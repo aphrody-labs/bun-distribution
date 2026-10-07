@@ -6,13 +6,13 @@
 > marked retired in the root production/service catalogues. Their config/model
 > entries describe a prior or proposed contract; they do not establish an
 > active VPS capability. For current placement and dated runtime evidence, see
-> [`production-topology.json`](../../../../config/production-topology.json),
-> [`service-catalog.json`](../../../../config/service-catalog.json), and the
+> [`production-topology.json`](../../../../tools/config/production-topology.json),
+> [`service-catalog.json`](../../../../tools/config/service-catalog.json), and the
 > 2026-10-02 topology observation.
 
 Retrieval, embedding and synthesis engines that run on or are reached from the production VPS.
 Model names, dimensions, services and environment names are owned by
-[`config/local-ai.json`](../../../../config/local-ai.json) (validated by `aphrody-infra validate`) and
+[`tools/config/local-ai.json`](../../../../tools/config/local-ai.json) (validated by `aphrody-infra validate`) and
 by the model catalog of `aphrody-ai` (`crates/ai/models/catalog.json`); this page explains
 the pipelines. Restored from the retired `aphrody` monolith (`docs/reference/infra/vps/RAG.md`).
 
@@ -25,7 +25,7 @@ the pipelines. Restored from the retired `aphrody` monolith (`docs/reference/inf
 - Web ingestion: `aphrody rag web-ingest` reads pages from the BXC Web API on loopback and writes
   only to the AI database; the operator wrapper is
   [`scripts/tools/infra/aphrody-rag-web-ingest.sh`](../../../../scripts/tools/infra/aphrody-rag-web-ingest.sh).
-- Indexes and their embedding spaces are declared under `indexes` in `config/local-ai.json`.
+- Indexes and their embedding spaces are declared under `indexes` in `tools/config/local-ai.json`.
   Querying an index with another model or dimension is forbidden (`mix-embedding-spaces`); a
   mismatch falls back to lexical search.
 
@@ -34,7 +34,7 @@ the pipelines. Restored from the retired `aphrody` monolith (`docs/reference/inf
 - Embeddings: `aphrody-shenron-embed` serves the multilingual E5 model declared for the
   `shenron-rag` index (loopback only, `aphrody-embed serve` from `aphrody-ai`).
 - Gateway: Shenron reaches search, documents, ingestion, chat and OCR through the `ai-http`
-  gateway of `config/local-ai.json` with a bearer token from its client environment file.
+  gateway of `tools/config/local-ai.json` with a bearer token from its client environment file.
 
 ## 3. X / Autopilot hybrid retrieval (recorded design)
 
@@ -64,5 +64,5 @@ Before relying on these weights, locate the live implementation in `aphrody-web`
 Managed `llama-server` instances (chat, code, reasoning, small, vision, embeddings, rerank) are
 planned and supervised by `aphrody-ai` (`crates/ai/llama-server`) with dynamic loopback
 ports; `aphrody ai env` prints their canonical `APHRODY_AI_*` variables on hosts that run them.
-The VPS row of `targets` in `config/local-ai.json` records which capabilities are available there
+The VPS row of `targets` in `tools/config/local-ai.json` records which capabilities are available there
 and which are deliberately unavailable.

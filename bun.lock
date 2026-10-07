@@ -880,7 +880,7 @@
       "name": "@aphrody/bun-forge",
       "version": "0.1.1",
       "dependencies": {
-        "@aphrody/yolo-core": "workspace:*",
+        "@aphrody/yolo-cli": "workspace:*",
       },
     },
     "packages/engine/n2b-client": {
@@ -893,6 +893,9 @@
     "packages/engine/plugins": {
       "name": "@aphrody/plugins",
       "version": "1.0.1",
+      "dependencies": {
+        "@aphrody/yolo-cli": "workspace:*",
+      },
     },
     "packages/engine/runtime": {
       "name": "@aphrody/runtime-sdk",
@@ -905,7 +908,6 @@
         "yolo": "./src/index.ts",
       },
       "dependencies": {
-        "@aphrody/plugins": "workspace:*",
         "@aphrody/runtime-sdk": "workspace:*",
         "@aphrody/workspace": "workspace:*",
         "@aphrody/yolo-core": "workspace:*",

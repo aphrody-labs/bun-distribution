@@ -142,7 +142,7 @@ const yoloRoot = process.env.YOLO_ROOT ?? process.env.APHRODY_YOLO_ROOT ?? join(
 const configPath = join(privateDir, "nginx.conf");
 await Bun.write(
   configPath,
-  (await readFile(join(yoloRoot, "config/host/nginx/aphrody/aphrody-local.conf"), "utf8"))
+  (await readFile(join(yoloRoot, "tools/config/host/nginx/aphrody/aphrody-local.conf"), "utf8"))
     .replaceAll("@STATE@", state)
     .replaceAll("@PRIVATE@", privateDir),
 );

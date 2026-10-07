@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
  * Tauri 3 line written into every generated project. Mirror of the root workspace pins:
- * `tauri-sync` (`config/tauri-upstream.json` `mirrors`) fails on drift and rewrites this literal on
+ * `tauri-sync` (`tools/config/tauri-upstream.json` `mirrors`) fails on drift and rewrites this literal on
  * `--apply`. This is the only copy; m3-next-migrate and web-to-tauri re-export it.
  */
 export const TAURI_3 = {

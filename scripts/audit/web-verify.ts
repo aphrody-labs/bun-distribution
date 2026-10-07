@@ -68,7 +68,7 @@ export function planStages(options: {
   const all: Stage[] = [
     {
       id: "config",
-      steps: [{ name: "config/web.json contract", command: null, timeoutMs: 30_000 }],
+      steps: [{ name: "tools/config/web.json contract", command: null, timeoutMs: 30_000 }],
     },
     {
       id: "bun",
@@ -208,16 +208,16 @@ export function parseArgs(argv: string[]): {
   return { stages, rust: argv.includes("--rust"), json: argv.includes("--json"), out };
 }
 
-/** In-process contract check of `config/web.json` and the documents it points at. */
+/** In-process contract check of `tools/config/web.json` and the documents it points at. */
 export function checkConfigFile(root: string): string[] {
-  const file = join(root, "config/web.json");
-  if (!existsSync(file)) return ["config/web.json is missing"];
+  const file = join(root, "tools/config/web.json");
+  if (!existsSync(file)) return ["tools/config/web.json is missing"];
   let raw: unknown;
   try {
     raw = JSON.parse(readFileSync(file, "utf8"));
   } catch (error) {
     return [
-      `config/web.json is not valid JSON: ${error instanceof Error ? error.message : String(error)}`,
+      `tools/config/web.json is not valid JSON: ${error instanceof Error ? error.message : String(error)}`,
     ];
   }
   const problems = validateWebConfig(raw);

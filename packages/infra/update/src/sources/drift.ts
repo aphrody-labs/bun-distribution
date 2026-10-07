@@ -3,9 +3,9 @@
  * Sources module: the single place for upstream source checkouts, upstream pins, forks and git state.
  *
  *   status|sync|verify   restore and inspect checkouts (./restore.ts, the former `upstream-sources` op)
- *   drift                remote head / newest tag / crates.io version vs every pin in config/upstream-sources.json,
+ *   drift                remote head / newest tag / crates.io version vs every pin in tools/config/upstream-sources.json,
  *                        plus the Cargo git remotes of Cargo.lock
- *   forks                fork vs parent ahead/behind (GitHub API) for config/update/forks.json
+ *   forks                fork vs parent ahead/behind (GitHub API) for tools/config/update/forks.json
  *   prune [--apply]      remove the <id>.pre-bump-<ts> checkouts kept by bump
  *   pull [--apply] [--deps]
  *                        fast-forward tracked, clean git checkouts (Cargo path dependencies only with --deps)
@@ -80,7 +80,7 @@ export type DriftRow = {
 };
 
 export async function driftRows(c: Ctx): Promise<DriftRow[]> {
-  const manifest = parseManifest(c.read("config/upstream-sources.json"));
+  const manifest = parseManifest(c.read("tools/config/upstream-sources.json"));
   const rows: DriftRow[] = [];
   for (const s of manifest.sources) {
     if (s.kind === "crate") {
@@ -257,7 +257,7 @@ export function replaceInBlock(
 }
 
 export async function bump(c: Ctx, only: string | undefined): Promise<number> {
-  const file = "config/upstream-sources.json";
+  const file = "tools/config/upstream-sources.json";
   const original = c.read(file);
   const manifest = parseManifest(original);
   const root = resolveSourceRoot(c.root, manifest, undefined);
@@ -381,7 +381,7 @@ export async function runSources(c: Ctx, args: string[]): Promise<number> {
           pinFile?: string;
           pinKeys?: Record<string, string>;
         }[];
-      }>("config/update/forks.json", { forks: [] });
+      }>("tools/config/update/forks.json", { forks: [] });
       for (const f of cfg.forks) {
         const i = await forkInfo(f.repo, f.parent);
         console.log(
@@ -418,7 +418,7 @@ export async function runSources(c: Ctx, args: string[]): Promise<number> {
     case "prune": {
       const root = resolveSourceRoot(
         c.root,
-        parseManifest(c.read("config/upstream-sources.json")),
+        parseManifest(c.read("tools/config/upstream-sources.json")),
         undefined,
       );
       const old = readdirSync(root).filter((d) => d.includes(".pre-bump-"));
@@ -431,11 +431,11 @@ export async function runSources(c: Ctx, args: string[]): Promise<number> {
     }
     case "pull": {
       // Fast-forward tracked git checkouts. Cargo path dependencies are skipped unless --deps (a pull can break the build).
-      const manifest = parseManifest(c.read("config/upstream-sources.json"));
+      const manifest = parseManifest(c.read("tools/config/upstream-sources.json"));
       const root = resolveSourceRoot(c.root, manifest, undefined);
       const withDeps = rest.includes("--deps");
       let failed = 0;
-      let text = c.read("config/upstream-sources.json");
+      let text = c.read("tools/config/upstream-sources.json");
       for (const s of manifest.sources.filter((x) => x.kind === "git" && !x.pinned)) {
         const dir = join(root, s.id);
         if (!existsSync(join(dir, ".git"))) {
@@ -465,7 +465,7 @@ export async function runSources(c: Ctx, args: string[]): Promise<number> {
         if (s.commit && s.commit !== head)
           text = replaceInBlock(text, s.id, "commit", s.commit, head); // keep the recorded observation current
       }
-      if (c.apply) c.write("config/upstream-sources.json", text);
+      if (c.apply) c.write("tools/config/upstream-sources.json", text);
       return failed ? 1 : 0;
     }
     case "repo":

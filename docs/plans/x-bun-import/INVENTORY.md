@@ -86,7 +86,7 @@ in-process: the TypeScript package re-implements them.
 | --- | --- | --- | --- | --- | --- |
 | `getOperation`, `allOperations`, `queries`, `mutations`, `Operation` (`config/catalog.ts` (not in repo), 52 lines) | `catalog::{operation, all, queries, mutations}`; data `crates/web/x/data/x-graphql-catalog.json` | none | `catalog [--mutations] [--filter]` | indexes the same JSON; a second copy of the Gryphon JSON (`config/gryphon-graphql-catalog.json` (not in repo), semantically equal) | `data`: the accessor imports the single shared JSON files of the crate (no logic duplicated); the Gryphon copy is deleted. Native ops `catalog_get`, `catalog_list` for hosts without a bundler |
 | `QueryIdStore`, `QueryIdSnapshot` (`config/query-ids.ts` (not in repo), 186 lines) | `QueryIdStore`, `Snapshot` (`runtime_query_ids.rs`) | none | `query-ids [--refresh]` | duplicate (and the same bug: a one-operation refresh overwrote the other cached ids) | `drop` the port; thin `QueryIdStore` class over native ops `query_ids_snapshot`, `query_ids_get`, `query_ids_refresh`; Rust fixes the overwrite and coalesces concurrent refreshes (single flight) |
-| `syncCatalogFromBundles`, `fetchLiveQueryIds`, `discoverBundleUrls`, `extractAllOperationsFromJs` (`tools/bundle-catalog.ts`, 179 lines) | `catalog_sync::sync_catalog_file`, `runtime_query_ids::{discover_bundles_public, fetch_and_extract_all}` | none | `catalog --sync` (path fixed at compile time) | duplicate | `drop` the TS implementation; native op `catalog_sync { path }`; `scripts/tools/web/x-catalog-sync.ts` calls it and still maintains the shared JSON |
+| `syncCatalogFromBundles`, `fetchLiveQueryIds`, `discoverBundleUrls`, `extractAllOperationsFromJs` (`packages/web/x/src/tools/bundle-catalog.ts`, 179 lines) | `catalog_sync::sync_catalog_file`, `runtime_query_ids::{discover_bundles_public, fetch_and_extract_all}` | none | `catalog --sync` (path fixed at compile time) | duplicate | `drop` the TS implementation; native op `catalog_sync { path }`; `scripts/tools/web/x-catalog-sync.ts` calls it and still maintains the shared JSON |
 | `X_DISCOVERY_PAGES`, `X_DISCOVERY_UA`, `X_RECON_URLS`, `X_SDK_COVERAGE`, `X_REST_V1_1`, `X_CDN`, `PREMIUM_ROUTES`, `PREMIUM_GRAPHQL_OPS`, `PREMIUM_PRODUCT_SKUS`, `PREMIUM_PAGE_URL`, `PREMIUM_PAYMENT_HOSTS`, `X_API_ENDPOINTS` (`config/x-surface.ts` (not in repo), 158 lines) | `surface::{DISCOVERY_PAGES, X_PRO_RECON_URLS, GRYPHON_GRAPHQL_OPS, GRAPHQL_URL_TEMPLATE, REST_V1_1_BASE, PREMIUM_GRAPHQL_OPS, PRODUCT_SKUS}` | none | `premium`, `xpro probe` print some | constants | `data`: kept as constants (no logic); the ones that exist in Rust are parity-tested against the native `meta` op |
 | `RADAR_*` (`config/radar-surface.ts` (not in repo)), `X_PRO_*`, `GRYPHON_*`, `X_PRO_COLUMN_TIMELINE_OPS` (`config/x-pro-surface.ts` (not in repo)) | `GRYPHON_GRAPHQL_OPS`, `X_PRO_RECON_URLS` | none | none | constants | `data` |
 
@@ -120,9 +120,9 @@ in-process: the TypeScript package re-implements them.
 
 | TS export | (a) Rust | (b) FFI | (c) CLI | (d) TS-only | Decision |
 | --- | --- | --- | --- | --- | --- |
-| `XTools`, `X_TOOL_NAMES`, `isXToolName`, `xSearchToolDef`, `xProfileToolDef`, `xWhoamiToolDef`, `xTweetsToolDef`, `xNewsToolDef`, `xNativeTools`, types (`tools/function-tools.ts`, 243 lines) | MCP tool `aphrody_x_client` (`crates/ai/mcp/src/x_tools.rs`) serves the same five actions to MCP hosts | none | none | OpenAI function schemas and argument validation | `thin`: stays (the schemas and the validation are TypeScript-side contracts of `@aphrody/xai`); fulfils calls with the native client |
+| `XTools`, `X_TOOL_NAMES`, `isXToolName`, `xSearchToolDef`, `xProfileToolDef`, `xWhoamiToolDef`, `xTweetsToolDef`, `xNewsToolDef`, `xNativeTools`, types (`packages/web/x/src/tools/function-tools.ts`, 243 lines) | MCP tool `aphrody_x_client` (`crates/ai/mcp/src/x_tools.rs`) serves the same five actions to MCP hosts | none | none | OpenAI function schemas and argument validation | `thin`: stays (the schemas and the validation are TypeScript-side contracts of `@aphrody/xai`); fulfils calls with the native client |
 | `rankPosts`, `rankPostsNative`, `rankTweets`, `rankTweetsNative`, `toPostCandidate`, `tweetToPostCandidate`, types (`algo.ts`, 168 lines) | `algorithm::{rank_posts, rank_posts_json}`, `tweet_to_algo_candidate`, `rank_tweets` | `aphrody_web_x_algorithm_rank` | none | `tweetToPostCandidate` duplicates `tweet_to_algo_candidate` (and parses `created_at` correctly, which the Rust one does not: X dates are not RFC 2822) | `port` the timestamp fix and `has_media` to Rust; `rankTweets` calls the native `rank_tweets`; `toPostCandidate` (raw multi-shape adapter) stays as a typed TS adapter |
-| `runXWebRecon`, `XSurfaceReconReport`, `ReconSummary`, `WebReconProfile` (`tools/web-recon.ts`, 103 lines) | none (web recon owner: `aphrody-web`) | `aphrody_web_obscura_fetch_submit` | `aphrody web` | profile routing; rendered profiles spawn the `aphrody-web` binary | `thin`, out of the X-client domain; left as is (open item: the rendered profiles still spawn a subprocess) |
+| `runXWebRecon`, `XSurfaceReconReport`, `ReconSummary`, `WebReconProfile` (`packages/web/x/src/tools/web-recon.ts`, 103 lines) | none (web recon owner: `aphrody-web`) | `aphrody_web_obscura_fetch_submit` | `aphrody web` | profile routing; rendered profiles spawn the `aphrody-web` binary | `thin`, out of the X-client domain; left as is (open item: the rendered profiles still spawn a subprocess) |
 
 ## 3. Consumers
 
@@ -137,13 +137,13 @@ in-process: the TypeScript package re-implements them.
 | `scripts/tools/web/x-premium-dump.ts` | `XClient`, `XSession`, `DEFAULT_CATALOG_PATH`, `client.graphqlWaiting`, `client.whoami`, `client.session` | unchanged call shape; catalog path from the shared constant |
 | `packages/infra/workspace/test/aphrody-packages.test.ts`, `ecosystem-deps.test.ts`, `web-migration.test.ts`; `packages/infra/update/test/bun.test.ts`, `deps.test.ts` | the package name and version strings only | no behaviour dependency; checked unchanged |
 | `package.json` (root) `ai:lint`, `ai:fmt` | path `packages/web/x/` | unchanged |
-| `config/pipeline.json`, `config/stack-training.json` | package names | unchanged |
+| `tools/config/pipeline.json`, `tools/config/stack-training.json` | package names | unchanged |
 | Rust: `crates/infra/aphrody-command` (`multicall.rs`, `pillars_cmd/web.rs`), `crates/ai/mcp/src/x_tools.rs` | `XClient`, `XSession`, `NewsOptions`, `cli_main`, `algorithm` | Rust API kept source-compatible (`XSession`, `XClient::new`, existing methods) |
 
 ## 4. What is Rust-owned once the batches land
 
 Everything under `XClient`, `core/*`, `config/{catalog,query-ids}`, `db/*`, `services/{media,news,premium,x-pro-deck,coverage}`
-and `tools/bundle-catalog` has a single implementation in `aphrody-x`, reached through one versioned JSON job API. What
+and `tools/bundle-catalog` (not in repo) has a single implementation in `aphrody-x`, reached through one versioned JSON job API. What
 stays in TypeScript is orchestration and contracts: purge engine, unfollow, tweet purge, radar, cron, crawler, function
 tools, recon, the session value object, constants and types.
 

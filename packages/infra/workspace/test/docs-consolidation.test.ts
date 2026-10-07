@@ -316,7 +316,7 @@ test("owner duplicates: docs copies are planned for removal against tracked owne
     entry({ path: "docs/reference/ui/x.md", sha256: "h3" }),
     entry({ path: "packages/ui/assets/x.md", sha256: "h3", untracked: true }),
     entry({ path: "docs/reference/ui/y.md", sha256: "h4" }),
-    entry({ path: "config/ai/plugins/aphrody/y.md", sha256: "h4", ownerKind: "config" }),
+    entry({ path: "tools/config/ai/plugins/aphrody/y.md", sha256: "h4", ownerKind: "config" }),
   ];
   const scan: ScanResult = {
     scope: "ui",
@@ -624,7 +624,7 @@ test("legacy repository paths follow the recorded layout migrations", () => {
       "crates/ui/aphrody-app": "crates/ui/app",
       "crates/ui/aphrody-render": "crates/ui/render",
       "crates/ui/aphrody-render-tools": "crates/ui/render-tools",
-      "crates/os/aphrody-proc": "crates/os/proc",
+      "crates/os/aphrody-proc": "crates/os/ostd/proc",
     },
     {
       "crates/ui/aphrody-render3d": "crates/ui/aphrody-render-tools",
@@ -887,9 +887,9 @@ test("all scope includes Infra and preserves shipped copies while excluding impo
         "# Tool\n\nFirst-party infrastructure documentation with enough text for duplicate comparison.\n",
       );
     }
-    await mkdir(join(root, "config/docs"), { recursive: true });
+    await mkdir(join(root, "tools/config/docs"), { recursive: true });
     await writeFile(
-      join(root, "config/docs/imported-upstream-docs.json"),
+      join(root, "tools/config/docs/imported-upstream-docs.json"),
       JSON.stringify({
         trees: [{ id: "imported", include: ["docs/reference/imported/**"] }],
       }),

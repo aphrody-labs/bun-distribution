@@ -4,7 +4,7 @@
 
 Le propriétaire est `@aphrody/workspace`. Les sources locales sont dans
 `~/plugins`, configurable par `APHRODY_PLUGINS_ROOT`. Les adaptateurs sont dans
-[`agent-plugin-providers.json`](../../../config/ai/agent-plugin-providers.json).
+[`agent-plugin-providers.json`](../../../tools/config/ai/agent-plugin-providers.json).
 Le CLI utilise `@aphrody/paths`, `@aphrody/bun`, Bun YAML/TOML, Oxfmt,
 le validateur Rust `aphrody-skills` et les commandes natives disponibles.
 

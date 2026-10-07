@@ -21,7 +21,7 @@ afterEach(() => {
 test("Drive daemon builds from the nested workspace through serialized Cargo", async () => {
   const root = mkdtempSync(join(tmpdir(), "aphrody-drive-owner-"));
   roots.push(root);
-  const drive = join(root, "crates/os/drive");
+  const drive = join(root, "crates/os/kernel/comps/drive");
   const scripts = join(root, "scripts/build/rust");
   mkdirSync(drive, { recursive: true });
   mkdirSync(scripts, { recursive: true });

@@ -30,10 +30,10 @@ export class Ctx {
   }
   watch = () =>
     this.jsonFile<{ libs: Lib[]; consumers: Record<string, { cargo?: string[]; bun?: string[] }> }>(
-      "config/deps/watch.json",
+      "tools/config/deps/watch.json",
       { libs: [], consumers: {} },
     );
-  journal = () => this.jsonFile<Journal>("config/deps/journal.json", { seen: {}, runs: [] });
+  journal = () => this.jsonFile<Journal>("tools/config/deps/journal.json", { seen: {}, runs: [] });
   saveJournal = (j: Journal) =>
-    this.write("config/deps/journal.json", `${JSON.stringify(j, null, 2)}\n`);
+    this.write("tools/config/deps/journal.json", `${JSON.stringify(j, null, 2)}\n`);
 }

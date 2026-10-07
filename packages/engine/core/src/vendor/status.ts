@@ -111,7 +111,17 @@ function countFiles(dir: string, limit: number): number {
  */
 export async function inspectPackages(vendorDir?: string): Promise<readonly SubmoduleStatus[]> {
   const vDir = vendorDir ?? resolve(yoloHome(), "vendor");
-  const pkgs = ["bun", "obscura", "tauri", "plugins-workspace", "create-tauri-app", "next"];
+  const catalog = Bun.file(resolve(vDir, "../tools/config/vendor.json"));
+  const pkgs: string[] = (await catalog.exists())
+    ? ((await catalog.json()) as { sources: { name: string }[] }).sources.map(
+        (source) => source.name,
+      )
+    : existsSync(vDir)
+      ? readdirSync(vDir, { withFileTypes: true })
+          .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
+          .map((entry) => entry.name)
+          .toSorted()
+      : [];
   const results: SubmoduleStatus[] = [];
 
   for (const name of pkgs) {

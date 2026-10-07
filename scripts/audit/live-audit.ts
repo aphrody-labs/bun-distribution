@@ -4,9 +4,9 @@
  *
  *   bun scripts/audit/live-audit.ts [--site <host>] [--skip-crawl] [--ssh <alias>] [--json]
  *
- * 1. routes  — every public route of yolo config/host/nginx/routes.json answers < 400 on its probe path.
+ * 1. routes  — every public route of yolo tools/config/host/nginx/routes.json answers < 400 on its probe path.
  * 2. crawl   — the native Aphrody Web crawler scans each active site of
- *              config/live-audit.json; every crawled page must be 2xx and free of error markers.
+ *              tools/config/live-audit.json; every crawled page must be 2xx and free of error markers.
  * 3. links   — internal links found in crawled pages but not crawled are fetched (broken links).
  * 4. assets  — every img/script/style/font/og:image referenced by crawled pages is fetched;
  *              first-party failures are errors, third-party failures are warnings.
@@ -60,7 +60,7 @@ const option = (name: string) => {
   const index = argv.indexOf(name);
   return index >= 0 ? argv[index + 1] : undefined;
 };
-const config = (await Bun.file(join(root, "config", "live-audit.json")).json()) as Config;
+const config = (await Bun.file(join(root, "tools", "config", "live-audit.json")).json()) as Config;
 const routes = (
   (await Bun.file(
     join(

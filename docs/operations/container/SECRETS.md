@@ -31,7 +31,7 @@ Start the API with the Docker secrets overlay:
 
 ```sh
 docker compose --env-file "$HOME/.aphrody/private/container-vault/compose.env" \
-  -f config/container/compose.yaml -f config/container/compose.secrets.yaml up -d api
+  -f tools/config/container/compose.yaml -f tools/config/container/compose.secrets.yaml up -d api
 ```
 
 Only the API token is mounted into this container. `YOLO_API_TOKEN_FILE` is read
@@ -51,7 +51,7 @@ Exports must remain in the private directory. Mount only the environment needed
 by that service. Images contain neither the vault nor its decryption key.
 
 The declared user service and daily timer are in
-`config/host/systemd/aphrody-container-vault.{service,timer}`. The timer catches
+`tools/config/host/systemd/aphrody-container-vault.{service,timer}`. The timer catches
 up after WSL starts; it requires the existing SSH, GitHub and Google credentials.
 No new account or authentication grant is created. Failure leaves source secrets
 unchanged and is reported by systemd; remote backups may have different revisions

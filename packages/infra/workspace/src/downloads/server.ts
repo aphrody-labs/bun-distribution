@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Aphrody download server: a read-only Bun.serve app behind nginx (config/host/nginx/aphrody/
+ * Aphrody download server: a read-only Bun.serve app behind nginx (tools/config/host/nginx/aphrody/
  * downloads.aphrody.com.conf). It serves one published release tree and never mutates anything.
  *
  *   <root>/latest.json        manifest: artifacts with name, version, platform, url, sha256, size

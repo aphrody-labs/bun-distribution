@@ -158,7 +158,7 @@ pub(crate) enum GitAction {
         #[arg(long)]
         json: bool,
     },
-    /// Upstream source checkouts outside the repository (config/upstream-sources.json).
+    /// Upstream source checkouts outside the repository (tools/config/upstream-sources.json).
     Source {
         /// `status` and `verify` inspect natively; `sync` runs the @aphrody/workspace restorer.
         #[arg(value_enum, default_value = "status")]
@@ -176,7 +176,7 @@ pub(crate) enum GitAction {
         #[arg(long)]
         pretty: bool,
     },
-    /// Live read-only access to the upstream catalogue (config/upstream-sources.json), no clone needed.
+    /// Live read-only access to the upstream catalogue (tools/config/upstream-sources.json), no clone needed.
     Upstream {
         /// `list` the catalogue, or `info`, `tree`, `read`, `search` one upstream through the GitHub API.
         #[arg(value_enum, default_value = "list")]

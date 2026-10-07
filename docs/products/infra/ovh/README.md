@@ -31,7 +31,7 @@ Historical Manager inventory observed during the September 2026 audit:
 
 - one active VPS service, named `rg`, in Strasbourg SBG6, on the VPS-4 2026
   plan. Its service name and address are not recorded here: the target is the
-  `vps` entry of `yolo/config/host/inventory/targets.json` and
+  `vps` entry of `yolo/tools/config/host/inventory/targets.json` and
   `aphrody-infra ovh vps list` prints the live inventory;
 - the `aphrody.com` domain and DNS zone;
 - DNS and mail services associated with `aphrody.com` (`rpbey.fr` was sold — operator decision,
@@ -99,7 +99,7 @@ Linux memory using `available`, not only `used`; reconcile dashboard sampling
 with SSH output before restarting anything.
 
 During the September 2026 audit (before the 2026-09-22 reset recorded in
-`yolo/config/host/inventory/vps-source.json`), the VPS had recent automated backup points and no
+`yolo/tools/config/host/inventory/vps-source.json`), the VPS had recent automated backup points and no
 failed systemd units. Its root filesystem was at approximately 92% usage. The largest
 identified consumers were build output under `niers/target`, `niers/var`, and
 the Steam data cache. These are candidates for an explicit cleanup plan, not

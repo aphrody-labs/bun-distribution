@@ -154,12 +154,12 @@ CI version captures per-PR deltas. Both views matter.
 
 ## 8. Reference
 
-- `crates/os/backend/benches/backend_bench.rs` — backend primitives bench source
+- `crates/os/ostd/backend/benches/backend_bench.rs` — backend primitives bench source
 - `crates/infra/aphrody/benches/cold_start.rs` — `aphrody version` cold-start bench
   (R-A R1.5 phase 1)
 - `crates/ai/mcp/benches/initialize_handshake.rs` — `aphrody-mcp` stdio
   MCP handshake bench (R-A R1.5 phase 2)
-- `crates/os/re/benches/triage.rs` — RE `triage()` throughput bench at
+- `crates/os/kernel/comps/re/benches/triage.rs` — RE `triage()` throughput bench at
   64 KiB / 1 MiB / 5 MiB + isolated `extract_strings` (pillar R5 metric)
 - `docs/reference/ai/PERFORMANCE.md` — bench claims with reproduction recipes
 - `docs/PLAN.md` (not in repo) §R-A R1.5 — acceptance criterion (p50 cold-start < 5 ms,

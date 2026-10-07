@@ -1,0 +1,14 @@
+# shenron-backup.timer — sauvegarde quotidienne du cache SQLite Shenron.
+# Décalée de l'heure de sauvegarde Postgres `shenron-pg-backup.timer` (dbfr, 03:00 UTC,
+# tools/config/scheduler-policy.json) pour ne jamais concurrencer le disque au même
+# instant sur des hôtes différents.
+[Unit]
+Description=Sauvegarde quotidienne SQLite Shenron (03:20 UTC)
+
+[Timer]
+OnCalendar=*-*-* 03:20:00
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

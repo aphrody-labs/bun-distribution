@@ -5,7 +5,7 @@
 - **App UI:** `packages/nie-ui` (submodule `aphrody-labs/nie-ui`), `packages/shenron-ui`, `packages/rg-ui`; Aphrody mounts this repo at `m3/` (owner decision, 2026-10-05); other consumers retain their own mount points.
 - **MCP:** `packages/m3-mcp` is the only design MCP (10 tools, including `m3_os_themes_list` and `m3_os_themes_generate`); the Claude plugin `aphrody-m3` launches it.
 - **Icons:** `bun packages/material-design-icons/scripts/svg-to-ico.ts <symbol|file.svg> --out src-tauri/icons` produces ICO, ICNS and PNG sets for Tauri apps; `templates/desktop/src-tauri/icons` is generated this way.
-- **Ownership split:** Bun FFI in yolo (`@aphrody/runtime-sdk/ffi`), Rust in aphrody, systemd/nginx/host config in yolo `config/host`.
+- **Ownership split:** Bun FFI in yolo (`@aphrody/runtime-sdk/ffi`), Rust in aphrody, systemd/nginx/host config in yolo `tools/config/host`.
 
 ## Standalone install (2026-10-04)
 

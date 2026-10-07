@@ -146,7 +146,7 @@ Grepped the workspace `Cargo.toml` files for `candle`, `ort`, `tokenizers`,
 
 | Crate | Status | Where |
 |-------|--------|-------|
-| `magika` | **WIRED** (opt-in `magika` feature) | `crates/os/re/Cargo.toml` (`magika = "1.1.0"`), impl in `crates/os/re/src/magika.rs` |
+| `magika` | **WIRED** (opt-in `magika` feature) | `crates/os/kernel/comps/re/Cargo.toml` (`magika = "1.1.0"`), impl in `crates/os/kernel/comps/re/src/magika.rs` |
 | `ort` | **WIRED** (transitive via `magika` + optional direct dep) | `crates/infra/aphrody/Cargo.toml` (`=2.0.0-rc.12`, `magika` feature) |
 | `lancedb` | **WIRED** | workspace `Cargo.toml` (`0.29`), `crates/ai/memory/Cargo.toml` |
 | `arrow-array` / `arrow-schema` | **WIRED** (LanceDB backend) | `crates/ai/memory/Cargo.toml` |
@@ -159,7 +159,7 @@ Grepped the workspace `Cargo.toml` files for `candle`, `ort`, `tokenizers`,
 | `tch` | not used | rejected (libtorch / non-hermetic) |
 
 The magika path is the only neural-ML code currently compiled into aphrody.
-`MagikaClass` / `Classifier` (`crates/os/re/src/magika.rs`) projects
+`MagikaClass` / `Classifier` (`crates/os/kernel/comps/re/src/magika.rs`) projects
 Magika's `FileType` + `TypeInfo` into an owned, serde-serializable result and
 runs the embedded ONNX model through `ort`. The feature is correctly host-only
 and opt-in because `ort`'s prebuilt-runtime download is incompatible with the

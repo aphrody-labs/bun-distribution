@@ -1,6 +1,6 @@
 # llama-server models on the vps
 
-Loopback-only OpenAI-compatible servers driven by upstream llama.cpp b11415 (`~/.aphrody/runtimes/llama-b11415`), one unit per model, declared in `config/host/systemd/aphrody/` and `config/service-catalog.json`.
+Loopback-only OpenAI-compatible servers driven by upstream llama.cpp b11415 (`~/.aphrody/runtimes/llama-b11415`), one unit per model, declared in `tools/config/host/systemd/aphrody/` and `tools/config/service-catalog.json`.
 
 | Unit | Port | Alias | Model |
 | --- | --- | --- | --- |

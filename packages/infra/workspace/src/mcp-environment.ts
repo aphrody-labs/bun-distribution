@@ -134,9 +134,9 @@ export function loadMcpEnvironmentRequirements(
 ): McpEnvironmentRequirements {
   let ai: Json, secrets: Json;
   try {
-    ai = object(safeJson(readFileSync(join(repoRoot, "config/local-ai.json"), "utf8")));
+    ai = object(safeJson(readFileSync(join(repoRoot, "tools/config/local-ai.json"), "utf8")));
     secrets = object(
-      safeJson(readFileSync(join(repoRoot, "config/secrets-contract.json"), "utf8")),
+      safeJson(readFileSync(join(repoRoot, "tools/config/secrets-contract.json"), "utf8")),
     );
   } catch {
     throw new Error("MCP environment contracts unavailable or invalid");

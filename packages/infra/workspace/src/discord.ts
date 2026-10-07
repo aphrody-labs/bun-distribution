@@ -49,13 +49,13 @@ export function discordDeployment(
     entrypoint: join(root, "packages/discord/kit/src/omar-monitor/main.ts"),
     bundle: "/srv/aphrody-lab/omar-monitor.mjs",
     policy: {
-      source: join(root, "config/host/discord-omar-monitor.json"),
+      source: join(root, "tools/config/host/discord-omar-monitor.json"),
       target: "/srv/aphrody-lab/omar-monitor-policy.json",
     },
     stateDirectory: "/srv/aphrody-lab/state/omar-monitor",
     stateOwner: "ubuntu",
     runtime: "/home/ubuntu/.bun/bin/bun",
-    plan: hostPlan([unit], { target, root: join(root, "config/host") }),
+    plan: hostPlan([unit], { target, root: join(root, "tools/config/host") }),
   };
 }
 

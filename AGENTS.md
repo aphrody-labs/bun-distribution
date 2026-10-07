@@ -36,7 +36,7 @@ UI is canonical in `m3/packages/app-ui` and `crates/ui/*`.
 - Bun: `packages/<domain>/<package>`; installation/admin/creator are modules of `packages/infra/product`.
 - No first-party `apps/` or `community/` tree: fold product surfaces into their capability owner; UI stays in `m3/packages/app-ui`.
 - Docs: `docs/<category>/<domain>`; scripts: `scripts/{audit,build,dev,migration,release,tools}`.
-- Infra: `config/host/` (`inventory/`, `systemd/`, `nginx/`, `rg/`, `nie/`, Shenron host plane); live
+- Infra: `tools/config/host/` (`inventory/`, `systemd/`, `nginx/`, `rg/`, `nie/`, Shenron host plane); live
   audits: `scripts/audit/live*`. Shenron and Koharu source live in `aphrody-labs/shenron`.
 
 [Rust naming](docs/architecture/rust-crate-naming.md) applies. Package/library/
@@ -51,7 +51,7 @@ Preserve lockfiles; no manual Cargo.lock edits or bulk updates hiding duplicates
 
 Use `sources:sync`, `sources:verify` and native upstream Git workflows.
 Integrated patches stay under their capability owner with provenance in
-`config/upstream-sources.json` until replacement qualifies. Preserve features,
+`tools/config/upstream-sources.json` until replacement qualifies. Preserve features,
 licences, notices and local patches. No upstream clone for research.
 
 ## Coordination and execution

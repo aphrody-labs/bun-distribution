@@ -4,7 +4,7 @@ import { chmod, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-const entrypoint = resolve(import.meta.dir, "../../../config/container/entrypoint.sh");
+const entrypoint = resolve(import.meta.dir, "../../../tools/config/container/entrypoint.sh");
 const temporary: string[] = [];
 
 afterEach(async () => {

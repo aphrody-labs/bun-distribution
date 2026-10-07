@@ -6,11 +6,11 @@ Le job Workspace `drive-review` rapproche les sept contrats DBFR (`AGENTS`, `SOU
 `IDENTITY`, `USER`, `TOOLS`, `HEARTBEAT`, `BOOT`, tous en `.md`) avec leur référence validée
 et les documents natifs Google. Le timer déclaré continue ce travail quand les clients
 Codex, Claude ou AGY sont fermés. La configuration propriétaire est
-[`config/host/agent-sync-vps.json`](../../../config/host/agent-sync-vps.json) ; son ordre
+[`tools/config/host/agent-sync-vps.json`](../../../tools/config/host/agent-sync-vps.json) ; son ordre
 est téléchargement → revue → réplication → indexation. Le plan n'exécute aucune tâche :
 
 ```sh
-bun packages/infra/workspace/src/agent-home-drive-sync.ts --config config/host/agent-sync-vps.json
+bun packages/infra/workspace/src/agent-home-drive-sync.ts --config tools/config/host/agent-sync-vps.json
 ```
 
 L'activation relève du plan/apply Infra déclaré. Le worker se lance ensuite avec le même

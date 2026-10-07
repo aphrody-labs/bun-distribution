@@ -2,7 +2,7 @@
 
 Référence vérifiée le 7 octobre 2026 dans le checkout local de `vendor/bun` :
 `085dd0ad5e2356f805ecb1b5d51f7cc28da802af`. Le runtime du produit reste épinglé
-à `a4d88d12417844912a9b6a5a9bedc0755b011092` dans `config/vendor.json`.
+à `a4d88d12417844912a9b6a5a9bedc0755b011092` dans `tools/config/vendor.json`.
 Le checkout, la révision distribuée et le runtime installé sont trois états
 distincts ; cette orientation architecturale ne constitue pas une activation.
 
@@ -23,12 +23,20 @@ les bibliothèques dans une seule crate. La structure observée des commandes es
 
 ## Décisions pour les prochains lots
 
-Les commandes Forge et de génération de plugins ont pour propriétaire cible
-`packages/engine/yolo`, avec des modules internes sous `src/cli/`. Leur absorption
-doit conserver les commandes `yolo forge` et `yolo plugin`, le chargement différé,
-les API réutilisables, les licences et les tests existants. Leurs propriétaires
-actuels restent `packages/engine/forge` et `packages/engine/plugins` jusqu'au lot
-de migration validé ; cette page ne prétend pas que leur déplacement est effectué.
+Les commandes Forge et de génération de plugins ont maintenant pour propriétaire
+`packages/engine/yolo`, avec leurs modules internes sous `src/cli/forge/` et
+`src/cli/plugin/`. Les commandes `yolo forge` et `yolo plugin` sont chargées
+à la demande et embarquées dans le binaire compilé ; elles fonctionnent sans
+checkout pour leurs opérations autonomes. Les configurations, licences et tests
+ont migré avec leur implémentation.
+
+Les identités npm `@aphrody/bun-forge` et `@aphrody/plugins` restent des façades
+de compatibilité dépréciées le 2026-10-07 : elles réexportent les API du
+propriétaire Yolo sans conserver une seconde implémentation. Leur dépendance
+pointe vers `@aphrody/yolo-cli`, qui ne dépend plus de ces façades. La publication
+de versions mises à jour reste distincte de cette qualification source.
+Les preuves et limites Forge sont dans le
+[reçu de consolidation](../operations/forge-yolo-consolidation.md).
 
 Le moteur natif reste dans `vendor/bun`. Les comportements du produit restent
 dans Aphrody : une consolidation de dossiers ne copie pas les domaines métier

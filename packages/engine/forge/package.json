@@ -11,14 +11,14 @@
     "access": "public"
   },
   "scripts": {
-    "test": "bun test test",
+    "test": "bun test ../yolo/test/forge",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "oxlint src test",
     "format": "oxfmt src test package.json tsconfig.json",
     "format:check": "oxfmt --check src test package.json tsconfig.json"
   },
   "dependencies": {
-    "@aphrody/yolo-core": "workspace:*"
+    "@aphrody/yolo-cli": "workspace:*"
   },
   "engines": {
     "bun": ">=1.4.2"

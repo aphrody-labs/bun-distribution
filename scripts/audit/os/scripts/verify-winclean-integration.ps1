@@ -4,8 +4,8 @@ param()
 
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../../../..')).Path
-$rustCatalog = Join-Path $root 'crates/os/winclean/src/tools.json'
-$ledgerPath = Join-Path $root 'crates/os/winclean/tool-migration.json'
+$rustCatalog = Join-Path $root 'crates/os/kernel/comps/winclean/src/tools.json'
+$ledgerPath = Join-Path $root 'crates/os/kernel/comps/winclean/tool-migration.json'
 $bunCatalog = Join-Path $root 'packages/os/winclean/src/generated.ts'
 # Resolve the real target directory via `cargo metadata`: the superproject's
 # `../.cargo/config.toml` routes this workspace into a target-dir shared with

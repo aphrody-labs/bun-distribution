@@ -7,7 +7,7 @@ migration runner and database URL resolution. Consumers: `aphrody-rag`,
 `aphrody-mcp`, `aphrody-memory`, `aphrody-train` (feature `registry`).
 
 No sqlx or sea-orm: the root workspace stays on `tokio-postgres` 0.7 and
-`rusqlite` 0.40 (bundled SQLite 3.53). `crates/os/drive` remains an isolated
+`rusqlite` 0.40 (bundled SQLite 3.53). `crates/os/kernel/comps/drive` remains an isolated
 workspace.
 
 | Feature | Default | Adds |

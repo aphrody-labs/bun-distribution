@@ -49,7 +49,7 @@ Les résultats lexicaux incluent code, commentaires, tests et chaînes. Les num�
 | `aphrody-app` | `crates/ui/app/Cargo.toml` | dependencies | `tauri-runtime-wry` | `workspace=True` |
 | `aphrody-drive` | `crates/ui/drive/Cargo.toml` | build-dependencies | `tauri-plugin` | `workspace=True, features=['build']` |
 | `aphrody-drive` | `crates/ui/drive/Cargo.toml` | dependencies | `tauri` | `workspace=True` |
-| `aphrody-kernel` | `crates/os/kernel/Cargo.toml` | dependencies | `aphrody-bun-docs` | `workspace=True, optional=True` |
+| `aphrody-kernel` | `crates/os/kernel/core/Cargo.toml` | dependencies | `aphrody-bun-docs` | `workspace=True, optional=True` |
 | `aphrody-shell-tauri` | `crates/shell/tauri/Cargo.toml` | build-dependencies | `tauri-plugin` | `workspace=True, features=['build']` |
 | `aphrody-shell-tauri` | `crates/shell/tauri/Cargo.toml` | dependencies | `tauri` | `workspace=True` |
 | `aphrody-shell-tauri` | `crates/shell/tauri/Cargo.toml` | dev-dependencies | `tauri` | `workspace=True, features=['test']` |
@@ -142,8 +142,8 @@ Le tableau liste chaque fichier Rust correspondant et les lignes contenant le mo
 - `crates/infra/git/src/awesome.rs` : 5, 24, 25, 27, 286
 - `crates/infra/git/src/upstream.rs` : 331, 344
 - `crates/infra/infra/src/drive.rs` : 4
-- `crates/os/drive/crates/sd-client/src/client.rs` : 30
-- `crates/os/drive/xtask/src/main.rs` : 177, 178, 179, 181, 206, 207, 274
+- `crates/os/kernel/comps/drive/crates/sd-client/src/client.rs` : 30
+- `crates/os/kernel/comps/drive/xtask/src/main.rs` : 177, 178, 179, 181, 206, 207, 274
 - `crates/os/stdio-capture/src/lib.rs` : 18
 - `crates/shell/session/src/lib.rs` : 5
 - `crates/shell/terminal-backend/src/lib.rs` : 216, 1049
@@ -291,10 +291,10 @@ Le tableau liste chaque fichier Rust correspondant et les lignes contenant le mo
 - `crates/infra/aphrody-command/src/lib.rs` : 391
 - `crates/infra/aphrody-command/src/pillars_cmd.rs` : 7
 - `crates/infra/aphrody-command/src/pillars_cmd/web.rs` : 228, 258, 462, 852, 886, 927, 928, 932, 1066, 1121, 1139, 1140, 1206, 1207, 1311, 1378, 1380
-- `crates/os/kernel/build.rs` : 4
-- `crates/os/kernel/src/main.rs` : 43, 141
-- `crates/os/kernel/src/mcp_proxy.rs` : 400
-- `crates/os/kernel/src/rpc.rs` : 21, 106
+- `crates/os/kernel/core/build.rs` : 4
+- `crates/os/kernel/core/src/main.rs` : 43, 141
+- `crates/os/kernel/core/src/mcp_proxy.rs` : 400
+- `crates/os/kernel/core/src/rpc.rs` : 21, 106
 - `crates/ui/app/src/lib.rs` : 14
 - `crates/ui/app/src/web_subsystem.rs` : 7
 - `crates/ui/identity/src/logo.rs` : 96
@@ -489,13 +489,13 @@ Le tableau liste chaque fichier Rust correspondant et les lignes contenant le mo
 - `crates/interop/ffi/src/web/native_http.rs` : 1, 5
 - `crates/interop/ffi/src/zerocopy.rs` : 2
 - `crates/koharu/koharu-library/src/bin/koharu-sdk.rs` : 2
-- `crates/os/drive/xtask/src/main.rs` : 274
-- `crates/os/kernel/src/client.rs` : 218
-- `crates/os/kernel/src/lib.rs` : 7
-- `crates/os/kernel/src/main.rs` : 102
-- `crates/os/kernel/src/runtimes.rs` : 5, 15, 19, 21, 23, 54, 74, 75, 82, 92
-- `crates/os/kernel/src/tests.rs` : 422, 425, 432, 460
-- `crates/os/subsystem/src/lib.rs` : 4
+- `crates/os/kernel/comps/drive/xtask/src/main.rs` : 274
+- `crates/os/kernel/core/src/client.rs` : 218
+- `crates/os/kernel/core/src/lib.rs` : 7
+- `crates/os/kernel/core/src/main.rs` : 102
+- `crates/os/kernel/core/src/runtimes.rs` : 5, 15, 19, 21, 23, 54, 74, 75, 82, 92
+- `crates/os/kernel/core/src/tests.rs` : 422, 425, 432, 460
+- `crates/os/ostd/subsystem/src/lib.rs` : 4
 - `crates/shell/web/src/lib.rs` : 5
 - `crates/ui/app/build.rs` : 22
 - `crates/ui/app/src/runtime.rs` : 5
@@ -515,9 +515,9 @@ Le tableau liste chaque fichier Rust correspondant et les lignes contenant le mo
 - `crates/compat/n2b-core/tests/rules_cli_commands.rs` : 28
 - `crates/compat/n2b/tests/contract.rs` : 230, 260, 265, 278, 279, 280, 281
 - `crates/infra/git/tests/awesome_black_box.rs` : 4, 6, 36, 38, 39, 78, 97, 99
-- `crates/os/drive/core/tests/ephemeral_bridge_test.rs` : 86, 101, 104
-- `crates/os/drive/core/tests/typescript_bridge_test.rs` : 11, 104, 109, 120, 123, 214, 219, 230, 233, 350, 355, 366, 369, 465, 470, 481, 484
-- `crates/os/drive/core/tests/typescript_search_bridge_test.rs` : 199, 204, 223, 226
+- `crates/os/kernel/comps/drive/core/tests/ephemeral_bridge_test.rs` : 86, 101, 104
+- `crates/os/kernel/comps/drive/core/tests/typescript_bridge_test.rs` : 11, 104, 109, 120, 123, 214, 219, 230, 233, 350, 355, 366, 369, 465, 470, 481, 484
+- `crates/os/kernel/comps/drive/core/tests/typescript_search_bridge_test.rs` : 199, 204, 223, 226
 - `crates/ui/bun/tests/icons_svg_parity.rs` : 3, 9, 19, 20, 66, 73
 - `crates/ui/m3-tokens/tests/mcu_image_parity.rs` : 7, 47
 - `crates/ui/m3-tokens/tests/mcu_parity.rs` : 5

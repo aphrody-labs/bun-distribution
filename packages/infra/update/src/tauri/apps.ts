@@ -2,7 +2,7 @@
 /**
  * Registry and audit of every Tauri project in the monorepo.
  *
- * `config/tauri-apps.json` is the single list of Tauri apps, plugins, generators and upstream fixtures.
+ * `tools/config/tauri-apps.json` is the single list of Tauri apps, plugins, generators and upstream fixtures.
  * This command scans the whole tree (git-ignored and Cargo-workspace-excluded paths included; only
  * `scanSkip` directories such as target/node_modules are skipped), compares it with the registry and
  * checks the duplication rules: Tauri crates come from the root `[workspace.dependencies]`, Tauri npm
@@ -361,7 +361,7 @@ export async function audit(root: string, registry: Registry): Promise<AuditRepo
       violations.push({
         code: "unregistered",
         subject: item.dir,
-        detail: `Tauri project (${item.via.join("+")}) missing from config/tauri-apps.json`,
+        detail: `Tauri project (${item.via.join("+")}) missing from tools/config/tauri-apps.json`,
       });
       continue;
     }
@@ -527,7 +527,7 @@ export async function runTauriApps(argv: string[]): Promise<number> {
     console.log("Usage: yolo ops tauri-apps [--root <repo>] [--check] [--fix] [--json]");
     return message === "help" ? 0 : (console.error(message), 2);
   }
-  const registry = parseRegistry(await readFile(join(args.root, "config/tauri-apps.json"), "utf8"));
+  const registry = parseRegistry(await readFile(join(args.root, "tools/config/tauri-apps.json"), "utf8"));
   if (args.fix) {
     const version = pinnedTauriVersion(await readFile(join(args.root, "Cargo.toml"), "utf8"));
     if (!version) throw new Error("root Cargo.toml has no pinned tauri version");

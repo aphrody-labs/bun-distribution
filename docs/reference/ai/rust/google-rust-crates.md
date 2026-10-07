@@ -29,8 +29,8 @@ triées par étoiles. Résultat : 2 crates intégrées réellement dans `aphrody
 
 ### 1. `zerocopy` 0.8.48 — Zero-copy header inspection
 
-**Où :** `crates/os/re/src/headers.rs` (nouveau module), déclarée dans
-`crates/os/re/Cargo.toml` (existait déjà en workspace dep, aucun code ne
+**Où :** `crates/os/kernel/comps/re/src/headers.rs` (nouveau module), déclarée dans
+`crates/os/kernel/comps/re/Cargo.toml` (existait déjà en workspace dep, aucun code ne
 l'utilisait avant cette PR).
 
 **Ce qui a été implémenté :**
@@ -60,12 +60,12 @@ zerocopy-derive).
 
 ### 2. `googletest` 0.14.2 — Matchers GoogleTest-style
 
-**Où :** `crates/os/re` (dev-dependency existante, aucun usage réel avant).
+**Où :** `crates/os/kernel/comps/re` (dev-dependency existante, aucun usage réel avant).
 Usage concret dans deux fichiers :
 
-- `crates/os/re/src/headers.rs` — 18 tests `#[gtest]` avec `expect_that!`,
+- `crates/os/kernel/comps/re/src/headers.rs` — 18 tests `#[gtest]` avec `expect_that!`,
   `eq`, `none`, `some`, `predicate`.
-- `crates/os/re/src/lib.rs` — 16 tests `#[test]` migrés vers `#[gtest]` +
+- `crates/os/kernel/comps/re/src/lib.rs` — 16 tests `#[test]` migrés vers `#[gtest]` +
   `expect_that!` (anciens `assert_eq!` / `assert!` remplacés par des matchers
   lisibles : `contains(predicate(...))`, `len(eq(N))`, `empty()`, `le()`, etc.).
 
@@ -107,7 +107,7 @@ cargo check -p aphrody --locked
 
 Fichiers modifiés / créés (non committés) :
 
-- `crates/os/re/src/headers.rs` — nouveau module (zero-copy headers + tests googletest)
-- `crates/os/re/src/lib.rs` — `pub mod headers` ajouté, `#![allow(non_ascii_idents)]`
+- `crates/os/kernel/comps/re/src/headers.rs` — nouveau module (zero-copy headers + tests googletest)
+- `crates/os/kernel/comps/re/src/lib.rs` — `pub mod headers` ajouté, `#![allow(non_ascii_idents)]`
   au crate root, tests migrés vers `#[gtest]` + `expect_that!`
 - `docs/reference/ai/rust/google-rust-crates.md` — ce fichier

@@ -16,8 +16,8 @@ L'écosystème Aphrody unifie ses surfaces d'interface utilisateur (Desktop Taur
    L'UI n'invente aucune donnée, texte ou état fictif. Toutes les fonctionnalités, statuts de sous-systèmes, listes de modèles, métriques d'agents et topologies de stockage sont calqués sur les contrats natifs du runtime :
    - FFI (`@aphrody/bun` / `packages/m3`)
    - Moteur App-Server JSON-RPC 2.0 (`crates/ai/app-server`)
-   - Noyau OS & sous-systèmes IPC (`crates/os/kernel`)
-   - Système de stockage VDFS et daemon supervisé (`crates/ui/drive`, `crates/os/drive`, `sd-daemon`)
+   - Noyau OS & sous-systèmes IPC (`crates/os/kernel/core`)
+   - Système de stockage VDFS et daemon supervisé (`crates/ui/drive`, `crates/os/kernel/comps/drive`, `sd-daemon`)
    - Moteurs spécialisés Koharu (Vision/OCR in-process) et Shenron (RAG ancré `dragonballfr.com`)
    - Shell NuShell interactif avec PTY (`crates/shell`)
 
@@ -119,7 +119,7 @@ flowchart TD
         CR_M3["crates/ui/m3<br/>(aphrody-m3)"]
         CR_APP["crates/ui/app<br/>(aphrody-app Tauri v3)"]
         CR_DRIVE["crates/ui/drive<br/>(aphrody-drive)"]
-        CR_KERN["crates/os/kernel<br/>(Kernel IPC)"]
+        CR_KERN["crates/os/kernel/core<br/>(Kernel IPC)"]
     end
 
     BB --> M3C

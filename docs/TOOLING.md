@@ -133,7 +133,7 @@ The installed user service runs the owner CLI directly. `KillMode=process`
 lets a stopped watcher release its lock while preserving active factory workers;
 the next watcher adopts their handles. Private state and logs live in
 `~/.aphrody/state/commit-sync/`, outside Git. Configuration and build profiles
-belong to [Aphrody commit-sync](../config/commit-sync.json).
+belong to [Aphrody commit-sync](../tools/config/commit-sync.json).
 
 Yolo's bounded profile is `bash scripts/release/factory-current.sh`: scoped native
 check/test/strict Clippy, runtime build, artifact/SDK packaging, compiled CLI,

@@ -10,7 +10,7 @@ n'est pas membre à cette date.
 
 ## Aphrody actif
 
-La politique [discord-ai-lab.json](../../../config/host/discord-ai-lab.json)
+La politique [discord-ai-lab.json](../../../tools/config/host/discord-ai-lab.json)
 sélectionne général par `assistant.channelId`. Le kit Discord conserve le salon
 assistant comme défaut pour les anciennes politiques sans cette propriété.
 Une mention d'Aphrody ou `Aphrody, <question>` déclenche le modèle local pour
@@ -18,7 +18,7 @@ le propriétaire, un administrateur ou un chercheur. Les bots et webhooks sont
 ignorés. Le bot vérifie le serveur du salon avant de commencer ; les réponses
 sont bornées, sans mentions et référencent le message utilisateur.
 
-Le [service déclaré](../../../config/host/systemd/aphrody/aphrody-discord-ai-lab.service)
+Le [service déclaré](../../../tools/config/host/systemd/aphrody/aphrody-discord-ai-lab.service)
 utilise `/srv/aphrody-lab/assistant.mjs`, la politique et les états privés sous
 `/srv/aphrody-lab/state`. L'authentification reste dans `/etc/aphrody-discord.env`.
 Le déploiement passe par le plan propriétaire :
@@ -52,7 +52,7 @@ et `ADMIN_LAB_CHANNEL_ID`. Ne pas arrêter la production pour une guilde inacces
 Le dépôt privé Shenron porte le relais général et les contrôles des commandes admin.
 
 L'inférence chat, les embeddings et le compute Shenron sont actifs sur DBFR ;
-Aphrody garde son modèle sur VPS. L'[architecture de production](../../../config/production-topology.json)
+Aphrody garde son modèle sur VPS. L'[architecture de production](../../../tools/config/production-topology.json)
 place les entraînements sur `omar-wsl`. L'inventaire SSH local n'offre actuellement
 aucun accès à ce poste ; `aphrody train --help` sur le binaire local annonce une
 feature train absente. Une liste de salons training ne prouve aucun job exécuté.
@@ -66,7 +66,7 @@ réel avant d'annoncer la couche IA/train/A2A complètement installée.
 
 Les salons privés `drive` (`1557358565155676210`) et `chat`
 (`1557358568523571225`) existent dans la catégorie de synchronisation du serveur.
-La [déclaration](../../../config/host/discord-control-plane.json) conserve leurs
+La [déclaration](../../../tools/config/host/discord-control-plane.json) conserve leurs
 IDs vérifiés et le dossier Drive DBFR `1RTkDa77DQBH-zpQLmjPSngksrcJznkxa`.
 Le connecteur natif Markdown en téléchargement a constaté trois documents
 inchangés, deux versions locales en avance et deux versions distantes staged.
@@ -78,8 +78,8 @@ locales (165 mises à jour), avec la mémoire désactivée. Ces miroirs protég�
 Codex/AGY/Claude ne constituent ni une fédération des PC ni une synchronisation
 des mémoires des fournisseurs. Les deux agent homes SSH DBFR et Shenron existent.
 
-Le [service de suivi](../../../config/host/systemd/aphrody/aphrody-discord-control-plane.service)
-et son [timer](../../../config/host/systemd/aphrody/aphrody-discord-control-plane.timer)
+Le [service de suivi](../../../tools/config/host/systemd/aphrody/aphrody-discord-control-plane.service)
+et son [timer](../../../tools/config/host/systemd/aphrody/aphrody-discord-control-plane.timer)
 vérifient toutes les deux minutes les destinations Discord, les agent homes et
 les reçus locaux. Ils publient uniquement des compteurs dans `drive` et l'état
 du tunnel dans `ops-alerts`, sans mentions. Un reçu Drive/agents de plus de dix
@@ -110,9 +110,9 @@ interactive ni export de clé privée n'a été déclenché par ce chantier.
 
 ## Synchronisation automatique des magasins privés
 
-La [déclaration de synchronisation](../../../config/host/agent-sync.json) et les
-unités utilisateur [service](../../../config/host/user/aphrody-agent-sync.service)
-et [timer](../../../config/host/user/aphrody-agent-sync.timer) sont installées et
+La [déclaration de synchronisation](../../../tools/config/host/agent-sync.json) et les
+unités utilisateur [service](../../../tools/config/host/user/aphrody-agent-sync.service)
+et [timer](../../../tools/config/host/user/aphrody-agent-sync.timer) sont installées et
 actives sur le poste WSL. Le timer vérifie les échéances chaque minute : Drive et
 les collecteurs natifs Codex/AGY/Claude toutes les cinq minutes, indexation locale
 des versions Drive staged chaque heure, vérification et sauvegarde des homes
@@ -153,15 +153,15 @@ persistant et son authentification sont décrits ci-dessous.
 
 ## Connecteur Drive Bun sur le VPS — 2026-10-07
 
-La [politique cloud](../../../config/host/agent-sync-vps.json) sélectionne
+La [politique cloud](../../../tools/config/host/agent-sync-vps.json) sélectionne
 uniquement `drive` et `drive-retrieval`, à partir du même propriétaire Google
 et du même worker Workspace Bun. Un unique credential service-account existant,
 déjà qualifié en lecture sur le dossier DBFR, a été transféré par SSH avec clé
 d'hôte vérifiée dans le store privé du VPS : répertoire `0700`, fichier `0600`.
 Sa valeur ne figure ni dans le dépôt ni dans les rapports Discord.
 
-Le [service](../../../config/host/systemd/aphrody/aphrody-drive-sync.service)
-est un oneshot ; son [minuteur](../../../config/host/systemd/aphrody/aphrody-drive-sync.timer)
+Le [service](../../../tools/config/host/systemd/aphrody/aphrody-drive-sync.service)
+est un oneshot ; son [minuteur](../../../tools/config/host/systemd/aphrody/aphrody-drive-sync.timer)
 est activé au démarrage et déclenche une passe chaque minute. Les intervalles
 de chaque capacité et les reprises après erreur restent contrôlés par les
 checkpoints privés. Un service `inactive/dead` après `Result=success` est normal
@@ -192,11 +192,11 @@ TypeScript, lint strict et format des chemins modifiés passent.
 
 ## Compute et RAG DBFR
 
-Le [catalogue de tunnels privés](../../../config/host/agent-sync-tunnels.json),
-son [service natif](../../../config/host/user/aphrody-dbfr-sync-tunnel.service)
-et l'[alias SSH](../../../config/host/user/aphrody-dbfr-wg.ssh.conf) relient
+Le [catalogue de tunnels privés](../../../tools/config/host/agent-sync-tunnels.json),
+son [service natif](../../../tools/config/host/user/aphrody-dbfr-sync-tunnel.service)
+et l'[alias SSH](../../../tools/config/host/user/aphrody-dbfr-wg.ssh.conf) relient
 le compute et les embeddings DBFR aux ports loopback 18789 et 18085 via
-WireGuard. Le [drop-in RAG](../../../config/host/user/shenron-rag-sync-native.conf)
+WireGuard. Le [drop-in RAG](../../../tools/config/host/user/shenron-rag-sync-native.conf)
 réutilise ces transports et les environnements protégés. Les deux forwards et
 la santé authentifiée du compute ont été vérifiés, sans exposer de nouvelle
 API publique.

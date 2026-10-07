@@ -3,7 +3,7 @@
 
 Status: canonical execution plan  
 Date: 2026-09-22  
-Scope: `crates/os/winclean`, Aphrody OS capability crates, kernel, desktop, Bun bindings, and the single Aphrody plugin
+Scope: `crates/os/kernel/comps/winclean`, Aphrody OS capability crates, kernel, desktop, Bun bindings, and the single Aphrody plugin
 Supersedes: the separation decisions of the 2026-05-19 winclean/aphrody unification audit (retired; git history)
 
 ## 1. Decision
@@ -37,7 +37,7 @@ The following facts were observed in the current workspace on 2026-09-22.
 
 | Area | Current state | Target |
 |---|---|---|
-| Source placement | Rust catalog, generated DTOs and handlers are under `crates/os/winclean` | Legacy C#/C++/SDK corpus removed; provenance docs remain outside the runtime path |
+| Source placement | Rust catalog, generated DTOs and handlers are under `crates/os/kernel/comps/winclean` | Legacy C#/C++/SDK corpus removed; provenance docs remain outside the runtime path |
 | Rust facade | `aphrody-winclean` dispatches directly in-process | Direct Rust implementations; no `libloading`, DLL discovery or managed fallback |
 | Tool surface | `src/tools.json` contains 166 tools | All 166 names mapped to a Rust owner and served by the kernel |
 | Kernel | `AdminSubsystem` republishes the complete catalog | Dispatch directly to typed Rust capability handlers |
@@ -242,7 +242,7 @@ those crates never depend back on it.
 
 ## 7. Complete 166-tool migration ledger
 
-`crates/os/winclean/src/tools.json` is the frozen compatibility input. The following inventory
+`crates/os/kernel/comps/winclean/src/tools.json` is the frozen compatibility input. The following inventory
 accounts for every currently published tool.
 
 | Count | Prefix/family | Tools | Primary Rust owner |
@@ -269,7 +269,7 @@ accounts for every currently published tool.
 | 1 each | singleton families | `analyze_pe`, `aob_scan`, `asar_list`, `click`, `copy_path`, `disable_scheduled_task`, `enable_scheduled_task`, `golang_scan`, `kill_process`, `launch_app`, `power_shell`, `query_event_log`, `read_file`, `resize_window`, `restart_service`, `run_scheduled_task`, `scrape`, `screenshot`, `scroll`, `send_notification`, `shortcut`, `snapshot`, `start_service`, `stop_service`, `switch_to_window`, `trim_process_working_set`, `type`, `wait`, `write_file` | mapped by domain above |
 
 The migration ledger must become machine-readable as
-`crates/os/winclean/tool-migration.json`. Each entry contains:
+`crates/os/kernel/comps/winclean/tool-migration.json`. Each entry contains:
 
 ```json
 {

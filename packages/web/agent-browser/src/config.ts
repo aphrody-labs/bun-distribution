@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Single reader of `config/web.json`, the configuration contract of the Aphrody web layer.
+ * Single reader of `tools/config/web.json`, the configuration contract of the Aphrody web layer.
  *
- * Precedence, lowest to highest: built-in defaults, `config/web.json`, environment variables
+ * Precedence, lowest to highest: built-in defaults, `tools/config/web.json`, environment variables
  * (see the `env` block of the file), explicit options passed by the caller. Secrets are never
  * read from or written to this file.
  */
@@ -139,18 +139,18 @@ function positiveInt(raw: string | undefined): number | undefined {
 
 export interface LoadWebConfigOptions {
   root?: string;
-  /** Path of the JSON file; defaults to `<root>/config/web.json`. */
+  /** Path of the JSON file; defaults to `<root>/tools/config/web.json`. */
   file?: string;
   env?: Record<string, string | undefined>;
   /** Explicit overrides, applied last. */
   overrides?: unknown;
 }
 
-/** Reads defaults, `config/web.json`, then environment overrides and caller overrides. */
+/** Reads defaults, `tools/config/web.json`, then environment overrides and caller overrides. */
 export function loadWebConfig(options: LoadWebConfigOptions = {}): WebConfig {
   const env = options.env ?? process.env;
   const root = resolve(options.root ?? repositoryRoot(env));
-  const file = resolve(options.file ?? join(root, "config/web.json"));
+  const file = resolve(options.file ?? join(root, "tools/config/web.json"));
   let merged: Omit<WebConfig, "root" | "source"> = structuredClone(DEFAULT_WEB_CONFIG);
   let source: string | null = null;
   if (existsSync(file)) {
@@ -241,7 +241,7 @@ function collectSecretLooking(value: unknown, path: string, out: string[]): void
 }
 
 /**
- * Structural validation of a raw `config/web.json` document. Returns one message per problem;
+ * Structural validation of a raw `tools/config/web.json` document. Returns one message per problem;
  * an empty array means the file honours the contract (loopback listener, bounded crawl,
  * http(s) only, no secret-looking values).
  */

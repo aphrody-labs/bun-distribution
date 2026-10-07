@@ -60,17 +60,17 @@ jobs:
         include:
           - name: Aphrody runtime
             context: .
-            file: config/container/Dockerfile
+            file: tools/config/container/Dockerfile
             target: runtime
             cache: aphrody-runtime
           - name: Aphrody developer image
             context: .
-            file: config/container/Dockerfile
+            file: tools/config/container/Dockerfile
             target: dev
             cache: aphrody-dev
           - name: Aphrody release builder
             context: .
-            file: config/container/Dockerfile
+            file: tools/config/container/Dockerfile
             target: release-builder
             cache: aphrody-release-builder
             cache_from: |
@@ -78,34 +78,34 @@ jobs:
               type=gha,scope=aphrody-release-builder
           - name: Browser and Bun WASM package
             context: .
-            file: config/container/Dockerfile
+            file: tools/config/container/Dockerfile
             target: wasm-artifacts
             cache: aphrody-wasm
             output: type=local,dest=dist/container-wasm
           - name: Alpine minimal runtime (AMD64 and ARM64)
-            context: config/container/aphrody-os
-            file: config/container/aphrody-os/Dockerfile
+            context: tools/config/container/aphrody-os
+            file: tools/config/container/aphrody-os/Dockerfile
             target: runtime
             cache: aphrody-alpine-runtime
             platforms: linux/amd64,linux/arm64
           - name: Alpine CLI
-            context: config/container/aphrody-os
-            file: config/container/aphrody-os/Dockerfile
+            context: tools/config/container/aphrody-os
+            file: tools/config/container/aphrody-os/Dockerfile
             target: cli
             cache: aphrody-alpine-cli
           - name: Alpine COSMIC desktop
-            context: config/container/aphrody-os
-            file: config/container/aphrody-os/Dockerfile
+            context: tools/config/container/aphrody-os
+            file: tools/config/container/aphrody-os/Dockerfile
             target: desktop
             cache: aphrody-alpine-desktop
           - name: Ubuntu desktop builder
             context: .
-            file: config/container/desktop/Dockerfile
+            file: tools/config/container/desktop/Dockerfile
             target: builder
             cache: aphrody-ubuntu-desktop-builder
           - name: Ubuntu desktop runtime
             context: .
-            file: config/container/desktop/Dockerfile
+            file: tools/config/container/desktop/Dockerfile
             target: runtime
             cache: aphrody-ubuntu-desktop-runtime
 

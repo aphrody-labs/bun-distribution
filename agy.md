@@ -16,7 +16,7 @@ des frameworks.
 - App desktop unique : routes `admin` (omar-kit) et `creator` (creator-kit) dans `m3/packages/app-ui`, `crates/ui/app/src/kits.rs`,
   `m3/apps/web` (not in repo) (former app directory merged into showcase) fusionné dans `showcase`, `packages/engine/yolo/web` absorbé (Studio › Moteur), `Aphrody-Setup.exe` (`packages/infra/product`).
 - Kit Omar zéro ligne de commande (`packages/infra/product`), plan WireGuard `wg1` + compte `omar` déclarés (non appliqués).
-- aphrody.com : page M3 minimale servie par `apps/web/downloads` (pet, bouton desktop, curl/pwsh), thème et icônes = pet.
+- aphrody.com : page M3 minimale servie par `packages/infra/product` (pet, bouton desktop, curl/pwsh), thème et icônes = pet.
 - vu : `crates/interop/ffi/src/python_ffi.rs` (libpython RTLD_GLOBAL, dlsym), `yolo py` délègue à vu ; fork Bun qualifié sur la fabrique.
 - Shenron : `@aphrody/a2a`, rag-core API unique + wasm + ffi, `shenron-chat-v2` servi sur vps `127.0.0.1:8799`, CDN `shenron-cdn-sync` local.
 - Release downloads courante : `20261006T191420Z-5bf7eed5a42c` (aphrody Linux+Windows, yolo Linux, plugins).
@@ -24,7 +24,7 @@ des frameworks.
 ## À finir (par priorité)
 1. **Release downloads** : `bun run downloads:publish plan|build|release|verify --revision <sha main>` pour publier
    `aphrody-setup` (kind desktop → bouton « Download Aphrody »), `omar-kit`. `host-apply` seulement si `server.ts`/vhost changent.
-2. **yolo Windows** : `config/downloads.json` artefact `yolo`/`windows-x86_64` est `enabled:false` (pas de runtime artifact
+2. **yolo Windows** : `tools/config/downloads.json` artefact `yolo`/`windows-x86_64` est `enabled:false` (pas de runtime artifact
    `dist/runtime/x86_64-pc-windows-msvc` (not in repo) (generated or machine-local artifact; presence depends on the build host)). Cross-build de `aphrody-ffi` (profil `runtime`, `cargo xwin`) sur la fabrique, packaging
    `scripts/release/runtime_artifact.ts`, activer, build/release/verify. Dernier commit lié : `fa0681c6f` (profil runtime, identité d'artefact).
 3. **Shenron en production** : les env `/etc/rose-griffon/shenron-{site,bot}.env` pointent déjà vers `shenron-chat-v2` (8799) ;
@@ -56,5 +56,5 @@ des frameworks.
 ## Pièges
 - `vps-cargo` : collisions de snapshot (`incorrect old value`) → réessayer ; refs cassées côté VPS (« snapshot incomplete ») → renvoyer les objets par pack.
 - Plusieurs agents partageaient `/home/aphro/aphrody` : toujours `git add <chemins>` (jamais `-A`), `git fetch && git rebase --autostash workspace/main` avant push.
-- `config/host/vps-cargo.json` contient le profil `shenron-omar` (restauré après un reset accidentel).
+- `tools/config/host/vps-cargo.json` contient le profil `shenron-omar` (restauré après un reset accidentel).
 - Quotas Claude presque épuisés (96 % hebdo) : sois économe ; `aphrody infra ssh exec --host vps '<cmd>'` a un timeout court.

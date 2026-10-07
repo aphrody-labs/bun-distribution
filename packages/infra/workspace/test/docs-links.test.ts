@@ -179,13 +179,13 @@ test("declared imported upstream trees are skipped and dead backtick paths fail 
     output.push(String(message)),
   );
   try {
-    await mkdir(join(root, "config/docs"), { recursive: true });
+    await mkdir(join(root, "tools/config/docs"), { recursive: true });
     await mkdir(join(root, "docs/reference/upstream-x"), { recursive: true });
     await mkdir(join(root, "docs/reference/upstream-x/local"), { recursive: true });
     await mkdir(join(root, "packages/real"), { recursive: true });
     await writeFile(join(root, "packages/real/index.ts"), "");
     await writeFile(
-      join(root, "config/docs/imported-upstream-docs.json"),
+      join(root, "tools/config/docs/imported-upstream-docs.json"),
       JSON.stringify({
         trees: [
           { id: "x", include: ["docs/*/upstream-x/**"], except: ["docs/*/upstream-x/local/**"] },
@@ -219,6 +219,23 @@ test("declared imported upstream trees are skipped and dead backtick paths fail 
     expect(await runDocsLinks(args)).toBe(1);
   } finally {
     logger.mockRestore();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("MCP operations do not become filesystem paths when tools is a repository root", async () => {
+  const root = await mkdtemp(join(tmpdir(), "docs-links-mcp-tools-"));
+  try {
+    await mkdir(join(root, "docs"));
+    await mkdir(join(root, "tools"));
+    const doc = join(root, "docs/protocol.md");
+    await writeFile(doc, "MCP operations: `tools/list` and `tools/call`.\n");
+    expect(await runDocsLinks(["--root", root, "--json"])).toBe(0);
+    await writeFile(doc, "MCP `tools/call`; repository script `tools/missing.ts`.\n");
+    expect(await runDocsLinks(["--root", root, "--json"])).toBe(1);
+    await writeFile(join(root, "tools/missing.ts"), "export {};\n");
+    expect(await runDocsLinks(["--root", root, "--json"])).toBe(0);
+  } finally {
     await rm(root, { recursive: true, force: true });
   }
 });

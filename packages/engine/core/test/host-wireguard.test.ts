@@ -35,7 +35,7 @@ import {
 
 // The tree these tests live in, not $HOME/aphrody: a worktree is checked against itself.
 const repo = join(import.meta.dir, "..", "..", "..", "..");
-const root = join(repo, "config", "host");
+const root = join(repo, "tools", "config", "host");
 const catalog = loadCatalog(root);
 const tunnel = () => loadTunnel(root);
 const unappliedTunnel = () => {
@@ -164,7 +164,7 @@ test("a complete conf needs a valid private key and a valid hub key, and never l
   expect(conf.indexOf("PrivateKey")).toBeLessThan(conf.indexOf("[Peer]"));
   expect(() => clientConf(t, "aphro-pc", hub, "oops")).toThrow(/private key/);
   expect(() => clientConf(t, "aphro-pc", "oops", priv)).toThrow(/hub-public-key/);
-  expect(() => assertOutsideRepo(join(repo, "config", "aphrody.conf"), repo)).toThrow(
+  expect(() => assertOutsideRepo(join(repo, "tools", "config", "aphrody.conf"), repo)).toThrow(
     /inside the repository/,
   );
   expect(() => assertOutsideRepo(join(repo, "not-yet", "dir", "a.conf"), repo)).toThrow(
@@ -197,7 +197,7 @@ test("wg-client refuses to write a conf into the repository and writes it outsid
     );
     return { code: await p.exited, err: await new Response(p.stderr).text() };
   };
-  const inside = join(repo, "config", "host", "should-not-exist.conf");
+  const inside = join(repo, "tools", "config", "host", "should-not-exist.conf");
   const refused = await run(inside);
   expect(refused.code).toBe(1);
   expect(refused.err).toContain("inside the repository");

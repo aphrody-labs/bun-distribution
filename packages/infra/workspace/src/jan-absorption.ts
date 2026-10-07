@@ -173,7 +173,7 @@ export async function runJanAbsorption(args: string[]): Promise<number> {
     inventorySources(pythonRoot, ["packages", "apps", "tools"]),
   ]);
   const comparisons = JSON.parse(
-    await readFile(join(root, "config/jan-absorption.json"), "utf8"),
+    await readFile(join(root, "tools/config/jan-absorption.json"), "utf8"),
   ) as {
     upstreamRevision: string;
     comparisons: Array<{

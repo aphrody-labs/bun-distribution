@@ -44,7 +44,7 @@ The repository root `ai.json` is the reference manifest of the
 - the skills and the file channel (`coord`: `.coord/inbox-from-<peer>.jsonl`,
   default bind `127.0.0.1:8788`);
 - no peers: the peer list is owned by `../aphrody-infra`
-  (`config/a2a-peers.json`) and resolved at runtime by
+  (`tools/config/a2a-peers.json`) and resolved at runtime by
   `aphrody_a2a_coord::PeerRegistry::from_env`.
   `APHRODY_A2A_PEERS_FILE` overrides the catalog path and
   `APHRODY_A2A_PEER_<ID>_URL` overrides one peer URL.
@@ -109,7 +109,7 @@ matches the implementation and was removed.
 ## TypeScript client
 
 `@aphrody/a2a` ([`packages/os/a2a`](../../../../packages/os/a2a/README.md)) is the Bun client of
-the server above. Its types are generated from `crates/os/a2a-pb/proto/a2a.proto` (`bun run generate`
+the server above. Its types are generated from `crates/os/kernel/comps/a2a-pb/proto/a2a.proto` (`bun run generate`
 in the package), the schema `aphrody-a2a-pb` compiles, and its tests run against an in-process fake
 agent and against `aphrody a2a serve` in dry-run mode. It speaks only A2A 1.0 (`SendMessage`,
 `GetTask`, ...); `LegacyBridge` (`@aphrody/a2a/legacy`) serves the pre-1.0 dialect (`message/send`,

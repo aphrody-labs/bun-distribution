@@ -56,7 +56,7 @@ forcer OVH, utiliser `MAIL_PROVIDER=smtp` et `SMTP_TLS=implicit` (465) ou
 `SMTP_TLS=starttls` (587). `RESEND_API_BASE_URL` est réservé aux tests et aux
 proxies explicitement maîtrisés.
 
-Le service systemd du site (modèle retiré le 2026-10-04, voir `config/service-catalog.json`)
+Le service systemd du site (modèle retiré le 2026-10-04, voir `tools/config/service-catalog.json`)
 charge `/etc/aphrody/aphrody-site.env` lorsqu'il existe. Aucun modèle `.env`
 n'est suivi dans les dépôts ; provisionner le fichier réel hors Git avec des
 permissions `0600`.

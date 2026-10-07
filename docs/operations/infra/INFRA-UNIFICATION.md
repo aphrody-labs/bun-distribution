@@ -3,8 +3,8 @@
 > **Inventaire historique, pas une déclaration d’état courant.** Les chemins
 > et unités ci-dessous proviennent de la consolidation des anciens dépôts.
 > Depuis, les owners, manifests et catalogues du monorepo ont évolué. Pour les
-> workloads et routes déclarés, consulter `config/service-catalog.json`,
-> `config/host/nginx/routes.json` et `config/production-topology.json`. Pour
+> workloads et routes déclarés, consulter `tools/config/service-catalog.json`,
+> `tools/config/host/nginx/routes.json` et `tools/config/production-topology.json`. Pour
 > l’implémentation, consulter les fichiers actuels `crates/infra/infra/`,
 > `packages/infra/workspace/` et `scripts/`. L’observation hôte datée est
 > séparée dans `VPS-STATUS-2026-10-02.md`.
@@ -12,12 +12,12 @@
 Ce document établit la source de vérité unifiée et le bilan de consolidation de l'ensemble des scripts, configurations et documentations d'infrastructure pour l'écosystème Aphrody (`aphrody-infra`, `aphrody`, `aphrody-os`, `rg`, `shenron`, `nie`, `iecode`).
 
 > **Host config home (2026-10-04).** systemd units/drop-ins and nginx sites of
-> aphrody, shenron, rg and nie live in yolo: `$YOLO_ROOT/config/host` (default
+> aphrody, shenron, rg and nie live in yolo: `$YOLO_ROOT/tools/config/host` (default
 > `~/yolo`), indexed by `catalog.json` (service, unit, site, owner repo, target
 > host). Shared sandbox/identity directives are drop-ins in `systemd/shared`
 > and proxy headers are `nginx/snippets/*.inc`; compose with
 > `bun $YOLO_ROOT/packages/core/src/host/cli.ts compose-unit|compose-nginx|check`.
-> `config/service-catalog.json` and `config/host/nginx/routes.json` remain here as
+> `tools/config/service-catalog.json` and `tools/config/host/nginx/routes.json` remain here as
 > declared intent (their `vhost` paths are relative to the yolo host config root).
 
 ---
@@ -26,8 +26,8 @@ Ce document établit la source de vérité unifiée et le bilan de consolidation
 
 `aphrody-infra` est l'unique dépositaire et autorité d'exploitation pour :
 - **Supervision & Cycle de vie** : Définition des unités systemd, timers et drop-ins.
-- **Routage & Passerelle Web** : Vhosts Nginx, certificats Let's Encrypt et table de routes publiques (`config/host/nginx/routes.json`).
-- **Catalogue de Services** : Unique registre de tous les workloads applicatifs (`config/service-catalog.json`).
+- **Routage & Passerelle Web** : Vhosts Nginx, certificats Let's Encrypt et table de routes publiques (`tools/config/host/nginx/routes.json`).
+- **Catalogue de Services** : Unique registre de tous les workloads applicatifs (`tools/config/service-catalog.json`).
 - **Gestion des Réseaux & Proxies** : Mullvad WireGuard (`wg0`), passerelle Privoxy (`127.0.0.1:8119`), tunnels PostgreSQL (`15433`).
 - **Pipelines de Déploiement** : Assemblage d'artefacts scellés et bascules atomiques blue/green (`scripts/atomic-deploy*.sh`).
 - **Sauvegardes & Rétention** : Backups automatiques journaliers (PostgreSQL logique, SQLite WAL, synchronisation offsite).
@@ -39,13 +39,13 @@ Ce document établit la source de vérité unifiée et le bilan de consolidation
 
 | Domaine / Projet | Emplacement Centralisé (`aphrody-infra`) | Ancien Emplacement (Dépôt Sœur) | Rôle & Optimisations |
 |---|---|---|---|
-| **Shenron Media Bridge** | `shenron:deploy/install-media-vpn-proxy.sh`<br>`~/yolo/config/host/privoxy/shenron-media.conf`<br>`config/host/systemd/shenron/privoxy.service.d/shenron-media.conf` | `shenron/deploy/install-media-vpn-proxy.sh`<br>`shenron/deploy/privoxy/` | Pont Privoxy HTTP (`:8119`) vers SOCKS5 Mullvad (`10.8.0.1:1080`). Idempotence, tests automatiques de connectivité `am.i.mullvad.net`. |
+| **Shenron Media Bridge** | `shenron:deploy/install-media-vpn-proxy.sh`<br>`~/yolo/tools/config/host/privoxy/shenron-media.conf`<br>`tools/config/host/systemd/shenron/privoxy.service.d/shenron-media.conf` | `shenron/deploy/install-media-vpn-proxy.sh`<br>`shenron/deploy/privoxy/` | Pont Privoxy HTTP (`:8119`) vers SOCKS5 Mullvad (`10.8.0.1:1080`). Idempotence, tests automatiques de connectivité `am.i.mullvad.net`. |
 | **Shenron Crawl Sync** | `shenron:scripts/sync-bxc-crawls.ts` | `shenron/scripts/ops/sync-bxc-crawls-to-newvps.ts` | Synchronisation SQLite vers PostgreSQL via Bun pur. Modernisation de l'alias hôte (`vps`), modes `--dry-run` et `--json`. |
 | **Shenron Backups** | `scripts/tools/infra/backup-shenron-pg.sh`<br>`scripts/tools/infra/backup-shenron-sqlite.sh` | `shenron/scripts/backup-shenron-*.sh` | Dépotoir logique MVCC `pg_dump` compressé, manifestes SHA-256, purge différée après accusé de réception offsite Windows. |
 | **NIE 3D Model Prewarm** | `scripts/nie/model-serve-prewarm.sh` (not in repo) | `nie/scripts/ops/model-serve-prewarm.sh` | Pré-chauffage du cache 3D (`nie-model-serve` :8792) pour les modèles GLB et Keshin critiques. Support `--json` et paramétrage du port. |
 | **NIE Sync Main** | `iecode/scripts/tools/sync-main.ts` | `nie/scripts/workspace-transfer.ts` | Synchronisation de checkout entre station de travail et VPS. |
 | **RG Release Assembly** | `iecode/scripts/rg/assemble-vps-release.sh`<br>`scripts/release/atomic-deploy-rg.sh` | `rg/scripts/ops/assemble-vps-release.sh` | Empaquetage d'artefact immuable Next.js 16 standalone sous Docker/Node 22 + Bun, génération de manifestes cryptographiques et bascule atomique. |
-| **Kernel & VPS Tuning** | `~/yolo/config/host/sysctl/99-aphrody-tuning.conf` (not in repo)<br>`~/yolo/config/host/aphrody-os/VPS-TUNING.md` | `aphrody/docs/aphrody-os/vps_tuning.md`<br>`aphrody-os/docs/vps_tuning.md` | Configuration sysctl unifiée (BBR, FQ, somaxconn, buffers TCP), optimisation VirtIO KVM. |
+| **Kernel & VPS Tuning** | `~/yolo/tools/config/host/sysctl/99-aphrody-tuning.conf` (not in repo)<br>`~/yolo/tools/config/host/aphrody-os/VPS-TUNING.md` | `aphrody/docs/aphrody-os/vps_tuning.md`<br>`aphrody-os/docs/vps_tuning.md` | Configuration sysctl unifiée (BBR, FQ, somaxconn, buffers TCP), optimisation VirtIO KVM. |
 | **DNS OVH & Domaines** | `crates/infra/ovh` (`aphrody infra ovh dns`) | Scripts shell et Python OVH disparates | Gestion unifiée DNSSEC, records A/AAAA/CNAME/MX, bascules d'apex et audits de zones en Rust natif. |
 
 ---

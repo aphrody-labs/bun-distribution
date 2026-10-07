@@ -422,7 +422,7 @@
       "kind": "shenron_community",
       "lang": "fr",
       "includePatterns": [
-        "^https://dragonballfr\\.com/wiki/"
+        "^https://dragonballfr\\.com/wiki(?:/|$)"
       ]
     },
     {

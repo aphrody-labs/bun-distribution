@@ -51,7 +51,7 @@ Open `index.html` for distribution, regression vs previous run, violin plots.
 ## 3. Bench results (criterion runs)
 
 The five micro-benches in
-[`crates/os/backend/benches/backend_bench.rs`](../../../crates/os/backend/benches/backend_bench.rs)
+[`crates/os/ostd/backend/benches/backend_bench.rs`](../../../crates/os/ostd/backend/benches/backend_bench.rs)
 exercise the algorithmic primitives that dominate hot paths in the backend
 crate. Expected ranges on the reference laptop:
 

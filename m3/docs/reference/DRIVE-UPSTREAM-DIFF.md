@@ -82,4 +82,4 @@ quarantine until a real model, failure path and index-time enforcement are quali
 | `core/src/ops/core/status/query.rs` | Hard-coded `running: true` | Real watcher/network state | Replaces upstream TODO. |
 | `core/src/service/sync/{backfill,state}.rs`, `infra/sync/checkpoints.rs` | No-op checkpoint `save`/`load` | Durable `BackfillCheckpointStore` in `sync.db` + restart test | Replaces upstream TODO. |
 | `core/build.rs` | `cargo:warning` when Swift client absent | `rerun-if-changed` | Swift client not vendored; avoids warning noise. |
-| `crates/archive/*`, `crates/os/drive/crates/task-system/src/system.rs` | Unused imports/bindings; `fetch_update` | Removed; `try_update` | Warning-clean under current toolchain. |
+| `crates/archive/*`, `crates/os/kernel/comps/drive/crates/task-system/src/system.rs` | Unused imports/bindings; `fetch_update` | Removed; `try_update` | Warning-clean under current toolchain. |

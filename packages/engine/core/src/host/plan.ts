@@ -65,7 +65,7 @@ const socketPattern = (sockets: string[]) =>
 
 /** Only an explicitly declared private relay may share a native service's port. */
 function socketRelays(repoRoot: string, facts: UnitFacts): string[] {
-  const root = join(repoRoot, "config/host");
+  const root = join(repoRoot, "tools/config/host");
   if (!facts.bind || !existsSync(join(root, TUNNEL_FILE))) return [];
   const tunnel = loadTunnel(root);
   const address =
@@ -151,7 +151,7 @@ interface ServiceEntry {
   health?: string;
 }
 function serviceEntry(repoRoot: string, id: string): ServiceEntry | undefined {
-  const file = join(repoRoot, "config/service-catalog.json");
+  const file = join(repoRoot, "tools/config/service-catalog.json");
   if (!existsSync(file)) return undefined;
   const catalog = JSON.parse(readFileSync(file, "utf8")) as { services: ServiceEntry[] };
   return catalog.services.find((s) => s.id === id);
@@ -222,7 +222,7 @@ export function pinnedSocketCheck(
   ].join("; ");
 }
 
-/** Steps for one unit. `repoRoot` holds `ai.json`, `config/service-catalog.json` and `scripts/tools/infra`. */
+/** Steps for one unit. `repoRoot` holds `ai.json`, `tools/config/service-catalog.json` and `scripts/tools/infra`. */
 function unitSteps(
   entry: HostUnit,
   text: string,
@@ -234,7 +234,7 @@ function unitSteps(
   const svc = serviceEntry(repoRoot, entry.service);
   if (f.bind && svc?.port !== undefined && svc.port !== f.bind.port) {
     throw new Error(
-      `${entry.unit}: binds :${f.bind.port} but config/service-catalog.json declares :${svc.port}`,
+      `${entry.unit}: binds :${f.bind.port} but tools/config/service-catalog.json declares :${svc.port}`,
     );
   }
   const step = (
@@ -366,7 +366,7 @@ function unitSteps(
       );
     const content = readFileSync(aiJson, "utf8");
     const dir = f.workingDirectory ?? "/srv/aphrody/shared/a2a";
-    const fleetPath = join(repoRoot, "config/host/agent-fleet.json");
+    const fleetPath = join(repoRoot, "tools/config/host/agent-fleet.json");
     const fleetConfigured = existsSync(fleetPath);
     if (fleetConfigured) {
       const { hub } = JSON.parse(readFileSync(fleetPath, "utf8")) as {
@@ -445,7 +445,7 @@ function unitSteps(
         `sudo -n sh -c ${sq(script)}`,
       ),
     );
-    const fleetPath = join(repoRoot, "config/host/agent-fleet.json");
+    const fleetPath = join(repoRoot, "tools/config/host/agent-fleet.json");
     if (f.service === "aphrody-a2a" && existsSync(fleetPath)) {
       const { hub } = JSON.parse(readFileSync(fleetPath, "utf8")) as {
         hub: { clientTokenFile: string };
@@ -635,7 +635,7 @@ function unitSteps(
     ),
   );
   if (mcp && f.targetHost === "dbfr" && relays.length) {
-    const root = join(repoRoot, "config/host");
+    const root = join(repoRoot, "tools/config/host");
     const tunnel = loadTunnel(root);
     const service = tunnel.services.find((candidate) => candidate.unit === f.service);
     if (!service) throw new Error(`${f.unit}: declared private proxy missing`);

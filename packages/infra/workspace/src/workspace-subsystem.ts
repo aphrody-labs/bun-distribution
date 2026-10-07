@@ -22,7 +22,7 @@ export const WORKSPACE_TOOLS: ToolSpec[] = [
   {
     name: "workspace_inline_inventory",
     description:
-      "Inline Python/Bun/Node invocations with scope, reason and the ratchet against config/inline-interpreters.baseline.json (CLI: automation-inventory --inline).",
+      "Inline Python/Bun/Node invocations with scope, reason and the ratchet against tools/config/inline-interpreters.baseline.json (CLI: automation-inventory --inline).",
     inputSchema: {
       type: "object",
       properties: {
@@ -40,7 +40,7 @@ export const WORKSPACE_TOOLS: ToolSpec[] = [
   {
     name: "workspace_build_factory_status",
     description:
-      "Where heavy Cargo/Bun work runs (factory or local) and why, from config/build-factory.json and this host's environment (CLI: build-factory status).",
+      "Where heavy Cargo/Bun work runs (factory or local) and why, from tools/config/build-factory.json and this host's environment (CLI: build-factory status).",
     inputSchema: { type: "object", properties: { root: ROOT_SCHEMA }, additionalProperties: false },
     readOnly: true,
     handler: async (args) => heavyBuildStatus(await readFactoryConfig(root(args)), process.env),

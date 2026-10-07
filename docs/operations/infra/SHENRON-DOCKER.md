@@ -65,7 +65,7 @@ its exact added capabilities are `NET_BIND_SERVICE`, `SETUID`, `SETGID`, with al
 other capabilities dropped and `no-new-privileges` enabled. Workers remain
 unprivileged. All workload root filesystems are read-only.
 
-Copy canonical `config/host/nginx/shenron/*.conf` into the release's `nginx/`
+Copy canonical `tools/config/host/nginx/shenron/*.conf` into the release's `nginx/`
 directory, and public static files into `public/`. Every file is sealed. Mount
 `nginx/` read-only at `/etc/nginx/conf.d`. Mount only the public shared directories
 `site/wiki`, `bot/assets` and `site/public-extra` at their corresponding

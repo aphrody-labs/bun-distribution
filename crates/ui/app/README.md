@@ -72,7 +72,7 @@ ui_dist_assets` checks that every listed file is staged byte-for-byte and that e
 build if a source is missing; a plain `cargo check` only warns.
 
 The desktop build helper prefers the OS-owned FSL workspace at
-`crates/os/drive/Cargo.toml` (or `APHRODY_DRIVE_WORKSPACE`) and falls back to
+`crates/os/kernel/comps/drive/Cargo.toml` (or `APHRODY_DRIVE_WORKSPACE`) and falls back to
 the retained UI Drive workspace for standalone checkouts. It stages the daemon
 as a target-suffixed Tauri `externalBin` and copies it beside the unbundled executable
 for `run` and `dev`. The shipped Drive UI uses the existing explorer, search, sidebar, tabs and

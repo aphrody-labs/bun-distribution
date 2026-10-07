@@ -2,8 +2,8 @@
 vendor/
 crates/tauri/
 crates/vendor/
-crates/os/a2a-pb/src/gen/
-crates/os/drive/patches/
+crates/os/kernel/comps/a2a-pb/src/gen/
+crates/os/kernel/comps/drive/patches/
 target/
 node_modules/
 dist/

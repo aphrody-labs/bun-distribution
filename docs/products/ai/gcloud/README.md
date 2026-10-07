@@ -7,7 +7,7 @@
 > plus bas sont des archives de leur capture initiale, pas des procédures
 > actuelles garanties. Les scripts PowerShell pour le CLI Google ont été
 > réalignés sur le monorepo; leur gate complète reste bloquée par le conflit de
-> versions uv entre `config/system-packages.json` et le workspace `aphrody-py`.
+> versions uv entre `tools/config/system-packages.json` et le workspace `aphrody-py`.
 > Voir le [contrat d'installation actuel](../../../reference/infra/GOOGLE-STACK-PACKAGING.md).
 > La propriété applicative courante est décrite dans le
 > [catalogue écosystème](../../../ecosystem/ECOSYSTEM.md) et les contrats Infra

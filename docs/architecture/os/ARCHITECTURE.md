@@ -6,7 +6,7 @@ limits and production exit conditions.
 
 ## Drive ownership and migration
 
-The [nested Drive workspace](../../../crates/os/drive/README.md) is an additive FSL-licensed
+The [nested Drive workspace](../../../crates/os/kernel/comps/drive/README.md) is an additive FSL-licensed
 source import for the local filesystem backend, daemon, CLI, indexing, sync,
 archive adapters and their native build patches. Its `Cargo.toml` is excluded
 from the Apache-2.0 OS workspace so licensing and Cargo dependency resolution
@@ -16,7 +16,7 @@ installed runtime and data parity still require qualification. The HTTP site
 belongs to `aphrody-web/crates/aphrody-site`, while presentation and the
 TypeScript client remain in `aphrody-ui`.
 
-The imported archive safety model is a [stub](../../../crates/os/drive/README.md#known-safety-gap)
+The imported archive safety model is a [stub](../../../crates/os/kernel/comps/drive/README.md#known-safety-gap)
 that returns safe verdicts; its “model loaded” log is not evidence of active
 prompt-injection screening. AI model implementation belongs to `aphrody-ai`
 behind a process contract, with OS enforcing the resulting filesystem policy.
@@ -166,7 +166,7 @@ see [`YOLO-AUTHORITY.md`](../../reference/os/YOLO-AUTHORITY.md).
 
 ### Cloud subsystem (`cloud`)
 
-The `cloud` subsystem (`crates/os/kernel/src/cloud.rs`) embeds native, privileged git repository analysis and Google Cloud / Gemini environment verification directly into the kernel:
+The `cloud` subsystem (`crates/os/kernel/core/src/cloud.rs`) embeds native, privileged git repository analysis and Google Cloud / Gemini environment verification directly into the kernel:
 
 - **`github_status`**: Current branch, upstream tracking (`ahead`/`behind` counters), status porcelain v1 modified and untracked file inventory, and last commit metadata. Resolves `repo_path` or falls back safely to current working directory.
 - **`github_branches`**: Enumerates all local and tracking remote branches with commit SHA, upstream target and divergence status.
@@ -176,7 +176,7 @@ The `cloud` subsystem (`crates/os/kernel/src/cloud.rs`) embeds native, privilege
 
 ### Dynamic infrastructure subsystem (`infra`)
 
-The `infra` subsystem (`crates/os/kernel/src/infra.rs`) provides remote host control and synchronization targeting production aliases (`vps`, `dbfr`):
+The `infra` subsystem (`crates/os/kernel/core/src/infra.rs`) provides remote host control and synchronization targeting production aliases (`vps`, `dbfr`):
 
 - **`infra_exec`**: Runs remote commands over in-process SSH with JSON output and exit status tracking.
 - **`infra_sftp_list`**: Traverses remote directories over native SFTP, returning entry metadata (size, file permissions, `is_dir`).

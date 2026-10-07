@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Shell / terminal stack: wasm, web, Tauri, serverless (definitive plan)
 
-> Path reconciliation (2026-10-07): `crates/os/coreutils` (not in repo) → `crates/os/kernel/src/coreutils.rs`; `crates/shell/aphrody-shell-sandbox-host-e2b` (not in repo) → `crates/shell/aphrody-shell-sandbox-host/src/e2b.rs`; `crates/shell/aphrody-shell-vfs-opfs` (not in repo) → `crates/shell/web/src/opfs.rs`. Original dated observations below retain their historical scope.
+> Path reconciliation (2026-10-07): `crates/os/coreutils` (not in repo) → `crates/os/kernel/core/src/coreutils.rs`; `crates/shell/aphrody-shell-sandbox-host-e2b` (not in repo) → `crates/shell/aphrody-shell-sandbox-host/src/e2b.rs`; `crates/shell/aphrody-shell-vfs-opfs` (not in repo) → `crates/shell/web/src/opfs.rs`. Original dated observations below retain their historical scope.
 
 Date: 2026-10-02. Status: active implementation plan. Section 1 is the baseline read from before implementation;
 the task status and [current shell status](../../products/shell/STATUS.md) record subsequent changes.
@@ -20,9 +20,9 @@ Rules: root `CLAUDE.md`. Workers never run Cargo; the lead runs one check at a t
 | Native PTY + WS server | `crates/shell/terminal-backend` | Real (portable-pty, 1598 lines). Native only. |
 | Nushell | `crates/shell/nu` (nu 0.115.1, features `brotli`, `os`, `rmp-serde`, `sqlite`) | Real, native only. Not built for wasm; wasm viability is unproven. |
 | Ratatui TUI | `crates/shell/tui` (not in repo) (retired source path; retained as historical evidence) | Real, native only. Out of scope here. |
-| Coreutils | `crates/os/kernel/src/coreutils.rs` | **Adapter only.** `subsystem.rs` spawns a pinned uutils multicall binary (`APHRODY_COREUTILS_BIN` or `target/aphrody-uutils/...`) as a subprocess; also wraps findutils/grep/sed/diffutils/tar companions. No uutils library code is linked, nothing compiles for wasm. MCP tools `coreutils_status/catalog/run` and `uutils_*` front it. uutils sources are not in `.cache/upstream` (not in repo) (generated or machine-local artifact; presence depends on the build host) and not in `config/upstream-sources.json`'s listing; locate or add before T7. |
-| Sandbox | `crates/os/sandbox` | **Native policy + helper real** (Landlock/seccomp unix, Low-IL windows, `SandboxPolicy`, `CommandRunner` trait, `MockCommandRunner`, `patch_guard`). **wasm is a stub** (`wasm.rs`: two no-op functions; `runner.rs` gates tokio on non-wasm). It is a command-confinement crate, not a remote-sandbox abstraction. |
-| VFS / OPFS | none | No shell VFS exists. `crates/os/fsindex` and `crates/os/drive` are different concerns (indexing, cloud drive); reuse only the ideas. |
+| Coreutils | `crates/os/kernel/core/src/coreutils.rs` | **Adapter only.** `subsystem.rs` spawns a pinned uutils multicall binary (`APHRODY_COREUTILS_BIN` or `target/aphrody-uutils/...`) as a subprocess; also wraps findutils/grep/sed/diffutils/tar companions. No uutils library code is linked, nothing compiles for wasm. MCP tools `coreutils_status/catalog/run` and `uutils_*` front it. uutils sources are not in `.cache/upstream` (not in repo) (generated or machine-local artifact; presence depends on the build host) and not in `tools/config/upstream-sources.json`'s listing; locate or add before T7. |
+| Sandbox | `crates/os/kernel/comps/sandbox` | **Native policy + helper real** (Landlock/seccomp unix, Low-IL windows, `SandboxPolicy`, `CommandRunner` trait, `MockCommandRunner`, `patch_guard`). **wasm is a stub** (`wasm.rs`: two no-op functions; `runner.rs` gates tokio on non-wasm). It is a command-confinement crate, not a remote-sandbox abstraction. |
+| VFS / OPFS | none | No shell VFS exists. `crates/os/kernel/libs/fsindex` and `crates/os/kernel/comps/drive` are different concerns (indexing, cloud drive); reuse only the ideas. |
 | Renderer | wterm/Ghostty DOM in `crates/ui/app` | Active renderer by decision (ENGINE-SELECTION.md). Native wgpu renderer is the UI owner's future work. |
 
 ## 2. Layer model (one owner per layer, no duplicates)
@@ -47,7 +47,7 @@ Decisions:
    Before writing a parser, T6 checks `best-stack-2026` and the ecosystem catalog for an existing wasm-clean crate
    (candidates to evaluate: `brush-parser` for POSIX/bash parsing only, `shlex`, `nu-parser` with default-features off,
    `uucore`). Choose by wasm32 build and licence; record the choice in an ADR under `docs/decisions/shell/`.
-3. **Coreutils in wasm = a `ShellCommand` registry over VFS and pipeline bytes.** `crates/os/kernel/src/coreutils.rs` stays the native
+3. **Coreutils in wasm = a `ShellCommand` registry over VFS and pipeline bytes.** `crates/os/kernel/core/src/coreutils.rs` stays the native
    subprocess owner. T6 measured that `uu_echo` compiles for wasm but writes to process stdout, while `uu_wc` fails
    on `errno` for the unknown OS target. Link a uutils utility only when its API can consume VFS and return byte output;
    the measured allow-list (cat, echo, head, tail, wc, sort, uniq, tr, cut, basename, dirname, printf, true/false,
@@ -152,7 +152,7 @@ serially.
 - Deps: T1 (trait), T2 (Vfs), T6 (allow-list).
 - Content: per-utility registration over `Vfs`. Link uutils crates only where the measured library API can use that
   VFS and return pipeline bytes; the current measured set needs small implementations instead. Each utility is tagged
-  `source = own` in the [generated table](../../reference/shell/WASM-UTILITIES.md). Does not touch `crates/os/kernel/src/coreutils.rs`.
+  `source = own` in the [generated table](../../reference/shell/WASM-UTILITIES.md). Does not touch `crates/os/kernel/core/src/coreutils.rs`.
 - Test: golden tests comparing output with the native pinned uutils binary (`coreutils_run` MCP tool / `APHRODY_COREUTILS_BIN`)
   on the same fixtures (native, lead); wasm32 check; Bun test in T8 that runs `ls | wc -l` end to end.
 
@@ -248,6 +248,6 @@ ENGINE-SELECTION.md.
 - OPFS sync handles need a worker and secure context; Safari/Firefox support differs, so the conformance run in Chrome is
   necessary, not sufficient.
 - Nushell wasm is unproven; the milestone does not depend on it.
-- `crates/os/sandbox` can mislead: its wasm module is a stub, so no task relies on it for browser isolation (the browser
+- `crates/os/kernel/comps/sandbox` can mislead: its wasm module is a stub, so no task relies on it for browser isolation (the browser
   sandbox is the wasm/worker boundary; remote isolation is the SandboxHost provider).
 - Working tree already has unrelated uncommitted edits (web-engine, fut, interop); shell tasks must not touch them.

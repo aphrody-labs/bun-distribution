@@ -1,7 +1,7 @@
 # Google stack packaging contract
 
-`config/google-stack-release.json` is the current release manifest for the
-Google integration. `config/google-gemini-pipeline.json` is a legacy pipeline
+`tools/config/google-stack-release.json` is the current release manifest for the
+Google integration. `tools/config/google-gemini-pipeline.json` is a legacy pipeline
 manifest: its split-repository owner and source paths no longer match this
 monorepo and must not be used to locate current implementations.
 
@@ -73,11 +73,11 @@ import of the `google-antigravity` SDK, and the `aphrody` pytest suite. Last ful
 
 ## Legacy manifest
 
-`config/google-gemini-pipeline.json` still names retired split repositories
+`tools/config/google-gemini-pipeline.json` still names retired split repositories
 and paths such as `crates/google/antigravity`,
 `packages/google`, and `aphrody-web/apps/bxc`. Treat it as historical until it
 is migrated or removed by its owner. Use
-[`google-stack-release.json`](../../../config/google-stack-release.json) for
+[`google-stack-release.json`](../../../tools/config/google-stack-release.json) for
 the current source roots and release artifacts.
 
 The VPS deployment remains governed by the immutable release workflow in

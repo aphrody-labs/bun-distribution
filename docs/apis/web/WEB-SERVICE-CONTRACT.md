@@ -4,7 +4,7 @@
 
 Status: 2026-10-03. Owner: `crates/web` (engine) and `packages/web/agent-browser`
 (Bun client). Machine-readable configuration:
-[`config/web.json`](../../../config/web.json). Architecture and consumers:
+[`tools/config/web.json`](../../../tools/config/web.json). Architecture and consumers:
 [`docs/architecture/web/ARCHITECTURE.md`](../../architecture/web/ARCHITECTURE.md).
 
 Every product interface that needs the web (Shenron, RG, Achillea, Koharu, the
@@ -83,7 +83,7 @@ Desktop webviews are a separate surface: `aphrody-mcp` publishes
 ```ts
 import { WebService } from "@aphrody/agent-browser/service";
 
-const web = new WebService();               // reads config/web.json, env, then overrides
+const web = new WebService();               // reads tools/config/web.json, env, then overrides
 const md = await web.markdown("https://example.com/");
 const report = await web.crawl(["https://example.com/"], { maxPages: 10 });
 const page = await web.session("https://example.com/");   // snapshot refs, click, fill, evaluate
@@ -96,7 +96,7 @@ await web.close();                            // stops the private engine, if on
 | `@aphrody/agent-browser`              | `AgentBrowser`, `AgentPage`, `WebCdpPage` (CDP client), types.                                              |
 | `@aphrody/agent-browser/service`      | `WebService` (fetch, markdown, artifact, scrape, crawl, session, cdp, screenshot, query), argument builders. |
 | `@aphrody/agent-browser/engine`       | `startEngine`, `withEngine`, `ensureTestEngine`, `stopAllEngines`: engine lifecycle on an ephemeral port.   |
-| `@aphrody/agent-browser/config`       | `loadWebConfig`, `resolveEngineBinary`, typed `config/web.json`.                                            |
+| `@aphrody/agent-browser/config`       | `loadWebConfig`, `resolveEngineBinary`, typed `tools/config/web.json`.                                            |
 | `@aphrody/agent-browser/test-preload` | `bun test` preload that owns one engine per test run and stops it afterwards.                               |
 | `@aphrody/web-test`                   | Playwright-compatible `test`, `expect`, locators on the same engine.                                        |
 
@@ -116,7 +116,7 @@ unless `APHRODY_BROWSER_CDP_URL` names a running one.
 
 ## Configuration precedence
 
-Defaults, then `config/web.json`, then environment variables, then explicit
+Defaults, then `tools/config/web.json`, then environment variables, then explicit
 options. Binary resolution: `APHRODY_WEB_BIN`, otherwise the most recently built
 of `target/debug/aphrody-web` (not in repo), `target/release/aphrody-web` (not in repo) (generated or machine-local artifact; presence depends on the build host) and
 `~/.local/bin/aphrody-web`, otherwise `PATH`. Secrets, cookies and browser
@@ -131,7 +131,7 @@ cookie reader (`aphrody-web-chromium`) redacts values from `Debug` output.
   unspecified and unique-local addresses are refused, both for literal hosts and
   after DNS resolution, unless explicitly allowed per process.
 - `crawl` stays on the seed hosts unless `--allowed-domain` widens it, and
-  honours `robots.txt` with `--obey-robots` (default in `config/web.json`).
+  honours `robots.txt` with `--obey-robots` (default in `tools/config/web.json`).
 - Stealth mode cannot be combined with a SOCKS5 proxy.
 
 ## Known limits

@@ -8,16 +8,16 @@ retired: the Aphrody Bun fork (`aphrody-labs/bun`) was deleted on 2026-10-02: `b
 
 ## Policy
 
-- Bun follows the latest published release (`config/update/pins.json` rewrites every hardcoded version, see
+- Bun follows the latest published release (`tools/config/update/pins.json` rewrites every hardcoded version, see
   `yolo update tools`). The Tauri family follows the latest 3.0.0 alpha line and is owned by `tauri sync`.
   TypeScript is 7 and Oxc (`oxlint`, `oxfmt`) is pinned: both move through the same pin manifest, never by hand.
 - Every other direct dependency follows its latest release. Minors and patches are applied automatically. A major (and
   a `0.x` minor, which is breaking by semver) needs the release notes read first (GitHub releases, the changelog or
   Context7), the repo's actual usage checked with a grep, and the consumers' typecheck and tests run afterwards. A major
-  that cannot be fixed cheaply is not bumped: it goes in the hold table below and in `config/deps/bun-holds.json`, with
+  that cannot be fixed cheaply is not bumped: it goes in the hold table below and in `tools/config/deps/bun-holds.json`, with
   the reason and the condition that releases it.
 - Security first: an npm advisory that a newer release fixes is bumped at once, even inside the age window (add the
-  package to `minimumReleaseAgeExcludes`). An advisory no bump can fix goes in `config/deps/advisory-holds.json`
+  package to `minimumReleaseAgeExcludes`). An advisory no bump can fix goes in `tools/config/deps/advisory-holds.json`
   (shared with the Rust and Python inventory).
 - A "direct" dependency is a `workspaces.catalog` entry or a literal range in one of the manifests. `catalog:` users are
   followed through the catalog. `workspace:`, `file:`, `link:`, git and `npm:` specs are not registry bumps and are skipped.
@@ -66,7 +66,7 @@ yolo update bun rollback                                         # restore the n
   advisories from OSV that no hold covers, and the Bun fork gap (`sources forks`).
 - Buckets in `status` and `plan`: `in-range` (a newer release inside the range), `pinned` (an exact pin or range behind
   inside its major), `major` (needs `--majors`), `held` (this file), `waiting` (the newer release is younger than the
-  window, nothing installable yet). Packages owned by `tauri sync` or `config/update/pins.json` are listed but never
+  window, nothing installable yet). Packages owned by `tauri sync` or `tools/config/update/pins.json` are listed but never
   edited here.
 - `apply`: (1) snapshot of every manifest and `bun.lock` under `target/update/bun/<utc>/`; (2) the Bun pin through
   `tools bun` when behind; (3) `tauri-sync --apply` when its check reports drift (its own Cargo gate, serialised
@@ -89,7 +89,7 @@ yolo update bun rollback                                         # restore the n
 3. Verdict per package: SAFE (bump), FIX (bump plus a named code change), HOLD (do not bump).
 4. `yolo update bun apply --majors a,b,c` for the SAFE and FIX ones, with the code fix applied before `verify`.
 5. A failure that is not a cheap, real fix: `yolo update bun rollback` (or edit the one spec back), then add the
-   package to `config/deps/bun-holds.json` and to the hold table below.
+   package to `tools/config/deps/bun-holds.json` and to the hold table below.
 6. Run `yolo update deps inventory` afterwards to refresh `docs/reference/workspace/DEPS-INVENTORY.md`.
 
 ## Rollback
@@ -103,7 +103,7 @@ Bun fork: the Aphrody Bun fork (`aphrody-labs/bun`) was deleted on 2026-10-02: `
 
 ## Held packages
 
-Mirror of `config/deps/bun-holds.json` (bumps refused) and the npm entries of `config/deps/advisory-holds.json`
+Mirror of `tools/config/deps/bun-holds.json` (bumps refused) and the npm entries of `tools/config/deps/advisory-holds.json`
 (advisories no bump can fix). Re-check each row on every bump and delete it when the blocker moves.
 
 | Package | Held at | Reason | Released when |

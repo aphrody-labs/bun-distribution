@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Tool pin manifest (config/update/pins.json): every hardcoded tool version, one capture group per target.
+ * Tool pin manifest (tools/config/update/pins.json): every hardcoded tool version, one capture group per target.
  * `check` fails when targets of a tool disagree; `apply` rewrites them all.
  */
 import { Ctx } from "./context.ts";
@@ -37,7 +37,7 @@ export function rewrite(text: string, t: Target, version: string): string {
 }
 
 export function load(c: Ctx): PinFile {
-  return c.jsonFile<PinFile>("config/update/pins.json", { tools: {} });
+  return c.jsonFile<PinFile>("tools/config/update/pins.json", { tools: {} });
 }
 
 export function collect(c: Ctx, tool: PinTool): Hit[] {

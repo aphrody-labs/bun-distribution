@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "owner": "@aphrody/workspace",
+  "protocol": {
+    "name": "A2A",
+    "version": "1.0",
+    "binding": "JSON-RPC 2.0",
+    "rpcPath": "/a2a",
+    "agentCardPath": "/.well-known/agent-card.json"
+  },
+  "coord": {
+    "directory": ".coord",
+    "location": "repository-root",
+    "format": "jsonl",
+    "inbox": ".coord/inbox-from-<peer>.jsonl",
+    "outbox": ".coord/outbox-to-<peer>.jsonl",
+    "envelope": ["v", "ts", "id", "from", "to", "kind", "topic", "body", "re", "channel_hint"],
+    "gitPolicy": "untracked-runtime-state",
+    "retention": "operator-rotated; never contains secrets"
+  },
+  "peers": [
+    {
+      "id": "aphrody",
+      "role": "ai-agent",
+      "application": "aphrody",
+      "service": "aphrody-a2a",
+      "transport": "https-jsonrpc",
+      "rpcPath": "/api/v1/a2a",
+      "endpoint": "https://aphrody.com/api/v1/a2a",
+      "agentCard": "https://aphrody.com/.well-known/agent-card.json",
+      "authEnv": null,
+      "status": "retired",
+      "retiredAt": "2026-09-25",
+      "note": "backing service aphrody-a2a and the aphrody.com vhost are status:retired in tools/config/service-catalog.json / yolo/tools/config/host/nginx/routes.json pending the Aphrody convergence redeploy; this peer record stays as the redeploy shape, not a live endpoint"
+    },
+    {
+      "id": "shenron",
+      "role": "dragon-ball-knowledge-agent",
+      "application": "shenron",
+      "service": "shenron-mcp",
+      "transport": "https-jsonrpc",
+      "endpoint": "https://mcp.dragonballfr.com/a2a",
+      "agentCard": "https://mcp.dragonballfr.com/.well-known/agent-card.json",
+      "authEnv": "SHENRON_A2A_TOKEN",
+      "status": "retired",
+      "retiredAt": "2026-09-25",
+      "supersededBy": "shenron-mcp dragonball.a2a_* tools over the Shenron site /api/a2a registry (aphrody-labs/shenron)"
+    },
+    {
+      "id": "codex",
+      "role": "coding-agent",
+      "transport": "coord-file",
+      "endpoint": ".coord/inbox-from-codex.jsonl",
+      "authEnv": null
+    },
+    {
+      "id": "agycli",
+      "role": "antigravity-gemini-agent",
+      "transport": "coord-file",
+      "endpoint": ".coord/inbox-from-agycli.jsonl",
+      "authEnv": null
+    },
+    {
+      "id": "claude",
+      "role": "coding-agent",
+      "transport": "coord-file",
+      "endpoint": ".coord/inbox-from-claude.jsonl",
+      "authEnv": null
+    },
+    {
+      "id": "ocr",
+      "role": "ocr-worker",
+      "transport": "coord-file",
+      "endpoint": ".coord/inbox-from-ocr.jsonl",
+      "authEnv": null
+    },
+    {
+      "id": "rag",
+      "role": "retrieval-agent",
+      "application": "aphrody",
+      "transport": "coord-file",
+      "endpoint": ".coord/inbox-from-rag.jsonl",
+      "authEnv": null
+    }
+  ],
+  "policy": {
+    "secrets": "authEnv names an operator-managed environment variable; values never live in Git",
+    "publicSurface": "Shenron (aphrody-labs/shenron) publishes MCP, OAuth and A2A on mcp.dragonballfr.com from the Infra-managed host; admin MCP tools require Bearer authorization"
+  },
+  "codingAgents": {
+    "workspace": "repository-root",
+    "branchPolicy": "same-current-branch",
+    "rules": "AGENTS.md",
+    "sessionOwner": "aphrody-session/external",
+    "syncCommand": [
+      "aphrody",
+      "ai",
+      "sync-sessions",
+      "--watch",
+      "--interval-secs",
+      "30",
+      "--json",
+      "--shared-workspace",
+      "."
+    ],
+    "memoryStore": "~/.aphrody/memory/memory.sqlite",
+    "contextFiles": [
+      ".coord/shared/MEMORY.md",
+      ".coord/shared/CONVERSATIONS.md",
+      ".coord/shared/TRANSCRIPTS.md"
+    ],
+    "commitPolicy": "one-integrator; distinct-file-claims",
+    "claimCommand": [
+      "aphrody",
+      "a2a",
+      "invoke",
+      "--peer",
+      "<agent>",
+      "--claim",
+      "<relative-file-family>",
+      "<task>"
+    ]
+  }
+}

@@ -15,36 +15,36 @@ image stays independent of GNU binaries.
 
 | File                                                                                      | Role                                                                                      |
 | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| [config/container/Dockerfile](../../../config/container/Dockerfile)                       | `runtime`, `dev`, `wasm-toolchain`, portable `wasm-artifacts`, and full `release-builder` |
-| [config/container/desktop/Dockerfile](../../../config/container/desktop/Dockerfile)       | Ubuntu GTK4/CEF builder and non-root desktop runtime                                      |
-| [config/container/aphrody-os/Dockerfile](../../../config/container/aphrody-os/Dockerfile) | Alpine musl Bun runtime, CLI userland, and COSMIC desktop                                 |
-| [config/container/entrypoint.sh](../../../config/container/entrypoint.sh)                 | Selects `mcp`, `api`, `yolo`, `aphrody` or `shell`                                        |
-| [config/container/compose.yaml](../../../config/container/compose.yaml)                   | Loopback-only API, stdio MCP, developer shell, and release builder                        |
+| [tools/config/container/Dockerfile](../../../tools/config/container/Dockerfile)                       | `runtime`, `dev`, `wasm-toolchain`, portable `wasm-artifacts`, and full `release-builder` |
+| [tools/config/container/desktop/Dockerfile](../../../tools/config/container/desktop/Dockerfile)       | Ubuntu GTK4/CEF builder and non-root desktop runtime                                      |
+| [tools/config/container/aphrody-os/Dockerfile](../../../tools/config/container/aphrody-os/Dockerfile) | Alpine musl Bun runtime, CLI userland, and COSMIC desktop                                 |
+| [tools/config/container/entrypoint.sh](../../../tools/config/container/entrypoint.sh)                 | Selects `mcp`, `api`, `yolo`, `aphrody` or `shell`                                        |
+| [tools/config/container/compose.yaml](../../../tools/config/container/compose.yaml)                   | Loopback-only API, stdio MCP, developer shell, and release builder                        |
 | [.devcontainer/devcontainer.json](../../../.devcontainer/devcontainer.json)               | VS Code dev container on the `dev` target                                                 |
 | [.dockerignore](../../../.dockerignore)                                                   | Excludes caches, outputs, coordination state and protected data                           |
 
 ## Run
 
 ```sh
-docker build -f config/container/Dockerfile --target runtime -t aphrody:runtime .
+docker build -f tools/config/container/Dockerfile --target runtime -t aphrody:runtime .
 docker run --rm aphrody:runtime aphrody --version
 docker run --rm -i aphrody:runtime mcp
-YOLO_API_TOKEN=<secret> docker compose -f config/container/compose.yaml up --build api
+YOLO_API_TOKEN=<secret> docker compose -f tools/config/container/compose.yaml up --build api
 
-docker compose -f config/container/compose.yaml run --rm dev
+docker compose -f tools/config/container/compose.yaml run --rm dev
 # inside the source container:
 scripts/build/rust/cargo-serial.sh check --locked -p <crate>
 
 # Complete Rust/Bun/Python release toolchain, with all locked Python workspace dependencies
-docker compose -f config/container/compose.yaml --profile release run --rm release-builder
+docker compose -f tools/config/container/compose.yaml --profile release run --rm release-builder
 # inside: cd packages/infra/cli-wasm && bun run build:wasm
 
 # Export the browser/Bun module, JS glue and TypeScript declarations.
-docker buildx build -f config/container/Dockerfile --target wasm-artifacts \
+docker buildx build -f tools/config/container/Dockerfile --target wasm-artifacts \
   --output type=local,dest=dist/container-wasm .
 
 # Rebuild from an explicit immutable download release instead of resolving latest.
-docker build -f config/container/Dockerfile --target runtime \
+docker build -f tools/config/container/Dockerfile --target runtime \
   --build-arg APHRODY_RELEASE=<release-id> -t aphrody:runtime .
 ```
 
@@ -52,8 +52,8 @@ The Ubuntu GTK4/CEF app environment is built separately because its native deskt
 compact API/MCP runtime:
 
 ```sh
-docker build -f config/container/desktop/Dockerfile --target builder -t aphrody:desktop-builder .
-docker build -f config/container/desktop/Dockerfile --target runtime -t aphrody:desktop-runtime .
+docker build -f tools/config/container/desktop/Dockerfile --target builder -t aphrody:desktop-builder .
+docker build -f tools/config/container/desktop/Dockerfile --target runtime -t aphrody:desktop-runtime .
 ```
 
 `aphrody:desktop-runtime` supplies application/UI libraries for host X11/Wayland display forwarding; it does not
@@ -88,7 +88,7 @@ requires a successful workflow run, and is not established by the workflow sourc
 The runtime runs as uid 1000, keeps `~/.aphrody` in a volume, and requires `YOLO_API_TOKEN` before binding the API to
 `0.0.0.0`. Compose publishes the API on host loopback and drops capabilities. The `.dockerignore` excludes `.coord`,
 `.codex`, `.git`, build outputs, local databases, model weights and credential files. Fetched `vendor/bun` and
-`vendor/deno` trees are excluded; native engine source acquisition follows `config/vendor.json`. Integrated sources
+`vendor/deno` trees are excluded; native engine source acquisition follows `tools/config/vendor.json`. Integrated sources
 under `crates/` remain available. Python's venv lives outside `/app`, so mounting a checkout keeps it available.
 Cargo target/registry/git, sccache and uv caches are mounted during builds and do not become image payloads.
 
@@ -100,7 +100,7 @@ Cargo target/registry/git, sccache and uv caches are mounted during builds and d
 - The published Aphrody and Yolo artifacts currently cover Linux x86_64; native ARM64 images require both artifacts
   for that target. The portable toolchain supports AMD64 and ARM64 tool downloads; the workflow declares both for
   the minimal Alpine runtime. Windows `yolo` and macOS native release artifacts remain unavailable.
-- The separate Alpine/COSMIC image remains in `config/container/aphrody-os`. CEF desktop, GPU drivers and model weights
+- The separate Alpine/COSMIC image remains in `tools/config/container/aphrody-os`. CEF desktop, GPU drivers and model weights
   are not part of the compact CLI runtime image.
 - The `dev` image uses the full checkout and installs workspace dependencies. It is intentionally separate from the
   compact runtime image.
@@ -179,7 +179,7 @@ selects a published image. To run the qualified GNU image without rebuilding, af
 bun scripts/tools/secrets/vault.ts runtime
 APHRODY_RUNTIME_IMAGE=ghcr.io/aphrody-labs/aphrody@sha256:9584253e39340758b4efcb1d11e86aa48f165a3e045759f75bb4a600559c3031 \
   docker compose --env-file "$HOME/.aphrody/private/container-vault/compose.env" \
-  -f config/container/compose.yaml -f config/container/compose.secrets.yaml up --no-build --pull always -d api
+  -f tools/config/container/compose.yaml -f tools/config/container/compose.secrets.yaml up --no-build --pull always -d api
 ```
 
 The mounted token stays outside the image and repository. Compose 2.40.3 validated the selected image/release,

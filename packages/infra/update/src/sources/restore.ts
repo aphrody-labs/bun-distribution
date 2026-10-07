@@ -2,7 +2,7 @@
 /**
  * Upstream source checkouts kept outside the repository.
  *
- * Reads `config/upstream-sources.json` and reports, verifies or (with
+ * Reads `tools/config/upstream-sources.json` and reports, verifies or (with
  * `--apply`) restores every listed checkout under the source root: git clones
  * at their pinned commit, crates.io archives, and the local patches applied on
  * top. `aphrody git source` reads the same manifest natively.
@@ -354,7 +354,7 @@ export async function runUpstreamSources(argv: string[]): Promise<number> {
     return message === "help" ? 0 : (console.error(message), 2);
   }
   const manifest = parseManifest(
-    await readFile(join(args.repo, "config/upstream-sources.json"), "utf8"),
+    await readFile(join(args.repo, "tools/config/upstream-sources.json"), "utf8"),
   );
   const root = resolveSourceRoot(args.repo, manifest, args.sourceRoot);
   // A build-tier reference (WSL build inputs) is restored only when named explicitly.

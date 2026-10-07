@@ -59,7 +59,7 @@ export interface InlineReport {
   files: InlineFile[];
 }
 
-export const DEFAULT_INLINE_BASELINE = "config/inline-interpreters.baseline.json";
+export const DEFAULT_INLINE_BASELINE = "tools/config/inline-interpreters.baseline.json";
 const PYTHON = String.raw`\bpython(?:3(?:\.\d+)?)?`;
 const PREFILTER = String.raw`python[0-9.]*([[:blank:]]+-[A-Za-z]+)*[[:blank:]]+(-c|-|<<)|(bun|node)[[:blank:]]+(--[a-z-]+[[:blank:]]+)*(-e|--eval|-p|--print)|["'](python3?|bun|node)["'][[:blank:]]*,|execPath[[:blank:]]*,`;
 const PATTERNS: { interpreter?: Interpreter; form: InlineForm; pattern: RegExp }[] = [

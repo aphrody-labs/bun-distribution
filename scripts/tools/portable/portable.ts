@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
-// Gathers what Aphrody needs outside its checkout into the git-ignored `.portable/` (config/portable.json), so the
+// Gathers what Aphrody needs outside its checkout into the git-ignored `.portable/` (tools/config/portable.json), so the
 // checkout moves to a fresh WSL, the VPS or another disk, and puts it back on the new machine.
 //
 //   bun scripts/tools/portable/portable.ts plan                  sizes and actions, changes nothing
@@ -210,7 +210,7 @@ function owner(path: string): string | undefined {
 }
 
 async function loadConfig(): Promise<PortableConfig> {
-  return Bun.file(join(ROOT, "config/portable.json")).json();
+  return Bun.file(join(ROOT, "tools/config/portable.json")).json();
 }
 
 function plan(config: PortableConfig): void {

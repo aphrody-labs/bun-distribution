@@ -13,7 +13,7 @@ import {
 let root: string;
 beforeAll(async () => {
   root = await mkdtemp(join(tmpdir(), "discord-deployment-test-"));
-  const host = join(root, "config/host");
+  const host = join(root, "tools/config/host");
   await mkdir(join(host, "systemd/aphrody"), { recursive: true });
   await Bun.write(
     join(host, "catalog.json"),

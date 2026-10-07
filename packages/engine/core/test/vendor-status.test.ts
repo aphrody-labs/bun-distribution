@@ -60,6 +60,20 @@ test("full SHA survives packed refs and vendor comparison rejects a matching sho
   );
   expect((await readVendorStatus(value.root))?.sources[0]?.inSync).toBe(false);
 });
+test("the vendor catalog owns discovery and retains declared missing checkouts", async () => {
+  const value = fixture();
+  mkdirSync(join(value.root, "tools/config"), { recursive: true });
+  mkdirSync(join(value.root, "vendor/unlisted"));
+  writeFileSync(
+    join(value.root, "tools/config/vendor.json"),
+    JSON.stringify({ sources: [{ name: "tauri" }, { name: "missing" }] }),
+  );
+  const packages = await inspectPackages(join(value.root, "vendor"));
+  expect(packages.map((entry) => entry.name)).toEqual(["tauri", "missing"]);
+  expect(packages[0]?.headCommit).toBe(value.sha);
+  expect(packages[1]?.exists).toBe(false);
+  expect(packages[1]?.path).toBe(join(value.root, "vendor/missing"));
+});
 test("linked fixture worktree resolves common packed refs and detached HEAD", async () => {
   const value = fixture();
   const linked = join(value.root, "linked-fixture");
@@ -89,7 +103,10 @@ test("status distinguishes the core default selection from all workspace members
   );
   const status = await collectStatusReport(root);
   expect(status.cargo?.members).toEqual(["crates/*"]);
-  expect(status.cargo?.defaultMembers).toEqual(["crates/engine/yolo-core", "crates/engine/yolo-runtime"]);
+  expect(status.cargo?.defaultMembers).toEqual([
+    "crates/engine/yolo-core",
+    "crates/engine/yolo-runtime",
+  ]);
   expect(renderStatusMarkdown(status)).toContain(
     "**Default Members:** crates/engine/yolo-core, crates/engine/yolo-runtime",
   );

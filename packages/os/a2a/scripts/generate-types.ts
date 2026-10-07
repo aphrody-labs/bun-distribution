@@ -10,7 +10,7 @@ import { generateTypes, parseProto } from "./proto-to-ts.ts";
 
 const packageRoot = join(import.meta.dir, "..");
 const repoRoot = join(packageRoot, "..", "..", "..");
-const protoFile = join(repoRoot, "crates", "os", "a2a-pb", "proto", "a2a.proto");
+const protoFile = join(repoRoot, "crates", "os", "kernel", "comps", "a2a-pb", "proto", "a2a.proto");
 const outFile = join(packageRoot, "src", "generated", "a2a.ts");
 
 export async function renderGenerated(): Promise<string> {

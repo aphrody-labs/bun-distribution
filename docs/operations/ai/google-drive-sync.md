@@ -20,7 +20,7 @@ yolo google drive sync --dry-run
 yolo google drive sync
 ```
 
-The Infra daemon is `packages/infra/workspace/src/agent-home-drive-sync.ts` in the Aphrody monorepo. It watches the local tree and also polls Drive every five minutes with Bun cron. Its systemd unit is `yolo/config/host/systemd/shenron/shenron-agent-home-drive-sync.service`. The service uses `--env-file=.env` for the child sync process.
+The Infra daemon is `packages/infra/workspace/src/agent-home-drive-sync.ts` in the Aphrody monorepo. It watches the local tree and also polls Drive every five minutes with Bun cron. Its systemd unit is `yolo/tools/config/host/systemd/shenron/shenron-agent-home-drive-sync.service`. The service uses `--env-file=.env` for the child sync process.
 
 The private state file is `~/.aphrody/drive-sync/dbfr-google-api.json`. It records Drive IDs, local SHA-256 hashes, and remote modification times after each file, so an interrupted transfer resumes. A lock prevents concurrent sync processes. The seven default documents are restored from the other side if one is missing. If both sides changed, sync stops and reports the conflict without making a copy or overwriting either version.
 

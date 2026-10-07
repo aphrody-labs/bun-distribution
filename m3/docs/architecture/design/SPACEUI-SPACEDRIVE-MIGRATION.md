@@ -43,7 +43,7 @@ server. Preserve the upstream source revision, notices, library schema, file ide
 offline data across repository moves. The [upstream audit](../../reference/DRIVE-UPSTREAM-DIFF.md)
 lists the currently observed differences.
 
-The [Drive FSL license](https://github.com/aphrody-labs/aphrody/blob/main/crates/os/drive/LICENSE) permits internal use but explicitly restricts
+The [Drive FSL license](https://github.com/aphrody-labs/aphrody/blob/main/crates/os/kernel/comps/drive/LICENSE) permits internal use but explicitly restricts
 providing this software as a managed cloud or hosted service to third parties, as well as
 third-party cloud storage, synchronization, data management and managed AI services based on
 it. "Cloud oriented" here means connecting a user's own cloud volumes and synchronizing

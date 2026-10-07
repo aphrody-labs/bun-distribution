@@ -2,7 +2,7 @@
 # Gérer la documentation Aphrody
 
 Propriétaire : `@aphrody/workspace`.
-Configuration : [documentation.json](../../../config/docs/documentation.json).
+Configuration : [documentation.json](../../../tools/config/docs/documentation.json).
 Navigation : [Workspace](README.md) ; [runtime](../../architecture/runtime-native/README.md).
 
 ## Commandes

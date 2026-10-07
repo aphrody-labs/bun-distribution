@@ -7,9 +7,9 @@ import { applyPackages, planPackages, powershell, type Runner } from "../src/sys
 
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), "system-packages-"));
-  await mkdir(join(root, "config"), { recursive: true });
+  await mkdir(join(root, "tools", "config"), { recursive: true });
   await writeFile(
-    join(root, "config/system-packages.json"),
+    join(root, "tools/config/system-packages.json"),
     JSON.stringify({
       common: ["git", "curl"],
       wsl: ["clang"],

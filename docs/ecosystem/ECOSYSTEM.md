@@ -23,11 +23,11 @@ Canonical Rust/Bun monorepo
 | --- | --- | --- | --- | --- |
 | `aphrody` | crates/infra/aphrody | Aphrody — cross-platform Rust CLI (Linux / Windows / macOS / WebAssembly). | `aphrody` | default, forensics, index, infer, jobs, magika, mcp-toolbox, memory-lancedb, native, ocr, rag, train, yara |
 | `aphrody-a2a` | crates/contracts/a2a | A2A v1 protocol types and core definitions |  |  |
-| `aphrody-a2a-client` | crates/os/a2a-client | A2A v1 async client with protocol binding factory |  | default, native-tls, rustls-tls |
-| `aphrody-a2a-coord` | crates/os/a2a-coord | Aphrody A2A coordination: ai.json manifest, JSONL mailboxes and their NDJSON/SSE proxy, native Claude/Grok/agy peers, HTTP listener. |  |  |
-| `aphrody-a2a-grpc` | crates/os/a2a-grpc | A2A v1 gRPC protocol binding for client and server |  | default, native-tls, rustls, rustls-tls |
-| `aphrody-a2a-pb` | crates/os/a2a-pb | A2A v1 protobuf-generated types and conversion layer |  |  |
-| `aphrody-a2a-server` | crates/os/a2a-server | A2A v1 async server framework |  | default, native-tls, rustls, rustls-tls |
+| `aphrody-a2a-client` | crates/os/kernel/comps/a2a-client | A2A v1 async client with protocol binding factory |  | default, native-tls, rustls-tls |
+| `aphrody-a2a-coord` | crates/os/kernel/comps/a2a-coord | Aphrody A2A coordination: ai.json manifest, JSONL mailboxes and their NDJSON/SSE proxy, native Claude/Grok/agy peers, HTTP listener. |  |  |
+| `aphrody-a2a-grpc` | crates/os/kernel/comps/a2a-grpc | A2A v1 gRPC protocol binding for client and server |  | default, native-tls, rustls, rustls-tls |
+| `aphrody-a2a-pb` | crates/os/kernel/comps/a2a-pb | A2A v1 protobuf-generated types and conversion layer |  |  |
+| `aphrody-a2a-server` | crates/os/kernel/comps/a2a-server | A2A v1 async server framework |  | default, native-tls, rustls, rustls-tls |
 | `aphrody-a2a-ui` | crates/ui/a2a-ui | A2A protocol UI: WASM channel viewer for ai.json + .coord JSONL mailbox. |  |  |
 | `aphrody-acl-tests` | crates/tauri/aphrody-acl-tests | Aphrody platform crate aphrody-acl-tests. |  |  |
 | `aphrody-agent-home` | crates/ai/agent-home | aphrody-agent-home — the agent's persistent home: Soul / Identity / User / Tools, mmap zero-copy file cache, content-addressed cache, bootstrap budget, system-prompt assembler, hot-reload, git backup. |  | default, git |
@@ -38,12 +38,12 @@ Canonical Rust/Bun monorepo
 | `aphrody-app` | crates/ui/app | Aphrody OS desktop (Tauri 3): the GUI and window manager; drives the aphrody agent over its app-server protocol. | `aphrody-app` | custom-protocol, default, in-process |
 | `aphrody-app-protocol` | crates/contracts/app-protocol | Pure, wasm32-safe Codex app-server v2 protocol types: JSON-RPC wire types, Tier-1 request/response pairs, server notifications, approvals, and aphrody/* protocol extensions. |  |  |
 | `aphrody-app-server` | crates/ai/app-server | Local Codex-shaped app server for Aphrody threads and turns. |  | default, in-process, rag |
-| `aphrody-backend` | crates/os/backend | Aphrody forensics and backend logic (Rust). |  |  |
+| `aphrody-backend` | crates/os/ostd/backend | Aphrody forensics and backend logic (Rust). |  |  |
 | `aphrody-bindgen` | crates/ml/bindgen | Bindgen-based generator for dynamically loaded native-library bindings. |  |  |
 | `aphrody-boq` | crates/google/boq | Google Boq batchexecute codec shared by the Gemini web and NotebookLM clients: f.req encoder, anti-XSSI strip, length-prefixed chunk parser, wrb.fr envelope extraction. |  |  |
 | `aphrody-bun` | crates/ui/bun | High-performance native Rust plugin for Bun applications using bun:ffi. |  | gpu |
 | `aphrody-bun-docs` | crates/compat/bun-docs | Offline Bun documentation (third_party/bun/docs) and n2b Node-to-Bun equivalents as an Aphrody OS MCP subsystem. |  |  |
-| `aphrody-capture` | crates/os/capture | Native Windows screen and window capture to PNG. GDI-based, zero unsafe outside FFI wrappers, RAII GDI handle guards. |  |  |
+| `aphrody-capture` | crates/os/kernel/libs/capture | Native Windows screen and window capture to PNG. GDI-based, zero unsafe outside FFI wrappers, RAII GDI handle guards. |  |  |
 | `aphrody-code-graph` | crates/ai/code-graph | aphrody-code-graph: native code graph (nodes, EXTRACTED/INFERRED edges with confidence, communities, god nodes, query/path/explain, report, graph.json) stored in the home database. Port of the Graphify concepts (Apache-2.0, see NOTICE). | `aphrody-graph` |  |
 | `aphrody-command` | crates/infra/aphrody-command | Reusable in-process Aphrody command parser and dispatch for CLI and FFI hosts. |  | default, forensics, index, infer, jobs, magika, mcp-toolbox, memory-lancedb, native, ocr, rag, train, yara |
 | `aphrody-command-pure` | crates/infra/aphrody-command-pure | Pure aphrody sub-commands (rag, toolcall, html, text): clap parsing and execution with no network, process, tokio, git or ssh. Shared by the native aphrody-command and the wasm32 targets. |  |  |
@@ -52,8 +52,8 @@ Canonical Rust/Bun monorepo
 | `aphrody-context` | crates/ai/context | LLM context-window manager — in-process token estimation (heuristic, BPE-shaped lexical, exact tokenizer.json), sliding-window trim with pinned-message preservation, summarization triggers, and JSON snapshot/restore. |  | default, tokenizers |
 | `aphrody-create-tauri-app` | crates/tauri/aphrody-create-tauri-app | Rapidly scaffold out a new tauri app project. |  |  |
 | `aphrody-create-tauri-app-node` | crates/tauri/aphrody-create-tauri-app-node | Aphrody platform crate aphrody-create-tauri-app-node. |  |  |
-| `aphrody-cron` | crates/os/cron | Lightweight async cron / interval / daily-time scheduler with pluggable JSON-backed job store for aphrody background tasks. |  |  |
-| `aphrody-diagnostics` | crates/os/diagnostics | Doctor, OS/infra status, resolved config and AI environment shared by the CLI and the desktop app. |  |  |
+| `aphrody-cron` | crates/os/kernel/comps/cron | Lightweight async cron / interval / daily-time scheduler with pluggable JSON-backed job store for aphrody background tasks. |  |  |
+| `aphrody-diagnostics` | crates/os/kernel/comps/diagnostics | Doctor, OS/infra status, resolved config and AI environment shared by the CLI and the desktop app. |  |  |
 | `aphrody-diffusion` | crates/ml/diffusion | Safe Rust bindings for stable-diffusion.cpp with runtime dynamic loading. |  |  |
 | `aphrody-diffusion-sys` | crates/ml/diffusion-sys | Low-level dynamically loaded FFI bindings for stable-diffusion.cpp. |  |  |
 | `aphrody-drive` | crates/ui/drive | Aphrody Drive, the Aphrody OS file explorer: Tauri 3 plugin that supervises the sd-daemon core and bridges it to the explorer webview. |  |  |
@@ -62,23 +62,23 @@ Canonical Rust/Bun monorepo
 | `aphrody-engine-mistralrs` | crates/ai/engine-mistralrs | In-process mistral.rs inference backend for Aphrody: a `ModelClient` (text, vision, tool calls, streaming) and an embedder over the `mistralrs` crate for safetensors, GGUF and UQFF weights, with ISQ and paged attention. Every mistral.rs dependency sits behind the off-by-default `engine` feature; without it the crate is a small shell that compiles on every target (wasm32 included) and reports `Unavailable`. |  | accelerate, cuda, cudnn, cutile, default, engine, flash-attn, metal, mkl, nccl |
 | `aphrody-ffi` | crates/interop/ffi | Native C-ABI surface for aphrody — load the full CLI in-process from Bun (bun:ffi) or any C host. |  | browser, cuda, default, forensics, gpu, index, infer, inference, jobs, magika, native-stealth, ocr, tooling, yara |
 | `aphrody-firefly` | crates/ai/firefly | Pure-Rust Adobe Firefly Services client for aphrody — IMS OAuth server-to-server token core, v3 async image generation (Image model), job polling and output download. Cross-platform (rustls), headless, in-policy. Backs the `aphrody firefly` CLI and the firefly_generate MCP tool, and is the auth core shared with the cloud Photoshop API. |  |  |
-| `aphrody-fsindex` | crates/os/fsindex | Persistent local-filesystem search index (SQLite FTS5), mirroring the Google desktop app's local_files.db. Metadata-only, privacy-bounded. |  |  |
+| `aphrody-fsindex` | crates/os/kernel/libs/fsindex | Persistent local-filesystem search index (SQLite FTS5), mirroring the Google desktop app's local_files.db. Metadata-only, privacy-bounded. |  |  |
 | `aphrody-gateway` | crates/ai/gateway | Provider-agnostic OpenAI-compatible AI gateway: Cloudflare AI Gateway, Vercel AI Gateway, and BYOK OpenAI proxy. |  |  |
 | `aphrody-gemini-runtime` | crates/google/gemini-runtime | Cross-platform Gemini CLI runtime adapter: detect, version, turn streaming, plus the mcp.json loader and the legacy MCP client facade over aphrody-mcp-client. |  |  |
 | `aphrody-gemini-web` | crates/google/gemini-web | Gemini web app (gemini.google.com) Boq RPC client — cookie auth, page-bootstrap token scrape, batchexecute envelope codec. Mirrors the notebooklm crate transport. |  |  |
 | `aphrody-git` | crates/infra/git | Native Git and GitHub integration for the Aphrody ecosystem. |  |  |
 | `aphrody-google` | crates/google/google | Canonical Rust facade for Aphrody Google Cloud, Gemini, Web and Antigravity integrations. |  |  |
 | `aphrody-gpu-backend` | crates/native/gpu-backend | Shared wgpu instance, adapter, device and surface-configuration boundary for Aphrody and IECODE renderers, plus the process-wide GPU hub (wgpu + CUDA). |  | cuda, default, hub, native-backends, webgl, webgpu, wgsl |
-| `aphrody-guard` | crates/os/guard | Autonomous-agent safety guardrails: pre-main process hardening (disable core dumps, block ptrace attach, strip LD_*/DYLD_* loader env) and a cross-platform shell command-safety classifier (Allow / Prompt / Forbidden) for gating agent-issued commands. Inspired by OpenAI Codex (Apache-2.0). |  |  |
+| `aphrody-guard` | crates/os/ostd/guard | Autonomous-agent safety guardrails: pre-main process hardening (disable core dumps, block ptrace attach, strip LD_*/DYLD_* loader env) and a cross-platform shell command-safety classifier (Allow / Prompt / Forbidden) for gating agent-issued commands. Inspired by OpenAI Codex (Apache-2.0). |  |  |
 | `aphrody-gui-core` | crates/ui/gui-core | Neutral GUI abstractions for Aphrody OS: WindowHost, SurfaceProvider, ThemeProvider, KernelBridge |  |  |
 | `aphrody-http-error` | crates/ai/http-error | One JSON error envelope ({"error":{"code","message","data"}}) shared by Aphrody's own HTTP surfaces. |  |  |
 | `aphrody-identity` | crates/ui/identity | Aphrody product identity: brand icons, favicon and webmanifest, the measured palette (design tokens, M3 seed), and the typed 2D pet runtime (RGBA atlas, timed animations, directions). |  | default, fs |
 | `aphrody-infer` | crates/ai/infer | Local ONNX inference backend for aphrody: runtime discovery, execution-provider selection with CUDA/DirectML/CPU fallback, and session loading driven by the aphrody-models catalog. |  | default, onnx |
 | `aphrody-infra` | crates/infra/infra | Unified Aphrody infrastructure, workflow, development environment and deployment orchestrator |  |  |
 | `aphrody-jev` | crates/ai/jev | Typed client for TypeSafe Jev System One decisions (Noul, Choice, Score) with SaaS, Cloudflare edge and local jeff routing and failover. |  | default, server |
-| `aphrody-jobs` | crates/os/jobs | Persistent background job queue (SQLite): submission, leased claims, crash recovery, retries, NDJSON logs. |  |  |
-| `aphrody-kernel` | crates/os/kernel | The Aphrody OS privileged user-space control plane: administration, MCP tools, skills and bus events over local IPC. |  | builtins, default |
-| `aphrody-kernel-client` | crates/os/kernel-client | Cross-platform local JSON-RPC client for the Aphrody OS kernel MCP endpoint. |  |  |
+| `aphrody-jobs` | crates/os/kernel/comps/jobs | Persistent background job queue (SQLite): submission, leased claims, crash recovery, retries, NDJSON logs. |  |  |
+| `aphrody-kernel` | crates/os/kernel/core | The Aphrody OS privileged user-space control plane: administration, MCP tools, skills and bus events over local IPC. |  | builtins, default |
+| `aphrody-kernel-client` | crates/os/kernel/client | Cross-platform local JSON-RPC client for the Aphrody OS kernel MCP endpoint. |  |  |
 | `aphrody-llama` | crates/ml/llama | Safe Rust bindings for llama.cpp with runtime dynamic loading. |  | default, llguidance, sampler |
 | `aphrody-llama-server` | crates/ai/llama-server | Managed local inference: a supervisor for llama.cpp's `llama-server`, driven as an external binary (never linked). Reads GGUF facts, probes what the installed build supports, plans the launch (context, KV precision, MoE/layer placement, LoRA), runs the server under a detached idle-timeout daemon that holds the GPU lease, and gives clients attach-or-spawn access to an OpenAI-compatible endpoint plus the tokenize / LoRA hot-swap / props side channels. | `aphrody-fake-llama-server`, `aphrody-llama-daemon` | in-process, test-support |
 | `aphrody-llama-sys` | crates/ml/llama-sys | Low-level dynamically loaded FFI bindings for llama.cpp. |  |  |
@@ -108,21 +108,21 @@ Canonical Rust/Bun monorepo
 | `aphrody-ovh` | crates/infra/ovh | Native OVHcloud engine: OAuth2 service account and SHA-1 signing, services, domains, DNS, VPS, email and IAM management. |  |  |
 | `aphrody-oxc-bridge` | crates/compat/oxc-bridge | Aphrody's in-process Oxc bridge for the Bun fork. |  |  |
 | `aphrody-patch` | crates/ai/patch | LLM-native file-edit patch format (*** Begin Patch / Add\|Update\|Delete File / @@ context) with a parser, Unicode-tolerant fuzzy line seeking, a streaming parser, and application over a pluggable filesystem trait. Inspired by OpenAI Codex apply-patch (Apache-2.0). |  |  |
-| `aphrody-proc` | crates/os/proc | Process supervision primitives shared by the llama-server supervisor, the command sandbox and the training runner: process groups that die with their owner (Linux session + killpg, Windows Job Object with KILL_ON_JOB_CLOSE), detached daemons, liveness probes, free-port allocation, advisory file locks and the single-GPU lease (shared for inference, exclusive for training). |  |  |
+| `aphrody-proc` | crates/os/ostd/proc | Process supervision primitives shared by the llama-server supervisor, the command sandbox and the training runner: process groups that die with their owner (Linux session + killpg, Windows Job Object with KILL_ON_JOB_CLOSE), detached daemons, liveness probes, free-port allocation, advisory file locks and the single-GPU lease (shared for inference, exclusive for training). |  |  |
 | `aphrody-prompts` | crates/ai/prompts | Prompt template engine: minijinja-backed registry, typed variable validation, reusable partials, and PII-scrubbing pipeline. |  |  |
 | `aphrody-providers` | crates/ai/providers | Single-source-of-truth `Provider` enum for the aphrody three-only LLM whitelist (anthropic, gemini, antigravity). |  |  |
 | `aphrody-rag` | crates/ai/rag | Unified RAG storage, embedding, vector scan, hybrid search, and agent tools for aphrody (P8). |  | default, native, ort |
 | `aphrody-rag-core` | crates/ai/rag-core | Pure, wasm32-safe core of the aphrody RAG layer: source-aware chunkers (Rust/JS-TS/Markdown/structural/prose), reciprocal-rank-fusion + MMR + vector helpers, and a bit-for-bit port of shenron's retrieval eval harness. |  | default, oxc |
 | `aphrody-rag-eval` | crates/ai/rag-eval | RAG retrieval evaluation harness (Recall@k, MRR, nDCG) over HTTP, MCP or a local index. |  |  |
-| `aphrody-re` | crates/os/re | Reverse engineering primitives for aphrody — PE/ELF/Mach-O triage, sections + entropy + hash, ASCII/UTF-16 strings extraction. Pure Rust, no C bindings, no GPL. |  | leveldb, magika, yara |
+| `aphrody-re` | crates/os/kernel/comps/re | Reverse engineering primitives for aphrody — PE/ELF/Mach-O triage, sections + entropy + hash, ASCII/UTF-16 strings extraction. Pure Rust, no C bindings, no GPL. |  | leveldb, magika, yara |
 | `aphrody-render` | crates/ui/render | Unified Aphrody native renderer contract: M3 layout, 2D GPU backends and CPU fallback. |  | all-gpu, cpu, default, dx12, gpu, metal, parallel, vulkan, webgl, webgpu |
 | `aphrody-restart` | crates/tauri/aphrody-restart | Aphrody platform crate aphrody-restart. | `restart` | process-relaunch-dangerous-allow-symlink-macos |
 | `aphrody-rollout` | crates/ai/rollout | Resilient agent-session recorder: appends timestamped JSONL items to ~/.aphrody/sessions/rollout-*.jsonl through an async actor (mpsc + background writer task with Flush/Persist/Shutdown), and resumes a prior session by replaying its JSONL. Inspired by OpenAI Codex rollout (Apache-2.0). |  |  |
 | `aphrody-router` | crates/ai/router | Provider-whitelisted LLM router (Anthropic + Gemini + Antigravity). |  |  |
 | `aphrody-rust` | crates/ai/rag-python | PyO3 extension module aphrody.aphrody_rust (RAG vector kernels and rank fusion), built into the aphrody Python wheel. |  |  |
-| `aphrody-sandbox` | crates/os/sandbox | Deterministic command and filesystem sandboxing for aphrody: SandboxPolicy, capability probing (Enforced/BestEffort/Unavailable), denial classification, and platform sandbox backends (Linux Landlock/seccomp, Windows Low-IL/Job Objects, macOS seatbelt). |  |  |
+| `aphrody-sandbox` | crates/os/kernel/comps/sandbox | Deterministic command and filesystem sandboxing for aphrody: SandboxPolicy, capability probing (Enforced/BestEffort/Unavailable), denial classification, and platform sandbox backends (Linux Landlock/seccomp, Windows Low-IL/Job Objects, macOS seatbelt). |  |  |
 | `aphrody-sdk` | crates/ai/sdk | Public Rust SDK for aphrody — programmatic embedding surface (Agent, Session, ToolRegistry, Skills, FS, Shell). Port of packages/gemini-cli/packages/sdk (~300 LoC TS). |  |  |
-| `aphrody-secrets` | crates/os/secrets | Secret store abstraction (env + plaintext file + AES-256-GCM/Argon2id encrypted file) with redacted Display/Debug, constant-time equality, and Zeroize-on-drop SecretValue newtype. |  |  |
+| `aphrody-secrets` | crates/os/ostd/secrets | Secret store abstraction (env + plaintext file + AES-256-GCM/Argon2id encrypted file) with redacted Display/Debug, constant-time equality, and Zeroize-on-drop SecretValue newtype. |  |  |
 | `aphrody-session` | crates/ai/session | Conversation session tracker for aphrody — turns + tool calls + token usage + cost, persisted as JSONL with atomic writes and deterministic replay; incremental mirror of external agent sessions (Antigravity CLI, Codex, Claude Code). |  | default, memory |
 | `aphrody-shell-sandbox-host` | crates/shell/aphrody-shell-sandbox-host | Transport-neutral sandbox host contract and local shell host adapters. |  |  |
 | `aphrody-shell-session` | crates/shell/session | Transport-neutral shell session and engine traits (input bytes in, output bytes out) with a scripted fake engine. |  |  |
@@ -135,10 +135,10 @@ Canonical Rust/Bun monorepo
 | `aphrody-sql` | crates/infra/sql | Shared SQL owner for Aphrody: PostgreSQL pool (TLS by URL, pgvector), SQLite open policy (WAL, sqlite-vec), checksummed plain-SQL migrations and database URL resolution. |  | default, postgres, sqlite, vec |
 | `aphrody-ssh` | crates/infra/ssh | Aphrody SSH operator: safe command execution and diagnostics for configured hosts. |  |  |
 | `aphrody-store` | crates/ai/store | aphrody-store: the single agent-home database (`<home>/db/aphrody.sqlite`): per-profile path resolution, versioned migrations, source/file fingerprints, pipeline journal, sync state and checksum-verified backups. | `aphrody-store` | default, vec |
-| `aphrody-subsystem` | crates/os/subsystem | The Aphrody subsystem contract: MCP tools, skills (parameterised tool sequences), a sub-agent routine and the shared event bus. |  |  |
+| `aphrody-subsystem` | crates/os/ostd/subsystem | The Aphrody subsystem contract: MCP tools, skills (parameterised tool sequences), a sub-agent routine and the shared event bus. |  |  |
 | `aphrody-supervisor` | crates/ai/supervisor | Multi-agent control plane for aphrody: spawns and tracks N named engine sessions, routes submissions to a chosen agent, fans-in every agent's event stream into one tagged channel, and drives lifecycle (list / interrupt / shutdown) plus per-agent autonomy policy. The orchestration layer above aphrody-engine. |  |  |
 | `aphrody-svg` | crates/ui/svg | The single SVG owner of the Aphrody ecosystem: parse, sanitize, optimize, normalize viewBox, M3 theming, sprite sheets, glyph outlines to SVG paths, rasterize to PNG/ICO and pixel diff. |  | default, glyph, m3, raster |
-| `aphrody-task-runner` | crates/os/task-runner | Parallel DAG task executor with dependency ordering, retries, timeouts, concurrency caps and NDJSON-friendly event stream for aphrody background pipelines. |  |  |
+| `aphrody-task-runner` | crates/os/kernel/comps/task-runner | Parallel DAG task executor with dependency ordering, retries, timeouts, concurrency caps and NDJSON-friendly event stream for aphrody background pipelines. |  |  |
 | `aphrody-tauri` | crates/tauri/aphrody-tauri | Make tiny, secure apps for all desktop platforms with Tauri |  | common-controls-v6, compression, config-json5, config-toml, custom-protocol, data-url, default, devtools, dynamic-acl, gtk4, http-range, image, image-ico, image-png, isolation, linux-libxdo, native-tls, native-tls-vendored, process-relaunch-dangerous-allow-symlink-macos, protocol-asset, rustls-tls, specta, test, tracing, tray-icon, unstable, uuid, webview-data-url, webview2-com |
 | `aphrody-tauri-build` | crates/tauri/aphrody-tauri-build | build time code to pair with https://crates.io/crates/tauri |  | codegen, config-json, config-json5, config-toml, default, isolation, quote, tauri-codegen |
 | `aphrody-tauri-bundler` | crates/tauri/aphrody-tauri-bundler | Wrap rust executables in OS-specific app bundles for Tauri |  | default, native-tls, native-tls-vendored, platform-certs, rustls |
@@ -187,7 +187,7 @@ Canonical Rust/Bun monorepo
 | `aphrody-tauri-specta-macros` | crates/tauri/aphrody-tauri-specta/macros | Completely typesafe Tauri commands |  |  |
 | `aphrody-tauri-utils` | crates/tauri/aphrody-tauri-utils | Utilities for Tauri |  | aes-gcm, brotli, build, build-2, cargo_metadata, compression, config-json5, config-toml, getrandom, html-manipulation, html-manipulation-2, isolation, json5, proc-macro2, process-relaunch-dangerous-allow-symlink-macos, quote, resources, schema, schemars, serialize-to-javascript, swift-rs, walkdir |
 | `aphrody-tauri-wrap` | crates/ui/tauri-wrap | Runtime plugin of web-to-tauri: turns a website, web app or built bundle into a native Tauri 3 window with the navigation policy, downloads, loopback server and sidecar that keep the page, its API and its backend unchanged. Also hosts the feature-gated debug bridge for Tauri 3 apps (`debug`). |  | bundle, debug-bridge, default |
-| `aphrody-telemetry` | crates/os/telemetry | In-process observability for aphrody — hierarchical spans, monotonic counters, bucketed histograms, NDJSON exporter. OpenTelemetry-inspired, zero OTLP weight. |  |  |
+| `aphrody-telemetry` | crates/os/kernel/comps/telemetry | In-process observability for aphrody — hierarchical spans, monotonic counters, bucketed histograms, NDJSON exporter. OpenTelemetry-inspired, zero OTLP weight. |  |  |
 | `aphrody-terminal-backend` | crates/shell/terminal-backend | Native pty driver and WebSocket server for aphrody-terminal (cross-platform via portable-pty). |  |  |
 | `aphrody-terminal-core` | crates/shell/terminal-core | Portable Rio VT terminal state shared by the native PTY backend, WASM and Tauri hosts. |  |  |
 | `aphrody-toolcall` | crates/ai/toolcall | Tool catalogue model for the aphrody agent engine: ToolDefinition (name / description / JSON-schema input & output), the async ToolExecutor trait, ToolExposure (Direct / Deferred / DirectModelOnly / Hidden), and a JsonSchema type with prompt-budget compaction passes. Inspired by OpenAI Codex tools (Apache-2.0). |  |  |
@@ -209,7 +209,7 @@ Canonical Rust/Bun monorepo
 | `aphrody-web-frames` | crates/web/web-frames | MPEG-7 ColorLayout frame indexing and trace.moe client for Aphrody Web |  |  |
 | `aphrody-web-index` | crates/web/web-index | HNSW approximate nearest-neighbour index with scalar int8 quantisation and mmap persistence |  |  |
 | `aphrody-web-service` | crates/web/web-service | Canonical web execution contract for Aphrody OS: OXC analysis, Bun tooling and Obscura V8 pages. |  | default, render, stealth |
-| `aphrody-winclean` | crates/os/winclean | Rust-owned compatibility surface for 166 WinClean Windows tools. |  |  |
+| `aphrody-winclean` | crates/os/kernel/comps/winclean | Rust-owned compatibility surface for 166 WinClean Windows tools. |  |  |
 | `aphrody-x` | crates/web/x | X / Twitter native GraphQL + REST client (cookie auth, no API key required) |  | test-support |
 | `aphrody-yolo` | crates/infra/yolo | Sovereign autonomous runtime core for Aphrody ecosystem. |  |  |
 | `obscura-browser` | crates/web/obscura-browser | Aphrody platform crate obscura-browser. |  | default, render, stealth |
@@ -316,7 +316,7 @@ Canonical Rust/Bun monorepo
 | `@aphrody/plugin-upload` | crates/tauri/aphrody-tauri-plugin-upload | Upload files from disk to a remote server over HTTP. |  |
 | `@aphrody/plugin-websocket` | crates/tauri/aphrody-tauri-plugin-websocket |  |  |
 | `@aphrody/plugin-window-state` | crates/tauri/aphrody-tauri-plugin-window-state | Save window positions and sizes and restore them when the app is reopened. |  |
-| `@aphrody/plugins` | packages/engine/plugins | Unified YOLO & Bun-TS7 plugin engine: generator, schema validation, doctrine enforcement and autonomous hook runtime |  |
+| `@aphrody/plugins` | packages/engine/plugins | Compatibility API for the plugin generator owned by @aphrody/yolo-cli |  |
 | `@aphrody/product` | packages/infra/product | Aphrody installation, administration and creator workflows in one native Bun product. | `aphrody-omar`, `aphrody-product`, `aphrody-setup`, `creator-kit` |
 | `@aphrody/qr` | packages/web/qr | First-party QR Code encoder and canvas renderer (module-for-module parity with qrcode 1.5.4) |  |
 | `@aphrody/rag-core` | packages/ai/rag-core | Aphrody RAG core for the web (WebAssembly) and for Bun (bun:ffi): chunking, fusion, eval and vector kernels behind one typed facade. |  |

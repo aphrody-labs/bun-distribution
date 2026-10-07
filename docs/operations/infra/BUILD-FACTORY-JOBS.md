@@ -4,7 +4,7 @@
 Owner: Workspace/Infra. Source:
 [factory CLI](../../../packages/infra/workspace/src/build-factory.ts) and
 [job supervisor](../../../packages/infra/workspace/src/build-factory-jobs.ts).
-The selected [factory configuration](../../../config/build-factory.json)
+The selected [factory configuration](../../../tools/config/build-factory.json)
 must enable the canonical VPS and must not mark it execution-only.
 This capability does not provision a host or change its placement policy.
 

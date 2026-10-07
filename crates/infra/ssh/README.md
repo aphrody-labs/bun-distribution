@@ -42,7 +42,7 @@ cargo run -p aphrody-ssh -- tunnel --services shenron-pg-tunnel,redis --offset 2
 cargo run -p aphrody-ssh -- tunnel status --json
 ```
 
-`tunnel` opens local port-forwards to `config/service-catalog.json` services, one `ssh -N -L ...`
+`tunnel` opens local port-forwards to `tools/config/service-catalog.json` services, one `ssh -N -L ...`
 process per SSH alias, so application repositories (Shenron first) stop hand-rolling `ssh -L`.
 Without `--services` it opens the default Shenron dev set (`shenron-pg-tunnel`, `aphrody-ai-http`,
 `aphrody-shenron-embed`, `shenron-bot`, `shenron-mcp`, `redis`). The local port is the remote port
@@ -51,5 +51,5 @@ plus `--offset` (default `10000`), except for entries whose catalog `health` is 
 from the entry's `target` prefix (`dbfr:...`) when present, else defaults to `vps`. Local ports
 already listening are skipped. The catalog path is `--catalog`, `APHRODY_INFRA_CATALOG`,
 `APHRODY_INFRA_ROOT`, or auto-discovered by walking up from the current directory to find
-`config/service-catalog.json` directly or under a sibling `aphrody-infra` checkout. `tunnel status`
+`tools/config/service-catalog.json` directly or under a sibling `aphrody-infra` checkout. `tunnel status`
 probes every planned local port and exits non-zero if any is down, without opening anything.

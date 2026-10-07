@@ -3,7 +3,7 @@ $CargoArgs = @($args)
 $ErrorActionPreference = 'Stop'
 if ($CargoArgs.Count -eq 0) { throw 'usage: cargo-serial.ps1 <cargo arguments...>' }
 $sourceRoot = (Resolve-Path (Join-Path $PSScriptRoot '../../..')).Path
-$factoryConfig = Join-Path $sourceRoot 'config/build-factory.json'
+$factoryConfig = Join-Path $sourceRoot 'tools/config/build-factory.json'
 $cargoCommand = if ($CargoArgs[0] -like '+*') { $CargoArgs[1] } else { $CargoArgs[0] }
 $heavyCommands = @('build', 'b', 'check', 'c', 'test', 't', 'clippy', 'rustdoc', 'doc', 'd', 'bench', 'run', 'r', 'install', 'rustc', 'nextest', 'xwin', 'zigbuild')
 $helpOnly = ($CargoArgs -contains '--help') -or ($CargoArgs -contains '-h')

@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Build factory transition and DBFR Shenron runtime
 
-Owner: Infra. Policy: [`config/build-factory.json`](../../../config/build-factory.json).
-Requested placement: [`production-topology.json`](../../../config/production-topology.json).
+Owner: Infra. Policy: [`tools/config/build-factory.json`](../../../tools/config/build-factory.json).
+Requested placement: [`production-topology.json`](../../../tools/config/production-topology.json).
 
 Current owner decision, 2026-10-03: [Yolo PLAN](../../../PLAN.md#build-et-release)
 reserves VPS for execution and retires its build toolchains and factory workspace.
@@ -289,4 +289,4 @@ Only DBFR Redis restarts; its enabled state is unchanged. SHA-256 must match bef
 
 ### Shared compute transport
 
-Shenron's compute client requires a loopback HTTP endpoint. Keep the existing VPS compute service and protected model store in place; supervise the VPS→DBFR reverse tunnel with `config/host/systemd/aphrody/aphrody-compute-dbfr-tunnel.service`. Install its helper at `/usr/local/libexec/aphrody-infra/shenron-compute-dbfr-tunnel.py` and the unit under `/etc/systemd/system`, then reload and enable it through Infra. Root reads only the port from the existing private compute environment before dropping to Ubuntu for SSH. No token is transferred or placed in process arguments. The SSH forward binds DBFR `127.0.0.1` to the same VPS loopback port, with forwarding failure and keepalive checks. Verify DBFR's listener is loopback-only and run the existing authenticated compute client probe before Shenron activation. This generic compute tunnel remains after the obsolete PostgreSQL tunnel is retired.
+Shenron's compute client requires a loopback HTTP endpoint. Keep the existing VPS compute service and protected model store in place; supervise the VPS→DBFR reverse tunnel with `tools/config/host/systemd/aphrody/aphrody-compute-dbfr-tunnel.service`. Install its helper at `/usr/local/libexec/aphrody-infra/shenron-compute-dbfr-tunnel.py` and the unit under `/etc/systemd/system`, then reload and enable it through Infra. Root reads only the port from the existing private compute environment before dropping to Ubuntu for SSH. No token is transferred or placed in process arguments. The SSH forward binds DBFR `127.0.0.1` to the same VPS loopback port, with forwarding failure and keepalive checks. Verify DBFR's listener is loopback-only and run the existing authenticated compute client probe before Shenron activation. This generic compute tunnel remains after the obsolete PostgreSQL tunnel is retired.

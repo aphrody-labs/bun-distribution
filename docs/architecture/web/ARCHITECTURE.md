@@ -4,7 +4,7 @@
 
 Inventory of 2026-10-01, taken from the working tree (not from historical plans).
 Contract of the public surfaces: [`docs/apis/web/WEB-SERVICE-CONTRACT.md`](../../apis/web/WEB-SERVICE-CONTRACT.md).
-Configuration: [`config/web.json`](../../../config/web.json). Operations:
+Configuration: [`tools/config/web.json`](../../../tools/config/web.json). Operations:
 [`docs/operations/web/AUTOMATION.md`](../../operations/web/AUTOMATION.md).
 Guides: [smoke and crawl](../../guides/web/WEB-SMOKE-AND-CRAWL.md),
 [debugging Tauri apps](../../guides/web/TAURI-DEBUG.md),
@@ -39,7 +39,7 @@ Rules that hold across the layers:
   (see `crates/web/web-service/src/lib.rs`).
 - One extractor: `aphrody-web-extract` (`extract_main`, `html_to_markdown`).
 - One crawl scheduler: `aphrody-web-crawl` (`Frontier`, `crawl_bounded`).
-- One configuration file: `config/web.json`.
+- One configuration file: `tools/config/web.json`.
 
 ## Rust crates (`crates/web`)
 
@@ -89,8 +89,8 @@ upstream lint relaxations declared in its manifest.
 
 | Package                | Surface                                                                                                   | Consumers                                                                                              |
 | ---------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `@aphrody/agent-browser` | `AgentBrowser`/`AgentPage`/`WebCdpPage` (CDP), `/service`, `/engine`, `/config`, `/test-preload`; command line `yolo browser` | `iecode/packages/rg/cron` (`web-cdp.ts`), `packages/rg/inagle` (not in repo) (`web-cdp.ts`), `@aphrody/web-test`, `config/pipeline.json` |
-| `@aphrody/web-test`    | Playwright-compatible runner on the same engine; site presets (Rose Griffon, Shenron, Aphrody UI)         | `config/pipeline.json` only; live audits under `scripts/audit/live` still point at a retired sibling checkout   |
+| `@aphrody/agent-browser` | `AgentBrowser`/`AgentPage`/`WebCdpPage` (CDP), `/service`, `/engine`, `/config`, `/test-preload`; command line `yolo browser` | `iecode/packages/rg/cron` (`web-cdp.ts`), `packages/rg/inagle` (not in repo) (`web-cdp.ts`), `@aphrody/web-test`, `tools/config/pipeline.json` |
+| `@aphrody/web-test`    | Playwright-compatible runner on the same engine; site presets (Rose Griffon, Shenron, Aphrody UI)         | `tools/config/pipeline.json` only; live audits under `scripts/audit/live` still point at a retired sibling checkout   |
 | `@aphrody/x`           | Headless X client, function tools                                                                         | `iecode/packages/rg/cron`, `packages/ai/xai`, `packages/fut/*` (some imports undeclared, see gaps)           |
 
 ## Public surfaces
@@ -108,12 +108,12 @@ upstream lint relaxations declared in its manifest.
 
 | What                         | Where                                                                                                       |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Layered configuration        | `config/web.json` (read by `@aphrody/agent-browser/config`), environment, flags                              |
+| Layered configuration        | `tools/config/web.json` (read by `@aphrody/agent-browser/config`), environment, flags                              |
 | Engine binary                | `APHRODY_WEB_BIN`, `target/{debug,release}/aphrody-web`, `~/.local/bin/aphrody-web`                         |
 | CDP endpoint                 | `APHRODY_BROWSER_CDP_URL` (alias `APHRODY_CDP_URL`); tests: `APHRODY_WEB_TEST_CDP_URL`                       |
 | Engine tuning                | `OBSCURA_*` (30+ variables: private network, proxy, timeouts, body cap, tokens, profiles, snapshots)        |
 | User agents                  | `aphrody-web-service` fetch Chrome/146 (Windows), engine Chrome/145 (Linux), crawl `AphrodyWeb/1.0`        |
-| Robots                       | off in `obscura-browser` and `crawl_bounded` by default; on in `aphrody_web_crawl` (MCP) and `config/web.json` |
+| Robots                       | off in `obscura-browser` and `crawl_bounded` by default; on in `aphrody_web_crawl` (MCP) and `tools/config/web.json` |
 | Timeouts                     | fetch 30 s, scrape 60 s, crawl 300 s, MCP call 180 s, HTTP client 30 s, service fetch 30 s / 2 MiB          |
 | Storage                      | `~/.aphrody/web` (frontier, reports), `~/.aphrody/x-*` (X session/store); secrets in protected stores only |
 | Service unit                 | yolo unit catalog `aphrody-web.service` (template, not installed)                                         |
@@ -147,7 +147,7 @@ Resolved in this change set are marked `FIXED`; the rest are open.
 10. OPEN. Product code outside the layer: `crates/ai/tools/src/builtin/scraping.rs` and `web_fetch.rs` (trivially replaceable by `aphrody_web_service::fetch::fetch`), `crates/interop/ffi/src/web/text.rs` (hand-rolled tag scans), `crates/compat/n2b-core/src/llmstxt/crawl.rs` (external `siteone` crawler, replaceable by `aphrody_web_crawl`). The unused `scraper` dependency of `crates/infra/aphrody` and `aphrody-command` was removed on 2026-10-05.
 11. OPEN. TypeScript scraping that bypasses the layer: cheerio over rendered HTML in `iecode/packages/rg/cron` and `packages/rg/inagle` (not in repo); curl/regex in Shenron scripts; `undici` imports without a declaration; a client of the retired `aphrody-web-api` (`shenron:packages/pipeline/src/aphrody/web.ts`).
 12. OPEN. Undeclared dependencies: `@aphrody/x` imported by `packages/fut/fut` (not in repo) (resolved through tsconfig paths) and by scripts without a manifest; `iecode/scripts/rg/qa/agent-browser-rg.sh` expects the upstream native `agent-browser` CLI that `@aphrody/agent-browser` does not provide.
-13. OPEN. Stale paths to a retired sibling layout: `scripts/audit/live`, `config/live-audit.json`, `config/service-catalog.json` (`aphrody-web-api:3007`, retired), `config/host/nginx/routes.json`, `config/mcp-google-web.json` (`bxc-mcp`), `config/host/systemd/aphrody/aphrody-web-api.service.example` (not in repo), `scripts/build/build-aphrody-stack-release.sh`, `packages/infra/workspace/src/ecosystem-deps.ts`, `plugins/aphrody/hooks` (not in repo) (retired sibling layout) (`apps/bxc` (not in repo)).
+13. OPEN. Stale paths to a retired sibling layout: `scripts/audit/live`, `tools/config/live-audit.json`, `tools/config/service-catalog.json` (`aphrody-web-api:3007`, retired), `tools/config/host/nginx/routes.json`, `tools/config/mcp-google-web.json` (`bxc-mcp`), `tools/config/host/systemd/aphrody/aphrody-web-api.service.example` (not in repo), `scripts/build/build-aphrody-stack-release.sh`, `packages/infra/workspace/src/ecosystem-deps.ts`, `plugins/aphrody/hooks` (not in repo) (retired sibling layout) (`apps/bxc` (not in repo)).
 14. OPEN. Docs: `docs/products/web/README.md` and several plans name crates that no longer exist (`crates/aphrody-web-*`, `aphrody-browser`, `aphrody-site`, `apps/bxc` (not in repo)); `docs/guides/web/web/NATIVE-INSTALL.md` documents `aphrody web install`, which the CLI does not have; four broken relative links in `docs/products/web`.
 15. OPEN. Tauri IPC shims and tools that call commands with no Rust handler (`m3/packages/m3-next-migrate/src/shims/tauri-ipc.ts` maps to `action_<name>`; `shenron:packages/pipeline/src/bridge/ipc.ts`; `crates/ui/app/src/desktop.rs` carries ten `#[tauri::command]` functions that are not in `generate_handler!`).
 16. OPEN. Network-dependent tests are not separated by a gate in every crate; the web gates in `web:verify` run only loopback fixtures.

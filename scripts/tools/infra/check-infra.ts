@@ -76,13 +76,13 @@ async function main(): Promise<void> {
     "README.md",
     "docs/reference/infra/TOPOLOGY.md",
     "docs/reference/infra/MIGRATION-GUARDRAILS.md",
-    "config/local-ai.json",
-    "config/local-ai.env.example",
+    "tools/config/local-ai.json",
+    "tools/config/local-ai.env.example",
   ];
   const yoloUnits = [
-    "config/host/systemd/aphrody/aphrody-web-api.service",
-    "config/host/catalog.json",
-    "config/host/inventory/vps-source.json",
+    "tools/config/host/systemd/aphrody/aphrody-web-api.service",
+    "tools/config/host/catalog.json",
+    "tools/config/host/inventory/vps-source.json",
   ];
   for (const relative of yoloUnits) {
     try {
@@ -102,16 +102,16 @@ async function main(): Promise<void> {
     }
   }
 
-  await readJson<JsonObject>(join(yoloRoot, "config/host/inventory/vps-source.json"));
+  await readJson<JsonObject>(join(yoloRoot, "tools/config/host/inventory/vps-source.json"));
   const a2a = await readJson<{
     peers: A2aPeer[];
     protocol: { rpcPath: string; agentCardPath: string };
-  }>("config/a2a-peers.json");
+  }>("tools/config/a2a-peers.json");
   const routes = await readJson<{ routes: Route[]; internal: Route[] }>(
-    join(yoloRoot, "config/host/nginx/routes.json"),
+    join(yoloRoot, "tools/config/host/nginx/routes.json"),
   );
   const catalog = await readJson<{ services: Array<{ id: string }> }>(
-    "config/service-catalog.json",
+    "tools/config/service-catalog.json",
   );
   const ids = new Set<string>();
 
@@ -182,7 +182,7 @@ async function main(): Promise<void> {
   const exitCode = await child.exited;
   if (exitCode !== 0) {
     fail(
-      "config/local-ai.env.example drifted from config/local-ai.json (run bun scripts/tools/infra/gen-local-ai-env.ts).",
+      "tools/config/local-ai.env.example drifted from tools/config/local-ai.json (run bun scripts/tools/infra/gen-local-ai-env.ts).",
     );
   }
   console.log("infra-check: ok");

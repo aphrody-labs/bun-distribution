@@ -5,7 +5,7 @@
 //!
 //! Offline, `docs/plans/vu/scaffold/vendor.json` (pins of the planned vu monorepo),
 //! `docs/plans/vu/scaffold/vu.json` (the single place of the runtime name) and
-//! `config/upstream-sources.json` (provenance of the forks) must describe the same revisions and the same
+//! `tools/config/upstream-sources.json` (provenance of the forks) must describe the same revisions and the same
 //! branch names. With `--online` the fork branches and the upstream tags are read through
 //! `aphrody git api` and must resolve to the pinned commit. With `--vu <checkout>` the files `vendor.json` and
 //! `vu.json` of the private vu repository must be byte-identical to the mirror kept here.
@@ -99,7 +99,7 @@ export function checkPins(identity: Identity, vendor: Vendor, upstream: Upstream
     forkIds.add(id);
     const entry = references.get(id);
     if (!entry) {
-      problems.push(`config/upstream-sources.json: missing reference ${id}`);
+      problems.push(`tools/config/upstream-sources.json: missing reference ${id}`);
       continue;
     }
     if (entry.tier !== "build") problems.push(`${id}: tier must be build`);
@@ -128,7 +128,7 @@ export function checkPins(identity: Identity, vendor: Vendor, upstream: Upstream
       source: release.name,
     });
     const entry = references.get(id);
-    if (!entry) problems.push(`config/upstream-sources.json: missing reference ${id}`);
+    if (!entry) problems.push(`tools/config/upstream-sources.json: missing reference ${id}`);
     else if (entry.ref !== release.tag || entry.observedCommit !== release.commit) {
       problems.push(`${id}: ref and observedCommit must be the release tag and commit`);
     }
@@ -146,7 +146,7 @@ export function checkPins(identity: Identity, vendor: Vendor, upstream: Upstream
   ]);
   for (const id of references.keys()) {
     if (id.startsWith(prefix) && !known.has(id))
-      problems.push(`config/upstream-sources.json: ${id} has no pin in vendor.json`);
+      problems.push(`tools/config/upstream-sources.json: ${id} has no pin in vendor.json`);
   }
   return problems;
 }
@@ -209,7 +209,7 @@ async function main(argv: string[]): Promise<number> {
   const identity = (await Bun.file(`${ROOT}/docs/plans/vu/scaffold/vu.json`).json()) as Identity;
   const vendor = (await Bun.file(`${ROOT}/docs/plans/vu/scaffold/vendor.json`).json()) as Vendor;
   const upstream = (await Bun.file(
-    `${ROOT}/config/upstream-sources.json`,
+    `${ROOT}/tools/config/upstream-sources.json`,
   ).json()) as UpstreamSources;
   const problems = checkPins(identity, vendor, upstream);
   if (argv.includes("--online")) problems.push(...checkRemote(vendor));

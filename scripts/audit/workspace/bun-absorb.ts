@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Bun-first dependency ratchet over `config/bun-absorb.json`.
+//! Bun-first dependency ratchet over `tools/config/bun-absorb.json`.
 //!
 //!   bun scripts/audit/workspace/bun-absorb.ts [--json] [--write-baseline] [--no-fork-active]
 //!
 //! Fails when a `builtin` package is declared by a workspace package, when a root catalog entry
 //! is used by no workspace package, or when a `native` package is imported by more files than
-//! `config/bun-absorb.baseline.json` records. Declared `fork` packages are refused: the
+//! `tools/config/bun-absorb.baseline.json` records. Declared `fork` packages are refused: the
 //! aphrody-labs/bun runtime resolves them natively (active since 2026-10-06; `--no-fork-active`
 //! downgrades them to warnings). `--write-baseline` records the
 //! current import counts, which may only go down.
@@ -181,9 +181,9 @@ async function countImports(root: string, config: AbsorbConfig): Promise<Record<
 if (import.meta.main) {
   const args = new Set(Bun.argv.slice(2));
   const root = resolve(import.meta.dir, "../../..");
-  const config: AbsorbConfig = await Bun.file(resolve(root, "config/bun-absorb.json")).json();
+  const config: AbsorbConfig = await Bun.file(resolve(root, "tools/config/bun-absorb.json")).json();
   const rootManifest = await Bun.file(resolve(root, "package.json")).json();
-  const baselinePath = resolve(root, "config/bun-absorb.baseline.json");
+  const baselinePath = resolve(root, "tools/config/bun-absorb.baseline.json");
   const imports = await countImports(root, config);
   const native = new Set(
     config.packages.filter((entry) => entry.status === "native").map((entry) => entry.name),

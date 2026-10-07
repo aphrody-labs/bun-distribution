@@ -52,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `nie-mcp` child over stdio (`NIE_MCP_BIN`), because `repo-layering.ts` gives
   `nie` no layer and aphrody-ai must not link its game crates. nie has no AI
   layer to converge (no LLM client, embedding or RAG code; see
-  `config/local-ai.json`).
+  `tools/config/local-ai.json`).
 
 ### One embedding crate: aphrody-embed (2026-09-26)
 
@@ -151,7 +151,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `BXC_DATA_DIR`, `PROXY_LISTEN`/`PROXY_EXIT`). `scripts/aphrody/setup-app-proxies.ps1`
   stays here because `aphrody vpn app setup` invokes it.
 - `ai-collaboration.json` deleted; `ai.json` drops its embedded peer list, points to
-  `config/a2a-peers.json` and advertises `https://aphrody.com/api/v1/a2a`.
+  `tools/config/a2a-peers.json` and advertises `https://aphrody.com/api/v1/a2a`.
   `PeerRegistry` now reads the infra catalog's `endpoint`/`transport` fields.
 - `package.json`: removed `infra:*`, `yolo*`, `bxc*` proxy scripts and `engines.node`.
   `uv` pinned to 0.12.17 in `mise.toml`, `python.yml` and `aphrody-reusable-ci.yml`.
@@ -258,7 +258,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `crates/infra/aphrody/tests/doctor.rs` — 6 integration tests using `assert_cmd`
   + `predicates`, nextest exit 0, DEGRADED exit 0, JSON deserialise
   verified (commit b228509).
-- `crates/os/backend/benches/backend_bench.rs` — 180-line criterion bench
+- `crates/os/ostd/backend/benches/backend_bench.rs` — 180-line criterion bench
   suite for the backend crate (commit b228509).
 - `.github/shenron/workflows/codeql.yml` — 70-line CodeQL security scan, on
   push/pr to main, weekly cron (commit b228509).
@@ -519,7 +519,7 @@ port, pipeline optimization.
   NL → A2A streaming via JsonRpcTransport.
 - `crates/os/base/benches/base_bench.rs` NEW (uncommitted) — criterion suite,
   6 benches across vfs and aes-gcm.
-- `crates/os/a2a-client/src/transport.rs` — `TransportKind` enum cross-platform
+- `crates/os/kernel/comps/a2a-client/src/transport.rs` — `TransportKind` enum cross-platform
   observability (NativeHyper / BrowserFetch / Unsupported) (uncommitted).
 - `crates/aphrody-wasm/examples/aphrody-terminal-demo.html` NEW (1361 lines,
   uncommitted) — pixel-perfect M3 showcase 8 panes, HTTP 200 verified.

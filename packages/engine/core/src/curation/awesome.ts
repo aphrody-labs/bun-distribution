@@ -422,8 +422,8 @@ const HELP = `\x1b[1myolo awesome\x1b[0m — browse ${DEFAULT_REPO}
   awesome github             GitHub repositories referenced by the list
   awesome check [section]    HTTP check of the links (network; --concurrency N, --timeout MS)
   awesome audit              Judge every entry for the Rust-based Bun (network, GitHub API);
-                             writes config/yolo/awesome-audit.json
-  awesome curate [--out f]   audit + config/yolo/awesome.curated.json + cleaned README (default
+                             writes tools/config/yolo/awesome-audit.json
+  awesome curate [--out f]   audit + tools/config/yolo/awesome.curated.json + cleaned README (default
                              docs/reference/yolo/AWESOME.md); --since YYYY-MM-DD (default ${RUST_BUN_SINCE})
 
 Options: --repo owner/name  --ref branch (default ${DEFAULT_REF})  --refresh  --offline
@@ -580,12 +580,12 @@ export async function runAwesomeCommand(
         entries: curated,
       };
       await Bun.write(
-        resolve(rootDir, "config/yolo/awesome-audit.json"),
+        resolve(rootDir, "tools/config/yolo/awesome-audit.json"),
         `${JSON.stringify(record, null, 2)}\n`,
       );
       if (command === "curate") {
         await Bun.write(
-          resolve(rootDir, "config/yolo/awesome.curated.json"),
+          resolve(rootDir, "tools/config/yolo/awesome.curated.json"),
           `${JSON.stringify(
             kept.map(({ facts: _facts, ...e }) => e),
             null,

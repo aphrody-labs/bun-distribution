@@ -19,10 +19,10 @@ restent sur loopback, sans publication nginx. `aphrody-mcp` est le serveur MCP
 canonique ; aucune configuration cliente nouvelle n'utilise les anciens alias
 `yolo mcp` ou `aphrody kernel mcp`.
 
-Les sources de référence sont les [unités et leur catalogue](../../../config/host/catalog.json),
-la [déclaration de flotte](../../../config/host/agent-fleet.json), le
+Les sources de référence sont les [unités et leur catalogue](../../../tools/config/host/catalog.json),
+la [déclaration de flotte](../../../tools/config/host/agent-fleet.json), le
 [plan d'installation Infra](../../../packages/engine/core/src/host/plan.ts) et le
-[contrat A2A natif](../../../crates/os/a2a-coord/README.md).
+[contrat A2A natif](../../../crates/os/kernel/comps/a2a-coord/README.md).
 
 ## Exécution et état durable
 
@@ -177,7 +177,7 @@ machine ; un transport MCP commun ne synchronise pas leur mémoire interne ni
 leurs poids de modèle.
 
 Les clients Windows natifs Codex 0.158 et Claude ont été configurés depuis leurs
-CLI avec la [déclaration Windows](../../../config/host/agent-fleet-mcp-windows.json).
+CLI avec la [déclaration Windows](../../../tools/config/host/agent-fleet-mcp-windows.json).
 Le transport qualifié utilise `C:/Windows/System32/wsl.exe --exec /usr/bin/ssh`
 et l'alias strict `aphrody-vps-wg` ; WSL et cet alias doivent rester disponibles.
 Deux connexions ont initialisé le serveur, lu ses 364 outils uniques et fermé
@@ -385,7 +385,7 @@ Les 18 tests de plan hôte et les contrôles TypeScript/lint/format passent.
 
 ## Synchronisation Drive indépendante des clients
 
-Le [worker VPS](../../../config/host/agent-sync-vps.json) utilise le propriétaire
+Le [worker VPS](../../../tools/config/host/agent-sync-vps.json) utilise le propriétaire
 Yolo Google et le pipeline agent home natif. Le timer
 `aphrody-drive-sync.timer` est `active/waiting` et `enabled`. Son service
 `aphrody-drive-sync.service` est un oneshot : il revient à `inactive/dead`
@@ -497,7 +497,7 @@ l'activation du nouveau plan VPS du 2026-10-07.
   `aphrody-llama-gemma4`, 7,1 pour `aphrody-fonts-proxy` et 7,5 pour
   `aphrody-downloads`. Ces scores ne qualifient pas les nouveaux bindings de home.
 - `upstream_list`, seul des cinq outils `upstream_*` alors exercé, a échoué faute
-  de checkout contenant `config/upstream-sources.json` dans le répertoire de
+  de checkout contenant `tools/config/upstream-sources.json` dans le répertoire de
   travail.
 - Le port VPS 8789 était occupé par le tunnel de calcul WSL et ne pouvait pas
   accueillir l'unité MCP. Le plan courant utilise 8793. Les observations

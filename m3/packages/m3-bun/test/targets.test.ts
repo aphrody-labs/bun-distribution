@@ -146,9 +146,9 @@ describe("systemd", () => {
       ).toBe(sharedDropin(ctx.yoloRoot, name));
     });
     expect(sharedDropin("/nonexistent", "sandbox-base.conf")).toContain("ProtectSystem=strict");
-    if (existsSync(join(ctx.yoloRoot, "config/host/systemd/shared/sandbox-base.conf"))) {
+    if (existsSync(join(ctx.yoloRoot, "tools/config/host/systemd/shared/sandbox-base.conf"))) {
       expect(sharedDropin(ctx.yoloRoot, "sandbox-base.conf")).toBe(
-        readFileSync(join(ctx.yoloRoot, "config/host/systemd/shared/sandbox-base.conf"), "utf8"),
+        readFileSync(join(ctx.yoloRoot, "tools/config/host/systemd/shared/sandbox-base.conf"), "utf8"),
       );
     }
   });
@@ -239,7 +239,7 @@ describe("nginx", () => {
     async () => {
       const dir = tmp("m3-bun-nginx-");
       mkdirSync(join(dir, "snippets"), { recursive: true });
-      const snippet = join(ctx.yoloRoot, "config/host/nginx/snippets/proxy-client-ip.inc");
+      const snippet = join(ctx.yoloRoot, "tools/config/host/nginx/snippets/proxy-client-ip.inc");
       writeFileSync(
         join(dir, "snippets/proxy-client-ip.inc"),
         existsSync(snippet)

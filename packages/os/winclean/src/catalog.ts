@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Generated from crates/os/winclean/src/tools.json by scripts/tools/os/scripts/generate-winclean-catalog.ts.
+// Generated from crates/os/kernel/comps/winclean/src/tools.json by scripts/tools/os/scripts/generate-winclean-catalog.ts.
 // Do not edit by hand.
 export const TOOL_CATALOG: ReadonlyArray<{ name: string; description: string; inputSchema: Record<string, unknown>; execution?: unknown }> = [
   {

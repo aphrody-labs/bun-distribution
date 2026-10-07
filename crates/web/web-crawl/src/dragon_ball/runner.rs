@@ -971,6 +971,79 @@ mod tests {
         }
     }
     #[tokio::test]
+    async fn shenron_wiki_root_redirect_does_not_exhaust_the_timeline_campaign_budget() {
+        struct RedirectFixture(Fixture);
+        impl CrawlTransport for RedirectFixture {
+            async fn fetch(&self, url: &Url) -> Result<FetchResult, String> {
+                let mut response = self.0.fetch(url).await?;
+                if url.as_str() == "https://dragonballfr.com/wiki/" {
+                    response.url = Url::parse("https://dragonballfr.com/wiki").unwrap();
+                }
+                Ok(response)
+            }
+        }
+        let directory = std::env::temp_dir().join(format!(
+            "aphrody-shenron-wiki-redirect-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
+        ));
+        let output = directory.join("corpus");
+        let mut plan = DragonBallPlan::default();
+        plan.targets.retain(|target| matches!(target.id.as_str(), "shenron" | "shenron-timeline"));
+        plan.defaults.per_host_delay_ms = 0;
+        let fixture = RedirectFixture(Fixture(HashMap::from([
+            (
+                "https://dragonballfr.com/wiki/".into(),
+                "<main><h1>Wiki reference</h1><p>Public source fixture.</p></main>".into(),
+            ),
+            (
+                "https://dragonballfr.com/wiki/timeline".into(),
+                "<main><h1>Timeline reference</h1><p>Published order fixture.</p></main>".into(),
+            ),
+            (
+                "https://dragonballfr.com/api/v1/wiki/timeline".into(),
+                r#"{"items":[{"kind":"episode","id":1,"date":null}]}"#.into(),
+            ),
+            (
+                "https://dragonballfr.com/api/v1/site/chronology".into(),
+                r#"{"config":{"version":1,"eraOrder":[],"overrides":{}}}"#.into(),
+            ),
+        ])));
+        let report = run_dragon_ball(
+            &plan,
+            &DragonBallRunOptions {
+                output: output.clone(),
+                sources: Vec::new(),
+                max_requests: Some(4),
+                max_depth: Some(0),
+                with_gallery: false,
+                force: false,
+            },
+            &fixture,
+        )
+        .await
+        .unwrap();
+        assert!(report.completed);
+        assert_eq!(report.network_requests, 4);
+        assert_eq!(report.documents, 4);
+        assert!(report.targets.iter().all(|target| target.completed
+            && target.errors.is_empty()
+            && target.failed == 0
+            && target.pending == 0));
+        let projection: Value =
+            serde_json::from_slice(&std::fs::read(output.join("shenron-timeline.json")).unwrap())
+                .unwrap();
+        assert_eq!(projection["completed"], true);
+        let documents = std::fs::read_to_string(output.join("shenron-documents.jsonl")).unwrap();
+        assert!(
+            documents.lines().any(|line| serde_json::from_str::<DragonBallDocument>(line)
+                .unwrap()
+                .canonical_url
+                == "https://dragonballfr.com/wiki")
+        );
+        std::fs::remove_dir_all(directory).unwrap();
+    }
+    #[tokio::test]
     async fn campaigns_resume_and_export_native_markdown_without_network_replay() {
         let output = std::env::temp_dir()
             .join(format!("aphrody-dragon-ball-campaign-{}", std::process::id()));

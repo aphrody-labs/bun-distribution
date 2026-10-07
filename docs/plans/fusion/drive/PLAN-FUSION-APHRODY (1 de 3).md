@@ -60,7 +60,7 @@ Ce qui va où (définitif) :
 
 Conventions du dépôt `yolo`, pensées pour Claude Code :
 
-1. **Un point d'entrée par action, et un seul** : `just build` (noyau), `just plugin <nom>`, `just check` (`cargo check` sur `default-members`), `just smoke` (les cinq commandes de fumigation, sortie comparée à `smoke/expected/`), `just bench` (`hyperfine` démarrage + taille), `just tiers` (classement 0/1/2 et refus de régression ; `xtask tiers` est à créer : seul `crates/os/drive/xtask` existe aujourd'hui). Aucune commande n'existe hors du `Justfile`.
+1. **Un point d'entrée par action, et un seul** : `just build` (noyau), `just plugin <nom>`, `just check` (`cargo check` sur `default-members`), `just smoke` (les cinq commandes de fumigation, sortie comparée à `smoke/expected/`), `just bench` (`hyperfine` démarrage + taille), `just tiers` (classement 0/1/2 et refus de régression ; `xtask tiers` est à créer : seul `crates/os/kernel/comps/drive/xtask` existe aujourd'hui). Aucune commande n'existe hors du `Justfile`.
 2. **`CLAUDE.md` de 100 lignes maximum** : arborescence, les six recettes `just`, les interdits (crates bannies, `todo!`, build WebKit), la politique de stubs et de `BROKEN.md`, l'identité de commit. Tout le reste vit dans `docs/` et est référencé, pas recopié.
 3. **Chaque crate a un `README.md` de dix lignes** : rôle, niveau (0/1/2), dépendances autorisées, propriétaire (noyau ou plugin), comment la tester seule. `xtask tiers` vérifie que le README et le `Cargo.toml` sont d'accord.
 4. **Les décisions vivent dans le dépôt** : `docs/decisions/NNNN-*.md` (ADR courts), `BROKEN.md` (état cassé connu, une ligne par item, fermé par un commit), `.claude/prompts/*.md` (les prompts de session versionnés, dont celui du one shot 1).
@@ -307,7 +307,7 @@ Sources : `V` = `/home/aphro/aphrody/vendor/bun` (`main` `c439b6fbd`) ; `F` = cl
 | forks `aphrody-labs/{tauri,wry,tao,next.js}` ; `tauri-runtime`, `tauri-runtime-wry` | confirmé (publics ; branche par défaut `dev` pour tauri/wry/tao, `canary` pour next.js ; `tao` `yolo` identique à `dev`) | `API` |
 | `GOAL.md` nomme `aphrody-labs/yolo` | « Yolo » nommé producteur (pas le dépôt) ; `aphrody-labs/yolo` existe, privé, non archivé ; `yolo-legacy` : 404 | `M/GOAL.md` §1, `API` |
 | `~/.yolo/bin` installé par `docs/DISTRIBUTION.md` | confirmé (`bin/yolo` = exécutable Bun compilé) | `M/docs/DISTRIBUTION.md` |
-| `xtask tiers` dans les deux dépôts | n'existe pas (seul `crates/os/drive/xtask`) | `fd xtask` |
+| `xtask tiers` dans les deux dépôts | n'existe pas (seul `crates/os/kernel/comps/drive/xtask`) | `fd xtask` |
 | « Onze fonctions » en double | 16 lignes de fonctions (+ « Versions croisées ») : 13 vers Bun, 3 gardées par Obscura | recompte du tableau |
 | `Element` dans l'API Rust d'Obscura | type existant mais non ré-exporté | `F/crates/obscura/src/lib.rs`, `page.rs` |
 | `CLAUDE.md` d'`aphrody` : pas de worktree/clone, Cargo réservé, `cargo-serial.sh`, `.coord/claims` | confirmé | `M/CLAUDE.md`, `scripts/build/rust/`, `.coord/` |

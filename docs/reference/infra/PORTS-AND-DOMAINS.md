@@ -7,13 +7,13 @@ separate evidence.
 
 Authoritative sources (never a second registry):
 
-- `config/service-catalog.json` — every unit, its loopback port, health check, owning repository
+- `tools/config/service-catalog.json` — every unit, its loopback port, health check, owning repository
   and `status`.
-- `config/host/nginx/routes.json` — every public host and path, and the internal paths reached through
+- `tools/config/host/nginx/routes.json` — every public host and path, and the internal paths reached through
   a public host.
-- `config/production-topology.json` — the port policy (`publicPorts` vs `internalOnly`) per host.
-- `config/a2a-peers.json` — the A2A registry (JSON-RPC endpoints and agent cards).
-- `config/asset-catalog.json` — the static CDN (`cdn.aphrody.com`), which has no backend process
+- `tools/config/production-topology.json` — the port policy (`publicPorts` vs `internalOnly`) per host.
+- `tools/config/a2a-peers.json` — the A2A registry (JSON-RPC endpoints and agent cards).
+- `tools/config/asset-catalog.json` — the static CDN (`cdn.aphrody.com`), which has no backend process
   and therefore no `service-catalog.json` entry.
 - `crates/infra/infra/src/validate.rs` (`aphrody-infra validate`) enforces cross-catalog
   consistency: no two services share a port or unit, every `port`/`health` is loopback/private and
@@ -68,7 +68,7 @@ arbitrary number.
 | PostgreSQL | 5432 | distro package | — | live, loopback only |
 | Redis | 6379 | distro package | — | live, loopback only |
 
-Bold rows were missing from `config/service-catalog.json` before this audit even though their
+Bold rows were missing from `tools/config/service-catalog.json` before this audit even though their
 systemd unit and their port already existed in `production-topology.json`'s `internalOnly` list —
 closed 2026-09-26.
 
@@ -80,12 +80,12 @@ closed 2026-09-26.
 | `aphrody.com` | `/api/v1/a2a`, `/.well-known/agent-card.json` | aphrody-a2a :8788 | retired 2026-09-25 |
 | `aphrody.com` | `/api/v1/models`, `/api/v1/rag/*` | aphrody-ai-http :8789 | retired 2026-09-25 |
 | `aphrody.com` | `/api/v1/web/` | aphrody-web-api :3007 | retired 2026-09-25 |
-| `mcp.aphrody.com` | `/mcp` | aphrody-site :8083 | retired 2026-09-25 (`config/host/nginx/aphrody/aphrody-apex.conf`) |
-| `n2b.aphrody.com` | `/api/v1/n2b`, `/api/v1/n2b/` | aphrody-site :8083 | retired 2026-09-25 (`config/host/nginx/aphrody/aphrody.com.conf`) |
-| `api.aphrody.com` | `/healthz`, `/api/v1/a2a`, `/api/v1/models`, `/api/v1/rag/*`, `/api/` etc. | aphrody-site :8083, aphrody-a2a :8788, aphrody-ai-http :8789 | retired 2026-09-25 (`config/host/nginx/aphrody/aphrody.com.conf`) |
+| `mcp.aphrody.com` | `/mcp` | aphrody-site :8083 | retired 2026-09-25 (`tools/config/host/nginx/aphrody/aphrody-apex.conf`) |
+| `n2b.aphrody.com` | `/api/v1/n2b`, `/api/v1/n2b/` | aphrody-site :8083 | retired 2026-09-25 (`tools/config/host/nginx/aphrody/aphrody.com.conf`) |
+| `api.aphrody.com` | `/healthz`, `/api/v1/a2a`, `/api/v1/models`, `/api/v1/rag/*`, `/api/` etc. | aphrody-site :8083, aphrody-a2a :8788, aphrody-ai-http :8789 | retired 2026-09-25 (`tools/config/host/nginx/aphrody/aphrody.com.conf`) |
 | `bot.aphrody.com` | `/` | `aphrody-discord-dev` (`127.0.0.1:4010`) | Bun dev app: signed Discord HTTP interactions, Gateway session for non-interaction events, OAuth2 login/callback; managed by `aphrody-infra` |
 | `downloads.aphrody.com` / `admin.aphrody.com` | `/` | none — reserved, explicit 410 | reserved; no backing service |
-| `cdn.aphrody.com` | `/s/`, `/h/`, `/s/manifest.json` | static `aphrody-cdn` release tree (`config/asset-catalog.json`) — no backend process, so no `service-catalog.json` entry | retired 2026-09-25: `/srv/aphrody-cdn` and its vhost were removed with the Aphrody retirement (`config/asset-catalog.json` `status: retired`); not part of the bundle |
+| `cdn.aphrody.com` | `/s/`, `/h/`, `/s/manifest.json` | static `aphrody-cdn` release tree (`tools/config/asset-catalog.json`) — no backend process, so no `service-catalog.json` entry | retired 2026-09-25: `/srv/aphrody-cdn` and its vhost were removed with the Aphrody retirement (`tools/config/asset-catalog.json` `status: retired`); not part of the bundle |
 | `nie.aphrody.com` | `/health`, `/api/`, `/f/`, `/b`, `/cdn/` | nie-site :8085, nie-model-serve :8790 | retired 2026-09-25 |
 | `nie.aphrody.com` | **`/downloads/inacord/latest.json`, `/downloads/channels/stable/latest.json`, `/downloads/files/`** | static Inacord updater feed (`~/nie/var/releases/inacord/public/...`) | **kept live intentionally** (docs/PLAN.md 2026-09-26 ledger entry) even though the rest of the nie backend and the Inacord desktop app itself are retired — installed clients still poll this feed |
 | `rosegriffon.fr` (+`www.`) | `/` | rg-website :3004 | live |
@@ -108,8 +108,8 @@ roster matches the live release (`5691ba4b`: website, api, bot, achillea-bot, cr
 
 ## 4. Gaps and owner decisions found by this audit (2026-09-26, all closed)
 
-Fixed in this pass (see `config/service-catalog.json`, `config/production-topology.json`,
-`config/a2a-peers.json`, and the header banners added to the nginx files under `iecode/config/rg/host/nginx/`):
+Fixed in this pass (see `tools/config/service-catalog.json`, `tools/config/production-topology.json`,
+`tools/config/a2a-peers.json`, and the header banners added to the nginx files under `iecode/config/rg/host/nginx/`):
 
 1. `rg-cdn` (8801), `rg-storage` (8810), `rg-realtime` (8812) had real systemd units and reserved
    topology ports but no `service-catalog.json` entry — added.
@@ -153,7 +153,7 @@ Resolved by the `rg` sibling audit (§5) the same day — no longer open:
    alternate/older standalone deployment mode of the *same code*, currently superseded by the
    unified `rg-api` path for live traffic (one exception: `iecode/apps/rg/website/src/lib/db/platform.ts`'s
    admin health dashboard still probes `:8810`/`:8812` directly as a standalone-service check).
-   `config/service-catalog.json`'s notes for these three services were corrected accordingly.
+   `tools/config/service-catalog.json`'s notes for these three services were corrected accordingly.
 9. ~~rg-storage/rg-realtime: proxied via rg-api, or a dead standalone unit?~~ — same answer as #8.
 
 Left as findings by the first pass (owner decisions needed) and all closed by the follow-up pass
@@ -170,12 +170,12 @@ of 2026-09-26 — nothing in this section is open any more:
     either without first confirming a live owner. `staging-nds.conf`'s own design intent (a staged
     NDS emulator, deliberately never public) is unchanged and still documented inline; it simply
     has no implementing code yet in this ecosystem.
-11. ~~`config/host/nginx/aphrody/aphrody.com.conf`'s `mcp.`, `downloads.`, `n2b.`, `api.` hosts~~ — **resolved
+11. ~~`tools/config/host/nginx/aphrody/aphrody.com.conf`'s `mcp.`, `downloads.`, `n2b.`, `api.` hosts~~ — **resolved
     2026-09-26.** `mcp.aphrody.com`, `n2b.aphrody.com` and `api.aphrody.com` all back onto
     already-retired services (`aphrody-site` :8083, plus `aphrody-a2a` :8788 and `aphrody-ai-http`
-    :8789 for `api.aphrody.com`) — added matching `config/host/nginx/routes.json` entries with
+    :8789 for `api.aphrody.com`) — added matching `tools/config/host/nginx/routes.json` entries with
     `status: retired`/`retiredAt: 2026-09-25` (same date as the services they back), plus an inline
-    banner on each server block in `config/host/nginx/aphrody/aphrody.com.conf`/`aphrody-apex.conf` naming the
+    banner on each server block in `tools/config/host/nginx/aphrody/aphrody.com.conf`/`aphrody-apex.conf` naming the
     retirement. `downloads.aphrody.com` (and its `bot.`/`admin.` siblings) is different in kind:
     it never had a backing service — it is a reserved placeholder returning an explicit 410 — so
     it correctly has no `nginx-routes.json` entry (that schema requires a `service` to reference);
@@ -191,7 +191,7 @@ of 2026-09-26 — nothing in this section is open any more:
     the `rpbey.fr`/`*.rpbey.fr` branch of the nginx-stats parser in `rg`'s
     `iecode/packages/rg/cron/src/tasks/stats/achillea.ts`. `docs/reference/infra/ops/OVH.md` and `docs/ovh/README.md` (not in repo) now
     record the sale instead of describing a live-but-unserved zone. No route ever existed in
-    `config/host/nginx/routes.json`/`config/service-catalog.json` for this domain, so no catalog entry
+    `tools/config/host/nginx/routes.json`/`tools/config/service-catalog.json` for this domain, so no catalog entry
     needed removing there. CHANGELOG/history mentions (e.g. `shenron/docs/archive/`) were left
     untouched, per the "history stays" rule.
 13. ~~Port 8811 (`SUPABASE_INTERNAL_URL`)~~ — **resolved 2026-09-26: routed to `rg-api:8800`
@@ -214,7 +214,7 @@ commit trailers in each repo for any fix that landed):
 - **aphrody-ai**: every literal that duplicates a canonical `APHRODY_AI_*` value already resolves
   through that env var first; nothing trivial to fix. One drift found and fixed 2026-09-26:
   `crates/ai/rag-eval/src/main.rs` (not in repo)'s `DEFAULT_MCP_URL` defaulted to `https://aphrody.com/mcp`,
-  a path/host with no live entry in `config/host/nginx/routes.json` (its `aphrody-site` backend is
+  a path/host with no live entry in `tools/config/host/nginx/routes.json` (its `aphrody-site` backend is
   retired). Made env-driven (`APHRODY_MCP_HTTP_URL`, checked before the local default) with the
   local default repointed at `http://127.0.0.1:8789/mcp` — `aphrody-mcp http`'s own `--bind`
   default and `/mcp` mount (`crates/ai/mcp/src/main.rs` (not in repo)), the one MCP HTTP origin this

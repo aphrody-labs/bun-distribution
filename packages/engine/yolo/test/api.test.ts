@@ -63,7 +63,7 @@ describe("yolo api (Native Bun HTTP / OpenAPI Server)", () => {
     const res = await fetch(`${baseUrl}/api/scan`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: "crates/infra/aphrody/src", exts: "ts" }),
+      body: JSON.stringify({ path: "packages/engine/yolo/src", exts: "ts" }),
     });
     expect(res.status).toBe(200);
     const data = await res.json();

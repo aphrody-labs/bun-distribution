@@ -131,7 +131,7 @@ def main():
             stream.flush()
             os.fsync(stream.fileno())
     for name in ("shenron-compute.service", "shenron-embed.service"):
-        source = args.checkout / "config/host/systemd/shenron" / name
+        source = args.checkout / "tools/config/host/systemd/shenron" / name
         destination = pathlib.Path("/etc/systemd/system") / name
         if destination.exists() and digest(destination) != digest(source):
             raise ValueError("existing service declaration conflict")

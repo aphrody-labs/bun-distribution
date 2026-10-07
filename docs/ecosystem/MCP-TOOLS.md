@@ -18,9 +18,9 @@ Kind: kernel-subsystem. 6 tools.
 | `workspace_automation_inventory` | Scripts under scripts/ directories of a repository or of every repository below a source root, classified check/release/sync/deploy/product (CLI: automation-inventory --json). |
 | `workspace_binaries` | Installed and workspace-built Aphrody binaries with their source and catalogue status; never arbitrary PATH files (CLI: yolo ops binaries). |
 | `workspace_bridges` | Rust, Bun, package and API bridge catalogue used by yolo ops bridge (CLI: yolo ops bridge status). |
-| `workspace_build_factory_status` | Where heavy Cargo/Bun work runs (factory or local) and why, from config/build-factory.json and this host's environment (CLI: build-factory status). |
+| `workspace_build_factory_status` | Where heavy Cargo/Bun work runs (factory or local) and why, from tools/config/build-factory.json and this host's environment (CLI: build-factory status). |
 | `workspace_fleet` | Repositories, pipeline stages and binaries declared for the Aphrody fleet (CLI: yolo ops fleet). |
-| `workspace_inline_inventory` | Inline Python/Bun/Node invocations with scope, reason and the ratchet against config/inline-interpreters.baseline.json (CLI: automation-inventory --inline). |
+| `workspace_inline_inventory` | Inline Python/Bun/Node invocations with scope, reason and the ratchet against tools/config/inline-interpreters.baseline.json (CLI: automation-inventory --inline). |
 
 ## aphrody — aphrody-agent-tools
 
@@ -258,7 +258,7 @@ Kind: rmcp. 67 tools.
 | `sync_external_agents` | Mirror the sessions of the other coding agents on this machine (Antigravity CLI `agy`, Codex, Claude Code) into ~/.aphrody/sessions/<agent>/<session_id>.jsonl, incrementally: per-file byte offsets me… |
 | `universal_web_fetch` | Fetch any webpage from the internet and convert it to clean Markdown. Fetched directly by aphrody and converted in-process (no third-party reader). Highly recommended for reading online developer doc… |
 | `upstream_info` | Live facts about one catalogue upstream from the GitHub API: head of the followed ref, latest release, licence, pushed date, archived flag, and whether it moved since the commit recorded in the manif… |
-| `upstream_list` | List the upstream catalogue (config/upstream-sources.json): the few vital checkouts and the reference upstreams that are never cloned (codex, ollama, mistral.rs, vllm, WSL, ...), with tier, purpose a… |
+| `upstream_list` | List the upstream catalogue (tools/config/upstream-sources.json): the few vital checkouts and the reference upstreams that are never cloned (codex, ollama, mistral.rs, vllm, WSL, ...), with tier, pur… |
 | `upstream_read` | Read one file of a catalogue upstream at its live ref (no clone). Text over 256 KiB is cut and flagged `truncated`. |
 | `upstream_search` | Code search inside one catalogue upstream (GitHub code search, needs a GH_TOKEN or GITHUB_TOKEN). |
 | `upstream_tree` | List a directory of one catalogue upstream at its live ref (no clone). `path` defaults to the repository root. |

@@ -12,7 +12,7 @@
  *   features  one `cargo check` of the workspace with every member feature switched on (minus the documented skips)
  *   targets   `cargo check --target` for the configured triples (wasm32, Windows MSVC through cargo-xwin)
  *   test      `cargo nextest run --workspace` (JUnit report of the `doctor` profile) and the doc tests
- *   deny      `cargo deny check advisories`, minus config/deps/advisory-holds.json
+ *   deny      `cargo deny check advisories`, minus tools/config/deps/advisory-holds.json
  *   bumps     toolchain channel, yanked or in-range releases left behind, lock pins and held crates (`rust status`)
  *
  * `--fix` repairs before it reports: lock pins and their relock, a lock that drifted from the manifests, every
@@ -22,7 +22,7 @@
  *
  * Exit code: 1 when an error-level problem remains; `--strict` also fails on warnings. The report is written to
  * target/update/rust-doctor/report.json with the raw output of every stage next to it. Skips, vendored crates, target
- * triples and test exclusions are data in config/update/rust-doctor.json, each with its reason.
+ * triples and test exclusions are data in tools/config/update/rust-doctor.json, each with its reason.
  */
 import {
   closeSync,
@@ -47,7 +47,7 @@ import {
 } from "./rust.ts";
 
 const WRAPPER = "scripts/build/rust/cargo-serial.sh";
-const CONFIG_FILE = "config/update/rust-doctor.json";
+const CONFIG_FILE = "tools/config/update/rust-doctor.json";
 const OUT_DIR = "target/update/rust-doctor";
 const JUNIT = "target/nextest/doctor/junit.xml";
 
@@ -557,7 +557,7 @@ class Doctor {
         stage: "lock",
         severity: "error",
         crate: d.crate,
-        message: `lock pin drifted: ${d.crate} ${d.from} must stay ${d.to} (config/deps/rust-holds.json)`,
+        message: `lock pin drifted: ${d.crate} ${d.from} must stay ${d.to} (tools/config/deps/rust-holds.json)`,
         fixable: true,
       });
     let sync = this.cargo("lock", ["metadata", "--locked", "--format-version", "1"]);
@@ -1069,7 +1069,7 @@ class Doctor {
             severity: "error" as const,
             crate,
             code: ids.join(","),
-            message: `open advisory: ${crate} ${ids.join(", ")} (bump it, or record a hold in config/deps/advisory-holds.json with the reason)`,
+            message: `open advisory: ${crate} ${ids.join(", ")} (bump it, or record a hold in tools/config/deps/advisory-holds.json with the reason)`,
           },
     );
     const open = problems.filter((p) => p.severity === "error").length;

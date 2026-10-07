@@ -23,7 +23,7 @@ export function infraRoot(): string {
   const env = process.env.APHRODY_ROOT?.trim();
   if (env) return resolve(env);
   const fromSource = resolve(import.meta.dir, "..", "..", "..", "..");
-  if (existsSync(join(fromSource, "config"))) return fromSource;
+  if (existsSync(join(fromSource, "tools", "config"))) return fromSource;
   return findWorkspaceRoot();
 }
 

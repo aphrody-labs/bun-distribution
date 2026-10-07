@@ -5,7 +5,7 @@ Owner: Infra (`packages/infra/update/src/ecosystems/uv.ts`, exported as `runUv` 
 is Python or uv: the uv pin, the managed CPython interpreters, every `uv.lock` of the Python workspace and the gates that
 prove the result. The pipeline overview is [UPDATE.md](../UPDATE.md). The Python workspace is `py/` of this repository
 (fused on 2026-10-05, [plan](../../../plans/vu/PLAN.md)); the module finds it through `inventory.pythonRoots` of
-`config/deps/watch.json` (override with `--py-root <dir>` or `APHRODY_PY_ROOT`).
+`tools/config/deps/watch.json` (override with `--py-root <dir>` or `APHRODY_PY_ROOT`).
 
 ## What is locked, and where
 
@@ -25,20 +25,20 @@ inside them is exact and strips extras. Run every gate from the repository root.
 
 ## Policy
 
-- uv follows the latest published release. Four places must agree: the installed binary, `config/system-packages.json`
-  (source of truth in `config/update/pins.json`), `required-version = "==X"` in the workspace `pyproject.toml` and the
+- uv follows the latest published release. Four places must agree: the installed binary, `tools/config/system-packages.json`
+  (source of truth in `tools/config/update/pins.json`), `required-version = "==X"` in the workspace `pyproject.toml` and the
   `setup-uv` version in `.github/workflows/python-sdk.yml` (not in repo) (plus the README and the CLI/TOOLS reference tables). The
   pin manifest rewrites all of them: `yolo update tools uv --apply` installs and re-pins, or
   `yolo update pins apply uv <version>` when the binary is already in place. `required-version` refuses any other uv, so
   update the binary first.
 - Every direct dependency follows its latest release inside its specifier; `uv lock --upgrade` is run on every bump.
-  A specifier that excludes the latest release is a cap and needs an entry in `config/deps/uv-holds.json` with the
+  A specifier that excludes the latest release is a cap and needs an entry in `tools/config/deps/uv-holds.json` with the
   reason; `status` prints such a cap without an entry as `NO REASON` and exits 1.
 - A major (and a `0.x` minor) is read before it is taken: the release notes (GitHub releases, the changelog or Context7),
   a grep of the repository's real usage, then the consumers' tests. A major that cannot be fixed cheaply is not bumped:
   it goes in the holds file, with the condition that releases it.
 - Security first: a PyPI advisory (OSV) that a newer release fixes is bumped at once. One that no bump fixes goes in
-  `config/deps/advisory-holds.json` with its reason.
+  `tools/config/deps/advisory-holds.json` with its reason.
 - Python versions: `.python-version` is 3.12, the interpreter every gate runs on (the training and OCR members need
   `==3.12.*` for their wheels). The SDK promises 3.11 to 3.14 and CI builds and tests it on all four, so its
   `requires-python` stays `>=3.11`; releases that need a newer interpreter (numpy 2.5, scipy 1.18, networkx 3.7) are
@@ -51,7 +51,7 @@ inside them is exact and strips extras. Run every gate from the repository root.
 
 ## Holds
 
-All reasons live in `config/deps/uv-holds.json` (read by `status`, `plan`, `apply`); the cap itself stays in the
+All reasons live in `tools/config/deps/uv-holds.json` (read by `status`, `plan`, `apply`); the cap itself stays in the
 pyproject it belongs to. Re-check every row on each bump and delete it as soon as the blocker moves.
 
 | Package | Held at | Reason |
@@ -60,13 +60,13 @@ pyproject it belongs to. Re-check every row on each bump and delete it as soon a
 | `transformers` | below 4.58 | `sentence-transformers[onnx]` 5.x needs `optimum-onnx` 0.1.0, which caps transformers; transformers 5 needs sentence-transformers 6 (the `mine` extra, no ONNX export) |
 | `sentence-transformers` | `>=5.7,<6` in `full`; `>=6.1` in `mine` | the two extras conflict by design; the lock carries both forks |
 | `magika` | `~=0.6.1` | markitdown hard-pins `magika~=0.6.1` as a core dependency; `classify.py` handles both result shapes so a markitdown bump makes the upgrade a no-op |
-| `maturin` | `==1.14.1` | exact build-backend pin of the SDK. 1.15.0 changes the sdist tar headers (UID and GID in pax) and hardens the PEP 517 build-wheel path, so the reproducibility and RECORD-integrity checks and the cargo-built wheels need a full requalification (`uv build`, `tools/sdk/verify-wheel.py`, six CI jobs), which needs Cargo |
+| `maturin` | `==1.14.1` | exact build-backend pin of the SDK. 1.15.0 changes the sdist tar headers (UID and GID in pax) and hardens the PEP 517 build-wheel path, so the reproducibility and RECORD-integrity checks and the cargo-built wheels need a full requalification (`uv build`, `py/tools/sdk/verify-wheel.py`, six CI jobs), which needs Cargo |
 | `torchvision`, `triton`, `nvidia-*`, `cuda-*` | follow torch | pinned by the torch wheel that pulls them |
 | `tokenizers`, `optimum`, `huggingface-hub` | follow transformers | `transformers` 4.57.6 caps tokenizers `<=0.23.0` and huggingface-hub `<1.0`; `optimum-onnx` caps optimum `<2.2`; docling-slim caps huggingface-hub `<2` |
 | `typer`, `semchunk`, `mammoth`, `websockets` | resolver | docling-slim `typer<0.27`, docling-core `semchunk<4`, markitdown `mammoth<1.12`, google-genai `websockets<17` |
 | `fsspec`, `multidict`, `antlr4-python3-runtime`, `mpmath`, `pydantic-core`, `onnxruntime` | resolver | datasets `fsspec<=2026.6.0`, aiohttp `multidict<7`, omegaconf `antlr4==4.9.*`, sympy `mpmath<1.4`, pydantic `pydantic-core==2.46.5`, magika `onnxruntime<=1.20.1` on Windows |
 
-PyPI advisory holds (`torch`, `transformers`) stay in `config/deps/advisory-holds.json`.
+PyPI advisory holds (`torch`, `transformers`) stay in `tools/config/deps/advisory-holds.json`.
 
 ## Commands
 
@@ -85,12 +85,12 @@ bun packages/infra/update/src/ecosystems/uv.ts rollback
 | --- | --- |
 | `status` | uv installed vs pinned vs latest and every `required-version`; `uv lock --check` per lock; every direct requirement of every pyproject (dependencies, extras, dependency groups, build requirements) against PyPI latest as `current`, `held` (manifest cap, python floor of the lock, or a recorded hold) or `open`; resolver-limited packages not explained by a hold; OSV advisories not covered by a hold; Python version policy. Exit 1 on uv drift, a stale lock, a cap without a reason, an open advisory or a policy finding |
 | `plan` | `uv lock --upgrade --dry-run` per lock (every change with its patch, minor, major or pre kind), the uv step, and the open direct rows that need a decision |
-| `apply` | snapshot, `uv python upgrade`, `uv lock --upgrade` per lock (or `--upgrade-package` for the named packages only), a journal entry in `config/deps/journal.json` (`ecosystem: uv-lock`), then `verify`. Refuses to run when the installed uv differs from the pin |
+| `apply` | snapshot, `uv python upgrade`, `uv lock --upgrade` per lock (or `--upgrade-package` for the named packages only), a journal entry in `tools/config/deps/journal.json` (`ecosystem: uv-lock`), then `verify`. Refuses to run when the installed uv differs from the pin |
 | `verify` | uv pins agree and the installed uv matches; `uv lock --check` per lock; `uv sync --all-packages --locked --extra rag --extra dedup`; `ruff check .`; pytest for every workspace member that ships `tests/test_*.py` (the SDK suite is about 500 tests) |
 | `rollback` | restore the lock files from the newest snapshot in `target/update/uv/<stamp>/` |
 
 `apply` does not install uv: do that first with `yolo update tools uv --apply`. The monorepo side of a bump
-(`config/system-packages.json`, the CLI and TOOLS reference tables, the holds file, the journal) is committed in the
+(`tools/config/system-packages.json`, the CLI and TOOLS reference tables, the holds file, the journal) is committed in the
 monorepo; the Python side (locks, pyprojects, workflow, README) is committed in `py/` of the same repository.
 
 ## Rollback
@@ -99,7 +99,7 @@ monorepo; the Python side (locks, pyprojects, workflow, README) is committed in 
    `git checkout -- py/uv.lock`.
 2. `uv sync --all-packages --locked --extra rag --extra dedup` realigns the environment.
 3. A uv bump is undone with `uv self update <old>` followed by `yolo update pins apply uv <old>`.
-4. Record why in `config/deps/uv-holds.json` so the next run does not retry it blindly.
+4. Record why in `tools/config/deps/uv-holds.json` so the next run does not retry it blindly.
 
 ## How a major bump is done
 

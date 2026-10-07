@@ -41,7 +41,7 @@ and [Rust-Python research](docs/RAPPORT_RUST_PYTHON_RESEARCH.md).
 - `packages/model-tools`: Koharu model exporters.
 - `apps/meetings`: audio meeting application built on the SDK.
 - `tools/`: operational, migration and packaging tools.
-- `vendor/`: removed 2026-10-05; Bun (`vendor/bun` at the repository root) is the only vendored source (`config/vendor.json`).
+- `vendor/`: removed 2026-10-05; Bun (`vendor/bun` at the repository root) is the only vendored source (`tools/config/vendor.json`).
 
 The root owns workspace dependencies and tooling. Standalone SDK and training
 locks are checked in temporary copies outside workspace discovery. Source

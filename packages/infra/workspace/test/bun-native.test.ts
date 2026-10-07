@@ -28,9 +28,13 @@ async function fixture() {
   const consumer = join(root, "packages/interop/native");
   await mkdir(join(ffi, "src"), { recursive: true });
   await mkdir(join(consumer, "src"), { recursive: true });
-  const serialScript = join(root, "scripts/build/rust/cargo-serial.sh");
+  const wrapper =
+    process.platform === "win32"
+      ? "scripts/dev/windows-cargo.ps1"
+      : "scripts/build/rust/cargo-serial.sh";
+  const serialScript = join(root, wrapper);
   await mkdir(dirname(serialScript), { recursive: true });
-  await cp(join(import.meta.dir, "../../../../scripts/build/rust/cargo-serial.sh"), serialScript);
+  await cp(join(import.meta.dir, "../../../..", wrapper), serialScript);
   await writeFile(
     join(root, "Cargo.toml"),
     '[workspace]\nresolver="3"\nmembers=["crates/interop/ffi"]\n',
@@ -88,7 +92,14 @@ test("native builder rejects legacy/unknown options without touching a source", 
 test("native builder fails before build when the serialization wrapper is absent", async () => {
   const { root } = await fixture();
   try {
-    await rm(join(root, "scripts/build/rust/cargo-serial.sh"));
+    await rm(
+      join(
+        root,
+        process.platform === "win32"
+          ? "scripts/dev/windows-cargo.ps1"
+          : "scripts/build/rust/cargo-serial.sh",
+      ),
+    );
     const result = await run([`--root=${root}`, "--debug", "--offline", "--unlocked"]);
     expect(result.code).toBe(1);
     expect(result.stderr).toContain("Cargo serialization wrapper missing");

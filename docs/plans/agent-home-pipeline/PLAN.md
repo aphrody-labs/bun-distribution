@@ -266,7 +266,7 @@ contracts and stay as aliases.
 
 ### 4.1 Provenance (batch 1)
 
-Add `config/upstream-sources.json` entry `graphify` (tier `integrated`, role "port source
+Add `tools/config/upstream-sources.json` entry `graphify` (tier `integrated`, role "port source
 and parity oracle"): `upstreamUrl https://github.com/Graphify-Labs/graphify`, ref `v8`,
 `upstreamCommit 5c7b84792f453582676548185aaec3824d51dfe2`, version 0.9.77, license
 Apache-2.0 (LICENSE, LICENSE-MIT, NOTICE preserved), `integratedPath crates/ai/code-graph`,

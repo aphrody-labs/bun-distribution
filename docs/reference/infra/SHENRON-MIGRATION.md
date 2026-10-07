@@ -3,8 +3,8 @@
 > **Migration record, not a current service inventory.** Shenron site, bot,
 > tunnel and backup entries remain declared in the root catalogues, but the
 > Aphrody AI HTTP and embedding units discussed below are marked retired in
-> `config/service-catalog.json` and the Aphrody plane is retired in
-> `config/production-topology.json`. Do not infer active RAG/OCR/A2A capability
+> `tools/config/service-catalog.json` and the Aphrody plane is retired in
+> `tools/config/production-topology.json`. Do not infer active RAG/OCR/A2A capability
 > from this migration narrative; use the dated VPS/topology reports and current
 > catalogues before operational actions.
 
@@ -45,8 +45,8 @@ backups et probes.
 - backups : `shenron-backup.timer` (sauvegarde SQLite locale) et les unités
   spécialisées déclarées dans le catalogue ;
 - exposition publique : Nginx uniquement, déclarée dans
-  `config/host/nginx/routes.json` ; les vhosts réels sont
-  `config/host/nginx/shenron/{00-shenron,dragonballfr.com,cdn.dragonballfr.com,bot.dragonballfr.com}.conf`,
+  `tools/config/host/nginx/routes.json` ; les vhosts réels sont
+  `tools/config/host/nginx/shenron/{00-shenron,dragonballfr.com,cdn.dragonballfr.com,bot.dragonballfr.com}.conf`,
   installés séparément dans `/etc/nginx/conf.d/` sur le vps ;
 - déploiement : `scripts/release/atomic-deploy-shenron.sh` (`assemble` puis
   `activate`, rollback vers le `current` précédent), seul ou comme deuxième
@@ -60,9 +60,9 @@ seul workload Bun : `discordx` (gateway Discord) et `Bun.serve` (API REST/
 GraphQL/OpenAPI, `API_PORT` par défaut `5006`) tournent dans le même process,
 démarré par `bun src/index.ts` depuis `apps/bot` (not in repo). Le catalogue infra a donc été
 aligné sur ce fait : **`shenron-api.service` est retiré** (ajouté à
-`policies.retiredUnits` dans `config/service-catalog.json`) et
+`policies.retiredUnits` dans `tools/config/service-catalog.json`) et
 `shenron-bot.service` porte à la fois le bot et le `health` public
-(`http://127.0.0.1:5006/health`, `public: true`). `config/host/nginx/routes.json`
+(`http://127.0.0.1:5006/health`, `public: true`). `tools/config/host/nginx/routes.json`
 route donc `bot.dragonballfr.com` vers le service `shenron-bot`, pas
 `shenron-api`.
 
@@ -81,7 +81,7 @@ release ; l'activation exige la présence des clés sans afficher leur valeur.
 
 Le moteur d'embeddings configuré par `APHRODY_AI_EMBED_MODEL` et
 `APHRODY_AI_EMBED_BASE_URL` (alias `APHRODY_SHENRON_EMBED_*`, noms canoniques de
-`config/local-ai.json`) doit produire les mêmes vecteurs
+`tools/config/local-ai.json`) doit produire les mêmes vecteurs
 `Xenova/multilingual-e5-small` 384D que le corpus importé : préfixes `query: `
 et `passage: `, mean pooling et normalisation L2. Une dimension identique avec
 un autre modèle ne suffit pas. L'unité `aphrody-shenron-embed.service` exécute
@@ -124,18 +124,18 @@ Le WireGuard historique (`wg0`, 10.8.0.0/24) est inactif côté VPS. Le chemin p
 retenu est donc `shenron-pg-tunnel.service`, un tunnel SSH supervisé par systemd.
 
 CDN : `cdn.dragonballfr.com` est une route Shenron dédiée, co-localisée sur le
-VPS (`config/host/nginx/routes.json`, `config/host/nginx/shenron/cdn.dragonballfr.com.conf`),
+VPS (`tools/config/host/nginx/routes.json`, `tools/config/host/nginx/shenron/cdn.dragonballfr.com.conf`),
 parce que le site est construit avec cet hôte comme base d'assets. Le plan est
 statique d'abord : `/srv/shenron-cdn` sert les fichiers, puis Next (`shenron-site`)
 ou le bot (`shenron-bot`) répondent, puis la maintenance (503 HTML de marque, API en
-503 JSON). `shenron-cdn-sync.timer` (horaire, `config/host/systemd/shenron/`) tire de
+503 JSON). `shenron-cdn-sync.timer` (horaire, `tools/config/host/systemd/shenron/`) tire de
 dbfr vers le vps le wiki, les assets et `public-extra` par WireGuard, avec une clé
 `rrsync -ro` limitée à WireGuard (10.8.0.1 ; shell et écriture refusés).
 
 Nginx : quatre fichiers possédés par Shenron sur l'hôte, installés séparément dans
 `/etc/nginx/conf.d/` : `00-shenron.conf` (zones de cache) et les vhosts
 `dragonballfr.com.conf`, `cdn.dragonballfr.com.conf` et `bot.dragonballfr.com.conf`
-(sources `config/host/nginx/shenron/`), validés par `nginx -t`.
+(sources `tools/config/host/nginx/shenron/`), validés par `nginx -t`.
 `scripts/release/atomic-deploy-shenron.sh` installe encore un `shenron.conf`
 concaténé unique : à aligner sur ces fichiers avant son prochain usage.
 `mcp.dragonballfr.com` est retiré avec `shenron-mcp` (2026-09-25). La page 50x de
@@ -146,7 +146,7 @@ Adaptateur (2026-09-26) : `scripts/release/atomic-deploy-shenron.sh assemble
 BUNDLE/shenron` construit `/srv/shenron/releases/<sha complet>` sans toucher au
 service ; `activate` vérifie le catalogue installé (rôle `shenron-site`,
 `shenron-bot` ; `shenron-pg-tunnel` et le timer de backup restent hors
-release), les clés requises de `config/secrets-contract.json` dans les fichiers
+release), les clés requises de `tools/config/secrets-contract.json` dans les fichiers
 d'environnement des unités, les liens `shared/`, puis bascule `current`,
 redémarre, sonde `:5011/api/health`, `:5006/health` et les routes HTTPS et
 restaure tout (y compris les fichiers de seed rafraîchis) en cas d'échec ;
@@ -179,7 +179,7 @@ premier résultat doit être vérifié et une restauration de contrôle effectu�
 
 ## Règles de déduplication
 
-1. Une seule unité par workload, déclarée dans `config/service-catalog.json`.
+1. Une seule unité par workload, déclarée dans `tools/config/service-catalog.json`.
 2. Un seul Nginx et une seule table de routes publiques.
 3. Aucun service Shenron ne lance sa propre instance Bun, Nginx ou superviseur.
 4. Les secrets restent dans les fichiers d’environnement opérateur et ne sont
@@ -193,7 +193,7 @@ de rollback sont requis avant suppression de l’ancien emplacement.
 
 ## Convergence RG/Shenron
 
-`config/application-contracts.json` est l’index des contrats retenus : RG reste
+`tools/config/application-contracts.json` est l’index des contrats retenus : RG reste
 la référence pour l’UI, Better Auth, les types API, PostgreSQL, Realtime et
 Storage. Shenron réutilise ces frontières et garde SQLite uniquement comme
 cache local borné pour ses tâches offline. Les doubles unités de site,
@@ -222,7 +222,7 @@ filebrowser, watchdog et superviseurs propres à Shenron sont retirées du plan.
 - Catalogue corrigé : `aphrody-shenron-embed.workingDirectory` pointe
   `shenron:apps-embed` (not in repo) ; `staged` retiré de `aphrody-shenron-embed`,
   `shenron-mcp` et `shenron-backup` (actifs en production). Source
-  `config/host/systemd/shenron/shenron-zswap.service` (not in repo) supprimée (unité retirée, absente des deux hôtes).
+  `tools/config/host/systemd/shenron/shenron-zswap.service` (not in repo) supprimée (unité retirée, absente des deux hôtes).
 - Écart résolu (2026-09-30) : sur DBFR, `shenron-pg-backup.service` et
   `shenron-sqlite-replica-backup.service` disposent d'un fallback direct et
   résilient vers `~/shenron/scripts/backup-shenron-{pg,sqlite}.sh`

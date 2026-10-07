@@ -4,7 +4,7 @@
 The owner authorized deployment on 2026-10-07. SSH and WireGuard are active on VPS,
 DBFR and WSL; MCP/A2A proxy units remain declared and were not activated by this batch.
 The original 2026-10-06 observation remains in
-`config/host/inventory/private-tunnel-2026-10-06.json`.
+`tools/config/host/inventory/private-tunnel-2026-10-06.json`.
 
 ## Verified activation on 2026-10-07
 
@@ -47,9 +47,9 @@ No replacement client private key is generated or provided.
 
 | Piece | File |
 | --- | --- |
-| Tunnel (subnet, hub, peers, services, grants, firewall policy) | `config/host/wireguard/aphrody-tunnel.json` |
-| Forwarders for the loopback services (template units, instance = port) | `config/host/systemd/aphrody/aphrody-wg-proxy@.{socket,service}` |
-| `omar` account: key file (root-owned), sudoers drop-in, sshd drop-ins | `config/host/{ssh/omar.authorized_keys,sudoers/omar,ssh/omar-sshd.conf,ssh/postgres-no-login-sshd.conf}`, `accounts` in `config/host/catalog.json` |
+| Tunnel (subnet, hub, peers, services, grants, firewall policy) | `tools/config/host/wireguard/aphrody-tunnel.json` |
+| Forwarders for the loopback services (template units, instance = port) | `tools/config/host/systemd/aphrody/aphrody-wg-proxy@.{socket,service}` |
+| `omar` account: key file (root-owned), sudoers drop-in, sshd drop-ins | `tools/config/host/{ssh/omar.authorized_keys,sudoers/omar,ssh/omar-sshd.conf,ssh/postgres-no-login-sshd.conf}`, `accounts` in `tools/config/host/catalog.json` |
 | Generator, checks, plan | `packages/engine/core/src/host/wireguard.ts` (`wg-plan`, `wg-client`), tests in `packages/engine/core/test/host-wireguard.test.ts`, catalog checks in `checkCatalog` |
 
 ```sh

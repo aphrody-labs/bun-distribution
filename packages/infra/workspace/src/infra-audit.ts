@@ -486,7 +486,7 @@ export async function runInfraAudit(args: string[]): Promise<number> {
         ...classifyGateEvidence(priorGate, plan.checks),
       }
     : null;
-  const services = (await Bun.file(join(root, "config/service-catalog.json")).json())
+  const services = (await Bun.file(join(root, "tools/config/service-catalog.json")).json())
     .services as Service[];
   const hosts: Record<string, unknown> = {};
   const hostQualifications: Record<string, HostQualification> = {};
@@ -594,9 +594,9 @@ export async function runInfraAudit(args: string[]): Promise<number> {
     "Cargo.lock",
     "package.json",
     "bun.lock",
-    "config/service-catalog.json",
+    "tools/config/service-catalog.json",
     "config/fleet.json",
-    "config/pipeline.json",
+    "tools/config/pipeline.json",
   ]) {
     const file = Bun.file(join(root, path));
     if (await file.exists()) controlFiles.push({ path, sha256: sha256(await file.bytes()) });

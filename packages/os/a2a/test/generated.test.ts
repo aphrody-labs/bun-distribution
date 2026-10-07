@@ -11,7 +11,7 @@ import { renderGenerated } from "../scripts/generate-types.ts";
 import { generateTypes, jsonName, parseProto } from "../scripts/proto-to-ts.ts";
 
 const repoRoot = join(import.meta.dir, "..", "..", "..", "..");
-const protoPath = join(repoRoot, "crates", "os", "a2a-pb", "proto", "a2a.proto");
+const protoPath = join(repoRoot, "crates", "os", "kernel", "comps", "a2a-pb", "proto", "a2a.proto");
 const rustErrors = join(repoRoot, "crates", "contracts", "a2a", "src", "errors.rs");
 const rustJsonRpc = join(repoRoot, "crates", "contracts", "a2a", "src", "jsonrpc.rs");
 

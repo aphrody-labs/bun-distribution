@@ -22,20 +22,53 @@
       "name": "aphrody-local-mcp",
       "unit": {
         "Description": "Aphrody local native MCP and HTTP backend",
-        "After": "network-online.target aphrody-kernel.service",
-        "Wants": "aphrody-kernel.service"
+        "After": "network-online.target",
+        "Wants": "network-online.target"
       },
       "service": {
         "WorkingDirectory": "%h/aphrody",
-        "ExecStart": "%h/.local/share/aphrody/local-app/current/bin/aphrody-mcp http --bind 127.0.0.1:8791",
+        "ExecStart": "%h/.local/bin/aphrody-mcp --env-file %h/.aphrody/private/mcp-environment/aphrody.json http --bind 127.0.0.1:8791",
         "Environment": [
           "APHRODY_AGENT_DOMAIN=aphrody",
           "APHRODY_PROFILE=aphrody",
-          "PATH=%h/.local/share/aphrody/local-app/current/bin:%h/.local/bin:/usr/local/bin:/usr/bin:/bin"
+          "APHRODY_HOME=%h/.aphrody",
+          "PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin"
         ],
-        "EnvironmentFile": "%h/.config/aphrody/local-app/mcp.env",
+        "EnvironmentFile": "%h/.aphrody/private/jobs/wsl-mcp.env",
         "Restart": "on-failure",
         "RestartSec": "5",
+        "UMask": "0077",
+        "MemoryHigh": "512M",
+        "MemoryMax": "1G",
+        "CPUQuota": "50%",
+        "TasksMax": "512",
+        "NoNewPrivileges": "yes"
+      }
+    },
+    {
+      "name": "aphrody-jobs-worker-wsl",
+      "unit": {
+        "Description": "Bounded persistent native Aphrody jobs worker on the owner's WSL",
+        "After": "network-online.target aphrody-local-mcp.service",
+        "Wants": "aphrody-local-mcp.service"
+      },
+      "service": {
+        "WorkingDirectory": "%h/.aphrody",
+        "ExecStart": "%h/.local/bin/aphrody job run --forever --host wsl --worker wsl-native --concurrency 2",
+        "Environment": [
+          "APHRODY_HOME=%h/.aphrody",
+          "APHRODY_AGENT_DOMAIN=aphrody",
+          "APHRODY_PROFILE=aphrody"
+        ],
+        "Restart": "on-failure",
+        "RestartSec": "10",
+        "TimeoutStopSec": "30",
+        "KillMode": "control-group",
+        "MemoryHigh": "2G",
+        "MemoryMax": "3G",
+        "CPUQuota": "200%",
+        "TasksMax": "512",
+        "NoNewPrivileges": "yes",
         "UMask": "0077"
       }
     },

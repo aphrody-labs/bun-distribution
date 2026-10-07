@@ -26,9 +26,9 @@ if (import.meta.main) {
   const files: [string, string][] = [
     [resolve(stage, "network.mjs"), "network.mjs"],
     [resolve(stage, "telemetry.mjs"), "telemetry.mjs"],
-    [resolve(root, "config/host/wireguard/aphrody-tunnel.json"), "network.json"],
+    [resolve(root, "tools/config/host/wireguard/aphrody-tunnel.json"), "network.json"],
     ...["service", "timer"].map((kind): [string, string] => [
-      resolve(root, `config/host/systemd/aphrody/aphrody-discord-lab-telemetry.${kind}`),
+      resolve(root, `tools/config/host/systemd/aphrody/aphrody-discord-lab-telemetry.${kind}`),
       `aphrody-discord-lab-telemetry.${kind}`,
     ]),
   ];

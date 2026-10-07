@@ -476,9 +476,9 @@ const factoryRoot = mkdtempSync(join(tmpdir(), "yolo-factory-"));
 const priorAphrodyRoot = process.env["YOLO_APHRODY_ROOT"];
 // eager: some describe blocks compute their plans while the file is being collected
 {
-  mkdirSync(join(factoryRoot, "config"), { recursive: true });
+  mkdirSync(join(factoryRoot, "tools", "config"), { recursive: true });
   writeFileSync(
-    join(factoryRoot, "config/build-factory.json"),
+    join(factoryRoot, "tools/config/build-factory.json"),
     JSON.stringify({
       enabled: true,
       target: "vps",
@@ -922,7 +922,7 @@ keep = ["only-on-dbfr"]
 
   it("the shipped host-policy.toml parses", async () => {
     const text = await Bun.file(
-      join(import.meta.dir, "../../../../config/host/host-policy.toml"),
+      join(import.meta.dir, "../../../../tools/config/host/host-policy.toml"),
     ).text();
     const p = parsePolicy(text, "vps");
     expect(p.reclaim.excludeNames).toContain("aphrody-ui");

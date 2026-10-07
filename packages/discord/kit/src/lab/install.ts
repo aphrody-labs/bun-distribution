@@ -42,8 +42,8 @@ if (import.meta.main) {
   if (!built.success) throw new Error("Lab bundle failed");
   const files = [
     [resolve(stage, "assistant.mjs"), "assistant.mjs"],
-    [resolve(root, "config/host/discord-ai-lab.json"), "policy.json"],
-    [resolve(root, "config/host/systemd/aphrody/aphrody-discord-ai-lab.service"), plan.unit],
+    [resolve(root, "tools/config/host/discord-ai-lab.json"), "policy.json"],
+    [resolve(root, "tools/config/host/systemd/aphrody/aphrody-discord-ai-lab.service"), plan.unit],
   ];
   const remoteStage = "/tmp/" + stage.split("/").at(-1);
   await remote(`mkdir -m 700 ${quote(remoteStage)}`);

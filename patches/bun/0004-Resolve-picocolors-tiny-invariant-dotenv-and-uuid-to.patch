@@ -786,7 +786,7 @@ index 0034aee4c5..5105bd86c0 100644
      entry!("utf-8-validate"),
      entry!("ws"),
 +    //
-+    // aphrody-labs/bun: npm packages absorbed by built-in modules (config/bun-absorb.json)
++    // aphrody-labs/bun: npm packages absorbed by built-in modules (tools/config/bun-absorb.json)
 +    entry!("picocolors"),
 +    entry!("tiny-invariant"),
 +    entry!("dotenv"),

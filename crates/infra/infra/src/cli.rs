@@ -92,7 +92,7 @@ enum CommandKind {
         #[arg(long)]
         json: bool,
     },
-    /// Reclaim allowlisted disk/tmpfs space on a target (config/disk-reclaim.json).
+    /// Reclaim allowlisted disk/tmpfs space on a target (tools/config/disk-reclaim.json).
     Reclaim {
         #[arg(long)]
         target: String,
@@ -116,7 +116,7 @@ enum CommandKind {
     Service {
         #[arg(value_enum)]
         action: crate::lifecycle::ServiceAction,
-        /// Workload id from config/service-catalog.json (or all if omitted).
+        /// Workload id from tools/config/service-catalog.json (or all if omitted).
         #[arg(long)]
         id: Option<String>,
         /// Remote target (default: "vps" or "local" if on Linux).
@@ -140,7 +140,7 @@ enum CommandKind {
     },
     /// Execute declared monorepo validation stages.
     Pipeline {
-        /// Target stage from config/pipeline.json, or plan/check.
+        /// Target stage from tools/config/pipeline.json, or plan/check.
         #[arg(long, default_value = "plan")]
         stage: String,
         #[arg(long)]
@@ -482,7 +482,7 @@ fn command(root: &Path, program: &str, args: &[&str]) -> Result<String> {
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_owned())
 }
 
-/// The cross-host target matrix lives in yolo: `$YOLO_ROOT/config/host/inventory/targets.json`.
+/// The cross-host target matrix lives in yolo: `$YOLO_ROOT/tools/config/host/inventory/targets.json`.
 fn load_matrix() -> Result<Matrix> {
     let path = validate::host_config_root().join("inventory/targets.json");
     let bytes = fs::read(&path).with_context(|| format!("manifest absent: {}", path.display()))?;
@@ -1394,7 +1394,7 @@ fn reclaim_disk(root: &Path, target_id: &str, apply: bool, run: &mut Run) -> Res
     let target = config
         .targets
         .get(target_id)
-        .with_context(|| format!("cible absente de config/disk-reclaim.json: {target_id}"))?;
+        .with_context(|| format!("cible absente de tools/config/disk-reclaim.json: {target_id}"))?;
     let script = reclaim::script(target, apply)?;
     let stdout =
         run_remote("ssh", &["-o", "BatchMode=yes", &target.ssh_alias, "sh", "-s"], &script)?;
@@ -1548,7 +1548,7 @@ fn service_lifecycle(
 ) -> Result<()> {
     match action {
         ServiceAction::Catalog => {
-            let catalog_path = root.join("config/service-catalog.json");
+            let catalog_path = root.join("tools/config/service-catalog.json");
             let content = fs::read_to_string(&catalog_path)
                 .with_context(|| format!("lecture {}", catalog_path.display()))?;
             if as_json {

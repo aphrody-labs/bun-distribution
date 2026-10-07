@@ -6,11 +6,11 @@ Application repositories retain business logic and data schemas.
 
 | Source | Authority |
 | --- | --- |
-| `config/service-catalog.json`, `yolo/config/host/nginx/routes.json` | Workloads and routing |
-| `config/production-topology.json`, `scheduler-policy.json` | Placement and timers |
-| `yolo/config/host/inventory/targets.json`, dated inventory files | Targets and sanitized observations |
-| `config/application-contracts.json`, `local-ai.json` | Shared application/AI integration |
-| `config/pipeline.json` | Cross-repository delivery stages |
+| `tools/config/service-catalog.json`, `yolo/tools/config/host/nginx/routes.json` | Workloads and routing |
+| `tools/config/production-topology.json`, `scheduler-policy.json` | Placement and timers |
+| `yolo/tools/config/host/inventory/targets.json`, dated inventory files | Targets and sanitized observations |
+| `tools/config/application-contracts.json`, `local-ai.json` | Shared application/AI integration |
+| `tools/config/pipeline.json` | Cross-repository delivery stages |
 | `systemd/`, `nginx/`, `host/` | Reviewable host templates and policy |
 | `crates/`, `scripts/` | Native control plane, SSH/Git/VPN/OVH and operational adapters |
 
@@ -93,10 +93,10 @@ Optional interactive developer tools are separate from server provisioning:
 `nu scripts/dev/setup.nu --developer-cli --apply` installs prebuilt Rust CLI releases
 and the declared Nu plugin binaries from crates.io, then registers those plugins
 with the local Nu installation. The inventory is
-`config/developer-cli-tools.json`; none of these tools are workspace dependencies.
+`tools/config/developer-cli-tools.json`; none of these tools are workspace dependencies.
 
 `aphrody-infra dev-env --local wsl --apply` and the root bootstrap install the
-Rust development tools declared in `config/system-packages.json` through
+Rust development tools declared in `tools/config/system-packages.json` through
 `cargo-binstall`. The set includes nextest, deny/audit/machete, expand/hack and
 the optional cross-compilation frontends; they remain host tools, not workspace
 dependencies.

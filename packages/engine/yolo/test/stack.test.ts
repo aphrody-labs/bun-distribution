@@ -47,10 +47,16 @@ describe("stack manifest", () => {
       pkg.devDependencies.typescript === "catalog:"
         ? catalog.typescript
         : pkg.devDependencies.typescript;
-    const oxlint =
-      pkg.devDependencies.oxlint === "catalog:" ? catalog.oxlint : pkg.devDependencies.oxlint;
-    const oxfmt =
-      pkg.devDependencies.oxfmt === "catalog:" ? catalog.oxfmt : pkg.devDependencies.oxfmt;
+    // Workspace gates use the installed toolchain binaries, not removed root npm dependencies.
+    const version = (tool: string): string => {
+      const result = Bun.spawnSync([tool, "--version"], { stdout: "pipe", stderr: "pipe" });
+      expect(result.exitCode).toBe(0);
+      const value = result.stdout.toString().match(/\b\d+\.\d+\.\d+\b/)?.[0];
+      expect(value).toBeDefined();
+      return value!;
+    };
+    const oxlint = version("oxlint");
+    const oxfmt = version("oxfmt");
     expect(stack.meta["typescript"]).toBe(ts);
     expect(stack.meta["oxlint"]).toBe(oxlint);
     expect(stack.meta["oxfmt"]).toBe(oxfmt);
@@ -62,7 +68,7 @@ describe("stack manifest", () => {
   it("only offers framework variants that are in the curated Rust-Bun list", async () => {
     const stack = await loadStack(rootDir);
     const curated = JSON.parse(
-      readFileSync(join(rootDir, "config/yolo/awesome.curated.json"), "utf8"),
+      readFileSync(join(rootDir, "tools/config/yolo/awesome.curated.json"), "utf8"),
     ) as {
       github?: string;
     }[];
@@ -193,11 +199,25 @@ describe("distribution", () => {
       expect(installer).toContain(variable);
     }
     expect(installer).toContain("SHA256SUMS");
-    expect(readFileSync(join(rootDir, "packages/engine/yolo/install.ps1"), "utf8")).toContain("Get-FileHash");
-    // every supported target of the SDK has a CI job in the release workflow
+    expect(readFileSync(join(rootDir, "packages/engine/yolo/install.ps1"), "utf8")).toContain(
+      "Get-FileHash",
+    );
+    // Every SDK target is selectable by the actual release installers. Factory release
+    // orchestration owns builds; the retired release.yml is not the packaging contract.
     const { SUPPORTED_TARGETS } = await import("../../runtime/src/artifact");
-    const workflow = readFileSync(join(rootDir, ".github/workflows/release.yml"), "utf8");
-    for (const target of Object.values(SUPPORTED_TARGETS)) expect(workflow).toContain(target);
+    const windowsInstaller = readFileSync(
+      join(rootDir, "packages/engine/yolo/install.ps1"),
+      "utf8",
+    );
+    const systems = [...installer.matchAll(/\) os_part=([a-z-]+) ;;/g)].map((match) => match[1]!);
+    const architectures = [...installer.matchAll(/\) arch_part=([a-z0-9_]+) ;;/g)].map(
+      (match) => match[1]!,
+    );
+    const targets = architectures.flatMap((arch) => systems.map((system) => `${arch}-${system}`));
+    const windowsTarget = windowsInstaller.match(/\$Target = "([^"]+)"/)?.[1];
+    expect(windowsTarget).toBeDefined();
+    targets.push(windowsTarget!);
+    expect(targets.toSorted()).toEqual(Object.values(SUPPORTED_TARGETS).toSorted());
   });
 
   it("installs from a local release directory into an isolated home (when a release was built)", async () => {

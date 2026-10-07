@@ -1,0 +1,35 @@
+# rg-cdn.service — upload/image origin behind cdn.rosegriffon.fr. Installed from an
+# immutable RG release by scripts/atomic-deploy-rg.sh.
+# Canonical port 8801 (tools/config/service-catalog.json). systemd applies EnvironmentFile=
+# after Environment=, so /etc/rose-griffon/rg-cdn.env must not set PORT or CDN_HOST.
+[Unit]
+Description=Rose Griffon CDN origin (upload/images/health) for cdn.rosegriffon.fr
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/srv/rg/current/apps/cdn
+EnvironmentFile=/etc/rose-griffon/rg-cdn.env
+Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/bin:/usr/bin:/bin
+Environment=NODE_ENV=production
+Environment=PORT=8801
+# Loopback only: nginx is the single public entry point.
+Environment=CDN_HOST=127.0.0.1
+ExecStart=/home/ubuntu/.bun/bin/bun server.ts
+# `always`: an exit with status 0 used to leave the origin dead without any alert.
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+# Measured RSS is ~8 MiB: the service streams files, it does not load them.
+MemoryHigh=512M
+MemoryMax=1G
+MemorySwapMax=256M
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rg-cdn
+
+[Install]
+WantedBy=multi-user.target

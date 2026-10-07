@@ -66,7 +66,7 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "test:integration": "bun test ./tests/integration",
-    "generate-types": "../../../scripts/build/rust/cargo-serial.sh run --bin generate_typescript_types --manifest-path ../../../crates/os/drive/core/Cargo.toml"
+    "generate-types": "../../../scripts/build/rust/cargo-serial.sh run --bin generate_typescript_types --manifest-path ../../../crates/os/kernel/comps/drive/core/Cargo.toml"
   },
   "dependencies": {
     "@aphrody/assets": "workspace:*",

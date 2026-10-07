@@ -120,7 +120,7 @@ Les chemins `src/…`, `scripts/…` et `packages/…` sont relatifs à `vendor/
 - `workspace.dependencies` : une quinzaine de crates externes, plus `lol_html = { path = "vendor/lolhtml" }` (`:349`) et `rust-argon2 = { path = "vendor/rust-argon2" }` (`:322`).
 - Racine du graphe : `bun_runtime` (`src/runtime/Cargo.toml`, `[lib]` seul). Toute crate de sa fermeture de dépendances voit son rlib lié (`scripts/build/rust.ts:26-33`).
 - Toolchain : `nightly-2026-09-15` (`rust-toolchain.toml:2`). Le monorepo est en stable `1.98.1` (`rust-toolchain.toml:10`), `rust-version 1.97`, edition 2024. Les crates Obscura sont en edition 2021.
-- **Contrainte forte** : le LLVM de rustc et celui de clang doivent avoir la même majeure (`scripts/build/CLAUDE.md`, Phase 1 §2 ; commit amont `a4f142914`). bun-forge épingle LLVM 23.1.1 (`config/bun-forge.json`).
+- **Contrainte forte** : le LLVM de rustc et celui de clang doivent avoir la même majeure (`scripts/build/CLAUDE.md`, Phase 1 §2 ; commit amont `a4f142914`). bun-forge épingle LLVM 23.1.1 (`tools/config/bun-forge.json`).
 - `Cargo.lock` du fork : **282 paquets (180 externes)**. Aucun `tokio`, `hyper`, `rustls`, `ring`, `reqwest`, `url`, `html5ever`, `mio` : Bun a sa propre boucle d'évènements (uSockets / libuv), son client HTTP (`src/http`) et BoringSSL.
   Présents : `serde 1.0.228`, `rustix 0.38.44`, `hashbrown 0.15/0.16/0.17`, `selectors 0.33` et `cssparser 0.36` (via `lol_html`), `phf 0.13.1`, `getrandom 0.4.2`, `strum 0.26`.
 
@@ -176,7 +176,7 @@ Autres contraintes :
   Rust est émis en bitcode (`-C linker-plugin-lto`, `rust.ts:508`) dès `release && !asan` (`scripts/build/flags.ts:1504-1506`). Chaque crate forme une seule unité de code (`Cargo.toml:131`).
   **Conséquence** : toute crate ajoutée passe dans l'optimisation LTO du lien final, donc plus de temps de lien et de RAM, et compile ses gros crates sur un seul thread.
 - **Graphe.** Codegen d'environ 20 étapes, puis rustc par crate (pipeline `.rmeta` sous `oven-sh/ninja`), dépendances C/C++ en `direct`, `nested-cmake` ou `prebuilt`, lien clang++/lld, puis contrôles (`scripts/build/CLAUDE.md`, Phase 2).
-- **bun-forge** (`packages/engine/forge/src/{main,plan,run}.ts`, `config/bun-forge.json`) :
+- **bun-forge** (`packages/engine/forge/src/{main,plan,run}.ts`, `tools/config/bun-forge.json`) :
   - dépôt `aphrody-labs/bun`, branche `main`, profil `release`, `lto: true` ;
   - scratch `auto` de **96 G** (loop ext4, tmpfs ou répertoire, `plan.ts:289-344`) ;
   - LLVM 23.1.1, cmake 3.30.5, rustup 1.28.2 ; paquets apt dont `golang`, `nasm`, `perl`, `ruby` ;
@@ -246,7 +246,7 @@ Aucun commit de `main` ne fixe encore de patron de **module intégré natif** (`
   GitHub refuse un renommage vers un nom pris, archivé compris : il faut d'abord renommer ou supprimer l'ancien `yolo`. Après le renommage, GitHub redirige `aphrody-labs/bun`, tant qu'aucun nouveau dépôt ne reprend ce nom.
 - **Binaire `yolo`** : collision avec le CLI Bun `yolo` du monorepo (`packages/engine/yolo/package.json` `bin.yolo`, PLAN §5 « un seul CLI `yolo` »). C'est une décision à prendre : soit le fork devient l'hôte du CLI `yolo`, soit les deux noms sont séparés.
 - **26 fichiers du monorepo** citent `aphrody-labs/bun`, notamment :
-  - `config/vendor.json:8`, `config/bun-forge.json` (`repository`), `config/bun-absorb.json` ;
+  - `tools/config/vendor.json:8`, `tools/config/bun-forge.json` (`repository`), `tools/config/bun-absorb.json` ;
   - `packages/engine/forge/src/{plan,main}.ts`, `packages/engine/yolo/src/{index,package-commands}.ts` ;
   - `scripts/tools/vendor/bun_upstream_{sync,tracker}.ts`, `scripts/audit/workspace/bun-absorb.ts` ;
   - les docs.

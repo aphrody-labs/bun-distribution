@@ -1,6 +1,6 @@
 # CLI Rust canonique
 
-Le catalogue [`config/cli-catalog.json`](../../../config/cli-catalog.json) définit
+Le catalogue [`tools/config/cli-catalog.json`](../../../tools/config/cli-catalog.json) définit
 un seul outil par capacité. Les commandes sont consommées depuis
 `aphrody-shell` et, pour les capacités OS autoritaires, enregistrées par
 `aphrody-kernel`.

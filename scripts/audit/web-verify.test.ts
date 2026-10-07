@@ -47,6 +47,6 @@ describe("config contract check", () => {
   });
 
   test("a missing config is reported", () => {
-    expect(checkConfigFile("/nonexistent-aphrody-root")).toEqual(["config/web.json is missing"]);
+    expect(checkConfigFile("/nonexistent-aphrody-root")).toEqual(["tools/config/web.json is missing"]);
   });
 });

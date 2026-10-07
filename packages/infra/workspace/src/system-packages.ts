@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-/** Host prerequisites from config/system-packages.json: one plan/apply for apt (Linux, WSL) and winget (Windows). */
+/** Host prerequisites from tools/config/system-packages.json: one plan/apply for apt (Linux, WSL) and winget (Windows). */
 import { join, resolve } from "node:path";
 import { infraRoot } from "./runtime.ts";
 
@@ -76,7 +76,7 @@ export async function powershell(runner: Runner = run): Promise<string[] | null>
 }
 
 export async function loadPackageConfig(root: string) {
-  return (await Bun.file(join(root, "config/system-packages.json")).json()) as {
+  return (await Bun.file(join(root, "tools/config/system-packages.json")).json()) as {
     common?: string[];
     windows?: { winget?: WingetPackage[]; installers?: Installer[] };
     [profile: string]: unknown;

@@ -1,9 +1,9 @@
 # Pipeline Google/Gemini Aphrody
 
-> **Historical pipeline manifest.** `config/google-gemini-pipeline.json` still
+> **Historical pipeline manifest.** `tools/config/google-gemini-pipeline.json` still
 > describes the former split repositories and contains retired owner paths.
 > For current source roots, release artifacts and host-local install policy,
-> use [`google-stack-release.json`](../../../config/google-stack-release.json)
+> use [`google-stack-release.json`](../../../tools/config/google-stack-release.json)
 > and [`GOOGLE-STACK-PACKAGING.md`](GOOGLE-STACK-PACKAGING.md).
 
 The current implementation is organized in the monorepo and the sibling
@@ -28,7 +28,7 @@ pwsh -NoProfile -File scripts/audit/verify-google-pipeline.ps1 [-StaticOnly]
 The verifier checks current Rust, Bun, doc-ai and Python owner paths, package
 metadata, source key literals and the shared uv pin. Full mode also runs the
 Rust, Bun, doc-ai and Python gates. The current blocker is a toolchain pin
-mismatch: `config/system-packages.json` requires uv `0.12.21`, while
+mismatch: `tools/config/system-packages.json` requires uv `0.12.21`, while
 `aphrody-py/pyproject.toml` pins `0.12.17`. No full pipeline test run is
 claimed until these manifests are aligned and the verifier completes.
 

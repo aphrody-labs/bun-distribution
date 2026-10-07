@@ -448,7 +448,7 @@ if (import.meta.main) {
     throw new Error("Use the declared aphrody-agent-sync.timer for periodic synchronization");
   const at = process.argv.indexOf("--config");
   const config = (await Bun.file(
-    at < 0 ? "config/host/agent-sync.json" : process.argv[at + 1]!,
+    at < 0 ? "tools/config/host/agent-sync.json" : process.argv[at + 1]!,
   ).json()) as SyncConfig;
   if (
     config.version !== 1 ||

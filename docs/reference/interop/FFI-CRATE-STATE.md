@@ -8,7 +8,7 @@ the historical counts and static inspection claims are unchanged.
 
 ## Summary
 
-- Cargo manifests under `crates/` and `apps/`: 211 found; 187 are workspace members (directory matches a `members` glob of the root `Cargo.toml`); 23 are excluded by the root `exclude` list or live under the excluded `crates/os/drive` tree (`crates/os/drive`, `crates/contracts/schema` and `crates/web/drive-server` (not in repo) are excluded explicitly; `crates/contracts/schema` has no `Cargo.toml`); 1 manifest without `[package]` (`crates/os/drive`).
+- Cargo manifests under `crates/` and `apps/`: 211 found; 187 are workspace members (directory matches a `members` glob of the root `Cargo.toml`); 23 are excluded by the root `exclude` list or live under the excluded `crates/os/kernel/comps/drive` tree (`crates/os/kernel/comps/drive`, `crates/contracts/schema` and `crates/web/drive-server` (not in repo) are excluded explicitly; `crates/contracts/schema` has no `Cargo.toml`); 1 manifest without `[package]` (`crates/os/kernel/comps/drive`).
 - Member crates with at least one `#[test]`/`#[tokio::test]` (static count, tests not run): 171; with none: 16.
 - Member crates linked into the `aphrody-ffi` cdylib according to `Cargo.lock` reachability from `aphrody-ffi`: 148 (15 as direct dependencies). Only 4 library crates plus `aphrody-ffi` itself define C symbols (see the FFI map).
 - Member crates with their own `cdylib` crate-type: 5. Member crates with a binary target: 37.
@@ -89,10 +89,10 @@ Columns: Kind = lib/bin/cdylib targets; FFI = how the crate reaches the single `
 | `crates/compat/oxc-bridge` | `aphrody-oxc-bridge` | lib | aphrody_oxc_* (5; re-exported by aphrody-ffi) | @aphrody/bun/oxc (oxc.ts) | 2 | 0/0 | 0/0 | member(glob) |
 | `crates/compat/toolchains` | `aphrody-toolchains` | lib | linked transitively, no C symbols | - | 7 | 0/0 | 0/0 | member(glob) |
 | `crates/contracts/a2a` | `aphrody-a2a` | lib | linked transitively, no C symbols | - | 90 | 0/0 | 0/0 | member(glob) |
-| `crates/os/a2a-pb` | `aphrody-a2a-pb` | lib | linked transitively, no C symbols | - | 67 | 0/0 | 0/0 | member(glob) |
+| `crates/os/kernel/comps/a2a-pb` | `aphrody-a2a-pb` | lib | linked transitively, no C symbols | - | 67 | 0/0 | 0/0 | member(glob) |
 | `crates/contracts/agent-proto` | `aphrody-agent-proto` | lib | linked transitively, no C symbols | - | 10 | 0/0 | 4/0 | member(glob) |
 | `crates/contracts/app-protocol` | `aphrody-app-protocol` | lib | linked transitively, no C symbols | - | 17 | 0/0 | 1/0 | member(glob) |
-| `crates/os/subsystem` | `aphrody-subsystem` | lib | linked transitively, no C symbols | - | 4 | 0/0 | 0/0 | member(glob) |
+| `crates/os/ostd/subsystem` | `aphrody-subsystem` | lib | linked transitively, no C symbols | - | 4 | 0/0 | 0/0 | member(glob) |
 | `crates/discord/aphrody-discord-compiler` | `aphrody-discord-compiler` | lib | linked transitively, no C symbols | - | 7 | 0/0 | 0/0 | member(glob) |
 | `crates/google/antigravity` | `aphrody-antigravity` | lib | linked transitively, no C symbols | - | 65 | 0/0 | 17/17 | member(glob) |
 | `crates/google/gcs` | `aphrody-gcs` | lib | linked transitively, no C symbols | - | 8 | 0/0 | 0/0 | member(glob) |
@@ -136,57 +136,57 @@ Columns: Kind = lib/bin/cdylib targets; FFI = how the crate reaches the single `
 | `crates/koharu/koharu-torch-sys` | `koharu-torch-sys` | lib | linked transitively, no C symbols | - | 0 | 0/0 | 0/0 | member(glob) |
 | `crates/koharu/koharu-translator` | `koharu-translator` | lib+bin*1 | linked transitively, no C symbols | - | 48 | 0/0 | 0/0 | member(glob) |
 | `crates/native/native` | `aphrody-native` | lib | linked transitively, no C symbols | - | 10 | 0/0 | 0/8 | member(glob) |
-| `crates/os/a2a-client` | `aphrody-a2a-client` | lib+bin*2 | linked transitively, no C symbols | - | 106 | 0/0 | 3/0 | member(glob) |
-| `crates/os/a2a-coord` | `aphrody-a2a-coord` | lib | linked transitively, no C symbols | - | 38 | 0/0 | 0/0 | member(glob) |
-| `crates/os/a2a-grpc` | `aphrody-a2a-grpc` | lib | not linked | - | 29 | 0/0 | 0/0 | member(glob) |
-| `crates/os/a2a-server` | `aphrody-a2a-server` | lib | linked transitively, no C symbols | - | 142 | 0/0 | 0/2 | member(glob) |
+| `crates/os/kernel/comps/a2a-client` | `aphrody-a2a-client` | lib+bin*2 | linked transitively, no C symbols | - | 106 | 0/0 | 3/0 | member(glob) |
+| `crates/os/kernel/comps/a2a-coord` | `aphrody-a2a-coord` | lib | linked transitively, no C symbols | - | 38 | 0/0 | 0/0 | member(glob) |
+| `crates/os/kernel/comps/a2a-grpc` | `aphrody-a2a-grpc` | lib | not linked | - | 29 | 0/0 | 0/0 | member(glob) |
+| `crates/os/kernel/comps/a2a-server` | `aphrody-a2a-server` | lib | linked transitively, no C symbols | - | 142 | 0/0 | 0/2 | member(glob) |
 | `crates/os/aphrody-wsl` | `aphrody-wsl` | lib+bin*1 | not linked | - | 3 | 0/0 | 0/0 | member(glob) |
-| `crates/os/backend` | `aphrody-backend` | lib+bin*1 | linked transitively, no C symbols | - | 0 | 0/0 | 0/0 | member(glob) |
+| `crates/os/ostd/backend` | `aphrody-backend` | lib+bin*1 | linked transitively, no C symbols | - | 0 | 0/0 | 0/0 | member(glob) |
 | `crates/os/base` | `aphrody-base` | lib | linked transitively, no C symbols | - | 0 | 0/0 | 1/7 | member(glob) |
-| `crates/os/capture` | `aphrody-capture` | lib | linked transitively, no C symbols | - | 7 | 0/0 | 0/57 | member(glob) |
+| `crates/os/kernel/libs/capture` | `aphrody-capture` | lib | linked transitively, no C symbols | - | 7 | 0/0 | 0/57 | member(glob) |
 | `crates/os/compat` | `aphrody-compat` | lib | linked transitively, no C symbols | - | 4 | 0/0 | 0/0 | member(glob) |
 | `crates/os/coreutils` | `aphrody-coreutils` | lib | linked transitively, no C symbols | - | 3 | 0/0 | 0/0 | member(glob) |
-| `crates/os/cron` | `aphrody-cron` | lib | not linked | - | 14 | 0/0 | 0/0 | member(glob) |
-| `crates/os/drive/crates/infra/aphrody` | `sd-cli` | bin*1 | not linked | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/core` | `sd-core` | lib+bin*6 | not linked | - | 599 | 8/1 | 0/67 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/core/benchmarks` | `sd-bench` | lib+bin*2 | not linked | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/crates/actors` | `sd-actors` | lib | not linked | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/crates/archive` | `sd-archive` | lib | not linked | - | 3 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/crates/crypto` | `sd-crypto` | lib | not linked | - | 49 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/crates/fda` | `sd-fda` | lib | not linked | - | 1 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/crates/ffmpeg` | `sd-ffmpeg` | lib | not linked | - | 1 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/crates/fs-watcher` | `sd-fs-watcher` | lib | not linked | - | 23 | 0/0 | 0/9 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/crates/images` | `sd-images` | lib | not linked | - | 0 | 0/0 | 0/1 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/crates/job-derive` | `job-derive` | lib+proc-macro | not linked | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/crates/log-analyzer` | `log-analyzer` | lib | not linked | - | 24 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/crates/media-metadata` | `sd-media-metadata` | lib | not linked | - | 2 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/crates/sd-client` | `sd-client` | lib | not linked | - | 1 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/crates/sdk` | `spacedrive-sdk` | lib | 2 no_mangle but not linked into aphrody-ffi | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/crates/sdk-macros` | `spacedrive-sdk-macros` | lib+proc-macro | 3 no_mangle but not linked into aphrody-ffi | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/crates/task-system` | `sd-task-system` | lib | not linked | - | 10 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/crates/task-validator` | `task-validator` | bin*1 | not linked | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/crates/utils` | `sd-utils` | lib | not linked | - | 3 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/patches/ffmpeg-sys-next` | `ffmpeg-sys-next` | lib | not linked | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/patches/whisper-rs-sys` | `whisper-rs-sys` | lib | linked transitively, no C symbols | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/drive) |
-| `crates/os/drive/xtask` | `xtask` | bin*1 | not linked | - | 0 | 0/0 | 0/1 | EXCLUDED (crates/os/drive) |
+| `crates/os/kernel/comps/cron` | `aphrody-cron` | lib | not linked | - | 14 | 0/0 | 0/0 | member(glob) |
+| `crates/os/kernel/comps/drive/crates/infra/aphrody` | `sd-cli` | bin*1 | not linked | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/core` | `sd-core` | lib+bin*6 | not linked | - | 599 | 8/1 | 0/67 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/core/benchmarks` | `sd-bench` | lib+bin*2 | not linked | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/crates/actors` | `sd-actors` | lib | not linked | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/crates/archive` | `sd-archive` | lib | not linked | - | 3 | 0/0 | 0/0 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/crates/crypto` | `sd-crypto` | lib | not linked | - | 49 | 0/0 | 0/0 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/crates/fda` | `sd-fda` | lib | not linked | - | 1 | 0/0 | 0/0 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/crates/ffmpeg` | `sd-ffmpeg` | lib | not linked | - | 1 | 0/0 | 0/0 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/crates/fs-watcher` | `sd-fs-watcher` | lib | not linked | - | 23 | 0/0 | 0/9 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/crates/images` | `sd-images` | lib | not linked | - | 0 | 0/0 | 0/1 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/crates/job-derive` | `job-derive` | lib+proc-macro | not linked | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/crates/log-analyzer` | `log-analyzer` | lib | not linked | - | 24 | 0/0 | 0/0 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/crates/media-metadata` | `sd-media-metadata` | lib | not linked | - | 2 | 0/0 | 0/0 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/crates/sd-client` | `sd-client` | lib | not linked | - | 1 | 0/0 | 0/0 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/crates/sdk` | `spacedrive-sdk` | lib | 2 no_mangle but not linked into aphrody-ffi | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/crates/sdk-macros` | `spacedrive-sdk-macros` | lib+proc-macro | 3 no_mangle but not linked into aphrody-ffi | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/crates/task-system` | `sd-task-system` | lib | not linked | - | 10 | 0/0 | 0/0 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/crates/task-validator` | `task-validator` | bin*1 | not linked | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/crates/utils` | `sd-utils` | lib | not linked | - | 3 | 0/0 | 0/0 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/patches/ffmpeg-sys-next` | `ffmpeg-sys-next` | lib | not linked | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/patches/whisper-rs-sys` | `whisper-rs-sys` | lib | linked transitively, no C symbols | - | 0 | 0/0 | 0/0 | EXCLUDED (crates/os/kernel/comps/drive) |
+| `crates/os/kernel/comps/drive/xtask` | `xtask` | bin*1 | not linked | - | 0 | 0/0 | 0/1 | EXCLUDED (crates/os/kernel/comps/drive) |
 | `crates/os/events` | `aphrody-events` | lib | linked transitively, no C symbols | - | 11 | 0/0 | 0/0 | member(glob) |
 | `crates/os/execpolicy` | `aphrody-execpolicy` | lib | linked transitively, no C symbols | - | 9 | 0/0 | 0/0 | member(glob) |
-| `crates/os/fsindex` | `aphrody-fsindex` | lib | linked transitively, no C symbols | - | 13 | 0/0 | 0/4 | member(glob) |
-| `crates/os/guard` | `aphrody-guard` | lib | linked transitively, no C symbols | - | 13 | 0/0 | 0/0 | member(glob) |
-| `crates/os/jobs` | `aphrody-jobs` | lib | linked transitively, no C symbols | - | 43 | 0/0 | 0/0 | member(glob) |
-| `crates/os/kernel` | `aphrody-kernel` | lib+bin*3 | linked transitively, no C symbols | - | 93 | 0/0 | 0/17 | member(glob) |
-| `crates/os/kernel-client` | `aphrody-kernel-client` | lib | linked transitively, no C symbols | - | 11 | 0/0 | 0/2 | member(glob) |
-| `crates/os/proc` | `aphrody-proc` | lib | linked transitively, no C symbols | - | 12 | 0/0 | 9/7 | member(glob) |
-| `crates/os/re` | `aphrody-re` | lib | linked transitively, no C symbols | - | 112 | 0/0 | 0/0 | member(glob) |
-| `crates/os/sandbox` | `aphrody-sandbox` | lib | not linked | - | 14 | 0/0 | 17/15 | member(glob) |
+| `crates/os/kernel/libs/fsindex` | `aphrody-fsindex` | lib | linked transitively, no C symbols | - | 13 | 0/0 | 0/4 | member(glob) |
+| `crates/os/ostd/guard` | `aphrody-guard` | lib | linked transitively, no C symbols | - | 13 | 0/0 | 0/0 | member(glob) |
+| `crates/os/kernel/comps/jobs` | `aphrody-jobs` | lib | linked transitively, no C symbols | - | 43 | 0/0 | 0/0 | member(glob) |
+| `crates/os/kernel/core` | `aphrody-kernel` | lib+bin*3 | linked transitively, no C symbols | - | 93 | 0/0 | 0/17 | member(glob) |
+| `crates/os/kernel/client` | `aphrody-kernel-client` | lib | linked transitively, no C symbols | - | 11 | 0/0 | 0/2 | member(glob) |
+| `crates/os/ostd/proc` | `aphrody-proc` | lib | linked transitively, no C symbols | - | 12 | 0/0 | 9/7 | member(glob) |
+| `crates/os/kernel/comps/re` | `aphrody-re` | lib | linked transitively, no C symbols | - | 112 | 0/0 | 0/0 | member(glob) |
+| `crates/os/kernel/comps/sandbox` | `aphrody-sandbox` | lib | not linked | - | 14 | 0/0 | 17/15 | member(glob) |
 | `crates/os/search` | `aphrody-search` | lib | not linked | - | 21 | 0/0 | 0/4 | member(glob) |
-| `crates/os/secrets` | `aphrody-secrets` | lib | linked transitively, no C symbols | - | 16 | 0/0 | 0/0 | member(glob) |
+| `crates/os/ostd/secrets` | `aphrody-secrets` | lib | linked transitively, no C symbols | - | 16 | 0/0 | 0/0 | member(glob) |
 | `crates/os/settings` | `aphrody-settings` | lib | not linked | - | 21 | 0/0 | 0/0 | member(glob) |
 | `crates/os/stdio-capture` | `aphrody-stdio-capture` | lib | used by aphrody_run_captured (direct dep) | - | 2 | 0/0 | 5/4 | member(glob) |
 | `crates/os/systemd` | `aphrody-systemd` | lib | linked transitively, no C symbols | - | 6 | 0/0 | 0/0 | member(glob) |
-| `crates/os/task-runner` | `aphrody-task-runner` | lib | not linked | - | 15 | 0/0 | 0/0 | member(glob) |
-| `crates/os/telemetry` | `aphrody-telemetry` | lib | not linked | - | 15 | 0/0 | 0/0 | member(glob) |
-| `crates/os/winclean` | `aphrody-winclean` | lib | linked transitively, no C symbols | - | 46 | 0/0 | 0/156 | member(glob) |
+| `crates/os/kernel/comps/task-runner` | `aphrody-task-runner` | lib | not linked | - | 15 | 0/0 | 0/0 | member(glob) |
+| `crates/os/kernel/comps/telemetry` | `aphrody-telemetry` | lib | not linked | - | 15 | 0/0 | 0/0 | member(glob) |
+| `crates/os/kernel/comps/winclean` | `aphrody-winclean` | lib | linked transitively, no C symbols | - | 46 | 0/0 | 0/156 | member(glob) |
 | `crates/shell/nu` | `aphrody-nu` | lib | linked transitively, no C symbols | - | 14 | 0/0 | 0/0 | member(glob) |
 | `crates/shell/session` | `aphrody-shell-session` | lib | not linked | - | 12 | 0/0 | 0/0 | member(glob) |
 | `crates/shell/shell` | `aphrody-shell` | lib | linked transitively, no C symbols | - | 0 | 0/0 | 0/0 | member(glob) |
@@ -239,5 +239,5 @@ Columns: Kind = lib/bin/cdylib targets; FFI = how the crate reaches the single `
 - Linked = reachable from `aphrody-ffi` in the `Cargo.lock` package graph (all targets and features, so it over-approximates what a default build links). It was read before the in-progress n2b crate merge by another session removed `aphrody-n2b-{ai,github,report,rules,scanners,util}`; the lock may still list them until the lead re-resolves.
 - Bun consumer: only the `@aphrody/bun` modules that bind to the cdylib are listed. Other Bun packages that spawn the `aphrody` binary or mention a crate name in docs/manifests are not FFI consumers and are not listed. A "-" means no FFI consumer was found, not that no consumer exists.
 - Tests, stubs, gates are regex counts over `src/**/*.rs` (and `tests/**/*.rs` for tests); they miss macro-generated tests and `build.rs`.
-- `crates/os/drive/**` is excluded from the workspace and treated as orphaned here; its `no_mangle` symbols (`sdk`, `sdk-macros`) are not part of the Bun FFI.
+- `crates/os/kernel/comps/drive/**` is excluded from the workspace and treated as orphaned here; its `no_mangle` symbols (`sdk`, `sdk-macros`) are not part of the Bun FFI.
 - `crates/compat/n2b` has 19 `no_mangle` occurrences in code-template strings (`rust_cmd.rs`, `*_templates.rs`), not exports; `crates/koharu/koharu/src/mallinfo.rs` exports 1 allocator-statistics symbol and `crates/ui/drive/src/macos.rs` 1 (macOS only); neither is bound from Bun (unverified for the template strings: counted by regex, not read in full).

@@ -19,14 +19,14 @@ async function run(host: string) {
   const bin = join(root, "bin");
   for (const dir of [
     join(root, "scripts/build/rust"),
-    join(root, "config"),
+    join(root, "tools", "config"),
     join(root, "packages/infra/workspace/src"),
     bin,
   ]) {
     mkdirSync(dir, { recursive: true });
   }
   await Bun.write(wrapper, await Bun.file(join(import.meta.dir, "cargo-serial.sh")).text());
-  await Bun.write(join(root, "config/build-factory.json"), "{}");
+  await Bun.write(join(root, "tools/config/build-factory.json"), "{}");
   await Bun.write(factory, 'console.log("factory");\n');
   const cargo = join(bin, "cargo");
   await Bun.write(cargo, '#!/bin/sh\nprintf "fixture-cargo:%s\\n" "$*"\n');

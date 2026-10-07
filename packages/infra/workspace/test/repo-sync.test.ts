@@ -513,8 +513,8 @@ test("native factory worker prepares the exact pin before its declared build and
   const value = await fixture();
   value.repository.id = "yolo";
   value.repository.buildCommand = ["bash", "owned-build.sh"];
-  await mkdir(join(value.root, "config"));
-  await writeFile(join(value.root, "config", "commit-sync.json"), JSON.stringify(value.config));
+  await mkdir(join(value.root, "tools", "config"), { recursive: true });
+  await writeFile(join(value.root, "tools", "config", "commit-sync.json"), JSON.stringify(value.config));
   const state = join(value.root, "state");
   await mkdir(join(state, "builds"), { recursive: true });
   const path = join(state, "builds", "yolo.json");
@@ -593,14 +593,14 @@ test("native factory worker prepares the exact pin before its declared build and
 });
 test("repo-sync status reads live receipts and pending metadata without exposing tokens or changing state", async () => {
   const value = await fixture();
-  await mkdir(join(value.root, "config"));
+  await mkdir(join(value.root, "tools", "config"), { recursive: true });
   const config = {
     ...value.config,
     repositories: ["yolo", "aphrody"].map((id) =>
       Object.assign({}, value.repository, { id, buildCommand: ["fixture"] }),
     ),
   };
-  await writeFile(join(value.root, "config", "commit-sync.json"), JSON.stringify(config));
+  await writeFile(join(value.root, "tools", "config", "commit-sync.json"), JSON.stringify(config));
   const state = join(value.root, "protected-state");
   const absent = await readRepoSyncStatus(value.root, state);
   expect(absent.state).toBe("absent");
@@ -691,8 +691,8 @@ test.skipIf(process.platform === "win32")(
   "SIGTERM ends CLI watch and releases protected lock",
   async () => {
     const value = await fixture();
-    await mkdir(join(value.root, "config"));
-    await writeFile(join(value.root, "config", "commit-sync.json"), JSON.stringify(value.config));
+    await mkdir(join(value.root, "tools", "config"), { recursive: true });
+    await writeFile(join(value.root, "tools", "config", "commit-sync.json"), JSON.stringify(value.config));
     const entry = join(value.root, "watch.ts");
     await writeFile(
       entry,

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Crawl one or more seeds with the native `aphrody-web crawl` and print a summary or the raw
-//! report. Defaults come from config/web.json; flags override them.
+//! report. Defaults come from tools/config/web.json; flags override them.
 //!
 //!   bun scripts/tools/web/web-crawl.ts <seed>... [--max-pages N] [--max-depth N] [--allow-host H]
 //!        [--no-robots] [--sitemaps] [--allow-private-network] [--json] [--out FILE]

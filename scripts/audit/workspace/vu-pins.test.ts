@@ -16,7 +16,7 @@ import {
 const ROOT = resolve(import.meta.dir, "../../..");
 const identity = (await Bun.file(`${ROOT}/docs/plans/vu/scaffold/vu.json`).json()) as Identity;
 const vendor = (await Bun.file(`${ROOT}/docs/plans/vu/scaffold/vendor.json`).json()) as Vendor;
-const upstream = (await Bun.file(`${ROOT}/config/upstream-sources.json`).json()) as UpstreamSources;
+const upstream = (await Bun.file(`${ROOT}/tools/config/upstream-sources.json`).json()) as UpstreamSources;
 
 const clone = <T>(value: T): T => structuredClone(value);
 const failing = (): unknown => {
@@ -58,7 +58,7 @@ describe("vu-pins", () => {
     const missing = clone(upstream);
     missing.reference = missing.reference!.filter((entry) => entry.id !== "vu-pyo3");
     expect(checkPins(identity, vendor, missing)).toContain(
-      "config/upstream-sources.json: missing reference vu-pyo3",
+      "tools/config/upstream-sources.json: missing reference vu-pyo3",
     );
   });
 
@@ -67,7 +67,7 @@ describe("vu-pins", () => {
     renamed.name = "xy";
     const problems = checkPins(renamed, vendor, upstream);
     expect(problems.some((p) => p.includes("must be xy-pin-0.12.23"))).toBe(true);
-    expect(problems).toContain("config/upstream-sources.json: missing reference xy-uv");
+    expect(problems).toContain("tools/config/upstream-sources.json: missing reference xy-uv");
     expect(checkPins({ ...identity, name: "Not A Name" }, vendor, upstream)[0]).toContain(
       "invalid runtime name",
     );
@@ -77,7 +77,7 @@ describe("vu-pins", () => {
     const orphan = clone(upstream);
     orphan.reference!.push({ id: "vu-ty", tier: "build" });
     expect(checkPins(identity, vendor, orphan)).toContain(
-      "config/upstream-sources.json: vu-ty has no pin in vendor.json",
+      "tools/config/upstream-sources.json: vu-ty has no pin in vendor.json",
     );
   });
 

@@ -2,7 +2,7 @@
 
 Cette page décrit l’ancien pipeline à dépôts séparés. Les owners et commandes
 ont depuis migré vers les workspaces de ce monorepo ; le catalogue root
-`config/pipeline.json` n’est pas une preuve que les anciens workspaces ou leurs
+`tools/config/pipeline.json` n’est pas une preuve que les anciens workspaces ou leurs
 scripts existent encore. Vérifier chaque package dans le checkout courant et
 consulter `docs/plans/infra/PLAN.md` pour l’état actuel. L’historique est gardé
 comme contexte, pas comme procédure de release active.

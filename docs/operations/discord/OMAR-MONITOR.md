@@ -3,14 +3,14 @@
 
 Le salon demandé est [start-here](https://discord.com/channels/1554189180030947338/1557354118710829117)
 de la guilde Aphrody. La déclaration
-[`discord-omar-monitor.json`](../../../config/host/discord-omar-monitor.json)
+[`discord-omar-monitor.json`](../../../tools/config/host/discord-omar-monitor.json)
 reprend les deux identifiants d’Omar du contrôle d’accès existant. Les bots,
 webhooks, autres auteurs, autres salons et autres guildes ne créent aucun travail.
 Le contenu du salon reste dans le store privé du VPS.
 
 ## Fonctionnement
 
-[`aphrody-discord-omar-monitor.service`](../../../config/host/systemd/aphrody/aphrody-discord-omar-monitor.service)
+[`aphrody-discord-omar-monitor.service`](../../../tools/config/host/systemd/aphrody/aphrody-discord-omar-monitor.service)
 est activé au démarrage du VPS. Le Gateway Discord fournit les nouveaux messages;
 le client existant de Discord kit possède les heartbeats, reconnexions et reprises.
 Une réconciliation REST toutes les trente secondes récupère les écarts et

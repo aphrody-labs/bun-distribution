@@ -3,7 +3,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { join, dirname, resolve, relative } from "node:path";
 
 /** Default location of the declared third-party documentation trees. */
-export const IMPORTED_UPSTREAM_DOCS_CONFIG = "config/docs/imported-upstream-docs.json";
+export const IMPORTED_UPSTREAM_DOCS_CONFIG = "tools/config/docs/imported-upstream-docs.json";
 
 interface ImportedTree {
   id: string;
@@ -36,7 +36,7 @@ export function importedUpstreamMatcher(
 }
 
 /** Default location of documents whose backtick-path check is explicitly deferred. */
-export const DOC_PATH_CHECK_DEFERRED_CONFIG = "config/docs/doc-path-check-deferred.json";
+export const DOC_PATH_CHECK_DEFERRED_CONFIG = "tools/config/docs/doc-path-check-deferred.json";
 
 function deferredPathCheckFiles(root: string): Set<string> {
   const file = resolve(root, DOC_PATH_CHECK_DEFERRED_CONFIG);
@@ -55,6 +55,9 @@ const HISTORICAL_PATH_TREES = [
 export const EXTERNAL_PATHS_MARKER = "<!-- docs-links: external-paths";
 /** Inline marker placed right after a code span whose path is intentionally absent from this checkout. */
 const ABSENT_PATH_SUFFIX = /^\s*\(not in repo\)/;
+
+// MCP method names can share a root segment with tools/, but name protocol operations.
+const MCP_TOOL_METHODS = new Set(["tools/list", "tools/call"]);
 
 const BACKTICK_PATH = /^[A-Za-z0-9_.@-][A-Za-z0-9_.@+/-]*$/;
 
@@ -76,7 +79,7 @@ export function backtickRepositoryPaths(content: string, rootEntries: Set<string
     value = value.replace(/:\d+(?:[-:]\d+)?$/, "").replace(/#.*$/, "");
     if (value.startsWith("./")) value = value.slice(2);
     if (!BACKTICK_PATH.test(value) || !value.includes("/") || value.includes("//")) continue;
-    if (value.includes("...")) continue;
+    if (value.includes("...") || MCP_TOOL_METHODS.has(value)) continue;
     const first = value.split("/", 1)[0]!;
     if (!rootEntries.has(first)) continue;
     paths.push(value.replace(/\/+$/, ""));

@@ -25,7 +25,7 @@ for await (const rel of glob.scan({ cwd: ROOT })) {
   byLicense.set(license, list);
 }
 
-const upstream = await Bun.file(`${ROOT}/config/upstream-sources.json`).json();
+const upstream = await Bun.file(`${ROOT}/tools/config/upstream-sources.json`).json();
 const integrated: any[] = Array.isArray(upstream.integrated) ? upstream.integrated : [];
 const reference: any[] = Array.isArray(upstream.reference)
   ? upstream.reference
@@ -76,7 +76,7 @@ for (const [spdx, list] of nonApache.toSorted((a, b) => a[0].localeCompare(b[0])
   );
 }
 lines.push("");
-lines.push("`aphrody-drive` and the `crates/os/drive` tree derive from Spacedrive");
+lines.push("`aphrody-drive` and the `crates/os/kernel/comps/drive` tree derive from Spacedrive");
 lines.push("(FSL-1.1-ALv2): source-available, converting to Apache-2.0 two years after");
 lines.push("each release. Embedding it in the unified binary is permitted with its");
 lines.push("notice preserved; it must not be used to build a competing product.");
@@ -85,7 +85,7 @@ lines.push("");
 lines.push("## Integrated third-party forks");
 lines.push("");
 lines.push("Vendored under their capability owner with provenance in");
-lines.push("`config/upstream-sources.json`; local patches preserved.");
+lines.push("`tools/config/upstream-sources.json`; local patches preserved.");
 lines.push("");
 lines.push("| Component | Upstream | Version | License | Path |");
 lines.push("| --- | --- | --- | --- | --- |");

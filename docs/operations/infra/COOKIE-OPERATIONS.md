@@ -14,7 +14,7 @@ La racine est partagée par `APHRODY_HOME`; `BXC_COOKIES_DIR` pointe vers son
 sous-répertoire `cookies`. Aphrody Python,
 Aphrody Web/BXC, Aphrody OS et les agents maison consomment cette variable et
 ne connaissent pas de valeur de cookie. Le
-référentiel ne contient que `config/cookie-layout.env.example` et le script de
+référentiel ne contient que `tools/config/cookie-layout.env.example` et le script de
 préparation des permissions.
 
 Après toute exposition d'un cookie, la session doit être révoquée depuis le

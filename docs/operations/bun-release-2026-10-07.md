@@ -5,7 +5,7 @@
 
 74 versions qualifiées sont publiées et vérifiées via les métadonnées publiques npm et leur intégrité SHA-512. Certaines versions ont initialement été reçues en staging : HTTP 404 à la lecture et HTTP 409 à une tentative de republication. La vérification a attendu leur disponibilité effective ; aucune version n’a été écrasée. Les versions alpha/canary conservent le tag `next`.
 
-Le [catalogue](../../config/npm-packages.json) conserve versions exactes, SHA-256/SHA-512 et dépendances de production. Le [guide](bun-packages.md) fournit la commande d’installation. Un projet vierge a installé les 74 paquets depuis npm ; les imports testés incluent fuzzy, HTTP, QR, core, runtime SDK, Google, scaffold, React, API/dialog Tauri, Canvas et RAG.
+Le [catalogue](../../tools/config/npm-packages.json) conserve versions exactes, SHA-256/SHA-512 et dépendances de production. Le [guide](bun-packages.md) fournit la commande d’installation. Un projet vierge a installé les 74 paquets depuis npm ; les imports testés incluent fuzzy, HTTP, QR, core, runtime SDK, Google, scaffold, React, API/dialog Tauri, Canvas et RAG.
 
 ## Validation
 

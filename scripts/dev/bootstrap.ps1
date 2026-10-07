@@ -30,7 +30,7 @@ foreach ($path in @("$env:USERPROFILE\.cargo\bin", "$env:USERPROFILE\.bun\bin", 
   if (Test-Path $path) { $env:PATH = "$path;$env:PATH" }
 }
 Require-Command git; Require-Command rustup; Require-Command bun; Require-Command uv
-$packagePins = Get-Content (Join-Path $root 'config/system-packages.json') -Raw | ConvertFrom-Json
+$packagePins = Get-Content (Join-Path $root 'tools/config/system-packages.json') -Raw | ConvertFrom-Json
 $bunPin = $packagePins.toolchains.bun.version
 if ((bun --version).Trim() -ne $bunPin) {
   Invoke-Expression "& {`$(Invoke-RestMethod 'https://bun.com/install.ps1')} -Version $bunPin"

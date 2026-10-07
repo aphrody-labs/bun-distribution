@@ -1,7 +1,7 @@
-//! Cross-catalog invariants between `config/service-catalog.json`,
-//! yolo `config/host/nginx/routes.json`, `config/local-ai.json`, `config/pipeline.json`,
-//! the topology port policy of `config/production-topology.json` and the
-//! repository registry of `config/stack-training.json`.
+//! Cross-catalog invariants between `tools/config/service-catalog.json`,
+//! yolo `tools/config/host/nginx/routes.json`, `tools/config/local-ai.json`, `tools/config/pipeline.json`,
+//! the topology port policy of `tools/config/production-topology.json` and the
+//! repository registry of `tools/config/stack-training.json`.
 
 use crate::catalog::ServiceCatalog;
 use crate::local_ai::{LocalAiContract, LocalAiEndpoint, LocalAiEnv, LocalAiTarget, load_local_ai};
@@ -18,7 +18,7 @@ pub struct Report {
     pub warnings: Vec<String>,
     pub services: usize,
     pub routes: usize,
-    /// Canonical env names declared by `config/local-ai.json`.
+    /// Canonical env names declared by `tools/config/local-ai.json`.
     pub local_ai_env: usize,
 }
 
@@ -36,19 +36,19 @@ fn load(root: &Path, relative: &str) -> Result<Value> {
     serde_json::from_str(&text).with_context(|| format!("JSON invalide: {}", path.display()))
 }
 
-/// Host config (systemd units, nginx sites) lives in yolo: `$YOLO_ROOT/config/host`,
+/// Host config (systemd units, nginx sites) lives in yolo: `$YOLO_ROOT/tools/config/host`,
 /// default `$HOME/aphrody` (`%USERPROFILE%\aphrody` on Windows).
 pub fn host_systemd_root() -> PathBuf {
     host_config_root().join("systemd")
 }
 
-/// `$YOLO_ROOT/config/host` (default `$HOME/aphrody`): systemd units, nginx sites and routes.
+/// `$YOLO_ROOT/tools/config/host` (default `$HOME/aphrody`): systemd units, nginx sites and routes.
 pub fn host_config_root() -> PathBuf {
     let yolo = std::env::var_os("YOLO_ROOT").map(PathBuf::from).unwrap_or_else(|| {
         let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"));
         PathBuf::from(home.unwrap_or_default()).join("aphrody")
     });
-    yolo.join("config/host")
+    yolo.join("tools/config/host")
 }
 
 fn unit_template_exists(systemd_root: &Path, unit: &str) -> bool {
@@ -74,7 +74,7 @@ pub fn check_unit_templates(systemd_root: &Path, catalog: &ServiceCatalog) -> Ve
         })
         .map(|service| {
             format!(
-                "{}: unité {} absente de yolo config/host/systemd/",
+                "{}: unité {} absente de yolo tools/config/host/systemd/",
                 service.id,
                 service.unit.as_deref().unwrap_or_default()
             )
@@ -83,8 +83,8 @@ pub fn check_unit_templates(systemd_root: &Path, catalog: &ServiceCatalog) -> Ve
 }
 
 pub fn run(root: &Path) -> Result<Report> {
-    let catalog = load(root, "config/service-catalog.json")?;
-    let topology = load(root, "config/production-topology.json")?;
+    let catalog = load(root, "tools/config/service-catalog.json")?;
+    let topology = load(root, "tools/config/production-topology.json")?;
     let contract = load_local_ai(root)?;
     let pipeline = load_pipeline_config(root)?;
     let mut report = check(&catalog, &load(&host_config_root(), "nginx/routes.json")?);
@@ -92,7 +92,7 @@ pub fn run(root: &Path) -> Result<Report> {
     report.merge(check_local_ai(&catalog, &topology, &contract));
     report.errors.extend(check_pipeline(&pipeline));
     report.merge(check_repositories(
-        &load(root, "config/stack-training.json")?,
+        &load(root, "tools/config/stack-training.json")?,
         &catalog,
         &contract,
         &pipeline,
@@ -138,7 +138,7 @@ impl<'a> RepositoryRegistry<'a> {
                 successors.join(", ")
             ),
             None => format!(
-                "{context}: unknown repository {repo} (not in config/stack-training.json repositories)"
+                "{context}: unknown repository {repo} (not in tools/config/stack-training.json repositories)"
             ),
         })
     }
@@ -371,7 +371,7 @@ pub fn check_topology_ports(catalog: &Value, topology: &Value) -> Report {
             report.errors.push(format!("{id}: port {port} is a public topology port"));
         } else if !hosts.iter().any(|(internal, _)| internal.contains(&port)) {
             report.errors.push(format!(
-                "{id}: port {port} is not internalOnly in config/production-topology.json"
+                "{id}: port {port} is not internalOnly in tools/config/production-topology.json"
             ));
         }
     }
@@ -678,7 +678,7 @@ fn check_local_ai_endpoint(
                 Some(_) => {}
                 None if contract.managed_services.contains_key(service) => {}
                 None => errors.push(format!(
-                    "local-ai: {id}: unknown service {service} (not in config/service-catalog.json nor managedServices)"
+                    "local-ai: {id}: unknown service {service} (not in tools/config/service-catalog.json nor managedServices)"
                 )),
             },
         }
@@ -815,7 +815,7 @@ fn check_static_target(
         };
         let Some(entry) = services.get(binding.service.as_str()) else {
             errors.push(format!(
-                "{label}: service {} is not in config/service-catalog.json",
+                "{label}: service {} is not in tools/config/service-catalog.json",
                 binding.service
             ));
             continue;
@@ -912,7 +912,7 @@ fn check_static_target(
     }
 }
 
-/// `config/local-ai.json` against the service catalog and the topology:
+/// `tools/config/local-ai.json` against the service catalog and the topology:
 /// services exist and declare the capability they back, static ports are
 /// internal-only, canonical names are unique, aliases unambiguous, indexes
 /// pinned to their embedding space and consumers only read known names.
@@ -974,7 +974,7 @@ pub fn check_local_ai(catalog: &Value, topology: &Value, contract: &LocalAiContr
             )),
             Some(_) => {},
             None => errors.push(format!(
-                "local-ai: index {id}: service {} is not in config/service-catalog.json",
+                "local-ai: index {id}: service {} is not in tools/config/service-catalog.json",
                 index.service
             )),
         }

@@ -56,7 +56,7 @@ MCP (`crates/ai/mcp`):
 
 FFI (`crates/interop/ffi/src/web`, `no_mangle` counts per file): cookies 1, dom 13, embed 4, extract 9, index 36, jobs 5, media 4, mod 46, native_http 5, net 15, net_aliases 30, text 6 (total about 174). Grep pattern also matches `extern "C"`, so counts are upper bounds.
 
-Bun APIs: `@aphrody/agent-browser` exports `./client ./types ./cdp ./config ./engine ./service ./test-preload ./tauri` (`package.json`); `config/web.json:4` names owner as `crates/web (aphrody-web-engine)` and agent-browser.
+Bun APIs: `@aphrody/agent-browser` exports `./client ./types ./cdp ./config ./engine ./service ./test-preload ./tauri` (`package.json`); `tools/config/web.json:4` names owner as `crates/web (aphrody-web-engine)` and agent-browser.
 
 ## 3. Duplication
 
@@ -66,7 +66,7 @@ Bun APIs: `@aphrody/agent-browser` exports `./client ./types ./cdp ./config ./en
 - Cookies: obscura-cdp (`cookie_params.rs`, domains/network/storage), obscura-net `CookieJar`, obscura-mcp get/set/clear, `web-chromium`, `x/src/session.rs`, FFI `web/cookies.rs`, web-index sqlite table `cookie_jars`. Six implementations.
 - Fetch clients: reqwest in obscura-js, obscura-net, web-bridge, web-detect, web-frames, x (workspace dep); wreq (stealth) only in obscura-net, pinned `=6.0.0-rc.31` and `wreq-util =3.0.0-rc.14` (`obscura-net/Cargo.toml:37-57`). The 8 `wreq` hits above are in obscura-net/obscura-js only. Two TLS stacks (reqwest rustls and wreq/boring).
 - CDP clients: server in obscura-cdp; clients in `packages/web/agent-browser/src/cdp.ts` and `packages/web/aphrody-web-test/src/cdp.ts` (two TS clients), plus web-chromium.
-- Crawl frontiers: `web-crawl` runner/frontier, `web-engine/src/crawl.rs`, `crates/os/task-runner`, `native_crawl_tools.rs`, FFI dom.rs; Bun `shenron:packages/pipeline/scripts/aphrody-web-corpus-crawl.ts`. Runtime store `frontier.sqlite` exists.
+- Crawl frontiers: `web-crawl` runner/frontier, `web-engine/src/crawl.rs`, `crates/os/kernel/comps/task-runner`, `native_crawl_tools.rs`, FFI dom.rs; Bun `shenron:packages/pipeline/scripts/aphrody-web-corpus-crawl.ts`. Runtime store `frontier.sqlite` exists.
 - Lightpanda/obscura/aphrody-web: three browser engines with no shared trait found.
 
 ## 4. Runtime state
@@ -87,7 +87,7 @@ Security:
 - CDP server: `control_refusal` checks in `obscura-cdp/src/server.rs` (~2061) for host/origin; default bind appears to be 127.0.0.1:9222 in tests. Auth for non-local bind unverified.
 - Cookies: `cookie_jars` table in index.sqlite and Gemini cookie file path (`web.rs:1095`) store session credentials; file permissions of sqlite files are 0755 (`ls -la`), executable and world-readable. Confirm 0600.
 - `APHRODY_WEB_BIN` is read from env (web-bridge resolve.rs/error.rs, agent-browser config.ts); a poisoned env can redirect execution.
-- Secrets in config: not scanned (unverified); `config/web.json` not read.
+- Secrets in config: not scanned (unverified); `tools/config/web.json` not read.
 Licences: obscura* Apache-2.0 manifests; taffy MIT with local patches (`docs/reference/web/VENDOR.md`). Upstream licences of wreq, obscura upstream not verified. `sd-server` (drive-server) is Spacedrive-derived (AGPL upstream; unverified), excluded from the workspace.
 Stale docs: `docs/reference/web/VENDOR.md` still points at `crates/aphrody-obscura/vendor/taffy` (not in repo) and `crates/aphrody-obscura/crates/obscura-render` (not in repo), and "latest published taffy 0.12.2" (dated 2026-09-25); current path is `crates/web/taffy` (not in repo). Also `docs/reference/web/_source` (not in repo), `apps`, `chromium` subdirs not reviewed.
 Dead code:

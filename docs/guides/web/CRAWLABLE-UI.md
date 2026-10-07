@@ -21,7 +21,7 @@ bun test scripts/audit/web-crawlability.test.ts           # pure logic, no netwo
 
 Exit code 0: within the baseline. 1: regression. 2: the audit could not run (for example a
 binary without `crawl`). The JSON report (`aphrody-web.crawlability/1`) goes to
-`storage.crawlabilityReport` of `config/web.json` (`~/.aphrody/web/reports/crawlability.json`);
+`storage.crawlabilityReport` of `tools/config/web.json` (`~/.aphrody/web/reports/crawlability.json`);
 the repository is written to only with an explicit `--out`.
 
 ## What it does
@@ -57,7 +57,7 @@ above `min.textCoverage`.
 
 ## Thresholds
 
-`config/web-crawlability.baseline.json` is a ratchet written by `--update-baseline` from the
+`tools/config/web-crawlability.baseline.json` is a ratchet written by `--update-baseline` from the
 measured state: gap maxima are the current values (all 0), hook and word minima carry 10 to 20 %
 slack. Review the diff of this file like code; tighten, never loosen without a reason.
 

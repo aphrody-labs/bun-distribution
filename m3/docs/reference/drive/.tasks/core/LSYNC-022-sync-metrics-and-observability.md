@@ -516,8 +516,8 @@ async fn test_sync_metrics_tracking() {
 
 ## References
 
-- [Indexer Metrics](https://github.com/aphrody-labs/aphrody/blob/main/crates/os/drive/core/src/ops/indexing/metrics.rs) - Similar pattern
-- [Watcher Metrics](https://github.com/aphrody-labs/aphrody/blob/main/crates/os/drive/core/src/service/watcher_old/metrics.rs) - Atomic counter examples
+- [Indexer Metrics](https://github.com/aphrody-labs/aphrody/blob/main/crates/os/kernel/comps/drive/core/src/ops/indexing/metrics.rs) - Similar pattern
+- [Watcher Metrics](https://github.com/aphrody-labs/aphrody/blob/main/crates/os/kernel/comps/drive/core/src/service/watcher_old/metrics.rs) - Atomic counter examples
 - [LSYNC-010](./LSYNC-010-sync-service.md) - Sync service architecture
 - [LSYNC-021](./LSYNC-021-unified-sync-config.md) - Configuration system
 

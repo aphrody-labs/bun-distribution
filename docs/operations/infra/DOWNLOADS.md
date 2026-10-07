@@ -44,7 +44,7 @@ whose layout is `bin/`, `artifact/` (verified runtime), `packages/engine/runtime
 
 ## Components
 
-Declared in `config/downloads.json`.
+Declared in `tools/config/downloads.json`.
 
 | Component | Source | Platforms |
 | --- | --- | --- |
@@ -74,16 +74,16 @@ bun run downloads:publish host-plan | host-apply --apply   # unit, vhost, certif
 ```
 
 `release` refuses to publish when a staged archive or the factory binary contains a denied file name (`.env`, keys,
-databases, model weights, cookies) or a token-shaped string (patterns in `config/downloads.json`). The release tree
+databases, model weights, cookies) or a token-shaped string (patterns in `tools/config/downloads.json`). The release tree
 is `/srv/aphrody-downloads/releases/<UTC>-<commit12>` on the vps; `current` is flipped atomically and the last five
 releases are kept. Run it from a pushed, building revision; never Cargo in WSL.
 
 ## Host (vps, through `aphrody infra ssh`)
 
-- `aphrody-downloads.service` (`config/host/systemd/aphrody/aphrody-downloads.service`), Bun on `127.0.0.1:8797`,
-  enabled; catalog entry `aphrody-downloads` in `config/service-catalog.json`, route in
-  `config/host/nginx/routes.json`, port in `config/production-topology.json`.
-- nginx vhost `config/host/nginx/aphrody/downloads.aphrody.com.conf`: nginx sends `/files/` itself (sendfile, ranges),
+- `aphrody-downloads.service` (`tools/config/host/systemd/aphrody/aphrody-downloads.service`), Bun on `127.0.0.1:8797`,
+  enabled; catalog entry `aphrody-downloads` in `tools/config/service-catalog.json`, route in
+  `tools/config/host/nginx/routes.json`, port in `tools/config/production-topology.json`.
+- nginx vhost `tools/config/host/nginx/aphrody/downloads.aphrody.com.conf`: nginx sends `/files/` itself (sendfile, ranges),
   proxies the rest. Certificate `downloads.aphrody.com` (HTTP-01, names `downloads.aphrody.com`, `aphrody.com`,
   `www.aphrody.com`) issued by `scripts/tools/infra/issue-downloads-certificate.sh`; renewal uses the existing
   certbot timer and the shared challenge webroot. The leftover `aphrody-acme-temp.conf` (404 on the apex) was retired
@@ -93,7 +93,7 @@ releases are kept. Run it from a pushed, building revision; never Cargo in WSL.
 ## Windows cross-build
 
 The factory host has `clang-cl`, `lld` and the `x86_64-pc-windows-msvc` Rust target. 2026-10-06: `cargo-xwin` 0.23.1 was
-installed there with `cargo binstall` (declared `windowsBuild` method of `config/host/toolchain.json`); the Windows
+installed there with `cargo binstall` (declared `windowsBuild` method of `tools/config/host/toolchain.json`); the Windows
 SDK/CRT splat is downloaded by `cargo xwin` on first use into `~/.cache/cargo-xwin` (copying the 1.1 GiB local splat
 over the current uplink was not practical).
 

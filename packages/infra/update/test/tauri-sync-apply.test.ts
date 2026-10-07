@@ -36,7 +36,7 @@ async function fixture(gate: string[]) {
   await put(root, "app/tauri.conf.json", `{\n  "$schema": "${schemaUrl("3.0.0-alpha.3")}"\n}\n`);
   await put(
     root,
-    "config/tauri-apps.json",
+    "tools/config/tauri-apps.json",
     JSON.stringify({
       schemaVersion: 1,
       projects: [{ id: "app", kind: "app", path: "app", confs: ["tauri.conf.json"] }],
@@ -52,7 +52,7 @@ async function fixture(gate: string[]) {
     gate: { bun: gate },
     patches: [],
   });
-  await put(root, "config/tauri-upstream.json", configText);
+  await put(root, "tools/config/tauri-upstream.json", configText);
   return { root, config: parseConfig(configText) };
 }
 

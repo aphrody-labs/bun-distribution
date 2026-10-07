@@ -163,11 +163,11 @@ def main():
     nginx = release / "nginx"
     nginx.mkdir()
     owner = pathlib.Path(__file__).resolve().parents[2]
-    for source in (owner / "config/host/nginx/shenron").glob("*.conf"):
+    for source in (owner / "tools/config/host/nginx/shenron").glob("*.conf"):
         shutil.copy2(source, nginx / source.name)
     public = release / "public"
     public.mkdir()
-    for source in (owner / "config/host/nginx/shenron/errorpages/dragonballfr").glob(
+    for source in (owner / "tools/config/host/nginx/shenron/errorpages/dragonballfr").glob(
         "*.html"
     ):
         shutil.copy2(source, public / source.name)

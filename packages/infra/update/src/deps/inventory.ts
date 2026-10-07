@@ -442,7 +442,7 @@ export async function inventory(
 }
 
 export function summarise(inv: Inventory, root: string): string {
-  const holdFile = join(root, "config/deps/advisory-holds.json");
+  const holdFile = join(root, "tools/config/deps/advisory-holds.json");
   const holds: { ecosystem: string; name: string; reason: string }[] = existsSync(holdFile)
     ? (JSON.parse(readFileSync(holdFile, "utf8")).holds ?? [])
     : [];
@@ -474,7 +474,7 @@ export function summarise(inv: Inventory, root: string): string {
     const heldRows = vuln.filter((r) => held(r));
     if (heldRows.length)
       lines.push(
-        "Held advisories (reason in `config/deps/advisory-holds.json`):",
+        "Held advisories (reason in `tools/config/deps/advisory-holds.json`):",
         ...heldRows.slice(0, 60).map((r) => `${fmt(r)} - ${held(r)!.reason}`),
         "",
       );

@@ -342,7 +342,7 @@ pub struct GitIngestRequest {
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct UpstreamListRequest {
     #[schemars(
-        description = "Repository root holding config/upstream-sources.json (default: APHRODY_ROOT, else the current directory)."
+        description = "Repository root holding tools/config/upstream-sources.json (default: APHRODY_ROOT, else the current directory)."
     )]
     pub repo_path: Option<String>,
 }
@@ -362,7 +362,7 @@ pub struct UpstreamRequest {
     )]
     pub query: Option<String>,
     #[schemars(
-        description = "Repository root holding config/upstream-sources.json (default: APHRODY_ROOT, else the current directory)."
+        description = "Repository root holding tools/config/upstream-sources.json (default: APHRODY_ROOT, else the current directory)."
     )]
     pub repo_path: Option<String>,
 }
@@ -2332,7 +2332,7 @@ impl GoogleMcpServer {
     // -----------------------------------------------------------------------
     // upstream_* — live, read-only access to the upstream catalogue (no clone).
     // -----------------------------------------------------------------------
-    #[tool(description = "List the upstream catalogue (config/upstream-sources.json): the few \
+    #[tool(description = "List the upstream catalogue (tools/config/upstream-sources.json): the few \
                           vital checkouts and the reference upstreams that are never cloned \
                           (codex, ollama, mistral.rs, vllm, WSL, ...), with tier, purpose and consumers.")]
     async fn upstream_list(
@@ -3103,7 +3103,7 @@ fn init_adaptive_env(env_file: Option<&std::path::Path>) -> Result<()> {
     // third, unrelated literal port next to `http_rest.rs`'s own (now
     // removed) `127.0.0.1:8080` default, and it never matched the vps
     // deployment's actual embed service (`:8794`, per
-    // `config/local-ai.json`). `EMBED_URL` is a legacy alias of
+    // `tools/config/local-ai.json`). `EMBED_URL` is a legacy alias of
     // the canonical `APHRODY_AI_EMBED_BASE_URL`
     // (`aphrody_config::ai_env::EMBED_BASE_URL`); every reader now resolves it
     // through that one contract and reports "not configured" when nothing is

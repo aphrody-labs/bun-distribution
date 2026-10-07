@@ -64,18 +64,18 @@ The Python product code stays in `py/` (a thin Python layer over the Rust runtim
 
 | Bun / Yolo | Python / `vu` |
 | --- | --- |
-| Fork aphrody-labs/bun, branch `main` = upstream + patches, pin in config/vendor.json | Forks aphrody-labs/uv, ruff, pyo3, one branch per release `vu-pin-<version>` at the release commit, pins in vendor.json |
+| Fork aphrody-labs/bun, branch `main` = upstream + patches, pin in tools/config/vendor.json | Forks aphrody-labs/uv, ruff, pyo3, one branch per release `vu-pin-<version>` at the release commit, pins in vendor.json |
 | Planned repository `yolo` holding vendor/bun, built on the VPS | Private repository aphrody-labs/vu (created 2026-10-05) holding vendor/{uv,ruff,pyo3}, built on the VPS |
-| bun-forge, `yolo forge`, config/bun-forge.json, receipts `aphrody.bun-forge/1` | Receipts `aphrody.vu-forge/1` written by the build scripts of the vu repository, driven through `vps-cargo --repo vu` (no second forge, no `yolo forge` generalisation: D13) |
+| bun-forge, `yolo forge`, tools/config/bun-forge.json, receipts `aphrody.bun-forge/1` | Receipts `aphrody.vu-forge/1` written by the build scripts of the vu repository, driven through `vps-cargo --repo vu` (no second forge, no `yolo forge` generalisation: D13) |
 | `scripts/tools/vendor/bun_upstream_sync.ts`, merge of upstream/main, never forced | Pins move by release tag (a new branch `vu-pin-<version>`), never by merge of main |
-| Provenance in config/upstream-sources.json | Entries vu-uv, vu-ruff, vu-pyo3, vu-python-build-standalone (added, section 4.2) |
+| Provenance in tools/config/upstream-sources.json | Entries vu-uv, vu-ruff, vu-pyo3, vu-python-build-standalone (added, section 4.2) |
 | Yolo runtime SDK: artifact directory with manifest.json, current/previous links, verified before load | `vu` runtime artifact with the same layout and verification (section 3.6) |
 | `yolo import` and vendor.toml for the Tauri forks | Not needed: no crate is copied or renamed (section 4.4) |
 
 ### 3.2 Repositories
 
 - Aphrody monorepo (this repository): products, `py/`, the SDK binding `crates/ai/rag-python`, the pins and provenance
-  (config/upstream-sources.json, the mirror in [scaffold/](scaffold/README.md)), `yolo py`. It never builds uv, ruff or
+  (tools/config/upstream-sources.json, the mirror in [scaffold/](scaffold/README.md)), `yolo py`. It never builds uv, ruff or
   CPython.
 - Private repository `aphrody-labs/vu` (created 2026-10-05): the workspace that builds, links and packages the runtime,
   its build scripts and receipts.
@@ -167,9 +167,9 @@ tokio-tar, rs-async-zip, astral-tl and the reqwest forks (all published on crate
 
 ### 4.2 Pins and provenance
 
-[scaffold/vendor.json](scaffold/vendor.json) is written like config/vendor.json (name, path, url, upstream, ref) and adds the
+[scaffold/vendor.json](scaffold/vendor.json) is written like tools/config/vendor.json (name, path, url, upstream, ref) and adds the
 tag, the fork branch, the crates.io evidence, the workspace facts and the release assets with sha256; the same file is
-the build input of the vu repository. config/upstream-sources.json carries the same facts as tier `build` references with
+the build input of the vu repository. tools/config/upstream-sources.json carries the same facts as tier `build` references with
 `forkUrl`, `forkRef` and `forkCommit` (ids `vu-uv`, `vu-ruff`, `vu-pyo3`, `vu-python-build-standalone`).
 The gate `bun scripts/audit/workspace/vu-pins.ts` (tests: vu-pins.test.ts) checks both files against each other and the
 identity; `--online` also reads the fork branches and the upstream tags through `aphrody git api`; `--vu <checkout>`
@@ -207,7 +207,7 @@ that a changed `name` makes the stale branch names and ids fail.
 - Environment: prefix VU_ (from the identity): `VU_HOME` (artifact store), `VU_RUNTIME` (the prefix of the running
   artifact, set by `vu` for its children). The runtime does not read credentials; index credentials stay in the tool's own
   mechanism.
-- Ownership: the pins and provenance belong to the Aphrody monorepo (config/upstream-sources.json); the build, the lock and
+- Ownership: the pins and provenance belong to the Aphrody monorepo (tools/config/upstream-sources.json); the build, the lock and
   the artifact belong to the `vu` repository; the Python product code and the SDK binding stay with `py/` and
   `crates/ai/rag-python`. `yolo py` is the only Aphrody consumer.
 - Permissions: no implicit privileged host access for scripts or remote pages; `vu python` runs with the permissions of its
@@ -250,7 +250,7 @@ toolchain, pinned sources, per-step durations, artifact path and sha256, glibc a
 `yolo forge` is tied to the Bun build (LLVM, cmake and rustup bootstrap). The runtime is plain Cargo plus an archive
 pipeline already covered by the factory locks, so the build is `vps-cargo run --repo vu -- build ...` for each Cargo step and a
 Bun assemble script for the rest. `vps-cargo` gains a generic `--repo` option (one entry per external repository in
-config/host/vps-cargo.json); no second build mechanism is added.
+tools/config/host/vps-cargo.json); no second build mechanism is added.
 
 ## 7. Absorption order and execution
 
@@ -313,11 +313,11 @@ Settled by the executing agent on the owner's order of 2026-10-05; each carries 
 ## 10. Follow-ups from the py fusion (closed 2026-10-06)
 
 The former repository `aphrody-py` is retired from every wiring. Done in `7a377bdaf` (source catalogs only; Infra's plan
-before apply stays the way a host receives them, and no host was edited): config/update/pins.json (the uv pins now target
-`py/pyproject.toml` and `py/README.md`; the nested workflow target is gone), config/google-stack-release.json,
-config/docs/documentation.json (the `python-google` source reads `py/` through the repository root),
-config/github/templates.json, config/ai/agent-plugin-providers.json, config/deps/watch.json, config/build-factory.json,
-config/host/toolchain.json, config/commit-sync.json, the systemd unit catalog (source-sync no longer lists the repository),
+before apply stays the way a host receives them, and no host was edited): tools/config/update/pins.json (the uv pins now target
+`py/pyproject.toml` and `py/README.md`; the nested workflow target is gone), tools/config/google-stack-release.json,
+tools/config/docs/documentation.json (the `python-google` source reads `py/` through the repository root),
+tools/config/github/templates.json, tools/config/ai/agent-plugin-providers.json, tools/config/deps/watch.json, tools/config/build-factory.json,
+tools/config/host/toolchain.json, tools/config/commit-sync.json, the systemd unit catalog (source-sync no longer lists the repository),
 scripts/dev/bootstrap and clone-and-bootstrap (the latter also pointed at a bootstrap path that never existed),
 scripts/tools/shell/setup, the root GOAL.md, the factory, repo-sync and documentation allowlists, the ecosystem catalog
 roots, the uv module's Python root default, the training runner and the `aphrody runtime` default project (`py`).
@@ -372,7 +372,7 @@ and Bun scripts; raw outputs were kept in the session scratch space and are summ
 - [x] `py/` deduplicated; follow-ups listed (section 10).
 - [x] Runtime name settled by the owner: `vu`; one constant.
 - [x] Forks created and pinned: uv `vu-pin-0.12.23`, ruff `vu-pin-0.16.10`, pyo3 `vu-pin-0.29.3`.
-- [x] Provenance in config/upstream-sources.json; pins gate and tests.
+- [x] Provenance in tools/config/upstream-sources.json; pins gate and tests.
 - [x] Feasibility: `cargo check` of uv and ruff at the pins; probe binary linking uv, ruff and PyO3.
 - [x] Every decision settled (section 9); private repository created.
 - [x] `vps-cargo --repo`; repository seeded; first `vu` build with a receipt; glibc audit; release build times and peak memory (J19).

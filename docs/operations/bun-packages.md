@@ -14,7 +14,7 @@ bun run packages:install --list
 bun run packages:install --cwd /chemin/du/projet --only @aphrody/fuzzy,@aphrody/qr
 ```
 
-Le [catalogue](../../config/npm-packages.json) distingue les versions publiées des packages bloqués. Les applications et exemples privés ne sont pas publiés sur npm. Les versions Tauri alpha et canary sont publiées sous `next` ; l’installateur utilise leurs versions exactes. Les API Tauri nécessitent un hôte compatible pour agir sur le système ; l’installation du JavaScript ne remplace pas l’installation d’un hôte natif.
+Le [catalogue](../../tools/config/npm-packages.json) distingue les versions publiées des packages bloqués. Les applications et exemples privés ne sont pas publiés sur npm. Les versions Tauri alpha et canary sont publiées sous `next` ; l’installateur utilise leurs versions exactes. Les API Tauri nécessitent un hôte compatible pour agir sur le système ; l’installation du JavaScript ne remplace pas l’installation d’un hôte natif.
 
 ## Gates et archives
 

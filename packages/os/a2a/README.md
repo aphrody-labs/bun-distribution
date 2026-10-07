@@ -96,7 +96,7 @@ in a send request). A webhook receiver decodes a delivery with `parsePushNotific
 
 ## Generated types
 
-`src/generated/a2a.ts` is generated from `crates/os/a2a-pb/proto/a2a.proto`, the schema the Rust
+`src/generated/a2a.ts` is generated from `crates/os/kernel/comps/a2a-pb/proto/a2a.proto`, the schema the Rust
 crates compile with prost, so both sides share one source: camelCase members, enum names as
 strings (`TASK_STATE_COMPLETED`), `oneof` as exclusive unions (`Part`, `StreamResponse`), required
 fields from `google.api.field_behavior`, and the method tables (`A2A_METHODS`, `A2AMethodTypes`).

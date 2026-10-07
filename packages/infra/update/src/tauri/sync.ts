@@ -2,7 +2,7 @@
 /**
  * Tauri upstream auto-sync.
  *
- * Reads `config/tauri-upstream.json`, compares the centralized versions (root
+ * Reads `tools/config/tauri-upstream.json`, compares the centralized versions (root
  * `Cargo.toml` [workspace.dependencies] and the root `package.json`
  * `workspaces.catalog`) with crates.io / npm / the tracked git refs, prints a
  * report, and with `--apply` bumps ONLY those two central files, refreshes the
@@ -171,7 +171,7 @@ export type TauriUpstreamConfig = {
   policy: { npmMinimumReleaseAgeSeconds: number };
   rust: { crates: string[]; forks: string[] };
   js: { catalog: string[]; cli: { package: string; version: string } };
-  /** Cargo packages and generated paths come from `config/tauri-apps.json` (see tauri-apps.ts). */
+  /** Cargo packages and generated paths come from `tools/config/tauri-apps.json` (see tauri-apps.ts). */
   gate: { bun: string[] };
   patches: PatchSpec[];
   /** Source files that copy central versions (e.g. scaffold templates); keys map a source key to a tracked name. */
@@ -500,7 +500,7 @@ function run(command: string[], cwd: string): { ok: boolean; output: string } {
 // ---------------------------------------------------------------------------
 
 async function loadRegistry(root: string): Promise<Registry | null> {
-  const path = join(root, "config/tauri-apps.json");
+  const path = join(root, "tools/config/tauri-apps.json");
   return existsSync(path) ? parseRegistry(await readFile(path, "utf8")) : null;
 }
 
@@ -734,7 +734,7 @@ export async function applyReport(
     "Cargo.lock",
     "package.json",
     "bun.lock",
-    "config/tauri-upstream.json",
+    "tools/config/tauri-upstream.json",
     ...(config.mirrors ?? []).map((mirror) => mirror.file),
     ...confFiles,
   ];
@@ -742,7 +742,7 @@ export async function applyReport(
   try {
     let cargoToml = saved.get("Cargo.toml")!;
     let packageJson = saved.get("package.json")!;
-    let configText = saved.get("config/tauri-upstream.json")!;
+    let configText = saved.get("tools/config/tauri-upstream.json")!;
     for (const row of todo) {
       if (row.kind === "crate") cargoToml = rewriteWorkspaceDep(cargoToml, row.name, row.target!);
       else if (row.kind === "npm")
@@ -758,7 +758,7 @@ export async function applyReport(
     }
     await writeFile(join(root, "Cargo.toml"), cargoToml);
     await writeFile(join(root, "package.json"), packageJson);
-    await writeFile(join(root, "config/tauri-upstream.json"), configText);
+    await writeFile(join(root, "tools/config/tauri-upstream.json"), configText);
     const central: Record<string, string | null> = {};
     for (const row of report.rows) central[row.name] = row.current;
     for (const row of todo) central[row.name] = row.target;
@@ -822,7 +822,7 @@ export async function runTauriSync(argv: string[]): Promise<number> {
     );
     return message === "help" ? 0 : (console.error(message), 2);
   }
-  const config = parseConfig(await readFile(join(args.root, "config/tauri-upstream.json"), "utf8"));
+  const config = parseConfig(await readFile(join(args.root, "tools/config/tauri-upstream.json"), "utf8"));
   const report = await buildReport(args.root, config, args.offline);
   console.log(args.json ? JSON.stringify(report, null, 2) : renderReport(report));
   if (args.apply) {

@@ -208,7 +208,7 @@ describe("AgUiEventStream: A2A Fleet Envelope Bidirectional Bridge", () => {
       to: "codex",
       kind: "ask",
       topic: "cargo-check",
-      body: "Verify serialization in crates/os/a2a-coord",
+      body: "Verify serialization in crates/os/kernel/comps/a2a-coord",
       channel_hint: ["rust", "serial"],
       re: "env-parent-0",
     };
@@ -221,7 +221,7 @@ describe("AgUiEventStream: A2A Fleet Envelope Bidirectional Bridge", () => {
     const roundtrip = agUiEventToCoordEnvelope(agUiEvent, "agy", "codex");
     expect(roundtrip.kind).toBe("ask");
     expect(roundtrip.topic).toBe("cargo-check");
-    expect(roundtrip.body).toBe("Verify serialization in crates/os/a2a-coord");
+    expect(roundtrip.body).toBe("Verify serialization in crates/os/kernel/comps/a2a-coord");
     expect(roundtrip.re).toBe("env-parent-0");
     expect(roundtrip.channel_hint).toEqual(["rust", "serial"]);
   });

@@ -79,14 +79,14 @@ fn no_alias_shadows_another_variable_s_canonical_name() {
     }
 }
 
-/// Cross-checks [`ALL`] against `../aphrody-infra/config/local-ai.json`
+/// Cross-checks [`ALL`] against `../aphrody-infra/tools/config/local-ai.json`
 /// (owned by `aphrody-infra`) when that sibling checkout is present. Skips
 /// cleanly otherwise — this repository does not depend on `aphrody-infra`
 /// existing on every machine that runs `cargo test`.
 #[test]
 fn matches_the_aphrody_infra_contract_when_present() {
     let candidate =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../aphrody-infra/config/local-ai.json");
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../aphrody-infra/tools/config/local-ai.json");
     let Ok(raw) = std::fs::read_to_string(&candidate) else {
         eprintln!(
             "skipping: {} not found (aphrody-infra is a sibling checkout)",

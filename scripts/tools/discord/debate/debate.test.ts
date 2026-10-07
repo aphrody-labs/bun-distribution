@@ -20,7 +20,7 @@ import type { LabMessage } from "../../../../packages/discord/kit/src/lab/assist
 /* oxlint-disable no-await-in-loop */
 
 const policy = (await Bun.file(
-  new URL("../../../../config/host/discord-debate.json", import.meta.url),
+  new URL("../../../../tools/config/host/discord-debate.json", import.meta.url),
 ).json()) as DebatePolicy;
 const source: Source = {
   id: "chapter-1",

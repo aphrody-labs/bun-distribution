@@ -19,7 +19,7 @@ shell subsystem; applications and agents are clients.
   operation needs them; their dependency ownership remains in their canonical
   repository.
 
-The machine-readable contract is [`config/shell-runtime.json`](../../../config/shell-runtime.json).
+The machine-readable contract is [`tools/config/shell-runtime.json`](../../../tools/config/shell-runtime.json).
 
 ## Verification
 

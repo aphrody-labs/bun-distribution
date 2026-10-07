@@ -44,7 +44,7 @@ Concurrency is deliberately capped: 24 logical CPUs are available, but the machi
 
 ## Perf smoke validation
 
-PMU parsing suites 8, 10 and 11 passed all eleven cases. Suite 7 skipped due to performance-event permissions. Suite 6 failed the upstream assertion at `tools/perf/tests/expr.c:251`: Intel TSC frequency must be nonzero, but this WSL host does not expose that frequency in `/proc/cpuinfo`. The diagnostic is captured in `perf-test-parser.log`. The perf test process exits zero even with a failed subtest, so log results rather than process exit status are the evidence.
+PMU parsing suites 8, 10 and 11 passed all eleven cases. Suite 7 skipped due to performance-event permissions. Suite 6 failed the upstream assertion at `tools/perf/tests/expr.c:251` (not in repo): Intel TSC frequency must be nonzero, but this WSL host does not expose that frequency in `/proc/cpuinfo`. The diagnostic is captured in `perf-test-parser.log`. The perf test process exits zero even with a failed subtest, so log results rather than process exit status are the evidence.
 
 A make warning during perf compilation reported a generated object 0.39 seconds in the future; no source file had a future timestamp when checked afterwards. Binary installation and the selected parsing tests completed.
 

@@ -20,9 +20,9 @@ du nouveau binaire par Infra.
 
 ## Déclarations et installation
 
-- [Déclaration MCP DBFR](../../../config/host/agent-fleet-mcp-dbfr.json), installée
+- [Déclaration MCP DBFR](../../../tools/config/host/agent-fleet-mcp-dbfr.json), installée
   dans `/home/ubuntu/.aphrody/fleet/agent-fleet-mcp.json`, mode `0600`.
-- [Alias SSH DBFR](../../../config/host/user/dbfr-aphrody-vps-wg.ssh.conf), installé
+- [Alias SSH DBFR](../../../tools/config/host/user/dbfr-aphrody-vps-wg.ssh.conf), installé
   dans `/home/ubuntu/.ssh/aphrody-fleet-vps.conf`, mode `0600`.
 - [Audit Discord](../../../scripts/audit/discord/fleet-membership.ts) : lecture
   des seules métadonnées d'application, de guilde, de membres et de permissions
@@ -82,8 +82,8 @@ L'audit natif a confirmé le bot Aphrody et le propriétaire dans la guilde
 `1554189180030947338`. Le compte Omar `1527405876695142620` est membre et
 dispose de `Manage Guild` ; l'ancien alias `1323725494184841256` renvoie `404`.
 Le compte présent est désormais le principal de
-[la politique administrateur](../../../config/host/omar-admin.json) et le premier
-de [la liste du moniteur](../../../config/host/discord-omar-monitor.json).
+[la politique administrateur](../../../tools/config/host/omar-admin.json) et le premier
+de [la liste du moniteur](../../../tools/config/host/discord-omar-monitor.json).
 L'ancien compte reste un alias : l'ensemble des identités accepté par le moniteur
 ne change pas. Les deux politiques VPS ont été sauvegardées, vérifiées et mises
 à jour sans changement d'unité ni redémarrage du moniteur. Le réconciliateur

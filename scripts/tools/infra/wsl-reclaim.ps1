@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Apply config/wsl/wslconfig and give the free space of the WSL disk back to C:.
+# Apply tools/config/wsl/wslconfig and give the free space of the WSL disk back to C:.
 # `wsl --shutdown` stops every WSL process, so it runs unattended at a quiet hour: the Windows scheduled task
 # AphrodyWslReclaim (registered from WSL, copy in C:\ProgramData\Aphrody) runs it once; the log is next to it.
 $ErrorActionPreference = 'Stop'

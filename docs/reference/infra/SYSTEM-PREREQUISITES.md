@@ -1,7 +1,7 @@
 # Prérequis système
 
 Une seule implémentation provisionne les hôtes Linux natifs :
-`aphrody-infra dev-env`. Elle lit `config/system-packages.json` (paquets APT par
+`aphrody-infra dev-env`. Elle lit `tools/config/system-packages.json` (paquets APT par
 cible, versions Bun/uv) et `rust-toolchain.toml` (canal Rust), génère un script
 idempotent et, sans `--apply`, se contente de comparer l'installé aux versions
 épinglées.
@@ -21,7 +21,7 @@ The optional interactive developer suite is separate from server provisioning.
 Review missing Rust CLI commands and Nu plugin registrations with
 `nu scripts/dev/setup.nu --developer-cli`, then install prebuilt crates.io releases
 and register the plugins using `nu scripts/dev/setup.nu --developer-cli --apply`.
-The tool and plugin package mappings live in `config/developer-cli-tools.json`;
+The tool and plugin package mappings live in `tools/config/developer-cli-tools.json`;
 they are installed globally and never added to an Aphrody workspace build.
 
 ## Ce que `--apply` fait

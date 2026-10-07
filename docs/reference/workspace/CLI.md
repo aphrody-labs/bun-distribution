@@ -144,7 +144,7 @@ les scripts TypeScript/shell et la documentation. Les scripts `package.json`
 résolvent d’abord `node_modules/.bin` (outil local, ex. `next`, `drizzle-kit`,
 `nodemon`), puis le PATH global. `bunx` n’est plus nécessaire pour les outils suivants, installés globalement et
 épinglés sur WSL, Windows, vps et dbfr (`bun add -g`, manifeste
-`yolo/config/host/toolchain.json`, procédure `docs/operations/infra/TOOLCHAIN-SYNC.md`) :
+`yolo/tools/config/host/toolchain.json`, procédure `docs/operations/infra/TOOLCHAIN-SYNC.md`) :
 `wasm-pack@0.15.0`, `@tauri-crates/infra/aphrody@3.0.0-alpha.4`, `jscodeshift`, `@ast-grep/cli`
 (`ast-grep`), `json-schema-to-typescript` (`json2ts`), `@material-design-icons/scripts`,
 ainsi que `drizzle-kit`, `prisma`, `wrangler`, `serve`, `nodemon`, `nx`, `shadcn`,
@@ -153,8 +153,8 @@ binaires directement ; `bunx` ne reste utile que pour un outil absent de cette l
 
 ## Inventaire des exécutables
 
-Sources : [manifest développeur](../../../config/developer-cli-tools.json),
-[catalogue canonique](../../../config/cli-catalog.json), résolution du PATH et
+Sources : [manifest développeur](../../../tools/config/developer-cli-tools.json),
+[catalogue canonique](../../../tools/config/cli-catalog.json), résolution du PATH et
 `--version` exécuté avec délai borné. Les plugins sont vérifiés via `plugin list`.
 `bottom` est le nom du package, son exécutable est `btm` ; `yazi-cli` fournit
 `ya` ; `tealdeer` fournit `tldr`. Ces noms de packages ne sont pas des absences.
@@ -244,7 +244,7 @@ avec des chemins antérieurs à la migration ; utiliser les manifests actuels et
 
 La configuration Nushell et ses intégrations sont décrites dans le
 [guide workstation](nu.md). Les dix plugins sont chargés à cette vérification.
-Le catalogue `config/cli-catalog.json` choisit un seul outil par capacité ;
+Le catalogue `tools/config/cli-catalog.json` choisit un seul outil par capacité ;
 `systemctl` reste le superviseur hôte et `ssh` le transport.
 
 Les jetons, conversations brutes et valeurs de configuration privées ne sont

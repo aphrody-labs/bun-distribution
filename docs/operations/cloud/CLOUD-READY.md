@@ -54,7 +54,7 @@ reachability, push remote) and exits non-zero on a missing required item. Sessio
 - GitHub: `bun scripts/ops/github-automation.ts [--org aphrody-labs] [--dry-run]` is idempotent; on every owned non-fork
   repository it enables delete-branch-on-merge, auto-merge, update-branch, Dependabot alerts and security updates.
   `.github/dependabot.yml` keeps the workflow actions current weekly.
-- Hosts (`vps`, `dbfr`): `aphrody-selfheal.timer` (units in `config/host/systemd/aphrody/`, installed on both)
+- Hosts (`vps`, `dbfr`): `aphrody-selfheal.timer` (units in `tools/config/host/systemd/aphrody/`, installed on both)
   runs every 5 minutes: clears failed units whose file is gone, restarts failed `aphrody-*`, `shenron-*`, `nie-*`,
   `rg-*` services (not `shenron-cdn-sync`, a long one-shot), vacuums the journal and apt cache above 85 % disk.
   Unattended upgrades, certbot, log rotation and the Shenron backup/pull timers were already active.

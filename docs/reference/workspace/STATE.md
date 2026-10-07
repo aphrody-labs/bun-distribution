@@ -34,37 +34,36 @@ Totals: **204 crates**, **95 packages**, **0 apps** (204 Rust, 95 Bun).
 Root `Cargo.toml` `[workspace] exclude`:
 
 - `crates/contracts/schema`
-- `crates/os/drive`
+- `crates/os/kernel/comps/drive`
 - `crates/tauri/aphrody-tauri-api`
 - `crates/tauri/aphrody-tauri-plugin-sql`
 
 Tracked Cargo manifests outside the root workspace (excluded, nested workspaces or fixtures):
 
-- `config/container/aphrody-os/vm/aphrody-init`
 - `crates/ai/code-graph/tests/fixtures/rust`
-- `crates/os/drive`
-- `crates/os/drive/apps/cli`
-- `crates/os/drive/core`
-- `crates/os/drive/core/benchmarks`
-- `crates/os/drive/crates/actors`
-- `crates/os/drive/crates/archive`
-- `crates/os/drive/crates/crypto`
-- `crates/os/drive/crates/fda`
-- `crates/os/drive/crates/ffmpeg`
-- `crates/os/drive/crates/fs-watcher`
-- `crates/os/drive/crates/images`
-- `crates/os/drive/crates/job-derive`
-- `crates/os/drive/crates/log-analyzer`
-- `crates/os/drive/crates/media-metadata`
-- `crates/os/drive/crates/sd-client`
-- `crates/os/drive/crates/sdk`
-- `crates/os/drive/crates/sdk-macros`
-- `crates/os/drive/crates/task-system`
-- `crates/os/drive/crates/task-validator`
-- `crates/os/drive/crates/utils`
-- `crates/os/drive/patches/ffmpeg-sys-next`
-- `crates/os/drive/patches/whisper-rs-sys`
-- `crates/os/drive/xtask`
+- `crates/os/kernel/comps/drive`
+- `crates/os/kernel/comps/drive/apps/cli`
+- `crates/os/kernel/comps/drive/core`
+- `crates/os/kernel/comps/drive/core/benchmarks`
+- `crates/os/kernel/comps/drive/crates/actors`
+- `crates/os/kernel/comps/drive/crates/archive`
+- `crates/os/kernel/comps/drive/crates/crypto`
+- `crates/os/kernel/comps/drive/crates/fda`
+- `crates/os/kernel/comps/drive/crates/ffmpeg`
+- `crates/os/kernel/comps/drive/crates/fs-watcher`
+- `crates/os/kernel/comps/drive/crates/images`
+- `crates/os/kernel/comps/drive/crates/job-derive`
+- `crates/os/kernel/comps/drive/crates/log-analyzer`
+- `crates/os/kernel/comps/drive/crates/media-metadata`
+- `crates/os/kernel/comps/drive/crates/sd-client`
+- `crates/os/kernel/comps/drive/crates/sdk`
+- `crates/os/kernel/comps/drive/crates/sdk-macros`
+- `crates/os/kernel/comps/drive/crates/task-system`
+- `crates/os/kernel/comps/drive/crates/task-validator`
+- `crates/os/kernel/comps/drive/crates/utils`
+- `crates/os/kernel/comps/drive/patches/ffmpeg-sys-next`
+- `crates/os/kernel/comps/drive/patches/whisper-rs-sys`
+- `crates/os/kernel/comps/drive/xtask`
 - `crates/tauri/aphrody-tauri-cli/src/migrate/migrations/v2/fixtures/app`
 - `crates/tauri/aphrody-tauri-cli/src/migrate/migrations/v2/fixtures/no-default-features`
 - `crates/tauri/aphrody-tauri-cli/src/migrate/migrations/v2/fixtures/no-wry`
@@ -72,6 +71,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 - `crates/tauri/aphrody-tauri/test/cef-rollback`
 - `crates/vendor/taffy`
 - `m3/templates/desktop/src-tauri`
+- `tools/config/container/aphrody-os/vm/aphrody-init`
 
 ## ai
 
@@ -171,7 +171,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@aphrody/n2b-core` | [packages/engine/n2b-client](../../../packages/engine/n2b-client) | bun package | 0.6.4 | lib | yes | 0 | 2026-10-07 |
 | `@aphrody/plugins` | [packages/engine/plugins](../../../packages/engine/plugins) | bun package | 1.0.1 | lib | yes | 0 | 2026-10-07 |
 | `@aphrody/runtime-sdk` | [packages/engine/runtime](../../../packages/engine/runtime) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-07 |
-| `@aphrody/yolo-cli` | [packages/engine/yolo](../../../packages/engine/yolo) | bun package | 1.0.0 | bin | yes | 0 | 2026-10-07 |
+| `@aphrody/yolo-cli` | [packages/engine/yolo](../../../packages/engine/yolo) | bun package | 1.0.0 | bin, lib | yes | 0 | 2026-10-07 |
 
 ## google
 
@@ -241,28 +241,28 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `aphrody-a2a-client` | [crates/os/a2a-client](../../../crates/os/a2a-client) | rust crate | 0.1.16 | lib | yes | 0 | 2026-10-05 |
-| `aphrody-a2a-coord` | [crates/os/a2a-coord](../../../crates/os/a2a-coord) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
-| `aphrody-a2a-grpc` | [crates/os/a2a-grpc](../../../crates/os/a2a-grpc) | rust crate | 0.2.2 | lib | yes | 0 | 2026-10-01 |
-| `aphrody-a2a-pb` | [crates/os/a2a-pb](../../../crates/os/a2a-pb) | rust crate | 0.1.8 | lib | yes | 0 | 2026-10-04 |
-| `aphrody-a2a-server` | [crates/os/a2a-server](../../../crates/os/a2a-server) | rust crate | 0.3.0 | lib | yes | 0 | 2026-10-06 |
-| `aphrody-backend` | [crates/os/backend](../../../crates/os/backend) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
-| `aphrody-capture` | [crates/os/capture](../../../crates/os/capture) | rust crate | 1.0.0-canary | rlib | yes | 0 | 2026-10-05 |
-| `aphrody-cron` | [crates/os/cron](../../../crates/os/cron) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
-| `aphrody-diagnostics` | [crates/os/diagnostics](../../../crates/os/diagnostics) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-05 |
-| `aphrody-fsindex` | [crates/os/fsindex](../../../crates/os/fsindex) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
-| `aphrody-guard` | [crates/os/guard](../../../crates/os/guard) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
-| `aphrody-jobs` | [crates/os/jobs](../../../crates/os/jobs) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
-| `aphrody-kernel` | [crates/os/kernel](../../../crates/os/kernel) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
-| `aphrody-kernel-client` | [crates/os/kernel-client](../../../crates/os/kernel-client) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
-| `aphrody-proc` | [crates/os/proc](../../../crates/os/proc) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
-| `aphrody-re` | [crates/os/re](../../../crates/os/re) | rust crate | 1.0.0-canary | rlib | yes | 0 | 2026-10-07 |
-| `aphrody-sandbox` | [crates/os/sandbox](../../../crates/os/sandbox) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
-| `aphrody-secrets` | [crates/os/secrets](../../../crates/os/secrets) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
-| `aphrody-subsystem` | [crates/os/subsystem](../../../crates/os/subsystem) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-03 |
-| `aphrody-task-runner` | [crates/os/task-runner](../../../crates/os/task-runner) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
-| `aphrody-telemetry` | [crates/os/telemetry](../../../crates/os/telemetry) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
-| `aphrody-winclean` | [crates/os/winclean](../../../crates/os/winclean) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
+| `aphrody-kernel-client` | [crates/os/kernel/client](../../../crates/os/kernel/client) | rust crate | 1.0.0-canary | lib | yes | 0 | uncommitted |
+| `aphrody-a2a-client` | [crates/os/kernel/comps/a2a-client](../../../crates/os/kernel/comps/a2a-client) | rust crate | 0.1.16 | lib | yes | 0 | uncommitted |
+| `aphrody-a2a-coord` | [crates/os/kernel/comps/a2a-coord](../../../crates/os/kernel/comps/a2a-coord) | rust crate | 1.0.0-canary | lib | yes | 0 | uncommitted |
+| `aphrody-a2a-grpc` | [crates/os/kernel/comps/a2a-grpc](../../../crates/os/kernel/comps/a2a-grpc) | rust crate | 0.2.2 | lib | yes | 0 | uncommitted |
+| `aphrody-a2a-pb` | [crates/os/kernel/comps/a2a-pb](../../../crates/os/kernel/comps/a2a-pb) | rust crate | 0.1.8 | lib | yes | 0 | uncommitted |
+| `aphrody-a2a-server` | [crates/os/kernel/comps/a2a-server](../../../crates/os/kernel/comps/a2a-server) | rust crate | 0.3.0 | lib | yes | 0 | uncommitted |
+| `aphrody-cron` | [crates/os/kernel/comps/cron](../../../crates/os/kernel/comps/cron) | rust crate | 1.0.0-canary | lib | yes | 0 | uncommitted |
+| `aphrody-diagnostics` | [crates/os/kernel/comps/diagnostics](../../../crates/os/kernel/comps/diagnostics) | rust crate | 1.0.0 | lib | yes | 0 | uncommitted |
+| `aphrody-jobs` | [crates/os/kernel/comps/jobs](../../../crates/os/kernel/comps/jobs) | rust crate | 1.0.0-canary | lib | yes | 0 | uncommitted |
+| `aphrody-re` | [crates/os/kernel/comps/re](../../../crates/os/kernel/comps/re) | rust crate | 1.0.0-canary | rlib | yes | 0 | uncommitted |
+| `aphrody-sandbox` | [crates/os/kernel/comps/sandbox](../../../crates/os/kernel/comps/sandbox) | rust crate | 1.0.0-canary | lib | yes | 0 | uncommitted |
+| `aphrody-task-runner` | [crates/os/kernel/comps/task-runner](../../../crates/os/kernel/comps/task-runner) | rust crate | 1.0.0-canary | lib | yes | 0 | uncommitted |
+| `aphrody-telemetry` | [crates/os/kernel/comps/telemetry](../../../crates/os/kernel/comps/telemetry) | rust crate | 1.0.0-canary | lib | yes | 0 | uncommitted |
+| `aphrody-winclean` | [crates/os/kernel/comps/winclean](../../../crates/os/kernel/comps/winclean) | rust crate | 1.0.0-canary | lib | yes | 0 | uncommitted |
+| `aphrody-kernel` | [crates/os/kernel/core](../../../crates/os/kernel/core) | rust crate | 1.0.0-canary | lib | yes | 0 | uncommitted |
+| `aphrody-capture` | [crates/os/kernel/libs/capture](../../../crates/os/kernel/libs/capture) | rust crate | 1.0.0-canary | rlib | yes | 0 | uncommitted |
+| `aphrody-fsindex` | [crates/os/kernel/libs/fsindex](../../../crates/os/kernel/libs/fsindex) | rust crate | 1.0.0-canary | lib | yes | 0 | uncommitted |
+| `aphrody-backend` | [crates/os/ostd/backend](../../../crates/os/ostd/backend) | rust crate | 1.0.0-canary | lib | yes | 0 | uncommitted |
+| `aphrody-guard` | [crates/os/ostd/guard](../../../crates/os/ostd/guard) | rust crate | 1.0.0-canary | lib | yes | 0 | uncommitted |
+| `aphrody-proc` | [crates/os/ostd/proc](../../../crates/os/ostd/proc) | rust crate | 1.0.0-canary | lib | yes | 0 | uncommitted |
+| `aphrody-secrets` | [crates/os/ostd/secrets](../../../crates/os/ostd/secrets) | rust crate | 1.0.0-canary | lib | yes | 0 | uncommitted |
+| `aphrody-subsystem` | [crates/os/ostd/subsystem](../../../crates/os/ostd/subsystem) | rust crate | 1.0.0-canary | lib | yes | 0 | uncommitted |
 | `@aphrody/a2a` | [packages/os/a2a](../../../packages/os/a2a) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-07 |
 | `@aphrody/drive-client` | [packages/os/drive-client](../../../packages/os/drive-client) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-07 |
 | `@aphrody/os` | [packages/os/kernel-client](../../../packages/os/kernel-client) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-07 |

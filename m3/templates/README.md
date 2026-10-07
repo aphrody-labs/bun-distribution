@@ -8,7 +8,7 @@ Rust-based Bun of `vendor/bun`.
 | [`stack.toml`](stack.toml) | Layers (host, runtime, SDK, server, web, desktop, headless, tooling), their plan phase and status, pinned versions, templates and framework variants |
 | [`base/`](base), [`web/`](web), [`react/`](react), [`desktop/`](desktop), [`hono/`](hono), [`elysia/`](elysia) | Versioned project templates used by `yolo create` (`web` or `react` for the frontend, `hono` or `elysia` for the HTTP variant) |
 | [`AWESOME.md`](../../docs/reference/yolo/AWESOME.md) | awesome-bun curated for the Rust-based Bun (14 of 87 entries; audit of the former `aphrody-labs/awesome-bun@yolo`, recorded in `awesome-audit.json`) |
-| [`awesome.curated.json`](../../config/yolo/awesome.curated.json) / [`awesome-audit.json`](../../config/yolo/awesome-audit.json) | Kept entries / the verdict and reason for every entry |
+| [`awesome.curated.json`](../../tools/config/yolo/awesome.curated.json) / [`awesome-audit.json`](../../tools/config/yolo/awesome-audit.json) | Kept entries / the verdict and reason for every entry |
 
 ## Scaffold
 

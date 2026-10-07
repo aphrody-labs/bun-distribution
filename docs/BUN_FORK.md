@@ -3,7 +3,7 @@
 > **Repository Nexus**: [aphrody-labs/bun](https://github.com/aphrody-labs/bun)
 > **Upstream Authority**: [oven-sh/bun](https://github.com/oven-sh/bun)
 > **Organization**: `aphrody-labs`
-> **Checkout Path**: `vendor/bun` (pin: `config/vendor.json`, not a Git submodule)
+> **Checkout Path**: `vendor/bun` (pin: `tools/config/vendor.json`, not a Git submodule)
 > **Fork Branch**: `main` (single and default branch: upstream `main` plus the Aphrody patches)
 > **Sync & Drift Engine**: [`scripts/tools/vendor/bun_upstream_sync.ts`](../scripts/tools/vendor/bun_upstream_sync.ts)
 > **PR & Issue Tracker Engine**: [`scripts/tools/vendor/bun_upstream_tracker.ts`](../scripts/tools/vendor/bun_upstream_tracker.ts)
@@ -31,7 +31,7 @@ Since 2026-10-05 the fork has a single Aphrody working branch, **`main`** (also 
 - Upstream arrives by merge (`upstream/main` into `main`), never by rebase or force push.
 - Optional `patches/bun/*.patch` files (root of this repo) are reapplied by the sync engine with
   `--apply --reapply-patches` when the fork checks fail after an upstream refactor.
-- `yolo forge` (`config/bun-forge.json`) watches and builds `main`; `config/vendor.json` pins the
+- `yolo forge` (`tools/config/bun-forge.json`) watches and builds `main`; `tools/config/vendor.json` pins the
   qualified commit.
 
 ---
@@ -62,7 +62,7 @@ The engines run directly with Bun (no `package.json` aliases):
 `vendor/bun` is a shallow, blobless checkout: without local refs, measure drift server side
 (`aphrody git api "/repos/oven-sh/bun/compare/main...aphrody-labs:bun:main"`), then let the engine
 fetch and merge (`--apply`, commits as `aphrody-dev`, never forced). A new `main` head is qualified by
-`yolo forge build` on the build host before `config/vendor.json` moves.
+`yolo forge build` on the build host before `tools/config/vendor.json` moves.
 
 ---
 
@@ -83,10 +83,10 @@ Based on automated upstream tracking:
 
 ## 5. Pin Integrity
 
-`vendor/bun` is not a Git submodule: `config/vendor.json` pins the qualified `main` commit, fetched by
+`vendor/bun` is not a Git submodule: `tools/config/vendor.json` pins the qualified `main` commit, fetched by
 `bun scripts/tools/vendor/fetch.ts`.
 
-- Current pin: the `ref` of the `bun` entry in `config/vendor.json`
+- Current pin: the `ref` of the `bun` entry in `tools/config/vendor.json`
 - Verification: `git -C vendor/bun rev-parse HEAD` against that `ref`
 
 ## 6. Factory qualification — 2026-10-07
@@ -135,7 +135,7 @@ the required templates/SDK and installed runtime are missing. Listing schemas do
 every tool implementation. Windows, macOS, native ARM64 and browser/container WASM behavior were
 not qualified by these Linux engine tests. No 50% build-time or binary-size reduction is established.
 
-At this qualification boundary, the source pin in `config/vendor.json` remains
+At this qualification boundary, the source pin in `tools/config/vendor.json` remains
 `a4d88d12417844912a9b6a5a9bedc0755b011092`; neither the existing dirty `vendor/bun` checkout nor PATH
 was changed. Promote the source pin and runtime installation only after the producer CLI, native
 SDK, acquisition and rollback gates are satisfied.

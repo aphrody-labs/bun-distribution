@@ -6,7 +6,7 @@ Source: <https://v8.dev/docs/build> · <https://v8.dev/docs/build-gn>
 
 ## Option A — `gm.py` (one-shot helper)
 
-`tools/dev/gm.py` chains `gn gen` + `ninja` (+ optional tests) and **prints
+`tools/dev/gm.py` (not in repo) chains `gn gen` + `ninja` (+ optional tests) and **prints
 every command it runs**, so you can copy them for manual re-use.
 
 ```bat

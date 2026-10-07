@@ -3,8 +3,8 @@
 import { join } from "node:path";
 
 const root = join(import.meta.dir, "../../../..");
-const catalogPath = join(root, "crates/os/winclean/src/tools.json");
-const rustPath = join(root, "crates/os/winclean/src/generated.rs");
+const catalogPath = join(root, "crates/os/kernel/comps/winclean/src/tools.json");
+const rustPath = join(root, "crates/os/kernel/comps/winclean/src/generated.rs");
 const bindingsPath = join(root, "packages/os/winclean/src/generated.ts");
 const outputPath = join(root, "packages/os/winclean/src/catalog.ts");
 
@@ -99,7 +99,7 @@ for (const tool of tools) {
   }
 }
 
-const output = `// SPDX-License-Identifier: Apache-2.0\n// Generated from crates/os/winclean/src/tools.json by scripts/tools/os/scripts/generate-winclean-catalog.ts.\n// Do not edit by hand.\nexport const TOOL_CATALOG: ReadonlyArray<{ name: string; description: string; inputSchema: Record<string, unknown>; execution?: unknown }> = ${JSON.stringify(tools, null, 2)};\n`;
+const output = `// SPDX-License-Identifier: Apache-2.0\n// Generated from crates/os/kernel/comps/winclean/src/tools.json by scripts/tools/os/scripts/generate-winclean-catalog.ts.\n// Do not edit by hand.\nexport const TOOL_CATALOG: ReadonlyArray<{ name: string; description: string; inputSchema: Record<string, unknown>; execution?: unknown }> = ${JSON.stringify(tools, null, 2)};\n`;
 if (process.argv.includes("--check")) {
   const current = await Bun.file(outputPath)
     .text()

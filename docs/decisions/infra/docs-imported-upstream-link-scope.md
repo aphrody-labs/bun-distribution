@@ -16,7 +16,7 @@ inventing targets or rewriting upstream text, which `CLAUDE.md` forbids
 ## Decision
 
 - The imported trees are declared in
-  [`config/docs/imported-upstream-docs.json`](../../../config/docs/imported-upstream-docs.json),
+  [`tools/config/docs/imported-upstream-docs.json`](../../../tools/config/docs/imported-upstream-docs.json),
   one entry per upstream with its source, `include` globs and `except` globs.
   No per-file ad hoc exclusion is used.
 - `docs-links` skips local-link and backtick-path checks for files matching

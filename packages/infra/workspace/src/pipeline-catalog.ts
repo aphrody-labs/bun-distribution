@@ -109,7 +109,7 @@ export async function runPipelineCatalog(args: string[]): Promise<number> {
   const report = await pipelineCatalog(root);
   if (apply)
     await Bun.write(
-      join(root, "config/pipeline.json"),
+      join(root, "tools/config/pipeline.json"),
       JSON.stringify(report.config, null, 2) + "\n",
     );
   console.log(

@@ -79,3 +79,12 @@ restent dans le plan global ; ce lot ne les déclare pas terminées.
 - [x] Déplacer le dernier prototype suivi de `apps/` vers `examples/`.
 - [x] Qualifier tests, lint, format et serveur HTTP ; liens locaux migrés, quatre chemins morts globaux préexistants.
 - [x] Préparer la livraison des chemins possédés ; fusions runtime, SDK et racine restantes dans le plan global.
+
+## Fusion proactive globale — 2026-10-07
+
+- [x] Absorber Forge et les plugins dans les modules CLI Yolo ; préserver les API npm par façades sans moteur dupliqué.
+- [x] Qualifier la génération et Forge depuis le binaire compilé sans checkout.
+- [x] Regrouper les 22 crates OS ; check, 943 tests et Clippy strict passent sur la fabrique.
+- [x] Migrer 279 configurations suivies vers tools/config et leurs consommateurs ; sauvegarde protégée conservée.
+- [x] Qualifier les dépendances/toolchains Docker desktop et intégrer les gates sérialisés.
+- [ ] Livrer les seuls changements possédés ; la fusion complète reste à prouver.

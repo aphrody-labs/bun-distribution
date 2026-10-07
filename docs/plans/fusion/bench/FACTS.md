@@ -13,7 +13,7 @@
 | Glibc | le fork exige glibc 2.43 : il ne démarre pas dans WSL (2.39) ; VPS et dbfr sont en 2.43 | `ldd --version` |
 | Deno | 2.9.7 (tag `v2.9.7` = `0c071246a412575e07423263404a5d13e7ed6aa2`, fork `aphrody-labs/deno`), V8 `15.0.245.2-rusty`, TypeScript 6.0.3 ; binaire sha256 `ce6a052beb97c2b92de67077e3f3924ba7c9661ede0d8dc2f66a116a3c841f21`, zip officiel vérifié contre `.sha256sum` (dbfr) | `deno --version` |
 | V8 d'Obscura | crate `v8 150.4.0` (rusty_v8 `v150.4.0` = `5c15a699…`) contient V8 15.0.245.2 (`v8-version.h` : 15, 0, 245, 2) ; `deno_core 0.412.0`, `deno_v8 0.4.0` (même `Cargo.lock` que Deno 2.9.7). Drapeaux de compilation de l'archive non comparés | `v8-150.4.0/v8/include/v8-version.h` dans le registre Cargo du VPS |
-| `config/vendor.json` | l'entrée `bun` garde `ref` `954db0c0…` (committé), alors que pin et checkout sont `c439b6fbd` ; fichier d'autres sessions, non modifié | `git show HEAD:config/vendor.json` |
+| `tools/config/vendor.json` | l'entrée `bun` garde `ref` `954db0c0…` (committé), alors que pin et checkout sont `c439b6fbd` ; fichier d'autres sessions, non modifié | `git show HEAD:tools/config/vendor.json` |
 
 ## 2. Équivalences V8 / JSC (reçu du 2026-10-05, révisé)
 

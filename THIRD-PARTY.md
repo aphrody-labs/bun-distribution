@@ -33,7 +33,7 @@ These crates are deliberately not Apache-2.0 and keep their own license:
 - **Unlicense**: `whisper-rs-sys`
 - **WTFPL**: `ffmpeg-sys-next`
 
-`aphrody-drive` and the `crates/os/drive` tree derive from Spacedrive
+`aphrody-drive` and the `crates/os/kernel/comps/drive` tree derive from Spacedrive
 (FSL-1.1-ALv2): source-available, converting to Apache-2.0 two years after
 each release. Embedding it in the unified binary is permitted with its
 notice preserved; it must not be used to build a competing product.
@@ -41,7 +41,7 @@ notice preserved; it must not be used to build a competing product.
 ## Integrated third-party forks
 
 Vendored under their capability owner with provenance in
-`config/upstream-sources.json`; local patches preserved.
+`tools/config/upstream-sources.json`; local patches preserved.
 
 | Component | Upstream | Version | License | Path |
 | --- | --- | --- | --- | --- |
@@ -58,17 +58,17 @@ Build-recipe inputs tracked for provenance (not vendored source):
 
 | Source | URL | Ref | Used by |
 | --- | --- | --- | --- |
-| mcp-server-tauri | https://github.com/hypothesi/mcp-server-tauri | main | Cargo.toml tauri-plugin-mcp-bridge; config/tauri-upstream.json |
-| tauri | https://github.com/tauri-apps/tauri | v3 | config/tauri-upstream.json debuggers; docs/guides/web/TAURI-DEBUG.md |
-| tauri-plugin-webdriver | https://github.com/Choochmeque/tauri-plugin-webdriver | main | config/tauri-upstream.json debuggers |
-| victauri | https://github.com/4DA-Systems/Victauri | main | config/tauri-upstream.json debuggers; aphrody-mcp Tauri tools design |
-| WSL | https://github.com/microsoft/WSL.git | master | config/os/wsl-build.json; crates/os/aphrody-wsl |
-| WSL2-Linux-Kernel | https://github.com/microsoft/WSL2-Linux-Kernel.git | linux-msft-wsl-6.18.y | config/os/wsl-build.json; crates/os/aphrody-wsl |
-| linux-stable | https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git | v7.2.9 | config/os/wsl-build.json; crates/os/aphrody-wsl |
-| jan | https://github.com/janhq/jan.git | 14a720628f9592c8e60f7e081ef733076db8a6a9 | m3/packages/app-ui/src/models-hub-state.ts; config/jan-absorption.json; docs/mig |
+| mcp-server-tauri | https://github.com/hypothesi/mcp-server-tauri | main | Cargo.toml tauri-plugin-mcp-bridge; tools/config/tauri-upstream.json |
+| tauri | https://github.com/tauri-apps/tauri | v3 | tools/config/tauri-upstream.json debuggers; docs/guides/web/TAURI-DEBUG.md |
+| tauri-plugin-webdriver | https://github.com/Choochmeque/tauri-plugin-webdriver | main | tools/config/tauri-upstream.json debuggers |
+| victauri | https://github.com/4DA-Systems/Victauri | main | tools/config/tauri-upstream.json debuggers; aphrody-mcp Tauri tools design |
+| WSL | https://github.com/microsoft/WSL.git | master | tools/config/os/wsl-build.json; crates/os/aphrody-wsl |
+| WSL2-Linux-Kernel | https://github.com/microsoft/WSL2-Linux-Kernel.git | linux-msft-wsl-6.18.y | tools/config/os/wsl-build.json; crates/os/aphrody-wsl |
+| linux-stable | https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git | v7.2.9 | tools/config/os/wsl-build.json; crates/os/aphrody-wsl |
+| jan | https://github.com/janhq/jan.git | 14a720628f9592c8e60f7e081ef733076db8a6a9 | m3/packages/app-ui/src/models-hub-state.ts; tools/config/jan-absorption.json; docs/mig |
 | mistral.rs | https://github.com/EricLBuehler/mistral.rs.git | master | Cargo.toml workspace dependency mistralrs; docs/plans/ai/native-integration-mast |
-| terminal | https://github.com/microsoft/terminal.git | main | config/os/wsl-build.json |
-| wslg | https://github.com/microsoft/wslg.git | main | config/os/wsl-build.json; scripts/build/os/build-wslg.py |
+| terminal | https://github.com/microsoft/terminal.git | main | tools/config/os/wsl-build.json |
+| wslg | https://github.com/microsoft/wslg.git | main | tools/config/os/wsl-build.json; scripts/build/os/build-wslg.py |
 | vu-uv | https://github.com/astral-sh/uv | 0.12.23 | docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json |
 | vu-ruff | https://github.com/astral-sh/ruff | 0.16.10 | docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json |
 | vu-pyo3 | https://github.com/PyO3/pyo3 | v0.29.3 | docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json |

@@ -25,7 +25,7 @@ export async function runDriveDaemon(args: string[]): Promise<number> {
   if (!(await Bun.file(join(repo, "Cargo.toml")).exists())) {
     throw new Error(`Aphrody monorepo missing: ${repo}`);
   }
-  const driveWorkspace = join(repo, "crates", "os", "drive");
+  const driveWorkspace = join(repo, "crates", "os", "kernel", "comps", "drive");
   const driveManifest = join(driveWorkspace, "Cargo.toml");
   if (!(await Bun.file(driveManifest).exists())) {
     throw new Error(`Drive workspace missing: ${driveManifest}`);

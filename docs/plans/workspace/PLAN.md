@@ -727,7 +727,7 @@ estimations de mémoire GPU ne prouvent pas la capacité de l'hôte courant.
 
 ### Import documentaire des dépôts upstream — 2026-10-01
 
-Les références Git de `config/upstream-sources.json` sont maintenant incluses
+Les références Git de `tools/config/upstream-sources.json` sont maintenant incluses
 dans (removed import receipt) sous `upstream-<id>`, avec HEAD observé,
 état du checkout, hash par fichier et note de licence. Les docs retenues sont
 copiées directement sous `docs/<catégorie>/upstream-<id>/`; les doublons SHA

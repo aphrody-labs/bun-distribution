@@ -7,9 +7,9 @@ function version(binary: string): string {
 }
 
 export function runRuntimeVersions(args: string[]): number {
-  // The pins live in config/system-packages.json (kept in step by `yolo update pins`).
+  // The pins live in tools/config/system-packages.json (kept in step by `yolo update pins`).
   const pins = JSON.parse(
-    readFileSync(new URL("../../../../config/system-packages.json", import.meta.url), "utf8"),
+    readFileSync(new URL("../../../../tools/config/system-packages.json", import.meta.url), "utf8"),
   ) as {
     toolchains: { bun: { version: string }; uv: { version: string } };
   };

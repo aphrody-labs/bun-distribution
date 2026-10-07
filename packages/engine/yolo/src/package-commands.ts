@@ -114,7 +114,7 @@ export const PACKAGE_COMMANDS = {
     summary: "One CDP browser command on the Obscura endpoint, as a JSON line",
   },
   forge: {
-    module: "packages/engine/forge/src/main.ts",
+    module: "packages/engine/yolo/src/cli/forge/main.ts",
     run: "runForge",
     summary: "Build the aphrody-labs/bun fork: doctor | bootstrap | build | watch | status | unit",
     keepAlive: true,
@@ -187,13 +187,15 @@ export async function runPackageCommand(
   }
   const { label, module, run, tools } = resolved;
   const path = join(root, module);
-  if (!existsSync(path)) {
+  if (name !== "forge" && !existsSync(path)) {
     console.error(
       `yolo ${label}: ${module} is missing under ${root}; run inside an Aphrody checkout or set YOLO_APHRODY_ROOT`,
     );
     return 127;
   }
-  const owner = (await import(pathToFileURL(path).href)) as Record<string, unknown>;
+  const owner = (
+    name === "forge" ? await import("./cli/forge/main.ts") : await import(pathToFileURL(path).href)
+  ) as Record<string, unknown>;
   const runner = owner[run];
   if (typeof runner !== "function") {
     console.error(`yolo ${label}: ${module} does not export ${run}()`);

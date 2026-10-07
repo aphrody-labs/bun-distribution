@@ -31,7 +31,7 @@ if (import.meta.main) {
     );
   } else {
     const catalog = (await Bun.file(
-      resolve(import.meta.dir, "../../config/npm-packages.json"),
+      resolve(import.meta.dir, "../../tools/config/npm-packages.json"),
     ).json()) as { packages: ReleasedPackage[] };
     const specs = installSpecs(catalog.packages, value("--only")?.split(","));
     if (args.includes("--list")) console.log(specs.join("\n"));

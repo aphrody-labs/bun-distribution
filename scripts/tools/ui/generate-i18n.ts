@@ -7,7 +7,7 @@
  * - FFI (@aphrody/bun, HCT maths, palettes)
  * - CLI (crates/infra/aphrody pillars & commands)
  * - App-Server (crates/ai/app-server JSON-RPC)
- * - OS Kernel (crates/os/kernel subsystems & tools)
+ * - OS Kernel (crates/os/kernel/core subsystems & tools)
  * - Drive (crates/ui/drive, sd-daemon, VDFS)
  * - Shell (crates/shell, NuShell & PTY)
  *

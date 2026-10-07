@@ -2,7 +2,7 @@
 
 # Tauri 3 upstream line
 
-Machine-readable source: [`config/tauri-upstream.json`](https://github.com/aphrody-labs/aphrody/blob/main/config/tauri-upstream.json).
+Machine-readable source: [`tools/config/tauri-upstream.json`](https://github.com/aphrody-labs/aphrody/blob/main/tools/config/tauri-upstream.json).
 Sync command: `bun run tauri:sync` (module `packages/infra/workspace/src/tauri-sync.ts` (not in repo)).
 
 ## Which upstream ref is current
@@ -55,20 +55,20 @@ bun run tauri:sync -- --offline # local patch verification only
 ```
 
 `--apply` edits only the root `Cargo.toml`, root `package.json` and
-`config/tauri-upstream.json` (CLI version), then runs `cargo check` on the
+`tools/config/tauri-upstream.json` (CLI version), then runs `cargo check` on the
 Tauri crates and `bun install` / `bun install --frozen-lockfile`. On any
 failure it restores those files and both lockfiles. Cargo rewrites tracked
-generated schemas (`generated` entries of `config/tauri-apps.json`); review or restore them after a run.
+generated schemas (`generated` entries of `tools/config/tauri-apps.json`); review or restore them after a run.
 Files listed under `mirrors` in the config (the `TAURI_3` constants of
 `packages/scaffold/src/pins.ts`, the single scaffolder) are kept equal to the central versions: drift is reported
 (exit 1) and `--apply` rewrites them. The same holds for the `$schema` tag of
-every first-party `tauri*.conf.json` listed in `config/tauri-apps.json`. The cargo
+every first-party `tauri*.conf.json` listed in `tools/config/tauri-apps.json`. The cargo
 gate packages and generated paths are derived from that registry too. It never
 commits or pushes.
 
 ## Tauri app registry
 
-`config/tauri-apps.json` is the single list of Tauri projects: apps
+`tools/config/tauri-apps.json` is the single list of Tauri projects: apps
 (`aphrody-app`, `aphrody-model-view`, `koharu`), plugins and libraries, JS
 packages, the generators (`scaffold`, `web-to-tauri`, `m3-next-migrate`), the
 `aphrody-tauri-wrap` runtime and the upstream-owned fixtures under

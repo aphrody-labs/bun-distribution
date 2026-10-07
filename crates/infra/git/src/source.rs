@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Upstream source checkouts kept outside the repository.
 //!
-//! Reads `config/upstream-sources.json`, the manifest owned by
+//! Reads `tools/config/upstream-sources.json`, the manifest owned by
 //! `@aphrody/workspace`, and reports each checkout's state under the source
 //! root. Restoring (clone, extract, patch) stays in the workspace package;
 //! this module only inspects, so it never writes.
@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use crate::{Error, git_error, io_error};
 
 /// Manifest path relative to the repository root.
-pub const MANIFEST_PATH: &str = "config/upstream-sources.json";
+pub const MANIFEST_PATH: &str = "tools/config/upstream-sources.json";
 
 /// Environment variable overriding the manifest's source root.
 pub const SOURCE_ROOT_ENV: &str = "APHRODY_SOURCE_ROOT";
@@ -227,7 +227,7 @@ mod tests {
     fn missing_and_unmanaged_are_reported() {
         let temp = tempfile::tempdir().unwrap();
         let repo = temp.path();
-        std::fs::create_dir_all(repo.join("config")).unwrap();
+        std::fs::create_dir_all(repo.join("tools").join("config")).unwrap();
         std::fs::create_dir_all(repo.join("src-root/stray")).unwrap();
         std::fs::write(
             repo.join(MANIFEST_PATH),
@@ -252,7 +252,7 @@ mod tests {
     fn integrated_sources_ignore_external_root_and_reject_escape() {
         let temp = tempfile::tempdir().unwrap();
         let repo = temp.path();
-        std::fs::create_dir_all(repo.join("config")).unwrap();
+        std::fs::create_dir_all(repo.join("tools").join("config")).unwrap();
         std::fs::create_dir_all(repo.join("crates/native/example")).unwrap();
         let manifest = r#"{"schemaVersion":1,"root":"absent","sources":[],"integrated":[{"id":"example","kind":"crate","version":"1.0.0","pinned":true,"integratedPath":"crates/native/example","patches":[{"id":"p","marker":{"file":"f.rs","contains":"patched"}}]}]}"#;
         std::fs::write(repo.join(MANIFEST_PATH), manifest).unwrap();

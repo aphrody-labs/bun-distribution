@@ -38,7 +38,7 @@
         },
         {
           "name": "aphrody-a2a-client",
-          "path": "crates/os/a2a-client",
+          "path": "crates/os/kernel/comps/a2a-client",
           "description": "A2A v1 async client with protocol binding factory",
           "bins": [],
           "features": [
@@ -49,14 +49,14 @@
         },
         {
           "name": "aphrody-a2a-coord",
-          "path": "crates/os/a2a-coord",
+          "path": "crates/os/kernel/comps/a2a-coord",
           "description": "Aphrody A2A coordination: ai.json manifest, JSONL mailboxes and their NDJSON/SSE proxy, native Claude/Grok/agy peers, HTTP listener.",
           "bins": [],
           "features": []
         },
         {
           "name": "aphrody-a2a-grpc",
-          "path": "crates/os/a2a-grpc",
+          "path": "crates/os/kernel/comps/a2a-grpc",
           "description": "A2A v1 gRPC protocol binding for client and server",
           "bins": [],
           "features": [
@@ -68,14 +68,14 @@
         },
         {
           "name": "aphrody-a2a-pb",
-          "path": "crates/os/a2a-pb",
+          "path": "crates/os/kernel/comps/a2a-pb",
           "description": "A2A v1 protobuf-generated types and conversion layer",
           "bins": [],
           "features": []
         },
         {
           "name": "aphrody-a2a-server",
-          "path": "crates/os/a2a-server",
+          "path": "crates/os/kernel/comps/a2a-server",
           "description": "A2A v1 async server framework",
           "bins": [],
           "features": [
@@ -178,7 +178,7 @@
         },
         {
           "name": "aphrody-backend",
-          "path": "crates/os/backend",
+          "path": "crates/os/ostd/backend",
           "description": "Aphrody forensics and backend logic (Rust).",
           "bins": [],
           "features": []
@@ -215,7 +215,7 @@
         },
         {
           "name": "aphrody-capture",
-          "path": "crates/os/capture",
+          "path": "crates/os/kernel/libs/capture",
           "description": "Native Windows screen and window capture to PNG. GDI-based, zero unsafe outside FFI wrappers, RAII GDI handle guards.",
           "bins": [],
           "features": []
@@ -297,14 +297,14 @@
         },
         {
           "name": "aphrody-cron",
-          "path": "crates/os/cron",
+          "path": "crates/os/kernel/comps/cron",
           "description": "Lightweight async cron / interval / daily-time scheduler with pluggable JSON-backed job store for aphrody background tasks.",
           "bins": [],
           "features": []
         },
         {
           "name": "aphrody-diagnostics",
-          "path": "crates/os/diagnostics",
+          "path": "crates/os/kernel/comps/diagnostics",
           "description": "Doctor, OS/infra status, resolved config and AI environment shared by the CLI and the desktop app.",
           "bins": [],
           "features": []
@@ -399,7 +399,7 @@
         },
         {
           "name": "aphrody-fsindex",
-          "path": "crates/os/fsindex",
+          "path": "crates/os/kernel/libs/fsindex",
           "description": "Persistent local-filesystem search index (SQLite FTS5), mirroring the Google desktop app's local_files.db. Metadata-only, privacy-bounded.",
           "bins": [],
           "features": []
@@ -456,7 +456,7 @@
         },
         {
           "name": "aphrody-guard",
-          "path": "crates/os/guard",
+          "path": "crates/os/ostd/guard",
           "description": "Autonomous-agent safety guardrails: pre-main process hardening (disable core dumps, block ptrace attach, strip LD_*/DYLD_* loader env) and a cross-platform shell command-safety classifier (Allow / Prompt / Forbidden) for gating agent-issued commands. Inspired by OpenAI Codex (Apache-2.0).",
           "bins": [],
           "features": []
@@ -514,14 +514,14 @@
         },
         {
           "name": "aphrody-jobs",
-          "path": "crates/os/jobs",
+          "path": "crates/os/kernel/comps/jobs",
           "description": "Persistent background job queue (SQLite): submission, leased claims, crash recovery, retries, NDJSON logs.",
           "bins": [],
           "features": []
         },
         {
           "name": "aphrody-kernel",
-          "path": "crates/os/kernel",
+          "path": "crates/os/kernel/core",
           "description": "The Aphrody OS privileged user-space control plane: administration, MCP tools, skills and bus events over local IPC.",
           "bins": [],
           "features": [
@@ -531,7 +531,7 @@
         },
         {
           "name": "aphrody-kernel-client",
-          "path": "crates/os/kernel-client",
+          "path": "crates/os/kernel/client",
           "description": "Cross-platform local JSON-RPC client for the Aphrody OS kernel MCP endpoint.",
           "bins": [],
           "features": []
@@ -804,7 +804,7 @@
         },
         {
           "name": "aphrody-proc",
-          "path": "crates/os/proc",
+          "path": "crates/os/ostd/proc",
           "description": "Process supervision primitives shared by the llama-server supervisor, the command sandbox and the training runner: process groups that die with their owner (Linux session + killpg, Windows Job Object with KILL_ON_JOB_CLOSE), detached daemons, liveness probes, free-port allocation, advisory file locks and the single-GPU lease (shared for inference, exclusive for training).",
           "bins": [],
           "features": []
@@ -853,7 +853,7 @@
         },
         {
           "name": "aphrody-re",
-          "path": "crates/os/re",
+          "path": "crates/os/kernel/comps/re",
           "description": "Reverse engineering primitives for aphrody — PE/ELF/Mach-O triage, sections + entropy + hash, ASCII/UTF-16 strings extraction. Pure Rust, no C bindings, no GPL.",
           "bins": [],
           "features": [
@@ -914,7 +914,7 @@
         },
         {
           "name": "aphrody-sandbox",
-          "path": "crates/os/sandbox",
+          "path": "crates/os/kernel/comps/sandbox",
           "description": "Deterministic command and filesystem sandboxing for aphrody: SandboxPolicy, capability probing (Enforced/BestEffort/Unavailable), denial classification, and platform sandbox backends (Linux Landlock/seccomp, Windows Low-IL/Job Objects, macOS seatbelt).",
           "bins": [],
           "features": []
@@ -928,7 +928,7 @@
         },
         {
           "name": "aphrody-secrets",
-          "path": "crates/os/secrets",
+          "path": "crates/os/ostd/secrets",
           "description": "Secret store abstraction (env + plaintext file + AES-256-GCM/Argon2id encrypted file) with redacted Display/Debug, constant-time equality, and Zeroize-on-drop SecretValue newtype.",
           "bins": [],
           "features": []
@@ -1032,7 +1032,7 @@
         },
         {
           "name": "aphrody-subsystem",
-          "path": "crates/os/subsystem",
+          "path": "crates/os/ostd/subsystem",
           "description": "The Aphrody subsystem contract: MCP tools, skills (parameterised tool sequences), a sub-agent routine and the shared event bus.",
           "bins": [],
           "features": []
@@ -1058,7 +1058,7 @@
         },
         {
           "name": "aphrody-task-runner",
-          "path": "crates/os/task-runner",
+          "path": "crates/os/kernel/comps/task-runner",
           "description": "Parallel DAG task executor with dependency ordering, retries, timeouts, concurrency caps and NDJSON-friendly event stream for aphrody background pipelines.",
           "bins": [],
           "features": []
@@ -1587,7 +1587,7 @@
         },
         {
           "name": "aphrody-telemetry",
-          "path": "crates/os/telemetry",
+          "path": "crates/os/kernel/comps/telemetry",
           "description": "In-process observability for aphrody — hierarchical spans, monotonic counters, bucketed histograms, NDJSON exporter. OpenTelemetry-inspired, zero OTLP weight.",
           "bins": [],
           "features": []
@@ -1762,7 +1762,7 @@
         },
         {
           "name": "aphrody-winclean",
-          "path": "crates/os/winclean",
+          "path": "crates/os/kernel/comps/winclean",
           "description": "Rust-owned compatibility surface for 166 WinClean Windows tools.",
           "bins": [],
           "features": []
@@ -2452,7 +2452,7 @@
         {
           "name": "@aphrody/plugins",
           "path": "packages/engine/plugins",
-          "description": "Unified YOLO & Bun-TS7 plugin engine: generator, schema validation, doctrine enforcement and autonomous hook runtime",
+          "description": "Compatibility API for the plugin generator owned by @aphrody/yolo-cli",
           "bins": []
         },
         {
@@ -3727,14 +3727,14 @@
             },
             {
               "name": "source",
-              "about": "Upstream source checkouts outside the repository (config/upstream-sources.json).",
+              "about": "Upstream source checkouts outside the repository (tools/config/upstream-sources.json).",
               "aliases": [],
               "cfg": [],
               "children": []
             },
             {
               "name": "upstream",
-              "about": "Live read-only access to the upstream catalogue (config/upstream-sources.json), no clone needed.",
+              "about": "Live read-only access to the upstream catalogue (tools/config/upstream-sources.json), no clone needed.",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -4639,7 +4639,7 @@
       "binary": "aphrody host-service",
       "crate": "aphrody-kernel",
       "repo": "aphrody",
-      "source": "crates/os/kernel/src/cli.rs#Cli",
+      "source": "crates/os/kernel/core/src/cli.rs#Cli",
       "commands": [
         {
           "name": "serve",
@@ -4749,7 +4749,7 @@
         },
         {
           "name": "reclaim",
-          "about": "Reclaim allowlisted disk/tmpfs space on a target (config/disk-reclaim.json).",
+          "about": "Reclaim allowlisted disk/tmpfs space on a target (tools/config/disk-reclaim.json).",
           "aliases": [],
           "cfg": [],
           "children": []
@@ -5748,14 +5748,14 @@
                 },
                 {
                   "name": "source",
-                  "about": "Upstream source checkouts outside the repository (config/upstream-sources.json).",
+                  "about": "Upstream source checkouts outside the repository (tools/config/upstream-sources.json).",
                   "aliases": [],
                   "cfg": [],
                   "children": []
                 },
                 {
                   "name": "upstream",
-                  "about": "Live read-only access to the upstream catalogue (config/upstream-sources.json), no clone needed.",
+                  "about": "Live read-only access to the upstream catalogue (tools/config/upstream-sources.json), no clone needed.",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -6987,7 +6987,7 @@
             },
             {
               "name": "check",
-              "about": "Validate secret presence for a service against config/secrets-contract.json.",
+              "about": "Validate secret presence for a service against tools/config/secrets-contract.json.",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -8149,7 +8149,7 @@
         },
         {
           "name": "workspace_build_factory_status",
-          "description": "Where heavy Cargo/Bun work runs (factory or local) and why, from config/build-factory.json and this host's environment (CLI: build-factory status).",
+          "description": "Where heavy Cargo/Bun work runs (factory or local) and why, from tools/config/build-factory.json and this host's environment (CLI: build-factory status).",
           "file": "packages/infra/workspace/src/workspace-subsystem.ts"
         },
         {
@@ -8159,7 +8159,7 @@
         },
         {
           "name": "workspace_inline_inventory",
-          "description": "Inline Python/Bun/Node invocations with scope, reason and the ratchet against config/inline-interpreters.baseline.json (CLI: automation-inventory --inline).",
+          "description": "Inline Python/Bun/Node invocations with scope, reason and the ratchet against tools/config/inline-interpreters.baseline.json (CLI: automation-inventory --inline).",
           "file": "packages/infra/workspace/src/workspace-subsystem.ts"
         }
       ]
@@ -8385,7 +8385,7 @@
         {
           "name": "probe",
           "description": "d",
-          "file": "crates/os/kernel/src/tool_host.rs"
+          "file": "crates/os/kernel/core/src/tool_host.rs"
         }
       ]
     },
@@ -8397,32 +8397,32 @@
         {
           "name": "gcp_status",
           "description": "Inspect Google Cloud Platform credentials, active project, and Gemini API key availability",
-          "file": "crates/os/kernel/src/cloud.rs"
+          "file": "crates/os/kernel/core/src/cloud.rs"
         },
         {
           "name": "gcp_storage_list",
           "description": "List objects and storage prefixes in a Google Cloud Storage bucket",
-          "file": "crates/os/kernel/src/cloud.rs"
+          "file": "crates/os/kernel/core/src/cloud.rs"
         },
         {
           "name": "git_ingest",
           "description": "Ingest any Git repository or directory into a prompt-ready LLM digest matching https://gitingest.com/llms.txt (token estimation, ASCII tree, delimited file contents)",
-          "file": "crates/os/kernel/src/cloud.rs"
+          "file": "crates/os/kernel/core/src/cloud.rs"
         },
         {
           "name": "github_branches",
           "description": "List local and tracking remote branches with upstream synchronization status",
-          "file": "crates/os/kernel/src/cloud.rs"
+          "file": "crates/os/kernel/core/src/cloud.rs"
         },
         {
           "name": "github_status",
           "description": "Inspect current branch, ahead/behind tracking, modified/untracked files and recent commits for a Git repository",
-          "file": "crates/os/kernel/src/cloud.rs"
+          "file": "crates/os/kernel/core/src/cloud.rs"
         },
         {
           "name": "github_tree",
           "description": "List tree entries (blobs, trees, sizes) at a specific Git reference or path",
-          "file": "crates/os/kernel/src/cloud.rs"
+          "file": "crates/os/kernel/core/src/cloud.rs"
         }
       ]
     },
@@ -8434,22 +8434,22 @@
         {
           "name": "compat_dotnet_exec",
           "description": "Execute a .NET assembly or application using the dotnet CLI",
-          "file": "crates/os/kernel/src/compat/subsystem.rs"
+          "file": "crates/os/kernel/core/src/compat/subsystem.rs"
         },
         {
           "name": "compat_pwsh_eval",
           "description": "Evaluate a PowerShell Core (pwsh) or Windows PowerShell script with output capture",
-          "file": "crates/os/kernel/src/compat/subsystem.rs"
+          "file": "crates/os/kernel/core/src/compat/subsystem.rs"
         },
         {
           "name": "compat_runtimes_status",
           "description": "Detect and report availability of Wine, Proton, .NET and PowerShell Core runtimes",
-          "file": "crates/os/kernel/src/compat/subsystem.rs"
+          "file": "crates/os/kernel/core/src/compat/subsystem.rs"
         },
         {
           "name": "compat_wine_exec",
           "description": "Execute a Windows binary using Proton/Wine (or native Windows fallback)",
-          "file": "crates/os/kernel/src/compat/subsystem.rs"
+          "file": "crates/os/kernel/core/src/compat/subsystem.rs"
         }
       ]
     },
@@ -8461,27 +8461,27 @@
         {
           "name": "coreutils_catalog",
           "description": "List every command compiled into the pinned uutils/coreutils multicall binary",
-          "file": "crates/os/kernel/src/coreutils.rs"
+          "file": "crates/os/kernel/core/src/coreutils.rs"
         },
         {
           "name": "coreutils_run",
           "description": "Run one command from the pinned uutils/coreutils distribution without a shell",
-          "file": "crates/os/kernel/src/coreutils.rs"
+          "file": "crates/os/kernel/core/src/coreutils.rs"
         },
         {
           "name": "coreutils_status",
           "description": "Report the resolved pinned uutils/coreutils binary and whether it is available",
-          "file": "crates/os/kernel/src/coreutils.rs"
+          "file": "crates/os/kernel/core/src/coreutils.rs"
         },
         {
           "name": "uutils_catalog",
           "description": "List supported pinned uutils companion utilities and their availability",
-          "file": "crates/os/kernel/src/coreutils.rs"
+          "file": "crates/os/kernel/core/src/coreutils.rs"
         },
         {
           "name": "uutils_run",
           "description": "Run a pinned uutils companion utility (find, grep, sed, diff, or tar) without a shell",
-          "file": "crates/os/kernel/src/coreutils.rs"
+          "file": "crates/os/kernel/core/src/coreutils.rs"
         }
       ]
     },
@@ -8493,27 +8493,27 @@
         {
           "name": "infra_exec",
           "description": "Execute an arbitrary remote command on an Aphrody infrastructure host (vps or dbfr) via in-process SSH",
-          "file": "crates/os/kernel/src/infra.rs"
+          "file": "crates/os/kernel/core/src/infra.rs"
         },
         {
           "name": "infra_git_status",
           "description": "Inspect the working tree status and recent commits of a production Git repository on an infrastructure host",
-          "file": "crates/os/kernel/src/infra.rs"
+          "file": "crates/os/kernel/core/src/infra.rs"
         },
         {
           "name": "infra_sftp_list",
           "description": "List directory entries and metadata (size, permissions, is_dir) on an Aphrody infrastructure host via native SFTP",
-          "file": "crates/os/kernel/src/infra.rs"
+          "file": "crates/os/kernel/core/src/infra.rs"
         },
         {
           "name": "infra_sftp_read",
           "description": "Read the content of a remote file on an Aphrody infrastructure host via native in-process SFTP",
-          "file": "crates/os/kernel/src/infra.rs"
+          "file": "crates/os/kernel/core/src/infra.rs"
         },
         {
           "name": "infra_sync",
           "description": "Execute a differential file/directory synchronization with remote infrastructure host (fast-rsync/rclone)",
-          "file": "crates/os/kernel/src/infra.rs"
+          "file": "crates/os/kernel/core/src/infra.rs"
         }
       ]
     },
@@ -8525,7 +8525,7 @@
         {
           "name": "runtime_resolve",
           "description": "Resolve Bun, uv and Nushell: path, source, installed version, repository pin, pin compliance and Aphrody Bun module version when present",
-          "file": "crates/os/kernel/src/runtimes.rs"
+          "file": "crates/os/kernel/core/src/runtimes.rs"
         }
       ]
     },
@@ -8537,42 +8537,42 @@
         {
           "name": "systemd_journal_query",
           "description": "Query log messages from systemd journald with unit, severity level, and limit filtering",
-          "file": "crates/os/kernel/src/systemd/subsystem.rs"
+          "file": "crates/os/kernel/core/src/systemd/subsystem.rs"
         },
         {
           "name": "systemd_list_units",
           "description": "List all active and configured systemd units, targets and services",
-          "file": "crates/os/kernel/src/systemd/subsystem.rs"
+          "file": "crates/os/kernel/core/src/systemd/subsystem.rs"
         },
         {
           "name": "systemd_load_unit_file",
           "description": "Load and register a new systemd unit from INI text content",
-          "file": "crates/os/kernel/src/systemd/subsystem.rs"
+          "file": "crates/os/kernel/core/src/systemd/subsystem.rs"
         },
         {
           "name": "systemd_reload_unit",
           "description": "Reload configuration for a systemd service",
-          "file": "crates/os/kernel/src/systemd/subsystem.rs"
+          "file": "crates/os/kernel/core/src/systemd/subsystem.rs"
         },
         {
           "name": "systemd_restart_unit",
           "description": "Restart a systemd service",
-          "file": "crates/os/kernel/src/systemd/subsystem.rs"
+          "file": "crates/os/kernel/core/src/systemd/subsystem.rs"
         },
         {
           "name": "systemd_start_unit",
           "description": "Start or activate a systemd service or target",
-          "file": "crates/os/kernel/src/systemd/subsystem.rs"
+          "file": "crates/os/kernel/core/src/systemd/subsystem.rs"
         },
         {
           "name": "systemd_stop_unit",
           "description": "Stop or deactivate a systemd service or target",
-          "file": "crates/os/kernel/src/systemd/subsystem.rs"
+          "file": "crates/os/kernel/core/src/systemd/subsystem.rs"
         },
         {
           "name": "systemd_unit_status",
           "description": "Get detailed status, state, PID, uptime, and dependencies of a specific systemd unit",
-          "file": "crates/os/kernel/src/systemd/subsystem.rs"
+          "file": "crates/os/kernel/core/src/systemd/subsystem.rs"
         }
       ]
     },
@@ -8985,7 +8985,7 @@
         },
         {
           "name": "upstream_list",
-          "description": "List the upstream catalogue (config/upstream-sources.json): the few vital checkouts and the reference upstreams that are never cloned (codex, ollama, mistral.rs, vllm, WSL, ...), with tier, purpose and consumers.",
+          "description": "List the upstream catalogue (tools/config/upstream-sources.json): the few vital checkouts and the reference upstreams that are never cloned (codex, ollama, mistral.rs, vllm, WSL, ...), with tier, purpose and consumers.",
           "file": "crates/ai/mcp/src/lib.rs"
         },
         {
@@ -9089,832 +9089,832 @@
         {
           "name": "analyze_pe",
           "description": "Performs static analysis and symbol recovery on a target Windows PE binary (.exe or .dll). Recovers sections, imports, entry point disassembly, and maps symbols using heuristics (no execution).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "aob_scan",
           "description": "Scans raw file bytes for an Array of Bytes (AOB) pattern with optional wildcards (? or ??). Pattern format: '48 8B ? ? 48 89' or 'E8 ? ? ? ? 85 C0'. Returns matching offsets in the binary.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "asar_list",
           "description": "Lists files contained inside an Electron ASAR archive (.asar) without extraction or execution. Returns relative paths, offsets, and sizes.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "binary_aes_ctr_decrypt",
           "description": "AES-128/256-CTR decryption of a file using caller-supplied key (hex) and 16-byte IV (hex). Streams large files. Returns sha256 of the plaintext. Key must be 16 or 32 bytes; IV must be 16 bytes.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "binary_entropy_map",
           "description": "Computes Shannon entropy (0..8 bits/byte) per fixed-size block. High entropy (>=7.5) typically indicates encryption or compression. Helps locate packed sections in a binary without disassembling.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "binary_extract_strings",
           "description": "Extracts printable ASCII and UTF-16LE strings of >=minLength characters from a file. Returns up to maxResults entries with offset, encoding (ascii/utf16), and the string. Streams the file in 1 MiB chunks — works on large binaries.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "binary_hash_multi",
           "description": "Computes MD5 + SHA1 + SHA256 of a file in a single pass. Streams the file (any size). Returns all three hex digests.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "binary_list_cpk",
           "description": "Lists files inside a CRIWARE CPK archive (used by Inazuma Eleven Victory Road, many Japanese games). Parses the @UTF table at the start of the file. Returns up to maxEntries rows with internal path, offset, size, compressed size, CRC32.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "binary_parse_pe_header",
           "description": "Parses the PE/COFF header of a Windows executable or DLL. Returns machine (x64/arm64/x86), characteristics, image base, entry RVA, subsystem (gui/console), is64bit flag, and section table (name + RVA + size + flags).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "binary_section_dump",
           "description": "Dumps one named section (e.g. '.text', '.rdata', '.rsrc') of a PE file to outputPath. Returns offset, size, sha256.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "binary_xor_decrypt",
           "description": "Writes 'decrypted' = encryptedFile XOR repeating-key to outputPath. Key in hex (e.g. 'A5 5A 12' or 'A55A12'). Streams large files. If the encryption is a single-byte XOR, pass one byte. Returns sha256 of result.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "click",
           "description": "Performs a mouse click at the given screen coordinates. button: 'left' | 'right' | 'middle'. clicks: 0 = hover only, 1 = single click, 2 = double click.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "computer_capture_screen",
           "description": "Captures the primary desktop as a PNG image content block for visual computer use. Returns the screen dimensions and coordinate space in a text block before the image. Use computer_observe for a specific application and its UI Automation tree.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "computer_click",
           "description": "Clicks a point in the selected application using native mouse input. x/y are relative to the outer window rectangle returned by computer_observe. The window is restored and focused by default. Re-observe after the click because menus and layouts may change.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "computer_click_element",
           "description": "Finds one UI Automation element in a selected application and clicks its center. Prefer automationId when present, otherwise use an exact name, className or controlType from the latest computer_observe result. If multiple elements match, set occurrence (zero-based) or the tool returns the candidates without clicking.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "computer_drag",
           "description": "Drags inside a selected application with interpolated native mouse movement. Coordinates are relative to the latest observed window image. Use this for canvas operations in Blender, Photoshop and similar software, then capture a fresh observation to verify the result.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "computer_key",
           "description": "Sends a keyboard key or shortcut to a selected application using SendInput. Examples: ctrl+c, ctrl+shift+s, alt+f4, enter, tab, escape, f5. Windows-key shortcuts are intentionally rejected by this computer-use surface. Re-observe after actions that change UI.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "computer_observe",
           "description": "Observes a Windows application for computer use. Returns structured window metadata and a native UI Automation tree as text, plus a PNG image content block when capture succeeds. windowHandle=0 selects the foreground window; otherwise use an exact HWND returned by window_enum_all. Coordinates in later computer_* actions are relative to this window image. Use this before every state-dependent click, type or drag.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "computer_ocr",
           "description": "Runs local Windows OCR over the selected application screenshot and returns exact text with line/word bounding boxes. region coordinates are relative to the observed window image. format=json returns structured OCR; format=markdown returns the extracted text as Markdown. Set speak=true to synthesize and play the result with the installed Windows voice.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "computer_record_clip",
           "description": "Records a bounded, exportable clip of a window or the primary desktop as an uncompressed AVI. The clip is written locally without ffmpeg or a cloud service. durationMs is 1..30000 and fps is 1..30.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "computer_scroll",
           "description": "Scrolls a selected application using native wheel input. x/y are relative to the observed window image and identify the pane under the cursor. Re-observe after scrolling because lazy-loaded content and UI layouts can change.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "computer_speak",
           "description": "Speaks text using the installed local Windows speech synthesizer and plays it immediately. No cloud API or key is used. Returns the generated WAV path for export or later playback.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "computer_type",
           "description": "Types literal Unicode text into a selected application. Focuses the point first; set clear=true to replace the current field. x/y are relative to the observed window image. Maximum payload is 4096 characters per call. Re-observe before submitting or pressing Enter.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "coord_assign_task",
           "description": "Publish a new .coord/CURRENT_TASK.md. The full body is the markdown content. Returns JSON {ok,bytes,path}.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "coord_query_stop",
           "description": "Check the A2A kill switch — presence of .coord/STOP. Returns JSON {ok,stop:true|false}.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "coord_read_status",
           "description": "Read the latest status block for an agent from .coord/STATUS_<AGENT>.txt. Returns JSON {ok,agent,status} (status='' when the file is absent).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "coord_read_task",
           "description": "Read the current .coord/CURRENT_TASK.md. Returns JSON {ok,content} (content='' when absent).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "coord_report_status",
           "description": "Write the status block for an agent. The block goes to .coord/STATUS_<AGENT>.txt where <AGENT> is the upper-case form of `agent`. Returns JSON {ok,agent,bytes}.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "copy_path",
           "description": "Copies a file or directory to a destination.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "delete_path",
           "description": "Deletes a file or directory. Set recursive=true for non-empty directories.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "delete_registry_entry",
           "description": "Deletes a registry value (when name is set) or the entire key (when name is null/empty).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "disable_scheduled_task",
           "description": "Disables a scheduled task via schtasks /Change /Disable.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "enable_scheduled_task",
           "description": "Enables a scheduled task via schtasks /Change /Enable.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "gamepad_create_xbox360",
           "description": "Allocates a virtual Xbox 360 controller via ViGEmBus and connects it to the system. The virtual controller is indexed by slotIndex (0–7). Returns {\"success\":true,\"slot\":N,\"vendorId\":\"045e\",\"productId\":\"028e\"} on success. Requires ViGEmBus: https://github.com/nefarius/ViGEmBus/releases",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "gamepad_destroy",
           "description": "Removes and frees the virtual Xbox 360 controller at the given slot. Safe to call if the slot was never created (no-op).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "gamepad_destroy_all",
           "description": "Removes and frees ALL active virtual Xbox 360 controllers created in this process. Use as cleanup before shutdown or when resetting gamepad state.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "gamepad_environment",
           "description": "Diagnoses the ViGEmBus virtual gamepad environment. Reports whether ViGEmBus registry key exists, whether the service is running, and whether ViGEmClient.dll can be located on disk. Install ViGEmBus from https://github.com/nefarius/ViGEmBus/releases if absent.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "gamepad_press_button",
           "description": "Presses one or more buttons on a virtual Xbox 360 controller then releases them. buttonMask uses the same bitmask as GamepadSendXbox360State. holdMs: how long to hold the buttons down (clamped to [1, 5000] ms).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "gamepad_send_xbox360_state",
           "description": "Sends a full Xbox 360 controller state update. buttons bitmask: DPAD_UP=1, DPAD_DOWN=2, DPAD_LEFT=4, DPAD_RIGHT=8, START=16, BACK=32, L3=64, R3=128, LB=256, RB=512, GUIDE=1024, A=4096, B=8192, X=16384, Y=32768. Axes lx/ly/rx/ry: [-32768, 32767]. Triggers lt/rt: [0, 255].",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "get_active_power_plan",
           "description": "Returns the GUID and friendly name of the active Windows power plan.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "get_clipboard_text",
           "description": "Reads UTF-16 text content from the Windows clipboard.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "get_cpu_info",
           "description": "Returns CPU topology as JSON: logical processors, physical cores, NUMA nodes, cache sizes (L1/L2/L3 aggregate), architecture.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "get_cpu_usage",
           "description": "Samples global CPU usage over a short interval (default 250 ms, clamp 50-2000) via GetSystemTimes. Returns usage/idle percent and raw idle/kernel/user deltas in seconds. Kernel time as reported by Windows INCLUDES idle time; this tool subtracts it before computing the percentage.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "get_defender_status",
           "description": "Returns Windows Defender state as JSON: AntivirusEnabled, RealTimeProtectionEnabled, BehaviorMonitorEnabled, TamperProtected, AntivirusSignatureVersion, LastQuickScanStartUtc, LastFullScanStartUtc, ThreatCount.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "get_disk_info",
           "description": "Returns logical-drive info (root, type, total/free/available bytes) as JSON via GetLogicalDriveStrings + GetDiskFreeSpaceEx.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "get_file_info",
           "description": "Returns metadata for a file or directory as JSON: size, dates, type, hidden flag.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "get_gpu_preferences",
           "description": "Reads all per-app GPU preferences from HKCU\\SOFTWARE\\Microsoft\\DirectX\\UserGpuPreferences. Returns each registered exe path with its raw preference string ('GpuPreference=N;').",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "get_hags_mode",
           "description": "Reads HKLM\\System\\CurrentControlSet\\Control\\GraphicsDrivers\\HwSchMode. 0 = WDDM CPU scheduling, 1 = OS-managed default, 2 = Hardware-Accelerated GPU Scheduling. Requires WDDM 2.7+ (Win10 20H1+ / Win11). Reboot to take effect.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "get_memory_info",
           "description": "Returns physical / virtual / page-file memory state as JSON via GlobalMemoryStatusEx.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "get_network_adapters",
           "description": "Lists network adapters (Name, Description, Status, MAC, link speed, IPv4 addresses) as JSON.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "get_os_info",
           "description": "Returns OS version info (ProductName, EditionId, DisplayVersion, BuildNumber, UBR, InstallationType, OSArchitecture, MachineName, UserName) as JSON.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "get_registry_value",
           "description": "Reads a registry value. Path uses PowerShell-style hive prefixes (HKCU:\\, HKLM:\\, HKCR:\\, HKU:\\, HKCC:\\).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "get_system_profile",
           "description": "Récupère le profil système complet pour vérifier l'état d'optimisation du poste.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "golang_scan",
           "description": "Inspects a target binary for Golang runtime signatures (pclntab) and extracts Go package/symbol indicators. Passive inspection without execution.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "keyboard_hold",
           "description": "Holds an arbitrary virtual key down (no release). Pair with KeyboardRelease to let go. Useful for charging mechanics, sustained movement keys, modifiers held across multiple ops.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "keyboard_release",
           "description": "Releases a virtual key previously held by KeyboardHold.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "keyboard_scan_code",
           "description": "Sends a single key by raw hardware SCAN CODE instead of virtual key. Some games (and anti-cheats) ignore Send-Input from virtual keys but accept scan codes because they match real keyboards. action: 'down' | 'up' | 'tap' (down+up).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "kill_process",
           "description": "Kills a process by PID (preferred) or name. Returns the count of terminated processes. Force=true requests an immediate kill (default true). PPL-protected processes return a labelled error.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "launch_app",
           "description": "Launches a Windows application. Accepts an absolute path to an .exe (e.g. 'C:\\\\Windows\\\\System32\\\\notepad.exe'), an executable name resolvable via PATH (e.g. 'notepad.exe'), or a shell URI (mailto:, explorer:, ms-settings:).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "list_directory",
           "description": "Lists directory contents as streamed JSON. Set recursive=true to descend, showHidden=true to include hidden entries, pattern to filter by glob, and exclude to omit matching entry names and skip matching directories. Exclusion matching is ASCII case-insensitive. Hard cap: 10000 entries returned; result is marked truncated when exceeded.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "list_listening_ports",
           "description": "Lists TCP/IPv4 listening ports (LISTEN state only) as JSON.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "list_power_plans",
           "description": "Lists installed Windows power plans with their GUID, friendly name, and whether they are currently active. Returns JSON with the active GUID at the top.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "list_processes",
           "description": "Lists running processes as JSON. Filter by name (substring, case-insensitive). Sort by 'memory' (default), 'private', 'cpu', 'threads', 'handles' or 'name'. Limit caps the result count (default 20, max 1000). Backed by NtQuerySystemInformation for a single-syscall enumeration with full per-process metrics.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "list_registry_key",
           "description": "Lists sub-keys and values under a registry key as JSON.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "list_scheduled_tasks",
           "description": "Lists scheduled tasks under the given folder (default = root '\\') via schtasks /Query. Returns JSON: Path, Name, State, LastRunTimeUtc, LastTaskResult, Enabled.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "list_services",
           "description": "Lists Windows services as JSON. Filter by name substring (case-insensitive) and/or by status: Running, Stopped, Paused, StartPending, StopPending.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "list_tcp_connections",
           "description": "Lists active TCP/IPv4 connections (Local/Remote address+port, state, owning PID) as JSON. Optional state filter (Listen, Established, CloseWait, TimeWait, Closed, SynSent, etc.).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "list_windows",
           "description": "Lists all visible top-level windows as JSON.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_allocate",
           "description": "Allocates virtual memory in a remote process via VirtualAllocEx. Returns the base address of the new region. protect: 'rw' (PAGE_READWRITE), 'rwx' (PAGE_EXECUTE_READWRITE), 'rx' (PAGE_EXECUTE_READ).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_dump_region",
           "description": "Reads up to MAX_DUMP_BYTES (4 MiB) from a memory region and writes them to a host-side file (default: %TEMP%\\winclean_mcp_dump_<pid>_<addr>.bin). Returns the path and sha256 of the dump. Suspends the target during the read if suspend=true (avoids torn pages).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_enable_debug_privilege",
           "description": "Enables SeDebugPrivilege on the current MCP process so subsequent OpenProcess calls can attach to protected processes (most non-PPL user-mode targets). Idempotent — safe to call repeatedly.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_free",
           "description": "Releases a region previously allocated with MemAllocate (MEM_RELEASE).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_get_module_base",
           "description": "Returns the base address and size of a named module in a process. Name comparison is case-insensitive. Returns the first match.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_list_modules",
           "description": "Lists all loaded modules (DLLs + EXE) of a process. Returns name, baseAddress, and sizeOfImage for each module.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_list_processes",
           "description": "Lists running processes filtered by name substring (case-insensitive). Returns pid, name, and sessionId for each match. Leave nameFilter empty to list all processes (capped at 512).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_protect",
           "description": "Changes page protection on a memory region via VirtualProtectEx. Returns the previous protection flags. protect: rw | rwx | rx | ro | noaccess.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_query_region",
           "description": "Queries the virtual memory region containing the given address via VirtualQueryEx. Returns BaseAddress, RegionSize, State (Free/Reserve/Commit), Protect flags, and Type (Private/Image/Mapped).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_read_bytes",
           "description": "Reads raw bytes from a process's virtual address space via ReadProcessMemory. Length is capped at 65536 bytes. Returns hex-encoded bytes in the 'hex' field.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_read_c_string",
           "description": "Reads a null-terminated ASCII C-string from a process's virtual memory. Stops at the first NUL byte or maxLength bytes, whichever comes first.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_read_double",
           "description": "Reads a 64-bit IEEE 754 double (little-endian) from a process's virtual memory.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_read_float",
           "description": "Reads a 32-bit IEEE 754 float (little-endian) from a process's virtual memory.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_read_int32",
           "description": "Reads a signed 32-bit integer (little-endian) from a process's virtual memory.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_read_int64",
           "description": "Reads a signed 64-bit integer (little-endian) from a process's virtual memory.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_read_utf16",
           "description": "Reads a null-terminated UTF-16LE wide string from a process's virtual memory. Stops at the first NUL char or maxChars characters, whichever comes first.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_resume_process",
           "description": "Resumes every thread of the target process via NtResumeProcess.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_scan_aob",
           "description": "Scans a module's memory range for an IDA-style byte pattern (Array-of-Bytes scan). Pattern format: hex bytes separated by spaces, '??' as wildcard. Example: '48 8B 05 ?? ?? ?? ?? 48 89 01'. Reads the module in 256 KiB chunks. Returns up to maxHits matching addresses.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_scan_value_int32",
           "description": "Cheat-Engine-style first scan: searches every committed RW page of the process for a 4-byte little-endian int32 value. Returns up to maxHits absolute addresses. Use MemReadInt32 to verify, then narrow via repeated scans.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_suspend_process",
           "description": "Suspends every thread of the target process via NtSuspendProcess.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_write_bytes",
           "description": "Writes raw bytes to a process's virtual memory via WriteProcessMemory. hex format: continuous hex digits (e.g. '48895c2408') or space-separated ('48 89 5c 24 08'). Length capped at 65536. Requires PROCESS_VM_WRITE — call MemEnableDebugPrivilege first for protected targets.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_write_double",
           "description": "Writes a 64-bit IEEE 754 double to a process's memory.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_write_float",
           "description": "Writes a 32-bit IEEE 754 float to a process's memory.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_write_int32",
           "description": "Writes a signed 32-bit little-endian integer to a process's memory.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mem_write_int64",
           "description": "Writes a signed 64-bit little-endian integer to a process's memory.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mouse_drag_to",
           "description": "Performs a mouse drag from (x1,y1) to (x2,y2) with intermediate cursor moves so the OS drag-recognition logic actually fires (some apps reject teleported clicks). button: 'left' | 'right' | 'middle'. steps: number of intermediate move events (default 20).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "mouse_move_smooth",
           "description": "Moves the mouse cursor smoothly along an interpolated path. Useful when the target window inspects MOUSEMOVE deltas (anti-automation heuristics) instead of a teleport via SetCursorPos. No button is pressed.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "move",
           "description": "Moves the mouse cursor to the given screen coordinates. Set drag=true to perform a left-button drag from the current position to the target.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "move_path",
           "description": "Moves or renames a file or directory.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "multi_edit",
           "description": "Types the same text into multiple UIA elements identified by exact Name property. Takes a comma-separated label list and a single text payload. Resolves labels against a fresh Snapshot() of the foreground window.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "multi_select",
           "description": "Clicks multiple UI elements identified by exact UIA Name property. Takes a comma-separated label list. Returns a JSON summary of clicked / notFound. Resolves labels against a fresh Snapshot() of the foreground window.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "perf_dwm_flush",
           "description": "Forces the Desktop Window Manager to flush pending GPU work (DwmFlush). Useful right before / after a frame-rate critical operation to align with VBLANK.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "perf_empty_working_sets",
           "description": "Trims the working set of EVERY accessible process via NtSetSystemInformation (MemoryEmptyWorkingSets). Each process keeps its memory but pages are pushed to standby, freeing physical RAM immediately. No process is killed.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "perf_memory_status",
           "description": "Returns current physical and virtual memory pressure (MEMORYSTATUSEX). Use before/after PerfPurgeStandbyList or PerfEmptyWorkingSets to measure impact.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "perf_purge_standby_list",
           "description": "Purges the Windows memory standby list (cached pages that are no longer in any working set but kept around for re-use). Frees RAM instantly without touching working sets. Equivalent to RAMMap → Empty Standby List. Requires elevation.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "perf_set_eco_mode",
           "description": "Toggles Win11 EcoQoS (PowerThrottling) on a process. EcoMode = on → process is throttled to E-cores and capped frequency (saves power). EcoMode = off → release throttling (max performance). Reset all overrides with mode='default'.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "power_shell",
           "description": "Executes a PowerShell command and returns stdout, stderr, exit code, and duration as JSON. Uses pwsh (PowerShell 7) when available, falling back to powershell.exe. Captures both streams without launching a window.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "query_event_log",
           "description": "Queries a Windows Event Log channel via wevtapi and returns up to maxEvents entries (newest first) as JSON. Optional XPath filter (e.g. \"*[System[Level=2]]\" for Error-level only). Channel examples: Application, System, Security, Microsoft-Windows-WindowsUpdateClient/Operational.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "read_file",
           "description": "Reads a UTF-8 text file. Supports optional line offset and limit for reading large files in chunks. Returns the content prefixed with the resolved absolute path.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "resize_window",
           "description": "Resizes / moves a window matched by title substring. Set width/height to 0 to keep current size.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "restart_service",
           "description": "Restarts a Windows service. Stops then starts, waiting up to 10s per phase.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "run_scheduled_task",
           "description": "Runs a scheduled task immediately via schtasks /Run.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "scrape",
           "description": "Fetches a URL via HTTP GET and returns extracted plain text (script/style stripped, tags removed). Caps: 4 MiB download, 200k extracted chars, 30s timeout. For richer extraction prefer the docs MCP server (microsoft_docs_fetch / winclean_universal_web_fetch).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "screenshot",
           "description": "Captures the primary monitor to a BMP file on disk. Returns the absolute file path. Width/height default to the full virtual screen.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "scroll",
           "description": "Scrolls at the given screen coordinates. axis: 'vertical' | 'horizontal'. direction: up/down for vertical, left/right for horizontal. wheelTimes is the number of wheel notches (each notch ≈ 3 lines).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "search_files",
           "description": "Searches a directory tree for files matching a glob pattern. Exclude basenames with glob patterns; excluded directories are not traversed. Hard cap: 10000 results; result is marked truncated when exceeded.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "search_windows",
           "description": "Effectue une recherche ultra-rapide sur le disque via l'indexeur natif Windows Search.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "send_notification",
           "description": "Displays a Windows tray balloon notification with title and message. Note: balloon tips replace classic Win32 toasts; modern WinRT toast (requires WindowsAppSDK projection) is not yet wired up.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "set_active_power_plan",
           "description": "Activates a Windows power plan by GUID. Common GUIDs: 381b4222-f694-41f0-9685-ff5bb260df2e (Balanced), 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c (High performance), a1841308-3541-4fab-bc81-f71556f20b4a (Power saver), e9a42b02-d5df-448d-aa00-03f14749eb61 (Ultimate Performance).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "set_clipboard_text",
           "description": "Writes UTF-16 text to the Windows clipboard.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "set_gpu_preference",
           "description": "Writes per-app GPU preference in HKCU\\SOFTWARE\\Microsoft\\DirectX\\UserGpuPreferences. preference: 'SystemDefault' (0), 'PowerSaving' (1, iGPU), 'HighPerformance' (2, dGPU). exePath should be the absolute path to the .exe. Takes effect on next process launch. Format written: REG_SZ 'GpuPreference=N;'.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "set_hags_mode",
           "description": "Writes HwSchMode in HKLM\\System\\CurrentControlSet\\Control\\GraphicsDrivers. Valid: 0 (WDDM CPU), 1 (OS default), 2 (HW-accelerated GPU scheduling). Requires admin + reboot. Microsoft + NVIDIA recommend 2 on WDDM 2.7+ hardware (validates DLSS 3 Frame Generation).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "set_process_affinity",
           "description": "Sets the CPU affinity mask of a process. The mask is a bitmask where bit N means 'process may run on logical processor N'. Pass 0 to reset to the system default. Returns previous and new mask in hex as JSON.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "set_process_priority",
           "description": "Sets the Windows priority class of a process. Valid values: 'Idle', 'BelowNormal', 'Normal', 'AboveNormal', 'High', 'Realtime'. Returns previous and new class as JSON. Realtime requires Administrator and can starve system services.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "set_registry_value",
           "description": "Writes a registry value. Creates the key if missing. Supported types: String, ExpandString, DWord, QWord, MultiString (newline-separated).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "shortcut",
           "description": "Sends a keyboard shortcut. The combo is a '+'-separated list of keys, e.g. 'ctrl+c', 'ctrl+shift+esc', 'win+r', 'alt+f4'. Modifier keys: ctrl, shift, alt, win. Literal keys: a-z, 0-9, f1-f24, esc, enter, tab, space, backspace, delete, home, end, up, down, left, right.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "snapshot",
           "description": "Captures a UIA control-view tree snapshot of the foreground window via native UI Automation. Pass windowHandle to inspect a specific application without changing focus. Returns up to maxElements (default 200) descendants with name, controlType, automationId, className, bounds, focus and enabled state. Used by computer_* and MultiSelect/MultiEdit.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "start_service",
           "description": "Starts a stopped Windows service. Waits up to 10s for the Running state.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "steam_get_game",
           "description": "Returns full details of a single Steam game by appId. Returns {\"success\":false,...} if the appId is not found.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "steam_get_game_status",
           "description": "Checks whether a Steam game process is currently running. Resolves install_dir and absolute_install_path from steam-scan.db. Executable name defaults to install_dir + \".exe\". Returns {\"appId\":N,\"running\":bool,\"pid\":N|null,\"executable\":\"...\",\"installDir\":\"...\"}.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "steam_kill_game",
           "description": "Kills a running Steam game by executable name. Returns {\"success\":true,\"pid\":N,\"killed\":1} or {\"success\":false,\"error\":\"not running\"}.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "steam_launch_and_wait",
           "description": "Launches a Steam game via steam://rungameid/{appId} then waits for the process to appear. Combines SteamLaunchByAppId + SteamWaitForLaunch in a single MCP call. Returns {\"success\":true,\"pid\":N,\"elapsedMs\":N} or {\"success\":false,...}.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "steam_launch_by_app_id",
           "description": "Launches a Steam game via steam://rungameid/{appId}. Returns immediately — use SteamWaitForLaunch to block until the process is alive. Returns {\"success\":false,...} if Steam is not installed.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "steam_list_games",
           "description": "Returns a JSON array of Steam games from steam-scan.db. By default only games whose files are present on disk (files_present > 0) are returned. Set includeMissing=true to include all rows regardless of files_present.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "steam_list_libraries",
           "description": "Returns all Steam library paths with their game_count and total_size_bytes as recorded in steam-scan.db.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "steam_open_uri",
           "description": "Opens any steam:// URI via ShellExecute. Allowed schemes: steam:// only. Returns {\"success\":true,\"uri\":\"...\"} or {\"success\":false,\"error\":\"invalid scheme\"}.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "steam_scan_summary",
           "description": "Returns aggregate counts from steam-scan.db: nb_installs, nb_libraries, nb_games, nb_games_present, total_size_bytes.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "steam_vault_status",
           "description": "Returns vault target metadata from secrets_vault_ref (target name, kind, description, user_hint). Secret material (passwords, tokens) is never included. Also attempts to invoke 'winclean-steam-auth list --json' (if present) for live vault status.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "steam_wait_for_launch",
           "description": "Polls until the named process appears or the timeout elapses. Returns {\"success\":true,\"pid\":N,\"elapsedMs\":N} or {\"success\":false,\"error\":\"timeout\",...}.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "stop_service",
           "description": "Stops a running Windows service. Waits up to 10s for the Stopped state.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "switch_to_window",
           "description": "Brings a window to the foreground by partial title match (case-insensitive). Restores it if minimized.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "trim_process_working_set",
           "description": "DIAGNOSTIC / DEBUG ONLY. Trims a process's working set via SetProcessWorkingSetSize(-1,-1). The OS does NOT free the pages — it moves them to the standby list. The next time the process touches that memory, it incurs a HARD PAGE FAULT (disk read). Mark Russinovich (Sysinternals creator, Azure CTO) documents this is anti-performance for normal use: see 'The Memory-Optimization Hoax'. The Microsoft API doc itself states the function is 'useful primarily for testing and tuning'. Use only on demonstrably-idle GUI apps where you accept the next-touch latency. Do NOT call in a loop.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "type",
           "description": "Types text at the given screen coordinates. Set clear=true to send Ctrl+A + Delete before typing. Set pressEnter=true to submit with RETURN after typing. Max 4096 chars per call.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "wait",
           "description": "Pauses execution for the given duration in seconds (1..120).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "window_capture",
           "description": "Captures the pixels of a window to a 24-bit BMP file via PrintWindow + GetDIBits. Works even when the window is MINIMISED, OFF-SCREEN or COVERED by another window (DWM redirection surface). Returns the saved BMP path and dimensions.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "window_close",
           "description": "Sends WM_CLOSE to the window (graceful close request).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "window_enum_all",
           "description": "Enumerates every top-level window (visible AND hidden). Filters by pid (0 = any), class substring, title substring (all case-insensitive). Returns hwnd, pid, classname, title, rect, visible, minimised, maximised flags.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "window_enum_children",
           "description": "Enumerates direct + indirect child windows of a given HWND parent. Useful to drill into controls inside an app frame (edit fields, buttons, listviews).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "window_find_by_class",
           "description": "Finds the first top-level HWND with the exact class name (case-sensitive) and optionally a matching window title. Returns hwnd=0 if not found.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "window_get_text",
           "description": "Reads the text of a window or control via WM_GETTEXTLENGTH + WM_GETTEXT. Works on hidden controls; pair with WindowEnumChildren to locate the HWND.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "window_minimise_all",
           "description": "Sends WM_KEYDOWN/UP for Win+D to the shell — minimises every visible window at once.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "window_move",
           "description": "Moves and/or resizes a window by HWND. Set width/height to 0 to keep current size, set x/y to a value outside the visible desktop to park the window off-screen.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "window_post_message",
           "description": "Posts a Win32 message to a window's queue via PostMessageW (asynchronous, non-blocking). Returns immediately even if the target ignores or hangs on the message.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "window_send_message",
           "description": "Sends a Win32 message to a window via SendMessageW (synchronous). Useful to drive controls without stealing focus — e.g. WM_LBUTTONDOWN/UP on a button HWND, WM_SETTEXT to set an edit field, WM_CLOSE to request close. wParam/lParam can be decimal or 0x-prefixed hex.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "window_set_opacity",
           "description": "Sets per-window opacity (0..255). Promotes the window to WS_EX_LAYERED if needed. Use 255 = fully opaque, 0 = fully transparent (but still receives input unless clickThrough).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "window_set_text",
           "description": "Sets the text of a window or control via WM_SETTEXT. Targets edit fields, captions, listbox items. For complex Unicode UIs prefer UIA.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "window_set_topmost",
           "description": "Sets the TOPMOST flag on a window (Z-order pinned above all non-topmost windows).",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "winml_get_version",
           "description": "Returns the ONNX Runtime version string powering Windows ML on this machine.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "winml_inspect_onnx",
           "description": "Loads an ONNX model and returns its input/output metadata (name, element type, shape). Use this before WinmlRunFloat32 to discover tensor shapes.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "winml_list_providers",
           "description": "Lists ONNX Runtime execution providers available in the current process (e.g. CPUExecutionProvider, DmlExecutionProvider, CUDAExecutionProvider). Reflects whatever EPs Windows ML / the loaded native dll registered.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "winml_run_float32",
           "description": "Runs inference on an ONNX model with float32 tensor inputs. inputsJson: '{\"input_name\":{\"shape\":[1,3,224,224],\"data\":[0.1,0.2,...]}}'. executionProvider: 'cpu' (default) | 'dml' (DirectML, any GPU) | 'cuda' (NVIDIA). Returns the first output tensor as float32 JSON.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "write_file",
           "description": "Writes UTF-8 text to a file. Creates parent directories as needed. Set append=true to append instead of overwrite.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "wsl_execute",
           "description": "Runs a command in an existing WSL distribution using an argv array, with a 30-second bound and captured stdout/stderr. command must contain the executable followed by arguments; it is never concatenated into a shell command. For deliberate shell scripting, pass /bin/sh, -lc, and the script as separate command entries.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "wsl_get_status",
           "description": "Returns the local WSL installation status. This is read-only and reports the Windows WSL configuration, default distribution, and kernel information when available.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "wsl_list_distributions",
           "description": "Lists installed WSL distributions with their state and WSL version. This is read-only; it never starts, terminates, imports, exports, or unregisters a distribution.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "wsl_list_processes",
           "description": "Lists Linux processes in an existing WSL distribution. This is read-only and returns PID, parent PID, command, and arguments.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "wsl_read_only_probe",
           "description": "Runs one fixed, read-only diagnostic inside an existing WSL distribution. probe must be one of: system-info, re-toolchain, processes, mounts, or network. No arbitrary shell command is accepted.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         },
         {
           "name": "wsl_send_signal",
           "description": "Sends HUP, INT, TERM, or KILL to one exact Linux PID in an existing WSL distribution. Call wsl_list_processes first to identify the target PID.",
-          "file": "crates/os/winclean/src/tools.json"
+          "file": "crates/os/kernel/comps/winclean/src/tools.json"
         }
       ]
     },

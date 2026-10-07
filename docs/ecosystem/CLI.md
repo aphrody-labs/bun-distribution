@@ -143,8 +143,8 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 238 comma
   - `aphrody git rollout` — Roll out managed CI to active GitHub repositories owned by an account.
   - `aphrody git ingest` — Ingest a Git repository or local directory into a prompt-ready LLM digest (GitIngest standard).
   - `aphrody git search` — Search GitHub repositories for documentation, llms.txt, and code digests.
-  - `aphrody git source` — Upstream source checkouts outside the repository (config/upstream-sources.json).
-  - `aphrody git upstream` — Live read-only access to the upstream catalogue (config/upstream-sources.json), no clone needed.
+  - `aphrody git source` — Upstream source checkouts outside the repository (tools/config/upstream-sources.json).
+  - `aphrody git upstream` — Live read-only access to the upstream catalogue (tools/config/upstream-sources.json), no clone needed.
   - `aphrody git attribution` — Audit and strip AI attributions, co-authors, and trailers from Git commits.
   - `aphrody git clean-public` — Audit public web surfaces, products and repositories for private AI leaks.
 - `aphrody ingest` — Ingest a Git repository or directory into a prompt-ready LLM digest (GitIngest standard). _(aliases: gitingest, y; cfg: not(target_arch = "wasm32"))_
@@ -280,7 +280,7 @@ Crate `aphrody-rag`, parser `crates/ai/rag/src/home_cli.rs#Cli`, 3 commands.
 
 ### `aphrody host-service`
 
-Crate `aphrody-kernel`, parser `crates/os/kernel/src/cli.rs#Cli`, 6 commands.
+Crate `aphrody-kernel`, parser `crates/os/kernel/core/src/cli.rs#Cli`, 6 commands.
 
 - `aphrody host-service serve` — Serve the kernel with the built-in subsystems on the local endpoint.
 - `aphrody host-service tools` — List tools as JSON.
@@ -301,7 +301,7 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 315 commands.
 - `aphrody infra sync` — Print the actions that a synchronization would perform.
 - `aphrody infra deploy` — Run a deploy adapter. Mutation requires --apply and an explicit target.
 - `aphrody infra validate` — Check cross-catalog invariants (services, nginx routes, port policy).
-- `aphrody infra reclaim` — Reclaim allowlisted disk/tmpfs space on a target (config/disk-reclaim.json).
+- `aphrody infra reclaim` — Reclaim allowlisted disk/tmpfs space on a target (tools/config/disk-reclaim.json).
 - `aphrody infra dev-env` — Validate or provision the declared development environment.
 - `aphrody infra service` — Manage cataloged services lifecycle (catalog, status, start, stop, restart, journal).
 - `aphrody infra probe` — Probe an HTTP or TCP endpoint health.
@@ -437,8 +437,8 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 315 commands.
     - `aphrody infra ssh git rollout` — Roll out managed CI to active GitHub repositories owned by an account.
     - `aphrody infra ssh git ingest` — Ingest a Git repository or local directory into a prompt-ready LLM digest (GitIngest standard).
     - `aphrody infra ssh git search` — Search GitHub repositories for documentation, llms.txt, and code digests.
-    - `aphrody infra ssh git source` — Upstream source checkouts outside the repository (config/upstream-sources.json).
-    - `aphrody infra ssh git upstream` — Live read-only access to the upstream catalogue (config/upstream-sources.json), no clone needed.
+    - `aphrody infra ssh git source` — Upstream source checkouts outside the repository (tools/config/upstream-sources.json).
+    - `aphrody infra ssh git upstream` — Live read-only access to the upstream catalogue (tools/config/upstream-sources.json), no clone needed.
     - `aphrody infra ssh git attribution` — Audit and strip AI attributions, co-authors, and trailers from Git commits.
     - `aphrody infra ssh git clean-public` — Audit public web surfaces, products and repositories for private AI leaks.
   - `aphrody infra ssh ingest` — Ingest a Git repository or directory into a prompt-ready LLM digest (GitIngest standard). _(aliases: gitingest, y; cfg: not(target_arch = "wasm32"))_
@@ -604,7 +604,7 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 315 commands.
     - `aphrody infra ovh iam sync` — Keep policy `aphrody-automation` and groups `aphrody-all*` covering every account resource (plan by default, requires --apply).
 - `aphrody infra secrets` — Sovereign secret management: audit leaks, contract check, envelope encrypt/decrypt, systemd render.
   - `aphrody infra secrets audit` — Deep audit of repository tree and files for unencrypted secrets and tokens.
-  - `aphrody infra secrets check` — Validate secret presence for a service against config/secrets-contract.json.
+  - `aphrody infra secrets check` — Validate secret presence for a service against tools/config/secrets-contract.json.
   - `aphrody infra secrets encrypt` — Encrypt an unencrypted environment file into an EncryptedManifest (.enc.json).
   - `aphrody infra secrets decrypt` — Decrypt an EncryptedManifest to verify integrity or inspect schema.
   - `aphrody infra secrets render` — Safely provision a decrypted environment file for systemd with 0400 permissions.

@@ -10,7 +10,7 @@ pas le parcours léger d’une application consommatrice. Voir le
 
 Ces scripts préparent un checkout neuf : outils système, versions Rust et Bun
 épinglées par le dépôt, dépendances Bun, sources Git référencées dans
-`config/upstream-sources.json`, dépendances Cargo et workspace Python frère
+`tools/config/upstream-sources.json`, dépendances Cargo et workspace Python frère
 `../aphrody-py` lorsqu’il existe. Les sources sont synchronisées aux commits
 déclarés et leurs patches configurés sont appliqués par le synchroniseur.
 
@@ -58,7 +58,7 @@ bash scripts/dev/bootstrap.sh
 ```
 
 Le script installe les paquets de base listés dans
-`config/system-packages.json`, Rustup et ses cibles, Bun, uv, Nu et les outils
+`tools/config/system-packages.json`, Rustup et ses cibles, Bun, uv, Nu et les outils
 Cargo déclarés, puis synchronise les sources Bun/Cargo et le workspace Python
 frère avec `uv`. APT nécessite `sudo`.
 

@@ -59,7 +59,7 @@ criterion     = { workspace = true }
 # wasm32 (no Command::output) and is gated to native targets via the
 # dev-dependencies block above. `harness = false` disables libtest so
 # criterion can install its own main() — same convention as
-# `crates/os/backend/benches/backend_bench.rs`.
+# `crates/os/ostd/backend/benches/backend_bench.rs`.
 [[bench]]
 name    = "cold_start"
 harness = false

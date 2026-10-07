@@ -8,7 +8,7 @@ if (($# == 0)); then
 fi
 
 source_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd)"
-factory_config="$source_root/config/build-factory.json"
+factory_config="$source_root/tools/config/build-factory.json"
 cargo_command="${1#+}"
 if [[ "$1" == +* ]]; then cargo_command="${2:-}"; fi
 help_only=false

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /* oxlint-disable no-await-in-loop -- uploads, checksums and factory jobs are intentionally sequential */
 /**
- * Publishes the Aphrody downloads (config/downloads.json) in one repeatable flow:
+ * Publishes the Aphrody downloads (tools/config/downloads.json) in one repeatable flow:
  *
  *   plan                          what would be built, staged and published (no mutation)
  *   build  --revision <sha>       prepare + build the factory binaries (aphrody-ops build-factory), wait for the jobs
@@ -98,7 +98,7 @@ export interface DownloadsConfig {
 }
 
 export const loadConfig = (): DownloadsConfig =>
-  JSON.parse(readFileSync(join(root, "config/downloads.json"), "utf8")) as DownloadsConfig;
+  JSON.parse(readFileSync(join(root, "tools/config/downloads.json"), "utf8")) as DownloadsConfig;
 
 const expand = (path: string): string =>
   path.startsWith("~/") ? join(homedir(), path.slice(2)) : resolve(root, path);
@@ -1507,8 +1507,8 @@ async function verify(cfg: DownloadsConfig) {
 
 async function hostCommands(cfg: DownloadsConfig, apply: boolean) {
   const rootDir = cfg.host.root;
-  const unit = "config/host/systemd/aphrody/aphrody-downloads.service";
-  const vhost = "config/host/nginx/aphrody/downloads.aphrody.com.conf";
+  const unit = "tools/config/host/systemd/aphrody/aphrody-downloads.service";
+  const vhost = "tools/config/host/nginx/aphrody/downloads.aphrody.com.conf";
   const cert = "scripts/tools/infra/issue-downloads-certificate.sh";
   const certDir = `/etc/letsencrypt/live/${cfg.site.certName}`;
   const steps = [

@@ -74,14 +74,14 @@ export type Fetcher = (url: string, init?: RequestInit) => Promise<Response>;
 
 export type ReleaseAge = { seconds: number; excludes: string[] };
 
-export const HOLDS_FILE = "config/deps/bun-holds.json";
-export const ADVISORY_FILE = "config/deps/advisory-holds.json";
+export const HOLDS_FILE = "tools/config/deps/bun-holds.json";
+export const ADVISORY_FILE = "tools/config/deps/advisory-holds.json";
 export const SNAPSHOT_DIR = "target/update/bun";
-/** Tools whose version lives in package.json / the Bun catalog and is pinned by `config/update/pins.json`. */
+/** Tools whose version lives in package.json / the Bun catalog and is pinned by `tools/config/update/pins.json`. */
 export const RUNTIME_TOOLS = ["bun", "typescript", "oxlint", "oxfmt"];
 /** Packages owned by `tauri sync` (its own gate, mirrors and release-age rules): never bumped here. */
 export const TAURI_OWNED = /^@tauri-apps\//;
-/** Packages whose version `config/update/pins.json` rewrites everywhere (runtime and toolchain pins): moved by `tools --apply`. */
+/** Packages whose version `tools/config/update/pins.json` rewrites everywhere (runtime and toolchain pins): moved by `tools --apply`. */
 export const PIN_OWNED = new Set(["bun-types", "@types/bun", "typescript", "oxlint", "oxfmt"]);
 
 // ---------------------------------------------------------------- specs
@@ -371,7 +371,7 @@ export type Plan = {
   pinned: Row[];
   /** A new major (or a 0.x minor): needs `--majors` after reading the release notes. */
   majors: Row[];
-  /** Refused by a hold in config/deps/bun-holds.json. */
+  /** Refused by a hold in tools/config/deps/bun-holds.json. */
   held: Row[];
   /** Newer release exists but is younger than `minimumReleaseAge`: nothing installable yet. */
   waiting: Row[];
@@ -689,11 +689,11 @@ export function renderStatus(s: Status): string[] {
   for (const r of s.plan.waiting) out.push(`  waiting  ${fmtRow(r)}`);
   for (const r of owned)
     out.push(
-      `  ${r.owner}${" ".repeat(9 - r.owner!.length)}${fmtRow(r)}  (owned by ${r.owner === "tauri" ? "tauri sync" : "config/update/pins.json, tools --apply"})`,
+      `  ${r.owner}${" ".repeat(9 - r.owner!.length)}${fmtRow(r)}  (owned by ${r.owner === "tauri" ? "tauri sync" : "tools/config/update/pins.json, tools --apply"})`,
     );
   if (s.advisories) {
     out.push(
-      `advisories ${s.advisories.open.length} open, ${s.advisories.held.length} held (config/deps/advisory-holds.json)`,
+      `advisories ${s.advisories.open.length} open, ${s.advisories.held.length} held (tools/config/deps/advisory-holds.json)`,
     );
     for (const a of s.advisories.open)
       out.push(

@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Toolchain sync (WSL, Windows, vps, dbfr)
 
-Owner: Infra. Plan and manifest: `yolo/config/host/toolchain.json`.
+Owner: Infra. Plan and manifest: `yolo/tools/config/host/toolchain.json`.
 Apply: `scripts/tools/toolchain-sync.sh` (Linux hosts, run on the host over SSH with
 `ssh <host> 'bash -s' < scripts/tools/toolchain-sync.sh`; the manifest is copied to
 `~/.cache/aphrody-toolchain.json` first) and `scripts/tools/toolchain-sync.ps1` (Windows, pwsh 7,
@@ -46,7 +46,7 @@ sync scripts. Logs: `~/.local/state/aphrody/log/bun-hygiene.log` (Windows
 
 ## Code intelligence and context reduction (2026-10-04)
 
-`yolo/config/host/toolchain.json` (`codeIntel`, `uvTools`, `versions.rtk`, `bunGlobal`) installs, per user on
+`yolo/tools/config/host/toolchain.json` (`codeIntel`, `uvTools`, `versions.rtk`, `bunGlobal`) installs, per user on
 every host: `rust-analyzer` (rustup component), the TypeScript 7 native language server
 (`tsc --lsp --stdio`, bun global `typescript@7`; `typescript-language-server` 6.x exits on TypeScript 7
 workspaces because it needs `tsserver.js`, so it is not installed), `rtk` (release binary), `serena` and

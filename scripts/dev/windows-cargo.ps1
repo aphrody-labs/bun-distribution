@@ -4,7 +4,7 @@
   Run cargo on Windows 11 against the MSVC toolchain of the newest Visual Studio / Build Tools.
 .DESCRIPTION
   Finds the installation with vswhere (nothing is hard-coded), enters its developer shell so cl.exe and
-  link.exe are on PATH, keeps the build output off the checkout, ignores a WSL-only rustc wrapper and maps
+  link.exe are on PATH, keeps the build output off the checkout, serializes Cargo, preserves native sccache and maps
   the SSH alias used by private Git dependencies to HTTPS through process-local Git configuration.
 .EXAMPLE
   pwsh -File scripts/dev/windows-cargo.ps1 test -p aphrody-wsl --locked
@@ -23,12 +23,30 @@ Set-Location $checkout
 $cargoBin = Join-Path $env:USERPROFILE '.cargo\bin'
 if ($env:Path -notlike "*$cargoBin*") { $env:Path += ";$cargoBin" }
 if (-not $env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR = Join-Path $env:LOCALAPPDATA 'aphrody\target' }
-$env:RUSTC_WRAPPER = ''
-$env:CARGO_BUILD_RUSTC_WRAPPER = ''
+if ($env:RUSTC_WRAPPER -and -not (Test-Path -LiteralPath $env:RUSTC_WRAPPER)) {
+    throw 'RUSTC_WRAPPER is not available on Windows; select an installed native wrapper explicitly.'
+}
+if (-not $env:RUSTC_WRAPPER) {
+    $cache = Get-Command sccache -ErrorAction SilentlyContinue
+    if ($cache) { $env:RUSTC_WRAPPER = $cache.Source }
+}
+if (-not $env:CARGO_BUILD_RUSTC_WRAPPER) { $env:CARGO_BUILD_RUSTC_WRAPPER = $env:RUSTC_WRAPPER }
+if (-not $env:CARGO_BUILD_JOBS) { $env:CARGO_BUILD_JOBS = '4' }
 $env:CARGO_NET_GIT_FETCH_WITH_CLI = 'true'
 $env:GIT_TERMINAL_PROMPT = '0'
 $env:GIT_CONFIG_COUNT = '1'
 $env:GIT_CONFIG_KEY_0 = 'url.https://github.com/.insteadOf'
 $env:GIT_CONFIG_VALUE_0 = 'ssh://git@github-dev/'
-& cargo @args
-exit $LASTEXITCODE
+$mutex = [System.Threading.Mutex]::new($false, 'Local\AphrodyCargoBuild')
+$ownsLock = $false
+try {
+    try { $ownsLock = $mutex.WaitOne(0) }
+    catch [System.Threading.AbandonedMutexException] { $ownsLock = $true }
+    if (-not $ownsLock) { throw 'Another Windows Cargo build holds the serialization lock.' }
+    & cargo @args
+    $result = $LASTEXITCODE
+} finally {
+    if ($ownsLock) { $mutex.ReleaseMutex() }
+    $mutex.Dispose()
+}
+exit $result

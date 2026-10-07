@@ -4,7 +4,7 @@
 Directive propriétaire du 7 octobre 2026 : donner à Omar les droits administrateur
 sur les surfaces Aphrody, en conservant les authentifications du propriétaire.
 
-La déclaration [omar-admin.json](../../../config/host/omar-admin.json) distingue
+La déclaration [omar-admin.json](../../../tools/config/host/omar-admin.json) distingue
 l'identité vérifiée et les droits souhaités de leur activation réelle. Le compte
 Discord principal est `1323725494184841256` (`trape17_10161`, Omar le Prime),
 confirmé par l'API Discord et le DM livré `1557349160041324594`. L'ancien compte

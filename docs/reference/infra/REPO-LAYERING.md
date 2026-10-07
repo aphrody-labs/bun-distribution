@@ -3,7 +3,7 @@
 The active Rust graph is the root `Cargo.toml` workspace. Run
 `bun run layering:check` to read `cargo metadata --no-deps --offline` and
 validate its workspace crate graph. Each node is a crate directory such as
-`crates/os/kernel`; each path dependency between workspace crates is an edge.
+`crates/os/kernel/core`; each path dependency between workspace crates is an edge.
 The command fails on a missing workspace target, metadata error, or crate
 cycle. `--json` prints all nodes, edges, external path sources, and errors.
 The test exercises both a fixture

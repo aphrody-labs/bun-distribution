@@ -46,12 +46,12 @@ async function fixture() {
       },
     ],
   };
-  await mkdir(join(root, "config"));
-  await writeFile(join(root, "config/native-runtime.json"), JSON.stringify(configuration));
+  await mkdir(join(root, "tools", "config"), { recursive: true });
+  await writeFile(join(root, "tools/config/native-runtime.json"), JSON.stringify(configuration));
   return { root, runtimeHome: join(root, "installed/runtime"), yolo, configuration };
 }
 async function updateConfiguration(f: Awaited<ReturnType<typeof fixture>>) {
-  await writeFile(join(f.root, "config/native-runtime.json"), JSON.stringify(f.configuration));
+  await writeFile(join(f.root, "tools/config/native-runtime.json"), JSON.stringify(f.configuration));
 }
 assetTest("native install, upgrade and rollback load the exact real artifacts", async () => {
   const f = await fixture();

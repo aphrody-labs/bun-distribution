@@ -53,7 +53,7 @@ if (import.meta.main) {
     { host: "vps", source: resolve(stage, "debate.mjs"), name: "debate.mjs" },
     {
       host: "vps",
-      source: resolve(root, "config/host/discord-debate.json"),
+      source: resolve(root, "tools/config/host/discord-debate.json"),
       name: "debate-policy.json",
     },
   ];

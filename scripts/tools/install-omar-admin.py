@@ -17,10 +17,10 @@ def main():
     owner = str(Path.home() / ".local/bin/aphrody")
     stage = "/tmp/aphrody-omar-admin-stage-20261007"
     files = {
-        "config/host/omar-admin.json": "/srv/aphrody-admin/config/host/omar-admin.json",
+        "tools/config/host/omar-admin.json": "/srv/aphrody-admin/tools/config/host/omar-admin.json",
         "scripts/tools/omar-admin-access.py": "/srv/aphrody-admin/scripts/tools/omar-admin-access.py",
-        "config/host/systemd/aphrody/aphrody-omar-admin.service": "/etc/systemd/system/aphrody-omar-admin.service",
-        "config/host/systemd/aphrody/aphrody-omar-admin.timer": "/etc/systemd/system/aphrody-omar-admin.timer",
+        "tools/config/host/systemd/aphrody/aphrody-omar-admin.service": "/etc/systemd/system/aphrody-omar-admin.service",
+        "tools/config/host/systemd/aphrody/aphrody-omar-admin.timer": "/etc/systemd/system/aphrody-omar-admin.timer",
     }
     plan = [
         {

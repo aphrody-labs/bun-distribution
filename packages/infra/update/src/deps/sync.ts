@@ -10,7 +10,7 @@
  *   plan       report outdated tools, Tauri family crates and Bun workspace (default)
  *   apply      rewrite pins, `uv self update`, `bun upgrade`, `bun update -r`, record the journal
  *   facts      fact-check changed libraries (GitHub notes + Context7 docs) into docs/research/workspace/deps/
- *   fix        pre-fix: run consumer gates, match failures to config/deps/fix-rules.json, write a brief
+ *   fix        pre-fix: run consumer gates, match failures to tools/config/deps/fix-rules.json, write a brief
  *   changelog  regenerate CHANGELOG.md from conventional commits + the dependency journal
  *   memory     write the managed deps block into every agent workspace (BOOT.md, memory/deps-state.md)
  *   inventory  whole-repo scan: crates.io, npm, PyPI, git remotes, OSV advisories, first-party crates
@@ -408,7 +408,7 @@ async function fix(c: Ctx, applyFixes: boolean, record = false): Promise<number>
     ]);
     output += `\n# cargo ${targets.cargo.join(" ")}\n${r.stdout}${r.stderr}`;
   }
-  const baselineFile = "config/deps/baseline.json";
+  const baselineFile = "tools/config/deps/baseline.json";
   const errors = normaliseErrors(output);
   if (record) {
     c.write(baselineFile, `${JSON.stringify({ recorded: today(), errors }, null, 2)}\n`);
@@ -417,7 +417,7 @@ async function fix(c: Ctx, applyFixes: boolean, record = false): Promise<number>
   }
   const known = new Set(c.jsonFile<{ errors: string[] }>(baselineFile, { errors: [] }).errors);
   const fresh = errors.filter((e) => !known.has(e));
-  const rules = c.jsonFile<{ rules: FixRule[] }>("config/deps/fix-rules.json", { rules: [] }).rules;
+  const rules = c.jsonFile<{ rules: FixRule[] }>("tools/config/deps/fix-rules.json", { rules: [] }).rules;
   const hits = matchRules(
     fresh.join("\n") +
       "\n" +
@@ -488,12 +488,12 @@ function changelog(c: Ctx): void {
     since: string;
     types: Record<string, string>;
     dependencyJournal: string;
-  }>("config/changelog.json", {
+  }>("tools/config/changelog.json", {
     output: "CHANGELOG.md",
     author: "aphrody-code",
     since: "2026-09-01",
     types: {},
-    dependencyJournal: "config/deps/journal.json",
+    dependencyJournal: "tools/config/deps/journal.json",
   });
   const log = c.run("git", [
     "log",
@@ -623,7 +623,7 @@ export async function runDepsSync(argv: string[]): Promise<number> {
     case "inventory": {
       const inv = await import("./inventory.ts");
       const roots =
-        c.jsonFile<{ inventory?: { pythonRoots?: string[] } }>("config/deps/watch.json", {})
+        c.jsonFile<{ inventory?: { pythonRoots?: string[] } }>("tools/config/deps/watch.json", {})
           .inventory?.pythonRoots ?? [];
       const data = await inv.inventory(c.root, {
         pythonRoots: roots.map((r) => r.replace(/^~/, homedir())),

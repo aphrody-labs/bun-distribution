@@ -16,27 +16,31 @@ const cliPkgPath = resolve(rootDir, "packages/engine/yolo/package.json");
 const cliEntryPath = resolve(rootDir, "packages/engine/yolo/src/index.ts");
 const generatedCatalogPath = resolve(rootDir, "m3/packages/app-ui/src/generated/bun-catalog.ts");
 
-describe("YOLO crates/infra/aphrody Suite (Zero External Dependencies, 100% Native Bun)", () => {
-  it("should have crates/infra/aphrody package.json with zero external runtime dependencies", async () => {
+describe("Yolo canonical CLI and native capability owners", () => {
+  it("uses the canonical CLI package with only first-party workspace runtime dependencies", async () => {
     expect(existsSync(cliPkgPath)).toBe(true);
     const pkg = await Bun.file(cliPkgPath).json();
     expect(pkg.name).toBe("@aphrody/yolo-cli");
-    expect(pkg.dependencies).toEqual({});
+    expect(pkg.bin.yolo).toBe("./src/index.ts");
+    expect(pkg.dependencies).toEqual({
+      "@aphrody/runtime-sdk": "workspace:*",
+      "@aphrody/workspace": "workspace:*",
+      "@aphrody/yolo-core": "workspace:*",
+    });
+    const rust = Bun.TOML.parse(
+      await Bun.file(resolve(rootDir, "crates/infra/aphrody/Cargo.toml")).text(),
+    );
+    expect((rust.package as { name: string }).name).toBe("aphrody");
+    expect(existsSync(resolve(rootDir, "crates/infra/aphrody/package.json"))).toBe(false);
   });
 
   it("should inspect local fork packages programmatically via Bun file checks", async () => {
     const statuses = await inspectPackages();
-    expect(statuses.length).toBe(8);
-
-    const names = statuses.map((s) => s.name).sort();
-    expect(names).toEqual([
-      "bun",
-      "create-tauri-app",
-      "next",
-      "obscura",
-      "plugins-workspace",
-      "tauri",
-    ]);
+    const catalog = await Bun.file(resolve(rootDir, "tools/config/vendor.json")).json();
+    const names = statuses.map((s) => s.name).toSorted();
+    expect(names).toEqual(
+      catalog.sources.map((source: { name: string }) => source.name).toSorted(),
+    );
 
     for (const status of statuses) {
       expect(status.exists).toBe(true);
@@ -101,8 +105,8 @@ describe("YOLO crates/infra/aphrody Suite (Zero External Dependencies, 100% Nati
 
       expect(exitCodeStatus).toBe(0);
       expect(stdoutStatus).toContain("=== YOLO Monorepo Status");
-      expect(stdoutStatus).toContain("vendor/bun");
-      expect(stdoutStatus).toContain("vendor/obscura");
+      const catalog = await Bun.file(resolve(rootDir, "tools/config/vendor.json")).json();
+      for (const source of catalog.sources) expect(stdoutStatus).toContain(source.path);
 
       const procBench = Bun.spawn(["bun", cliEntryPath, "bench"], {
         cwd: rootDir,
@@ -252,7 +256,18 @@ describe("YOLO vendoring", () => {
     const { readVendorStatus } = await import("../src/index");
     const status = await readVendorStatus();
     expect(status?.crates).toBeGreaterThan(40);
-    expect(status?.sources.length).toBe(6);
+    const declaration = Bun.TOML.parse(await Bun.file(resolve(rootDir, "vendor.toml")).text()) as {
+      source: { name: string }[];
+    };
+    expect(status?.sources.map((source) => source.name).toSorted()).toEqual(
+      declaration.source.map((source) => source.name).toSorted(),
+    );
+    const { readGitHead } = await import("../../core/src/vendor/status");
+    for (const source of status!.sources) {
+      expect(source.lockedSha).toMatch(/^[a-f0-9]{40}$/);
+      expect(source.headSha).toBe(await readGitHead(resolve(rootDir, "vendor", source.name)));
+      expect(source.inSync).toBe(source.lockedSha === source.headSha);
+    }
   });
 });
 

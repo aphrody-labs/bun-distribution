@@ -57,7 +57,7 @@ function plugin(store: string, name = "example"): string {
   );
   return path;
 }
-const configPath = join(import.meta.dir, "../../../../config/ai/agent-plugin-providers.json");
+const configPath = join(import.meta.dir, "../../../../tools/config/ai/agent-plugin-providers.json");
 afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 });

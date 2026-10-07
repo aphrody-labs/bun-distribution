@@ -6,7 +6,7 @@
 #
 # Owner: aphrody-infra (moved from shenron/scripts/backup-shenron-pg.sh; the
 # Shenron copy is frozen until the DBFR units are reinstalled from this repo).
-# Unit: config/host/systemd/shenron/shenron-pg-backup.{service,timer} (03:00 UTC on DBFR).
+# Unit: tools/config/host/systemd/shenron/shenron-pg-backup.{service,timer} (03:00 UTC on DBFR).
 #
 # Environment:
 #   SHENRON_ROOT            Shenron checkout/release root (default: $PWD, i.e.

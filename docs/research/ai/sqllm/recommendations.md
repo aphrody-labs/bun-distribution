@@ -92,7 +92,7 @@ T2a/b/c engines, T5 MCP, T11 sweep). Every dependency change goes through
    - sqlx 0.9.0 caps `libsqlite3-sys` below 0.38, while the root locks
      0.38.2, and `links = "sqlite3"` forbids two versions in one graph.
    - Stay on rusqlite 0.40 for SQLite and tokio-postgres for PG.
-   - `crates/os/drive` stays an isolated workspace with sqlx 0.8 / sea-orm 1.1
+   - `crates/os/kernel/comps/drive` stays an isolated workspace with sqlx 0.8 / sea-orm 1.1
      / rusqlite 0.32.
    - Use tokio-rusqlite 0.8 or deadpool-sqlite 0.14 if async SQLite is needed;
      both already require rusqlite 0.40.

@@ -67,9 +67,9 @@ Les crates proches, hors `crates/tauri`, comptent :
   - `tao` : 0 commit propre, 2 de retard.
 - Intégration au monorepo par `cf2fa3f4b` (« fuse yolo », dans `crates/vendor`), puis `3ce06ae3a`
   (vers `crates/tauri`).
-- Lacune : `config/upstream-sources.json` ne déclare en « integrated » que `tauri-plugin-dialog` et
+- Lacune : `tools/config/upstream-sources.json` ne déclare en « integrated » que `tauri-plugin-dialog` et
   `tauri-plugin-mcp-bridge`. Le cœur tauri, tao, wry, les 29 autres plugins et create-tauri-app n'y ont aucune
-  entrée de provenance. La règle CLAUDE.md « provenance in config/upstream-sources.json » n'est donc pas
+  entrée de provenance. La règle CLAUDE.md « provenance in tools/config/upstream-sources.json » n'est donc pas
   respectée.
 
 **Patchs locaux réels.**
@@ -78,7 +78,7 @@ Les crates proches, hors `crates/tauri`, comptent :
 2. Préfixe ACL des plugins (`crates/tauri/aphrody-tauri-utils/src/acl/mod.rs:61-62`).
 3. Scope npm `@aphrody` et scripts Bun.
 4. Import de `Manager` dans le dialog (`patches/tauri-plugin-dialog-3.0.0-alpha.2.patch`,
-   `config/tauri-upstream.json` patches[0]).
+   `tools/config/tauri-upstream.json` patches[0]).
 5. Fork git de tauri-specta (`koharu-rs`), réintégré comme crate.
 6. mcp-bridge : patchs Tauri 3 et sécurité (`patches/tauri-plugin-mcp-bridge-0.13.0-{registry,tauri3}.patch`).
 
@@ -95,9 +95,9 @@ Aucun patch fonctionnel ne porte sur wry ou tao.
 
 **Configs incohérentes (erreurs préexistantes).**
 
-- `config/tauri-upstream.json:21` déclare `"pin": "released-alpha-from-crates-io"`, alors que le dépôt consomme
+- `tools/config/tauri-upstream.json:21` déclare `"pin": "released-alpha-from-crates-io"`, alors que le dépôt consomme
   des forks par chemin (`Cargo.toml:396-458`).
-- `config/tauri-apps.json:57` cite `aphrody-model-view`, qui n'existe plus.
+- `tools/config/tauri-apps.json:57` cite `aphrody-model-view`, qui n'existe plus.
 - `crates/tauri/aphrody-tauri-examples/Cargo.toml:39-75` pointe 10 exemples vers `crates/examples/tauri/*`,
   qui n'existe pas. Les fichiers sont dans `m3/examples/tauri`.
 - `scripts/build/desktop/artifact.ts:57-61` lit `crates/aphrody-{tauri,wry,tao}/LICENSE*` (chemins morts ; le bon
@@ -143,7 +143,7 @@ Aucun patch fonctionnel ne porte sur wry ou tao.
 - `m3-theme/src/tauri.tsx:8-24` lit `__TAURI_INTERNALS__`.
 - `m3-next-migrate/src/shims/tauri-ipc.ts:15,44` : shim IPC, 8,8 k lignes au total.
 - `scaffold` (1,4 k lignes) génère des coquilles Tauri 3 (`src/tauri.ts`, épingles `src/pins.ts` dans
-  `config/tauri-upstream.json` mirrors).
+  `tools/config/tauri-upstream.json` mirrors).
 - `web-to-tauri` (4,2 k lignes) génère des projets autour de `aphrody-tauri-wrap`.
 - `m3/packages/app-ui/showcase/scripts/tauri.ts:1-8` : pas de coquille Tauri ; un sidecar Bun compilé sert UI et API
   sur loopback dans la fenêtre d'aphrody-app. C'est le précédent le plus proche de « Bun en backend ».
@@ -168,8 +168,8 @@ jamais demandée.
 **Scripts, CI et gates.**
 
 - `scripts/build/shell/tauri-e2e.sh:13` construit l'exemple `shell_e2e` (WebKitGTK sous broadway).
-- `config/pipeline.json:1740` (étape `bun-tauri`) exécute typecheck et build de `@aphrody/api`.
-- `config/host/toolchain.json:38,117` fixe tauriCli `3.0.0-alpha.4`.
+- `tools/config/pipeline.json:1740` (étape `bun-tauri`) exécute typecheck et build de `@aphrody/api`.
+- `tools/config/host/toolchain.json:38,117` fixe tauriCli `3.0.0-alpha.4`.
 - La CI GitHub (`.github/workflows/{inline-interpreters,update}.yml`) ne construit pas Tauri.
 - Aucun script n'appelle `cargo tauri`, `tauri bundle` ou `tauri-driver` (`rg`).
 
@@ -184,7 +184,7 @@ code GitHub ne trouve pas `tauri-runtime-cef` dans shenron (index non garanti, �
 |---|---|
 | 15 plugins : barcode-scanner, biometric, cli, geolocation, haptics, http, localhost, nfc, persisted-scope, positioner, shell, stronghold, upload, websocket, sql | ≈ 8,8 k rs, 6,9 k ts, 4,1 k kt/swift |
 | `tauri-runtime-cef` (seul usage : feature optionnelle des exemples morts) | 20,5 k rs |
-| create-tauri-app (+ node) — doublon du scaffolder unique `@aphrody/scaffold`, `config/tauri-apps.json` | 3,4 k |
+| create-tauri-app (+ node) — doublon du scaffolder unique `@aphrody/scaffold`, `tools/config/tauri-apps.json` | 3,4 k |
 | restart | 163 |
 | tauri-examples (chemins morts) | — |
 | Outillage CLI, bundler, driver, schema-* (aucun appelant) | 40 k rs |
@@ -200,7 +200,7 @@ décision de publication, pas seulement de code.
   **headless** expérimental pour automatisation (navigate, evaluate, click, screenshot). WKWebView sur macOS,
   Chrome/Edge par CDP ailleurs. Ce n'est **pas** une fenêtre native visible : il ne remplace ni tao ni wry.
   - Il est pertinent pour deux usages : les outils MCP `aphrody_tauri_*` (même surface : DOM, evaluate,
-    screenshot, wait) et `playwright`/`puppeteer` (`config/bun-absorb.json:52-54`).
+    screenshot, wait) et `playwright`/`puppeteer` (`tools/config/bun-absorb.json:52-54`).
   - Contrainte décisive (`src/runtime/webview/HostProcess.rs:1-12`) : WKWebView exige le thread principal, et le
     pont CFRunLoop→kqueue sur le thread JS a été abandonné. Bun lance donc un **sous-processus hôte** qui parle
     par socketpair.
@@ -315,7 +315,7 @@ et leurs auteurs n'existent que sur GitHub.
 
 - 2 362 identiques à HEAD ;
 - 1 550 présents seulement dans l'historique : Turbopack/Next (59 crates retirées par `b9609c7da`), anciennes
-  versions de `config/host`, tests, docs ;
+  versions de `tools/config/host`, tests, docs ;
 - 65 absents. Presque tous ont un homologue modifié (tests sous `packages/engine/yolo/test/*`, `crates/compat/n2b-core`,
   `crates/compat/toolchains`, fichiers racine).
 
@@ -362,7 +362,7 @@ une description qui cite `aphrody-labs/bun`.
 
 **À renommer** (opérationnel) :
 
-- `config/vendor.json:8` (url) et `config/bun-forge.json:3-4` (repository) ;
+- `tools/config/vendor.json:8` (url) et `tools/config/bun-forge.json:3-4` (repository) ;
 - `scripts/tools/vendor/bun_upstream_sync.ts:2,93-94,244` ;
 - `packages/engine/forge/{src/main.ts:3,23; src/plan.ts:412,471; package.json:4}` ;
 - `packages/engine/yolo/src/{index.ts:122; package-commands.ts:119}` et `scripts/audit/workspace/bun-absorb.ts:9` ;
@@ -381,7 +381,7 @@ une description qui cite `aphrody-labs/bun`.
 
 **Historique** (ne pas réécrire) :
 
-- `config/host/inventory/2026-09-30-bun-transfer.json` ;
+- `tools/config/host/inventory/2026-09-30-bun-transfer.json` ;
 - (removed import receipt) (liens PR 1 et run Actions, redirigés après renommage) ;
 - `docs/research/infra/github-mirrors-audit-2026-10-02.md:65`.
 
@@ -394,7 +394,7 @@ une description qui cite `aphrody-labs/bun`.
   `trackingBranch: "yolo"`.
 - `scripts/tools/vendor/bun_upstream_tracker.ts:312,346-352` utilise `checkout yolo` / `push origin yolo` sur
   une branche supprimée.
-- Épingle en retard : `config/vendor.json:10` = `954db0c0`, alors que le checkout et `main` sont à `c439b6fbd`.
+- Épingle en retard : `tools/config/vendor.json:10` = `954db0c0`, alors que le checkout et `main` sont à `c439b6fbd`.
 - `packages/engine/yolo/test/{cli_app,stack}.test.ts` lisent `vendor/bun/LATEST` et parlent de « submodule ».
 
 **Références à `aphrody-labs/yolo` qui changeraient silencieusement de sens** (elles désignaient l'ancien
@@ -415,7 +415,7 @@ faux tant que le code reste dans le monorepo.
 **Statut de la branche du fork.** Sur GitHub, le dépôt a `main` par défaut (`c439b6fbd`, « Merge upstream
 oven-sh/bun main into yolo ») et `yolo` absent (404), conformément à la précision du coordinateur. Il compte
 toutefois **12 457 branches et 265 tags** (GraphQL `refs.totalCount`), copiés de l'amont à la création du fork
-le 2026-10-02. « Branche unique `main` » (`PLAN.md:115`, `config/bun-forge.json:3`) n'est vrai que pour les
+le 2026-10-02. « Branche unique `main` » (`PLAN.md:115`, `tools/config/bun-forge.json:3`) n'est vrai que pour les
 branches Aphrody. Le checkout local n'a que `main`.
 
 ### B.3 Collisions du nom `yolo` et nomenclature
@@ -473,8 +473,8 @@ branches Aphrody. Le checkout local n'a que `main`.
      Les URL de l'ancien yolo pointent désormais vers le fork Bun (voir B.2).
   2. `aphrody-labs/bun` redirige vers `aphrody-labs/yolo` tant qu'aucun dépôt `bun` n'est recréé dans
      l'organisation.
-  3. GitHub recommande `git remote set-url` : `vendor/bun` origin, miroir bun-forge, `config/vendor.json`,
-     `config/bun-forge.json`.
+  3. GitHub recommande `git remote set-url` : `vendor/bun` origin, miroir bun-forge, `tools/config/vendor.json`,
+     `tools/config/bun-forge.json`.
 
 **Réseau de forks** ([transferring](https://docs.github.com/en/repositories/creating-and-managing-repositories/transferring-a-repository),
 [about-forks](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/about-forks)) :

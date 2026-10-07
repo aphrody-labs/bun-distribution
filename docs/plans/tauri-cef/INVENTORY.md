@@ -32,7 +32,7 @@ Every row carries its decision, marked `tranché`: **remove** (deleted), **migra
 | `aphrody-wry` | the system webview library, GTK3 + `webkit2gtk 2.0` + `javascriptcore-rs` + `soup3` on Linux | **remove** | One runtime. Nothing outside `aphrody-tauri-runtime-wry` and `aphrody-tauri-plugin-mcp-bridge` linked it. |
 | `aphrody-tao`, `aphrody-tao-macros` | window library of wry, `gtk 0.18` | **remove** | Only wry used it; the CEF runtime brings `tauri-winit` with its own GTK4 backend. |
 | `aphrody-tauri-runtime-wry` | the runtime crate `aphrody-app` selected | **remove** | Replaced by `aphrody-tauri-runtime-cef`, already in the workspace. |
-| `aphrody-tauri-driver` | WebDriver proxy to `WebKitWebDriver` (Linux) and `msedgedriver` (Windows) | **remove** | Evidence: it only proxies the native drivers and sets `TAURI_WEBVIEW_AUTOMATION`, which only the wry runtime reads (`config/tauri-upstream.json`, `debuggers`); upstream's own CEF example states "there is no WebDriver, no driver binary" and tests over CDP (`Cef::remote_debugging`, Playwright `connectOverCDP`). Nothing in the tree depended on it. |
+| `aphrody-tauri-driver` | WebDriver proxy to `WebKitWebDriver` (Linux) and `msedgedriver` (Windows) | **remove** | Evidence: it only proxies the native drivers and sets `TAURI_WEBVIEW_AUTOMATION`, which only the wry runtime reads (`tools/config/tauri-upstream.json`, `debuggers`); upstream's own CEF example states "there is no WebDriver, no driver binary" and tests over CDP (`Cef::remote_debugging`, Playwright `connectOverCDP`). Nothing in the tree depended on it. |
 | `crates/tauri/aphrody-restart` | `tauri::process::restart` integration test binary, depends on `tauri` only | **keep** | Runtime-neutral. It reaches the GTK sys crates only through `tauri` feature unification and keeps building on CEF. |
 | `crates/tauri/aphrody-acl-tests` | ACL fixtures, dev-dependencies only | **keep** | Runtime-neutral. |
 | Root `Cargo.toml` `[workspace.dependencies]` | `wry`, `tao`, `tauri-runtime-wry` | **remove** | Follows the crates. |
@@ -47,7 +47,7 @@ Every row carries its decision, marked `tranché`: **remove** (deleted), **migra
 | :--- | :--- | :--- | :--- |
 | `crates/ui/app` (`aphrody-app`) | `tauri_runtime_wry::Wry` in `run()` and in the isolated runtime host; `tune_linux_display` sets `WEBKIT_*`; `host_info().engine = "system-webview"`; Windows manifest overrides CEF's; `deb.depends` lists `libwebkit2gtk-4.1-0`, appindicator; `webviewInstallMode` | **migrate** | `#[cef_entry_point]`, `Cef` runtime built in one module (cache path, remote debugging opt-in, sandbox auto), per-session profile for `--runtime-host`, CEF-compatible manifest, GTK4/CEF `deb.depends`, `engine = "cef"`. |
 | `crates/ui/app/examples/shell_e2e.rs`, `scripts/build/shell/tauri-e2e.sh` | WebKitGTK on Broadway | **migrate** | CEF under Xvfb; same permission-checked IPC assertions. |
-| `crates/shell/tauri` (`aphrody-shell-tauri`), `crates/ui/drive`, `crates/ui/tauri-wrap` | generic over `tauri::Runtime`; docs and `Engine::Wry` only | **migrate** | No runtime code to change; `config/tauri-apps.json` runtime field and docs follow; `wrap.json` `engine` accepts `cef` only. |
+| `crates/shell/tauri` (`aphrody-shell-tauri`), `crates/ui/drive`, `crates/ui/tauri-wrap` | generic over `tauri::Runtime`; docs and `Engine::Wry` only | **migrate** | No runtime code to change; `tools/config/tauri-apps.json` runtime field and docs follow; `wrap.json` `engine` accepts `cef` only. |
 | `crates/web/web-service`, `crates/web/web-engine`, `crates/ui/render`, `crates/ui/m3-tokens` | the word "Wry" in doc comments and one enum variant (`JavaScriptEngine::Wry`) | **keep** | Serialised identity of an engine role; renaming a public enum variant is a compatibility break for no runtime gain. The doc comments are updated where they state the engine. |
 | `crates/tauri/aphrody-tauri-examples` + `m3/examples/tauri/*` | `default = ["wry"]`, `cfg(feature = "cef")` switches in ten examples | **migrate** | CEF only: no `wry` feature, the examples call `Cef` and carry `#[cef_entry_point]` unconditionally (vendor rewrites). |
 
@@ -57,7 +57,7 @@ Every change below is a `[[rewrite]]` or a source removal in `vendor.toml` so a 
 
 | Item | Decision | Why |
 | :--- | :--- | :--- |
-| `aphrody-tauri-runtime-cef`: Linux idle CPU spin (tauri-apps/tauri#16189) | **migrate** (patch) | Small, upstream-proposed fix, applied as three rewrites and recorded in `config/upstream-sources.json` with `patches/tauri-runtime-cef-3.0.0-alpha.5-glib-work-source.patch`. |
+| `aphrody-tauri-runtime-cef`: Linux idle CPU spin (tauri-apps/tauri#16189) | **migrate** (patch) | Small, upstream-proposed fix, applied as three rewrites and recorded in `tools/config/upstream-sources.json` with `patches/tauri-runtime-cef-3.0.0-alpha.5-glib-work-source.patch`. |
 | `aphrody-tauri-runtime-cef`: window mapped at creation despite `visible(false)` (#16205) | **keep** (mitigated in the app) | No small runtime fix (unmapping makes CEF flag `WasHidden` and stalls the first load, per the issue). The app parks its hidden windows off-screen at creation and places them before showing (`crates/ui/app/src/parking.rs`). |
 | `aphrody-tauri-cli/src/runtime/mod.rs` `Runtime::{Wry, Cef, Other}`, `WebviewRuntime::{Wry, Cef, Other}` in the bundler | **keep** | Upstream's multi-runtime selection by dependency name. With the wry runtime gone `Runtime::detect` yields `Cef` for every Aphrody app; deleting the variant is ~400 lines of vendored rewrites for no behaviour change. The facts that are wrong for CEF are fixed: Linux package dependency is GTK 4 (`libgtk-4-1`), not GTK 3. |
 | `aphrody-tauri-cli` `info` (`webkit2gtk-4.1` probe), `aphrody-create-tauri-app` `deps.rs` (webkit2gtk install hints) | **migrate** | They would tell a user to install a library CEF does not use. They report the GTK 4 and CEF prerequisites instead. |
@@ -77,9 +77,9 @@ Every change below is a `[[rewrite]]` or a source removal in `vendor.toml` so a 
 | `packages/engine/yolo/test/import.test.ts` | **migrate** | The `tauri-driver` fixture is replaced by a surviving binary crate; the importer tests keep their coverage. |
 | `packages/engine/core/src/vendor/status.ts`, `packages/engine/core/test/startup.test.ts` | **migrate** | Submodule lists drop `wry` and `tao`. |
 | `scripts/tools/vendor/packages_upstream_sync.ts` | **migrate** | Same list. |
-| `config/upstream-sources.json` | **migrate** | `tauri` reference no longer sparse-reads upstream `tauri-driver`; entry for the CEF runtime patch. |
-| `config/tauri-upstream.json` | **migrate** | Default runtime `tauri-runtime-cef`, `tauri-runtime-wry` leaves `rust.crates` and the mirror key, the `tauri-driver` debugger entry and the WebView2/WebKitGTK/WKWebView built-in entries are retired with their reason. |
-| `patches/tauri-plugin-mcp-bridge-0.13.0-*.patch` | **keep** | Provenance records of the upstream diff; the CEF port is a further local change recorded in `config/upstream-sources.json`. |
+| `tools/config/upstream-sources.json` | **migrate** | `tauri` reference no longer sparse-reads upstream `tauri-driver`; entry for the CEF runtime patch. |
+| `tools/config/tauri-upstream.json` | **migrate** | Default runtime `tauri-runtime-cef`, `tauri-runtime-wry` leaves `rust.crates` and the mirror key, the `tauri-driver` debugger entry and the WebView2/WebKitGTK/WKWebView built-in entries are retired with their reason. |
+| `patches/tauri-plugin-mcp-bridge-0.13.0-*.patch` | **keep** | Provenance records of the upstream diff; the CEF port is a further local change recorded in `tools/config/upstream-sources.json`. |
 
 ## E. Scripts, configuration and packaging
 
@@ -88,11 +88,11 @@ Every change below is a `[[rewrite]]` or a source removal in `vendor.toml` so a 
 | `scripts/build/desktop/artifact.ts` | **migrate** | Notices pointed at `aphrody-wry` and `aphrody-tao` (dead paths even before this change); the artifact now ships the CEF payload and the CEF notices. |
 | `packages/engine/runtime/src/desktop-artifact.ts`, `desktop.ts`, README, `packages/engine/yolo` help and tests | **migrate** | `engine: "cef"`; manifest schema `yolo.desktop-artifact/2` with nested payload paths (`locales/en-US.pak`), still no symlinks, no traversal, no unlisted entries. |
 | `packages/infra/workspace/src/desktop-smoke.ts`, `native-desktop.ts` | **migrate** | The smoke test drove WebView2 through `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS`; it now opens the app's opt-in CEF remote debugging port. |
-| `config/host/vps-cargo.json` | **migrate** | `CEF_PATH` under the factory cache (`/srv/aphrody-build/cache/cef`) so the 1.5 GB distribution is downloaded once and never lands in the repository or in one copy per profile. `desktopSysCrates` keeps `gtk4-sys`; the GTK3 names are dropped. |
-| `config/system-packages.json`, `scripts/release/bootstrap_remote.sh`, `scripts/tools/ui/drive/scripts/setup.*` | **migrate** | GTK 4 + CEF prerequisites replace `libgtk-3-dev`, `libwebkit2gtk-4.1-dev`, `libayatana-appindicator3-dev`; not added to the `dbfr` set (minimum host surface). |
-| `config/tauri-apps.json`, `packages/infra/update/src/tauri/apps.ts` and tests | **migrate** | `runtime` is `cef`; the type no longer allows `wry`. |
-| `config/deps/advisory-holds.json`, `config/deps/journal.json` | **migrate** | The `glib` 0.18 hold and the `tauri-runtime-wry` journal entry describe the removed stack. |
-| `.env.example`, `config/ui/wsl.env.example` | **migrate** | `TAURI_LINUX_AYATANA_APPINDICATOR`, `APHRODY_WEBVIEW=tauri-wry-when-desktop` are dead. |
+| `tools/config/host/vps-cargo.json` | **migrate** | `CEF_PATH` under the factory cache (`/srv/aphrody-build/cache/cef`) so the 1.5 GB distribution is downloaded once and never lands in the repository or in one copy per profile. `desktopSysCrates` keeps `gtk4-sys`; the GTK3 names are dropped. |
+| `tools/config/system-packages.json`, `scripts/release/bootstrap_remote.sh`, `scripts/tools/ui/drive/scripts/setup.*` | **migrate** | GTK 4 + CEF prerequisites replace `libgtk-3-dev`, `libwebkit2gtk-4.1-dev`, `libayatana-appindicator3-dev`; not added to the `dbfr` set (minimum host surface). |
+| `tools/config/tauri-apps.json`, `packages/infra/update/src/tauri/apps.ts` and tests | **migrate** | `runtime` is `cef`; the type no longer allows `wry`. |
+| `tools/config/deps/advisory-holds.json`, `tools/config/deps/journal.json` | **migrate** | The `glib` 0.18 hold and the `tauri-runtime-wry` journal entry describe the removed stack. |
+| `.env.example`, `tools/config/ui/wsl.env.example` | **migrate** | `TAURI_LINUX_AYATANA_APPINDICATOR`, `APHRODY_WEBVIEW=tauri-wry-when-desktop` are dead. |
 | `scripts/dev/ui/install-local-app.ts`, `scripts/build/ui/build-local-app-release.ts` | **keep** | They install the web "local app" (nginx + app-server), not the Tauri desktop; no runtime reference. |
 | `docs/reference/infra/THIRD_PARTY_LICENSES.md` | **migrate** | Generated notice list, regenerated from the new lock (it still listed `wry 0.55.1`, `tao 0.35.3`). |
 

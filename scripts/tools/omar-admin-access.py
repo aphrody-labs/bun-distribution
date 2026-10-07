@@ -22,7 +22,7 @@ def main():
     )
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
-    policy = json.loads((root / "config/host/omar-admin.json").read_text())
+    policy = json.loads((root / "tools/config/host/omar-admin.json").read_text())
     discord = policy["discord"]
     remote = """
 import json,urllib.request,urllib.error

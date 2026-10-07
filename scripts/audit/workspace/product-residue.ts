@@ -4,7 +4,7 @@
 //!   bun scripts/audit/workspace/product-residue.ts [--json] [--write-baseline]
 //!
 //! Counts, per tracked file, the lines that name Shenron, Koharu, Dragon Ball or the databooks.
-//! `config/product-residue.baseline.json` holds what Aphrody keeps on purpose: the Infra host
+//! `tools/config/product-residue.baseline.json` holds what Aphrody keeps on purpose: the Infra host
 //! plane, the `/api/v1/shenron/*` gateway and its environment aliases, the `shenron` A2A peer,
 //! the `koharu-*` ML base until it is renamed, and dated records. A file missing from the baseline
 //! or above its count fails; `--write-baseline` records the current counts, which may only go down.
@@ -97,7 +97,7 @@ export async function countResidue(root: string): Promise<Record<string, number>
 if (import.meta.main) {
   const args = new Set(Bun.argv.slice(2));
   const root = resolve(import.meta.dir, "../../..");
-  const baselinePath = resolve(root, "config/product-residue.baseline.json");
+  const baselinePath = resolve(root, "tools/config/product-residue.baseline.json");
   const counts = await countResidue(root);
   if (args.has("--write-baseline"))
     await Bun.write(

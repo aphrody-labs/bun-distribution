@@ -17,10 +17,10 @@ import { WebService, crawlArgs, fetchArgs } from "../src/service.ts";
 
 const root = repositoryRoot();
 
-describe("config/web.json", () => {
+describe("tools/config/web.json", () => {
   test("is readable and merges onto the defaults", () => {
     const config = loadWebConfig({ root, env: {} });
-    expect(config.source).toBe(join(root, "config/web.json"));
+    expect(config.source).toBe(join(root, "tools/config/web.json"));
     expect(config.engine.host).toBe("127.0.0.1");
     expect(config.engine.allowPrivateNetwork).toBe(false);
     expect(config.crawl.obeyRobots).toBe(true);
@@ -114,7 +114,7 @@ describe("service argument builders", () => {
 });
 
 describe("validateWebConfig", () => {
-  const good = JSON.parse(readFileSync(join(root, "config/web.json"), "utf8"));
+  const good = JSON.parse(readFileSync(join(root, "tools/config/web.json"), "utf8"));
 
   test("the committed config honours the contract", () => {
     expect(validateWebConfig(good)).toEqual([]);

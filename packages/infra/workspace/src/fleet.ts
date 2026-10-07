@@ -16,7 +16,7 @@ type Pipeline = { stages?: Array<{ id?: string; steps?: Array<{ repo?: string }>
 export async function loadFleet(root = infraRoot()): Promise<Fleet> {
   const [ecosystem, pipeline, binaries] = await Promise.all([
     Bun.file(join(root, "docs", "ecosystem", "ecosystem.json")).json() as Promise<Ecosystem>,
-    Bun.file(join(root, "config", "pipeline.json")).json() as Promise<Pipeline>,
+    Bun.file(join(root, "tools", "config", "pipeline.json")).json() as Promise<Pipeline>,
     discoverAphrodyBinaries(root),
   ]);
   return {

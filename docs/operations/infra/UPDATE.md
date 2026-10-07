@@ -7,18 +7,18 @@ dev-env checks. Bun, uv and the Tauri family follow the latest published release
 
 | Module | Command | What it does |
 | --- | --- | --- |
-| gate | `bun run update` | pins agree everywhere, user units linked, `/etc/wsl.conf` matches `config/wsl/wsl.conf` (exit 1 on drift) |
-| pins | `yolo update pins [check\|apply <tool> <version>]` | every hardcoded version of bun, uv, rust, nushell, oxlint, oxfmt, typescript (manifest: `config/update/pins.json`, one regex capture per target, 30+ `engines` ranges included) |
+| gate | `bun run update` | pins agree everywhere, user units linked, `/etc/wsl.conf` matches `tools/config/wsl/wsl.conf` (exit 1 on drift) |
+| pins | `yolo update pins [check\|apply <tool> <version>]` | every hardcoded version of bun, uv, rust, nushell, oxlint, oxfmt, typescript (manifest: `tools/config/update/pins.json`, one regex capture per target, 30+ `engines` ranges included) |
 | tools | `bun run update:tools` (`--apply`) | installed vs pinned vs latest (GitHub, PyPI, npm, crates.io); `--apply` installs the exact version (`uv self update <v>`, bun installer, `rustup toolchain install`, `cargo binstall nu@<v>`) and re-pins |
 | cargo | `bun run update:cargo` (`--apply`) | `cargo update --dry-run`, or the lock refresh inside manifest ranges through `cargo-serial.sh`; snapshot in `target/update/` (not in repo) |
 | deps | `bun run update:deps`, `yolo update deps <sub>` | `plan`, `apply` (Tauri family + `bun update -r`), `facts`, `fix`, `baseline`, `changelog`, `memory`, `inventory`, `run` |
 | systemd | `bun run update:systemd`, `yolo update systemd install\|restart` | write the units rendered from the yolo unit catalog (`yolo/packages/core/src/units/catalog.json`, `APHRODY_YOLO_ROOT` or `~/yolo`) into `~/.config/systemd/user` (differing copies are kept as `*.pre-update-<ts>`), `daemon-reload`, `try-restart` units that run bun or aphrody binaries |
 | sources | `bun run sources` (status), `sources:verify`, `sources:sync`, `bun run update:sources` (drift), `yolo update sources <sub>` | the one owner of `~/source` checkouts, upstream pins, forks and git state, see below |
 | tauri | `yolo ops tauri-sync [--check\|--apply]` (also run by `deps plan\|apply`) | the one owner of the Tauri crates, npm packages, mirrors (`m3/packages/scaffold/src/pins.ts`) and `$schema` URLs; honours `minimumReleaseAge`; its Cargo gate goes through `cargo-serial.sh` |
-| rust | `bun run update:rust`, `yolo update rust status\|plan\|apply [--majors a,b]\|verify` | structured Rust bump: toolchain, lock refresh in range, majors one at a time, advisories vs `config/deps/rust-holds.json`; every Cargo call goes through `cargo-serial.sh`. Doc: [update/RUST.md](./update/RUST.md) |
+| rust | `bun run update:rust`, `yolo update rust status\|plan\|apply [--majors a,b]\|verify` | structured Rust bump: toolchain, lock refresh in range, majors one at a time, advisories vs `tools/config/deps/rust-holds.json`; every Cargo call goes through `cargo-serial.sh`. Doc: [update/RUST.md](./update/RUST.md) |
 | rust doctor | `bun run rust:doctor`, `bun run rust:fix`, `yolo update rust doctor\|fix [--only a,b] [--skip a,b] [--strict] [--allow-dirty]` | one action for the whole Cargo workspace: lock, format, compile and lints, every member feature, wasm32 and Windows MSVC targets, tests, advisories and bumps; `fix` repairs lock pins, formatting and machine-applicable suggestions first, never in vendored or already-modified crates. Report: `target/update/rust-doctor/report.json` (not in repo). Doc: [update/RUST.md](./update/RUST.md#doctor-one-action-for-the-whole-workspace) |
-| bun | `bun run update:bun`, `yolo update bun status\|plan\|apply [--majors a,b]\|verify\|rollback` | structured Bun/npm bump: runtime pins, release-age aware plan, majors after release notes, holds in `config/deps/bun-holds.json`, snapshot and rollback under `target/update/bun/` (not in repo). Doc: [update/BUN.md](./update/BUN.md) |
-| uv | `bun run update:uv`, `yolo update uv status\|plan\|apply [--upgrade-package a,b]\|verify\|rollback` | structured Python bump for `~/aphrody-py` (three `uv.lock` files), holds in `config/deps/uv-holds.json`. Doc: [update/UV.md](./update/UV.md) |
+| bun | `bun run update:bun`, `yolo update bun status\|plan\|apply [--majors a,b]\|verify\|rollback` | structured Bun/npm bump: runtime pins, release-age aware plan, majors after release notes, holds in `tools/config/deps/bun-holds.json`, snapshot and rollback under `target/update/bun/` (not in repo). Doc: [update/BUN.md](./update/BUN.md) |
+| uv | `bun run update:uv`, `yolo update uv status\|plan\|apply [--upgrade-package a,b]\|verify\|rollback` | structured Python bump for `~/aphrody-py` (three `uv.lock` files), holds in `tools/config/deps/uv-holds.json`. Doc: [update/UV.md](./update/UV.md) |
 | upstream | `bun run upstream`, `yolo update upstream list\|drift\|refresh\|fetch\|prune\|docs` | the reference upstream catalogue, see "Sources" below |
 | all | `bun run update:run` | tools, cargo, deps, systemd restart, then the gate |
 
@@ -26,14 +26,14 @@ Everything except `check`, `pins` and `systemd check` is report-only until `--ap
 
 ## Dependency steps
 
-- `facts [--all]`: GitHub release notes plus Context7 docs for the libraries in `config/deps/watch.json` that changed
+- `facts [--all]`: GitHub release notes plus Context7 docs for the libraries in `tools/config/deps/watch.json` that changed
   -> `docs/research/workspace/deps/<date>.md`.
-- `fix [--apply-fixes]`: runs the consumer gates (tsc, `cargo check`), subtracts `config/deps/baseline.json`, matches
-  `config/deps/fix-rules.json`, writes `.coord/shared/deps-fix-<date>.md`. Only `kind: script` rules edit files.
+- `fix [--apply-fixes]`: runs the consumer gates (tsc, `cargo check`), subtracts `tools/config/deps/baseline.json`, matches
+  `tools/config/deps/fix-rules.json`, writes `.coord/shared/deps-fix-<date>.md`. Only `kind: script` rules edit files.
 - `inventory`: whole-repo scan (about 45 s, six-hour cache in `target/deps-inventory/cache` (not in repo) (generated or machine-local artifact; presence depends on the build host)) of `Cargo.lock` vs the
   crates.io sparse index, git remotes via `git ls-remote` (any host), `bun.lock` vs npm, Python pins vs PyPI, and one
   OSV.dev batch for advisories -> `docs/reference/workspace/DEPS-INVENTORY.md`.
-- `changelog`: `CHANGELOG.md` from conventional commits (`config/changelog.json`) and the journal.
+- `changelog`: `CHANGELOG.md` from conventional commits (`tools/config/changelog.json`) and the journal.
 - `memory`: managed block in each `~/.aphrody/workspaces/*/BOOT.md` and `memory/deps-state.md`.
 
 Registries: crates.io, npm, GitHub (token from `GITHUB_TOKEN`, `GH_TOKEN` or `gh auth token`), PyPI, Context7
@@ -59,11 +59,11 @@ repository; add a collector in `src/deps/inventory.ts` when one appears.
 
 ## Sources, upstreams, forks and git
 
-Manifest: `config/upstream-sources.json`, two parts. `sources` (4 entries) are the only checkouts kept under `~/source`:
+Manifest: `tools/config/upstream-sources.json`, two parts. `sources` (4 entries) are the only checkouts kept under `~/source`:
 Cargo path dependencies with local patches (`git` or `crate`, `pinned`, optional `hold`, patches with a marker file).
 `reference` (17 entries, tier `reference` or `build`) are upstreams that are never cloned by default; they are read live.
 Overview, generated: [UPSTREAMS.md](../../reference/infra/UPSTREAMS.md). The native `aphrody git source` command reads
-`sources`, read only. `config/update/forks.json` lists the forks the repository depends on, each with the reason it stays.
+`sources`, read only. `tools/config/update/forks.json` lists the forks the repository depends on, each with the reason it stays.
 
 | Command | What it does |
 | --- | --- |
@@ -87,17 +87,17 @@ the heads; `fetch <id> [--path <dir>]` makes a disposable shallow clone in `~/.c
 `prune --apply [--cache]` removes every non-vital directory of `~/source` (clean ones only) and the cache; `docs --apply`
 regenerates UPSTREAMS.md. The WSL build inputs (tier `build`) are restored only for a build
 (`sources sync --only <id> --apply`) and pruned afterwards; build outputs live in `~/.local/share/aphrody/wsl-artifacts`
-(`config/os/wsl-build.json`), not in `~/source`.
+(`tools/config/os/wsl-build.json`), not in `~/source`.
 
 `update run` reports `sources drift`, `upstream drift` and `forks` (or restores missing vital checkouts with `--apply`).
 Bun fork: the Aphrody Bun fork (`aphrody-labs/bun`) was deleted on 2026-10-02: `bun:aphrody` is optional and upstream Bun with `@aphrody/bun` is the runtime.
 
 ## Advisories, holds and release age
 
-- `config/deps/advisory-holds.json`: advisories that cannot be fixed yet (`ecosystem`, `name`, `reason`). `inventory` splits
+- `tools/config/deps/advisory-holds.json`: advisories that cannot be fixed yet (`ecosystem`, `name`, `reason`). `inventory` splits
   OSV findings into Open (a newer release exists), Open (no newer release) and Held, so only the first two need work.
   Current holds: yara-x pinned `=1.7.0` (1.19-1.21 need wasmtime 43-45 whose advisories are fixed only in 46.0.3+).
 - `bunfig.toml` `minimumReleaseAge` delays new npm releases; `minimumReleaseAgeExcludes` lists the packages that follow
   the latest immediately (Tauri JS, Next and its `@next/*` binaries, nodemailer, undici). `tauri-sync` honours the list.
-- `config/upstream-sources.json` `hold`: a pin that must not move and why (serde-saphyr: mistral.rs needs exactly 0.0.16).
+- `tools/config/upstream-sources.json` `hold`: a pin that must not move and why (serde-saphyr: mistral.rs needs exactly 0.0.16).
 - The npm collector of `inventory` retries on HTTP 429 with the `Retry-After` delay and runs 8 requests at a time.

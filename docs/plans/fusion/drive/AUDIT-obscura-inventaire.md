@@ -16,8 +16,8 @@ aux tailles ou aux temps est **statique (manifests/lockfile)** et doit être con
    `crates/ai/mcp/Cargo.toml:21,27`) et → `aphrody-web-engine` (défaut `render`,
    `crates/web/web-engine/Cargo.toml:10,13`) → `obscura-mcp`/`obscura-browser` → `obscura-js` → V8. Donc
    `libaphrody_ffi`, le binaire multi-call `aphrody` et le noyau embarquent V8 + le rendu
-   (`crates/os/kernel/build.rs:5-10` le documente). JSC (Bun) et V8 cohabitent déjà en processus ;
-   le correctif `simdutf-rio` existe précisément pour ça (`config/upstream-sources.json`, entrée
+   (`crates/os/kernel/core/build.rs:5-10` le documente). JSC (Bun) et V8 cohabitent déjà en processus ;
+   le correctif `simdutf-rio` existe précisément pour ça (`tools/config/upstream-sources.json`, entrée
    `simdutf-rio` : « does not collide with V8's own simdutf in the same process »).
 3. **`Bun.WebView` existe dans le fork** (`vendor/bun/packages/bun-types/bun.d.ts:9553-9990`,
    `vendor/bun/src/runtime/webview/*`, ~119 tests dans `vendor/bun/test/js/bun/webview/`). Backend
@@ -39,7 +39,7 @@ aux tailles ou aux temps est **statique (manifests/lockfile)** et doit être con
    (`v8x build.rs:120-126` panique ailleurs) et embarque son propre WebKit, pas celui de Bun.
    Sous Linux seul QuickJS est possible (`deno_core` feature `quickjs`). C'est un gabarit d'API V8→JSC
    (`v8x/src/jsc/{isolate,terminate,module,bytecode}.rs`), pas une solution prête. Jamais mentionné dans les docs du dépôt.
-6. **Provenance incomplète** : Obscura est absent de `config/upstream-sources.json` (intégrés :
+6. **Provenance incomplète** : Obscura est absent de `tools/config/upstream-sources.json` (intégrés :
    mcp-bridge, simdutf-rio, dialog, serde-saphyr, koharu-ml-base) et de `THIRD-PARTY.md`.
    Seule trace : `docs/reference/web/crates/aphrody-obscura/OBSCURA-UPSTREAM.txt:1-3`
    (h4ckf0r0day/obscura @ `1a3169da276d7720732c7b20535474942917fb83`), qui affirme « Upstream code otherwise
@@ -90,11 +90,11 @@ tests à partir de la l. 4097), `obscura-render/src/paint.rs` 16 326, `obscura-b
 
 Absents : **stylo, wgpu, Servo layout, lol-html** (aucun crate Obscura ne les tire ; `wgpu` existe dans le
 workspace mais pour d'autres propriétaires). Le style CSS est maison (`obscura-render/src/{css,style}.rs`,
-~20 k lignes). Holds de versions liés : `config/deps/rust-holds.json:27,31` (cssparser 0.37 / selectors 0.38
+~20 k lignes). Holds de versions liés : `tools/config/deps/rust-holds.json:27,31` (cssparser 0.37 / selectors 0.38
 bloqués par `obscura-dom/src/selector.rs` et `obscura-render/src/{css,style}.rs`).
 
 Toutes les crates portent `[lints.rust] warnings="allow"` + clippy `all/pedantic=allow` (code « vendored »),
-exemptées aussi dans `config/update/rust-doctor.json:11`.
+exemptées aussi dans `tools/config/update/rust-doctor.json:11`.
 
 ### 1.2 V8 : où et pourquoi
 
@@ -118,13 +118,13 @@ exemptées aussi dans `config/update/rust-doctor.json:11`.
   partie de l'empreinte d'un navigateur Chrome).
 - Contraintes d'hôte : isolate `!Send` → thread dédié + runtime tokio current-thread, pile 64 MiB
   (`crates/ai/mcp/src/browser_tools.rs:13-15,27`) ; MSVC `/OPT:NOICF` sinon abort au démarrage
-  (`crates/os/kernel/build.rs:5-10`).
+  (`crates/os/kernel/core/build.rs:5-10`).
 
 ### 1.3 Licences et provenance
 
 | Élément | Licence | Provenance enregistrée |
 |---|---|---|
-| Obscura (8 crates) | Apache-2.0 (`LICENSE` seulement dans `obscura-dom`) | `OBSCURA-UPSTREAM.txt` (commit `1a3169da…`) ; **absent** de `config/upstream-sources.json` et `THIRD-PARTY.md` |
+| Obscura (8 crates) | Apache-2.0 (`LICENSE` seulement dans `obscura-dom`) | `OBSCURA-UPSTREAM.txt` (commit `1a3169da…`) ; **absent** de `tools/config/upstream-sources.json` et `THIRD-PARTY.md` |
 | `deno_core`, `deno_v8`, `serde_v8`, `v8` | MIT (V8 lui-même BSD-3 dans l'archive) | crates.io |
 | `v8x` | MIT OR Apache-2.0 | crates.io (dans le lock seulement) |
 | `html5ever` | MIT OR Apache-2.0 | crates.io |
@@ -174,7 +174,7 @@ messaging ; `aphrody-command` ← `aphrody-ffi`, `aphrody` (CLI) ; `aphrody-web-
 | `packages/engine/yolo` | `yolo browser …` : une commande CDP sur l'endpoint Obscura (`src/index.ts:121`, `src/package-commands.ts:114`). |
 | MCP | `obscura-mcp` : 37 noms `browser_*` (`crates/web/obscura-mcp/src/lib.rs`) publiés `aphrody_browser_*` par `aphrody-mcp` ; clients `crates/ai/mcp-client/src/{bxc,web}.rs`. |
 | Python | `py/packages/aphrody/src/aphrody/web_browser.py:251` (« `render` uses Obscura »). |
-| Config / docs | `config/web.json` (`engine.port 9222`, `allowPrivateNetwork:false`, env `OBSCURA_*` l. 35-36, 54, 88-94), `config/live-audit.json:7`, `docs/architecture/web/ARCHITECTURE.md:20-60` (règle « Obscura/V8 renders remote pages », l. 36), `docs/reference/web/web/obscura-integration-spec.md`, `docs/APHRODY-RUST-TAURI-OBSCURA-BUN.md` (inventaire lexical). |
+| Config / docs | `tools/config/web.json` (`engine.port 9222`, `allowPrivateNetwork:false`, env `OBSCURA_*` l. 35-36, 54, 88-94), `tools/config/live-audit.json:7`, `docs/architecture/web/ARCHITECTURE.md:20-60` (règle « Obscura/V8 renders remote pages », l. 36), `docs/reference/web/web/obscura-integration-spec.md`, `docs/APHRODY-RUST-TAURI-OBSCURA-BUN.md` (inventaire lexical). |
 
 ## 3. Recouvrement avec Bun (fork `vendor/bun`)
 
@@ -214,7 +214,7 @@ messaging ; `aphrody-command` ← `aphrody-ffi`, `aphrody` (CLI) ; `aphrody-web-
 
 ### 4.2 Ordre conseillé
 
-0. **Préalables** (sans code moteur) : entrée Obscura + taffy dans `config/upstream-sources.json`, NOTICE/`THIRD-PARTY.md`
+0. **Préalables** (sans code moteur) : entrée Obscura + taffy dans `tools/config/upstream-sources.json`, NOTICE/`THIRD-PARTY.md`
    (Apache NOTICE, MPL-2.0, BSD-3, OFL/Vera), corriger `OBSCURA-UPSTREAM.txt` ; mesurer la ligne de base (§4.7) ;
    rendre V8 optionnel dans les chemins par défaut (`aphrody-mcp` `native-browser`, `aphrody-web-engine` `render`,
    `aphrody-web-bridge` → `aphrody-obscura` défaut `api`) pour que `libaphrody_ffi` puisse être chargée par Bun sans V8.
@@ -330,7 +330,7 @@ restent dans Aphrody. Pas de copie du code dans `vendor/bun` (règle « no copie
   crawlability ; `web:verify:rust` (`:183`) ajoute check/clippy `-D warnings`/test sur `WEB_CRATES`
   (`scripts/audit/web-verify.ts:16-35,142-173`). `cargo-serial.sh` refuse Cargo lourd sous WSL
   (`scripts/build/rust/cargo-serial.sh:20-24`) : passer par `bun scripts/build/rust/vps-cargo.ts run -- …` ou
-  la fabrique. Audit live : `config/live-audit.json:7`.
+  la fabrique. Audit live : `tools/config/live-audit.json:7`.
 - Rejouer côté Bun :
   1. Suites TS existantes inchangées contre l'endpoint (`APHRODY_WEB_TEST_CDP_URL`).
   2. Tests `Bun.WebView` du fork (`bun bd test test/js/bun/webview/webview-chrome-ws.test.ts`) pointés sur Obscura :

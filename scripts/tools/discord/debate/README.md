@@ -20,7 +20,7 @@ Le transport Discord de Shenron utilise son compte et ses identifiants protégé
 sur DBFR. Sans sa présence dans la guilde, Aphrody affiche explicitement le
 relais de son modèle. Le worker réévalue cette présence toutes les cinq minutes.
 La politique des rôles, des modèles et des limites est dans
-[discord-debate.json](../../../../config/host/discord-debate.json).
+[discord-debate.json](../../../../tools/config/host/discord-debate.json).
 
 ## Sources et apprentissage
 
@@ -55,7 +55,7 @@ bun scripts/tools/discord/debate/install.ts --apply
 
 Le plan et l'application passent par Infra, installent les ponts root sur DBFR,
 le bundle sur VPS et la seule unité
-[aphrody-discord-debate.service](../../../../config/host/systemd/aphrody/aphrody-discord-debate.service).
+[aphrody-discord-debate.service](../../../../tools/config/host/systemd/aphrody/aphrody-discord-debate.service).
 Les identifiants existants restent sur leurs hôtes. Les sessions, états et
 rollouts restent dans `/srv/aphrody-lab/state/debate`, en répertoires privés et
 fichiers 0600 ; ils ne doivent pas entrer dans Git ou les artefacts publics.
@@ -72,7 +72,7 @@ binding natif Canvas, dont le chargement dynamique échappait au bundler.
 partir du digest existant et du binaire source vérifié, smoke sans réseau,
 Compose `--no-deps`, contrôle de santé, comparaison des montages et restauration
 de l'image/drop-in précédents si les contrôles échouent. Le drop-in
-[guild-admission.conf](../../../../config/host/systemd/shenron/shenron-bot-docker.service.d/guild-admission.conf)
+[guild-admission.conf](../../../../tools/config/host/systemd/shenron/shenron-bot-docker.service.d/guild-admission.conf)
 rend cet override persistant. Les CLIs déployées ne proposent pas d'application
 partielle de cet artefact ou des `unitDropIns` déclarés : cet adaptateur passe
 par le SSH natif Infra, sans modifier le déployeur partagé.

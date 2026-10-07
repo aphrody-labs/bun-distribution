@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Render the shared issue and PR templates (config/github/templates.json) into each repository's
+ * Render the shared issue and PR templates (tools/config/github/templates.json) into each repository's
  * .github. `--check` reports drift without writing (exit 1); default writes.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -26,7 +26,7 @@ interface RepoTemplate {
 }
 
 const root = join(import.meta.dir, "../../..");
-const config = JSON.parse(readFileSync(join(root, "config/github/templates.json"), "utf8")) as {
+const config = JSON.parse(readFileSync(join(root, "tools/config/github/templates.json"), "utf8")) as {
   repos: Record<string, RepoTemplate>;
 };
 

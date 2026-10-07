@@ -21,7 +21,7 @@ daily automated health checks with alert thresholds; established billing policy 
 
 ## Policy
 
-**Declared in** `config/host/host-policy.toml` `[billing]`:
+**Declared in** `tools/config/host/host-policy.toml` `[billing]`:
 
 ```toml
 [billing]
@@ -41,7 +41,7 @@ identifiers are private and stay outside the repository:
 
 - `OVH_CLIENT_ID` / `OVH_CLIENT_SECRET` in `~/.config/aphrody/ovh.env` (`export KEY=VALUE`), or
   `client_id` / `client_secret` in the `[ovh-eu]` section of `~/.config/ovh/aphrody.conf`.
-- On the host: `/etc/aphrody/ovh.env` (key names declared in `config/secrets-contract.json`,
+- On the host: `/etc/aphrody/ovh.env` (key names declared in `tools/config/secrets-contract.json`,
   service `aphrody-ovh-watch`).
 
 The CLI exchanges them at `POST https://www.ovh.com/auth/oauth2/token`
@@ -303,7 +303,7 @@ It replaces the former `aphrody-ovh-vps-watch` units: disable and remove those i
 **Install on VPS** (after deploying Aphrody CLI):
 ```bash
 # Copy declarative units from the repository (no activation)
-sudo cp config/host/systemd/aphrody/aphrody-ovh-watch.* /etc/systemd/system/
+sudo cp tools/config/host/systemd/aphrody/aphrody-ovh-watch.* /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable aphrody-ovh-watch.timer
 sudo systemctl start aphrody-ovh-watch.timer
@@ -328,7 +328,7 @@ aphrody ovh vps status vps-203bea89
 # → Error: VPS expired, renew with `aphrody ovh vps renew vps-203bea89`
 ```
 
-**Tunnel config**: `config/host/vps-cargo.json` (read-only, do not modify).
+**Tunnel config**: `tools/config/host/vps-cargo.json` (read-only, do not modify).
 
 ## OVH API Endpoints Used
 
@@ -385,7 +385,7 @@ sudo systemctl list-timers aphrody-ovh-watch.timer
 
 If the timer is absent or inactive:
 ```bash
-sudo cp config/host/systemd/aphrody/aphrody-ovh-watch.* /etc/systemd/system/
+sudo cp tools/config/host/systemd/aphrody/aphrody-ovh-watch.* /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable aphrody-ovh-watch.timer
 sudo systemctl start aphrody-ovh-watch.timer

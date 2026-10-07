@@ -25,17 +25,16 @@ check: typecheck lint fmt-check rust-fmt-check check-core clippy
 
 typecheck:
     tsc -p packages/engine/yolo/tsconfig.json --noEmit
-    tsc -p packages/engine/forge/tsconfig.json --noEmit
 
 # Run the installed toolchain binaries directly, without package execution/download runners.
 lint:
-    oxlint packages/engine/yolo/src/ packages/engine/yolo/test/ packages/engine/forge/src/ packages/engine/
+    oxlint packages/engine/yolo/src/ packages/engine/yolo/test/ packages/engine/yolo/src/cli/forge/ packages/engine/
 
 fmt:
-    oxfmt --write packages/engine/yolo/src/ packages/engine/yolo/test/ packages/engine/forge/src/ packages/engine/
+    oxfmt --write packages/engine/yolo/src/ packages/engine/yolo/test/ packages/engine/yolo/src/cli/forge/ packages/engine/
 
 fmt-check:
-    oxfmt --check packages/engine/yolo/src/ packages/engine/yolo/test/ packages/engine/forge/src/ packages/engine/
+    oxfmt --check packages/engine/yolo/src/ packages/engine/yolo/test/ packages/engine/yolo/src/cli/forge/ packages/engine/
 
 # Minimal owned source formatting; imported engines keep an explicit upstream gate.
 rust-fmt:
@@ -153,7 +152,7 @@ qualify-python: rust-fmt-python-check check-python clippy-python test-python
 # `rustup run` without --install refuses an absent toolchain instead of acquiring it.
 qualify-upstream: rust-fmt-upstream-check check-upstream test-upstream
 
-# The Bun fork builds through `yolo forge` (packages/engine/forge): toolchain, per-commit scratch partition, receipt.
+# The Bun fork builds through `yolo forge` (packages/engine/yolo/src/cli/forge): toolchain, per-commit scratch partition, receipt.
 qualify-bun *args:
     bun packages/engine/yolo/src/index.ts forge build --branch main {{args}}
 
@@ -237,7 +236,6 @@ docs-serve:
 
 # Cleaning
 clean:
-    rm -rf packages/engine/forge/dist
     @echo -e "\033[1;32m[OK] Yolo build outputs cleaned\033[0m"
 
 # Publishing (dry-run by default; real publish needs explicit *-run recipes)

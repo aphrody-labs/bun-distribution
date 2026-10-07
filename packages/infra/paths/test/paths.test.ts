@@ -23,5 +23,5 @@ test("finds a workspace from a nested source file using all root markers", () =>
 });
 
 test("portablePath normalizes manifest separators", () => {
-  expect(portablePath("crates\\os\\kernel")).toBe("crates/os/kernel");
+  expect(portablePath("crates\\os\\kernel")).toBe("crates/os/kernel/core");
 });

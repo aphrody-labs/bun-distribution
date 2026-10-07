@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Host config: systemd units, nginx sites, the cross-host inventory and the toolchain
-// manifest live under `config/host` (the single home for aphrody, shenron, rg and nie). Units keep only their own
+// manifest live under `tools/config/host` (the single home for aphrody, shenron, rg and nie). Units keep only their own
 // directives; shared sandbox/identity blocks are drop-ins listed in
 // `catalog.json` and composed back into one flat unit at install/package time.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -51,7 +51,7 @@ export function yoloRoot(env: Record<string, string | undefined> = process.env):
   return env.YOLO_ROOT || join(env.HOME || env.USERPROFILE || homedir(), "aphrody");
 }
 export const hostRoot = (env?: Record<string, string | undefined>) =>
-  join(yoloRoot(env), "config", "host");
+  join(yoloRoot(env), "tools", "config", "host");
 
 export function loadCatalog(root = hostRoot()): HostCatalog {
   return JSON.parse(readFileSync(join(root, "catalog.json"), "utf8"));

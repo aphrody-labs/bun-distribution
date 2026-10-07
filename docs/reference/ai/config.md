@@ -274,7 +274,7 @@ profiles for the model families it targets (Qwen2.5-Coder, Qwen3, GPT-OSS,
 and the OCR/STT/vision model ids are not only `config.toml` keys: they are
 also named by eighteen canonical environment variables
 ([`aphrody_config::ai_env`](../../../crates/ai/config/src/ai_env.rs)), the
-same contract `[`config/local-ai.json`](../../../config/local-ai.json)` publishes to shenron,
+same contract `[`tools/config/local-ai.json`](../../../tools/config/local-ai.json)` publishes to shenron,
 `aphrody-os`, `rg` and `nie`:
 
 | Canonical name | What it names |

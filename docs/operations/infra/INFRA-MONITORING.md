@@ -36,7 +36,7 @@ aphrody-infra validate --json
 The Rust `status` command reports target/matrix state using its live target
 adapter (service counts/failures and selected host details); it is distinct
 from the catalog service query. The `service` commands query workloads declared in root
-[`config/service-catalog.json`](../../../config/service-catalog.json); they do
+[`tools/config/service-catalog.json`](../../../tools/config/service-catalog.json); they do
 not discover arbitrary systemd units. Use a dated host observation when
 reporting complete unit inventory. `validate` checks the current service,
 route and port-policy catalogues; it is not a runtime health probe.
@@ -49,10 +49,10 @@ its removal is historical and is superseded for that observation only.
 
 The root JSON catalogues are authoritative for declared policy:
 
-- `config/service-catalog.json` owns service IDs, units, health paths and
+- `tools/config/service-catalog.json` owns service IDs, units, health paths and
   declared ports;
-- `yolo/config/host/nginx/routes.json` owns public hosts and upstream routes;
-- `config/production-topology.json` owns host roles and public/internal port
+- `yolo/tools/config/host/nginx/routes.json` owns public hosts and upstream routes;
+- `tools/config/production-topology.json` owns host roles and public/internal port
   policy.
 
 Retired services remain recorded as evidence and must not be treated as

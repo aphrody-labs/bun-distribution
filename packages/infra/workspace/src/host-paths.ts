@@ -2,7 +2,7 @@
 /**
  * Repository-wide audit of machine- and host-specific paths: removed checkouts (~/source, the
  * pre-monorepo superproject), absolute user homes, WSL mounts and VPS-only homes. Aphrody must run
- * from any checkout location and platform; host layouts belong to the declarations in yolo `config/host`.
+ * from any checkout location and platform; host layouts belong to the declarations in yolo `tools/config/host`.
  */
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -136,7 +136,7 @@ const ALLOWED: Partial<Record<HostPathArea, HostPathRule[]>> = {
 const OWN_FILES = new Set([
   "packages/infra/workspace/src/host-paths.ts",
   "packages/infra/workspace/test/host-paths.test.ts",
-  "config/host-paths.baseline.json",
+  "tools/config/host-paths.baseline.json",
 ]);
 
 export function hostPathArea(path: string): HostPathArea {
@@ -320,7 +320,7 @@ export async function runHostPaths(args: string[]): Promise<number> {
       }
     }
   const files = await collectHostPaths(root);
-  const baselinePath = join(root, "config/host-paths.baseline.json");
+  const baselinePath = join(root, "tools/config/host-paths.baseline.json");
   const counts = Object.fromEntries(files.map((file) => [file.path, file.findings.length]));
   if (writeBaseline)
     await Bun.write(
@@ -369,7 +369,7 @@ export async function runHostPaths(args: string[]): Promise<number> {
       byRule: tally((item) => item.rule),
       byArea: tally((item) => item.area),
     },
-    ratchet: { baseline: baseline ? "config/host-paths.baseline.json" : null, regressions },
+    ratchet: { baseline: baseline ? "tools/config/host-paths.baseline.json" : null, regressions },
     files,
   };
   if (markdown) {

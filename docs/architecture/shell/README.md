@@ -29,7 +29,7 @@ The Tauri plugin sends PTY output through a bounded Channel. The event transport
 compatibility fallback. The WebSocket backend authenticates requests, checks Origin/Host, and
 limits sessions, frame size, output and idle time. Named PTY sessions retain bounded output
 for a 30-second reconnect window; unnamed sessions close on disconnect. Remote provider confinement belongs behind
-`SandboxHost`; `crates/os/sandbox` is the separate native command policy owner.
+`SandboxHost`; `crates/os/kernel/comps/sandbox` is the separate native command policy owner.
 
 ## Qualification
 

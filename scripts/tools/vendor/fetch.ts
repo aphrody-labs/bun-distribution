@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
-// The one vendor tool: `config/vendor.json` is the registry (url, pinned ref, sparse set) and the fetched trees are
+// The one vendor tool: `tools/config/vendor.json` is the registry (url, pinned ref, sparse set) and the fetched trees are
 // git-ignored. Every fetch is shallow (depth 1), blobless and sparse, so only the pinned commit's needed paths are
 // downloaded.
 //
@@ -28,7 +28,7 @@ export interface VendorSource {
 const REPO = resolve(dirname(import.meta.path), "../../..");
 
 export const loadSources = async (): Promise<VendorSource[]> =>
-  (await Bun.file(join(REPO, "config/vendor.json")).json()).sources;
+  (await Bun.file(join(REPO, "tools/config/vendor.json")).json()).sources;
 
 const git = (cwd: string, ...args: string[]) => {
   const r = Bun.spawnSync(["/usr/bin/git", ...args], { cwd, stdout: "pipe", stderr: "pipe" });

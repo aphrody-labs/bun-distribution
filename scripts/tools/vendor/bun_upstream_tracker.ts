@@ -310,7 +310,7 @@ export class BunUpstreamTrackerEngine {
     let md = `# Bun Upstream Optimization & Intelligence Tracker\n\n`;
     md += `> **Source**: [oven-sh/bun](https://github.com/oven-sh/bun)  \n`;
     md += `> **Target Fork**: [aphrody-labs/bun](https://github.com/aphrody-labs/bun) (Branch: \`main\`)  \n`;
-    md += `> **Updated**: ${new Date().toISOString()}  \n`;
+    md += `> **Updated**: ${new Date().toISOString()}\n`;
     md += `> **Engine**: \`scripts/tools/vendor/bun_upstream_tracker.ts\`\n\n`;
 
     md += `## 1. Executive Summary & Optimization Strategy\n\n`;

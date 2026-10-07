@@ -32,7 +32,7 @@ history under `upstream/`.
 | --- | --- |
 | Contracts | `crates/contracts`: neutral wire types, schemas, A2A and app-server contracts |
 | Native | `crates/native`: native compute foundations and bridge contracts |
-| Compat and Bun | `crates/compat`, `packages/compat` (not in repo), `packages/bun`: compatibility engines and runtime clients |
+| Compat and Bun | `crates/compat`, `packages/compat` (not in repo), `packages/engine`: compatibility engines and runtime clients |
 | Interop | [Rust FFI](../../../crates/interop/ffi), [Bun native adapter](../../../packages/interop/native): shared library boundary |
 | CLI | [crates/infra/aphrody](../../../crates/infra/aphrody): argument handling, configuration and invocation of owner libraries |
 | OS and Shell | `crates/os`, `packages/os`, `crates/shell`: system capabilities, kernel, process supervision, jobs and shell facilities |
@@ -74,10 +74,10 @@ respect runtime threading and lifetime rules.
 
 ## Infrastructure, data and provenance
 
-Infra configuration is canonical: [services](../../../config/service-catalog.json),
-[topology](../../../config/production-topology.json),
-`config/host/nginx/routes.json` and
-[local AI](../../../config/local-ai.json). Current release records and live
+Infra configuration is canonical: [services](../../../tools/config/service-catalog.json),
+[topology](../../../tools/config/production-topology.json),
+`tools/config/host/nginx/routes.json` and
+[local AI](../../../tools/config/local-ai.json). Current release records and live
 probes establish deployed state; manifests and historical catalogues do not.
 Migration tools may intentionally read legacy archives, while active service
 configuration must use active roots and installed runtime paths.
@@ -95,7 +95,7 @@ Packaging copies need consumer and license verification before deduplication.
 
 Qualification proceeds from contracts/native/compat, through interop and CLI,
 OS/shell/Infra, UI and AI/Web, then RG and other consumers, to Shenron as the
-final product gate. The [generated pipeline](../../../config/pipeline.json)
+final product gate. The [generated pipeline](../../../tools/config/pipeline.json)
 records declared commands; actual exit codes, logs and coverage establish
 passing gates. Missing qualification scripts need real checks.
 

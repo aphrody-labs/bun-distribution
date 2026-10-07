@@ -9,7 +9,7 @@ Preuves : [Aphrody MEMORY](../../../MEMORY.md) et
 - Modifier un consommateur : [guide](../../guides/workspace/runtime-consumer.md).
 - Lire un reçu : [qualification](qualification.md).
 - ABI producteur : [RUNTIME-ABI](../../RUNTIME-ABI.md).
-- Provenance source : [déclarations](../../../config/upstream-sources.json).
+- Provenance source : [déclarations](../../../tools/config/upstream-sources.json).
 - Documentation : [propriétaire Workspace](../../guides/workspace/documentation.md).
 
 Cette page est un point d'entrée, sans contrat ni tableau d'état dupliqué.

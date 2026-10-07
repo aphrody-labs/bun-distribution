@@ -181,7 +181,7 @@ async function selectedDirectory(home: string, target: string, slot: "current" |
 export async function acquireNativeRuntime(options: NativeRuntimeOptions) {
   const root = resolve(options.root);
   const contract = readContract(
-    JSON.parse(await readFile(join(root, "config/native-runtime.json"), "utf8")),
+    JSON.parse(await readFile(join(root, "tools/config/native-runtime.json"), "utf8")),
   );
   if (options.action !== "install" && options.action !== "verify" && options.action !== "rollback")
     throw new Error("Expected install, verify or rollback");
@@ -264,7 +264,7 @@ export async function runNativeRuntime(input: readonly string[]): Promise<number
   const args = [...input];
   if (args.includes("--help")) {
     console.log(
-      "Usage: yolo ops native-runtime install|verify|rollback [--root DIR] [--artifact DIR] [--runtime-home DIR] [--yolo BIN] [--apply]. Uses the runtime pins of config/native-runtime.json, the workspace SDK and the Yolo release owner; no source checkout, Cargo or engine rebuild. Default: verify without activation.",
+      "Usage: yolo ops native-runtime install|verify|rollback [--root DIR] [--artifact DIR] [--runtime-home DIR] [--yolo BIN] [--apply]. Uses the runtime pins of tools/config/native-runtime.json, the workspace SDK and the Yolo release owner; no source checkout, Cargo or engine rebuild. Default: verify without activation.",
     );
     return 0;
   }

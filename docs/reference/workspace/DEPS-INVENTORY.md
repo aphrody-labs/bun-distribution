@@ -7,7 +7,7 @@ Generated 2026-10-04T03:38:40.421Z by `aphrody-update deps inventory` (crates.io
 
 - resolved: 2351, behind latest: 715 (direct: 104), with advisories: 16, yanked/deprecated: 0
 
-Held advisories (reason in `config/deps/advisory-holds.json`):
+Held advisories (reason in `tools/config/deps/advisory-holds.json`):
 - atomic-polyfill 1.0.3: RUSTSEC-2023-0089 (latest 1.0.3) - unmaintained notice, transitive; no newer release.
 - bincode 1.3.3: RUSTSEC-2025-0141 (latest 3.0.0) - RUSTSEC-2025-0141 is an unmaintained notice; 3.0.0 is not a drop-in replacement. Transitive (heed-types and others).
 - bincode 2.0.1: RUSTSEC-2025-0141 (latest 3.0.0) - RUSTSEC-2025-0141 is an unmaintained notice; 3.0.0 is not a drop-in replacement. Transitive (heed-types and others).
@@ -98,7 +98,7 @@ Open advisories with a newer release (bump or replace the consumer):
 Open advisories with no newer release:
 - braces 3.0.3: GHSA-vfj7-8cjw-p6xm (latest 3.0.3)
 
-Held advisories (reason in `config/deps/advisory-holds.json`):
+Held advisories (reason in `tools/config/deps/advisory-holds.json`):
 - adm-zip 0.6.0: GHSA-7q85-xj36-vmfc, GHSA-8238-w5pm-2374, GHSA-c6fg-446q-cg94 (latest 0.6.1) - 0.6.0 is pinned exactly by @mintlify/cli and @mintlify/previewing (dev docs tool `mint`, @aphrody/koharu-docs only); 0.6.1 is already used by onnxruntime-node. Moves with the next mint release.
 - esbuild 0.27.7: GHSA-g7r4-m6w7-qqqr (latest 0.28.2) - 0.27/0.21/0.18 are pinned by vite and tool ranges that exclude 0.28; the advisories concern the esbuild dev server only.
 - js-yaml 4.3.1: GHSA-2883-xcg3-v3hh (latest 5.4.2) - 4.3.1 is pinned exactly by @mintlify/* (dev docs tool `mint`); every other consumer already resolves 4.3.2, 3.15.2 or 5.x. Moves with the next mint release.
@@ -216,7 +216,7 @@ Open advisories with a newer release (bump or replace the consumer):
 - setuptools 81.0.0: GHSA-h35f-9h28-mq5c, PYSEC-2026-3447 (latest 84.0.0)
 - urllib3 2.6.3: GHSA-8988-9cw3-xx77, GHSA-gh4c-6fx4-qh6g, GHSA-mf9v-mfxr-j63j (latest 2.8.0)
 
-Held advisories (reason in `config/deps/advisory-holds.json`):
+Held advisories (reason in `tools/config/deps/advisory-holds.json`):
 - torch 2.8.0: GHSA-qfhq-4f3w-5fph, GHSA-rrmf-rvhw-rf47, GHSA-vgrw-7cvw-pwgx (latest 2.14.1) - pinned ==2.8.0 in aphrody-train: the 2.14.0 Windows wheel failed to import torch.amp in the CPU smoke test.
 - torch 2.8.0+cu129: GHSA-qfhq-4f3w-5fph, GHSA-rrmf-rvhw-rf47, GHSA-vgrw-7cvw-pwgx (latest 2.14.1) - pinned ==2.8.0 in aphrody-train: the 2.14.0 Windows wheel failed to import torch.amp in the CPU smoke test.
 - transformers 4.57.6: GHSA-29pf-2h5f-8g72, GHSA-69w3-r845-3855, GHSA-fgcw-684q-jj6r (latest 5.18.0) - kept below 4.58 by aphrody-train (sentence-transformers 5.x line); 5.x needs sentence-transformers 6.

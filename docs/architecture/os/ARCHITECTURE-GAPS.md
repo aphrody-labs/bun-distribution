@@ -19,8 +19,8 @@ path checks an identity, token, peer credentials, or scope. The Unix socket is c
 0600, but that does not distinguish processes or agents running as the same user. As a result, the
 documented identity and scope model currently has no kernel enforcement point.
 
-Evidence: [`rpc.rs`](../../../crates/os/kernel/src/rpc.rs), `tools/call` and
-`system/register_subsystem`; [`transport.rs`](../../../crates/os/kernel/src/transport.rs), local
+Evidence: [`rpc.rs`](../../../crates/os/kernel/core/src/rpc.rs), `tools/call` and
+`system/register_subsystem`; [`transport.rs`](../../../crates/os/kernel/core/src/transport.rs), local
 endpoint setup.
 
 **Direction:** define the intended trust boundary (all processes of one OS user, or individually
@@ -37,9 +37,9 @@ subsystems and its RPC handler calls them directly, with no policy or sandbox ch
 This leaves a gap between the repository's ownership statement (kernel owns execution policy and
 sandboxing) and runtime enforcement, especially for remote subsystem calls and admin operations.
 
-Evidence: [`aphrody-kernel/Cargo.toml`](../../../crates/os/kernel/Cargo.toml),
+Evidence: [`aphrody-kernel/Cargo.toml`](../../../crates/os/kernel/core/Cargo.toml),
 `main.rs` (`builtin_kernel`), and
-[`rpc.rs`](../../../crates/os/kernel/src/rpc.rs) (`tools/call`).
+[`rpc.rs`](../../../crates/os/kernel/core/src/rpc.rs) (`tools/call`).
 
 **Direction:** make the policy boundary explicit and enforce it at kernel dispatch or document
 which clients own enforcement. Avoid presenting re-exported policy crates as kernel enforcement.
@@ -56,7 +56,7 @@ also appends received chunks to an unbounded string buffer until it sees a newli
 resource-exhaustion risk within the local trust boundary and makes overload behavior hard to
 control.
 
-Evidence: [`transport.rs`](../../../crates/os/kernel/src/transport.rs) (`MAX_LINE`, unbounded queue,
+Evidence: [`transport.rs`](../../../crates/os/kernel/core/src/transport.rs) (`MAX_LINE`, unbounded queue,
 request task spawn); [`packages/os/kernel-client/src/index.ts`](../../../packages/os/kernel-client/src/index.ts) (`#receive`).
 
 **Direction:** add bounded queues, request/concurrency quotas, output and input limits appropriate
@@ -74,8 +74,8 @@ the same tool can address different coordination state depending on how the kern
 these files also bypass the planned job state machine and recovery model.
 
 Evidence: [`WINCLEAN-RUST-CONVERGENCE.md`](../../reference/os/WINCLEAN-RUST-CONVERGENCE.md), coordination ownership;
-[`dispatch.rs`](../../../crates/os/winclean/src/dispatch.rs), `coord_root` and `coord_*` handlers;
-[`aphrody-jobs`](../../../crates/os/jobs/src/lib.rs), currently not consumed by another workspace
+[`dispatch.rs`](../../../crates/os/kernel/comps/winclean/src/dispatch.rs), `coord_root` and `coord_*` handlers;
+[`aphrody-jobs`](../../../crates/os/kernel/comps/jobs/src/lib.rs), currently not consumed by another workspace
 crate.
 
 **Direction:** either implement the planned adapter to the durable job/A2A owner or revise the
@@ -91,8 +91,8 @@ but no crate consumes it and there is no bridge from kernel events to its persis
 the kernel's event stream is not automatically the durable/auditable event stream described by
 the local events capability.
 
-Evidence: [`kernel/src/lib.rs`](../../../crates/os/kernel/src/lib.rs) (`AgentBus` ownership),
-[`events/src/lib.rs`](../../../crates/os/kernel/src/events.rs) (`EventBus`), and workspace dependency
+Evidence: [`kernel/src/lib.rs`](../../../crates/os/kernel/core/src/lib.rs) (`AgentBus` ownership),
+[`events/src/lib.rs`](../../../crates/os/kernel/core/src/events.rs) (`EventBus`), and workspace dependency
 metadata (no consumer of `aphrody-events`).
 
 **Direction:** decide whether `aphrody-events` is a reusable library awaiting integration or an
@@ -114,7 +114,7 @@ metadata and generated argument types to drift without the documented gate notic
 Evidence: [`verify-winclean-integration.ps1`](../../../scripts/audit/os/scripts/verify-winclean-integration.ps1),
 [`packages/os/winclean/src/index.ts`](../../../packages/os/winclean/src/index.ts) (`listTools`),
 [`packages/os/winclean/src/generated.ts`](../../../packages/os/winclean/src/generated.ts), and
-[`crates/os/winclean/src/tools.json`](../../../crates/os/winclean/src/tools.json).
+[`crates/os/kernel/comps/winclean/src/tools.json`](../../../crates/os/kernel/comps/winclean/src/tools.json).
 
 **Direction:** check in or otherwise pin a deterministic generator and have the gate compare the
 full tool-name/schema surface across Rust and Bun. Return the actual schema from `listTools()`.
@@ -130,7 +130,7 @@ them. In practice, some catalog entries route through this large compatibility m
 coordination implementation does not use its planned owner. This raises the cost of changing
 compatibility contracts independently from domain behavior.
 
-Evidence: [`dispatch.rs`](../../../crates/os/winclean/src/dispatch.rs),
+Evidence: [`dispatch.rs`](../../../crates/os/kernel/comps/winclean/src/dispatch.rs),
 [`WINCLEAN-RUST-CONVERGENCE.md`](../../reference/os/WINCLEAN-RUST-CONVERGENCE.md), ownership matrix; file length and
 module contents from the current checkout.
 
@@ -155,7 +155,7 @@ each download error, then returns success, so the binary can print “terminé a
 partial or total failure.
 
 Evidence: `aphrody-backend/src/main.rs`,
-[`aphrody-backend/src/lib.rs`](../../../crates/os/backend/src/lib.rs),
+[`aphrody-backend/src/lib.rs`](../../../crates/os/ostd/backend/src/lib.rs),
 [`Cargo.toml`](../../../Cargo.toml), and [`README.md`](../../products/os/README.md).
 
 **Direction:** identify its owner and product role, or retire/move the crate. If retained, give the

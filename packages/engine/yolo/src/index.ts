@@ -163,7 +163,6 @@ async function main(): Promise<void> {
     "tauri",
     "docs",
     "import",
-    "plugin",
     "py",
     "python",
     "uv",
@@ -527,8 +526,11 @@ async function main(): Promise<void> {
     }
 
     case "plugin": {
-      const { runPluginCommand } = await import("./plugin");
-      process.exitCode = await runPluginCommand(args.slice(1), rootDir());
+      const { runPluginCommand } = await import("./cli/plugin/command");
+      process.exitCode = await runPluginCommand(
+        args.slice(1),
+        isCompiled() ? workspaceRoot() : rootDir(),
+      );
       break;
     }
 

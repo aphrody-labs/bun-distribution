@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "proxy": "nginx",
+  "sourceOfTruth": "tools/config/service-catalog.json",
+  "policy": "one-nginx-instance-one-route-per-public-service",
+  "routes": [
+    {
+      "host": "nie.aphrody.com",
+      "service": "nie-site",
+      "upstream": "127.0.0.1:8085",
+      "probePath": "/health",
+      "paths": [
+        "/api/",
+        "/f/",
+        "/b",
+        "/health"
+      ],
+      "bearerPaths": [
+        "/f/",
+        "/b"
+      ],
+      "staticPaths": [
+        "/downloads/inacord/latest.json",
+        "/downloads/channels/stable/latest.json",
+        "/downloads/files/"
+      ],
+      "vhost": "nginx/aphrody/aphrody-nie-cdn.conf",
+      "status": "retired",
+      "retiredAt": "2026-09-25"
+    },
+    {
+      "host": "rosegriffon.fr",
+      "service": "rg-website",
+      "upstream": "127.0.0.1:3004",
+      "probePath": "/api/health",
+      "aliases": [
+        "www.rosegriffon.fr"
+      ]
+    },
+    {
+      "host": "api.rosegriffon.fr",
+      "service": "rg-api",
+      "upstream": "127.0.0.1:8800",
+      "probePath": "/health"
+    },
+    {
+      "host": "cdn.rosegriffon.fr",
+      "service": "rg-api",
+      "upstream": "127.0.0.1:8800",
+      "probePath": "/cdn/health"
+    },
+    {
+      "host": "achillea.rosegriffon.fr",
+      "service": "rg-achillea-bot",
+      "upstream": "127.0.0.1:4000",
+      "probePath": "/health/check"
+    },
+    {
+      "host": "ranked.rosegriffon.fr",
+      "service": "rg-achillea-bot",
+      "upstream": "127.0.0.1:4002",
+      "probePath": "/health/check"
+    },
+    {
+      "host": "azalee.rosegriffon.fr",
+      "service": "rg-api",
+      "upstream": "127.0.0.1:8800",
+      "probePath": "/health",
+      "paths": [
+        "/storage/v1/"
+      ]
+    }
+  ],
+  "internal": [
+    {
+      "service": "nie-model-serve",
+      "upstream": "127.0.0.1:8792",
+      "via": "nginx",
+      "publicHost": "nie.aphrody.com",
+      "paths": [
+        "/cdn/"
+      ],
+      "denyPaths": [
+        "/cdn/raw/",
+        "/cdn/vfs/",
+        "/cdn/depot/"
+      ],
+      "exportQueryAllowlist": "/cdn/export/",
+      "vhost": "nginx/aphrody/aphrody-nie-cdn.conf",
+      "status": "retired",
+      "retiredAt": "2026-09-25"
+    },
+    {
+      "service": "nie-model-serve",
+      "upstream": "127.0.0.1:8792",
+      "via": "nginx",
+      "publicHost": "cdn.rosegriffon.fr",
+      "paths": [
+        "/cfg/",
+        "/typed/",
+        "/tex/",
+        "/tex-info/",
+        "/audio/",
+        "/audio-info/",
+        "/video/",
+        "/lip/",
+        "/menu-render/",
+        "/model-full/",
+        "/model-chr/",
+        "/model-edit/",
+        "/model-avatar/",
+        "/model-map/",
+        "/avatar/",
+        "/icons/",
+        "/ui/",
+        "/export/",
+        "/g4tx/",
+        "/dx11/",
+        "/menu-tree",
+        "/story-scene",
+        "/vfs/"
+      ],
+      "denyPaths": [
+        "/raw/",
+        "/depot/"
+      ],
+      "hostOnlyPaths": [
+        "/vfs/"
+      ],
+      "exportQueryAllowlist": "/export/",
+      "vhost": "scripts/rg/nginx-gen.ts",
+      "status": "retired",
+      "retiredAt": "2026-09-25"
+    },
+    {
+      "service": "nie-site",
+      "upstream": "127.0.0.1:8085",
+      "via": "nginx",
+      "publicHost": "cdn.rosegriffon.fr",
+      "paths": [
+        "/model/"
+      ],
+      "vhost": "scripts/rg/nginx-gen.ts",
+      "status": "retired",
+      "retiredAt": "2026-09-25"
+    },
+    {
+      "service": "rg-api",
+      "upstream": "127.0.0.1:8800",
+      "via": "nginx",
+      "publicHost": "rosegriffon.fr",
+      "paths": [
+        "/realtime/v1/",
+        "/storage/v1/"
+      ]
+    }
+  ],
+  "internalGateway": "127.0.0.1:8811"
+}

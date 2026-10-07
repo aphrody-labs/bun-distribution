@@ -1,4 +1,4 @@
-//! Allowlisted disk reclamation on a remote target (`config/disk-reclaim.json`).
+//! Allowlisted disk reclamation on a remote target (`tools/config/disk-reclaim.json`).
 
 use anyhow::{Context, Result, bail};
 use serde::Deserialize;
@@ -33,9 +33,9 @@ pub struct Tmp {
 }
 
 pub fn load(root: &Path) -> Result<Config> {
-    let path = root.join("config/disk-reclaim.json");
+    let path = root.join("tools/config/disk-reclaim.json");
     let text = fs::read_to_string(&path).with_context(|| format!("lecture {}", path.display()))?;
-    serde_json::from_str(&text).context("config/disk-reclaim.json invalide")
+    serde_json::from_str(&text).context("tools/config/disk-reclaim.json invalide")
 }
 
 fn safe_token(value: &str) -> bool {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
  * Python / uv ecosystem module: one structured, documented, automated bump of the uv pin, every `uv.lock` of the
- * Python workspace (default `py/`, the first `inventory.pythonRoots` entry of config/deps/watch.json),
+ * Python workspace (default `py/`, the first `inventory.pythonRoots` entry of tools/config/deps/watch.json),
  * the managed interpreters and the Python gates. Doc: docs/operations/infra/update/UV.md.
  *
  *   status    uv installed vs pinned vs latest, `required-version` and CI pins, `uv lock --check` per lock,
@@ -9,7 +9,7 @@
  *             packages, OSV advisories that no hold covers, Python version policy
  *   plan      `uv lock --upgrade --dry-run` per lock, the open direct rows and the majors that need a decision
  *   apply     snapshot, `uv python upgrade`, `uv lock --upgrade` (or `--upgrade-package a,b` only), `uv sync`,
- *             then the verify pass; the lock diff is journalled in config/deps/journal.json
+ *             then the verify pass; the lock diff is journalled in tools/config/deps/journal.json
  *   verify    uv pins agree, `uv lock --check` per lock, ruff over the whole tree, pytest of every member with tests
  *   rollback  restore the lock files from the newest snapshot under target/update/uv/ (or `git checkout -- uv.lock`)
  *
@@ -28,8 +28,8 @@ import type { Change } from "../deps/sync.ts";
 
 // ---------------------------------------------------------------- constants
 
-export const HOLDS_FILE = "config/deps/uv-holds.json";
-export const ADVISORY_FILE = "config/deps/advisory-holds.json";
+export const HOLDS_FILE = "tools/config/deps/uv-holds.json";
+export const ADVISORY_FILE = "tools/config/deps/advisory-holds.json";
 export const SNAPSHOT_DIR = "target/update/uv";
 /** Extras installed so that every member suite can be collected (networkx for the RAG tests, datasketch for train). */
 export const TEST_EXTRAS = ["rag", "dedup"] as const;
@@ -346,7 +346,7 @@ export type DirectRow = {
   cause?: "manifest-cap" | "python-floor" | "hold";
   kind: BumpKind;
   reason?: string;
-  /** A manifest cap (`==`, `<`, `~=`) with no entry in config/deps/uv-holds.json or advisory-holds.json. */
+  /** A manifest cap (`==`, `<`, `~=`) with no entry in tools/config/deps/uv-holds.json or advisory-holds.json. */
   undocumented?: boolean;
 };
 
@@ -562,7 +562,7 @@ export function expandHome(p: string): string {
 
 export function pythonRoot(c: Ctx, override?: string): string | undefined {
   const configured =
-    c.jsonFile<{ inventory?: { pythonRoots?: string[] } }>("config/deps/watch.json", {}).inventory
+    c.jsonFile<{ inventory?: { pythonRoots?: string[] } }>("tools/config/deps/watch.json", {}).inventory
       ?.pythonRoots ?? [];
   const candidates = [override, process.env.APHRODY_PY_ROOT, ...configured, "py"]
     .filter((x): x is string => !!x)
@@ -1089,7 +1089,7 @@ export async function applyBumps(
   const pyRoot = pythonRoot(c, args.pyRoot);
   if (!pyRoot) {
     console.error(
-      "no Python root (config/deps/watch.json inventory.pythonRoots, --py-root or APHRODY_PY_ROOT)",
+      "no Python root (tools/config/deps/watch.json inventory.pythonRoots, --py-root or APHRODY_PY_ROOT)",
     );
     return 1;
   }
@@ -1156,7 +1156,7 @@ export async function runUvWith(c: Ctx, args: UvArgs): Promise<number> {
       const s = await collectStatus(c, { pyRoot: args.pyRoot, offline: args.offline });
       if (!s) {
         console.error(
-          "no Python root found (config/deps/watch.json inventory.pythonRoots, --py-root or APHRODY_PY_ROOT)",
+          "no Python root found (tools/config/deps/watch.json inventory.pythonRoots, --py-root or APHRODY_PY_ROOT)",
         );
         return 1;
       }

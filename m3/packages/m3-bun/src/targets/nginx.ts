@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// nginx: a vhost in the shape of the yolo vhosts (`config/host/nginx/<ns>/*.conf`: an `upstream` with keepalive,
+// nginx: a vhost in the shape of the yolo vhosts (`tools/config/host/nginx/<ns>/*.conf`: an `upstream` with keepalive,
 // ACME and redirect on :80, TLS on :443, `include snippets/proxy-client-ip.inc`), proxying everything to the one
 // Bun process; an HTTP-only variant for a loopback test; and the `routes.json` entry of yolo's route catalog.
 // Static files and API share the upstream: the app server already sets cache headers and compresses.

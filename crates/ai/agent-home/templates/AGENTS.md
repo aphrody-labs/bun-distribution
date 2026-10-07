@@ -31,7 +31,7 @@ est propriétaire.
 
 - Le dépôt courant (racine Git du répertoire de travail) fait autorité ; lire
   ses `AGENTS.md`, `CLAUDE.md` et manifestes avant toute écriture.
-- Monorepo Aphrody (si présent, repérable par `crates/os/kernel` et
+- Monorepo Aphrody (si présent, repérable par `crates/os/kernel/core` et
   `packages/infra/workspace`) : crates Rust sous `crates/<domaine>/<crate>`,
   CLI sous `crates/infra/aphrody`, apps et packages Bun sous `apps/` et `packages/`,
   plugin agent sous `plugins/aphrody`.

@@ -90,7 +90,7 @@ Symboles ré-exportés au niveau racine (`__init__.py:33-45`, `__all__`) :
 | `ModelConfig` | modèle pydantic | `types.py:136` | Slots `default` / `image_generation` |
 | `ModelEntry` | modèle pydantic | `types.py:120` | Nom modèle + clé + génération |
 | `ThinkingLevel` | `StrEnum` | `types.py:82` | MINIMAL/LOW/MEDIUM/HIGH |
-| `ToolContext` | classe | `tools/tool_context.py:42` | Contexte injecté dans les outils custom |
+| `ToolContext` | classe | `tools/tool_context.py:42` (not in repo) | Contexte injecté dans les outils custom |
 | `UsageMetadata` | modèle pydantic | `types.py:473` | Comptage de tokens |
 
 ### 1.2 Client principal — `Agent` (`agent.py:32-239`)
@@ -153,12 +153,12 @@ Re-exports publics dans `connections/local/__init__.py`.
 
 ### 1.5 Outils — `tools/`
 
-- `ToolRunner` (`tools/tool_runner.py:126`) : `register` (`:152`), `unregister`
+- `ToolRunner` (`tools/tool_runner.py:126` (not in repo)) : `register` (`:152`), `unregister`
   (`:176`), `execute` (`:256`), `process_tool_calls` (`:279`, exécution
   concurrente via `asyncio.gather`), `get_public_callable` (`:200`, masque
   `ToolContext` du schéma), `set_context` (`:144`), `tool_names`/`tools` props.
 - `ToolWithSchema` (`tool_runner.py:103`) : wrapper callable + JSON Schema explicite.
-- `ToolContext` (`tools/tool_context.py:42`) : `conversation_id` (`:65`), `is_idle`
+- `ToolContext` (`tools/tool_context.py:42` (not in repo)) : `conversation_id` (`:65`), `is_idle`
   (`:70`), `async send(message)` (`:75`), `get_state`/`set_state` (`:86`/`:98`).
 - Type `PythonTool = Callable[..., Any]` (`types.py:465`).
 
@@ -357,7 +357,7 @@ Le port direct du SDK = stratégie (A).
 | `connections/local/local_connection_config.py` | `src/connection/local_config.rs` |
 | `connections/local/localharness_pb2.py` | `src/proto/` généré par `prost-build` depuis le `.proto` (à récupérer) |
 | `connections/local/types.py` | `src/connection/local_types.rs` (résultats d'outils structurés) |
-| `tools/tool_runner.py`, `tool_context.py` | `src/tools.rs` (registre + exécution ; injection de contexte via trait) |
+| `tools/tool_runner.py` (not in repo), `tool_context.py` | `src/tools.rs` (registre + exécution ; injection de contexte via trait) |
 | `hooks/hooks.py`, `hook_runner.py`, `policy.py` | `src/hooks/` (`mod.rs`, `runner.rs`, `policy.rs`) |
 | `triggers/triggers.py`, `helpers.py`, `trigger_runner.py` | `src/triggers.rs` |
 | `mcp/bridge.py` | `src/mcp.rs` (client MCP) |

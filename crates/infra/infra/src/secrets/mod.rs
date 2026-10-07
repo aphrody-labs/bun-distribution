@@ -30,7 +30,7 @@ pub enum SecretsCommand {
         #[arg(long)]
         json: bool,
     },
-    /// Validate secret presence for a service against config/secrets-contract.json.
+    /// Validate secret presence for a service against tools/config/secrets-contract.json.
     Check {
         #[arg(long)]
         service: String,
@@ -105,7 +105,7 @@ impl SecretsCommand {
                 Ok(())
             },
             SecretsCommand::Check { service, env_file, json } => {
-                let contract_path = root.join("config/secrets-contract.json");
+                let contract_path = root.join("tools/config/secrets-contract.json");
                 let contract = SecretsContract::load(&contract_path)?;
 
                 let env_map = if let Some(p) = env_file {

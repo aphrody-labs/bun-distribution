@@ -1,4 +1,4 @@
-# Build context for config/container/Dockerfile: sources only, never output, caches, secrets or private data.
+# Build context for tools/config/container/Dockerfile: sources only, never output, caches, secrets or private data.
 .git
 **/.git
 **/.agents
@@ -19,7 +19,7 @@
 /.cache
 /.turbo
 /graphify-out
-# Fetched upstream engines are acquired from config/vendor.json when building them.
+# Fetched upstream engines are acquired from tools/config/vendor.json when building them.
 # First-party and integrated Rust sources in crates/ remain part of the context.
 /vendor/bun
 /vendor/deno

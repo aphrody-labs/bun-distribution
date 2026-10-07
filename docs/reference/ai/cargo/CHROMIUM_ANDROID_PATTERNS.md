@@ -17,9 +17,9 @@ Citation Chromium :
 - **Tout nouveau code en Rust** (cf. `CLAUDE.md`).
 - **C/C++ retiré progressivement** par sous-système (cf. `docs/reference/ai/cargo/MIGRATION.md`).
 
-## 2. Toolchain pinning (alignement Chromium `tools/rust/`)
+## 2. Toolchain pinning (alignement Chromium `tools/rust/` (not in repo))
 
-Chromium pin sa toolchain dans `tools/rust/`. Nous, dans `rust-toolchain.toml` :
+Chromium pin sa toolchain dans `tools/rust/` (not in repo). Nous, dans `rust-toolchain.toml` :
 
 ```toml
 [toolchain]

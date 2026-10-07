@@ -106,14 +106,14 @@ export function check(c: Ctx): number {
   const orphan = live.filter((u) => !own.has(u) && /^(aphrody|shenron|rg)-/.test(u));
   for (const u of orphan)
     console.log(`unit   ${u.padEnd(46)} live-only (not in the yolo unit catalog)`);
-  const tpl = "config/wsl/wsl.conf";
+  const tpl = "tools/config/wsl/wsl.conf";
   if (c.exists(tpl) && existsSync("/etc/wsl.conf")) {
     const drift = wslDrift(c.read(tpl), readFileSync("/etc/wsl.conf", "utf8"));
     for (const d of drift) {
       console.log(`wsl    ${d}`);
       bad++;
     }
-    if (!drift.length) console.log("wsl    /etc/wsl.conf matches config/wsl/wsl.conf");
+    if (!drift.length) console.log("wsl    /etc/wsl.conf matches tools/config/wsl/wsl.conf");
   }
   return bad ? 1 : 0;
 }

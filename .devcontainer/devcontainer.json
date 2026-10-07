@@ -1,7 +1,7 @@
 {
   "name": "aphrody",
   "build": {
-    "dockerfile": "../config/container/Dockerfile",
+    "dockerfile": "../tools/config/container/Dockerfile",
     "context": "..",
     "target": "dev"
   },

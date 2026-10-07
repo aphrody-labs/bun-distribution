@@ -89,7 +89,7 @@ In a yolo app the HTTP server is `Bun.serve`, and Rust code is reached through t
 
 ### Winner: keep and extend your OVHcloud fleet (your own EU bare metal or large VPS)
 
-1. **Keep `vps` and `dbfr`**; both are on OVHcloud. The build server has 45 GiB of RAM and 290 GiB of disk (`aphrody/config/production-topology.json`). OVH no longer sells a VPS that size (the current maximum is 24 GB), so any replacement would cost more.
+1. **Keep `vps` and `dbfr`**; both are on OVHcloud. The build server has 45 GiB of RAM and 290 GiB of disk (`aphrody/tools/config/production-topology.json`). OVH no longer sells a VPS that size (the current maximum is 24 GB), so any replacement would cost more.
 2. **For extra capacity**, add an OVHcloud Rise, So You Start or Kimsufi dedicated server (all spared by the second-half increase), or a Hetzner auction server at about €0.58–0.72 per GB with dedicated cores.
    - The auction's trade-off is manual provisioning and hardware repairs that take hours.
    - Stick to x86-64 for now. `yolo` has only built and verified linux-x64 (decision D8), so no Arm hosts (Hetzner CAX, Ampere) until the linux-arm64 target exists.
@@ -100,7 +100,7 @@ In a yolo app the HTTP server is `Bun.serve`, and Rust code is reached through t
 - **Agents already run it**. They operate these hosts through the Aphrody MCP tools (`infra_exec`, `infra_sync`, `systemd_*`), `yolo ship` (coordination claims, GitHub commit statuses) and `yolo host` (plan, then apply, then journal). There is no provider-specific integration to add.
 - **No request timeouts**. Long SSE, WebSocket and LLM streams, and supervised processes (`process.supervise`), run unchanged.
 - **Root access**. The runtime library can be loaded through `bun:ffi`.
-- **GPUs on demand**. Rent them by the hour when local inference becomes a requirement. Today text generation goes to Gemini (`aphrody/config/local-ai.json`).
+- **GPUs on demand**. Rent them by the hour when local inference becomes a requirement. Today text generation goes to Gemini (`aphrody/tools/config/local-ai.json`).
 
 ### Not recommended as yolo's main host:
 - **Vercel Functions** runs Bun 1.4, but that runtime is still in beta (August 2026), and the function model doesn't suit long-lived supervised processes.
@@ -124,7 +124,7 @@ In a yolo app the HTTP server is `Bun.serve`, and Rust code is reached through t
 - **Bun-only tooling**: Bun compiles JSX/TSX itself, so React needs no plugin. Svelte, Vue and Solid each need a compiler plugin.
 
 ### Winner: React 19 + Material 3 web components (`@aphrody/material-web` through `@lit/react`), bundled by Bun's HTML bundler, with no Vite and no extra compiler.
-1. **Same stack as Aphrody**. Its `m3-*` packages run unchanged in yolo-generated apps and in the desktop shell (`apps/web`), so there's no second design system.
+1. **Same stack as Aphrody**. Its `m3-*` packages run unchanged in yolo-generated apps and in the desktop shell (`packages/infra/product`), so there's no second design system.
 2. **No extra tooling**.
    - TSX support is built into Bun.
    - Hot reload comes with `Bun.serve` development mode.
@@ -195,4 +195,4 @@ On the Rust side: use Dioxus 0.7 for all-Rust apps (inside the Tauri shell), or 
 
 ### Local Repositories
 - `yolo`: `templates/stack.toml`, `docs/DECISIONS.md` (D8, D15, D18, D21, D27), `AGENTS.md`, `vendor/create-tauri-app/templates/` (not in repo) (historical upstream template layout)
-- `aphrody`: `PLAN.md` §1, root `package.json` dependency catalog, `packages/ui/m3-*`, `config/production-topology.json`, `config/local-ai.json`
+- `aphrody`: `PLAN.md` §1, root `package.json` dependency catalog, `packages/ui/m3-*`, `tools/config/production-topology.json`, `tools/config/local-ai.json`

@@ -23,10 +23,10 @@ bun run rust:fix         # the same gates, repairing what is mechanical first
 - A bump moves in three tiers: the **in-range refresh** (lock only), **precise** moves (one crate at a time when a bulk
   refresh left it behind), and **majors** (the manifest requirement changes, consumers are fixed). Majors are never part of
   a plain `apply`; each one is a transaction that rolls back when it cannot be fixed cheaply.
-- Holds are data, not folklore: `config/deps/rust-holds.json` (never move) and `config/deps/advisory-holds.json`
+- Holds are data, not folklore: `tools/config/deps/rust-holds.json` (never move) and `tools/config/deps/advisory-holds.json`
   (advisories that no bump can fix). An exact `=x.y.z` requirement is a deliberate pin: reported as `[exact pin]`, moved only
   by an explicit `apply --majors <crate>`.
-- Tauri family crates belong to `yolo ops tauri-sync` (`config/tauri-upstream.json`); the module reports them as
+- Tauri family crates belong to `yolo ops tauri-sync` (`tools/config/tauri-upstream.json`); the module reports them as
   `[owner: tauri-sync]` and refuses to move them.
 - `rust-toolchain.toml` moves only through `yolo update tools rust --apply`, together with the category repositories
   (see the header of that file). The module reports the gap, it does not change the channel.
@@ -60,7 +60,7 @@ derived from `dep:crate` entries), not blindly.
 
 `yolo update rust doctor` (`bun run rust:doctor`) proves the state of the Cargo workspace; `yolo update rust fix`
 (`bun run rust:fix`) is the same run with the repair step first. Owner module:
-`packages/infra/update/src/ecosystems/rust-doctor.ts`; data: `config/update/rust-doctor.json`; nextest profile:
+`packages/infra/update/src/ecosystems/rust-doctor.ts`; data: `tools/config/update/rust-doctor.json`; nextest profile:
 `.config/nextest.toml` (`doctor`). Each stage is one Cargo command through `cargo-serial.sh`, in this order:
 
 | Stage | Proves | `fix` repairs |
@@ -74,7 +74,7 @@ derived from `dep:crate` entries), not blindly.
 | `deny` | `cargo deny check advisories`; crates in `advisory-holds.json` are notes, any other one is an error | |
 | `bumps` | `rust status`: toolchain pin against stable, yanked or in-range releases left behind, open OSV advisories, held crates | |
 
-Targets are data (`targets[]` in `config/update/rust-doctor.json`):
+Targets are data (`targets[]` in `tools/config/update/rust-doctor.json`):
 
 - `packages: "auto"` selects the members with a dependency gated on the target family (`match`), plus `include[]`
   (artifacts with no gated dependency, such as `aphrody-shell-web`), minus `exclude[]` (host-only crates, each with its
@@ -117,7 +117,7 @@ that the default build never touches; the first run after a toolchain or lock ch
 
 ## Held crates
 
-Every entry is in `config/deps/rust-holds.json`. Advisory-driven ones are also in `config/deps/advisory-holds.json`.
+Every entry is in `tools/config/deps/rust-holds.json`. Advisory-driven ones are also in `tools/config/deps/advisory-holds.json`.
 
 | Crate | Stays | Why |
 | --- | --- | --- |
@@ -142,7 +142,7 @@ whole workspace (`cargo check --workspace --all-targets`) and tested on the touc
 | Crate | From | To | Fix needed |
 | --- | --- | --- | --- |
 | `gix` | 0.83 | 0.88 | `find_remote(name.as_ref())` ambiguity (`aphrody-git`) |
-| `nu-*` (7 crates) | 0.115.1 | 0.116.0 | none; pin `nushell` in `config/update/pins.json` follows `Cargo.toml` |
+| `nu-*` (7 crates) | 0.115.1 | 0.116.0 | none; pin `nushell` in `tools/config/update/pins.json` follows `Cargo.toml` |
 | `octocrab` | 0.50 | 0.54 | none |
 | `jsonschema` | 0.35 | 0.58 | none |
 | `json5` | 0.4 | 1.3 | none |
@@ -187,7 +187,7 @@ backend of `aes-gcm` 0.11 (`getrandom` 0.4 without `wasm_js`), which broke the w
 2. `rust apply --skip-refresh --majors <group>`. On failure the transaction rolls back and prints the compiler errors.
 3. To fix forward, repeat with `--keep`, fix the code (usually one pattern repeated), run
    `cargo-serial.sh check --workspace --all-targets --keep-going` until clean, then `rust verify`.
-4. If the fix is not cheap, let it roll back and add the crate to `config/deps/rust-holds.json` (and
+4. If the fix is not cheap, let it roll back and add the crate to `tools/config/deps/rust-holds.json` (and
    `advisory-holds.json` for an advisory) with the blocker, then add a row to the table above.
 5. Run `cargo test -p <touched crates>`.
 
@@ -204,8 +204,8 @@ backend of `aes-gcm` 0.11 (`getrandom` 0.4 without `wasm_js`), which broke the w
 ## Links
 
 - [Update pipeline](../UPDATE.md), [dependency inventory](../../../reference/workspace/DEPS-INVENTORY.md)
-- `config/deps/rust-holds.json`, `config/deps/advisory-holds.json`, `config/upstream-sources.json`
+- `tools/config/deps/rust-holds.json`, `tools/config/deps/advisory-holds.json`, `tools/config/upstream-sources.json`
 - `packages/infra/update/src/ecosystems/rust.ts`, `packages/infra/update/test/rust.test.ts`
 - `packages/infra/update/src/ecosystems/rust-doctor.ts`, `packages/infra/update/test/rust-doctor.test.ts`,
-  `config/update/rust-doctor.json`, `.config/nextest.toml`
+  `tools/config/update/rust-doctor.json`, `.config/nextest.toml`
 - [Cargo build resource policy](../../../../CLAUDE.md)

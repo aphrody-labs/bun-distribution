@@ -11,8 +11,8 @@ URL is retired without breaking. It does not cover deployment (owned by
 
 ## 0. Where each site actually stands (2026-09-26)
 
-Read live status from `yolo/config/host/nginx/routes.json` and
-`config/service-catalog.json` before assuming a host is reachable — do not
+Read live status from `yolo/tools/config/host/nginx/routes.json` and
+`tools/config/service-catalog.json` before assuming a host is reachable — do not
 hard-code it here, it drifts. As of this audit:
 
 | Site | Host(s) | Status |
@@ -145,7 +145,7 @@ literal (see §6 — `aphrody-site` currently hard-codes `https://aphrody.com` i
   within the same day advertising a dead subdomain and vanished paths; the
   dynamic route replaces it for that reason. Any `llms.txt`, admin API docs
   page, or public API response that lists a "live" endpoint must be verified
-  against `yolo/config/host/nginx/routes.json` — see §5.
+  against `yolo/tools/config/host/nginx/routes.json` — see §5.
 
 ## 4. hreflang
 
@@ -160,7 +160,7 @@ that is worse than omitting it.
 ## 5. Links to retired things
 
 Before shipping a page that names a specific host or a specific product,
-check `yolo/config/host/nginx/routes.json` and `service-catalog.json` for
+check `yolo/tools/config/host/nginx/routes.json` and `service-catalog.json` for
 `"status": "retired"`. Found and fixed by this audit:
 
 - `shenron` `apps/shenron/site` advertised `https://mcp.dragonballfr.com/mcp` as a

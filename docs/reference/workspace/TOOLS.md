@@ -72,7 +72,7 @@ Une version inconnue signifie que la sonde --version a échoué, pas que le bina
 - Git : `github_status` reçoit repo_path ; sa liste de modifications ne prouve pas leur auteur.
 - Agent Home : crates/ai/agent-home ; génération : packages/infra/workspace/src/agent-home.ts.
 - Sessions externes : crates/ai/session/src/external ; mémoire : crates/ai/memory.
-- A2A : config/a2a-peers.json ; transport : crates/os/a2a-coord ; contrat : crates/contracts/a2a.
+- A2A : tools/config/a2a-peers.json ; transport : crates/os/kernel/comps/a2a-coord ; contrat : crates/contracts/a2a.
 - Modèles locaux : crates/ai/llama-server et crates/ai/models ; ne pas déplacer les poids.
 - Contrôles Rust : cargo check/clippy/test sur les packages modifiés ; Bun : oxlint/oxfmt, tsgo, bun test selon manifests.
 

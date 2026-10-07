@@ -1,8 +1,8 @@
 # Bun Upstream Optimization & Intelligence Tracker
 
-> **Source**: [oven-sh/bun](https://github.com/oven-sh/bun)  
-> **Target Fork**: [aphrody-labs/bun](https://github.com/aphrody-labs/bun) (Branch: `main`)  
-> **Updated**: 2026-10-07T15:23:51.393Z  
+> **Source**: [oven-sh/bun](https://github.com/oven-sh/bun)
+> **Target Fork**: [aphrody-labs/bun](https://github.com/aphrody-labs/bun) (Branch: `main`)
+> **Updated**: 2026-10-07T16:10:03.169Z
 > **Engine**: `scripts/tools/vendor/bun_upstream_tracker.ts`
 
 ## 1. Executive Summary & Optimization Strategy
@@ -10,8 +10,8 @@
 This intelligence dashboard monitors upstream Bun pull requests and performance issues to optimize **Aphrody Bun Fork** for high-throughput AI agent execution, memory efficiency, and native FFI bridging.
 
 - **Critical Stability / Crash Fixes Identified**: 11
-- **High-Impact Performance & FFI Optimizations**: 20
-- **Total Tracked Items**: 34
+- **High-Impact Performance & FFI Optimizations**: 22
+- **Total Tracked Items**: 36
 
 ## 2. Priority Cherry-Pick & Backport Candidates
 
@@ -28,8 +28,10 @@ This intelligence dashboard monitors upstream Bun pull requests and performance 
 | [#44703](https://github.com/oven-sh/bun/pull/44703) | dns: read the system resolver config again after a server stops answering | Stability & Crash Fix | **CRITICAL** | `OPEN` | Proactively adopt or cherry-pick to prevent runtime agent thread crash. |
 | [#44426](https://github.com/oven-sh/bun/pull/44426) | build: compile c-ares without CARES_THREADS | Stability & Crash Fix | **CRITICAL** | `OPEN` | Proactively adopt or cherry-pick to prevent runtime agent thread crash. |
 | [#35053](https://github.com/oven-sh/bun/pull/35053) | bundler: honor onResolve `{ external: true }` with no path, and clear a stale source_index on external answers | Stability & Crash Fix | **CRITICAL** | `OPEN` | Proactively adopt or cherry-pick to prevent runtime agent thread crash. |
-| [#44535](https://github.com/oven-sh/bun/pull/44535) | ws: take the frame type of send() from options.binary and frame the payload natively | Memory & Garbage Collection | *HIGH* | `OPEN` | Integrate to optimize long-running 24/7 background agent memory footprint. |
+| [#40260](https://github.com/oven-sh/bun/pull/40260) | napi: take the Node-API lifecycle code to safe Rust | Memory & Garbage Collection | *HIGH* | `OPEN` | Integrate to optimize long-running 24/7 background agent memory footprint. |
+| [#41990](https://github.com/oven-sh/bun/pull/41990) | css: keep font/transition sub-properties on the side of the shorthand they were written on | Network & Streams | *HIGH* | `OPEN` | Optimizes CDP WebSocket streaming and LLM API response throughput. |
 | [#44651](https://github.com/oven-sh/bun/pull/44651) | Return the error of a failed listen from usockets to Bun.serve and Bun.listen | Memory & Garbage Collection | *HIGH* | `OPEN` | Integrate to optimize long-running 24/7 background agent memory footprint. |
+| [#44535](https://github.com/oven-sh/bun/pull/44535) | ws: take the frame type of send() from options.binary and frame the payload natively | Memory & Garbage Collection | *HIGH* | `OPEN` | Integrate to optimize long-running 24/7 background agent memory footprint. |
 | [#44699](https://github.com/oven-sh/bun/pull/44699) | Bun.password.verify: compare the named algorithm with the hash, throw on a mismatch | Memory & Garbage Collection | *HIGH* | `OPEN` | Integrate to optimize long-running 24/7 background agent memory footprint. |
 | [#44702](https://github.com/oven-sh/bun/pull/44702) | bundler: embed files referenced via new URL(..., import.meta.url) in --compile | Network & Streams | *HIGH* | `OPEN` | Optimizes CDP WebSocket streaming and LLM API response throughput. |
 | [#44406](https://github.com/oven-sh/bun/pull/44406) | install: remove nested copies bun.lock no longer places, with the hoisted linker | Memory & Garbage Collection | *HIGH* | `OPEN` | Integrate to optimize long-running 24/7 background agent memory footprint. |

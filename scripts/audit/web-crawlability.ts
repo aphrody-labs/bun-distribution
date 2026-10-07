@@ -16,7 +16,7 @@
 //!
 //! Exit code: 0 within the baseline, 1 on a regression, 2 when the audit could not run (for
 //! example a binary without `crawl`). The default report path is the `storage.crawlabilityReport`
-//! of config/web.json; the repository is only written to with an explicit `--out`.
+//! of tools/config/web.json; the repository is only written to with an explicit `--out`.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -1332,7 +1332,7 @@ if (import.meta.main) {
   const config = loadWebConfig();
   const baselinePath = resolve(
     root,
-    value("--baseline") ?? "config/web-crawlability.baseline.json",
+    value("--baseline") ?? "tools/config/web-crawlability.baseline.json",
   );
   const outPath = value("--out")
     ? resolve(root, value("--out")!)

@@ -3,7 +3,7 @@
 # setup
 
 `Aphrody-Setup.exe`, l'installeur en un clic pour tout le monde : c'est le bouton « Download Aphrody » de
-aphrody.com (artefact `aphrody-setup`, kind `desktop`, de `config/downloads.json`). Un double clic, deux questions
+aphrody.com (artefact `aphrody-setup`, kind `desktop`, de `tools/config/downloads.json`). Un double clic, deux questions
 (rôles en option), et tout est installé ou réparé, en français, sans ligne de commande :
 
 | Étape               | Ce qu'elle fait                                                                                             |

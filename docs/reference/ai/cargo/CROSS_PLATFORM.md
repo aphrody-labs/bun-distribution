@@ -141,7 +141,7 @@ Le `rust-toolchain.toml` garantit que **chaque runner installe exactement la mê
 ## Patterns Chromium / Android adoptés
 
 ### Chromium
-- ✅ **Toolchain pinnée** via `rust-toolchain.toml` (équivalent `tools/rust/`).
+- ✅ **Toolchain pinnée** via `rust-toolchain.toml` (équivalent `tools/rust/` (not in repo)).
 - ✅ **Lints android-strict** disponibles en preset opt-in per-crate (cf. `docs/reference/ai/cargo/LINTS.md`).
 - ✅ **Supply-chain audits** : `cargo-vet` avec feeds Google/Mozilla/Fuchsia/ChromeOS.
 - ✅ **`cxx` + `bindgen`** ajoutés à `workspace.dependencies` (pas encore utilisés — quand surface FFI grandit).

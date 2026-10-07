@@ -346,7 +346,7 @@ async fn test_entry_closure_rebuilt_during_sync() {
 
 ## References
 
-- [Entry Entity](https://github.com/aphrody-labs/aphrody/blob/main/crates/os/drive/core/src/infra/db/entities/entry.rs)
-- [Backfill Manager](https://github.com/aphrody-labs/aphrody/blob/main/crates/os/drive/core/src/service/sync/backfill.rs)
+- [Entry Entity](https://github.com/aphrody-labs/aphrody/blob/main/crates/os/kernel/comps/drive/core/src/infra/db/entities/entry.rs)
+- [Backfill Manager](https://github.com/aphrody-labs/aphrody/blob/main/crates/os/kernel/comps/drive/core/src/service/sync/backfill.rs)
 - [CORE-004](./CORE-004-closure-table.md) - Closure table architecture
 - INDEX-003 - Depends on closure table

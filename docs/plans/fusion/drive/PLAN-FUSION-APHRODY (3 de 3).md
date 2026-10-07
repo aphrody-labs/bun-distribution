@@ -24,7 +24,7 @@ Ordre de mise en place : le squelette (arborescence, `xtask`, `ci.yml` à trois 
 
 Inventaire au 5 octobre (recompté le soir : `cargo metadata --no-deps --offline` sur `aphrody` `1c2cbf1ed`, lignes de `*.rs` par répertoire de crate, tests et fixtures compris) : 235 crates membres du workspace (`crates/` et `apps/`) et 950 969 lignes de Rust. 74 crates sont de la logique pure (ni tokio, ni reqwest, ni rusqlite, ni tauri, ni wasm-bindgen, ni pyo3, toutes dépendances confondues ; 80 si l'on ignore les `dev-dependencies`) ; 114 dépendent de tokio (104 hors `dev-dependencies`), 55 de reqwest, 76 de tracing, 48 d'async-trait, 13 de rusqlite, 41 de `aphrody-tauri` (le crate `tauri` renommé ; 51 avec le reste de la famille runtime/plugins/wry/tao), 4 de wasm-bindgen, 2 de pyo3.
 
-> **Écart constaté (2026-10-05)** : le plan annonçait 237 crates, ~929 000 lignes, 82 pures, 115 tokio, 77 tracing, 44 tauri ; ces valeurs ne se reproduisent pas (méthode de comptage d'origine inconnue). Les 235 membres excluent `crates/os/drive` (workspace Spacedrive, 25 paquets `sd-*`), `aphrody-tauri-plugin-sql` et les fixtures de `aphrody-tauri-cli`, exclus du workspace racine. La convergence consiste à classer chaque crate dans un des trois niveaux ci-dessous et à n'autoriser qu'une implémentation par capacité d'E/S : celle du noyau `yolo`. Les mêmes règles s'appliquent dans les deux dépôts ; une crate de niveau 0 migre vers `yolo` quand un plugin ou le noyau l'importe.
+> **Écart constaté (2026-10-05)** : le plan annonçait 237 crates, ~929 000 lignes, 82 pures, 115 tokio, 77 tracing, 44 tauri ; ces valeurs ne se reproduisent pas (méthode de comptage d'origine inconnue). Les 235 membres excluent `crates/os/kernel/comps/drive` (workspace Spacedrive, 25 paquets `sd-*`), `aphrody-tauri-plugin-sql` et les fixtures de `aphrody-tauri-cli`, exclus du workspace racine. La convergence consiste à classer chaque crate dans un des trois niveaux ci-dessous et à n'autoriser qu'une implémentation par capacité d'E/S : celle du noyau `yolo`. Les mêmes règles s'appliquent dans les deux dépôts ; une crate de niveau 0 migre vers `yolo` quand un plugin ou le noyau l'importe.
 
 | Niveau | Définition | Règle | Exemples déjà conformes |
 | --- | --- | --- | --- |
@@ -57,7 +57,7 @@ Carte par domaine et cible de convergence (crates et lignes recomptées le 5 oct
 Mécanique de convergence, exécutable par agent et mesurable :
 
 1. `just tiers` (`xtask tiers`) lit chaque `Cargo.toml`, classe la crate (0, 1 ou 2) d'après ses dépendances et écrit `docs/architecture/tiers.toml` ; la CI refuse une crate de niveau 0 qui gagne tokio, reqwest ou rusqlite, et une crate de niveau 2 qui dépasse 500 lignes hors tests. Tourne dans `yolo` et dans `aphrody`.
-2. Doublons fonctionnels à éliminer, dans l'ordre : trois piles HTTP (reqwest 0.13, `obscura-net`, `aphrody-http`) ; deux SQLite (rusqlite 0.40 bundled d'`aphrody`, `bun:sqlite` du fork ; la copie d'Obscura n'embarque aucun SQLite, vérifié dans ses `Cargo.toml`) ; deux YAML (serde-saphyr, `Yolo.YAML`) ; deux simdutf ; deux journaux (tracing, `aphrody-output`) ; deux tables de commandes (`aphrody-command`, `aphrody-mcp`) ; deux systemd (`aphrody-systemd`, unités de `config/host/systemd`).
+2. Doublons fonctionnels à éliminer, dans l'ordre : trois piles HTTP (reqwest 0.13, `obscura-net`, `aphrody-http`) ; deux SQLite (rusqlite 0.40 bundled d'`aphrody`, `bun:sqlite` du fork ; la copie d'Obscura n'embarque aucun SQLite, vérifié dans ses `Cargo.toml`) ; deux YAML (serde-saphyr, `Yolo.YAML`) ; deux simdutf ; deux journaux (tracing, `aphrody-output`) ; deux tables de commandes (`aphrody-command`, `aphrody-mcp`) ; deux systemd (`aphrody-systemd`, unités de `tools/config/host/systemd`).
 3. tokio sort par vagues de domaine (`web`, puis `infra`, `ai`, `os`, `google`), chaque vague fermée par un `cargo tree -i tokio` qui ne liste plus le domaine ; `async-trait` et `futures` tombent avec lui.
 4. Les 74 crates déjà pures (80 hors `dev-dependencies`) reçoivent `[lints] workspace = true` et la cible `wasm32-unknown-unknown` dans la CI dès le one shot 1 : elles sont le socle que tout le reste rejoint.
 
@@ -235,7 +235,7 @@ Dépôts et fichiers lus le 5 octobre 2026.
 - [tauri-apps/tauri](https://github.com/tauri-apps/tauri/tree/dev/crates) (branche `dev` pour les liens ci-dessous ; les chiffres de ce plan portent sur la branche `v3`, lue dans `crates/tauri/*` et le rapport `research-tauri-v3.md`) : [`Cargo.toml`](https://github.com/tauri-apps/tauri/blob/dev/Cargo.toml), [`crates/tauri-runtime`](https://github.com/tauri-apps/tauri/tree/dev/crates/tauri-runtime) (`lib.rs`, `webview.rs`, `window.rs`, `Cargo.toml`), `crates/tauri-runtime-wry/Cargo.toml`, `crates/tauri/Cargo.toml`
 - [Guide de migration Tauri 3 depuis Tauri 2](https://v3.tauri.app/fr/start/migrate/from-tauri-2/)
 - [Cloudflare, « Kitesurf »](https://blog.cloudflare.com/kitesurf/) cité par le README d'Obscura pour le contexte
-- [aphrody-labs/aphrody](https://github.com/aphrody-labs/aphrody) (privé, commit `32284a6` lu en début de journée ; `main` = `1c2cbf1ed` au soir) : `Cargo.toml`, `rust-toolchain.toml`, `Justfile`, `CLAUDE.md`, `GOAL.md`, `PLAN.md`, `docs/DISTRIBUTION.md`, `crates/web/*/Cargo.toml`, `crates/web/web-crawl/src/{frontier,runner}.rs`, `crates/web/web-engine/src/main.rs`, `crates/tauri/*/Cargo.toml`, `crates/infra/sql/Cargo.toml`, `config/host/systemd/`
+- [aphrody-labs/aphrody](https://github.com/aphrody-labs/aphrody) (privé, commit `32284a6` lu en début de journée ; `main` = `1c2cbf1ed` au soir) : `Cargo.toml`, `rust-toolchain.toml`, `Justfile`, `CLAUDE.md`, `GOAL.md`, `PLAN.md`, `docs/DISTRIBUTION.md`, `crates/web/*/Cargo.toml`, `crates/web/web-crawl/src/{frontier,runner}.rs`, `crates/web/web-engine/src/main.rs`, `crates/tauri/*/Cargo.toml`, `crates/infra/sql/Cargo.toml`, `tools/config/host/systemd/`
 
 Chiffres calculés dans cette session : lignes par crate (`wc -l`), recouvrement des `Cargo.lock` (126 paquets communs, 95 à version identique, 31 en écart : reproduit le soir entre le `Cargo.lock` du fork Bun et celui du fork Obscura), 71 `#[op2]`, 164 références `v8::`, 70 ops distincts appelés par `bootstrap.js` (valeurs recomptées sur la copie `d21e0f54a` : 76, 183, 74).
 
@@ -247,7 +247,7 @@ Statut : V = vérifié conforme, C = corrigé dans le texte, N = non vérifiable
 
 | Affirmation | Valeur vérifiée | Statut | Source |
 | --- | --- | --- | --- |
-| 237 crates | 235 membres (27 paquets hors workspace : `crates/os/drive`, plugin-sql, fixtures) | C | `cargo metadata` |
+| 237 crates | 235 membres (27 paquets hors workspace : `crates/os/kernel/comps/drive`, plugin-sql, fixtures) | C | `cargo metadata` |
 | ~929 000 lignes | 950 969 lignes `*.rs` (tests et fixtures compris) | C | `Bun.Glob` |
 | 82 crates pures | 74 (toutes dépendances), 80 (hors dev) | C | `cargo metadata` |
 | 115 tokio | 114 (104 hors dev) | C | idem |
@@ -272,7 +272,7 @@ Statut : V = vérifié conforme, C = corrigé dans le texte, N = non vérifiable
 | Exemples niveau 0 (9 crates) | 8 sont sans tokio/reqwest/rusqlite ; `aphrody-search` dépend de tokio et tracing | C | `cargo metadata` |
 | Crates niveau 1 « à migrer » (10) et niveau 2 (4) | Toutes existent et portent bien tokio/reqwest/rusqlite/tauri/wasm-bindgen/pyo3 attendus (`aphrody-fsindex` : rusqlite sans tokio ; `aphrody-git` : tokio en dev seulement) | V | idem |
 | `aphrody-io`, `aphrody-http`, `aphrody-sys`, `aphrody-spawn`, `aphrody-output` | Absents d'`aphrody` ; équivalents `bun_io`/`bun_http`/`bun_sys`/`bun_spawn`/`bun_output` dans le fork ; `bun_io` = boucle epoll/kqueue (collision de nom) | C | `src/io/lib.rs`, `Cargo.toml` du fork |
-| Doublons : simdutf ×2, YAML ×2, commandes ×2, systemd ×2 | `crates/native/simdutf` + `bun_simdutf_sys` ; `serde-saphyr` + `src/parsers/yaml.rs` ; `aphrody-command` + `aphrody-mcp` ; `crates/os/systemd` + `config/host/systemd` | V | idem |
+| Doublons : simdutf ×2, YAML ×2, commandes ×2, systemd ×2 | `crates/native/simdutf` + `bun_simdutf_sys` ; `serde-saphyr` + `src/parsers/yaml.rs` ; `aphrody-command` + `aphrody-mcp` ; `crates/os/systemd` + `tools/config/host/systemd` | V | idem |
 | Trois SQLite (dont un dans Obscura) | Deux : rusqlite 0.40 et `bun:sqlite` ; aucun SQLite dans les `Cargo.toml` d'Obscura | C | `cargo metadata`, `src/js/bun/sqlite.ts` |
 | Deux journaux (tracing, `aphrody-output`) | tracing : 76 crates ; `bun_output` existe ; absence de tracing dans le lock du fork | V | `Cargo.lock` du fork |
 | `ci.yml` Obscura (policy, core, performance) | Présent (`PR checks`, PR + push `main`) | V | API `h4ckf0r0day/obscura@1fccab2c1` |

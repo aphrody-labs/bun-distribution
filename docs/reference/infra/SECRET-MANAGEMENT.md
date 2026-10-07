@@ -40,7 +40,7 @@ Ce document synthétise l'état de l'art, analyse comparativement les solutions 
 4. **Surface 4 : L'Exécution & Invariants (Contrat Typé)**
    - *Risque* : Démarrage d'un service en production avec une variable manquante provoquant des pannes silencieuses.
    - *Parade* :
-     - Contrat de schéma déclaratif (`config/secrets-contract.json`).
+     - Contrat de schéma déclaratif (`tools/config/secrets-contract.json`).
      - Commande `aphrody-infra secrets check` validant la présence et le format des variables requises **sans jamais afficher ni enregistrer les valeurs**.
 
 ---

@@ -22,7 +22,7 @@ export const SITE = {
   host: "vps",
   root: "/srv/aphrody-creator",
   keepReleases: 5,
-  vhost: "config/host/nginx/aphrody/creator.aphrody.com.conf",
+  vhost: "tools/config/host/nginx/aphrody/creator.aphrody.com.conf",
   certScript: "scripts/tools/infra/issue-creator-certificate.sh",
 };
 

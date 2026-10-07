@@ -60,7 +60,7 @@ test("inventory ratchets tracked automation against owner annotations", async ()
   try {
     await mkdir(join(root, "scripts"), { recursive: true });
     await mkdir(join(root, "docs"), { recursive: true });
-    await mkdir(join(root, "config"), { recursive: true });
+    await mkdir(join(root, "tools", "config"), { recursive: true });
     await writeFile(join(root, "scripts/host.sh"), `${PY} -c 'print(1)'\n${PY} -c 'print(2)'\n`);
     await writeFile(join(root, "scripts/local.sh"), `${BUN} -e 'console.log(1)'\n`);
     await writeFile(join(root, "docs/guide.sh"), `${PY} -c 'documentation is out of scope'\n`);
@@ -73,7 +73,7 @@ test("inventory ratchets tracked automation against owner annotations", async ()
       },
     };
     await writeFile(
-      join(root, "config/inline-interpreters.baseline.json"),
+      join(root, "tools/config/inline-interpreters.baseline.json"),
       JSON.stringify(baseline),
     );
     git("init", "-q");
@@ -100,7 +100,7 @@ test("inventory ratchets tracked automation against owner annotations", async ()
       "scripts/host.sh": { count: 2, scope: "host", reason: "runtime-only host" },
       "scripts/local.sh": { count: 1, scope: "unclassified", reason: "" },
     });
-    await writeFile(join(root, "config/inline-interpreters.baseline.json"), JSON.stringify(next));
+    await writeFile(join(root, "tools/config/inline-interpreters.baseline.json"), JSON.stringify(next));
     expect((await collectInlineInterpreters(root)).ratchet.status).toBe("pass");
     expect((await collectInlineInterpreters(root, null)).ratchet.baseline).toBeNull();
   } finally {

@@ -356,7 +356,7 @@
         "compiled": false,
         "sourceIdentifiers": {
           "hostSource": "crates/ui/m3-showcase/src/lib.rs",
-          "hostRegistry": "config/tauri-apps.json",
+          "hostRegistry": "tools/config/tauri-apps.json",
           "sourceState": "Native host source is uncommitted inventory at this audit, not a versioned release artifact."
         }
       },

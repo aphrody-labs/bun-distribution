@@ -106,12 +106,12 @@ pub fn windows_executable(relative: &str) -> PathBuf {
 
 impl Config {
     pub fn read(path: &Path) -> Result<Self> {
-        // <workspace>/config/os/wsl-build.json: the checkout is three levels above the file.
+        // <workspace>/tools/config/os/wsl-build.json: the checkout is three levels above the file.
         let absolute = path.canonicalize()?;
         let workspace = absolute
             .ancestors()
             .nth(3)
-            .ok_or_else(|| Error::Invalid("config must live under <workspace>/config/os".into()))?;
+            .ok_or_else(|| Error::Invalid("config must live under <workspace>/tools/config/os".into()))?;
         Self::parse(&fs::read(path)?, workspace)
     }
     /// Parses a configuration whose roots may use `${workspace}`, `${home}` and `${data}`.
@@ -513,7 +513,7 @@ mod tests {
     use super::*;
     fn config() -> Config {
         Config::parse(
-            include_bytes!("../../../../../config/os/wsl-build.json"),
+            include_bytes!("../../../../../tools/config/os/wsl-build.json"),
             &std::env::temp_dir().join("aphrody-workspace"),
         )
         .unwrap()

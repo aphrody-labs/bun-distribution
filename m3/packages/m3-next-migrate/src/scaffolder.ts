@@ -10,7 +10,7 @@ import { generateAppRouterCode, type RouteHierarchy } from "./layout";
 
 /**
  * Tauri 3 line scaffolded into generated apps. The single copy lives in `@aphrody/scaffold` (mirror of
- * the root `Cargo.toml` and `config/tauri-upstream.json`, bumped with `bun run tauri:sync`).
+ * the root `Cargo.toml` and `tools/config/tauri-upstream.json`, bumped with `bun run tauri:sync`).
  */
 export { TAURI_3 };
 

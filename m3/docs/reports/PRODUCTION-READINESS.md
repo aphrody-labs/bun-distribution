@@ -141,7 +141,7 @@ the source condition remains an explicit tooling choice.
 ## Prepared native work, still unqualified
 
 Native host source `crates/ui/m3-showcase/src/lib.rs` exists and inherits
-parent workspace dependencies; `config/tauri-apps.json` registers it.
+parent workspace dependencies; `tools/config/tauri-apps.json` registers it.
 The host source remains uncommitted inventory in this audit. It is not
 versioned release evidence.
 

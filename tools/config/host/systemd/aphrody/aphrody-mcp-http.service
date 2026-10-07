@@ -1,0 +1,77 @@
+# SPDX-License-Identifier: Apache-2.0
+# Aphrody MCP, Streamable HTTP transport through the canonical `aphrody-mcp http` entry point:
+# tools on /mcp and the REST gateway on /healthz, /api/v1/*. Catalog entry `aphrody-mcp-http`
+# (tools/config/service-catalog.json), vps.
+# Loopback only: 127.0.0.1:8793, never proxied by nginx, never published (the binary refuses a non-loopback --bind; ufw
+# denies incoming by default). 127.0.0.1:8789 is not used: on the vps it is the loopback end of the WSL compute reverse
+# tunnel, which the Shenron site and bot read.
+# Authentication: /mcp answers only to `Authorization: Bearer <token>` (constant-time comparison, 401 otherwise, 503 when
+# no token is configured); /healthz needs none. The token is APHRODY_MCP_HTTP_TOKEN in /etc/aphrody/aphrody-mcp-http.env
+# (root:root 0600), generated on the host by the host-plan `generate-token` step with `openssl rand -hex 32`, never in the
+# repository, never in this unit. The file is required: no file, no start. Sandbox below: home hidden except the Aphrody
+# state dir, no capability, container sockets out of reach.
+# Binary: /home/ubuntu/.local/bin/aphrody-mcp (previous build retained for rollback). The tool
+# set is fixed at build time by the Cargo features (`--features mcp-toolbox`); the host-plan accepts a build only when
+# tools/list over HTTP returns the expected count.
+# State: ~/.aphrody (RAG index, jobs, memory, models, runtimes), the only writable path. APHRODY_SHENRON_PRODUCTION_READY
+# is deliberately unset: the Shenron REST gateway stays quarantined (503), the Shenron compute path keeps its own endpoint.
+[Unit]
+Description=Aphrody MCP Streamable HTTP server (aphrody-mcp http, 127.0.0.1:8793, loopback only, Bearer token)
+After=network-online.target
+Wants=network-online.target
+StartLimitBurst=10
+StartLimitIntervalSec=600
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/aphrody/shared/agent-workspaces/aphrody
+Environment=HOME=/home/ubuntu
+Environment=XDG_CACHE_HOME=/home/ubuntu/.aphrody/xdg/cache
+Environment=XDG_CONFIG_HOME=/home/ubuntu/.aphrody/xdg/config
+Environment=XDG_DATA_HOME=/home/ubuntu/.aphrody/xdg/data
+Environment=RUST_LOG=info
+Environment="APHRODY_YOLO_TOOL_HOST=/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/yolo-tool-host.mjs"
+Environment="APHRODY_M3_TOOL_HOST=/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/m3-tool-host.mjs"
+EnvironmentFile=/etc/aphrody/aphrody-mcp-http.env
+EnvironmentFile=/etc/aphrody/aphrody-a2a.env
+ExecStart=/home/ubuntu/.local/bin/aphrody-mcp http --bind 127.0.0.1:8793
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+
+# Resources: the Shenron site and bot share the host, so this server yields under contention.
+MemoryAccounting=true
+MemoryHigh=3G
+MemoryMax=4G
+TasksMax=1024
+LimitNOFILE=65536
+CPUWeight=50
+Nice=5
+
+# Sandbox, on top of the run-as-ubuntu, sandbox-base, sandbox-kernel, net-inet-only and syscall-service drop-ins.
+# /home is an empty tmpfs: only the binary (read-only) and the state directory (read-write) are mapped in, so
+# ~/.ssh, ~/.config, other tokens and the other binaries are not visible. JIT needs W+X pages, hence no
+# MemoryDenyWriteExecute.
+ProtectHome=tmpfs
+BindReadOnlyPaths=/home/ubuntu/.local/bin/aphrody-mcp /home/ubuntu/.local/bin/aphrody /home/ubuntu/.bun/bin/bun
+BindPaths=/home/ubuntu/.aphrody
+ReadWritePaths=/home/ubuntu/.aphrody
+InaccessiblePaths=-/run/docker.sock -/var/run/docker.sock -/run/containerd -/var/lib/lxd -/run/user
+ProtectProc=invisible
+PrivateDevices=true
+RestrictNamespaces=true
+RestrictRealtime=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+SystemCallArchitectures=native
+# The in-process browser (V8) calls pkey_alloc at start; @system-service does not allow it and the process would die
+# with SIGSYS on the first browser tool (observed 2026-10-06 under this exact sandbox).
+SystemCallFilter=@pkey
+UMask=0077
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aphrody-mcp-http
+
+[Install]
+WantedBy=multi-user.target

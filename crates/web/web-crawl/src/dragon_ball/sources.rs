@@ -198,6 +198,29 @@ impl DragonBallPlan {
 mod tests {
     use super::*;
     #[test]
+    fn shenron_wiki_redirect_boundary_preserves_public_source_scope() {
+        let plan = DragonBallPlan::default();
+        let target = plan.targets.iter().find(|target| target.id == "shenron").unwrap();
+        for accepted in [
+            "https://dragonballfr.com/wiki",
+            "https://dragonballfr.com/wiki/",
+            "https://dragonballfr.com/wiki/timeline",
+            "https://dragonballfr.com/wiki/episodes/1",
+        ] {
+            assert!(target.accepts(&Url::parse(accepted).unwrap()), "{accepted}");
+        }
+        for excluded in [
+            "https://dragonballfr.com/wikipedia",
+            "https://dragonballfr.com/wiki-admin",
+            "https://dragonballfr.com/admin/wiki",
+            "https://dragonballfr.com/api/v1/wiki/timeline",
+            "https://dragonballfr.com.example.org/wiki",
+            "https://user:password@dragonballfr.com/wiki",
+        ] {
+            assert!(!target.accepts(&Url::parse(excluded).unwrap()), "{excluded}");
+        }
+    }
+    #[test]
     fn migrated_plan_has_complete_domains_and_forbids_fandom() {
         let plan = DragonBallPlan::default();
         plan.validate().unwrap();

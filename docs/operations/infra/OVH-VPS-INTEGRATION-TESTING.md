@@ -14,9 +14,9 @@ and commit them.
 - `crates/infra/ovh/src/lib.rs`: Added `Start`, `SetDeleteAtExpiration`, `Watch` subcommands; CLI implementation; integration test for parse argument combinations.
 
 **Configuration**:
-- `config/host/host-policy.toml`: Added `[billing]` section with VPS policy (renewal, expiration thresholds).
-- `config/host/systemd/aphrody/aphrody-ovh-watch.timer`: Daily health check timer (07h00 UTC).
-- `config/host/systemd/aphrody/aphrody-ovh-watch.service`: Health check service unit (read-only, journals to systemd-journald).
+- `tools/config/host/host-policy.toml`: Added `[billing]` section with VPS policy (renewal, expiration thresholds).
+- `tools/config/host/systemd/aphrody/aphrody-ovh-watch.timer`: Daily health check timer (07h00 UTC).
+- `tools/config/host/systemd/aphrody/aphrody-ovh-watch.service`: Health check service unit (read-only, journals to systemd-journald).
 
 **Documentation**:
 - `docs/operations/infra/OVH-VPS-OPERATIONS.md`: Complete runbook (incidents, commands, policy, troubleshooting).
@@ -95,10 +95,10 @@ Expected:
 
 ### 3. Verify policy configuration
 
-Check the new `[billing]` section in `config/host/host-policy.toml`:
+Check the new `[billing]` section in `tools/config/host/host-policy.toml`:
 
 ```bash
-rg '\[billing\]' config/host/host-policy.toml -A 5
+rg '\[billing\]' tools/config/host/host-policy.toml -A 5
 ```
 
 Expected output:
@@ -118,7 +118,7 @@ Copy units to VPS and check they're active:
 
 ```bash
 # On the VPS:
-sudo cp config/host/systemd/aphrody/aphrody-ovh-watch.* /etc/systemd/system/
+sudo cp tools/config/host/systemd/aphrody/aphrody-ovh-watch.* /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable aphrody-ovh-watch.timer
 sudo systemctl start aphrody-ovh-watch.timer
@@ -200,7 +200,7 @@ Once tested:
 1. **Commit the changes**:
    ```bash
    git add crates/infra/ovh/Cargo.toml crates/infra/ovh/src/
-   git add config/host/host-policy.toml config/host/systemd/aphrody/aphrody-ovh-watch.*
+   git add tools/config/host/host-policy.toml tools/config/host/systemd/aphrody/aphrody-ovh-watch.*
    git add docs/operations/infra/OVH-VPS-OPERATIONS.md
    git commit -m "feat(ovh): Add VPS health monitoring, expiration alerts, and policy enforcement"
    ```
@@ -215,7 +215,7 @@ Once tested:
 3. **Deploy systemd units** (on the actual VPS):
    ```bash
    aphrody-infra ssh exec --host vps -- \
-     'sudo cp /srv/aphrody/config/host/systemd/aphrody/aphrody-ovh-watch.* /etc/systemd/system/ && \
+     'sudo cp /srv/aphrody/tools/config/host/systemd/aphrody/aphrody-ovh-watch.* /etc/systemd/system/ && \
       sudo systemctl daemon-reload && \
       sudo systemctl enable aphrody-ovh-watch.timer && \
       sudo systemctl start aphrody-ovh-watch.timer'

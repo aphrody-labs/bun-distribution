@@ -10,7 +10,7 @@
   "documentation_url": "https://github.com/aphrody-labs/aphrody",
   "peer_registry": {
     "owner": "@aphrody/workspace",
-    "path": "config/a2a-peers.json",
+    "path": "tools/config/a2a-peers.json",
     "note": "Canonical monorepo peer registry; APHRODY_A2A_PEERS_FILE is an explicit override."
   },
   "provider": {

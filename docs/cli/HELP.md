@@ -142,8 +142,8 @@ yolo awesome — browse oven-sh/awesome-bun
   awesome github             GitHub repositories referenced by the list
   awesome check [section]    HTTP check of the links (network; --concurrency N, --timeout MS)
   awesome audit              Judge every entry for the Rust-based Bun (network, GitHub API);
-                             writes config/yolo/awesome-audit.json
-  awesome curate [--out f]   audit + config/yolo/awesome.curated.json + cleaned README (default
+                             writes tools/config/yolo/awesome-audit.json
+  awesome curate [--out f]   audit + tools/config/yolo/awesome.curated.json + cleaned README (default
                              docs/reference/yolo/AWESOME.md); --since YYYY-MM-DD (default 2026-05-14)
 
 Options: --repo owner/name  --ref branch (default main)  --refresh  --offline
@@ -353,7 +353,7 @@ Commands:
   sync                 Print the actions that a synchronization would perform
   deploy               Run a deploy adapter. Mutation requires --apply and an explicit target
   validate             Check cross-catalog invariants (services, nginx routes, port policy)
-  reclaim              Reclaim allowlisted disk/tmpfs space on a target (config/disk-reclaim.json)
+  reclaim              Reclaim allowlisted disk/tmpfs space on a target (tools/config/disk-reclaim.json)
   dev-env              Validate or provision the declared development environment
   service              Manage cataloged services lifecycle (catalog, status, start, stop, restart, journal)
   probe                Probe an HTTP or TCP endpoint health

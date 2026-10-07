@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// The shared asset CDN (config/asset-catalog.json).
+// The shared asset CDN (tools/config/asset-catalog.json).
 //
 //   bun scripts/assets/cdn.ts check               every source present, one owner per content
 //   bun scripts/assets/cdn.ts build [--out dir]   release tree: s/<scope>/<path>, h/<hash>.<ext>, manifest
@@ -86,7 +86,7 @@ export function contentType(path: string): string {
 }
 
 export async function loadCatalog(root = INFRA_ROOT): Promise<Catalog> {
-  return Bun.file(join(root, "config/asset-catalog.json")).json();
+  return Bun.file(join(root, "tools/config/asset-catalog.json")).json();
 }
 
 function excluded(path: string, patterns: string[]): boolean {

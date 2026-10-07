@@ -24,7 +24,7 @@ preuves historiques : ancien plan
   Les identités publiques Cargo et les noms `@aphrody/*` sont conservés.
 - CLI : `crates/infra/aphrody` ; bindings : `crates/interop/ffi`,
   `packages/interop/native` ; Infra : `packages/infra/workspace`.
-- Clients kernel : `crates/os/kernel-client`, `packages/os/kernel-client`.
+- Clients kernel : `crates/os/kernel/client`, `packages/os/kernel-client`.
   UI regroupée sous `design/aphrody-m3/packages`. Adaptateur Python : `crates/ai/rag-python`.
 - 45 dossiers générés supprimés, 525 971 639 842 octets de fichiers mesurés.
   Caches de développement supprimés : 10 336 726 022 octets supplémentaires.
@@ -43,7 +43,7 @@ Preuves : scan du dépôt,
 nettoyage,
 chemins courts,
 installation des exécutables,
-[pipeline](../../../../config/pipeline.json).
+[pipeline](../../../../tools/config/pipeline.json).
 Les liens documentaires non résolus du scan restent des candidats à examiner :
 routes de sites, exemples et snapshots historiques demandent une classification.
 
@@ -175,7 +175,7 @@ Recherche : [pratiques documentaires](../../../research/workspace/documentation-
   Clos 2026-10-03 : 4542 documents = 888 actifs vérifiés (liens et chemins) +
   3654 copies amont ignorées par règle ; historiques = preuves `docs/migration`
   et entrées datées de ce plan, seul document encore exempté du contrôle des
-  chemins (raison consignée dans `config/docs/doc-path-check-deferred.json`) ;
+  chemins (raison consignée dans `tools/config/docs/doc-path-check-deferred.json`) ;
   `docs/apis/infra/vps/APIS.md` réaligné sur les chemins du monorepo.
   `docs:check-links` : 0 lien cassé, 0 chemin mort.
 - [x] Classer les scripts importés par commande utilisée, propriétaire et
@@ -265,7 +265,7 @@ actifs, aucun import vers une ancienne implantation déplacée.
 ### Inventaire de revue documentaire — 2026-10-01
 
 - FAIT : trois destinations de runbooks Infra corrigées vers les fichiers
-  existants `config/shell-runtime.json` et
+  existants `tools/config/shell-runtime.json` et
   `config/infra/inventory/aphrody-discord-dev-2026-09-29.md`. Le contrôle ne relève plus
   de destination manquante dans `docs/operations/infra/`.
 - Rapport de revue :
@@ -287,7 +287,7 @@ actifs, aucun import vers une ancienne implantation déplacée.
 
 - FAIT : `.cache/upstream` ne garde que les quatre checkouts nécessaires au build (`mcp-server-tauri`, `simdutf-rio`,
   `tauri-plugin-dialog`, `serde-saphyr`) : 23 Go avant, 11 Mo après. Les 17 autres amonts sont des entrées `reference`
-  de `config/upstream-sources.json`, lues en direct : `aphrody git upstream list|info|tree|read|search`, outils MCP
+  de `tools/config/upstream-sources.json`, lues en direct : `aphrody git upstream list|info|tree|read|search`, outils MCP
   `upstream_*`, skill `upstreams`, `aphrody-update upstream`. Vue générée : `docs/reference/infra/UPSTREAMS.md`.
 - FAIT : sorties de build WSL déplacées vers `~/.local/share/aphrody/wsl-artifacts` (empreinte du `bzImage` vérifiée) ;
   audits WSL vers `docs/research/os/wsl-audits`.
@@ -786,27 +786,27 @@ migration non entreprise). Détails : `design/aphrody-m3/docs/operations/tauri-u
   `koharu-rs/tauri-specta` : un commit (tauri >= 3) toujours nécessaire, amont
   `main` dépend encore de tauri 2.
 - FAIT : `bun run tauri:sync[:check]` (`packages/infra/workspace/src/tauri-sync.ts`,
-  `config/tauri-upstream.json`) : rapport courant/dernier, refs git, patches,
+  `tools/config/tauri-upstream.json`) : rapport courant/dernier, refs git, patches,
   `--check` (code 1 si en retard ou patch cassé), `--apply` borné à Cargo.toml
   racine + catalogue avec gate et retour arrière. 11 tests Bun réussis ; rapport
   réel : 0 en retard, 1 paquet `too-fresh` ; retour arrière vérifié sur une racine
   temporaire dont le gate échoue. `apply` réussi jusqu'au bout non exercé (aucune
   mise à jour disponible).
 - INCOMPLET : `tauri-runtime-cef` alpha.4 compile (`koharu-app`, `koharu`) mais
-  Koharu n'a pas été lancé ; `crates/os/drive` et `crates/web/drive-server`
+  Koharu n'a pas été lancé ; `crates/os/kernel/comps/drive` et `crates/web/drive-server`
   restent exclus, sans dépendance Tauri ; Windows/macOS non qualifiés.
 - FAIT (suite) : `m3-next-migrate` génère des applications Tauri 3 (versions
   `TAURI_3` dans `src/scaffolder.ts`, runtime wry explicite, `tauri-plugin-opener`
   à la place de `plugin-shell`) ; `test/scaffold-tauri3.test.ts` (3 tests) échoue si
   les versions dérivent du `Cargo.toml` racine, du catalogue ou de
-  `config/tauri-upstream.json`. `aphrody-ops tauri` (`tauri.ts`) vise
+  `tools/config/tauri-upstream.json`. `aphrody-ops tauri` (`tauri.ts`) vise
   `crates/ui/app`, construit les sidecars `aphrody` et `koharu-sdk` depuis ce
   workspace (le checkout frère reste prioritaire s'il existe) et embarque `ui-dist`
   tant que `packages/app-ui` n'existe pas dans le workspace.
 
 ### Registre des projets Tauri — 2026-10-01
 
-- FAIT : `config/tauri-apps.json` liste tous les projets Tauri : trois applications
+- FAIT : `tools/config/tauri-apps.json` liste tous les projets Tauri : trois applications
   (`aphrody-app`, `aphrody-model-view`, `koharu`), plugins et bibliothèques, paquets JS
   Koharu, générateur `m3-next-migrate` et fixtures amont sous `upstream/`
   (`mcp-server-tauri`, `tauri-plugin-webdriver`, `victauri`, `tauri-plugin-dialog`,
@@ -830,7 +830,7 @@ migration non entreprise). Détails : `design/aphrody-m3/docs/operations/tauri-u
   (`test/tauri-sync-apply.test.ts`, 3 tests) ; `tauri-apps.test.ts` : 12 tests.
 - INCOMPLET : les confs Koharu par plateforme répètent la fenêtre `main` et l'identifiant
   (Tauri remplace les tableaux lors de la fusion) ; les docs et skills Tauri 2 dupliqués
-  (`design/aphrody-m3/docs/reference/tauri`, `tauri-v2` sous `config/ai/plugins` et `plugins/aphrody`)
+  (`design/aphrody-m3/docs/reference/tauri`, `tauri-v2` sous `tools/config/ai/plugins` et `plugins/aphrody`)
   relèvent de l'agent docs.
 
 ### Consolidation de la documentation UI/GUI/wgpu/Tauri/M3 — 2026-10-01
@@ -959,7 +959,7 @@ Propriétaires : `crates/ai`, `crates/web`, `packages/ai`, `packages/web`.
 Cartographie : [architecture](../../../../m3/docs/architecture/drive/apps/server/ARCHITECTURE.md) (21 crates
 Rust, 3 paquets Bun, consommateurs, 16 écarts), contrat de service
 [docs/apis/web/WEB-SERVICE-CONTRACT.md](../../../apis/web/WEB-SERVICE-CONTRACT.md),
-configuration unique [config/web.json](../../../../config/web.json), automatisation
+configuration unique [tools/config/web.json](../../../../tools/config/web.json), automatisation
 [docs/operations/web/AUTOMATION.md](../../../operations/web/AUTOMATION.md), guides
 [smoke et crawl](../../../guides/web/WEB-SMOKE-AND-CRAWL.md),
 [debug Tauri](../../../guides/web/TAURI-DEBUG.md),
@@ -987,7 +987,7 @@ FAIT (vérifié) :
 - `bun run web:smoke` : 11 vérifications sur fixtures loopback (fetch Markdown,
   artifact, scripts V8, crawl avec robots, CDP, DOM, refs d’accessibilité,
   clic/saisie, PNG, PDF, arrêt propre) en 1,2 s avec le binaire construit.
-- `config/pipeline.json` régénéré par le générateur (63 lignes ajoutées, dont
+- `tools/config/pipeline.json` régénéré par le générateur (63 lignes ajoutées, dont
   celles d’autres domaines détectées au même moment).
 - UI crawlable : `bun run web:crawlability` rend 8 pages SSR des paquets m3
   (primitives, forms, explorer, trois readers) servies en loopback, les parcourt
@@ -997,7 +997,7 @@ FAIT (vérifié) :
   16 `data-testid` (coque seule) ; après : 0, 0, 206, 29 ; 8/8 pages atteintes par
   `<a href>`, couverture texte du crawler min 0,268 / moyenne 0,465 (497 mots sur
   906 visibles, inchangée). Seuils figés dans
-  `config/web-crawlability.baseline.json` (14 régressions détectées sur le HTML
+  `tools/config/web-crawlability.baseline.json` (14 régressions détectées sur le HTML
   d’avant). Tests : 11 (audit) + 9 (`m3-next` sitemap/robots/llms.txt/JSON-LD)
   + primitives 108, forms 12, explorer 11, reader 10 ; `ui:browser-audit` 47 ok,
   11 serveur seul, 0 échec.
@@ -1264,7 +1264,7 @@ smoke documenté. Une mise en production est une opération distincte.
 
 ### Inférence de production et entraînement Shenron (2026-10-02, suite)
 
-- Service `aphrody-ai-http` (unité suivie `config/systemd/user/aphrody-ai-http.service`,
+- Service `aphrody-ai-http` (unité suivie `tools/config/systemd/user/aphrody-ai-http.service`,
   secrets dans `~/.aphrody/private/shenron/ai-http.env`) actif sur 127.0.0.1:8789.
   `/llm/chat` démarre le daemon llama.cpp géré quand aucune URL n'est fixée
   (feature `managed-llama` d'aphrody-mcp), client poolé, une reprise sur
@@ -1366,9 +1366,9 @@ les adaptateurs de sessions canoniques et une mémoire commune.
   injectés dans les prompts. CLAUDE.md et GEMINI.md pointent vers AGENTS.md.
 - FAIT : service utilisateur `aphrody-agent-session-sync` actif, ingestion
   Claude/Codex/agy toutes les 30 secondes par le propriétaire session existant.
-  Source de service suivie sous config/systemd/user ; données privées hors Git.
+  Source de service suivie sous tools/config/systemd/user ; données privées hors Git.
 - 29 tests a2a-coord et clippy réussis. Provisioners Codex/agy corrigés vers
-  config/ai/plugins/aphrody ; check CLI all-targets réussi (log /tmp/shared-cli-check.log).
+  tools/config/ai/plugins/aphrody ; check CLI all-targets réussi (log /tmp/shared-cli-check.log).
 - Rappel croisé, claims, garde de branche, brokers/proxies et simultanéité
   qualifiés ci-dessous. Projections d’enveloppes et endpoints legacy restent ouverts.
 
@@ -1684,7 +1684,7 @@ heuristique ; aucun changement Git ne doit être attribué sans preuve.
   par nom de base ou dynamique. Ces 741 sont des candidats, pas des scripts
   inutilisés ; rien n’est supprimé. Un second passage par nom de base dans les manifests et
   `pipeline.json` ramène les candidats de 741 à 688. Reste : comparer aux commandes déclarées du
-  pipeline (`config/pipeline.json`) et aux `scripts` des manifests.
+  pipeline (`tools/config/pipeline.json`) et aux `scripts` des manifests.
 - Preuves : inventaire.
 
 ### Effets d’import M3 Design et frontière `use client` — 2026-10-01

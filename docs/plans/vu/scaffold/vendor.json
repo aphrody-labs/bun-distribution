@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "Pins of the vu monorepo (planned repository aphrody-labs/vu), written like config/vendor.json: sources are fetched on demand, shallow and blobless, never vendored into Git. Each pin is an exact commit of an aphrody-labs fork whose branch `vu-pin-<version>` was created at the upstream release commit on 2026-10-05; the same facts are recorded in config/upstream-sources.json (ids vu-uv, vu-ruff, vu-pyo3, vu-python-build-standalone). `scripts/audit/workspace/vu-pins.ts` checks both files against each other and, with --online, against GitHub.",
+  "description": "Pins of the vu monorepo (planned repository aphrody-labs/vu), written like tools/config/vendor.json: sources are fetched on demand, shallow and blobless, never vendored into Git. Each pin is an exact commit of an aphrody-labs fork whose branch `vu-pin-<version>` was created at the upstream release commit on 2026-10-05; the same facts are recorded in tools/config/upstream-sources.json (ids vu-uv, vu-ruff, vu-pyo3, vu-python-build-standalone). `scripts/audit/workspace/vu-pins.ts` checks both files against each other and, with --online, against GitHub.",
   "sources": [
     {
       "name": "uv",

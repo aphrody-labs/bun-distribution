@@ -5,7 +5,7 @@
  * the exact WSL worktree (HEAD plus uncommitted and untracked files, `.gitignore` respected) is
  * snapshotted into `refs/wsl/snapshot`, sent to a dedicated VPS checkout and built there through
  * `scripts/build/rust/cargo-serial.sh` under the factory heavy lock, inside the remote tmux session.
- * Logs stream back live; artifacts come back with `fetch`. Configuration: config/host/vps-cargo.json.
+ * Logs stream back live; artifacts come back with `fetch`. Configuration: tools/config/host/vps-cargo.json.
  *
  *   bun scripts/build/rust/vps-cargo.ts tunnel up|down|status   local tmux: SSH master + git daemon
  *   bun scripts/build/rust/vps-cargo.ts sync [--pull]           snapshot + checkout on the VPS
@@ -58,7 +58,7 @@ export type VpsCargoConfig = {
   maxJobs?: number;
   /**
    * False when the host has no GTK 4 development libraries (the CEF desktop runtime; a production server keeps a minimum
-   * surface, config/system-packages.json): packages that need them stay on the primary host. Default true.
+   * surface, tools/config/system-packages.json): packages that need them stay on the primary host. Default true.
    */
   desktopLibraries?: boolean;
   /** Crates whose presence in a package's dependency closure means the desktop libraries are needed. */
@@ -76,7 +76,7 @@ export type VpsCargoConfig = {
 };
 
 const ROOT = resolve(import.meta.dir, "../../..");
-const CONFIG_PATH = join(ROOT, "config/host/vps-cargo.json");
+const CONFIG_PATH = join(ROOT, "tools/config/host/vps-cargo.json");
 const MAX_SNAPSHOT_FILE_BYTES = 50 * 1024 * 1024;
 
 export function expandHome(path: string, home = homedir()): string {
@@ -93,7 +93,7 @@ export async function loadConfig(path = CONFIG_PATH, host?: string): Promise<Vps
   const base = (await Bun.file(path).json()) as VpsCargoConfig;
   if (host === undefined || host === base.host) return base;
   const override = base.hosts?.[host];
-  if (!override) throw new Error(`unknown build host "${host}" (config/host/vps-cargo.json hosts)`);
+  if (!override) throw new Error(`unknown build host "${host}" (tools/config/host/vps-cargo.json hosts)`);
   return { ...base, ...override, remoteEnv: { ...base.remoteEnv, ...override.remoteEnv }, host };
 }
 
@@ -107,7 +107,7 @@ export function repositoryConfig(
 ): { config: VpsCargoConfig; root: string } {
   const repository = config.repositories?.[name];
   if (!repository)
-    throw new Error(`unknown repository "${name}" (config/host/vps-cargo.json repositories)`);
+    throw new Error(`unknown repository "${name}" (tools/config/host/vps-cargo.json repositories)`);
   if (repository.host && repository.host !== config.host) {
     const host = config.hosts?.[repository.host];
     if (!host) throw new Error(`repository "${name}" requires unknown host "${repository.host}"`);

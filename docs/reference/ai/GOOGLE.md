@@ -13,7 +13,7 @@ Le projet suit officiellement les branches **Canary** des Ã©cosystÃ¨mes Goog
 - **Chrome Canary** (`Google.Chrome.Canary` via WinGet) â€” rÃ©fÃ©rence pour le rendu web.
 - **Android Studio Canary** (`Google.AndroidStudio`) â€” IDE de rÃ©fÃ©rence.
 - **Cloud SDK** (`gcloud`, `gsutil`, `bq`) â€” dÃ©ploiement.
-- **Rust nightly** (mirror du canal Chromium `tools/rust/`) â€” toolchain unique.
+- **Rust nightly** (mirror du canal Chromium `tools/rust/` (not in repo)) â€” toolchain unique.
 
 Catalogue Google complet : voir `google.json`.
 
@@ -45,7 +45,7 @@ Catalogue Google complet : voir `google.json`.
 | **Android NDK** | Cross-compile pour Android | `cargo ndk` + 4 targets Android dans `rust-toolchain.toml` |
 | **Chromium** | Memory-safe untrusted-data handling | Tout nouveau code en Rust (cf. CLAUDE.md) |
 | **Chromium** | `cxx` primary FFI | `cxx` + `bindgen` dans `[workspace.dependencies]` |
-| **Chromium** | Pinned toolchain (`tools/rust/`) | `rust-toolchain.toml` nightly pinnÃ© |
+| **Chromium** | Pinned toolchain (`tools/rust/` (not in repo)) | `rust-toolchain.toml` nightly pinnÃ© |
 | **Fuchsia** | `cargo-vet` + critÃ¨res `ub-risk-*` | `supply-chain/audits.toml` avec ub-risk-0/1/2/3 |
 | **Fuchsia** | `safe-to-deploy` default | `cargo deny check` requis avant merge |
 | **ChromeOS** | Imports d'audits cross-project | `supply-chain/config.toml` import Google/Mozilla/Fuchsia/ChromeOS |

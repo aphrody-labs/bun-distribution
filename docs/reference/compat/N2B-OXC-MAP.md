@@ -105,7 +105,7 @@ Separate imported workspaces (own lockfiles, not the root catalog):
 `shenron:package.json` (catalog `oxlint ^1.81.0` :28, `oxfmt ^0.66.0` :29,
 behind the root pins).
 
-Pins: `config/update/pins.json` tools `oxlint` (targets `package.json`,
+Pins: `tools/config/update/pins.json` tools `oxlint` (targets `package.json`,
 `docs/reference/workspace/CLI.md`) and `oxfmt`; `pins check` reports both ok.
 
 Config files (30 found outside `node_modules`/`target`/`.next`): root
@@ -136,7 +136,7 @@ Live code (behaviour depends on a `bun:aphrody` module that stock Bun lacks):
 
 | File:line | Reference |
 |---|---|
-| `crates/os/kernel/src/runtimes.rs:23` | probes `require('bun:aphrody').moduleVersion` |
+| `crates/os/kernel/core/src/runtimes.rs:23` | probes `require('bun:aphrody').moduleVersion` |
 | `packages/engine/n2b-client/src/plugin.ts` (former source location packages/engine/n2b-plugin/src/index.ts:79) | specifier `"bun:aphrody"` |
 | `packages/interop/native/src/library.ts:293` | owner type `"@aphrody/bun" \| "bun:aphrody"` |
 | `packages/interop/native/fixtures/bun-fork-native.ts:18,31` | fixture for `bun:aphrody` |

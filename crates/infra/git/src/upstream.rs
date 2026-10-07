@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Upstream catalogue and live, read-only access to it.
 //!
-//! `config/upstream-sources.json` lists the few upstreams that stay checked out (`sources`, tier
+//! `tools/config/upstream-sources.json` lists the few upstreams that stay checked out (`sources`, tier
 //! `vital`) and the many that do not (`reference`, tier `reference` or `build`). This module reads that
 //! catalogue and answers questions about any entry straight from the GitHub API, so nothing has to be
 //! cloned: repository facts, a directory listing, one file, or a code search.

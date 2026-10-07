@@ -70,11 +70,11 @@ rafraîchissement charge le fichier protégé existant
 site et le bot. Le code Bun exige l'accusé d'indexation E5 de chaque document,
 puis termine une synchronisation limitée à l'espace `shenron:timeline`.
 Une erreur empêche le retrait des anciens passages de cet espace. Les unités sont
-déclarées dans le [catalogue Infra](../../../config/host/catalog.json) :
+déclarées dans le [catalogue Infra](../../../tools/config/host/catalog.json) :
 
-- [`shenron-timeline-refresh.service`](../../../config/host/systemd/shenron/shenron-timeline-refresh.service)
-- [`shenron-timeline-refresh.timer`](../../../config/host/systemd/shenron/shenron-timeline-refresh.timer)
-- [`shenron-timeline-api.service`](../../../config/host/systemd/shenron/shenron-timeline-api.service)
+- [`shenron-timeline-refresh.service`](../../../tools/config/host/systemd/shenron/shenron-timeline-refresh.service)
+- [`shenron-timeline-refresh.timer`](../../../tools/config/host/systemd/shenron/shenron-timeline-refresh.timer)
+- [`shenron-timeline-api.service`](../../../tools/config/host/systemd/shenron/shenron-timeline-api.service)
 
 Le timer est horaire, persistant, avec cinq minutes de délai aléatoire. Le
 premier déclenchement automatique observé le 7 octobre à 14:00:56 UTC s'est

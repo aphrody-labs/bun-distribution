@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Migration C++ → Rust
 
-> Path reconciliation (2026-10-07): `crates/os/base/src/injector.rs` (not in repo) → `crates/os/backend/src/base/injector.rs`. Original dated observations below retain their historical scope.
+> Path reconciliation (2026-10-07): `crates/os/base/src/injector.rs` (not in repo) → `crates/os/ostd/backend/src/base/injector.rs`. Original dated observations below retain their historical scope.
 
 > Réf. : `CLAUDE.md`, `GEMINI.md`, `docs/PLAN.md` (not in repo).
 > Stratégie : incrémentale, par sous-système, sans régression fonctionnelle.
@@ -22,7 +22,7 @@
 - Network DNS : `crates/aphrody-backend/src/dns.rs` (not in repo)
 
 ### En cours
-- `injector/injector.cpp` → `crates/os/backend/src/base/injector.rs` (déjà entamé)
+- `injector/injector.cpp` → `crates/os/ostd/backend/src/base/injector.rs` (déjà entamé)
 - ProcessManager kernel-side → `crates/google_os/src/kernel/process.rs` (not in repo)
 - io_uring émulation → `crates/google_os/src/kernel/io_uring.rs` (not in repo) (à brancher sur Win11 IoRing API)
 

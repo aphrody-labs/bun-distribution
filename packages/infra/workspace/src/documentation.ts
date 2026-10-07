@@ -58,7 +58,7 @@ export interface DocumentationManifest {
   excluded: Array<{ path: string; reason: string }>;
 }
 
-const CONFIG = "config/docs/documentation.json";
+const CONFIG = "tools/config/docs/documentation.json";
 const PRIVATE_CONTEXT =
   /(^|\/)(MEMORY|CONVERSATIONS|TRANSCRIPTS|LIVE)\.md$|(^|\/)(\.coord|\.git|node_modules|\.venv|target|privateMarkdown|private-markdown)(\/|$)/i;
 

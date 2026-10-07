@@ -49,7 +49,7 @@ those checks.
 `aphrody-infra status --target vps --json` uses the Rust CLI's target/matrix
 adapter, including host service counts and selected host details; it is not
 the service-catalog query. `aphrody-infra service status --target vps --json`
-queries entries selected from `config/service-catalog.json`; it does not
+queries entries selected from `tools/config/service-catalog.json`; it does not
 discover arbitrary units. Installed binary/catalog and current source views
 can differ, so reconcile their revisions before relying on results. The root
 monorepo CLI is defined in
@@ -73,7 +73,7 @@ serves `https://bot.aphrody.com`, binds only to loopback `:4010`, and reads
 `DISCORD_GUILD_ID`, `BASE_URL` and `PORT`. Never place that file in a release.
 
 For first-time provisioning, issue a dedicated certificate with the webroot
-challenge and install the Nginx/systemd files from yolo (`$YOLO_ROOT/config/host/{nginx,systemd}`, default `~/yolo`; nginx `include snippets/*.inc` files go to `/etc/nginx/snippets/`):
+challenge and install the Nginx/systemd files from yolo (`$YOLO_ROOT/tools/config/host/{nginx,systemd}`, default `~/yolo`; nginx `include snippets/*.inc` files go to `/etc/nginx/snippets/`):
 
 ```bash
 sudo certbot certonly --webroot -w /var/www/letsencrypt \
@@ -108,7 +108,7 @@ Historical status (2026-09-29 08:50 UTC): release
 checksums, public health/Gateway, `ping` command, minimal login and separate
 install redirects, denied callback replay, and logout origin checks passed.
 The authorized callback and rollback drill remain open; see
-`config/host/inventory/aphrody-discord-dev-2026-09-29.md`.
+`tools/config/host/inventory/aphrody-discord-dev-2026-09-29.md`.
 
 Historical status (2026-09-29 08:56 UTC): release
 `4cf6332cdc66b3ec9c0f2b0c288f0a3024acf808` superseded the prior
@@ -149,7 +149,7 @@ The agent console served by `aphrody` is `aphrody-ui`'s tracked
 `crates/ui/app/ui-dist`, embedded at compile time by
 `aphrody-app-server`; a build that falls back to its placeholder page fails.
 Nginx serves `/ai.json` byte-for-byte from `/srv/aphrody/current/ai.json` and
-routes the apex (`config/host/nginx/aphrody/aphrody-apex.conf`: `aphrody.com`,
+routes the apex (`tools/config/host/nginx/aphrody/aphrody-apex.conf`: `aphrody.com`,
 `www.aphrody.com`, `mcp.aphrody.com`) to the loopback services.
 
 Persistent state stays outside releases: Web SQLite, crawler queue and cookies
@@ -174,10 +174,10 @@ service never downloads). Web rankings/SEO live in PostgreSQL `aphrody_web`
 | `aphrody-a2a.env` | optional |
 | `shenron-compute-client.env` | `APHRODY_AI_HTTP_URL`, `APHRODY_AI_HTTP_TOKEN` (+ legacy `APHRODY_SHENRON_API_URL`/`_TOKEN`), read by `shenron-site`/`shenron-bot` |
 
-`APHRODY_AI_*` names are canonical (`config/local-ai.json`); the adapter also
+`APHRODY_AI_*` names are canonical (`tools/config/local-ai.json`); the adapter also
 accepts the legacy aliases `APHRODY_SHENRON_EMBED_MODEL` and
 `APHRODY_SHENRON_EMBED_BASE_URL`, and refuses a canonical/alias pair with
-different values. The key list is mirrored in `config/secrets-contract.json`.
+different values. The key list is mirrored in `tools/config/secrets-contract.json`.
 
 ### Activation checks
 
@@ -267,7 +267,7 @@ NIE and IECode ship no VPS release. The bundle contains no secret.
    Aphrody credential (table above) and the Shenron compute client env; nothing
    is copied from the old host. Shenron and RG keep their existing
    `/etc/rose-griffon/*.env` and RG `/etc` files (`0600`), which the Shenron
-   adapter checks against `config/secrets-contract.json`.
+   adapter checks against `tools/config/secrets-contract.json`.
 4. **TLS.** `aphrody.com`, `www.aphrody.com` and `mcp.aphrody.com` have no
    certificate on the host any more. Check their A/AAAA records point to the
    VPS first (`aphrody-infra ovh dns records aphrody.com --type A`). Prefer
@@ -345,7 +345,7 @@ active. On success `/srv/aphrody-infra/BUNDLE.json` (with `activatedAt`) and
 After activation: run `$B/provision-shenron-ai-access.sh` as root to prove
 Shenron → AI (RAG search returns passages), drop `"status": "retired"` from the
 five Aphrody services, their routes, the `vps` allocation and the `vps`
-local-AI target in `config/`, refresh `config/host/inventory/vps-source.json`, then run
+local-AI target in `config/`, refresh `tools/config/host/inventory/vps-source.json`, then run
 the `live` pipeline stage (`bun run audit:live`).
 
 ## Existing-host path (legacy)

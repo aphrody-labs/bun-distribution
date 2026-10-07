@@ -29,7 +29,7 @@ fi
 # Mutable data stays in /srv/shenron/shared, linked into every release; the
 # Git-tracked seed of those directories is refreshed on activation (backed up,
 # never deleted). Secrets stay in /etc env files; only key names are checked,
-# against the installed config/secrets-contract.json.
+# against the installed tools/config/secrets-contract.json.
 usage='usage: atomic-deploy-shenron.sh assemble DIR | [activate] RELEASE_DIR | restore BACKUP_DIR'
 root="${SHENRON_RELEASE_ROOT:-/srv/shenron}"
 share="${SHENRON_INFRA_SHARE:-/usr/local/share/aphrody-infra}"

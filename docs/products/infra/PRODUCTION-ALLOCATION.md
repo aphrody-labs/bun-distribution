@@ -3,9 +3,9 @@
 ## Décision
 
 La topologie déclarée est portée par
-[`config/production-topology.json`](../../../config/production-topology.json),
-les unités par [`config/service-catalog.json`](../../../config/service-catalog.json)
-et les routes par `yolo/config/host/nginx/routes.json`.
+[`tools/config/production-topology.json`](../../../tools/config/production-topology.json),
+les unités par [`tools/config/service-catalog.json`](../../../tools/config/service-catalog.json)
+et les routes par `yolo/tools/config/host/nginx/routes.json`.
 Le VPS héberge les allocations actives RG, Shenron et Nginx ; les allocations
 Aphrody Web/AI et NIE sont marquées retired dans le catalogue. La pile Aphrody
 ne doit donc pas être décrite comme redéployée par le bundle sans nouvelle
@@ -47,7 +47,7 @@ l’hôte. Les applications n’administrent pas l’instance Nginx publique.
 
 ## Timers unifiés
 
-La politique `config/scheduler-policy.json` déclare la stratégie des tâches
+La politique `tools/config/scheduler-policy.json` déclare la stratégie des tâches
 périodiques. Les unités/timers effectivement actifs doivent être lus dans le
 catalogue puis vérifiés par une observation hôte datée ; la seule présence
 d’un timer n’établit pas le succès de ses sauvegardes ni leur restauration.

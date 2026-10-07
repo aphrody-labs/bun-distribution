@@ -110,13 +110,13 @@ function remap(
   const value = JSON.parse(source.toString("utf8")) as Record<string, unknown>;
   const endpoints = endpointClasses(value);
   const remaps: string[] = [];
-  if (path === "config/pipeline.json") {
+  if (path === "tools/config/pipeline.json") {
     if (value.workspaceRoot !== "../")
       throw new Error("unexpected pipeline.workspaceRoot; review source before import");
     value.workspaceRoot = ".";
     remaps.push("workspaceRoot: ../ -> .");
   }
-  if (path === "config/google-stack-release.json") {
+  if (path === "tools/config/google-stack-release.json") {
     const repositories = value.sourceRepositories as Record<string, unknown>;
     if (repositories?.ai !== "../aphrody-ai" || repositories?.web !== "../aphrody-web")
       throw new Error("unexpected google-stack sourceRepositories; review source before import");

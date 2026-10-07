@@ -107,7 +107,12 @@ async function catalogGaps(root: string): Promise<CatalogGap[]> {
 }
 
 async function ffiOwners(root: string): Promise<Component[]> {
-  const components = await rustComponents(root, ["crates/*/*/Cargo.toml"]);
+  const components = await rustComponents(root, [
+    "crates/*/*/Cargo.toml",
+    "crates/os/ostd/*/Cargo.toml",
+    "crates/os/kernel/*/Cargo.toml",
+    "crates/os/kernel/{comps,libs}/*/Cargo.toml",
+  ]);
   const owners = await Promise.all(
     components.map(async (component) => {
       const parsed = TOML.parse(await Bun.file(join(root, component.manifest)).text()) as {
@@ -120,7 +125,12 @@ async function ffiOwners(root: string): Promise<Component[]> {
 }
 
 async function mcpHosts(root: string): Promise<Component[]> {
-  const components = await rustComponents(root, ["crates/*/*/Cargo.toml"]);
+  const components = await rustComponents(root, [
+    "crates/*/*/Cargo.toml",
+    "crates/os/ostd/*/Cargo.toml",
+    "crates/os/kernel/*/Cargo.toml",
+    "crates/os/kernel/{comps,libs}/*/Cargo.toml",
+  ]);
   const hosts = await Promise.all(
     components.map(async (component) => {
       if (!component.name.endsWith("-mcp")) return null;

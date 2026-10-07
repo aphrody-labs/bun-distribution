@@ -50,7 +50,7 @@ export function callVec(op:string,params:string,a:Uint8Array,b:Uint8Array):Uint8
   const provenance: WasmBuildProvenance = {
     source: {
       revision: "1".repeat(40),
-      patches: [{ path: "config/container/Dockerfile", sha256: "2".repeat(64) }],
+      patches: [{ path: "tools/config/container/Dockerfile", sha256: "2".repeat(64) }],
     },
     wasm: { sha256: sha256Bytes(wasm), bytes: wasm.length },
     inputs: Object.fromEntries(

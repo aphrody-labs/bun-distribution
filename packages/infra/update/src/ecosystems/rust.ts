@@ -4,7 +4,7 @@
  *
  *   rust status                      toolchain channel vs latest stable/nightly, direct crates behind the crates.io
  *                                    sparse index (in manifest range and beyond), OSV advisories not covered by
- *                                    config/deps/advisory-holds.json, Cargo git remotes and source pins that moved
+ *                                    tools/config/deps/advisory-holds.json, Cargo git remotes and source pins that moved
  *   rust plan                        what `apply` would do; majors are listed separately with the consumers to change
  *   rust apply [--majors a,b+c]      (--keep leaves a failing major in place to fix forward) in-range lock refresh, `cargo update -p name@ver --precise X` for stragglers, then
  *                                    `cargo check` of the touched consumers; every --majors crate is a transaction
@@ -26,8 +26,8 @@ import { cmpVersion } from "../deps/sync.ts";
 import { cargoGitRemotes, driftRows } from "../sources/drift.ts";
 
 const WRAPPER = "scripts/build/rust/cargo-serial.sh";
-const HOLDS_FILE = "config/deps/rust-holds.json";
-const ADVISORY_HOLDS_FILE = "config/deps/advisory-holds.json";
+const HOLDS_FILE = "tools/config/deps/rust-holds.json";
+const ADVISORY_HOLDS_FILE = "tools/config/deps/advisory-holds.json";
 
 // ---------------------------------------------------------------- versions and requirements (pure, unit-tested)
 
@@ -422,7 +422,7 @@ export type OutdatedRow = {
   /** Rust version the `beyond` release needs, when it exceeds the pinned toolchain. */
   beyondMsrv?: string;
   yanked?: boolean;
-  /** Reason from config/deps/rust-holds.json: never moved by apply, not even with --majors. */
+  /** Reason from tools/config/deps/rust-holds.json: never moved by apply, not even with --majors. */
   held?: string;
   /** The manifest requires `=x.y.z`: the owner pinned it on purpose; only an explicit `--majors` moves it. */
   exactPin?: boolean;
@@ -602,7 +602,7 @@ export function restoreLockPins(c: Ctx): { restored: number; failed: number } {
 
 function owners(c: Ctx): Map<string, string> {
   const m = new Map<string, string>();
-  for (const n of c.jsonFile<{ rust?: { crates?: string[] } }>("config/tauri-upstream.json", {})
+  for (const n of c.jsonFile<{ rust?: { crates?: string[] } }>("tools/config/tauri-upstream.json", {})
     .rust?.crates ?? [])
     m.set(n, "tauri-sync (yolo ops tauri-sync)");
   return m;
@@ -717,7 +717,7 @@ function printStatus(r: RustReport) {
   for (const x of beyond) console.log(`  beyond   ${fmtRow(x)}`);
   for (const x of r.outdated.filter((y) => y.yanked)) console.log(`  yanked   ${fmtRow(x)}`);
   console.log(
-    `advisories ${r.advisories.open.length} open, ${r.advisories.held.length} held (config/deps/advisory-holds.json)`,
+    `advisories ${r.advisories.open.length} open, ${r.advisories.held.length} held (tools/config/deps/advisory-holds.json)`,
   );
   for (const a of r.advisories.open)
     console.log(`  open     ${a.crate} ${a.version}: ${a.ids.slice(0, 4).join(", ")}`);

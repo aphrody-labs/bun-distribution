@@ -2,7 +2,7 @@
 
 # Idempotent native bootstrap of this Linux/WSL host. Thin wrapper over
 # `aphrody-infra dev-env --local`, the single implementation; pins come from
-# config/system-packages.json and rust-toolchain.toml. Check-only by default.
+# tools/config/system-packages.json and rust-toolchain.toml. Check-only by default.
 def main [
   --target: string = "wsl"  # package set: vps, dbfr or wsl
   --apply                   # install/upgrade instead of reporting

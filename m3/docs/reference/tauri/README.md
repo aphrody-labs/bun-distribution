@@ -4,7 +4,7 @@
 
 Current line: Tauri 3 alpha (`tauri =3.0.0-alpha.3`, the one runtime `tauri-runtime-cef`), pinned in the root `Cargo.toml` and described in
 [`docs/operations/ui/tauri-upstream.md`](../../operations/tauri-upstream.md) and
-[`config/tauri-apps.json`](https://github.com/aphrody-labs/aphrody/blob/main/config/tauri-apps.json) (registry of every Tauri project).
+[`tools/config/tauri-apps.json`](https://github.com/aphrody-labs/aphrody/blob/main/tools/config/tauri-apps.json) (registry of every Tauri project).
 Tauri 2 pages below are kept as historical or compatibility context and carry a banner. Parent map:
 [`../../../architecture/ui/README.md`](../../architecture/README.md).
 

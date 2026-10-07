@@ -86,7 +86,7 @@ built from a looked-up OID was not verified (UNVERIFIED). The fallback is
   - **Conclusion:** do not enable sqlx's `sqlite` feature in the root
     workspace. Postgres-only sqlx is fine.
   - [sqlx-sqlite Cargo.toml](https://github.com/launchbadge/sqlx/blob/v0.9.0/sqlx-sqlite/Cargo.toml)
-- `crates/os/drive` (an imported Spacedrive tree) is a **separate workspace**
+- `crates/os/kernel/comps/drive` (an imported Spacedrive tree) is a **separate workspace**
   excluded from the root. Its sqlx 0.8 sqlite, sea-orm 1.1 and rusqlite 0.32
   share libsqlite3-sys 0.30 and do not affect the root graph.
 
@@ -169,8 +169,8 @@ crate needs checked macros across many queries.
 | `crates/ai/rag` | rusqlite 0.40 (FTS5 + `vectors` BLOB table), tokio-postgres 0.7.18 (`aphrody_rag_documents`, lexical only) | SQLite + PG | Dense search is an exact in-process scan over all BLOBs (`store.rs::search_vector`); PG connects per call with `NoTls` and a 5 s timeout |
 | `crates/ai/mcp` | tokio-postgres (`shenron_vector.rs`, `http_rest.rs`) | PG + pgvector | Vectors are passed as `$n::text::vector` string literals; fixed 384-dim E5 space |
 | `crates/ai/memory` | rusqlite (`sqlite.rs`, `sqlite_local.rs`), optional lancedb 0.29 | SQLite | Tags as JSON text matched with `LIKE`; hand-rolled brute-force "hnsw" module |
-| `crates/os/jobs`, `fsindex`, `ocr-core`, `web-*`, `x`, `google`, `antigravity`, `winclean` | rusqlite | SQLite | `busy_timeout = 5000` already set in jobs and ocr-core |
-| `crates/os/drive` (separate workspace) | sqlx 0.8 sqlite, sea-orm 1.1, rusqlite 0.32 | SQLite | Imported Spacedrive; isolated graph |
+| `crates/os/kernel/comps/jobs`, `fsindex`, `ocr-core`, `web-*`, `x`, `google`, `antigravity`, `winclean` | rusqlite | SQLite | `busy_timeout = 5000` already set in jobs and ocr-core |
+| `crates/os/kernel/comps/drive` (separate workspace) | sqlx 0.8 sqlite, sea-orm 1.1, rusqlite 0.32 | SQLite | Imported Spacedrive; isolated graph |
 | `packages/shenron/db` | drizzle-orm 0.45.3 over postgres.js 3.4.9 and `Bun.SQL` (`bun-sql.ts`) | PG | `prepare` already configurable per URL |
 | `packages/shenron/pipeline` | `bun:sqlite` + `sqlite-vec` **^0.1.1** (npm), postgres.js | SQLite (FTS5 `rag_chunks` + `vec0 vec_chunks`) + PG; Neon training registry DDL | sqlite-vec is 8 patch releases behind (0.1.9 reclaims space on DELETE) |
 | `iecode/packages/rg/db` | kysely + pg + `@supabase/ssr` | Supabase PG | RG product, Supabase-managed |

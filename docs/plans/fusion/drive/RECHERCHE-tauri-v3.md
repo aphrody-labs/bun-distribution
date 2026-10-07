@@ -268,7 +268,7 @@ Sources : [compare tauri](https://github.com/tauri-apps/tauri/compare/v3...aphro
 - Déplacer sous `#[cfg(feature = "tauri-ext")]` le module `tauri_ext`, le paramètre par défaut `T = tauri::EventLoopMessage` (remplacé par `T` sans défaut, ou par un type local) et les deux appels Android.
 - Taille estimée : une trentaine de lignes, d'après le décompte du §3.1.
 - Gain : `tauri-runtime-wry` sans tokio, sans reqwest, sans muda/tray-icon par `tauri`.
-- Une PR amont est défendable, puisque les maintenateurs veulent « rework how the runtimes work … easier for runtime creators ». Sinon le patch vit dans le fork, avec sa provenance dans `config/upstream-sources.json`.
+- Une PR amont est défendable, puisque les maintenateurs veulent « rework how the runtimes work … easier for runtime creators ». Sinon le patch vit dans le fork, avec sa provenance dans `tools/config/upstream-sources.json`.
 - Rejeté : réécrire un `aphrody-runtime-wry`. Ce serait dupliquer 7 500 lignes, contraire à la règle de dédoublonnage.
 
 ### 8.4 Hôte de fenêtres

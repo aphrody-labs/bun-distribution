@@ -463,7 +463,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
     return failure || missingTargets.length ? 1 : 0;
   }
   const upstreamManifest = JSON.parse(
-    await readFile(join(aphrodyRoot, "config/upstream-sources.json"), "utf8"),
+    await readFile(join(aphrodyRoot, "tools/config/upstream-sources.json"), "utf8"),
   ) as { root?: string; sources?: Array<{ id: string; kind: string; license?: string }> };
   const upstreamRoot = resolve(
     options.get("--upstreams-root") ??

@@ -71,6 +71,17 @@ test("Web migration gate inventories source, target, and shared host counts", as
     await put(target, "crates/ai/mcp/src/main.rs", "fn main() {}\n");
     await put(
       target,
+      "crates/os/kernel/comps/nested/Cargo.toml",
+      '[package]\nname = "nested-mcp"\nversion = "1.0.0"\n[lib]\ncrate-type = ["cdylib"]\n',
+    );
+    await put(target, "crates/os/kernel/comps/nested/src/main.rs", "fn main() {}\n");
+    await put(
+      target,
+      "crates/os/ostd/sdk/Cargo.toml",
+      '[package]\nname = "ostd-sdk"\nversion = "1.0.0"\n[lib]\ncrate-type = ["cdylib"]\n',
+    );
+    await put(
+      target,
       "packages/web/x/package.json",
       '{"name":"@aphrody/x","dependencies":{"typescript":"catalog:"}}',
     );
@@ -84,8 +95,12 @@ test("Web migration gate inventories source, target, and shared host counts", as
     expect(report.missing.rust).toEqual([]);
     expect(report.missing.bun.map((item) => item.name)).toEqual(["@aphrody/missing"]);
     expect(report.catalogGaps.map((gap) => gap.dependency)).toEqual(["absent"]);
-    expect(report.cdylibs.map((item) => item.name)).toEqual(["aphrody-ffi"]);
-    expect(report.mcpHosts.map((item) => item.name)).toEqual(["aphrody-mcp"]);
+    expect(report.cdylibs.map((item) => item.name)).toEqual([
+      "aphrody-ffi",
+      "nested-mcp",
+      "ostd-sdk",
+    ]);
+    expect(report.mcpHosts.map((item) => item.name)).toEqual(["aphrody-mcp", "nested-mcp"]);
     expect(report.legacyAbiSymbols.map((item) => item.symbol)).toEqual(["bxc_old", "bxc_old"]);
     expect(report.ready).toBe(false);
   } finally {

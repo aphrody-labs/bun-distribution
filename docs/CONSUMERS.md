@@ -38,7 +38,7 @@ Archives are canonical and named by their SHA-256; the consumer pins them in its
 refuses dirty sources and never compiles native engines.
 
 The runtime artifacts a workspace may activate are pinned separately in
-`config/native-runtime.json` (`yolo ops native-runtime`): acquiring sources does
+`tools/config/native-runtime.json` (`yolo ops native-runtime`): acquiring sources does
 not qualify a runtime library.
 
 ## Runtime artifact and rollout

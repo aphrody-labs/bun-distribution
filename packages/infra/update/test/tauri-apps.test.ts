@@ -22,7 +22,7 @@ import {
 
 const rootCargo = `[workspace]
 members = ["crates/ui/*", "crates/koharu/*"]
-exclude = ["crates/os/drive"]
+exclude = ["crates/os/kernel/comps/drive"]
 
 [workspace.dependencies]
 tauri = { version = "=3.0.0-alpha.3", default-features = false }
@@ -46,7 +46,7 @@ const registryJson = JSON.stringify({
     {
       id: "drive",
       kind: "plugin",
-      path: "crates/os/drive",
+      path: "crates/os/kernel/comps/drive",
       package: "aphrody-os-drive",
       workspace: "excluded",
     },
@@ -118,7 +118,7 @@ test("npmTauriDeps ignores peer ranges and unrelated packages", () => {
 
 test("workspaceState follows members, excludes and the upstream tree", () => {
   expect(workspaceState(rootCargo, "crates/ui/app")).toBe("member");
-  expect(workspaceState(rootCargo, "crates/os/drive")).toBe("excluded");
+  expect(workspaceState(rootCargo, "crates/os/kernel/comps/drive")).toBe("excluded");
   expect(workspaceState(rootCargo, "upstream/victauri/crates/x")).toBe("upstream");
   expect(workspaceState(rootCargo, "packages/koharu/ui")).toBe("outside");
   // members globs match one path segment only
@@ -171,7 +171,7 @@ async function fixtureTree(): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "tauri-apps-"));
   dirs.push(root);
   await put(root, "Cargo.toml", rootCargo);
-  await put(root, "config/tauri-apps.json", registryJson);
+  await put(root, "tools/config/tauri-apps.json", registryJson);
   const stale = `{\n  "$schema": "${schemaUrl("3.0.0-alpha.2")}",\n  "build": { "frontendDist": "dist", "beforeBuildCommand": "bun --cwd ../aphrody-ui run build" }\n}\n`;
   await put(root, "crates/ui/app/tauri.conf.json", stale);
   await put(
@@ -185,7 +185,7 @@ async function fixtureTree(): Promise<string> {
     JSON.stringify({ dependencies: { "@tauri-apps/api": "^3.0.0" } }),
   );
   // workspace-excluded and git-ignored-looking paths must still be found; target/node_modules must not
-  await put(root, "crates/os/drive/Cargo.toml", `[dependencies]\ntauri = { workspace = true }\n`);
+  await put(root, "crates/os/kernel/comps/drive/Cargo.toml", `[dependencies]\ntauri = { workspace = true }\n`);
   await put(root, "upstream/fx/examples/demo/src-tauri/tauri.conf.json", "{}");
   await put(root, "crates/ui/stray/Tauri.toml", "");
   await put(root, "crates/ui/app/target/debug/Cargo.toml", `[dependencies]\ntauri = "3"\n`);
@@ -201,7 +201,7 @@ test("discover scans excluded paths and skips target and node_modules", async ()
   const root = await fixtureTree();
   const found = await discover(root, ["target", "node_modules", ".git"]);
   expect(found.map((item) => item.dir)).toEqual([
-    "crates/os/drive",
+    "crates/os/kernel/comps/drive",
     "crates/ui/app",
     "crates/ui/stray",
     "upstream/fx/examples/demo/src-tauri",
@@ -224,7 +224,7 @@ test("audit reports unregistered projects, pinned deps, schema drift and legacy 
     "schema-drift:crates/ui/app/tauri.conf.json",
     "unregistered:crates/ui/stray",
   ]);
-  expect(report.rows.find((row) => row.dir === "crates/os/drive")).toMatchObject({
+  expect(report.rows.find((row) => row.dir === "crates/os/kernel/comps/drive")).toMatchObject({
     id: "drive",
     workspace: "excluded",
   });
@@ -241,7 +241,7 @@ test("audit flags a missing registry path and a workspace mismatch", async () =>
       schemaVersion: 1,
       projects: [
         { id: "ghost", kind: "app", path: "crates/ui/ghost" },
-        { id: "drive", kind: "plugin", path: "crates/os/drive", package: "p", workspace: "member" },
+        { id: "drive", kind: "plugin", path: "crates/os/kernel/comps/drive", package: "p", workspace: "member" },
       ],
     }),
   );

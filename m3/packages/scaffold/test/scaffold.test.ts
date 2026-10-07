@@ -45,7 +45,7 @@ describe("pins", () => {
     expect(cargoVersion(manifest, "tauri-runtime-cef")).toBe(TAURI_3.runtimeCef);
     expect(cargoVersion(manifest, "tauri-build")).toBe(TAURI_3.build);
     expect(cargoVersion(manifest, "tauri-plugin-opener")).toBe(TAURI_3.pluginOpener);
-    const config = JSON.parse(await Bun.file(join(root, "config/tauri-upstream.json")).text());
+    const config = JSON.parse(await Bun.file(join(root, "tools/config/tauri-upstream.json")).text());
     expect(config.js.cli.version).toBe(TAURI_3.jsCli);
     // The Tauri JS packages are workspace members (`workspace:*`), published under these versions.
     const version = async (dir: string) =>
@@ -56,7 +56,7 @@ describe("pins", () => {
   });
 
   it("are mirrored once: tauri-sync tracks this file and no other scaffolder", async () => {
-    const config = JSON.parse(await Bun.file(join(root, "config/tauri-upstream.json")).text());
+    const config = JSON.parse(await Bun.file(join(root, "tools/config/tauri-upstream.json")).text());
     expect(config.mirrors.map((mirror: { file: string }) => mirror.file)).toEqual([
       "m3/packages/scaffold/src/pins.ts",
     ]);

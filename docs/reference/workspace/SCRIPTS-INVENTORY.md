@@ -23,7 +23,7 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 
 ### audit
 
-- scripts/audit/os/drive/core/scripts/test_daemon.sh (supprimé : doublon exact de `crates/os/drive/core/scripts/test_daemon.sh`)
+- scripts/audit/os/drive/core/scripts/test_daemon.sh (supprimé : doublon exact de `crates/os/kernel/comps/drive/core/scripts/test_daemon.sh`)
 - `scripts/audit/shenron/scripts/ops/audit-and-materialize-ocr.ts`
 - `scripts/audit/shenron/scripts/ops/audit-databook-corpus.ts`
 - `scripts/audit/shenron/scripts/ops/audit-databooks-manga.ts`
@@ -68,13 +68,13 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 - `scripts/build/web/apps/bxc/scripts/build-serverless.ts`
 - scripts/build/web/apps/bxc/scripts/capture_squad_builders.ts (supprimé)
 
-### yolo config/host/nginx/check-aphrody-apex.ps1
+### yolo tools/config/host/nginx/check-aphrody-apex.ps1
 
-- `scripts/yolo config/host/nginx/check-aphrody-apex.ps1`
+- `scripts/yolo tools/config/host/nginx/check-aphrody-apex.ps1`
 
-### yolo config/host/nginx/check-aphrody-apex.sh
+### yolo tools/config/host/nginx/check-aphrody-apex.sh
 
-- `scripts/yolo config/host/nginx/check-aphrody-apex.sh`
+- `scripts/yolo tools/config/host/nginx/check-aphrody-apex.sh`
 
 ### check-aphrody-stack-units.sh
 
@@ -161,8 +161,8 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 - `scripts/tools/infra/wsl-reclaim.ps1`
 - `scripts/tools/koharu/scripts/download_bluearchive_comics.ts`
 - `scripts/tools/msvc-wsl.py`
-- scripts/tools/os/drive/core/scripts/combine.sh (supprimé : doublon exact de `crates/os/drive/core/scripts/combine.sh`)
-- scripts/tools/os/drive/core/scripts/update_spacedrive.sh (supprimé : doublon exact de `crates/os/drive/core/scripts/update_spacedrive.sh`)
+- scripts/tools/os/drive/core/scripts/combine.sh (supprimé : doublon exact de `crates/os/kernel/comps/drive/core/scripts/combine.sh`)
+- scripts/tools/os/drive/core/scripts/update_spacedrive.sh (supprimé : doublon exact de `crates/os/kernel/comps/drive/core/scripts/update_spacedrive.sh`)
 - `scripts/tools/os/scripts/absorb-upstream.ts`
 - `scripts/tools/os/scripts/data/make-renames.nu`
 - `scripts/tools/os/scripts/forensics/Invoke-GoogleReversePipeline.ps1`
@@ -325,7 +325,7 @@ Preuve : import relatif sans fichier cible (`.ts`, `.tsx`, `/index.ts`, `.js`→
 13 copies sous `scripts/` identiques octet pour octet (même blob git) à un fichier de leur paquet propriétaire, sans consommateur (aucun import ni chemin cité hors cet inventaire) :
 
 - scripts/audit/compat/test/fixture/scripts/install.sh → `crates/compat/n2b/tests/fixtures/node-project/scripts/install.sh`
-- scripts/audit/os/drive/core/scripts/test_daemon.sh → `crates/os/drive/core/scripts/test_daemon.sh`
+- scripts/audit/os/drive/core/scripts/test_daemon.sh → `crates/os/kernel/comps/drive/core/scripts/test_daemon.sh`
 - scripts/audit/ui/packages/eslint-plugin-m3/scripts/sync-symbol-names.ts → `m3/packages/eslint-plugin-m3/scripts/sync-symbol-names.ts`
 - scripts/build/koharu/packages/bridge/scripts/prepare-wasm.ts → `packages/koharu/bridge/scripts/prepare-wasm.ts`
 - scripts/build/ui/packages/material-web/scripts/build.ts → `m3/packages/material-web/scripts/build.ts`
@@ -335,8 +335,8 @@ Preuve : import relatif sans fichier cible (`.ts`, `.tsx`, `/index.ts`, `.js`→
 - scripts/build/ui/packages/material-web/scripts/generate-sass-token-meta.ts → `m3/packages/material-web/scripts/generate-sass-token-meta.ts`
 - scripts/migration/ui/packages/material-web/migration/codemods/scripts/run-fixtures.ts → `m3/packages/m3-codemods/scripts/run-fixtures.ts`
 - scripts/migration/ui/packages/material-web/migration/scripts/theme-to-tokens.ts → `m3/packages/m3-tokens/src/theme-to-tokens.ts`
-- scripts/tools/os/drive/core/scripts/combine.sh → `crates/os/drive/core/scripts/combine.sh`
-- scripts/tools/os/drive/core/scripts/update_spacedrive.sh → `crates/os/drive/core/scripts/update_spacedrive.sh`
+- scripts/tools/os/drive/core/scripts/combine.sh → `crates/os/kernel/comps/drive/core/scripts/combine.sh`
+- scripts/tools/os/drive/core/scripts/update_spacedrive.sh → `crates/os/kernel/comps/drive/core/scripts/update_spacedrive.sh`
 
 Conservé : scripts/tools/shenron/scripts/ops/wiki-databooks-indexer.ts (importé par 6 scripts `enrich-category-*` et l'audit de couverture), doublon de `apps/shenron/site/scripts/_wiki-databooks-indexer.ts` à unifier par Shenron.
 
@@ -373,8 +373,8 @@ Conservé : scripts/tools/shenron/scripts/ops/wiki-databooks-indexer.ts (import�
 `@aphrody/workspace`). Supprimés, sans appelant ou remplacés par leur propriétaire :
 
 - scripts/build/discord/** et scripts/audit/discord/** : kit de scripts amont discord.js (paquets
-  cibles retirés avec `upstream/discord`, aucune provenance dans `config/upstream-sources.json` ni
-  `config/vendor.json`)
+  cibles retirés avec `upstream/discord`, aucune provenance dans `tools/config/upstream-sources.json` ni
+  `tools/config/vendor.json`)
 - scripts/inlineScripts.mts : script amont Base UI (`pnpm inline-scripts`, cible `packages/react/src`
   absente)
 - scripts/build/ui/packages/m3-theme/scripts/{mcu-fixture,mcu-image-fixture}.ts : copies périmées de
@@ -384,7 +384,7 @@ Conservé : scripts/tools/shenron/scripts/ops/wiki-databooks-indexer.ts (import�
 - scripts/tools/web/apps/bxc/scripts/x-coverage.ts : doublon de `scripts/tools/web/x-coverage.ts`
 - scripts/audit/live-candidates/web-db-count.ts : sonde de la base bxc, sans appelant
 - scripts/tools/os/scripts/absorb-upstream.ts : sans appelant, dépendance `smol-toml` absente ;
-  l’intégration amont passe par `scripts/tools/vendor/fetch.ts` et `config/vendor.json`
+  l’intégration amont passe par `scripts/tools/vendor/fetch.ts` et `tools/config/vendor.json`
 - scripts/tools/workspace/learn-monorepo.ts et config/knowledge-scope.json : `knowledge:scan` non
   déclaré ; catalogue `scripts/tools/workspace/ecosystem.ts` et `aphrody scan`
 - scripts/tools/workspace/maintain-crates.ts : remplacé par `aphrody-infra maintenance`

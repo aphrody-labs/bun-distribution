@@ -200,7 +200,7 @@ export function policyFile(yoloRoot: string, explicit?: string): string | null {
     explicit,
     process.env["YOLO_HOST_POLICY"],
     join(process.cwd(), "host-policy.toml"),
-    join(yoloRoot, "config/host/host-policy.toml"),
+    join(yoloRoot, "tools/config/host/host-policy.toml"),
   ];
   for (const c of candidates) if (c !== undefined && c !== "" && existsSync(c)) return c;
   return null;

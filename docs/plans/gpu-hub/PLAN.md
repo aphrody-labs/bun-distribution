@@ -15,9 +15,9 @@ v86 so the final image is as WASM as possible; exploit Bun-in-Rust and `bun:ffi`
 | C ABI 1.5: `yolo_gpu_call_start` (`gpu.info`, `gpu.wgsl`, `gpu.cuda`), bounded workers, cancellable before start | `crates/engine/yolo-runtime` features `gpu`/`cuda` (`src/gpu.rs`, header) | `cargo test -p yolo-runtime` with no features / `gpu` / `cuda`: 33 / 36 / 36 passed |
 | cdylib export | `crates/interop/ffi` features `gpu` (now also `yolo-runtime/gpu`) and `cuda` | `cargo check -p aphrody-ffi --features cuda` started, **not completed** (interrupted); run it first |
 | Bun SDK: `GpuRuntime` (`info`, `wgsl`, `cuda`) on `bun:ffi` | `packages/engine/runtime/src/gpu.ts`, export `./gpu`, `test/gpu.test.ts` | `tsc --noEmit` clean, oxlint/oxfmt clean; tests skip without `YOLO_RUNTIME_LIB` (no GPU artifact built here) |
-| Aphrody OS container: Alpine 3.24, uutils/sudo-rs/eza/Nushell+Starship/Ion/ripgrep/fd/bottom/Helix/Yazi/Zellij, Bun 1.4.2, `agent` yolo account | `config/container/aphrody-os/Dockerfile` (default target) | `aphrody-selftest`: 25/25, image 284 MB |
+| Aphrody OS container: Alpine 3.24, uutils/sudo-rs/eza/Nushell+Starship/Ion/ripgrep/fd/bottom/Helix/Yazi/Zellij, Bun 1.4.2, `agent` yolo account | `tools/config/container/aphrody-os/Dockerfile` (default target) | `aphrody-selftest`: 25/25, image 284 MB |
 | COSMIC Epoch 1.0.15 desktop target, bash-free Bun launcher | same Dockerfile `--target desktop`, `desktop/usr/local/bin/aphrody-desktop` | Nested session rendered headless (weston pixman + grim, `desktop-test/`): panel, applets, dock |
-| Bootable VM variant: Linux 7.2.9 `LLVM=1` + Rust, Bun as init, Rust PID 1 shim | `config/container/aphrody-os/vm/`, `patches/linux/0001-misc-add-aphrody_runtime-Rust-driver.patch` | Booted in QEMU (`-cpu max`): 9/11 checks, the 2 failures fixed (uutils `--features unix`, ACPI) but not re-booted |
+| Bootable VM variant: Linux 7.2.9 `LLVM=1` + Rust, Bun as init, Rust PID 1 shim | `tools/config/container/aphrody-os/vm/`, `patches/linux/0001-misc-add-aphrody_runtime-Rust-driver.patch` | Booted in QEMU (`-cpu max`): 9/11 checks, the 2 failures fixed (uutils `--features unix`, ACPI) but not re-booted |
 
 ## Single process, today
 
@@ -36,7 +36,7 @@ GPU process for page WebGPU: that is Chromium's design, not something the hub ca
    (needs a CEF-capable build host). Page access stays behind Tauri capabilities.
 3. **Obscura `navigator.gpu`**: `deno_webgpu 0.226` matches deno_core 0.412 but pins wgpu-core **29.0.1**;
    the hub is wgpu **30.0.1**. Port it to wgpu 30 as an integrated patch under `crates/web/obscura-js`
-   (provenance in `config/upstream-sources.json`), share the hub device, gate it per context
+   (provenance in `tools/config/upstream-sources.json`), share the hub device, gate it per context
    (`webgpu: true`), apply `apply_limit_buckets` for remote pages. Spec reference: the wgpu
    `webgpu-specs` skill (WebGPU/WGSL sources under `target/claude/` (not in repo) (generated or machine-local artifact; availability depends on the build host), gpuweb `454d33cf`, 2026-09-23).
 4. **JSC instead of V8** (fusion plan §11.3): the `JsEngine` seam is still to be written; Bun-in-Rust

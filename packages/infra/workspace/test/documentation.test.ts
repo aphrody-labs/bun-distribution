@@ -31,7 +31,7 @@ function fixture(): { root: string; put: (path: string, content: string) => void
     mkdirSync(dirname(join(root, path)), { recursive: true });
     writeFileSync(join(root, path), content);
   };
-  put("config/docs/documentation.json", JSON.stringify(config));
+  put("tools/config/docs/documentation.json", JSON.stringify(config));
   return { root, put };
 }
 
@@ -77,13 +77,13 @@ describe("unified documentation", () => {
       expect(() => documentationPath(root, "docs/../other.md")).toThrow("Unsafe");
       symlinkSync(tmpdir(), join(root, "linked"));
       expect(() => documentationPath(root, "linked/file.md")).toThrow("symlink");
-      put("config/docs/documentation.json", JSON.stringify({ ...config, visibility: "public" }));
+      put("tools/config/docs/documentation.json", JSON.stringify({ ...config, visibility: "public" }));
       expect(() => loadDocumentationConfig(root)).toThrow("private visibility");
-      put("config/docs/documentation.json", JSON.stringify({ ...config, inventory: ".npmrc" }));
+      put("tools/config/docs/documentation.json", JSON.stringify({ ...config, inventory: ".npmrc" }));
       expect(() => loadDocumentationConfig(root)).toThrow("owned docs paths");
       const target = { root: ".", id: "same", language: "typescript", paths: ["src.ts"] };
       put(
-        "config/docs/documentation.json",
+        "tools/config/docs/documentation.json",
         JSON.stringify({ ...config, sources: [target, target] }),
       );
       expect(() => loadDocumentationConfig(root)).toThrow("source id");

@@ -9,7 +9,7 @@
 
 | Catégorie | Pattern source | Notre implémentation | Statut |
 |---|---|---|---|
-| **Toolchain pinning** | Chromium `tools/rust/` | `rust-toolchain.toml` nightly + 14 targets | ✅ |
+| **Toolchain pinning** | Chromium `tools/rust/` (not in repo) | `rust-toolchain.toml` nightly + 14 targets | ✅ |
 | **Workspace deps centralisées** | Android `rustlibs:` | `[workspace.dependencies]` 80 deps | ✅ |
 | **Workspace inheritance** | Android Soong | `[workspace.package]` + `*.workspace = true` | ✅ |
 | **`crate-type` cdylib+rlib** | Android `rust_ffi` | `bun_ffi`, `google_os`, `python_ffi` | ✅ |

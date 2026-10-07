@@ -2497,7 +2497,7 @@ nginx failed failed
             "--offset",
             "500",
             "--catalog",
-            "config/service-catalog.json",
+            "tools/config/service-catalog.json",
             "--dry-run",
         ])
         .unwrap();
@@ -2505,7 +2505,7 @@ nginx failed failed
             Commands::Tunnel { args, action } => {
                 assert_eq!(args.services.as_deref(), Some("shenron-pg-tunnel,redis"));
                 assert_eq!(args.offset, 500);
-                assert_eq!(args.catalog.as_deref(), Some(Path::new("config/service-catalog.json")));
+                assert_eq!(args.catalog.as_deref(), Some(Path::new("tools/config/service-catalog.json")));
                 assert!(args.dry_run);
                 assert!(action.is_none());
             },

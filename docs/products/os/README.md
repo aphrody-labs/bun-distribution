@@ -13,7 +13,7 @@ through local MCP/IPC; desktop, AI and Bun callers are clients.
 - Persistent work: `aphrody-jobs`, `cron`, `task-runner`, events and telemetry.
 - System libraries: coreutils adapters, reverse engineering, capture, filesystem
   indexing/search, secrets and settings. See [architecture](../../architecture/os/ARCHITECTURE.md).
-- Drive backend: the isolated [FSL migration workspace](../../../crates/os/drive/README.md) holds
+- Drive backend: the isolated [FSL migration workspace](../../../crates/os/kernel/comps/drive/README.md) holds
   the imported core, daemon, CLI and bundled adapters pending runtime cutover.
 - Bun clients: `@aphrody/os`, `@aphrody-code/winclean`; the unified agent plugin in the sibling `../aphrody-ai/plugins/aphrody/` repository path.
 

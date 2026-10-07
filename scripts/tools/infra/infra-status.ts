@@ -10,7 +10,7 @@
  * This file intentionally never starts, stops, reloads or installs anything.
  * Deployment remains explicit through `aphrody-infra deploy`.
  *
- * The only service registry is config/service-catalog.json; components, ports and
+ * The only service registry is tools/config/service-catalog.json; components, ports and
  * retired units are derived from it.
  */
 
@@ -19,7 +19,7 @@ import { readFile } from "node:fs/promises";
 
 const INFRA_ROOT = process.env.APHRODY_INFRA_ROOT ?? `${import.meta.dir}/../../..`;
 const CATALOG_PATH =
-  process.env.APHRODY_SERVICE_CATALOG ?? `${INFRA_ROOT}/config/service-catalog.json`;
+  process.env.APHRODY_SERVICE_CATALOG ?? `${INFRA_ROOT}/tools/config/service-catalog.json`;
 const catalog = JSON.parse(await readFile(CATALOG_PATH, "utf8")) as Catalog;
 const json = process.argv.includes("--json");
 const strict = process.argv.includes("--strict");

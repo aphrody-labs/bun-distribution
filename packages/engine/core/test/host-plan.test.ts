@@ -39,7 +39,7 @@ let dir: string;
 let root: string;
 beforeAll(() => {
   dir = mkdtempSync(join(tmpdir(), "host-plan-"));
-  root = join(dir, "config/host");
+  root = join(dir, "tools/config/host");
   mkdirSync(join(root, "systemd/aphrody"), { recursive: true });
   mkdirSync(join(root, "systemd/shared"), { recursive: true });
   mkdirSync(join(dir, "scripts/tools/infra"), { recursive: true });
@@ -60,7 +60,7 @@ beforeAll(() => {
   );
   writeFileSync(join(root, "systemd/aphrody/other.service"), unitText("127.0.0.1:9000"));
   writeFileSync(
-    join(dir, "config/service-catalog.json"),
+    join(dir, "tools/config/service-catalog.json"),
     JSON.stringify({
       services: [
         { id: "aphrody-a2a", port: 8788, health: "http://127.0.0.1:8788/ping" },

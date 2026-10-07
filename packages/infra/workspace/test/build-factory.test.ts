@@ -338,10 +338,10 @@ test.skipIf(process.platform === "win32")(
     const f = await preparationFixture();
     try {
       const root = join(f.root, "owner-config");
-      await mkdir(join(root, "config"), { recursive: true });
-      await writeFile(join(root, "config/build-factory.json"), JSON.stringify(f.declared));
+      await mkdir(join(root, "tools", "config"), { recursive: true });
+      await writeFile(join(root, "tools/config/build-factory.json"), JSON.stringify(f.declared));
       await writeFile(
-        join(root, "config/commit-sync.json"),
+        join(root, "tools/config/commit-sync.json"),
         JSON.stringify({
           schemaVersion: 1,
           owners: ["aphrody-labs"],
@@ -456,7 +456,7 @@ test("factory plans use the existing Infra owner and shared serial lock", () => 
 
 test("Yolo shares factory caches while preserving its canonical packaging target directory", async () => {
   const declared: BuildFactoryConfig = await Bun.file(
-    join(import.meta.dir, "../../../../config/build-factory.json"),
+    join(import.meta.dir, "../../../../tools/config/build-factory.json"),
   ).json();
   expect(declared.repositories.yolo).toBe("/srv/aphrody-build/workspaces/yolo");
   const plan = buildFactoryPlan(declared, "yolo", revision, ["just", "runtime-package"]);

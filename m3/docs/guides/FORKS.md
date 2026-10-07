@@ -1,6 +1,6 @@
 # Forks
 
-M3 vendors no fork. `config/vendor.json` lists Bun (`vendor/bun`) as the only on-demand source, fetched by
+M3 vendors no fork. `tools/config/vendor.json` lists Bun (`vendor/bun`) as the only on-demand source, fetched by
 `bun scripts/tools/vendor/fetch.ts`.
 
 | Package | Source |
@@ -12,4 +12,4 @@ M3 vendors no fork. `config/vendor.json` lists Bun (`vendor/bun`) as the only on
 | `@aphrody/material-design-icons` | a local catalogue checkout (`M3_ICONS_ROOT`) |
 
 The fork repositories (`aphrody-labs/material-web`, `material-color-utilities`, `material-design-icons`, `fonts`)
-remain on GitHub; their last pins are in the history of `config/vendor.json` (before 2026-10-05).
+remain on GitHub; their last pins are in the history of `tools/config/vendor.json` (before 2026-10-05).

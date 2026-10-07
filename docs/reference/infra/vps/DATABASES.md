@@ -13,8 +13,8 @@
 The VPS combines PostgreSQL (primary relational store), Redis (in-memory cache) and embedded
 SQLite files (bounded local caches and crawl indexes). Policy: PostgreSQL is primary, SQLite is a
 bounded local cache (`deduplication.database` in
-[`config/application-contracts.json`](../../../../config/application-contracts.json)). Ports and
-private paths are declared in [`config/production-topology.json`](../../../../config/production-topology.json)
+[`tools/config/application-contracts.json`](../../../../tools/config/application-contracts.json)). Ports and
+private paths are declared in [`tools/config/production-topology.json`](../../../../tools/config/production-topology.json)
 and the catalog; connection strings are operator secrets and never appear in this repository.
 Restored from the retired `aphrody` monolith (`docs/reference/infra/vps/DATABASES.md`); the remote database host
 it used to print was removed.
@@ -40,7 +40,7 @@ the Web and AI databases are described in [`docs/reference/infra/TOPOLOGY.md`](.
 it for the offline queue, distributed locks and transient Discord state (dedicated logical
 database); Shenron keys are prefixed `dbz:*`. Redis is a cache: nothing in it is the only copy of
 application data, and it is excluded from the backup data classes unless
-[`config/scheduler-policy.json`](../../../../config/scheduler-policy.json) says otherwise.
+[`tools/config/scheduler-policy.json`](../../../../tools/config/scheduler-policy.json) says otherwise.
 
 ## 3. SQLite
 

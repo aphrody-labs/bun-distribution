@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-// systemd: a unit in the shape of the yolo host units (`config/host/systemd/<ns>/*.service`: Type=simple, an
+// systemd: a unit in the shape of the yolo host units (`tools/config/host/systemd/<ns>/*.service`: Type=simple, an
 // unprivileged user, `WorkingDirectory=/srv/<ns>/current`, an `EnvironmentFile` under `/etc/<ns>`, restart on
-// failure), with the sandbox written as the shared drop-ins of `config/host/systemd/shared` (copied from the
+// failure), with the sandbox written as the shared drop-ins of `tools/config/host/systemd/shared` (copied from the
 // yolo checkout when it is there), a catalog entry in the `service-catalog.json` format and an env example.
 // Nothing here installs anything: hosts change through Infra's catalog, plan first.
 import { existsSync, readFileSync } from "node:fs";
@@ -18,9 +18,9 @@ export const SHARED_DROPINS: ReadonlyArray<readonly [string, string]> = [
   ["syscall-service.conf", "# Allow the @system-service syscall set and deny obsolete/privileged calls.\n[Service]\nSystemCallFilter=@system-service\nSystemCallFilter=~@obsolete @privileged\n"],
 ];
 
-/** A shared drop-in from `<yolo>/config/host/systemd/shared`, else the embedded text. */
+/** A shared drop-in from `<yolo>/tools/config/host/systemd/shared`, else the embedded text. */
 export function sharedDropin(yoloRoot: string, file: string): string {
-  const path = join(yoloRoot, "config/host/systemd/shared", file);
+  const path = join(yoloRoot, "tools/config/host/systemd/shared", file);
   if (existsSync(path)) return readFileSync(path, "utf8");
   return SHARED_DROPINS.find(([name]) => name === file)![1];
 }

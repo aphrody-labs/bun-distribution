@@ -89,7 +89,7 @@ export function parsePluginArgs(argv: string[]): Args {
   const result: Args = {
     command: "status",
     store: pluginStorePath(),
-    config: resolve(import.meta.dir, "../../../../config/ai/agent-plugin-providers.json"),
+    config: resolve(import.meta.dir, "../../../../tools/config/ai/agent-plugin-providers.json"),
     home: userHome(),
     cwd: process.cwd(),
     providers: [],

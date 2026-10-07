@@ -192,7 +192,7 @@ test("argument parsing", () => {
 
 test("the committed config parses and lists every tracked crate", async () => {
   const text = await Bun.file(
-    new URL("../../../../config/tauri-upstream.json", import.meta.url),
+    new URL("../../../../tools/config/tauri-upstream.json", import.meta.url),
   ).text();
   const config = parseConfig(text);
   expect(config.line).toBe(3);

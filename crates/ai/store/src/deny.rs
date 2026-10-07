@@ -6,7 +6,7 @@
 const COMMON_DIRS: &[&str] = &[".ssh", ".gnupg", ".aws", "node_modules", "target", ".git"];
 
 /// Directories that hold secrets or heavy private state when the root is an agent home
-/// (`~/.aphrody`); they are ordinary source folders in a repository (`crates/os/secrets`).
+/// (`~/.aphrody`); they are ordinary source folders in a repository (`crates/os/ostd/secrets`).
 const HOME_DIRS: &[&str] =
     &["cookies", "credentials", "secrets", "private", "models", "services", "drive-sync", "ocr"];
 
@@ -105,7 +105,7 @@ mod tests {
         ] {
             assert!(is_denied(path, DenyPolicy::Home), "{path} must be denied in a home");
         }
-        assert!(!is_denied("crates/os/secrets/src/lib.rs", DenyPolicy::Repo));
+        assert!(!is_denied("crates/os/ostd/secrets/src/lib.rs", DenyPolicy::Repo));
         assert!(!is_denied("crates/ai/models/src/store.rs", DenyPolicy::Repo));
     }
 

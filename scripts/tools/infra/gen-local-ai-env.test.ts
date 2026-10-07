@@ -6,7 +6,7 @@ const contract = await loadContract();
 const rendered = render(contract);
 
 describe("local-ai env example", () => {
-  test("the committed example matches config/local-ai.json", async () => {
+  test("the committed example matches tools/config/local-ai.json", async () => {
     const committed = (await Bun.file(examplePath).text()).replaceAll("\r\n", "\n");
     expect(committed).toBe(rendered);
   });
@@ -24,7 +24,7 @@ describe("local-ai env example", () => {
 
   test("the vps embed binding pins the Shenron index space", () => {
     const vpsTarget = contract.targets.vps;
-    if (!vpsTarget) throw new Error("config/local-ai.json declares no vps target");
+    if (!vpsTarget) throw new Error("tools/config/local-ai.json declares no vps target");
     const vps = vpsTarget.bindings?.embed?.env ?? {};
     const index = contract.indexes?.["shenron-rag"];
     expect(vps.APHRODY_AI_EMBED_MODEL).toBe(index?.servedModel);

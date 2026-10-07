@@ -5,7 +5,7 @@
 Status 2026-10-05 (one desktop runtime, CEF: [plan](../../plans/tauri-cef/PLAN.md)). Survey 2026-10-01, comparison and fork pins:
 [`docs/research/web/tauri-debugging-survey-2026-10-01.md`](../../research/web/tauri-debugging-survey-2026-10-01.md).
 Registry of pins and patches: the `debuggers` block of
-[`config/tauri-upstream.json`](../../../config/tauri-upstream.json).
+[`tools/config/tauri-upstream.json`](../../../tools/config/tauri-upstream.json).
 
 ## What was built, and what was not verified
 
@@ -13,7 +13,7 @@ Registry of pins and patches: the `debuggers` block of
 | --------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | Pinned upstream forks                   | `.cache/upstream/mcp-server-tauri` (not in repo) (generated or machine-local artifact; presence depends on the build host) (checkout); tauri-plugin-webdriver and victauri are read live (`aphrody git upstream read <id> <path>`) | One checkout (Cargo path dependency); the others are catalogue entries ([UPSTREAMS.md](../../reference/infra/UPSTREAMS.md)). GitHub forks under `aphrody-code`; nothing pushed.                                          |
 | Patch set over the hypothesi bridge     | `patches/tauri-plugin-mcp-bridge-0.13.0-tauri3.patch` (11 files), applied to `.cache/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge` (not in repo) (generated or machine-local artifact; presence depends on the build host) | Applies to the pristine pin and reproduces the working tree. **Not compiled or run** after patching.        |
-| Feature-gated host plugin               | `crates/ui/tauri-wrap` (`aphrody_tauri_wrap::debug`, feature `debug-bridge`)              | **Not compiled.** Registered in `config/tauri-apps.json`; `bun run tauri:apps:check` passes.                                   |
+| Feature-gated host plugin               | `crates/ui/tauri-wrap` (`aphrody_tauri_wrap::debug`, feature `debug-bridge`)              | **Not compiled.** Registered in `tools/config/tauri-apps.json`; `bun run tauri:apps:check` passes.                                   |
 | Bun client                              | `@aphrody/agent-browser/tauri` (`listTauriApps`, `TauriBridge`)                           | 6 tests pass against a fake bridge; the DOM snapshot script runs in the aphrody-web engine on a fixture page.                 |
 | App wiring                              | `crates/ui/model-view` (not in repo) feature `debug-bridge`                                             | **Not compiled.** Window launch under X11 was seen with a build that predates the plugin (see below).                          |
 

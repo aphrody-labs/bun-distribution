@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 [workspace]
 resolver = "3"
-members = ["crates/ui/*", "crates/infra/*", "crates/contracts/*", "crates/os/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/ml/*", "crates/ai/*", "crates/google/*", "crates/interop/*", "crates/web/*", "crates/engine/*", "crates/tauri/*"]
+members = ["crates/ui/*", "crates/infra/*", "crates/contracts/*", "crates/os/ostd/*", "crates/os/kernel/core", "crates/os/kernel/client", "crates/os/kernel/comps/*", "crates/os/kernel/libs/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/ml/*", "crates/ai/*", "crates/google/*", "crates/interop/*", "crates/web/*", "crates/engine/*", "crates/tauri/*"]
 exclude = [
   "crates/contracts/schema",
-  "crates/os/drive",
+  "crates/os/kernel/comps/drive",
   "crates/tauri/aphrody-tauri-api",
   "crates/tauri/aphrody-tauri-plugin-sql",
 ]
@@ -47,12 +47,12 @@ aes-gcm = { version = "0.11", features = [] }
 aphrody = { path = "crates/infra/aphrody", version = "1.0.0", features = [] }
 aphrody-command = { path = "crates/infra/aphrody-command", version = "1.0.0", features = [] }
 aphrody-a2a = { path = "crates/contracts/a2a", version = "0.3", features = [] }
-aphrody-a2a-client = { path = "crates/os/a2a-client", version = "0.1", default-features = false, features = [] }
-aphrody-a2a-coord = { path = "crates/os/a2a-coord", version = "1.0.0-canary", features = [] }
-aphrody-a2a-server = { path = "crates/os/a2a-server", version = "0.3", default-features = false, features = [] }
-aphrody-a2a-pb = { path = "crates/os/a2a-pb", version = "0.1" }
-aphrody-kernel-client = { path = "crates/os/kernel-client", version = "1.0.0-canary" }
-aphrody-subsystem = { path = "crates/os/subsystem", version = "1.0.0-canary" }
+aphrody-a2a-client = { path = "crates/os/kernel/comps/a2a-client", version = "0.1", default-features = false, features = [] }
+aphrody-a2a-coord = { path = "crates/os/kernel/comps/a2a-coord", version = "1.0.0-canary", features = [] }
+aphrody-a2a-server = { path = "crates/os/kernel/comps/a2a-server", version = "0.3", default-features = false, features = [] }
+aphrody-a2a-pb = { path = "crates/os/kernel/comps/a2a-pb", version = "0.1" }
+aphrody-kernel-client = { path = "crates/os/kernel/client", version = "1.0.0-canary" }
+aphrody-subsystem = { path = "crates/os/ostd/subsystem", version = "1.0.0-canary" }
 aphrody-agent-home = { path = "crates/ai/agent-home", version = "1.0.0", features = [] }
 aphrody-agent-proto = { path = "crates/contracts/agent-proto", version = "1.0.0-canary", features = [] }
 aphrody-agent-runtime = { path = "crates/ai/agent-runtime", version = "1.0.0", features = [] }
@@ -63,30 +63,30 @@ aphrody-identity = { path = "crates/ui/identity", version = "1.0.0-canary" }
 aphrody-antigravity = { path = "crates/google/antigravity", version = "1.0.0", features = [] }
 aphrody-app-protocol = { path = "crates/contracts/app-protocol", version = "1.0.0-canary", features = [] }
 aphrody-app-server = { path = "crates/ai/app-server", version = "1.0.0", features = [] }
-aphrody-backend = { path = "crates/os/backend", version = "1.0.0-canary", features = [] }
+aphrody-backend = { path = "crates/os/ostd/backend", version = "1.0.0-canary", features = [] }
 aphrody-boq = { path = "crates/google/boq", version = "1.0.0", features = [] }
-aphrody-capture = { path = "crates/os/capture", version = "1.0.0-canary", features = [] }
+aphrody-capture = { path = "crates/os/kernel/libs/capture", version = "1.0.0-canary", features = [] }
 aphrody-config = { path = "crates/ai/config", version = "1.0.0", features = [] }
-aphrody-diagnostics = { path = "crates/os/diagnostics", version = "1.0.0" }
+aphrody-diagnostics = { path = "crates/os/kernel/comps/diagnostics", version = "1.0.0" }
 aphrody-context = { path = "crates/ai/context", version = "1.0.0", features = [] }
 aphrody-embed = { path = "crates/ai/embed", version = "1.0.0", default-features = false, features = [] }
 aphrody-engine = { path = "crates/ai/engine", version = "1.0.0", features = [] }
 aphrody-engine-mistralrs = { path = "crates/ai/engine-mistralrs", version = "1.0.0" }
 aphrody-firefly = { path = "crates/ai/firefly", version = "1.0.0", features = [] }
-aphrody-fsindex = { path = "crates/os/fsindex", version = "1.0.0-canary", features = [] }
+aphrody-fsindex = { path = "crates/os/kernel/libs/fsindex", version = "1.0.0-canary", features = [] }
 aphrody-gateway = { path = "crates/ai/gateway", version = "1.0.0", features = [] }
 aphrody-gemini-runtime = { path = "crates/google/gemini-runtime", version = "1.0.0", features = [] }
 aphrody-gemini-web = { path = "crates/google/gemini-web", version = "0.2.1", features = [] }
 aphrody-git = { path = "crates/infra/git", version = "0.1.0", features = [] }
 aphrody-google = { path = "crates/google/google", version = "1.0.0", features = [] }
 aphrody-gpu-backend = { path = "crates/native/gpu-backend", version = "1.0.0-canary" }
-aphrody-guard = { path = "crates/os/guard", version = "1.0.0-canary", features = [] }
+aphrody-guard = { path = "crates/os/ostd/guard", version = "1.0.0-canary", features = [] }
 aphrody-http-error = { path = "crates/ai/http-error", version = "1.0.0", features = [] }
 aphrody-infer = { path = "crates/ai/infer", version = "1.0.0", features = ["onnx"] }
 aphrody-infra = { path = "crates/infra/infra", version = "0.1.0" }
 aphrody-jev = { path = "crates/ai/jev", version = "1.0.0", features = [] }
-aphrody-jobs = { path = "crates/os/jobs", version = "1.0.0-canary", features = [] }
-aphrody-kernel = { path = "crates/os/kernel", version = "1.0.0-canary", default-features = false, features = [] }
+aphrody-jobs = { path = "crates/os/kernel/comps/jobs", version = "1.0.0-canary", features = [] }
+aphrody-kernel = { path = "crates/os/kernel/core", version = "1.0.0-canary", default-features = false, features = [] }
 aphrody-llama-server = { path = "crates/ai/llama-server", version = "1.0.0", features = [] }
 aphrody-llm-infra = { path = "crates/ai/llm-infra", version = "1.0.0", features = [] }
 aphrody-m3-tokens = { path = "crates/ui/m3-tokens", version = "1.0.0-canary", features = [] }
@@ -106,16 +106,16 @@ aphrody-ocr-core = { path = "crates/ai/ocr-core", version = "1.0.0", features = 
 aphrody-ocr-onnx = { path = "crates/ai/ocr-onnx", version = "1.0.0", features = [] }
 aphrody-ocr-vlm = { path = "crates/ai/ocr-vlm", version = "1.0.0", features = [] }
 aphrody-patch = { path = "crates/ai/patch", version = "1.0.0", features = [] }
-aphrody-proc = { path = "crates/os/proc", version = "1.0.0-canary", features = [] }
+aphrody-proc = { path = "crates/os/ostd/proc", version = "1.0.0-canary", features = [] }
 aphrody-prompts = { path = "crates/ai/prompts", version = "1.0.0", features = [] }
 aphrody-providers = { path = "crates/ai/providers", version = "1.0.0", features = [] }
 aphrody-rag = { path = "crates/ai/rag", version = "1.0.0", features = [] }
 aphrody-rag-core = { path = "crates/ai/rag-core", version = "1.0.0", features = [] }
 aphrody-rag-eval = { path = "crates/ai/rag-eval", version = "1.0.0", features = [] }
-aphrody-re = { path = "crates/os/re", version = "1.0.0-canary", features = [] }
+aphrody-re = { path = "crates/os/kernel/comps/re", version = "1.0.0-canary", features = [] }
 aphrody-rollout = { path = "crates/ai/rollout", version = "1.0.0", features = [] }
 aphrody-router = { path = "crates/ai/router", version = "1.0.0", features = [] }
-aphrody-secrets = { path = "crates/os/secrets", version = "1.0.0-canary", features = [] }
+aphrody-secrets = { path = "crates/os/ostd/secrets", version = "1.0.0-canary", features = [] }
 aphrody-session = { path = "crates/ai/session", version = "1.0.0", features = [] }
 aphrody-skills = { path = "crates/ai/skills", version = "1.0.0", features = [] }
 aphrody-ssh = { path = "crates/infra/ssh", version = "0.1.0", features = [] }
@@ -148,7 +148,7 @@ aphrody-web-frames = { path = "crates/web/web-frames", version = "0.1.0", featur
 aphrody-web-index = { path = "crates/web/web-index", version = "0.1.0", features = [] }
 aphrody-web-service = { path = "crates/web/web-service", version = "1.0.0", features = [] }
 aphrody-x = { path = "crates/web/x", version = "0.3.1", features = [] }
-aphrody-winclean = { path = "crates/os/winclean", version = "1.0.0-canary", features = [] }
+aphrody-winclean = { path = "crates/os/kernel/comps/winclean", version = "1.0.0-canary", features = [] }
 aphrody-yolo = { path = "crates/infra/yolo", version = "0.1.0" }
 arc-swap = "1.9.2"
 arrow-array = { version = "58", features = [] }
@@ -286,10 +286,10 @@ prost-types        = { version = "0.14" }
 pbjson             = { version = "0.9" }
 pbjson-types       = { version = "0.9" }
 pbjson-build       = { version = "0.9" }
-aphrody-cron = { path = "crates/os/cron", version = "1.0.0-canary", features = [] }
-aphrody-sandbox = { path = "crates/os/sandbox", version = "1.0.0-canary", features = [] }
-aphrody-task-runner = { path = "crates/os/task-runner", version = "1.0.0-canary", features = [] }
-aphrody-telemetry = { path = "crates/os/telemetry", version = "1.0.0-canary", features = [] }
+aphrody-cron = { path = "crates/os/kernel/comps/cron", version = "1.0.0-canary", features = [] }
+aphrody-sandbox = { path = "crates/os/kernel/comps/sandbox", version = "1.0.0-canary", features = [] }
+aphrody-task-runner = { path = "crates/os/kernel/comps/task-runner", version = "1.0.0-canary", features = [] }
+aphrody-telemetry = { path = "crates/os/kernel/comps/telemetry", version = "1.0.0-canary", features = [] }
 aphrody-bun-docs = { path = "crates/compat/bun-docs", version = "1.0.0-canary", features = [] }
 aes                = { version = "0.9.3" }
 argon2             = { version = "0.6" }
@@ -429,7 +429,7 @@ serde-saphyr = { path = "crates/compat/serde-saphyr" }
 taffy = { path = "crates/vendor/taffy" }
 # Integrated Unicode implementation preserves the private C++ namespace alongside V8.
 simdutf = { path = "crates/native/simdutf" }
-# tauri-plugin-dialog 3.0.0-alpha.2 predates tauri 3.0.0-alpha.3 (Manager::run_on_main_thread); see config/tauri-upstream.json
+# tauri-plugin-dialog 3.0.0-alpha.2 predates tauri 3.0.0-alpha.3 (Manager::run_on_main_thread); see tools/config/tauri-upstream.json
 
 # Build footprint (2026-10-02): full DWARF for 191 members and ~2,300 dependencies made target/debug ~250 GiB and
 # kept the WSL disk saturated during links. Line tables keep file:line backtraces and profiler symbols for workspace

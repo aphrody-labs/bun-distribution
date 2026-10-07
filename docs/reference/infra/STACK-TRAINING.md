@@ -1,6 +1,6 @@
 # Stack training registry
 
-`config/stack-training.json` est la mémoire opérationnelle de l’orchestrateur,
+`tools/config/stack-training.json` est la mémoire opérationnelle de l’orchestrateur,
 pas un modèle entraîné avec des secrets. Elle enregistre les dépôts de
 référence et les packages à meilleur ratio valeur/réutilisation pour décider
 des builds et intégrations.
@@ -27,6 +27,6 @@ de runtime.
 `repositories` est aussi le registre des dépôts vivants : `aphrody-infra
 validate` refuse tout `sourceRepo` du catalogue de services, clé
 `policies.applicationRoots`, dépôt source ou consommateur de
-`config/local-ai.json` et étape de `config/pipeline.json` qui n’y figure pas.
+`tools/config/local-ai.json` et étape de `tools/config/pipeline.json` qui n’y figure pas.
 `retiredRepositories` liste les dépôts retirés (le monolithe `aphrody`, scindé
 le 2026-09-25) et leurs successeurs ; les nommer est une erreur explicite.

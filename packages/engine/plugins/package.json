@@ -1,7 +1,7 @@
 {
   "name": "@aphrody/plugins",
   "version": "1.0.1",
-  "description": "Unified YOLO & Bun-TS7 plugin engine: generator, schema validation, doctrine enforcement and autonomous hook runtime",
+  "description": "Compatibility API for the plugin generator owned by @aphrody/yolo-cli",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -25,10 +25,12 @@
     "access": "public"
   },
   "scripts": {
-    "test": "bun test test/plugins.test.ts",
+    "test": "bun test ../yolo/test/plugins.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@aphrody/yolo-cli": "workspace:*"
+  },
   "engines": {
     "bun": ">=1.4.2"
   }

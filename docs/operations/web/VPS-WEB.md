@@ -3,8 +3,8 @@
 
 État vérifié le 2026-10-07 : `vps` et `dbfr` exécutent le moteur natif
 Obscura de la CLI multicall Aphrody. Les unités
-[`aphrody-web-browser-vps.service`](../../../config/host/systemd/aphrody/aphrody-web-browser-vps.service)
-et [`aphrody-web-browser-dbfr.service`](../../../config/host/systemd/aphrody/aphrody-web-browser-dbfr.service)
+[`aphrody-web-browser-vps.service`](../../../tools/config/host/systemd/aphrody/aphrody-web-browser-vps.service)
+et [`aphrody-web-browser-dbfr.service`](../../../tools/config/host/systemd/aphrody/aphrody-web-browser-dbfr.service)
 ont été composées, vérifiées et activées par le propriétaire Infra :
 
 ```sh

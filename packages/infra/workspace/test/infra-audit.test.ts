@@ -15,7 +15,7 @@ import {
 import { sensitiveInventoryPath } from "../../../../scripts/tools/infra/check-infra.ts";
 
 test("tracked inventory allows templates and SQL source but detects private runtime files", () => {
-  expect(sensitiveInventoryPath("config/local-ai.env.example")).toBe(false);
+  expect(sensitiveInventoryPath("tools/config/local-ai.env.example")).toBe(false);
   expect(sensitiveInventoryPath("config/schema.sql")).toBe(false);
   expect(sensitiveInventoryPath("config/.env.production")).toBe(true);
   expect(sensitiveInventoryPath("inventory/private.key")).toBe(true);

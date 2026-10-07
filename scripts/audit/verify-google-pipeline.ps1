@@ -47,7 +47,7 @@ $pythonWorkspaceManifest = Join-Path $PythonRoot 'pyproject.toml'
 $pythonFacade = Join-Path $PythonRoot 'packages/ai/py/aphrody/aphrody/google.py'
 $cargoWrapper = Join-Path $AphrodyRoot 'scripts/build/rust/cargo-serial.ps1'
 $pythonLock = Join-Path $PythonRoot 'uv.lock'
-$toolchainManifest = Join-Path $AphrodyRoot 'config/system-packages.json'
+$toolchainManifest = Join-Path $AphrodyRoot 'tools/config/system-packages.json'
 
 foreach ($path in @(
     (Join-Path $AphrodyRoot 'Cargo.toml'), $cargoManifest, $rustMain,
@@ -103,7 +103,7 @@ $pythonUvVersion = $pythonUvMatch.Groups[1].Value
 $toolchainManifestValue = Get-Content -LiteralPath $toolchainManifest -Raw | ConvertFrom-Json
 $monorepoUvVersion = [string]$toolchainManifestValue.toolchains.uv.version
 if ($pythonUvVersion -ne $monorepoUvVersion) {
-    throw "uv pin mismatch: monorepo config/system-packages.json requires $monorepoUvVersion, but py/ requires $pythonUvVersion. Align the workspace manifests before running the Python gate."
+    throw "uv pin mismatch: monorepo tools/config/system-packages.json requires $monorepoUvVersion, but py/ requires $pythonUvVersion. Align the workspace manifests before running the Python gate."
 }
 
 # These source checks reject literal key assignments without reading local env

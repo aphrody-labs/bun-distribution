@@ -24,7 +24,7 @@ reflète le résultat. Une API contiguë évite les copies vers des matrices
 possédées. Les tests couvrent aussi une frontière de tuile à 257 lignes.
 
 La recette Python embarque seulement les trois modules canoniques nécessaires
-depuis une révision Git fixée. `tools/packaging/pin_rag_source.py` lit les bytes
+depuis une révision Git fixée. `tools/packaging/pin_rag_source.py` (not in repo) lit les bytes
 commités, ajoute les déclarations de module du wrapper et produit une archive
 déterministe avec hashes. Les modules core sont inchangés dans cette projection.
 Le backend valide l'allowlist avant toute écriture. Il ne lit aucun checkout
