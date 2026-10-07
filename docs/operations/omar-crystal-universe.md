@@ -391,3 +391,25 @@ Vérification réelle sur Bun local `127.0.0.1:4335` contre Shenron : recherche
 `Goku` en DB → HTTP 200, huit titres `Dragon Ball — tome …`; source non prise en
 charge → HTTP 400. Les tests unitaires, lint strict, format et diff-check sont
 relancés pour cette modification; aucun texte OCR n'est conservé dans le dépôt.
+
+## 2026-10-07 — URL WebSocket configurable pour l'hébergement
+
+Le navigateur choisit maintenant `ws://localhost:4320` en développement local,
+`ws(s)://<hôte de la page>` ailleurs, ou la base optionnelle
+`DRAGON_PIXEL_WS_BASE`. Bun expose la configuration publique via `/api/config`
+avec `cache-control: no-store`; ses validateurs rejettent protocoles autres que
+`ws:`/`wss:`, identifiants, query et fragment avant exposition. Le client valide
+l'URL structurée, n'accepte que les salles existantes (ASCII, 1–32 caractères) et
+encode le chemin. Le serveur Axum conserve sa liste d'origines explicite : le
+déploiement doit router `/ws/{room}` jusqu'à Axum et définir
+`DRAGON_PIXEL_ALLOWED_ORIGINS` avec l'origine exacte de la page. Aucun proxy ni
+service public n'a été appliqué.
+
+Vérification : cas unitaires localhost, même origine HTTPS, préfixe configurable,
+salle invalide et bases aux schémas/identifiants interdits; `bun test` (13 tests,
+60 assertions), bundle navigateur (7 modules), Oxlint strict, Oxfmt et `git diff
+--check` passent. Les instances Bun locales `127.0.0.1:4337/4338` servent les
+assets et `/api/config` en 200, avec la base `wss://` attendue; un schéma HTTP
+configuré est ramené à une valeur vide sans divulguer la configuration invalide.
+Le routage proxy, l'allowlist d'une origine de production et une connexion WebSocket
+publique restent non qualifiés.

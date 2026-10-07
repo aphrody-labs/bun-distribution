@@ -5,6 +5,7 @@ import { readGamepadInput } from "./gamepad.js";
 import { DEFAULT_AVATAR, loadAvatar, normalizeAvatar, saveAvatar } from "./avatar.js";
 import { buildLoreSearchRequest, filterLoreSearchPayload } from "./lore-search.js";
 import { buildLoreCatalogRequest, normalizeLoreCatalogPayload } from "./lore-catalog.js";
+import { buildMultiplayerSocketUrl } from "./multiplayer-url.js";
 test("energy, transformation, cooldown and expiry", () => {
   const g = createGame();
   g.player.energy = 80;
@@ -202,4 +203,40 @@ test("Super catalogue sorts chapter IDs and rejects malformed entries", () => {
   expect(catalog.records.map(({ id }) => id)).toEqual(["ch1315", "ch1417"]);
   expect(catalog.omittedCount).toBe(1);
   expect(() => normalizeLoreCatalogPayload({ volumes: [] }, "invalid")).toThrow();
+});
+
+test("multiplayer uses the local port in development and same-origin TLS in production", () => {
+  expect(buildMultiplayerSocketUrl(new URL("http://localhost:4317/"), "test-room")).toBe(
+    "ws://localhost:4320/ws/test-room",
+  );
+  expect(buildMultiplayerSocketUrl(new URL("https://game.example.com/"), "test-room")).toBe(
+    "wss://game.example.com/ws/test-room",
+  );
+  expect(
+    buildMultiplayerSocketUrl(
+      new URL("https://game.example.com/"),
+      "test-room",
+      "wss://socket.example.net/rooms",
+    ),
+  ).toBe("wss://socket.example.net/rooms/ws/test-room");
+  expect(
+    buildMultiplayerSocketUrl(new URL("https://game.example.com/"), "test-room", "/multiplayer"),
+  ).toBe("wss://game.example.com/multiplayer/ws/test-room");
+  expect(() =>
+    buildMultiplayerSocketUrl(new URL("https://game.example.com/"), "bad room"),
+  ).toThrow();
+  expect(() =>
+    buildMultiplayerSocketUrl(
+      new URL("https://game.example.com/"),
+      "room",
+      "https://socket.example.net",
+    ),
+  ).toThrow();
+  expect(() =>
+    buildMultiplayerSocketUrl(
+      new URL("https://game.example.com/"),
+      "room",
+      "wss://user:password@socket.example.net",
+    ),
+  ).toThrow();
 });

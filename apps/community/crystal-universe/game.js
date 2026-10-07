@@ -4,6 +4,7 @@ import { drawAge1000Map } from "./age1000-map.js";
 import { readGamepadInput } from "./gamepad.js";
 import { loadAvatar, normalizeAvatar, saveAvatar } from "./avatar.js";
 import { createWebGpuArena } from "./webgpu.js";
+import { buildMultiplayerSocketUrl } from "./multiplayer-url.js";
 let initDragonPixelWasm = async () => {};
 let RustGameSession = null;
 try {
@@ -125,55 +126,76 @@ document.querySelector("#start").addEventListener("click", () => {
 document.querySelector("#pause").addEventListener("click", () => {
   if (active && game.status === "playing") pause(!paused);
 });
-document.querySelector("#join-room").addEventListener("click", () => {
+document.querySelector("#join-room").addEventListener("click", async () => {
   const room = roomName.value.trim();
   if (!/^[A-Za-z0-9_-]{1,32}$/.test(room)) {
     multiplayerStatus.textContent = "Utilise 1 à 32 lettres, chiffres, tirets ou traits bas.";
     return;
   }
-  multiplayerSocket?.close();
+  const joinButton = document.querySelector("#join-room");
+  joinButton.disabled = true;
+  document.querySelector("#leave-room").disabled = true;
+  const previousSocket = multiplayerSocket;
+  multiplayerSocket = null;
+  previousSocket?.close();
   multiplayerPlayers = [];
   multiplayerPlayerId = null;
-  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const url = `${protocol}//${window.location.hostname || "127.0.0.1"}:4320/ws/${encodeURIComponent(room)}`;
   multiplayerStatus.textContent = "Connexion au serveur Rust…";
-  const socket = new WebSocket(url);
-  multiplayerSocket = socket;
-  socket.addEventListener("open", () => {
-    if (multiplayerSocket !== socket) return;
-    document.querySelector("#join-room").disabled = true;
-    document.querySelector("#leave-room").disabled = false;
-    multiplayerStatus.textContent = `Connecté à la salle « ${room} »; synchronisation en cours.`;
-  });
-  socket.addEventListener("message", (event) => {
-    if (multiplayerSocket !== socket) return;
+  try {
+    let configuredBase = "";
     try {
-      const message = JSON.parse(event.data);
-      if (message.type === "joined") multiplayerPlayerId = message.player_id;
-      if (message.type === "game") game = message.game;
-      if (message.type === "joined" || message.type === "players") {
-        multiplayerPlayers = (message.players || []).filter(
-          (player) => player.id !== multiplayerPlayerId,
-        );
-        multiplayerStatus.textContent = `Salle « ${room} » · ${multiplayerPlayers.length + 1} joueur(s) connecté(s).`;
+      const response = await fetch("/api/config", { cache: "no-store" });
+      if (response.ok) {
+        const config = await response.json();
+        configuredBase =
+          typeof config.multiplayerWebSocketBase === "string"
+            ? config.multiplayerWebSocketBase
+            : "";
       }
     } catch {
-      multiplayerStatus.textContent = "Réponse du serveur Rust illisible.";
+      // An omitted config uses the local development port or the page's own host.
     }
-  });
-  socket.addEventListener("error", () => {
-    if (multiplayerSocket === socket)
-      multiplayerStatus.textContent = "Serveur Rust indisponible; le mode solo reste actif.";
-  });
-  socket.addEventListener("close", () => {
-    if (multiplayerSocket !== socket) return;
-    multiplayerSocket = null;
-    multiplayerPlayerId = null;
-    multiplayerPlayers = [];
-    document.querySelector("#join-room").disabled = false;
-    document.querySelector("#leave-room").disabled = true;
-    multiplayerStatus.textContent = "Déconnecté. Le mode solo reste actif.";
-  });
+    const socket = new WebSocket(buildMultiplayerSocketUrl(window.location, room, configuredBase));
+    multiplayerSocket = socket;
+    socket.addEventListener("open", () => {
+      if (multiplayerSocket !== socket) return;
+      document.querySelector("#leave-room").disabled = false;
+      multiplayerStatus.textContent = `Connecté à la salle « ${room} »; synchronisation en cours.`;
+    });
+    socket.addEventListener("message", (event) => {
+      if (multiplayerSocket !== socket) return;
+      try {
+        const message = JSON.parse(event.data);
+        if (message.type === "joined") multiplayerPlayerId = message.player_id;
+        if (message.type === "game") game = message.game;
+        if (message.type === "joined" || message.type === "players") {
+          multiplayerPlayers = (message.players || []).filter(
+            (player) => player.id !== multiplayerPlayerId,
+          );
+          multiplayerStatus.textContent = `Salle « ${room} » · ${multiplayerPlayers.length + 1} joueur(s) connecté(s).`;
+        }
+      } catch {
+        multiplayerStatus.textContent = "Réponse du serveur Rust illisible.";
+      }
+    });
+    socket.addEventListener("error", () => {
+      if (multiplayerSocket === socket)
+        multiplayerStatus.textContent = "Serveur Rust indisponible; le mode solo reste actif.";
+    });
+    socket.addEventListener("close", () => {
+      if (multiplayerSocket !== socket) return;
+      multiplayerSocket = null;
+      multiplayerPlayerId = null;
+      multiplayerPlayers = [];
+      joinButton.disabled = false;
+      document.querySelector("#leave-room").disabled = true;
+      multiplayerStatus.textContent = "Déconnecté. Le mode solo reste actif.";
+    });
+  } catch (error) {
+    joinButton.disabled = false;
+    multiplayerStatus.textContent =
+      error.message || "Impossible de configurer la connexion multijoueur.";
+  }
 });
 document.querySelector("#leave-room").addEventListener("click", () => {
   multiplayerSocket?.close(1000, "player left room");

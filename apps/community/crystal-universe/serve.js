@@ -10,18 +10,44 @@ const files = new Set([
   "engine.js",
   "gamepad.js",
   "avatar.js",
+  "multiplayer-url.js",
   "lore-catalog.js",
   "age1000-map.js",
   "dragon-pixel-wasm.js",
   "dragon-pixel-wasm_bg.wasm",
 ]);
 const shenronBase = process.env.SHENRON_API_BASE || "https://bot.dragonballfr.com";
+function publicMultiplayerWebSocketBase() {
+  const value = process.env.DRAGON_PIXEL_WS_BASE?.trim() || "";
+  if (!value) return "";
+  if (value.startsWith("/") && !value.startsWith("//"))
+    return value.includes("?") || value.includes("#") ? "" : value;
+  try {
+    const url = new URL(value);
+    if (
+      (url.protocol !== "ws:" && url.protocol !== "wss:") ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash
+    )
+      return "";
+    return `${url.protocol}//${url.host}${url.pathname}`;
+  } catch {
+    return "";
+  }
+}
 const server = Bun.serve({
   hostname: "127.0.0.1",
   port: Number(process.env.PORT || 4317),
   fetch(request) {
     const pathname = new URL(request.url).pathname;
     const name = pathname.slice(1) || "index.html";
+    if (pathname === "/api/config" && request.method === "GET")
+      return Response.json(
+        { multiplayerWebSocketBase: publicMultiplayerWebSocketBase() },
+        { headers: { "cache-control": "no-store" } },
+      );
     if (pathname === "/dragon-pixel-wasm.js" || pathname === "/dragon-pixel-wasm_bg.wasm") {
       const file = Bun.file(
         new URL(

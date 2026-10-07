@@ -50,6 +50,13 @@ combat de salle à partir des entrées reçues. Le mode reste jouable en solo si
 n'est pas démarré. Aucun déploiement public, compte utilisateur ou stockage réseau
 n'a été configuré.
 
+Le client emploie ce port séparé sur `localhost`; sur un hôte distant il utilise
+`/ws/{salle}` même origine, à router vers Axum par le proxy de déploiement. Une
+base WebSocket absolue ou un préfixe de chemin peut être défini dans l'environnement
+Bun avec `DRAGON_PIXEL_WS_BASE` (URL absolue en `ws:`/`wss:`, sans identifiants ni query).
+Le serveur Rust doit aussi autoriser explicitement l'origine de la page via
+`DRAGON_PIXEL_ALLOWED_ORIGINS`; aucun proxy ni service public n'est configuré ici.
+
 Flèches ou Q/D : déplacement ; Espace : saut ; J : combo ; K : projectile ;
 L : charge ; T : transformation ; P : pause. Les commandes sont aussi affichées
 dans le jeu. Une perte de focus ou le passage en arrière-plan met en pause.
