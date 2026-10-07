@@ -31,6 +31,7 @@ if (-not $env:RUSTC_WRAPPER) {
     if ($cache) { $env:RUSTC_WRAPPER = $cache.Source }
 }
 if (-not $env:CARGO_BUILD_RUSTC_WRAPPER) { $env:CARGO_BUILD_RUSTC_WRAPPER = $env:RUSTC_WRAPPER }
+if (-not $env:SCCACHE_SERVER_PORT) { $env:SCCACHE_SERVER_PORT = '4227' }
 if (-not $env:CARGO_BUILD_JOBS) { $env:CARGO_BUILD_JOBS = '4' }
 $env:CARGO_NET_GIT_FETCH_WITH_CLI = 'true'
 $env:GIT_TERMINAL_PROMPT = '0'

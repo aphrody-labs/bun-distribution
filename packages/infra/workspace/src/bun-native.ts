@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Build and qualify the aggregate aphrody-ffi artifact for @aphrody/bun. */
 import { copyFile, cp, mkdir, mkdtemp, rename, rm } from "node:fs/promises";
-import { existsSync } from "node:fs";
-import { basename, join, relative, resolve, sep } from "node:path";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { createRequire } from "node:module";
+import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { tmpdir } from "node:os";
 import { pathToFileURL } from "node:url";
 import { suffix } from "bun:ffi";
@@ -96,7 +97,47 @@ export function renderNativeConsumerImports(packageRoot: string): string {
     .join("\n");
 }
 
-async function smoke(
+/** Copy the selected SDK's source dependency closure, never the host's runtime state. */
+export async function stageNativeConsumer(packageRoot: string, staging: string): Promise<string> {
+  const seen = new Map<string, string>();
+  async function stage(source: string): Promise<string> {
+    source = realpathSync(source);
+    const pkg = JSON.parse(readFileSync(join(source, "package.json"), "utf8")) as {
+      name: string;
+      dependencies?: Record<string, string>;
+    };
+    if (!/^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/i.test(pkg.name))
+      throw new Error("invalid native SDK dependency name");
+    const previous = seen.get(pkg.name);
+    if (previous && previous !== source)
+      throw new Error(`conflicting native SDK dependency: ${pkg.name}`);
+    const destination = join(staging, "node_modules", pkg.name);
+    if (previous) return destination;
+    seen.set(pkg.name, source);
+    await cp(join(source, "src"), join(destination, "src"), { recursive: true });
+    await copyFile(join(source, "package.json"), join(destination, "package.json"));
+    const require = createRequire(join(source, "package.json"));
+    for (const name of Object.keys(pkg.dependencies ?? {})) {
+      let dependency = dirname(require.resolve(name));
+      while (
+        !existsSync(join(dependency, "package.json")) ||
+        JSON.parse(readFileSync(join(dependency, "package.json"), "utf8")).name !== name
+      ) {
+        const parent = dirname(dependency);
+        if (parent === dependency) throw new Error(`native SDK dependency owner missing: ${name}`);
+        dependency = parent;
+      }
+      // Keep dependency ownership checks and shared staging mutations ordered.
+      // eslint-disable-next-line no-await-in-loop
+      await stage(dependency);
+    }
+    return destination;
+  }
+  return stage(packageRoot);
+}
+
+/** Qualify a selected aggregate against the isolated SDK before publication. */
+export async function smokeNativeConsumer(
   packageRoot: string,
   artifact: string,
   cwd: string,
@@ -148,6 +189,7 @@ import { pathToFileURL } from "node:url";
     ...process.env,
     APHRODY_FFI_LIB: undefined,
     APHRODY_FFI_DEV: debug ? "1" : undefined,
+    YOLO_TOOLING_LIB: artifact,
     CARGO_TARGET_DIR: join(cwd, "no-cargo-artifacts"),
   });
   if (code !== 0 || stdout.trim() !== "aggregate native consumer verified") {
@@ -317,9 +359,7 @@ export async function runBunNative(
     await mkdir(directory, { recursive: true });
     const staging = await mkdtemp(join(tmpdir(), "aphrody-native-stage-"));
     try {
-      const isolatedConsumer = join(staging, "node_modules", "@aphrody", "bun");
-      await cp(join(packageRoot, "src"), join(isolatedConsumer, "src"), { recursive: true });
-      await copyFile(join(packageRoot, "package.json"), join(isolatedConsumer, "package.json"));
+      const isolatedConsumer = await stageNativeConsumer(packageRoot, staging);
       const isolatedNative = join(isolatedConsumer, "native", triple);
       await mkdir(isolatedNative, { recursive: true });
       const staged = join(isolatedNative, filename);
@@ -364,11 +404,12 @@ export async function runBunNative(
       // The temporary manifest is invisible to the installed consumer until every smoke passes.
       const stagedManifest = join(isolatedNative, "manifest.json");
       await Bun.write(stagedManifest, JSON.stringify(attestation, null, 2) + "\n");
-      await smoke(isolatedConsumer, staged, staging, signal, true);
+      await smokeNativeConsumer(isolatedConsumer, staged, staging, signal, true);
       attestation.consumerSmoke = "passed";
       await Bun.write(stagedManifest, JSON.stringify(attestation, null, 2) + "\n");
       // Release installation must also pass with development overrides disabled.
-      if (profile === "release") await smoke(isolatedConsumer, staged, staging, signal, false);
+      if (profile === "release")
+        await smokeNativeConsumer(isolatedConsumer, staged, staging, signal, false);
       signal.throwIfAborted();
       const publication = await mkdtemp(join(directory, ".stage-"));
       try {

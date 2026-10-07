@@ -1,13 +1,69 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
 import { chmod, cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { createReadStream } from "node:fs";
+import { createReadStream, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { availableParallelism, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { suffix } from "bun:ffi";
+import { stageNativeConsumer } from "../src/bun-native.ts";
 
 const builder = join(import.meta.dir, "../src/bun-native.ts");
+
+test("SDK staging resolves transitive source dependencies without copying runtime state", async () => {
+  const root = await mkdtemp(join(tmpdir(), "aphrody-sdk-closure-"));
+  try {
+    const consumer = join(root, "consumer");
+    const helper = join(consumer, "node_modules/@fixture/helper");
+    const leaf = join(helper, "node_modules/@fixture/leaf");
+    const packages = [
+      [consumer, "@aphrody/bun", "@fixture/helper", 'export { value } from "@fixture/helper";'],
+      [helper, "@fixture/helper", "@fixture/leaf", 'export { value } from "@fixture/leaf";'],
+      [leaf, "@fixture/leaf", "", "export const value = 42;"],
+    ] as const;
+    await Promise.all(
+      packages.map(async ([path, name, dependency, code]) => {
+        await mkdir(join(path, "src"), { recursive: true });
+        await writeFile(
+          join(path, "package.json"),
+          JSON.stringify({
+            name,
+            main: "src/index.ts",
+            type: "module",
+            dependencies: dependency ? { [dependency]: "1.0.0" } : {},
+          }),
+        );
+        await writeFile(join(path, "src/index.ts"), code);
+        await writeFile(join(path, "runtime-state.json"), "fixture-only");
+      }),
+    );
+    const staged = await stageNativeConsumer(consumer, join(root, "isolated"));
+    const child = Bun.spawnSync(
+      [
+        process.execPath,
+        "-e",
+        `
+      const { value } = await import(${JSON.stringify(join(staged, "src/index.ts"))});
+      if (value !== 42) throw new Error("wrong staged dependency result");
+    `,
+      ],
+      {
+        stdout: "pipe",
+        stderr: "pipe",
+      },
+    );
+    expect(child.exitCode).toBe(0);
+    expect(child.stderr.toString()).toBe("");
+    expect(
+      await Bun.file(join(root, "isolated/node_modules/@fixture/leaf/src/index.ts")).text(),
+    ).toBe("export const value = 42;");
+    expect(await Bun.file(join(staged, "runtime-state.json")).exists()).toBe(false);
+    expect(existsSync(join(staged, "node_modules"))).toBe(false);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 async function run(args: string[], env = process.env) {
   const child = Bun.spawn([process.execPath, builder, ...args], {
     env,
@@ -100,11 +156,22 @@ test("native builder fails before build when the serialization wrapper is absent
           : "scripts/build/rust/cargo-serial.sh",
       ),
     );
-    const result = await run([`--root=${root}`, "--debug", "--offline", "--unlocked"]);
+    const result = await run([`--root=${root}`, "--debug", "--offline", "--unlocked"], {
+      ...process.env,
+      CARGO_TARGET_DIR: join(root, "target"),
+    });
     expect(result.code).toBe(1);
     expect(result.stderr).toContain("Cargo serialization wrapper missing");
     expect(result.stdout).not.toContain("[bun-native]");
-    expect(await Bun.file(join(root, "target/debug/libaphrody_ffi.so")).exists()).toBe(false);
+    expect(
+      await Bun.file(
+        join(
+          root,
+          "target/debug",
+          `${process.platform === "win32" ? "" : "lib"}aphrody_ffi.${suffix}`,
+        ),
+      ).exists(),
+    ).toBe(false);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -269,7 +336,10 @@ test("native builder requires actual GPU forwarding rather than accepting an unu
 test("native builder refuses an ABI-incomplete artifact and leaves no success manifest", async () => {
   const { root, consumer } = await fixture();
   try {
-    const result = await run([`--root=${root}`, "--debug", "--offline", "--unlocked"]);
+    const result = await run([`--root=${root}`, "--debug", "--offline", "--unlocked"], {
+      ...process.env,
+      CARGO_TARGET_DIR: join(root, "target"),
+    });
     expect(result.stderr).toContain("staged native consumer failed");
     expect(result.stderr).toContain("aphrody_abi_version");
     expect(result.code).toBe(1);
