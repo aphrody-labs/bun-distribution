@@ -151,7 +151,8 @@ function unitSteps(
 
   const mcp = f.service === "aphrody-mcp-http" || f.service === "aphrody-mcp-http-dbfr";
   const a2a = f.service === "aphrody-a2a";
-  const install = mcp || a2a ? binary : undefined;
+  const jobs = /^aphrody-jobs-worker-(vps|dbfr)$/.test(f.service);
+  const install = mcp || a2a || jobs ? binary : undefined;
   if (install && !/^[0-9a-f]{64}$/.test(install.sha256)) {
     throw new Error(`${f.unit}: --binary-sha256 must be a 64 hex digit SHA-256`);
   }
@@ -180,6 +181,18 @@ function unitSteps(
       `sha256sum ${f.binary}`,
     ),
   );
+  if (jobs) {
+    const executable = sq(install?.from ?? f.binary);
+    steps.push(
+      step(
+        "preflight",
+        "check",
+        "jobs-capability",
+        "the selected native binary supports persistent workers with host placement and bounded concurrency",
+        `job_worker_help="$(${executable} job run --help)" && printf %s "$job_worker_help" | grep -q -- '--host' && printf %s "$job_worker_help" | grep -q -- '--concurrency'`,
+      ),
+    );
+  }
   if (port !== undefined) {
     steps.push(
       step(
