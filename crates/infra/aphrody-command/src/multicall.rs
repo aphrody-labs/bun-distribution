@@ -269,9 +269,7 @@ mod tests {
     #[test]
     fn install_path_links_every_compatibility_name() {
         let names: Vec<_> = aliases().collect();
-        for wanted in ["n2b"] {
-            assert!(names.contains(&wanted), "`aphrody self install-path` must link {wanted}");
-        }
+        assert!(names.contains(&"n2b"), "`aphrody self install-path` must link n2b");
     }
 
     #[test]
