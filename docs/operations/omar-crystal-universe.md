@@ -116,3 +116,19 @@ L'écran Dragon Pixel expose maintenant une recherche d'archives Dragon Ball. Le
 Vérification réelle : serveur Bun local sur `127.0.0.1:4328`, `GET /` → 200 ; `GET /api/lore/search?q=Goku%20Namek` → 200, résultats sourcés dont « Planète Namek » et « Goku — Saga Namek » avec URLs dragonballfr.com ; entrée d'un caractère → 400. `aphrody_shenron_rag_search` confirme les mêmes corpus et extraits côté MCP. Gates du lot : `bun test apps/community/crystal-universe/engine.test.js` (5 tests, 20 assertions), `oxlint --deny-warnings apps/community/crystal-universe/*.js`, `oxfmt --check apps/community/crystal-universe`, `git diff --check` — tous verts.
 
 Cette liaison fournit une recherche du RAG, pas l'ingestion/la redistribution de toutes les planches OCR. Le catalogue MCP expose 147 volumes/tomes OCR sur plusieurs séries, mais ce décompte seul ne prouve pas que les 42 tomes d'une édition précise ou tout Dragon Ball Super soient complets. Le jeu reste un mini-jeu Canvas 2D solo : pas de moteur Xenoverse 2, rendu 3D/WebGPU, multijoueur réseau, manette, persistance ou création complète d'avatar. Les assets et les données de Xenoverse 2 restent indisponibles localement ; `vendor/dbxv2` était absent/vide selon le relevé précédent et les assets suivis du checkout ne comprennent aucun paquet Xenoverse. Leur licence d'extraction/redistribution n'est pas établie. Aucun asset de jeu, donnée privée ou scan sous droit n'a été copié ou publié. Ces dépendances maintiennent l'objectif global ouvert.
+
+## 2026-10-07 — Référence RAG Dragon Ball (profil Shenron isolé)
+
+La campagne native `aphrody web dragon-ball` a collecté les cibles bornées
+`wikipedia-fr,wikipedia-en`, sans galerie ni média, avec profondeur 2 et budget
+global 25. `robots.txt` actuel ne bloque pas le User-Agent de la campagne sur ces
+domaines. Résultat : 25 requêtes, 25 documents FR, 988 chunks indexés dans le profil
+`shenron`, aucune erreur; Wikipédia EN reste en attente (9 seeds) car le budget est
+épuisé. Le rapport natif `aphrody web dragon-ball status --profile shenron --json`
+confirme `completed:false`, `documents:25`, `network_requests:25`.
+
+Vérification : `aphrody home query ... --profile shenron` retrouve l’article Dragon
+Ball et l’information des 42 volumes/519 chapitres, une fiche *Dragon Ball Super*
+et des extraits de l’arc Moro. Le corpus est documentaire et partiel : il ne contient
+pas les pages intégrales ni les images des 42 tomes; il ne prouve pas l’exhaustivité
+de DBS. Aucun profil aphrody/dbfr/ie n’a été utilisé pour cette campagne.
