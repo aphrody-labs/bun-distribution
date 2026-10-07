@@ -111,6 +111,8 @@ test("avatar creation validates and persists local character choices", () => {
     hair: "#172216",
     outfit: "#e4a83d",
     hairstyle: "crest",
+    build: "broad",
+    height: 1.12,
   };
   const record = new Map();
   const storage = {
@@ -124,10 +126,25 @@ test("avatar creation validates and persists local character choices", () => {
     hair: values.hair,
     outfit: values.outfit,
     hairstyle: values.hairstyle,
+    build: values.build,
+    height: values.height,
   });
   expect(loadAvatar({ getItem: () => "{" })).toEqual(DEFAULT_AVATAR);
   for (const race of ["saiyan", "earthling", "namekian", "majin", "frieza", "android"])
     expect(normalizeAvatar({ ...values, race }).race).toBe(race);
+  expect(normalizeAvatar({ ...values, build: "slim", height: 0.85 })).toMatchObject({
+    build: "slim",
+    height: 0.85,
+  });
+  expect(normalizeAvatar({ ...values, build: "unknown", height: 1.5 })).toMatchObject({
+    build: "athletic",
+    height: 1.15,
+  });
+  expect(normalizeAvatar({ name: "Legacy" })).toMatchObject({
+    name: "Legacy",
+    build: "athletic",
+    height: 1,
+  });
 });
 
 test("manga series search scopes the query and filters mixed RAG results", () => {

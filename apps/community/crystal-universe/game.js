@@ -49,6 +49,8 @@ const avatarFields = {
   name: document.querySelector("#avatar-name"),
   race: document.querySelector("#avatar-race"),
   hairstyle: document.querySelector("#avatar-hairstyle"),
+  build: document.querySelector("#avatar-build"),
+  height: document.querySelector("#avatar-height"),
   skin: document.querySelector("#avatar-skin"),
   hair: document.querySelector("#avatar-hair"),
   outfit: document.querySelector("#color"),
@@ -106,13 +108,19 @@ const keys = {
   l: "charge",
   t: "transform",
 };
-for (const [key, field] of Object.entries(avatarFields)) field.value = avatar[key];
+for (const [key, field] of Object.entries(avatarFields))
+  field.value = key === "height" ? String(Math.round(avatar.height * 100)) : avatar[key];
+document.querySelector("#avatar-height-value").value = `${Math.round(avatar.height * 100)} %`;
 for (const field of Object.values(avatarFields)) {
   field.addEventListener("input", () => {
     const values = Object.fromEntries(
-      Object.entries(avatarFields).map(([key, control]) => [key, control.value]),
+      Object.entries(avatarFields).map(([key, control]) => [
+        key,
+        key === "height" ? Number(control.value) / 100 : control.value,
+      ]),
     );
     avatar = normalizeAvatar(values);
+    document.querySelector("#avatar-height-value").value = `${Math.round(avatar.height * 100)} %`;
     try {
       avatar = saveAvatar(localStorage, avatar);
     } catch {
@@ -287,6 +295,13 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden && active) pause(true);
 });
 function fighter(x, y, color, transformed, facing = 1, customAvatar = null) {
+  const { build = "athletic", height = 1 } = customAvatar || {};
+  const width = build === "slim" ? 0.84 : build === "broad" ? 1.2 : 1;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(width, height);
+  x = 0;
+  y = 0;
   const outfit = transformed ? "#ffd475" : customAvatar?.outfit || color;
   const skin = customAvatar?.skin || outfit;
   ctx.fillStyle = outfit;
@@ -344,6 +359,7 @@ function fighter(x, y, color, transformed, facing = 1, customAvatar = null) {
   }
   ctx.fillStyle = "#0b1020";
   ctx.fillRect(x + facing * 4 - 2, y - 45, 4, 4);
+  ctx.restore();
 }
 function draw2d() {
   ctx.clearRect(0, 0, 960, 400);

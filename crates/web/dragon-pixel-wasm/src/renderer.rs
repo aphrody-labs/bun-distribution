@@ -24,6 +24,10 @@ struct Avatar {
     hair: String,
     #[serde(default = "default_outfit")]
     outfit: String,
+    #[serde(default = "default_avatar_build")]
+    build: String,
+    #[serde(default = "default_avatar_height")]
+    height: f32,
 }
 
 #[derive(Clone, Deserialize)]
@@ -48,7 +52,13 @@ impl Default for Snapshot {
 
 impl Default for Avatar {
     fn default() -> Self {
-        Self { skin: default_skin(), hair: default_hair(), outfit: default_outfit() }
+        Self {
+            skin: default_skin(),
+            hair: default_hair(),
+            outfit: default_outfit(),
+            build: default_avatar_build(),
+            height: default_avatar_height(),
+        }
     }
 }
 
@@ -60,6 +70,14 @@ fn default_hair() -> String {
 }
 fn default_outfit() -> String {
     "#63e6ff".into()
+}
+
+fn default_avatar_build() -> String {
+    "athletic".into()
+}
+
+fn default_avatar_height() -> f32 {
+    1.0
 }
 
 #[derive(Component)]
@@ -220,6 +238,21 @@ fn sync_scene(
         };
         *visibility = if active { Visibility::Visible } else { Visibility::Hidden };
         transform.translation = position;
+        let avatar = match actor.0 {
+            ActorKind::Player | ActorKind::Skin | ActorKind::Hair => Some(&snapshot.avatar),
+            ActorKind::Remote => snapshot.remotes.get(actor.1).map(|remote| &remote.avatar),
+            ActorKind::Enemy | ActorKind::Shot => None,
+        };
+        if let Some(avatar) = avatar {
+            let width = match avatar.build.as_str() {
+                "slim" => 0.84,
+                "broad" => 1.2,
+                _ => 1.0,
+            };
+            transform.scale = Vec3::new(width, avatar.height, width);
+        } else {
+            transform.scale = Vec3::ONE;
+        }
         transform.rotation =
             Quat::from_rotation_y(if facing < 0.0 { std::f32::consts::PI } else { 0.0 });
         if let Some(mut asset) = materials.get_mut(&material.0)

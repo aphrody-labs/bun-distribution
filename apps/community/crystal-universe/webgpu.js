@@ -173,41 +173,51 @@ function addFighter(
   race = "saiyan",
   hairstyle = "spiky",
   transformed = false,
+  build = "athletic",
+  height = 1,
 ) {
+  const width = build === "slim" ? 0.84 : build === "broad" ? 1.2 : 1;
+  const part = (center, size, color) =>
+    cube(
+      vertices,
+      [x + (center[0] - x) * width, feet + (center[1] - feet) * height, center[2]],
+      [size[0] * width, size[1] * height, size[2] * width],
+      color,
+    );
   const body = rgb(transformed ? "#ffd475" : outfit);
   const flesh = rgb(skin);
   const coiffure = rgb(hair);
   const legHeight = 0.43;
-  cube(vertices, [x - 0.13, feet + legHeight / 2, 0], [0.18, legHeight, 0.2], body);
-  cube(vertices, [x + 0.13, feet + legHeight / 2, 0], [0.18, legHeight, 0.2], body);
-  cube(vertices, [x, feet + 0.94, 0], [0.48, 0.57, 0.3], body);
-  cube(vertices, [x - 0.34, feet + 0.9, 0], [0.16, 0.5, 0.19], body);
-  cube(vertices, [x + 0.34, feet + 0.9, 0], [0.16, 0.5, 0.19], body);
-  cube(vertices, [x, feet + 1.39, 0], [0.34, 0.35, 0.31], flesh);
+  part([x - 0.13, feet + legHeight / 2, 0], [0.18, legHeight, 0.2], body);
+  part([x + 0.13, feet + legHeight / 2, 0], [0.18, legHeight, 0.2], body);
+  part([x, feet + 0.94, 0], [0.48, 0.57, 0.3], body);
+  part([x - 0.34, feet + 0.9, 0], [0.16, 0.5, 0.19], body);
+  part([x + 0.34, feet + 0.9, 0], [0.16, 0.5, 0.19], body);
+  part([x, feet + 1.39, 0], [0.34, 0.35, 0.31], flesh);
   if (race === "namekian") {
-    cube(vertices, [x - 0.11, feet + 1.73, 0], [0.055, 0.3, 0.055], flesh);
-    cube(vertices, [x + 0.11, feet + 1.73, 0], [0.055, 0.3, 0.055], flesh);
+    part([x - 0.11, feet + 1.73, 0], [0.055, 0.3, 0.055], flesh);
+    part([x + 0.11, feet + 1.73, 0], [0.055, 0.3, 0.055], flesh);
   } else if (race === "frieza") {
-    cube(vertices, [x - 0.11, feet + 1.68, 0], [0.06, 0.28, 0.06], flesh);
-    cube(vertices, [x + 0.11, feet + 1.68, 0], [0.06, 0.28, 0.06], flesh);
+    part([x - 0.11, feet + 1.68, 0], [0.06, 0.28, 0.06], flesh);
+    part([x + 0.11, feet + 1.68, 0], [0.06, 0.28, 0.06], flesh);
   } else if (race === "android") {
-    cube(vertices, [x - 0.22, feet + 1.39, 0], [0.1, 0.14, 0.12], rgb("#98efff"));
-    cube(vertices, [x + 0.22, feet + 1.39, 0], [0.1, 0.14, 0.12], rgb("#98efff"));
+    part([x - 0.22, feet + 1.39, 0], [0.1, 0.14, 0.12], rgb("#98efff"));
+    part([x + 0.22, feet + 1.39, 0], [0.1, 0.14, 0.12], rgb("#98efff"));
   } else if (race === "majin") {
-    cube(vertices, [x, feet + 1.75, 0], [0.08, 0.4, 0.08], flesh);
+    part([x, feet + 1.75, 0], [0.08, 0.4, 0.08], flesh);
   } else if (hairstyle === "crest") {
-    cube(vertices, [x, feet + 1.7, 0], [0.13, 0.38, 0.2], coiffure);
+    part([x, feet + 1.7, 0], [0.13, 0.38, 0.2], coiffure);
   } else if (hairstyle === "short") {
-    cube(vertices, [x, feet + 1.59, 0], [0.38, 0.1, 0.34], coiffure);
+    part([x, feet + 1.59, 0], [0.38, 0.1, 0.34], coiffure);
   } else {
-    cube(vertices, [x - 0.1, feet + 1.69, 0], [0.18, 0.3, 0.2], coiffure);
-    cube(vertices, [x + 0.1, feet + 1.66, 0], [0.16, 0.24, 0.2], coiffure);
-    cube(vertices, [x, feet + 1.78, 0], [0.15, 0.24, 0.2], coiffure);
+    part([x - 0.1, feet + 1.69, 0], [0.18, 0.3, 0.2], coiffure);
+    part([x + 0.1, feet + 1.66, 0], [0.16, 0.24, 0.2], coiffure);
+    part([x, feet + 1.78, 0], [0.15, 0.24, 0.2], coiffure);
   }
   if (transformed) {
     const aura = rgb("#ffc64a");
-    cube(vertices, [x - 0.4, feet + 1.05, -0.05], [0.08, 1.45, 0.08], aura);
-    cube(vertices, [x + 0.4, feet + 1.05, -0.05], [0.08, 1.45, 0.08], aura);
+    part([x - 0.4, feet + 1.05, -0.05], [0.08, 1.45, 0.08], aura);
+    part([x + 0.4, feet + 1.05, -0.05], [0.08, 1.45, 0.08], aura);
   }
 }
 
@@ -229,6 +239,8 @@ function geometryFor(game, avatar, remotePlayers) {
     avatar.race,
     avatar.hairstyle,
     player.transformed > 0,
+    avatar.build,
+    avatar.height,
   );
   for (const enemy of game.enemies) {
     const x = (enemy.x - 480) / 95;
@@ -247,6 +259,9 @@ function geometryFor(game, avatar, remotePlayers) {
       remote.avatar.hair,
       remote.avatar.race,
       remote.avatar.hairstyle,
+      false,
+      remote.avatar.build,
+      remote.avatar.height,
     );
   }
   for (const shot of game.shots) {

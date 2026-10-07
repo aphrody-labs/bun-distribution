@@ -473,3 +473,18 @@ assets et `/api/config` en 200, avec la base `wss://` attendue; un schéma HTTP
 configuré est ramené à une valeur vide sans divulguer la configuration invalide.
 Le routage proxy, l'allowlist d'une origine de production et une connexion WebSocket
 publique restent non qualifiés.
+## 2026-10-07 — Morphologie d’avatar synchronisée entre rendus
+
+L’atelier permet maintenant de choisir une silhouette fine, athlétique ou robuste et
+une taille comprise entre 85 et 115 %. `avatar.js` normalise et conserve ces choix
+avec les avatars existants; `game.js` les applique dans le rendu Canvas, et
+`webgpu.js` les répercute sur la géométrie 3D. Le renderer Bevy WASM applique les
+mêmes facteurs de proportions aux acteurs locaux et distants. Le serveur multijoueur
+valide les valeurs bornées et attribue les défauts compatibles aux anciens messages.
+
+Gates : 14 tests Bun (66 assertions), 5 tests du serveur Rust, `cargo check` du
+renderer Bevy pour `wasm32-unknown-unknown`, Oxlint sans avertissement, Oxfmt,
+bundle navigateur Bun et `git diff --check` — verts. La vérification navigateur
+visuelle n’a pas été exécutée. Cette amélioration concerne la création d’avatar;
+elle ne fournit ni moteur Xenoverse 2 ni ses ressources, et le RAG n’est pas devenu
+une archive exhaustive intégrée au client.

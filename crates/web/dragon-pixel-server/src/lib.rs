@@ -34,6 +34,10 @@ pub struct Avatar {
     pub skin: String,
     pub hair: String,
     pub outfit: String,
+    #[serde(default = "default_avatar_build")]
+    pub build: String,
+    #[serde(default = "default_avatar_height")]
+    pub height: f32,
 }
 
 impl Avatar {
@@ -44,6 +48,9 @@ impl Avatar {
             && ["saiyan", "earthling", "namekian", "majin", "frieza", "android"]
                 .contains(&self.race.as_str())
             && ["spiky", "short", "crest"].contains(&self.hairstyle.as_str())
+            && ["slim", "athletic", "broad"].contains(&self.build.as_str())
+            && self.height.is_finite()
+            && (0.85..=1.15).contains(&self.height)
             && [&self.skin, &self.hair, &self.outfit].iter().all(|color| valid_color(color))
     }
 }
@@ -194,7 +201,17 @@ fn default_avatar() -> Avatar {
         skin: "#f0c19a".to_owned(),
         hair: "#242b46".to_owned(),
         outfit: "#63e6ff".to_owned(),
+        build: default_avatar_build(),
+        height: default_avatar_height(),
     }
+}
+
+fn default_avatar_build() -> String {
+    "athletic".to_owned()
+}
+
+fn default_avatar_height() -> f32 {
+    1.0
 }
 
 fn valid_color(color: &str) -> bool {
@@ -352,6 +369,25 @@ mod tests {
         assert!(!valid_color("red"));
     }
 
+    #[test]
+    fn legacy_avatar_payloads_receive_safe_morphology_defaults() {
+        let avatar: Avatar = serde_json::from_str(
+            r##"{
+                "name":"Patrouilleur",
+                "race":"saiyan",
+                "hairstyle":"spiky",
+                "skin":"#f0c19a",
+                "hair":"#242b46",
+                "outfit":"#63e6ff"
+            }"##,
+        )
+        .unwrap();
+
+        assert_eq!(avatar.build, "athletic");
+        assert_eq!(avatar.height, 1.0);
+        assert!(avatar.is_valid());
+    }
+
     #[tokio::test]
     async fn rooms_limit_players_and_remove_empty_rooms() {
         let hub = RoomHub::default();
@@ -389,6 +425,17 @@ mod tests {
             avatar.race = race.to_owned();
             assert!(avatar.is_valid());
         }
+        for build in ["slim", "athletic", "broad"] {
+            let mut avatar = default_avatar();
+            avatar.build = build.to_owned();
+            assert!(avatar.is_valid());
+        }
+        let mut extreme_height = default_avatar();
+        extreme_height.height = 1.16;
+        assert!(!extreme_height.is_valid());
+        let mut non_finite_height = default_avatar();
+        non_finite_height.height = f32::NAN;
+        assert!(!non_finite_height.is_valid());
     }
 
     #[tokio::test]

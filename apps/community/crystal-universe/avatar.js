@@ -6,10 +6,13 @@ export const DEFAULT_AVATAR = {
   hair: "#242b46",
   outfit: "#63e6ff",
   hairstyle: "spiky",
+  build: "athletic",
+  height: 1,
 };
 
 const races = new Set(["saiyan", "earthling", "namekian", "majin", "frieza", "android"]);
 const hairstyles = new Set(["spiky", "short", "crest"]);
+const builds = new Set(["slim", "athletic", "broad"]);
 const colorPattern = /^#[0-9a-f]{6}$/i;
 
 export function normalizeAvatar(value) {
@@ -24,6 +27,10 @@ export function normalizeAvatar(value) {
     hair: colorPattern.test(avatar.hair) ? avatar.hair : DEFAULT_AVATAR.hair,
     outfit: colorPattern.test(avatar.outfit) ? avatar.outfit : DEFAULT_AVATAR.outfit,
     hairstyle: hairstyles.has(avatar.hairstyle) ? avatar.hairstyle : DEFAULT_AVATAR.hairstyle,
+    build: builds.has(avatar.build) ? avatar.build : DEFAULT_AVATAR.build,
+    height: Number.isFinite(Number(avatar.height))
+      ? Math.max(0.85, Math.min(1.15, Number(avatar.height)))
+      : DEFAULT_AVATAR.height,
   };
 }
 

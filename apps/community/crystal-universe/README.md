@@ -11,6 +11,8 @@ Clavier, clic gauche/glisser pour bouger, clic droit pour tirer, manette Gamepad
 gestion des pointeurs simultanés.
 Atelier d'avatar avec nom, six choix de race, coiffure et couleurs de peau, cheveux et tenue;
 le choix est conservé dans le stockage local du navigateur.
+L’éditeur ajoute une silhouette (fine, athlétique ou robuste) et une taille de 85 à 115 %;
+ces paramètres sont rendus par Canvas, WebGPU et Bevy, puis transmis aux joueurs distants.
 Les archives Shenron permettent de chercher tout le RAG, les passages OCR des
 deux mangas ensemble, ou séparément Dragon Ball (42 tomes) et Dragon Ball Super.
 Les vues séparées interrogent le corpus manga partagé, puis filtrent les titres de
