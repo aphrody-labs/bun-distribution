@@ -13,7 +13,14 @@
 //! `EVERYTHING_DLL`, the standard DLL search path, then the
 //! `%ProgramFiles%` / `%ProgramFiles(x86)%` `Everything` folders.
 
-// The SDK constant table and the non-Windows stub are the full binding; only Windows consumes all of it.
+// Keep the complete private SDK binding even when the caller uses only a subset.
+#![cfg_attr(
+    windows,
+    expect(
+        dead_code,
+        reason = "The private SDK binding retains supported request, sort and count declarations"
+    )
+)]
 #![cfg_attr(not(windows), allow(dead_code))]
 
 use std::{path::PathBuf, sync::OnceLock};

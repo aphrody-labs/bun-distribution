@@ -8,7 +8,6 @@
 
 use std::{
     env,
-    ffi::OsString,
     path::{Path, PathBuf},
 };
 
@@ -23,9 +22,7 @@ use miette::{IntoDiagnostic, Result, miette};
 pub(crate) fn config_dir() -> Result<PathBuf> {
     #[cfg(windows)]
     {
-        return env::var_os("APPDATA")
-            .map(PathBuf::from)
-            .ok_or_else(|| miette!("APPDATA is not set"));
+        env::var_os("APPDATA").map(PathBuf::from).ok_or_else(|| miette!("APPDATA is not set"))
     }
     #[cfg(target_os = "macos")]
     {
@@ -48,18 +45,11 @@ pub(crate) fn config_dir() -> Result<PathBuf> {
     }
 }
 
-/// User home directory.
+/// User home directory for the Unix configuration paths.
+#[cfg(unix)]
 pub(crate) fn home_dir() -> Result<PathBuf> {
-    let var: OsString = if cfg!(windows) {
-        env::var_os("USERPROFILE")
-            .or_else(|| env::var_os("HOME"))
-            .ok_or_else(|| miette!("neither USERPROFILE nor HOME is set"))?
-    } else {
-        env::var_os("HOME").ok_or_else(|| miette!("HOME is not set"))?
-    };
-    Ok(PathBuf::from(var))
+    env::var_os("HOME").map(PathBuf::from).ok_or_else(|| miette!("HOME is not set"))
 }
-
 /// Ensure a directory exists (creating it recursively if needed).
 #[allow(dead_code)]
 pub(crate) fn ensure_dir(path: &Path) -> Result<()> {

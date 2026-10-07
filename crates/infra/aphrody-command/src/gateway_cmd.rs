@@ -114,12 +114,11 @@ fn resolve_adapter(provider: &str) -> miette::Result<(Arc<dyn GatewayAdapter>, V
 
         #[cfg(target_os = "windows")]
         {
-            if let Ok(token) = aphrody_antigravity::auth::token_from_credential_manager() {
-                if let Ok(adapter) =
+            if let Ok(token) = aphrody_antigravity::auth::token_from_credential_manager()
+                && let Ok(adapter) =
                     GoogleAntigravityAdapter::new(token.access_token, ANTIGRAVITY_BASE_URL)
-                {
-                    return Ok((Arc::new(adapter), advertised_models("google-antigravity")));
-                }
+            {
+                return Ok((Arc::new(adapter), advertised_models("google-antigravity")));
             }
         }
     }
