@@ -642,35 +642,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-ai"
-version = "1.0.0"
-dependencies = [
- "aphrody-agent-home",
- "aphrody-agent-runtime",
- "aphrody-agent-tools",
- "aphrody-context",
- "aphrody-mcp-client",
- "aphrody-memory",
- "aphrody-models",
- "aphrody-prompts",
- "aphrody-providers",
- "aphrody-rag",
- "aphrody-rag-core",
- "aphrody-rag-eval",
- "aphrody-router",
- "aphrody-session",
- "aphrody-supervisor",
- "aphrody-toolcall",
- "aphrody-tools",
- "aphrody-train",
- "async-trait",
- "miette 7.6.0",
- "serde",
- "serde_json",
- "tokio",
-]
-
-[[package]]
 name = "aphrody-antigravity"
 version = "1.0.0"
 dependencies = [
@@ -935,14 +906,15 @@ dependencies = [
 name = "aphrody-command"
 version = "1.0.0"
 dependencies = [
+ "anyhow",
  "aphrody-a2a",
  "aphrody-a2a-client",
  "aphrody-a2a-coord",
  "aphrody-agent-home",
  "aphrody-agent-proto",
  "aphrody-agent-runtime",
- "aphrody-ai",
  "aphrody-antigravity",
+ "aphrody-app-protocol",
  "aphrody-app-server",
  "aphrody-backend",
  "aphrody-base",
@@ -954,10 +926,8 @@ dependencies = [
  "aphrody-create-tauri-app",
  "aphrody-diagnostics",
  "aphrody-discord-compiler",
- "aphrody-ecosystem",
  "aphrody-embed",
  "aphrody-engine",
- "aphrody-exec-events",
  "aphrody-firefly",
  "aphrody-fsindex",
  "aphrody-gateway",
@@ -985,7 +955,6 @@ dependencies = [
  "aphrody-notebooklm",
  "aphrody-obscura",
  "aphrody-ocr",
- "aphrody-project-doc",
  "aphrody-prompts",
  "aphrody-rag",
  "aphrody-rag-eval",
@@ -997,7 +966,6 @@ dependencies = [
  "aphrody-skills",
  "aphrody-ssh",
  "aphrody-stdio-capture",
- "aphrody-summary",
  "aphrody-tauri-cli",
  "aphrody-terminal-backend",
  "aphrody-toolcall",
@@ -1035,6 +1003,7 @@ dependencies = [
  "obscura-net",
  "ort",
  "predicates",
+ "pretty_assertions",
  "rayon",
  "regex",
  "reqwest 0.13.5",
@@ -1234,10 +1203,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-ecosystem"
-version = "1.0.0"
-
-[[package]]
 name = "aphrody-embed"
 version = "1.0.0"
 dependencies = [
@@ -1327,17 +1292,6 @@ version = "1.0.0-canary"
 dependencies = [
  "thiserror 2.0.21",
  "windows 0.62.2",
-]
-
-[[package]]
-name = "aphrody-exec-events"
-version = "1.0.0"
-dependencies = [
- "aphrody-app-protocol",
- "pretty_assertions",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -1433,17 +1387,6 @@ dependencies = [
  "tokio",
  "url",
  "which 8.0.6",
-]
-
-[[package]]
-name = "aphrody-gcs"
-version = "1.0.0"
-dependencies = [
- "aphrody-subsystem",
- "reqwest 0.13.5",
- "rustls",
- "serde_json",
- "tokio",
 ]
 
 [[package]]
@@ -1676,9 +1619,8 @@ dependencies = [
  "aphrody-coreutils",
  "aphrody-events",
  "aphrody-execpolicy",
- "aphrody-gcs",
  "aphrody-kernel-client",
- "aphrody-shell",
+ "aphrody-nu",
  "aphrody-subsystem",
  "aphrody-systemd",
  "aphrody-toolchains",
@@ -2335,15 +2277,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-project-doc"
-version = "1.0.0"
-dependencies = [
- "pretty_assertions",
- "tempfile",
- "thiserror 2.0.21",
-]
-
-[[package]]
 name = "aphrody-prompts"
 version = "1.0.0"
 dependencies = [
@@ -2623,15 +2556,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-shell"
-version = "1.0.0-canary"
-dependencies = [
- "aphrody-nu",
- "aphrody-terminal-backend",
- "aphrody-tui",
-]
-
-[[package]]
 name = "aphrody-shell-sandbox-host"
 version = "1.0.0-canary"
 dependencies = [
@@ -2821,14 +2745,6 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.21",
  "tokio",
-]
-
-[[package]]
-name = "aphrody-summary"
-version = "1.0.0"
-dependencies = [
- "anyhow",
- "tempfile",
 ]
 
 [[package]]

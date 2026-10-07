@@ -116,7 +116,7 @@ fn status(project: Option<PathBuf>, json: bool) -> Result<()> {
         python,
         accelerators: hardware,
         onnx_runtime,
-        ecosystem: aphrody_ecosystem::SURFACES
+        ecosystem: crate::ecosystem::SURFACES
             .iter()
             .map(|surface| SurfaceAvailability {
                 surface: format!("{:?}", surface.surface),
@@ -124,13 +124,13 @@ fn status(project: Option<PathBuf>, json: bool) -> Result<()> {
                 boundary: format!("{:?}", surface.boundary),
                 binary_found: matches!(
                     surface.boundary,
-                    aphrody_ecosystem::Boundary::LocalProcess
-                        | aphrody_ecosystem::Boundary::LocalStdio
+                    crate::ecosystem::Boundary::LocalProcess
+                        | crate::ecosystem::Boundary::LocalStdio
                 )
                 .then(|| {
-                    aphrody_ecosystem::find_local_surface(
+                    crate::ecosystem::find_local_surface(
                         surface.surface,
-                        &aphrody_ecosystem::path_directories(),
+                        &crate::ecosystem::path_directories(),
                     )
                     .is_some()
                 }),

@@ -14,11 +14,11 @@
 //!
 //! ## Library usage
 //!
-//! ```no_run
+//! ```ignore
 //! // Returns the SUMMARY.md markdown body as a `String`. Walks the docs
 //! // tree starting from the workspace root resolved via `CARGO_MANIFEST_DIR`
 //! // (falling back to the current directory).
-//! let markdown = aphrody_summary::generate().expect("docs/ readable");
+//! let markdown = generate().expect("docs/ readable");
 //! assert!(markdown.contains("# Summary"));
 //! ```
 //!

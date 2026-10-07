@@ -56,7 +56,7 @@ pub(crate) const TOOLS: &[Tool] = &[
     tool("translate-project", &["aphrody-translate"], Target::Entry(aphrody_translate::cli_main)),
     tool("jev", &["aphrody-jev"], Target::Entry(aphrody_jev::cli_main)),
     tool("embed", &["aphrody-embed"], Target::Entry(aphrody_embed::cli_main)),
-    tool("summary", &["aphrody-summary"], Target::Entry(aphrody_summary::cli_main)),
+    tool("summary", &["aphrody-summary"], Target::Entry(crate::summary::cli_main)),
     tool("skills", &["aphrody-skills"], Target::Entry(aphrody_skills::cli_main)),
     tool(
         "agent-home-memory",

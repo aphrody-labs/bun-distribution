@@ -28,6 +28,7 @@ mod auth;
 pub mod cli;
 pub mod client;
 pub mod cloud;
+mod gcs;
 mod cloud_git;
 pub mod host_service;
 pub mod hvsock;

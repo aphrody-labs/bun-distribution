@@ -115,9 +115,9 @@ async fn builtin_kernel(
     kernel.register(Arc::new(crate::CloudSubsystem::new()) as Arc<dyn SystemSubsystem>).await?;
     kernel.register(Arc::new(crate::RuntimeSubsystem::new()) as Arc<dyn SystemSubsystem>).await?;
     if shell {
-        let nu = aphrody_shell::NuShell::from_current_dir().map_err(anyhow::Error::msg)?;
+        let nu = aphrody_nu::NuShell::from_current_dir().map_err(anyhow::Error::msg)?;
         kernel
-            .register(Arc::new(aphrody_shell::ShellSubsystem::new(nu)) as Arc<dyn SystemSubsystem>)
+            .register(Arc::new(aphrody_nu::ShellSubsystem::new(nu)) as Arc<dyn SystemSubsystem>)
             .await?;
     }
     // Subsystems of higher layers (aphrody-ui, aphrody-web) run as MCP plugin processes: this

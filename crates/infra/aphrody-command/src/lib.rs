@@ -17,6 +17,14 @@ mod agy_loop;
 #[cfg(not(target_arch = "wasm32"))]
 mod agy_provision;
 #[cfg(not(target_arch = "wasm32"))]
+mod ecosystem;
+#[cfg(not(target_arch = "wasm32"))]
+mod exec_events;
+#[cfg(not(target_arch = "wasm32"))]
+mod project_doc;
+#[cfg(not(target_arch = "wasm32"))]
+mod summary;
+#[cfg(not(target_arch = "wasm32"))]
 mod ai_env_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod ai_sync_cmd;

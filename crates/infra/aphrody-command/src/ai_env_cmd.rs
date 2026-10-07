@@ -85,7 +85,7 @@ pub(crate) async fn run(action: AiAction) -> miette::Result<()> {
         AiAction::Env(args) => env(args).await,
         AiAction::SyncSessions(args) => crate::ai_sync_cmd::run(args).await,
         AiAction::Status { json } => {
-            let status = aphrody_ai::AphrodyAiEngine::new().status();
+            let status = ai_layer_status();
             if json {
                 println!("{}", serde_json::to_string_pretty(&status).into_diagnostic()?);
             } else {
@@ -97,4 +97,22 @@ pub(crate) async fn run(action: AiAction) -> miette::Result<()> {
             Ok(())
         },
     }
+}
+
+fn ai_layer_status() -> serde_json::Value {
+    serde_json::json!({
+        "status": "ready",
+        "layer": "ai",
+        "capabilities": [
+            "local-inference",
+            "rag-hybrid",
+            "mcp-protocol",
+            "autonomous-agents",
+            "agent-home-seven-doc-sync",
+            "agent-home-memory",
+            "rag-evaluation",
+            "guarded-training",
+            "router-whitelist"
+        ]
+    })
 }

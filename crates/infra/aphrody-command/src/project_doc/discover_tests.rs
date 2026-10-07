@@ -4,7 +4,7 @@ use std::fs;
 use pretty_assertions::assert_eq;
 
 use super::*;
-use crate::{ProjectDoc, ProjectDocOptions, Scope, SkipReason};
+use crate::project_doc::{ProjectDoc, ProjectDocOptions, Scope, SkipReason};
 
 fn write(path: &Path, content: &str) {
     if let Some(parent) = path.parent() {

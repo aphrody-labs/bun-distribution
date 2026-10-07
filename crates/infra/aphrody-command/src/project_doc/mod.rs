@@ -49,8 +49,7 @@ use std::path::{Path, PathBuf};
 mod discover;
 
 pub use discover::{
-    AGENTS_MD_SEPARATOR, DEFAULT_AGENTS_MD_FILENAME, DEFAULT_PROJECT_DOC_MAX_BYTES,
-    LOCAL_AGENTS_MD_FILENAME, discover,
+    AGENTS_MD_SEPARATOR, DEFAULT_PROJECT_DOC_MAX_BYTES, discover,
 };
 
 /// Where a [`ProjectDocPart`] came from.

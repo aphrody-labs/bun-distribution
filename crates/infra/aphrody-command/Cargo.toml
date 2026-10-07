@@ -128,10 +128,8 @@ obscura-dom                       = { workspace = true }
 obscura-net                       = { workspace = true }
 aphrody-n2b                       = { workspace = true }
 aphrody-translate         = { workspace = true }
-aphrody-ecosystem         = { workspace = true }
 aphrody-backend                   = { workspace = true }
 rustls                    = { workspace = true }
-aphrody-ai                = { workspace = true }
 aphrody-native            = { workspace = true }
 aphrody-terminal-backend  = { workspace = true }
 # Natural-language fallback (`auto_command`) routes prompts to a running
@@ -161,7 +159,6 @@ create-tauri-app          = { path = "../../tauri/aphrody-create-tauri-app", pac
 aphrody-gemini-web        = { workspace = true }
 aphrody-jev               = { workspace = true, features = ["server"] }
 aphrody-embed             = { workspace = true, features = ["server"] }
-aphrody-summary           = { workspace = true }
 aphrody-skills            = { workspace = true }
 # Messaging (outbound connectors + bidirectional channels: Slack/Telegram/Matrix/Discord/X).
 # Native-only because reqwest + tokio do not compile on wasm32.
@@ -271,9 +268,9 @@ tracing                  = { workspace = true }
 toml                     = { workspace = true }
 aphrody-model-client      = { workspace = true }
 jsonschema                = { workspace = true }
-aphrody-project-doc       = { workspace = true }
 aphrody-rollout           = { workspace = true }
-aphrody-exec-events       = { workspace = true }
+aphrody-app-protocol      = { workspace = true }
+anyhow                    = { workspace = true }
 aphrody-rag               = { workspace = true }
 aphrody-code-graph        = { workspace = true }
 aphrody-llama-server      = { workspace = true }
@@ -299,6 +296,7 @@ tokio         = { version = "1.52", default-features = false, features = ["sync"
 
 # --- Dev/test dependencies (integration tests only, native targets) --------
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+pretty_assertions = { workspace = true }
 assert_cmd    = { workspace = true }
 predicates    = { workspace = true }
 serde_json    = { workspace = true }

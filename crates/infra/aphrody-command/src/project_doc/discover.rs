@@ -4,7 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{
+use crate::project_doc::{
     ProjectDoc, ProjectDocError, ProjectDocOptions, ProjectDocPart, Scope, SkipReason, io_error,
 };
 

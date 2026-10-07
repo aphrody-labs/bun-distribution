@@ -18,7 +18,7 @@ use aphrody_agent_runtime::{
 use aphrody_config::{CliOverrides, Config};
 #[cfg(test)]
 use aphrody_config::{ConfigLayer, LayerSource};
-use aphrody_exec_events::*;
+use crate::exec_events::*;
 use clap::{Args, Subcommand};
 use miette::IntoDiagnostic as _;
 
@@ -122,9 +122,9 @@ pub(crate) fn runtime_config(config: &Config, cwd: &Path) -> miette::Result<Runt
     let mut instructions = vec![aphrody_prompts::APHRODY_UNIFIED_SYSTEM_PROMPT.to_owned()];
     instructions.extend(config.instructions.iter().cloned());
     instructions.extend(config.developer_instructions.iter().cloned());
-    let docs = aphrody_project_doc::discover(
+    let docs = crate::project_doc::discover(
         cwd,
-        &aphrody_project_doc::ProjectDocOptions {
+        &crate::project_doc::ProjectDocOptions {
             max_bytes: config.project_doc_max_bytes,
             fallback_filenames: config.project_doc_fallback_filenames.clone(),
             global_dir: Some(workspace.clone()),

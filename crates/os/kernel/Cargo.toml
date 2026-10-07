@@ -19,14 +19,13 @@ builtins = [
     "dep:aphrody-bun-docs",
     "dep:aphrody-compat",
     "dep:aphrody-coreutils",
-    "dep:aphrody-shell",
+    "dep:aphrody-nu",
     "dep:aphrody-systemd",
     "dep:clap",
 ]
 
 [dependencies]
 aphrody-subsystem = { workspace = true }
-aphrody-gcs = { workspace = true }
 aphrody-events = { workspace = true }
 aphrody-execpolicy = { workspace = true }
 aphrody-kernel-client = { workspace = true }
@@ -47,7 +46,7 @@ anyhow = { workspace = true, optional = true }
 aphrody-bun-docs = { workspace = true, optional = true }
 aphrody-compat = { workspace = true, optional = true }
 aphrody-coreutils = { workspace = true, optional = true }
-aphrody-shell = { workspace = true, optional = true }
+aphrody-nu = { workspace = true, optional = true }
 aphrody-systemd = { workspace = true, optional = true }
 clap = { workspace = true, optional = true }
 
@@ -59,3 +58,4 @@ windows-sys = { workspace = true, features = ["Win32_Networking_WinSock", "Win32
 
 [dev-dependencies]
 tempfile = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net", "io-util"] }

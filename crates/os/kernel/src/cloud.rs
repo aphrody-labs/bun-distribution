@@ -271,11 +271,11 @@ impl SystemSubsystem for CloudSubsystem {
                     .and_then(Value::as_str)
                     .ok_or_else(|| SubsystemError::InvalidArguments("missing bucket".into()))?;
                 let prefix = arguments.get("prefix").and_then(Value::as_str).unwrap_or("");
-                let client = aphrody_gcs::http_client()?;
+                let client = crate::gcs::http_client()?;
                 let config =
-                    aphrody_gcs::GcsConfig::from_env(&client, crate::paths::home_dir().as_deref())
+                    crate::gcs::GcsConfig::from_env(&client, crate::paths::home_dir().as_deref())
                         .await?;
-                aphrody_gcs::list(&client, &config, bucket, prefix).await
+                crate::gcs::list(&client, &config, bucket, prefix).await
             },
             _ => Err(SubsystemError::UnknownTool(tool.to_owned())),
         }

@@ -13,7 +13,7 @@ use std::{ffi::OsString, fs};
 
 use anyhow::Result;
 
-use crate::{generate, generate_llms, repo_root};
+use crate::summary::{generate, generate_llms, repo_root};
 
 /// Returns the exit code: 0 when written or up to date, 1 when `--check` finds drift.
 fn run(args: &[OsString]) -> Result<i32> {

@@ -7,7 +7,7 @@
 
 use std::{
     env,
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
 
 /// The repository that owns a capability and its implementation.
@@ -115,38 +115,6 @@ pub const fn spec(surface: Surface) -> SurfaceSpec {
     }
 }
 
-/// Checkout roots supplied by the orchestrator. Paths are explicit so this
-/// contract can be used from an installed binary outside the source tree.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct RepositoryRoots {
-    pub ai: PathBuf,
-    pub os: PathBuf,
-    pub infra: PathBuf,
-}
-
-impl RepositoryRoots {
-    #[must_use]
-    pub fn new(ai: impl Into<PathBuf>, os: impl Into<PathBuf>, infra: impl Into<PathBuf>) -> Self {
-        Self { ai: ai.into(), os: os.into(), infra: infra.into() }
-    }
-
-    #[must_use]
-    pub fn root(&self, layer: Layer) -> &Path {
-        match layer {
-            Layer::Ai => &self.ai,
-            Layer::Os => &self.os,
-            Layer::Infra => &self.infra,
-        }
-    }
-
-    /// A root is observed only when its Cargo manifest exists. This check
-    /// never substitutes a different repository when one sibling is missing.
-    #[must_use]
-    pub fn present(&self, layer: Layer) -> bool {
-        self.root(layer).join("Cargo.toml").is_file()
-    }
-}
-
 /// Local file resolution, deliberately weaker than a successful handshake.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct LocalSurface {
@@ -221,13 +189,5 @@ mod tests {
         assert!(find_local_surface(Surface::OsMcp, std::slice::from_ref(&directory)).is_none());
         std::fs::remove_file(&executable).expect("remove fixture binary");
         std::fs::remove_dir(&directory).expect("remove fixture directory");
-    }
-
-    #[test]
-    fn explicit_roots_never_alias_a_missing_layer() {
-        let roots = RepositoryRoots::new("ai", "os", "infra");
-        assert_eq!(roots.root(Layer::Ai), Path::new("ai"));
-        assert_eq!(roots.root(Layer::Os), Path::new("os"));
-        assert_eq!(roots.root(Layer::Infra), Path::new("infra"));
     }
 }
