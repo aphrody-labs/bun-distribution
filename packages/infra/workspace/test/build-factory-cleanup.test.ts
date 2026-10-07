@@ -8,6 +8,7 @@ import {
   symlinkSync,
   writeFileSync,
   chmodSync,
+  readFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -16,6 +17,9 @@ import {
   factoryPathReferenced,
   factoryTransientShell,
   validateFactoryCleanup,
+  withFactoryResource,
+  prewarmFactorySccache,
+  factoryLeaseHeld,
 } from "../src/build-factory-cleanup.ts";
 import type { BuildFactoryConfig } from "../src/build-factory.ts";
 const roots: string[] = [];
@@ -275,7 +279,6 @@ test("direct route holds the kernel lease through nested work and cleans on fail
       privilegeBinary: "/usr/bin/sudo" as const,
     },
   };
-  const { withFactoryResource, factoryLeaseHeld } = await import("../src/build-factory-cleanup.ts");
   const previousTmp = process.env.TMPDIR;
   await expect(
     withFactoryResource(
@@ -391,7 +394,6 @@ test("direct startup refuses a symlink and releases the untouched lease", async 
       privilegeBinary: "/usr/bin/sudo" as const,
     },
   };
-  const { withFactoryResource } = await import("../src/build-factory-cleanup.ts");
   let invoked = false;
   await expect(
     withFactoryResource(
@@ -418,7 +420,6 @@ test("surviving child cleanup retains the direct command's original exit code", 
       privilegeBinary: "/usr/bin/sudo" as const,
     },
   };
-  const { withFactoryResource } = await import("../src/build-factory-cleanup.ts");
   const code = await withFactoryResource(
     config,
     async () => {
@@ -450,7 +451,6 @@ test("a proved waiter on the same heavy lock cannot block terminal scratch clean
       privilegeBinary: "/usr/bin/sudo" as const,
     },
   };
-  const { withFactoryResource } = await import("../src/build-factory-cleanup.ts");
   let queued: ReturnType<typeof Bun.spawn> | undefined;
   await withFactoryResource(
     config,
@@ -472,3 +472,110 @@ test("a proved waiter on the same heavy lock cannot block terminal scratch clean
   expect(await queued!.exited).toBe(0);
   expect(readdirSync(f.transient)).toEqual([]);
 }, 30000);
+
+test("shared compiler daemon startup loses job metadata while compiler clients retain their scratch", async () => {
+  const f = fixture();
+  mkdirSync(join(f.root, "locks"), { recursive: true });
+  f.config.cleanup = {
+    transientRoot: f.transient,
+    privilegeBinary: "/usr/bin/sudo",
+    retiredOutputs: [],
+  };
+  const binary = join(f.root, "sccache-fixture");
+  const receipt = join(f.root, "daemon-start.json");
+  writeFileSync(
+    binary,
+    `#!/usr/bin/env bun
+await Bun.write(${JSON.stringify(receipt)}, JSON.stringify({tmp:process.env.TMPDIR, cache:process.env.SCCACHE_DIR, idle:process.env.SCCACHE_IDLE_TIMEOUT, resource:process.env.APHRODY_FACTORY_RESOURCE, lock:process.env.APHRODY_FACTORY_LOCK_PATH, target:process.env.CARGO_TARGET_DIR, notify:process.env.SCCACHE_STARTUP_NOTIFY}));
+`,
+  );
+  chmodSync(binary, 0o700);
+  const prior = {
+    target: process.env.CARGO_TARGET_DIR,
+    notify: process.env.SCCACHE_STARTUP_NOTIFY,
+    idle: process.env.SCCACHE_IDLE_TIMEOUT,
+  };
+  try {
+    await withFactoryResource(
+      f.config,
+      async () => {
+        process.env.CARGO_TARGET_DIR = join(f.root, "cache/cargo/job");
+        process.env.SCCACHE_STARTUP_NOTIFY = join(f.transient, "startup.sock");
+        process.env.SCCACHE_IDLE_TIMEOUT = "1";
+        await prewarmFactorySccache(f.config, binary);
+        expect(JSON.parse(readFileSync(receipt, "utf8"))).toEqual({
+          tmp: join(f.root, "cache/sccache/control-plane-tmp"),
+          cache: join(f.root, "cache/sccache"),
+          idle: "0",
+        });
+        expect(process.env.TMPDIR).toBe(f.transient);
+        expect(process.env.CARGO_TARGET_DIR).toBe(join(f.root, "cache/cargo/job"));
+        expect(process.env.SCCACHE_IDLE_TIMEOUT).toBe("1");
+        const compiler = Bun.spawn(
+          [
+            process.execPath,
+            "-e",
+            'await Bun.write(process.env.TMPDIR + "/compiler-output", "job");',
+          ],
+          { env: { ...process.env }, stdout: "ignore", stderr: "pipe" },
+        );
+        expect(await compiler.exited).toBe(0);
+        expect(readFileSync(join(f.transient, "compiler-output"), "utf8")).toBe("job");
+      },
+      f.docker,
+    );
+    expect(readdirSync(f.transient)).toEqual([]);
+    expect(readFileSync(receipt, "utf8")).toContain("control-plane-tmp");
+    await expect(prewarmFactorySccache(f.config, binary)).rejects.toThrow(
+      "actual factory heavy lease",
+    );
+  } finally {
+    if (prior.target === undefined) delete process.env.CARGO_TARGET_DIR;
+    else process.env.CARGO_TARGET_DIR = prior.target;
+    if (prior.notify === undefined) delete process.env.SCCACHE_STARTUP_NOTIFY;
+    else process.env.SCCACHE_STARTUP_NOTIFY = prior.notify;
+    if (prior.idle === undefined) delete process.env.SCCACHE_IDLE_TIMEOUT;
+    else process.env.SCCACHE_IDLE_TIMEOUT = prior.idle;
+  }
+});
+
+test("direct resource CLI passes the acquired job environment to its compiler command", async () => {
+  const f = fixture();
+  mkdirSync(join(f.root, "locks"), { recursive: true });
+  const bin = join(f.root, "bin");
+  mkdirSync(bin);
+  writeFileSync(join(bin, "docker"), "#!/bin/sh\nexit 0\n");
+  chmodSync(join(bin, "docker"), 0o700);
+  const config = {
+    ...f.config,
+    cleanup: { transientRoot: f.transient, privilegeBinary: "/usr/bin/sudo", retiredOutputs: [] },
+  };
+  const configPath = join(f.root, "factory.json");
+  writeFileSync(configPath, JSON.stringify(config));
+  const receipt = join(f.root, "compiler-environment.json");
+  const code = `await Bun.write(${JSON.stringify(receipt)}, JSON.stringify({tmp:process.env.TMPDIR, resource:process.env.APHRODY_FACTORY_RESOURCE})); await Bun.write(process.env.TMPDIR + "/compiler-output", "job");`;
+  const child = Bun.spawn(
+    [
+      process.execPath,
+      join(import.meta.dir, "../src/build-factory-cleanup.ts"),
+      configPath,
+      process.execPath,
+      "-e",
+      code,
+    ],
+    {
+      env: { ...process.env, PATH: bin + ":" + process.env.PATH },
+      stdout: "pipe",
+      stderr: "pipe",
+      timeout: 10000,
+    },
+  );
+  const [exit, error] = await Promise.all([child.exited, new Response(child.stderr).text()]);
+  expect(error).toBe("");
+  expect(exit).toBe(0);
+  expect(JSON.parse(readFileSync(receipt, "utf8"))).toEqual({
+    tmp: f.transient,
+    resource: f.transient,
+  });
+  expect(readdirSync(f.transient)).toEqual([]);
+});

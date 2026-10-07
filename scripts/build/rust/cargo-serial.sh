@@ -94,6 +94,12 @@ fi
 if [[ ! -v RUSTC_WRAPPER ]] && command -v sccache >/dev/null 2>&1; then
     export RUSTC_WRAPPER=sccache
 fi
+# Prewarm immediately before every Cargo invocation, including inherited leases:
+# the shared daemon may have timed out during a preceding Bun job. Compiler requests
+# retain the client's job TMPDIR; only persistent server startup metadata is sanitized.
+if [[ "$help_only" == false && -n "${APHRODY_FACTORY_RESOURCE:-}" && ( "${RUSTC_WRAPPER:-}" == sccache || "${RUSTC_WRAPPER:-}" == */sccache ) ]]; then
+    bun "$source_root/packages/infra/workspace/src/build-factory-cleanup.ts" --sccache "$factory_config" "$(command -v "$RUSTC_WRAPPER")"
+fi
 echo "[cargo-serial] waiting for $lock_file (jobs=$jobs, timeout=${wait_seconds}s)" >&2
 # Keep ownership in flock itself. A spawned sccache daemon must not inherit
 # the descriptor and hold the build lock after Cargo has exited.

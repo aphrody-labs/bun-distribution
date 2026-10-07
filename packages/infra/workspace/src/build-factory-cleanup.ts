@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { posix } from "node:path";
-import { readFileSync, statSync } from "node:fs";
+import { readFileSync, statSync, mkdirSync, lstatSync, realpathSync } from "node:fs";
 import type { BuildFactoryConfig } from "./build-factory.ts";
 
 export interface FactoryCleanupPolicy {
@@ -312,7 +312,7 @@ export function inheritedFactoryResourceHeld(): boolean {
 export async function withFactoryResource<T>(
   config: BuildFactoryConfig,
   body: () => Promise<T>,
-  dockerBinary = "docker",
+  dockerBinary = Bun.which("docker") ?? "docker",
 ): Promise<T> {
   if (!config.cleanup) return body();
   validateFactoryCleanup(config, config.cleanup);
@@ -422,19 +422,77 @@ export async function withFactoryResource<T>(
   }
 }
 
+/** Persistent sccache control-plane metadata must never retain a job's disposable lease. */
+export async function prewarmFactorySccache(config: BuildFactoryConfig, binary = "sccache") {
+  const inheritedLease = inheritedFactoryResourceHeld();
+  if (!inheritedLease && !factoryLeaseHeld(config.lockPath, localLeases.get(config.lockPath)))
+    throw new Error("Shared sccache startup requires the actual factory heavy lease");
+  // Secondary hosts inherit their own proven lease and persistent cache root.
+  const cacheRoot = inheritedLease
+    ? posix.join(posix.dirname(process.env.APHRODY_FACTORY_RESOURCE!), "cache")
+    : config.cacheRoot;
+  const cache = posix.join(cacheRoot, "sccache");
+  const controlTmp = posix.join(cache, "control-plane-tmp");
+  mkdirSync(controlTmp, { recursive: true, mode: 0o700 });
+  if (lstatSync(controlTmp).isSymbolicLink() || realpathSync(controlTmp) !== controlTmp)
+    throw new Error("Shared sccache control-plane temporary directory must be canonical");
+  const env: Record<string, string | undefined> = {
+    ...process.env,
+    SCCACHE_DIR: cache,
+    // Toolchain acquisition can outlast the daemon's default idle timeout.
+    // A later client must not respawn it with the disposable job environment.
+    SCCACHE_IDLE_TIMEOUT: "0",
+    TMPDIR: controlTmp,
+  };
+  for (const key of [
+    "APHRODY_FACTORY_RESOURCE",
+    "APHRODY_FACTORY_LOCK_PATH",
+    "SCCACHE_STARTUP_NOTIFY",
+    "CARGO_TARGET_DIR",
+    "APHRODY_CARGO_TARGET_DIR",
+  ])
+    delete env[key];
+  const run = async (arg: string) => {
+    const child = Bun.spawn([binary, arg], {
+      env,
+      stdin: "ignore",
+      stdout: "ignore",
+      stderr: "pipe",
+      timeout: 15000,
+    });
+    const [code, error] = await Promise.all([child.exited, new Response(child.stderr).text()]);
+    return { code, error };
+  };
+  const started = await run("--start-server");
+  // The owner reports a nonzero status when its server already exists. Verify that server responds.
+  if (started.code !== 0 && (await run("--show-stats")).code !== 0)
+    throw new Error(`Shared sccache server could not start: ${started.error.trim()}`);
+}
+
 async function resourceMain() {
-  const [configPath, ...command] = Bun.argv.slice(2);
+  let [configPath, ...command] = Bun.argv.slice(2);
+  const sccacheOnly = configPath === "--sccache";
+  if (sccacheOnly) [configPath, ...command] = command;
   if (configPath === "--held") {
     process.exitCode = inheritedFactoryResourceHeld() ? 0 : 1;
     return;
   }
-  if (!configPath || command.length === 0)
+  if (!configPath || (!sccacheOnly && command.length === 0))
     throw new Error("usage: factory-resource <config> <command...>");
   const config = (await Bun.file(configPath).json()) as BuildFactoryConfig;
   if (!config.cleanup)
     throw new Error("Factory transient policy is required for direct resource routing");
+  if (sccacheOnly) {
+    await prewarmFactorySccache(config, command[0]);
+    return;
+  }
   const code = await withFactoryResource(config, async () => {
-    const child = Bun.spawn(command, { stdin: "inherit", stdout: "inherit", stderr: "inherit" });
+    const child = Bun.spawn(command, {
+      env: { ...process.env },
+      stdin: "inherit",
+      stdout: "inherit",
+      stderr: "inherit",
+    });
     return child.exited;
   });
   process.exitCode = code;

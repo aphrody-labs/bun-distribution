@@ -11,7 +11,7 @@ afterEach(() => {
   for (const path of fixtures.splice(0)) rmSync(path, { recursive: true, force: true });
 });
 
-async function run(host: string) {
+async function run(host: string, held = false) {
   const root = mkdtempSync(join(tmpdir(), "aphrody-cargo-routing-"));
   fixtures.push(root);
   const wrapper = join(root, "scripts/build/rust/cargo-serial.sh");
@@ -31,12 +31,16 @@ async function run(host: string) {
   await Bun.write(
     join(root, "packages/infra/workspace/src/build-factory-cleanup.ts"),
     `
-if (Bun.argv[2] === "--held") process.exit(1);
+if (Bun.argv[2] === "--held") process.exit(${held ? 0 : 1});
+if (Bun.argv[2] === "--sccache") { console.log("fixture-shared-cache-prewarm"); process.exit(0); }
 console.log("fixture-resource-owner");
 const child = Bun.spawn(Bun.argv.slice(3), { env: { ...process.env, APHRODY_BUILD_HOST: "", APHRODY_FACTORY_RESOURCE: "", APHRODY_LOCAL_CARGO: "1" }, stdout: "inherit", stderr: "inherit" });
 process.exitCode = await child.exited;
 `,
   );
+  const sccache = join(bin, "sccache");
+  await Bun.write(sccache, "#!/bin/sh\nexit 0\n");
+  chmodSync(sccache, 0o700);
   const cargo = join(bin, "cargo");
   await Bun.write(cargo, '#!/bin/sh\nprintf "fixture-cargo:%s\\n" "$*"\n');
   chmodSync(cargo, 0o700);
@@ -45,7 +49,8 @@ process.exitCode = await child.exited;
       ...process.env,
       PATH: `${bin}:${process.env.PATH ?? ""}`,
       APHRODY_BUILD_HOST: host,
-      APHRODY_FACTORY_RESOURCE: "",
+      APHRODY_FACTORY_RESOURCE: held ? join(root, "transient") : "",
+      RUSTC_WRAPPER: "sccache",
       APHRODY_LOCAL_CARGO: "0",
       APHRODY_CLOUD: "0",
       CLAUDE_CODE_REMOTE: "false",
@@ -78,5 +83,19 @@ linuxTest.each(["", "wsl", "dbfr-untrusted"])(
     expect(result.exitCode).toBe(64);
     expect(result.stdout.toString()).not.toContain("fixture-cargo");
     expect(result.stderr.toString()).toContain("Heavy Cargo never runs in WSL");
+  },
+);
+
+linuxTest(
+  "inherited heavy resource prewarms the shared daemon immediately before Cargo",
+  async () => {
+    const result = await run("vps", true);
+    const output = result.stdout.toString();
+    expect(result.exitCode).toBe(0);
+    expect(output).toContain("fixture-shared-cache-prewarm");
+    expect(output.indexOf("fixture-shared-cache-prewarm")).toBeLessThan(
+      output.indexOf("fixture-cargo"),
+    );
+    expect(output).not.toContain("fixture-resource-owner");
   },
 );
