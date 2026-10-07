@@ -72,6 +72,7 @@
     }
   ],
   "assistant": {
+    "channelId": "1554189195201740803",
     "modelBaseUrl": "http://127.0.0.1:8798/v1",
     "model": "gemma4-e2b",
     "pollSeconds": 5,

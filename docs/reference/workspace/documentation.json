@@ -3136,7 +3136,7 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "1185f5b1bed68b388c94a233fe76672daddb25c368cb1881df0050df0b3fb586",
+      "sha256": "3de3163e720cbf12c4f58110c5d398d242c53952fcfe6eb45e003b5430196c21",
       "bytes": 8177,
       "domain": "",
       "status": "generated",
@@ -6494,6 +6494,16 @@
       "canonical": "docs/operations/infra/CREATOR.md"
     },
     {
+      "path": "docs/operations/infra/DISCORD-SHENRON-AI.md",
+      "title": "Discord Aphrody et Shenron : raccordement IA",
+      "sha256": "0c6cf88ac17c4d3bb5b72df258cfbde227de1177429b641f6f0d31ad09f14808",
+      "bytes": 3775,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/DISCORD-SHENRON-AI.md"
+    },
+    {
       "path": "docs/operations/infra/DOWNLOADS.md",
       "title": "Aphrody downloads: site, publisher and GitHub releases",
       "sha256": "89d3706e1e1a25aee5fc9c8b09b9f0671442bc16bd6e0d8d2f6f2a0a2fa9f7c7",
@@ -6562,6 +6572,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/infra/MCP-A2A.md"
+    },
+    {
+      "path": "docs/operations/infra/OMAR-ADMIN.md",
+      "title": "Administration Aphrody — Omar",
+      "sha256": "3cba3f7221b2ea3e56f22e5baa9de272ab67ff7968711cd89d65660a26965f10",
+      "bytes": 3660,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/OMAR-ADMIN.md"
     },
     {
       "path": "docs/operations/infra/OVH-VPS-INTEGRATION-TESTING.md",
@@ -31856,7 +31876,7 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "71ae4229a937a1f3721a76b56081ffc59a25c4f702e3fe25037c7b42903baa0c",
+      "sha256": "a7bd692d20a809acfddded5e2f0f920292152c4271647276dc25273cb2dacbb5",
       "bytes": 50037,
       "domain": "workspace",
       "status": "generated",
@@ -36816,8 +36836,8 @@
     {
       "path": "packages/discord/aphrody-messaging/README.md",
       "title": "@aphrody/messaging",
-      "sha256": "7a8c077107ad2ff451bd6ce3acd0018796a34b6dcf7d4934d282cdb753f4a9fd",
-      "bytes": 1628,
+      "sha256": "7a4d61d0c333f329065275fceebe445f63291e00fa7be34e8d1eb3a3bd2846d0",
+      "bytes": 2063,
       "domain": "discord",
       "status": "canonical",
       "visibility": "private",
@@ -36826,8 +36846,8 @@
     {
       "path": "packages/discord/kit/README.md",
       "title": "@aphrody/discord-kit",
-      "sha256": "18fa0d95c4f0c87d3f43b357e42c49df68c13658940c3e0e6bb92d7001c1306d",
-      "bytes": 1237,
+      "sha256": "9633c541e4c4b7a952f346eaed7d71f968da63168c1deebb871dff0d25ac5532",
+      "bytes": 1672,
       "domain": "discord",
       "status": "canonical",
       "visibility": "private",
@@ -37382,16 +37402,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "var/mirror/README.md"
-    },
-    {
-      "path": "var/reports/shenron-cutover-2026-10-07/TODO.md",
-      "title": "Shenron vps → dbfr",
-      "sha256": "bbc1d3ddd9f870b7978ab782335125969fd6f812600dcab38c13cb9166389a3c",
-      "bytes": 447,
-      "domain": "",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "var/reports/shenron-cutover-2026-10-07/TODO.md"
     }
   ],
   "duplicates": [

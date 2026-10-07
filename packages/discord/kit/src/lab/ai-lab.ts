@@ -17,6 +17,7 @@ export interface LabPolicy {
     channels: { name: string; topic: string; guide?: string }[];
   }[];
   assistant: {
+    channelId?: string;
     modelBaseUrl: string;
     model: string;
     pollSeconds: number;

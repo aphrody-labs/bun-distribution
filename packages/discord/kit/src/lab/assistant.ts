@@ -16,18 +16,24 @@ export interface LabMessage {
   webhook_id?: string;
   mentions?: { id: string }[];
 }
-export function eligiblePrompt(message: LabMessage, state: LabState): string | undefined {
+export function eligiblePrompt(
+  message: LabMessage,
+  state: LabState,
+  channelId = state.channels.assistant,
+): string | undefined {
   if (
-    message.channel_id !== state.channels.assistant ||
+    message.channel_id !== channelId ||
     message.author.bot ||
     message.webhook_id ||
-    !message.mentions?.some((user) => user.id === state.botId)
+    (!message.mentions?.some((user) => user.id === state.botId) &&
+      !/^aphrody(?:[\s,:]|$)/i.test(message.content))
   )
     return;
   return (
     message.content
       .replaceAll(`<@${state.botId}>`, "")
       .replaceAll(`<@!${state.botId}>`, "")
+      .replace(/^aphrody[\s,:]*/i, "")
       .trim()
       .slice(0, 4000) || undefined
   );
@@ -70,7 +76,11 @@ export async function processMessage(
   api: LabApi,
   infer = askModel,
 ): Promise<boolean> {
-  const prompt = eligiblePrompt(message, state);
+  const prompt = eligiblePrompt(
+    message,
+    state,
+    policy.assistant.channelId ?? state.channels.assistant,
+  );
   if (!prompt) return false;
   const member = await api<{ roles: string[] }>(
     `/guilds/${state.guildId}/members/${message.author.id}`,
@@ -115,13 +125,17 @@ if (import.meta.main) {
     (role) => role.name === policy.adminRole && BigInt(role.permissions) & 8n,
   );
   if (!admin) throw new Error("Admin role absent");
+  const channelId = policy.assistant.channelId ?? state.channels.assistant;
+  const channel = await api<{ guild_id: string; type: number }>(`/channels/${channelId}`);
+  if (channel.guild_id !== policy.guildId || channel.type !== 0)
+    throw new Error("Conversation channel identity mismatch");
   if (process.argv.includes("--smoke")) {
     const answer = await askModel(policy, "Réponds exactement LAB_OK.");
     const posted = await api<{ id: string }>(
       `/channels/${state.channels["lab-status"]}/messages`,
       "POST",
       {
-        content: `Assistant IA local vérifié : ${policy.assistant.model}. Réponse de contrôle : ${answer.slice(0, 100)}.\nDans <#${state.channels.assistant}>, mentionnez <@${state.botId}> avec votre question.`,
+        content: `Assistant IA local vérifié : ${policy.assistant.model}. Réponse de contrôle : ${answer.slice(0, 100)}.\nDans <#${channelId}>, mentionnez <@${state.botId}> avec votre question.`,
         allowed_mentions: { parse: [] },
       },
     );
@@ -135,9 +149,7 @@ if (import.meta.main) {
     ? ((await Bun.file(cursorPath).json()) as { after: string }).after
     : undefined;
   if (!cursor) {
-    const latest = await api<LabMessage[]>(
-      `/channels/${state.channels.assistant}/messages?limit=1`,
-    );
+    const latest = await api<LabMessage[]>(`/channels/${channelId}/messages?limit=1`);
     cursor = latest[0]?.id ?? String(BigInt(Date.now() - 1420070400000) << 22n);
     await saveState(cursorPath, { after: cursor });
   }
@@ -150,7 +162,7 @@ if (import.meta.main) {
     JSON.stringify({
       ready: true,
       guildId: state.guildId,
-      channelId: state.channels.assistant,
+      channelId,
       model: policy.assistant.model,
     }),
   );
@@ -160,7 +172,7 @@ if (import.meta.main) {
     if (stopping) break;
     try {
       const messages: LabMessage[] = await api<LabMessage[]>(
-        `/channels/${state.channels.assistant}/messages?after=${cursor}&limit=100`,
+        `/channels/${channelId}/messages?after=${cursor}&limit=100`,
       );
       for (const message of messages.toSorted((a, b) => (BigInt(a.id) < BigInt(b.id) ? -1 : 1))) {
         if (stopping) break;

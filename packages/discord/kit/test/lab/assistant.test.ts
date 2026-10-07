@@ -30,6 +30,7 @@ const policy = {
     maxTokens: 384,
   },
 } as LabPolicy;
+const researcherApi: LabApi = async <T>() => ({ roles: ["researcher"] }) as T;
 const emptyRolesApi: LabApi = async <T>() => ({ roles: [] }) as T;
 describe("laboratory assistant boundary", () => {
   test("accept only explicit human mentions in configured channel", () => {
@@ -51,6 +52,28 @@ describe("laboratory assistant boundary", () => {
       }),
     ).toBe(false);
     expect(calls).toBe(0);
+  });
+  test("migration targets general and accepts an explicit Aphrody address", async () => {
+    const migrated = { ...policy, assistant: { ...policy.assistant, channelId: "general" } };
+    let calls = 0;
+    const infer = async () => {
+      calls++;
+      return "answer";
+    };
+    expect(await processMessage(message, state, migrated, "admin", researcherApi, infer)).toBe(
+      false,
+    );
+    expect(
+      await processMessage(
+        { ...message, channel_id: "general", content: "Aphrody, bonjour", mentions: [] },
+        state,
+        migrated,
+        "admin",
+        researcherApi,
+        infer,
+      ),
+    ).toBe(true);
+    expect(calls).toBe(1);
   });
   test("researcher response is bounded, referenced and cannot ping anyone", async () => {
     let payload: Record<string, unknown> | undefined;
