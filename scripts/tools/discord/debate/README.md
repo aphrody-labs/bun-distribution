@@ -24,9 +24,12 @@ La politique des rôles, des modèles et des limites est dans
 
 ## Sources et apprentissage
 
-Le pont appelle les outils natifs `aphrody_shenron_rag_search` et
-`aphrody_shenron_llm_chat` du MCP Shenron existant sur DBFR. Si la recherche
-native est indisponible, il utilise le VFS déjà servi par Shenron. Les références
+Le pont appelle `aphrody_shenron_rag_search` du MCP canonique existant sur DBFR.
+Si la recherche native est indisponible, il utilise le VFS déjà servi par Shenron.
+Les réponses viennent des deux daemons déjà installés sur VPS : Gemma sur
+`127.0.0.1:8798`, Shenron sur `127.0.0.1:8799`. Chaque réponse est bornée à
+384 tokens, avec un délai de 90 secondes. Le contexte conserve quatre réponses
+récentes de 600 caractères et des extraits de 900 caractères. Les références
 conservent leurs identifiants et URL. Fandom est rejeté ; le manga, les databooks,
 l'anime, les films et les jeux restent distincts. Une référence retrouvée ne
 garantit pas que sa proposition est vraie. Aucun OCR, index, source éditoriale
@@ -50,7 +53,9 @@ Exécuter depuis la racine Aphrody :
 
 ```sh
 bun scripts/tools/discord/debate/install.ts
-bun scripts/tools/discord/debate/install.ts --apply
+APHRODY_SSH_COMMAND_TIMEOUT_SECS=250 bun scripts/tools/discord/debate/install.ts --apply
+# Un échange demandé par l’opérateur ; le service est arrêté pendant l’écriture.
+APHRODY_SSH_COMMAND_TIMEOUT_SECS=250 bun scripts/tools/discord/debate/install.ts --apply --exchange "Goku contre Vegeta : réponds à ton rival avec les sources disponibles"
 ```
 
 Le plan et l'application passent par Infra, installent les ponts root sur DBFR,
@@ -59,8 +64,11 @@ le bundle sur VPS et la seule unité
 Les identifiants existants restent sur leurs hôtes. Les sessions, états et
 rollouts restent dans `/srv/aphrody-lab/state/debate`, en répertoires privés et
 fichiers 0600 ; ils ne doivent pas entrer dans Git ou les artefacts publics.
-L'installation stoppe son worker avant de modifier son état ; `--probe`
-vérifie les backends sans publier de message de test.
+L'installation stoppe son worker avant de modifier son bundle ou son état,
+sauvegarde les fichiers existants dans son store privé avec vérification SHA-256
+et redémarre le service même si un contrôle échoue. `--probe` vérifie les
+backends sans publier de message de test ; `--exchange` publie un tour demandé
+par l’opérateur. Les tours autonomes restent bornés par la politique.
 
 Shenron refusait initialement toute guilde différente de sa guilde principale,
 à la connexion comme lors de l'invitation. Le correctif source ajoute une liste
@@ -99,7 +107,27 @@ Le bot corrigé est actif sur DBFR : santé HTTP vérifiée, image
 montages protégés inchangés et override systemd installé. Le salon privé créé
 porte l'identifiant `1557364553283543161`. La réception privée du déploiement
 sur DBFR conserve le checksum du binaire et l'image de retour arrière.
-La guilde doit encore réinviter un bot qui l'avait déjà quittée.
+Le vrai compte Shenron est désormais présent dans la guilde (contrôle du 7 octobre 2026).
 
 Référence de packaging vérifiée :
 [documentation officielle Bun sur les exécutables](https://bun.com/docs/bundler/executables).
+
+## Correction des échanges locaux du 7 octobre 2026
+
+Le service était actif et les probes courts réussissaient, mais quatre tours
+autonomes ne contenaient aucune réponse Shenron. Un prompt sourcé de 9 715 octets
+a échoué au délai SSH de 65 secondes. Le pont HTTP expirait après 55 secondes,
+alors que le backend natif autorise 90 secondes et omet `max_tokens`.
+Le worker utilise désormais les daemons locaux existants avec une génération
+bornée, et le délai du pont RAG suit le contrat natif. Le message système
+requiert de finir la réponse sans confirmation intermédiaire tout en conservant
+les limites réelles des outils, l’authentification et les contrôles techniques.
+
+Qualification de ce lot : 20 tests Bun, quatre tests Python, TypeScript ciblé,
+oxlint strict, oxfmt et Ruff passent. Le plan Infra et la vérification systemd
+passent ; le service est activé après sauvegarde privée et checksum du bundle
+`8591ad81e275201131fdb129554005a33c7d9534573c1a15a411ca8b65ec2e48`.
+L’échange `1557479077550489601` est réellement publié dans `debat` par le compte
+Shenron (`1557479416630747198`) puis Aphrody/Gemma (`1557479594007863406`).
+Les conversations et données d’entraînement restent dans leur store privé.
+Aucun entraînement de poids ni accès GPU/Omar n’est qualifié par cet échange.

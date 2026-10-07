@@ -9,6 +9,10 @@ const remote = (host: string, cmd: string) =>
   run([cli, "infra", "ssh", "exec", "--host", host, "--cmd", cmd]);
 
 if (import.meta.main) {
+  const exchangeIndex = process.argv.indexOf("--exchange");
+  const exchangeTopic = exchangeIndex < 0 ? undefined : process.argv[exchangeIndex + 1];
+  if (exchangeIndex >= 0 && (!exchangeTopic?.trim() || exchangeTopic.startsWith("--")))
+    throw new Error("--exchange requires a topic");
   const plan = {
     host: "vps",
     unit: "aphrody-discord-debate.service",
@@ -89,14 +93,6 @@ for name in ${JSON.stringify(names)}:
  assert hashlib.sha256((target/name).read_bytes()).hexdigest()==hashes[name]
 print(json.dumps({'verified':True,'files':${JSON.stringify(names)}}))`;
   await remote(
-    "dbfr",
-    `sudo -n python3 -c ${quote(verifyInstall(["aphrody-debate-backend.py", "aphrody-debate-discord.mjs"], "/usr/local/libexec"))}`,
-  );
-  await remote(
-    "vps",
-    `sudo -n python3 -c ${quote(verifyInstall(["debate.mjs", "debate-policy.json"], plan.target))}`,
-  );
-  await remote(
     "vps",
     `if systemctl is-active --quiet ${plan.unit}; then sudo -n systemctl stop ${plan.unit}; fi`,
   );
@@ -106,12 +102,40 @@ print(json.dumps({'verified':True,'files':${JSON.stringify(names)}}))`;
   );
   const worker =
     "/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/debate.mjs --policy /srv/aphrody-lab/debate-policy.json --env-file /etc/aphrody-discord.env --state /srv/aphrody-lab/state/debate/state.json";
-  console.log(await remote("vps", `${worker} --configure --apply`));
-  console.log(await remote("vps", `${worker} --probe`));
-  // The declared unit passes Infra's composition plan and apply, then activation.
-  console.log(await remote("vps", `${worker} --guide`));
-  console.log(await run(["bun", hostCli, "host-apply", plan.unit, "--target", "vps", "--apply"]));
-  await remote("vps", `sudo -n systemctl restart ${plan.unit}`);
+  const backup = `/srv/aphrody-lab/state/debate/rollback-${stage.split("/").at(-1)}`;
+  const preserve = `import pathlib,hashlib,shutil,json,os
+target=pathlib.Path(${JSON.stringify(backup)})
+target.mkdir(mode=0o700)
+for name,source in {'state.json':'/srv/aphrody-lab/state/debate/state.json','debate.mjs':'/srv/aphrody-lab/debate.mjs','debate-policy.json':'/srv/aphrody-lab/debate-policy.json'}.items():
+ p=pathlib.Path(source)
+ if p.exists():
+  dest=target/name
+  shutil.copy2(p,dest)
+  os.chmod(dest,0o600)
+  assert hashlib.sha256(p.read_bytes()).digest()==hashlib.sha256(dest.read_bytes()).digest()
+print(json.dumps({'verifiedBackup':True}))`;
+  try {
+    console.log(await remote("vps", `sudo -n -u ubuntu python3 -c ${quote(preserve)}`));
+    await remote(
+      "dbfr",
+      `sudo -n python3 -c ${quote(verifyInstall(["aphrody-debate-backend.py", "aphrody-debate-discord.mjs"], "/usr/local/libexec"))}`,
+    );
+    await remote(
+      "vps",
+      `sudo -n python3 -c ${quote(verifyInstall(["debate.mjs", "debate-policy.json"], plan.target))}`,
+    );
+    console.log(await remote("vps", `${worker} --configure --apply`));
+    console.log(await remote("vps", `${worker} --probe`));
+    console.log(await remote("vps", `${worker} --guide`));
+    if (exchangeTopic)
+      console.log(await remote("vps", `${worker} --exchange ${quote(exchangeTopic)}`));
+    // The declared unit passes Infra's composition plan and apply, then activation.
+    console.log(await run(["bun", hostCli, "host-apply", plan.unit, "--target", "vps", "--apply"]));
+  } finally {
+    // A failed probe leaves the last private session intact and never strands
+    // the existing service stopped. Backups remain in the protected host store.
+    await remote("vps", `sudo -n systemctl restart ${plan.unit}`);
+  }
   console.log(await remote("vps", `systemctl is-active ${plan.unit}`));
   console.log(JSON.stringify({ installed: true, hashes }));
 }

@@ -43,7 +43,9 @@ def call(tool, arguments):
         request = urllib.request.Request(
             "http://127.0.0.1:8789/mcp", data=json.dumps(body).encode(), headers=headers
         )
-        with urllib.request.urlopen(request, timeout=55) as response:
+        # Native local chat allows 90 s. Keep the bridge deadline above it;
+        # a 55 s probe passed while real grounded turns were being cancelled.
+        with urllib.request.urlopen(request, timeout=110) as response:
             session = response.headers.get("mcp-session-id")
             if session:
                 headers["Mcp-Session-Id"] = session

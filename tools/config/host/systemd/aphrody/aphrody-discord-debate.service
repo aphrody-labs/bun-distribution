@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 [Unit]
 Description=Aphrody source-grounded Shenron Discord debates
-After=network-online.target aphrody-llama-gemma4.service
+After=network-online.target aphrody-llama-gemma4.service aphrody-llama-shenron-chat.service
 Wants=network-online.target
 
 [Service]
@@ -12,7 +12,7 @@ WorkingDirectory=/srv/aphrody-lab/state/debate
 ExecStart=/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/debate.mjs --policy /srv/aphrody-lab/debate-policy.json --env-file /etc/aphrody-discord.env --state /srv/aphrody-lab/state/debate/state.json
 Restart=on-failure
 RestartSec=5
-TimeoutStopSec=150
+TimeoutStopSec=250
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only

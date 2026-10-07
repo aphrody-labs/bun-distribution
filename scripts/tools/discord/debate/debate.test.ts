@@ -2,6 +2,7 @@
 import { expect, test } from "bun:test";
 import {
   addressedPrompt,
+  groundedPrompt,
   maybeInitiate,
   approvedRollouts,
   citedSources,
@@ -12,7 +13,7 @@ import {
   type DebateState,
   type Source,
 } from "./debate.ts";
-import { configureDebate } from "./worker.ts";
+import { configureDebate, debateMessages, makeBackend } from "./worker.ts";
 import type { LabApi } from "../../../../packages/discord/kit/src/lab/ai-lab.ts";
 import type { LabMessage } from "../../../../packages/discord/kit/src/lab/assistant.ts";
 
@@ -88,6 +89,70 @@ test("grounds sequential Shenron/Gemma responses and disables mentions", async (
     f.posts.every((p) => p.allowed_mentions.parse.length === 0 && p.content.length <= 1900),
   ).toBe(true);
   expect(approvedRollouts(f.state)).toEqual([]);
+});
+test("bounds grounded CPU context while keeping citation identities", () => {
+  const longSource = { ...source, snippet: "x".repeat(2400), title: "t".repeat(600) };
+  const turns = Array.from({ length: 12 }, (_, index) => ({
+    id: String(index),
+    speaker: "shenron",
+    text: "h".repeat(1200),
+    prompt: "private prompt omitted",
+    sources: [longSource],
+  }));
+  const prompt = groundedPrompt(
+    "Goku",
+    "Une objection",
+    turns,
+    Array.from({ length: 6 }, () => ({ ...longSource })),
+  );
+  const data = JSON.parse(prompt.split("\n").at(-1)!) as {
+    history: { text: string }[];
+    sources: { sourceId: string; citation: string; snippet: string }[];
+  };
+  expect(data.history).toHaveLength(4);
+  expect(data.history.every((turn) => turn.text.length === 600)).toBe(true);
+  expect(data.sources[5]?.citation).toBe("[S6]");
+  expect(data.sources.every((item) => item.snippet.length === 900)).toBe(true);
+  expect(data.sources[0]?.sourceId).toBe(source.sourceId);
+  expect(prompt.length).toBeLessThan(11_000);
+});
+test("local model autonomy lives in a system message with truthful execution boundaries", () => {
+  const messages = debateMessages("Données sources synthétiques");
+  expect(messages.map((item) => item.role)).toEqual(["system", "user"]);
+  expect(messages[0]?.content).toContain("sans confirmation intermédiaire");
+  expect(messages[0]?.content).toContain("NHITL ne crée aucune authentification");
+  expect(messages[1]?.content).toBe("Données sources synthétiques");
+});
+test("both existing local models receive bounded generation and independent system instructions", async () => {
+  const originalFetch = globalThis.fetch;
+  const calls: { url: string; body: { model: string; max_tokens: number; messages: unknown[] } }[] =
+    [];
+  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+    calls.push({ url: String(input), body: JSON.parse(String(init?.body)) });
+    return Response.json({ choices: [{ message: { content: "Réponse locale" } }] });
+  }) as typeof fetch;
+  try {
+    const backend = makeBackend(policy);
+    for (const speaker of ["shenron", "gemma"] as const)
+      expect(await backend.answer(speaker, "Question synthétique")).toBe("Réponse locale");
+    expect(calls.map((call) => call.url)).toEqual([
+      "http://127.0.0.1:8799/v1/chat/completions",
+      "http://127.0.0.1:8798/v1/chat/completions",
+    ]);
+    expect(calls.map((call) => call.body.model)).toEqual(["shenron-chat-v2", "gemma4-e2b"]);
+    expect(calls.every((call) => call.body.max_tokens === 384)).toBe(true);
+    expect(calls.every((call) => call.body.messages.length === 2)).toBe(true);
+    const outside = makeBackend({
+      ...policy,
+      shenron: { ...policy.shenron, baseUrl: "https://unowned.invalid/v1" },
+    });
+    await expect(outside.answer("shenron", "Question")).rejects.toThrow(
+      "Local model endpoint required",
+    );
+    expect(calls).toHaveLength(2);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 test("only administrators can validate a cited Shenron response", async () => {
   const f = fixture();

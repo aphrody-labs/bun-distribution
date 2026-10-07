@@ -12,12 +12,14 @@
   "gemma": {
     "baseUrl": "http://127.0.0.1:8798/v1",
     "model": "gemma4-e2b",
-    "maxTokens": 600
+    "maxTokens": 384
   },
   "shenron": {
     "host": "dbfr",
     "bridge": "/usr/local/libexec/aphrody-debate-backend.py",
+    "baseUrl": "http://127.0.0.1:8799/v1",
     "model": "shenron-chat-v2",
+    "maxTokens": 384,
     "botId": "1497194276025663680",
     "discordBridge": "/usr/local/libexec/aphrody-debate-discord.mjs"
   },
