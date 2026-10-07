@@ -4,6 +4,7 @@ import { createGame, pointerAction, pointerDirection, step } from "./engine.js";
 import { readGamepadInput } from "./gamepad.js";
 import { DEFAULT_AVATAR, loadAvatar, normalizeAvatar, saveAvatar } from "./avatar.js";
 import { buildLoreSearchRequest, filterLoreSearchPayload } from "./lore-search.js";
+import { buildLoreCatalogRequest, normalizeLoreCatalogPayload } from "./lore-catalog.js";
 test("energy, transformation, cooldown and expiry", () => {
   const g = createGame();
   g.player.energy = 80;
@@ -158,4 +159,47 @@ test("manga series search scopes the query and filters mixed RAG results", () =>
 test("manga series search rejects unsupported source identifiers", () => {
   expect(buildLoreSearchRequest("Goku", "manga-dbs").error).toContain("n'est pas disponible");
   expect(buildLoreSearchRequest("x", "dragonball").error).toContain("2 et 120");
+});
+
+test("manga catalogue exposes the 42 standard volumes and keeps the count explicit", () => {
+  expect(buildLoreCatalogRequest("DB")).toEqual({ series: "DB" });
+  expect(buildLoreCatalogRequest("unknown").error).toContain("Choisis");
+  const catalog = normalizeLoreCatalogPayload(
+    {
+      count: 44,
+      volumes: [
+        { tome: "vol42", pages: 234, pagesWithJa: 71 },
+        { tome: "t901", pages: 114, pagesWithJa: 65 },
+        { tome: "vol1", pages: 221, pagesWithJa: 113 },
+        { tome: "vol43", pages: 200, pagesWithJa: 90 },
+      ],
+    },
+    "DB",
+  );
+  expect(catalog).toEqual({
+    series: "DB",
+    declaredCount: 44,
+    omittedCount: 2,
+    records: [
+      { id: "vol1", number: 1, pages: 221, pagesWithJa: 113 },
+      { id: "vol42", number: 42, pages: 234, pagesWithJa: 71 },
+    ],
+  });
+});
+
+test("Super catalogue sorts chapter IDs and rejects malformed entries", () => {
+  const catalog = normalizeLoreCatalogPayload(
+    {
+      count: 3,
+      volumes: [
+        { tome: "ch1417", pages: 45, pagesWithJa: 22 },
+        { tome: "ch1315", pages: 16, pagesWithJa: 10 },
+        { tome: "ch1418", pages: 0, pagesWithJa: 0 },
+      ],
+    },
+    "DBS",
+  );
+  expect(catalog.records.map(({ id }) => id)).toEqual(["ch1315", "ch1417"]);
+  expect(catalog.omittedCount).toBe(1);
+  expect(() => normalizeLoreCatalogPayload({ volumes: [] }, "invalid")).toThrow();
 });

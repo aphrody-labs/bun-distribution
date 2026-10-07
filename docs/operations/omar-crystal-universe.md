@@ -350,6 +350,31 @@ reste ouvert : le moteur Xenoverse 2 et ses assets propriétaires sont absents,
 Bevy n'est pas intégré, et les métadonnées RAG ne prouvent pas la transcription
 exhaustive de chaque page.
 
+## 2026-10-07 — Catalogue OCR consultable dans Dragon Pixel
+
+L'interface interroge aussi l'endpoint public filtrable
+`/api/public/manga/tomes?series=DB|DBS`. Une table native présente l'identifiant,
+les pages déclarées et les pages avec japonais. Elle ne charge aucune transcription
+ni image; les 2 fiches DB auxiliaires hors `vol1`–`vol42` sont comptées puis omises.
+Le proxy accepte uniquement `DB` et `DBS`, normalise les lignes, vérifie les
+compteurs et ordonne les volumes/chapitres numériquement. Sur mobile la table garde
+ses en-têtes sémantiques et peut défiler horizontalement dans une région focalisable.
+
+Inventaire direct actuel via l'API : DB retourne 44 fiches, dont les 42 volumes
+`vol1`–`vol42` (7 844 pages déclarées, 3 213 avec japonais) et deux entrées
+auxiliaires `t901`/`t902`; DBS retourne 103 identifiants continus `ch1315`–`ch1417`
+(4 355 pages déclarées, 2 122 avec japonais). Le serveur local `127.0.0.1:4336`
+renvoie HTTP 200 pour chaque série avec ces comptes, trie correctement les bornes,
+omet les fiches DB auxiliaires, et renvoie 400 pour une série non autorisée; la page
+retourne également 200. Assertions directes sur le normaliseur, bundle navigateur
+(6 modules), Bun (12 tests, 53 expect() calls via `bun test --reporter=dots
+/srv/aphrody-build/workspaces/aphrody-crystal-universe/apps/community/crystal-universe/engine.test.js`
+depuis `/tmp` pour éviter le preload `@happy-dom/global-registrator` absent du
+clone sparse), Oxlint strict, Oxfmt et `git diff --check` passent. Ces métadonnées
+n'établissent pas la transcription complète de toutes les pages, l'exhaustivité
+éditoriale de DBS ni les droits de redistribution du manga. Aucun texte OCR n'a été
+ajouté au dépôt.
+
 ## 2026-10-07 — Recherche RAG séparée par série
 
 Le sélecteur permet de chercher Dragon Ball classique ou Dragon Ball Super

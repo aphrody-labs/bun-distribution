@@ -16,6 +16,9 @@ deux mangas ensemble, ou séparément Dragon Ball (42 tomes) et Dragon Ball Supe
 Les vues séparées interrogent le corpus manga partagé, puis filtrent les titres de
 série parmi les 25 premiers résultats récupérés; elles ne garantissent pas une
 couverture exhaustive des pages OCR.
+Le catalogue séparé liste les 42 volumes Dragon Ball et les chapitres DBS annoncés
+par Shenron, avec leurs compteurs de pages OCR déclarés; ces métadonnées ne
+certifient pas la complétude des transcriptions.
 
 Le prototype s'inspire de conventions générales de jeux d'arène et reste entièrement
 original. Aucun graphisme, personnage ou code de jeux commerciaux n'est copié.

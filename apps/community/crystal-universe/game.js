@@ -51,6 +51,9 @@ let avatar = loadAvatar(localStorage);
 const loreForm = document.querySelector("#lore-search");
 const loreStatus = document.querySelector("#lore-status");
 const loreResults = document.querySelector("#lore-results");
+const loreCatalogForm = document.querySelector("#lore-catalog-form");
+const loreCatalogStatus = document.querySelector("#lore-catalog-status");
+const loreCatalogRows = document.querySelector("#lore-catalog-rows");
 const multiplayerStatus = document.querySelector("#multiplayer-status");
 const roomName = document.querySelector("#room-name");
 let multiplayerSocket = null,
@@ -454,5 +457,43 @@ loreForm.addEventListener("submit", async (event) => {
     renderLoreResults(payload);
   } catch (error) {
     loreStatus.textContent = error.message || "Les archives sont momentanément indisponibles.";
+  }
+});
+
+loreCatalogForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const series = new FormData(loreCatalogForm).get("series");
+  loreCatalogStatus.textContent = "Chargement des métadonnées de l’inventaire…";
+  loreCatalogRows.replaceChildren();
+  try {
+    const response = await fetch(`/api/lore/catalog?series=${encodeURIComponent(series)}`);
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Le catalogue n’a pas pu être chargé.");
+    if (payload.series !== series || !Array.isArray(payload.records))
+      throw new Error("La réponse du catalogue est invalide.");
+    const catalog = payload;
+    for (const record of catalog.records) {
+      const row = document.createElement("tr");
+      const volume = document.createElement("th");
+      const pages = document.createElement("td");
+      const japanesePages = document.createElement("td");
+      volume.scope = "row";
+      volume.textContent = record.id;
+      pages.textContent = String(record.pages);
+      japanesePages.textContent = String(record.pagesWithJa);
+      row.append(volume, pages, japanesePages);
+      loreCatalogRows.append(row);
+    }
+    const pages = catalog.records.reduce((total, record) => total + record.pages, 0);
+    const pagesWithJa = catalog.records.reduce((total, record) => total + record.pagesWithJa, 0);
+    const label = series === "DB" ? "volumes Dragon Ball" : "chapitres Dragon Ball Super";
+    const omitted = catalog.omittedCount
+      ? ` ${catalog.omittedCount} fiche(s) hors série ou hors numérotation standard masquée(s).`
+      : "";
+    loreCatalogStatus.textContent = `${catalog.records.length} ${label} · ${pages.toLocaleString("fr-FR")} pages déclarées · ${pagesWithJa.toLocaleString("fr-FR")} avec japonais.${omitted} Ces nombres viennent des métadonnées, pas d’un contrôle de transcription page par page.`;
+  } catch (error) {
+    loreCatalogRows.replaceChildren();
+    loreCatalogStatus.textContent =
+      error.message || "Le catalogue Shenron est momentanément indisponible.";
   }
 });

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { buildLoreSearchRequest, filterLoreSearchPayload } from "./lore-search.js";
+import { buildLoreCatalogRequest, normalizeLoreCatalogPayload } from "./lore-catalog.js";
 
 const files = new Set([
   "index.html",
@@ -9,6 +10,7 @@ const files = new Set([
   "engine.js",
   "gamepad.js",
   "avatar.js",
+  "lore-catalog.js",
   "age1000-map.js",
   "dragon-pixel-wasm.js",
   "dragon-pixel-wasm_bg.wasm",
@@ -82,6 +84,44 @@ const server = Bun.serve({
         .catch(() =>
           Response.json(
             { error: "Les archives Shenron sont momentanément indisponibles." },
+            { status: 502 },
+          ),
+        );
+    }
+    if (name === "api/lore/catalog" && request.method === "GET") {
+      const params = new URL(request.url).searchParams;
+      const catalog = buildLoreCatalogRequest(params.get("series"));
+      if (catalog.error) return Response.json({ error: catalog.error }, { status: 400 });
+      const url = new URL("/api/public/manga/tomes", shenronBase);
+      url.searchParams.set("series", catalog.series);
+      return fetch(url, {
+        headers: { accept: "application/json" },
+        signal: AbortSignal.timeout(12000),
+      })
+        .then(async (response) => {
+          const body = await response.text();
+          if (!response.ok)
+            return new Response(body, {
+              status: response.status,
+              headers: {
+                "content-type": "application/json; charset=utf-8",
+                "cache-control": "no-store",
+              },
+            });
+          try {
+            return Response.json(normalizeLoreCatalogPayload(JSON.parse(body), catalog.series), {
+              headers: { "cache-control": "no-store" },
+            });
+          } catch {
+            return Response.json(
+              { error: "La réponse du catalogue est illisible." },
+              { status: 502, headers: { "cache-control": "no-store" } },
+            );
+          }
+        })
+        .catch(() =>
+          Response.json(
+            { error: "Le catalogue Shenron est momentanément indisponible." },
             { status: 502 },
           ),
         );

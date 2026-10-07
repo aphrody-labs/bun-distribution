@@ -147,6 +147,41 @@
           </p>
         </form>
         <ol id="lore-results" aria-label="Résultats des archives"></ol>
+        <div class="lore-catalog">
+          <h3>Inventaire OCR déclaré</h3>
+          <form id="lore-catalog-form">
+            <label for="lore-catalog-series">Série à parcourir</label>
+            <select id="lore-catalog-series" name="series">
+              <option value="DB">Dragon Ball — 42 tomes</option>
+              <option value="DBS">Dragon Ball Super</option>
+            </select>
+            <button type="submit">Afficher l’inventaire</button>
+          </form>
+          <p id="lore-catalog-status" role="status" aria-live="polite">
+            L’inventaire indique les pages déclarées par Shenron; il ne certifie pas une
+            transcription OCR complète de chaque page.
+          </p>
+          <div
+            class="lore-table-wrap"
+            role="region"
+            aria-label="Inventaire OCR Dragon Ball"
+            tabindex="0"
+          >
+            <table id="lore-catalog-table">
+              <caption>
+                Volumes et chapitres présents au catalogue Shenron
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Tome ou chapitre</th>
+                  <th scope="col">Pages déclarées</th>
+                  <th scope="col">Pages avec japonais</th>
+                </tr>
+              </thead>
+              <tbody id="lore-catalog-rows"></tbody>
+            </table>
+          </div>
+        </div>
       </section>
       <p id="result" role="status">Choisis ton style puis lance la partie.</p>
       <div class="controls" aria-label="Commandes tactiles">
