@@ -82,6 +82,14 @@
   ],
   "units": [
     {
+      "service": "aphrody-discord-ai-lab",
+      "unit": "aphrody-discord-ai-lab.service",
+      "path": "systemd/aphrody/aphrody-discord-ai-lab.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
       "service": "aphrody-omar-admin",
       "unit": "aphrody-omar-admin.service",
       "path": "systemd/aphrody/aphrody-omar-admin.service",
