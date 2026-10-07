@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
+import { buildLoreSearchRequest, filterLoreSearchPayload } from "./lore-search.js";
+
 const files = new Set([
   "index.html",
   "style.css",
@@ -35,37 +37,48 @@ const server = Bun.serve({
     }
     if (name === "api/lore/search" && request.method === "GET") {
       const params = new URL(request.url).searchParams;
-      const query = params.get("q")?.trim() || "";
       const sourceId = params.get("sourceId")?.trim() || "";
-      if (query.length < 2 || query.length > 120)
-        return Response.json(
-          { error: "La recherche doit contenir entre 2 et 120 caractères." },
-          { status: 400 },
-        );
-      if (sourceId && sourceId !== "manga")
-        return Response.json(
-          { error: "Le corpus sélectionné n'est pas disponible." },
-          { status: 400 },
-        );
+      const search = buildLoreSearchRequest(params.get("q"), sourceId);
+      if (search.error) return Response.json({ error: search.error }, { status: 400 });
       const url = new URL("/api/public/rag/search", shenronBase);
-      url.searchParams.set("q", query);
-      url.searchParams.set("limit", "8");
-      if (sourceId) url.searchParams.set("sourceId", sourceId);
+      url.searchParams.set("q", search.query);
+      url.searchParams.set("limit", String(search.limit));
+      if (search.sourceId) url.searchParams.set("sourceId", search.sourceId);
       return fetch(url, {
         headers: { accept: "application/json" },
         signal: AbortSignal.timeout(12000),
       })
-        .then(
-          async (response) =>
-            new Response(await response.text(), {
+        .then(async (response) => {
+          const body = await response.text();
+          if (!sourceId || !search.titlePrefix)
+            return new Response(body, {
               status: response.status,
               headers: {
                 "content-type":
                   response.headers.get("content-type") || "application/json; charset=utf-8",
                 "cache-control": "no-store",
               },
-            }),
-        )
+            });
+          if (!response.ok)
+            return new Response(body, {
+              status: response.status,
+              headers: {
+                "content-type": "application/json; charset=utf-8",
+                "cache-control": "no-store",
+              },
+            });
+          try {
+            return Response.json(filterLoreSearchPayload(JSON.parse(body), sourceId), {
+              status: response.status,
+              headers: { "cache-control": "no-store" },
+            });
+          } catch {
+            return Response.json(
+              { error: "La réponse des archives est illisible." },
+              { status: 502, headers: { "cache-control": "no-store" } },
+            );
+          }
+        })
         .catch(() =>
           Response.json(
             { error: "Les archives Shenron sont momentanément indisponibles." },

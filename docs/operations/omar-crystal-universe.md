@@ -349,3 +349,20 @@ de code ni paquet généré n'a été ajouté par cette reprise. L'objectif comp
 reste ouvert : le moteur Xenoverse 2 et ses assets propriétaires sont absents,
 Bevy n'est pas intégré, et les métadonnées RAG ne prouvent pas la transcription
 exhaustive de chaque page.
+
+## 2026-10-07 — Recherche RAG séparée par série
+
+Le sélecteur permet de chercher Dragon Ball classique ou Dragon Ball Super
+séparément. Le service préfixe la requête avec le nom de série, interroge le
+corpus manga Shenron partagé sur 25 résultats au plus, puis conserve jusqu'à huit
+titres correspondant à la série. Le mode général et le mode manga mixte restent
+disponibles. Cette méthode élimine les résultats de l'autre série quand ils sont
+présents dans la fenêtre récupérée; le classement lexical peut laisser une série
+sans résultat, et cette recherche ne prouve pas l'exhaustivité OCR des 42 tomes ou
+de Dragon Ball Super.
+
+Vérification réelle sur Bun local `127.0.0.1:4335` contre Shenron : recherche
+`Moro` en DBS → HTTP 200, huit titres `Dragon Ball Super — chapitre …`; recherche
+`Goku` en DB → HTTP 200, huit titres `Dragon Ball — tome …`; source non prise en
+charge → HTTP 400. Les tests unitaires, lint strict, format et diff-check sont
+relancés pour cette modification; aucun texte OCR n'est conservé dans le dépôt.

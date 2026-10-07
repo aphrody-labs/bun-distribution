@@ -11,8 +11,11 @@ Clavier, clic gauche/glisser pour bouger, clic droit pour tirer, manette Gamepad
 gestion des pointeurs simultanés.
 Atelier d'avatar avec nom, six choix de race, coiffure et couleurs de peau, cheveux et tenue;
 le choix est conservé dans le stockage local du navigateur.
-Les archives Shenron permettent de chercher soit tout le RAG, soit les passages
-OCR sourcés du manga Dragon Ball et Dragon Ball Super.
+Les archives Shenron permettent de chercher tout le RAG, les passages OCR des
+deux mangas ensemble, ou séparément Dragon Ball (42 tomes) et Dragon Ball Super.
+Les vues séparées interrogent le corpus manga partagé, puis filtrent les titres de
+série parmi les 25 premiers résultats récupérés; elles ne garantissent pas une
+couverture exhaustive des pages OCR.
 
 Le prototype s'inspire de conventions générales de jeux d'arène et reste entièrement
 original. Aucun graphisme, personnage ou code de jeux commerciaux n'est copié.

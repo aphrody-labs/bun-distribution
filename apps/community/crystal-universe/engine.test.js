@@ -3,6 +3,7 @@ import { test, expect } from "bun:test";
 import { createGame, pointerAction, pointerDirection, step } from "./engine.js";
 import { readGamepadInput } from "./gamepad.js";
 import { DEFAULT_AVATAR, loadAvatar, normalizeAvatar, saveAvatar } from "./avatar.js";
+import { buildLoreSearchRequest, filterLoreSearchPayload } from "./lore-search.js";
 test("energy, transformation, cooldown and expiry", () => {
   const g = createGame();
   g.player.energy = 80;
@@ -121,4 +122,40 @@ test("avatar creation validates and persists local character choices", () => {
   expect(loadAvatar({ getItem: () => "{" })).toEqual(DEFAULT_AVATAR);
   for (const race of ["saiyan", "earthling", "namekian", "majin", "frieza", "android"])
     expect(normalizeAvatar({ ...values, race }).race).toBe(race);
+});
+
+test("manga series search scopes the query and filters mixed RAG results", () => {
+  expect(buildLoreSearchRequest(" Moro ", "dragonballsuper")).toEqual({
+    query: "Dragon Ball Super Moro",
+    sourceId: "manga",
+    limit: 25,
+    titlePrefix: "Dragon Ball Super — chapitre ",
+  });
+  expect(buildLoreSearchRequest(" Goku ", "dragonball")).toEqual({
+    query: "Dragon Ball tome Goku",
+    sourceId: "manga",
+    limit: 25,
+    titlePrefix: "Dragon Ball — tome ",
+  });
+  const payload = {
+    mode: "hybrid",
+    results: [
+      { title: "Dragon Ball Super — chapitre 46, planche 1" },
+      { title: "Dragon Ball — tome 42, planche 205" },
+      { title: "Dragon Ball Super — chapitre 47, planche 1" },
+    ],
+  };
+  expect(filterLoreSearchPayload(payload, "dragonball").results).toEqual([
+    { title: "Dragon Ball — tome 42, planche 205" },
+  ]);
+  expect(filterLoreSearchPayload(payload, "dragonballsuper").results).toEqual([
+    { title: "Dragon Ball Super — chapitre 46, planche 1" },
+    { title: "Dragon Ball Super — chapitre 47, planche 1" },
+  ]);
+  expect(filterLoreSearchPayload(payload, "manga")).toBe(payload);
+});
+
+test("manga series search rejects unsupported source identifiers", () => {
+  expect(buildLoreSearchRequest("Goku", "manga-dbs").error).toContain("n'est pas disponible");
+  expect(buildLoreSearchRequest("x", "dragonball").error).toContain("2 et 120");
 });
