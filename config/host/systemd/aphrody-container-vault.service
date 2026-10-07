@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Collect and back up the encrypted Aphrody container vault
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/aphro/aphrody
+Environment=PATH=/home/aphro/.local/bin:/home/aphro/.bun/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/aphro/.bun/bin/bun /home/aphro/aphrody/scripts/tools/secrets/vault.ts sync
+UMask=0077
+TimeoutStartSec=180
+NoNewPrivileges=yes
