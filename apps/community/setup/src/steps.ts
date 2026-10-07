@@ -7,7 +7,7 @@
  * and the kit; creator: creator-kit).
  */
 import { existsSync, readFileSync } from "node:fs";
-import { copyFile, mkdir, readdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, rename, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 
 import { formatBytes } from "../../creator-kit/src/lib/format.ts";
@@ -26,8 +26,7 @@ import { desktopCandidates } from "../../creator-kit/src/lib/desktop-launch.ts";
 import type { Context } from "../../omar-kit/src/lib/context.ts";
 import {
   checkArtifact,
-  fetchManifest,
-  fetchSums,
+  downloadsFor,
   pickArtifact,
   WINDOWS_PLATFORM,
   type ManifestArtifact,
@@ -87,10 +86,11 @@ async function verifiedArtifact(
   label: string,
   platform: string = WINDOWS_PLATFORM,
 ): Promise<Verified> {
-  const base = DEFAULT_BASE;
   let manifest;
+  let base;
+  let sums;
   try {
-    manifest = await fetchManifest(base, ctx.fetchImpl);
+    ({ manifest, base, sums } = await downloadsFor(ctx, DEFAULT_BASE));
   } catch (error) {
     return {
       state: "echec",
@@ -106,7 +106,7 @@ async function verifiedArtifact(
       action: "Rien à faire de ton côté : relance ce programme quand il sera publié.",
     };
   try {
-    checkArtifact(base, artifact, await fetchSums(base, ctx.fetchImpl));
+    checkArtifact(base, artifact, sums);
   } catch (error) {
     return {
       state: "echec",
@@ -234,13 +234,41 @@ export const stepPlugins: Step = {
     for (const { id, artifact } of found) {
       const archive = join(setupDirs(ctx).tmp, artifact.file ?? `${id}.tar.gz`);
       await downloadVerified(asRelease(artifact), archive, ctx.fetchImpl);
+      await mkdir(root, { recursive: true });
       const dest = join(root, id);
-      await rm(`${dest}.new`, { recursive: true, force: true });
-      await extractTarGz(archive, `${dest}.new`);
-      await rm(dest, { recursive: true, force: true });
-      await mkdir(dirname(dest), { recursive: true });
-      await copyDir(`${dest}.new`, dest);
-      await rm(`${dest}.new`, { recursive: true, force: true });
+      const staging = await mkdtemp(join(root, `.${id}-new-`));
+      const backup = `${staging}.old`;
+      let moved = false;
+      let preserveBackup = false;
+      try {
+        await extractTarGz(archive, staging);
+        try {
+          await rename(dest, backup);
+          moved = true;
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+        }
+        try {
+          await rename(staging, dest);
+        } catch (error) {
+          if (moved) {
+            try {
+              await rename(backup, dest);
+            } catch (rollbackError) {
+              preserveBackup = true;
+              throw new AggregateError(
+                [error, rollbackError],
+                `restauration incomplète : sauvegarde conservée dans ${backup}`,
+                { cause: rollbackError },
+              );
+            }
+          }
+          throw error;
+        }
+      } finally {
+        await rm(staging, { recursive: true, force: true });
+        if (!preserveBackup) await rm(backup, { recursive: true, force: true });
+      }
       await rm(archive, { force: true });
     }
     await mkdir(join(root, ".claude-plugin"), { recursive: true });
@@ -276,16 +304,6 @@ export const stepPlugins: Step = {
         };
   },
 };
-
-async function copyDir(from: string, to: string): Promise<void> {
-  await mkdir(to, { recursive: true });
-  for (const entry of await readdir(from, { withFileTypes: true })) {
-    const source = join(from, entry.name);
-    const target = join(to, entry.name);
-    if (entry.isDirectory()) await copyDir(source, target);
-    else await copyFile(source, target);
-  }
-}
 
 export const stepShortcut: Step = {
   id: "raccourci",

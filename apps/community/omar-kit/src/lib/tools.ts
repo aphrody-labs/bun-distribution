@@ -10,6 +10,7 @@ export type ToolName =
   | "wireguard"
   | "ssh"
   | "sshKeygen"
+  | "aphrody-mcp"
   | "aphrody"
   | "yolo"
   | "claude"
@@ -29,6 +30,7 @@ export function findTool(sys: System, paths: KitPaths, name: ToolName): string |
     wireguard: [join(paths.programFiles, "WireGuard", "wireguard.exe")],
     ssh: [join(systemRoot, "System32", "OpenSSH", "ssh.exe")],
     sshKeygen: [join(systemRoot, "System32", "OpenSSH", "ssh-keygen.exe")],
+    "aphrody-mcp": [join(paths.home, ".local", "bin", "aphrody-mcp.exe")],
     aphrody: [join(paths.home, ".local", "bin", "aphrody.exe"), ...latestAphrodyBuilds(paths)],
     yolo: [join(paths.home, ".yolo", "bin", "yolo.exe")],
     claude: [
@@ -42,6 +44,7 @@ export function findTool(sys: System, paths: KitPaths, name: ToolName): string |
     wireguard: "wireguard",
     ssh: "ssh",
     sshKeygen: "ssh-keygen",
+    "aphrody-mcp": "aphrody-mcp",
     aphrody: "aphrody",
     yolo: "yolo",
     claude: "claude",

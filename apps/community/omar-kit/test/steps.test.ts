@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
@@ -26,7 +27,9 @@ const touch = (path: string, text = "x") => {
   writeFileSync(path, text);
 };
 const state = (): InstallState => ({ repoReady: false });
-const SHA = "a".repeat(64);
+const hash = (text: string) => createHash("sha256").update(text).digest("hex");
+const SHA = hash("archive-bytes");
+const INSTALL_SCRIPT = "$sums = Get-Content SHA256SUMS; Get-FileHash x";
 const BASE = "https://downloads.aphrody.com";
 
 function downloads(
@@ -40,12 +43,14 @@ function downloads(
         release: { id: "r" },
         baseUrl: BASE,
         artifacts: options.artifacts ?? [],
+        assetChecksums: {
+          "install.ps1": hash(INSTALL_SCRIPT),
+          "install-yolo.ps1": hash(INSTALL_SCRIPT),
+        },
       });
     if (url.endsWith("/SHA256SUMS")) return new Response(options.sums ?? "");
-    if (url.endsWith("/install.ps1"))
-      return new Response(
-        options.installScript ?? "$sums = Get-Content SHA256SUMS; Get-FileHash x",
-      );
+    if (url.endsWith("/install.ps1") || url.endsWith("/install-yolo.ps1"))
+      return new Response(options.installScript ?? INSTALL_SCRIPT);
     if (url.includes("/files/")) return new Response("archive-bytes");
     return new Response("nope", { status: 404 });
   };
@@ -322,7 +327,11 @@ test("aphrody step: reuses the official installer after cross-checking the hashe
     "Bypass",
     "-File",
   ]);
-  expect(call.options.env).toEqual({ APHRODY_DOWNLOAD_URL: BASE, APHRODY_COMPONENTS: "aphrody" });
+  expect(call.options.env).toEqual({
+    APHRODY_DOWNLOAD_URL: BASE,
+    APHRODY_RELEASE: "r",
+    APHRODY_COMPONENTS: "aphrody",
+  });
   expect(call.options.inherit).toBe(true);
   expect(scriptSeen).toContain("Get-FileHash");
   expect(existsSync(call.argv.at(-1)!)).toBe(false);
@@ -347,7 +356,7 @@ test("aphrody step refuses a catalogue that disagrees with SHA256SUMS and a scri
   });
   const result = await stepAphrody.run(lax.ctx, "executer", state());
   expect(result.state).toBe("echec");
-  expect(result.detail).toContain("ne vérifie pas");
+  expect(result.detail).toContain("SHA-256");
   expect(lax.sys.calls).toEqual([]);
 });
 
@@ -458,18 +467,13 @@ test("yolo step: waits while unpublished, then uses yolo's own installer on a ve
   const { ctx, sys } = testContext({
     fetchImpl: downloads({ artifacts: [artifact], sums: sumsFor(file) }),
   });
-  // Without a copy of the repository the site's installer is used, and refused when it checks nothing.
-  const early = await stepYolo.run(ctx, "executer", state());
-  expect(early.state).toBe("echec");
-  expect(early.detail).toContain("ne vérifie pas les empreintes");
-  touch(join(ctx.paths.repoDir, "apps", "yolo", "install.ps1"), "# official");
   let release: string[] = [];
   sys.handlers.push({
-    match: /^powershell .*install\.ps1/,
+    match: /^powershell .*install-yolo\.ps1/,
     result: (argv) => {
       release = readdirSync(join(ctx.paths.installDir, "tmp", "yolo-release"));
       touch(join(ctx.paths.home, ".yolo", "bin", "yolo.exe"));
-      expect(argv.at(-1)).toBe(join(ctx.paths.repoDir, "apps", "yolo", "install.ps1"));
+      expect(argv.at(-1)).toBe(join(ctx.paths.installDir, "tmp", "install-yolo.ps1"));
       return {};
     },
   });
@@ -498,7 +502,7 @@ test("yolo step without the repository runs the site's verified installer", asyn
   const { ctx, sys } = testContext({
     fetchImpl: async (input, init) =>
       String(input).endsWith("/install-yolo.ps1")
-        ? new Response("Get-Content SHA256SUMS; Get-FileHash x")
+        ? new Response(INSTALL_SCRIPT)
         : base(input, init),
   });
   const script = join(ctx.paths.installDir, "tmp", "install-yolo.ps1");
@@ -531,7 +535,7 @@ test("MCP step: declares the server in Claude Desktop with a backup, once", asyn
   expect(done.state).toBe("fait");
   expect(JSON.parse(readFileSync(config, "utf8"))).toEqual({
     preferences: { x: 1 },
-    mcpServers: { aphrody: { command: aphrody, args: ["kernel", "mcp"] } },
+    mcpServers: { aphrody: { command: aphrody, args: ["mcp-server"] } },
   });
   expect((await stepMcp.run(ctx, "executer", state())).state).toBe("deja");
   expect(sys.calls).toEqual([]);

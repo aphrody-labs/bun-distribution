@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /** What downloads.aphrody.com publishes (`latest.json`, `SHA256SUMS`) and the checks done before anything is installed. */
+import { createHash } from "node:crypto";
+import type { Context } from "./context.ts";
 import type { Release } from "../../../creator-kit/src/lib/update.ts";
 
 export interface ManifestArtifact {
@@ -19,6 +21,8 @@ export interface Manifest {
   release: { id: string; commit?: string };
   baseUrl: string;
   artifacts: ManifestArtifact[];
+  /** Installer assets are listed here; SHA256SUMS covers artifact archives only. */
+  assetChecksums?: Record<string, string>;
 }
 
 export const WINDOWS_PLATFORM = "windows-x86_64";
@@ -34,7 +38,74 @@ export async function fetchManifest(base: string, fetchImpl: Fetch = fetch): Pro
   const manifest = (await res.json()) as Manifest;
   if (manifest.schemaVersion !== 1 || !Array.isArray(manifest.artifacts))
     throw new Error("le catalogue de téléchargement n'a pas le format attendu");
+  if (!manifest.release || !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(manifest.release.id))
+    throw new Error("identifiant de release invalide");
   return manifest;
+}
+
+/** One snapshot per installer context: selecting current never mixes releases mid-install. */
+const snapshots = new WeakMap<Context, Map<string, Promise<DownloadSnapshot>>>();
+export interface DownloadSnapshot {
+  manifest: Manifest;
+  base: string;
+  sums: Map<string, string>;
+}
+export function downloadsFor(ctx: Context, base: string): Promise<DownloadSnapshot> {
+  let selected = snapshots.get(ctx);
+  if (!selected) {
+    selected = new Map();
+    snapshots.set(ctx, selected);
+  }
+  let snapshot = selected.get(base);
+  if (!snapshot) {
+    snapshot = (async () => {
+      const manifest = await fetchManifest(base, ctx.fetchImpl);
+      const pinned = `${base.replace(/\/$/, "")}/releases/${manifest.release.id}`;
+      const artifacts = manifest.artifacts.map((artifact) => {
+        const file = artifact.file ?? new URL(artifact.url).pathname.split("/").pop()!;
+        safeFile(file);
+        const url = new URL(artifact.url);
+        if (
+          url.origin !== new URL(base).origin ||
+          url.search ||
+          url.hash ||
+          ![`${base}/files/${file}`, `${pinned}/files/${file}`].includes(artifact.url)
+        )
+          throw new Error(`adresse hors du site de téléchargement : ${artifact.url}`);
+        return { ...artifact, file, url: `${pinned}/files/${file}` };
+      });
+      return {
+        manifest: { ...manifest, artifacts },
+        base: pinned,
+        sums: await fetchSums(pinned, ctx.fetchImpl),
+      };
+    })();
+    selected.set(base, snapshot);
+  }
+  return snapshot;
+}
+function safeFile(file: string): void {
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(file) || file === "." || file === "..")
+    throw new Error(`nom de fichier refusé : ${file}`);
+}
+export async function verifiedScript(
+  snapshot: DownloadSnapshot,
+  name: string,
+  fetchImpl: Fetch,
+): Promise<string> {
+  safeFile(name);
+  const hashes = snapshot.manifest.assetChecksums;
+  const expected = hashes && Object.hasOwn(hashes, name) ? hashes[name] : undefined;
+  if (typeof expected !== "string" || !/^[0-9a-f]{64}$/i.test(expected))
+    throw new Error(`${name} : empreinte SHA-256 absente ou invalide dans assetChecksums`);
+  const response = await fetchImpl(`${snapshot.base}/${name}`, {
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!response.ok) throw new Error(`${name} : HTTP ${response.status}`);
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (createHash("sha256").update(bytes).digest("hex") !== expected.toLowerCase())
+    throw new Error(`SHA-256 invalide pour ${name}`);
+  return new TextDecoder().decode(bytes);
 }
 
 export async function fetchSums(
@@ -74,6 +145,14 @@ export function checkArtifact(
   if (!artifact.url.startsWith(`${base}/files/`))
     throw new Error(`adresse hors du site de téléchargement : ${artifact.url}`);
   const file = artifact.file ?? decodeURIComponent(artifact.url.slice(`${base}/files/`.length));
+  safeFile(file);
+  if (artifact.url !== `${base}/files/${file}`) throw new Error("adresse et fichier différents");
+  if (
+    !/^[0-9a-f]{64}$/i.test(artifact.sha256) ||
+    !Number.isSafeInteger(artifact.size) ||
+    artifact.size < 0
+  )
+    throw new Error("métadonnées invalides");
   const listed = sums.get(file);
   if (!listed) throw new Error(`${file} n'est pas dans SHA256SUMS`);
   if (listed !== artifact.sha256.toLowerCase())

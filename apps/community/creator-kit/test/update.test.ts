@@ -162,3 +162,76 @@ test("updateNow reports up-to-date, check-only and bad checksums without touchin
   tampered.stop(true);
   expect(await readFile(join(dir, "creator-kit"), "utf8")).toBe("OLD-BINARY");
 });
+
+test("archive preflight rejects unsafe paths, links, corrupt headers and truncation before writing", async () => {
+  const { extractTarGz } = await import("../src/lib/update.ts");
+  const { existsSync } = await import("node:fs");
+  const raw = Bun.gunzipSync(new Uint8Array(archive));
+  const cases: Uint8Array[] = [];
+  for (const name of ["../escape", "C:/escape", "a\\escape", "NUL.exe", "file:stream"]) {
+    const candidate = new Uint8Array(raw);
+    candidate.fill(0, 0, 100);
+    candidate.set(new TextEncoder().encode(name));
+    candidate.fill(32, 148, 156);
+    const sum = candidate.subarray(0, 512).reduce((a, b) => a + b, 0);
+    candidate.set(new TextEncoder().encode(`${sum.toString(8).padStart(6, "0")}\0 `), 148);
+    cases.push(candidate);
+  }
+  const link = new Uint8Array(raw);
+  link[156] = 50;
+  link.fill(32, 148, 156);
+  link.set(
+    new TextEncoder().encode(
+      `${link
+        .subarray(0, 512)
+        .reduce((a, b) => a + b, 0)
+        .toString(8)
+        .padStart(6, "0")}\0 `,
+    ),
+    148,
+  );
+  cases.push(link, raw.subarray(0, 520));
+  const dir = await mkdtemp(join(tmpdir(), "unsafe-pack-"));
+  for (const [index, candidate] of cases.entries()) {
+    const tar = join(dir, `${index}.tar.gz`);
+    await writeFile(tar, Bun.gzipSync(new Uint8Array(candidate)));
+    const dest = join(dir, `dest-${index}`);
+    await expect(extractTarGz(tar, dest)).rejects.toThrow();
+    expect(existsSync(dest)).toBe(false);
+  }
+});
+
+test("failed activation restores all previous files after an earlier promotion", async () => {
+  const { applyPack } = await import("../src/lib/update.ts");
+  const { rename } = await import("node:fs/promises");
+  const dir = await mkdtemp(join(tmpdir(), "rollback-pack-"));
+  await writeFile(join(dir, "creator-kit"), "OLD-BINARY");
+  await mkdir(join(dir, "web"));
+  await writeFile(join(dir, "web", "old.html"), "old-page");
+  const tar = join(dir, "pack.tar.gz");
+  await writeFile(tar, archive);
+  await expect(
+    applyPack(tar, dir, "creator-kit", {
+      rename: async (from, to) => {
+        if (String(from).includes(".update-") && String(to) === join(dir, "web"))
+          throw new Error("injected activation failure");
+        return rename(from, to);
+      },
+    }),
+  ).rejects.toThrow("activation failure");
+  expect(await readFile(join(dir, "creator-kit"), "utf8")).toBe("OLD-BINARY");
+  expect(await readFile(join(dir, "web", "old.html"), "utf8")).toBe("old-page");
+});
+
+test("a pre-existing symlink destination cannot redirect archive extraction", async () => {
+  const { extractTarGz } = await import("../src/lib/update.ts");
+  const { symlink } = await import("node:fs/promises");
+  const dir = await mkdtemp(join(tmpdir(), "symlink-pack-"));
+  const outside = join(dir, "outside");
+  await mkdir(outside);
+  await symlink(outside, join(dir, "dest"), "dir");
+  const tar = join(dir, "pack.tar.gz");
+  await writeFile(tar, archive);
+  await expect(extractTarGz(tar, join(dir, "dest"))).rejects.toThrow("lien refusé");
+  expect(await readdir(outside)).toEqual([]);
+});

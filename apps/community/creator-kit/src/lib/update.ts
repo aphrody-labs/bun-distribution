@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { lstat, mkdir, mkdtemp, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
 
@@ -122,29 +122,70 @@ export async function extractTarGz(archive: string, dest: string): Promise<void>
   const decoder = new TextDecoder();
   const field = (start: number, length: number) =>
     decoder.decode(data.subarray(start, start + length)).replace(/\0.*$/s, "");
+  const entries: { name: string; size: number; type: string; offset: number }[] = [];
+  const seen = new Set<string>();
   let offset = 0;
   while (offset + 512 <= data.length) {
-    if (data[offset] === 0) break;
+    if (data.subarray(offset, offset + 512).every((byte) => byte === 0)) break;
     const prefix = field(offset + 345, 155);
     const name = (prefix ? `${prefix}/` : "") + field(offset, 100);
-    const size = Number.parseInt(field(offset + 124, 12).trim() || "0", 8);
+    const sizeField = field(offset + 124, 12).trim();
+    const size = /^[0-7]+$/.test(sizeField) ? Number.parseInt(sizeField, 8) : Number.NaN;
     const type = String.fromCharCode(data[offset + 156] || 48);
+    const checksum = Number.parseInt(field(offset + 148, 8).trim(), 8);
+    let sum = 0;
+    for (let i = 0; i < 512; i += 1) sum += i >= 148 && i < 156 ? 32 : data[offset + i]!;
+    if (
+      checksum !== sum ||
+      !Number.isSafeInteger(size) ||
+      size < 0 ||
+      offset + 512 + size > data.length
+    )
+      throw new Error(`archive tronquée ou en-tête invalide : ${name}`);
     offset += 512;
     const clean = name.replace(/^\.\//, "").replace(/\/$/, "");
-    if (clean === "" || clean === ".") {
-      offset += Math.ceil(size / 512) * 512;
-      continue;
-    }
-    if (clean.startsWith("/") || /^[A-Za-z]:/.test(clean) || clean.split(/[\\/]/).includes("..")) {
-      throw new Error(`entrée refusée : ${name}`);
-    }
-    const target = join(dest, clean);
-    if (type === "5") await mkdir(target, { recursive: true });
-    else if (type === "0" || type === "\0") {
-      await mkdir(dirname(target), { recursive: true });
-      await writeFile(target, data.subarray(offset, offset + size));
+    if (!["0", "\0", "5"].includes(type)) throw new Error(`type d'entrée refusé : ${name}`);
+    if (clean !== "" && clean !== ".") {
+      if (
+        clean.startsWith("/") ||
+        clean.includes("\\") ||
+        clean.includes(":") ||
+        [...clean].some((char) => char.charCodeAt(0) < 32) ||
+        /[<>"|?*]/.test(clean) ||
+        clean.split("/").some((part) => part === ".." || part === "" || part === ".") ||
+        clean
+          .split("/")
+          .some(
+            (part) =>
+              /[. ]$/.test(part) || /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)/i.test(part),
+          ) ||
+        seen.has(clean.toLowerCase())
+      )
+        throw new Error(`entrée refusée : ${name}`);
+      seen.add(clean.toLowerCase());
+      entries.push({ name: clean, size, type, offset });
     }
     offset += Math.ceil(size / 512) * 512;
+  }
+  if (offset + 1024 > data.length || !data.subarray(offset).every((byte) => byte === 0))
+    throw new Error("fin d'archive invalide");
+  // Validate every header before the first write, then reject pre-existing symlink parents.
+  for (const entry of entries) {
+    let parent = dest;
+    for (const part of ["", ...entry.name.split("/")]) {
+      parent = part ? join(parent, part) : parent;
+      const stat = await lstat(parent).catch((error: NodeJS.ErrnoException) => {
+        if (error.code === "ENOENT") return undefined;
+        throw error;
+      });
+      if (stat?.isSymbolicLink()) throw new Error(`lien refusé : ${parent}`);
+    }
+    const target = join(dest, entry.name);
+    if (entry.type === "5") await mkdir(target, { recursive: true });
+    else {
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, data.subarray(entry.offset, entry.offset + entry.size));
+    }
   }
 }
 
@@ -157,25 +198,64 @@ export async function applyPack(
   archive: string,
   installDir: string,
   exeName: string,
+  operations: { rename?: typeof rename } = {},
 ): Promise<void> {
-  const staging = join(installDir, `.update-${Date.now()}`);
-  await mkdir(staging, { recursive: true });
+  const move = operations.rename ?? rename;
+  await mkdir(installDir, { recursive: true });
+  if ((await lstat(installDir)).isSymbolicLink())
+    throw new Error("dossier d’installation lié refusé");
+  const staging = await mkdtemp(join(dirname(installDir), ".update-"));
+  const backup = await mkdtemp(join(dirname(installDir), ".rollback-"));
+  const moved: string[] = [];
+  const promoted: string[] = [];
+  let preserveBackup = false;
   try {
     await extractTarGz(archive, staging);
     const entries = await readdir(staging);
-    if (!entries.includes(exeName)) throw new Error(`${exeName} absent de l'archive`);
-    for (const entry of entries) {
-      const target = join(installDir, entry);
-      if (entry === exeName) {
-        await rm(`${target}.old`, { force: true });
-        await rename(target, `${target}.old`).catch(() => undefined);
-      } else {
-        await rm(target, { recursive: true, force: true });
+    if (!entries.includes(exeName) || !(await lstat(join(staging, exeName))).isFile())
+      throw new Error(`${exeName} absent de l'archive`);
+    try {
+      for (const entry of entries) {
+        const target = join(installDir, entry);
+        try {
+          await move(target, join(backup, entry));
+          moved.push(entry);
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+        }
+        await move(join(staging, entry), target);
+        promoted.push(entry);
       }
-      await rename(join(staging, entry), target);
+    } catch (error) {
+      try {
+        for (const entry of promoted.toReversed())
+          await rm(join(installDir, entry), { recursive: true, force: true });
+        for (const entry of moved.toReversed())
+          await move(join(backup, entry), join(installDir, entry));
+      } catch (rollbackError) {
+        preserveBackup = true;
+        throw new AggregateError(
+          [error, rollbackError],
+          `restauration incomplète : sauvegarde conservée dans ${backup}`,
+          { cause: rollbackError },
+        );
+      }
+      throw error;
+    }
+    // Keep the running executable's previous generation until the next launch (Windows semantics).
+    if (moved.includes(exeName)) {
+      try {
+        await rm(join(installDir, `${exeName}.old`), { force: true });
+        await move(join(backup, exeName), join(installDir, `${exeName}.old`));
+      } catch {
+        // Activation succeeded; Windows may hold the previous generation open.
+        // Retain its backup instead of turning cleanup into a failed installation.
+        preserveBackup = true;
+      }
     }
   } finally {
     await rm(staging, { recursive: true, force: true });
+    if (!preserveBackup) await rm(backup, { recursive: true, force: true });
   }
 }
 

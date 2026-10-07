@@ -15,10 +15,10 @@ export interface McpSpec {
 
 export const MCP_NAME = "aphrody";
 
-/** Same launch line as the Aphrody plugin: `aphrody kernel mcp` over stdio. */
-export const mcpSpec = (aphrodyExe: string): McpSpec => ({
-  command: aphrodyExe,
-  args: ["kernel", "mcp"],
+/** Canonical MCP binary; the multicall fallback runs the same server. */
+export const mcpSpec = (aphrodyExe: string, mcpExe?: string): McpSpec => ({
+  command: mcpExe ?? aphrodyExe,
+  args: mcpExe ? [] : ["mcp-server"],
 });
 
 export class McpConfigError extends Error {}

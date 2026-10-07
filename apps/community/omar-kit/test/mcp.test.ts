@@ -18,10 +18,10 @@ import { testContext } from "./helpers.ts";
 
 const spec = mcpSpec("C:\\Users\\Omar\\.local\\bin\\aphrody.exe");
 
-test("the launch line is the plugin's: aphrody kernel mcp", () => {
+test("the launch line is the plugin's: aphrody mcp-server", () => {
   expect(spec).toEqual({
     command: "C:\\Users\\Omar\\.local\\bin\\aphrody.exe",
-    args: ["kernel", "mcp"],
+    args: ["mcp-server"],
   });
 });
 
@@ -99,7 +99,7 @@ test("Claude Code is configured through its own CLI", async () => {
   ]);
   sys.handlers.unshift({
     match: "claude mcp get",
-    result: { stdout: `aphrody: ${spec.command} kernel mcp` },
+    result: { stdout: `aphrody: ${spec.command} mcp-server` },
   });
   expect((await configureClaudeCode(sys, "claude", spec)).state).toBe("deja");
   expect(await claudeCodeState(sys, "claude", spec)).toBe("configure");
@@ -134,4 +134,11 @@ test("probeMcp reports a missing program and a silent server", async () => {
   writeFileSync(script, "setTimeout(() => {}, 30000);");
   const silent = await probeMcp({ command: process.execPath, args: [script] }, 500);
   expect(silent.ok).toBe(false);
+});
+
+test("canonical MCP binary wins over the multicall fallback", () => {
+  expect(mcpSpec("aphrody.exe", "aphrody-mcp.exe")).toEqual({
+    command: "aphrody-mcp.exe",
+    args: [],
+  });
 });

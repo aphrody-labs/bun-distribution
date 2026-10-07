@@ -116,3 +116,108 @@ test("toRelease exposes only the update archive in the shape creator-kit's engin
   });
   expect(toRelease(manifest, "nothing", "windows-x64")).toBeUndefined();
 });
+
+test("one-click selection stays on one immutable release while current changes", async () => {
+  const { downloadsFor, verifiedScript } = await import("../src/lib/downloads.ts");
+  const { testContext } = await import("./helpers.ts");
+  const { createHash } = await import("node:crypto");
+  const calls: string[] = [];
+  let current = "r1";
+  const script = "verified install script";
+  const scriptHash = createHash("sha256").update(script).digest("hex");
+  const { ctx } = testContext({
+    fetchImpl: async (url) => {
+      calls.push(url);
+      if (url === `${BASE}/latest.json`)
+        return Response.json({
+          ...manifest,
+          release: { id: current },
+          assetChecksums: { "install.ps1": scriptHash },
+        });
+      if (url === `${BASE}/releases/r1/SHA256SUMS`)
+        return new Response(`${SHA}  ${manifest.artifacts[1]!.file}\n`);
+      if (url === `${BASE}/releases/r1/install.ps1`) return new Response(script);
+      return new Response("mutable endpoint forbidden", { status: 404 });
+    },
+  });
+  const first = await downloadsFor(ctx, BASE);
+  current = "r2";
+  const second = await downloadsFor(ctx, BASE);
+  expect(second).toBe(first);
+  expect(calls.filter((url) => url.endsWith("/latest.json"))).toHaveLength(1);
+  expect(first.manifest.artifacts[1]!.url).toBe(
+    `${BASE}/releases/r1/files/${manifest.artifacts[1]!.file}`,
+  );
+  expect(await verifiedScript(first, "install.ps1", ctx.fetchImpl)).toBe(script);
+  expect(first.sums.has("install.ps1")).toBe(false);
+  await expect(
+    verifiedScript(first, "install.ps1", async () => new Response("tampered")),
+  ).rejects.toThrow("SHA-256");
+  await expect(verifiedScript(first, "../install.ps1", ctx.fetchImpl)).rejects.toThrow("refusé");
+});
+
+test("installer scripts require a valid assetChecksums entry before any download", async () => {
+  const { verifiedScript } = await import("../src/lib/downloads.ts");
+  const { createHash } = await import("node:crypto");
+  const script = "published immutable installer";
+  const sha = createHash("sha256").update(script).digest("hex");
+  let requests = 0;
+  const download = async () => {
+    requests += 1;
+    return new Response(script);
+  };
+  const missingHashes: Manifest["assetChecksums"][] = [
+    undefined,
+    {},
+    { "install.ps1": "bad" },
+    { "install.ps1": "a".repeat(63) },
+  ];
+  await Promise.all(
+    missingHashes.map(async (assetChecksums) => {
+      await expect(
+        verifiedScript(
+          {
+            manifest: { ...manifest, assetChecksums },
+            base: `${BASE}/releases/r1`,
+            sums: new Map([["install.ps1", sha]]),
+          },
+          "install.ps1",
+          download,
+        ),
+      ).rejects.toThrow("assetChecksums");
+    }),
+  );
+  expect(requests).toBe(0);
+  expect(
+    await verifiedScript(
+      {
+        manifest: { ...manifest, assetChecksums: { "install.ps1": sha.toUpperCase() } },
+        base: `${BASE}/releases/r1`,
+        sums: new Map(),
+      },
+      "install.ps1",
+      download,
+    ),
+  ).toBe(script);
+  expect(requests).toBe(1);
+});
+
+test("unsafe release identifiers and artifact filenames never become download paths", async () => {
+  const { downloadsFor } = await import("../src/lib/downloads.ts");
+  const { testContext } = await import("./helpers.ts");
+  await Promise.all(
+    ["../escape", "r?x", "", "r/evil"].map(async (id) => {
+      await expect(
+        fetchManifest(BASE, async () => Response.json({ ...manifest, release: { id } })),
+      ).rejects.toThrow("identifiant");
+    }),
+  );
+  const { ctx } = testContext({
+    fetchImpl: async () =>
+      Response.json({
+        ...manifest,
+        artifacts: [{ ...manifest.artifacts[1], file: "../evil.exe" }],
+      }),
+  });
+  await expect(downloadsFor(ctx, BASE)).rejects.toThrow("refusé");
+});

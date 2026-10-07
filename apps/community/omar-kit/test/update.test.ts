@@ -48,9 +48,10 @@ beforeAll(() => {
               ]
             : [],
         });
-      if (path === "/SHA256SUMS")
+      if (path === "/releases/r1/SHA256SUMS")
         return new Response(`${tamper ? "0".repeat(64) : sha}  ${file}\n`);
-      if (path === `/files/${file}`) return new Response(archive as unknown as BodyInit);
+      if (path === `/releases/r1/files/${file}`)
+        return new Response(archive as unknown as BodyInit);
       return new Response("nope", { status: 404 });
     },
   });

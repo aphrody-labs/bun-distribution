@@ -8,13 +8,17 @@ import { existsSync } from "node:fs";
 import { copyFile, mkdir, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 
-import { compareVersions, isCompiled } from "../../../creator-kit/src/lib/update.ts";
+import {
+  compareVersions,
+  isCompiled,
+  downloadVerified,
+} from "../../../creator-kit/src/lib/update.ts";
 import { formatBytes } from "../../../creator-kit/src/lib/format.ts";
 import type { Context } from "./context.ts";
 import {
   checkArtifact,
-  fetchManifest,
-  fetchSums,
+  downloadsFor,
+  verifiedScript,
   pickArtifact,
   WINDOWS_PLATFORM,
 } from "./downloads.ts";
@@ -363,9 +367,9 @@ export const stepAphrody: Step = {
     if (sys.platform !== "win32")
       return { state: "ignore", detail: "installation Windows seulement" };
     const base = state.pack?.downloadsBase ?? "https://downloads.aphrody.com";
-    let manifest;
+    let snapshot;
     try {
-      manifest = await fetchManifest(base, fetchImpl);
+      snapshot = await downloadsFor(ctx, base);
     } catch (error) {
       return {
         state: "echec",
@@ -373,7 +377,7 @@ export const stepAphrody: Step = {
         action: "Vérifie ta connexion Internet puis relance.",
       };
     }
-    const artifact = pickArtifact(manifest, "aphrody", WINDOWS_PLATFORM, ".zip");
+    const artifact = pickArtifact(snapshot.manifest, "aphrody", WINDOWS_PLATFORM, ".zip");
     if (!artifact)
       return {
         state: "attente",
@@ -382,7 +386,7 @@ export const stepAphrody: Step = {
           "Rien à faire de ton côté : l'équipe doit le publier ; le kit l'installera à ce moment-là (relance « Tout installer ou réparer » plus tard).",
       };
     try {
-      checkArtifact(base, artifact, await fetchSums(base, fetchImpl));
+      checkArtifact(snapshot.base, artifact, snapshot.sums);
     } catch (error) {
       return {
         state: "echec",
@@ -399,9 +403,12 @@ export const stepAphrody: Step = {
         state: "a-faire",
         detail: `installer aphrody ${artifact.version} (${formatBytes(artifact.size)}, empreinte SHA-256 vérifiée)`,
       };
-    const script = await (
-      await fetchImpl(`${base}/install.ps1`, { signal: AbortSignal.timeout(30_000) })
-    ).text();
+    let script;
+    try {
+      script = await verifiedScript(snapshot, "install.ps1", fetchImpl);
+    } catch (error) {
+      return { state: "echec", detail: `vérification refusée : ${(error as Error).message}` };
+    }
     if (!script.includes("SHA256SUMS") || !script.includes("Get-FileHash"))
       return {
         state: "echec",
@@ -421,7 +428,11 @@ export const stepAphrody: Step = {
       {
         inherit: true,
         timeoutMs: 1_200_000,
-        env: { APHRODY_DOWNLOAD_URL: base, APHRODY_COMPONENTS: "aphrody" },
+        env: {
+          APHRODY_DOWNLOAD_URL: base,
+          APHRODY_RELEASE: snapshot.manifest.release.id,
+          APHRODY_COMPONENTS: "aphrody",
+        },
       },
     );
     await rm(file, { force: true }).catch(() => undefined);
@@ -534,9 +545,9 @@ export const stepYolo: Step = {
     if (sys.platform !== "win32")
       return { state: "ignore", detail: "installation Windows seulement" };
     const base = state.pack?.downloadsBase ?? "https://downloads.aphrody.com";
-    let manifest;
+    let snapshot;
     try {
-      manifest = await fetchManifest(base, fetchImpl);
+      snapshot = await downloadsFor(ctx, base);
     } catch {
       return {
         state: "attente",
@@ -544,7 +555,7 @@ export const stepYolo: Step = {
         action: "Réessaie plus tard.",
       };
     }
-    const artifact = pickArtifact(manifest, "yolo", WINDOWS_PLATFORM, ".tar.gz");
+    const artifact = pickArtifact(snapshot.manifest, "yolo", WINDOWS_PLATFORM, ".tar.gz");
     if (!artifact)
       return {
         state: "attente",
@@ -555,45 +566,32 @@ export const stepYolo: Step = {
     const version = installed ? await toolVersion(sys, installed) : undefined;
     if (version && compareVersions(version, artifact.version) >= 0)
       return { state: "deja", detail: `version ${version}` };
-    // The official installer: from the copy of the repository when there is one, else the site's copy of it.
-    const repoScript = join(paths.repoDir, "apps", "yolo", "install.ps1");
+    try {
+      checkArtifact(snapshot.base, artifact, snapshot.sums);
+    } catch (error) {
+      return { state: "echec", detail: `vérification refusée : ${(error as Error).message}` };
+    }
     if (mode === "simuler")
       return {
         state: "a-faire",
         detail: `installer yolo ${artifact.version} avec son installateur officiel`,
       };
-    try {
-      checkArtifact(base, artifact, await fetchSums(base, fetchImpl));
-    } catch (error) {
-      return {
-        state: "echec",
-        detail: `vérification refusée : ${(error as Error).message}`,
-        action: "N'installe rien et prévenir l'équipe.",
-      };
-    }
-    // The official installer verifies SHA256SUMS itself; it reads the release from a local folder we fill first.
     const dir = join(paths.installDir, "tmp", "yolo-release");
     await rm(dir, { recursive: true, force: true });
     await mkdir(dir, { recursive: true });
-    const sums = await (await fetchImpl(`${base}/SHA256SUMS`)).text();
-    await writeFile(join(dir, "SHA256SUMS"), sums);
     const file = artifact.file ?? basename(artifact.url);
-    const archive = new Uint8Array(await (await fetchImpl(artifact.url)).arrayBuffer());
-    await writeFile(join(dir, file), archive);
-    let script = repoScript;
-    if (!existsSync(script)) {
-      const text = await (
-        await fetchImpl(`${base}/install-yolo.ps1`, { signal: AbortSignal.timeout(30_000) })
-      ).text();
-      if (!text.includes("SHA256SUMS") || !text.includes("Get-FileHash"))
-        return {
-          state: "echec",
-          detail:
-            "le script d'installation de yolo du site ne vérifie pas les empreintes : je ne le lance pas",
-          action: "Prévenir l'équipe.",
-        };
-      script = join(paths.installDir, "tmp", "install-yolo.ps1");
-      await writeFile(script, text);
+    const script = join(paths.installDir, "tmp", "install-yolo.ps1");
+    try {
+      await downloadVerified(
+        { ...artifact, id: file, file, kind: "update", format: "tar.gz" },
+        join(dir, file),
+        fetchImpl,
+      );
+      await writeFile(join(dir, "SHA256SUMS"), `${artifact.sha256}  ${file}\n`);
+      await writeFile(script, await verifiedScript(snapshot, "install-yolo.ps1", fetchImpl));
+    } catch (error) {
+      await rm(dir, { recursive: true, force: true });
+      return { state: "echec", detail: `vérification refusée : ${(error as Error).message}` };
     }
     const run = await sys.run(
       ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script],
@@ -603,7 +601,7 @@ export const stepYolo: Step = {
         env: { YOLO_RELEASE_DIR: dir, YOLO_NO_CRATES: "1" },
       },
     );
-    if (script !== repoScript) await rm(script, { force: true }).catch(() => undefined);
+    await rm(script, { force: true }).catch(() => undefined);
     await rm(dir, { recursive: true, force: true }).catch(() => undefined);
     ctx.log(`install.ps1 yolo -> ${run.code}`);
     const after = findTool(sys, paths, "yolo");
@@ -632,7 +630,7 @@ export const stepMcp: Step = {
         detail: "dépend d'aphrody, pas encore installé",
         action: "Relance après l'installation d'aphrody.",
       };
-    const spec = mcpSpec(aphrody);
+    const spec = mcpSpec(aphrody, findTool(sys, paths, "aphrody-mcp"));
     const claude = findTool(sys, paths, "claude");
     const desktop = await desktopState(paths, spec);
     const code = await claudeCodeState(sys, claude, spec);

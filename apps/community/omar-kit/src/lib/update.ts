@@ -14,8 +14,7 @@ import {
 import type { Context } from "./context.ts";
 import {
   checkArtifact,
-  fetchManifest,
-  fetchSums,
+  downloadsFor,
   pickArtifact,
   toRelease,
   WINDOWS_PLATFORM,
@@ -41,12 +40,13 @@ export async function updateKit(
     options.base ??
     (await loadProfile(ctx.paths))?.downloadsBase ??
     "https://downloads.aphrody.com";
-  const manifest = await fetchManifest(base, ctx.fetchImpl);
+  const snapshot = await downloadsFor({ ...ctx }, base);
+  const manifest = snapshot.manifest;
   const release = toRelease(manifest, name, currentPlatform());
   if (!release)
     return { status: "skipped", detail: "aucune mise à jour de ce programme n'est publiée" };
   const artifact = pickArtifact(manifest, name, WINDOWS_PLATFORM, ".tar.gz");
-  if (artifact) checkArtifact(base, artifact, await fetchSums(base, ctx.fetchImpl));
+  if (artifact) checkArtifact(snapshot.base, artifact, snapshot.sums);
   return updateFromRelease(release, {
     version: ctx.version,
     execPath: ctx.exePath,
