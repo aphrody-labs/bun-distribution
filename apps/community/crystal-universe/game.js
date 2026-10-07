@@ -43,6 +43,12 @@ let avatar = loadAvatar(localStorage);
 const loreForm = document.querySelector("#lore-search");
 const loreStatus = document.querySelector("#lore-status");
 const loreResults = document.querySelector("#lore-results");
+const multiplayerStatus = document.querySelector("#multiplayer-status");
+const roomName = document.querySelector("#room-name");
+let multiplayerSocket = null,
+  multiplayerPlayerId = null,
+  multiplayerPlayers = [],
+  lastNetworkSync = 0;
 let game = createGame(),
   active = false,
   paused = false,
@@ -95,6 +101,58 @@ document.querySelector("#start").addEventListener("click", () => {
 });
 document.querySelector("#pause").addEventListener("click", () => {
   if (active && game.status === "playing") pause(!paused);
+});
+document.querySelector("#join-room").addEventListener("click", () => {
+  const room = roomName.value.trim();
+  if (!/^[A-Za-z0-9_-]{1,32}$/.test(room)) {
+    multiplayerStatus.textContent = "Utilise 1 à 32 lettres, chiffres, tirets ou traits bas.";
+    return;
+  }
+  multiplayerSocket?.close();
+  multiplayerPlayers = [];
+  multiplayerPlayerId = null;
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const url = `${protocol}//${window.location.hostname || "127.0.0.1"}:4320/ws/${encodeURIComponent(room)}`;
+  multiplayerStatus.textContent = "Connexion au serveur Rust…";
+  const socket = new WebSocket(url);
+  multiplayerSocket = socket;
+  socket.addEventListener("open", () => {
+    if (multiplayerSocket !== socket) return;
+    document.querySelector("#join-room").disabled = true;
+    document.querySelector("#leave-room").disabled = false;
+    multiplayerStatus.textContent = `Connecté à la salle « ${room} »; synchronisation en cours.`;
+  });
+  socket.addEventListener("message", (event) => {
+    if (multiplayerSocket !== socket) return;
+    try {
+      const message = JSON.parse(event.data);
+      if (message.type === "joined") multiplayerPlayerId = message.player_id;
+      if (message.type === "joined" || message.type === "players") {
+        multiplayerPlayers = (message.players || []).filter(
+          (player) => player.id !== multiplayerPlayerId,
+        );
+        multiplayerStatus.textContent = `Salle « ${room} » · ${multiplayerPlayers.length + 1} joueur(s) connecté(s).`;
+      }
+    } catch {
+      multiplayerStatus.textContent = "Réponse du serveur Rust illisible.";
+    }
+  });
+  socket.addEventListener("error", () => {
+    if (multiplayerSocket === socket)
+      multiplayerStatus.textContent = "Serveur Rust indisponible; le mode solo reste actif.";
+  });
+  socket.addEventListener("close", () => {
+    if (multiplayerSocket !== socket) return;
+    multiplayerSocket = null;
+    multiplayerPlayerId = null;
+    multiplayerPlayers = [];
+    document.querySelector("#join-room").disabled = false;
+    document.querySelector("#leave-room").disabled = true;
+    multiplayerStatus.textContent = "Déconnecté. Le mode solo reste actif.";
+  });
+});
+document.querySelector("#leave-room").addEventListener("click", () => {
+  multiplayerSocket?.close(1000, "player left room");
 });
 window.addEventListener("keydown", (e) => {
   if (["INPUT", "SELECT", "BUTTON"].includes(e.target.tagName)) return;
@@ -231,6 +289,15 @@ function draw2d() {
     ctx.fillStyle = "#fc8b9c";
     ctx.fillRect(e.x - 20, e.y - 65, (40 * e.hp) / (35 + game.wave * 8), 4);
   }
+  for (const remote of multiplayerPlayers)
+    fighter(
+      remote.x,
+      remote.y,
+      remote.avatar.outfit,
+      false,
+      Math.sign(p.x - remote.x),
+      remote.avatar,
+    );
   ctx.fillStyle = "#77f3ff";
   for (const s of game.shots) {
     ctx.beginPath();
@@ -239,7 +306,7 @@ function draw2d() {
   }
 }
 function draw() {
-  if (webGpuArena) webGpuArena.render(game, avatar);
+  if (webGpuArena) webGpuArena.render(game, avatar, multiplayerPlayers);
   else draw2d();
   drawAge1000Map(mapContext, mapCanvas.width, mapCanvas.height);
 }
@@ -271,6 +338,10 @@ function frame(now) {
   }
   const p = game.player;
   hud.textContent = `${avatar.name} · Vie ${Math.ceil(p.hp)} / 100 · Énergie ${Math.floor(p.energy)} / 100 · Vague ${game.wave} / 5 · Score ${game.score}${p.transformed ? " · Transformation active" : ""} · ${webGpuArena ? "3D WebGPU" : "Canvas 2D"}`;
+  if (multiplayerSocket?.readyState === WebSocket.OPEN && now - lastNetworkSync >= 50) {
+    multiplayerSocket.send(JSON.stringify({ type: "update", player: { x: p.x, y: p.y, avatar } }));
+    lastNetworkSync = now;
+  }
   draw();
   requestAnimationFrame(frame);
 }

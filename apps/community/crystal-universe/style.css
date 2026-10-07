@@ -30,7 +30,8 @@ p {
 }
 .setup,
 .controls,
-.avatar-creator {
+.avatar-creator,
+.multiplayer {
   display: flex;
   gap: 0.7rem;
   align-items: center;
@@ -42,6 +43,30 @@ p {
   border: 1px solid #344e6a;
   border-radius: 1rem;
   background: #111d2d;
+}
+.multiplayer {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid #344e6a;
+  border-radius: 1rem;
+  background: #111d2d;
+}
+.multiplayer h2,
+.multiplayer p {
+  margin: 0;
+}
+.multiplayer p {
+  flex-basis: 100%;
+  color: #b7c5df;
+}
+.multiplayer input {
+  width: min(12rem, 100%);
+  font: inherit;
+  color: #f0f5ff;
+  background: #17263d;
+  border: 1px solid #94a6c5;
+  border-radius: 0.6rem;
+  padding: 0.65rem 0.9rem;
 }
 .avatar-creator > div {
   flex-basis: 100%;

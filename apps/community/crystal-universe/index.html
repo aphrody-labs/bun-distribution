@@ -26,6 +26,23 @@
         ><button id="start">Jouer / Recommencer</button
         ><button id="pause" aria-pressed="false">Pause</button>
       </section>
+      <section class="multiplayer" aria-labelledby="multiplayer-title">
+        <h2 id="multiplayer-title">Salle multijoueur Rust</h2>
+        <label for="room-name">Code de salle</label>
+        <input
+          id="room-name"
+          value="lobby"
+          minlength="1"
+          maxlength="32"
+          pattern="[A-Za-z0-9_-]+"
+          autocomplete="off"
+        />
+        <button id="join-room">Rejoindre</button>
+        <button id="leave-room" disabled>Quitter</button>
+        <p id="multiplayer-status" role="status" aria-live="polite">
+          Mode solo. Lance le serveur Rust local pour rejoindre une salle.
+        </p>
+      </section>
       <section class="avatar-creator" aria-labelledby="avatar-title">
         <div>
           <p class="eyebrow">Atelier de personnage · sauvegarde locale</p>

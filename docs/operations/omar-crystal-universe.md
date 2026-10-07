@@ -251,3 +251,23 @@ loopback (`127.0.0.1`) comme IP privée; l'exécution réelle du pipeline et le 
 sur adaptateur GPU restent donc non qualifiés. Cette évolution est une arène
 prototype côté navigateur : elle n'intègre ni moteur Rust/WASM, ni multijoueur,
 ni données/assets Xenoverse 2.
+
+## 2026-10-07 — Service Rust de salles multijoueurs locales
+
+`crates/web/dragon-pixel-server` fournit le binaire `aphrody-web-game-server` avec
+Axum/WebSocket. Il écoute par défaut sur `127.0.0.1:4320`; les navigateurs d'origine
+`http://127.0.0.1:4317` et `http://localhost:4317` sont acceptés, avec liste
+additionnelle explicite via `DRAGON_PIXEL_ALLOWED_ORIGINS`. Salles ASCII de 1 à 32
+caractères, plafond de 128 salles et quatre joueurs par salle. Les positions sont
+bornées à l'arène et les champs avatar sont validés avant diffusion. Le bouton
+multijoueur côté page rejoint ou quitte une salle et dessine les autres avatars
+dans le rendu WebGPU/Canvas; le mode solo reste disponible serveur arrêté.
+
+Validation : `cargo check`, quatre tests Rust dont deux clients WebSocket réels qui
+reçoivent le même état partagé, Clippy strict, huit tests JS / 32 assertions, build
+navigateur, lint/format, `diff --check`; endpoints de la page, du module WebGPU, du
+service `/health` et du proxy RAG vérifiés localement. L'outil navigateur bloque les
+URL loopback, donc le clic UI n'a pas été exercé dans le navigateur intégré. Ce
+service ne simule pas le combat côté serveur, n'authentifie ni ne persiste les
+comptes, ne configure pas TLS et reste lié à la boucle locale. Il ne constitue pas
+encore la stack Rust complète, un service public, ou l'intégration Xenoverse 2.

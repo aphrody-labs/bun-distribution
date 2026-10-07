@@ -205,7 +205,7 @@ function addFighter(
   }
 }
 
-function geometryFor(game, avatar) {
+function geometryFor(game, avatar, remotePlayers) {
   const vertices = [];
   cube(vertices, [0, -0.18, 0], [12, 0.36, 4], rgb("#55758b"));
   for (let index = -4; index <= 4; index++)
@@ -228,6 +228,20 @@ function geometryFor(game, avatar) {
     const x = (enemy.x - 480) / 95;
     const y = Math.max(0, (320 - enemy.y) / 100);
     addFighter(vertices, x, y, "#fc8b9c", "#f1c39d", "#442b52");
+  }
+  for (const remote of remotePlayers) {
+    const x = (remote.x - 480) / 95;
+    const y = Math.max(0, (320 - remote.y) / 100);
+    addFighter(
+      vertices,
+      x,
+      y,
+      remote.avatar.outfit,
+      remote.avatar.skin,
+      remote.avatar.hair,
+      remote.avatar.race,
+      remote.avatar.hairstyle,
+    );
   }
   for (const shot of game.shots) {
     const x = (shot.x - 480) / 95;
@@ -307,8 +321,8 @@ export async function createWebGpuArena(canvas) {
   });
   return {
     lost: device.lost,
-    render(game, avatar) {
-      const data = geometryFor(game, avatar);
+    render(game, avatar, remotePlayers = []) {
+      const data = geometryFor(game, avatar, remotePlayers);
       if (data.byteLength > vertex.size) return;
       device.queue.writeBuffer(vertex, 0, data);
       device.queue.writeBuffer(uniform, 0, cameraMatrix(canvas.width / canvas.height));

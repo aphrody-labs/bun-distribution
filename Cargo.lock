@@ -3752,6 +3752,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-web-game-server"
+version = "1.0.0"
+dependencies = [
+ "axum",
+ "futures-util",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-tungstenite 0.30.0",
+ "uuid 1.26.1",
+]
+
+[[package]]
 name = "aphrody-web-index"
 version = "0.1.0"
 dependencies = [

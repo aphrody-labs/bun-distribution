@@ -25,8 +25,18 @@ Depuis la racine du checkout :
 bun apps/community/crystal-universe/serve.js
 ```
 
+Pour le mode multijoueur local, démarrer aussi le service Rust dans un autre terminal :
+
+```sh
+cargo run -p aphrody-web-game-server
+```
+
 Ouvrir `http://127.0.0.1:4317/`, choisir le style, puis **Jouer / Recommencer**.
-Le serveur reste local. Aucun déploiement public n'a été effectué.
+Le serveur de jeu écoute par défaut sur `127.0.0.1:4320`, limite les salles à
+quatre joueurs et conserve leur état en mémoire. Chaque joueur rejoint le même code
+de salle pour voir les avatars des autres. Le mode reste jouable en solo si Rust
+n'est pas démarré. Aucun déploiement public, compte utilisateur ou stockage réseau
+n'a été configuré.
 
 Flèches ou Q/D : déplacement ; Espace : saut ; J : combo ; K : projectile ;
 L : charge ; T : transformation ; P : pause. Les commandes sont aussi affichées
