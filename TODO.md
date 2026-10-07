@@ -95,3 +95,8 @@ restent dans le plan global ; ce lot ne les déclare pas terminées.
 - [x] Compiler Yolo bytecode et SDK FFI partagé ; archive réelle, installation isolée et rollback qualifiés (activation encore ouverte).
 - [x] Nettoyer les targets VPS retirés (~39,2 Go) et qualifier la ressource temporaire unique (90 tests), sous verrou global.
 - [ ] Absorber les 2 631 fichiers M3 selon la carte validée, après ce lot.
+
+<!-- owner codex-root: isolated Taffy qualification -->
+- [x] Qualifier Taffy 0.12.1 sur le snapshot dc6f41ef2160 : 110 tests, check et Clippy strict passent sur le VPS.
+- [x] Faire résoudre le lockfile du candidat Taffy isolé e81f1a4c53c7 par Cargo ; revoir le diff et qualifier ce candidat exact.
+- [x] Livrer le déplacement, le correctif de retrait des nœuds et leur provenance en conservant les changements concurrents. Les adaptateurs M3/Bun/WASM restent une qualification distincte.

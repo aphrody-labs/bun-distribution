@@ -324,5 +324,15 @@
       "sha256": "cb35902c534b63fec27301a3055caa9a0cc987a67e0dc40022d07d13bb3e0b35",
       "bytes": 8913
     }
+  ],
+  "localPatches": [
+    {
+      "date": "2026-10-07",
+      "path": "src/tree/taffy_tree.rs",
+      "reason": "Removing measured child must release its context and invalidate parent/ancestor layout caches; repeated stale remove returns InvalidInputNode",
+      "regression": "removing_measured_child_releases_context_and_invalidates_parent_layout",
+      "qualification": "source plus regression fixture; root factory tests pending",
+      "record": "LOCAL-PATCHES.md"
+    }
   ]
 }

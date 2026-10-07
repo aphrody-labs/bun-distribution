@@ -15,7 +15,7 @@ Evidence lives in [MEMORY.md](../../../MEMORY.md), [PLAN.md](../../../PLAN.md) a
 | `aphrody-labs/shenron` | Shenron site, bot, API, MCP (dragonballfr.com) |
 | `aphrody-labs/plugins`, `plugin-aphrody`, `plugin-yolo` | Claude plugins (submodules) |
 | `aphrody-labs/uv`, `ruff`, `pyo3`, `deno` | forks pinned by `vu` and the arena |
-| not attached on purpose | `iecode` (keeps its own repository and authority), `taffy` (now integrated in `crates/vendor/taffy`) |
+| not attached on purpose | `iecode` (keeps its own repository and authority), `taffy` (now integrated in `crates/ui/taffy`) |
 
 ## Owner orders in force
 

@@ -21,6 +21,7 @@ description = "aphrody \u2014 the ultimate cross-platform CLI (Linux/Windows/WAS
 categories = ["command-line-utilities", "development-tools", "web-programming"]
 keywords = ["cli", "cross-platform", "rust", "linux", "wasm"]
 [workspace.dependencies]
+taffy = { version = "0.12.1" }
 aphrody-sprite-sheet = { path = "crates/ui/sprite-sheet", version = "1.0.0-canary" }
 crc32fast = { version = "1.5", default-features = false }
 image-compare = { version = "0.5" }
@@ -426,7 +427,7 @@ perf = { level = "warn", priority = -1 }
 # Integrated YAML implementation preserves the Mistral.rs 0.0.16 API and regex compatibility.
 serde-saphyr = { path = "crates/compat/serde-saphyr" }
 # Modified layout fork (aphrody-labs/taffy @ 4cd8b38f, MIT), integrated so no SSH alias is needed (cloud sessions, CI).
-taffy = { path = "crates/vendor/taffy" }
+taffy = { path = "crates/ui/taffy" }
 # Integrated Unicode implementation preserves the private C++ namespace alongside V8.
 simdutf = { path = "crates/native/simdutf" }
 # tauri-plugin-dialog 3.0.0-alpha.2 predates tauri 3.0.0-alpha.3 (Manager::run_on_main_thread); see tools/config/tauri-upstream.json

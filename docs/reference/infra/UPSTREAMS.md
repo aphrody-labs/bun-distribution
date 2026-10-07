@@ -17,7 +17,7 @@ Source, tests and licences are tracked in the monorepo; Cargo needs no sibling c
 | `serde-saphyr` | 0.0.16 | `crates/compat/serde-saphyr` | `patches/serde-saphyr-0.0.16-regex.patch` |
 | `aphrody-llama` | 0.83.5 | `crates/ml/llama` |  |
 | `aphrody-obscura` | 0.1.0 | `crates/web/obscura` |  |
-| `taffy` | 0.12.1 | `crates/vendor/taffy` |  |
+| `taffy` | 0.12.1 | `crates/ui/taffy` |  |
 
 ## Vital checkouts (0)
 

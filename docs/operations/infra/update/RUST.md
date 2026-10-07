@@ -33,7 +33,7 @@ bun run rust:fix         # the same gates, repairing what is mechanical first
 
 ### Resolver rule (`.cargo/config.toml`)
 
-`[resolver] incompatible-rust-versions = "allow"`. The vendored `crates/vendor/taffy` still declares `rust-version = "1.71"`;
+`[resolver] incompatible-rust-versions = "allow"`. The integrated `crates/ui/taffy` still declares `rust-version = "1.71"`;
 with Cargo's default `fallback` that single member made `cargo update` downgrade openssl, quinn-proto, serde_with and
 others to releases that build on Rust 1.71 (security fixes included). The workspace builds on one pinned modern toolchain,
 so the lock always resolves to the newest release.

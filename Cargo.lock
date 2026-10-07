@@ -1175,6 +1175,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "url",
+ "windows-sys 0.61.2",
  "yolo-runtime",
 ]
 
@@ -24603,8 +24604,12 @@ name = "taffy"
 version = "0.12.1"
 dependencies = [
  "arrayvec",
+ "cssparser 0.37.0",
+ "document-features",
  "grid",
+ "roxmltree 0.21.1",
  "serde",
+ "serde_json",
  "slotmap",
 ]
 

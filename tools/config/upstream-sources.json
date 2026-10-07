@@ -21,7 +21,9 @@
       "kind": "git",
       "url": "https://github.com/tauri-apps/tauri",
       "ref": "v3",
-      "sparse": ["crates/tauri-runtime-cef"],
+      "sparse": [
+        "crates/tauri-runtime-cef"
+      ],
       "license": "Apache-2.0 OR MIT",
       "tier": "reference",
       "purpose": "Tauri 3 branch; only crates/tauri-runtime-cef is read: the one desktop runtime (CEF + tauri-winit + GTK 4). The local patch for tauri-apps/tauri#16189 (patches/tauri-runtime-cef-3.0.0-alpha.5-glib-work-source.patch, base 3.0.0-alpha.5) is re-checked against it; drop the patch once upstream merges a fix.",
@@ -324,8 +326,8 @@
       "pinned": true,
       "role": "dependency",
       "license": "MIT",
-      "note": "Layout fork carrying the upstream Obscura layout changes. Integrated from the pinned revision (src, Cargo.toml, LICENSE, README, MIGRATION.json) as a path patch of crates-io so a build needs no SSH alias to the private repository (cloud sessions, CI, factory). Re-import from the fork revision to update.",
-      "integratedPath": "crates/vendor/taffy",
+      "note": "Layout fork carrying the upstream Obscura layout changes. Integrated from the pinned revision (src, Cargo.toml, LICENSE, README, MIGRATION.json) as a path patch of crates-io so a build needs no SSH alias to the private repository (cloud sessions, CI, factory). Local patch: TaffyTree::remove releases measured-node context data and invalidates the parent layout cache; LOCAL-PATCHES.md and MIGRATION.json retain the patch and regression fixture. Preserve this patch or qualify its upstream replacement when re-importing the fork revision. Subsequent retained-node removal patch and regression are recorded in crates/ui/taffy/LOCAL-PATCHES.md and MIGRATION.json; native and cross-target source qualification is recorded in docs/operations/workspace/taffy-integration-2026-10-07.md.",
+      "integratedPath": "crates/ui/taffy",
       "upstreamPackageIdentityPreserved": true
     }
   ]

@@ -645,7 +645,8 @@ impl<NodeContext> TaffyTree<NodeContext> {
     /// Returns the id of the node removed.
     pub fn remove(&mut self, node: NodeId) -> TaffyResult<NodeId> {
         let key = node.into();
-        if let Some(parent) = self.parents[key] {
+        let parent = self.parents.get(key).copied().ok_or(TaffyError::InvalidInputNode(node))?;
+        if let Some(parent) = parent {
             if let Some(children) = self.children.get_mut(parent.into()) {
                 children.retain(|f| *f != node);
             }
@@ -661,6 +662,10 @@ impl<NodeContext> TaffyTree<NodeContext> {
         let _ = self.children.remove(key);
         let _ = self.parents.remove(key);
         let _ = self.nodes.remove(key);
+        self.node_context_data.remove(key);
+        if let Some(parent) = parent {
+            self.mark_dirty(parent)?;
+        }
 
         Ok(node)
     }
@@ -1003,6 +1008,42 @@ mod tests {
         assert!(taffy.children.capacity() >= CAPACITY);
         assert!(taffy.parents.capacity() >= CAPACITY);
         assert!(taffy.nodes.capacity() >= CAPACITY);
+    }
+
+    #[test]
+    #[cfg(all(feature = "std", feature = "flexbox"))]
+    fn removing_measured_child_releases_context_and_invalidates_parent_layout() {
+        use std::sync::{
+            Arc,
+            atomic::{AtomicUsize, Ordering},
+        };
+        struct Context(Arc<AtomicUsize>);
+        impl Drop for Context {
+            fn drop(&mut self) {
+                self.0.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+        let drops = Arc::new(AtomicUsize::new(0));
+        let mut tree: TaffyTree<Context> = TaffyTree::new();
+        let child =
+            tree.new_leaf_with_context(Style::default(), Context(Arc::clone(&drops))).unwrap();
+        let parent = tree.new_with_children(Style::default(), &[child]).unwrap();
+        tree.compute_layout_with_measure(parent, Size::MAX_CONTENT, |_, _, _, context, _| {
+            if context.is_some() { Size { width: 80.0, height: 20.0 } } else { Size::ZERO }
+        })
+        .unwrap();
+        assert_eq!(tree.layout(parent).unwrap().size.width, 80.0);
+        assert!(!tree.dirty(parent).unwrap());
+        tree.remove(child).unwrap();
+        assert_eq!(drops.load(Ordering::SeqCst), 1, "removed text context released immediately");
+        assert!(tree.dirty(parent).unwrap());
+        tree.compute_layout(parent, Size::MAX_CONTENT).unwrap();
+        assert_eq!(
+            tree.layout(parent).unwrap().size.width,
+            0.0,
+            "cached child width must disappear"
+        );
+        assert!(matches!(tree.remove(child), Err(TaffyError::InvalidInputNode(_))));
     }
 
     #[test]
