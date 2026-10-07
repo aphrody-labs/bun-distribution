@@ -195,5 +195,6 @@ thing that will mislead the next reader of that directory.
 
 `conf.d/` also holds twenty-odd `.bak-*` / `.avant-*` copies of vhosts. They do not load (they
 do not end in `.conf`), and they are **not** backups of anything current — the versioned files
-under `deploy/nginx/` are, and they were verified byte-identical to the live
-`conf.d/aphrody.com.conf` and `conf.d/bxc.aphrody.com.conf` on 2026-09-07.
+now under `tools/config/host/nginx/aphrody/` are. The 2026-09-07 verification compared
+the then-versioned files byte-for-byte with the live `conf.d/aphrody.com.conf` and
+`conf.d/bxc.aphrody.com.conf`; it establishes their state on that date.

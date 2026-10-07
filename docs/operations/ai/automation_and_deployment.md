@@ -97,31 +97,29 @@ To start the Linux loop from the repository root:
 
 ## 4. VPS systemd Integration
 
-Deploying to a Linux VPS is managed via `deploy/deploy-vps.sh` and two systemd service unit templates:
-- `aphrody.service` (for a standard React static/SPA site server)
-- `aphrody-rust.service` (for fronting or supervising a Rust backend)
+Deploying to a Linux VPS is owned by Workspace/Infra. The installed native CLI
+exposes the deploy adapters and cataloged service lifecycle:
+
+```bash
+aphrody infra deploy --help
+aphrody infra service --help
+```
+
+The [service catalogue](../../../tools/config/service-catalog.json) selects the
+service and host. Its [systemd units](../../../tools/config/host/systemd/aphrody)
+are the versioned templates.
 
 ### Serving React / SPA Web App
 
-1. Build the wheel package on your development machine and transfer it along with the deploy scripts to the VPS:
-   ```bash
-   uv build --package aphrody --wheel
-   scp dist/aphrody-*.whl deploy/* user@vps-ip:/tmp/aphrody-deploy/
-   ```
-
-2. Log into the VPS and execute the bootstrap script as root:
-   ```bash
-   sudo ./deploy-vps.sh --mode react --wheel /tmp/aphrody-deploy/aphrody-0.1.0-*.whl \
-        --site /srv/site --host 0.0.0.0 --port 8080
-   ```
+Build the site's declared artifact and select its deploy adapter from the native
+CLI. Deployment mutation requires `--apply` and an explicit target, as described
+by the installed help.
 
 ### Supervising a Rust Backend
 
-Deploy the Rust binary and trigger:
-```bash
-sudo ./deploy-vps.sh --mode rust --wheel /tmp/aphrody-deploy/aphrody-0.1.0-*.whl \
-     --binary /opt/myapp/bin/myapp
-```
+Deliver the qualified Rust artifact through its deploy adapter. Manage its
+cataloged systemd service with `aphrody infra service`; use the installed help
+for the available lifecycle actions and target selection.
 
 ### HARDENING / SECURITY
 - A system-level `aphrody` service user is created with home directory `/opt/aphrody` and shell `/usr/sbin/nologin`.

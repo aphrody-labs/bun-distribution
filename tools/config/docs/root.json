@@ -429,6 +429,10 @@
             "2026-10-06",
             "One app: kit bridge `aphrody.kit/1`, routes `admin`/`creator`, `m3/apps/web` merged into showcase, `packages/engine/yolo/web` into Studio › Engine; `Aphrody-Setup.exe`; app-ui 215 tests.",
             "Unsigned exes; nothing run on physical Windows."
+          ],
+          [
+            "2026-10-07",
+            "Renderer feature inheritance integration: prepared root default-features=false plus explicit native defaults restores cargo metadata; native bun/command retain cpu+parallel, WASM declares cpu only. Scoped docs generation/check/links and rustfmt pass; live Oxc catalogue schema repaired (integrated placement, local patch text retained in note), source bundle still pending its owner. Two obsolete deploy documentation references repaired via live native Infra help and canonical host configuration, without host mutation. VPS snapshot 9897153d6e6860726b18f3c868b848230934f03c test -p aphrody-render --no-default-features --features cpu --lib --tests --locked failed 101 before tests: six compile errors in active-owner layout/components.rs (Dimension intrinsic traits, ambiguous Result error, missing Role.css_suffix), 16 warnings. Initial 54-file Taffy byte-preserving move proof predates further local patches; source integration remains uncommitted. Receipt: docs/operations/workspace/render-integration-2026-10-07.md. No renderer/default-feature/WASM/package/desktop qualification claimed."
           ]
         ]
       },
