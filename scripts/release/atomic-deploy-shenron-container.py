@@ -186,9 +186,24 @@ def verify(release, root):
     contract = json.loads((share / "secrets-contract.json").read_text()).get(
         "services", {}
     )
-    declared = json.loads(
-        command(compose + ["config", "--no-env-resolution", "--format", "json"])
-    )
+    try:
+        # Assembled Compose is JSON. Read sealed declarations directly: Compose
+        # 2.40.3 resolves env_file values even with --no-env-resolution alone.
+        declared = json.loads((release / "compose.yaml").read_text())
+    except json.JSONDecodeError:
+        declared = json.loads(
+            command(
+                compose
+                + [
+                    "config",
+                    "--no-env-resolution",
+                    "--no-interpolate",
+                    "--no-path-resolution",
+                    "--format",
+                    "json",
+                ]
+            )
+        )
     for name, service in services.items():
         tagged = json.loads(command(["docker", "image", "inspect", service["image"]]))[
             0

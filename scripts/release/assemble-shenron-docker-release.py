@@ -4,7 +4,9 @@
 
 import argparse
 import json
+import os
 import pathlib
+import re
 import shutil
 import subprocess
 
@@ -65,6 +67,8 @@ def main():
             str(args.app_compose),
             "config",
             "--no-env-resolution",
+            "--no-interpolate",
+            "--no-path-resolution",
             "--format",
             "json",
         ],
@@ -75,7 +79,60 @@ def main():
     if result.returncode:
         parser.error("application Compose configuration failed; inspect privately")
     config = json.loads(result.stdout)
+    allowed_vars = {
+        "SHENRON_UID",
+        "SHENRON_GID",
+        "SHENRON_SHARED_ROOT",
+        "SHENRON_SITE_ENV_FILE",
+        "SHENRON_BOT_ENV_FILE",
+        "SHENRON_COMPUTE_CLIENT_ENV_FILE",
+        "SHENRON_IMAGE_TAG",
+        "SHENRON_REVISION",
+    }
+
+    def interpolate(value):
+        if isinstance(value, str):
+
+            def replace(match):
+                name, default = match.group(1), match.group(2)
+                if name not in allowed_vars:
+                    parser.error(
+                        "undeclared template variable; preserve credentials in env_file"
+                    )
+                return os.environ.get(name) or default or ""
+
+            value = re.sub(r"\$\{([A-Z_][A-Z0-9_]*)(?::-([^}]*))?\}", replace, value)
+            if "$" in value:
+                parser.error("unresolved production template")
+            return value
+        if isinstance(value, dict):
+            return {key: interpolate(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [interpolate(item) for item in value]
+        return value
+
+    config = interpolate(config)
     services = config["services"]
+    public_environment = {
+        "site": {
+            "SHENRON_HOME",
+            "SHENRON_PROFILE",
+            "SHENRON_VFS_DB",
+            "HOSTNAME",
+            "PORT",
+            "NEXT_TELEMETRY_DISABLED",
+            "SHENRON_SITE_DIR",
+            "SHENRON_FFI_LIB",
+        },
+        "bot": {"API_HOST", "API_PORT", "DATABASE_PATH", "NODE_ENV", "SHENRON_FFI_LIB"},
+    }
+    for name in ("site", "bot"):
+        if not services.get(name, {}).get("env_file") or not set(
+            services[name].get("environment", {})
+        ).issubset(public_environment[name]):
+            parser.error(
+                "private environment expansion detected; release was not written"
+            )
     if set(services) != {"site", "bot"}:
         parser.error("application owner must supply exactly site and bot")
     for service in services.values():
