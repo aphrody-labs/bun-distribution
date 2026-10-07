@@ -5,6 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const fixtures: string[] = [];
+// Linux factories own this Bash/flock wrapper; Windows owns the PowerShell one.
+const linuxTest = test.skipIf(process.platform !== "linux");
 afterEach(() => {
   for (const path of fixtures.splice(0)) rmSync(path, { recursive: true, force: true });
 });
@@ -48,7 +50,7 @@ async function run(host: string) {
   });
 }
 
-test.each(["vps", "dbfr"])(
+linuxTest.each(["vps", "dbfr"])(
   "declared factory host %s executes Cargo under the serialized wrapper",
   async (host) => {
     const result = await run(host);
@@ -58,7 +60,7 @@ test.each(["vps", "dbfr"])(
   },
 );
 
-test.each(["", "wsl", "dbfr-untrusted"])(
+linuxTest.each(["", "wsl", "dbfr-untrusted"])(
   "non-factory host %s keeps the heavy Cargo routing refusal",
   async (host) => {
     const result = await run(host);
