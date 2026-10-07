@@ -1,0 +1,235 @@
+# SPDX-License-Identifier: Apache-2.0
+"""Deployment preflight and rollback tests; no Docker daemon or host mutations."""
+
+import importlib.util
+import json
+import os
+import pathlib
+import sqlite3
+import subprocess
+import tempfile
+import unittest
+from unittest.mock import patch
+
+spec = importlib.util.spec_from_file_location(
+    "container_adapter",
+    pathlib.Path(__file__).with_name("atomic-deploy-shenron-container.py"),
+)
+adapter = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(adapter)
+
+
+class ContainerDeploymentTests(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.root = pathlib.Path(self.directory.name).resolve()
+        self.env = self.root / "etc"
+        self.env.mkdir()
+        self.env_file = self.env / "site.env"
+        self.env_file.write_text("DATABASE_URL=private-fixture-value\n")
+        self.env_file.chmod(0o600)
+        self.share = self.root / "infra"
+        self.share.mkdir()
+        (self.share / "secrets-contract.json").write_text(
+            json.dumps(
+                {
+                    "services": {
+                        "shenron-site": {
+                            "secrets": [{"name": "DATABASE_URL", "required": True}]
+                        },
+                        "shenron-bot": {"secrets": []},
+                    }
+                }
+            )
+        )
+        self.addCleanup(patch.stopall)
+        patch.dict(
+            os.environ,
+            SHENRON_ENV_ROOT=str(self.env),
+            SHENRON_INFRA_SHARE=str(self.share),
+        ).start()
+        self.vfs = self.root / "shared/server/data/shenron-vfs.sqlite"
+        self.vfs.parent.mkdir(parents=True)
+        with sqlite3.connect(self.vfs) as db:
+            db.executescript(
+                "CREATE TABLE vfs_meta(key TEXT,value TEXT); INSERT INTO vfs_meta VALUES('profile','public');"
+                "CREATE TABLE vfs_nodes(visibility TEXT); CREATE TABLE rag_doc_attrs(visibility TEXT);"
+                "CREATE TABLE chunks(id INTEGER); INSERT INTO chunks VALUES(1);"
+            )
+        self.releases = []
+        self.calls = []
+        self.fail_up = None
+        self.inspect_drift = False
+        patch.object(adapter, "command", side_effect=self.command).start()
+        patch.object(
+            adapter.subprocess, "run", return_value=subprocess.CompletedProcess([], 3)
+        ).start()
+
+    def release(self, digit):
+        sha = digit * 40
+        release = self.root / "releases" / ("docker-" + sha)
+        release.mkdir(parents=True)
+        (release / "compose.yaml").write_text("sealed-fixture-compose\n")
+        (release / "deploy.env").write_text("SHENRON_IMAGE_TAG=" + sha + "\n")
+        image_id = "sha256:" + digit * 64
+        manifest = {
+            "schemaVersion": 1,
+            "runtime": "docker",
+            "target": "dbfr",
+            "repository": "shenron",
+            "commit": sha,
+            "imageId": image_id,
+            "files": {
+                name: adapter.file_digest(release / name)
+                for name in ("compose.yaml", "deploy.env")
+            },
+            "publicVfs": {
+                "path": str(self.vfs),
+                "sha256": adapter.file_digest(self.vfs),
+            },
+        }
+        (release / "release.json").write_text(json.dumps(manifest))
+        self.releases.append((release, manifest))
+        return release
+
+    def command(self, args):
+        self.calls.append(args)
+        if args[:3] == ["docker", "image", "inspect"]:
+            for _, manifest in self.releases:
+                if args[3] in (manifest["imageId"], "shenron:" + manifest["commit"]):
+                    return json.dumps(
+                        [
+                            {
+                                "Id": manifest["imageId"],
+                                "Os": "linux",
+                                "Architecture": "amd64",
+                                "Config": {
+                                    "Labels": {
+                                        "org.opencontainers.image.revision": manifest[
+                                            "commit"
+                                        ]
+                                    }
+                                },
+                            }
+                        ]
+                    )
+            raise AssertionError("unknown image")
+        if args[:3] == ["docker", "container", "inspect"]:
+            image = (
+                self.releases[-1][1]["imageId"]
+                if not self.inspect_drift
+                else "sha256:" + "f" * 64
+            )
+            return json.dumps([{"Image": image}])
+        release = pathlib.Path(args[args.index("-f") + 1]).parent
+        manifest = next(m for r, m in self.releases if r == release)
+        if "config" in args:
+            service = {
+                "image": "shenron:" + manifest["commit"],
+                "restart": "unless-stopped",
+                "read_only": True,
+                "user": "1000:1000",
+                "cap_drop": ["ALL"],
+                "security_opt": ["no-new-privileges:true"],
+                "healthcheck": {"test": ["CMD", "health"]},
+                "env_file": [{"path": str(self.env_file)}],
+            }
+            return json.dumps({"services": {"site": service, "bot": service}})
+        if "up" in args and release == self.fail_up:
+            raise adapter.DeploymentError("fixture readiness failure")
+        if "ps" in args:
+            # Compose emits newline-delimited JSON, rather than an array, on some versions.
+            return "\n".join(
+                json.dumps(
+                    {
+                        "Service": name,
+                        "State": "running",
+                        "Health": "healthy",
+                        "ID": name,
+                    }
+                )
+                for name in ("site", "bot")
+            )
+        return ""
+
+    def test_corrupt_package_has_no_activation(self):
+        release = self.release("a")
+        (release / "compose.yaml").write_text("tampered")
+        with self.assertRaises(adapter.DeploymentError):
+            adapter.activate(release, self.root)
+        self.assertEqual(self.calls, [])
+        self.assertFalse((self.root / "current").exists())
+
+    def test_private_vfs_rejected_even_when_checksum_is_sealed(self):
+        with sqlite3.connect(self.vfs) as db:
+            db.execute("INSERT INTO vfs_nodes VALUES('private')")
+        release = self.release("a")
+        with self.assertRaisesRegex(adapter.DeploymentError, "non-public"):
+            adapter.activate(release, self.root)
+        self.assertFalse(any("up" in call for call in self.calls))
+
+    def test_environment_permissions_rejected_before_mutation(self):
+        release = self.release("a")
+        self.env_file.chmod(0o644)
+        with self.assertRaisesRegex(adapter.DeploymentError, "0600"):
+            adapter.activate(release, self.root)
+        self.assertFalse(any("up" in call for call in self.calls))
+
+    def test_success_checks_both_runtime_images(self):
+        release = self.release("a")
+        adapter.activate(release, self.root)
+        self.assertEqual((self.root / "current").resolve(), release)
+        self.assertEqual(
+            sum(call[:3] == ["docker", "container", "inspect"] for call in self.calls),
+            2,
+        )
+        up = next(call for call in self.calls if "up" in call)
+        self.assertIn("--no-build", up)
+        self.assertIn("never", up)
+
+    def test_failed_readiness_stops_candidate_and_restores_previous(self):
+        previous = self.release("a")
+        candidate = self.release("b")
+        (self.root / "current").symlink_to(previous)
+        self.fail_up = candidate
+        with self.assertRaisesRegex(adapter.DeploymentError, "readiness"):
+            adapter.activate(candidate, self.root)
+        self.assertEqual((self.root / "current").resolve(), previous)
+        mutations = [call for call in self.calls if "up" in call or "stop" in call]
+        self.assertEqual(
+            ["up" if "up" in call else "stop" for call in mutations],
+            ["up", "stop", "up"],
+        )
+        self.assertIn(str(previous / "compose.yaml"), mutations[-1])
+
+    def test_running_image_drift_causes_rollback(self):
+        release = self.release("a")
+        self.inspect_drift = True
+        with self.assertRaisesRegex(adapter.DeploymentError, "sealed image"):
+            adapter.activate(release, self.root)
+        self.assertFalse((self.root / "current").exists())
+
+    def test_rollback_refuses_a_newer_current(self):
+        previous = self.release("a")
+        candidate = self.release("b")
+        newer = self.release("c")
+        (self.root / "current").symlink_to(newer)
+        backup = self.root / "deploy-backups/fixture"
+        backup.mkdir(parents=True)
+        (backup / "ROLLBACK.json").write_text(
+            json.dumps(
+                {
+                    "kind": "shenron-docker",
+                    "target": str(candidate),
+                    "previous": str(previous),
+                }
+            )
+        )
+        with self.assertRaisesRegex(adapter.DeploymentError, "newer activation"):
+            adapter.restore_backup(backup, self.root)
+        self.assertEqual(self.calls, [])
+
+
+if __name__ == "__main__":
+    unittest.main()

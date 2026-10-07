@@ -1,0 +1,398 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+"""Sealed Shenron Docker activation; invoked by the canonical Infra adapter."""
+
+import fcntl
+import hashlib
+import json
+import os
+import pathlib
+import re
+import sqlite3
+import subprocess
+import sys
+import tempfile
+
+
+class DeploymentError(Exception):
+    pass
+
+
+def require(condition, message):
+    if not condition:
+        raise DeploymentError(message)
+
+
+def command(args):
+    result = subprocess.run(
+        args, capture_output=True, text=True, timeout=240, check=False
+    )
+    # Compose diagnostics can include interpolated private environment values.
+    require(result.returncode == 0, "deployment command failed: " + args[0])
+    return result.stdout
+
+
+def file_digest(path):
+    with path.open("rb") as stream:
+        return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def verify(release, root):
+    require(
+        release.parent == root / "releases",
+        "release must be directly under the release root",
+    )
+    manifest_path = release / "release.json"
+    require(
+        manifest_path.is_file() and not manifest_path.is_symlink(),
+        "sealed Docker release.json required",
+    )
+    manifest = json.loads(manifest_path.read_text())
+    revision = manifest.get("commit", "")
+    require(
+        manifest.get("schemaVersion") == 1
+        and manifest.get("runtime") == "docker"
+        and manifest.get("repository") == "shenron"
+        and manifest.get("target") == "dbfr"
+        and re.fullmatch(r"[a-f0-9]{40}", revision),
+        "invalid Docker release identity",
+    )
+    require(
+        release.name in (revision, "docker-" + revision),
+        "release name differs from commit",
+    )
+    require(
+        set(manifest.get("files", {})) == {"compose.yaml", "deploy.env"},
+        "release must seal Compose and deployment settings",
+    )
+    for name, digest in manifest["files"].items():
+        path = release / name
+        require(
+            path.is_file() and not path.is_symlink() and file_digest(path) == digest,
+            "release file integrity check failed",
+        )
+    image_id = manifest.get("imageId", "")
+    require(
+        re.fullmatch(r"sha256:[a-f0-9]{64}", image_id), "immutable image ID required"
+    )
+    image = json.loads(command(["docker", "image", "inspect", image_id]))[0]
+    require(
+        image["Id"] == image_id
+        and image["Os"] == "linux"
+        and image["Architecture"] == "amd64"
+        and image.get("Config", {})
+        .get("Labels", {})
+        .get("org.opencontainers.image.revision")
+        == revision,
+        "image platform or source revision differs from release",
+    )
+    compose = [
+        "docker",
+        "compose",
+        "--project-name",
+        "shenron",
+        "--env-file",
+        str(release / "deploy.env"),
+        "-f",
+        str(release / "compose.yaml"),
+    ]
+    config = json.loads(command(compose + ["config", "--format", "json"]))
+    services = config.get("services", {})
+    require(
+        set(services) == {"site", "bot"},
+        "Docker release must contain exactly site and bot",
+    )
+    env_root = pathlib.Path(os.environ.get("SHENRON_ENV_ROOT", "/etc")).resolve()
+    share = pathlib.Path(
+        os.environ.get("SHENRON_INFRA_SHARE", "/usr/local/share/aphrody-infra")
+    )
+    contract = json.loads((share / "secrets-contract.json").read_text()).get(
+        "services", {}
+    )
+    declared = json.loads(
+        command(compose + ["config", "--no-env-resolution", "--format", "json"])
+    )
+    for name, service in services.items():
+        tagged = json.loads(command(["docker", "image", "inspect", service["image"]]))[
+            0
+        ]
+        require(tagged["Id"] == image_id, "every workload must use the sealed image")
+        user = str(service.get("user", ""))
+        require(
+            service.get("restart") == "unless-stopped"
+            and service.get("read_only") is True
+            and re.fullmatch(r"[1-9][0-9]*(?::[0-9]+)?", user)
+            and not service.get("privileged")
+            and "ALL" in service.get("cap_drop", [])
+            and "no-new-privileges:true" in service.get("security_opt", [])
+            and service.get("healthcheck", {}).get("test"),
+            "invalid container runtime policy",
+        )
+        for volume in service.get("volumes", []):
+            require(
+                volume.get("type") == "bind"
+                and pathlib.Path(volume.get("source", "/missing"))
+                .resolve()
+                .is_relative_to(root / "shared"),
+                "production mounts must stay inside the Shenron shared store",
+            )
+        # Inspect unexpanded env-file declarations without ever printing their values.
+        env_files = declared["services"][name].get("env_file", [])
+        require(env_files, "private runtime environment file required")
+        keys = set()
+        for entry in env_files:
+            path = pathlib.Path(entry["path"] if isinstance(entry, dict) else entry)
+            require(
+                not path.is_symlink()
+                and path.resolve().is_relative_to(env_root)
+                and path.is_file()
+                and path.stat().st_mode & 0o777 == 0o600,
+                "runtime environment must be a contained private 0600 file",
+            )
+            for line in path.read_text().splitlines():
+                line = line.strip().removeprefix("export ").strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
+                    if value.strip().strip("\"'"):
+                        keys.add(key.strip())
+        policy = contract.get("shenron-" + name)
+        require(policy is not None, "installed secrets contract lacks the workload")
+        require(
+            all(
+                secret["name"] in keys
+                for secret in policy.get("secrets", [])
+                if secret.get("required")
+            ),
+            "private runtime environment lacks required secrets-contract keys",
+        )
+    asset = manifest.get("publicVfs", {})
+    vfs = pathlib.Path(asset.get("path", "/missing"))
+    require(
+        not vfs.is_symlink()
+        and vfs.is_file()
+        and vfs.resolve().is_relative_to(root / "shared" / "server" / "data")
+        and file_digest(vfs) == asset.get("sha256"),
+        "qualified public VFS is missing or changed",
+    )
+    with sqlite3.connect(vfs.resolve().as_uri() + "?mode=ro", uri=True) as db:
+        require(
+            db.execute("PRAGMA quick_check").fetchone() == ("ok",),
+            "VFS integrity check failed",
+        )
+        require(
+            db.execute("SELECT value FROM vfs_meta WHERE key='profile'").fetchone()
+            == ("public",),
+            "only the public VFS profile may serve this release",
+        )
+        for table in ("vfs_nodes", "rag_doc_attrs"):
+            require(
+                db.execute(
+                    f"SELECT count(*) FROM {table} WHERE visibility != 'public'"
+                ).fetchone()[0]
+                == 0,
+                "VFS contains non-public content",
+            )
+        require(
+            db.execute("SELECT count(*) FROM chunks").fetchone()[0] > 0,
+            "public RAG corpus is empty",
+        )
+    return compose, image_id
+
+
+def switch(root, release):
+    current = root / "current"
+    temporary = root / (".current.docker." + str(os.getpid()))
+    if temporary.is_symlink():
+        temporary.unlink()
+    temporary.symlink_to(release)
+    os.replace(temporary, current)
+
+
+def restore_backup(backup, root):
+    require(
+        backup.parent == root / "deploy-backups",
+        "rollback record outside deployment backups",
+    )
+    record = json.loads((backup / "ROLLBACK.json").read_text())
+    require(record.get("kind") == "shenron-docker", "not a Docker rollback record")
+    target = pathlib.Path(record["target"]).resolve(strict=True)
+    require(target.parent == root / "releases", "rollback target outside releases")
+    current = root / "current"
+    require(
+        current.is_symlink() and current.resolve() == target,
+        "rollback refuses to replace a newer activation",
+    )
+    previous = (
+        pathlib.Path(record["previous"]).resolve(strict=True)
+        if record.get("previous")
+        else None
+    )
+    if previous == target:
+        print("same immutable release; current pointer preserved")
+        return
+    previous_compose = verify(previous, root)[0] if previous else None
+    compose = [
+        "docker",
+        "compose",
+        "--project-name",
+        "shenron",
+        "--env-file",
+        str(target / "deploy.env"),
+        "-f",
+        str(target / "compose.yaml"),
+    ]
+    command(compose + ["stop"])
+    if previous:
+        switch(root, previous)
+        command(
+            previous_compose
+            + [
+                "up",
+                "--detach",
+                "--no-build",
+                "--pull",
+                "never",
+                "--wait",
+                "--wait-timeout",
+                "180",
+            ]
+        )
+    else:
+        current.unlink()
+    print("Docker rollback verified")
+
+
+def activate(release, root):
+    compose, image_id = verify(release, root)
+    current = root / "current"
+    require(
+        not current.exists() or current.is_symlink(),
+        "current must be a release symlink",
+    )
+    previous = current.resolve() if current.is_symlink() else None
+    if previous and previous != release:
+        verify(previous, root)
+    for unit in (
+        "shenron-site.service",
+        "shenron-bot.service",
+        "shenron-mcp-http.service",
+    ):
+        active = subprocess.run(
+            ["systemctl", "is-active", "--quiet", unit],
+            capture_output=True,
+            check=False,
+        )
+        require(
+            active.returncode in (3, 4),
+            "legacy writer or systemd availability prevents Docker activation",
+        )
+    backup_root = root / "deploy-backups"
+    backup_root.mkdir(mode=0o700, exist_ok=True)
+    backup = pathlib.Path(tempfile.mkdtemp(prefix="docker-", dir=backup_root))
+    (backup / "ROLLBACK.json").write_text(
+        json.dumps(
+            {
+                "kind": "shenron-docker",
+                "previous": str(previous) if previous else None,
+                "target": str(release),
+                "imageId": image_id,
+            }
+        )
+        + "\n"
+    )
+    mutated = False
+    try:
+        # Docker restart policy supplies boot activation; one Compose project owns both workloads.
+        switch(root, release)
+        mutated = True
+        command(
+            compose
+            + [
+                "up",
+                "--detach",
+                "--no-build",
+                "--pull",
+                "never",
+                "--wait",
+                "--wait-timeout",
+                "180",
+            ]
+        )
+        output = command(compose + ["ps", "--all", "--format", "json"])
+        try:
+            states = json.loads(output)
+        except json.JSONDecodeError:
+            states = [json.loads(line) for line in output.splitlines() if line.strip()]
+        if isinstance(states, dict):
+            states = [states]
+        require(
+            {entry["Service"] for entry in states} == {"site", "bot"}
+            and all(
+                entry.get("Health") == "healthy" and entry.get("State") == "running"
+                for entry in states
+            ),
+            "all production containers must be running and healthy",
+        )
+        for entry in states:
+            runtime = json.loads(
+                command(["docker", "container", "inspect", entry["ID"]])
+            )[0]
+            require(
+                runtime["Image"] == image_id,
+                "running container differs from sealed image",
+            )
+    except Exception:
+        if mutated:
+            restore_backup(backup, root)
+        raise
+    print("Docker activation verified; rollback=" + str(backup))
+
+
+def main():
+    require(os.geteuid() == 0, "run as root")
+    args = sys.argv[1:]
+    mode, target = (
+        ("activate", args[0])
+        if len(args) == 1
+        else args
+        if len(args) == 2
+        else (None, None)
+    )
+    require(
+        mode in ("activate", "verify", "restore"),
+        "usage: adapter [activate|verify] RELEASE | restore BACKUP",
+    )
+    root = pathlib.Path(
+        os.environ.get("SHENRON_RELEASE_ROOT", "/srv/shenron")
+    ).resolve()
+    release = pathlib.Path(target).resolve(strict=True)
+    with (root / ".docker-deploy.lock").open("a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        if mode == "restore":
+            restore_backup(release, root)
+        elif mode == "verify":
+            verify(release, root)
+            print("sealed Docker release verified")
+        else:
+            activate(release, root)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (
+        DeploymentError,
+        OSError,
+        ValueError,
+        KeyError,
+        sqlite3.Error,
+        subprocess.TimeoutExpired,
+    ) as error:
+        # Unexpected parser/database errors can expose runtime values; keep them out of logs.
+        print(
+            str(error)
+            if isinstance(error, DeploymentError)
+            else "Docker deployment validation failed",
+            file=sys.stderr,
+        )
+        sys.exit(2)

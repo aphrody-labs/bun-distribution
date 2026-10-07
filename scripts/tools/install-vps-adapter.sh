@@ -39,7 +39,7 @@ if [[ -n "$source_manifest" ]]; then
 import hashlib, json, pathlib, sys
 manifest_path, root, revision = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]), sys.argv[3]
 m = json.loads(manifest_path.read_text())
-expected = {'scripts/tools/install-vps-adapter.sh', 'scripts/release/atomic-deploy-shenron.sh', 'config/service-catalog.json', 'config/nginx-routes.json', 'config/secrets-contract.json'}
+expected = {'scripts/tools/install-vps-adapter.sh', 'scripts/release/atomic-deploy-shenron.sh', 'scripts/release/atomic-deploy-shenron-container.py', 'config/service-catalog.json', 'config/nginx-routes.json', 'config/secrets-contract.json'}
 if m.get('backupOwner') is True: expected.update({'scripts/tools/infra/backup-shenron-sqlite.sh'})
 if m.get('schemaVersion') != 1 or m.get('repository') != 'aphrody-labs/aphrody' or m.get('stack') != 'shenron' or m.get('sourceCommit') != revision or set(m.get('files', {})) != expected:
     raise SystemExit('sealed adapter source manifest differs from requested revision/files')
@@ -82,7 +82,7 @@ destination.parent.mkdir(parents=True, exist_ok=True)
 stage = pathlib.Path(tempfile.mkdtemp(prefix='.adapter-package-', dir=destination.parent))
 try:
     files = {}
-    selected = ['scripts/tools/install-vps-adapter.sh', 'scripts/release/atomic-deploy-shenron.sh', 'config/service-catalog.json', 'config/nginx-routes.json', 'config/secrets-contract.json']
+    selected = ['scripts/tools/install-vps-adapter.sh', 'scripts/release/atomic-deploy-shenron.sh', 'scripts/release/atomic-deploy-shenron-container.py', 'config/service-catalog.json', 'config/nginx-routes.json', 'config/secrets-contract.json']
     if backup_owner: selected += ['scripts/tools/infra/backup-shenron-sqlite.sh']
     for relative in selected:
         source = root / relative
@@ -115,11 +115,12 @@ install -d -m 0755 "$sbin" "$share"
 declare -A adapters=(
   [aphrody-infra-deploy-aphrody]=atomic-deploy-aphrody-stack.sh
   [aphrody-infra-deploy-shenron]=atomic-deploy-shenron.sh
+  [aphrody-infra-deploy-shenron-container]=atomic-deploy-shenron-container.py
   [aphrody-infra-deploy-rg]=atomic-deploy-rg.sh
   [aphrody-infra-deploy-bundle]=atomic-deploy-bundle.sh
 )
 if [[ "$stack" = shenron ]]; then
-  adapters=([aphrody-infra-deploy-shenron]=atomic-deploy-shenron.sh)
+  adapters=([aphrody-infra-deploy-shenron]=atomic-deploy-shenron.sh [aphrody-infra-deploy-shenron-container]=atomic-deploy-shenron-container.py)
 fi
 for name in "${!adapters[@]}"; do install -m 0755 "$infra/scripts/release/${adapters[$name]}" "$sbin/$name"; done
 for catalog in service-catalog secrets-contract; do

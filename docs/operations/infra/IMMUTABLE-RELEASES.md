@@ -1,5 +1,9 @@
 # Immutable release workflow
 
+The owner-directed DBFR container flow is documented in
+[Shenron Docker releases](SHENRON-DOCKER.md). The systemd procedures below
+describe the earlier deployment format; they do not activate container releases.
+
 This is a historical release design. At the 2026-10-02 catalog state, the
 Aphrody Web/AI plane is retired; RG and Shenron are the active application
 planes, with a separate Aphrody Discord development service. Do not run the

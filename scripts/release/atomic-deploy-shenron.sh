@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# The canonical adapter also handles sealed container releases, without a Bun
+# installation or source reconstruction on the production host.
+container_target="${2:-${1:-}}"
+if [[ -n "$container_target" && ( -f "$container_target/compose.yaml" || -f "$container_target/ROLLBACK.json" ) ]]; then
+  container_adapter="$(dirname "${BASH_SOURCE[0]}")/aphrody-infra-deploy-shenron-container"
+  [[ -f "$container_adapter" ]] || container_adapter="$(dirname "${BASH_SOURCE[0]}")/atomic-deploy-shenron-container.py"
+  exec python3 "$container_adapter" "$@"
+fi
+
 # Shenron release plane on the VPS (/srv/shenron/{releases,current,shared}),
 # modelled on atomic-deploy-rg.sh. The installed catalog snapshot is the
 # roster (application shenron, release-based, not retired: shenron-site and
