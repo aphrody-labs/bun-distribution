@@ -130,11 +130,8 @@ aphrody-supervisor = { path = "crates/ai/supervisor", version = "1.0.0", feature
 aphrody-shell-web = { path = "crates/shell/web", version = "1.0.0-canary", features = [] }
 aphrody-shell-sandbox-host = { path = "crates/shell/aphrody-shell-sandbox-host", version = "1.0.0-canary", features = [] }
 aphrody-shell-tauri = { path = "crates/shell/tauri", version = "1.0.0-canary", features = [] }
-aphrody-shell-sandbox-host-e2b = { path = "crates/shell/aphrody-shell-sandbox-host-e2b", version = "1.0.0-canary", features = [] }
 aphrody-shell-session = { path = "crates/shell/session", version = "1.0.0-canary", features = [] }
 aphrody-shell-vfs = { path = "crates/shell/vfs", version = "1.0.0-canary", features = [] }
-aphrody-shell-vfs-opfs = { path = "crates/shell/aphrody-shell-vfs-opfs", version = "1.0.0-canary", features = [] }
-aphrody-shell-wasm-utils = { path = "crates/shell/aphrody-shell-wasm-utils", version = "1.0.0-canary", features = [] }
 aphrody-terminal-core = { path = "crates/shell/terminal-core", version = "1.0.0-canary", features = [] }
 aphrody-terminal-backend = { path = "crates/shell/terminal-backend", version = "1.0.0-canary", features = [] }
 aphrody-toolcall = { path = "crates/ai/toolcall", version = "1.0.0", features = [] }

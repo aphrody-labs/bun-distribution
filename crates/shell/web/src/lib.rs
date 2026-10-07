@@ -7,11 +7,13 @@
 //! all, in which case [`WebShell`] runs the in-process [`local::LocalShell`].
 
 pub mod local;
+pub mod opfs;
 mod syntax;
+pub mod utils;
 pub mod wire;
 
 use aphrody_shell_session::{ShellSession, SpawnSpec};
-use aphrody_shell_vfs_opfs::SharedOpfsVfs;
+use crate::opfs::SharedOpfsVfs;
 use aphrody_terminal_core::TerminalState;
 use wasm_bindgen::prelude::*;
 
@@ -190,5 +192,5 @@ pub fn data_frame(bytes: &[u8]) -> String {
 /// Run the shared VFS conformance suite in a browser WASM instance.
 #[wasm_bindgen]
 pub fn opfs_vfs_conformance() {
-    aphrody_shell_vfs::conformance::run(aphrody_shell_vfs_opfs::OpfsVfs::new);
+    aphrody_shell_vfs::conformance::run(crate::opfs::OpfsVfs::new);
 }

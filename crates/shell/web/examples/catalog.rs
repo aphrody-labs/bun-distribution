@@ -3,9 +3,9 @@
 
 fn main() {
     println!("| Utility | Source |\n| --- | --- |");
-    for utility in aphrody_shell_wasm_utils::catalog() {
+    for utility in aphrody_shell_web::utils::catalog() {
         let source = match utility.source {
-            aphrody_shell_wasm_utils::Source::Own => "own",
+            aphrody_shell_web::utils::Source::Own => "own",
         };
         println!("| `{}` | `{source}` |", utility.name);
     }

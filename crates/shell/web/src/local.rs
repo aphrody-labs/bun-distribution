@@ -33,7 +33,7 @@ impl ShellCommand for UtilityCommand {
         stdin: &[u8],
     ) -> Result<Vec<u8>, String> {
         let cwd = shell.cwd().to_vec();
-        aphrody_shell_wasm_utils::run(self.0, shell.vfs(), &cwd, args, stdin)
+        crate::utils::run(self.0, shell.vfs(), &cwd, args, stdin)
     }
 }
 
@@ -95,7 +95,7 @@ impl LocalShell {
             size: (80, 24),
             exited: false,
         };
-        for utility in aphrody_shell_wasm_utils::catalog() {
+        for utility in crate::utils::catalog() {
             shell.register_command(utility.name, Rc::new(UtilityCommand(utility.name)));
         }
         (shell, greeting.into_bytes())

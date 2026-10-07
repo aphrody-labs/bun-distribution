@@ -2,6 +2,8 @@
 //! Remote-capable shell host contract. Local confinement belongs to `aphrody-sandbox`;
 //! this crate owns session lifecycle and file transfer across host boundaries.
 
+#[cfg(not(target_arch = "wasm32"))]
+pub mod e2b;
 mod mock;
 #[cfg(not(target_arch = "wasm32"))]
 mod pty;

@@ -15,7 +15,7 @@ use std::{
     time::Duration,
 };
 
-use aphrody_shell_sandbox_host::{HostError, HostLimits, SandboxHost};
+use crate::{HostError, HostLimits, SandboxHost};
 use aphrody_shell_session::{SessionError, ShellSession, SpawnSpec, check_size};
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use reqwest::blocking::{Client, Response, multipart};
@@ -618,6 +618,6 @@ mod tests {
             limits: HostLimits::default(),
         };
         let mut host = E2bHost::create(config).expect("create E2B sandbox");
-        aphrody_shell_sandbox_host::verify_host_contract(&mut host).await.unwrap();
+        crate::verify_host_contract(&mut host).await.unwrap();
     }
 }

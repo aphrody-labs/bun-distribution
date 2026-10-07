@@ -2465,15 +2465,6 @@ dependencies = [
  "aphrody-shell-vfs",
  "aphrody-shell-web",
  "aphrody-terminal-backend",
- "tokio",
-]
-
-[[package]]
-name = "aphrody-shell-sandbox-host-e2b"
-version = "1.0.0-canary"
-dependencies = [
- "aphrody-shell-sandbox-host",
- "aphrody-shell-session",
  "base64 0.23.1",
  "reqwest 0.13.5",
  "rustls",
@@ -2502,29 +2493,13 @@ name = "aphrody-shell-vfs"
 version = "1.0.0-canary"
 
 [[package]]
-name = "aphrody-shell-vfs-opfs"
-version = "1.0.0-canary"
-dependencies = [
- "aphrody-shell-vfs",
- "crc32fast",
-]
-
-[[package]]
-name = "aphrody-shell-wasm-utils"
-version = "1.0.0-canary"
-dependencies = [
- "aphrody-shell-vfs",
-]
-
-[[package]]
 name = "aphrody-shell-web"
 version = "1.0.0-canary"
 dependencies = [
  "aphrody-shell-session",
  "aphrody-shell-vfs",
- "aphrody-shell-vfs-opfs",
- "aphrody-shell-wasm-utils",
  "aphrody-terminal-core",
+ "crc32fast",
  "serde_json",
  "wasm-bindgen",
 ]

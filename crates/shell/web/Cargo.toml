@@ -17,8 +17,7 @@ workspace = true
 [dependencies]
 aphrody-shell-session = { workspace = true }
 aphrody-shell-vfs = { workspace = true }
-aphrody-shell-vfs-opfs = { workspace = true }
-aphrody-shell-wasm-utils = { workspace = true }
+crc32fast = { workspace = true }
 aphrody-terminal-core = { workspace = true }
 serde_json = { workspace = true }
 wasm-bindgen = { workspace = true }
