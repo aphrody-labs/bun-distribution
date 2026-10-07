@@ -33,6 +33,7 @@ async function fixture(executables: Record<string, string>, checkout = false) {
         APHRODY_ROOT: app,
         APHRODY_HOME: join(root, "home"),
         YOLO_API_TOKEN: "",
+        YOLO_API_TOKEN_FILE: "",
         ...extra,
       },
       stdout: "pipe",
@@ -85,6 +86,46 @@ test("API receives the explicit container host, port and extra arguments", async
     "--json",
     "",
   ]);
+});
+
+test("API reads the mounted secret and replaces a stale environment token", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "aphrody-api-secret-"));
+  temporary.push(dir);
+  const path = join(dir, "api.token");
+  await Bun.write(path, "file-fixture-token\n", { mode: 0o400 });
+  const run = await fixture({ yolo: '[ "$YOLO_API_TOKEN" = "file-fixture-token" ]' });
+  const result = await run(["api"], {
+    YOLO_API_TOKEN: "stale-fixture-token",
+    YOLO_API_TOKEN_FILE: path,
+  });
+  expect(result.exitCode).toBe(0);
+  expect(result.stdout).toBe("");
+  expect(result.stderr).toBe("");
+});
+
+test("API rejects a missing mounted secret even when an environment token exists", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "aphrody-api-secret-"));
+  temporary.push(dir);
+  const run = await fixture({ yolo: 'printf "server launched"' });
+  const result = await run(["api"], {
+    YOLO_API_TOKEN: "stale-fixture-token",
+    YOLO_API_TOKEN_FILE: join(dir, "missing"),
+  });
+  expect(result.exitCode).toBe(64);
+  expect(result.stdout).toBe("");
+  expect(result.stderr).toContain("secret file is not readable");
+});
+
+test("API rejects an empty mounted secret before launching the server", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "aphrody-api-secret-"));
+  temporary.push(dir);
+  const path = join(dir, "api.token");
+  await Bun.write(path, "", { mode: 0o400 });
+  const run = await fixture({ yolo: 'printf "server launched"' });
+  const result = await run(["api"], { YOLO_API_TOKEN_FILE: path });
+  expect(result.exitCode).toBe(64);
+  expect(result.stdout).toBe("");
+  expect(result.stderr).toContain("YOLO_API_TOKEN is required");
 });
 
 test("checkout bootstrap stays on stderr and reuses installed dependencies", async () => {
