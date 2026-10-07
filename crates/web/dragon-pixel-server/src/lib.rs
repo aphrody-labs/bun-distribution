@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
+use aphrody_dragon_pixel_core::{Game, Input};
 use axum::{
     Json, Router,
     extract::{
@@ -75,6 +76,8 @@ pub struct PlayerSnapshot {
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ClientMessage {
     Update { player: PlayerInput },
+    Input { input: Input, dt: f32 },
+    Frame { player: PlayerInput, input: Input, dt: f32 },
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -82,17 +85,23 @@ pub enum ClientMessage {
 pub enum ServerMessage {
     Joined { player_id: String, players: Vec<PlayerSnapshot> },
     Players { players: Vec<PlayerSnapshot> },
+    Game { game: Game },
 }
 
 struct Room {
     events: broadcast::Sender<ServerMessage>,
     players: RwLock<HashMap<String, PlayerSnapshot>>,
+    game: RwLock<Game>,
 }
 
 impl Room {
     fn new() -> Self {
         let (events, _) = broadcast::channel(64);
-        Self { events, players: RwLock::new(HashMap::new()) }
+        Self {
+            events,
+            players: RwLock::new(HashMap::new()),
+            game: RwLock::new(Game::new("balanced")),
+        }
     }
 
     async fn snapshot(&self) -> Vec<PlayerSnapshot> {
@@ -271,11 +280,28 @@ async fn handle_socket(
                 match message {
                     Message::Text(text) if text.len() <= MAX_CLIENT_MESSAGE_BYTES => {
                         if last_update.elapsed() < UPDATE_INTERVAL { continue; }
-                        let Ok(ClientMessage::Update { player }) = serde_json::from_str::<ClientMessage>(&text) else {
+                        let Ok(message) = serde_json::from_str::<ClientMessage>(&text) else {
                             continue;
                         };
                         last_update = Instant::now();
-                        hub.update(&room, &player_id, player).await;
+                        match message {
+                            ClientMessage::Update { player } => hub.update(&room, &player_id, player).await,
+                            ClientMessage::Input { input, dt } if dt.is_finite() => {
+                                let mut game = room.game.write().await;
+                                game.step(input, dt.min(0.05));
+                                let snapshot = game.clone();
+                                drop(game);
+                                let _ = room.events.send(ServerMessage::Game { game: snapshot });
+                            }
+                            ClientMessage::Input { .. } => {}
+                            ClientMessage::Frame { player, input, dt }
+                                if dt.is_finite() && player.is_valid() =>
+                            {
+                                hub.update(&room, &player_id, player).await;
+                                advance_game(&room, input, dt).await;
+                            }
+                            ClientMessage::Frame { .. } => {}
+                        }
                     }
                     Message::Ping(payload) => {
                         if sender.send(Message::Pong(payload)).await.is_err() { break; }
@@ -301,6 +327,14 @@ async fn handle_socket(
         }
     }
     hub.leave(&room_name, &room, &player_id).await;
+}
+
+async fn advance_game(room: &Room, input: Input, dt: f32) {
+    let mut game = room.game.write().await;
+    game.step(input, dt.min(0.05));
+    let snapshot = game.clone();
+    drop(game);
+    let _ = room.events.send(ServerMessage::Game { game: snapshot });
 }
 
 #[cfg(test)]
@@ -371,6 +405,7 @@ mod tests {
         let first_id = match first_join {
             ServerMessage::Joined { player_id, .. } => player_id,
             ServerMessage::Players { .. } => panic!("expected joined message"),
+            ServerMessage::Game { .. } => panic!("unexpected game snapshot before input"),
         };
         let mut second_request =
             format!("ws://{address}/ws/test-room").into_client_request().unwrap();
@@ -385,6 +420,7 @@ mod tests {
         let (second_id, existing_player_count) = match second_join {
             ServerMessage::Joined { player_id, players } => (player_id, players.len()),
             ServerMessage::Players { .. } => panic!("expected joined message"),
+            ServerMessage::Game { .. } => panic!("unexpected game snapshot before input"),
         };
         assert_ne!(first_id, second_id);
         assert_eq!(existing_player_count, 2);
@@ -414,6 +450,30 @@ mod tests {
             }
         }
         assert!(updated, "the other player receives the authoritative room snapshot");
+        tokio::time::sleep(UPDATE_INTERVAL).await;
+        let input = ClientMessage::Frame {
+            player: PlayerInput { x: 500.0, y: 160.0, avatar: default_avatar() },
+            input: Input { right: true, ..Input::default() },
+            dt: 0.05,
+        };
+        first.send(ClientFrame::Text(serde_json::to_string(&input).unwrap().into())).await.unwrap();
+        let mut advanced = false;
+        let deadline = Instant::now() + Duration::from_secs(2);
+        while Instant::now() < deadline {
+            let Ok(Some(Ok(ClientFrame::Text(message)))) =
+                tokio::time::timeout(Duration::from_millis(250), second.next()).await
+            else {
+                continue;
+            };
+            let message: ServerMessage = serde_json::from_str(message.as_str()).unwrap();
+            if let ServerMessage::Game { game } = message {
+                advanced = game.player.x > 160.0;
+                if advanced {
+                    break;
+                }
+            }
+        }
+        assert!(advanced, "Rust processes room input and broadcasts the updated game state");
         first.close(None).await.unwrap();
         second.close(None).await.unwrap();
         server.abort();

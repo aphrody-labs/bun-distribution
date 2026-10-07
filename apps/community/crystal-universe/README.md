@@ -14,10 +14,8 @@ le choix est conservé dans le stockage local du navigateur.
 Les archives Shenron permettent de chercher soit tout le RAG, soit les passages
 OCR sourcés du manga Dragon Ball et Dragon Ball Super.
 
-La proposition fusionne la charge/transformation et le combat d'arène de Dragon
-Crystal avec la personnalisation et l'invasion par vagues de Warriors of the
-Universe. Ce prototype est solo ; les services multijoueurs des jeux originaux
-ne sont pas intégrés. Aucun graphisme, personnage ou code de ces jeux n'est copié.
+Le prototype s'inspire de conventions générales de jeux d'arène et reste entièrement
+original. Aucun graphisme, personnage ou code de jeux commerciaux n'est copié.
 
 Depuis la racine du checkout :
 
@@ -28,13 +26,21 @@ bun apps/community/crystal-universe/serve.js
 Pour le mode multijoueur local, démarrer aussi le service Rust dans un autre terminal :
 
 ```sh
-cargo run -p aphrody-web-game-server
+bun scripts/build/rust/vps-cargo.ts run -- run -p aphrody-web-game-server
+```
+
+Construire le cœur de combat WASM avant de lancer le navigateur :
+
+```sh
+bun scripts/build/rust/wasm-package.ts --crate aphrody-dragon-pixel-wasm --out target/wasm-package-stage/aphrody-dragon-pixel-wasm --name dragon-pixel-wasm
 ```
 
 Ouvrir `http://127.0.0.1:4317/`, choisir le style, puis **Jouer / Recommencer**.
 Le serveur de jeu écoute par défaut sur `127.0.0.1:4320`, limite les salles à
 quatre joueurs et conserve leur état en mémoire. Chaque joueur rejoint le même code
-de salle pour voir les avatars des autres. Le mode reste jouable en solo si Rust
+de salle pour voir les avatars des autres. Le cœur de simulation Rust est partagé
+entre le client WASM et le service natif; le serveur maintient également un état de
+combat de salle à partir des entrées reçues. Le mode reste jouable en solo si Rust
 n'est pas démarré. Aucun déploiement public, compte utilisateur ou stockage réseau
 n'a été configuré.
 

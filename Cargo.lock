@@ -1038,6 +1038,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-dragon-pixel-core"
+version = "1.0.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "aphrody-dragon-pixel-wasm"
+version = "1.0.0"
+dependencies = [
+ "aphrody-dragon-pixel-core",
+ "serde_json",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "aphrody-drive"
 version = "1.0.0"
 dependencies = [
@@ -3755,6 +3771,7 @@ dependencies = [
 name = "aphrody-web-game-server"
 version = "1.0.0"
 dependencies = [
+ "aphrody-dragon-pixel-core",
  "axum",
  "futures-util",
  "serde",

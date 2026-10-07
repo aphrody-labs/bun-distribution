@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-dragon-pixel-wasm"
+description = "Browser WebAssembly adapter for the shared Dragon Pixel combat simulation."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+aphrody-dragon-pixel-core = { path = "../dragon-pixel-core" }
+serde_json.workspace = true
+wasm-bindgen.workspace = true
+
+[lints]
+workspace = true

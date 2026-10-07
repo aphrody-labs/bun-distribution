@@ -267,7 +267,31 @@ Validation : `cargo check`, quatre tests Rust dont deux clients WebSocket réels
 reçoivent le même état partagé, Clippy strict, huit tests JS / 32 assertions, build
 navigateur, lint/format, `diff --check`; endpoints de la page, du module WebGPU, du
 service `/health` et du proxy RAG vérifiés localement. L'outil navigateur bloque les
-URL loopback, donc le clic UI n'a pas été exercé dans le navigateur intégré. Ce
-service ne simule pas le combat côté serveur, n'authentifie ni ne persiste les
-comptes, ne configure pas TLS et reste lié à la boucle locale. Il ne constitue pas
-encore la stack Rust complète, un service public, ou l'intégration Xenoverse 2.
+URL loopback, donc le clic UI n'a pas été exercé dans le navigateur intégré.
+
+## 2026-10-07 — Simulation Rust partagée et client WASM
+
+`crates/web/dragon-pixel-core` contient la simulation déterministe sans I/O;
+`crates/web/dragon-pixel-wasm` l'expose au navigateur via wasm-bindgen. Le service
+Axum et le module WASM appellent la même fonction. En salle connectée, le client
+envoie les entrées et affiche les snapshots Rust; hors connexion, il avance le même
+cœur WASM local. Le paquet se construit avec
+`scripts/build/rust/wasm-package.ts`; Bun sert les deux fichiers générés depuis
+`target/wasm-package-stage`.
+
+Vérification : 7 tests Rust réussis (2 cœur, 1 pont WASM, 4 serveur); le test
+WebSocket ouvre deux clients et vérifie la présence et une évolution de combat Rust
+reçue par le second client. Clippy ciblé `-D warnings`, compilation
+`wasm32-unknown-unknown --release`, wasm-bindgen 0.2.129, bundle navigateur Bun,
+8 tests JS / 32 assertions, Oxlint strict, Oxfmt et `git diff --check` passent. En
+exécution locale, `/`, le module JS WASM et le binaire WASM répondent 200 (139 272
+octets); `/health` répond `ok`.
+
+Cette arène partage une simulation de combat par salle; ce n'est pas encore un réseau
+d'instances individuelles ni un netcode qualifié contre latence, triche,
+reconnexion ou charge. Il n'y a ni comptes, persistance, TLS, service public ni
+déploiement. Le navigateur embarqué ne peut pas ouvrir le loopback dans cette
+session et l'adaptateur GPU réel reste non testé. Aucun moteur Bevy, asset/data
+Xenoverse, contenu Xenoverse 3 ou texte de manga n'a été ajouté. Le RAG demeure
+fondé sur l'index Shenron existant; ses limites de couverture et de droits restent
+inchangées.

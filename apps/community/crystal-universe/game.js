@@ -4,6 +4,14 @@ import { drawAge1000Map } from "./age1000-map.js";
 import { readGamepadInput } from "./gamepad.js";
 import { loadAvatar, normalizeAvatar, saveAvatar } from "./avatar.js";
 import { createWebGpuArena } from "./webgpu.js";
+let initDragonPixelWasm = async () => {};
+let RustGameSession = null;
+try {
+  ({ default: initDragonPixelWasm, Session: RustGameSession } =
+    await import("./dragon-pixel-wasm.js"));
+} catch {
+  // The local source fallback remains available before the WASM package is built.
+}
 const canvas = document.querySelector("#arena"),
   ctx = canvas.getContext("2d");
 const webGpuCanvas = document.querySelector("#arena-webgpu");
@@ -50,9 +58,19 @@ let multiplayerSocket = null,
   multiplayerPlayers = [],
   lastNetworkSync = 0;
 let game = createGame(),
+  rustGame = null,
   active = false,
   paused = false,
   last = 0;
+initDragonPixelWasm()
+  .then(() => {
+    if (RustGameSession) rustGame = new RustGameSession("balanced");
+    return null;
+  })
+  .catch(() => {
+    // A development checkout can run before its optional WASM package is built.
+    return null;
+  });
 const held = new Set(),
   pointers = new Map();
 let controllerConnected = false,
@@ -95,7 +113,9 @@ function pause(value) {
   result.textContent = paused ? "Partie en pause." : "Combat en cours.";
 }
 document.querySelector("#start").addEventListener("click", () => {
-  game = createGame(document.querySelector("#style").value);
+  const style = document.querySelector("#style").value;
+  game = createGame(style);
+  if (RustGameSession) rustGame = new RustGameSession(style);
   active = true;
   pause(false);
 });
@@ -127,6 +147,7 @@ document.querySelector("#join-room").addEventListener("click", () => {
     try {
       const message = JSON.parse(event.data);
       if (message.type === "joined") multiplayerPlayerId = message.player_id;
+      if (message.type === "game") game = message.game;
       if (message.type === "joined" || message.type === "players") {
         multiplayerPlayers = (message.players || []).filter(
           (player) => player.id !== multiplayerPlayerId,
@@ -316,6 +337,7 @@ function frame(now) {
   const gamepad = [...navigator.getGamepads()].find(Boolean);
   controllerConnected = Boolean(gamepad);
   const { input: gamepadInput, startPressed: gamepadStartPressed } = readGamepadInput(gamepad);
+  let networkInput = {};
   if (gamepadStartPressed && !gamepadStartWasPressed && active && game.status === "playing")
     pause(!paused);
   gamepadStartWasPressed = gamepadStartPressed;
@@ -323,10 +345,19 @@ function frame(now) {
     const input = {};
     for (const action of [...held, ...pointers.values()]) input[action] = true;
     for (const [action, pressed] of Object.entries(gamepadInput)) input[action] ||= pressed;
+    networkInput = input;
     const mouseDirection = pointerDirection(mouseTarget, game.player.x);
     if (mouseDirection) input[mouseDirection] = true;
     else mouseTarget = null;
-    step(game, input, dt);
+    if (multiplayerSocket?.readyState === WebSocket.OPEN) {
+      // The Rust room snapshot drives combat while connected; never advance a second local world.
+    } else if (rustGame) {
+      const state = JSON.parse(rustGame.step(JSON.stringify(input), dt));
+      state.player.style = game.player.style;
+      game = state;
+    } else {
+      step(game, input, dt);
+    }
     if (game.status !== "playing") {
       active = false;
       clear();
@@ -339,7 +370,14 @@ function frame(now) {
   const p = game.player;
   hud.textContent = `${avatar.name} · Vie ${Math.ceil(p.hp)} / 100 · Énergie ${Math.floor(p.energy)} / 100 · Vague ${game.wave} / 5 · Score ${game.score}${p.transformed ? " · Transformation active" : ""} · ${webGpuArena ? "3D WebGPU" : "Canvas 2D"}`;
   if (multiplayerSocket?.readyState === WebSocket.OPEN && now - lastNetworkSync >= 50) {
-    multiplayerSocket.send(JSON.stringify({ type: "update", player: { x: p.x, y: p.y, avatar } }));
+    multiplayerSocket.send(
+      JSON.stringify({
+        type: "frame",
+        player: { x: p.x, y: p.y, avatar },
+        input: networkInput,
+        dt,
+      }),
+    );
     lastNetworkSync = now;
   }
   draw();
