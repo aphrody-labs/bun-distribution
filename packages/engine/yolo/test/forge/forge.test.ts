@@ -303,11 +303,14 @@ describe("build environment", () => {
       symlinkSync(process.execPath, join(dir, BINARY.name));
       for (const alias of BINARY.aliases) symlinkSync(BINARY.name, join(dir, alias));
       for (const name of [BINARY.name, ...BINARY.aliases]) {
-        const r = Bun.spawnSync([
-          join(dir, name),
-          "-e",
-          'console.log(process.argv0.split("/").pop(), Bun.version)',
-        ]);
+        const r = Bun.spawnSync(
+          [join(dir, name), "-e", 'console.log(process.argv0.split("/").pop(), Bun.version)'],
+          {
+            // Probe engine aliases even when the host embeds the Yolo product dispatcher.
+            // Product yolo/bun/vu dispatch is qualified separately on the shipped artifact.
+            env: { ...process.env, BUN_BE_BUN: "1" },
+          },
+        );
         expect(r.exitCode).toBe(0);
         expect(r.stdout.toString().trim()).toBe(`${name} ${Bun.version}`);
       }

@@ -68,6 +68,7 @@ Dated evidence only. Decisions and queue live in PLAN.md; rules in AGENTS.md. Hi
 | 2026-10-07 | `scripts/audit/ai/graph-parity.ts` compares Graphify-shaped exports with oracle snapshots by node, edge relation, and confidence agreement; scoped Bun/TS gates pass. | Native TS/JS and Python extraction and P1–P6 remain open. |
 | 2026-10-06 | Imports after dry-run: global home 14,331 memories, 720 sessions; dbfr 421 documents, 2,362 chunks; aphrody 37 memories. | Home sync is preview-first; `--apply` takes a verified backup. |
 | 2026-10-07 | Native TypeScript/JavaScript extractor uses workspace-pinned OXC, resolves imports/calls and emits language identities. TypeScript fixture Graphify oracle and Rust oracle both pass on VPS snapshot `95c1ec042163591d98b0ddb94cf6c66ea366c5f7`; scoped check/test/strict Clippy passed. | Fixture parity only; whole-repository parity P1–P6 and Python extraction remain open. |
+| 2026-10-07 | Local capability-owner CLI `aphrody home status` confirms schema 7: 19,110 files, 7,424 docs, 145,382 chunks, 287,952 graph nodes, 701,230 edges, 14,331 memories, 929 sessions and 12 backups. `home query "aphro os" --limit 3` returns chunk, node and memory hits. | Vectors remain 0; this is lexical hybrid retrieval. Session MCP resolves another empty home, so the existing local store was verified through its owner CLI. Whole-repository graph parity remains open. |
 
 ## Infra, hosts, release
 

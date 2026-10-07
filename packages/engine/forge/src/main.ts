@@ -6,5 +6,15 @@ export { runForge };
 if (import.meta.main) {
   const compiled = Bun.main.startsWith("/$bunfs/") || Bun.main.startsWith("B:/~BUN/");
   const command = compiled ? process.execPath : `${Bun.which("bun") ?? "bun"} ${Bun.main}`;
-  process.exitCode = await runForge(Bun.argv.slice(2), command);
+  void runForge(Bun.argv.slice(2), command).then(
+    (code) => {
+      process.exitCode = code;
+      return code;
+    },
+    (error: unknown) => {
+      console.error(error);
+      process.exitCode = 1;
+      return 1;
+    },
+  );
 }

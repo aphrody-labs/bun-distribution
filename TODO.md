@@ -87,4 +87,11 @@ restent dans le plan global ; ce lot ne les déclare pas terminées.
 - [x] Regrouper les 22 crates OS ; check, 943 tests et Clippy strict passent sur la fabrique.
 - [x] Migrer 279 configurations suivies vers tools/config et leurs consommateurs ; sauvegarde protégée conservée.
 - [x] Qualifier les dépendances/toolchains Docker desktop et intégrer les gates sérialisés.
-- [ ] Livrer les seuls changements possédés ; la fusion complète reste à prouver.
+- [x] Intégration poussée : `7b4d5f0cd` (2 815 fichiers), puis `d429aa205` ; la fusion complète reste à prouver.
+
+## Suite active — runtime et fabrique unique
+
+- [ ] Gates des 11 consommateurs Rust hors OS de tools/config.
+- [ ] Compiler Yolo sur le fork disponible avec bytecode et SDK FFI embarqué ; qualifier avant activation.
+- [ ] Nettoyer les espaces de build VPS terminés et déclarer leur purge automatique dans la fabrique unique.
+- [ ] Absorber les 2 631 fichiers M3 selon la carte validée, après ce lot.

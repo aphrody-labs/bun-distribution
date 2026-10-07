@@ -76,8 +76,8 @@
     {
       "path": "TODO.md",
       "title": "Livraison en cours",
-      "sha256": "900a602c1bd1630559036ab1c2d1cf631a1cdfe5a72dd02c7cb4f1e4d4e785bc",
-      "bytes": 5750,
+      "sha256": "647763e180d233e71885b77f4d7b0f0b184b573e4f8451df20f694968e394fed",
+      "bytes": 6189,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -6336,8 +6336,8 @@
     {
       "path": "docs/operations/forge-yolo-consolidation.md",
       "title": "Fusion Forge et Yolo — 2026-10-07",
-      "sha256": "210a9dd57dfe4fc7a4072639a5a02cc1083003f4f818129539e5a5ad678e50b6",
-      "bytes": 1940,
+      "sha256": "67911c668ab1e8b7689401c64adbc45dd3de455a35646437c05cfa2253b936a3",
+      "bytes": 3392,
       "domain": "",
       "status": "canonical",
       "visibility": "private",

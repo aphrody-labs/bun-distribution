@@ -70,4 +70,16 @@ export async function runForge(argv: string[], invocationCommand?: string): Prom
   }
 }
 
-if (import.meta.main) process.exitCode = await runForge(Bun.argv.slice(2));
+if (import.meta.main) {
+  void runForge(Bun.argv.slice(2)).then(
+    (code) => {
+      process.exitCode = code;
+      return code;
+    },
+    (error: unknown) => {
+      console.error(error);
+      process.exitCode = 1;
+      return 1;
+    },
+  );
+}
