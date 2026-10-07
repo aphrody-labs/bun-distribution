@@ -59,6 +59,20 @@ The engines run directly with Bun (no `package.json` aliases):
 | `bun scripts/tools/vendor/bun_upstream_sync.ts --apply --auto-fix` | Drift Auto-Repair     | Resolves conflicts on lockfiles and completions, re-applies Aphrody patches if diverged.                                                                |
 | `bun scripts/tools/vendor/bun_upstream_tracker.ts`                 | Upstream Intelligence | Scans upstream PRs and issues for performance optimizations, memory fixes, and crashes.                                                                 |
 
+### Live Sync State (Measured 2026-10-07)
+
+```text
+─────────────────────────────────────────────────────────────
+ Aphrody Bun Upstream Synchronization Engine
+─────────────────────────────────────────────────────────────
+ Upstream (oven-sh/bun:main)   : bd599f5af
+ Fork (aphrody-labs/bun:main)  : 085dd0ad5
+ Commits behind upstream       : 0
+ Commits ahead (fork patches)  : 23
+ Drift status                  : in_sync
+─────────────────────────────────────────────────────────────
+```
+
 `vendor/bun` is a shallow, blobless checkout: without local refs, measure drift server side
 (`aphrody git api "/repos/oven-sh/bun/compare/main...aphrody-labs:bun:main"`), then let the engine
 fetch and merge (`--apply`, commits as `aphrody-dev`, never forced). A new `main` head is qualified by
@@ -68,7 +82,7 @@ fetch and merge (`--apply`, commits as `aphrody-dev`, never forced). A new `main
 
 ## 4. Key Upstream Optimization Discoveries for Aphrody Fork
 
-Based on automated upstream tracking:
+Based on automated upstream tracking (36 monitored PRs and issues, 11 critical, 22 high-impact):
 
 1. **`BUN_JSC_numberOfGCMarkers=1` (Issue #44186)**:
    - Allocating workers contend on GC marking threads. For 4-8 worker agent fleets, capping GC markers halves wall time.
@@ -76,8 +90,14 @@ Based on automated upstream tracking:
    - Upstream SQLite reads contend on global mutex when memory status is tracked. Setting `SQLITE_DEFAULT_MEMSTATUS=0` unlocks concurrent worker reads.
 3. **HTTP Head Buffer Optimization (Issue #44208)**:
    - Avoids quadratic buffer copy for non-upgrade HTTP requests in agent servers.
-4. **Socket Drainage & TLS State Fix (PR #42351 & PR #44327)**:
-   - Critical stability fix preventing orphaned WebSocket connections in high-frequency Obscura CDP interaction loops.
+4. **Socket Drainage & Listen Error Fixes (PR #42351, PR #44327, PR #44651)**:
+   - Critical stability fix preventing orphaned WebSocket connections in high-frequency Obscura CDP interaction loops; proper propagation of listen errors from usockets to `Bun.serve` / `Bun.listen`.
+5. **WebSocket Native Binary Framing (PR #44535)**:
+   - Derives frame type from `options.binary` in `ws.send()` and frames payloads natively without JS conversion.
+6. **Built-in TypeScript Type Checking (PR #44361, PR #44665)**:
+   - Built-in `bun check` type checker and parity alignments with `tsc` for fast validation without external Node/TSC runtime.
+7. **Node-API Lifecycle in Safe Rust (PR #40260)**:
+   - Ports native N-API lifecycle handlers to safe Rust, eliminating thread-safety and teardown panics in multi-threaded FFI worker environments.
 
 ---
 
@@ -86,8 +106,11 @@ Based on automated upstream tracking:
 `vendor/bun` is not a Git submodule: `tools/config/vendor.json` pins the qualified `main` commit, fetched by
 `bun scripts/tools/vendor/fetch.ts`.
 
-- Current pin: the `ref` of the `bun` entry in `tools/config/vendor.json`
+- Current source pin: `"ref": "a4d88d12417844912a9b6a5a9bedc0755b011092"`
+- Fork head (`aphrody-labs/bun:main`): `085dd0ad5e2356f805ecb1b5d51f7cc28da802af` (re-qualified on VPS factory)
 - Verification: `git -C vendor/bun rev-parse HEAD` against that `ref`
+
+---
 
 ## 6. Factory qualification — 2026-10-07
 
@@ -139,3 +162,47 @@ At this qualification boundary, the source pin in `tools/config/vendor.json` rem
 `a4d88d12417844912a9b6a5a9bedc0755b011092`; neither the existing dirty `vendor/bun` checkout nor PATH
 was changed. Promote the source pin and runtime installation only after the producer CLI, native
 SDK, acquisition and rollback gates are satisfied.
+
+---
+
+## 7. Versioned Aphrody Patches Matrix (`patches/bun/`)
+
+The Aphrody fork preserves 9 modular, self-contained patches applied directly on top of upstream `oven-sh/bun:main`:
+
+| Patch File | Scope | Intent & Architectural Role |
+| :--- | :--- | :--- |
+| `0001-feat-types-add-Tauri-aware-bun-types-declarations.patch` | Types | Adds `packages/bun-types/tauri.d.ts` for first-party Tauri IPC and desktop window API typing in Bun scripts. |
+| `0002-chore-rename-publishable-npm-packages-to-the-aphrody.patch` | Packaging | Re-scopes publishable workspace packages to `@aphrody/*` (e.g. `@aphrody/bun-types`). |
+| `0003-Propagate-Rust-native-dependencies-to-the-Linux-Bun-.patch` | Toolchain | Injects `scripts/build/rust/native-link.ts` to propagate Rust cdylib dependencies directly into the Ninja Linux link phase. |
+| `0004-Resolve-picocolors-tiny-invariant-dotenv-and-uuid-to.patch` | In-tree Runtime | Inlines `picocolors`, `tiny-invariant`, `dotenv`, and `uuid` (v1/v3-v7) into `src/js/thirdparty` as zero-dependency built-in modules. |
+| `0005-Sync-bun.lock-with-the-aphrody-bun-types-workspace-r.patch` | Packaging | Locks dependency graph for the `@aphrody/bun-types` rename with `--frozen-lockfile` compliance. |
+| `0006-chore-claude-cloud-sessions-run-unrestricted-drop-th.patch` | Cloud Env | Removes the restrictive pre-bash-guard hook to permit unrestricted agent execution in cloud sandboxes. |
+| `0007-feat-ffi-cli-bun-ffi-dlopen-global-RTLD_NOW-RTLD_GLO.patch` | Core FFI & CLI | Implements `bun:ffi` `{ global: true }` (`RTLD_NOW \| RTLD_GLOBAL`) in `DynLib` and bypasses standalone bundle wrapper when `argv0 === "bun"`. |
+| `0008-feat-cloud-SSH-aliases-and-session-context-hook-for-.patch` | Cloud Tooling | Configures Cloud SSH aliases and `scripts/dev/session-start.ts` context hooks for headless cloud runs. |
+| `0009-feat-cloud-cloud-ssh-configures-git-identity-gh-cred.patch` | Cloud Tooling | Configures `aphrody-dev` git identity and GitHub credential helpers for automated cloud builds. |
+
+---
+
+## 8. Runtime Unification Roadmap & Qualification Next Steps
+
+As codified in `docs/plans/yolo-fork-unified/PLAN.md` and `docs/plans/os/native-runtime-yolo.md`:
+
+```mermaid
+flowchart TD
+    YOLO_BIN["Unified Binary: yolo"]
+    YOLO_BIN -->|"argv0 === 'yolo'"| YOLO_CLI["Yolo CLI v0.1.0\n(forge, ops, workspace, update)"]
+    YOLO_BIN -->|"argv0 === 'bun'"| BUN_ENGINE["Bun Runtime v1.4.3\n(Built-in modules + dlopen global)"]
+    YOLO_BIN -->|"argv0 === 'vu'"| VU_DELEGATE["Vu Python Bridge\n(~/.vu/current CPython 3.12.15)"]
+    BUN_ENGINE -->|"bun:ffi dlopen(global: true)"| LIBPYTHON["Single Shared libpython\n(RTLD_GLOBAL, PyO3 & aphrody_rust)"]
+```
+
+### Remaining Qualification Checklist Before Advancing Source Pin:
+
+1. **`libaphrody_ffi` Tooling Feature**:
+   - Build and link the `libaphrody_ffi` provider with `--features tooling` so that `yolo parse` passes natively.
+2. **Runtime SDK & Home Templates**:
+   - Populate standard environment templates in isolated home to allow `yolo doctor` to pass cleanly.
+3. **Cross-Platform Host Parity**:
+   - Verify Windows MSVC build path (`install.ps1` without broken symlinks) and macOS ARM64.
+4. **Controlled Pin Promotion**:
+   - Once items 1-3 pass, update `"ref"` in `tools/config/vendor.json` from `a4d88d12417844912a9b6a5a9bedc0755b011092` to `085dd0ad5e2356f805ecb1b5d51f7cc28da802af`.

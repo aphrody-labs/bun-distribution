@@ -7255,6 +7255,21 @@ fn collect_web_fonts(
     let mut seen = std::collections::HashSet::new();
     let mut fonts = Vec::new();
     let mut rules = Vec::new();
+    // Text nodes exclude stylesheet/script payloads: those often contain every locale.
+    let mut characters = std::collections::HashSet::new();
+    for nid in crate::dom::rendered_descendants(tree, tree.document()) {
+        let Some(node) = tree.get_node(nid) else { continue };
+        let excluded = node.parent.and_then(|parent| tree.get_node(parent)).is_some_and(|parent| {
+            parent.as_element().is_some_and(|element| matches!(&*element.local, "style" | "script"))
+        });
+        if excluded { continue; }
+        if let obscura_dom::tree::NodeData::Text { contents } = &node.data {
+            characters.extend(contents.chars().map(u32::from));
+        }
+        if let Some(value) = node.get_attribute("value") {
+            characters.extend(value.chars().map(u32::from));
+        }
+    }
 
     for nid in crate::dom::rendered_descendants(tree, tree.document()) {
         // Inspect tags without copying unrelated script/text payloads.
@@ -7268,7 +7283,7 @@ fn collect_web_fonts(
         }
         let css = tree.text_content(nid);
         for face in font_face_blocks(&css) {
-            if !font_face_covers_ascii(face) {
+            if !font_face_covers_characters(face, &characters) {
                 continue;
             }
             let sources: Vec<_> = font_face_urls(face)
@@ -7292,7 +7307,7 @@ fn collect_web_fonts(
             "src:{};font-weight:{};font-style:{};unicode-range:{}",
             face.source, face.weight, face.style, face.unicode_range
         );
-        if !font_face_covers_ascii(&descriptor_block) {
+        if !font_face_covers_characters(&descriptor_block, &characters) {
             continue;
         }
         let sources: Vec<_> = font_face_urls(&descriptor_block)
@@ -7355,7 +7370,8 @@ fn collect_web_fonts(
     }
 
     for rule in rules {
-        if fonts.len() >= 16 {
+        // CJK families split across many unicode-range files; sixteen drops live glyphs.
+        if fonts.len() >= 256 {
             break;
         }
         for (key, src) in rule.sources {
@@ -7518,7 +7534,7 @@ fn font_face_italic(face: &str) -> Option<bool> {
     })
 }
 
-fn font_face_covers_ascii(face: &str) -> bool {
+fn font_face_covers_characters(face: &str, characters: &std::collections::HashSet<u32>) -> bool {
     let Some(range) = font_face_declaration(face, "unicode-range") else {
         return true;
     };
@@ -7538,7 +7554,7 @@ fn font_face_covers_ascii(face: &str) -> bool {
             let point = u32::from_str_radix(value, 16).ok();
             (point, point)
         };
-        matches!((start, end), (Some(start), Some(end)) if start <= 0x7e && end >= 0x20)
+        matches!((start, end), (Some(start), Some(end)) if characters.iter().any(|point| start <= *point && *point <= end))
     })
 }
 
