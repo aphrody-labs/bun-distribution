@@ -318,13 +318,6 @@ ratatui = { version = "0.30" }
 crossterm = { version = "0.29" }
 portable-pty = { version = "0.8" }
 rio-vt = { version = "=0.5.28", default-features = false }
-nu-cmd-extra = { version = "0.116.0", default-features = false }
-nu-cmd-lang = { version = "0.116.0", default-features = false, features = ["os"] }
-nu-command = { version = "0.116.0", default-features = false, features = ["network", "os", "rustls-tls", "sqlite"] }
-nu-engine = { version = "0.116.0", default-features = false, features = ["os"] }
-nu-parser = { version = "0.116.0", default-features = false }
-nu-protocol = { version = "0.116.0", default-features = false, features = ["brotli", "os", "rmp-serde", "sqlite"] }
-nu-std = { version = "0.116.0", default-features = false, features = ["sqlite"] }
 crossbeam-channel  = { version = "0.5" }
 oxc_ast_visit      = { version = "0.152.0" }
 oxc_syntax         = { version = "0.152.0" }
