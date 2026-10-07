@@ -61,6 +61,7 @@ class ContainerDeploymentTests(unittest.TestCase):
         self.calls = []
         self.fail_up = None
         self.inspect_drift = False
+        self.gateway = False
         patch.object(adapter, "command", side_effect=self.command).start()
         patch.object(
             adapter.subprocess, "run", return_value=subprocess.CompletedProcess([], 3)
@@ -96,6 +97,21 @@ class ContainerDeploymentTests(unittest.TestCase):
     def command(self, args):
         self.calls.append(args)
         if args[:3] == ["docker", "image", "inspect"]:
+            if args[3] == "gateway:fixture":
+                return json.dumps(
+                    [
+                        {
+                            "Id": "sha256:" + "d" * 64,
+                            "Os": "linux",
+                            "Architecture": "amd64",
+                            "Config": {
+                                "Labels": {
+                                    "org.opencontainers.image.revision": "e" * 40
+                                }
+                            },
+                        }
+                    ]
+                )
             for _, manifest in self.releases:
                 if args[3] in (manifest["imageId"], "shenron:" + manifest["commit"]):
                     return json.dumps(
@@ -121,6 +137,8 @@ class ContainerDeploymentTests(unittest.TestCase):
                 if not self.inspect_drift
                 else "sha256:" + "f" * 64
             )
+            if args[3] == "gateway":
+                image = "sha256:" + "d" * 64
             return json.dumps([{"Image": image}])
         release = pathlib.Path(args[args.index("-f") + 1]).parent
         manifest = next(m for r, m in self.releases if r == release)
@@ -135,7 +153,17 @@ class ContainerDeploymentTests(unittest.TestCase):
                 "healthcheck": {"test": ["CMD", "health"]},
                 "env_file": [{"path": str(self.env_file)}],
             }
-            return json.dumps({"services": {"site": service, "bot": service}})
+            services = {"site": service, "bot": service}
+            if self.gateway:
+                gateway = dict(service)
+                gateway.update(
+                    image="gateway:fixture",
+                    user="0:0",
+                    cap_add=["NET_BIND_SERVICE", "SETUID", "SETGID"],
+                )
+                gateway.pop("env_file")
+                services["gateway"] = gateway
+            return json.dumps({"services": services})
         if "up" in args and release == self.fail_up:
             raise adapter.DeploymentError("fixture readiness failure")
         if "ps" in args:
@@ -149,9 +177,81 @@ class ContainerDeploymentTests(unittest.TestCase):
                         "ID": name,
                     }
                 )
-                for name in ("site", "bot")
+                for name in (
+                    ("site", "bot", "gateway") if self.gateway else ("site", "bot")
+                )
             )
         return ""
+
+    def test_gateway_activation_checks_distinct_image_and_source_revision(self):
+        self.gateway = True
+        release = self.release("a")
+        manifest = self.releases[-1][1]
+        manifest["images"] = {
+            "gateway": {"id": "sha256:" + "d" * 64, "commit": "e" * 40}
+        }
+        (release / "release.json").write_text(json.dumps(manifest))
+        adapter.activate(release, self.root)
+        self.assertEqual(
+            sum(call[:3] == ["docker", "container", "inspect"] for call in self.calls),
+            3,
+        )
+
+    def test_gateway_rejects_private_and_writable_mounts(self):
+        release = self.release("a")
+        manifest = self.releases[-1][1]
+        public = {
+            "type": "bind",
+            "source": str(self.root / "shared/site/wiki"),
+            "target": "/srv/shenron-cdn/wiki",
+            "read_only": True,
+        }
+        self.assertTrue(
+            adapter.allowed_mount("gateway", public, release, self.root, manifest)
+        )
+        public["read_only"] = False
+        self.assertFalse(
+            adapter.allowed_mount("gateway", public, release, self.root, manifest)
+        )
+        public["read_only"] = True
+        public["source"] = str(self.root / "shared/bot/data")
+        self.assertFalse(
+            adapter.allowed_mount("gateway", public, release, self.root, manifest)
+        )
+        public["source"] = "/etc/letsencrypt"
+        public["target"] = "/etc/letsencrypt"
+        self.assertFalse(
+            adapter.allowed_mount("gateway", public, release, self.root, manifest)
+        )
+
+    def test_gateway_nginx_mount_requires_every_file_sealed(self):
+        release = self.release("a")
+        nginx = release / "nginx"
+        nginx.mkdir()
+        route = nginx / "route.conf"
+        route.write_text("fixture route")
+        manifest = self.releases[-1][1]
+        mount = {"source": str(nginx), "target": "/etc/nginx/conf.d", "read_only": True}
+        self.assertFalse(
+            adapter.allowed_mount("gateway", mount, release, self.root, manifest)
+        )
+        manifest["files"]["nginx/route.conf"] = adapter.file_digest(route)
+        self.assertTrue(
+            adapter.allowed_mount("gateway", mount, release, self.root, manifest)
+        )
+        (nginx / "unsealed.conf").write_text("unexpected route")
+        self.assertFalse(
+            adapter.allowed_mount("gateway", mount, release, self.root, manifest)
+        )
+
+    def test_sealed_path_traversal_rejected_before_docker(self):
+        release = self.release("a")
+        manifest = self.releases[-1][1]
+        manifest["files"]["../outside"] = "a" * 64
+        (release / "release.json").write_text(json.dumps(manifest))
+        with self.assertRaises(adapter.DeploymentError):
+            adapter.verify(release, self.root)
+        self.assertEqual(self.calls, [])
 
     def test_corrupt_package_has_no_activation(self):
         release = self.release("a")

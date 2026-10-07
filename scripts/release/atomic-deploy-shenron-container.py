@@ -37,6 +37,44 @@ def file_digest(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
+def allowed_mount(name, volume, release, root, manifest):
+    source = pathlib.Path(volume.get("source", "/missing")).resolve()
+    if name != "gateway":
+        return source.is_relative_to(root / "shared")
+    if volume.get("read_only") is not True:
+        return False
+    target = volume.get("target", "")
+    if target == "/etc/letsencrypt":
+        return source == pathlib.Path("/etc/aphrody/shenron-tls").resolve()
+    if target == "/etc/nginx/conf.d":
+        files = manifest.get("files", {})
+        return (
+            source == release / "nginx"
+            and bool([n for n in files if n.startswith("nginx/")])
+            and {str(p.relative_to(release)) for p in source.rglob("*") if p.is_file()}
+            == {n for n in files if n.startswith("nginx/")}
+        )
+    # Public media roots only. Never expose private bot data, conversations or home.
+    public = {
+        "/srv/shenron-cdn/wiki": root / "shared/site/wiki",
+        "/srv/shenron-cdn/assets": root / "shared/bot/assets",
+        "/srv/shenron-cdn/site-extra": root / "shared/site/public-extra",
+    }
+    if target in public:
+        return source == public[target].resolve()
+    if source.is_relative_to(release) and volume.get("target", "").startswith(
+        "/srv/shenron-cdn/"
+    ):
+        if source.is_file():
+            return str(source.relative_to(release)) in manifest.get("files", {})
+        return source.is_dir() and all(
+            str(p.relative_to(release)) in manifest.get("files", {})
+            for p in source.rglob("*")
+            if p.is_file()
+        )
+    return False
+
+
 def verify(release, root):
     require(
         release.parent == root / "releases",
@@ -62,13 +100,26 @@ def verify(release, root):
         "release name differs from commit",
     )
     require(
-        set(manifest.get("files", {})) == {"compose.yaml", "deploy.env"},
+        set(manifest.get("files", {})) >= {"compose.yaml", "deploy.env"}
+        and all(
+            not pathlib.PurePosixPath(name).is_absolute()
+            and ".." not in pathlib.PurePosixPath(name).parts
+            for name in manifest.get("files", {})
+        ),
         "release must seal Compose and deployment settings",
     )
     for name, digest in manifest["files"].items():
         path = release / name
         require(
-            path.is_file() and not path.is_symlink() and file_digest(path) == digest,
+            path.is_file()
+            and not path.is_symlink()
+            and path.resolve().is_relative_to(release)
+            and not any(
+                parent.is_symlink()
+                for parent in path.parents
+                if parent != release and parent.is_relative_to(release)
+            )
+            and file_digest(path) == digest,
             "release file integrity check failed",
         )
     image_id = manifest.get("imageId", "")
@@ -99,9 +150,19 @@ def verify(release, root):
     config = json.loads(command(compose + ["config", "--format", "json"]))
     services = config.get("services", {})
     require(
-        set(services) == {"site", "bot"},
-        "Docker release must contain exactly site and bot",
+        set(services) in ({"site", "bot"}, {"site", "bot", "gateway"}),
+        "Docker release must contain site and bot and optionally gateway",
     )
+    images = manifest.get("images", {})
+    expected_images = {name: image_id for name in services}
+    if "gateway" in services:
+        gateway = images.get("gateway", {})
+        require(
+            re.fullmatch(r"sha256:[a-f0-9]{64}", gateway.get("id", ""))
+            and re.fullmatch(r"[a-f0-9]{40}", gateway.get("commit", "")),
+            "sealed gateway image identity required",
+        )
+        expected_images["gateway"] = gateway["id"]
     env_root = pathlib.Path(os.environ.get("SHENRON_ENV_ROOT", "/etc")).resolve()
     share = pathlib.Path(
         os.environ.get("SHENRON_INFRA_SHARE", "/usr/local/share/aphrody-infra")
@@ -116,12 +177,37 @@ def verify(release, root):
         tagged = json.loads(command(["docker", "image", "inspect", service["image"]]))[
             0
         ]
-        require(tagged["Id"] == image_id, "every workload must use the sealed image")
+        require(
+            tagged["Id"] == expected_images[name],
+            "every workload must use its sealed image",
+        )
+        require(
+            tagged["Os"] == "linux" and tagged["Architecture"] == "amd64",
+            "workload image platform differs",
+        )
+        if name == "gateway":
+            require(
+                tagged.get("Config", {})
+                .get("Labels", {})
+                .get("org.opencontainers.image.revision")
+                == images["gateway"]["commit"],
+                "gateway source revision differs",
+            )
         user = str(service.get("user", ""))
         require(
             service.get("restart") == "unless-stopped"
             and service.get("read_only") is True
-            and re.fullmatch(r"[1-9][0-9]*(?::[0-9]+)?", user)
+            and (
+                user in ("0", "0:0")
+                if name == "gateway"
+                else re.fullmatch(r"[1-9][0-9]*(?::[0-9]+)?", user)
+            )
+            and (
+                set(service.get("cap_add", []))
+                == {"NET_BIND_SERVICE", "SETUID", "SETGID"}
+                if name == "gateway"
+                else not service.get("cap_add")
+            )
             and not service.get("privileged")
             and "ALL" in service.get("cap_drop", [])
             and "no-new-privileges:true" in service.get("security_opt", [])
@@ -131,11 +217,15 @@ def verify(release, root):
         for volume in service.get("volumes", []):
             require(
                 volume.get("type") == "bind"
-                and pathlib.Path(volume.get("source", "/missing"))
-                .resolve()
-                .is_relative_to(root / "shared"),
+                and allowed_mount(name, volume, release, root, manifest),
                 "production mounts must stay inside the Shenron shared store",
             )
+        if name == "gateway":
+            require(
+                not declared["services"][name].get("env_file"),
+                "gateway must not receive application secrets",
+            )
+            continue
         # Inspect unexpanded env-file declarations without ever printing their values.
         env_files = declared["services"][name].get("env_file", [])
         require(env_files, "private runtime environment file required")
@@ -196,7 +286,7 @@ def verify(release, root):
             db.execute("SELECT count(*) FROM chunks").fetchone()[0] > 0,
             "public RAG corpus is empty",
         )
-    return compose, image_id
+    return compose, expected_images
 
 
 def switch(root, release):
@@ -263,7 +353,7 @@ def restore_backup(backup, root):
 
 
 def activate(release, root):
-    compose, image_id = verify(release, root)
+    compose, expected_images = verify(release, root)
     current = root / "current"
     require(
         not current.exists() or current.is_symlink(),
@@ -295,7 +385,7 @@ def activate(release, root):
                 "kind": "shenron-docker",
                 "previous": str(previous) if previous else None,
                 "target": str(release),
-                "imageId": image_id,
+                "images": expected_images,
             }
         )
         + "\n"
@@ -326,7 +416,7 @@ def activate(release, root):
         if isinstance(states, dict):
             states = [states]
         require(
-            {entry["Service"] for entry in states} == {"site", "bot"}
+            {entry["Service"] for entry in states} == set(expected_images)
             and all(
                 entry.get("Health") == "healthy" and entry.get("State") == "running"
                 for entry in states
@@ -338,7 +428,7 @@ def activate(release, root):
                 command(["docker", "container", "inspect", entry["ID"]])
             )[0]
             require(
-                runtime["Image"] == image_id,
+                runtime["Image"] == expected_images[entry["Service"]],
                 "running container differs from sealed image",
             )
     except Exception:

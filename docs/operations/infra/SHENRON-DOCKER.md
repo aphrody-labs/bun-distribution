@@ -40,8 +40,8 @@ retain the previous version while its release is available for rollback. Replaci
 a shared VFS in place invalidates the previous release's integrity check.
 
 Activation is serialized. The old systemd Shenron writers must already be stopped.
-One Compose project owns site and bot; production performs no build or image pull.
-The adapter switches `current`, waits for both container health checks and verifies
+One Compose project owns site, bot and the optional gateway; production performs no build or image pull.
+The adapter switches `current`, waits for every container health check and verifies
 their running state. A failure stops the candidate and restores the previous sealed
 release. A rollback record is retained under `deploy-backups/docker-*` (0700).
 Invoke the same adapter with `restore BACKUP` to repeat rollback; it refuses to
@@ -54,3 +54,46 @@ Neither a version command nor a container health check proves those requirements
 Remove the VPS runtime and temporary forwarding only after DBFR's public routes
 and protected data are qualified. Never package environment files, conversations,
 private databases or model weights inside the image or Git release.
+
+## Gateway bundle and sealing
+
+The gateway uses its own immutable Aphrody image while site and bot share the
+Shenron image. Add `images.gateway` with `id` (Docker SHA-256 image ID) and
+`commit` (40-character Aphrody revision). Every gateway image must be Linux amd64
+and carry the matching OCI revision. Its runtime user is `0:0` for the TLS master;
+its exact added capabilities are `NET_BIND_SERVICE`, `SETUID`, `SETGID`, with all
+other capabilities dropped and `no-new-privileges` enabled. Workers remain
+unprivileged. All workload root filesystems are read-only.
+
+Copy canonical `config/host/nginx/shenron/*.conf` into the release's `nginx/`
+directory, and public static files into `public/`. Every file is sealed. Mount
+`nginx/` read-only at `/etc/nginx/conf.d`. Mount only the public shared directories
+`site/wiki`, `bot/assets` and `site/public-extra` at their corresponding
+`/srv/shenron-cdn/{wiki,assets,site-extra}` paths. Other static mounts must be
+sealed files or directories from the release. Private bot data, conversations,
+agent homes and unrelated TLS identities cannot be mounted in the gateway.
+
+Provision `/etc/aphrody/shenron-tls` through Infra as a protected, dedicated TLS
+store containing only the required Shenron certificates and keys, preserving the
+`live/` to `archive/` links. Mount it read-only at `/etc/letsencrypt`. Do not mount
+the host's entire certificate store or copy keys into a release or image. Provide
+writable nginx runtime/cache directories with tmpfs, including `/run`,
+`/var/lib/nginx` and `/var/cache/nginx`.
+
+Assemble on the build VPS, transfer only public release files to DBFR, load the
+images, and seal on DBFR against the qualified public VFS:
+
+```sh
+python3 scripts/release/seal-shenron-docker-release.py RELEASE \
+  --commit SHENRON_COMMIT --image-id SHENRON_IMAGE_ID \
+  --public-vfs /srv/shenron/shared/server/data/VERSION/shenron-vfs.sqlite \
+  --gateway-image-id GATEWAY_IMAGE_ID --gateway-commit APHRODY_COMMIT
+sudo aphrody-infra-deploy-shenron verify RELEASE
+```
+
+The sealing command refuses an existing manifest, unexpected files and symlinks.
+It hashes public release files and the external VFS; it does not verify runtime
+availability itself. The canonical adapter supplies that preflight. PostgreSQL,
+Redis and backend inference remain protected host capabilities until their own
+checksum-verified migration and rollback qualify; application/gateway packaging
+alone does not establish a full database/backend container migration.
