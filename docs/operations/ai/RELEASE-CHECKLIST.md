@@ -18,7 +18,7 @@ and tick boxes as you go.
 - [ ] All in-flight Discussions answered or moved to issues.
 - [ ] [`docs/PLAN.md` (not in repo)](../../plans/ai/PLAN.md) reviewed; all `Pending` items
       either shipped or explicitly punted.
-- [ ] [`docs/plans/upstream-oxc/crates/oxc_minifier/docs/ROADMAP.md`](../../plans/ai/ROADMAP.md) reflects current quarter targets.
+- [ ] [(upstream oxc doc, not vendored)](../../plans/ai/ROADMAP.md) reflects current quarter targets.
 - [ ] [`docs/reference/ai/FAQ.md`](../../reference/ai/FAQ.md) covers new features in this release.
 
 ## 2. Test gates (run locally)

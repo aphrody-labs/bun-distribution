@@ -166,7 +166,7 @@ mirror an explicit configuration and return an aggregate error when required ass
 **Priority: P2.**
 
 The current convergence plan says all 166 tools dispatch to Rust and the NativeAOT migration is
-complete. `docs/architecture/upstream-oxc/crates/oxc_minifier/docs/ARCHITECTURE.md` still describes Rust handlers as replacing the legacy oracle
+complete. (upstream oxc doc, not vendored) still describes Rust handlers as replacing the legacy oracle
 incrementally and lists NativeAOT as a Windows target component. Those statements conflict with
 the completed, Rust-only WinClean product path and make the architecture index unreliable for
 deciding what is implemented versus historical. References to external .NET compatibility support

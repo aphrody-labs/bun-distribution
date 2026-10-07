@@ -157,7 +157,7 @@ Current docs that still describe the forks as live:
 | `docs/reference/workspace/DEPS-INVENTORY.md:196` | `aphrody-code/oxc` pinned `31d5266e150f` |
 | `docs/reference/upstream-bun/APHRODY-FORK.md:3,11,15,18` | fork procedure |
 | `docs/products/upstream-bun/README.md:5` | fork README |
-| `docs/products/upstream-oxc/apps/aphrody-oxc/README.md:3` | fork cdylib README |
+| (upstream oxc doc, not vendored) | fork cdylib README |
 | `crates/compat/oxc-bridge/README.md:4` | origin `oxc/apps/aphrody-oxc` (provenance; correct as history) |
 | (removed import receipt) | fork commits, PR, CI run |
 

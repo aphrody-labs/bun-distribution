@@ -148,7 +148,7 @@ traceability between a published version and its measured bench numbers.
 We do NOT (yet) use `criterion-compare-action`. It requires baseline
 persistence across runs and a sustained CI baseline store, which is more
 infrastructure than we currently maintain. When that lands (planned Q3 2026
-per `docs/plans/upstream-oxc/crates/oxc_minifier/docs/ROADMAP.md`), the manual ledger will be supplemented, not
+per (upstream oxc doc, not vendored)), the manual ledger will be supplemented, not
 replaced — the manual version captures release-version-level snapshots; the
 CI version captures per-PR deltas. Both views matter.
 
@@ -165,5 +165,5 @@ CI version captures per-PR deltas. Both views matter.
 - `docs/PLAN.md` (not in repo) §R-A R1.5 — acceptance criterion (p50 cold-start < 5 ms,
   p50 MCP initialize < 20 ms on reference hardware)
 - `.github/workflows/bench.yml` (not in repo) — CI bench gate
-- `docs/plans/upstream-oxc/crates/oxc_minifier/docs/ROADMAP.md` — planned `criterion-compare-action` wiring
+- (upstream oxc doc, not vendored) — planned `criterion-compare-action` wiring
 - `docs/reference/ai/cargo/PUBLISH-LADDER.md` — yank policy referenced in section 5
