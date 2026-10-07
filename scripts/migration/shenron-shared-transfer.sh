@@ -18,7 +18,7 @@ ssh "${ssh_options[@]}" "$peer" "test -d '$destination' && test -w '$destination
   echo 'DBFR destination must be provisioned by Infra before transfer' >&2; exit 2;
 }
 if [[ "$phase" = final ]]; then
-  for unit in shenron-site.service shenron-bot.service shenron-backup.service; do
+  for unit in shenron-site.service shenron-bot.service shenron-site-docker.service shenron-bot-docker.service shenron-backup.service; do
     if systemctl is-active --quiet "$unit"; then
       echo "final transfer requires quiesced source: $unit" >&2; exit 2;
     fi
@@ -26,7 +26,7 @@ if [[ "$phase" = final ]]; then
   if systemctl is-active --quiet shenron-backup.timer; then
     echo 'final transfer requires paused source backup timer' >&2; exit 2;
   fi
-  ssh "${ssh_options[@]}" "$peer" 'for unit in shenron-site.service shenron-bot.service; do if systemctl is-active --quiet "$unit"; then printf "DBFR writer must be inactive: %s\n" "$unit" >&2; exit 2; fi; done'
+  ssh "${ssh_options[@]}" "$peer" 'for unit in shenron-site.service shenron-bot.service shenron-site-docker.service shenron-bot-docker.service; do if systemctl is-active --quiet "$unit"; then printf "DBFR writer must be inactive: %s\n" "$unit" >&2; exit 2; fi; done'
 fi
 bandwidth="${SHENRON_TRANSFER_KIB_PER_SEC:-51200}"
 [[ "$bandwidth" =~ ^[1-9][0-9]{0,6}$ ]] || { echo 'invalid transfer bandwidth in KiB/s' >&2; exit 2; }
@@ -38,6 +38,10 @@ if $apply; then
 fi
 args=(-a --relative --partial --partial-dir="$partial_root" --bwlimit="$bandwidth" --info=stats2 --human-readable
   --rsh='ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=yes')
+# Keep only runtime state. These paths are regenerated or retained on the source
+# as rollback/history; never copy them into the production target.
+excluded_dirs=(.cache bun-cache runtime-cache image-cache next-cache backups .rsync-partial)
+for name in "${excluded_dirs[@]}"; do args+=("--exclude=**/$name/***"); done
 [[ "$phase" != final ]] || args+=(--checksum)
 $apply || args+=(--dry-run)
 # No --delete: preserve data and existing stores on both hosts.
@@ -82,8 +86,10 @@ PYQUARANTINE
   python3 - "$source_root" <<'PYINVENTORY' | ssh "${ssh_options[@]}" "$peer" "python3 -c \"import base64;exec(base64.b64decode('$encoded_quarantine'))\""
 import json,pathlib,sys
 root=pathlib.Path(sys.argv[1]);mains=[];sidecars=[]
+excluded={'.cache','bun-cache','runtime-cache','image-cache','next-cache','backups','.rsync-partial'}
 for store in ('site','bot','coord'):
  for path in (root/store).rglob('*.db'):
+  if excluded.intersection(path.relative_to(root).parts[:-1]): continue
   if path.is_symlink() or not path.is_file() or not path.resolve().is_relative_to(root.resolve()):
    raise SystemExit('source SQLite main must be a contained regular file')
   relative=path.relative_to(root).as_posix();mains.append(relative)
@@ -98,7 +104,7 @@ PYINVENTORY
   evidence="$HOME/.local/share/aphrody/infra/migrations/shenron-$(date -u +%Y%m%dT%H%M%SZ)"
   install -d -m 0700 "$evidence"
   manifest="$evidence/SHARED-SHA256SUMS"
-  (cd "$source_root" && find site bot coord -type f ! -path '*/.rsync-partial/*' -print0 |
+  (cd "$source_root" && find site bot coord -type d \( -name .cache -o -name bun-cache -o -name runtime-cache -o -name image-cache -o -name next-cache -o -name backups -o -name .rsync-partial \) -prune -o -type f -print0 |
     LC_ALL=C sort -z | xargs -0 -r sha256sum) > "$manifest"
   chmod 0600 "$manifest"
   remote_manifest="/home/ubuntu/.local/share/aphrody/infra/migrations/$(basename "$evidence")"
