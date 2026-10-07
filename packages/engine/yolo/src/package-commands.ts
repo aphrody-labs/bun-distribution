@@ -227,12 +227,16 @@ export async function runPackageCommand(
   let status: number;
   let native: Awaited<ReturnType<typeof nativeJobPort>> | undefined;
   try {
+    const rootOption = resolved.args.indexOf("--root");
+    const updateArgs = resolved.args.filter(
+      (arg, index) => !(arg === "--root" || (rootOption >= 0 && index === rootOption + 1)),
+    );
     if (
       name === "update" &&
-      resolved.args[0] === "systemd" &&
-      resolved.args[1] === "jobs-clients" &&
-      resolved.args.includes("--qualify") &&
-      resolved.args.includes("--apply")
+      updateArgs[0] === "systemd" &&
+      updateArgs[1] === "jobs-clients" &&
+      updateArgs.includes("--qualify") &&
+      updateArgs.includes("--apply")
     )
       native = await nativeJobPort(root);
     const returned = await (runner as Runner)(resolved.args, native);

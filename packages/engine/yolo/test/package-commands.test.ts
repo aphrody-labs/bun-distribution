@@ -137,7 +137,7 @@ describe("yolo package commands", () => {
     expect(
       await runPackageCommand(
         "update",
-        ["systemd", "jobs-clients", "--qualify", "--apply"],
+        ["--root", fixtureRoot, "systemd", "jobs-clients", "--qualify", "--apply"],
         fixtureRoot,
       ),
     ).toBe(19);
