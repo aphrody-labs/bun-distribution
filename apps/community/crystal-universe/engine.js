@@ -101,3 +101,7 @@ export function pointerDirection(targetX, playerX, tolerance = 12) {
   if (Math.abs(difference) < tolerance) return null;
   return difference < 0 ? "left" : "right";
 }
+
+export function pointerAction(button) {
+  return button === 2 ? "blast" : null;
+}

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { createGame, pointerDirection, step } from "./engine.js";
+import { createGame, pointerAction, pointerDirection, step } from "./engine.js";
 import { drawAge1000Map } from "./age1000-map.js";
 import { readGamepadInput } from "./gamepad.js";
 import { loadAvatar, normalizeAvatar, saveAvatar } from "./avatar.js";
@@ -189,6 +189,13 @@ window.addEventListener("keyup", (e) =>
 );
 for (const arenaCanvas of [canvas, webGpuCanvas]) {
   arenaCanvas.addEventListener("pointerdown", (event) => {
+    const action = pointerAction(event.button);
+    if (action) {
+      event.preventDefault();
+      arenaCanvas.setPointerCapture(event.pointerId);
+      held.add(action);
+      return;
+    }
     if (event.button !== 0) return;
     const bounds = arenaCanvas.getBoundingClientRect();
     mouseTarget = Math.max(0, Math.min(960, ((event.clientX - bounds.left) / bounds.width) * 960));
@@ -202,6 +209,10 @@ for (const arenaCanvas of [canvas, webGpuCanvas]) {
       );
     }
   });
+  arenaCanvas.addEventListener("pointerup", (event) => held.delete(pointerAction(event.button)));
+  for (const event of ["pointercancel", "lostpointercapture"])
+    arenaCanvas.addEventListener(event, () => held.delete("blast"));
+  arenaCanvas.addEventListener("contextmenu", (event) => event.preventDefault());
 }
 window.addEventListener("gamepadconnected", () => {
   controllerConnected = true;

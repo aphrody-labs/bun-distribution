@@ -7,7 +7,7 @@ WebGPU 3D avec repli Canvas 2D, combos, sauts, projectiles, charge d'énergie et
 transformation de huit secondes.
 Cinq vagues d'adversaires IA, score, victoire/défaite, pause et reprise.
 Trois styles (équilibré, vitesse, puissance) et couleur personnalisable.
-Clavier, clic/glisser souris, manette Gamepad API et sept boutons tactiles avec
+Clavier, clic gauche/glisser pour bouger, clic droit pour tirer, manette Gamepad API et sept boutons tactiles avec
 gestion des pointeurs simultanés.
 Atelier d'avatar avec nom, six choix de race, coiffure et couleurs de peau, cheveux et tenue;
 le choix est conservé dans le stockage local du navigateur.

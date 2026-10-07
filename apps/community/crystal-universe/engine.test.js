@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { test, expect } from "bun:test";
-import { createGame, pointerDirection, step } from "./engine.js";
+import { createGame, pointerAction, pointerDirection, step } from "./engine.js";
 import { readGamepadInput } from "./gamepad.js";
 import { DEFAULT_AVATAR, loadAvatar, normalizeAvatar, saveAvatar } from "./avatar.js";
 test("energy, transformation, cooldown and expiry", () => {
@@ -68,6 +68,8 @@ test("mouse pointer moves toward its target and stops within tolerance", () => {
   expect(pointerDirection(300, 200)).toBe("right");
   expect(pointerDirection(205, 200)).toBeNull();
   expect(pointerDirection(null, 200)).toBeNull();
+  expect(pointerAction(2)).toBe("blast");
+  expect(pointerAction(0)).toBeNull();
 });
 
 test("gamepad axes, buttons, start and disconnect map to game actions", () => {

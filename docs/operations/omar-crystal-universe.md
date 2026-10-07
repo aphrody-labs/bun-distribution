@@ -309,3 +309,8 @@ Vérification : test d'avatar couvre les six valeurs, test serveur valide Freeze
 Androïde; suites Rust/JS et les gates ciblées sont relancées dans ce lot. Il s'agit
 de formes de substitution originales, sans représentation canonique ou équipement
 du jeu.
+
+Le clic droit de la souris déclenche aussi un tir d'énergie; le clic gauche reste
+le déplacement vers le point visé. Le Canvas capture le pointeur pendant le tir et
+libère l'action sur relâchement, annulation ou perte de capture pour éviter un tir
+resté bloqué. Le menu contextuel est désactivé uniquement sur l'arène.
