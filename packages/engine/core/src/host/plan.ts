@@ -8,7 +8,7 @@
 // oxlint-disable no-await-in-loop -- sequential by design: host commands run one after the other and stop on failure.
 import { existsSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { composeUnit, type HostUnit, hostRoot, loadCatalog } from "./index.ts";
+import { composeUnit, type HostUnit, hostRepositoryRoot, hostRoot, loadCatalog } from "./index.ts";
 import { inCidr, loadTunnel, selectedProxySteps, TUNNEL_FILE, type WgStep } from "./wireguard.ts";
 
 export interface UnitFacts {
@@ -711,7 +711,7 @@ function unitSteps(
 
 export function hostPlan(units: string[], options: PlanOptions = {}): Plan {
   const root = options.root ?? hostRoot();
-  const repoRoot = join(root, "..", "..");
+  const repoRoot = hostRepositoryRoot(root);
   const catalog = loadCatalog(root);
   const entries = units.map((name) => {
     const entry = catalog.units.find((u) => u.unit === name || u.service === name);

@@ -5,7 +5,7 @@
 // `catalog.json` and composed back into one flat unit at install/package time.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { basename, join } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { accountProblems, loadTunnel, tunnelProblems } from "./wireguard.ts";
 
 export interface HostUnit {
@@ -52,6 +52,14 @@ export function yoloRoot(env: Record<string, string | undefined> = process.env):
 }
 export const hostRoot = (env?: Record<string, string | undefined>) =>
   join(yoloRoot(env), "tools", "config", "host");
+
+/** Keep repository paths distinct from the migrated tools/config directory. */
+export function hostRepositoryRoot(root = hostRoot()): string {
+  const parent = resolve(root, "..", "..");
+  // A legacy repository named tools still owns its own Git directory or worktree file.
+  if (basename(parent) !== "tools" || existsSync(join(parent, ".git"))) return parent;
+  return dirname(parent);
+}
 
 export function loadCatalog(root = hostRoot()): HostCatalog {
   return JSON.parse(readFileSync(join(root, "catalog.json"), "utf8"));
