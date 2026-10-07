@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Aphrody native Obscura CDP browser on dbfr (loopback only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ubuntu/.aphrody/private/web
+Environment=HOME=/home/ubuntu/.aphrody/private/web
+Environment=RUST_LOG=info
+ExecStart=/home/ubuntu/.local/lib/aphrody/shenron-4e51190ca80efab5/aphrody web-engine launch --host 127.0.0.1 --port 9222 --workers 1
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+MemoryAccounting=true
+MemoryHigh=1G
+MemoryMax=2G
+CPUWeight=30
+Nice=10
+TasksMax=512
+LimitNOFILE=16384
+ProtectHome=tmpfs
+BindReadOnlyPaths=/home/ubuntu/.local/lib/aphrody/shenron-4e51190ca80efab5/aphrody
+BindPaths=/home/ubuntu/.aphrody/private/web
+ReadWritePaths=/home/ubuntu/.aphrody/private/web
+PrivateDevices=true
+ProtectProc=invisible
+RestrictRealtime=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
