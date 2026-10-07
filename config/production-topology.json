@@ -3,7 +3,7 @@
   "strategy": "vps-build-test-release-factory-dbfr-shenron-local-source",
   "hosts": {
     "vps": {
-      "role": "build-test-release-factory",
+      "role": "aphrody-products-and-build-factory",
       "capacityObserved": {
         "memoryGiB": 45,
         "diskGiB": 290
@@ -52,7 +52,7 @@
           "disk": "shared-media-and-release",
           "status": "migration-requested",
           "target": "dbfr",
-          "note": "Keep current runtime until DBFR qualified; no duplicate bot gateway."
+          "note": "Owner directive 2026-10-07: all Shenron runtime, data, media, CDN and ingress move to DBFR; VPS is reserved for Aphrody. Verify protected copies before retiring the source."
         },
         "nginx": {
           "priority": 100,
@@ -156,7 +156,8 @@
           "memory": "bounded",
           "disk": "versioned-releases-and-shared-state",
           "status": "migration-requested",
-          "source": "vps"
+          "source": "vps",
+          "note": "Owner directive 2026-10-07: sole Shenron production host, including bot, site, MCP, PostgreSQL, Redis, chat, media, CDN and ingress."
         }
       },
       "network": {
@@ -208,5 +209,10 @@
     }
   },
   "portPolicy": "only-nginx-80-443-public; every application port loopback or private-network",
-  "bandwidthPolicy": "serve-site-api-cdn-first; backups rate-limited; crawlers paused by default"
+  "bandwidthPolicy": "serve-site-api-cdn-first; backups rate-limited; crawlers paused by default",
+  "diskBlockerPolicy": {
+    "requestedAt": "2026-10-07",
+    "action": "reclaim substantially when capacity blocks work",
+    "safety": "Use Infra plans, protect active work and credentials, verify retained copies before deleting replaced protected stores."
+  }
 }
