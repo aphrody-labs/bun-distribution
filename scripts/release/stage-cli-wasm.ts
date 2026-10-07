@@ -3,7 +3,6 @@
 /** Portable browser/Bun/Node package of the existing typed pure-command facade and Rust WASM. */
 import { createHash } from "node:crypto";
 import { copyFile, lstat, mkdir, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { buildWasmPackage } from "../build/rust/wasm-package.ts";
 import {
@@ -113,7 +112,9 @@ export async function stageCliWasm(options: WasmStageOptions): Promise<StagedEnt
   const pkg = JSON.parse(await readFile(join(app, "package.json"), "utf8"));
   const commit = (await run(["git", "rev-parse", "HEAD"], { cwd: root })).stdout.trim();
   const out = resolve(options.out);
-  const work = await mkdtemp(join(tmpdir(), "aphrody-cli-wasm-"));
+  // The archive is promoted by rename; /tmp may be a separate tmpfs on the factory.
+  await mkdir(out, { recursive: true });
+  const work = await mkdtemp(join(out, ".aphrody-cli-wasm-stage-"));
   try {
     const source = options.input ? resolve(options.input) : join(work, "generated");
     let provenance = options.provenance;

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
+import { existsSync } from "node:fs";
 import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -180,3 +181,18 @@ test("prebuilt input cannot silently skip provenance", async () => {
     await rm(f.work, { recursive: true, force: true });
   }
 });
+
+test.skipIf(!existsSync("/dev/shm"))(
+  "archive promotion works when output is on a separate tmpfs",
+  async () => {
+    const f = await fixture();
+    const out = await mkdtemp("/dev/shm/aphrody-cli-wasm-test-");
+    try {
+      const entries = await stageCliWasm({ input: f.input, provenance: f.provenance, out });
+      expect(await sha256File(join(out, entries[0]!.file))).toBe(entries[0]!.sha256);
+    } finally {
+      await rm(f.work, { recursive: true, force: true });
+      await rm(out, { recursive: true, force: true });
+    }
+  },
+);
