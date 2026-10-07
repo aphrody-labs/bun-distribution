@@ -303,3 +303,5 @@ export * from "./icons";
 export * from "./reproduce";
 export * from "./render";
 export * from "./svg";
+export * from "./inference";
+export * from "./http";

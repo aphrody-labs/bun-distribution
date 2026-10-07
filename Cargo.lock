@@ -2123,7 +2123,9 @@ name = "aphrody-re"
 version = "1.0.0-canary"
 dependencies = [
  "aes 0.9.3",
+ "crc32fast",
  "criterion",
+ "flate2",
  "goblin 0.10.7",
  "googletest",
  "hex",

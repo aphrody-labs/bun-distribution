@@ -25,7 +25,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | architecture | [ai](architecture/ai/) | 6 | - |
 | architecture | [compat](architecture/compat/) | 1 | - |
 | architecture | [convergence](architecture/convergence/) | 1 | - |
-| architecture | [discord](architecture/discord/) | 4 | [Aphrody Discord Architecture](architecture/discord/README.md) |
+| architecture | [discord](architecture/discord/) | 4 | [Architecture Discord](architecture/discord/README.md) |
 | architecture | [interop](architecture/interop/) | 1 | - |
 | architecture | [os](architecture/os/) | 4 | - |
 | architecture | [runtime-native](architecture/runtime-native/) | 2 | [Frontière runtime Yolo / produit Aphrody](architecture/runtime-native/README.md) |
@@ -50,12 +50,12 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | guides | [upstream-bun](guides/upstream-bun/) vendored upstream copy | 203 | - |
 | guides | [web](guides/web/) | 4 | - |
 | guides | [workspace](guides/workspace/) | 4 | [Parcours Workspace Aphrody](guides/workspace/README.md) |
-| operations | [(files)](operations/) | 6 | - |
+| operations | [(files)](operations/) | 7 | - |
 | operations | [ai](operations/ai/) | 6 | - |
 | operations | [cloud](operations/cloud/) | 4 | - |
 | operations | [container](operations/container/) | 2 | - |
 | operations | [discord](operations/discord/) | 3 | [Discord Operations Runbooks & Guides](operations/discord/README.md) |
-| operations | [infra](operations/infra/) | 28 | - |
+| operations | [infra](operations/infra/) | 29 | - |
 | operations | [os](operations/os/) | 1 | - |
 | operations | [upstream-bun](operations/upstream-bun/) vendored upstream copy | 11 | - |
 | operations | [web](operations/web/) | 3 | - |
@@ -84,7 +84,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | products | [ai](products/ai/) | 16 | [Aphrody AI](products/ai/README.md) |
 | products | [compat](products/compat/) | 5 | [Aphrody Compat](products/compat/README.md) |
 | products | [contracts](products/contracts/) | 5 | [Aphrody Contracts](products/contracts/README.md) |
-| products | [discord](products/discord/) | 3 | [Aphrody Discord Ecosystem](products/discord/README.md) |
+| products | [discord](products/discord/) | 3 | [Intégration Discord](products/discord/README.md) |
 | products | [infra](products/infra/) | 5 | [Aphrody Infra](products/infra/README.md) |
 | products | [native](products/native/) | 1 | [Aphrody Native](products/native/README.md) |
 | products | [os](products/os/) | 5 | [Aphrody OS](products/os/README.md) |
@@ -119,4 +119,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | cli (outside the category layout) | [(files)](cli/) | 1 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
 
-Total: 3235 files.
+Total: 3237 files.

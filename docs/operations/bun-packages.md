@@ -47,7 +47,6 @@ Le tableau ci-dessous est produit depuis les archives auditées et les réponses
 | `@aphrody/assets` | `0.1.1` | Publié | [manifest](../../m3/packages/assets/package.json) |
 | `@aphrody/bun` | `3.3.7` | Qualification restante | [manifest](../../packages/interop/native/package.json) |
 | `@aphrody/bun-forge` | `0.1.1` | Publié | [manifest](../../packages/engine/forge/package.json) |
-| `@aphrody/bun-test-dom` | `0.1.1` | Publié | [manifest](../../packages/bun/test-dom/package.json) |
 | `@aphrody/canvas` | `1.0.9-aphrody.4` | Publié | [manifest](../../m3/packages/canvas/package.json) |
 | `@aphrody/cli-wasm` | `0.1.1` | Publié | [manifest](../../packages/infra/cli-wasm/package.json) |
 | `@aphrody/discord-kit` | `0.1.1` | Publié | [manifest](../../packages/discord/kit/package.json) |
@@ -83,7 +82,6 @@ Le tableau ci-dessous est produit depuis les archives auditées et les réponses
 | `@aphrody/m3-theme` | `3.3.7` | Qualification restante | [manifest](../../m3/packages/m3-theme/package.json) |
 | `@aphrody/m3-tokens` | `3.3.7` | Publié | [manifest](../../m3/packages/m3-tokens/package.json) |
 | `@aphrody/material-design-icons` | `1.0.1` | Publié | [manifest](../../m3/packages/material-design-icons/package.json) |
-| `@aphrody/messaging` | `0.1.1` | Publié | [manifest](../../packages/discord/aphrody-messaging/package.json) |
 | `@aphrody/n2b-core` | `0.6.4` | Publié | [manifest](../../packages/engine/n2b-client/package.json) |
 | `@aphrody/os` | `0.1.0` | Qualification restante | [manifest](../../packages/os/kernel-client/package.json) |
 | `@aphrody/ovh` | `0.2.1` | Publié | [manifest](../../packages/infra/ovh/package.json) |

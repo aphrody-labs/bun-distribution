@@ -28,7 +28,7 @@ export function createInfraClient(baseUrl = "http://127.0.0.1:8787"): InfraApiCl
 
 ## Source: packages/infra/workspace/src/index.ts
 
-SHA-256: `d459464c75b1765f197f1fa38923f8138bbb66eb40d6fe2e62135609d4c0eeb6`
+SHA-256: `28acfb76e6c2a8f2a443e1c52f70ae8ef39404302079a1fe16e19789a60c15fd`
 
 ### Source line 1
 
@@ -424,4 +424,10 @@ export { runStackDedup } from "./stack-dedup.ts";
 
 ```typescript
 export { runDocumentation, buildDocumentationManifest, renderDocumentationAgentIndex, } from "./documentation.ts";
+```
+
+### Source line 81
+
+```typescript
+export * from "./paths.ts";
 ```

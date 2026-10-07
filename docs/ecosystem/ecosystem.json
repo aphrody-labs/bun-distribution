@@ -1974,12 +1974,6 @@
           "bins": []
         },
         {
-          "name": "@aphrody/bun-test-dom",
-          "path": "packages/bun/test-dom",
-          "description": "",
-          "bins": []
-        },
-        {
           "name": "@aphrody/canvas",
           "path": "m3/packages/canvas",
           "description": "Aphrody native Skia canvas facade over the pinned upstream @napi-rs/canvas runtime",
@@ -2275,12 +2269,6 @@
           "bins": [
             "m3-svg-to-ico"
           ]
-        },
-        {
-          "name": "@aphrody/messaging",
-          "path": "packages/discord/aphrody-messaging",
-          "description": "Aphrody messaging channel contracts and Discord REST adapter.",
-          "bins": []
         },
         {
           "name": "@aphrody/n2b-core",
@@ -10137,7 +10125,7 @@
     "sharedRepos": 0,
     "crates": 205,
     "binaries": 9,
-    "bunPackages": 128,
+    "bunPackages": 126,
     "pythonPackages": 8,
     "cliBinaries": 16,
     "cliCommands": 706,

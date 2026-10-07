@@ -1,0 +1,972 @@
+From bf2dd4e0c3ee62903336dd4d7c1ff3dbb5d657da Mon Sep 17 00:00:00 2001
+From: aphrody-dev <contact@aphrody.com>
+Date: Mon, 5 Oct 2026 08:12:21 +0200
+Subject: [PATCH 4/9] Resolve picocolors, tiny-invariant, dotenv and uuid to
+ built-in modules
+
+Hardcoded thirdparty replacements, like ws and node-fetch: the runtime serves
+these npm specifiers from src/js/thirdparty without node_modules.
+
+- picocolors: same ANSI sequences and nesting as picocolors 1.x
+- tiny-invariant: same messages; NODE_ENV read at load
+- dotenv, dotenv/config: dotenv 17 grammar, populate and multi-file config;
+  no banner, no .env.vault decryption
+- uuid: uuid 11 API (v1, v3-v7, conversions, parse, stringify, validate),
+  randomness from crypto, MD5/SHA-1 from Bun.CryptoHasher
+
+Checked against the npm packages byte for byte (670 assertions) on both the
+sources and the release-preprocessed modules.
+
+(cherry picked from commit 8b5badd2a054f0b1ca01250effcf29f5fbc1842c)
+---
+ src/js/internal/dotenv.ts                     | 125 ++++++
+ src/js/thirdparty/dotenv.ts                   |   4 +
+ src/js/thirdparty/dotenv/config.ts            |  28 ++
+ src/js/thirdparty/picocolors.ts               |  93 ++++
+ src/js/thirdparty/tiny-invariant.ts           |  17 +
+ src/js/thirdparty/uuid.ts                     | 403 ++++++++++++++++++
+ src/resolve_builtins/HardcodedModule.rs       |  22 +
+ test/js/first_party/dotenv/dotenv.test.ts     |  56 +++
+ .../first_party/picocolors/picocolors.test.ts |  22 +
+ .../tiny-invariant/tiny-invariant.test.ts     |  26 ++
+ test/js/first_party/uuid/uuid.test.ts         |  44 ++
+ 11 files changed, 840 insertions(+)
+ create mode 100644 src/js/internal/dotenv.ts
+ create mode 100644 src/js/thirdparty/dotenv.ts
+ create mode 100644 src/js/thirdparty/dotenv/config.ts
+ create mode 100644 src/js/thirdparty/picocolors.ts
+ create mode 100644 src/js/thirdparty/tiny-invariant.ts
+ create mode 100644 src/js/thirdparty/uuid.ts
+ create mode 100644 test/js/first_party/dotenv/dotenv.test.ts
+ create mode 100644 test/js/first_party/picocolors/picocolors.test.ts
+ create mode 100644 test/js/first_party/tiny-invariant/tiny-invariant.test.ts
+ create mode 100644 test/js/first_party/uuid/uuid.test.ts
+
+diff --git a/src/js/internal/dotenv.ts b/src/js/internal/dotenv.ts
+new file mode 100644
+index 0000000000..48f957285a
+--- /dev/null
++++ b/src/js/internal/dotenv.ts
+@@ -0,0 +1,125 @@
++// Shared implementation of the hardcoded "dotenv" and "dotenv/config" modules.
++// API-compatible with https://github.com/motdotla/dotenv 17.x (parse, populate, config, configDotenv).
++// Bun already loads .env files natively; this keeps explicit `dotenv` callers working without the package.
++// Differences: no "injected env" banner (as with `quiet: true`), and .env.vault decryption through
++// DOTENV_KEY is not supported (falls back to plain .env files, as dotenv does when no vault exists).
++// BSD-2-Clause License, Copyright (c) 2015, Scott Motte
++
++const fs = require("node:fs");
++const path = require("node:path");
++const os = require("node:os");
++
++type Env = Record<string, string | undefined>;
++
++interface DotenvOptions {
++  path?: string | URL | Array<string | URL>;
++  encoding?: BufferEncoding;
++  debug?: boolean | string;
++  quiet?: boolean | string;
++  override?: boolean | string;
++  processEnv?: Env;
++  DOTENV_KEY?: string;
++}
++
++const LINE =
++  /(?:^|^)\s*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*'(?:\\'|[^'])*'|\s*"(?:\\"|[^"])*"|\s*`(?:\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?(?:$|$)/gm;
++
++function parseBoolean(value: unknown): boolean {
++  if (typeof value === "string") return !["false", "0", "no", "off", ""].includes(value.toLowerCase());
++  return Boolean(value);
++}
++
++function debugLog(message: string) {
++  console.log(`┆ ${message}`);
++}
++
++function parse(src: string | Buffer): Record<string, string> {
++  const obj: Record<string, string> = {};
++  const lines = src.toString().replace(/\r\n?/gm, "\n");
++  LINE.lastIndex = 0;
++  let match: RegExpExecArray | null;
++  while ((match = LINE.exec(lines)) != null) {
++    const key = match[1];
++    let value = (match[2] || "").trim();
++    const maybeQuote = value[0];
++    value = value.replace(/^(['"`])([\s\S]*)\1$/gm, "$2");
++    if (maybeQuote === '"') {
++      value = value.replace(/\\n/g, "\n").replace(/\\r/g, "\r");
++    }
++    obj[key] = value;
++  }
++  return obj;
++}
++
++function populate(processEnv: Env, parsed: Record<string, string>, options: DotenvOptions = {}) {
++  const debug = Boolean(options && options.debug);
++  const override = Boolean(options && options.override);
++  const populated: Record<string, string> = {};
++  if (typeof parsed !== "object") {
++    const err = new Error("OBJECT_REQUIRED: Please check the processEnv argument being passed to populate");
++    (err as any).code = "OBJECT_REQUIRED";
++    throw err;
++  }
++  for (const key of Object.keys(parsed)) {
++    if (Object.hasOwn(processEnv, key)) {
++      if (override === true) {
++        processEnv[key] = parsed[key];
++        populated[key] = parsed[key];
++      }
++      if (debug) {
++        debugLog(`"${key}" is already defined and ${override === true ? "WAS" : "was NOT"} overwritten`);
++      }
++    } else {
++      processEnv[key] = parsed[key];
++      populated[key] = parsed[key];
++    }
++  }
++  return populated;
++}
++
++function resolveHome(envPath: string | URL): string | URL {
++  return typeof envPath === "string" && envPath[0] === "~" ? path.join(os.homedir(), envPath.slice(1)) : envPath;
++}
++
++function configDotenv(options?: DotenvOptions) {
++  let processEnv: Env = process.env;
++  if (options && options.processEnv != null) processEnv = options.processEnv;
++  const debug = parseBoolean(processEnv.DOTENV_CONFIG_DEBUG || (options && options.debug));
++  const encoding = (options && options.encoding) || "utf8";
++
++  let optionPaths: Array<string | URL> = [path.resolve(process.cwd(), ".env")];
++  if (options && options.path) {
++    optionPaths = Array.isArray(options.path) ? options.path.map(resolveHome) : [resolveHome(options.path)];
++  }
++
++  let lastError: Error | undefined;
++  const parsedAll: Record<string, string> = {};
++  for (const filePath of optionPaths) {
++    try {
++      populate(parsedAll, parse(fs.readFileSync(filePath, { encoding })), options);
++    } catch (e) {
++      if (debug) debugLog(`failed to load ${filePath} ${(e as Error).message}`);
++      lastError = e as Error;
++    }
++  }
++  populate(processEnv, parsedAll, options);
++  return lastError ? { parsed: parsedAll, error: lastError } : { parsed: parsedAll };
++}
++
++function config(options?: DotenvOptions) {
++  return configDotenv(options);
++}
++
++function decrypt(_encrypted: string, _keyStr: string): string {
++  const err = new Error("DECRYPTION_FAILED: .env.vault decryption is not supported by Bun's built-in dotenv");
++  (err as any).code = "DECRYPTION_FAILED";
++  throw err;
++}
++
++export default {
++  configDotenv,
++  config,
++  decrypt,
++  parse,
++  populate,
++};
+diff --git a/src/js/thirdparty/dotenv.ts b/src/js/thirdparty/dotenv.ts
+new file mode 100644
+index 0000000000..8f696552f0
+--- /dev/null
++++ b/src/js/thirdparty/dotenv.ts
+@@ -0,0 +1,4 @@
++// Hardcoded module "dotenv"
++// Implementation: internal/dotenv.ts
++
++export default require("internal/dotenv");
+diff --git a/src/js/thirdparty/dotenv/config.ts b/src/js/thirdparty/dotenv/config.ts
+new file mode 100644
+index 0000000000..37ef0d8f05
+--- /dev/null
++++ b/src/js/thirdparty/dotenv/config.ts
+@@ -0,0 +1,28 @@
++// Hardcoded module "dotenv/config"
++// Same option sources as dotenv 17 config.js: DOTENV_CONFIG_* environment variables, then
++// dotenv_config_<option>=<value> arguments; quiet unless told otherwise.
++
++const dotenv = require("internal/dotenv");
++
++const options: Record<string, string> = {};
++for (const [name, key] of [
++  ["encoding", "DOTENV_CONFIG_ENCODING"],
++  ["path", "DOTENV_CONFIG_PATH"],
++  ["quiet", "DOTENV_CONFIG_QUIET"],
++  ["debug", "DOTENV_CONFIG_DEBUG"],
++  ["override", "DOTENV_CONFIG_OVERRIDE"],
++  ["DOTENV_KEY", "DOTENV_CONFIG_DOTENV_KEY"],
++]) {
++  const value = process.env[key];
++  if (value != null) options[name] = value;
++}
++const cli: Record<string, string> = {};
++for (const arg of process.argv) {
++  const match = arg.match(/^dotenv_config_(encoding|path|quiet|debug|override|DOTENV_KEY)=(.+)$/);
++  if (match) cli[match[1]] = match[2];
++}
++if (!("quiet" in cli)) cli.quiet = "true";
++
++dotenv.config(Object.assign(options, cli));
++
++export default {};
+diff --git a/src/js/thirdparty/picocolors.ts b/src/js/thirdparty/picocolors.ts
+new file mode 100644
+index 0000000000..225665fca5
+--- /dev/null
++++ b/src/js/thirdparty/picocolors.ts
+@@ -0,0 +1,93 @@
++// Hardcoded module "picocolors"
++// API- and output-compatible with https://github.com/alexeyraspopov/picocolors 1.x
++// ISC License, Copyright (c) 2021-2024 Oleksii Raspopov, Kostiantyn Denysov, Anton Verinov
++
++type Formatter = (input: unknown) => string;
++
++const argv: string[] = process.argv || [];
++const env = process.env || {};
++
++const isColorSupported =
++  !(!!env.NO_COLOR || argv.includes("--no-color")) &&
++  (!!env.FORCE_COLOR ||
++    argv.includes("--color") ||
++    process.platform === "win32" ||
++    (!!(process.stdout || {}).isTTY && env.TERM !== "dumb") ||
++    !!env.CI);
++
++function replaceClose(string: string, close: string, replace: string, index: number): string {
++  let result = "";
++  let cursor = 0;
++  do {
++    result += string.substring(cursor, index) + replace;
++    cursor = index + close.length;
++    index = string.indexOf(close, cursor);
++  } while (~index);
++  return result + string.substring(cursor);
++}
++
++function formatter(open: string, close: string, replace: string = open): Formatter {
++  return input => {
++    const string = "" + input;
++    const index = string.indexOf(close, open.length);
++    return ~index ? open + replaceClose(string, close, replace, index) + close : open + string + close;
++  };
++}
++
++function plain(_open: string, _close: string, _replace?: string): Formatter {
++  return String;
++}
++
++function createColors(enabled: boolean = isColorSupported) {
++  const f = enabled ? formatter : plain;
++  return {
++    isColorSupported: enabled,
++    reset: f("\x1b[0m", "\x1b[0m"),
++    bold: f("\x1b[1m", "\x1b[22m", "\x1b[22m\x1b[1m"),
++    dim: f("\x1b[2m", "\x1b[22m", "\x1b[22m\x1b[2m"),
++    italic: f("\x1b[3m", "\x1b[23m"),
++    underline: f("\x1b[4m", "\x1b[24m"),
++    inverse: f("\x1b[7m", "\x1b[27m"),
++    hidden: f("\x1b[8m", "\x1b[28m"),
++    strikethrough: f("\x1b[9m", "\x1b[29m"),
++
++    black: f("\x1b[30m", "\x1b[39m"),
++    red: f("\x1b[31m", "\x1b[39m"),
++    green: f("\x1b[32m", "\x1b[39m"),
++    yellow: f("\x1b[33m", "\x1b[39m"),
++    blue: f("\x1b[34m", "\x1b[39m"),
++    magenta: f("\x1b[35m", "\x1b[39m"),
++    cyan: f("\x1b[36m", "\x1b[39m"),
++    white: f("\x1b[37m", "\x1b[39m"),
++    gray: f("\x1b[90m", "\x1b[39m"),
++
++    bgBlack: f("\x1b[40m", "\x1b[49m"),
++    bgRed: f("\x1b[41m", "\x1b[49m"),
++    bgGreen: f("\x1b[42m", "\x1b[49m"),
++    bgYellow: f("\x1b[43m", "\x1b[49m"),
++    bgBlue: f("\x1b[44m", "\x1b[49m"),
++    bgMagenta: f("\x1b[45m", "\x1b[49m"),
++    bgCyan: f("\x1b[46m", "\x1b[49m"),
++    bgWhite: f("\x1b[47m", "\x1b[49m"),
++
++    blackBright: f("\x1b[90m", "\x1b[39m"),
++    redBright: f("\x1b[91m", "\x1b[39m"),
++    greenBright: f("\x1b[92m", "\x1b[39m"),
++    yellowBright: f("\x1b[93m", "\x1b[39m"),
++    blueBright: f("\x1b[94m", "\x1b[39m"),
++    magentaBright: f("\x1b[95m", "\x1b[39m"),
++    cyanBright: f("\x1b[96m", "\x1b[39m"),
++    whiteBright: f("\x1b[97m", "\x1b[39m"),
++
++    bgBlackBright: f("\x1b[100m", "\x1b[49m"),
++    bgRedBright: f("\x1b[101m", "\x1b[49m"),
++    bgGreenBright: f("\x1b[102m", "\x1b[49m"),
++    bgYellowBright: f("\x1b[103m", "\x1b[49m"),
++    bgBlueBright: f("\x1b[104m", "\x1b[49m"),
++    bgMagentaBright: f("\x1b[105m", "\x1b[49m"),
++    bgCyanBright: f("\x1b[106m", "\x1b[49m"),
++    bgWhiteBright: f("\x1b[107m", "\x1b[49m"),
++  };
++}
++
++export default Object.assign(createColors(), { createColors });
+diff --git a/src/js/thirdparty/tiny-invariant.ts b/src/js/thirdparty/tiny-invariant.ts
+new file mode 100644
+index 0000000000..94e4419544
+--- /dev/null
++++ b/src/js/thirdparty/tiny-invariant.ts
+@@ -0,0 +1,17 @@
++// Hardcoded module "tiny-invariant"
++// API-compatible with https://github.com/alexreardon/tiny-invariant 1.x
++// MIT License, Copyright (c) 2019 Alexander Reardon
++
++// Read once at load, like the npm build. Through a local so the builtin bundler does not inline NODE_ENV.
++const env = process.env;
++const isProduction = env.NODE_ENV === "production";
++const prefix = "Invariant failed";
++
++function invariant(condition: unknown, message?: string | (() => string)): asserts condition {
++  if (condition) return;
++  if (isProduction) throw new Error(prefix);
++  const provided = typeof message === "function" ? message() : message;
++  throw new Error(provided ? `${prefix}: ${provided}` : prefix);
++}
++
++export default invariant;
+diff --git a/src/js/thirdparty/uuid.ts b/src/js/thirdparty/uuid.ts
+new file mode 100644
+index 0000000000..e2771ed65c
+--- /dev/null
++++ b/src/js/thirdparty/uuid.ts
+@@ -0,0 +1,403 @@
++// Hardcoded module "uuid"
++// API- and byte-compatible with https://github.com/uuidjs/uuid 11.x: v1, v3, v4, v5, v6, v7, v1ToV6, v6ToV1,
++// parse, stringify, validate, version, NIL, MAX. Randomness comes from crypto.getRandomValues, v4 without
++// arguments from crypto.randomUUID, MD5/SHA-1 from Bun.CryptoHasher.
++// MIT License, Copyright (c) 2010-2020 Robert Kieffer and other contributors
++
++type Bytes = Uint8Array | number[];
++type Buf = Uint8Array | number[] | undefined;
++
++interface RandomOptions {
++  random?: Bytes;
++  rng?: () => Bytes;
++}
++interface V1Options extends RandomOptions {
++  node?: Bytes;
++  clockseq?: number;
++  msecs?: number;
++  nsecs?: number;
++  _v6?: boolean;
++}
++interface V7Options extends RandomOptions {
++  msecs?: number;
++  seq?: number;
++}
++
++const NIL = "00000000-0000-0000-0000-000000000000";
++const MAX = "ffffffff-ffff-ffff-ffff-ffffffffffff";
++const DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
++const URL = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
++const REGEX =
++  /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/i;
++
++const byteToHex: string[] = [];
++for (let i = 0; i < 256; ++i) byteToHex.push((i + 0x100).toString(16).slice(1));
++
++const pool = new Uint8Array(256);
++let poolPtr = pool.length;
++function rng(): Uint8Array {
++  if (poolPtr > pool.length - 16) {
++    crypto.getRandomValues(pool);
++    poolPtr = 0;
++  }
++  return pool.slice(poolPtr, (poolPtr += 16));
++}
++
++function validate(uuid: unknown): boolean {
++  return typeof uuid === "string" && REGEX.test(uuid);
++}
++
++function version(uuid: string): number {
++  if (!validate(uuid)) throw TypeError("Invalid UUID");
++  return parseInt(uuid.slice(14, 15), 16);
++}
++
++function unsafeStringify(arr: Bytes, offset = 0): string {
++  return (
++    byteToHex[arr[offset]] +
++    byteToHex[arr[offset + 1]] +
++    byteToHex[arr[offset + 2]] +
++    byteToHex[arr[offset + 3]] +
++    "-" +
++    byteToHex[arr[offset + 4]] +
++    byteToHex[arr[offset + 5]] +
++    "-" +
++    byteToHex[arr[offset + 6]] +
++    byteToHex[arr[offset + 7]] +
++    "-" +
++    byteToHex[arr[offset + 8]] +
++    byteToHex[arr[offset + 9]] +
++    "-" +
++    byteToHex[arr[offset + 10]] +
++    byteToHex[arr[offset + 11]] +
++    byteToHex[arr[offset + 12]] +
++    byteToHex[arr[offset + 13]] +
++    byteToHex[arr[offset + 14]] +
++    byteToHex[arr[offset + 15]]
++  ).toLowerCase();
++}
++
++function stringify(arr: Bytes, offset = 0): string {
++  const uuid = unsafeStringify(arr, offset);
++  if (!validate(uuid)) throw TypeError("Stringified UUID is invalid");
++  return uuid;
++}
++
++function parse(uuid: string): Uint8Array {
++  if (!validate(uuid)) throw TypeError("Invalid UUID");
++  let v: number;
++  return Uint8Array.of(
++    (v = parseInt(uuid.slice(0, 8), 16)) >>> 24,
++    (v >>> 16) & 0xff,
++    (v >>> 8) & 0xff,
++    v & 0xff,
++    (v = parseInt(uuid.slice(9, 13), 16)) >>> 8,
++    v & 0xff,
++    (v = parseInt(uuid.slice(14, 18), 16)) >>> 8,
++    v & 0xff,
++    (v = parseInt(uuid.slice(19, 23), 16)) >>> 8,
++    v & 0xff,
++    ((v = parseInt(uuid.slice(24, 36), 16)) / 0x10000000000) & 0xff,
++    (v / 0x100000000) & 0xff,
++    (v >>> 24) & 0xff,
++    (v >>> 16) & 0xff,
++    (v >>> 8) & 0xff,
++    v & 0xff,
++  );
++}
++
++function checkRange(buf: Bytes, offset: number) {
++  if (offset < 0 || offset + 16 > buf.length) {
++    throw new RangeError(`UUID byte range ${offset}:${offset + 15} is out of buffer bounds`);
++  }
++}
++
++function checkRandom(rnds: Bytes) {
++  if (rnds.length < 16) throw new Error("Random bytes length must be >= 16");
++}
++
++function copyInto(bytes: Bytes, buf: Bytes, offset: number) {
++  checkRange(buf, offset);
++  for (let i = 0; i < 16; ++i) buf[offset + i] = bytes[i];
++  return buf;
++}
++
++const v1State: { msecs?: number; nsecs?: number; node?: Bytes; clockseq?: number } = {};
++
++function updateV1State(state: typeof v1State, now: number, rnds: Uint8Array) {
++  state.msecs ??= -Infinity;
++  state.nsecs ??= 0;
++  if (now === state.msecs) {
++    state.nsecs++;
++    if (state.nsecs >= 10000) {
++      state.node = undefined;
++      state.nsecs = 0;
++    }
++  } else if (now > state.msecs) {
++    state.nsecs = 0;
++  } else if (now < state.msecs) {
++    state.node = undefined;
++  }
++  if (!state.node) {
++    state.node = rnds.slice(10, 16);
++    state.node[0] |= 0x01;
++    state.clockseq = ((rnds[8] << 8) | rnds[9]) & 0x3fff;
++  }
++  state.msecs = now;
++  return state;
++}
++
++function v1Bytes(
++  rnds: Bytes,
++  msecs: number | undefined,
++  nsecs: number | undefined,
++  clockseq: number | undefined,
++  node: Bytes | undefined,
++  buf: Buf,
++  offset = 0,
++): Bytes {
++  checkRandom(rnds);
++  if (!buf) {
++    buf = new Uint8Array(16);
++    offset = 0;
++  } else {
++    checkRange(buf, offset);
++  }
++  msecs ??= Date.now();
++  nsecs ??= 0;
++  clockseq ??= ((rnds[8] << 8) | rnds[9]) & 0x3fff;
++  node ??= rnds.slice(10, 16);
++  msecs += 12219292800000;
++  const tl = ((msecs & 0xfffffff) * 10000 + nsecs) % 0x100000000;
++  buf[offset++] = (tl >>> 24) & 0xff;
++  buf[offset++] = (tl >>> 16) & 0xff;
++  buf[offset++] = (tl >>> 8) & 0xff;
++  buf[offset++] = tl & 0xff;
++  const tmh = ((msecs / 0x100000000) * 10000) & 0xfffffff;
++  buf[offset++] = (tmh >>> 8) & 0xff;
++  buf[offset++] = tmh & 0xff;
++  buf[offset++] = ((tmh >>> 24) & 0xf) | 0x10;
++  buf[offset++] = (tmh >>> 16) & 0xff;
++  buf[offset++] = (clockseq >>> 8) | 0x80;
++  buf[offset++] = clockseq & 0xff;
++  for (let n = 0; n < 6; ++n) buf[offset++] = node[n];
++  return buf;
++}
++
++function v1(options?: V1Options, buf?: Buf, offset?: number): any {
++  let bytes: Bytes;
++  const isV6 = options?._v6 ?? false;
++  if (options) {
++    const keys = Object.keys(options);
++    if (keys.length === 1 && keys[0] === "_v6") options = undefined;
++  }
++  if (options) {
++    bytes = v1Bytes(
++      options.random ?? options.rng?.() ?? rng(),
++      options.msecs,
++      options.nsecs,
++      options.clockseq,
++      options.node,
++      buf,
++      offset,
++    );
++  } else {
++    const now = Date.now();
++    const rnds = rng();
++    updateV1State(v1State, now, rnds);
++    bytes = v1Bytes(
++      rnds,
++      v1State.msecs,
++      v1State.nsecs,
++      isV6 ? undefined : v1State.clockseq,
++      isV6 ? undefined : v1State.node,
++      buf,
++      offset,
++    );
++  }
++  return buf ?? unsafeStringify(bytes);
++}
++
++function v1ToV6Bytes(b: Bytes): Uint8Array {
++  return Uint8Array.of(
++    ((b[6] & 0x0f) << 4) | ((b[7] >> 4) & 0x0f),
++    ((b[7] & 0x0f) << 4) | ((b[4] & 0xf0) >> 4),
++    ((b[4] & 0x0f) << 4) | ((b[5] & 0xf0) >> 4),
++    ((b[5] & 0x0f) << 4) | ((b[0] & 0xf0) >> 4),
++    ((b[0] & 0x0f) << 4) | ((b[1] & 0xf0) >> 4),
++    ((b[1] & 0x0f) << 4) | ((b[2] & 0xf0) >> 4),
++    0x60 | (b[2] & 0x0f),
++    b[3],
++    b[8],
++    b[9],
++    b[10],
++    b[11],
++    b[12],
++    b[13],
++    b[14],
++    b[15],
++  );
++}
++
++function v6ToV1Bytes(b: Bytes): Uint8Array {
++  return Uint8Array.of(
++    ((b[3] & 0x0f) << 4) | ((b[4] >> 4) & 0x0f),
++    ((b[4] & 0x0f) << 4) | ((b[5] & 0xf0) >> 4),
++    ((b[5] & 0x0f) << 4) | (b[6] & 0x0f),
++    b[7],
++    ((b[1] & 0x0f) << 4) | ((b[2] & 0xf0) >> 4),
++    ((b[2] & 0x0f) << 4) | ((b[3] & 0xf0) >> 4),
++    0x10 | ((b[0] & 0xf0) >> 4),
++    ((b[0] & 0x0f) << 4) | ((b[1] & 0xf0) >> 4),
++    b[8],
++    b[9],
++    b[10],
++    b[11],
++    b[12],
++    b[13],
++    b[14],
++    b[15],
++  );
++}
++
++function v1ToV6(uuid: string | Bytes): any {
++  const bytes = v1ToV6Bytes(typeof uuid === "string" ? parse(uuid) : uuid);
++  return typeof uuid === "string" ? unsafeStringify(bytes) : bytes;
++}
++
++function v6ToV1(uuid: string | Bytes): any {
++  const bytes = v6ToV1Bytes(typeof uuid === "string" ? parse(uuid) : uuid);
++  return typeof uuid === "string" ? unsafeStringify(bytes) : bytes;
++}
++
++function v6(options?: V1Options, buf?: Buf, offset?: number): any {
++  options ??= {};
++  offset ??= 0;
++  const bytes = v1ToV6Bytes(v1({ ...options, _v6: true }, new Uint8Array(16)));
++  if (buf) return copyInto(bytes, buf, offset);
++  return unsafeStringify(bytes);
++}
++
++function v4(options?: RandomOptions, buf?: Buf, offset?: number): any {
++  if (!buf && !options) return crypto.randomUUID();
++  options = options || {};
++  const rnds = options.random ?? options.rng?.() ?? rng();
++  checkRandom(rnds);
++  rnds[6] = (rnds[6] & 0x0f) | 0x40;
++  rnds[8] = (rnds[8] & 0x3f) | 0x80;
++  if (buf) return copyInto(rnds, buf, offset || 0);
++  return unsafeStringify(rnds);
++}
++
++const v7State: { msecs?: number; seq?: number } = {};
++
++function updateV7State(state: typeof v7State, now: number, rnds: Uint8Array) {
++  state.msecs ??= -Infinity;
++  state.seq ??= 0;
++  if (now > state.msecs) {
++    state.seq = (rnds[6] << 23) | (rnds[7] << 16) | (rnds[8] << 8) | rnds[9];
++    state.msecs = now;
++  } else {
++    state.seq = (state.seq + 1) | 0;
++    if (state.seq === 0) state.msecs++;
++  }
++  return state;
++}
++
++function v7Bytes(rnds: Bytes, msecs: number | undefined, seq: number | undefined, buf: Buf, offset = 0): Bytes {
++  checkRandom(rnds);
++  if (!buf) {
++    buf = new Uint8Array(16);
++    offset = 0;
++  } else {
++    checkRange(buf, offset);
++  }
++  msecs ??= Date.now();
++  seq ??= ((rnds[6] * 0x7f) << 24) | (rnds[7] << 16) | (rnds[8] << 8) | rnds[9];
++  buf[offset++] = (msecs / 0x10000000000) & 0xff;
++  buf[offset++] = (msecs / 0x100000000) & 0xff;
++  buf[offset++] = (msecs / 0x1000000) & 0xff;
++  buf[offset++] = (msecs / 0x10000) & 0xff;
++  buf[offset++] = (msecs / 0x100) & 0xff;
++  buf[offset++] = msecs & 0xff;
++  buf[offset++] = 0x70 | ((seq >>> 28) & 0x0f);
++  buf[offset++] = (seq >>> 20) & 0xff;
++  buf[offset++] = 0x80 | ((seq >>> 14) & 0x3f);
++  buf[offset++] = (seq >>> 6) & 0xff;
++  buf[offset++] = ((seq << 2) & 0xff) | (rnds[10] & 0x03);
++  buf[offset++] = rnds[11];
++  buf[offset++] = rnds[12];
++  buf[offset++] = rnds[13];
++  buf[offset++] = rnds[14];
++  buf[offset++] = rnds[15];
++  return buf;
++}
++
++function v7(options?: V7Options, buf?: Buf, offset?: number): any {
++  let bytes: Bytes;
++  if (options) {
++    bytes = v7Bytes(options.random ?? options.rng?.() ?? rng(), options.msecs, options.seq, buf, offset);
++  } else {
++    const now = Date.now();
++    const rnds = rng();
++    updateV7State(v7State, now, rnds);
++    bytes = v7Bytes(rnds, v7State.msecs, v7State.seq, buf, offset);
++  }
++  return buf ?? unsafeStringify(bytes);
++}
++
++function stringToBytes(str: string): Uint8Array {
++  return new TextEncoder().encode(str);
++}
++
++function v35(
++  versionBits: number,
++  algorithm: "md5" | "sha1",
++  value: string | Bytes,
++  namespace: string | Bytes,
++  buf?: Buf,
++  offset?: number,
++): any {
++  const valueBytes = typeof value === "string" ? stringToBytes(value) : value;
++  if (typeof namespace === "string") namespace = parse(namespace);
++  if (namespace?.length !== 16) {
++    throw TypeError("Namespace must be array-like (16 iterable integer values, 0-255)");
++  }
++  const input = new Uint8Array(16 + valueBytes.length);
++  input.set(namespace);
++  input.set(valueBytes, 16);
++  const bytes = Uint8Array.from(new Bun.CryptoHasher(algorithm).update(input).digest().subarray(0, 16));
++  bytes[6] = (bytes[6] & 0x0f) | versionBits;
++  bytes[8] = (bytes[8] & 0x3f) | 0x80;
++  if (buf) return copyInto(bytes, buf, offset || 0);
++  return unsafeStringify(bytes);
++}
++
++function v3(value: string | Bytes, namespace: string | Bytes, buf?: Buf, offset?: number): any {
++  return v35(0x30, "md5", value, namespace, buf, offset);
++}
++v3.DNS = DNS;
++v3.URL = URL;
++
++function v5(value: string | Bytes, namespace: string | Bytes, buf?: Buf, offset?: number): any {
++  return v35(0x50, "sha1", value, namespace, buf, offset);
++}
++v5.DNS = DNS;
++v5.URL = URL;
++
++export default {
++  MAX,
++  NIL,
++  parse,
++  stringify,
++  v1,
++  v1ToV6,
++  v3,
++  v4,
++  v5,
++  v6,
++  v6ToV1,
++  v7,
++  validate,
++  version,
++};
+diff --git a/src/resolve_builtins/HardcodedModule.rs b/src/resolve_builtins/HardcodedModule.rs
+index 0034aee4c5..5105bd86c0 100644
+--- a/src/resolve_builtins/HardcodedModule.rs
++++ b/src/resolve_builtins/HardcodedModule.rs
+@@ -129,6 +129,16 @@ pub enum HardcodedModule {
+     NodeFetch,
+     #[strum(serialize = "@vercel/fetch")]
+     VercelFetch,
++    #[strum(serialize = "picocolors")]
++    Picocolors,
++    #[strum(serialize = "tiny-invariant")]
++    TinyInvariant,
++    #[strum(serialize = "dotenv")]
++    Dotenv,
++    #[strum(serialize = "dotenv/config")]
++    DotenvConfig,
++    #[strum(serialize = "uuid")]
++    Uuid,
+     #[strum(serialize = "utf-8-validate")]
+     Utf8Validate,
+     #[strum(serialize = "node:v8")]
+@@ -300,6 +310,11 @@ bun_core::comptime_string_map! {
+         b"undici" => HardcodedModule::Undici,
+         b"ws" => HardcodedModule::Ws,
+         b"@vercel/fetch" => HardcodedModule::VercelFetch,
++        b"picocolors" => HardcodedModule::Picocolors,
++        b"tiny-invariant" => HardcodedModule::TinyInvariant,
++        b"dotenv" => HardcodedModule::Dotenv,
++        b"dotenv/config" => HardcodedModule::DotenvConfig,
++        b"uuid" => HardcodedModule::Uuid,
+         b"utf-8-validate" => HardcodedModule::Utf8Validate,
+         b"abort-controller" => HardcodedModule::AbortController,
+     };
+@@ -750,6 +765,13 @@ const BUN_EXTRA_ALIAS_KVS: &[AliasKv] = &[
+     entry!("undici"),
+     entry!("utf-8-validate"),
+     entry!("ws"),
++    //
++    // aphrody-labs/bun: npm packages absorbed by built-in modules (config/bun-absorb.json)
++    entry!("picocolors"),
++    entry!("tiny-invariant"),
++    entry!("dotenv"),
++    entry!("dotenv/config"),
++    entry!("uuid"),
+     (
+         b"ws/lib/websocket",
+         Alias {
+diff --git a/test/js/first_party/dotenv/dotenv.test.ts b/test/js/first_party/dotenv/dotenv.test.ts
+new file mode 100644
+index 0000000000..c4197c1349
+--- /dev/null
++++ b/test/js/first_party/dotenv/dotenv.test.ts
+@@ -0,0 +1,56 @@
++import { expect, test } from "bun:test";
++import dotenv, { parse, populate } from "dotenv";
++import { bunEnv, bunExe, tempDir } from "harness";
++import { join } from "node:path";
++
++test("dotenv resolves to the built-in module", () => {
++  expect(require.resolve("dotenv")).toBe("dotenv");
++  expect(require.resolve("dotenv/config")).toBe("dotenv/config");
++  expect(typeof dotenv.config).toBe("function");
++});
++
++test("dotenv.parse matches the npm grammar", () => {
++  expect(parse("A=1\nexport B = two \nC=\"multi\\nline\"\nD=val # c\nE='s q'")).toEqual({
++    A: "1",
++    B: "two",
++    C: "multi\nline",
++    D: "val",
++    E: "s q",
++  });
++  expect(parse(Buffer.from("X=1\r\nY: colon\r\n#Z=no"))).toEqual({ X: "1", Y: "colon" });
++});
++
++test("dotenv.populate keeps existing keys unless override", () => {
++  const env: Record<string, string> = { A: "keep" };
++  expect(populate(env, { A: "x", B: "y" })).toEqual({ B: "y" });
++  expect(env).toEqual({ A: "keep", B: "y" });
++  expect(populate(env, { A: "x" }, { override: true })).toEqual({ A: "x" });
++  expect(env.A).toBe("x");
++});
++
++test("dotenv.config reads several files, first file wins", () => {
++  using dir = tempDir("dotenv-config", { "one.env": "X=1\nY=one", "two.env": "Y=two\nZ=3" });
++  const processEnv: Record<string, string> = { Z: "pre" };
++  const result = dotenv.config({ path: [join(String(dir), "one.env"), join(String(dir), "two.env")], processEnv });
++  expect(result).toEqual({ parsed: { X: "1", Y: "one", Z: "3" } });
++  expect(processEnv).toEqual({ X: "1", Y: "one", Z: "pre" });
++  const missing = dotenv.config({ path: join(String(dir), "missing.env"), processEnv: {} });
++  expect(missing.parsed).toEqual({});
++  expect(missing.error).toBeInstanceOf(Error);
++});
++
++test("dotenv/config honours DOTENV_CONFIG_PATH", async () => {
++  using dir = tempDir("dotenv-config-env", {
++    "custom.env": "FROM_CUSTOM=yes",
++    "index.js": `require("dotenv/config"); console.log(process.env.FROM_CUSTOM);`,
++  });
++  await using proc = Bun.spawn({
++    cmd: [bunExe(), "index.js"],
++    env: { ...bunEnv, DOTENV_CONFIG_PATH: join(String(dir), "custom.env") },
++    cwd: String(dir),
++    stdout: "pipe",
++  });
++  const [stdout, exitCode] = await Promise.all([proc.stdout.text(), proc.exited]);
++  expect(stdout).toBe("yes\n");
++  expect(exitCode).toBe(0);
++});
+diff --git a/test/js/first_party/picocolors/picocolors.test.ts b/test/js/first_party/picocolors/picocolors.test.ts
+new file mode 100644
+index 0000000000..dfbcd99040
+--- /dev/null
++++ b/test/js/first_party/picocolors/picocolors.test.ts
+@@ -0,0 +1,22 @@
++import { expect, test } from "bun:test";
++import pc, { createColors, red } from "picocolors";
++
++test("picocolors resolves to the built-in module", () => {
++  expect(require.resolve("picocolors")).toBe("picocolors");
++  expect(typeof red).toBe("function");
++  expect(typeof pc.isColorSupported).toBe("boolean");
++});
++
++test("picocolors nests closing sequences like the npm package", () => {
++  const c = createColors(true);
++  expect(c.red(c.bold("a") + "b")).toBe("\x1b[31m\x1b[1ma\x1b[22mb\x1b[39m");
++  expect(c.bold("x" + c.dim("y") + "z")).toBe("\x1b[1mx\x1b[2my\x1b[22m\x1b[1mz\x1b[22m");
++  expect(c.bgBlueBright(42)).toBe("\x1b[104m42\x1b[49m");
++});
++
++test("picocolors without colors returns plain strings", () => {
++  const c = createColors(false);
++  expect(c.isColorSupported).toBe(false);
++  expect(c.red("a")).toBe("a");
++  expect(c.bold(undefined)).toBe("undefined");
++});
+diff --git a/test/js/first_party/tiny-invariant/tiny-invariant.test.ts b/test/js/first_party/tiny-invariant/tiny-invariant.test.ts
+new file mode 100644
+index 0000000000..7a0b02f1e3
+--- /dev/null
++++ b/test/js/first_party/tiny-invariant/tiny-invariant.test.ts
+@@ -0,0 +1,26 @@
++import { expect, test } from "bun:test";
++import { bunEnv, bunExe } from "harness";
++import invariant from "tiny-invariant";
++
++test("tiny-invariant resolves to the built-in module", () => {
++  expect(require.resolve("tiny-invariant")).toBe("tiny-invariant");
++  expect(require("tiny-invariant")).toBe(invariant);
++});
++
++test("tiny-invariant messages", () => {
++  expect(() => invariant(true, "never")).not.toThrow();
++  expect(() => invariant(false)).toThrow(new Error("Invariant failed"));
++  expect(() => invariant(0, "boom")).toThrow(new Error("Invariant failed: boom"));
++  expect(() => invariant(null, () => "lazy")).toThrow(new Error("Invariant failed: lazy"));
++});
++
++test("tiny-invariant hides messages in production", async () => {
++  await using proc = Bun.spawn({
++    cmd: [bunExe(), "-e", `try { require("tiny-invariant")(false, "secret") } catch (e) { console.log(e.message) }`],
++    env: { ...bunEnv, NODE_ENV: "production" },
++    stdout: "pipe",
++  });
++  const [stdout, exitCode] = await Promise.all([proc.stdout.text(), proc.exited]);
++  expect(stdout).toBe("Invariant failed\n");
++  expect(exitCode).toBe(0);
++});
+diff --git a/test/js/first_party/uuid/uuid.test.ts b/test/js/first_party/uuid/uuid.test.ts
+new file mode 100644
+index 0000000000..c1688d49d2
+--- /dev/null
++++ b/test/js/first_party/uuid/uuid.test.ts
+@@ -0,0 +1,44 @@
++import { expect, test } from "bun:test";
++import { MAX, NIL, parse, stringify, v1, v1ToV6, v3, v4, v5, v6, v6ToV1, v7, validate, version } from "uuid";
++
++const random = () => Uint8Array.from({ length: 16 }, (_, i) => (i * 37 + 11) & 0xff);
++
++test("uuid resolves to the built-in module", () => {
++  expect(require.resolve("uuid")).toBe("uuid");
++});
++
++test("uuid name-based versions match the npm vectors", () => {
++  expect(v5("example.com", v5.DNS)).toBe("cfbff0d1-9375-5685-968c-48ce8b15ae17");
++  expect(v3("example.com", v3.DNS)).toBe("9073926b-929f-31c2-abc9-fad77ae3e8eb");
++  expect(v5.URL).toBe("6ba7b811-9dad-11d1-80b4-00c04fd430c8");
++});
++
++test("uuid time-based and random versions match the npm vectors", () => {
++  expect(v1({ random: random(), msecs: 1700000000123, nsecs: 42, clockseq: 0x1234, node: [1, 2, 3, 4, 5, 6] })).toBe(
++    "04c284da-833b-11ee-9234-010203040506",
++  );
++  expect(v6({ random: random(), msecs: 1700000000123, nsecs: 7 })).toBe("1ee833b0-4c28-64b7-b358-7da2c7ec1136");
++  expect(v7({ random: random(), msecs: 1700000000123 })).toBe("018bcfe5-687b-7970-b8cd-61a2c7ec1136");
++  expect(v4({ random: random() })).toBe("0b30557a-9fc4-490e-b358-7da2c7ec1136");
++});
++
++test("uuid helpers", () => {
++  const id = v4();
++  expect(validate(id)).toBe(true);
++  expect(version(id)).toBe(4);
++  expect(stringify(parse(id))).toBe(id);
++  expect(validate(NIL) && validate(MAX)).toBe(true);
++  expect(validate("nope")).toBe(false);
++  expect(() => parse("nope")).toThrow("Invalid UUID");
++  const t = v1({ random: random(), msecs: 1700000000123 });
++  expect(v6ToV1(v1ToV6(t))).toBe(t);
++  const buf = new Uint8Array(20);
++  expect(v4({ random: random() }, buf, 2)).toBe(buf);
++  expect(() => v4({}, new Uint8Array(10), 0)).toThrow(RangeError);
++});
++
++test("uuid v7 is monotonic", () => {
++  const ids = Array.from({ length: 1000 }, () => v7());
++  expect(ids.toSorted()).toEqual(ids);
++  expect(version(ids[0])).toBe(7);
++});
+-- 
+2.43.0
+

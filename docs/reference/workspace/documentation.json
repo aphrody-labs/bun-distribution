@@ -56,7 +56,7 @@
     {
       "path": "README.md",
       "title": "Aphrody",
-      "sha256": "6e3d2383eb70e5655a5ed2109387cee4544543f4a3b14cc7d10ca50f8c26bcd7",
+      "sha256": "8be8de8e2f551cc60dcb7ddda5ee46ad9967ab9a73beea2cf3e9505ef945c4bc",
       "bytes": 3399,
       "domain": "",
       "status": "generated",
@@ -76,8 +76,8 @@
     {
       "path": "TODO.md",
       "title": "Livraison en cours",
-      "sha256": "a1563a9020f03b161b4695575f3d87ac598e86ddf974c2dab1b1e62a51f71074",
-      "bytes": 4313,
+      "sha256": "996866bee4448dc8d212320d301822523912d5c3851988a2fc76098241bb5edb",
+      "bytes": 4583,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -92,6 +92,16 @@
       "status": "historical",
       "visibility": "private",
       "canonical": "agy.md"
+    },
+    {
+      "path": "apps/community/crystal-universe/README.md",
+      "title": "Dragon Pixel — proposition pour Omar",
+      "sha256": "30c7c226d4e8e11a003270e36a954fc5ba5111579e10acc68286bb56dff67ae4",
+      "bytes": 1577,
+      "domain": "community",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "apps/community/crystal-universe/README.md"
     },
     {
       "path": "config/container/desktop/README.md",
@@ -2966,8 +2976,8 @@
     {
       "path": "docs/BUN_FORK.md",
       "title": "Aphrody Bun Fork — Architecture, Synchronization & Optimization Hub",
-      "sha256": "5538dbaff4279aa2ebfdb34b90378c9437992bd1e65609664c66ba597f2179ad",
-      "bytes": 10308,
+      "sha256": "3bb7c6d537e23c7d91bc5a552efde8066f4824a6355de7bd9733a3b78fa0db61",
+      "bytes": 10295,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -2976,8 +2986,8 @@
     {
       "path": "docs/BUN_UPSTREAM_TRACKER.md",
       "title": "Bun Upstream Optimization & Intelligence Tracker",
-      "sha256": "972c9dd24edb0e7a3eed2f998ac83d3c5bd89888024683ef05d1cd3b681d0bf2",
-      "bytes": 16012,
+      "sha256": "0752fcc5438441b2404c7a54c8ed672b79763612c37a3a7dd5769615f8706114",
+      "bytes": 10963,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -3056,8 +3066,8 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "b0131c6715d692f96d233c3ce2dafa7a877117601e8f850f64fa77b8e9e5cfb3",
-      "bytes": 8177,
+      "sha256": "f121de787905da0bc205724bb5711c3dbfab912d2ccce2bf480392c64c2d18f0",
+      "bytes": 8164,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -3236,8 +3246,8 @@
     {
       "path": "docs/apis/generated/workspace-typescript.md",
       "title": "Source reference: workspace-typescript",
-      "sha256": "d8cac2ee1da69474f139afe1898804f73debbbca05f8b00ce556b2b494b044e4",
-      "bytes": 7573,
+      "sha256": "315b12ecd570f8513422a2b8fd56f9cb815ba9806969e23ed45ff8da5e55e088",
+      "bytes": 7640,
       "domain": "generated",
       "status": "generated",
       "visibility": "private",
@@ -3675,19 +3685,19 @@
     },
     {
       "path": "docs/architecture/discord/README.md",
-      "title": "Aphrody Discord Architecture",
-      "sha256": "54f68e975fe0d8f55b545e1d6b58807691777992b5a8ac5b7d72d1dfb6713a42",
-      "bytes": 9225,
+      "title": "Architecture Discord",
+      "sha256": "48840bd9a93f86aa9d1347ba012c9754df8fd7c16bf682ed35354d1f31421952",
+      "bytes": 1398,
       "domain": "discord",
-      "status": "historical",
+      "status": "canonical",
       "visibility": "private",
       "canonical": "docs/architecture/discord/README.md"
     },
     {
       "path": "docs/architecture/discord/architecture/README.md",
       "title": "Aphrody Discord Architecture & Upstream Consolidation",
-      "sha256": "0a033130624881525ba69d78148315d4d74752c1503d6072b2fd6237f95a670a",
-      "bytes": 3785,
+      "sha256": "eb3dec3c253a2eda1d1144b5b268446963f78e3decd9c49e96a3dec0e4480279",
+      "bytes": 3812,
       "domain": "discord",
       "status": "historical",
       "visibility": "private",
@@ -3946,8 +3956,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "35e80680b5f77fd3220f1b12b5c4ac6db227d4ef9ab04f45afad2b29c14945fa",
-      "bytes": 61392,
+      "sha256": "1b8a2ec73c143695efcdb08bc137acc10df6f4c11452326306d2fc855f1eb82f",
+      "bytes": 61194,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -6276,8 +6286,8 @@
     {
       "path": "docs/operations/bun-packages.md",
       "title": "Packages Bun : installation et release",
-      "sha256": "5a4b67a48ca8011b36efbae1d29c7a63db46b844fc6cc73ffc5fa48c2fce9abc",
-      "bytes": 13612,
+      "sha256": "32b8078991d02a70a1450c0300d79621f308f04dc87b981f43c4820e137529c2",
+      "bytes": 13396,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -6454,6 +6464,16 @@
       "canonical": "docs/operations/infra/DOWNLOADS.md"
     },
     {
+      "path": "docs/operations/infra/DRIVE-RECONCILIATION-WORKER.md",
+      "title": "Rapprochement privé des Agent Homes Drive",
+      "sha256": "9a3bcd072ad860ca01bfd402d28f6ca26d5bf8c039de1381673d9679bd9242b8",
+      "bytes": 2761,
+      "domain": "infra",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/DRIVE-RECONCILIATION-WORKER.md"
+    },
+    {
       "path": "docs/operations/infra/GCP-OPERATIONS.md",
       "title": "Google Cloud runtime",
       "sha256": "b30f17b0ab9aee7b95864f594dde65643b4b44148dd508a00143c245f14da18b",
@@ -6506,8 +6526,8 @@
     {
       "path": "docs/operations/infra/MCP-A2A.md",
       "title": "MCP et A2A persistants sur le VPS",
-      "sha256": "5557d3325a297eabbc4d079702ab59e23f88fedd51bb1c562949ef1623fda707",
-      "bytes": 27915,
+      "sha256": "cddb437c6da166341dcfb0b9664ad10093cacddc678df1da6ae937cd2336f8c7",
+      "bytes": 30251,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -6662,6 +6682,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/infra/update/UV.md"
+    },
+    {
+      "path": "docs/operations/omar-crystal-universe.md",
+      "title": "Objectifs d'Omar — Dragon Pixel",
+      "sha256": "eeec56d40c298229ccc4bbba085cf1b798c65d9a684d9e6f4ee05230cb4e1c36",
+      "bytes": 5515,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/omar-crystal-universe.md"
     },
     {
       "path": "docs/operations/omar-guide.md",
@@ -7785,19 +7815,19 @@
     },
     {
       "path": "docs/products/discord/README.md",
-      "title": "Aphrody Discord Ecosystem",
-      "sha256": "57488ed76c6289f9a3c33932c26fd9a4cb5c0e3a8cded75914b683c47824a65b",
-      "bytes": 6490,
+      "title": "Intégration Discord",
+      "sha256": "c917f41ebf8944a988ea202ef47e6bb7c13a72f43c6801f8eeecdd0dc757e801",
+      "bytes": 1344,
       "domain": "discord",
-      "status": "historical",
+      "status": "canonical",
       "visibility": "private",
       "canonical": "docs/products/discord/README.md"
     },
     {
       "path": "docs/products/discord/packages/aphrody-messaging/README.md",
-      "title": "@aphrody/messaging",
-      "sha256": "bff047f1dd35b93941862f433eda967e6f64e96be7b659dc312d1db7e46e0cdd",
-      "bytes": 688,
+      "title": "Compatibilité Discord messaging",
+      "sha256": "ae70803ce33d1bd4325dc99d2df0ca37e7d926562f4377b383cd0f576aa905f9",
+      "bytes": 643,
       "domain": "discord",
       "status": "canonical",
       "visibility": "private",
@@ -31836,8 +31866,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "e12149a44710b1c8491c5bc5cb80c2e2a0ec58886383c1e315beea527819e70f",
-      "bytes": 49148,
+      "sha256": "7c2d71b923a926052cf9cc82aa9feebf641480cfc4f03656b43a9e320cd65f0b",
+      "bytes": 48689,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",
@@ -36782,26 +36812,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "packages/ai/xai/README.md"
-    },
-    {
-      "path": "packages/bun/test-dom/README.md",
-      "title": "@aphrody/bun-test-dom",
-      "sha256": "3b4e57683869daf9185343a2de00c26a41e76380eb7073663f59dd8d0b53c810",
-      "bytes": 525,
-      "domain": "bun",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "packages/bun/test-dom/README.md"
-    },
-    {
-      "path": "packages/discord/aphrody-messaging/README.md",
-      "title": "@aphrody/messaging",
-      "sha256": "7a4d61d0c333f329065275fceebe445f63291e00fa7be34e8d1eb3a3bd2846d0",
-      "bytes": 2063,
-      "domain": "discord",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "packages/discord/aphrody-messaging/README.md"
     },
     {
       "path": "packages/discord/kit/README.md",

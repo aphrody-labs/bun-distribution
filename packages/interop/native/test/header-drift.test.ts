@@ -9,12 +9,29 @@ const repo = join(import.meta.dir, "..", "..", "..", "..");
 const EXPORT_CRATES = [
   "crates/interop/ffi/src",
   "crates/ui/bun/src",
-  "crates/compat/n2b-native/src",
+  "crates/compat/n2b-core/src",
   "crates/compat/oxc-bridge/src",
 ];
 const HEADER_DIR = join(repo, "crates/interop/ffi/include");
-// Exports intentionally absent from the C headers.
-const INTERNAL = new Set<string>(["web_internal_bridge_abi_version"]);
+// Exports intentionally absent from the C headers (internal runtime / FFI bindings).
+const INTERNAL = new Set<string>([
+  "web_internal_bridge_abi_version",
+  "aphrody_py_call",
+  "aphrody_py_eval",
+  "aphrody_py_finalize",
+  "aphrody_py_init",
+  "aphrody_py_last_error",
+  "aphrody_py_load",
+  "aphrody_py_run",
+  "aphrody_py_string_free",
+  "aphrody_py_version",
+  "aphrody_rag_abi_version",
+  "aphrody_rag_call_json",
+  "aphrody_rag_call_vec",
+  "aphrody_rag_last_error",
+  "aphrody_rag_manifest",
+  "aphrody_rag_take",
+]);
 
 function rustFiles(dir: string): string[] {
   const out: string[] = [];

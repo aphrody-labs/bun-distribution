@@ -70,3 +70,16 @@ export function rendreReseauNatif(): void {
 GlobalRegistrator.register();
 
 rendreReseauNatif();
+
+// Conformité WHATWG FormData.append(name, value, filename) :
+// Si value est un Blob et que filename est fourni, happy-dom oublie le nom et force "blob".
+// On enveloppe le Blob en File avec le nom attendu.
+if (typeof FormData !== "undefined" && FormData.prototype.append) {
+  const origAppend = FormData.prototype.append;
+  FormData.prototype.append = function (name: string, value: unknown, filename?: string) {
+    if (value instanceof Blob && filename && !(value instanceof File)) {
+      value = new File([value], filename, { type: value.type });
+    }
+    return origAppend.call(this, name, value as any, filename);
+  };
+}

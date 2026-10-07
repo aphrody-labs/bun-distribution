@@ -117,6 +117,15 @@
         ]
       }
     },
+    "dbfr-stale-shenron-build": {
+      "sshAlias": "dbfr",
+      "paths": [
+        {
+          "path": "shenron-build/cache/cargo/shenron-wsl",
+          "reason": "Retired isolated Shenron Cargo target, qualified 2026-10-07: no process cwd/exe/fd or Docker mount references it; current factory namespace is aphrody-build/cache. Source, registry, compiler caches, runtime slots and private data remain outside this target."
+        }
+      ]
+    },
     "dbfr": {
       "sshAlias": "dbfr",
       "paths": [

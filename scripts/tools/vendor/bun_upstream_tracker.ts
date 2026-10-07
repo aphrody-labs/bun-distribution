@@ -54,7 +54,7 @@ export class BunUpstreamTrackerEngine {
   private readonly outputPath: string;
 
   public constructor(
-    outputPath: string = resolve(import.meta.dir, "../../docs/BUN_UPSTREAM_TRACKER.md"),
+    outputPath: string = resolve(import.meta.dir, "../../../docs/BUN_UPSTREAM_TRACKER.md"),
   ) {
     this.outputPath = outputPath;
   }

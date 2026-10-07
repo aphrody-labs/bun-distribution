@@ -347,6 +347,44 @@ export function prepareMcpEnvironment(
   };
 }
 
+/** Inspect one existing protected profile without refreshing or disclosing its values. */
+export function loadPreparedMcpEnvironment(options: {
+  profile: PreparedMcpEnvironment["profile"];
+  path: string;
+  repoRoot: string;
+  services?: readonly string[];
+  requirements?: McpEnvironmentRequirements;
+}): PreparedMcpEnvironment {
+  if (basename(options.path) !== `${options.profile}.json`)
+    throw new Error("MCP saved profile belongs to another domain");
+  const env = environment(safeJson(privateText(options.path)));
+  for (const domain of [env.APHRODY_PROFILE, env.APHRODY_AGENT_DOMAIN]) {
+    if (
+      domain &&
+      domain !== options.profile &&
+      !(domain === "shenron" && options.profile === "dbfr")
+    )
+      throw new Error("MCP saved profile belongs to another domain");
+  }
+  if (env.APHRODY_MCP_ENV_FILE || env.APHRODY_MCP_CONFIG)
+    throw new Error("MCP saved profile contains recursive routing references");
+  const requirements =
+    options.requirements ??
+    loadMcpEnvironmentRequirements(options.repoRoot, options.services, options.profile === "dbfr");
+  const keys = Object.keys(env).toSorted();
+  return {
+    schemaVersion: 1,
+    profile: options.profile,
+    path: options.path,
+    fingerprint: fingerprint(serialize(env)),
+    keys,
+    sources: [{ id: `profile:${options.path}`, keys }],
+    missingRequired: requirements.required.filter(
+      (key) => !env[key] && !(requirements.aliases[key] ?? []).some((alias) => !!env[alias]),
+    ),
+  };
+}
+
 export interface McpConfigTarget {
   provider: "codex" | "claude" | "agy" | "aphrody";
   path: string;
@@ -570,6 +608,17 @@ export async function probeMcpEnvironment(
             const block = object(entry);
             if (block.type !== "text" || typeof block.text !== "string") return false;
             const body = object(safeJson(block.text));
+            if (body.error !== undefined) {
+              const message =
+                typeof body.error === "string" ? body.error : object(body.error).message;
+              result.failure =
+                message === "RAG database unavailable"
+                  ? "native-rag-database-unavailable"
+                  : message === "RAG search unavailable"
+                    ? "native-rag-search-unavailable"
+                    : "native-rag-backend-error";
+              return false;
+            }
             return body.error === undefined && Array.isArray(body.results);
           });
         }
@@ -578,7 +627,7 @@ export async function probeMcpEnvironment(
       rmSync(configPath, { force: true });
     }
     result.completed = result.toolCount > 0 && result.ragReady;
-    if (!result.completed) result.failure = "native-rag-probe-failed";
+    if (!result.completed) result.failure ??= "native-rag-probe-failed";
     return result;
   } catch {
     result.failure = "native-probe-unavailable";
@@ -631,7 +680,7 @@ export async function runMcpEnvironment(argv: readonly string[]): Promise<number
     });
     if (parsed.values.help) {
       console.log(
-        "yolo ops mcp-environment <prepare|probe|apply> --output PRIVATE_DIR --binary /absolute/aphrody-mcp [--pid PID] [--source PRIVATE_JSON] [--service ID] [--profile aphrody|dbfr|ie]",
+        "yolo ops mcp-environment <prepare|probe|apply> --output PRIVATE_DIR --binary /absolute/aphrody-mcp [--home AGENT_HOME] [--service ID] [--profile aphrody|dbfr|ie]\nprepare: [--pid PID --process-binary EXISTING_NATIVE] [--process-key CONTEXT7_API_KEY|SSH_AUTH_SOCK] [--source PRIVATE_JSON]\nprobe/apply: inspect the prepared profile without refreshing its environment",
       );
       return 0;
     }
@@ -644,18 +693,35 @@ export async function runMcpEnvironment(argv: readonly string[]): Promise<number
       !["aphrody", "dbfr", "ie"].includes(values.profile!)
     )
       throw new Error("Invalid MCP environment operation");
-    const prepared = prepareMcpEnvironment({
-      profile: values.profile as PreparedMcpEnvironment["profile"],
-      outputDir: values.output,
-      repoRoot: values.repo!,
-      binary: values.binary,
-      processBinary: values["process-binary"],
-      processPid: values.pid === undefined ? undefined : Number(values.pid),
-      sourceFiles: values.source,
-      services: values.service,
-      processKeys: values["process-key"],
-      configTargets: values.home ? existingMcpConfigTargets(values.home) : undefined,
-    });
+    const profile = values.profile as PreparedMcpEnvironment["profile"];
+    if (
+      action !== "prepare" &&
+      (values.pid !== undefined ||
+        values.source?.length ||
+        values["process-key"]?.length ||
+        values["process-binary"] !== undefined)
+    )
+      throw new Error("MCP source refresh requires prepare before verification");
+    const prepared =
+      action === "prepare"
+        ? prepareMcpEnvironment({
+            profile,
+            outputDir: values.output,
+            repoRoot: values.repo!,
+            binary: values.binary,
+            processBinary: values["process-binary"],
+            processPid: values.pid === undefined ? undefined : Number(values.pid),
+            sourceFiles: values.source,
+            services: values.service,
+            processKeys: values["process-key"],
+            configTargets: values.home ? existingMcpConfigTargets(values.home) : undefined,
+          })
+        : loadPreparedMcpEnvironment({
+            profile,
+            path: join(values.output, `${profile}.json`),
+            repoRoot: values.repo!,
+            services: values.service,
+          });
     if (action === "prepare") {
       console.log(JSON.stringify(prepared));
       return prepared.missingRequired.length ? 1 : 0;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Real React DOM interactions with synthetic owner responses; no live data or service claims.
 // oxlint-disable-next-line no-unassigned-import -- existing owner registers the DOM for component interactions
-import "../../../../packages/bun/test-dom/src/index";
+import "../../../../scripts/test-dom";
 import { afterEach, expect, test } from "bun:test";
 import { createElement, act } from "react";
 import { createRoot, type Root } from "react-dom/client";

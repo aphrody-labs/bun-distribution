@@ -1,0 +1,166 @@
+From 169100c6082a229687174e39ada8248d228991ea Mon Sep 17 00:00:00 2001
+From: aphrody-dev <contact@aphrody.com>
+Date: Wed, 7 Oct 2026 00:14:44 +0200
+Subject: [PATCH 8/9] feat(cloud): SSH aliases and session context hook for
+ cloud sessions
+
+(cherry picked from commit bdf08197e506c23623bac36bfe88d5ad1211965f)
+---
+ .claude/settings.json        | 18 +++++++++++
+ scripts/dev/cloud-ssh.sh     | 49 ++++++++++++++++++++++++++++++
+ scripts/dev/session-start.ts | 58 ++++++++++++++++++++++++++++++++++++
+ 3 files changed, 125 insertions(+)
+ create mode 100755 scripts/dev/cloud-ssh.sh
+ create mode 100644 scripts/dev/session-start.ts
+
+diff --git a/.claude/settings.json b/.claude/settings.json
+index 12cf75fbf9..52ff2bc2b1 100644
+--- a/.claude/settings.json
++++ b/.claude/settings.json
+@@ -10,6 +10,24 @@
+           }
+         ]
+       }
++    ],
++    "SessionStart": [
++      {
++        "hooks": [
++          {
++            "type": "command",
++            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/dev/cloud-ssh.sh\"",
++            "timeout": 30,
++            "statusMessage": "SSH hosts"
++          },
++          {
++            "type": "command",
++            "command": "bun \"$CLAUDE_PROJECT_DIR/scripts/dev/session-start.ts\"",
++            "timeout": 30,
++            "statusMessage": "Resuming open work"
++          }
++        ]
++      }
+     ]
+   },
+   "permissions": {
+diff --git a/scripts/dev/cloud-ssh.sh b/scripts/dev/cloud-ssh.sh
+new file mode 100755
+index 0000000000..47f5f4e3e2
+--- /dev/null
++++ b/scripts/dev/cloud-ssh.sh
+@@ -0,0 +1,49 @@
++#!/usr/bin/env bash
++# SPDX-License-Identifier: Apache-2.0
++# SSH from a Claude Code cloud session to the owner hosts: writes ~/.ssh/config aliases `vps`, `dbfr` and `wsl`
++# from the cloud environment, never from the repository. Idempotent, tolerant (exit code 0).
++#   APHRODY_SSH_KEY_B64   base64 of the private key (cloud secret; SHENRON_SSH_KEY_B64 accepted)
++#   APHRODY_VPS_HOST      first VPS address     APHRODY_DBFR_HOST  second VPS address
++#   APHRODY_WSL_HOST      optional WSL address reachable from the cloud (reverse tunnel or private network)
++#   APHRODY_WSL_PORT      optional WSL port (default 22)   APHRODY_WSL_USER  optional WSL login (default aphro)
++#   APHRODY_SSH_USER      VPS login (default ubuntu)
++#   --force               run outside a cloud session
++set -u
++[[ "${CLAUDE_CODE_REMOTE:-}" == "true" || "${1:-}" == "--force" ]] || exit 0
++key_b64="${APHRODY_SSH_KEY_B64:-${SHENRON_SSH_KEY_B64:-}}"
++vps="${APHRODY_VPS_HOST:-${SHENRON_VPS_HOST:-}}"
++dbfr="${APHRODY_DBFR_HOST:-${SHENRON_DBFR_HOST:-}}"
++if [[ -z "$key_b64" || ( -z "$vps" && -z "$dbfr" ) ]]; then
++  echo "cloud-ssh: APHRODY_SSH_KEY_B64 and APHRODY_VPS_HOST/APHRODY_DBFR_HOST absent, SSH aliases not written"
++  exit 0
++fi
++umask 077
++mkdir -p "$HOME/.ssh"
++key="$HOME/.ssh/aphrody_hosts"
++printf '%s' "$key_b64" | base64 -d >"$key" 2>/dev/null && chmod 600 "$key" || {
++  echo "cloud-ssh: APHRODY_SSH_KEY_B64 is not valid base64"
++  exit 0
++}
++user="${APHRODY_SSH_USER:-${SHENRON_SSH_USER:-ubuntu}}"
++config="$HOME/.ssh/config"
++touch "$config"
++host_block() { # alias address user port
++  printf 'Host %s\n    HostName %s\n    User %s\n    Port %s\n    IdentityFile %s\n    IdentitiesOnly yes\n' "$1" "$2" "$3" "$4" "$key"
++  printf '    StrictHostKeyChecking accept-new\n    ServerAliveInterval 30\n    ConnectTimeout 10\n    ControlMaster auto\n'
++  printf '    ControlPath ~/.ssh/cm/%%C\n    ControlPersist 8h\n'
++}
++mkdir -p "$HOME/.ssh/cm"
++if ! grep -q '# aphrody-hosts' "$config" 2>/dev/null; then
++  {
++    echo "# aphrody-hosts"
++    [[ -z "$vps" ]] || host_block vps "$vps" "$user" 22
++    [[ -z "$dbfr" ]] || host_block dbfr "$dbfr" "$user" 22
++    [[ -z "${APHRODY_WSL_HOST:-}" ]] || host_block wsl "$APHRODY_WSL_HOST" "${APHRODY_WSL_USER:-aphro}" "${APHRODY_WSL_PORT:-22}"
++  } >>"$config"
++fi
++chmod 600 "$config"
++for h in vps dbfr wsl; do
++  grep -q "^Host $h\$" "$config" || continue
++  ssh -o BatchMode=yes -o ConnectTimeout=8 "$h" true 2>/dev/null && echo "cloud-ssh: $h reachable" || echo "cloud-ssh: $h unreachable (network or key)"
++done
++exit 0
+diff --git a/scripts/dev/session-start.ts b/scripts/dev/session-start.ts
+new file mode 100644
+index 0000000000..b1f49cb478
+--- /dev/null
++++ b/scripts/dev/session-start.ts
+@@ -0,0 +1,58 @@
++// SPDX-License-Identifier: Apache-2.0
++// SessionStart hook: hands the session the Git state, the host reachability and the no-human-in-the-loop rule,
++// then the open work (agy.md), so a cloud, WSL or VPS session resumes the plan without being told.
++import { existsSync, readFileSync } from "node:fs";
++import { join } from "node:path";
++
++const root = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
++const resumePath = join(root, "agy.md");
++const resume = existsSync(resumePath) ? readFileSync(resumePath, "utf8") : "(agy.md absent)";
++
++async function git(...args: string[]): Promise<string> {
++  const proc = Bun.spawn(["git", ...args], { cwd: root, stdout: "pipe", stderr: "ignore" });
++  const out = await new Response(proc.stdout).text();
++  await proc.exited;
++  return out.trim();
++}
++
++function aliasDefined(alias: string): boolean {
++  const cfg = join(process.env.HOME ?? "", ".ssh/config");
++  return existsSync(cfg) && new RegExp(`^Host ${alias}$`, "m").test(readFileSync(cfg, "utf8"));
++}
++
++function reach(alias: string): string {
++  const code = Bun.spawnSync(
++    ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", alias, "true"],
++    {
++      stdout: "ignore",
++      stderr: "ignore",
++    },
++  ).exitCode;
++  return `${alias}: ${code === 0 ? "reachable" : "unavailable"}`;
++}
++
++const [branch, head, dirty] = await Promise.all([
++  git("rev-parse", "--abbrev-ref", "HEAD"),
++  git("log", "--oneline", "-5"),
++  git("status", "--short"),
++]);
++const kind = process.env.CLAUDE_CODE_REMOTE === "true" ? "cloud" : "local";
++const hosts =
++  ["vps", "dbfr", "wsl"].filter(aliasDefined).map(reach).join(", ") || "no alias defined";
++const context = [
++  `[aphrody] ${kind} session: full autonomy, no human in the loop.`,
++  "Resume the open work below end to end: code, gates, commit and push, then hosts through `aphrody infra ssh exec --host vps|dbfr` (plan before apply, see docs/operations/cloud/CLOUD-READY.md in the aphrody repository).",
++  `SSH: ${hosts}.`,
++  `Branch ${branch}. Last commits:\n${head}`,
++  dirty
++    ? `Dirty tree (other agents may own it, do not touch):\n${dirty.split("\n").slice(0, 12).join("\n")}`
++    : "Clean tree.",
++  "--- OPEN WORK ---",
++  resume,
++].join("\n");
++
++console.log(
++  JSON.stringify({
++    hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: context },
++  }),
++);
+-- 
+2.43.0
+

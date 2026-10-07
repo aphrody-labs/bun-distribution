@@ -1,0 +1,181 @@
+From 8a64a21a33ccb625e9e264e153b6af524d708c8f Mon Sep 17 00:00:00 2001
+From: aphrody-dev <contact@aphrody.com>
+Date: Sat, 3 Oct 2026 12:05:31 +0200
+Subject: [PATCH 2/9] chore: rename publishable npm packages to the @aphrody
+ scope
+
+(cherry picked from commit fa052eaccfd4dc072c7ead66767e87f0d53a0889)
+---
+ packages/bun-build-mdx-rs/npm/darwin-arm64/package.json     | 2 +-
+ packages/bun-build-mdx-rs/npm/darwin-x64/package.json       | 2 +-
+ packages/bun-build-mdx-rs/npm/linux-arm64-gnu/package.json  | 2 +-
+ packages/bun-build-mdx-rs/npm/linux-arm64-musl/package.json | 2 +-
+ packages/bun-build-mdx-rs/npm/linux-x64-gnu/package.json    | 2 +-
+ packages/bun-build-mdx-rs/npm/linux-x64-musl/package.json   | 2 +-
+ packages/bun-build-mdx-rs/npm/win32-x64-msvc/package.json   | 2 +-
+ packages/bun-build-mdx-rs/package.json                      | 2 +-
+ packages/bun-debug-adapter-protocol/package.json            | 2 +-
+ packages/bun-inspector-frontend/package.json                | 2 +-
+ packages/bun-inspector-protocol/package.json                | 2 +-
+ packages/bun-plugin-svelte/package.json                     | 2 +-
+ packages/bun-plugin-yaml/package.json                       | 2 +-
+ packages/bun-types/package.json                             | 2 +-
+ 14 files changed, 14 insertions(+), 14 deletions(-)
+
+diff --git a/packages/bun-build-mdx-rs/npm/darwin-arm64/package.json b/packages/bun-build-mdx-rs/npm/darwin-arm64/package.json
+index 951d585f7c..9c1f7472c8 100644
+--- a/packages/bun-build-mdx-rs/npm/darwin-arm64/package.json
++++ b/packages/bun-build-mdx-rs/npm/darwin-arm64/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "name": "bun-mdx-rs-darwin-arm64",
++  "name": "@aphrody/bun-mdx-rs-darwin-arm64",
+   "version": "0.0.0",
+   "os": [
+     "darwin"
+diff --git a/packages/bun-build-mdx-rs/npm/darwin-x64/package.json b/packages/bun-build-mdx-rs/npm/darwin-x64/package.json
+index c06d5dcb3f..ff0f9ddfd2 100644
+--- a/packages/bun-build-mdx-rs/npm/darwin-x64/package.json
++++ b/packages/bun-build-mdx-rs/npm/darwin-x64/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "name": "bun-mdx-rs-darwin-x64",
++  "name": "@aphrody/bun-mdx-rs-darwin-x64",
+   "version": "0.0.0",
+   "os": [
+     "darwin"
+diff --git a/packages/bun-build-mdx-rs/npm/linux-arm64-gnu/package.json b/packages/bun-build-mdx-rs/npm/linux-arm64-gnu/package.json
+index 3306e1c73b..39729266b9 100644
+--- a/packages/bun-build-mdx-rs/npm/linux-arm64-gnu/package.json
++++ b/packages/bun-build-mdx-rs/npm/linux-arm64-gnu/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "name": "bun-mdx-rs-linux-arm64-gnu",
++  "name": "@aphrody/bun-mdx-rs-linux-arm64-gnu",
+   "version": "0.0.0",
+   "os": [
+     "linux"
+diff --git a/packages/bun-build-mdx-rs/npm/linux-arm64-musl/package.json b/packages/bun-build-mdx-rs/npm/linux-arm64-musl/package.json
+index f157254b73..97e2a8206a 100644
+--- a/packages/bun-build-mdx-rs/npm/linux-arm64-musl/package.json
++++ b/packages/bun-build-mdx-rs/npm/linux-arm64-musl/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "name": "bun-mdx-rs-linux-arm64-musl",
++  "name": "@aphrody/bun-mdx-rs-linux-arm64-musl",
+   "version": "0.0.0",
+   "os": [
+     "linux"
+diff --git a/packages/bun-build-mdx-rs/npm/linux-x64-gnu/package.json b/packages/bun-build-mdx-rs/npm/linux-x64-gnu/package.json
+index 2118f18b97..2af97c8a1f 100644
+--- a/packages/bun-build-mdx-rs/npm/linux-x64-gnu/package.json
++++ b/packages/bun-build-mdx-rs/npm/linux-x64-gnu/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "name": "bun-mdx-rs-linux-x64-gnu",
++  "name": "@aphrody/bun-mdx-rs-linux-x64-gnu",
+   "version": "0.0.0",
+   "os": [
+     "linux"
+diff --git a/packages/bun-build-mdx-rs/npm/linux-x64-musl/package.json b/packages/bun-build-mdx-rs/npm/linux-x64-musl/package.json
+index 107c980f24..64f79f156a 100644
+--- a/packages/bun-build-mdx-rs/npm/linux-x64-musl/package.json
++++ b/packages/bun-build-mdx-rs/npm/linux-x64-musl/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "name": "bun-mdx-rs-linux-x64-musl",
++  "name": "@aphrody/bun-mdx-rs-linux-x64-musl",
+   "version": "0.0.0",
+   "os": [
+     "linux"
+diff --git a/packages/bun-build-mdx-rs/npm/win32-x64-msvc/package.json b/packages/bun-build-mdx-rs/npm/win32-x64-msvc/package.json
+index 2af78fa8b1..15f3011877 100644
+--- a/packages/bun-build-mdx-rs/npm/win32-x64-msvc/package.json
++++ b/packages/bun-build-mdx-rs/npm/win32-x64-msvc/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "name": "bun-mdx-rs-win32-x64-msvc",
++  "name": "@aphrody/bun-mdx-rs-win32-x64-msvc",
+   "version": "0.0.0",
+   "os": [
+     "win32"
+diff --git a/packages/bun-build-mdx-rs/package.json b/packages/bun-build-mdx-rs/package.json
+index 8bd5af45fe..c77598dc30 100644
+--- a/packages/bun-build-mdx-rs/package.json
++++ b/packages/bun-build-mdx-rs/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "name": "bun-mdx-rs",
++  "name": "@aphrody/bun-mdx-rs",
+   "version": "0.0.0",
+   "main": "index.js",
+   "types": "index.d.ts",
+diff --git a/packages/bun-debug-adapter-protocol/package.json b/packages/bun-debug-adapter-protocol/package.json
+index cf8bd70ce0..9c51e36d2a 100644
+--- a/packages/bun-debug-adapter-protocol/package.json
++++ b/packages/bun-debug-adapter-protocol/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "name": "bun-debug-adapter-protocol",
++  "name": "@aphrody/bun-debug-adapter-protocol",
+   "version": "0.0.1",
+   "type": "module",
+   "dependencies": {
+diff --git a/packages/bun-inspector-frontend/package.json b/packages/bun-inspector-frontend/package.json
+index 1439d41c60..99539486d0 100644
+--- a/packages/bun-inspector-frontend/package.json
++++ b/packages/bun-inspector-frontend/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "name": "web-inspector-bun",
++  "name": "@aphrody/web-inspector-bun",
+   "module": "index.ts",
+   "type": "module",
+   "devDependencies": {
+diff --git a/packages/bun-inspector-protocol/package.json b/packages/bun-inspector-protocol/package.json
+index 5498b104f4..621e4b2183 100644
+--- a/packages/bun-inspector-protocol/package.json
++++ b/packages/bun-inspector-protocol/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "name": "bun-inspector-protocol",
++  "name": "@aphrody/bun-inspector-protocol",
+   "version": "0.0.2",
+   "scripts": {
+     "build": "bun build --target=node --outfile=index.js --minify-syntax ./index.ts --external=ws"
+diff --git a/packages/bun-plugin-svelte/package.json b/packages/bun-plugin-svelte/package.json
+index 2fe537baaf..3bdf34a54e 100644
+--- a/packages/bun-plugin-svelte/package.json
++++ b/packages/bun-plugin-svelte/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "name": "bun-plugin-svelte",
++  "name": "@aphrody/bun-plugin-svelte",
+   "version": "0.0.6",
+   "description": "Official Svelte plugin for Bun",
+   "repository": {
+diff --git a/packages/bun-plugin-yaml/package.json b/packages/bun-plugin-yaml/package.json
+index b9f79395d0..2d30838571 100644
+--- a/packages/bun-plugin-yaml/package.json
++++ b/packages/bun-plugin-yaml/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "name": "bun-plugin-yaml",
++  "name": "@aphrody/bun-plugin-yaml",
+   "version": "0.0.1",
+   "module": "index.ts",
+   "type": "module",
+diff --git a/packages/bun-types/package.json b/packages/bun-types/package.json
+index 871741a297..9ed92a038c 100644
+--- a/packages/bun-types/package.json
++++ b/packages/bun-types/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "name": "bun-types",
++  "name": "@aphrody/bun-types",
+   "license": "MIT",
+   "types": "./index.d.ts",
+   "typesVersions": {
+-- 
+2.43.0
+

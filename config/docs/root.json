@@ -2,64 +2,22 @@
   "readme": {
     "summary": "Private Rust/Bun monorepo: the Bun fork runtime (`yolo`), the Python runtime (`vu`), the `aphrody` CLI/MCP/FFI and the M3 UI framework.",
     "layout": [
-      [
-        "apps/<domain>/<app>",
-        "Applications"
-      ],
-      [
-        "packages/<domain>/<package>",
-        "Bun packages"
-      ],
-      [
-        "crates/<domain>/<crate>",
-        "Rust crates"
-      ],
-      [
-        "m3/",
-        "UI framework, `m3/packages/app-ui`"
-      ],
-      [
-        "py/",
-        "Python packages"
-      ],
-      [
-        "config/",
-        "Build, product, host and deployment declarations"
-      ],
-      [
-        "scripts/",
-        "audit, build, dev, migration, release, tools"
-      ],
-      [
-        "docs/",
-        "Guides, contracts, generated references"
-      ],
-      [
-        ".coord/",
-        "Claims and receipts"
-      ]
+      ["apps/<domain>/<app>", "Applications"],
+      ["packages/<domain>/<package>", "Bun packages"],
+      ["crates/<domain>/<crate>", "Rust crates"],
+      ["m3/", "UI framework, `m3/packages/app-ui`"],
+      ["py/", "Python packages"],
+      ["config/", "Build, product, host and deployment declarations"],
+      ["scripts/", "audit, build, dev, migration, release, tools"],
+      ["docs/", "Guides, contracts, generated references"],
+      [".coord/", "Claims and receipts"]
     ],
     "links": [
-      [
-        "PLAN.md",
-        "Architecture, contracts, open queue"
-      ],
-      [
-        "MEMORY.md",
-        "Dated evidence and limits"
-      ],
-      [
-        "AGENTS.md",
-        "Working rules"
-      ],
-      [
-        "docs/README.md",
-        "Documentation index"
-      ],
-      [
-        "docs/reference/workspace/STATE.md",
-        "Workspace inventory"
-      ]
+      ["PLAN.md", "Architecture, contracts, open queue"],
+      ["MEMORY.md", "Dated evidence and limits"],
+      ["AGENTS.md", "Working rules"],
+      ["docs/README.md", "Documentation index"],
+      ["docs/reference/workspace/STATE.md", "Workspace inventory"]
     ],
     "installation": [
       "## One install par agent IA",
@@ -104,30 +62,12 @@
   },
   "plan": {
     "owners": [
-      [
-        "Aphrody",
-        "Products, workflows, UI, integrations"
-      ],
-      [
-        "Yolo",
-        "Precompiled runtime and SDK (Bun fork + CLI, aliases `bun`, `vu`)"
-      ],
-      [
-        "Workspace/Infra",
-        "Orchestration, inventories, factories, release, hosts"
-      ],
-      [
-        "`m3/packages/app-ui`, `crates/ui/*`",
-        "Canonical UI"
-      ],
-      [
-        "`crates/ai/rag-python`",
-        "Sole owner of the `aphrody-rust` Python binding"
-      ],
-      [
-        "IECODE",
-        "Separate repository, store and authority"
-      ],
+      ["Aphrody", "Products, workflows, UI, integrations"],
+      ["Yolo", "Precompiled runtime and SDK (Bun fork + CLI, aliases `bun`, `vu`)"],
+      ["Workspace/Infra", "Orchestration, inventories, factories, release, hosts"],
+      ["`m3/packages/app-ui`, `crates/ui/*`", "Canonical UI"],
+      ["`crates/ai/rag-python`", "Sole owner of the `aphrody-rust` Python binding"],
+      ["IECODE", "Separate repository, store and authority"],
       [
         "Kernel",
         "`aphrody-kernel`: minimal TCB + subsystems; Linux/Asterinas/kernel32 provide the rest"
@@ -138,10 +78,7 @@
         "Rust CLI",
         "`aphrody` multicall binary (`crates/infra/aphrody`, `crates/infra/aphrody-command`); former tool names are links"
       ],
-      [
-        "Bun CLI",
-        "`yolo` (`packages/engine/yolo`)"
-      ],
+      ["Bun CLI", "`yolo` (`packages/engine/yolo`)"],
       [
         "FFI",
         "`aphrody_ffi` cdylib (`crates/interop/ffi`): `aphrody_*`, `yolo_*`, `bun_rs_*`, `aphrody_oxc_*`; PyO3 modules stay separate"
@@ -275,6 +212,11 @@
             "2026-10-07",
             "Owner-requested product fusion: top-level `apps/` and `m3/apps/` removed; setup/admin/creator in `@aphrody/product` 0.3.0, Rust CLI in `crates/infra/aphrody`, Yolo CLI/Forge in `packages/engine/{yolo,forge}`, downloads in Workspace, showcase in app-ui. Product 348 tests, Forge 28, downloads 18, showcase 18 + 3 DOM, bridge 6 and embedded configuration 7 passed; scoped TypeScript/lint and repository links passed. CLI Cargo check passed on the VPS; Windows installer compiled and started under Wine.",
             "Rust test/Clippy and native desktop qualification are pending. Wine is not physical Windows; Omar remains offline. Private stores and concurrent feature work are preserved. No performance improvement is claimed."
+          ],
+          [
+            "2026-10-07",
+            "Consolidated Bun capabilities: `@aphrody/messaging` implementation and test-DOM package removed; Discord messaging now belongs to `@aphrody/discord-kit/messaging`, shared test DOM to `scripts/test-dom.ts`, inference to `@aphrody/bun`, HTTP transport to `@aphrody/bun`, and paths to Workspace. Compatibility facades remain for published `@aphrody/inference`, `@aphrody/paths` and `@aphrody/http`. Discord 65 tests and Google 34 tests passed; Workspace typecheck, targeted package contracts (17 tests), frozen Bun lock and docs generation/check passed.",
+            "The full Workspace suite had 377 passes, 20 skips and 3 fixture timeouts in `build-factory-source`; its isolated rerun had 8 passes and 2 Git pack fixture failures. Services were not activated and no remote Drive writes were executed. Full source-level consolidation does not imply package publication or host deployment."
           ]
         ]
       },
@@ -476,11 +418,7 @@
             "Cloud session host: 4 CPU, 15 GB RAM, ~30 GB disk; scoped `-p <crate>` gates only.",
             "Full workspace, V8, Tauri, WebKit builds go to the VPS."
           ],
-          [
-            "2026-10-05",
-            "CI jobs do not start (account billing).",
-            "Owner-side."
-          ],
+          ["2026-10-05", "CI jobs do not start (account billing).", "Owner-side."],
           [
             "2026-10-07",
             "Private GHCR runtime digest `sha256:9584253e39340758b4efcb1d11e86aa48f165a3e045759f75bb4a600559c3031` passed registry pull, readonly-root token-file API health and shutdown. Alpine AMD64/ARM64 digest `sha256:7506e634d1ab1acfadaaceb6a59d52629a02b62bd59ec1507c334816e7b55aad` passed both architecture runtime/WASM probes.",

@@ -24,12 +24,11 @@ import { dirname, join, resolve } from "node:path";
 
 /** Vendored packages can be linked for resolution without adopting first-party manifest rules. */
 
-/** The M3 family (published packages only): lockstep version and shared presets. */
-export const M3_FAMILY = /^@aphrody\/(m3(-[a-z0-9-]+)?|material-web|bun)$/;
+/** The M3 UI family (published packages only): lockstep version and shared presets. */
+export const M3_FAMILY = /^@aphrody\/(m3(-[a-z0-9-]+)?|material-web)$/;
 /** M3 packages that keep their own tsconfig: the preset itself, the FFI package and the Lit fork. */
 export const M3_OWN_TSCONFIG = new Set([
   "@aphrody/m3-config",
-  "@aphrody/bun",
   "@aphrody/material-web",
   // Standalone targets: the Bun MCP server and the Next.js examples carry their own compiler options.
   "@aphrody/m3-mcp",

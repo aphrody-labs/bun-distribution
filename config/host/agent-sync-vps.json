@@ -10,10 +10,37 @@
     "intervalSeconds": 300
   },
   "retrieval": {
-    "root": "/home/ubuntu/.aphrody/drive-sync/retrieval-markdown",
-    "intervalSeconds": 3600
+    "root": "/home/ubuntu/.aphrody/drive-sync/reviewed-current",
+    "intervalSeconds": 3600,
+    "label": "drive-dbfr-reviewed"
   },
-  "jobs": ["drive", "drive-retrieval"],
+  "driveReview": {
+    "intervalSeconds": 300,
+    "receiptRoot": "/home/ubuntu/.aphrody/automation/drive-vps/reviews",
+    "stateFile": "/home/ubuntu/.aphrody/drive-sync/dbfr-google-markdown.json",
+    "baselineDirectory": "/home/ubuntu/.aphrody/drive-sync/markdown-reviewed-baseline",
+    "reviewedDirectory": "/home/ubuntu/.aphrody/drive-sync/reviewed-current",
+    "a2aUrl": "http://127.0.0.1:8788/",
+    "tokenFile": "/home/ubuntu/.aphrody/private/a2a/bearer",
+    "peer": "codex",
+    "ownerModule": {
+      "path": "/home/ubuntu/.aphrody/automation/drive-bootstrap/google-owner-review.mjs",
+      "sha256": "9d47e81f1d15e031b35a04bb2d6183d31231516eb59738e34cf40a8319f63051"
+    },
+    "validatorModule": {
+      "path": "/home/ubuntu/.aphrody/automation/drive-vps/drive-reconcile-review.mjs",
+      "sha256": "7c63f4f6c1a5a73118686bfec64afc3af83af5a48694c30ee06b39ab2211ded2"
+    }
+  },
+  "replica": {
+    "incoming": "/home/ubuntu/.aphrody/drive-sync/incoming-markdown",
+    "contract": "/srv/aphrody-lab/drive-sync-contract.json",
+    "directory": "/home/ubuntu/.aphrody/workspaces/dbfr/incoming/drive-cloud",
+    "stateRoot": "/home/ubuntu/.aphrody",
+    "shenronRoot": "/srv/shenron/shared/agent-home",
+    "intervalSeconds": 300
+  },
+  "jobs": ["drive", "drive-review", "drive-replica", "drive-retrieval"],
   "publication": {
     "host": "local",
     "directory": "/srv/aphrody-lab/state",

@@ -68,7 +68,11 @@ export function formatSize(bytes: number): string {
 
 // The Aphrody pet, idle track of crates/ui/identity (atlas row 0, six timed cells), drawn by CSS
 // at half scale from /pet.webp so the page carries no script for it.
-const PET = { cell: [192, 208], atlas: [1536, 2288], idle: [280, 110, 110, 140, 140, 320] };
+const PET: { cell: [number, number]; atlas: [number, number]; idle: number[] } = {
+  cell: [192, 208],
+  atlas: [1536, 2288],
+  idle: [280, 110, 110, 140, 140, 320],
+};
 const petKeyframes = (): string => {
   const total = PET.idle.reduce((a, b) => a + b, 0);
   let at = 0;
@@ -254,7 +258,7 @@ export function createHandler(rootInput: string): (request: Request) => Promise<
       const match = /^\/releases\/([^/]+)(\/.*)$/.exec(path);
       let id: string;
       try {
-        id = match ? decodeURIComponent(match[1]) : "";
+        id = match ? decodeURIComponent(match[1]!) : "";
       } catch {
         return new Response("bad request", { status: 400, headers: withHeaders({}) });
       }
@@ -262,7 +266,7 @@ export function createHandler(rootInput: string): (request: Request) => Promise<
       if (!match || pinnedRoot === null)
         return new Response("not found", { status: 404, headers: withHeaders({}) });
       releaseRoot = pinnedRoot;
-      resourcePath = match[2];
+      resourcePath = match[2]!;
     }
 
     if (PUBLIC_ASSETS.has(resourcePath.slice(1))) {

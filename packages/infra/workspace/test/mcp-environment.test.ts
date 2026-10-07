@@ -14,6 +14,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   existingMcpConfigTargets,
+  loadPreparedMcpEnvironment,
   loadMcpEnvironmentRequirements,
   planMcpEnvironmentConfiguration,
   prepareMcpEnvironment,
@@ -226,7 +227,7 @@ else {
   if(args.includes('list')){
     console.log(JSON.stringify({kind:'server_info',tool_count:1}));
     console.log(JSON.stringify({kind:'tool',name:'aphrody_shenron_rag_search'}));
-  }else if(args.includes('call'))console.log(JSON.stringify({result:{content:[{type:'text',text:JSON.stringify({results:[],mode:'lexical'})}]}}));
+  }else if(args.includes('call'))console.log(JSON.stringify({result:{content:[{type:'text',text:JSON.stringify(process.env.PROBE_FIXTURE_ERROR?{error:{code:'503',message:process.env.PROBE_FIXTURE_ERROR}}:{results:[],mode:'lexical'})}]}}));
   else process.exit(10);
 }
 `,
@@ -238,6 +239,25 @@ else {
   expect(result.ragReady).toBe(true);
   expect(result.toolCount).toBe(1);
   expect(JSON.stringify(result)).not.toContain("fixture-only-password");
+  const unavailable = profile(root, {
+    HOME: root,
+    PATH: "/fixture/bin",
+    APHRODY_MCP_DATABASE_URL: "fixture-only-password",
+    PROBE_FIXTURE_ERROR: "RAG database unavailable",
+  });
+  const failed = await probeMcpEnvironment(unavailable, binary, 2000);
+  expect(failed.completed).toBe(false);
+  expect(failed.failure).toBe("native-rag-database-unavailable");
+  const privateFailure = profile(root, {
+    HOME: root,
+    PATH: "/fixture/bin",
+    APHRODY_MCP_DATABASE_URL: "fixture-only-password",
+    PROBE_FIXTURE_ERROR: "fixture-only-password",
+  });
+  const sanitized = await probeMcpEnvironment(privateFailure, binary, 2000);
+  expect(sanitized.completed).toBe(false);
+  expect(sanitized.failure).toBe("native-rag-backend-error");
+  expect(JSON.stringify(sanitized)).not.toContain("fixture-only-password");
 });
 
 test("explicit process sources cannot import generic database or routing keys", () => {
@@ -303,4 +323,49 @@ test("recurring preparation preserves auth after agents contain only profile ref
     }),
   );
   expect(() => profile(root)).toThrow("another domain");
+});
+
+test("prepared-profile inspection neither refreshes launch environment nor reports readiness", () => {
+  const root = fixture(),
+    prepared = profile(root),
+    bytes = readFileSync(prepared.path, "utf8");
+  const loaded = loadPreparedMcpEnvironment({
+    profile: "aphrody",
+    path: prepared.path,
+    repoRoot: root,
+    requirements,
+  });
+  expect(loaded.fingerprint).toBe(prepared.fingerprint);
+  expect(loaded.missingRequired).toEqual([]);
+  expect(readFileSync(prepared.path, "utf8")).toBe(bytes);
+  expect("completed" in loaded).toBe(false);
+  expect(JSON.stringify(loaded)).not.toContain("fixture-only-password");
+  expect(() =>
+    loadPreparedMcpEnvironment({
+      profile: "dbfr",
+      path: prepared.path,
+      repoRoot: root,
+      requirements,
+    }),
+  ).toThrow("another domain");
+  writeFileSync(
+    prepared.path,
+    JSON.stringify({ APHRODY_AGENT_DOMAIN: "aphrody", APHRODY_MCP_ENV_FILE: prepared.path }),
+  );
+  expect(() =>
+    loadPreparedMcpEnvironment({
+      profile: "aphrody",
+      path: prepared.path,
+      repoRoot: root,
+      requirements,
+    }),
+  ).toThrow("recursive routing");
+  expect(() =>
+    loadPreparedMcpEnvironment({
+      profile: "dbfr",
+      path: prepared.path,
+      repoRoot: root,
+      requirements,
+    }),
+  ).toThrow("another domain");
 });

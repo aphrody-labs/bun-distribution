@@ -94,11 +94,10 @@ describe("bun workspace contract", () => {
       "@aphrody/m3-tokens",
       "@aphrody/m3-react",
       "@aphrody/material-web",
-      "@aphrody/bun",
     ]) {
       expect(M3_FAMILY.test(name)).toBe(true);
     }
-    for (const name of ["@aphrody/os", "@aphrody/canvas", "@spacedrive/primitives"])
+    for (const name of ["@aphrody/os", "@aphrody/canvas", "@aphrody/bun", "@spacedrive/primitives"])
       expect(M3_FAMILY.test(name)).toBe(false);
 
     const manifest: Record<string, any> = {

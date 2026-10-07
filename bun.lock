@@ -827,7 +827,7 @@
       "name": "@aphrody/inference",
       "version": "0.1.1",
       "dependencies": {
-        "@aphrody/paths": "workspace:*",
+        "@aphrody/bun": "workspace:*",
       },
       "devDependencies": {
         "@types/bun": "catalog:",
@@ -850,24 +850,6 @@
       "version": "1.1.6",
       "dependencies": {
         "@aphrody/x": "workspace:*",
-      },
-    },
-    "packages/bun/test-dom": {
-      "name": "@aphrody/bun-test-dom",
-      "version": "0.1.1",
-      "dependencies": {
-        "@happy-dom/global-registrator": "catalog:",
-      },
-    },
-    "packages/discord/aphrody-messaging": {
-      "name": "@aphrody/messaging",
-      "version": "0.1.1",
-      "dependencies": {
-        "@aphrody/discord-kit": "workspace:*",
-      },
-      "devDependencies": {
-        "tsdown": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "packages/discord/kit": {
@@ -1001,6 +983,7 @@
       "name": "@aphrody/bun",
       "version": "3.3.8",
       "dependencies": {
+        "@aphrody/paths": "workspace:*",
         "@aphrody/runtime-sdk": "workspace:*",
         "@aphrody/update": "workspace:*",
       },
@@ -1301,8 +1284,6 @@
 
     "@aphrody/bun-forge": ["@aphrody/bun-forge@workspace:packages/engine/forge"],
 
-    "@aphrody/bun-test-dom": ["@aphrody/bun-test-dom@workspace:packages/bun/test-dom"],
-
     "@aphrody/canvas": ["@aphrody/canvas@workspace:m3/packages/canvas"],
 
     "@aphrody/cli-wasm": ["@aphrody/cli-wasm@workspace:packages/infra/cli-wasm"],
@@ -1380,8 +1361,6 @@
     "@aphrody/material-web": ["@aphrody/material-web@3.3.3", "", { "dependencies": { "@aphrody/bun": "3.3.0", "@aphrody/canvas": "1.0.9-aphrody.2", "@lit/context": "^1.1.6", "lit": "^3.3.3", "three": "^0.186.1", "tslib": "^2.8.1" } }, "sha512-CJfD9sBx/T+DlXsasZD2vD/y5BMvMomDOsQP5jGNZ5fHeiA4bQQXevTALDd54wGnIdhEo5+bFnPUpUSUDbAGHA=="],
 
     "@aphrody/mcp-ui": ["@aphrody/mcp-ui@7.1.1-aphrody.1", "", { "dependencies": { "@modelcontextprotocol/client": "^2.2.0", "@modelcontextprotocol/core": "^2.2.0", "@modelcontextprotocol/ext-apps": "^2.0.3", "@modelcontextprotocol/sdk": "^1.32.0", "zod": "^3.25.76 || ^4.0.0" }, "peerDependencies": { "react": ">=18.0.0", "react-dom": ">=18.0.0" } }, "sha512-nvi/YuU8lSKjc0bPCZzOfpNU/w3NrgmygN2VaI3ptd2eN4yydFUmpNQivgUp01cApjjndGN3kgGa4YZYM1MDXw=="],
-
-    "@aphrody/messaging": ["@aphrody/messaging@workspace:packages/discord/aphrody-messaging"],
 
     "@aphrody/n2b-core": ["@aphrody/n2b-core@workspace:packages/engine/n2b-client"],
 

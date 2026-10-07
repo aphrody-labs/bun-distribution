@@ -105,6 +105,33 @@ sous un répertoire 0700. Le credential reste sur l'hôte. Le client natif
 configuré. Un fichier configuré illisible ou invalide fait échouer l'appel avant
 la requête ; il n'entraîne aucun repli vers un accès anonyme.
 
+### Profil d'environnement des clients stdio
+
+`yolo ops mcp-environment` prépare un seul fichier JSON privé par profil pour
+le serveur natif `aphrody-mcp`. La commande recueille l'environnement déjà
+hérité, les variables autorisées du processus MCP canonique de même UID, les
+fichiers JSON explicitement protégés et les blocs `env` des configurations
+clientes existantes. Elle refuse les fichiers non privés, les valeurs qui
+remplaceraient le domaine ou le `PATH`, les routes serveur historiques et les
+valeurs de credential en ligne qui ne sont pas déjà préservées dans le profil.
+Un défaut de configuration ne crée aucune authentification.
+
+```sh
+yolo ops mcp-environment prepare --output /private/aphrody/mcp --binary /absolute/path/aphrody-mcp --profile aphrody
+yolo ops mcp-environment probe --output /private/aphrody/mcp --binary /absolute/path/aphrody-mcp --profile aphrody
+yolo ops mcp-environment apply --output /private/aphrody/mcp --binary /absolute/path/aphrody-mcp --profile aphrody --home /home/aphro
+```
+
+`prepare` écrit le profil en mode 0600 dans un dossier 0700 et ne renvoie que
+les noms de clés, leurs sources, une empreinte et les clés requises manquantes.
+`probe` utilise le client natif pour tester le transport stdio et un appel RAG
+de lecture ; il n'ajoute pas de second serveur. `apply` ne touche qu'aux
+configurations fournisseurs déjà présentes, conserve leurs autres options,
+crée des sauvegardes privées et n'écrit qu'après la sonde réussie. C'est une
+mutation locale des configurations clientes : l'exécuter seulement sur le home
+explicitement visé et après validation du profil. Les tests emploient des
+valeurs de fixture ; ils ne lisent ni authentification réelle ni serveur distant.
+
 Les unités tournent sous `ubuntu`, avec `NoNewPrivileges`, `ProtectSystem=strict`,
 `ProtectHome=tmpfs`, des chemins d'écriture explicites et aucun droit implicite
 sur les sockets de conteneurs. Les deux unités exposent Bun et les binaires

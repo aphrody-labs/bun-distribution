@@ -10,9 +10,8 @@ const repo = join(import.meta.dir, "..", "..", "..", "..");
 const EXPORT_CRATES = [
   "crates/interop/ffi/src",
   "crates/ui/bun/src",
-  "crates/compat/n2b-native/src",
+  "crates/compat/n2b-core/src",
   "crates/compat/oxc-bridge/src",
-  "crates/ai/rag-ffi/src",
 ];
 
 // These existing C ABI exports remain for compatibility. Their JS consumers
@@ -48,6 +47,22 @@ const OWN_BINDING_EXPORTS = new Set([
   "aphrody_rag_call_vec",
   "aphrody_rag_take",
   "aphrody_rag_last_error",
+  // Web pipeline and command dispatch (bound in pipeline.ts / PIPELINE_SYMBOLS):
+  "aphrody_command_submit",
+  "aphrody_mcp_tool_submit",
+  "aphrody_web_pipeline_abi_version",
+  "aphrody_web_pipeline_pending_count",
+  "aphrody_web_pipeline_submit",
+  // Python runtime (bound by vu / aphrody-py):
+  "aphrody_py_call",
+  "aphrody_py_eval",
+  "aphrody_py_finalize",
+  "aphrody_py_init",
+  "aphrody_py_last_error",
+  "aphrody_py_load",
+  "aphrody_py_run",
+  "aphrody_py_string_free",
+  "aphrody_py_version",
 ]);
 
 function rustFiles(dir: string): string[] {

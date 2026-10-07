@@ -16,7 +16,7 @@
 ## Docs
 
 - [Documentation index](../../README.md)
-- [Aphrody Discord Architecture](../../architecture/discord/README.md)
+- [Architecture Discord](../../architecture/discord/README.md)
 - [Frontière runtime Yolo / produit Aphrody](../../architecture/runtime-native/README.md)
 - [Shell and terminal layers](../../architecture/shell/README.md)
 - [Parcours Workspace Aphrody](../../guides/workspace/README.md)
@@ -38,7 +38,7 @@
 - [Aphrody AI](../../products/ai/README.md)
 - [Aphrody Compat](../../products/compat/README.md)
 - [Aphrody Contracts](../../products/contracts/README.md)
-- [Aphrody Discord Ecosystem](../../products/discord/README.md)
+- [Intégration Discord](../../products/discord/README.md)
 - [Aphrody Infra](../../products/infra/README.md)
 - [Aphrody Native](../../products/native/README.md)
 - [Aphrody OS](../../products/os/README.md)

@@ -45,21 +45,6 @@
       ]
     },
     {
-      "id": "bun-bun",
-      "parallel": false,
-      "steps": [
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/bun-test-dom",
-            "typecheck"
-          ]
-        }
-      ]
-    },
-    {
       "id": "bun-os",
       "parallel": false,
       "steps": [
@@ -654,33 +639,6 @@
       "id": "bun-discord",
       "parallel": false,
       "steps": [
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/messaging",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/messaging",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/messaging",
-            "build"
-          ]
-        },
         {
           "repo": "aphrody",
           "command": [

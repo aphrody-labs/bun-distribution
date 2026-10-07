@@ -1,0 +1,33 @@
+From 0d87bb8fcbeef9af491b2e35466300f49efab957 Mon Sep 17 00:00:00 2001
+From: aphrody-dev <contact@aphrody.com>
+Date: Wed, 7 Oct 2026 00:20:13 +0200
+Subject: [PATCH 9/9] feat(cloud): cloud-ssh configures git identity, gh
+ credential helper and HTTPS remotes
+
+(cherry picked from commit 8c744781ed9e9940999b7012c4dc48ac31863cbb)
+---
+ scripts/dev/cloud-ssh.sh | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/scripts/dev/cloud-ssh.sh b/scripts/dev/cloud-ssh.sh
+index 47f5f4e3e2..15336856cd 100755
+--- a/scripts/dev/cloud-ssh.sh
++++ b/scripts/dev/cloud-ssh.sh
+@@ -10,6 +10,14 @@
+ #   --force               run outside a cloud session
+ set -u
+ [[ "${CLAUDE_CODE_REMOTE:-}" == "true" || "${1:-}" == "--force" ]] || exit 0
++# GitHub: git identity, HTTPS through the gh credential helper (the owner SSH alias github-dev does not exist here).
++git config --global user.name "aphrody-dev"
++git config --global user.email "contact@aphrody.com"
++git config --global url."https://github.com/".insteadOf "git@github-dev:"
++if [[ -n "${GH_TOKEN:-}" ]] && command -v gh >/dev/null 2>&1; then
++  git config --global credential.https://github.com.helper '!gh auth git-credential'
++  gh auth status >/dev/null 2>&1 && echo "cloud-ssh: gh authenticated" || echo "cloud-ssh: gh token rejected"
++fi
+ key_b64="${APHRODY_SSH_KEY_B64:-${SHENRON_SSH_KEY_B64:-}}"
+ vps="${APHRODY_VPS_HOST:-${SHENRON_VPS_HOST:-}}"
+ dbfr="${APHRODY_DBFR_HOST:-${SHENRON_DBFR_HOST:-}}"
+-- 
+2.43.0
+

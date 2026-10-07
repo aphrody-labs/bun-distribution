@@ -52,7 +52,11 @@ test("a selected Drive worker needs no agent settings and cannot retain unrelate
   const next = await syncPass(
     {
       ...config,
-      ragMonitor: { unit: "rag.service", reportPath: "/private/rag.json", intervalSeconds: 60 },
+      ragMonitor: {
+        unit: "shenron-rag-sync.service",
+        reportPath: "/private/rag.json",
+        intervalSeconds: 60,
+      },
     },
     previous,
     async (argv, env) => {
@@ -186,4 +190,151 @@ test("unsafe receipt names cannot escape the destination or invoke a remote comm
   );
   expect(calls).toBe(0);
   expect(await readdir(path)).toEqual([]);
+});
+
+test("review pending and blocked receipts gate downstream consumers even between review ticks", async () => {
+  const driveReview = {
+    intervalSeconds: 300,
+    receiptRoot: "/private/reviews",
+    stateFile: "/private/state",
+    baselineDirectory: "/private/baseline",
+    reviewedDirectory: "/private/reviewed",
+    a2aUrl: "http://localhost:8788",
+    tokenFile: "/private/token",
+    peer: "codex",
+    ownerModule: { path: "/private/owner", sha256: "a".repeat(64) },
+    validatorModule: { path: "/private/validator", sha256: "b".repeat(64) },
+  };
+  await Promise.all(
+    ([{ review_pending: 1 }, { review_blocked: 1 }] as Record<string, number>[]).map(
+      async (report) => {
+        const previous: SyncState = {
+          "drive-review": {
+            ok: true,
+            nextAt: 5000,
+            failures: 0,
+            lastSuccess: { observedAt: "2026-10-07T13:00:00.000Z", report },
+          },
+        };
+        let calls = 0;
+        const next = await syncPass(
+          {
+            ...config,
+            driveReview,
+            jobs: ["drive-review", "drive-retrieval", "drive-replica"],
+            replica: {
+              incoming: "/private/incoming",
+              directory: "/private/dest",
+              stateRoot: "/private/stateRoot",
+              shenronRoot: "/private/shenron",
+              contract: "/private/contract",
+              intervalSeconds: 300,
+            },
+          },
+          previous,
+          async () => {
+            calls++;
+            return "{}";
+          },
+          1000,
+        );
+        expect(calls).toBe(0);
+        for (const job of ["drive-retrieval", "drive-replica"]) {
+          expect(next[job]?.ok).toBe(false);
+          expect(next[job]?.waiting?.report).toEqual(report);
+          expect(next[job]?.lastSuccess).toBeUndefined();
+        }
+      },
+    ),
+  );
+});
+test("reviewed indexing requires an intact managed generation rather than prior success alone", async () => {
+  const root = await directory();
+  let calls = 0;
+  const next = await syncPass(
+    {
+      ...config,
+      jobs: ["drive-review", "drive-retrieval"],
+      driveReview: {
+        intervalSeconds: 300,
+        receiptRoot: root,
+        stateFile: root + "/state",
+        baselineDirectory: root + "/baseline",
+        reviewedDirectory: root + "/absent",
+        a2aUrl: "http://localhost:8788",
+        tokenFile: root + "/token",
+        peer: "codex",
+        ownerModule: { path: root + "/owner", sha256: "a".repeat(64) },
+        validatorModule: { path: root + "/validator", sha256: "b".repeat(64) },
+      },
+    },
+    {
+      "drive-review": {
+        ok: true,
+        failures: 0,
+        nextAt: 5000,
+        lastSuccess: {
+          observedAt: "2026-10-07T13:00:00.000Z",
+          report: { unchanged: 7, verified: 7 },
+        },
+      },
+    },
+    async () => {
+      calls++;
+      return '{"errors":[]}';
+    },
+    1000,
+  );
+  expect(calls).toBe(0);
+  expect(next["drive-retrieval"]?.ok).toBe(false);
+});
+test("remote receipts use native Bun atomic writes and expose only whitelisted public metadata", async () => {
+  const path = await directory();
+  const next: SyncState = {
+    ...state,
+    "drive-review": {
+      ok: true,
+      nextAt: 300000,
+      failures: 0,
+      lastSuccess: {
+        observedAt: "2026-10-07T13:00:00.000Z",
+        report: { review_pending: 1, token: "private" } as never,
+      },
+    },
+    "drive-retrieval": {
+      ok: false,
+      failures: 0,
+      nextAt: 60000,
+      waiting: { observedAt: "2026-10-07T13:00:00.000Z", report: { review_pending: 1 } },
+    },
+    secret: { ok: true, failures: 0, nextAt: 1, token: "private" } as never,
+  };
+  await publishSyncReceipts(
+    { ...config, publication: { ...config.publication, host: "vps", directory: path } },
+    next,
+    async (argv) => {
+      const command = argv[argv.indexOf("--cmd") + 1]!;
+      expect(command.startsWith("/home/ubuntu/.bun/bin/bun -e '")).toBe(true);
+      expect(command).not.toContain("python");
+      const child = Bun.spawn(
+        ["bash", "-c", command.replace("/home/ubuntu/.bun/bin/bun", process.execPath)],
+        { stdout: "pipe", stderr: "pipe" },
+      );
+      const [output, error, code] = await Promise.all([
+        new Response(child.stdout).text(),
+        new Response(child.stderr).text(),
+        child.exited,
+      ]);
+      expect(error).toBe("");
+      expect(code).toBe(0);
+      return output;
+    },
+  );
+  const receipt = await Bun.file(join(path, "agent-sync-vps-status.json")).json();
+  expect(JSON.stringify(receipt)).not.toContain("private");
+  expect(receipt.jobs.secret).toBeUndefined();
+  expect(receipt.jobs["drive-review"].lastSuccess.report).toEqual({ review_pending: 1 });
+  expect(receipt.jobs["drive-retrieval"].waiting.report).toEqual({ review_pending: 1 });
+  expect((await stat(join(path, "agent-sync-vps-status.json"))).mode & 0o777).toBe(0o600);
+  expect(await readdir(path)).toEqual(["agent-sync-vps-status.json"]);
 });

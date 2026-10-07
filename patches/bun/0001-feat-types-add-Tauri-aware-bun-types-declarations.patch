@@ -1,0 +1,85 @@
+From c72ae582ab249f42ed23567f149ecc8d81355244 Mon Sep 17 00:00:00 2001
+From: aphrody-dev <contact@aphrody.com>
+Date: Sat, 3 Oct 2026 11:51:11 +0200
+Subject: [PATCH 1/9] feat(types): add Tauri-aware bun-types declarations
+
+(cherry picked from commit d2d160ee63bb6cc684146021b9efda197a5514a6)
+---
+ packages/bun-types/index.d.ts |  1 +
+ packages/bun-types/tauri.d.ts | 52 +++++++++++++++++++++++++++++++++++
+ 2 files changed, 53 insertions(+)
+ create mode 100644 packages/bun-types/tauri.d.ts
+
+diff --git a/packages/bun-types/index.d.ts b/packages/bun-types/index.d.ts
+index 0195941eee..6940642e88 100644
+--- a/packages/bun-types/index.d.ts
++++ b/packages/bun-types/index.d.ts
+@@ -24,6 +24,7 @@
+ /// <reference path="./sql.d.ts" />
+ /// <reference path="./security.d.ts" />
+ /// <reference path="./bundle.d.ts" />
++/// <reference path="./tauri.d.ts" />
+ 
+ /// <reference path="./bun.ns.d.ts" />
+ 
+diff --git a/packages/bun-types/tauri.d.ts b/packages/bun-types/tauri.d.ts
+new file mode 100644
+index 0000000000..8c3cbee7e9
+--- /dev/null
++++ b/packages/bun-types/tauri.d.ts
+@@ -0,0 +1,52 @@
++/**
++ * Native Tauri 3 IPC & Webview Types for Bun Runtime
++ * Enables bi-directional integration: Bun is aware of Tauri IPC primitives,
++ * and Tauri applications can run with zero-overhead Bun Web APIs.
++ */
++
++declare module "bun" {
++  /**
++   * Tauri 3 Native IPC Bridge & Webview Integration
++   */
++  namespace tauri {
++    /**
++     * IPC Command Handler function signature
++     */
++    type CommandHandler<TArgs = unknown, TResult = unknown> = (args: TArgs) => Promise<TResult> | TResult;
++
++    /**
++     * IPC Request message payload exchanged between frontend & backend
++     */
++    interface IpcMessage<TPayload = unknown> {
++      readonly cmd: string;
++      readonly callback: number;
++      readonly error: number;
++      readonly payload: TPayload;
++    }
++
++    /**
++     * Window & webview bounds in physical coordinates
++     */
++    interface PhysicalBounds {
++      readonly x: number;
++      readonly y: number;
++      readonly width: number;
++      readonly height: number;
++    }
++
++    /**
++     * Hardware & Wayland display configuration detected by Tauri 3 backend
++     */
++    interface DisplayBackendConfig {
++      readonly isWayland: boolean;
++      readonly waylandDisplay?: string | undefined;
++      readonly dmaBufRendererDisabled: boolean;
++      readonly explicitSyncDisabled: boolean;
++    }
++
++    /**
++     * Probe current Tauri / Wayland runtime flags
++     */
++    function getDisplayConfig(): DisplayBackendConfig;
++  }
++}
+-- 
+2.43.0
+

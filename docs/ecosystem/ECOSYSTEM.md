@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 1 repositories (1 aphrody, 0 shared, 0 experiments), 205 crates, 9 binaries, 128 Bun packages, 8 uv packages, 706 CLI commands, 370 MCP tools.
+Totals: 1 repositories (1 aphrody, 0 shared, 0 experiments), 205 crates, 9 binaries, 126 Bun packages, 8 uv packages, 706 CLI commands, 370 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -227,7 +227,7 @@ Canonical Rust/Bun monorepo
 | `yolo-pyo3` | crates/engine/yolo-pyo3 | PyO3 0.29 Native Extension Module for YOLO Monorepo (Free-threaded, No-GIL, py.detach) |  |  |
 | `yolo-runtime` | crates/engine/yolo-runtime | Versioned C ABI of the precompiled YOLO native runtime (first slice: system stats and cancellable benchmark) |  | browser, cuda, default, gpu |
 
-### Bun packages (128)
+### Bun packages (126)
 
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
@@ -239,7 +239,6 @@ Canonical Rust/Bun monorepo
 | `@aphrody/assets` | m3/packages/assets | File-kind icons, extension badges, brand logos, images, sounds, videos and lottie animations, with icon resolution (getIcon, getLayeredIcon, getBeardedIcon, getIcon20): the Spacedrive @sd/assets set, merged with SpaceUI's @spacedrive/icons, for the Material Design 3 explorer surfaces. |  |
 | `@aphrody/bun` | packages/interop/native | Native Rust FFI wrappers for Bun. |  |
 | `@aphrody/bun-forge` | packages/engine/forge | yolo forge: builds the aphrody-labs/bun fork on a fresh Linux machine, one temporary checkout per commit |  |
-| `@aphrody/bun-test-dom` | packages/bun/test-dom |  |  |
 | `@aphrody/canvas` | m3/packages/canvas | Aphrody native Skia canvas facade over the pinned upstream @napi-rs/canvas runtime |  |
 | `@aphrody/cli` | crates/tauri/aphrody-tauri-cli-node | Command line interface for building Tauri apps | `tauri` |
 | `@aphrody/cli-darwin-arm64` | crates/tauri/aphrody-tauri-cli-node/npm/darwin-arm64 | Command line interface for building Tauri apps |  |
@@ -287,7 +286,6 @@ Canonical Rust/Bun monorepo
 | `@aphrody/m3-theme` | m3/packages/m3-theme | Canonical Material 3 fusion sheets: tokens.css (M3 + shadcn/ui + Tailwind v4 aliases), tailwind.css (every M3 system token as a Tailwind v4 utility) and spaceui.css (the SpaceUI themes rebuilt as M3 dynamic schemes, with SpaceUI compatibility aliases). |  |
 | `@aphrody/m3-tokens` | m3/packages/m3-tokens | Material 3 design tokens (--md-sys-*) for the @aphrody/material-web fork: MUI-theme → M3 token CSS generation and runtime Material You dynamic colour via material-color-utilities. |  |
 | `@aphrody/material-design-icons` | m3/packages/material-design-icons | Material Symbols SVG catalogue (forks/material-design-icons) with SVG to ICO/ICNS sync for Tauri desktop icons. | `m3-svg-to-ico` |
-| `@aphrody/messaging` | packages/discord/aphrody-messaging | Aphrody messaging channel contracts and Discord REST adapter. |  |
 | `@aphrody/n2b-core` | packages/engine/n2b-client | Native N2B SDK scan, explicit legacy CLI helpers and Bun shims |  |
 | `@aphrody/os` | packages/os/kernel-client | Bun client for the Aphrody OS kernel: join the OS as a subsystem, call any OS tool or skill. |  |
 | `@aphrody/ovh` | packages/infra/ovh | OVH cloud library for Aphrody Infra: DNS, VPS, Email, and multi-profile operations in pure Bun (command line: aphrody ovh) |  |

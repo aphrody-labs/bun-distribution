@@ -1,0 +1,502 @@
+From 0c76b549571b8f9054b21399362ba85634851570 Mon Sep 17 00:00:00 2001
+From: aphrody-dev <contact@aphrody.com>
+Date: Mon, 5 Oct 2026 00:30:32 +0200
+Subject: [PATCH 3/9] Propagate Rust native dependencies to the Linux Bun
+ linker
+
+(cherry picked from commit cf4e249669120828ca4c133ecd528195bb2cdc5c)
+---
+ scripts/build/bun.ts                         |   7 +-
+ scripts/build/ninja.ts                       |   3 +-
+ scripts/build/rust.ts                        |  11 +-
+ scripts/build/rust/native-link.ts            | 126 ++++++++++
+ scripts/build/timings.ts                     |   1 +
+ test/internal/build-rust-native-link.test.ts | 240 +++++++++++++++++++
+ 6 files changed, 380 insertions(+), 8 deletions(-)
+ create mode 100644 scripts/build/rust/native-link.ts
+ create mode 100644 test/internal/build-rust-native-link.test.ts
+
+diff --git a/scripts/build/bun.ts b/scripts/build/bun.ts
+index 94b2d70c88..5eb2102646 100644
+--- a/scripts/build/bun.ts
++++ b/scripts/build/bun.ts
+@@ -177,7 +177,7 @@ export function emitBun(n: Ninja, cfg: Config, sources: Sources): BunOutput {
+   const rustArgon2Dep = resolveDep(n, cfg, rustArgon2, depsByName);
+   assert(rustArgon2Dep !== null, "rust-argon2 resolveDep returned null — should never be skipped");
+   depsByName.set(rustArgon2.name, rustArgon2Dep);
+-  const rustObjects = emitRust(n, cfg, {
++  const rust = emitRust(n, cfg, {
+     codegenOrderOnly: codegen.rustInputs,
+     rustSources: sources.rust,
+     vendorStamps: [...lolhtmlDep.outputs, ...rustArgon2Dep.outputs],
+@@ -427,13 +427,14 @@ export function emitBun(n: Ninja, cfg: Config, sources: Sources): BunOutput {
+   // export the C++ side touches is reached from those roots.
+   const shimInputs = emitShims(n, cfg);
+   const depLink = lazyDepObjects(cfg, depObjects);
+-  const linkObjects = [...cxxObjects, ...cObjects, ...depLink.eager, ...rustObjects, ...windowsRes];
++  const linkObjects = [...cxxObjects, ...cObjects, ...depLink.eager, ...rust.rlibs, ...windowsRes];
+   const ldflags = [...flags.ldflags, ...systemLibs(cfg)];
++  if (rust.nativeLink !== undefined) ldflags.push(quote(`@${rust.nativeLink}`, cfg.host.os === "windows"));
+   const exe = link(n, cfg, exeName, linkObjects, {
+     libs: depLibs,
+     lazyObjects: depLink.lazy,
+     flags: ldflags,
+-    implicitInputs: [...linkImplicitInputs(cfg), ...shimInputs],
++    implicitInputs: [...linkImplicitInputs(cfg), ...shimInputs, ...(rust.nativeLink ? [rust.nativeLink] : [])],
+     // Declare the maps the release link writes as side-products (`perf`
+     // symbolication on linux; the order file tracer's symbol table on windows).
+     linkerMapOutputs: linkerMapOutputs(cfg),
+diff --git a/scripts/build/ninja.ts b/scripts/build/ninja.ts
+index 5a02f2d67e..d1aaefb8ff 100644
+--- a/scripts/build/ninja.ts
++++ b/scripts/build/ninja.ts
+@@ -53,8 +53,9 @@ const ruleVars = {
+   pch_msvc: ["cxxflags", "pch_header", "pch_stub_obj"],
+   // configure.ts
+   regen: [],
+-  // rust/emit.ts
++  // rust/emit.ts, rust/native-link.ts
+   rust_build_script: ["manifest", "crate"],
++  rust_native_link: ["manifest"],
+   rust_plan: ["planinput", "plan"],
+   rust_rustc: ["manifest", "crate", "what"],
+   // shims.ts
+diff --git a/scripts/build/rust.ts b/scripts/build/rust.ts
+index a936123806..43a34d0742 100644
+--- a/scripts/build/rust.ts
++++ b/scripts/build/rust.ts
+@@ -41,6 +41,7 @@ import { computeCpuTargetFlags, rustLtoInLink } from "./flags.ts";
+ import type { Ninja } from "./ninja.ts";
+ import { envify } from "./rust/cargo-env.ts";
+ import { emitRustPlan, emitRustUnits, registerRustUnitRules } from "./rust/emit.ts";
++import { emitRustNativeLink } from "./rust/native-link.ts";
+ import { type PlanInput, planEnv, planPath, readPlan } from "./rust/plan.ts";
+ import { buildRustGraph, linkedRlibs } from "./rust/units.ts";
+ 
+@@ -675,9 +676,10 @@ function shimCargoInvocation(
+ /**
+  * Emit the Rust step: for bun_runtime — and on Windows targets the .bin/ shim — a plan edge and, once the plans
+  * exist, one edge per unit. Returns what the link takes beside the C/C++ objects: the rlib of `bun_runtime` and of
+- * every library it depends on, std's included. No crate is a final Rust artifact; the link is bun's own.
++ * every library it depends on, std's included, and Linux build-script native link inputs. No crate is a final Rust
++ * artifact; the link is bun's own.
+  */
+-export function emitRust(n: Ninja, cfg: Config, inputs: RustBuildInputs): string[] {
++export function emitRust(n: Ninja, cfg: Config, inputs: RustBuildInputs): { rlibs: string[]; nativeLink?: string } {
+   assert(cfg.cargo !== undefined, "building bun's Rust crates requires cargo but no rust toolchain was found", {
+     hint: "Install rust: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh",
+   });
+@@ -743,7 +745,7 @@ export function emitRust(n: Ninja, cfg: Config, inputs: RustBuildInputs): string
+   if (runtime.plan === undefined || (shim !== undefined && shim.plan === undefined)) {
+     n.phony("bun-rust", planFiles);
+     n.blank();
+-    return [];
++    return { rlibs: [] };
+   }
+   const toolchainBin = (tool: string) => join(rustSysroot, "bin", `${tool}${cfg.host.exeSuffix}`);
+   const context = {
+@@ -796,9 +798,10 @@ export function emitRust(n: Ninja, cfg: Config, inputs: RustBuildInputs): string
+     },
+   );
+   const rlibs = linkedRlibs(graph).map(unit => unit.output);
++  const nativeLink = emitRustNativeLink(n, cfg, graph);
+   n.phony("bun-rust", rlibs);
+   n.blank();
+-  return rlibs;
++  return { rlibs, ...(nativeLink !== undefined ? { nativeLink } : {}) };
+ }
+ 
+ /**
+diff --git a/scripts/build/rust/native-link.ts b/scripts/build/rust/native-link.ts
+new file mode 100644
+index 0000000000..427ac8e8d5
+--- /dev/null
++++ b/scripts/build/rust/native-link.ts
+@@ -0,0 +1,126 @@
++/**
++ * The Linux executable is linked by clang++, not rustc. Native libraries recorded only in rlib metadata
++ * therefore need a final-link input of their own. Build scripts are run by ninja, so collect their output
++ * at build time, after the target scripts ran, rather than reading potentially stale output at configure.
++ */
++import { readFileSync } from "node:fs";
++import { dirname, isAbsolute, resolve } from "node:path";
++import type { Config } from "../config.ts";
++import { BuildError, assert } from "../error.ts";
++import { writeIfChanged } from "../fs.ts";
++import type { Ninja } from "../ninja.ts";
++import { quote } from "../shell.ts";
++import type { BuildScriptOutput } from "./cargo-env.ts";
++import { linkedRlibs, type RustGraph } from "./units.ts";
++
++/** clang response-file quoting, not shell quoting: neither a shell nor -Wl parses these arguments. */
++export function nativeLinkResponse(args: string[]): string {
++  return args.map(arg => `"${arg.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join("\n") + "\n";
++}
++
++/**
++ * Linux native dependencies emitted by cargo build scripts. A normal static library is already packed
++ * into its rlib by rustc (+bundle is the default); only -bundle archives need another linker input.
++ * Per-target rustc-link-arg directives are not transitive library metadata and must not leak from deps.
++ */
++export function nativeLinkArguments(
++  outputs: (Pick<BuildScriptOutput, "linkLibs" | "linkSearch"> & { cwd: string })[],
++): string[] {
++  const args: string[] = [];
++  // Search directories precede libraries, preserving Cargo's order (no sorting or library deduplication).
++  for (const output of outputs) {
++    for (const search of output.linkSearch) {
++      const match = /^(native|all|dependency|crate|framework)=(.*)$/.exec(search);
++      const kind = match?.[1] ?? "all";
++      const path = match?.[2] ?? search;
++      if (kind === "dependency" || kind === "crate") continue;
++      assert(kind !== "framework", "Rust framework search paths are not supported by the Linux native link");
++      assert(path.length > 0 && !/[\0\r\n]/.test(path), "Invalid Rust native library search path");
++      // rustc runs in the package directory; the final clang link runs in the build directory.
++      args.push(`-L${isAbsolute(path) ? path : resolve(output.cwd, path)}`);
++    }
++  }
++  for (const output of outputs) {
++    for (const spec of output.linkLibs) {
++      const equal = spec.indexOf("=");
++      const [kind, modifiers = ""] = (equal < 0 ? "dylib" : spec.slice(0, equal)).split(":");
++      // NAME:RENAME changes rustc's #[link] name, not the name of the library on disk.
++      const name = (equal < 0 ? spec : spec.slice(equal + 1)).split(":")[0]!;
++      assert(name.length > 0 && !/[\0\r\n]/.test(name), `Invalid Rust native library: ${spec}`);
++      assert(kind === "static" || kind === "dylib", `Unsupported Linux Rust native library: ${spec}`);
++      const mods = new Map<string, boolean>();
++      for (const modifier of modifiers === "" ? [] : modifiers.split(",")) {
++        const match = /^([+-])(bundle|whole-archive|verbatim|as-needed)$/.exec(modifier);
++        assert(match !== null && !mods.has(match[2]!), `Unsupported Rust native library modifier: ${spec}`);
++        mods.set(match[2]!, match[1] === "+");
++      }
++      assert(
++        kind === "static" ? !mods.has("as-needed") : !mods.has("bundle") && !mods.has("whole-archive"),
++        `Invalid Rust native library modifiers: ${spec}`,
++      );
++      if (kind === "static" && (mods.get("bundle") ?? true)) {
++        // Whole-archive metadata would require selecting individual bundled members from an rlib.
++        assert(!mods.get("whole-archive"), `Bundled whole-archive requires rustc final linking: ${spec}`);
++        continue;
++      }
++      const scoped = kind === "static" || mods.has("as-needed");
++      if (scoped) args.push("-Wl,--push-state");
++      if (kind === "static") {
++        args.push("-Wl,-Bstatic");
++        if (mods.get("whole-archive")) args.push("-Wl,--whole-archive");
++      } else if (mods.has("as-needed")) {
++        args.push(mods.get("as-needed") ? "-Wl,--as-needed" : "-Wl,--no-as-needed");
++      }
++      args.push(`-l${mods.get("verbatim") ? ":" : ""}${name}`);
++      if (scoped) args.push("-Wl,--pop-state");
++    }
++  }
++  return args;
++}
++
++/** Return a generated clang response file, or nothing for the unchanged non-Linux build graphs. */
++export function emitRustNativeLink(n: Ninja, cfg: Config, graph: RustGraph): string | undefined {
++  if (!cfg.linux) return undefined;
++  // linkedRlibs excludes proc-macros and their host-only transitive dependencies, including on native builds.
++  const scripts = new Map<string, { output: string; cwd: string }>();
++  for (const unit of linkedRlibs(graph)) {
++    if (unit.buildScript) {
++      scripts.set(unit.buildScript.output, { output: unit.buildScript.output, cwd: dirname(unit.pkg.manifest_path) });
++    }
++  }
++  if (scripts.size === 0) return undefined;
++  const script = import.meta.filename;
++  const manifest = resolve(graph.dir, "native-link.json");
++  const response = resolve(graph.dir, "native-link.rsp");
++  writeIfChanged(manifest, JSON.stringify([...scripts.values()], null, 2) + "\n");
++  const hostWindows = cfg.host.os === "windows";
++  n.rule("rust_native_link", {
++    command: `${quote(cfg.bun, hostWindows)} ${quote(script, hostWindows)} $manifest $out`,
++    description: "Rust native link inputs $out",
++    restat: true,
++  });
++  n.build({
++    outputs: [response],
++    rule: "rust_native_link",
++    inputs: [...scripts.keys()],
++    implicitInputs: [manifest, script, resolve(import.meta.dir, "../fs.ts"), resolve(import.meta.dir, "../error.ts")],
++    vars: { manifest: quote(manifest, hostWindows) },
++  });
++  return response;
++}
++
++if (import.meta.main) {
++  try {
++    const [manifest, response] = process.argv.slice(2);
++    assert(manifest !== undefined && response !== undefined, "native-link.ts requires a manifest and response path");
++    const scripts = JSON.parse(readFileSync(manifest, "utf8")) as { output: string; cwd: string }[];
++    const outputs = scripts.map(({ output, cwd }) => ({
++      ...(JSON.parse(readFileSync(output, "utf8")) as BuildScriptOutput),
++      cwd,
++    }));
++    writeIfChanged(response, nativeLinkResponse(nativeLinkArguments(outputs)));
++  } catch (error) {
++    process.stderr.write(error instanceof BuildError ? error.format() : `${error}\n`);
++    process.exitCode = 1;
++  }
++}
+diff --git a/scripts/build/timings.ts b/scripts/build/timings.ts
+index a77d53a63a..a8d86ecfcd 100644
+--- a/scripts/build/timings.ts
++++ b/scripts/build/timings.ts
+@@ -818,6 +818,7 @@ const ruleLane: Record<RuleName, Lane> = {
+   npm_install: "codegen",
+   rust_build_script: "Rust",
+   rust_plan: "Rust",
++  rust_native_link: "link and checks",
+   rust_rustc: "Rust",
+   cc: "C and C++",
+   cxx: "C and C++",
+diff --git a/test/internal/build-rust-native-link.test.ts b/test/internal/build-rust-native-link.test.ts
+new file mode 100644
+index 0000000000..1aafbda455
+--- /dev/null
++++ b/test/internal/build-rust-native-link.test.ts
+@@ -0,0 +1,240 @@
++import { describe, expect, test } from "bun:test";
++import { isLinux, tempDir } from "harness";
++import { mkdirSync, readFileSync, statSync, utimesSync, writeFileSync } from "node:fs";
++import { join } from "node:path";
++import { link } from "../../scripts/build/compile.ts";
++import type { Config } from "../../scripts/build/config.ts";
++import { Ninja } from "../../scripts/build/ninja.ts";
++import { emitRustNativeLink, nativeLinkArguments, nativeLinkResponse } from "../../scripts/build/rust/native-link.ts";
++import { parseBuildScriptOutput } from "../../scripts/build/rust/run.ts";
++import type { RustGraph, RustUnit, UnitDep } from "../../scripts/build/rust/units.ts";
++
++function output(directives: string, cwd = "/package") {
++  return { ...parseBuildScriptOutput(directives), cwd };
++}
++
++test("native directories and dylibs reach the Linux final link in dependency order", () => {
++  const gtk = output(
++    "cargo:rustc-link-search=native=/usr/lib\ncargo:rustc-link-lib=gtk-3\ncargo:rustc-link-lib=gdk-3\n",
++  );
++  const transitive = output(
++    "cargo:rustc-link-search=dependency=/rust/deps\ncargo:rustc-link-search=/opt/native lib\n" +
++      "cargo:rustc-link-lib=dylib=gio-2.0\ncargo:rustc-link-lib=gtk-3\ncargo:rustc-link-arg=DO_NOT_PROPAGATE\n",
++  );
++  expect(nativeLinkArguments([gtk, transitive])).toEqual([
++    "-L/usr/lib",
++    "-L/opt/native lib",
++    "-lgtk-3",
++    "-lgdk-3",
++    "-lgio-2.0",
++    "-lgtk-3",
++  ]);
++});
++
++test("relative native search paths belong to their package, not the final link directory", () => {
++  expect(nativeLinkArguments([output("cargo:rustc-link-search=native=../lib\n", "/package/sys")])).toEqual([
++    "-L/package/lib",
++  ]);
++});
++
++test("bundled archives are not linked twice; external archive selection restores linker state", () => {
++  const script = output(
++    "cargo:rustc-link-lib=static=bundled\ncargo:rustc-link-lib=static:+bundle=also_bundled\n" +
++      "cargo:rustc-link-lib=static:-bundle,+whole-archive,+verbatim=libnative.a\n" +
++      "cargo:rustc-link-lib=dylib:-as-needed=gtk-3:renamed\ncargo:rustc-link-lib=m\n",
++  );
++  expect(nativeLinkArguments([script])).toEqual([
++    "-Wl,--push-state",
++    "-Wl,-Bstatic",
++    "-Wl,--whole-archive",
++    "-l:libnative.a",
++    "-Wl,--pop-state",
++    "-Wl,--push-state",
++    "-Wl,--no-as-needed",
++    "-lgtk-3",
++    "-Wl,--pop-state",
++    "-lm",
++  ]);
++});
++
++test.each([
++  ["framework=AppKit", "Unsupported Linux Rust native library"],
++  ["static:+whole-archive=packed", "Bundled whole-archive requires rustc final linking"],
++  ["dylib:+whole-archive=wrong", "Invalid Rust native library modifiers"],
++  ["dylib:+unknown=wrong", "Unsupported Rust native library modifier"],
++  ["dylib=", "Invalid Rust native library"],
++])("rejects an unsupported native link contract: %s", (spec, error) => {
++  expect(() => nativeLinkArguments([{ linkSearch: [], linkLibs: [spec], cwd: "/package" }])).toThrow(error);
++});
++
++/** Only the fields read by the real dependency walk are needed for this graph fixture. */
++function unit(name: string, platform: string, script?: string, dependencies: RustUnit[] = []): RustUnit {
++  return {
++    crateName: name,
++    kind: "lib",
++    platform,
++    profile: { panic: "abort" },
++    deps: dependencies.map(dependency => ({ unit: dependency, externName: dependency.crateName }) as UnitDep),
++    buildScript: script === undefined ? undefined : ({ output: script } as RustUnit),
++  } as RustUnit;
++}
++
++function fixture(dir: string, linux = true) {
++  const script = join(dir, "target-script.json");
++  const host = unit("macro", "host", join(dir, "missing-host-script.json"));
++  host.kind = "proc-macro";
++  const unusedPanic = unit("panic_unwind", "x86_64-unknown-linux-gnu", join(dir, "missing-unwind-script.json"));
++  const dependency = unit("gtk_sys", "x86_64-unknown-linux-gnu", script);
++  dependency.pkg = { manifest_path: join(dir, "Cargo.toml") } as RustUnit["pkg"];
++  const root = unit("bun_runtime", "x86_64-unknown-linux-gnu", undefined, [host, unusedPanic, dependency]);
++  const graph = { root, dir } as RustGraph;
++  const cfg = {
++    linux,
++    windows: false,
++    buildDir: dir,
++    cwd: dir,
++    host: { os: "linux" },
++    bun: process.execPath,
++    cxx: "/fake/clang++",
++    ld: "/fake/ld.lld",
++    exeSuffix: "",
++  } as Config;
++  return { script, graph, cfg };
++}
++
++describe("Ninja native response edge", () => {
++  test("is a final-link dependency and excludes host-only and unselected panic build scripts", () => {
++    using dir = tempDir("rust-native-link", {});
++    const { script, graph, cfg } = fixture(String(dir));
++    const n = new Ninja({ buildDir: String(dir) });
++    const rsp = emitRustNativeLink(n, cfg, graph)!;
++    n.rule("link", { command: "clang++ @$out.rsp $lazy $ldflags -o $out" });
++    link(n, cfg, "bun", [], { libs: [], flags: [`@${rsp}`], implicitInputs: [rsp] });
++    expect(JSON.parse(readFileSync(join(String(dir), "native-link.json"), "utf8"))).toEqual([
++      { output: script, cwd: String(dir) },
++    ]);
++    const ninja = n.toString().replace(/ \$\n +/g, " ");
++    expect(ninja).toMatch(/build native-link\.rsp[^\n]*: rust_native_link target-script\.json/);
++    expect(ninja).toMatch(/build bun[^\n]*: link[^\n]*native-link\.rsp/);
++    expect(n.toString()).not.toContain("missing-host-script");
++    expect(n.toString()).not.toContain("missing-unwind-script");
++  });
++
++  test("does not change non-Linux graphs", () => {
++    using dir = tempDir("rust-native-link-other", {});
++    const { graph, cfg } = fixture(String(dir), false);
++    const n = new Ninja({ buildDir: String(dir) });
++    expect(emitRustNativeLink(n, cfg, graph)).toBeUndefined();
++    expect(n.toString()).not.toContain("rust_native_link");
++  });
++
++  test.skipIf(!isLinux || !Bun.which("ninja"))(
++    "executes the real response driver, rebuilds changed scripts, and preserves unchanged output",
++    () => {
++      using dir = tempDir("rust-native-link-run", {});
++      const root = String(dir);
++      const { script, graph, cfg } = fixture(root);
++      const n = new Ninja({ buildDir: root });
++      const rsp = emitRustNativeLink(n, cfg, graph)!;
++      writeFileSync(join(root, "build.ninja"), n.toString());
++      const run = () => Bun.spawnSync(["ninja", "-C", root, "native-link.rsp"], { stdout: "pipe", stderr: "pipe" });
++      let revision = 0;
++      const update = (directives: string) => {
++        writeFileSync(script, JSON.stringify(parseBuildScriptOutput(directives)));
++        // Filesystems with coarse timestamps must still see a new input after each completed ninja invocation.
++        const changed = new Date(Date.now() + ++revision * 1000);
++        utimesSync(script, changed, changed);
++      };
++      update("cargo:rustc-link-lib=gtk-3\n");
++      let result = run();
++      expect(result.exitCode).toBe(0);
++      expect(readFileSync(rsp, "utf8")).toBe('"-lgtk-3"\n');
++      const old = new Date(Date.now() - 10_000);
++      utimesSync(rsp, old, old);
++      const previousTime = statSync(rsp).mtimeMs;
++      update("cargo:rustc-link-lib=gtk-3\ncargo:warning=changed\n");
++      result = run();
++      expect(result.exitCode).toBe(0);
++      expect(statSync(rsp).mtimeMs).toBe(previousTime);
++      update("cargo:rustc-link-lib=gdk-3\n");
++      result = run();
++      expect(result.exitCode).toBe(0);
++      expect(readFileSync(rsp, "utf8")).toBe('"-lgdk-3"\n');
++      update("cargo:rustc-link-lib=framework=AppKit\n");
++      result = run();
++      expect(result.exitCode).not.toBe(0);
++      expect(result.stdout.toString() + result.stderr.toString()).toContain("Unsupported Linux Rust native library");
++    },
++  );
++});
++
++test("quotes clang response arguments without shell expansion", () => {
++  expect(nativeLinkResponse(["-L/path with spaces", '-L/a"b', "-L/a\\b", "-L/$(false)"])).toBe(
++    '"-L/path with spaces"\n"-L/a\\"b"\n"-L/a\\\\b"\n"-L/$(false)"\n',
++  );
++});
++
++const clang = Bun.which("clang++-23") ?? Bun.which("clang++");
++test.skipIf(!isLinux || clang === null)(
++  "the installed Clang driver accepts the response without compiling or linking",
++  () => {
++    using dir = tempDir("rust-native-link-clang", {});
++    const rsp = join(String(dir), "native.rsp");
++    writeFileSync(
++      rsp,
++      nativeLinkResponse(
++        nativeLinkArguments([
++          output("cargo:rustc-link-search=native=/native lib/$(false)\ncargo:rustc-link-lib=gtk-3\n"),
++        ]),
++      ),
++    );
++    // -### prints the selected linker invocation; it neither compiles sources nor loads a native library.
++    const result = Bun.spawnSync([clang!, "-###", `@${rsp}`, "-o", join(String(dir), "unused")], {
++      stdout: "pipe",
++      stderr: "pipe",
++    });
++    expect(result.exitCode).toBe(0);
++    expect(result.stderr.toString()).toContain('"-L/native lib/\\$(false)"');
++    expect(result.stderr.toString()).toContain('"-lgtk-3"');
++  },
++);
++
++test.skipIf(!isLinux || clang === null)("links and runs a tiny native dependency with a comma in its name", () => {
++  using dir = tempDir("rust-native-link-library", {});
++  const root = String(dir);
++  const libraryDir = join(root, "native libraries");
++  mkdirSync(libraryDir);
++  const librarySource = join(root, "library.cpp");
++  const consumerSource = join(root, "consumer.cpp");
++  writeFileSync(librarySource, 'extern "C" int native_answer() { return 42; }\n');
++  writeFileSync(
++    consumerSource,
++    'extern "C" int native_answer(); int main() { return native_answer() == 42 ? 0 : 1; }\n',
++  );
++  const library = Bun.spawnSync(
++    [clang!, "-fPIC", "-shared", librarySource, "-o", join(libraryDir, "libnative,fixture.so")],
++    {
++      stdout: "pipe",
++      stderr: "pipe",
++    },
++  );
++  expect(library.exitCode).toBe(0);
++  const rsp = join(root, "native.rsp");
++  writeFileSync(
++    rsp,
++    nativeLinkResponse(
++      nativeLinkArguments([
++        output(`cargo:rustc-link-search=native=${libraryDir}\ncargo:rustc-link-lib=dylib=native,fixture\n`),
++      ]),
++    ),
++  );
++  const exe = join(root, "consumer");
++  const consumer = Bun.spawnSync([clang!, consumerSource, `@${rsp}`, "-o", exe], { stdout: "pipe", stderr: "pipe" });
++  expect(consumer.exitCode).toBe(0);
++  const run = Bun.spawnSync([exe], {
++    env: { ...process.env, LD_LIBRARY_PATH: libraryDir },
++    stdout: "pipe",
++    stderr: "pipe",
++  });
++  expect(run.exitCode).toBe(0);
++});
+-- 
+2.43.0
+

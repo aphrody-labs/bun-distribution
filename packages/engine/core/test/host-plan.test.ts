@@ -147,7 +147,9 @@ const quiet = () => {};
 
 test("apply: a failed preflight check stops before any mutation", async () => {
   const plan: Plan = hostPlan(["aphrody-mcp-http"], { root });
-  const { commands, run } = recorder((c) => c.includes("sport = :8789") && c.startsWith("!"));
+  const { commands, run } = recorder(
+    (c) => c.includes("sport = :8789") && c.includes("socket_rows="),
+  );
   const failed = await applyPlan(plan, run, quiet);
   expect(failed).toEqual(["aphrody-mcp-http/port-free"]);
   expect(
@@ -301,3 +303,68 @@ test("mcp-http: without a build the installed binary is checked; the unit's env 
   expect(text).toContain("aphrody-mcp http --bind 127.0.0.1:8793");
   expect(text).not.toMatch(/--bind 127\.0\.0\.1:8789/);
 });
+
+test("socket gates preserve the declared WireGuard relay and reject occupied, wildcard and unknown listeners", async () => {
+  const fixture = join(dir, "socket-fixtures");
+  const policy = join(root, "wireguard/aphrody-tunnel.json");
+  mkdirSync(fixture, { recursive: true });
+  mkdirSync(join(root, "wireguard"), { recursive: true });
+  const socket = join(fixture, "ss");
+  const sleep = join(fixture, "sleep");
+  writeFileSync(socket, '#!/bin/sh\nprintf "%s\\n" "$TASK_SOCKET_ROWS"\n', { mode: 0o700 });
+  writeFileSync(sleep, "#!/bin/sh\nexit 0\n", { mode: 0o700 });
+  const relay = {
+    host: "vps",
+    unit: "aphrody-mcp-http",
+    port: 8789,
+    expose: "socket-proxyd",
+    upstream: "127.0.0.1:8789",
+    address: "10.200.77.1",
+  };
+  const declaration = {
+    subnet: "10.200.77.0/24",
+    hub: { peer: "vps", address: "10.200.77.1" },
+    peers: [],
+    services: [relay],
+  };
+  writeFileSync(policy, JSON.stringify(declaration));
+  const steps = hostPlan(["aphrody-mcp-http"], { root }).steps;
+  const execute = async (id: string, addresses: string[]) => {
+    const command = steps
+      .find((step) => step.id.endsWith("/" + id))!
+      .run.replaceAll("ss -H -ltn", `'${socket}' -H -ltn`)
+      .replaceAll("sleep 0.25", `'${sleep}' 0.25`);
+    const child = Bun.spawn(["sh", "-c", command], {
+      env: {
+        ...process.env,
+        TASK_SOCKET_ROWS: addresses.map((address) => `LISTEN 0 128 ${address}:8789 *:*`).join("\n"),
+      },
+      stdout: "ignore",
+      stderr: "ignore",
+    });
+    return child.exited;
+  };
+  try {
+    expect(await execute("port-free", [])).toBe(0);
+    expect(await execute("port-free", ["10.200.77.1"])).toBe(0);
+    expect(
+      await Promise.all(
+        ["127.0.0.1", "0.0.0.0", "[::]", "*", "51.77.147.152"].map((address) =>
+          execute("port-free", ["10.200.77.1", address]),
+        ),
+      ),
+    ).toEqual([1, 1, 1, 1, 1]);
+    expect(await execute("listen-loopback", ["127.0.0.1", "10.200.77.1"])).toBe(0);
+    expect(await execute("listen-loopback", ["127.0.0.1"])).toBe(0);
+    expect(await execute("listen-loopback", ["10.200.77.1"])).toBe(1);
+    expect(await execute("listen-loopback", ["127.0.0.1", "51.77.147.152"])).toBe(1);
+    expect(await execute("listen-loopback", ["127.0.0.1", "10.200.77.99"])).toBe(1);
+    writeFileSync(
+      policy,
+      JSON.stringify({ ...declaration, services: [{ ...relay, address: "51.77.147.152" }] }),
+    );
+    expect(() => hostPlan(["aphrody-mcp-http"], { root })).toThrow("private WireGuard address");
+  } finally {
+    rmSync(policy, { force: true });
+  }
+}, 20_000);

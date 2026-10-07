@@ -66,6 +66,12 @@
 ///
 /// Entry point: [`adobe::map_adobe_app`].
 pub mod adobe;
+/// Android application package (APK / AAB) container inspection, binary XML (AXML)
+/// decoder, classes.dex parser, native .so library ABI inventory, and APK signature
+/// scheme detection (v1, v2, v3, v3.1, SourceStamp).
+///
+/// Entry point: [`android::analyze_apk`].
+pub mod android;
 /// Native Electron `app.asar` archive reader (list + extract, no execution).
 pub mod asar;
 /// Electron binary analyser — fuses wire, V8 snapshot/code-cache, Electron /
@@ -93,6 +99,13 @@ pub mod headers;
 ///
 /// Entry point: [`minidump::Minidump::open`].
 pub mod minidump;
+
+/// Steam directory discovery, VDF / KeyValues parser, ACF AppManifest parser,
+/// Steam DRM and SteamStub wrapper detection, and library scanning.
+///
+/// Entry points: [`steam::find_steam_installations`], [`steam::parse_vdf`],
+/// [`steam::AppManifest::parse`], [`steam::inspect_steam_drm`].
+pub mod steam;
 
 /// Read-only Chromium LevelDB enumerator (opt-in `leveldb` feature, host-only).
 ///

@@ -9,6 +9,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { composeUnit, type HostUnit, hostRoot, loadCatalog } from "./index.ts";
+import { inCidr, loadTunnel, TUNNEL_FILE } from "./wireguard.ts";
 
 export interface UnitFacts {
   unit: string;
@@ -59,6 +60,39 @@ const BUN = "/home/ubuntu/.bun/bin/bun";
 const MCP_TOKEN_ENV = "APHRODY_MCP_HTTP_TOKEN";
 const b64 = (text: string) => Buffer.from(text).toString("base64");
 const sq = (text: string) => `'${text.replaceAll("'", "'\\''")}'`;
+const socketPattern = (sockets: string[]) =>
+  "^(" + sockets.map((socket) => socket.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")$";
+
+/** Only an explicitly declared private relay may share a native service's port. */
+function socketRelays(repoRoot: string, facts: UnitFacts): string[] {
+  const root = join(repoRoot, "config/host");
+  if (!facts.bind || !existsSync(join(root, TUNNEL_FILE))) return [];
+  const tunnel = loadTunnel(root);
+  const address =
+    tunnel.hub.peer === facts.targetHost
+      ? tunnel.hub.address
+      : tunnel.peers.find((peer) => peer.host === facts.targetHost)?.address;
+  return tunnel.services
+    .filter(
+      (service) =>
+        service.host === facts.targetHost &&
+        service.unit === facts.service &&
+        service.port === facts.bind!.port &&
+        service.expose === "socket-proxyd" &&
+        service.upstream === `${facts.bind!.host}:${facts.bind!.port}`,
+    )
+    .map((service) => {
+      if (
+        service.address !== address ||
+        !inCidr(service.address, tunnel.subnet) ||
+        !["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"].some((cidr) =>
+          inCidr(service.address, cidr),
+        )
+      )
+        throw new Error(`${facts.unit}: relay must use its declared private WireGuard address`);
+      return `${service.address}:${service.port}`;
+    });
+}
 
 /** Directives of the `[Service]` section of a composed unit (`key` -> every value, in order). */
 function serviceDirectives(text: string): Map<string, string[]> {
@@ -123,6 +157,34 @@ function serviceEntry(repoRoot: string, id: string): ServiceEntry | undefined {
   return catalog.services.find((s) => s.id === id);
 }
 
+/** A pinned refresh may reuse only this unit's exact native listener. */
+export function pinnedSocketCheck(
+  facts: UnitFacts,
+  relays: string[],
+  requireListener = false,
+): string {
+  if (!facts.bind) throw new Error("Pinned socket qualification requires a bind address");
+  const port = facts.bind.port;
+  const endpoints = (
+    facts.bind.host === "localhost" ? ["127.0.0.1", "[::1]"] : [facts.bind.host]
+  ).map((host) => `${host === "::1" ? "[::1]" : host}:${port}`);
+  const endpointFilter = endpoints
+    .map((endpoint) => `$4 == ${JSON.stringify(endpoint)}`)
+    .join(" || ");
+  return [
+    `rows=$(timeout 5 sudo -n ss -H -ltnp "sport = :${port}") || exit 1`,
+    `addresses=$(printf '%s\\n' "$rows" | awk '{print $4}')`,
+    `[ -z "$addresses" ] || ! printf '%s\\n' "$addresses" | grep -qvE ${sq(socketPattern([...endpoints, ...relays]))} || exit 1`,
+    `native_rows=$(printf '%s\\n' "$rows" | awk ${sq(endpointFilter)})`,
+    `if [ -z "$native_rows" ]; then exit ${requireListener ? 1 : 0}; fi`,
+    `systemctl is-active --quiet ${sq(facts.unit)} || exit 1`,
+    `main_pid=$(systemctl show ${sq(facts.unit)} -p MainPID --value) || exit 1`,
+    `case "$main_pid" in ''|0|*[!0-9]*) exit 1 ;; esac`,
+    `owners=$(printf '%s\\n' "$native_rows" | grep -oE 'pid=[0-9]+' | sort -u)`,
+    `[ "$owners" = "pid=$main_pid" ]`,
+  ].join("; ");
+}
+
 /** Steps for one unit. `repoRoot` holds `ai.json`, `config/service-catalog.json` and `scripts/tools/infra`. */
 function unitSteps(
   entry: HostUnit,
@@ -146,6 +208,13 @@ function unitSteps(
     run: string,
   ): PlanStep => ({ id: `${f.service}/${id}`, unit: f.unit, phase, kind, note, run });
   const port = f.bind?.port;
+  const relays = socketRelays(repoRoot, f);
+  const expectedSockets = f.bind
+    ? (f.bind.host === "localhost" ? ["127.0.0.1", "[::1]"] : [f.bind.host]).map(
+        (host) => `${host === "::1" ? "[::1]" : host}:${port}`,
+      )
+    : [];
+  const socketRows = `socket_rows=$(ss -H -ltn "sport = :${port}") || exit 1; sockets=$(printf '%s\\n' "$socket_rows" | awk '{print $4}')`;
   const stage = `${STAGE_DIR}/${f.unit}`;
   const steps: PlanStep[] = [];
 
@@ -198,9 +267,13 @@ function unitSteps(
       step(
         "preflight",
         "check",
-        "port-free",
-        `nothing listens on :${port} yet (a reverse tunnel or another unit holding it would make the unit fail to bind)`,
-        `! ss -H -ltn "sport = :${port}" | grep -q .`,
+        install ? "port-owner" : "port-free",
+        install
+          ? "an occupied native socket belongs exactly to this active unit's MainPID; only its declared private relay may share the port"
+          : `the declared loopback socket is free; only its declared private WireGuard relay may already listen on :${port}`,
+        install
+          ? pinnedSocketCheck(f, relays)
+          : `${socketRows}; ${relays.length ? `[ -z "$sockets" ] || ! printf '%s\\n' "$sockets" | grep -qvE ${sq(socketPattern(relays))}` : '[ -z "$sockets" ]'}`,
       ),
     );
   }
@@ -235,6 +308,18 @@ function unitSteps(
       `systemctl is-enabled ${f.unit} 2>&1; systemctl is-active ${f.unit} 2>&1; true`,
     ),
   );
+
+  if (install) {
+    steps.push(
+      step(
+        "provision",
+        "mutate",
+        "upgrade-state",
+        "retain the current unit, activation state and binary rollback marker before a pinned refresh",
+        `install -d -m 0700 ${STAGE_DIR}; rm -f ${sq(`${stage}.previous`)} ${sq(`${stage}.was-active`)} ${sq(`${stage}.was-enabled`)} ${sq(`${stage}.binary-installed`)}; fragment=$(systemctl show ${sq(f.unit)} -p FragmentPath --value); if [ -n "$fragment" ] && [ -f "$fragment" ]; then sudo -n cp -p "$fragment" ${sq(`${stage}.previous`)}; fi; if systemctl is-active --quiet ${sq(f.unit)}; then touch ${sq(`${stage}.was-active`)}; fi; if systemctl is-enabled --quiet ${sq(f.unit)}; then touch ${sq(`${stage}.was-enabled`)}; fi`,
+      ),
+    );
+  }
 
   if (f.service === "aphrody-a2a") {
     const aiJson = join(repoRoot, "ai.json");
@@ -358,7 +443,7 @@ function unitSteps(
         "mutate",
         "install-binary",
         `install the build as ${f.binary}, the previous one is kept as ${f.binary}.prev (rollback: mv it back)`,
-        `install -d -m 0755 ${dir} && install -m 0755 ${sq(install.from)} ${f.binary}.new && echo ${install.sha256}'  '${sq(`${f.binary}.new`)} | sha256sum -c --quiet - && { [ ! -e ${f.binary} ] || cp -p ${f.binary} ${f.binary}.prev; } && mv -f ${f.binary}.new ${f.binary}`,
+        `install -d -m 0755 ${dir} && install -m 0755 ${sq(install.from)} ${f.binary}.new && echo ${install.sha256}'  '${sq(`${f.binary}.new`)} | sha256sum -c --quiet - && { [ ! -e ${f.binary} ] || cp -p ${f.binary} ${f.binary}.prev; } && mv -f ${f.binary}.new ${f.binary} && touch ${sq(`${stage}.binary-installed`)}`,
       ),
     );
   }
@@ -401,8 +486,12 @@ function unitSteps(
       "install",
       "mutate",
       "enable-now",
-      "enable at boot and start",
-      `sudo systemctl enable --now ${f.unit}`,
+      install
+        ? "enable at boot and restart onto the pinned native artifact"
+        : "enable at boot and start",
+      install
+        ? `sudo systemctl enable ${f.unit} && sudo systemctl restart ${f.unit}`
+        : `sudo systemctl enable --now ${f.unit}`,
     ),
   );
 
@@ -421,8 +510,10 @@ function unitSteps(
         "verify",
         "check",
         "listen-loopback",
-        `every listener on :${port} is loopback (never 0.0.0.0, [::] or a public address)`,
-        `n=0; until ss -H -ltn "sport = :${port}" | grep -q .; do n=$((n+1)); [ "$n" -lt 20 ] || exit 1; sleep 0.25; done; l=$(ss -H -ltn "sport = :${port}" | awk '{print $4}'); [ -n "$l" ] && ! echo "$l" | grep -qvE '^(127\\.0\\.0\\.1|\\[::1\\]):'`,
+        `the native loopback socket is present; any additional listener must be its declared private WireGuard relay`,
+        install
+          ? `n=0; until (${pinnedSocketCheck(f, relays, true)}); do n=$((n+1)); [ "$n" -lt 20 ] || exit 1; sleep 0.25; done`
+          : `n=0; until { ${socketRows}; printf '%s\\n' "$sockets" | grep -qE ${sq(socketPattern(expectedSockets))}; }; do n=$((n+1)); [ "$n" -lt 20 ] || exit 1; sleep 0.25; done; ! printf '%s\\n' "$sockets" | grep -qvE ${sq(socketPattern([...expectedSockets, ...relays]))}`,
       ),
     );
   }
@@ -497,9 +588,13 @@ function unitSteps(
     step(
       "rollback",
       "mutate",
-      "remove",
-      "stop and remove this unit (state directories and env files are kept)",
-      `sudo systemctl disable --now ${f.unit}; sudo rm -f /etc/systemd/system/${f.unit}; sudo systemctl daemon-reload; sudo systemctl reset-failed ${f.unit} 2>/dev/null; true`,
+      install ? "restore" : "remove",
+      install
+        ? "restore the previous unit, native binary and activation state; retain private state and credentials"
+        : "stop and remove this unit (state directories and env files are kept)",
+      install
+        ? `set -e; if [ -e ${sq(`${stage}.binary-installed`)} ] && [ -e ${sq(`${f.binary}.prev`)} ]; then mv -f ${sq(`${f.binary}.prev`)} ${sq(f.binary)}; fi; if [ -f ${sq(`${stage}.previous`)} ]; then sudo -n cp -p ${sq(`${stage}.previous`)} /etc/systemd/system/${f.unit}; sudo systemctl daemon-reload; if [ -e ${sq(`${stage}.was-active`)} ]; then sudo systemctl restart ${f.unit}; else sudo systemctl stop ${f.unit}; fi; if [ -e ${sq(`${stage}.was-enabled`)} ]; then sudo systemctl enable ${f.unit}; else sudo systemctl disable ${f.unit}; fi; else sudo systemctl disable --now ${f.unit}; sudo rm -f /etc/systemd/system/${f.unit}; sudo systemctl daemon-reload; fi`
+        : `sudo systemctl disable --now ${f.unit}; sudo rm -f /etc/systemd/system/${f.unit}; sudo systemctl daemon-reload; sudo systemctl reset-failed ${f.unit} 2>/dev/null; true`,
     ),
   );
   return steps;
@@ -632,7 +727,7 @@ export async function applyPlan(
     for (const s of mine.filter(
       (x) => x.phase === "provision" || x.phase === "install" || x.phase === "verify",
     )) {
-      if (s.id.endsWith("/install")) installed = true;
+      if (s.id.endsWith("/install") || s.id.endsWith("/install-binary")) installed = true;
       if (!(await exec(s))) {
         if (installed && rollback) await exec(rollback);
         return [s.id];

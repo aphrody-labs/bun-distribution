@@ -5,7 +5,11 @@ import { chmod, mkdir, rename, rm, stat } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { replicateHome, type ReplicaConfig } from "./agent-home-replica.ts";
 import { readRagStatus, type RagMonitorConfig } from "./agent-home-rag-status.ts";
-import { reconcileDriveReview, type DriveReviewConfig } from "./agent-home-drive-reconcile.ts";
+import {
+  reconcileDriveReview,
+  verifyReviewedProjection,
+  type DriveReviewConfig,
+} from "./agent-home-drive-reconcile.ts";
 
 export interface SyncConfig {
   version: 1;
@@ -17,7 +21,7 @@ export interface SyncConfig {
   agents?: { intervalSeconds: number };
   homes?: { profile: "aphrody" | "dbfr"; intervalSeconds: number }[];
   jobs?: SyncJobName[];
-  retrieval?: { root: string; intervalSeconds: number };
+  retrieval?: { root: string; intervalSeconds: number; label?: string };
   driveReview?: DriveReviewConfig;
   replica?: ReplicaConfig;
   ragMonitor?: RagMonitorConfig;
@@ -41,6 +45,7 @@ export interface JobState {
   failures: number;
   ok: boolean;
   lastSuccess?: JobReceipt;
+  waiting?: JobReceipt;
 }
 export type SyncState = Record<string, JobState>;
 export type Runner = (argv: string[], environment?: Record<string, string>) => Promise<string>;
@@ -168,7 +173,7 @@ function jobs(config: SyncConfig) {
               "index",
               config.retrieval.root,
               "--label",
-              "drive-dbfr-staged",
+              config.retrieval.label ?? "drive-dbfr-staged",
               "--profile",
               "dbfr",
             ],
@@ -198,7 +203,7 @@ function jobs(config: SyncConfig) {
             perform: (run: Runner) =>
               replicateHome(
                 config.replica!,
-                config.drive.home,
+                config.driveReview?.reviewedDirectory ?? config.drive.home,
                 config.receiptRoot,
                 config.aphrody,
                 run,
@@ -207,6 +212,13 @@ function jobs(config: SyncConfig) {
         ]
       : []),
   ];
+  if (config.driveReview && config.replica) {
+    const replica = available.splice(
+      available.findIndex((job) => job.name === "drive-replica"),
+      1,
+    )[0]!;
+    available.splice(available.findIndex((job) => job.name === "drive-review") + 1, 0, replica);
+  }
   if (config.jobs === undefined) return available;
   if (
     !Array.isArray(config.jobs) ||
@@ -216,7 +228,7 @@ function jobs(config: SyncConfig) {
   )
     throw new Error("Selected sync jobs must be unique configured capabilities");
   const wanted = new Set<string>(config.jobs);
-  // Keep download before retrieval even when the selection lists retrieval first.
+  // Keep owner download/review before downstream consumers regardless of selection order.
   return available.filter((job) => wanted.has(job.name));
 }
 /** A failed capability does not block other due jobs; failures retry with bounded backoff. */
@@ -238,7 +250,33 @@ export async function syncPass(
   for (const job of selected) {
     if ((state[job.name]?.nextAt ?? 0) > now) continue;
     const old = state[job.name];
+    const guarded =
+      config.driveReview && (job.name === "drive-replica" || job.name === "drive-retrieval");
+    const review = state["drive-review"];
+    if (
+      guarded &&
+      (!review?.ok ||
+        review.lastSuccess?.report.review_pending ||
+        review.lastSuccess?.report.review_blocked)
+    ) {
+      state[job.name] = {
+        ...old,
+        ok: false,
+        failures: old?.failures ?? 0,
+        nextAt: now + Math.min(60, job.interval) * 1000,
+        waiting: {
+          observedAt: new Date(now).toISOString(),
+          report: {
+            [review?.lastSuccess?.report.review_blocked ? "review_blocked" : "review_pending"]: 1,
+          },
+        },
+      };
+      await persist(state);
+      continue;
+    }
     try {
+      if (guarded && config.driveReview?.reviewedDirectory)
+        await verifyReviewedProjection(config.driveReview.reviewedDirectory);
       const report =
         "perform" in job && job.perform
           ? counters(await job.perform(run))
@@ -301,15 +339,51 @@ function validatePublication(config: SyncConfig) {
 export async function publishSyncReceipts(config: SyncConfig, state: SyncState, run: Runner) {
   validatePublication(config);
   // Only counters travel; raw provider output and authentication remain in protected stores.
-  const automation = { observedAt: new Date().toISOString(), jobs: state };
+  const publicState: Record<string, JobState> = Object.fromEntries(
+    Object.entries(state)
+      .filter(([name]) =>
+        [
+          "drive",
+          "agents",
+          "home-dbfr",
+          "home-aphrody",
+          "drive-retrieval",
+          "drive-review",
+          "drive-replica",
+          "rag-monitor",
+        ].includes(name),
+      )
+      .map(([name, value]) => [
+        name,
+        {
+          ok: value.ok === true,
+          failures:
+            Number.isSafeInteger(value.failures) && value.failures >= 0 ? value.failures : 0,
+          nextAt: Number.isSafeInteger(value.nextAt) && value.nextAt >= 0 ? value.nextAt : 0,
+          ...Object.fromEntries(
+            ["lastSuccess", "waiting"].flatMap((key) => {
+              const receipt = value[key as "lastSuccess" | "waiting"];
+              return receipt && /^\d{4}-\d{2}-\d{2}T[0-9:.]+Z$/.test(receipt.observedAt)
+                ? [[key, { observedAt: receipt.observedAt, report: counters(receipt.report) }]]
+                : [];
+            }),
+          ),
+        },
+      ]),
+  );
+  const automation = { observedAt: new Date().toISOString(), jobs: publicState };
   const reports: Record<string, unknown> = {
     [config.publication.receiptName ?? "automation-sync.json"]: automation,
   };
   if (config.publication.receiptName === undefined) {
-    if (state.drive?.lastSuccess) reports["drive-sync.json"] = state.drive.lastSuccess;
-    if (state.agents?.lastSuccess) reports["agent-sync.json"] = state.agents.lastSuccess;
-    if (state["rag-monitor"]?.lastSuccess)
-      reports["rag-sync.json"] = state["rag-monitor"].lastSuccess;
+    for (const [job, file] of [
+      ["drive", "drive-sync.json"],
+      ["agents", "agent-sync.json"],
+      ["rag-monitor", "rag-sync.json"],
+    ]) {
+      const receipt = publicState[job!]?.lastSuccess;
+      if (receipt) reports[file!] = receipt;
+    }
   }
   if (config.publication.host === "local") {
     for (const [name, report] of Object.entries(reports))
@@ -318,12 +392,14 @@ export async function publishSyncReceipts(config: SyncConfig, state: SyncState, 
   }
   const payload = Buffer.from(JSON.stringify(reports)).toString("base64");
   const remote = Buffer.from(config.publication.directory).toString("base64");
-  const python = [
-    `import base64,json,os,pathlib; root=pathlib.Path(base64.b64decode("${remote}").decode()); reports=json.loads(base64.b64decode("${payload}")); root.mkdir(mode=0o700,parents=True,exist_ok=True)`,
-    "for name,data in reports.items():",
-    ' p=root/name; t=p.with_suffix(".sync.tmp"); t.write_text(json.dumps(data)+"\\n"); os.chmod(t,0o600); t.replace(p)',
-    'print("sync-receipts-published")',
-  ].join("\n");
+  const script = `import {mkdir,open,rename,lstat,realpath} from "node:fs/promises"; import {join,resolve,isAbsolute} from "node:path";
+const root=Buffer.from("${remote}","base64").toString("utf8"); const reports=JSON.parse(Buffer.from("${payload}","base64").toString("utf8"));
+if(!isAbsolute(root))throw Error("UNSAFE_RECEIPT_ROOT"); await mkdir(root,{recursive:true,mode:0o700});
+if(!(await lstat(root)).isDirectory()||(await realpath(root))!==resolve(root))throw Error("UNSAFE_RECEIPT_ROOT");
+for(const [name,data] of Object.entries(reports)){if(!/^[A-Za-z0-9][A-Za-z0-9._-]{0,119}\\.json$/.test(name))throw Error("UNSAFE_RECEIPT_NAME");
+const target=join(root,name),temporary=target+"."+crypto.randomUUID()+".tmp",file=await open(temporary,"wx",0o600);
+try{await file.writeFile(JSON.stringify(data)+"\\n");await file.sync();}finally{await file.close();}await rename(temporary,target);}
+const directory=await open(root,"r");try{await directory.sync();}finally{await directory.close();}console.log("sync-receipts-published");`;
   const result = await run([
     config.aphrody,
     "infra",
@@ -332,7 +408,7 @@ export async function publishSyncReceipts(config: SyncConfig, state: SyncState, 
     "--host",
     config.publication.host,
     "--cmd",
-    "python3 -c '" + python + "'",
+    "/home/ubuntu/.bun/bin/bun -e '" + script.replace(/'/g, "'\\''") + "'",
   ]);
   if (result.trim() !== "sync-receipts-published")
     throw new Error("Unverified receipt publication");

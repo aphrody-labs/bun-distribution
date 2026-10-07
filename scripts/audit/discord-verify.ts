@@ -32,13 +32,7 @@ for (const gate of ["typecheck", "test", "build"]) {
   run(discordKit, "run", gate);
 }
 
-// 3. Gate @aphrody/messaging (Aphrody-owned transport & adapter)
-const messaging = resolve(root, "packages/discord/aphrody-messaging");
-for (const gate of ["typecheck", "test", "build"]) {
-  run(messaging, "run", gate);
-}
-
-// 4. Gate consumer bots typecheck & integrity if requested with --full. The Shenron bot lives in
+// 3. Gate consumer bots typecheck & integrity if requested with --full. The Shenron bot lives in
 // aphrody-labs/shenron (SHENRON_ROOT, else the sibling checkout of this repository).
 if (process.argv.includes("--full")) {
   const shenronBot = resolve(
@@ -53,9 +47,18 @@ if (process.argv.includes("--full")) {
   }
 }
 
-// 5. Gate native standalone compilation if requested with --compile
+// 4. Gate native standalone compilation if requested with --compile
 if (process.argv.includes("--compile")) {
-  run(root, "run", "packages/engine/yolo/src/index.ts", "ops", "discord", "compile", "all", "--smoke");
+  run(
+    root,
+    "run",
+    "packages/engine/yolo/src/index.ts",
+    "ops",
+    "discord",
+    "compile",
+    "all",
+    "--smoke",
+  );
 }
 
 console.log(

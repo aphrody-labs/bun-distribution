@@ -77,3 +77,6 @@ export {
   buildDocumentationManifest,
   renderDocumentationAgentIndex,
 } from "./documentation.ts";
+
+export * from "./paths.ts";
+

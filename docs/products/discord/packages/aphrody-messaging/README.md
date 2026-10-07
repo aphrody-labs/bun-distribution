@@ -1,18 +1,17 @@
-# @aphrody/messaging
+# Compatibilité Discord messaging
 
-Bun-first TypeScript port of Aphrody's shared messaging channel contract and
-Discord REST adapter. It has no runtime package dependencies; HTTP and multipart
-uploads use Fetch APIs, while filesystem uploads use `Bun.file`.
+L’ancien paquet `@aphrody/messaging` a été absorbé par `@aphrody/discord-kit`.
+Le point d’entrée maintenu est `@aphrody/discord-kit/messaging`; l’ancienne
+entrée npm demeure une compatibilité historique et ne possède plus de source
+distincte dans ce dépôt.
 
 ```ts
-import { DiscordChannel } from "@aphrody/messaging";
+import { DiscordChannel } from "@aphrody/discord-kit/messaging";
 
 const discord = DiscordChannel.fromEnv();
 const sent = await discord.sendText("channel-id", "Hello");
 console.log(sent.id);
 ```
 
-The required environment key is `DISCORD_BOT_TOKEN`. `rooms()` enumerates guild
-channels, `openDm(userId)` resolves a private channel, and `streamInbox()` polls
-guild text/thread history once per second. The stream is cancellable with an
-`AbortSignal`.
+L’implémentation et ses tests vivent dans `packages/discord/kit/src/messaging.ts`
+et `packages/discord/kit/test/channel.test.ts`.

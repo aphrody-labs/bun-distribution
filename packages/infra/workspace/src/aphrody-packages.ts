@@ -88,7 +88,9 @@ export async function aphrodyPackageDirectories(root: string): Promise<Map<strin
       exclude.some((glob) => glob.match(manifest))
     )
       continue;
-    const { name } = JSON.parse(await readFile(join(root, manifest), "utf8")) as { name?: string };
+    const fullPath = join(root, manifest);
+    if (!existsSync(fullPath)) continue;
+    const { name } = JSON.parse(await readFile(fullPath, "utf8")) as { name?: string };
     if (name?.startsWith("@aphrody/")) directories.set(name, join(root, dirname(manifest)));
   }
   return directories;

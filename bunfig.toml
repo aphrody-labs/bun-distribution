@@ -40,5 +40,4 @@ importSource = "react"
 ".css" = "css"
 
 [test]
-preload = ["./packages/bun/test-dom/src/index.ts"]
-
+preload = ["./scripts/test-dom.ts"]

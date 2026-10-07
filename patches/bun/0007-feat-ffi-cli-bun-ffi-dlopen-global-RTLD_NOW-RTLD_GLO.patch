@@ -1,0 +1,299 @@
+From 970bfe8f721d08a38a958f5ac11ee9b6a6de6b63 Mon Sep 17 00:00:00 2001
+From: aphrody-dev <contact@aphrody.com>
+Date: Tue, 6 Oct 2026 17:09:01 +0000
+Subject: [PATCH 7/9] feat(ffi,cli): bun:ffi dlopen { global }
+ (RTLD_NOW|RTLD_GLOBAL) and a compiled executable linked as bun is the engine
+ (argv0), with first-party tests
+
+(cherry picked from commit a4d88d12417844912a9b6a5a9bedc0755b011092)
+---
+ packages/bun-types/ffi.d.ts                   |  7 +++
+ src/js/bun/ffi.ts                             |  5 +-
+ src/runtime/cli/mod.rs                        | 16 +++++-
+ src/runtime/ffi/FFIObject.rs                  |  4 +-
+ src/runtime/ffi/ffi_body.rs                   | 12 ++++-
+ src/sys/lib.rs                                | 16 +++++-
+ .../runtime/argv0-bun-alias.test.ts           | 42 +++++++++++++++
+ .../first_party/runtime/dlopen-global.test.ts | 52 +++++++++++++++++++
+ 8 files changed, 146 insertions(+), 8 deletions(-)
+ create mode 100644 test/js/first_party/runtime/argv0-bun-alias.test.ts
+ create mode 100644 test/js/first_party/runtime/dlopen-global.test.ts
+
+diff --git a/packages/bun-types/ffi.d.ts b/packages/bun-types/ffi.d.ts
+index 93584ffc45..5174c9ebf0 100644
+--- a/packages/bun-types/ffi.d.ts
++++ b/packages/bun-types/ffi.d.ts
+@@ -586,8 +586,15 @@ declare module "bun:ffi" {
+   function dlopen<Fns extends Record<string, FFIFunction>>(
+     name: string | import("bun").BunFile | URL,
+     symbols: Fns,
++    options?: DlopenOptions,
+   ): Library<Fns>;
+ 
++  /** Options of {@link dlopen} (Aphrody fork). */
++  interface DlopenOptions {
++    /** Open with `RTLD_NOW | RTLD_GLOBAL` so later libraries resolve symbols against this one. Default `false`. */
++    global?: boolean;
++  }
++
+   /**
+    * **Experimental:** Compile ISO C11 source code using TinyCC, and make {@link symbols} available as functions to JavaScript.
+    *
+diff --git a/src/js/bun/ffi.ts b/src/js/bun/ffi.ts
+index bfb98abf98..b4411fa6b7 100644
+--- a/src/js/bun/ffi.ts
++++ b/src/js/bun/ffi.ts
+@@ -193,10 +193,11 @@ function normalizePath(path: string | URL | Bun.BunFile | undefined) {
+   return path;
+ }
+ 
+-function dlopen(path, options) {
++function dlopen(path, options, loadOptions?) {
+   path = normalizePath(path);
+ 
+-  const result = nativeDLOpen(path, options);
++  // `{ global: true }` opens with RTLD_NOW | RTLD_GLOBAL (one shared libpython for Bun and PyO3 extensions).
++  const result = nativeDLOpen(path, options, !!(loadOptions && loadOptions.global));
+   if (Error.isError(result)) throw result;
+ 
+   // Bind it because it's a breaking change to not do so
+diff --git a/src/runtime/cli/mod.rs b/src/runtime/cli/mod.rs
+index 5e41851de0..0822124850 100644
+--- a/src/runtime/cli/mod.rs
++++ b/src/runtime/cli/mod.rs
+@@ -833,6 +833,15 @@ pub(crate) mod command {
+         }
+     }
+ 
++    /// argv0 names the engine alias: the final path component is `bun` (or `bun.exe`), not `bunx`.
++    fn is_plain_bun(argv0: &[u8]) -> bool {
++        let name = argv0
++            .rsplit(|byte| *byte == b'/' || *byte == b'\\')
++            .next()
++            .unwrap_or(argv0);
++        name == b"bun" || name == b"bun.exe"
++    }
++
+     fn is_node(argv0: &[u8]) -> bool {
+         #[cfg(windows)]
+         {
+@@ -1199,8 +1208,11 @@ pub(crate) mod command {
+             }
+         }
+ 
+-        // bun build --compile entry point
+-        if !bun_core::env_var::feature_flag::BUN_BE_BUN::get().unwrap_or(false) {
++        // bun build --compile entry point. A compiled executable linked as `bun` is the engine itself (one `yolo`
++        // file with the aliases `bun` and `vu`, selected by argv0); `BUN_BE_BUN=1` stays the explicit override.
++        if !bun_core::env_var::feature_flag::BUN_BE_BUN::get().unwrap_or(false)
++            && !is_plain_bun(bun::argv().get(0).map(bun_core::ZStr::as_bytes).unwrap_or(b""))
++        {
+             if let Some(graph) = bun_standalone_graph::Graph::from_executable()? {
+                 // Never taken for a plain `bun` binary; ~2 KB of argv-splice
+                 // and ctx-setup code lives behind this cold call.
+diff --git a/src/runtime/ffi/FFIObject.rs b/src/runtime/ffi/FFIObject.rs
+index 510d8ae872..acf0f4136d 100644
+--- a/src/runtime/ffi/FFIObject.rs
++++ b/src/runtime/ffi/FFIObject.rs
+@@ -792,7 +792,9 @@ mod fields {
+         let mut iter = callframe.arguments().iter();
+         let name = eat_string(global, &mut iter)?;
+         let object = eat_required(global, &mut iter)?;
+-        FfiImpl::open(global, &*name.view(global)?, object)
++        // Third argument: `true` opens the library with RTLD_NOW | RTLD_GLOBAL (see `DynLib::open_global`).
++        let global_scope = next_eat(&mut iter).is_some_and(|value| value.to_boolean());
++        FfiImpl::open(global, &*name.view(global)?, object, global_scope)
+     }
+ 
+     // callback → FFI::callback(global, JSValue, JSValue) -> JsResult<JSValue>
+diff --git a/src/runtime/ffi/ffi_body.rs b/src/runtime/ffi/ffi_body.rs
+index f6fbb13d66..6fccc263d1 100644
+--- a/src/runtime/ffi/ffi_body.rs
++++ b/src/runtime/ffi/ffi_body.rs
+@@ -1404,6 +1404,7 @@ impl FFI {
+         global: &JSGlobalObject,
+         name_str: &bun_core::String,
+         object_value: JSValue,
++        global_scope: bool,
+     ) -> JsResult<JSValue> {
+         jsc::mark_binding();
+         let vm = jsc::VirtualMachineRef::get();
+@@ -1468,12 +1469,19 @@ impl FFI {
+ 
+         let dylib: bun_sys::DynLib = 'brk: {
+             // First try using the name directly
+-            match bun_sys::DynLib::open(name) {
++            let open = |path: &[u8]| {
++                if global_scope {
++                    bun_sys::DynLib::open_global(path)
++                } else {
++                    bun_sys::DynLib::open(path)
++                }
++            };
++            match open(name) {
+                 Ok(d) => break 'brk d,
+                 Err(_) => {
+                     let backup_name = Fs::FileSystem::instance().abs(&[name]);
+                     // if that fails, try resolving the filepath relative to the current working directory
+-                    match bun_sys::DynLib::open(backup_name) {
++                    match open(backup_name) {
+                         Ok(d) => break 'brk d,
+                         Err(_) => {
+                             // Then, if that fails, report an error with the library name and system error
+diff --git a/src/sys/lib.rs b/src/sys/lib.rs
+index c89037345c..de9d45019c 100644
+--- a/src/sys/lib.rs
++++ b/src/sys/lib.rs
+@@ -5908,6 +5908,16 @@ unsafe impl Sync for DynLib {}
+ impl DynLib {
+     /// `dlopen(path, RTLD_LAZY)` / `LoadLibraryW(path)`.
+     pub fn open(path: &[u8]) -> core::result::Result<Self, bun_errno::SystemErrno> {
++        Self::open_with_flags(path, RTLD::LAZY)
++    }
++
++    /// `dlopen(path, RTLD_NOW | RTLD_GLOBAL)`: the library's symbols join the global scope, so a later
++    /// library (a PyO3 extension against one shared libpython) resolves against it.
++    pub fn open_global(path: &[u8]) -> core::result::Result<Self, bun_errno::SystemErrno> {
++        Self::open_with_flags(path, RTLD::NOW | RTLD::GLOBAL)
++    }
++
++    fn open_with_flags(path: &[u8], flags: i32) -> core::result::Result<Self, bun_errno::SystemErrno> {
+         let mut buf = bun_paths::path_buffer_pool::get();
+         // `std.DynLib.open` returns `error.NameTooLong`; never truncate (could
+         // dlopen a different library whose path is a prefix of the requested one).
+@@ -5919,7 +5929,7 @@ impl DynLib {
+         buf.0[len] = 0;
+         // SAFETY: NUL-terminated above.
+         let z = ZStr::from_buf(&buf.0[..], len);
+-        match dlopen(z, RTLD::LAZY) {
++        match dlopen(z, flags) {
+             Some(h) => Ok(Self { handle: h }),
+             None => Err(bun_errno::SystemErrno::ENOENT),
+         }
+@@ -5955,6 +5965,8 @@ impl DynLib {
+ pub mod RTLD {
+     pub const LAZY: i32 = libc::RTLD_LAZY;
+     pub const LOCAL: i32 = libc::RTLD_LOCAL;
++    pub const NOW: i32 = libc::RTLD_NOW;
++    pub const GLOBAL: i32 = libc::RTLD_GLOBAL;
+ }
+ #[cfg(windows)]
+ pub mod RTLD {
+@@ -5962,6 +5974,8 @@ pub mod RTLD {
+     // sites compile. Values match POSIX so any bitmask logic stays inert.
+     pub const LAZY: i32 = 0x1;
+     pub const LOCAL: i32 = 0;
++    pub const NOW: i32 = 0x2;
++    pub const GLOBAL: i32 = 0x100;
+ }
+ 
+ /// `dlopen(filename, flags)`. Windows → `LoadLibraryExW` (UTF-8 → UTF-16).
+diff --git a/test/js/first_party/runtime/argv0-bun-alias.test.ts b/test/js/first_party/runtime/argv0-bun-alias.test.ts
+new file mode 100644
+index 0000000000..ec92935f58
+--- /dev/null
++++ b/test/js/first_party/runtime/argv0-bun-alias.test.ts
+@@ -0,0 +1,42 @@
++// Aphrody fork: a compiled executable linked as `bun` is the engine (one `yolo` file, aliases bun and vu by argv0).
++import { describe, expect, test } from "bun:test";
++import { bunExe, tempDir } from "harness";
++import { symlinkSync } from "node:fs";
++import { join } from "node:path";
++
++describe.skipIf(process.platform === "win32")("compiled executable argv0 aliases", () => {
++  test("yolo runs the embedded program, bun and a plain bun-named link run the engine", async () => {
++    using dir = tempDir("argv0-alias", {
++      "main.ts": 'console.log("embedded program", process.argv0.split("/").pop());\n',
++    });
++    const exe = join(String(dir), "yolo");
++    const compile = Bun.spawnSync({
++      cmd: [bunExe(), "build", "--compile", join(String(dir), "main.ts"), "--outfile", exe],
++      cwd: String(dir),
++    });
++    expect(compile.stderr.toString()).not.toContain("error");
++    expect(compile.exitCode).toBe(0);
++
++    const asYolo = Bun.spawnSync([exe]);
++    expect(asYolo.stdout.toString().trim()).toBe("embedded program yolo");
++
++    symlinkSync("yolo", join(String(dir), "bun"));
++    const asBun = Bun.spawnSync([join(String(dir), "bun"), "-e", 'console.log("engine", typeof Bun.version)']);
++    expect(asBun.stderr.toString()).toBe("");
++    expect(asBun.stdout.toString().trim()).toBe("engine string");
++
++    // The engine still starts the program when asked to: `bun <file>` runs the file, not the payload.
++    const asBunFile = Bun.spawnSync([join(String(dir), "bun"), join(String(dir), "main.ts")]);
++    expect(asBunFile.stdout.toString().trim()).toBe("embedded program bun");
++  });
++
++  test("BUN_BE_BUN=1 keeps working under the original name", () => {
++    using dir = tempDir("argv0-be-bun", { "main.ts": 'console.log("payload");\n' });
++    const exe = join(String(dir), "yolo");
++    expect(
++      Bun.spawnSync({ cmd: [bunExe(), "build", "--compile", join(String(dir), "main.ts"), "--outfile", exe] }).exitCode,
++    ).toBe(0);
++    const r = Bun.spawnSync({ cmd: [exe, "-e", 'console.log("engine")'], env: { ...process.env, BUN_BE_BUN: "1" } });
++    expect(r.stdout.toString().trim()).toBe("engine");
++  });
++});
+diff --git a/test/js/first_party/runtime/dlopen-global.test.ts b/test/js/first_party/runtime/dlopen-global.test.ts
+new file mode 100644
+index 0000000000..56754941b2
+--- /dev/null
++++ b/test/js/first_party/runtime/dlopen-global.test.ts
+@@ -0,0 +1,52 @@
++// Aphrody fork: bun:ffi dlopen(path, symbols, { global: true }) opens with RTLD_NOW | RTLD_GLOBAL, so a library
++// opened later resolves its undefined symbols against it (one shared libpython for Bun and PyO3 extensions).
++import { dlopen } from "bun:ffi";
++import { describe, expect, test } from "bun:test";
++import { tempDir } from "harness";
++import { join } from "node:path";
++
++const cc = Bun.which("cc") ?? Bun.which("gcc") ?? Bun.which("clang");
++
++describe.skipIf(process.platform !== "linux" || !cc)("bun:ffi dlopen global option", () => {
++  function build() {
++    const dir = tempDir("ffi-global", {
++      "a.c": "int aphrody_shared_value(void) { return 42; }\n",
++      "b.c": "extern int aphrody_shared_value(void);\nint aphrody_via_global(void) { return aphrody_shared_value() + 1; }\n",
++    });
++    const a = join(String(dir), "liba.so");
++    const b = join(String(dir), "libb.so");
++    const run = (args: string[]) => {
++      const r = Bun.spawnSync([cc!, ...args]);
++      if (r.exitCode !== 0) throw new Error(r.stderr.toString());
++    };
++    run(["-shared", "-fPIC", "-o", a, join(String(dir), "a.c")]);
++    // BIND_NOW: an unresolved symbol makes dlopen fail instead of failing at the first call.
++    run(["-shared", "-fPIC", "-Wl,-z,now", "-o", b, join(String(dir), "b.c")]);
++    return { dir, a, b };
++  }
++
++  test("a library opened without the option is not visible to the next one", () => {
++    const { dir, a, b } = build();
++    using _dir = dir;
++    const lib = dlopen(a, { aphrody_shared_value: { args: [], returns: "i32" } });
++    try {
++      expect(lib.symbols.aphrody_shared_value()).toBe(42);
++      expect(() => dlopen(b, { aphrody_via_global: { args: [], returns: "i32" } })).toThrow(/undefined symbol|Failed to open/);
++    } finally {
++      lib.close();
++    }
++  });
++
++  test("{ global: true } makes its symbols resolvable by a library opened afterwards", () => {
++    const { dir, a, b } = build();
++    using _dir = dir;
++    const lib = dlopen(a, { aphrody_shared_value: { args: [], returns: "i32" } }, { global: true });
++    const dependent = dlopen(b, { aphrody_via_global: { args: [], returns: "i32" } });
++    try {
++      expect(dependent.symbols.aphrody_via_global()).toBe(43);
++    } finally {
++      dependent.close();
++      lib.close();
++    }
++  });
++});
+-- 
+2.43.0
+

@@ -602,24 +602,6 @@
       "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
     },
     {
-      "name": "@aphrody/bun-test-dom",
-      "version": "0.1.1",
-      "path": "packages/bun/test-dom/package.json",
-      "status": "published",
-      "sha256": "024eef22ab17ca753146ce404d4ce77d0bc7c9e36a998763d43ecdf79b5618b3",
-      "integrity": "sha512-XZKt0FwXS8S4NiZIYr/X8BTCleTFlH72T4+W46tx1xrKXHDuIk4tOS+G3nLpuHbzinYiX+Efw+zfKlNuWlCoTA==",
-      "dependencies": ["@happy-dom/global-registrator"]
-    },
-    {
-      "name": "@aphrody/messaging",
-      "version": "0.1.1",
-      "path": "packages/discord/aphrody-messaging/package.json",
-      "status": "published",
-      "sha256": "daf05e8d5e8141e1a1425f9f85515bfff340f70ddca88563493b92095ffff49e",
-      "integrity": "sha512-73pf9hVE6kpoivdj6jU3Q70Q2uEGl/peD07ftdhpRaAnoQVUnp8HjQ3MwOBKs2ROF5nGBKgrbzmNF/ut7I54Ag==",
-      "dependencies": ["@discordjs/rest"]
-    },
-    {
       "name": "@aphrody/discord-kit",
       "version": "0.1.1",
       "path": "packages/discord/kit/package.json",
