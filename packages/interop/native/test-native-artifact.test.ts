@@ -113,6 +113,7 @@ async function isolated(code: string, env: Record<string, string | undefined>, c
     cwd,
     env: {
       ...process.env,
+      HOME: cwd,
       APHRODY_FFI_DEV: undefined,
       APHRODY_FFI_LIB: undefined,
       ...env,

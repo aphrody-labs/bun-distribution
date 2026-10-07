@@ -4,6 +4,7 @@ import { dlopen, FFIType, suffix } from "bun:ffi";
 import { existsSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import packageMetadata from "../package.json";
+import { resolveInstalledNativeLibraryPath } from "./native-installation";
 import {
   NATIVE_ABI_VERSIONS,
   nativeDevelopmentEnabled,
@@ -326,6 +327,10 @@ export function resolveNativeLibraryPath(): string | undefined {
     ...(triple ? [join(packageRoot, "native", triple, file)] : []),
     join(packageRoot, "native", file),
   ];
+  const packaged = candidates.find(existsSync);
+  if (packaged) return packaged;
+  const installed = resolveInstalledNativeLibraryPath();
+  if (installed) return installed;
   if (nativeDevelopmentEnabled()) {
     for (const profile of ["release", "debug"]) {
       if (triple) candidates.push(join(target, triple, profile, file));
