@@ -98,6 +98,10 @@ url        = { workspace = true }
 [target.'cfg(all(target_os = "linux", target_env = "gnu"))'.dependencies]
 libm = { workspace = true }
 
+# python_ffi hosts the shared python3XY.dll through LoadLibraryW/GetProcAddress on Windows.
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true, features = ["Win32_System_LibraryLoader"] }
+
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = { workspace = true }
 # The loopback HTTP server the X job API tests point the client at (no real host, no real cookie).

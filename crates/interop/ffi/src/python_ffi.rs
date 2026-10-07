@@ -4,7 +4,7 @@
 //! C ABI that hosts the shared CPython inside `libaphrody`.
 //!
 //! The libpython is the one of the `vu` artifact, shared with the Bun fork (`yolo`): it is opened
-//! `RTLD_GLOBAL` at run time and its C API is bound by `dlsym`; it is never linked. Nothing is
+//! `RTLD_GLOBAL` at run time (`LoadLibraryW`, process-wide by construction, on Windows) and its C API is bound by `dlsym`; it is never linked. Nothing is
 //! cached beyond the process-wide host: strings returned to the caller are owned by this crate
 //! and released with [`aphrody_py_string_free`]. Every export catches panics and answers an
 //! error code; the detail of the last failure is read with [`aphrody_py_last_error`].
@@ -97,6 +97,51 @@ fn host() -> std::sync::MutexGuard<'static, Option<Host>> {
     HOST.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
+/// Binds the CPython C API from a resolved symbol table (shared by every platform).
+fn bind_with(sym: impl Fn(&CStr) -> *mut c_void) -> Result<Api, String> {
+    /// # Safety
+    /// `T` is a function pointer type matching the symbol.
+    unsafe fn cast<T: Copy>(p: *mut c_void) -> T {
+        // SAFETY: caller contract; function pointers and data pointers have the same size here.
+        unsafe { std::mem::transmute_copy::<*mut c_void, T>(&p) }
+    }
+    macro_rules! f {
+        ($name:literal) => {{
+            let p = sym($name);
+            if p.is_null() {
+                return Err(format!("missing symbol {}", $name.to_string_lossy()));
+            }
+            // SAFETY: the symbol is the documented CPython C API function of that name.
+            unsafe { cast(p) }
+        }};
+    }
+    Ok(Api {
+        is_initialized: f!(c"Py_IsInitialized"),
+        initialize_ex: f!(c"Py_InitializeEx"),
+        finalize_ex: f!(c"Py_FinalizeEx"),
+        save_thread: f!(c"PyEval_SaveThread"),
+        restore_thread: f!(c"PyEval_RestoreThread"),
+        gil_ensure: f!(c"PyGILState_Ensure"),
+        gil_release: f!(c"PyGILState_Release"),
+        run_simple: f!(c"PyRun_SimpleString"),
+        run_string: f!(c"PyRun_String"),
+        import_module: f!(c"PyImport_ImportModule"),
+        get_attr: f!(c"PyObject_GetAttrString"),
+        call_object: f!(c"PyObject_CallObject"),
+        tuple_new: f!(c"PyTuple_New"),
+        tuple_set: f!(c"PyTuple_SetItem"),
+        unicode_from: f!(c"PyUnicode_FromString"),
+        object_str: f!(c"PyObject_Str"),
+        as_utf8: f!(c"PyUnicode_AsUTF8"),
+        decref: f!(c"Py_DecRef"),
+        add_module: f!(c"PyImport_AddModule"),
+        module_dict: f!(c"PyModule_GetDict"),
+        err_fetch: f!(c"PyErr_Fetch"),
+        err_clear: f!(c"PyErr_Clear"),
+        get_version: f!(c"Py_GetVersion"),
+    })
+}
+
 #[cfg(unix)]
 mod sys {
     use super::{Api, c_void};
@@ -108,9 +153,14 @@ mod sys {
         unsafe { libc::dlopen(c.as_ptr(), libc::RTLD_NOW | libc::RTLD_GLOBAL) }
     }
 
-    pub fn global_handle() -> *mut c_void {
-        // SAFETY: RTLD_DEFAULT searches the global scope of the process.
-        libc::RTLD_DEFAULT
+    /// The global scope of the process, when it already exports the CPython C API (the Bun
+    /// fork opens the libpython `RTLD_GLOBAL`).
+    pub fn already_loaded() -> *mut c_void {
+        if has(libc::RTLD_DEFAULT, c"Py_IsInitialized") {
+            libc::RTLD_DEFAULT
+        } else {
+            std::ptr::null_mut()
+        }
     }
 
     fn sym(handle: *mut c_void, name: &CStr) -> *mut c_void {
@@ -118,80 +168,81 @@ mod sys {
         unsafe { libc::dlsym(handle, name.as_ptr()) }
     }
 
-    pub fn has(handle: *mut c_void, name: &CStr) -> bool {
+    fn has(handle: *mut c_void, name: &CStr) -> bool {
         !sym(handle, name).is_null()
     }
 
-    /// # Safety
-    /// `T` is a function pointer type matching the symbol.
-    unsafe fn cast<T: Copy>(p: *mut c_void) -> T {
-        // SAFETY: caller contract; function pointers and data pointers have the same size here.
-        unsafe { std::mem::transmute_copy::<*mut c_void, T>(&p) }
-    }
-
     pub fn bind(handle: *mut c_void) -> Result<Api, String> {
-        macro_rules! f {
-            ($name:literal) => {{
-                let p = sym(handle, $name);
-                if p.is_null() {
-                    return Err(format!("missing symbol {}", $name.to_string_lossy()));
-                }
-                // SAFETY: the symbol is the documented CPython C API function of that name.
-                unsafe { cast(p) }
-            }};
-        }
-        Ok(Api {
-            is_initialized: f!(c"Py_IsInitialized"),
-            initialize_ex: f!(c"Py_InitializeEx"),
-            finalize_ex: f!(c"Py_FinalizeEx"),
-            save_thread: f!(c"PyEval_SaveThread"),
-            restore_thread: f!(c"PyEval_RestoreThread"),
-            gil_ensure: f!(c"PyGILState_Ensure"),
-            gil_release: f!(c"PyGILState_Release"),
-            run_simple: f!(c"PyRun_SimpleString"),
-            run_string: f!(c"PyRun_String"),
-            import_module: f!(c"PyImport_ImportModule"),
-            get_attr: f!(c"PyObject_GetAttrString"),
-            call_object: f!(c"PyObject_CallObject"),
-            tuple_new: f!(c"PyTuple_New"),
-            tuple_set: f!(c"PyTuple_SetItem"),
-            unicode_from: f!(c"PyUnicode_FromString"),
-            object_str: f!(c"PyObject_Str"),
-            as_utf8: f!(c"PyUnicode_AsUTF8"),
-            decref: f!(c"Py_DecRef"),
-            add_module: f!(c"PyImport_AddModule"),
-            module_dict: f!(c"PyModule_GetDict"),
-            err_fetch: f!(c"PyErr_Fetch"),
-            err_clear: f!(c"PyErr_Clear"),
-            get_version: f!(c"Py_GetVersion"),
-        })
+        super::bind_with(|name| sym(handle, name))
     }
 }
 
-#[cfg(not(unix))]
+#[cfg(windows)]
+mod sys {
+    use super::{Api, c_void, library_candidates};
+    use std::ffi::CStr;
+    use windows_sys::Win32::System::LibraryLoader::{
+        GetModuleHandleW, GetProcAddress, LoadLibraryW,
+    };
+
+    fn wide(s: &str) -> Vec<u16> {
+        s.encode_utf16().chain(std::iter::once(0)).collect()
+    }
+
+    /// Windows has no global symbol scope: a module loaded once is shared by every caller of the
+    /// process, which gives the same single-libpython guarantee as `RTLD_GLOBAL`.
+    pub fn open(path: &str) -> *mut c_void {
+        let w = wide(path);
+        // SAFETY: valid NUL-terminated UTF-16 path.
+        unsafe { LoadLibraryW(w.as_ptr()) }
+    }
+
+    /// A `python3XY.dll` already mapped by the host (the Bun fork or an embedding process).
+    pub fn already_loaded() -> *mut c_void {
+        for name in library_candidates() {
+            let w = wide(&name);
+            // SAFETY: valid NUL-terminated UTF-16 name; no reference count is taken.
+            let h = unsafe { GetModuleHandleW(w.as_ptr()) };
+            if !h.is_null() {
+                return h;
+            }
+        }
+        std::ptr::null_mut()
+    }
+
+    fn sym(handle: *mut c_void, name: &CStr) -> *mut c_void {
+        // SAFETY: valid module handle and NUL-terminated name.
+        unsafe { GetProcAddress(handle, name.as_ptr().cast()) }
+            .map_or(std::ptr::null_mut(), |f| f as *mut c_void)
+    }
+
+    pub fn bind(handle: *mut c_void) -> Result<Api, String> {
+        super::bind_with(|name| sym(handle, name))
+    }
+}
+
+#[cfg(not(any(unix, windows)))]
 mod sys {
     use super::{Api, c_void};
-    use std::ffi::CStr;
     pub fn open(_: &str) -> *mut c_void {
         std::ptr::null_mut()
     }
-    pub fn global_handle() -> *mut c_void {
+    pub fn already_loaded() -> *mut c_void {
         std::ptr::null_mut()
     }
-    pub fn has(_: *mut c_void, _: &CStr) -> bool {
-        false
-    }
     pub fn bind(_: *mut c_void) -> Result<Api, String> {
-        Err("hosting libpython is implemented for Unix only".into())
+        Err("hosting libpython is not supported on this platform".into())
     }
 }
 
 fn library_candidates() -> Vec<String> {
     let mut names = Vec::new();
     for minor in (11..=14).rev() {
+        #[cfg(windows)]
+        names.push(format!("python3{minor}.dll"));
         #[cfg(target_os = "macos")]
         names.push(format!("libpython3.{minor}.dylib"));
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(all(unix, not(target_os = "macos")))]
         {
             names.push(format!("libpython3.{minor}.so.1.0"));
             names.push(format!("libpython3.{minor}.so"));
@@ -205,8 +256,8 @@ fn load_inner(path: Option<&str>) -> i32 {
     if slot.is_some() {
         return APHRODY_PY_OK;
     }
-    if !cfg!(unix) {
-        set_error("hosting libpython is implemented for Unix only");
+    if !cfg!(any(unix, windows)) {
+        set_error("hosting libpython is not supported on this platform");
         return APHRODY_PY_ERR_UNSUPPORTED;
     }
     let env = std::env::var("APHRODY_LIBPYTHON").ok().filter(|v| !v.is_empty());
@@ -219,9 +270,9 @@ fn load_inner(path: Option<&str>) -> i32 {
     }
     if handle.is_null() && tried.is_empty() {
         // The Bun fork (or the embedding host) may already have mapped it globally.
-        if sys::has(sys::global_handle(), c"Py_IsInitialized") {
-            handle = sys::global_handle();
-            tried.push("<already global>".into());
+        handle = sys::already_loaded();
+        if !handle.is_null() {
+            tried.push("<already loaded>".into());
         }
     }
     if handle.is_null() && tried.is_empty() {

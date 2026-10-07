@@ -53,11 +53,18 @@ nom `yolo` il exécute le CLI embarqué ; sous le nom `vu` le CLI délègue à l
   `~/.bun/bin/bun` et `~/.local/bin/vu` pointent sur ces liens, `~/.local/bin/yolo` sur `~/.yolo/bin/yolo` ; le Bun
   officiel reste en `~/.bun/bin/bun-1.4.2` (retour arrière : relier `bun` dessus) et `bunx` y pointe jusqu'à la
   prochaine forge (fork `1ab54728c6` : `argv0` `bunx` = moteur) ; `bun-fork` et son répertoire sont retirés.
-- [ ] Ouvert : `packageManager` `bun@1.4.2` dans 20 manifestes (les sessions cloud installent le Bun officiel
-  qu'il nomme) ; `install.ps1` et Windows
-  (pas de liens symboliques, pas de build fork Windows) ; fort découplage du `yolo` historique `~/.yolo` ; `libaphrody`
-  (PyO3) en `RTLD_GLOBAL` est le côté du plan vu ; asset d'outillage natif (`--yolo-asset`) non embarqué dans le
-  reçu ci-dessus (`asset: null`) : les commandes qui l'exigent restent à qualifier.
+- [x] Activation locale (2026-10-07) : `~/.yolo/bin/yolo` est le binaire fusionné (Bun 1.4.3, `a4d88d124`, CLI et
+  fournisseur natif embarqués), `~/.bun/bin/bun` et `~/.local/bin/{yolo,bun,vu}` pointent vers lui ; `vu --version`
+  délègue à l'artefact `~/.vu` (`0.1.0-cf385dd2`).
+- [x] Windows (code) : `install.ps1` crée `bin\bun.exe` et `bin\vu.exe` en liens durs vers `yolo.exe` (aucune copie,
+  `YOLO_NO_ALIASES=1` les retire) ; le fork reconnaît `bun.exe`/`bunx.exe` comme moteur, `isVuArgv0` reconnaît `vu.exe`.
+- [x] libpython partagée côté `libaphrody` : `crates/interop/ffi/src/python_ffi.rs` (`aphrody_py_*`) ouvre la
+  bibliothèque en `RTLD_GLOBAL` sous Unix et par `LoadLibraryW`/`GetProcAddress` (`python3XY.dll`, déjà chargée ou
+  explicite) sous Windows ; liaison `bun:ffi` `@aphrody/runtime-sdk/python` (`Python.open`, `run`, `eval`, `call`,
+  `version`, libpython de l'artefact `vu` actif) ; `yolo py eval|exec` exécute Python en processus sur cette bibliothèque.
+- [ ] Ouvert : build fork Windows (`yolo.exe`) sur la fabrique et artefact `yolo`/`windows-x86_64` de
+  `tools/config/downloads.json` ; `packageManager` `bun@1.4.2` des manifestes (le fork n'a pas de version publiée) ;
+  retrait de l'ancien `yolo` historique.
 
 ## Hors périmètre
 

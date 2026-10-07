@@ -277,6 +277,27 @@ export async function runPythonCommand(
     return 0;
   }
 
+  // In-process Python on the one shared libpython of the vu artifact, hosted by libaphrody (plan D18): no child
+  // process, no second interpreter. `exec` runs statements, `eval` prints str(result).
+  if (sub === "eval" || sub === "exec") {
+    const code = args.slice(1).filter((arg) => !arg.startsWith("--")).join(" ");
+    if (code === "") {
+      console.error(`Usage: yolo py ${sub} <python ${sub === "eval" ? "expression" : "statements"}>`);
+      return 2;
+    }
+    const { Python, libpythonIn } = await import("@aphrody/runtime-sdk/python");
+    const libpython = tools.vu.artifact === undefined ? undefined : libpythonIn(tools.vu.artifact);
+    try {
+      using python = Python.open(libpython === undefined ? {} : { libpython });
+      if (sub === "eval") out(python.eval(code));
+      else python.run(code);
+      return 0;
+    } catch (error) {
+      console.error(`yolo py ${sub}: ${error instanceof Error ? error.message : String(error)}`);
+      return 1;
+    }
+  }
+
   // The verbs of the vu runtime itself (package manager, interpreters, ffi, hf, compiler): `yolo` loads the installed
   // artifact and delegates (plan D18); it never links vu. `yolo py vu <args>` is the explicit form of any vu command.
   if (sub === "vu" || VU_VERBS.has(sub)) {
@@ -410,7 +431,7 @@ export async function runPythonCommand(
 
   console.error(`Unknown python subcommand: ${sub}`);
   console.error(
-    "Usage: yolo py [status|test|lint|fmt|build|vu|add|remove|sync|lock|run|pip|python|ffi|hf|compile|check|locks|distributions|providers|typecheck|format:check|plan] [--engine] [--timeout-ms <n>] [--vu <dir>] [--no-vu] [--vu-full] [--json|--md]",
+    "Usage: yolo py [status|eval|exec|test|lint|fmt|build|vu|add|remove|sync|lock|run|pip|python|ffi|hf|compile|check|locks|distributions|providers|typecheck|format:check|plan] [--engine] [--timeout-ms <n>] [--vu <dir>] [--no-vu] [--vu-full] [--json|--md]",
   );
   return 2;
 }

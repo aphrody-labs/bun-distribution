@@ -65,7 +65,10 @@ fn host_runs_code_and_calls_module() {
 
     let (m, f, a) = (c"os.path", c"basename", c"/a/b/file.txt");
     // SAFETY: valid pointers.
-    assert_eq!(unsafe { aphrody_py_call(m.as_ptr(), f.as_ptr(), a.as_ptr(), &mut out) }, APHRODY_PY_OK);
+    assert_eq!(
+        unsafe { aphrody_py_call(m.as_ptr(), f.as_ptr(), a.as_ptr(), &mut out) },
+        APHRODY_PY_OK
+    );
     assert_eq!(take(out), "file.txt");
 
     // Calls from another thread attach through the GIL state API.

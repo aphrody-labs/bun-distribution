@@ -1,7 +1,8 @@
 # YOLO installer for Windows (PowerShell):
 #   irm https://github.com/aphrody-labs/yolo/releases/latest/download/install.ps1 | iex
 # Environment: YOLO_VERSION, YOLO_HOME (default %USERPROFILE%\.yolo), YOLO_REPO, YOLO_RELEASE_DIR, GITHUB_TOKEN,
-#              YOLO_NO_CRATES=1 (skip the Rust sources of the desktop scaffold), YOLO_NO_MODIFY_PATH=1
+#              YOLO_NO_CRATES=1 (skip the Rust sources of the desktop scaffold), YOLO_NO_MODIFY_PATH=1,
+#              YOLO_NO_ALIASES=1 (do not install the bun.exe and vu.exe aliases of the single yolo executable)
 $ErrorActionPreference = "Stop"
 # $ErrorActionPreference only stops on PowerShell errors: a nonzero exit from tar.exe or yolo.exe does not throw by
 # itself, so every native call below is followed by an explicit $LASTEXITCODE check.
@@ -77,7 +78,7 @@ try {
   # Known limitation: `yolo upgrade` runs this script from the very yolo.exe it is about to replace, and Windows
   # locks an executable file while it runs, so `Rename-Item $New $Part` can still fail for "bin" in that path (the
   # plain `irm ... | iex` / manual install.ps1 flow is unaffected, since nothing there is already running).
-  foreach ($Part in "bin", "packages", "m3", "templates", "VERSION", "LICENSE", "LICENSES", "vendor.lock") {
+  foreach ($Part in "bin", "packages", "assets", "templates", "m3", "VERSION", "LICENSE", "LICENSES", "vendor.lock") {
     $Src = Join-Path $Extract $Part; if (-not (Test-Path $Src)) { continue }
     $New = Join-Path $HomeDir "$Part.new"; if (Test-Path $New) { Remove-Item -Recurse -Force $New }
     Copy-Item -Recurse $Src $New
@@ -88,6 +89,13 @@ try {
   if ($CratesName) {
     $CratesDst = Join-Path $HomeDir "crates"; New-Item -ItemType Directory -Force -Path $CratesDst | Out-Null
     Copy-Item -Recurse -Force (Join-Path $CratesExtract "crates\*") $CratesDst
+  }
+  # One executable, three names by argv0 (yolo, bun = the engine, vu = the vu runtime artifact). Windows has no
+  # dependable unprivileged symlink, so the aliases are hard links to bin\yolo.exe on the same volume: no copy.
+  foreach ($Alias in "bun.exe", "vu.exe") {
+    $AliasPath = Join-Path $HomeDir "bin\$Alias"
+    if (Test-Path $AliasPath) { Remove-Item -Force $AliasPath }
+    if (-not $env:YOLO_NO_ALIASES) { New-Item -ItemType HardLink -Path $AliasPath -Target (Join-Path $HomeDir "bin\yolo.exe") | Out-Null }
   }
   $env:YOLO_HOME = $HomeDir
   & (Join-Path $HomeDir "bin\yolo.exe") runtime install (Join-Path $Extract "artifact"); Assert-Success "yolo runtime install"
