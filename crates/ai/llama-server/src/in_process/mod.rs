@@ -446,6 +446,36 @@ fn seed() -> u32 {
         .map_or(1, |elapsed| elapsed.subsec_nanos().max(1))
 }
 
+/// Render the model's embedded Jinja template rather than the C API's template recogniser.
+/// Modern model templates require Python-compatible methods and preserve their own role rules.
+fn render_jinja_prompt(
+    template: &str,
+    messages: &[(&str, String)],
+    bos: &str,
+    eos: &str,
+) -> Result<String, String> {
+    let mut environment = minijinja::Environment::new();
+    environment.set_unknown_method_callback(minijinja_contrib::pycompat::unknown_method_callback);
+    environment.add_function(
+        "raise_exception",
+        |message: String| -> Result<String, minijinja::Error> {
+            Err(minijinja::Error::new(minijinja::ErrorKind::InvalidOperation, message))
+        },
+    );
+    environment.add_function("strftime_now", |format: String| {
+        chrono::Utc::now().format(&format).to_string()
+    });
+    environment
+        .add_template("chat", template)
+        .map_err(|error| format!("chat template: {error}"))?;
+    let messages: Vec<_> =
+        messages.iter().map(|(role, content)| json!({"role":role,"content":content})).collect();
+    environment.get_template("chat").map_err(|error| format!("chat template: {error}"))?
+        .render(minijinja::context! { messages, bos_token => bos, eos_token => eos,
+            add_generation_prompt => true, enable_thinking => false, tools => Vec::<serde_json::Value>::new() })
+        .map_err(|error| format!("chat template: {error}"))
+}
+
 /// Decode one turn, sending events as they become final. `Err` = a failure to report.
 fn generate(
     inner: &Inner,
@@ -467,8 +497,21 @@ fn generate(
         Err(_) => aphrody_llama::model::LlamaChatTemplate::new("chatml")
             .map_err(|error| error.to_string())?,
     };
-    let prompt =
-        model.apply_chat_template(&template, &messages, true).map_err(|error| error.to_string())?;
+    let raw_template = template.to_str().map_err(|error| error.to_string())?;
+    let prompt = if raw_template.contains("{{") || raw_template.contains("{%") {
+        let mut decoder = encoding_rs::UTF_8.new_decoder();
+        let bos = model
+            .token_to_piece(model.token_bos(), &mut decoder, true, None)
+            .map_err(|error| error.to_string())?;
+        let eos = model
+            .token_to_piece(model.token_eos(), &mut decoder, true, None)
+            .map_err(|error| error.to_string())?;
+        render_jinja_prompt(raw_template, &render_messages(turn, marker), &bos, &eos)?
+    } else {
+        model
+            .apply_chat_template(&template, &messages, true)
+            .map_err(|error| format!("named chat template: {error}"))?
+    };
 
     // Most templates write the BOS token themselves; add it only when they did not.
     let mut decoder = encoding_rs::UTF_8.new_decoder();
@@ -657,8 +700,9 @@ mod tests {
         .await
         .expect("host model");
         let observer = Arc::downgrade(&engine.inner);
-        let stream = engine
+        let mut stream = engine
             .stream(ChatTurn {
+                system: Some("Answer briefly and preserve these system instructions.".into()),
                 messages: vec![ChatMessage {
                     role: Role::User,
                     parts: vec![Part::Text("Count from one to ten.".into())],
@@ -671,6 +715,18 @@ mod tests {
             })
             .await
             .expect("decoder");
+        let decoded = tokio::time::timeout(std::time::Duration::from_secs(90), async {
+            while let Some(event) = futures::StreamExt::next(&mut stream).await {
+                match event.expect("native decoder with system instructions") {
+                    ModelStreamEvent::TextDelta(text) if !text.is_empty() => return true,
+                    _ => {},
+                }
+            }
+            false
+        })
+        .await
+        .expect("native first token deadline");
+        assert!(decoded, "native decoder produced text");
         assert!(!resource.load(std::sync::atomic::Ordering::SeqCst));
         drop(engine);
         drop(stream);
@@ -682,6 +738,24 @@ mod tests {
         .await
         .expect("cancelled producer eventually releases resource");
         assert!(observer.upgrade().is_none());
+    }
+
+    #[test]
+    fn embedded_jinja_preserves_system_and_python_methods() {
+        let template = "{{ bos_token }}{% for m in messages %}<{{ m.role }}>{{ m.content.strip() }}{% endfor %}{% if add_generation_prompt %}<assistant>{% endif %}";
+        let rendered = render_jinja_prompt(
+            template,
+            &[("system", " actual soul ".into()), ("user", " hello ".into())],
+            "<bos>",
+            "<eos>",
+        )
+        .unwrap();
+        assert_eq!(rendered, "<bos><system>actual soul<user>hello<assistant>");
+        assert!(
+            render_jinja_prompt("{{ raise_exception('unsupported role') }}", &[], "", "")
+                .unwrap_err()
+                .contains("unsupported role")
+        );
     }
 
     fn tool() -> ToolDecl {

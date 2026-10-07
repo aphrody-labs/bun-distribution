@@ -136,11 +136,23 @@ async function fixture() {
   return { root, ffi, consumer };
 }
 
+test("inference builds reject a crate that lacks its native model owner", async () => {
+  const { root } = await fixture();
+  try {
+    const result = await run([`--root=${root}`, "--inference", "--unlocked"]);
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain("aphrody-ffi does not expose the native llama inference owner");
+    expect(existsSync(join(root, "target"))).toBe(false);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("native builder rejects legacy/unknown options without touching a source", async () => {
   expect(await run(["--root", "/missing", "--debug"])).toEqual({
     stdout: "",
     stderr:
-      "bun-native: unknown argument --root\nusage: bun-native [--root=<monorepo>] [--package-root=<consumer>] [--debug] [--gpu] [--jobs] [--offline] [--unlocked] [--stage-existing=<debug-artifact>] [--artifact-sha256=<hex>]\n",
+      "bun-native: unknown argument --root\nusage: bun-native [--root=<monorepo>] [--package-root=<consumer>] [--debug] [--gpu] [--jobs] [--inference] [--offline] [--unlocked] [--stage-existing=<debug-artifact>] [--artifact-sha256=<hex>]\n",
     code: 2,
   });
 });

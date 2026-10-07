@@ -14,7 +14,7 @@ use std::{
     },
 };
 
-use aphrody_agent_home::{AgentHome, BootstrapBudget, HomeOptions};
+use aphrody_agent_home::{AgentHome, BootstrapBudget, BootstrapFile, HomeOptions};
 use aphrody_llama_server::in_process::{InProcessLlama, LoadOptions, LoraSpec};
 use aphrody_model_client::{ChatMessage, ChatTurn, ModelClient, ModelStreamEvent, TurnOptions};
 use futures::StreamExt;
@@ -168,7 +168,23 @@ fn home_prompt(path: PathBuf) -> Result<String, String> {
     if home.soul().is_none() {
         return Err("the selected Agent Home has no SOUL.md; refusing a synthetic persona".into());
     }
-    Ok(home.system_prompt(&BootstrapBudget::default()).render())
+    // This boundary performs tool-less chat. Agent execution guides are not model persona.
+    // Preserve the complete protected identity; token fit is checked by the native decoder.
+    let mut view = home.system_prompt(&BootstrapBudget {
+        max_chars: usize::MAX,
+        total_max_chars: usize::MAX,
+        ..BootstrapBudget::default()
+    });
+    view.sections.retain(|section| {
+        matches!(section.file, BootstrapFile::Soul | BootstrapFile::Identity | BootstrapFile::User)
+    });
+    if view.sections.iter().any(|section| section.truncated) {
+        return Err(
+            "the protected inference identity was truncated; refusing a partial persona".into()
+        );
+    }
+    view.truncation = None;
+    Ok(view.render())
 }
 
 fn model_path(model: &str) -> Result<PathBuf, String> {
@@ -476,6 +492,23 @@ mod tests {
         assert!(home_prompt(directory.path().to_owned()).unwrap_err().contains("SOUL.md"));
         std::fs::write(directory.path().join("SOUL.md"), "# Fixture\nA test persona.").unwrap();
         assert!(home_prompt(directory.path().to_owned()).unwrap().contains("A test persona."));
+    }
+
+    #[test]
+    fn inference_identity_is_complete_without_execution_bootstrap() {
+        let directory = tempfile::tempdir().unwrap();
+        let soul = format!("# Fixture\n{}\nActual soul tail.", "Persona detail. ".repeat(1000));
+        std::fs::write(directory.path().join("SOUL.md"), &soul).unwrap();
+        std::fs::write(directory.path().join("IDENTITY.md"), "# Identity\nActual identity.")
+            .unwrap();
+        std::fs::write(directory.path().join("AGENTS.md"), "EXECUTION_ONLY ".repeat(5000)).unwrap();
+        std::fs::write(directory.path().join("TOOLS.md"), "UNAVAILABLE_EXECUTION_TOOLS").unwrap();
+        let prompt = home_prompt(directory.path().to_owned()).unwrap();
+        assert!(prompt.contains(&soul));
+        assert!(prompt.contains("Actual identity."));
+        assert!(!prompt.contains("EXECUTION_ONLY"));
+        assert!(!prompt.contains("UNAVAILABLE_EXECUTION_TOOLS"));
+        assert!(!prompt.contains("truncation warning"));
     }
 
     #[test]

@@ -222,12 +222,14 @@ export async function runBunNative(
         existingArtifact = arg.slice(17);
       else if (arg.startsWith("--artifact-sha256=") && /^[a-f0-9]{64}$/.test(arg.slice(18)))
         expectedHash = arg.slice(18);
-      else if (["--unlocked", "--gpu", "--jobs", "--debug", "--offline"].includes(arg))
+      else if (
+        ["--unlocked", "--gpu", "--jobs", "--inference", "--debug", "--offline"].includes(arg)
+      )
         flags.add(arg);
       else {
         console.error(`bun-native: unknown argument ${arg}`);
         console.error(
-          "usage: bun-native [--root=<monorepo>] [--package-root=<consumer>] [--debug] [--gpu] [--jobs] [--offline] [--unlocked] [--stage-existing=<debug-artifact>] [--artifact-sha256=<hex>]",
+          "usage: bun-native [--root=<monorepo>] [--package-root=<consumer>] [--debug] [--gpu] [--jobs] [--inference] [--offline] [--unlocked] [--stage-existing=<debug-artifact>] [--artifact-sha256=<hex>]",
         );
         return 2;
       }
@@ -282,11 +284,17 @@ export async function runBunNative(
     if (flags.has("--jobs") && !ffi?.features.jobs?.includes("aphrody-command/jobs")) {
       throw new Error("aphrody-ffi does not forward the jobs feature to aphrody-command");
     }
+    if (
+      flags.has("--inference") &&
+      !ffi?.features.inference?.includes("dep:aphrody-llama-server")
+    ) {
+      throw new Error("aphrody-ffi does not expose the native llama inference owner");
+    }
     const rustc = await output(["rustc", "--version", "--verbose"], repo, signal);
     const triple = rustc.match(/^host: (\S+)$/m)?.[1];
     if (!triple) throw new Error("rustc did not report its host target");
     const profile = flags.has("--debug") ? "debug" : "release";
-    const features = ["gpu", "jobs"].filter((feature) => flags.has(`--${feature}`));
+    const features = ["gpu", "jobs", "inference"].filter((feature) => flags.has(`--${feature}`));
     const sourceBefore = existingArtifact
       ? null
       : (await output(["git", "rev-parse", "HEAD"], repo, signal).catch(() => "")).trim();
