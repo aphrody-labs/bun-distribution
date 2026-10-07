@@ -9,17 +9,25 @@
   "pollSeconds": 5,
   "maxRounds": 12,
   "sourceLimit": 6,
+  "rag": {
+    "config": "/srv/aphrody-lab/debate-mcp.toml",
+    "server": "shenron-rag"
+  },
   "gemma": {
-    "baseUrl": "http://127.0.0.1:8798/v1",
-    "model": "gemma4-e2b",
-    "maxTokens": 384
+    "model": "gemma-4-e2b-it-q4km",
+    "profile": "aphrody",
+    "context": 8192,
+    "gpuLayers": 0,
+    "maxTokens": 256
   },
   "shenron": {
     "host": "dbfr",
-    "bridge": "/usr/local/libexec/aphrody-debate-backend.py",
-    "baseUrl": "http://127.0.0.1:8799/v1",
-    "model": "shenron-chat-v2",
-    "maxTokens": 384,
+    "model": "qwen3-4b-instruct-2507-q4km",
+    "profile": "dbfr",
+    "context": 8192,
+    "gpuLayers": 0,
+    "lora": "/home/ubuntu/.aphrody/models/adapters/shenron-chat-v2/adapter.gguf",
+    "maxTokens": 256,
     "botId": "1497194276025663680",
     "discordBridge": "/usr/local/libexec/aphrody-debate-discord.mjs"
   },

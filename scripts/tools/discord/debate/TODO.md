@@ -21,3 +21,14 @@ Lot local IA du 7 octobre 2026 :
 - [x] Qualifier les limites de contexte et les délais du pont canonique.
 - [x] Activer le worker et observer une réponse de chaque vrai compte dans debat.
 - [x] Conserver les sessions privées et livrer le lot possédé.
+
+Lot arbitrage / FFI du 7 octobre 2026 :
+
+- [x] Lire les demandes actuelles du salon et publier un cadrage d’arbitre.
+- [x] Observer les deux intervenants et signaler les limites réelles de leurs arguments.
+- [x] Corriger et tester la priorité du sujet humain sur l’initiative automatique.
+- [x] Qualifier le RAG natif CLI/MCP à six sources, schéma Shenron en lecture seule.
+- [x] Préparer les propriétaires partagés FFI pour inference et RAG, avec rollback du worker.
+- [ ] Qualifier le manifeste de production et le binding RAG FFI à six sources.
+- [ ] Qualifier les deux modèles et un échange réellement servi par le worker FFI.
+- [ ] Exécuter les gates finales, retirer le pont remplacé, livrer et pousser le lot.

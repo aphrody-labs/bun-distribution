@@ -1,22 +1,25 @@
 # SPDX-License-Identifier: Apache-2.0
 [Unit]
 Description=Aphrody source-grounded Shenron Discord debates
-After=network-online.target aphrody-llama-gemma4.service aphrody-llama-shenron-chat.service
-Wants=network-online.target
+After=network-online.target aphrody-mcp-http.service shenron-pg-tunnel.service
+Wants=network-online.target aphrody-mcp-http.service
 
 [Service]
 Type=simple
 User=ubuntu
 Group=ubuntu
 WorkingDirectory=/srv/aphrody-lab/state/debate
-ExecStart=/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/debate.mjs --policy /srv/aphrody-lab/debate-policy.json --env-file /etc/aphrody-discord.env --state /srv/aphrody-lab/state/debate/state.json
+EnvironmentFile=/etc/aphrody-discord-native.env
+EnvironmentFile=/etc/aphrody/aphrody-mcp-http.env
+Environment=BUN_BE_BUN=1
+ExecStart=/home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo /srv/aphrody-lab/debate.mjs --policy /srv/aphrody-lab/debate-policy.json --env-file /etc/aphrody-discord.env --state /srv/aphrody-lab/state/debate/state.json
 Restart=on-failure
 RestartSec=5
-TimeoutStopSec=250
+TimeoutStopSec=450
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/srv/aphrody-lab/state/debate
+ReadWritePaths=/srv/aphrody-lab/state/debate /home/ubuntu/.aphrody/locks
 PrivateTmp=true
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
 UMask=0077

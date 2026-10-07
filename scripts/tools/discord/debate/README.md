@@ -9,7 +9,10 @@ répond en spécialiste Dragon Ball. Les noms `Aphrody, <question>` et
 ou poursuivent un débat. Les messages des bots et des webhooks ne déclenchent
 aucune réponse en boucle.
 
-`!debat <sujet>` ouvre une session ; `!argument <thèse>` la poursuit. Un
+`!debat <sujet>` ouvre une session ; `!argument <thèse>` la poursuit. Une demande
+humaine remplace un sujet lancé automatiquement : l’ancien débat est clôturé et
+archivé avant d’ouvrir le nouveau, sans mélanger leurs contextes. Un débat déjà
+ouvert par un humain garde son sujet jusqu’à `!fin`. Un
 administrateur peut utiliser `!fin`, `!pause`, `!reprendre` et
 `!valider <ID de réponse>`. Les chercheurs peuvent participer. Chaque débat
 compte au plus douze tours ; les modèles peuvent décider d'une intervention
@@ -24,22 +27,38 @@ La politique des rôles, des modèles et des limites est dans
 
 ## Sources et apprentissage
 
-Le pont appelle `aphrody_shenron_rag_search` du MCP canonique existant sur DBFR.
-Si la recherche native est indisponible, il utilise le VFS déjà servi par Shenron.
-Les réponses viennent des deux daemons déjà installés sur VPS : Gemma sur
-`127.0.0.1:8798`, Shenron sur `127.0.0.1:8799`. Chaque réponse est bornée à
-384 tokens, avec un délai de 90 secondes. Le contexte conserve quatre réponses
-récentes de 600 caractères et des extraits de 900 caractères. Les références
-conservent leurs identifiants et URL. Fandom est rejeté ; le manga, les databooks,
-l'anime, les films et les jeux restent distincts. Une référence retrouvée ne
-garantit pas que sa proposition est vraie. Aucun OCR, index, source éditoriale
-ou dataset existant n'est modifié par ce worker.
+Le runtime d’exécution est le binaire Yolo installé, appelé directement avec
+`BUN_BE_BUN=1` pour ses APIs compatibles. Le code du worker utilise les propriétaires partagés du kit : `NativeLocalAI`
+pour l’inférence en processus et `searchLocalRag` pour le client MCP natif par
+FFI. Le RAG appelle uniquement `aphrody_shenron_rag_search` du serveur canonique
+Aphrody, avec le schéma PostgreSQL Shenron existant en lecture seule derrière
+son tunnel privé. Le token reste une référence d’environnement protégée.
+Aucun téléchargement de poids ni moteur parallèle n’est créé.
 
-Seules les réponses de Shenron évaluées par un administrateur et portant des
-citations valides produisent une entrée d'entraînement. Le format de rollout
-est compatible avec le lecteur natif `aphrody_train.dataset` ; ses gardes gold,
-secrets et déduplication restent nécessaires avant tout entraînement. La
-validation d'une citation ne remplace pas l'évaluation de son contenu.
+Les profils `aphrody` et `dbfr`, leurs SOUL et le LoRA Shenron restent distincts.
+Un seul modèle natif est résident par appel ; le verrou partagé entre processus
+empêche le chargement simultané par le laboratoire et le débat. Chaque réponse
+est bornée à 256 tokens et 180 secondes, file d’attente comprise. Le contexte
+garde trois réponses de 400 caractères et six extraits de 600 caractères.
+Les références gardent leurs identifiants et URL ; Fandom est rejeté. Les règles
+séparent manga, databooks, anime, films et jeux, et le format demande une majeure,
+une mineure, une conclusion et une objection précise au rival. Une référence
+retrouvée ne garantit pas la vérité de sa proposition.
+
+La source native est préparée ; l’activation attend encore l’admission du
+binaire de production par son manifeste et une qualification FFI complète.
+Le service actuellement qualifié conserve le transport d’inférence HTTP existant
+pendant cette qualification. Les contrôles CLI/MCP natifs du RAG ont retrouvé
+six sources réelles ; cela ne vaut pas encore qualification du binding FFI.
+
+La commande facultative `!valider` exporte les réponses Shenron annotées et
+portant des citations valides. Son format de rollout est compatible avec le
+lecteur natif `aphrody_train.dataset`. Le pipeline autorisé de génération et de
+validation de candidats conserve ses contrôles de provenance, de secrets, de
+domaine, de déduplication et de séparation du gold d’évaluation ; il n’ajoute
+pas de préalable d’approbation humaine. Les sorties de modèle ne deviennent
+pas automatiquement des vérités de référence. Aucun job qualifié n’a encore
+été lancé par ce worker, et valider une citation n’évalue pas son contenu.
 
 `!agent codex|agy|claude <texte>` est un **relais humain administrateur**, identifié
 comme tel. Les endpoints A2A authentifiés de ces pairs et l'accès au WSL d'Omar
@@ -52,14 +71,14 @@ films et jeux n'est revendiqué.
 Exécuter depuis la racine Aphrody :
 
 ```sh
-bun scripts/tools/discord/debate/install.ts
-APHRODY_SSH_COMMAND_TIMEOUT_SECS=250 bun scripts/tools/discord/debate/install.ts --apply
+env BUN_BE_BUN=1 /home/aphro/.yolo/bin/yolo scripts/tools/discord/debate/install.ts
+APHRODY_SSH_COMMAND_TIMEOUT_SECS=480 BUN_BE_BUN=1 /home/aphro/.yolo/bin/yolo scripts/tools/discord/debate/install.ts --apply
 # Un échange demandé par l’opérateur ; le service est arrêté pendant l’écriture.
-APHRODY_SSH_COMMAND_TIMEOUT_SECS=250 bun scripts/tools/discord/debate/install.ts --apply --exchange "Goku contre Vegeta : réponds à ton rival avec les sources disponibles"
+APHRODY_SSH_COMMAND_TIMEOUT_SECS=480 BUN_BE_BUN=1 /home/aphro/.yolo/bin/yolo scripts/tools/discord/debate/install.ts --apply --exchange "Goku contre Vegeta : réponds à ton rival avec les sources disponibles"
 ```
 
-Le plan et l'application passent par Infra, installent les ponts root sur DBFR,
-le bundle sur VPS et la seule unité
+Le plan et l’application passent par Infra, installent le relais Discord du
+compte Shenron sur DBFR, le bundle sur VPS et la seule unité
 [aphrody-discord-debate.service](../../../../tools/config/host/systemd/aphrody/aphrody-discord-debate.service).
 Les identifiants existants restent sur leurs hôtes. Les sessions, états et
 rollouts restent dans `/srv/aphrody-lab/state/debate`, en répertoires privés et
@@ -131,3 +150,33 @@ L’échange `1557479077550489601` est réellement publié dans `debat` par le c
 Shenron (`1557479416630747198`) puis Aphrody/Gemma (`1557479594007863406`).
 Les conversations et données d’entraînement restent dans leur store privé.
 Aucun entraînement de poids ni accès GPU/Omar n’est qualifié par cet échange.
+
+## Arbitrage et raccordement natif du 7 octobre 2026
+
+Le sujet automatique empêchait une nouvelle demande humaine d’ouvrir son
+propre débat ; l’argument suivant était alors rattaché au précédent sujet.
+La transition archive désormais l’initiative avant de prendre la demande humaine.
+Les rôles distinguent défense de la thèse et critique d’une prémisse précise,
+sans fabriquer une opposition lorsque les sources conduisent à un accord.
+L’arbitrage a observé les réponses des deux comptes puis signalé les inférences
+insuffisantes ; la présence des quatre libellés ne valide pas leur syllogisme.
+
+Le raccordement PostgreSQL natif réutilise le rôle et le tunnel existants. Ses
+options `search_path` et `default_transaction_read_only` sont vérifiées avant
+l’application ; les espaces du paramètre URI sont encodés `%20`. Les contrôles
+Infra et le vrai RPC fournissent six identifiants de sources Shenron. Une
+sauvegarde privée vérifiée et le retour au service précédent protègent toute
+application qui échoue à cette qualification.
+
+Le rapport GPU local est une évaluation du retrieval et un microbenchmark
+d’encodage distincts. Il ne prouve pas une exécution GPU de toute la récupération
+et ne constitue pas un entraînement. Les données, gold, conversations et poids
+restent dans leurs stores de domaine.
+
+Le lot préparé passe 27 tests (123 assertions), TypeScript ciblé, lint strict,
+format et reconstruction des bundles avec l’admission native. Ces gates ont
+été exécutées directement par le Yolo installé ; elles ne qualifient pas
+l’activation FFI restante. Le worker HTTP actuellement qualifié a servi
+l’échange `1557492036876107777`, avec Shenron `1557492315059257515`,
+Aphrody/Gemma `1557492471590555844` et le bilan d’arbitrage
+`1557493043006021652`. Les limites de logique et de source restent explicites.

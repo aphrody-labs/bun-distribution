@@ -2,6 +2,7 @@
 import { expect, test } from "bun:test";
 import {
   addressedPrompt,
+  answerFailureClass,
   groundedPrompt,
   maybeInitiate,
   approvedRollouts,
@@ -36,6 +37,19 @@ const message = (id: string, content: string, author = "omar"): LabMessage => ({
   channel_id: "debate",
   author: { id: author },
   content,
+});
+test("failure telemetry identifies technical classes without returning private error bodies", () => {
+  expect(answerFailureClass(new Error("native deadline: private prompt text"))).toBe("deadline");
+  expect(answerFailureClass(new Error("the selected Agent Home has no SOUL.md"))).toBe(
+    "profile-configuration",
+  );
+  expect(answerFailureClass(new Error("model is not installed in the protected model store"))).toBe(
+    "model-configuration",
+  );
+  expect(answerFailureClass(new Error("Native manifest missing at /private/path"))).toBe(
+    "native-binding",
+  );
+  expect(answerFailureClass(new Error("credential=must-not-appear"))).toBe("backend-unavailable");
 });
 function fixture(roles = ["researcher"]) {
   const posts: { content: string; allowed_mentions: { parse: string[] }; nonce: string }[] = [];
@@ -90,6 +104,66 @@ test("grounds sequential Shenron/Gemma responses and disables mentions", async (
   ).toBe(true);
   expect(approvedRollouts(f.state)).toEqual([]);
 });
+test("publication distinguishes secondary references from primary manga passages", async () => {
+  const f = fixture();
+  f.backend.search = async () => [{ ...source, kind: "character" }];
+  await f.processMessage(f.message("secondary", "!debat Une comparaison sourcée"));
+  expect(f.posts.every((post) => post.content.includes("Passage primaire absent"))).toBe(true);
+  const primary = fixture();
+  await primary.processMessage(primary.message("primary", "!debat Une comparaison sourcée"));
+  expect(primary.posts.every((post) => !post.content.includes("Passage primaire absent"))).toBe(
+    true,
+  );
+});
+test("a human topic replaces and archives an automatic topic without stale context", async () => {
+  const f = fixture();
+  f.state.session = {
+    id: "automatic",
+    topic: "Goku contre Vegeta",
+    rounds: 1,
+    closed: false,
+    turns: [
+      {
+        id: "automatic:human",
+        speaker: "initiative:gemma",
+        text: "Goku",
+        prompt: "Goku",
+        sources: [],
+      },
+    ],
+  };
+  const snapshots: DebateState[] = [];
+  const prompts: string[] = [];
+  f.backend.answer = async (_speaker, prompt) => {
+    prompts.push(prompt);
+    return "Une thèse [S1].";
+  };
+  await handleMessage(
+    f.message("human-topic", "!debat Cell contre Gohan"),
+    f.state,
+    policy,
+    f.api,
+    f.backend,
+    async () => {
+      snapshots.push(structuredClone(f.state));
+    },
+  );
+  expect(snapshots[0]?.session?.id).toBe("automatic");
+  expect(snapshots[0]?.session?.closed).toBe(true);
+  expect(f.state.session?.topic).toBe("Cell contre Gohan");
+  expect(f.state.session?.rounds).toBe(1);
+  expect(prompts.every((prompt) => !prompt.includes("Goku contre Vegeta"))).toBe(true);
+  expect(f.posts).toHaveLength(2);
+});
+test("a new topic preserves an already open human debate", async () => {
+  const f = fixture();
+  await f.processMessage(f.message("first", "!debat Cell contre Gohan"));
+  await f.processMessage(f.message("second", "!debat Buu"));
+  expect(f.state.session?.id).toBe("first");
+  expect(f.state.session?.topic).toBe("Cell contre Gohan");
+  expect(f.inferences()).toBe(2);
+  expect(f.posts.at(-1)?.content).toContain("Un débat est ouvert");
+});
 test("bounds grounded CPU context while keeping citation identities", () => {
   const longSource = { ...source, snippet: "x".repeat(2400), title: "t".repeat(600) };
   const turns = Array.from({ length: 12 }, (_, index) => ({
@@ -109,12 +183,12 @@ test("bounds grounded CPU context while keeping citation identities", () => {
     history: { text: string }[];
     sources: { sourceId: string; citation: string; snippet: string }[];
   };
-  expect(data.history).toHaveLength(4);
-  expect(data.history.every((turn) => turn.text.length === 600)).toBe(true);
+  expect(data.history).toHaveLength(3);
+  expect(data.history.every((turn) => turn.text.length === 400)).toBe(true);
   expect(data.sources[5]?.citation).toBe("[S6]");
-  expect(data.sources.every((item) => item.snippet.length === 900)).toBe(true);
+  expect(data.sources.every((item) => item.snippet.length === 600)).toBe(true);
   expect(data.sources[0]?.sourceId).toBe(source.sourceId);
-  expect(prompt.length).toBeLessThan(11_000);
+  expect(prompt.length).toBeLessThan(9_000);
 });
 test("local model autonomy lives in a system message with truthful execution boundaries", () => {
   const messages = debateMessages("Données sources synthétiques");
@@ -123,36 +197,37 @@ test("local model autonomy lives in a system message with truthful execution bou
   expect(messages[0]?.content).toContain("NHITL ne crée aucune authentification");
   expect(messages[1]?.content).toBe("Données sources synthétiques");
 });
-test("both existing local models receive bounded generation and independent system instructions", async () => {
-  const originalFetch = globalThis.fetch;
-  const calls: { url: string; body: { model: string; max_tokens: number; messages: unknown[] } }[] =
-    [];
-  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
-    calls.push({ url: String(input), body: JSON.parse(String(init?.body)) });
-    return Response.json({ choices: [{ message: { content: "Réponse locale" } }] });
-  }) as typeof fetch;
-  try {
-    const backend = makeBackend(policy);
-    for (const speaker of ["shenron", "gemma"] as const)
-      expect(await backend.answer(speaker, "Question synthétique")).toBe("Réponse locale");
-    expect(calls.map((call) => call.url)).toEqual([
-      "http://127.0.0.1:8799/v1/chat/completions",
-      "http://127.0.0.1:8798/v1/chat/completions",
-    ]);
-    expect(calls.map((call) => call.body.model)).toEqual(["shenron-chat-v2", "gemma4-e2b"]);
-    expect(calls.every((call) => call.body.max_tokens === 384)).toBe(true);
-    expect(calls.every((call) => call.body.messages.length === 2)).toBe(true);
-    const outside = makeBackend({
-      ...policy,
-      shenron: { ...policy.shenron, baseUrl: "https://unowned.invalid/v1" },
-    });
-    await expect(outside.answer("shenron", "Question")).rejects.toThrow(
-      "Local model endpoint required",
-    );
-    expect(calls).toHaveLength(2);
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
+test("both models use the shared native adapter with isolated profiles and bounded generation", async () => {
+  const calls: { model: string; profile: string; maxTokens?: number; system?: string }[] = [];
+  const backend = makeBackend(policy, {
+    async chat(selection, input) {
+      calls.push({
+        model: selection.model,
+        profile: selection.profile,
+        maxTokens: input.maxTokens,
+        system: input.system,
+      });
+      expect(input.messages).toEqual([{ role: "user", content: "Question synthétique" }]);
+      return {
+        text: "Réponse native",
+        model: selection.model,
+        profile: selection.profile,
+        usage: null,
+        finishReason: "stop",
+      };
+    },
+  });
+  for (const speaker of ["shenron", "gemma"] as const)
+    expect(await backend.answer(speaker, "Question synthétique")).toBe("Réponse native");
+  expect(calls.map((call) => call.model)).toEqual([
+    "qwen3-4b-instruct-2507-q4km",
+    "gemma-4-e2b-it-q4km",
+  ]);
+  expect(calls.map((call) => call.profile)).toEqual(["dbfr", "aphrody"]);
+  expect(calls.every((call) => call.maxTokens === 256)).toBe(true);
+  expect(calls.every((call) => call.system?.includes("sans confirmation intermédiaire"))).toBe(
+    true,
+  );
 });
 test("only administrators can validate a cited Shenron response", async () => {
   const f = fixture();

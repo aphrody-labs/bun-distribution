@@ -11,8 +11,11 @@ import {
   type Channel,
 } from "../../../../packages/discord/kit/src/lab/ai-lab.ts";
 import type { LabMessage } from "../../../../packages/discord/kit/src/lab/assistant.ts";
+import { localAI, type NativeLocalAI } from "../../../../packages/discord/kit/src/lab/local-ai.ts";
+import { searchLocalRag } from "../../../../packages/discord/kit/src/lab/local-rag.ts";
 import {
   approvedRollouts,
+  groundedPrompt,
   handleMessage,
   maybeInitiate,
   normalizeSources,
@@ -48,62 +51,31 @@ export function debateMessages(prompt: string): { role: string; content: string 
   ];
 }
 
-export function makeBackend(policy: DebatePolicy): Backend {
-  if (
-    policy.shenron.host !== "dbfr" ||
-    policy.shenron.bridge !== "/usr/local/libexec/aphrody-debate-backend.py"
-  )
-    throw new Error("Canonical backend required");
-  const invoke = async (tool: string, args: unknown): Promise<Record<string, unknown>> => {
-    const encoded = Buffer.from(JSON.stringify({ tool, arguments: args })).toString("base64");
-    const text = await run([
-      "/home/ubuntu/.local/bin/aphrody",
-      "infra",
-      "ssh",
-      "exec",
-      "--host",
-      policy.shenron.host,
-      "--cmd",
-      `sudo -n python3 /usr/local/libexec/aphrody-debate-backend.py '${encoded}'`,
-    ]);
-    const result = JSON.parse(text) as Record<string, unknown>;
-    if (result.error) throw new Error("Shenron unavailable");
-    return result;
-  };
+export function makeBackend(
+  policy: DebatePolicy,
+  inference: Pick<NativeLocalAI, "chat"> = localAI,
+  rag: typeof searchLocalRag = searchLocalRag,
+): Backend {
+  if (policy.shenron.host !== "dbfr" || policy.rag.server !== "shenron-rag")
+    throw new Error("Canonical domain owners required");
   return {
     async sendShenron(channelId, message) {
       return shenronDiscord({ action: "send", channelId, message });
     },
     async search(query) {
-      const body = await invoke("aphrody_shenron_rag_search", {
-        q: query,
-        limit: policy.sourceLimit,
-      });
-      return normalizeSources(body as { results?: Record<string, unknown>[] }, policy.sourceLimit);
+      const body = await rag(policy.rag, query, policy.sourceLimit);
+      return normalizeSources(body, policy.sourceLimit);
     },
     async answer(speaker, prompt) {
-      // Both existing VPS daemons expose the same local inference API. The
-      // native chat tool omits max_tokens; bound generation here for CPU turns.
       const model = speaker === "shenron" ? policy.shenron : policy.gemma;
-      const url = new URL(model.baseUrl);
-      if (url.protocol !== "http:" || url.hostname !== "127.0.0.1")
-        throw new Error("Local model endpoint required");
-      const response = await fetch(`${url.href.replace(/\/$/, "")}/chat/completions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: model.model,
-          messages: debateMessages(prompt),
-          max_tokens: model.maxTokens,
-          temperature: 0.3,
-          stream: false,
-        }),
-        signal: AbortSignal.timeout(90_000),
-        redirect: "error",
+      const result = await inference.chat(model, {
+        system: debateMessages(prompt)[0]!.content,
+        messages: [{ role: "user", content: prompt }],
+        maxTokens: model.maxTokens,
+        temperature: 0.3,
+        timeoutMs: 180_000,
       });
-      if (!response.ok) throw new Error("Local model unavailable");
-      const result = (await response.json()) as { choices?: { message?: { content?: string } }[] };
-      return result.choices?.[0]?.message?.content ?? "";
+      return result.text;
     },
   };
 }
@@ -166,7 +138,7 @@ async function shenronDiscord(
     "--host",
     "dbfr",
     "--cmd",
-    `sudo -n /home/ubuntu/.bun/bin/bun /usr/local/libexec/aphrody-debate-discord.mjs '${encoded}'`,
+    `sudo -n env BUN_BE_BUN=1 /home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo /usr/local/libexec/aphrody-debate-discord.mjs '${encoded}'`,
   ]);
   return JSON.parse(result) as { available?: boolean; botId?: string; messageId?: string };
 }
@@ -281,7 +253,7 @@ if (import.meta.main) {
   await saveState(statePath, state);
   if (process.argv.includes("--guide")) {
     const content =
-      "**Aphrody ↔ Shenron : rivalité Dragon Ball**\nAphrody, <question> ou Shenron, <question>, ainsi que leurs @, ouvrent ou poursuivent le débat. !debat <sujet et continuité> et !argument <thèse> restent disponibles.\nAphrody est le développeur et critique de Shenron ; Shenron se spécialise en Dragon Ball. Chaque rival peut choisir d’intervenir spontanément : une occasion toutes les 15 minutes, quatre initiatives maximum par débat. Un premier débat peut s’ouvrir dès que les deux comptes bots sont présents. Les messages de bots ne déclenchent aucune boucle.\n!pause / !reprendre contrôle les initiatives ; !fin clôture. !agent codex|agy|claude <texte> relaie une contribution humaine, en attendant les endpoints A2A qualifiés. !valider <ID> permet aux administrateurs d’évaluer une réponse Shenron pour le dataset privé.\nLes références viennent du RAG Shenron existant sur DBFR ; manga, databooks, anime, films et jeux restent distincts. Les réponses évaluées doivent passer les gardes gold/secrets d’aphrody train sur le WSL d’Omar. Aucun poids n’est modifié automatiquement. Tant que le vrai bot Shenron n’est pas installé, ses réponses portent explicitement la mention de relais par Aphrody.";
+      "**Aphrody ↔ Shenron : rivalité Dragon Ball**\nAphrody, <question> ou Shenron, <question>, ainsi que leurs @, ouvrent ou poursuivent le débat. !debat <sujet et continuité> et !argument <thèse> restent disponibles.\nAphrody est le développeur et critique de Shenron ; Shenron se spécialise en Dragon Ball. Chaque rival peut choisir d’intervenir spontanément : une occasion toutes les 15 minutes, quatre initiatives maximum par débat. Un premier débat peut s’ouvrir dès que les deux comptes bots sont présents. Les messages de bots ne déclenchent aucune boucle.\n!pause / !reprendre contrôle les initiatives ; !fin clôture. !agent codex|agy|claude <texte> relaie une contribution humaine, en attendant les endpoints A2A qualifiés. !valider <ID> permet aux administrateurs d’annoter une réponse Shenron candidate dans le store privé.\nLes références viennent du RAG Shenron existant sur DBFR ; manga, databooks, anime, films et jeux restent distincts. Les exemples candidats passent par le propriétaire natif aphrody train et ses contrôles de provenance, de secrets, de domaine et de séparation du gold d’évaluation. Une sortie de modèle ne devient pas automatiquement une vérité de référence ; une annotation humaine n’est pas un préalable ajouté au pipeline autorisé. Aucun entraînement qualifié n’a encore été lancé par ce workflow. Tant que le vrai bot Shenron n’est pas installé, ses réponses portent explicitement la mention de relais par Aphrody.";
     if (state.guideId)
       await api(`/channels/${state.channelId}/messages/${state.guideId}`, "PATCH", {
         content,
@@ -305,9 +277,14 @@ if (import.meta.main) {
     const sources = await backend.search("Son Goku");
     if (!sources.length) throw new Error("RAG returned no sources");
     const ready: string[] = [];
+    const probePrompt = groundedPrompt(
+      "Fiabilité des références Dragon Ball disponibles",
+      "Quelle affirmation ces extraits étayent-ils, et quelle limite de preuve faut-il reconnaître ?",
+      [],
+      sources,
+    );
     for (const speaker of ["shenron", "gemma"] as const) {
-      if (!(await backend.answer(speaker, "Réponds exactement DEBATE_OK.")))
-        throw new Error("Probe empty answer");
+      if (!(await backend.answer(speaker, probePrompt))) throw new Error("Probe empty answer");
       ready.push(speaker);
     }
     console.log(
@@ -315,6 +292,7 @@ if (import.meta.main) {
         ready,
         shenronDiscordAvailable: state.shenronAvailable,
         sourceCount: sources.length,
+        groundedPromptBytes: Buffer.byteLength(probePrompt),
         sources: sources.map((s) => ({ sourceId: s.sourceId, kind: s.kind })),
       }),
     );
