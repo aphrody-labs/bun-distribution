@@ -31,7 +31,7 @@ Since 2026-10-05 the fork has a single Aphrody working branch, **`main`** (also 
 - Upstream arrives by merge (`upstream/main` into `main`), never by rebase or force push.
 - Optional `patches/bun/*.patch` files (root of this repo) are reapplied by the sync engine with
   `--apply --reapply-patches` when the fork checks fail after an upstream refactor.
-- `bun-forge` (`yolo forge`, `config/bun-forge.json`) watches and builds `main`; `config/vendor.json` pins the
+- `yolo forge` (`config/bun-forge.json`) watches and builds `main`; `config/vendor.json` pins the
   qualified commit.
 
 ---

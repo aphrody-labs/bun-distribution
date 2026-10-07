@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
-//! bun-forge — builds the aphrody-labs/bun fork on a fresh Linux machine. Run it as `yolo forge <command>`; the yolo CLI
-//! loads this module in-process and calls `runForge`. `bun run compile` still links a standalone executable.
+//! Builds the aphrody-labs/bun fork on a fresh Linux machine. Run it as `yolo forge <command>`; the yolo CLI
+//! loads this module in-process and calls `runForge`.
 //!
 //!   yolo forge doctor                      what the machine has and lacks
 //!   yolo forge bootstrap                   install the toolchain (apt with sudo; LLVM, cmake, rustup into the cache)
@@ -37,7 +37,7 @@ async function main(argv: string[]): Promise<number> {
       console.log(HELP);
       return 0;
     case "version":
-      console.log(`bun-forge ${VERSION} (Bun ${Bun.version})`);
+      console.log(`yolo forge ${VERSION} (Bun ${Bun.version})`);
       return 0;
     case "doctor":
       return doctor(options) ? 0 : 1;

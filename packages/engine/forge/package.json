@@ -3,9 +3,6 @@
   "version": "0.1.1",
   "description": "yolo forge: builds the aphrody-labs/bun fork on a fresh Linux machine, one temporary checkout per commit",
   "license": "Apache-2.0",
-  "bin": {
-    "bun-forge": "./src/main.ts"
-  },
   "files": [
     "src"
   ],
@@ -14,8 +11,6 @@
     "access": "public"
   },
   "scripts": {
-    "compile": "bun build ./src/main.ts --compile --minify --bytecode --format=esm --sourcemap --outfile dist/bun-forge",
-    "compile:all": "bun build ./src/main.ts --compile --minify --bytecode --format=esm --target=bun-linux-x64 --outfile dist/bun-forge-linux-x64 && bun build ./src/main.ts --compile --minify --bytecode --format=esm --target=bun-linux-arm64 --outfile dist/bun-forge-linux-arm64",
     "test": "bun test test",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "oxlint src test",

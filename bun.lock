@@ -896,9 +896,6 @@
     "packages/engine/forge": {
       "name": "@aphrody/bun-forge",
       "version": "0.1.1",
-      "bin": {
-        "bun-forge": "./src/main.ts",
-      },
       "dependencies": {
         "@aphrody/yolo-core": "workspace:*",
       },

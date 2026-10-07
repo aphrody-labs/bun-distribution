@@ -128,7 +128,7 @@ describe("yolo package commands", () => {
       [["doc-ai", "--help"], "yolo doc-ai translate"],
       [["browser", "--version"], "@aphrody/agent-browser"],
       [["forge", "--help"], "yolo forge doctor"],
-      [["forge", "version"], "bun-forge 0.1.1"],
+      [["forge", "version"], "yolo forge 0.1.1"],
       [["m3", "--help"], "Tools (yolo m3 <tool> ...):"],
       [["m3", "help"], "m3 new <dir>"],
       [["m3", "next", "--help"], "usage: m3-next"],
