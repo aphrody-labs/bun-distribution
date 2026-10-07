@@ -11,6 +11,7 @@ import { runUpstream } from "./sources/upstream.ts";
 import { runRust } from "./ecosystems/rust.ts";
 import { runBun } from "./ecosystems/bun.ts";
 import { runUv } from "./ecosystems/uv.ts";
+import type { NativeJobTransport } from "./job-hosts.ts";
 
 /** `yolo update`: toolchain pins, dependencies, Cargo lock, user systemd units and dev-env checks. */
 export const updateHelp = `yolo update: one entry point for toolchain pins, dependencies, Cargo lock, user systemd units and dev-env checks.
@@ -27,7 +28,10 @@ export const updateHelp = `yolo update: one entry point for toolchain pins, depe
   yolo update run [--apply]             tools, cargo, deps, systemd restart, then the gates (report only without --apply)
 Global flags: --root <repo>, --json`;
 
-export async function runUpdate(argv: string[]): Promise<number> {
+export async function runUpdate(
+  argv: string[],
+  ports: { nativeJobTransport?: NativeJobTransport } = {},
+): Promise<number> {
   const ri = argv.indexOf("--root");
   const root = resolve(ri >= 0 ? argv[ri + 1]! : process.cwd());
   const args = argv.filter((a, i) => !(a === "--root" || (ri >= 0 && i === ri + 1)));
@@ -61,7 +65,7 @@ export async function runUpdate(argv: string[]): Promise<number> {
     case "deps":
       return runDepsSync(rest.length ? [...rest, "--root", root] : ["plan", "--root", root]);
     case "systemd":
-      return runSystemd(c, rest);
+      return runSystemd(c, rest, ports);
     case "sources":
       return runSources(c, rest);
     case "upstream":

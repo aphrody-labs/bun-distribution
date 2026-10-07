@@ -26,6 +26,12 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { Ctx } from "./context.ts";
 import { spawnSync, type SpawnSyncResult } from "./process.ts";
+import {
+  prepareNativeJobHostClients,
+  qualifyNativeJobHostClients,
+  type NativeJobHost,
+  type NativeJobTransport,
+} from "./job-hosts.ts";
 
 export type UnitState = "missing" | "current" | "stale-copy" | "foreign-link";
 
@@ -76,6 +82,7 @@ function isLink(p: string): boolean {
 
 /** Keys required by the repo template that /etc/wsl.conf does not set the same way. */
 export function wslDrift(template: string, live: string): string[] {
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- existing local parser stays scoped to this unrelated drift check.
   const parse = (t: string) => {
     const out = new Map<string, string>();
     let section = "";
@@ -435,7 +442,11 @@ export async function activateLocalJobs(
   }
 }
 
-export function runSystemd(c: Ctx, args: string[]): number | Promise<number> {
+export function runSystemd(
+  c: Ctx,
+  args: string[],
+  ports: { nativeJobTransport?: NativeJobTransport } = {},
+): number | Promise<number> {
   switch (args[0] ?? "check") {
     case "check":
       return check(c);
@@ -455,8 +466,32 @@ export function runSystemd(c: Ctx, args: string[]): number | Promise<number> {
       const at = args.indexOf("--binary-sha256");
       return activateLocalJobs(c, at < 0 ? "" : (args[at + 1] ?? ""));
     }
+    case "jobs-clients": {
+      if (args.includes("--qualify") && (!c.apply || !ports.nativeJobTransport))
+        throw new Error("Native job qualification requires --apply and the native transport owner");
+      const at = args.indexOf("--binary-sha256");
+      const ids = args.flatMap((arg, index) => (arg === "--host" ? [args[index + 1]] : []));
+      if (ids.some((id) => !["vps", "dbfr", "wsl"].includes(id ?? "")))
+        throw new Error("Select existing qualified host identities explicitly");
+      const hosts = prepareNativeJobHostClients(
+        c,
+        ids as NativeJobHost["id"][],
+        at < 0 ? "" : (args[at + 1] ?? ""),
+      );
+      if (args.includes("--qualify"))
+        return qualifyNativeJobHostClients(hosts, ports.nativeJobTransport!, {
+          pin: args[at + 1] ?? "",
+        }).then((qualified) => {
+          console.log(JSON.stringify(qualified, null, 2));
+          return 0;
+        });
+      console.log(JSON.stringify(hosts, null, 2));
+      return 0;
+    }
     default:
-      console.error("usage: systemd [check|install [unit...]|restart [needle...]]");
+      console.error(
+        "usage: systemd [check|install [unit...]|restart [needle...]|jobs --binary-sha256 HEX|jobs-clients --host vps|dbfr|wsl --binary-sha256 HEX]",
+      );
       return 2;
   }
 }
