@@ -1,0 +1,91 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+:root {
+  color-scheme: dark;
+  font-family: system-ui, sans-serif;
+  background: #0b1020;
+  color: #f0f5ff;
+}
+body {
+  max-width: 1080px;
+  margin: auto;
+  padding: 1.4rem;
+  line-height: 1.6;
+}
+header {
+  padding: 1.4rem 0;
+}
+h1 {
+  font-size: clamp(2rem, 7vw, 4rem);
+  margin: 0;
+  line-height: 1.15;
+}
+h1 span {
+  color: #63e6ff;
+}
+.eyebrow {
+  color: #c7bbff;
+}
+p {
+  max-width: 80ch;
+}
+.setup,
+.controls {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+button,
+select {
+  font: inherit;
+  color: #f0f5ff;
+  background: #263653;
+  border: 1px solid #94a6c5;
+  padding: 0.65rem 0.9rem;
+  border-radius: 0.6rem;
+  min-height: 48px;
+  cursor: pointer;
+}
+#start {
+  background: #5a39a5;
+}
+button:active {
+  background: #43668a;
+}
+:focus-visible {
+  outline: 3px solid #63e6ff;
+  outline-offset: 4px;
+}
+input {
+  min-height: 48px;
+}
+canvas {
+  width: 100%;
+  height: auto;
+  background: #10172d;
+  border: 1px solid #64799e;
+  border-radius: 0.8rem;
+}
+.controls {
+  margin: 1rem 0;
+}
+.controls button {
+  touch-action: none;
+  user-select: none;
+}
+#hud {
+  font-variant-numeric: tabular-nums;
+}
+#result {
+  min-height: 1.6em;
+  color: #ffe29d;
+}
+footer {
+  color: #b7c5df;
+  margin: 2rem 0;
+}
+details {
+  padding: 1rem;
+  background: #19233a;
+  border-radius: 0.6rem;
+}

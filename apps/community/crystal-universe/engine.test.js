@@ -1,0 +1,62 @@
+// SPDX-License-Identifier: Apache-2.0
+import { test, expect } from "bun:test";
+import { createGame, step } from "./engine.js";
+test("energy, transformation, cooldown and expiry", () => {
+  const g = createGame();
+  g.player.energy = 80;
+  step(g, { transform: true }, 0.01);
+  expect(g.player.transformed).toBe(8);
+  expect(g.player.energy).toBeLessThan(1);
+  for (let i = 0; i < 170; i++) step(g, {}, 0.05);
+  expect(g.player.transformed).toBe(0);
+});
+test("combo and projectile damage with energy cost", () => {
+  const g = createGame();
+  g.wave = 1;
+  g.enemies = [{ x: 210, y: 320, hp: 100, cooldown: 10 }];
+  step(g, { punch: true }, 0.01);
+  expect(g.enemies[0].hp).toBe(87);
+  step(g, { punch: true }, 0.01);
+  expect(g.enemies[0].hp).toBe(87);
+  g.player.cooldown = 0;
+  step(g, { blast: true }, 0.01);
+  expect(g.player.energy).toBeLessThan(21);
+  for (let i = 0; i < 10; i++) step(g, {}, 0.01);
+  expect(g.enemies[0].hp).toBe(63);
+});
+test("five waves win, score only once per enemy", () => {
+  const g = createGame();
+  for (let wave = 1; wave <= 5; wave++) {
+    step(g, {}, 0.05);
+    expect(g.wave).toBe(wave);
+    for (const e of g.enemies) e.hp = 0;
+    step(g, {}, 0.05);
+    for (let i = 0; i < 31; i++) step(g, {}, 0.05);
+  }
+  expect(g.status).toBe("won");
+  expect(g.score).toBe(2000);
+  const score = g.score;
+  step(g, { blast: true }, 0.05);
+  expect(g.score).toBe(score);
+});
+test("death ends game and pauses simulation", () => {
+  const g = createGame();
+  g.wave = 1;
+  g.player.hp = 1;
+  g.enemies = [{ x: 180, y: 320, hp: 50, cooldown: 0 }];
+  step(g, {}, 0.01);
+  expect(g.status).toBe("lost");
+  const x = g.player.x;
+  step(g, { right: true }, 0.05);
+  expect(g.player.x).toBe(x);
+});
+test("jump, arena bounds and character differences", () => {
+  const a = createGame(),
+    b = createGame("speed");
+  step(a, { right: true, jump: true }, 0.05);
+  step(b, { right: true }, 0.05);
+  expect(a.player.y).toBeLessThan(320);
+  expect(b.player.x).toBeGreaterThan(a.player.x);
+  for (let i = 0; i < 1000; i++) step(b, { right: true }, 0.05);
+  expect(b.player.x).toBeLessThanOrEqual(936);
+});

@@ -1,0 +1,60 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dragon Pixel — mini-jeu d'Omar</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <p class="eyebrow">Le mini-jeu d'Omar · Prototype original</p>
+      <h1>Dragon <span>Pixel</span></h1>
+      <p>Charge ton énergie. Transforme-toi. Repousse cinq vagues de guerriers.</p>
+    </header>
+    <main>
+      <section class="setup">
+        <label for="style">Style de combat</label
+        ><select id="style">
+          <option value="balanced">Équilibré</option>
+          <option value="speed">Vitesse</option>
+          <option value="power">Puissance</option></select
+        ><label for="color">Couleur du guerrier</label
+        ><input id="color" type="color" value="#63e6ff" /><button id="start">
+          Jouer / Recommencer</button
+        ><button id="pause" aria-pressed="false">Pause</button>
+      </section>
+      <p id="hud">Prêt à entrer dans l'arène.</p>
+      <canvas
+        id="arena"
+        width="960"
+        height="400"
+        role="img"
+        aria-label="Arène de combat 2D. Les statistiques et le résultat sont affichés en texte."
+        >Ce jeu nécessite un navigateur prenant en charge Canvas.</canvas
+      >
+      <p id="result" role="status">Choisis ton style puis lance la partie.</p>
+      <div class="controls" aria-label="Commandes tactiles">
+        <button data-action="left">← Gauche</button><button data-action="right">Droite →</button
+        ><button data-action="jump">Saut</button><button data-action="punch">Combo</button
+        ><button data-action="blast">Projectile</button><button data-action="charge">Charger</button
+        ><button data-action="transform">Transformer</button>
+      </div>
+      <details>
+        <summary>Comment jouer</summary>
+        <p>
+          Flèches gauche/droite ou Q/D : déplacement · Espace : saut · J : combo · K : projectile
+          (20 énergie) · L : charge · T : transformation (80 énergie, 8 secondes) · P : pause. Sur
+          mobile, maintiens les boutons. Élimine cinq vagues pour gagner. Les styles changent la
+          vitesse ou la puissance.
+        </p>
+      </details>
+    </main>
+    <footer>
+      Inspiré des mécaniques de Dragon Crystal et Warriors of the Universe. Personnages et
+      graphismes originaux. Solo contre IA, sans compte.
+    </footer>
+    <script type="module" src="game.js"></script>
+  </body>
+</html>
