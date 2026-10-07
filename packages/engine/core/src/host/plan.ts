@@ -316,7 +316,7 @@ function unitSteps(
         "mutate",
         "upgrade-state",
         "retain the current unit, activation state and binary rollback marker before a pinned refresh",
-        `install -d -m 0700 ${STAGE_DIR}; rm -f ${sq(`${stage}.previous`)} ${sq(`${stage}.was-active`)} ${sq(`${stage}.was-enabled`)} ${sq(`${stage}.binary-installed`)}; fragment=$(systemctl show ${sq(f.unit)} -p FragmentPath --value); if [ -n "$fragment" ] && [ -f "$fragment" ]; then sudo -n cp -p "$fragment" ${sq(`${stage}.previous`)}; fi; if systemctl is-active --quiet ${sq(f.unit)}; then touch ${sq(`${stage}.was-active`)}; fi; if systemctl is-enabled --quiet ${sq(f.unit)}; then touch ${sq(`${stage}.was-enabled`)}; fi`,
+        `set -e; install -d -m 0700 ${STAGE_DIR}; rm -f ${sq(`${stage}.previous`)} ${sq(`${stage}.was-active`)} ${sq(`${stage}.was-enabled`)} ${sq(`${stage}.binary-installed`)}; fragment=$(systemctl show ${sq(f.unit)} -p FragmentPath --value); if [ -n "$fragment" ] && [ -f "$fragment" ]; then sudo -n cp -p "$fragment" ${sq(`${stage}.previous`)}; fi; if systemctl is-active --quiet ${sq(f.unit)}; then touch ${sq(`${stage}.was-active`)}; fi; if systemctl is-enabled --quiet ${sq(f.unit)}; then touch ${sq(`${stage}.was-enabled`)}; fi`,
       ),
     );
   }

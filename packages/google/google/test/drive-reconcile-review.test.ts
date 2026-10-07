@@ -1,5 +1,5 @@
-// Durable fsync fixtures permit bounded concurrent host I/O.
 // SPDX-License-Identifier: Apache-2.0
+// Durable fsync fixtures permit bounded concurrent host I/O.
 /* oxlint-disable no-await-in-loop -- Fixture setup and mutation checks intentionally preserve operation order. */
 import { afterEach, expect, test } from "bun:test";
 import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";

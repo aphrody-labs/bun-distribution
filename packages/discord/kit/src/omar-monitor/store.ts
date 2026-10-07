@@ -33,16 +33,19 @@ export interface Job {
   goals: string | null;
   evidence: string | null;
 }
-export function isOmar(message: SourceMessage, policy: Policy): boolean {
+export function isAuthorizedUser(message: SourceMessage, policy: Policy): boolean {
+  const isOwner = !!policy.ownerId && message.author.id === policy.ownerId;
+  const isOmarUser = Array.isArray(policy.omarUserIds) && policy.omarUserIds.includes(message.author.id);
   return (
     message.channel_id === policy.channelId &&
     (!message.guild_id || message.guild_id === policy.guildId) &&
     !message.author.bot &&
     !message.webhook_id &&
-    policy.omarUserIds.includes(message.author.id) &&
+    (isOwner || isOmarUser) &&
     !!message.content.trim()
   );
 }
+export const isOmar = isAuthorizedUser;
 export class Queue {
   readonly db: Database;
   constructor(path: string) {

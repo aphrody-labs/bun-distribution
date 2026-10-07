@@ -19,8 +19,8 @@ const facts: UnitFacts = {
   envFiles: [],
   writePaths: [],
 };
+const quoted = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
 async function guard(rows: string[], pid: number, active = true, required = false) {
-  const quoted = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
   const command = pinnedSocketCheck(facts, ["10.200.77.1:8793"], required)
     .replace(
       'timeout 5 sudo -n ss -H -ltnp "sport = :8793"',
@@ -31,7 +31,7 @@ async function guard(rows: string[], pid: number, active = true, required = fals
   return Bun.spawn(["sh", "-c", command], { stdout: "ignore", stderr: "ignore" }).exited;
 }
 const listener = (address: string, pid?: number) =>
-  `LISTEN 0 128 ${address}:8793 *:*${pid === undefined ? "" : ` users:((\"native\",pid=${pid},fd=9))`}`;
+  `LISTEN 0 128 ${address}:8793 *:*${pid === undefined ? "" : ` users:(("native",pid=${pid},fd=9))`}`;
 
 test("A pinned refresh accepts only its active MainPID on the exact native socket", async () => {
   expect(await guard([listener("127.0.0.1", 700), listener("10.200.77.1", 800)], 700)).toBe(0);

@@ -35,8 +35,10 @@ const message = (id = "10", fields: Partial<SourceMessage> = {}): SourceMessage 
   content: "Vérifie les deux VPS",
   ...fields,
 });
-test("only authenticated Omar messages in the declared guild/channel create work", () => {
+test("only authenticated Omar or owner messages in the declared guild/channel create work", () => {
   expect(isOmar(message(), policy)).toBe(true);
+  const ownerPolicy = { ...policy, ownerId: "yoyo" };
+  expect(isOmar(message("11", { author: { id: "yoyo" } }), ownerPolicy)).toBe(true);
   for (const fields of [
     { author: { id: "other" } },
     { author: { id: "omar", bot: true } },
@@ -45,7 +47,7 @@ test("only authenticated Omar messages in the declared guild/channel create work
     { guild_id: "foreign" },
     { content: "  " },
   ])
-    expect(isOmar(message("10", fields), policy)).toBe(false);
+    expect(isOmar(message("10", fields), ownerPolicy)).toBe(false);
 });
 test("gateway/history overlap and restart preserve a single running goal", async () => {
   const dir = await mkdtemp(join(tmpdir(), "omar-queue-test-"));
