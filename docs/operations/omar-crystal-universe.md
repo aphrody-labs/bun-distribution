@@ -53,16 +53,14 @@ qualifier. L'onglet de test a été fermé sans toucher aux autres onglets.
 
 ## Dépendance ouverte : indexation native
 
-`/home/ubuntu/.local/bin/aphrody web crawl-index --help` répond
-`unrecognized subcommand 'crawl-index'`. L'aide `aphrody web --help` confirme
-l'absence de cette capacité installée. Aucun ancien script de crawl n'a été utilisé.
+État historique avant installation : `/home/ubuntu/.local/bin/aphrody web crawl-index --help` répondait `unrecognized subcommand 'crawl-index'` et l'aide `aphrody web --help` confirmait l'absence de cette capacité. Aucun ancien script de crawl n'a été utilisé.
 `aphrody home query 'Dragon Crystal Warriors of the Universe' --profile aphrody
 --limit 5` retourne `hits: []`.
 
 Installer la capacité produit `web crawl-index` pour pouvoir indexer les fiches
 autorisées (profil aphrody, labels omar, maximum 25 requêtes et profondeur 2,
 respect robots), puis vérifier leur présence avec `aphrody home query`.
-Ce volet demeure ouvert ; l'achèvement global n'est pas revendiqué.
+Cette dépendance a été levée le 2026-10-07 par installation de la capacité produit ; voir la campagne ci-dessus. L'achèvement global demeure ouvert pour le jeu complet, le corpus exhaustif et les assets sous licence.
 
 ## Nom du jeu — 2026-10-07
 
@@ -109,4 +107,12 @@ Le graphe Rust et les tests natifs ont été commités dans la branche locale Sh
 
 `docs/reference/root/PLAN.md` de Shenron marque la fusion dbxv2 incomplète. `vendor/dbxv2` est un sous-module vers `aphrody-code/dbxv2`, épinglé à `fabc19c0021e3e992786dc2a093a749c8a1c26f0`; le plan l’identifie comme propriétaire/sous licence Proprietary. Le checkout du sous-module est actuellement vide, et aucun checkout/asset dbxv2 correspondant n’a été trouvé au chemin local attendu. Le commit Shenron `10fdd60c` apporte un moteur de formats en Rust, crate `shenron-re`, scan des seuls manifests d’installation Steam et wrappers WASM; cela ne prouve ni portage complet Bun/Rust, ni extraction de ressources.
 
-Le scanner Steam existant lit `steamapps/appmanifest_*.acf`, sans jetons ni profils privés ; aucun flux de données de compte, dépôt d’assets de jeu, copie vers le PC/VPS/DBFR ou production CDN n’a été effectué. La licence et l’inventaire complet des assets du jeu/du toolkit ne permettent pas une redistribution publique dans la carte/CDN. Le contenu du jeu reste dans les stores du propriétaire ; aucun résultat d’extraction/données privées n’est ajouté à Git.
+Le scanner Steam existant lit `steamapps/appmanifest_*.acf`, sans jetons ni profils privés ; aucun flux de données de compte, dépôt d'assets de jeu, copie vers le PC/VPS/DBFR ou production CDN n'a été effectué. La licence et l'inventaire complet des assets du jeu/du toolkit ne permettent pas une redistribution publique dans la carte/CDN. Le contenu du jeu reste dans les stores du propriétaire ; aucun résultat d'extraction/données privées n'est ajouté à Git.
+
+## 2026-10-07 — Connexion Dragon Pixel au RAG Shenron
+
+L'écran Dragon Pixel expose maintenant une recherche d'archives Dragon Ball. Le serveur local valide `q` (2–120 caractères), limite la réponse à huit résultats et relaie vers l'API publique Shenron sans exposer de secret. L'interface n'insère que du texte avec `textContent` et affiche les liens sources dans un nouvel onglet isolé. Aucun scan/page d'image n'est embarqué.
+
+Vérification réelle : serveur Bun local sur `127.0.0.1:4328`, `GET /` → 200 ; `GET /api/lore/search?q=Goku%20Namek` → 200, résultats sourcés dont « Planète Namek » et « Goku — Saga Namek » avec URLs dragonballfr.com ; entrée d'un caractère → 400. `aphrody_shenron_rag_search` confirme les mêmes corpus et extraits côté MCP. Gates du lot : `bun test apps/community/crystal-universe/engine.test.js` (5 tests, 20 assertions), `oxlint --deny-warnings apps/community/crystal-universe/*.js`, `oxfmt --check apps/community/crystal-universe`, `git diff --check` — tous verts.
+
+Cette liaison fournit une recherche du RAG, pas l'ingestion/la redistribution de toutes les planches OCR. Le catalogue MCP expose 147 volumes/tomes OCR sur plusieurs séries, mais ce décompte seul ne prouve pas que les 42 tomes d'une édition précise ou tout Dragon Ball Super soient complets. Le jeu reste un mini-jeu Canvas 2D solo : pas de moteur Xenoverse 2, rendu 3D/WebGPU, multijoueur réseau, manette, persistance ou création complète d'avatar. Les assets et les données de Xenoverse 2 restent indisponibles localement ; `vendor/dbxv2` était absent/vide selon le relevé précédent et les assets suivis du checkout ne comprennent aucun paquet Xenoverse. Leur licence d'extraction/redistribution n'est pas établie. Aucun asset de jeu, donnée privée ou scan sous droit n'a été copié ou publié. Ces dépendances maintiennent l'objectif global ouvert.

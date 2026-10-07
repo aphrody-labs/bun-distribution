@@ -55,6 +55,34 @@
           extraites.</small
         >
       </section>
+      <section class="lore" aria-labelledby="lore-title">
+        <div>
+          <p class="eyebrow">Archives Shenron · lecture en direct</p>
+          <h2 id="lore-title">Explorer les archives Dragon Ball</h2>
+          <p>
+            Recherche dans le corpus Dragon Ball accessible par le service Shenron. Les résultats
+            restent de courts extraits sourcés ; les planches et images ne sont pas copiées dans le
+            jeu.
+          </p>
+        </div>
+        <form id="lore-search">
+          <label for="lore-query">Personnage, saga ou terme</label>
+          <input
+            id="lore-query"
+            name="q"
+            type="search"
+            minlength="2"
+            maxlength="120"
+            required
+            placeholder="Ex. Namek, Goku, tournoi"
+          />
+          <button type="submit">Chercher dans les archives</button>
+          <p id="lore-status" role="status" aria-live="polite">
+            La recherche interroge le RAG Dragon Ball configuré.
+          </p>
+        </form>
+        <ol id="lore-results" aria-label="Résultats des archives"></ol>
+      </section>
       <p id="result" role="status">Choisis ton style puis lance la partie.</p>
       <div class="controls" aria-label="Commandes tactiles">
         <button data-action="left">← Gauche</button><button data-action="right">Droite →</button

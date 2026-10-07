@@ -7,6 +7,9 @@ const hud = document.querySelector("#hud"),
   result = document.querySelector("#result");
 const mapCanvas = document.querySelector("#world-map");
 const mapContext = mapCanvas.getContext("2d");
+const loreForm = document.querySelector("#lore-search");
+const loreStatus = document.querySelector("#lore-status");
+const loreResults = document.querySelector("#lore-results");
 let game = createGame(),
   active = false,
   paused = false,
@@ -154,3 +157,44 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+
+function renderLoreResults(payload) {
+  loreResults.replaceChildren();
+  const entries = payload.results || payload.hits || [];
+  if (!entries.length) {
+    loreStatus.textContent = "Aucun passage trouvé pour cette recherche.";
+    return;
+  }
+  for (const entry of entries) {
+    const item = document.createElement("li");
+    const article = document.createElement("article");
+    const title = document.createElement("h3");
+    const passage = document.createElement("p");
+    const source = document.createElement("a");
+    title.textContent = entry.title || entry.entity || "Passage Dragon Ball";
+    passage.textContent = entry.snippet || entry.content || "Aucun extrait disponible.";
+    source.href = entry.url || "https://dragonballfr.com/";
+    source.textContent = "Ouvrir la source";
+    source.target = "_blank";
+    source.rel = "noopener noreferrer";
+    article.append(title, passage, source);
+    item.append(article);
+    loreResults.append(item);
+  }
+  loreStatus.textContent = `${entries.length} passage(s) sourcé(s) trouvé(s).`;
+}
+
+loreForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const query = new FormData(loreForm).get("q").trim();
+  loreStatus.textContent = "Recherche dans les archives…";
+  loreResults.replaceChildren();
+  try {
+    const response = await fetch(`/api/lore/search?q=${encodeURIComponent(query)}`);
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "La recherche a échoué.");
+    renderLoreResults(payload);
+  } catch (error) {
+    loreStatus.textContent = error.message || "Les archives sont momentanément indisponibles.";
+  }
+});
