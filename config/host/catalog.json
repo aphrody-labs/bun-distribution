@@ -23,6 +23,11 @@
       "unit": "privoxy.service",
       "path": "systemd/shenron/privoxy.service.d",
       "hosts": ["vps"]
+    },
+    {
+      "unit": "shenron-bot-docker.service",
+      "path": "systemd/shenron/shenron-bot-docker.service.d",
+      "hosts": ["dbfr"]
     }
   ],
   "nginxSnippets": {
@@ -620,6 +625,14 @@
       "service": "aphrody-discord-control-plane-timer",
       "unit": "aphrody-discord-control-plane.timer",
       "path": "systemd/aphrody/aphrody-discord-control-plane.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-discord-debate",
+      "unit": "aphrody-discord-debate.service",
+      "path": "systemd/aphrody/aphrody-discord-debate.service",
       "dropIns": [],
       "ownerRepo": "aphrody",
       "targetHost": "vps"

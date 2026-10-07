@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "guildId": "1554189180030947338",
+  "ownerId": "281114294152724491",
+  "adminRole": "Aphrody Administrator",
+  "researcherRole": "AI Researcher",
+  "category": "02 · Laboratoire IA",
+  "channelName": "debat",
+  "pollSeconds": 5,
+  "maxRounds": 12,
+  "sourceLimit": 6,
+  "gemma": {
+    "baseUrl": "http://127.0.0.1:8798/v1",
+    "model": "gemma4-e2b",
+    "maxTokens": 600
+  },
+  "shenron": {
+    "host": "dbfr",
+    "bridge": "/usr/local/libexec/aphrody-debate-backend.py",
+    "model": "shenron-chat-v2",
+    "botId": "1497194276025663680",
+    "discordBridge": "/usr/local/libexec/aphrody-debate-discord.mjs"
+  },
+  "rivalry": {
+    "enabled": true,
+    "startAutonomously": true,
+    "starterTopic": "Son Goku et Vegeta : comparer leur progression dans le manga avec des sources vérifiables",
+    "intervalSeconds": 900,
+    "maxSpontaneousRounds": 4,
+    "aphrodyRole": "Développeur de Shenron : critiquer ses arguments, proposer des évaluations et améliorer sa fiabilité. Aucun changement de code sans pipeline canonique qualifié.",
+    "shenronRole": "Spécialiste Dragon Ball : défendre et corriger ses arguments avec les sources, préparer son apprentissage sans prétendre modifier ses poids."
+  },
+  "trainingHost": "omar-wsl",
+  "codingAgents": ["codex", "agy", "claude"],
+  "agentTransportStatus": "awaiting-qualified-authenticated-A2A-endpoints",
+  "sourcePolicy": "Existing Shenron RAG only; retain source IDs and URLs; distinguish manga, databooks, anime, films and games; reject Fandom. No OCR or editorial mutation."
+}
