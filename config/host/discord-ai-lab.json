@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "guildId": "1554189180030947338",
+  "ownerId": "281114294152724491",
+  "name": "Aphrody · AI Lab",
+  "researcherRole": "AI Researcher",
+  "adminRole": "Aphrody Administrator",
+  "categories": [
+    {
+      "name": "01 · Accueil",
+      "channels": [
+        {
+          "name": "start-here",
+          "topic": "Mode d'emploi du laboratoire IA Aphrody.",
+          "guide": "Bienvenue dans le laboratoire IA Aphrody.\n• Discussion : salon général existant.\n• assistant : mentionnez @Aphrody avec votre question.\n• experiments / prompts / evaluations : hypothèses, variantes et résultats reproductibles.\n• model-registry / training-jobs / datasets : modèles, suivi des jobs et provenance.\n• admin-console / ops-alerts : pilotage réservé aux administrateurs.\nYoyo et Omar administrent le laboratoire. Les accès et les secrets restent dans les stores protégés ; publiez des références de données et des métriques, jamais les valeurs secrètes."
+        },
+        {
+          "name": "lab-status",
+          "topic": "État vérifié des bots, modèles et capacités du laboratoire."
+        }
+      ]
+    },
+    {
+      "name": "02 · Laboratoire IA",
+      "channels": [
+        {
+          "name": "assistant",
+          "topic": "Mentionnez @Aphrody avec votre question pour converser avec le modèle local."
+        },
+        {
+          "name": "experiments",
+          "topic": "Une expérience = objectif, hypothèse, protocole, version, résultat et limites.",
+          "guide": "**Fiche d'expérience**\nObjectif :\nHypothèse :\nModèle et version :\nJeu d'évaluation (référence protégée) :\nParamètres :\nMétriques et comparaison :\nRésultat / limites :\nDécision et prochaine étape :"
+        },
+        { "name": "prompts", "topic": "Prompts versionnés, exemples et variantes à comparer." },
+        {
+          "name": "evaluations",
+          "topic": "Benchmarks, régressions, qualité, latence et coût mesurés."
+        }
+      ]
+    },
+    {
+      "name": "03 · Modèles et entraînement",
+      "channels": [
+        {
+          "name": "model-registry",
+          "topic": "Modèles, versions, licences, empreintes et validation avant activation."
+        },
+        {
+          "name": "training-jobs",
+          "topic": "Suivi des entraînements sur le WSL d'Omar : plan, identifiant du job, métriques, checkpoints."
+        },
+        {
+          "name": "datasets",
+          "topic": "Provenance, licences et références aux datasets conservés dans les stores protégés."
+        }
+      ]
+    },
+    {
+      "name": "04 · Administration",
+      "adminOnly": true,
+      "channels": [
+        {
+          "name": "admin-console",
+          "topic": "Décisions, plans Infra, accès, déploiements et validation des administrateurs."
+        },
+        {
+          "name": "ops-alerts",
+          "topic": "Incidents, diagnostics et état des services, sans credentials."
+        }
+      ]
+    }
+  ],
+  "assistant": {
+    "modelBaseUrl": "http://127.0.0.1:8798/v1",
+    "model": "gemma4-e2b",
+    "pollSeconds": 5,
+    "maxTokens": 384,
+    "systemPrompt": "Tu es Aphrody, assistant du laboratoire IA privé de Yoyo et Omar. Réponds en français, clairement et avec les limites des résultats. Aide à formuler des expériences, analyser des métriques et concevoir des prompts. Tu n'as pas d'accès aux secrets ni d'outils d'exécution. Ne prétends pas avoir exécuté une commande, lancé un entraînement ou consulté une base."
+  },
+  "documentation": [
+    "https://docs.discord.com/developers/resources/guild",
+    "https://docs.discord.com/developers/topics/permissions",
+    "https://docs.discord.com/developers/events/gateway#message-content-intent"
+  ]
+}
