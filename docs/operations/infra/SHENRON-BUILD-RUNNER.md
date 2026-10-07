@@ -1,5 +1,26 @@
 # Shenron build factory runner
 
+## Verified activation, 2026-10-07
+
+Runner `aphrody-vps-shenron` (repository runner ID 21) is registered, online, and
+its canonical systemd service is enabled/active. Real trusted manual qualification
+[run 37598615282](https://github.com/aphrody-labs/shenron/actions/runs/37598615282)
+completed successfully on this named runner: non-root identity, Bun 1.4.2,
+Cargo/Rust 1.98.1, Docker 29.1.3, Buildx 0.30.1 and Compose.
+The existing `server-artifact.yml` now selects this actual factory, without a
+second release pipeline. Hosted CI remains subject to the account billing block.
+No complete application build or production promotion is established by this
+toolchain qualification.
+
+The runner account has its own copied precompiled Bun and rustup executables;
+`factory-1.98.1` links the existing public VPS Rust toolchain. Credentials from
+the Ubuntu account were not copied. Registration credentials stay protected
+under its 0700 runner directory; the short-lived registration file was removed.
+Automatic runner updates are disabled: upgrade the pinned official archive through
+Infra and requalify before GitHub drops support for the installed runner version.
+
+## Ownership and installation
+
 Infra owns `aphrody-shenron-build-runner.service` on `vps`. The private repository
 `aphrody-labs/shenron` owns its release workflow. DBFR hosts production; this runner
 only builds. Its actual labels after registration are `self-hosted`, `Linux`,

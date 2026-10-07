@@ -36,6 +36,7 @@ chown -R shenron-build:shenron-build "$runner_dir"
 # Never enable shell tracing: GitHub registration token is a short-lived secret.
 registration_token=$(<"$token_file")
 [[ $registration_token =~ ^[A-Za-z0-9_]+$ ]] || exit 2
+cd "$runner_dir"
 sudo -u shenron-build env HOME="$runner_home" "$runner_dir/config.sh" \
   --unattended --url https://github.com/aphrody-labs/shenron \
   --token "$registration_token" --name aphrody-vps-shenron \
