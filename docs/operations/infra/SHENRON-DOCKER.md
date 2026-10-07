@@ -97,3 +97,64 @@ availability itself. The canonical adapter supplies that preflight. PostgreSQL,
 Redis and backend inference remain protected host capabilities until their own
 checksum-verified migration and rollback qualify; application/gateway packaging
 alone does not establish a full database/backend container migration.
+
+## Complete bundle assembly and protected-state conversion
+
+`assemble-shenron-docker-release.py` consumes the product owner's application
+Compose with `--no-env-resolution`, removes build declarations, pins app image
+IDs, selects the versioned VFS and adds the canonical gateway. Its nginx scratch
+subdirectories use UID/GID 33 to avoid forbidden chown during startup; its open
+file limit is 65535. Run on DBFR with the matching committed Infra source package:
+
+```sh
+python3 scripts/release/assemble-shenron-docker-release.py RELEASE \
+  --app-compose PRODUCT_COMPOSE --image-id APP_IMAGE_ID \
+  --gateway-image-id GATEWAY_IMAGE_ID --public-vfs PUBLIC_VFS
+```
+
+Images are built on VPS, exported with `docker image save IMAGE_ID`, checksum
+verified after authenticated transfer, then loaded on DBFR with `docker image
+load`. Compare `docker image inspect` IDs before sealing. No build or pull occurs
+at activation. The initial apps/gateway bundle can consume existing protected
+host PostgreSQL and Redis while their replacement is qualified.
+
+Read-only DBFR inventory on 2026-10-07 found PostgreSQL 18.6 Ubuntu
+`18.6-0ubuntu0.26.04.1` with plpgsql, pg_trgm and unaccent, 2.3 GiB data, no
+external tablespaces; Redis 8.0.5 (`5:8.0.5-1`), 236 MiB, RDB persistence and AOF
+disabled. The state Dockerfile pins those packages on Ubuntu 26.04 to preserve
+platform/collation compatibility. Build and verify the actual image before use;
+package availability and PostgreSQL collation versions remain runtime gates.
+
+For coordinated conversion, stop all app writers and the host PostgreSQL/Redis
+units through Infra, then run `sudo python3 scripts/migration/shenron-state-container.py
+--apply`. The command requires a fresh `/srv/shenron/shared/state`, stopped units,
+no Shenron containers and a clean PostgreSQL shutdown. It checksum-copies data,
+configuration and Redis RDB, checks originals stayed unchanged, preserves PG TLS
+credentials privately, normalizes Redis owned runtime paths and writes a private
+`VERIFIED.json`. Original host stores stay intact. Failure never activates the
+partial destination. Redis ACL/include paths must be reviewed privately before
+cutover; referenced external ACL files require separate protected migration.
+
+Then assemble with `--state-image-id STATE_IMAGE_ID`; seal with
+`--service-image postgres STATE_IMAGE_ID APHRODY_COMMIT` and
+`--service-image redis STATE_IMAGE_ID APHRODY_COMMIT`. These services retain their
+observed numeric identities, host-loopback ports and auth configuration. The
+adapter requires host writers inactive, both database services together, sealed
+image identities, read-only roots and mounts contained in verified state.
+Verify database/role counts, extensions, collation version, real authenticated
+SQL, Redis key count and representative values privately before resuming apps.
+
+Optional `--chat-image-id`, `--model-path` and `--adapter-path` add the qualified
+Shenron chat v2 CPU service at loopback 8799. Build `llama.Dockerfile` from only the
+qualified b11415 runtime. Keep weights and adapter under the protected
+`shared/models` store, transferred with verified checksums; never put them in the
+image. Seal using `--service-image chat IMAGE_ID APHRODY_COMMIT`. Verify a real
+OpenAI-compatible authenticated chat operation and available memory on DBFR;
+this definition does not qualify OCR, embeddings or additional backend models.
+
+For rollback after protected-store conversion, stop container writers first and
+preserve the latest container-owned state. Restoring the original host snapshot
+after production writes would lose changes: reconcile/checksum-transfer the
+latest store back under a clean shutdown before resuming host units. Ordinary
+release rollback should reuse the same qualified container-owned state. The
+adapter does not automatically reverse this protected-data conversion.

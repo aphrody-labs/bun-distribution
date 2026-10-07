@@ -22,6 +22,13 @@ def main():
     parser.add_argument("--public-vfs", required=True, type=pathlib.Path)
     parser.add_argument("--gateway-image-id")
     parser.add_argument("--gateway-commit")
+    parser.add_argument(
+        "--service-image",
+        nargs=3,
+        action="append",
+        default=[],
+        metavar=("ROLE", "IMAGE_ID", "COMMIT"),
+    )
     args = parser.parse_args()
     for value, pattern in (
         (args.commit, r"[a-f0-9]{40}"),
@@ -73,6 +80,14 @@ def main():
         manifest["images"] = {
             "gateway": {"id": args.gateway_image_id, "commit": args.gateway_commit}
         }
+    for role, identity, revision in args.service_image:
+        if (
+            role not in ("postgres", "redis", "chat")
+            or not re.fullmatch(r"sha256:[a-f0-9]{64}", identity)
+            or not re.fullmatch(r"[a-f0-9]{40}", revision)
+        ):
+            parser.error("invalid protected service image identity")
+        manifest.setdefault("images", {})[role] = {"id": identity, "commit": revision}
     output = release / "release.json"
     with output.open("x") as stream:
         json.dump(manifest, stream, indent=2, sort_keys=True)

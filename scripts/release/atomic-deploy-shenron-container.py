@@ -39,6 +39,18 @@ def file_digest(path):
 
 def allowed_mount(name, volume, release, root, manifest):
     source = pathlib.Path(volume.get("source", "/missing")).resolve()
+    if name in ("postgres", "redis"):
+        owned = root / "shared/state" / name
+        return (
+            source.is_relative_to(owned)
+            and (root / "shared/state/VERIFIED.json").is_file()
+        )
+    if name == "chat":
+        return (
+            volume.get("read_only") is True
+            and source.is_relative_to(root / "shared/models")
+            and source.is_file()
+        )
     if name != "gateway":
         return source.is_relative_to(root / "shared")
     if volume.get("read_only") is not True:
@@ -150,19 +162,23 @@ def verify(release, root):
     config = json.loads(command(compose + ["config", "--format", "json"]))
     services = config.get("services", {})
     require(
-        set(services) in ({"site", "bot"}, {"site", "bot", "gateway"}),
+        {"site", "bot"}.issubset(services)
+        and set(services).issubset(
+            {"site", "bot", "gateway", "postgres", "redis", "chat"}
+        )
+        and (("postgres" in services) == ("redis" in services)),
         "Docker release must contain site and bot and optionally gateway",
     )
     images = manifest.get("images", {})
     expected_images = {name: image_id for name in services}
-    if "gateway" in services:
-        gateway = images.get("gateway", {})
+    for role in set(services) - {"site", "bot"}:
+        gateway = images.get(role, {})
         require(
             re.fullmatch(r"sha256:[a-f0-9]{64}", gateway.get("id", ""))
             and re.fullmatch(r"[a-f0-9]{40}", gateway.get("commit", "")),
-            "sealed gateway image identity required",
+            "sealed infrastructure image identity required",
         )
-        expected_images["gateway"] = gateway["id"]
+        expected_images[role] = gateway["id"]
     env_root = pathlib.Path(os.environ.get("SHENRON_ENV_ROOT", "/etc")).resolve()
     share = pathlib.Path(
         os.environ.get("SHENRON_INFRA_SHARE", "/usr/local/share/aphrody-infra")
@@ -185,13 +201,13 @@ def verify(release, root):
             tagged["Os"] == "linux" and tagged["Architecture"] == "amd64",
             "workload image platform differs",
         )
-        if name == "gateway":
+        if name not in ("site", "bot"):
             require(
                 tagged.get("Config", {})
                 .get("Labels", {})
                 .get("org.opencontainers.image.revision")
-                == images["gateway"]["commit"],
-                "gateway source revision differs",
+                == images[name]["commit"],
+                "infrastructure source revision differs",
             )
         user = str(service.get("user", ""))
         require(
@@ -220,10 +236,10 @@ def verify(release, root):
                 and allowed_mount(name, volume, release, root, manifest),
                 "production mounts must stay inside the Shenron shared store",
             )
-        if name == "gateway":
+        if name not in ("site", "bot"):
             require(
                 not declared["services"][name].get("env_file"),
-                "gateway must not receive application secrets",
+                "infrastructure workloads must not receive application secrets",
             )
             continue
         # Inspect unexpanded env-file declarations without ever printing their values.
@@ -362,11 +378,14 @@ def activate(release, root):
     previous = current.resolve() if current.is_symlink() else None
     if previous and previous != release:
         verify(previous, root)
-    for unit in (
-        "shenron-site.service",
-        "shenron-bot.service",
-        "shenron-mcp-http.service",
-    ):
+    units = ["shenron-site.service", "shenron-bot.service", "shenron-mcp-http.service"]
+    if "postgres" in expected_images:
+        units.extend(["postgresql@18-main.service", "redis-server.service"])
+    if "gateway" in expected_images:
+        units.append("nginx.service")
+    if "chat" in expected_images:
+        units.append("aphrody-llama-shenron-chat.service")
+    for unit in units:
         active = subprocess.run(
             ["systemctl", "is-active", "--quiet", unit],
             capture_output=True,

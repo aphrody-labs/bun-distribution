@@ -62,6 +62,7 @@ class ContainerDeploymentTests(unittest.TestCase):
         self.fail_up = None
         self.inspect_drift = False
         self.gateway = False
+        self.infrastructure = []
         patch.object(adapter, "command", side_effect=self.command).start()
         patch.object(
             adapter.subprocess, "run", return_value=subprocess.CompletedProcess([], 3)
@@ -137,7 +138,7 @@ class ContainerDeploymentTests(unittest.TestCase):
                 if not self.inspect_drift
                 else "sha256:" + "f" * 64
             )
-            if args[3] == "gateway":
+            if args[3] in ("gateway", *self.infrastructure):
                 image = "sha256:" + "d" * 64
             return json.dumps([{"Image": image}])
         release = pathlib.Path(args[args.index("-f") + 1]).parent
@@ -163,6 +164,14 @@ class ContainerDeploymentTests(unittest.TestCase):
                 )
                 gateway.pop("env_file")
                 services["gateway"] = gateway
+            for role in self.infrastructure:
+                state = dict(service)
+                state.update(
+                    image="gateway:fixture",
+                    user="105:111" if role == "postgres" else "104:110",
+                )
+                state.pop("env_file")
+                services[role] = state
             return json.dumps({"services": services})
         if "up" in args and release == self.fail_up:
             raise adapter.DeploymentError("fixture readiness failure")
@@ -178,10 +187,33 @@ class ContainerDeploymentTests(unittest.TestCase):
                     }
                 )
                 for name in (
-                    ("site", "bot", "gateway") if self.gateway else ("site", "bot")
+                    (["site", "bot", "gateway"] if self.gateway else ["site", "bot"])
+                    + self.infrastructure
                 )
             )
         return ""
+
+    def test_protected_database_pair_uses_sealed_infrastructure_image(self):
+        self.infrastructure = ["postgres", "redis"]
+        release = self.release("a")
+        manifest = self.releases[-1][1]
+        manifest["images"] = {
+            name: {"id": "sha256:" + "d" * 64, "commit": "e" * 40}
+            for name in self.infrastructure
+        }
+        (release / "release.json").write_text(json.dumps(manifest))
+        adapter.activate(release, self.root)
+        self.assertEqual(
+            sum(call[:3] == ["docker", "container", "inspect"] for call in self.calls),
+            4,
+        )
+
+    def test_incomplete_database_pair_rejected_before_activation(self):
+        self.infrastructure = ["postgres"]
+        release = self.release("a")
+        with self.assertRaises(adapter.DeploymentError):
+            adapter.activate(release, self.root)
+        self.assertFalse(any("up" in call for call in self.calls))
 
     def test_gateway_activation_checks_distinct_image_and_source_revision(self):
         self.gateway = True
