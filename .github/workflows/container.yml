@@ -1,0 +1,126 @@
+# SPDX-License-Identifier: Apache-2.0
+name: Container images
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: containers-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    name: Select one immutable runtime release
+    runs-on: ubuntu-latest
+    outputs:
+      id: ${{ steps.release.outputs.id }}
+    steps:
+      - name: Resolve published release once
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          id="$(curl --fail --silent --show-error https://downloads.aphrody.com/latest.json | jq --exit-status --raw-output '.release.id | select(test("^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"))')"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: release
+    name: Build ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - name: Aphrody runtime
+            context: .
+            file: config/container/Dockerfile
+            target: runtime
+            cache: aphrody-runtime
+          - name: Aphrody developer image
+            context: .
+            file: config/container/Dockerfile
+            target: dev
+            cache: aphrody-dev
+          - name: Aphrody release builder
+            context: .
+            file: config/container/Dockerfile
+            target: release-builder
+            cache: aphrody-release-builder
+            cache_from: |
+              type=gha,scope=aphrody-dev
+              type=gha,scope=aphrody-release-builder
+          - name: Browser and Bun WASM package
+            context: .
+            file: config/container/Dockerfile
+            target: wasm-artifacts
+            cache: aphrody-wasm
+            output: type=local,dest=dist/container-wasm
+          - name: Alpine minimal runtime (AMD64 and ARM64)
+            context: config/container/aphrody-os
+            file: config/container/aphrody-os/Dockerfile
+            target: runtime
+            cache: aphrody-alpine-runtime
+            platforms: linux/amd64,linux/arm64
+          - name: Alpine CLI
+            context: config/container/aphrody-os
+            file: config/container/aphrody-os/Dockerfile
+            target: cli
+            cache: aphrody-alpine-cli
+          - name: Alpine COSMIC desktop
+            context: config/container/aphrody-os
+            file: config/container/aphrody-os/Dockerfile
+            target: desktop
+            cache: aphrody-alpine-desktop
+          - name: Ubuntu desktop builder
+            context: .
+            file: config/container/desktop/Dockerfile
+            target: builder
+            cache: aphrody-ubuntu-desktop-builder
+          - name: Ubuntu desktop runtime
+            context: .
+            file: config/container/desktop/Dockerfile
+            target: runtime
+            cache: aphrody-ubuntu-desktop-runtime
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Set up ARM64 emulation
+        if: contains(matrix.platforms, 'arm64')
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - name: Build image (no registry push)
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          target: ${{ matrix.target }}
+          platforms: ${{ matrix.platforms || 'linux/amd64' }}
+          build-args: APHRODY_RELEASE=${{ needs.release.outputs.id }}
+          outputs: ${{ matrix.output || '' }}
+          push: false
+          cache-from: ${{ matrix.cache_from || format('type=gha,scope={0}', matrix.cache) }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.cache }}
+
+      - name: Keep the compiled WASM package
+        if: matrix.target == 'wasm-artifacts'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: aphrody-browser-bun-wasm
+          path: dist/container-wasm
+          if-no-files-found: error

@@ -241,5 +241,21 @@ Native Bun HTTP REST and OpenAPI micro-server for YOLO tools.
   }
   console.log(`  Press Ctrl+C to stop.`);
 
-  return new Promise(() => {}); // keep running
+  return new Promise<number>((resolve, reject) => {
+    let stopping = false;
+    const shutdown = async () => {
+      if (stopping) return;
+      stopping = true;
+      process.off("SIGINT", shutdown);
+      process.off("SIGTERM", shutdown);
+      try {
+        await server.stop();
+        resolve(0);
+      } catch (error) {
+        reject(error);
+      }
+    };
+    process.once("SIGINT", shutdown);
+    process.once("SIGTERM", shutdown);
+  });
 }

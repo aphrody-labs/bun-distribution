@@ -7,7 +7,7 @@
  *   plan                          what would be built, staged and published (no mutation)
  *   build  --revision <sha>       prepare + build the factory binaries (aphrody-ops build-factory), wait for the jobs
  *   release --revision <sha>      stage every artifact, scan for secrets, upload to the host, flip `current`
- *   assets                        republish the installers (cfg.assets) into the current release
+ *   assets                        publish new installers in an immutable snapshot of current artifacts
  *   github --release <id>         create/refresh the GitHub release of each configured EXISTING repository
  *   verify [--release <id>]       download from the public URL, check SHA-256, run the binaries
  *   host-plan | host-apply        install the declared unit, nginx vhost and app on the host (plan by default)
@@ -15,13 +15,14 @@
  * Hosts change only through `aphrody infra ssh`; the binaries are built on the factory from a pushed
  * revision (never Cargo in WSL). Private keys never enter this script.
  */
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import {
   existsSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   statSync,
   symlinkSync,
@@ -29,7 +30,7 @@ import {
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { deflateRawSync } from "node:zlib";
-import { basename, join, resolve } from "node:path";
+import { basename, join, resolve, sep } from "node:path";
 
 export const root = resolve(import.meta.dir, "../..");
 
@@ -777,12 +778,26 @@ async function build(cfg: DownloadsConfig) {
 async function release(cfg: DownloadsConfig) {
   const commit = await revisionArg();
   const id = arg("id") ?? releaseId(commit);
+  if (!safeReleaseName(id)) throw new Error("invalid release ID");
+  const stage = stageRoot(id);
+  mkdirSync(join(stage, ".."), { recursive: true });
+  mkdirSync(stage); // Reserve a new local tree; an existing release is immutable.
+  const rel = `${cfg.host.root}/releases/${id}`;
+  try {
+    await remote(cfg, `mkdir -p ${q(`${cfg.host.root}/releases`)} && mkdir ${q(rel)}`);
+  } catch (error) {
+    rmSync(stage, { recursive: true, force: true });
+    throw error;
+  }
   try {
     await releaseTree(cfg, commit, id);
   } catch (error) {
-    // a failed release never leaves a half-written tree on the host (`current` was not flipped)
-    await remote(cfg, `rm -rf ${q(`${cfg.host.root}/releases/${id}`)}`).catch(() => undefined);
-    rmSync(stageRoot(id), { recursive: true, force: true });
+    // Remove only this newly reserved tree, and never the selected current release.
+    await remote(
+      cfg,
+      `if [ "$(readlink -f ${q(`${cfg.host.root}/current`)})" != ${q(rel)} ]; then rm -rf ${q(rel)}; fi`,
+    ).catch(() => undefined);
+    rmSync(stage, { recursive: true, force: true });
     throw error;
   }
 }
@@ -791,8 +806,7 @@ async function releaseTree(cfg: DownloadsConfig, commit: string, id: string) {
   const files: PublishedFile[] = [];
   const notes: string[] = [];
   const stage = stageRoot(id);
-  rmSync(stage, { recursive: true, force: true });
-  mkdirSync(join(stage, "files"), { recursive: true });
+  mkdirSync(join(stage, "files"));
   await remote(cfg, `mkdir -p ${q(`${cfg.host.root}/releases/${id}/files`)}`);
 
   for (const a of cfg.artifacts) {
@@ -859,58 +873,298 @@ async function releaseTree(cfg: DownloadsConfig, commit: string, id: string) {
       throw new Error(`host checksum mismatch for ${f.file}: ${got} != ${f.sha256}`);
   }
 
-  // manifests and installers
-  for (const [name, source] of Object.entries(cfg.assets)) {
-    await run(["cp", join(root, source), join(stage, name)]);
-    const hits = scanBytes(
-      name,
-      new Uint8Array(readFileSync(join(stage, name))),
-      cfg.secrets.contentPatterns,
-    );
-    if (hits.length) throw new Error(`secret scan failed for ${name}`);
-  }
   const manifest = buildManifest({ baseUrl: cfg.site.baseUrl, id, commit, files, notes });
+  await finalizeRelease(cfg, id, stage, manifest, files);
+}
+
+type ReleaseTransport = {
+  remote: (cfg: DownloadsConfig, command: string, timeoutSecs?: number) => Promise<string>;
+  put: (cfg: DownloadsConfig, local: string, dest: string) => Promise<void>;
+};
+const releaseTransport: ReleaseTransport = { remote, put };
+const safeReleaseName = (name: string): boolean => /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(name);
+const safePayloadName = (name: string): boolean =>
+  !!name && !/[\\/\0\r\n]/.test(name) && !name.startsWith(".");
+
+/** Freeze source bytes before scanning/uploading so source edits cannot race publication. */
+function stageAssets(
+  cfg: DownloadsConfig,
+  stage: string,
+  sourceRoot = root,
+): Record<string, string> {
+  const hashes: Record<string, string> = {};
+  const realRoot = realpathSync(sourceRoot);
+  for (const [name, source] of Object.entries(cfg.assets)) {
+    if (
+      !safePayloadName(name) ||
+      ["latest.json", "manifest.json", "SHA256SUMS", "files"].includes(name)
+    )
+      throw new Error(`invalid asset name: ${name}`);
+    const path = realpathSync(join(sourceRoot, source));
+    if (!path.startsWith(realRoot + sep) || !statSync(path).isFile())
+      throw new Error(`asset source outside repository: ${source}`);
+    const bytes = new Uint8Array(readFileSync(path));
+    const hits = [
+      ...scanName(name, cfg.secrets.deniedNames),
+      ...scanName(source, cfg.secrets.deniedNames),
+      ...scanBytes(name, bytes, cfg.secrets.contentPatterns),
+    ];
+    if (hits.length) throw new Error(`secret scan failed for ${name}`);
+    writeFileSync(join(stage, name), bytes);
+    hashes[name] = sha256Bytes(bytes);
+  }
+  return hashes;
+}
+
+/** Shared metadata upload, verification, atomic selection and declared retention. */
+async function finalizeRelease(
+  cfg: DownloadsConfig,
+  id: string,
+  stage: string,
+  manifest: Record<string, unknown>,
+  files: PublishedFile[],
+  io = releaseTransport,
+  assetHashes = stageAssets(cfg, stage),
+  expectedCurrent?: string,
+  recordLocalRelease = true,
+) {
+  const rel = `${cfg.host.root}/releases/${id}`;
   writeFileSync(join(stage, "latest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
   writeFileSync(join(stage, "SHA256SUMS"), buildSums(files));
   for (const f of files)
     writeFileSync(join(stage, "files", `${f.file}.sha256`), `${f.sha256}  ${f.file}\n`);
-  const small = ["latest.json", "SHA256SUMS", ...Object.keys(cfg.assets)];
-  for (const name of small)
-    await put(cfg, join(stage, name), `${cfg.host.root}/releases/${id}/${name}`);
+  const small = ["latest.json", "SHA256SUMS", ...Object.keys(assetHashes)];
+  for (const name of small) {
+    const local = join(stage, name);
+    await io.put(cfg, local, `${rel}/${name}`);
+    const got = (
+      await io.remote(cfg, `sha256sum ${q(`${rel}/${name}`)} | cut -d' ' -f1`, 600)
+    ).trim();
+    if (got !== (await sha256File(local))) throw new Error(`host checksum mismatch for ${name}`);
+  }
   for (const f of files)
-    await put(cfg, join(stage, "files", `${f.file}.sha256`), `${remoteFiles}/${f.file}.sha256`);
-
-  const rel = `${cfg.host.root}/releases/${id}`;
-  await remote(
+    await io.put(cfg, join(stage, "files", `${f.file}.sha256`), `${rel}/files/${f.file}.sha256`);
+  // All payloads and sidecars must agree before publishing this tree.
+  await io.remote(
+    cfg,
+    [
+      "set -e",
+      `cd ${q(`${rel}/files`)}`,
+      `sha256sum -c ${q(`${rel}/SHA256SUMS`)}`,
+      ...files.map((f) => `sha256sum -c ${q(`${f.file}.sha256`)}`),
+    ].join("\n"),
+    600,
+  );
+  await io.remote(
     cfg,
     [
       "set -e",
       `cd ${q(cfg.host.root)}`,
+      "exec 9> .publish.lock",
+      "flock -x 9",
+      ...(expectedCurrent ? [`test "$(readlink -f current)" = ${q(expectedCurrent)}`] : []),
+      `test -f ${q(`${rel}/latest.json`)}`,
       `ln -sfn ${q(`releases/${id}`)} current.new`,
       "mv -T current.new current",
       `ls -1dt releases/* | tail -n +${cfg.host.keepReleases + 1} | xargs -r rm -rf`,
-      `test -f ${q(`${rel}/latest.json`)}`,
     ].join("\n"),
   );
   console.log(`release ${id} published (current -> releases/${id})`);
-  writeFileSync(
-    join(root, "dist/downloads/last-release.json"),
-    `${JSON.stringify({ id, commit, files }, null, 2)}\n`,
-  );
+  if (recordLocalRelease)
+    writeFileSync(
+      join(stage, "../last-release.json"),
+      `${JSON.stringify(
+        { id, commit: (manifest.release as { commit?: string }).commit, files },
+        null,
+        2,
+      )}\n`,
+    );
 }
 
-/** Republishes the installers (cfg.assets) into the current release tree, without a rebuild. */
-async function assets(cfg: DownloadsConfig) {
-  const current = (await remote(cfg, `readlink -f ${q(`${cfg.host.root}/current`)}`)).trim();
-  if (!current.startsWith(`${cfg.host.root}/releases/`))
-    throw new Error(`no current release (${current})`);
-  for (const [name, source] of Object.entries(cfg.assets)) {
-    const bytes = new Uint8Array(readFileSync(join(root, source)));
-    const hits = scanBytes(name, bytes, cfg.secrets.contentPatterns);
-    if (hits.length) throw new Error(`secret scan failed for ${name}`);
-    await put(cfg, join(root, source), `${current}/${name}`);
-    console.log(`updated ${current}/${name}`);
+interface SnapshotManifest extends Record<string, unknown> {
+  release: { id: string; commit?: string; [key: string]: unknown };
+  artifacts: Record<string, unknown>[];
+  baseUrl: string;
+}
+
+/** Preserve build provenance while pinning every inherited artifact to the new release. */
+export function planAssetsSnapshot(
+  source: SnapshotManifest,
+  sums: string,
+  id: string,
+  assetCommit: string,
+  secrets: DownloadsConfig["secrets"],
+  now = new Date(),
+): { manifest: SnapshotManifest; files: PublishedFile[] } {
+  if (
+    !safeReleaseName(id) ||
+    !source.release ||
+    !safeReleaseName(source.release.id) ||
+    id === source.release.id ||
+    typeof source.baseUrl !== "string" ||
+    !Array.isArray(source.artifacts)
+  )
+    throw new Error("invalid release snapshot");
+  if (
+    scanBytes(
+      "latest.json",
+      new TextEncoder().encode(JSON.stringify(source)),
+      secrets.contentPatterns,
+    ).length
+  )
+    throw new Error("secret scan failed for inherited manifest");
+  const checksums = new Map<string, string>();
+  for (const line of sums.trim().split("\n").filter(Boolean)) {
+    const match = /^([a-f0-9]{64}) [ *](.+)$/.exec(line);
+    if (!match || checksums.has(match[2]!))
+      throw new Error("invalid or duplicate SHA256SUMS entry");
+    checksums.set(match[2]!, match[1]!);
   }
+  const names = new Set<string>();
+  const files = source.artifacts.map((artifact): PublishedFile => {
+    const file =
+      artifact.file ??
+      (typeof artifact.url === "string" ? basename(new URL(artifact.url).pathname) : "");
+    if (
+      typeof file !== "string" ||
+      !safePayloadName(file) ||
+      names.has(file) ||
+      scanName(file, secrets.deniedNames).length ||
+      checksums.get(file) !== artifact.sha256 ||
+      typeof artifact.sha256 !== "string" ||
+      !/^[a-f0-9]{64}$/.test(artifact.sha256) ||
+      typeof artifact.size !== "number" ||
+      !Number.isSafeInteger(artifact.size) ||
+      artifact.size < 0 ||
+      ![artifact.name, artifact.version, artifact.platform].every(
+        (value) => typeof value === "string" && value.length,
+      )
+    )
+      throw new Error(`invalid or unchecked inherited artifact: ${String(file)}`);
+    names.add(file);
+    return {
+      component: artifact.name as string,
+      version: artifact.version as string,
+      platform: artifact.platform as string,
+      target: typeof artifact.target === "string" ? artifact.target : "",
+      kind: typeof artifact.kind === "string" ? artifact.kind : "",
+      file,
+      sha256: artifact.sha256,
+      size: artifact.size,
+      ...(Array.isArray(artifact.provides) ? { provides: artifact.provides as string[] } : {}),
+    };
+  });
+  if (checksums.size !== names.size) throw new Error("unlisted inherited checksum payload");
+  return {
+    files,
+    manifest: {
+      ...source,
+      generatedAt: now.toISOString(),
+      release: { ...source.release, id, assetsFrom: source.release.id, assetsCommit: assetCommit },
+      artifacts: source.artifacts.map((artifact, index) => ({
+        ...artifact,
+        file: files[index]!.file,
+        url: `${source.baseUrl.replace(/\/$/, "")}/releases/${id}/files/${files[index]!.file}`,
+      })),
+    },
+  };
+}
+
+/** Reuse only immutable artifact payloads; new mutable metadata is never hardlinked. */
+export async function publishAssetsSnapshot(
+  cfg: DownloadsConfig,
+  options: { id: string; assetCommit: string; sourceRoot?: string; io?: ReleaseTransport },
+) {
+  const io = options.io ?? releaseTransport;
+  const sourceRoot = options.sourceRoot ?? root;
+  if (!safeReleaseName(options.id)) throw new Error("invalid release ID");
+  const current = (await io.remote(cfg, `readlink -f ${q(`${cfg.host.root}/current`)}`)).trim();
+  const oldId = basename(current);
+  if (!safeReleaseName(oldId) || current !== `${cfg.host.root}/releases/${oldId}`)
+    throw new Error(`no current release (${current})`);
+  await io.remote(
+    cfg,
+    [
+      "set -e",
+      ...["latest.json", "SHA256SUMS"].map(
+        (name) =>
+          `test -f ${q(`${current}/${name}`)} && test "$(readlink -f ${q(`${current}/${name}`)})" = ${q(`${current}/${name}`)}`,
+      ),
+    ].join("\n"),
+  );
+  const source = JSON.parse(
+    await io.remote(cfg, `cat ${q(`${current}/latest.json`)}`),
+  ) as SnapshotManifest;
+  if (source.release?.id !== oldId) throw new Error("current manifest release ID mismatch");
+  const sums = await io.remote(cfg, `cat ${q(`${current}/SHA256SUMS`)}`);
+  const { manifest, files } = planAssetsSnapshot(
+    source,
+    sums,
+    options.id,
+    options.assetCommit,
+    cfg.secrets,
+  );
+  const stage = join(sourceRoot, "dist/downloads", options.id);
+  mkdirSync(join(sourceRoot, "dist/downloads"), { recursive: true });
+  mkdirSync(stage); // never destroy an existing local snapshot
+  mkdirSync(join(stage, "files"));
+  const rel = `${cfg.host.root}/releases/${options.id}`;
+  let reserved = false;
+  try {
+    const assetHashes = stageAssets(cfg, stage, sourceRoot);
+    manifest.assetChecksums = assetHashes;
+    // Reject aliases and linked payloads before reuse; mkdir reserves a genuinely new tree.
+    await io.remote(
+      cfg,
+      [
+        "set -e",
+        `test "$(readlink -f ${q(`${cfg.host.root}/releases`)})" = ${q(`${cfg.host.root}/releases`)}`,
+        `mkdir ${q(rel)}`,
+      ].join("\n"),
+    );
+    reserved = true;
+    await io.remote(cfg, `mkdir ${q(`${rel}/files`)}`);
+    for (const f of files) {
+      const path = `${current}/files/${f.file}`;
+      await io.remote(
+        cfg,
+        [
+          "set -e",
+          `test -f ${q(path)}`,
+          `test ! -L ${q(path)}`,
+          `test "$(readlink -f ${q(path)})" = ${q(path)}`,
+          `test "$(stat -c %s ${q(path)})" = ${q(String(f.size))}`,
+          `test "$(sha256sum ${q(path)} | cut -d' ' -f1)" = ${q(f.sha256)}`,
+          `ln ${q(path)} ${q(`${rel}/files/${f.file}`)}`,
+        ].join("\n"),
+        600,
+      );
+    }
+    await finalizeRelease(cfg, options.id, stage, manifest, files, io, assetHashes, current, false);
+    return manifest;
+  } catch (error) {
+    if (reserved)
+      await io
+        .remote(
+          cfg,
+          [
+            "set -e",
+            `if [ "$(readlink -f ${q(`${cfg.host.root}/current`)})" != ${q(rel)} ]; then rm -rf ${q(rel)}; fi`,
+          ].join("\n"),
+        )
+        .catch(() => undefined);
+    rmSync(stage, { recursive: true, force: true });
+    throw error;
+  }
+}
+
+/** Publish new installers with current artifact payloads, without rebuilding or uploading binaries. */
+async function assets(cfg: DownloadsConfig) {
+  const assetCommit = await gitOut(root, "rev-parse", "HEAD");
+  await publishAssetsSnapshot(cfg, {
+    assetCommit,
+    id: arg("id") ?? `${releaseId(assetCommit)}-assets-${randomUUID().slice(0, 8)}`,
+  });
 }
 
 async function ghJson(

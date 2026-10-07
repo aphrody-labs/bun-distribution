@@ -4,6 +4,7 @@
 # Aphrody userland: Alpine with the GNU/busybox core utilities replaced by Rust
 # rewrites, and Bun as the JavaScript/TypeScript runtime.
 #
+#   docker build --target runtime -t aphrody/bun-alpine config/container/aphrody-os # Bun-only runtime
 #   docker build -t aphrody/rust-bun config/container/aphrody-os                    # CLI (default)
 #   docker build -t aphrody/cosmic --target desktop config/container/aphrody-os     # + COSMIC Epoch
 #   docker run --rm -it aphrody/rust-bun
@@ -22,11 +23,39 @@ ARG BUN_VERSION=1.4.2
 # Official Bun image, used only as a source for its verified musl binary.
 FROM oven/bun:${BUN_VERSION}-alpine AS bun
 
-FROM alpine:${ALPINE_VERSION} AS cli
+FROM alpine:${ALPINE_VERSION} AS runtime
+
+LABEL org.opencontainers.image.title="aphrody/bun-alpine" \
+      org.opencontainers.image.description="Minimal non-root Alpine runtime using the official musl Bun binary" \
+      org.opencontainers.image.licenses="Apache-2.0"
+
+# Keep the runtime free of compilers and agent/desktop tools. The official
+# Alpine Bun image supplies the musl-linked binary; GNU/glibc release artifacts
+# must not be copied into this image.
+RUN apk add --no-cache ca-certificates libgcc libstdc++ tzdata \
+    && addgroup -g 1000 agent \
+    && adduser -D -u 1000 -G agent -h /home/agent agent \
+    && mkdir -p /home/agent/app \
+    && chown -R agent:agent /home/agent
+
+COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
+RUN ln -s bun /usr/local/bin/bunx
+
+ENV BUN_RUNTIME_TRANSPILER_CACHE_PATH=0 \
+    BUN_INSTALL_BIN=/usr/local/bin \
+    LANG=C.UTF-8
+
+USER agent
+WORKDIR /home/agent/app
+CMD ["/usr/local/bin/bun", "--version"]
+
+FROM runtime AS cli
 
 LABEL org.opencontainers.image.title="aphrody/rust-bun" \
       org.opencontainers.image.description="Alpine with uutils, sudo-rs, eza, Nushell, Ion and Bun instead of GNU/busybox tools" \
       org.opencontainers.image.licenses="Apache-2.0"
+
+USER root
 
 # `build_ca` is an optional BuildKit secret for builds behind a TLS-intercepting
 # proxy. It is only read during this step and never stored in the image.
@@ -44,9 +73,6 @@ RUN --mount=type=secret,id=build_ca,required=false \
     # sudo-rs-su ships /usr/bin/su; drop busybox's copy so only one su exists.
     rm -f /bin/su
 
-COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
-RUN ln -s bun /usr/local/bin/bunx
-
 COPY rootfs/ /
 
 # "agent" is the account autonomous agents run as; it gets root through sudo-rs
@@ -55,8 +81,7 @@ RUN set -eu; \
     grep -qx "@includedir /etc/sudoers.d" /etc/sudoers || echo "@includedir /etc/sudoers.d" >> /etc/sudoers; \
     chmod 0440 /etc/sudoers /etc/sudoers.d/agent; \
     printf '/usr/bin/nu\n/usr/bin/ion\n' >> /etc/shells; \
-    addgroup -g 1000 agent; \
-    adduser -D -u 1000 -G agent -h /home/agent -s /usr/bin/nu agent; \
+    sed -i 's#^agent:x:1000:1000:.*#agent:x:1000:1000:Linux User,,,:/home/agent:/usr/bin/nu#' /etc/passwd; \
     sed -i 's#^root:x:0:0:root:/root:/bin/sh#root:x:0:0:root:/root:/usr/bin/nu#' /etc/passwd; \
     mkdir -p /home/agent/app; \
     cp -r /etc/skel/. /home/agent/; \

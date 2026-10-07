@@ -8,13 +8,14 @@
  *   <root>/SHA256SUMS         `<sha256>  <file>` for every artifact of the release
  *   <root>/install.sh|.ps1    one-line installers
  *   <root>/files/<file>       artifacts, each next to its `<file>.sha256`
+ *   /releases/<id>/...        immutable routes from sibling releases/<id>, same public resources
  *
  * `<root>` is the `current` symlink that scripts/release/publish-downloads.ts flips atomically.
  * Environment: DOWNLOADS_ROOT (default /srv/aphrody-downloads/current), DOWNLOADS_PORT (8797),
  * DOWNLOADS_HOST (127.0.0.1).
  */
-import { realpathSync } from "node:fs";
-import { basename, join, resolve, sep } from "node:path";
+import { realpathSync, statSync } from "node:fs";
+import { basename, dirname, join, resolve, sep } from "node:path";
 
 export interface Artifact {
   name: string;
@@ -126,15 +127,52 @@ ${cmd("Windows", `irm ${base}/install.ps1 | iex`)}
 `;
 }
 
-export function resolveFile(root: string, name: string): string | null {
-  if (name === "" || name.includes("\0") || name.includes("/") || name.includes("\\")) return null;
-  if (name.startsWith(".")) return null;
-  const base = resolve(root, "files");
-  const candidate = join(base, name);
+const PUBLIC_ASSETS = new Set([
+  "latest.json",
+  "manifest.json",
+  "SHA256SUMS",
+  "install.sh",
+  "install.ps1",
+  "install-yolo.sh",
+  "install-yolo.ps1",
+  "pet.webp",
+  "icon.svg",
+]);
+
+function resolveContainedFile(root: string, directory: string, name: string): string | null {
+  if (!name || /[\\/\0\r\n]/.test(name) || name.startsWith(".")) return null;
+  // Release trees must never expose credentials, databases or model stores.
+  const protectedName =
+    /(?:\.(?:pem|key|sqlite3?|db|gguf|safetensors|onnx|ckpt)(?:-wal|-shm)?$|^id_(?:rsa|dsa|ecdsa|ed25519)|^credentials(?:\.json)?$|^cookies?\.(?:json|txt|sqlite)$)/i;
+  if (protectedName.test(name)) return null;
   try {
-    const real = realpathSync(candidate);
-    const realBase = realpathSync(base);
-    return real.startsWith(realBase + sep) ? real : null;
+    const realRoot = realpathSync(root);
+    const realBase = realpathSync(join(root, directory));
+    if (realBase !== realRoot && !realBase.startsWith(realRoot + sep)) return null;
+    const real = realpathSync(join(realBase, name));
+    return real.startsWith(realBase + sep) &&
+      !protectedName.test(basename(real)) &&
+      !basename(real).startsWith(".") &&
+      statSync(real).isFile()
+      ? real
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+export function resolveFile(root: string, name: string): string | null {
+  return resolveContainedFile(root, "files", name);
+}
+
+function resolveRelease(root: string, id: string): string | null {
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(id)) return null;
+  try {
+    const parent = realpathSync(dirname(root));
+    const releases = realpathSync(join(dirname(root), "releases"));
+    if (releases !== join(parent, "releases")) return null;
+    const release = realpathSync(join(releases, id));
+    return release === join(releases, id) && statSync(release).isDirectory() ? release : null;
   } catch {
     return null;
   }
@@ -166,7 +204,8 @@ function withHeaders(init: Record<string, string>): Headers {
 
 async function readManifest(root: string): Promise<Manifest | null> {
   try {
-    return (await Bun.file(join(root, "latest.json")).json()) as Manifest;
+    const path = resolveContainedFile(root, "", "latest.json");
+    return path ? ((await Bun.file(path).json()) as Manifest) : null;
   } catch {
     return null;
   }
@@ -208,38 +247,47 @@ export function createHandler(rootInput: string): (request: Request) => Promise<
       });
     }
 
-    if (
-      [
-        "/latest.json",
-        "/SHA256SUMS",
-        "/install.sh",
-        "/install.ps1",
-        "/install-yolo.sh",
-        "/pet.webp",
-        "/icon.svg",
-      ].includes(path)
-    ) {
-      const file = Bun.file(join(root, path.slice(1)));
-      if (!(await file.exists()))
+    let releaseRoot = root;
+    let resourcePath = path;
+    const immutable = path.startsWith("/releases/");
+    if (immutable) {
+      const match = /^\/releases\/([^/]+)(\/.*)$/.exec(path);
+      let id: string;
+      try {
+        id = match ? decodeURIComponent(match[1]) : "";
+      } catch {
+        return new Response("bad request", { status: 400, headers: withHeaders({}) });
+      }
+      const pinnedRoot = resolveRelease(root, id);
+      if (!match || pinnedRoot === null)
         return new Response("not found", { status: 404, headers: withHeaders({}) });
-      const ext = path.slice(path.lastIndexOf("."));
+      releaseRoot = pinnedRoot;
+      resourcePath = match[2];
+    }
+
+    if (PUBLIC_ASSETS.has(resourcePath.slice(1))) {
+      const real = resolveContainedFile(releaseRoot, "", resourcePath.slice(1));
+      if (real === null)
+        return new Response("not found", { status: 404, headers: withHeaders({}) });
+      const file = Bun.file(real);
+      const ext = resourcePath.slice(resourcePath.lastIndexOf("."));
       return new Response(head ? null : file, {
         headers: withHeaders({
           "content-type": TEXT_TYPES[ext] ?? "text/plain; charset=utf-8",
-          "cache-control": "public, max-age=60",
+          "cache-control": immutable ? "public, max-age=31536000, immutable" : "public, max-age=60",
           "access-control-allow-origin": "*",
         }),
       });
     }
 
-    if (path.startsWith("/files/")) {
+    if (resourcePath.startsWith("/files/")) {
       let name: string;
       try {
-        name = decodeURIComponent(path.slice("/files/".length));
+        name = decodeURIComponent(resourcePath.slice("/files/".length));
       } catch {
         return new Response("bad request", { status: 400, headers: withHeaders({}) });
       }
-      const real = resolveFile(root, name);
+      const real = resolveFile(releaseRoot, name);
       if (real === null)
         return new Response("not found", { status: 404, headers: withHeaders({}) });
       const file = Bun.file(real);

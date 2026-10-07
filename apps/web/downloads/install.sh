@@ -14,6 +14,7 @@
 #
 # Environment:
 #   APHRODY_DOWNLOAD_URL  base URL of the download server (default https://downloads.aphrody.com)
+#   APHRODY_RELEASE       immutable release ID (default: select latest.json once)
 #   APHRODY_COMPONENTS    `all` (default) or space separated: aphrody yolo plugin-aphrody plugin-yolo
 #                         plugin-shenron mcp
 #   APHRODY_PREFIX        install prefix (default ~/.local): binaries in <prefix>/lib/aphrody/<release>,
@@ -25,6 +26,7 @@
 set -eu
 
 BASE="${APHRODY_DOWNLOAD_URL:-https://downloads.aphrody.com}"
+BASE=${BASE%/}
 COMPONENTS="${APHRODY_COMPONENTS:-all}"
 ALL=""
 if [ "$COMPONENTS" = all ]; then
@@ -62,16 +64,51 @@ else die "sha256sum or shasum is required"; fi
 have tar || die "tar is required"
 
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT INT TERM
+STAGING=""
+trap '[ -z "$STAGING" ] || rm -rf "$STAGING"; rm -rf "$TMP"' EXIT INT TERM
 
-fetch "$BASE/SHA256SUMS" "$TMP/SHA256SUMS" || die "cannot read $BASE/SHA256SUMS"
+RELEASE_ID="${APHRODY_RELEASE:-}"
+if [ -z "$RELEASE_ID" ]; then
+  fetch "$BASE/latest.json" "$TMP/latest.json" || die "cannot read $BASE/latest.json"
+  RELEASE_ID=$(tr '\n' ' ' <"$TMP/latest.json" | sed -n 's/.*"release"[[:space:]]*:[[:space:]]*{[^}]*"id"[[:space:]]*:[[:space:]]*"\([A-Za-z0-9][A-Za-z0-9._-]*\)".*/\1/p')
+fi
+case "$RELEASE_ID" in "" | *[!A-Za-z0-9._-]* | . | ..) die "invalid or missing release ID" ;; esac
+case "$RELEASE_ID" in [A-Za-z0-9]*) ;; *) die "invalid release ID" ;; esac
+[ ${#RELEASE_ID} -le 128 ] || die "release ID is too long"
+RELEASE_BASE="$BASE/releases/$RELEASE_ID"
+fetch "$RELEASE_BASE/SHA256SUMS" "$TMP/SHA256SUMS" || die "cannot read $RELEASE_BASE/SHA256SUMS"
+# Restrict checksum entries before using any filename as a local path or URL.
+awk 'NF != 2 || length($1) != 64 || $1 ~ /[^0-9a-fA-F]/ || $2 !~ /^[A-Za-z0-9][A-Za-z0-9._-]*$/ { exit 1 }' "$TMP/SHA256SUMS" || die "invalid SHA256SUMS"
+say "Selected release $RELEASE_ID"
+
+# Reject paths and links that could escape the staging directory.
+preflight_tar() {
+  tar -tzf "$1" >"$TMP/archive-paths" || die "invalid archive"
+  awk '$0 ~ /^\// || $0 ~ /^[A-Za-z]:/ || $0 ~ /(^|\/)\.\.(\/|$)/ { exit 1 }' "$TMP/archive-paths" || die "unsafe archive path"
+  tar -tvzf "$1" >"$TMP/archive-types" || die "invalid archive"
+  awk 'substr($0, 1, 1) != "-" && substr($0, 1, 1) != "d" { exit 1 }' "$TMP/archive-types" || die "archive links or special files are unsupported"
+}
+
+# Keep the active directory intact until its replacement has passed preflight.
+promote_directory() {
+  dest="$1"
+  previous="$dest.previous"
+  [ ! -e "$previous" ] || die "previous installation exists: $previous"
+  if [ -e "$dest" ]; then mv "$dest" "$previous"; fi
+  if ! mv "$dest.new" "$dest"; then
+    [ ! -e "$previous" ] || mv "$previous" "$dest"
+    die "cannot activate $dest"
+  fi
+  STAGING=""
+  [ ! -e "$previous" ] || rm -rf "$previous"
+}
 
 # file_for <prefix> <suffix-pattern>: the release file `<prefix>-*<suffix>` listed in SHA256SUMS
 file_for() { awk -v p="$1" -v s="$2" '{ n=$2; if (index(n, p "-") == 1 && n ~ s) print n }' "$TMP/SHA256SUMS" | head -1; }
 
 download() { # file -> $TMP/file, verified
   name="$1"
-  fetch "$BASE/files/$name" "$TMP/$name" || die "cannot download $BASE/files/$name"
+  fetch "$RELEASE_BASE/files/$name" "$TMP/$name" || die "cannot download $RELEASE_BASE/files/$name"
   want=$(awk -v n="$name" '$2 == n { print $1 }' "$TMP/SHA256SUMS")
   [ -n "$want" ] || die "$name is not listed in SHA256SUMS"
   got=$(sha256 "$TMP/$name")
@@ -85,11 +122,15 @@ install_aphrody() {
   download "$name"
   release=${name%-"$TARGET".tar.gz}
   dest="$PREFIX/lib/aphrody/$release"
-  mkdir -p "$dest"
-  tar -xzf "$TMP/$name" -C "$dest"
-  [ -x "$dest/aphrody" ] || die "the archive has no aphrody executable"
+  preflight_tar "$TMP/$name"
+  [ ! -e "$dest.new" ] || die "staging installation exists: $dest.new"
+  STAGING="$dest.new"
+  mkdir -p "$dest.new"
+  tar -xzf "$TMP/$name" -C "$dest.new"
+  [ -x "$dest.new/aphrody" ] || die "the archive has no aphrody executable"
+  "$dest.new/aphrody" --version >/dev/null || die "the downloaded aphrody does not run on this host"
+  promote_directory "$dest"
   APHRODY_BIN="$dest/aphrody"
-  "$dest/aphrody" --version >/dev/null || die "the downloaded aphrody does not run on this host"
   if [ -z "${APHRODY_NO_LINKS:-}" ]; then
     mkdir -p "$HOME/.local/bin"
     "$dest/aphrody" self install-path --bin "$dest/aphrody" || die "aphrody self install-path failed"
@@ -103,7 +144,7 @@ install_yolo() {
   [ -n "$name" ] || { skip "no yolo build for $TARGET in this release"; return 0; }
   download "$name"
   installer="$TMP/install-yolo.sh"
-  fetch "$BASE/install-yolo.sh" "$installer" || die "cannot download install-yolo.sh"
+  fetch "$RELEASE_BASE/install-yolo.sh" "$installer" || die "cannot download install-yolo.sh"
   # The yolo installer reads SHA256SUMS and the archive from a local release directory.
   mkdir -p "$TMP/yolo-release"
   cp "$TMP/SHA256SUMS" "$TMP/$name" "$TMP/yolo-release/"
@@ -116,11 +157,13 @@ install_plugin() {
   [ -n "$name" ] || { skip "no $component archive in this release"; return 0; }
   download "$name"
   dest="$PREFIX/share/aphrody/plugins/$component"
-  rm -rf "$dest.new"
+  preflight_tar "$TMP/$name"
+  [ ! -e "$dest.new" ] || die "staging installation exists: $dest.new"
+  STAGING="$dest.new"
   mkdir -p "$dest.new"
   tar -xzf "$TMP/$name" -C "$dest.new"
-  rm -rf "$dest"
-  mv "$dest.new" "$dest"
+  [ -f "$dest.new/.claude-plugin/plugin.json" ] || die "the archive has no plugin manifest"
+  promote_directory "$dest"
   say "$component installed in $dest"
   PLUGINS="$PLUGINS $component"
 }
@@ -154,13 +197,23 @@ register_plugins() {
   done
 }
 
-# The aphrody MCP server in Claude Code (`aphrody kernel mcp` over stdio, as the plugin and Aphrody-Setup declare it).
+# The canonical aphrody MCP server, over stdio.
 install_mcp() {
-  bin="${APHRODY_BIN:-$(command -v aphrody || true)}"
+  # Prefer the canonical installed executable; fall back to the supported multicall command.
+  bin=$(command -v aphrody-mcp || true)
+  mcp_args=""
+  if [ -z "$bin" ]; then
+    bin="${APHRODY_BIN:-$(command -v aphrody || true)}"
+    mcp_args="mcp-server"
+  fi
   [ -n "$bin" ] || { skip "aphrody is not installed: no MCP server to declare"; return 0; }
-  have claude || { skip "Claude Code is not installed: claude mcp add --scope user aphrody -- $bin kernel mcp"; return 0; }
+  have claude || { skip "Claude Code is not installed: claude mcp add --scope user aphrody -- $bin $mcp_args"; return 0; }
   claude mcp remove aphrody --scope user >/dev/null 2>&1 || true
-  claude mcp add --scope user aphrody -- "$bin" kernel mcp >/dev/null || die "claude mcp add failed"
+  if [ -n "$mcp_args" ]; then
+    claude mcp add --scope user aphrody -- "$bin" "$mcp_args" >/dev/null || die "claude mcp add failed"
+  else
+    claude mcp add --scope user aphrody -- "$bin" >/dev/null || die "claude mcp add failed"
+  fi
   say "aphrody MCP server declared in Claude Code"
 }
 
