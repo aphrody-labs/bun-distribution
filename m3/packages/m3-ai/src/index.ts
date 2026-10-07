@@ -86,7 +86,7 @@ export { TaskCreateForm } from "./TaskCreateForm";
 export type { TaskCreateFormProps, TaskCreateFormData } from "./TaskCreateForm";
 
 // AG-UI Protocol & Agent-to-User (A2U) Bridge
-export { EventType } from "@aphrody/ag-ui";
+export { EventType } from "./ag-ui";
 export {
   AgUiEventAccumulator,
   agUiEventsToTranscriptSteps,

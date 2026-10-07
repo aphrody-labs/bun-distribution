@@ -10,7 +10,7 @@ import {
   type ReasoningMessageContentEvent,
   type SubagentStartedEvent,
   type SubagentFinishedEvent,
-} from "@aphrody/ag-ui";
+} from "../src/ag-ui";
 import {
   AgUiEventAccumulator,
   agUiEventsToTranscriptItems,

@@ -7,7 +7,7 @@ import {
   ToolCall,
   type AgUiStreamState,
 } from "@aphrody/m3-ai";
-import type { BaseEvent } from "@aphrody/ag-ui";
+import type { BaseEvent } from "@aphrody/m3-ai/ag-ui";
 import { Button } from "@aphrody/m3-primitives";
 import { Card, Code, Page, Section } from "../components/ui.tsx";
 import type { PageProps } from "./index.ts";
@@ -87,7 +87,7 @@ export default function Ai({ adaptive }: PageProps) {
     <Page
       title="AI"
       summary="Inspect a real AG-UI event stream through the Material 3 transcript, tool-call and composer components."
-      packages={["@aphrody/m3-ai", "@aphrody/ag-ui"]}
+      packages={["@aphrody/m3-ai", "@aphrody/m3-ai/ag-ui"]}
       panes={adaptive.panes}
       aside={
         <Card>

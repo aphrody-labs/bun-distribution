@@ -123,7 +123,7 @@ export const DESTINATIONS: readonly Destination[] = [
     icon: smartIcon,
     iconFilled: smartFilled,
     summary: "A chat transcript, tool calls, markdown and an AG-UI stream from the API.",
-    packages: ["@aphrody/m3-ai", "@aphrody/ag-ui"],
+    packages: ["@aphrody/m3-ai"],
   },
   {
     id: "reader",

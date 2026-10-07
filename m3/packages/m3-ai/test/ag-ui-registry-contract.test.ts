@@ -6,7 +6,7 @@ import {
   decodeProto,
   tokenUsageFromLangChainMetadata,
   type BaseEvent,
-} from "../src/index";
+} from "../src/ag-ui";
 import fixtures from "../fixtures/null-omission.json";
 
 // Replay the existing cross-language wire fixtures through the public adapter.

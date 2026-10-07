@@ -21,7 +21,7 @@ import {
   type SubagentFinishedEvent,
   type SubagentErrorEvent,
   type RunErrorEvent,
-} from "@aphrody/ag-ui";
+} from "./ag-ui";
 import {
   type TranscriptStep,
   type TranscriptItem,
