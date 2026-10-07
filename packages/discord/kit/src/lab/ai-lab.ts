@@ -3,7 +3,7 @@
 /* oxlint-disable no-await-in-loop */
 import { mkdir, chmod } from "node:fs/promises";
 import { dirname } from "node:path";
-import { discordFetch } from "../../../packages/discord/kit/src/rest.ts";
+import { discordFetch } from "../rest.ts";
 
 export interface LabPolicy {
   guildId: string;

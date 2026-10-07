@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { askModel, eligiblePrompt, processMessage, type LabMessage } from "./assistant.ts";
-import type { LabApi, LabPolicy, LabState } from "./ai-lab.ts";
+import {
+  askModel,
+  eligiblePrompt,
+  processMessage,
+  type LabMessage,
+} from "../../src/lab/assistant.ts";
+import type { LabApi, LabPolicy, LabState } from "../../src/lab/ai-lab.ts";
 
 const state: LabState = {
   guildId: "guild",

@@ -10,3 +10,11 @@ Shared Discord bot core kit, published as `@aphrody/discord-kit` and used by the
 - **Commands Safety**: Diagnoses Discord API `Invalid Form Body` errors with detailed `rawError` path logging.
 - **Guards**: `NotBot` (drops automated bot events) and `createMonoGuildGuard` (restricts private bots to a designated production server).
 - **Graceful Lifecycle**: Structured SIGTERM and SIGINT cleanup sequence.
+
+## Implementation ownership
+
+Discord messaging, REST, bot lifecycle and the private AI laboratory are implemented
+in `packages/discord/kit`. `@aphrody/messaging` is a compatibility export of
+`@aphrody/discord-kit/messaging`; it contains no separate transport. Laboratory
+entrypoints are `src/lab/ai-lab.ts` and `src/lab/assistant.ts`. Discord transport
+tests use the package Bun configuration to preserve native multipart primitives.

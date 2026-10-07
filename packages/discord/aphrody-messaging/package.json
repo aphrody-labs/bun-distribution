@@ -24,7 +24,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@discordjs/rest": "catalog:"
+    "@aphrody/discord-kit": "workspace:*"
   },
   "devDependencies": {
     "tsdown": "catalog:",

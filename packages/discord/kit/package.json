@@ -21,21 +21,34 @@
     "./apps": {
       "types": "./dist/apps.d.mts",
       "import": "./dist/apps.mjs"
+    },
+    "./messaging": {
+      "types": "./dist/messaging.d.mts",
+      "import": "./dist/messaging.mjs"
+    },
+    "./lab": {
+      "types": "./dist/lab/ai-lab.d.mts",
+      "import": "./dist/lab/ai-lab.mjs"
+    },
+    "./assistant": {
+      "types": "./dist/lab/assistant.d.mts",
+      "import": "./dist/lab/assistant.mjs"
     }
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/rest.ts src/apps.ts --format esm --dts",
-    "test": "bun test test",
+    "build": "tsdown src/index.ts src/rest.ts src/apps.ts src/messaging.ts src/lab/ai-lab.ts src/lab/assistant.ts --format esm --dts",
+    "test": "bun test --config=./bunfig.toml test",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@aphrody/runtime-sdk": "workspace:*",
     "discord-api-types": "catalog:",
     "discord.js": "catalog:",
-    "discordx": "catalog:"
+    "discordx": "catalog:",
+    "@discordjs/rest": "catalog:"
   },
   "devDependencies": {
     "tsdown": "catalog:",

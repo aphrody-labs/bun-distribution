@@ -30,3 +30,11 @@ guild text/thread history once per second. The stream is cancellable with an
 messages per room and backfills later polls to the saved cursor when a channel
 has more than 100 new messages. Discord's [message endpoint](https://docs.discord.com/developers/resources/message#get-channel-messages)
 returns pages newest first.
+
+## Implementation ownership
+
+Discord messaging, REST, bot lifecycle and the private AI laboratory are implemented
+in `packages/discord/kit`. `@aphrody/messaging` is a compatibility export of
+`@aphrody/discord-kit/messaging`; it contains no separate transport. Laboratory
+entrypoints are `src/lab/ai-lab.ts` and `src/lab/assistant.ts`. Discord transport
+tests use the package Bun configuration to preserve native multipart primitives.

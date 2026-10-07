@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { configureLab, type LabApi, type LabPolicy, type Channel } from "./ai-lab.ts";
+import { configureLab, type LabApi, type LabPolicy, type Channel } from "../../src/lab/ai-lab.ts";
 
 const policy: LabPolicy = {
   guildId: "guild",
