@@ -1,0 +1,9 @@
+# Timeline DBFR
+
+- [x] Collecter les 684 médias et 32 repères d’Âges avec références et ordre éditorial.
+- [x] Exposer JSON, GraphQL, SQL et index Redis depuis une génération commune.
+- [x] Indexer le foyer DBFR et préparer 655 exemples train / 61 évaluation séparés par identité.
+- [x] Activer et vérifier le rafraîchissement horaire déclaré par Infra sur DBFR.
+- [ ] Achever la collecte des 716 fiches liées (64 vérifiées sans échec au 2026-10-07).
+- [ ] Vérifier que le chat Shenron de production consomme ces passages et qualifier ses embeddings.
+- [ ] Entraîner, évaluer et qualifier le modèle sur l’hôte Omar.

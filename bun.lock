@@ -1026,6 +1026,7 @@
         "@aphrody/os": "workspace:*",
         "@aphrody/paths": "workspace:*",
         "@aphrody/runtime-sdk": "workspace:*",
+        "@aphrody/timeline": "workspace:*",
         "@aphrody/update": "workspace:*",
         "@aphrody/yolo-core": "workspace:*",
         "@typescript/typescript6": "catalog:",
@@ -1121,6 +1122,16 @@
     "packages/web/qr": {
       "name": "@aphrody/qr",
       "version": "0.1.1",
+      "devDependencies": {
+        "@types/bun": "catalog:",
+      },
+    },
+    "packages/web/timeline": {
+      "name": "@aphrody/timeline",
+      "version": "0.1.0",
+      "dependencies": {
+        "graphql": "catalog:",
+      },
       "devDependencies": {
         "@types/bun": "catalog:",
       },
@@ -1244,6 +1255,7 @@
     "embla-carousel-react": "^8.6.0",
     "google-auth-library": "11.1.0",
     "googleapis": "^182.0.0",
+    "graphql": "17.0.2",
     "happy-dom": "^20.14.5",
     "input-otp": "^1.5.0",
     "jscodeshift": "^17.3.0",
@@ -1490,6 +1502,8 @@
     "@aphrody/shell-web": ["@aphrody/shell-web@workspace:packages/shell/web"],
 
     "@aphrody/sql": ["@aphrody/sql@workspace:packages/infra/sql"],
+
+    "@aphrody/timeline": ["@aphrody/timeline@workspace:packages/web/timeline"],
 
     "@aphrody/update": ["@aphrody/update@workspace:packages/infra/update"],
 
@@ -2498,6 +2512,8 @@
     "gopd": ["gopd@1.2.0", "", {}, "sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg=="],
 
     "graceful-fs": ["graceful-fs@4.2.11", "", {}, "sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ=="],
+
+    "graphql": ["graphql@17.0.2", "", {}, "sha512-FRWbddMxfkjiB7z+aQDWIR+E34xo9I8c9mtK2RPv8PmMzKRvrdsreHL/Ui/TmwHJfhHChEtsFPyMHKI+xuarQQ=="],
 
     "happy-dom": ["happy-dom@20.14.5", "", { "dependencies": { "@types/node": ">=20.0.0", "@types/whatwg-mimetype": "^3.0.2", "@types/ws": "^8.18.1", "buffer-image-size": "^0.6.4", "entities": "^7.0.1", "whatwg-mimetype": "^3.0.0", "ws": "^8.21.0" } }, "sha512-x/RzkpWO40bTjIoT30iQtt64FLLmH/iRcUCN2X//bLx7H3ifkdfPXyqsro/OYtqzIAhiLMMA7mmiOR9C3NOKjQ=="],
 

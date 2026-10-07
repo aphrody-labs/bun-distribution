@@ -660,6 +660,30 @@
       "dropIns": [],
       "ownerRepo": "aphrody",
       "targetHost": "vps"
+    },
+    {
+      "service": "shenron-timeline-refresh",
+      "unit": "shenron-timeline-refresh.service",
+      "path": "systemd/shenron/shenron-timeline-refresh.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "shenron-timeline-refresh-timer",
+      "unit": "shenron-timeline-refresh.timer",
+      "path": "systemd/shenron/shenron-timeline-refresh.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "shenron-timeline-api",
+      "unit": "shenron-timeline-api.service",
+      "path": "systemd/shenron/shenron-timeline-api.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
     }
   ],
   "nginx": [

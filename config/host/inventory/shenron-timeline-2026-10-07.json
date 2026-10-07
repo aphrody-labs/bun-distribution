@@ -1,0 +1,64 @@
+{
+  "observedAt": "2026-10-07T13:21:08.121Z",
+  "host": "dbfr",
+  "ownerPackage": "@aphrody/timeline",
+  "runtimeOwner": "@aphrody/workspace",
+  "runtimeSha256": "8a156b6a76d8503cf031a589e7e2222126e926282b166e119c6155dfc7b5353c",
+  "generation": "435e3bf03ac7869aea706a78f03918d4a5a66ea25195b2008eeb76a2bc5a5101",
+  "media": 684,
+  "ages": 32,
+  "sqlite": {
+    "episodes": 659,
+    "movies": 9,
+    "manga": 16,
+    "ages": 32
+  },
+  "redis": {
+    "entries": 716,
+    "media": 684,
+    "ages": 32
+  },
+  "home": {
+    "profile": "dbfr",
+    "label": "shenron:timeline",
+    "initialIndexedDocuments": 716,
+    "initialChunks": 716,
+    "searchVerified": true
+  },
+  "linkedCrawl": {
+    "known": 64,
+    "lastChecked": 32,
+    "lastFailed": 0,
+    "budgetPerHourlyPass": 32
+  },
+  "training": {
+    "trainExamples": 655,
+    "evalExamples": 61,
+    "weightsTrained": false,
+    "host": "omar-wsl",
+    "hostProbe": "10.200.77.10 unreachable from vps on 2026-10-07",
+    "cliFeatureAvailable": false
+  },
+  "services": {
+    "refreshResult": "success",
+    "refreshExitCode": 0,
+    "timerActive": true,
+    "apiActive": true,
+    "apiBind": "127.0.0.1:8813",
+    "graphqlHttpVerified": true
+  },
+  "validation": {
+    "bunTestsPassed": 8,
+    "packageTypecheck": true,
+    "workspaceTypecheck": true,
+    "strictOxlint": true,
+    "documentationLinksBroken": 0,
+    "globalCatalogUnlistedConcurrentUnits": 4
+  },
+  "limits": [
+    "Chat production consumption and embeddings remain unqualified",
+    "All linked source pages have not yet completed their initial crawl",
+    "No model training or promotion performed",
+    "Windows and macOS execution not qualified"
+  ]
+}
