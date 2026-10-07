@@ -154,6 +154,8 @@ struct Inner {
     n_ctx: u32,
     /// One generation at a time: a context per turn is expensive on a GPU.
     gate: Arc<Semaphore>,
+    /// Host resource ownership follows every decoder clone and drops after native weights.
+    _residency_guard: Option<Arc<dyn Send + Sync>>,
 }
 
 /// An in-process `ModelClient` over a GGUF model via `aphrody-llama`.
@@ -184,13 +186,35 @@ impl InProcessLlama {
         model_name: impl Into<String>,
         options: LoadOptions,
     ) -> Result<Self, LlamaLoadError> {
+        Self::load_inner(path.as_ref().to_path_buf(), model_name.into(), options, None).await
+    }
+
+    /// Load a model while retaining a host resource through loading and every decoder.
+    /// The guard remains owned by native work even if the caller cancels this future.
+    ///
+    /// # Errors
+    /// See [`LlamaLoadError`].
+    pub async fn load_with_residency_guard(
+        path: impl AsRef<Path>,
+        model_name: impl Into<String>,
+        options: LoadOptions,
+        guard: Arc<dyn Send + Sync>,
+    ) -> Result<Self, LlamaLoadError> {
+        Self::load_inner(path.as_ref().to_path_buf(), model_name.into(), options, Some(guard)).await
+    }
+
+    async fn load_inner(
+        path: PathBuf,
+        model_name: String,
+        options: LoadOptions,
+        residency_guard: Option<Arc<dyn Send + Sync>>,
+    ) -> Result<Self, LlamaLoadError> {
         let backend = backend().await?;
-        let path = path.as_ref().to_path_buf();
         let load_path = path.clone();
         let model = tokio::task::spawn_blocking(move || {
             let params = LlamaModelParams::default().with_n_gpu_layers(options.gpu_layers);
             LlamaModel::load_from_file(backend, &load_path, &params)
-                .map(|model| (model, options.ctx))
+                .map(|model| (model, options.ctx, residency_guard))
                 .map_err(|error| LlamaLoadError::Model {
                     path: load_path.display().to_string(),
                     message: error.to_string(),
@@ -201,7 +225,9 @@ impl InProcessLlama {
             path: path.display().to_string(),
             message: error.to_string(),
         })??;
-        let (model, ctx) = model;
+        // Bind the guard first so every early-error path drops native weights before it.
+        let residency_guard = model.2;
+        let (model, ctx, _) = model;
         if options.lora.len() > 1 {
             return Err(LlamaLoadError::Lora {
                 path: options.lora[1].path.display().to_string(),
@@ -248,8 +274,9 @@ impl InProcessLlama {
                 path,
                 n_ctx,
                 gate: Arc::new(Semaphore::new(1)),
+                _residency_guard: residency_guard,
             }),
-            model_name: model_name.into(),
+            model_name,
         })
     }
 
@@ -609,6 +636,53 @@ mod tests {
     use serde_json::json;
 
     use super::*;
+
+    #[tokio::test(flavor = "multi_thread")]
+    #[ignore = "needs APHRODY_LLAMA_TEST_MODEL and the host libllama runtime"]
+    async fn cancelled_decoder_keeps_the_model_resource_until_native_work_stops() {
+        let path = std::env::var("APHRODY_LLAMA_TEST_MODEL").expect("protected model path");
+        let resource = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        struct Resident(Arc<std::sync::atomic::AtomicBool>);
+        impl Drop for Resident {
+            fn drop(&mut self) {
+                self.0.store(true, std::sync::atomic::Ordering::SeqCst);
+            }
+        }
+        let engine = InProcessLlama::load_with_residency_guard(
+            &path,
+            "resident-test",
+            LoadOptions { ctx: Some(1024), gpu_layers: 0, ..LoadOptions::default() },
+            Arc::new(Resident(Arc::clone(&resource))),
+        )
+        .await
+        .expect("host model");
+        let observer = Arc::downgrade(&engine.inner);
+        let stream = engine
+            .stream(ChatTurn {
+                messages: vec![ChatMessage {
+                    role: Role::User,
+                    parts: vec![Part::Text("Count from one to ten.".into())],
+                }],
+                options: aphrody_model_client::TurnOptions {
+                    max_output_tokens: Some(16),
+                    ..Default::default()
+                },
+                ..Default::default()
+            })
+            .await
+            .expect("decoder");
+        assert!(!resource.load(std::sync::atomic::Ordering::SeqCst));
+        drop(engine);
+        drop(stream);
+        tokio::time::timeout(std::time::Duration::from_secs(60), async {
+            while !resource.load(std::sync::atomic::Ordering::SeqCst) {
+                tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .expect("cancelled producer eventually releases resource");
+        assert!(observer.upgrade().is_none());
+    }
 
     fn tool() -> ToolDecl {
         ToolDecl {

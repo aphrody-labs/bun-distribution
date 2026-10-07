@@ -5,6 +5,7 @@
 use std::{
     collections::HashMap,
     ffi::{CString, c_char},
+    fs::{File, TryLockError},
     panic::{AssertUnwindSafe, catch_unwind},
     path::PathBuf,
     sync::{
@@ -38,6 +39,64 @@ struct Session {
     engine: InProcessLlama,
     profile: String,
     home: PathBuf,
+}
+
+fn resident_file_at(path: &std::path::Path) -> Result<File, String> {
+    let mut options = File::options();
+    options.create(true).read(true).write(true).truncate(false);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    options.open(path).map_err(|e| format!("resident model lease unavailable: {e}"))
+}
+
+#[cfg(test)]
+fn resident_lease_at(path: &std::path::Path) -> Result<File, String> {
+    let file = resident_file_at(path)?;
+    file.try_lock().map_err(|e| e.to_string())?;
+    Ok(file)
+}
+
+async fn resident_lease(id: u64) -> Result<File, String> {
+    // Use the host owner's common state root, not a domain APHRODY_HOME override: profiles
+    // keep their data isolated while every bot process shares the same hardware budget.
+    let root =
+        aphrody_agent_home::paths::home_dir().map_err(|e| e.to_string())?.join(".aphrody/locks");
+    let mut directory = std::fs::DirBuilder::new();
+    directory.recursive(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::DirBuilderExt;
+        directory.mode(0o700);
+    }
+    directory
+        .create(&root)
+        .map_err(|e| format!("resident model lease directory unavailable: {e}"))?;
+    let file = resident_file_at(&root.join("native-inference.lock"))?;
+    wait_resident_lease(file, id).await
+}
+
+async fn wait_resident_lease(file: File, id: u64) -> Result<File, String> {
+    let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(90);
+    loop {
+        if !state()?.jobs.contains_key(&id) {
+            return Err("model lease request was cancelled".into());
+        }
+        match file.try_lock() {
+            Ok(()) => return Ok(file),
+            Err(TryLockError::Error(error)) => {
+                return Err(format!("resident model lease unavailable: {error}"));
+            },
+            Err(TryLockError::WouldBlock) if tokio::time::Instant::now() >= deadline => {
+                return Err("another native inference process owns the resident model lease; observation deadline exceeded".into());
+            },
+            Err(TryLockError::WouldBlock) => {
+                tokio::time::sleep(std::time::Duration::from_millis(250)).await
+            },
+        }
+    }
 }
 
 static STATE: OnceLock<Mutex<State>> = OnceLock::new();
@@ -146,14 +205,21 @@ async fn execute(request: Request, id: u64) -> Result<Value, String> {
                 .await
                 .map_err(|e| e.to_string())??;
             let path = model_path(&model)?;
+            let resident_lease = resident_lease(id).await?;
             let options = LoadOptions {
                 ctx: context,
                 gpu_layers: gpu_layers.unwrap_or(u32::MAX),
                 lora: lora.into_iter().map(|path| LoraSpec { path, scale: 1.0 }).collect(),
                 ..LoadOptions::default()
             };
-            let engine =
-                InProcessLlama::load(path, &model, options).await.map_err(|e| e.to_string())?;
+            let engine = InProcessLlama::load_with_residency_guard(
+                path,
+                &model,
+                options,
+                Arc::new(resident_lease),
+            )
+            .await
+            .map_err(|e| e.to_string())?;
             let context = engine.context_window();
             {
                 let mut state = state()?;
@@ -335,6 +401,55 @@ pub unsafe extern "C" fn aphrody_inference_free(value: *mut c_char) {
 mod tests {
     use super::*;
     use std::ffi::CStr;
+
+    #[test]
+    fn resident_lease_probe_child() {
+        if let Some(path) = std::env::var_os("APHRODY_INFERENCE_LEASE_TEST") {
+            assert!(resident_lease_at(std::path::Path::new(&path)).is_err());
+        }
+    }
+
+    #[test]
+    fn resident_model_lease_is_cross_process_and_released_on_last_reference() {
+        let directory = tempfile::tempdir().expect("test directory");
+        let path = directory.path().join("resident.lock");
+        let lease = Arc::new(resident_lease_at(&path).expect("first lease"));
+        let active_stream = Arc::clone(&lease);
+        drop(lease);
+        assert!(resident_lease_at(&path).is_err());
+        let child = std::process::Command::new(std::env::current_exe().expect("test executable"))
+            .args(["--exact", "inference::tests::resident_lease_probe_child", "--nocapture"])
+            .env("APHRODY_INFERENCE_LEASE_TEST", &path)
+            .output()
+            .expect("separate process");
+        assert!(child.status.success());
+        assert!(String::from_utf8_lossy(&child.stdout).contains("1 passed"));
+        drop(active_stream);
+        let _next = resident_lease_at(&path).expect("released lease");
+    }
+
+    #[test]
+    fn cancellation_during_lease_wait_does_not_load_or_retain_a_model() {
+        let directory = tempfile::tempdir().expect("test directory");
+        let path = directory.path().join("resident.lock");
+        let owner = resident_lease_at(&path).expect("resident owner");
+        let waiter = resident_file_at(&path).expect("waiting process file");
+        let runtime = runtime().expect("runtime");
+        let id = NEXT.fetch_add(1, Ordering::Relaxed);
+        state()
+            .expect("state")
+            .jobs
+            .insert(id, Job { task: runtime.spawn(std::future::pending()), opening: false });
+        runtime.spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+            aphrody_inference_cancel(id);
+        });
+        let result = runtime.block_on(wait_resident_lease(waiter, id));
+        assert!(result.expect_err("cancelled wait").contains("cancelled"));
+        assert!(!state().expect("state").jobs.contains_key(&id));
+        drop(owner);
+        let _next = resident_lease_at(&path).expect("no waiting lease remains");
+    }
 
     unsafe fn take(pointer: *mut c_char) -> Value {
         let value = serde_json::from_slice(unsafe { CStr::from_ptr(pointer) }.to_bytes()).unwrap();
