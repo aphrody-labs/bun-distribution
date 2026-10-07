@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { networkPeers, publicSyncReport } from "../../src/lab/control-plane";
+import { networkPeers, publicSyncReport, publicAutomation } from "../../src/lab/control-plane";
 
 const declaration = {
   interface: "wg1",
@@ -43,4 +43,14 @@ test("reports expose only counters, never conversation or credentials", () => {
       staged: "2",
     }),
   ).toEqual({ records_ingested: 42, sources_scanned: 3 });
+});
+test("automation reports reveal job states without private output", () => {
+  expect(
+    publicAutomation({
+      drive: { ok: false, token: "secret" },
+      agents: { ok: true, sessions: "private" },
+      token: { ok: true },
+      "home-dbfr": { ok: "yes" },
+    }),
+  ).toEqual({ drive: "retrying", agents: "ok" });
 });

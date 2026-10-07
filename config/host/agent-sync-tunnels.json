@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "owner": "aphrody-infra",
+  "services": [
+    { "id": "shenron-compute", "target": "aphrody-dbfr-wg:127.0.0.1:8789", "public": false },
+    { "id": "shenron-embed", "target": "aphrody-dbfr-wg:127.0.0.1:8085", "public": false }
+  ]
+}

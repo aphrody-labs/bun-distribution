@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Synchronize Drive and coding agents with protected Aphrody homes
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/aphro/aphrody
+Environment=PATH=/home/aphro/.local/bin:/home/aphro/.bun/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/aphro/.bun/bin/bun --env-file=/home/aphro/aphrody/.env /home/aphro/aphrody/packages/infra/workspace/src/agent-home-drive-sync.ts --config /home/aphro/aphrody/config/host/agent-sync.json --apply
+TimeoutStartSec=20min
+NoNewPrivileges=true
+UMask=0077

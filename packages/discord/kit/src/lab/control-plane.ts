@@ -6,7 +6,12 @@ import type { NetworkSnapshot } from "./network.ts";
 interface Declaration {
   guildId: string;
   channels: { drive: string; chat: string; network: string };
-  drive: { folderId: string; reportPath: string; agentReportPath: string };
+  drive: {
+    folderId: string;
+    reportPath: string;
+    agentReportPath: string;
+    automationReportPath?: string;
+  };
   wireguard: { interface: string; reportPath: string; peers: { id: string }[] };
 }
 export interface NetworkPeer {
@@ -87,6 +92,32 @@ async function readReport(path: string) {
     ...publicSyncReport(receipt.report ?? {}),
   };
 }
+export function publicAutomation(value: Record<string, unknown>) {
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([name]) =>
+        /^(drive|agents|drive-retrieval|drive-replica|home-aphrody|home-dbfr)$/.test(name),
+      )
+      .flatMap(([name, job]) => {
+        if (!job || typeof job !== "object" || !("ok" in job) || typeof job.ok !== "boolean")
+          return [];
+        return [[name, job.ok ? "ok" : "retrying"]];
+      }),
+  );
+}
+async function readAutomation(path?: string) {
+  if (!path || !(await Bun.file(path).exists())) return { available: false };
+  const receipt = (await Bun.file(path).json()) as {
+    observedAt?: string;
+    jobs?: Record<string, unknown>;
+  };
+  const age = Date.now() - Date.parse(receipt.observedAt ?? "");
+  return {
+    available: true,
+    fresh: Number.isFinite(age) && age >= 0 && age <= 180_000,
+    jobs: publicAutomation(receipt.jobs ?? {}),
+  };
+}
 async function run(argv: string[]): Promise<string> {
   const child = Bun.spawn(argv, { stdout: "pipe", stderr: "ignore" });
   const deadline = setTimeout(() => child.kill(), 25_000);
@@ -112,10 +143,11 @@ if (import.meta.main) {
   const env = await loadCredentials(flag("--env-file"));
   if (env.DISCORD_GUILD_ID !== declaration.guildId || !env.DISCORD_BOT_TOKEN)
     throw new Error("Guild credential mismatch");
-  const [peers, drive, agents] = await Promise.all([
+  const [peers, drive, agents, automation] = await Promise.all([
     readNetwork(declaration.wireguard),
     readReport(declaration.drive.reportPath),
     readReport(declaration.drive.agentReportPath),
+    readAutomation(declaration.drive.automationReportPath),
   ]);
   const dbfr = await run([
     "/home/ubuntu/.local/bin/aphrody",
@@ -129,7 +161,7 @@ if (import.meta.main) {
   ])
     .then((output) => (output.trim() === "homes-present" ? "homes-present" : "unverified"))
     .catch(() => "unreachable");
-  const summary = { peers, drive, agents, dbfr };
+  const summary = { peers, drive, agents, automation, dbfr };
   const fingerprint = JSON.stringify(summary);
   const receiptPath = flag("--receipt");
   const previous = (await Bun.file(receiptPath).exists())
@@ -153,7 +185,7 @@ if (import.meta.main) {
   const reports = [
     [
       declaration.channels.drive,
-      `**Synchronisation DBFR**\nDossier : https://drive.google.com/drive/folders/${declaration.drive.folderId}\nDrive : ${JSON.stringify(drive)}\nSessions des agents : ${JSON.stringify(agents)}\nAgent homes SSH DBFR/Shenron : ${dbfr}.\nUne mise à jour staged ou un miroir de session ne prouve pas une synchronisation complète ni une connexion A2A.`,
+      `**Synchronisation DBFR**\nDossier : https://drive.google.com/drive/folders/${declaration.drive.folderId}\nAutomatisation : ${JSON.stringify(automation)}\nDrive : ${JSON.stringify(drive)}\nSessions des agents : ${JSON.stringify(agents)}\nAgent homes SSH DBFR/Shenron : ${dbfr}.\nUne mise à jour staged ou un miroir de session ne prouve pas une synchronisation complète ni une connexion A2A.`,
     ],
     [
       declaration.channels.network,

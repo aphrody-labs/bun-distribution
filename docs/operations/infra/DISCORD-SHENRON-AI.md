@@ -82,8 +82,7 @@ et son [timer](../../../config/host/systemd/aphrody/aphrody-discord-control-plan
 vérifient toutes les deux minutes les destinations Discord, les agent homes et
 les reçus locaux. Ils publient uniquement des compteurs dans `drive` et l'état
 du tunnel dans `ops-alerts`, sans mentions. Un reçu Drive/agents de plus de dix
-minutes est signalé comme périmé ; aucune réplication périodique de contenu
-n'est revendiquée. Le suivi réutilise le reçu WireGuard de la télémétrie du lab :
+minutes est signalé comme périmé. Le suivi réutilise le reçu WireGuard de la télémétrie du lab :
 au-delà de cinq minutes il indique un état inconnu plutôt qu'une connexion.
 La tâche s'exécute comme `ubuntu`, sans droit réseau privilégié ni écriture dans
 les dossiers d'authentification. Son répertoire de travail est le dossier d'état
@@ -97,14 +96,87 @@ Pour ce cas, les unités composées passent par `infra ssh exec`, vérification
 Le bundle et la déclaration transférés sont vérifiés par SHA-256 ; les états
 restent en 0600 sous `/srv/aphrody-lab/state`.
 
-Preuve du 2026-10-07 : le tunnel `wg1` relie VPS, WSL et DBFR. Les peers Windows
-`aphro-pc` et `omar` n'ont encore aucun handshake. Le serveur Discord expose le
+Preuve du 2026-10-07 : le tunnel `wg1` relie VPS, WSL, DBFR et le Windows
+`aphro-pc`, dont le service WireGuard et le handshake sont maintenant vérifiés.
+Le peer `omar` reste sans handshake. Le serveur Discord expose le
 suivi ; les transferts réseau restent sur WireGuard/SSH. Le client Yolo installé
 sur VPS ne possède pas encore la commande `google` et aucun transfert de jeton
 Drive depuis le poste local n'a été effectué. `chat` reste disponible pour la
 liaison des agents après qualification de leurs endpoints et de l'installation
 du bot Shenron ; il n'est pas une conversation autonome déjà opérationnelle.
-Windows est accessible depuis WSL, mais cette session PowerShell n'a pas le rôle
-administrateur et aucune unité de tunnel WireGuard n'est installée. L'activation
-du tunnel privé du PC nécessite donc son administration locale ; aucune clé de
-remplacement ni élévation interactive n'a été déclenchée.
+L'activation Windows a été constatée pendant la session ; aucune élévation
+interactive ni export de clé privée n'a été déclenché par ce chantier.
+
+## Synchronisation automatique des magasins privés
+
+La [déclaration de synchronisation](../../../config/host/agent-sync.json) et les
+unités utilisateur [service](../../../config/host/user/aphrody-agent-sync.service)
+et [timer](../../../config/host/user/aphrody-agent-sync.timer) sont installées et
+actives sur le poste WSL. Le timer vérifie les échéances chaque minute : Drive et
+les collecteurs natifs Codex/AGY/Claude toutes les cinq minutes, indexation locale
+des versions Drive staged chaque heure, vérification et sauvegarde des homes
+`dbfr` et `aphrody` chaque jour. Un échec conserve le dernier succès et réessaie
+avec un délai de une minute à une heure ; les autres tâches continuent. Chaque
+tâche écrit son checkpoint avant la suivante, et le verrou PID empêche deux
+passes concurrentes. Aucun entraînement ni ancien exécutable mémoire n'est lancé.
+
+Les rapports transmis au suivi Discord ne contiennent que compteurs, échéances
+et états. Les sorties natives complètes, conversations et authentifications
+restent privées. Le MCP local utilise désormais le serveur canonique
+`/home/aphro/.local/bin/aphrody-mcp`, en conservant les autres entrées et leurs
+authentifications. Le premier index local des versions Drive a ajouté six
+documents et 38 chunks au home DBFR. La dernière passe publiée vérifiée à
+12:35:19 UTC avait cinq capacités réussies. À 12:41 UTC, le CLI natif existant du
+VPS a été transféré vers DBFR, vérifié par SHA-256 et par `home status`, puis
+installé sans écraser de binaire existant. La réplication a indexé 26 documents
+au total dans les deux homes distants. L'ajout explicite du `MEMORY.md` DBFR a
+ensuite ajouté un document par home, soit 28 documents cumulés. Une passe répétée vérifie le snapshot
+sans recopier les fichiers inchangés. Le timer reprend cette tâche toutes les
+cinq minutes.
+
+La réplication distante utilise les sept documents du contrat du connecteur
+Drive, ses versions staged et le `MEMORY.md` du home DBFR explicitement déclaré,
+dans des snapshots privés nommés par
+empreinte. Elle vérifie chaque fichier avant d'indexer les deux homes DBFR et
+Shenron, recontrôle les snapshots existants et recopie ceux qui sont altérés.
+Elle exclut les fichiers d'authentification, sessions fournisseur, bases et poids,
+et n'écrase aucun document actif ou conflit. Le transfert passe par le SFTP
+natif avec `APHRODY_DBFR_HOST=10.200.77.3`. Le home Shenron reste distinct du home
+DBFR ; une copie de documents ne synchronise pas les mémoires des fournisseurs.
+L'artefact CLI déployé a l'empreinte
+`4e51190ca80efab50df4b3f351c2be60b41815c2566a6a9e456d4077a761c296`.
+
+Le poste WSL détient actuellement l'authentification Drive. Sa suppression ou
+son arrêt suspendrait ces collecteurs : une migration authentifiée vers le
+successeur doit précéder son retrait. Aucun jeton Google n'a été copié au VPS.
+
+## Compute et RAG DBFR
+
+Le [catalogue de tunnels privés](../../../config/host/agent-sync-tunnels.json),
+son [service natif](../../../config/host/user/aphrody-dbfr-sync-tunnel.service)
+et l'[alias SSH](../../../config/host/user/aphrody-dbfr-wg.ssh.conf) relient
+le compute et les embeddings DBFR aux ports loopback 18789 et 18085 via
+WireGuard. Le [drop-in RAG](../../../config/host/user/shenron-rag-sync-native.conf)
+réutilise ces transports et les environnements protégés. Les deux forwards et
+la santé authentifiée du compute ont été vérifiés, sans exposer de nouvelle
+API publique.
+
+La bibliothèque FFI Shenron existante du payload DBFR a été vérifiée par SHA-256
+et ABI 4 avant consommation locale ; aucun moteur n'a été recompilé. Une valeur
+PostgreSQL `options` encodée avec `+` provoquait une erreur `+search_path` côté
+pilote natif. L'environnement protégé a été normalisé en `%20`, sauvegardé et
+remplacé atomiquement ; le générateur source emploie déjà `quote_via=quote`.
+Après redémarrage déclaré du compute : santé HTTP 200, RAG et LLM disponibles,
+statistiques HTTP 200, 59 995 chunks et zéro vecteur. Cela ne prouve pas une
+couverture complète des embeddings. La synchronisation RAG est relancée par
+son unité utilisateur en arrière-plan ; son succès exige un nouveau rapport
+final sans échec, et non un simple état `activating` ou un checkpoint partiel.
+
+Validation du lot automatique : 21 tests ciblés réussis, TypeScript Workspace
+et kit Discord sans erreur, lint des chemins modifiés propre. La suite kit
+élargie expose un échec hors chemins modifiés : `sendFile` conserve `blob` au
+lieu du nom `note.txt` avec le Bun installé. Aucun résultat global vert n'est
+revendiqué. A2A reste à qualifier : la présence de `APHRODY_A2A_DRY_RUN`, même
+avec la valeur `0`, active le dry-run ; le jeton de coordination ne protège pas
+tous les endpoints du listener actuel. Ne pas exposer l'exécution de code avant
+qualification de cette authentification et des endpoints PC.

@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Retry and refresh Drive and coding agent synchronization automatically
+
+[Timer]
+OnBootSec=60
+OnUnitActiveSec=60
+AccuracySec=5
+Unit=aphrody-agent-sync.service
+
+[Install]
+WantedBy=timers.target
