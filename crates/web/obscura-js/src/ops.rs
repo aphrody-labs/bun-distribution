@@ -3470,7 +3470,7 @@ fn intercept_fulfill_response(
 /// uses request_client() directly. Every preflight and redirect is checked before I/O.
 /// Existing fulfill/header-rewrite actions keep their navigation behavior; this gate
 /// only carries the native blocking decision into the scripted transport.
-async fn enforce_context_request_policy(
+pub(crate) async fn enforce_context_request_policy(
     client: &Option<Arc<ObscuraHttpClient>>,
     raw_url: &str,
     method: &str,
@@ -5590,7 +5590,7 @@ mod tests {
     }
 }
 
-fn validate_fetch_url(url: &url::Url, allow_private_network: bool) -> Result<(), String> {
+pub(crate) fn validate_fetch_url(url: &url::Url, allow_private_network: bool) -> Result<(), String> {
     let scheme = url.scheme();
     // file:// is denied by default here, matching Page.navigate /
     // Target.createTarget (which gate it behind --allow-file-access). The
@@ -5933,7 +5933,8 @@ pub fn max_live_frames() -> usize {
 }
 
 /// An initial about:blank needs its own realm before the next JS statement.
-#[op2(nofast)]
+/// The initializer calls back into document-realm ops synchronously.
+#[op2(nofast, reentrant)]
 fn op_initial_frame(
     scope: &mut v8::PinScope,
     state: &OpState,
@@ -6893,6 +6894,11 @@ pub fn build_extension() -> Extension {
         op_console_msg(),
         op_report_browser_exception(),
         op_fetch_url(),
+        crate::websocket::op_websocket_create(),
+        crate::websocket::op_websocket_connect(),
+        crate::websocket::op_websocket_read(),
+        crate::websocket::op_websocket_send(),
+        crate::websocket::op_websocket_close(),
         op_fetch_cancel_handle(),
         op_abort_signal_state(),
         op_fetch_body(),

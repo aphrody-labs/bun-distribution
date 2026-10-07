@@ -7,6 +7,7 @@ pub mod ops;
 pub mod runtime;
 pub mod v8_flags;
 mod write_stream;
+mod websocket;
 
 pub use markdown::HTML_TO_MARKDOWN_JS;
 // Screenshot rasterization (PNG bytes) from the render layer. Available when the

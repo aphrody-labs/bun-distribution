@@ -17574,6 +17574,7 @@ dependencies = [
  "ctr 0.10.1",
  "deno_core",
  "deno_error",
+ "futures-util",
  "getrandom 0.4.3",
  "hkdf 0.13.0",
  "hmac 0.13.0",
@@ -17589,6 +17590,7 @@ dependencies = [
  "sha1 0.11.0",
  "sha2 0.11.0",
  "tokio",
+ "tokio-tungstenite 0.30.0",
  "tracing",
  "url",
 ]

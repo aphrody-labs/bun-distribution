@@ -25,6 +25,8 @@ obscura-dom = { workspace = true }
 obscura-net = { workspace = true }
 deno_core = "0.412"
 tokio = { workspace = true }
+futures-util = { workspace = true }
+tokio-tungstenite = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 url = { workspace = true }

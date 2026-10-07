@@ -16366,43 +16366,119 @@ if (typeof EventSource === 'undefined') {
   };
 }
 
-if (typeof WebSocket === 'undefined') {
-  globalThis.WebSocket = class WebSocket {
-    constructor(url, protocols) {
-      // Validate URL scheme per spec — Chrome throws SyntaxError for non-ws/wss URLs
-      if (typeof url !== 'string' || !/^wss?:\/\//i.test(url)) {
-        throw new DOMException(
-          "Failed to construct 'WebSocket': The URL '" + url + "' is invalid.",
-          'SyntaxError'
-        );
-      }
-      this.url = url;
-      this.readyState = 0; // CONNECTING
-      this.bufferedAmount = 0;
-      this.binaryType = 'blob';
-      this.extensions = '';
-      this.protocol = Array.isArray(protocols) ? (protocols[0] || '') : (protocols || '');
-      this.onopen = null; this.onmessage = null; this.onerror = null; this.onclose = null;
-      _makeListenerBox(this);
-      Promise.resolve().then(() => {
-        if (this.readyState !== 0) return;
-        this.readyState = 1; // OPEN
-        const ev = new Event('open');
-        if (typeof this.onopen === 'function') { try { this.onopen(ev); } catch (e) {} }
-        try { this.dispatchEvent(ev); } catch (e) {}
+if (typeof CloseEvent === 'undefined') {
+  globalThis.CloseEvent = class CloseEvent extends Event {
+    constructor(type, init = {}) {
+      super(type, init);
+      Object.defineProperties(this, {
+        code:{value:Number(init.code || 0), enumerable:true},
+        reason:{value:String(init.reason || ''), enumerable:true},
+        wasClean:{value:Boolean(init.wasClean), enumerable:true},
       });
     }
-    send(data) { /* drop; no real socket */ }
-    close(code, reason) {
-      if (this.readyState >= 2) return;
-      this.readyState = 3; // CLOSED
-      const ev = new Event('close');
-      ev.code = code || 1000; ev.reason = reason || ''; ev.wasClean = true;
-      if (typeof this.onclose === 'function') { try { this.onclose(ev); } catch (e) {} }
-      try { this.dispatchEvent(ev); } catch (e) {}
+  };
+}
+
+if (typeof WebSocket === 'undefined') {
+  globalThis.WebSocket = class WebSocket {
+    #rid; #state = 0; #buffered = 0; #protocol = ''; #binaryType = 'blob';
+    #writes = Promise.resolve(); #closeTimer = null;
+    constructor(input, protocols = []) {
+      if (arguments.length === 0) throw new TypeError('WebSocket requires a URL');
+      let url;
+      try { url = new URL(String(input), document.baseURI); } catch (_) { throw new DOMException('Invalid WebSocket URL', 'SyntaxError'); }
+      if (url.protocol === 'http:') url.protocol = 'ws:';
+      if (url.protocol === 'https:') url.protocol = 'wss:';
+      if (!['ws:', 'wss:'].includes(url.protocol) || url.href.includes('#') || url.username || url.password)
+        throw new DOMException('Invalid WebSocket URL', 'SyntaxError');
+      protocols = protocols !== null && typeof protocols === 'object' && typeof protocols[Symbol.iterator] === 'function' ? Array.from(protocols, String) : [String(protocols)];
+      if (protocols.length > 16 || protocols.some(p => !p || p.length > 256 || !/^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/.test(p)) || new Set(protocols).size !== protocols.length)
+        throw new DOMException('Invalid WebSocket protocols', 'SyntaxError');
+      Object.defineProperty(this, 'url', {value:url.href, enumerable:true});
+      this.onopen = null; this.onmessage = null; this.onerror = null; this.onclose = null;
+      this.#rid = __obscuraCore.ops.op_websocket_create();
+      __obscuraCore.ops.op_websocket_connect(this.#rid, this.url, protocols).then(protocol => {
+        if (this.#state !== 0) return;
+        this.#protocol = protocol;
+        this.#state = 1;
+        this.#emit(new Event('open'));
+        this.#read();
+      }).catch(() => this.#fail());
+    }
+    get readyState() { return this.#state; }
+    get bufferedAmount() { return this.#buffered; }
+    get protocol() { return this.#protocol; }
+    get extensions() { return ''; }
+    get binaryType() { return this.#binaryType; }
+    set binaryType(value) { if (value === 'blob' || value === 'arraybuffer') this.#binaryType = value; }
+    addEventListener(type, callback, options) { _eventTargetAdd(this, type, callback, options); }
+    removeEventListener(type, callback, options) { _eventTargetRemove(this, type, callback, options); }
+    dispatchEvent(event) { return _eventTargetDispatch(this, event); }
+    #emit(event) {
+      event.target = this; event.currentTarget = this;
+      const handler = this['on' + event.type];
+      if (typeof handler === 'function') { try { handler.call(this, event); } catch (error) { console.error(error); } }
+      this.dispatchEvent(event);
+    }
+    #finish(code, reason, clean) {
+      if (this.#state === 3) return;
+      this.#state = 3;
+      clearTimeout(this.#closeTimer);
+      __obscuraCore.tryClose(this.#rid);
+      const event = new CloseEvent('close', {code, reason, wasClean:clean});
+      this.#emit(event);
+    }
+    #fail() {
+      if (this.#state === 3) return;
+      this.#emit(new Event('error'));
+      this.#finish(1006, '', false);
+    }
+    async #read() {
+      try {
+        while (this.#state !== 3) {
+          const pending = __obscuraCore.ops.op_websocket_read(this.#rid);
+          // A live socket must not keep a navigation/event-loop settle pending forever.
+          __obscuraCore.unrefOpPromise(pending);
+          const message = await pending;
+          if (this.#state === 3) return;
+          if (message.type === 'close') { this.#finish(message.code, message.reason, message.clean); return; }
+          if (this.#state !== 1) continue;
+          const bytes = message.type === 'binary' ? _base64ToUint8Array(message.data) : null;
+          const data = bytes ? (this.#binaryType === 'arraybuffer' ? _arrayBufferFromBytes(bytes) : new Blob([bytes])) : message.text;
+          const event = new MessageEvent('message', {data, origin:new URL(this.url).origin, lastEventId:''});
+          this.#emit(event);
+        }
+      } catch (_) { this.#fail(); }
+    }
+    send(data) {
+      if (this.#state === 0) throw new DOMException('WebSocket is connecting', 'InvalidStateError');
+      const text = !(data instanceof ArrayBuffer || ArrayBuffer.isView(data) || data instanceof Blob);
+      const bytes = text ? new TextEncoder().encode(String(data)) : _bodyToUint8Array(data).slice();
+      if (this.#buffered + bytes.byteLength > 4 * 1024 * 1024)
+        throw new DOMException('WebSocket send buffer limit exceeded', 'QuotaExceededError');
+      this.#buffered += bytes.byteLength;
+      if (this.#state !== 1) return;
+      this.#writes = this.#writes.then(async () => {
+        await __obscuraCore.ops.op_websocket_send(this.#rid, bytes, text);
+        this.#buffered -= bytes.byteLength;
+      }).catch(() => this.#fail());
+    }
+    close(code = 1000, reason = '') {
+      code = Number(code); reason = String(reason);
+      if (!Number.isInteger(code) || !(code === 1000 || (code >= 3000 && code <= 4999)))
+        throw new DOMException('Invalid WebSocket close code', 'InvalidAccessError');
+      if (new TextEncoder().encode(reason).byteLength > 123)
+        throw new DOMException('WebSocket close reason is too long', 'SyntaxError');
+      if (this.#state >= 2) return;
+      if (this.#state === 0) { this.#fail(); return; }
+      this.#state = 2;
+      this.#closeTimer = setTimeout(() => this.#finish(1006, '', false), 5000);
+      this.#writes = this.#writes.then(() => __obscuraCore.ops.op_websocket_close(this.#rid, code, reason)).catch(() => this.#fail());
     }
     static CONNECTING = 0; static OPEN = 1; static CLOSING = 2; static CLOSED = 3;
   };
+  for (const [name, value] of [['CONNECTING',0],['OPEN',1],['CLOSING',2],['CLOSED',3]])
+    Object.defineProperty(WebSocket.prototype, name, {value, enumerable:true});
 }
 
 if (typeof BroadcastChannel === 'undefined') {
