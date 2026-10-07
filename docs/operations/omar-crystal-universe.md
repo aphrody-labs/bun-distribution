@@ -146,10 +146,14 @@ chapitres intégraux et ne démontrent pas l’exhaustivité du RAG source.
 Contrôle de métadonnées du corpus manga via `dragonball.manga_tomes` (profil source
 Shenron, sans conserver ni citer le texte renvoyé) : DB `vol1` indique 221 pages,
 DB `vol42` 234 pages, un chapitre DBS `ch1370` 45 pages. Cela confirme des entrées
-OCR aux deux extrémités de la série et dans DBS, mais pas l’existence/complétude de
-chaque volume intermédiaire, la complétude de DBS, ni les droits de réutilisation.
-Les réponses de détail incluent des transcriptions; aucun passage de manga n’a été
-copié dans le dépôt ou affiché dans le jeu au cours de ce contrôle.
+OCR aux deux extrémités de la série et dans DBS. Un contrôle du listing complet
+compte 42 identifiants distincts DB (`vol1` à `vol42`), tous avec un nombre non nul
+de planches OCR dans les métadonnées. La sortie MCP est tronquée après 90 000
+caractères; le champ `count` annonce 147 entrées au total et n'est pas une preuve
+de couverture de DBS. Ce catalogue confirme la présence de métadonnées OCR, pas
+la complétude des transcriptions/planches, l'exhaustivité de DBS, ni les droits de
+réutilisation. Les réponses de détail incluent des transcriptions; aucun passage
+de manga n’a été copié dans le dépôt ou affiché dans le jeu au cours de ce contrôle.
 
 ## 2026-10-07 — Commandes manette
 
