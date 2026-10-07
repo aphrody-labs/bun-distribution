@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Aphrody Discord realtime Codex monitor and Omar goal executor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/srv/aphrody-lab
+ExecStart=/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/omar-monitor.mjs --policy /srv/aphrody-lab/omar-monitor-policy.json
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=30
+KillMode=control-group
+# Authenticated coding workers use the existing Ubuntu/Infra permissions.
+# Mutations follow repository claims, build locks and declared host plans.
+PrivateTmp=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

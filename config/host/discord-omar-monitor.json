@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "guildId": "1554189180030947338",
+  "channelId": "1557354118710829117",
+  "omarUserIds": ["1323725494184841256", "1527405876695142620"],
+  "ownerId": "281114294152724491",
+  "envFile": "/etc/aphrody-discord.env",
+  "store": "/srv/aphrody-lab/state/omar-monitor/queue.sqlite",
+  "receipt": "/srv/aphrody-lab/state/omar-monitor/status.json",
+  "codex": "/home/ubuntu/.local/bin/codex",
+  "cwd": "/srv/aphrody-build/workspaces/aphrody",
+  "nativeMcp": "/home/ubuntu/.local/bin/aphrody-mcp",
+  "profile": "aphrody",
+  "reconcileSeconds": 30,
+  "historyPageBudget": 100,
+  "documentation": "https://developers.openai.com/codex/app-server"
+}

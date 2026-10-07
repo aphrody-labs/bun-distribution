@@ -91,6 +91,30 @@
   ],
   "units": [
     {
+      "service": "aphrody-discord-omar-monitor",
+      "unit": "aphrody-discord-omar-monitor.service",
+      "path": "systemd/aphrody/aphrody-discord-omar-monitor.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-web-browser-vps",
+      "unit": "aphrody-web-browser-vps.service",
+      "path": "systemd/aphrody/aphrody-web-browser-vps.service",
+      "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-kernel", "net-inet-only"],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-web-browser-dbfr",
+      "unit": "aphrody-web-browser-dbfr.service",
+      "path": "systemd/aphrody/aphrody-web-browser-dbfr.service",
+      "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-kernel", "net-inet-only"],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
       "service": "aphrody-discord-lab-telemetry",
       "unit": "aphrody-discord-lab-telemetry.service",
       "path": "systemd/aphrody/aphrody-discord-lab-telemetry.service",
