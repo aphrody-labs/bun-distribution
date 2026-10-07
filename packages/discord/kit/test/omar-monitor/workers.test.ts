@@ -7,6 +7,8 @@ import { Codex, codexCommand } from "../../src/omar-monitor/codex.ts";
 import { Queue, type Job, type Policy } from "../../src/omar-monitor/store.ts";
 import { WorkerPool, workerHostId } from "../../src/omar-monitor/workers.ts";
 
+const shellQuote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
+
 const policy: Policy = {
   guildId: "guild",
   channelId: "channel",
@@ -126,6 +128,41 @@ for await(const line of createInterface({input:process.stdin})){const m=JSON.par
   } finally {
     pool.close();
     local.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("Codex tools do not inherit the monitor's fork interpreter mode", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "codex-fork-mode-"));
+  const launcher = join(dir, "codex");
+  const server = join(dir, "server.ts");
+  await Bun.write(
+    server,
+    `
+import {createInterface} from 'node:readline';
+for await(const line of createInterface({input:process.stdin})) {
+  const m=JSON.parse(line);
+  if(m.id) console.log(JSON.stringify({id:m.id,result:{profile:process.env.APHRODY_PROFILE}}));
+}
+`,
+  );
+  await Bun.write(
+    launcher,
+    `#!/bin/sh
+if [ "\${BUN_BE_BUN+x}" = x ]; then exit 88; fi
+exec env BUN_BE_BUN=1 ${shellQuote(process.execPath)} ${shellQuote(server)}
+`,
+  );
+  await chmod(launcher, 0o700);
+  const previous = process.env.BUN_BE_BUN;
+  process.env.BUN_BE_BUN = "1";
+  const codex = new Codex({ ...policy, codex: launcher });
+  try {
+    await codex.initialize();
+    expect(await codex.request("fixture/environment", {})).toEqual({ profile: policy.profile });
+  } finally {
+    codex.close();
+    process.env.BUN_BE_BUN = previous;
     await rm(dir, { recursive: true, force: true });
   }
 });

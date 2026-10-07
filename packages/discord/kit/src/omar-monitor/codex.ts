@@ -68,7 +68,8 @@ export class Codex {
       stdin: "pipe",
       stdout: "pipe",
       stderr: "inherit",
-      env: { ...process.env, APHRODY_PROFILE: policy.profile },
+      // Interpreter mode belongs to this worker, not the compiled Yolo CLI its coding tools run.
+      env: { ...process.env, BUN_BE_BUN: undefined, APHRODY_PROFILE: policy.profile },
     });
     void this.readWire().catch(() => this.fail(new Error("Invalid Codex protocol")));
     void this.child.exited.then(() => this.fail(new Error("Codex server exited")));
