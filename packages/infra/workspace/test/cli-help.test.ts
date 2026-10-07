@@ -141,6 +141,7 @@ test("without flags the legacy catalogue and PATH discovery remain recursive", a
   await value.executable("aphrody");
   await value.executable("catalog-unselected");
   await value.executable("aphrody-standalone");
+  await value.executable("aphrody-summary");
   expect(await value.capture([])).toBe(0);
   const out = join(value.root, "data/aphrody/cli-help");
   const manifest = await value.manifest(out);
@@ -151,6 +152,9 @@ test("without flags the legacy catalogue and PATH discovery remain recursive", a
   ]);
   expect(manifest.entries).toHaveLength(6);
   expect(manifest.capture).toEqual({ binaries: null, recursive: true });
+  expect((await value.invocations()).some((entry) => entry.binary === "aphrody-summary")).toBe(
+    false,
+  );
 });
 
 test("missing selected binaries and failing stderr help return a failure", async () => {

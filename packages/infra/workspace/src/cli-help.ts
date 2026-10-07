@@ -182,6 +182,9 @@ export async function runCliHelp(
       if (directory.status !== "fulfilled") continue;
       for (const name of directory.value) if (/^aphrody-[a-z\d-]+$/.test(name)) binaries.add(name);
     }
+    // The retired summary executable treats --help as generation and rewrites
+    // repository documentation. It is not a current capability to capture.
+    binaries.delete("aphrody-summary");
   }
   const installed = [...binaries].toSorted().flatMap((binary) => {
     const executable = Bun.which(binary);
