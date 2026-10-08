@@ -38,7 +38,7 @@ rustup default "${RUST_STABLE:-stable}"
 
 if ! command -v bun >/dev/null; then
   say "bun (release, bootstraps the Bun fork build)"
-  curl -fsSL https://bun.sh/install | bash
+  curl -fsSL https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.sh | bash
 fi
 
 # cargo reuses one sccache store on the factory volume; Bun's own build uses ccache under BUN_BUILD_CACHE_DIR

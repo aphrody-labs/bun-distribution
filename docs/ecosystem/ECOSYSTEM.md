@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 288 crates, 38 binaries, 159 Bun packages, 10 uv packages, 1106 CLI commands, 390 MCP tools.
+Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 287 crates, 38 binaries, 158 Bun packages, 10 uv packages, 1106 CLI commands, 390 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -18,7 +18,7 @@ Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 288 crates, 38 bina
 
 Canonical Rust/Bun monorepo
 
-### Crates (215)
+### Crates (214)
 
 | Crate | Path | Description | Binaries | Features |
 | --- | --- | --- | --- | --- |
@@ -43,8 +43,7 @@ Canonical Rust/Bun monorepo
 | `aphrody-bindgen` | crates/ml/bindgen | Bindgen-based generator for dynamically loaded native-library bindings. |  |  |
 | `aphrody-boq` | crates/google/boq | Google Boq batchexecute codec shared by the Gemini web and NotebookLM clients: f.req encoder, anti-XSSI strip, length-prefixed chunk parser, wrb.fr envelope extraction. |  |  |
 | `aphrody-bun` | crates/ui/bun | High-performance native Rust plugin for Bun applications using bun:ffi. |  | gpu |
-| `aphrody-bun-bridge` | crates/compat/bun-bridge | Native bridge integrating Bun fork capabilities (zero-allocation Shell AST & parser, in-process POSIX builtins, JSC structured engine, and fast systems crates) into Aphrody OS. |  |  |
-| `aphrody-bun-docs` | crates/compat/bun-docs | Offline Bun documentation (third_party/bun/docs) and n2b Node-to-Bun equivalents as an Aphrody OS MCP subsystem. |  |  |
+| `aphrody-bun-docs` | crates/compat/bun-docs | Offline Bun documentation (docs/ of the aphrody-labs/bun fork) and n2b Node-to-Bun equivalents as an Aphrody OS MCP subsystem. |  |  |
 | `aphrody-capture` | crates/os/kernel/libs/capture | Native Windows screen and window capture to PNG. GDI-based, zero unsafe outside FFI wrappers, RAII GDI handle guards. |  |  |
 | `aphrody-code-graph` | crates/ai/code-graph | aphrody-code-graph: native code graph (nodes, EXTRACTED/INFERRED edges with confidence, communities, god nodes, query/path/explain, report, graph.json) stored in the home database. Port of the Graphify concepts (Apache-2.0, see NOTICE). | `aphrody-graph` |  |
 | `aphrody-command` | crates/infra/aphrody-command | Reusable in-process Aphrody command parser and dispatch for CLI and FFI hosts. |  | default, forensics, index, infer, jobs, magika, mcp-toolbox, memory-lancedb, native, ocr, rag, train, yara |
@@ -238,7 +237,7 @@ Canonical Rust/Bun monorepo
 | `yolo-pyo3` | crates/engine/yolo-pyo3 | PyO3 0.29 Native Extension Module for YOLO Monorepo (Free-threaded, No-GIL, py.detach) |  |  |
 | `yolo-runtime` | crates/engine/yolo-runtime | Versioned C ABI of the precompiled YOLO native runtime (first slice: system stats and cancellable benchmark) |  | browser, cuda, default, gpu |
 
-### Bun packages (125)
+### Bun packages (124)
 
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
@@ -339,7 +338,6 @@ Canonical Rust/Bun monorepo
 | `@aphrody/update` | packages/infra/update | Unified update pipeline: tool pins, dependency sync, Cargo lock refresh, user systemd units and dev-env checks |  |
 | `@aphrody/web-test` | packages/web/aphrody-web-test | Playwright-compatible browser and site test runner for Bun, backed by the shared Rust Obscura CDP server. |  |
 | `@aphrody/web-to-tauri` | m3/packages/web-to-tauri | Converts a website, web app or built web bundle into a native Tauri 3 app: probes the target, plans a regression-free mode (remote, bundle, sidecar), generates the project and checks parity against the original. | `web-to-tauri` |
-| `@aphrody/webview-page` | packages/web/webview-page | Playwright-shaped page, locators, routing and events over Bun.WebView (Chrome backend over CDP) |  |
 | `@aphrody/winclean` | packages/os/winclean | Kernel-backed Bun client for the unified Aphrody OS WinClean catalog (166 tools). |  |
 | `@aphrody/workspace` | packages/infra/workspace | Cross-monorepo workspace orchestrator, gates, audits, migration tools and operations |  |
 | `@aphrody/x` | packages/web/x | Headless X (Twitter) client for Bun: a thin import over the Rust crate aphrody-x (aphrody-ffi), with batch jobs for mass scripting. Cookie-auth GraphQL + REST, no API key. Includes local For You algo (x-algorithm port), store, and X function tools (XTools, x_* JSON Schema definitions) for Grok or any tool-calling model. |  |

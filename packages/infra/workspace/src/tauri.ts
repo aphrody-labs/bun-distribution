@@ -9,6 +9,7 @@
 import { existsSync } from "node:fs";
 import { copyFile, mkdir, stat } from "node:fs/promises";
 import { resolve, join } from "node:path";
+import { cargoSerialCommand, cargoSerialPath } from "./cargo-serial.ts";
 
 const VALID_ACTIONS = ["check", "build", "run", "dev", "bundle"] as const;
 type Action = (typeof VALID_ACTIONS)[number];
@@ -38,22 +39,23 @@ function parseArgs(args: string[]): { action: Action; bundles: string; repo: str
 export function resolveTauriLayout(repo: string) {
   const appDir = join(repo, "crates", "ui", "app");
   const uiDir = join(repo, "m3", "packages", "app-ui");
-  const cargoSerial = join(repo, "scripts", "build", "rust", "cargo-serial.sh");
+  const cargoSerial = cargoSerialPath(repo);
   if (!existsSync(join(repo, "Cargo.toml")) || !existsSync(join(appDir, "Cargo.toml"))) {
     throw new Error("--root must be the active Aphrody monorepo with crates/ui/app");
   }
   if (!existsSync(cargoSerial)) throw new Error(`serialized Cargo wrapper missing: ${cargoSerial}`);
-  return { appDir, uiDir, cargoSerial };
+  return { appDir, uiDir, cargoSerial, cargo: cargoSerialCommand(repo) };
 }
 
 export async function runTauri(args: string[]): Promise<number> {
   const { action, bundles, repo } = parseArgs(args);
-  const { appDir, uiDir, cargoSerial } = resolveTauriLayout(repo);
+  const { appDir, uiDir, cargoSerial, cargo } = resolveTauriLayout(repo);
   const isWindows = process.platform === "win32";
   const isLinux = process.platform === "linux";
   if (!isWindows && !isLinux) throw new Error("Aphrody desktop targets Windows and Linux");
   // Tauri's CLI starts Cargo internally; route that child through the shared lock too.
-  const commandEnv = { ...Bun.env, CARGO: cargoSerial };
+  // CARGO must name an executable, which a PowerShell script is not.
+  const commandEnv = isWindows ? { ...Bun.env } : { ...Bun.env, CARGO: cargoSerial };
 
   function runSync(command: string[], cwd: string, errorMessage: string) {
     console.log(`[tauri] Running: ${command.join(" ")} in ${cwd}`);
@@ -119,7 +121,7 @@ export async function runTauri(args: string[]): Promise<number> {
       ).target_directory;
       runSync(
         [
-          cargoSerial,
+          ...cargo,
           "build",
           "--manifest-path",
           manifest,
@@ -213,24 +215,24 @@ export async function runTauri(args: string[]): Promise<number> {
     console.log(`[tauri] Executing action: ${action}...`);
     switch (action) {
       case "check":
-        runSync([cargoSerial, "check", "--locked"], appDir, "cargo check failed");
+        runSync([...cargo, "check", "--locked"], appDir, "cargo check failed");
         break;
       case "build":
         runSync(
-          [cargoSerial, "build", "--release", "--locked", "--features", "custom-protocol"],
+          [...cargo, "build", "--release", "--locked", "--features", "custom-protocol"],
           appDir,
           "cargo build failed",
         );
         break;
       case "run":
         runSync(
-          [cargoSerial, "run", "--release", "--locked", "--features", "custom-protocol"],
+          [...cargo, "run", "--release", "--locked", "--features", "custom-protocol"],
           appDir,
           "cargo run failed",
         );
         break;
       case "dev":
-        runSync([cargoSerial, "run", "--locked"], appDir, "cargo dev failed");
+        runSync([...cargo, "run", "--locked"], appDir, "cargo dev failed");
         break;
       case "bundle": {
         const selectedBundles = bundles || (isWindows ? "nsis" : "deb,appimage");

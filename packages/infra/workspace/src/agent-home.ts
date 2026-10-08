@@ -59,7 +59,6 @@ const REPOS: readonly RepoSpec[] = [
 /** Binaries this ecosystem installs, and how an agent checks for them. */
 const BINARIES = [
   "aphrody",
-  "aphrody-kernel",
   "aphrody-mcp",
   "claude",
   "codex",
@@ -411,11 +410,11 @@ function renderRepos(all: readonly RepoFacts[], generatedAt: string, source: str
 }
 
 export function renderTools(generatedAt: string, home: string, root: string): string {
-  const kernel = locate("aphrody-kernel", home, persistentPathDirs());
+  const kernel = locate("aphrody", home, persistentPathDirs());
   let toolRows: string[] = [];
   let kernelStatus = "Non interrogé : binaire kernel absent.";
   if (kernel.kind !== "absent") {
-    const raw = run(kernel.path, ["tools"], root);
+    const raw = run(kernel.path, ["kernel", "tools"], root);
     if (raw != null) {
       try {
         const inventory = JSON.parse(raw) as { tools?: { name: string; description?: string }[] };
@@ -447,7 +446,7 @@ export function renderTools(generatedAt: string, home: string, root: string): st
     "## Propriétaires et commandes",
     "",
     "- Inventaire des commandes : docs/reference/workspace/CLI.md dans le monorepo ; consulter --help du binaire installé.",
-    "- Kernel OS : `aphrody-kernel tools`, `aphrody-kernel call <outil> '<JSON>'`, `aphrody-kernel mcp`.",
+    "- Kernel OS : `aphrody kernel tools`, `aphrody kernel call <outil> '<JSON>'`, `aphrody kernel serve`.",
     "- Nushell : `nu_eval` reçoit code/cwd/vars ; transmettre les données via vars. Cet outil peut modifier le système.",
     "- Git : `github_status` reçoit repo_path ; sa liste de modifications ne prouve pas leur auteur.",
     "- Agent Home : crates/ai/agent-home ; génération : packages/infra/workspace/src/agent-home.ts.",

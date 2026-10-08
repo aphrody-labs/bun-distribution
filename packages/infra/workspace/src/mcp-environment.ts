@@ -18,6 +18,7 @@ import {
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { replaceTomlTable } from "./agent-plugin-providers.ts";
+import { isOwnedByCurrentUser, isOwnerOnly } from "./portable-fs.ts";
 
 type Environment = Record<string, string>;
 type Json = Record<string, unknown>;
@@ -55,6 +56,14 @@ function environment(value: unknown): Environment {
     throw new Error("MCP environment exceeds its size bound");
   return result;
 }
+/** The canonical stdio server binary; Windows executables carry an `.exe` suffix. */
+function isCanonicalServer(path: string): boolean {
+  const name = basename(path);
+  return (
+    name === "aphrody-mcp" ||
+    (process.platform === "win32" && name.toLowerCase() === "aphrody-mcp.exe")
+  );
+}
 function safeJson(text: string): unknown {
   try {
     return JSON.parse(text) as unknown;
@@ -71,8 +80,8 @@ function privateText(path: string): string {
     descriptor = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW);
     const stat = fstatSync(descriptor);
     if (
-      stat.uid !== process.getuid?.() ||
-      (stat.mode & 0o077) !== 0 ||
+      !isOwnedByCurrentUser(stat.uid) ||
+      !isOwnerOnly(stat.mode) ||
       stat.size > MAX_BYTES ||
       stat.ino !== link.ino ||
       stat.dev !== link.dev
@@ -94,8 +103,8 @@ function privateDirectory(path: string): void {
   if (
     !stat.isDirectory() ||
     stat.isSymbolicLink() ||
-    stat.uid !== process.getuid?.() ||
-    (stat.mode & 0o077) !== 0 ||
+    !isOwnedByCurrentUser(stat.uid) ||
+    !isOwnerOnly(stat.mode) ||
     realpathSync(path) !== resolve(path)
   )
     throw new Error("MCP profile directory must be private and owned");
@@ -419,7 +428,7 @@ export function planMcpEnvironmentConfiguration(
   binary: string,
   targets: readonly McpConfigTarget[],
 ): McpConfigChange[] {
-  if (!isAbsolute(binary) || basename(binary) !== "aphrody-mcp")
+  if (!isAbsolute(binary) || !isCanonicalServer(binary))
     throw new Error("MCP configuration requires the canonical server path");
   const values = environment(safeJson(privateText(prepared.path)));
   if (fingerprint(serialize(values)) !== prepared.fingerprint)
@@ -447,7 +456,7 @@ export function planMcpEnvironmentConfiguration(
     delete server.url;
     delete server.headers;
     delete server.http_headers;
-    if (typeof current.command === "string" && basename(current.command) !== "aphrody-mcp")
+    if (typeof current.command === "string" && !isCanonicalServer(current.command))
       throw new Error("MCP configuration is not the canonical stdio server");
     if (
       Array.isArray(current.args) &&
@@ -524,12 +533,7 @@ export async function probeMcpEnvironment(
     ragReady: false,
   };
   try {
-    if (
-      !isAbsolute(binary) ||
-      basename(binary) !== "aphrody-mcp" ||
-      timeoutMs < 1 ||
-      timeoutMs > 60000
-    )
+    if (!isAbsolute(binary) || !isCanonicalServer(binary) || timeoutMs < 1 || timeoutMs > 60000)
       throw new Error();
     const profile = environment(safeJson(privateText(prepared.path)));
     if (fingerprint(serialize(profile)) !== prepared.fingerprint) throw new Error();

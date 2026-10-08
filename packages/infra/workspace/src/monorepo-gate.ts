@@ -2,6 +2,7 @@
 import { realpath } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { firstPartyManifests } from "@aphrody/update/manifests";
+import { cargoSerialCommand } from "./cargo-serial.ts";
 import { routeHeavyBuild } from "./build-factory.ts";
 import { DEFAULT_INLINE_BASELINE } from "./inline-interpreters.ts";
 
@@ -58,7 +59,7 @@ export function buildMonorepoGatePlan(input: {
   noBuild?: boolean;
 }): MonorepoGatePlan {
   const root = resolve(input.root);
-  const cargo = join(root, "scripts/build/rust/cargo-serial.sh");
+  const cargo = cargoSerialCommand(root);
   const gaps = [...(input.gaps ?? [])];
   const checks: GateCheck[] = [];
   const add = (name: string, command: string[]) => checks.push({ name, command, cwd: root });
@@ -68,9 +69,9 @@ export function buildMonorepoGatePlan(input: {
     if (!input.hasCargoLock)
       gaps.push({ path: "Cargo.lock", check: "lockfile", reason: "Rust lockfile missing" });
     add("Rust formatting", ["cargo", "fmt", "--all", "--check"]);
-    add("Rust all-target check", [cargo, "check", "--workspace", "--all-targets", "--locked"]);
+    add("Rust all-target check", [...cargo, "check", "--workspace", "--all-targets", "--locked"]);
     add("Rust Clippy", [
-      cargo,
+      ...cargo,
       "clippy",
       "--workspace",
       "--all-targets",
@@ -79,10 +80,10 @@ export function buildMonorepoGatePlan(input: {
       "-D",
       "warnings",
     ]);
-    add("Rust all-target tests", [cargo, "test", "--workspace", "--all-targets", "--locked"]);
-    add("Rust documentation tests", [cargo, "test", "--workspace", "--doc", "--locked"]);
+    add("Rust all-target tests", [...cargo, "test", "--workspace", "--all-targets", "--locked"]);
+    add("Rust documentation tests", [...cargo, "test", "--workspace", "--doc", "--locked"]);
     add("Rust release build", [
-      cargo,
+      ...cargo,
       "build",
       "--workspace",
       "--all-targets",
@@ -273,11 +274,13 @@ export async function discoverMonorepoGatePlan(
       continue;
     }
     let matches = 0;
-    for await (const path of new Bun.Glob(`${pattern.replace(/\/$/, "")}/package.json`).scan({
+    for await (const scanned of new Bun.Glob(`${pattern.replace(/\/$/, "")}/package.json`).scan({
       cwd: root,
       onlyFiles: true,
       followSymlinks: false,
     })) {
+      // Manifest identities are repository-relative with "/" (firstPartyManifests and gap reports).
+      const path = scanned.replaceAll("\\", "/");
       const directory = dirname(path);
       matches++;
       if (!selectedManifests.has(path)) {

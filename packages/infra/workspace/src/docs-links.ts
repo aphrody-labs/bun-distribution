@@ -242,7 +242,7 @@ export async function runDocsLinks(args: string[]): Promise<number> {
       importedSkipped.set(importedTree, (importedSkipped.get(importedTree) ?? 0) + 1);
       continue;
     }
-    checkedFiles.push(relative(ROOT_DIR, file).replaceAll("\\", "/"));
+    checkedFiles.push(rootRelative);
 
     // oxlint-disable-next-line no-await-in-loop -- Bound memory while scanning imported documentation.
     const content = await readFile(file, "utf-8");
@@ -289,7 +289,7 @@ export async function runDocsLinks(args: string[]): Promise<number> {
         // Strip URL metadata before decoding so %23 and %3F remain filename characters.
         path = decodeURIComponent(linkUrl.split(/[?#]/, 1)[0] ?? "");
       } catch {
-        findings.push({ file: relativeFile, link: linkUrl, target: "<invalid URL encoding>" });
+        findings.push({ file: rootRelative, link: linkUrl, target: "<invalid URL encoding>" });
         brokenLinks++;
         continue;
       }
@@ -306,10 +306,10 @@ export async function runDocsLinks(args: string[]): Promise<number> {
       const exists = (await Promise.all(targets.map(verifyPath))).some(Boolean);
       if (!exists) {
         const targetPath = targets[0] ?? "<invalid route>";
-        findings.push({ file: relativeFile, link: linkUrl, target: targetPath });
+        findings.push({ file: rootRelative, link: linkUrl, target: targetPath });
         if (!json)
           console.error(
-            `❌ Lien cassé dans [${relativeFile}] : "${linkUrl}" (Cible non trouvée: ${targetPath})`,
+            `❌ Lien cassé dans [${rootRelative}] : "${linkUrl}" (Cible non trouvée: ${targetPath})`,
           );
         brokenLinks++;
       }

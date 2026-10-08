@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { bunCheckout } from "../../core/src/vendor/catalog";
 import {
   generateBunCatalog,
   inspectPackages,
@@ -9,9 +10,8 @@ import {
 } from "../src/index";
 
 const rootDir = resolve(import.meta.dir, "../../../..");
-// These tests read the Bun fork submodule (`git submodule update --init vendor/bun`); the public CI
-// checkout has no access to the private fork and skips them.
-const haveBunFork = existsSync(resolve(rootDir, "vendor/bun/LATEST"));
+// These tests read the Bun fork checkout (APHRODY_BUN_CHECKOUT, else C:/bun on Windows); skipped when absent.
+const haveBunFork = bunCheckout() !== undefined;
 const cliPkgPath = resolve(rootDir, "packages/engine/yolo/package.json");
 const cliEntryPath = resolve(rootDir, "packages/engine/yolo/src/index.ts");
 const generatedCatalogPath = resolve(rootDir, "m3/packages/app-ui/src/generated/bun-catalog.ts");
@@ -43,8 +43,12 @@ describe("Yolo canonical CLI and native capability owners", () => {
     );
 
     for (const status of statuses) {
-      expect(status.exists).toBe(true);
-      expect(existsSync(status.path)).toBe(true);
+      // Sources are fetched on demand and git-ignored: a missing checkout is reported as not fetched.
+      expect(status.exists).toBe(existsSync(status.path));
+      if (!status.exists) {
+        expect(status.headCommit).toBeUndefined();
+        expect(status.filesCount).toBeUndefined();
+      }
     }
   });
 
@@ -345,7 +349,9 @@ describe("YOLO awesome", () => {
     await Bun.write(path, readme);
     const proc = Bun.spawn(
       ["bun", cliEntryPath, "awesome", "search", "docs", "--file", path, "--json"],
-      { stdout: "pipe" },
+      {
+        stdout: "pipe",
+      },
     );
     const out = JSON.parse(await new Response(proc.stdout).text());
     expect(await proc.exited).toBe(0);

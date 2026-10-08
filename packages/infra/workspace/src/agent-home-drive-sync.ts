@@ -399,7 +399,7 @@ if(!(await lstat(root)).isDirectory()||(await realpath(root))!==resolve(root))th
 for(const [name,data] of Object.entries(reports)){if(!/^[A-Za-z0-9][A-Za-z0-9._-]{0,119}\\.json$/.test(name))throw Error("UNSAFE_RECEIPT_NAME");
 const target=join(root,name),temporary=target+"."+crypto.randomUUID()+".tmp",file=await open(temporary,"wx",0o600);
 try{await file.writeFile(JSON.stringify(data)+"\\n");await file.sync();}finally{await file.close();}await rename(temporary,target);}
-const directory=await open(root,"r");try{await directory.sync();}finally{await directory.close();}console.log("sync-receipts-published");`;
+if(process.platform!=="win32"){const directory=await open(root,"r");try{await directory.sync();}finally{await directory.close();}}console.log("sync-receipts-published");`;
   const result = await run([
     config.aphrody,
     "infra",

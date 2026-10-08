@@ -1,6 +1,6 @@
 /* oxlint-disable eslint/no-await-in-loop -- recipes run one after another against one fixture */
 import { afterEach, expect, test } from "bun:test";
-import { chmod, mkdir, mkdtemp, rm } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -102,6 +102,36 @@ appendFileSync(${JSON.stringify(log)}, JSON.stringify({args: process.argv.slice(
   );
   await chmod(bun, 0o700);
   return { log };
+}
+
+/** Package names of the manifests under crates/, skipping dependency and build trees (slow on bind mounts). */
+async function workspacePackageNames(): Promise<string[]> {
+  const manifests: string[] = [];
+  const walk = async (dir: string): Promise<void> => {
+    const entries = await readdir(dir, { withFileTypes: true });
+    await Promise.all(
+      entries.map(async (entry) => {
+        if (entry.isDirectory()) {
+          if (
+            entry.name !== "node_modules" &&
+            entry.name !== "target" &&
+            !entry.name.startsWith(".")
+          )
+            await walk(join(dir, entry.name));
+        } else if (entry.name === "Cargo.toml") manifests.push(join(dir, entry.name));
+      }),
+    );
+  };
+  await walk(join(root, "crates"));
+  const names = await Promise.all(
+    manifests.map(async (path) => {
+      const manifest = Bun.TOML.parse(await Bun.file(path).text()) as {
+        package?: { name?: string };
+      };
+      return manifest.package?.name;
+    }),
+  );
+  return names.filter((name): name is string => Boolean(name));
 }
 
 function packages(args: string[]): string[] {
@@ -267,13 +297,7 @@ profileTest(
     for (const args of commands.slice(6, 9)) expect(packages(args)).toEqual(["yolo-pyo3"]);
 
     // Every upstream selector still names a workspace package.
-    const names: string[] = [];
-    for (const path of new Bun.Glob("crates/**/Cargo.toml").scanSync({ cwd: root })) {
-      const manifest = Bun.TOML.parse(await Bun.file(join(root, path)).text()) as {
-        package?: { name?: string };
-      };
-      if (manifest.package?.name) names.push(manifest.package.name);
-    }
+    const names = await workspacePackageNames();
     for (const pattern of packages(commands[10]!)) {
       const glob = new Bun.Glob(pattern);
       expect(

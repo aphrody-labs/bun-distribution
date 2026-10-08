@@ -78,6 +78,7 @@ export async function tailRecords(path: string, bytes = 256 * 1024): Promise<Jso
 }
 
 export function sessionCandidates(process: Json, sources: Json[], root: string): Json[] {
+  root = resolve(root);
   if (typeof process.cwd !== "string" || resolve(process.cwd) !== root) return [];
   return sources.filter(
     (source) =>

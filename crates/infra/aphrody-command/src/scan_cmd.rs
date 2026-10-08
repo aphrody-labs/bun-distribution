@@ -31,7 +31,7 @@ pub(crate) struct TreeCommand {
     /// Comma-separated list of top-level group directories to inspect.
     /// Defaults to `vendor,packages,crates`.
     pub groups: Vec<String>,
-    /// Output JSON file path. `-` writes to stdout.
+    /// Output JSON file path. `-` writes only the JSON to stdout; none prints only the summary.
     pub output: Option<PathBuf>,
     /// Number of top extensions to include per directory.
     pub top_ext_count: usize,
@@ -122,7 +122,11 @@ impl TerminalCommand for TreeCommand {
             "directories": sorted,
         });
 
-        write_report(self.output.as_deref(), &report)?;
+        let written = match write_report(self.output.as_deref(), &report)? {
+            Report::Stdout => return Ok(()),
+            Report::Summary => None,
+            Report::File(path) => Some(path),
+        };
 
         // Console summary.
         println!();
@@ -149,6 +153,7 @@ impl TerminalCommand for TreeCommand {
         }
         println!();
         println!("done in {:.1} s", elapsed.as_secs_f64());
+        print_written(written.as_deref());
         Ok(())
     }
 }
@@ -230,7 +235,7 @@ const MANIFEST_NAMES: &[&str] = &[
 pub(crate) struct ManifestsCommand {
     /// Root of the project. Defaults to the current working directory.
     pub root: Option<PathBuf>,
-    /// Output JSON file path. `-` writes to stdout.
+    /// Output JSON file path. `-` writes only the JSON to stdout; none prints only the summary.
     pub output: Option<PathBuf>,
 }
 
@@ -309,7 +314,11 @@ impl TerminalCommand for ManifestsCommand {
             "manifests": sorted_manifests,
         });
 
-        write_report(self.output.as_deref(), &report)?;
+        let written = match write_report(self.output.as_deref(), &report)? {
+            Report::Stdout => return Ok(()),
+            Report::Summary => None,
+            Report::File(path) => Some(path),
+        };
 
         println!();
         println!("=== MANIFEST COUNTS BY TYPE ===");
@@ -331,6 +340,7 @@ impl TerminalCommand for ManifestsCommand {
 
         println!();
         println!("done in {:.1} s", elapsed.as_secs_f64());
+        print_written(written.as_deref());
         Ok(())
     }
 }
@@ -558,22 +568,26 @@ fn resolve_root(explicit: Option<PathBuf>) -> miette::Result<PathBuf> {
     std::env::current_dir().into_diagnostic().wrap_err("failed to read current working directory")
 }
 
-fn write_report(output: Option<&Path>, report: &Value) -> miette::Result<()> {
+/// Where [`write_report`] sent the report.
+#[derive(Debug, PartialEq, Eq)]
+enum Report {
+    /// No output path: the caller prints only its console summary.
+    Summary,
+    /// `-`: the JSON went to stdout, alone, so it can be piped.
+    Stdout,
+    /// Written to this absolute path.
+    File(PathBuf),
+}
+
+fn write_report(output: Option<&Path>, report: &Value) -> miette::Result<Report> {
+    let Some(path) = output else { return Ok(Report::Summary) };
     let json = serde_json::to_string_pretty(report)
         .into_diagnostic()
         .wrap_err("failed to serialise report")?;
-
-    // None or "-" → stdout; anything else → write to that path.
-    let to_stdout = match output {
-        None => true,
-        Some(p) => p == Path::new("-"),
-    };
-    if to_stdout {
+    if path == Path::new("-") {
         println!("{json}");
-        return Ok(());
+        return Ok(Report::Stdout);
     }
-
-    let path = output.unwrap();
     if let Some(parent) = path.parent()
         && !parent.as_os_str().is_empty()
     {
@@ -584,8 +598,19 @@ fn write_report(output: Option<&Path>, report: &Value) -> miette::Result<()> {
     std::fs::write(path, &json)
         .into_diagnostic()
         .wrap_err_with(|| format!("failed to write {}", path.display()))?;
-    eprintln!("report: {}", path.display());
-    Ok(())
+    let absolute = std::path::absolute(path).unwrap_or_else(|_| path.to_path_buf());
+    Ok(Report::File(absolute))
+}
+
+/// Last line of a scan: where the JSON report is, or how to get one.
+fn print_written(path: Option<&Path>) {
+    match path {
+        Some(path) => {
+            let size = std::fs::metadata(path).map_or(0, |meta| meta.len());
+            println!("report written to {} ({:.1} KB)", path.display(), size as f64 / 1024.0);
+        },
+        None => println!("no JSON report written; pass -o <file> (or -o - for stdout)"),
+    }
 }
 
 /// Minimal ISO-8601 timestamp without pulling chrono. Uses SystemTime UNIX
@@ -619,4 +644,24 @@ fn unix_to_ymd_hms(secs: u64) -> (i64, u32, u32, u32, u32, u32) {
     let minute = (secs_of_day % 3600) / 60;
     let second = secs_of_day % 60;
     (year, m, d, hour, minute, second)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn report_goes_to_an_absolute_file_or_nowhere() {
+        let dir = tempfile::tempdir().unwrap();
+        let report = json!({ "ok": true });
+        assert_eq!(write_report(None, &report).unwrap(), Report::Summary);
+        let target = dir.path().join("nested").join("scan.json");
+        let Report::File(path) = write_report(Some(&target), &report).unwrap() else {
+            panic!("expected a file");
+        };
+        assert!(path.is_absolute() && path.ends_with("scan.json"));
+        let written: Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(written, report);
+    }
 }

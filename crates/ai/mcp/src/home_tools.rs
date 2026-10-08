@@ -82,13 +82,18 @@ mod tests {
 
     #[test]
     fn kind_names_map_and_unknown_names_are_ignored() {
-        assert_eq!(kinds(&["chunk".into(), "memory".into(), "x".into()]), [HitKind::Chunk, HitKind::Memory]);
+        assert_eq!(
+            kinds(&["chunk".into(), "memory".into(), "x".into()]),
+            [HitKind::Chunk, HitKind::Memory]
+        );
         assert!(kinds(&[]).is_empty());
     }
 
     #[tokio::test]
     async fn an_empty_query_is_rejected_without_touching_the_database() {
-        let out = query(HomeQueryRequest { query: "  ".into(), limit: None, kinds: None, profile: None }).await;
+        let out =
+            query(HomeQueryRequest { query: "  ".into(), limit: None, kinds: None, profile: None })
+                .await;
         assert!(out.contains("query is empty"), "{out}");
     }
 }

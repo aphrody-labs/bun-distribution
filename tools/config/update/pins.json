@@ -9,7 +9,11 @@
           "file": "tools/config/system-packages.json",
           "re": "\"bun\": \\{\\s*\"version\": \"(\\d+\\.\\d+\\.\\d+)\""
         },
+        { "file": "tools/config/system-packages.json", "re": "\"-Version\",\\s*\"(\\d+\\.\\d+\\.\\d+)\"" },
         { "file": "package.json", "re": "\"packageManager\": \"bun@(\\d+\\.\\d+\\.\\d+)\"" },
+        { "file": "tools/config/host/toolchain.json", "re": "\"bun\": \"(\\d+\\.\\d+\\.\\d+)\"" },
+        { "glob": "tools/config/container/**/Dockerfile", "re": "ARG BUN_VERSION=(\\d+\\.\\d+\\.\\d+)" },
+        { "glob": ".github/workflows/*.yml", "re": "aphrody/install\\.sh \\| bash -s (\\d+\\.\\d+\\.\\d+)" },
         {
           "glob": "{package.json,config/*/package.json,apps/**/package.json,packages/**/package.json,crates/**/package.json}",
           "re": "\"bun\": \">=(\\d+\\.\\d+\\.\\d+)\""

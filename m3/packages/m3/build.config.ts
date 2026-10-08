@@ -14,5 +14,5 @@ export default m3Package({
   ],
   target: "node",
   useClient: ["react.js"],
-  external: ["bun", "bun:*", "@tailwindcss/node", "@tailwindcss/oxide"],
+  external: ["bun", "bun:*", "@aphrody/bun-plugin-tailwind"],
 });

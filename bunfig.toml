@@ -12,6 +12,7 @@ minimumReleaseAgeExcludes = [
   "@aphrody/material-web",
   "@aphrody/bun-types",
   "@aphrody/bun-webview-page",
+  "@aphrody/bun-plugin-tailwind",
   "@aphrody/next-bun",
   "next",
   "@next/env",

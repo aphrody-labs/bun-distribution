@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-import { afterEach, expect, test } from "bun:test";
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { afterAll, afterEach, expect, test } from "bun:test";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { buildFactoryPlan, type BuildFactoryConfig } from "../src/build-factory.ts";
 import { factoryJobPlan } from "../src/build-factory-jobs.ts";
+import { writeBunCommand } from "./fixtures/bun-command.ts";
 
 const roots: string[] = [];
 const revision = "a".repeat(40);
@@ -33,6 +34,23 @@ const durable = factoryJobPlan(
   jobId,
 );
 
+// One Infra stand-in per file: Windows needs a compiled executable, so it is built once and
+// locates its per-test marker and reply through the inherited environment.
+const fixtureHome = await mkdtemp(join(tmpdir(), "aphrody-factory-job-infra-"));
+const infra = await writeBunCommand(
+  fixtureHome,
+  "infra-fixture",
+  `import { readFileSync, writeFileSync } from "node:fs";
+writeFileSync(process.env.INFRA_FIXTURE_MARKER, JSON.stringify({args: process.argv.slice(2), timeout: process.env.APHRODY_SSH_COMMAND_TIMEOUT_SECS}));
+const reply = JSON.parse(readFileSync(process.env.INFRA_FIXTURE_RESPONSE, "utf8"));
+process.stdout.write(reply.stdout);
+process.stderr.write(reply.stderr ?? "");
+process.exitCode = reply.code ?? 0;
+`,
+  { native: true },
+);
+afterAll(() => rm(fixtureHome, { recursive: true, force: true }));
+
 afterEach(async () => {
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
@@ -44,19 +62,6 @@ async function fixture() {
   await writeFile(join(root, "tools/config/build-factory.json"), JSON.stringify(config));
   const marker = join(root, "invocation.json");
   const response = join(root, "response.json");
-  const infra = join(root, "infra-fixture");
-  await writeFile(
-    infra,
-    `#!${process.execPath}
-import { readFileSync, writeFileSync } from "node:fs";
-writeFileSync(${JSON.stringify(marker)}, JSON.stringify({args: process.argv.slice(2), timeout: process.env.APHRODY_SSH_COMMAND_TIMEOUT_SECS}));
-const reply = JSON.parse(readFileSync(${JSON.stringify(response)}, "utf8"));
-process.stdout.write(reply.stdout);
-process.stderr.write(reply.stderr ?? "");
-process.exitCode = reply.code ?? 0;
-`,
-  );
-  await chmod(infra, 0o755);
   const receipt = {
     schemaVersion: 1,
     jobId,
@@ -74,7 +79,13 @@ process.exitCode = reply.code ?? 0;
     const child = Bun.spawn(
       [process.execPath, join(import.meta.dir, "../src/build-factory.ts"), ...args],
       {
-        env: { ...process.env, APHRODY_ROOT: root, APHRODY_INFRA_BIN: infra },
+        env: {
+          ...process.env,
+          APHRODY_ROOT: root,
+          APHRODY_INFRA_BIN: infra,
+          INFRA_FIXTURE_MARKER: marker,
+          INFRA_FIXTURE_RESPONSE: response,
+        },
         stdout: "pipe",
         stderr: "pipe",
         timeout: 5000,

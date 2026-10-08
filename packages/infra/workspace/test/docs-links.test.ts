@@ -35,6 +35,8 @@ test("generated migration index and URL metadata resolve actual local files", as
     await writeFile(join(root, "docs/llms.txt"), "");
     await mkdir(join(root, "docs/reference/workspace"), { recursive: true });
     await writeFile(join(root, "docs/reference/workspace/documentation.json"), "{}");
+    // NTFS forbids "?" in file names; "#" alone still exercises literal query characters there.
+    const literal = process.platform === "win32" ? "question#.md" : "question?#.md";
     const entries = [
       {
         source: "owner/Guide (draft)[1].md",
@@ -47,9 +49,9 @@ test("generated migration index and URL metadata resolve actual local files", as
         target: "docs/guides/owner/Guide(draft).md",
       },
       {
-        source: "owner/question?#.md",
+        source: `owner/${literal}`,
         kind: "documentation",
-        target: "docs/guides/owner/question?#.md",
+        target: `docs/guides/owner/${literal}`,
       },
     ];
     await Promise.all(
@@ -69,7 +71,7 @@ test("generated migration index and URL metadata resolve actual local files", as
       "[balanced](../guides/owner/Guide(draft).md)",
       "[virtual](file:///docs/guides/owner/Guide%20%28draft%29%5B1%5D.md?view=1#intro)",
       "[route](/guides/owner/Guide%20%28draft%29%5B1%5D?view=1#intro)",
-      "[literal query characters](../guides/owner/question%3F%23.md)",
+      `[literal query characters](../guides/owner/${encodeURIComponent(literal)})`,
       "[external](https://example.com/Guide%20(draft).md?view=1#intro)",
       "[same page](#intro)",
       "`[inline code](missing.md)`",

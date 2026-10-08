@@ -4,9 +4,9 @@
   "note": "Aphrody fournit les binaires applicatifs et les facades Rust/Bun/uv; ces paquets restent des prerequis OS.",
   "toolchains": {
     "bun": {
-      "version": "1.4.2",
+      "version": "1.4.3",
       "owner": "aphrody-os",
-      "install": "official-installer",
+      "install": "https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.{sh,ps1} <version>",
       "rootEnv": "BUN_INSTALL"
     },
     "uv": {
@@ -132,9 +132,6 @@
         "id": "Git.Git"
       },
       {
-        "id": "Oven-sh.Bun"
-      },
-      {
         "id": "astral-sh.uv"
       },
       {
@@ -146,6 +143,12 @@
       }
     ],
     "installers": [
+      {
+        "name": "bun",
+        "check": "bun",
+        "url": "https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.ps1",
+        "args": ["-Version", "1.4.3"]
+      },
       {
         "name": "rustup",
         "check": "rustup",

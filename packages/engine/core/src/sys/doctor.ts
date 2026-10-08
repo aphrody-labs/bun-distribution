@@ -117,7 +117,8 @@ export function collectDoctorReport(): DoctorReport {
   let runtimeInfo: DoctorReport["runtime"] = { installed: false };
   const active = list().find((e) => e.current);
   if (active === undefined) {
-    okStatus = false;
+    // A source checkout runs without the native artifact; only a compiled install requires it.
+    if (!sourceInstallation) okStatus = false;
     runtimeInfo = { installed: false, error: "no runtime artifact installed" };
   } else {
     try {

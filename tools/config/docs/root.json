@@ -2,64 +2,22 @@
   "readme": {
     "summary": "Private Rust/Bun monorepo: the Bun fork runtime (`yolo`), the Python runtime (`vu`), the `aphrody` CLI/MCP/FFI and the M3 UI framework.",
     "layout": [
-      [
-        "packages/<domain>/<package>",
-        "Bun packages"
-      ],
-      [
-        "crates/<domain>/<crate>",
-        "Rust crates"
-      ],
-      [
-        "m3/",
-        "UI framework, `m3/packages/app-ui`"
-      ],
-      [
-        "py/",
-        "Python packages"
-      ],
-      [
-        "tools/config/",
-        "Build, product, host and deployment declarations"
-      ],
-      [
-        "scripts/",
-        "audit, build, dev, migration, release, tools"
-      ],
-      [
-        "docs/",
-        "Guides, contracts, generated references"
-      ],
-      [
-        ".coord/",
-        "Claims and receipts"
-      ],
-      [
-        "examples/",
-        "Standalone Bun examples"
-      ]
+      ["packages/<domain>/<package>", "Bun packages"],
+      ["crates/<domain>/<crate>", "Rust crates"],
+      ["m3/", "UI framework, `m3/packages/app-ui`"],
+      ["py/", "Python packages"],
+      ["tools/config/", "Build, product, host and deployment declarations"],
+      ["scripts/", "audit, build, dev, migration, release, tools"],
+      ["docs/", "Guides, contracts, generated references"],
+      [".coord/", "Claims and receipts"],
+      ["examples/", "Standalone Bun examples"]
     ],
     "links": [
-      [
-        "PLAN.md",
-        "Architecture, contracts, open queue"
-      ],
-      [
-        "MEMORY.md",
-        "Dated evidence and limits"
-      ],
-      [
-        "AGENTS.md",
-        "Working rules"
-      ],
-      [
-        "docs/README.md",
-        "Documentation index"
-      ],
-      [
-        "docs/reference/workspace/STATE.md",
-        "Workspace inventory"
-      ]
+      ["PLAN.md", "Architecture, contracts, open queue"],
+      ["MEMORY.md", "Dated evidence and limits"],
+      ["AGENTS.md", "Working rules"],
+      ["docs/README.md", "Documentation index"],
+      ["docs/reference/workspace/STATE.md", "Workspace inventory"]
     ],
     "installation": [
       "## One install par agent IA",
@@ -104,44 +62,20 @@
   },
   "plan": {
     "owners": [
-      [
-        "Aphrody",
-        "Products, workflows, UI, integrations"
-      ],
-      [
-        "Yolo",
-        "Precompiled runtime and SDK (Bun fork + CLI, aliases `bun`, `vu`)"
-      ],
-      [
-        "Workspace/Infra",
-        "Orchestration, inventories, factories, release, hosts"
-      ],
-      [
-        "`m3/packages/app-ui`, `crates/ui/*`",
-        "Canonical UI"
-      ],
-      [
-        "`crates/ai/rag-python`",
-        "Sole owner of the `aphrody-rust` Python binding"
-      ],
-      [
-        "IECODE",
-        "Separate repository, store and authority"
-      ],
-      [
-        "Kernel",
-        "`aphrody-kernel`: minimal TCB + subsystems; Linux/Asterinas/kernel32 provide the rest"
-      ]
+      ["Aphrody", "Products, workflows, UI, integrations"],
+      ["Yolo", "Precompiled runtime and SDK (Bun fork + CLI, aliases `bun`, `vu`)"],
+      ["Workspace/Infra", "Orchestration, inventories, factories, release, hosts"],
+      ["`m3/packages/app-ui`, `crates/ui/*`", "Canonical UI"],
+      ["`crates/ai/rag-python`", "Sole owner of the `aphrody-rust` Python binding"],
+      ["IECODE", "Separate repository, store and authority"],
+      ["Kernel", "`aphrody-kernel`: minimal TCB + subsystems; Linux/Asterinas/kernel32 provide the rest"]
     ],
     "targets": [
       [
         "Rust CLI",
         "`aphrody` multicall binary (`crates/infra/aphrody`, `crates/infra/aphrody-command`); former tool names are links"
       ],
-      [
-        "Bun CLI",
-        "`yolo` (`packages/engine/yolo`)"
-      ],
+      ["Bun CLI", "`yolo` (`packages/engine/yolo`)"],
       [
         "FFI",
         "`aphrody_ffi` cdylib (`crates/interop/ffi`): `aphrody_*`, `yolo_*`, `bun_rs_*`, `aphrody_oxc_*`; PyO3 modules stay separate"
@@ -154,14 +88,8 @@
         "MCP",
         "`aphrody-mcp` (`crates/ai/mcp`) is the only MCP server and hosts the kernel in process; `aphrody kernel mcp`, `yolo mcp` and `m3-mcp` are deprecated aliases (2026-10-07); `yolo tool` and the M3 `tool-host` are tool hosts, not servers"
       ],
-      [
-        "Desktop",
-        "`aphrody-app` on `tauri-runtime-cef` (CEF + `tauri-winit` + GTK 4); routes `admin`, `creator`"
-      ],
-      [
-        "Python",
-        "`vu` runtime (uv + ruff + PyO3 + shared CPython), plan in `docs/plans/vu/PLAN.md`"
-      ],
+      ["Desktop", "`aphrody-app` on `tauri-runtime-cef` (CEF + `tauri-winit` + GTK 4); routes `admin`, `creator`"],
+      ["Python", "`vu` runtime (uv + ruff + PyO3 + shared CPython), plan in `docs/plans/vu/PLAN.md`"],
       [
         "Bun product",
         "One package, `packages/infra/product`, one entrypoint and `Aphrody-Setup.exe`: installation, administration and creator modules; showcase folded into canonical app-ui."
@@ -211,10 +139,7 @@
         "Native runtime acquisition",
         "Verified artifact on a fresh machine without engine rebuild; install, upgrade, rollback"
       ],
-      [
-        "Desktop",
-        "Windows installer for `aphrody-app`; real Windows run; rendering in the real CEF app"
-      ],
+      ["Desktop", "Windows installer for `aphrody-app`; real Windows run; rendering in the real CEF app"],
       [
         "Shenron production",
         "Restart `shenron-site`/`shenron-bot` after the release; measure `/api/chat`; verify the agent card"
@@ -223,14 +148,8 @@
         "MCP HTTP auth",
         "Finish `workspace/wip/infra-mcp-auth` (bearer, free port, `infra validate` fix), gate, rebase, push"
       ],
-      [
-        "agent-home",
-        "Land `workspace/wip/agent-home-gaps`; gate `aphrody-agent-home`, `aphrody-config`"
-      ],
-      [
-        "code-graph",
-        "Python/TS extractors and `scripts/audit/ai/graph-parity.ts`; Graphify stays the parity oracle"
-      ],
+      ["agent-home", "Land `workspace/wip/agent-home-gaps`; gate `aphrody-agent-home`, `aphrody-config`"],
+      ["code-graph", "Python/TS extractors and `scripts/audit/ai/graph-parity.ts`; Graphify stays the parity oracle"],
       [
         "Publication",
         "npm `@aphrody/*`, crates.io (316 crates: metadata, `publish = false`, path versions, 14 taken names), PyPI"
@@ -312,7 +231,7 @@
           ],
           [
             "2026-10-08",
-            "Autonomous zero-latency terminal engine `aphrody-term` and `aphrody-bun-bridge` integrated into the monorepo. Circular ring buffer with FairMutex 256KB read leases, memchr vectorized bulk ASCII, ComputerUseController (>10 GB/s scraping) and in-process Bun Shell with POSIX builtins and JSC structured evaluation (22x faster than Nu). Integrated ComputerEnvironment::Terminal into `aphrody-agent-tools`, scrape_text into `WebTerminal`, and v86/container2wasm WASM microVM into `aphrody-shell-sandbox-host`. Workspace layout verified across 95 packages with 0 violations; 18 term/bun-bridge tests and 7 agent-tools computer_use tests passed.",
+            "Autonomous zero-latency terminal engine `aphrody-term` integrated into the monorepo. Circular ring buffer with FairMutex 256KB read leases, memchr vectorized bulk ASCII and ComputerUseController (>10 GB/s scraping). Integrated ComputerEnvironment::Terminal into `aphrody-agent-tools`, scrape_text into `WebTerminal`, and v86/container2wasm WASM microVM into `aphrody-shell-sandbox-host`. Workspace layout verified across 95 packages with 0 violations; term tests and 7 agent-tools computer_use tests passed.",
             "Linux and Windows MSVC checks pass. Full CEF GUI integration and physical GPU rendering qualified separately."
           ]
         ]
@@ -539,11 +458,7 @@
             "Cloud session host: 4 CPU, 15 GB RAM, ~30 GB disk; scoped `-p <crate>` gates only.",
             "Full workspace, V8, Tauri, WebKit builds go to the VPS."
           ],
-          [
-            "2026-10-05",
-            "CI jobs do not start (account billing).",
-            "Owner-side."
-          ],
+          ["2026-10-05", "CI jobs do not start (account billing).", "Owner-side."],
           [
             "2026-10-07",
             "Private GHCR runtime digest `sha256:9584253e39340758b4efcb1d11e86aa48f165a3e045759f75bb4a600559c3031` passed registry pull, readonly-root token-file API health and shutdown. Alpine AMD64/ARM64 digest `sha256:7506e634d1ab1acfadaaceb6a59d52629a02b62bd59ec1507c334816e7b55aad` passed both architecture runtime/WASM probes.",
@@ -571,7 +486,7 @@
           ],
           [
             "2026-10-08",
-            "Full cloud compatibility achieved across Aphrody: auto-detection of cloud environments (`CLAUDE_CODE_REMOTE`, `APHRODY_CLOUD`, `CI`, `GITHUB_ACTIONS`, `CODESPACES`, `GITPOD_WORKSPACE_ID`, `CLOUD_SHELL`, Docker `/.dockerenv`) in `build-factory.ts` and `cargo-serial.sh` with CPU-bounded jobs (`nproc`, max 6); Linux `bun` binary path and PATH export corrected in `.claude/hooks/session-start.sh`; automated secret-free agent home initialization and security audit in `scripts/dev/cloud-agent-home.ts` integrated into `cloud-setup.sh` and `entrypoint.sh`; `cloud-doctor.ts` updated with standalone cloud mode (`--standalone`) and agent home verification; `aphrody-bun-bridge` (WyHash, DotEnv, Router, SemVer, Glob, Valkey, Base64) qualified and strict Clippy clean with 27 passed unit tests.",
+            "Full cloud compatibility achieved across Aphrody: auto-detection of cloud environments (`CLAUDE_CODE_REMOTE`, `APHRODY_CLOUD`, `CI`, `GITHUB_ACTIONS`, `CODESPACES`, `GITPOD_WORKSPACE_ID`, `CLOUD_SHELL`, Docker `/.dockerenv`) in `build-factory.ts` and `cargo-serial.sh` with CPU-bounded jobs (`nproc`, max 6); Linux `bun` binary path and PATH export corrected in `.claude/hooks/session-start.sh`; automated secret-free agent home initialization and security audit in `scripts/dev/cloud-agent-home.ts` integrated into `cloud-setup.sh` and `entrypoint.sh`; `cloud-doctor.ts` updated with standalone cloud mode (`--standalone`) and agent home verification.",
             "Linux and Windows MSVC checks pass. Global typecheck, bun:check, docs:check-links, docs:check, and format:check pass with zero errors."
           ]
         ]

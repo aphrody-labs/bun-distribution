@@ -2,6 +2,7 @@
 // Build the nested FSL Drive workspace and stage its daemon for Aphrody Tauri.
 import { copyFile, mkdir, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import { cargoSerialCommand, cargoSerialPath } from "./cargo-serial.ts";
 
 function parseArgs(args: string[]): { repo: string; debug: boolean } {
   let repo = process.cwd();
@@ -30,7 +31,7 @@ export async function runDriveDaemon(args: string[]): Promise<number> {
   if (!(await Bun.file(driveManifest).exists())) {
     throw new Error(`Drive workspace missing: ${driveManifest}`);
   }
-  const cargoSerial = join(repo, "scripts", "build", "rust", "cargo-serial.sh");
+  const cargoSerial = cargoSerialPath(repo);
   if (!(await Bun.file(cargoSerial).exists())) {
     throw new Error(`serialized Cargo wrapper missing: ${cargoSerial}`);
   }
@@ -50,7 +51,7 @@ export async function runDriveDaemon(args: string[]): Promise<number> {
     throw new Error("clang-cl is required for the Windows Drive daemon build");
   }
   const command = [
-    cargoSerial,
+    ...cargoSerialCommand(repo),
     ...(windowsX64 ? ["--config", 'env.CFLAGS_x86_64_pc_windows_msvc.value="-W0 /arch:AVX2"'] : []),
     "build",
     "--manifest-path",

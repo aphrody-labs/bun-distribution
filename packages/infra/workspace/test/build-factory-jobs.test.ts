@@ -11,13 +11,14 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, posix } from "node:path";
 import { buildFactoryPlan, type BuildFactoryConfig } from "../src/build-factory.ts";
 import {
   FACTORY_JOB_MAX_TAIL_BYTES,
   factoryJobPlan,
   factoryJobStatusPlan,
 } from "../src/build-factory-jobs.ts";
+import { hasMode } from "../src/portable-fs.ts";
 
 type Plan = { transport: readonly string[] };
 const quoted = (text: string) => "'" + text.replaceAll("'", "'\\''") + "'";
@@ -173,18 +174,34 @@ async function fixture(seconds = 3) {
   };
 }
 
+/** The factory host's POSIX layout, for plan validation where the Linux host scripts cannot run. */
+function remoteLayout() {
+  const root = "/srv/factory";
+  const repository = posix.join(root, "source");
+  const config: BuildFactoryConfig = {
+    schemaVersion: 1,
+    enabled: true,
+    target: "vps",
+    cacheRoot: posix.join(root, "cache"),
+    artifactRoot: posix.join(root, "artifacts"),
+    lockPath: posix.join(root, "locks", "heavy.lock"),
+    repositories: { aphrody: repository },
+    rust: { maxJobs: 1 },
+    commandTimeoutSeconds: 3,
+  };
+  const owner = (command: string[]) => buildFactoryPlan(config, "aphrody", "a".repeat(40), command);
+  return { root, repository, config, owner, cleanup: async () => {} };
+}
+
 test("job plans reject traversal, unsafe identities, artifact overlaps and foreign owner plans", async () => {
-  const f = await fixture();
+  const linux = process.platform === "linux";
+  const f = linux ? await fixture() : remoteLayout();
+  const at = linux ? join : posix.join;
   try {
     const owner = f.owner(["true"]);
     for (const id of ["", "../job", "a/b", "bad.id", "a".repeat(65), "x\0y"])
       expect(() => factoryJobPlan(f.config, owner, id)).toThrow("job id");
-    for (const path of [
-      f.repository,
-      join(f.repository, "artifacts"),
-      f.root,
-      join(f.root, "locks"),
-    ])
+    for (const path of [f.repository, at(f.repository, "artifacts"), f.root, at(f.root, "locks")])
       expect(() => factoryJobPlan({ ...f.config, artifactRoot: path }, owner, "valid")).toThrow(
         "outside",
       );
@@ -211,11 +228,10 @@ test("job plans reject traversal, unsafe identities, artifact overlaps and forei
     const request = factoryJobPlan(f.config, owner, "valid");
     expect(request.fingerprint).toMatch(/^[a-f0-9]{64}$/);
     expect(request.fingerprint).toBe(factoryJobPlan(f.config, owner, "valid").fingerprint);
+    if (!linux) return;
     expect((await execute(factoryJobStatusPlan(f.config, "absent"))).exitCode).toBe(2);
     expect(
-      await Bun.file(
-        join(f.config.artifactRoot, "factory-jobs", "absent", "request.json"),
-      ).exists(),
+      await Bun.file(at(f.config.artifactRoot, "factory-jobs", "absent", "request.json")).exists(),
     ).toBe(false);
   } finally {
     await f.cleanup();
@@ -292,13 +308,13 @@ test.skipIf(process.platform !== "linux")(
       expect((await f.status("matching")).exitCode).toBe(0);
       expect(JSON.stringify(terminal)).not.toContain(opaque);
       expect(prior).not.toContain(opaque);
-      expect((await stat(plan.directory)).mode & 0o777).toBe(0o700);
+      expect(hasMode((await stat(plan.directory)).mode, 0o700)).toBe(true);
       const files = await Promise.all(
         ["request.json", "state.json", "runner.mjs", "stdout.log", "stderr.log", "exit.json"].map(
           (name) => stat(join(plan.directory, name)),
         ),
       );
-      for (const file of files) expect(file.mode & 0o777).toBe(0o600);
+      for (const file of files) expect(hasMode(file.mode, 0o600)).toBe(true);
     } finally {
       await f.cleanup();
     }

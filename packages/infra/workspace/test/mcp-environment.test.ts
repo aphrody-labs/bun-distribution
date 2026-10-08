@@ -21,6 +21,22 @@ import {
   probeMcpEnvironment,
   readMcpProcessEnvironment,
 } from "../src/mcp-environment.ts";
+import { hasMode, POSIX_MODES } from "../src/portable-fs.ts";
+
+/** A shebang script on POSIX; Windows cannot exec one directly, so it is compiled to a real executable. */
+async function fixtureExecutable(path: string, source: string) {
+  if (process.platform !== "win32") {
+    writeFileSync(path, `#!${process.execPath}\n${source}`, { mode: 0o700 });
+    return;
+  }
+  const entry = `${path}.ts`;
+  writeFileSync(entry, source);
+  const build = Bun.spawnSync([process.execPath, "build", "--compile", entry, "--outfile", path], {
+    stdout: "ignore",
+    stderr: "pipe",
+  });
+  if (build.exitCode !== 0) throw new Error(build.stderr.toString());
+}
 
 const roots: string[] = [];
 afterEach(() => {
@@ -55,8 +71,8 @@ const profile = (
 test("private JSON profile keeps values out of metadata and has deterministic fingerprint", () => {
   const root = fixture(),
     prepared = profile(root);
-  expect(statSync(prepared.path).mode & 0o777).toBe(0o600);
-  expect(statSync(join(root, "private")).mode & 0o777).toBe(0o700);
+  expect(hasMode(statSync(prepared.path).mode, 0o600)).toBe(true);
+  expect(hasMode(statSync(join(root, "private")).mode, 0o700)).toBe(true);
   expect(JSON.parse(readFileSync(prepared.path, "utf8")).APHRODY_MCP_DATABASE_URL).toBe(
     "fixture-only-password",
   );
@@ -107,7 +123,7 @@ test("public, symbolic and malformed private source files fail without exposing 
       sourceFiles: [source],
     });
   writeFileSync(path, "fixture-only-password", { mode: 0o644 });
-  expect(run.bind(null, path)).toThrow("owned, private regular file");
+  if (POSIX_MODES) expect(run.bind(null, path)).toThrow("owned, private regular file");
   chmodSync(path, 0o600);
   expect(run.bind(null, path)).toThrow("invalid JSON");
   symlinkSync(path, alias);
@@ -212,18 +228,17 @@ test("native verification uses structured config for paths with spaces and repor
   const root = fixture(),
     directory = join(root, "binary with spaces");
   mkdirSync(directory);
-  const binary = join(directory, "aphrody-mcp"),
+  const binary = join(directory, process.platform === "win32" ? "aphrody-mcp.exe" : "aphrody-mcp"),
     prepared = profile(root);
-  writeFileSync(
+  await fixtureExecutable(
     binary,
-    `#!${process.execPath}
-const args=process.argv.slice(2);
+    `const args=process.argv.slice(2);
 if(args.includes('--help')){console.log('Usage --env-file');}
 else {
   if(args.includes('--stdio')||args.includes('probe'))process.exit(8);
   const config=await Bun.file(args[args.indexOf('--config')+1]).json();
   const server=config.mcpServers.aphrody;
-  if(server.command!==process.argv[1]||server.args[0]!=='--env-file'||server.args[1]!==args[1])process.exit(9);
+  if(server.command!==(process.platform==='win32'?process.execPath:process.argv[1])||server.args[0]!=='--env-file'||server.args[1]!==args[1])process.exit(9);
   if(args.includes('list')){
     console.log(JSON.stringify({kind:'server_info',tool_count:1}));
     console.log(JSON.stringify({kind:'tool',name:'aphrody_shenron_rag_search'}));
@@ -231,7 +246,6 @@ else {
   else process.exit(10);
 }
 `,
-    { mode: 0o700 },
   );
   const result = await probeMcpEnvironment(prepared, binary, 2000);
   expect(result.supported).toBe(true);
@@ -258,7 +272,8 @@ else {
   expect(sanitized.completed).toBe(false);
   expect(sanitized.failure).toBe("native-rag-backend-error");
   expect(JSON.stringify(sanitized)).not.toContain("fixture-only-password");
-});
+  // Windows compiles the fixture executable first.
+}, 30_000);
 
 test("explicit process sources cannot import generic database or routing keys", () => {
   const root = fixture();

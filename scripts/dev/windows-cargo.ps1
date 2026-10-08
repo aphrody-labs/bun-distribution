@@ -38,12 +38,18 @@ $env:GIT_TERMINAL_PROMPT = '0'
 $env:GIT_CONFIG_COUNT = '1'
 $env:GIT_CONFIG_KEY_0 = 'url.https://github.com/.insteadOf'
 $env:GIT_CONFIG_VALUE_0 = 'ssh://git@github-dev/'
+# Same bounded wait as cargo-serial.ps1: concurrent builds queue instead of failing.
+$waitSeconds = 1800
+if ($env:APHRODY_CARGO_LOCK_TIMEOUT_SECS) {
+    if ($env:APHRODY_CARGO_LOCK_TIMEOUT_SECS -notmatch '^\d+$') { throw 'APHRODY_CARGO_LOCK_TIMEOUT_SECS must be an integer.' }
+    $waitSeconds = [int]$env:APHRODY_CARGO_LOCK_TIMEOUT_SECS
+}
 $mutex = [System.Threading.Mutex]::new($false, 'Local\AphrodyCargoBuild')
 $ownsLock = $false
 try {
-    try { $ownsLock = $mutex.WaitOne(0) }
+    try { $ownsLock = $mutex.WaitOne([TimeSpan]::FromSeconds($waitSeconds)) }
     catch [System.Threading.AbandonedMutexException] { $ownsLock = $true }
-    if (-not $ownsLock) { throw 'Another Windows Cargo build holds the serialization lock.' }
+    if (-not $ownsLock) { throw 'Timed out waiting for the shared Windows Cargo build lock.' }
     & cargo @args
     $result = $LASTEXITCODE
 } finally {

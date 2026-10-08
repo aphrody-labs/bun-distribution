@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import { mkdtemp, chmod, rm } from "node:fs/promises";
+import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { optimizationPrompt } from "../src/optimize.ts";
+import { withoutPath, writeBunCommand } from "./fixtures/bun-command.ts";
 
 // `yolo optimize` is the only command line of this module.
 const yolo = join(import.meta.dir, "../../../../packages/engine/yolo/src/index.ts");
@@ -15,16 +16,16 @@ test("requires a bounded task", () => {
 test("passes task literally to the owner CLI and preserves its failure", async () => {
   const dir = await mkdtemp(join(tmpdir(), "aphrody-optimize-"));
   try {
-    const binary = join(dir, "aphrody");
     const capture = join(dir, "args.json");
-    await Bun.write(
-      binary,
-      `#!${process.execPath}\nawait Bun.write(process.env.CAPTURE, JSON.stringify(process.argv.slice(2))); process.exit(7);\n`,
+    await writeBunCommand(
+      dir,
+      "aphrody",
+      "await Bun.write(process.env.CAPTURE, JSON.stringify(process.argv.slice(2))); process.exit(7);\n",
+      { native: true },
     );
-    await chmod(binary, 0o755);
     const task = 'simplify $(touch /tmp/should-not-run) `echo unsafe` "quoted"';
     const child = Bun.spawn([process.execPath, yolo, "optimize", task], {
-      env: { ...process.env, PATH: dir, CAPTURE: capture },
+      env: { ...withoutPath(process.env), PATH: dir, CAPTURE: capture },
       stdout: "pipe",
       stderr: "pipe",
     });
@@ -36,7 +37,7 @@ test("passes task literally to the owner CLI and preserves its failure", async (
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
-});
+}, 30_000);
 
 test("preview needs no owner executable", async () => {
   const child = Bun.spawn(

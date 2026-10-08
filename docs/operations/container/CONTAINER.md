@@ -69,18 +69,28 @@ One build image serves Aphrody and Shenron on the VPS factory:
 [scripts/build/container/aphrody-build.ts](../../../scripts/build/container/aphrody-build.ts). Its build context is that
 directory only: no checkout, env file or secret enters the image.
 
-| Content             | Source of the pin                                                                                       |
-| ------------------- | ------------------------------------------------------------------------------------------------------- |
-| Rust                | `rust-toolchain.toml`: channel plus every target (Linux, Windows MSVC, wasm32, Apple) and component     |
-| `wasm-bindgen-cli`  | `Cargo.lock` (`wasm-bindgen`), prebuilt through checksum-pinned cargo-binstall                          |
-| Bun / uv            | `package.json#packageManager` / Dockerfile `UV_VERSION`                                                 |
-| sccache, cargo-xwin | Dockerfile `SCCACHE_VERSION` / `CARGO_XWIN_VERSION` (same versions as the VPS host)                     |
-| Native              | Ubuntu 24.04: clang/lld/llvm 18 (`clang-cl`, `lld-link`, `llvm-lib` for MSVC), mold, cmake, ninja, nasm |
+| Content             | Source of the pin                                                                                                   |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Rust                | `rust-toolchain.toml`: channel plus every target (Linux, Windows MSVC, wasm32, Apple) and component                 |
+| `wasm-bindgen-cli`  | `Cargo.lock` (`wasm-bindgen`), prebuilt through checksum-pinned cargo-binstall                                      |
+| Bun / uv            | `package.json#packageManager` / Dockerfile `UV_VERSION`                                                             |
+| sccache, cargo-xwin | Dockerfile `SCCACHE_VERSION` / `CARGO_XWIN_VERSION` (same versions as the VPS host)                                 |
+| Native              | Ubuntu 26.04 LTS (glibc 2.43): clang/lld/llvm 22 (`clang-cl`, `lld-link`, `llvm-lib`), mold 2.40, cmake 4.2, nasm 3 |
 
 It covers `aws-lc-sys` (cmake, clang, nasm), the WireGuard crates (`defguard_wireguard_rs` netlink and boringtun are
 pure Rust), remote desktop/VNC (`rustvncserver`, `vnc-rs`, `x11rb` and `jpeg-encoder` are pure Rust), Windows MSVC
 cross builds such as `aphrody-mcp --features winclean` through `cargo xwin` (the MSVC CRT/SDK download is cached in
 a volume), Dragon Pixel and Koharu wasm32 and Shenron's Bun builds. Linux links use clang + mold.
+
+Base choice (2026-10-09): Ubuntu 26.04 LTS has the newest glibc of the candidates checked on the VPS (2.43; Fedora 43
+2.42, Debian 13 2.41) and is the OS of both deployment hosts (vps, dbfr), so artifacts built here run there
+natively; a binary linked against glibc 2.43 does not run on older distributions. The MSVC STL that cargo-xwin
+fetches requires clang-cl 19 or newer; Windows C/C++ is compiled for x86-64-v2 (`-msse4.2 -mpopcnt`, the Windows 11
+24H2 baseline) because clang-cl needs the ISA enabled for SSE4.1 intrinsics. `CMAKE_POLICY_VERSION_MINIMUM=3.5` keeps
+vendored CMake projects that predate CMake 4 building. Private GitHub dependencies (Shenron pins
+`aphrody-labs/aphrody`) authenticate through the image's system credential helper with `APHRODY_GIT_TOKEN`, which
+`run` resolves from the caller (`APHRODY_GIT_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN`, then `gh auth token`) and passes by
+name only.
 
 ```sh
 bun scripts/build/container/aphrody-build.ts image      # aphrody-build:<rust>-bun<bun>-<sha9> and :latest

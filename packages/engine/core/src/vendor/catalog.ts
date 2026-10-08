@@ -65,17 +65,28 @@ async function writeTrackedCatalog(
   }
 }
 
-export async function generateBunCatalog(
-  rootDir: string = yoloHome(),
-): Promise<AutonomousGenerationReport> {
+/** Bun fork checkout (aphrody-labs/bun): `APHRODY_BUN_CHECKOUT`, else `C:/bun` on Windows; undefined when absent. */
+export function bunCheckout(
+  env: Record<string, string | undefined> = process.env,
+): string | undefined {
+  const dir = env.APHRODY_BUN_CHECKOUT || (process.platform === "win32" ? "C:/bun" : undefined);
+  return dir && existsSync(resolve(dir, "docs")) ? resolve(dir) : undefined;
+}
+
+export async function generateBunCatalog(rootDirArg?: string): Promise<AutonomousGenerationReport> {
   const t0 = Bun.nanoseconds();
-  const bunRepoDir = resolve(rootDir, "vendor/bun");
+  const rootDir = rootDirArg ?? yoloHome();
+  const bunRepoDir = rootDirArg === undefined ? bunCheckout() : resolve(rootDir, "vendor/bun");
+  if (!bunRepoDir)
+    throw new Error(
+      "Bun catalog generation requires the Bun fork checkout (set APHRODY_BUN_CHECKOUT)",
+    );
   const bunDocsDir = resolve(bunRepoDir, "docs");
   const bunTypesDir = resolve(bunRepoDir, "packages/bun-types");
   if (!existsSync(bunDocsDir) || !existsSync(bunTypesDir))
     throw new Error("Bun catalog generation requires vendor/bun docs and bun-types source data");
   const sourceRevision = await readGitHead(bunRepoDir);
-  if (!sourceRevision) throw new Error("Cannot resolve the pinned vendor/bun source revision");
+  if (!sourceRevision) throw new Error("Cannot resolve the vendor/bun source revision");
 
   const globDocs = new Bun.Glob("**/*.md*");
   const globTypes = new Bun.Glob("*.d.ts");

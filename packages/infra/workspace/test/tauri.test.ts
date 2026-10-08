@@ -19,12 +19,25 @@ test("Tauri check uses only the current app and serialized Cargo wrapper", async
   mkdirSync(scripts, { recursive: true });
   writeFileSync(join(root, "Cargo.toml"), "[workspace]\nmembers = []\n");
   writeFileSync(join(app, "Cargo.toml"), '[package]\nname = "test-app"\n');
-  const wrapper = join(scripts, "cargo-serial.sh");
-  writeFileSync(
-    wrapper,
-    `#!/bin/sh\nprintf '%s\\n' "$@" > "${root}/invocation"\nprintf '%s' "$CARGO" > "${root}/cargo-env"\nprintf '%s' "\${RUSTC_WRAPPER-}" > "${root}/rustc-env"\n`,
-  );
-  chmodSync(wrapper, 0o755);
+  const windows = process.platform === "win32";
+  const wrapper = join(scripts, windows ? "cargo-serial.ps1" : "cargo-serial.sh");
+  if (windows)
+    writeFileSync(
+      wrapper,
+      [
+        `[IO.File]::WriteAllText('${root}/invocation', (($args | ForEach-Object { "$_\`n" }) -join ''))`,
+        `[IO.File]::WriteAllText('${root}/cargo-env', [string]$env:CARGO)`,
+        `[IO.File]::WriteAllText('${root}/rustc-env', [string]$env:RUSTC_WRAPPER)`,
+        "",
+      ].join("\r\n"),
+    );
+  else {
+    writeFileSync(
+      wrapper,
+      `#!/bin/sh\nprintf '%s\\n' "$@" > "${root}/invocation"\nprintf '%s' "$CARGO" > "${root}/cargo-env"\nprintf '%s' "\${RUSTC_WRAPPER-}" > "${root}/rustc-env"\n`,
+    );
+    chmodSync(wrapper, 0o755);
+  }
   const previous = Bun.env.RUSTC_WRAPPER;
   Bun.env.RUSTC_WRAPPER = "test-sccache-wrapper";
   try {
@@ -33,7 +46,10 @@ test("Tauri check uses only the current app and serialized Cargo wrapper", async
     expect(layout.appDir).toBe(app);
     expect(await runTauri(["check", "--root", root])).toBe(0);
     expect(readFileSync(join(root, "invocation"), "utf8")).toBe("check\n--locked\n");
-    expect(readFileSync(join(root, "cargo-env"), "utf8")).toBe(wrapper);
+    // Tauri's internal Cargo is routed through CARGO only where the wrapper is an executable.
+    expect(readFileSync(join(root, "cargo-env"), "utf8")).toBe(
+      windows ? (process.env.CARGO ?? "") : wrapper,
+    );
     expect(readFileSync(join(root, "rustc-env"), "utf8")).toBe("test-sccache-wrapper");
   } finally {
     if (previous === undefined) delete Bun.env.RUSTC_WRAPPER;

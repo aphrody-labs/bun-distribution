@@ -26,6 +26,7 @@ import {
   type DriveReviewScope,
   type ReviewPorts,
 } from "../src/agent-home-drive-reconcile.ts";
+import { hasMode, POSIX_MODES } from "../src/portable-fs.ts";
 
 const names = [
   "AGENTS.md",
@@ -155,7 +156,7 @@ test("Drive review persists the private intent and ACK before polling a single t
       contextId: string;
     };
     expect(review.phase).toBe("reserved");
-    expect((await stat(reviewPath)).mode & 0o777).toBe(0o600);
+    expect(hasMode((await stat(reviewPath)).mode, 0o600)).toBe(true);
     return {
       task: {
         id: "task-1",
@@ -489,7 +490,7 @@ test("all seven verified files publish as one immutable generation and managed p
   });
   const target = await readlink(value.config.reviewedDirectory);
   expect((await readdir(target)).toSorted()).toEqual(names.toSorted());
-  expect((await stat(join(target, "AGENTS.md"))).mode & 0o777).toBe(0o600);
+  expect(hasMode((await stat(join(target, "AGENTS.md"))).mode, 0o600)).toBe(true);
   await verifyReviewedProjection(value.config.reviewedDirectory);
   await reconcileDriveReview(value.config, async () => "", value.ports);
   expect(await readlink(value.config.reviewedDirectory)).toBe(target);
@@ -636,7 +637,7 @@ test("production loading accepts SHA-pinned private owner modules above the docu
   }
 });
 
-test.each(["sha", "permissions", "hardlink", "oversize"])(
+test.each(["sha", ...(POSIX_MODES ? ["permissions"] : []), "hardlink", "oversize"])(
   "production module loading preserves the %s guard before imports",
   async (kind) => {
     const { config } = await productionFixture();

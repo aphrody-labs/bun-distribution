@@ -27,6 +27,18 @@ test("Drive daemon builds from the nested workspace through serialized Cargo", a
   mkdirSync(scripts, { recursive: true });
   writeFileSync(join(root, "Cargo.toml"), "[workspace]\n");
   writeFileSync(join(drive, "Cargo.toml"), "[workspace]\n");
+  const windows = process.platform === "win32";
+  const exe = windows ? ".exe" : "";
+  const literal = (path: string) => `'${path.replaceAll("'", "''")}'`;
+  writeFileSync(
+    join(scripts, "cargo-serial.ps1"),
+    [
+      `[IO.File]::WriteAllText(${literal(join(root, "invocation"))}, (($args -join "\`n") + "\`n"))`,
+      `[IO.File]::WriteAllText(${literal(join(root, "rustc-env"))}, "$env:RUSTC_WRAPPER")`,
+      `$null = New-Item -ItemType Directory -Force (Join-Path $env:CARGO_TARGET_DIR 'debug')`,
+      `[IO.File]::WriteAllText((Join-Path $env:CARGO_TARGET_DIR 'debug/sd-daemon.exe'), 'daemon')`,
+    ].join("\r\n"),
+  );
   const wrapper = join(scripts, "cargo-serial.sh");
   writeFileSync(
     wrapper,
@@ -48,8 +60,8 @@ printf 'daemon' > "$CARGO_TARGET_DIR/debug/sd-daemon"
     expect(readFileSync(join(root, "rustc-env"), "utf8")).toBe("test-sccache-wrapper");
     const host = /^host: (.+)$/m.exec(Bun.spawnSync(["rustc", "-vV"]).stdout.toString())?.[1];
     expect(host).toBeDefined();
-    expect(existsSync(join(root, "crates/ui/app/binaries", `sd-daemon-${host}`))).toBe(true);
-    expect(existsSync(join(root, "target/debug/sd-daemon"))).toBe(true);
+    expect(existsSync(join(root, "crates/ui/app/binaries", `sd-daemon-${host}${exe}`))).toBe(true);
+    expect(existsSync(join(root, `target/debug/sd-daemon${exe}`))).toBe(true);
   } finally {
     if (previous === undefined) delete Bun.env.RUSTC_WRAPPER;
     else Bun.env.RUSTC_WRAPPER = previous;

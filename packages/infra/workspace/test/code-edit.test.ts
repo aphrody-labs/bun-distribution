@@ -2,7 +2,7 @@
 import { expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { editCommand, parseCodeEdit, runCodeEdit } from "../src/code-edit.ts";
 
 test("preview preserves files; apply inserts literal dollar signs and removal works", () => {
@@ -77,8 +77,8 @@ test("YOLO rename delegates path selection and literal rules to the owner CLI", 
     "/tmp/yolo",
   ]);
   const command = editCommand(options, []);
-  expect(command).toContain("/tmp/yolo/crates/infra/aphrody/src/index.ts");
-  expect(command).toContain("/tmp/source repo");
+  expect(command).toContain(resolve("/tmp/yolo/crates/infra/aphrody/src/index.ts"));
+  expect(command).toContain(resolve("/tmp/source repo"));
   expect(command).toContain("--exclude");
   expect(command).toContain("**/*.test.ts");
   expect(command).toContain("--paths");

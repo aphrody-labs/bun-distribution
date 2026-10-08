@@ -122,7 +122,7 @@ export async function stageNativeConsumer(packageRoot: string, staging: string):
       const entrypoint = join(source, "src/index.ts");
       const owner = join(source, "../workspace/src/paths.ts");
       const inputs = [entrypoint, owner].map((path) => ({
-        path: relative(source, path),
+        path: relative(source, path).replaceAll(sep, "/"),
         sha256: new Bun.CryptoHasher("sha256").update(readFileSync(path)).digest("hex"),
       }));
       const bundle = await Bun.build({

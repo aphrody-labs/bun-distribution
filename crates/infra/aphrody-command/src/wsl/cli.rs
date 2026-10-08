@@ -47,7 +47,11 @@ pub enum Action {
 #[derive(Parser)]
 #[command(version, about = "Aphrody WSL source build and distribution workbench")]
 struct Args {
-    #[arg(long, env = "APHRODY_WSL_BUILD_CONFIG", default_value = "tools/config/os/wsl-build.json")]
+    #[arg(
+        long,
+        env = "APHRODY_WSL_BUILD_CONFIG",
+        default_value = "tools/config/os/wsl-build.json"
+    )]
     config: PathBuf,
     #[command(subcommand)]
     action: Action,

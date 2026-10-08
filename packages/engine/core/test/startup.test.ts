@@ -62,7 +62,7 @@ describe("status file counts", () => {
       const byName = new Map((await inspectPackages(vendor)).map((p) => [p.name, p]));
       expect(byName.get("create-tauri-app")?.filesCount).toBe(3);
       expect(byName.get("plugins-workspace")?.filesCount).toBe(251);
-      expect(byName.get("bun")?.exists).toBe(false);
+      expect(byName.has("bun")).toBe(false);
     } finally {
       rmSync(vendor, { recursive: true, force: true });
     }

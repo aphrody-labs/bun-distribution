@@ -121,7 +121,7 @@ export async function planPackages(
       "$tools = @{}",
       ...installers.map(
         (item) =>
-          `$tools['${item.name}'] = [bool](Get-Command ${item.check} -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $env:USERPROFILE '.cargo\\bin\\${item.check}.exe'))`,
+          `$tools['${item.name}'] = [bool](Get-Command ${item.check} -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $env:USERPROFILE '.cargo\\bin\\${item.check}.exe')) -or (Test-Path (Join-Path $env:USERPROFILE '.bun\\bin\\${item.check}.exe'))`,
       ),
       "[pscustomobject]@{ winget = $have; tools = $tools } | ConvertTo-Json -Compress -Depth 3",
     ].join("; ");
@@ -197,7 +197,9 @@ export async function applyPackages(
       const installer = config.windows?.installers?.find((item) => item.name === entry.id);
       if (!installer) continue;
       steps.push(
-        `$f = Join-Path $env:TEMP ${quote(`${installer.name}-init.exe`)}; Invoke-WebRequest ${quote(installer.url)} -OutFile $f; & $f ${installer.args.map(quote).join(" ")}; if ($LASTEXITCODE) { exit $LASTEXITCODE }`,
+        installer.url.endsWith(".ps1")
+          ? `& ([scriptblock]::Create((Invoke-RestMethod ${quote(installer.url)}))) ${installer.args.map(quote).join(" ")}`
+          : `$f = Join-Path $env:TEMP ${quote(`${installer.name}-init.exe`)}; Invoke-WebRequest ${quote(installer.url)} -OutFile $f; & $f ${installer.args.map(quote).join(" ")}; if ($LASTEXITCODE) { exit $LASTEXITCODE }`,
       );
     }
   }

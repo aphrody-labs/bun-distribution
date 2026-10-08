@@ -8,6 +8,9 @@ import { pythonWorkspaceCommands, runPythonWorkspace, supervise } from "../src/p
 const fixture = join(import.meta.dir, "fixtures/python-workspace.ts");
 const root = "/";
 const silent = { diagnostics: () => {} };
+// supervise() refuses non-Linux hosts: the native runtime only terminates a whole process tree through
+// Linux process groups (crates/engine/yolo-runtime/src/process.rs kills just the leader elsewhere).
+const supervisedTest = test.skipIf(process.platform !== "linux");
 const measure = (command: string[], cwd: string = root, options = {}) =>
   supervise(command, cwd, options);
 
@@ -39,7 +42,7 @@ async function assertStopped(pid: number) {
   throw new Error(`Fixture process ${pid} still runs`);
 }
 
-test("measurement preserves failure and resource evidence", async () => {
+supervisedTest("measurement preserves failure and resource evidence", async () => {
   const result = await measure([process.execPath, fixture, "7"], root, silent);
   expect(result.exitCode).toBe(7);
   expect(result.success).toBe(false);
@@ -48,13 +51,13 @@ test("measurement preserves failure and resource evidence", async () => {
   expect(() => JSON.stringify(result)).not.toThrow();
 });
 
-test("missing executable is a structured failure", async () => {
+supervisedTest("missing executable is a structured failure", async () => {
   const result = await measure(["/nonexistent/aphrody-workspace-command"], root, silent);
   expect(result.success).toBe(false);
   expect(result.exitCode).toBe(127);
 });
 
-test("child output cannot contaminate JSON stdout", async () => {
+supervisedTest("child output cannot contaminate JSON stdout", async () => {
   const child = Bun.spawn([process.execPath, fixture, "measure"], {
     stdout: "pipe",
     stderr: "pipe",
@@ -124,7 +127,7 @@ test("invalid budgets are rejected without executing", async () => {
   }
 });
 
-test("lossless output refuses overflow explicitly", async () => {
+supervisedTest("lossless output refuses overflow explicitly", async () => {
   const result = await measure([process.execPath, fixture, "flood"], root, {
     ...silent,
     maxOutputBytes: 1024,
@@ -135,7 +138,7 @@ test("lossless output refuses overflow explicitly", async () => {
 });
 
 for (const action of ["timeout", "cancel", "orphan"] as const) {
-  test(`${action} stops the leader and its SIGTERM-resistant descendant`, async () => {
+  supervisedTest(`${action} stops the leader and its SIGTERM-resistant descendant`, async () => {
     const directory = await mkdtemp(join(tmpdir(), "aphrody-supervisor-"));
     const controller = new AbortController();
     const operation = measure(
@@ -165,7 +168,7 @@ for (const action of ["timeout", "cancel", "orphan"] as const) {
   });
 }
 
-test("missing verified artifact is an explicit prerequisite failure", async () => {
+supervisedTest("missing verified artifact is an explicit prerequisite failure", async () => {
   const child = Bun.spawn([process.execPath, fixture, "measure"], {
     env: { ...process.env, YOLO_RUNTIME_HOME: "/nonexistent/aphrody-runtime" },
     stdout: "pipe",
@@ -180,3 +183,13 @@ test("missing verified artifact is an explicit prerequisite failure", async () =
   expect(JSON.parse(output).reason).toBe("runtime_unavailable");
   expect(JSON.parse(output).exitCode).toBe(125);
 });
+
+test.skipIf(process.platform === "linux")(
+  "hosts without process-group supervision refuse before loading the runtime",
+  async () => {
+    const result = await measure([process.execPath, fixture, "0"], root, silent);
+    expect(result.reason).toBe("unsupported_platform");
+    expect(result.exitCode).toBe(125);
+    expect(result).not.toHaveProperty("pid");
+  },
+);

@@ -10,6 +10,50 @@ import {
 } from "../src/build-factory-install.ts";
 
 const roots: string[] = [];
+const windows = process.platform === "win32";
+const EXE = windows ? ".exe" : "";
+/** A 1 KiB x64 console PE whose entry point returns 0 (Windows fixture for a runnable artifact). */
+function tinyPe(): Uint8Array {
+  const b = new Uint8Array(0x400);
+  const v = new DataView(b.buffer);
+  b.set([0x4d, 0x5a]); // MZ
+  v.setUint32(0x3c, 0x40, true); // e_lfanew
+  b.set([0x50, 0x45, 0, 0], 0x40); // PE\0\0
+  const coff = 0x44;
+  v.setUint16(coff, 0x8664, true); // AMD64
+  v.setUint16(coff + 2, 1, true); // sections
+  v.setUint16(coff + 16, 0xf0, true); // optional header size
+  v.setUint16(coff + 18, 0x22, true); // executable, large address aware
+  const opt = coff + 20;
+  v.setUint16(opt, 0x20b, true); // PE32+
+  v.setUint32(opt + 16, 0x1000, true); // entry point
+  v.setUint32(opt + 20, 0x1000, true); // base of code
+  v.setBigUint64(opt + 24, 0x140000000n, true); // image base
+  v.setUint32(opt + 32, 0x1000, true); // section alignment
+  v.setUint32(opt + 36, 0x200, true); // file alignment
+  v.setUint16(opt + 40, 6, true); // OS major
+  v.setUint16(opt + 48, 6, true); // subsystem major
+  v.setUint32(opt + 56, 0x2000, true); // size of image
+  v.setUint32(opt + 60, 0x200, true); // size of headers
+  v.setUint16(opt + 68, 3, true); // console subsystem
+  v.setBigUint64(opt + 72, 0x100000n, true); // stack reserve
+  v.setBigUint64(opt + 80, 0x1000n, true); // stack commit
+  v.setBigUint64(opt + 88, 0x100000n, true); // heap reserve
+  v.setBigUint64(opt + 96, 0x1000n, true); // heap commit
+  v.setUint32(opt + 108, 16, true); // data directories
+  const section = opt + 0xf0;
+  b.set(new TextEncoder().encode(".text"), section);
+  v.setUint32(section + 8, 0x1000, true); // virtual size
+  v.setUint32(section + 12, 0x1000, true); // virtual address
+  v.setUint32(section + 16, 0x200, true); // raw size
+  v.setUint32(section + 20, 0x200, true); // raw pointer
+  v.setUint32(section + 36, 0x60000020, true); // code, execute, read
+  b.set([0x31, 0xc0, 0xc3], 0x200); // xor eax, eax; ret
+  return b;
+}
+/** An executable whose `--version` succeeds: a shell script on POSIX, a minimal PE on Windows. */
+const runnable = (script: string) => (windows ? tinyPe() : script);
+const bytes = async (path: string) => new Uint8Array(await Bun.file(path).arrayBuffer());
 const revision = "b".repeat(40);
 const release = "factory-bbbbbbbbbbbb";
 const config: BuildFactoryConfig = {
@@ -90,7 +134,7 @@ test("derives artifacts from --bin, packages, profiles and targets", async () =>
   ).rejects.toThrow("not produced");
 });
 
-async function remoteFixture(script: string) {
+async function remoteFixture(script: string | Uint8Array) {
   const root = await scratch("factory-remote");
   const source = `${root}/remote-bin`;
   await Bun.write(source, script, { mode: 0o755 });
@@ -117,15 +161,20 @@ async function remoteFixture(script: string) {
 const artifact = [{ name: "tool", remotePath: "/x/tool" }];
 
 test("verifies, probes and atomically replaces; reinstall is unchanged", async () => {
-  const { root, remote, install, fetches } = await remoteFixture("#!/bin/sh\necho tool 1.0\n");
-  await Bun.write(`${install.binDir}/tool`, "#!/bin/sh\necho old\n", { mode: 0o755 });
+  const tool = runnable("#!/bin/sh\necho tool 1.0\n");
+  const { root, remote, install, fetches } = await remoteFixture(tool);
+  await Bun.write(`${install.binDir}/tool${EXE}`, "#!/bin/sh\necho old\n", { mode: 0o755 });
   const [first] = await installFactoryArtifacts(artifact, revision, remote, install);
+  expect(first!.error).toBeUndefined();
   expect(first!.status).toBe("installed");
-  expect(await Bun.file(`${install.binDir}/tool`).text()).toBe("#!/bin/sh\necho tool 1.0\n");
-  expect(first!.previous).toBe(`${install.libRoot}/${release}/previous/tool`);
+  expect(await bytes(`${install.binDir}/tool${EXE}`)).toEqual(
+    typeof tool === "string" ? new TextEncoder().encode(tool) : tool,
+  );
+  expect(first!.previous).toBe(`${install.libRoot}/${release}/previous/tool${EXE}`);
   expect(await Bun.file(first!.previous!).text()).toBe("#!/bin/sh\necho old\n");
   expect(await Bun.file(`${root}/state/installs.jsonl`).text()).toContain('"status":"installed"');
   const [second] = await installFactoryArtifacts(artifact, revision, remote, install);
+  expect(second!.error).toBeUndefined();
   expect(second!.status).toBe("unchanged");
   expect(fetches()).toBe(1);
 });
@@ -134,11 +183,12 @@ test("refuses an artifact that cannot start here and keeps the active binary", a
   const { remote, install } = await remoteFixture(
     "#!/bin/sh\necho 'GLIBC_2.43 not found' >&2\nexit 1\n",
   );
-  await Bun.write(`${install.binDir}/tool`, "#!/bin/sh\necho ok\n", { mode: 0o755 });
+  await Bun.write(`${install.binDir}/tool${EXE}`, "#!/bin/sh\necho ok\n", { mode: 0o755 });
   const [record] = await installFactoryArtifacts(artifact, revision, remote, install);
   expect(record!.status).toBe("refused");
-  expect(record!.error).toContain("GLIBC_2.43");
-  expect(await Bun.file(`${install.binDir}/tool`).text()).toBe("#!/bin/sh\necho ok\n");
+  // Windows cannot start the foreign (non-PE) artifact at all; POSIX runs it and reports its error.
+  expect(record!.error).toContain(windows ? "Artifact cannot run on this host" : "GLIBC_2.43");
+  expect(await Bun.file(`${install.binDir}/tool${EXE}`).text()).toBe("#!/bin/sh\necho ok\n");
 });
 
 test("rejects a download whose digest differs from the factory copy", async () => {
@@ -152,5 +202,5 @@ test("rejects a download whose digest differs from the factory copy", async () =
   const [record] = await installFactoryArtifacts(artifact, revision, tampered, install);
   expect(record!.status).toBe("refused");
   expect(record!.error).toContain("mismatch");
-  expect(await Bun.file(`${install.binDir}/tool`).exists()).toBe(false);
+  expect(await Bun.file(`${install.binDir}/tool${EXE}`).exists()).toBe(false);
 });

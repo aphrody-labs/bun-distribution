@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { createHash } from "node:crypto";
 import { readFile, realpath } from "node:fs/promises";
-import { isAbsolute, relative, resolve } from "node:path";
+import { isAbsolute, relative, resolve, sep } from "node:path";
 import * as ts from "@typescript/typescript6";
 
 export interface SourceReferenceTarget {
@@ -247,11 +247,11 @@ export async function generateSourceReference(
         throw new Error(`Unsafe source reference path: ${path}`);
       const absolute = await realpath(resolve(base, path));
       const local = relative(base, absolute);
-      if (local === ".." || local.startsWith("../") || isAbsolute(local))
+      if (local.split(sep)[0] === ".." || isAbsolute(local))
         throw new Error(`Source reference escapes repository: ${path}`);
       if (
         local
-          .split("/")
+          .split(sep)
           .some((part) => part === ".git" || part === ".npmrc" || part.startsWith(".env"))
       )
         throw new Error(`Unsafe resolved source reference path: ${path}`);

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterEach, expect, test } from "bun:test";
 import { $ } from "bun";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { checkPluginFacts } from "../src/plugin-facts.ts";
 
 const roots: string[] = [];
@@ -9,7 +11,7 @@ afterEach(async () => {
 });
 
 test("relative evidence roots resolve inside the plugin, independent of the working directory", async () => {
-  const store = `${Bun.env.TMPDIR ?? "/tmp"}/plugin-facts-${crypto.randomUUID()}`;
+  const store = join(tmpdir(), `plugin-facts-${crypto.randomUUID()}`);
   roots.push(store);
   await Bun.write(
     `${store}/demo/plugin.json`,
@@ -28,6 +30,6 @@ test("relative evidence roots resolve inside the plugin, independent of the work
   const [record] = checkPluginFacts(store);
   expect(record!.status).toBe("stale");
   expect(Object.keys(record!.receipt!.inputs)).toContain(
-    `${store}/demo:references/upstream-main.json`,
+    `${resolve(store, "demo")}:references/upstream-main.json`,
   );
 });

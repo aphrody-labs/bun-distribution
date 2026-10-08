@@ -108,10 +108,9 @@ impl Config {
     pub fn read(path: &Path) -> Result<Self> {
         // <workspace>/tools/config/os/wsl-build.json: the checkout is three levels above the file.
         let absolute = path.canonicalize()?;
-        let workspace = absolute
-            .ancestors()
-            .nth(3)
-            .ok_or_else(|| Error::Invalid("config must live under <workspace>/tools/config/os".into()))?;
+        let workspace = absolute.ancestors().nth(3).ok_or_else(|| {
+            Error::Invalid("config must live under <workspace>/tools/config/os".into())
+        })?;
         Self::parse(&fs::read(path)?, workspace)
     }
     /// Parses a configuration whose roots may use `${workspace}`, `${home}` and `${data}`.

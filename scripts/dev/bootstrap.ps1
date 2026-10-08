@@ -21,7 +21,7 @@ function Install-Winget([string]$Id, [string]$Override = '') {
 
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { throw 'Install/enable App Installer (winget) first, then rerun.' }
 $tools = @(
-  @{ Id='Git.Git' }, @{ Id='Rustlang.Rustup' }, @{ Id='Bun.Bun' }, @{ Id='astral-sh.uv' },
+  @{ Id='Git.Git' }, @{ Id='Rustlang.Rustup' }, @{ Id='astral-sh.uv' },
   @{ Id='Kitware.CMake' }, @{ Id='Ninja-build.Ninja' }, @{ Id='LLVM.LLVM' },
   @{ Id='Microsoft.VisualStudio.2022.BuildTools'; Override='--wait --passive --norestart --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --add Microsoft.VisualStudio.Component.Windows11SDK.26100' }
 )

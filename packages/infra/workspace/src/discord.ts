@@ -11,7 +11,7 @@
 import { existsSync, statSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { infraRoot, runInfra } from "./runtime.ts";
 import {
   applyPlan,
@@ -259,7 +259,7 @@ export async function deployDiscord(
   };
   const draining = await quiesceDiscord(deployment, transport);
   const stage = await mkdtemp(join(tmpdir(), "aphrody-discord-release-"));
-  const stageName = stage.split("/").at(-1)!;
+  const stageName = basename(stage);
   const remoteStage = `/srv/aphrody-lab/.deploy/${stageName}`;
   const probeBundle = `/srv/aphrody-lab/.${stageName}.mjs`;
   const probePolicy = `/srv/aphrody-lab/.${stageName}-policy.json`;

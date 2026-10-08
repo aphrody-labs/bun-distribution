@@ -180,6 +180,18 @@
       "purpose": "Prebuilt CPython 3.12.15 (default, the py workspace baseline) and 3.14.8 distributions (install_only_stripped and full archives) that the vu runtime embeds; consumed as release assets pinned by sha256, not forked.",
       "consumers": "docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json",
       "note": "MPL-2.0 covers the build system; the distributions carry CPython (PSF-2.0) and the licences of their bundled libraries. The install_only_stripped sha256 equals the digest pinned by uv 0.12.23 (crates/uv-python/download-metadata.json). Minimum glibc of the gnu targets: 2.17 (running.rst)."
+    },
+    {
+      "id": "bun",
+      "kind": "git",
+      "url": "https://github.com/oven-sh/bun",
+      "ref": "main",
+      "license": "MIT",
+      "tier": "reference",
+      "checkout": "../bun",
+      "fork": "https://github.com/aphrody-labs/bun",
+      "purpose": "Bun runtime upstream; Aphrody runs the aphrody-labs/bun fork, checked out next to this repository, which merges oven-sh/bun main. upstream_search reads that checkout when no GitHub token is available.",
+      "consumers": "docs/reference/upstream-bun; packages/infra/update; aphrody yolo verify (Bun source gates)"
     }
   ],
   "integrated": [

@@ -77,7 +77,13 @@ test("remote probe transports URL data literally and parses as Python", async ()
   const script = Buffer.from(encoded, "base64").toString();
   const result = await observeCommand(
     "syntax",
-    ["python3", "-c", "import ast,sys;ast.parse(sys.argv[1])", script],
+    // Python is run through uv (repository policy; Windows' python3 is a Store stub) when available.
+    [
+      ...(Bun.which("uv") ? ["uv", "run", "--no-project", "--quiet", "python"] : ["python3"]),
+      "-c",
+      "import ast,sys;ast.parse(sys.argv[1])",
+      script,
+    ],
     import.meta.dir,
   );
   expect(result.exitCode).toBe(0);

@@ -44,7 +44,7 @@ fi
 
 log bun
 BUN=$(j .versions.bun)
-if [ "$(bun --version 2>/dev/null)" != "$BUN" ]; then curl -fsSL https://bun.sh/install | bash -s "bun-v$BUN" >/dev/null 2>&1; fi
+if [ "$(bun --version 2>/dev/null)" != "$BUN" ]; then curl -fsSL https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.sh | bash -s "$BUN" >/dev/null 2>&1; fi
 bun add -g $(j '.bunGlobal|join(" ")') 2>&1 | tail -2
 
 log uv

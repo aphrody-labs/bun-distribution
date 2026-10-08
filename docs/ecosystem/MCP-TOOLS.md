@@ -82,9 +82,9 @@ Kind: kernel-subsystem. 4 tools.
 
 | Tool | Description |
 | --- | --- |
-| `bun_docs_list` | List Bun docs pages (slug, title, description, url), optionally under a slug prefix such as `runtime/` or `guides/test/`. |
-| `bun_docs_read` | Read one Bun docs page as Markdown by slug (`runtime/file-io`) or bun.com/docs URL, optionally only the section under a heading. |
-| `bun_docs_search` | Search the vendored Bun docs (runtime, bundler, package manager, test runner, guides). Returns ranked pages with slug, url and a snippet; set include_content to also return the best page. |
+| `bun_docs_list` | List the aphrody-labs/bun fork docs pages (slug, title, description, url), optionally under a slug prefix such as `runtime/` or `guides/test/`. |
+| `bun_docs_read` | Read one page of the aphrody-labs/bun fork docs as Markdown by slug (`runtime/file-io`) or bun.com/docs URL, optionally only the section under a heading. |
+| `bun_docs_search` | Search the Bun docs of the aphrody-labs/bun fork (checkout APHRODY_BUN_CHECKOUT or mirror docs/reference/upstream-bun): runtime, bundler, package manager, test runner, guides. Returns ranked pages wi… |
 | `bun_node_equivalent` | Bun equivalent of a Node module (`fs`, `node:child_process`), npm package (`dotenv`, `jest`) or Node API, from the n2b registry, with matching Bun docs pages. |
 
 ## aphrody — aphrody-kernel
@@ -104,7 +104,7 @@ Kind: kernel-subsystem. 6 tools.
 | `gcp_status` | Inspect Google Cloud Platform credentials, active project, and Gemini API key availability |
 | `gcp_storage_list` | List objects and storage prefixes in a Google Cloud Storage bucket |
 | `git_ingest` | Ingest any Git repository or directory into a prompt-ready LLM digest matching https://gitingest.com/llms.txt (token estimation, ASCII tree, delimited file contents) |
-| `github_branches` | List local and tracking remote branches with upstream synchronization status |
+| `github_branches` | List local and remote-tracking branches (local first, then by name) with upstream and ahead/behind for local branches; filtered and paginated, 50 per page by default |
 | `github_status` | Inspect current branch, ahead/behind tracking, modified/untracked files and recent commits for a Git repository |
 | `github_tree` | List tree entries (blobs, trees, sizes) at a specific Git reference or path |
 
@@ -261,7 +261,7 @@ Kind: rmcp. 68 tools.
 | `upstream_info` | Live facts about one catalogue upstream from the GitHub API: head of the followed ref, latest release, licence, pushed date, archived flag, and whether it moved since the commit recorded in the manif… |
 | `upstream_list` | List the upstream catalogue (tools/config/upstream-sources.json): the few vital checkouts and the reference upstreams that are never cloned (codex, ollama, mistral.rs, vllm, WSL, ...), with tier, pur… |
 | `upstream_read` | Read one file of a catalogue upstream at its live ref (no clone). Text over 256 KiB is cut and flagged `truncated`. |
-| `upstream_search` | Code search inside one catalogue upstream (GitHub code search, needs a GH_TOKEN or GITHUB_TOKEN). |
+| `upstream_search` | Code search inside one catalogue upstream: GitHub code search with a token (GH_TOKEN, GITHUB_TOKEN or gh auth); without one, the entry's local checkout (every word, case-insensitive, 20 hits) with a… |
 | `upstream_tree` | List a directory of one catalogue upstream at its live ref (no clone). `path` defaults to the repository root. |
 | `voice_synthesize` | Synthesise speech from text via the aphrody-voice ElevenLabs adapter. Returns { audio_base64, mime_type, duration_ms, bytes, voice }. Requires ELEVENLABS_API_KEY in env. |
 | `voice_transcribe` | Transcribe base64-encoded audio via aphrody-voice-stt. Prefers offline whisper.cpp (set APHRODY_WHISPER_MODEL to a GGML model path); falls back to the OpenAI Whisper REST API (OPENAI_API_KEY) — so th… |

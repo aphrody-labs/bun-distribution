@@ -20,6 +20,12 @@ async function fixture() {
         ],
         installers: [
           { name: "rustup", check: "rustup", url: "https://win.rustup.rs/x86_64", args: ["-y"] },
+          {
+            name: "bun",
+            check: "bun",
+            url: "https://example.test/install.ps1",
+            args: ["-Version", "1.4.3"],
+          },
         ],
       },
     }),
@@ -59,7 +65,7 @@ test("Windows plan and apply use one PowerShell 7 process each, through the WinG
       processes.push(argv);
       return {
         exitCode: 0,
-        stdout: JSON.stringify({ winget: ["Git.Git"], tools: { rustup: false } }),
+        stdout: JSON.stringify({ winget: ["Git.Git"], tools: { rustup: false, bun: false } }),
       };
     };
     const plan = await planPackages(root, "windows", null, runner);
@@ -67,6 +73,7 @@ test("Windows plan and apply use one PowerShell 7 process each, through the WinG
       ["winget", "Git.Git", "installed"],
       ["winget", "Microsoft.VisualStudio.BuildTools", "missing"],
       ["installer", "rustup", "missing"],
+      ["installer", "bun", "missing"],
     ]);
     expect(processes).toHaveLength(1);
     expect(processes[0]![0]).toBe("pwsh.exe");
@@ -83,6 +90,9 @@ test("Windows plan and apply use one PowerShell 7 process each, through the WinG
         : "winget install --id 'Microsoft.VisualStudio.BuildTools' -e --silent --accept-package-agreements --accept-source-agreements --override '--add VCTools'",
     );
     expect(script).toContain("https://win.rustup.rs/x86_64");
+    expect(script).toContain(
+      "& ([scriptblock]::Create((Invoke-RestMethod 'https://example.test/install.ps1'))) '-Version' '1.4.3'",
+    );
     expect(script).not.toContain("Git.Git");
   } finally {
     await rm(root, { recursive: true, force: true });

@@ -361,7 +361,7 @@ pub struct UpstreamRequest {
     )]
     pub path: Option<String>,
     #[schemars(
-        description = "Search query for `upstream_search` (GitHub code search, restricted to this upstream)."
+        description = "Search query for `upstream_search` (GitHub code search restricted to this upstream, else every word in its local checkout)."
     )]
     pub query: Option<String>,
     #[schemars(
@@ -601,6 +601,79 @@ fn context7_client() -> &'static reqwest::Client {
             .build()
             .expect("context7 reqwest client build")
     })
+}
+
+/// Largest section of a `docs_auto_search` report (the Context7 docs get twice this).
+const DOCS_SECTION_MAX: usize = 6 * 1024;
+
+/// Cuts `text` to at most `max` bytes on a char boundary and says so.
+fn clip_section(text: &str, max: usize) -> String {
+    if text.len() <= max {
+        return text.to_owned();
+    }
+    let mut end = max;
+    while !text.is_char_boundary(end) {
+        end -= 1;
+    }
+    format!("{}\n\n… (truncated: {} of {} bytes shown)", &text[..end], end, text.len())
+}
+
+/// Picks the Context7 library titled `name` (case-insensitive, then `id` ending in it) out of a
+/// `v1/search` answer, never a merely first-ranked unrelated one; also renders the top candidates.
+/// An empty `name` picks nothing.
+fn pick_context7_library(resolved: &str, name: &str) -> (Option<String>, String) {
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(resolved) else {
+        return (None, clip_section(resolved, 1024));
+    };
+    let results = value["results"].as_array().cloned().unwrap_or_default();
+    if results.is_empty() {
+        return (None, clip_section(resolved, 1024));
+    }
+    let wanted = name.trim().to_lowercase();
+    let normalized: String = wanted.chars().filter(char::is_ascii_alphanumeric).collect();
+    let field = |r: &serde_json::Value, key: &str| r[key].as_str().unwrap_or("").to_owned();
+    let picked = (!wanted.is_empty())
+        .then(|| {
+            results
+                .iter()
+                .find(|r| field(r, "title").to_lowercase() == wanted)
+                .or_else(|| {
+                    results.iter().find(|r| {
+                        let id = field(r, "id").to_lowercase();
+                        let last = id.rsplit('/').next().unwrap_or("");
+                        let last: String =
+                            last.chars().filter(char::is_ascii_alphanumeric).collect();
+                        !normalized.is_empty() && last == normalized
+                    })
+                })
+                .map(|r| field(r, "id"))
+        })
+        .flatten();
+    let candidates = results
+        .iter()
+        .take(5)
+        .map(|r| {
+            let description: String = field(r, "description").chars().take(160).collect();
+            format!("- `{}` — {}: {description}", field(r, "id"), field(r, "title"))
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    (picked, candidates)
+}
+
+/// Canonical `coding_style_guide` topic for common spellings (`c++`, `cpp`, `ts`, `py`, `bash`…).
+fn style_guide_topic(topic: &str) -> String {
+    let topic = topic.trim().to_lowercase();
+    match topic.as_str() {
+        "c++" | "cxx" | "cc" | "cplusplus" => "cpp",
+        "ts" => "typescript",
+        "js" | "ecmascript" => "javascript",
+        "py" => "python",
+        "sh" | "bash" => "shell",
+        "css" | "html/css" => "html",
+        _ => return topic,
+    }
+    .to_owned()
 }
 
 async fn context7_get(path: &str, params: &[(&str, &str)]) -> String {
@@ -872,7 +945,7 @@ impl GoogleMcpServer {
         // reads as though `rust` were documented in Google's C++ guide.
         // Naming the miss costs one line and turns a wrong answer into a
         // correctable one.
-        let Some(target_url) = map.get(topic.as_str()).copied() else {
+        let Some(target_url) = map.get(style_guide_topic(&topic).as_str()).copied() else {
             let mut known: Vec<&str> = map.keys().copied().collect();
             known.sort_unstable();
             return format!(
@@ -1903,26 +1976,29 @@ impl GoogleMcpServer {
         }
 
         let ctx7_future = async {
-            if let Some(name) = library_name.as_deref().filter(|s| !s.is_empty()) {
-                let q = format!("{name} {query}");
-                let resolved = context7_get("v1/search", &[("query", q.as_str())]).await;
-                let lib_id =
-                    serde_json::from_str::<serde_json::Value>(&resolved).ok().and_then(|v| {
-                        v.pointer("/results/0/id").and_then(|x| x.as_str()).map(str::to_owned)
-                    });
+            if let Some(name) = library_name.as_deref().filter(|s| !s.trim().is_empty()) {
+                let resolved = context7_get("v1/search", &[("query", name.trim())]).await;
+                let (lib_id, candidates) = pick_context7_library(&resolved, name);
                 if let Some(id) = lib_id {
                     let path = format!("v1/{}", id.trim_start_matches('/'));
                     let docs = context7_get(
                         &path,
-                        &[("type", "txt"), ("topic", query.as_str()), ("tokens", "5000")],
+                        &[("type", "txt"), ("topic", query.as_str()), ("tokens", "3000")],
                     )
                     .await;
-                    format!("### resolved library_id: `{id}`\n\n{resolved}\n\n### docs\n\n{docs}")
+                    format!(
+                        "### resolved library_id: `{id}`\n\n{candidates}\n\n### docs\n\n{}",
+                        clip_section(&docs, DOCS_SECTION_MAX * 2)
+                    )
                 } else {
-                    resolved
+                    format!(
+                        "No Context7 library is titled {name:?}; no deep fetch. Candidates:\n\n\
+                         {candidates}"
+                    )
                 }
             } else {
-                context7_get("v1/search", &[("query", query.as_str())]).await
+                let resolved = context7_get("v1/search", &[("query", query.as_str())]).await;
+                pick_context7_library(&resolved, "").1
             }
         };
 
@@ -1960,12 +2036,12 @@ impl GoogleMcpServer {
         out.push_str("## 1. Context7 (community docs catalog)\n\n");
         out.push_str(&ctx7);
         out.push_str("\n\n## 2. Microsoft Learn — concept / API search\n\n");
-        out.push_str(&ms_search);
+        out.push_str(&clip_section(&ms_search, DOCS_SECTION_MAX));
         out.push_str("\n\n## 3. Microsoft Learn — code samples\n\n");
-        out.push_str(&ms_code);
+        out.push_str(&clip_section(&ms_code, DOCS_SECTION_MAX));
         if !gh_docs.is_empty() {
             out.push_str("\n\n## 4. GitHub — repositories & llms.txt\n\n");
-            out.push_str(&gh_docs);
+            out.push_str(&clip_section(&gh_docs, DOCS_SECTION_MAX));
         }
         out
     }
@@ -2335,9 +2411,11 @@ impl GoogleMcpServer {
     // -----------------------------------------------------------------------
     // upstream_* — live, read-only access to the upstream catalogue (no clone).
     // -----------------------------------------------------------------------
-    #[tool(description = "List the upstream catalogue (tools/config/upstream-sources.json): the few \
+    #[tool(
+        description = "List the upstream catalogue (tools/config/upstream-sources.json): the few \
                           vital checkouts and the reference upstreams that are never cloned \
-                          (codex, ollama, mistral.rs, vllm, WSL, ...), with tier, purpose and consumers.")]
+                          (codex, ollama, mistral.rs, vllm, WSL, ...), with tier, purpose and consumers."
+    )]
     async fn upstream_list(
         &self,
         Parameters(UpstreamListRequest { repo_path }): Parameters<UpstreamListRequest>,
@@ -2373,8 +2451,10 @@ impl GoogleMcpServer {
         upstream_query("read", request).await
     }
 
-    #[tool(description = "Code search inside one catalogue upstream (GitHub code search, needs a \
-                          GH_TOKEN or GITHUB_TOKEN).")]
+    #[tool(description = "Code search inside one catalogue upstream: GitHub code search with a \
+                          token (GH_TOKEN, GITHUB_TOKEN or gh auth); without one, the entry's \
+                          local checkout (every word, case-insensitive, 20 hits) with a \
+                          `degraded` note.")]
     async fn upstream_search(&self, Parameters(request): Parameters<UpstreamRequest>) -> String {
         upstream_query("search", request).await
     }
@@ -3645,6 +3725,44 @@ mod aphrody_mcp_call_tests {
         let v = parse(&body);
         let kind = v["error"].as_str().unwrap_or_default();
         assert!(kind.starts_with("MCP_"), "expected structured MCP_* error envelope, got {v}");
+    }
+
+    #[test]
+    fn context7_pick_matches_the_library_title_not_the_first_rank() {
+        let resolved = r#"{"results":[
+            {"id":"/websites/heyzine_how-to","title":"Heyzine How-to","description":"x"},
+            {"id":"/visit-dav/visit","title":"VisIt","description":"y"},
+            {"id":"/websites/webkit","title":"WebKit","description":"z"}
+        ]}"#;
+        let (picked, candidates) = super::pick_context7_library(resolved, "webkit");
+        assert_eq!(picked.as_deref(), Some("/websites/webkit"));
+        assert_eq!(candidates.lines().count(), 3);
+        let (picked, _) = super::pick_context7_library(resolved, "next.js");
+        assert_eq!(picked, None);
+        let by_id = r#"{"results":[{"id":"/vercel/next.js","title":"Next"}]}"#;
+        assert_eq!(
+            super::pick_context7_library(by_id, "Next.js").0.as_deref(),
+            Some("/vercel/next.js")
+        );
+        assert_eq!(super::pick_context7_library(resolved, "").0, None);
+        assert_eq!(super::pick_context7_library("not json", "x").0, None);
+    }
+
+    #[test]
+    fn docs_sections_are_clipped_on_char_boundaries() {
+        assert_eq!(super::clip_section("abc", 3), "abc");
+        let clipped = super::clip_section(&"é".repeat(10), 5);
+        assert!(clipped.starts_with("éé\n") && clipped.contains("4 of 20 bytes"));
+    }
+
+    #[test]
+    fn style_guide_topics_accept_common_aliases() {
+        for alias in ["c++", "C++", " cpp ", "cxx"] {
+            assert_eq!(super::style_guide_topic(alias), "cpp");
+        }
+        assert_eq!(super::style_guide_topic("TS"), "typescript");
+        assert_eq!(super::style_guide_topic("bash"), "shell");
+        assert_eq!(super::style_guide_topic("rust"), "rust");
     }
 
     #[test]

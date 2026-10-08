@@ -207,16 +207,9 @@
           ]
         },
         {
-          "name": "aphrody-bun-bridge",
-          "path": "crates/compat/bun-bridge",
-          "description": "Native bridge integrating Bun fork capabilities (zero-allocation Shell AST & parser, in-process POSIX builtins, JSC structured engine, and fast systems crates) into Aphrody OS.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-bun-docs",
           "path": "crates/compat/bun-docs",
-          "description": "Offline Bun documentation (third_party/bun/docs) and n2b Node-to-Bun equivalents as an Aphrody OS MCP subsystem.",
+          "description": "Offline Bun documentation (docs/ of the aphrody-labs/bun fork) and n2b Node-to-Bun equivalents as an Aphrody OS MCP subsystem.",
           "bins": [],
           "features": []
         },
@@ -2643,12 +2636,6 @@
           ]
         },
         {
-          "name": "@aphrody/webview-page",
-          "path": "packages/web/webview-page",
-          "description": "Playwright-shaped page, locators, routing and events over Bun.WebView (Chrome backend over CDP)",
-          "bins": []
-        },
-        {
           "name": "@aphrody/winclean",
           "path": "packages/os/winclean",
           "description": "Kernel-backed Bun client for the unified Aphrody OS WinClean catalog (166 tools).",
@@ -4490,7 +4477,7 @@
           "children": [
             {
               "name": "status",
-              "about": "Inspect Aphrody Shell capabilities (Bun Shell, Nushell, PTY, TUI)",
+              "about": "Inspect Aphrody Shell capabilities (Nushell, Bun Shell through `bun exec`, PTY, TUI)",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -4504,14 +4491,14 @@
             },
             {
               "name": "eval",
-              "about": "Evaluate a command or pipeline (Nushell or native Bun Shell)",
+              "about": "Evaluate a command or pipeline (Nushell, or Bun Shell through `bun exec`)",
               "aliases": [],
               "cfg": [],
               "children": []
             },
             {
               "name": "bun",
-              "about": "Direct in-process Bun Shell execution (zero fork/exec, native POSIX builtins)",
+              "about": "Run a command with Bun Shell (`bun exec`)",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -6590,7 +6577,7 @@
               "children": [
                 {
                   "name": "status",
-                  "about": "Inspect Aphrody Shell capabilities (Bun Shell, Nushell, PTY, TUI)",
+                  "about": "Inspect Aphrody Shell capabilities (Nushell, Bun Shell through `bun exec`, PTY, TUI)",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -6604,14 +6591,14 @@
                 },
                 {
                   "name": "eval",
-                  "about": "Evaluate a command or pipeline (Nushell or native Bun Shell)",
+                  "about": "Evaluate a command or pipeline (Nushell, or Bun Shell through `bun exec`)",
                   "aliases": [],
                   "cfg": [],
                   "children": []
                 },
                 {
                   "name": "bun",
-                  "about": "Direct in-process Bun Shell execution (zero fork/exec, native POSIX builtins)",
+                  "about": "Run a command with Bun Shell (`bun exec`)",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -12483,17 +12470,17 @@
       "tools": [
         {
           "name": "bun_docs_list",
-          "description": "List Bun docs pages (slug, title, description, url), optionally under a slug prefix such as `runtime/` or `guides/test/`.",
+          "description": "List the aphrody-labs/bun fork docs pages (slug, title, description, url), optionally under a slug prefix such as `runtime/` or `guides/test/`.",
           "file": "crates/compat/bun-docs/src/lib.rs"
         },
         {
           "name": "bun_docs_read",
-          "description": "Read one Bun docs page as Markdown by slug (`runtime/file-io`) or bun.com/docs URL, optionally only the section under a heading.",
+          "description": "Read one page of the aphrody-labs/bun fork docs as Markdown by slug (`runtime/file-io`) or bun.com/docs URL, optionally only the section under a heading.",
           "file": "crates/compat/bun-docs/src/lib.rs"
         },
         {
           "name": "bun_docs_search",
-          "description": "Search the vendored Bun docs (runtime, bundler, package manager, test runner, guides). Returns ranked pages with slug, url and a snippet; set include_content to also return the best page.",
+          "description": "Search the Bun docs of the aphrody-labs/bun fork (checkout APHRODY_BUN_CHECKOUT or mirror docs/reference/upstream-bun): runtime, bundler, package manager, test runner, guides. Returns ranked pages with slug, url and a snippet; set include_content to also return the best page.",
           "file": "crates/compat/bun-docs/src/lib.rs"
         },
         {
@@ -12537,7 +12524,7 @@
         },
         {
           "name": "github_branches",
-          "description": "List local and tracking remote branches with upstream synchronization status",
+          "description": "List local and remote-tracking branches (local first, then by name) with upstream and ahead/behind for local branches; filtered and paginated, 50 per page by default",
           "file": "crates/os/kernel/core/src/cloud.rs"
         },
         {
@@ -13126,7 +13113,7 @@
         },
         {
           "name": "upstream_search",
-          "description": "Code search inside one catalogue upstream (GitHub code search, needs a GH_TOKEN or GITHUB_TOKEN).",
+          "description": "Code search inside one catalogue upstream: GitHub code search with a token (GH_TOKEN, GITHUB_TOKEN or gh auth); without one, the entry's local checkout (every word, case-insensitive, 20 hits) with a `degraded` note.",
           "file": "crates/ai/mcp/src/lib.rs"
         },
         {
@@ -14349,9 +14336,9 @@
     "aphrodyRepos": 2,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 288,
+    "crates": 287,
     "binaries": 38,
-    "bunPackages": 159,
+    "bunPackages": 158,
     "pythonPackages": 10,
     "cliBinaries": 35,
     "cliCommands": 1106,

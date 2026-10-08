@@ -39,7 +39,7 @@ fi
 
 bun_pin="$(jq -r '.toolchains.bun.version' "$packages_file")"
 if ! command -v bun >/dev/null || [[ "$(bun --version)" != "$bun_pin" ]]; then
-  curl -fsSL https://bun.sh/install | bash -s "bun-v${bun_pin}"
+  curl -fsSL https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.sh | bash -s "${bun_pin}"
 fi
 uv_pin="$(jq -r '.toolchains.uv.version' "$packages_file")"
 if ! command -v uv >/dev/null || [[ "$(uv --version)" != *"${uv_pin}"* ]]; then

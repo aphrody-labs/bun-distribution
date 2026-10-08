@@ -20,7 +20,11 @@ const inside = (base: string, path: string): boolean =>
     relative(base, path) !== ".." &&
     !isAbsolute(relative(base, path)));
 const htmlPath = (path: string): string => `${path}.html`;
-const url = (path: string): string => path.split(sep).map(encodeURIComponent).join("/");
+const url = (path: string): string =>
+  path
+    .split(sep === "\\" ? /[\\/]/ : "/")
+    .map(encodeURIComponent)
+    .join("/");
 
 /** Check every existing ancestor, including dangling links, before reading or writing. */
 async function noSymlinks(path: string): Promise<void> {
@@ -115,7 +119,7 @@ async function filesUnder(directory: string, base = directory): Promise<string[]
     const path = join(directory, entry.name);
     if (entry.isSymbolicLink()) throw new Error(`Symlink refused: ${path}`);
     if (entry.isDirectory()) paths.push(...(await filesUnder(path, base)));
-    else if (entry.isFile()) paths.push(relative(base, path));
+    else if (entry.isFile()) paths.push(relative(base, path).split(sep).join("/"));
     else throw new Error(`Unsupported output entry: ${path}`);
   }
   return paths;

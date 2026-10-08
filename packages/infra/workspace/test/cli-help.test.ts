@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterEach, expect, test } from "bun:test";
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 import { runCliHelp } from "../src/cli-help.ts";
+import { withoutPath, writeBunCommand } from "./fixtures/bun-command.ts";
 
 const roots: string[] = [];
 afterEach(async () => {
@@ -16,8 +18,7 @@ async function fixture() {
   const bin = join(root, "bin");
   const log = join(root, "invocations.jsonl");
   await mkdir(bin);
-  await writeFile(join(bin, "git"), `#!${process.execPath}\nprocess.exit(1);\n`);
-  await chmod(join(bin, "git"), 0o755);
+  await writeBunCommand(bin, "git", "process.exit(1);\n");
   await mkdir(join(root, "docs/ecosystem"), { recursive: true });
   await writeFile(
     join(root, "docs/ecosystem/ecosystem.json"),
@@ -29,17 +30,16 @@ async function fixture() {
     `import { runCliHelp } from ${JSON.stringify(resolveCollector())};
 for (const binary of ["yolo", "qualified", "aphrody", "bxc", "n2b", "nie", "niers", "inagle", "azalee", "catalog-unselected"]) {
   const resolved = Bun.which(binary);
-  if (resolved && !resolved.startsWith(${JSON.stringify(`${bin}/`)})) throw new Error("Fixture PATH isolation failed");
+  if (resolved && !resolved.startsWith(${JSON.stringify(bin + sep)})) throw new Error("Fixture PATH isolation failed");
 }
 process.exitCode = await runCliHelp(process.argv.slice(2), ${JSON.stringify(root)});
 `,
   );
-  const executable = async (binary: string, exitCode = 0) => {
-    const path = join(bin, binary);
-    await writeFile(
-      path,
-      `#!${process.execPath}
-import { appendFileSync } from "node:fs";
+  const executable = async (binary: string, exitCode = 0) =>
+    writeBunCommand(
+      bin,
+      binary,
+      `import { appendFileSync } from "node:fs";
 const args = process.argv.slice(2);
 appendFileSync(${JSON.stringify(log)}, JSON.stringify({ binary: ${JSON.stringify(binary)}, args }) + "\\n");
 if (${exitCode} !== 0) { console.error("fixture failure"); process.exit(${exitCode}); }
@@ -48,13 +48,10 @@ if (args.length === 1) {
 } else { console.log("Fixture child help"); }
 `,
     );
-    await chmod(path, 0o755);
-    return path;
-  };
   const capture = async (args: string[]) => {
     const child = Bun.spawn([process.execPath, runner, ...args], {
       env: {
-        ...process.env,
+        ...withoutPath(process.env),
         PATH: bin,
         XDG_DATA_HOME: join(root, "data"),
         CLI_HELP_TEST_SECRET: "fixture-sensitive-value",
@@ -110,7 +107,7 @@ test("selected top-level capture invokes only requested PATH binaries and preser
 });
 
 function resolveCollector() {
-  return new URL("../src/cli-help.ts", import.meta.url).pathname;
+  return fileURLToPath(new URL("../src/cli-help.ts", import.meta.url));
 }
 
 test("comma selection and explicit output remain bounded without subcommand dispatch", async () => {

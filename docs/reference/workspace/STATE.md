@@ -199,7 +199,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-ovh` | [crates/infra/ovh](../../../crates/infra/ovh) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-05 |
 | `aphrody-remote-desktop` | [crates/infra/remote-desktop](../../../crates/infra/remote-desktop) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-08 |
 | `aphrody-sql` | [crates/infra/sql](../../../crates/infra/sql) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-07 |
-| `aphrody-ssh` | [crates/infra/ssh](../../../crates/infra/ssh) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-08 |
+| `aphrody-ssh` | [crates/infra/ssh](../../../crates/infra/ssh) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-09 |
 | `aphrody-vpn` | [crates/infra/vpn](../../../crates/infra/vpn) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-05 |
 | `aphrody-wireguard` | [crates/infra/wireguard](../../../crates/infra/wireguard) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-08 |
 | `aphrody-yolo` | [crates/infra/yolo](../../../crates/infra/yolo) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-08 |
@@ -208,7 +208,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@aphrody/paths` | [packages/infra/paths](../../../packages/infra/paths) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-07 |
 | `@aphrody/product` | [packages/infra/product](../../../packages/infra/product) | bun package | 0.3.0 | bin, lib | yes | 0 | 2026-10-07 |
 | `@aphrody/sql` | [packages/infra/sql](../../../packages/infra/sql) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-07 |
-| `@aphrody/update` | [packages/infra/update](../../../packages/infra/update) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-08 |
+| `@aphrody/update` | [packages/infra/update](../../../packages/infra/update) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-09 |
 | `@aphrody/workspace` | [packages/infra/workspace](../../../packages/infra/workspace) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-09 |
 
 ## interop
@@ -295,7 +295,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@aphrody/m3-mcp` | [m3/packages/m3-mcp](../../../m3/packages/m3-mcp) | bun package | 3.3.7 | lib | yes | 0 | 2026-10-07 |
 | `@aphrody/m3-motion` | [m3/packages/m3-motion](../../../m3/packages/m3-motion) | bun package | 3.3.7 | lib | yes | 0 | 2026-10-07 |
 | `@aphrody/m3-next` | [m3/packages/m3-next](../../../m3/packages/m3-next) | bun package | 3.3.7 | bin, lib | yes | 0 | 2026-10-09 |
-| `@aphrody/m3-next-migrate` | [m3/packages/m3-next-migrate](../../../m3/packages/m3-next-migrate) | bun package | 3.3.7 | bin, lib | yes | 0 | 2026-10-08 |
+| `@aphrody/m3-next-migrate` | [m3/packages/m3-next-migrate](../../../m3/packages/m3-next-migrate) | bun package | 3.3.7 | bin, lib | yes | 0 | 2026-10-09 |
 | `@aphrody/m3-next-example` | [m3/packages/m3-next/examples/app](../../../m3/packages/m3-next/examples/app) | bun package | 3.3.6 | private | yes | 0 | 2026-10-07 |
 | `@aphrody/m3-next-tauri-example` | [m3/packages/m3-next/examples/tauri](../../../m3/packages/m3-next/examples/tauri) | bun package | 3.3.6 | private | yes | 0 | 2026-10-07 |
 | `@aphrody/m3-os-themes` | [m3/packages/m3-os-themes](../../../m3/packages/m3-os-themes) | bun package | 3.3.7 | bin, lib | yes | 0 | 2026-10-07 |
@@ -453,7 +453,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-web-service` | [crates/web/web-service](../../../crates/web/web-service) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-06 |
 | `aphrody-x` | [crates/web/x](../../../crates/web/x) | rust crate | 0.3.1 | lib | yes | 0 | 2026-10-06 |
 | `@aphrody/agent-browser` | [packages/web/agent-browser](../../../packages/web/agent-browser) | bun package | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
-| `@aphrody/web-test` | [packages/web/aphrody-web-test](../../../packages/web/aphrody-web-test) | bun package | 0.2.6 | lib | yes | 0 | 2026-10-08 |
+| `@aphrody/web-test` | [packages/web/aphrody-web-test](../../../packages/web/aphrody-web-test) | bun package | 0.2.6 | lib | yes | 0 | 2026-10-09 |
 | `@aphrody/fuzzy` | [packages/web/fuzzy](../../../packages/web/fuzzy) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-07 |
 | `@aphrody/http` | [packages/web/http](../../../packages/web/http) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-08 |
 | `@aphrody/qr` | [packages/web/qr](../../../packages/web/qr) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-07 |

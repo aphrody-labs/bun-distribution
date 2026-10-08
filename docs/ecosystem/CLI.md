@@ -101,10 +101,10 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 248 comma
     - `aphrody web frames quota`
     - `aphrody web frames index`
 - `aphrody shell` — Canonical Shell: Nushell PTY session, Ratatui TUI, embedded terminal. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody shell status` — Inspect Aphrody Shell capabilities (Bun Shell, Nushell, PTY, TUI)
+  - `aphrody shell status` — Inspect Aphrody Shell capabilities (Nushell, Bun Shell through `bun exec`, PTY, TUI)
   - `aphrody shell start` — Start interactive Nushell / Ratatui terminal session
-  - `aphrody shell eval` — Evaluate a command or pipeline (Nushell or native Bun Shell)
-  - `aphrody shell bun` — Direct in-process Bun Shell execution (zero fork/exec, native POSIX builtins)
+  - `aphrody shell eval` — Evaluate a command or pipeline (Nushell, or Bun Shell through `bun exec`)
+  - `aphrody shell bun` — Run a command with Bun Shell (`bun exec`)
   - `aphrody shell term` — Launch the autonomous, zero-copy, hardware-accelerated Aphrody Term engine
   - `aphrody shell computer-use` — AI Computer-Use screen scraping and programmatic action interface
   - `aphrody shell serve` — Start the Aphrody Terminal Backend WebSocket server
@@ -406,10 +406,10 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 349 commands.
       - `aphrody infra ssh web frames quota`
       - `aphrody infra ssh web frames index`
   - `aphrody infra ssh shell` — Canonical Shell: Nushell PTY session, Ratatui TUI, embedded terminal. _(cfg: not(target_arch = "wasm32"))_
-    - `aphrody infra ssh shell status` — Inspect Aphrody Shell capabilities (Bun Shell, Nushell, PTY, TUI)
+    - `aphrody infra ssh shell status` — Inspect Aphrody Shell capabilities (Nushell, Bun Shell through `bun exec`, PTY, TUI)
     - `aphrody infra ssh shell start` — Start interactive Nushell / Ratatui terminal session
-    - `aphrody infra ssh shell eval` — Evaluate a command or pipeline (Nushell or native Bun Shell)
-    - `aphrody infra ssh shell bun` — Direct in-process Bun Shell execution (zero fork/exec, native POSIX builtins)
+    - `aphrody infra ssh shell eval` — Evaluate a command or pipeline (Nushell, or Bun Shell through `bun exec`)
+    - `aphrody infra ssh shell bun` — Run a command with Bun Shell (`bun exec`)
     - `aphrody infra ssh shell term` — Launch the autonomous, zero-copy, hardware-accelerated Aphrody Term engine
     - `aphrody infra ssh shell computer-use` — AI Computer-Use screen scraping and programmatic action interface
     - `aphrody infra ssh shell serve` — Start the Aphrody Terminal Backend WebSocket server

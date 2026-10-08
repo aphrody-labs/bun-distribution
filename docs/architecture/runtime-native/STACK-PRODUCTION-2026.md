@@ -67,13 +67,9 @@ Le paradigme Aphrody résout la dichotomie entre ergonomie interactive humaine e
 - **Starship intégré :** Prompt contextuel haute performance avec indicateurs Git, runtime et état du workspace.
 
 ### 2.2. Moteur IA : Bun Shell Natif + JavaScriptCore (JSC)
-- **Zero-Fork Execution :** Élimine le coût du `fork()` + `execve()` OS (typiquement 2 à 15 ms par commande shell). L'exécution in-process s'effectue en microsecondes.
-- **Parser & AST Arena :** Bun Shell du fork [aphrody-labs/bun](../../reference/upstream-bun/APHRODY-FORK.md) (`src/shell/` (not in repo)) ; la copie Rust `crates/compat/bun-bridge` (not in repo) a été supprimée le 2026-10-08 :
-  - `AstArena` : Allocateur arène bump sans fragmentation du tas, réinitialisable en $O(1)$.
-  - Parser SIMD à validation ASCII memchr intégrée.
-  - Brace expansion déterministe (`echo {a,b}{1,2}`).
-  - Pipelines asynchronously chaînés (`cmd1 | cmd2 && cmd3`).
-- **Bridge FFI TypeScript :** Expose [`packages/interop/native`](../../../packages/interop/native) via `bun-shell.ts` pour une intégration native transparente dans tous les packages Bun du monorepo.
+- **Bun Shell du fork :** le shell est celui de Bun lui-même, fork [aphrody-labs/bun](../../reference/upstream-bun/APHRODY-FORK.md). `aphrody shell bun` et `aphrody shell eval --bun` lancent `bun exec` ; les scripts Bun utilisent `` $`…` `` en process, sans `fork()` + `execve()` par builtin.
+  - Builtins POSIX natifs (`cat`, `ls`, `rm`, `cp`, `mv`, `mkdir`, `touch`…), brace expansion (`echo {a,b}{1,2}`), pipelines chaînés (`cmd1 | cmd2 && cmd3`).
+- **Bridge FFI TypeScript :** [`packages/interop/native`](../../../packages/interop/native) expose les bibliothèques natives Rust aux packages Bun du monorepo.
 
 ### 2.3. Core Tools Rust
 - **Recherche & Traversée :** `ripgrep` (moteur regex SIMD) et `fd` (traversée multi-threadée d'arborescences).

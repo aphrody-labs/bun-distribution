@@ -613,8 +613,8 @@ pub(crate) enum ScanAction {
         /// Comma-separated list of top-level group directories to scan.
         #[arg(long, value_delimiter = ',')]
         groups: Vec<String>,
-        /// Output JSON file path; `-` writes to stdout. Omitted = prints
-        /// only the console summary.
+        /// Output JSON file path, printed absolute at the end; `-` writes only
+        /// the JSON to stdout. Omitted = prints only the console summary.
         #[arg(long, short)]
         output: Option<PathBuf>,
         /// Number of top extensions to include per directory.
@@ -624,8 +624,11 @@ pub(crate) enum ScanAction {
     /// Walk the repo for Cargo.toml / package.json / pyproject.toml / etc.
     /// and emit metadata (name, version, dependency count, workspace members).
     Manifests {
+        /// Root of the project; defaults to the current working directory.
         #[arg(long)]
         root: Option<PathBuf>,
+        /// Output JSON file path, printed absolute at the end; `-` writes only
+        /// the JSON to stdout. Omitted = prints only the console summary.
         #[arg(long, short)]
         output: Option<PathBuf>,
     },

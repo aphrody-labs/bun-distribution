@@ -4,12 +4,18 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "@aphrody/update/process";
 import { existsSync } from "node:fs";
 import { copyFile, mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
-import { basename, dirname, join, relative, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { homedir } from "node:os";
 import { inventoryNestedFiles, inventorySubmodules } from "./submodule-inventory.ts";
 import { importInfraConfig } from "./infra-config-import.ts";
 import { importInfraScripts } from "./infra-scripts-import.ts";
 import { importSourceLicenses } from "./source-licenses-import.ts";
+
+/** True when `target` is strictly below `root`, with either path separator. */
+function inside(root: string, target: string): boolean {
+  const path = relative(root, target);
+  return path !== "" && !isAbsolute(path) && path.split(sep)[0] !== "..";
+}
 
 type Mode = "extract" | "orchestrator-split" | "upstream-pinned" | "deferred" | "classify";
 type RootSpec = {
@@ -367,7 +373,7 @@ export function renderDocumentationIndex(
   for (const entry of entries) {
     const destination = entry.importedTarget ?? entry.target;
     if (entry.kind !== "documentation" || !destination?.startsWith("docs/")) continue;
-    if (!resolve(aphrodyRoot, destination).startsWith(`${resolve(aphrodyRoot)}/docs/`))
+    if (!inside(resolve(aphrodyRoot, "docs"), resolve(aphrodyRoot, destination)))
       throw new Error(`documentation destination escaped docs: ${destination}`);
   }
   return [
@@ -546,7 +552,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
       const destinationRoot = intoPython ? pythonRoot : aphrodyRoot;
       let destination = intoPython ? planned.slice("../aphrody-py".length) : planned;
       let target = resolve(destinationRoot, destination);
-      if (!target.startsWith(`${destinationRoot}/`)) {
+      if (!inside(destinationRoot, target)) {
         failures.push(`script target escaped: ${planned}`);
         continue;
       }
@@ -683,8 +689,8 @@ export async function runConsolidation(args: string[]): Promise<number> {
       const fallback = resolve(aphrodyRoot, entry.importedTarget);
       const preferred = resolve(aphrodyRoot, entry.target);
       if (
-        !fallback.startsWith(`${aphrodyRoot}/`) ||
-        !preferred.startsWith(`${aphrodyRoot}/`) ||
+        !inside(aphrodyRoot, fallback) ||
+        !inside(aphrodyRoot, preferred) ||
         !existsSync(source) ||
         !existsSync(fallback) ||
         !existsSync(preferred)
@@ -738,7 +744,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
       const source = resolve(sourceBase, entry.source.slice(slash + 1));
       let destination = entry.importedTarget ?? entry.target;
       let target = resolve(aphrodyRoot, destination);
-      if (!target.startsWith(`${aphrodyRoot}/`)) {
+      if (!inside(aphrodyRoot, target)) {
         failures.push(`target escaped destination: ${destination}`);
         continue;
       }

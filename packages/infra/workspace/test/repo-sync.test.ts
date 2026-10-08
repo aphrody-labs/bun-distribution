@@ -20,6 +20,7 @@ import {
   runFactoryWorker,
   type FactoryJob,
 } from "../src/repo-sync.ts";
+import { hasMode } from "../src/portable-fs.ts";
 
 const roots: string[] = [];
 afterEach(async () => {
@@ -207,7 +208,7 @@ test("protected PID lock prevents overlapping owners and releases only its own l
   const state = join(value.root, "state");
   const release = acquireSourceSyncLock(state);
   expect(() => acquireSourceSyncLock(state)).toThrow("already has an owner");
-  expect((await stat(join(state, "owner.lock"))).mode & 0o777).toBe(0o600);
+  expect(hasMode((await stat(join(state, "owner.lock"))).mode, 0o600)).toBe(true);
   release();
   expect(existsSync(join(state, "owner.lock"))).toBe(false);
 });

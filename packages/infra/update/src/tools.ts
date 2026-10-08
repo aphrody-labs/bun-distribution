@@ -10,6 +10,9 @@ import { cmpVersion, registries } from "./deps/sync.ts";
 export type ToolRow = { tool: string; pinned?: string; installed?: string; latest?: string };
 
 const VERSION = /\d+\.\d+\.\d+/;
+/** Installers of the aphrody-labs/bun runtime releases (append `.sh` or `.ps1`). */
+export const BUN_INSTALLER =
+  "https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install";
 
 export function installed(c: Ctx, tool: string): string | undefined {
   const cmds: Record<string, [string, string[]]> = {
@@ -27,15 +30,25 @@ export function installed(c: Ctx, tool: string): string | undefined {
   return r.status === 0 ? VERSION.exec(r.stdout)?.[0] : undefined;
 }
 
-export async function latest(tool: string, src: { github?: string; pypi?: string; npm?: string; crate?: string; stripTag?: string }): Promise<string | undefined> {
+export async function latest(
+  tool: string,
+  src: { github?: string; pypi?: string; npm?: string; crate?: string; stripTag?: string },
+): Promise<string | undefined> {
   if (src.npm) return registries.npm(src.npm).catch(() => undefined);
   if (src.crate) return registries.crate(src.crate).catch(() => undefined);
   // PyPI is what `uv self update` serves; the GitHub tag can precede it.
-  if (src.pypi) { const v = await registries.pypi(src.pypi).catch(() => undefined); if (v) return v; }
+  if (src.pypi) {
+    const v = await registries.pypi(src.pypi).catch(() => undefined);
+    if (v) return v;
+  }
   if (src.github) {
     const rel = await registries.github(src.github).catch(() => []);
     const re = new RegExp(src.stripTag ?? "^v", "g");
-    return rel.map((r) => r.tag.replace(re, "")).filter((t) => /^\d+\.\d+\.\d+$/.test(t)).toSorted(cmpVersion).at(-1);
+    return rel
+      .map((r) => r.tag.replace(re, ""))
+      .filter((t) => /^\d+\.\d+\.\d+$/.test(t))
+      .toSorted(cmpVersion)
+      .at(-1);
   }
   return undefined;
 }
@@ -44,7 +57,12 @@ export async function plan(c: Ctx): Promise<ToolRow[]> {
   const pins = new Map(checkPins(c).map((r) => [r.tool, r.pin]));
   const rows: ToolRow[] = [];
   for (const [tool, def] of Object.entries(load(c).tools)) {
-    rows.push({ tool, pinned: pins.get(tool), installed: installed(c, tool), latest: await latest(tool, def.latest) });
+    rows.push({
+      tool,
+      pinned: pins.get(tool),
+      installed: installed(c, tool),
+      latest: await latest(tool, def.latest),
+    });
   }
   return rows;
 }
@@ -53,11 +71,22 @@ export async function plan(c: Ctx): Promise<ToolRow[]> {
 export function install(c: Ctx, tool: string, version: string): boolean {
   const run = (cmd: string, args: string[]) => c.run(cmd, args, { inherit: true }).status === 0;
   switch (tool) {
-    case "uv": return run("uv", ["self", "update", version]);
-    case "bun": return run("bash", ["-c", `curl -fsSL https://bun.sh/install | bash -s "bun-v${version}"`]);
-    case "rust": return run("rustup", ["toolchain", "install", version, "--profile", "minimal"]);
-    case "nushell": return run("cargo", ["binstall", "-y", `nu@${version}`]);
-    default: return true; // oxlint, oxfmt, typescript come from the Bun catalog (bun install)
+    case "uv":
+      return run("uv", ["self", "update", version]);
+    case "bun":
+      return process.platform === "win32"
+        ? run("pwsh", [
+            "-NoProfile",
+            "-Command",
+            `& ([scriptblock]::Create((irm ${BUN_INSTALLER}.ps1))) -Version ${version}`,
+          ])
+        : run("bash", ["-c", `curl -fsSL ${BUN_INSTALLER}.sh | bash -s ${version}`]);
+    case "rust":
+      return run("rustup", ["toolchain", "install", version, "--profile", "minimal"]);
+    case "nushell":
+      return run("cargo", ["binstall", "-y", `nu@${version}`]);
+    default:
+      return true; // oxlint, oxfmt, typescript come from the Bun catalog (bun install)
   }
 }
 
@@ -68,9 +97,14 @@ export async function runTools(c: Ctx, args: string[]): Promise<number> {
   for (const r of rows) {
     const behind = r.latest && r.pinned && cmpVersion(r.pinned, r.latest) < 0;
     const lag = r.installed && r.pinned && r.installed !== r.pinned;
-    console.log(`tool   ${r.tool.padEnd(10)} pinned ${r.pinned ?? "?"}  installed ${r.installed ?? "-"}  latest ${r.latest ?? "?"}${behind ? "  <- behind" : ""}${lag ? "  <- installed differs from pin" : ""}`);
+    console.log(
+      `tool   ${r.tool.padEnd(10)} pinned ${r.pinned ?? "?"}  installed ${r.installed ?? "-"}  latest ${r.latest ?? "?"}${behind ? "  <- behind" : ""}${lag ? "  <- installed differs from pin" : ""}`,
+    );
     if (!c.apply || !r.latest || !behind) continue;
-    if (!install(c, r.tool, r.latest)) { console.error(`warn   could not install ${r.tool} ${r.latest}; pin left at ${r.pinned}`); continue; }
+    if (!install(c, r.tool, r.latest)) {
+      console.error(`warn   could not install ${r.tool} ${r.latest}; pin left at ${r.pinned}`);
+      continue;
+    }
     // The installer channel can lag the tag: pin what is actually present when the tool is host-installed.
     const have = installed(c, r.tool);
     const target = r.tool === "uv" || r.tool === "bun" ? (have ?? r.latest) : r.latest;

@@ -28,7 +28,7 @@ Restored by `bun run sources:sync` (or `aphrody git source sync --apply`); each 
 | --- | --- | --- | --- |
 
 
-## Reference upstreams (6, never cloned by default)
+## Reference upstreams (7, never cloned by default)
 
 | Id | Repository | Ref | Observed | What it is for | Used by |
 | --- | --- | --- | --- | --- | --- |
@@ -38,6 +38,7 @@ Restored by `bun run sources:sync` (or `aphrody git source sync --apply`); each 
 | `victauri` | [4DA-Systems/Victauri](https://github.com/4DA-Systems/Victauri) | `main` | bb17a65296 | Rust-native Tauri MCP; read for its hardening and tool surface. | tools/config/tauri-upstream.json debuggers; aphrody-mcp Tauri tools design |
 | `jan` | [janhq/jan](https://github.com/janhq/jan) | `14a720628f9592c8e60f7e081ef733076db8a6a9` | 14a720628f | Pinned Jan source for owner-authorized absorption; existing Aphrody capability owners remain canonical. Initial model-hub search adapted with Fuse.js 7.1.0; full parity pending. Pinned checkout: ../aphrody-py/vendor/jan. Root LICENSE Apache-2.0, Menlo Research 2025; selected search adaptation retains attribution. Python/JS ADK manifests declare AGPL-3.0; do not assume a uniform repository license. | m3/packages/app-ui/src/models-hub-state.ts; tools/config/jan-absorption.json; docs/migration/jan-absorption |
 | `mistral.rs` | [EricLBuehler/mistral.rs](https://github.com/EricLBuehler/mistral.rs) | `master` | 3f2515e9b5 | mistral.rs; Cargo git dependency (mistralrs) plus native integration reference. | Cargo.toml workspace dependency mistralrs; docs/plans/ai/native-integration-master.md |
+| `bun` | [oven-sh/bun](https://github.com/oven-sh/bun) | `main` | - | Bun runtime upstream; Aphrody runs the aphrody-labs/bun fork, checked out next to this repository, which merges oven-sh/bun main. upstream_search reads that checkout when no GitHub token is available. | docs/reference/upstream-bun; packages/infra/update; aphrody yolo verify (Bun source gates) |
 
 ## Build-on-demand upstreams (9)
 

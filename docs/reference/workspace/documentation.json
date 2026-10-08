@@ -3256,8 +3256,8 @@
     {
       "path": "docs/architecture/runtime-native/STACK-PRODUCTION-2026.md",
       "title": "La Stack Utile & Optimisée (Production 2026 — Zéro Goulot d'Étranglement)",
-      "sha256": "75a449683f41e1b96dfe0157a3c1e3289c30e4bd64dedf4bd2c3001aec3ac29e",
-      "bytes": 22483,
+      "sha256": "89b843965557cce4b248b67d6789b3c4fe1c47821891a472585ccb1693e29a7e",
+      "bytes": 22230,
       "domain": "runtime-native",
       "status": "canonical",
       "visibility": "private",
@@ -3436,8 +3436,8 @@
     {
       "path": "docs/decisions/architecture/STACK-DECISION.md",
       "title": "Architecture Agent-First & Maturation de la Stack",
-      "sha256": "b48bf3014df1cdf5d20bb52eed05150e72175652ef44a759aac1ae1d677f6234",
-      "bytes": 11638,
+      "sha256": "a1f4a9ff8c4f7f620713a138db18d1611ddb555d415080edb5db18667045949e",
+      "bytes": 11520,
       "domain": "architecture",
       "status": "canonical",
       "visibility": "private",
@@ -3876,8 +3876,8 @@
     {
       "path": "docs/operations/cloud/CLOUD-SYNC.md",
       "title": "Cloud and local session sync journal",
-      "sha256": "5300e164d967413a013fce7c8142865911324eb57bc7693642b061a75f30c7c0",
-      "bytes": 5761,
+      "sha256": "8e443589717becbfb874ae51fbea225375296784e39e2cb75e4aa08a269205d9",
+      "bytes": 5631,
       "domain": "cloud",
       "status": "canonical",
       "visibility": "private",
@@ -3896,8 +3896,8 @@
     {
       "path": "docs/operations/container/CONTAINER.md",
       "title": "Aphrody in a container",
-      "sha256": "296b91a7b48d396aaf57b1a543991a1ac0321b89e9ea80cbbfdab269df6f84a8",
-      "bytes": 18746,
+      "sha256": "0dd06055537435f3496edc2da341b79554344782ab23cfab974f5c399f573f36",
+      "bytes": 19741,
       "domain": "container",
       "status": "canonical",
       "visibility": "private",
@@ -3916,8 +3916,8 @@
     {
       "path": "docs/operations/discord/OMAR-MONITOR.md",
       "title": "Moniteur Codex et objectifs d’Omar",
-      "sha256": "ab88e7fe92abbc1bb1b026bcaaf97528f4a339b1f33db61446d79a0805f842d4",
-      "bytes": 13120,
+      "sha256": "7d4831a39cb39a9e6d584e9676bdbd555f096db15973ae2d3564a4a133be942c",
+      "bytes": 13521,
       "domain": "discord",
       "status": "canonical",
       "visibility": "private",
@@ -4926,7 +4926,7 @@
     {
       "path": "docs/plans/workspace/PLAN.md",
       "title": "Aphrody — FFI unique et consolidation Rust, Python, Bun",
-      "sha256": "672fd96a98ac847e48ff5ebc16846a7c437fc8ecaae43ba393c35042ca5286e4",
+      "sha256": "b26ae9cbb761d6558d26a097cd80246f0870af6d1b1f4efdfbb35df0616af7f0",
       "bytes": 57536,
       "domain": "workspace",
       "status": "historical",
@@ -12366,7 +12366,7 @@
     {
       "path": "docs/reference/workspace/CLI.md",
       "title": "CLI du poste Aphrody",
-      "sha256": "cc33520135ea54b2f0ce811d8f8ad62698c019f294ad9e6041e381a80122fa45",
+      "sha256": "5ea899f21f27c92dbbde3f006c41b2f4242cf8d4b9dddc2f0464a5870908d623",
       "bytes": 14330,
       "domain": "workspace",
       "status": "canonical",
@@ -12446,7 +12446,7 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "616a084250f6f8f71246baf9a969998b04f31b29b3a57b47a60b20f745567af2",
+      "sha256": "cda4f72767b95fcb1caa4d2e39354ceb00e21bb710a1d757fa16d66a4f334fc0",
       "bytes": 50464,
       "domain": "workspace",
       "status": "generated",
@@ -17066,8 +17066,8 @@
     {
       "path": "m3/packages/m3-next-migrate/README.md",
       "title": "@aphrody/m3-next-migrate",
-      "sha256": "7289aa38976139a487ec8a4319758b6de5c4a9909cdeed5b301c199a8118cb3d",
-      "bytes": 9497,
+      "sha256": "8cf3c680258df714fca4cdc6242de88adeb746214ea6a8febbb2925649909ede",
+      "bytes": 9449,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -17076,8 +17076,8 @@
     {
       "path": "m3/packages/m3-next/README.md",
       "title": "@aphrody/m3-next",
-      "sha256": "9392047fe27488dc7c9b0705894c926b497da59e4cbc7f7e234fe4e469559b75",
-      "bytes": 7633,
+      "sha256": "7a8e322dc8821a133775a360c9e7b74eb73d811d6550c5904cb66d91e72cc95b",
+      "bytes": 7585,
       "domain": "",
       "status": "canonical",
       "visibility": "private",

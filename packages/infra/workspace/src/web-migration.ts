@@ -39,7 +39,8 @@ async function paths(root: string, patterns: string[]): Promise<string[]> {
       Array.fromAsync(new Glob(pattern).scan({ cwd: root, onlyFiles: true })),
     ),
   );
-  return [...new Set(found.flat())].toSorted();
+  // Repository-relative identities use "/" on every host (Windows scans yield "\").
+  return [...new Set(found.flat().map((path) => path.replaceAll("\\", "/")))].toSorted();
 }
 
 async function rustComponents(root: string, patterns: string[]): Promise<Component[]> {

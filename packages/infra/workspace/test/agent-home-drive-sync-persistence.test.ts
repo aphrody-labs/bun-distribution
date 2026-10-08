@@ -9,6 +9,7 @@ import {
   type SyncConfig,
   type SyncState,
 } from "../src/agent-home-drive-sync.ts";
+import { hasMode } from "../src/portable-fs.ts";
 
 const config: SyncConfig = {
   version: 1,
@@ -121,7 +122,8 @@ test("local publication atomically replaces only its distinct private receipt wi
   await Promise.all(legacy.map((name) => Bun.write(join(path, name), "owned-by-wsl")));
   const receipt = join(path, "agent-sync-vps-status.json");
   await Bun.write(receipt, "previous-complete-receipt", { mode: 0o666 });
-  const reader = await open(receipt, "r");
+  // Windows cannot rename over a file another handle holds open; the open-reader proof is POSIX-only.
+  const reader = process.platform === "win32" ? undefined : await open(receipt, "r");
   try {
     await publishSyncReceipts(
       { ...config, publication: { ...config.publication, directory: path } },
@@ -130,9 +132,9 @@ test("local publication atomically replaces only its distinct private receipt wi
         throw new Error("Local publication must not use SSH");
       },
     );
-    expect(await reader.readFile("utf8")).toBe("previous-complete-receipt");
+    if (reader) expect(await reader.readFile("utf8")).toBe("previous-complete-receipt");
     expect((await Bun.file(receipt).json()).jobs).toEqual(state);
-    expect((await stat(receipt)).mode & 0o777).toBe(0o600);
+    expect(hasMode((await stat(receipt)).mode, 0o600)).toBe(true);
     expect((await readdir(path)).toSorted()).toEqual(
       [...legacy, "agent-sync-vps-status.json"].toSorted(),
     );
@@ -142,7 +144,7 @@ test("local publication atomically replaces only its distinct private receipt wi
       ),
     );
   } finally {
-    await reader.close();
+    await reader?.close();
   }
 });
 
@@ -157,7 +159,7 @@ test("omitting a receipt name preserves the legacy per-capability publication co
   );
   expect((await readdir(path)).toSorted()).toEqual(["automation-sync.json", "drive-sync.json"]);
   expect(await Bun.file(join(path, "drive-sync.json")).json()).toEqual(state.drive?.lastSuccess);
-  expect((await stat(join(path, "automation-sync.json"))).mode & 0o777).toBe(0o600);
+  expect(hasMode((await stat(join(path, "automation-sync.json"))).mode, 0o600)).toBe(true);
 });
 
 test("unsafe receipt names cannot escape the destination or invoke a remote command", async () => {
@@ -316,10 +318,11 @@ test("remote receipts use native Bun atomic writes and expose only whitelisted p
       const command = argv[argv.indexOf("--cmd") + 1]!;
       expect(command.startsWith("/home/ubuntu/.bun/bin/bun -e '")).toBe(true);
       expect(command).not.toContain("python");
-      const child = Bun.spawn(
-        ["bash", "-c", command.replace("/home/ubuntu/.bun/bin/bun", process.execPath)],
-        { stdout: "pipe", stderr: "pipe" },
-      );
+      const prefix = "/home/ubuntu/.bun/bin/bun -e '";
+      expect(command.endsWith("'")).toBe(true);
+      // Undo the single-quote shell escaping so the remote script runs without a POSIX shell.
+      const script = command.slice(prefix.length, -1).replaceAll("'\\''", "'");
+      const child = Bun.spawn([process.execPath, "-e", script], { stdout: "pipe", stderr: "pipe" });
       const [output, error, code] = await Promise.all([
         new Response(child.stdout).text(),
         new Response(child.stderr).text(),
@@ -335,6 +338,6 @@ test("remote receipts use native Bun atomic writes and expose only whitelisted p
   expect(receipt.jobs.secret).toBeUndefined();
   expect(receipt.jobs["drive-review"].lastSuccess.report).toEqual({ review_pending: 1 });
   expect(receipt.jobs["drive-retrieval"].waiting.report).toEqual({ review_pending: 1 });
-  expect((await stat(join(path, "agent-sync-vps-status.json"))).mode & 0o777).toBe(0o600);
+  expect(hasMode((await stat(join(path, "agent-sync-vps-status.json"))).mode, 0o600)).toBe(true);
   expect(await readdir(path)).toEqual(["agent-sync-vps-status.json"]);
 });

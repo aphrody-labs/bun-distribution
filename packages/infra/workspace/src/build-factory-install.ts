@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /* eslint-disable no-await-in-loop -- Artifacts are activated one at a time so a refusal never leaves a partial set behind. */
-import { $ } from "bun";
+import { mkdir, rename, rm } from "node:fs/promises";
 import type { BuildFactoryConfig } from "./build-factory.ts";
 
 /** Local activation of factory binaries: verified download, ABI probe, atomic replacement on PATH. */
@@ -39,10 +39,16 @@ const join = (...parts: string[]) => parts.join("/").replaceAll(/\/{2,}/gu, "/")
 const parent = (path: string) => path.slice(0, path.lastIndexOf("/")) || "/";
 const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
 
+/** Local executables carry `.exe` on Windows; Cargo adds it for Windows targets. */
+const LOCAL_EXE = process.platform === "win32" ? ".exe" : "";
+const isAbsolutePath = (path: string) =>
+  path.startsWith("/") || (process.platform === "win32" && /^[A-Za-z]:\//u.test(path));
+
 function absolute(value: string, field: string): string {
-  const home = Bun.env.HOME;
-  const path = value.startsWith("~/") && home ? join(home, value.slice(2)) : value;
-  if (!path.startsWith("/") || path.split("/").some((part) => part === ".." || part === "."))
+  const home = (Bun.env.HOME ?? Bun.env.USERPROFILE)?.replaceAll("\\", "/");
+  const local = process.platform === "win32" ? value.replaceAll("\\", "/") : value;
+  const path = local.startsWith("~/") && home ? join(home, local.slice(2)) : local;
+  if (!isAbsolutePath(path) || path.split("/").some((part) => part === ".." || part === "."))
     throw new Error(`Invalid build factory install.${field}: expected an absolute path`);
   return path.replace(/\/$/u, "");
 }
@@ -72,7 +78,7 @@ async function cargoBinaries(root: string, packageName: string): Promise<string[
     try {
       manifests = [
         ...new Bun.Glob("**/Cargo.toml").scanSync({ cwd: join(root, top), onlyFiles: true }),
-      ];
+      ].map((manifest) => manifest.replaceAll("\\", "/"));
     } catch {
       continue;
     }
@@ -137,7 +143,8 @@ export async function factoryArtifacts(
       ? join(config.cacheRoot, "cargo", repository)
       : join(config.repositories[repository]!, "target");
   const dir = target ? join(targetDir, target, profile) : join(targetDir, profile);
-  return [...new Set(selected)].map((name) => ({ name, remotePath: join(dir, name) }));
+  const suffix = target.includes("windows") ? ".exe" : "";
+  return [...new Set(selected)].map((name) => ({ name, remotePath: join(dir, name + suffix) }));
 }
 
 async function sha256(path: string): Promise<string> {
@@ -148,7 +155,19 @@ async function sha256(path: string): Promise<string> {
 
 /** A binary that cannot start here (glibc/ABI/arch) must never replace the active one. */
 async function probe(path: string, timeoutSeconds: number): Promise<string | null> {
-  const child = Bun.spawn([path, "--version"], {
+  let child;
+  try {
+    child = spawnProbe(path, timeoutSeconds);
+  } catch (error) {
+    // A foreign executable format (ELF on Windows: EFTYPE, ENOEXEC elsewhere) fails at spawn.
+    return error instanceof Error ? error.message.slice(-2000) : String(error);
+  }
+  const [code, err] = await Promise.all([child.exited, new Response(child.stderr).text()]);
+  return code === 0 ? null : (err.trim() || `exit ${code}`).slice(-2000);
+}
+
+function spawnProbe(path: string, timeoutSeconds: number) {
+  return Bun.spawn([path, "--version"], {
     stdin: "ignore",
     stdout: "ignore",
     stderr: "pipe",
@@ -157,8 +176,6 @@ async function probe(path: string, timeoutSeconds: number): Promise<string | nul
     // fields that only exist in the types; the process environment holds strings.
     env: { ...(Bun.env as Record<string, string | undefined>), RUST_LOG: "error" },
   });
-  const [code, err] = await Promise.all([child.exited, new Response(child.stderr).text()]);
-  return code === 0 ? null : (err.trim() || `exit ${code}`).slice(-2000);
 }
 
 /** Download, verify, probe and atomically replace each binary; the previous one is preserved. */
@@ -171,25 +188,26 @@ export async function installFactoryArtifacts(
   if (!/^[a-f0-9]{40}$/u.test(revision)) throw new Error("A full pinned Git revision is required");
   const release = join(install.libRoot, `factory-${revision.slice(0, 12)}`);
   const previousDir = join(release, "previous");
-  await $`mkdir -p ${previousDir} ${install.binDir} ${parent(install.stateFile)}`.quiet();
+  for (const dir of [previousDir, install.binDir, parent(install.stateFile)])
+    await mkdir(dir, { recursive: true });
   const records: InstallRecord[] = [];
   for (const { name, remotePath } of artifacts) {
-    const path = join(release, name);
-    const target = join(install.binDir, name);
+    const path = join(release, name + LOCAL_EXE);
+    const target = join(install.binDir, name + LOCAL_EXE);
     try {
       const { sha256: expected, size } = await remote.describe(remotePath);
       if (!/^[a-f0-9]{64}$/u.test(expected)) throw new Error("Remote digest is invalid");
       if (!(await Bun.file(path).exists()) || (await sha256(path)) !== expected) {
         const partial = `${path}.partial`;
-        await $`rm -f ${partial}`.quiet();
+        await rm(partial, { force: true });
         await remote.fetch(remotePath, partial);
         const valid = Bun.file(partial).size === size && (await sha256(partial)) === expected;
         if (!valid) {
-          await $`rm -f ${partial}`.quiet();
+          await rm(partial, { force: true });
           throw new Error(`Downloaded artifact digest/size mismatch for ${name}`);
         }
         await Bun.write(path, Bun.file(partial), { mode: 0o755 });
-        await $`rm -f ${partial}`.quiet();
+        await rm(partial, { force: true });
       }
       const failure = await probe(path, install.probeTimeoutSeconds);
       if (failure) throw new Error(`Artifact cannot run on this host: ${failure}`);
@@ -199,13 +217,13 @@ export async function installFactoryArtifacts(
           records.push({ name, status: "unchanged", sha256: expected, path, target });
           continue;
         }
-        previous = join(previousDir, name);
+        previous = join(previousDir, name + LOCAL_EXE);
         await Bun.write(previous, Bun.file(target), { mode: 0o755 });
       }
       // Same-directory staging then rename: PATH never observes a partial binary.
-      const staged = join(install.binDir, `.${name}.factory-${process.pid}`);
+      const staged = join(install.binDir, `.${name}.factory-${process.pid}${LOCAL_EXE}`);
       await Bun.write(staged, Bun.file(path), { mode: 0o755 });
-      await $`mv -f ${staged} ${target}`.quiet();
+      await rename(staged, target);
       const record: InstallRecord = {
         name,
         status: "installed",

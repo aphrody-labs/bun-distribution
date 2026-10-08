@@ -12,7 +12,7 @@
 # Cargo.lock, sccache, mold/lld, cmake/ninja/nasm/clang (aws-lc-sys, boringtun/defguard netlink,
 # rustvncserver, x11rb), Bun and uv. Runs as any host uid with the shared `aphrody-build` group.
 
-ARG UBUNTU=24.04
+ARG UBUNTU=26.04
 
 FROM ubuntu:${UBUNTU} AS build
 ARG RUST_CHANNEL
@@ -25,7 +25,8 @@ ARG SCCACHE_VERSION=0.18.0
 ARG CARGO_XWIN_VERSION=0.23.1
 ARG CARGO_BINSTALL_VERSION=1.24.0
 ARG CARGO_BINSTALL_SHA256=7ffe1832c4bc3148d00f02d51c1d96c9cccdec76a0fa20e6e5692201d78bcc0b
-ARG LLVM=18
+# LLVM 22 (Ubuntu 26.04): the MSVC STL that cargo-xwin fetches rejects clang-cl older than 19 (STL1000).
+ARG LLVM=22
 ARG BUILD_GID=1500
 ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8
 
@@ -89,12 +90,17 @@ RUN groupadd -g "${BUILD_GID}" aphrody-build \
  && chown -R root:aphrody-build /cache /work && chmod -R 2775 /cache /work
 COPY --chmod=755 entrypoint.sh /usr/local/bin/aphrody-build-entrypoint
 
+# Windows MSVC C/C++: clang-cl, unlike cl.exe, needs the ISA enabled for SSE4.1/SSSE3 intrinsics
+# (libwebp-sys): x86-64-v2, the Windows 11 24H2 baseline (SSE4.2 + POPCNT).
 ENV CARGO_HOME=/cache/cargo \
     SCCACHE_DIR=/cache/sccache SCCACHE_CACHE_SIZE=20G RUSTC_WRAPPER=sccache CARGO_INCREMENTAL=0 \
     BUN_INSTALL_CACHE_DIR=/cache/bun XWIN_CACHE_DIR=/cache/xwin XDG_CACHE_HOME=/cache/xdg \
     CARGO_BUILD_JOBS=6 CARGO_NET_GIT_FETCH_WITH_CLI=true CARGO_TERM_COLOR=never \
     CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=clang \
     CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C link-arg=-fuse-ld=mold" \
+    CMAKE_POLICY_VERSION_MINIMUM=3.5 \
+    CFLAGS_x86_64_pc_windows_msvc="-msse4.2 -mpopcnt" \
+    CXXFLAGS_x86_64_pc_windows_msvc="-msse4.2 -mpopcnt" \
     APHRODY_CLOUD=1 CONTAINER=true HOME=/tmp/home \
     NEXT_TELEMETRY_DISABLED=1 DO_NOT_TRACK=1
 LABEL org.opencontainers.image.title="aphrody-build" \

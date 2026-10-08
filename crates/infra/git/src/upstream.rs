@@ -6,7 +6,7 @@
 //! catalogue and answers questions about any entry straight from the GitHub API, so nothing has to be
 //! cloned: repository facts, a directory listing, one file, or a code search.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use base64::Engine as _;
 use serde::{Deserialize, Serialize};
@@ -49,6 +49,8 @@ pub struct Upstream {
     pub consumers: String,
     /// Licence expression recorded in the manifest.
     pub license: Option<String>,
+    /// Local checkout (`checkout` in the manifest, relative to the repository root), when it exists.
+    pub checkout: Option<PathBuf>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -97,6 +99,8 @@ struct RawReference {
     purpose: String,
     #[serde(default)]
     consumers: String,
+    #[serde(default)]
+    checkout: Option<String>,
 }
 
 /// Parses the catalogue out of the manifest text.
@@ -115,6 +119,7 @@ pub fn parse_catalogue(text: &str) -> Result<Vec<Upstream>, Error> {
             purpose: source.note.unwrap_or_else(|| "Cargo path dependency".to_owned()),
             consumers: "Cargo.toml path dependency".to_owned(),
             license: source.license,
+            checkout: None,
         });
     }
     for reference in raw.reference {
@@ -132,17 +137,36 @@ pub fn parse_catalogue(text: &str) -> Result<Vec<Upstream>, Error> {
             purpose: reference.purpose,
             consumers: reference.consumers,
             license: reference.license,
+            checkout: reference.checkout.map(PathBuf::from),
         });
     }
     Ok(entries)
 }
 
-/// Reads the catalogue of the repository rooted at `repository`.
+/// Reads the catalogue of the repository rooted at `repository`; a `checkout` is resolved against
+/// that root and kept only when the directory exists.
 pub fn catalogue(repository: impl AsRef<Path>) -> Result<Vec<Upstream>, Error> {
-    let path = repository.as_ref().join(MANIFEST_PATH);
+    let repository = repository.as_ref();
+    let path = repository.join(MANIFEST_PATH);
     let text =
         std::fs::read_to_string(&path).map_err(|error| io_error("read manifest", &path, error))?;
-    parse_catalogue(&text)
+    let mut entries = parse_catalogue(&text)?;
+    for entry in &mut entries {
+        entry.checkout = entry
+            .checkout
+            .take()
+            .map(|checkout| repository.join(checkout))
+            .filter(|checkout| checkout.is_dir())
+            .map(|checkout| checkout.canonicalize().map_or(checkout, strip_verbatim));
+    }
+    Ok(entries)
+}
+
+fn strip_verbatim(path: PathBuf) -> PathBuf {
+    match path.to_str().and_then(|text| text.strip_prefix(r"\\?\")) {
+        Some(rest) if !rest.starts_with(r"UNC\") => PathBuf::from(rest),
+        _ => path,
+    }
 }
 
 /// Finds one entry by id.
@@ -300,14 +324,109 @@ pub async fn read(client: &GitHubClient, entry: &Upstream, path: &str) -> Result
     }))
 }
 
-/// Code search restricted to this upstream (the GitHub code-search API needs a token).
+/// Hits returned by [`search`].
+pub const SEARCH_HITS: usize = 20;
+/// Files larger than this are skipped by [`local_search`].
+const LOCAL_SEARCH_MAX_FILE: u64 = 1024 * 1024;
+
+/// Code search restricted to this upstream. GitHub code search needs a token: without one, or when
+/// GitHub refuses it (401/403), the local checkout is searched instead; an entry without one answers
+/// `degraded` with the way to enable the search instead of failing.
 pub async fn search(client: &GitHubClient, entry: &Upstream, query: &str) -> Result<Value, Error> {
     if query.trim().is_empty() {
         return Err(git_error("`search` needs a query"));
     }
+    let refused = if client.is_authenticated() {
+        match github_search(client, entry, query).await {
+            Err(Error::GitHubStatus { status: status @ (401 | 403), .. }) => {
+                format!("GitHub code search refused the token (HTTP {status})")
+            },
+            other => return other,
+        }
+    } else {
+        "GitHub code search needs a token (GH_TOKEN, GITHUB_TOKEN or `gh auth login`)".to_owned()
+    };
+    match &entry.checkout {
+        Some(checkout) => {
+            let mut found = local_search(checkout, query)?;
+            found["id"] = json!(entry.id);
+            found["degraded"] = json!(refused);
+            Ok(found)
+        },
+        None => Ok(json!({
+            "id": entry.id,
+            "query": query,
+            "total": Value::Null,
+            "items": [],
+            "degraded": refused,
+            "hint": "set GH_TOKEN, or give this entry a `checkout` in tools/config/upstream-sources.json",
+        })),
+    }
+}
+
+/// Files of `checkout` (`.gitignore` honoured, `.git` skipped) containing every word of `query`,
+/// case-insensitively, with the first line holding the first word; at most [`SEARCH_HITS`] items.
+pub fn local_search(checkout: &Path, query: &str) -> Result<Value, Error> {
+    let words: Vec<String> = query.split_whitespace().map(str::to_lowercase).collect();
+    let Some(first) = words.first().cloned() else {
+        return Err(git_error("`search` needs a query"));
+    };
+    let walker = ignore::WalkBuilder::new(checkout)
+        .require_git(false)
+        .filter_entry(|entry| entry.file_name() != ".git")
+        .build();
+    let mut items = Vec::new();
+    let mut truncated = false;
+    for entry in walker.flatten() {
+        if !entry.file_type().is_some_and(|kind| kind.is_file())
+            || entry.metadata().map_or(true, |meta| meta.len() > LOCAL_SEARCH_MAX_FILE)
+        {
+            continue;
+        }
+        let Ok(bytes) = std::fs::read(entry.path()) else { continue };
+        if bytes.contains(&0) {
+            continue;
+        }
+        let text = String::from_utf8_lossy(&bytes);
+        let lower = text.to_lowercase();
+        if !words.iter().all(|word| lower.contains(word.as_str())) {
+            continue;
+        }
+        if items.len() == SEARCH_HITS {
+            truncated = true;
+            break;
+        }
+        let line = text
+            .lines()
+            .enumerate()
+            .find(|(_, line)| line.to_lowercase().contains(first.as_str()))
+            .map(|(index, line)| (index + 1, line.trim().chars().take(200).collect::<String>()));
+        let relative = entry.path().strip_prefix(checkout).unwrap_or(entry.path());
+        items.push(json!({
+            "path": relative.to_string_lossy().replace('\\', "/"),
+            "line": line.as_ref().map(|(number, _)| *number),
+            "text": line.map(|(_, text)| text),
+        }));
+    }
+    Ok(json!({
+        "query": query,
+        "source": "local checkout",
+        "checkout": checkout.to_string_lossy(),
+        "total": if truncated { Value::Null } else { json!(items.len()) },
+        "truncated": truncated,
+        "items": items,
+    }))
+}
+
+async fn github_search(
+    client: &GitHubClient,
+    entry: &Upstream,
+    query: &str,
+) -> Result<Value, Error> {
     let slug = slug(&entry.url)?;
     let q: String = url::form_urlencoded::byte_serialize(query.trim().as_bytes()).collect();
-    let body = get(client, &format!("/search/code?q={q}+repo:{slug}&per_page=20")).await?;
+    let body =
+        get(client, &format!("/search/code?q={q}+repo:{slug}&per_page={SEARCH_HITS}")).await?;
     let items: Vec<Value> = body["items"]
         .as_array()
         .map(|items| {
@@ -346,6 +465,52 @@ mod tests {
         assert_eq!(entries[1].git_ref.as_deref(), Some("v0.7.0"));
         assert_eq!(entries[2].tier, UpstreamTier::Reference);
         assert_eq!(entries[3].tier, UpstreamTier::Build);
+    }
+
+    #[tokio::test]
+    async fn search_without_token_reads_the_checkout_or_degrades() {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+        let root = tempfile::tempdir().unwrap();
+        let checkout = root.path().join("bun");
+        std::fs::create_dir_all(checkout.join("src/bundler")).unwrap();
+        std::fs::create_dir_all(checkout.join("build")).unwrap();
+        std::fs::write(checkout.join(".gitignore"), "build/\n").unwrap();
+        std::fs::write(
+            checkout.join("src/bundler/linker.rs"),
+            "fn a() {}\n// Merge Small chunks\n",
+        )
+        .unwrap();
+        std::fs::write(checkout.join("src/other.rs"), "merge only\n").unwrap();
+        std::fs::write(checkout.join("build/linker.rs"), "merge small\n").unwrap();
+        let repository = root.path().join("aphrody");
+        let manifest = repository.join(MANIFEST_PATH);
+        std::fs::create_dir_all(manifest.parent().unwrap()).unwrap();
+        std::fs::write(
+            &manifest,
+            r#"{"reference":[
+                {"id":"bun","tier":"reference","url":"https://github.com/oven-sh/bun","checkout":"../bun"},
+                {"id":"codex","tier":"reference","url":"https://github.com/openai/codex","checkout":"../missing"}
+            ]}"#,
+        )
+        .unwrap();
+        let entries = catalogue(&repository).unwrap();
+        let bun = find(&entries, "bun").unwrap();
+        assert!(bun.checkout.as_ref().is_some_and(|path| path.ends_with("bun")));
+        let codex = find(&entries, "codex").unwrap();
+        assert_eq!(codex.checkout, None);
+
+        let client = GitHubClient::new(None, "http://127.0.0.1:9").unwrap();
+        let found = search(&client, bun, "merge SMALL").await.unwrap();
+        assert_eq!(found["source"], "local checkout");
+        assert_eq!(found["total"], 1);
+        assert_eq!(found["items"][0]["path"], "src/bundler/linker.rs");
+        assert_eq!(found["items"][0]["line"], 2);
+        assert!(found["degraded"].as_str().unwrap().contains("token"));
+
+        let degraded = search(&client, codex, "merge").await.unwrap();
+        assert_eq!(degraded["items"], json!([]));
+        assert!(degraded["hint"].as_str().unwrap().contains("GH_TOKEN"));
+        assert!(search(&client, bun, "  ").await.is_err());
     }
 
     #[test]

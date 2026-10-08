@@ -16,6 +16,7 @@ import {
 } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { hasMode, replaceSymlink } from "./portable-fs.ts";
 
 const NAMES = [
   "AGENTS.md",
@@ -149,7 +150,7 @@ async function readPrivate(path: string, limit = MAX_BYTES): Promise<Uint8Array>
     const info = await file.stat();
     if (
       !info.isFile() ||
-      (info.mode & 0o777) !== 0o600 ||
+      !hasMode(info.mode, 0o600) ||
       info.size > limit ||
       info.nlink !== 1 ||
       (process.getuid && info.uid !== process.getuid())
@@ -181,7 +182,12 @@ async function save(path: string, value: unknown, raw = false) {
     await file.close();
   }
   await rename(temp, path);
-  const directory = await open(dirname(path), "r");
+  await syncDirectory(dirname(path));
+}
+// Windows cannot fsync a directory handle (EPERM); NTFS renames are journaled.
+async function syncDirectory(path: string) {
+  if (process.platform === "win32") return;
+  const directory = await open(path, "r");
   try {
     await directory.sync();
   } finally {
@@ -299,13 +305,8 @@ export async function publishReviewedProjection(config: DriveReviewScope, owner:
   const switchPointer = async (destination: string) => {
     const temporary = `${pointer}.${crypto.randomUUID()}.tmp`;
     await symlink(destination, temporary);
-    await rename(temporary, pointer);
-    const parent = await open(dirname(pointer), "r");
-    try {
-      await parent.sync();
-    } finally {
-      await parent.close();
-    }
+    await replaceSymlink(temporary, pointer);
+    await syncDirectory(dirname(pointer));
   };
   await switchPointer(target);
   try {

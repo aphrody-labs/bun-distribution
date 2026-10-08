@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { mkdir, readdir, realpath, stat } from "node:fs/promises";
-import { delimiter, dirname, join, resolve } from "node:path";
+import { basename, delimiter, dirname, extname, join, resolve } from "node:path";
 import { homedir } from "node:os";
 
 interface Entry {
@@ -180,7 +180,10 @@ export async function runCliHelp(
     );
     for (const directory of pathDirectories) {
       if (directory.status !== "fulfilled") continue;
-      for (const name of directory.value) if (/^aphrody-[a-z\d-]+$/.test(name)) binaries.add(name);
+      for (const entry of directory.value) {
+        const name = commandName(entry);
+        if (/^aphrody-[a-z\d-]+$/.test(name)) binaries.add(name);
+      }
     }
     // The retired summary executable treats --help as generation and rewrites
     // repository documentation. It is not a current capability to capture.
@@ -321,7 +324,7 @@ export async function runCliHelp(
     "| --- | --- | --- |",
     ...entries.map(
       (entry) =>
-        `| \`${entry.command.join(" ")} --help\` | ${entry.timedOut ? "timeout" : entry.exitCode === 0 ? "ok" : `exit ${entry.exitCode}`} | [text](${snapshot.split("/").at(-1)}/${entry.file}) |`,
+        `| \`${entry.command.join(" ")} --help\` | ${entry.timedOut ? "timeout" : entry.exitCode === 0 ? "ok" : `exit ${entry.exitCode}`} | [text](${basename(snapshot)}/${entry.file}) |`,
     ),
     "",
     "## Absent binaries",
@@ -356,7 +359,19 @@ export async function runCliHelp(
     : 1;
 }
 
+/** PATH entry name as a command: Windows launchers drop their PATHEXT extension (`aphrody-x.exe` is `aphrody-x`). */
+function commandName(entry: string): string {
+  if (process.platform !== "win32") return entry;
+  const extension = extname(entry).toLowerCase();
+  const executable = (process.env.PATHEXT ?? ".COM;.EXE;.BAT;.CMD")
+    .toLowerCase()
+    .split(";")
+    .includes(extension);
+  return extension && executable ? entry.slice(0, -extension.length) : entry;
+}
+
 async function gitHead(root: string): Promise<string> {
+  if (!Bun.which("git")) return "unknown";
   const proc = Bun.spawn(["git", "rev-parse", "HEAD"], {
     cwd: root,
     stdout: "pipe",

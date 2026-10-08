@@ -2,7 +2,7 @@
 import { expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import {
   buildMonorepoGatePlan,
   discoverMonorepoGatePlan,
@@ -44,9 +44,10 @@ test("gate plans locked all-target Rust checks, tests and release builds plus ea
   expect(plan.gaps).toEqual([]);
   expect(plan.checks[0]!.command).toEqual(["bun", "install", "--frozen-lockfile"]);
   for (const subcommand of ["check", "clippy", "test", "build"]) {
-    const check = plan.checks.find(
-      (item) => item.command[0].endsWith("cargo-serial.sh") && item.command[1] === subcommand,
-    )!;
+    const check = plan.checks.find((item) => {
+      const wrapper = item.command.findIndex((arg) => /cargo-serial.(?:sh|ps1)$/.test(arg));
+      return wrapper >= 0 && item.command[wrapper + 1] === subcommand;
+    })!;
     expect(check.command).toContain("--workspace");
     expect(check.command).toContain("--all-targets");
     expect(check.command).toContain("--locked");
@@ -64,7 +65,9 @@ test("gate plans locked all-target Rust checks, tests and release builds plus ea
   );
   const checks = plan.checks.filter((item) => item.name.startsWith("@owner/app:"));
   expect(checks).toHaveLength(5);
-  expect(checks.every((item) => item.cwd === "/workspace/aphrody/apps/owner/app")).toBe(true);
+  expect(checks.every((item) => item.cwd === resolve("/workspace/aphrody/apps/owner/app"))).toBe(
+    true,
+  );
   expect(checks.map((item) => item.command)).toContainEqual(["bun", "run", "type-check"]);
   expect(checks.map((item) => item.command)).toContainEqual(["bun", "run", "format:check"]);
   expect(plan.checks.some((item) => item.command.includes("--filter"))).toBe(false);
@@ -215,7 +218,9 @@ test("no-build excludes Cargo compilation, arbitrary adapters, unsafe test hooks
   expect(plan.noBuild).toBe(true);
   expect(plan.checks[0]!.command).toContain("--ignore-scripts");
   expect(plan.checks[0]!.command).toContain("--dry-run");
-  expect(plan.checks.some((check) => /cargo-serial/.test(check.command[0]!))).toBe(false);
+  expect(plan.checks.some((check) => check.command.some((arg) => /cargo-serial/.test(arg)))).toBe(
+    false,
+  );
   expect(plan.checks.find((check) => check.name === "@owner/app: typecheck")!.command).toEqual([
     "tsc",
     "--noEmit",
@@ -240,7 +245,7 @@ test("an inline interpreter baseline adds a read-only ratchet kept in no-build m
       "--check",
       "--markdown",
       "--root",
-      "/workspace/aphrody",
+      resolve("/workspace/aphrody"),
     ]);
   }
 });

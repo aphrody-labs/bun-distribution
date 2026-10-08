@@ -169,7 +169,7 @@
       "value": "high",
       "role": "bun:ffi wrapper over the bun_rs native library (M3 tokens, icons, SVG)",
       "source": "local: packages/bun",
-      "policy": "single-native-bun-bridge"
+      "policy": "single-native-bun-ffi"
     }
   ],
   "canonicalExternalStack": {
