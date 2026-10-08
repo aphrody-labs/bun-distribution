@@ -151,7 +151,12 @@
         "manifest": "omar-kit.manifest.json"
       },
       "platforms": [
-        { "platform": "windows-x86_64", "target": "x86_64-pc-windows-msvc", "enabled": true }
+        {
+          "platform": "windows-x86_64",
+          "target": "x86_64-pc-windows-msvc",
+          "enabled": false,
+          "reason": "fused into aphrody-setup (packages/infra/product, 3311e4dce): the administrator module ships inside Aphrody-Setup and its updater reads the aphrody-setup artifact; stage-omar-kit.ts only rebuilds aphrody-setup"
+        }
       ]
     },
     {

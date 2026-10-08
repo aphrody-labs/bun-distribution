@@ -27,6 +27,7 @@ export function initSync(source) { new WebAssembly.Instance(new WebAssembly.Modu
 export function version() { return "fixture"; }
 export function run() { return JSON.stringify({code:0,stdout:"toolcall fixture",stderr:""}); }
 export function abiVersion() { return 1; }
+export function initPanicHook() {}
 export function manifest() { return JSON.stringify({abi:1,json:[],vec:[]}); }
 export function callJson(op,input) { return input; }
 export function callVec(op,params,a,b) { return a; }
@@ -41,6 +42,7 @@ export function initSync(source: {module: BufferSource | WebAssembly.Module}): u
 export function run(args:string[],stdin:string,files:string):string;
 export function version():string;
 export function abiVersion():number;
+export function initPanicHook():void;
 export function manifest():string;
 export function callJson(op:string,input:string):string;
 export function callVec(op:string,params:string,a:Uint8Array,b:Uint8Array):Uint8Array;

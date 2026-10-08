@@ -222,6 +222,12 @@ function snapshotFixture() {
     ...cfg,
     host: { ...cfg.host, root: host, keepReleases: 5 },
     assets: { "install.sh": "installer.sh" },
+    // The staged-kit path stays covered although omar-kit is now fused into aphrody-setup.
+    artifacts: cfg.artifacts.map((a) =>
+      a.id === "omar-kit"
+        ? { ...a, platforms: a.platforms?.map((p) => ({ ...p, enabled: true })) }
+        : a,
+    ),
   };
   const uploads: string[] = [];
   const io = {
