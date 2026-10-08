@@ -9,11 +9,10 @@
  * Registry archives contain compiled files only; pass the standalone fork sources.
  * Run: bun run generate.ts --source /path/to/material-web [--output /tmp/preview]
  */
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
-import { join, relative, dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { mkdirSync, readdirSync, statSync } from "node:fs";
+import { join, relative, resolve } from "node:path";
 
-const HERE = dirname(fileURLToPath(import.meta.url));
+const HERE = import.meta.dir;
 const args = process.argv.slice(2);
 let sourceRoot: string | undefined;
 let outputRoot = HERE;
@@ -35,7 +34,7 @@ if (!sourceRoot) {
 }
 const MW = sourceRoot;
 for (const bundle of ["all.ts", "aphrody-components.ts", "aphrody-labs.ts"]) {
-  if (!statSync(join(MW, bundle), { throwIfNoEntry: false })?.isFile()) {
+  if (!(await Bun.file(join(MW, bundle)).exists())) {
     throw new Error(`Material Web source checkout is missing ${bundle}: ${MW}`);
   }
 }
@@ -85,15 +84,15 @@ interface Unresolved {
 
 const defs: Map<string, Def[]> = new Map();
 
-function walk(dir: string): void {
+async function walk(dir: string): Promise<void> {
   for (const name of readdirSync(dir)) {
     const full = join(dir, name);
     const st = statSync(full);
     if (st.isDirectory()) {
       if (SKIP_DIRS.has(name)) continue;
-      walk(full);
+      await walk(full);
     } else if (name.endsWith(".ts") && !name.endsWith("_test.ts") && !name.endsWith(".d.ts")) {
-      const src = readFileSync(full, "utf8");
+      const src = await Bun.file(full).text();
       let m;
       RE.lastIndex = 0;
       while ((m = RE.exec(src))) {
@@ -106,14 +105,14 @@ function walk(dir: string): void {
     }
   }
 }
-walk(MW);
+await walk(MW);
 
 // ── 3. Canonical import path preference ────────────────────────────────────
 // Tags re-exported by the three bundles must import from the bundled entry
 // path. Build the set of canonical relative paths from those bundles.
 const bundleImports = new Set<string>();
 for (const bundle of ["all.ts", "aphrody-components.ts", "aphrody-labs.ts"]) {
-  const src = readFileSync(join(MW, bundle), "utf8");
+  const src = await Bun.file(join(MW, bundle)).text();
   for (const m of src.matchAll(/from ['"]\.\/([^'"]+\.js)['"]/g)) bundleImports.add(m[1]);
 }
 
@@ -271,7 +270,7 @@ const EVENTS_BY_TAG: Record<string, EventMap> = {
 };
 
 // ── 5. Resolve every requested tag ─────────────────────────────────────────
-const tags = readFileSync(ELEMENTS_TXT, "utf8")
+const tags = (await Bun.file(ELEMENTS_TXT).text())
   .split("\n")
   .map((s) => s.trim())
   .filter(Boolean);
@@ -348,7 +347,7 @@ for (const [group, items] of [...groups.entries()].toSorted()) {
     lines.push(`});`);
     lines.push("");
   }
-  writeFileSync(join(OUT_DIR, fileName), lines.join("\n"));
+  await Bun.write(join(OUT_DIR, fileName), lines.join("\n"));
   indexLines.push(`export * from './wrappers/${group}.js';`.replace("./wrappers", "./"));
 }
 
@@ -358,7 +357,7 @@ for (const [group] of [...groups.entries()].toSorted()) {
   idx.push(`export * from './wrappers/${group}.js';`);
 }
 idx.push("");
-writeFileSync(join(outputRoot, "index.ts"), idx.join("\n"));
+await Bun.write(join(outputRoot, "index.ts"), idx.join("\n"));
 
 // ── 7. Report ──────────────────────────────────────────────────────────────
 console.log(`Tags requested: ${tags.length}`);
@@ -368,7 +367,7 @@ if (unresolved.length) {
   for (const u of unresolved) console.log(`  - ${u.tag}: ${u.reason}`);
 }
 // Emit a machine-readable manifest for the README.
-writeFileSync(
+await Bun.write(
   join(outputRoot, ".manifest.json"),
   JSON.stringify(
     {
@@ -401,9 +400,9 @@ const listSection =
   `> Régénérée par \`generate.ts\` (\`.manifest.json\`). ${unresolved.length} non résolu(s).\n\n` +
   `| Wrapper | Tag | Import élément | # events |\n| --- | --- | --- | --- |\n${rows}\n`;
 try {
-  const readme = readFileSync(README, "utf8");
+  const readme = await Bun.file(README).text();
   const updated = readme.replace(/## Liste complète des wrappers \(\d+\)[\s\S]*$/, listSection);
-  if (updated !== readme) writeFileSync(README, updated);
+  if (updated !== readme) await Bun.write(README, updated);
 } catch {
   /* README optional */
 }
