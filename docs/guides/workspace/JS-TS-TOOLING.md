@@ -32,16 +32,11 @@ The `tooling` feature of `aphrody-ffi` (formerly the `yolo-tooling` cdylib) is t
 are explicit build selections. This keeps the source implementation in the runtime
 repository while avoiding unconditional parser/formatter initialization.
 
-The four transferred Bun packages retain their names and version 0.6.2:
+The N2B Bun package moved to the Bun fork and is consumed from npm:
 
 | Package | Source | Behavior |
 | --- | --- | --- |
-| `@aphrody/n2b-core` | packages/n2b-client | Default scan calls the native SDK; compatibility CLI helpers are explicit |
-
-The plugin's `auto` and `required` policies both require the native provider.
-`native: "off"` selects the historical CLI adapter explicitly. The `rules`,
-`promptMarkdown` and `binaryVersion` compatibility helpers remain CLI backed.
-These exceptions do not implement an alternative parser or a process-per-file scan.
+| `@aphrody/bun-plugin-n2b` | aphrody-labs/bun `packages/bun-n2b` | In-process scan, codemods, Bun plugin and the `n2b` CLI (replaces `@aphrody/n2b-core`) |
 
 ## Native calls and ownership
 

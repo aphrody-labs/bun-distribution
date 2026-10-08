@@ -94,7 +94,10 @@ pub use bun_rs::*;
 #[cfg(all(feature = "tooling", not(target_arch = "wasm32")))]
 mod n2b_native;
 #[cfg(all(feature = "tooling", not(target_arch = "wasm32")))]
-pub use aphrody_oxc_bridge::*;
+pub use aphrody_oxc_bridge::{
+    aphrody_oxc_abi_version, aphrody_oxc_analyze, aphrody_oxc_format, aphrody_oxc_free,
+    aphrody_oxc_lint, aphrody_oxc_minify, aphrody_oxc_parse,
+};
 #[cfg(all(feature = "tooling", not(target_arch = "wasm32")))]
 pub use n2b_native::*;
 #[cfg(all(feature = "tooling", not(target_arch = "wasm32")))]

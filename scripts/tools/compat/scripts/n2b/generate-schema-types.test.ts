@@ -16,15 +16,13 @@ async function fixture() {
   return root;
 }
 
-test("schema lives in crates/contracts; Rust output in the n2b-types crate; generated TS in its package", async () => {
+test("schema lives in crates/contracts; generated TS in the runtime SDK", async () => {
   const root = await fixture();
   const schema = join(root, "crates/contracts/schema/v2.json");
   await Bun.write(schema, '{"title":"N2BReport"}');
   const paths = await schemaPaths(root);
   expect(paths.schema).toBe(schema);
-  expect(paths.rust).toBe(join(root, "crates/compat/n2b-types/src/schema.rs"));
-  expect(paths.format).toBe(join(root, "crates/compat/n2b-types/rustfmt.toml"));
-  expect(paths.ts).toBe(join(root, "packages/engine/n2b-client/src/types.ts"));
+  expect(paths.ts).toBe(join(root, "packages/engine/runtime/src/tooling-schema.ts"));
   expect(await Bun.file(paths.schema).json()).toEqual({ title: "N2BReport" });
 });
 

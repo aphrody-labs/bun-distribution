@@ -3,16 +3,10 @@
 // Needs no native library, so it always runs.
 import { expect, test } from "bun:test";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
+import { exportCrateDirs, repo } from "./export-crates.ts";
 
-const repo = join(import.meta.dir, "..", "..", "..", "..");
-// Crates whose C symbols are re-exported by the single aphrody-ffi cdylib.
-const EXPORT_CRATES = [
-  "crates/interop/ffi/src",
-  "crates/ui/bun/src",
-  "crates/compat/n2b-core/src",
-  "crates/compat/oxc-bridge/src",
-];
+const EXPORT_CRATES = exportCrateDirs();
 
 // These existing C ABI exports remain for compatibility. Their JS consumers
 // now use the SDK's single tooling provider instead of the product FFI table.
@@ -105,7 +99,7 @@ function rustExports(): Map<string, RustExport> {
   const re =
     /#\[(?:unsafe\()?no_mangle\)?\]\s*(?:#\[[^\]]*\]\s*|\/\/\/[^\n]*\n\s*)*pub\s+(?:unsafe\s+)?extern\s+"C"\s+fn\s+(\w+)\s*\(([^)]*)\)\s*(?:->\s*([^{]+?))?\s*\{/g;
   for (const crate of EXPORT_CRATES) {
-    for (const file of rustFiles(join(repo, crate))) {
+    for (const file of rustFiles(crate)) {
       const text = readFileSync(file, "utf8");
       for (const m of text.matchAll(re)) {
         const params = m[2]!
@@ -115,7 +109,7 @@ function rustExports(): Map<string, RustExport> {
           .map((p) => normalizeRust(p.slice(p.indexOf(":") + 1)));
         if (found.has(m[1]!)) duplicateRustExports.push(m[1]!);
         found.set(m[1]!, {
-          file: file.slice(repo.length + 1),
+          file: relative(repo, file),
           args: params,
           returns: normalizeRust(m[3] ?? ""),
         });
@@ -205,9 +199,7 @@ test("arity, argument and return types agree", () => {
 
 test("no bun:aphrody fork dependence remains in the Bun sources", () => {
   const stale: string[] = [];
-  const roots = ["packages/interop/native/src", "packages/compat/n2b-plugin/src"].filter((root) =>
-    existsSync(join(repo, root)),
-  );
+  const roots = ["packages/interop/native/src"].filter((root) => existsSync(join(repo, root)));
   const needle = ["bun", "aphrody"].join(":");
   for (const root of roots) {
     for (const entry of readdirSync(join(repo, root), { recursive: true })) {

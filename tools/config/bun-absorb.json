@@ -15,7 +15,6 @@
       ".git",
       "var",
       "coverage",
-      "crates/compat/n2b/tests/fixtures",
       "scripts/audit/workspace/bun-absorb.test.ts"
     ]
   },

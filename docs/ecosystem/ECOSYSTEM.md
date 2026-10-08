@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 287 crates, 38 binaries, 158 Bun packages, 10 uv packages, 1106 CLI commands, 390 MCP tools.
+Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 282 crates, 38 binaries, 157 Bun packages, 10 uv packages, 1106 CLI commands, 390 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -18,7 +18,7 @@ Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 287 crates, 38 bina
 
 Canonical Rust/Bun monorepo
 
-### Crates (214)
+### Crates (209)
 
 | Crate | Path | Description | Binaries | Features |
 | --- | --- | --- | --- | --- |
@@ -98,10 +98,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-model-antigravity` | crates/google/model-antigravity | Antigravity (Google AI Ultra / Cloud Code) ModelClient implementation for aphrody agent engine — keyless token re-read on 401, function calling, reasoning stream. |  |  |
 | `aphrody-model-client` | crates/ai/model-client | Provider abstraction for the aphrody agent engine: the async `ModelClient` trait, a unified `ModelStreamEvent` (text delta / tool call / reasoning / completed+usage), and a Gemini generateContent streaming client that maps Google's SSE wire onto the unified events. Lets the turn loop stay provider-agnostic (Gemini REST / gemini-web / agy). |  |  |
 | `aphrody-models` | crates/ai/models | Local model lifecycle for aphrody: pinned HuggingFace/URL references, a curated catalog of OCR / visual-transcription / speech-to-text / embedding models, a digest-checked resumable downloader, hand-rolled GGUF / GGML / safetensors / ONNX header inspection, and an LRU-evicting on-disk store under ~/.aphrody/models. |  |  |
-| `aphrody-n2b` | crates/compat/n2b | Node.js to Bun migration analyzer and codemod |  | ai, default |
-| `aphrody-n2b-core` | crates/compat/n2b-core | N2B engine: rules, scanners, reports, audit, run orchestration, manifest handling, report card and llms.txt generation. |  | default |
-| `aphrody-n2b-registry` | crates/compat/n2b-registry | N2B data-driven Node-to-Bun migration rule registry, embedded TOML validated at first use. |  |  |
-| `aphrody-n2b-types` | crates/compat/n2b-types | N2B shared types and the versioned JSON report schema. |  |  |
 | `aphrody-native` | crates/native/native | Host hardware topology and monotonic clock probes for Aphrody. |  |  |
 | `aphrody-nu` | crates/shell/nu | Nushell embedded in Aphrody OS: structured evaluation for agents (the shell subsystem). |  |  |
 | `aphrody-obscura` | crates/web/obscura | Rust API for the Obscura headless browser |  | api, default, obscura-browser, obscura-net, render, stealth, tokio |
@@ -110,7 +106,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-ocr-onnx` | crates/ai/ocr-onnx | PP-OCR ONNX recognition primitives for aphrody. |  |  |
 | `aphrody-ocr-vlm` | crates/ai/ocr-vlm | llama.cpp VLM backends for Aphrody OCR: one-shot and resident document transcription. |  |  |
 | `aphrody-ovh` | crates/infra/ovh | Native OVHcloud engine: OAuth2 service account and SHA-1 signing, services, domains, DNS, VPS, email and IAM management. |  |  |
-| `aphrody-oxc-bridge` | crates/compat/oxc-bridge | Aphrody's in-process Oxc bridge for the Bun fork. |  |  |
 | `aphrody-patch` | crates/ai/patch | LLM-native file-edit patch format (*** Begin Patch / Add\|Update\|Delete File / @@ context) with a parser, Unicode-tolerant fuzzy line seeking, a streaming parser, and application over a pluggable filesystem trait. Inspired by OpenAI Codex apply-patch (Apache-2.0). |  |  |
 | `aphrody-proc` | crates/os/ostd/proc | Process supervision primitives shared by the llama-server supervisor, the command sandbox and the training runner: process groups that die with their owner (Linux session + killpg, Windows Job Object with KILL_ON_JOB_CLOSE), detached daemons, liveness probes, free-port allocation, advisory file locks and the single-GPU lease (shared for inference, exclusive for training). |  |  |
 | `aphrody-prompts` | crates/ai/prompts | Prompt template engine: minijinja-backed registry, typed variable validation, reusable partials, and PII-scrubbing pipeline. |  |  |
@@ -237,7 +232,7 @@ Canonical Rust/Bun monorepo
 | `yolo-pyo3` | crates/engine/yolo-pyo3 | PyO3 0.29 Native Extension Module for YOLO Monorepo (Free-threaded, No-GIL, py.detach) |  |  |
 | `yolo-runtime` | crates/engine/yolo-runtime | Versioned C ABI of the precompiled YOLO native runtime (first slice: system stats and cancellable benchmark) |  | browser, cuda, default, gpu |
 
-### Bun packages (124)
+### Bun packages (123)
 
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
@@ -295,7 +290,6 @@ Canonical Rust/Bun monorepo
 | `@aphrody/m3-theme` | m3/packages/m3-theme | Canonical Material 3 fusion sheets: tokens.css (M3 + shadcn/ui + Tailwind v4 aliases), tailwind.css (every M3 system token as a Tailwind v4 utility) and spaceui.css (the SpaceUI themes rebuilt as M3 dynamic schemes, with SpaceUI compatibility aliases). |  |
 | `@aphrody/m3-tokens` | m3/packages/m3-tokens | Material 3 design tokens (--md-sys-*) for the @aphrody/material-web fork: MUI-theme → M3 token CSS generation and runtime Material You dynamic colour via material-color-utilities. |  |
 | `@aphrody/material-design-icons` | m3/packages/material-design-icons | Material Symbols SVG catalogue (forks/material-design-icons) with SVG to ICO/ICNS sync for Tauri desktop icons. | `m3-svg-to-ico` |
-| `@aphrody/n2b-core` | packages/engine/n2b-client | Native N2B SDK scan, explicit legacy CLI helpers and Bun shims |  |
 | `@aphrody/os` | packages/os/kernel-client | Bun client for the Aphrody OS kernel: join the OS as a subsystem, call any OS tool or skill. |  |
 | `@aphrody/ovh` | packages/infra/ovh | OVH cloud library for Aphrody Infra: DNS, VPS, Email, and multi-profile operations in pure Bun (command line: aphrody ovh) |  |
 | `@aphrody/paths` | packages/infra/paths | Cross-platform path resolution for Aphrody workspaces and runtime data |  |

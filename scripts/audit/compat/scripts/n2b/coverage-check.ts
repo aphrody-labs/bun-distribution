@@ -7,9 +7,9 @@ import { pluginStorePath } from "@aphrody/paths";
  * toutes les APIs Bun documentées dans `docs/bun/`.
  *
  * Usage :
- *   bun scripts/n2b/coverage-check.ts              # run once, print summary + write report
- *   bun scripts/n2b/coverage-check.ts --json       # output structured JSON
- *   bun scripts/n2b/coverage-check.ts --strict     # exit 1 si coverage < threshold
+ *   bun scripts/audit/compat/scripts/n2b/coverage-check.ts              # run once, print summary + write report
+ *   bun scripts/audit/compat/scripts/n2b/coverage-check.ts --json       # output structured JSON
+ *   bun scripts/audit/compat/scripts/n2b/coverage-check.ts --strict     # exit 1 si coverage < threshold
  *
  * Env vars :
  *   CLAUDE_PLUGIN_ROOT    plugin root scanned for agents/skills/commands (default: ~/plugins/aphrody)

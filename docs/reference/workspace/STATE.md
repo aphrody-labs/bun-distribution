@@ -6,17 +6,17 @@ Facts read from `cargo metadata --no-deps`, the root `package.json` Bun workspac
 Crates are Rust workspace members outside `apps/`; packages are Bun workspaces outside `apps/`;
 apps are Rust or Bun members under `apps/`. `todo!` counts `todo!(` and `unimplemented!(` in `.rs` files.
 
-Totals: **214 crates**, **93 packages**, **0 apps** (214 Rust, 93 Bun).
+Totals: **209 crates**, **92 packages**, **0 apps** (209 Rust, 92 Bun).
 
 ## Per domain
 
 | Domain | Crates | Packages | Apps | `todo!` |
 | --- | ---: | ---: | ---: | ---: |
 | [ai](#ai) | 50 | 4 | 0 | 0 |
-| [compat](#compat) | 9 | 0 | 0 | 0 |
+| [compat](#compat) | 4 | 0 | 0 | 0 |
 | [contracts](#contracts) | 3 | 0 | 0 | 0 |
 | [discord](#discord) | 0 | 1 | 0 | 0 |
-| [engine](#engine) | 3 | 5 | 0 | 0 |
+| [engine](#engine) | 3 | 4 | 0 | 0 |
 | [google](#google) | 6 | 1 | 0 | 0 |
 | [infra](#infra) | 14 | 7 | 0 | 0 |
 | [interop](#interop) | 1 | 1 | 0 | 0 |
@@ -137,11 +137,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
 | `aphrody-bun-docs` | [crates/compat/bun-docs](../../../crates/compat/bun-docs) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-09 |
-| `aphrody-n2b` | [crates/compat/n2b](../../../crates/compat/n2b) | rust crate | 0.6.2 | lib | yes | 0 | 2026-10-07 |
-| `aphrody-n2b-core` | [crates/compat/n2b-core](../../../crates/compat/n2b-core) | rust crate | 0.6.2 | lib | yes | 0 | 2026-10-09 |
-| `aphrody-n2b-registry` | [crates/compat/n2b-registry](../../../crates/compat/n2b-registry) | rust crate | 0.6.2 | lib | yes | 0 | 2026-10-05 |
-| `aphrody-n2b-types` | [crates/compat/n2b-types](../../../crates/compat/n2b-types) | rust crate | 0.6.2 | lib | no | 0 | 2026-10-05 |
-| `aphrody-oxc-bridge` | [crates/compat/oxc-bridge](../../../crates/compat/oxc-bridge) | rust crate | 0.1.0 | rlib | yes | 0 | 2026-10-05 |
 | `rfb-encodings` | [crates/compat/rfb-encodings](../../../crates/compat/rfb-encodings) | rust crate | 0.1.7 | lib | yes | 0 | 2026-10-08 |
 | `serde-saphyr` | [crates/compat/serde-saphyr](../../../crates/compat/serde-saphyr) | rust crate | 0.0.16 | bin, lib | yes | 0 | 2026-10-05 |
 | `aphrody-toolchains` | [crates/compat/toolchains](../../../crates/compat/toolchains) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-01 |
@@ -168,7 +163,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `yolo-pyo3` | [crates/engine/yolo-pyo3](../../../crates/engine/yolo-pyo3) | rust crate | 1.0.0 | cdylib | no | 0 | 2026-10-05 |
 | `yolo-runtime` | [crates/engine/yolo-runtime](../../../crates/engine/yolo-runtime) | rust crate | 1.0.0 | rlib | yes | 0 | 2026-10-08 |
 | `@aphrody/yolo-core` | [packages/engine/core](../../../packages/engine/core) | bun package | 1.0.1 | lib | yes | 0 | 2026-10-09 |
-| `@aphrody/n2b-core` | [packages/engine/n2b-client](../../../packages/engine/n2b-client) | bun package | 0.6.4 | lib | yes | 0 | 2026-10-07 |
 | `@aphrody/plugins` | [packages/engine/plugins](../../../packages/engine/plugins) | bun package | 1.0.1 | lib | yes | 0 | 2026-10-07 |
 | `@aphrody/runtime-sdk` | [packages/engine/runtime](../../../packages/engine/runtime) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-09 |
 | `@aphrody/yolo-cli` | [packages/engine/yolo](../../../packages/engine/yolo) | bun package | 1.0.0 | bin, lib | yes | 0 | 2026-10-09 |
@@ -189,7 +183,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `aphrody` | [crates/infra/aphrody](../../../crates/infra/aphrody) | rust crate | 1.0.0 | bin, lib | yes | 0 | 2026-10-07 |
+| `aphrody` | [crates/infra/aphrody](../../../crates/infra/aphrody) | rust crate | 1.0.0 | bin, lib | yes | 0 | 2026-10-09 |
 | `aphrody-command` | [crates/infra/aphrody-command](../../../crates/infra/aphrody-command) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-09 |
 | `aphrody-command-pure` | [crates/infra/aphrody-command-pure](../../../crates/infra/aphrody-command-pure) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-07 |
 | `aphrody-command-wasm` | [crates/infra/aphrody-command-wasm](../../../crates/infra/aphrody-command-wasm) | rust crate | 1.0.0 | cdylib, rlib | yes | 0 | 2026-10-08 |
@@ -251,7 +245,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-a2a-pb` | [crates/os/kernel/comps/a2a-pb](../../../crates/os/kernel/comps/a2a-pb) | rust crate | 0.1.8 | lib | yes | 0 | 2026-10-07 |
 | `aphrody-a2a-server` | [crates/os/kernel/comps/a2a-server](../../../crates/os/kernel/comps/a2a-server) | rust crate | 0.3.0 | lib | yes | 0 | 2026-10-07 |
 | `aphrody-cron` | [crates/os/kernel/comps/cron](../../../crates/os/kernel/comps/cron) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
-| `aphrody-diagnostics` | [crates/os/kernel/comps/diagnostics](../../../crates/os/kernel/comps/diagnostics) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-07 |
+| `aphrody-diagnostics` | [crates/os/kernel/comps/diagnostics](../../../crates/os/kernel/comps/diagnostics) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-09 |
 | `aphrody-jobs` | [crates/os/kernel/comps/jobs](../../../crates/os/kernel/comps/jobs) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
 | `aphrody-re` | [crates/os/kernel/comps/re](../../../crates/os/kernel/comps/re) | rust crate | 1.0.0-canary | rlib | yes | 0 | 2026-10-08 |
 | `aphrody-sandbox` | [crates/os/kernel/comps/sandbox](../../../crates/os/kernel/comps/sandbox) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
@@ -268,7 +262,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-subsystem` | [crates/os/ostd/subsystem](../../../crates/os/ostd/subsystem) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
 | `@aphrody/a2a` | [packages/os/a2a](../../../packages/os/a2a) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-07 |
 | `@aphrody/drive-client` | [packages/os/drive-client](../../../packages/os/drive-client) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-08 |
-| `@aphrody/os` | [packages/os/kernel-client](../../../packages/os/kernel-client) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-07 |
+| `@aphrody/os` | [packages/os/kernel-client](../../../packages/os/kernel-client) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-09 |
 | `@aphrody/winclean` | [packages/os/winclean](../../../packages/os/winclean) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-07 |
 
 ## packages

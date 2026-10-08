@@ -4,14 +4,9 @@
 import { expect, test } from "bun:test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { exportCrateDirs, repo } from "./export-crates.ts";
 
-const repo = join(import.meta.dir, "..", "..", "..", "..");
-const EXPORT_CRATES = [
-  "crates/interop/ffi/src",
-  "crates/ui/bun/src",
-  "crates/compat/n2b-core/src",
-  "crates/compat/oxc-bridge/src",
-];
+const EXPORT_CRATES = exportCrateDirs();
 const HEADER_DIR = join(repo, "crates/interop/ffi/include");
 // Exports intentionally absent from the C headers (internal runtime / FFI bindings).
 const INTERNAL = new Set<string>([
@@ -48,7 +43,7 @@ function rustNames(): Set<string> {
   const re =
     /#\[(?:unsafe\()?no_mangle\)?\]\s*(?:#\[[^\]]*\]\s*|\/\/\/[^\n]*\n\s*)*pub\s+(?:unsafe\s+)?extern\s+"C"\s+fn\s+(\w+)/g;
   for (const crate of EXPORT_CRATES) {
-    for (const file of rustFiles(join(repo, crate))) {
+    for (const file of rustFiles(crate)) {
       for (const m of readFileSync(file, "utf8").matchAll(re)) names.add(m[1]!);
     }
   }

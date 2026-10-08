@@ -56,7 +56,7 @@
     {
       "path": "README.md",
       "title": "Aphrody",
-      "sha256": "a55e6903491a294f0a30276c2e733643ad119e4ccf70956439108f0a2c17d7f1",
+      "sha256": "e4ad19f60b689934963f77dfa59f7263938df25b23df09bfc617eb945be6efa4",
       "bytes": 3412,
       "domain": "",
       "status": "generated",
@@ -262,66 +262,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "crates/compat/bun-docs/README.md"
-    },
-    {
-      "path": "crates/compat/n2b-core/README.md",
-      "title": "aphrody-n2b-core",
-      "sha256": "065683b76489f4c62015bc53948d52995ab5909aacac5af80614472150ca123d",
-      "bytes": 3140,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/compat/n2b-core/README.md"
-    },
-    {
-      "path": "crates/compat/n2b-registry/README.md",
-      "title": "aphrody-n2b-registry",
-      "sha256": "70494a6a40273565b24d628a0c097f258da7334a4700e301db7fbe0a7be01535",
-      "bytes": 1266,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/compat/n2b-registry/README.md"
-    },
-    {
-      "path": "crates/compat/n2b-types/README.md",
-      "title": "aphrody-n2b-types",
-      "sha256": "3a167d156150c721a9ed13606f4cd60ce709e6a385bbab2a88ec89e799f3d00a",
-      "bytes": 901,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/compat/n2b-types/README.md"
-    },
-    {
-      "path": "crates/compat/n2b/README.md",
-      "title": "aphrody-n2b",
-      "sha256": "b811a14cf7a39145e4930b12a74be111ac3ace27d09fc8fbbf61122ab888f90f",
-      "bytes": 2246,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/compat/n2b/README.md"
-    },
-    {
-      "path": "crates/compat/n2b/tests/baselines/rpb-dashboard-baseline/INVOCATIONS.md",
-      "title": "Invocations n2b utilisées par rpb-dashboard",
-      "sha256": "fac1edeb2b218558ebe62002f2a4e125055c1e5b431cf65d5108aa1120e6cba6",
-      "bytes": 2308,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/compat/n2b/tests/baselines/rpb-dashboard-baseline/INVOCATIONS.md"
-    },
-    {
-      "path": "crates/compat/oxc-bridge/README.md",
-      "title": "Aphrody Oxc bridge — Yolo owner",
-      "sha256": "9c3dd572696e9fb395762d3d5b55e699948005fb0bf977e88e6ed48165fc1c6d",
-      "bytes": 2401,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/compat/oxc-bridge/README.md"
     },
     {
       "path": "crates/compat/rfb-encodings/README.md",
@@ -3486,8 +3426,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "3c24b538dad399d063d46bbc52d7c9d8d702712bb6a212a8b6201f67372c388a",
-      "bytes": 81857,
+      "sha256": "8a66d140036855384d99b4707664e5d52bb3a0bab3cf3deeed88a0cedebe2bfb",
+      "bytes": 81072,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -3646,8 +3586,8 @@
     {
       "path": "docs/guides/workspace/JS-TS-TOOLING.md",
       "title": "Shared native JavaScript and TypeScript tooling",
-      "sha256": "87c7ee62b0f2cf6f9b6c2036261cef34f8dc1dd1ba4c6bf6a190f860587ab624",
-      "bytes": 11574,
+      "sha256": "f69814d22a79ff48c968fd71d6571382e5c19bf951ba6a674fa77171f11c7b85",
+      "bytes": 11288,
       "domain": "workspace",
       "status": "canonical",
       "visibility": "private",
@@ -11666,8 +11606,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "962df831f31f4ef45c7848ca8417d524dd83f8b4d3f8482548d14e3931a5657d",
-      "bytes": 50464,
+      "sha256": "d52bea630b31460ac541b92d9336f3157e7e30c296bbbb2f42961ce49787e3e0",
+      "bytes": 49650,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",

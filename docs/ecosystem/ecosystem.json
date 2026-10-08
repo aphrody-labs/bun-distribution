@@ -714,39 +714,6 @@
           "features": []
         },
         {
-          "name": "aphrody-n2b",
-          "path": "crates/compat/n2b",
-          "description": "Node.js to Bun migration analyzer and codemod",
-          "bins": [],
-          "features": [
-            "ai",
-            "default"
-          ]
-        },
-        {
-          "name": "aphrody-n2b-core",
-          "path": "crates/compat/n2b-core",
-          "description": "N2B engine: rules, scanners, reports, audit, run orchestration, manifest handling, report card and llms.txt generation.",
-          "bins": [],
-          "features": [
-            "default"
-          ]
-        },
-        {
-          "name": "aphrody-n2b-registry",
-          "path": "crates/compat/n2b-registry",
-          "description": "N2B data-driven Node-to-Bun migration rule registry, embedded TOML validated at first use.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-n2b-types",
-          "path": "crates/compat/n2b-types",
-          "description": "N2B shared types and the versioned JSON report schema.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-native",
           "path": "crates/native/native",
           "description": "Host hardware topology and monotonic clock probes for Aphrody.",
@@ -813,13 +780,6 @@
           "name": "aphrody-ovh",
           "path": "crates/infra/ovh",
           "description": "Native OVHcloud engine: OAuth2 service account and SHA-1 signing, services, domains, DNS, VPS, email and IAM management.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-oxc-bridge",
-          "path": "crates/compat/oxc-bridge",
-          "description": "Aphrody's in-process Oxc bridge for the Bun fork.",
           "bins": [],
           "features": []
         },
@@ -2367,12 +2327,6 @@
           "bins": [
             "m3-svg-to-ico"
           ]
-        },
-        {
-          "name": "@aphrody/n2b-core",
-          "path": "packages/engine/n2b-client",
-          "description": "Native N2B SDK scan, explicit legacy CLI helpers and Bun shims",
-          "bins": []
         },
         {
           "name": "@aphrody/os",
@@ -14336,9 +14290,9 @@
     "aphrodyRepos": 2,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 287,
+    "crates": 282,
     "binaries": 38,
-    "bunPackages": 158,
+    "bunPackages": 157,
     "pythonPackages": 10,
     "cliBinaries": 35,
     "cliCommands": 1106,

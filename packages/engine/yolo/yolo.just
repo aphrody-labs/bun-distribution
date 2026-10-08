@@ -203,9 +203,9 @@ runtime-build:
 tooling-build: runtime-build
 
 qualify-tooling:
-    "{{cargo_owner}}" check --locked -p aphrody-ffi --features tooling -p aphrody-n2b -p aphrody-toolchains -p yolo-core --features yolo-core/repository-tools
-    "{{cargo_owner}}" test --locked -p aphrody-ffi --features tooling -p aphrody-oxc-bridge -p aphrody-n2b -p aphrody-n2b-core -p aphrody-n2b-native -p aphrody-n2b-registry -p aphrody-n2b-types -p aphrody-toolchains -p yolo-core --features yolo-core/repository-tools --lib --tests
-    "{{cargo_owner}}" clippy --locked -p aphrody-ffi --features tooling -p aphrody-oxc-bridge -p aphrody-n2b -p aphrody-n2b-core -p aphrody-n2b-native -p aphrody-n2b-registry -p aphrody-n2b-types -p aphrody-toolchains -p yolo-core --features yolo-core/repository-tools --all-targets -- -D warnings
+    "{{cargo_owner}}" check --locked -p aphrody-ffi --features tooling -p aphrody-toolchains -p yolo-core --features yolo-core/repository-tools
+    "{{cargo_owner}}" test --locked -p aphrody-ffi --features tooling -p aphrody-bun-docs -p aphrody-toolchains -p yolo-core --features yolo-core/repository-tools --lib --tests
+    "{{cargo_owner}}" clippy --locked -p aphrody-ffi --features tooling -p aphrody-bun-docs -p aphrody-toolchains -p yolo-core --features yolo-core/repository-tools --all-targets -- -D warnings
     just tooling-build
 
 runtime-test: runtime-build

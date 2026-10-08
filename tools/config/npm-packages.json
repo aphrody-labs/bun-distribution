@@ -611,15 +611,6 @@
       "dependencies": ["@aphrody/runtime-sdk", "@oxc-project/types"]
     },
     {
-      "name": "@aphrody/n2b-core",
-      "version": "0.6.4",
-      "path": "packages/engine/n2b-client/package.json",
-      "status": "published",
-      "sha256": "2702ca14e4bfa22e65d74f9b753ae0da0954200aa5deb259a498f22992bad4af",
-      "integrity": "sha512-eJgVqfYCgW0TMAep+VzPFWgoLxFKtSMLrhJuvwxi/Cab3TGYxxYX1sTaT8Gu1vTC83OxIEX8REKbGzm9TDKM2g==",
-      "dependencies": ["@aphrody/runtime-sdk"]
-    },
-    {
       "name": "@aphrody/plugins",
       "version": "1.0.1",
       "path": "packages/engine/plugins/package.json",

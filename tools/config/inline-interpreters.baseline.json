@@ -52,11 +52,6 @@
       "scope": "unclassified",
       "reason": ""
     },
-    "packages/engine/n2b-client/test/binary-resolution.test.ts": {
-      "count": 1,
-      "scope": "unclassified",
-      "reason": ""
-    },
     "packages/infra/update/test/tauri-sync-apply.test.ts": {
       "count": 1,
       "scope": "test",
