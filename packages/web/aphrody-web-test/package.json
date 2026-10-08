@@ -47,7 +47,7 @@
   },
   "dependencies": {
     "@aphrody/agent-browser": "workspace:*",
-    "@aphrody/next-bun": "file:../../../../bun/packages/bun-next"
+    "@aphrody/next-bun": "0.2.0-aphrody.1"
   },
   "engines": {
     "bun": ">=1.4.2"

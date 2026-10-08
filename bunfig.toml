@@ -12,6 +12,7 @@ minimumReleaseAgeExcludes = [
   "@aphrody/material-web",
   "@aphrody/bun-types",
   "@aphrody/bun-webview-page",
+  "@aphrody/next-bun",
   "next",
   "@next/env",
   "@next/swc-linux-x64-gnu",

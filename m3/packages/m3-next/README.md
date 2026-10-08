@@ -103,8 +103,8 @@ Turbopack, 15.3 s with `--webpack`). `m3-next dev`, `build` and `start` pass the
 
 The runner (`bunNodeShim`, `nextBin`, `nextCommand`) and its tests now live in `@aphrody/next-bun`
 (`packages/bun-next/lib/run.js` and `test/integration/next-bun/` of aphrody-labs/bun, also `next-bun dev|build|start`).
-`bin/m3-next.ts` re-exports them and keeps the `m3-next` usage. The dependency is `file:../../../../bun/packages/bun-next`
-(the fork checked out next to this one) until `@aphrody/next-bun` is on npm.
+`bin/m3-next.ts` re-exports them and keeps the `m3-next` usage. The dependency is the published
+`@aphrody/next-bun` (npm, exact pin `0.2.0-aphrody.1`).
 
 A file named `proxy.ts` anywhere in a transpiled package is treated as the app's proxy by Next: that is why this package's helper
 lives in `theme-proxy.ts` (exported as `@aphrody/m3-next/proxy`).

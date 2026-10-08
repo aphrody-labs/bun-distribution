@@ -124,12 +124,12 @@ export async function auditPackages(
         ["bun", "pm", "pack", "--filename", archive, "--quiet"],
         dirname(join(root, path)),
       );
-      const names = (await checked(["tar", "-tzf", archive], root)).trim().split("\n");
+      // Bun.Archive rather than tar: GNU tar reads a "C:\..." archive path as a remote host.
+      const entries = await new Bun.Archive(await Bun.file(archive).bytes()).files();
+      const names = [...entries.keys()];
       if (names.some((name) => !name.startsWith("package/")))
         throw new Error("archive contains paths outside package/");
-      const packed: Manifest = JSON.parse(
-        await checked(["tar", "-xOf", archive, "package/package.json"], root),
-      );
+      const packed: Manifest = JSON.parse(await entries.get("package/package.json")!.text());
       row.files = names.length;
       row.errors = auditPayload(
         packed,
@@ -143,10 +143,7 @@ export async function auditPackages(
           file.startsWith("vendor/")
         )
           continue;
-        const source = await checked(
-          ["tar", "-xOf", archive, "--occurrence=1", `package/${file}`],
-          root,
-        );
+        const source = await entries.get(`package/${file}`)!.text();
         const loader = file.endsWith("tsx")
           ? "tsx"
           : file.endsWith("jsx")

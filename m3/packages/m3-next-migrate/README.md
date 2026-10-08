@@ -44,7 +44,7 @@ The `next16` and `tailwind4` codemods, the source scanner (`lex`), `pages-hints`
 (`packages/bun-next/codemods/` of aphrody-labs/bun, tested in `test/integration/next-bun/codemods.test.ts` there, also
 `next-bun codemod`). This package keeps `mui-to-m3` (and its JSX scanner), composes `[...NEXT16_CODEMODS, mui, ...TAILWIND4_CODEMODS]`,
 passes the M3 preset header to `tailwind-config-v4` and re-exports the rest from `@aphrody/m3-next-migrate/codemods`. The dependency is
-`file:../../../../bun/packages/bun-next` (the fork checked out next to this one) until `@aphrody/next-bun` is on npm.
+the published `@aphrody/next-bun` (npm, exact pin `0.2.0-aphrody.1`).
 
 ---
 
