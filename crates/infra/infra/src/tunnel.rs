@@ -362,11 +362,34 @@ fn detach_up(
         const CREATE_NO_WINDOW: u32 = 0x0800_0000;
         const DETACHED_PROCESS: u32 = 0x0000_0008;
         cmd.creation_flags(CREATE_NO_WINDOW | DETACHED_PROCESS);
+        disinherit_std_handles();
     }
     let child = cmd.spawn()?;
     let out = json!({ "name": name, "detached": child.id(), "log": log });
     println!("{}", serde_json::to_string_pretty(&out)?);
     Ok(out)
+}
+
+/// `CreateProcess` inherits every inheritable handle, including the caller's stdout pipe: the
+/// detached owner would then hold the pipe of a capturing shell open for the tunnel's lifetime.
+#[cfg(windows)]
+fn disinherit_std_handles() {
+    use windows_sys::Win32::Foundation::{
+        HANDLE_FLAG_INHERIT, INVALID_HANDLE_VALUE, SetHandleInformation,
+    };
+    use windows_sys::Win32::System::Console::{
+        GetStdHandle, STD_ERROR_HANDLE, STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
+    };
+    for which in [STD_INPUT_HANDLE, STD_OUTPUT_HANDLE, STD_ERROR_HANDLE] {
+        // SAFETY: GetStdHandle has no preconditions; SetHandleInformation only clears the
+        // inherit flag of a handle owned by this process and is skipped for null/invalid ones.
+        unsafe {
+            let h = GetStdHandle(which);
+            if !h.is_null() && h != INVALID_HANDLE_VALUE {
+                SetHandleInformation(h, HANDLE_FLAG_INHERIT, 0);
+            }
+        }
+    }
 }
 
 fn print_status(st: &Value) {
