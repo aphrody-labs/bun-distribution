@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterEach, beforeAll, describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -68,8 +67,8 @@ afterEach(async () => {
 
 describe("sources", () => {
   for (const file of FILES) {
-    test(`${file}.tsx carries the fusion header and no SpaceUI leftovers`, () => {
-      const source = readFileSync(join(import.meta.dir, "..", "src", `${file}.tsx`), "utf8");
+    test(`${file}.tsx carries the fusion header and no SpaceUI leftovers`, async () => {
+      const source = await Bun.file(join(import.meta.dir, "..", "src", `${file}.tsx`)).text();
       expect(source.startsWith("// SPDX-License-Identifier: Apache-2.0 AND MIT\n")).toBe(true);
       expect(source).toContain(`packages/aphrody-spaceui/packages/primitives/src/${file}`);
       expect(source).not.toMatch(SPACEUI_VOCABULARY);
