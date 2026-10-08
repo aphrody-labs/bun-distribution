@@ -6,8 +6,8 @@
  * application on a loopback port: one origin for the UI and the API. This script compiles the
  * sidecar and stages it beside the desktop executable, where the desktop looks for it first.
  */
-import { copyFile, mkdir } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { mkdir } from "node:fs/promises";
+import { resolve } from "node:path";
 import {
   heavyBuildStatus,
   readFactoryConfig,
@@ -141,8 +141,7 @@ async function runSidecar(): Promise<void> {
     profile,
     `m3-showcase${suffix}`,
   );
-  await mkdir(dirname(beside), { recursive: true });
-  await copyFile(command.at(-1)!, beside);
+  await Bun.write(beside, Bun.file(command.at(-1)!));
 }
 
 export async function runTauri(input: string[] = []): Promise<void> {

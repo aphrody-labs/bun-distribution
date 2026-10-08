@@ -2,14 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Chromium interaction checks against an existing local production server; no snapshots or installations.
 import assert from "node:assert/strict";
-import { mkdir } from "node:fs/promises";
-import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
-import { fileURLToPath } from "node:url";
+import { isAbsolute, relative, resolve, sep } from "node:path";
 import { chromium, type Page } from "@aphrody/bun-webview-page";
 import { PAGES } from "../src/pages/index.ts";
 import { CHROMIUM_ARGS } from "./shots.ts";
 
-const RUNS = fileURLToPath(new URL("../../../../.coord/runs/m3-prod/", import.meta.url));
+const RUNS = Bun.fileURLToPath(new URL("../../../../.coord/runs/m3-prod/", import.meta.url));
 interface Check {
   name: string;
   passed: boolean;
@@ -391,7 +389,6 @@ if (import.meta.main) {
     };
     const out = outputPath(value("--out"));
     const report = await browserContract(value("--url") ?? "http://127.0.0.1:3312");
-    await mkdir(dirname(out), { recursive: true });
     await Bun.write(out, JSON.stringify(report, null, 2) + "\n");
     const failures = report.checks.filter((check) => !check.passed);
     console.log(report.checks.length + " checks, " + failures.length + " failures; " + out);

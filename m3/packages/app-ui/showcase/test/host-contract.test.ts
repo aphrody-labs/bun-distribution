@@ -61,7 +61,7 @@ describe("showcase host delivery contract", () => {
   test("sidecar target names match the compiler and unsupported mobile hosts fail clearly", () => {
     const linux = sidecarCommand("x86_64-unknown-linux-gnu", "/consumer");
     expect(linux).toContain("linux-x64");
-    expect(linux.at(-1)).toBe("/consumer/m3-showcase-x86_64-unknown-linux-gnu");
+    expect(linux.at(-1)).toBe(resolve("/consumer/m3-showcase-x86_64-unknown-linux-gnu"));
     const windows = sidecarCommand("x86_64-pc-windows-msvc", "/consumer");
     expect(windows).toContain("windows-x64");
     expect(windows.at(-1)).toEndWith("m3-showcase-x86_64-pc-windows-msvc.exe");
