@@ -144,10 +144,11 @@ async function workspaceManifests(root: string, patterns: string[]): Promise<Man
   ];
   // Negated workspace patterns (packages leaving for another repository) still count as users.
   for (const pattern of patterns.filter((p) => !p.startsWith("!"))) {
-    for await (const path of new Bun.Glob(`${pattern}/package.json`).scan({
+    for await (const rawPath of new Bun.Glob(`${pattern}/package.json`).scan({
       cwd: root,
       onlyFiles: true,
     })) {
+      const path = rawPath.replace(/\\/g, "/");
       if (path.includes("node_modules/")) continue;
       manifests.push({ path, json: await Bun.file(resolve(root, path)).json() });
     }
@@ -163,7 +164,8 @@ async function countImports(root: string, config: AbsorbConfig): Promise<Record<
     `(^|/)(${config.scan.exclude.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})(/|$)`,
   );
   const counts: Record<string, number> = {};
-  for await (const path of new Bun.Glob(config.scan.include).scan({ cwd: root, onlyFiles: true })) {
+  for await (const rawPath of new Bun.Glob(config.scan.include).scan({ cwd: root, onlyFiles: true })) {
+    const path = rawPath.replace(/\\/g, "/");
     if (exclude.test(path)) continue;
     let source: string;
     try {

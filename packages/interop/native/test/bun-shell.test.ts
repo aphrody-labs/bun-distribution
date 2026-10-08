@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, it } from "bun:test";
 import {
+  bunBase64Encode,
+  bunGlobMatch,
   bunJscEval,
+  bunParseDotenv,
+  bunSemverSatisfies,
   bunShell,
   bunValidateAscii,
   bunValidateUtf8,
+  bunWyHash,
   type BunShellResult,
 } from "../src/bun-shell";
 
@@ -53,5 +58,51 @@ describe("Bun Native Integration", () => {
       { name: "Alice", age: 30 },
       { name: "Charlie", age: 35 },
     ]);
+  });
+
+  it("calculates fast 64-bit WyHash deterministically", () => {
+    const h1 = bunWyHash("aphrody-kernel");
+    const h2 = bunWyHash("aphrody-kernel");
+    const h3 = bunWyHash("aphrody-kernel-diff");
+
+    expect(h1).toBe(h2);
+    expect(h1).not.toBe(h3);
+    expect(h1).not.toBe(0n);
+  });
+
+  it("parses .env files with variable expansion and quotes", () => {
+    const envContent = `
+PORT=8080
+API_URL=https://api.aphrody.com
+WELCOME="Hello Aphrody"
+`;
+    const parsed = bunParseDotenv(envContent);
+    expect(parsed.PORT).toBe("8080");
+    expect(parsed.API_URL).toBe("https://api.aphrody.com");
+    expect(parsed.WELCOME).toBe("Hello Aphrody");
+  });
+
+  it("evaluates SemVer constraints with caret and tilde", () => {
+    expect(bunSemverSatisfies("1.2.3", "^1.2.0")).toBe(true);
+    expect(bunSemverSatisfies("2.0.0", "^1.2.0")).toBe(false);
+    expect(bunSemverSatisfies("1.2.5", "~1.2.0")).toBe(true);
+    expect(bunSemverSatisfies("1.3.0", "~1.2.0")).toBe(false);
+  });
+
+  it("matches filesystem paths with native glob patterns", () => {
+    expect(bunGlobMatch("src/**/*.ts", "src/shell/bun.ts")).toBe(true);
+    expect(bunGlobMatch("src/**/*.ts", "crates/shell/bun.rs")).toBe(false);
+    expect(bunGlobMatch("*.json", "package.json")).toBe(true);
+  });
+
+  it("encodes standard and URL-safe Base64", () => {
+    const data = new TextEncoder().encode("Aphrody + Bun = Speed");
+    const standard = bunBase64Encode(data, false);
+    const urlSafe = bunBase64Encode(data, true);
+
+    expect(typeof standard).toBe("string");
+    expect(typeof urlSafe).toBe("string");
+    expect(urlSafe.includes("+")).toBe(false);
+    expect(urlSafe.includes("/")).toBe(false);
   });
 });

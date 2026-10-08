@@ -22,6 +22,7 @@ serde_json = { workspace = true }
 which = { workspace = true }
 memchr = { workspace = true }
 simdutf = { workspace = true }
+regex = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

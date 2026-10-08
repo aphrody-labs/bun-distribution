@@ -292,3 +292,101 @@ export function bunValidateAscii(bytes: Uint8Array): boolean {
   }
   return true;
 }
+
+/**
+ * Fast WyHash 64-bit algorithm matching Bun's `bun.hash()`.
+ */
+export function bunWyHash(data: Uint8Array | string, seed: bigint = 0n): bigint {
+  const bytes = typeof data === "string" ? new TextEncoder().encode(data) : data;
+  if (isNativeBunAvailable()) {
+    try {
+      return BigInt(lib.bun_hash_wyhash(bytes, BigInt(bytes.length), seed));
+    } catch {}
+  }
+  // Fast in-process 64-bit FNV fallback when FFI is not loaded
+  let h = 0xcbf29ce484222325n ^ seed;
+  for (let i = 0; i < bytes.length; i++) {
+    h ^= BigInt(bytes[i]!);
+    h = (h * 0x100000001b3n) & 0xffffffffffffffffn;
+  }
+  return h;
+}
+
+/**
+ * Native .env parser matching Bun's thirdparty/dotenv with variable expansion.
+ */
+export function bunParseDotenv(content: string): Record<string, string> {
+  if (isNativeBunAvailable()) {
+    try {
+      const cStr = Buffer.from(content + "\0");
+      const ptr = lib.bun_dotenv_parse(cStr);
+      if (ptr) {
+        try {
+          return JSON.parse(new CString(ptr).toString());
+        } finally {
+          lib.bun_bridge_free_string(ptr);
+        }
+      }
+    } catch {}
+  }
+  const out: Record<string, string> = {};
+  for (const line of content.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const clean = trimmed.startsWith("export ") ? trimmed.slice(7).trim() : trimmed;
+    const idx = clean.indexOf("=");
+    if (idx !== -1) {
+      const k = clean.slice(0, idx).trim();
+      let v = clean.slice(idx + 1).trim();
+      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+        v = v.slice(1, -1);
+      }
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+/**
+ * High-speed SemVer satisfaction test.
+ */
+export function bunSemverSatisfies(version: string, requirement: string): boolean {
+  if (isNativeBunAvailable()) {
+    try {
+      return lib.bun_semver_satisfies(Buffer.from(version + "\0"), Buffer.from(requirement + "\0"));
+    } catch {}
+  }
+  return Bun.semver.satisfies(version, requirement);
+}
+
+/**
+ * Fast glob pattern matching.
+ */
+export function bunGlobMatch(pattern: string, path: string): boolean {
+  if (isNativeBunAvailable()) {
+    try {
+      return lib.bun_glob_match(Buffer.from(pattern + "\0"), Buffer.from(path + "\0"));
+    } catch {}
+  }
+  return new Bun.Glob(pattern).match(path);
+}
+
+/**
+ * Fast Base64 encoding.
+ */
+export function bunBase64Encode(data: Uint8Array, urlSafe: boolean = false): string {
+  if (isNativeBunAvailable()) {
+    try {
+      const ptr = lib.bun_base64_encode(data, BigInt(data.length), urlSafe);
+      if (ptr) {
+        try {
+          return new CString(ptr).toString();
+        } finally {
+          lib.bun_bridge_free_string(ptr);
+        }
+      }
+    } catch {}
+  }
+  const str = Buffer.from(data).toString("base64");
+  return urlSafe ? str.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "") : str;
+}

@@ -294,6 +294,26 @@ const SYMBOLS = {
     args: [FFIType.ptr],
     returns: FFIType.void,
   },
+  bun_hash_wyhash: {
+    args: [FFIType.ptr, FFIType.u64_fast, FFIType.u64_fast],
+    returns: FFIType.u64_fast,
+  },
+  bun_dotenv_parse: {
+    args: [FFIType.cstring],
+    returns: FFIType.ptr,
+  },
+  bun_semver_satisfies: {
+    args: [FFIType.cstring, FFIType.cstring],
+    returns: FFIType.bool,
+  },
+  bun_glob_match: {
+    args: [FFIType.cstring, FFIType.cstring],
+    returns: FFIType.bool,
+  },
+  bun_base64_encode: {
+    args: [FFIType.ptr, FFIType.u64_fast, FFIType.bool],
+    returns: FFIType.ptr,
+  },
 } as const;
 
 type NativeLibrary = ReturnType<typeof dlopen<typeof SYMBOLS>>;
