@@ -92,7 +92,8 @@ enum CommandKind {
         #[arg(long)]
         json: bool,
     },
-    /// Reclaim allowlisted disk/tmpfs space on a target (tools/config/disk-reclaim.json).
+    /// Reclaim allowlisted disk/tmpfs space on a target; root-level steps run through sudo -n
+    /// (tools/config/disk-reclaim.json).
     Reclaim {
         #[arg(long)]
         target: String,
@@ -1442,11 +1443,18 @@ fn reclaim_disk(root: &Path, target_id: &str, apply: bool, run: &mut Run) -> Res
         };
         let bytes: u64 = bytes.trim().parse().unwrap_or(0);
         total += bytes;
+        let system_paths = target.system.iter().flat_map(|s| s.paths.iter());
+        let fallback = if label.starts_with("system:") {
+            "root-level cleanup through sudo -n"
+        } else {
+            "tmpfs entries older than the threshold"
+        };
         let reason = target
             .paths
             .iter()
+            .chain(system_paths)
             .find(|e| e.path == label)
-            .map_or("tmpfs entries older than the threshold", |e| e.reason.as_str());
+            .map_or(fallback, |e| e.reason.as_str());
         println!("{:>8.2} GiB  {label}  ({reason})", bytes as f64 / 1024f64.powi(3));
         entries.push(json!({ "path": label, "bytes": bytes }));
     }

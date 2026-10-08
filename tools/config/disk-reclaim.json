@@ -5,7 +5,8 @@
   "policy": [
     "paths are relative to the remote $HOME; absolute paths and '..' are rejected",
     "never list data read by a running unit (nie-model-serve reads .local/share/Steam/iecode and nie/var/model-cache; nie-site runs from nie/target/release)",
-    "/tmp is tmpfs: reclaiming it frees RAM and swap, not disk"
+    "/tmp is tmpfs: reclaiming it frees RAM and swap, not disk",
+    "system steps run through sudo -n: docker prune never touches volumes; absolute paths below protected roots (/srv, /var/lib/docker, /srv/shenron/shared...) only"
   ],
   "targets": {
     "vps": {
@@ -102,6 +103,62 @@
         {
           "path": "aphrody",
           "reason": "stale pre-factory checkout (clean, nothing unpushed 2026-10-05); source lives in /srv/aphrody-build/workspaces/aphrody"
+        },
+        {
+          "path": ".cache/shenron-bench-host",
+          "reason": "tool/bench cache, rebuilt on demand"
+        },
+        {
+          "path": ".cache/cargo-xwin",
+          "reason": "tool/bench cache, rebuilt on demand"
+        },
+        {
+          "path": ".cache/creator-kit",
+          "reason": "tool/bench cache, rebuilt on demand"
+        },
+        {
+          "path": ".cache/downloads-publish",
+          "reason": "tool/bench cache, rebuilt on demand"
+        },
+        {
+          "path": ".cache/aphrody-build-src",
+          "reason": "tool/bench cache, rebuilt on demand"
+        },
+        {
+          "path": ".cache/aphrody-build-testctx",
+          "reason": "tool/bench cache, rebuilt on demand"
+        },
+        {
+          "path": "shenron-docker/target",
+          "reason": "build output of a non-git Shenron copy, rebuildable"
+        },
+        {
+          "path": "shenron-docker/node_modules",
+          "reason": "build output of a non-git Shenron copy, rebuildable"
+        },
+        {
+          "path": "shenron-docker/dist",
+          "reason": "build output of a non-git Shenron copy, rebuildable"
+        },
+        {
+          "path": "shenron-release/target",
+          "reason": "build output of a non-git Shenron copy, rebuildable"
+        },
+        {
+          "path": "shenron-release/node_modules",
+          "reason": "build output of a non-git Shenron copy, rebuildable"
+        },
+        {
+          "path": "shenron-release/dist",
+          "reason": "build output of a non-git Shenron copy, rebuildable"
+        },
+        {
+          "path": "shenron-xenoverse-map/target",
+          "reason": "build output of a non-git Shenron copy, rebuildable"
+        },
+        {
+          "path": "shenron-xenoverse-map/node_modules",
+          "reason": "build output of a non-git Shenron copy, rebuildable"
         }
       ],
       "tmp": {
@@ -114,6 +171,29 @@
           "tmux-*",
           "snap-private-tmp",
           "*quarantine*"
+        ]
+      },
+      "system": {
+        "docker": true,
+        "journalMaxSize": "200M",
+        "apt": true,
+        "snap": true,
+        "rotatedLogs": true,
+        "coreDumps": true,
+        "varTmpOlderThanDays": 7,
+        "paths": [
+          {
+            "path": "/srv/aphrody-build/cache/target-wg-check",
+            "reason": "one-off WireGuard check target, superseded by the container gate"
+          },
+          {
+            "path": "/srv/aphrody-build/cache/bun-forge",
+            "reason": "retired bun-forge cache; the fork builds in aphrody/build-linux"
+          },
+          {
+            "path": "/srv/aphrody-build/transient/remote-unify",
+            "reason": "stopped transient gate clone"
+          }
         ]
       }
     },
@@ -153,7 +233,17 @@
           "path": ".local/share/Trash",
           "reason": "60 KiB user trash, already discarded"
         }
-      ]
+      ],
+      "system": {
+        "docker": true,
+        "journalMaxSize": "200M",
+        "apt": true,
+        "snap": true,
+        "rotatedLogs": true,
+        "coreDumps": true,
+        "varTmpOlderThanDays": 7,
+        "paths": []
+      }
     }
   }
 }
