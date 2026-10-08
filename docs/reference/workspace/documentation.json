@@ -3916,8 +3916,8 @@
     {
       "path": "docs/operations/discord/OMAR-MONITOR.md",
       "title": "Moniteur Codex et objectifs d’Omar",
-      "sha256": "1c6811fdf633ee28cd87427b3b48125d10e3d178f38872158678c9c02414044e",
-      "bytes": 13119,
+      "sha256": "ab88e7fe92abbc1bb1b026bcaaf97528f4a339b1f33db61446d79a0805f842d4",
+      "bytes": 13120,
       "domain": "discord",
       "status": "canonical",
       "visibility": "private",
@@ -12446,7 +12446,7 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "8e70b44f529404c1b6c598126b67eb937ca292c67b4d084a5ee1faf4c7273517",
+      "sha256": "616a084250f6f8f71246baf9a969998b04f31b29b3a57b47a60b20f745567af2",
       "bytes": 50464,
       "domain": "workspace",
       "status": "generated",
