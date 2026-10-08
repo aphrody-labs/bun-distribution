@@ -3,15 +3,24 @@ import { test, expect } from "bun:test";
 import { mkdtemp, chmod, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { Queue, type Policy, type SourceMessage, isOmar } from "../../src/omar-monitor/store.ts";
+import {
+  isDiscordPing,
+  Queue,
+  type Policy,
+  type SourceMessage,
+  isOmar,
+} from "../../src/omar-monitor/store.ts";
 import {
   reconcile,
   safeOutput,
   parseResult,
   checkOmarMonitorUpgrade,
   checkOmarMonitorReady,
+  defaultPingGoal,
+  ensureMentionGoal,
 } from "../../src/omar-monitor/service.ts";
 import { Codex, finalText, type Turn } from "../../src/omar-monitor/codex.ts";
+import { WorkerPool } from "../../src/omar-monitor/workers.ts";
 import type { LabApi } from "../../src/lab/ai-lab.ts";
 
 const fullPage: LabApi = async <T>() =>
@@ -49,6 +58,108 @@ test("only authenticated Omar or owner messages in the declared guild/channel cr
     { content: "  " },
   ])
     expect(isOmar(message("10", fields), ownerPolicy)).toBe(false);
+});
+test("a Discord mention always produces a goal, including when the planner returns none", () => {
+  expect(isDiscordPing("<@123456789>")).toBe(true);
+  expect(isDiscordPing("<@&123456789>")).toBe(true);
+  expect(isDiscordPing("@everyone")).toBe(true);
+  expect(ensureMentionGoal([], "<@123456789>")).toEqual([defaultPingGoal]);
+  expect(ensureMentionGoal(["Inspect the requested service"], "<@123456789>")).toEqual([
+    "Inspect the requested service",
+  ]);
+  expect(ensureMentionGoal([], "No request here")).toEqual([]);
+});
+test("unassigned terminal mention jobs are requeued without discarding prior evidence", () => {
+  const q = new Queue(":memory:");
+  try {
+    q.ingest(message("11", { content: "<@123456789>" }), policy);
+    q.update("11", { state: "ignored", goals: "[]", evidence: "prior ignored evidence" });
+    q.ingest(message("12", { content: "Please inspect <@&123456789>" }), policy);
+    q.update("12", {
+      state: "blocked",
+      goals: JSON.stringify(["Inspect the requested host"]),
+      worker_host: "omar-wsl",
+      evidence: "prior route evidence",
+    });
+    q.ingest(message("13", { content: "No mention" }), policy);
+    q.update("13", { state: "blocked", evidence: "preserve unrelated job" });
+    q.ingest(message("14", { content: "<@123456789>" }), policy);
+    q.update("14", { state: "blocked", worker_thread: "already-launched" });
+
+    expect(q.recoverUnassignedMentions(defaultPingGoal)).toBe(2);
+    const recovered = q.db
+      .query<
+        {
+          id: string;
+          state: string;
+          goals: string;
+          worker_host: string | null;
+          prior_evidence: string | null;
+        },
+        []
+      >("SELECT id,state,goals,worker_host,prior_evidence FROM jobs WHERE id IN (?,?) ORDER BY id")
+      .all("11", "12");
+    expect(recovered).toEqual([
+      {
+        id: "11",
+        state: "pending",
+        goals: JSON.stringify([defaultPingGoal]),
+        worker_host: null,
+        prior_evidence: "prior ignored evidence",
+      },
+      {
+        id: "12",
+        state: "pending",
+        goals: JSON.stringify(["Inspect the requested host"]),
+        worker_host: null,
+        prior_evidence: "prior route evidence",
+      },
+    ]);
+    expect(
+      q.db.query<{ state: string }, [string]>("SELECT state FROM jobs WHERE id=?").get("13")?.state,
+    ).toBe("blocked");
+    expect(
+      q.db.query<{ state: string }, [string]>("SELECT state FROM jobs WHERE id=?").get("14")?.state,
+    ).toBe("blocked");
+  } finally {
+    q.close();
+  }
+});
+test("an unavailable selected host falls back to a local worker thread", async () => {
+  const local = {} as Codex;
+  const pool = new WorkerPool(
+    {
+      ...policy,
+      defaultWorkerHost: "omar-wsl",
+      workerHosts: [
+        {
+          id: "omar-wsl",
+          match: ["training"],
+          unavailableReason: "WireGuard peer is unreachable",
+        },
+      ],
+    } as Policy,
+    local,
+  );
+  try {
+    const worker = await pool.select({
+      id: "15",
+      text: "training on the owner workstation",
+      state: "pending",
+      channel_id: "c",
+      monitor_thread: null,
+      worker_thread: null,
+      worker_host: null,
+      goals: JSON.stringify(["Check training status"]),
+      evidence: null,
+    });
+    expect(worker.hostId).toBe("local");
+    expect(worker.codex).toBe(local);
+    expect(worker.routeFailure?.hostId).toBe("omar-wsl");
+    expect(worker.routeFailure?.reason).toContain("unreachable");
+  } finally {
+    pool.close();
+  }
 });
 test("gateway/history overlap and restart preserve a single running goal", async () => {
   const dir = await mkdtemp(join(tmpdir(), "omar-queue-test-"));

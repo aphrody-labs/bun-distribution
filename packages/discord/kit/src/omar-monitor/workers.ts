@@ -13,6 +13,12 @@ export class WorkerUnavailable extends Error {
 }
 
 const normalized = (text: string) => text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+export interface WorkerSelection {
+  hostId: string;
+  policy: Policy;
+  codex: Codex;
+  routeFailure?: { hostId: string; reason: string };
+}
 
 /** A persisted thread belongs to its original host, including legacy VPS threads. */
 export function workerHostId(policy: Policy, job: Job): string {
@@ -56,14 +62,34 @@ export class WorkerPool {
     private readonly local: Codex,
   ) {}
 
-  async select(job: Job): Promise<{ hostId: string; policy: Policy; codex: Codex }> {
+  private localFallback(job: Job, error: WorkerUnavailable): WorkerSelection {
+    if (job.worker_thread) throw error;
+    return {
+      hostId: "local",
+      policy: this.policy,
+      codex: this.local,
+      routeFailure: { hostId: error.hostId, reason: error.message },
+    };
+  }
+
+  async select(job: Job): Promise<WorkerSelection> {
     const hostId = workerHostId(this.policy, job);
     if (hostId === "local") return { hostId, policy: this.policy, codex: this.local };
     const existing = this.clients.get(hostId);
     if (existing) return { hostId, ...existing };
     const host = this.policy.workerHosts?.find((candidate) => candidate.id === hostId);
-    if (!host) throw new WorkerUnavailable(hostId, "host removed from declared policy");
-    const policy = remotePolicy(this.policy, host);
+    if (!host)
+      return this.localFallback(
+        job,
+        new WorkerUnavailable(hostId, "host removed from declared policy"),
+      );
+    let policy: Policy;
+    try {
+      policy = remotePolicy(this.policy, host);
+    } catch (error) {
+      if (error instanceof WorkerUnavailable) return this.localFallback(job, error);
+      throw error;
+    }
     const codex = new Codex(policy);
     let deadline: ReturnType<typeof setTimeout> | undefined;
     try {
@@ -75,7 +101,10 @@ export class WorkerPool {
       ]);
     } catch {
       codex.close();
-      throw new WorkerUnavailable(hostId, "authenticated SSH/Codex transport unavailable");
+      return this.localFallback(
+        job,
+        new WorkerUnavailable(hostId, "authenticated SSH/Codex transport unavailable"),
+      );
     } finally {
       clearTimeout(deadline);
     }

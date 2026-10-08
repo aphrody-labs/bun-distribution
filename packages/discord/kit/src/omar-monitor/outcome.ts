@@ -31,9 +31,18 @@ export function recordOutcome(
     const count = result.status === "continue" && needs.length ? (prior?.count ?? 0) + 1 : 0;
     queue.set(key, JSON.stringify({ count }));
     const outcome: Outcome = count >= 3 ? { ...result, status: "blocked", needs } : result;
+    let priorAttempt: unknown;
+    if (job.prior_evidence) {
+      try {
+        priorAttempt = JSON.parse(job.prior_evidence);
+      } catch {
+        priorAttempt = job.prior_evidence;
+      }
+    }
     queue.update(job.id, {
       state: outcome.status === "continue" ? "executing" : outcome.status,
       evidence: JSON.stringify({
+        ...(priorAttempt === undefined ? {} : { priorAttempt }),
         threadId: job.worker_thread,
         workerHost: job.worker_host ?? "local",
         turnId: turn.id,

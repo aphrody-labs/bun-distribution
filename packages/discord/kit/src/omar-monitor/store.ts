@@ -52,6 +52,10 @@ export interface Job {
   worker_host?: string | null;
   goals: string | null;
   evidence: string | null;
+  prior_evidence?: string | null;
+}
+export function isDiscordPing(text: string): boolean {
+  return /<@(?:[!&])?\d+>|@(everyone|here)\b/i.test(text);
 }
 export function isAuthorizedUser(message: SourceMessage, policy: Policy): boolean {
   const isOwner = !!policy.ownerId && message.author.id === policy.ownerId;
@@ -90,6 +94,8 @@ export class Queue {
       this.db.exec("ALTER TABLE jobs ADD COLUMN channel_id TEXT NOT NULL DEFAULT ''");
     if (!jobCols.some((col) => col.name === "worker_host"))
       this.db.exec("ALTER TABLE jobs ADD COLUMN worker_host TEXT");
+    if (!jobCols.some((col) => col.name === "prior_evidence"))
+      this.db.exec("ALTER TABLE jobs ADD COLUMN prior_evidence TEXT");
     const outboxCols = this.db.query<{ name: string }, []>("PRAGMA table_info(outbox)").all();
     if (!outboxCols.some((col) => col.name === "channel_id"))
       this.db.exec("ALTER TABLE outbox ADD COLUMN channel_id TEXT NOT NULL DEFAULT ''");
@@ -159,6 +165,27 @@ export class Queue {
         "SELECT state,count(*) AS count FROM jobs GROUP BY state",
       )
       .all();
+  }
+  recoverUnassignedMentions(defaultGoal: string): number {
+    const rows = this.db
+      .query<{ id: string; text: string; goals: string | null }, []>(
+        "SELECT id,text,goals FROM jobs WHERE state IN ('blocked','ignored') AND worker_thread IS NULL",
+      )
+      .all()
+      .filter((row) => isDiscordPing(row.text));
+    if (!rows.length) return 0;
+    return this.db.transaction(() => {
+      let recovered = 0;
+      for (const row of rows) {
+        const goals = row.goals && row.goals !== "[]" ? row.goals : JSON.stringify([defaultGoal]);
+        recovered += this.db
+          .query(
+            "UPDATE jobs SET state='pending', goals=?, worker_host=NULL, prior_evidence=COALESCE(prior_evidence,evidence), evidence=NULL WHERE id=? AND state IN ('blocked','ignored') AND worker_thread IS NULL",
+          )
+          .run(goals, row.id).changes;
+      }
+      return recovered;
+    })();
   }
   post(nonce: string, source: string, text: string, channelId = "") {
     this.db

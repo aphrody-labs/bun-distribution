@@ -52,6 +52,12 @@ credentials connus ainsi que les motifs de secrets sont masqués. Les résultats
 structurés passent par une outbox privée : une erreur Discord ne relance pas
 l’objectif; un nonce borné déduplique la livraison.
 
+Chaque mention Discord déclenche un goal : si le planificateur n’en extrait
+aucun, le monitor ajoute explicitement le goal de santé. Si l’hôte choisi est
+indisponible, un worker local diagnostique l’accès et rend un résultat précis
+sans déplacer une tâche liée à cet hôte. Les mentions terminales sans worker
+sont reprises au démarrage, avec leurs preuves antérieures conservées.
+
 ## Stores et exploitation
 
 Le binaire Bun et la politique résident sous `/srv/aphrody-lab/`. La file
