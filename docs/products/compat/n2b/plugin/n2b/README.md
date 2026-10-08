@@ -23,7 +23,7 @@
 
 ## Upstream Bun docs
 
-The canonical offline mirror of the upstream Bun docs is `docs/<category>/upstream-bun/`
+The canonical offline mirror of the Bun docs is `docs/reference/upstream-bun/`
 (for example [`runtime/nodejs-compat.mdx`](../../../../../reference/upstream-bun/runtime/nodejs-compat.mdx));
 see [`../../README.md`](../../README.md).
 
@@ -55,4 +55,4 @@ see [`../../README.md`](../../README.md).
 
 **Je travaille sur WASM** → `research/wasm-bindgen-study.md` + `../wasm/WASM_BINDGEN_BUN_PATCH.md`
 
-**Je bench Bun** → [`../bun/project/benchmarking.mdx`](../../../../../research/upstream-bun/project/benchmarking.mdx)
+**Je bench Bun** → [`../bun/project/benchmarking.mdx`](../../../../../reference/upstream-bun/project/benchmarking.mdx)

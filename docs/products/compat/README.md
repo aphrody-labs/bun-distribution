@@ -35,4 +35,4 @@ remains independent. Prepared publication is not a published release.
 
 ## Automatisation transversale
 
-`bun run docs:bun:update` délègue la synchronisation documentaire Bun à `yolo ops bun-upstream-docs`.
+`bun run docs:bun:update` (ou `yolo ops bun-upstream-docs`) recopie `docs/` du checkout du fork Bun dans l’unique miroir `docs/reference/upstream-bun/` ; `bun run docs:bun:check` vérifie qu’il est à jour.

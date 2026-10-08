@@ -1,7 +1,7 @@
 ## Usage
 
 ```bash
-[flags] <package>[@version] [flags and arguments for the package]
+bunx [flags] <package>[@version] [flags and arguments for the package]
 ```
 
 Execute an npm package executable (CLI). If the package isn't installed in `node_modules`, Bun installs it into a global shared cache.
@@ -33,17 +33,17 @@ Execute an npm package executable (CLI). If the package isn't installed in `node
 
 ```bash terminal icon="terminal"
 # Run Prisma migrations
-prisma migrate
+bunx prisma migrate
 
 # Format a file with Prettier
-prettier foo.js
+bunx prettier foo.js
 
 # Run a specific version of a package
-uglify-js@3.14.0 app.js
+bunx uglify-js@3.14.0 app.js
 
 # Use --package when binary name differs from package name
-ng new my-app
+bunx -p @angular/cli ng new my-app
 
 # Force running with Bun instead of Node.js, even if the executable contains a Node shebang
-vite dev foo.js
+bunx --bun vite dev foo.js
 ```

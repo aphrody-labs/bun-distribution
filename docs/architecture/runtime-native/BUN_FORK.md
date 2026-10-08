@@ -3,8 +3,9 @@
 > **Repository Nexus**: [aphrody-labs/bun](https://github.com/aphrody-labs/bun)
 > **Upstream Authority**: [oven-sh/bun](https://github.com/oven-sh/bun)
 > **Organization**: `aphrody-labs`
-> **Checkout Path**: `vendor/bun` (pin: `tools/config/vendor.json`, not a Git submodule)
+> **Checkout Path**: `vendor/bun` (pin: `tools/config/vendor.json`, not a Git submodule); full working checkout on Windows: `C:\bun` (`APHRODY_BUN_CHECKOUT` or `--checkout` override)
 > **Fork Branch**: `main` (single and default branch: upstream `main` plus the Aphrody patches)
+> **Canonical merge tool (in the fork)**: [sync-upstream.ts](https://github.com/aphrody-labs/bun/blob/main/scripts/aphrody/sync-upstream.ts) and [scope.ts](https://github.com/aphrody-labs/bun/blob/main/scripts/aphrody/scope.ts) in the fork (rename-aware merge, `@aphrody` scope)
 > **Sync & Drift Engine**: [`scripts/tools/vendor/bun_upstream_sync.ts`](../../../scripts/tools/vendor/bun_upstream_sync.ts)
 > **PR & Issue Tracker Engine**: [`scripts/tools/vendor/bun_upstream_tracker.ts`](../../../scripts/tools/vendor/bun_upstream_tracker.ts)
 > **Tracker Live Dashboard**: [BUN_UPSTREAM_TRACKER.md](../../archive/snapshots/BUN_UPSTREAM_TRACKER.md)
@@ -55,8 +56,8 @@ The engines run directly with Bun (no `package.json` aliases):
 | Command                                                            | Action                | Description                                                                                                                                             |
 | :----------------------------------------------------------------- | :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `bun scripts/tools/vendor/bun_upstream_sync.ts --dry-run`          | Sync Simulation       | Reports commit distances and drift from local refs, without fetching or touching the working tree. Needs `upstream/main` and `main` (or `origin/main`). |
-| `bun scripts/tools/vendor/bun_upstream_sync.ts --apply`            | Auto-Sync Upstream    | Fetches `upstream`, merges `upstream/main` into `main`, runs the fork checks, pushes `origin/main` (never forced).                                      |
-| `bun scripts/tools/vendor/bun_upstream_sync.ts --apply --auto-fix` | Drift Auto-Repair     | Resolves conflicts on lockfiles and completions, re-applies Aphrody patches if diverged.                                                                |
+| `bun scripts/tools/vendor/bun_upstream_sync.ts --apply`            | Auto-Sync Upstream    | Fetches `upstream`, merges `upstream/main` into `main` through the fork tool [sync-upstream.ts](https://github.com/aphrody-labs/bun/blob/main/scripts/aphrody/sync-upstream.ts) when present, checks the fork markers (`FORK_MARKERS`: thirdparty dotenv, first-party tests, the fork tools) and `scope.ts --check`, pushes `origin/main` (never forced). `--qualify` adds `bun bd test test/js/first_party/`. |
+| `bun scripts/tools/vendor/bun_upstream_sync.ts --apply --auto-fix` | Drift Auto-Repair     | Checkout without the fork tool only: resolves conflicts on lockfiles and completions; `--reapply-patches` re-applies `patches/bun/*.patch` if the checks fail. |
 | `bun scripts/tools/vendor/bun_upstream_tracker.ts`                 | Upstream Intelligence | Scans upstream PRs and issues for performance optimizations, memory fixes, and crashes.                                                                 |
 
 ### Live Sync State (Measured 2026-10-07)

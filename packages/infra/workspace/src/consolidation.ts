@@ -660,7 +660,6 @@ export async function runConsolidation(args: string[]): Promise<number> {
       "docs/products/os/README.md",
       "docs/products/ui/README.md",
       "docs/products/nie/README.md",
-      "docs/products/upstream-bun/README.md",
     ]);
     const isSelected = (entry: Entry) => {
       const sourceRoot = entry.source.slice(0, entry.source.indexOf("/"));

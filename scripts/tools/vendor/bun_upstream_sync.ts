@@ -2,11 +2,16 @@
  * Upstream sync engine for the Aphrody Bun fork (aphrody-labs/bun).
  *
  * One branch: `main` carries the Aphrody patches on top of upstream oven-sh/bun `main`.
+ * The checkout is `--checkout <dir>`, else `APHRODY_BUN_CHECKOUT`, else `C:\bun` on Windows when it
+ * exists, else `vendor/bun` of this repository.
  * - Analysis (default, or --dry-run) compares the fork branch with `upstream/main` from local refs.
- * - --apply fetches upstream, merges `upstream/main` into `main` (never rebases, never force-pushes),
- *   verifies the fork additions and pushes `origin main`.
- * - --auto-fix resolves lockfile and completions conflicts with the upstream side;
- *   --reapply-patches re-applies `patches/bun/*.patch` when the fork checks fail after a merge.
+ * - --apply fetches upstream and merges `upstream/main` into `main` (never rebases, never force-pushes)
+ *   through the fork's canonical tool `scripts/aphrody/sync-upstream.ts` (rename-aware merge plus the
+ *   `scripts/aphrody/scope.ts` @aphrody rewrite) when the checkout has it, verifies the fork additions
+ *   and pushes `origin main`.
+ * - --qualify also runs the fork tests with the debug build (`bun bd test test/js/first_party/`).
+ * - --auto-fix (only without the fork tool) resolves lockfile and completions conflicts with the upstream
+ *   side; --reapply-patches re-applies `patches/bun/*.patch` when the fork checks fail after a merge.
  */
 
 import { existsSync, readdirSync } from "node:fs";
@@ -24,6 +29,36 @@ export interface SyncOptions {
   readonly apply?: boolean;
   readonly autoFix?: boolean;
   readonly reapplyPatches?: boolean;
+  readonly qualify?: boolean;
+}
+
+/** Files only the fork carries; a checkout missing one is not aphrody-labs/bun `main`. */
+export const FORK_MARKERS = [
+  "src/js/thirdparty/dotenv.ts",
+  "src/js/internal/dotenv.ts",
+  "test/js/first_party",
+  "scripts/aphrody/sync-upstream.ts",
+  "scripts/aphrody/scope.ts",
+] as const;
+
+/** The fork's own upstream merge tool, relative to the checkout. */
+export const FORK_SYNC_TOOL = "scripts/aphrody/sync-upstream.ts";
+
+/** Explicit directory, then `APHRODY_BUN_CHECKOUT`, then `C:\bun` (Windows), then `vendor/bun`. */
+export function resolveBunCheckout(
+  explicit?: string,
+  env: Record<string, string | undefined> = process.env,
+  platform: string = process.platform,
+): string {
+  if (explicit) return resolve(explicit);
+  if (env.APHRODY_BUN_CHECKOUT) return resolve(env.APHRODY_BUN_CHECKOUT);
+  if (platform === "win32" && existsSync("C:\\bun\\.git")) return "C:\\bun";
+  return resolve(repositoryRoot, "vendor/bun");
+}
+
+/** Fork markers absent from a checkout. */
+export function missingForkMarkers(bunDir: string): string[] {
+  return FORK_MARKERS.filter((marker) => !existsSync(resolve(bunDir, marker)));
 }
 
 export interface DriftReport {
@@ -54,12 +89,12 @@ export class BunUpstreamSyncEngine {
   private readonly bunDir: string;
   private readonly patchesDir: string;
 
-  public constructor(bunDir: string = resolve(repositoryRoot, "vendor/bun")) {
+  public constructor(bunDir: string = resolveBunCheckout()) {
     this.bunDir = bunDir;
     this.patchesDir = resolve(repositoryRoot, "patches/bun");
   }
 
-  /** Runs one git command in vendor/bun. */
+  /** Runs one git command in the Bun checkout. */
   private async runGit(args: string[]): Promise<{ stdout: string; stderr: string; code: number }> {
     const proc = Bun.spawn(["git", ...args], {
       cwd: this.bunDir,
@@ -129,6 +164,49 @@ export class BunUpstreamSyncEngine {
       console.error(`[Sync Error] Failed to checkout ${FORK_BRANCH}:`, checkout.stderr);
       return false;
     }
+    if (existsSync(resolve(this.bunDir, FORK_SYNC_TOOL))) {
+      if (options.autoFix === true) {
+        console.warn(
+          "[Sync] --auto-fix is ignored: the fork tool resolves only @aphrody rename conflicts.",
+        );
+      }
+      console.log(`[Sync] Merging ${UPSTREAM_REF} with the fork tool ${FORK_SYNC_TOOL}...`);
+      const code = await this.runTool(["bun", FORK_SYNC_TOOL, "--root", this.bunDir, "--no-fetch"]);
+      if (code !== 0) {
+        console.error(
+          `[Sync Error] ${FORK_SYNC_TOOL} exited ${code} (2 = conflicts beyond the rename; merge aborted).`,
+        );
+        return false;
+      }
+    } else if (!(await this.legacyMerge(options))) {
+      return false;
+    }
+
+    if (!(await this.verifyForkIntegrity(options))) {
+      console.warn("[Sync Warning] Fork integrity checks failed.");
+      if (!options.reapplyPatches) return false;
+      const applied = await this.reapplyPatches();
+      if (!applied || !(await this.verifyForkIntegrity(options))) return false;
+    }
+
+    console.log(`[Sync] Pushing ${FORK_BRANCH} to origin (fast-forward only)...`);
+    const push = await this.runGit(["push", "origin", FORK_BRANCH]);
+    return push.code === 0;
+  }
+
+  /** Runs a command in the checkout with inherited output and returns its exit code. */
+  private async runTool(cmd: string[]): Promise<number> {
+    const proc = Bun.spawn(cmd, {
+      cwd: this.bunDir,
+      stdin: "ignore",
+      stdout: "inherit",
+      stderr: "inherit",
+    });
+    return await proc.exited;
+  }
+
+  /** Plain merge for a checkout without the fork tool. */
+  private async legacyMerge(options: SyncOptions): Promise<boolean> {
     console.log(`[Sync] Merging ${UPSTREAM_REF} into ${FORK_BRANCH}...`);
     const merge = await this.runGit([
       "merge",
@@ -146,17 +224,7 @@ export class BunUpstreamSyncEngine {
       await this.runGit(["merge", "--abort"]);
       return false;
     }
-
-    if (!(await this.verifyForkIntegrity())) {
-      console.warn("[Sync Warning] Fork integrity tests failed.");
-      if (!options.reapplyPatches) return false;
-      const applied = await this.reapplyPatches();
-      if (!applied || !(await this.verifyForkIntegrity())) return false;
-    }
-
-    console.log(`[Sync] Pushing ${FORK_BRANCH} to origin (fast-forward only)...`);
-    const push = await this.runGit(["push", "origin", FORK_BRANCH]);
-    return push.code === 0;
+    return true;
   }
 
   /** Resolves conflicts on generated files (lockfiles, completions) with the upstream side. */
@@ -210,17 +278,24 @@ export class BunUpstreamSyncEngine {
     return commit.code === 0;
   }
 
-  /** Runs the fork's own runtime test when the checkout has it. */
-  public async verifyForkIntegrity(): Promise<boolean> {
-    const testPath = resolve(this.bunDir, "packages/aphrody-bun-runtime/test/runtime.test.ts");
-    if (!existsSync(testPath)) return true;
-    const proc = Bun.spawn(["bun", "test", testPath], {
-      cwd: this.bunDir,
-      stdin: "ignore",
-      stdout: "inherit",
-      stderr: "inherit",
-    });
-    return (await proc.exited) === 0;
+  /**
+   * Fork markers present and the @aphrody rename complete (`scope.ts --check`); with `qualify`, the
+   * fork tests through the debug build. A system `bun test` never contains native changes.
+   */
+  public async verifyForkIntegrity(options: SyncOptions = {}): Promise<boolean> {
+    const missing = missingForkMarkers(this.bunDir);
+    if (missing.length > 0) {
+      console.error(`[Integrity] ${this.bunDir} lacks fork files: ${missing.join(", ")}`);
+      return false;
+    }
+    if ((await this.runTool(["bun", "scripts/aphrody/scope.ts", "--check"])) !== 0) {
+      console.error("[Integrity] scripts/aphrody/scope.ts --check found upstream package names.");
+      return false;
+    }
+    if (options.qualify === true) {
+      return (await this.runTool(["bun", "bd", "test", "test/js/first_party/"])) === 0;
+    }
+    return true;
   }
 
   /** Analyses drift; with --apply, fetches, merges upstream into the fork branch and pushes it. */
@@ -240,6 +315,7 @@ export class BunUpstreamSyncEngine {
     console.log("─────────────────────────────────────────────────────────────");
     console.log(" Aphrody Bun Upstream Synchronization Engine");
     console.log("─────────────────────────────────────────────────────────────");
+    console.log(` Checkout                      : ${this.bunDir}`);
     console.log(` Upstream (oven-sh/bun:main)   : ${before.upstreamCommit}`);
     console.log(` Fork (aphrody-labs/bun:main)  : ${before.forkCommit}`);
     console.log(` Commits behind upstream       : ${before.commitsBehindUpstream}`);
@@ -259,7 +335,7 @@ export class BunUpstreamSyncEngine {
       return result(true, "Read-only analysis. Pass --apply to fetch, merge and push.");
     }
     if (before.hasUncommittedChanges) {
-      return result(false, "vendor/bun has uncommitted changes; commit or resolve them first.");
+      return result(false, `${this.bunDir} has uncommitted changes; commit or resolve them first.`);
     }
     if (before.commitsBehindUpstream === 0) {
       return result(true, "The fork already contains upstream main.");
@@ -275,14 +351,22 @@ export class BunUpstreamSyncEngine {
 }
 
 if (import.meta.main) {
-  const args = new Set(process.argv.slice(2));
-  const engine = new BunUpstreamSyncEngine();
+  const argv = process.argv.slice(2);
+  const checkoutIndex = argv.indexOf("--checkout");
+  const checkout = checkoutIndex >= 0 ? argv[checkoutIndex + 1] : undefined;
+  if (checkoutIndex >= 0 && (!checkout || checkout.startsWith("--"))) {
+    console.error("--checkout requires a directory");
+    process.exit(2);
+  }
+  const args = new Set(argv);
+  const engine = new BunUpstreamSyncEngine(resolveBunCheckout(checkout));
   try {
     const res = await engine.execute({
       dryRun: args.has("--dry-run"),
       apply: args.has("--apply"),
       autoFix: args.has("--auto-fix"),
       reapplyPatches: args.has("--reapply-patches"),
+      qualify: args.has("--qualify"),
     });
     console.log(`\nSync finished. Success: ${res.success}. Message: ${res.message}`);
     process.exitCode = res.success ? 0 : 1;

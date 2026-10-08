@@ -17,7 +17,7 @@ Branch: `bun-native` (local only, commit `3019280`)
 
 No `npm`, `npx`, `yarn`, or `pnpm` invocations found anywhere in Rust code.
 
-### JS templates (`docs/products/upstream-bun/src/js/`)
+### JS templates (`src/js/` of the Bun fork)
 
 No `require(`, `Buffer.`, or `process.env.NODE` patterns found in codegen Rust source. The generator emits JS text via string interpolation; the emitted `nodejs` target JS uses `require('node:process')` and `require('node:fs/promises')` — both work identically in Bun (Node compat layer).
 

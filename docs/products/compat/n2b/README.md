@@ -8,15 +8,15 @@ Bun supports, what Node exposes, what n2b must detect and rewrite.
 
 | Folder | Source | Pinned version |
 |---|---|---|
-| `docs/<category>/upstream-bun/` (canonical) | `oven-sh/bun` · `docs/` | HEAD `a2671046` (2026-09-29), see (removed import receipt) |
+| `docs/reference/upstream-bun/` (canonical) | `aphrody-labs/bun` (fork of `oven-sh/bun`) · `docs/` | commit and per-file SHA-256 in `docs/reference/upstream-bun/SOURCE.json` |
 | `docs/<category>/compat/n2b/bun/` (residual) | `oven-sh/bun` · `docs/` | main `d316760e` (2026-09-06): only the 26 files that differ from the canonical copy remain |
 | `docs/<category>/compat/n2b/node/` | `nodejs/node` · `doc/api/` | LTS v24.15.1 (`9fe7634c`) |
 | `docs/<category>/compat/n2b/plugin/n2b/` | n2b plugin documentation (changelog, structure, research, WASM reports) | — |
 
 On 2026-10-02 the 309 files of the older n2b Bun mirror that were identical to
-`docs/<category>/upstream-bun/` after CRLF to LF normalisation were removed; the
+the canonical Bun mirror after CRLF to LF normalisation were removed; the
 removed-to-canonical aliases and both SHA-256 values are recorded in
-(removed import receipt). Read the Bun docs from `upstream-bun`
+(removed import receipt). Read the Bun docs from `docs/reference/upstream-bun`
 (also served offline by the `bun_docs_*` MCP tools of `crates/compat/bun-docs`).
 
 Only markdown is kept here; binary assets (images, icons, logos) are stripped.
@@ -25,10 +25,12 @@ Only markdown is kept here; binary assets (images, icons, logos) are stripped.
 
 ### Bun docs
 
-`yolo ops bun-upstream-docs [--root <repo>] [--ref <branch-or-tag>]`
-(`packages/infra/workspace/src/bun-upstream-docs.ts`) still writes the legacy
-`docs/n2b/bun/` (not in repo) path; it must be pointed at `docs/<category>/upstream-bun/`
-before it is used again (owner: Infra).
+`bun run docs:bun:update` (`packages/infra/workspace/src/bun-upstream-docs.ts`, also
+`yolo ops bun-upstream-docs`) mirrors `docs/` of the local Bun fork checkout (`--source`, else
+`APHRODY_BUN_CHECKOUT`, else `C:\bun` on Windows; otherwise a shallow clone of `aphrody-labs/bun`
+at `--ref`) into `docs/reference/upstream-bun/`, the single copy: pages, `docs.json` and snippets,
+without binary assets, repository READMEs or test fixtures. Stale pages are deleted;
+`APHRODY-FORK.md` is first-party and kept. `--check` exits 1 when the mirror is stale.
 
 ### `node/` — manual
 
@@ -81,9 +83,9 @@ unaffected. Drop this note once that fix lands.
 | File | Use |
 |---|---|
 | `docs/reference/upstream-bun/runtime/nodejs-compat.mdx` | Node→Bun compatibility matrix: which Node modules work, partially or not at all |
-| `docs/apis/upstream-bun/runtime/bun-apis.mdx` | Native `Bun.*` API surface: rewrite targets |
+| `docs/reference/upstream-bun/runtime/bun-apis.mdx` | Native `Bun.*` API surface: rewrite targets |
 | `docs/reference/upstream-bun/runtime/*.mdx` | Per-API detail (ffi, sqlite, shell, sql, redis, s3, glob, …) |
-| `docs/plans/upstream-bun/project/roadmap.mdx` | Bun roadmap, to anticipate future rules |
+| `docs/reference/upstream-bun/project/roadmap.mdx` | Bun roadmap, to anticipate future rules |
 | `docs/reference/compat/n2b/node/*.md` | Full Node API surface (one file per module): what n2b must detect |
 | `docs/reference/compat/n2b/node/CHANGELOG_V24.md` | Node v24 LTS changes |
 
@@ -95,4 +97,4 @@ field, a free-form citation (for example
 `docs = "absent from docs/bun/runtime/nodejs-compat.mdx (…)"`). The test
 `crates/compat/n2b-registry/src/registry.rs::tests::docs_field_citations_resolve` extracts every
 `docs/(bun|node)/*.md(x)` substring from those fields and fails unless the cited file exists
-under `docs/<category>/upstream-bun/` (Bun) or `docs/<category>/compat/n2b/node/` (Node).
+under `docs/<category>/upstream-bun/` (Bun; only `reference` exists) or `docs/<category>/compat/n2b/node/` (Node).

@@ -78,6 +78,7 @@ Bun ships as a single, dependency-free binary and includes a runtime, package ma
 - Package Manager: Fast installs, workspaces, overrides, and audits with `bun install`.
 - Test Runner: Jest-compatible, TypeScript-first tests with snapshots, DOM, and watch mode.
 - Bundler: Native bundling for JS/TS/JSX with splitting, plugins, and HTML imports.
+- Type Checker: Check a TypeScript project on every CPU core with [`bun check`](/runtime/check).
 
 Explore each area using the cards above. Each section is structured with an overview, short examples, reference, and best practices for fast scanning and deep dives.
 
@@ -100,7 +101,7 @@ bun run start                 # run the `start` script
 bun install <pkg>             # install a package
 bun build ./index.tsx         # bundle a project for browsers
 bun test                      # run tests
-cowsay 'Hello, world!'   # execute a package
+bunx cowsay 'Hello, world!'   # execute a package
 ```
 
 ## What is a runtime?

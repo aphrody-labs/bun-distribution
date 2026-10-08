@@ -47,7 +47,7 @@ crates most relevant to FFI/ABI work:
 Beyond the workspace, two first-party Rust packages ship to crates.io and are
 the cleanest references for "Rust author of a Bun-loaded native module":
 
-- `docs/products/upstream-bun/packages/bun-native-plugin-rs` (`bun-native-plugin` 0.2.0, `var/bun/packages/bun-native-plugin-rs/Cargo.toml`)
+- [`packages/bun-native-plugin-rs`](https://github.com/aphrody-labs/bun/tree/main/packages/bun-native-plugin-rs) of the fork (`bun-native-plugin` 0.2.0)
   — a Rustified wrapper for writing **native bundler plugins**, which are
   technically N-API modules exporting a `#[no_mangle] extern "C"` lifecycle hook.
   Ships a companion proc-macro crate `bun-macro` (`#[bun]`).
@@ -323,7 +323,7 @@ addon instead of (or alongside) the raw `cdylib`:
   bodies in `catch_unwind` and converts panics to thrown JS errors. Bun's
   native-plugin macro does the same and additionally warns it "may catch *some*
   panics but [is] **not guaranteed to catch all**" — "avoid panics at all costs"
-  (`docs/products/upstream-bun/packages/bun-native-plugin-rs/README.md:141-152`). Combine
+  ([`packages/bun-native-plugin-rs/README.md`](https://github.com/aphrody-labs/bun/tree/main/packages/bun-native-plugin-rs/README.md)). Combine
   `catch_unwind` with `panic = "abort"` awareness (section d).
 - **Error handling: return errors, do not `.unwrap()`.** Bun's own Rust
   guidance: "Don't `.unwrap()` a fallible path that user input or the OS can hit

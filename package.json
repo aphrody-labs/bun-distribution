@@ -189,6 +189,8 @@
     "docs:check-links": "bun packages/engine/yolo/src/index.ts ops docs links --root .",
     "docs:gen": "bun packages/engine/yolo/src/index.ts ops docs generate --root .",
     "docs:check": "bun packages/engine/yolo/src/index.ts ops docs check --root .",
+    "docs:bun:update": "bun packages/infra/workspace/src/bun-upstream-docs.ts --root .",
+    "docs:bun:check": "bun packages/infra/workspace/src/bun-upstream-docs.ts --root . --check",
     "docs:consolidate": "bun packages/engine/yolo/src/index.ts ops docs consolidate",
     "docs:overlaps": "bun packages/engine/yolo/src/index.ts ops docs overlaps --root .",
     "tauri:apps": "bun packages/engine/yolo/src/index.ts ops tauri-apps --root .",

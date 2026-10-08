@@ -84,7 +84,7 @@ répertoires ; son total ne prouve pas la couverture complète de `src`.
 Le fork Bun observé est `a2671046afbfc818fba21a4925f384b75dc8e109`, Oxc
 `31d5266e150ff17af52f0c2fc798cc27dc9a5a59`. La documentation du fork
 [`ffi.mdx`](../../reference/upstream-bun/runtime/ffi.mdx) décrit FFI comme expérimental ;
-[`node-api.mdx`](../../apis/upstream-bun/runtime/node-api.mdx) présente les addons Node-API.
+[`node-api.mdx`](../../reference/upstream-bun/runtime/node-api.mdx) présente les addons Node-API.
 Aucun choix de transport ne dispense des essais du fork exact distribué.
 Les skills locaux `bun`, `rust-bun` et Rust consultés sont des aides datées ;
 les manifests, sources et types installés tranchent leurs contradictions.

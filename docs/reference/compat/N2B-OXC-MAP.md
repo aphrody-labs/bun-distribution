@@ -154,8 +154,7 @@ Current docs that still describe the forks as live:
 | `docs/reference/compat/BUN-RUST-INTEGRATION.md:14` | fork's `bun:aphrody` |
 | `docs/reference/web/WEB-RUNTIME.md:144` | fork `bun/`, `bun:aphrody` |
 | `docs/reference/workspace/DEPS-INVENTORY.md:196` | `aphrody-code/oxc` pinned `31d5266e150f` |
-| `docs/reference/upstream-bun/APHRODY-FORK.md:3,11,15,18` | fork procedure |
-| `docs/products/upstream-bun/README.md:5` | fork README |
+| `docs/reference/upstream-bun/APHRODY-FORK.md` | fork procedure (rewritten 2026-10-08 from the real fork: no `bun:aphrody`) |
 | (upstream oxc doc, not vendored) | fork cdylib README |
 | `crates/compat/oxc-bridge/README.md:4` | origin `oxc/apps/aphrody-oxc` (provenance; correct as history) |
 | (removed import receipt) | fork commits, PR, CI run |
