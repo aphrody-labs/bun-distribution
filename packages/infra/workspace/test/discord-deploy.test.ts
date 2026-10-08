@@ -99,6 +99,7 @@ test("Infra exec transfers compressed files in bounded chunks without exposing p
     .join("");
   expect(gunzipSync(Buffer.from(encoded, "base64"))).toEqual(Buffer.from(payload));
   expect(commands.at(-1)).toContain("base64 --decode");
+  expect(commands.at(-1)).toContain("chmod 644");
   expect(commands.join("\n")).not.toContain(Buffer.from(payload).toString("hex"));
 });
 
