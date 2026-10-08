@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { createHash } from "node:crypto";
 import {
   FONT_STACKS,
   FONTS,
@@ -15,32 +14,37 @@ import {
 } from "./index";
 
 const root = join(import.meta.dir, "..");
-const lock = JSON.parse(readFileSync(join(root, "fonts.lock.json"), "utf8")) as {
+const lock = (await Bun.file(join(root, "fonts.lock.json")).json()) as {
   sources: { "google-fonts": { submodule: string } };
   files: { dest: string; sha256: string; bytes: number }[];
   tracked: { file: string; path: string; sha256: string; bytes: number }[];
 };
 const fork = join(root, "../..", lock.sources["google-fonts"].submodule);
-const forkMaterialised = existsSync(join(fork, "ofl"));
-const sha256 = (path: string) => createHash("sha256").update(readFileSync(path)).digest("hex");
+const forkMaterialised = existsSync(join(fork, "ofl")); // directory: Bun.file().exists() is false for dirs
+const sha256 = async (path: string) =>
+  new Bun.CryptoHasher("sha256").update(await Bun.file(path).bytes()).digest("hex");
+const size = (path: string) => Bun.file(path).size;
+const magic = async (path: string) => (await Bun.file(path).slice(0, 4).bytes()).toHex();
 const SYNC_HINT = "run `bun scripts/fonts-sync.ts` at the repository root";
 const WOFF2 = "774f4632";
 const sheetBytes = (sheet: FontSheet) =>
   FONTS.filter((f) => f.sheet === sheet)
     .flatMap((f) => f.faces)
-    .reduce((n, f) => n + statSync(join(root, f.file)).size, 0);
+    .reduce((n, f) => n + size(join(root, f.file)), 0);
 const SFNT = ["00010000", "74727565", "4f54544f"]; // TrueType, true, OTTO
 
 describe("@aphrody/m3-fonts upstream sources (fonts.lock.json)", () => {
-  test("every pinned source is synced into fonts/upstream with its sha256", () => {
-    for (const entry of lock.files) {
-      const file = join(root, UPSTREAM_DIR, entry.dest);
-      expect(existsSync(file), `${entry.dest} missing: ${SYNC_HINT}`).toBe(true);
-      expect(statSync(file).size, entry.dest).toBe(entry.bytes);
-      expect(sha256(file), `${entry.dest} differs from fonts.lock.json: ${SYNC_HINT}`).toBe(
-        entry.sha256,
-      );
-    }
+  test("every pinned source is synced into fonts/upstream with its sha256", async () => {
+    await Promise.all(
+      lock.files.map(async (entry) => {
+        const file = join(root, UPSTREAM_DIR, entry.dest);
+        expect(await Bun.file(file).exists(), `${entry.dest} missing: ${SYNC_HINT}`).toBe(true);
+        expect(size(file), entry.dest).toBe(entry.bytes);
+        expect(await sha256(file), `${entry.dest} differs from fonts.lock.json: ${SYNC_HINT}`).toBe(
+          entry.sha256,
+        );
+      }),
+    );
   });
 
   test("every upstream path the manifest uses is pinned in the lock", () => {
@@ -54,27 +58,39 @@ describe("@aphrody/m3-fonts upstream sources (fonts.lock.json)", () => {
       expect(pinned.has(path), path).toBe(true);
   });
 
-  test("the tracked variable sources are the pinned bytes", () => {
-    for (const t of lock.tracked) {
-      expect(statSync(join(root, t.file)).size, t.file).toBe(t.bytes);
-      expect(sha256(join(root, t.file)), t.file).toBe(t.sha256);
-    }
+  test("the tracked variable sources are the pinned bytes", async () => {
+    await Promise.all(
+      lock.tracked.map(async (t) => {
+        expect(size(join(root, t.file)), t.file).toBe(t.bytes);
+        expect(await sha256(join(root, t.file)), t.file).toBe(t.sha256);
+      }),
+    );
   });
 
   test.skipIf(!forkMaterialised)(
     `the tracked variable sources come from forks/fonts at the pinned commit${forkMaterialised ? "" : " [skipped: forks/fonts is not vendored]"}`,
-    () => {
-      for (const t of lock.tracked) expect(sha256(join(fork, t.path)), t.path).toBe(t.sha256);
+    async () => {
+      await Promise.all(
+        lock.tracked.map(async (t) =>
+          expect(await sha256(join(fork, t.path)), t.path).toBe(t.sha256),
+        ),
+      );
     },
   );
 
-  test("the tracked OFL texts of the Google Sans subsets are the pinned upstream licences", () => {
-    for (const [tracked, dest] of [
-      ["fonts/GoogleSansFlex-OFL.txt", "google-sans-flex/OFL.txt"],
-      ["fonts/GoogleSansCode-OFL.txt", "google-sans-code/OFL.txt"],
-    ] as const) {
-      expect(sha256(join(root, tracked))).toBe(lock.files.find((e) => e.dest === dest)!.sha256);
-    }
+  test("the tracked OFL texts of the Google Sans subsets are the pinned upstream licences", async () => {
+    await Promise.all(
+      (
+        [
+          ["fonts/GoogleSansFlex-OFL.txt", "google-sans-flex/OFL.txt"],
+          ["fonts/GoogleSansCode-OFL.txt", "google-sans-code/OFL.txt"],
+        ] as const
+      ).map(async ([tracked, dest]) => {
+        expect(await sha256(join(root, tracked))).toBe(
+          lock.files.find((e) => e.dest === dest)!.sha256,
+        );
+      }),
+    );
   });
 });
 
@@ -86,28 +102,30 @@ describe("@aphrody/m3-fonts", () => {
       if (job.japanese) expect(faces.length).toBeGreaterThan(5);
       for (const f of faces) {
         expect(f.unicodeRange).toMatch(/^U\+[0-9A-F]{4}/);
-        expect(statSync(join(root, f.file)).size).toBe(f.bytes);
+        expect(size(join(root, f.file))).toBe(f.bytes);
       }
     }
   });
 
-  test("every face, source and license file exists and is a real font", () => {
-    for (const fam of FONTS) {
-      expect([WOFF2, ...SFNT]).toContain(
-        readFileSync(join(root, fam.sourceFile)).subarray(0, 4).toString("hex"),
-      );
-      for (const f of fam.faces) {
-        const p = join(root, f.file);
-        expect(existsSync(p)).toBe(true);
-        expect(readFileSync(p).subarray(0, 4).toString("hex")).toBe(WOFF2);
-        expect(f.format).toBe("woff2");
-        if (f.licenseFile) {
-          expect(readFileSync(join(root, f.licenseFile), "utf8")).toContain(
-            "SIL OPEN FONT LICENSE",
-          );
-        }
-      }
-    }
+  test("every face, source and license file exists and is a real font", async () => {
+    await Promise.all(
+      FONTS.map(async (fam) => {
+        expect([WOFF2, ...SFNT]).toContain(await magic(join(root, fam.sourceFile)));
+        await Promise.all(
+          fam.faces.map(async (f) => {
+            const p = join(root, f.file);
+            expect(await Bun.file(p).exists()).toBe(true);
+            expect(await magic(p)).toBe(WOFF2);
+            expect(f.format).toBe("woff2");
+            if (f.licenseFile) {
+              expect(await Bun.file(join(root, f.licenseFile)).text()).toContain(
+                "SIL OPEN FONT LICENSE",
+              );
+            }
+          }),
+        );
+      }),
+    );
   });
 
   test("core sheet stays small; Japanese and icon fonts live in their own sheets", () => {
@@ -116,7 +134,7 @@ describe("@aphrody/m3-fonts", () => {
       expect(f.sheet).toBe(f.role === "icon" ? "symbols" : f.script === "japanese" ? "jp" : "core");
     // No Japanese chunk exceeds 300 KiB, so a page only pulls the blocks it renders.
     for (const f of FONTS.filter((x) => x.sheet === "jp").flatMap((x) => x.faces)) {
-      expect(statSync(join(root, f.file)).size).toBeLessThan(300 * 1024);
+      expect(size(join(root, f.file))).toBeLessThan(300 * 1024);
     }
   });
 
@@ -144,10 +162,12 @@ describe("@aphrody/m3-fonts", () => {
     expect(FONT_STACKS.plain.endsWith("sans-serif")).toBe(true);
   });
 
-  test("stylesheets are in sync with the manifest", () => {
-    for (const [sheet, file] of Object.entries(SHEET_FILES) as [FontSheet, string][]) {
-      expect(readFileSync(join(root, "src", file), "utf8")).toBe(renderStylesheet("../", sheet));
-    }
-    expect(readFileSync(join(root, "src", SHEET_FILES.core), "utf8")).not.toContain(".ttf");
+  test("stylesheets are in sync with the manifest", async () => {
+    await Promise.all(
+      (Object.entries(SHEET_FILES) as [FontSheet, string][]).map(async ([sheet, file]) => {
+        expect(await Bun.file(join(root, "src", file)).text()).toBe(renderStylesheet("../", sheet));
+      }),
+    );
+    expect(await Bun.file(join(root, "src", SHEET_FILES.core)).text()).not.toContain(".ttf");
   });
 });
