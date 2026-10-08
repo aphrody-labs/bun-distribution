@@ -31946,7 +31946,7 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "bfe32fabc5a32c832e90f6d0eda170248a08bd7d7aaf10a427d21a26b3e889bd",
+      "sha256": "3c1b53bcaef6b371f87f0a7abca51652891db70d3811d7c688010b6df5fb293c",
       "bytes": 49858,
       "domain": "workspace",
       "status": "generated",

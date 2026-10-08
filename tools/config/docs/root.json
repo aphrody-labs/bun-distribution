@@ -309,6 +309,11 @@
             "2026-10-08",
             "Aggressive script and documentation consolidation: non-canonical script directories (scripts/aphrody, scripts/aphrody-os, scripts/assets, scripts/bench, scripts/iecode, scripts/ops) reorganized into canonical scripts/{audit,build,dev,migration,release,tools}; replaced copied Base UI release document in scripts/README.md with authentic Aphrody tooling guide. Historical research and superseded memos archived into docs/archive/ (memos, research, snapshots); declared docs/archive/** under imported upstream and historical trees. Restored zero-dependency aphrody-softraster crate (crates/ui/softraster) restoring full cargo metadata compatibility across repos (C:\\iecode, aphrody-nie-inventory). Full documentation gates verified: docs:check-links passes with 0 broken links and 0 dead code paths; docs:check passes with 0 failures.",
             "All-tree docs verification and local link integrity confirmed across 3002 inventoried documents. Cargo check -p aphrody-command -p aphrody-terminal-backend --locked, bun:check, format:check, and lint pass with 0 errors."
+          ],
+          [
+            "2026-10-08",
+            "Autonomous zero-latency terminal engine `aphrody-term` and `aphrody-bun-bridge` integrated into the monorepo. Circular ring buffer with FairMutex 256KB read leases, memchr vectorized bulk ASCII, ComputerUseController (>10 GB/s scraping) and in-process Bun Shell with POSIX builtins and JSC structured evaluation (22x faster than Nu). Integrated ComputerEnvironment::Terminal into `aphrody-agent-tools`, scrape_text into `WebTerminal`, and v86/container2wasm WASM microVM into `aphrody-shell-sandbox-host`. Workspace layout verified across 95 packages with 0 violations; 18 term/bun-bridge tests and 7 agent-tools computer_use tests passed.",
+            "Linux and Windows MSVC checks pass. Full CEF GUI integration and physical GPU rendering qualified separately."
           ]
         ]
       },

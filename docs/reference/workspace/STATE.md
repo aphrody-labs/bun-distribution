@@ -79,7 +79,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | --- | --- | --- | --- | --- | --- | ---: | --- |
 | `aphrody-agent-home` | [crates/ai/agent-home](../../../crates/ai/agent-home) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-07 |
 | `aphrody-agent-runtime` | [crates/ai/agent-runtime](../../../crates/ai/agent-runtime) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-06 |
-| `aphrody-agent-tools` | [crates/ai/agent-tools](../../../crates/ai/agent-tools) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-06 |
+| `aphrody-agent-tools` | [crates/ai/agent-tools](../../../crates/ai/agent-tools) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-08 |
 | `aphrody-app-server` | [crates/ai/app-server](../../../crates/ai/app-server) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-07 |
 | `aphrody-code-graph` | [crates/ai/code-graph](../../../crates/ai/code-graph) | rust crate | 1.0.0 | bin, lib | yes | 0 | 2026-10-07 |
 | `aphrody-config` | [crates/ai/config](../../../crates/ai/config) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-07 |
@@ -318,9 +318,9 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-shell-session` | [crates/shell/session](../../../crates/shell/session) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
 | `aphrody-shell-tauri` | [crates/shell/tauri](../../../crates/shell/tauri) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
 | `aphrody-terminal-backend` | [crates/shell/terminal-backend](../../../crates/shell/terminal-backend) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-08 |
-| `aphrody-terminal-core` | [crates/shell/terminal-core](../../../crates/shell/terminal-core) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
+| `aphrody-terminal-core` | [crates/shell/terminal-core](../../../crates/shell/terminal-core) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-08 |
 | `aphrody-shell-vfs` | [crates/shell/vfs](../../../crates/shell/vfs) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
-| `aphrody-shell-web` | [crates/shell/web](../../../crates/shell/web) | rust crate | 1.0.0-canary | cdylib, rlib | yes | 0 | 2026-10-07 |
+| `aphrody-shell-web` | [crates/shell/web](../../../crates/shell/web) | rust crate | 1.0.0-canary | cdylib, rlib | yes | 0 | 2026-10-08 |
 | `@aphrody/shell-web` | [packages/shell/web](../../../packages/shell/web) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-08 |
 
 ## tauri
