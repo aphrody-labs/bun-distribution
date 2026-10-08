@@ -55,9 +55,6 @@
     "@radix-ui/react-toggle": "catalog:",
     "@radix-ui/react-toggle-group": "catalog:",
     "@radix-ui/react-tooltip": "catalog:",
-    "@rosegriffon/db": "workspace:*",
-    "@rosegriffon/preferences": "workspace:*",
-    "@rosegriffon/types": "workspace:*",
     "@tanstack/react-table": "catalog:",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
@@ -86,9 +83,23 @@
   "peerDependencies": {
     "next": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "@rosegriffon/db": "*",
+    "@rosegriffon/preferences": "*",
+    "@rosegriffon/types": "*"
   },
   "engines": {
     "bun": ">=1.4.2"
+  },
+  "peerDependenciesMeta": {
+    "@rosegriffon/db": {
+      "optional": true
+    },
+    "@rosegriffon/preferences": {
+      "optional": true
+    },
+    "@rosegriffon/types": {
+      "optional": true
+    }
   }
 }

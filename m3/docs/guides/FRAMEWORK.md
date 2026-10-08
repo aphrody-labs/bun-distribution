@@ -25,7 +25,7 @@ Packages use `catalog:`, `workspace:*` and explicit dependencies where declared.
 
 ## Yolo orchestration
 
-Root scripts run [scripts/yolo.ts](../../scripts/yolo.ts), which invokes `$YOLO_ROOT/bin/yolo` directly.
+Root scripts run [scripts/yolo.ts](../../scripts/yolo.ts), which runs the Bun CLI `bun run $YOLO_ROOT/packages/engine/yolo/src/index.ts` on every platform.
 `YOLO_ROOT` defaults to `$HOME/yolo`; inspect this entry point's live help for Yolo commands.
 The wrapper sets `YOLO_HOME` to this repository for its Yolo preflight; `serve` and `compile` run the showcase's own scripts.
 
@@ -81,9 +81,8 @@ the target toolchains; a configuration or web build does not establish an instal
 ## Benchmark qualification limits
 
 The [performance report](../reports/PERF.md) records dated measurements; rerun a corrected harness
-before making current performance claims. As observed on 2026-10-04, `scripts/bench/run.ts` starts
-Yolo with `bun $YOLO_ROOT/bin/yolo`, although this entry point is a Bash script. That invocation
-fails with a syntax error, while direct `$YOLO_ROOT/bin/yolo version --json` succeeds.
+before making current performance claims. As observed on 2026-10-04, `scripts/bench/run.ts` started Yolo with `bun $YOLO_ROOT/bin/yolo`, a Bash
+script, which failed with a syntax error. It now runs the Bun entry (`YOLO_CLI` of `scripts/yolo.ts`).
 The harness records timings without rejecting these nonzero exits, so a budget comparison alone
 does not qualify the Yolo measurements. Its stored test/lint/typecheck exit strings and snapshot
 errors also do not necessarily cause the ordinary benchmark command to fail. Performance budgets

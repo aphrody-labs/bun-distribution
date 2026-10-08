@@ -14,7 +14,7 @@ remain authoritative for native runtime and installed hosts.
 | App API/file server, executable compiler and deployment configuration | `packages/m3-bun` |
 | Shared `Bun.build` preset and workspace build cache | `packages/m3-config`, `scripts/build.ts` |
 | Tokens, themes and renderer adapters | M3 packages; canonical native token contract in Aphrody `crates/ui/m3-tokens` |
-| Package build/test orchestration | `scripts/yolo.ts`, existing `$YOLO_ROOT/bin/yolo` |
+| Package build/test orchestration | `scripts/yolo.ts`, the Bun CLI `$YOLO_ROOT/packages/engine/yolo/src/index.ts` |
 | Minimal web example / adaptive UI and API consumer | `apps/web` / `apps/showcase` |
 | Native artifacts and installed desktop/mobile hosts | Aphrody integrator and declared build factory |
 

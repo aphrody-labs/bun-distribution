@@ -81,8 +81,8 @@ describe("yolo task plan", () => {
   test("test runs every workspace package and ends with the repository gates", () => {
     const steps = plan("test");
     expect(steps[1]!.cmd).toContain("./scripts/check-exports.test.ts");
-    expect(steps[2]!.cmd).toContain("*");
-    expect(steps[2]!.cmd).toContain("!@aphrody/app-ui");
+    expect(steps[2]!.cmd).toContain("./packages/*");
+    expect(steps[2]!.cmd).not.toContain("*");
     expect(steps[2]!.cmd).toContain("!@aphrody/nie-ui");
     expect(steps.slice(3).map((s) => s.cmd[1])).toEqual([
       "scripts/check-exports.ts",
@@ -90,8 +90,9 @@ describe("yolo task plan", () => {
       "scripts/check-links.ts",
     ]);
   });
-  test("YOLO_CLI resolves under YOLO_ROOT", () => {
-    expect(YOLO_CLI).toBe(join(YOLO_ROOT, "bin", "yolo"));
+  test("YOLO_CLI is the Bun entry under YOLO_ROOT, run by bun on every platform", () => {
+    expect(YOLO_CLI).toBe(join(YOLO_ROOT, "packages", "engine", "yolo", "src", "index.ts"));
+    expect(YOLO_COMMAND).toEqual(["bun", "run", YOLO_CLI]);
   });
   test("install:theme defaults to a dry-run install", () => {
     const cmd = plan("install:theme")[0]!.cmd;

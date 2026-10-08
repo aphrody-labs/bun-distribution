@@ -15,8 +15,8 @@ coordination run. Cloud sessions run Cargo and Git directly; a local WSL session
 Rust on the declared factory.
 
 Use existing native MCP capabilities or the owner CLI with live help. The Yolo
-entrypoint is `$YOLO_ROOT/bin/yolo`, not a TypeScript interpreter invocation of
-that shell script. Resolve framework gates from the selected checkout's manifest.
+CLI is Bun: `scripts/yolo.ts` runs `bun run $YOLO_ROOT/packages/engine/yolo/src/index.ts`
+(the `bin/yolo` bash launcher is never spawned). Resolve framework gates from the selected checkout's manifest.
 
 Follow the scoped gates and actual limitations in [PLAN.md](PLAN.md). Successful
 DOM tests, viewport presets or cross-compilation do not establish installed host

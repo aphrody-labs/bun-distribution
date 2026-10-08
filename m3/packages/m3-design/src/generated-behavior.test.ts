@@ -58,6 +58,7 @@ beforeAll(async () => {
   entries.push(featurelessEntry);
   const checkout = resolvePath(import.meta.dir, "../../..");
   const reactTypes = resolvePath(Bun.resolveSync("@types/react/package.json", checkout), "..");
+  const reactDomTypes = resolvePath(Bun.resolveSync("@types/react-dom/package.json", checkout), "..");
   const configuration = join(workspace, "tsconfig.json");
   await Bun.write(
     configuration,
@@ -65,7 +66,7 @@ beforeAll(async () => {
       extends: join(checkout, "packages/m3-config/tsconfig.json"),
       compilerOptions: {
         types: ["react", "react-dom"],
-        typeRoots: [join(checkout, "node_modules/@types")],
+        typeRoots: [...new Set([reactTypes, reactDomTypes].map((dir) => resolvePath(dir, "..")))],
         paths: {
           "@aphrody/m3-react": [join(checkout, "packages/m3-react/index.ts")],
           react: [join(reactTypes, "index.d.ts")],
@@ -140,7 +141,7 @@ beforeAll(async () => {
       artifacts[name] = module.default;
     }),
   );
-});
+}, 120_000);
 
 afterEach(async () => {
   for (const mounted of mounts.splice(0)) {

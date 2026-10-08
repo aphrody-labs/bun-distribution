@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Root task runner: the m3 packages build, serve and compile through the yolo CLI.
 //   bun scripts/yolo.ts <build|serve|compile|test|lint|typecheck|bench|bench:check|install:theme> [args...]
-// yolo is resolved from $YOLO_ROOT (default $HOME/yolo) and run through `$YOLO_ROOT/bin/yolo`.
+// yolo is resolved from $YOLO_ROOT (default $HOME/yolo) and run as the Bun CLI `bun run $YOLO_ROOT/packages/engine/yolo/src/index.ts`
+// on every platform (bin/yolo is only a bash launcher around that entry).
 //   build    the canonical cached package/app pipeline (every app, the showcase included)
 //   serve    apps/showcase `dev`      (yolo m3 bun dev, HMR)
 //   compile  apps/showcase `compile`  (yolo m3 bun compile, single executable shown by aphrody-app --showcase)
@@ -12,22 +13,20 @@
 //                               docs/reports/PERF.md; `bench:check` fails past docs/reports/perf-budget.json + 10%
 //   install:theme               packages/m3-os-themes CLI (dry-run unless --apply)
 // The single M3 showcase is apps/showcase (it absorbed the former apps/web example on 2026-10-06).
-import { existsSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 
-export const REPO = resolve(dirname(import.meta.path), "..");
+export const REPO = resolve(import.meta.dir, "..");
+/** The Bun entry of the yolo CLI inside a yolo root. */
+const entryOf = (root: string) => join(root, "packages", "engine", "yolo", "src", "index.ts");
 /** The enclosing Aphrody monorepo carries yolo since m3 was fused into it; a standalone checkout uses $HOME/yolo. */
 const MONOREPO = resolve(REPO, "..");
 export const YOLO_ROOT =
   process.env["YOLO_ROOT"] ||
-  (existsSync(join(MONOREPO, "bin", "yolo")) ? MONOREPO : join(homedir(), "yolo"));
-export const YOLO_CLI = join(YOLO_ROOT, "bin", "yolo");
-/** bin/yolo is a bash launcher Windows cannot spawn; there the command runs the entry that launcher execs. */
-export const YOLO_COMMAND =
-  process.platform === "win32"
-    ? ["bun", "run", join(YOLO_ROOT, "packages", "engine", "yolo", "src", "index.ts")]
-    : [YOLO_CLI];
+  ((await Bun.file(entryOf(MONOREPO)).exists()) ? MONOREPO : join(homedir(), "yolo"));
+/** yolo is a Bun CLI: its entry is run by bun directly, never through the bash launcher. */
+export const YOLO_CLI = entryOf(YOLO_ROOT);
+export const YOLO_COMMAND = ["bun", "run", YOLO_CLI];
 
 export type Step = { cmd: string[]; cwd?: string; env?: Record<string, string> };
 
@@ -38,16 +37,16 @@ export const yolo = (...args: string[]): Step => ({
   env: { YOLO_HOME: REPO },
 });
 
-/** Test selection: every workspace package. The packages excluded from the workspace are named explicitly, since
- * `--filter "*"` alone still selects them: the host-bound ones (installed and tested by aphrody or iecode) and the
- * nested repository packages/nie-ui (its own workspace, install and `bun test`). */
-const EXCLUDED = ["@aphrody/app-ui", "@rosegriffon/ui", "@aphrody/web-to-tauri", "@aphrody/nie-ui"];
-const ALL = ["--filter", "*", ...EXCLUDED.flatMap((name) => ["--filter", `!${name}`])];
+/** Test selection: every package of this repository (path filter: the enclosing Aphrody workspace has many more).
+ * The nested repository packages/nie-ui (its own workspace, install and `bun test`) is excluded explicitly, since
+ * `--filter` alone still selects it. */
+const EXCLUDED = ["@aphrody/nie-ui"];
+const ALL = ["--filter", "./packages/*", ...EXCLUDED.flatMap((name) => ["--filter", `!${name}`])];
 
 /** Lint scope: m3 packages (not the nested app submodules), apps and scripts. */
 const lintPaths = (): string[] => [
-  ...readdirSync(join(REPO, "packages"))
-    .filter((d) => d.startsWith("m3"))
+  ...[...new Bun.Glob("m3*").scanSync({ cwd: join(REPO, "packages"), onlyFiles: false })]
+    .toSorted()
     .map((d) => `packages/${d}`),
   "apps",
   "scripts",
@@ -114,7 +113,7 @@ export function plan(task: string, rest: string[] = []): Step[] {
 if (import.meta.main) {
   const [task = "", ...rest] = process.argv.slice(2);
   try {
-    if (task !== "install:theme" && !existsSync(YOLO_CLI))
+    if (task !== "install:theme" && !(await Bun.file(YOLO_CLI).exists()))
       throw new Error(`yolo CLI not found at ${YOLO_CLI}; set YOLO_ROOT`);
     for (const step of plan(task, rest)) {
       const code = Bun.spawnSync(step.cmd, {
