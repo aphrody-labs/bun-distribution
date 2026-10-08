@@ -5736,8 +5736,8 @@
     {
       "path": "docs/reference/ai/PITFALLS.md",
       "title": "Pitfalls",
-      "sha256": "bc9f8a5a035322408cf0ce477f243e0b4711d05a6dc69fe5163066ad4f676fdd",
-      "bytes": 12738,
+      "sha256": "a2a4a936cc5210a65abf71e45426f825dc86f6f87bb39f50ec1530ec11f7de0e",
+      "bytes": 12802,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -11286,8 +11286,8 @@
     {
       "path": "docs/reference/web/web/BUILD-WINDOWS.md",
       "title": "Build Windows — Stack complète Aphrody Web + lightpanda + agent-browser",
-      "sha256": "bd3e04596288c7a3690e978ef69bd3a283c285e39f0be8e3dad9cf001f1a3d32",
-      "bytes": 20695,
+      "sha256": "4ce161c95cb51021d358e14dd31b8f9c1d89fb470a355aee5fd87c597ca3dab8",
+      "bytes": 21072,
       "domain": "web",
       "status": "canonical",
       "visibility": "private",
@@ -11666,7 +11666,7 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "962df831f31f4ef45c7848ca8417d524dd83f8b4d3f8482548d14e3931a5657d",
+      "sha256": "33c243ef07cf06337fb8425df9ec2b6bcbe7a8fb8b27c9afb3952fbb9671580f",
       "bytes": 50464,
       "domain": "workspace",
       "status": "generated",

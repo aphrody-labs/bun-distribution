@@ -189,7 +189,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `aphrody` | [crates/infra/aphrody](../../../crates/infra/aphrody) | rust crate | 1.0.0 | bin, lib | yes | 0 | 2026-10-07 |
+| `aphrody` | [crates/infra/aphrody](../../../crates/infra/aphrody) | rust crate | 1.0.0 | bin, lib | yes | 0 | 2026-10-09 |
 | `aphrody-command` | [crates/infra/aphrody-command](../../../crates/infra/aphrody-command) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-09 |
 | `aphrody-command-pure` | [crates/infra/aphrody-command-pure](../../../crates/infra/aphrody-command-pure) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-07 |
 | `aphrody-command-wasm` | [crates/infra/aphrody-command-wasm](../../../crates/infra/aphrody-command-wasm) | rust crate | 1.0.0 | cdylib, rlib | yes | 0 | 2026-10-08 |
@@ -251,7 +251,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-a2a-pb` | [crates/os/kernel/comps/a2a-pb](../../../crates/os/kernel/comps/a2a-pb) | rust crate | 0.1.8 | lib | yes | 0 | 2026-10-07 |
 | `aphrody-a2a-server` | [crates/os/kernel/comps/a2a-server](../../../crates/os/kernel/comps/a2a-server) | rust crate | 0.3.0 | lib | yes | 0 | 2026-10-07 |
 | `aphrody-cron` | [crates/os/kernel/comps/cron](../../../crates/os/kernel/comps/cron) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
-| `aphrody-diagnostics` | [crates/os/kernel/comps/diagnostics](../../../crates/os/kernel/comps/diagnostics) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-07 |
+| `aphrody-diagnostics` | [crates/os/kernel/comps/diagnostics](../../../crates/os/kernel/comps/diagnostics) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-09 |
 | `aphrody-jobs` | [crates/os/kernel/comps/jobs](../../../crates/os/kernel/comps/jobs) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
 | `aphrody-re` | [crates/os/kernel/comps/re](../../../crates/os/kernel/comps/re) | rust crate | 1.0.0-canary | rlib | yes | 0 | 2026-10-08 |
 | `aphrody-sandbox` | [crates/os/kernel/comps/sandbox](../../../crates/os/kernel/comps/sandbox) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
@@ -268,7 +268,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-subsystem` | [crates/os/ostd/subsystem](../../../crates/os/ostd/subsystem) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
 | `@aphrody/a2a` | [packages/os/a2a](../../../packages/os/a2a) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-07 |
 | `@aphrody/drive-client` | [packages/os/drive-client](../../../packages/os/drive-client) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-08 |
-| `@aphrody/os` | [packages/os/kernel-client](../../../packages/os/kernel-client) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-07 |
+| `@aphrody/os` | [packages/os/kernel-client](../../../packages/os/kernel-client) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-09 |
 | `@aphrody/winclean` | [packages/os/winclean](../../../packages/os/winclean) | bun package | 0.1.0 | lib | yes | 0 | 2026-10-07 |
 
 ## packages
