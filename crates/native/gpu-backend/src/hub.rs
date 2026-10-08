@@ -159,14 +159,14 @@ impl Hub {
         let rank = |adapter: &wgpu::Adapter| {
             let info = adapter.get_info();
             let discrete = info.device_type == wgpu::DeviceType::DiscreteGpu;
-            match (info.vendor == NVIDIA_VENDOR_ID, discrete) {
+            let nvidia = info.vendor == NVIDIA_VENDOR_ID;
+            match (discrete, nvidia) {
                 (true, true) => 0,
                 (true, false) => 1,
-                (false, true) => 2,
-                _ => 3,
+                _ => 2,
             }
         };
-        if let Some(best) = adapters.into_iter().min_by_key(rank).filter(|a| rank(a) < 3) {
+        if let Some(best) = adapters.into_iter().min_by_key(rank).filter(|a| rank(a) < 2) {
             return Ok(best);
         }
         let options = wgpu::RequestAdapterOptions {
