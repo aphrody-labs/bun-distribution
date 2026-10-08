@@ -3,10 +3,12 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { gunzipSync } from "node:zlib";
 import {
   deployDiscord,
   discordDeployment,
   parseRemoteExit,
+  uploadViaInfraExec,
   quiesceDiscord,
   type DiscordDeploymentTransport,
 } from "../src/discord.ts";
@@ -78,6 +80,26 @@ test("remote exit markers preserve systemctl status codes through Infra transpor
     stdout: "ActiveState=inactive",
   });
   expect(parseRemoteExit("normal output\n", 0)).toEqual({ code: 0, stdout: "normal output\n" });
+});
+
+test("Infra exec transfers compressed files in bounded chunks without exposing plaintext", async () => {
+  const source = join(root, "upload-payload.bin");
+  const payload = crypto.getRandomValues(new Uint8Array(180_000));
+  await Bun.write(source, payload);
+  const commands: string[] = [];
+  await uploadViaInfraExec("vps", source, "/tmp/release/payload", async (_host, command) => {
+    commands.push(command);
+    return { code: 0, stdout: "", stderr: "" };
+  });
+  expect(commands[0]).toContain("umask 077; : >");
+  expect(commands.slice(1, -1).every((command) => command.length < 40_100)).toBe(true);
+  const encoded = commands
+    .slice(1, -1)
+    .map((command) => /^printf '%s' '([^']*)' >>/.exec(command)?.[1] ?? "")
+    .join("");
+  expect(gunzipSync(Buffer.from(encoded, "base64"))).toEqual(Buffer.from(payload));
+  expect(commands.at(-1)).toContain("base64 --decode");
+  expect(commands.join("\n")).not.toContain(Buffer.from(payload).toString("hex"));
 });
 
 test("an absent or changed Yolo fork cannot signal, build or upload a monitor release", async () => {

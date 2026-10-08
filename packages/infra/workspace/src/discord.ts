@@ -12,6 +12,7 @@ import { existsSync, statSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { gzipSync } from "node:zlib";
 import { infraRoot, runInfra } from "./runtime.ts";
 import {
   applyPlan,
@@ -30,6 +31,38 @@ export function parseRemoteExit(stdout: string, fallback: number) {
     code: Number(marker[1]),
     stdout: stdout.slice(0, marker.index).trimEnd(),
   };
+}
+
+async function runInfraCommand(host: string, command: string) {
+  const wrapped = `set +e; { ${command}; }; status=$?; printf '\\n__APHRODY_EXIT_CODE__=%s\\n' "$status"; exit 0`;
+  const result = await runInfra({ args: ["ssh", "exec", "--host", host, "--cmd", wrapped] });
+  return { ...parseRemoteExit(result.stdout, result.exitCode), stderr: result.stderr };
+}
+
+export async function uploadViaInfraExec(
+  host: string,
+  source: string,
+  target: string,
+  run: typeof runInfraCommand = runInfraCommand,
+) {
+  const encoded = gzipSync(await Bun.file(source).bytes()).toString("base64");
+  const transfer = `${target}.gz.b64`;
+  const commands = [
+    `umask 077; : > ${quote(transfer)}`,
+    ...Array.from(
+      { length: Math.ceil(encoded.length / 40_000) },
+      (_, index) =>
+        `printf '%s' ${quote(encoded.slice(index * 40_000, (index + 1) * 40_000))} >> ${quote(transfer)}`,
+    ),
+    `base64 --decode ${quote(transfer)} > ${quote(`${target}.gz`)} && gzip --decompress ${quote(`${target}.gz`)} > ${quote(target)} && rm -f -- ${quote(transfer)} ${quote(`${target}.gz`)}`,
+  ];
+  for (const command of commands) {
+    const result = await run(host, command);
+    if (result.code !== 0)
+      throw new Error(
+        `Infra exec upload failed (${result.code}): ${result.stderr || result.stdout}`,
+      );
+  }
 }
 
 export interface DiscordDeployment {
@@ -209,18 +242,9 @@ async function resumeDiscord(
 }
 
 const deploymentTransport: DiscordDeploymentTransport = {
-  async run(host, command) {
-    const wrapped = `set +e; { ${command}; }; status=$?; printf '\\n__APHRODY_EXIT_CODE__=%s\\n' "$status"; exit 0`;
-    const result = await runInfra({ args: ["ssh", "exec", "--host", host, "--cmd", wrapped] });
-    const remote = parseRemoteExit(result.stdout, result.exitCode);
-    return { ...remote, stderr: result.stderr };
-  },
+  run: runInfraCommand,
   async upload(host, source, target) {
-    const result = await runInfra({
-      args: ["ssh", "sftp", "--host", host, "--put", source, "--path", target, "--json"],
-    });
-    if (result.exitCode !== 0)
-      throw new Error(`Infra upload failed (${result.exitCode}): ${result.stderr}`);
+    await uploadViaInfraExec(host, source, target);
   },
   async build(entrypoint, outdir) {
     const result = await Bun.build({
