@@ -239,7 +239,7 @@ async function backup() {
   const metadata = JSON.parse(await run(["gh", "api", `repos/${repo}`])) as { private: boolean };
   if (!metadata.private)
     throw new Error("GitHub vault backup requires the existing private repository");
-  const remotePath = "config/protected-backups/container-vault.enc.json";
+  const remotePath = "tools/config/protected-backups/container-vault.enc.json";
   let sha: string | undefined;
   try {
     sha = (

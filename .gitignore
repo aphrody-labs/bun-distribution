@@ -48,6 +48,7 @@ compile_commands.json
 /var/json/
 /var/private/
 /var/unification/
+/tools/var/
 *.pem
 *.key
 *.p12

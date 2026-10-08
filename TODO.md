@@ -91,7 +91,9 @@ restent dans le plan global ; ce lot ne les déclare pas terminées.
 
 ## Suite active — runtime et fabrique unique
 
-- [ ] Gates des 11 consommateurs Rust hors OS de tools/config.
+- [x] Gates des 11 consommateurs Rust hors OS de tools/config (aphrody-command, aphrody, aphrody-infra, aphrody-ssh, aphrody-git, aphrody-ovh, aphrody-vpn, aphrody-yolo, aphrody-sql, aphrody-mcp, aphrody-models vérifiés sous --locked).
+- [x] Absorption de config/ dans tools/config/ (déplacement de protected-backups, mise à jour de vault.ts, .dockerignore et root.json, suppression de config/ à la racine).
+- [x] Nettoyage des manifestes partiels orphelins de packages/ui (alignement avec AGENTS.md et le workspace Bun).
 - [x] Compiler Yolo bytecode et SDK FFI partagé ; archive réelle, installation isolée et rollback qualifiés (activation encore ouverte).
 - [x] Nettoyer les targets VPS retirés (~39,2 Go) et qualifier la ressource temporaire unique (90 tests), sous verrou global.
 - [ ] Absorber les 2 631 fichiers M3 selon la carte validée, après ce lot.

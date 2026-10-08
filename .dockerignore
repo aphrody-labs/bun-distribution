@@ -24,7 +24,7 @@
 /vendor/bun
 /vendor/deno
 /plugins/_state
-/config/protected-backups
+/tools/config/protected-backups
 **/.cache
 **/.turbo
 **/.venv

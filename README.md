@@ -53,7 +53,7 @@ Totals: 204 crates, 95 packages, 0 apps.
 | `crates/<domain>/<crate>` | Rust crates |
 | `m3/` | UI framework, `m3/packages/app-ui` |
 | `py/` | Python packages |
-| `config/` | Build, product, host and deployment declarations |
+| `tools/config/` | Build, product, host and deployment declarations |
 | `scripts/` | audit, build, dev, migration, release, tools |
 | `docs/` | Guides, contracts, generated references |
 | `.coord/` | Claims and receipts |

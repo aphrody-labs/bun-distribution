@@ -19,7 +19,7 @@
         "Python packages"
       ],
       [
-        "config/",
+        "tools/config/",
         "Build, product, host and deployment declarations"
       ],
       [
@@ -299,6 +299,11 @@
             "2026-10-07",
             "OS source layout consolidated as crates/os/ostd and kernel/{core,client,comps,libs}; 22 crate identities and 2117 tracked files retained, zero missing. Factory all-22 check 5afea21ab1b6 passed; tests 2ba687d91318: 943 passed, zero failed, three existing ignored, 59 suites. Strict all-target Clippy e1a7de359097 passed. Drive/A2A/inventory 13 Bun tests and docs-consolidation 28 tests; scoped TypeScript and formatting passed.",
             "Independent FSL Drive workspace excluded and not compiled. Existing cross-component dependencies, Windows execution, SDK/runtime packaging and installation remain unqualified. No measured performance gain claimed. Concurrent local-jobs activation and crawler changes remain with their owners."
+          ],
+          [
+            "2026-10-08",
+            "11 non-OS Rust consumers of tools/config fully verified and passing under --locked (aphrody-command, aphrody, aphrody-infra, aphrody-ssh, aphrody-git, aphrody-ovh, aphrody-vpn, aphrody-yolo, aphrody-sql, aphrody-mcp, aphrody-models). config/ fully absorbed into tools/config/ (protected-backups moved, vault.ts and .dockerignore updated, root config/ removed). Leftover partial packages/ui manifests untracked; canonical UI maintained in m3/packages/app-ui according to AGENTS.md. Bun workspace contract passes 94 first-party manifests with 0 violations.",
+            "Linux factory/WSL and Windows MSVC checks pass. Full M3 relocation remains staged under its documented criteria."
           ]
         ]
       },
