@@ -94,3 +94,14 @@ export function step(g, input, dt) {
   g.enemies = alive;
   if (p.hp <= 0) g.status = "lost";
 }
+
+export function pointerDirection(targetX, playerX, tolerance = 12) {
+  if (targetX === null || !Number.isFinite(targetX) || !Number.isFinite(playerX)) return null;
+  const difference = targetX - playerX;
+  if (Math.abs(difference) < tolerance) return null;
+  return difference < 0 ? "left" : "right";
+}
+
+export function pointerAction(button) {
+  return button === 2 ? "blast" : null;
+}
