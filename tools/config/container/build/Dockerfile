@@ -77,6 +77,11 @@ RUN curl -fsSL https://bun.sh/install | env BUN_INSTALL=/opt/bun bash -s "bun-v$
  && curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" | env UV_INSTALL_DIR=/usr/local/bin INSTALLER_NO_MODIFY_PATH=1 sh \
  && uv --version
 
+# Private Git dependencies (aphrody-labs/aphrody pinned by revision in Shenron): the system credential
+# helper answers for github.com from APHRODY_GIT_TOKEN, passed at run time by name only; nothing stored.
+RUN git config --system credential.https://github.com.helper \
+      '!f() { test "$1" = get && test -n "${APHRODY_GIT_TOKEN:-}" && printf "username=x-access-token\npassword=%s\n" "$APHRODY_GIT_TOKEN"; }; f'
+
 # Shared caches: each mount point becomes a named volume owned by the build group (setgid, group
 # writable), so any host uid that runs with `--group-add ${BUILD_GID}` shares them.
 RUN groupadd -g "${BUILD_GID}" aphrody-build \

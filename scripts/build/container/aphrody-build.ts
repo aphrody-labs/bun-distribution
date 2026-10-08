@@ -19,6 +19,10 @@
  * plus the shared build group (gid 1500), named cache volumes aphrody-build-{cargo,sccache,bun,xwin,xdg},
  * bounded resources (APHRODY_BUILD_CPUS, default 6; APHRODY_BUILD_MEMORY, default 16g, no swap) and the
  * factory heavy lock `/srv/aphrody-build/locks/heavy.lock` when it exists.
+ *
+ * Private Git dependencies (Shenron pins aphrody-labs/aphrody by revision): the image's system Git
+ * credential helper answers for github.com with `APHRODY_GIT_TOKEN`. `run` resolves it from the
+ * caller (APHRODY_GIT_TOKEN, GH_TOKEN, GITHUB_TOKEN, else `gh auth token`) and passes it by name only.
  */
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
@@ -186,6 +190,20 @@ export function runArgs(o: RunOptions): string[] {
     : ["flock", "--close", HEAVY_LOCK, ...docker];
 }
 
+/** Token for the image's github.com credential helper, from the caller's environment or `gh`. */
+export function gitToken(
+  env: Record<string, string | undefined>,
+  gh: () => string | undefined,
+): string | undefined {
+  return env.APHRODY_GIT_TOKEN || env.GH_TOKEN || env.GITHUB_TOKEN || gh() || undefined;
+}
+
+function ghToken(): string | undefined {
+  if (!Bun.which("gh")) return undefined;
+  const p = Bun.spawnSync(["gh", "auth", "token"], { stdout: "pipe", stderr: "ignore" });
+  return p.exitCode === 0 ? p.stdout.toString().trim() : undefined;
+}
+
 function git(args: string[]): string {
   const p = Bun.spawnSync(["git", ...args], { cwd: ROOT, stdout: "pipe", stderr: "inherit" });
   if (p.exitCode !== 0) throw new Error(`git ${args.join(" ")} : code ${p.exitCode}`);
@@ -234,6 +252,8 @@ function run(argv: string[]): never {
   flags.forEach((flag, i) => {
     if (flag === "--env") env.push(flags[i + 1] ?? "");
   });
+  const token = gitToken(process.env, ghToken);
+  if (token && !env.includes("APHRODY_GIT_TOKEN")) env.push("APHRODY_GIT_TOKEN");
   const args = runArgs({
     repo: resolve(value("--repo") ?? ROOT),
     command,
@@ -247,7 +267,10 @@ function run(argv: string[]): never {
     memory: process.env.APHRODY_BUILD_MEMORY,
     tty: process.stdin.isTTY === true && process.stdout.isTTY === true,
   });
-  const p = Bun.spawnSync(args, { stdio: ["inherit", "inherit", "inherit"] });
+  const p = Bun.spawnSync(args, {
+    env: token ? { ...process.env, APHRODY_GIT_TOKEN: token } : process.env,
+    stdio: ["inherit", "inherit", "inherit"],
+  });
   process.exit(p.exitCode ?? 1);
 }
 

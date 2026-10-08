@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
 import { resolve } from "node:path";
-import { buildArgs, imageTag, readPins, runArgs } from "./aphrody-build.ts";
+import { buildArgs, gitToken, imageTag, readPins, runArgs } from "./aphrody-build.ts";
 
 const ROOT = resolve(import.meta.dir, "../../..");
 
@@ -62,4 +62,11 @@ test("run refuses unbounded or unsafe inputs", () => {
   expect(() => runArgs({ ...base, env: ["A=b"] })).toThrow();
   expect(() => runArgs({ ...base, targetVolume: "../x" })).toThrow();
   expect(() => runArgs({ ...base, command: [] })).toThrow();
+});
+
+test("git token: caller environment first, gh last, never required", () => {
+  expect(gitToken({ APHRODY_GIT_TOKEN: "a", GH_TOKEN: "b" }, () => "c")).toBe("a");
+  expect(gitToken({ GITHUB_TOKEN: "d" }, () => "c")).toBe("d");
+  expect(gitToken({}, () => "c")).toBe("c");
+  expect(gitToken({}, () => undefined)).toBeUndefined();
 });
