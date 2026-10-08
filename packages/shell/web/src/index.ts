@@ -282,3 +282,90 @@ export function attach(wasm: WasmApi, transport: Transport, cols = 80, rows = 24
     close: () => transport.close(),
   };
 }
+
+/** MicroVM engine type for in-browser / WebAssembly guest execution. */
+export type WasmContainerEngine = "v86" | "container2wasm";
+
+/** Options for launching a sandboxed Linux microVM container entirely in WebAssembly. */
+export interface WasmContainerOptions {
+  /** MicroVM engine: "v86" (x86 JIT virtualization) or "container2wasm" (QEMU/Bochs OCI emulator). */
+  engine?: WasmContainerEngine;
+  /** Guest RAM size in megabytes. Defaults to 128. */
+  memoryMb?: number;
+  /** URL or path to an OCI rootfs / disk image. */
+  rootfsUrl?: string;
+  /** URL or path to a pre-booted memory snapshot for instant (< 50ms) resume. */
+  snapshotUrl?: string;
+  /** Guest mount point where the host VFS / OPFS is mapped via 9p. Defaults to `/mnt/host`. */
+  mountPoint?: string;
+  /** Existing dedicated worker or custom ShellWorker implementation. */
+  worker?: ShellWorker;
+  /** Initial terminal columns. Defaults to 80. */
+  cols?: number;
+  /** Initial terminal rows. Defaults to 24. */
+  rows?: number;
+}
+
+/**
+ * Transport for running a full Linux container guest inside WebAssembly.
+ * Supports v86 (x86 JIT VM) and container2wasm (OCI container emulator),
+ * bridging the guest serial/console to the terminal and mapping OPFS/VFS via 9p.
+ */
+export function wasmContainerTransport(options: WasmContainerOptions = {}): Transport {
+  const cols = options.cols ?? 80;
+  const rows = options.rows ?? 24;
+  const engine = options.engine ?? "v86";
+  const worker =
+    options.worker ??
+    (typeof Worker !== "undefined"
+      ? (new Worker(new URL("./worker.ts", import.meta.url), { type: "module" }) as ShellWorker)
+      : undefined);
+
+  if (!worker) {
+    throw new Error("wasmContainerTransport requires a Web Worker environment or a custom ShellWorker");
+  }
+
+  let out: (bytes: Uint8Array) => void = () => {};
+  let closed = false;
+
+  worker.addEventListener("message", ({ data }) => {
+    if (closed && data.type !== "closed") return;
+    if ((data.type === "ready" || data.type === "output") && data.bytes) {
+      out(new Uint8Array(data.bytes));
+    } else if (data.type === "error") {
+      out(new TextEncoder().encode(`\r\n[${engine}] error: ${data.message ?? "container error"}\r\n`));
+      closed = true;
+      worker.terminate();
+    } else if (data.type === "closed") {
+      worker.terminate();
+    }
+  });
+
+  worker.postMessage({
+    type: "init",
+    cols,
+    rows,
+    engine,
+    memoryMb: options.memoryMb ?? 128,
+    rootfsUrl: options.rootfsUrl,
+    snapshotUrl: options.snapshotUrl,
+    mountPoint: options.mountPoint ?? "/mnt/host",
+  });
+
+  return {
+    send: (bytes) => {
+      if (closed) return;
+      const owned = Uint8Array.from(bytes);
+      worker.postMessage({ type: "input", bytes: owned.buffer }, [owned.buffer]);
+    },
+    resize: (c, r) => {
+      if (!closed) worker.postMessage({ type: "resize", cols: c, rows: r });
+    },
+    onOutput: (cb) => (out = cb),
+    close: () => {
+      if (closed) return;
+      closed = true;
+      worker.postMessage({ type: "close" });
+    },
+  };
+}

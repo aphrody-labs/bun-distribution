@@ -56,7 +56,7 @@
     {
       "path": "README.md",
       "title": "Aphrody",
-      "sha256": "0a999da4d236978d9c72ad7185995505267881a48df5f0e3079ea11dc138a499",
+      "sha256": "0e3e9e2d8f1b4d8fed94bbb60c80d1a19e3c6e7a559a24f046d4a630974f6df4",
       "bytes": 3412,
       "domain": "",
       "status": "generated",
@@ -2876,7 +2876,7 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "4dc2198045d05d2a849aab6a1488f13c4b453b9dce5545795c5cfbe76a9ee566",
+      "sha256": "8d98cf94f7e8a2ba6ae68b5714cee2e9e7fb78ad16dae763db37af9fb3b2dbe4",
       "bytes": 8579,
       "domain": "",
       "status": "generated",
@@ -3394,6 +3394,16 @@
       "canonical": "docs/architecture/ai/research/adobe-connector/skills/adobe-design-from-template/SKILL.md"
     },
     {
+      "path": "docs/architecture/bun-native-integration.md",
+      "title": "Bun Native Integration Architecture in Aphrody OS",
+      "sha256": "e2238a909ba69affeb4b54bde737bcc7b7c5ff86f20484455655e865f99426a1",
+      "bytes": 6299,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/architecture/bun-native-integration.md"
+    },
+    {
       "path": "docs/architecture/bun-upstream.md",
       "title": "Architecture de consolidation fondée sur Bun upstream",
       "sha256": "4959696b072e23d2bc31b3e0ae273b64beffc0fdb452adfb18ae6b624edc6ec0",
@@ -3552,6 +3562,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/architecture/runtime-native/RUNTIME.md"
+    },
+    {
+      "path": "docs/architecture/runtime-native/WASM-CONTAINER-V86.md",
+      "title": "Full-WASM Architecture: MicroVM Container Virtualization (v86 & container2wasm)",
+      "sha256": "d766f792d2e62255831741286625b428c26f39dc57a4b7dde3330cde923853cb",
+      "bytes": 12491,
+      "domain": "runtime-native",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/architecture/runtime-native/WASM-CONTAINER-V86.md"
     },
     {
       "path": "docs/architecture/runtime-native/qualification.md",
@@ -3816,8 +3836,8 @@
     {
       "path": "docs/ecosystem/CLI.md",
       "title": "CLI command trees",
-      "sha256": "464b634a9b07912e581c8a72a6dac11f9160f9b8874a84dc1c5b3996bceff78e",
-      "bytes": 105851,
+      "sha256": "4690797f77be2856f3af286379517f0d9147c337024be8cb914f692035490393",
+      "bytes": 106579,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -3826,8 +3846,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "ef763d68f438c381a9c9e0ec21c3bcd08229b46cbefd7ee87995147afb62d619",
-      "bytes": 80448,
+      "sha256": "402bef05173b62851a035d47bb08759198219f7659bfa9b419c5120299fdf68a",
+      "bytes": 80903,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -31916,8 +31936,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "d1aa53ef071f1b3e51a60f36164ecb78381a179a86a301b9345e9f3be4e0ca39",
-      "bytes": 49583,
+      "sha256": "bc9fea8de2d2a4dab4338afd370f82f3200429331c74b50aac2d57a3cbeae9b4",
+      "bytes": 49860,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",

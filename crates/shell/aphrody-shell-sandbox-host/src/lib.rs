@@ -7,6 +7,7 @@ pub mod e2b;
 mod mock;
 #[cfg(not(target_arch = "wasm32"))]
 mod pty;
+pub mod wasm_guest;
 
 use std::{error::Error, fmt, time::Duration};
 
@@ -16,6 +17,7 @@ use aphrody_shell_vfs::VfsError;
 pub use mock::MockHost;
 #[cfg(not(target_arch = "wasm32"))]
 pub use pty::LocalPtyHost;
+pub use wasm_guest::{WasmGuestConfig, WasmGuestEngine, WasmGuestHost};
 
 /// Quotas shared by mock, native and remote sandbox hosts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

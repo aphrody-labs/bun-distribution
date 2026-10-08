@@ -126,7 +126,9 @@ aphrody-backend                   = { workspace = true }
 aphrody-proc = { workspace = true }
 rustls                    = { workspace = true }
 aphrody-native            = { workspace = true }
+aphrody-bun-bridge        = { workspace = true }
 aphrody-terminal-backend  = { workspace = true }
+aphrody-term              = { workspace = true }
 # Natural-language fallback (`auto_command`) routes prompts to a running
 # A2A agent over JSON-RPC; reqwest-backed transports are native-only.
 aphrody-a2a                       = { workspace = true }

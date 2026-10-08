@@ -207,6 +207,13 @@
           ]
         },
         {
+          "name": "aphrody-bun-bridge",
+          "path": "crates/compat/bun-bridge",
+          "description": "Native bridge integrating Bun fork capabilities (zero-allocation Shell AST & parser, in-process POSIX builtins, JSC structured engine, and fast systems crates) into Aphrody OS.",
+          "bins": [],
+          "features": []
+        },
+        {
           "name": "aphrody-bun-docs",
           "path": "crates/compat/bun-docs",
           "description": "Offline Bun documentation (third_party/bun/docs) and n2b Node-to-Bun equivalents as an Aphrody OS MCP subsystem.",
@@ -1601,6 +1608,15 @@
           "description": "In-process observability for aphrody — hierarchical spans, monotonic counters, bucketed histograms, NDJSON exporter. OpenTelemetry-inspired, zero OTLP weight.",
           "bins": [],
           "features": []
+        },
+        {
+          "name": "aphrody-term",
+          "path": "crates/shell/aphrody-term",
+          "description": "Autonomous, zero-copy, hardware-accelerated terminal engine for Aphrody AI Computer-Use, WezTerm surface protocols, Cosmic rendering, and native Bun shell.",
+          "bins": [],
+          "features": [
+            "default"
+          ]
         },
         {
           "name": "aphrody-terminal-backend",
@@ -4414,7 +4430,7 @@
           "children": [
             {
               "name": "status",
-              "about": "Inspect Aphrody Shell capabilities (Nushell, PTY, TUI)",
+              "about": "Inspect Aphrody Shell capabilities (Bun Shell, Nushell, PTY, TUI)",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -4428,7 +4444,28 @@
             },
             {
               "name": "eval",
-              "about": "Evaluate a Nushell command or pipeline",
+              "about": "Evaluate a command or pipeline (Nushell or native Bun Shell)",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "bun",
+              "about": "Direct in-process Bun Shell execution (zero fork/exec, native POSIX builtins)",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "term",
+              "about": "Launch the autonomous, zero-copy, hardware-accelerated Aphrody Term engine",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "computer-use",
+              "about": "AI Computer-Use screen scraping and programmatic action interface",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -6449,7 +6486,7 @@
               "children": [
                 {
                   "name": "status",
-                  "about": "Inspect Aphrody Shell capabilities (Nushell, PTY, TUI)",
+                  "about": "Inspect Aphrody Shell capabilities (Bun Shell, Nushell, PTY, TUI)",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -6463,7 +6500,28 @@
                 },
                 {
                   "name": "eval",
-                  "about": "Evaluate a Nushell command or pipeline",
+                  "about": "Evaluate a command or pipeline (Nushell or native Bun Shell)",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "bun",
+                  "about": "Direct in-process Bun Shell execution (zero fork/exec, native POSIX builtins)",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "term",
+                  "about": "Launch the autonomous, zero-copy, hardware-accelerated Aphrody Term engine",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "computer-use",
+                  "about": "AI Computer-Use screen scraping and programmatic action interface",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -13962,12 +14020,12 @@
     "aphrodyRepos": 2,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 279,
+    "crates": 281,
     "binaries": 37,
     "bunPackages": 160,
     "pythonPackages": 10,
     "cliBinaries": 35,
-    "cliCommands": 1064,
+    "cliCommands": 1070,
     "mcpServers": 20,
     "mcpTools": 389,
     "mcpUniqueToolNames": 387

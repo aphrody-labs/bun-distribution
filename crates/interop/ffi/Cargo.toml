@@ -55,6 +55,7 @@ browser   = ["yolo-runtime/browser"]
 aphrody-command = { workspace = true }
 aphrody-agent-home = { workspace = true }
 aphrody-bun = { workspace = true }
+aphrody-bun-bridge = { workspace = true }
 aphrody-n2b-core = { workspace = true, optional = true }
 memchr = { workspace = true, optional = true }
 aphrody-oxc-bridge = { workspace = true, optional = true }

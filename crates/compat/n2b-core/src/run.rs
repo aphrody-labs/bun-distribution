@@ -347,7 +347,10 @@ fn process_file(abs: &Path, rel: &str, opts: &RunOptions) -> Result<Option<FileF
     if meta.len() > 2 * 1024 * 1024 {
         return Ok(None);
     }
-    let before = std::fs::read_to_string(abs).context("read UTF-8 source")?;
+    let bytes = std::fs::read(abs).context("read source bytes")?;
+    let before = aphrody_bun_bridge::from_utf8_simd(&bytes)
+        .context("source is not valid UTF-8")?
+        .to_string();
 
     let (findings, after) = if is_pkg {
         scan_package_json(rel, &before)

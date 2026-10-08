@@ -20,6 +20,7 @@ path = "src/lib.rs"
 [dependencies]
 aphrody-n2b-types.workspace = true
 aphrody-n2b-registry.workspace = true
+aphrody-bun-bridge.workspace = true
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml.workspace = true

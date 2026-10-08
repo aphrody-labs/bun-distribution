@@ -21,14 +21,14 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 
 | Category | Domain | Files | Entry |
 | --- | --- | ---: | --- |
-| architecture | [(files)](architecture/) | 3 | - |
+| architecture | [(files)](architecture/) | 4 | - |
 | architecture | [ai](architecture/ai/) | 6 | - |
 | architecture | [compat](architecture/compat/) | 1 | - |
 | architecture | [convergence](architecture/convergence/) | 1 | - |
 | architecture | [discord](architecture/discord/) | 4 | [Architecture Discord](architecture\discord\README.md) |
 | architecture | [interop](architecture/interop/) | 1 | - |
 | architecture | [os](architecture/os/) | 4 | - |
-| architecture | [runtime-native](architecture/runtime-native/) | 5 | [Frontière runtime Yolo / produit Aphrody](architecture\runtime-native\README.md) |
+| architecture | [runtime-native](architecture/runtime-native/) | 6 | [Frontière runtime Yolo / produit Aphrody](architecture\runtime-native\README.md) |
 | architecture | [shell](architecture/shell/) | 1 | [Shell and terminal layers](architecture\shell\README.md) |
 | architecture | [upstream-bun](architecture/upstream-bun/) vendored upstream copy | 2 | - |
 | architecture | [web](architecture/web/) | 2 | - |
@@ -125,4 +125,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | cli (outside the category layout) | [(files)](cli/) | 1 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
 
-Total: 3248 files.
+Total: 3250 files.

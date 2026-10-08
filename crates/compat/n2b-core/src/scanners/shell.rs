@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::rules::cli_commands::apply_cli_rules;
+use aphrody_bun_bridge::parse_script;
 use aphrody_n2b_types::types::Finding;
+use crate::rules::cli_commands::apply_cli_rules;
 
 pub fn scan_shell(path: &str, content: &str) -> (Vec<Finding>, String) {
+    // Validate AST with Bun Shell's zero-allocation arena parser
+    let _ = parse_script(content);
     apply_cli_rules(path, content)
 }

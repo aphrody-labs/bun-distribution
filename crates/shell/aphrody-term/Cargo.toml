@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-term"
+description = "Autonomous, zero-copy, hardware-accelerated terminal engine for Aphrody AI Computer-Use, WezTerm surface protocols, Cosmic rendering, and native Bun shell."
+version = "1.0.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[lib]
+name = "aphrody_term"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+rio-vt = { workspace = true }
+portable-pty = { workspace = true }
+crossterm = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+memchr = { workspace = true }
+parking_lot = "0.12"
+thiserror = { workspace = true }
+
+[features]
+default = []

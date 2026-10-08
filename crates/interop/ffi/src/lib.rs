@@ -89,6 +89,10 @@ pub use python_ffi::*;
 #[cfg(not(target_arch = "wasm32"))]
 pub use bun_rs::*;
 
+// The native Bun Bridge ABI (Bun Shell in-process builtins, braces, JSC, SIMD)
+#[cfg(not(target_arch = "wasm32"))]
+pub use aphrody_bun_bridge::*;
+
 // Preserve the native N2B and Oxc contracts inside this sole dynamic artifact.
 // Their original library owners provide implementations and destructors.
 #[cfg(all(feature = "tooling", not(target_arch = "wasm32")))]

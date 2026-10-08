@@ -27,6 +27,7 @@ crc32fast = { version = "1.5", default-features = false }
 image-compare = { version = "0.5" }
 palette = { version = "0.7", default-features = false }
 aphrody-oxc-bridge = { path = "crates/compat/oxc-bridge", version = "0.1.0" }
+aphrody-bun-bridge = { path = "crates/compat/bun-bridge", version = "1.0.0-canary" }
 oxc_codegen = { version = "0.152.0", default-features = false }
 oxc_minifier = { version = "0.152.0" }
 oxc_semantic = { version = "0.152.0" }
@@ -127,6 +128,7 @@ aphrody-shell-tauri = { path = "crates/shell/tauri", version = "1.0.0-canary", f
 aphrody-shell-session = { path = "crates/shell/session", version = "1.0.0-canary", features = [] }
 aphrody-shell-vfs = { path = "crates/shell/vfs", version = "1.0.0-canary", features = [] }
 aphrody-terminal-core = { path = "crates/shell/terminal-core", version = "1.0.0-canary", features = [] }
+aphrody-term = { path = "crates/shell/aphrody-term", version = "1.0.0", features = [] }
 aphrody-terminal-backend = { path = "crates/shell/terminal-backend", version = "1.0.0-canary", features = [] }
 aphrody-toolcall = { path = "crates/ai/toolcall", version = "1.0.0", features = [] }
 aphrody-toolcall-repair = { path = "crates/ai/toolcall-repair", version = "1.0.0", features = [] }
@@ -197,6 +199,7 @@ libc = "0.2.189"
 memmap2 = "0.9.11"
 miette = { version = "7", features = ["fancy"] }
 mimalloc = { version = "0.1", default-features = false, features = [] }
+simdutf = { path = "crates/native/simdutf", version = "0.7.0" }
 libm = "0.2.16"
 minijinja = "2.24.0"
 mistralrs = { version = "0.9.4", git = "https://github.com/EricLBuehler/mistral.rs.git", rev = "3f2515e9b5adc2ac44949c128c50a13b15721294", default-features = false }

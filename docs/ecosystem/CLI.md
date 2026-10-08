@@ -6,13 +6,13 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 35 binaries with a clap surface, 1064 commands.
+Totals: 35 binaries with a clap surface, 1070 commands.
 
 ## aphrody
 
 ### `aphrody`
 
-Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 240 commands.
+Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 243 commands.
 
 - `aphrody pure` — Pure commands (rag, toolcall, html, text): no network, no processes; also built for wasm32.
   - `aphrody pure rag` — RAG core: chunking, rank fusion, MMR, source weighting, retrieval eval.
@@ -101,9 +101,12 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 240 comma
     - `aphrody web frames quota`
     - `aphrody web frames index`
 - `aphrody shell` — Canonical Shell: Nushell PTY session, Ratatui TUI, embedded terminal. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody shell status` — Inspect Aphrody Shell capabilities (Nushell, PTY, TUI)
+  - `aphrody shell status` — Inspect Aphrody Shell capabilities (Bun Shell, Nushell, PTY, TUI)
   - `aphrody shell start` — Start interactive Nushell / Ratatui terminal session
-  - `aphrody shell eval` — Evaluate a Nushell command or pipeline
+  - `aphrody shell eval` — Evaluate a command or pipeline (Nushell or native Bun Shell)
+  - `aphrody shell bun` — Direct in-process Bun Shell execution (zero fork/exec, native POSIX builtins)
+  - `aphrody shell term` — Launch the autonomous, zero-copy, hardware-accelerated Aphrody Term engine
+  - `aphrody shell computer-use` — AI Computer-Use screen scraping and programmatic action interface
   - `aphrody shell serve` — Start the Aphrody Terminal Backend WebSocket server
 - `aphrody train` — Machine learning training and fine-tuning engine. _(cfg: all(not(target_arch = "wasm32"), feature = "train"))_
   - `aphrody train status` — Show training status, GPU lock availability, and active jobs.
@@ -293,7 +296,7 @@ Crate `aphrody-kernel`, parser `crates/os/kernel/core/src/cli.rs#Cli`, 6 command
 
 ### `aphrody infra`
 
-Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 317 commands.
+Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 320 commands.
 
 - `aphrody infra status` — Show target, repository and runtime state without mutation.
 - `aphrody infra inventory` — Run the existing deep resource inventory through the canonical Bun adapter.
@@ -397,9 +400,12 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 317 commands.
       - `aphrody infra ssh web frames quota`
       - `aphrody infra ssh web frames index`
   - `aphrody infra ssh shell` — Canonical Shell: Nushell PTY session, Ratatui TUI, embedded terminal. _(cfg: not(target_arch = "wasm32"))_
-    - `aphrody infra ssh shell status` — Inspect Aphrody Shell capabilities (Nushell, PTY, TUI)
+    - `aphrody infra ssh shell status` — Inspect Aphrody Shell capabilities (Bun Shell, Nushell, PTY, TUI)
     - `aphrody infra ssh shell start` — Start interactive Nushell / Ratatui terminal session
-    - `aphrody infra ssh shell eval` — Evaluate a Nushell command or pipeline
+    - `aphrody infra ssh shell eval` — Evaluate a command or pipeline (Nushell or native Bun Shell)
+    - `aphrody infra ssh shell bun` — Direct in-process Bun Shell execution (zero fork/exec, native POSIX builtins)
+    - `aphrody infra ssh shell term` — Launch the autonomous, zero-copy, hardware-accelerated Aphrody Term engine
+    - `aphrody infra ssh shell computer-use` — AI Computer-Use screen scraping and programmatic action interface
     - `aphrody infra ssh shell serve` — Start the Aphrody Terminal Backend WebSocket server
   - `aphrody infra ssh train` — Machine learning training and fine-tuning engine. _(cfg: all(not(target_arch = "wasm32"), feature = "train"))_
     - `aphrody infra ssh train status` — Show training status, GPU lock availability, and active jobs.

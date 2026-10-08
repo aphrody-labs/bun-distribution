@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-bun-bridge"
+description = "Native bridge integrating Bun fork capabilities (zero-allocation Shell AST & parser, in-process POSIX builtins, JSC structured engine, and fast systems crates) into Aphrody OS."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[lib]
+name = "aphrody_bun_bridge"
+path = "src/lib.rs"
+crate-type = ["rlib"]
+
+[dependencies]
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+which = { workspace = true }
+memchr = { workspace = true }
+simdutf = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[lints]
+workspace = true
