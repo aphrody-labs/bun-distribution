@@ -1,7 +1,7 @@
 # Forks
 
-M3 vendors no fork. `tools/config/vendor.json` lists Bun (`vendor/bun`) as the only on-demand source, fetched by
-`bun scripts/tools/vendor/fetch.ts`.
+M3 vendors no fork. Bun is the fork `aphrody-labs/bun`, consumed through its releases (npm `@aphrody/bun-runtime`,
+`@aphrody/bun-types`), never vendored.
 
 | Package | Source |
 | --- | --- |

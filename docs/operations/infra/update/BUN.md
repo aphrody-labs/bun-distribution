@@ -3,8 +3,8 @@
 
 Owner: Infra (`packages/infra/update/src/ecosystems/bun.ts`, exported as `runBun`). It bumps everything that is Bun or
 npm: the Bun runtime pin, the Tauri JS packages, the root `workspaces.catalog` and the literal ranges of every
-first-party manifest (84 manifests plus the root). The pipeline overview is [UPDATE.md](../UPDATE.md); the Bun fork is
-retired: the Aphrody Bun fork (`aphrody-labs/bun`) was deleted on 2026-10-02: `bun:aphrody` is optional and upstream Bun with `@aphrody/bun` is the runtime.
+first-party manifest (84 manifests plus the root). The pipeline overview is [UPDATE.md](../UPDATE.md). The Bun of Aphrody is
+the fork `aphrody-labs/bun` (see [Bun fork](#bun-fork)).
 
 ## Policy
 
@@ -99,7 +99,18 @@ committed is reverted with `git revert` of that commit. After either, run `bun i
 
 ## Bun fork
 
-Bun fork: the Aphrody Bun fork (`aphrody-labs/bun`) was deleted on 2026-10-02: `bun:aphrody` is optional and upstream Bun with `@aphrody/bun` is the runtime.
+`aphrody-labs/bun` (`main` = upstream `oven-sh/bun` plus the Aphrody commits) is the kernel Bun of Aphrody; the
+monorepo keeps no Bun patch queue and no vendored Bun tree (`patches/bun/` and the `vendor/bun` pin were removed on
+2026-10-08, every patch is a commit of the fork). Its own `APHRODY.md` lists what Aphrody consumes.
+
+- Version pin: `tools/config/update/pins.json` takes `latest` from the fork releases (`aphrody-v<base>-aphrody.<n>`,
+  the pin is `<base>`), so the workspace never moves past a Bun version the fork has released.
+- Binaries: release assets and npm `@aphrody/bun-runtime` (`bunx @aphrody/bun-runtime`); types: `@aphrody/bun-types`;
+  crates: `aphrody-bun-native-plugin`, `aphrody-bun-macro`. `@aphrody/bun` on npm is not ours.
+- Upstream merges: the fork's `bun scripts/aphrody/sync-upstream.ts` (workflow `aphrody-upstream-sync.yml`, every
+  6 hours). Drift report: `yolo update sources forks` (`tools/config/update/forks.json`).
+- Docs: `bun run docs:bun:update` mirrors the fork's `docs/` into `docs/reference/upstream-bun` (MCP `bun_docs_*`).
+- Source checkout: `APHRODY_BUN_CHECKOUT`, else `C:\bun` on Windows.
 
 ## Held packages
 

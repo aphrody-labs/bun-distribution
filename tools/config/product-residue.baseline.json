@@ -386,8 +386,6 @@
     "packages/web/timeline/src/retrieval.ts": 1,
     "packages/web/timeline/src/storage.ts": 7,
     "packages/web/timeline/test/timeline.test.ts": 12,
-    "patches/bun/0008-feat-cloud-SSH-aliases-and-session-context-hook-for-.patch": 5,
-    "patches/bun/0009-feat-cloud-cloud-ssh-configures-git-identity-gh-cred.patch": 3,
     "PLAN.md": 1,
     "py/docs/BEST_PRACTICES.md": 1,
     "py/docs/sdk/workspace-audit.md": 1,

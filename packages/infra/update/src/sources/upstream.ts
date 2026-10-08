@@ -151,7 +151,7 @@ ${forks.map((f) => `| \`${f.repo}\` | ${f.parent ?? "-"} | ${f.role ?? "-"} | ${
 | Agent entry point | skill \`upstreams\` (\`~/plugins/aphrody/skills/upstreams\`) |
 
 The Cargo git dependencies (oxc-project/oxc, hf-hub, mistral.rs, tauri-specta fork) are tracked by \`yolo update sources drift\`;
-forks by \`yolo update sources forks\`. The Bun and Oxc forks were retired on 2026-10-02.
+forks by \`yolo update sources forks\`. The Bun fork aphrody-labs/bun is the Bun of Aphrody (its own repository, merged with upstream by its scripts/aphrody/sync-upstream.ts); the Oxc fork was retired on 2026-10-02.
 `;
 }
 

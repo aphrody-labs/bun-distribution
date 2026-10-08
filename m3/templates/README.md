@@ -1,7 +1,7 @@
 # Aphrody stack
 
 The complete stack of the unified native runtime plan ([PLAN.md](../../PLAN.md)), built on the
-Rust-based Bun of `vendor/bun`.
+Rust-based Bun of the fork `aphrody-labs/bun`.
 
 | File | Role |
 | :--- | :--- |

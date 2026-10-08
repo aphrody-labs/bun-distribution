@@ -4,7 +4,7 @@
 
 [meta]
 name = "aphrody-stack"
-bun = "1.4.2"            # the Rust-based Bun (vendor/bun, rewrite merged 2026-05-14)
+bun = "1.4.2"            # the Rust-based Bun (fork aphrody-labs/bun, releases on npm @aphrody/bun-runtime)
 typescript = "7.0.2"
 oxlint = "1.86.0"
 oxfmt = "0.71.0"
@@ -16,9 +16,9 @@ runtime_abi = "1.4"
 
 [layer.host]
 plan = "R1"
-provider = "Bun fork (vendor/bun)"
+provider = "Bun fork (aphrody-labs/bun)"
 status = "implemented via the SDK preload; no Bun fork change"
-paths = ["vendor/bun", "packages/engine/runtime/src/preload.ts"]
+paths = ["packages/engine/runtime/src/preload.ts"]
 
 [layer.runtime]
 plan = "R0"

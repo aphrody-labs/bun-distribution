@@ -5,13 +5,14 @@
 Patched Rust implementations are tracked inside the Aphrody Cargo workspace. Only optional build inputs live under the source root
 (`.cache/upstream` (not in repo), an untracked machine-local cache; override with `APHRODY_SOURCE_ROOT`); everything else is a catalogue entry that is read live.
 
-## Integrated Rust implementations (7)
+## Integrated Rust implementations (8)
 
 Source, tests and licences are tracked in the monorepo; Cargo needs no sibling checkout.
 
 | Package | Version | Owner path | Preserved patches |
 | --- | --- | --- | --- |
 | `tauri-plugin-mcp-bridge` | 0.13.0 | `crates/ui/tauri-plugin-mcp-bridge` | `patches/tauri-plugin-mcp-bridge-0.13.0-registry.patch` |
+| `rfb-encodings` | 0.1.7 | `crates/compat/rfb-encodings` | `patches/rfb-encodings-0.1.7-truecolour.patch` |
 | `simdutf` | 0.7.0 | `crates/native/simdutf` | `patches/simdutf-rio-0.7.0.patch` |
 | `tauri-plugin-dialog` | 3.0.0-alpha.2 | `crates/tauri/aphrody-tauri-plugin-dialog` | `patches/tauri-plugin-dialog-3.0.0-alpha.2.patch` |
 | `serde-saphyr` | 0.0.16 | `crates/compat/serde-saphyr` | `patches/serde-saphyr-0.0.16-regex.patch` |
@@ -56,12 +57,13 @@ Inputs of the WSL build (`tools/config/os/wsl-build.json`, `crates/infra/aphrody
 | `vu-pyo3` | [PyO3/pyo3](https://github.com/PyO3/pyo3) | `v0.29.3` | 451d99fdcd | PyO3 0.29.3, the version of the Aphrody workspace Cargo.lock, pinned for the CPython embedding of the vu runtime. Fork aphrody-labs/pyo3 created 2026-10-05, branch vu-pin-0.29.3 at tag v0.29.3. crates.io pyo3 and pyo3-ffi 0.29.3 carry .cargo_vcs_info.json sha1 451d99fd (verified). Static embedding of libpython is not first-class upstream. Checked by scripts/audit/workspace/vu-pins.ts. | docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json |
 | `vu-python-build-standalone` | [astral-sh/python-build-standalone](https://github.com/astral-sh/python-build-standalone) | `20261003` | 5e46737f64 | Prebuilt CPython 3.12.15 (default, the py workspace baseline) and 3.14.8 distributions (install_only_stripped and full archives) that the vu runtime embeds; consumed as release assets pinned by sha256, not forked. MPL-2.0 covers the build system; the distributions carry CPython (PSF-2.0) and the licences of their bundled libraries. The install_only_stripped sha256 equals the digest pinned by uv 0.12.23 (crates/uv-python/download-metadata.json). Minimum glibc of the gnu targets: 2.17 (running.rst). | docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json |
 
-## Forks (1)
+## Forks (2)
 
 Every fork needs a reason to exist; `yolo update sources forks` compares each with its parent.
 
 | Fork | Parent | Role | Why it stays |
 | --- | --- | --- | --- |
+| `aphrody-labs/bun` | oven-sh/bun | Bun of Aphrody: runtime releases (npm @aphrody/bun-runtime), @aphrody/bun-types, crates aphrody-bun-*, docs mirrored in docs/reference/upstream-bun | Carries every Aphrody Bun change as commits on main (thirdparty built-ins, bun:ffi dlopen global, argv0 aliases, @aphrody packages, Next.js layer); upstream merged by the fork's scripts/aphrody/sync-upstream.ts every 6 hours. |
 | `koharu-rs/tauri-specta` | - | tauri-specta fork (Cargo git dependency) | Third-party fork, not ours: upstream tauri-specta 2.0.0-rc.25 on crates.io requires tauri ^2 while the workspace is on Tauri 3. |
 
 ## Access
@@ -78,4 +80,4 @@ Every fork needs a reason to exist; `yolo update sources forks` compares each wi
 | Agent entry point | skill `upstreams` (`~/plugins/aphrody/skills/upstreams`) |
 
 The Cargo git dependencies (oxc-project/oxc, hf-hub, mistral.rs, tauri-specta fork) are tracked by `yolo update sources drift`;
-forks by `yolo update sources forks`. The Bun and Oxc forks were retired on 2026-10-02.
+forks by `yolo update sources forks`. The Bun fork aphrody-labs/bun is the Bun of Aphrody (its own repository, merged with upstream by its scripts/aphrody/sync-upstream.ts); the Oxc fork was retired on 2026-10-02.

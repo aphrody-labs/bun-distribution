@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 # Idempotent toolchain bootstrap for the build factory host (Ubuntu). Run by ship_remote.sh before every build, and
 # standalone: bash scripts/release/bootstrap_remote.sh
-# Pins follow the sources: yolo rust-toolchain.toml (workspace), vendor/bun/rust-toolchain.toml and
-# vendor/bun/scripts/build/ci-images/spec.ts (Bun fork: LLVM 23, nightly Rust, release Bun), cmake/ninja from apt.
+# Pins follow the sources: yolo rust-toolchain.toml (workspace), the Bun fork checkout ($APHRODY_BUN_CHECKOUT, default
+# ~/bun) rust-toolchain.toml and scripts/build/ci-images/spec.ts (LLVM 23, nightly Rust, release Bun), cmake/ninja from apt.
 set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 CACHE=${APHRODY_BUILD_CACHE:-/srv/aphrody-build/cache}
 LLVM=${YOLO_LLVM:-23}
 RUST_STABLE=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' "$ROOT/rust-toolchain.toml" | head -1)
-RUST_BUN=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' "$ROOT/vendor/bun/rust-toolchain.toml" 2>/dev/null | head -1 || true)
+RUST_BUN=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' "${APHRODY_BUN_CHECKOUT:-$HOME/bun}/rust-toolchain.toml" 2>/dev/null | head -1 || true)
 say() { echo "=== bootstrap: $* ($(date -u +%FT%TZ))"; }
 
 say "apt packages"

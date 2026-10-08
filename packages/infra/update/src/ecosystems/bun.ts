@@ -898,7 +898,7 @@ export function renderPlan(s: Status, majors: string[]): string[] {
   out.push(
     "6 verify    bun:check, monorepo:layout, workspace tests, typecheck of every package whose resolved deps changed",
   );
-  out.push("7 fork      none: the Bun fork was retired on 2026-10-02; the runtime is upstream Bun");
+  out.push("7 fork      the runtime pin follows the aphrody-labs/bun releases (tools/config/update/pins.json); fork drift: `yolo update sources forks`");
   return out;
 }
 

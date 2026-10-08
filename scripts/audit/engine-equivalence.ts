@@ -8,10 +8,14 @@
 // ADJACENT lists near-misses that are not equivalents; MITIGATIONS lists building blocks (existence only).
 //   bun scripts/audit/engine-equivalence.ts [--write]
 import { $ } from "bun";
+import { homedir } from "node:os";
 import { join } from "node:path";
 
 const ROOT = join(import.meta.dir, "../..");
-const BUN_SRC = join(ROOT, "vendor/bun/src");
+// The Bun fork checkout (aphrody-labs/bun): APHRODY_BUN_CHECKOUT, else C:/bun on Windows, else ~/bun.
+const BUN_CHECKOUT =
+  process.env.APHRODY_BUN_CHECKOUT ?? (process.platform === "win32" ? "C:/bun" : join(homedir(), "bun"));
+const BUN_SRC = join(BUN_CHECKOUT, "src");
 const OBSCURA = join(ROOT, "crates/web/obscura-js/src");
 const OBSCURA_JS = join(ROOT, "crates/web/obscura-js/js");
 const WEBKIT_PREBUILT =
@@ -309,7 +313,7 @@ console.log("bun v8 shim", JSON.stringify(shim));
 if (process.argv.includes("--write")) {
   const pins = {
     webkit: "5718a6ec579b98362ea7276a426deedcc6281ef5",
-    bunFork: (await $`git -C ${join(ROOT, "vendor/bun")} rev-parse HEAD`.text()).trim(),
+    bunFork: (await $`git -C ${BUN_CHECKOUT} rev-parse HEAD`.text()).trim(),
     rustyV8:
       "v8 crate 150.4.0 (denoland/rusty_v8 tag v150.4.0, 5c15a6995c9bb4bacd3e341b59fff32c909c80bf)",
     forks: ["aphrody-labs/WebKit@bun-pin", "aphrody-labs/rusty_v8@obscura-pin-v150.4.0"],
