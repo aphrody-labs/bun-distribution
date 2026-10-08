@@ -58,3 +58,12 @@ task. Run relevant artifact gates when owning the corresponding source batch.
 
 Successful timing, output generation or a source export alone never closes a
 runtime, deployment, performance or installed host milestone.
+
+## Full Bun (chantier T, Bun fork plan section T)
+
+Outside the framework packages, no vite, vitest, jest, pnpm, tsx, ts-node, esbuild or webpack remains: tests run with
+`bun test` + happy-dom, builds with `Bun.build`, `eslint-plugin-m3` is an oxlint JS plugin, `scripts/yolo.ts` runs the
+Bun CLI of yolo (never the bash launcher) and package tests are scoped to `./packages/*`. `node:*` imports were moved to
+Bun APIs where equivalent (`Bun.file`, `Bun.write`, `Bun.spawn`, `Bun.CryptoHasher`, `Bun.fileURLToPath`, `Bun.Archive`);
+`node:path`, `node:os`, `mkdtemp`, recursive `rm`, `symlink`, `chmod` and synchronous public APIs stay. `@aphrody/rg-ui` is
+a workspace member with typed optional host peers. Verification after the 2026-10-09 refactor is pending the final test pass.
