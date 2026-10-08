@@ -1,6 +1,9 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Aphrody repository instructions
 
+**Before any code change, read [START-HERE.md](START-HERE.md)** (team, rules, hosts, tunnel, remote control,
+work in progress; shared with Shenron).
+
 ## Authority and scope
 
 Read [PLAN.md](PLAN.md) and [MEMORY.md](MEMORY.md). PLAN owns the active
