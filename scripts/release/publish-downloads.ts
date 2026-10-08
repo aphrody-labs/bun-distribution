@@ -5,7 +5,7 @@
  * Publishes the Aphrody downloads (tools/config/downloads.json) in one repeatable flow:
  *
  *   plan                          what would be built, staged and published (no mutation)
- *   build  --revision <sha>       prepare + build the factory binaries (yolo ops build-factory), wait for the jobs
+ *   build  --revision <sha> [--attempt <n>]  prepare + build the factory binaries (yolo ops build-factory), wait for the jobs
  *   release --revision <sha>      stage every artifact, scan for secrets, upload to the host, flip `current`
  *   assets [--staged <dir>]       publish installers and optional prebuilt kits in an immutable snapshot
  *                                 repeat --staged; --staged-revision <sha> records their verified source revision
@@ -773,7 +773,9 @@ async function build(cfg: DownloadsConfig) {
   await run(buildFactory("prepare", "--repo", cfg.factory.repo, "--revision", commit, "--apply"));
   for (const a of cfg.artifacts.filter((x) => x.kind === "factory-binary")) {
     for (const p of (a.platforms ?? []).filter((x) => x.enabled && x.cargo)) {
-      const job = `${cfg.factory.jobPrefix}-${a.id}-${p.platform}-${commit.slice(0, 9)}`;
+      // Job ids are idempotent: a failed job is replayed only under a new --attempt suffix.
+      const attempt = arg("attempt");
+      const job = `${cfg.factory.jobPrefix}-${a.id}-${p.platform}-${commit.slice(0, 9)}${attempt ? `-a${attempt}` : ""}`;
       console.log(`build ${job}`);
       await run(
         buildFactory(
