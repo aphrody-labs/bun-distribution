@@ -92,6 +92,7 @@ export function discordDeployment(
     if (step.id.endsWith("/binary"))
       step.run = `sudo -n -u 'ubuntu' -H sh -c ${quote(`cd /tmp && test -x ${quote(runtime)} && ${quote(runtime)} --version`)}`;
     else if (step.id.endsWith("/binary-sha256")) step.run = `sudo -n sha256sum ${quote(runtime)}`;
+    else if (step.id.endsWith("/systemd-verify")) step.run = `sudo -n ${step.run}`;
   }
   return {
     target,

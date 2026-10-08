@@ -178,6 +178,9 @@ test("release resolves product source and the declared target; foreign targets f
   expect(deployment.plan.steps.find((step) => step.id.endsWith("/binary"))?.run).toContain(
     "sudo -n -u 'ubuntu'",
   );
+  expect(
+    deployment.plan.steps.find((step) => step.id.endsWith("/systemd-verify"))?.run,
+  ).toStartWith("sudo -n systemd-analyze verify");
   expect(() => discordDeployment("omar-monitor", "dbfr", root)).toThrow("not dbfr");
   expect(() => discordDeployment("arbitrary", "vps", root)).toThrow("Unknown Discord deployment");
 });
