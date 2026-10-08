@@ -46,9 +46,19 @@ export interface HostCatalog {
   accounts?: HostAccount[];
 }
 
-/** `$YOLO_ROOT`, default `$HOME/aphrody`; Windows uses `%USERPROFILE%\aphrody`. */
-export function yoloRoot(env: Record<string, string | undefined> = process.env): string {
-  return env.YOLO_ROOT || join(env.HOME || env.USERPROFILE || homedir(), "aphrody");
+/** The source checkout that holds this module, when it carries the host catalog (null in a compiled binary). */
+export function sourceCheckout(from = import.meta.dir): string | null {
+  for (let dir = from, up = dirname(dir); dir !== up; dir = up, up = dirname(dir))
+    if (existsSync(join(dir, "tools", "config", "host", "catalog.json"))) return dir;
+  return null;
+}
+
+/** `$YOLO_ROOT`, else the source checkout running this code, else `$HOME/aphrody` (`%USERPROFILE%\aphrody`). */
+export function yoloRoot(
+  env: Record<string, string | undefined> = process.env,
+  checkout: string | null = sourceCheckout(),
+): string {
+  return env.YOLO_ROOT || checkout || join(env.HOME || env.USERPROFILE || homedir(), "aphrody");
 }
 export const hostRoot = (env?: Record<string, string | undefined>) =>
   join(yoloRoot(env), "tools", "config", "host");

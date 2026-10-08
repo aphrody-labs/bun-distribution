@@ -9,9 +9,9 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { planPackageSync, syncPackages } from "../../core/src/pm";
+import { cargoSerialArgv, planPackageSync, syncPackages } from "../../core/src/pm";
 import { closeSharedRuntime, getRuntimeStatus } from "../../core/src/runtime";
 import { executeTool, ToolExecutionContext } from "../src/tools/registry";
 
@@ -56,14 +56,7 @@ async function fixture() {
       root,
     );
     await run([Bun.which("uv")!, "lock", "--offline", "--no-python-downloads"], root);
-    await run(
-      [
-        join(homedir(), "aphrody/scripts/build/rust/cargo-serial.sh"),
-        "generate-lockfile",
-        "--offline",
-      ],
-      root,
-    );
+    await run([Bun.which("cargo")!, "generate-lockfile", "--offline"], root);
     return {
       root,
       cleanup() {
@@ -86,7 +79,7 @@ describe("native unified dependency synchronization", () => {
       expect(plan.steps.every((step) => step.argv.includes("--offline"))).toBe(true);
       expect(plan.steps[0]!.argv).toContain("--frozen-lockfile");
       expect(plan.steps[1]!.argv).toContain("--locked");
-      expect(plan.steps[2]!.argv[0]).toEndWith("cargo-serial.sh");
+      expect(plan.steps[2]!.argv.slice(0, -3)).toEqual(cargoSerialArgv());
       const result = await syncPackages({ root: f.root, offline: true });
       expect(result.applied).toBe(false);
       expect(existsSync(join(f.root, ".venv"))).toBe(false);
@@ -195,7 +188,7 @@ describe("native unified dependency synchronization", () => {
     const packageDir = join(root, "package");
     mkdirSync(packageDir);
     writeFileSync(join(packageDir, "package.json"), '{"name":"slow-fixture","version":"1.0.0"}');
-    await run(["tar", "-czf", join(root, "fixture.tgz"), "package"], root);
+    await run(["tar", "-czf", "fixture.tgz", "package"], root);
     const bytes = readFileSync(join(root, "fixture.tgz"));
     let stall = false;
     let pendingDownload = false;

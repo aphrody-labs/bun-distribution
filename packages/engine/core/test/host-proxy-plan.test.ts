@@ -126,7 +126,7 @@ test("Rollback removes newly owned templates and grants while keeping prior live
       writeFileSync(join(state, marker), "");
     writeFileSync(join(units, "aphrody-wg-proxy@.socket"), "prior template");
     writeFileSync(join(units, "aphrody-wg-proxy@.service"), "new template");
-    const command = `systemctl() { printf 'systemctl %s\\n' "$*" >> "$TASK_PROXY_LOG"; }; ufw() { printf 'ufw %s\\n' "$*" >> "$TASK_PROXY_LOG"; }; ${tracked.rollback.replaceAll("/etc/systemd/system", units)}`;
+    const command = `systemctl() { printf 'systemctl %s\\n' "$*" >> "$TASK_PROXY_LOG"; }; ufw() { printf 'ufw %s\\n' "$*" >> "$TASK_PROXY_LOG"; }; ${tracked.rollback.replaceAll("/etc/systemd/system", units.replaceAll("\\", "/"))}`;
     expect(
       await Bun.spawn(["sh", "-c", command], {
         env: { ...process.env, TASK_PROXY_LOG: log },

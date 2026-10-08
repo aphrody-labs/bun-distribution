@@ -35,6 +35,11 @@ case "$cargo_command" in
         fi
         ;;
 esac
+# Only compilation is serialized; fetch, metadata and lockfile commands rely on Cargo's own package-cache lock.
+case "$cargo_command" in
+    build|b|check|c|test|t|clippy|rustdoc|doc|d|bench|run|r|install|rustc|nextest|xwin|zigbuild) ;;
+    *) exec cargo "$@" ;;
+esac
 
 # A resource marker is a routing hint, never proof of ownership. The owner checks
 # the actual kernel FLOCK and process ancestry before reusing the heavy lease.
