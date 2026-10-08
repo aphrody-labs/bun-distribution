@@ -15,6 +15,9 @@ layers from `m3-tokens.css`). It is one `@import`: no JS plugin, no config file.
 
 Colour values are set at runtime (`applyDynamicColor`, `<m3-theme>`, `M3Html` in `@aphrody/m3-next`).
 
+With Bun, `@aphrody/bun-plugin-tailwind` adds these imports and a seeded colour scheme on its own: `tailwind({ theme: "m3" })`
+(or `{ theme: { seed: "#0b57d0" } }`), and the same option on its PostCSS plugin.
+
 ## What it adds
 
 | Family                | Theme keys (`@theme inline`)                                                         | Utilities and variants                                                                                                                     |
