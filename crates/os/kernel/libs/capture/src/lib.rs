@@ -52,6 +52,16 @@ pub struct DetailedWindowInfo {
     pub is_foreground: bool,
 }
 
+/// Raw top-down BGRA frame of the virtual screen (no encoding).
+#[derive(Debug, Clone)]
+pub struct RawFrame {
+    pub origin_x: i32,
+    pub origin_y: i32,
+    pub width: u32,
+    pub height: u32,
+    pub bgra: Vec<u8>,
+}
+
 // ─── platform impl ──────────────────────────────────────────────────────────
 
 #[cfg(windows)]
@@ -158,6 +168,21 @@ pub fn mouse_move(x: i32, y: i32) -> Result<()> {
 #[cfg(windows)]
 pub fn mouse_click(button: &str, clicks: u32) -> Result<()> {
     capture_impl::mouse_click(button, clicks)
+}
+/// Capture the full virtual screen as raw BGRA pixels.
+#[cfg(windows)]
+pub fn capture_virtual_screen_raw() -> Result<RawFrame> {
+    capture_impl::capture_virtual_screen_raw()
+}
+/// Press (`down`) or release a mouse button (`left`, `right`, `middle`).
+#[cfg(windows)]
+pub fn mouse_button(button: &str, down: bool) -> Result<()> {
+    capture_impl::mouse_button(button, down)
+}
+/// Raw wheel deltas (120 per notch); `dy` vertical, `dx` horizontal.
+#[cfg(windows)]
+pub fn mouse_wheel(dx: i32, dy: i32) -> Result<()> {
+    capture_impl::mouse_wheel(dx, dy)
 }
 #[cfg(windows)]
 pub fn mouse_scroll(axis: &str, direction: &str, times: u32) -> Result<()> {
@@ -284,6 +309,18 @@ pub fn mouse_move(_x: i32, _y: i32) -> Result<()> {
 }
 #[cfg(not(windows))]
 pub fn mouse_click(_button: &str, _clicks: u32) -> Result<()> {
+    Err(CaptureError::Unsupported)
+}
+#[cfg(not(windows))]
+pub fn capture_virtual_screen_raw() -> Result<RawFrame> {
+    Err(CaptureError::Unsupported)
+}
+#[cfg(not(windows))]
+pub fn mouse_button(_button: &str, _down: bool) -> Result<()> {
+    Err(CaptureError::Unsupported)
+}
+#[cfg(not(windows))]
+pub fn mouse_wheel(_dx: i32, _dy: i32) -> Result<()> {
     Err(CaptureError::Unsupported)
 }
 #[cfg(not(windows))]

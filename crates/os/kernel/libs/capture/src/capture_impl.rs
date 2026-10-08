@@ -153,6 +153,25 @@ unsafe fn blit_region_to_png(
     w: i32,
     h: i32,
 ) -> Result<Vec<u8>> {
+    // Safety: forwarded from this function's contract.
+    let mut buf = unsafe { blit_region_to_bgra(screen_dc, x, y, w, h)? };
+    // The buffer is BGRA top-down; convert to RGBA for the `image` crate.
+    crate::bgra_to_rgba(&mut buf);
+    encode_rgba_to_png(&buf, w as u32, h as u32)
+}
+
+/// Blit a screen rectangle and return the raw top-down BGRA pixels.
+///
+/// # Safety
+///
+/// Same contract as [`blit_region_to_png`].
+unsafe fn blit_region_to_bgra(
+    screen_dc: &ScreenDc,
+    x: i32,
+    y: i32,
+    w: i32,
+    h: i32,
+) -> Result<Vec<u8>> {
     // 1. Create a memory DC compatible with the screen DC.
     // Safety: screen_dc.hdc is a valid screen DC.
     let mem_dc = unsafe { MemDc::create(screen_dc.hdc)? };
@@ -224,11 +243,7 @@ unsafe fn blit_region_to_png(
         return Err(CaptureError::Win32("GetDIBits returned 0 scan lines".to_owned()));
     }
 
-    // 8. The buffer is BGRA top-down; convert to RGBA for the `image` crate.
-    crate::bgra_to_rgba(&mut buf);
-
-    // 9. Encode as PNG.
-    encode_rgba_to_png(&buf, w as u32, h as u32)
+    Ok(buf)
 }
 
 // ─── PNG encoding ────────────────────────────────────────────────────────────
@@ -259,6 +274,25 @@ pub(crate) fn capture_primary_screen() -> Result<Vec<u8>> {
     let dc = unsafe { ScreenDc::acquire(None)? };
     // Safety: dc.hdc is a valid screen DC; 0,0 is the origin; w,h > 0.
     unsafe { blit_region_to_png(&dc, 0, 0, w, h) }
+}
+
+pub(crate) fn capture_virtual_screen_raw() -> Result<crate::RawFrame> {
+    // Safety: GetSystemMetrics is always safe to call.
+    let x = unsafe { GetSystemMetrics(SM_XVIRTUALSCREEN) };
+    let y = unsafe { GetSystemMetrics(SM_YVIRTUALSCREEN) };
+    let w = unsafe { GetSystemMetrics(SM_CXVIRTUALSCREEN) };
+    let h = unsafe { GetSystemMetrics(SM_CYVIRTUALSCREEN) };
+    if w <= 0 || h <= 0 {
+        return Err(CaptureError::Win32(
+            "GetSystemMetrics(SM_CXVIRTUALSCREEN/SM_CYVIRTUALSCREEN) returned non-positive value"
+                .to_owned(),
+        ));
+    }
+    // Safety: GetDC(None) acquires the screen DC.
+    let dc = unsafe { ScreenDc::acquire(None)? };
+    // Safety: dc.hdc is valid; w,h > 0.
+    let bgra = unsafe { blit_region_to_bgra(&dc, x, y, w, h)? };
+    Ok(crate::RawFrame { origin_x: x, origin_y: y, width: w as u32, height: h as u32, bgra })
 }
 
 pub(crate) fn capture_virtual_screen() -> Result<Vec<u8>> {
@@ -636,6 +670,40 @@ pub(crate) fn mouse_click(button: &str, clicks: u32) -> Result<()> {
         }
         if clicks > 1 {
             std::thread::sleep(std::time::Duration::from_millis(40));
+        }
+    }
+    Ok(())
+}
+
+pub(crate) fn mouse_button(button: &str, down: bool) -> Result<()> {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP, MOUSEEVENTF_MIDDLEDOWN, MOUSEEVENTF_MIDDLEUP,
+        MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP, mouse_event,
+    };
+    let flag = match (button.to_ascii_lowercase().as_str(), down) {
+        ("right", true) => MOUSEEVENTF_RIGHTDOWN,
+        ("right", false) => MOUSEEVENTF_RIGHTUP,
+        ("middle", true) => MOUSEEVENTF_MIDDLEDOWN,
+        ("middle", false) => MOUSEEVENTF_MIDDLEUP,
+        (_, true) => MOUSEEVENTF_LEFTDOWN,
+        (_, false) => MOUSEEVENTF_LEFTUP,
+    };
+    unsafe {
+        mouse_event(flag, 0, 0, 0, 0);
+    }
+    Ok(())
+}
+
+pub(crate) fn mouse_wheel(dx: i32, dy: i32) -> Result<()> {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        MOUSEEVENTF_HWHEEL, MOUSEEVENTF_WHEEL, mouse_event,
+    };
+    unsafe {
+        if dy != 0 {
+            mouse_event(MOUSEEVENTF_WHEEL, 0, 0, dy, 0);
+        }
+        if dx != 0 {
+            mouse_event(MOUSEEVENTF_HWHEEL, 0, 0, dx, 0);
         }
     }
     Ok(())
