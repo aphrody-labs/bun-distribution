@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
+import { resolve } from "node:path";
 import { Ctx } from "../src/context.ts";
 import {
   advisoryHeld,
@@ -528,18 +529,21 @@ describe("overrides", () => {
 describe("arguments", () => {
   test("parseArgs", () => {
     expect(
-      parseArgs(["apply", "--majors", "react,react-dom", "--majors=vite", "--offline"], "/r"),
+      parseArgs(
+        ["apply", "--majors", "react,react-dom", "--majors=vite", "--offline"],
+        resolve("/r"),
+      ),
     ).toMatchObject({
       sub: "apply",
       majors: ["react", "react-dom", "vite"],
       offline: true,
-      root: "/r",
+      root: resolve("/r"),
     });
     expect(parseArgs([], "/r").sub).toBe("status");
     expect(parseArgs(["verify", "--skip-tests", "--root", "/x/y"], "/r")).toMatchObject({
       sub: "verify",
       skipTests: true,
-      root: "/x/y",
+      root: resolve("/x/y"),
     });
     expect(() => parseArgs(["--bogus"], "/r")).toThrow("unknown argument");
   });

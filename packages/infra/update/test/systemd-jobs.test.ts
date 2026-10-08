@@ -157,15 +157,16 @@ test("dry run writes no bearer, config or units and rejects an unqualified binar
   try {
     await activateLocalJobs(f.context, f.pin, {
       home: f.home,
+      platform: "linux" as const,
       availableMemoryBytes: 6 * 1024 ** 3,
       run: f.run,
     });
     expect(existsSync(join(f.privateRoot, "jobs"))).toBe(false);
     expect(existsSync(join(f.units, f.names[0]!))).toBe(false);
     writeFileSync(join(f.home, ".local/bin/aphrody"), "foreign-native");
-    await expect(activateLocalJobs(f.context, f.pin, { home: f.home, run: f.run })).rejects.toThrow(
-      "qualified pin",
-    );
+    await expect(
+      activateLocalJobs(f.context, f.pin, { home: f.home, platform: "linux", run: f.run }),
+    ).rejects.toThrow("qualified pin");
   } finally {
     log.mockRestore();
   }
@@ -183,6 +184,7 @@ test("authentication failure restores selected prior units and leaves the PC ser
     await expect(
       activateLocalJobs(f.context, f.pin, {
         home: f.home,
+        platform: "linux" as const,
         availableMemoryBytes: 6 * 1024 ** 3,
         run: f.run,
         fetch: failure,
@@ -208,6 +210,7 @@ test("successful activation retains its purpose-bound bearer and keeps client co
   try {
     const options = {
       home: f.home,
+      platform: "linux" as const,
       availableMemoryBytes: 6 * 1024 ** 3,
       run: f.run,
       fetch: f.request,
@@ -218,7 +221,7 @@ test("successful activation retains its purpose-bound bearer and keeps client co
     await activateLocalJobs(f.context, f.pin, options);
     expect(readFileSync(bearer, "utf8")).toBe(before);
     for (const path of [bearer, join(f.privateRoot, "jobs/wsl.toml")])
-      expect(statSync(path).mode & 0o777).toBe(0o600);
+      if (process.platform !== "win32") expect(statSync(path).mode & 0o777).toBe(0o600);
     expect(readFileSync(join(f.privateRoot, "jobs/wsl.toml"), "utf8")).toContain(
       "127.0.0.1:8791/mcp",
     );

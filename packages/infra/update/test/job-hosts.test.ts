@@ -68,7 +68,7 @@ test("producer prepares only declared private routes and marks them unready befo
     ["dbfr", 2, false],
   ]);
   for (const host of hosts) {
-    expect(statSync(host.config).mode & 0o777).toBe(0o600);
+    if (process.platform !== "win32") expect(statSync(host.config).mode & 0o777).toBe(0o600);
     const text = readFileSync(host.config, "utf8");
     const parsed = Bun.TOML.parse(text) as {
       mcp_servers: {
@@ -151,7 +151,7 @@ test("a lost submit receipt retries the identical native key and qualifies only 
     .find((command) => command?.includes("/proc/"));
   expect(identityCommand).toContain("sudo -n sha256sum -c --quiet");
   expect(identityCommand).toContain("printf '%s %s\\n'");
-  expect(statSync(f.manifest).mode & 0o777).toBe(0o600);
+  if (process.platform !== "win32") expect(statSync(f.manifest).mode & 0o777).toBe(0o600);
   f.runtime.active = false;
   await expect(qualifyNativeJobHostClients(hosts, transport, f)).rejects.toThrow("runtime");
   expect(requests).toHaveLength(2);
@@ -239,6 +239,8 @@ test("fresh probes revoke previous readiness when queue is unavailable or placem
 test("producer preserves foreign symlinks and refuses unknown or duplicate placements", () => {
   const f = fixture();
   expect(() => prepareNativeJobHostClients(f.context, ["vps", "vps"], f.pin, f)).toThrow("unique");
+  // Windows has no POSIX mode bits; the group/other-readable rejection is POSIX-only.
+  if (process.platform === "win32") return;
   mkdirSync(join(f.home, ".aphrody/private/jobs"), { recursive: true, mode: 0o755 });
   expect(() => prepareNativeJobHostClients(f.context, ["vps"], f.pin, f)).toThrow(
     "private directory",

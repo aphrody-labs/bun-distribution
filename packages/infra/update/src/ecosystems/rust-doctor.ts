@@ -34,7 +34,7 @@ import {
   rmSync,
 } from "node:fs";
 import { spawnSync } from "node:child_process";
-import { dirname, join, relative } from "node:path";
+import { dirname, isAbsolute, join, relative } from "node:path";
 import { Ctx } from "../context.ts";
 import { parseCargoLock } from "../deps/inventory.ts";
 import {
@@ -375,7 +375,7 @@ export function parseFmtList(text: string, root: string): string[] {
   for (const raw of text.split("\n")) {
     const l = raw.trim().replace(/^Incorrect newline style in /, "");
     if (!l.endsWith(".rs")) continue;
-    out.add(l.startsWith("/") ? relative(root, l) : l);
+    out.add(isAbsolute(l) || l.startsWith("/") ? relative(root, l).replaceAll("\\", "/") : l);
   }
   return [...out].toSorted();
 }

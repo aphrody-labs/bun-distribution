@@ -562,8 +562,8 @@ export function expandHome(p: string): string {
 
 export function pythonRoot(c: Ctx, override?: string): string | undefined {
   const configured =
-    c.jsonFile<{ inventory?: { pythonRoots?: string[] } }>("tools/config/deps/watch.json", {}).inventory
-      ?.pythonRoots ?? [];
+    c.jsonFile<{ inventory?: { pythonRoots?: string[] } }>("tools/config/deps/watch.json", {})
+      .inventory?.pythonRoots ?? [];
   const candidates = [override, process.env.APHRODY_PY_ROOT, ...configured, "py"]
     .filter((x): x is string => !!x)
     .map((x) => resolve(c.root, expandHome(x)));
@@ -576,6 +576,7 @@ export function pythonRoot(c: Ctx, override?: string): string | undefined {
 export function discover(pyRoot: string): Layout {
   const scan = (pattern: string) =>
     [...new Bun.Glob(pattern).scanSync({ cwd: pyRoot })]
+      .map((f) => f.replaceAll("\\", "/"))
       .filter((f) => !SKIP_DIRS.test(f))
       .toSorted();
   return {

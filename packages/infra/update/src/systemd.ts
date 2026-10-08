@@ -221,15 +221,15 @@ export function assertLocalJobsReceipt(stdout: string): void {
     throw new Error("Authenticated local native jobs control failed");
 }
 
+/** POSIX owner and 0700-style mode check; Windows has no uid/mode semantics (per-user profile ACLs apply). */
+export function ownerPrivate(s: { uid: number; mode: number }): boolean {
+  if (process.platform === "win32") return true;
+  return s.uid === process.getuid?.() && (s.mode & 0o077) === 0;
+}
+
 export function ownedPrivateFile(path: string): string {
   const s = lstatSync(path);
-  if (
-    !s.isFile() ||
-    s.isSymbolicLink() ||
-    s.uid !== process.getuid?.() ||
-    (s.mode & 0o077) !== 0 ||
-    s.size > 2 * 1024 * 1024
-  )
+  if (!s.isFile() || s.isSymbolicLink() || !ownerPrivate(s) || s.size > 2 * 1024 * 1024)
     throw new Error("Expected an owned private regular file");
   return readFileSync(path, "utf8");
 }
@@ -243,6 +243,7 @@ export function durablePrivateWrite(path: string, text: string) {
     closeSync(descriptor);
   }
   renameSync(temporary, path);
+  if (process.platform === "win32") return; // directories cannot be opened or fsynced on Windows
   const directory = openSync(dirname(path), "r");
   try {
     fsyncSync(directory);
@@ -276,11 +277,12 @@ export async function activateLocalJobs(
     availableMemoryBytes?: number;
     run?: LocalRun;
     fetch?: typeof fetch;
+    platform?: NodeJS.Platform;
   } = {},
 ) {
   if (!/^[a-f0-9]{64}$/.test(pin))
     throw new Error("Local jobs require an explicit qualified native binary SHA-256");
-  if (process.platform !== "linux")
+  if ((options.platform ?? process.platform) !== "linux")
     throw new Error("Local jobs require the Linux user-systemd owner");
   const home = options.home ?? homedir();
   const run =
@@ -339,12 +341,7 @@ export async function activateLocalJobs(
   const credentials = join(privateRoot, "jobs");
   mkdirSync(credentials, { recursive: true, mode: 0o700 });
   const ds = lstatSync(credentials);
-  if (
-    !ds.isDirectory() ||
-    ds.isSymbolicLink() ||
-    ds.uid !== process.getuid?.() ||
-    (ds.mode & 0o077) !== 0
-  )
+  if (!ds.isDirectory() || ds.isSymbolicLink() || !ownerPrivate(ds))
     throw new Error("Local jobs credentials directory must be private and owned");
   const tokenFile = join(credentials, "wsl-mcp.env");
   if (!existsSync(tokenFile))

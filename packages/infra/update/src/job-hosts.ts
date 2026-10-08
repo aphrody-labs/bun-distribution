@@ -6,7 +6,7 @@ import { homedir } from "node:os";
 import { isAbsolute, join } from "node:path";
 import { Ctx } from "./context.ts";
 import { spawnSync, type SpawnSyncResult } from "./process.ts";
-import { durablePrivateWrite, ownedPrivateFile } from "./systemd.ts";
+import { durablePrivateWrite, ownedPrivateFile, ownerPrivate } from "./systemd.ts";
 
 export interface NativeJobHost {
   id: "vps" | "dbfr" | "wsl";
@@ -100,12 +100,7 @@ function privateDirectory(home: string): string {
   const directory = join(home, ".aphrody/private/jobs");
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   const state = lstatSync(directory);
-  if (
-    !state.isDirectory() ||
-    state.isSymbolicLink() ||
-    state.uid !== process.getuid?.() ||
-    (state.mode & 0o077) !== 0
-  )
+  if (!state.isDirectory() || state.isSymbolicLink() || !ownerPrivate(state))
     throw new Error("Job clients require an owned private directory");
   return directory;
 }
