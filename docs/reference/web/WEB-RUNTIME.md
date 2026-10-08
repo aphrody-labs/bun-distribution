@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Runtime web unifié : Aphrody Web Browser, Bun et N2B
 
 `aphrody-web` conserve les capacités web (N2B vit dans `aphrody-compat`) ; il ne les réduit pas à un
@@ -133,15 +134,15 @@ lane above.
 
 ## Propriété fonctionnelle
 
-| Surface | Capacités maintenues | Propriétaire canonique |
-|---|---|---|
-| Web/Chrome | fetch, scrape concurrent, `--eval`, proxy, stealth, V8 flags, CDP, serveur MCP, sortie HTML/texte/liens/Markdown/brute | `aphrody-web-engine` (`aphrody-web`) + Obscura |
-| Extraction | HTML, contenu principal, métadonnées/canonical, Markdown, blocs, chunks, SimHash/déduplication | `aphrody-web-extract` |
-| ABI compatibilité | pages persistantes, navigation, évaluation, cookies, headers, blocage de ressources, délais et réseau privé | `aphrody-web-render`; conservé tant que chaque contrat ABI n'est pas migré et testé |
-| Browser OS | navigation, snapshot, formulaire, extraction, capture, PDF, cookies, onglets et scripts via les outils `browser_*` | `aphrody-browser` via `aphrody-web-service` |
-| N2B | analyse AST OXC, scanners, règles/codemods, registry, rapports, GitHub audit, prompt, app/win32/linux/wasm/bin/rust/bunpp/llmstxt | `crates/compat/n2b*` ; façades Bun dans `aphrody-compat/packages/n2b*` |
-| Bun | installation, workspaces, build, test, scripts et FFI native | [Fork `aphrody-labs/bun`](../upstream-bun/APHRODY-FORK.md) (JavaScriptCore), sans module `bun:aphrody` ; les bibliothèques natives Aphrody passent par `bun:ffi`. Voir la [carte Infra](../infra/APHRODY-BUN-PLATFORM.md). |
-| Deno | cible de génération N2B, pas un runtime de produit Aphrody | N2B ; `deno_core` reste limité à l'ABI web de compatibilité |
+| Surface           | Capacités maintenues                                                                                                              | Propriétaire canonique                                                                                                                                                                                                     |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web/Chrome        | fetch, scrape concurrent, `--eval`, proxy, stealth, V8 flags, CDP, serveur MCP, sortie HTML/texte/liens/Markdown/brute            | `aphrody-web-engine` (`aphrody-web`) + Obscura                                                                                                                                                                             |
+| Extraction        | HTML, contenu principal, métadonnées/canonical, Markdown, blocs, chunks, SimHash/déduplication                                    | `aphrody-web-extract`                                                                                                                                                                                                      |
+| ABI compatibilité | pages persistantes, navigation, évaluation, cookies, headers, blocage de ressources, délais et réseau privé                       | `aphrody-web-render`; conservé tant que chaque contrat ABI n'est pas migré et testé                                                                                                                                        |
+| Browser OS        | navigation, snapshot, formulaire, extraction, capture, PDF, cookies, onglets et scripts via les outils `browser_*`                | `aphrody-browser` via `aphrody-web-service`                                                                                                                                                                                |
+| N2B               | analyse AST OXC, scanners, règles/codemods, registry, rapports, GitHub audit, prompt, app/win32/linux/wasm/bin/rust/bunpp/llmstxt | fork `aphrody-labs/bun/packages/bun-n2b` (crates `aphrody-n2b*`, npm `@aphrody/bun-plugin-n2b`), voir [N2B.md](../compat/N2B.md)                                                                                           |
+| Bun               | installation, workspaces, build, test, scripts et FFI native                                                                      | [Fork `aphrody-labs/bun`](../upstream-bun/APHRODY-FORK.md) (JavaScriptCore), sans module `bun:aphrody` ; les bibliothèques natives Aphrody passent par `bun:ffi`. Voir la [carte Infra](../infra/APHRODY-BUN-PLATFORM.md). |
+| Deno              | cible de génération N2B, pas un runtime de produit Aphrody                                                                        | N2B ; `deno_core` reste limité à l'ABI web de compatibilité                                                                                                                                                                |
 
 Les contrats X/XAI, Google et leurs schémas restent des extensions de
 compatibilité. Leur migration exige un adaptateur contractuel et des tests de
@@ -181,6 +182,6 @@ Validation ciblée :
 
 ```powershell
 $env:RUSTC_WRAPPER=''
-cargo test -p aphrody-web-service -p aphrody-browser -p aphrody-web-engine -p aphrody-n2b-core --locked
+cargo test -p aphrody-web-service -p aphrody-browser -p aphrody-web-engine --locked
 bun run runtime:check
 ```

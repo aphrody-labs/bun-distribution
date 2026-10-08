@@ -23,7 +23,6 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | --- | --- | ---: | --- |
 | architecture | [(files)](architecture/) | 2 | - |
 | architecture | [ai](architecture/ai/) | 6 | - |
-| architecture | [compat](architecture/compat/) | 1 | - |
 | architecture | [convergence](architecture/convergence/) | 1 | - |
 | architecture | [discord](architecture/discord/) | 4 | [Architecture Discord](architecture\discord\README.md) |
 | architecture | [interop](architecture/interop/) | 1 | - |
@@ -33,7 +32,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | architecture | [web](architecture/web/) | 2 | - |
 | architecture | [workspace](architecture/workspace/) | 4 | - |
 | apis | [ai](apis/ai/) | 5 | - |
-| apis | [compat](apis/compat/) | 2 | - |
+| apis | [compat](apis/compat/) | 1 | - |
 | apis | [contracts](apis/contracts/) | 1 | - |
 | apis | [generated](apis/generated/) | 3 | - |
 | apis | [infra](apis/infra/) | 1 | - |
@@ -79,7 +78,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [x-bun-import](plans/x-bun-import/) | 2 | [`@aphrody/x`: a thin Bun import over `aphrody-x`](plans\x-bun-import\PLAN.md) |
 | plans | [yolo-fork-unified](plans/yolo-fork-unified/) | 1 | [yolo et le fork Bun : un seul produit runtime](plans\yolo-fork-unified\PLAN.md) |
 | products | [ai](products/ai/) | 16 | [Aphrody AI](products\ai\README.md) |
-| products | [compat](products/compat/) | 5 | [Aphrody Compat](products\compat\README.md) |
+| products | [compat](products/compat/) | 2 | [Aphrody Compat](products\compat\README.md) |
 | products | [contracts](products/contracts/) | 5 | [Aphrody Contracts](products\contracts\README.md) |
 | products | [discord](products/discord/) | 3 | [Intégration Discord](products\discord\README.md) |
 | products | [infra](products/infra/) | 5 | [Aphrody Infra](products\infra\README.md) |
@@ -89,7 +88,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | products | [web](products/web/) | 7 | [Aphrody Web](products\web\README.md) |
 | products | [workspace](products/workspace/) | 1 | [Aphrody source workspace](products\workspace\README.md) |
 | reference | [ai](reference/ai/) | 215 | - |
-| reference | [compat](reference/compat/) | 78 | - |
+| reference | [compat](reference/compat/) | 4 | - |
 | reference | [contracts](reference/contracts/) | 2 | - |
 | reference | [discord](reference/discord/) | 41 | - |
 | reference | [infra](reference/infra/) | 33 | - |
@@ -103,7 +102,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | reference | [workspace](reference/workspace/) | 15 | [Workspace documentation](reference\workspace\INDEX.md) |
 | reference | [yolo](reference/yolo/) | 1 | - |
 | research | [ai](research/ai/) | 48 | - |
-| research | [compat](research/compat/) | 10 | - |
+| research | [compat](research/compat/) | 1 | - |
 | research | [discord](research/discord/) | 1 | - |
 | research | [infra](research/infra/) | 3 | - |
 | research | [os](research/os/) | 15 | - |
@@ -117,4 +116,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | cli (outside the category layout) | [(files)](cli/) | 1 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
 
-Total: 1186 files.
+Total: 1098 files.

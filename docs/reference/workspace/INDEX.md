@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Workspace documentation
 
 > Historical source-workspace index. Current navigation is generated in
@@ -12,42 +13,42 @@ own repositories.
 
 ## Current authorities
 
-| Question | Start here |
-| --- | --- |
-| How is the workspace organized? | [Architecture](../../architecture/workspace/ARCHITECTURE.md) |
-| How will FFI, Rust/Bun and Python be consolidated under aphrody-labs? | [Root consolidation plan](../../plans/workspace/PLAN.md) |
-| How is Spacedrive absorbed across Aphrody repositories? | [Workspace migration plan](../../plans/workspace/PLAN.md) |
-| How are NIE capabilities absorbed without another repository? | [Workspace convergence plan](../../plans/workspace/PLAN.md#nie-convergence), [capability map](https://github.com/aphrody-labs/iecode/blob/main/docs/nie/NIE-CAPABILITY-MAP.md) |
-| Where are Files/VFS/search duplicates recorded? | [Dated Files surface audit](../../research/workspace/FILE-SURFACE-AUDIT.md) |
-| How is Nushell configured on the Aphrody workstation? | [Nushell setup](./nu.md) |
-| Which execution rules apply? | [AGENTS.md](./AGENTS.md), the shared execution contract |
-| What must the workstation deliver next? | [AI delivery plan](../../plans/ai/PLAN.md) |
-| How does Bun model training cross repositories? | [Workspace Bun handoffs](../../plans/workspace/PLAN.md#bun-adapter-handoffs), then the [AI training runbook](../ai/training.md#bun-qwen3-coder-30b-adapter-delivery) |
-| How do the UI and native capabilities connect? | [GUI contract](../../../m3/docs/reference/GUI.md), [UI design](../../../m3/docs/architecture/UI-DESIGN.md), [UX design](../../../m3/docs/architecture/UX-DESIGN.md) |
-| Which crates, packages, commands and tools exist? | Infra [ecosystem](../../ecosystem/ECOSYSTEM.md), [CLI](../../ecosystem/CLI.md), [MCP](../../ecosystem/MCP-TOOLS.md) |
-| What is the protocol/data ownership? | [Architecture contracts](../../architecture/workspace/ARCHITECTURE.md#contracts-and-data-ownership), then the implementation owner |
-| Where are service topology and release decisions? | [Infra documentation](../../products/infra/README.md) and its `config/` / `inventory/` |
-| Which child revisions are recorded? | Root gitlinks, .gitmodules, manifest and current child Git state |
+| Question                                                              | Start here                                                                                                                                                                     |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| How is the workspace organized?                                       | [Architecture](../../architecture/workspace/ARCHITECTURE.md)                                                                                                                   |
+| How will FFI, Rust/Bun and Python be consolidated under aphrody-labs? | [Root consolidation plan](../../plans/workspace/PLAN.md)                                                                                                                       |
+| How is Spacedrive absorbed across Aphrody repositories?               | [Workspace migration plan](../../plans/workspace/PLAN.md)                                                                                                                      |
+| How are NIE capabilities absorbed without another repository?         | [Workspace convergence plan](../../plans/workspace/PLAN.md#nie-convergence), [capability map](https://github.com/aphrody-labs/iecode/blob/main/docs/nie/NIE-CAPABILITY-MAP.md) |
+| Where are Files/VFS/search duplicates recorded?                       | [Dated Files surface audit](../../research/workspace/FILE-SURFACE-AUDIT.md)                                                                                                    |
+| How is Nushell configured on the Aphrody workstation?                 | [Nushell setup](./nu.md)                                                                                                                                                       |
+| Which execution rules apply?                                          | [AGENTS.md](./AGENTS.md), the shared execution contract                                                                                                                        |
+| What must the workstation deliver next?                               | [AI delivery plan](../../plans/ai/PLAN.md)                                                                                                                                     |
+| How does Bun model training cross repositories?                       | [Workspace Bun handoffs](../../plans/workspace/PLAN.md#bun-adapter-handoffs), then the [AI training runbook](../ai/training.md#bun-qwen3-coder-30b-adapter-delivery)           |
+| How do the UI and native capabilities connect?                        | [GUI contract](../../../m3/docs/reference/GUI.md), [UI design](../../../m3/docs/architecture/UI-DESIGN.md), [UX design](../../../m3/docs/architecture/UX-DESIGN.md)            |
+| Which crates, packages, commands and tools exist?                     | Infra [ecosystem](../../ecosystem/ECOSYSTEM.md), [CLI](../../ecosystem/CLI.md), [MCP](../../ecosystem/MCP-TOOLS.md)                                                            |
+| What is the protocol/data ownership?                                  | [Architecture contracts](../../architecture/workspace/ARCHITECTURE.md#contracts-and-data-ownership), then the implementation owner                                             |
+| Where are service topology and release decisions?                     | [Infra documentation](../../products/infra/README.md) and its `config/` / `inventory/`                                                                                         |
+| Which child revisions are recorded?                                   | Root gitlinks, .gitmodules, manifest and current child Git state                                                                                                               |
 
 ## Repository entry points
 
-| Owner | Documentation |
-| --- | --- |
-| AI | [README](../../products/ai/_source/README.md.a7d252bc425b), [index](../../products/ai/_source/README.md), [architecture](../../architecture/ai/ARCHITECTURE.md) |
-| System | [README](../../products/os/_source/README.md.712b5622bf2b) |
-| UI | [README](../../../m3/docs/products/_source/README.md.8c1fe132fe5c), [index](../../../m3/docs/products/_source/README.md) |
-| Manga, OCR and databook review | Aphrody manga adapter, Shenron review boundary |
-| Web | [README](../../products/web/README.md) |
-| Contracts | [README](../../products/contracts/README.md), [A2A](../../products/contracts/a2a/README.md) |
-| Native | [README](../../products/native/README.md) |
-| Shell | [README](../../products/shell/README.md) |
-| Compatibility | [README](../../products/compat/_source/README.md.038abe5c2ce0) |
-| Infrastructure | [README](../../products/infra/README.md), [shared integration context](../infra/UNIFIED-AGENT-CONTEXT.md) |
-| Discord integration | [aphrody-discord](../../products/discord/README.md), Shenron boundary |
-| RG | README |
-| Shenron | README |
-| NIE | README |
-| IECODE | README |
+| Owner                          | Documentation                                                                                                                                                   |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AI                             | [README](../../products/ai/_source/README.md.a7d252bc425b), [index](../../products/ai/_source/README.md), [architecture](../../architecture/ai/ARCHITECTURE.md) |
+| System                         | [README](../../products/os/_source/README.md.712b5622bf2b)                                                                                                      |
+| UI                             | [README](../../../m3/docs/products/_source/README.md.8c1fe132fe5c), [index](../../../m3/docs/products/_source/README.md)                                        |
+| Manga, OCR and databook review | Aphrody manga adapter, Shenron review boundary                                                                                                                  |
+| Web                            | [README](../../products/web/README.md)                                                                                                                          |
+| Contracts                      | [README](../../products/contracts/README.md), [A2A](../../products/contracts/a2a/README.md)                                                                     |
+| Native                         | [README](../../products/native/README.md)                                                                                                                       |
+| Shell                          | [README](../../products/shell/README.md)                                                                                                                        |
+| Compatibility                  | [README](../../products/compat/README.md)                                                                                                                       |
+| Infrastructure                 | [README](../../products/infra/README.md), [shared integration context](../infra/UNIFIED-AGENT-CONTEXT.md)                                                       |
+| Discord integration            | [aphrody-discord](../../products/discord/README.md), Shenron boundary                                                                                           |
+| RG                             | README                                                                                                                                                          |
+| Shenron                        | README                                                                                                                                                          |
+| NIE                            | README                                                                                                                                                          |
+| IECODE                         | README                                                                                                                                                          |
 
 ## Historical material
 

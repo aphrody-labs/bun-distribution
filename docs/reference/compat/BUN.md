@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Bun layer of aphrody-compat
 
 > Path reconciliation (2026-10-07): `crates/compat/n2b-native` (not in repo) → `crates/interop/ffi/src/n2b_native.rs`. Original dated observations below retain their historical scope.
@@ -8,18 +9,18 @@ and states the rules they follow.
 
 ## Map
 
-| Layer | Where | Role |
-| --- | --- | --- |
-| Runtime | system `bun`, pinned by root `package.json` `packageManager` (and `mise.toml`) | The only JS runtime and package manager. Its source is the [aphrody-labs/bun fork](../upstream-bun/APHRODY-FORK.md); Aphrody keeps no Bun source checkout. |
-| Workspace | root `package.json` `workspaces`, `bun.lock`, `turbo.json` | One install and lockfile for `packages/*`. Shared versions live in the root `workspaces.catalog`. |
-| Native FFI | `../crates/ui/bun` (cdylib `bun_rs`) and UI `@aphrody/bun` | Rust hot paths loaded through `bun:ffi`: M3 color and schemes, Sass (grass), spec validation, M3 CSS, icons, 3D rendering. The UI repository owns and consumes this library. |
-| Runtime access | `crates/compat/toolchains` | Resolve installed Bun, repository version pins and launch environment without a shell. Compat owns this crate and OS consumes it; the [Bun fork](../upstream-bun/APHRODY-FORK.md) supplies the runtime and the docs mirror, not a linked library. See [BUN-RUST-INTEGRATION.md](./BUN-RUST-INTEGRATION.md). |
-| Node to Bun | `crates/aphrody-n2b*`, `@aphrody/n2b-*` | Scanner, rule registry, codemods and reports. The core TypeScript package wraps the CLI; the build plugin prefers the native scanner library and falls back to the CLI. Knowledge base in [n2b/README.md](../../products/compat/n2b/README.md). |
-| N2B native scan | `crates/interop/ffi/src/n2b_native.rs` | ABI v2 keeps the read-only `node2bun_scan_json` and adds `node2bun_scan_with_options_json` for `mode`, `ignore` and `dry_run`; callers release reports with `node2bun_string_free`. Fix and aggressive modes can write project files. Consumers bind the library through `bun:ffi`; the [Bun fork](../upstream-bun/APHRODY-FORK.md) has no `bun:aphrody` module. |
-| Documentation | `crates/compat/bun-docs` (`bun_docs` kernel subsystem, registered by `../aphrody-os`) | Offline `bun_docs_search`, `bun_docs_read`, `bun_docs_list` and `bun_node_equivalent` over `APHRODY_BUN_DOCS`, else `docs/reference/upstream-bun` (mirror of the fork docs) and the n2b registry. |
+| Layer           | Where                                                                                 | Role                                                                                                                                                                                                                                                                                                                                                             |
+| --------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Runtime         | system `bun`, pinned by root `package.json` `packageManager` (and `mise.toml`)        | The only JS runtime and package manager. Its source is the [aphrody-labs/bun fork](../upstream-bun/APHRODY-FORK.md); Aphrody keeps no Bun source checkout.                                                                                                                                                                                                       |
+| Workspace       | root `package.json` `workspaces`, `bun.lock`, `turbo.json`                            | One install and lockfile for `packages/*`. Shared versions live in the root `workspaces.catalog`.                                                                                                                                                                                                                                                                |
+| Native FFI      | `../crates/ui/bun` (cdylib `bun_rs`) and UI `@aphrody/bun`                            | Rust hot paths loaded through `bun:ffi`: M3 color and schemes, Sass (grass), spec validation, M3 CSS, icons, 3D rendering. The UI repository owns and consumes this library.                                                                                                                                                                                     |
+| Runtime access  | `crates/compat/toolchains`                                                            | Resolve installed Bun, repository version pins and launch environment without a shell. Compat owns this crate and OS consumes it; the [Bun fork](../upstream-bun/APHRODY-FORK.md) supplies the runtime and the docs mirror, not a linked library. See [BUN-RUST-INTEGRATION.md](./BUN-RUST-INTEGRATION.md).                                                      |
+| Node to Bun     | crates.io `aphrody-n2b*`, npm `@aphrody/bun-plugin-n2b`                               | Scanner, rule registry, codemods and reports. Sources and docs live in the Bun fork: see [N2B.md](./N2B.md). `aphrody n2b` links the published crates.                                                                                                                                                                                                           |
+| N2B native scan | `crates/interop/ffi/src/n2b_native.rs`                                                | ABI v2 keeps the read-only `node2bun_scan_json` and adds `node2bun_scan_with_options_json` for `mode`, `ignore` and `dry_run`; callers release reports with `node2bun_string_free`. Fix and aggressive modes can write project files. Consumers bind the library through `bun:ffi`; the [Bun fork](../upstream-bun/APHRODY-FORK.md) has no `bun:aphrody` module. |
+| Documentation   | `crates/compat/bun-docs` (`bun_docs` kernel subsystem, registered by `../aphrody-os`) | Offline `bun_docs_search`, `bun_docs_read`, `bun_docs_list` and `bun_node_equivalent` over `APHRODY_BUN_DOCS`, else `docs/reference/upstream-bun` (mirror of the fork docs) and the n2b registry.                                                                                                                                                                |
 
 The repository-wide ownership and target integration plan are in [Infra's Bun platform map](../infra/APHRODY-BUN-PLATFORM.md).
-The exact crate, package, schema and CLI inventory is in [N2B's Bun surface](./n2b/BUN-SURFACE.md).
+The n2b crate, package, schema and CLI documentation is in the Bun fork ([N2B.md](./N2B.md)).
 
 ## Rules for the manifests in `packages/*`
 

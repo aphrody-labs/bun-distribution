@@ -18,16 +18,19 @@ import { pluginStorePath } from "@aphrody/paths";
  */
 
 import { Glob } from "bun";
+import { existsSync } from "node:fs";
 import { copyFile, mkdir } from "node:fs/promises";
 import { join, dirname, relative, resolve } from "node:path";
 
 const SCRIPT_DIR = dirname(import.meta.path);
 // scripts/audit/compat/scripts/n2b -> repository root is five levels up.
 const REPO_ROOT = resolve(SCRIPT_DIR, "..", "..", "..", "..", "..");
-const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT ?? pluginStorePath("aphrody");
+const REPO_PLUGIN = join(REPO_ROOT, "plugins/aphrody");
+const PLUGIN_ROOT =
+  process.env.CLAUDE_PLUGIN_ROOT ??
+  (existsSync(REPO_PLUGIN) ? REPO_PLUGIN : pluginStorePath("aphrody"));
 // Canonical Bun docs mirror (the n2b copy was deduplicated on 2026-10-02).
 const DOCS_BUN = process.env.N2B_DOCS_BUN ?? join(REPO_ROOT, "docs/reference/upstream-bun");
-const DOCS_N2B = join(REPO_ROOT, "docs/reference/compat/n2b/plugin/n2b");
 const COVERAGE_DIR = process.env.N2B_COVERAGE_DIR ?? join(REPO_ROOT, "var/audit/n2b-coverage");
 const THRESHOLD = Number(process.env.COVERAGE_THRESHOLD ?? "80");
 
@@ -98,36 +101,23 @@ async function scanDocs(): Promise<number> {
 type N2bRule = { id: string; replacement: string | null; aggressive: boolean };
 
 async function loadN2bRules(): Promise<N2bRule[]> {
+  // n2b lives in the Bun fork (packages/bun-n2b); use its binary, else the aphrody multicall.
   const n2b = Bun.which("n2b");
-  if (n2b) {
-    try {
-      const out = await Bun.$`${n2b} rules --report json`.quiet().text();
-      const parsed = JSON.parse(out);
-      if (Array.isArray(parsed)) {
-        return parsed.map((r: any) => ({
-          id: r.id ?? r.rule_id ?? "",
-          replacement: r.replacement ?? r.suggestion ?? null,
-          aggressive: Boolean(r.aggressive ?? r.autofix === "aggressive"),
-        }));
-      }
-    } catch {
-      // fall through to doc scan
-    }
+  const aphrody = Bun.which("aphrody");
+  const cmd = n2b ? [n2b] : aphrody ? [aphrody, "n2b"] : null;
+  if (!cmd) return [];
+  try {
+    const out = await Bun.$`${cmd} rules --report json`.quiet().text();
+    const parsed = JSON.parse(out);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((r: any) => ({
+      id: r.id ?? r.rule_id ?? "",
+      replacement: r.replacement ?? r.suggestion ?? null,
+      aggressive: Boolean(r.aggressive ?? r.autofix === "aggressive"),
+    }));
+  } catch {
+    return [];
   }
-  // Fallback: grep the bundled n2b doc for rule ids
-  const rules: N2bRule[] = [];
-  const glob = new Glob("**/*.md");
-  for await (const rel of glob.scan({ cwd: DOCS_N2B })) {
-    const text = await Bun.file(join(DOCS_N2B, rel)).text();
-    for (const m of text.matchAll(
-      /`(api|cli|imports|pkg|ci|shebang|tsconfig|husky|lock|workspace)\/([a-z-]+)`/g,
-    )) {
-      rules.push({ id: `${m[1]}/${m[2]}`, replacement: null, aggressive: false });
-    }
-  }
-  // Dedup
-  const seen = new Set<string>();
-  return rules.filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)));
 }
 
 // ──────────────────────────────────────────────────────────────────

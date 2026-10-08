@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Packages Bun : installation et release
 
 Bun ≥ 1.4.2 est requis. Le runtime Bun lui-même et `@aphrody/bun-types`, `@aphrody/bun-runtime` viennent du [fork aphrody-labs/bun](../reference/upstream-bun/APHRODY-FORK.md), pas de ce catalogue. Depuis le clone Aphrody, une seule commande installe dans un projet consommateur les versions npm qualifiées du catalogue :
@@ -38,94 +39,94 @@ Le runbook `scripts/audit/infra/reclaim-cargo-test-binaries.py` a retiré 27 ex�
 
 Le tableau ci-dessous est produit depuis les archives auditées et les réponses de publication, puis vérifié contre npm.
 
-| Paquet | Version | État | Source |
-| --- | --- | --- | --- |
-| `@aphrody/a2a` | `0.1.1` | Publié | [manifest](../../packages/os/a2a/package.json) |
-| `@aphrody/agent-browser` | `1.0.0-canary` | Qualification restante | [manifest](../../packages/web/agent-browser/package.json) |
-| `@aphrody/api` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-api/package.json) |
-| `@aphrody/app-ui` | `0.1.0` | Qualification restante | [manifest](../../m3/packages/app-ui/package.json) |
-| `@aphrody/assets` | `0.1.1` | Publié | [manifest](../../m3/packages/assets/package.json) |
-| `@aphrody/bun` | `3.3.7` | Qualification restante | [manifest](../../packages/interop/native/package.json) |
-| `@aphrody/canvas` | `1.0.9-aphrody.4` | Publié | [manifest](../../m3/packages/canvas/package.json) |
-| `@aphrody/cli-wasm` | `0.1.1` | Publié | [manifest](../../packages/infra/cli-wasm/package.json) |
-| `@aphrody/discord-kit` | `0.1.1` | Publié | [manifest](../../packages/discord/kit/package.json) |
-| `@aphrody/doc-ai` | `3.2.7` | Publié | [manifest](../../packages/ai/doc-ai/package.json) |
-| `@aphrody/drive-client` | `0.1.1` | Publié | [manifest](../../packages/os/drive-client/package.json) |
-| `@aphrody/eslint-plugin-m3` | `3.3.4` | Publié | [manifest](../../m3/packages/eslint-plugin-m3/package.json) |
-| `@aphrody/fuzzy` | `0.1.1` | Publié | [manifest](../../packages/web/fuzzy/package.json) |
-| `@aphrody/google` | `1.0.0-canary.1` | Publié | [manifest](../../packages/google/google/package.json) |
-| `@aphrody/http` | `0.1.1` | Publié | [manifest](../../packages/web/http/package.json) |
-| `@aphrody/identity` | `0.1.1` | Publié | [manifest](../../m3/packages/identity/package.json) |
-| `@aphrody/inference` | `0.1.1` | Publié | [manifest](../../packages/ai/inference/package.json) |
-| `@aphrody/m3` | `3.3.7` | Qualification restante | [manifest](../../m3/packages/m3/package.json) |
-| `@aphrody/m3-ai` | `3.3.7` | Publié | [manifest](../../m3/packages/m3-ai/package.json) |
-| `@aphrody/m3-baseui` | `3.3.7` | Publié | [manifest](../../m3/packages/m3-baseui/package.json) |
-| `@aphrody/m3-bun` | `3.3.7` | Qualification restante | [manifest](../../m3/packages/m3-bun/package.json) |
-| `@aphrody/m3-codemods` | `3.3.7` | Publié | [manifest](../../m3/packages/m3-codemods/package.json) |
-| `@aphrody/m3-config` | `3.3.7` | Publié | [manifest](../../m3/packages/m3-config/package.json) |
-| `@aphrody/m3-design` | `3.3.7` | Qualification restante | [manifest](../../m3/packages/m3-design/package.json) |
-| `@aphrody/m3-explorer` | `3.3.7` | Publié | [manifest](../../m3/packages/m3-explorer/package.json) |
-| `@aphrody/m3-fonts` | `3.3.7` | Publié | [manifest](../../m3/packages/m3-fonts/package.json) |
-| `@aphrody/m3-forms` | `3.3.7` | Publié | [manifest](../../m3/packages/m3-forms/package.json) |
-| `@aphrody/m3-front` | `3.3.7` | Publié | [manifest](../../m3/packages/m3-front/package.json) |
-| `@aphrody/m3-icons` | `3.3.7` | Qualification restante | [manifest](../../m3/packages/m3-icons/package.json) |
-| `@aphrody/m3-mcp` | `3.3.7` | Publié | [manifest](../../m3/packages/m3-mcp/package.json) |
-| `@aphrody/m3-motion` | `3.3.7` | Publié | [manifest](../../m3/packages/m3-motion/package.json) |
-| `@aphrody/m3-next` | `3.3.7` | Qualification restante | [manifest](../../m3/packages/m3-next/package.json) |
-| `@aphrody/m3-next-migrate` | `3.3.7` | Qualification restante | [manifest](../../m3/packages/m3-next-migrate/package.json) |
-| `@aphrody/m3-os-themes` | `3.3.7` | Publié | [manifest](../../m3/packages/m3-os-themes/package.json) |
-| `@aphrody/m3-primitives` | `3.3.7` | Publié | [manifest](../../m3/packages/m3-primitives/package.json) |
-| `@aphrody/m3-react` | `3.3.7` | Publié | [manifest](../../m3/packages/m3-react/package.json) |
-| `@aphrody/m3-reader` | `3.3.7` | Publié | [manifest](../../m3/packages/m3-reader/package.json) |
-| `@aphrody/m3-tailwind` | `3.3.7` | Publié | [manifest](../../m3/packages/m3-tailwind/package.json) |
-| `@aphrody/m3-theme` | `3.3.7` | Qualification restante | [manifest](../../m3/packages/m3-theme/package.json) |
-| `@aphrody/m3-tokens` | `3.3.7` | Publié | [manifest](../../m3/packages/m3-tokens/package.json) |
-| `@aphrody/material-design-icons` | `1.0.1` | Publié | [manifest](../../m3/packages/material-design-icons/package.json) |
-| `@aphrody/n2b-core` | `0.6.4` | Publié | [manifest](../../packages/engine/n2b-client/package.json) |
-| `@aphrody/os` | `0.1.0` | Qualification restante | [manifest](../../packages/os/kernel-client/package.json) |
-| `@aphrody/ovh` | `0.2.1` | Publié | [manifest](../../packages/infra/ovh/package.json) |
-| `@aphrody/paths` | `0.1.1` | Publié | [manifest](../../packages/infra/paths/package.json) |
-| `@aphrody/plugin-autostart` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-autostart/package.json) |
-| `@aphrody/plugin-barcode-scanner` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-barcode-scanner/package.json) |
-| `@aphrody/plugin-biometric` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-biometric/package.json) |
-| `@aphrody/plugin-cli` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-cli/package.json) |
-| `@aphrody/plugin-clipboard-manager` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-clipboard-manager/package.json) |
-| `@aphrody/plugin-deep-link` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-deep-link/package.json) |
-| `@aphrody/plugin-dialog` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-dialog/package.json) |
-| `@aphrody/plugin-fs` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-fs/package.json) |
-| `@aphrody/plugin-geolocation` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-geolocation/package.json) |
-| `@aphrody/plugin-global-shortcut` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-global-shortcut/package.json) |
-| `@aphrody/plugin-haptics` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-haptics/package.json) |
-| `@aphrody/plugin-http` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-http/package.json) |
-| `@aphrody/plugin-log` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-log/package.json) |
-| `@aphrody/plugin-nfc` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-nfc/package.json) |
-| `@aphrody/plugin-notification` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-notification/package.json) |
-| `@aphrody/plugin-opener` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-opener/package.json) |
-| `@aphrody/plugin-os` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-os/package.json) |
-| `@aphrody/plugin-positioner` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-positioner/package.json) |
-| `@aphrody/plugin-process` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-process/package.json) |
-| `@aphrody/plugin-shell` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-shell/package.json) |
-| `@aphrody/plugin-sql` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-sql/package.json) |
-| `@aphrody/plugin-store` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-store/package.json) |
-| `@aphrody/plugin-stronghold` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-stronghold/package.json) |
-| `@aphrody/plugin-updater` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-updater/package.json) |
-| `@aphrody/plugin-upload` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-upload/package.json) |
-| `@aphrody/plugin-websocket` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-websocket/package.json) |
-| `@aphrody/plugin-window-state` | `3.0.0-alpha.3` | Publié | [manifest](../../crates/tauri/aphrody-tauri-plugin-window-state/package.json) |
-| `@aphrody/plugins` | `1.0.1` | Publié | [manifest](../../packages/engine/plugins/package.json) |
-| `@aphrody/qr` | `0.1.1` | Publié | [manifest](../../packages/web/qr/package.json) |
-| `@aphrody/rag-core` | `0.1.1` | Publié | [manifest](../../packages/ai/rag-core/package.json) |
-| `@aphrody/runtime-sdk` | `0.1.1` | Publié | [manifest](../../packages/engine/runtime/package.json) |
-| `@aphrody/scaffold` | `1.0.0-canary.1` | Publié | [manifest](../../m3/packages/scaffold/package.json) |
-| `@aphrody/shell-web` | `0.1.1` | Publié | [manifest](../../packages/shell/web/package.json) |
-| `@aphrody/sql` | `0.1.1` | Publié | [manifest](../../packages/infra/sql/package.json) |
-| `@aphrody/update` | `0.1.1` | Publié | [manifest](../../packages/infra/update/package.json) |
-| `@aphrody/web-test` | `0.2.6` | Qualification restante | [manifest](../../packages/web/aphrody-web-test/package.json) |
-| `@aphrody/web-to-tauri` | `1.0.0-canary` | Qualification restante | [manifest](../../m3/packages/web-to-tauri/package.json) |
-| `@aphrody/webview-page` | `0.1.1` | Publié ; remplacé par `@aphrody/bun-webview-page` du fork | [manifest](https://github.com/aphrody-labs/bun/blob/main/packages/bun-webview-page/package.json) |
-| `@aphrody/winclean` | `0.1.0` | Qualification restante | [manifest](../../packages/os/winclean/package.json) |
-| `@aphrody/workspace` | `0.1.0` | Qualification restante | [manifest](../../packages/infra/workspace/package.json) |
-| `@aphrody/x` | `1.3.0` | Qualification restante | [manifest](../../packages/web/x/package.json) |
-| `@aphrody/xai` | `1.1.6` | Qualification restante | [manifest](../../packages/ai/xai/package.json) |
-| `@aphrody/yolo-cli` | `1.0.0` | Qualification restante | [manifest](../../packages/engine/yolo/package.json) |
-| `@aphrody/yolo-core` | `1.0.1` | Publié | [manifest](../../packages/engine/core/package.json) |
+| Paquet                              | Version           | État                                                      | Source                                                                                                |
+| ----------------------------------- | ----------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `@aphrody/a2a`                      | `0.1.1`           | Publié                                                    | [manifest](../../packages/os/a2a/package.json)                                                        |
+| `@aphrody/agent-browser`            | `1.0.0-canary`    | Qualification restante                                    | [manifest](../../packages/web/agent-browser/package.json)                                             |
+| `@aphrody/api`                      | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-api/package.json)                                         |
+| `@aphrody/app-ui`                   | `0.1.0`           | Qualification restante                                    | [manifest](../../m3/packages/app-ui/package.json)                                                     |
+| `@aphrody/assets`                   | `0.1.1`           | Publié                                                    | [manifest](../../m3/packages/assets/package.json)                                                     |
+| `@aphrody/bun`                      | `3.3.7`           | Qualification restante                                    | [manifest](../../packages/interop/native/package.json)                                                |
+| `@aphrody/canvas`                   | `1.0.9-aphrody.4` | Publié                                                    | [manifest](../../m3/packages/canvas/package.json)                                                     |
+| `@aphrody/cli-wasm`                 | `0.1.1`           | Publié                                                    | [manifest](../../packages/infra/cli-wasm/package.json)                                                |
+| `@aphrody/discord-kit`              | `0.1.1`           | Publié                                                    | [manifest](../../packages/discord/kit/package.json)                                                   |
+| `@aphrody/doc-ai`                   | `3.2.7`           | Publié                                                    | [manifest](../../packages/ai/doc-ai/package.json)                                                     |
+| `@aphrody/drive-client`             | `0.1.1`           | Publié                                                    | [manifest](../../packages/os/drive-client/package.json)                                               |
+| `@aphrody/eslint-plugin-m3`         | `3.3.4`           | Publié                                                    | [manifest](../../m3/packages/eslint-plugin-m3/package.json)                                           |
+| `@aphrody/fuzzy`                    | `0.1.1`           | Publié                                                    | [manifest](../../packages/web/fuzzy/package.json)                                                     |
+| `@aphrody/google`                   | `1.0.0-canary.1`  | Publié                                                    | [manifest](../../packages/google/google/package.json)                                                 |
+| `@aphrody/http`                     | `0.1.1`           | Publié                                                    | [manifest](../../packages/web/http/package.json)                                                      |
+| `@aphrody/identity`                 | `0.1.1`           | Publié                                                    | [manifest](../../m3/packages/identity/package.json)                                                   |
+| `@aphrody/inference`                | `0.1.1`           | Publié                                                    | [manifest](../../packages/ai/inference/package.json)                                                  |
+| `@aphrody/m3`                       | `3.3.7`           | Qualification restante                                    | [manifest](../../m3/packages/m3/package.json)                                                         |
+| `@aphrody/m3-ai`                    | `3.3.7`           | Publié                                                    | [manifest](../../m3/packages/m3-ai/package.json)                                                      |
+| `@aphrody/m3-baseui`                | `3.3.7`           | Publié                                                    | [manifest](../../m3/packages/m3-baseui/package.json)                                                  |
+| `@aphrody/m3-bun`                   | `3.3.7`           | Qualification restante                                    | [manifest](../../m3/packages/m3-bun/package.json)                                                     |
+| `@aphrody/m3-codemods`              | `3.3.7`           | Publié                                                    | [manifest](../../m3/packages/m3-codemods/package.json)                                                |
+| `@aphrody/m3-config`                | `3.3.7`           | Publié                                                    | [manifest](../../m3/packages/m3-config/package.json)                                                  |
+| `@aphrody/m3-design`                | `3.3.7`           | Qualification restante                                    | [manifest](../../m3/packages/m3-design/package.json)                                                  |
+| `@aphrody/m3-explorer`              | `3.3.7`           | Publié                                                    | [manifest](../../m3/packages/m3-explorer/package.json)                                                |
+| `@aphrody/m3-fonts`                 | `3.3.7`           | Publié                                                    | [manifest](../../m3/packages/m3-fonts/package.json)                                                   |
+| `@aphrody/m3-forms`                 | `3.3.7`           | Publié                                                    | [manifest](../../m3/packages/m3-forms/package.json)                                                   |
+| `@aphrody/m3-front`                 | `3.3.7`           | Publié                                                    | [manifest](../../m3/packages/m3-front/package.json)                                                   |
+| `@aphrody/m3-icons`                 | `3.3.7`           | Qualification restante                                    | [manifest](../../m3/packages/m3-icons/package.json)                                                   |
+| `@aphrody/m3-mcp`                   | `3.3.7`           | Publié                                                    | [manifest](../../m3/packages/m3-mcp/package.json)                                                     |
+| `@aphrody/m3-motion`                | `3.3.7`           | Publié                                                    | [manifest](../../m3/packages/m3-motion/package.json)                                                  |
+| `@aphrody/m3-next`                  | `3.3.7`           | Qualification restante                                    | [manifest](../../m3/packages/m3-next/package.json)                                                    |
+| `@aphrody/m3-next-migrate`          | `3.3.7`           | Qualification restante                                    | [manifest](../../m3/packages/m3-next-migrate/package.json)                                            |
+| `@aphrody/m3-os-themes`             | `3.3.7`           | Publié                                                    | [manifest](../../m3/packages/m3-os-themes/package.json)                                               |
+| `@aphrody/m3-primitives`            | `3.3.7`           | Publié                                                    | [manifest](../../m3/packages/m3-primitives/package.json)                                              |
+| `@aphrody/m3-react`                 | `3.3.7`           | Publié                                                    | [manifest](../../m3/packages/m3-react/package.json)                                                   |
+| `@aphrody/m3-reader`                | `3.3.7`           | Publié                                                    | [manifest](../../m3/packages/m3-reader/package.json)                                                  |
+| `@aphrody/m3-tailwind`              | `3.3.7`           | Publié                                                    | [manifest](../../m3/packages/m3-tailwind/package.json)                                                |
+| `@aphrody/m3-theme`                 | `3.3.7`           | Qualification restante                                    | [manifest](../../m3/packages/m3-theme/package.json)                                                   |
+| `@aphrody/m3-tokens`                | `3.3.7`           | Publié                                                    | [manifest](../../m3/packages/m3-tokens/package.json)                                                  |
+| `@aphrody/material-design-icons`    | `1.0.1`           | Publié                                                    | [manifest](../../m3/packages/material-design-icons/package.json)                                      |
+| `@aphrody/n2b-core`                 | `0.6.4`           | Publié ; remplacé par `@aphrody/bun-plugin-n2b`           | [`aphrody-labs/bun/packages/bun-n2b`](https://github.com/aphrody-labs/bun/tree/main/packages/bun-n2b) |
+| `@aphrody/os`                       | `0.1.0`           | Qualification restante                                    | [manifest](../../packages/os/kernel-client/package.json)                                              |
+| `@aphrody/ovh`                      | `0.2.1`           | Publié                                                    | [manifest](../../packages/infra/ovh/package.json)                                                     |
+| `@aphrody/paths`                    | `0.1.1`           | Publié                                                    | [manifest](../../packages/infra/paths/package.json)                                                   |
+| `@aphrody/plugin-autostart`         | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-autostart/package.json)                            |
+| `@aphrody/plugin-barcode-scanner`   | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-barcode-scanner/package.json)                      |
+| `@aphrody/plugin-biometric`         | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-biometric/package.json)                            |
+| `@aphrody/plugin-cli`               | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-cli/package.json)                                  |
+| `@aphrody/plugin-clipboard-manager` | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-clipboard-manager/package.json)                    |
+| `@aphrody/plugin-deep-link`         | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-deep-link/package.json)                            |
+| `@aphrody/plugin-dialog`            | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-dialog/package.json)                               |
+| `@aphrody/plugin-fs`                | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-fs/package.json)                                   |
+| `@aphrody/plugin-geolocation`       | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-geolocation/package.json)                          |
+| `@aphrody/plugin-global-shortcut`   | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-global-shortcut/package.json)                      |
+| `@aphrody/plugin-haptics`           | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-haptics/package.json)                              |
+| `@aphrody/plugin-http`              | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-http/package.json)                                 |
+| `@aphrody/plugin-log`               | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-log/package.json)                                  |
+| `@aphrody/plugin-nfc`               | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-nfc/package.json)                                  |
+| `@aphrody/plugin-notification`      | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-notification/package.json)                         |
+| `@aphrody/plugin-opener`            | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-opener/package.json)                               |
+| `@aphrody/plugin-os`                | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-os/package.json)                                   |
+| `@aphrody/plugin-positioner`        | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-positioner/package.json)                           |
+| `@aphrody/plugin-process`           | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-process/package.json)                              |
+| `@aphrody/plugin-shell`             | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-shell/package.json)                                |
+| `@aphrody/plugin-sql`               | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-sql/package.json)                                  |
+| `@aphrody/plugin-store`             | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-store/package.json)                                |
+| `@aphrody/plugin-stronghold`        | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-stronghold/package.json)                           |
+| `@aphrody/plugin-updater`           | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-updater/package.json)                              |
+| `@aphrody/plugin-upload`            | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-upload/package.json)                               |
+| `@aphrody/plugin-websocket`         | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-websocket/package.json)                            |
+| `@aphrody/plugin-window-state`      | `3.0.0-alpha.3`   | Publié                                                    | [manifest](../../crates/tauri/aphrody-tauri-plugin-window-state/package.json)                         |
+| `@aphrody/plugins`                  | `1.0.1`           | Publié                                                    | [manifest](../../packages/engine/plugins/package.json)                                                |
+| `@aphrody/qr`                       | `0.1.1`           | Publié                                                    | [manifest](../../packages/web/qr/package.json)                                                        |
+| `@aphrody/rag-core`                 | `0.1.1`           | Publié                                                    | [manifest](../../packages/ai/rag-core/package.json)                                                   |
+| `@aphrody/runtime-sdk`              | `0.1.1`           | Publié                                                    | [manifest](../../packages/engine/runtime/package.json)                                                |
+| `@aphrody/scaffold`                 | `1.0.0-canary.1`  | Publié                                                    | [manifest](../../m3/packages/scaffold/package.json)                                                   |
+| `@aphrody/shell-web`                | `0.1.1`           | Publié                                                    | [manifest](../../packages/shell/web/package.json)                                                     |
+| `@aphrody/sql`                      | `0.1.1`           | Publié                                                    | [manifest](../../packages/infra/sql/package.json)                                                     |
+| `@aphrody/update`                   | `0.1.1`           | Publié                                                    | [manifest](../../packages/infra/update/package.json)                                                  |
+| `@aphrody/web-test`                 | `0.2.6`           | Qualification restante                                    | [manifest](../../packages/web/aphrody-web-test/package.json)                                          |
+| `@aphrody/web-to-tauri`             | `1.0.0-canary`    | Qualification restante                                    | [manifest](../../m3/packages/web-to-tauri/package.json)                                               |
+| `@aphrody/webview-page`             | `0.1.1`           | Publié ; remplacé par `@aphrody/bun-webview-page` du fork | [manifest](https://github.com/aphrody-labs/bun/blob/main/packages/bun-webview-page/package.json)      |
+| `@aphrody/winclean`                 | `0.1.0`           | Qualification restante                                    | [manifest](../../packages/os/winclean/package.json)                                                   |
+| `@aphrody/workspace`                | `0.1.0`           | Qualification restante                                    | [manifest](../../packages/infra/workspace/package.json)                                               |
+| `@aphrody/x`                        | `1.3.0`           | Qualification restante                                    | [manifest](../../packages/web/x/package.json)                                                         |
+| `@aphrody/xai`                      | `1.1.6`           | Qualification restante                                    | [manifest](../../packages/ai/xai/package.json)                                                        |
+| `@aphrody/yolo-cli`                 | `1.0.0`           | Qualification restante                                    | [manifest](../../packages/engine/yolo/package.json)                                                   |
+| `@aphrody/yolo-core`                | `1.0.1`           | Publié                                                    | [manifest](../../packages/engine/core/package.json)                                                   |

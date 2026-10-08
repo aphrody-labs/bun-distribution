@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Performance
 
 Performance claims for `aphrody` with reproducible recipes. Complements
@@ -19,7 +20,7 @@ NVMe SSD), Windows 11 Insider Canary, Rust nightly 1.97 release profile
 - AES-256-GCM decrypt of a 1 KiB Chromium-format payload: **< 50 µs**.
 - A2A `file_jsonl` inbox poll with 100 envelopes (~50 KB): **< 5 ms**.
 - WASM bundle (`aphrody-wasm` release, `wasm-pack --target web`): **~91 KB**
-  gzip-compressed *(historical — crate extracted to `aphrody-ts` 2026-05-23, see §6).*
+  gzip-compressed _(historical — crate extracted to `aphrody-ts` 2026-05-23, see §6)._
 
 These are floors and ceilings the team verifies in CI, not marketing wins.
 
@@ -55,13 +56,13 @@ The five micro-benches in
 exercise the algorithmic primitives that dominate hot paths in the backend
 crate. Expected ranges on the reference laptop:
 
-| Bench name | Expected range | Notes |
-|---|---:|---|
-| `vfs_resolve` | ~200 ns/op | HashMap lookup + prefix match + `PathBuf::push` chain. Zero syscalls. |
-| `dns_dedup_sort` | ~5 µs/op | 20-entry domain list: lowercase, filter, sort, dedup. |
-| `aes_gcm_decrypt_1kb` | ~10-50 µs/op | RustCrypto `aes-gcm` decryption of a 1 KiB Chromium-format ciphertext (3-byte prefix + 12-byte nonce + payload + tag). Lower bound assumes AES-NI; pure software path lands higher. |
-| `sha256_hash_1mb` | ~3-5 ms/op | `sha2` crate, ~250 MB/s sustained throughput. |
-| `serde_json_parse_crtsh` | ~10 µs/op | `serde_json::from_slice` on a 20-entry crt.sh-shaped payload. |
+| Bench name               | Expected range | Notes                                                                                                                                                                               |
+| ------------------------ | -------------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `vfs_resolve`            |     ~200 ns/op | HashMap lookup + prefix match + `PathBuf::push` chain. Zero syscalls.                                                                                                               |
+| `dns_dedup_sort`         |       ~5 µs/op | 20-entry domain list: lowercase, filter, sort, dedup.                                                                                                                               |
+| `aes_gcm_decrypt_1kb`    |   ~10-50 µs/op | RustCrypto `aes-gcm` decryption of a 1 KiB Chromium-format ciphertext (3-byte prefix + 12-byte nonce + payload + tag). Lower bound assumes AES-NI; pure software path lands higher. |
+| `sha256_hash_1mb`        |     ~3-5 ms/op | `sha2` crate, ~250 MB/s sustained throughput.                                                                                                                                       |
+| `serde_json_parse_crtsh` |      ~10 µs/op | `serde_json::from_slice` on a 20-entry crt.sh-shaped payload.                                                                                                                       |
 
 Hardware without AES-NI (or ARM without crypto extensions) will see
 `aes_gcm_decrypt_1kb` drift up. File an issue if your numbers are an order
@@ -123,11 +124,11 @@ SSH round-trip plus disk fsync.
 
 Historical: `wasm-pack build --target web --release <aphrody-wasm>` produced:
 
-| Artifact | Size | Role |
-|---|---:|---|
+| Artifact               |                                   Size | Role                         |
+| ---------------------- | -------------------------------------: | ---------------------------- |
 | `aphrody_wasm_bg.wasm` | **~91 KB gzip** (~250 KB uncompressed) | Rust core compiled to wasm32 |
-| `aphrody_wasm.js` | ~10 KB | wasm-bindgen JS glue |
-| `aphrody_wasm.d.ts` | ~3 KB | TypeScript types |
+| `aphrody_wasm.js`      |                                 ~10 KB | wasm-bindgen JS glue         |
+| `aphrody_wasm.d.ts`    |                                  ~3 KB | TypeScript types             |
 
 Optimisations were pinned in the crate's `Cargo.toml` under
 `[package.metadata.wasm-pack.profile.release]`: `wasm-opt` enabled with SIMD
@@ -150,13 +151,13 @@ Resident set size measured via `ps -o rss=` (Linux) or
 Apples-to-oranges — different tools do different things — but useful for
 calibrating expectations:
 
-| Tool | Cold start | Notes |
-|---|---:|---|
-| `just` | ~10 ms | Smaller surface, no diagnostic subcommand. |
-| `taskfile` | ~50 ms | Go runtime overhead. |
-| `gh` | ~80-150 ms | Go + HTTP client init. |
-| `aphrody --version` | ~30 ms | Rust + `mimalloc`; competitive with `just`. |
-| `aphrody doctor` | < 100 ms | Wider scope than the others; comparable to `gh auth status`. |
+| Tool                | Cold start | Notes                                                        |
+| ------------------- | ---------: | ------------------------------------------------------------ |
+| `just`              |     ~10 ms | Smaller surface, no diagnostic subcommand.                   |
+| `taskfile`          |     ~50 ms | Go runtime overhead.                                         |
+| `gh`                | ~80-150 ms | Go + HTTP client init.                                       |
+| `aphrody --version` |     ~30 ms | Rust + `mimalloc`; competitive with `just`.                  |
+| `aphrody doctor`    |   < 100 ms | Wider scope than the others; comparable to `gh auth status`. |
 
 `aphrody` is competitive with `just` for task-runner use, faster than `gh`
 for environment diagnostics, and the only tool here that also ships an A2A
@@ -185,7 +186,7 @@ benches outside its expected band.
 ## 10. Performance regressions
 
 Criterion benches run in the extended job of
-[`.github/workflows/cross-platform.yml` (not in repo)](../../../crates/compat/n2b/tests/fixtures/node-project/.github/workflows/ci.yml).
+`.github/workflows/cross-platform.yml` (not in repo).
 The job stores the previous baseline under `target/criterion/` (not in repo) and criterion
 reports percent change automatically. Open an issue tagged `perf` if you see
 a **>20% regression** on any of the five benches versus the baseline — that

@@ -34,12 +34,6 @@
       ]
     },
     {
-      "id": "n2b-node-docs",
-      "upstream": "https://github.com/nodejs/node doc/api (n2b reference copies; Bun docs live only in docs/reference/upstream-bun)",
-      "include": ["docs/*/compat/n2b/node/**"],
-      "except": []
-    },
-    {
       "id": "antigravity-sdk-python",
       "upstream": "Google Antigravity SDK for Python (packages/google/antigravity-sdk-python)",
       "include": ["docs/*/ai/py/antigravity-sdk-python/**"],

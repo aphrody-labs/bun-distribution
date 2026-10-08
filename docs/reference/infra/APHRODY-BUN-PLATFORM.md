@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Aphrody Bun platform
 
 Current source ownership, checked on 2026-10-02. The root
@@ -8,19 +9,19 @@ The [ecosystem catalogue](../../ecosystem/ECOSYSTEM.md) is the generated invento
 
 ## Owners
 
-| Capability | Source owner | Boundary |
-| --- | --- | --- |
-| Bun runtime fork | [aphrody-labs/bun](../upstream-bun/APHRODY-FORK.md) | JavaScriptCore runtime, bundler, package manager and tests; every Bun change lands there. Releases `aphrody-v*`, npm `@aphrody/bun-runtime`. |
-| Toolchain discovery | [aphrody-toolchains](../../../crates/compat/toolchains/) | Installed executable discovery and version pins. |
-| Node-to-Bun analysis | [N2B crates](../../../crates/compat/) and [surface inventory](../compat/n2b/BUN-SURFACE.md) | Static analysis, migration rules and reports; source analysis does not execute remote JavaScript. |
-| Bun N2B consumers | [client, plugin and types](../../../packages/engine/n2b-client) | Thin bindings to the owned scanner and build-time analysis. |
-| N2B native ABI | [aphrody-n2b-native](../../../crates/interop/ffi/src/n2b_native.rs) | Versioned C ABI with owned-string release. |
-| Oxc tools | [Cargo pins](../../../Cargo.toml), private `aphrody-labs/oxc` | Parser, formatter, linter and minifier dependencies; inspect the actual pinned revisions. |
-| Offline Bun docs | [aphrody-bun-docs](../../../crates/compat/bun-docs/), [Bun reference](../upstream-bun/) | Version-matched documentation and Node compatibility lookup. |
-| Runtime C ABI | [aphrody-ffi](../../../crates/interop/ffi/) | In-process native calls through an explicit versioned ABI. |
-| Web acquisition | [aphrody-web-crawl](../../../crates/web/web-crawl/), [web service](../../../crates/web/web-service/), [CLI](../../../crates/web/web-engine/) | One native crawl frontier and shared browser/network owners. |
-| Bun web consumers | [WebService](../../../packages/web/agent-browser/src/service.ts) | Thin bindings; no independent fetch fallback, frontier or scraper engine. |
-| RG game packages | [Pinned IECODE contract](https://github.com/aphrody-labs/iecode/blob/main/docs/rg/decisions/ievr-packages-from-iecode.md) | Producer-owned private archives; no copied game package or external Bun workspace member. |
+| Capability           | Source owner                                                                                                                                 | Boundary                                                                                                                                     |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bun runtime fork     | [aphrody-labs/bun](../upstream-bun/APHRODY-FORK.md)                                                                                          | JavaScriptCore runtime, bundler, package manager and tests; every Bun change lands there. Releases `aphrody-v*`, npm `@aphrody/bun-runtime`. |
+| Toolchain discovery  | [aphrody-toolchains](../../../crates/compat/toolchains/)                                                                                     | Installed executable discovery and version pins.                                                                                             |
+| Node-to-Bun analysis | [n2b in the Bun fork](../compat/N2B.md) (`aphrody-labs/bun/packages/bun-n2b`, crates `aphrody-n2b*`)                                         | Static analysis, migration rules and reports; source analysis does not execute remote JavaScript.                                            |
+| Bun N2B consumers    | [`@aphrody/bun-plugin-n2b`](../compat/N2B.md)                                                                                                | Bun plugin, CLI (`bunx @aphrody/bun-plugin-n2b`) and report types, published from the fork.                                                  |
+| N2B native ABI       | [aphrody-n2b-native](../../../crates/interop/ffi/src/n2b_native.rs)                                                                          | Versioned C ABI with owned-string release.                                                                                                   |
+| Oxc tools            | [Oxc bridge in the Bun fork](../compat/N2B.md) (`aphrody-labs/bun/packages/bun-oxc`, crate `aphrody-oxc-bridge`)                             | Parser, formatter, linter and minifier dependencies; inspect the actual pinned revisions.                                                    |
+| Offline Bun docs     | [aphrody-bun-docs](../../../crates/compat/bun-docs/), [Bun reference](../upstream-bun/)                                                      | Version-matched documentation and Node compatibility lookup.                                                                                 |
+| Runtime C ABI        | [aphrody-ffi](../../../crates/interop/ffi/)                                                                                                  | In-process native calls through an explicit versioned ABI.                                                                                   |
+| Web acquisition      | [aphrody-web-crawl](../../../crates/web/web-crawl/), [web service](../../../crates/web/web-service/), [CLI](../../../crates/web/web-engine/) | One native crawl frontier and shared browser/network owners.                                                                                 |
+| Bun web consumers    | [WebService](../../../packages/web/agent-browser/src/service.ts)                                                                             | Thin bindings; no independent fetch fallback, frontier or scraper engine.                                                                    |
+| RG game packages     | [Pinned IECODE contract](https://github.com/aphrody-labs/iecode/blob/main/docs/rg/decisions/ievr-packages-from-iecode.md)                    | Producer-owned private archives; no copied game package or external Bun workspace member.                                                    |
 
 ## Runtime evidence
 
