@@ -215,19 +215,113 @@ pub fn get_memory_info() -> MemoryInfo {
     }
 }
 
+/// Cache totals summed over every cache instance reported by
+/// `GetLogicalProcessorInformationEx(RelationCache)` (same meaning as WMI `L2CacheSize`/`L3CacheSize`).
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+struct CacheTotals {
+    l1: u64,
+    l2: u64,
+    l3: u64,
+    line: u32,
+}
+
+/// Walk a `SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX` buffer as (relationship, record bytes).
+fn lpi_records(buffer: &[u8]) -> impl Iterator<Item = (u32, &[u8])> {
+    let mut offset = 0usize;
+    std::iter::from_fn(move || {
+        let head = buffer.get(offset..offset.checked_add(8)?)?;
+        let relationship = u32::from_le_bytes(head[..4].try_into().ok()?);
+        let size = u32::from_le_bytes(head[4..8].try_into().ok()?) as usize;
+        if size < 8 {
+            return None;
+        }
+        let record = buffer.get(offset..offset.checked_add(size)?)?;
+        offset += size;
+        Some((relationship, record))
+    })
+}
+
+const RELATION_NUMA_NODE: u32 = 1;
+const RELATION_CACHE: u32 = 2;
+
+fn cache_totals(buffer: &[u8]) -> CacheTotals {
+    let mut totals = CacheTotals::default();
+    for (relationship, record) in lpi_records(buffer) {
+        // CACHE_RELATIONSHIP after the 8-byte header: Level u8, Associativity u8, LineSize u16,
+        // CacheSize u32.
+        if relationship != RELATION_CACHE || record.len() < 16 {
+            continue;
+        }
+        let level = record[8];
+        let line = u32::from(u16::from_le_bytes([record[10], record[11]]));
+        let size = u64::from(u32::from_le_bytes([record[12], record[13], record[14], record[15]]));
+        match level {
+            1 => {
+                totals.l1 += size;
+                totals.line = totals.line.max(line);
+            },
+            2 => totals.l2 += size,
+            3 => totals.l3 += size,
+            _ => {},
+        }
+    }
+    totals
+}
+
+fn numa_node_count(buffer: &[u8]) -> u32 {
+    let nodes = lpi_records(buffer).filter(|(relationship, _)| *relationship == RELATION_NUMA_NODE);
+    u32::try_from(nodes.count()).unwrap_or(u32::MAX)
+}
+
+#[cfg(windows)]
+fn logical_processor_info(relationship: u32) -> Vec<u8> {
+    use windows::Win32::System::SystemInformation::{
+        GetLogicalProcessorInformationEx, LOGICAL_PROCESSOR_RELATIONSHIP,
+        SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX,
+    };
+    let relationship = LOGICAL_PROCESSOR_RELATIONSHIP(relationship as i32);
+    let mut length = 0u32;
+    // SAFETY: a null buffer with length 0 only asks for the required size.
+    let _ = unsafe { GetLogicalProcessorInformationEx(relationship, None, &mut length) };
+    if length == 0 {
+        return Vec::new();
+    }
+    let mut buffer = vec![0u8; length as usize];
+    // SAFETY: `buffer` is `length` writable bytes; the API fills whole records and updates `length`.
+    let result = unsafe {
+        GetLogicalProcessorInformationEx(
+            relationship,
+            Some(buffer.as_mut_ptr().cast::<SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>()),
+            &mut length,
+        )
+    };
+    if result.is_err() {
+        return Vec::new();
+    }
+    buffer.truncate(length as usize);
+    buffer
+}
+
+#[cfg(not(windows))]
+fn logical_processor_info(_relationship: u32) -> Vec<u8> {
+    Vec::new()
+}
+
 pub fn get_cpu_info() -> CpuInfo {
     let mut system = System::new();
     system.refresh_cpu_all();
     let logical = system.cpus().len().max(1);
     let physical = System::physical_core_count().unwrap_or(logical).max(1);
+    let caches = cache_totals(&logical_processor_info(RELATION_CACHE));
+    let numa = numa_node_count(&logical_processor_info(RELATION_NUMA_NODE)).max(1);
     CpuInfo {
         logical_processors: logical,
         physical_cores: physical,
-        numa_nodes: 1,
-        cache_line_bytes: 64,
-        l1_cache_bytes: 0,
-        l2_cache_bytes: 0,
-        l3_cache_bytes: 0,
+        numa_nodes: numa,
+        cache_line_bytes: if caches.line == 0 { 64 } else { caches.line },
+        l1_cache_bytes: caches.l1,
+        l2_cache_bytes: caches.l2,
+        l3_cache_bytes: caches.l3,
         processor_architecture: std::env::consts::ARCH.to_owned(),
     }
 }
@@ -923,14 +1017,38 @@ pub fn get_disk_info() -> DiskInfoListResponse {
     DiskInfoListResponse { count: disks.len(), disks }
 }
 
+/// One value of `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion` as text (empty when absent).
+fn current_version_value(name: &str) -> String {
+    crate::registry::get_value("HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", name)
+        .ok()
+        .map(|value| registry_text(&value["Value"]))
+        .unwrap_or_default()
+}
+
+fn registry_text(value: &serde_json::Value) -> String {
+    match value {
+        serde_json::Value::String(text) => text.clone(),
+        serde_json::Value::Number(number) => number.to_string(),
+        _ => String::new(),
+    }
+}
+
+fn or_fallback(value: String, fallback: impl FnOnce() -> String) -> String {
+    if value.is_empty() { fallback() } else { value }
+}
+
 pub fn get_os_info() -> OsInfo {
     OsInfo {
         product_name: System::long_os_version().unwrap_or_default(),
-        edition_id: String::new(),
-        display_version: System::os_version().unwrap_or_default(),
-        build_number: System::kernel_version().unwrap_or_default(),
-        ubr: String::new(),
-        installation_type: String::new(),
+        edition_id: current_version_value("EditionID"),
+        display_version: or_fallback(current_version_value("DisplayVersion"), || {
+            System::os_version().unwrap_or_default()
+        }),
+        build_number: or_fallback(current_version_value("CurrentBuildNumber"), || {
+            System::kernel_version().unwrap_or_default()
+        }),
+        ubr: current_version_value("UBR"),
+        installation_type: current_version_value("InstallationType"),
         os_architecture: std::env::consts::ARCH.to_owned(),
         machine_name: System::host_name().unwrap_or_default(),
         user_name: std::env::var("USERNAME").or_else(|_| std::env::var("USER")).unwrap_or_default(),
@@ -1080,4 +1198,71 @@ pub fn get_system_profile() -> serde_json::Value {
         "gpu": "Unavailable from portable sysinfo",
         "ram": format!("{} GB", memory.total_physical_bytes / 1024 / 1024 / 1024)
     })
+}
+
+#[cfg(test)]
+mod hardware_tests {
+    use super::*;
+
+    fn cache_record(level: u8, line: u16, size: u32) -> Vec<u8> {
+        let mut record = vec![0u8; 48];
+        record[..4].copy_from_slice(&RELATION_CACHE.to_le_bytes());
+        record[4..8].copy_from_slice(&48u32.to_le_bytes());
+        record[8] = level;
+        record[10..12].copy_from_slice(&line.to_le_bytes());
+        record[12..16].copy_from_slice(&size.to_le_bytes());
+        record
+    }
+
+    #[test]
+    fn cache_totals_sum_every_instance_per_level() {
+        let mut buffer = Vec::new();
+        for _ in 0..2 {
+            buffer.extend(cache_record(1, 64, 32 * 1024));
+            buffer.extend(cache_record(1, 64, 48 * 1024));
+            buffer.extend(cache_record(2, 64, 2 * 1024 * 1024));
+        }
+        buffer.extend(cache_record(3, 64, 30 * 1024 * 1024));
+        let totals = cache_totals(&buffer);
+        assert_eq!(totals.l1, 2 * (32 + 48) * 1024);
+        assert_eq!(totals.l2, 4 * 1024 * 1024);
+        assert_eq!(totals.l3, 30 * 1024 * 1024);
+        assert_eq!(totals.line, 64);
+    }
+
+    #[test]
+    fn truncated_or_empty_buffers_do_not_panic() {
+        assert_eq!(cache_totals(&[]), CacheTotals::default());
+        let record = cache_record(3, 64, 1024);
+        assert_eq!(cache_totals(&record[..20]), CacheTotals::default());
+        assert_eq!(numa_node_count(&[0u8; 4]), 0);
+    }
+
+    #[test]
+    fn numa_records_are_counted() {
+        let mut node = vec![0u8; 16];
+        node[..4].copy_from_slice(&RELATION_NUMA_NODE.to_le_bytes());
+        node[4..8].copy_from_slice(&16u32.to_le_bytes());
+        assert_eq!(numa_node_count(&[node.clone(), node].concat()), 2);
+    }
+
+    #[test]
+    fn registry_values_render_as_text() {
+        assert_eq!(registry_text(&serde_json::json!("Core")), "Core");
+        assert_eq!(registry_text(&serde_json::json!(2956)), "2956");
+        assert_eq!(registry_text(&serde_json::json!(null)), "");
+        assert_eq!(or_fallback(String::new(), || "x".into()), "x");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn live_cpu_and_os_info_are_populated() {
+        let cpu = get_cpu_info();
+        assert!(cpu.l1_cache_bytes > 0 && cpu.l2_cache_bytes > 0 && cpu.l3_cache_bytes > 0);
+        assert!(cpu.numa_nodes >= 1);
+        let os = get_os_info();
+        assert!(!os.ubr.is_empty() && os.ubr.chars().all(|c| c.is_ascii_digit()));
+        assert!(!os.edition_id.is_empty() && !os.installation_type.is_empty());
+        assert!(!os.build_number.is_empty());
+    }
 }
