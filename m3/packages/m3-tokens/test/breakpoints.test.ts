@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
 import {
   BREAKPOINTS,
   classifyWidth,
@@ -62,13 +61,13 @@ describe("M3 window height classes", () => {
     [900, "expanded"],
   ] as const)("classifyHeight(%i) === %s", (h, c) => expect(classifyHeight(h)).toBe(c));
 
-  test("css carries the height breakpoints", () => {
+  test("css carries the height breakpoints", async () => {
     expect(HEIGHT_BREAKPOINTS).toEqual({ compact: 0, medium: 480, expanded: 900 });
     expect(heightMediaQuery("medium")).toBe("(min-height: 480px)");
     const css = breakpointsCss();
     expect(css).toContain("@custom-media --md-height-expanded (min-height: 900px)");
     expect(css).toContain("--md-breakpoint-height-medium: 480px");
-    const file = readFileSync(new URL("../src/breakpoints.css", import.meta.url), "utf8");
+    const file = await Bun.file(new URL("../src/breakpoints.css", import.meta.url)).text();
     expect(file).toContain("@custom-media --md-height-medium (min-height: 480px)");
     expect(file).toContain("--md-breakpoint-height-expanded: 900px");
   });

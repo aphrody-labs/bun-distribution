@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
 import {
   DIRECTIONAL_SHAPES,
   EMPHASIZED_STYLES,
@@ -7,8 +6,8 @@ import {
   expressiveCss,
 } from "../src/expressive.js";
 
-const file = readFileSync(new URL("../src/expressive.css", import.meta.url), "utf8");
-const tokens = readFileSync(new URL("../src/m3-tokens.css", import.meta.url), "utf8");
+const file = await Bun.file(new URL("../src/expressive.css", import.meta.url)).text();
+const tokens = await Bun.file(new URL("../src/m3-tokens.css", import.meta.url)).text();
 
 describe("emphasized typescale", () => {
   test("15 styles with the Compose weights", () => {
