@@ -36,10 +36,9 @@ const TOKEN_ENDPOINT: &str = "https://oauth2.googleapis.com/token";
 /// Environment variables that may supply the Antigravity OAuth `client_secret`,
 /// in priority order.
 ///
-/// The public sign-in flow is a PKCE "installed app" exchange and needs no
-/// secret, but Google rejects the `refresh_token` grant for this client with
-/// `400 client_secret is missing` unless the secret the desktop binary ships
-/// is presented. We never embed that secret (repo policy); an operator who
+/// Google rejects both the PKCE code exchange and the `refresh_token` grant
+/// for this client with `400 client_secret is missing` unless the secret the
+/// desktop binary ships is presented. We never embed that secret (repo policy); an operator who
 /// wants a fully standalone refresh sets one of these. When none is set the
 /// refresh path falls back to re-reading the OS credential store, which the
 /// running Antigravity desktop app keeps fresh (the keyless design).

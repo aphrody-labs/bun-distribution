@@ -349,13 +349,19 @@ fn percent_decode(value: &str) -> String {
 /// [`OAuthToken`] at the Google token endpoint.
 async fn exchange_code(code: &str, verifier: &str) -> Result<OAuthToken, SdkError> {
     let client = reqwest::Client::new();
-    let params = [
+    let secret = crate::auth::resolve_client_secret_from_env();
+    let mut params = vec![
         ("client_id", ANTIGRAVITY_CLIENT_ID),
         ("grant_type", "authorization_code"),
         ("code", code),
         ("redirect_uri", REDIRECT_URI),
         ("code_verifier", verifier),
     ];
+    // Google now rejects this exchange with `400 client_secret is missing` for
+    // the Antigravity client too; send the operator-supplied secret when set.
+    if let Some(secret) = secret.as_deref() {
+        params.push(("client_secret", secret));
+    }
 
     let response = client.post(TOKEN_ENDPOINT).form(&params).send().await?;
     let status = response.status();

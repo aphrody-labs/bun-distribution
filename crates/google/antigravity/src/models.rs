@@ -160,9 +160,37 @@ pub struct ModelInfo {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FetchAvailableModelsResponse {
-    /// Models available to the user's account / tier.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    /// Models available to the user's account / tier. The live endpoint
+    /// returns an object keyed by model id; the older list shape is still
+    /// accepted. Map keys fill a missing [`ModelInfo::name`].
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "models_seq_or_map"
+    )]
     pub models: Vec<ModelInfo>,
+}
+
+fn models_seq_or_map<'de, D>(deserializer: D) -> Result<Vec<ModelInfo>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Shape {
+        Seq(Vec<ModelInfo>),
+        Map(std::collections::BTreeMap<String, ModelInfo>),
+    }
+    Ok(match Shape::deserialize(deserializer)? {
+        Shape::Seq(models) => models,
+        Shape::Map(models) => models
+            .into_iter()
+            .map(|(id, mut info)| {
+                info.name.get_or_insert(id);
+                info
+            })
+            .collect(),
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -575,6 +603,23 @@ mod tests {
         assert!(resp.models[0].capabilities.is_some());
         assert_eq!(resp.models[1].name.as_deref(), Some("gemini-2.0-pro"));
         assert!(resp.models[1].display_name.is_none());
+        round_trip(&resp);
+    }
+
+    #[test]
+    fn fetch_available_models_response_parses_keyed_object() {
+        let sample = r#"{
+            "models": {
+                "gemini-3-flash": { "displayName": "Gemini 3 Flash" },
+                "gemini-3-pro": { "name": "gemini-3-pro", "quotaInfo": {} }
+            }
+        }"#;
+
+        let resp: FetchAvailableModelsResponse = serde_json::from_str(sample).expect("parse");
+        assert_eq!(resp.models.len(), 2);
+        assert_eq!(resp.models[0].name.as_deref(), Some("gemini-3-flash"));
+        assert_eq!(resp.models[0].display_name.as_deref(), Some("Gemini 3 Flash"));
+        assert_eq!(resp.models[1].name.as_deref(), Some("gemini-3-pro"));
         round_trip(&resp);
     }
 
