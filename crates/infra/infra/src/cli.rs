@@ -108,7 +108,7 @@ enum CommandKind {
         target: Option<String>,
         #[arg(long)]
         apply: bool,
-        /// Run on this Linux host instead of over ssh/wsl.exe (package set: vps, dbfr or wsl).
+        /// Run on this Linux host instead of over ssh/docker (package set: vps, dbfr or wsl).
         #[arg(long, value_name = "HOST")]
         local: Option<String>,
     },
@@ -501,6 +501,9 @@ fn load_matrix() -> Result<Matrix> {
     serde_json::from_slice(&bytes).with_context(|| format!("{} invalide", path.display()))
 }
 
+/// Local Linux build/test container (Ubuntu 26.04, glibc 2.43); replaces the removed WSL Ubuntu-24.04.
+const LINUX_BUILD_IMAGE: &str = "aphrody/build-linux:26.04";
+
 fn selected<'a>(matrix: &'a Matrix, id: Option<&str>) -> Result<Vec<&'a Target>> {
     let targets: Vec<_> =
         matrix.targets.iter().filter(|t| id.is_none_or(|wanted| t.id == wanted)).collect();
@@ -532,12 +535,16 @@ fn live_status(target: &Target) -> Option<Value> {
                 "systemctl list-units --type=service --state=running --no-legend | grep -Ei 'nier|nie|shenron|web' || true",
             ],
         ),
-        "wsl-ubuntu-24.04" => (
-            "wsl.exe",
+        "linux-container-26.04" => (
+            "docker",
             vec![
-                "-d",
-                "Ubuntu-24.04",
-                "--",
+                "run",
+                "--rm",
+                "--cpus",
+                "6",
+                "--memory",
+                "6g",
+                LINUX_BUILD_IMAGE,
                 "bash",
                 "-lc",
                 "rustc --version; bun --version; uv --version",
@@ -1248,13 +1255,28 @@ fn dev_env(root: &Path, target_id: Option<&str>, apply: bool, run: &mut Run) -> 
         let (host, program, args): (&str, &str, Vec<&str>) = match target.id.as_str() {
             "vps" => ("vps", "ssh", vec!["-o", "BatchMode=yes", "vps", "bash", "-s"]),
             "dbfr" => ("dbfr", "ssh", vec!["-o", "BatchMode=yes", "dbfr", "bash", "-s"]),
-            "wsl-ubuntu-24.04" => {
-                ("wsl", "wsl.exe", vec!["-d", "Ubuntu-24.04", "--", "bash", "-s"])
+            "linux-container-26.04" => {
+                (
+                    "wsl",
+                    "docker",
+                    vec![
+                        "run",
+                        "--rm",
+                        "-i",
+                        "--cpus",
+                        "6",
+                        "--memory",
+                        "6g",
+                        LINUX_BUILD_IMAGE,
+                        "bash",
+                        "-s",
+                    ],
+                )
             },
             _ => {
                 if target_id.is_some() {
                     bail!(
-                        "dev-env ne provisionne que les hôtes Linux natifs (vps, dbfr, wsl-ubuntu-24.04): {}",
+                        "dev-env ne provisionne que les hôtes Linux natifs (vps, dbfr, linux-container-26.04): {}",
                         target.id
                     );
                 }

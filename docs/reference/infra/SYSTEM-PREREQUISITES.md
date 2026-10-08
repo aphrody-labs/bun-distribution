@@ -7,10 +7,10 @@ idempotent et, sans `--apply`, se contente de comparer l'installé aux versions
 épinglées.
 
 ```sh
-# Depuis Windows (ssh / wsl.exe)
+# Depuis Windows (ssh / conteneur Docker aphrody/build-linux:26.04)
 aphrody-infra dev-env --target vps
 aphrody-infra dev-env --target dbfr --apply
-aphrody-infra dev-env --target wsl-ubuntu-24.04 --apply
+aphrody-infra dev-env --target linux-container-26.04 --apply
 
 # Sur l'hôte Linux lui-même (façade Nushell, même implémentation)
 nu scripts/dev/setup.nu --target wsl

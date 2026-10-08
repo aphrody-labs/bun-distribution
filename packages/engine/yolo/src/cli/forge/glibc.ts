@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //! glibc ceiling for the Bun fork binary. The build host runs a newer glibc (the factory: 2.43) than the hosts that
-//! install the binary (WSL Ubuntu 24.04: 2.39). Linking there records `acosf@GLIBC_2.43`, `asinf@GLIBC_2.43` and
+//! install the binary (Ubuntu 24.04 user machines: 2.39; vps and dbfr run 26.04). Linking there records `acosf@GLIBC_2.43`, `asinf@GLIBC_2.43` and
 //! `atan2f@GLIBC_2.43` (libm functions re-versioned by glibc 2.43; the previous versions are still exported), which
 //! makes the dynamic loader refuse the binary on older hosts. `lowerGlibcCeiling` rewrites the version requirement
 //! (`.gnu.version_r` entry: hash and name) of those re-versioned symbols to the lowest GLIBC version the same library

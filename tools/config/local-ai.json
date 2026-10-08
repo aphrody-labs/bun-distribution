@@ -26,7 +26,7 @@
       "runtime": "llama.cpp llama-server (upstream release binaries, driven not linked)",
       "ports": "dynamic",
       "discovery": "aphrody ai env",
-      "hosts": ["windows-local", "wsl-ubuntu-24.04"],
+      "hosts": ["windows-local", "linux-container-26.04"],
       "note": "Planned and supervised by aphrody (process groups, GPU lease, flags probed from the installed build's --help). Ports change per run and are never written into a repository."
     }
   },
@@ -234,12 +234,12 @@
       "services": ["aphrody-managed-llama"],
       "note": "aphrody ai env prints the canonical APHRODY_AI_* names for the llama-server instances aphrody manages on this host (dynamic loopback ports). Nothing is hard-coded."
     },
-    "wsl-ubuntu-24.04": {
+    "linux-container-26.04": {
       "resolution": "runtime",
-      "topologyHost": "wsl-ubuntu-24.04",
+      "topologyHost": "linux-container-26.04",
       "resolver": "aphrody ai env",
       "services": ["aphrody-managed-llama"],
-      "note": "Reference build/test host. WSL2 runs with default NAT networking (no mirrored mode configured on windows-local), so 127.0.0.1 inside WSL does not reach the Windows llama-server: run the resolver inside WSL against a WSL-side aphrody, or leave the capability unset."
+      "note": "Reference build/test host: local Docker container aphrody/build-linux:26.04 (same OS and glibc as vps and dbfr). 127.0.0.1 inside the container does not reach the Windows llama-server: run the resolver inside the container against a container-side aphrody, or leave the capability unset."
     }
   },
   "consumers": {

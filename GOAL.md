@@ -91,10 +91,10 @@ aphrody.com est le point d'entrée de développement et de déploiement de :
 - **Builds lourds sur les hôtes SSH** :
   - paquets Bun sur `dbfr` ;
   - Rust et C++ sur l'usine de compilation (voir préalables) ;
-  - aucune surcharge sur WSL.
-- **WSL Ubuntu 24.04** : Aphrody complet, binaires, bibliothèques et dépendances installés.
+  - conteneur local limité à `--cpus 6 --memory 6g`, jamais le VPS.
+- **Conteneur Docker `aphrody/build-linux:26.04`** (Ubuntu 26.04, remplace la WSL Ubuntu-24.04 désinstallée) : Aphrody complet, binaires, bibliothèques et dépendances installés.
 - **Windows 11** : binaires, bibliothèques et dépendances installés via `aphrody-ops system-packages`.
-  - Blocages (Build Tools 2026, etc.) : documentation Microsoft Learn via le MCP Aphrody, winclean au complet, PATH utilisateur et système, profil pwsh et WSL synchronisés.
+  - Blocages (Build Tools 2026, etc.) : documentation Microsoft Learn via le MCP Aphrody, winclean au complet, PATH utilisateur et système, profil pwsh et conteneur Linux synchronisés.
   - Installer le plus de SDK, toolkits et CLI utiles, sans doublon et à jour, sur Windows comme sur les VPS de build.
   - Tests natifs MSVC avec `scripts/dev/windows-cargo.ps1`.
   - Tests Bun avec `scripts/dev/windows-bun-test.ps1`.
@@ -128,8 +128,8 @@ Une étape n'est close qu'avec sa preuve (révision, commande, résultat) dans [
 | MCP | sous-système `workspace` (7 outils) servi par `aphrody-workspace-subsystem.service` | `docs/ecosystem/MCP-TOOLS.md` |
 | Windows 11 | Visual Studio Build Tools 2026 (v18.10, MSVC 14.51), Windows SDK 10.0.26100, .NET SDK 10.0.401, PowerShell 7.6.6, module WinGet 1.29.380, Bun 1.4.2, uv, Rust 1.98.1 MSVC | `system-packages plan --host windows`, `vswhere`, `dotnet --list-sdks` |
 | Tests MSVC natifs | `aphrody-winclean`, `-diagnostics`, `-a2a-coord`, `-a2a-pb`, `-wsl` : verts | `scripts/dev/windows-cargo.ps1` |
-| WSL | Ubuntu 24.04, glibc 2.39, gcc 13.3, clang 18.1.3, cmake 3.28.3, ninja 1.11.1, MinGW gcc 13, zig 0.16.0, cargo-zigbuild 0.23.4, cargo-xwin 0.23.1, uv 0.12.22, TypeScript 7.0.2 | versions des outils |
-| Hôtes | `vps` hôte de production, `dbfr` hôte secondaire, `wsl-ubuntu-24.04` hôte de build de référence | `yolo/tools/config/host/inventory/targets.json` |
+| Conteneur `aphrody/build-linux:26.04` (ex-WSL Ubuntu 24.04, désinstallée) | Ubuntu 26.04, glibc 2.43 (mesures ci-dessous = ancienne WSL 24.04, à relever) : gcc 13.3, clang 18.1.3, cmake 3.28.3, ninja 1.11.1, MinGW gcc 13, zig 0.16.0, cargo-zigbuild 0.23.4, cargo-xwin 0.23.1, uv 0.12.22, TypeScript 7.0.2 | versions des outils |
+| Hôtes | `vps` hôte de production, `dbfr` hôte secondaire, `linux-container-26.04` hôte de build de référence | `yolo/tools/config/host/inventory/targets.json` |
 
 ## 11. Écarts et préalables
 

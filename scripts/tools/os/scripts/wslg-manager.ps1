@@ -12,7 +12,7 @@ param (
     [ValidateSet("Status", "Windows", "Gpu", "Desktop", "Json")]
     [string]$Action = "Status",
 
-    [string]$Distro = "Ubuntu-24.04"
+    [string]$Distro = ((wsl.exe --list --quiet 2>$null | ForEach-Object { ($_ -replace "`0", "").Trim() } | Where-Object { $_ -and $_ -notmatch "^docker-desktop" } | Select-Object -First 1))
 )
 
 $ErrorActionPreference = "Stop"

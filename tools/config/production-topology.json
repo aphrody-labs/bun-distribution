@@ -194,7 +194,7 @@
         "public-runtime"
       ]
     },
-    "wsl-ubuntu-24.04": {
+    "linux-container-26.04": {
       "role": "source-and-light-validation",
       "allocations": {
         "iecode": "source-assets-tools",

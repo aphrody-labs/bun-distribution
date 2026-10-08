@@ -4,8 +4,8 @@
 //! glibc 2.40 to 2.43 gave several single-precision libm functions new symbol versions (`acosf`,
 //! `asinf`, `atan2f`, `atanhf`, `acoshf`, `coshf`, `sinhf`, `log10f`, `tgammaf`, `lgammaf`,
 //! `remainderf` carry `GLIBC_2.43`). A library linked on such a host (the build factory runs Ubuntu
-//! 26.04, glibc 2.43) imports `acosf@GLIBC_2.43` and `dlopen` refuses it on glibc 2.39 (WSL Ubuntu
-//! 24.04, the Bun hosts that load this library).
+//! 26.04, glibc 2.43) imports `acosf@GLIBC_2.43` and `dlopen` refuses it on glibc 2.39 (Ubuntu
+//! 24.04 user machines that load this library; vps and dbfr run 26.04 like the factory).
 //!
 //! Defining the functions in this library resolves every reference at link time, so no versioned
 //! import is left; at run time the host's own libm is still preferred for unversioned lookups. The

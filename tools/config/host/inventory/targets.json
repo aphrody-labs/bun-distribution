@@ -24,9 +24,9 @@
       }
     },
     {
-      "id": "wsl-ubuntu-24.04",
+      "id": "linux-container-26.04",
       "kind": "reference-build-host",
-      "os": "Ubuntu-24.04 / WSL2",
+      "os": "Ubuntu 26.04 / Docker container aphrody/build-linux:26.04 (glibc 2.43)",
       "releaseWorkspace": {
         "build": "scripts/build/build-aphrody-stack-release.sh --compute-only MONOREPO COMMIT",
         "bundles": "$APHRODY_RELEASE_ROOT/bundles",

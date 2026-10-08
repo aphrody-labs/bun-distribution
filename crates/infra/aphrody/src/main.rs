@@ -16,7 +16,7 @@
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 /// glibc 2.43 gave `acosf` and `atan2f` new symbol versions; a binary linked on a newer host
-/// imports `acosf@GLIBC_2.43` and no longer starts on glibc 2.39 (WSL Ubuntu 24.04). Defining
+/// imports `acosf@GLIBC_2.43` and no longer starts on glibc 2.39 (Ubuntu 24.04 user hosts). Defining
 /// them in the executable resolves every reference at link time, so no versioned import is
 /// left; `libm` is the musl implementation ported to Rust.
 #[cfg(all(target_os = "linux", target_env = "gnu"))]

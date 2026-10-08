@@ -25,7 +25,7 @@ native lifecycle surface; deployment remains atomic and release-based through th
 aphrody-infra status --json
 aphrody-infra doctor --json
 aphrody-infra inventory --json
-aphrody-infra dev-env --target wsl-ubuntu-24.04
+aphrody-infra dev-env --target linux-container-26.04
 aphrody-infra sync --target windows-local
 aphrody-infra deploy --target vps --stack bundle --release /srv/aphrody-infra/bundles/<id>
 aphrody-infra deploy --target vps --stack bundle --release /srv/aphrody-infra/bundles/<id> --apply

@@ -53,9 +53,12 @@ repository's docs.
 - **Build profiles are all in use.** `dist` and `reproducible` inherit from
   `release`; switching `release` to thin LTO degrades them. For a fast
   optimized build use `--profile release-fast`.
-- **Linux verification from a Windows host.** WSL `Ubuntu-24.04` works; use a
-  separate `CARGO_TARGET_DIR` inside the distribution so Linux artifacts never
-  mix with the Windows target directory.
+- **Linux verification from a Windows host.** Use the local Docker container
+  `aphrody/build-linux:26.04` (Ubuntu 26.04, glibc 2.43; Dockerfile
+  `scripts/aphrody/linux.Dockerfile` in the Bun fork), e.g.
+  `bun C:/bun/scripts/aphrody/tmux.ts run <job> --linux --cwd C:/aphrody -- "<cmd>"`
+  (`--cpus 6 --memory 6g`, never the VPS). Keep a named volume for `CARGO_TARGET_DIR`
+  so Linux artifacts never mix with the Windows target directory.
 
 ## Features and wiring
 

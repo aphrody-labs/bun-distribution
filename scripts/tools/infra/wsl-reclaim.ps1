@@ -4,7 +4,9 @@
 # AphrodyWslReclaim (registered from WSL, copy in C:\ProgramData\Aphrody) runs it once; the log is next to it.
 $ErrorActionPreference = 'Stop'
 Start-Transcript -Path "$env:ProgramData\Aphrody\wsl-reclaim.log" -Append | Out-Null
-$distro = 'Ubuntu-24.04'
+# The distribution is detected: the first installed non-docker one. Nothing to do when WSL has none.
+$distro = (wsl.exe --list --quiet 2>$null | ForEach-Object { ($_ -replace "`0", '').Trim() } | Where-Object { $_ -and $_ -notmatch '^docker-desktop' } | Select-Object -First 1)
+if (-not $distro) { 'No WSL distribution installed: nothing to reclaim.'; Stop-Transcript | Out-Null; exit 0 }
 $vhd = Get-ChildItem "$env:LOCALAPPDATA\wsl" -Recurse -Filter ext4.vhdx | Sort-Object Length -Descending | Select-Object -First 1
 $before = [math]::Round($vhd.Length / 1GB)
 wsl.exe --shutdown
