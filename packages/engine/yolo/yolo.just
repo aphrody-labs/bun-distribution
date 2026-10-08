@@ -152,9 +152,25 @@ qualify-python: rust-fmt-python-check check-python clippy-python test-python
 # `rustup run` without --install refuses an absent toolchain instead of acquiring it.
 qualify-upstream: rust-fmt-upstream-check check-upstream test-upstream
 
-# The Bun fork builds through `yolo forge` (packages/engine/yolo/src/cli/forge): toolchain, per-commit scratch partition, receipt.
+# Qualify the aphrody-labs/bun fork. With a local checkout (APHRODY_BUN_CHECKOUT, default ../bun): scope check, upstream
+# lag (synced by the fork's scripts/aphrody/sync-upstream.ts), then `yolo forge` builds that checkout; without one, forge
+# clones the fork from GitHub. Forge owns toolchain, per-commit scratch partition and receipt.
+[positional-arguments]
 qualify-bun *args:
-    bun packages/engine/yolo/src/index.ts forge build --branch main {{args}}
+    #!/usr/bin/env bash
+    set -euo pipefail
+    fork="${APHRODY_BUN_CHECKOUT:-../bun}"
+    if [[ ! -f "$fork/scripts/aphrody/scope.ts" ]]; then
+      [[ -z "${APHRODY_BUN_CHECKOUT:-}" ]] || { echo "APHRODY_BUN_CHECKOUT=$fork is not an aphrody-labs/bun checkout." >&2; exit 64; }
+      exec bun packages/engine/yolo/src/index.ts forge build --branch main "$@"
+    fi
+    fork="$(cd "$fork" && pwd)"
+    bun "$fork/scripts/aphrody/scope.ts" --check
+    if git -C "$fork" rev-parse -q --verify upstream/main >/dev/null 2>&1; then
+      behind="$(git -C "$fork" rev-list --count HEAD..upstream/main)"
+      [[ "$behind" == 0 ]] || echo "fork is $behind commit(s) behind upstream/main: bun scripts/aphrody/sync-upstream.ts in $fork" >&2
+    fi
+    exec bun packages/engine/yolo/src/index.ts forge build --branch main --repository "$fork" "$@"
 
 # Native Workspace owner pins the source revision and serializes heavy provider builds.
 [positional-arguments]

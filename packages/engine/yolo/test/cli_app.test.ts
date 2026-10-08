@@ -70,6 +70,18 @@ describe("Yolo canonical CLI and native capability owners", () => {
     expect(cargo?.members.some((m) => m.startsWith("crates/"))).toBe(true);
   });
 
+  it("searches the Bun docs mirror in docs/reference/upstream-bun", async () => {
+    const proc = Bun.spawn(["bun", cliEntryPath, "docs", "server", "--json"], {
+      cwd: rootDir,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const [stdout, exitCode] = await Promise.all([proc.stdout.text(), proc.exited]);
+    const report = JSON.parse(stdout);
+    expect(report.matches).toContain("runtime/http/server.mdx");
+    expect(exitCode).toBe(0);
+  });
+
   it.skipIf(!haveBunFork)(
     "should autonomously scan upstream Bun and generate capability catalog",
     async () => {

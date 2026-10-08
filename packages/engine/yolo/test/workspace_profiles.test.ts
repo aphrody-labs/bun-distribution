@@ -111,7 +111,9 @@ function packages(args: string[]): string[] {
 profileTest("the Bun recipe dispatches to yolo forge, which owns toolchain and pins", async () => {
   const setup = await fixture();
   const bun = await bunFixture(setup);
-  const result = await runRecipes(setup, ["qualify-bun", "--dry-run"], setup.dir);
+  const result = await runRecipes(setup, ["qualify-bun", "--dry-run"], setup.dir, {
+    APHRODY_BUN_CHECKOUT: "",
+  });
   expect(result.exitCode, result.stderr).toBe(0);
   const probes = (await Bun.file(bun.log).text())
     .trim()
@@ -119,11 +121,54 @@ profileTest("the Bun recipe dispatches to yolo forge, which owns toolchain and p
     .map((line) => JSON.parse(line));
   expect(probes).toEqual([
     {
-      args: ["packages/engine/yolo/src/index.ts", "forge", "build", "--branch", "main", "--dry-run"],
+      args: [
+        "packages/engine/yolo/src/index.ts",
+        "forge",
+        "build",
+        "--branch",
+        "main",
+        "--dry-run",
+      ],
       cwd: setup.dir,
     },
   ]);
   expect(await Bun.file(setup.log).exists()).toBe(false);
+});
+
+profileTest("the Bun recipe qualifies the local fork checkout before forge builds it", async () => {
+  const setup = await fixture();
+  const bun = await bunFixture(setup);
+  const fork = join(setup.dir, "fork");
+  await Bun.write(join(fork, "scripts/aphrody/scope.ts"), "");
+  const result = await runRecipes(setup, ["qualify-bun", "--dry-run"], setup.dir, {
+    APHRODY_BUN_CHECKOUT: fork,
+  });
+  expect(result.exitCode, result.stderr).toBe(0);
+  const probes = (await Bun.file(bun.log).text())
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line));
+  expect(probes).toEqual([
+    { args: [join(fork, "scripts/aphrody/scope.ts"), "--check"], cwd: setup.dir },
+    {
+      args: [
+        "packages/engine/yolo/src/index.ts",
+        "forge",
+        "build",
+        "--branch",
+        "main",
+        "--repository",
+        fork,
+        "--dry-run",
+      ],
+      cwd: setup.dir,
+    },
+  ]);
+
+  const missing = await runRecipes(setup, ["qualify-bun"], setup.dir, {
+    APHRODY_BUN_CHECKOUT: join(setup.dir, "absent"),
+  });
+  expect(missing.exitCode).toBe(64);
 });
 
 profileTest(

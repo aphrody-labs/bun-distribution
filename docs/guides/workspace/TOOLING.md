@@ -79,8 +79,10 @@ Its desktop/browser replacement still requires qualified provider artifacts.
 
 Bun is built in its own repository, the [aphrody-labs/bun fork](../../reference/upstream-bun/APHRODY-FORK.md)
 (`bun bd` for debug, `bun scripts/build.ts --profile=release` or the fork workflow `aphrody-release.yml` for
-releases). Aphrody carries no vendored Bun checkout; the `qualify-bun` recipe of the Yolo workspace profiles
-still expects one and is not a qualification of the fork.
+releases). Aphrody carries no vendored Bun checkout. `just qualify-bun` qualifies the fork: with a local checkout
+(`APHRODY_BUN_CHECKOUT`, default `../bun`) it runs the fork's `scope.ts --check`, reports the lag behind
+`upstream/main` (merged by the fork's `sync-upstream.ts`) and has `yolo forge` build that checkout; without one,
+forge clones the fork from GitHub.
 
 ## Layout
 

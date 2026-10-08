@@ -13,18 +13,19 @@ USAGE:
 
 COMMANDS:
   status [--json|--md] Inspect active package forks & Cargo workspace status
-  scan [dir] [--json|--md] Fast parallel recursive scanner (lines, bytes, wyhash)
+  scan [dir] [--json|--md|--ingest] Fast parallel recursive scanner (lines, bytes, wyhash); --ingest feeds the agent home
+  train <args>     Delegate to 'aphrody train' (datasets, jobs, promotion)
   n2b [dir] [--jobs N] [--fix|--aggressive] [--dry-run] [--json] Native recursive Node-to-Bun migration
   ai list|call <tool> <json> Shared AI capabilities (same schemas and owner as MCP/API)
-  mcp                 Model Context Protocol (MCP 2024-11-05) stdio server for AI agents
+  mcp                 Alias of the single MCP server (aphrody mcp-server); tool list|call hosts the yolo_* tools
   api [--port N]      Serve local HTTP / REST / OpenAPI micro-server (Bun.serve)
   web [build|dev]     Manage and build the zero-overhead Web & Desktop frontend
   generate [--json]   Autonomously scan upstream Bun and generate code & capability catalogs
   parse <file> [--json|--md] Fast AST & token analysis via Bun file streaming + wyhash
-  docs [query] [--json|--md] Search or inspect version-matched Bun documentation in vendor/bun/docs
+  docs [query] [--json|--md] Search or inspect the Bun docs mirror in docs/reference/upstream-bun
   version [--json] | doctor [--json|--md] Installed version, target; check the installation
   runtime install|list|verify|rollback|info  Manage installed runtime artifacts
-  desktop-runtime package|install|verify|rollback|info  Manage native system-WebView artifacts
+  desktop-runtime package|install|verify|rollback|info  Manage native CEF desktop artifacts
   upgrade [--check|--release-dir DIR] Install a verified release; uninstall [--yes] removes ~/.yolo
   create <dir> [--with web,desktop] Scaffold an Aphrody stack project (Bun + runtime SDK + Tauri) from templates/
   awesome [stats|list|search|github|check] Browse oven-sh/awesome-bun (README cached, no clone)
@@ -53,7 +54,7 @@ AGENT-FIRST PROTOCOLS:
 
 ENGINE BASELINE:
   Runtime: Bun 1.4.2 (744846f844)
-  OS:      linux (x64)
+  OS:      win32 (x64)
 ```
 
 ## yolo n2b -h
@@ -80,13 +81,27 @@ Exit codes: 0 success, 1 findings in check mode, 2 errors or invalid arguments.
 
 ```
 === Bun Docs Corpus (via Bun.Glob) ===
-  Docs directory: vendor/bun/docs (7 root items)
+  Docs directory: docs/reference/upstream-bun (9 root items)
+```
+
+## yolo train -h
+
+```
+Usage: yolo train <aphrody train arguments>
+
+Delegates to `aphrody train` (run `aphrody train --help`).
 ```
 
 ## yolo ai -h
 
 ```
 Expected yolo ai list or call <AI tool-name> '<json-object>'
+```
+
+## yolo tool -h
+
+```
+Usage: yolo tool list | call <tool-name> '<json-object>'
 ```
 
 ## yolo api -h
@@ -109,13 +124,13 @@ Options:
 ## yolo desktop-runtime -h
 
 ```
-yolo desktop-runtime package|install|verify|rollback|info [artifact] [--root SOURCE] [--binary EXE] [--output DIR] [--home DIR] [--allow-dirty]
+yolo desktop-runtime package|install|verify|rollback|info [artifact] [--root SOURCE] [--binary EXE] [--cef-dir DIR] [--output DIR] [--home DIR] [--allow-dirty] [--no-strip]
 ```
 
 ## yolo runtime -h
 
 ```
-usage: yolo runtime install <dir> | list | verify | rollback | info
+usage: yolo runtime install <dir> | list | verify | rollback | info [--installed]
 ```
 
 ## yolo create -h
@@ -174,11 +189,17 @@ COMMANDS:
   help                   Display this help message
 ```
 
+## yolo vu -h
+
+```
+vu: runtime not installed (no active artifact under C:\Users\aphro\.vu); set VU_HOME or install the vu artifact
+```
+
 ## yolo python -h
 
 ```
 Unknown python subcommand: -h
-Usage: yolo py [status|test|lint|fmt|build|vu|add|remove|sync|lock|run|pip|python|ffi|hf|compile|check|locks|distributions|providers|typecheck|format:check|plan] [--engine] [--timeout-ms <n>] [--vu <dir>] [--no-vu] [--vu-full] [--json|--md]
+Usage: yolo py [status|eval|exec|test|lint|fmt|build|vu|add|remove|sync|lock|run|pip|python|ffi|hf|compile|check|locks|distributions|providers|typecheck|format:check|plan] [--engine] [--timeout-ms <n>] [--vu <dir>] [--no-vu] [--vu-full] [--json|--md]
 ```
 
 ## yolo hooks -h
@@ -207,6 +228,9 @@ yolo update: one entry point for toolchain pins, dependencies, Cargo lock, user 
   yolo update cargo [--apply]           Cargo.lock refresh within manifest ranges (dry run by default)
   yolo update deps <sub> [...]          dependency pipeline: plan|apply|facts|fix|changelog|memory|inventory|baseline|run
   yolo update systemd [check|install|restart]
+  yolo update systemd jobs --binary-sha256 HEX [--apply]   qualify and activate the declared local MCP and worker units
+  yolo update systemd jobs-clients --host vps|dbfr|wsl --binary-sha256 HEX [--apply]   prepare protected native MCP clients; repeat --host for each selected host
+  yolo update systemd jobs-clients --host vps --host dbfr --host wsl --binary-sha256 HEX --qualify --apply   prove each current worker with a durable read-only native Web job
   yolo update sources [status|sync|verify|drift|forks|repo|bump]   upstream source checkouts, upstream pins, forks, git state
   yolo update rust|bun|uv <status|plan|apply|verify>   per-ecosystem structured bump (docs/operations/infra/update/{RUST,BUN,UV}.md)
   yolo update upstream [list|drift|refresh|fetch|prune|docs]   reference upstreams: catalogue, live drift, disposable fetch
@@ -280,7 +304,8 @@ yolo forge — builds the aphrody-labs/bun fork on a fresh Linux machine.
 Options: --repository <url> --branch <name> --profile <p> --lto on|off --jobs <n>
          --scratch auto|loop|tmpfs|dir --scratch-size <96G> --interval <s> --home <dir> --artifacts <dir>
          --keep (leave the scratch space) --tests (run test/js/first_party with the new binary) --dry-run
-Environment: BUN_FORGE_HOME, BUN_FORGE_ARTIFACTS, BUN_FORGE_REPOSITORY, BUN_FORGE_BRANCH.
+         --yolo-root <monorepo> --yolo-asset <lib> (compile the yolo CLI onto the new engine: one `yolo` file, aliases `bun` and `vu` selected by argv0)
+Environment: BUN_FORGE_HOME, BUN_FORGE_ARTIFACTS, BUN_FORGE_REPOSITORY, BUN_FORGE_BRANCH, BUN_FORGE_YOLO_ROOT, BUN_FORGE_YOLO_ASSET.
 A compiled host (yolo or the standalone executable) embeds Bun; the build's `bun` is that executable (BUN_BE_BUN=1).
 ```
 

@@ -87,6 +87,8 @@ const rootDir = (): string => (cachedRoot ??= yoloHome());
 export const WEB_APP_DIR = "m3/packages/app-ui";
 /** The checkout enclosing the working directory, else the working directory (ai, mcp, api). */
 const workspaceRoot = (): string => findCheckout() ?? process.cwd();
+/** The only copy of the Bun docs in Aphrody, mirrored from the aphrody-labs/bun fork (`bun run docs:bun:update`). */
+const BUN_DOCS_MIRROR = "docs/reference/upstream-bun";
 
 export function printHelp(): void {
   const header = "\x1b[1m\x1b[36mYOLO Industrial Engine CLI\x1b[0m (100% Native Bun Powered)";
@@ -107,7 +109,7 @@ ${header}
   \x1b[32mweb [build|dev]\x1b[0m     Manage and build the zero-overhead Web & Desktop frontend
   \x1b[32mgenerate [--json]\x1b[0m   Autonomously scan upstream Bun and generate code & capability catalogs
   \x1b[32mparse <file> [--json|--md]\x1b[0m Fast AST & token analysis via Bun file streaming + wyhash
-  \x1b[32mdocs [query] [--json|--md]\x1b[0m Search or inspect version-matched Bun documentation in vendor/bun/docs
+  \x1b[32mdocs [query] [--json|--md]\x1b[0m Search or inspect the Bun docs mirror in docs/reference/upstream-bun
   \x1b[32mversion [--json] | doctor [--json|--md]\x1b[0m Installed version, target; check the installation
   \x1b[32mruntime install|list|verify|rollback|info\x1b[0m  Manage installed runtime artifacts
   \x1b[32mdesktop-runtime package|install|verify|rollback|info\x1b[0m  Manage native CEF desktop artifacts
@@ -352,7 +354,7 @@ async function main(): Promise<void> {
     }
 
     case "docs": {
-      const docsDir = resolve(rootDir(), "vendor", "bun/docs");
+      const docsDir = resolve(rootDir(), BUN_DOCS_MIRROR);
       const query = args.find((a) => !a.startsWith("-") && a !== "docs")?.toLowerCase();
       let matches: string[] = [];
       if (existsSync(docsDir)) {
@@ -361,7 +363,8 @@ async function main(): Promise<void> {
           matches = Array.from(glob.scanSync({ cwd: docsDir, onlyFiles: true })).toSorted();
         } else {
           const glob = new Bun.Glob("**/*.{md,mdx}");
-          for (const filePath of glob.scanSync({ cwd: docsDir, onlyFiles: true })) {
+          for (const scanned of glob.scanSync({ cwd: docsDir, onlyFiles: true })) {
+            const filePath = scanned.replaceAll("\\", "/");
             if (filePath.toLowerCase().includes(query)) {
               matches.push(filePath);
             }
@@ -388,7 +391,7 @@ async function main(): Promise<void> {
 
       if (args.includes("--md")) {
         const mdLines = [
-          `# yolo docs: ${query ? `"${query}"` : "vendor/bun/docs"}`,
+          `# yolo docs: ${query ? `"${query}"` : BUN_DOCS_MIRROR}`,
           "",
           `- **Matches:** ${matches.length}`,
           "",
@@ -404,7 +407,7 @@ async function main(): Promise<void> {
         break;
       }
       if (!query) {
-        console.log(`  Docs directory: vendor/bun/docs (${matches.length} root items)`);
+        console.log(`  Docs directory: ${BUN_DOCS_MIRROR} (${matches.length} root items)`);
       } else {
         console.log(`  Found ${matches.length} match(es):`);
         for (const r of matches.slice(0, 10)) {

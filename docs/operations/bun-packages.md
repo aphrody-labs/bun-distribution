@@ -122,7 +122,7 @@ Le tableau ci-dessous est produit depuis les archives auditées et les réponses
 | `@aphrody/update` | `0.1.1` | Publié | [manifest](../../packages/infra/update/package.json) |
 | `@aphrody/web-test` | `0.2.6` | Qualification restante | [manifest](../../packages/web/aphrody-web-test/package.json) |
 | `@aphrody/web-to-tauri` | `1.0.0-canary` | Qualification restante | [manifest](../../m3/packages/web-to-tauri/package.json) |
-| `@aphrody/webview-page` | `0.1.1` | Publié | [manifest](../../packages/web/webview-page/package.json) |
+| `@aphrody/webview-page` | `0.1.1` | Publié ; remplacé par `@aphrody/bun-webview-page` du fork | [manifest](https://github.com/aphrody-labs/bun/blob/main/packages/bun-webview-page/package.json) |
 | `@aphrody/winclean` | `0.1.0` | Qualification restante | [manifest](../../packages/os/winclean/package.json) |
 | `@aphrody/workspace` | `0.1.0` | Qualification restante | [manifest](../../packages/infra/workspace/package.json) |
 | `@aphrody/x` | `1.3.0` | Qualification restante | [manifest](../../packages/web/x/package.json) |

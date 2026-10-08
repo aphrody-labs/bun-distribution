@@ -4,7 +4,7 @@
 
 ## Déplacé vers aphrody-labs/bun
 
-Depuis le 2026-10-08, le plan Next.js sur Bun vit dans le fork Bun : `packages/bun-next/docs/PLAN.md`
+Depuis le 2026-10-08, le plan Next.js sur Bun vit dans le fork Bun : [packages/bun-next/docs/PLAN.md](https://github.com/aphrody-labs/bun/blob/main/packages/bun-next/docs/PLAN.md)
 (paquet `@aphrody/next-bun`, cibles Next 16.1.6 et `vendor/next.js` 16.5.0-canary.4). Il remplace ce plan
 (ancien checkout `../yolo/vendor/next`, file P-NEXT-01..04) : route retenue `Bun.build` comme bundler de Next,
 jalons J0..J6 avec leurs tests, constats Turbopack/`node`.
