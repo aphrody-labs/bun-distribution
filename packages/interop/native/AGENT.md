@@ -1,12 +1,12 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Bun agent client
 
-[`agent.ts`](agent.ts) provides a Bun-native app-server client alongside the
-existing synchronous FFI binding. It starts `aphrody app-server` through
+[`src/agent.ts`](src/agent.ts) (export `@aphrody/bun/agent`) provides a Bun-native app-server client alongside the
+synchronous FFI binding. It starts `aphrody app-server` through
 `Bun.spawn` and exchanges newline-delimited v2 protocol frames.
 
 ```typescript
-import { AgentClient } from "./agent";
+import { AgentClient } from "@aphrody/bun/agent";
 
 const client = new AgentClient({ executable: "aphrody" });
 try {
@@ -43,7 +43,7 @@ This is a Bun port of the transport/router in OpenAI Codex
 [`sdk/python/src/openai_codex`](https://github.com/openai/codex/tree/78245b47af2a7aafcabe025828ceecca69db4df1/sdk/python/src/openai_codex),
 revision `78245b47af2a7aafcabe025828ceecca69db4df1`, licensed Apache-2.0.
 The Python client and its real Rust integration suite live in
-[`py/aphrody`](../../../py/aphrody/docs/agent.md).
+[`py/aphrody`](../../../docs/reference/ai/py/aphrody/docs/agent.md).
 
 - FAIT: handshake, threads, streaming turns, interruption, structured errors,
   timeouts and process shutdown; seven real-child tests, TypeScript and Oxlint
@@ -55,7 +55,7 @@ The Python client and its real Rust integration suite live in
 From the repository root:
 
 ```text
-bun test crates/aphrody-ffi/bun/agent.test.ts
+bun test packages/interop/native/test/agent.test.ts
 ```
 
 The Python integration suite also launches this SDK through Bun against the

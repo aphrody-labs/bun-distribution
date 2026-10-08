@@ -1,7 +1,7 @@
 {
   "name": "@aphrody/bun",
   "version": "3.3.8",
-  "description": "Native Rust FFI wrappers for Bun.",
+  "description": "bun:ffi bindings for the Aphrody native library (aphrody-ffi: M3 tokens, icons, SVG, render, web, X, inference) and the aphrody app-server client. Not the Bun runtime: the aphrody-labs/bun fork binary ships as @aphrody/bun-runtime.",
   "license": "Apache-2.0",
   "author": "aphrody-code",
   "files": [
@@ -27,7 +27,7 @@
     "./n2b": "./src/n2b.ts",
     "./oxc": "./src/oxc.ts",
     "./zerocopy": "./src/zerocopy.ts",
-    "./spawn-sync": "./src/spawn-sync.ts"
+    "./agent": "./src/agent.ts"
   },
   "publishConfig": {
     "access": "public"

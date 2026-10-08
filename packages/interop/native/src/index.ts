@@ -305,4 +305,3 @@ export * from "./render";
 export * from "./svg";
 export * from "./inference";
 export * from "./http";
-export * from "./bun-shell";

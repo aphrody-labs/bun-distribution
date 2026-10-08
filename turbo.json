@@ -9,10 +9,7 @@
         "**/*.js",
         "**/*.js.map",
         "**/*.d.ts",
-        ".tsbuildinfo",
-        "target/release/libbun_rs.so",
-        "target/release/libbun_rs.dylib",
-        "target/release/libbun_rs.dll"
+        ".tsbuildinfo"
       ]
     },
     "typecheck": {

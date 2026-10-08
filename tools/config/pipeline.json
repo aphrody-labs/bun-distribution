@@ -2150,15 +2150,6 @@
           "command": [
             "run",
             "--filter",
-            "@aphrody/bun-forge",
-            "lint"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
             "@aphrody/yolo-cli",
             "typecheck"
           ]

@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 // Resolve the repo root relative to this script
-// (packages/bun/scripts/ -> repo root). material-web was merged in-tree on
+// (packages/interop/native/scripts/ -> repo root). material-web was merged in-tree on
 // 2026-06-01, so both the input JSON and the output Rust file live under packages/.
 const root = join(import.meta.dir, "../../../..");
 const jsonPath = join(root, "m3/packages/m3-codemods/data/material-symbols-names.json");
@@ -23,7 +23,7 @@ pub const MATERIAL_SYMBOLS: &[&str] = &[
 `;
 
 for (const name of symbols) {
-  content += `\t"${name}",\n`;
+  content += `    "${name}",\n`;
 }
 
 content += "];\n";

@@ -93,8 +93,13 @@ lets `cargo test`/`nextest` unit-test the marshaling helpers in-process.
 
 ## Use from Bun
 
+The Bun binding is the `@aphrody/bun` workspace package
+([`packages/interop/native`](../../../packages/interop/native)); its
+`bun:ffi` symbol table is drift-tested against the Rust exports
+(`test/ffi-drift.test.ts`, `test/header-drift.test.ts`).
+
 ```ts
-import { run, runCaptured, version } from "./bun/index.ts";
+import { run, runCaptured, version } from "@aphrody/bun/web";
 
 console.log(version());
 
@@ -106,23 +111,17 @@ console.log(JSON.parse(r.stdout));
 run(["doctor"]);
 ```
 
-The loader resolves the cdylib from `target/{release,debug}/` relative to the
-binding, or from `APHRODY_FFI_LIB` when set. A runnable smoke is in
-`bun/example.ts`:
+The loader resolves the cdylib from `target/{release,debug}/` (with
+`APHRODY_FFI_DEV=1`), or from `APHRODY_FFI_LIB` when set. Smoke run:
 
 ```sh
 cargo build --release -p aphrody-ffi
-bun run crates/interop/ffi/bun/example.ts
+APHRODY_FFI_DEV=1 bun run packages/interop/native/test-ffi.ts
 ```
 
-## Consumed by
-
-The `bun/index.ts` here is the **canonical, drift-tested** binding (the
-`header_abi_version_matches` unit test pins it to the C ABI). Any other Bun or
-C host must mirror it and re-check `aphrody_abi_version()` at load; no sibling
-repository currently ships such a mirror (the former `aphrody-ts` workspace and
-its `@aphrody-code/native` package were not carried into the category
-repositories). This crate stays the engine and the ABI source of truth.
+The app-server client (`AgentClient`) is `@aphrody/bun/agent`
+([`packages/interop/native/AGENT.md`](../../../packages/interop/native/AGENT.md)).
+This crate stays the engine and the ABI source of truth.
 
 ## Ownership rules (read before binding from another language)
 
