@@ -492,7 +492,7 @@ export async function startOmarMonitor(policy: Policy, options: OmarMonitorOptio
         continue;
       }
       job.worker_host = worker.hostId;
-      queue.update(job.id, { worker_host: worker.hostId });
+      queue.update(job.id, { worker_host: worker.hostId, state: "executing" });
       if (worker.routeFailure)
         console.log(
           JSON.stringify({
