@@ -100,8 +100,8 @@ committed is reverted with `git revert` of that commit. After either, run `bun i
 ## Bun fork
 
 `aphrody-labs/bun` (`main` = upstream `oven-sh/bun` plus the Aphrody commits) is the kernel Bun of Aphrody; the
-monorepo keeps no Bun patch queue and no vendored Bun tree (`patches/bun/` and the `vendor/bun` pin were removed on
-2026-10-08, every patch is a commit of the fork). Its own `APHRODY.md` lists what Aphrody consumes.
+monorepo keeps no Bun patch queue and no vendored Bun tree (both removed on 2026-10-08: every former patch is a
+commit of the fork). Its own `APHRODY.md` lists what Aphrody consumes.
 
 - Version pin: `tools/config/update/pins.json` takes `latest` from the fork releases (`aphrody-v<base>-aphrody.<n>`,
   the pin is `<base>`), so the workspace never moves past a Bun version the fork has released.

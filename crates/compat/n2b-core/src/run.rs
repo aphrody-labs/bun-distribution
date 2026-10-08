@@ -348,9 +348,7 @@ fn process_file(abs: &Path, rel: &str, opts: &RunOptions) -> Result<Option<FileF
         return Ok(None);
     }
     let bytes = std::fs::read(abs).context("read source bytes")?;
-    let before = aphrody_bun_bridge::from_utf8_simd(&bytes)
-        .context("source is not valid UTF-8")?
-        .to_string();
+    let before = std::str::from_utf8(&bytes).context("source is not valid UTF-8")?.to_string();
 
     let (findings, after) = if is_pkg {
         scan_package_json(rel, &before)

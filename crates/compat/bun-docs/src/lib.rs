@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Bun documentation as an Aphrody OS subsystem.
 //!
-//! The corpus is the upstream Bun docs tree, supplied with `APHRODY_BUN_DOCS` or an optional
-//! `third_party/bun/docs` checkout. It is indexed once, in memory, the first time a tool runs,
+//! The corpus is the `docs/` tree of the Bun fork aphrody-labs/bun: its checkout
+//! (`APHRODY_BUN_CHECKOUT`, else `C:/bun` on Windows) or the mirror `docs/reference/upstream-bun`
+//! (`bun run docs:bun:update`); `APHRODY_BUN_DOCS` overrides both. It is indexed once, in memory, the first time a tool runs,
 //! so every lookup is offline. The n2b registry
 //! supplies the Node-to-Bun equivalents (`node:*` modules, npm packages, API call patterns).
 //!
 //! Tools: `bun_docs_search`, `bun_docs_read`, `bun_docs_list`, `bun_node_equivalent`.
 //! Skill: `bun_docs_lookup` (search and return the best page in one call).
 //!
-//! The docs root resolves from `APHRODY_BUN_DOCS`, installed data directories, then an
-//! optional corpus in the current checkout or the checkout this crate was built from.
+//! The docs root resolves from `APHRODY_BUN_DOCS`, the fork checkout, installed data directories,
+//! then the mirror in the current checkout or the checkout this crate was built from.
 //! Installed kernels do not require their launch directory to be a source checkout.
 
 use std::{
@@ -26,10 +27,14 @@ use aphrody_subsystem::{
 use async_trait::async_trait;
 use serde_json::{Value, json};
 
-/// Canonical site the vendored docs are published to.
+/// Canonical site the Bun docs are published to.
 pub const DOCS_BASE_URL: &str = "https://bun.com/docs";
 /// Environment variable overriding the docs root.
 pub const ROOT_ENV: &str = "APHRODY_BUN_DOCS";
+/// Environment variable naming the Bun fork checkout (aphrody-labs/bun) whose `docs/` is read.
+pub const CHECKOUT_ENV: &str = "APHRODY_BUN_CHECKOUT";
+/// Mirror of the fork's `docs/` inside the Aphrody monorepo.
+pub const MIRROR: &str = "docs/reference/upstream-bun";
 
 const DEFAULT_LIMIT: usize = 8;
 const MAX_LIMIT: usize = 50;
@@ -335,7 +340,7 @@ fn snippet(body: &str, terms: &[String]) -> String {
     if cut { format!("{text}…") } else { text.to_owned() }
 }
 
-/// Docs root: `APHRODY_BUN_DOCS`, installed data, then optional checkout copies.
+/// Docs root: `APHRODY_BUN_DOCS`, the fork checkout's `docs/`, installed data, then the mirror.
 ///
 /// Install a corpus at `<executable-directory>/bun-docs`,
 /// `<installation-prefix>/share/aphrody/bun/docs`, or
@@ -353,13 +358,25 @@ pub fn resolve_root() -> Option<PathBuf> {
         .map(PathBuf::from)
         .filter(|path| path.is_absolute())
         .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/share")));
-    let installed = installed_roots(executable.as_deref(), data.as_deref());
+    let mut installed: Vec<PathBuf> =
+        fork_docs(std::env::var_os(CHECKOUT_ENV).map(PathBuf::from).as_deref(), cfg!(windows))
+            .into_iter()
+            .collect();
+    installed.extend(installed_roots(executable.as_deref(), data.as_deref()));
     resolve_root_from(
         configured.as_deref(),
         &installed,
         std::env::current_dir().ok().as_deref(),
         Path::new(env!("CARGO_MANIFEST_DIR")),
     )
+}
+
+/// `docs/` of the fork checkout (`APHRODY_BUN_CHECKOUT`, else `C:/bun` on Windows), when it holds a corpus.
+fn fork_docs(checkout: Option<&Path>, windows: bool) -> Option<PathBuf> {
+    let checkout =
+        checkout.map(Path::to_path_buf).or_else(|| windows.then(|| PathBuf::from("C:/bun")))?;
+    let docs = checkout.join("docs");
+    docs.join("docs.json").is_file().then_some(docs)
 }
 
 fn installed_roots(executable: Option<&Path>, data: Option<&Path>) -> Vec<PathBuf> {
@@ -389,12 +406,7 @@ fn resolve_root_from(
         return Some(root.clone());
     }
     cwd.into_iter().chain(std::iter::once(built)).find_map(|start| {
-        start.ancestors().find_map(|dir| {
-            ["third_party/bun/docs", "docs/reference/upstream-bun"]
-                .into_iter()
-                .map(|relative| dir.join(relative))
-                .find(|root| root.is_dir())
-        })
+        start.ancestors().find_map(|dir| Some(dir.join(MIRROR)).filter(|root| root.is_dir()))
     })
 }
 
@@ -553,14 +565,14 @@ impl SystemSubsystem for BunDocsSubsystem {
     }
 
     fn description(&self) -> &str {
-        "Offline Bun documentation (vendored third_party/bun/docs) and n2b Node-to-Bun equivalents."
+        "Offline Bun documentation (docs/ of the aphrody-labs/bun fork) and n2b Node-to-Bun equivalents."
     }
 
     fn tools(&self) -> Vec<ToolDefinition> {
         vec![
             ToolDefinition::new(
                 "bun_docs_search",
-                "Search the vendored Bun docs (runtime, bundler, package manager, test runner, guides). Returns ranked pages with slug, url and a snippet; set include_content to also return the best page.",
+                "Search the Bun docs of the aphrody-labs/bun fork (checkout APHRODY_BUN_CHECKOUT or mirror docs/reference/upstream-bun): runtime, bundler, package manager, test runner, guides. Returns ranked pages with slug, url and a snippet; set include_content to also return the best page.",
                 json!({
                     "type": "object",
                     "properties": {
@@ -575,7 +587,7 @@ impl SystemSubsystem for BunDocsSubsystem {
             .read_only(),
             ToolDefinition::new(
                 "bun_docs_read",
-                "Read one Bun docs page as Markdown by slug (`runtime/file-io`) or bun.com/docs URL, optionally only the section under a heading.",
+                "Read one page of the aphrody-labs/bun fork docs as Markdown by slug (`runtime/file-io`) or bun.com/docs URL, optionally only the section under a heading.",
                 json!({
                     "type": "object",
                     "properties": {
@@ -589,7 +601,7 @@ impl SystemSubsystem for BunDocsSubsystem {
             .read_only(),
             ToolDefinition::new(
                 "bun_docs_list",
-                "List Bun docs pages (slug, title, description, url), optionally under a slug prefix such as `runtime/` or `guides/test/`.",
+                "List the aphrody-labs/bun fork docs pages (slug, title, description, url), optionally under a slug prefix such as `runtime/` or `guides/test/`.",
                 json!({
                     "type": "object",
                     "properties": { "prefix": { "type": "string" } }
@@ -708,9 +720,10 @@ impl SystemSubsystem for BunDocsSubsystem {
     fn skills(&self) -> Vec<SkillManifest> {
         vec![SkillManifest {
             name: "bun_docs_lookup".into(),
-            description: "Answer a Bun question from the vendored docs: ranked pages plus the \
+            description:
+                "Answer a Bun question from the aphrody-labs/bun fork docs: ranked pages plus the \
                           best page's Markdown."
-                .into(),
+                    .into(),
             parameters: vec!["query".into()],
             steps: vec![SkillStep {
                 tool: "bun_docs_search".into(),
@@ -844,6 +857,16 @@ mod tests {
     }
 
     #[test]
+    fn fork_checkout_docs_need_a_corpus() {
+        let temp = tempfile::tempdir().expect("temporary checkout");
+        assert_eq!(fork_docs(Some(temp.path()), false), None);
+        std::fs::create_dir_all(temp.path().join("docs")).expect("docs directory");
+        std::fs::write(temp.path().join("docs/docs.json"), "{}").expect("docs.json");
+        assert_eq!(fork_docs(Some(temp.path()), true), Some(temp.path().join("docs")));
+        assert_eq!(fork_docs(None, false), None);
+    }
+
+    #[test]
     fn explicit_corpus_override_does_not_fall_back_when_invalid() {
         let temp = tempfile::tempdir().expect("temporary corpus");
         let missing = temp.path().join("missing-configured-corpus");
@@ -855,7 +878,7 @@ mod tests {
 
     #[test]
     fn checkout_discovery_handles_old_and_consolidated_crate_layouts() {
-        for relative in ["third_party/bun/docs", "docs/reference/upstream-bun"] {
+        for relative in [MIRROR] {
             let temp = tempfile::tempdir().expect("temporary checkout");
             let root = temp.path().join(relative);
             std::fs::create_dir_all(&root).expect("checkout corpus");
@@ -879,9 +902,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn vendored_corpus_answers_real_queries() {
+    async fn fork_corpus_answers_real_queries() {
         let Some(root) = resolve_root() else {
-            eprintln!("third_party/bun/docs not checked out; skipping");
+            eprintln!("no Bun docs corpus (fork checkout or {MIRROR}); skipping");
             return;
         };
         let docs = BunDocsSubsystem::with_root(root);

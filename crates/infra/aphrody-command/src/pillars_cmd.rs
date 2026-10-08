@@ -149,7 +149,7 @@ pub(crate) use web::{WebAction, handle_web};
 // --- 5. SHELL PILLAR ---
 #[derive(Debug, Subcommand)]
 pub(crate) enum ShellAction {
-    /// Inspect Aphrody Shell capabilities (Bun Shell, Nushell, PTY, TUI)
+    /// Inspect Aphrody Shell capabilities (Nushell, Bun Shell through `bun exec`, PTY, TUI)
     Status {
         /// Emit status as JSON
         #[arg(long)]
@@ -161,20 +161,20 @@ pub(crate) enum ShellAction {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// Evaluate a command or pipeline (Nushell or native Bun Shell)
+    /// Evaluate a command or pipeline (Nushell, or Bun Shell through `bun exec`)
     Eval {
         /// Shell code/pipeline to evaluate
         pipeline: String,
         /// Emit result as JSON
         #[arg(long)]
         json: bool,
-        /// Use native Bun Shell engine (in-process builtins, zero fork/exec)
+        /// Run it with Bun Shell (`bun exec`) instead of Nushell
         #[arg(long)]
         bun: bool,
     },
-    /// Direct in-process Bun Shell execution (zero fork/exec, native POSIX builtins)
+    /// Run a command with Bun Shell (`bun exec`)
     Bun {
-        /// Shell script or command to execute in-process
+        /// Shell script or command to execute
         command: String,
         /// Emit result as JSON
         #[arg(long)]
@@ -206,6 +206,35 @@ pub(crate) enum ShellAction {
     },
 }
 
+/// Runs `script` with Bun Shell (`bun exec`) in `root`; with `json`, prints `{exit_code, stdout, stderr, duration_ms}`.
+fn bun_exec(script: &str, root: &std::path::Path, json: bool) -> miette::Result<()> {
+    let bun = which::which("bun").unwrap_or_else(|_| std::path::PathBuf::from("bun"));
+    let mut cmd = std::process::Command::new(&bun);
+    cmd.arg("exec").arg(script).current_dir(root);
+    if !json {
+        let status =
+            cmd.status().map_err(|e| miette::miette!("Failed to launch bun exec: {}", e))?;
+        if !status.success() {
+            std::process::exit(status.code().unwrap_or(1));
+        }
+        return Ok(());
+    }
+    let started = std::time::Instant::now();
+    let out = cmd.output().map_err(|e| miette::miette!("Failed to launch bun exec: {}", e))?;
+    let exit_code = out.status.code().unwrap_or(1);
+    let report = serde_json::json!({
+        "exit_code": exit_code,
+        "stdout": String::from_utf8_lossy(&out.stdout),
+        "stderr": String::from_utf8_lossy(&out.stderr),
+        "duration_ms": started.elapsed().as_secs_f64() * 1000.0,
+    });
+    println!("{}", serde_json::to_string_pretty(&report).into_diagnostic()?);
+    if exit_code != 0 {
+        std::process::exit(exit_code);
+    }
+    Ok(())
+}
+
 pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
     match action {
         ShellAction::Status { json } => {
@@ -214,45 +243,17 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
                 "terminal_engine": "aphrody-term-1.0.0",
                 "backend": "aphrody-terminal-backend",
                 "tui": "ratatui-0.30",
-                "engine": "bun-shell-native",
-                "fallback_engine": "nushell-0.116.0",
-                "builtins": [
-                    "echo", "cat", "ls", "cd", "pwd", "mkdir", "rm",
-                    "touch", "which", "true", "false", "seq", "basename", "dirname"
-                ],
-                "features": [
-                    "in-process-pipeline",
-                    "braces-expansion",
-                    "zero-alloc-ast-arena",
-                    "jsc-structured-queries-22x",
-                    "simd-utf8-validation",
-                    "packed-16b-cell",
-                    "fair-mutex-bounded-leases",
-                    "memchr-ascii-fastpath",
-                    "webgpu-instanced-quads",
-                    "computer-use-zero-latency"
-                ],
+                "engine": "nushell",
+                "bun_shell": "bun exec (aphrody-labs/bun)",
                 "status": "ready"
             });
             if json {
                 println!("{}", serde_json::to_string_pretty(&status).into_diagnostic()?);
             } else {
                 println!("=== Aphrody Shell & Terminal Environment ===");
-                println!(
-                    "  * Terminal:      aphrody-term (16B PackedCell, FairMutex 256KB, WebGPU Quads)"
-                );
-                println!(
-                    "  * AI Agent:      Computer-Use Controller (>10 GB/s synchronous scraping)"
-                );
-                println!("  * Native Engine: Bun Shell (In-Process, Zero-Alloc Arena AST)");
-                println!(
-                    "  * Builtins:      echo, cat, ls, cd, pwd, mkdir, rm, touch, which, seq, basename, dirname"
-                );
-                println!("  * Expansion:     Braces {{a,b}}{{1,2}}, numeric ranges {{1..5}}");
-                println!(
-                    "  * Structured:    JSC Engine (22x faster than Nushell on structured data)"
-                );
-                println!("  * Fallback:      Nushell 0.116.0");
+                println!("  * Terminal:      aphrody-term");
+                println!("  * Shell:         Nushell (eval, start)");
+                println!("  * Bun Shell:     bun exec (shell bun, shell eval --bun)");
                 println!("  * TUI:           Ratatui 0.30");
                 println!("  * PTY Bridge:    aphrody-terminal-backend (WebSocket/Local)");
             }
@@ -294,22 +295,7 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
                 });
 
             if bun {
-                let out = aphrody_bun_bridge::run_shell(&pipeline, Some(&root))
-                    .map_err(|e| miette::miette!("Bun Shell evaluation error: {}", e))?;
-                if json {
-                    println!("{}", serde_json::to_string_pretty(&out).into_diagnostic()?);
-                } else {
-                    if !out.stdout.is_empty() {
-                        print!("{}", out.stdout);
-                    }
-                    if !out.stderr.is_empty() {
-                        eprint!("{}", out.stderr);
-                    }
-                }
-                if out.exit_code != 0 {
-                    std::process::exit(out.exit_code);
-                }
-                return Ok(());
+                return bun_exec(&pipeline, &root, json);
             }
 
             let nu_path = which::which("nu").unwrap_or_else(|_| std::path::PathBuf::from("nu"));
@@ -337,21 +323,7 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
                     }
                 });
 
-            let out = aphrody_bun_bridge::run_shell(&command, Some(&root))
-                .map_err(|e| miette::miette!("Bun Shell evaluation error: {}", e))?;
-            if json {
-                println!("{}", serde_json::to_string_pretty(&out).into_diagnostic()?);
-            } else {
-                if !out.stdout.is_empty() {
-                    print!("{}", out.stdout);
-                }
-                if !out.stderr.is_empty() {
-                    eprint!("{}", out.stderr);
-                }
-            }
-            if out.exit_code != 0 {
-                std::process::exit(out.exit_code);
-            }
+            bun_exec(&command, &root, json)?;
         },
         ShellAction::Term { args } => {
             let cols = 80;

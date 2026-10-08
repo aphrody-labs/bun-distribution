@@ -10,7 +10,6 @@ description = "Native Aphrody Discord engine: Ed25519 webhook verification, REST
 
 [dependencies]
 anyhow = { workspace = true }
-aphrody-bun-bridge = { workspace = true }
 aphrody-web-extract = { workspace = true, optional = true }
 chrono = { workspace = true }
 clap = { workspace = true, features = ["derive"], optional = true }

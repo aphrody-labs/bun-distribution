@@ -863,21 +863,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-bun-bridge"
-version = "1.0.0"
-dependencies = [
- "anyhow",
- "memchr",
- "regex",
- "serde",
- "serde_json",
- "simdutf",
- "tempfile",
- "thiserror 2.0.21",
- "which 8.0.6",
-]
-
-[[package]]
 name = "aphrody-bun-docs"
 version = "1.0.0-canary"
 dependencies = [
@@ -933,7 +918,6 @@ dependencies = [
  "aphrody-app-server",
  "aphrody-backend",
  "aphrody-bindgen",
- "aphrody-bun-bridge",
  "aphrody-code-graph",
  "aphrody-command-pure",
  "aphrody-config",
@@ -1143,7 +1127,6 @@ name = "aphrody-discord"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "aphrody-bun-bridge",
  "aphrody-web-extract",
  "chrono",
  "clap",
@@ -1277,7 +1260,6 @@ dependencies = [
  "aphrody-agent-home",
  "aphrody-backend",
  "aphrody-bun",
- "aphrody-bun-bridge",
  "aphrody-command",
  "aphrody-gemini-web",
  "aphrody-llama-server",
@@ -1972,7 +1954,6 @@ name = "aphrody-n2b-core"
 version = "0.6.2"
 dependencies = [
  "anyhow",
- "aphrody-bun-bridge",
  "aphrody-n2b-registry",
  "aphrody-n2b-types",
  "colored 3.1.1",
