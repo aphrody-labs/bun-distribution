@@ -221,7 +221,7 @@
       "dependencies": {
         "@aphrody/api": "workspace:*",
         "@aphrody/assets": "workspace:*",
-        "@aphrody/bun-webview-page": "0.1.1-aphrody.1",
+        "@aphrody/bun-webview-page": "0.1.1-aphrody.2",
         "@aphrody/canvas": "workspace:*",
         "@aphrody/drive-client": "workspace:*",
         "@aphrody/eslint-plugin-m3": "workspace:*",
@@ -586,7 +586,7 @@
         "@aphrody/next-bun": "file:../../../../bun/packages/bun-next",
       },
       "devDependencies": {
-        "@aphrody/bun-webview-page": "0.1.1-aphrody.1",
+        "@aphrody/bun-webview-page": "0.1.1-aphrody.2",
         "@aphrody/m3-config": "workspace:*",
         "@types/react": "catalog:",
         "@types/react-dom": "catalog:",
@@ -1270,7 +1270,7 @@
 
     "@aphrody/bun": ["@aphrody/bun@workspace:packages/interop/native"],
 
-    "@aphrody/bun-webview-page": ["@aphrody/bun-webview-page@0.1.1-aphrody.1", "", {}, "sha512-fmRvTL271bJxSNQ2UwuoHgwnM1bYnBOD1HBJNuKsGBRce1Xu/Ku0iVuK0KQwtRzZf9vNAmTw8N52ctTi1GKGvA=="],
+    "@aphrody/bun-webview-page": ["@aphrody/bun-webview-page@0.1.1-aphrody.2", "", {}, "sha512-LIiyIcAJeeDR7LUnR9btkNwWrPTCpKrkdKTJmf22dn0rCdfpKVKe7JGekeO7+iozH7tyy/8LXKEEFoWXx6utuQ=="],
 
     "@aphrody/canvas": ["@aphrody/canvas@workspace:m3/packages/canvas"],
 
