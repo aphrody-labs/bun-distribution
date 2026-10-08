@@ -47,7 +47,7 @@ export function spawnSync(
     const r = run(cmd, args, o);
     return {
       status: r.exitCode ?? null,
-      signal: r.signalCode ?? null,
+      signal: r.signalCode == null ? null : String(r.signalCode),
       stdout: text(r.stdout),
       stderr: text(r.stderr),
     };

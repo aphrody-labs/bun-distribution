@@ -10,8 +10,6 @@
           "re": "\"bun\": \\{\\s*\"version\": \"(\\d+\\.\\d+\\.\\d+)\""
         },
         { "file": "package.json", "re": "\"packageManager\": \"bun@(\\d+\\.\\d+\\.\\d+)\"" },
-        { "file": "package.json", "re": "\"@types/bun\": \"(\\d+\\.\\d+\\.\\d+)\"" },
-        { "file": "package.json", "re": "\"bun-types\": \"\\^(\\d+\\.\\d+\\.\\d+)\"" },
         {
           "glob": "{package.json,config/*/package.json,apps/**/package.json,packages/**/package.json,crates/**/package.json}",
           "re": "\"bun\": \">=(\\d+\\.\\d+\\.\\d+)\""
