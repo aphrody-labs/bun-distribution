@@ -95,7 +95,7 @@ else
 fi
 command -v rustup >/dev/null 2>&1 || curl -fsSL https://sh.rustup.rs | sh -s -- -y --no-modify-path --default-toolchain none >/dev/null 2>&1
 rustup toolchain install {rust} --profile minimal -c rustfmt -c clippy >/dev/null 2>&1 && rustup default {rust} >/dev/null 2>&1
-[ "$(bun --version 2>/dev/null)" = "{bun}" ] || curl -fsSL https://bun.sh/install | bash -s "bun-v{bun}" >/dev/null 2>&1
+[ "$(bun --version 2>/dev/null)" = "{bun}" ] || curl -fsSL https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.sh | bash -s "{bun}" >/dev/null 2>&1
 uv --version 2>/dev/null | grep -q " {uv} " || curl -LsSf https://astral.sh/uv/{uv}/install.sh | env UV_INSTALL_DIR="$HOME/.local/bin" INSTALLER_NO_MODIFY_PATH=1 sh >/dev/null 2>&1
 command -v nu >/dev/null 2>&1 || {{ command -v cargo-binstall >/dev/null 2>&1 || cargo install --locked cargo-binstall >/dev/null 2>&1; cargo binstall -y --locked nu >/dev/null 2>&1; }}
 if [ -n "{cargo_tools}" ]; then
@@ -193,7 +193,7 @@ mod tests {
     #[test]
     fn apply_installs_pinned_versions() {
         let s = script(&pins(), true).unwrap();
-        assert!(s.contains("bun-v1.4.2"));
+        assert!(s.contains("aphrody/install.sh | bash -s \"1.4.2\""));
         assert!(s.contains("astral.sh/uv/0.12.17/install.sh"));
         assert!(s.contains("rustup toolchain install nightly-2026-05-17"));
         assert!(s.contains("for p in git rsync"));

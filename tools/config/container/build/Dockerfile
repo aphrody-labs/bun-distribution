@@ -72,9 +72,11 @@ RUN curl -fsSL "https://github.com/cargo-bins/cargo-binstall/releases/download/v
  && rm -rf /tmp/cargo-binstall /tmp/cargo-binstall.tgz /opt/rust/cargo/registry /opt/rust/cargo/.crates* \
  && sccache --version && cargo-xwin --version && wasm-bindgen --version
 
-RUN curl -fsSL https://bun.sh/install | env BUN_INSTALL=/opt/bun bash -s "bun-v${BUN_VERSION}" \
+# Bun: the aphrody-labs/bun fork, newest aphrody.N release of the pinned base version.
+RUN curl -fsSL https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.sh \
+      | env BUN_INSTALL=/opt/bun bash -s "${BUN_VERSION}" \
  && ln -sf /opt/bun/bin/bun /usr/local/bin/bun && ln -sf /opt/bun/bin/bun /usr/local/bin/bunx \
- && test "$(bun --version)" = "${BUN_VERSION}" \
+ && case "$(bun --version)" in "${BUN_VERSION}"*) ;; *) echo "bun $(bun --version) is not ${BUN_VERSION}" >&2; exit 1 ;; esac \
  && curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" | env UV_INSTALL_DIR=/usr/local/bin INSTALLER_NO_MODIFY_PATH=1 sh \
  && uv --version
 
