@@ -93,3 +93,16 @@ objectifs ont un thread exécuteur. Le worker actif traite un objectif, les deux
 autres attendent leur tour. Les objectifs `blocked` restent ouverts; la tâche
 reste en cours jusqu’à ce que les 15 pings aient un worker et que les
 dépendances réelles soient qualifiées.
+
+## Vérification de la file — 2026-10-08 22:35:34 UTC
+
+Le service est toujours `active/running`, PID `2138001`, `NRestarts=0`,
+`ExecMainStatus=0`; le contrôle `--ready-check --expect-pid 2138001` répond
+`ready=true`. Les SHA-256 relus sont toujours bundle
+`63ab825e57de336d716828f7ab78aeda7935ba6ccbe84995567bdcfb6436e05b` et
+politique `d737f235fc81d0f757d1a371e24ea05921f42b1680c13a10a1c08547247eae81`.
+Le reçu confirme Gateway connecté, historique complet, 15 salons et curseur
+`1557863988740493344`. Les 15 jobs ont chacun un thread moniteur et un thread
+exécuteur : 4 `achieved`, 10 `blocked`, 1 `executing`, aucun worker en attente.
+Les blocages restent ouverts; cette preuve porte sur le lancement des agents,
+pas sur l’achèvement de chaque demande.

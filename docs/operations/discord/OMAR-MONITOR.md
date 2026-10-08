@@ -228,11 +228,11 @@ qualifier toutes les dépendances avant de conclure les objectifs.
 
 Le 2026-10-08 à 22:24 UTC, le workflow Infra a activé le bundle
 `63ab825e57de336d716828f7ab78aeda7935ba6ccbe84995567bdcfb6436e05b` avec le
-repli par thread VPS et la reprise des pings sans worker. À 22:30 UTC, le PID
+repli par thread VPS et la reprise des pings sans worker. À 22:35:34 UTC, le PID
 `2138001` est actif sans redémarrage; Gateway connecté, 15 salons et 15 threads
-moniteur. La file compte 3 `achieved`, 9 `blocked`, 1 `executing` et 2
-`pending`; 13 pings ont déjà un thread exécuteur, les deux derniers attendent
-leur tour. Cette observation ne ferme pas les objectifs bloqués ou en attente.
+moniteur. La file compte 4 `achieved`, 10 `blocked`, 1 `executing` et aucun
+`pending`; les 15 pings ont un thread exécuteur. Les objectifs bloqués restent
+ouverts et l’objectif en cours n’est pas déclaré terminé.
 
 Qualification du correctif : 33 tests produit/routage/outbox/livraison réussis,
 TypeScript des deux propriétaires, oxlint strict, oxfmt et liens documentaires

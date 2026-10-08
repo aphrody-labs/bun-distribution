@@ -229,6 +229,13 @@ results apply to their named revisions and dates, not current host health.
   two were queued; service remained active and Gateway connected. Evidence:
   [`omar-monitor-2026-10-08.md`](../../tools/config/host/inventory/omar-monitor-2026-10-08.md).
 
+- **2026-10-08 22:35 UTC:** rechecked after replay. All 15 queued mentions now
+  have a monitor thread and a worker thread; 4 are achieved, 10 remain blocked
+  and open, and 1 is executing. There are no unspawned pings. The Gateway and
+  systemd service remain active at the verified bundle hash. This closes worker
+  launch coverage, not the underlying blocked requests. See the dated inventory
+  record above.
+
 - **2026-10-08:** deployed the all-guild Discord monitor on VPS through the Infra
   workspace workflow. Candidate probe, 15-channel Gateway discovery, 15/15
   SQLite history markers, Yolo pin/checksum, queue safety, systemd verification
