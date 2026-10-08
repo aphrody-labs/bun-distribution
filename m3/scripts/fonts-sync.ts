@@ -121,7 +121,8 @@ function materialSymbols(lock: LockFile): Promise<string> {
     const dir = mkdtempSync(join(tmpdir(), "m3-fonts-sync-"));
     const tgz = join(dir, "package.tgz");
     writeFileSync(tgz, bytes);
-    const tar = Bun.spawnSync(["tar", "-xzf", tgz, "-C", dir], { stdout: "pipe", stderr: "pipe" });
+    // Relative paths: GNU tar (Git for Windows) reads `C:\…` as a remote host.
+    const tar = Bun.spawnSync(["tar", "-xzf", "package.tgz"], { cwd: dir, stdout: "pipe", stderr: "pipe" });
     if (tar.exitCode !== 0) throw new Error(`tar: ${tar.stderr.toString().trim()}`);
     process.on("exit", () => rmSync(dir, { recursive: true, force: true }));
     return dir;
