@@ -104,7 +104,7 @@ export function discordDeployment(
 }
 
 function discordRuntime(deployment: DiscordDeployment): string {
-  return `sudo -n -u ${quote(deployment.stateOwner)} -H env BUN_BE_BUN=1 ${quote(deployment.runtime)}`;
+  return `cd /tmp && sudo -n -u ${quote(deployment.stateOwner)} -H env BUN_BE_BUN=1 ${quote(deployment.runtime)}`;
 }
 
 export interface DiscordDeploymentTransport {
