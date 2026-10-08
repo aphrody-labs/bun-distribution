@@ -44,6 +44,12 @@
       "upstream": "Google Antigravity SDK for Python (packages/google/antigravity-sdk-python)",
       "include": ["docs/*/ai/py/antigravity-sdk-python/**"],
       "except": []
+    },
+    {
+      "id": "docs-archive",
+      "upstream": "Historical archived documentation and superseded memos (docs/archive/**)",
+      "include": ["docs/archive/**"],
+      "except": []
     }
   ]
 }

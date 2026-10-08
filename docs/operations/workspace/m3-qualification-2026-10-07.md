@@ -2,7 +2,7 @@
 
 # Qualification M3 après déplacement — 7 octobre 2026
 
-Ce reçu couvre le checkout partagé après déplacement vers `packages/ui/`.
+Ce reçu couvre le checkout partagé après déplacement vers `packages/ui/` (not in repo).
 Les fichiers sources de la migration restent sous le claim `m3-root-absorption`.
 Il complète le [reçu Infra/Git](config-consumers-2026-10-07.md) ; aucune
 installation ni publication de runtime n'est qualifiée par ces contrôles.
@@ -45,7 +45,7 @@ L'audit d'assets relève deux chemins morts dans le showcase :
 
 - « packages/ui/app-ui/showcase/scripts/browser-contract.ts » : chemin relatif
   erroné du répertoire de résultats « .coord/runs/m3-prod/ ».
-- `packages/ui/app-ui/showcase/src/styles.css` : chemin relatif de
+- `packages/ui/app-ui/showcase/src/styles.css` (not in repo) : chemin relatif de
   `GoogleSansFlex-latin.woff2`.
 
 Le README du showcase a été corrigé pour pointer vers `crates/ui/app/Cargo.toml`.
@@ -54,7 +54,7 @@ Les chemins sources concurrents n'ont pas été modifiés pour rendre les gates 
 
 Les références entre guillemets décrivent les chemins observés lors de ces essais,
 y compris les cibles absentes. Elles ne constituent pas des liens documentaires.
-Les chemins canoniques actuels de l'interface sont sous `packages/ui/`.
+Les chemins canoniques de l'interface sont sous `m3/packages/app-ui` (ancien essai sous `packages/ui/` (not in repo)).
 
 ## Reprise et preuves
 

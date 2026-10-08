@@ -156,7 +156,11 @@ pub(crate) enum ShellAction {
         json: bool,
     },
     /// Start interactive Nushell / Ratatui terminal session
-    Start,
+    Start {
+        /// Arguments passed to the shell engine
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
 }
 
 pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
@@ -166,20 +170,42 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
                 "layer": "shell",
                 "backend": "aphrody-terminal-backend",
                 "tui": "ratatui-0.30",
-                "engine": "nushell-0.115.1",
+                "engine": "nushell-0.116.0",
                 "status": "ready"
             });
             if json {
                 println!("{}", serde_json::to_string_pretty(&status).into_diagnostic()?);
             } else {
                 println!("=== Aphrody Shell Environment ===");
-                println!("  * Engine:     Nushell 0.115.1");
+                println!("  * Engine:     Nushell 0.116.0");
                 println!("  * TUI:        Ratatui 0.30");
                 println!("  * PTY Bridge: aphrody-terminal-backend (WebSocket/Local)");
             }
         },
-        ShellAction::Start => {
-            println!("Starting Aphrody Shell session...");
+        ShellAction::Start { args } => {
+            let nu_path = which::which("nu").unwrap_or_else(|_| std::path::PathBuf::from("nu"));
+            let mut cmd = std::process::Command::new(&nu_path);
+            let root = std::env::var("APHRODY_ROOT")
+                .map(std::path::PathBuf::from)
+                .unwrap_or_else(|_| {
+                    if std::path::Path::new("C:\\aphrody").exists() {
+                        std::path::PathBuf::from("C:\\aphrody")
+                    } else {
+                        std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
+                    }
+                });
+            cmd.current_dir(&root);
+            if !args.is_empty() {
+                cmd.args(&args);
+            }
+            cmd.stdin(std::process::Stdio::inherit())
+                .stdout(std::process::Stdio::inherit())
+                .stderr(std::process::Stdio::inherit());
+            let mut child = cmd.spawn().map_err(|e| miette::miette!("Failed to launch Aphrody shell: {}", e))?;
+            let status = child.wait().map_err(|e| miette::miette!("Shell session error: {}", e))?;
+            if !status.success() {
+                std::process::exit(status.code().unwrap_or(1));
+            }
         },
     }
     Ok(())

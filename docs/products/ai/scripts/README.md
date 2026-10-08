@@ -70,7 +70,7 @@ Host deployment belongs to `crates/infra` and `packages/infra/workspace`.
 | `sync-agent-plugins.ts` | Sync plugin definitions and tool manifests across agent runtimes. |
 | `build-grok-cookie-jar.py` | Convert exported session cookies to `~/.aphrody/cookies/grok.json`. |
 | `test-xai-grok-bxc.sh` | Validation suite for xAI Grok and BXC web extraction. |
-| *(host infra / VPS)* | VPS scrapers and network proxies live in `scripts/aphrody/`; systemd templates live in the root `systemd/` tree. |
+| *(host infra / VPS)* | VPS scrapers and network proxies live in `scripts/tools/infra/`; systemd templates live in the root `tools/config/host/systemd/` tree. |
 
 The canonical ecosystem discovery is generated in [`docs/ecosystem/`](../../../ecosystem/)
 from the active roots; check it with `bun scripts/tools/workspace/ecosystem.ts --check` and

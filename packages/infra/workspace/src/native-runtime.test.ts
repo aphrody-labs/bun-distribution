@@ -51,7 +51,10 @@ async function fixture() {
   return { root, runtimeHome: join(root, "installed/runtime"), yolo, configuration };
 }
 async function updateConfiguration(f: Awaited<ReturnType<typeof fixture>>) {
-  await writeFile(join(f.root, "tools/config/native-runtime.json"), JSON.stringify(f.configuration));
+  await writeFile(
+    join(f.root, "tools/config/native-runtime.json"),
+    JSON.stringify(f.configuration),
+  );
 }
 assetTest("native install, upgrade and rollback load the exact real artifacts", async () => {
   const f = await fixture();

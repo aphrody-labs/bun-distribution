@@ -245,7 +245,7 @@ enum Commands {
     #[cfg(not(target_arch = "wasm32"))]
     Shell {
         #[command(subcommand)]
-        action: pillars_cmd::ShellAction,
+        action: Option<pillars_cmd::ShellAction>,
     },
     /// Machine learning training and fine-tuning engine.
     #[cfg(all(not(target_arch = "wasm32"), feature = "train"))]
@@ -1016,6 +1016,7 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
         },
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Shell { action }) => {
+            let action = action.unwrap_or(pillars_cmd::ShellAction::Start { args: Vec::new() });
             pillars_cmd::handle_shell(action)?;
         },
         #[cfg(feature = "train")]

@@ -7,7 +7,7 @@
 > **Fork Branch**: `main` (single and default branch: upstream `main` plus the Aphrody patches)
 > **Sync & Drift Engine**: [`scripts/tools/vendor/bun_upstream_sync.ts`](../scripts/tools/vendor/bun_upstream_sync.ts)
 > **PR & Issue Tracker Engine**: [`scripts/tools/vendor/bun_upstream_tracker.ts`](../scripts/tools/vendor/bun_upstream_tracker.ts)
-> **Tracker Live Dashboard**: [BUN_UPSTREAM_TRACKER.md](BUN_UPSTREAM_TRACKER.md)
+> **Tracker Live Dashboard**: [BUN_UPSTREAM_TRACKER.md](archive/snapshots/BUN_UPSTREAM_TRACKER.md)
 
 ---
 
@@ -171,9 +171,9 @@ The Aphrody fork preserves 9 modular, self-contained patches applied directly on
 
 | Patch File | Scope | Intent & Architectural Role |
 | :--- | :--- | :--- |
-| `0001-feat-types-add-Tauri-aware-bun-types-declarations.patch` | Types | Adds `packages/bun-types/tauri.d.ts` for first-party Tauri IPC and desktop window API typing in Bun scripts. |
+| `0001-feat-types-add-Tauri-aware-bun-types-declarations.patch` | Types | Adds `packages/bun-types/tauri.d.ts` (not in repo) for first-party Tauri IPC and desktop window API typing in Bun scripts. |
 | `0002-chore-rename-publishable-npm-packages-to-the-aphrody.patch` | Packaging | Re-scopes publishable workspace packages to `@aphrody/*` (e.g. `@aphrody/bun-types`). |
-| `0003-Propagate-Rust-native-dependencies-to-the-Linux-Bun-.patch` | Toolchain | Injects `scripts/build/rust/native-link.ts` to propagate Rust cdylib dependencies directly into the Ninja Linux link phase. |
+| `0003-Propagate-Rust-native-dependencies-to-the-Linux-Bun-.patch` | Toolchain | Injects `scripts/build/rust/native-link.ts` (not in repo) to propagate Rust cdylib dependencies directly into the Ninja Linux link phase. |
 | `0004-Resolve-picocolors-tiny-invariant-dotenv-and-uuid-to.patch` | In-tree Runtime | Inlines `picocolors`, `tiny-invariant`, `dotenv`, and `uuid` (v1/v3-v7) into `src/js/thirdparty` as zero-dependency built-in modules. |
 | `0005-Sync-bun.lock-with-the-aphrody-bun-types-workspace-r.patch` | Packaging | Locks dependency graph for the `@aphrody/bun-types` rename with `--frozen-lockfile` compliance. |
 | `0006-chore-claude-cloud-sessions-run-unrestricted-drop-th.patch` | Cloud Env | Removes the restrictive pre-bash-guard hook to permit unrestricted agent execution in cloud sandboxes. |

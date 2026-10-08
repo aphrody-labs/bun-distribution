@@ -304,6 +304,11 @@
             "2026-10-08",
             "11 non-OS Rust consumers of tools/config fully verified and passing under --locked (aphrody-command, aphrody, aphrody-infra, aphrody-ssh, aphrody-git, aphrody-ovh, aphrody-vpn, aphrody-yolo, aphrody-sql, aphrody-mcp, aphrody-models). config/ fully absorbed into tools/config/ (protected-backups moved, vault.ts and .dockerignore updated, root config/ removed). Leftover partial packages/ui manifests untracked; canonical UI maintained in m3/packages/app-ui according to AGENTS.md. Bun workspace contract passes 94 first-party manifests with 0 violations.",
             "Linux factory/WSL and Windows MSVC checks pass. Full M3 relocation remains staged under its documented criteria."
+          ],
+          [
+            "2026-10-08",
+            "Aggressive script and documentation consolidation: non-canonical script directories (scripts/aphrody, scripts/aphrody-os, scripts/assets, scripts/bench, scripts/iecode, scripts/ops) reorganized into canonical scripts/{audit,build,dev,migration,release,tools}; replaced copied Base UI release document in scripts/README.md with authentic Aphrody tooling guide. Historical research and superseded memos archived into docs/archive/ (memos, research, snapshots); declared docs/archive/** under imported upstream and historical trees. Restored zero-dependency aphrody-softraster crate (crates/ui/softraster) restoring full cargo metadata compatibility across repos (C:\\iecode, aphrody-nie-inventory). Full documentation gates verified: docs:check-links passes with 0 broken links and 0 dead code paths; docs:check passes with 0 failures.",
+            "All-tree docs verification and local link integrity confirmed across 3002 inventoried documents. Cargo check -p aphrody-command -p aphrody-terminal-backend --locked, bun:check, format:check, and lint pass with 0 errors."
           ]
         ]
       },

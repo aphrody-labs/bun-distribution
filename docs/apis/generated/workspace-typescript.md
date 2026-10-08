@@ -28,7 +28,7 @@ export function createInfraClient(baseUrl = "http://127.0.0.1:8787"): InfraApiCl
 
 ## Source: packages/infra/workspace/src/index.ts
 
-SHA-256: `28acfb76e6c2a8f2a443e1c52f70ae8ef39404302079a1fe16e19789a60c15fd`
+SHA-256: `0e36d38d0e71082e80d10125545b88e2e72063b9d9ae402fa5fba5935f346120`
 
 ### Source line 1
 

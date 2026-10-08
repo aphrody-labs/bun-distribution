@@ -48,7 +48,7 @@ annulé avant tout Cargo ; la reprise utilisait la configuration Git
 `pack.threads=1`, `pack.windowMemory=64m`, `pack.packSizeLimit=256m`.
 
 Les six erreurs proviennent du nouveau module
-`crates/ui/render/src/layout/components.rs` :
+`crates/ui/render/src/layout/components.rs` (not in repo) :
 
 - `Dimension` n'implémente pas les traits requis par `min_content()` et
   `max_content()` ;

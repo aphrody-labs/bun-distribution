@@ -398,7 +398,7 @@ See `aphrody ovh profiles` and the Aphrody Infra README for credential setup.
 
 ## References
 
-- [Aphrody Infra README](/home/aphro/aphrody/docs/products/infra/README.md)
+- [Aphrody Infra README](../../products/infra/README.md)
 - [OVH API Console](https://eu.api.ovh.com/console)
 - [OVH VPS Public API Docs](https://api.ovh.com/console/#/vps)
 - Public schemas: [services.json](https://eu.api.ovh.com/1.0/services.json),

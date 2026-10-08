@@ -6,7 +6,7 @@ Facts read from `cargo metadata --no-deps`, the root `package.json` Bun workspac
 Crates are Rust workspace members outside `apps/`; packages are Bun workspaces outside `apps/`;
 apps are Rust or Bun members under `apps/`. `todo!` counts `todo!(` and `unimplemented!(` in `.rs` files.
 
-Totals: **204 crates**, **95 packages**, **0 apps** (204 Rust, 95 Bun).
+Totals: **206 crates**, **95 packages**, **0 apps** (206 Rust, 95 Bun).
 
 ## Per domain
 
@@ -26,7 +26,7 @@ Totals: **204 crates**, **95 packages**, **0 apps** (204 Rust, 95 Bun).
 | [packages](#packages) | 0 | 34 | 0 | 0 |
 | [shell](#shell) | 8 | 1 | 0 | 0 |
 | [tauri](#tauri) | 50 | 28 | 0 | 34 |
-| [ui](#ui) | 13 | 0 | 0 | 0 |
+| [ui](#ui) | 15 | 0 | 0 | 0 |
 | [web](#web) | 17 | 8 | 0 | 0 |
 
 ## Workspace exclusions
@@ -69,7 +69,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 - `crates/tauri/aphrody-tauri-cli/src/migrate/migrations/v2/fixtures/no-wry`
 - `crates/tauri/aphrody-tauri-plugin-sql`
 - `crates/tauri/aphrody-tauri/test/cef-rollback`
-- `crates/vendor/taffy`
+- `examples/runtime-rust-extension`
 - `m3/templates/desktop/src-tauri`
 - `tools/config/container/aphrody-os/vm/aphrody-init`
 
@@ -105,7 +105,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-ocr-onnx` | [crates/ai/ocr-onnx](../../../crates/ai/ocr-onnx) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-05 |
 | `aphrody-ocr-vlm` | [crates/ai/ocr-vlm](../../../crates/ai/ocr-vlm) | rust crate | 1.0.0 | rlib | yes | 0 | 2026-10-05 |
 | `aphrody-patch` | [crates/ai/patch](../../../crates/ai/patch) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-05 |
-| `aphrody-prompts` | [crates/ai/prompts](../../../crates/ai/prompts) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-05 |
+| `aphrody-prompts` | [crates/ai/prompts](../../../crates/ai/prompts) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-07 |
 | `aphrody-providers` | [crates/ai/providers](../../../crates/ai/providers) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-05 |
 | `aphrody-rag` | [crates/ai/rag](../../../crates/ai/rag) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-07 |
 | `aphrody-rag-core` | [crates/ai/rag-core](../../../crates/ai/rag-core) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-07 |
@@ -177,7 +177,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `aphrody-antigravity` | [crates/google/antigravity](../../../crates/google/antigravity) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-05 |
+| `aphrody-antigravity` | [crates/google/antigravity](../../../crates/google/antigravity) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-08 |
 | `aphrody-boq` | [crates/google/boq](../../../crates/google/boq) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-05 |
 | `aphrody-gemini-runtime` | [crates/google/gemini-runtime](../../../crates/google/gemini-runtime) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-07 |
 | `aphrody-gemini-web` | [crates/google/gemini-web](../../../crates/google/gemini-web) | rust crate | 0.2.1 | lib | yes | 0 | 2026-10-06 |
@@ -417,8 +417,10 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-m3-reproduce` | [crates/ui/m3-reproduce](../../../crates/ui/m3-reproduce) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
 | `aphrody-m3-tokens` | [crates/ui/m3-tokens](../../../crates/ui/m3-tokens) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
 | `aphrody-render` | [crates/ui/render](../../../crates/ui/render) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
+| `aphrody-softraster` | [crates/ui/softraster](../../../crates/ui/softraster) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
 | `aphrody-sprite-sheet` | [crates/ui/sprite-sheet](../../../crates/ui/sprite-sheet) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
 | `aphrody-svg` | [crates/ui/svg](../../../crates/ui/svg) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
+| `taffy` | [crates/ui/taffy](../../../crates/ui/taffy) | rust crate | 0.12.1 | lib | yes | 0 | 2026-10-07 |
 | `aphrody-tauri-plugin-mcp-bridge` | [crates/ui/tauri-plugin-mcp-bridge](../../../crates/ui/tauri-plugin-mcp-bridge) | rust crate | 0.13.0 | rlib | yes | 0 | 2026-10-06 |
 | `aphrody-tauri-wrap` | [crates/ui/tauri-wrap](../../../crates/ui/tauri-wrap) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-06 |
 

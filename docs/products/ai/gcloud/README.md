@@ -22,8 +22,8 @@ et reproductible (CLAUDE.md §0.1).
 * **[Optimisation des Coûts & Quotas Always Free](../../../reference/ai/gcloud/COST_OPTIMIZATION.md)** — Runbook détaillé pour exploiter le catalogue GCP à $0.00/mois.
 
 > **Provisionné le 2026-05-23.** Source de vérité opérationnelle : les scripts
-> [`scripts/gcp-sa-setup.{ps1,sh}`](../../../../scripts/aphrody) et
-> [`scripts/aphrody/gcp-enable-all.sh`](../../../../scripts/aphrody/gcp-enable-all.sh). Cette doc
+> [`scripts/gcp-sa-setup.{ps1,sh}`](../../../../scripts/tools/infra) et
+> [`scripts/tools/infra/gcp-enable-all.sh`](../../../../scripts/tools/infra/gcp-enable-all.sh). Cette doc
 > décrit l'état cible ; relancer un script suffit à le reconstituer.
 
 ---
@@ -117,7 +117,7 @@ gcloud services list --enabled --project aphrody --format='value(config.name)' |
 gcloud services list --enabled --project aphrody
 
 # (Re)activer TOUTES les APIs Google first-party — idempotent
-bash scripts/aphrody/gcp-enable-all.sh
+bash scripts/tools/infra/gcp-enable-all.sh
 ```
 
 APIs clés pour aphrody : `aiplatform` (Vertex AI), `generativelanguage`
@@ -131,9 +131,9 @@ APIs clés pour aphrody : `aiplatform` (Vertex AI), `generativelanguage`
 
 | Script | Plateforme | Rôle |
 |--------|------------|------|
-| [`scripts/aphrody/gcp-sa-setup.ps1`](../../../../scripts/aphrody/gcp-sa-setup.ps1) | Windows (hôte) | SA + owner + 37 APIs cœur + clé JSON + clé API + `.env` + vérif |
-| [`scripts/aphrody/gcp-sa-setup.sh`](../../../../scripts/aphrody/gcp-sa-setup.sh) | Linux (cible #1) | idem, miroir bash |
-| [`scripts/aphrody/gcp-enable-all.sh`](../../../../scripts/aphrody/gcp-enable-all.sh) | Linux/bash | active **toutes** les 525 APIs first-party (lots de 20, repli individuel) |
+| [`scripts/tools/infra/gcp-sa-setup.ps1`](../../../../scripts/tools/infra/gcp-sa-setup.ps1) | Windows (hôte) | SA + owner + 37 APIs cœur + clé JSON + clé API + `.env` + vérif |
+| [`scripts/tools/infra/gcp-sa-setup.sh`](../../../../scripts/tools/infra/gcp-sa-setup.sh) | Linux (cible #1) | idem, miroir bash |
+| [`scripts/tools/infra/gcp-enable-all.sh`](../../../../scripts/tools/infra/gcp-enable-all.sh) | Linux/bash | active **toutes** les 525 APIs first-party (lots de 20, repli individuel) |
 
 Tous **idempotents** et **non-interactifs**.
 

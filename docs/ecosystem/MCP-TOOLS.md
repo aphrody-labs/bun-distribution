@@ -7,7 +7,7 @@ Every MCP tool registered in source, grouped by server: rmcp `#[tool]` routers, 
 full text is in [ecosystem.json](ecosystem.json). The kernel re-exports its subsystems' tools through
 `aphrody-kernel`, so one tool name can appear under several servers.
 
-Totals: 19 servers, 370 tool registrations, 368 unique tool names.
+Totals: 20 servers, 389 tool registrations, 387 unique tool names.
 
 ## aphrody — @aphrody/workspace subsystem `workspace`
 
@@ -511,3 +511,29 @@ Kind: json-catalog. 37 tools.
 | `browser_type` | Type text into an input element (appends to existing value). Pass `ref` (preferred) OR `selector`. |
 | `browser_wait_for` | Wait for a CSS selector to appear in the DOM |
 | `browser_wait_for_text` | Wait until a substring appears anywhere in the rendered page text. Use when you want to wait for a result message or notification rather than a specific selector. |
+
+## iecode — aphrody-nie-cli (NieMcpServer)
+
+Kind: rmcp. 19 tools.
+
+| Tool | Description |
+| --- | --- |
+| `aphrody_api_health` | Report the health of the native nie MCP process and its in-process CLI binding. |
+| `asset_get` | Read and decode a VFS asset in process as raw bytes, JSON, PNG, or WAV; model codes use the bounded native HTTP client for aphrody-nie-model-serve. |
+| `explorer_navigate` | Navigate the connected explorer to a VFS prefix and optionally select one entry. |
+| `explorer_open` | Open one VFS file in the connected explorer detail panel. |
+| `explorer_status` | Report whether the native loopback bridge is listening and whether an Inacord explorer client is connected. |
+| `explorer_tab` | Switch the connected explorer to one known tab: editor, explorer, search, data, cpk, save, mods, re, lua, or settings. |
+| `explorer_toast` | Display an info, success, or error notification in the connected explorer. |
+| `game_launch` | Launch nie.exe from the repository root without waiting and return its process ID. |
+| `re_coverage` | Return the current reverse-engineering coverage report from the canonical CLI library. |
+| `re_function` | Find reverse-engineered functions by name fragment or virtual address. |
+| `re_query` | Run a read-only SQL query through the canonical `nie wiki db` library path. |
+| `repo_read` | Read one bounded source or documentation file through aphrody-nie-explore's confined repository API. |
+| `vfs_cat` | Read bounded bytes from one VFS file and return UTF-8 text or base64. |
+| `vfs_list` | List immediate directories and files under a VFS prefix. Compatibility name retained from the Bun server. |
+| `vfs_search` | Search VFS paths by case-insensitive substring or glob. Compatibility name retained from the Bun server. |
+| `vfs_stat` | Return VFS metadata for an exact file or folder prefix. |
+| `wiki_character_card` | Read an exact character card with native stat anchors, learned skills and auras from the configured wiki mirror. No network access or writes. |
+| `wiki_search` | Search characters, techniques and items using the shared read-only wiki query owner. |
+| `zukan_rank` | Rank supplied official-encyclopedia entries against supplied candidates with the shared bounded native matcher. Suggestions only; no identity assignment, network request or write. |

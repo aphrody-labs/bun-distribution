@@ -77,9 +77,15 @@ describe("unified documentation", () => {
       expect(() => documentationPath(root, "docs/../other.md")).toThrow("Unsafe");
       symlinkSync(tmpdir(), join(root, "linked"));
       expect(() => documentationPath(root, "linked/file.md")).toThrow("symlink");
-      put("tools/config/docs/documentation.json", JSON.stringify({ ...config, visibility: "public" }));
+      put(
+        "tools/config/docs/documentation.json",
+        JSON.stringify({ ...config, visibility: "public" }),
+      );
       expect(() => loadDocumentationConfig(root)).toThrow("private visibility");
-      put("tools/config/docs/documentation.json", JSON.stringify({ ...config, inventory: ".npmrc" }));
+      put(
+        "tools/config/docs/documentation.json",
+        JSON.stringify({ ...config, inventory: ".npmrc" }),
+      );
       expect(() => loadDocumentationConfig(root)).toThrow("owned docs paths");
       const target = { root: ".", id: "same", language: "typescript", paths: ["src.ts"] };
       put(

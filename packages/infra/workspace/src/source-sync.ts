@@ -124,7 +124,9 @@ function ownerRemote(url: string, owners: string[], repository: SyncRepository):
   return !!match && owners.includes(match[1]!) && match[2] === repository.id;
 }
 export async function loadSourceSyncConfig(root = sourceRoot): Promise<SourceSyncConfig> {
-  const config: SourceSyncConfig = await Bun.file(join(root, "tools/config/commit-sync.json")).json();
+  const config: SourceSyncConfig = await Bun.file(
+    join(root, "tools/config/commit-sync.json"),
+  ).json();
   if (
     config.schemaVersion !== 1 ||
     !Array.isArray(config.owners) ||

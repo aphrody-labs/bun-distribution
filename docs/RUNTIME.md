@@ -11,7 +11,7 @@ active design direction; implementation and performance gates remain open.
 
 Read [repository instructions](../AGENTS.md) and [current memory](../MEMORY.md),
 then the existing [vendoring](VENDORING.md) and [tooling](TOOLING.md) procedures.
-The earlier [Rust usage inventory](APHRODY-RUST-TAURI-OBSCURA-BUN.md) is a lexical
+The earlier [Rust usage inventory](archive/memos/APHRODY-RUST-TAURI-OBSCURA-BUN.md) is a lexical
 navigation aid, not a resolved Cargo graph or effective-profile audit.
 
 ## Slice status

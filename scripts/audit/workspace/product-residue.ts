@@ -22,7 +22,7 @@ const EXCLUDED = [
   /^docs\/reference\/workspace\/documentation\.json$/,
   /(^|\/)CHANGELOG\.md$/,
   /\.lock$/,
-  /^config\/product-residue\.baseline\.json$/,
+  /^tools\/config\/product-residue\.baseline\.json$/,
   // The audit names the products it looks for.
   /^scripts\/audit\/workspace\/product-residue(\.test)?\.ts$/,
 ];

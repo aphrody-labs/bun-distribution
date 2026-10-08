@@ -2,7 +2,7 @@
 
 - [Unified native runtime](RUNTIME.md)
 - [Bun Fork](BUN_FORK.md)
-- [Bun Upstream Tracker](BUN_UPSTREAM_TRACKER.md)
+- [Bun Upstream Tracker](archive/snapshots/BUN_UPSTREAM_TRACKER.md)
 - [Vendoring the Tauri stack](VENDORING.md)
 - [Tooling](TOOLING.md)
 - [Server management (`yolo host`)](SERVER.md)
@@ -14,8 +14,8 @@
 - [Distribution](DISTRIBUTION.md)
 - Fact-check: October 2026
 - Critical issues: October 2026
-- [Stack report: October 2026](STACK-REPORT-2026-10.md)
+- [Stack report: October 2026](archive/snapshots/STACK-REPORT-2026-10.md)
 - [Architecture & Maturation de la Stack](STACK-DECISION.md)
 - [Guide des Meilleures Pratiques (Rust + Python + Bun)](BEST_PRACTICES.md)
-- [Rapport d'Ingénierie & Convergence Rust-Python](RAPPORT_RUST_PYTHON_RESEARCH.md)
-- [Awesome Ecosystem Polyglotte](AWESOME-POLYGLOT.md)
+- [Rapport d'Ingénierie & Convergence Rust-Python](archive/research/RAPPORT_RUST_PYTHON_RESEARCH.md)
+- [Awesome Ecosystem Polyglotte](archive/research/AWESOME-POLYGLOT.md)

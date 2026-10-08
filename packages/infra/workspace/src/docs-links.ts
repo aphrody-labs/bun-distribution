@@ -49,6 +49,7 @@ function deferredPathCheckFiles(root: string): Set<string> {
 const HISTORICAL_PATH_TREES = [
   new Bun.Glob("docs/migration/**"),
   new Bun.Glob("docs/plans/**/archive/**"),
+  new Bun.Glob("docs/archive/**"),
 ];
 
 /** Document-level opt-out: the document's backtick paths name another repository layout or git history. */

@@ -158,8 +158,14 @@ visit(tree.body)
 print(json.dumps(dict(doc=ast.get_docstring(tree, clean=False), items=items)))
 `;
 
+function pythonCommand(): string[] {
+  if (process.env.PYTHON) return [process.env.PYTHON];
+  if (process.platform === "win32") return ["uv", "run", "python"];
+  return ["python3"];
+}
+
 async function pythonReference(text: string): Promise<string> {
-  const child = Bun.spawn(["python3", "-I", "-c", PYTHON_AST], {
+  const child = Bun.spawn([...pythonCommand(), "-I", "-c", PYTHON_AST], {
     stdin: "pipe",
     stdout: "pipe",
     stderr: "pipe",

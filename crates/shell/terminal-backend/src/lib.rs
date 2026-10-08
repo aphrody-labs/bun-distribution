@@ -356,6 +356,11 @@ fn unauthorized_response(reason: &str) -> ErrorResponse {
 /// On Windows: tries `pwsh` first, falls back to `cmd`.
 /// On Unix: uses `$SHELL` env var, falls back to `/bin/bash`.
 pub fn default_shell() -> String {
+    if let Ok(shell) = std::env::var("APHRODY_SHELL") {
+        if !shell.is_empty() && which_shell(&shell) {
+            return shell;
+        }
+    }
     #[cfg(target_os = "windows")]
     {
         if which_shell("pwsh") {

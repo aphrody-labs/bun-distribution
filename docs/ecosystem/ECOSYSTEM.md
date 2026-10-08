@@ -7,17 +7,18 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 1 repositories (1 aphrody, 0 shared, 0 experiments), 204 crates, 9 binaries, 126 Bun packages, 8 uv packages, 706 CLI commands, 370 MCP tools.
+Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 279 crates, 37 binaries, 160 Bun packages, 10 uv packages, 1060 CLI commands, 389 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
 | [aphrody](#aphrody) | aphrody | Canonical Rust/Bun monorepo |
+| [iecode](#iecode) | aphrody | Active game-domain workspace |
 
 ## aphrody
 
 Canonical Rust/Bun monorepo
 
-### Crates (204)
+### Crates (206)
 
 | Crate | Path | Description | Binaries | Features |
 | --- | --- | --- | --- | --- |
@@ -131,6 +132,7 @@ Canonical Rust/Bun monorepo
 | `aphrody-shell-web` | crates/shell/web | Aphrody shell for WebAssembly: browser and Tauri webview terminal, local shell and wire protocol. |  |  |
 | `aphrody-skills` | crates/ai/skills | Unified skills infrastructure: SKILL.md runtime + lifecycle hooks + tool-level permissions. |  |  |
 | `aphrody-skills-forge` | crates/ai/skills-forge | Programmatic SKILL.md scaffolding + registry loader + lint engine for the aphrody skill catalog. |  |  |
+| `aphrody-softraster` | crates/ui/softraster | Dependency-free deterministic CPU triangle rasterizer (z-buffer, perspective-correct nearest texturing, alpha cutout): the GPU-less fallback shared by aphrody-render and nie. |  |  |
 | `aphrody-sprite-sheet` | crates/ui/sprite-sheet | Sprite atlas to web sheet (CSS image/mask classes, standalone SVG symbols, JSON manifest); no_std + alloc, no input format. |  |  |
 | `aphrody-sql` | crates/infra/sql | Shared SQL owner for Aphrody: PostgreSQL pool (TLS by URL, pgvector), SQLite open policy (WAL, sqlite-vec), checksummed plain-SQL migrations and database URL resolution. |  | default, postgres, sqlite, vec |
 | `aphrody-ssh` | crates/infra/ssh | Aphrody SSH operator: safe command execution and diagnostics for configured hosts. |  |  |
@@ -222,6 +224,7 @@ Canonical Rust/Bun monorepo
 | `obscura-ssrf` | crates/web/obscura-ssrf | Shared SSRF deny-set and private-network opt-in for Obscura network transports and renderer. |  |  |
 | `serde-saphyr` | crates/compat/serde-saphyr | YAML (de)serializer for Serde, built on top of Saphyr, emphasizing panic-free parsing. | `serde-saphyr` | default, figment, garde, miette, robotics, validator |
 | `simdutf` | crates/native/simdutf | Unicode validation and transcoding at billions of characters per second |  |  |
+| `taffy` | crates/ui/taffy | A flexible UI layout library |  | alloc, block_layout, calc, content_size, debug, default, detailed_layout_info, document-features, flexbox, float_layout, grid, parse, parse_faster, profile, serde, std, strict_provenance, taffy_tree |
 | `yolo-core` | crates/engine/yolo-core | Core native engine and system benchmarking logic for YOLO Monorepo |  | default, repository-tools |
 | `yolo-pyo3` | crates/engine/yolo-pyo3 | PyO3 0.29 Native Extension Module for YOLO Monorepo (Free-threaded, No-GIL, py.detach) |  |  |
 | `yolo-runtime` | crates/engine/yolo-runtime | Versioned C ABI of the precompiled YOLO native runtime (first slice: system stats and cancellable benchmark) |  | browser, cuda, default, gpu |
@@ -369,3 +372,131 @@ Canonical Rust/Bun monorepo
 | `aphrody-train` | py/packages/aphrody-train | Training surface for aphrody: dataset generation, embedding/reranker fine-tuning, LoRA |  |
 | `koharu-model-tools` | py/packages/model-tools | Export pretrained vision models for the Koharu Rust implementation | `koharu-export-dinov2`, `koharu-export-efficientnet` |
 | `yolo` | packages/engine/python | High-performance Python wrapper around YOLO Rust native engine (PyO3 + uv) |  |
+
+## iecode
+
+Active game-domain workspace
+
+### Crates (73)
+
+| Crate | Path | Description | Binaries | Features |
+| --- | --- | --- | --- | --- |
+| `aphrody-aarch64` | crates/aphrody-aarch64 | Portable AArch64 decoder and bounded interpreter extracted from rdynarmic |  |  |
+| `aphrody-ctr` | crates/aphrody-ctr | Pure Nintendo 3DS PICA command encoding and register stream decoding |  |  |
+| `aphrody-dust-cli` | crates/emu/cli |  | `dust` |  |
+| `aphrody-dust-core` | crates/emu/core |  |  | 3d-hi-res-coords, bft-r, bft-w, channel-audio-capture, debugger-hooks, default, disasm, interp-arm9-interlocks, interp-pipeline, interp-pipeline-accurate-reloads, interp-r15-write-checks, interp-timing-details, jit, log, nds-complete, nds-decomp, nds-rom, pu-checks, serde, xq-audio |
+| `aphrody-dust-soft-2d` | crates/emu/render/soft-2d |  |  | crossbeam-channel, threaded |
+| `aphrody-dust-soft-2d-base` | crates/emu/render/soft-2d/base |  |  |  |
+| `aphrody-dust-soft-3d` | crates/emu/render/soft-3d |  |  |  |
+| `aphrody-dust-web` | apps/web/crate |  |  | log, slog |
+| `aphrody-dust-wgpu` | crates/emu/render/wgpu |  |  | threaded |
+| `aphrody-emu-utils` | crates/emu/utils |  |  | app, cocoa, objc, triple-buffer |
+| `aphrody-emu-utils-macros` | crates/emu/utils/macros |  |  |  |
+| `aphrody-emulator-host` | crates/aphrody-emulator-host | Explicit Bevy scheduling for IECODE emulator cores |  |  |
+| `aphrody-homebrew` | crates/aphrody-homebrew | Rust build orchestration and stable ABI types for IECODE Nintendo homebrew | `aphrody-homebrew` |  |
+| `aphrody-nie-app` | crates/nie/aphrody-nie-app | Cœur du jeu nie : la machine à états (GameState) + le rendu abstrait (trait Renderer), extraits en bibliothèque réutilisable. aphrody-nie-play (headless/golden) et aphrody-nie-game (interactif GPU) en sont deux front-ends. Câble match aphrody-nie-core, dialogues + police aphrody-nie-formats, perso 3D aphrody-nie-render3d. |  |  |
+| `aphrody-nie-asm` | crates/nie/aphrody-nie-asm | Encodeur x86-64 (dialecte MSVC) — régénère les corps de fonctions de nie.exe depuis une source symbolique |  | default, serde |
+| `aphrody-nie-bench` | crates/nie/aphrody-nie-bench | Banc d'essai inter-langages : mesure les hot paths du dépôt en Rust, et produit les échantillons que les harnais C++/C#/TS rejouent | `aphrody-nie-bench` | default, host |
+| `aphrody-nie-bevy` | crates/nie/aphrody-nie-bevy | Intégration native Bevy : les formats réels du jeu (G4TX, G4MD/G4MG) deviennent des assets Bevy — Image, Mesh — via un greffon et des AssetLoaders |  | bevy, default |
+| `aphrody-nie-camera` | crates/nie/aphrody-nie-camera | Caméra d'Inazuma Eleven: Victory Road — modèle, contrôleurs portés (CCameraCtrl*), codec G4CM (décode/encode byte-exact), configs cfg.bin, carte RE et pilotage live du process. | `nie-cam` | default, host |
+| `aphrody-nie-cli` | crates/nie/aphrody-nie-cli | Binaire `nie` : pilote la boucle RE (seed, propagate, coverage) et la frontière redis | `nie` |  |
+| `aphrody-nie-computer-use` | crates/nie/aphrody-nie-computer-use | Native, bounded Computer Use probes for nie.exe and Ghidra. |  | default, host |
+| `aphrody-nie-core` | crates/nie/aphrody-nie-core | Logique de jeu reversée en Rust pur (ballon, IA tactique, états de match, calcul gardien, stats joueur) |  | data, default, real-azalee, serde |
+| `aphrody-nie-data` | crates/nie/aphrody-nie-data | Modèles de données de jeu IEVR portés en Rust pur (skills, auras, chara_param, items, growth/exp tables, passifs) depuis le pipeline inagle — no_std+alloc, wasm-friendly | `export_formations`, `export_passives`, `export_skills` | default, serde, std |
+| `aphrody-nie-dump` | crates/nie/aphrody-nie-dump | Minidump reader for nie.exe: re-exports aphrody_re::minidump and adds the game image base |  |  |
+| `aphrody-nie-editor` | crates/nie/aphrody-nie-editor | Native NIE 3D editor with a shared DirectX 12, Vulkan, or OpenGL viewport | `aphrody-nie-editor` | default, host |
+| `aphrody-nie-emu` | crates/nie/aphrody-nie-emu | Canonical emulator backend registry and capability contracts for Inazuma Eleven |  |  |
+| `aphrody-nie-explore` | crates/nie/aphrody-nie-explore | Moteur partagé d'aperçu/description des entrées VFS (CPK) par format — utilisé par `nie vfs cat` (aphrody-nie-cli) et l'app desktop `nie-explorer` (Tauri) |  | default, host |
+| `aphrody-nie-ffi` | crates/nie/aphrody-nie-ffi | Frontière FFI C-ABI: expose la logique nie (CRC32 RDBN, PRNG CRand MT19937, décodage formats, VFS) à Bun et autres runtimes |  |  |
+| `aphrody-nie-forge` | crates/nie/aphrody-nie-forge | Forge de nie.exe — découpe, régénère et mesure le binaire produit depuis le workspace Rust | `aphrody-nie-forge` | default, redb |
+| `aphrody-nie-formats` | crates/nie/aphrody-nie-formats | Parsers de formats Level-5 (CPK, cfg.bin, G4*, CriLayla, Criware) portés en Rust no_std-friendly pour nie headless + wasm |  | audio-decode, default, images, lua, real-fixtures, remote-vfs, serde, std, textures, textures-encode |
+| `aphrody-nie-game` | crates/nie/aphrody-nie-game | Hôte GUI natif wgpu — rend les vrais assets IEVR (pilier D1/C4 pixel-perfect) | `aphrody-nie-game` |  |
+| `aphrody-nie-geom` | crates/nie/aphrody-nie-geom | Shared POD geometry types (Vec2/Vec3) and scalar math for the IECODE workspace. |  | default, serde, std |
+| `aphrody-nie-headless` | crates/nie/aphrody-nie-headless | Runner CLI headless : détecte un format IEVR et affiche un résumé JSON sans moteur Windows | `aphrody-nie-headless` | default, host |
+| `aphrody-nie-identity-source` | crates/nie/aphrody-nie-identity-source | Aphrody depuis le jeu : dossier natif (chara_param, skill_config, aura), contrat 3D et exporteur `export_aphrody`, au-dessus d'aphrody-identity | `export_aphrody` |  |
+| `aphrody-nie-index` | crates/nie/aphrody-nie-index | Bounded in-memory and host-backed knowledge indexes for nie.exe reverse engineering |  | default, host |
+| `aphrody-nie-inventory` | crates/nie/aphrody-nie-inventory | IEVR (Inazuma Eleven Victory Road) reverse-engineering analysis tools — consumes binary inventory JSON for static catalog work. | `ievr-tools` | default, integration |
+| `aphrody-nie-launcher` | crates/nie/aphrody-nie-launcher | Native Rust launcher, save editor, and mod package manager for Inazuma Eleven: Victory Road | `aphrody-nie-launcher` |  |
+| `aphrody-nie-lua` | crates/nie/aphrody-nie-lua | VM Lua 5.2 réelle (mlua, PUC-Rio 5.2.4 vendored) — exécute les vrais scripts .lua.bin du jeu (logique de menus/scènes). Cœur de la boucle moteur. |  | analysis, default, vm |
+| `aphrody-nie-lua-web` | crates/nie/aphrody-nie-lua-web | Browser-callable surface over the real aphrody-nie-lua VM (mlua, vendored Lua 5.2.4 C), built for wasm32-unknown-emscripten only. Mirrors crates/tools/nie-site's POST /api/v1/menu/runtime/{screen} contract: JS supplies the .lua.bin scripts and *_setting.cfg.bin bytes fetched from the site's VFS (/f/{path}), this crate replays them through the same aphrody_nie_lua::menu_runtime::replay used natively. wasm32-unknown-unknown cannot host this crate: mlua-sys compiles PUC-Rio Lua's C sources, which need libc + setjmp/longjmp only present under emscripten's libc shim. |  |  |
+| `aphrody-nie-mcp` | crates/nie/aphrody-nie-mcp | Native Rust MCP stdio server for the complete nie tool surface | `aphrody-nie-mcp` |  |
+| `aphrody-nie-model-serve` | crates/nie/aphrody-nie-model-serve | Portable IEVR model catalogs and menu compositor with an optional live GLB HTTP server | `aphrody-nie-model-serve` | default, host, real-audio |
+| `aphrody-nie-net` | crates/nie/aphrody-nie-net | nie online mode — multiplayer networking engine, Inacode room lobby, matchmaking, and deterministic rollback/lockstep synchronization |  | default, transport |
+| `aphrody-nie-ocgen` | crates/nie/aphrody-nie-ocgen | Pipeline de génération 3D d'un personnage original : références mesurées → CHARA_EDIT_PARAM → composition → plan d'assemblage | `aphrody-nie-ocgen` | bc7, cli, default |
+| `aphrody-nie-pe` | crates/nie/aphrody-nie-pe | Lecture/écriture byte-exacte du PE64 nie.exe + découpage du fichier en unités de forge |  | default, serde |
+| `aphrody-nie-pe-inspect` | crates/nie/aphrody-nie-pe-inspect | Reverse-engineering primitives for PE/ELF/Mach-O triage, string extraction, and x86 disassembly. |  | default, integration |
+| `aphrody-nie-pg` | crates/nie/aphrody-nie-pg | Import des cfg.bin du VFS IEVR (RDBN et T2B) dans PostgreSQL, schéma `nie`, sans étape JSON | `aphrody-nie-pg` | real-fixtures |
+| `aphrody-nie-play` | crates/nie/aphrody-nie-play | Front-end HEADLESS/GOLDEN du jeu nie : exécute la machine à états de aphrody-nie-app via un flow scripté + un Renderer CPU, et écrit le playthrough en PNG/MP4 déterministes. Le match vient de la vraie FSM aphrody-nie-core. | `aphrody-nie-play` |  |
+| `aphrody-nie-queue` | crates/nie/aphrody-nie-queue | Bounded deduplicated BFS frontiers for the nie reverse-engineering loop |  | default, host |
+| `aphrody-nie-re` | crates/nie/aphrody-nie-re | Moteur RE nie : RTTI MSVC, indexation goblin/iced-x86, propagation de labels sur le call-graph |  | default, host |
+| `aphrody-nie-render` | crates/nie/aphrody-nie-render | Façade de rendu nie: 2D, 3D CPU/GPU, GUI et WASM |  |  |
+| `aphrody-nie-render3d` | crates/nie/aphrody-nie-render3d | Renderer 3D du moteur nie : charge un GLB réel (assets CPK) et le rend en perspective (rastérisation CPU z-buffer + éclairage) → PNG/MP4 turntable, headless | `aphrody-nie-render3d` | cli, default, gpu, webgl, webgpu |
+| `aphrody-nie-runtime` | crates/nie/aphrody-nie-runtime | Moteur de jeu nie : boucle intégrée monde + physique + rendu top-down → frames/MP4 (headless, déterministe) | `aphrody-nie-runtime`, `nie-match3d` |  |
+| `aphrody-nie-save` | crates/nie/aphrody-nie-save | Déchiffrement, lecture et édition des saves IEVR (Lives format CRC32-keyed XOR) |  | default, real-saves, serde |
+| `aphrody-nie-seed` | crates/nie/aphrody-nie-seed | Import du savoir fusionné (index Ghidra aphrody-nie-index.json, RTTI, formats iecode, hash→nom inagle) comme ancres de la boucle RE nie |  | default, host |
+| `aphrody-nie-sql` | crates/nie/aphrody-nie-sql | Shared read-only SQL boundary for NIE hosts |  |  |
+| `aphrody-nie-steam` | crates/nie/aphrody-nie-steam | Acquisition Steam native (download/dump des depots IEVR) en Rust pur, sur steamroom — port du Steam/ C# d'iecode (remplace SteamKit2) | `aphrody-nie-steam` | default, host |
+| `aphrody-nie-tasks` | crates/nie/aphrody-nie-tasks | Cancelable, pausable asynchronous job orchestration with progress reporting. |  | default, host |
+| `aphrody-nie-trace` | crates/nie/aphrody-nie-trace | RE en direct (runtime) : lecture de la mémoire live d'un nie.exe — process_vm_readv(2) si Wine/Linux, ReadProcessMemory si Windows natif. Résolution de module, hex dump, dump de plages, scan. Binaire nie-mem cross-compilable depuis WSL. | `nie-edit`, `nie-mem` | default, host |
+| `aphrody-nie-ui` | crates/nie/aphrody-nie-ui | Source unique, typée, des jetons de design du jeu (couleurs OKLCH, géométrie, mouvement) — génère le CSS de packages/inacord-ui/src/shell/game-tokens.css et relie nie_formats::sprite_sheet (icônes) aux jetons pour le Rust qui compose des images | `game_screens_css` |  |
+| `aphrody-nie-video` | crates/nie/aphrody-nie-video | Streaming RGBA-to-video encoding capability for IECODE. |  |  |
+| `aphrody-nie-viewer-web` | crates/nie/aphrody-nie-viewer-web | Le viewer 3D du dépôt, compilé seul pour le navigateur avec le backend WebGL 2 — chargé à la demande quand WebGPU manque |  |  |
+| `aphrody-nie-viola` | crates/nie/aphrody-nie-viola | Opérations de modding LEVEL-5 (dump, pack, merge, crypto Criware) en Rust — périmètre de l'outil Viola, ordonnancement et empreinte mémoire revus |  |  |
+| `aphrody-nie-wasm` | crates/nie/aphrody-nie-wasm | Bindings WebAssembly pour le savoir nie vérifié : aphrody-nie-formats (detect/CRILAYLA/@UTF/G4*), aphrody-nie-core (stats growth + FSM de match) et aphrody-nie-data (lookup skill/aura/item) exposés au navigateur via wasm-bindgen |  | default, webgpu |
+| `aphrody-nie-wiki` | crates/nie/aphrody-nie-wiki | Explore IEVR game data from the SQLite mirror |  |  |
+| `aphrody-nie-zukan` | crates/nie/aphrody-nie-zukan | Level-5 Inagle encyclopedia ingestion, parsing, and matching | `aphrody-nie-zukan` | default, host |
+| `aphrody-switch` | crates/aphrody-switch | Portable Switch CPU and Tegra texture primitives |  |  |
+| `aphrody-wii` | crates/aphrody-wii | Portable Wii executable loading and Broadway branch execution |  |  |
+| `aphrody-wii-debug` | crates/emu/wii/debug |  |  |  |
+| `aphrody-wii-dff` | crates/emu/wii/dff |  |  |  |
+| `aphrody-wii-disasm` | crates/emu/wii/disasm |  |  |  |
+| `aphrody-wii-image` | crates/emu/wii/image |  |  | banner, default |
+| `aphrody-wii-render` | crates/emu/wii/render |  |  | default, dump-wgsl, gx-stats, hotpath, renderdoc-capture |
+| `aphrody-wii-runtime` | crates/emu/wii/core | Retained Gecko Wii/GameCube interpreter and device runtime |  | default, fps-counter, gx-stats, hooks, hooks-mut-traps, rendersink-blackbox |
+| `aphrody-wii-web` | apps/web/wii/crate |  |  | debug, default |
+
+### Bun packages (34)
+
+| Package | Path | Description | Bin |
+| --- | --- | --- | --- |
+| `@aphrody/iecode-web` | apps/web |  |  |
+| `@aphrody/inagle-ui` | packages/nie-ui/packages/inagle-ui | Inagle explorer/maps UI helpers: re-exports @rosegriffon/inagle/ui (iecode packages/inagle), provided by the iecode workspace. |  |
+| `@aphrody/nie-ui` | packages/nie-ui | NIE UI and design, unified: emulator web UI (src), menu renderers, NIE web/site libraries and scripts, pixel-perfect tooling, skills, docs and the Rust crates (rust/). |  |
+| `@aphrody/nie-web` | packages/nie-ui/packages/nie-web | NIE web/site: wasm bindings (nie-wasm-web), engine/game loaders, build/audit/release/tools scripts of the former nie-web app, viewer assets. |  |
+| `@rose-griffon/menu-render` | packages/nie-ui/packages/menu-render | Renderer React pixel-perfect pour les écrans de menu IEVR depuis un menu-layout.json (canvas 1280×720, sprites G4TX, transforms absolus, z-order drawPriority). lua-host.ts expects @rose-griffon/iecode-inagle from the iecode workspace. |  |
+| `@rose-griffon/menu-render-webgpu` | packages/nie-ui/packages/menu-render-webgpu | Renderer WebGPU 2D pixel-perfect pour les écrans de menu IEVR (quads texturés instanciés, projection ortho 1280×720, sampler nearest, premultiplied alpha, blend par drawType, z-order painter par drawPriority). Fallback DOM <GameMenu> de @rose-griffon/menu-render. |  |
+| `@rosegriffon/achillea-client` | packages/rg/achillea-client | Versioned HTTP client and runtime contracts for the Achillea guild API |  |
+| `@rosegriffon/achillea-contract` | packages/rg/achillea-contract | Contrat Achilléa exporté en JSON Schema et en types natifs (Rust, Swift, Kotlin) — la brique qui rend le domaine portable hors TypeScript |  |
+| `@rosegriffon/achillea-core` | packages/rg/achillea-core | Logique métier portable (multi-runtime : navigateur, edge Deno/Web, Node, Bun) — Elo, classement, sanctions, licences, votes, validation. Aucune dépendance Discord / ORM / DI. |  |
+| `@rosegriffon/achillea-types` | packages/rg/achillea-types | Contrats d'API partagés (DTO + enums) — source unique pour le bot et le web |  |
+| `@rosegriffon/app-shell` | packages/rg/app-shell | Chrome applicatif partagé de website (navigation, barre latérale, barre supérieure, pied de page) |  |
+| `@rosegriffon/assets` | packages/rg/assets | Shared static assets for Rose Griffon apps |  |
+| `@rosegriffon/auth` | packages/rg/auth | Shared authentication logic and guards for Rose Griffon apps |  |
+| `@rosegriffon/azalee` | packages/azalee | Bibliothèque Bun du wiki Azalée (Inazuma Eleven: Victory Road) — accès PostgreSQL, index CPK, recherche et CLI. | `azalee` |
+| `@rosegriffon/azalee-web` | packages/nie-ui/apps/azalee-web |  |  |
+| `@rosegriffon/bot` | apps/rg/bot | Bot Discord Rose Griffon — slash commands public + admin, sync members, canvas cards |  |
+| `@rosegriffon/cdn` | packages/rg/cdn |  |  |
+| `@rosegriffon/config` | packages/rg/config | Configs partagées : TypeScript, Oxc et Tailwind preset |  |
+| `@rosegriffon/cron` | packages/rg/cron | Daemon de tâches planifiées (cron) pour la maintenance DB, CDN et API |  |
+| `@rosegriffon/db` | packages/rg/db | Accès PostgreSQL partagé, façades SQL et types Database générés (site + bot) |  |
+| `@rosegriffon/discord-sync` | packages/rg/discord-sync |  |  |
+| `@rosegriffon/i18n` | packages/rg/i18n | Noyau i18n pur Rose Griffon : locales BCP-47, négociation, replis et formatage Intl |  |
+| `@rosegriffon/identity` | packages/rg/identity | Compte unique Rose Griffon : identité native et connexions liées (Discord, Patreon, Twitch, Google, Steam, Achilléa) |  |
+| `@rosegriffon/inagle` | packages/inagle | Universal Game Data API for Inazuma Eleven: Victory Road — parsers, types, and tools for IEVR game data | `inagle` |
+| `@rosegriffon/inagle-cross` | packages/inagle-cross | API de données et de rétro-conception pour Inazuma Eleven Cross — types, schémas, et analyseurs d'assets |  |
+| `@rosegriffon/preferences` | packages/rg/preferences | Pure cross-runtime resolution of Rose Griffon presentation preferences |  |
+| `@rosegriffon/realtime` | packages/rg/realtime |  |  |
+| `@rosegriffon/search` | packages/rg/search | Recherche unifiée sur les trois domaines du réseau : association, wiki Azalée, e-sport Achilléa |  |
+| `@rosegriffon/storage` | packages/rg/storage |  |  |
+| `@rosegriffon/types` | packages/rg/types | Types métier partagés (roles, user, discord) — source unique de vérité bot/azalee/website |  |
+| `@rosegriffon/website` | apps/rg/website |  |  |
+| `iecode-homebrew` | packages/iecode-homebrew | Bun commands for the IECODE DS/DSi and 3DS homebrew toolchains | `iecode-homebrew` |
+| `iecode-workspace` | . | Game-format tooling, Inazuma Eleven data libraries and console-emulation components, with Rust, Bun, Python, .NET and C++ interfaces. |  |
+| `ieverse` | packages/ieverse | Canonical Inazuma Eleven media catalogue, source URLs, navigation and player contracts. |  |
+
+### uv packages (2)
+
+| Package | Path | Description | Scripts |
+| --- | --- | --- | --- |
+| `iecode-python-workspace` | . | Shared UV workspace for the repository's Python tools |  |
+| `niepy` | src/niepy | Porte d'entrée Python vers le moteur et les données de nie (Inazuma Eleven: Victory Road) — VFS, décodeurs de formats, simulation de match, pont Ren'Py. |  |

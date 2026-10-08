@@ -2364,6 +2364,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-softraster"
+version = "1.0.0-canary"
+
+[[package]]
 name = "aphrody-sprite-sheet"
 version = "1.0.0-canary"
 dependencies = [

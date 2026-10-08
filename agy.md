@@ -38,7 +38,7 @@ des frameworks.
 5. **agent-home** : branche `workspace/wip/agent-home-gaps` (3 commits : `homes_dir`, templates/merge/sync/révision sha256-v1, doc).
    Cherry-pick sur `main`, clippy `-D warnings` + nextest `aphrody-agent-home` `aphrody-config` via vps-cargo, pousser.
 6. **code-graph Python/TS** : extracteurs `crates/ai/code-graph/src/extract/{python,ts}.rs`, oracles et `scripts/audit/ai/graph-parity.ts`
-   étaient non commités dans le worktree `.claude/worktrees/agent-a2c55289be2ba5c65` (base 30b0e8a41). Terminer et gater, Graphify reste l'oracle de parité.
+   étaient non commités dans le worktree `.claude/worktrees/agent-a2c55289be2ba5c65` (not in repo) (base 30b0e8a41). Terminer et gater, Graphify reste l'oracle de parité.
 7. **vu / fork / yolo** : benchmark `uv sync` régression ×0.74, ratchet résidus produit (431 fichiers), activation PATH du fork
    (`bun`/`yolo`/`vu` pointent encore vers les anciens binaires), embed `libaphrody_ffi`, test de `python-ffi` contre la libpython de l'artefact vu,
    Windows pour `python-ffi`, liaison `bun:ffi`. Plan : `docs/plans/vu/PLAN.md` (D18), `docs/plans/yolo-fork-unified/PLAN.md`.

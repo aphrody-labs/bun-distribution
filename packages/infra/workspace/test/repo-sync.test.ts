@@ -514,7 +514,10 @@ test("native factory worker prepares the exact pin before its declared build and
   value.repository.id = "yolo";
   value.repository.buildCommand = ["bash", "owned-build.sh"];
   await mkdir(join(value.root, "tools", "config"), { recursive: true });
-  await writeFile(join(value.root, "tools", "config", "commit-sync.json"), JSON.stringify(value.config));
+  await writeFile(
+    join(value.root, "tools", "config", "commit-sync.json"),
+    JSON.stringify(value.config),
+  );
   const state = join(value.root, "state");
   await mkdir(join(state, "builds"), { recursive: true });
   const path = join(state, "builds", "yolo.json");
@@ -692,7 +695,10 @@ test.skipIf(process.platform === "win32")(
   async () => {
     const value = await fixture();
     await mkdir(join(value.root, "tools", "config"), { recursive: true });
-    await writeFile(join(value.root, "tools", "config", "commit-sync.json"), JSON.stringify(value.config));
+    await writeFile(
+      join(value.root, "tools", "config", "commit-sync.json"),
+      JSON.stringify(value.config),
+    );
     const entry = join(value.root, "watch.ts");
     await writeFile(
       entry,
