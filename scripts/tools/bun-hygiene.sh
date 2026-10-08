@@ -12,15 +12,17 @@ exec > >(tee -a "$LOG") 2>&1
 say() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*"; }
 say "start host=$(hostname) bun=$(bun --version 2>/dev/null)"
 
-# 1. version: newest stable release older than MIN_AGE_DAYS
-rel=$(curl -fsSL --max-time 30 "https://api.github.com/repos/oven-sh/bun/releases?per_page=10" 2>/dev/null)
-target=$(printf '%s' "$rel" | jq -r --argjson d "$MIN_AGE_DAYS" '[.[]|select(.prerelease==false and .draft==false and ((now - (.published_at|fromdateiso8601)) > ($d*86400)))][0].tag_name // empty' | sed 's/^bun-v//')
-cur=$(bun --version 2>/dev/null)
-if [ -n "$target" ] && [ "$target" != "$cur" ] && [ "$(printf '%s\n%s\n' "$cur" "$target" | sort -V | tail -1)" = "$target" ]; then
+# 1. version: newest aphrody-labs/bun release (tags aphrody-v<base>-aphrody.<n>) older than MIN_AGE_DAYS
+STATE="$HOME/.local/state/aphrody"; mkdir -p "$STATE"
+rel=$(curl -fsSL --max-time 30 "https://api.github.com/repos/aphrody-labs/bun/releases?per_page=20" 2>/dev/null)
+target=$(printf '%s' "$rel" | jq -r --argjson d "$MIN_AGE_DAYS" '[.[]|select(.prerelease==false and .draft==false and (.tag_name|startswith("aphrody-v")) and ((now - (.published_at|fromdateiso8601)) > ($d*86400)))][0].tag_name // empty')
+cur=$(cat "$STATE/bun-tag" 2>/dev/null || echo "bun-$(bun --version 2>/dev/null)")
+if [ -n "$target" ] && [ "$target" != "$cur" ]; then
   say "upgrade $cur -> $target"
-  curl -fsSL https://bun.sh/install | bash -s "bun-v$target" >/dev/null 2>&1 && say "bun now $(bun --version)" || say "WARN upgrade failed"
+  curl -fsSL https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.sh | bash -s "$target" >/dev/null 2>&1 \
+    && printf '%s\n' "$target" > "$STATE/bun-tag" && say "bun now $(bun --revision)" || say "WARN upgrade failed"
 else say "version ok cur=$cur eligible=${target:-unknown}"; fi
-mkdir -p "$HOME/.local/state/aphrody"; printf '%s\n' "$(bun --version)" > "$HOME/.local/state/aphrody/bun-version"
+printf '%s\n' "$(bun --version)" > "$STATE/bun-version"
 
 # 2. global packages and drift report
 say "global packages"; bun pm ls -g 2>&1 | sed 's/^/  /'

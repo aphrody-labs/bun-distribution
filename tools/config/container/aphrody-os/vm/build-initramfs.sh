@@ -6,7 +6,7 @@ set -euo pipefail
 #
 # Inputs (built beforehand, git-ignored):
 #   userland/inst/bin/{coreutils,eza,sudo,su,visudo}  cargo install --root userland/inst coreutils --features unix; sudo-rs; eza
-#   userland/bun/package/bin/bun                       npm tarball @oven/bun-linux-x64 (needs AVX2: run QEMU with -cpu max)
+#   userland/bun/package/bin/bun                       npm pack @aphrody/bun-runtime-linux-x64 (fork release; run QEMU with -cpu max)
 #   aphrody-init/target/release/aphrody-init           cargo build --release --manifest-path aphrody-init/Cargo.toml
 # Kernel: Linux 7.2.x + patches/linux/0001-misc-add-aphrody_runtime-Rust-driver.patch, config
 # tinyconfig + aphrody.config (merge_config.sh), make LLVM=1 bzImage, copied to out/bzImage.

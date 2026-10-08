@@ -225,19 +225,7 @@ function knownInstallDirs(home: string): string[] {
   const dirs = [join(home, ".cargo", "bin"), join(home, ".bun", "bin")];
   if (process.platform === "win32") {
     const local = process.env["LOCALAPPDATA"];
-    if (local != null) {
-      dirs.push(
-        join(
-          local,
-          "Microsoft",
-          "WinGet",
-          "Packages",
-          "Oven-sh.Bun_Microsoft.Winget.Source_8wekyb3d8bbwe",
-          "bun-windows-x64",
-        ),
-        join(local, "bun"),
-      );
-    }
+    if (local != null) dirs.push(join(local, "bun"));
   } else {
     dirs.push("/usr/local/bin", join(home, ".local", "bin"));
   }

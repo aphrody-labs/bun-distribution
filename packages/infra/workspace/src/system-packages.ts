@@ -198,7 +198,7 @@ export async function applyPackages(
       if (!installer) continue;
       steps.push(
         installer.url.endsWith(".ps1")
-          ? `& ([scriptblock]::Create((Invoke-RestMethod ${quote(installer.url)}))) ${installer.args.map(quote).join(" ")}`
+          ? `& ([scriptblock]::Create((Invoke-RestMethod ${quote(installer.url)}))) ${installer.args.map(a => (/^-[A-Za-z]+$/.test(a) ? a : quote(a))).join(" ")}`
           : `$f = Join-Path $env:TEMP ${quote(`${installer.name}-init.exe`)}; Invoke-WebRequest ${quote(installer.url)} -OutFile $f; & $f ${installer.args.map(quote).join(" ")}; if ($LASTEXITCODE) { exit $LASTEXITCODE }`,
       );
     }

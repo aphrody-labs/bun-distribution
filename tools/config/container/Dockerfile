@@ -56,12 +56,12 @@ RUN APHRODY_DOWNLOAD_URL="${APHRODY_DOWNLOAD_URL}" \
 
 # Developer base. Pins follow package.json (packageManager) and tools/config/system-packages.json.
 FROM runtime-base AS base
-ARG BUN_VERSION=1.4.2
+ARG BUN_VERSION=1.4.3
 ARG UV_VERSION=0.12.22
 RUN apt-get update \
  && apt-get install -y --no-install-recommends coreutils gawk git grep openssh-client python3 ripgrep rsync tar unzip xz-utils zstd jq \
  && rm -rf /var/lib/apt/lists/* \
- && curl -fsSL https://bun.sh/install | env BUN_INSTALL=/usr/local bash -s "bun-v${BUN_VERSION}" \
+ && curl -fsSL https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.sh | env BUN_INSTALL=/usr/local bash -s "${BUN_VERSION}" \
  && curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" | env UV_INSTALL_DIR=/usr/local/bin INSTALLER_NO_MODIFY_PATH=1 sh
 
 FROM base AS build-tools

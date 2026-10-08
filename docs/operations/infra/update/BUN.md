@@ -105,6 +105,12 @@ commit of the fork). Its own `APHRODY.md` lists what Aphrody consumes.
 
 - Version pin: `tools/config/update/pins.json` takes `latest` from the fork releases (`aphrody-v<base>-aphrody.<n>`,
   the pin is `<base>`), so the workspace never moves past a Bun version the fork has released.
+- Install: every Aphrody install of Bun runs the fork's installer, never bun.sh or winget `Oven-sh.Bun`:
+  `curl -fsSL https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.sh | bash -s <pin>`, or
+  `install.ps1 -Version <pin>` on Windows (newest `aphrody.<n>` of the pin, SHA256-checked). Callers: `scripts/dev/bootstrap.*`,
+  `cloud-setup.sh`, `toolchain-sync.*`, `bun-hygiene.*` (newest fork release at least 3 days old), `yolo update tools --apply`,
+  `yolo ops system-packages` (Windows installer entry), the `tools/config/container/**` Dockerfiles (Alpine takes the
+  `-musl` asset) and the CI workflows. `pins.json` keeps their version literals in step.
 - Binaries: release assets and npm `@aphrody/bun-runtime` (`bunx @aphrody/bun-runtime`); types: `@aphrody/bun-types`;
   crates: `aphrody-bun-native-plugin`, `aphrody-bun-macro`. `@aphrody/bun` on npm is not ours.
 - Upstream merges: the fork's `bun scripts/aphrody/sync-upstream.ts` (workflow `aphrody-upstream-sync.yml`, every

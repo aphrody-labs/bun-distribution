@@ -29,13 +29,15 @@ if (-not $SkipNativeTools) { foreach ($tool in $tools) { Install-Winget $tool.Id
 foreach ($path in @("$env:USERPROFILE\.cargo\bin", "$env:USERPROFILE\.bun\bin", "$env:USERPROFILE\.local\bin", "$env:ProgramFiles\Git\cmd", "$env:ProgramFiles\LLVM\bin")) {
   if (Test-Path $path) { $env:PATH = "$path;$env:PATH" }
 }
-Require-Command git; Require-Command rustup; Require-Command bun; Require-Command uv
+Require-Command git; Require-Command rustup; Require-Command uv
 $packagePins = Get-Content (Join-Path $root 'tools/config/system-packages.json') -Raw | ConvertFrom-Json
 $bunPin = $packagePins.toolchains.bun.version
-if ((bun --version).Trim() -ne $bunPin) {
-  Invoke-Expression "& {`$(Invoke-RestMethod 'https://bun.com/install.ps1')} -Version $bunPin"
+$haveBun = if (Get-Command bun -ErrorAction SilentlyContinue) { (bun --version).Trim() } else { '' }
+if ($haveBun -ne $bunPin) {
+  # Bun of Aphrody = the aphrody-labs/bun fork releases.
+  & ([scriptblock]::Create((Invoke-RestMethod 'https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.ps1'))) -Version $bunPin
+  $env:PATH = "$env:USERPROFILE\.bun\bin;$env:PATH"
   if ((bun --version).Trim() -ne $bunPin) { throw "Pinned Bun $bunPin installation failed" }
-  foreach ($path in @("$env:USERPROFILE\.bun\bin")) { if (Test-Path $path) { $env:PATH = "$path;$env:PATH" } }
 }
 $uvPin = $packagePins.toolchains.uv.version
 if ((uv --version) -notmatch [regex]::Escape($uvPin)) {

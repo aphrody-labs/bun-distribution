@@ -91,7 +91,7 @@ test("Windows plan and apply use one PowerShell 7 process each, through the WinG
     );
     expect(script).toContain("https://win.rustup.rs/x86_64");
     expect(script).toContain(
-      "& ([scriptblock]::Create((Invoke-RestMethod 'https://example.test/install.ps1'))) '-Version' '1.4.3'",
+      "& ([scriptblock]::Create((Invoke-RestMethod 'https://example.test/install.ps1'))) -Version '1.4.3'",
     );
     expect(script).not.toContain("Git.Git");
   } finally {

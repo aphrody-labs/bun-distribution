@@ -17,11 +17,16 @@ $env:Path = "$h\.bun\bin;$env:LOCALAPPDATA\Microsoft\WinGet\Links;$env:Path"
 $logDir = "$env:LOCALAPPDATA\aphrody\log"; New-Item -ItemType Directory -Force $logDir | Out-Null
 Start-Transcript -Path "$logDir\bun-hygiene.log" -Append | Out-Null
 $cur = (bun --version).Trim(); "start host=$env:COMPUTERNAME bun=$cur"
-$rel = Invoke-RestMethod 'https://api.github.com/repos/oven-sh/bun/releases?per_page=10'
-$tgt = ($rel | Where-Object { -not $_.prerelease -and -not $_.draft -and ((Get-Date).ToUniversalTime() - [datetime]$_.published_at).TotalDays -gt $MinAgeDays } | Select-Object -First 1).tag_name -replace '^bun-v', ''
-if ($tgt -and [version]$tgt -gt [version]$cur) {
-  "upgrade $cur -> $tgt"; winget upgrade --id Oven-sh.Bun --exact --version $tgt --silent --accept-package-agreements 2>&1 | Select-Object -Last 2
-} else { "version ok cur=$cur eligible=$tgt" }
+# Newest aphrody-labs/bun release (tags aphrody-v<base>-aphrody.<n>) older than MinAgeDays.
+$state = "$env:LOCALAPPDATA\aphrody\bun-tag"
+$curTag = if (Test-Path $state) { (Get-Content $state -Raw).Trim() } else { "bun-$cur" }
+$rel = Invoke-RestMethod 'https://api.github.com/repos/aphrody-labs/bun/releases?per_page=20'
+$tgt = ($rel | Where-Object { -not $_.prerelease -and -not $_.draft -and $_.tag_name -like 'aphrody-v*' -and ((Get-Date).ToUniversalTime() - [datetime]$_.published_at).TotalDays -gt $MinAgeDays } | Select-Object -First 1).tag_name
+if ($tgt -and $tgt -ne $curTag) {
+  "upgrade $curTag -> $tgt"
+  & ([scriptblock]::Create((Invoke-RestMethod 'https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.ps1'))) -Version $tgt -NoPathUpdate 2>&1 | Select-Object -Last 2
+  if ($?) { Set-Content -Path $state -Value $tgt }
+} else { "version ok cur=$curTag eligible=$tgt" }
 'global packages'; bun pm ls -g 2>&1
 'outdated (global)'; Push-Location "$h\.bun\install\global"; bun outdated 2>&1; Pop-Location
 'untrusted lifecycle scripts'; bun pm -g untrusted 2>&1

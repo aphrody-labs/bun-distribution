@@ -9,7 +9,7 @@ ARG UBUNTU_VERSION=24.04
 FROM ubuntu:${UBUNTU_VERSION} AS builder
 ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8
 ARG RUST_VERSION=1.98.1
-ARG BUN_VERSION=1.4.2
+ARG BUN_VERSION=1.4.3
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       build-essential ca-certificates clang cmake curl git libasound2-dev libclang-dev \
@@ -30,7 +30,7 @@ WORKDIR /workspace
 RUN curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs \
       | sh -s -- -y --profile minimal --no-modify-path --default-toolchain "${RUST_VERSION}" \
  && rustup component add clippy rustfmt rust-src \
- && curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}"
+ && curl -fsSL https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.sh | bash -s "${BUN_VERSION}"
 CMD ["bash"]
 
 # Runtime libraries for the CEF/GTK4 app. No browser system WebView is installed.
