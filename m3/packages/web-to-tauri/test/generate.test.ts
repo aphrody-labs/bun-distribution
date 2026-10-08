@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import { isUsableAppIcon, pngInfo, TAURI_3 } from "@aphrody/scaffold";
 import { generateProject, GenerateError } from "../src/generate.ts";
@@ -132,8 +132,7 @@ describe("generateProject: remote", () => {
   it("refuses a non-empty directory and never overwrites a file, even with force", async () => {
     const out = join(await tempDir("w2t-gen-"), "app");
     dirs.push(join(out, ".."));
-    await mkdir(out, { recursive: true });
-    await writeFile(join(out, "keep.txt"), "mine");
+    await Bun.write(join(out, "keep.txt"), "mine");
     const plan = planConversion(await probeUrl(`${site.a}/home`));
     await expect(generateProject(plan, out, { copyLock: false })).rejects.toThrow("not empty");
     await generateProject(plan, out, { copyLock: false, force: true });
@@ -218,8 +217,7 @@ describe("generateProject: directories", () => {
     const out = join(await tempDir("w2t-out-"), "app");
     dirs.push(src, join(out, ".."));
     await writeTree(src, { "dist/index.html": "<html></html>" });
-    await mkdir(join(src, "public"), { recursive: true });
-    await writeFile(join(src, "public/icon.png"), solidIconPng(256, [1, 2, 3, 255]));
+    await Bun.write(join(src, "public/icon.png"), solidIconPng(256, [1, 2, 3, 255]));
     await generateProject(planConversion(await probeDirectory(src)), out, { copyLock: false });
     const icon = new Uint8Array(
       await Bun.file(join(out, "src-tauri/icons/icon.png")).arrayBuffer(),

@@ -6,7 +6,7 @@
  * `@aphrody/scaffold`, the single scaffolder.
  */
 import { existsSync } from "node:fs";
-import { cp, copyFile } from "node:fs/promises";
+import { cp } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import {
   crateName,
@@ -249,7 +249,7 @@ export async function generateProject(
     const lock = join(REPO_ROOT, "Cargo.lock");
     const target = join(tauriDir, "Cargo.lock");
     if (existsSync(lock) && wrapCrate.startsWith(REPO_ROOT) && !existsSync(target)) {
-      await copyFile(lock, target);
+      await Bun.write(target, Bun.file(lock));
       written.push(target);
       notes.push("Cargo.lock copied from the repository so dependency versions match its pins");
     }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { solidIconPng } from "@aphrody/scaffold";
 
 export interface Site {
@@ -94,7 +94,6 @@ export async function tempDir(prefix: string): Promise<string> {
 export async function writeTree(root: string, files: Record<string, string>): Promise<void> {
   for (const [path, content] of Object.entries(files)) {
     const full = join(root, path);
-    await mkdir(dirname(full), { recursive: true });
-    await writeFile(full, content);
+    await Bun.write(full, content);
   }
 }
