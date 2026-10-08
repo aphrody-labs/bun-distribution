@@ -87,6 +87,7 @@ export class Codex {
         console.error(JSON.stringify({ event: "codex-server-exit", exitCode }));
         this.fail(new Error("Codex server exited"));
       }
+      return undefined;
     });
   }
   private async readWire() {

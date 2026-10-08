@@ -134,11 +134,9 @@ test("an active goal prevents uploads, builds, installs and restart", async () =
 test("a stopped recovered monitor can upgrade without signaling a stale receipt PID", async () => {
   const f = fixture();
   const run = f.transport.run;
-  let activated = false;
   f.transport.run = async (host, command) => {
     const result = await run(host, command);
     if (command.endsWith("-p MainPID --value")) result.stdout = "0\n";
-    if (command.includes("enable --now")) activated = true;
     return result;
   };
   await deployDiscord(discordDeployment("omar-monitor", "vps", root), f.transport, quiet);

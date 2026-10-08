@@ -35,6 +35,7 @@ const message = (id = "10", fields: Partial<SourceMessage> = {}): SourceMessage 
   content: "Vérifie les deux VPS",
   ...fields,
 });
+const anchoredHistoryApi: LabApi = async <T>() => [message("12"), message("11")] as T;
 test("only authenticated Omar or owner messages in the declared guild/channel create work", () => {
   expect(isOmar(message(), policy)).toBe(true);
   const ownerPolicy = { ...policy, ownerId: "yoyo" };
@@ -99,9 +100,8 @@ test("REST catch-up traverses more than 100 messages without advancing over a ga
 test("new channels begin after their configured cursor instead of importing old history", async () => {
   const q = new Queue(":memory:");
   const anchored = { ...policy, startAfter: { c: "10" } };
-  const api: LabApi = async <T>() => [message("12"), message("11")] as T;
   try {
-    await reconcile(q, anchored, api);
+    await reconcile(q, anchored, anchoredHistoryApi);
     expect(q.counts()).toEqual([{ state: "pending", count: 2 }]);
     expect(q.get("history_complete")).toBe("true");
     expect(q.get("after")).toBe("12");
