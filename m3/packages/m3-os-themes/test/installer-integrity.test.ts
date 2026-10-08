@@ -1,20 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  symlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { run, writeFiles } from "../src/cli.ts";
 import { generate } from "../src/generate.ts";
 
-test("theme inputs and generated output reject invalid modes, variants and escaping paths", () => {
+test("theme inputs and generated output reject invalid modes, variants and escaping paths", async () => {
   expect(run(["generate", "--seed", "--apply"]).code).toBe(2);
   expect(run(["generate", "--variant", "unknown"]).code).toBe(2);
   expect(() => generate({ name: "Aphrody", seed: "#6750a4", mode: "invalid" as never })).toThrow(
@@ -31,7 +23,7 @@ test("theme inputs and generated output reject invalid modes, variants and escap
       expect(() =>
         writeFiles([{ target: "gnome", path: "link/private", content: "bad" }], root),
       ).toThrow("symlink");
-      expect(existsSync(join(outside, "private"))).toBe(false);
+      expect(await Bun.file(join(outside, "private")).exists()).toBe(false);
     }
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -41,7 +33,7 @@ test("theme inputs and generated output reject invalid modes, variants and escap
 
 test.skipIf(process.platform !== "linux")(
   "GNOME and COSMIC installers restore existing icon directories and preserve literal settings",
-  () => {
+  async () => {
     const root = mkdtempSync(join(tmpdir(), "m3-theme-integrity-"));
     try {
       const out = join(root, "out");
@@ -55,9 +47,9 @@ test.skipIf(process.platform !== "linux")(
       mkdirSync(bin);
       mkdirSync(icons);
       mkdirSync(installed, { recursive: true });
-      writeFileSync(join(icons, "index.theme"), "[Icon Theme]\nName=Fixture Icons\n");
-      writeFileSync(join(icons, "new.svg"), "<svg>new</svg>");
-      writeFileSync(join(installed, "original.svg"), "<svg>original</svg>");
+      await Bun.write(join(icons, "index.theme"), "[Icon Theme]\nName=Fixture Icons\n");
+      await Bun.write(join(icons, "new.svg"), "<svg>new</svg>");
+      await Bun.write(join(installed, "original.svg"), "<svg>original</svg>");
       writeFileSync(
         join(bin, "gsettings"),
         '#!/usr/bin/env bash\ncase "$1" in\nget) printf "%s\\n" "$M3_FAKE_THEME" ;;\nwritable) printf "true\\n" ;;\nlist-schemas) printf "org.gnome.shell.extensions.user-theme\\n" ;;\nset) printf "%s\\n" "$4" >> "$M3_SETTINGS_LOG" ;;\nesac\n',
@@ -72,6 +64,7 @@ test.skipIf(process.platform !== "linux")(
         M3_SETTINGS_LOG: settingsLog,
         M3_FAKE_THEME: literalSetting,
       };
+      /* oxlint-disable no-await-in-loop -- the installer steps mutate one sandbox and must run in order */
       for (const target of ["gnome", "cosmic"] as const) {
         expect(run(["generate", "--target", target, "--out", out]).code).toBe(0);
         const command = (...args: string[]) =>
@@ -82,19 +75,19 @@ test.skipIf(process.platform !== "linux")(
           });
         const beforeInvalid = command("--icons", join(root, "missing"));
         expect(beforeInvalid.exitCode).toBe(2);
-        expect(readFileSync(join(installed, "original.svg"), "utf8")).toBe("<svg>original</svg>");
+        expect(await Bun.file(join(installed, "original.svg")).text()).toBe("<svg>original</svg>");
         const apply = command("--mode", "dark", "--icons", icons);
         expect(apply.stderr.toString()).toBe("");
         expect(apply.exitCode).toBe(0);
-        expect(readFileSync(join(installed, "new.svg"), "utf8")).toBe("<svg>new</svg>");
-        expect(existsSync(join(installed, "original.svg"))).toBe(false);
+        expect(await Bun.file(join(installed, "new.svg")).text()).toBe("<svg>new</svg>");
+        expect(await Bun.file(join(installed, "original.svg")).exists()).toBe(false);
         expect(command("--mode", "dark", "--icons", icons).exitCode).toBe(0);
         expect(command("--uninstall").exitCode).toBe(0);
-        expect(readFileSync(join(installed, "original.svg"), "utf8")).toBe("<svg>original</svg>");
-        expect(existsSync(join(installed, "new.svg"))).toBe(false);
-        expect(existsSync(marker)).toBe(false);
+        expect(await Bun.file(join(installed, "original.svg")).text()).toBe("<svg>original</svg>");
+        expect(await Bun.file(join(installed, "new.svg")).exists()).toBe(false);
+        expect(await Bun.file(marker).exists()).toBe(false);
       }
-      expect(readFileSync(settingsLog, "utf8")).toContain(literalSetting);
+      expect(await Bun.file(settingsLog).text()).toContain(literalSetting);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
