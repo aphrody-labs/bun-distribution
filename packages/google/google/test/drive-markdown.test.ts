@@ -151,6 +151,13 @@ describe("read-only native Google Docs Markdown projection", () => {
     expect(normalizeMarkdown(md)).toBe(md);
     expect(projectionMarkdown({ body: { content: [paragraph("Dragon\n")] } }, md)).toBe(md);
   });
+  test("uses remote persona frontmatter without duplicating the local block", () => {
+    const local = '---\nidentity: "Local"\nbrevity: "balanced"\n---\nOld persona\n';
+    const remote = '---\nidentity: "Drive"\nbrevity: "terse"\n---\n\nNew persona\n';
+    const md = projectionMarkdown({ body: { content: [paragraph(remote)] } }, local);
+    expect(md).toBe(normalizeMarkdown(remote));
+    expect(md.match(/^---$/gm)).toHaveLength(2);
+  });
   test("stages remote changes even when local is untouched and never trusts untracked local context", () => {
     expect(projectionAction({ remoteHash: "old", localHash: "local" }, "new", "local")).toBe(
       "stage",

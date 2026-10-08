@@ -189,8 +189,13 @@ export function nativeMarkdown(document: NativeDocument): string {
 }
 export function projectionMarkdown(document: NativeDocument, localMarkdown: string): string {
   const local = normalizeMarkdown(localMarkdown),
-    frontmatter = /^---\n[\s\S]*?\n---\n/.exec(local)?.[0] ?? "";
-  return normalizeMarkdown(`${frontmatter}${frontmatter ? "\n" : ""}${nativeMarkdown(document)}`);
+    remote = normalizeMarkdown(nativeMarkdown(document)),
+    localFrontmatter = /^---\n[\s\S]*?\n---\n/.exec(local)?.[0] ?? "";
+  // The Google Doc may contain the complete SOUL.md, including its YAML
+  // frontmatter. Prefer it when present; only carry local profile metadata
+  // forward when the remote Markdown has no frontmatter of its own.
+  if (/^---\n[\s\S]*?\n---\n/.test(remote)) return remote;
+  return normalizeMarkdown(`${localFrontmatter}${localFrontmatter ? "\n" : ""}${remote}`);
 }
 export function projectionAction(
   previous: { remoteHash: string; localHash: string } | undefined,
