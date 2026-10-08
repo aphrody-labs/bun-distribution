@@ -10,6 +10,8 @@ minimumReleaseAgeExcludes = [
   "@aphrody/ag-ui-client",
   "@aphrody/mcp-ui",
   "@aphrody/material-web",
+  "@aphrody/bun-types",
+  "@aphrody/bun-webview-page",
   "next",
   "@next/env",
   "@next/swc-linux-x64-gnu",

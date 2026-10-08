@@ -337,7 +337,7 @@
           ],
           [
             "2026-10-06",
-            "Absorbed natively: `postgres`/`pg` → `Bun.SQL`, `vitest` → `bun:test`, `date-fns` → `Intl`, `fuse.js` → `@aphrody/fuzzy` (312 reference queries identical), `qrcode` → `@aphrody/qr` (208 symbols identical), `playwright-core` → `@aphrody/webview-page` (16 tests). Ratchet baseline `{}`.",
+            "Absorbed natively: `postgres`/`pg` → `Bun.SQL`, `vitest` → `bun:test`, `date-fns` → `Intl`, `fuse.js` → `@aphrody/fuzzy` (312 reference queries identical), `qrcode` → `@aphrody/qr` (208 symbols identical), `playwright-core` → `@aphrody/bun-webview-page` (fork) (16 tests). Ratchet baseline `{}`.",
             "No Kanji QR mode; fuzzy lacks extended search, logical queries, diacritic folding."
           ],
           [

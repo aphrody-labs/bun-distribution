@@ -46,6 +46,7 @@
   "dependencies": {
     "@aphrody/api": "workspace:*",
     "@aphrody/assets": "workspace:*",
+    "@aphrody/bun-webview-page": "0.1.1-aphrody.1",
     "@aphrody/canvas": "workspace:*",
     "@aphrody/drive-client": "workspace:*",
     "@aphrody/eslint-plugin-m3": "workspace:*",
@@ -76,7 +77,6 @@
     "@aphrody/plugin-dialog": "workspace:*",
     "@aphrody/qr": "workspace:*",
     "@aphrody/scaffold": "workspace:*",
-    "@aphrody/webview-page": "workspace:*",
     "@dnd-kit/core": "catalog:",
     "@dnd-kit/sortable": "catalog:",
     "@dnd-kit/utilities": "catalog:",

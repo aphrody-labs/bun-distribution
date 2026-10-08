@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium, type Page } from "@aphrody/webview-page";
+import { chromium, type Page } from "@aphrody/bun-webview-page";
 import { PAGES } from "../src/pages/index.ts";
 import { CHROMIUM_ARGS } from "./shots.ts";
 

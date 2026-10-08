@@ -6,9 +6,9 @@
 //   bun scripts/browser-check.ts [--base http://localhost:3218]     (server running: `bun run start` in examples/app)
 //   bun scripts/yolo-example.ts browser                             (builds with yolo, starts the server, runs this)
 //
-// The browser is Bun.WebView driven through @aphrody/webview-page (Chrome, Chromium or Edge found on PATH or in
+// The browser is Bun.WebView driven through @aphrody/bun-webview-page (Chrome, Chromium or Edge found on PATH or in
 // BUN_CHROME_PATH); no Playwright and no browser download.
-import { chromium } from "@aphrody/webview-page";
+import { chromium } from "@aphrody/bun-webview-page";
 
 export interface Check {
   name: string;
