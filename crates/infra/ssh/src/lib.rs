@@ -1196,7 +1196,13 @@ pub async fn run_ssh(host: Host, args: &[&str]) -> Result<Output, Error> {
         stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
     };
     if !output.status.success() {
-        return Err(Error::Remote { code: result.exit_code, stderr: result.stderr.trim().into() });
+        // Keep the remote stdout too: commands often redirect their diagnostics there (`2>&1`).
+        let stderr = match (result.stdout.trim(), result.stderr.trim()) {
+            ("", err) => err.to_owned(),
+            (out, "") => out.to_owned(),
+            (out, err) => format!("{out}\n{err}"),
+        };
+        return Err(Error::Remote { code: result.exit_code, stderr });
     }
     Ok(result)
 }

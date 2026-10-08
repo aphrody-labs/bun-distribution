@@ -41,6 +41,14 @@
       { "remote": "127.0.0.1:28793", "local": "127.0.0.1:8793", "service": "mcpHttp" }
     ]
   },
+  "linkWatch": {
+    "$comment": "aphrody-omar-link.timer on the vps: posts each wg1 / reverse-tunnel transition to the admin channel.",
+    "discordChannelId": "1557354144149405806",
+    "ownerDiscordId": "281114294152724491",
+    "credentialFile": "/etc/aphrody-discord.env",
+    "handshakeFreshSeconds": 180,
+    "stateFile": "/var/lib/aphrody-omar-link/state.json"
+  },
   "ownerAliases": {
     "omar-pc": "ssh over wg1 (10.200.77.10)",
     "omar-rt": "ssh through the reverse tunnel (ProxyJump vps, 127.0.0.1:22010)"
