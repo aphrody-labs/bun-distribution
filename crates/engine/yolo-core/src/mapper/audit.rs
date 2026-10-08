@@ -113,10 +113,19 @@ pub fn run(root: &Path, audit_out: &Path, map_out: &Path) -> Result<RunResult> {
   let root_kind = crate::mapper::detect::detect_root(&root);
   let content_hash = compute_root_hash(&root);
 
+  let declared = Arc::new(crate::mapper::detect::declared_workspaces(&root));
+  let mut scan_dirs: Vec<String> = SCAN_DIRS.iter().map(|d| (*d).to_owned()).collect();
+  for member in declared.iter() {
+    let top = member.split('/').next().unwrap_or(member).to_owned();
+    if !scan_dirs.contains(&top) {
+      scan_dirs.push(top);
+    }
+  }
+
   let acc = Arc::new(ScanAccumulator::default());
   let ignore_set = build_ignore_globset()?;
 
-  for dir in SCAN_DIRS {
+  for dir in &scan_dirs {
     let abs = root.join(dir);
     if !abs.is_dir() {
       continue;
@@ -135,10 +144,12 @@ pub fn run(root: &Path, audit_out: &Path, map_out: &Path) -> Result<RunResult> {
     let acc_cl = Arc::clone(&acc);
     let ignore_set_cl = ignore_set.clone();
     let root_cl = root.clone();
+    let declared_cl = Arc::clone(&declared);
     walker.run(move || {
       let acc = Arc::clone(&acc_cl);
       let ignore_set = ignore_set_cl.clone();
       let root = root_cl.clone();
+      let declared = Arc::clone(&declared_cl);
       Box::new(move |result| {
         let entry = match result {
           Ok(e) => e,
@@ -148,7 +159,7 @@ pub fn run(root: &Path, audit_out: &Path, map_out: &Path) -> Result<RunResult> {
           return WalkState::Continue;
         }
         if entry.file_type().map(|t| t.is_file()).unwrap_or(false) {
-          process_file(&entry, &root, &acc);
+          process_file(&entry, &root, &acc, &declared);
         }
         WalkState::Continue
       })
@@ -213,7 +224,7 @@ pub fn run(root: &Path, audit_out: &Path, map_out: &Path) -> Result<RunResult> {
     last_updated: now.clone(),
     generator: "aphrody-yolo map (rust)",
     scope: Scope {
-      directories_audited: SCAN_DIRS.iter().map(|s| (*s).to_string()).collect(),
+      directories_audited: scan_dirs.clone(),
       excluded: IGNORE_SEGMENTS.iter().map(|s| s.to_string()).collect(),
       host: host.clone(),
       os: os.clone(),
@@ -236,7 +247,7 @@ pub fn run(root: &Path, audit_out: &Path, map_out: &Path) -> Result<RunResult> {
       format!(
         "All source code under {} exclusively relies on workspace-aware utilities and \
                  environment variables for file resolution.",
-        SCAN_DIRS.join(" / "),
+        scan_dirs.join(" / "),
       )
     } else {
       format!("{total_findings} finding(s) detected — review `findings.*.matches` and remediate.")
@@ -358,7 +369,7 @@ struct PkgJson {
   version: Option<String>,
 }
 
-fn process_file(entry: &DirEntry, root: &Path, acc: &ScanAccumulator) {
+fn process_file(entry: &DirEntry, root: &Path, acc: &ScanAccumulator, declared: &[String]) {
   use std::sync::atomic::Ordering;
 
   let path = entry.path();
@@ -389,8 +400,10 @@ fn process_file(entry: &DirEntry, root: &Path, acc: &ScanAccumulator) {
       // output of `workspace_key()` on all platforms (Windows
       // `display()` yields back-slashes, causing file_count=0 otherwise).
       let ws_key = ws_rel.display().to_string().replace('\\', "/");
+      // With declared workspaces, a nested manifest (fixture, example) is not a workspace.
+      let is_workspace = declared.is_empty() || declared.contains(&ws_key);
       match name {
-        "package.json" => {
+        "package.json" if is_workspace => {
           if let Some((n, v)) = parse_pkg_json(path) {
             let mut e = acc.workspaces.entry(ws_key).or_default();
             e.name = e.name.clone().or(n);
@@ -401,7 +414,7 @@ fn process_file(entry: &DirEntry, root: &Path, acc: &ScanAccumulator) {
             });
           }
         }
-        "Cargo.toml" => {
+        "Cargo.toml" if is_workspace => {
           if let Some((n, v)) = parse_cargo_toml(path) {
             let mut e = acc.workspaces.entry(ws_key).or_default();
             e.name = e.name.clone().or(n);
@@ -417,7 +430,7 @@ fn process_file(entry: &DirEntry, root: &Path, acc: &ScanAccumulator) {
     }
   }
 
-  if let Some(ws_key) = workspace_key(rel) {
+  if let Some(ws_key) = workspace_key(rel, declared) {
     let mut e = acc.workspaces.entry(ws_key).or_default();
     e.file_count += 1;
     e.bytes += size;
@@ -487,13 +500,23 @@ fn process_file(entry: &DirEntry, root: &Path, acc: &ScanAccumulator) {
   }
 }
 
-fn workspace_key(rel: &Path) -> Option<String> {
+/// Workspace owning `rel`: the longest declared workspace containing it, else (nothing
+/// declared) the `apps/<name>` or `packages/<name>` directory.
+fn workspace_key(rel: &Path, declared: &[String]) -> Option<String> {
   let path_str = rel.to_string_lossy();
   let normalized = if path_str.contains('\\') {
     std::path::PathBuf::from(path_str.replace('\\', "/"))
   } else {
     rel.to_path_buf()
   };
+  if !declared.is_empty() {
+    let text = normalized.to_string_lossy();
+    return declared
+      .iter()
+      .filter(|d| text.strip_prefix(d.as_str()).is_some_and(|rest| rest.starts_with('/')))
+      .max_by_key(|d| d.len())
+      .cloned();
+  }
 
   let mut comps = normalized.components();
   let top = comps.next()?.as_os_str().to_string_lossy().into_owned();
@@ -660,7 +683,7 @@ mod tests {
   fn workspace_key_normalises_windows_paths() {
     // POSIX-style relative path (Linux / macOS native)
     let posix = Path::new("apps/myapp/src/index.ts");
-    let posix_key = workspace_key(posix);
+    let posix_key = workspace_key(posix, &[]);
     assert_eq!(posix_key.as_deref(), Some("apps/myapp"));
 
     // Windows-style relative path: Path::new on all platforms accepts
@@ -668,7 +691,7 @@ mod tests {
     // from a raw string with `\\` characters, so this simulates what
     // `strip_prefix` returns on Windows hosts.
     let win_raw = std::path::PathBuf::from("apps\\myapp\\src\\index.ts");
-    let win_key = workspace_key(&win_raw);
+    let win_key = workspace_key(&win_raw, &[]);
     assert_eq!(win_key.as_deref(), Some("apps/myapp"));
 
     // Both representations must produce an identical key so that the
@@ -684,15 +707,25 @@ mod tests {
   /// from the original invariant.
   #[test]
   fn workspace_key_rejects_non_workspace_paths() {
-    assert_eq!(workspace_key(Path::new("src/lib.rs")), None);
-    assert_eq!(workspace_key(Path::new("crates/foo/src/lib.rs")), None);
-    assert_eq!(workspace_key(Path::new("")), None);
+    assert_eq!(workspace_key(Path::new("src/lib.rs"), &[]), None);
+    assert_eq!(workspace_key(Path::new("crates/foo/src/lib.rs"), &[]), None);
+    assert_eq!(workspace_key(Path::new(""), &[]), None);
   }
 
   /// `packages/` prefix must be accepted in addition to `apps/`.
   #[test]
   fn workspace_key_accepts_packages_prefix() {
-    let key = workspace_key(Path::new("packages/utils/index.ts"));
+    let key = workspace_key(Path::new("packages/utils/index.ts"), &[]);
     assert_eq!(key.as_deref(), Some("packages/utils"));
+  }
+
+  #[test]
+  fn declared_workspaces_take_the_longest_prefix() {
+    let declared = ["src/sema".to_owned(), "src/sema/driver".to_owned(), "src/sys".to_owned()];
+    let key = |p: &str| workspace_key(Path::new(p), &declared);
+    assert_eq!(key("src/sema/driver/lib.rs").as_deref(), Some("src/sema/driver"));
+    assert_eq!(key("src/sema/lib.rs").as_deref(), Some("src/sema"));
+    assert_eq!(key("src/system/x.rs"), None);
+    assert_eq!(key("apps/demo/index.ts"), None);
   }
 }

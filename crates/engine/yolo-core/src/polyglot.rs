@@ -7,7 +7,7 @@ use anyhow::{Context, Result};
 use oxc_allocator::Allocator;
 use oxc_ast::{
   AstKind,
-  ast::{Expression, VariableDeclarationKind},
+  ast::{Argument, Expression, VariableDeclarationKind},
 };
 use oxc_ast_visit::Visit;
 use oxc_parser::Parser;
@@ -389,7 +389,12 @@ pub struct Declarations {
   pub classes: Vec<String>,
   pub functions: Vec<String>,
   pub interfaces: Vec<String>,
+  /// Module-level constants; constants local to a function or block are not listed.
   pub constants: Vec<String>,
+  /// Enum names.
+  pub enums: Vec<String>,
+  /// Enum variants as `Enum.Variant`.
+  pub enum_variants: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -437,11 +442,38 @@ struct JsDeclarations {
   functions: Vec<String>,
   interfaces: Vec<String>,
   constants: Vec<String>,
+  enums: Vec<String>,
+  enum_variants: Vec<String>,
   imports: Vec<(u32, String)>,
+  /// Nesting inside function bodies, blocks, loops and namespaces.
+  depth: usize,
+}
+
+fn opens_scope(node: &AstKind<'_>) -> bool {
+  matches!(
+    node,
+    AstKind::FunctionBody(_)
+      | AstKind::BlockStatement(_)
+      | AstKind::StaticBlock(_)
+      | AstKind::SwitchStatement(_)
+      | AstKind::ForStatement(_)
+      | AstKind::ForInStatement(_)
+      | AstKind::ForOfStatement(_)
+      | AstKind::TSModuleBlock(_)
+  )
 }
 
 impl<'a> Visit<'a> for JsDeclarations {
+  fn leave_node(&mut self, node: AstKind<'a>) {
+    if opens_scope(&node) {
+      self.depth -= 1;
+    }
+  }
+
   fn enter_node(&mut self, node: AstKind<'a>) {
+    if opens_scope(&node) {
+      self.depth += 1;
+    }
     match node {
       AstKind::Function(node) => push_unique(
         &mut self.functions,
@@ -454,11 +486,30 @@ impl<'a> Visit<'a> for JsDeclarations {
       AstKind::TSInterfaceDeclaration(node) => {
         push_unique(&mut self.interfaces, Some(node.id.name.to_string()))
       }
-      AstKind::VariableDeclaration(node) if node.kind == VariableDeclarationKind::Const => {
+      AstKind::VariableDeclaration(node)
+        if node.kind == VariableDeclarationKind::Const && self.depth == 0 =>
+      {
         for declaration in &node.declarations {
           for id in declaration.id.get_binding_identifiers() {
             push_unique(&mut self.constants, Some(id.name.to_string()));
           }
+        }
+      }
+      AstKind::TSEnumDeclaration(node) => {
+        let name = node.id.name.to_string();
+        for member in &node.body.members {
+          push_unique(
+            &mut self.enum_variants,
+            Some(format!("{name}.{}", member.id.static_name())),
+          );
+        }
+        push_unique(&mut self.enums, Some(name));
+      }
+      AstKind::CallExpression(node) if node.is_require_call() => {
+        if let Some(Argument::StringLiteral(source)) = node.arguments.first() {
+          self
+            .imports
+            .push((source.span.start, source.value.to_string()));
         }
       }
       AstKind::ImportExpression(node) => {
@@ -480,6 +531,8 @@ pub fn parse(path: &Path, content: &str) -> ParseResult {
   let mut functions = Vec::new();
   let mut interfaces = Vec::new();
   let mut constants = Vec::new();
+  let mut enums = Vec::new();
+  let mut enum_variants = Vec::new();
   let mut blank_lines = 0;
   let mut comment_lines = 0;
   let mut code_lines = 0;
@@ -526,7 +579,11 @@ pub fn parse(path: &Path, content: &str) -> ParseResult {
         );
         push_unique(
           &mut classes,
-          captures(r"^(?:pub\s+)?(?:struct|enum)\s+(\w+)", line),
+          captures(r"^(?:pub(?:\([^)]+\))?\s+)?struct\s+(\w+)", line),
+        );
+        push_unique(
+          &mut enums,
+          captures(r"^(?:pub(?:\([^)]+\))?\s+)?enum\s+(\w+)", line),
         );
         push_unique(
           &mut interfaces,
@@ -636,6 +693,8 @@ pub fn parse(path: &Path, content: &str) -> ParseResult {
       functions = declarations.functions;
       interfaces = declarations.interfaces;
       constants = declarations.constants;
+      enums = declarations.enums;
+      enum_variants = declarations.enum_variants;
     }
   }
   let validation_gate = match (definition.build_gate, definition.test_runner) {
@@ -659,6 +718,8 @@ pub fn parse(path: &Path, content: &str) -> ParseResult {
       functions,
       interfaces,
       constants,
+      enums,
+      enum_variants,
     },
     validation_gate,
     diagnostics,
@@ -722,10 +783,11 @@ mod tests {
   fn parses_rust_symbols() {
     let result = parse(
       Path::new("lib.rs"),
-      "use std::fs;\npub struct Engine;\npub trait Run {}\npub fn execute() {}\n",
+      "use std::fs;\npub struct Engine;\npub(crate) enum Kind { A }\npub trait Run {}\npub fn execute() {}\n",
     );
     assert_eq!(result.imports, ["std::fs"]);
     assert_eq!(result.declarations.classes, ["Engine"]);
+    assert_eq!(result.declarations.enums, ["Kind"]);
     assert_eq!(result.declarations.functions, ["execute"]);
   }
 }

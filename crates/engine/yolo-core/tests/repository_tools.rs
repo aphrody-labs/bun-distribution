@@ -29,6 +29,34 @@ const { left, right: renamed } = value;
 }
 
 #[test]
+fn require_calls_are_imports_and_locals_are_not_constants() {
+  let source = r#"
+const { join } = require("node:path");
+const fs = require('fs');
+const dynamic = require(name);
+export const enum Mode { Read, Write = 2, "dash-name" }
+enum Plain { A }
+const TOP = 1;
+function run() {
+  const local = require("./local");
+  for (const item of []) {}
+  if (TOP) { const inner = 2; }
+  return local;
+}
+class Box { static { const hidden = 3; } }
+"#;
+  let parsed = polyglot::parse(Path::new("module.ts"), source);
+  assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+  assert_eq!(parsed.imports, ["node:path", "fs", "./local"]);
+  assert_eq!(parsed.declarations.constants, ["join", "fs", "dynamic", "TOP"]);
+  assert_eq!(parsed.declarations.enums, ["Mode", "Plain"]);
+  assert_eq!(
+    parsed.declarations.enum_variants,
+    ["Mode.Read", "Mode.Write", "Mode.dash-name", "Plain.A"]
+  );
+}
+
+#[test]
 fn invalid_javascript_reports_parser_diagnostics_and_no_invented_symbols() {
   let parsed = polyglot::parse(Path::new("bad.js"), "import { broken from ;");
   assert!(!parsed.diagnostics.is_empty());
@@ -84,6 +112,47 @@ fn audit_keeps_topology_contract_and_prunes_ignored_directories() {
   assert_eq!(report["workspaces"][0]["path"], "apps/demo");
   assert_eq!(report["workspaces"][0]["name"], "fixture");
   assert!(mapper::audit::run(&root.path().join("missing"), &audit, &map).is_err());
+}
+
+#[test]
+fn audit_maps_declared_cargo_and_package_json_workspaces() {
+  let root = tempfile::tempdir().unwrap();
+  let r = root.path();
+  let write = |path: &str, text: &str| {
+    let path = r.join(path);
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    std::fs::write(path, text).unwrap();
+  };
+  write("Cargo.toml", "[workspace]\nmembers = [\"src/sys\", \"src/core\"]\n");
+  write("package.json", r#"{"name":"root","workspaces":["./packages/types"]}"#);
+  write("src/sys/Cargo.toml", "[package]\nname = \"bun_sys\"\nversion = \"0.1.0\"\n");
+  write("src/sys/lib.rs", "pub fn open() {}\n");
+  write("src/core/Cargo.toml", "[package]\nname = \"bun_core\"\n");
+  write("src/core/lib.rs", "\n");
+  write("packages/types/package.json", r#"{"name":"types"}"#);
+  write("packages/types/index.d.ts", "export {};\n");
+  write("packages/types/fixture/package.json", r#"{"name":"fixture"}"#);
+  let audit = r.join("out/audit.json");
+  let map = r.join("out/map.json");
+  let result = mapper::audit::run(r, &audit, &map).unwrap();
+  assert_eq!(result.workspaces, 3);
+  let report: serde_json::Value = serde_json::from_slice(&std::fs::read(&map).unwrap()).unwrap();
+  let names: Vec<(&str, &str, u64)> = report["workspaces"]
+    .as_array()
+    .unwrap()
+    .iter()
+    .map(|w| {
+      (
+        w["path"].as_str().unwrap(),
+        w["name"].as_str().unwrap(),
+        w["file_count"].as_u64().unwrap(),
+      )
+    })
+    .collect();
+  assert_eq!(
+    names,
+    [("packages/types", "types", 3), ("src/core", "bun_core", 2), ("src/sys", "bun_sys", 2)]
+  );
 }
 
 #[tokio::test(flavor = "current_thread")]
