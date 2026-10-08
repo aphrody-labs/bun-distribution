@@ -96,6 +96,19 @@ test("REST catch-up traverses more than 100 messages without advancing over a ga
     q.close();
   }
 });
+test("new channels begin after their configured cursor instead of importing old history", async () => {
+  const q = new Queue(":memory:");
+  const anchored = { ...policy, startAfter: { c: "10" } };
+  const api: LabApi = async <T>() => [message("12"), message("11")] as T;
+  try {
+    await reconcile(q, anchored, api);
+    expect(q.counts()).toEqual([{ state: "pending", count: 2 }]);
+    expect(q.get("history_complete")).toBe("true");
+    expect(q.get("after")).toBe("12");
+  } finally {
+    q.close();
+  }
+});
 test("a truncated history pass keeps the high-water mark until the gap is collected", async () => {
   const q = new Queue(":memory:");
   q.set("history_complete", "true");
@@ -303,11 +316,14 @@ test("multi-channel configuration admits and routes messages across multiple dec
       channel_id: "c2",
     });
 
-    const job102 = q.db.query<{ id: string; channel_id: string }, [string]>("SELECT id, channel_id FROM jobs WHERE id=?").get("102");
+    const job102 = q.db
+      .query<{ id: string; channel_id: string }, [string]>(
+        "SELECT id, channel_id FROM jobs WHERE id=?",
+      )
+      .get("102");
     expect(job102?.channel_id).toBe("c2");
   } finally {
     q.close();
     await rm(dir, { recursive: true, force: true });
   }
 });
-

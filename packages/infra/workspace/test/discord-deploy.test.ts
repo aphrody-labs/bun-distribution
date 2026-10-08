@@ -52,6 +52,15 @@ function fixture(fail: (command: string) => boolean = () => false, native = true
           ? { code: 0, stdout: '{"upgradeProtocol":2}', stderr: "" }
           : { code: 1, stdout: "", stderr: "error: --policy required" };
       if (fail(command)) return { code: 1, stdout: "", stderr: "fixture refusal" };
+      if (command.includes("__APHRODY_ACTIVE_CODE"))
+        return { code: 0, stdout: "inactive\n__APHRODY_ACTIVE_CODE=3\n", stderr: "" };
+      if (command.includes("sha256sum"))
+        return {
+          code: 0,
+          stdout:
+            "c886d124e1389167b0f1424b91bfc2902cc750c481d61fef6e97cd605493bf0b  /home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo\n",
+          stderr: "",
+        };
       return {
         code: 0,
         stdout: command.endsWith("-p MainPID --value") ? "1234\n" : "",
@@ -72,7 +81,7 @@ function fixture(fail: (command: string) => boolean = () => false, native = true
 const quiet = () => {};
 
 test("an absent or changed Yolo fork cannot signal, build or upload a monitor release", async () => {
-  const f = fixture((command) => command.includes("sha256sum -c"));
+  const f = fixture((command) => command.includes("sha256sum"));
   await expect(
     deployDiscord(discordDeployment("omar-monitor", "vps", root), f.transport, quiet),
   ).rejects.toThrow("Declared Yolo fork");
@@ -88,10 +97,12 @@ test("monitor probes execute the pinned fork in interpreter mode", async () => {
     /--capabilities|--ready-check|--upgrade-check/.test(command),
   );
   expect(probes.length).toBeGreaterThan(0);
-  for (const command of probes)
-    expect(command).toStartWith(
-      "env BUN_BE_BUN=1 '/home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo'",
-    );
+  for (const command of probes) expect(command).toStartWith("sudo -n -u 'ubuntu' bash -c");
+  for (const command of probes) {
+    expect(command).toMatch(/cd .*srv\/aphrody-lab/);
+    expect(command).toContain("BUN_BE_BUN=1");
+    expect(command).toContain("/home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo");
+  }
 });
 
 test("release resolves product source and the declared target; foreign targets fail", () => {
@@ -128,13 +139,24 @@ test("a stopped recovered monitor can upgrade without signaling a stale receipt 
     const result = await run(host, command);
     if (command.endsWith("-p MainPID --value")) result.stdout = "0\n";
     if (command.includes("enable --now")) activated = true;
-    if (command.startsWith("systemctl is-active --quiet") && !activated) result.code = 3;
     return result;
   };
   await deployDiscord(discordDeployment("omar-monitor", "vps", root), f.transport, quiet);
   expect(f.uploads).toHaveLength(2);
   expect(f.commands.some((command) => command.includes("--expect-pid"))).toBe(false);
   expect(f.commands.some((command) => command.includes("--signal"))).toBe(false);
+  expect(
+    f.commands.some((command) =>
+      command.includes("systemctl restart 'aphrody-discord-omar-monitor.service'"),
+    ),
+  ).toBe(false);
+  expect(
+    f.commands.some(
+      (command) =>
+        command.includes("bash -c") &&
+        command.includes("/home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo"),
+    ),
+  ).toBe(true);
 });
 
 test("zero PID cannot bypass activation state or a durable executing goal", async () => {
@@ -145,7 +167,8 @@ test("zero PID cannot bypass activation state or a durable executing goal", asyn
       f.transport.run = async (host, command) => {
         const result = await run(host, command);
         if (command.endsWith("-p MainPID --value")) result.stdout = "0\n";
-        if (command.startsWith("systemctl is-active --quiet")) result.code = activeCode;
+        if (command.includes("__APHRODY_ACTIVE_CODE"))
+          result.stdout = `${activeCode === 0 ? "activating" : "inactive"}\n__APHRODY_ACTIVE_CODE=${activeCode}\n`;
         if (command.endsWith("--upgrade-check")) result.code = 1;
         return result;
       };
@@ -197,8 +220,14 @@ test("a failed staged product probe keeps installed files and service untouched"
     deployDiscord(discordDeployment("omar-monitor", "vps", root), f.transport, quiet),
   ).rejects.toThrow("fixture refusal");
   expect(f.uploads).toHaveLength(2);
-  expect(f.commands.some((command) => /sudo.*install|systemctl restart/.test(command))).toBe(false);
-  expect(f.commands.at(-1)).toContain("rm -rf -- '/tmp/aphrody-discord-release-");
+  expect(
+    f.commands.some(
+      (command) => command.includes(".new'") || command.includes("systemctl restart"),
+    ),
+  ).toBe(false);
+  expect(f.commands.at(-1)).toContain(
+    "rm -rf -- '/srv/aphrody-lab/.deploy/aphrody-discord-release-",
+  );
 });
 
 test("release verifies uploaded bytes, installs the declared unit, and preserves protected stores", async () => {
@@ -206,12 +235,16 @@ test("release verifies uploaded bytes, installs the declared unit, and preserves
   await deployDiscord(discordDeployment("omar-monitor", "vps", root), f.transport, quiet);
   expect(f.uploads).toHaveLength(2);
   expect(f.uploads.join("\n")).not.toMatch(/queue\.sqlite|\.env|auth/);
+  const runtimeCheck = f.commands.find((command) => command.includes("sha256sum"));
+  expect(runtimeCheck).toContain("sudo -n -u 'ubuntu' sha256sum");
   const checks = f.commands.filter((command) => command.includes("sha256sum -c --quiet"));
-  expect(checks).toHaveLength(5);
-  expect(checks[0]).toContain(discordDeployment("omar-monitor", "vps", root).runtimeSha256);
+  expect(checks).toHaveLength(4);
   expect(f.commands.findIndex((command) => command.endsWith("--probe"))).toBeLessThan(
     f.commands.findIndex((command) => command.includes(".new'")),
   );
+  expect(
+    f.commands.some((command) => command.includes("install -d -o 'omar' -g 'omar' -m 711")),
+  ).toBe(true);
   expect(
     f.commands.some((command) =>
       command.includes("systemctl restart 'aphrody-discord-omar-monitor.service'"),
@@ -226,7 +259,7 @@ test("release verifies uploaded bytes, installs the declared unit, and preserves
 
 test("activation failure restores previous product files and the previous unit", async () => {
   const f = fixture(
-    (command) => command.includes("restart") && command.includes("is-active --quiet"),
+    (command) => command === "systemctl is-active --quiet 'aphrody-discord-omar-monitor.service'",
   );
   await expect(
     deployDiscord(discordDeployment("omar-monitor", "vps", root), f.transport, quiet),
@@ -240,6 +273,11 @@ test("activation failure restores previous product files and the previous unit",
     f.commands.some(
       (command) =>
         command.includes("previous-active") && command.includes("systemctl daemon-reload"),
+    ),
+  ).toBe(true);
+  expect(
+    f.commands.some(
+      (command) => command === "sudo -n systemctl stop 'aphrody-discord-omar-monitor.service'",
     ),
   ).toBe(true);
 });

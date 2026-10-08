@@ -31,6 +31,7 @@ export interface DiscordDeployment {
   policy: { source: string; target: string };
   stateDirectory: string;
   stateOwner: string;
+  uploadOwner: string;
   runtime: string;
   runtimeSha256: string;
   plan: Plan;
@@ -55,6 +56,7 @@ export function discordDeployment(
     },
     stateDirectory: "/srv/aphrody-lab/state/omar-monitor",
     stateOwner: "ubuntu",
+    uploadOwner: "omar",
     runtime: "/home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo",
     runtimeSha256: "c886d124e1389167b0f1424b91bfc2902cc750c481d61fef6e97cd605493bf0b",
     plan: hostPlan([unit], { target, root: join(root, "tools/config/host") }),
@@ -62,7 +64,8 @@ export function discordDeployment(
 }
 
 function discordRuntime(deployment: DiscordDeployment): string {
-  return `env BUN_BE_BUN=1 ${quote(deployment.runtime)}`;
+  const command = `cd ${quote("/srv/aphrody-lab")} && exec env BUN_BE_BUN=1 "$0" "$@"`;
+  return `sudo -n -u ${quote(deployment.stateOwner)} bash -c ${quote(command)} ${quote(deployment.runtime)}`;
 }
 
 export interface DiscordDeploymentTransport {
@@ -70,6 +73,23 @@ export interface DiscordDeploymentTransport {
   upload(host: string, source: string, target: string): Promise<void>;
   build(entrypoint: string, outdir: string): Promise<void>;
   wait?(milliseconds: number): Promise<void>;
+}
+
+async function systemdActive(
+  deployment: DiscordDeployment,
+  transport: DiscordDeploymentTransport,
+): Promise<{ code: number; state: string }> {
+  const result = await transport.run(
+    deployment.target,
+    `systemctl is-active ${quote(deployment.unit)} 2>&1; activeCode=$?; printf '\\n__APHRODY_ACTIVE_CODE=%s\\n' "$activeCode"`,
+  );
+  const marker = /__APHRODY_ACTIVE_CODE=([0-9]+)/.exec(result.stdout);
+  if (result.code !== 0 || !marker)
+    throw new Error(`Cannot determine monitor service state: ${result.stderr || result.stdout}`);
+  return {
+    code: Number(marker[1]),
+    state: result.stdout.replace(marker[0], "").trim(),
+  };
 }
 
 /** A live monitor must acknowledge drainage from its current systemd PID before an upgrade proceeds. */
@@ -80,21 +100,19 @@ export async function quiesceDiscord(
 ): Promise<string | null> {
   const runtime = await transport.run(
     deployment.target,
-    `printf '%s  %s\\n' ${quote(deployment.runtimeSha256)} ${quote(deployment.runtime)} | sha256sum -c --quiet -`,
+    `sudo -n -u ${quote(deployment.stateOwner)} sha256sum ${quote(deployment.runtime)}`,
   );
-  if (runtime.code !== 0)
+  const runtimeHash = runtime.stdout.trim().split(/\s+/)[0];
+  if (runtime.code !== 0 || runtimeHash !== deployment.runtimeSha256)
     throw new Error("Declared Yolo fork is absent or its SHA-256 differs; deployment deferred");
   const worker = `${discordRuntime(deployment)} ${quote(deployment.bundle)}`;
   const installed = await transport.run(deployment.target, `test -f ${quote(deployment.bundle)}`);
   if (installed.code === 1) {
-    const active = await transport.run(
-      deployment.target,
-      `systemctl is-active --quiet ${quote(deployment.unit)}`,
-    );
+    const active = await systemdActive(deployment, transport);
     if (active.code === 0)
       throw new Error("A live monitor has no installed artifact; deployment deferred");
     if (active.code !== 3 && active.code !== 4)
-      throw new Error("Cannot qualify monitor absence for installation");
+      throw new Error(`Cannot qualify monitor absence for installation (${active.state})`);
     return null;
   }
   if (installed.code !== 0) throw new Error("Cannot qualify installed Discord artifact");
@@ -111,12 +129,9 @@ export async function quiesceDiscord(
   );
   const pid = pidResult.stdout.trim();
   if (pidResult.code === 0 && pid === "0") {
-    const active = await transport.run(
-      deployment.target,
-      `systemctl is-active --quiet ${quote(deployment.unit)}`,
-    );
+    const active = await systemdActive(deployment, transport);
     if (active.code !== 3 && active.code !== 4)
-      throw new Error("Cannot qualify stopped monitor: service may still be activating");
+      throw new Error(`Cannot qualify stopped monitor: service is ${active.state}`);
     const idle = await transport.run(
       deployment.target,
       `${worker} --policy ${quote(deployment.policy.target)} --upgrade-check`,
@@ -207,6 +222,12 @@ const deploymentTransport: DiscordDeploymentTransport = {
   async upload(host, source, target) {
     const result = await runInfra({
       args: ["ssh", "sftp", "--host", host, "--put", source, "--path", target, "--json"],
+      // The in-process SFTP adapter cannot follow this host's OpenSSH ProxyJump route.
+      // Use Infra's direct VPS endpoint for the file channel; exec stays on the SSH alias.
+      env:
+        host === "vps"
+          ? { APHRODY_VPS_HOST: process.env.APHRODY_VPS_SFTP_HOST?.trim() || "51.77.147.152" }
+          : undefined,
     });
     if (result.exitCode !== 0)
       throw new Error(`Infra upload failed (${result.exitCode}): ${result.stderr}`);
@@ -232,13 +253,16 @@ export async function deployDiscord(
     const result = await transport.run(deployment.target, command);
     if (result.code !== 0)
       throw new Error(
-        `Discord deployment refused (${result.code}): ${result.stderr || result.stdout}`,
+        `Discord deployment refused (${result.code}) while running ${command.slice(0, 180)}: ${result.stderr || result.stdout}`,
       );
     if (result.stdout.trim()) log(result.stdout.trim());
   };
   const draining = await quiesceDiscord(deployment, transport);
   const stage = await mkdtemp(join(tmpdir(), "aphrody-discord-release-"));
-  const remoteStage = `/tmp/${stage.split("/").at(-1)}`;
+  const stageName = stage.split("/").at(-1)!;
+  const remoteStage = `/srv/aphrody-lab/.deploy/${stageName}`;
+  const probeBundle = `/srv/aphrody-lab/.${stageName}.mjs`;
+  const probePolicy = `/srv/aphrody-lab/.${stageName}-policy.json`;
   let remoteCreated = false;
   let installedChanged = false;
   try {
@@ -256,7 +280,10 @@ export async function deployDiscord(
       },
     ];
     const hashes: Record<string, string> = {};
-    await exec(`mkdir -m 700 ${quote(remoteStage)}`);
+    // Bun's pinned interpreter only loads the staged module from the service root, not a child directory.
+    await exec(
+      `sudo -n install -d -o ${quote(deployment.uploadOwner)} -g ${quote(deployment.uploadOwner)} -m 711 ${quote(remoteStage)}`,
+    );
     remoteCreated = true;
     /* oxlint-disable no-await-in-loop -- upload, install and verify are an ordered release transaction. */
     for (const file of files) {
@@ -268,7 +295,10 @@ export async function deployDiscord(
         `printf '%s  %s\\n' ${quote(hashes[file.name]!)} ${quote(`${remoteStage}/${file.name}`)} | sha256sum -c --quiet -`,
       );
     }
-    const worker = `${discordRuntime(deployment)} ${quote(`${remoteStage}/omar-monitor.mjs`)} --policy ${quote(`${remoteStage}/omar-monitor-policy.json`)}`;
+    await exec(
+      `sudo -n install -o root -g root -m 644 ${quote(`${remoteStage}/omar-monitor.mjs`)} ${quote(probeBundle)} && sudo -n install -o root -g root -m 644 ${quote(`${remoteStage}/omar-monitor-policy.json`)} ${quote(probePolicy)}`,
+    );
+    const worker = `${discordRuntime(deployment)} ${quote(probeBundle)} --policy ${quote(probePolicy)}`;
     await exec(`${worker} --probe`);
     // Recheck after the build/upload/probe, before any installed code changes.
     if (draining) {
@@ -300,11 +330,22 @@ export async function deployDiscord(
         `sudo -n install -o root -g root -m 644 ${quote(`${remoteStage}/${file.name}`)} ${quote(`${file.target}.new`)} && sudo -n mv -f ${quote(`${file.target}.new`)} ${target} && printf '%s  %s\\n' ${quote(hashes[file.name]!)} ${target} | sha256sum -c --quiet -`,
       );
     }
-    const failed = await applyPlan(deployment.plan, transport.run, log);
-    if (failed.length) throw new Error(`Infra host apply failed: ${failed.join(", ")}`);
-    await exec(
-      `sudo -n systemctl restart ${quote(deployment.unit)} && systemctl is-active --quiet ${quote(deployment.unit)}`,
+    const failed = await applyPlan(
+      deployment.plan,
+      (host, command) =>
+        transport.run(
+          host,
+          command.includes(deployment.runtime)
+            ? `sudo -n -u ${quote(deployment.stateOwner)} bash -c ${quote(command)}`
+            : command,
+        ),
+      log,
     );
+    if (failed.length) throw new Error(`Infra host apply failed: ${failed.join(", ")}`);
+    if (draining) {
+      await exec(`sudo -n systemctl restart ${quote(deployment.unit)}`);
+    }
+    await exec(`systemctl is-active --quiet ${quote(deployment.unit)}`);
     await exec(
       `systemctl show ${quote(deployment.unit)} -p ActiveState -p MainPID -p ExecMainStatus -p NRestarts`,
     );
@@ -313,6 +354,11 @@ export async function deployDiscord(
     );
   } catch (error) {
     if (installedChanged) {
+      const stopped = await transport.run(
+        deployment.target,
+        `sudo -n systemctl stop ${quote(deployment.unit)}`,
+      );
+      if (stopped.code !== 0) log(`Service stop before release rollback failed (${stopped.code})`);
       const paths = [
         deployment.bundle,
         deployment.policy.target,
@@ -336,7 +382,10 @@ export async function deployDiscord(
   } finally {
     if (draining) await resumeDiscord(deployment, transport, draining);
     if (remoteCreated) {
-      const cleanup = await transport.run(deployment.target, `rm -rf -- ${quote(remoteStage)}`);
+      const cleanup = await transport.run(
+        deployment.target,
+        `sudo -n rm -f -- ${quote(probeBundle)} ${quote(probePolicy)} && sudo -n rm -rf -- ${quote(remoteStage)}`,
+      );
       if (cleanup.code !== 0) log(`Release staging cleanup failed (${cleanup.code})`);
     }
     await rm(stage, { recursive: true, force: true });

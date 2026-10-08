@@ -1,12 +1,14 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Moniteur Codex et objectifs d’Omar
 
-Le salon demandé est [start-here](https://discord.com/channels/1554189180030947338/1557354118710829117)
+Le salon source est [start-here](https://discord.com/channels/1554189180030947338/1557354118710829117)
 de la guilde Aphrody. La déclaration
 [`discord-omar-monitor.json`](../../../tools/config/host/discord-omar-monitor.json)
-reprend les deux identifiants d’Omar du contrôle d’accès existant. Les bots,
-webhooks, autres auteurs, autres salons et autres guildes ne créent aucun travail.
-Le contenu du salon reste dans le store privé du VPS.
+inclut tous les salons texte actuels de cette guilde et reprend les deux
+identifiants d’Omar du contrôle d’accès existant. À l’ajout, chaque salon part
+du curseur `startAfter` déclaré, sans rejouer son historique antérieur. Les bots,
+webhooks, autres auteurs et autres guildes ne créent aucun travail. Le contenu
+reste dans le store privé du VPS.
 
 ## Fonctionnement
 

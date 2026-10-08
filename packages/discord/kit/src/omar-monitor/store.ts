@@ -13,6 +13,7 @@ export interface Policy {
   guildId: string;
   channelId: string;
   channelIds?: string[];
+  startAfter?: Record<string, string>;
   omarUserIds: string[];
   ownerId: string;
   envFile: string;

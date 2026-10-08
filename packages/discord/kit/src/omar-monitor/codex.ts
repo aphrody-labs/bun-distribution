@@ -22,6 +22,7 @@ interface Wire {
 }
 
 const shellQuote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
+const MAX_CODEX_FRAME_CHARS = 64 * 1024 * 1024;
 /** Infra's bounded exec API has no streaming stdin transport; SSH owns this stdio gap. */
 export function codexCommand(policy: Policy): string[] {
   if (!policy.codexTransport) return [policy.codex, "app-server", "--stdio"];
@@ -71,21 +72,59 @@ export class Codex {
       // Interpreter mode belongs to this worker, not the compiled Yolo CLI its coding tools run.
       env: { ...process.env, BUN_BE_BUN: undefined, APHRODY_PROFILE: policy.profile },
     });
-    void this.readWire().catch(() => this.fail(new Error("Invalid Codex protocol")));
-    void this.child.exited.then(() => this.fail(new Error("Codex server exited")));
+    void this.readWire().catch((error: unknown) => {
+      console.error(
+        JSON.stringify({
+          event: "codex-stdout-error",
+          errorName: error instanceof Error ? error.name : "unknown",
+          childExitCode: this.child.exitCode,
+        }),
+      );
+      this.fail(new Error("Codex server stdout failed"));
+    });
+    void this.child.exited.then((exitCode) => {
+      if (!this.closed) {
+        console.error(JSON.stringify({ event: "codex-server-exit", exitCode }));
+        this.fail(new Error("Codex server exited"));
+      }
+    });
   }
   private async readWire() {
     const decoder = new TextDecoder();
     let buffer = "";
     for await (const chunk of this.child.stdout) {
       buffer += decoder.decode(chunk, { stream: true });
-      if (buffer.length > 16 * 1024 * 1024) throw new Error("Codex frame budget exceeded");
       let newline = buffer.indexOf("\n");
       while (newline >= 0) {
         const line = buffer.slice(0, newline);
         buffer = buffer.slice(newline + 1);
-        if (line.trim()) this.receive(JSON.parse(line) as Wire);
+        if (line.length > MAX_CODEX_FRAME_CHARS) throw new Error("Codex frame budget exceeded");
+        if (line.trim()) {
+          try {
+            this.receive(JSON.parse(line) as Wire);
+          } catch (error) {
+            console.error(
+              JSON.stringify({
+                event: "codex-invalid-frame",
+                frameLength: line.length,
+                firstCodePoint: line.trimStart().codePointAt(0) ?? null,
+                parseError: error instanceof SyntaxError,
+              }),
+            );
+            throw error;
+          }
+        }
         newline = buffer.indexOf("\n");
+      }
+      if (buffer.length > MAX_CODEX_FRAME_CHARS) {
+        console.error(
+          JSON.stringify({
+            event: "codex-oversized-frame",
+            frameLength: buffer.length,
+            firstCodePoint: buffer.trimStart().codePointAt(0) ?? null,
+          }),
+        );
+        throw new Error("Codex frame budget exceeded");
       }
     }
   }

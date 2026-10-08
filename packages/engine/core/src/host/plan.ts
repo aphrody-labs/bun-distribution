@@ -536,7 +536,7 @@ function unitSteps(
       "check",
       "systemd-verify",
       "systemd accepts the unit",
-      `systemd-analyze verify ${stage}`,
+      `sudo -n systemd-analyze verify ${stage}`,
     ),
     step(
       "install",
