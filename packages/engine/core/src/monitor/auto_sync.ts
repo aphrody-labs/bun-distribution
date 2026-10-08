@@ -8,7 +8,7 @@
 import type { Database } from "bun:sqlite";
 import { existsSync, mkdirSync, writeFileSync, renameSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
-import { join, basename, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { recordTrainingSample } from "../ledger/index";
 import type { NativeRedisClient } from "../redis/client";
 import { indexCodebaseToRedis } from "../redis/indexer";
@@ -108,13 +108,17 @@ export class AutoSyncEngine {
       }
     };
     try {
-      const branch = await run(["branch", "--show-current"]);
-      const commit = await run(["rev-parse", "HEAD"]);
-      const statusText = await run(["status", "--porcelain"]);
-      const lines = statusText ? statusText.split("\n") : [];
+      // One spawn: porcelain v2 carries the head commit and branch in its `# branch.*` headers.
+      const statusText = await run(["status", "--porcelain=v2", "--branch"]);
+      const header = (key: string) =>
+        statusText.match(new RegExp(`^# branch\\.${key} (.+)$`, "m"))?.[1]?.trim();
+      const lines = statusText.split("\n").filter((line) => line && !line.startsWith("#"));
+      const commit = header("oid");
+      if (!commit || commit === "(initial)") throw new Error("git rev-parse failed (no commit)");
+      const head = header("head");
       return {
         repo: repoName,
-        branch: branch || "(detached)",
+        branch: head && head !== "(detached)" ? head : "(detached)",
         commit,
         dirty: lines.length > 0,
         uncommittedCount: lines.length,
@@ -228,7 +232,7 @@ export class AutoSyncEngine {
     let written = false;
     for (const target of this.#beaconPaths) {
       try {
-        const dir = target.substring(0, target.lastIndexOf("/"));
+        const dir = dirname(target);
         if (!existsSync(dir)) {
           mkdirSync(dir, { recursive: true, mode: 0o700 });
         }

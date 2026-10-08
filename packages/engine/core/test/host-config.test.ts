@@ -8,6 +8,7 @@ import {
   composeUnit,
   hostRoot,
   loadCatalog,
+  sourceCheckout,
   yoloRoot,
 } from "../../core/src/host/index.ts";
 
@@ -23,7 +24,8 @@ test("catalog and tree agree", () => {
 
 test("YOLO_ROOT overrides the default monorepo checkout", () => {
   expect(yoloRoot({ YOLO_ROOT: "/x" })).toBe("/x");
-  expect(yoloRoot({ HOME: "/h" })).toBe("/h/aphrody");
+  expect(yoloRoot({ HOME: "/h" })).toBe(sourceCheckout()!);
+  expect(yoloRoot({ HOME: "/h" }, null)).toBe(join("/h", "aphrody"));
 });
 
 test("composed units carry every dropped-in directive", () => {

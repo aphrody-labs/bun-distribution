@@ -129,39 +129,47 @@ function binaryFixture(sourceRoot = tmpdir()) {
   const sha256 = new Bun.CryptoHasher("sha256").update(readFileSync(from)).digest("hex");
   return { root, from, binary, marker, artifact: { from, sha256 } };
 }
+// The pinned install script targets Linux hosts: its guarantees are POSIX modes, inodes and symlinks.
+const posixTest = test.skipIf(process.platform === "win32");
 const shell = (command: string) =>
   Bun.spawn(["sh", "-c", command], { stdout: "ignore", stderr: "ignore" }).exited;
 
-test("Non-executable or writable native pins are refused without modifying their permissions", async () => {
-  await Promise.all(
-    [0o644, 0o775].map(async (mode) => {
-      const f = binaryFixture();
-      chmodSync(f.from, mode);
-      const oldInode = statSync(f.binary).ino;
-      expect(await shell(pinnedBinaryInstall(f.binary, f.artifact, f.marker))).not.toBe(0);
-      expect(statSync(f.from).mode & 0o777).toBe(mode);
-      expect(statSync(f.binary).ino).toBe(oldInode);
-      expect(existsSync(f.marker)).toBe(false);
-      expect(existsSync(`${f.binary}.prev`)).toBe(false);
-    }),
-  );
-});
+posixTest(
+  "Non-executable or writable native pins are refused without modifying their permissions",
+  async () => {
+    await Promise.all(
+      [0o644, 0o775].map(async (mode) => {
+        const f = binaryFixture();
+        chmodSync(f.from, mode);
+        const oldInode = statSync(f.binary).ino;
+        expect(await shell(pinnedBinaryInstall(f.binary, f.artifact, f.marker))).not.toBe(0);
+        expect(statSync(f.from).mode & 0o777).toBe(mode);
+        expect(statSync(f.binary).ino).toBe(oldInode);
+        expect(existsSync(f.marker)).toBe(false);
+        expect(existsSync(`${f.binary}.prev`)).toBe(false);
+      }),
+    );
+  },
+);
 
-test("Pinned install retains shared pin and old running inode; rollback restores exact bytes", async () => {
-  const f = binaryFixture();
-  const previousInode = statSync(f.binary).ino;
-  expect(await shell(pinnedBinaryInstall(f.binary, f.artifact, f.marker))).toBe(0);
-  expect(statSync(f.binary).ino).toBe(statSync(f.from).ino);
-  expect(statSync(`${f.binary}.prev`).ino).toBe(previousInode);
-  expect(readFileSync(f.from, "utf8")).toBe("qualified-native-pin");
-  expect(existsSync(f.marker)).toBe(true);
-  expect(await shell(`mv -fT -- ${quoted(`${f.binary}.prev`)} ${quoted(f.binary)}`)).toBe(0);
-  expect(statSync(f.binary).ino).toBe(previousInode);
-  expect(readFileSync(f.binary, "utf8")).toBe("previous-native-binary");
-  expect(readFileSync(f.from, "utf8")).toBe("qualified-native-pin");
-});
+posixTest(
+  "Pinned install retains shared pin and old running inode; rollback restores exact bytes",
+  async () => {
+    const f = binaryFixture();
+    const previousInode = statSync(f.binary).ino;
+    expect(await shell(pinnedBinaryInstall(f.binary, f.artifact, f.marker))).toBe(0);
+    expect(statSync(f.binary).ino).toBe(statSync(f.from).ino);
+    expect(statSync(`${f.binary}.prev`).ino).toBe(previousInode);
+    expect(readFileSync(f.from, "utf8")).toBe("qualified-native-pin");
+    expect(existsSync(f.marker)).toBe(true);
+    expect(await shell(`mv -fT -- ${quoted(`${f.binary}.prev`)} ${quoted(f.binary)}`)).toBe(0);
+    expect(statSync(f.binary).ino).toBe(previousInode);
+    expect(readFileSync(f.binary, "utf8")).toBe("previous-native-binary");
+    expect(readFileSync(f.from, "utf8")).toBe("qualified-native-pin");
+  },
+);
 
-test("Rollback symlinks preserve both old targets and replace only the alias", async () => {
+posixTest("Rollback symlinks preserve both old targets and replace only the alias", async () => {
   const f = binaryFixture();
   rmSync(f.binary);
   writeFileSync(join(f.root, "old-pin"), "previous-native-binary");

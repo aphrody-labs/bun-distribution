@@ -13,6 +13,8 @@ if (($heavyCommands -contains $cargoCommand) -and -not $helpOnly -and (Test-Path
     throw 'Heavy Cargo execution belongs to the VPS factory. Use yolo ops build-factory run with the pinned revision and owner command. APHRODY_LOCAL_CARGO=1 is only for an explicitly selected scoped diagnostic.'
   }
 }
+# Only compilation is serialized; fetch, metadata and lockfile commands rely on Cargo's own package-cache lock.
+if ($heavyCommands -notcontains $cargoCommand) { & cargo @CargoArgs; exit $LASTEXITCODE }
 foreach ($arg in $CargoArgs) {
   if ($arg -match '^(--jobs|-j)(=|\d|$)') { throw 'Do not override Cargo job count; set APHRODY_CARGO_JOBS=1..6 instead.' }
 }

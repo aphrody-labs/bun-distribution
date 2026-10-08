@@ -1,9 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 import { existsSync, realpathSync, statSync } from "node:fs";
-import { homedir } from "node:os";
 import { join, resolve, dirname } from "node:path";
 
 import { processes } from "../runtime";
+import { yoloRoot } from "../host/index.ts";
+
+/** The Aphrody Cargo serialization wrapper as an argv prefix: the PowerShell twin on Windows, the bash script elsewhere. */
+export function cargoSerialArgv(root = yoloRoot()): string[] {
+  const dir = join(root, "scripts", "build", "rust");
+  return process.platform === "win32"
+    ? [Bun.which("pwsh") ?? "pwsh", "-NoProfile", "-File", join(dir, "cargo-serial.ps1")]
+    : [join(dir, "cargo-serial.sh")];
+}
 
 export type PackageManager = "bun" | "uv" | "cargo";
 export interface PackageSyncOptions {
@@ -119,10 +127,10 @@ export async function planPackageSync(options: PackageSyncOptions = {}): Promise
         ...(options.production ? ["--no-dev"] : []),
       ];
     else {
-      const wrapper = join(homedir(), "aphrody", "scripts", "build", "rust", "cargo-serial.sh");
-      if (!existsSync(wrapper))
+      const wrapper = cargoSerialArgv();
+      if (!existsSync(wrapper.at(-1)!))
         blockers.push("Supported Aphrody Cargo serialization wrapper unavailable");
-      argv = [wrapper, "fetch", "--locked"];
+      argv = [...wrapper, "fetch", "--locked"];
     }
     if (options.offline) argv.push("--offline");
     steps.push({ manager, manifest, lockfile, argv, blockers, inputHashes });
