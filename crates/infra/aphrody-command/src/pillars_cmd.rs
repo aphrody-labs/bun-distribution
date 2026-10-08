@@ -238,12 +238,20 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
                 println!("{}", serde_json::to_string_pretty(&status).into_diagnostic()?);
             } else {
                 println!("=== Aphrody Shell & Terminal Environment ===");
-                println!("  * Terminal:      aphrody-term (16B PackedCell, FairMutex 256KB, WebGPU Quads)");
-                println!("  * AI Agent:      Computer-Use Controller (>10 GB/s synchronous scraping)");
+                println!(
+                    "  * Terminal:      aphrody-term (16B PackedCell, FairMutex 256KB, WebGPU Quads)"
+                );
+                println!(
+                    "  * AI Agent:      Computer-Use Controller (>10 GB/s synchronous scraping)"
+                );
                 println!("  * Native Engine: Bun Shell (In-Process, Zero-Alloc Arena AST)");
-                println!("  * Builtins:      echo, cat, ls, cd, pwd, mkdir, rm, touch, which, seq, basename, dirname");
+                println!(
+                    "  * Builtins:      echo, cat, ls, cd, pwd, mkdir, rm, touch, which, seq, basename, dirname"
+                );
                 println!("  * Expansion:     Braces {{a,b}}{{1,2}}, numeric ranges {{1..5}}");
-                println!("  * Structured:    JSC Engine (22x faster than Nushell on structured data)");
+                println!(
+                    "  * Structured:    JSC Engine (22x faster than Nushell on structured data)"
+                );
                 println!("  * Fallback:      Nushell 0.116.0");
                 println!("  * TUI:           Ratatui 0.30");
                 println!("  * PTY Bridge:    aphrody-terminal-backend (WebSocket/Local)");
@@ -252,9 +260,8 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
         ShellAction::Start { args } => {
             let nu_path = which::which("nu").unwrap_or_else(|_| std::path::PathBuf::from("nu"));
             let mut cmd = std::process::Command::new(&nu_path);
-            let root = std::env::var("APHRODY_ROOT")
-                .map(std::path::PathBuf::from)
-                .unwrap_or_else(|_| {
+            let root =
+                std::env::var("APHRODY_ROOT").map(std::path::PathBuf::from).unwrap_or_else(|_| {
                     if std::path::Path::new("C:\\aphrody").exists() {
                         std::path::PathBuf::from("C:\\aphrody")
                     } else {
@@ -268,16 +275,17 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
             cmd.stdin(std::process::Stdio::inherit())
                 .stdout(std::process::Stdio::inherit())
                 .stderr(std::process::Stdio::inherit());
-            let mut child = cmd.spawn().map_err(|e| miette::miette!("Failed to launch Aphrody shell: {}", e))?;
+            let mut child = cmd
+                .spawn()
+                .map_err(|e| miette::miette!("Failed to launch Aphrody shell: {}", e))?;
             let status = child.wait().map_err(|e| miette::miette!("Shell session error: {}", e))?;
             if !status.success() {
                 std::process::exit(status.code().unwrap_or(1));
             }
         },
         ShellAction::Eval { pipeline, json, bun } => {
-            let root = std::env::var("APHRODY_ROOT")
-                .map(std::path::PathBuf::from)
-                .unwrap_or_else(|_| {
+            let root =
+                std::env::var("APHRODY_ROOT").map(std::path::PathBuf::from).unwrap_or_else(|_| {
                     if std::path::Path::new("C:\\aphrody").exists() {
                         std::path::PathBuf::from("C:\\aphrody")
                     } else {
@@ -306,26 +314,22 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
 
             let nu_path = which::which("nu").unwrap_or_else(|_| std::path::PathBuf::from("nu"));
             let mut cmd = std::process::Command::new(&nu_path);
-            let code = if json {
-                format!("{} | to json", pipeline)
-            } else {
-                pipeline
-            };
+            let code = if json { format!("{} | to json", pipeline) } else { pipeline };
             cmd.arg("-c").arg(&code);
             cmd.current_dir(&root);
             cmd.stdin(std::process::Stdio::inherit())
                 .stdout(std::process::Stdio::inherit())
                 .stderr(std::process::Stdio::inherit());
-            let mut child = cmd.spawn().map_err(|e| miette::miette!("Failed to launch Nushell eval: {}", e))?;
+            let mut child =
+                cmd.spawn().map_err(|e| miette::miette!("Failed to launch Nushell eval: {}", e))?;
             let status = child.wait().map_err(|e| miette::miette!("Shell eval error: {}", e))?;
             if !status.success() {
                 std::process::exit(status.code().unwrap_or(1));
             }
         },
         ShellAction::Bun { command, json } => {
-            let root = std::env::var("APHRODY_ROOT")
-                .map(std::path::PathBuf::from)
-                .unwrap_or_else(|_| {
+            let root =
+                std::env::var("APHRODY_ROOT").map(std::path::PathBuf::from).unwrap_or_else(|_| {
                     if std::path::Path::new("C:\\aphrody").exists() {
                         std::path::PathBuf::from("C:\\aphrody")
                     } else {
@@ -352,11 +356,7 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
         ShellAction::Term { args } => {
             let cols = 80;
             let rows = 24;
-            let config = aphrody_term::TermConfig {
-                cols,
-                rows,
-                ..Default::default()
-            };
+            let config = aphrody_term::TermConfig { cols, rows, ..Default::default() };
             let term = aphrody_term::AphrodyTerm::new(config);
             println!("=== Aphrody Term (Autonomous Zero-Copy Terminal Engine) ===");
             println!("  * Grid Layout:  16-byte PackedCell (L1 cache aligned)");
@@ -365,26 +365,27 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
             println!("  * GPU Pipeline: Multi-quad instanced WebGPU runs");
             println!("  * AI Interface: Zero-latency Computer-Use controller (>10 GB/s)");
             let (col, row, visible) = term.cursor();
-            println!("  * State:        Initialized {}x{} (cursor: {}:{}, visible: {})", cols, rows, col, row, visible);
+            println!(
+                "  * State:        Initialized {}x{} (cursor: {}:{}, visible: {})",
+                cols, rows, col, row, visible
+            );
             if !args.is_empty() {
                 println!("  * Command:      {}", args.join(" "));
             }
         },
         ShellAction::ComputerUse { action, json } => {
-            let config = aphrody_term::TermConfig {
-                cols: 80,
-                rows: 24,
-                ..Default::default()
-            };
+            let config = aphrody_term::TermConfig { cols: 80, rows: 24, ..Default::default() };
             let term = aphrody_term::AphrodyTerm::new(config);
             let controller = term.computer_use();
             if let Some(ref act) = action {
-                if act.starts_with("type ") {
-                    let text = act[5..].to_string();
-                    let _ = controller.dispatch_action(aphrody_term::computer_use::ComputerAction::TypeText(text));
-                } else if act.starts_with("key ") {
-                    let key = act[4..].to_string();
-                    let _ = controller.dispatch_action(aphrody_term::computer_use::ComputerAction::PressKey(key));
+                if let Some(text) = act.strip_prefix("type ") {
+                    let _ = controller.dispatch_action(
+                        aphrody_term::computer_use::ComputerAction::TypeText(text.to_string()),
+                    );
+                } else if let Some(key) = act.strip_prefix("key ") {
+                    let _ = controller.dispatch_action(
+                        aphrody_term::computer_use::ComputerAction::PressKey(key.to_string()),
+                    );
                 }
             }
             let text = term.scrape_text();
@@ -409,11 +410,14 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
                 .parse()
                 .map_err(|e| miette::miette!("Invalid socket address: {}", e))?;
             println!("Starting Aphrody Terminal Backend on ws://{}", addr);
-            let runtime = tokio::runtime::Runtime::new().map_err(|e| miette::miette!("Tokio runtime error: {}", e))?;
-            runtime.block_on(async {
-                let cfg = aphrody_terminal_backend::PtyConfig::default().with_env_limits();
-                aphrody_terminal_backend::serve(addr, cfg).await
-            }).map_err(|e| miette::miette!("Terminal server error: {}", e))?;
+            let runtime = tokio::runtime::Runtime::new()
+                .map_err(|e| miette::miette!("Tokio runtime error: {}", e))?;
+            runtime
+                .block_on(async {
+                    let cfg = aphrody_terminal_backend::PtyConfig::default().with_env_limits();
+                    aphrody_terminal_backend::serve(addr, cfg).await
+                })
+                .map_err(|e| miette::miette!("Terminal server error: {}", e))?;
         },
     }
     Ok(())

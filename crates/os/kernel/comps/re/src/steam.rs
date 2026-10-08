@@ -669,22 +669,20 @@ pub fn find_steam_installations() -> Vec<SteamInstallation> {
     {
         if let Ok(pf86) = std::env::var("ProgramFiles(x86)") {
             let cand = PathBuf::from(pf86).join("Steam");
-            if cand.exists() {
-                if let Some(inst) = probe_steam_installation(cand, SteamPlatform::Windows) {
-                    if !results.iter().any(|r| r.root_path == inst.root_path) {
-                        results.push(inst);
-                    }
-                }
+            if cand.exists()
+                && let Some(inst) = probe_steam_installation(cand, SteamPlatform::Windows)
+                && !results.iter().any(|r| r.root_path == inst.root_path)
+            {
+                results.push(inst);
             }
         }
         if let Ok(pf) = std::env::var("ProgramFiles") {
             let cand = PathBuf::from(pf).join("Steam");
-            if cand.exists() {
-                if let Some(inst) = probe_steam_installation(cand, SteamPlatform::Windows) {
-                    if !results.iter().any(|r| r.root_path == inst.root_path) {
-                        results.push(inst);
-                    }
-                }
+            if cand.exists()
+                && let Some(inst) = probe_steam_installation(cand, SteamPlatform::Windows)
+                && !results.iter().any(|r| r.root_path == inst.root_path)
+            {
+                results.push(inst);
             }
         }
     }
