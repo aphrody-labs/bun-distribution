@@ -24,4 +24,17 @@ pub enum GraphError {
     /// A node reference matched nothing.
     #[error("no node matches `{0}`")]
     NoMatch(String),
+    /// A node reference matched several nodes.
+    #[error(
+        "`{text}` matches {total} nodes; pass an id or `file::symbol`:\n  {}",
+        candidates.join("\n  ")
+    )]
+    Ambiguous {
+        /// The reference.
+        text: String,
+        /// Number of candidates.
+        total: usize,
+        /// First candidates: `label - file:loc [id ...] (n edges)`.
+        candidates: Vec<String>,
+    },
 }

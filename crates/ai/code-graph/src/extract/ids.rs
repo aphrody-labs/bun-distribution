@@ -25,7 +25,12 @@ pub fn normalize_id(s: &str) -> String {
 /// Build an id from parts (each trimmed of `_` and `.` edges, joined with `_`).
 #[must_use]
 pub fn make_id(parts: &[&str]) -> String {
-    let joined = parts.iter().map(|p| p.trim_matches(|c| c == '_' || c == '.')).filter(|p| !p.is_empty()).collect::<Vec<_>>().join("_");
+    let joined = parts
+        .iter()
+        .map(|p| p.trim_matches(|c| c == '_' || c == '.'))
+        .filter(|p| !p.is_empty())
+        .collect::<Vec<_>>()
+        .join("_");
     normalize_id(&joined)
 }
 
@@ -45,7 +50,10 @@ mod tests {
     #[test]
     fn ids_match_the_graphify_recipe() {
         assert_eq!(make_id(&["crates/ai/rag/src/store.rs"]), "crates_ai_rag_src_store_rs");
-        assert_eq!(make_id(&[file_stem("crates/ai/rag/src/store.rs"), "RagStore"]), "crates_ai_rag_src_store_ragstore");
+        assert_eq!(
+            make_id(&[file_stem("crates/ai/rag/src/store.rs"), "RagStore"]),
+            "crates_ai_rag_src_store_ragstore"
+        );
         assert_eq!(make_id(&["a_b", ".open"]), "a_b_open");
         assert_eq!(normalize_id("__Hello,  World__"), "hello_world");
         assert_eq!(normalize_id(&normalize_id("İslem Yap")), normalize_id("İslem Yap"));

@@ -17,7 +17,8 @@ impl Graph {
     /// I/O or JSON failures.
     pub fn write_graph_json(&self, mut w: impl Write, built_at_commit: Option<&str>) -> Result<()> {
         let io = |e: std::io::Error| crate::error::GraphError::Json(serde_json::Error::io(e));
-        w.write_all(b"{\"directed\":true,\"multigraph\":true,\"graph\":{},\"nodes\":[").map_err(io)?;
+        w.write_all(b"{\"directed\":true,\"multigraph\":true,\"graph\":{},\"nodes\":[")
+            .map_err(io)?;
         for (i, n) in self.nodes.iter().enumerate() {
             if i > 0 {
                 w.write_all(b",").map_err(io)?;
@@ -31,6 +32,7 @@ impl Graph {
                 "source_location": n.loc,
                 "community": n.community,
                 "community_name": n.community_name,
+                "package": n.package,
             });
             serde_json::to_writer(&mut w, &value)?;
         }
@@ -52,8 +54,31 @@ impl Graph {
             });
             serde_json::to_writer(&mut w, &value)?;
         }
-        w.write_all(b"],\"hyperedges\":[],\"built_at_commit\":").map_err(io)?;
-        serde_json::to_writer(&mut w, &built_at_commit)?;
+        // One hyperedge per package (Rust crate or npm package) grouping its nodes.
+        let mut packages: std::collections::BTreeMap<&str, Vec<&str>> =
+            std::collections::BTreeMap::new();
+        for n in &self.nodes {
+            if let Some(package) = n.package.as_deref() {
+                packages.entry(package).or_default().push(n.id.as_str());
+            }
+        }
+        w.write_all(b"],\"hyperedges\":[").map_err(io)?;
+        for (i, (package, nodes)) in packages.iter().enumerate() {
+            if i > 0 {
+                w.write_all(b",").map_err(io)?;
+            }
+            let value = json!({
+                "id": format!("package:{package}"),
+                "label": package,
+                "relation": "package",
+                "confidence": "EXTRACTED",
+                "confidence_score": 1.0,
+                "nodes": nodes,
+            });
+            serde_json::to_writer(&mut w, &value)?;
+        }
+        w.write_all(b"],\"built_at_commit\":").map_err(io)?;
+        serde_json::to_writer(&mut w, &built_at_commit.or(self.meta.built_at_commit.as_deref()))?;
         w.write_all(b"}").map_err(io)?;
         Ok(())
     }
@@ -73,6 +98,18 @@ mod tests {
         assert_eq!(value["nodes"].as_array().unwrap().len(), 5);
         assert_eq!(value["links"].as_array().unwrap().len(), 4);
         assert_eq!(value["built_at_commit"], "abc");
+        assert_eq!(value["hyperedges"].as_array().unwrap().len(), 0);
+
+        let mut packaged = sample();
+        packaged.nodes[0].package = Some("rag".into());
+        packaged.nodes[1].package = Some("rag".into());
+        packaged.meta.built_at_commit = Some("def".into());
+        let mut with_packages = Vec::new();
+        packaged.write_graph_json(&mut with_packages, None).unwrap();
+        let value: serde_json::Value = serde_json::from_slice(&with_packages).unwrap();
+        assert_eq!(value["hyperedges"][0]["id"], "package:rag");
+        assert_eq!(value["hyperedges"][0]["nodes"].as_array().unwrap().len(), 2);
+        assert_eq!(value["built_at_commit"], "def");
 
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("graph.json");

@@ -36,12 +36,25 @@ fn jaccard(a: &BTreeSet<String>, b: &BTreeSet<String>) -> f64 {
 
 #[test]
 fn nodes_and_edges_match_the_graphify_oracle_on_the_fixture() {
-    let oracle: serde_json::Value =
-        serde_json::from_slice(&std::fs::read(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/rust.oracle.json")).unwrap()).unwrap();
-    let expected_nodes: BTreeSet<String> =
-        oracle["nodes"].as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_owned()).collect();
-    let expected_edges: BTreeSet<String> =
-        oracle["edges"].as_array().unwrap().iter().map(|v| v.as_str().unwrap().to_owned()).collect();
+    let oracle: serde_json::Value = serde_json::from_slice(
+        &std::fs::read(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/rust.oracle.json"),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    let expected_nodes: BTreeSet<String> = oracle["nodes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_str().unwrap().to_owned())
+        .collect();
+    let expected_edges: BTreeSet<String> = oracle["edges"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_str().unwrap().to_owned())
+        .collect();
 
     let files = fixture_files().into_iter().map(|(rel, src)| extract_file(&rel, &src)).collect();
     let (graph, _) = assemble(files);
@@ -55,7 +68,15 @@ fn nodes_and_edges_match_the_graphify_oracle_on_the_fixture() {
     let edges: BTreeSet<String> = graph
         .edges
         .iter()
-        .map(|e| format!("{}|{}|{}|{}", e.relation, graph.nodes[e.src].label, graph.nodes[e.dst].label, e.confidence.as_str()))
+        .map(|e| {
+            format!(
+                "{}|{}|{}|{}",
+                e.relation,
+                graph.nodes[e.src].label,
+                graph.nodes[e.dst].label,
+                e.confidence.as_str()
+            )
+        })
         .collect();
 
     let node_j = jaccard(&nodes, &expected_nodes);
@@ -67,6 +88,26 @@ fn nodes_and_edges_match_the_graphify_oracle_on_the_fixture() {
     println!("node jaccard {node_j:.3}, edge jaccard {edge_j:.3}");
     println!("missing nodes {missing_nodes:#?}\nextra nodes {extra_nodes:#?}");
     println!("missing edges {missing_edges:#?}\nextra edges {extra_edges:#?}");
-    assert!(node_j >= 0.95, "node jaccard {node_j:.3}: missing {missing_nodes:?} extra {extra_nodes:?}");
-    assert!(edge_j >= 0.90, "edge jaccard {edge_j:.3}: missing {missing_edges:?} extra {extra_edges:?}");
+    assert!(
+        node_j >= 0.95,
+        "node jaccard {node_j:.3}: missing {missing_nodes:?} extra {extra_nodes:?}"
+    );
+    // Graphify resolves neither qualified (`store::Store::open`, `net::client::fetch_into`) nor
+    // typed-receiver (`store.insert`) calls, nor every name of a `use` list; these edges are
+    // checked by hand against the fixture and are the only extras allowed.
+    let enrichment: BTreeSet<&str> = [
+        "calls|fetch_into()|.put()|INFERRED",
+        "calls|helper()|.insert()|INFERRED",
+        "calls|run()|.insert()|INFERRED",
+        "calls|run()|.open()|INFERRED",
+        "calls|run()|fetch_into()|INFERRED",
+        "imports_from|client.rs|Backend|EXTRACTED",
+        "imports_from|client.rs|count|EXTRACTED",
+    ]
+    .into_iter()
+    .collect();
+    assert!(missing_edges.is_empty(), "edge jaccard {edge_j:.3}: missing {missing_edges:?}");
+    let unexpected: Vec<_> =
+        extra_edges.iter().filter(|e| !enrichment.contains(e.as_str())).collect();
+    assert!(unexpected.is_empty(), "edge jaccard {edge_j:.3}: unexpected extra {unexpected:?}");
 }

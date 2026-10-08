@@ -47,6 +47,8 @@ pub struct Explanation {
     pub source: Option<String>,
     /// Kind label.
     pub kind: String,
+    /// Package (crate or npm package).
+    pub package: Option<String>,
     /// Community name.
     pub community: Option<String>,
     /// Degree.
@@ -63,6 +65,9 @@ impl std::fmt::Display for Explanation {
             writeln!(f, "  Source:    {source}")?;
         }
         writeln!(f, "  Type:      {}", self.kind)?;
+        if let Some(package) = &self.package {
+            writeln!(f, "  Package:   {package}")?;
+        }
         if let Some(c) = &self.community {
             writeln!(f, "  Community: {c}")?;
         }
@@ -87,6 +92,20 @@ pub struct Hop {
     pub node: usize,
     /// Edge used to reach it (`None` for the start) and whether it was followed forwards.
     pub via: Option<(usize, bool)>,
+}
+
+/// Options of [`Graph::shortest_path_with`].
+#[derive(Debug, Clone, Default)]
+pub struct PathOptions {
+    /// Follow edges only from source to target.
+    pub directed: bool,
+    /// Keep only edges with one of these relations (empty keeps all).
+    pub relations: Vec<String>,
+}
+
+impl PathOptions {
+    /// Relations of a dependency path: calls and imports.
+    pub const DEPENDENCY_RELATIONS: &[&str] = &["calls", "imports", "imports_from"];
 }
 
 /// Options of [`Graph::query`].
@@ -132,34 +151,128 @@ fn tokens(question: &str) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     for raw in question.split(|c: char| !(c.is_alphanumeric() || c == '_')) {
         let token = raw.to_lowercase();
-        if token.chars().count() >= 3 && !STOPWORDS.contains(&token.as_str()) && !out.contains(&token) {
+        if token.chars().count() >= 3
+            && !STOPWORDS.contains(&token.as_str())
+            && !out.contains(&token)
+        {
             out.push(token);
         }
     }
     out
 }
 
+fn bare_label(label: &str) -> &str {
+    label.trim_end_matches("()").trim_start_matches('.')
+}
+
 impl Graph {
-    /// Node indices matching `text`: exact id, then exact label, then label containing it
-    /// (case-insensitive), the last two ranked by degree.
+    /// Node indices matching `text`: exact id, then exact label (`join` also matches
+    /// `join()` and `.join()`; sourced nodes before stubs), then label containing it
+    /// (case-insensitive), each tier ranked by degree. `path/to/file.rs::symbol` keeps the
+    /// matches of that file.
     #[must_use]
     pub fn find(&self, text: &str) -> Vec<usize> {
         if let Some(i) = self.index_of(text) {
             return vec![i];
         }
-        let needle = text.to_lowercase();
-        let mut exact: Vec<usize> =
-            (0..self.nodes.len()).filter(|&i| self.nodes[i].norm_label == needle).collect();
-        let mut partial: Vec<usize> = (0..self.nodes.len())
-            .filter(|&i| self.nodes[i].norm_label != needle && self.nodes[i].norm_label.contains(&needle))
-            .collect();
-        let rank = |v: &mut Vec<usize>| {
-            v.sort_by(|&a, &b| self.degree(b).cmp(&self.degree(a)).then_with(|| self.nodes[a].id.cmp(&self.nodes[b].id)));
+        self.find_by_label(text)
+    }
+
+    fn find_by_label(&self, text: &str) -> Vec<usize> {
+        let (file, symbol) = match text.rsplit_once("::") {
+            Some((file, symbol)) if file.contains('.') || file.contains('/') => {
+                (Some(file.replace('\\', "/")), symbol)
+            },
+            _ => (None, text),
         };
-        rank(&mut exact);
-        rank(&mut partial);
+        let in_file = |i: usize| {
+            file.as_deref().is_none_or(|wanted| {
+                self.nodes[i]
+                    .file
+                    .as_deref()
+                    .is_some_and(|f| f == wanted || f.ends_with(&format!("/{wanted}")))
+            })
+        };
+        let needle = symbol.to_lowercase();
+        let bare_needle = bare_label(&needle);
+        let mut exact: Vec<usize> = (0..self.nodes.len())
+            .filter(|&i| in_file(i))
+            .filter(|&i| {
+                let label = &self.nodes[i].norm_label;
+                *label == needle || bare_label(label) == bare_needle
+            })
+            .collect();
+        let mut partial: Vec<usize> = (0..self.nodes.len())
+            .filter(|&i| {
+                in_file(i) && !exact.contains(&i) && self.nodes[i].norm_label.contains(&needle)
+            })
+            .collect();
+        exact.sort_by(|&a, &b| {
+            self.nodes[b]
+                .file
+                .is_some()
+                .cmp(&self.nodes[a].file.is_some())
+                .then_with(|| self.degree(b).cmp(&self.degree(a)))
+                .then_with(|| self.nodes[a].id.cmp(&self.nodes[b].id))
+        });
+        partial.sort_by(|&a, &b| {
+            self.degree(b)
+                .cmp(&self.degree(a))
+                .then_with(|| self.nodes[a].id.cmp(&self.nodes[b].id))
+        });
         exact.extend(partial);
         exact
+    }
+
+    /// The single node `text` names: an id, a unique exact label (sourced nodes win over
+    /// stubs), a `file::symbol` reference or a unique partial match.
+    ///
+    /// # Errors
+    ///
+    /// [`GraphError::NoMatch`], or [`GraphError::Ambiguous`] listing the candidates with their
+    /// file, location and id.
+    pub fn resolve(&self, text: &str) -> Result<usize> {
+        // An id names one node, unless it is a stub whose name sourced nodes also carry.
+        let by_id = self.index_of(text);
+        if let Some(i) = by_id
+            && self.nodes[i].file.is_some()
+        {
+            return Ok(i);
+        }
+        let found = self.find_by_label(text);
+        if found.is_empty() {
+            return by_id.ok_or_else(|| GraphError::NoMatch(text.to_owned()));
+        }
+        let symbol = text.rsplit_once("::").map_or(text, |(_, s)| s).to_lowercase();
+        let exact: Vec<usize> = found
+            .iter()
+            .copied()
+            .filter(|&i| bare_label(&self.nodes[i].norm_label) == bare_label(&symbol))
+            .collect();
+        let tier = if exact.is_empty() { found } else { exact };
+        let sourced: Vec<usize> =
+            tier.iter().copied().filter(|&i| self.nodes[i].file.is_some()).collect();
+        let tier = if sourced.is_empty() { tier } else { sourced };
+        let literal: Vec<usize> =
+            tier.iter().copied().filter(|&i| self.nodes[i].norm_label == symbol).collect();
+        let tier = if literal.is_empty() { tier } else { literal };
+        if let [only] = tier.as_slice() {
+            return Ok(*only);
+        }
+        let candidates = tier
+            .iter()
+            .take(15)
+            .map(|&i| {
+                let n = &self.nodes[i];
+                let at = match (&n.file, &n.loc) {
+                    (Some(f), Some(l)) => format!("{f}:{l}"),
+                    (Some(f), None) => f.clone(),
+                    _ => "(no source)".to_owned(),
+                };
+                format!("{} - {at} [id {}] ({} edges)", n.label, n.id, self.degree(i))
+            })
+            .collect();
+        Err(GraphError::Ambiguous { text: text.to_owned(), total: tier.len(), candidates })
     }
 
     /// Describe the best node matching `text` and its connections.
@@ -168,7 +281,7 @@ impl Graph {
     ///
     /// [`GraphError::NoMatch`] when nothing matches.
     pub fn explain(&self, text: &str) -> Result<Explanation> {
-        let node = *self.find(text).first().ok_or_else(|| GraphError::NoMatch(text.to_owned()))?;
+        let node = self.resolve(text)?;
         let n = &self.nodes[node];
         let at = |e: &crate::graph::Edge| match (&e.file, &e.loc) {
             (Some(f), Some(l)) => Some(format!("{f}:{l}")),
@@ -204,6 +317,7 @@ impl Graph {
                 None => f.clone(),
             }),
             kind: n.kind.as_str().to_owned(),
+            package: n.package.clone(),
             community: n.community_name.clone(),
             degree: self.degree(node),
             connections,
@@ -214,10 +328,28 @@ impl Graph {
     ///
     /// # Errors
     ///
-    /// [`GraphError::NoMatch`] when either end matches nothing.
+    /// See [`Graph::resolve`].
     pub fn shortest_path(&self, from: &str, to: &str) -> Result<Option<Vec<Hop>>> {
-        let a = *self.find(from).first().ok_or_else(|| GraphError::NoMatch(from.to_owned()))?;
-        let b = *self.find(to).first().ok_or_else(|| GraphError::NoMatch(to.to_owned()))?;
+        self.shortest_path_with(from, to, &PathOptions::default())
+    }
+
+    /// Shortest path between two nodes, restricted to some relations and optionally directed.
+    ///
+    /// # Errors
+    ///
+    /// See [`Graph::resolve`].
+    pub fn shortest_path_with(
+        &self,
+        from: &str,
+        to: &str,
+        options: &PathOptions,
+    ) -> Result<Option<Vec<Hop>>> {
+        let a = self.resolve(from)?;
+        let b = self.resolve(to)?;
+        let keep = |e: usize| {
+            options.relations.is_empty()
+                || options.relations.iter().any(|r| *r == self.edges[e].relation)
+        };
         let mut prev: Vec<Option<(usize, usize, bool)>> = vec![None; self.nodes.len()];
         let mut seen = vec![false; self.nodes.len()];
         let mut queue = VecDeque::from([a]);
@@ -226,7 +358,16 @@ impl Graph {
             if u == b {
                 break;
             }
-            for (&e, forward) in self.out_edges(u).iter().map(|e| (e, true)).chain(self.in_edges(u).iter().map(|e| (e, false))) {
+            let backwards: &[usize] = if options.directed { &[] } else { self.in_edges(u) };
+            for (&e, forward) in self
+                .out_edges(u)
+                .iter()
+                .map(|e| (e, true))
+                .chain(backwards.iter().map(|e| (e, false)))
+            {
+                if !keep(e) {
+                    continue;
+                }
                 let edge = &self.edges[e];
                 let v = if forward { edge.dst } else { edge.src };
                 if !seen[v] {
@@ -263,7 +404,10 @@ impl Graph {
             .filter_map(|i| {
                 let n = &self.nodes[i];
                 let file = n.file.as_deref().unwrap_or("").to_lowercase();
-                let score = words.iter().filter(|w| n.norm_label.contains(w.as_str()) || file.contains(w.as_str())).count();
+                let score = words
+                    .iter()
+                    .filter(|w| n.norm_label.contains(w.as_str()) || file.contains(w.as_str()))
+                    .count();
                 (score > 0).then_some((i, score))
             })
             .collect();
@@ -273,7 +417,9 @@ impl Graph {
                 .then_with(|| self.nodes[a.0].id.cmp(&self.nodes[b.0].id))
         });
         let starts: Vec<usize> = scored.iter().take(options.starts).map(|(i, _)| *i).collect();
-        let allowed = |relation: &str| options.relations.is_empty() || options.relations.iter().any(|r| r == relation);
+        let allowed = |relation: &str| {
+            options.relations.is_empty() || options.relations.iter().any(|r| r == relation)
+        };
 
         let mut order: Vec<usize> = Vec::new();
         let mut seen: HashSet<usize> = HashSet::new();
@@ -396,6 +542,55 @@ mod tests {
     }
 
     #[test]
+    fn a_directed_path_follows_edges_forwards_only_and_filters_relations() {
+        let g = sample();
+        let directed = PathOptions { directed: true, relations: Vec::new() };
+        assert!(g.shortest_path_with("Connection", "RagStore", &directed).unwrap().is_none());
+        let path = g.shortest_path_with("RagStore", "Connection", &directed).unwrap().unwrap();
+        assert!(path.iter().skip(1).all(|h| h.via.is_some_and(|v| v.1)));
+        let calls_only = PathOptions { directed: true, relations: vec!["calls".into()] };
+        assert!(g.shortest_path_with("RagStore", "Connection", &calls_only).unwrap().is_none());
+        assert_eq!(
+            g.shortest_path_with(".open()", "Connection", &calls_only).unwrap().unwrap().len(),
+            3
+        );
+    }
+
+    #[test]
+    fn ambiguous_names_list_candidates_and_file_qualified_names_pick_one() {
+        let nodes = vec![
+            crate::graph::Node::code("a_join", "join()", Some("src/a.ts")),
+            crate::graph::Node::code("b_join", "join()", Some("src/b.ts")),
+            crate::graph::Node::code("join", "join", None),
+        ];
+        let g = Graph::from_parts(nodes, Vec::new());
+        match g.explain("join") {
+            Err(GraphError::Ambiguous { candidates, total, .. }) => {
+                assert_eq!(total, 2, "the stub is not a candidate when sourced nodes exist");
+                assert!(
+                    candidates[0].contains("src/a.ts") && candidates[0].contains("[id a_join]"),
+                    "{candidates:?}"
+                );
+            },
+            other => panic!("{other:?}"),
+        }
+        assert_eq!(g.explain("src/b.ts::join").unwrap().id, "b_join");
+        assert_eq!(g.explain("b.ts::join()").unwrap().id, "b_join");
+        let methods = Graph::from_parts(
+            vec![
+                crate::graph::Node::code("f", "open()", Some("lib.rs")),
+                crate::graph::Node::code("m", ".open()", Some("lib.rs")),
+            ],
+            Vec::new(),
+        );
+        assert!(methods.explain("lib.rs::open").is_err());
+        assert_eq!(methods.explain("lib.rs::open()").unwrap().id, "f");
+        assert_eq!(methods.explain(".open()").unwrap().id, "m");
+        assert_eq!(g.explain("a_join").unwrap().id, "a_join");
+        assert!(g.explain("ambiguous").is_err());
+    }
+
+    #[test]
     fn query_expands_from_the_best_matches_within_the_budget() {
         let g = sample();
         let r = g.query("where is upsert_doc called?", &QueryOptions::default());
@@ -403,10 +598,14 @@ mod tests {
         assert!(r.nodes.len() >= 3);
         assert!(r.text.contains("NODE .upsert_doc()"));
         assert!(r.text.contains("EDGE .open() --calls [INFERRED]--> .upsert_doc()"));
-        let tight = g.query("upsert_doc", &QueryOptions { budget_tokens: 5, ..QueryOptions::default() });
+        let tight =
+            g.query("upsert_doc", &QueryOptions { budget_tokens: 5, ..QueryOptions::default() });
         assert_eq!(tight.nodes.len(), 1);
         assert!(tight.truncated > 0);
-        let only_contains = g.query("upsert_doc", &QueryOptions { relations: vec!["contains".into()], ..QueryOptions::default() });
+        let only_contains = g.query(
+            "upsert_doc",
+            &QueryOptions { relations: vec!["contains".into()], ..QueryOptions::default() },
+        );
         assert!(only_contains.edges.iter().all(|&e| g.edges[e].relation == "contains"));
         assert_eq!(g.query("the and", &QueryOptions::default()), QueryResult::default());
     }

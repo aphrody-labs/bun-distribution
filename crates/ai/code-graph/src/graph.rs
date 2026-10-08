@@ -100,6 +100,8 @@ pub struct Node {
     pub community: Option<i64>,
     /// Community name.
     pub community_name: Option<String>,
+    /// Package of the node file: Rust crate identifier or npm package name.
+    pub package: Option<String>,
 }
 
 impl Node {
@@ -116,6 +118,7 @@ impl Node {
             lang: None,
             community: None,
             community_name: None,
+            package: None,
         }
     }
 }
@@ -161,6 +164,15 @@ impl Edge {
     }
 }
 
+/// Facts about the tree a graph was built from.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct GraphMeta {
+    /// Absolute root of the tree.
+    pub root: Option<String>,
+    /// `HEAD` of the tree at build time.
+    pub built_at_commit: Option<String>,
+}
+
 /// A graph with adjacency lists in both directions.
 #[derive(Debug, Clone, Default)]
 pub struct Graph {
@@ -168,6 +180,8 @@ pub struct Graph {
     pub nodes: Vec<Node>,
     /// Edges.
     pub edges: Vec<Edge>,
+    /// Source facts (filled by [`Graph::load`]).
+    pub meta: GraphMeta,
     pub(crate) by_id: HashMap<String, usize>,
     pub(crate) out_adj: Vec<Vec<usize>>,
     pub(crate) in_adj: Vec<Vec<usize>>,
@@ -230,13 +244,13 @@ impl Graph {
     ///
     /// [`GraphError::UnknownSource`] or database failures.
     pub fn load(db: &HomeDb, label: &str) -> Result<Self> {
-        let source = db
-            .source_id(label)?
-            .ok_or_else(|| GraphError::UnknownSource(label.to_owned()))?;
+        let source =
+            db.source_id(label)?.ok_or_else(|| GraphError::UnknownSource(label.to_owned()))?;
         let mut nodes = Vec::new();
         {
             let mut stmt = db.conn().prepare(
-                "SELECT n.node_id, n.label, n.kind, n.file_path, n.loc, n.lang, n.community, c.name
+                "SELECT n.node_id, n.label, n.kind, n.file_path, n.loc, n.lang, n.community, c.name,
+                        json_extract(n.attrs_json, '$.package')
                  FROM graph_nodes n
                  LEFT JOIN graph_communities c ON c.source_id = n.source_id AND c.id = n.community
                  WHERE n.source_id = ?1 ORDER BY n.pk",
@@ -253,6 +267,7 @@ impl Graph {
                     lang: r.get(5)?,
                     community: r.get(6)?,
                     community_name: r.get(7)?,
+                    package: r.get(8)?,
                 })
             })?;
             for row in rows {
@@ -269,9 +284,10 @@ impl Graph {
             )?;
             let mut rows = stmt.query([source])?;
             while let Some(r) = rows.next()? {
-                let (Some(&src), Some(&dst)) =
-                    (index.get(r.get::<_, String>(0)?.as_str()), index.get(r.get::<_, String>(1)?.as_str()))
-                else {
+                let (Some(&src), Some(&dst)) = (
+                    index.get(r.get::<_, String>(0)?.as_str()),
+                    index.get(r.get::<_, String>(1)?.as_str()),
+                ) else {
                     continue;
                 };
                 edges.push(Edge {
@@ -288,7 +304,14 @@ impl Graph {
             }
         }
         drop(index);
-        Ok(Self::from_parts(nodes, edges))
+        let meta = db.conn().query_row(
+            "SELECT root, json_extract(meta_json, '$.built_at_commit') FROM sources WHERE id = ?1",
+            [source],
+            |r| Ok(GraphMeta { root: r.get(0)?, built_at_commit: r.get(1)? }),
+        )?;
+        let mut graph = Self::from_parts(nodes, edges);
+        graph.meta = meta;
+        Ok(graph)
     }
 
     /// Replace the graph of the source `label` (created when missing) with this graph, in one
@@ -305,8 +328,8 @@ impl Graph {
         tx.execute("DELETE FROM graph_communities WHERE source_id = ?1", [source])?;
         {
             let mut node = tx.prepare(
-                "INSERT INTO graph_nodes (source_id, node_id, label, kind, file_path, loc, lang, community)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                "INSERT INTO graph_nodes (source_id, node_id, label, kind, file_path, loc, lang, community, attrs_json)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, CASE WHEN ?9 IS NULL THEN '{}' ELSE json_object('package', ?9) END)",
             )?;
             for n in &self.nodes {
                 node.execute(params![
@@ -317,7 +340,8 @@ impl Graph {
                     n.file,
                     n.loc,
                     n.lang,
-                    n.community
+                    n.community,
+                    n.package
                 ])?;
             }
             let mut edge = tx.prepare(
@@ -339,7 +363,8 @@ impl Graph {
                     e.context
                 ])?;
             }
-            let mut sizes: std::collections::BTreeMap<i64, (Option<&str>, i64)> = Default::default();
+            let mut sizes: std::collections::BTreeMap<i64, (Option<&str>, i64)> =
+                Default::default();
             for n in &self.nodes {
                 if let Some(c) = n.community {
                     let entry = sizes.entry(c).or_insert((None, 0));

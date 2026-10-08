@@ -7,6 +7,7 @@
 //! Labels: `name()` for a function, `.name()` for a method, the bare name for a type.
 
 pub mod ids;
+pub mod markdown;
 pub mod resolve;
 pub mod rust;
 pub mod typescript;
@@ -14,6 +15,9 @@ pub mod typescript;
 use serde::{Deserialize, Serialize};
 
 use crate::graph::Confidence;
+
+/// Version of the per-file extraction format; cached rows of another version are re-extracted.
+pub const EXTRACT_VERSION: u32 = 2;
 
 /// What a raw node is; corpus resolution folds stubs only onto types.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -30,6 +34,8 @@ pub enum NodeClass {
     Variant,
     /// A macro.
     Macro,
+    /// A Markdown heading.
+    Section,
     /// A sourceless stub awaiting resolution.
     #[default]
     Stub,
@@ -85,6 +91,43 @@ pub struct RawCall {
     pub file: String,
     /// `Lnn`.
     pub loc: String,
+    /// Rust: qualifying path of the callee (`bun_sys`, `crate::store::Store`), already expanded
+    /// through the file's `use` aliases; for a member call on a receiver of known type, the type
+    /// path.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    /// JS/TS: module specifier the callee was imported from.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub module: Option<String>,
+}
+
+/// What an import record points at.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ImportKind {
+    /// A JS/TS module specifier (`./math`, `node:path`, `internal/fs`).
+    #[default]
+    Module,
+    /// A Markdown `[[wiki link]]`.
+    Wiki,
+    /// A Markdown `[text](relative/path.md)` link.
+    Link,
+}
+
+/// An import or link resolved against the corpus at assembly.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawImport {
+    /// Specifier as written.
+    pub specifier: String,
+    /// Imported names (`default` for a default import); empty for a side-effect or namespace
+    /// import.
+    #[serde(default)]
+    pub names: Vec<String>,
+    /// `Lnn`.
+    pub loc: String,
+    /// Kind of the import.
+    #[serde(default)]
+    pub kind: ImportKind,
 }
 
 /// Everything extracted from one file.
@@ -96,8 +139,17 @@ pub struct FileExtract {
     pub edges: Vec<RawEdge>,
     /// Unresolved call sites.
     pub calls: Vec<RawCall>,
+    /// JS/TS imports and Markdown links, resolved at assembly.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub imports: Vec<RawImport>,
+    /// Rust glob imports (`use a::b::*` gives `a::b`), searched for plain calls.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub globs: Vec<String>,
     /// Parse problem, if any (the file contributes nothing then).
     pub error: Option<String>,
+    /// [`EXTRACT_VERSION`] of the extractor that produced this record.
+    #[serde(default)]
+    pub version: u32,
 }
 
 /// Languages with a native extractor.
@@ -107,6 +159,8 @@ pub enum Language {
     Rust,
     /// TypeScript / JavaScript.
     TypeScript,
+    /// Markdown (headings and links).
+    Markdown,
 }
 
 impl Language {
@@ -116,6 +170,7 @@ impl Language {
         match path.rsplit_once('.')?.1 {
             "rs" => Some(Self::Rust),
             "js" | "jsx" | "mjs" | "cjs" | "ts" | "tsx" | "mts" | "cts" => Some(Self::TypeScript),
+            "md" | "mdx" => Some(Self::Markdown),
             _ => None,
         }
     }
@@ -124,9 +179,12 @@ impl Language {
 /// Extract one file.
 #[must_use]
 pub fn extract_file(rel_path: &str, source: &[u8]) -> FileExtract {
-    match Language::of_path(rel_path) {
+    let mut out = match Language::of_path(rel_path) {
         Some(Language::Rust) => rust::extract(rel_path, source),
         Some(Language::TypeScript) => typescript::extract(rel_path, source),
+        Some(Language::Markdown) => markdown::extract(rel_path, source),
         None => FileExtract::default(),
-    }
+    };
+    out.version = EXTRACT_VERSION;
+    out
 }

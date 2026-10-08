@@ -10,8 +10,11 @@ impl Graph {
     /// The `limit` most connected nodes (degree, then id), highest first.
     #[must_use]
     pub fn god_nodes(&self, limit: usize) -> Vec<(usize, usize)> {
-        let mut ranked: Vec<(usize, usize)> = (0..self.nodes.len()).map(|i| (i, self.degree(i))).collect();
-        ranked.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| self.nodes[a.0].id.cmp(&self.nodes[b.0].id)));
+        let mut ranked: Vec<(usize, usize)> =
+            (0..self.nodes.len()).map(|i| (i, self.degree(i))).collect();
+        ranked.sort_by(|a, b| {
+            b.1.cmp(&a.1).then_with(|| self.nodes[a.0].id.cmp(&self.nodes[b.0].id))
+        });
         ranked.truncate(limit);
         ranked
     }
@@ -106,7 +109,9 @@ impl Graph {
                 .iter()
                 .copied()
                 .max_by(|&x, &y| {
-                    self.degree(x).cmp(&self.degree(y)).then_with(|| self.nodes[y].id.cmp(&self.nodes[x].id))
+                    self.degree(x)
+                        .cmp(&self.degree(y))
+                        .then_with(|| self.nodes[y].id.cmp(&self.nodes[x].id))
                 })
                 .unwrap_or(group[0]);
             let name = self.nodes[best].label.clone();
@@ -143,11 +148,17 @@ fn louvain_pass(adj: &[Vec<(usize, f64)>]) -> (Vec<usize>, bool) {
                 }
             }
             total[current] -= degree[node];
-            let stay = links.get(&current).copied().unwrap_or(0.0) - total[current] * degree[node] / two_m;
+            let stay =
+                links.get(&current).copied().unwrap_or(0.0) - total[current] * degree[node] / two_m;
             let mut best = (current, stay);
             for (&candidate, &weight) in &links {
                 let gain = weight - total[candidate] * degree[node] / two_m;
-                if gain > best.1 + 1e-12 || ((gain - best.1).abs() <= 1e-12 && candidate < best.0 && candidate != current && gain > stay + 1e-12) {
+                if gain > best.1 + 1e-12
+                    || ((gain - best.1).abs() <= 1e-12
+                        && candidate < best.0
+                        && candidate != current
+                        && gain > stay + 1e-12)
+                {
                     best = (candidate, gain);
                 }
             }
@@ -180,7 +191,10 @@ mod tests {
         let nodes: Vec<Node> =
             (0..6).map(|i| Node::code(&format!("n{i}"), &format!("N{i}"), None)).collect();
         let pairs = [(0, 1), (1, 2), (0, 2), (3, 4), (4, 5), (3, 5), (2, 3)];
-        Graph::from_parts(nodes, pairs.iter().map(|&(a, b)| Edge::extracted(a, b, "calls")).collect())
+        Graph::from_parts(
+            nodes,
+            pairs.iter().map(|&(a, b)| Edge::extracted(a, b, "calls")).collect(),
+        )
     }
 
     #[test]
