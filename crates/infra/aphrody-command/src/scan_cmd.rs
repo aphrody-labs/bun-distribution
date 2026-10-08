@@ -585,7 +585,13 @@ fn write_report(output: Option<&Path>, report: &Value) -> miette::Result<Report>
         .into_diagnostic()
         .wrap_err("failed to serialise report")?;
     if path == Path::new("-") {
-        println!("{json}");
+        use std::io::Write as _;
+        match writeln!(std::io::stdout().lock(), "{json}") {
+            Err(error) if error.kind() != std::io::ErrorKind::BrokenPipe => {
+                return Err(error).into_diagnostic().wrap_err("failed to write the report");
+            },
+            _ => {},
+        }
         return Ok(Report::Stdout);
     }
     if let Some(parent) = path.parent()
