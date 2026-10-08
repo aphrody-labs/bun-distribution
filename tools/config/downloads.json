@@ -61,6 +61,8 @@
           "platform": "windows-x86_64",
           "target": "x86_64-pc-windows-msvc",
           "cargo": [
+            "env",
+            "TARGET_CPU=x86-64-v2",
             "scripts/build/rust/cargo-serial.sh",
             "xwin",
             "build",
@@ -81,7 +83,7 @@
           "archive": "zip",
           "enabled": true,
           "optional": true,
-          "note": "cross-built on the factory with cargo-xwin (Windows SDK/CRT splat in ~/.cache/cargo-xwin on the host), with aphrody-mcp/winclean so the embedded MCP server carries the Windows computer_* tools; skipped, with a note in latest.json, when the binary is absent"
+          "note": "cross-built on the factory with cargo-xwin (Windows SDK/CRT splat in ~/.cache/cargo-xwin on the host), with aphrody-mcp/winclean so the embedded MCP server carries the Windows computer_* tools; TARGET_CPU=x86-64-v2 lets libwebp-sys pass -march to clang-cl, which otherwise rejects its SSE4.1 sources (MSVC compiles them without a target flag); skipped, with a note in latest.json, when the binary is absent"
         },
         {
           "platform": "macos-aarch64",
