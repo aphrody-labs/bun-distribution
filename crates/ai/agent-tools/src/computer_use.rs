@@ -772,13 +772,34 @@ impl RemoteComputerTarget {
     }
 }
 
+/// JSON-RPC reply from a streamable HTTP body: plain JSON or the first SSE `data:` event
+/// carrying a JSON object.
+fn parse_mcp_reply(text: &str) -> Option<Value> {
+    let text = text.trim();
+    if text.is_empty() {
+        return None;
+    }
+    if let Ok(v) = serde_json::from_str::<Value>(text) {
+        return Some(v);
+    }
+    text.lines()
+        .filter_map(|l| l.strip_prefix("data:"))
+        .filter_map(|d| serde_json::from_str::<Value>(d.trim()).ok())
+        .find(|v| v.get("result").is_some() || v.get("error").is_some())
+}
+
 /// Remote execution backend for computer use on an administrator's PC.
 /// Communicates with the remote PC's Aphrody MCP service over WireGuard / HTTP.
 pub struct RemoteComputerBackend {
     target: RemoteComputerTarget,
     mode: RemoteComputerMode,
     client: reqwest::Client,
+    /// Streamable HTTP MCP session (`Mcp-Session-Id`), opened on first call.
+    session: tokio::sync::Mutex<Option<String>>,
 }
+
+/// Environment variable holding the bearer of remote `aphrody-mcp http` targets.
+pub const REMOTE_MCP_TOKEN_ENV: &str = "APHRODY_REMOTE_MCP_TOKEN";
 
 impl RemoteComputerBackend {
     /// Create a new remote backend for the specified target and mode.
@@ -786,7 +807,7 @@ impl RemoteComputerBackend {
     pub fn new(target: RemoteComputerTarget, mode: RemoteComputerMode) -> Self {
         let client =
             reqwest::Client::builder().timeout(Duration::from_secs(30)).build().unwrap_or_default();
-        Self { target, mode, client }
+        Self { target, mode, client, session: tokio::sync::Mutex::new(None) }
     }
 
     /// Target information.
@@ -809,51 +830,110 @@ impl RemoteComputerBackend {
     ) -> Result<Value, ToolError> {
         let payload = json!({
             "jsonrpc": "2.0",
-            "id": 1,
+            "id": 2,
             "method": "tools/call",
-            "params": {
-                "name": name,
-                "arguments": arguments,
-            }
+            "params": { "name": name, "arguments": arguments }
         });
+        let mut session = self.session.lock().await;
+        for attempt in 0..2 {
+            if session.is_none() {
+                *session = Some(self.open_session().await?);
+            }
+            let (status, _, body) = self.post(&payload, session.as_deref()).await?;
+            // An expired or unknown session is reopened once.
+            if status == reqwest::StatusCode::NOT_FOUND && attempt == 0 {
+                *session = None;
+                continue;
+            }
+            if !status.is_success() {
+                return Err(self.error(format!(
+                    "remote computer-use `{name}`: HTTP {status} from {}",
+                    self.target.endpoint
+                )));
+            }
+            let body = body.ok_or_else(|| self.error(format!("empty response to `{name}`")))?;
+            if let Some(err) = body.get("error") {
+                return Err(self.error(format!("remote MCP error: {err}")));
+            }
+            return Ok(body.get("result").cloned().unwrap_or(body));
+        }
+        Err(self.error(format!("remote MCP session refused by {}", self.target.endpoint)))
+    }
 
-        let mut req = self.client.post(&self.target.endpoint).json(&payload);
-        if let Some(token) = &self.target.auth_token {
+    fn error(&self, message: String) -> ToolError {
+        ToolError::Execution { tool: "computer".into(), message }
+    }
+
+    fn bearer(&self) -> Option<String> {
+        self.target
+            .auth_token
+            .clone()
+            .or_else(|| std::env::var(REMOTE_MCP_TOKEN_ENV).ok().filter(|t| !t.is_empty()))
+    }
+
+    /// POST one JSON-RPC message; returns the status, the session header and the JSON-RPC
+    /// reply (plain JSON or the first `data:` event of an SSE stream).
+    async fn post(
+        &self,
+        payload: &Value,
+        session: Option<&str>,
+    ) -> Result<(reqwest::StatusCode, Option<String>, Option<Value>), ToolError> {
+        let mut req = self
+            .client
+            .post(&self.target.endpoint)
+            .header("Accept", "application/json, text/event-stream")
+            .json(payload);
+        if let Some(token) = self.bearer() {
             req = req.bearer_auth(token);
         }
-
-        let resp = req.send().await.map_err(|e| ToolError::Execution {
-            tool: "computer".into(),
-            message: format!(
-                "remote computer-use call `{name}` to {} ({}) failed: {e}",
+        if let Some(id) = session {
+            req = req.header("Mcp-Session-Id", id);
+        }
+        let resp = req.send().await.map_err(|e| {
+            self.error(format!(
+                "remote computer-use call to {} ({}) failed: {e}",
                 self.target.host, self.target.endpoint
-            ),
+            ))
         })?;
+        let status = resp.status();
+        let session_id =
+            resp.headers().get("mcp-session-id").and_then(|v| v.to_str().ok()).map(str::to_owned);
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| self.error(format!("remote computer-use read failed: {e}")))?;
+        Ok((status, session_id, parse_mcp_reply(&text)))
+    }
 
-        if !resp.status().is_success() {
-            return Err(ToolError::Execution {
-                tool: "computer".into(),
-                message: format!(
-                    "remote computer-use HTTP {} from {}",
-                    resp.status(),
-                    self.target.endpoint
-                ),
-            });
+    /// `initialize` + `notifications/initialized`, returning the session id.
+    async fn open_session(&self) -> Result<String, ToolError> {
+        let init = json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": "2025-06-18",
+                "capabilities": {},
+                "clientInfo": { "name": "aphrody-remote-computer", "version": env!("CARGO_PKG_VERSION") }
+            }
+        });
+        let (status, session, _) = self.post(&init, None).await?;
+        if !status.is_success() {
+            return Err(self.error(format!(
+                "remote MCP initialize: HTTP {status} from {}{}",
+                self.target.endpoint,
+                if status == reqwest::StatusCode::UNAUTHORIZED {
+                    format!(" (set {REMOTE_MCP_TOKEN_ENV} or the target token)")
+                } else {
+                    String::new()
+                }
+            )));
         }
-
-        let body: Value = resp.json().await.map_err(|e| ToolError::Execution {
-            tool: "computer".into(),
-            message: format!("invalid JSON received from remote computer-use: {e}"),
-        })?;
-
-        if let Some(err) = body.get("error") {
-            return Err(ToolError::Execution {
-                tool: "computer".into(),
-                message: format!("remote MCP error: {err}"),
-            });
-        }
-
-        Ok(body.get("result").cloned().unwrap_or(body))
+        let session = session
+            .ok_or_else(|| self.error("remote MCP initialize returned no session".into()))?;
+        let note = json!({ "jsonrpc": "2.0", "method": "notifications/initialized" });
+        self.post(&note, Some(&session)).await?;
+        Ok(session)
     }
 
     async fn execute_winclean(
@@ -1680,6 +1760,14 @@ mod tests {
     use super::*;
 
     #[test]
+    fn mcp_reply_parses_json_and_sse() {
+        assert_eq!(parse_mcp_reply(r#"{"result":1}"#), Some(json!({"result": 1})));
+        let sse = "id: 0\nevent: message\ndata: {\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"ok\":true}}\n\n";
+        assert_eq!(parse_mcp_reply(sse).unwrap()["result"]["ok"], json!(true));
+        assert_eq!(parse_mcp_reply("  "), None);
+    }
+
+    #[test]
     fn policy_blocks_uac_prompts_deterministically() {
         let policy = ComputerPolicy::default();
         let denial = policy.verify_target("User Account Control").unwrap_err();
@@ -1819,15 +1907,30 @@ mod tests {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
 
-        // Spawn mock MCP server responding to tools/call
+        // Spawn mock streamable HTTP MCP server: initialize, notifications, tools/call
         tokio::spawn(async move {
-            for _ in 0..3 {
+            loop {
                 if let Ok((mut socket, _)) = listener.accept().await {
                     let mut buf = vec![0u8; 4096];
                     let n = socket.read(&mut buf).await.unwrap_or(0);
                     let req = String::from_utf8_lossy(&buf[..n]);
 
-                    let body = if req.contains("computer_capture_screen") {
+                    if req.contains("notifications/initialized") {
+                        let _ = socket
+                            .write_all(b"HTTP/1.1 202 Accepted\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                            .await;
+                        continue;
+                    }
+                    let initialize = req.contains("\"initialize\"");
+                    let session = if initialize {
+                        "Mcp-Session-Id: mock-session\r\n"
+                    } else {
+                        assert!(req.to_ascii_lowercase().contains("mcp-session-id: mock-session"));
+                        ""
+                    };
+                    let body = if initialize {
+                        r#"{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-06-18","capabilities":{},"serverInfo":{"name":"mock","version":"1"}}}"#
+                    } else if req.contains("computer_capture_screen") {
                         r#"{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"image","mimeType":"image/png","data":"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="}],"isError":false}}"#
                     } else if req.contains("wsl_execute") {
                         r#"{"jsonrpc":"2.0","id":1,"result":{"structuredContent":{"Success":true,"ExitCode":0,"Stdout":"Linux omar-wsl 6.6.36.6-microsoft-standard-WSL2\n","Stderr":""},"isError":false}}"#
@@ -1836,7 +1939,7 @@ mod tests {
                     };
 
                     let response = format!(
-                        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{}",
+                        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n{session}Connection: close\r\nContent-Length: {}\r\n\r\n{}",
                         body.len(),
                         body
                     );
