@@ -90,7 +90,7 @@ test("monitor probes execute the pinned fork in interpreter mode", async () => {
   expect(probes.length).toBeGreaterThan(0);
   for (const command of probes)
     expect(command).toStartWith(
-      "env BUN_BE_BUN=1 '/home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo'",
+      "sudo -n -u 'ubuntu' -H env BUN_BE_BUN=1 '/home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo'",
     );
 });
 
