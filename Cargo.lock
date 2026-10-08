@@ -652,12 +652,14 @@ dependencies = [
 name = "aphrody-agent-tools"
 version = "1.0.0"
 dependencies = [
+ "anyhow",
  "aphrody-agent-proto",
  "aphrody-gemini-web",
  "aphrody-google",
  "aphrody-guard",
  "aphrody-jev",
  "aphrody-patch",
+ "aphrody-remote-desktop",
  "aphrody-term",
  "aphrody-toolcall",
  "aphrody-web-service",
@@ -1738,6 +1740,7 @@ dependencies = [
  "aphrody-ocr-vlm",
  "aphrody-rag",
  "aphrody-re",
+ "aphrody-remote-desktop",
  "aphrody-secrets",
  "aphrody-session",
  "aphrody-sql",

@@ -21,6 +21,7 @@ use aphrody_toolcall::{
     AdditionalProperties, JsonSchema, ToolDefinition, ToolError, ToolExecutor, ToolImage,
     ToolOutput,
 };
+use aphrody_remote_desktop as rd;
 use aphrody_web_service::session;
 use base64::Engine as _;
 use serde::{Deserialize, Serialize};
@@ -44,6 +45,8 @@ pub enum ComputerEnvironment {
     RemoteWindows,
     /// Remote WSL automation on an administrator's PC.
     RemoteWsl,
+    /// Any RFB (VNC) server, e.g. `aphrody infra remote serve` on a tunnel peer.
+    RemoteVnc,
     /// In-memory mock environment for unit tests.
     Mock,
 }
@@ -77,6 +80,7 @@ impl ComputerEnvironment {
             Self::Wsl => "wsl",
             Self::RemoteWindows => "remote_windows",
             Self::RemoteWsl => "remote_wsl",
+            Self::RemoteVnc => "remote_vnc",
             Self::Mock => "mock",
         }
     }
@@ -687,67 +691,39 @@ pub struct RemoteComputerTarget {
     /// Optional WSL distribution name when targeting remote WSL (defaults to "Ubuntu-24.04").
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub wsl_distro: Option<String>,
+    /// Tunnel member id scoping the credential store (`aphrody infra remote token`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub member: Option<String>,
 }
 
 impl RemoteComputerTarget {
-    /// Known WireGuard peer address for admin Omar.
-    pub const OMAR_WIREGUARD_IP: &'static str = "10.200.77.10";
-    /// Default port for Aphrody PC agent / WinClean MCP server.
-    pub const DEFAULT_PC_MCP_PORT: u16 = 8793;
-    /// Forwarded port for remote PC MCP tunnel.
-    pub const FORWARDED_PC_MCP_PORT: u16 = 18793;
     /// Default WSL distribution for admin tasks.
     pub const DEFAULT_WSL_DISTRO: &'static str = "Ubuntu-24.04";
 
-    /// Resolve a target from a host string or alias.
+    /// Resolve a host, alias, tunnel member (`omar`, `omar-tunnel`, `aphro-pc`), `host:port` or
+    /// `http(s)://` endpoint through the shared remote target model (declared tunnel inventory).
     #[must_use]
     pub fn resolve(host: &str) -> Self {
-        let trimmed = host.trim();
-        if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
-            let port = if trimmed.contains(":18793") {
-                Self::FORWARDED_PC_MCP_PORT
-            } else {
-                Self::DEFAULT_PC_MCP_PORT
-            };
-            return Self {
-                host: trimmed.to_string(),
-                port,
-                endpoint: trimmed.to_string(),
+        use rd::target::TargetKind;
+        let wsl_distro = Some(Self::DEFAULT_WSL_DISTRO.to_string());
+        match rd::target::resolve(host, TargetKind::McpHttp, None) {
+            Ok(t) if t.kind == TargetKind::McpHttp => Self {
+                endpoint: t.url(),
+                host: t.host,
+                port: t.port,
                 auth_token: None,
-                wsl_distro: Some(Self::DEFAULT_WSL_DISTRO.to_string()),
-            };
-        }
-
-        let (resolved_host, port) = match trimmed.to_ascii_lowercase().as_str() {
-            "omar" => (Self::OMAR_WIREGUARD_IP.to_string(), Self::DEFAULT_PC_MCP_PORT),
-            "omar-tunnel" | "omar-forward" => {
-                ("127.0.0.1".to_string(), Self::FORWARDED_PC_MCP_PORT)
+                wsl_distro,
+                member: t.id,
             },
-            "owner" | "aphro-pc" | "windows" => {
-                ("10.200.77.4".to_string(), Self::DEFAULT_PC_MCP_PORT)
+            // Not an MCP endpoint (empty, other scheme): keep the spec so the call reports it.
+            _ => Self {
+                host: host.trim().to_string(),
+                port: TargetKind::McpHttp.default_port(),
+                endpoint: host.trim().to_string(),
+                auth_token: None,
+                wsl_distro,
+                member: None,
             },
-            "vps" => ("10.200.77.1".to_string(), Self::DEFAULT_PC_MCP_PORT),
-            "dbfr" => ("10.200.77.3".to_string(), Self::DEFAULT_PC_MCP_PORT),
-            other => {
-                if let Some((h, p)) = other.rsplit_once(':') {
-                    if let Ok(parsed_port) = p.parse::<u16>() {
-                        (h.to_string(), parsed_port)
-                    } else {
-                        (other.to_string(), Self::DEFAULT_PC_MCP_PORT)
-                    }
-                } else {
-                    (other.to_string(), Self::DEFAULT_PC_MCP_PORT)
-                }
-            },
-        };
-
-        let endpoint = format!("http://{}:{}/mcp", resolved_host, port);
-        Self {
-            host: resolved_host,
-            port,
-            endpoint,
-            auth_token: None,
-            wsl_distro: Some(Self::DEFAULT_WSL_DISTRO.to_string()),
         }
     }
 
@@ -798,8 +774,6 @@ pub struct RemoteComputerBackend {
     session: tokio::sync::Mutex<Option<String>>,
 }
 
-/// Environment variable holding the bearer of remote `aphrody-mcp http` targets.
-pub const REMOTE_MCP_TOKEN_ENV: &str = "APHRODY_REMOTE_MCP_TOKEN";
 
 impl RemoteComputerBackend {
     /// Create a new remote backend for the specified target and mode.
@@ -865,10 +839,10 @@ impl RemoteComputerBackend {
     }
 
     fn bearer(&self) -> Option<String> {
-        self.target
-            .auth_token
-            .clone()
-            .or_else(|| std::env::var(REMOTE_MCP_TOKEN_ENV).ok().filter(|t| !t.is_empty()))
+        self.target.auth_token.clone().or_else(|| {
+            rd::tokens::resolve(rd::tokens::TokenKind::Mcp, self.target.member.as_deref())
+                .map(|s| s.expose().to_owned())
+        })
     }
 
     /// POST one JSON-RPC message; returns the status, the session header and the JSON-RPC
@@ -923,7 +897,10 @@ impl RemoteComputerBackend {
                 "remote MCP initialize: HTTP {status} from {}{}",
                 self.target.endpoint,
                 if status == reqwest::StatusCode::UNAUTHORIZED {
-                    format!(" (set {REMOTE_MCP_TOKEN_ENV} or the target token)")
+                    format!(
+                        " (set {} or run aphrody infra remote token set mcp)",
+                        rd::tokens::TokenKind::Mcp.env()
+                    )
                 } else {
                     String::new()
                 }
@@ -1162,6 +1139,158 @@ impl ComputerBackend for RemoteComputerBackend {
         match self.mode {
             RemoteComputerMode::WinClean => self.execute_winclean(action, policy).await,
             RemoteComputerMode::Wsl => self.execute_wsl(action, policy).await,
+        }
+    }
+}
+
+/// Computer use over RFB: any VNC server (`aphrody infra remote serve`, TigerVNC, macOS...).
+/// The session opens on the first action and is reused; a failed action drops it.
+pub struct VncComputerBackend {
+    target: rd::target::RemoteTarget,
+    password: Option<String>,
+    session: tokio::sync::Mutex<Option<rd::vnc::client::VncSession>>,
+}
+
+impl VncComputerBackend {
+    /// Backend for `target` (`vnc://host:port`, tunnel member or `host[:port]`); the password
+    /// comes from the credential store when `password` is `None`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the target does not resolve to an RFB endpoint.
+    pub fn new(target: &str, password: Option<String>) -> Result<Self, ToolError> {
+        let t = rd::target::resolve(target, rd::target::TargetKind::Vnc, None)
+            .map_err(|e| vnc_error(format!("{e:#}")))?;
+        if t.kind != rd::target::TargetKind::Vnc {
+            return Err(vnc_error(format!("{target}: not a VNC target (use vnc://host:port)")));
+        }
+        Ok(Self { target: t, password, session: tokio::sync::Mutex::new(None) })
+    }
+
+    /// Canonical `vnc://` URL of the target.
+    #[must_use]
+    pub fn url(&self) -> String {
+        self.target.url()
+    }
+
+    async fn run(&self, action: &ComputerAction) -> anyhow::Result<ToolOutput> {
+        use rd::backend::MouseButton;
+        let mut guard = self.session.lock().await;
+        if guard.is_none() {
+            let password = self
+                .password
+                .clone()
+                .or_else(|| self.target.credential().map(|s| s.expose().to_owned()));
+            *guard =
+                Some(rd::vnc::client::VncSession::connect(&self.target.addr(), password).await?);
+        }
+        let Some(vnc) = guard.as_ref() else { anyhow::bail!("VNC session unavailable") };
+        let out = match action {
+            ComputerAction::Screenshot => {
+                let shot = vnc.screenshot(80, 1).await?;
+                let b64 = base64::engine::general_purpose::STANDARD.encode(&shot.jpeg);
+                let mut out = ToolOutput::ok(format!(
+                    "Screenshot {}x{} from {}.",
+                    shot.width,
+                    shot.height,
+                    self.target.url()
+                ));
+                out.images = vec![ToolImage::new("image/jpeg", b64)];
+                out
+            },
+            ComputerAction::Click { x: Some(x), y: Some(y), element_id: None, button } => {
+                let b = MouseButton::parse(button.as_deref().unwrap_or("left"));
+                vnc.click(*x, *y, b, 1).await?;
+                ToolOutput::ok(format!("Clicked {} at ({x}, {y}).", b.as_str()))
+            },
+            ComputerAction::Click { .. } => ToolOutput::error(
+                "VNC click needs x and y (no accessibility tree over RFB)".to_string(),
+            ),
+            ComputerAction::DoubleClick { x, y } => {
+                vnc.click(*x, *y, MouseButton::Left, 2).await?;
+                ToolOutput::ok(format!("Double-clicked at ({x}, {y})."))
+            },
+            ComputerAction::Move { x, y } => {
+                vnc.move_to(*x, *y).await?;
+                ToolOutput::ok(format!("Moved to ({x}, {y})."))
+            },
+            ComputerAction::Drag { start_x, start_y, end_x, end_y } => {
+                vnc.drag((*start_x, *start_y), (*end_x, *end_y)).await?;
+                ToolOutput::ok(format!("Dragged ({start_x}, {start_y}) -> ({end_x}, {end_y})."))
+            },
+            ComputerAction::Scroll { delta_x, delta_y, direction, amount } => {
+                let (dx, dy) = scroll_deltas(*delta_x, *delta_y, direction.as_deref(), *amount);
+                vnc.scroll(dx, dy).await?;
+                ToolOutput::ok(format!("Scrolled ({dx}, {dy})."))
+            },
+            ComputerAction::Type { text } => {
+                vnc.type_text(text).await?;
+                ToolOutput::ok(format!("Typed {} character(s).", text.chars().count()))
+            },
+            ComputerAction::Keypress { key } => {
+                vnc.keypress(key).await?;
+                ToolOutput::ok(format!("Pressed {key}."))
+            },
+            ComputerAction::Wait { duration_ms } => {
+                tokio::time::sleep(Duration::from_millis(*duration_ms)).await;
+                ToolOutput::ok(format!("Waited {duration_ms} ms."))
+            },
+            ComputerAction::Observe { .. }
+            | ComputerAction::ListWindows
+            | ComputerAction::FocusWindow { .. } => ToolOutput::error(format!(
+                "`{}` is unavailable over RFB (pixels and input only); use screenshot",
+                action.name()
+            )),
+        };
+        Ok(out)
+    }
+}
+
+/// Scroll deltas in 120-unit wheel steps: explicit deltas win, else `direction` × `amount`.
+fn scroll_deltas(
+    delta_x: Option<i32>,
+    delta_y: Option<i32>,
+    direction: Option<&str>,
+    amount: Option<i32>,
+) -> (i32, i32) {
+    let step = amount.unwrap_or(120);
+    let dy = delta_y.unwrap_or(match direction {
+        Some("up") => -step,
+        Some("down") => step,
+        _ => 0,
+    });
+    let dx = delta_x.unwrap_or(match direction {
+        Some("left") => -step,
+        Some("right") => step,
+        _ => 0,
+    });
+    (dx, dy)
+}
+
+fn vnc_error(message: String) -> ToolError {
+    ToolError::Execution { tool: "computer".into(), message }
+}
+
+#[async_trait::async_trait]
+impl ComputerBackend for VncComputerBackend {
+    fn environment(&self) -> ComputerEnvironment {
+        ComputerEnvironment::RemoteVnc
+    }
+
+    async fn execute(
+        &self,
+        action: &ComputerAction,
+        _policy: &ComputerPolicy,
+    ) -> Result<ToolOutput, ToolError> {
+        match self.run(action).await {
+            Ok(out) => Ok(out),
+            Err(e) => {
+                // A broken connection is reopened by the next action.
+                if let Some(old) = self.session.lock().await.take() {
+                    old.close().await;
+                }
+                Err(vnc_error(format!("VNC {}: {e:#}", self.target.url())))
+            },
         }
     }
 }
@@ -1558,9 +1687,29 @@ impl ComputerTool {
                 RemoteComputerTarget::omar(),
                 RemoteComputerMode::Wsl,
             )),
+            ComputerEnvironment::RemoteVnc => match VncComputerBackend::new("omar", None) {
+                Ok(b) => Arc::new(b),
+                Err(_) => Arc::new(UnsupportedComputerBackend::new(
+                    env,
+                    "the declared tunnel has no VNC target for omar",
+                )),
+            },
             ComputerEnvironment::Mock => Arc::new(MockComputerBackend::new(env)),
         };
         Self::new_with_backend(backend, policy)
+    }
+
+    /// Create configured for any VNC server (`vnc://host:port`, tunnel member or `host[:port]`).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the target does not resolve to an RFB endpoint.
+    pub fn remote_vnc(
+        target: &str,
+        password: Option<String>,
+        policy: ComputerPolicy,
+    ) -> Result<Self, ToolError> {
+        Ok(Self::new_with_backend(Arc::new(VncComputerBackend::new(target, password)?), policy))
     }
 
     /// Create configured for remote Windows WinClean desktop computer use on an administrator's PC.
@@ -1881,11 +2030,35 @@ mod tests {
 
         let owner = RemoteComputerTarget::resolve("aphro-pc");
         assert_eq!(owner.host, "10.200.77.4");
+        assert_eq!(owner.member.as_deref(), Some("aphro-pc"));
+        assert_eq!(omar.member.as_deref(), Some("omar"));
 
         let custom = RemoteComputerTarget::resolve("192.168.1.50:9000");
         assert_eq!(custom.host, "192.168.1.50");
         assert_eq!(custom.port, 9000);
         assert_eq!(custom.endpoint, "http://192.168.1.50:9000/mcp");
+    }
+
+    #[test]
+    fn vnc_backend_resolves_targets_and_reports_failures() {
+        let tool = ComputerTool::remote_vnc("omar", None, ComputerPolicy::default()).unwrap();
+        assert_eq!(tool.environment(), ComputerEnvironment::RemoteVnc);
+        let backend = VncComputerBackend::new("omar", None).unwrap();
+        assert_eq!(backend.url(), "vnc://10.200.77.10:5900");
+        assert!(VncComputerBackend::new("http://10.200.77.10:8793", None).is_err());
+        assert_eq!(scroll_deltas(None, None, Some("up"), None), (0, -120));
+        assert_eq!(scroll_deltas(Some(240), Some(-360), Some("up"), None), (240, -360));
+        assert_eq!(scroll_deltas(None, None, Some("right"), Some(3)), (3, 0));
+    }
+
+    #[tokio::test]
+    async fn vnc_backend_errors_when_server_is_absent() {
+        let backend = VncComputerBackend::new("vnc://127.0.0.1:9", Some("x".into())).unwrap();
+        let err = backend
+            .execute(&ComputerAction::Screenshot, &ComputerPolicy::default())
+            .await
+            .unwrap_err();
+        assert!(err.to_string().contains("vnc://127.0.0.1:9"), "{err}");
     }
 
     #[test]
@@ -1954,6 +2127,7 @@ mod tests {
             endpoint: format!("http://{addr}/mcp"),
             auth_token: None,
             wsl_distro: Some("Ubuntu-24.04".to_string()),
+            member: None,
         };
 
         // 1. WinClean screenshot

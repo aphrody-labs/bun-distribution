@@ -44,7 +44,8 @@ pub use apply_patch::ApplyPatchTool;
 pub use computer_use::{
     BrowserComputerBackend, ComputerAction, ComputerBackend, ComputerEnvironment, ComputerPolicy,
     ComputerTool, ComputerUseTool, MockComputerBackend, RemoteComputerBackend, RemoteComputerMode,
-    RemoteComputerTarget, UnsupportedComputerBackend, WindowsComputerBackend, WslComputerBackend,
+    RemoteComputerTarget, UnsupportedComputerBackend, VncComputerBackend, WindowsComputerBackend,
+    WslComputerBackend,
 };
 pub use jev::{JEV_TOOL, JevDecideTool};
 pub use read_file::ReadFileTool;

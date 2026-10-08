@@ -211,7 +211,7 @@ enum Commands {
         #[arg(long)]
         role: String,
     },
-    /// Serve or inspect the OpenAI-compatible HTTP AI Gateway (127.0.0.1:8795).
+    /// Serve or inspect the OpenAI-compatible HTTP AI Gateway (127.0.0.1:8786).
     #[cfg(not(target_arch = "wasm32"))]
     Gateway {
         #[command(subcommand)]

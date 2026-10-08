@@ -16,10 +16,10 @@ use clap::Subcommand;
 
 #[derive(Debug, Clone, Subcommand)]
 pub(crate) enum GatewayAction {
-    /// Start serving the OpenAI-compatible HTTP AI Gateway (default: 127.0.0.1:8795).
+    /// Start serving the OpenAI-compatible HTTP AI Gateway (default: 127.0.0.1:8786).
     Serve {
-        /// Socket address to bind (e.g. 127.0.0.1:8795).
-        #[arg(long, default_value = "127.0.0.1:8795")]
+        /// Socket address to bind (e.g. 127.0.0.1:8786).
+        #[arg(long, default_value = "127.0.0.1:8786")]
         addr: String,
 
         /// Provider adapter: "auto", "google-antigravity", "gemini-cli", or "openai".
@@ -29,20 +29,20 @@ pub(crate) enum GatewayAction {
     /// Query the status of a running gateway.
     Status {
         /// Socket address of the gateway to check.
-        #[arg(long, default_value = "127.0.0.1:8795")]
+        #[arg(long, default_value = "127.0.0.1:8786")]
         addr: String,
     },
     /// List models available through the gateway.
     Models {
         /// Socket address of the gateway to query, or query local provider if not running.
-        #[arg(long, default_value = "127.0.0.1:8795")]
+        #[arg(long, default_value = "127.0.0.1:8786")]
         addr: String,
     },
 }
 
 impl Default for GatewayAction {
     fn default() -> Self {
-        Self::Serve { addr: "127.0.0.1:8795".to_string(), provider: "auto".to_string() }
+        Self::Serve { addr: "127.0.0.1:8786".to_string(), provider: "auto".to_string() }
     }
 }
 

@@ -7,7 +7,7 @@ Every MCP tool registered in source, grouped by server: rmcp `#[tool]` routers, 
 full text is in [ecosystem.json](ecosystem.json). The kernel re-exports its subsystems' tools through
 `aphrody-kernel`, so one tool name can appear under several servers.
 
-Totals: 20 servers, 389 tool registrations, 387 unique tool names.
+Totals: 20 servers, 390 tool registrations, 388 unique tool names.
 
 ## aphrody — @aphrody/workspace subsystem `workspace`
 
@@ -193,7 +193,7 @@ Kind: json-catalog. 18 tools.
 
 ## aphrody — aphrody-mcp (GoogleMcpServer)
 
-Kind: rmcp. 67 tools.
+Kind: rmcp. 68 tools.
 
 | Tool | Description |
 | --- | --- |
@@ -210,6 +210,7 @@ Kind: rmcp. 67 tools.
 | `aphrody_ocr` | Read an image with a local vision-language model (llama.cpp + an installed GGUF from the aphrody model store) and return markdown. Fully offline; nothing is downloaded. A page with no readable text r… |
 | `aphrody_rag_context` | Same retrieval as aphrody_rag_search, rendered as a numbered, citable Markdown context block ready to paste into a prompt. |
 | `aphrody_rag_search` | Search the local aphrody RAG index (SQLite FTS5, built by `aphrody rag index`; $APHRODY_RAG_DB or ~/.aphrody/rag/index.db). Returns ranked chunks with path, lines and score as JSON. |
+| `aphrody_remote_vnc` | Computer use on any VNC (RFB) server: a tunnel member (`omar`), `host[:port]` or `vnc://host:port`, e.g. `aphrody infra remote serve` on a WireGuard peer. Actions: screenshot (JPEG image), click, dou… |
 | `aphrody_schema` | Return machine-readable backend contracts from the unified endpoint. `aphrody` returns the live MCP tool schemas, `web` lists the web backend tools, `n2b` returns its canonical report JSON Schema, `a… |
 | `aphrody_shenron_llm_chat` | Chat through Aphrody's configured local OpenAI-compatible model for Shenron. Returns answer and model. Requires the configured model backend. |
 | `aphrody_shenron_ocr` | Transcribe one base64 image with Aphrody's local OCR for Shenron. Returns text, textless, suspect, findings and languageApplied=false. Requires a binary built with the ocr feature and installed OCR m… |

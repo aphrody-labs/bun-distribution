@@ -323,7 +323,7 @@ mod tests {
         assert!(is_allowed_origin("http://localhost:8083"));
         assert!(is_allowed_origin("https://localhost:3000"));
         assert!(is_allowed_origin("http://127.0.0.1"));
-        assert!(is_allowed_origin("http://127.0.0.1:8795"));
+        assert!(is_allowed_origin("http://127.0.0.1:8786"));
         assert!(is_allowed_origin("https://127.0.0.1:443"));
         assert!(is_allowed_origin("http://[::1]:8080"));
         assert!(is_allowed_origin("http://tauri.localhost"));

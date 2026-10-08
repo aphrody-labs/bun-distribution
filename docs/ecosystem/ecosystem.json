@@ -902,7 +902,12 @@
           "path": "crates/infra/remote-desktop",
           "description": "Cross-platform remote-desktop server (JPEG over WebSocket, embedded browser viewer) for `aphrody infra remote serve`.",
           "bins": [],
-          "features": []
+          "features": [
+            "default",
+            "vnc",
+            "vnc-client",
+            "vnc-server"
+          ]
         },
         {
           "name": "aphrody-render",
@@ -1939,6 +1944,19 @@
           "features": []
         },
         {
+          "name": "rfb-encodings",
+          "path": "crates/compat/rfb-encodings",
+          "description": "RFB (Remote Framebuffer) protocol encoding implementations for VNC",
+          "bins": [],
+          "features": [
+            "debug-logging",
+            "default",
+            "generate-golden",
+            "log",
+            "turbojpeg"
+          ]
+        },
+        {
           "name": "serde-saphyr",
           "path": "crates/compat/serde-saphyr",
           "description": "YAML (de)serializer for Serde, built on top of Saphyr, emphasizing panic-free parsing.",
@@ -2057,13 +2075,7 @@
         {
           "name": "@aphrody/bun",
           "path": "packages/interop/native",
-          "description": "Native Rust FFI wrappers for Bun.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/bun-forge",
-          "path": "packages/engine/forge",
-          "description": "yolo forge: builds the aphrody-labs/bun fork on a fresh Linux machine, one temporary checkout per commit",
+          "description": "bun:ffi bindings for the Aphrody native library (aphrody-ffi: M3 tokens, icons, SVG, render, web, X, inference) and the aphrody app-server client. Not the Bun runtime: the aphrody-labs/bun fork binary ships as @aphrody/bun-runtime.",
           "bins": []
         },
         {
@@ -4023,7 +4035,7 @@
         },
         {
           "name": "gateway",
-          "about": "Serve or inspect the OpenAI-compatible HTTP AI Gateway (127.0.0.1:8795).",
+          "about": "Serve or inspect the OpenAI-compatible HTTP AI Gateway (127.0.0.1:8786).",
           "aliases": [],
           "cfg": [
             "not(target_arch = \"wasm32\")"
@@ -4031,7 +4043,7 @@
           "children": [
             {
               "name": "serve",
-              "about": "Start serving the OpenAI-compatible HTTP AI Gateway (default: 127.0.0.1:8795).",
+              "about": "Start serving the OpenAI-compatible HTTP AI Gateway (default: 127.0.0.1:8786).",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -4798,7 +4810,7 @@
           "children": [
             {
               "name": "inspect",
-              "about": "Inspect branch, HEAD, remotes and status with pure-Rust gix.",
+              "about": "Inspect branch, HEAD, remotes, status, ahead/behind remote branches, recent log and change hotspots with pure-Rust gix.",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -5719,7 +5731,7 @@
         },
         {
           "name": "path",
-          "about": "Shortest path between two nodes.",
+          "about": "Shortest path between two nodes (id, label or `file::symbol`).",
           "aliases": [],
           "cfg": [],
           "children": []
@@ -5735,6 +5747,15 @@
           "name": "export",
           "about": "Write `graph.json`.",
           "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "delete",
+          "about": "Delete the graph named by `--source` (nodes, edges, communities, cache, scan rows).",
+          "aliases": [
+            "drop"
+          ],
           "cfg": [],
           "children": []
         }
@@ -6114,7 +6135,7 @@
             },
             {
               "name": "gateway",
-              "about": "Serve or inspect the OpenAI-compatible HTTP AI Gateway (127.0.0.1:8795).",
+              "about": "Serve or inspect the OpenAI-compatible HTTP AI Gateway (127.0.0.1:8786).",
               "aliases": [],
               "cfg": [
                 "not(target_arch = \"wasm32\")"
@@ -6122,7 +6143,7 @@
               "children": [
                 {
                   "name": "serve",
-                  "about": "Start serving the OpenAI-compatible HTTP AI Gateway (default: 127.0.0.1:8795).",
+                  "about": "Start serving the OpenAI-compatible HTTP AI Gateway (default: 127.0.0.1:8786).",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -6889,7 +6910,7 @@
               "children": [
                 {
                   "name": "inspect",
-                  "about": "Inspect branch, HEAD, remotes and status with pure-Rust gix.",
+                  "about": "Inspect branch, HEAD, remotes, status, ahead/behind remote branches, recent log and change hotspots with pure-Rust gix.",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -7903,37 +7924,66 @@
         },
         {
           "name": "remote",
-          "about": "Full remote desktop (screen stream, mouse, keyboard) over the private tunnel.",
+          "about": "Remote control over the private tunnel: desktop (WebSocket + VNC), VNC client, status, credentials.",
           "aliases": [],
           "cfg": [],
           "children": [
             {
               "name": "serve",
-              "about": "Serve the desktop of this host (bind a tunnel address, e.g. 10.200.77.10:8795).",
+              "about": "Serve the desktop of this host: browser viewer (WebSocket) and RFB for any VNC viewer. Bind a tunnel address, e.g. `--bind 10.200.77.10:8795` (VNC then on 10.200.77.10:5900).",
               "aliases": [],
               "cfg": [],
               "children": []
             },
             {
               "name": "status",
-              "about": "Capture backend availability on this host.",
+              "about": "Aggregated state: local capture backend, tunnel handshakes and reachability of the remote servers (WebSocket desktop, VNC, MCP, shell). Targets default to every declared service.",
               "aliases": [],
               "cfg": [],
               "children": []
             },
             {
               "name": "snapshot",
-              "about": "Write one JPEG frame of the desktop.",
+              "about": "Write one JPEG frame of this desktop.",
               "aliases": [],
               "cfg": [],
               "children": []
             },
             {
               "name": "open",
-              "about": "Open the browser viewer of a remote host (`host:port`, tunnel address or inventory member).",
+              "about": "Open the browser viewer of a remote host (inventory member, `host[:port]` or `ws://`).",
               "aliases": [],
               "cfg": [],
               "children": []
+            },
+            {
+              "name": "connect",
+              "about": "Connect to any VNC server (`vnc://host:port`, inventory member or `host[:port]`) and optionally act on it.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "token",
+              "about": "Credential store (`<aphrody home>/private`): where each channel's secret comes from.",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "status",
+                  "about": "Show the source (never the value) of every channel's credential.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "set",
+                  "about": "Store a credential read from stdin, or a generated one with --generate.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
             }
           ]
         },
@@ -9209,20 +9259,20 @@
         },
         {
           "name": "fs",
-          "about": "Build and query the persistent metadata-only filesystem index.",
+          "about": "Build and query the persistent metadata-only filesystem index (tab-separated text).",
           "aliases": [],
           "cfg": [],
           "children": [
             {
               "name": "build",
-              "about": "Build or refresh the metadata-only SQLite FTS index.",
+              "about": "Build or refresh the index (path, size, mtime per file; honours .gitignore, skips .git).",
               "aliases": [],
               "cfg": [],
               "children": []
             },
             {
               "name": "search",
-              "about": "Search an existing metadata-only SQLite FTS index.",
+              "about": "List indexed paths containing every word of the query (case-insensitive).",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -9338,7 +9388,7 @@
         },
         {
           "name": "path",
-          "about": "Shortest path between two nodes.",
+          "about": "Shortest path between two nodes (id, label or `file::symbol`).",
           "aliases": [],
           "cfg": [],
           "children": []
@@ -9354,6 +9404,15 @@
           "name": "export",
           "about": "Write `graph.json`.",
           "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "delete",
+          "about": "Delete the graph named by `--source` (nodes, edges, communities, cache, scan rows).",
+          "aliases": [
+            "drop"
+          ],
           "cfg": [],
           "children": []
         }
@@ -12811,6 +12870,11 @@
           "file": "crates/ai/mcp/src/lib.rs"
         },
         {
+          "name": "aphrody_remote_vnc",
+          "description": "Computer use on any VNC (RFB) server: a tunnel member (`omar`), `host[:port]` or `vnc://host:port`, e.g. `aphrody infra remote serve` on a WireGuard peer. Actions: screenshot (JPEG image), click, double_click, move, drag (x,y -> end_x,end_y), scroll (delta_x/delta_y in 120-unit wheel steps, positive down/right), type, keypress (`Enter`, `ctrl+s`), wait, close. The session is kept open between calls. The password comes from the credential store (APHRODY_VNC_PASSWORD or `aphrody infra remote token set vnc`), never from the arguments.",
+          "file": "crates/ai/mcp/src/lib.rs"
+        },
+        {
           "name": "aphrody_schema",
           "description": "Return machine-readable backend contracts from the unified endpoint. `aphrody` returns the live MCP tool schemas, `web` lists the web backend tools, `n2b` returns its canonical report JSON Schema, `a2a` returns the A2A v1 JSON-RPC contract, and `all` returns every local contract plus the live web catalogue when available.",
           "file": "crates/ai/mcp/src/lib.rs"
@@ -14285,14 +14349,14 @@
     "aphrodyRepos": 2,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 287,
+    "crates": 288,
     "binaries": 38,
-    "bunPackages": 160,
+    "bunPackages": 159,
     "pythonPackages": 10,
     "cliBinaries": 35,
-    "cliCommands": 1100,
+    "cliCommands": 1106,
     "mcpServers": 20,
-    "mcpTools": 389,
-    "mcpUniqueToolNames": 387
+    "mcpTools": 390,
+    "mcpUniqueToolNames": 388
   }
 }

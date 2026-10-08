@@ -24,6 +24,8 @@ aphrody-web-service         = { workspace = true, features = ["render"] }
 aphrody-gemini-web          = { workspace = true }
 obscura-net                = { workspace = true }
 aphrody-jev         = { workspace = true }
+aphrody-remote-desktop = { workspace = true, features = ["vnc-client"] }
+anyhow              = { workspace = true }
 serde               = { workspace = true }
 serde_json          = { workspace = true }
 thiserror           = { workspace = true }

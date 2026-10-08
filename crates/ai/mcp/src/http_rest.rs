@@ -2132,12 +2132,16 @@ mod tests {
             .post(format!("http://{address}/api/v1/shenron/ocr"))
             .json(&json!({"image_base64": "A".repeat(3 * 1024 * 1024)}))
             .send()
-            .await
-            .unwrap();
-        assert!(matches!(
-            large_ocr.status(),
-            StatusCode::UNAUTHORIZED | StatusCode::SERVICE_UNAVAILABLE
-        ));
+            .await;
+        // The server answers before reading the body; Windows then aborts the upload
+        // (WSAECONNABORTED) instead of delivering the response. Both are a rejection.
+        match large_ocr {
+            Ok(response) => assert!(matches!(
+                response.status(),
+                StatusCode::UNAUTHORIZED | StatusCode::SERVICE_UNAVAILABLE
+            )),
+            Err(error) => assert!(error.is_request(), "{error}"),
+        }
         server.abort();
     }
 

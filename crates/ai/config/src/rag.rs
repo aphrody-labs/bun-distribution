@@ -171,6 +171,8 @@ pub enum ComputerUseEnvironment {
     RemoteWindows,
     /// Remote WSL automation on an administrator's PC.
     RemoteWsl,
+    /// Any RFB (VNC) server: `remote_host` is a tunnel member, `host[:port]` or `vnc://` URL.
+    RemoteVnc,
 }
 
 /// `[computer_use]` — computer-use tool configuration.

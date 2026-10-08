@@ -6,7 +6,7 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 35 binaries with a clap surface, 1100 commands.
+Totals: 35 binaries with a clap surface, 1106 commands.
 
 ## aphrody
 
@@ -39,8 +39,8 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 248 comma
   - `aphrody rag search` — Search the index and report source paths, lines and effective mode.
   - `aphrody rag context` — Assemble source context for a model prompt.
   - `aphrody rag stats` — Report document, chunk and vector counts.
-- `aphrody gateway` — Serve or inspect the OpenAI-compatible HTTP AI Gateway (127.0.0.1:8795). _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody gateway serve` — Start serving the OpenAI-compatible HTTP AI Gateway (default: 127.0.0.1:8795).
+- `aphrody gateway` — Serve or inspect the OpenAI-compatible HTTP AI Gateway (127.0.0.1:8786). _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody gateway serve` — Start serving the OpenAI-compatible HTTP AI Gateway (default: 127.0.0.1:8786).
   - `aphrody gateway status` — Query the status of a running gateway.
   - `aphrody gateway models` — List models available through the gateway.
 - `aphrody config` — Manage, show, or import Codex-compatible configuration. _(cfg: not(target_arch = "wasm32"))_
@@ -144,7 +144,7 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 248 comma
   - `aphrody discord inspect` — Inspect a Discord bot configuration, TypeScript decorators, and Oxc AST syntax.
   - `aphrody discord verify` — Run the comprehensive Discord monorepo verification gate (catalog, kit, messaging, bots, compile).
 - `aphrody git` — Native Git inspection, GitHub REST/GraphQL, and ecosystem distribution. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody git inspect` — Inspect branch, HEAD, remotes and status with pure-Rust gix.
+  - `aphrody git inspect` — Inspect branch, HEAD, remotes, status, ahead/behind remote branches, recent log and change hotspots with pure-Rust gix.
   - `aphrody git repo` — Fetch canonical GitHub repository metadata.
   - `aphrody git api` — Call any GitHub REST endpoint through authenticated Octocrab.
   - `aphrody git graphql` — Call the GitHub GraphQL endpoint.
@@ -271,14 +271,15 @@ _No subcommands (flags only)._
 
 ### `aphrody graph`
 
-Crate `aphrody-code-graph`, parser `crates/ai/code-graph/src/cli.rs#Cli`, 6 commands.
+Crate `aphrody-code-graph`, parser `crates/ai/code-graph/src/cli.rs#Cli`, 7 commands.
 
 - `aphrody graph build` — Scan a tree and (re)build its graph incrementally.
 - `aphrody graph query` — Budgeted breadth-first retrieval for a question.
 - `aphrody graph explain` — Describe a node and its connections.
-- `aphrody graph path` — Shortest path between two nodes.
+- `aphrody graph path` — Shortest path between two nodes (id, label or `file::symbol`).
 - `aphrody graph report` — Print the markdown report.
 - `aphrody graph export` — Write `graph.json`.
+- `aphrody graph delete` — Delete the graph named by `--source` (nodes, edges, communities, cache, scan rows). _(aliases: drop)_
 
 ### `aphrody home`
 
@@ -301,7 +302,7 @@ Crate `aphrody-kernel`, parser `crates/os/kernel/core/src/cli.rs#Cli`, 6 command
 
 ### `aphrody infra`
 
-Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 345 commands.
+Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 349 commands.
 
 - `aphrody infra status` — Show target, repository and runtime state without mutation.
 - `aphrody infra inventory` — Run the existing deep resource inventory through the canonical Bun adapter.
@@ -343,8 +344,8 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 345 commands.
     - `aphrody infra ssh rag search` — Search the index and report source paths, lines and effective mode.
     - `aphrody infra ssh rag context` — Assemble source context for a model prompt.
     - `aphrody infra ssh rag stats` — Report document, chunk and vector counts.
-  - `aphrody infra ssh gateway` — Serve or inspect the OpenAI-compatible HTTP AI Gateway (127.0.0.1:8795). _(cfg: not(target_arch = "wasm32"))_
-    - `aphrody infra ssh gateway serve` — Start serving the OpenAI-compatible HTTP AI Gateway (default: 127.0.0.1:8795).
+  - `aphrody infra ssh gateway` — Serve or inspect the OpenAI-compatible HTTP AI Gateway (127.0.0.1:8786). _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh gateway serve` — Start serving the OpenAI-compatible HTTP AI Gateway (default: 127.0.0.1:8786).
     - `aphrody infra ssh gateway status` — Query the status of a running gateway.
     - `aphrody infra ssh gateway models` — List models available through the gateway.
   - `aphrody infra ssh config` — Manage, show, or import Codex-compatible configuration. _(cfg: not(target_arch = "wasm32"))_
@@ -448,7 +449,7 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 345 commands.
     - `aphrody infra ssh discord inspect` — Inspect a Discord bot configuration, TypeScript decorators, and Oxc AST syntax.
     - `aphrody infra ssh discord verify` — Run the comprehensive Discord monorepo verification gate (catalog, kit, messaging, bots, compile).
   - `aphrody infra ssh git` — Native Git inspection, GitHub REST/GraphQL, and ecosystem distribution. _(cfg: not(target_arch = "wasm32"))_
-    - `aphrody infra ssh git inspect` — Inspect branch, HEAD, remotes and status with pure-Rust gix.
+    - `aphrody infra ssh git inspect` — Inspect branch, HEAD, remotes, status, ahead/behind remote branches, recent log and change hotspots with pure-Rust gix.
     - `aphrody infra ssh git repo` — Fetch canonical GitHub repository metadata.
     - `aphrody infra ssh git api` — Call any GitHub REST endpoint through authenticated Octocrab.
     - `aphrody infra ssh git graphql` — Call the GitHub GraphQL endpoint.
@@ -584,11 +585,15 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 345 commands.
   - `aphrody infra wg syncconf` — Converge the peers of a live interface on a configuration (`wg syncconf`).
   - `aphrody infra wg strip` — Print the `wg setconf` subset of a configuration (`wg-quick strip`).
   - `aphrody infra wg driver` — WireGuardNT driver library (Windows).
-- `aphrody infra remote` — Full remote desktop (screen stream, mouse, keyboard) over the private tunnel.
-  - `aphrody infra remote serve` — Serve the desktop of this host (bind a tunnel address, e.g. 10.200.77.10:8795).
-  - `aphrody infra remote status` — Capture backend availability on this host.
-  - `aphrody infra remote snapshot` — Write one JPEG frame of the desktop.
-  - `aphrody infra remote open` — Open the browser viewer of a remote host (`host:port`, tunnel address or inventory member).
+- `aphrody infra remote` — Remote control over the private tunnel: desktop (WebSocket + VNC), VNC client, status, credentials.
+  - `aphrody infra remote serve` — Serve the desktop of this host: browser viewer (WebSocket) and RFB for any VNC viewer. Bind a tunnel address, e.g. `--bind 10.200.77.10:8795` (VNC then on 10.200.77.10:5900).
+  - `aphrody infra remote status` — Aggregated state: local capture backend, tunnel handshakes and reachability of the remote servers (WebSocket desktop, VNC, MCP, shell). Targets default to every declared service.
+  - `aphrody infra remote snapshot` — Write one JPEG frame of this desktop.
+  - `aphrody infra remote open` — Open the browser viewer of a remote host (inventory member, `host[:port]` or `ws://`).
+  - `aphrody infra remote connect` — Connect to any VNC server (`vnc://host:port`, inventory member or `host[:port]`) and optionally act on it.
+  - `aphrody infra remote token` — Credential store (`<aphrody home>/private`): where each channel's secret comes from.
+    - `aphrody infra remote token status` — Show the source (never the value) of every channel's credential.
+    - `aphrody infra remote token set` — Store a credential read from stdin, or a generated one with --generate.
 - `aphrody infra vpn` — Native Mullvad VPN controller and auto-proxy geo-unblock driver.
   - `aphrody infra vpn status` — Show current Mullvad VPN connection status and egress details.
   - `aphrody infra vpn connect` — Connect the VPN tunnel, optionally setting relay location (e.g. us, ch, se).
@@ -800,9 +805,9 @@ Crate `aphrody-yolo`, parser `crates/infra/yolo/src/cli.rs#Cli`, 25 commands.
   - `aphrody yolo shell eval` — Evaluate Nushell code and return structured output.
   - `aphrody yolo shell commands` — List embedded Nushell commands.
   - `aphrody yolo shell describe` — Print full embedded Nushell help for a command.
-- `aphrody yolo fs` — Build and query the persistent metadata-only filesystem index.
-  - `aphrody yolo fs build` — Build or refresh the metadata-only SQLite FTS index.
-  - `aphrody yolo fs search` — Search an existing metadata-only SQLite FTS index.
+- `aphrody yolo fs` — Build and query the persistent metadata-only filesystem index (tab-separated text).
+  - `aphrody yolo fs build` — Build or refresh the index (path, size, mtime per file; honours .gitignore, skips .git).
+  - `aphrody yolo fs search` — List indexed paths containing every word of the query (case-insensitive).
   - `aphrody yolo fs status` — Report the entry count of an existing filesystem index.
 - `aphrody yolo win` — Proxy Windows administration to the running kernel admin subsystem.
   - `aphrody yolo win catalog` — List the generated WinClean tool catalog without loading the DLL.
@@ -817,14 +822,15 @@ Crate `aphrody-yolo`, parser `crates/infra/yolo/src/cli.rs#Cli`, 25 commands.
 
 ### `aphrody-graph`
 
-Crate `aphrody-code-graph`, parser `crates/ai/code-graph/src/cli.rs#Cli`, 6 commands.
+Crate `aphrody-code-graph`, parser `crates/ai/code-graph/src/cli.rs#Cli`, 7 commands.
 
 - `aphrody-graph build` — Scan a tree and (re)build its graph incrementally.
 - `aphrody-graph query` — Budgeted breadth-first retrieval for a question.
 - `aphrody-graph explain` — Describe a node and its connections.
-- `aphrody-graph path` — Shortest path between two nodes.
+- `aphrody-graph path` — Shortest path between two nodes (id, label or `file::symbol`).
 - `aphrody-graph report` — Print the markdown report.
 - `aphrody-graph export` — Write `graph.json`.
+- `aphrody-graph delete` — Delete the graph named by `--source` (nodes, edges, communities, cache, scan rows). _(aliases: drop)_
 
 ### `aphrody-store`
 

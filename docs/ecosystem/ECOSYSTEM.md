@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 287 crates, 38 binaries, 160 Bun packages, 10 uv packages, 1100 CLI commands, 389 MCP tools.
+Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 288 crates, 38 binaries, 159 Bun packages, 10 uv packages, 1106 CLI commands, 390 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -18,7 +18,7 @@ Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 287 crates, 38 bina
 
 Canonical Rust/Bun monorepo
 
-### Crates (214)
+### Crates (215)
 
 | Crate | Path | Description | Binaries | Features |
 | --- | --- | --- | --- | --- |
@@ -120,7 +120,7 @@ Canonical Rust/Bun monorepo
 | `aphrody-rag-core` | crates/ai/rag-core | Pure, wasm32-safe core of the aphrody RAG layer: source-aware chunkers (Rust/JS-TS/Markdown/structural/prose), reciprocal-rank-fusion + MMR + vector helpers, and a bit-for-bit port of shenron's retrieval eval harness. |  | default, oxc |
 | `aphrody-rag-eval` | crates/ai/rag-eval | RAG retrieval evaluation harness (Recall@k, MRR, nDCG) over HTTP, MCP or a local index. |  |  |
 | `aphrody-re` | crates/os/kernel/comps/re | Reverse engineering primitives for aphrody — PE/ELF/Mach-O triage, sections + entropy + hash, ASCII/UTF-16 strings extraction. Pure Rust, no C bindings, no GPL. |  | leveldb, magika, yara |
-| `aphrody-remote-desktop` | crates/infra/remote-desktop | Cross-platform remote-desktop server (JPEG over WebSocket, embedded browser viewer) for `aphrody infra remote serve`. |  |  |
+| `aphrody-remote-desktop` | crates/infra/remote-desktop | Cross-platform remote-desktop server (JPEG over WebSocket, embedded browser viewer) for `aphrody infra remote serve`. |  | default, vnc, vnc-client, vnc-server |
 | `aphrody-render` | crates/ui/render | Unified Aphrody native renderer contract: M3 layout, 2D GPU backends and CPU fallback. |  | all-gpu, cpu, default, dx12, gpu, metal, parallel, vulkan, webgl, webgpu |
 | `aphrody-restart` | crates/tauri/aphrody-restart | Aphrody platform crate aphrody-restart. | `restart` | process-relaunch-dangerous-allow-symlink-macos |
 | `aphrody-rollout` | crates/ai/rollout | Resilient agent-session recorder: appends timestamped JSONL items to ~/.aphrody/sessions/rollout-*.jsonl through an async actor (mpsc + background writer task with Flush/Persist/Shutdown), and resumes a prior session by replaying its JSONL. Inspired by OpenAI Codex rollout (Apache-2.0). |  |  |
@@ -230,6 +230,7 @@ Canonical Rust/Bun monorepo
 | `obscura-net` | crates/web/obscura-net | Aphrody platform crate obscura-net. |  | default, futures-util, stealth, wreq, wreq-util |
 | `obscura-render` | crates/web/obscura-render | Optional scoped render layer for Obscura: layout (taffy) and, with the paint feature, text and raster output for screenshots. |  | default, paint |
 | `obscura-ssrf` | crates/web/obscura-ssrf | Shared SSRF deny-set and private-network opt-in for Obscura network transports and renderer. |  |  |
+| `rfb-encodings` | crates/compat/rfb-encodings | RFB (Remote Framebuffer) protocol encoding implementations for VNC |  | debug-logging, default, generate-golden, log, turbojpeg |
 | `serde-saphyr` | crates/compat/serde-saphyr | YAML (de)serializer for Serde, built on top of Saphyr, emphasizing panic-free parsing. | `serde-saphyr` | default, figment, garde, miette, robotics, validator |
 | `simdutf` | crates/native/simdutf | Unicode validation and transcoding at billions of characters per second |  |  |
 | `taffy` | crates/ui/taffy | A flexible UI layout library |  | alloc, block_layout, calc, content_size, debug, default, detailed_layout_info, document-features, flexbox, float_layout, grid, parse, parse_faster, profile, serde, std, strict_provenance, taffy_tree |
@@ -237,7 +238,7 @@ Canonical Rust/Bun monorepo
 | `yolo-pyo3` | crates/engine/yolo-pyo3 | PyO3 0.29 Native Extension Module for YOLO Monorepo (Free-threaded, No-GIL, py.detach) |  |  |
 | `yolo-runtime` | crates/engine/yolo-runtime | Versioned C ABI of the precompiled YOLO native runtime (first slice: system stats and cancellable benchmark) |  | browser, cuda, default, gpu |
 
-### Bun packages (126)
+### Bun packages (125)
 
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
@@ -247,8 +248,7 @@ Canonical Rust/Bun monorepo
 | `@aphrody/api` | crates/tauri/aphrody-tauri-api | Tauri API definitions |  |
 | `@aphrody/app-ui` | m3/packages/app-ui |  |  |
 | `@aphrody/assets` | m3/packages/assets | File-kind icons, extension badges, brand logos, images, sounds, videos and lottie animations, with icon resolution (getIcon, getLayeredIcon, getBeardedIcon, getIcon20): the Spacedrive @sd/assets set, merged with SpaceUI's @spacedrive/icons, for the Material Design 3 explorer surfaces. |  |
-| `@aphrody/bun` | packages/interop/native | Native Rust FFI wrappers for Bun. |  |
-| `@aphrody/bun-forge` | packages/engine/forge | yolo forge: builds the aphrody-labs/bun fork on a fresh Linux machine, one temporary checkout per commit |  |
+| `@aphrody/bun` | packages/interop/native | bun:ffi bindings for the Aphrody native library (aphrody-ffi: M3 tokens, icons, SVG, render, web, X, inference) and the aphrody app-server client. Not the Bun runtime: the aphrody-labs/bun fork binary ships as @aphrody/bun-runtime. |  |
 | `@aphrody/canvas` | m3/packages/canvas | Aphrody native Skia canvas facade over the pinned upstream @napi-rs/canvas runtime |  |
 | `@aphrody/cli` | crates/tauri/aphrody-tauri-cli-node | Command line interface for building Tauri apps | `tauri` |
 | `@aphrody/cli-darwin-arm64` | crates/tauri/aphrody-tauri-cli-node/npm/darwin-arm64 | Command line interface for building Tauri apps |  |

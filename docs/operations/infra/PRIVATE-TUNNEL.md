@@ -243,6 +243,48 @@ Owner directive of 2026-10-08: full SSH between the owner (`aphro-pc`, GitHub `a
   aphro-pc: `Remove-NetFirewallRule -Name Aphrody-SSH-In-Tunnel` and `Stop-Service sshd`; client configs keep
   `*.before-ssh-mesh-20261008` backups.
 
+## Remote control: one target model (2026-10-08)
+
+`aphrody infra remote` (`crates/infra/infra/src/remote.rs`) drives every remote-control channel through one target
+model and one credential store, both in `aphrody-remote-desktop`:
+
+- **Targets** (`src/target.rs`): `local`, `mcp-http`, `vnc`, `ws` (browser desktop), `shell`. A spec is a tunnel member
+  (`omar`, `aphro-pc`, aliases `owner`, `hub`), `<member>-forward` / `<member>-tunnel` (loopback, declared port + 10000),
+  `host[:port]` or a URL (`vnc://`, `rfb://`, `http(s)://`, `mcp://`, `ws(s)://`, `shell://`). Addresses and ports come
+  from the declared services of `aphrody-tunnel.json` (compiled-in copy when no checkout is found); defaults: MCP 8793,
+  desktop 8795, VNC 5900, shell 8790.
+- **Credentials** (`src/tokens.rs`): environment variable, then `<aphrody home>/private/<member>/<file>`, then
+  `<aphrody home>/private/<file>` (`APHRODY_HOME`, else `~/.aphrody`; outside any repository, mode 0600 on Unix).
+  `remote`: `APHRODY_REMOTE_TOKEN` / `remote.token`; `mcp`: `APHRODY_REMOTE_MCP_TOKEN` / `mcp.token`; `vnc`:
+  `APHRODY_VNC_PASSWORD` / `vnc.password`; `shell`: `APHRODY_OS_AUTH_TOKEN` / `shell.token`. Without a VNC password the
+  server derives one from the remote token (SHA-256, 8 characters). Values are never printed, only their source.
+- **Consumers**: `aphrody infra remote serve|status|open|connect|token`, the agent `computer` tool
+  (`RemoteComputerTarget::resolve` and the bearer of `RemoteComputerBackend`, `VncComputerBackend`) and the MCP tool
+  `aphrody_remote_vnc`. WinClean, OS and shell tools stay in their owner crates; they are reached through the
+  `mcp-http` or `shell` target of a member.
+
+### VNC (RFB)
+
+`aphrody infra remote serve` also starts an RFB server (`rustvncserver` 2.2.1, Apache-2.0) fed by the same capture and
+injection as the browser desktop (Windows SendInput, X11 XTEST). It binds the `--bind` address on port 5900 (`--vnc
+<ip:port>` to change, `--no-vnc` to disable), never `0.0.0.0`, and admits loopback plus `--vnc-allow` (addresses, CIDRs,
+`any`); the default allowlist is the members granted a `vnc-*` service, today `aphro-pc` `10.200.77.4` only. Service
+`vnc-omar` (`10.200.77.10:5900`) is declared and granted to `aphro-pc`; the generated vps rule is:
+
+```sh
+ufw route allow in on wg1 out on wg1 from 10.200.77.4 to 10.200.77.10 port 5900 proto tcp comment 'aphrody-wg-aphro-pc'
+```
+
+Not applied by this change (plan before apply, see [OMAR-REMOTE-CONTROL.md](OMAR-REMOTE-CONTROL.md) section 2.8 for
+the Windows rule). Any viewer works (`vnc://10.200.77.10:5900`, TigerVNC, RealVNC, Remmina); the native client is
+`aphrody infra remote connect omar --screenshot shot.jpg [--click x,y] [--type text] [--key ctrl+s]`.
+`aphrody infra remote status` aggregates the local capture backend, the `wg1` handshakes (alive below 180 s) and the
+reachability of every declared desktop, VNC, MCP and shell service.
+
+Limits: RFB VNC authentication is DES over the first 8 password characters, so the tunnel stays the security boundary;
+the RFB stream is not encrypted outside WireGuard. `rfb-encodings` 0.1.7 is integrated under `crates/compat` with a
+pixel-format fix (BGRA viewers had red and blue swapped), provenance in `tools/config/upstream-sources.json`.
+
 ## Order, validation and rollback
 
 `wg-plan` prints the sequence: owner's order, dbfr and WSL keygen, vps keygen and hub, ufw and forwarders, client start,

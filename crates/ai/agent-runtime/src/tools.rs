@@ -415,7 +415,16 @@ fn desktop_computer_tool(section: Option<&ComputerUseConfig>) -> Option<Arc<dyn 
         allowed_apps: section.allowed_apps.clone().unwrap_or_default(),
         denied_apps: section.denied_apps.clone().unwrap_or_default(),
     };
-    let mut tool = if let Some(host) = &section.remote_host {
+    let mut tool = if section.environment == Some(ComputerUseEnvironment::RemoteVnc) {
+        let host = section.endpoint.as_deref().or(section.remote_host.as_deref()).unwrap_or("omar");
+        match ComputerTool::remote_vnc(host, None, policy) {
+            Ok(tool) => tool,
+            Err(e) => {
+                tracing::warn!("computer_use: VNC target {host}: {e}");
+                return None;
+            },
+        }
+    } else if let Some(host) = &section.remote_host {
         let mut target = RemoteComputerTarget::resolve(host);
         if let Some(distro) = &section.wsl_distribution {
             target = target.with_wsl_distro(distro.clone());
@@ -437,6 +446,7 @@ fn desktop_computer_tool(section: Option<&ComputerUseConfig>) -> Option<Arc<dyn 
             Some(ComputerUseEnvironment::Wsl) => ComputerEnvironment::Wsl,
             Some(ComputerUseEnvironment::RemoteWindows) => ComputerEnvironment::RemoteWindows,
             Some(ComputerUseEnvironment::RemoteWsl) => ComputerEnvironment::RemoteWsl,
+            Some(ComputerUseEnvironment::RemoteVnc) => ComputerEnvironment::RemoteVnc,
             None => ComputerEnvironment::auto_detect(),
         };
         ComputerTool::for_environment(environment, policy)

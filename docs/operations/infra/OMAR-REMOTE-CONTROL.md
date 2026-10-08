@@ -19,6 +19,8 @@ que hors bande. Inventaire : `tools/config/host/wireguard/aphrody-tunnel.json` ;
   - `8793/tcp` : `aphrody-mcp http` (outils WinClean `computer_*` par action), Bearer `APHRODY_MCP_HTTP_TOKEN`.
     `aphrody-mcp http` refuse toute adresse non loopback : il écoute sur `127.0.0.1:8793` et un `netsh portproxy`
     le publie sur `10.200.77.10:8793`.
+  - `5900/tcp` : serveur VNC (RFB) du même `aphrody infra remote serve`, pour tout visualiseur VNC ; admis :
+    loopback et `10.200.77.4` uniquement (liste d'autorisation du serveur et pare-feu Windows).
 
 ### Prérequis
 
@@ -27,7 +29,8 @@ que hors bande. Inventaire : `tools/config/host/wireguard/aphrody-tunnel.json` ;
    commits avant l'étape Omar ; vérifier avec `aphrody infra wg --help` et `aphrody infra remote --help`.
 2. **VPS (ufw `deny routed`)** : règles routées sur `wg1` :
    `ufw route allow in on wg1 out on wg1 from 10.200.77.4 to 10.200.77.10 port 8795 proto tcp comment 'aphrody-wg-omar-remote'`
-   et la même pour `8793`.
+   et la même pour `8793` ; pour VNC (`5900`), uniquement depuis `10.200.77.4` (règle générée par l'inventaire,
+   commentaire `aphrody-wg-aphro-pc`).
 3. Hors du dépôt, `aphrody infra wg render|up omar` ne trouve pas l'inventaire : sur le PC d'Omar on utilise
    un fichier `.conf` (étape 2.4).
 
@@ -101,7 +104,7 @@ New-NetFirewallRule -DisplayName "Aphrody MCP HTTP (tunnel)" -Direction Inbound 
   -Protocol TCP -LocalPort 8793 -LocalAddress 10.200.77.10 -RemoteAddress 10.200.77.0/24 -Profile Any
 ```
 
-Durcissement possible : `-RemoteAddress 10.200.77.4` (seul le PC du propriétaire).
+Durcissement possible : `-RemoteAddress 10.200.77.4` (seul le PC du propriétaire). La règle VNC est en 2.8.
 
 ### 2.6 Bureau à distance
 
@@ -125,6 +128,35 @@ Invoke-RestMethod http://127.0.0.1:8793/healthz
 ```
 
 Les routes REST hors `/mcp` ne sont pas derrière le Bearer : garder la règle pare-feu 8793 restreinte au tunnel.
+
+### 2.8 VNC (RFB)
+
+`aphrody infra remote serve` démarre aussi un serveur VNC sur l'adresse de `--bind`, port 5900 (`--vnc <ip:port>`
+pour changer, `--no-vnc` pour le couper). Il n'écoute jamais `0.0.0.0` et n'admet que le loopback et les membres
+autorisés à un service `vnc-*` de l'inventaire, soit `10.200.77.4` (`--vnc-allow` pour remplacer). Mot de passe :
+`APHRODY_VNC_PASSWORD`, sinon `<aphrody home>\private\vnc.password`, sinon dérivé du jeton du bureau à distance
+(8 caractères) ; il n'est jamais affiché, seule sa source l'est.
+
+```powershell
+New-NetFirewallRule -Group "Aphrody tunnel" -DisplayName "Aphrody VNC (tunnel)" -Direction Inbound -Action Allow `
+  -Protocol TCP -LocalPort 5900 -LocalAddress 10.200.77.10 -RemoteAddress 10.200.77.4 -Profile Any
+aphrody infra remote token set vnc --generate      # optionnel : mot de passe propre, affiché une fois, hors bande
+aphrody infra remote serve --bind 10.200.77.10:8795   # bureau navigateur 8795 + VNC 10.200.77.10:5900
+aphrody infra remote token status                  # source de chaque secret (jamais la valeur)
+```
+
+Côté propriétaire :
+
+```powershell
+aphrody infra remote token set vnc --target omar   # colle le mot de passe reçu hors bande (stdin)
+aphrody infra remote status                        # handshakes wg1, 8795, 5900, 8793 d'Omar
+aphrody infra remote connect omar --screenshot omar.jpg
+aphrody infra remote connect vnc://10.200.77.10:5900 --click 640,400 --type "bonjour" --key Enter
+```
+
+Tout visualiseur VNC fonctionne aussi (`10.200.77.10:5900`). Agents : environnement `remote_vnc` de l'outil
+`computer` (`VncComputerBackend`) et outil MCP `aphrody_remote_vnc` (cible `omar`). Limites : l'authentification VNC
+est DES sur 8 caractères et le flux RFB n'est pas chiffré hors WireGuard ; le tunnel reste la frontière de sécurité.
 
 ## 3. Côté propriétaire (aphro-pc)
 

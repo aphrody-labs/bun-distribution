@@ -65,6 +65,9 @@ mod protocol;
 // the local filesystem and the process table.
 #[cfg(not(target_arch = "wasm32"))]
 mod sync_tools;
+// Computer use over RFB (VNC) through the shared remote target model and credential store.
+#[cfg(not(target_arch = "wasm32"))]
+mod remote_tools;
 // Browser automation served natively through the system-layer browser crates.
 #[cfg(all(feature = "native-browser", not(target_arch = "wasm32")))]
 mod browser_tools;
@@ -2645,6 +2648,27 @@ impl GoogleMcpServer {
     }
 }
 
+// Own impl block: host-only (see the note above the toolbox routers).
+#[cfg(not(target_arch = "wasm32"))]
+#[tool_router(router = remote_router)]
+impl GoogleMcpServer {
+    #[tool(description = "Computer use on any VNC (RFB) server: a tunnel member (`omar`), \
+                          `host[:port]` or `vnc://host:port`, e.g. `aphrody infra remote serve` \
+                          on a WireGuard peer. Actions: screenshot (JPEG image), click, \
+                          double_click, move, drag (x,y -> end_x,end_y), scroll (delta_x/delta_y \
+                          in 120-unit wheel steps, positive down/right), type, keypress \
+                          (`Enter`, `ctrl+s`), wait, close. The session is kept open between \
+                          calls. The password comes from the credential store \
+                          (APHRODY_VNC_PASSWORD or `aphrody infra remote token set vnc`), never \
+                          from the arguments.")]
+    async fn aphrody_remote_vnc(
+        &self,
+        Parameters(req): Parameters<remote_tools::RemoteVncRequest>,
+    ) -> rmcp::model::CallToolResult {
+        remote_tools::call(req).await
+    }
+}
+
 #[cfg(all(feature = "rag", not(target_arch = "wasm32")))]
 #[tool_router(router = rag_router)]
 impl GoogleMcpServer {
@@ -2760,6 +2784,7 @@ impl GoogleMcpServer {
         #[cfg(not(target_arch = "wasm32"))]
         {
             router += Self::external_sessions_router();
+            router += Self::remote_router();
         }
         #[cfg(all(feature = "ocr", not(target_arch = "wasm32")))]
         {
