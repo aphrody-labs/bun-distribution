@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Packages Bun : installation et release
 
-Bun ≥ 1.4.2 est requis. Depuis le clone Aphrody, une seule commande installe dans un projet consommateur les versions npm qualifiées du catalogue :
+Bun ≥ 1.4.2 est requis. Le runtime Bun lui-même et `@aphrody/bun-types`, `@aphrody/bun-runtime` viennent du [fork aphrody-labs/bun](../reference/upstream-bun/APHRODY-FORK.md), pas de ce catalogue. Depuis le clone Aphrody, une seule commande installe dans un projet consommateur les versions npm qualifiées du catalogue :
 
 ```sh
 bun run packages:install --cwd /chemin/du/projet
@@ -46,7 +46,6 @@ Le tableau ci-dessous est produit depuis les archives auditées et les réponses
 | `@aphrody/app-ui` | `0.1.0` | Qualification restante | [manifest](../../m3/packages/app-ui/package.json) |
 | `@aphrody/assets` | `0.1.1` | Publié | [manifest](../../m3/packages/assets/package.json) |
 | `@aphrody/bun` | `3.3.7` | Qualification restante | [manifest](../../packages/interop/native/package.json) |
-| `@aphrody/bun-forge` | `0.1.1` | Publié | [manifest](../../packages/engine/forge/package.json) |
 | `@aphrody/canvas` | `1.0.9-aphrody.4` | Publié | [manifest](../../m3/packages/canvas/package.json) |
 | `@aphrody/cli-wasm` | `0.1.1` | Publié | [manifest](../../packages/infra/cli-wasm/package.json) |
 | `@aphrody/discord-kit` | `0.1.1` | Publié | [manifest](../../packages/discord/kit/package.json) |

@@ -76,7 +76,7 @@ Every change below is a `[[rewrite]]` or a source removal in `vendor.toml` so a 
 | `vendor.lock`, `docs/reference/workspace/CRATES.md` | **migrate** | Entries removed by hand: `yolo import` needs the `vendor/*` checkouts, absent in this tree, so `yolo import --check` cannot run here. |
 | `packages/engine/yolo/test/import.test.ts` | **migrate** | The `tauri-driver` fixture is replaced by a surviving binary crate; the importer tests keep their coverage. |
 | `packages/engine/core/src/vendor/status.ts`, `packages/engine/core/test/startup.test.ts` | **migrate** | Submodule lists drop `wry` and `tao`. |
-| `scripts/tools/vendor/packages_upstream_sync.ts` | **migrate** | Same list. |
+| `scripts/tools/vendor/packages_upstream_sync.ts` (not in repo) | **migrate** | Same list; the script was removed on 2026-10-08 with the vendored Bun tooling. |
 | `tools/config/upstream-sources.json` | **migrate** | `tauri` reference no longer sparse-reads upstream `tauri-driver`; entry for the CEF runtime patch. |
 | `tools/config/tauri-upstream.json` | **migrate** | Default runtime `tauri-runtime-cef`, `tauri-runtime-wry` leaves `rust.crates` and the mirror key, the `tauri-driver` debugger entry and the WebView2/WebKitGTK/WKWebView built-in entries are retired with their reason. |
 | `patches/tauri-plugin-mcp-bridge-0.13.0-*.patch` | **keep** | Provenance records of the upstream diff; the CEF port is a further local change recorded in `tools/config/upstream-sources.json`. |

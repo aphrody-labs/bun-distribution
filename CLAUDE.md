@@ -17,6 +17,12 @@ Product positioning (owner directive of 2026-10-06): the runtimes (the Bun fork,
 the real Aphrody products. Aphrody AI is a backend serving the apps; M3 and app-ui are
 frameworks, not products. Prioritise, document and release accordingly.
 
+Bun is our fork [aphrody-labs/bun](docs/reference/upstream-bun/APHRODY-FORK.md) (checkout `C:\bun` or
+`APHRODY_BUN_CHECKOUT`): every Bun change (runtime, built-ins, types, bundler, package manager) lands there as a
+commit with its test, never as a patch, vendored tree or Rust copy in Aphrody. The only copy of the Bun docs is
+`docs/reference/upstream-bun` (`bun run docs:bun:update|check`); answer Bun API questions from it or the MCP
+`bun_docs_*` tools.
+
 Work autonomously through authorized implementation, gates, commit and push,
 without intermediate confirmation. Missing authority/data or external blockers
 do not authorize destructive actions, publication or changes outside scope.

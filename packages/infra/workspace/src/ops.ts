@@ -274,13 +274,6 @@ export async function runOps(argv: readonly string[]): Promise<number> {
   if (operation === "bun-workspace") {
     return await (await import("./bun-workspace.ts")).runBunWorkspace(rest);
   }
-  if (operation === "bun-docs") {
-    const [action = "fetch", ...args] = rest;
-    if (action === "fetch") return await (await import("./bun-docs.ts")).runBunDocs(args);
-    if (action === "check")
-      return await (await import("./bun-docs.ts")).runBunDocs(["--check", ...args]);
-    throw new Error("usage: yolo ops bun-docs [fetch|check]");
-  }
   if (operation === "monorepo-audit") {
     return await (await import("./monorepo-audit.ts")).runMonorepoAudit(rest);
   }

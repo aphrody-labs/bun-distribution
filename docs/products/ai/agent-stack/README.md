@@ -93,7 +93,7 @@ Refresh: `bash scripts/aphrody/fetch-ai-llms.sh` (from the Aphrody monorepo root
 | File | Source |
 | --- | --- |
 | [`x-ai-llms.txt`](../../../reference/ai/agent-stack/x-ai-llms.txt) | https://docs.x.ai/llms.txt |
-| [`bun-llms.txt`](../../../../packages/infra/workspace/docs/bun/llms.txt) | https://bun.com/docs/llms.txt |
+| [`upstream-bun/`](../../../reference/upstream-bun/APHRODY-FORK.md) | docs of the aphrody-labs/bun fork |
 | [`anthropic-llms.txt`](../../../reference/ai/agent-stack/anthropic-llms.txt) | https://docs.anthropic.com/llms.txt |
 | [`claude-code-llms.txt`](../../../reference/ai/agent-stack/claude-code-llms.txt) | https://code.claude.com/docs/llms.txt |
 

@@ -6,8 +6,7 @@
   "author": "Aphrody",
   "files": [
     "src",
-    "README.md",
-    "docs/bun"
+    "README.md"
   ],
   "type": "module",
   "exports": {
@@ -16,7 +15,6 @@
     "./imports-exports": "./src/imports-exports.ts",
     "./monorepo-audit": "./src/monorepo-audit.ts",
     "./bun-workspace": "./src/bun-workspace.ts",
-    "./bun-docs": "./src/bun-docs.ts",
     "./ui-verify": "./src/ui-verify.ts",
     "./drive-upstream-audit": "./src/drive-upstream-audit.ts",
     "./drive-daemon": "./src/drive-daemon.ts",

@@ -297,7 +297,7 @@ Axum et le module WASM appellent la même fonction. En salle connectée, le clie
 envoie les entrées et affiche les snapshots Rust; hors connexion, il avance le même
 cœur WASM local. Le paquet se construit avec
 `scripts/build/rust/wasm-package.ts`; Bun sert les deux fichiers générés depuis
-`target/wasm-package-stage`.
+`target/wasm-package-stage` (not in repo) (build output).
 
 Vérification : 7 tests Rust réussis (2 cœur, 1 pont WASM, 4 serveur); le test
 WebSocket ouvre deux clients et vérifie la présence et une évolution de combat Rust

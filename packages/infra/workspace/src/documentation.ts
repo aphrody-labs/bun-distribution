@@ -140,9 +140,7 @@ export function buildDocumentationManifest(
     if (!existsSync(absolute) || !lstatSync(absolute).isFile()) continue;
     const text = readFileSync(absolute, "utf8");
     const upstream =
-      !!imported(path) ||
-      /(^|\/)(upstream[^/]*|third_party|third-party|vendor)(\/|$)/.test(path) ||
-      path.startsWith("packages/infra/workspace/docs/bun/");
+      !!imported(path) || /(^|\/)(upstream[^/]*|third_party|third-party|vendor)(\/|$)/.test(path);
     const history =
       /^docs\/(migration|history)\//.test(path) || /\/(archive|historical)\//.test(path);
     const status = history

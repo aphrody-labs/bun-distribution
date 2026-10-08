@@ -25,7 +25,7 @@ Evidence lives in [MEMORY.md](../../../MEMORY.md), [PLAN.md](../../../PLAN.md) a
    [tauri-cef-native-performance-2026-10-05.md](../../research/web/tauri-cef-native-performance-2026-10-05.md).
 3. `py/` is fused into Aphrody; runtime `vu` follows the Bun/Yolo precedent.
 4. `@aphrody/x` is a thin Bun import over the Rust crate; bxc and n2b are absorbed into `aphrody` with aliases.
-5. V8 versus JSC arbitration for Obscura: [docs/plans/fusion/](../../plans/fusion/drive/) journal and bench receipts.
+5. V8 versus JSC arbitration for Obscura: [bench receipts](../../plans/fusion/bench/).
 6. One agent home `~/.aphrody`, one database, one pipeline, one RAG; Graphify absorbed natively in Rust:
    [docs/plans/agent-home-pipeline/PLAN.md](../../plans/agent-home-pipeline/PLAN.md).
 7. No guardrails on tools in cloud sessions (Cargo, Git, any CLI). No human in the loop: commit and push finished

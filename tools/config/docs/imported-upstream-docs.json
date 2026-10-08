@@ -34,9 +34,9 @@
       ]
     },
     {
-      "id": "n2b-node-bun-docs",
-      "upstream": "https://github.com/nodejs/node doc/api and https://github.com/oven-sh/bun docs (n2b reference copies)",
-      "include": ["docs/*/compat/n2b/node/**", "docs/*/compat/n2b/bun/**"],
+      "id": "n2b-node-docs",
+      "upstream": "https://github.com/nodejs/node doc/api (n2b reference copies; Bun docs live only in docs/reference/upstream-bun)",
+      "include": ["docs/*/compat/n2b/node/**"],
       "except": []
     },
     {

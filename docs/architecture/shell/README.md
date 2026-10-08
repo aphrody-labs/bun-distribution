@@ -10,7 +10,7 @@ work.
 | Layer | Owner | Contract |
 | --- | --- | --- |
 | VT state & GPU Grid | `crates/shell/aphrody-term`, `crates/shell/terminal-core` | Ingest raw output bytes, produce a terminal snapshot and replies. `aphrody-term` brings 16B `PackedCell` L1 cache alignment, fast-path ASCII `memchr`, `FairMutex` (256 Ko bounded leases), and WebGPU instanced quads via Sugarloaf. |
-| In-Process Shell Engine | `crates/compat/bun-bridge`, `crates/shell/nu` | Dual-engine execution: Nushell 0.116 for interactive typed exploration; Bun Shell native AST parser (`AstArena` bump allocator) + JSC for 0ms-fork agent execution. |
+| In-Process Shell Engine | Bun Shell of the [fork](../../reference/upstream-bun/APHRODY-FORK.md), `crates/shell/nu` | Dual-engine execution: Nushell 0.116 for interactive typed exploration; Bun Shell native AST parser (`AstArena` bump allocator) + JSC for 0ms-fork agent execution. |
 | Engines and sessions | `crates/shell/web`, `crates/shell/session`, `crates/shell/terminal-backend` | Browser commands use `LocalShell` and `ShellSession`; native and Tauri shells use `PtySession`. All exchange input and output bytes. |
 | Filesystem | `crates/shell/vfs`, `crates/shell/web/src/opfs.rs` | The synchronous `Vfs` trait serves shell commands. `MemVfs` is the reference; `OpfsVfs` encodes bounded, checksummed snapshots. |
 | Hosts & MicroVMs | `crates/shell/aphrody-shell-sandbox-host`, `crates/shell/aphrody-shell-sandbox-host/src/wasm_guest.rs` | `SandboxHost` handles session, limits and file transfer across local PTY, E2B cloud provider, and in-process Full-WASM microVMs (`v86` x86 JIT and `container2wasm` OCI runner). |

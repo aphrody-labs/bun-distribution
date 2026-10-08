@@ -14,18 +14,11 @@
 | [`research/wasm-bindgen-study.md`](../../../../../research/compat/n2b/plugin/n2b/research/wasm-bindgen-study.md) | Étude approfondie de wasm-bindgen (architecture, flow, patch Bun local) | 14 Ko |
 | [`research/discord-stack-research.md`](../../../../../research/compat/n2b/plugin/n2b/research/discord-stack-research.md) | Stack complète Discord : Rust backend + React/RN frontend + design system | 8 Ko |
 
-## bun/ — Notes Bun-spécifiques
-
-| Fichier | Sujet |
-|---|---|
-| [`bun/bun-roadmap-159.md`](../../../../../plans/compat/n2b/plugin/n2b/bun/bun-roadmap-159.md) | Roadmap Bun issue #159 |
-| [`bun/bun-roadmap-mapping.md`](../../../../../plans/compat/n2b/plugin/n2b/bun/bun-roadmap-mapping.md) | Mapping roadmap ↔ sources |
-
 ## Upstream Bun docs
 
 The canonical offline mirror of the Bun docs is `docs/reference/upstream-bun/`
 (for example [`runtime/nodejs-compat.mdx`](../../../../../reference/upstream-bun/runtime/nodejs-compat.mdx));
-see [`../../README.md`](../../README.md).
+see [`../../README.md`](../../README.md). Bun itself is the [aphrody-labs/bun fork](../../../../../reference/upstream-bun/APHRODY-FORK.md).
 
 ## Autres
 

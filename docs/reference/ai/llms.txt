@@ -16,8 +16,6 @@
 ## Docs
 
 - [Documentation index](..\..\README.md)
-- [Documentation index](..\..\README.md)
-- [Documentation index](..\..\README.md)
 - [Architecture Discord](..\..\architecture\discord\README.md)
 - [Frontière runtime Yolo / produit Aphrody](..\..\architecture\runtime-native\README.md)
 - [Shell and terminal layers](..\..\architecture\shell\README.md)

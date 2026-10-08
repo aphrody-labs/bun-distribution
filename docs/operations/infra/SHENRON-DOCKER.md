@@ -164,8 +164,8 @@ adapter does not automatically reverse this protected-data conversion.
 
 Shenron's Rust, WASM, Bun install and bot steps run in Aphrody's single VPS build image
 (`aphrody-build:latest`, see [CONTAINER.md](../container/CONTAINER.md#vps-build-image-aphrody-build)), never directly
-on the host toolchain. Shenron owns the call sites: `scripts/build/container.ts` (same run contract as
-`aphrody-build.ts run`), `scripts/ops/release-host.ts` and the self-hosted workflows.
+on the host toolchain. Shenron owns the call sites: `scripts/build/container.ts` (not in repo) (same run contract as
+`aphrody-build.ts run`), `scripts/ops/release-host.ts` (not in repo) and the self-hosted workflows.
 
 - **Release** (`bun scripts/ops/release.ts`, user `ubuntu`): `release-host.ts build` checks the image against the
   checkout (`container.ts --check`: Rust channel and `wasm-bindgen` labels), then runs `bun install`,
@@ -177,7 +177,7 @@ on the host toolchain. Shenron owns the call sites: `scripts/build/container.ts`
   2026-10-07 ended in `== EXIT 1` because it fast-forwarded the editable `~/shenron` itself and uncommitted edits
   there blocked `git merge --ff-only`; edits in `~/shenron` no longer affect a release.
 - **Runner** (`aphrody-vps-shenron`, user `shenron-build`, already in `docker`): `server-artifact.yml` runs
-  `bun ci` and `scripts/build/server.ts` through `container.ts --target-volume shenron-ci` (the runner cleans its
+  `bun ci` and `scripts/build/server.ts` (not in repo) through `container.ts --target-volume shenron-ci` (the runner cleans its
   checkout between jobs; `target/` lives in a volume). The production public VFS is a workflow input, default
   `/home/shenron-build/data/shenron-vfs.public.sqlite` (public profile, staged with a verified SHA-256);
   `factory-check.yml` verifies the image and its tools as the runner user.

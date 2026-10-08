@@ -119,7 +119,7 @@ L'architecture d'exécution concrète en production pour 2026 unifie 4 couches c
 
 1. **Couche 1 : Interface & Scripts (Dual Engine : Humain vs IA)**
    - *Humain Exploratoire :* Nushell 0.116 (21ms cold start, pipelines typés) + Starship.
-   - *No-Human-In-The-Loop / IA :* Bun Shell natif in-process (`crates/compat/bun-bridge`) + JavaScriptCore (22x plus rapide, 0ms fork, `AstArena` bump allocator).
+   - *No-Human-In-The-Loop / IA :* Bun Shell natif in-process (fork aphrody-labs/bun ; la copie `crates/compat/bun-bridge` (not in repo) a été supprimée le 2026-10-08) + JavaScriptCore (22x plus rapide, 0ms fork, `AstArena` bump allocator).
    - *Core Tools Rust :* `ripgrep`, `fd`, `bottom`, `Helix`, `Yazi`.
 2. **Couche 2 : Terminal & Rendu GPU**
    - *Moteur Terminal :* `aphrody-term` (absorbé de Rio, Cosmic-Term & WezTerm) avec cellules compactes 16B (`PackedCell`) alignées sur lignes de cache L1, fast-path ASCII `memchr`, `FairMutex` à baux bornés (256 Ko) anti-famine, et quads instanciés WebGPU coalescés en 2 passes.

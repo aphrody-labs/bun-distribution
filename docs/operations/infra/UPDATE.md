@@ -90,7 +90,7 @@ regenerates UPSTREAMS.md. The WSL build inputs (tier `build`) are restored only 
 (`tools/config/os/wsl-build.json`), not in `~/source`.
 
 `update run` reports `sources drift`, `upstream drift` and `forks` (or restores missing vital checkouts with `--apply`).
-Bun fork: the Aphrody Bun fork (`aphrody-labs/bun`) was deleted on 2026-10-02: `bun:aphrody` is optional and upstream Bun with `@aphrody/bun` is the runtime.
+Bun: the runtime is the fork `aphrody-labs/bun`, updated from `oven-sh/bun` inside the fork; see [Bun in Aphrody](../../reference/upstream-bun/APHRODY-FORK.md). It has no `bun:aphrody` module.
 
 ## Advisories, holds and release age
 

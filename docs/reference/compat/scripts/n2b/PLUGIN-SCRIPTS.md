@@ -23,7 +23,7 @@ Audit + coverage automation pour le plugin `n2b`.
 
 ## `coverage-check.ts` — audit one-shot
 
-Scanne `packages/infra/workspace/docs/bun/` pour extraire toutes les APIs Bun mentionnées, croise avec :
+Scanne `docs/reference/upstream-bun/` pour extraire toutes les APIs Bun mentionnées, croise avec :
 - les règles `n2b` (via `n2b rules --report json` si installé, sinon fallback sur `docs/plugin/n2b/` (not in repo))
 - les fichiers du plugin (`agents/`, `commands/`, `skills/`, `hooks/`, `output-styles/`)
 

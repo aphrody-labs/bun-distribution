@@ -68,7 +68,7 @@ Le paradigme Aphrody résout la dichotomie entre ergonomie interactive humaine e
 
 ### 2.2. Moteur IA : Bun Shell Natif + JavaScriptCore (JSC)
 - **Zero-Fork Execution :** Élimine le coût du `fork()` + `execve()` OS (typiquement 2 à 15 ms par commande shell). L'exécution in-process s'effectue en microsecondes.
-- **Parser & AST Arena :** Implémenté dans [`crates/compat/bun-bridge`](../../../crates/compat/bun-bridge) :
+- **Parser & AST Arena :** Bun Shell du fork [aphrody-labs/bun](../../reference/upstream-bun/APHRODY-FORK.md) (`src/shell/` (not in repo)) ; la copie Rust `crates/compat/bun-bridge` (not in repo) a été supprimée le 2026-10-08 :
   - `AstArena` : Allocateur arène bump sans fragmentation du tas, réinitialisable en $O(1)$.
   - Parser SIMD à validation ASCII memchr intégrée.
   - Brace expansion déterministe (`echo {a,b}{1,2}`).

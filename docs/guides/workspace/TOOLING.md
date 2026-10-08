@@ -77,21 +77,10 @@ definitions are not evidence that those jobs ran. The current Aphrody consumer
 already verifies a pinned ABI 1.4 SDK/runtime without building the workspace.
 Its desktop/browser replacement still requires qualified provider artifacts.
 
-`just factory bun <full-sha>` selects `--submodules vendor/bun` through the native
-Workspace owner. Prepare that same committed source separately with
-`./bin/yolo ops build-factory prepare --repo yolo --revision <full-sha> --submodules vendor/bun --apply`.
-The owner checks parent files/index, the selected gitlink and its recursive
-descendants under the existing locks; unrelated gitlinks retain their state.
-This selected scope does not qualify the entire repository.
-
-`qualify-bun` refuses execution outside the factory contract before running Bun.
-It checks the source toolchain pin, requires the installed `nightly-2026-09-15`
-with `rustup run` without `--install`, then runs the fork's own
-`bun scripts/build.ts --profile=release -j2` in `vendor/bun`, with that toolchain
-selected explicitly. The two-job limit applies to the top-level Ninja invocation.
-The Bun build driver owns its C++/Rust graph and may acquire its pinned dependencies
-or compiler components during configure. Tests of this recipe use recorded commands;
-they do not establish that the engine was built or that desktop is functional.
+Bun is built in its own repository, the [aphrody-labs/bun fork](../../reference/upstream-bun/APHRODY-FORK.md)
+(`bun bd` for debug, `bun scripts/build.ts --profile=release` or the fork workflow `aphrody-release.yml` for
+releases). Aphrody carries no vendored Bun checkout; the `qualify-bun` recipe of the Yolo workspace profiles
+still expects one and is not a qualification of the fork.
 
 ## Layout
 

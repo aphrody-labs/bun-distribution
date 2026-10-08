@@ -2,7 +2,7 @@
 
 > Path reconciliation (2026-10-07): `packages/engine/n2b-plugin/src/index.ts` (not in repo) → `packages/engine/n2b-client/src/plugin.ts`. Original dated observations below retain their historical scope.
 
-State on 2026-10-02. Stock Bun 1.4.2 is the only runtime: the Aphrody Bun fork and its `bun:aphrody` module are deleted. Everything goes through `bun:ffi` `dlopen` over one native library. Per-crate facts are in `docs/reference/interop/FFI-CRATE-STATE.md`.
+State on 2026-10-02 (runtime note 2026-10-08). The Bun runtime is the [aphrody-labs/bun fork](../../reference/upstream-bun/APHRODY-FORK.md); it has no `bun:aphrody` module and links no Aphrody library. Everything goes through `bun:ffi` `dlopen` over one native library. Per-crate facts are in `docs/reference/interop/FFI-CRATE-STATE.md`.
 
 ## Structure
 

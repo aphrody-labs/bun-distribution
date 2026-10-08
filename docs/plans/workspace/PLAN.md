@@ -74,7 +74,7 @@ répertoires ; son total ne prouve pas la couverture complète de `src`.
 | `aphrody-ui/packages/bun/package.json`, `crates/ui/bun/Cargo.toml` | `@aphrody/bun` 3.3.3, crate `aphrody-bun` 1.0.0-canary, bibliothèque `bun_rs`, cdylib + rlib. Les versions ne sont pas un contrat ABI commun. |
 | `aphrody-ui/packages/bun/src/`, `packages/svg/src/` (not in repo) | Plusieurs chargements du même `bun_rs`, recherche de `target/`, appels natifs dès l'import du module principal. M3, Sass, icônes, SVG, rendu et reproduction doivent tous être conservés. |
 | `crates/interop/ffi/src/lib.rs` | ABI Aphrody v1, exports CLI, Shenron/RAG/persona et manga, runtime Tokio persistant, capture stdio. Le seul wrapper `bun/index.ts` ne couvre pas toute cette surface. |
-| `bun/src/js/bun/aphrody.ts` | Le module **`bun:aphrody`** charge séparément `aphrody_ffi` ABI 1, N2B ABI 2 et Oxc ABI 1. Il expose `runCaptured`, scan, format, minify et lint. Ce n'est pas encore une liaison Rust statique au moteur. |
+| [Fork `aphrody-labs/bun`](../../reference/upstream-bun/APHRODY-FORK.md) | Pas de module `bun:aphrody` ni de liaison Rust statique au moteur : `aphrody_ffi`, N2B et Oxc se chargent par `bun:ffi`. |
 | `crates/interop/ffi/src/n2b_native.rs`, `oxc/apps/aphrody-oxc` | Sources natives spécifiques déjà présentes ; comparer leur graphe Oxc, leurs fonctions et leurs features avant fusion. |
 | `aphrody-web/Cargo.toml` | Web est déjà une famille de crates : moteur, bridge, FFI, render, extract, index, service, Chromium et Obscura ; sa simple façade ne supprime pas leurs duplications. |
 | `iecode/crates/ffi`, `nie/crates/engine/nie-ffi`, `iecode/packages/nie` | ABI/bindings du domaine en migration. Une présence dans deux dépôts n'est pas une raison suffisante pour supprimer un côté. |
@@ -230,9 +230,8 @@ façades du plan précédent est abandonnée.
   ABI avant usage, source/release SHA et empreinte. Aucun calcul de démonstration
   au moment de l'import ; types importables sans bibliothèque installée.
   Une résolution `target/` reste un mode développeur explicite et centralisé.
-- [ ] `bun:aphrody`, `@aphrody/bun`, SVG et les autres consommateurs partagent
-  les mêmes descripteurs générés. Le module builtin garde la compatibilité de
-  ses types sans dépendre du registre npm au démarrage.
+- [ ] `@aphrody/bun`, SVG et les autres consommateurs partagent les mêmes
+  descripteurs générés.
 - [ ] Les anciens noms de packages/symboles servent de redirections temporaires
   vers le même code. Des anciens noms de DLL peuvent nécessiter des shims de
   transition ; aucune implémentation dupliquée permanente.
@@ -367,9 +366,8 @@ restent des critères de sortie de P5.
   pour construire une seule copie compatible. Mesurer le code et les pages
   réellement chargées ; compter les noms de crates ne mesure pas la mémoire.
 - [ ] Pour Bun, traiter séparément `Bun.build`, résolution/parser, minifier,
-  `bun test`, formatter et lint. Aujourd'hui un helper `bun:aphrody` ne remplace
-  aucune de ces chaînes. Chaque greffe identifie le point du fork, la patch
-  stack, les types, les tests upstream et le contrat N2B complet à conserver.
+  `bun test`, formatter et lint. Toute greffe se fait par commit dans le
+  [fork](../../reference/upstream-bun/APHRODY-FORK.md) et identifie les types, les tests upstream et le contrat N2B complet à conserver.
 - [ ] Comparer l'agrégateur cdylib et une liaison au runtime Rust/JSC du fork.
   Choisir sur ABI, rebases upstream, coût mémoire et plateformes ; ne pas créer
   un second runtime JS embarqué uniquement pour satisfaire un nom de package.

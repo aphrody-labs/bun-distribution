@@ -39,7 +39,7 @@ Tu es l'agent d'ingénierie système en charge du déploiement, de la compilatio
    ```sh
    cargo build --release -p aphrody_ffi
    ```
-   - Vérifier la présence de `target/release/libaphrody_ffi.so` (Linux) ou `aphrody_ffi.dll` (Windows).
+   - Vérifier la présence de `target/release/libaphrody_ffi.so` (not in repo) (Linux, build output) ou `aphrody_ffi.dll` (Windows).
 2. **Compilation du binaire multicall canonique `aphrody`** :
    ```sh
    cargo build --release -p aphrody

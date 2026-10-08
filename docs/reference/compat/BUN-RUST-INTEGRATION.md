@@ -11,8 +11,8 @@ is not a member of this Cargo workspace.
 
 - `aphrody-n2b-native` exports a versioned C ABI. Its `node2bun_scan_json`
   function runs the N2B scanner in check mode and returns an owned JSON result;
-  `node2bun_string_free` releases it. The Aphrody Bun fork's `bun:aphrody`
-  module loads this dynamic library through `bun:ffi`. The library must be
+  `node2bun_string_free` releases it. Consumers load this dynamic library
+  through `bun:ffi`; the [Bun fork](../upstream-bun/APHRODY-FORK.md) has no `bun:aphrody` module. The library must be
   supplied separately; the Rust scanner is not linked into the Bun executable.
 - `aphrody-ffi` in `aphrody-ai` exposes Aphrody's command surface through a
   separate C dynamic library and `bun:ffi`.

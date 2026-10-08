@@ -10,7 +10,7 @@ The [ecosystem catalogue](../../ecosystem/ECOSYSTEM.md) is the generated invento
 
 | Capability | Source owner | Boundary |
 | --- | --- | --- |
-| Bun runtime fork | Fork pin, private `aphrody-labs/bun` | JavaScriptCore runtime, bundler, package manager and tests. The fork is distinct from the installed upstream Bun executable. |
+| Bun runtime fork | [aphrody-labs/bun](../upstream-bun/APHRODY-FORK.md) | JavaScriptCore runtime, bundler, package manager and tests; every Bun change lands there. Releases `aphrody-v*`, npm `@aphrody/bun-runtime`. |
 | Toolchain discovery | [aphrody-toolchains](../../../crates/compat/toolchains/) | Installed executable discovery and version pins. |
 | Node-to-Bun analysis | [N2B crates](../../../crates/compat/) and [surface inventory](../compat/n2b/BUN-SURFACE.md) | Static analysis, migration rules and reports; source analysis does not execute remote JavaScript. |
 | Bun N2B consumers | [client, plugin and types](../../../packages/engine/n2b-client) | Thin bindings to the owned scanner and build-time analysis. |
@@ -24,10 +24,9 @@ The [ecosystem catalogue](../../ecosystem/ECOSYSTEM.md) is the generated invento
 
 ## Runtime evidence
 
-`config/bun-fork.json` (not in repo) records the historical Linux debug verification and the
-native ABI versions for `bun:aphrody`. It also records unresolved distribution
-and consumer-selection gates. Source presence and an installed upstream Bun
-binary do not prove the fork module is running.
+The Bun runtime is the [aphrody-labs/bun fork](../upstream-bun/APHRODY-FORK.md), released as
+`aphrody-v*` binaries and `@aphrody/bun-runtime`. It has no `bun:aphrody` module: Aphrody native
+libraries load through `bun:ffi`.
 
 The module binds separately built Aphrody, N2B and Oxc dynamic libraries through
 `bun:ffi`. It does not establish static linkage, replacement of Bun's parser,

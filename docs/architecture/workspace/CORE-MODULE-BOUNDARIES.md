@@ -27,7 +27,7 @@ le reçu d’implémentation.
 
 Le 2026-10-05, le propriétaire confirme la cible **fork Bun orienté desktop**,
 avec les vrais moteurs V8/Tauri/Obscura/Turbopack et uv absorbés nativement.
-Le cœur Bun complet reste dans `vendor/bun` ; les deux crates `yolo-*` minimales
+Le cœur Bun complet reste dans le [fork `aphrody-labs/bun`](../../reference/upstream-bun/APHRODY-FORK.md) ; les deux crates `yolo-*` minimales
 désignent le socle commun de qualification et d’interopérabilité, pas tout le
 runtime final. Les modules organisent le code et l’initialisation à la demande
 dans le processus. Un preload ou un wrapper qui invoque les CLI ne réalise pas
@@ -59,7 +59,7 @@ amélioration du compilateur n’est déduite de cet arbitrage.
 | Tauri/Wry/Tao et outillage : 54 imports, dont 30 plugins Tauri | Fournisseur desktop et ses outils de fabrication | Sélection de plugins par application et permissions Tauri ; aucune API Bun par crate |
 | Next/Turbo/Turbopack | Retiré le 2026-10-05 : aucun consommateur, `next` vient de npm | Historique Git |
 | Obscura et son V8, dans `crates/web/obscura` | Fournisseur navigateur optionnel | `runtime:browser` ; conserver le graphe de build du moteur |
-| Fork Bun, dans `vendor/bun` | Hôte JavaScript et APIs natives existantes | Patch interne seulement pour un besoin d’intégration VM ou un gain mesuré |
+| [Fork Bun `aphrody-labs/bun`](../../reference/upstream-bun/APHRODY-FORK.md) | Hôte JavaScript et APIs natives existantes | Commit dans le fork seulement pour un besoin d’intégration VM ou un gain mesuré |
 
 Les quatre modules `runtime:*` figurent déjà dans le
 [preload](../../../packages/engine/runtime/src/preload.ts). Desktop et browser ont du code en

@@ -9,14 +9,13 @@ Bun supports, what Node exposes, what n2b must detect and rewrite.
 | Folder | Source | Pinned version |
 |---|---|---|
 | `docs/reference/upstream-bun/` (canonical) | `aphrody-labs/bun` (fork of `oven-sh/bun`) · `docs/` | commit and per-file SHA-256 in `docs/reference/upstream-bun/SOURCE.json` |
-| `docs/<category>/compat/n2b/bun/` (residual) | `oven-sh/bun` · `docs/` | main `d316760e` (2026-09-06): only the 26 files that differ from the canonical copy remain |
 | `docs/<category>/compat/n2b/node/` | `nodejs/node` · `doc/api/` | LTS v24.15.1 (`9fe7634c`) |
 | `docs/<category>/compat/n2b/plugin/n2b/` | n2b plugin documentation (changelog, structure, research, WASM reports) | — |
 
 On 2026-10-02 the 309 files of the older n2b Bun mirror that were identical to
 the canonical Bun mirror after CRLF to LF normalisation were removed; the
 removed-to-canonical aliases and both SHA-256 values are recorded in
-(removed import receipt). Read the Bun docs from `docs/reference/upstream-bun`
+(removed import receipt); the 26 residual files were removed on 2026-10-08. Read the Bun docs from `docs/reference/upstream-bun`
 (also served offline by the `bun_docs_*` MCP tools of `crates/compat/bun-docs`).
 
 Only markdown is kept here; binary assets (images, icons, logos) are stripped.

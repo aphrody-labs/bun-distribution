@@ -122,7 +122,7 @@ from a successful Rust compilation.
 Client examples and executable integration tests:
 
 - [Python client](./py/aphrody/docs/agent.md)
-- [Bun client](../../../crates/interop/ffi/bun/README-agent.md)
+- [Bun client](../../../packages/interop/native/AGENT.md)
 - Real binary tests
 
 The implementation status and outstanding parity work remain tracked in the

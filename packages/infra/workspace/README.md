@@ -24,7 +24,7 @@ yolo ops orchestrate health
 yolo ops imports-exports --root ../aphrody-ui --json
 yolo ops monorepo-audit --root ../aphrody-ui --only imports --json
 yolo ops bun-workspace --root ../aphrody-ui --json
-yolo ops bun-docs check
+yolo ops bun-upstream-docs --check
 yolo ops ui-verify --root ../aphrody-ui --quick
 ```
 
@@ -72,7 +72,7 @@ yolo ops infra quality audit --repo shenron --run
 yolo ops infra quality fix --repo aphrody-ui --run
 ```
 
-`imports-exports`, `monorepo-audit`, `bun-workspace`, `bun-docs` and `ui-verify` are reusable Bun modules. They centralize the UI AST inventory, audit dispatcher, Bun workspace contract, embedded official Bun documentation, and UI gate runner. The UI exposes them through its existing package scripts, which call `yolo ops`.
+`imports-exports`, `monorepo-audit`, `bun-workspace`, `bun-upstream-docs` and `ui-verify` are reusable Bun modules. They centralize the UI AST inventory, audit dispatcher, Bun workspace contract, the Bun docs mirror of the aphrody-labs/bun fork (`docs/reference/upstream-bun`), and UI gate runner. The UI exposes them through its existing package scripts, which call `yolo ops`.
 
 `automation-inventory --root ~/src --json` emits the current cross-repository automation catalogue and classification.
 

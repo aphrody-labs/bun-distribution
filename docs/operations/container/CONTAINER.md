@@ -88,7 +88,7 @@ bun scripts/build/container/aphrody-build.ts run -- scripts/build/rust/cargo-ser
 bun scripts/build/container/aphrody-build.ts run --target-volume aphrody -- cargo xwin check --target x86_64-pc-windows-msvc -p aphrody-mcp --features winclean
 ```
 
-Run contract (also implemented by Shenron's `scripts/build/container.ts`):
+Run contract (also implemented by Shenron's `scripts/build/container.ts` (not in repo)):
 
 - The checkout is bind mounted at its own absolute path; the process runs as the caller's uid/gid plus the shared
   `aphrody-build` group (gid 1500) with umask 002, `--cap-drop ALL`, `no-new-privileges` and `--init`.

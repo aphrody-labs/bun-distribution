@@ -2,7 +2,7 @@
 # N2B surface used with Bun
 
 This inventory follows the current manifests and source. It separates the full
-N2B product from the smaller in-process API exposed by `bun:aphrody`.
+N2B product from the smaller in-process API loaded through `bun:ffi` (Yolo native SDK).
 
 ## Rust crates
 
@@ -33,11 +33,9 @@ in their manifests. The native crate is independently versioned.
 | `@aphrody/n2b-types` | generated report types from Contracts JSON schema v2 |
 
 All four package manifests currently declare version 0.6.2. The plugin scans
-once per build with `bun:aphrody` when available, or invokes the Rust CLI when
-using installed Bun, when the native library is unavailable, or when a custom
-binary/working directory is requested. It is a build plugin.
-`native: "required"` surfaces import or ABI failures; `native: "off"` forces
-the CLI. The default `"auto"` falls back and reports a native scan failure.
+once per build through the Yolo native SDK (`bun:ffi`). `native: "required"` (the default)
+and `"auto"` both scan natively and fail the build when the provider is missing; only
+`native: "off"` runs the Rust CLI. A custom binary or working directory requires `native: "off"`.
 
 ## Contracts and command surface
 

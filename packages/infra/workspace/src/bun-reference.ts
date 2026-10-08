@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
-/** Official Bun docs captured by `bun run bun:docs:fetch`; these imports embed in --compile. */
-import bunLlmIndex from "../docs/bun/llms.txt" with { type: "text" };
-import executableDocs from "../docs/bun/bundler/executables.md" with { type: "text" };
-import processDocs from "../docs/bun/runtime/child-process.md" with { type: "text" };
-import bunApiDocs from "../docs/bun/runtime/bun-apis.md" with { type: "text" };
-import tomlDocs from "../docs/bun/runtime/toml.md" with { type: "text" };
-import catalogDocs from "../docs/bun/pm/catalogs.md" with { type: "text" };
-import filterDocs from "../docs/bun/pm/filter.md" with { type: "text" };
-import installDocs from "../docs/bun/pm/install.md" with { type: "text" };
-import isolatedDocs from "../docs/bun/pm/isolated-installs.md" with { type: "text" };
-import lockfileDocs from "../docs/bun/pm/lockfile.md" with { type: "text" };
-import workspaceDocs from "../docs/bun/pm/workspaces.md" with { type: "text" };
+/** Bun docs mirrored from the aphrody-labs/bun fork (`bun run docs:bun:update`); these imports embed in --compile. */
+import bunLlmIndex from "../../../../docs/reference/upstream-bun/index.mdx" with { type: "text" };
+import executableDocs from "../../../../docs/reference/upstream-bun/bundler/executables.mdx" with { type: "text" };
+import processDocs from "../../../../docs/reference/upstream-bun/runtime/child-process.mdx" with { type: "text" };
+import bunApiDocs from "../../../../docs/reference/upstream-bun/runtime/bun-apis.mdx" with { type: "text" };
+import tomlDocs from "../../../../docs/reference/upstream-bun/runtime/toml.mdx" with { type: "text" };
+import catalogDocs from "../../../../docs/reference/upstream-bun/pm/catalogs.mdx" with { type: "text" };
+import filterDocs from "../../../../docs/reference/upstream-bun/pm/filter.mdx" with { type: "text" };
+import installDocs from "../../../../docs/reference/upstream-bun/pm/cli/install.mdx" with { type: "text" };
+import isolatedDocs from "../../../../docs/reference/upstream-bun/pm/isolated-installs.mdx" with { type: "text" };
+import lockfileDocs from "../../../../docs/reference/upstream-bun/pm/lockfile.mdx" with { type: "text" };
+import workspaceDocs from "../../../../docs/reference/upstream-bun/pm/workspaces.mdx" with { type: "text" };
 
 export const BUN_DOCUMENTS = [
   {
     title: "Bun documentation index",
-    source: "https://bun.com/llms.txt",
+    source: "https://bun.com/docs",
     content: bunLlmIndex,
   },
   {

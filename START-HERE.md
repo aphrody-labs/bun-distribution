@@ -26,7 +26,7 @@ Org GitHub `aphrody-labs` (3 membres, dépôts privés, lecture par défaut). Sa
 
 ## 3. Lire ensuite
 - Aphrody : `AGENTS.md`/`CLAUDE.md`, `PLAN.md`, `MEMORY.md`, `docs/operations/agent-tooling.md`.
-- Shenron : `AGENTS.md` (= `CLAUDE.md`), `docs/reference/root/REPRISE.md`, `data/home/MEMORY.md` (privé).
+- Shenron : `AGENTS.md` (= `CLAUDE.md`), `docs/reference/root/REPRISE.md` (not in repo), `data/home/MEMORY.md` (privé).
 - Infra : `docs/operations/infra/PRIVATE-TUNNEL.md`, `docs/operations/infra/OMAR-REMOTE-CONTROL.md`, `docs/operations/container/CONTAINER.md`, `docs/operations/infra/SHENRON-DOCKER.md`.
 
 ## 4. Outils (ordre de préférence)

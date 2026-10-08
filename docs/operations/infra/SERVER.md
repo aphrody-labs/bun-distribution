@@ -125,8 +125,8 @@ jobs run detached (`nohup`) because the ssh exec transport times out after about
 
 ## Bun feature map
 
-"Verified" means the API is present in `vendor/bun/packages/bun-types` and documented under
-`vendor/bun/docs`, and `typeof` was checked at runtime on this Bun 1.4.2 build. Status: **used** = in
+"Verified" means the API is present in the fork's `packages/bun-types` (not in repo) and documented under
+[`docs/reference/upstream-bun`](../../reference/upstream-bun/APHRODY-FORK.md), and `typeof` was checked at runtime on this Bun 1.4.2 build. Status: **used** = in
 `crates/infra/aphrody/src/host*.ts` today; **planned** = fits server management, not implemented; **n/a** = verified to
 exist but not relevant to server management.
 

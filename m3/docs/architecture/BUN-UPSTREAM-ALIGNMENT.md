@@ -4,7 +4,7 @@
 
 > **Document d'Architecture Canonique**  
 > Périmètre : Interface Utilisateur (UI/GUI), Web, Desktop (Tauri v3), Scripts, Infra, Packages et Crates de tout Aphrody.  
-> Source de référence upstream : upstream `oven-sh/bun` (the Aphrody fork was deleted on 2026-10-02) through `aphrody git upstream` for oven-sh/bun (Bun v1.4+).
+> Source de référence : le fork [`aphrody-labs/bun`](../../../docs/reference/upstream-bun/APHRODY-FORK.md) (Bun 1.4.3, releases `aphrody-v*`), qui suit `oven-sh/bun` par merge.
 
 ---
 
@@ -25,7 +25,7 @@ L'écosystème Aphrody unifie ses surfaces d'interface utilisateur (Desktop Taur
    Toutes les clés de traduction sont organisées en namespaces sémantiques dérivés des piliers d'architecture (`common`, `nav`, `chat`, `files`, `models`, `settings`, `kernel`, `subsystems`, `drive`, `koharu`, `shenron`, `shell`, `ffi`, `errors`). Aucun texte n'est injecté sans passer par le générateur automatique et l'audit de parité stricte 1:1.
 
 3. **Exploitation Intégrale des Primitives Bun Upstream** :  
-   Élimination progressive des wrappers Node.js redondants au profit des primitives natives C++/Zig/Rust de Bun :
+   Élimination progressive des wrappers Node.js redondants au profit des primitives natives C++/Rust de Bun :
    - Bundler natif `Bun.build` avec splitting, sourcemaps et gestion du flag `'use client';`
    - Serveur fullstack `Bun.serve` avec routage déclaratif, streaming zéro-copie `Bun.file`, compression `Bun.gzipSync` et hachage ETag `Bun.hash.wyhash`
    - Cache d'exécution SQLite in-process via `bun:sqlite` (mode WAL) pour les thèmes, tokens, icônes et métadonnées

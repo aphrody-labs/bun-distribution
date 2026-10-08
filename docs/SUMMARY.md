@@ -1,8 +1,7 @@
 # Summary
 
 - [Unified native runtime](architecture/runtime-native/RUNTIME.md)
-- [Bun Fork](architecture/runtime-native/BUN_FORK.md)
-- [Bun Upstream Tracker](archive/snapshots/BUN_UPSTREAM_TRACKER.md)
+- [Bun in Aphrody: the aphrody-labs/bun fork](reference/upstream-bun/APHRODY-FORK.md)
 - [Vendoring the Tauri stack](guides/workspace/VENDORING.md)
 - [Tooling](guides/workspace/TOOLING.md)
 - [Server management (`yolo host`)](operations/infra/SERVER.md)
@@ -18,7 +17,6 @@
 - [Architecture & Maturation de la Stack](decisions/architecture/STACK-DECISION.md)
 - [La Stack Utile & Optimisée (Production 2026)](architecture/runtime-native/STACK-PRODUCTION-2026.md)
 - [Virtualisation Full-WASM & MicroVM](architecture/runtime-native/WASM-CONTAINER-V86.md)
-- [Intégration Bun Shell Natif](architecture/bun-native-integration.md)
 - [Architecture Shell & Terminal](architecture/shell/README.md)
 - [Guide des Meilleures Pratiques (Rust + Python + Bun)](guides/workspace/BEST_PRACTICES.md)
 - [Rapport d'Ingénierie & Convergence Rust-Python](archive/research/RAPPORT_RUST_PYTHON_RESEARCH.md)

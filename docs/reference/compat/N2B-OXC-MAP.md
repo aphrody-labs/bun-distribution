@@ -126,41 +126,17 @@ Gates and scripts running them:
 
 No `.github/workflows` file runs oxlint/oxfmt (grep).
 
-## 5. Stale references to the deleted forks
+## 5. Fork references
 
-The forks `aphrody-labs/bun` and `aphrody-labs/oxc` (aliased `aphrody-code/*`)
-were deleted on 2026-10-02. `config/bun-fork.json` (not in repo) and `upstream/` do not exist
-in the tree. Cargo.lock and bun.lock contain no fork reference.
+Bun: `aphrody-labs/bun` is the live Bun fork of Aphrody; see [Bun in Aphrody](../upstream-bun/APHRODY-FORK.md).
+It has no `bun:aphrody` module. The code that probed `bun:aphrody` (kernel runtime report, n2b plugin,
+`@aphrody/bun` library owner, fork fixture) was removed (see [FFI.md](../../architecture/interop/FFI.md)), and the
+docs that described `bun:aphrody` as live were corrected on 2026-10-08.
 
-Live code (behaviour depends on a `bun:aphrody` module that stock Bun lacks):
-
-| File:line | Reference |
-|---|---|
-| `crates/os/kernel/core/src/runtimes.rs:23` | probes `require('bun:aphrody').moduleVersion` |
-| `packages/engine/n2b-client/src/plugin.ts` (former source location packages/engine/n2b-plugin/src/index.ts:79) | specifier `"bun:aphrody"` |
-| `packages/interop/native/src/library.ts:293` | owner type `"@aphrody/bun" \| "bun:aphrody"` |
-| `packages/interop/native/fixtures/bun-fork-native.ts:18,31` | fixture for `bun:aphrody` |
-
-Current docs that still describe the forks as live:
-
-| File:line | Reference |
-|---|---|
-| `PLAN.md:169,230` | Bun fork merge, `bun:aphrody` tests |
-| `docs/plans/workspace/PLAN.md:75,76,231,368` | `bun:aphrody`, `oxc/apps/aphrody-oxc` |
-| `docs/plans/infra/PLAN.md:150` | `bun:aphrody` on Aphrody `main` |
-| `docs/reference/infra/UPSTREAMS.md:56,57` | `aphrody-labs/bun`, `aphrody-code/oxc` rows |
-| `docs/reference/infra/APHRODY-BUN-PLATFORM.md:13,18,28` | links missing `config/bun-fork.json` (not in repo), `aphrody-labs/oxc` |
-| `docs/reference/compat/n2b/BUN-SURFACE.md:5,36` | `bun:aphrody` API |
-| `docs/reference/compat/BUN-RUST-INTEGRATION.md:14` | fork's `bun:aphrody` |
-| `docs/reference/web/WEB-RUNTIME.md:144` | fork `bun/`, `bun:aphrody` |
-| `docs/reference/workspace/DEPS-INVENTORY.md:196` | `aphrody-code/oxc` pinned `31d5266e150f` |
-| `docs/reference/upstream-bun/APHRODY-FORK.md` | fork procedure (rewritten 2026-10-08 from the real fork: no `bun:aphrody`) |
-| (upstream oxc doc, not vendored) | fork cdylib README |
-| `crates/compat/oxc-bridge/README.md:4` | origin `oxc/apps/aphrody-oxc` (provenance; correct as history) |
-| (removed import receipt) | fork commits, PR, CI run |
-
-Already updated to say the fork was deleted: `docs/operations/infra/update/BUN.md:7,102`,
-`docs/operations/infra/UPDATE.md:93`, `docs/research/infra/github-mirrors-audit-2026-10-02.md:65`.
+Oxc: `aphrody-labs/oxc` (aliased `aphrody-code/oxc`) was deleted on 2026-10-02. Remaining mentions:
+`docs/reference/infra/UPSTREAMS.md` (`aphrody-code/oxc` row), `docs/reference/workspace/DEPS-INVENTORY.md`
+(`aphrody-code/oxc` pinned `31d5266e150f`) and `crates/compat/oxc-bridge/README.md` (origin
+`oxc/apps/aphrody-oxc`, correct as provenance).
 
 Historical evidence (dated logs/JSON, keep as record): `inventory/2026-09-30-{bun,oxc}-transfer.json`,
 `docs/operations/**/2026-10-01*/*.{log,json}` (rev `31d5266e...` on `aphrody-code/oxc`),
@@ -197,7 +173,7 @@ Nothing below was compiled: Cargo is run only by the integrating agent. Bun gate
 | `aphrody_n2b_report::render_json` in `crates/ai/mcp/src/main.rs` (not in repo) | `aphrody_n2b_core::report::render_json` | MCP tool `n2b` unchanged |
 | private `write` + `which` copies in `n2b/src/{app,linux,wasm,win32}_cmd.rs` | `crates/compat/n2b/src/scaffold_fs.rs` (`write_tagged`, `which`) | output and log tags unchanged |
 | `@aphrody/n2b-shims` sources | `@aphrody/n2b-core/shims{,/env,/fs,/path,/shell}` (`packages/engine/n2b-client/src/shims/`) | `@aphrody/n2b-shims` 0.6.2 is published on npm: the package stays as a re-export alias |
-| 309 Bun doc files in `docs/*/compat/n2b/bun/` | `docs/*/upstream-bun/` | per-file aliases + SHA-256 in (removed import receipt) |
+| 309 Bun doc files in the former n2b Bun mirror | `docs/reference/upstream-bun/` | the 26 residual files were removed on 2026-10-08; the mirror is the only copy |
 | `docs/apis/contracts/v2.json` (not in repo) | `crates/contracts/schema/v2.json` | `include_str!` in mcp repointed; alias recorded in the same JSON |
 | Node-to-Bun mapping list in `plugins/aphrody/skills/n2b/SKILL.md` | pointer to `crates/compat/n2b-registry/registry/*.toml`, `aphrody n2b rules`, MCP `bun_node_equivalent` | skill name and triggers unchanged |
 | `update-bun-docs.{sh,ps1}`, `n2b-env.{sh,ps1}`, `refactor-{start,state}.{sh,ps1}` | deleted | `yolo ops bun-upstream-docs` remains the Bun-docs entry point |

@@ -64,10 +64,10 @@ The Python product code stays in `py/` (a thin Python layer over the Rust runtim
 
 | Bun / Yolo | Python / `vu` |
 | --- | --- |
-| Fork aphrody-labs/bun, branch `main` = upstream + patches, pin in tools/config/vendor.json | Forks aphrody-labs/uv, ruff, pyo3, one branch per release `vu-pin-<version>` at the release commit, pins in vendor.json |
-| Planned repository `yolo` holding vendor/bun, built on the VPS | Private repository aphrody-labs/vu (created 2026-10-05) holding vendor/{uv,ruff,pyo3}, built on the VPS |
+| Fork aphrody-labs/bun, branch `main` = upstream + Aphrody commits | Forks aphrody-labs/uv, ruff, pyo3, one branch per release `vu-pin-<version>` at the release commit, pins in vendor.json |
+| Bun: its own fork repository `aphrody-labs/bun`, released by its workflows | Private repository aphrody-labs/vu (created 2026-10-05) holding vendor/{uv,ruff,pyo3}, built on the VPS |
 | bun-forge, `yolo forge`, tools/config/bun-forge.json, receipts `aphrody.bun-forge/1` | Receipts `aphrody.vu-forge/1` written by the build scripts of the vu repository, driven through `vps-cargo --repo vu` (no second forge, no `yolo forge` generalisation: D13) |
-| `scripts/tools/vendor/bun_upstream_sync.ts`, merge of upstream/main, never forced | Pins move by release tag (a new branch `vu-pin-<version>`), never by merge of main |
+| Fork `scripts/aphrody/sync-upstream.ts` (not in repo) ([Bun fork](../../reference/upstream-bun/APHRODY-FORK.md)), merge of upstream/main, never forced | Pins move by release tag (a new branch `vu-pin-<version>`), never by merge of main |
 | Provenance in tools/config/upstream-sources.json | Entries vu-uv, vu-ruff, vu-pyo3, vu-python-build-standalone (added, section 4.2) |
 | Yolo runtime SDK: artifact directory with manifest.json, current/previous links, verified before load | `vu` runtime artifact with the same layout and verification (section 3.6) |
 | `yolo import` and vendor.toml for the Tauri forks | Not needed: no crate is copied or renamed (section 4.4) |

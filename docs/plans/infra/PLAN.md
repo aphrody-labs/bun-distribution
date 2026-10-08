@@ -163,8 +163,8 @@ Existing RG/Shenron deployments and adapters do not prove bundle activation.
   migrate only after owner/API/license review and consumer validation. The
   `--skip-ui` option avoids reading the separately owned UI checkout.
 - Continue the [Aphrody Bun platform](../../reference/infra/APHRODY-BUN-PLATFORM.md) plan from the P0
-  fork track above. `bun:aphrody` is now on Aphrody `main`; native libraries
-  remain dynamic, and cross-platform releases and consumer selection are open.
+  fork track above. The runtime is the [aphrody-labs/bun fork](../../reference/upstream-bun/APHRODY-FORK.md), which has no
+  `bun:aphrody` module; native libraries remain dynamic (`bun:ffi`) and consumer selection is open.
 - Keep the consolidation controller in `packages/infra/workspace`; it owns
   cross-workspace inventory and guarded documentation import. Domain
   implementation belongs to its Rust, Bun or Python owner package. Re-run the
