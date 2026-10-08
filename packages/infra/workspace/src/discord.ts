@@ -54,7 +54,7 @@ export async function uploadViaInfraExec(
       (_, index) =>
         `printf '%s' ${quote(encoded.slice(index * 40_000, (index + 1) * 40_000))} >> ${quote(transfer)}`,
     ),
-    `base64 --decode ${quote(transfer)} > ${quote(`${target}.gz`)} && gzip --decompress ${quote(`${target}.gz`)} > ${quote(target)} && rm -f -- ${quote(transfer)} ${quote(`${target}.gz`)}`,
+    `base64 --decode ${quote(transfer)} > ${quote(`${target}.gz`)} && gzip --decompress --stdout ${quote(`${target}.gz`)} > ${quote(target)} && rm -f -- ${quote(transfer)} ${quote(`${target}.gz`)}`,
   ];
   for (const command of commands) {
     const result = await run(host, command);
