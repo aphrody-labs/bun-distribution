@@ -73,7 +73,7 @@ Every change below is a `[[rewrite]]` or a source removal in `vendor.toml` so a 
 | Item | Decision | Why |
 | :--- | :--- | :--- |
 | `vendor.toml` sources `wry`, `tao`; crates upstream `tauri-runtime-wry`, upstream `tauri-driver`; the `wgpu = "23"` rewrite for wry | **remove** | The importer must not bring the deleted crates back. |
-| `vendor.lock`, `docs/CRATES.md` | **migrate** | Entries removed by hand: `yolo import` needs the `vendor/*` checkouts, absent in this tree, so `yolo import --check` cannot run here. |
+| `vendor.lock`, `docs/reference/workspace/CRATES.md` | **migrate** | Entries removed by hand: `yolo import` needs the `vendor/*` checkouts, absent in this tree, so `yolo import --check` cannot run here. |
 | `packages/engine/yolo/test/import.test.ts` | **migrate** | The `tauri-driver` fixture is replaced by a surviving binary crate; the importer tests keep their coverage. |
 | `packages/engine/core/src/vendor/status.ts`, `packages/engine/core/test/startup.test.ts` | **migrate** | Submodule lists drop `wry` and `tao`. |
 | `scripts/tools/vendor/packages_upstream_sync.ts` | **migrate** | Same list. |
@@ -111,7 +111,7 @@ Every change below is a `[[rewrite]]` or a source removal in `vendor.toml` so a 
 | Item | Decision | Why |
 | :--- | :--- | :--- |
 | `docs/plans/tauri-cef/PLAN.md` (new) | **add** | Final design, decisions, risks, evidence. |
-| `docs/VENDORING.md`, `PLAN.md`, `AGENTS.md`, `MEMORY.md` (append only), `docs/guides/web/TAURI-DEBUG.md`, `docs/architecture/web/ARCHITECTURE.md`, `docs/products/shell/STATUS.md`, `docs/plans/shell/wasm-stack-definitive.md`, (removed), `docs/reference/web/WEB-RUNTIME.md` | **migrate** | Live guidance that names the runtime. |
+| `docs/guides/workspace/VENDORING.md`, `PLAN.md`, `AGENTS.md`, `MEMORY.md` (append only), `docs/guides/web/TAURI-DEBUG.md`, `docs/architecture/web/ARCHITECTURE.md`, `docs/products/shell/STATUS.md`, `docs/plans/shell/wasm-stack-definitive.md`, (removed), `docs/reference/web/WEB-RUNTIME.md` | **migrate** | Live guidance that names the runtime. |
 | `docs/plans/fusion/**` | **keep, not mine** | Owned by the V8/JSC arbiter; the final facts go to `main` by message. |
 | Dated research, reviews and history (`docs/research/**`, `docs/plans/runtime/history`, `docs/archive/snapshots/STACK-REPORT-2026-10.md`, `docs/reference/os/WINCLEAN-RUST-CONVERGENCE.md`, `docs/architecture/os/**`, `docs/reference/web/*VERIFICATION*`, Google/WebView2 reverse-engineering notes) | **keep** | Evidence at its date; rewriting history would erase the reason for earlier choices. WebView2 in the Google reverse-engineering notes is the Google app's own host, unrelated to this runtime. |
-| `docs/ecosystem/**`, `docs/CRATES.md`, (removed) | **regenerate** | Produced by `yolo ops docs generate --skip-ecosystem` / the importer at the end. |
+| `docs/ecosystem/**`, `docs/reference/workspace/CRATES.md`, (removed) | **regenerate** | Produced by `yolo ops docs generate --skip-ecosystem` / the importer at the end. |

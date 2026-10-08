@@ -68,7 +68,7 @@ As recorded on 2026-10-03, GitHub Actions did not start for this repository (acc
 runtime}.yml` are present; their current execution and complete correctness are not established by that observation. The intended replacement is `yolo ship` on a qualified
 Aphrody build factory: `scripts/release/ship_remote.sh` runs the same gates,
 and `scripts/release/publish_remote.sh` publishes the GitHub release when the shipped commit is the `v<VERSION>`
-tag and `main` contains it ([TOOLING.md](TOOLING.md#building-and-releasing-yolo-ship)). A `vX.Y.Z` tag still needs an
+tag and `main` contains it ([TOOLING.md](../../guides/workspace/TOOLING.md#building-and-releasing-yolo-ship)). A `vX.Y.Z` tag still needs an
 explicit `yolo ship --apply --sha <tag-commit>` to publish; it is not pushed automatically on tag like the Actions
 workflow would be.
 
@@ -86,7 +86,7 @@ beyond a syntax check (`pwsh -Command '[scriptblock]::Create(...)'`) — the his
 ## Current readiness (2026-10-04)
 
 The configured factory still targets `vps`, which the owner decision in
-[PLAN](../PLAN.md#build-et-release) reserves for execution only. A new qualified
+[PLAN](../../../PLAN.md#build-et-release) reserves for execution only. A new qualified
 factory must be designated before heavy gates or `yolo ship --apply`; do not
 bootstrap build tooling onto the retired factory.
 

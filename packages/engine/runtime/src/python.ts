@@ -89,12 +89,12 @@ export function libpythonIn(current: string): string | null {
   return null;
 }
 
-function takeString(symbols: Symbols, raw: Pointer | null): string {
-  if (raw === null) return "";
+function takeString(symbols: Symbols, raw: Pointer | bigint | number | null): string {
+  if (raw === null || raw === 0 || raw === 0n) return "";
   try {
-    return new CString(raw).toString();
+    return new CString(raw as Pointer).toString();
   } finally {
-    symbols.aphrody_py_string_free(raw);
+    symbols.aphrody_py_string_free(raw as Pointer);
   }
 }
 

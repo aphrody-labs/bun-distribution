@@ -1,7 +1,7 @@
 /**
  * Distribution commands of the standalone `yolo` executable: `version`, `doctor`, `runtime ...`,
  * `upgrade`, `uninstall`. They manage the installation under the yolo home
- * (`~/.yolo`: bin/, runtime/, packages/runtime/, templates/, crates/, VERSION), see docs/DISTRIBUTION.md.
+ * (`~/.yolo`: bin/, runtime/, packages/runtime/, templates/, crates/, VERSION), see docs/operations/release/DISTRIBUTION.md.
  */
 import { existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { homedir } from "node:os";

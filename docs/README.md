@@ -28,11 +28,11 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | architecture | [discord](architecture/discord/) | 4 | [Architecture Discord](architecture\discord\README.md) |
 | architecture | [interop](architecture/interop/) | 1 | - |
 | architecture | [os](architecture/os/) | 4 | - |
-| architecture | [runtime-native](architecture/runtime-native/) | 2 | [Frontière runtime Yolo / produit Aphrody](architecture\runtime-native\README.md) |
+| architecture | [runtime-native](architecture/runtime-native/) | 5 | [Frontière runtime Yolo / produit Aphrody](architecture\runtime-native\README.md) |
 | architecture | [shell](architecture/shell/) | 1 | [Shell and terminal layers](architecture\shell\README.md) |
 | architecture | [upstream-bun](architecture/upstream-bun/) vendored upstream copy | 2 | - |
 | architecture | [web](architecture/web/) | 2 | - |
-| architecture | [workspace](architecture/workspace/) | 3 | - |
+| architecture | [workspace](architecture/workspace/) | 4 | - |
 | apis | [ai](apis/ai/) | 5 | - |
 | apis | [compat](apis/compat/) | 2 | - |
 | apis | [contracts](apis/contracts/) | 1 | - |
@@ -42,21 +42,24 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | apis | [upstream-bun](apis/upstream-bun/) vendored upstream copy | 29 | - |
 | apis | [web](apis/web/) | 3 | - |
 | decisions | [ai](decisions/ai/) | 1 | - |
+| decisions | [architecture](decisions/architecture/) | 1 | - |
 | decisions | [infra](decisions/infra/) | 2 | - |
+| decisions | [runtime](decisions/runtime/) | 1 | - |
 | decisions | [shell](decisions/shell/) | 2 | - |
 | guides | [ai](guides/ai/) | 8 | - |
 | guides | [compat](guides/compat/) | 5 | - |
 | guides | [discord](guides/discord/) | 1 | - |
 | guides | [upstream-bun](guides/upstream-bun/) vendored upstream copy | 203 | - |
 | guides | [web](guides/web/) | 4 | - |
-| guides | [workspace](guides/workspace/) | 4 | [Parcours Workspace Aphrody](guides\workspace\README.md) |
+| guides | [workspace](guides/workspace/) | 8 | [Parcours Workspace Aphrody](guides\workspace\README.md) |
 | operations | [(files)](operations/) | 8 | - |
 | operations | [ai](operations/ai/) | 6 | - |
 | operations | [cloud](operations/cloud/) | 4 | - |
 | operations | [container](operations/container/) | 2 | - |
 | operations | [discord](operations/discord/) | 3 | [Discord Operations Runbooks & Guides](operations\discord\README.md) |
-| operations | [infra](operations/infra/) | 31 | - |
+| operations | [infra](operations/infra/) | 32 | - |
 | operations | [os](operations/os/) | 1 | - |
+| operations | [release](operations/release/) | 1 | - |
 | operations | [upstream-bun](operations/upstream-bun/) vendored upstream copy | 11 | - |
 | operations | [web](operations/web/) | 3 | - |
 | operations | [workspace](operations/workspace/) | 9 | - |
@@ -104,7 +107,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | reference | [shell](reference/shell/) | 10 | - |
 | reference | [upstream-bun](reference/upstream-bun/) vendored upstream copy | 2045 | - |
 | reference | [web](reference/web/) | 48 | - |
-| reference | [workspace](reference/workspace/) | 13 | [Workspace documentation](reference\workspace\INDEX.md) |
+| reference | [workspace](reference/workspace/) | 15 | [Workspace documentation](reference\workspace\INDEX.md) |
 | reference | [yolo](reference/yolo/) | 1 | - |
 | research | [ai](research/ai/) | 48 | - |
 | research | [compat](research/compat/) | 11 | - |
@@ -115,7 +118,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | research | [upstream-bun](research/upstream-bun/) vendored upstream copy | 5 | - |
 | research | [web](research/web/) | 3 | - |
 | research | [workspace](research/workspace/) | 3 | - |
-| (root) (outside the category layout) | [(files)](./) | 17 | - |
+| (root) (outside the category layout) | [(files)](./) | 3 | - |
 | archive (outside the category layout) | [memos](archive/memos/) | 2 | - |
 | archive (outside the category layout) | [research](archive/research/) | 2 | - |
 | archive (outside the category layout) | [snapshots](archive/snapshots/) | 2 | - |

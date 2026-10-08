@@ -86,8 +86,8 @@
     {
       "path": "agy.md",
       "title": "agy.md — reprise du travail (état au 2026-10-06 22:30 Paris)",
-      "sha256": "774de7a112eca7cde1339d2cd8c02a934baa9a7f4351ed326392a1ba70efc91b",
-      "bytes": 6809,
+      "sha256": "00b44368d51410d0a6de04e3c3c0bd44a873bd9ac2057f16e360c0d2ef8c1b96",
+      "bytes": 6233,
       "domain": "",
       "status": "historical",
       "visibility": "private",
@@ -2874,164 +2874,24 @@
       "canonical": "crates/web/web-index/README.md"
     },
     {
-      "path": "docs/BEST_PRACTICES.md",
-      "title": "Guide des Meilleures Pratiques d'Ingénierie : YOLO Polyglot Monorepo",
-      "sha256": "3e64fb2a05db9c980b6be4f1efd033c60308b4c963cb49761844429ebc59b8db",
-      "bytes": 3741,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/BEST_PRACTICES.md"
-    },
-    {
-      "path": "docs/BUN_FORK.md",
-      "title": "Aphrody Bun Fork — Architecture, Synchronization & Optimization Hub",
-      "sha256": "6f846a01cbab0175f9e07a7f3199b68e83e87cec22ade799b80c037006aac4a6",
-      "bytes": 15598,
-      "domain": "",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/BUN_FORK.md"
-    },
-    {
-      "path": "docs/CONSUMERS.md",
-      "title": "Runtime consumers",
-      "sha256": "ad01d75e2bb370425caee8db318081404217e60566c2a0042ca15ea5215ca032",
-      "bytes": 2552,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/CONSUMERS.md"
-    },
-    {
-      "path": "docs/CORE-MODULE-BOUNDARIES.md",
-      "title": "Cœur Yolo, modules Bun et fournisseurs natifs",
-      "sha256": "de440bd5eb1c35650710c9d8d3479abfac53a852a22ce2e0302197d7ed774915",
-      "bytes": 13330,
-      "domain": "",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/CORE-MODULE-BOUNDARIES.md"
-    },
-    {
-      "path": "docs/CRATES.md",
-      "title": "Imported crates",
-      "sha256": "ef80af4d034a4807b81ab3906da2be6fc1b10e45239b63ba1aae555d315f1970",
-      "bytes": 6929,
-      "domain": "",
-      "status": "generated",
-      "visibility": "private",
-      "canonical": "docs/CRATES.md"
-    },
-    {
-      "path": "docs/DECISIONS.md",
-      "title": "Runtime decisions",
-      "sha256": "137117ce8f74c1d5099662ca5d6fb6846d723cf9e4ebd9dae9ef991387f8035e",
-      "bytes": 19714,
-      "domain": "",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/DECISIONS.md"
-    },
-    {
-      "path": "docs/DISTRIBUTION.md",
-      "title": "Distribution: one command to install, one archive to deploy",
-      "sha256": "901cc355271fc40e424aed874c3ce23ce76dc760877fd8717a43679888587b0a",
-      "bytes": 5838,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/DISTRIBUTION.md"
-    },
-    {
-      "path": "docs/JS-TS-TOOLING.md",
-      "title": "Shared native JavaScript and TypeScript tooling",
-      "sha256": "9969a43d600ad98c175410687eb4ce1071728571e407e2e32035ddd0b92f818d",
-      "bytes": 11492,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/JS-TS-TOOLING.md"
-    },
-    {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "cd2eafd016ffd0ff9c33b595f81090f95c2e00c51ed8904d3093e9f2ec0304ee",
-      "bytes": 8406,
+      "sha256": "4dc2198045d05d2a849aab6a1488f13c4b453b9dce5545795c5cfbe76a9ee566",
+      "bytes": 8579,
       "domain": "",
       "status": "generated",
       "visibility": "private",
       "canonical": "docs/README.md"
     },
     {
-      "path": "docs/RUNTIME-ABI.md",
-      "title": "Runtime C ABI (slice R0, ABI 1.4)",
-      "sha256": "43b6f166faefeb331aa4d465245ccf838208652f3792a1d82313437202fe4f8b",
-      "bytes": 9589,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/RUNTIME-ABI.md"
-    },
-    {
-      "path": "docs/RUNTIME.md",
-      "title": "Unified native runtime",
-      "sha256": "afbc70a876bffc4d931bd63df1776cfaf58079d54615a96760426804cb9863fc",
-      "bytes": 1135,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/RUNTIME.md"
-    },
-    {
-      "path": "docs/SERVER.md",
-      "title": "Server management with yolo host",
-      "sha256": "6ef2ccae9a4e214670ff9bc18c9e4a2d5499cd8216dd4a3447a2b546d95c357c",
-      "bytes": 19392,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/SERVER.md"
-    },
-    {
-      "path": "docs/STACK-DECISION.md",
-      "title": "Architecture Agent-First & Maturation de la Stack",
-      "sha256": "5d0d7897bd6043ce23e57f9be318b8648a90b8a139c0696fbd6534c507d37fbb",
-      "bytes": 9336,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/STACK-DECISION.md"
-    },
-    {
       "path": "docs/SUMMARY.md",
       "title": "Summary",
-      "sha256": "eb6ac4dba2c605180a17ef093a7e85c424e487319f7cf7cced4a0f230afdc5e9",
-      "bytes": 951,
+      "sha256": "5db757b9fc61456065734d085a770c29884bbaca92cecfd6a970840363281d6e",
+      "bytes": 1226,
       "domain": "",
       "status": "historical",
       "visibility": "private",
       "canonical": "docs/SUMMARY.md"
-    },
-    {
-      "path": "docs/TOOLING.md",
-      "title": "Tooling",
-      "sha256": "5e2dc43177da4d5bc72f0e9fa169503ef7d2d3a9d0c4e072c81ed8c63ba66765",
-      "bytes": 14352,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/TOOLING.md"
-    },
-    {
-      "path": "docs/VENDORING.md",
-      "title": "Vendoring the Tauri stack",
-      "sha256": "399b22c41596fc25d61518cd5321ddee73e31214f28455049aedabf850c5aaa9",
-      "bytes": 4067,
-      "domain": "",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/VENDORING.md"
     },
     {
       "path": "docs/apis/ai/api-unified-pattern.md",
@@ -3536,8 +3396,8 @@
     {
       "path": "docs/architecture/bun-upstream.md",
       "title": "Architecture de consolidation fondée sur Bun upstream",
-      "sha256": "3a84082039d4aedbbe578e4b1d1241d675c842973f8df99cd9ebea98342f5314",
-      "bytes": 3508,
+      "sha256": "4959696b072e23d2bc31b3e0ae273b64beffc0fdb452adfb18ae6b624edc6ec0",
+      "bytes": 3520,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -3654,14 +3514,44 @@
       "canonical": "docs/architecture/os/research/RUST-OS-ARCHITECTURE-AND-BAREMETAL-ANALYSIS.md"
     },
     {
+      "path": "docs/architecture/runtime-native/BUN_FORK.md",
+      "title": "Aphrody Bun Fork — Architecture, Synchronization & Optimization Hub",
+      "sha256": "033c459f621d5a146c57a538c0e0ee3a99032a1f97db402d15b203c791d0ec1d",
+      "bytes": 15606,
+      "domain": "runtime-native",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/architecture/runtime-native/BUN_FORK.md"
+    },
+    {
       "path": "docs/architecture/runtime-native/README.md",
       "title": "Frontière runtime Yolo / produit Aphrody",
-      "sha256": "1dd036c6d03cc8f0034af0cd8c0bbd5ac1f029af0a34f864d0a8f256e8120a95",
-      "bytes": 729,
+      "sha256": "a297ecba9cffb5ec13eb7a82227d58376fd71d752817be4246215c45482e94e0",
+      "bytes": 723,
       "domain": "runtime-native",
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/architecture/runtime-native/README.md"
+    },
+    {
+      "path": "docs/architecture/runtime-native/RUNTIME-ABI.md",
+      "title": "Runtime C ABI (slice R0, ABI 1.4)",
+      "sha256": "5801dd7538df18a38b7323751f75bab6e77cc04a2b4e0ac6e64fe73cdc3db82d",
+      "bytes": 9619,
+      "domain": "runtime-native",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/architecture/runtime-native/RUNTIME-ABI.md"
+    },
+    {
+      "path": "docs/architecture/runtime-native/RUNTIME.md",
+      "title": "Unified native runtime",
+      "sha256": "6f01cebbb9c9bcee7e8416a84dd26648c20e740430b08b8743efb10fcb0e4e3b",
+      "bytes": 1211,
+      "domain": "runtime-native",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/architecture/runtime-native/RUNTIME.md"
     },
     {
       "path": "docs/architecture/runtime-native/qualification.md",
@@ -3752,6 +3642,16 @@
       "status": "historical",
       "visibility": "private",
       "canonical": "docs/architecture/workspace/ARCHITECTURE.md"
+    },
+    {
+      "path": "docs/architecture/workspace/CORE-MODULE-BOUNDARIES.md",
+      "title": "Cœur Yolo, modules Bun et fournisseurs natifs",
+      "sha256": "3ae4eb232bd8f2bd6be034f54446f6fbb301f93b5d8b6ef863099b24104642df",
+      "bytes": 13437,
+      "domain": "workspace",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/architecture/workspace/CORE-MODULE-BOUNDARIES.md"
     },
     {
       "path": "docs/architecture/workspace/M3-LOCATION.md",
@@ -3854,6 +3754,16 @@
       "canonical": "docs/decisions/ai/raptor-f64-native-kernels.md"
     },
     {
+      "path": "docs/decisions/architecture/STACK-DECISION.md",
+      "title": "Architecture Agent-First & Maturation de la Stack",
+      "sha256": "5d0d7897bd6043ce23e57f9be318b8648a90b8a139c0696fbd6534c507d37fbb",
+      "bytes": 9336,
+      "domain": "architecture",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/decisions/architecture/STACK-DECISION.md"
+    },
+    {
       "path": "docs/decisions/infra/docs-imported-upstream-link-scope.md",
       "title": "Decision: link and path checks skip declared imported upstream doc trees",
       "sha256": "30edfb2161da3771a99c7869a1970d7ac014c8497971705a62d31c254867a3cc",
@@ -3872,6 +3782,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/decisions/infra/sql-convergence.md"
+    },
+    {
+      "path": "docs/decisions/runtime/DECISIONS.md",
+      "title": "Runtime decisions",
+      "sha256": "3287f9a11b38c6e6d4bc2c52555385e72befc510eaa9b4a7bcbe540b92c0b4d4",
+      "bytes": 19838,
+      "domain": "runtime",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/decisions/runtime/DECISIONS.md"
     },
     {
       "path": "docs/decisions/shell/sandbox-provider.md",
@@ -3896,8 +3816,8 @@
     {
       "path": "docs/ecosystem/CLI.md",
       "title": "CLI command trees",
-      "sha256": "677a558f8558742b8d7507e9a840d48388f9fd6762243f5bd600b1162c03efa5",
-      "bytes": 105527,
+      "sha256": "464b634a9b07912e581c8a72a6dac11f9160f9b8874a84dc1c5b3996bceff78e",
+      "bytes": 105851,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -3906,8 +3826,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "083099a15fe883fa41e4f62c5e99631e813480a401019067386b6768e41c9301",
-      "bytes": 80415,
+      "sha256": "ef763d68f438c381a9c9e0ec21c3bcd08229b46cbefd7ee87995147afb62d619",
+      "bytes": 80448,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -6104,6 +6024,26 @@
       "canonical": "docs/guides/web/web/NATIVE-INSTALL.md"
     },
     {
+      "path": "docs/guides/workspace/BEST_PRACTICES.md",
+      "title": "Guide des Meilleures Pratiques d'Ingénierie : YOLO Polyglot Monorepo",
+      "sha256": "41d9aeb1c02677d0af845fd6a5bbef1e695536925a76ecf4b57be7376fbb47cf",
+      "bytes": 3765,
+      "domain": "workspace",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/guides/workspace/BEST_PRACTICES.md"
+    },
+    {
+      "path": "docs/guides/workspace/JS-TS-TOOLING.md",
+      "title": "Shared native JavaScript and TypeScript tooling",
+      "sha256": "87c7ee62b0f2cf6f9b6c2036261cef34f8dc1dd1ba4c6bf6a190f860587ab624",
+      "bytes": 11574,
+      "domain": "workspace",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/guides/workspace/JS-TS-TOOLING.md"
+    },
+    {
       "path": "docs/guides/workspace/README.md",
       "title": "Parcours Workspace Aphrody",
       "sha256": "d167fae66729db34860b4226191646be5d4b7481c14dcb58b93740dd48a6cf70",
@@ -6112,6 +6052,26 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/guides/workspace/README.md"
+    },
+    {
+      "path": "docs/guides/workspace/TOOLING.md",
+      "title": "Tooling",
+      "sha256": "c3db12ae0d997f3e27181ce14e17b1313b919371ff3c959c3b5a52238e9ee59f",
+      "bytes": 14457,
+      "domain": "workspace",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/guides/workspace/TOOLING.md"
+    },
+    {
+      "path": "docs/guides/workspace/VENDORING.md",
+      "title": "Vendoring the Tauri stack",
+      "sha256": "c98f7f6832bf1c559b09cb75b41d8661df4a8f693c2be5d2f9a540e4c97ddd74",
+      "bytes": 4087,
+      "domain": "workspace",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/guides/workspace/VENDORING.md"
     },
     {
       "path": "docs/guides/workspace/bootstrap.md",
@@ -6156,8 +6116,8 @@
     {
       "path": "docs/operations/SESSION-2026-10-07.md",
       "title": "Session Docker, WASM et installation — 2026-10-07",
-      "sha256": "f5cc7e8d52e0baa87608a370075e931ed4a44734bc2e7e7d14d4b925484cad6c",
-      "bytes": 8236,
+      "sha256": "9eb2866c2183b4b1645309e546ea11ec92496404c90d52336a87136796618779",
+      "bytes": 8264,
       "domain": "",
       "status": "historical",
       "visibility": "private",
@@ -6554,6 +6514,16 @@
       "canonical": "docs/operations/infra/RUST-BUILD-FACTORY.md"
     },
     {
+      "path": "docs/operations/infra/SERVER.md",
+      "title": "Server management with yolo host",
+      "sha256": "694e2efc77293f5cb8bc5bbc603eabeacef6875274c629f22a64218f4ff52907",
+      "bytes": 19416,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/SERVER.md"
+    },
+    {
       "path": "docs/operations/infra/SHELL-OPERATIONS.md",
       "title": "Aphrody shell operations",
       "sha256": "be5be48b747ea0b317ab7a2f94199f7fcaf58c6114a8f86e4dbfd37bd55748a5",
@@ -6692,6 +6662,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/os/windows-wsl-host-bridge.md"
+    },
+    {
+      "path": "docs/operations/release/DISTRIBUTION.md",
+      "title": "Distribution: one command to install, one archive to deploy",
+      "sha256": "99dd1f25472374d661749d81f8558824cd51200109ec94d87d95c73a57da5294",
+      "bytes": 5867,
+      "domain": "release",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/release/DISTRIBUTION.md"
     },
     {
       "path": "docs/operations/upstream-bun/packages/bun-release/README.md",
@@ -7476,8 +7456,8 @@
     {
       "path": "docs/plans/tauri-cef/INVENTORY.md",
       "title": "Single CEF runtime: inventory of wry, tao, GTK3 and WebKitGTK references",
-      "sha256": "468ac844e77f2f0fba3f96684a70127ec5a83dd42f0a9ee15c32dde9c60449d3",
-      "bytes": 16115,
+      "sha256": "719fc370030307eecb228cca0ace3c21dce8e7443562ea5659827008081cbf29",
+      "bytes": 16172,
       "domain": "tauri-cef",
       "status": "canonical",
       "visibility": "private",
@@ -7486,8 +7466,8 @@
     {
       "path": "docs/plans/tauri-cef/PLAN.md",
       "title": "One desktop runtime: tauri-runtime-cef (CEF + tauri-winit + GTK 4)",
-      "sha256": "b2b10bb402e46660a7216471b8358cb8723b37c40e12946dccbc2cfce97f67f0",
-      "bytes": 6728,
+      "sha256": "3a532163cf8b984e82295a117d21343e0cf585ca30c2dadf622bd882ac5cee03",
+      "bytes": 6748,
       "domain": "tauri-cef",
       "status": "canonical",
       "visibility": "private",
@@ -7536,8 +7516,8 @@
     {
       "path": "docs/plans/web/next-fork/PLAN.md",
       "title": "Fork Next.js — plan propriétaire",
-      "sha256": "553e30bc783310fba6feddc718492dff6571b7f94869b537a0701fbc61515787",
-      "bytes": 2296,
+      "sha256": "f7cfe98391aabd45ef8be706fede3fee0d2b022a4129f62516614f124f3f9ea1",
+      "bytes": 2313,
       "domain": "web",
       "status": "canonical",
       "visibility": "private",
@@ -31864,6 +31844,26 @@
       "canonical": "docs/reference/workspace/CLI.md"
     },
     {
+      "path": "docs/reference/workspace/CONSUMERS.md",
+      "title": "Runtime consumers",
+      "sha256": "ad01d75e2bb370425caee8db318081404217e60566c2a0042ca15ea5215ca032",
+      "bytes": 2552,
+      "domain": "workspace",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/reference/workspace/CONSUMERS.md"
+    },
+    {
+      "path": "docs/reference/workspace/CRATES.md",
+      "title": "Imported crates",
+      "sha256": "ef80af4d034a4807b81ab3906da2be6fc1b10e45239b63ba1aae555d315f1970",
+      "bytes": 6929,
+      "domain": "workspace",
+      "status": "generated",
+      "visibility": "private",
+      "canonical": "docs/reference/workspace/CRATES.md"
+    },
+    {
       "path": "docs/reference/workspace/DEPS-INVENTORY.md",
       "title": "Dependency inventory",
       "sha256": "0e205c1177f1eb933c1efdfbd5c62c7454cf672b8eb7705d28d587c39a531d56",
@@ -31916,7 +31916,7 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "b84cee907ab71d8f579f52e6de92fbe58da71d07eb7a32a60ff05b8ba9a18bc5",
+      "sha256": "d1aa53ef071f1b3e51a60f36164ecb78381a179a86a301b9345e9f3be4e0ca39",
       "bytes": 49583,
       "domain": "workspace",
       "status": "generated",
@@ -36926,8 +36926,8 @@
     {
       "path": "packages/engine/runtime/README.md",
       "title": "@aphrody/runtime-sdk",
-      "sha256": "8371fd0e3d21f0cd3cdec21a04cd682b08749bf4b79c2c586e4061b56cc10f59",
-      "bytes": 3432,
+      "sha256": "b5f2d7b12c3063831ab0f307d07895bb98e3d2984a39d83c5b8a00f6eb0e57aa",
+      "bytes": 3478,
       "domain": "engine",
       "status": "canonical",
       "visibility": "private",

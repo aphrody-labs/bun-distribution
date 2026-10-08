@@ -5,9 +5,9 @@
  *
  * Lancer : bun scripts/sync-symbol-names.ts   (depuis packages/eslint-plugin-m3/)
  */
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
-const HERE = dirname(new URL(import.meta.url).pathname);
+const HERE = import.meta.dir;
 const ROOT = join(HERE, "..");
 const SRC = join(ROOT, "..", "m3-codemods", "data", "material-symbols-names.json");
 const OUT = join(ROOT, "data", "material-symbols-names.js");

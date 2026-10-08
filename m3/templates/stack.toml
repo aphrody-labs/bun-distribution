@@ -24,7 +24,7 @@ paths = ["vendor/bun", "packages/engine/runtime/src/preload.ts"]
 plan = "R0"
 provider = "crates/engine/yolo-runtime (C ABI, precompiled)"
 status = "implemented, one target built locally"
-paths = ["crates/engine/yolo-runtime", "docs/RUNTIME-ABI.md"]
+paths = ["crates/engine/yolo-runtime", "docs/architecture/runtime-native/RUNTIME-ABI.md"]
 
 [layer.sdk]
 plan = "R0"

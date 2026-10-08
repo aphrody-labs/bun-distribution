@@ -198,3 +198,26 @@ RUN --mount=type=cache,target=/home/aphrody/.cache/uv,uid=1000,gid=1000 \
     uv sync --locked --all-packages --project py
 WORKDIR /app
 CMD ["shell"]
+
+# Benchmark container: compares all major shells, runtimes, and terminal VT engines
+FROM base AS benchmark
+USER root
+ARG TARGETARCH
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      dash bash zsh fish hyperfine time jq bc bsdextrautils \
+ && rm -rf /var/lib/apt/lists/* \
+ && arch="${TARGETARCH:-$(uname -m)}" \
+ && case "$arch" in \
+      amd64|x86_64) nu_arch=x86_64-unknown-linux-musl ;; \
+      arm64|aarch64) nu_arch=aarch64-unknown-linux-musl ;; \
+      *) nu_arch=x86_64-unknown-linux-musl ;; \
+    esac \
+ && curl -fsSL "https://github.com/nushell/nushell/releases/download/0.116.0/nu-0.116.0-${nu_arch}.tar.gz" \
+      | tar -xzf - --strip-components=1 -C /usr/local/bin \
+ && nu --version
+USER aphrody
+WORKDIR /app
+COPY --chown=aphrody:aphrody . .
+CMD ["bash", "scripts/benchmark/run-shell-benchmark.sh"]
+

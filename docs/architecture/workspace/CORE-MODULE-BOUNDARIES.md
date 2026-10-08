@@ -8,7 +8,7 @@ Décision du 2026-10-04, issue de l’examen des manifestes, points d’entrée 
 consommateurs Yolo/Aphrody. **Yolo absorbe les contrats communs ; les moteurs
 restent des fournisseurs optionnels précompilés, exposés par quelques modules
 Bun. Aphrody conserve le produit.** Cette décision précise D5/D6 et remplace le
-comptage historique de D15 dans [DECISIONS](DECISIONS.md).
+comptage historique de D15 dans [DECISIONS](../../decisions/runtime/DECISIONS.md).
 
 Le recensement exhaustif couvre les
 117 manifestes directement sous `crates/`, les huit sous-modules `vendor/` et
@@ -62,7 +62,7 @@ amélioration du compilateur n’est déduite de cet arbitrage.
 | Fork Bun, dans `vendor/bun` | Hôte JavaScript et APIs natives existantes | Patch interne seulement pour un besoin d’intégration VM ou un gain mesuré |
 
 Les quatre modules `runtime:*` figurent déjà dans le
-[preload](../packages/engine/runtime/src/preload.ts). Desktop et browser ont du code en
+[preload](../../../packages/engine/runtime/src/preload.ts). Desktop et browser ont du code en
 cours ; leur présence ne qualifie pas R3/R4 ni une distribution installable.
 
 ## Ce qui entre dans le cœur
@@ -79,7 +79,7 @@ l’orchestration. Il réutilise les APIs Bun pour fichiers, HTTP, cryptographie
 clients natifs déjà couverts. Les règles de catalogue, déploiement et gestionnaire
 de paquets restent des modules du CLI/SDK ; elles ne deviennent pas des builtins
 de la VM. L’acquisition Bun/uv/Cargo utilise les binaires globaux et le wrapper
-Cargo sérialisé déjà présents dans [pm](../packages/engine/core/src/pm/index.ts).
+Cargo sérialisé déjà présents dans [pm](../../../packages/engine/core/src/pm/index.ts).
 
 Une fonction ne rejoint le cœur natif que si son contrat est commun à plusieurs
 consommateurs, si elle y apporte une garantie native utile, et si ses dépendances
@@ -89,7 +89,7 @@ suffit pas : `turbo-tasks` et `turbo-tasks-fs` restent internes au compilateur.
 ## Desktop : conserver le fournisseur, sélectionner les extensions
 
 Tauri, Wry et Tao restent ensemble comme plugin optionnel. Le
-[SDK desktop](../packages/engine/runtime/src/desktop.ts) supervise actuellement un hôte
+[SDK desktop](../../../packages/engine/runtime/src/desktop.ts) supervise actuellement un hôte
 précompilé séparé ; ce chemin transitoire n’est pas l’absorption demandée.
 L’intégration dans Bun doit respecter la boucle UI principale et ses règles de thread.
 La source générique et les artefacts moteur appartiennent à Yolo ; les fenêtres,
@@ -99,7 +99,7 @@ Les 30 `tauri-plugin-*` restent des extensions Tauri. En particulier,
 `fs/http/shell/process/os` servent les appels WebView soumis aux permissions
 Tauri ; les opérations serveur utilisent Bun et les services Yolo existants.
 Les transformer chacun en module Bun ajouterait des dépendances GUI aux usages
-serveur. Le [plugin HTTP](../crates/tauri/aphrody-tauri-plugin-http/Cargo.toml) dépend
+serveur. Le [plugin HTTP](../../../crates/tauri/aphrody-tauri-plugin-http/Cargo.toml) dépend
 effectivement de Tauri, du plugin FS et de reqwest.
 
 `tauri-build`, macros, codegen, bundler, CLI, signature, générateurs de schémas et
@@ -118,10 +118,10 @@ consommait ; `next` vient de npm et la compilation passe par `Bun.build`.
 
 | Besoin | Mécanisme retenu | Preuve ou condition |
 | :-- | :-- | :-- |
-| Imports `runtime:*` à l’exécution | `Bun.plugin()` et modules virtuels | [Preload existant](../packages/engine/runtime/src/preload.ts) |
-| Résolution de ces imports au build | Plugin `Bun.build` | [Adaptateur existant](../packages/engine/runtime/src/bundler.ts) ; l’artefact natif reste à distribuer |
-| Transformations natives du code source | Addon N-API `onBeforeParse`, si le besoin correspond | [Contrat Bun épinglé](reference/upstream-bun/bundler/plugins.mdx) ; respecter les threads de parsing |
-| Service natif partagé Rust/Bun/Python | C ABI versionnée, `bun:ffi` côté Bun | [Contrat Yolo](RUNTIME-ABI.md), ownership et arrêt explicites |
+| Imports `runtime:*` à l’exécution | `Bun.plugin()` et modules virtuels | [Preload existant](../../../packages/engine/runtime/src/preload.ts) |
+| Résolution de ces imports au build | Plugin `Bun.build` | [Adaptateur existant](../../../packages/engine/runtime/src/bundler.ts) ; l’artefact natif reste à distribuer |
+| Transformations natives du code source | Addon N-API `onBeforeParse`, si le besoin correspond | [Contrat Bun épinglé](../../reference/upstream-bun/bundler/plugins.mdx) ; respecter les threads de parsing |
+| Service natif partagé Rust/Bun/Python | C ABI versionnée, `bun:ffi` côté Bun | [Contrat Yolo](../runtime-native/RUNTIME-ABI.md), ownership et arrêt explicites |
 | Accès interne à la VM | Patch du fork Bun, build et tests propres | Registre des builtins |
 
 `Bun.plugin()` ne commute pas JSC vers V8 et ne remplace pas globalement
@@ -170,7 +170,7 @@ supervision ; les consommateurs Rust Web et l’application UI ne sont pas tous
 migrés. Le pilote desktop ne couvre pas encore tous leurs plugins.
 
 La matérialisation `vendor` → `crates/` est en revanche définie par
-[VENDORING](VENDORING.md). Les 113 imports gardent pins, notices et identités
+[VENDORING](../../guides/workspace/VENDORING.md). Les 113 imports gardent pins, notices et identités
 compatibles. Leur suppression ou leur fusion physique dans le fork Bun n’est
 pas nécessaire pour adopter ce découpage.
 

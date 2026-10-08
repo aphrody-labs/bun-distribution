@@ -5,7 +5,7 @@
 `yolo host` manages a Linux server end to end from the `yolo` CLI: inventory, reclaim, archive with
 verification, services, kernel tuning, network checks and read-only mounts. It runs on `--host vps|dbfr`
 through the Aphrody transport (`aphrody-infra ssh exec`, `ssh service`, `ssh tune`) and on `--host local`
-by running the commands directly. Decision: D26 in [DECISIONS.md](DECISIONS.md).
+by running the commands directly. Decision: D26 in [DECISIONS.md](../../decisions/runtime/DECISIONS.md).
 
 ```sh
 yolo host audit    --host vps [--json]                  # read-only: inventory, findings, prioritized plan

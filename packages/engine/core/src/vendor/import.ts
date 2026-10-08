@@ -7,7 +7,7 @@
  *  - `workspace = true` fields and dependencies are materialized from the source workspace
  *  - dependencies on imported crates point to the new directories (`package = "aphrody-x"`)
  *    with the version constraint aligned on the imported version
- *  - `vendor.lock` and `docs/CRATES.md` describe the result
+ *  - `vendor.lock` and `docs/reference/workspace/CRATES.md` describe the result
  *
  * Dry-run by default; `--apply` writes to `--out`; `--check` diffs against `--out`.
  */
@@ -819,7 +819,7 @@ export async function runImportCommand(
       console.log(
         `Usage: yolo import [--apply] [--check] [--scan] [--out <dir>] [--config <file>]\n\n` +
           `  (no flags)  dry run: what would be imported from vendor.toml into crates/aphrody-*\n` +
-          `  --apply     write the import (normally done on the \`vendor\` branch; see docs/VENDORING.md)\n` +
+          `  --apply     write the import (normally done on the \`vendor\` branch; see docs/guides/workspace/VENDORING.md)\n` +
           `  --check     fail if crates/ differs from a fresh import of the pinned submodule commits\n` +
           `  --scan      report what vendor.toml could add from the configured sources, without importing\n` +
           `  --out DIR   import into DIR instead of this checkout (used by import-check's worktree)\n` +
@@ -852,7 +852,7 @@ export async function runImportCommand(
   });
   const extra = new Map<string, string>([
     ["vendor.lock", renderLock(result)],
-    ["docs/CRATES.md", renderCratesDoc(result, config)],
+    ["docs/reference/workspace/CRATES.md", renderCratesDoc(result, config)],
   ]);
   const elapsed = ((Bun.nanoseconds() - started) / 1e6).toFixed(0);
   console.log(

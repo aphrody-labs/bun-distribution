@@ -24,7 +24,7 @@ One workspace, one set of commands (`just --list`).
 | Stack scaffold (`templates/stack.toml`, `templates/`) | `just create <dir> --with web,desktop --framework hono` |
 | Curated awesome-bun for the Rust-based Bun | `just awesome-curate`, `just awesome search <words>` |
 | Vendoring | `just import-scan`, `just import`, `just vendor-update`, `just import-check` |
-| Linux server (audit, reclaim, archive, services, tune, net, mount; plan by default) | `just host audit --host vps`, see [SERVER.md](SERVER.md) |
+| Linux server (audit, reclaim, archive, services, tune, net, mount; plan by default) | `just host audit --host vps`, see [SERVER.md](../../operations/infra/SERVER.md) |
 | Docs | `just docs-build` |
 | Publishing (dry run) | `just publish-dry` |
 
@@ -133,7 +133,7 @@ The installed user service runs the owner CLI directly. `KillMode=process`
 lets a stopped watcher release its lock while preserving active factory workers;
 the next watcher adopts their handles. Private state and logs live in
 `~/.aphrody/state/commit-sync/`, outside Git. Configuration and build profiles
-belong to [Aphrody commit-sync](../tools/config/commit-sync.json).
+belong to [Aphrody commit-sync](../../../tools/config/commit-sync.json).
 
 Yolo's bounded profile is `bash scripts/release/factory-current.sh`: scoped native
 check/test/strict Clippy, runtime build, artifact/SDK packaging, compiled CLI,
@@ -149,7 +149,7 @@ artifact. See the synchronization receipt.
 The following describes the older full-engine `ship` pipeline. Its unlimited
 job count and resource settings still require separate qualification before use.
 
-`yolo ship [--apply] [--sha X] [--force] [--wait]` (refuses below the free-space floor of the build host, 20 % by default and variable, see [SERVER.md](SERVER.md)) is this repository's CI and release host: GitHub
+`yolo ship [--apply] [--sha X] [--force] [--wait]` (refuses below the free-space floor of the build host, 20 % by default and variable, see [SERVER.md](../../operations/infra/SERVER.md)) is this repository's CI and release host: GitHub
 Actions is not available to it (billing), so the Aphrody build factory runs the gates of
 `.github/workflows/ci.yml` (not in repo), the runtime artifact, the release assets and the D0/D2 install/deploy
 smoke instead, as `yolo/ship` commit statuses. Each build is a detached tmux session
@@ -177,8 +177,8 @@ would run, the `.coord` claim; no network, no remote access).
 server through `aphrody-infra ssh exec` (the local host runs commands directly). Every subcommand is a plan
 until `--apply`, applied steps are journaled in `var/host/<host>/journal.jsonl`, and the safety rules are
 hard-coded in `packages/engine/yolo/src/host-safety.ts`. Policy lives in `host-policy.toml`. Full description, the Bun
-feature map and the verification status are in [SERVER.md](SERVER.md); the decision is D26 in
-[DECISIONS.md](DECISIONS.md). Tests: `bun test test/host.test.ts` (no network, no remote access; the
+feature map and the verification status are in [SERVER.md](../../operations/infra/SERVER.md); the decision is D26 in
+[DECISIONS.md](../../decisions/runtime/DECISIONS.md). Tests: `bun test test/host.test.ts` (no network, no remote access; the
 `--apply` paths run on `local` in temporary directories).
 
 
@@ -207,4 +207,4 @@ Cargo fetch under the installed ABI 1.4 supervisor. No engine compilation is
 performed. Missing/stale locks and failures remain explicit. The full manager
 milestone stays open beyond this Linux x64 dependency-acquisition tranche.
 See qualification and
-[core API](../packages/engine/core/README.md).
+[core API](../../../packages/engine/core/README.md).

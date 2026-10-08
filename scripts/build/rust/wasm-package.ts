@@ -2,10 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
  * Build a wasm-bindgen crate into a web package with locked Cargo/bindgen and wasm-opt -Oz.
- * Cloud sessions use cargo-serial.sh; other hosts use the checksum-verifying VPS factory.
- * Output is replaced only after the staged package passes validation. --no-opt explicitly skips optimization.
+ * Cloud sessions use cargo-serial.sh; Windows / local cargo sessions run Cargo directly;
+ * WSL sessions use the checksum-verifying VPS factory.
+ * Output is replaced atomically only after the staged package passes validation. --no-opt explicitly skips optimization.
  *
- * bun scripts/build/rust/wasm-package.ts --crate <package> --out <dir> [--name <name>] [--skip-cargo] [--no-opt]
+ * bun scripts/build/rust/wasm-package.ts --crate <package> --out <dir> [--name <name>] [--profile <p>] [--max-bytes <N>] [--skip-cargo] [--no-opt]
  */
 import { $ } from "bun";
 import { mkdir, mkdtemp, rename, rm } from "node:fs/promises";
@@ -17,12 +18,19 @@ const triple = "wasm32-unknown-unknown";
 // Never --all-features: stringref/GC imports break JavaScriptCore (Bun/Safari) and older engines.
 const optimizerFeatures = [
   "--enable-bulk-memory",
-  "--enable-bulk-memory-opt",
   "--enable-nontrapping-float-to-int",
   "--enable-sign-ext",
   "--enable-mutable-globals",
   "--enable-multivalue",
   "--enable-reference-types",
+];
+
+const wasmOptFlags = [
+  "-Oz",
+  "--converge",
+  "--strip-debug",
+  "--strip-producers",
+  ...optimizerFeatures,
 ];
 
 export type ToolResult = { exitCode: number; stdout: string; stderr?: string };
@@ -31,6 +39,8 @@ export type BuildOptions = {
   crate: string;
   out: string;
   name?: string;
+  profile?: string;
+  maxBytes?: number;
   skipCargo?: boolean;
   noOpt?: boolean;
 };
@@ -55,6 +65,7 @@ export async function buildWasmPackage(
   const run = dependencies.run ?? runTool;
   const crate = options.crate;
   const name = options.name ?? crate.replaceAll("-", "_");
+  const profile = options.profile ?? "wasm-release";
   if (!/^[a-zA-Z0-9_-]+$/.test(crate) || !/^[a-zA-Z0-9_-]+$/.test(name))
     throw new Error(
       "crate and output name must contain only letters, digits, underscores or hyphens",
@@ -77,29 +88,34 @@ export async function buildWasmPackage(
     const result = await run([bin, "--version"], root);
     return result.exitCode === 0 && result.stdout.trim() === `wasm-bindgen ${pinned}`;
   };
-  let bindgen = "wasm-bindgen";
+  const exeSuffix = process.platform === "win32" ? ".exe" : "";
+  let bindgen = `wasm-bindgen${exeSuffix}`;
   if (!(await matchesPin(bindgen))) {
-    const tool = join(
-      dependencies.home ?? homedir(),
-      ".cache/aphrody/tools",
-      `wasm-bindgen-${pinned}`,
-    );
-    bindgen = join(tool, "wasm-bindgen");
-    if (!(await matchesPin(bindgen))) {
-      await checked([
-        "cargo",
-        "binstall",
-        "--no-confirm",
-        "--locked",
-        "--version",
-        pinned,
-        "--install-path",
-        tool,
-        "wasm-bindgen-cli",
-      ]);
+    if (await matchesPin("wasm-bindgen")) {
+      bindgen = "wasm-bindgen";
+    } else {
+      const tool = join(
+        dependencies.home ?? homedir(),
+        ".cache/aphrody/tools",
+        `wasm-bindgen-${pinned}`,
+      );
+      bindgen = join(tool, `wasm-bindgen${exeSuffix}`);
+      if (!(await matchesPin(bindgen))) {
+        await checked([
+          "cargo",
+          "binstall",
+          "--no-confirm",
+          "--locked",
+          "--version",
+          pinned,
+          "--install-path",
+          tool,
+          "wasm-bindgen-cli",
+        ]);
+      }
+      if (!(await matchesPin(bindgen)))
+        throw new Error(`wasm-bindgen ${pinned} (Cargo.lock) is not available`);
     }
-    if (!(await matchesPin(bindgen)))
-      throw new Error(`wasm-bindgen ${pinned} (Cargo.lock) is not available`);
   }
 
   // Staging on the output filesystem makes publication use rename instead of copying partial files.
@@ -111,17 +127,24 @@ export async function buildWasmPackage(
   try {
     const artifact = `${crate.replaceAll("-", "_")}.wasm`;
     let wasmFile: string;
-    const cargoArgs = ["build", "--locked", "-p", crate, "--target", triple, "--release"];
+    const cargoArgs =
+      profile === "release"
+        ? ["build", "--locked", "-p", crate, "--target", triple, "--release"]
+        : ["build", "--locked", "-p", crate, "--target", triple, "--profile", profile];
+
     if (env.CLAUDE_CODE_REMOTE === "true" || env.APHRODY_CLOUD === "1") {
       if (!options.skipCargo)
         await checked([join(root, "scripts/build/rust/cargo-serial.sh"), ...cargoArgs]);
-      wasmFile = join(resolve(root, env.CARGO_TARGET_DIR ?? "target"), triple, "release", artifact);
+      wasmFile = join(resolve(root, env.CARGO_TARGET_DIR ?? "target"), triple, profile, artifact);
+    } else if (process.platform === "win32" || env.APHRODY_LOCAL_CARGO === "1") {
+      if (!options.skipCargo) await checked(["cargo", ...cargoArgs]);
+      wasmFile = join(resolve(root, env.CARGO_TARGET_DIR ?? "target"), triple, profile, artifact);
     } else {
       const vps = join(root, "scripts/build/rust/vps-cargo.ts");
       if (!options.skipCargo) await checked(["bun", vps, "run", "--", ...cargoArgs]);
       // Exit 3 means a checksum-verified file was fetched but cannot run on the local host (WASM).
       const fetched = await run(
-        ["bun", vps, "fetch", "--profile", `${triple}/release`, "--bin", artifact, "--dest", stage],
+        ["bun", vps, "fetch", "--profile", `${triple}/${profile}`, "--bin", artifact, "--dest", stage],
         root,
       );
       if (fetched.exitCode !== 0 && fetched.exitCode !== 3)
@@ -143,7 +166,7 @@ export async function buildWasmPackage(
     if (!options.noOpt) {
       const optimized = join(stage, "optimized.wasm");
       // An optimizer failure aborts the release; it never replaces the last usable package.
-      await checked(["wasm-opt", "-Oz", ...optimizerFeatures, wasm, "-o", optimized]);
+      await checked(["wasm-opt", ...wasmOptFlags, wasm, "-o", optimized]);
       const optimizedBytes = await Bun.file(optimized).arrayBuffer();
       if (!WebAssembly.validate(optimizedBytes))
         throw new Error("wasm-opt produced an invalid module");
@@ -159,8 +182,21 @@ export async function buildWasmPackage(
       }),
     );
     const bytes = Bun.file(wasm).size;
+
+    // Size ratchet enforcement
+    if (options.maxBytes && bytes > options.maxBytes) {
+      throw new Error(
+        `WASM size ratchet exceeded for ${crate}: ${bytes} bytes > max ${options.maxBytes} bytes`,
+      );
+    }
+
     let backedUp = false;
+    let previousBytes: number | undefined;
     try {
+      const existingWasm = join(out, `${name}_bg.wasm`);
+      if (await Bun.file(existingWasm).exists()) {
+        previousBytes = Bun.file(existingWasm).size;
+      }
       await rename(out, previous);
       backedUp = true;
     } catch (error) {
@@ -189,10 +225,12 @@ export async function buildWasmPackage(
       wasm: join(out, `${name}_bg.wasm`),
       rawBytes: raw,
       bytes,
+      previousBytes,
+      delta: previousBytes !== undefined ? bytes - previousBytes : undefined,
       optimization: options.noOpt
         ? "skipped (--no-opt)"
         : bytes < raw
-          ? "optimized (-Oz)"
+          ? `optimized (-Oz converged; saved ${raw - bytes} bytes)`
           : "validated (-Oz; original size retained)",
     };
   } finally {
@@ -211,16 +249,23 @@ if (import.meta.main) {
   const out = flag("--out");
   if (!crate || !out)
     throw new Error(
-      "usage: wasm-package.ts --crate <package> --out <dir> [--name <n>] [--skip-cargo] [--no-opt]",
+      "usage: wasm-package.ts --crate <package> --out <dir> [--name <n>] [--profile <p>] [--max-bytes <N>] [--skip-cargo] [--no-opt]",
     );
+  const maxBytesStr = flag("--max-bytes");
   const result = await buildWasmPackage({
     crate,
     out,
     name: flag("--name"),
+    profile: flag("--profile"),
+    maxBytes: maxBytesStr ? Number.parseInt(maxBytesStr, 10) : undefined,
     skipCargo: argv.includes("--skip-cargo"),
     noOpt: argv.includes("--no-opt"),
   });
+  const deltaStr =
+    result.delta !== undefined
+      ? ` (previous: ${result.previousBytes} B, ${result.delta >= 0 ? `+${result.delta}` : result.delta} B)`
+      : "";
   console.log(
-    `${result.wasm}: ${result.rawBytes} bytes from wasm-bindgen, ${result.bytes} bytes ${result.optimization}`,
+    `${result.wasm}: ${result.rawBytes} bytes from wasm-bindgen -> ${result.bytes} bytes ${result.optimization}${deltaStr}`,
   );
 }

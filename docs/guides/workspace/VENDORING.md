@@ -29,7 +29,7 @@ Each fork keeps `main` as an upstream mirror and `yolo` as the branch the submod
   (or a marker file for the default style) into the crate;
 - applies the `[[rewrite]]` rules of `vendor.toml` (paths that left the crate, formatting fixes) and
   the `[[copy]]` rules (the sources of `tauri-examples`);
-- writes `vendor.lock` (source SHAs, crate map) and `docs/CRATES.md`.
+- writes `vendor.lock` (source SHAs, crate map) and `docs/reference/workspace/CRATES.md`.
 
 Not vendored on purpose: the migrate fixtures, `cef-rollback`, the benchmark crates and the example
 apps (`yolo import --scan` lists every manifest and whether it is imported).

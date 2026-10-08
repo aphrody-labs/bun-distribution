@@ -943,6 +943,7 @@ version = "1.0.0"
 dependencies = [
  "aphrody-command-pure",
  "aphrody-rag-core",
+ "console_error_panic_hook",
  "serde_json",
  "wasm-bindgen",
 ]

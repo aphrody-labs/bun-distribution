@@ -3,7 +3,7 @@
 //! First vertical slice (phase R0 of PLAN.md): one capability family (system statistics and a
 //! cancellable benchmark, both from `yolo-core`) behind a stable boundary.
 //!
-//! Contract (see `docs/RUNTIME-ABI.md`):
+//! Contract (see `docs/architecture/runtime-native/RUNTIME-ABI.md`):
 //! - no Rust type crosses the boundary; everything is `repr(C)`, integers, pointers or buffers;
 //! - objects are opaque 64-bit handles (index + generation) owned by this library, so a stale or
 //!   forged handle is rejected instead of dereferenced;

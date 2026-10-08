@@ -2,7 +2,7 @@
 
 # Runtime C ABI (slice R0, ABI 1.4)
 
-First vertical slice of [PLAN.md](../PLAN.md) phase R0: one capability family behind a versioned
+First vertical slice of [PLAN.md](../../../PLAN.md) phase R0: one capability family behind a versioned
 C ABI, a precompiled artifact and a light TypeScript consumer. Nothing here qualifies later
 phases.
 
@@ -33,7 +33,7 @@ bun run packages/runtime/examples/stats.ts
 
 `system.stats` and `bench.compute` were picked because they already existed and need no engine.
 `process.supervise` and `http.probe` are the first real shared service (decision D10 in
-[DECISIONS](DECISIONS.md)); the TypeScript surface is `runtime:system` and `runtime:process`, loaded
+[DECISIONS](../../decisions/runtime/DECISIONS.md)); the TypeScript surface is `runtime:system` and `runtime:process`, loaded
 by the preload plugin of `packages/engine/runtime`.
 
 ## Contract

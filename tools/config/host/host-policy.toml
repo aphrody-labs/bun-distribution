@@ -1,4 +1,4 @@
-# Policy for `yolo host` (see docs/SERVER.md). Lists add to the built-in defaults; they cannot remove the
+# Policy for `yolo host` (see docs/operations/infra/SERVER.md). Lists add to the built-in defaults; they cannot remove the
 # hard-coded protections (ssh and the base system are never stopped, protected paths are never reclaimed,
 # nothing is formatted or wiped). Per-host tables ([hosts.vps.*]) add to the global ones.
 

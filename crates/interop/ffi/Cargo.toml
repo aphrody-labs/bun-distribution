@@ -74,7 +74,7 @@ async-trait = { workspace = true }
 aphrody-web-index = { workspace = true }
 aphrody-gemini-web = { workspace = true }
 aphrody-x = { workspace = true }
-# Versioned yolo_* C ABI (docs/RUNTIME-ABI.md), re-exported by this cdylib.
+# Versioned yolo_* C ABI (docs/architecture/runtime-native/RUNTIME-ABI.md), re-exported by this cdylib.
 yolo-runtime = { workspace = true }
 base64     = { workspace = true }
 # A dlopened library must not reserve mimalloc's initial-exec static TLS.

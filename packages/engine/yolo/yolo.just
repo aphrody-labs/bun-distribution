@@ -179,7 +179,7 @@ install-cli:
 generate:
     bun run packages/engine/yolo/src/index.ts generate
 
-# Native runtime (docs/RUNTIME-ABI.md): the artifact uses the `runtime` profile (unwinding panics)
+# Native runtime (docs/architecture/runtime-native/RUNTIME-ABI.md): the artifact uses the `runtime` profile (unwinding panics)
 runtime-build:
     "{{cargo_owner}}" build --locked --no-default-features --profile runtime -p aphrody-ffi --features browser,tooling
 

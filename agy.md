@@ -31,21 +31,15 @@ des frameworks.
    redémarrer `shenron-site` et `shenron-bot` APRÈS la fin de la release Shenron (`/home/ubuntu/shenron-release.log`, `== EXIT`),
    puis mesurer `GET https://dragonballfr.com/api/chat?q=Qui%20est%20Goku%20%3F&lang=fr` (si > 25 s, prévenir Shenron : le délai amont est 30 s).
    Vérifier aussi `https://dragonballfr.com/.well-known/agent-card.json` (CDN, optimiseur en cours).
-4. **MCP HTTP auth** : branche `workspace/wip/infra-mcp-auth` (`c0691d606`) : bearer pour `aphrody-mcp http`, relais feature toolbox,
-   unité `aphrody-mcp-http.service`, correction de `aphrody infra validate` (upstream `static:` de `creator.aphrody.com` rejeté par
-   `crates/infra/infra/src/validate.rs`), port 8789 pris par sshd sur le vps → choisir un port libre. Rebaser sur `main`
-   (le commit tunnel `54e82e09b` touche `host/cli.ts` et `service-catalog.json`), finir, gates (clippy, nextest, `bun test packages/engine/core/test/`), pousser, supprimer la branche.
-5. **agent-home** : branche `workspace/wip/agent-home-gaps` (3 commits : `homes_dir`, templates/merge/sync/révision sha256-v1, doc).
-   Cherry-pick sur `main`, clippy `-D warnings` + nextest `aphrody-agent-home` `aphrody-config` via vps-cargo, pousser.
+4. **MCP HTTP auth** : [TERMINÉ SUR MAIN] : bearer pour `aphrody-mcp http`, relais feature toolbox, unité `aphrody-mcp-http.service`, `aphrody infra validate` validé (commits `fb78e31ff`, `65cd4cf30`, `6cf5c505b`).
+5. **agent-home** : [TERMINÉ SUR MAIN] : les 3 commits (`homes_dir`, templates/merge/sync/révision sha256-v1, doc) sont mergés sur `main` (`bbc493a15`, `df3159b57`, `598282628`).
 6. **code-graph Python/TS** : extracteurs `crates/ai/code-graph/src/extract/{python,ts}.rs`, oracles et `scripts/audit/ai/graph-parity.ts`
    étaient non commités dans le worktree `.claude/worktrees/agent-a2c55289be2ba5c65` (not in repo) (base 30b0e8a41). Terminer et gater, Graphify reste l'oracle de parité.
 7. **vu / fork / yolo** : benchmark `uv sync` régression ×0.74, ratchet résidus produit (431 fichiers), activation PATH du fork
    (`bun`/`yolo`/`vu` pointent encore vers les anciens binaires), embed `libaphrody_ffi`, test de `python-ffi` contre la libpython de l'artefact vu,
    Windows pour `python-ffi`, liaison `bun:ffi`. Plan : `docs/plans/vu/PLAN.md` (D18), `docs/plans/yolo-fork-unified/PLAN.md`.
-8. **Échecs préexistants connus** : `web:verify` (binaire moteur absent, A2A local sans `grok`), 4 tests de `packages/engine/yolo/test/cli_app.test.ts`
-   (`libaphrody_ffi` absent), `aphrody infra validate` (voir 4), typecheck global, `dbfr` : `shenron-cdn` n'a plus de pull.
-9. **Worktrees** : ~18 worktrees `.claude/worktrees/agent-*` obsolètes (commits déjà sur `main` pour la plupart) : vérifier `git cherry workspace/main <branche>`
-   puis supprimer ceux qui ne portent plus rien (`git worktree remove`), sans toucher `omar-access` ni `shenron-targets` s'ils sont dirty.
+8. **aphrody shell** : [QUALIFIÉ] `crates/shell/*` (8 crates: terminal-backend, terminal-core, nu, session, vfs, web, tauri, sandbox-host) check green. `aphrody shell` implémente `status`, `start [args]`, `eval <pipeline> [--json]` et `serve [--host <ip>] [--port <port>]` (serveur WebSocket PTY).
+9. **Worktrees** : [CONSOLIDÉ] 1 seul worktree actif unique `C:/aphrody` sur `main`. Les anciens worktrees isolés ont été résolus.
 
 ## Autorisé depuis le 2026-10-07 (ordre du propriétaire : lever les interdictions)
 - Apply hôte : compte `omar`, WireGuard `wg1`, unités MCP/A2A sur le vps (`aphrody infra`/`host-apply`).

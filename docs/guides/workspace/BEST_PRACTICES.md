@@ -7,7 +7,7 @@ Ce document détaille les standards d'architecture, de mémoire et de concurrenc
 ## 1. Architecture Rust : Cœur Neutre & FFI Découplée
 
 ### Principe de Responsabilité Unique
-Le code de calcul intensif réside exclusivement dans [`crates/engine/yolo-core`](../crates/engine/yolo-core). Cette crate ne possède **aucune adhérence** à Python (PyO3) ni à Bun (`bun:ffi`) :
+Le code de calcul intensif réside exclusivement dans [`crates/engine/yolo-core`](../../../crates/engine/yolo-core). Cette crate ne possède **aucune adhérence** à Python (PyO3) ni à Bun (`bun:ffi`) :
 - Pureté algorithmique : calculs vectorisés, `rayon::par_chunks()`.
 - Immutabilité des tranches : passage par référence `&[f64]` plutôt que transfert d'allocation `Vec<f64>` quand c'est possible.
 - Concurrence sûre : isolation des états modifiables via `parking_lot::RwLock` ou structures atomiques.
@@ -45,15 +45,15 @@ fn parallel_sum_squares(py: Python<'_>, values: Vec<f64>) -> PyResult<f64> {
 ```
 
 ### Stubs Typés PEP 484 & PEP 561
-- Toujours fournir [`py.typed`](../packages/engine/python/python/yolo/py.typed) à la racine du package Python pour signaler aux vérificateurs de types (`ty`, `mypy`, `pyright`) que le module est typé.
-- Fournir un fichier de stubs [`.pyi`](../packages/engine/python/python/yolo/_yolo_native.pyi) reflétant exactement l'interface C-API compilée par PyO3.
+- Toujours fournir [`py.typed`](../../../packages/engine/python/python/yolo/py.typed) à la racine du package Python pour signaler aux vérificateurs de types (`ty`, `mypy`, `pyright`) que le module est typé.
+- Fournir un fichier de stubs [`.pyi`](../../../packages/engine/python/python/yolo/_yolo_native.pyi) reflétant exactement l'interface C-API compilée par PyO3.
 
 ---
 
 ## 3. Bun & Zero-Copy FFI (`bun:ffi`)
 
 ### Appel Direct sans Sérialisation
-Dans [`packages/engine/runtime/src/compute.ts`](../packages/engine/runtime/src/compute.ts) :
+Dans [`packages/engine/runtime/src/compute.ts`](../../../packages/engine/runtime/src/compute.ts) :
 - Éviter absolument de convertir des `Float64Array` en tableaux JavaScript natifs (`Array.from` ou `.map`).
 - Passer directement le pointeur mémoire sous-jacent via `ptr(numbers)` :
 ```typescript

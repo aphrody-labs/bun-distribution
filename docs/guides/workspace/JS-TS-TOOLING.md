@@ -9,8 +9,8 @@ Bun builtin, a complete VS Code migration or measured memory/startup gains.
 
 The dated migration receipt records source
 revisions, file hashes and the scope of qualification. The runtime architecture
-remains governed by [GOAL](../GOAL.md), [PLAN](../PLAN.md) and
-[the ABI contract](RUNTIME-ABI.md).
+remains governed by [GOAL](../../../GOAL.md), [PLAN](../../../PLAN.md) and
+[the ABI contract](../../architecture/runtime-native/RUNTIME-ABI.md).
 
 ## Canonical owners
 
@@ -23,8 +23,8 @@ remains governed by [GOAL](../GOAL.md), [PLAN](../PLAN.md) and
 | Compatibility CLI | aphrody-n2b | Existing `n2b` binary and native in-process engine |
 | Runtime discovery and pins | aphrody-toolchains | Bun/uv/Nushell discovery and launch environment; discovery is not engine embedding |
 | Native parser, formatter, linter and minifier | aphrody-oxc-bridge | `aphrody_oxc_*`, ABI 1, official Oxc APIs |
-| Grouped optional provider | [aphrody-ffi](../crates/interop/ffi) feature `tooling` | Reexports the two C ABIs from `libaphrody_ffi`; group ABI 1 (`yolo_tooling_abi_version`); no second engine implementation |
-| Repository mapper, watcher and polyglot inspection | [yolo-core](../crates/engine/yolo-core) with `repository-tools` | `mapper` and `polyglot`; Aphrody's `aphrody_yolo` library reexports them |
+| Grouped optional provider | [aphrody-ffi](../../../crates/interop/ffi) feature `tooling` | Reexports the two C ABIs from `libaphrody_ffi`; group ABI 1 (`yolo_tooling_abi_version`); no second engine implementation |
+| Repository mapper, watcher and polyglot inspection | [yolo-core](../../../crates/engine/yolo-core) with `repository-tools` | `mapper` and `polyglot`; Aphrody's `aphrody_yolo` library reexports them |
 
 The seven transferred crates preserve their package, library and binary identities.
 The `tooling` feature of `aphrody-ffi` (formerly the `yolo-tooling` cdylib) is the grouped artifact owner. The default Cargo members remain
@@ -45,7 +45,7 @@ These exceptions do not implement an alternative parser or a process-per-file sc
 
 ## Native calls and ownership
 
-[The light SDK](../packages/engine/runtime/src/tooling.ts) owns `NativeTooling` and the
+[The light SDK](../../../packages/engine/runtime/src/tooling.ts) owns `NativeTooling` and the
 shared convenience functions. `@aphrody/yolo-core/compiler` reexports that owner
 and adds the official ESTree JSON types. Importing the SDK does not load a library;
 the first operation or explicit probe loads and verifies the selected artifact.
@@ -80,7 +80,7 @@ owners for their broader CLI behavior; no `npx` or `bunx` execution is needed.
 
 ## Shared scan budget and safe migration boundaries
 
-[The std-only resource owner](../crates/engine/yolo-core/src/resources.rs) supplies one
+[The std-only resource owner](../../../crates/engine/yolo-core/src/resources.rs) supplies one
 exclusive scan lease and a worker budget of 1 through 6. N2B and repository mapping
 use the same owner; defaults cap available parallelism at six. The lease creates
 no worker pool. It serializes scans sharing one linked native library, including
@@ -134,9 +134,9 @@ some individual file errors; it is not a substitute for N2B's strict traversal.
 | Python, desktop, browser and compiler engines | Existing uv/PyO3, Tauri, Obscura and Bun/Next owners | This lot does not deliver their future builtin absorption or shared WebView/allocator integration |
 
 The canonical report schema is
-[crates/contracts/schema/v2.json](../crates/contracts/schema/v2.json).
+[crates/contracts/schema/v2.json](../../../crates/contracts/schema/v2.json).
 Its generated TypeScript surface is
-[packages/runtime/src/tooling-schema.ts](../packages/engine/runtime/src/tooling-schema.ts);
+[packages/runtime/src/tooling-schema.ts](../../../packages/engine/runtime/src/tooling-schema.ts);
 the compatibility package aliases it. The Yolo schema generator owns both that
 output and the Rust schema output; the Aphrody command remains a compatibility
 route while consumers migrate. Regeneration must preserve the original version-2

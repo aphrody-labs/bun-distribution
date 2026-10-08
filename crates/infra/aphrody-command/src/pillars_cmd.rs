@@ -161,6 +161,23 @@ pub(crate) enum ShellAction {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
+    /// Evaluate a Nushell command or pipeline
+    Eval {
+        /// Nushell code/pipeline to evaluate
+        pipeline: String,
+        /// Emit result as JSON
+        #[arg(long)]
+        json: bool,
+    },
+    /// Start the Aphrody Terminal Backend WebSocket server
+    Serve {
+        /// IP address to bind
+        #[arg(long, default_value = "127.0.0.1")]
+        host: String,
+        /// Port to listen on
+        #[arg(long, default_value_t = 8790)]
+        port: u16,
+    },
 }
 
 pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
@@ -206,6 +223,45 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
             if !status.success() {
                 std::process::exit(status.code().unwrap_or(1));
             }
+        },
+        ShellAction::Eval { pipeline, json } => {
+            let nu_path = which::which("nu").unwrap_or_else(|_| std::path::PathBuf::from("nu"));
+            let mut cmd = std::process::Command::new(&nu_path);
+            let code = if json {
+                format!("{} | to json", pipeline)
+            } else {
+                pipeline
+            };
+            cmd.arg("-c").arg(&code);
+            let root = std::env::var("APHRODY_ROOT")
+                .map(std::path::PathBuf::from)
+                .unwrap_or_else(|_| {
+                    if std::path::Path::new("C:\\aphrody").exists() {
+                        std::path::PathBuf::from("C:\\aphrody")
+                    } else {
+                        std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
+                    }
+                });
+            cmd.current_dir(&root);
+            cmd.stdin(std::process::Stdio::inherit())
+                .stdout(std::process::Stdio::inherit())
+                .stderr(std::process::Stdio::inherit());
+            let mut child = cmd.spawn().map_err(|e| miette::miette!("Failed to launch Nushell eval: {}", e))?;
+            let status = child.wait().map_err(|e| miette::miette!("Shell eval error: {}", e))?;
+            if !status.success() {
+                std::process::exit(status.code().unwrap_or(1));
+            }
+        },
+        ShellAction::Serve { host, port } => {
+            let addr: std::net::SocketAddr = format!("{}:{}", host, port)
+                .parse()
+                .map_err(|e| miette::miette!("Invalid socket address: {}", e))?;
+            println!("Starting Aphrody Terminal Backend on ws://{}", addr);
+            let runtime = tokio::runtime::Runtime::new().map_err(|e| miette::miette!("Tokio runtime error: {}", e))?;
+            runtime.block_on(async {
+                let cfg = aphrody_terminal_backend::PtyConfig::default().with_env_limits();
+                aphrody_terminal_backend::serve(addr, cfg).await
+            }).map_err(|e| miette::miette!("Terminal server error: {}", e))?;
         },
     }
     Ok(())

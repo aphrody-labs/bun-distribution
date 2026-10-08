@@ -22,6 +22,13 @@ pub fn run(args: Vec<String>, stdin: &str, files_json: &str) -> Result<String, S
     run_json(&args, stdin, files_json)
 }
 
+/// Install standard browser console error panic hook for debuggability and readable traces.
+#[wasm_bindgen(js_name = initPanicHook)]
+pub fn init_panic_hook() {
+    #[cfg(feature = "console_error_panic_hook")]
+    console_error_panic_hook::set_once();
+}
+
 /// Package version of the pure command crate.
 #[wasm_bindgen]
 #[must_use]
@@ -38,8 +45,12 @@ fn run_json(args: &[String], stdin: &str, files_json: &str) -> Result<String, St
     };
     let mut io = MemoryIo { stdin: stdin.to_string(), files };
     let out = run_args(args, &mut io);
-    Ok(serde_json::json!({ "code": out.code, "stdout": out.stdout, "stderr": out.stderr })
-        .to_string())
+    serde_json::to_string(&serde_json::json!({
+        "code": out.code,
+        "stdout": out.stdout,
+        "stderr": out.stderr
+    }))
+    .map_err(|e| format!("failed to serialize command output: {e}"))
 }
 
 #[cfg(test)]

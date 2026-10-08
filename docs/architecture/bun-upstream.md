@@ -49,7 +49,7 @@ consommateurs et des exports, les validations pertinentes puis la suppression
 du propriétaire devenu inutile. Les données privées et les profils
 d'authentification restent dans leurs magasins protégés.
 
-La mise à jour du fork suit le workflow de [qualification Bun](../BUN_FORK.md) :
+La mise à jour du fork suit le workflow de [qualification Bun](runtime-native/BUN_FORK.md) :
 merge upstream, construction en factory, tests, qualification du packaging puis
 changement explicite de la révision épinglée. Les preuves de compilation seules
 ne suffisent pas à déclarer le runtime installé opérationnel.

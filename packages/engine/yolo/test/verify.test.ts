@@ -142,7 +142,7 @@ describe("selectChanged", () => {
 
   it("selects the gates whose surfaces match a changed file", () => {
     const only = (files: string[]) => selectChanged(GATES, files).map((g) => g.id);
-    expect(only(["docs/SERVER.md"])).toEqual(["whitespace", "docs"]);
+    expect(only(["docs/operations/infra/SERVER.md"])).toEqual(["whitespace", "docs"]);
     expect(only(["packages/engine/yolo/src/verify.ts"])).toEqual([
       "whitespace",
       "typecheck",

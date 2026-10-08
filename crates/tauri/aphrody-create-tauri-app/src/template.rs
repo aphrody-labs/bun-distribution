@@ -39,7 +39,7 @@ impl Display for Flavor {
 
 /// This fork keeps only the Bun-run vanilla JS/TS frontend and the pure-Rust/WASM frameworks
 /// (yew, leptos, sycamore, dioxus); every npm-ecosystem framework template (Vue, Svelte, React,
-/// Solid, Angular, Preact) and the .NET one (Blazor) are dropped (see docs/VENDORING.md upstream).
+/// Solid, Angular, Preact) and the .NET one (Blazor) are dropped (see docs/guides/workspace/VENDORING.md upstream).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 #[derive(Default)]

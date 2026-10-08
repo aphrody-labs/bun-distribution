@@ -262,7 +262,10 @@
           "path": "crates/infra/aphrody-command-wasm",
           "description": "wasm-bindgen adapter running the pure aphrody sub-commands (aphrody-command-pure) in the browser; no logic of its own.",
           "bins": [],
-          "features": []
+          "features": [
+            "console_error_panic_hook",
+            "default"
+          ]
         },
         {
           "name": "aphrody-config",
@@ -4422,6 +4425,20 @@
               "aliases": [],
               "cfg": [],
               "children": []
+            },
+            {
+              "name": "eval",
+              "about": "Evaluate a Nushell command or pipeline",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "serve",
+              "about": "Start the Aphrody Terminal Backend WebSocket server",
+              "aliases": [],
+              "cfg": [],
+              "children": []
             }
           ]
         },
@@ -6440,6 +6457,20 @@
                 {
                   "name": "start",
                   "about": "Start interactive Nushell / Ratatui terminal session",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "eval",
+                  "about": "Evaluate a Nushell command or pipeline",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "serve",
+                  "about": "Start the Aphrody Terminal Backend WebSocket server",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -13936,7 +13967,7 @@
     "bunPackages": 160,
     "pythonPackages": 10,
     "cliBinaries": 35,
-    "cliCommands": 1060,
+    "cliCommands": 1064,
     "mcpServers": 20,
     "mcpTools": 389,
     "mcpUniqueToolNames": 387

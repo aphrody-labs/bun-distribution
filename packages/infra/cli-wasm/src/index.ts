@@ -4,6 +4,7 @@ import init, {
   abiVersion,
   callJson,
   callVec,
+  initPanicHook,
   initSync,
   manifest,
   run,
@@ -61,6 +62,8 @@ export interface Cli {
   text(args: readonly string[], options?: RunOptions): string;
   /** Pure source projection; shares the native Web parser without network or filesystem access. */
   dragonBall<T = unknown>(html: string, options: DragonBallProjectionOptions): T;
+  /** Install console_error_panic_hook in browser environments for readable panic traces. */
+  initPanicHook(): void;
 }
 
 const exec = (args: readonly string[], options: RunOptions = {}): Outcome =>
@@ -97,6 +100,13 @@ function open(): Cli {
           { stdin: html },
         ),
       ) as T,
+    initPanicHook: () => {
+      try {
+        if (typeof initPanicHook === "function") initPanicHook();
+      } catch {
+        // Ignored if panic hook already initialized or not running in a supported runtime
+      }
+    },
   };
 }
 

@@ -5,9 +5,9 @@
 > **Organization**: `aphrody-labs`
 > **Checkout Path**: `vendor/bun` (pin: `tools/config/vendor.json`, not a Git submodule)
 > **Fork Branch**: `main` (single and default branch: upstream `main` plus the Aphrody patches)
-> **Sync & Drift Engine**: [`scripts/tools/vendor/bun_upstream_sync.ts`](../scripts/tools/vendor/bun_upstream_sync.ts)
-> **PR & Issue Tracker Engine**: [`scripts/tools/vendor/bun_upstream_tracker.ts`](../scripts/tools/vendor/bun_upstream_tracker.ts)
-> **Tracker Live Dashboard**: [BUN_UPSTREAM_TRACKER.md](archive/snapshots/BUN_UPSTREAM_TRACKER.md)
+> **Sync & Drift Engine**: [`scripts/tools/vendor/bun_upstream_sync.ts`](../../../scripts/tools/vendor/bun_upstream_sync.ts)
+> **PR & Issue Tracker Engine**: [`scripts/tools/vendor/bun_upstream_tracker.ts`](../../../scripts/tools/vendor/bun_upstream_tracker.ts)
+> **Tracker Live Dashboard**: [BUN_UPSTREAM_TRACKER.md](../../archive/snapshots/BUN_UPSTREAM_TRACKER.md)
 
 ---
 
@@ -46,7 +46,7 @@ Since 2026-10-05 the fork has a single Aphrody working branch, **`main`** (also 
 ---
 
 The consolidation architecture follows the verified native source topology;
-see [Architecture de consolidation fondée sur Bun upstream](architecture/bun-upstream.md).
+see [Architecture de consolidation fondée sur Bun upstream](../bun-upstream.md).
 
 ## 3. Automation Toolchain & CLI Commands
 

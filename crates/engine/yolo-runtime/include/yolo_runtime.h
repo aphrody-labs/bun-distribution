@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0
  *
  * YOLO native runtime — versioned C ABI (major 1).
- * Contract and ownership rules: docs/RUNTIME-ABI.md
+ * Contract and ownership rules: docs/architecture/runtime-native/RUNTIME-ABI.md
  */
 #ifndef YOLO_RUNTIME_H
 #define YOLO_RUNTIME_H

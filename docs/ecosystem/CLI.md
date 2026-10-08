@@ -6,13 +6,13 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 35 binaries with a clap surface, 1060 commands.
+Totals: 35 binaries with a clap surface, 1064 commands.
 
 ## aphrody
 
 ### `aphrody`
 
-Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 238 commands.
+Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 240 commands.
 
 - `aphrody pure` — Pure commands (rag, toolcall, html, text): no network, no processes; also built for wasm32.
   - `aphrody pure rag` — RAG core: chunking, rank fusion, MMR, source weighting, retrieval eval.
@@ -103,6 +103,8 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 238 comma
 - `aphrody shell` — Canonical Shell: Nushell PTY session, Ratatui TUI, embedded terminal. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody shell status` — Inspect Aphrody Shell capabilities (Nushell, PTY, TUI)
   - `aphrody shell start` — Start interactive Nushell / Ratatui terminal session
+  - `aphrody shell eval` — Evaluate a Nushell command or pipeline
+  - `aphrody shell serve` — Start the Aphrody Terminal Backend WebSocket server
 - `aphrody train` — Machine learning training and fine-tuning engine. _(cfg: all(not(target_arch = "wasm32"), feature = "train"))_
   - `aphrody train status` — Show training status, GPU lock availability, and active jobs.
   - `aphrody train lease` — Test acquiring the exclusive GPU training lease (preempts llama-server).
@@ -291,7 +293,7 @@ Crate `aphrody-kernel`, parser `crates/os/kernel/core/src/cli.rs#Cli`, 6 command
 
 ### `aphrody infra`
 
-Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 315 commands.
+Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 317 commands.
 
 - `aphrody infra status` — Show target, repository and runtime state without mutation.
 - `aphrody infra inventory` — Run the existing deep resource inventory through the canonical Bun adapter.
@@ -397,6 +399,8 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 315 commands.
   - `aphrody infra ssh shell` — Canonical Shell: Nushell PTY session, Ratatui TUI, embedded terminal. _(cfg: not(target_arch = "wasm32"))_
     - `aphrody infra ssh shell status` — Inspect Aphrody Shell capabilities (Nushell, PTY, TUI)
     - `aphrody infra ssh shell start` — Start interactive Nushell / Ratatui terminal session
+    - `aphrody infra ssh shell eval` — Evaluate a Nushell command or pipeline
+    - `aphrody infra ssh shell serve` — Start the Aphrody Terminal Backend WebSocket server
   - `aphrody infra ssh train` — Machine learning training and fine-tuning engine. _(cfg: all(not(target_arch = "wasm32"), feature = "train"))_
     - `aphrody infra ssh train status` — Show training status, GPU lock availability, and active jobs.
     - `aphrody infra ssh train lease` — Test acquiring the exclusive GPU training lease (preempts llama-server).

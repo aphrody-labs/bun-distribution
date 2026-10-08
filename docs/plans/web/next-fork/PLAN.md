@@ -4,7 +4,7 @@
 Relevé source : 2026-10-03. Yolo possède le fork/import et les moteurs ;
 Aphrody possède les applications Next concernées.
 Architecture et workflow : [PLAN racine](../../../../PLAN.md).
-Import/fork : [Yolo VENDORING](../../../VENDORING.md).
+Import/fork : [Yolo VENDORING](../../../guides/workspace/VENDORING.md).
 
 ## État vérifié
 

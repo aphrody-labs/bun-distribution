@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 279 crates, 37 binaries, 160 Bun packages, 10 uv packages, 1060 CLI commands, 389 MCP tools.
+Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 279 crates, 37 binaries, 160 Bun packages, 10 uv packages, 1064 CLI commands, 389 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -48,7 +48,7 @@ Canonical Rust/Bun monorepo
 | `aphrody-code-graph` | crates/ai/code-graph | aphrody-code-graph: native code graph (nodes, EXTRACTED/INFERRED edges with confidence, communities, god nodes, query/path/explain, report, graph.json) stored in the home database. Port of the Graphify concepts (Apache-2.0, see NOTICE). | `aphrody-graph` |  |
 | `aphrody-command` | crates/infra/aphrody-command | Reusable in-process Aphrody command parser and dispatch for CLI and FFI hosts. |  | default, forensics, index, infer, jobs, magika, mcp-toolbox, memory-lancedb, native, ocr, rag, train, yara |
 | `aphrody-command-pure` | crates/infra/aphrody-command-pure | Pure aphrody sub-commands (rag, toolcall, html, text): clap parsing and execution with no network, process, tokio, git or ssh. Shared by the native aphrody-command and the wasm32 targets. |  |  |
-| `aphrody-command-wasm` | crates/infra/aphrody-command-wasm | wasm-bindgen adapter running the pure aphrody sub-commands (aphrody-command-pure) in the browser; no logic of its own. |  |  |
+| `aphrody-command-wasm` | crates/infra/aphrody-command-wasm | wasm-bindgen adapter running the pure aphrody sub-commands (aphrody-command-pure) in the browser; no logic of its own. |  | console_error_panic_hook, default |
 | `aphrody-config` | crates/ai/config | Codex-compatible config.toml model for aphrody: ConfigToml, model providers (managed llama-server, Ollama, LM Studio, vLLM, Antigravity, OpenAI, Anthropic, ChatGPT), layered merge (built-ins < Codex-compat < user < project < profile < -c overrides < CLI flags), dotted -c override parsing, and the No-Human-In-The-Loop policy defaults. Pure, no filesystem access in the core, wasm32-safe. |  |  |
 | `aphrody-context` | crates/ai/context | LLM context-window manager — in-process token estimation (heuristic, BPE-shaped lexical, exact tokenizer.json), sliding-window trim with pinned-message preservation, summarization triggers, and JSON snapshot/restore. |  | default, tokenizers |
 | `aphrody-create-tauri-app` | crates/tauri/aphrody-create-tauri-app | Rapidly scaffold out a new tauri app project. |  |  |
