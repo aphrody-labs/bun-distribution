@@ -6,6 +6,7 @@
 use crate::grid::TerminalGrid;
 use crate::pty::PtyController;
 use serde::{Deserialize, Serialize};
+use std::sync::Mutex;
 
 /// High-level action for AI Computer-Use agents.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -31,12 +32,12 @@ pub struct SemanticBlock {
 
 /// AI Computer-Use controller providing synchronous, zero-latency interactions with the terminal.
 pub struct ComputerUseController {
-    pty: Option<PtyController>,
+    pty: Option<Mutex<PtyController>>,
 }
 
 impl ComputerUseController {
     pub fn new(pty: Option<PtyController>) -> Self {
-        Self { pty }
+        Self { pty: pty.map(Mutex::new) }
     }
 
     /// Captures the full screen buffer as plain text in under 0.1ms (> 10 GB/s throughput).
@@ -51,9 +52,10 @@ impl ComputerUseController {
 
     /// Dispatches a programmatic Computer-Use action directly into the PTY.
     pub fn dispatch_action(&self, action: ComputerAction) -> std::io::Result<()> {
-        let Some(ref pty) = self.pty else {
+        let Some(ref pty_lock) = self.pty else {
             return Ok(());
         };
+        let pty = pty_lock.lock().unwrap();
 
         match action {
             ComputerAction::TypeText(text) => {

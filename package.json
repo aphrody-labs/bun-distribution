@@ -5,12 +5,10 @@
     "packages": [
       "packages/ai/*",
       "packages/google/*",
-      "packages/bun/*",
       "packages/discord/*",
       "packages/shell/*",
       "packages/infra/*",
       "packages/web/*",
-      "packages/compat/*",
       "packages/os/*",
       "packages/engine/*",
       "m3/packages/*",

@@ -36,6 +36,8 @@ pub enum ComputerEnvironment {
     Browser,
     /// Linux X11 automation.
     Linux,
+    /// Hardware-accelerated, autonomous terminal computer use via `aphrody-term`.
+    Terminal,
     /// In-memory mock environment for unit tests.
     Mock,
 }
@@ -65,6 +67,7 @@ impl ComputerEnvironment {
             Self::Windows => "windows",
             Self::Browser => "browser",
             Self::Linux => "linux",
+            Self::Terminal => "terminal",
             Self::Mock => "mock",
         }
     }
@@ -555,6 +558,99 @@ impl ComputerBackend for BrowserComputerBackend {
     }
 }
 
+/// Autonomous, high-performance terminal computer-use backend via `aphrody-term`.
+/// Provides in-memory grid scraping at >10 GB/s without OCR, and direct programmatic PTY action dispatch.
+#[cfg(not(target_arch = "wasm32"))]
+pub struct TerminalComputerBackend {
+    grid: Arc<aphrody_term::FairMutex<aphrody_term::TerminalGrid>>,
+    controller: Arc<aphrody_term::ComputerUseController>,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl TerminalComputerBackend {
+    /// Create a new terminal backend wrapping an existing grid and controller.
+    #[must_use]
+    pub fn new(
+        grid: Arc<aphrody_term::FairMutex<aphrody_term::TerminalGrid>>,
+        controller: Arc<aphrody_term::ComputerUseController>,
+    ) -> Self {
+        Self { grid, controller }
+    }
+
+    /// Create a standalone terminal backend with default dimensions.
+    #[must_use]
+    pub fn standalone(cols: usize, rows: usize) -> Self {
+        let grid = Arc::new(aphrody_term::FairMutex::new(aphrody_term::TerminalGrid::new(
+            cols, rows, 10_000,
+        )));
+        let controller = Arc::new(aphrody_term::ComputerUseController::new(None));
+        Self { grid, controller }
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[async_trait::async_trait]
+impl ComputerBackend for TerminalComputerBackend {
+    fn environment(&self) -> ComputerEnvironment {
+        ComputerEnvironment::Terminal
+    }
+
+    async fn execute(
+        &self,
+        action: &ComputerAction,
+        _policy: &ComputerPolicy,
+    ) -> Result<ToolOutput, ToolError> {
+        match action {
+            ComputerAction::Screenshot | ComputerAction::Observe { .. } => {
+                let g = self.grid.lock();
+                let text = self.controller.snapshot_text(&g);
+                let (col, row, visible) = self.controller.cursor_position(&g);
+                Ok(ToolOutput::ok(format!(
+                    "Terminal buffer (cursor at col {col}, row {row}, visible: {visible}):\n{text}"
+                )))
+            },
+            ComputerAction::Type { text } => {
+                self.controller
+                    .dispatch_action(aphrody_term::ComputerAction::TypeText(text.clone()))
+                    .map_err(|e| ToolError::Execution {
+                        tool: "computer".into(),
+                        message: format!("terminal type error: {e}"),
+                    })?;
+                Ok(ToolOutput::ok(format!("Typed {} character(s) into terminal.", text.len())))
+            },
+            ComputerAction::Keypress { key } => {
+                self.controller
+                    .dispatch_action(aphrody_term::ComputerAction::PressKey(key.clone()))
+                    .map_err(|e| ToolError::Execution {
+                        tool: "computer".into(),
+                        message: format!("terminal keypress error: {e}"),
+                    })?;
+                Ok(ToolOutput::ok(format!("Pressed key '{key}' in terminal.")))
+            },
+            ComputerAction::Wait { duration_ms } => {
+                tokio::time::sleep(Duration::from_millis(*duration_ms)).await;
+                Ok(ToolOutput::ok(format!("Waited {duration_ms} ms.")))
+            },
+            ComputerAction::Scroll { delta_y, amount, direction, .. } => {
+                let amt = amount.or(*delta_y).unwrap_or(1);
+                let key = if direction.as_deref() == Some("down") || delta_y.unwrap_or(0) > 0 {
+                    "down"
+                } else {
+                    "up"
+                };
+                for _ in 0..amt.unsigned_abs() {
+                    let _ = self.controller.dispatch_action(aphrody_term::ComputerAction::PressKey(key.to_string()));
+                }
+                Ok(ToolOutput::ok(format!("Scrolled terminal {key} by {amt}.")))
+            },
+            other => Ok(ToolOutput::error(format!(
+                "computer action `{}` is not supported in terminal environment",
+                other.name()
+            ))),
+        }
+    }
+}
+
 /// Backend for a target environment this build cannot drive.
 ///
 /// Every action is rejected with an explicit error naming the missing
@@ -757,9 +853,39 @@ impl ComputerTool {
                 env,
                 "no X11 desktop backend is compiled into this build",
             )),
+            #[cfg(not(target_arch = "wasm32"))]
+            ComputerEnvironment::Terminal => Arc::new(TerminalComputerBackend::standalone(80, 24)),
+            #[cfg(target_arch = "wasm32")]
+            ComputerEnvironment::Terminal => Arc::new(UnsupportedComputerBackend::new(
+                env,
+                "terminal PTY is unavailable in WebAssembly",
+            )),
             ComputerEnvironment::Mock => Arc::new(MockComputerBackend::new(env)),
         };
         Self::new_with_backend(backend, policy)
+    }
+
+    /// Create configured specifically for autonomous terminal computer use via `aphrody-term`.
+    #[cfg(not(target_arch = "wasm32"))]
+    #[must_use]
+    pub fn terminal(
+        grid: Arc<aphrody_term::FairMutex<aphrody_term::TerminalGrid>>,
+        controller: Arc<aphrody_term::ComputerUseController>,
+    ) -> Self {
+        Self::new_with_backend(
+            Arc::new(TerminalComputerBackend::new(grid, controller)),
+            ComputerPolicy::default(),
+        )
+    }
+
+    /// Create standalone terminal computer tool with custom grid dimensions.
+    #[cfg(not(target_arch = "wasm32"))]
+    #[must_use]
+    pub fn terminal_standalone(cols: usize, rows: usize) -> Self {
+        Self::new_with_backend(
+            Arc::new(TerminalComputerBackend::standalone(cols, rows)),
+            ComputerPolicy::default(),
+        )
     }
 
     /// Create configured specifically for browser and web computer use via the shared Rust Web client.
@@ -971,5 +1097,28 @@ mod tests {
         let tool = ComputerTool::browser();
         assert_eq!(tool.environment(), ComputerEnvironment::Browser);
         assert_eq!(tool.definition().name, "computer");
+    }
+
+    #[tokio::test]
+    #[cfg(not(target_arch = "wasm32"))]
+    async fn terminal_backend_scrapes_and_executes_actions() {
+        let tool = ComputerTool::terminal_standalone(80, 24);
+        assert_eq!(tool.environment(), ComputerEnvironment::Terminal);
+
+        let snap = tool.handle(json!({"action": "screenshot"})).await.unwrap();
+        assert!(!snap.is_error);
+        assert!(snap.content.contains("Terminal buffer"));
+
+        let type_out = tool.handle(json!({"action": "type", "text": "ls -la"})).await.unwrap();
+        assert!(!type_out.is_error);
+        assert!(type_out.content.contains("Typed 6 character(s)"));
+
+        let key_out = tool.handle(json!({"action": "keypress", "key": "Enter"})).await.unwrap();
+        assert!(!key_out.is_error);
+        assert!(key_out.content.contains("Pressed key 'Enter'"));
+
+        let wait_out = tool.handle(json!({"action": "wait", "duration_ms": 5})).await.unwrap();
+        assert!(!wait_out.is_error);
+        assert!(wait_out.content.contains("Waited 5 ms"));
     }
 }

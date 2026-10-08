@@ -588,6 +588,7 @@ dependencies = [
  "aphrody-guard",
  "aphrody-jev",
  "aphrody-patch",
+ "aphrody-term",
  "aphrody-toolcall",
  "aphrody-web-service",
  "aphrody-winclean",
@@ -3522,6 +3523,7 @@ dependencies = [
 name = "aphrody-terminal-core"
 version = "1.0.0-canary"
 dependencies = [
+ "aphrody-term",
  "rio-vt",
 ]
 

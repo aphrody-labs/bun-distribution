@@ -63,11 +63,13 @@ export async function runWorkspaceLayout(args: string[]): Promise<number> {
     const gitMetadata = join(absolutePath, ".git");
 
     if (
-      !/^(apps|examples|packages|drive\/(?:apps|packages))\//.test(workspacePath) ||
+      !/^(apps|examples|packages|drive\/(?:apps|packages)|m3\/packages|crates\/tauri)\//.test(
+        workspacePath,
+      ) ||
       relative(root, absolutePath).startsWith("..")
     ) {
       errors.push(
-        `workspace must live below apps/, examples/, packages/, drive/apps/, or drive/packages/: ${workspacePath}`,
+        `workspace must live below packages/, m3/packages/, crates/tauri/, or drive/: ${workspacePath}`,
       );
     }
     if (!existsSync(packageManifest)) {

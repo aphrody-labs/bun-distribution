@@ -51,6 +51,12 @@ impl WebTerminal {
         self.state.snapshot().lines
     }
 
+    /// Fast in-memory screen text scraping for AI perception and automated tests.
+    #[must_use]
+    pub fn scrape_text(&self) -> String {
+        self.state.snapshot().lines.join("\n")
+    }
+
     /// `{columns, rows, lines, cursor:{row,col,visible}}` for a renderer.
     #[must_use]
     pub fn snapshot_json(&self) -> String {
@@ -107,6 +113,12 @@ impl WebShell {
     #[must_use]
     pub fn snapshot_json(&self) -> String {
         self.terminal.snapshot_json()
+    }
+
+    /// Fast in-memory screen text scraping.
+    #[must_use]
+    pub fn scrape_text(&self) -> String {
+        self.terminal.scrape_text()
     }
 }
 
