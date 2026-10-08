@@ -17,8 +17,26 @@ const result: Outcome = {
 };
 function open(path = ":memory:") {
   const q = new Queue(path);
-  q.ingest({ id: "1", channel_id: "c", author: { id: "omar" }, content: "Demande" }, policy);
-  q.ingest({ id: "2", channel_id: "c", author: { id: "omar" }, content: "Suite" }, policy);
+  q.ingest(
+    {
+      id: "1",
+      channel_id: "c",
+      author: { id: "omar" },
+      content: "Demande",
+      mentions: [{ id: "bot" }],
+    },
+    policy,
+  );
+  q.ingest(
+    {
+      id: "2",
+      channel_id: "c",
+      author: { id: "omar" },
+      content: "Suite",
+      mentions: [{ id: "bot" }],
+    },
+    policy,
+  );
   return q;
 }
 

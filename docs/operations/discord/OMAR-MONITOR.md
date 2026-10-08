@@ -1,11 +1,14 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Moniteur Codex et objectifs d’Omar
 
-Le salon demandé est [start-here](https://discord.com/channels/1554189180030947338/1557354118710829117)
-de la guilde Aphrody. La déclaration
+Le salon de réponse est [start-here](https://discord.com/channels/1554189180030947338/1557354118710829117)
+de la guilde Aphrody. Le Gateway et la réconciliation couvrent tous les salons
+de la guilde où l'API autorise la lecture de l'historique textuel, ainsi que
+les fils actifs. Seuls les messages contenant une mention Discord structurée
+et écrits par Omar ou le propriétaire créent un objectif. La déclaration
 [`discord-omar-monitor.json`](../../../tools/config/host/discord-omar-monitor.json)
 reprend les deux identifiants d’Omar du contrôle d’accès existant. Les bots,
-webhooks, autres auteurs, autres salons et autres guildes ne créent aucun travail.
+webhooks, autres auteurs et autres guildes ne créent aucun travail.
 Le contenu du salon reste dans le store privé du VPS.
 
 ## Fonctionnement

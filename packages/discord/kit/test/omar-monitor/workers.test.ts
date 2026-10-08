@@ -93,7 +93,13 @@ test("thread and host are persisted atomically across queue restart", async () =
   let queue = new Queue(join(dir, "queue.sqlite"));
   try {
     queue.ingest(
-      { id: "123", channel_id: "channel", author: { id: "owner" }, content: "WSL" },
+      {
+        id: "123",
+        channel_id: "channel",
+        author: { id: "owner" },
+        content: "WSL",
+        mentions: [{ id: "bot" }],
+      },
       policy,
     );
     queue.update("123", { worker_thread: "remote", worker_host: "owner-wsl", state: "executing" });

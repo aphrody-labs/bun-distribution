@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { Queue, type Policy, type SourceMessage, isOmar } from "../../src/omar-monitor/store.ts";
 import {
   reconcile,
+  listMonitorChannels,
   safeOutput,
   parseResult,
   checkOmarMonitorUpgrade,
@@ -33,6 +34,7 @@ const message = (id = "10", fields: Partial<SourceMessage> = {}): SourceMessage 
   channel_id: "c",
   author: { id: "omar" },
   content: "Vérifie les deux VPS",
+  mentions: [{ id: "aphrody-bot" }],
   ...fields,
 });
 test("only authenticated Omar or owner messages in the declared guild/channel create work", () => {
@@ -303,7 +305,11 @@ test("multi-channel configuration admits and routes messages across multiple dec
       channel_id: "c2",
     });
 
-    const job102 = q.db.query<{ id: string; channel_id: string }, [string]>("SELECT id, channel_id FROM jobs WHERE id=?").get("102");
+    const job102 = q.db
+      .query<{ id: string; channel_id: string }, [string]>(
+        "SELECT id, channel_id FROM jobs WHERE id=?",
+      )
+      .get("102");
     expect(job102?.channel_id).toBe("c2");
   } finally {
     q.close();
@@ -311,3 +317,66 @@ test("multi-channel configuration admits and routes messages across multiple dec
   }
 });
 
+test("all-guild mode queues only real pings from trusted authors and the exact guild", () => {
+  const allGuildPolicy: Policy = { ...policy, allGuildChannels: true, ownerId: "yoyo" };
+  expect(isOmar(message("1", { channel_id: "any-channel", guild_id: "g" }), allGuildPolicy)).toBe(
+    true,
+  );
+  for (const fields of [
+    { mentions: [] },
+    { mention_roles: ["role"], author: { id: "other" } },
+    { mention_everyone: true, guild_id: "foreign" },
+    { channel_id: "any-channel", guild_id: undefined },
+  ])
+    expect(
+      isOmar(message("2", { channel_id: "any-channel", guild_id: "g", ...fields }), allGuildPolicy),
+    ).toBe(false);
+  const q = new Queue(":memory:");
+  try {
+    q.ingest(message("3", { channel_id: "random", guild_id: "g" }), allGuildPolicy);
+    q.ingest(message("4", { channel_id: "random", guild_id: "g", mentions: [] }), allGuildPolicy);
+    expect(q.counts()).toEqual([{ state: "pending", count: 1 }]);
+  } finally {
+    q.close();
+  }
+});
+
+test("all-guild discovery covers message channels and active threads, not foreign channels", async () => {
+  const allGuildPolicy: Policy = { ...policy, allGuildChannels: true };
+  const calls: string[] = [];
+  const api: LabApi = async <T>(path: string) => {
+    calls.push(path);
+    if (path.endsWith("/channels"))
+      return [
+        { id: "c", guild_id: "g", type: 0 },
+        { id: "voice", guild_id: "g", type: 2 },
+        { id: "category", guild_id: "g", type: 4 },
+        { id: "foreign", guild_id: "other", type: 0 },
+      ] as T;
+    return { threads: [{ id: "thread", guild_id: "g", type: 11 }] } as T;
+  };
+  const channels = await listMonitorChannels(allGuildPolicy, api);
+  expect(calls).toEqual(["/guilds/g/channels", "/guilds/g/threads/active"]);
+  expect(channels.map((channel) => channel.id).sort()).toEqual(["c", "thread", "voice"]);
+});
+
+test("a newly discovered all-guild channel starts at the persisted activation horizon", async () => {
+  const q = new Queue(":memory:");
+  const ids: string[] = [];
+  const api: LabApi = async <T>(path: string) => {
+    ids.push(path);
+    return [] as T;
+  };
+  try {
+    await reconcile(q, { ...policy, allGuildChannels: true }, api, [
+      { id: "c", guild_id: "g", type: 0 },
+      { id: "new-thread", guild_id: "g", type: 11 },
+    ]);
+    expect(q.get("all_guild_channels_since")).toBeTruthy();
+    expect(q.get("after_new-thread")).toBe(q.get("all_guild_channels_since"));
+    expect(ids).toHaveLength(2);
+    expect(q.get("history_complete_new-thread")).toBe("true");
+  } finally {
+    q.close();
+  }
+});

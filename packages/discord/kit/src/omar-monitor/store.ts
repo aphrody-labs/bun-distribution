@@ -8,11 +8,15 @@ export interface SourceMessage {
   author: { id: string; bot?: boolean };
   webhook_id?: string | null;
   content: string;
+  mentions?: { id: string }[];
+  mention_roles?: string[];
+  mention_everyone?: boolean;
 }
 export interface Policy {
   guildId: string;
   channelId: string;
   channelIds?: string[];
+  allGuildChannels?: boolean;
   omarUserIds: string[];
   ownerId: string;
   envFile: string;
@@ -52,19 +56,30 @@ export interface Job {
   goals: string | null;
   evidence: string | null;
 }
+export function hasPing(message: SourceMessage): boolean {
+  return Boolean(
+    message.mention_everyone ||
+    (Array.isArray(message.mentions) && message.mentions.length > 0) ||
+    (Array.isArray(message.mention_roles) && message.mention_roles.length > 0),
+  );
+}
 export function isAuthorizedUser(message: SourceMessage, policy: Policy): boolean {
   const isOwner = !!policy.ownerId && message.author.id === policy.ownerId;
   const isOmarUser =
     Array.isArray(policy.omarUserIds) && policy.omarUserIds.includes(message.author.id);
   const allowedChannels =
     policy.channelIds && policy.channelIds.length > 0 ? policy.channelIds : [policy.channelId];
+  const allowedChannel = policy.allGuildChannels
+    ? message.guild_id === policy.guildId
+    : allowedChannels.includes(message.channel_id) &&
+      (!message.guild_id || message.guild_id === policy.guildId);
   return (
-    allowedChannels.includes(message.channel_id) &&
-    (!message.guild_id || message.guild_id === policy.guildId) &&
+    allowedChannel &&
     !message.author.bot &&
     !message.webhook_id &&
     (isOwner || isOmarUser) &&
-    !!message.content.trim()
+    !!message.content.trim() &&
+    hasPing(message)
   );
 }
 export const isOmar = isAuthorizedUser;
@@ -94,20 +109,14 @@ export class Queue {
       this.db.exec("ALTER TABLE outbox ADD COLUMN channel_id TEXT NOT NULL DEFAULT ''");
   }
   ingest(message: SourceMessage, policy: Policy, via: "rest" | "gateway" = "rest") {
-    const allowedChannels =
-      policy.channelIds && policy.channelIds.length > 0 ? policy.channelIds : [policy.channelId];
-    if (
-      !allowedChannels.includes(message.channel_id) ||
-      (message.guild_id && message.guild_id !== policy.guildId)
-    )
-      return;
+    if (!isAuthorizedUser(message, policy)) return;
     this.db.transaction(() => {
       const added = this.db
         .query(
           "INSERT OR IGNORE INTO messages(id,author,text,received,via,channel_id) VALUES(?,?,?,?,?,?)",
         )
         .run(message.id, message.author.id, message.content, Date.now(), via, message.channel_id);
-      if (added.changes && isOmar(message, policy))
+      if (added.changes)
         this.db
           .query("INSERT INTO jobs(id,text,channel_id) VALUES(?,?,?)")
           .run(message.id, message.content, message.channel_id);

@@ -12,6 +12,9 @@ export async function connectGateway(
     content: string;
     author: { id: string; bot: boolean };
     webhookId: string | null;
+    mentions: { id: string }[];
+    mentionRoles: string[];
+    mentionEveryone: boolean;
   }) => void,
   onReady: () => void,
   onDisconnect: () => void,
@@ -30,7 +33,19 @@ export async function connectGateway(
     makeCache: Options.cacheWithLimits({ MessageManager: 0, GuildMemberManager: 0 }),
     allowedMentions: { parse: [] },
   });
-  client.on("messageCreate", onMessage);
+  client.on("messageCreate", (message) =>
+    onMessage({
+      id: message.id,
+      guildId: message.guildId,
+      channelId: message.channelId,
+      content: message.content,
+      author: { id: message.author.id, bot: message.author.bot },
+      webhookId: message.webhookId,
+      mentions: [...message.mentions.users.keys()].map((id) => ({ id })),
+      mentionRoles: [...message.mentions.roles.keys()],
+      mentionEveryone: message.mentions.everyone,
+    }),
+  );
   client.on("clientReady", onReady);
   client.on("shardResume", onReady);
   client.on("shardDisconnect", onDisconnect);
