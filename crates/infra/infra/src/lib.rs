@@ -17,6 +17,7 @@ pub mod pipeline;
 pub mod probe;
 pub mod reclaim;
 pub mod secrets;
+pub mod tunnel;
 pub mod validate;
 
 pub use cli::cli_main;

@@ -230,7 +230,8 @@ mod tests {
     /// A catalog holding one site nginx serves from disk, which has no unit: none of these calls may reach a host.
     fn unit_less_root() -> tempfile::TempDir {
         let root = tempfile::tempdir().expect("fixture directory");
-        std::fs::create_dir_all(root.path().join("tools").join("config")).expect("fixture config directory");
+        std::fs::create_dir_all(root.path().join("tools").join("config"))
+            .expect("fixture config directory");
         std::fs::write(
             root.path().join("tools/config/service-catalog.json"),
             r#"{ "schemaVersion": 1, "owner": "infra", "supervisor": "systemd", "proxy": "nginx",

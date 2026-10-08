@@ -190,6 +190,18 @@ enum CommandKind {
         #[arg(long)]
         json: bool,
     },
+    /// Native WireGuard (wg, wg-quick, WireGuardNT) for the private tunnel.
+    Wg {
+        #[arg(long, global = true)]
+        json: bool,
+        #[command(subcommand)]
+        command: crate::tunnel::WgCommand,
+    },
+    /// Full remote desktop (screen stream, mouse, keyboard) over the private tunnel.
+    Remote {
+        #[command(subcommand)]
+        command: crate::tunnel::RemoteCommand,
+    },
     /// Native Mullvad VPN controller and auto-proxy geo-unblock driver.
     Vpn {
         #[command(subcommand)]
@@ -2203,6 +2215,12 @@ async fn run_cli(cli: Cli) -> Result<()> {
             execute_ci(repo, source_ref, *apply, *json, &mut run)
         },
         CommandKind::Vpn { command } => execute_vpn(command, &mut run).await,
+        CommandKind::Wg { json, command } => {
+            crate::tunnel::execute(&root, command, *json).await.map(|v| run.action("wg", "done", v))
+        },
+        CommandKind::Remote { command } => crate::tunnel::execute_remote(&root, command)
+            .await
+            .map(|v| run.action("remote", "done", v)),
         CommandKind::Workflow { stage, json } => run_pipeline_stage(&root, stage, *json, &mut run),
         CommandKind::Yolo { args } => execute_yolo(&root, args, &mut run),
         CommandKind::Drive { command } => execute_drive(command, &mut run).await,

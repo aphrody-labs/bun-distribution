@@ -128,8 +128,9 @@ printf 'apt\t%s missing of {count}\n' "$missing"
 
 /// Optional developer tools share the canonical catalog and installer.
 pub fn developer_script(root: &Path, apply: bool) -> Result<String> {
-    let catalog: Value =
-        serde_json::from_str(&fs::read_to_string(root.join("tools/config/developer-cli-tools.json"))?)?;
+    let catalog: Value = serde_json::from_str(&fs::read_to_string(
+        root.join("tools/config/developer-cli-tools.json"),
+    )?)?;
     let mut out = String::from("set -eu\n");
     out.push_str(&format!("{PATH_BLOCK}\n"));
     for family in ["tools", "nu_plugins"] {

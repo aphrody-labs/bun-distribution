@@ -143,6 +143,8 @@ aphrody-translate-core = { path = "crates/ai/translate-core", version = "1.0.0",
 aphrody-vision = { path = "crates/ai/vision", version = "1.0.0", features = [] }
 aphrody-voice = { path = "crates/ai/voice", version = "1.0.0", features = [] }
 aphrody-vpn = { path = "crates/infra/vpn", version = "0.1.0", features = [] }
+aphrody-remote-desktop = { path = "crates/infra/remote-desktop", version = "0.1.0", features = [] }
+aphrody-wireguard = { path = "crates/infra/wireguard", version = "0.1.0", features = [] }
 aphrody-web-crawl = { path = "crates/web/web-crawl", version = "1.0.0", features = [] }
 aphrody-web-detect = { path = "crates/web/web-detect", version = "1.0.0", features = [] }
 yolo-runtime = { path = "crates/engine/yolo-runtime", version = "1.0.0" }
@@ -283,6 +285,12 @@ windows = { version = "0.62.2", features = ["Foundation", "Globalization", "Grap
 auto_impl          = { version = "1" }
 rcgen              = { version = "0.14", default-features = false, features = ["crypto", "pem", "ring"] }
 getrandom          = { version = "0.4" }
+ipnet              = { version = "2.12" }
+x25519-dalek       = { version = "2.0.1", features = ["static_secrets"] }
+defguard_wireguard_rs = { version = "0.12.2", default-features = false }
+wireguard-nt       = { version = "0.5" }
+x11rb              = { version = "0.13", default-features = false }
+jpeg-encoder       = { version = "0.7", default-features = false }
 http               = { version = "1" }
 axum-server        = { version = "0.8", default-features = false, features = ["tls-rustls-no-provider"] }
 tower-http         = { version = "0.7", features = ["cors"] }

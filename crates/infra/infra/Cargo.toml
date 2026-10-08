@@ -17,6 +17,8 @@ aphrody-git = { workspace = true }
 aphrody-ssh = { workspace = true }
 aphrody-ovh = { path = "../ovh", version = "0.1.0" }
 aphrody-vpn = { workspace = true }
+aphrody-remote-desktop = { workspace = true }
+aphrody-wireguard = { workspace = true }
 aphrody-yolo = { path = "../yolo", version = "0.1.0" }
 base64.workspace = true
 chrono.workspace = true
