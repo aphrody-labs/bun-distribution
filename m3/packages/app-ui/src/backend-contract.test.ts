@@ -1,10 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
-import { afterEach, expect, test } from "bun:test";
-import { aphrodyReply, aphrodyRpc, ensureAphrodyInitialized, getRagStats } from "./tauri-bridge";
+import { afterEach, beforeEach, expect, test } from "bun:test";
+import {
+  aphrodyReply,
+  aphrodyRpc,
+  ensureAphrodyInitialized,
+  getRagStats,
+  resetAphrodyInitializationForTesting,
+} from "./tauri-bridge";
 import { parseAgentInventory } from "./backend-inventory";
 
 const originalFetch = globalThis.fetch;
+beforeEach(() => {
+  resetAphrodyInitializationForTesting();
+});
 afterEach(() => {
+  resetAphrodyInitializationForTesting();
   globalThis.fetch = originalFetch;
 });
 

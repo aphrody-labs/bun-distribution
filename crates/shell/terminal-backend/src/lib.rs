@@ -385,7 +385,6 @@ pub fn default_shell() -> String {
 /// Resolved in-process with the [`which`] crate: no `where.exe` child process, and — unlike
 /// `where` — the current directory is only searched when `PATH` itself lists it, so a stray
 /// `pwsh.exe` in the working directory does not count as an installed shell.
-#[cfg(target_os = "windows")]
 fn which_shell(name: &str) -> bool {
     which::which(name).is_ok()
 }

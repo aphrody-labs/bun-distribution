@@ -56,7 +56,7 @@
     {
       "path": "README.md",
       "title": "Aphrody",
-      "sha256": "0e3e9e2d8f1b4d8fed94bbb60c80d1a19e3c6e7a559a24f046d4a630974f6df4",
+      "sha256": "72e61e0ca4671c1b708a1eb651e0dfcab937fc9c5d5156d7fb3ec078954fce70",
       "bytes": 3412,
       "domain": "",
       "status": "generated",
@@ -2876,7 +2876,7 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "8f13deb7ce95a11858e8ccb8f5bbc56ae3621d88263e0c6185c62d5ab7a15d19",
+      "sha256": "cfe882b73e79e954383ee66cde387f7b41b5c73f49434dc8f43bb89d9f66335b",
       "bytes": 8579,
       "domain": "",
       "status": "generated",
@@ -2966,7 +2966,7 @@
     {
       "path": "docs/apis/generated/infra-rust.md",
       "title": "Source reference: infra-rust",
-      "sha256": "a5f0dc1e7713a1f98beb1095a6084ac5f3190d1dc275692c9eb149ee25b5cdd2",
+      "sha256": "4e033af143db65dde2f53c47283b36b0ba3c418481df09fcc1a5a21d25ac9313",
       "bytes": 2762,
       "domain": "generated",
       "status": "generated",
@@ -3846,8 +3846,8 @@
     {
       "path": "docs/ecosystem/CLI.md",
       "title": "CLI command trees",
-      "sha256": "4690797f77be2856f3af286379517f0d9147c337024be8cb914f692035490393",
-      "bytes": 106579,
+      "sha256": "fe87870520b43a70f22f018922dc40de8c4a1e1fa37178078da5662cd343cbfd",
+      "bytes": 76945,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -3856,8 +3856,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "402bef05173b62851a035d47bb08759198219f7659bfa9b419c5120299fdf68a",
-      "bytes": 80903,
+      "sha256": "02f8ccbc44bd026a83f13c93011247d10cc3fa7ea3fe3bea20378a7de3a625be",
+      "bytes": 62767,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -3866,8 +3866,8 @@
     {
       "path": "docs/ecosystem/MCP-TOOLS.md",
       "title": "MCP tools",
-      "sha256": "f18ce41480a47af1c18fd5525fed4e549f839ee9c3b88505d9c040d897508ffd",
-      "bytes": 64712,
+      "sha256": "c9269154582261d1212e7f2bd2f95f2dc2c6d78c10a8d5a08d89f3a2e6191ede",
+      "bytes": 62382,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -6224,6 +6224,16 @@
       "canonical": "docs/operations/ai/shenron-local-bridge.md"
     },
     {
+      "path": "docs/operations/aphrodyos-setup-prompt.md",
+      "title": "MISSION AUTONOME : SETUP COMPLET APHRODYOS, CONFIGURATION, CRATES, PACKAGES, APPS, DOCKER & INFRA",
+      "sha256": "f8eaea2b8e364e128e0e0cdef58e9d0e9dfe2159070b16b9514e36701230eb51",
+      "bytes": 7982,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/aphrodyos-setup-prompt.md"
+    },
+    {
       "path": "docs/operations/bun-packages.md",
       "title": "Packages Bun : installation et release",
       "sha256": "99ee2924a7534fa9c968d9fe4233c3ce9301c5491dffe1165e002aeac71a7c84",
@@ -6494,6 +6504,16 @@
       "canonical": "docs/operations/infra/OMAR-ADMIN.md"
     },
     {
+      "path": "docs/operations/infra/OMAR-REMOTE-CONTROL.md",
+      "title": "Contrôle du PC Windows d'Omar depuis Aphrody (tunnel WireGuard privé)",
+      "sha256": "6d9baaf9984a80e5b4713ea340a803202481c1b6d26e19310ea316e0de6320c6",
+      "bytes": 11265,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/OMAR-REMOTE-CONTROL.md"
+    },
+    {
       "path": "docs/operations/infra/OVH-VPS-INTEGRATION-TESTING.md",
       "title": "OVH VPS Integration Testing — Aphrody Infra (2026-10-05)",
       "sha256": "f3d31dfbc89ddeecf6bb2c9995bb2d1336a9b122464a7210b903fd25b8d6bd12",
@@ -6516,7 +6536,7 @@
     {
       "path": "docs/operations/infra/PRIVATE-TUNNEL.md",
       "title": "Private WireGuard tunnel and Omar administrator access",
-      "sha256": "b40ec51982dddaf566c72e79a1d9de67980f378b9536747e0ba5b83f47c2b232",
+      "sha256": "bf8cad25e95e4c106314e25c9db36cf6a008cd3792e8fb302817098ca39b60a7",
       "bytes": 13904,
       "domain": "infra",
       "status": "canonical",
@@ -31946,8 +31966,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "3c1b53bcaef6b371f87f0a7abca51652891db70d3811d7c688010b6df5fb293c",
-      "bytes": 49858,
+      "sha256": "fe39d1b1c3878f4147a52d318dba9d81c8043f74dcc08afe6051fe453d5efd5c",
+      "bytes": 50269,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",

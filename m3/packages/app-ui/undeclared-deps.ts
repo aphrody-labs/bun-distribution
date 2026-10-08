@@ -24,6 +24,21 @@ export const undeclaredDependencies: BunPlugin = {
       }
       return undefined;
     });
+    build.onResolve({ filter: /^tiny-invariant$/ }, () => ({
+      path: "tiny-invariant",
+      namespace: "tiny-invariant-virtual",
+    }));
+    build.onLoad({ filter: /.*/, namespace: "tiny-invariant-virtual" }, () => ({
+      contents: `
+const prefix = "Invariant failed";
+export default function invariant(condition, message) {
+  if (condition) return;
+  const provided = typeof message === "function" ? message() : message;
+  throw new Error(provided ? \`\${prefix}: \${provided}\` : prefix);
+}
+`,
+      loader: "js",
+    }));
   },
 };
 

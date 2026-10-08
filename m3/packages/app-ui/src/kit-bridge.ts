@@ -130,6 +130,11 @@ export function kitCatalog(kit: KitName, refresh = false): Promise<KitCatalog> {
   return pending;
 }
 
+/** @internal Reset the in-memory catalog cache between tests. */
+export function clearKitCatalogsForTesting(): void {
+  catalogs.clear();
+}
+
 export interface RunLine {
   /** Position in the run, a stable key for the log. */
   id: number;

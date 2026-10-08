@@ -621,6 +621,11 @@ export function ensureAphrodyInitialized(): Promise<void> {
   return initialization;
 }
 
+/** @internal Reset the shared initialization promise between tests. */
+export function resetAphrodyInitializationForTesting(): void {
+  initialization = undefined;
+}
+
 function rpcResult(body: unknown, notification: boolean): Record<string, unknown> {
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     throw new Error("Réponse du service invalide.");

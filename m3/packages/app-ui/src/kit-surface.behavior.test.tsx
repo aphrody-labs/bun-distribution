@@ -3,7 +3,7 @@ import { afterEach, expect, test } from "bun:test";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
-import type { KitCatalog, KitEvent } from "./kit-bridge";
+import { clearKitCatalogsForTesting, type KitCatalog, type KitEvent } from "./kit-bridge";
 import { KitSurface } from "./routes/kit/KitSurface";
 
 let root: Root | undefined;
@@ -13,6 +13,7 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 const originalInternals = Object.getOwnPropertyDescriptor(window, "__TAURI_INTERNALS__");
 
 afterEach(async () => {
+  clearKitCatalogsForTesting();
   await act(async () => root?.unmount());
   root = undefined;
   host.replaceChildren();

@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { KIT_PROTOCOL as KIT_SOURCE_PROTOCOL } from "../../../../packages/infra/product/src/shared/desktop";
 import {
+  clearKitCatalogsForTesting,
   idleRun,
   KIT_PROTOCOL,
   kitCatalog,
@@ -18,6 +19,7 @@ import { LINK_DESTINATIONS, parseLink } from "./open-requests";
 
 const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
 afterEach(() => {
+  clearKitCatalogsForTesting();
   if (originalWindow) Object.defineProperty(globalThis, "window", originalWindow);
   else Reflect.deleteProperty(globalThis, "window");
 });

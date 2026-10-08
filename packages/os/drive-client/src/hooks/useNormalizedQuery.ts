@@ -27,7 +27,12 @@ import { useQuery, useQueryClient, QueryClient } from "@tanstack/react-query";
 import { useSpacedriveClient } from "./useClient";
 import type { Event } from "../generated/types";
 import type { SdPath } from "../generated/types";
-import invariant from "tiny-invariant";
+function invariant(condition: unknown, message?: string | (() => string)): asserts condition {
+	if (condition) return;
+	const prefix = "Invariant failed";
+	const provided = typeof message === "function" ? message() : message;
+	throw new Error(provided ? `${prefix}: ${provided}` : prefix);
+}
 import * as v from "valibot";
 import type { Simplify } from "type-fest";
 
