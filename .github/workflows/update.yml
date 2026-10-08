@@ -20,7 +20,7 @@ jobs:
         run: |
           bun packages/engine/yolo/src/index.ts update tools --root .
           bun packages/engine/yolo/src/index.ts update deps facts --root .
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: update-facts
           path: docs/research/workspace/deps/
