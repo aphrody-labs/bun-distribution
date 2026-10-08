@@ -2886,8 +2886,8 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "1d8c469cebb58e7e387494ddb18ec2691b24ee606578e83d8280e813a278652f",
-      "bytes": 7914,
+      "sha256": "a3cac1ba3d435fdab850b36b89e509e05dddbdf9d1d19f3450e87f421b000390",
+      "bytes": 7854,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -2952,16 +2952,6 @@
       "status": "historical",
       "visibility": "private",
       "canonical": "docs/apis/compat/aphrody-bun-napi-optimization.md"
-    },
-    {
-      "path": "docs/apis/compat/n2b/node/n-api.md",
-      "title": "Node-API",
-      "sha256": "e7c35696d351aa5561dfe99cbfe92b3f04e05d8443b8adfb7d0e1bd55b380073",
-      "bytes": 251232,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/apis/compat/n2b/node/n-api.md"
     },
     {
       "path": "docs/apis/contracts/API.md",
@@ -3112,16 +3102,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/architecture/ai/research/adobe-connector/skills/adobe-design-from-template/SKILL.md"
-    },
-    {
-      "path": "docs/architecture/compat/n2b/plugin/n2b/research/monorepo-architecture-2026.md",
-      "title": "Monorepo Rust — Web/Desktop partagé + Mobile séparé + UI Discord/VS Code-like",
-      "sha256": "986538afe033189432704941617539c43521231b8b5fcc21c58b2be19970305d",
-      "bytes": 27442,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/architecture/compat/n2b/plugin/n2b/research/monorepo-architecture-2026.md"
     },
     {
       "path": "docs/architecture/convergence/BUN-ELYSIA-COLYSEUS-ARCHITECTURE.md",
@@ -3836,8 +3816,8 @@
     {
       "path": "docs/operations/bun-packages.md",
       "title": "Packages Bun : installation et release",
-      "sha256": "f837178a715b5cd47236126f39689c42d4cc6648b2f5c8637729950944758fd9",
-      "bytes": 13568,
+      "sha256": "1c435b3602eeb15224aa0bec7218f25cd8a46af038727ba9276123a3a0eadd68",
+      "bytes": 23333,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -4256,8 +4236,8 @@
     {
       "path": "docs/operations/infra/update/BUN.md",
       "title": "Bun and npm updates (yolo update bun)",
-      "sha256": "fb76a1901b7c3439325cf6580f11b9bee591430630d8702bbf2951698273a89b",
-      "bytes": 14801,
+      "sha256": "c0ebc31727a47207f8462db1399c289906aa3f57116a775f0133885ed5fd31df",
+      "bytes": 15488,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -5116,42 +5096,22 @@
     {
       "path": "docs/products/compat/README.md",
       "title": "Aphrody Compat",
-      "sha256": "4027948aa336ebf54d8636267ef2ea64c57820cb484d9d423b62da23dc3dbcad",
-      "bytes": 2005,
+      "sha256": "b297470d4491358941139e299b964cbbef0a5e260204b57b9feca19464ca171c",
+      "bytes": 1478,
       "domain": "compat",
-      "status": "historical",
+      "status": "canonical",
       "visibility": "private",
       "canonical": "docs/products/compat/README.md"
     },
     {
       "path": "docs/products/compat/_source/README.md",
       "title": "aphrody-compat documentation",
-      "sha256": "78be3163ce43e418387c39aac29112bc30ed1d0301c7c976a377a082ed1b28f4",
-      "bytes": 1947,
+      "sha256": "3c4682fbde2969983d9bb451c64e9cd2b7d0dd04cd5454523b7951867d96e7da",
+      "bytes": 3283,
       "domain": "compat",
-      "status": "canonical",
+      "status": "historical",
       "visibility": "private",
       "canonical": "docs/products/compat/_source/README.md"
-    },
-    {
-      "path": "docs/products/compat/n2b/README.md",
-      "title": "docs/n2b — Bun + Node knowledge base for n2b",
-      "sha256": "a32afc577e1cbef7fccd2ec46cd54cd04509f5b1474488f17b73538d3a7aa099",
-      "bytes": 5159,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/products/compat/n2b/README.md"
-    },
-    {
-      "path": "docs/products/compat/n2b/plugin/n2b/README.md",
-      "title": "docs/ — Documentation et recherche",
-      "sha256": "7a25401791938587f928976a6bcadb798455c3b695c510dc8c80372db89d5913",
-      "bytes": 2970,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/products/compat/n2b/plugin/n2b/README.md"
     },
     {
       "path": "docs/products/contracts/README.md",
@@ -5766,8 +5726,8 @@
     {
       "path": "docs/reference/ai/PERFORMANCE.md",
       "title": "Performance",
-      "sha256": "5f1f26fb70f324c2bc1f6565eb2195b88ec338e7babb7175ca9f4991c207333d",
-      "bytes": 8529,
+      "sha256": "bc8e0cbd1d3f1f0dba6e6d4fa2f855c60ea6fed896c3e9cf55958e8b32a227e6",
+      "bytes": 9957,
       "domain": "ai",
       "status": "historical",
       "visibility": "private",
@@ -6896,10 +6856,10 @@
     {
       "path": "docs/reference/compat/AGENTS.md",
       "title": "aphrody-compat: agent rules",
-      "sha256": "b3b65e4b0e4d1419125d4a0ba1438ff6218778219cc280a9c6c70bed48389ea5",
-      "bytes": 3950,
+      "sha256": "aca69e25f3ca2e5406b4528e523bd10fa52272b71e5c21f38925c57ab270b9a6",
+      "bytes": 1801,
       "domain": "compat",
-      "status": "historical",
+      "status": "canonical",
       "visibility": "private",
       "canonical": "docs/reference/compat/AGENTS.md"
     },
@@ -6916,762 +6876,22 @@
     {
       "path": "docs/reference/compat/BUN.md",
       "title": "Bun layer of aphrody-compat",
-      "sha256": "a68413b2c33a8dbe5d0aaadefb98a644ade964e4ba10ef92faad542abca8c182",
-      "bytes": 4371,
+      "sha256": "b26b73a03519adc7034b916dce346fa308e7470678a26a73ff2058a2a76e6eb5",
+      "bytes": 6444,
       "domain": "compat",
       "status": "historical",
       "visibility": "private",
       "canonical": "docs/reference/compat/BUN.md"
     },
     {
-      "path": "docs/reference/compat/N2B-OXC-MAP.md",
-      "title": "N2B and Oxc map (Rust and Bun)",
-      "sha256": "350128ae8b71f00e2ccdaa9ab7f908d7bd890f7774d3f55243b2f587e5adca29",
-      "bytes": 13696,
-      "domain": "compat",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/N2B-OXC-MAP.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/BUN-SURFACE.md",
-      "title": "N2B surface used with Bun",
-      "sha256": "6be82065a9ae0e5f58ae3d5c736e712c2d1c1170c62e64737fbc29c624c52cdc",
-      "bytes": 4241,
+      "path": "docs/reference/compat/N2B.md",
+      "title": "n2b and the Oxc bridge",
+      "sha256": "f21d1da7268b0160d2657820d0fa4df8102431c3106eabaeb0b6590a75bb7001",
+      "bytes": 1904,
       "domain": "compat",
       "status": "canonical",
       "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/BUN-SURFACE.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/CHANGELOG_V24.md",
-      "title": "Node.js 24 ChangeLog",
-      "sha256": "3db533aa16be0693b32845d32f64007ad3fbce77b5bd9ec3a06fd88c90423a60",
-      "bytes": 483465,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/CHANGELOG_V24.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/addons.md",
-      "title": "C++ addons",
-      "sha256": "319fed1cebceded7cac41d98063d01e1fa3a3ef917627c61a1516932c384b4ac",
-      "bytes": 40767,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/addons.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/assert.md",
-      "title": "Assert",
-      "sha256": "eaae96326cae945099e45cee023806998df3542e56dac45bb8bb94655fa89c2a",
-      "bytes": 78741,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/assert.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/async_context.md",
-      "title": "Asynchronous context tracking",
-      "sha256": "25a034e9d3b69688f466361a2e55e914935ff3cbb83264d0f2e97409170180ba",
-      "bytes": 27171,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/async_context.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/async_hooks.md",
-      "title": "Async hooks",
-      "sha256": "27f8192888cafe18c5c3b4d230973103d418bbf2cfbbf3cffaf5baccf2617811",
-      "bytes": 33403,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/async_hooks.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/buffer.md",
-      "title": "Buffer",
-      "sha256": "239c52bab1220be626223af746d8a3b30abfa33f658b3725a605074efa521559",
-      "bytes": 160659,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/buffer.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/child_process.md",
-      "title": "Child process",
-      "sha256": "5fd30992dde78bad4f29ea65a74dffb4ea16e3a97ccbd0329f62b998a4dc47ca",
-      "bytes": 88997,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/child_process.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/cli.md",
-      "title": "Command-line API",
-      "sha256": "eb2602965a63e509e2b9d93ce88823f423c83a2ab2145dbc49dcc99bde9e5c60",
-      "bytes": 121927,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/cli.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/cluster.md",
-      "title": "Cluster",
-      "sha256": "1603a386afa7d90a1b6bd4de0bd21cfdb5d7c118d6a7426bdc38d46ff103dc3f",
-      "bytes": 30689,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/cluster.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/console.md",
-      "title": "Console",
-      "sha256": "6c8ad1a1f6a88120ba1678aa57ec949e333f7e38787b07b22493c64d72c340bf",
-      "bytes": 18735,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/console.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/corepack.md",
-      "title": "Corepack",
-      "sha256": "6d3cb4351cc90a4c731434c2b8a26ffe559466aaabb8b5e5d3a546f29519b3bf",
-      "bytes": 421,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/corepack.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/crypto.md",
-      "title": "Crypto",
-      "sha256": "31949db659f59ef39d2c20acdcdc563caa88e308eb2476f555c253dbd057a374",
-      "bytes": 236217,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/crypto.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/debugger.md",
-      "title": "Debugger",
-      "sha256": "aa14638837f69e6a0d9366f0fe94a5840f8c4a4ede9ca93bf28dd64abaef3fc3",
-      "bytes": 8031,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/debugger.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/deprecations.md",
-      "title": "Deprecated APIs",
-      "sha256": "0069d194b276b904796c7b1512fce7bf6ccee7dbf80ab5a6f7b31b483fbdce7a",
-      "bytes": 141197,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/deprecations.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/dgram.md",
-      "title": "UDP/datagram sockets",
-      "sha256": "e503ed8b594943b999f57870025678d4796c76d6ea38226a7e23555d22ccc76c",
-      "bytes": 34192,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/dgram.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/diagnostics_channel.md",
-      "title": "Diagnostics Channel",
-      "sha256": "c230a14ccdb38cc469b507dd9a98409fc7f8fdb84cbca1eec0f25e7c53279e7a",
-      "bytes": 44391,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/diagnostics_channel.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/dns.md",
-      "title": "DNS",
-      "sha256": "c94e5822897235471a6ce8caf6f2989c50cb0e5d5b2149378c3f13c2682beaa4",
-      "bytes": 62653,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/dns.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/documentation.md",
-      "title": "About this documentation",
-      "sha256": "1b72b18f9106ac4442fe65fdde7c4dbde9b1e036e46dd846a8927010f723eb9f",
-      "bytes": 3674,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/documentation.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/domain.md",
-      "title": "Domain",
-      "sha256": "c804d08cddf8294b27b9bdaff3cb04616737d9186ae2419526b617e864d0b7ac",
-      "bytes": 15865,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/domain.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/embedding.md",
-      "title": "C++ embedder API",
-      "sha256": "f8687c096a859f35ad0ff8f5d52303855d7649a66bebd44039bd191280150107",
-      "bytes": 7078,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/embedding.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/environment_variables.md",
-      "title": "Environment Variables",
-      "sha256": "1962a7ae13a9fe9fc4a3df0cd93b1a2b61b4f290cc13f3b4eec0ba03c17eac38",
-      "bytes": 5356,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/environment_variables.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/errors.md",
-      "title": "Errors",
-      "sha256": "84ebc7a5c39fda414ddfc22eb07cb0bc57232ee18f7303f882f12dfa9f109631",
-      "bytes": 121605,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/errors.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/esm.md",
-      "title": "Modules: ECMAScript modules",
-      "sha256": "6072e3df980be16c18d6d2000731cc8724adce783f754144fa8f8558dc08c702",
-      "bytes": 49565,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/esm.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/events.md",
-      "title": "Events",
-      "sha256": "c4fec4a5d09da14e4d4f4463b72227daa41204e5f435d7d4e072c8390eb6a3df",
-      "bytes": 74619,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/events.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/fs.md",
-      "title": "File system",
-      "sha256": "251228e6500952cfc8e1cdf4618b11f769ba405473fe5808e2b4b5d64e040da2",
-      "bytes": 288482,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/fs.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/globals.md",
-      "title": "Global objects",
-      "sha256": "4f29fcdc8b6698d90ce5a07b4898aa0ab24f8e0b33474bf31d9fdc81d0335d4b",
-      "bytes": 34431,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/globals.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/http.md",
-      "title": "HTTP",
-      "sha256": "32ddd9d89d24cdd9ecc27e68c0c1d84127709ab6ba6578e8759f861a798dd9e1",
-      "bytes": 139846,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/http.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/http2.md",
-      "title": "HTTP/2",
-      "sha256": "35824a0e3bcef24fe71534fef4290aadf304ca5a195074d798a144b412535f27",
-      "bytes": 163453,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/http2.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/https.md",
-      "title": "HTTPS",
-      "sha256": "a380cffde36737926ea495155276208ffb1ac1fd7972454bb58cf525b965ab35",
-      "bytes": 22773,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/https.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/index.md",
-      "title": "* [About this documentation](./documentation.md)",
-      "sha256": "37e061a39bfa56cb8894e62d11be730a0425a5072b4d9b322947ce5a6899f457",
-      "bytes": 2380,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/index.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/inspector.md",
-      "title": "Inspector",
-      "sha256": "7f428e20acafeb06a20e09d48d2bc5dc4aedd66a55ebe0a79d1f37af79ced7ea",
-      "bytes": 19985,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/inspector.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/intl.md",
-      "title": "Internationalization support",
-      "sha256": "fefb6178a1427e3a5ffb95b843c0d35aa61a7c3e74a1df28607fa968deb01168",
-      "bytes": 12005,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/intl.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/module.md",
-      "title": "Modules: node:module API",
-      "sha256": "b6bbcd46398e37080a46c73771f6fed6406bc00eaa4aa04b883319e7b11974bf",
-      "bytes": 80136,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/module.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/modules.md",
-      "title": "Modules: CommonJS modules",
-      "sha256": "dfa7ca086c8e6aa2d5debe89c705504cbcd4f57ff93938f42283f70990d3a774",
-      "bytes": 42991,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/modules.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/net.md",
-      "title": "Net",
-      "sha256": "6ddd1a37ea2d5360cd1799a1b5cc465ec475e931061ef126f2abae69b3936342",
-      "bytes": 65790,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/net.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/os.md",
-      "title": "OS",
-      "sha256": "2a5169329b0d8c9e52780265342661cde8b3e1ee4b97e6a40c1922713df94089",
-      "bytes": 38512,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/os.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/packages.md",
-      "title": "Modules: Packages",
-      "sha256": "037d063b3e4752d142536e4e7822af7c3943e39783892b937724905f9f23461d",
-      "bytes": 41595,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/packages.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/path.md",
-      "title": "Path",
-      "sha256": "b32f5d8d65a957a2ddbd9f551c109c3bca446b532d12e50e44a6921e26bd640e",
-      "bytes": 17515,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/path.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/perf_hooks.md",
-      "title": "Performance measurement APIs",
-      "sha256": "4ac3c7c9115ad74a0b55f9c04cfd224e1b382efff55662815af91340e97ca865",
-      "bytes": 64693,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/perf_hooks.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/permissions.md",
-      "title": "Permissions",
-      "sha256": "6176d4115cab6d4ac6c5e941649cfdc4dd127a7054f1ba9dc016fdc5c9c61800",
-      "bytes": 8734,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/permissions.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/process.md",
-      "title": "Process",
-      "sha256": "805f34486e5b4e2eabc4eafd9c5dd7f26625ee408d43d6d325be2da4af5d401c",
-      "bytes": 137455,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/process.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/punycode.md",
-      "title": "Punycode",
-      "sha256": "8f486fb82b803b05e798e0f8de190778d533282921a3f8bebc253b918ed41838",
-      "bytes": 4451,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/punycode.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/querystring.md",
-      "title": "Query string",
-      "sha256": "c114b89c321b16d501f877560d855efa6f9373af51c3428f1ffb1b999a42564c",
-      "bytes": 5861,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/querystring.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/quic.md",
-      "title": "QUIC",
-      "sha256": "522c3ec7ae6b65f56c8fd5b7452b07d9878fe20cb514425102ccbed5613771c6",
-      "bytes": 28924,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/quic.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/readline.md",
-      "title": "Readline",
-      "sha256": "bfc4db20af56a92904182cd779e6167b309f29a9bffe4acbd7e5a2b0229b699f",
-      "bytes": 44088,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/readline.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/repl.md",
-      "title": "REPL",
-      "sha256": "a261b82cc9ff43a2578691545c2cd7be5c5312aeb934c55a5affaa7c0413df5e",
-      "bytes": 35543,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/repl.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/single-executable-applications.md",
-      "title": "Single executable applications",
-      "sha256": "5bb72e9839291376a046f9885865b79de0701e67a4387a79e9af8f38117e674b",
-      "bytes": 20834,
-      "domain": "compat",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/single-executable-applications.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/sqlite.md",
-      "title": "SQLite",
-      "sha256": "223419bfcc691991253a7a02c1f7087ee067da37e8132bdf2bf0e660c716c14e",
-      "bytes": 58448,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/sqlite.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/stream.md",
-      "title": "Stream",
-      "sha256": "437e16ba45d816befac4e4d3c077aba1967ef0407060c0f105792b3556faa011",
-      "bytes": 162300,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/stream.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/string_decoder.md",
-      "title": "String decoder",
-      "sha256": "5d4d20888f38aaeb5ca5e241e10e1e66653bcc3c8719b88cd54366fa0a67feb1",
-      "bytes": 3776,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/string_decoder.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/synopsis.md",
-      "title": "Usage and example",
-      "sha256": "f27830a496965be5799effc706af5743b81b972cf6b735097f1b00eacebeb340",
-      "bytes": 2254,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/synopsis.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/test.md",
-      "title": "Test runner",
-      "sha256": "d6167366a4f6c106695f9d1a2782e797fa09fb625aaf84321abef04a16f7edef",
-      "bytes": 144228,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/test.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/timers.md",
-      "title": "Timers",
-      "sha256": "7cbdda5dcee13eb057ffe514847ea19ad4aa6ced1196a06d6da72922bd970490",
-      "bytes": 17984,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/timers.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/tls.md",
-      "title": "TLS (SSL)",
-      "sha256": "d0840685c17d59d478e84414d17cc3cbe1893f66063a62a53b7c4dbebb6f1918",
-      "bytes": 101150,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/tls.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/tracing.md",
-      "title": "Trace events",
-      "sha256": "58720fb16f3a3bfa24c1e58ef1c9bf7e536d2795b38d7e80aee4f2eb20ea0b01",
-      "bytes": 11202,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/tracing.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/tty.md",
-      "title": "TTY",
-      "sha256": "597d278e3026b383104f1454033f112a270db1cf7ccc63ca3746372956f18a87",
-      "bytes": 10139,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/tty.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/typescript.md",
-      "title": "Modules: TypeScript",
-      "sha256": "de7abe96c99ec5ad5b3937f1762d751a9414f9c60a87a52a0d59ebd71c1c3205",
-      "bytes": 8361,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/typescript.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/url.md",
-      "title": "URL",
-      "sha256": "2302c40d7d3b47e70db0190eddabb6b867f5ce13f16355a0d3e06dbe709d1a4f",
-      "bytes": 68283,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/url.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/util.md",
-      "title": "Util",
-      "sha256": "99578e6b8b8f52a1407a088022156eaa30f22712782ce7d7dec43da170c4c5f9",
-      "bytes": 116588,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/util.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/v8.md",
-      "title": "V8",
-      "sha256": "81c45a6af989ebbf6d404b0db25516b76fe830afdcf14c4a2b5e801ee5873d04",
-      "bytes": 54391,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/v8.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/vm.md",
-      "title": "VM (executing JavaScript)",
-      "sha256": "a3e8f25889a7e00280dd88efc9636b2b84002f78c6afedee6d5fc44ace857205",
-      "bytes": 97662,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/vm.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/wasi.md",
-      "title": "WebAssembly System Interface (WASI)",
-      "sha256": "fc1b37403f73648c0686163fe3078974c25cc5c14b9ee08e6025b2ff495d65c9",
-      "bytes": 9499,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/wasi.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/webcrypto.md",
-      "title": "Web Crypto API",
-      "sha256": "b07899af708f7da61a5f9693d589eddeefada2ea1af483a6d912e50cc83cadb4",
-      "bytes": 86547,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/webcrypto.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/webstreams.md",
-      "title": "Web Streams API",
-      "sha256": "46e7ba93a6b9f4282c1e668fe7a8a85a7fae811a63a0bf5d3a8eb0b229d0e76f",
-      "bytes": 45000,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/webstreams.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/worker_threads.md",
-      "title": "Worker threads",
-      "sha256": "d5b7175577dc0914db99edacaba6a9f1775aaffc3e2c02b0f3503be86f8d68e5",
-      "bytes": 68792,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/worker_threads.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/node/zlib.md",
-      "title": "Zlib",
-      "sha256": "0771d28a7f56472d3bdf2985e0e61722337bb70b19c79b40070a71fe1e356609",
-      "bytes": 51965,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/node/zlib.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/plugin/n2b/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "d085590ea9009a86d3780621dd52be261f3efd9079cae41ef8ca25bc235085c9",
-      "bytes": 4704,
-      "domain": "compat",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/plugin/n2b/CHANGELOG.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/plugin/n2b/INDEX.md",
-      "title": "n2b — historical documentation bundle",
-      "sha256": "62f4fd10e5de7f60a596488db757bf594ed111ac96cb34436aaddffb69548f97",
-      "bytes": 1307,
-      "domain": "compat",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/plugin/n2b/INDEX.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/plugin/n2b/build-your-own-x.md",
-      "title": "Build your own <X> — Rust & TypeScript only",
-      "sha256": "5a0a772d2d9aa96a7ad574541e1c583b22de6f8f06eb952df548da34d1d8917e",
-      "bytes": 3844,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/plugin/n2b/build-your-own-x.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/plugin/n2b/wasm/WASM_BINDGEN_BUN_PATCH.md",
-      "title": "wasm-bindgen Bun-native Patch",
-      "sha256": "69719f88e69ca233af15399c61d7e2ac21e30020498871224ada651e04130028",
-      "bytes": 5512,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/plugin/n2b/wasm/WASM_BINDGEN_BUN_PATCH.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/plugin/n2b/wasm/WASM_BINDGEN_PERF.md",
-      "title": "wasm-bindgen Performance Optimization Report",
-      "sha256": "111da88b95800bb3e07e070d990f70452679c2f7edb459b580c83a1c51da011f",
-      "bytes": 2644,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/plugin/n2b/wasm/WASM_BINDGEN_PERF.md"
-    },
-    {
-      "path": "docs/reference/compat/n2b/plugin/n2b/wasm/WASM_PACK_BUN_PATCH.md",
-      "title": "wasm-pack Bun-Native Patch",
-      "sha256": "28119af22191ccf86699d258d61237a3ea066948f38adb2012a9aea34ea79b51",
-      "bytes": 4173,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/n2b/plugin/n2b/wasm/WASM_PACK_BUN_PATCH.md"
-    },
-    {
-      "path": "docs/reference/compat/scripts/n2b/PLUGIN-SCRIPTS.md",
-      "title": "n2b scripts",
-      "sha256": "7660bdfac22aeda9effb15e448bbcb1bba007b3601b958bea0a5914272c14003",
-      "bytes": 4946,
-      "domain": "compat",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/reference/compat/scripts/n2b/PLUGIN-SCRIPTS.md"
+      "canonical": "docs/reference/compat/N2B.md"
     },
     {
       "path": "docs/reference/contracts/AGENTS.md",
@@ -7766,8 +6986,8 @@
     {
       "path": "docs/reference/infra/APHRODY-BUN-PLATFORM.md",
       "title": "Aphrody Bun platform",
-      "sha256": "14c59f8c17a2e5a68bf9924baef9d748ab33909195cf922846c555745edbb7b3",
-      "bytes": 3928,
+      "sha256": "86fafa2659dded0fd04102895e0af4d8a7e4c0dea6698c6d5cfbbafe681fc5c8",
+      "bytes": 5959,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -11956,8 +11176,8 @@
     {
       "path": "docs/reference/web/WEB-RUNTIME.md",
       "title": "Runtime web unifié : Aphrody Web Browser, Bun et N2B",
-      "sha256": "0da50297da40045e174a700e6cc1eb40ad56ed13576f5abbffefa36dc3226902",
-      "bytes": 11934,
+      "sha256": "0df9ff0e565431b1705b02945be93ea9f0304fbc650ebb557304fb2676333c5e",
+      "bytes": 13861,
       "domain": "web",
       "status": "canonical",
       "visibility": "private",
@@ -12406,8 +11626,8 @@
     {
       "path": "docs/reference/workspace/INDEX.md",
       "title": "Workspace documentation",
-      "sha256": "6b2fc6aee963d6a67a30ca6faa76012ae90c6102361dc37ca1f8aaa42c0ac29f",
-      "bytes": 5034,
+      "sha256": "cf5fd2d73fe9b4e4d1caec4e10f9c15dbf48d48a9067da300e2d84df8eaf4982",
+      "bytes": 9198,
       "domain": "workspace",
       "status": "historical",
       "visibility": "private",
@@ -12446,7 +11666,7 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "cda4f72767b95fcb1caa4d2e39354ceb00e21bb710a1d757fa16d66a4f334fc0",
+      "sha256": "962df831f31f4ef45c7848ca8417d524dd83f8b4d3f8482548d14e3931a5657d",
       "bytes": 50464,
       "domain": "workspace",
       "status": "generated",
@@ -12456,8 +11676,8 @@
     {
       "path": "docs/reference/workspace/TOOLS.md",
       "title": "Outils et contextes Agent Home",
-      "sha256": "b5e190f65d96b72f79a8f404d32139ecc8d03d142742971237b03f1a69da02db",
-      "bytes": 68343,
+      "sha256": "cd26a147bbd2639ae6a32502b150f6b40a1df6ff95620749065f46e1627e3011",
+      "bytes": 45270,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",
@@ -12882,96 +12102,6 @@
       "status": "historical",
       "visibility": "private",
       "canonical": "docs/research/ai/vllm-rust-review-2026-10-01.md"
-    },
-    {
-      "path": "docs/research/compat/n2b/node/report.md",
-      "title": "Diagnostic report",
-      "sha256": "6559756ef08203b3158700c1de4f83c3e748aefb8cda685f2faf8ed094acbf7e",
-      "bytes": 24772,
-      "domain": "compat",
-      "status": "imported",
-      "visibility": "private",
-      "canonical": "docs/research/compat/n2b/node/report.md"
-    },
-    {
-      "path": "docs/research/compat/n2b/plugin/n2b/research/discord-stack-research.md",
-      "title": "Discord — Stack technique complète (recherche)",
-      "sha256": "58713840761620eec980af9d527ce8c8e144a6a30f5dc7ca5758ee819f48ce99",
-      "bytes": 8350,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/research/compat/n2b/plugin/n2b/research/discord-stack-research.md"
-    },
-    {
-      "path": "docs/research/compat/n2b/plugin/n2b/research/rust-starred-libs-2026.md",
-      "title": "Rust — Librairies starred ⭐ pour stack 2026",
-      "sha256": "2a0145d38ad36716e7f19cb90a8565591b439622c502b7d1513c6dfc39de39e6",
-      "bytes": 35999,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/research/compat/n2b/plugin/n2b/research/rust-starred-libs-2026.md"
-    },
-    {
-      "path": "docs/research/compat/n2b/plugin/n2b/research/rust-web-stack-2026.md",
-      "title": "Stack Rust web 2026 + Web app avec look desktop natif — recherche approfondie",
-      "sha256": "c509bdd7752705dd07f565651a2109ffff267c4a4cfd9e0f5c2ca4fa188a08fe",
-      "bytes": 13941,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/research/compat/n2b/plugin/n2b/research/rust-web-stack-2026.md"
-    },
-    {
-      "path": "docs/research/compat/n2b/plugin/n2b/research/wasm-bindgen-study.md",
-      "title": "Étude de wasm-bindgen — ~/rsbun/wasm/wasm-bindgen/",
-      "sha256": "21b4fd9a9ec114d85ce0aebbc33067e15d57f6ec1b8002196c3c3c3261c8695e",
-      "bytes": 14282,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/research/compat/n2b/plugin/n2b/research/wasm-bindgen-study.md"
-    },
-    {
-      "path": "docs/research/compat/n2b/plugin/n2b/wasm/n2b-reports/n2b-binaryen.md",
-      "title": "node2bun report",
-      "sha256": "3ddeeaaa45430c8640cc2d5f5df92c72ae220a82f49d40777ae316232e531f8a",
-      "bytes": 2596,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/research/compat/n2b/plugin/n2b/wasm/n2b-reports/n2b-binaryen.md"
-    },
-    {
-      "path": "docs/research/compat/n2b/plugin/n2b/wasm/n2b-reports/n2b-wabt.md",
-      "title": "node2bun report",
-      "sha256": "9dd6b07912007b66840b5452ebfa43a04c4ea2f9ec4d174cec4d715d3ea4e0e5",
-      "bytes": 931,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/research/compat/n2b/plugin/n2b/wasm/n2b-reports/n2b-wabt.md"
-    },
-    {
-      "path": "docs/research/compat/n2b/plugin/n2b/wasm/n2b-reports/n2b-wasm-bindgen.md",
-      "title": "node2bun report",
-      "sha256": "593977231765f7252eb1cc2ac31538d0769c80a638514ed9cf5cd423ddaf7af0",
-      "bytes": 62715,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/research/compat/n2b/plugin/n2b/wasm/n2b-reports/n2b-wasm-bindgen.md"
-    },
-    {
-      "path": "docs/research/compat/n2b/plugin/n2b/wasm/n2b-reports/n2b-wasm-pack.md",
-      "title": "node2bun report",
-      "sha256": "f721abed262e99d522071fc3975ea02a3c23bf6726dc8c61c50bbe0668453901",
-      "bytes": 1946,
-      "domain": "compat",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/research/compat/n2b/plugin/n2b/wasm/n2b-reports/n2b-wasm-pack.md"
     },
     {
       "path": "docs/research/compat/research/bun-vs-vite-2026.md",
@@ -17186,8 +16316,8 @@
     {
       "path": "m3/packages/m3-tailwind/README.md",
       "title": "@aphrody/m3-tailwind",
-      "sha256": "ddcb41b9252199660ab52b64b709cd7821879ce0ba780a0ad1ac7f511caf5556",
-      "bytes": 4284,
+      "sha256": "c612943813c04a767047b4982b89f97b4f1a1d4e4151370f2e5317b749e37eaa",
+      "bytes": 4494,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
