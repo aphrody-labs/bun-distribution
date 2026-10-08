@@ -97,8 +97,7 @@ describe("vps-cargo", () => {
       " scripts/build/rust/cargo-serial.sh check",
     );
     expect(() => repositoryConfig(config, "nope")).toThrow("unknown repository");
-    const secondary = await loadConfig(undefined, "dbfr");
-    expect(() => repositoryConfig(secondary, "vu")).toThrow("primary host only");
+    await expect(loadConfig(undefined, "dbfr")).rejects.toThrow("unknown build host");
   });
 
   test("secret-like paths are refused", () => {
@@ -413,15 +412,16 @@ describe("desktop-library routing", () => {
   });
 });
 
-test("owner pins every Shenron checkout to DBFR and its own factory locks", async () => {
+test("owner keeps every Shenron build on the VPS factory, never on DBFR", async () => {
   const primary = await loadConfig();
+  expect(primary.hosts?.dbfr).toBeUndefined();
   for (const name of ["shenron", "shenron-release", "shenron-omar"]) {
     const { config } = repositoryConfig(primary, name);
-    expect(config.host).toBe("dbfr");
-    expect(config.remoteHeavyLock).toContain("/home/ubuntu/aphrody-build/");
-    expect(config.cargoSerial).toContain("/home/ubuntu/aphrody-build/");
+    expect(config.host).toBe("vps");
+    expect(config.remoteHeavyLock).toContain("/srv/aphrody-build/");
+    expect(config.cargoSerial).toContain("/srv/aphrody-build/");
     expect(remoteRunScript(config, SHA, "shenron-routing", ["check"], 2)).not.toContain(
-      "/srv/aphrody-build/",
+      "/home/ubuntu/aphrody-build/",
     );
   }
 });

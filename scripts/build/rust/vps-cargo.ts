@@ -22,7 +22,7 @@
 import { $ } from "bun";
 import { mkdir, rm } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, posix, resolve } from "node:path";
 import { factoryTransientShell } from "../../../packages/infra/workspace/src/build-factory-cleanup.ts";
 
 export type Forward = { bind: string; to: string; purpose?: string };
@@ -82,7 +82,7 @@ const MAX_SNAPSHOT_FILE_BYTES = 50 * 1024 * 1024;
 
 export function expandHome(path: string, home = homedir()): string {
   if (path === "~") return home;
-  return path.startsWith("~/") ? join(home, path.slice(2)) : path;
+  return path.startsWith("~/") ? posix.join(home, path.slice(2)) : path;
 }
 
 /** POSIX single-quote for remote shell commands. */
@@ -508,7 +508,7 @@ export function remoteRunScript(
     `export PATH="$HOME/.bun/bin:$HOME/.cargo/bin:$HOME/.local/bin:$PATH"`,
     // The shared checkout is moved to the job snapshot only once this job holds the factory lock: another session may
     // have synced its own snapshot while this job waited, and building then would compile the wrong tree.
-    `exec env ${env.join(" ")} flock --close ${shellQuote(config.remoteHeavyLock)} bash -c ${shellQuote(`set -euo pipefail; git checkout -q -f ${sha} || { echo "checkout moved away from ${sha}" >&2; exit 2; }; ${factoryTransientShell(resolve(dirname(config.remoteHeavyLock), "../transient")).join("; ")}; "$@"`)} bash ${shellQuote(config.cargoSerial ?? "scripts/build/rust/cargo-serial.sh")} ${cargoArgs.map(shellQuote).join(" ")}`,
+    `exec env ${env.join(" ")} flock --close ${shellQuote(config.remoteHeavyLock)} bash -c ${shellQuote(`set -euo pipefail; git checkout -q -f ${sha} || { echo "checkout moved away from ${sha}" >&2; exit 2; }; ${factoryTransientShell(posix.resolve(posix.dirname(config.remoteHeavyLock), "../transient")).join("; ")}; "$@"`)} bash ${shellQuote(config.cargoSerial ?? "scripts/build/rust/cargo-serial.sh")} ${cargoArgs.map(shellQuote).join(" ")}`,
   ].join("; ");
   const window = `bash -c ${shellQuote(`(${body}) > ${log} 2>&1; echo $? > ${exit}`)}`;
   const session = shellQuote(config.remoteSession);
