@@ -25,12 +25,8 @@ const pack = Bun.spawnSync(["bun", "pm", "pack", "--ignore-scripts", "--filename
   stderr: "pipe",
 });
 if (pack.exitCode !== 0) throw new Error(pack.stderr.toString());
-const packed = Bun.spawnSync(["tar", "-xOf", archive, "package/package.json"], {
-  stdout: "pipe",
-  stderr: "pipe",
-});
-if (packed.exitCode !== 0) throw new Error(packed.stderr.toString());
-const publishManifest = JSON.parse(packed.stdout.toString());
+const packed = await new Bun.Archive(await Bun.file(archive).bytes()).files("package/package.json");
+const publishManifest = JSON.parse(await packed.get("package/package.json")!.text());
 const record = await Bun.file(join(PACKAGE_DIR, "vendor", "UPSTREAM.md")).text();
 const hasUpstream = await upstreamCheckedOut();
 
