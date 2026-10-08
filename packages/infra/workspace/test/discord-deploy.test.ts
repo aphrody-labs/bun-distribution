@@ -173,8 +173,10 @@ test("a crash-loop with an active durable goal is left running", async () => {
 });
 
 test("release resolves product source and the declared target; foreign targets fail", () => {
-  expect(discordDeployment("omar-monitor", "vps", root).entrypoint).toBe(
-    join(root, "packages/discord/kit/src/omar-monitor/main.ts"),
+  const deployment = discordDeployment("omar-monitor", "vps", root);
+  expect(deployment.entrypoint).toBe(join(root, "packages/discord/kit/src/omar-monitor/main.ts"));
+  expect(deployment.plan.steps.find((step) => step.id.endsWith("/binary"))?.run).toContain(
+    "sudo -n -u 'ubuntu'",
   );
   expect(() => discordDeployment("omar-monitor", "dbfr", root)).toThrow("not dbfr");
   expect(() => discordDeployment("arbitrary", "vps", root)).toThrow("Unknown Discord deployment");

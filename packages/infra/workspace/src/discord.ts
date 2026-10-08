@@ -86,6 +86,13 @@ export function discordDeployment(
 ): DiscordDeployment {
   if (service !== "omar-monitor") throw new Error(`Unknown Discord deployment: ${service}`);
   const unit = "aphrody-discord-omar-monitor.service";
+  const runtime = "/home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo";
+  const plan = hostPlan([unit], { target, root: join(root, "tools/config/host") });
+  for (const step of plan.steps) {
+    if (step.id.endsWith("/binary"))
+      step.run = `sudo -n -u 'ubuntu' -H sh -c ${quote(`cd /tmp && test -x ${quote(runtime)} && ${quote(runtime)} --version`)}`;
+    else if (step.id.endsWith("/binary-sha256")) step.run = `sudo -n sha256sum ${quote(runtime)}`;
+  }
   return {
     target,
     unit,
@@ -97,9 +104,9 @@ export function discordDeployment(
     },
     stateDirectory: "/srv/aphrody-lab/state/omar-monitor",
     stateOwner: "ubuntu",
-    runtime: "/home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo",
+    runtime,
     runtimeSha256: "c886d124e1389167b0f1424b91bfc2902cc750c481d61fef6e97cd605493bf0b",
-    plan: hostPlan([unit], { target, root: join(root, "tools/config/host") }),
+    plan,
   };
 }
 
