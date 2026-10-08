@@ -94,7 +94,10 @@ pub(crate) async fn run(action: WincleanAction) -> miette::Result<()> {
             Ok(())
         },
         WincleanAction::Call { tool, args, kv, json, images } => {
-            let arguments = build_arguments(args.as_deref(), &kv)?;
+            let mut arguments = build_arguments(args.as_deref(), &kv)?;
+            if let Some(info) = aphrody_winclean::catalog().iter().find(|t| t.name == tool) {
+                coerce_to_schema(&mut arguments, &info.input_schema, &kv);
+            }
             let result = if ["windows_", "desktop_", "privileged_"]
                 .iter()
                 .any(|prefix| tool.starts_with(prefix))
@@ -249,12 +252,44 @@ fn build_arguments(json: Option<&str>, kv: &[String]) -> miette::Result<Value> {
     Ok(Value::Object(map))
 }
 
-fn print_result(tool: &str, result: &ToolResult, image_dir: &Path) -> miette::Result<()> {
+/// What a tool result shows on stdout: its text blocks, else its structured content
+/// (many tools return only `structuredContent`, which used to print nothing).
+fn render_result(result: &ToolResult) -> miette::Result<String> {
     let text = result.text();
+    if text.trim().is_empty() {
+        return match &result.structured_content {
+            Some(Value::String(plain)) => Ok(plain.clone()),
+            Some(value) => serde_json::to_string_pretty(value).into_diagnostic(),
+            None => Ok(String::new()),
+        };
+    }
     // Tools return compact JSON documents; pretty-print them when possible.
     match serde_json::from_str::<Value>(&text) {
-        Ok(value) => println!("{}", serde_json::to_string_pretty(&value).into_diagnostic()?),
-        Err(_) => println!("{text}"),
+        Ok(value) => serde_json::to_string_pretty(&value).into_diagnostic(),
+        Err(_) => Ok(text),
+    }
+}
+
+/// `--arg value=2` parses as a JSON number, but a tool whose schema declares `value` a string
+/// (`set_registry_value`) rejects it: send the raw text back for string-typed properties.
+fn coerce_to_schema(arguments: &mut Value, schema: &Value, kv: &[String]) {
+    let (Some(map), Some(props)) = (arguments.as_object_mut(), schema["properties"].as_object())
+    else {
+        return;
+    };
+    for pair in kv {
+        let Some((key, raw)) = pair.split_once('=') else { continue };
+        let wants_string = props.get(key).is_some_and(|p| p["type"] == "string");
+        if wants_string && !map.get(key).is_some_and(Value::is_string) {
+            map.insert(key.to_owned(), Value::String(raw.to_owned()));
+        }
+    }
+}
+
+fn print_result(tool: &str, result: &ToolResult, image_dir: &Path) -> miette::Result<()> {
+    let rendered = render_result(result)?;
+    if !rendered.is_empty() || result.images().is_empty() {
+        println!("{rendered}");
     }
     for (index, image) in result.images().iter().enumerate() {
         let ext = image.mime_type.rsplit('/').next().unwrap_or("bin");
@@ -296,5 +331,55 @@ mod tests {
         );
         assert!(build_arguments(Some("[1]"), &[]).is_err());
         assert!(build_arguments(None, &["novalue".into()]).is_err());
+    }
+
+    fn result(json: serde_json::Value) -> ToolResult {
+        serde_json::from_value(json).unwrap()
+    }
+
+    #[test]
+    fn structured_only_result_is_rendered() {
+        let object = result(serde_json::json!({
+            "content": [], "structuredContent": {"BuildNumber": "28000"}, "isError": false
+        }));
+        assert!(render_result(&object).unwrap().contains("\"BuildNumber\": \"28000\""));
+        let plain = result(serde_json::json!({
+            "content": [], "structuredContent": "Set registry value", "isError": false
+        }));
+        assert_eq!(render_result(&plain).unwrap(), "Set registry value");
+    }
+
+    #[test]
+    fn text_result_wins_over_structured_content() {
+        let both = result(serde_json::json!({
+            "content": [{"type": "text", "text": "{\"a\":1}"}],
+            "structuredContent": {"b": 2}, "isError": false
+        }));
+        let rendered = render_result(&both).unwrap();
+        assert!(rendered.contains("\"a\": 1") && !rendered.contains("\"b\""));
+    }
+
+    #[test]
+    fn empty_result_renders_nothing() {
+        assert_eq!(render_result(&result(serde_json::json!({"content": []}))).unwrap(), "");
+    }
+
+    #[test]
+    fn numeric_arg_is_sent_as_string_when_the_schema_says_string() {
+        let schema = serde_json::json!({"properties": {"value": {"type": "string"}, "x": {"type": "integer"}}});
+        let kv = vec!["value=2".to_owned(), "x=5".to_owned()];
+        let mut args = build_arguments(None, &kv).unwrap();
+        coerce_to_schema(&mut args, &schema, &kv);
+        assert_eq!(args, serde_json::json!({"value": "2", "x": 5}));
+    }
+
+    #[test]
+    fn registry_value_schema_is_string_typed_in_the_catalog() {
+        let info =
+            aphrody_winclean::catalog().iter().find(|t| t.name == "set_registry_value").unwrap();
+        let kv = vec!["value=2".to_owned()];
+        let mut args = build_arguments(None, &kv).unwrap();
+        coerce_to_schema(&mut args, &info.input_schema, &kv);
+        assert_eq!(args["value"], "2");
     }
 }

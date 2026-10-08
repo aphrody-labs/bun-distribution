@@ -95,7 +95,8 @@ pub(crate) enum OsAction {
 pub(crate) async fn handle_os(action: OsAction) -> miette::Result<()> {
     match action {
         OsAction::Status { json } => {
-            let status = aphrody_diagnostics::os_status().await;
+            let mut status = aphrody_diagnostics::os_status().await;
+            merge_in_process_winclean(&mut status, in_process_winclean_tools());
             if json {
                 println!("{}", serde_json::to_string_pretty(&status).into_diagnostic()?);
             } else {
@@ -139,6 +140,49 @@ pub(crate) async fn handle_os(action: OsAction) -> miette::Result<()> {
         },
     }
     Ok(())
+}
+
+/// Tools of the in-process `aphrody-winclean` runtime (the live list, else the vendored catalog).
+fn in_process_winclean_tools() -> usize {
+    aphrody_winclean::shared()
+        .ok()
+        .and_then(|wc| wc.list_tools().ok())
+        .map_or_else(|| aphrody_winclean::catalog().len(), |tools| tools.len())
+}
+
+/// `aphrody winclean` runs in-process, so an offline kernel daemon must not hide its tools:
+/// keep the larger of the kernel's admin tool count and the in-process count.
+fn merge_in_process_winclean(status: &mut serde_json::Value, in_process: usize) {
+    let kernel = status["winclean_tools"].as_u64().unwrap_or(0);
+    let merged = kernel.max(in_process as u64);
+    status["winclean_tools"] = serde_json::json!(merged);
+    status["winclean_in_process"] = serde_json::json!(in_process);
+}
+
+#[cfg(test)]
+mod os_status_tests {
+    use super::*;
+
+    #[test]
+    fn offline_kernel_still_reports_in_process_winclean_tools() {
+        let mut status = serde_json::json!({"status": "offline", "winclean_tools": 0});
+        merge_in_process_winclean(&mut status, 166);
+        assert_eq!(status["winclean_tools"], 166);
+        assert_eq!(status["winclean_in_process"], 166);
+        assert_eq!(status["status"], "offline");
+    }
+
+    #[test]
+    fn larger_kernel_count_is_kept() {
+        let mut status = serde_json::json!({"winclean_tools": 200});
+        merge_in_process_winclean(&mut status, 166);
+        assert_eq!(status["winclean_tools"], 200);
+    }
+
+    #[test]
+    fn in_process_catalog_is_not_empty() {
+        assert!(in_process_winclean_tools() > 0);
+    }
 }
 
 pub(crate) mod web;
