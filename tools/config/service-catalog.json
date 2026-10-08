@@ -155,6 +155,7 @@
       "sourceRepo": "aphrody",
       "workingDirectory": "/srv/aphrody/shared/agent-workspaces/aphrody",
       "public": false,
+      "host": "vps",
       "note": "MCP Streamable HTTP of `aphrody-mcp http` (toolbox build), loopback only and never proxied (the binary refuses a non-loopback bind). /mcp requires `Authorization: Bearer` (APHRODY_MCP_HTTP_TOKEN, generated on the host in /etc/aphrody/aphrody-mcp-http.env, constant-time comparison, 503 without a token); /healthz needs none. Port 8793, not 8789: the vps keeps 8789 for the WSL compute tunnel. Runbook: docs/operations/infra/MCP-A2A.md; unit tools/config/host/systemd/aphrody/aphrody-mcp-http.service"
     },
     {

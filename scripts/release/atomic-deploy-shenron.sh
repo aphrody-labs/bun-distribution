@@ -24,7 +24,8 @@ fi
 #       routes; any failure restores the previous `current`, units, vhost,
 #       refreshed shared files and service states.
 #   atomic-deploy-shenron.sh restore BACKUP_DIR
-#       Re-apply the backup of an earlier activation (bundle rollback).
+#       Re-apply the backup of an earlier activation (bundle rollback). Only the
+#       active release stays on disk: reassemble the previous bundle first.
 #
 # Mutable data stays in /srv/shenron/shared, linked into every release; the
 # Git-tracked seed of those directories is refreshed on activation (backed up,
@@ -310,6 +311,10 @@ case "$mode" in
     [[ "$(cat "$backup/kind" 2>/dev/null || true)" = shenron && -f "$backup/previous-release" && -f "$backup/units" ]] || {
       echo "not a Shenron activation backup: $backup" >&2; exit 2;
     }
+    restored="$(cat "$backup/previous-release")"
+    [[ -z "$restored" || -d "$restored" ]] || {
+      echo "release $restored was pruned after activation: assemble its bundle again, then activate it" >&2; exit 2;
+    }
     restore_backup "$backup"
     printf 'restored Shenron from %s; current=%s\n' "$backup" "$(if [[ -L "$current" ]]; then readlink -f -- "$current"; else echo none; fi)"
     exit 0 ;;
@@ -556,4 +561,13 @@ if [[ -n "$public_urls" ]]; then
   done <<< "$public_urls"
 fi
 trap - ERR
-printf 'activated Shenron %s; previous=%s; backup=%s\n' "$(cat "$release/RELEASE_SHA")" "${previous:-none}" "$backup"
+# One release on disk: once `current` is healthy every other release goes (each was ~2.4 GB; 34 had filled
+# /srv on 2026-10-09). In-flight .assembling-* stages belong to a concurrent assemble and are kept.
+pruned=0
+for old in "$release_root"/* "$release_root"/.superseded-*; do
+  [[ -d "$old" && "$old" != "$release" ]] || continue
+  rm -rf -- "$old"
+  pruned=$((pruned + 1))
+done
+printf 'activated Shenron %s; previous=%s (pruned with %s other releases); backup=%s\n' \
+  "$(cat "$release/RELEASE_SHA")" "${previous:-none}" "$pruned" "$backup"

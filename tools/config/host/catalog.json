@@ -342,30 +342,6 @@
       "pairs": "aphrody-selfheal.service"
     },
     {
-      "service": "aphrody-downloads",
-      "unit": "aphrody-downloads.service",
-      "path": "systemd/aphrody/aphrody-downloads.service",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps"
-    },
-    {
-      "service": "aphrody-llama-gemma4",
-      "unit": "aphrody-llama-gemma4.service",
-      "path": "systemd/aphrody/aphrody-llama-gemma4.service",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps"
-    },
-    {
-      "service": "aphrody-llama-shenron-chat",
-      "unit": "aphrody-llama-shenron-chat.service",
-      "path": "systemd/aphrody/aphrody-llama-shenron-chat.service",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps"
-    },
-    {
       "service": "nie-model-serve",
       "unit": "nie-model-serve.service",
       "path": "systemd/nie/nie-model-serve.service",

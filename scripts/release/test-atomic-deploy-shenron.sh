@@ -148,6 +148,12 @@ SHENRON_BACKUP_DIR="$fixture/backup-second" bash "$script" activate "$second" >"
 [[ "$(readlink -f "$fixture/shenron/current")" = "$second" ]]
 grep -q '"second"' "$seed"
 grep -q '# second' "$fixture/units/shenron-site.service"
+# One release on disk: the healthy activation pruned `first`, so restore refuses until it is reassembled.
+[[ ! -e "$first" ]]
+if bash "$script" restore "$fixture/backup-second" >"$fixture/out" 2>&1; then echo 'restored a pruned release' >&2; exit 1; fi
+grep -q 'was pruned' "$fixture/out"
+[[ "$(readlink -f "$fixture/shenron/current")" = "$second" ]]
+bash "$script" assemble "$fixture/bundles/first" >"$fixture/out" 2>&1
 bash "$script" restore "$fixture/backup-second" >"$fixture/out" 2>&1
 [[ "$(readlink -f "$fixture/shenron/current")" = "$first" ]]
 grep -q '"first"' "$seed"
@@ -196,8 +202,11 @@ grep -q '^EnvironmentFile=-/home/other/private.env$' "$third/systemd/unrelated-o
 grep -q 'ExecStart=.*current/apps/shenron/site/node_modules/next/dist/bin/next' "$third/systemd/shenron-site.service"
 grep -q 'WorkingDirectory=/srv/shenron/current/apps/shenron/site' "$third/systemd/shenron-site.service"
 if grep -q 'shenron-pg-tunnel.service' "$third/systemd/"*.service; then echo 'DBFR retains tunnel dependency' >&2; exit 1; fi
+mkdir -p "$fixture/shenron/releases/.superseded-1111111-20261005T000000Z"
 bash "$script" activate "$third" >"$fixture/out" 2>&1
 [[ "$(readlink -f "$fixture/shenron/current")" = "$third" ]]
+[[ ! -e "$first" && ! -e "$second" && ! -e "$fixture/shenron/releases/.superseded-1111111-20261005T000000Z" ]]
+[[ -d "$retained" ]] && grep -q 'pruned with 3 other releases' "$fixture/out"
 grep -q '^install --frozen-lockfile --ignore-scripts$' "$third/.fixture-install-args"
 [[ -f "$third/apps/shenron/site/node_modules/next/dist/bin/next" && ! -e "$third/node_modules/next/dist/bin/next" ]]
 echo 'Shenron monorepo DBFR mapping and local PostgreSQL preflight: ok'
