@@ -105,7 +105,7 @@ async function yolo(ctx: Ctx): Promise<void> {
 
 // ---------------------------------------------------------------- mcp (tool host)
 
-const TOOL_HOST = process.env["BENCH_TOOL_HOST"] ?? join(REPO, "packages/m3-mcp/src/tool-host.ts");
+const TOOL_HOST = Bun.env["BENCH_TOOL_HOST"] ?? join(REPO, "packages/m3-mcp/src/tool-host.ts");
 
 /** One `tool-host.ts call` round trip: the parsed MCP-shaped result, or "missing". */
 function hostCall(name: string, args: unknown): unknown {

@@ -16,7 +16,6 @@
 import { existsSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { cpus } from "node:os";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
 import { m3BunBuild, type M3PackageConfig } from "../packages/m3-config/bun-build.ts";
 import {
   REPO,
@@ -186,7 +185,7 @@ export async function pool<T, R>(
 async function loadConfig(pkg: WorkspacePackage): Promise<M3PackageConfig | undefined> {
   const file = join(pkg.dir, "build.config.ts");
   if (!existsSync(file)) return undefined;
-  return ((await import(pathToFileURL(file).href)) as { default: M3PackageConfig }).default;
+  return ((await import(Bun.pathToFileURL(file).href)) as { default: M3PackageConfig }).default;
 }
 
 async function buildPackage(

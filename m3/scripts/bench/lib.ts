@@ -119,7 +119,7 @@ export function spawnTimed(
   const started = performance.now();
   const proc = Bun.spawnSync(cmd, {
     cwd: opts.cwd,
-    env: { ...process.env, ...opts.env },
+    env: { ...Bun.env, ...opts.env },
     stdout: "pipe",
     stderr: "pipe",
     stdin: "ignore",
@@ -136,7 +136,7 @@ export async function timeToFirstLine(
   const started = performance.now();
   const proc = Bun.spawn(cmd, {
     cwd: opts.cwd,
-    env: { ...process.env, ...opts.env },
+    env: { ...Bun.env, ...opts.env },
     stdin: opts.stdin === undefined ? "ignore" : "pipe",
     stdout: "pipe",
     stderr: "ignore",

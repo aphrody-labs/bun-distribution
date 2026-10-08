@@ -34,7 +34,7 @@ export const REPO = resolve(dirname(import.meta.path), "..");
 const MONOREPO = resolve(REPO, "..");
 /** Same resolution as scripts/yolo.ts, inlined: this script also runs as a standalone copy. */
 export const YOLO_ROOT =
-  process.env["YOLO_ROOT"] ||
+  Bun.env["YOLO_ROOT"] ||
   (existsSync(join(MONOREPO, "bin", "yolo")) ? MONOREPO : join(homedir(), "yolo"));
 /** The producer SDK loader (`@aphrody/runtime-sdk/ffi`): the monorepo keeps it under packages/engine, a standalone yolo checkout under packages. */
 export const RUNTIME_SDK_FFI =
@@ -108,7 +108,7 @@ export function installedCopies(root = REPO): InstalledCopy[] {
 
 /** The aphrody checkout that builds the library: $APHRODY_ROOT, an enclosing checkout, or ~/aphrody. */
 export function aphrodyRoot(start = REPO): string {
-  if (process.env["APHRODY_ROOT"]) return resolve(process.env["APHRODY_ROOT"]);
+  if (Bun.env["APHRODY_ROOT"]) return resolve(Bun.env["APHRODY_ROOT"]);
   for (let dir = start; ; dir = dirname(dir)) {
     if (existsSync(join(dir, "crates/interop/ffi/Cargo.toml"))) return dir;
     if (dirname(dir) === dir) break;
@@ -118,8 +118,8 @@ export function aphrodyRoot(start = REPO): string {
 
 /** Directories searched after the explicit and environment paths. */
 export function searchDirs(root = aphrodyRoot(), copies = installedCopies()): string[] {
-  const target = process.env["CARGO_TARGET_DIR"]
-    ? resolve(root, process.env["CARGO_TARGET_DIR"])
+  const target = Bun.env["CARGO_TARGET_DIR"]
+    ? resolve(root, Bun.env["CARGO_TARGET_DIR"])
     : join(root, "target");
   const arch = process.arch === "arm64" ? "aarch64" : "x86_64";
   const triple =

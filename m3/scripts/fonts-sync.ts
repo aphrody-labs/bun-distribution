@@ -11,7 +11,6 @@
 //                     raw file of that commit (public fork aphrody-labs/fonts of google/fonts)
 //   material-symbols  the npm tarball, checked against its sha512 integrity, then extracted
 // --check verifies without fetching: exit 1 when a file is missing or differs.
-import { createHash } from "node:crypto";
 import {
   existsSync,
   mkdirSync,
@@ -63,7 +62,7 @@ export interface Result {
 export const readLock = (file = LOCK_FILE): LockFile => JSON.parse(readFileSync(file, "utf8"));
 
 export const sha256 = (bytes: Uint8Array): string =>
-  createHash("sha256").update(bytes).digest("hex");
+  new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
 
 /** Raw URL of a google-fonts entry (each path segment percent-encoded: `[`, `]`, `,`). */
 export function rawUrl(lock: LockFile, entry: LockEntry): string {
@@ -115,7 +114,7 @@ function materialSymbols(lock: LockFile): Promise<string> {
   tarballDir ??= (async () => {
     const source = lock.sources["material-symbols"];
     const bytes = await download(source.tarball);
-    const digest = `sha512-${createHash("sha512").update(bytes).digest("base64")}`;
+    const digest = `sha512-${new Bun.CryptoHasher("sha512").update(bytes).digest("base64")}`;
     if (digest !== source.integrity)
       throw new Error(`${source.package}: integrity ${digest} != ${source.integrity}`);
     const dir = mkdtempSync(join(tmpdir(), "m3-fonts-sync-"));
