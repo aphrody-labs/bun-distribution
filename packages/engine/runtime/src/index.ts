@@ -591,7 +591,8 @@ export class Runtime implements Disposable {
     const path = options.libraryPath ?? defaultLibraryPath();
     if (!existsSync(path)) {
       throw new Error(
-        `YOLO runtime library not found at ${path}. Build it with \`cargo build --profile runtime -p yolo-runtime\` ` +
+        `YOLO runtime library not found at ${path}. Build it with \`just yolo::runtime-build\` ` +
+          `(\`cargo build --profile runtime -p aphrody-ffi --no-default-features --features browser,tooling\`) ` +
           `or point YOLO_RUNTIME_LIB to a prebuilt artifact.`,
       );
     }
