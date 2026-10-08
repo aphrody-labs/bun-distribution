@@ -45,6 +45,7 @@ pub enum Host {
     #[value(alias = "ovh-vps")]
     Vps,
     Dbfr,
+    Omar,
 }
 
 impl Host {
@@ -53,6 +54,7 @@ impl Host {
         match self {
             Self::Vps => "vps",
             Self::Dbfr => "dbfr",
+            Self::Omar => "omar",
         }
     }
 }
@@ -2086,6 +2088,7 @@ mod tests {
     fn aliases_are_stable() {
         assert_eq!(Host::Vps.alias(), "vps");
         assert_eq!(Host::Dbfr.alias(), "dbfr");
+        assert_eq!(Host::Omar.alias(), "omar");
     }
 
     #[test]
@@ -2505,7 +2508,10 @@ nginx failed failed
             Commands::Tunnel { args, action } => {
                 assert_eq!(args.services.as_deref(), Some("shenron-pg-tunnel,redis"));
                 assert_eq!(args.offset, 500);
-                assert_eq!(args.catalog.as_deref(), Some(Path::new("tools/config/service-catalog.json")));
+                assert_eq!(
+                    args.catalog.as_deref(),
+                    Some(Path::new("tools/config/service-catalog.json"))
+                );
                 assert!(args.dry_run);
                 assert!(action.is_none());
             },

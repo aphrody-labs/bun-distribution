@@ -11,8 +11,8 @@ use std::{
 
 use aphrody_agent_tools::{
     ApplyPatchTool, ComputerEnvironment, ComputerPolicy, ComputerTool, ComputerUseTool,
-    GoogleAiTool, JevDecideTool, JsEvalTool, ReadFileTool, SearchTextTool, ShellExecTool,
-    WebScrapeTool, WebSearchTool,
+    GoogleAiTool, JevDecideTool, JsEvalTool, ReadFileTool, RemoteComputerTarget, SearchTextTool,
+    ShellExecTool, WebScrapeTool, WebSearchTool,
 };
 use aphrody_config::{ComputerUseConfig, ComputerUseEnvironment, McpServerConfig};
 use aphrody_mcp_client::{ToolCatalog, register_selected_mcp_servers};
@@ -415,13 +415,32 @@ fn desktop_computer_tool(section: Option<&ComputerUseConfig>) -> Option<Arc<dyn 
         allowed_apps: section.allowed_apps.clone().unwrap_or_default(),
         denied_apps: section.denied_apps.clone().unwrap_or_default(),
     };
-    let environment = match section.environment {
-        Some(ComputerUseEnvironment::Windows) => ComputerEnvironment::Windows,
-        Some(ComputerUseEnvironment::Browser) => ComputerEnvironment::Browser,
-        Some(ComputerUseEnvironment::Linux) => ComputerEnvironment::Linux,
-        None => ComputerEnvironment::auto_detect(),
+    let mut tool = if let Some(host) = &section.remote_host {
+        let mut target = RemoteComputerTarget::resolve(host);
+        if let Some(distro) = &section.wsl_distribution {
+            target = target.with_wsl_distro(distro.clone());
+        }
+        if let Some(ep) = &section.endpoint {
+            target.endpoint = ep.clone();
+        }
+        match section.environment {
+            Some(ComputerUseEnvironment::Wsl | ComputerUseEnvironment::RemoteWsl) => {
+                ComputerTool::remote_wsl(target, policy)
+            },
+            _ => ComputerTool::remote_winclean(target, policy),
+        }
+    } else {
+        let environment = match section.environment {
+            Some(ComputerUseEnvironment::Windows) => ComputerEnvironment::Windows,
+            Some(ComputerUseEnvironment::Browser) => ComputerEnvironment::Browser,
+            Some(ComputerUseEnvironment::Linux) => ComputerEnvironment::Linux,
+            Some(ComputerUseEnvironment::Wsl) => ComputerEnvironment::Wsl,
+            Some(ComputerUseEnvironment::RemoteWindows) => ComputerEnvironment::RemoteWindows,
+            Some(ComputerUseEnvironment::RemoteWsl) => ComputerEnvironment::RemoteWsl,
+            None => ComputerEnvironment::auto_detect(),
+        };
+        ComputerTool::for_environment(environment, policy)
     };
-    let mut tool = ComputerTool::for_environment(environment, policy);
     tool.rename(COMPUTER_USE_TOOL);
     Some(Arc::new(tool))
 }

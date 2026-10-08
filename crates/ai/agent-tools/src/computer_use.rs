@@ -38,6 +38,12 @@ pub enum ComputerEnvironment {
     Linux,
     /// Hardware-accelerated, autonomous terminal computer use via `aphrody-term`.
     Terminal,
+    /// Windows Subsystem for Linux (WSL) automation via `wsl_execute` and guest telemetry.
+    Wsl,
+    /// Remote native Windows desktop automation on an administrator's PC (e.g. via WinClean MCP over WireGuard).
+    RemoteWindows,
+    /// Remote WSL automation on an administrator's PC.
+    RemoteWsl,
     /// In-memory mock environment for unit tests.
     Mock,
 }
@@ -68,6 +74,9 @@ impl ComputerEnvironment {
             Self::Browser => "browser",
             Self::Linux => "linux",
             Self::Terminal => "terminal",
+            Self::Wsl => "wsl",
+            Self::RemoteWindows => "remote_windows",
+            Self::RemoteWsl => "remote_wsl",
             Self::Mock => "mock",
         }
     }
@@ -639,7 +648,9 @@ impl ComputerBackend for TerminalComputerBackend {
                     "up"
                 };
                 for _ in 0..amt.unsigned_abs() {
-                    let _ = self.controller.dispatch_action(aphrody_term::ComputerAction::PressKey(key.to_string()));
+                    let _ = self
+                        .controller
+                        .dispatch_action(aphrody_term::ComputerAction::PressKey(key.to_string()));
                 }
                 Ok(ToolOutput::ok(format!("Scrolled terminal {key} by {amt}.")))
             },
@@ -649,6 +660,604 @@ impl ComputerBackend for TerminalComputerBackend {
             ))),
         }
     }
+}
+
+/// Execution mode for a remote computer-use backend.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RemoteComputerMode {
+    /// Remote native Windows desktop via WinClean MCP tools.
+    WinClean,
+    /// Remote WSL Linux guest via `wsl_execute` and WSL telemetry tools.
+    Wsl,
+}
+
+/// Target endpoint and configuration for a remote administrator's PC computer-use session.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RemoteComputerTarget {
+    /// Host name, IP address, or inventory alias (e.g. "omar", "10.200.77.10", "aphro-pc").
+    pub host: String,
+    /// Target port (defaults to 8793 for Aphrody PC MCP, 18793 for forwarded tunnel).
+    pub port: u16,
+    /// Explicit MCP/HTTP endpoint (e.g. "http://10.200.77.10:8793/mcp").
+    pub endpoint: String,
+    /// Optional authentication bearer token.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auth_token: Option<String>,
+    /// Optional WSL distribution name when targeting remote WSL (defaults to "Ubuntu-24.04").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wsl_distro: Option<String>,
+}
+
+impl RemoteComputerTarget {
+    /// Known WireGuard peer address for admin Omar.
+    pub const OMAR_WIREGUARD_IP: &'static str = "10.200.77.10";
+    /// Default port for Aphrody PC agent / WinClean MCP server.
+    pub const DEFAULT_PC_MCP_PORT: u16 = 8793;
+    /// Forwarded port for remote PC MCP tunnel.
+    pub const FORWARDED_PC_MCP_PORT: u16 = 18793;
+    /// Default WSL distribution for admin tasks.
+    pub const DEFAULT_WSL_DISTRO: &'static str = "Ubuntu-24.04";
+
+    /// Resolve a target from a host string or alias.
+    #[must_use]
+    pub fn resolve(host: &str) -> Self {
+        let trimmed = host.trim();
+        if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
+            let port = if trimmed.contains(":18793") {
+                Self::FORWARDED_PC_MCP_PORT
+            } else {
+                Self::DEFAULT_PC_MCP_PORT
+            };
+            return Self {
+                host: trimmed.to_string(),
+                port,
+                endpoint: trimmed.to_string(),
+                auth_token: None,
+                wsl_distro: Some(Self::DEFAULT_WSL_DISTRO.to_string()),
+            };
+        }
+
+        let (resolved_host, port) = match trimmed.to_ascii_lowercase().as_str() {
+            "omar" => (Self::OMAR_WIREGUARD_IP.to_string(), Self::DEFAULT_PC_MCP_PORT),
+            "omar-tunnel" | "omar-forward" => {
+                ("127.0.0.1".to_string(), Self::FORWARDED_PC_MCP_PORT)
+            },
+            "owner" | "aphro-pc" | "windows" => {
+                ("10.200.77.4".to_string(), Self::DEFAULT_PC_MCP_PORT)
+            },
+            "vps" => ("10.200.77.1".to_string(), Self::DEFAULT_PC_MCP_PORT),
+            "dbfr" => ("10.200.77.3".to_string(), Self::DEFAULT_PC_MCP_PORT),
+            other => {
+                if let Some((h, p)) = other.rsplit_once(':') {
+                    if let Ok(parsed_port) = p.parse::<u16>() {
+                        (h.to_string(), parsed_port)
+                    } else {
+                        (other.to_string(), Self::DEFAULT_PC_MCP_PORT)
+                    }
+                } else {
+                    (other.to_string(), Self::DEFAULT_PC_MCP_PORT)
+                }
+            },
+        };
+
+        let endpoint = format!("http://{}:{}/mcp", resolved_host, port);
+        Self {
+            host: resolved_host,
+            port,
+            endpoint,
+            auth_token: None,
+            wsl_distro: Some(Self::DEFAULT_WSL_DISTRO.to_string()),
+        }
+    }
+
+    /// Construct a target for administrator Omar.
+    #[must_use]
+    pub fn omar() -> Self {
+        Self::resolve("omar")
+    }
+
+    /// With an explicit WSL distribution.
+    #[must_use]
+    pub fn with_wsl_distro(mut self, distro: impl Into<String>) -> Self {
+        self.wsl_distro = Some(distro.into());
+        self
+    }
+
+    /// With an explicit authentication token.
+    #[must_use]
+    pub fn with_auth_token(mut self, token: impl Into<String>) -> Self {
+        self.auth_token = Some(token.into());
+        self
+    }
+}
+
+/// Remote execution backend for computer use on an administrator's PC.
+/// Communicates with the remote PC's Aphrody MCP service over WireGuard / HTTP.
+pub struct RemoteComputerBackend {
+    target: RemoteComputerTarget,
+    mode: RemoteComputerMode,
+    client: reqwest::Client,
+}
+
+impl RemoteComputerBackend {
+    /// Create a new remote backend for the specified target and mode.
+    #[must_use]
+    pub fn new(target: RemoteComputerTarget, mode: RemoteComputerMode) -> Self {
+        let client =
+            reqwest::Client::builder().timeout(Duration::from_secs(30)).build().unwrap_or_default();
+        Self { target, mode, client }
+    }
+
+    /// Target information.
+    #[must_use]
+    pub fn target(&self) -> &RemoteComputerTarget {
+        &self.target
+    }
+
+    /// Execution mode.
+    #[must_use]
+    pub fn mode(&self) -> RemoteComputerMode {
+        self.mode
+    }
+
+    /// Call a remote tool on the target PC over HTTP MCP JSON-RPC.
+    pub async fn call_remote_tool(
+        &self,
+        name: &str,
+        arguments: &Value,
+    ) -> Result<Value, ToolError> {
+        let payload = json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+                "name": name,
+                "arguments": arguments,
+            }
+        });
+
+        let mut req = self.client.post(&self.target.endpoint).json(&payload);
+        if let Some(token) = &self.target.auth_token {
+            req = req.bearer_auth(token);
+        }
+
+        let resp = req.send().await.map_err(|e| ToolError::Execution {
+            tool: "computer".into(),
+            message: format!(
+                "remote computer-use call `{name}` to {} ({}) failed: {e}",
+                self.target.host, self.target.endpoint
+            ),
+        })?;
+
+        if !resp.status().is_success() {
+            return Err(ToolError::Execution {
+                tool: "computer".into(),
+                message: format!(
+                    "remote computer-use HTTP {} from {}",
+                    resp.status(),
+                    self.target.endpoint
+                ),
+            });
+        }
+
+        let body: Value = resp.json().await.map_err(|e| ToolError::Execution {
+            tool: "computer".into(),
+            message: format!("invalid JSON received from remote computer-use: {e}"),
+        })?;
+
+        if let Some(err) = body.get("error") {
+            return Err(ToolError::Execution {
+                tool: "computer".into(),
+                message: format!("remote MCP error: {err}"),
+            });
+        }
+
+        Ok(body.get("result").cloned().unwrap_or(body))
+    }
+
+    async fn execute_winclean(
+        &self,
+        action: &ComputerAction,
+        _policy: &ComputerPolicy,
+    ) -> Result<ToolOutput, ToolError> {
+        match action {
+            ComputerAction::Screenshot => {
+                let res = self.call_remote_tool("computer_capture_screen", &json!({})).await?;
+                parse_remote_mcp_output(&res, "Screenshot captured from remote PC.")
+            },
+            ComputerAction::Click { x, y, element_id, button } => {
+                if let Some(eid) = element_id {
+                    let args = json!({ "elementId": eid });
+                    let res = self.call_remote_tool("computer_click_element", &args).await?;
+                    parse_remote_mcp_output(&res, "Clicked remote element.")
+                } else if let (Some(x), Some(y)) = (x, y) {
+                    let btn = button.as_deref().unwrap_or("left");
+                    let args = json!({ "x": x, "y": y, "button": btn });
+                    let res = self.call_remote_tool("computer_click", &args).await?;
+                    parse_remote_mcp_output(&res, "Clicked at coordinates on remote PC.")
+                } else {
+                    Err(ToolError::InvalidArguments {
+                        tool: "computer".into(),
+                        message: "click action requires coordinates (x, y) or an element_id".into(),
+                    })
+                }
+            },
+            ComputerAction::DoubleClick { x, y } => {
+                let args = json!({ "x": x, "y": y, "button": "left", "doubleClick": true });
+                let res = self.call_remote_tool("computer_click", &args).await?;
+                parse_remote_mcp_output(&res, "Double clicked on remote PC.")
+            },
+            ComputerAction::Move { x, y } => {
+                let args = json!({ "x": x, "y": y });
+                let res = self.call_remote_tool("mouse_move_smooth", &args).await?;
+                parse_remote_mcp_output(&res, "Moved mouse on remote PC.")
+            },
+            ComputerAction::Drag { start_x, start_y, end_x, end_y } => {
+                let args = json!({
+                    "startX": start_x,
+                    "startY": start_y,
+                    "endX": end_x,
+                    "endY": end_y,
+                });
+                let res = self.call_remote_tool("computer_drag", &args).await?;
+                parse_remote_mcp_output(&res, "Dragged on remote PC.")
+            },
+            ComputerAction::Scroll { delta_x, delta_y, direction, amount } => {
+                let dy = delta_y.or_else(|| match direction.as_deref() {
+                    Some("up") => Some(-amount.unwrap_or(120)),
+                    Some("down") => Some(amount.unwrap_or(120)),
+                    _ => None,
+                });
+                let dx = delta_x.or_else(|| match direction.as_deref() {
+                    Some("left") => Some(-amount.unwrap_or(120)),
+                    Some("right") => Some(amount.unwrap_or(120)),
+                    _ => None,
+                });
+                let args = json!({
+                    "deltaX": dx.unwrap_or(0),
+                    "deltaY": dy.unwrap_or(0),
+                });
+                let res = self.call_remote_tool("computer_scroll", &args).await?;
+                parse_remote_mcp_output(&res, "Scrolled on remote PC.")
+            },
+            ComputerAction::Type { text } => {
+                let args = json!({ "text": text });
+                let res = self.call_remote_tool("computer_type", &args).await?;
+                parse_remote_mcp_output(&res, "Typed on remote PC.")
+            },
+            ComputerAction::Keypress { key } => {
+                let args = json!({ "key": key });
+                let res = self.call_remote_tool("computer_key", &args).await?;
+                parse_remote_mcp_output(&res, "Pressed key on remote PC.")
+            },
+            ComputerAction::Wait { duration_ms } => {
+                tokio::time::sleep(Duration::from_millis(*duration_ms)).await;
+                Ok(ToolOutput::ok(format!("Waited {duration_ms} ms on remote target.")))
+            },
+            ComputerAction::Observe { element_id } => {
+                let args = json!({ "elementId": element_id });
+                let res = self.call_remote_tool("computer_observe", &args).await?;
+                parse_remote_mcp_output(&res, "Observed remote desktop.")
+            },
+            ComputerAction::ListWindows => {
+                let res = self.call_remote_tool("list_windows", &json!({})).await?;
+                parse_remote_mcp_output(&res, "Listed windows on remote PC.")
+            },
+            ComputerAction::FocusWindow { window_title, window_id } => {
+                let args = if let Some(title) = window_title {
+                    json!({ "title": title })
+                } else if let Some(wid) = window_id {
+                    json!({ "windowHandle": wid })
+                } else {
+                    return Err(ToolError::InvalidArguments {
+                        tool: "computer".into(),
+                        message: "focus_window requires window_title or window_id".into(),
+                    });
+                };
+                let res = self.call_remote_tool("switch_to_window", &args).await?;
+                parse_remote_mcp_output(&res, "Focused window on remote PC.")
+            },
+        }
+    }
+
+    async fn execute_wsl(
+        &self,
+        action: &ComputerAction,
+        _policy: &ComputerPolicy,
+    ) -> Result<ToolOutput, ToolError> {
+        let distro =
+            self.target.wsl_distro.as_deref().unwrap_or(RemoteComputerTarget::DEFAULT_WSL_DISTRO);
+        match action {
+            ComputerAction::Screenshot => {
+                // If a visual capture is possible on remote PC, attempt it; otherwise return process telemetry.
+                match self.call_remote_tool("computer_capture_screen", &json!({})).await {
+                    Ok(res)
+                        if res.get("content").and_then(Value::as_array).is_some_and(|c| {
+                            c.iter().any(|b| b.get("type").and_then(Value::as_str) == Some("image"))
+                        }) =>
+                    {
+                        parse_remote_mcp_output(&res, "WSL desktop screenshot captured.")
+                    },
+                    _ => {
+                        let res = self
+                            .call_remote_tool(
+                                "wsl_list_processes",
+                                &json!({ "distribution": distro }),
+                            )
+                            .await?;
+                        let text = format_wsl_process_list(&res, distro);
+                        Ok(ToolOutput::ok(text))
+                    },
+                }
+            },
+            ComputerAction::Observe { .. } => {
+                let res = self
+                    .call_remote_tool("wsl_list_processes", &json!({ "distribution": distro }))
+                    .await?;
+                let text = format_wsl_process_list(&res, distro);
+                Ok(ToolOutput::ok(text))
+            },
+            ComputerAction::Type { text } => {
+                let args = json!({
+                    "distribution": distro,
+                    "command": ["/bin/sh", "-lc", text],
+                });
+                let res = self.call_remote_tool("wsl_execute", &args).await?;
+                let text = format_wsl_execution_result(&res, distro, text);
+                Ok(ToolOutput::ok(text))
+            },
+            ComputerAction::Keypress { key } => {
+                let sig = match key.to_ascii_uppercase().as_str() {
+                    "CTRL+C" | "SIGINT" => "INT",
+                    "SIGTERM" => "TERM",
+                    "SIGKILL" => "KILL",
+                    _ => "INT",
+                };
+                let args = json!({
+                    "distribution": distro,
+                    "processId": 0,
+                    "signal": sig,
+                });
+                let res = self.call_remote_tool("wsl_send_signal", &args).await?;
+                parse_remote_mcp_output(
+                    &res,
+                    &format!("Dispatched signal {sig} to WSL distro {distro}."),
+                )
+            },
+            ComputerAction::Wait { duration_ms } => {
+                tokio::time::sleep(Duration::from_millis(*duration_ms)).await;
+                Ok(ToolOutput::ok(format!("Waited {duration_ms} ms in remote WSL session.")))
+            },
+            ComputerAction::ListWindows => {
+                let distros = self.call_remote_tool("wsl_list_distributions", &json!({})).await?;
+                let text = format!(
+                    "WSL Distributions on {}:\n{}",
+                    self.target.host,
+                    serde_json::to_string_pretty(&distros).unwrap_or_default()
+                );
+                Ok(ToolOutput::ok(text))
+            },
+            ComputerAction::FocusWindow { window_title, .. } => {
+                if let Some(target_distro) = window_title {
+                    Ok(ToolOutput::ok(format!(
+                        "Selected active WSL distribution: `{target_distro}` on remote PC {}.",
+                        self.target.host
+                    )))
+                } else {
+                    Ok(ToolOutput::ok(format!(
+                        "Active WSL distribution: `{distro}` on remote PC {}.",
+                        self.target.host
+                    )))
+                }
+            },
+            other => Ok(ToolOutput::error(format!(
+                "computer action `{}` is not supported in WSL environment (use `type` to execute commands, or `observe` to inspect processes)",
+                other.name()
+            ))),
+        }
+    }
+}
+
+#[async_trait::async_trait]
+impl ComputerBackend for RemoteComputerBackend {
+    fn environment(&self) -> ComputerEnvironment {
+        match self.mode {
+            RemoteComputerMode::WinClean => ComputerEnvironment::RemoteWindows,
+            RemoteComputerMode::Wsl => ComputerEnvironment::RemoteWsl,
+        }
+    }
+
+    async fn execute(
+        &self,
+        action: &ComputerAction,
+        policy: &ComputerPolicy,
+    ) -> Result<ToolOutput, ToolError> {
+        if let ComputerAction::FocusWindow { window_title: Some(title), .. } = action
+            && let Err(denial) = policy.verify_target(title)
+        {
+            return Ok(ToolOutput::error(denial));
+        }
+
+        match self.mode {
+            RemoteComputerMode::WinClean => self.execute_winclean(action, policy).await,
+            RemoteComputerMode::Wsl => self.execute_wsl(action, policy).await,
+        }
+    }
+}
+
+/// Local Windows Subsystem for Linux (WSL) computer-use backend.
+/// Uses the in-process `aphrody-winclean` crate to drive WSL distributions directly.
+pub struct WslComputerBackend {
+    distro: String,
+}
+
+impl WslComputerBackend {
+    /// Create a local WSL backend targeting `distro` (defaults to "Ubuntu-24.04").
+    #[must_use]
+    pub fn new(distro: Option<&str>) -> Self {
+        Self { distro: distro.unwrap_or(RemoteComputerTarget::DEFAULT_WSL_DISTRO).to_string() }
+    }
+}
+
+#[async_trait::async_trait]
+impl ComputerBackend for WslComputerBackend {
+    fn environment(&self) -> ComputerEnvironment {
+        ComputerEnvironment::Wsl
+    }
+
+    async fn execute(
+        &self,
+        action: &ComputerAction,
+        _policy: &ComputerPolicy,
+    ) -> Result<ToolOutput, ToolError> {
+        let wc = match aphrody_winclean::shared() {
+            Ok(wc) => wc,
+            Err(error) => {
+                return Ok(ToolOutput::error(format!(
+                    "WSL computer use unavailable: aphrody-winclean backend not loaded ({error})"
+                )));
+            },
+        };
+
+        match action {
+            ComputerAction::Screenshot | ComputerAction::Observe { .. } => {
+                let args = json!({ "distribution": self.distro });
+                let res = wc.call_async("wsl_list_processes", &args).await.map_err(|e| {
+                    ToolError::Execution { tool: "computer".into(), message: e.to_string() }
+                })?;
+                let text = format!("WSL [{}] Processes:\n{}", self.distro, res.text());
+                Ok(ToolOutput::ok(text))
+            },
+            ComputerAction::Type { text } => {
+                let args = json!({
+                    "distribution": self.distro,
+                    "command": ["/bin/sh", "-lc", text],
+                });
+                let res = wc.call_async("wsl_execute", &args).await.map_err(|e| {
+                    ToolError::Execution { tool: "computer".into(), message: e.to_string() }
+                })?;
+                let out_text = res.text();
+                Ok(ToolOutput::ok(if out_text.is_empty() {
+                    serde_json::to_string_pretty(&res.structured_content).unwrap_or_default()
+                } else {
+                    out_text
+                }))
+            },
+            ComputerAction::Keypress { key } => {
+                let sig = match key.to_ascii_uppercase().as_str() {
+                    "CTRL+C" | "SIGINT" => "INT",
+                    "SIGTERM" => "TERM",
+                    "SIGKILL" => "KILL",
+                    _ => "INT",
+                };
+                let args = json!({
+                    "distribution": self.distro,
+                    "processId": 0,
+                    "signal": sig,
+                });
+                let res = wc.call_async("wsl_send_signal", &args).await.map_err(|e| {
+                    ToolError::Execution { tool: "computer".into(), message: e.to_string() }
+                })?;
+                Ok(ToolOutput::ok(res.text()))
+            },
+            ComputerAction::Wait { duration_ms } => {
+                tokio::time::sleep(Duration::from_millis(*duration_ms)).await;
+                Ok(ToolOutput::ok(format!("Waited {duration_ms} ms in WSL.")))
+            },
+            ComputerAction::ListWindows => {
+                let res =
+                    wc.call_async("wsl_list_distributions", &json!({})).await.map_err(|e| {
+                        ToolError::Execution { tool: "computer".into(), message: e.to_string() }
+                    })?;
+                Ok(ToolOutput::ok(format!("WSL Distributions:\n{}", res.text())))
+            },
+            ComputerAction::FocusWindow { window_title, .. } => {
+                if let Some(target) = window_title {
+                    Ok(ToolOutput::ok(format!("Targeted WSL distribution: `{target}`.")))
+                } else {
+                    Ok(ToolOutput::ok(format!("Active WSL distribution: `{}`.", self.distro)))
+                }
+            },
+            other => Ok(ToolOutput::error(format!(
+                "computer action `{}` is not supported in WSL environment",
+                other.name()
+            ))),
+        }
+    }
+}
+
+fn parse_remote_mcp_output(value: &Value, fallback_default: &str) -> Result<ToolOutput, ToolError> {
+    let is_error = value.get("isError").and_then(Value::as_bool).unwrap_or(false);
+    let mut texts = Vec::new();
+    let mut images = Vec::new();
+
+    if let Some(content) = value.get("content").and_then(Value::as_array) {
+        for block in content {
+            match block.get("type").and_then(Value::as_str) {
+                Some("text") => {
+                    if let Some(t) = block.get("text").and_then(Value::as_str) {
+                        texts.push(t);
+                    }
+                },
+                Some("image") => {
+                    if let Some(data) = block.get("data").and_then(Value::as_str) {
+                        let mime =
+                            block.get("mimeType").and_then(Value::as_str).unwrap_or("image/png");
+                        images.push(ToolImage::new(mime, data));
+                    }
+                },
+                _ => {},
+            }
+        }
+    }
+
+    let text = if texts.is_empty() {
+        if let Some(structured) = value.get("structuredContent") {
+            serde_json::to_string_pretty(structured)
+                .unwrap_or_else(|_| fallback_default.to_string())
+        } else {
+            fallback_default.to_string()
+        }
+    } else {
+        texts.join("\n")
+    };
+
+    let mut out = if is_error { ToolOutput::error(text) } else { ToolOutput::ok(text) };
+    out.images = images;
+    Ok(out)
+}
+
+fn format_wsl_process_list(value: &Value, distro: &str) -> String {
+    let mut s = format!("WSL [{distro}] Active Processes:\n");
+    if let Some(text) = value
+        .get("content")
+        .and_then(Value::as_array)
+        .and_then(|a| a.first())
+        .and_then(|b| b.get("text"))
+        .and_then(Value::as_str)
+    {
+        s.push_str(text);
+    } else if let Some(content) = value.get("structuredContent") {
+        s.push_str(&serde_json::to_string_pretty(content).unwrap_or_default());
+    } else {
+        s.push_str(&serde_json::to_string_pretty(value).unwrap_or_default());
+    }
+    s
+}
+
+fn format_wsl_execution_result(value: &Value, distro: &str, command: &str) -> String {
+    let struct_val = value.get("structuredContent").unwrap_or(value);
+    let stdout = struct_val.get("Stdout").and_then(Value::as_str).unwrap_or_default();
+    let stderr = struct_val.get("Stderr").and_then(Value::as_str).unwrap_or_default();
+    let exit_code = struct_val.get("ExitCode").and_then(Value::as_i64).unwrap_or(0);
+    let success = struct_val.get("Success").and_then(Value::as_bool).unwrap_or(exit_code == 0);
+
+    let err_str = if stderr.is_empty() { String::new() } else { format!("\n[stderr]: {stderr}") };
+
+    format!(
+        "WSL [{distro}] Execution (exit {exit_code}, success: {success}) for `{command}`:\n{stdout}{err_str}"
+    )
 }
 
 /// Backend for a target environment this build cannot drive.
@@ -860,9 +1469,53 @@ impl ComputerTool {
                 env,
                 "terminal PTY is unavailable in WebAssembly",
             )),
+            ComputerEnvironment::Wsl => Arc::new(WslComputerBackend::new(None)),
+            ComputerEnvironment::RemoteWindows => Arc::new(RemoteComputerBackend::new(
+                RemoteComputerTarget::omar(),
+                RemoteComputerMode::WinClean,
+            )),
+            ComputerEnvironment::RemoteWsl => Arc::new(RemoteComputerBackend::new(
+                RemoteComputerTarget::omar(),
+                RemoteComputerMode::Wsl,
+            )),
             ComputerEnvironment::Mock => Arc::new(MockComputerBackend::new(env)),
         };
         Self::new_with_backend(backend, policy)
+    }
+
+    /// Create configured for remote Windows WinClean desktop computer use on an administrator's PC.
+    #[must_use]
+    pub fn remote_winclean(target: RemoteComputerTarget, policy: ComputerPolicy) -> Self {
+        Self::new_with_backend(
+            Arc::new(RemoteComputerBackend::new(target, RemoteComputerMode::WinClean)),
+            policy,
+        )
+    }
+
+    /// Create configured for remote WSL computer use on an administrator's PC.
+    #[must_use]
+    pub fn remote_wsl(target: RemoteComputerTarget, policy: ComputerPolicy) -> Self {
+        Self::new_with_backend(
+            Arc::new(RemoteComputerBackend::new(target, RemoteComputerMode::Wsl)),
+            policy,
+        )
+    }
+
+    /// Create configured for an administrator peer (e.g. "omar" at 10.200.77.10) in either WinClean or WSL mode.
+    #[must_use]
+    pub fn for_admin_peer(peer_name: &str, use_wsl: bool, policy: ComputerPolicy) -> Self {
+        let target = RemoteComputerTarget::resolve(peer_name);
+        if use_wsl {
+            Self::remote_wsl(target, policy)
+        } else {
+            Self::remote_winclean(target, policy)
+        }
+    }
+
+    /// Create configured for local WSL computer use.
+    #[must_use]
+    pub fn wsl(distro: Option<&str>, policy: ComputerPolicy) -> Self {
+        Self::new_with_backend(Arc::new(WslComputerBackend::new(distro)), policy)
     }
 
     /// Create configured specifically for autonomous terminal computer use via `aphrody-term`.
@@ -1120,5 +1773,104 @@ mod tests {
         let wait_out = tool.handle(json!({"action": "wait", "duration_ms": 5})).await.unwrap();
         assert!(!wait_out.is_error);
         assert!(wait_out.content.contains("Waited 5 ms"));
+    }
+
+    #[test]
+    fn remote_computer_target_resolves_omar_and_peers() {
+        let omar = RemoteComputerTarget::resolve("omar");
+        assert_eq!(omar.host, "10.200.77.10");
+        assert_eq!(omar.port, 8793);
+        assert_eq!(omar.endpoint, "http://10.200.77.10:8793/mcp");
+        assert_eq!(omar.wsl_distro.as_deref(), Some("Ubuntu-24.04"));
+
+        let omar_shortcut = RemoteComputerTarget::omar();
+        assert_eq!(omar_shortcut, omar);
+
+        let omar_tunnel = RemoteComputerTarget::resolve("omar-tunnel");
+        assert_eq!(omar_tunnel.host, "127.0.0.1");
+        assert_eq!(omar_tunnel.port, 18793);
+        assert_eq!(omar_tunnel.endpoint, "http://127.0.0.1:18793/mcp");
+
+        let owner = RemoteComputerTarget::resolve("aphro-pc");
+        assert_eq!(owner.host, "10.200.77.4");
+
+        let custom = RemoteComputerTarget::resolve("192.168.1.50:9000");
+        assert_eq!(custom.host, "192.168.1.50");
+        assert_eq!(custom.port, 9000);
+        assert_eq!(custom.endpoint, "http://192.168.1.50:9000/mcp");
+    }
+
+    #[test]
+    fn admin_peer_tool_construction() {
+        let winclean_tool = ComputerTool::for_admin_peer("omar", false, ComputerPolicy::default());
+        assert_eq!(winclean_tool.environment(), ComputerEnvironment::RemoteWindows);
+
+        let wsl_tool = ComputerTool::for_admin_peer("omar", true, ComputerPolicy::default());
+        assert_eq!(wsl_tool.environment(), ComputerEnvironment::RemoteWsl);
+
+        let local_wsl = ComputerTool::wsl(Some("Ubuntu-24.04"), ComputerPolicy::default());
+        assert_eq!(local_wsl.environment(), ComputerEnvironment::Wsl);
+    }
+
+    #[tokio::test]
+    async fn remote_computer_backend_executes_actions_over_mock_http() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+
+        // Spawn mock MCP server responding to tools/call
+        tokio::spawn(async move {
+            for _ in 0..3 {
+                if let Ok((mut socket, _)) = listener.accept().await {
+                    let mut buf = vec![0u8; 4096];
+                    let n = socket.read(&mut buf).await.unwrap_or(0);
+                    let req = String::from_utf8_lossy(&buf[..n]);
+
+                    let body = if req.contains("computer_capture_screen") {
+                        r#"{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"image","mimeType":"image/png","data":"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="}],"isError":false}}"#
+                    } else if req.contains("wsl_execute") {
+                        r#"{"jsonrpc":"2.0","id":1,"result":{"structuredContent":{"Success":true,"ExitCode":0,"Stdout":"Linux omar-wsl 6.6.36.6-microsoft-standard-WSL2\n","Stderr":""},"isError":false}}"#
+                    } else {
+                        r#"{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"Remote click acknowledged"}],"isError":false}}"#
+                    };
+
+                    let response = format!(
+                        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{}",
+                        body.len(),
+                        body
+                    );
+                    let _ = socket.write_all(response.as_bytes()).await;
+                }
+            }
+        });
+
+        let target = RemoteComputerTarget {
+            host: addr.ip().to_string(),
+            port: addr.port(),
+            endpoint: format!("http://{addr}/mcp"),
+            auth_token: None,
+            wsl_distro: Some("Ubuntu-24.04".to_string()),
+        };
+
+        // 1. WinClean screenshot
+        let win_tool = ComputerTool::remote_winclean(target.clone(), ComputerPolicy::default());
+        let snap_out = win_tool.handle(json!({"action": "screenshot"})).await.unwrap();
+        assert!(!snap_out.is_error);
+        assert_eq!(snap_out.images.len(), 1);
+        assert_eq!(snap_out.images[0].mime, "image/png");
+
+        // 2. WSL command execution
+        let wsl_tool = ComputerTool::remote_wsl(target.clone(), ComputerPolicy::default());
+        let exec_out =
+            wsl_tool.handle(json!({"action": "type", "text": "uname -a"})).await.unwrap();
+        assert!(!exec_out.is_error);
+        assert!(exec_out.content.contains("Linux omar-wsl"));
+
+        // 3. WinClean click
+        let click_out =
+            win_tool.handle(json!({"action": "click", "x": 150, "y": 250})).await.unwrap();
+        assert!(!click_out.is_error);
+        assert!(click_out.content.contains("Remote click acknowledged"));
     }
 }

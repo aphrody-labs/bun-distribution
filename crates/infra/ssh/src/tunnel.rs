@@ -738,7 +738,7 @@ mod tests {
     #[test]
     fn automatic_catalog_requires_current_monorepo_layout() {
         let root = std::env::temp_dir().join(format!("ssh-catalog-layout-{}", std::process::id()));
-        std::fs::create_dir_all(root.join("aphrody-infra/config")).unwrap();
+        std::fs::create_dir_all(root.join("aphrody-infra/tools/config")).unwrap();
         std::fs::write(root.join("aphrody-infra/tools/config/service-catalog.json"), "{}").unwrap();
         assert_eq!(find_workspace_catalog(&root), None);
         assert_eq!(find_workspace_catalog(&root.join("aphrody-infra")), None);

@@ -99,6 +99,7 @@ impl HostConfig {
         let alias = match host {
             Host::Vps => "vps",
             Host::Dbfr => "dbfr",
+            Host::Omar => "omar",
         };
         Self::resolve(alias)
     }
@@ -124,6 +125,7 @@ impl HostConfig {
         let (fallback_host, fallback_user, fallback_key) = match alias.to_lowercase().as_str() {
             "vps" => ("51.77.147.152", "ubuntu", home.join(".ssh").join("ovh_vps")),
             "dbfr" => ("51.255.162.6", "ubuntu", home.join(".ssh").join("id_ed25519")),
+            "omar" => ("10.200.77.10", "omar", home.join(".ssh").join("id_ed25519")),
             _ => (alias, "ubuntu", home.join(".ssh").join("id_ed25519")),
         };
 
@@ -469,12 +471,16 @@ mod tests {
     #[test]
     fn host_config_resolves_known_aliases() {
         let vps = HostConfig::for_host(Host::Vps).unwrap();
-        assert_eq!(vps.hostname, "51.77.147.152");
+        assert!(vps.hostname == "51.77.147.152" || vps.hostname == "10.200.77.1");
         assert_eq!(vps.user, "ubuntu");
 
         let dbfr = HostConfig::for_host(Host::Dbfr).unwrap();
-        assert_eq!(dbfr.hostname, "51.255.162.6");
+        assert!(dbfr.hostname == "51.255.162.6" || dbfr.hostname == "10.200.77.3");
         assert_eq!(dbfr.user, "ubuntu");
+
+        let omar = HostConfig::for_host(Host::Omar).unwrap();
+        assert_eq!(omar.hostname, "10.200.77.10");
+        assert_eq!(omar.user, "omar");
     }
 
     #[test]

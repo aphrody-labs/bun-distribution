@@ -2007,6 +2007,7 @@ async fn execute_drive(cmd: &DriveCommand, run: &mut Run) -> Result<()> {
                         crate::drive::MountKind::RemoteSftp { host, .. } => match host {
                             aphrody_ssh::Host::Vps => "RemoteSftp(vps)",
                             aphrody_ssh::Host::Dbfr => "RemoteSftp(dbfr)",
+                            aphrody_ssh::Host::Omar => "RemoteSftp(omar)",
                         },
                         crate::drive::MountKind::GitRepo { .. } => "GitRepo",
                         crate::drive::MountKind::OpenDalFs { .. } => "OpenDalFs",

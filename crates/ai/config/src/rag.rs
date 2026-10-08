@@ -165,6 +165,12 @@ pub enum ComputerUseEnvironment {
     Browser,
     /// Linux X11 automation via `x11rb`.
     Linux,
+    /// Windows Subsystem for Linux (WSL) automation via `wsl_execute`.
+    Wsl,
+    /// Remote native Windows automation on an administrator's PC (e.g. via `WireGuard` peer).
+    RemoteWindows,
+    /// Remote WSL automation on an administrator's PC.
+    RemoteWsl,
 }
 
 /// `[computer_use]` — computer-use tool configuration.
@@ -184,6 +190,15 @@ pub struct ComputerUseConfig {
     /// Target environment/backend.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub environment: Option<ComputerUseEnvironment>,
+    /// Optional remote administrator target host or IP (e.g. "omar", "10.200.77.10").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub remote_host: Option<String>,
+    /// Optional WSL distribution name when targeting WSL (e.g. "Ubuntu-24.04").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wsl_distribution: Option<String>,
+    /// Optional custom remote endpoint override (e.g. `http://10.200.77.10:8793/mcp`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub endpoint: Option<String>,
 }
 
 #[cfg(test)]
