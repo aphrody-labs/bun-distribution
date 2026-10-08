@@ -8,7 +8,6 @@
 //   bun run gen            # every folder
 //   bun run gen -- icons   # only the listed folders
 
-import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 
 const ASSET_FOLDERS = ["icons", "images", "videos"];
@@ -16,6 +15,12 @@ const LAZY_FOLDERS = ["svgs/brands", "svgs/ext/Extras", "svgs/ext/Code"];
 const SKIP = new Set(["index.ts", "urls.ts"]);
 
 const root = join(import.meta.dir, "..");
+
+/** Names directly inside `dir` (files and folders, dotfiles included), or null when it cannot be read. */
+const readdir = (dir: string): Promise<string[] | null> =>
+  Array.fromAsync(new Bun.Glob("*").scan({ cwd: dir, onlyFiles: false, dot: true })).catch(
+    () => null,
+  );
 
 /** `Video-20.png` → `Video20`. */
 const variableName = (fileName: string): string => fileName.split(".")[0]!.replaceAll("-", "");
@@ -77,7 +82,7 @@ function render(folder: string, lazy: boolean, fileNames: string[]): string {
 
 async function generate(folder: string, lazy: boolean): Promise<string | null> {
   const dir = join(root, folder);
-  const entries = await readdir(dir).catch(() => null);
+  const entries = await readdir(dir);
   if (!entries) return null;
   const fileNames = entries.filter((f) => !SKIP.has(f) && !f.startsWith(".")).toSorted();
   const out = join(dir, "index.ts");
@@ -91,7 +96,7 @@ async function generate(folder: string, lazy: boolean): Promise<string | null> {
  */
 async function generateBeardedUrls(): Promise<string | null> {
   const dir = join(root, "svgs/ext/Extras");
-  const entries = await readdir(dir).catch(() => null);
+  const entries = await readdir(dir);
   if (!entries) return null;
   const svgs = entries.filter((f) => f.endsWith(".svg")).toSorted();
   const out = join(dir, "urls.ts");
@@ -126,9 +131,7 @@ const written = (
     ...folders.map(([f, lazy]) => generate(f, lazy)),
     ...(only.size === 0 || only.has("svgs/ext/Extras") ? [generateBeardedUrls()] : []),
   ])
-).filter(
-  (f): f is string => f !== null,
-);
+).filter((f): f is string => f !== null);
 if (written.length > 0) {
   const fmt = Bun.spawnSync(["oxfmt", ...written], {
     stdout: "inherit",
