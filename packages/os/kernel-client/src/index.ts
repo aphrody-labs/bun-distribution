@@ -7,7 +7,7 @@
  * here. {@link KernelClient} also calls any OS tool or skill directly.
  *
  * Wire format: newline-delimited JSON-RPC 2.0 over the per-user local endpoint (Unix socket or
- * Windows named pipe), the same one `aphrody-kernel` and the desktop serve.
+ * Windows named pipe), the same one `aphrody kernel` and the desktop serve.
  */
 import { connect, type Socket } from "node:net";
 import { join } from "node:path";

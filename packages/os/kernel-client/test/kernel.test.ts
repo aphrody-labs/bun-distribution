@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-// End-to-end against a real `aphrody-kernel serve` on a private endpoint.
+// End-to-end against a real `aphrody kernel serve` on a private endpoint.
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { KernelClient, registerSubsystem } from "../src/index.ts";
 
-const exe = process.platform === "win32" ? "aphrody-kernel.exe" : "aphrody-kernel";
-// The Rust workspace root owns target/; an explicit binary override is available for installed builds.
+const exe = process.platform === "win32" ? "aphrody.exe" : "aphrody";
+// The kernel ships as `aphrody kernel`; the Rust workspace root owns target/, APHRODY_BIN points at an installed build.
 const binary =
-  process.env.APHRODY_KERNEL_BIN ?? join(import.meta.dir, "../../../../target/debug", exe);
+  process.env.APHRODY_BIN ?? join(import.meta.dir, "../../../../target/debug", exe);
 const endpoint =
   process.platform === "win32"
     ? `\\\\.\\pipe\\aphrody-os-bun-test-${process.pid}`
@@ -18,7 +18,7 @@ let server: ReturnType<typeof Bun.spawn> | undefined;
 beforeAll(async () => {
   if (!existsSync(binary))
     throw new Error(`build it first through scripts/build/rust/cargo-serial.sh: ${binary}`);
-  server = Bun.spawn([binary, "--socket", endpoint, "serve", "--no-browser"], {
+  server = Bun.spawn([binary, "kernel", "--socket", endpoint, "serve", "--no-browser"], {
     stderr: "pipe",
     stdout: "pipe",
   });
