@@ -5,7 +5,7 @@
 //   sprite-<style>[-fill].svg  one <symbol id="name"> sprite per style (web, Tauri, wxwasm)
 //   freedesktop/<Theme>/     freedesktop icon theme (index.theme + scalable/*) for GNOME, COSMIC, KDE
 // Usage: bun export-theme.ts --out dist/icons [--theme Aphrody-M3] [--styles outlined,rounded,sharp]
-import { mkdirSync, writeFileSync, existsSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { readSymbolSvg, symbolNames, hasSymbol, type SymbolStyle } from "../src/index.ts";
 
@@ -18,13 +18,16 @@ const out = resolve(flag("out", "dist/icons"));
 const theme = flag("theme", "Aphrody-M3");
 const styles = flag("styles", "outlined,rounded,sharp").split(",") as SymbolStyle[];
 
+const pending: Promise<unknown>[] = [];
+const write = (path: string, content: string): void => void pending.push(Bun.write(path, content));
+
 const names = symbolNames();
 if (names.length === 0) {
   console.error("catalogue empty: run `bun scripts/sync-catalogue.ts` first");
   process.exit(1);
 }
 mkdirSync(out, { recursive: true });
-writeFileSync(join(out, "names.json"), JSON.stringify(names));
+await Bun.write(join(out, "names.json"), JSON.stringify(names));
 
 const inner = (svg: string) => svg.replace(/^[\s\S]*?<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "");
 const viewBox = (svg: string) => /viewBox="([^"]+)"/.exec(svg)?.[1] ?? "0 -960 960 960";
@@ -40,7 +43,7 @@ for (const style of styles) {
       box = viewBox(svg);
       symbols.push(`<symbol id="${name}" viewBox="${box}">${inner(svg)}</symbol>`);
     }
-    writeFileSync(
+    write(
       join(out, `sprite-${style}${filled ? "-fill" : ""}.svg`),
       `<svg xmlns="http://www.w3.org/2000/svg" style="display:none">${symbols.join("")}</svg>`,
     );
@@ -107,15 +110,15 @@ const dirs = new Set<string>(["material"]);
 mkdirSync(join(root, "material"), { recursive: true });
 for (const name of names) {
   if (hasSymbol(name, "outlined"))
-    writeFileSync(join(root, "material", `${name}.svg`), readSymbolSvg(name, "outlined"));
+    write(join(root, "material", `${name}.svg`), readSymbolSvg(name, "outlined"));
 }
 let mapped = 0;
 for (const [icon, [context, symbol]] of Object.entries(MAP)) {
   if (!hasSymbol(symbol, "outlined")) continue;
   mkdirSync(join(root, context), { recursive: true });
   const svg = readSymbolSvg(symbol, "outlined");
-  writeFileSync(join(root, context, `${icon}.svg`), svg);
-  writeFileSync(join(root, context, `${icon}-symbolic.svg`), svg);
+  write(join(root, context, `${icon}.svg`), svg);
+  write(join(root, context, `${icon}-symbolic.svg`), svg);
   dirs.add(context);
   mapped++;
 }
@@ -133,11 +136,12 @@ const sections = [...dirs]
     (d) => `[scalable/${d}]\nContext=${ctx[d]}\nSize=24\nMinSize=16\nMaxSize=512\nType=Scalable\n`,
   )
   .join("\n");
-writeFileSync(
+await Bun.write(
   join(out, "freedesktop", theme, "index.theme"),
   `[Icon Theme]\nName=${theme}\nComment=Material Symbols (outlined, wght 400) for Aphrody M3\nInherits=hicolor\nDirectories=${listed.join(",")}\n\n${sections}`,
 );
+await Promise.all(pending);
 console.log(
   `exported ${names.length} symbols: ${sprites} sprites, freedesktop theme "${theme}" (${mapped} mapped names) -> ${out}`,
 );
-if (!existsSync(join(out, "names.json"))) process.exit(1);
+if (!(await Bun.file(join(out, "names.json")).exists())) process.exit(1);
