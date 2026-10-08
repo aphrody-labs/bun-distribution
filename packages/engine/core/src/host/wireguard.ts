@@ -266,12 +266,25 @@ export function accountProblems(root: string, accounts: HostAccount[], t?: Tunne
       `Match User ${a.user}`,
       "AuthenticationMethods publickey",
       "PasswordAuthentication no",
-      "AllowTcpForwarding no",
       "GatewayPorts no",
       "AuthorizedKeysFile /etc/ssh/authorized_keys.d/%u",
     ])
       if (!sshd.includes(need))
         problems.push(`${tag}: ${own?.file ?? "sshd drop-in"} lacks "${need}"`);
+    // Forwarding: none, or reverse (-R) only onto loopback ports, never local (-L) forwarding.
+    const forwarding = /^\s*AllowTcpForwarding\s+(\S+)\s*$/m.exec(sshd)?.[1];
+    if (forwarding === "remote") {
+      if (!/^\s*PermitOpen\s+none\s*$/m.test(sshd))
+        problems.push(`${tag}: remote forwarding without "PermitOpen none"`);
+      const listen = /^\s*PermitListen\s+(.+)$/m.exec(sshd)?.[1]?.trim().split(/\s+/) ?? [];
+      if (listen.length === 0 || listen.some((l) => !/^127\.0\.0\.1:\d+$/.test(l)))
+        problems.push(
+          `${tag}: remote forwarding must list PermitListen 127.0.0.1:<port> entries only`,
+        );
+    } else if (forwarding !== "no")
+      problems.push(
+        `${tag}: ${own?.file ?? "sshd drop-in"} lacks "AllowTcpForwarding no" (or remote)`,
+      );
     if (a.postgresAccess === "sudo-only") {
       const deny = a.sshdDropIns
         .filter((d) => d.hosts.includes("dbfr"))
@@ -681,7 +694,7 @@ function accountSteps(ctx: PlanContext, t: Tunnel, host: "vps" | "dbfr"): WgStep
         phase: "verify",
         kind: "check",
         note: "effective sshd values for omar from his public address",
-        run: `sudo -n sshd -T -C user=${a.user},host=x,addr=${a.allowedFrom[0]} | grep -E '^(authenticationmethods publickey|passwordauthentication no|allowtcpforwarding no|gatewayports no|authorizedkeysfile /etc/ssh/authorized_keys.d/%u)$' | wc -l | grep -qx 5`,
+        run: `sudo -n sshd -T -C user=${a.user},host=x,addr=${a.allowedFrom[0]} | grep -E '^(authenticationmethods publickey|passwordauthentication no|allowtcpforwarding (no|remote)|gatewayports no|authorizedkeysfile /etc/ssh/authorized_keys.d/%u)$' | wc -l | grep -qx 5`,
       },
       {
         id: id("verify-sudo"),

@@ -5,13 +5,14 @@
 État au 2026-10-08. Paquet de mise en place publié dans le salon admin Discord sécurisé. Aucun secret ici :
 clés privées, jetons et identifiants restent sur leur machine ou dans leur magasin protégé et ne transitent
 que hors bande. Inventaire : `tools/config/host/wireguard/aphrody-tunnel.json` ; tunnel :
-[PRIVATE-TUNNEL.md](PRIVATE-TUNNEL.md).
+[PRIVATE-TUNNEL.md](PRIVATE-TUNNEL.md). Variables non secrètes (identités, wg1, ports, alias) :
+`tools/config/var/omar.json`.
 
 ## 1. Architecture
 
 - Tunnel `aphrody-private` (`wg1` côté Linux, `aphrody` côté Windows), sous-réseau `10.200.77.0/24`, split tunnel.
 - Hub `vps` `10.200.77.1`, endpoint `51.77.147.152:51821`, clé publique `McWuNyGdzU81q9MEyfvnxoGYIHqGW1UcRqpcge3NxB4=`.
-- `omar` = `10.200.77.10`, clé publique déclarée `A42Sm27uwGBIkzPeTmK7yQxz24JDpM9h5jjeQyyjfzg=`.
+- `omar` = `10.200.77.10`, clé publique déclarée `lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=`.
 - `aphro-pc` (propriétaire) = `10.200.77.4`. Le flux aphro-pc → omar transite par le hub (routage peer à peer, sans NAT).
 - Services sur le PC d'Omar, joignables uniquement par le tunnel :
   - `8795/tcp` : bureau à distance complet `aphrody infra remote serve` (flux JPEG + souris/clavier, visionneuse
@@ -60,7 +61,7 @@ $k = "$env:USERPROFILE\.aphrody\wireguard\aphrody.key"
 New-Item -ItemType Directory -Force (Split-Path $k) | Out-Null
 Read-Host "PrivateKey" | Set-Content -NoNewline $k     # coller, rien ne s'affiche ailleurs
 icacls $k /inheritance:r /grant:r "${env:USERNAME}:F" | Out-Null
-Get-Content $k | aphrody infra wg pubkey   # doit afficher A42Sm27uwGBIkzPeTmK7yQxz24JDpM9h5jjeQyyjfzg=
+Get-Content $k | aphrody infra wg pubkey   # doit afficher lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=
 ```
 
 - **B, nouvelle clé** : `aphrody infra wg keygen` (écrit `%USERPROFILE%\.aphrody\wireguard\aphrody.key`, affiche la
@@ -225,7 +226,7 @@ RÈGLES DE SÉCURITÉ (absolues)
 FAITS
 - Tunnel `aphrody-private`, interface Windows `aphrody`, réseau 10.200.77.0/24 (split tunnel).
 - Hub vps 10.200.77.1, endpoint 51.77.147.152:51821, clé publique McWuNyGdzU81q9MEyfvnxoGYIHqGW1UcRqpcge3NxB4=
-- Omar = 10.200.77.10/24, clé publique déclarée A42Sm27uwGBIkzPeTmK7yQxz24JDpM9h5jjeQyyjfzg=
+- Omar = 10.200.77.10/24, clé publique déclarée lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=
 - Propriétaire aphro-pc = 10.200.77.4 : seule source autorisée vers les services d'Omar.
 - Services Omar : 8795/tcp bureau à distance (`aphrody infra remote serve`) ; 8793/tcp MCP HTTP (`aphrody-mcp http`, qui refuse toute adresse non loopback : 127.0.0.1:8793 + netsh portproxy).
 - Variables (redéfinis-les dans chaque nouvelle session) : $Repo = "C:\src\aphrody" ; $AH = "$env:USERPROFILE\.aphrody" ; $Bin = "$env:LOCALAPPDATA\Aphrody\bin"
@@ -270,7 +271,7 @@ aphrody infra wg driver status
 
 6) CLÉ PRIVÉE (fichier $AH\wireguard\aphrody.key)
 a. S'il existe : Get-Content "$AH\wireguard\aphrody.key" -Raw | aphrody infra wg pubkey
-   Attendu : A42Sm27uwGBIkzPeTmK7yQxz24JDpM9h5jjeQyyjfzg= → OK, passe à d.
+   Attendu : lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ= → OK, passe à d.
 b. S'il n'existe pas : affiche à Omar ce message et attends sa confirmation : « Dans une AUTRE fenêtre PowerShell, colle la PrivateKey de ton tunnel (app WireGuard → tunnel → Modifier → ligne PrivateKey) avec : $k="$env:USERPROFILE\.aphrody\wireguard\aphrody.key"; New-Item -ItemType Directory -Force (Split-Path $k)|Out-Null; Read-Host "PrivateKey" | Set-Content -NoNewline $k ». Ne lui demande JAMAIS de te la coller. Puis refais a.
 c. Si Omar n'a plus cette clé (ou si a. donne une autre clé publique et qu'il confirme l'avoir perdue) : aphrody infra wg keygen (ajoute --force seulement pour remplacer un aphrody.key erroné). Il affiche la clé PUBLIQUE seule : Omar la poste dans le salon admin Discord ; le propriétaire met à jour l'inventaire et le hub. Continue les étapes ; le handshake viendra après.
 d. Restreins l'ACL : icacls "$AH\wireguard\aphrody.key" /inheritance:r /grant:r "${env:USERNAME}:F"
@@ -347,7 +348,7 @@ Optionnel : Remove-Item "$AH\private\remote.token","$AH\private\mcp.token" ; ré
 
 11) RAPPORT FINAL (Omar le poste dans le salon admin Discord ; AUCUN secret : ni clé privée, ni jeton, ni contenu de .key/.token/.conf)
 - aphrody --version, git -C $Repo rev-parse --short HEAD, méthode (build source ou release)
-- clé publique : A42Sm27uwGBIkzPeTmK7yQxz24JDpM9h5jjeQyyjfzg= confirmée, OU la nouvelle clé publique issue de keygen
+- clé publique : lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ= confirmée, OU la nouvelle clé publique issue de keygen
 - sortie de `aphrody infra --root $Repo wg show aphrody` (clés publiques seulement) et résultat du ping 10.200.77.1
 - healthz 8795 et 8793 (127.0.0.1 et 10.200.77.10), 401 sans jeton, portproxy, règles pare-feu, état de la tâche planifiée
 - jetons remis hors bande : oui/non (jamais leur valeur)
@@ -400,6 +401,18 @@ if (-not (Select-String -Quiet -Path "$S\config" -Pattern '^Host aphro-pc' -Erro
 ```
 
 Rollback : `Stop-Service sshd; Set-Service sshd -StartupType Disabled; Remove-NetFirewallRule -Name Aphrody-SSH-In-Tunnel`.
+
+## 4 ter. Tunnel SSH inverse (tant que wg1 n'a pas de handshake)
+
+Le PC d'Omar publie ses services locaux sur la boucle locale du vps. `omar-sshd.conf` n'autorise que ces trois
+`-R` (`PermitListen`), aucun `-L` (`PermitOpen none`). Tâche planifiée `Aphrody Omar reverse` côté Omar :
+
+```powershell
+ssh -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -R 127.0.0.1:22010:127.0.0.1:22 -R 127.0.0.1:28795:127.0.0.1:8795 -R 127.0.0.1:28793:127.0.0.1:8793 omar@51.77.147.152
+```
+
+Côté propriétaire : `ssh omar-rt` (ProxyJump vps → 127.0.0.1:22010) ; bureau à distance et MCP via
+`ssh -L 8795:127.0.0.1:28795 -L 8793:127.0.0.1:28793 vps`. Services d'Omar liés à 127.0.0.1 tant que wg1 est coupé.
 
 ## 5. Modèle `wg render omar` (sans PrivateKey)
 

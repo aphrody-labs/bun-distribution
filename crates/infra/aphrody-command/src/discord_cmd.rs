@@ -31,12 +31,15 @@ pub(crate) enum DiscordAction {
     Send {
         /// Destination Discord channel ID
         channel_id: String,
-        /// Message text content
+        /// Message text content (`-` reads it from stdin)
         #[arg(long, short)]
         message: Option<String>,
         /// Optional file to attach
         #[arg(long, short)]
         file: Option<PathBuf>,
+        /// Optional path to environment file (e.g. .env or /etc/aphrody-discord.env)
+        #[arg(long)]
+        env_file: Option<PathBuf>,
     },
     /// Ask Aphrody AI and post the grounded response with rich Embeds into Discord.
     Ask {
@@ -125,8 +128,12 @@ pub(crate) async fn run_discord(action: DiscordAction) -> Result<()> {
             );
             Ok(())
         },
-        DiscordAction::Send { channel_id, message, file } => {
-            let bot = load_bot(None)?;
+        DiscordAction::Send { channel_id, message, file, env_file } => {
+            let bot = load_bot(env_file.as_ref())?;
+            let message = match message.as_deref() {
+                Some("-") => Some(std::io::read_to_string(std::io::stdin()).into_diagnostic()?),
+                _ => message,
+            };
             if let Some(file_path) = file {
                 let filename = file_path.file_name().and_then(|n| n.to_str()).unwrap_or("file.dat");
                 let bytes = std::fs::read(&file_path).into_diagnostic()?;

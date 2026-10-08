@@ -113,9 +113,9 @@ test("WireGuard key format: 44 base64 characters, 32 bytes", () => {
 test("registered peers have valid public keys after host-local generation", () => {
   const t = tunnel();
   expect(t.peers.find((p) => p.id === "omar")?.publicKey).toBe(
-    "A42Sm27uwGBIkzPeTmK7yQxz24JDpM9h5jjeQyyjfzg=",
+    "lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=",
   );
-  expect(t.peers.find((p) => p.id === "omar")?.publicKeyNote).toContain("withdrawn");
+  expect(t.peers.find((p) => p.id === "omar")?.publicKeyNote).toContain("never handshaked");
   expect(t.peers.find((p) => p.id === "aphro-pc")?.publicKey).toBe(
     "VewVolGGwY3Lvp78jp9dKB7RIxg2xUR2pbVS+y+uj2I=",
   );
@@ -220,7 +220,7 @@ test("hub config: known keys inline, the others are apply-time inputs, no privat
   expect(h.text).toContain("PublicKey = VewVolGGwY3Lvp78jp9dKB7RIxg2xUR2pbVS+y+uj2I=");
   expect(h.text).toContain("AllowedIPs = 10.200.77.10/32");
   expect(h.needs.map((n) => n.env)).toEqual(["WSL_PUBLIC_KEY", "DBFR_PUBLIC_KEY"]);
-  expect(h.text).toContain("PublicKey = A42Sm27uwGBIkzPeTmK7yQxz24JDpM9h5jjeQyyjfzg=");
+  expect(h.text).toContain("PublicKey = lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=");
   expect(PRIVATE_KEY_PATTERN.test(h.text)).toBe(false);
   expect(h.text).not.toMatch(/AllowedIPs = [^\n]*\/(0|2[0-3])\b/);
 });
@@ -329,7 +329,7 @@ test("the omar account files: no key invented, root-owned key file, one sudoers 
   const keys = readFileSync(join(root, "ssh/omar.authorized_keys"), "utf8");
   const lines = keys.split("\n").filter((l) => l.trim() && !l.trim().startsWith("#"));
   expect(lines).toEqual([
-    'from="92.170.252.46,10.200.77.0/24",restrict,pty ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJvmGjMWPLFJZWsACxRqCC0Ll+uXvnyunYdPG4E8jS4V omar (supplied comment: windows-aphro)',
+    'from="92.170.252.46,10.200.77.0/24",restrict,pty,port-forwarding,permitlisten="127.0.0.1:22010",permitlisten="127.0.0.1:28795",permitlisten="127.0.0.1:28793" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJvmGjMWPLFJZWsACxRqCC0Ll+uXvnyunYdPG4E8jS4V omar (supplied comment: windows-aphro)',
   ]);
   expect(keys).toContain("shared pair");
   expect(catalog.accounts![0]!.findings?.join("\n")).toMatch(
@@ -348,7 +348,9 @@ test("the omar account files: no key invented, root-owned key file, one sudoers 
     "Match User omar",
     "AuthenticationMethods publickey",
     "PasswordAuthentication no",
-    "AllowTcpForwarding no",
+    "AllowTcpForwarding remote",
+    "PermitListen 127.0.0.1:22010 127.0.0.1:28795 127.0.0.1:28793",
+    "PermitOpen none",
     "GatewayPorts no",
     "AuthorizedKeysFile /etc/ssh/authorized_keys.d/%u",
   ])

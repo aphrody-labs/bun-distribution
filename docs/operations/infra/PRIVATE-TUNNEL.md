@@ -79,7 +79,7 @@ named in `needs`; the fresh-install adapter above executes the SSH/WireGuard sub
   generator), no `DNS` line, `PersistentKeepalive = 25`, endpoint `51.77.147.152:51821`.
 - **Keys.** Each private key is born on its own peer (`wg genkey` into a `0600` file on a host, the WireGuard app on
   Windows) and never enters the repository, the plan or a report; only public keys are declared. omar =
-  `A42Sm27uwGBIkzPeTmK7yQxz24JDpM9h5jjeQyyjfzg=`, aphro-pc = `VewVolGGwY3Lvp78jp9dKB7RIxg2xUR2pbVS+y+uj2I=` (distinct).
+  `lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=`, aphro-pc = `VewVolGGwY3Lvp78jp9dKB7RIxg2xUR2pbVS+y+uj2I=` (distinct).
   The key announced earlier for omar was withdrawn (private key lost) and appears nowhere. The hub, WSL and dbfr keys
   are generated at apply.
 - **Routing.** The hub routes peer to peer (`ip_forward` is already 1; the apply persists it). No NAT, no `FORWARD`

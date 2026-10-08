@@ -1,0 +1,60 @@
+{
+  "$comment": "Single source of the non-secret variables of Omar's remote setup. No private key, token or public IP here: tokens travel out of band, the public address stays in host logs and ssh/omar.authorized_keys only.",
+  "schemaVersion": 1,
+  "principal": "omar",
+  "updated": "2026-10-08",
+  "identity": {
+    "githubLogin": "KyrioFox",
+    "discordUserId": "1527405876695142620",
+    "discordRole": "Aphrody Administrator",
+    "unixUser": "omar",
+    "admin": "tools/config/host/omar-admin.json"
+  },
+  "wireguard": {
+    "interface": "wg1",
+    "address": "10.200.77.10/32",
+    "publicKey": "lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=",
+    "hub": { "host": "vps", "endpoint": "51.77.147.152:51821", "address": "10.200.77.1" },
+    "inventory": "tools/config/host/wireguard/aphrody-tunnel.json"
+  },
+  "services": {
+    "ssh": { "bind": "10.200.77.10:22", "allowedFrom": "10.200.77.4" },
+    "remoteDesktop": {
+      "bind": "10.200.77.10:8795",
+      "allowedFrom": "10.200.77.4",
+      "tokenEnv": "APHRODY_REMOTE_TOKEN"
+    },
+    "mcpHttp": {
+      "bind": "10.200.77.10:8793",
+      "allowedFrom": "10.200.77.4",
+      "tokenEnv": "APHRODY_MCP_HTTP_TOKEN"
+    }
+  },
+  "reverseTunnel": {
+    "$comment": "Fallback while wg1 has no handshake: Omar's PC publishes its loopback services on the vps loopback (omar-sshd.conf PermitListen).",
+    "host": "vps",
+    "login": "omar",
+    "scheduledTask": "Aphrody Omar reverse",
+    "forwards": [
+      { "remote": "127.0.0.1:22010", "local": "127.0.0.1:22", "service": "ssh" },
+      { "remote": "127.0.0.1:28795", "local": "127.0.0.1:8795", "service": "remoteDesktop" },
+      { "remote": "127.0.0.1:28793", "local": "127.0.0.1:8793", "service": "mcpHttp" }
+    ]
+  },
+  "ownerAliases": {
+    "omar-pc": "ssh over wg1 (10.200.77.10)",
+    "omar-rt": "ssh through the reverse tunnel (ProxyJump vps, 127.0.0.1:22010)"
+  },
+  "sshd": {
+    "config": "tools/config/host/ssh/omar-sshd.conf",
+    "authorizedKeys": "tools/config/host/ssh/omar.authorized_keys",
+    "sudoers": "tools/config/host/sudoers/omar"
+  },
+  "pending": [
+    "Omar's own SSH public key (replaces the shared windows-aphro key)",
+    "first wg1 handshake from 10.200.77.10",
+    "Windows user name for the User of the omar-pc / omar-rt aliases",
+    "remote.token and mcp.token delivered out of band"
+  ],
+  "runbook": "docs/operations/infra/OMAR-REMOTE-CONTROL.md"
+}

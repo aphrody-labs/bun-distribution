@@ -90,9 +90,9 @@
       "host": "windows",
       "os": "windows",
       "address": "10.200.77.10",
-      "publicKey": "A42Sm27uwGBIkzPeTmK7yQxz24JDpM9h5jjeQyyjfzg=",
+      "publicKey": "lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=",
       "keyOrigin": "WireGuard app on Omar's Windows PC (empty tunnel); he sends only the public key",
-      "publicKeyNote": "supplied by the owner on 2026-10-06, replacing the key announced earlier that day (withdrawn: tunnel cancelled, private key lost; never reuse it)",
+      "publicKeyNote": "key actually configured on Omar's PC, relayed by the owner on 2026-10-08 (pair verified); replaces A42Sm27u… (2026-10-06), which never handshaked. Applied on the vps wg1 the same day",
       "udpSource": {
         "mode": "ufw",
         "ips": ["92.170.252.46"],
