@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Shenron Docker releases on DBFR
 
 The owner-directed topology is WSL for source editing, VPS for builds, and DBFR
@@ -24,8 +25,8 @@ The container release directory is `releases/<commit>` or
   "target": "dbfr",
   "commit": "FULL_40_CHARACTER_SHA",
   "imageId": "sha256:FULL_IMAGE_ID",
-  "files": {"compose.yaml": "SHA256", "deploy.env": "SHA256"},
-  "publicVfs": {"path": "/srv/shenron/shared/server/data/shenron-vfs.sqlite", "sha256": "SHA256"}
+  "files": { "compose.yaml": "SHA256", "deploy.env": "SHA256" },
+  "publicVfs": { "path": "/srv/shenron/shared/server/data/shenron-vfs.sqlite", "sha256": "SHA256" }
 }
 ```
 
@@ -158,3 +159,27 @@ after production writes would lose changes: reconcile/checksum-transfer the
 latest store back under a clean shutdown before resuming host units. Ordinary
 release rollback should reuse the same qualified container-owned state. The
 adapter does not automatically reverse this protected-data conversion.
+
+## Builds on the VPS: the `aphrody-build` image
+
+Shenron's Rust, WASM, Bun install and bot steps run in Aphrody's single VPS build image
+(`aphrody-build:latest`, see [CONTAINER.md](../container/CONTAINER.md#vps-build-image-aphrody-build)), never directly
+on the host toolchain. Shenron owns the call sites: `scripts/build/container.ts` (same run contract as
+`aphrody-build.ts run`), `scripts/ops/release-host.ts` and the self-hosted workflows.
+
+- **Release** (`bun scripts/ops/release.ts`, user `ubuntu`): `release-host.ts build` checks the image against the
+  checkout (`container.ts --check`: Rust channel and `wasm-bindgen` labels), then runs `bun install`,
+  `shenron-mcp`, `shenron-ffi`, Koharu and shenron-re WASM and the bot in the container. The site keeps its own
+  bounded Node 22 container (`build-site-external.ts`); assembly and the protected site environment stay on the host
+  (`sudo -n`).
+- **Build tree**: the release builds in `~/shenron-release`, a detached worktree of `~/shenron` forced onto
+  `origin/main` (`checkout -f --detach`, `clean -ffd`; ignored caches and `target/` are kept). The release of
+  2026-10-07 ended in `== EXIT 1` because it fast-forwarded the editable `~/shenron` itself and uncommitted edits
+  there blocked `git merge --ff-only`; edits in `~/shenron` no longer affect a release.
+- **Runner** (`aphrody-vps-shenron`, user `shenron-build`, already in `docker`): `server-artifact.yml` runs
+  `bun ci` and `scripts/build/server.ts` through `container.ts --target-volume shenron-ci` (the runner cleans its
+  checkout between jobs; `target/` lives in a volume). The production public VFS is a workflow input, default
+  `/home/shenron-build/data/shenron-vfs.public.sqlite` (public profile, staged with a verified SHA-256);
+  `factory-check.yml` verifies the image and its tools as the runner user.
+- Rebuild the image whenever `rust-toolchain.toml`, `packageManager` or the `wasm-bindgen` lock version changes:
+  from a clean Aphrody checkout on the VPS, `bun scripts/build/container/aphrody-build.ts image`.

@@ -62,3 +62,13 @@ Official references:
 - <https://docs.github.com/en/actions/concepts/runners/self-hosted-runners>
 - <https://docs.github.com/en/rest/actions/self-hosted-runners#create-a-registration-token-for-a-repository>
 - <https://github.com/actions/runner/releases/tag/v2.338.0>
+
+## Build image, 2026-10-08
+
+The runner builds inside Aphrody's `aphrody-build:latest` image, not on the host toolchain: see
+[SHENRON-DOCKER.md](SHENRON-DOCKER.md#builds-on-the-vps-the-aphrody-build-image). `shenron-build` was already in
+the `docker` group (installer `usermod --append --groups docker`, unit `SupplementaryGroups=docker`); no host
+change was required. The public VFS input of `server-artifact.yml` is staged at
+`/home/shenron-build/data/shenron-vfs.public.sqlite` (owner `shenron-build`, 0644, SHA-256
+`82b57dc12b921cb1f0ae13473051b552d4ab942e527dbfa4712074992704c7a7`, the public VFS of release `7b26187`); the
+earlier runs 37634762086 and 37665743137 failed because the fresh checkout had no VFS.

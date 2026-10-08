@@ -13,15 +13,16 @@ The opt-in `release-builder` adds the frozen Bun workspace and every locked Pyth
 The separate Ubuntu desktop image supplies GTK4/CEF build or runtime libraries; the Alpine/COSMIC
 image stays independent of GNU binaries.
 
-| File                                                                                      | Role                                                                                      |
-| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| File                                                                                                  | Role                                                                                      |
+| ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | [tools/config/container/Dockerfile](../../../tools/config/container/Dockerfile)                       | `runtime`, `dev`, `wasm-toolchain`, portable `wasm-artifacts`, and full `release-builder` |
+| [tools/config/container/build/Dockerfile](../../../tools/config/container/build/Dockerfile)           | `aphrody-build`: the VPS build image shared by Aphrody and Shenron (see below)            |
 | [tools/config/container/desktop/Dockerfile](../../../tools/config/container/desktop/Dockerfile)       | Ubuntu GTK4/CEF builder and non-root desktop runtime                                      |
 | [tools/config/container/aphrody-os/Dockerfile](../../../tools/config/container/aphrody-os/Dockerfile) | Alpine musl Bun runtime, CLI userland, and COSMIC desktop                                 |
 | [tools/config/container/entrypoint.sh](../../../tools/config/container/entrypoint.sh)                 | Selects `mcp`, `api`, `yolo`, `aphrody` or `shell`                                        |
 | [tools/config/container/compose.yaml](../../../tools/config/container/compose.yaml)                   | Loopback-only API, stdio MCP, developer shell, and release builder                        |
-| [.devcontainer/devcontainer.json](../../../.devcontainer/devcontainer.json)               | VS Code dev container on the `dev` target                                                 |
-| [.dockerignore](../../../.dockerignore)                                                   | Excludes caches, outputs, coordination state and protected data                           |
+| [.devcontainer/devcontainer.json](../../../.devcontainer/devcontainer.json)                           | VS Code dev container on the `dev` target                                                 |
+| [.dockerignore](../../../.dockerignore)                                                               | Excludes caches, outputs, coordination state and protected data                           |
 
 ## Run
 
@@ -60,6 +61,47 @@ docker build -f tools/config/container/desktop/Dockerfile --target runtime -t ap
 start a virtual desktop or fetch the CEF bundle. See the desktop README for launch wiring. WASM artifacts use the
 explicit optimizer feature set already declared by `scripts/build/rust/wasm-package.ts`, which keeps generated glue
 compatible with Bun's JavaScriptCore and browser engines.
+
+## VPS build image (`aphrody-build`)
+
+One build image serves Aphrody and Shenron on the VPS factory:
+[tools/config/container/build/Dockerfile](../../../tools/config/container/build/Dockerfile), driven by
+[scripts/build/container/aphrody-build.ts](../../../scripts/build/container/aphrody-build.ts). Its build context is that
+directory only: no checkout, env file or secret enters the image.
+
+| Content             | Source of the pin                                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------------------------- |
+| Rust                | `rust-toolchain.toml`: channel plus every target (Linux, Windows MSVC, wasm32, Apple) and component     |
+| `wasm-bindgen-cli`  | `Cargo.lock` (`wasm-bindgen`), prebuilt through checksum-pinned cargo-binstall                          |
+| Bun / uv            | `package.json#packageManager` / Dockerfile `UV_VERSION`                                                 |
+| sccache, cargo-xwin | Dockerfile `SCCACHE_VERSION` / `CARGO_XWIN_VERSION` (same versions as the VPS host)                     |
+| Native              | Ubuntu 24.04: clang/lld/llvm 18 (`clang-cl`, `lld-link`, `llvm-lib` for MSVC), mold, cmake, ninja, nasm |
+
+It covers `aws-lc-sys` (cmake, clang, nasm), the WireGuard crates (`defguard_wireguard_rs` netlink and boringtun are
+pure Rust), remote desktop/VNC (`rustvncserver`, `vnc-rs`, `x11rb` and `jpeg-encoder` are pure Rust), Windows MSVC
+cross builds such as `aphrody-mcp --features winclean` through `cargo xwin` (the MSVC CRT/SDK download is cached in
+a volume), Dragon Pixel and Koharu wasm32 and Shenron's Bun builds. Linux links use clang + mold.
+
+```sh
+bun scripts/build/container/aphrody-build.ts image      # aphrody-build:<rust>-bun<bun>-<sha9> and :latest
+bun scripts/build/container/aphrody-build.ts run -- scripts/build/rust/cargo-serial.sh check --locked -p aphrody-wireguard
+bun scripts/build/container/aphrody-build.ts run --target-volume aphrody -- cargo xwin check --target x86_64-pc-windows-msvc -p aphrody-mcp --features winclean
+```
+
+Run contract (also implemented by Shenron's `scripts/build/container.ts`):
+
+- The checkout is bind mounted at its own absolute path; the process runs as the caller's uid/gid plus the shared
+  `aphrody-build` group (gid 1500) with umask 002, `--cap-drop ALL`, `no-new-privileges` and `--init`.
+- Caches are named volumes on the system disk (`/srv` is nearly full): `aphrody-build-cargo` (registry and git),
+  `-sccache` (local disk, 20 GiB cap), `-bun`, `-xwin`, `-xdg`. Volume roots are setgid and group writable, so
+  `ubuntu` (releases) and `shenron-build` (runner) share them. `--target-volume NAME` moves `CARGO_TARGET_DIR` to
+  `aphrody-build-target-NAME` for checkouts that CI cleans between jobs.
+- Limits: `--cpus` 6 (`APHRODY_BUILD_CPUS`, at most 6), `--memory` 16g without swap (`APHRODY_BUILD_MEMORY`),
+  `--cpu-shares 512`, `--pids-limit 8192` and `--oom-score-adj 500`, so earlyoom and the kernel kill a build before
+  the llama-server services. `CARGO_BUILD_JOBS=6`, `CARGO_INCREMENTAL=0`, `RUSTC_WRAPPER=sccache`.
+- The factory heavy lock `/srv/aphrody-build/locks/heavy.lock` wraps the run when it exists (`--no-lock` only when
+  the caller already holds it). `--env NAME` passes a secret by name; its value never reaches argv or the image.
+- `--host-network` is opt-in, for loopback services such as the PostgreSQL tunnel.
 
 ## WASM, browser and native FFI
 
