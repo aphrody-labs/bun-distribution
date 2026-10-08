@@ -263,15 +263,36 @@ fn env_value(name: &str) -> Option<String> {
     std::env::var(name).ok().filter(|value| !value.trim().is_empty())
 }
 
-/// Token of a GitHub CLI login, read from `hosts.yml` without running `gh`.
+/// Token of a GitHub CLI login: read from `hosts.yml` when `gh` stored it there, otherwise asked
+/// to `gh auth token` (keyring storage, the default on Windows and macOS).
 fn gh_cli_token(api_base: &str, user: Option<&str>) -> Option<String> {
     let dir = env_value("GH_CONFIG_DIR").map(std::path::PathBuf::from).or_else(|| {
-        env_value("XDG_CONFIG_HOME").map(|base| std::path::PathBuf::from(base).join("gh")).or_else(
-            || env_value("HOME").map(|home| std::path::PathBuf::from(home).join(".config/gh")),
-        )
-    })?;
-    let text = std::fs::read_to_string(dir.join("hosts.yml")).ok()?;
-    hosts_token(&text, api_base, user)
+        env_value("XDG_CONFIG_HOME")
+            .map(|base| std::path::PathBuf::from(base).join("gh"))
+            .or_else(|| {
+                env_value("APPDATA").map(|base| std::path::PathBuf::from(base).join("GitHub CLI"))
+            })
+            .or_else(|| {
+                env_value("HOME").map(|home| std::path::PathBuf::from(home).join(".config/gh"))
+            })
+    });
+    dir.and_then(|dir| std::fs::read_to_string(dir.join("hosts.yml")).ok())
+        .and_then(|text| hosts_token(&text, api_base, user))
+        .or_else(|| gh_keyring_token(api_base, user))
+}
+
+fn gh_keyring_token(api_base: &str, user: Option<&str>) -> Option<String> {
+    let host = url::Url::parse(api_base).ok()?.host_str()?.to_owned();
+    let host = if host == "api.github.com" { "github.com".to_owned() } else { host };
+    let mut cmd = std::process::Command::new("gh");
+    cmd.args(["auth", "token", "--hostname", &host]);
+    if let Some(user) = user {
+        cmd.args(["--user", user]);
+    }
+    let out =
+        cmd.stdin(std::process::Stdio::null()).stderr(std::process::Stdio::null()).output().ok()?;
+    let token = String::from_utf8(out.stdout).ok()?.trim().to_owned();
+    (out.status.success() && !token.is_empty()).then_some(token)
 }
 
 fn hosts_token(hosts_yml: &str, api_base: &str, user: Option<&str>) -> Option<String> {

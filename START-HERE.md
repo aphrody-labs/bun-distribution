@@ -32,6 +32,11 @@ Org GitHub `aphrody-labs` (3 membres, dépôts privés, lecture par défaut). Sa
 ## 4. Outils (ordre de préférence)
 1. `aphrody` (Rust, binaire multi-call unique : `aphrody infra`, `aphrody git`, `aphrody mcp-server`, `aphrody shell`…) et le MCP `aphrody` (aphrody-mcp).
 2. `yolo` (Bun) → 3. `bun` → 4. CLI Rust (`rg`, `fd`, `nu`…). Tout le reste est permis si besoin (git, cargo, uv, ssh, gh, pwsh).
+- **Obligatoire** : commencer chaque tâche par le skill adapté (`yolo:yolo`, `aphrody:ecosystem`, `aphrody:deploy`,
+  `yolo:docs`, `yolo:rust-target-check`…), les outils MCP `aphrody` (`ToolSearch`), puis la CLI propriétaire
+  (table complète : `docs/operations/agent-tooling.md`). Discord : `aphrody discord send`, hôtes :
+  `aphrody infra ssh exec --host …`, Windows : `aphrody winclean` / MCP. Python ad hoc, `curl` ou `ssh` brut seulement
+  pour un manque réel, signalé dans le rapport.
 - Toujours `--help` avant d'utiliser une sous-commande. GitHub : `aphrody git api|repo|search` (ou `gh` authentifié : l'API anonyme est vite limitée).
 - Rust : gates scopés `cargo clippy -p <crate> --all-targets -- -D warnings` + `cargo test -p <crate>`. Cargo lourd / engines → fabrique VPS. Bun : `bun run typecheck|lint|format:check|test`.
 

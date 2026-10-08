@@ -38,8 +38,23 @@ installed binaries on 2026-10-06; confirm a command with `--help` before scripti
 | Web fetch and crawl | `aphrody web`, MCP `universal_web_fetch` |
 | Memory, RAG, models | `aphrody memory`, `aphrody model`, skills `aphrody:aphrody-rag`, `aphrody:aphrody-train` |
 | Coordination | `.coord/claims`, MCP `coord_*`, `aphrody a2a` |
+| Discord (post, file, status) | `aphrody discord send <channel> -m <text> [-f <file>]`, `aphrody discord status`; on the vps `sudo -n ~/.local/bin/aphrody discord … --env-file /etc/aphrody-discord.env` (token never read by the agent) |
+| WireGuard tunnel wg1 | `aphrody infra wg plan\|up\|down\|show\|render\|syncconf\|keygen\|pubkey\|driver` (`--root <repo>` for the inventory) |
+| Remote desktop, remote computer use | `aphrody infra remote serve\|open\|status`, MCP HTTP `aphrody mcp-server http` (bearer), `RemoteComputerBackend` |
+| Windows control (services, tasks, power, registry, network, windows, screen) | `aphrody winclean`, `aphrody os`, MCP `list_services`, `list_scheduled_tasks`, `get_network_adapters`, `list_listening_ports`, `computer_observe` + one `computer_*` action |
+| WSL | MCP `wsl_list_distributions`, `wsl_execute`, `aphrody wsl` |
+| Shell session | `aphrody shell status\|start\|eval\|serve` |
+| Library choice | `aphrody git search <query>`, `aphrody awesome`, crates.io API (licence, downloads, last release) |
 
 ## 3. Habits
+
+- Start each task by loading the matching skill (`Skill` tool) and the MCP tools it needs (`ToolSearch`), then the
+  owner CLI with `--help`. Generic shell, ad hoc Python or `curl` only for a gap no owner covers, and say so in the
+  report (a gap is a bug to file against the owner).
+- GitHub: `aphrody git` reads the `gh` login (hosts file or keyring); set `APHRODY_GITHUB_USER=aphrody-dev`.
+  `aphrody-code` is the owner's former account: never use it.
+- Hosts: `aphrody infra ssh exec --host vps|dbfr '<cmd>'` (or MCP `infra_exec`); `APHRODY_SSH_COMMAND_TIMEOUT_SECS`
+  raises the 30 s default for long commands. Plain `ssh vps` only for interactive or streamed transfers.
 
 - Batch reads with `bun -e` / `Bun.Glob` or `nu_eval`; avoid chains of `cd`, `sed -n` and `cat`.
 - Wait for a long command with a single blocking call (or a background run with notification), not `until`/`sleep`
