@@ -5,7 +5,7 @@
  * Publishes the Aphrody downloads (tools/config/downloads.json) in one repeatable flow:
  *
  *   plan                          what would be built, staged and published (no mutation)
- *   build  --revision <sha>       prepare + build the factory binaries (aphrody-ops build-factory), wait for the jobs
+ *   build  --revision <sha>       prepare + build the factory binaries (yolo ops build-factory), wait for the jobs
  *   release --revision <sha>      stage every artifact, scan for secrets, upload to the host, flip `current`
  *   assets [--staged <dir>]       publish installers and optional prebuilt kits in an immutable snapshot
  *                                 repeat --staged; --staged-revision <sha> records their verified source revision
@@ -14,7 +14,8 @@
  *   host-plan | host-apply        install the declared unit, nginx vhost and app on the host (plan by default)
  *
  * Hosts change only through `aphrody infra ssh`; the binaries are built on the factory from a pushed
- * revision (never Cargo in WSL). Private keys never enter this script.
+ * revision (never Cargo in WSL). On the host itself (APHRODY_BUILD_HOST=<host.target>, the build-factory
+ * convention) remote commands and uploads run locally. Private keys never enter this script.
  */
 import { createHash, randomUUID } from "node:crypto";
 import {
@@ -249,8 +250,31 @@ export async function run(
   return { code, stdout, stderr };
 }
 
+/** True when this process runs on the release host itself (same convention as build-factory). */
+const onHost = (cfg: DownloadsConfig): boolean =>
+  process.env.APHRODY_BUILD_HOST === cfg.host.target;
+
+/** `yolo ops build-factory ...` through the Workspace owner, without depending on an installed link. */
+const buildFactory = (...args: string[]): string[] => [
+  process.execPath,
+  join(root, "packages/infra/workspace/src/ops.ts"),
+  "build-factory",
+  ...args,
+];
+
 /** Runs a shell command on the host through `aphrody infra ssh exec` (never raw ssh). */
 export async function remote(cfg: DownloadsConfig, command: string, timeoutSecs = 120) {
+  if (onHost(cfg)) {
+    const local = await run(["timeout", String(timeoutSecs), "bash", "-c", command], {
+      allowFail: true,
+    });
+    if (local.code !== 0)
+      throw new Error(
+        `remote command failed (${local.code}): ${command.slice(0, 200)}
+${local.stderr}${local.stdout}`,
+      );
+    return local.stdout;
+  }
   const result = await run(
     ["aphrody", "infra", "ssh", "exec", "--host", cfg.host.target, "--json", "-c", command],
     { env: { APHRODY_SSH_COMMAND_TIMEOUT_SECS: String(timeoutSecs) }, allowFail: true },
@@ -271,6 +295,10 @@ export async function remote(cfg: DownloadsConfig, command: string, timeoutSecs 
 }
 
 export async function put(cfg: DownloadsConfig, local: string, dest: string) {
+  if (onHost(cfg)) {
+    await run(["cp", "--", local, dest]);
+    return;
+  }
   await run([
     "aphrody",
     "infra",
@@ -319,7 +347,10 @@ function pluginVersion(artifact: ArtifactConfig): string {
     "show",
     `${git.ref}:${sub}${artifact.manifest}`,
   ]);
-  if (out.exitCode !== 0) throw new Error(`cannot read ${artifact.manifest} of ${artifact.id}`);
+  if (out.exitCode !== 0)
+    throw new Error(
+      `cannot read ${artifact.manifest} of ${artifact.id}: clone ${artifact.repository ?? "its repository"} into ${expand(git.path)}`,
+    );
   return (JSON.parse(out.stdout.toString()) as { version: string }).version;
 }
 
@@ -723,7 +754,7 @@ async function plan(cfg: DownloadsConfig) {
 
 async function waitForJob(job: string): Promise<void> {
   for (;;) {
-    const out = await run(["aphrody-ops", "build-factory", "status", "--job", job, "--tail", "5"]);
+    const out = await run(buildFactory("status", "--job", job, "--tail", "5"));
     const status = JSON.parse(out.stdout) as {
       status: string;
       exitCode?: number;
@@ -739,24 +770,13 @@ async function waitForJob(job: string): Promise<void> {
 
 async function build(cfg: DownloadsConfig) {
   const commit = await revisionArg();
-  await run([
-    "aphrody-ops",
-    "build-factory",
-    "prepare",
-    "--repo",
-    cfg.factory.repo,
-    "--revision",
-    commit,
-    "--apply",
-  ]);
+  await run(buildFactory("prepare", "--repo", cfg.factory.repo, "--revision", commit, "--apply"));
   for (const a of cfg.artifacts.filter((x) => x.kind === "factory-binary")) {
     for (const p of (a.platforms ?? []).filter((x) => x.enabled && x.cargo)) {
       const job = `${cfg.factory.jobPrefix}-${a.id}-${p.platform}-${commit.slice(0, 9)}`;
       console.log(`build ${job}`);
       await run(
-        [
-          "aphrody-ops",
-          "build-factory",
+        buildFactory(
           "run",
           "--repo",
           cfg.factory.repo,
@@ -767,7 +787,7 @@ async function build(cfg: DownloadsConfig) {
           job,
           "--",
           ...p.cargo!,
-        ],
+        ),
         {
           env: { APHRODY_FACTORY_INSTALL: "0" },
         },
@@ -1527,7 +1547,11 @@ async function hostCommands(cfg: DownloadsConfig, apply: boolean) {
     cfg,
     `sudo install -d -o ubuntu -g ubuntu ${rootDir} ${rootDir}/releases ${rootDir}/app`,
   );
-  await put(cfg, join(root, "packages/infra/workspace/src/downloads/server.ts"), `${rootDir}/app/server.ts`);
+  await put(
+    cfg,
+    join(root, "packages/infra/workspace/src/downloads/server.ts"),
+    `${rootDir}/app/server.ts`,
+  );
   await put(cfg, join(root, unit), "/tmp/aphrody-downloads.service");
   await remote(
     cfg,
