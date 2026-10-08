@@ -136,10 +136,10 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `aphrody-bun-bridge` | [crates/compat/bun-bridge](../../../crates/compat/bun-bridge) | rust crate | 1.0.0 | rlib | yes | 0 | uncommitted |
+| `aphrody-bun-bridge` | [crates/compat/bun-bridge](../../../crates/compat/bun-bridge) | rust crate | 1.0.0 | rlib | yes | 0 | 2026-10-08 |
 | `aphrody-bun-docs` | [crates/compat/bun-docs](../../../crates/compat/bun-docs) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
 | `aphrody-n2b` | [crates/compat/n2b](../../../crates/compat/n2b) | rust crate | 0.6.2 | lib | yes | 0 | 2026-10-07 |
-| `aphrody-n2b-core` | [crates/compat/n2b-core](../../../crates/compat/n2b-core) | rust crate | 0.6.2 | lib | yes | 0 | 2026-10-07 |
+| `aphrody-n2b-core` | [crates/compat/n2b-core](../../../crates/compat/n2b-core) | rust crate | 0.6.2 | lib | yes | 0 | 2026-10-08 |
 | `aphrody-n2b-registry` | [crates/compat/n2b-registry](../../../crates/compat/n2b-registry) | rust crate | 0.6.2 | lib | yes | 0 | 2026-10-05 |
 | `aphrody-n2b-types` | [crates/compat/n2b-types](../../../crates/compat/n2b-types) | rust crate | 0.6.2 | lib | no | 0 | 2026-10-05 |
 | `aphrody-oxc-bridge` | [crates/compat/oxc-bridge](../../../crates/compat/oxc-bridge) | rust crate | 0.1.0 | rlib | yes | 0 | 2026-10-05 |
@@ -214,7 +214,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
 | `aphrody-ffi` | [crates/interop/ffi](../../../crates/interop/ffi) | rust crate | 1.0.0 | cdylib, rlib | yes | 0 | 2026-10-08 |
-| `@aphrody/bun` | [packages/interop/native](../../../packages/interop/native) | bun package | 3.3.8 | lib | yes | 0 | 2026-10-07 |
+| `@aphrody/bun` | [packages/interop/native](../../../packages/interop/native) | bun package | 3.3.8 | lib | yes | 0 | 2026-10-08 |
 
 ## ml
 
@@ -312,8 +312,8 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `aphrody-shell-sandbox-host` | [crates/shell/aphrody-shell-sandbox-host](../../../crates/shell/aphrody-shell-sandbox-host) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
-| `aphrody-term` | [crates/shell/aphrody-term](../../../crates/shell/aphrody-term) | rust crate | 1.0.0 | lib | yes | 0 | uncommitted |
+| `aphrody-shell-sandbox-host` | [crates/shell/aphrody-shell-sandbox-host](../../../crates/shell/aphrody-shell-sandbox-host) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-08 |
+| `aphrody-term` | [crates/shell/aphrody-term](../../../crates/shell/aphrody-term) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-08 |
 | `aphrody-nu` | [crates/shell/nu](../../../crates/shell/nu) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
 | `aphrody-shell-session` | [crates/shell/session](../../../crates/shell/session) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
 | `aphrody-shell-tauri` | [crates/shell/tauri](../../../crates/shell/tauri) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
@@ -321,7 +321,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-terminal-core` | [crates/shell/terminal-core](../../../crates/shell/terminal-core) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
 | `aphrody-shell-vfs` | [crates/shell/vfs](../../../crates/shell/vfs) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
 | `aphrody-shell-web` | [crates/shell/web](../../../crates/shell/web) | rust crate | 1.0.0-canary | cdylib, rlib | yes | 0 | 2026-10-07 |
-| `@aphrody/shell-web` | [packages/shell/web](../../../packages/shell/web) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-07 |
+| `@aphrody/shell-web` | [packages/shell/web](../../../packages/shell/web) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-08 |
 
 ## tauri
 
