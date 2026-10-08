@@ -1,12 +1,23 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Moniteur Codex et objectifs d’Omar
 
-Le salon demandé est [start-here](https://discord.com/channels/1554189180030947338/1557354118710829117)
-de la guilde Aphrody. La déclaration
+Le salon de réponse est [start-here](https://discord.com/channels/1554189180030947338/1557354118710829117)
+de la guilde Aphrody. Le Gateway suit les salons et fils actifs présents dans
+son cache de guilde. La réconciliation lit leur historique accessible via
+l'API Discord. Chaque message humain avec une mention Discord structurée crée
+un objectif, quel que soit son auteur ; les bots, webhooks, messages sans
+mention et autres guildes sont ignorés. Le curseur initial est le message
+`1557863988740493344`. La déclaration
 [`discord-omar-monitor.json`](../../../tools/config/host/discord-omar-monitor.json)
-reprend les deux identifiants d’Omar du contrôle d’accès existant. Les bots,
-webhooks, autres auteurs, autres salons et autres guildes ne créent aucun travail.
+définit la guilde, le salon de réponse et ce curseur.
 Le contenu du salon reste dans le store privé du VPS.
+
+Si le service est arrêté alors que la file contient des objectifs `planning`
+ou `executing`, le workflow de déploiement vérifie d'abord que systemd n'a
+plus de processus actif. Il réinitialise ensuite uniquement leur état à
+`pending` : les objectifs, preuves et fils Codex restent dans SQLite pour
+reprendre le travail.
 
 ## Fonctionnement
 
@@ -23,9 +34,10 @@ préexistante. L’intégration suit le [protocole officiel OpenAI](https://deve
 initialisation, thread, tour, événements et résultat terminal. Le MCP Aphrody configuré pour ses threads est le binaire canonique de leur
 hôte ; les éventuels services de domaine sont déclarés dans la politique.
 
-Pour chaque demande authentifiée d’Omar ou du propriétaire, un thread moniteur en lecture seule
-extrait toutes les demandes concrètes. Un thread exécuteur distinct prend
-l’ensemble des objectifs et leur message original. Il suit les règles du dépôt,
+Pour chaque message humain de cette guilde contenant une vraie mention Discord,
+un thread moniteur en lecture seule extrait toutes les demandes concrètes.
+Un thread exécuteur distinct prend l’ensemble des objectifs et leur message
+original, avec l’identifiant Discord de son auteur. Il suit les règles du dépôt,
 les revendications de chemins, Infra et les verrous de build. Il peut déléguer
 des sous-tâches bornées. Les anciennes conversations, documents et contenus web
 ne deviennent pas des instructions supplémentaires.
@@ -39,6 +51,9 @@ une réponse invalide ou un échec reste un objectif ouvert. Trois résultats
 consécutifs `continue` avec `needs` contredisent le contrat de progression :
 le moniteur conserve les preuves, classe la dépendance `blocked` et libère
 la demande suivante. La reformulation du besoin ne réinitialise pas ce contrôle.
+Si l’app-server Codex ferme son flux pendant la reprise d’un thread, le service
+marque uniquement cet objectif `blocked`, conserve ses fils et ses preuves,
+poste la dépendance dans le salon, puis redémarre pour traiter les autres pings.
 Les résultats intermédiaires sont transmis au plus une fois par minute, avec
 compteur persistant ; chaque résultat terminal est conservé dans l’outbox.
 
@@ -167,6 +182,47 @@ Les prompts imposent NHITL pour les actions déjà autorisées et les gates du
 dépôt ; une information indispensable manquante doit être décrite dans `needs`,
 sans relance indéfinie. Les capacités et skills sont découverts dans leurs
 propriétaires actuels, sans nombre d’outils figé ni commande retirée.
+
+## Déploiement tous salons du 2026-10-08
+
+La politique active utilise `allGuildChannels` et le curseur
+`1557863988740493344`. À l’observation du 2026-10-08 22:05 UTC, le Gateway
+avait découvert 15 salons et fils actifs, et SQLite contenait 15 marqueurs
+d’historique terminés avec le même curseur initial. Les données ont été
+réconciliées avant l’écriture du reçu `historyComplete`. La file conservait
+3 objectifs `achieved`, 4 `blocked`, 1 `ignored` et 7 `pending`, sans objectif
+`planning` ou `executing` perdu pendant le déploiement.
+
+Le service `aphrody-discord-omar-monitor.service` était `enabled` et `active`,
+PID `1954130`, `ExecMainStatus=0`, `NRestarts=0`, avec Gateway connecté. Les
+SHA-256 installés étaient `cf55c813844afdd216182d840ff64a22a5e2147082f6ed9829f9f0bbb7a72d01`
+pour le bundle et `d737f235fc81d0f757d1a371e24ea05921f42b1680c13a10a1c08547247eae81`
+pour la politique. Le bundle a été construit localement, transféré via les
+commandes SSH d’Infra (SFTP natif inaccessible depuis cette session), puis
+revalidé par checksum, probe Discord/Codex, contrôle d’inactivité de la file,
+validation systemd et activation du plan Infra.
+
+L’observation est consignée dans
+[`omar-monitor-2026-10-08.md`](../../../tools/config/host/inventory/omar-monitor-2026-10-08.md).
+
+## État recontrôlé le 2026-10-09
+
+Le contrôle Infra a relu le reçu du PID systemd vivant `2026120` : Gateway
+connecté, drainage inactif, 15 salons, 15 marqueurs d’historique terminés et
+curseur `1557863988740493344`. Le service est `active/running`,
+`ExecMainStatus=0`, `NRestarts=0`. Les SHA-256 installés sont
+`1edbd1b4087ff50932631004610af427d9cf47dd8016af4f6d773ba004aa1d67` pour le
+bundle et `d737f235fc81d0f757d1a371e24ea05921f42b1680c13a10a1c08547247eae81`
+pour la politique.
+
+La file contient 15 objectifs : 3 `achieved`, 10 `blocked`, 2 `ignored`, aucun
+`pending`, `planning` ou `executing`. Cinq objectifs ont un thread exécuteur
+persisté mais restent bloqués; cinq autres sont affectés à `owner-wsl` sans
+thread. La connexion SSH depuis le VPS vers `10.200.77.2:22` expire; le worker
+WSL et l’exécution de ces cinq objectifs ne sont donc pas qualifiés. Les deux
+messages ignorés n’ont pas de thread exécuteur. La présence du service ne prouve
+pas que chaque ping a été traité avec succès; garder le moniteur actif et
+rétablir le worker WSL avant de conclure l’objectif.
 
 Qualification du correctif : 33 tests produit/routage/outbox/livraison réussis,
 TypeScript des deux propriétaires, oxlint strict, oxfmt et liens documentaires

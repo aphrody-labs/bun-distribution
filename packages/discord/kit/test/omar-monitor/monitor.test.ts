@@ -3,9 +3,15 @@ import { test, expect } from "bun:test";
 import { mkdtemp, chmod, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { Queue, type Policy, type SourceMessage, isOmar } from "../../src/omar-monitor/store.ts";
+import {
+  Queue,
+  type Policy,
+  type SourceMessage,
+  isMonitorPing,
+} from "../../src/omar-monitor/store.ts";
 import {
   reconcile,
+  listMonitorChannels,
   safeOutput,
   parseResult,
   checkOmarMonitorUpgrade,
@@ -33,21 +39,22 @@ const message = (id = "10", fields: Partial<SourceMessage> = {}): SourceMessage 
   channel_id: "c",
   author: { id: "omar" },
   content: "Vérifie les deux VPS",
+  mentions: [{ id: "aphrody-bot" }],
   ...fields,
 });
-test("only authenticated Omar or owner messages in the declared guild/channel create work", () => {
-  expect(isOmar(message(), policy)).toBe(true);
+test("real human mentions in the declared guild/channel create work", () => {
+  expect(isMonitorPing(message(), policy)).toBe(true);
   const ownerPolicy = { ...policy, ownerId: "yoyo" };
-  expect(isOmar(message("11", { author: { id: "yoyo" } }), ownerPolicy)).toBe(true);
+  expect(isMonitorPing(message("11", { author: { id: "yoyo" } }), ownerPolicy)).toBe(true);
   for (const fields of [
-    { author: { id: "other" } },
     { author: { id: "omar", bot: true } },
     { webhook_id: "webhook" },
     { channel_id: "other" },
     { guild_id: "foreign" },
     { content: "  " },
   ])
-    expect(isOmar(message("10", fields), ownerPolicy)).toBe(false);
+    expect(isMonitorPing(message("10", fields), ownerPolicy)).toBe(false);
+  expect(isMonitorPing(message("12", { author: { id: "other" } }), ownerPolicy)).toBe(true);
 });
 test("gateway/history overlap and restart preserve a single running goal", async () => {
   const dir = await mkdtemp(join(tmpdir(), "omar-queue-test-"));
@@ -70,6 +77,36 @@ test("gateway/history overlap and restart preserve a single running goal", async
   } finally {
     q.close();
     await rm(dir, { recursive: true, force: true });
+  }
+});
+test("recovery only requeues interrupted jobs and preserves their goals and Codex threads", () => {
+  const q = new Queue(":memory:");
+  try {
+    q.ingest(message("20"), policy);
+    q.update("20", {
+      state: "executing",
+      goals: '["resume this work"]',
+      monitor_thread: "monitor-thread",
+      worker_thread: "worker-thread",
+      evidence: '{"checkpoint":"kept"}',
+    });
+    q.ingest(message("21"), policy);
+    q.update("21", { state: "blocked" });
+    expect(q.requeueActive()).toBe(1);
+    expect(q.next()).toMatchObject({
+      id: "20",
+      state: "pending",
+      goals: '["resume this work"]',
+      monitor_thread: "monitor-thread",
+      worker_thread: "worker-thread",
+      evidence: '{"checkpoint":"kept"}',
+    });
+    expect(q.counts()).toEqual([
+      { state: "blocked", count: 1 },
+      { state: "pending", count: 1 },
+    ]);
+  } finally {
+    q.close();
   }
 });
 test("REST catch-up traverses more than 100 messages without advancing over a gap", async () => {
@@ -275,10 +312,10 @@ test("multi-channel configuration admits and routes messages across multiple dec
     channelIds: ["c1", "c2", "c3"],
     ownerId: "yoyo",
   };
-  expect(isOmar(message("1", { channel_id: "c1" }), multiPolicy)).toBe(true);
-  expect(isOmar(message("2", { channel_id: "c2" }), multiPolicy)).toBe(true);
-  expect(isOmar(message("3", { channel_id: "c3" }), multiPolicy)).toBe(true);
-  expect(isOmar(message("4", { channel_id: "c4" }), multiPolicy)).toBe(false);
+  expect(isMonitorPing(message("1", { channel_id: "c1" }), multiPolicy)).toBe(true);
+  expect(isMonitorPing(message("2", { channel_id: "c2" }), multiPolicy)).toBe(true);
+  expect(isMonitorPing(message("3", { channel_id: "c3" }), multiPolicy)).toBe(true);
+  expect(isMonitorPing(message("4", { channel_id: "c4" }), multiPolicy)).toBe(false);
 
   const dir = await mkdtemp(join(tmpdir(), "omar-multichannel-test-"));
   const q = new Queue(join(dir, "queue.sqlite"));
@@ -303,7 +340,11 @@ test("multi-channel configuration admits and routes messages across multiple dec
       channel_id: "c2",
     });
 
-    const job102 = q.db.query<{ id: string; channel_id: string }, [string]>("SELECT id, channel_id FROM jobs WHERE id=?").get("102");
+    const job102 = q.db
+      .query<{ id: string; channel_id: string }, [string]>(
+        "SELECT id, channel_id FROM jobs WHERE id=?",
+      )
+      .get("102");
     expect(job102?.channel_id).toBe("c2");
   } finally {
     q.close();
@@ -311,3 +352,77 @@ test("multi-channel configuration admits and routes messages across multiple dec
   }
 });
 
+test("all-guild mode queues real human pings from every author in the exact guild", () => {
+  const allGuildPolicy: Policy = { ...policy, allGuildChannels: true, ownerId: "yoyo" };
+  expect(
+    isMonitorPing(message("1", { channel_id: "any-channel", guild_id: "g" }), allGuildPolicy),
+  ).toBe(true);
+  for (const fields of [
+    { mentions: [] },
+    { mention_everyone: true, guild_id: "foreign" },
+    { channel_id: "any-channel", guild_id: undefined },
+  ])
+    expect(
+      isMonitorPing(
+        message("2", { channel_id: "any-channel", guild_id: "g", ...fields }),
+        allGuildPolicy,
+      ),
+    ).toBe(false);
+  expect(
+    isMonitorPing(
+      message("5", {
+        channel_id: "random",
+        guild_id: "g",
+        author: { id: "other" },
+        mention_roles: ["role"],
+      }),
+      allGuildPolicy,
+    ),
+  ).toBe(true);
+  const q = new Queue(":memory:");
+  try {
+    q.ingest(message("3", { channel_id: "random", guild_id: "g" }), allGuildPolicy);
+    q.ingest(message("4", { channel_id: "random", guild_id: "g", mentions: [] }), allGuildPolicy);
+    expect(q.counts()).toEqual([{ state: "pending", count: 1 }]);
+  } finally {
+    q.close();
+  }
+});
+
+test("all-guild discovery uses the authenticated Gateway cache", async () => {
+  const allGuildPolicy: Policy = { ...policy, allGuildChannels: true };
+  const channels = await listMonitorChannels(allGuildPolicy, async () => {
+    throw new Error("unexpected REST discovery");
+  }, [
+    { id: "c", guild_id: "g", type: 0, last_message_id: null },
+    { id: "voice", guild_id: "g", type: 2, last_message_id: null },
+    { id: "thread", guild_id: "g", type: 11, last_message_id: null },
+  ]);
+  expect(channels.map((channel) => channel.id).sort()).toEqual(["c", "thread", "voice"]);
+});
+
+test("a newly discovered all-guild channel starts at the persisted activation horizon", async () => {
+  const q = new Queue(":memory:");
+  const ids: string[] = [];
+  const api: LabApi = async <T>(path: string) => {
+    ids.push(path);
+    return [] as T;
+  };
+  try {
+    await reconcile(
+      q,
+      { ...policy, allGuildChannels: true, startAfterSnowflake: "1557863988740493344" },
+      api,
+      [
+        { id: "c", guild_id: "g", type: 0 },
+        { id: "new-thread", guild_id: "g", type: 11 },
+      ],
+    );
+    expect(q.get("all_guild_channels_since")).toBe("1557863988740493344");
+    expect(q.get("after_new-thread")).toBe("1557863988740493344");
+    expect(ids).toHaveLength(2);
+    expect(q.get("history_complete_new-thread")).toBe("true");
+  } finally {
+    q.close();
+  }
+});

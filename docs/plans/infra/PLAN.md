@@ -89,8 +89,6 @@ do not treat old counts or Git state as current evidence.
 
 ### P1 — data safety
 
-
-
 - Verify the first scheduled DBFR PostgreSQL/SQLite and Windows pull cycles,
 
   hashes, acknowledgement and control restore; manual runs alone do not close this.
@@ -99,11 +97,7 @@ do not treat old counts or Git state as current evidence.
 
   SQLite backup timer and restore; retain unverified data-class markers until then.
 
-
-
 ### P1 — production activation
-
-
 
 Do not activate the legacy all-in-one bundle while its Aphrody plane is marked
 retired in the current catalog. Re-evaluate whether bundle deployment remains
@@ -129,11 +123,7 @@ these data and runtime gates:
    prove application probes and rollback. Only then update retirement markers
    and live inventory.
 
-
-
 Existing RG/Shenron deployments and adapters do not prove bundle activation.
-
-
 
 ### P2 — host hygiene
 
@@ -142,8 +132,6 @@ Existing RG/Shenron deployments and adapters do not prove bundle activation.
 - Re-declare VPN/forwarding only for an observed need.
 
 - Refresh VPS inventory after mutations and add DBFR/WSL inventories.
-
-
 
 ### P3 — control-plane consolidation
 
@@ -172,10 +160,7 @@ Existing RG/Shenron deployments and adapters do not prove bundle activation.
   2026-09-29 scan/import counts below are historical evidence, not current
   completion criteria.
 
-
 ### Post-split follow-ups (step-back review 2026-09-25, `src/docs/governance/STEP-BACK-REVIEW-2026-09-25.md`)
-
-
 
 - Qualify remaining API inconsistencies in [API](../../apis/contracts/API.md),
 
@@ -191,17 +176,11 @@ Existing RG/Shenron deployments and adapters do not prove bundle activation.
 
   close it. Legacy repository archival is not part of a documentation update.
 
-
-
 ### Open decisions
-
-
 
 - Resolve the Shenron asset CDN/media-proxy owner from live requirements.
 
 - Keep distribution systemd as PID 1; alternatives require a disposable-host trial.
-
-
 
 Previously listed domain/port questions were closed later in the old ledger:
 
@@ -213,11 +192,7 @@ Do not reopen these as unresolved solely because an earlier section listed them.
 
 See [ports and domains](../../reference/infra/PORTS-AND-DOMAINS.md) and current catalogues.
 
-
-
 ## 4. Protected data (never reclaim without a verified off-host copy)
-
-
 
 Protect application PostgreSQL/SQLite, runtime caches with user data, model/data
 
@@ -227,11 +202,7 @@ checksum-verified off-host backup and restore proof before destructive migration
 
 Source cleanup never authorizes removal of active runtime data.
 
-
-
 ## 5. Done (verified)
-
-
 
 The previous ledger records registry consolidation, layered dependencies, utility
 
@@ -239,9 +210,22 @@ moves, retirement/backup operations, route fixes and bundle adapter checks. Thos
 
 results apply to their named revisions and dates, not current host health.
 
-
-
 ## 6. Decision ledger (append-only)
+
+- **2026-10-09:** rechecked the live all-guild Discord monitor. The systemd
+  process and installed bundle/policy checksums are healthy; Gateway receipt
+  still covers all 15 channels and history markers. The durable queue has 3
+  achieved, 10 blocked and 2 ignored goals. Five `owner-wsl` goals have no
+  worker thread because VPS SSH to `10.200.77.2:22` times out. Keep this goal
+  open until WSL connectivity and those worker threads are restored. Current
+  evidence: [`omar-monitor-2026-10-08.md`](../../tools/config/host/inventory/omar-monitor-2026-10-08.md).
+
+- **2026-10-08:** deployed the all-guild Discord monitor on VPS through the Infra
+  workspace workflow. Candidate probe, 15-channel Gateway discovery, 15/15
+  SQLite history markers, Yolo pin/checksum, queue safety, systemd verification
+  and active service receipt passed. The queue retained seven pending goals;
+  no active goal was reset. Evidence and installed SHA-256 values:
+  [`omar-monitor-2026-10-08.md`](../../../tools/config/host/inventory/omar-monitor-2026-10-08.md).
 
 - **2026-09-29:** activated Aphrody Discord development release `4cf6332cdc66b3ec9c0f2b0c288f0a3024acf808`. Active checksums, service, public health/Gateway, login/install redirects and unauthenticated session check passed. The login rate limit passed its local test. A controlled rollback to the prior release and reactivation of this release passed public health/Gateway probes; fresh authorized callback remains open. Evidence: `yolo/tools/config/host/inventory/aphrody-discord-dev-2026-09-29.md`.
 
@@ -267,7 +251,6 @@ results apply to their named revisions and dates, not current host health.
   install, package typecheck, oxlint and oxfmt check passed at this source state.
   Targets: `<repo>` and `../aphrody-py`.
 
-
 The pre-cleanup ledger is retained at [revision 917cb93c0afd](https://github.com/aphrody-labs/aphrody/blob/917cb93c0afd7b8883ad1dd5ee6397365609af10/docs/PLAN.md).
 
 Retrieve locally with `git show 917cb93c0afd7b8883ad1dd5ee6397365609af10:docs/PLAN.md`.
@@ -276,12 +259,11 @@ Append new dated decisions here with owner/revision/evidence; keep the open-work
 
 sections current and store operational detail in its existing runbook.
 
-
-
 - **2026-09-28:** condensed documentation; preserved outstanding backup, activation,
   hygiene and consolidation gates; removed questions already closed in later entries.
 
   No live state was changed or requalified.
+
 - **2026-09-28:** restored the dedicated Discord development endpoint as an Infra-owned
   Bun service on `bot.aphrody.com` (`:4010`), with a pinned bundle builder and rollback-capable
   activator. The app uses Carbon's signed HTTP interactions and OAuth2 routes, plus its Gateway
@@ -418,8 +400,6 @@ sections current and store operational detail in its existing runbook.
   a compatible release or a separately validated replacement exists. Evidence: downloaded and
 
   inspected the 0.14.0 crate source and checked the current upstream Obscura manifest.
-
-
 
 - **2026-09-28:** expanded the read-only scanner's footprint section to all Aphrody owner
   repositories and their nested vendor/third-party trees, excluding `.git` metadata from source

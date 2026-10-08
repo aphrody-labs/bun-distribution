@@ -13,6 +13,7 @@ if (import.meta.main) {
       guide: { type: "boolean" },
       "upgrade-check": { type: "boolean" },
       "ready-check": { type: "boolean" },
+      "recover-active": { type: "boolean" },
       "expect-pid": { type: "string" },
       capabilities: { type: "boolean" },
     },
@@ -34,6 +35,7 @@ if (import.meta.main) {
     values.guide,
     values["upgrade-check"],
     values["ready-check"],
+    values["recover-active"],
   ].filter(Boolean);
   if (modes.length > 1) throw new Error("Choose one monitor mode");
   const policy = (await Bun.file(values.policy).json()) as Policy;
@@ -43,12 +45,14 @@ if (import.meta.main) {
       ? "ready-check"
       : values["upgrade-check"]
         ? "upgrade-check"
-        : values.smoke
-          ? "smoke"
-          : values.probe
-            ? "probe"
-            : values.guide
-              ? "guide"
-              : "serve",
+        : values["recover-active"]
+          ? "recover-active"
+          : values.smoke
+            ? "smoke"
+            : values.probe
+              ? "probe"
+              : values.guide
+                ? "guide"
+                : "serve",
   });
 }

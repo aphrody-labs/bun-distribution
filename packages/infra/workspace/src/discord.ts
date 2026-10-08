@@ -12,6 +12,7 @@ import { existsSync, statSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { gzipSync } from "node:zlib";
 import { infraRoot, runInfra } from "./runtime.ts";
 import {
   applyPlan,
@@ -62,7 +63,7 @@ export function discordDeployment(
 }
 
 function discordRuntime(deployment: DiscordDeployment): string {
-  return `env BUN_BE_BUN=1 ${quote(deployment.runtime)}`;
+  return `sudo -n -u ${quote(deployment.stateOwner)} sh -c ${quote(`cd /srv/aphrody-lab && exec env BUN_BE_BUN=1 "$0" "$@"`)} ${quote(deployment.runtime)}`;
 }
 
 export interface DiscordDeploymentTransport {
@@ -70,6 +71,23 @@ export interface DiscordDeploymentTransport {
   upload(host: string, source: string, target: string): Promise<void>;
   build(entrypoint: string, outdir: string): Promise<void>;
   wait?(milliseconds: number): Promise<void>;
+}
+
+async function systemdActive(
+  deployment: DiscordDeployment,
+  transport: DiscordDeploymentTransport,
+): Promise<{ code: number; state: string }> {
+  const result = await transport.run(
+    deployment.target,
+    `systemctl is-active ${quote(deployment.unit)} 2>&1; activeCode=$?; printf '\\n__APHRODY_ACTIVE_CODE=%s\\n' "$activeCode"`,
+  );
+  const marker = /__APHRODY_ACTIVE_CODE=([0-9]+)/.exec(result.stdout);
+  if (result.code !== 0 || !marker)
+    throw new Error(`Cannot determine monitor service state: ${result.stderr || result.stdout}`);
+  return {
+    code: Number(marker[1]),
+    state: result.stdout.replace(marker[0], "").trim(),
+  };
 }
 
 /** A live monitor must acknowledge drainage from its current systemd PID before an upgrade proceeds. */
@@ -80,21 +98,19 @@ export async function quiesceDiscord(
 ): Promise<string | null> {
   const runtime = await transport.run(
     deployment.target,
-    `printf '%s  %s\\n' ${quote(deployment.runtimeSha256)} ${quote(deployment.runtime)} | sha256sum -c --quiet -`,
+    `sudo -n -u ${quote(deployment.stateOwner)} sha256sum ${quote(deployment.runtime)}`,
   );
-  if (runtime.code !== 0)
+  const runtimeHash = runtime.stdout.trim().split(/\s+/)[0];
+  if (runtime.code !== 0 || runtimeHash !== deployment.runtimeSha256)
     throw new Error("Declared Yolo fork is absent or its SHA-256 differs; deployment deferred");
   const worker = `${discordRuntime(deployment)} ${quote(deployment.bundle)}`;
   const installed = await transport.run(deployment.target, `test -f ${quote(deployment.bundle)}`);
   if (installed.code === 1) {
-    const active = await transport.run(
-      deployment.target,
-      `systemctl is-active --quiet ${quote(deployment.unit)}`,
-    );
+    const active = await systemdActive(deployment, transport);
     if (active.code === 0)
       throw new Error("A live monitor has no installed artifact; deployment deferred");
     if (active.code !== 3 && active.code !== 4)
-      throw new Error("Cannot qualify monitor absence for installation");
+      throw new Error(`Cannot qualify monitor absence for installation (${active.state})`);
     return null;
   }
   if (installed.code !== 0) throw new Error("Cannot qualify installed Discord artifact");
@@ -111,18 +127,18 @@ export async function quiesceDiscord(
   );
   const pid = pidResult.stdout.trim();
   if (pidResult.code === 0 && pid === "0") {
-    const active = await transport.run(
-      deployment.target,
-      `systemctl is-active --quiet ${quote(deployment.unit)}`,
-    );
+    const active = await systemdActive(deployment, transport);
     if (active.code !== 3 && active.code !== 4)
-      throw new Error("Cannot qualify stopped monitor: service may still be activating");
+      throw new Error(`Cannot qualify stopped monitor: service is ${active.state}`);
     const idle = await transport.run(
       deployment.target,
       `${worker} --policy ${quote(deployment.policy.target)} --upgrade-check`,
     );
-    if (idle.code !== 0)
-      throw new Error("Stopped monitor still owns active goals; recovery must be qualified first");
+    if (idle.code !== 0) {
+      if (/Upgrade deferred: [1-9][0-9]* goals are still active/.test(idle.stderr || idle.stdout))
+        return "recover-active";
+      throw new Error("Stopped monitor failed its upgrade safety check");
+    }
     return null;
   }
   if (pidResult.code !== 0 || !/^[1-9][0-9]*$/.test(pid))
@@ -205,11 +221,28 @@ const deploymentTransport: DiscordDeploymentTransport = {
     return { code: result.exitCode, stdout: result.stdout, stderr: result.stderr };
   },
   async upload(host, source, target) {
-    const result = await runInfra({
-      args: ["ssh", "sftp", "--host", host, "--put", source, "--path", target, "--json"],
-    });
-    if (result.exitCode !== 0)
-      throw new Error(`Infra upload failed (${result.exitCode}): ${result.stderr}`);
+    // Native SFTP cannot route to the private WireGuard address from this WSL session. Transfer
+    // gzip data in bounded shell arguments through the Infra SSH exec owner; the release workflow
+    // verifies the decoded file's checksum before installation.
+    const encodedPath = `${target}.gzip.b64`;
+    const decodedPath = `${target}.decoded`;
+    const exec = async (command: string) => {
+      const transfer = await runInfra({
+        args: ["ssh", "exec", "--host", host, "--cmd", command],
+      });
+      if (transfer.exitCode !== 0)
+        throw new Error(`Infra exec upload failed (${transfer.exitCode}): ${transfer.stderr}`);
+    };
+    await exec(`: > ${quote(encodedPath)} && chmod 600 ${quote(encodedPath)}`);
+    const compressed = gzipSync(await Bun.file(source).bytes()).toString("base64");
+    for (let offset = 0; offset < compressed.length; offset += 60_000) {
+      const chunk = compressed.slice(offset, offset + 60_000);
+      await exec(`printf %s ${quote(chunk)} >> ${quote(encodedPath)}`);
+    }
+    await exec(
+      `base64 --decode ${quote(encodedPath)} | gzip --decompress --stdout > ${quote(decodedPath)} && mv -f ${quote(decodedPath)} ${quote(target)} && rm -f ${quote(encodedPath)}`,
+    );
+    console.info(`Uploaded ${source.split("/").at(-1)} through bounded Infra SSH exec chunks`);
   },
   async build(entrypoint, outdir) {
     const result = await Bun.build({
@@ -256,7 +289,7 @@ export async function deployDiscord(
       },
     ];
     const hashes: Record<string, string> = {};
-    await exec(`mkdir -m 700 ${quote(remoteStage)}`);
+    await exec(`mkdir -m 755 ${quote(remoteStage)}`);
     remoteCreated = true;
     /* oxlint-disable no-await-in-loop -- upload, install and verify are an ordered release transaction. */
     for (const file of files) {
@@ -271,7 +304,19 @@ export async function deployDiscord(
     const worker = `${discordRuntime(deployment)} ${quote(`${remoteStage}/omar-monitor.mjs`)} --policy ${quote(`${remoteStage}/omar-monitor-policy.json`)}`;
     await exec(`${worker} --probe`);
     // Recheck after the build/upload/probe, before any installed code changes.
-    if (draining) {
+    if (draining === "recover-active") {
+      const active = await systemdActive(deployment, transport);
+      if (active.code !== 3 && active.code !== 4)
+        throw new Error(`Stopped monitor became active before recovery (${active.state})`);
+      const pid = await transport.run(
+        deployment.target,
+        `systemctl show ${quote(deployment.unit)} -p MainPID --value`,
+      );
+      if (pid.code !== 0 || pid.stdout.trim() !== "0")
+        throw new Error("Monitor PID changed before recovery; durable goals were left untouched");
+      await exec(`${worker} --recover-active`);
+      await exec(`${worker} --upgrade-check`);
+    } else if (draining) {
       await exec(
         `${discordRuntime(deployment)} ${quote(deployment.bundle)} --policy ${quote(deployment.policy.target)} --upgrade-check --expect-pid ${draining}`,
       );
@@ -300,11 +345,24 @@ export async function deployDiscord(
         `sudo -n install -o root -g root -m 644 ${quote(`${remoteStage}/${file.name}`)} ${quote(`${file.target}.new`)} && sudo -n mv -f ${quote(`${file.target}.new`)} ${target} && printf '%s  %s\\n' ${quote(hashes[file.name]!)} ${target} | sha256sum -c --quiet -`,
       );
     }
-    const failed = await applyPlan(deployment.plan, transport.run, log);
-    if (failed.length) throw new Error(`Infra host apply failed: ${failed.join(", ")}`);
-    await exec(
-      `sudo -n systemctl restart ${quote(deployment.unit)} && systemctl is-active --quiet ${quote(deployment.unit)}`,
+    const failed = await applyPlan(
+      deployment.plan,
+      (host, command) =>
+        transport.run(
+          host,
+          command.includes(deployment.runtime)
+            ? `sudo -n -u ${quote(deployment.stateOwner)} bash -c ${quote(command)}`
+            : command.startsWith("systemd-analyze verify ")
+              ? `sudo -n ${command}`
+              : command,
+        ),
+      log,
     );
+    if (failed.length) throw new Error(`Infra host apply failed: ${failed.join(", ")}`);
+    if (draining && draining !== "recover-active") {
+      await exec(`sudo -n systemctl restart ${quote(deployment.unit)}`);
+    }
+    await exec(`systemctl is-active --quiet ${quote(deployment.unit)}`);
     await exec(
       `systemctl show ${quote(deployment.unit)} -p ActiveState -p MainPID -p ExecMainStatus -p NRestarts`,
     );
@@ -313,6 +371,11 @@ export async function deployDiscord(
     );
   } catch (error) {
     if (installedChanged) {
+      const stopped = await transport.run(
+        deployment.target,
+        `sudo -n systemctl stop ${quote(deployment.unit)}`,
+      );
+      if (stopped.code !== 0) log(`Service stop before release rollback failed (${stopped.code})`);
       const paths = [
         deployment.bundle,
         deployment.policy.target,
@@ -431,7 +494,7 @@ export async function runDiscord(args: string[] = [], root = infraRoot()): Promi
         policy: deployment.policy,
         stateDirectory: deployment.stateDirectory,
         upgrade:
-          "Refused while a goal is planning or executing; private queue and authentication preserved",
+          "Live goals must drain; stopped goals are requeued after confirming systemd is inactive",
       }),
     );
     if (rest.includes("--apply")) await deployDiscord(deployment);
