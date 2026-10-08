@@ -247,16 +247,20 @@ test("ufw rules: specific sources, own marker, nothing for postgres, redis or th
     "input:ssh-vps",
     "route:ssh-dbfr",
     "route:ssh-wsl",
+    "route:ssh-aphro-pc",
     "input:mcp-http",
     "input:a2a",
   ]);
   expect(
     rules
       .filter((r) => r.kind === "route")
-      .every((r) => /to 10\.200\.77\.[234] port (22|8793)/.test(r.text)),
+      .every((r) =>
+        /to 10\.200\.77\.([234] port (22|8793)|10 port (22|5900|8793|8795)) /.test(r.text),
+      ),
   ).toBe(true);
   expect(rules.filter((r) => r.peer === "dbfr").map((r) => r.text)).toEqual([
     "ufw route allow in on wg1 out on wg1 from 10.200.77.3 to 10.200.77.4 port 22 proto tcp comment 'aphrody-wg-dbfr'",
+    "ufw allow in on wg1 from 10.200.77.3 to 10.200.77.1 port 22 proto tcp comment 'aphrody-wg-dbfr'",
     "ufw allow in on wg1 from 10.200.77.3 to 10.200.77.1 port 8793 proto tcp comment 'aphrody-wg-dbfr'",
   ]);
 });

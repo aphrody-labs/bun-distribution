@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Private WireGuard tunnel and Omar administrator access
 
 The owner authorized deployment on 2026-10-07. SSH and WireGuard are active on VPS,
@@ -45,12 +46,12 @@ No replacement client private key is generated or provided.
 
 ## What is declared
 
-| Piece | File |
-| --- | --- |
-| Tunnel (subnet, hub, peers, services, grants, firewall policy) | `tools/config/host/wireguard/aphrody-tunnel.json` |
-| Forwarders for the loopback services (template units, instance = port) | `tools/config/host/systemd/aphrody/aphrody-wg-proxy@.{socket,service}` |
-| `omar` account: key file (root-owned), sudoers drop-in, sshd drop-ins | `tools/config/host/{ssh/omar.authorized_keys,sudoers/omar,ssh/omar-sshd.conf,ssh/postgres-no-login-sshd.conf}`, `accounts` in `tools/config/host/catalog.json` |
-| Generator, checks, plan | `packages/engine/core/src/host/wireguard.ts` (`wg-plan`, `wg-client`), tests in `packages/engine/core/test/host-wireguard.test.ts`, catalog checks in `checkCatalog` |
+| Piece                                                                  | File                                                                                                                                                                 |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tunnel (subnet, hub, peers, services, grants, firewall policy)         | `tools/config/host/wireguard/aphrody-tunnel.json`                                                                                                                    |
+| Forwarders for the loopback services (template units, instance = port) | `tools/config/host/systemd/aphrody/aphrody-wg-proxy@.{socket,service}`                                                                                               |
+| `omar` account: key file (root-owned), sudoers drop-in, sshd drop-ins  | `tools/config/host/{ssh/omar.authorized_keys,sudoers/omar,ssh/omar-sshd.conf,ssh/postgres-no-login-sshd.conf}`, `accounts` in `tools/config/host/catalog.json`       |
+| Generator, checks, plan                                                | `packages/engine/core/src/host/wireguard.ts` (`wg-plan`, `wg-client`), tests in `packages/engine/core/test/host-wireguard.test.ts`, catalog checks in `checkCatalog` |
 
 ```sh
 bun packages/engine/core/src/host/cli.ts check                      # catalog, tunnel and account checks
@@ -95,18 +96,18 @@ named in `needs`; the fresh-install adapter above executes the SSH/WireGuard sub
   key is the authentication. A second rule would duplicate Shenron's. The choice holds as long as that list keeps them;
   `wg-plan --observe` re-checks it (`vps.workstation-coverage`).
 - Tunnel access: `allow in on wg1 from <peer> to 10.200.77.1 port P` for vps services, `route allow in on wg1 out on wg1
-  from <peer> to <host> port P` for services of another peer. dbfr needs no ufw change (22/tcp is already open). Nothing is
+from <peer> to <host> port P` for services of another peer. dbfr needs no ufw change (22/tcp is already open). Nothing is
   ever opened for `5432` or `6379`.
 
 ### Who reaches what
 
-| Service | Where | omar | aphro-pc | wsl | How |
-| --- | --- | --- | --- | --- | --- |
-| ssh | vps `10.200.77.1:22` | yes | yes | yes | sshd listener |
-| ssh | dbfr `10.200.77.3:22` | yes | yes | yes | routed by the hub |
-| MCP HTTP | vps `10.200.77.1:8789` | yes | yes | yes | `aphrody-wg-proxy@8789` to `127.0.0.1:8789` |
-| A2A | vps `10.200.77.1:8788` | yes | yes | yes | `aphrody-wg-proxy@8788` to `127.0.0.1:8788` |
-| training | WSL `10.200.77.2` | pending | pending | n/a | ports not declared anywhere: no rule is generated until the owner names them |
+| Service  | Where                  | omar    | aphro-pc | wsl | How                                                                          |
+| -------- | ---------------------- | ------- | -------- | --- | ---------------------------------------------------------------------------- |
+| ssh      | vps `10.200.77.1:22`   | yes     | yes      | yes | sshd listener                                                                |
+| ssh      | dbfr `10.200.77.3:22`  | yes     | yes      | yes | routed by the hub                                                            |
+| MCP HTTP | vps `10.200.77.1:8789` | yes     | yes      | yes | `aphrody-wg-proxy@8789` to `127.0.0.1:8789`                                  |
+| A2A      | vps `10.200.77.1:8788` | yes     | yes      | yes | `aphrody-wg-proxy@8788` to `127.0.0.1:8788`                                  |
+| training | WSL `10.200.77.2`      | pending | pending  | n/a | ports not declared anywhere: no rule is generated until the owner names them |
 
 `aphrody-wg-proxy@<port>` is a stock `systemd-socket-proxyd` behind a socket bound to the hub address only (`FreeBind`,
 `IPAddressAllow=127.0.0.0/8 10.200.77.0/24`, `DynamicUser`, exposure 1.6 by `systemd-analyze security --offline`). The
@@ -194,6 +195,53 @@ PersistentKeepalive = 25
 3. Dans la fenêtre, garde les deux premières lignes (`[Interface]` et `PrivateKey = ...`) et colle sous elles le bloc de texte reçu (`aphrody-omar.txt`).
 4. Clique « Enregistrer » puis « Activer » : le tunnel doit passer à « Actif ».
 5. Pour couper : « Désactiver » ; ne partage jamais la ligne `PrivateKey`.
+
+## SSH mesh (2026-10-08)
+
+Owner directive of 2026-10-08: full SSH between the owner (`aphro-pc`, GitHub `aphrody-dev`), `vps`, `dbfr` and Omar
+(GitHub `KyrioFox`, confirmed by the owner the same day; `tools/config/host/omar-admin.json`). Every link rides `wg1`
+(`10.200.77.0/24`); nothing new is exposed publicly. Declared by the `ssh-*` services and grants of
+`tools/config/host/wireguard/aphrody-tunnel.json` (new `ssh-omar`; grants `omar -> ssh-aphro-pc`,
+`aphro-pc -> ssh-omar`, `dbfr -> ssh-vps`), which generate the routed ufw rules below. Record:
+`tools/config/host/inventory/ssh-mesh-2026-10-08.json` (public keys only).
+
+| Link                  | Alias (client)                                      | Login, key                                                        | State 2026-10-08                |
+| --------------------- | --------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------- |
+| aphro-pc → vps / dbfr | `vps`, `dbfr`, `vps-wg`, `dbfr-wg`                  | `ubuntu`, `id_ed25519_aphrody` (`aphrody-owner-pc`)               | tested                          |
+| vps → dbfr            | `dbfr-wg` (vps `~/.ssh/config`)                     | `ubuntu`, vps `id_ed25519`                                        | tested                          |
+| dbfr → vps            | `vps-wg` (dbfr `~/.ssh/config`), `aphrody-vps-wg`   | `ubuntu`, `aphrody_fleet_vps` (`aphrody-fleet:dbfr-vps`)          | tested                          |
+| vps / dbfr → aphro-pc | `aphro-pc`                                          | `aphro`, `id_ed25519_aphro_pc`, `from=` the host's tunnel address | tested                          |
+| omar → vps / dbfr     | `vps`, `dbfr` (Omar's config)                       | `omar`, `/etc/ssh/authorized_keys.d/omar`                         | waits for Omar's own key        |
+| omar → aphro-pc       | `aphro-pc` (Omar's config)                          | `aphro`, `administrators_authorized_keys`, `from="10.200.77.10"`  | waits for Omar's own key        |
+| aphro-pc → omar       | `omar-pc` (owner config, `User` from Omar's report) | `aphrody-owner-pc` / `aphrody-dev@github`                         | waits for Omar's sshd (step 12) |
+| vps → omar            | `ssh -i ~/.ssh/id_ed25519_omar_pc`                  | `aphrody-vps-to-omar-pc`, `from="10.200.77.1"`                    | waits for Omar's sshd (step 12) |
+
+- **vps / dbfr.** sshd listens on `0.0.0.0:22`. Omar's keys live in the root-owned `/etc/ssh/authorized_keys.d/omar`
+  (the `AuthorizedKeysFile` of `Match User omar`, `60-omar.conf`); `/home/omar/.ssh` exists (`700 omar:omar`) for his
+  client files only, sshd never reads an `authorized_keys` there. `/etc/sudoers.d/omar` is installed and passes
+  `visudo -c`. ufw: `aphrody-wg-omar` input/route rules to `10.200.77.1:22`, `10.200.77.3:22` and now
+  `10.200.77.4:22`; `aphrody-wg-aphro-pc` route to `10.200.77.10:22`; `aphrody-wg-dbfr` input to `10.200.77.1:22`.
+  vps-originated traffic (to dbfr or Omar) needs no rule. `wg0` and `shenron-admin` rules are untouched.
+- **aphro-pc.** OpenSSH Server (`ListenAddress 10.200.77.4`, key only, `AllowUsers edjez aphro`; `aphro` is an
+  administrator, so keys come from `C:\ProgramData\ssh\administrators_authorized_keys`, ACL Administrators + SYSTEM
+  only). sshd was stopped: it still depended on the retired `WireGuardTunnel$aphrody` service; the dependency was
+  removed, start type is delayed automatic and recovery restarts it after 10 s / 30 s / 60 s (the bind to
+  `10.200.77.4` fails until the scheduled task `\Aphrody\Aphrody WG aphro-pc` brings the tunnel up). The interface
+  profile is Public while the stock `OpenSSH-Server-In-TCP` rule is Private-only, so the rule
+  `Aphrody-SSH-In-Tunnel` (group `Aphrody tunnel`, any profile, local `10.200.77.4`, remote `10.200.77.0/24`) admits
+  the tunnel. The GitHub keys `github_aphrody_dev` (`Host github.com`) and `github_aphrody_code`
+  (`Host github-aphrody-code`) were copied from the hosts into `~/.ssh` and loaded in `ssh-agent`; sleep and
+  hibernation are off.
+- **Omar's key.** `github.com/KyrioFox.keys` is empty; step 12 of [OMAR-REMOTE-CONTROL.md](OMAR-REMOTE-CONTROL.md)
+  has his Codex generate an ed25519 pair and post the public line in the admin channel. The owner then runs
+  `~/.aphrody/run/install-omar-ssh-key.ps1 '<public line>'` (elevated PowerShell 7 on aphro-pc, idempotent): it appends
+  the key with the declared `from="92.170.252.46,10.200.77.0/24",restrict,pty` options to
+  `/etc/ssh/authorized_keys.d/omar` on vps and dbfr (backup `*.before-kyriofox-<stamp>`) and with
+  `from="10.200.77.10"` to the aphro-pc administrators file, then the line is declared in `ssh/omar.authorized_keys`.
+  The shared `windows-aphro` key stays until the owner removes it.
+- **Rollback.** Hosts: `ufw delete` the two routed `:22` rules to `10.200.77.4` / `10.200.77.10`, drop the key line;
+  aphro-pc: `Remove-NetFirewallRule -Name Aphrody-SSH-In-Tunnel` and `Stop-Service sshd`; client configs keep
+  `*.before-ssh-mesh-20261008` backups.
 
 ## Order, validation and rollback
 

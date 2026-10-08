@@ -95,9 +95,7 @@
       "publicKeyNote": "supplied by the owner on 2026-10-06, replacing the key announced earlier that day (withdrawn: tunnel cancelled, private key lost; never reuse it)",
       "udpSource": {
         "mode": "ufw",
-        "ips": [
-          "92.170.252.46"
-        ],
+        "ips": ["92.170.252.46"],
         "comment": "aphrody-wg-omar"
       }
     }
@@ -138,6 +136,16 @@
       "proto": "tcp",
       "expose": "peer-listener",
       "auth": "ssh-key"
+    },
+    {
+      "id": "ssh-omar",
+      "host": "omar",
+      "address": "10.200.77.10",
+      "port": 22,
+      "proto": "tcp",
+      "expose": "peer-listener",
+      "auth": "ssh-key",
+      "caveat": "Windows OpenSSH Server on Omar PC (step 12 of OMAR-REMOTE-CONTROL.md); firewall rule Aphrody-SSH-In-Tunnel admits 10.200.77.0/24 on 10.200.77.10 only; authorized keys: owner (GitHub aphrody-dev and aphrody-owner-pc) and aphrody-vps-to-omar-pc."
     },
     {
       "id": "mcp-http",
@@ -206,17 +214,11 @@
     }
   ],
   "grants": {
-    "omar": [
-      "ssh-vps",
-      "ssh-dbfr",
-      "ssh-wsl",
-      "mcp-http",
-      "a2a",
-      "training"
-    ],
+    "omar": ["ssh-vps", "ssh-dbfr", "ssh-wsl", "ssh-aphro-pc", "mcp-http", "a2a", "training"],
     "aphro-pc": [
       "ssh-vps",
       "ssh-dbfr",
+      "ssh-omar",
       "mcp-http",
       "a2a",
       "training",
@@ -224,30 +226,14 @@
       "remote-desktop-omar",
       "mcp-http-omar"
     ],
-    "wsl": [
-      "ssh-vps",
-      "ssh-dbfr",
-      "mcp-http",
-      "a2a",
-      "mcp-http-dbfr"
-    ],
-    "dbfr": [
-      "ssh-aphro-pc",
-      "mcp-http"
-    ],
-    "vps": [
-      "mcp-http-dbfr"
-    ]
+    "wsl": ["ssh-vps", "ssh-dbfr", "mcp-http", "a2a", "mcp-http-dbfr"],
+    "dbfr": ["ssh-aphro-pc", "ssh-vps", "mcp-http"],
+    "vps": ["mcp-http-dbfr"]
   },
   "firewall": {
     "marker": "aphrody-wg",
-    "foreignMarkers": [
-      "shenron-admin"
-    ],
-    "neverOpen": [
-      5432,
-      6379
-    ],
+    "foreignMarkers": ["shenron-admin"],
+    "neverOpen": [5432, 6379],
     "note": "Rules carry the aphrody-wg-<peer> comment. scripts/ops/admin-access.ts of Shenron only deletes rules whose comment is shenron-admin, so the two never collide. The tunnel subnet is RFC 1918 outside 10.8.0.0/24: admin-access-host.ts skips it (no ufw, fail2ban, pg_hba or admin-IP entry)."
   }
 }

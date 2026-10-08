@@ -10,9 +10,14 @@
     "permissions": "8",
     "credentialFile": "/etc/aphrody-discord.env"
   },
-  "github": { "organization": "aphrody-labs", "login": null, "role": "admin" },
+  "github": {
+    "organization": "aphrody-labs",
+    "login": "KyrioFox",
+    "role": "admin",
+    "sshKeys": "none published on github.com/KyrioFox.keys (2026-10-08); own key requested in step 12 of docs/operations/infra/OMAR-REMOTE-CONTROL.md"
+  },
   "verification": {
     "discordIdentity": "Discord user lookup and successful DM 1557349160041324594",
-    "githubIdentity": "unverified; never infer that KyrioFox is Omar"
+    "githubIdentity": "KyrioFox confirmed as Omar by the owner on 2026-10-08 (session directive: third member of aphrody-labs)"
   }
 }

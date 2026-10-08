@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Contrôle du PC Windows d'Omar depuis Aphrody (tunnel WireGuard privé)
 
 État au 2026-10-08. Paquet de mise en place publié dans le salon admin Discord sécurisé. Aucun secret ici :
@@ -154,18 +155,18 @@ agent `computer_*` distante vise `http://10.200.77.10:8793/mcp` avec le jeton MC
 
 ### Checklist
 
-| # | Test | Attendu |
-| --- | --- | --- |
-| 1 | `Test-Connection 10.200.77.10` | réponses ; handshake récent dans `wg show` des deux côtés |
-| 2 | `/healthz` 8795 et 8793 | `ok` / 200 |
-| 3 | Visionneuse ouverte | image du bureau d'Omar, fluide |
-| 4 | Clic (souris) | menu Démarrer / fenêtre activée |
-| 5 | Saisie | texte tapé dans Notepad identique |
-| 6 | Raccourcis | `Ctrl+C/V`, `Alt+Tab`, `Win+R`, `Ctrl+Shift+Esc` |
-| 7 | Multi-écran | bureau virtuel complet capturé ; clic sur le 2e écran au bon endroit |
-| 8 | Reconnexion | fermer/rouvrir l'onglet ; `wg down`/`wg up` ; reprise sans redémarrer `serve` |
-| 9 | Jeton faux | refus (401) sur 8795 et `/mcp` |
-| 10 | MCP | `tools/list` contient `computer_*`, `computer_observe` renvoie un état |
+| #   | Test                           | Attendu                                                                       |
+| --- | ------------------------------ | ----------------------------------------------------------------------------- |
+| 1   | `Test-Connection 10.200.77.10` | réponses ; handshake récent dans `wg show` des deux côtés                     |
+| 2   | `/healthz` 8795 et 8793        | `ok` / 200                                                                    |
+| 3   | Visionneuse ouverte            | image du bureau d'Omar, fluide                                                |
+| 4   | Clic (souris)                  | menu Démarrer / fenêtre activée                                               |
+| 5   | Saisie                         | texte tapé dans Notepad identique                                             |
+| 6   | Raccourcis                     | `Ctrl+C/V`, `Alt+Tab`, `Win+R`, `Ctrl+Shift+Esc`                              |
+| 7   | Multi-écran                    | bureau virtuel complet capturé ; clic sur le 2e écran au bon endroit          |
+| 8   | Reconnexion                    | fermer/rouvrir l'onglet ; `wg down`/`wg up` ; reprise sans redémarrer `serve` |
+| 9   | Jeton faux                     | refus (401) sur 8795 et `/mcp`                                                |
+| 10  | MCP                            | `tools/list` contient `computer_*`, `computer_observe` renvoie un état        |
 
 ## 4. Prompt Codex du PC d'Omar (build source, tunnel, contrôle à distance)
 
@@ -320,6 +321,53 @@ Optionnel : Remove-Item "$AH\private\remote.token","$AH\private\mcp.token" ; ré
 - jetons remis hors bande : oui/non (jamais leur valeur)
 - ce qui a échoué, pourquoi, et ce qui reste à faire côté Omar ou côté propriétaire
 ```
+
+## 4 bis. Étape 12 — SSH (posté le 2026-10-08)
+
+Messages `1557864511908745337` et `1557864516170027020` du salon admin, à exécuter par le Codex d'Omar en
+PowerShell administrateur après l'étape 11. Omar (GitHub `KyrioFox`, confirmé par le propriétaire le 2026-10-08) n'a
+aucune clé publique sur GitHub : son Codex en génère une et ne poste que la ligne `.pub`. Le propriétaire l'installe
+ensuite par `~/.aphrody/run/install-omar-ssh-key.ps1 '<ligne publique>'` (vps, dbfr, aphro-pc) puis la déclare dans
+`tools/config/host/ssh/omar.authorized_keys`. Liens et état : section « SSH mesh » de
+[PRIVATE-TUNNEL.md](PRIVATE-TUNNEL.md). Côté propriétaire, l'alias `omar-pc` (`~/.ssh/config`) attend le `User`
+Windows du rapport d'Omar.
+
+```powershell
+# a) Clé d'Omar (créée seulement si absente), puis poste ICI la seule ligne publique affichée
+$S = "$env:USERPROFILE\.ssh"; New-Item -ItemType Directory -Force $S | Out-Null
+if (-not (Test-Path "$S\id_ed25519")) {
+  ssh-keygen --% -t ed25519 -f "%USERPROFILE%\.ssh\id_ed25519" -N "" -C omar@KyrioFox
+}
+Get-Content "$S\id_ed25519.pub"
+
+# b) Serveur OpenSSH, démarrage auto, port 22 ouvert au seul tunnel
+if ((Get-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0).State -ne 'Installed') { Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0 }
+# (si Get-WindowsCapability échoue : winget install --id Microsoft.OpenSSH.Preview -e)
+Set-Service sshd -StartupType Automatic; Start-Service sshd
+Remove-NetFirewallRule -Name Aphrody-SSH-In-Tunnel -ErrorAction SilentlyContinue
+New-NetFirewallRule -Name Aphrody-SSH-In-Tunnel -DisplayName 'Aphrody tunnel SSH' -Group 'Aphrody tunnel' -Direction Inbound -Protocol TCP -LocalPort 22 -LocalAddress 10.200.77.10 -RemoteAddress 10.200.77.0/24 -Profile Any -Action Allow
+Disable-NetFirewallRule -Name OpenSSH-Server-In-TCP -ErrorAction SilentlyContinue   # pas de 22 hors tunnel
+
+# c) Clés publiques autorisées (propriétaire GitHub aphrody-dev, PC du propriétaire, vps), tunnel seulement
+$keys = @(
+ 'from="10.200.77.0/24" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+IwnaVjBqNuHwnId41Eug0Q76N0u2A8pkWqltPn+hP aphrody-dev@github',
+ 'from="10.200.77.4" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM9fIsjABVye9MqLRBc2ddz2hKJdxNPQm22uzcDKrnkw aphrody-owner-pc',
+ 'from="10.200.77.1" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICXbajabKOH0cOxwgHWtA3Y4cdT/ZTQcck4c3stty709 aphrody-vps-to-omar-pc')
+$adm = [bool]((whoami /groups) -match 'S-1-5-32-544')
+$f = if ($adm) { "$env:ProgramData\ssh\administrators_authorized_keys" } else { "$S\authorized_keys" }
+$cur = @(if (Test-Path $f) { Get-Content $f })
+$keys | Where-Object { $cur -notcontains $_ } | Add-Content -Encoding ascii $f
+if ($adm) { icacls $f /inheritance:r /grant '*S-1-5-32-544:F' /grant '*S-1-5-18:F' }
+
+# d) Client : alias vers vps, dbfr, aphro-pc
+if (-not (Select-String -Quiet -Path "$S\config" -Pattern '^Host aphro-pc' -ErrorAction SilentlyContinue)) {
+"Host vps`n  HostName 10.200.77.1`n  User omar`nHost dbfr`n  HostName 10.200.77.3`n  User omar`nHost aphro-pc`n  HostName 10.200.77.4`n  User aphro`nHost vps dbfr aphro-pc`n  IdentityFile ~/.ssh/id_ed25519`n  IdentitiesOnly yes`n  StrictHostKeyChecking accept-new" | Add-Content -Encoding ascii "$S\config" }
+
+# e) Rapport (ici) : whoami ; $env:USERNAME ; admin=$adm ; (Get-Service sshd).Status ; Get-NetTCPConnection -LocalPort 22 -State Listen ; ligne .pub
+# Une fois ta clé installée par le propriétaire : ssh vps whoami ; ssh dbfr whoami ; ssh aphro-pc whoami
+```
+
+Rollback : `Stop-Service sshd; Set-Service sshd -StartupType Disabled; Remove-NetFirewallRule -Name Aphrody-SSH-In-Tunnel`.
 
 ## 5. Modèle `wg render omar` (sans PrivateKey)
 
