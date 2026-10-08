@@ -9,7 +9,7 @@
  * - API health check probe with latency timing and timeout handling.
  */
 
-import type { PwCookieParam, PlaywrightBrowserContext } from "../next/context.ts";
+import type { PwCookieParam, PlaywrightBrowserContext } from "../next/index.ts";
 
 /** Canonical origins for Rose Griffon domains. */
 export const ROSE_GRIFFON_ORIGINS = {

@@ -46,7 +46,8 @@
     "test": "bun test test/"
   },
   "dependencies": {
-    "@aphrody/agent-browser": "workspace:*"
+    "@aphrody/agent-browser": "workspace:*",
+    "@aphrody/next-bun": "file:../../../../bun/packages/bun-next"
   },
   "engines": {
     "bun": ">=1.4.2"

@@ -5,7 +5,7 @@ import { assertNativeShellOwner, assertPrivateOwnerWorkspace } from "@aphrody/sc
 import { existsSync, realpathSync } from "node:fs";
 import { copyFile, mkdir, readdir } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import { inSkipped, skippedSpans } from "./codemods/lex";
+import { inSkipped, skippedSpans } from "@aphrody/next-bun/codemods/lex";
 import { qualifyDependencies } from "./dependencies";
 import { buildRouteHierarchy, type RouteHierarchy } from "./layout";
 import { scanNextDirectory, type ScanStats } from "./scanner";
@@ -197,8 +197,8 @@ export async function migrateProject(
 
     for (const entry of entries) {
       const srcFile = join(currentPath, entry.name);
-      const rel = relative(sourceDir, srcFile);
-      const publicAsset = rel.replace(/\\/g, "/").startsWith("public/");
+      const rel = relative(sourceDir, srcFile).replaceAll("\\", "/");
+      const publicAsset = rel.startsWith("public/");
       if (
         entry.name === "node_modules" ||
         entry.name === ".next" ||

@@ -2,9 +2,11 @@
 // MUI -> Material 3 on the Next 16 stack: the components that map one to one become Base UI wrappers
 // (`@aphrody/m3-baseui`), layout and typography become elements with M3 Tailwind classes (`@aphrody/m3-tailwind`),
 // and everything else is reported. The mapping data of the Lit stack (`@aphrody/m3-codemods`) stays there.
-import { type CodemodResult, unchanged } from "./types";
-import { applyEdits, skippedSpans } from "./lex";
+import type { CodemodResult } from "@aphrody/next-bun/codemods";
+import { applyEdits, skippedSpans } from "@aphrody/next-bun/codemods/lex";
 import { closingTag, findTags, stringValue, type Attr, type Tag } from "./jsx";
+
+const unchanged = (code: string): CodemodResult => ({ code, changes: [], warnings: [] });
 
 /** MUI component -> Base UI wrapper. */
 const WRAPPERS: Record<string, string> = {

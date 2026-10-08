@@ -450,7 +450,7 @@
       "path": "m3/packages/m3-next-migrate/package.json",
       "status": "blocked",
       "sha256": "bd8ebf8628651c701eb6daeac0e388caf6965da590678fd8db732eca03eaec8a",
-      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante ; dépend de @aphrody/next-bun (file:, aphrody-labs/bun packages/bun-next), pas encore publié sur npm."
     },
     {
       "name": "@aphrody/m3-next",
@@ -458,7 +458,7 @@
       "path": "m3/packages/m3-next/package.json",
       "status": "blocked",
       "sha256": "45056c1266ae3c1617a550b8a2a243e299c7ba9f93f14ae483a8e42a7bfcc96e",
-      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante ; dépend de @aphrody/next-bun (file:, aphrody-labs/bun packages/bun-next), pas encore publié sur npm."
     },
     {
       "name": "@aphrody/m3-os-themes",
@@ -779,7 +779,7 @@
       "path": "packages/web/aphrody-web-test/package.json",
       "status": "blocked",
       "sha256": "705780673d24943e67582f1c02777c3ca3f3913877c08eea8344d0c888a60f4d",
-      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+      "reason": "Qualification native, intégration ou dépendance non qualifiée restante ; dépend de @aphrody/next-bun (file:, aphrody-labs/bun packages/bun-next), pas encore publié sur npm."
     },
     {
       "name": "@aphrody/fuzzy",

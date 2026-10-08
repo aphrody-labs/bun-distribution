@@ -227,7 +227,8 @@ Components serves only the prefetched shell inside the scope.
 nesting guard (`context().cookies()` read), `resolveURL` + its `about:blank`
 error text, and the acquire→`fn`→release-in-`finally` semantics.
 
-**Reimplemented on Aphrody Web:**
+**Reimplemented on Aphrody Web:** (moved on 2026-10-08 to `@aphrody/next-bun/testing`, aphrody-labs/bun
+`packages/bun-next/testing/`, updated to `@next/playwright` 16.5; `src/next/index.ts` re-exports it)
 - `src/next/context.ts` — `CdpCookieContext`, a `PlaywrightBrowserContext`-shaped
   adapter mapping `addCookies` / `cookies` / `clearCookies` onto
   `Network.setCookies` / `Network.getCookies` / `Network.deleteCookies`. Plus

@@ -9,7 +9,7 @@ import "./setup.ts";
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { WebCdpPage } from "../src/cdp.ts";
-import type { CdpSend } from "../src/next/context.ts";
+import type { CdpSend } from "../src/next/index.ts";
 import {
   // Rose Griffon
   ROSE_GRIFFON_ORIGINS,

@@ -41,7 +41,7 @@ export const M3_TOOLS = {
     module: "m3/packages/m3-next/bin/m3-next.ts",
     run: "runM3Next",
     summary:
-      "Next.js 16 on Bun, Turbopack workers included: dev | build | start [next args] [m3-next]",
+      "Next.js 16 on Bun, Turbopack workers included: dev | build | start [next args] [m3-next, runner from @aphrody/next-bun]",
   },
   bun: {
     module: "m3/packages/m3-bun/src/cli.ts",
@@ -57,7 +57,8 @@ export const M3_TOOLS = {
   "next-migrate": {
     module: "m3/packages/m3-next-migrate/src/cli.ts",
     run: "runNextMigrate",
-    summary: "Next.js 16 migration, codemods and pages-hints [m3-next-migrate, next-migrate]",
+    summary:
+      "Next.js 16 migration, codemods (next16 and tailwind4 from @aphrody/next-bun, plus mui) and pages-hints [m3-next-migrate, next-migrate]",
   },
   "svg-to-ico": {
     module: "m3/packages/material-design-icons/scripts/svg-to-ico.ts",

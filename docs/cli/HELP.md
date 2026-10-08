@@ -306,10 +306,10 @@ compile builds the UI and links it with the Bun runtime into one executable that
 it runs @aphrody/m3-bun, which must be installed next to this package.
 
 Tools (yolo m3 <tool> ...):
-  next           Next.js 16 on Bun, Turbopack workers included: dev | build | start [next args] [m3-next]
+  next           Next.js 16 on Bun, Turbopack workers included: dev | build | start [next args] [m3-next, runner from @aphrody/next-bun]
   bun            Build, serve, compile, package and deploy configs of an M3 app [m3-bun]
   os-themes      M3 OS themes: install | generate | uninstall (dry-run unless --apply) [m3-os-themes]
-  next-migrate   Next.js 16 migration, codemods and pages-hints [m3-next-migrate, next-migrate]
+  next-migrate   Next.js 16 migration, codemods (next16 and tailwind4 from @aphrody/next-bun, plus mui) and pages-hints [m3-next-migrate, next-migrate]
   svg-to-ico     Material Symbol or SVG to Tauri icons (ico, icns, PNG) [m3-svg-to-ico]
   web-to-tauri   Website or bundle to a Tauri 3 app: probe | plan | convert | parity [web-to-tauri]
   scaffold       The single project scaffolder: list | example | new [aphrody-scaffold]

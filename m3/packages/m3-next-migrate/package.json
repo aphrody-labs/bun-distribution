@@ -106,6 +106,7 @@
     "test": "bun test ./test/ && bun test --preload @aphrody/m3-config/test/dom ./test-dom/"
   },
   "dependencies": {
+    "@aphrody/next-bun": "file:../../../../bun/packages/bun-next",
     "@aphrody/scaffold": "workspace:*",
     "react": "catalog:"
   },

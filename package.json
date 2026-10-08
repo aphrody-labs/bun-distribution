@@ -16,6 +16,7 @@
       "packages/interop/*",
       "crates/tauri/aphrody-tauri-api",
       "crates/tauri/aphrody-tauri-plugin-*",
+      "m3/apps/*",
       "m3/packages/m3-next/examples/*"
     ],
     "catalog": {

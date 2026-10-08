@@ -24,6 +24,10 @@ export function qualifyDependencies(
   sourceDir: string,
 ): { dependencies: Record<string, string>; requirements: MigrationRequirement[] } {
   const owner = readManifest(resolve(PRIVATE_OWNER_ROOT, "package.json"));
+  // The M3 owner is folded into the repository's single Bun workspace, which holds the members and the catalog.
+  const repositoryRoot = resolve(PRIVATE_OWNER_ROOT, "..");
+  const repository = readManifest(resolve(repositoryRoot, "package.json"));
+  const workspaces = repository.workspaces ?? owner.workspaces;
   const sourceManifest = resolve(sourceDir, "package.json");
   const declared = existsSync(sourceManifest)
     ? (readManifest(sourceManifest).dependencies ?? {})
@@ -120,8 +124,8 @@ export function qualifyDependencies(
       add(path, "no canonical installed package owner was found");
       continue;
     }
-    const member = relative(PRIVATE_OWNER_ROOT, directory).replaceAll("\\", "/");
-    const patterns = owner.workspaces?.packages ?? [];
+    const member = relative(repositoryRoot, directory).replaceAll("\\", "/");
+    const patterns = workspaces?.packages ?? [];
     const workspace =
       patterns.some((pattern) => !pattern.startsWith("!") && new Bun.Glob(pattern).match(member)) &&
       !patterns.some(
@@ -149,7 +153,7 @@ export function qualifyDependencies(
       }
     }
     if (workspace) dependencies[name] = "workspace:*";
-    else if (owner.workspaces?.catalog?.[name]) dependencies[name] = "catalog:";
+    else if (workspaces?.catalog?.[name]) dependencies[name] = "catalog:";
     else {
       const ownerRange = owner.dependencies?.[name] ?? owner.devDependencies?.[name];
       if (ownerRange) dependencies[name] = ownerRange;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { inSkipped, skippedSpans } from "./codemods/lex";
+import { inSkipped, skippedSpans } from "@aphrody/next-bun/codemods/lex";
 
 export interface MigrationRequirement {
   file: string;

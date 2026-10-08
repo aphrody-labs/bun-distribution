@@ -1,43 +1,15 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Fork Next.js — plan propriétaire
 
-Relevé source : 2026-10-03. Yolo possède le fork/import et les moteurs ;
-Aphrody possède les applications Next concernées.
-Architecture et workflow : [PLAN racine](../../../../PLAN.md).
-Import/fork : [Yolo VENDORING](../../../guides/workspace/VENDORING.md).
+## Déplacé vers aphrody-labs/bun
 
-## État vérifié
+Depuis le 2026-10-08, le plan Next.js sur Bun vit dans le fork Bun : `packages/bun-next/docs/PLAN.md`
+(paquet `@aphrody/next-bun`, cibles Next 16.1.6 et `vendor/next.js` 16.5.0-canary.4). Il remplace ce plan
+(ancien checkout `../yolo/vendor/next`, file P-NEXT-01..04) : route retenue `Bun.build` comme bundler de Next,
+jalons J0..J6 avec leurs tests, constats Turbopack/`node`.
 
-Checkout existant : `../yolo/vendor/next`, branche `yolo`.
-Pins source : vendor manifest/lock Yolo. Scaffold : `templates/stack.toml`
-et `packages/engine/yolo/src/create.ts` côté Yolo. Le parser actuel accepte les variantes
-framework Hono/Elysia ; Next reste une proposition, pas un flag livré.
-
-L'ancien document était une seule ligne avec 230 séquences newline échappées.
-Ses tableaux « supporté/opérationnel », versions exemples et affirmation d'une
-réécriture intégrale de Bun en Rust n'étaient pas accompagnés de reçus.
-Ils ne qualifient pas une compatibilité actuelle.
-
-## Queue
-
-| Travail | Gate |
-| --- | --- |
-| Synchronisation du fork | Owner workflow, ref amont choisie, aucun force-push ni perte de patches |
-| P-NEXT-01 : standalone/tracing | SDK/runtime inclus par provenance ; pas Node externe implicite |
-| P-NEXT-02 : accès runtime | ABI/capacités négociées pour server components et API routes |
-| P-NEXT-03 : IPC workers | fork/send/descriptors, concurrent cache et workers sous superviseur |
-| P-NEXT-04 : arrêt | SIGTERM/SIGINT, fin bornée, aucun worker possédé restant |
-| Template Next proposé | CLI create, deps épinglées, TS config, layout/page/health et build-standalone |
-| Release consommateur | Installation/runtime vérifiés et rollback avec même contrat produit |
-
-Qualifier Pages/App Router, RSC/streaming, server actions/cookies,
-dynamic/lazy chunks, Turbopack dev/build et standalone séparément.
-Le banc Next dans le fork Bun est une entrée à vérifier contre le pin sélectionné,
-pas un test déclaré vert ici. Aucun bénéfice SWC/Turbopack déduit de leur langage.
-
-## Livraison
-
-Modifier les owners existants, réutiliser le checkout et les caches.
-Aucun clone de vérification, copie de template concurrente ou chaîne de build
-alternative. Builds moteurs via fabrique ; tests applicatifs par leurs owners.
-Garder les patches et notices jusqu'à remplacement qualifié.
+Côté aphrody restent les intégrations M3 : `m3/packages/m3-next` (withM3, M3Html/M3Root, thème, crawl, et
+`m3-next` qui réexporte le runner de `@aphrody/next-bun/run`) et `m3/packages/m3-next-migrate` (migrateur
+Next → hôte Bun/Tauri via `@aphrody/scaffold`, shims, codemod `mui-to-m3`, codemods next16/tailwind4 composés
+depuis `@aphrody/next-bun/codemods`). `@aphrody/web-test/next` réexporte `@aphrody/next-bun/testing`.

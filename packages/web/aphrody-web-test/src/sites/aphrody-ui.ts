@@ -9,8 +9,7 @@
  * - Instant navigation performance benchmark over the CDP cookie protocol.
  */
 
-import { instant } from "../next/instant.ts";
-import type { WebPageLike, PlaywrightPage } from "../next/context.ts";
+import { instant, type PlaywrightPage, type WebPageLike } from "../next/index.ts";
 
 /** Canonical M3 token families. */
 export const M3_REQUIRED_COLOR_TOKENS = [

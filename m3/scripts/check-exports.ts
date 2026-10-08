@@ -70,6 +70,30 @@ export function workspacePatterns(manifest: Record<string, any>): string[] {
   return Array.isArray(ws) ? ws : Array.isArray(ws?.packages) ? ws.packages : [];
 }
 
+/**
+ * The workspace that installs `root`: its own manifest when it declares workspaces, else the enclosing repository's
+ * (this owner is folded into one Bun workspace there), with the patterns that fall under `root` re-rooted to it.
+ */
+export function workspaceOwner(root: string): {
+  manifest: Record<string, any>;
+  patterns: string[];
+  repository?: string;
+} {
+  const own = readJson(join(root, "package.json"));
+  if (workspacePatterns(own).length) return { manifest: own, patterns: workspacePatterns(own) };
+  const repository = dirname(root);
+  const file = join(repository, "package.json");
+  if (!existsSync(file)) return { manifest: own, patterns: [] };
+  const outer = readJson(file);
+  const prefix = `${relative(repository, root).replaceAll("\\", "/")}/`;
+  const patterns = workspacePatterns(outer).flatMap((pattern) => {
+    const negated = pattern.startsWith("!");
+    const body = negated ? pattern.slice(1) : pattern;
+    return body.startsWith(prefix) ? [`${negated ? "!" : ""}${body.slice(prefix.length)}`] : [];
+  });
+  return { manifest: outer, patterns, repository };
+}
+
 /** Package directories matched by workspace patterns under `root` (negations honoured). */
 export function expandWorkspaces(root: string, patterns: string[]): string[] {
   const dirs = new Set<string>();
@@ -78,7 +102,7 @@ export function expandWorkspaces(root: string, patterns: string[]): string[] {
       cwd: root,
       onlyFiles: true,
     })) {
-      if (!file.includes("node_modules")) dirs.add(dirname(file));
+      if (!file.includes("node_modules")) dirs.add(dirname(file).replaceAll("\\", "/"));
     }
   }
   for (const negated of patterns.filter((p) => p.startsWith("!"))) {
@@ -93,8 +117,7 @@ export function expandWorkspaces(root: string, patterns: string[]): string[] {
  * packages of nested repositories. */
 export function listPackages(root = REPO): Pkg[] {
   const out: Pkg[] = [];
-  const rootManifest = readJson(join(root, "package.json"));
-  const members = new Set(expandWorkspaces(root, workspacePatterns(rootManifest)));
+  const members = new Set(expandWorkspaces(root, workspaceOwner(root).patterns));
   for (const group of ["packages", "apps"]) {
     const base = join(root, group);
     if (!existsSync(base)) continue;
@@ -518,15 +541,22 @@ export function checkAll(
   only: string[] = [],
 ): { packages: number; findings: Finding[] } {
   const pkgs = listPackages(root);
-  const rootManifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+  const owner = workspaceOwner(root);
+  const rootManifest = readJson(join(root, "package.json"));
   const catalog: Record<string, string> =
-    rootManifest.workspaces?.catalog ?? rootManifest.catalog ?? {};
+    owner.manifest.workspaces?.catalog ?? owner.manifest.catalog ?? {};
   const byName = new Map(
     pkgs.filter((p) => p.manifest.name && !p.nested).map((p) => [p.manifest.name as string, p]),
   );
   for (const p of pkgs)
     if (p.nested && p.manifest.name && !byName.has(p.manifest.name)) byName.set(p.manifest.name, p);
   const names = new Set(byName.keys());
+  // Members of the enclosing repository's workspace resolve `workspace:*` too.
+  if (owner.repository)
+    for (const dir of expandWorkspaces(owner.repository, workspacePatterns(owner.manifest))) {
+      const name = readJson(join(owner.repository, dir, "package.json")).name;
+      if (name) names.add(name);
+    }
   let hostNames: Set<string> | undefined;
   const host = () => (hostNames ??= hostPackageNames());
   const selected = only.length
@@ -548,7 +578,15 @@ export function checkAll(
       host,
       findings,
     );
-    importChecks(pkg, pkgs, byName, pkg.nested ? new Set() : declaredDeps(rootManifest), findings);
+    importChecks(
+      pkg,
+      pkgs,
+      byName,
+      pkg.nested
+        ? new Set()
+        : new Set([...declaredDeps(rootManifest), ...declaredDeps(owner.manifest)]),
+      findings,
+    );
     if (pkg.nested) for (const f of findings.slice(before)) f.severity = "warn";
   }
   return { packages: selected.length, findings };
