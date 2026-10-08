@@ -229,8 +229,12 @@ test("a failed staged product probe keeps installed files and service untouched"
     deployDiscord(discordDeployment("omar-monitor", "vps", root), f.transport, quiet),
   ).rejects.toThrow("fixture refusal");
   expect(f.uploads).toHaveLength(2);
-  expect(f.commands.some((command) => /sudo.*install|systemctl restart/.test(command))).toBe(false);
-  expect(f.commands.at(-1)).toContain("rm -rf -- '/tmp/aphrody-discord-release-");
+  expect(
+    f.commands.some((command) =>
+      /sudo -n install -o root -g root -m 644|systemctl restart/.test(command),
+    ),
+  ).toBe(false);
+  expect(f.commands.at(-1)).toContain("sudo -n rm -rf -- '/srv/aphrody-lab/.release-");
 });
 
 test("release verifies uploaded bytes, installs the declared unit, and preserves protected stores", async () => {

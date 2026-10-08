@@ -244,7 +244,12 @@ async function resumeDiscord(
 const deploymentTransport: DiscordDeploymentTransport = {
   run: runInfraCommand,
   async upload(host, source, target) {
-    await uploadViaInfraExec(host, source, target);
+    await uploadViaInfraExec(host, source, target, (uploadHost, command) =>
+      runInfraCommand(
+        uploadHost,
+        `sudo -n -u ${quote("ubuntu")} -H sh -c ${quote(`cd /srv/aphrody-lab && ${command}`)}`,
+      ),
+    );
   },
   async build(entrypoint, outdir) {
     const result = await Bun.build({
@@ -273,7 +278,7 @@ export async function deployDiscord(
   };
   const draining = await quiesceDiscord(deployment, transport);
   const stage = await mkdtemp(join(tmpdir(), "aphrody-discord-release-"));
-  const remoteStage = `/tmp/${stage.split("/").at(-1)}`;
+  const remoteStage = `/srv/aphrody-lab/.release-${stage.split("/").at(-1)}`;
   let remoteCreated = false;
   let installedChanged = false;
   try {
@@ -291,8 +296,9 @@ export async function deployDiscord(
       },
     ];
     const hashes: Record<string, string> = {};
-    await exec(`mkdir -m 700 ${quote(remoteStage)}`);
-    await exec(`chmod 711 ${quote(remoteStage)}`);
+    await exec(
+      `sudo -n install -d -o ${quote(deployment.stateOwner)} -g ${quote(deployment.stateOwner)} -m 700 ${quote(remoteStage)}`,
+    );
     remoteCreated = true;
     /* oxlint-disable no-await-in-loop -- upload, install and verify are an ordered release transaction. */
     for (const file of files) {
@@ -372,7 +378,10 @@ export async function deployDiscord(
   } finally {
     if (draining) await resumeDiscord(deployment, transport, draining);
     if (remoteCreated) {
-      const cleanup = await transport.run(deployment.target, `rm -rf -- ${quote(remoteStage)}`);
+      const cleanup = await transport.run(
+        deployment.target,
+        `sudo -n rm -rf -- ${quote(remoteStage)}`,
+      );
       if (cleanup.code !== 0) log(`Release staging cleanup failed (${cleanup.code})`);
     }
     await rm(stage, { recursive: true, force: true });
