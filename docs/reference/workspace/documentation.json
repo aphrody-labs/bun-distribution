@@ -2826,7 +2826,7 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "a3cac1ba3d435fdab850b36b89e509e05dddbdf9d1d19f3450e87f421b000390",
+      "sha256": "3c6391bfd95db93e33f746e223cf0ab90cfbcafbbdcf98cccb631dae9023d79e",
       "bytes": 7854,
       "domain": "",
       "status": "generated",
@@ -4485,11 +4485,11 @@
     },
     {
       "path": "docs/plans/ai/plans/codex-oss.md",
-      "title": "Historical coding-agent integration plan",
-      "sha256": "28a203980786825518136d53d4a66cdef0ef05c089620487e416bcb6d664f55a",
-      "bytes": 1515,
+      "title": "Codex OSS Integration & Absorption Plan",
+      "sha256": "c219326355f87538f52d225281d3acabcc7bad19604a9822783398549d2f91e4",
+      "bytes": 3851,
       "domain": "ai",
-      "status": "historical",
+      "status": "canonical",
       "visibility": "private",
       "canonical": "docs/plans/ai/plans/codex-oss.md"
     },
@@ -5676,8 +5676,8 @@
     {
       "path": "docs/reference/ai/PITFALLS.md",
       "title": "Pitfalls",
-      "sha256": "bc9f8a5a035322408cf0ce477f243e0b4711d05a6dc69fe5163066ad4f676fdd",
-      "bytes": 12738,
+      "sha256": "a2a4a936cc5210a65abf71e45426f825dc86f6f87bb39f50ec1530ec11f7de0e",
+      "bytes": 12802,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -5786,8 +5786,8 @@
     {
       "path": "docs/reference/ai/THIRD_PARTY_CODEX.md",
       "title": "Third-party material from OpenAI Codex",
-      "sha256": "46722deaab75585cde6c90f28df89aa3a40f8f0060cab3be378f43a836987ca6",
-      "bytes": 7433,
+      "sha256": "deb0831804a69c5aca3e9cb7fb1cf7767ca1f077154b6b7891f8dec54672fcb5",
+      "bytes": 7609,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -7166,8 +7166,8 @@
     {
       "path": "docs/reference/infra/UPSTREAMS.md",
       "title": "Upstreams",
-      "sha256": "3852364f284a98ee2dc02f0befe7cf5201b5d87a2522576e740423cbce87216e",
-      "bytes": 10454,
+      "sha256": "e49e95a21a8ee0b69a733fd2c2f6c38127612d3d89d5179063c989321d007825",
+      "bytes": 10973,
       "domain": "infra",
       "status": "notice",
       "visibility": "private",
@@ -11226,8 +11226,8 @@
     {
       "path": "docs/reference/web/web/BUILD-WINDOWS.md",
       "title": "Build Windows — Stack complète Aphrody Web + lightpanda + agent-browser",
-      "sha256": "bd3e04596288c7a3690e978ef69bd3a283c285e39f0be8e3dad9cf001f1a3d32",
-      "bytes": 20695,
+      "sha256": "4ce161c95cb51021d358e14dd31b8f9c1d89fb470a355aee5fd87c597ca3dab8",
+      "bytes": 21072,
       "domain": "web",
       "status": "canonical",
       "visibility": "private",
@@ -11606,7 +11606,7 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "d52bea630b31460ac541b92d9336f3157e7e30c296bbbb2f42961ce49787e3e0",
+      "sha256": "d5abc176cee9326ef03360b6f4a8a689449d6719c44bad3c35080251c8f4507d",
       "bytes": 49650,
       "domain": "workspace",
       "status": "generated",

@@ -13,11 +13,12 @@ The verbatim and adapted items below were originally compared with
 `78245b47af2a7aafcabe025828ceecca69db4df1` (2026-09-19). Keep that revision
 as the provenance for those files unless their source is re-audited.
 
-The current audit checkout is the shallow Git submodule `thirdparty/codex`,
-tracking upstream `main` and pinned at
-`a6bd19261c30ce0a0225fe90e646822d29916f11` (2026-09-26). The pin records the
-source used by the current parity audit; it does not retroactively change the
-provenance of existing ports or fixtures.
+The current reference checkout and private fork is [aphrody-labs/codex](https://github.com/aphrody-labs/codex),
+tracking upstream `openai/codex` main and pinned at
+`bd274564e1b1b3febb3886d274e6d97c2a3d275e` (2026-10-09). Absorption boundaries and mappings
+are declared in [tools/config/codex-absorption.json](../../../tools/config/codex-absorption.json).
+The pin records the verified upstream source; it does not retroactively change the
+provenance of existing initial ports or fixtures.
 
 ## Verbatim material
 

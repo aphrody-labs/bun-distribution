@@ -35,52 +35,93 @@ struct FsHit {
     modified: u64,
 }
 
-/// Metadata-only filesystem index: a tab-separated text file, one `path\tsize\tmtime` line per
-/// file. The walk honours `.gitignore`, `.ignore` and Git excludes and never enters `.git`.
+/// Metadata-only filesystem index in SQLite: `files(path, size, modified)` plus an FTS5 trigram
+/// table over the paths for substring search. The walk honours `.gitignore`, `.ignore` and Git
+/// excludes and never enters `.git`. A build writes a fresh database beside the target and
+/// renames it into place.
 struct FsIndex {
     path: PathBuf,
 }
+
+/// Name of the index in the repository state directory.
+const FS_INDEX_FILE: &str = "fsindex.sqlite";
+/// Text index written by earlier releases, imported once then removed.
+const FS_INDEX_LEGACY: &str = "fsindex.tsv";
 
 impl FsIndex {
     fn open(path: &Path) -> Self {
         Self { path: path.to_path_buf() }
     }
 
-    fn build(&self, root: &Path) -> Result<usize> {
+    fn create(path: &Path) -> Result<rusqlite::Connection> {
+        let _ = fs::remove_file(path);
+        let db = rusqlite::Connection::open(path)
+            .with_context(|| format!("cannot create filesystem index: {}", path.display()))?;
+        db.execute_batch(
+            "PRAGMA journal_mode = OFF;
+             PRAGMA synchronous = OFF;
+             CREATE TABLE files (path TEXT PRIMARY KEY, size INTEGER NOT NULL, modified INTEGER NOT NULL);
+             CREATE VIRTUAL TABLE files_fts USING fts5(path, content = 'files', tokenize = 'trigram');",
+        )?;
+        Ok(db)
+    }
+
+    fn write(&self, entries: impl IntoIterator<Item = FsHit>) -> Result<usize> {
+        let partial = self.path.with_extension("sqlite.partial");
+        let mut db = Self::create(&partial)?;
+        let tx = db.transaction()?;
         let mut count = 0;
-        let mut out = String::new();
+        {
+            let mut insert = tx.prepare(
+                "INSERT OR REPLACE INTO files (path, size, modified) VALUES (?1, ?2, ?3)",
+            )?;
+            for hit in entries {
+                insert.execute(rusqlite::params![
+                    hit.path,
+                    i64::try_from(hit.size).unwrap_or(i64::MAX),
+                    i64::try_from(hit.modified).unwrap_or(i64::MAX)
+                ])?;
+                count += 1;
+            }
+        }
+        tx.execute("INSERT INTO files_fts (files_fts) VALUES ('rebuild')", [])?;
+        tx.commit()?;
+        drop(db);
+        fs::rename(&partial, &self.path).with_context(|| {
+            format!("cannot move filesystem index into place: {}", self.path.display())
+        })?;
+        Ok(count)
+    }
+
+    fn build(&self, root: &Path) -> Result<usize> {
         let walker = ignore::WalkBuilder::new(root)
             .hidden(false)
             .require_git(false)
             .filter_entry(|entry| entry.file_name() != ".git")
             .build();
-        for entry in walker.flatten() {
-            if !entry.file_type().is_some_and(|t| t.is_file()) {
-                continue;
-            }
-            let path = entry.path().display().to_string();
-            if path.contains(['\t', '\n']) {
-                continue;
-            }
-            let metadata = entry.metadata().ok();
-            let size = metadata.as_ref().map_or(0, fs::Metadata::len);
-            let modified = metadata
-                .and_then(|m| m.modified().ok())
-                .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
-                .map_or(0, |d| d.as_secs());
-            count += 1;
-            out.push_str(&format!("{path}\t{size}\t{modified}\n"));
-        }
-        let partial = self.path.with_extension("tsv.partial");
-        fs::write(&partial, out)?;
-        fs::rename(&partial, &self.path)?;
+        let entries =
+            walker.flatten().filter(|e| e.file_type().is_some_and(|t| t.is_file())).map(|entry| {
+                let metadata = entry.metadata().ok();
+                FsHit {
+                    path: entry.path().display().to_string(),
+                    size: metadata.as_ref().map_or(0, fs::Metadata::len),
+                    modified: metadata
+                        .and_then(|m| m.modified().ok())
+                        .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+                        .map_or(0, |d| d.as_secs()),
+                }
+            });
+        let count = self.write(entries)?;
+        let _ = fs::remove_file(self.path.with_file_name(FS_INDEX_LEGACY));
         Ok(count)
     }
 
-    fn entries(&self) -> Result<Vec<FsHit>> {
-        let content = fs::read_to_string(&self.path)
-            .with_context(|| format!("cannot read filesystem index: {}", self.path.display()))?;
-        Ok(content
+    /// Imports a `path\tsize\tmtime` index of an earlier release into this database, then
+    /// removes it. Returns the imported entry count.
+    fn import_legacy(&self, legacy: &Path) -> Result<usize> {
+        let content = fs::read_to_string(legacy)
+            .with_context(|| format!("cannot read filesystem index: {}", legacy.display()))?;
+        let entries: Vec<FsHit> = content
             .lines()
             .filter_map(|line| {
                 let mut fields = line.rsplitn(3, '\t');
@@ -88,26 +129,67 @@ impl FsIndex {
                 let size = fields.next()?.parse().ok()?;
                 Some(FsHit { path: fields.next()?.to_owned(), size, modified })
             })
-            .collect())
+            .collect();
+        let count = self.write(entries)?;
+        fs::remove_file(legacy)?;
+        Ok(count)
     }
 
-    /// Paths containing every whitespace-separated word of `query`, case-insensitively.
+    fn connect(&self) -> Result<rusqlite::Connection> {
+        rusqlite::Connection::open_with_flags(
+            &self.path,
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+        )
+        .with_context(|| format!("cannot open filesystem index: {}", self.path.display()))
+    }
+
+    /// Paths containing every whitespace-separated word of `query`, case-insensitively: words of
+    /// three characters or more go through the FTS5 trigram index, shorter ones through `LIKE`.
     fn search(&self, query: &str, limit: usize) -> Result<Vec<FsHit>> {
         let words: Vec<String> = query.split_whitespace().map(str::to_lowercase).collect();
         anyhow::ensure!(!words.is_empty(), "empty filesystem query");
-        Ok(self
-            .entries()?
-            .into_iter()
-            .filter(|hit| {
-                let path = hit.path.to_lowercase();
-                words.iter().all(|word| path.contains(word.as_str()))
+        let (long, short): (Vec<&String>, Vec<&String>) =
+            words.iter().partition(|word| word.chars().count() >= 3);
+        let mut sql = String::from("SELECT f.path, f.size, f.modified FROM files f");
+        let mut params: Vec<String> = Vec::new();
+        let mut filters: Vec<String> = Vec::new();
+        if !long.is_empty() {
+            sql.push_str(" JOIN files_fts ON files_fts.rowid = f.rowid");
+            filters.push("files_fts MATCH ?".into());
+            params.push(
+                long.iter()
+                    .map(|word| format!("\"{}\"", word.replace('"', "\"\"")))
+                    .collect::<Vec<_>>()
+                    .join(" AND "),
+            );
+        }
+        for word in short {
+            filters.push("lower(f.path) LIKE ? ESCAPE '!'".into());
+            let escaped = word.replace('!', "!!").replace('%', "!%").replace('_', "!_");
+            params.push(format!("%{escaped}%"));
+        }
+        sql.push_str(" WHERE ");
+        sql.push_str(&filters.join(" AND "));
+        sql.push_str(" ORDER BY length(f.path), f.path LIMIT ?");
+        let db = self.connect()?;
+        let mut statement = db.prepare(&sql)?;
+        let mut values: Vec<rusqlite::types::Value> =
+            params.into_iter().map(rusqlite::types::Value::Text).collect();
+        values.push(rusqlite::types::Value::Integer(i64::try_from(limit).unwrap_or(i64::MAX)));
+        let rows = statement.query_map(rusqlite::params_from_iter(values), |row| {
+            Ok(FsHit {
+                path: row.get(0)?,
+                size: u64::try_from(row.get::<_, i64>(1)?).unwrap_or_default(),
+                modified: u64::try_from(row.get::<_, i64>(2)?).unwrap_or_default(),
             })
-            .take(limit)
-            .collect())
+        })?;
+        Ok(rows.collect::<rusqlite::Result<_>>()?)
     }
 
     fn len(&self) -> Result<usize> {
-        Ok(self.entries()?.len())
+        let count: i64 =
+            self.connect()?.query_row("SELECT count(*) FROM files", [], |r| r.get(0))?;
+        Ok(usize::try_from(count).unwrap_or_default())
     }
 }
 
@@ -298,7 +380,7 @@ enum ShellCommand {
 enum FsCommand {
     /// Build or refresh the index (path, size, mtime per file; honours .gitignore, skips .git).
     Build {
-        /// Index path. Defaults to fsindex.tsv in the repository state directory.
+        /// Index path. Defaults to fsindex.sqlite in the repository state directory.
         #[arg(long)]
         database: Option<PathBuf>,
     },
@@ -309,13 +391,13 @@ enum FsCommand {
         query: Vec<String>,
         #[arg(long, default_value_t = 20)]
         limit: usize,
-        /// Index path. Defaults to fsindex.tsv in the repository state directory.
+        /// Index path. Defaults to fsindex.sqlite in the repository state directory.
         #[arg(long)]
         database: Option<PathBuf>,
     },
     /// Report the entry count of an existing filesystem index.
     Status {
-        /// Index path. Defaults to fsindex.tsv in the repository state directory.
+        /// Index path. Defaults to fsindex.sqlite in the repository state directory.
         #[arg(long)]
         database: Option<PathBuf>,
     },
@@ -666,7 +748,7 @@ fn map(root: &Path, out: Option<PathBuf>, map: Option<PathBuf>, command: MapComm
 }
 
 fn index_database(root: &Path, database: Option<PathBuf>) -> PathBuf {
-    database.map_or_else(|| repo_state_dir(root).join("fsindex.tsv"), |path| root.join(path))
+    database.map_or_else(|| repo_state_dir(root).join(FS_INDEX_FILE), |path| root.join(path))
 }
 
 fn shell(root: &Path, json_output: bool, endpoint: &str, command: ShellCommand) -> Result<()> {
@@ -709,6 +791,15 @@ fn shell(root: &Path, json_output: bool, endpoint: &str, command: ShellCommand) 
 }
 
 fn existing_index(database: &Path) -> Result<()> {
+    let legacy = database.with_file_name(FS_INDEX_LEGACY);
+    if !database.is_file() && legacy.is_file() {
+        let imported = FsIndex::open(database).import_legacy(&legacy)?;
+        eprintln!(
+            "imported {imported} entries from {} into {}",
+            legacy.display(),
+            database.display()
+        );
+    }
     anyhow::ensure!(
         database.is_file(),
         "filesystem index does not exist: {}; run `aphrody yolo fs build` first",
@@ -1737,7 +1828,7 @@ mod tests {
             fs::create_dir_all(file.parent().unwrap()).unwrap();
             fs::write(file, text).unwrap();
         }
-        let index = FsIndex::open(&fixture.0.join("index.tsv"));
+        let index = FsIndex::open(&fixture.0.join(FS_INDEX_FILE));
         assert_eq!(index.build(&root).unwrap(), 5);
         let found = |query: &str| -> Vec<String> {
             index
@@ -1758,6 +1849,19 @@ mod tests {
         assert!(
             index.search("http", 10).unwrap().iter().all(|hit| hit.size == 1 && hit.modified > 0)
         );
+        assert_eq!(found("ci yml"), [".github/workflows/ci.yml"]);
+        assert_eq!(found("rs 100%"), Vec::<String>::new());
+        assert!(index.search("  ", 10).is_err());
+
+        let legacy = fixture.0.join("state").join(FS_INDEX_LEGACY);
+        fs::create_dir_all(legacy.parent().unwrap()).unwrap();
+        fs::write(&legacy, "C:\\repo\\src\\Lib.rs\t42\t7\nbroken line\n").unwrap();
+        let migrated = legacy.with_file_name(FS_INDEX_FILE);
+        existing_index(&migrated).unwrap();
+        assert!(!legacy.exists());
+        let hits = FsIndex::open(&migrated).search("lib.RS", 5).unwrap();
+        assert_eq!((hits.len(), hits[0].size, hits[0].modified), (1, 42, 7));
+        assert_eq!(FsIndex::open(&migrated).len().unwrap(), 1);
     }
 
     #[test]

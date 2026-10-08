@@ -13,6 +13,7 @@ import {
   RUNTIME_SDK_FFI,
   SUFFIX,
   searchDirs,
+  YOLO_ROOT,
 } from "./native.ts";
 
 const root = mkdtempSync(join(tmpdir(), "m3-native-"));
@@ -118,6 +119,8 @@ test.skipIf(!existsSync(RUNTIME_SDK_FFI))(
     const proc = Bun.spawn(
       [process.execPath, script, "status", "--json", ...(real.path ? ["--lib", real.path] : [])],
       {
+        // The copy lives outside the monorepo, so it cannot find the producer SDK by itself.
+        env: { ...process.env, YOLO_ROOT },
         stdout: "pipe",
         stderr: "pipe",
       },

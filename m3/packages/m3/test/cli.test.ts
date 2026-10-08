@@ -172,7 +172,8 @@ describe("runCli", () => {
 
   test("m3 compile writes an executable, not an HTML file, and the executable serves the built UI", async () => {
     await using tmp = await tempDir();
-    const outfile = join(tmp.dir, "test-bin");
+    // Bun appends .exe to a Windows executable.
+    const outfile = join(tmp.dir, process.platform === "win32" ? "test-bin.exe" : "test-bin");
     expect(
       await runCli(["compile", "--outfile", outfile, "--config", "m3.plain.config.ts"], FIXTURE),
     ).toBe(0);
@@ -225,7 +226,7 @@ describe("runCli", () => {
     const uiDist = join(tmp.dir, "desktop-ui");
     await Bun.write(
       join(tmp.dir, "m3.config.ts"),
-      `export default { entry: "${join(FIXTURE, "plain.html")}", tauri: { uiDist: "${uiDist}" } };\n`,
+      `export default { entry: ${JSON.stringify(join(FIXTURE, "plain.html"))}, tauri: { uiDist: ${JSON.stringify(uiDist)} } };\n`,
     );
     expect(await runCli(["desktop"], tmp.dir)).toBe(0);
     expect(existsSync(join(uiDist, "index.html"))).toBe(true);

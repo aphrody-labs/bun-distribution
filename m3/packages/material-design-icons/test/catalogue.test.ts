@@ -7,15 +7,19 @@ import {
   symbolSvgPath,
 } from "../src/index.ts";
 
+/** The path in "/" form, so the expectations hold on every host. */
+const svgPath = (...args: Parameters<typeof symbolSvgPath>): string =>
+  symbolSvgPath(...args).replaceAll("\\", "/");
+
 test("symbolSvgPath follows the fork naming (default, fill, weight)", () => {
-  expect(symbolSvgPath("home")).toEndWith("home/materialsymbolsoutlined/home_24px.svg");
-  expect(symbolSvgPath("home", "rounded", 400, true)).toEndWith(
+  expect(svgPath("home")).toEndWith("home/materialsymbolsoutlined/home_24px.svg");
+  expect(svgPath("home", "rounded", 400, true)).toEndWith(
     "home/materialsymbolsrounded/home_fill1_24px.svg",
   );
-  expect(symbolSvgPath("home", "sharp", 300)).toEndWith(
+  expect(svgPath("home", "sharp", 300)).toEndWith(
     "home/materialsymbolssharp/home_wght300_24px.svg",
   );
-  expect(symbolSvgPath("home", "outlined", 300, true)).toEndWith(
+  expect(svgPath("home", "outlined", 300, true)).toEndWith(
     "home/materialsymbolsoutlined/home_wght300fill1_24px.svg",
   );
 });

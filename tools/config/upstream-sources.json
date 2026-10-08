@@ -192,6 +192,18 @@
       "fork": "https://github.com/aphrody-labs/bun",
       "purpose": "Bun runtime upstream; Aphrody runs the aphrody-labs/bun fork, checked out next to this repository, which merges oven-sh/bun main. upstream_search reads that checkout when no GitHub token is available.",
       "consumers": "docs/reference/upstream-bun; packages/infra/update; aphrody yolo verify (Bun source gates)"
+    },
+    {
+      "id": "codex",
+      "kind": "git",
+      "url": "https://github.com/openai/codex",
+      "ref": "main",
+      "license": "Apache-2.0",
+      "tier": "reference",
+      "fork": "https://github.com/aphrody-labs/codex",
+      "purpose": "OpenAI Codex CLI upstream and private fork aphrody-labs/codex; Aphrody absorbs its app-server v2 protocol, configuration shapes, execution events and agent lifecycle natively into the workspace.",
+      "consumers": "crates/ai/app-server; crates/contracts/app-protocol; crates/ai/config; crates/ai/rollout; crates/ai/engine; crates/ai/session; tools/config/codex-absorption.json; docs/reference/ai/THIRD_PARTY_CODEX.md; docs/plans/ai/plans/codex-oss.md",
+      "observedCommit": "bd274564e1b1b3febb3886d274e6d97c2a3d275e"
     }
   ],
   "integrated": [

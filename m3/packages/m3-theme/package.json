@@ -66,7 +66,7 @@
     "typecheck": "tsc --noEmit",
     "typecheck:fast": "tsc --noEmit",
     "generate:fusion": "bun run generate",
-    "test": "bun test",
+    "test": "APHRODY_FFI_DEV=1 bun test",
     "fixture:mcu": "bun run scripts/mcu-fixture.ts"
   },
   "dependencies": {

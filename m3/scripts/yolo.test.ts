@@ -4,11 +4,11 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pipeline } from "./build.ts";
-import { REPO, SHOWCASE, YOLO_CLI, plan } from "./yolo.ts";
+import { REPO, SHOWCASE, YOLO_CLI, YOLO_COMMAND, YOLO_ROOT, plan } from "./yolo.ts";
 
 describe("yolo task plan", () => {
   test("build runs after a yolo preflight; serve and compile run the single showcase", () => {
-    expect(plan("build")[0]!.cmd).toEqual([YOLO_CLI, "version", "--json"]);
+    expect(plan("build")[0]!.cmd).toEqual([...YOLO_COMMAND, "version", "--json"]);
     expect(plan("build")[0]!.env).toEqual({ YOLO_HOME: REPO });
     expect(plan("serve")).toEqual([{ cmd: ["bun", "run", "dev"], cwd: SHOWCASE }]);
     expect(plan("compile")).toEqual([{ cmd: ["bun", "run", "compile"], cwd: SHOWCASE }]);
@@ -91,7 +91,7 @@ describe("yolo task plan", () => {
     ]);
   });
   test("YOLO_CLI resolves under YOLO_ROOT", () => {
-    expect(YOLO_CLI.endsWith("bin/yolo")).toBe(true);
+    expect(YOLO_CLI).toBe(join(YOLO_ROOT, "bin", "yolo"));
   });
   test("install:theme defaults to a dry-run install", () => {
     const cmd = plan("install:theme")[0]!.cmd;

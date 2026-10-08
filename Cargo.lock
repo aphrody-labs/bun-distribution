@@ -4043,6 +4043,7 @@ dependencies = [
  "chrono",
  "clap",
  "ignore",
+ "rusqlite",
  "serde",
  "serde_json",
  "tokio",
