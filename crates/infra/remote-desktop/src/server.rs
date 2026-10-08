@@ -46,13 +46,8 @@ impl Default for ServeOptions {
 }
 
 /// Constant-time (w.r.t. content) equality of two tokens.
-pub fn tokens_equal(a: &str, b: &str) -> bool {
-    let (a, b) = (a.as_bytes(), b.as_bytes());
-    let mut diff = a.len() ^ b.len();
-    for i in 0..a.len().max(b.len()) {
-        diff |= usize::from(a.get(i).copied().unwrap_or(0) ^ b.get(i).copied().unwrap_or(0));
-    }
-    diff == 0
+fn tokens_equal(a: &str, b: &str) -> bool {
+    aphrody_secrets::constant_time_eq(a.as_bytes(), b.as_bytes())
 }
 
 #[derive(Deserialize, Default)]

@@ -203,6 +203,16 @@
       "caveat": "aphrody infra remote serve on Omar PC (screen stream + input); token generated on that PC, transmitted out of band; Windows firewall admits 10.200.77.0/24 only."
     },
     {
+      "id": "vnc-omar",
+      "host": "omar",
+      "address": "10.200.77.10",
+      "port": 5900,
+      "proto": "tcp",
+      "expose": "peer-listener",
+      "auth": "vnc-password",
+      "caveat": "RFB server of aphrody infra remote serve --vnc on Omar PC (any VNC viewer); password from APHRODY_VNC_PASSWORD or derived from the remote token, peer allowlist 10.200.77.4 in the server and the Windows firewall."
+    },
+    {
       "id": "mcp-http-omar",
       "host": "omar",
       "address": "10.200.77.10",
@@ -224,7 +234,8 @@
       "training",
       "mcp-http-dbfr",
       "remote-desktop-omar",
-      "mcp-http-omar"
+      "mcp-http-omar",
+      "vnc-omar"
     ],
     "wsl": ["ssh-vps", "ssh-dbfr", "mcp-http", "a2a", "mcp-http-dbfr"],
     "dbfr": ["ssh-aphro-pc", "ssh-vps", "mcp-http"],

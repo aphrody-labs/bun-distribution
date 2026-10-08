@@ -16,6 +16,7 @@ pub mod nginx;
 pub mod pipeline;
 pub mod probe;
 pub mod reclaim;
+pub mod remote;
 pub mod secrets;
 pub mod tunnel;
 pub mod validate;

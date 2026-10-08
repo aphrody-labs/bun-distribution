@@ -4,15 +4,21 @@
 //! Captures the screen (Windows GDI via `aphrody-capture`, Linux X11 via
 //! pure-Rust `x11rb`), streams JPEG frames over a WebSocket to an embedded
 //! browser viewer and injects the viewer's mouse and keyboard input.
-//! Authentication is a mandatory bearer token.
+//! Authentication is a mandatory bearer token. The same capture/input backend also feeds an
+//! RFB (VNC) server (`vnc-server`), and a VNC client (`vnc-client`) drives any VNC server.
+//! [`target`] is the single remote-target model (local, MCP HTTP, VNC, WebSocket, shell)
+//! resolved from the declared WireGuard tunnel; [`tokens`] is the single credential source.
 
 pub mod backend;
 pub mod encode;
 pub mod keymap;
 pub mod protocol;
 mod server;
+pub mod target;
+pub mod tokens;
+pub mod vnc;
 
-pub use server::{ServeOptions, serve, tokens_equal};
+pub use server::{ServeOptions, serve};
 
 use anyhow::{Context, Result};
 

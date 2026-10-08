@@ -99,12 +99,11 @@ pub enum WgCommand {
 }
 
 fn inventory(root: &Path) -> Result<Inventory> {
-    Inventory::load(&root.join(aphrody_wireguard::inventory::INVENTORY_PATH))
-        .map_err(|e| anyhow!("{e}"))
+    Inventory::discover(Some(root)).map_err(|e| anyhow!("{e}"))
 }
 
 /// Interface name of this OS: `windowsTunnelName` on Windows, `interface` elsewhere.
-fn default_name(root: &Path) -> String {
+pub(crate) fn default_name(root: &Path) -> String {
     inventory(root)
         .map(|i| if cfg!(windows) { i.windows_tunnel_name } else { i.interface })
         .unwrap_or_else(|_| if cfg!(windows) { "aphrody".into() } else { "wg1".into() })
@@ -432,85 +431,4 @@ mod tests {
         let inv = inventory(&root).unwrap();
         assert!(inv.render("aphro-pc", None).is_ok());
     }
-}
-
-/// `aphrody infra remote`: full remote desktop (screen stream + mouse/keyboard) over the tunnel.
-#[derive(Debug, Subcommand)]
-pub enum RemoteCommand {
-    /// Serve the desktop of this host (bind a tunnel address, e.g. 10.200.77.10:8795).
-    Serve {
-        #[arg(long, default_value = "127.0.0.1:8795")]
-        bind: std::net::SocketAddr,
-        /// Bearer token (default: APHRODY_REMOTE_TOKEN, else generated and printed once).
-        #[arg(long, env = "APHRODY_REMOTE_TOKEN", hide_env_values = true)]
-        token: Option<String>,
-        #[arg(long, default_value_t = 15)]
-        fps: u32,
-        #[arg(long, default_value_t = 70)]
-        quality: u8,
-        #[arg(long, default_value_t = 1)]
-        scale: u8,
-    },
-    /// Capture backend availability on this host.
-    Status,
-    /// Write one JPEG frame of the desktop.
-    Snapshot {
-        #[arg(long, default_value = "remote-snapshot.jpg")]
-        out: PathBuf,
-        #[arg(long, default_value_t = 80)]
-        quality: u8,
-        #[arg(long, default_value_t = 1)]
-        scale: u8,
-    },
-    /// Open the browser viewer of a remote host (`host:port`, tunnel address or inventory member).
-    Open {
-        target: String,
-        #[arg(long, env = "APHRODY_REMOTE_TOKEN", hide_env_values = true)]
-        token: String,
-    },
-}
-
-pub async fn execute_remote(root: &Path, cmd: &RemoteCommand) -> Result<Value> {
-    use aphrody_remote_desktop as rd;
-    let out = match cmd {
-        RemoteCommand::Serve { bind, token, fps, quality, scale } => {
-            let token = token.clone().filter(|t| !t.is_empty()).unwrap_or_else(|| {
-                let t = rd::generate_token();
-                eprintln!("token (à transmettre hors bande): {t}");
-                t
-            });
-            println!("bureau à distance: http://{bind}/#token=<token>");
-            rd::serve(rd::ServeOptions {
-                bind: *bind,
-                token,
-                fps: *fps,
-                quality: *quality,
-                scale: *scale,
-            })
-            .await?;
-            json!({ "served": bind.to_string() })
-        },
-        RemoteCommand::Status => rd::backend_status(),
-        RemoteCommand::Snapshot { out, quality, scale } => {
-            let (q, s) = (*quality, *scale);
-            let jpeg = tokio::task::spawn_blocking(move || rd::snapshot_jpeg(q, s)).await??;
-            std::fs::write(out, &jpeg)?;
-            json!({ "written": out, "bytes": jpeg.len() })
-        },
-        RemoteCommand::Open { target, token } => {
-            let host =
-                match inventory(root).ok().and_then(|i| i.address_of(target).map(str::to_owned)) {
-                    Some(addr) => format!("{addr}:8795"),
-                    None if target.contains(':') => target.clone(),
-                    None => format!("{target}:8795"),
-                };
-            let url = format!("http://{host}/#token={token}");
-            std::process::Command::new(if cfg!(windows) { "explorer" } else { "xdg-open" })
-                .arg(&url)
-                .spawn()?;
-            json!({ "opened": format!("http://{host}/") })
-        },
-    };
-    println!("{}", serde_json::to_string_pretty(&out)?);
-    Ok(out)
 }

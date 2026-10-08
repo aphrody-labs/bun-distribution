@@ -197,10 +197,10 @@ enum CommandKind {
         #[command(subcommand)]
         command: crate::tunnel::WgCommand,
     },
-    /// Full remote desktop (screen stream, mouse, keyboard) over the private tunnel.
+    /// Remote control over the private tunnel: desktop (WebSocket + VNC), VNC client, status, credentials.
     Remote {
         #[command(subcommand)]
-        command: crate::tunnel::RemoteCommand,
+        command: crate::remote::RemoteCommand,
     },
     /// Native Mullvad VPN controller and auto-proxy geo-unblock driver.
     Vpn {
@@ -2218,7 +2218,7 @@ async fn run_cli(cli: Cli) -> Result<()> {
         CommandKind::Wg { json, command } => {
             crate::tunnel::execute(&root, command, *json).await.map(|v| run.action("wg", "done", v))
         },
-        CommandKind::Remote { command } => crate::tunnel::execute_remote(&root, command)
+        CommandKind::Remote { command } => crate::remote::execute_remote(&root, command)
             .await
             .map(|v| run.action("remote", "done", v)),
         CommandKind::Workflow { stage, json } => run_pipeline_stage(&root, stage, *json, &mut run),

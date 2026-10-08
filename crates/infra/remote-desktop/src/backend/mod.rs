@@ -55,6 +55,18 @@ pub trait ScreenBackend: Send {
     fn key(&mut self, code: &str, down: bool) -> Result<()>;
     /// Type literal text.
     fn text(&mut self, text: &str) -> Result<()>;
+    /// Press or release an X11/RFB keysym (VNC input). The default maps the keysym to its
+    /// physical key, else types its character on press.
+    fn keysym(&mut self, keysym: u32, down: bool) -> Result<()> {
+        if let Some(code) = crate::keymap::keysym_to_code(keysym) {
+            return self.key(&code, down);
+        }
+        match crate::keymap::keysym_char(keysym) {
+            Some(c) if down => self.text(c.encode_utf8(&mut [0; 4])),
+            Some(_) => Ok(()),
+            None => anyhow::bail!("unmapped keysym {keysym:#x}"),
+        }
+    }
 }
 
 /// Open the backend of the current platform.

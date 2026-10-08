@@ -13,11 +13,9 @@ use x11rb::protocol::xtest::ConnectionExt as _;
 use x11rb::rust_connection::RustConnection;
 
 use super::{MouseButton, RawFrame, ScreenBackend};
-use crate::keymap::code_to_keysym;
+use crate::keymap::{char_to_keysym, code_to_keysym};
 
 const KEYSYM_SHIFT_L: u32 = 0xFFE1;
-const KEYSYM_RETURN: u32 = 0xFF0D;
-const KEYSYM_TAB: u32 = 0xFF09;
 
 pub struct X11Backend {
     conn: RustConnection,
@@ -94,15 +92,6 @@ impl X11Backend {
     }
 }
 
-fn char_keysym(c: char) -> u32 {
-    match c {
-        '\n' | '\r' => KEYSYM_RETURN,
-        '\t' => KEYSYM_TAB,
-        c if (' '..='~').contains(&c) || ('\u{a0}'..='\u{ff}').contains(&c) => c as u32,
-        c => 0x0100_0000 + c as u32,
-    }
-}
-
 impl ScreenBackend for X11Backend {
     fn name(&self) -> &'static str {
         "x11"
@@ -163,10 +152,17 @@ impl ScreenBackend for X11Backend {
         self.fake(if down { KEY_PRESS_EVENT } else { KEY_RELEASE_EVENT }, kc, 0, 0)
     }
 
+    fn keysym(&mut self, keysym: u32, down: bool) -> Result<()> {
+        let (kc, _) = self
+            .find_keycode(keysym)
+            .ok_or_else(|| anyhow!("no keycode for keysym {keysym:#x}"))?;
+        self.fake(if down { KEY_PRESS_EVENT } else { KEY_RELEASE_EVENT }, kc, 0, 0)
+    }
+
     fn text(&mut self, text: &str) -> Result<()> {
         let shift = self.find_keycode(KEYSYM_SHIFT_L).map(|(k, _)| k);
         for ch in text.chars() {
-            let Some((kc, needs_shift)) = self.find_keycode(char_keysym(ch)) else {
+            let Some((kc, needs_shift)) = self.find_keycode(char_to_keysym(ch)) else {
                 continue; // glyph absent from the active keyboard layout
             };
             let shift = if needs_shift { shift } else { None };

@@ -208,6 +208,30 @@
       "upstreamPackageIdentityPreserved": true
     },
     {
+      "id": "rfb-encodings",
+      "kind": "crate",
+      "crate": "rfb-encodings",
+      "version": "0.1.7",
+      "upstreamUrl": "https://github.com/dustinmcafee/rfb-encodings",
+      "pinned": true,
+      "role": "dependency",
+      "license": "Apache-2.0",
+      "patches": [
+        {
+          "id": "rfb-encodings-truecolour-compare",
+          "file": "patches/rfb-encodings-0.1.7-truecolour.patch",
+          "strip": 1,
+          "marker": {
+            "file": "src/translate.rs",
+            "contains": "a.true_colour_flag == 0"
+          }
+        }
+      ],
+      "note": "crates.io 0.1.7 archive (src, build.rs, LICENSE, NOTICE, README). pixel_formats_equal used a bitwise NOT on a u8 (!flag != 0 is always true), so every 32 bpp true-colour client format was treated as the server rgba32 and never translated: BGRA viewers saw red and blue swapped. Fixture tests and the generate_fixture binary are not integrated. Drop once upstream ships the fix.",
+      "integratedPath": "crates/compat/rfb-encodings",
+      "upstreamPackageIdentityPreserved": true
+    },
+    {
       "id": "simdutf-rio",
       "kind": "crate",
       "crate": "simdutf",

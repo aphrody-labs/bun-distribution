@@ -15,6 +15,10 @@ use crate::{Error, Key, Result};
 /// Relative location of the declared tunnel in the Aphrody repository.
 pub const INVENTORY_PATH: &str = "tools/config/host/wireguard/aphrody-tunnel.json";
 
+/// The declared tunnel compiled into the binary, used when no checkout is at hand (an operator
+/// PC running only the installed `aphrody`).
+pub const EMBEDDED: &str = include_str!("../../../../tools/config/host/wireguard/aphrody-tunnel.json");
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Hub {
@@ -83,6 +87,37 @@ impl Inventory {
 
     pub fn parse(text: &str) -> Result<Self> {
         serde_json::from_str(text).map_err(|e| Error::Config(format!("inventaire: {e}")))
+    }
+
+    /// The compiled-in copy of the declared tunnel ([`EMBEDDED`]).
+    pub fn embedded() -> Result<Self> {
+        Self::parse(EMBEDDED)
+    }
+
+    /// The declared tunnel of the checkout `root` when it holds one, else the embedded copy.
+    pub fn discover(root: Option<&Path>) -> Result<Self> {
+        match root.map(|r| r.join(INVENTORY_PATH)) {
+            Some(path) if path.is_file() => Self::load(&path),
+            _ => Self::embedded(),
+        }
+    }
+
+    /// Member id (hub included) owning a tunnel address.
+    #[must_use]
+    pub fn id_of_address(&self, address: &str) -> Option<&str> {
+        if self.hub.address == address {
+            return Some(&self.hub.peer);
+        }
+        self.peers.iter().find(|p| p.address == address).map(|p| p.id.as_str())
+    }
+
+    /// Services listening on a member, matched by tunnel address.
+    #[must_use]
+    pub fn services_of(&self, id: &str) -> Vec<&Service> {
+        let Some(address) = self.address_of(id) else {
+            return Vec::new();
+        };
+        self.services.iter().filter(|s| s.address == address).collect()
     }
 
     /// Ids of every member, hub first.
@@ -177,6 +212,18 @@ mod tests {
     fn repo_inventory() -> Inventory {
         let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..").join(INVENTORY_PATH);
         Inventory::load(&path).unwrap()
+    }
+
+    #[test]
+    fn embedded_copy_matches_repository_and_resolves_services() {
+        let repo = repo_inventory();
+        let embedded = Inventory::embedded().unwrap();
+        assert_eq!(embedded.ids(), repo.ids());
+        assert_eq!(embedded.id_of_address("10.200.77.10"), Some("omar"));
+        assert_eq!(embedded.id_of_address(&embedded.hub.address.clone()), Some("vps"));
+        let omar: Vec<_> = embedded.services_of("omar").iter().map(|s| s.id.clone()).collect();
+        assert!(omar.contains(&"vnc-omar".to_owned()), "{omar:?}");
+        assert!(Inventory::discover(Some(Path::new("/nonexistent"))).is_ok());
     }
 
     #[test]

@@ -17,7 +17,7 @@ use std::time::{Duration, Instant};
 /// `CryptoProvider` before the first TLS handshake, or the client panics with
 /// "Could not automatically determine the process-level CryptoProvider".
 static INIT_CRYPTO: Once = Once::new();
-fn ensure_crypto_provider() {
+pub(crate) fn ensure_crypto_provider() {
     INIT_CRYPTO.call_once(|| {
         let _ = rustls::crypto::ring::default_provider().install_default();
     });

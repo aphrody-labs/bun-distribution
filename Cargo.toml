@@ -291,6 +291,8 @@ defguard_wireguard_rs = { version = "0.12.2", default-features = false }
 wireguard-nt       = { version = "0.5" }
 x11rb              = { version = "0.13", default-features = false }
 jpeg-encoder       = { version = "0.7", default-features = false }
+rustvncserver      = { version = "2.2.1", default-features = false }
+vnc-rs             = { version = "0.6", default-features = false }
 http               = { version = "1" }
 axum-server        = { version = "0.8", default-features = false, features = ["tls-rustls-no-provider"] }
 tower-http         = { version = "0.7", features = ["cors"] }
@@ -442,6 +444,8 @@ serde-saphyr = { path = "crates/compat/serde-saphyr" }
 taffy = { path = "crates/ui/taffy" }
 # Integrated Unicode implementation preserves the private C++ namespace alongside V8.
 simdutf = { path = "crates/native/simdutf" }
+# rfb-encodings 0.1.7 (Apache-2.0, used by rustvncserver): fixes the inverted true-colour test that skipped pixel translation for BGRA clients.
+rfb-encodings = { path = "crates/compat/rfb-encodings" }
 # tauri-plugin-dialog 3.0.0-alpha.2 predates tauri 3.0.0-alpha.3 (Manager::run_on_main_thread); see tools/config/tauri-upstream.json
 
 # Build footprint (2026-10-02): full DWARF for 191 members and ~2,300 dependencies made target/debug ~250 GiB and
