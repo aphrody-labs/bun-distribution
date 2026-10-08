@@ -4,9 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	AtSign,
 	Check,
-	Heart,
 	Image as ImageIcon,
-	Sparkles,
 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
