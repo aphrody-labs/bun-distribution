@@ -6,7 +6,6 @@
 // `shape-large-top`, `state-layer`, `motion-expressive-default-spatial`, `compact:`, `m3-open:`) and the
 // runtime `--md-sys-*` custom properties never drift.
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { BREAKPOINTS, HEIGHT_BREAKPOINTS } from "@aphrody/m3-tokens/breakpoints";
 import { ROLES } from "@aphrody/m3-tokens/dynamic-color";
 import {
@@ -22,7 +21,7 @@ export { springPosition, springSettleMs, springToCss, type SpringCss } from "./s
 
 const kebab = (s: string): string => s.replace(/([A-Z])/g, "-$1").toLowerCase();
 const sheet = (specifier: string): string =>
-  readFileSync(fileURLToPath(import.meta.resolve(specifier)), "utf8");
+  readFileSync(Bun.fileURLToPath(import.meta.resolve(specifier)), "utf8");
 
 /** `m3-tokens.css`, the generated static tokens (corner scale, motion, elevation, state layers). */
 const TOKENS = sheet("@aphrody/m3-tokens/m3-tokens.css");

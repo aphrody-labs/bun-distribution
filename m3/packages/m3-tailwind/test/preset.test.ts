@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
 import { compile } from "@tailwindcss/node";
 import { ROLES } from "@aphrody/m3-tokens/dynamic-color";
 import { BREAKPOINTS } from "@aphrody/m3-tokens/breakpoints";
@@ -21,9 +19,10 @@ import {
 } from "../src/index.ts";
 
 const kebab = (s: string): string => s.replace(/([A-Z])/g, "-$1").toLowerCase();
-const file = (url: string): string => readFileSync(new URL(url, import.meta.url), "utf8");
+const file = (url: string): Promise<string> => Bun.file(new URL(url, import.meta.url)).text();
 const tokenSheets =
-  file("../../m3-tokens/src/m3-tokens.css") + file("../../m3-tokens/src/expressive.css");
+  (await file("../../m3-tokens/src/m3-tokens.css")) +
+  (await file("../../m3-tokens/src/expressive.css"));
 
 /** Compile the generated preset (without `@import "tailwindcss"`, which would add the base layers) and build `classes`. */
 async function build(classes: string[], css: string = presetCss()): Promise<string> {
@@ -35,8 +34,8 @@ async function build(classes: string[], css: string = presetCss()): Promise<stri
 }
 
 describe("preset.css", () => {
-  test("is up to date with the generator", () => {
-    expect(file("../preset.css")).toBe(presetCss());
+  test("is up to date with the generator", async () => {
+    expect(await file("../preset.css")).toBe(presetCss());
   });
 
   test("themeCss is `inline` by default and `static` on request", () => {
@@ -250,7 +249,7 @@ describe("Tailwind v4 compiles the preset", () => {
   test("an app on the preset (theme + utilities + preset) builds without errors", async () => {
     const compiler = await compile(
       '@import "tailwindcss/theme.css" layer(theme);\n@import "tailwindcss/utilities.css" layer(utilities);\n@import "@aphrody/m3-tailwind/preset.css";',
-      { base: fileURLToPath(new URL("..", import.meta.url)), onDependency: () => {} },
+      { base: Bun.fileURLToPath(new URL("..", import.meta.url)), onDependency: () => {} },
     );
     const out = compiler.build(["bg-primary", "p-4", "md:grid", "medium:flex", "dark:bg-surface"]);
     expect(out).toContain("var(--md-sys-color-primary)");
