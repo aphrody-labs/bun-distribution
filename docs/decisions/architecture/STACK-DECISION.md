@@ -110,3 +110,28 @@ Chaque fonctionnalité de la CLI `yolo` est conçue pour être exposée via quat
 - **Package Python `yolo` (`packages/python` (not in repo)) :** Intégration Pydantic V2, Apache Arrow IPC / Polars DataFrame, stubs typés PEP 484/561 (`py.typed`, `_yolo_native.pyi`).
 - C ABI versionné (`EXPECTED_ABI_MAJOR = 1`, `EXPECTED_ABI_MINOR = 4`).
 - Zéro dépendance d'en-tête externe, gestion stricte des lifetimes et panic boundaries.
+
+---
+
+## 5. La Stack Utile & Optimisée (Production 2026 — Zéro Goulot d'Étranglement)
+
+L'architecture d'exécution concrète en production pour 2026 unifie 4 couches complémentaires à performance maximale (référence détaillée : [STACK-PRODUCTION-2026.md](../../architecture/runtime-native/STACK-PRODUCTION-2026.md)) :
+
+1. **Couche 1 : Interface & Scripts (Dual Engine : Humain vs IA)**
+   - *Humain Exploratoire :* Nushell 0.116 (21ms cold start, pipelines typés) + Starship.
+   - *No-Human-In-The-Loop / IA :* Bun Shell natif in-process (`crates/compat/bun-bridge`) + JavaScriptCore (22x plus rapide, 0ms fork, `AstArena` bump allocator).
+   - *Core Tools Rust :* `ripgrep`, `fd`, `bottom`, `Helix`, `Yazi`.
+2. **Couche 2 : Terminal & Rendu GPU**
+   - *Moteur Terminal :* `aphrody-term` (absorbé de Rio, Cosmic-Term & WezTerm) avec cellules compactes 16B (`PackedCell`) alignées sur lignes de cache L1, fast-path ASCII `memchr`, `FairMutex` à baux bornés (256 Ko) anti-famine, et quads instanciés WebGPU coalescés en 2 passes.
+   - *Compositeur :* `niri` (sur Wayland Linux) et `Headless Buffer` (pour agent IA kernel).
+3. **Couche 3 : Userland & Builtins en Mémoire**
+   - *Builtins In-Process :* `uutils-coreutils` + builtins Bun (cat, ls, echo, rm, cp...) sans création de sous-processus OS.
+   - *Agent Computer-Use :* `ComputerUseController` (>10 Go/s scraping mémoire direct, injection programmatique d'événements).
+   - *Allocateurs :* `mimalloc` (allocateur global multithreadé) + `AstArena` (bump allocator pour zéro fragmentation du tas).
+4. **Couche 4 : Noyau & Accélérateurs Matériels Réels**
+   - *Pilotes NVIDIA natifs :* CUDA 12.x, TensorRT-LLM, cuDNN, NVLink, DirectStorage DMA.
+   - *Noyaux :* Linux 6.x (`io_uring`, `cgroups v2`) et Windows NT (`DirectStorage`).
+   - *Abstraction sécurité :* `aphrody-ostd` (`crates/os/ostd`, inspiré d'Asterinas, sans privilèges Ring 0).
+5. **Couche Virtualisation Full-WASM :**
+   - MicroVM in-process avec `v86` (reprise sous 50ms par snapshot mémoire) et `container2wasm` (coureur OCI WebAssembly), unifiés sous le trait canonique `SandboxHost` ([WASM-CONTAINER-V86.md](../../architecture/runtime-native/WASM-CONTAINER-V86.md)).
+

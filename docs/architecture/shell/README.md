@@ -9,12 +9,18 @@ work.
 
 | Layer | Owner | Contract |
 | --- | --- | --- |
-| VT state | `crates/shell/terminal-core` | Ingest raw output bytes, produce a terminal snapshot and replies. The client owns VT state for every transport. |
+| VT state & GPU Grid | `crates/shell/aphrody-term`, `crates/shell/terminal-core` | Ingest raw output bytes, produce a terminal snapshot and replies. `aphrody-term` brings 16B `PackedCell` L1 cache alignment, fast-path ASCII `memchr`, `FairMutex` (256 Ko bounded leases), and WebGPU instanced quads via Sugarloaf. |
+| In-Process Shell Engine | `crates/compat/bun-bridge`, `crates/shell/nu` | Dual-engine execution: Nushell 0.116 for interactive typed exploration; Bun Shell native AST parser (`AstArena` bump allocator) + JSC for 0ms-fork agent execution. |
 | Engines and sessions | `crates/shell/web`, `crates/shell/session`, `crates/shell/terminal-backend` | Browser commands use `LocalShell` and `ShellSession`; native and Tauri shells use `PtySession`. All exchange input and output bytes. |
 | Filesystem | `crates/shell/vfs`, `crates/shell/web/src/opfs.rs` | The synchronous `Vfs` trait serves shell commands. `MemVfs` is the reference; `OpfsVfs` encodes bounded, checksummed snapshots. |
-| Hosts | `crates/shell/aphrody-shell-sandbox-host`, `crates/shell/aphrody-shell-sandbox-host/src/e2b.rs` | `SandboxHost` handles session, limits and file transfer. Mock and local PTY adapters are qualified; the E2B adapter awaits live provider conformance. |
+| Hosts & MicroVMs | `crates/shell/aphrody-shell-sandbox-host`, `crates/shell/aphrody-shell-sandbox-host/src/wasm_guest.rs` | `SandboxHost` handles session, limits and file transfer across local PTY, E2B cloud provider, and in-process Full-WASM microVMs (`v86` x86 JIT and `container2wasm` OCI runner). |
 | Transports | `packages/shell/web`, `crates/shell/tauri` | The TypeScript `Transport` interface carries bytes over a dedicated OPFS worker, Tauri Channel, or authenticated WebSocket. |
-| Renderer | `crates/ui/app` | The existing DOM terminal renderer consumes output; it does not parse shell commands. |
+| Computer-Use Controller | `crates/shell/aphrody-term/src/computer_use.rs` | High-throughput agent screen capture (>10 GB/s direct memory scraping) and programmatic key/text injection without X11/Wayland latency. |
+| Renderer | `crates/shell/aphrody-term`, `crates/ui/app` | Instanced WebGPU 2-pass quad coalescing (background quads + glyph atlas) with Wayland `niri` or headless agent buffer support. |
+
+## Production 2026 Stack Architecture
+
+The complete production architecture is specified in [La Stack Utile & Optimisée (Production 2026)](../runtime-native/STACK-PRODUCTION-2026.md) and [Virtualisation Full-WASM & MicroVM](../runtime-native/WASM-CONTAINER-V86.md).
 
 ## Browser persistence
 
@@ -38,3 +44,4 @@ the Bun package checks and exercise a real Tauri webview. Set `APHRODY_CHROME` t
 Chromium browser tests and `APHRODY_SHELL_LIVE_BIN` to the built PTY `serve` example for the
 live WebSocket test. The script uses the repository's serialized Cargo wrapper through its
 existing owner scripts.
+

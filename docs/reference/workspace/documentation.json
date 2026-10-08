@@ -2876,7 +2876,7 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "8d98cf94f7e8a2ba6ae68b5714cee2e9e7fb78ad16dae763db37af9fb3b2dbe4",
+      "sha256": "8f13deb7ce95a11858e8ccb8f5bbc56ae3621d88263e0c6185c62d5ab7a15d19",
       "bytes": 8579,
       "domain": "",
       "status": "generated",
@@ -2886,8 +2886,8 @@
     {
       "path": "docs/SUMMARY.md",
       "title": "Summary",
-      "sha256": "5db757b9fc61456065734d085a770c29884bbaca92cecfd6a970840363281d6e",
-      "bytes": 1226,
+      "sha256": "1d44d5a7cdd2ad7f5d2e005a97e6fc84ae588901d9fef7bbab8a432f5fb91ea5",
+      "bytes": 1558,
       "domain": "",
       "status": "historical",
       "visibility": "private",
@@ -3564,6 +3564,16 @@
       "canonical": "docs/architecture/runtime-native/RUNTIME.md"
     },
     {
+      "path": "docs/architecture/runtime-native/STACK-PRODUCTION-2026.md",
+      "title": "La Stack Utile & Optimisée (Production 2026 — Zéro Goulot d'Étranglement)",
+      "sha256": "1a87d40948db37b2d9b6537ea40627d67dd351d7ddce73217bae41c506491572",
+      "bytes": 22363,
+      "domain": "runtime-native",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/architecture/runtime-native/STACK-PRODUCTION-2026.md"
+    },
+    {
       "path": "docs/architecture/runtime-native/WASM-CONTAINER-V86.md",
       "title": "Full-WASM Architecture: MicroVM Container Virtualization (v86 & container2wasm)",
       "sha256": "d766f792d2e62255831741286625b428c26f39dc57a4b7dde3330cde923853cb",
@@ -3606,8 +3616,8 @@
     {
       "path": "docs/architecture/shell/README.md",
       "title": "Shell and terminal layers",
-      "sha256": "b5801e28757a429f49ceed2e16a1e90ce7aecdf441a4c96bf98f55d01561e013",
-      "bytes": 3117,
+      "sha256": "2a6b4cd31c7ff7147ffd6545d390cda6568cd334c2013086a68cafd3ba0a5555",
+      "bytes": 4117,
       "domain": "shell",
       "status": "historical",
       "visibility": "private",
@@ -3776,8 +3786,8 @@
     {
       "path": "docs/decisions/architecture/STACK-DECISION.md",
       "title": "Architecture Agent-First & Maturation de la Stack",
-      "sha256": "5d0d7897bd6043ce23e57f9be318b8648a90b8a139c0696fbd6534c507d37fbb",
-      "bytes": 9336,
+      "sha256": "259cd6e383019da57b995169891a71ef34e6707b7caac2f050c6d220e2abd852",
+      "bytes": 11558,
       "domain": "architecture",
       "status": "canonical",
       "visibility": "private",

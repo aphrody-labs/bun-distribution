@@ -118,7 +118,7 @@ impl SandboxHost for WasmGuestHost {
             limits: self.config.limits,
             last_activity: Instant::now(),
             output_bytes: 0,
-            engine: self.config.engine,
+            _engine: self.config.engine,
         }))
     }
 
