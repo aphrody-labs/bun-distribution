@@ -126,6 +126,52 @@ test("monitor probes execute the pinned fork in interpreter mode", async () => {
     );
 });
 
+test("an idle crash-loop is stopped only after queue idleness is proved", async () => {
+  const f = fixture();
+  const run = f.transport.run;
+  let stopped = false;
+  f.transport.run = async (host, command) => {
+    if (command.includes("-p ActiveState -p SubState -p NRestarts"))
+      return {
+        code: 0,
+        stdout: "ActiveState=activating\nSubState=auto-restart\nNRestarts=4\n",
+        stderr: "",
+      };
+    if (command.endsWith("--upgrade-check"))
+      return { code: 0, stdout: '{"upgradeSafe":true}', stderr: "" };
+    if (command.includes("systemctl stop")) stopped = true;
+    if (command.includes("-p ActiveState -p MainPID"))
+      return { code: 0, stdout: "ActiveState=inactive\nMainPID=0\n", stderr: "" };
+    return run(host, command);
+  };
+  await expect(
+    quiesceDiscord(discordDeployment("omar-monitor", "vps", root), f.transport),
+  ).resolves.toBeNull();
+  expect(stopped).toBe(true);
+  expect(f.commands.some((command) => command.includes("--upgrade-check"))).toBe(false);
+});
+
+test("a crash-loop with an active durable goal is left running", async () => {
+  const f = fixture();
+  const run = f.transport.run;
+  let stopped = false;
+  f.transport.run = async (host, command) => {
+    if (command.includes("-p ActiveState -p SubState -p NRestarts"))
+      return {
+        code: 0,
+        stdout: "ActiveState=activating\nSubState=auto-restart\nNRestarts=4\n",
+        stderr: "",
+      };
+    if (command.endsWith("--upgrade-check")) return { code: 1, stdout: "", stderr: "active goal" };
+    if (command.includes("systemctl stop")) stopped = true;
+    return run(host, command);
+  };
+  await expect(
+    quiesceDiscord(discordDeployment("omar-monitor", "vps", root), f.transport),
+  ).rejects.toThrow("durable queue still has an active goal");
+  expect(stopped).toBe(false);
+});
+
 test("release resolves product source and the declared target; foreign targets fail", () => {
   expect(discordDeployment("omar-monitor", "vps", root).entrypoint).toBe(
     join(root, "packages/discord/kit/src/omar-monitor/main.ts"),

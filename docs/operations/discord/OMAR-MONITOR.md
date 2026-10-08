@@ -89,6 +89,9 @@ et une file sans objectif actif. Une observation expirée diffère la livraison;
 `SIGUSR2` reprend le processus toujours vivant, sans relancer son objectif.
 Le workflow restaure les fichiers produit et l’unité précédents si l’activation
 échoue. Les bases, rollouts et credentials restent à leur emplacement.
+Un crash loop est arrêté seulement après preuve que la file ne porte aucun
+objectif actif; le PID zéro et l'état inactif sont ensuite vérifiés avant
+l'upload. Un objectif actif laisse le service et la file intacts.
 Le contrôle `--smoke` du worker déployé crée deux tours de qualification :
 une réponse structurée du moniteur, puis une lecture réelle de la version
 Aphrody par l’exécuteur. Il ne crée pas de message d’Omar et n’envoie aucun

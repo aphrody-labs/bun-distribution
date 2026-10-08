@@ -147,6 +147,53 @@ export async function quiesceDiscord(
   const protocols = JSON.parse(capability.stdout) as { upgradeProtocol?: number };
   if (protocols.upgradeProtocol !== 2)
     throw new Error("Unsupported Discord monitor upgrade protocol");
+  const serviceState = await transport.run(
+    deployment.target,
+    `systemctl show ${quote(deployment.unit)} -p ActiveState -p SubState -p NRestarts`,
+  );
+  const state = Object.fromEntries(
+    serviceState.stdout
+      .trim()
+      .split("\n")
+      .map((line) => {
+        const separator = line.indexOf("=");
+        return [line.slice(0, separator), line.slice(separator + 1)];
+      }),
+  );
+  if (state.ActiveState === "activating" && state.SubState === "auto-restart") {
+    const idle = await transport.run(
+      deployment.target,
+      `${worker} --policy ${quote(deployment.policy.target)} --upgrade-check`,
+    );
+    if (idle.code !== 0)
+      throw new Error("Crash-loop recovery deferred: the durable queue still has an active goal");
+    const stopped = await transport.run(
+      deployment.target,
+      `sudo -n systemctl stop ${quote(deployment.unit)}`,
+    );
+    if (stopped.code !== 0)
+      throw new Error(`Crash-loop stop failed (${stopped.code}); deployment deferred`);
+    const verified = await transport.run(
+      deployment.target,
+      `systemctl show ${quote(deployment.unit)} -p ActiveState -p MainPID`,
+    );
+    const stoppedState = Object.fromEntries(
+      verified.stdout
+        .trim()
+        .split("\n")
+        .map((line) => {
+          const separator = line.indexOf("=");
+          return [line.slice(0, separator), line.slice(separator + 1)];
+        }),
+    );
+    if (
+      verified.code !== 0 ||
+      stoppedState.ActiveState !== "inactive" ||
+      stoppedState.MainPID !== "0"
+    )
+      throw new Error("Crash-loop stop was not confirmed; deployment deferred");
+    return null;
+  }
   const pidResult = await transport.run(
     deployment.target,
     `systemctl show ${quote(deployment.unit)} -p MainPID --value`,
