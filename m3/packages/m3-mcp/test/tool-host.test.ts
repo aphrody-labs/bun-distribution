@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-import { fileURLToPath } from "node:url";
 import { expect, test } from "bun:test";
 import { callM3Tool, listM3Tools } from "../src/tools.ts";
 
@@ -24,7 +23,7 @@ test("a call validates its arguments and returns an MCP-shaped result", async ()
 });
 
 test("the executable host prints the list and one call result", () => {
-  const host = fileURLToPath(new URL("../src/tool-host.ts", import.meta.url));
+  const host = Bun.fileURLToPath(new URL("../src/tool-host.ts", import.meta.url));
   const list = Bun.spawnSync([process.execPath, host, "list"]);
   expect(JSON.parse(list.stdout.toString()).length).toBeGreaterThan(10);
   const call = Bun.spawnSync([process.execPath, host, "call", "m3_list_packages", "{}"]);
