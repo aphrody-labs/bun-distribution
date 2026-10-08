@@ -332,7 +332,7 @@ export function resolveNativeLibraryPath(): string | undefined {
   const installed = resolveInstalledNativeLibraryPath();
   if (installed) return installed;
   if (nativeDevelopmentEnabled()) {
-    for (const profile of ["release", "debug"]) {
+    for (const profile of ["release", "runtime", "debug"]) {
       if (triple) candidates.push(join(target, triple, profile, file));
       candidates.push(join(target, profile, file));
     }

@@ -21,7 +21,13 @@ import { join } from "node:path";
 // `@aphrody/bun` opens the bun_rs native library when it is imported. Without the library these
 // suites are skipped with the loader's reason; build or link it as described in
 // docs/guides/NATIVE.md (`bun scripts/native.ts link --apply`).
-const native = await import("@aphrody/bun").catch((error: unknown) => error as Error);
+// The library opens lazily, so the probe loads it: a missing or unaccepted artifact skips here, not mid-suite.
+const native = await import("@aphrody/bun")
+  .then((module) => {
+    if (!module.isAphrodyFfiAvailable()) throw new Error("aphrody-ffi native library not found");
+    return module;
+  })
+  .catch((error: unknown) => error as Error);
 const unavailable =
   native instanceof Error
     ? `bun_rs native library unavailable (${String(native.message ?? native).split("\n")[0]}); see docs/guides/NATIVE.md`
@@ -41,7 +47,9 @@ function vars(css: string, marker: string): Map<string, string> {
   const start = css.indexOf(marker);
   expect(start).toBeGreaterThanOrEqual(0);
   const body = css.slice(css.indexOf("{", start) + 1, css.indexOf("}", start));
-  return new Map([...body.matchAll(/(--[a-z0-9-]+):\s*([^;]+);/g)].map((m) => [m[1]!, m[2]!.trim()]));
+  return new Map(
+    [...body.matchAll(/(--[a-z0-9-]+):\s*([^;]+);/g)].map((m) => [m[1]!, m[2]!.trim()]),
+  );
 }
 
 /** Every `--md-sys-color-*` of a block equals the reference scheme; returns how many were checked. */
@@ -58,11 +66,16 @@ function expectScheme(block: Map<string, string>, scheme: DynamicScheme): number
 }
 
 function expectExtended(block: Map<string, string>, source: number, dark: boolean) {
-  for (const [name, seed] of [["success", 0xff16a34a], ["warning", 0xfff59e0b]] as const) {
+  for (const [name, seed] of [
+    ["success", 0xff16a34a],
+    ["warning", 0xfff59e0b],
+  ] as const) {
     const group = customColor(source, { name, value: seed, blend: true });
     const tones = dark ? group.dark : group.light;
     expect(block.get(`--md-ext-color-${name}`)).toBe(hexFromArgb(tones.color));
-    expect(block.get(`--md-ext-color-on-${name}-container`)).toBe(hexFromArgb(tones.onColorContainer));
+    expect(block.get(`--md-ext-color-on-${name}-container`)).toBe(
+      hexFromArgb(tones.onColorContainer),
+    );
   }
 }
 
@@ -75,11 +88,17 @@ describe.skipIf(skip)(named("sheets match material-color-utilities"), () => {
   });
 
   test("scheme sheet: any seed, variant and contrast", () => {
-    for (const [seed, dark, contrast] of [["#1a73e8", false, 0.5], ["#ce422b", true, 1], ["#16a34a", false, -1]] as const) {
+    for (const [seed, dark, contrast] of [
+      ["#1a73e8", false, 0.5],
+      ["#ce422b", true, 1],
+      ["#16a34a", false, -1],
+    ] as const) {
       const css = m3Css({ sheet: "scheme", seed, variant: "vibrant", dark, contrast });
       const argb = Number.parseInt(seed.slice(1), 16) | 0xff000000;
       const block = vars(css, ":root {");
-      expect(expectScheme(block, new SchemeVibrant(Hct.fromInt(argb >>> 0), dark, contrast))).toBe(49);
+      expect(expectScheme(block, new SchemeVibrant(Hct.fromInt(argb >>> 0), dark, contrast))).toBe(
+        49,
+      );
       expectExtended(block, argb >>> 0, dark);
     }
   });
@@ -87,8 +106,13 @@ describe.skipIf(skip)(named("sheets match material-color-utilities"), () => {
   test("spaceui.css: every theme", () => {
     const css = m3Css({ sheet: "spaceui" });
     const themes = [
-      ["dark", "#1c1d26", true], ["light", "#f2f2f4", false], ["midnight", "#0f0f1a", true],
-      ["noir", "#080808", true], ["slate", "#151619", true], ["nord", "#191d24", true], ["mocha", "#1e1915", true],
+      ["dark", "#1c1d26", true],
+      ["light", "#f2f2f4", false],
+      ["midnight", "#0f0f1a", true],
+      ["noir", "#080808", true],
+      ["slate", "#151619", true],
+      ["nord", "#191d24", true],
+      ["mocha", "#1e1915", true],
     ] as const;
     for (const [name, neutralHex, dark] of themes) {
       const accent = Hct.fromInt(0xff2499ff);
@@ -104,7 +128,10 @@ describe.skipIf(skip)(named("sheets match material-color-utilities"), () => {
         secondaryPalette: base.secondaryPalette,
         tertiaryPalette: base.tertiaryPalette,
         neutralPalette: TonalPalette.fromHueAndChroma(neutral.hue, chroma),
-        neutralVariantPalette: TonalPalette.fromHueAndChroma(neutral.hue, chroma === 0 ? 0 : chroma + 4),
+        neutralVariantPalette: TonalPalette.fromHueAndChroma(
+          neutral.hue,
+          chroma === 0 ? 0 : chroma + 4,
+        ),
         errorPalette: base.errorPalette,
       });
       const block = vars(css, `/* SpaceUI ${name} */`);
@@ -127,7 +154,6 @@ describe.skipIf(skip)(named("committed sheets are current (bun run generate)"), 
       expect(normalize(onDisk)).toBe(normalize(m3Css({ sheet })));
     });
   }
-
 });
 
 /** oxfmt may rewrap lines: compare token streams, not layout. */

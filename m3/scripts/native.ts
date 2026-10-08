@@ -31,9 +31,17 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
 export const REPO = resolve(dirname(import.meta.path), "..");
-export const YOLO_ROOT = process.env["YOLO_ROOT"] ?? join(homedir(), "yolo");
-/** The producer SDK loader (`@aphrody/runtime-sdk/ffi`) inside the yolo checkout. */
-export const RUNTIME_SDK_FFI = join(YOLO_ROOT, "packages/runtime/src/ffi.ts");
+const MONOREPO = resolve(REPO, "..");
+/** Same resolution as scripts/yolo.ts, inlined: this script also runs as a standalone copy. */
+export const YOLO_ROOT =
+  process.env["YOLO_ROOT"] ||
+  (existsSync(join(MONOREPO, "bin", "yolo")) ? MONOREPO : join(homedir(), "yolo"));
+/** The producer SDK loader (`@aphrody/runtime-sdk/ffi`): the monorepo keeps it under packages/engine, a standalone yolo checkout under packages. */
+export const RUNTIME_SDK_FFI =
+  [
+    join(YOLO_ROOT, "packages", "engine", "runtime", "src", "ffi.ts"),
+    join(YOLO_ROOT, "packages", "runtime", "src", "ffi.ts"),
+  ].find((path) => existsSync(path)) ?? join(YOLO_ROOT, "packages", "runtime", "src", "ffi.ts");
 
 export const SUFFIX =
   process.platform === "win32" ? "dll" : process.platform === "darwin" ? "dylib" : "so";
@@ -75,6 +83,18 @@ export function installedCopies(root = REPO): InstalledCopy[] {
   }
   const hoisted = join(root, "node_modules/@aphrody/bun");
   if (existsSync(join(hoisted, "package.json"))) dirs.add(hoisted);
+  // Inside the aphrody monorepo the package is the workspace member itself, not an installed copy.
+  for (let dir = root; ; dir = dirname(dir)) {
+    const member = join(dir, "packages/interop/native");
+    if (
+      existsSync(join(dir, "crates/interop/ffi/Cargo.toml")) &&
+      existsSync(join(member, "package.json"))
+    ) {
+      dirs.add(member);
+      break;
+    }
+    if (dirname(dir) === dir) break;
+  }
   return [...dirs].toSorted().map((dir) => {
     const nativeFile = nativeFileFor(dir);
     return {
@@ -112,6 +132,7 @@ export function searchDirs(root = aphrodyRoot(), copies = installedCopies()): st
     join(homedir(), ".local/lib/aphrody"),
     join(target, "release"),
     join(target, triple, "release"),
+    join(target, "runtime"),
     join(target, "debug"),
     join(target, triple, "debug"),
     ...copies.map((copy) => dirname(copy.nativeFile)),

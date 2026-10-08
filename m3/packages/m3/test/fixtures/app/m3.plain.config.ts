@@ -4,5 +4,4 @@ import { defineM3Config } from "../../../src/config.ts";
 
 export default defineM3Config({
   entry: "plain.html",
-  root: "../../../../../..",
 });

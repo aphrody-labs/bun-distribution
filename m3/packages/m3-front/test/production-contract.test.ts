@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, test } from "bun:test";
 import { schemeFromSeed } from "@aphrody/m3-tokens/dynamic-color";
 import { defineM3Theme, M3ThemeElement, observeWindowClass, registerM3 } from "../src/index.ts";
@@ -38,7 +39,7 @@ describe("front production contract", () => {
         "-e",
         'const front = await import("@aphrody/m3-front"); front.defineM3Theme(); console.log(front.windowClassFor(600, 480).width);',
       ],
-      { cwd: new URL("..", import.meta.url).pathname, stdout: "pipe", stderr: "pipe" },
+      { cwd: fileURLToPath(new URL("..", import.meta.url)), stdout: "pipe", stderr: "pipe" },
     );
     const [code, stdout, stderr] = await Promise.all([
       child.exited,

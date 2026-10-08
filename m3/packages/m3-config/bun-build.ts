@@ -18,7 +18,7 @@
  */
 import { Glob, type BuildArtifact, type BunPlugin } from "bun";
 import { existsSync, readFileSync } from "node:fs";
-import { dirname, join, resolve, sep } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 export const USE_CLIENT = "'use client';\n";
 
@@ -125,14 +125,14 @@ export function expandEntries(entries: string | readonly string[], cwd: string):
 
 /** Deepest directory that contains every entry: the base of the output layout (`src/a.ts` -> `dist/a.js`). */
 export function commonDir(files: readonly string[]): string {
-  const [first, ...rest] = files.map((f) => dirname(f).split(sep));
+  const [first, ...rest] = files.map((f) => dirname(f).replaceAll("\\", "/").split("/"));
   let common = first ?? [];
   for (const parts of rest) {
     let i = 0;
     while (i < common.length && i < parts.length && common[i] === parts[i]) i++;
     common = common.slice(0, i);
   }
-  return common.join(sep) || sep;
+  return common.join("/") || "/";
 }
 
 /**
@@ -141,7 +141,8 @@ export function commonDir(files: readonly string[]): string {
  */
 export async function prependUseClient(dir: string, only?: readonly string[]): Promise<number> {
   const files: string[] = [];
-  for await (const path of new Glob("**/*.js").scan({ cwd: dir, onlyFiles: true })) {
+  for await (const found of new Glob("**/*.js").scan({ cwd: dir, onlyFiles: true })) {
+    const path = found.replaceAll("\\", "/");
     if (!only || only.includes(path.split("/").pop() ?? path) || only.includes(path))
       files.push(path);
   }

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { compile } from "@tailwindcss/node";
@@ -249,7 +250,7 @@ describe("Tailwind v4 compiles the preset", () => {
   test("an app on the preset (theme + utilities + preset) builds without errors", async () => {
     const compiler = await compile(
       '@import "tailwindcss/theme.css" layer(theme);\n@import "tailwindcss/utilities.css" layer(utilities);\n@import "@aphrody/m3-tailwind/preset.css";',
-      { base: new URL("..", import.meta.url).pathname, onDependency: () => {} },
+      { base: fileURLToPath(new URL("..", import.meta.url)), onDependency: () => {} },
     );
     const out = compiler.build(["bg-primary", "p-4", "md:grid", "medium:flex", "dark:bg-surface"]);
     expect(out).toContain("var(--md-sys-color-primary)");

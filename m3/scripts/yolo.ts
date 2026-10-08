@@ -17,14 +17,23 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
 export const REPO = resolve(dirname(import.meta.path), "..");
-export const YOLO_ROOT = process.env["YOLO_ROOT"] ?? join(homedir(), "yolo");
-export const YOLO_CLI = join(YOLO_ROOT, "bin/yolo");
+/** The enclosing Aphrody monorepo carries yolo since m3 was fused into it; a standalone checkout uses $HOME/yolo. */
+const MONOREPO = resolve(REPO, "..");
+export const YOLO_ROOT =
+  process.env["YOLO_ROOT"] ||
+  (existsSync(join(MONOREPO, "bin", "yolo")) ? MONOREPO : join(homedir(), "yolo"));
+export const YOLO_CLI = join(YOLO_ROOT, "bin", "yolo");
+/** bin/yolo is a bash launcher Windows cannot spawn; there the command runs the entry that launcher execs. */
+export const YOLO_COMMAND =
+  process.platform === "win32"
+    ? ["bun", "run", join(YOLO_ROOT, "packages", "engine", "yolo", "src", "index.ts")]
+    : [YOLO_CLI];
 
 export type Step = { cmd: string[]; cwd?: string; env?: Record<string, string> };
 
 /** `<yolo cli> ...args` with yolo's home set to this repository. */
 export const yolo = (...args: string[]): Step => ({
-  cmd: [YOLO_CLI, ...args],
+  cmd: [...YOLO_COMMAND, ...args],
   cwd: REPO,
   env: { YOLO_HOME: REPO },
 });
@@ -93,7 +102,7 @@ export function plan(task: string, rest: string[] = []): Step[] {
       return [
         bun(
           REPO,
-          join(REPO, "packages/m3-os-themes/src/cli.ts"),
+          "packages/m3-os-themes/src/cli.ts",
           ...(rest.length > 0 ? rest : ["install", "--target", "all"]),
         ),
       ];
