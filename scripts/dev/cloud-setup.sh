@@ -19,7 +19,7 @@ for arg in "$@"; do
     --force) force=1 ;;
   esac
 done
-[[ "${CLAUDE_CODE_REMOTE:-}" == "true" || $force == 1 || $dry == 1 ]] || exit 0
+[[ "${CLAUDE_CODE_REMOTE:-}" == "true" || "${APHRODY_CLOUD:-0}" == "1" || "${CI:-}" == "true" || "${GITHUB_ACTIONS:-}" == "true" || "${CODESPACES:-}" == "true" || $force == 1 || $dry == 1 ]] || exit 0
 
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 log_dir="${XDG_STATE_HOME:-$HOME/.local/state}/aphrody"
@@ -113,11 +113,26 @@ if [[ -f "$root/bun.lock" ]] && (have bun || (( dry == 1 ))); then
   run bash -c "cd '$root' && bun install --frozen-lockfile"
 fi
 
+step "Yolo wrapper"
+if have bun || (( dry == 1 )); then
+  mkdir -p "$HOME/.local/bin"
+  run bash -c "printf '#!/bin/sh\nexec bun \"%s/packages/engine/yolo/src/index.ts\" \"\$@\"\n' '$root' > '$HOME/.local/bin/yolo' && chmod +x '$HOME/.local/bin/yolo'"
+fi
+
 step "Aphrody and Yolo binaries (download server, when announced)"
 if [[ -n "${APHRODY_DOWNLOAD_BASE:-}" ]]; then
   run bash -c "curl -fsSL '$APHRODY_DOWNLOAD_BASE/install.sh' | sh"
 else
-  echo "  APHRODY_DOWNLOAD_BASE is not set: skipped"
+  echo "  APHRODY_DOWNLOAD_BASE is not set: skipped remote install"
+fi
+if ! have aphrody && (have cargo || (( dry == 1 ))); then
+  step "aphrody CLI fallback (scoped in-process build)"
+  run bash -c "cargo install --path '$root/crates/infra/aphrody' --locked --root '$HOME/.local' --no-default-features"
+fi
+
+step "agent home setup (secret-free, local)"
+if (have bun || (( dry == 1 ))) && [[ -f "$root/scripts/dev/cloud-agent-home.ts" ]]; then
+  run bash -c "bun '$root/scripts/dev/cloud-agent-home.ts' --apply"
 fi
 
 step "code graph (local, offline)"

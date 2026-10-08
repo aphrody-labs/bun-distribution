@@ -17,9 +17,14 @@ for arg in "$@"; do
 done
 case "$cargo_command" in
     build|b|check|c|test|t|clippy|rustdoc|doc|d|bench|run|r|install|rustc|nextest|xwin|zigbuild)
-        # The Claude cloud session is itself the build host: it never routes to the factory.
+        # Cloud environments (Claude Code, APHRODY_CLOUD, CI, GitHub Actions, Codespaces, containers)
+        # are themselves build hosts: they never route to the factory.
         # Both declared factory hosts run Cargo locally under their factory locks.
-        if [[ "$help_only" == false && -f "$factory_config" && "${APHRODY_BUILD_HOST:-}" != vps && "${APHRODY_BUILD_HOST:-}" != dbfr && "${APHRODY_LOCAL_CARGO:-0}" != 1 && "${CLAUDE_CODE_REMOTE:-}" != true && "${APHRODY_CLOUD:-0}" != 1 ]]; then
+        is_cloud=false
+        if [[ "${CLAUDE_CODE_REMOTE:-}" == true || "${APHRODY_CLOUD:-0}" == 1 || "${CI:-}" == true || "${GITHUB_ACTIONS:-}" == true || "${CODESPACES:-}" == true || -n "${GITPOD_WORKSPACE_ID:-}" || "${CLOUD_SHELL:-}" == true || -f /.dockerenv || "${CONTAINER:-}" == true ]]; then
+            is_cloud=true
+        fi
+        if [[ "$help_only" == false && -f "$factory_config" && "${APHRODY_BUILD_HOST:-}" != vps && "${APHRODY_BUILD_HOST:-}" != dbfr && "${APHRODY_LOCAL_CARGO:-0}" != 1 && "$is_cloud" == false ]]; then
             # The Workspace build-factory owner interprets the factory contract.
             factory_route="$(bun "$source_root/packages/infra/workspace/src/build-factory.ts" status --route)"
             if [[ "$factory_route" == factory ]]; then
@@ -45,8 +50,8 @@ if [[ "$help_only" == false && -f "$factory_config" && ( "${APHRODY_BUILD_HOST:-
 fi
 
 default_jobs=6
-if [[ "${CLAUDE_CODE_REMOTE:-}" == true || "${APHRODY_CLOUD:-0}" == 1 ]]; then
-    default_jobs="$(nproc)"
+if [[ "${CLAUDE_CODE_REMOTE:-}" == true || "${APHRODY_CLOUD:-0}" == 1 || "${CI:-}" == true || "${GITHUB_ACTIONS:-}" == true || "${CODESPACES:-}" == true || -n "${GITPOD_WORKSPACE_ID:-}" || -f /.dockerenv ]]; then
+    default_jobs="$(nproc 2>/dev/null || echo 4)"
     if ((default_jobs > 6)); then default_jobs=6; fi
 fi
 jobs="${APHRODY_CARGO_JOBS:-$default_jobs}"

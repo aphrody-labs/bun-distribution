@@ -65,8 +65,7 @@ impl BunShellExecutor {
         let mut total_stderr = Vec::new();
         let mut purely_in_process = true;
 
-        let mut iter = script.pipelines.iter().peekable();
-        while let Some((pipeline, op)) = iter.next() {
+        for (pipeline, op) in &script.pipelines {
             let mut pipe_stdout = Vec::new();
             let mut pipe_stderr = Vec::new();
 
@@ -261,9 +260,7 @@ impl BunShellExecutor {
                 .map_err(|e| format!("bun-shell: command not found: '{}' ({})", name, e))?;
 
             if let Some(mut child_in) = child.stdin.take() {
-                if !stdin.is_empty() {
-                    let _ = child_in.write_all(stdin);
-                }
+                let _ = child_in.write_all(stdin);
             }
 
             let mut out = Vec::new();

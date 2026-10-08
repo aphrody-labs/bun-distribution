@@ -16,9 +16,8 @@ pub fn encode_url_safe(data: &[u8]) -> String {
 }
 
 fn encode_with_alphabet(data: &[u8], alphabet: &[u8; 64], pad: bool) -> String {
-    let mut out = String::with_capacity((data.len() + 2) / 3 * 4);
-    let chunks = data.chunks_exact(3);
-    let rem = chunks.remainder();
+    let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
+    let (chunks, rem) = data.as_chunks::<3>();
 
     for chunk in chunks {
         let b0 = chunk[0];
@@ -87,8 +86,7 @@ pub fn decode(input: &str) -> Result<Vec<u8>, Base64Error> {
         .collect();
 
     let mut out = Vec::with_capacity(clean.len() * 3 / 4);
-    let chunks = clean.chunks_exact(4);
-    let rem = chunks.remainder();
+    let (chunks, rem) = clean.as_chunks::<4>();
 
     for chunk in chunks {
         let v0 = decode_char(chunk[0]).ok_or_else(|| Base64Error(format!("invalid char {}", chunk[0] as char)))?;

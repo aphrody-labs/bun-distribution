@@ -431,11 +431,12 @@ fn builtin_rm(argv: &[String], stderr: &mut Vec<u8>, cwd: &Path) -> i32 {
         };
 
         if let Err(e) = res {
-            if !force {
-                let msg = format!("rm: cannot remove '{}': {}\n", target, e);
-                stderr.extend_from_slice(msg.as_bytes());
-                exit_code = 1;
+            if force {
+                continue;
             }
+            let msg = format!("rm: cannot remove '{}': {}\n", target, e);
+            stderr.extend_from_slice(msg.as_bytes());
+            exit_code = 1;
         }
     }
 

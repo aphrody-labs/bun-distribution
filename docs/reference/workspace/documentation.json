@@ -46,8 +46,8 @@
     {
       "path": "PLAN.md",
       "title": "Plan",
-      "sha256": "4fbffec7b7d2fdba6a55288df4a83b46560c2760d4f9aa1e8c02641bbc6fc417",
-      "bytes": 6405,
+      "sha256": "10af8c637213d12f6b44aff5ef10168bbfb2449eff1e317cd86c69f77eda8f36",
+      "bytes": 6387,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -6246,8 +6246,8 @@
     {
       "path": "docs/operations/cloud/AGENT-HOME-SETUP.md",
       "title": "Fresh agent home for a cloud session",
-      "sha256": "bf500619de89666bbc85028690716d7db564a16a7796c4f78f5f899a36ef3543",
-      "bytes": 2846,
+      "sha256": "00d27be13adeef567ba6c360f75116c4c77f7a17b6a429acf951bbf3ea2f462f",
+      "bytes": 2989,
       "domain": "cloud",
       "status": "canonical",
       "visibility": "private",
@@ -6266,8 +6266,8 @@
     {
       "path": "docs/operations/cloud/CLOUD-SYNC.md",
       "title": "Cloud and local session sync journal",
-      "sha256": "bd0ed34375fcb4aed36f151764bb0ef46dbe2c76d08edc1836a5244bc9a2cc27",
-      "bytes": 4944,
+      "sha256": "5300e164d967413a013fce7c8142865911324eb57bc7693642b061a75f30c7c0",
+      "bytes": 5761,
       "domain": "cloud",
       "status": "canonical",
       "visibility": "private",

@@ -30,14 +30,14 @@ pub fn parse_dotenv(content: &str) -> HashMap<String, String> {
             let key = raw_key.trim().to_string();
             let mut val_str = raw_val.trim();
 
-            let value = if val_str.starts_with('"') {
+            let value = if let Some(stripped) = val_str.strip_prefix('"') {
                 if val_str.ends_with('"') && val_str.len() >= 2 {
                     unescape_double_quotes(&val_str[1..val_str.len() - 1])
                 } else {
                     // Multiline string
-                    let mut accum = String::from(&val_str[1..]);
+                    let mut accum = String::from(stripped);
                     let mut closed = false;
-                    while let Some(next_line) = lines.next() {
+                    for next_line in lines.by_ref() {
                         accum.push('\n');
                         if let Some(pos) = next_line.find('"') {
                             accum.push_str(&next_line[..pos]);
@@ -53,12 +53,12 @@ pub fn parse_dotenv(content: &str) -> HashMap<String, String> {
                         accum
                     }
                 }
-            } else if val_str.starts_with('\'') {
+            } else if let Some(stripped) = val_str.strip_prefix('\'') {
                 if val_str.ends_with('\'') && val_str.len() >= 2 {
                     val_str[1..val_str.len() - 1].to_string()
                 } else {
-                    let mut accum = String::from(&val_str[1..]);
-                    while let Some(next_line) = lines.next() {
+                    let mut accum = String::from(stripped);
+                    for next_line in lines.by_ref() {
                         accum.push('\n');
                         if let Some(pos) = next_line.find('\'') {
                             accum.push_str(&next_line[..pos]);

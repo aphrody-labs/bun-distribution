@@ -120,12 +120,13 @@ impl<T> Router<T> {
 
         // 1. Try static matches first (highest priority)
         for child in &node.children {
-            if let NodeKind::Static(ref s) = child.kind {
-                if s == seg {
+            match &child.kind {
+                NodeKind::Static(s) if s == seg => {
                     if let Some(h) = self.match_node(child, segments, depth + 1, params) {
                         return Some(h);
                     }
                 }
+                _ => {}
             }
         }
 

@@ -36,7 +36,13 @@ const [branch, head, dirty] = await Promise.all([
   git("log", "--oneline", "-5"),
   git("status", "--short"),
 ]);
-const kind = process.env.CLAUDE_CODE_REMOTE === "true" ? "cloud" : "local";
+const kind =
+  process.env.CLAUDE_CODE_REMOTE === "true" ||
+  process.env.APHRODY_CLOUD === "1" ||
+  process.env.CI === "true" ||
+  process.env.GITHUB_ACTIONS === "true"
+    ? "cloud"
+    : "local";
 const hosts =
   ["vps", "dbfr", "wsl"].filter(aliasDefined).map(reach).join(", ") || "no alias defined";
 const context = [

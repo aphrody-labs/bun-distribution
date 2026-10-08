@@ -13,10 +13,12 @@ the repository on each session and holds no secret. Status: the layout and comma
    is announced in [CLOUD-SYNC.md](CLOUD-SYNC.md), otherwise build the single crate through the factory
    (`bun scripts/build/rust/vps-cargo.ts run -- build --release -p aphrody`; a full release build exceeds 4 CPU).
 4. Seed the home without prompts and without secrets:
+   Run `bun scripts/dev/cloud-agent-home.ts --apply` (automated by `cloud-setup.sh` and `entrypoint.sh`).
+   It creates the directory hierarchy, seeds `AGENTS.md`, `TOOLS.md`, `SOUL.md`, `IDENTITY.md`, `USER.md`,
+   `HEARTBEAT.md`, `BOOT.md`, `BOOTSTRAP.md` (templates: `crates/ai/agent-home/templates`), creates `CONTEXT.md`,
+   and runs a strict security audit ensuring zero credentials, private keys or cookies exist in the home.
+   Alternatively with the binary:
    `aphrody oc-onboard --non-interactive --accept-risk --workspace "$APHRODY_HOME/workspaces/aphrody"`.
-   It always writes `AGENTS.md` and `TOOLS.md` and the persona files `SOUL.md`, `IDENTITY.md`, `USER.md`,
-   `HEARTBEAT.md`, `BOOT.md` (templates: `crates/ai/agent-home/templates`). Without the binary, copy those
-   templates into `$APHRODY_HOME/workspaces/aphrody/` by hand; edit `USER.md` and `IDENTITY.md` for the owner.
 5. Context: keep the repository's `AGENTS.md`, `MEMORY.md`, `PLAN.md` and
    [CONTEXT-HANDOFF.md](CONTEXT-HANDOFF.md) as the memory source; the cloud session adds its own notes to
    `MEMORY.md` and [CLOUD-SYNC.md](CLOUD-SYNC.md) and commits them.

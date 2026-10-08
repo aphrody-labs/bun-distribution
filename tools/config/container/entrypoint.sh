@@ -12,6 +12,11 @@ cmd="${1:-mcp}"
 [ "$#" -eq 0 ] || shift
 
 mkdir -p "${APHRODY_HOME:-$HOME/.aphrody}"
+if [ -f "$root/scripts/dev/cloud-agent-home.ts" ] && command -v bun >/dev/null 2>&1; then
+  if [ ! -f "${APHRODY_HOME:-$HOME/.aphrody}/workspaces/aphrody/AGENTS.md" ]; then
+    bun "$root/scripts/dev/cloud-agent-home.ts" --apply >&2 || true
+  fi
+fi
 # A bind-mounted checkout hides the image's node_modules: restore them from the lockfile, never mutating it.
 if [ ! -d "$root/node_modules" ] && [ -f "$root/bun.lock" ]; then
   command -v bun >/dev/null 2>&1 || {

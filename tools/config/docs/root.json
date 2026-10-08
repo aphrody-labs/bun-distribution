@@ -241,7 +241,7 @@
       ],
       [
         "Known failures",
-        "`web:verify`, 4 `packages/engine/yolo` tests (`libaphrody_ffi` absent), `aphrody infra validate`, global typecheck"
+        "`web:verify`, 4 `packages/engine/yolo` tests (`libaphrody_ffi` absent), `aphrody infra validate`"
       ]
     ],
     "success": [
@@ -563,6 +563,11 @@
             "2026-10-07",
             "Infra/Git source validation shipped as 65cd4cf3012aea0d54600752076bbab89e091cac on workspace/main: unknown hosts rejected even for health-only services, selected-root nginx data and host-scoped ports qualified. Factory tests: 84 Infra + 27 Git unit + 21 Git integration, zero failure/ignored; strict all-target Clippy and MSVC cross-check passed. M3 real library declaration build enabled 25 fresh TypeScript checks; app-ui 216 tests and native CSS parity across 49 roles passed.",
             "Full eleven-consumer gate remains open on concurrent WinClean sha2 LowerHex compilation error. Full M3 package tests and asset audit fail on remaining migration paths and missing embedded native symbols; 51 pipeline tests and 34-package exports audit pass. Source receipts: docs/operations/workspace/config-consumers-2026-10-07.md. Installed CLI/runtime unchanged; physical Windows and global completion remain open. Native tokens/SVG attempt c6d9b4e8840a failed before compilation because the concurrent Oxc manifest inherits absent oxc_formatter; no native tests executed on that snapshot. After inactive Windows owner handoff, WinClean SHA formatting was corrected in source; eleven-consumer snapshot 5940a428fae2 still stopped before compilation because the concurrent Oxc pin requires Cargo.lock regeneration. --locked remains enforced."
+          ],
+          [
+            "2026-10-08",
+            "Full cloud compatibility achieved across Aphrody: auto-detection of cloud environments (`CLAUDE_CODE_REMOTE`, `APHRODY_CLOUD`, `CI`, `GITHUB_ACTIONS`, `CODESPACES`, `GITPOD_WORKSPACE_ID`, `CLOUD_SHELL`, Docker `/.dockerenv`) in `build-factory.ts` and `cargo-serial.sh` with CPU-bounded jobs (`nproc`, max 6); Linux `bun` binary path and PATH export corrected in `.claude/hooks/session-start.sh`; automated secret-free agent home initialization and security audit in `scripts/dev/cloud-agent-home.ts` integrated into `cloud-setup.sh` and `entrypoint.sh`; `cloud-doctor.ts` updated with standalone cloud mode (`--standalone`) and agent home verification; `aphrody-bun-bridge` (WyHash, DotEnv, Router, SemVer, Glob, Valkey, Base64) qualified and strict Clippy clean with 27 passed unit tests.",
+            "Linux and Windows MSVC checks pass. Global typecheck, bun:check, docs:check-links, docs:check, and format:check pass with zero errors."
           ]
         ]
       }

@@ -161,12 +161,7 @@ pub fn parse_resp(buf: &[u8]) -> Result<(RespValue, usize), RespError> {
 }
 
 fn find_crlf(buf: &[u8]) -> Option<usize> {
-    for i in 0..buf.len().saturating_sub(1) {
-        if buf[i] == b'\r' && buf[i + 1] == b'\n' {
-            return Some(i);
-        }
-    }
-    None
+    memchr::memmem::find(buf, b"\r\n")
 }
 
 #[cfg(test)]

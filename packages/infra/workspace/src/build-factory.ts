@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { existsSync } from "node:fs";
 import { join, posix, resolve } from "node:path";
 import { infraRoot, runInfra } from "./runtime.ts";
 import {
@@ -363,6 +364,16 @@ export function heavyBuildStatus(
     return local("Claude Code cloud session: builds run in the session");
   if (env.APHRODY_CLOUD === "1")
     return local("APHRODY_CLOUD=1 (cloud session or container): builds run in place");
+  if (env.GITHUB_ACTIONS === "true" || env.CI === "true")
+    return local("CI/GitHub Actions runner: builds run in place");
+  if (
+    env.CODESPACES === "true" ||
+    env.GITPOD_WORKSPACE_ID !== undefined ||
+    env.CLOUD_SHELL === "true"
+  )
+    return local("Cloud developer environment: builds run in place");
+  if (existsSync("/.dockerenv") || env.CONTAINER === "true")
+    return local("Container runtime: builds run in place");
   if (config.executionOnlyTargets?.includes(config.target)) {
     if (localCargo && host !== config.target)
       return local("APHRODY_LOCAL_CARGO=1 selects a scoped local diagnostic");

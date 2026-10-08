@@ -219,14 +219,10 @@ fn unescape_braces(input: &str) -> String {
     let mut out = String::with_capacity(input.len());
     let mut chars = input.chars().peekable();
     while let Some(c) = chars.next() {
-        if c == '\\' {
-            if let Some(&next) = chars.peek() {
-                if next == '{' || next == '}' || next == ',' {
-                    out.push(next);
-                    chars.next();
-                    continue;
-                }
-            }
+        if c == '\\' && matches!(chars.peek(), Some('{' | '}' | ',')) {
+            let next = chars.next().unwrap();
+            out.push(next);
+            continue;
         }
         out.push(c);
     }
