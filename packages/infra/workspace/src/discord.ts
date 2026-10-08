@@ -80,7 +80,7 @@ export async function quiesceDiscord(
 ): Promise<string | null> {
   const runtime = await transport.run(
     deployment.target,
-    `printf '%s  %s\\n' ${quote(deployment.runtimeSha256)} ${quote(deployment.runtime)} | sha256sum -c --quiet -`,
+    `printf '%s  %s\\n' ${quote(deployment.runtimeSha256)} ${quote(deployment.runtime)} | sudo -n sha256sum -c --quiet -`,
   );
   if (runtime.code !== 0)
     throw new Error("Declared Yolo fork is absent or its SHA-256 differs; deployment deferred");
