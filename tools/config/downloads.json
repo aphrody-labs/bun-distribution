@@ -70,6 +70,10 @@
             "x86_64-pc-windows-msvc",
             "-p",
             "aphrody",
+            "-p",
+            "aphrody-mcp",
+            "--features",
+            "aphrody-mcp/winclean",
             "--bin",
             "aphrody"
           ],
@@ -77,7 +81,7 @@
           "archive": "zip",
           "enabled": true,
           "optional": true,
-          "note": "cross-built on the factory with cargo-xwin (Windows SDK/CRT splat in ~/.cache/cargo-xwin on the host); skipped, with a note in latest.json, when the binary is absent"
+          "note": "cross-built on the factory with cargo-xwin (Windows SDK/CRT splat in ~/.cache/cargo-xwin on the host), with aphrody-mcp/winclean so the embedded MCP server carries the Windows computer_* tools; skipped, with a note in latest.json, when the binary is absent"
         },
         {
           "platform": "macos-aarch64",
