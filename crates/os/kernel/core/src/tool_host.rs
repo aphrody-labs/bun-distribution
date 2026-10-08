@@ -71,7 +71,8 @@ impl ToolHostSubsystem {
             tools: Vec::new(),
         };
         let listed = host.run(&["list"], LIST_TIMEOUT).await?;
-        let array = listed.as_array().ok_or_else(|| format!("tool host {name}: list is not an array"))?;
+        let array =
+            listed.as_array().ok_or_else(|| format!("tool host {name}: list is not an array"))?;
         for tool in array {
             let definition = crate::mcp_proxy::provider_tool(tool)?;
             if !occupied.contains(&definition.name) {
@@ -127,11 +128,10 @@ impl SystemSubsystem for ToolHostSubsystem {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod tests {
     use super::*;
 
-    #[cfg(unix)]
     #[tokio::test]
     async fn lists_and_calls_a_host_without_mcp() {
         let dir = tempfile::tempdir().unwrap();

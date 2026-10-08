@@ -146,31 +146,56 @@ pub(crate) fn status(path: &Path) -> Result<Value, SubsystemError> {
     }))
 }
 
-/// `github_branches`: local and remote-tracking branches with upstream and tip subject.
-pub(crate) fn branches(path: &Path) -> Result<Value, SubsystemError> {
+/// Which branches `github_branches` lists.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct BranchQuery {
+    /// Case-insensitive substring of the short branch name.
+    pub filter: Option<String>,
+    /// `local`, `remote` or `all`.
+    pub scope: String,
+    /// Page size.
+    pub limit: usize,
+    /// Branches skipped before the page.
+    pub offset: usize,
+}
+
+impl Default for BranchQuery {
+    fn default() -> Self {
+        Self { filter: None, scope: "all".into(), limit: BRANCH_PAGE, offset: 0 }
+    }
+}
+
+/// Default page of `github_branches`; forks of large projects carry tens of thousands of
+/// remote branches.
+pub(crate) const BRANCH_PAGE: usize = 50;
+/// Largest accepted page.
+pub(crate) const BRANCH_PAGE_MAX: usize = 1000;
+
+/// `github_branches`: local and remote-tracking branches (local first, then by name), filtered and
+/// paginated; each listed local branch carries its upstream and ahead/behind counts.
+pub(crate) fn branches(path: &Path, query: &BranchQuery) -> Result<Value, SubsystemError> {
+    let (want_local, want_remote) = match query.scope.as_str() {
+        "all" => (true, true),
+        "local" => (true, false),
+        "remote" => (false, true),
+        other => {
+            return Err(SubsystemError::InvalidArguments(format!(
+                "scope must be local, remote or all, not `{other}`"
+            )));
+        },
+    };
+    let limit = query.limit.clamp(1, BRANCH_PAGE_MAX);
+    let needle = query.filter.as_deref().map(str::to_lowercase).filter(|n| !n.is_empty());
     let repo = open(path)?;
     let references = repo.references().map_err(|e| failed("git branch failed", e))?;
-    let mut branches = Vec::new();
+    let mut matching: Vec<(bool, String, String)> = Vec::new();
     for reference in references.all().map_err(|e| failed("git branch failed", e))? {
-        let mut reference = reference.map_err(|e| failed("git branch failed", e))?;
+        let reference = reference.map_err(|e| failed("git branch failed", e))?;
         let full = reference.name().as_bstr().to_string();
         let is_local = full.starts_with("refs/heads/");
-        if !is_local && !full.starts_with("refs/remotes/") {
+        if !(is_local && want_local || full.starts_with("refs/remotes/") && want_remote) {
             continue;
         }
-        let upstream = if is_local {
-            repo.branch_remote_tracking_ref_name(reference.name(), gix::remote::Direction::Fetch)
-                .and_then(Result::ok)
-                .map(|name| short_ref(&name.as_bstr().to_string()))
-                .unwrap_or_default()
-        } else {
-            String::new()
-        };
-        let subject = reference
-            .peel_to_id()
-            .ok()
-            .map(|id| commit_subject(&repo, id.detach()))
-            .unwrap_or_default();
         let name = if is_local {
             short_ref(&full)
         } else {
@@ -178,15 +203,47 @@ pub(crate) fn branches(path: &Path) -> Result<Value, SubsystemError> {
             let short = short_ref(&full);
             short.strip_suffix("/HEAD").map(str::to_owned).unwrap_or(short)
         };
-        branches.push(json!({
-            "name": name,
-            "upstream": upstream,
-            "latest_subject": subject,
-        }));
+        if needle.as_ref().is_some_and(|n| !name.to_lowercase().contains(n.as_str())) {
+            continue;
+        }
+        matching.push((is_local, name, full));
     }
+    matching.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
+    let total = matching.len();
+    let mut branches = Vec::new();
+    for (is_local, name, full) in matching.into_iter().skip(query.offset).take(limit) {
+        let mut reference =
+            repo.find_reference(full.as_str()).map_err(|e| failed("git branch failed", e))?;
+        let tip = reference.peel_to_id().ok().map(gix::Id::detach);
+        let subject = tip.map(|id| commit_subject(&repo, id)).unwrap_or_default();
+        let mut entry = json!({ "name": name, "local": is_local, "latest_subject": subject });
+        if is_local {
+            let upstream = repo
+                .branch_remote_tracking_ref_name(reference.name(), gix::remote::Direction::Fetch)
+                .and_then(Result::ok);
+            entry["upstream"] = json!(
+                upstream.as_ref().map(|n| short_ref(&n.as_bstr().to_string())).unwrap_or_default()
+            );
+            let upstream_tip = upstream.and_then(|n| {
+                repo.find_reference(n.as_ref()).ok()?.peel_to_id().ok().map(gix::Id::detach)
+            });
+            if let (Some(tip), Some(upstream_tip)) = (tip, upstream_tip) {
+                let count = |from: gix::ObjectId, hidden: gix::ObjectId| {
+                    repo.rev_walk([from]).with_hidden([hidden]).all().map_or(0, Iterator::count)
+                };
+                entry["ahead"] = json!(count(tip, upstream_tip));
+                entry["behind"] = json!(count(upstream_tip, tip));
+            }
+        }
+        branches.push(entry);
+    }
+    let next = query.offset + branches.len();
     Ok(json!({
         "repository": path.to_string_lossy(),
+        "total": total,
         "count": branches.len(),
+        "offset": query.offset,
+        "next_offset": if next < total { json!(next) } else { Value::Null },
         "branches": branches,
     }))
 }
@@ -423,12 +480,36 @@ mod tests {
         assert_eq!(status["recent_commits"][0]["message"], "initial commit");
         assert_eq!(status["recent_commits"][0]["author"], "Test");
 
-        let branches = branches(dir.path()).expect("branches");
+        let branches = branches(dir.path(), &BranchQuery::default()).expect("branches");
         assert_eq!(branches["count"], 2);
         let names: Vec<_> =
             branches["branches"].as_array().unwrap().iter().map(|b| b["name"].clone()).collect();
-        assert!(names.contains(&json!("main")) && names.contains(&json!("feature")));
+        assert_eq!(names, [json!("feature"), json!("main")]);
         assert_eq!(branches["branches"][0]["latest_subject"], "initial commit");
+        assert_eq!(branches["next_offset"], Value::Null);
+
+        let page = |filter: Option<&str>, scope: &str, limit: usize, offset: usize| {
+            super::branches(
+                dir.path(),
+                &BranchQuery {
+                    filter: filter.map(str::to_owned),
+                    scope: scope.into(),
+                    limit,
+                    offset,
+                },
+            )
+        };
+        let first = page(None, "all", 1, 0).expect("page");
+        assert_eq!((first["total"].clone(), first["count"].clone()), (json!(2), json!(1)));
+        assert_eq!(first["next_offset"], 1);
+        let second = page(None, "all", 1, 1).expect("page");
+        assert_eq!(second["branches"][0]["name"], "main");
+        assert_eq!(second["next_offset"], Value::Null);
+        let filtered = page(Some("FEAT"), "all", 10, 0).expect("filter");
+        assert_eq!(filtered["total"], 1);
+        assert_eq!(filtered["branches"][0]["name"], "feature");
+        assert_eq!(page(None, "remote", 10, 0).expect("remote")["total"], 0);
+        assert!(page(None, "every", 10, 0).is_err());
 
         let root = tree(dir.path(), "HEAD", ".").expect("tree");
         assert_eq!(root["entries_count"], 2);

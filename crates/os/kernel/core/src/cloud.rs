@@ -103,13 +103,33 @@ impl SystemSubsystem for CloudSubsystem {
             .read_only(),
             ToolDefinition::new(
                 "github_branches",
-                "List local and tracking remote branches with upstream synchronization status",
+                "List local and remote-tracking branches (local first, then by name) with upstream and ahead/behind for local branches; filtered and paginated, 50 per page by default",
                 json!({
                     "type": "object",
                     "properties": {
                         "repo_path": {
                             "type": "string",
                             "description": "Path to the git repository (defaults to current working directory)"
+                        },
+                        "filter": {
+                            "type": "string",
+                            "description": "Case-insensitive substring of the branch name"
+                        },
+                        "scope": {
+                            "type": "string",
+                            "enum": ["all", "local", "remote"],
+                            "description": "Which branches to list (default all)"
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": crate::cloud_git::BRANCH_PAGE_MAX,
+                            "description": "Page size (default 50)"
+                        },
+                        "offset": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Branches to skip; pass the previous next_offset"
                         }
                     }
                 }),
@@ -212,7 +232,25 @@ impl SystemSubsystem for CloudSubsystem {
             "github_branches" => {
                 let repo_path =
                     resolve_repo_path(arguments.get("repo_path").and_then(Value::as_str))?;
-                blocking(move || crate::cloud_git::branches(&repo_path)).await
+                let query = crate::cloud_git::BranchQuery {
+                    filter: arguments.get("filter").and_then(Value::as_str).map(str::to_owned),
+                    scope: arguments
+                        .get("scope")
+                        .and_then(Value::as_str)
+                        .unwrap_or("all")
+                        .to_owned(),
+                    limit: arguments
+                        .get("limit")
+                        .and_then(Value::as_u64)
+                        .map_or(crate::cloud_git::BRANCH_PAGE, |n| {
+                            usize::try_from(n).unwrap_or(usize::MAX)
+                        }),
+                    offset: arguments
+                        .get("offset")
+                        .and_then(Value::as_u64)
+                        .map_or(0, |n| usize::try_from(n).unwrap_or(usize::MAX)),
+                };
+                blocking(move || crate::cloud_git::branches(&repo_path, &query)).await
             },
             "github_tree" => {
                 let repo_path =
