@@ -280,7 +280,9 @@ test("a failed staged product probe keeps installed files and service untouched"
       /sudo -n install -o root -g root -m 644|systemctl restart/.test(command),
     ),
   ).toBe(false);
-  expect(f.commands.at(-1)).toContain("sudo -n rm -rf -- '/srv/aphrody-lab/.release-");
+  expect(f.commands.at(-1)).toContain(
+    "sudo -n rm -rf -- '/home/ubuntu/.cache/aphrody-discord-release-",
+  );
 });
 
 test("release verifies uploaded bytes, installs the declared unit, and preserves protected stores", async () => {

@@ -294,7 +294,7 @@ const deploymentTransport: DiscordDeploymentTransport = {
     await uploadViaInfraExec(host, source, target, (uploadHost, command) =>
       runInfraCommand(
         uploadHost,
-        `sudo -n -u ${quote("ubuntu")} -H sh -c ${quote(`cd /srv/aphrody-lab && ${command}`)}`,
+        `sudo -n -u ${quote("ubuntu")} -H sh -c ${quote(`cd /home/ubuntu && ${command}`)}`,
       ),
     );
   },
@@ -325,7 +325,7 @@ export async function deployDiscord(
   };
   const draining = await quiesceDiscord(deployment, transport);
   const stage = await mkdtemp(join(tmpdir(), "aphrody-discord-release-"));
-  const remoteStage = `/srv/aphrody-lab/.release-${stage.split("/").at(-1)}`;
+  const remoteStage = `/home/ubuntu/.cache/aphrody-discord-release-${stage.split("/").at(-1)}`;
   let remoteCreated = false;
   let installedChanged = false;
   try {
@@ -354,7 +354,7 @@ export async function deployDiscord(
         .digest("hex");
       await transport.upload(deployment.target, file.source, `${remoteStage}/${file.name}`);
       await exec(
-        `printf '%s  %s\\n' ${quote(hashes[file.name]!)} ${quote(`${remoteStage}/${file.name}`)} | sha256sum -c --quiet -`,
+        `printf '%s  %s\\n' ${quote(hashes[file.name]!)} ${quote(`${remoteStage}/${file.name}`)} | sudo -n sha256sum -c --quiet -`,
       );
     }
     const worker = `${discordRuntime(deployment)} ${quote(`${remoteStage}/omar-monitor.mjs`)} --policy ${quote(`${remoteStage}/omar-monitor-policy.json`)}`;
@@ -378,6 +378,9 @@ export async function deployDiscord(
       await exec(
         `if sudo -n test -f ${quote(target)}; then sudo -n cp -p ${quote(target)} ${quote(`${remoteStage}/previous-${index}`)}; fi`,
       );
+      await exec(
+        `if sudo -n test -f ${quote(target)}; then sudo -n cmp -s ${quote(target)} ${quote(`${remoteStage}/previous-${index}`)}; else test ! -e ${quote(`${remoteStage}/previous-${index}`)}; fi`,
+      );
     }
     await exec(
       `if systemctl is-active --quiet ${quote(deployment.unit)}; then touch ${quote(`${remoteStage}/previous-active`)}; fi`,
@@ -386,7 +389,7 @@ export async function deployDiscord(
     for (const file of files) {
       const target = quote(file.target);
       await exec(
-        `sudo -n install -o root -g root -m 644 ${quote(`${remoteStage}/${file.name}`)} ${quote(`${file.target}.new`)} && sudo -n mv -f ${quote(`${file.target}.new`)} ${target} && printf '%s  %s\\n' ${quote(hashes[file.name]!)} ${target} | sha256sum -c --quiet -`,
+        `sudo -n rm -f -- ${target} ${quote(`${file.target}.new`)} && sudo -n install -o root -g root -m 644 ${quote(`${remoteStage}/${file.name}`)} ${quote(`${file.target}.new`)} && sudo -n mv -f ${quote(`${file.target}.new`)} ${target} && printf '%s  %s\\n' ${quote(hashes[file.name]!)} ${target} | sudo -n sha256sum -c --quiet -`,
       );
     }
     const failed = await applyPlan(deployment.plan, transport.run, log);
@@ -411,7 +414,7 @@ export async function deployDiscord(
         const previous = quote(`${remoteStage}/previous-${index}`);
         const restored = await transport.run(
           deployment.target,
-          `if sudo -n test -f ${previous}; then sudo -n install -o root -g root -m 644 ${previous} ${quote(target)}; else sudo -n rm -f -- ${quote(target)}; fi`,
+          `sudo -n rm -f -- ${quote(target)} ${quote(`${target}.new`)} && if sudo -n test -f ${previous}; then sudo -n install -o root -g root -m 644 ${previous} ${quote(target)}; else sudo -n rm -f -- ${quote(target)}; fi`,
         );
         if (restored.code !== 0) log(`Release rollback failed for ${target} (${restored.code})`);
       }

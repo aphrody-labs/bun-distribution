@@ -79,6 +79,9 @@ du remplacement déployé.
 
 L’installation compose le plan Infra, vérifie les SHA-256 des uploads,
 contrôle l’accès au salon et initialise Codex avant d’activer le service.
+Les artefacts temporaires et les sauvegardes vérifiées restent sous le cache
+privé du compte `ubuntu`; le bundle précédent est retiré de `/srv` uniquement
+après copie et comparaison afin de permettre les déploiements sur un volume plein.
 Une mise à jour utilise le protocole produit de drainage : `SIGUSR1` demande
 au PID réel de systemd de finir son objectif en cours sans en démarrer un autre.
 Le signal attend d’abord `--ready-check --expect-pid`, qui prouve que ce
