@@ -148,7 +148,10 @@ describe("systemd", () => {
     expect(sharedDropin("/nonexistent", "sandbox-base.conf")).toContain("ProtectSystem=strict");
     if (existsSync(join(ctx.yoloRoot, "tools/config/host/systemd/shared/sandbox-base.conf"))) {
       expect(sharedDropin(ctx.yoloRoot, "sandbox-base.conf")).toBe(
-        readFileSync(join(ctx.yoloRoot, "tools/config/host/systemd/shared/sandbox-base.conf"), "utf8"),
+        readFileSync(
+          join(ctx.yoloRoot, "tools/config/host/systemd/shared/sandbox-base.conf"),
+          "utf8",
+        ),
       );
     }
   });
@@ -456,20 +459,24 @@ describe("windows", () => {
     const open = xml.match(/<[a-z]+[ >]/g)!.length;
     expect(open).toBeGreaterThan(8);
   });
-  test.skipIf(!Bun.which("pwsh"))("PowerShell parses every script without syntax errors", () => {
-    for (const file of ["build-windows.ps1", "install-service.ps1", "uninstall-service.ps1"]) {
-      const script = `$e = $null; $t = $null; [System.Management.Automation.Language.Parser]::ParseFile('${join(out, "windows", file)}', [ref]$t, [ref]$e) | Out-Null; if ($e.Count -gt 0) { $e | ForEach-Object { $_.Message }; exit 1 }`;
+  test.skipIf(!Bun.which("pwsh"))(
+    "PowerShell parses every script without syntax errors",
+    () => {
+      const files = ["build-windows.ps1", "install-service.ps1", "uninstall-service.ps1"].map(
+        (file) => join(out, "windows", file),
+      );
+      const script = `foreach ($f in @(${files.map((file) => `'${file}'`).join(", ")})) { $e = $null; $t = $null; [System.Management.Automation.Language.Parser]::ParseFile($f, [ref]$t, [ref]$e) | Out-Null; foreach ($x in $e) { "$(Split-Path $f -Leaf): $($x.Message)" } }`;
       const proc = Bun.spawnSync(["pwsh", "-NoProfile", "-NonInteractive", "-Command", script], {
         stdout: "pipe",
         stderr: "pipe",
       });
-      expect({ file, out: proc.stdout.toString().trim(), code: proc.exitCode }).toEqual({
-        file,
+      expect({ out: proc.stdout.toString().trim(), code: proc.exitCode }).toEqual({
         out: "",
         code: 0,
       });
-    }
-  });
+    },
+    30_000,
+  );
 });
 
 describe("linux-image", () => {
@@ -496,5 +503,5 @@ describe("linux-image", () => {
     expect(Bun.spawnSync(["file", bin], { stdout: "pipe" }).stdout.toString()).toMatch(
       /statically linked/,
     );
-  });
+  }, 30_000);
 });

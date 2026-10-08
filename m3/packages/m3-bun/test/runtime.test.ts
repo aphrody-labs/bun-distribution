@@ -29,7 +29,11 @@ describe("runtimeSdkPath", () => {
 describe("launch", () => {
   test("starts a process, waits for its HTTP port, stops it, and says how", async () => {
     const port = freePort();
-    const child = await launch(process.execPath, { args: [script()], port, env: { PORT: String(port) } });
+    const child = await launch(process.execPath, {
+      args: [script()],
+      port,
+      env: { PORT: String(port) },
+    });
     try {
       expect(["yolo-runtime", "bun-spawn"]).toContain(child.via);
       expect(child.readyStatus).toBe(200);
@@ -46,7 +50,9 @@ describe("launch", () => {
     const file = join(tmp(), "idle.ts");
     writeFileSync(file, "setInterval(() => {}, 1 << 30);\n");
     const started = Date.now();
-    await expect(launch(process.execPath, { args: [file], port: freePort(), timeoutMs: 600 })).rejects.toBeDefined();
+    await expect(
+      launch(process.execPath, { args: [file], port: freePort(), timeoutMs: 600 }),
+    ).rejects.toBeDefined();
     expect(Date.now() - started).toBeLessThan(5000);
   }, 30_000);
 });
@@ -55,11 +61,25 @@ describe("smoke", () => {
   test("GETs each path, checks status and content type, reports ok", async () => {
     const port = freePort();
     // `launch` runs the program with the given args; a tiny wrapper script makes a runnable "executable".
-    const wrapper = join(tmp(), "run.sh");
-    writeFileSync(wrapper, `#!/bin/sh\nexec ${process.execPath} ${script()}\n`, { mode: 0o755 });
-    const report = await smoke(wrapper, port, ["/", "/healthz"], { "/": "text/html", "/healthz": "application/json" });
+    const wrapper = join(tmp(), process.platform === "win32" ? "run.exe" : "run.sh");
+    if (process.platform === "win32") {
+      const compiled = Bun.spawnSync(
+        [process.execPath, "build", "--compile", script(), "--outfile", wrapper],
+        { stdout: "pipe", stderr: "pipe" },
+      );
+      expect(compiled.stderr.toString()).not.toContain("error");
+    } else {
+      writeFileSync(wrapper, `#!/bin/sh\nexec ${process.execPath} ${script()}\n`, { mode: 0o755 });
+    }
+    const report = await smoke(wrapper, port, ["/", "/healthz"], {
+      "/": "text/html",
+      "/healthz": "application/json",
+    });
     expect(report.ok).toBe(true);
-    expect(report.checks.map((c) => [c.path, c.status])).toEqual([["/", 200], ["/healthz", 200]]);
+    expect(report.checks.map((c) => [c.path, c.status])).toEqual([
+      ["/", 200],
+      ["/healthz", 200],
+    ]);
     const wrong = await smoke(wrapper, freePort(), ["/"], { "/": "application/json" });
     expect(wrong.ok).toBe(false);
   }, 30_000);

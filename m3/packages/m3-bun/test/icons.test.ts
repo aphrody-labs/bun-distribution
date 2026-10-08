@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
+import { resolve } from "node:path";
 import {
   iconFile,
   iconUrl,
@@ -109,7 +110,7 @@ describe("readIcon", () => {
     const saved = Bun.env.M3_ICONS_ROOT;
     Bun.env.M3_ICONS_ROOT = "/somewhere/else";
     try {
-      expect(iconsRoot()).toBe("/somewhere/else");
+      expect(iconsRoot()).toBe(resolve("/somewhere/else"));
     } finally {
       if (saved === undefined) delete Bun.env.M3_ICONS_ROOT;
       else Bun.env.M3_ICONS_ROOT = saved;
