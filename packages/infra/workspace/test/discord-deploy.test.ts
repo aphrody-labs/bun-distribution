@@ -6,6 +6,7 @@ import { join } from "node:path";
 import {
   deployDiscord,
   discordDeployment,
+  parseRemoteExit,
   quiesceDiscord,
   type DiscordDeploymentTransport,
 } from "../src/discord.ts";
@@ -70,6 +71,14 @@ function fixture(fail: (command: string) => boolean = () => false, native = true
   return { commands, uploads, builds, transport };
 }
 const quiet = () => {};
+
+test("remote exit markers preserve systemctl status codes through Infra transport", () => {
+  expect(parseRemoteExit("ActiveState=inactive\n__APHRODY_EXIT_CODE__=3\n", 0)).toEqual({
+    code: 3,
+    stdout: "ActiveState=inactive",
+  });
+  expect(parseRemoteExit("normal output\n", 0)).toEqual({ code: 0, stdout: "normal output\n" });
+});
 
 test("an absent or changed Yolo fork cannot signal, build or upload a monitor release", async () => {
   const f = fixture((command) => command.includes("sha256sum -c"));

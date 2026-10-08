@@ -23,6 +23,15 @@ import {
 
 const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
 
+export function parseRemoteExit(stdout: string, fallback: number) {
+  const marker = /\n?__APHRODY_EXIT_CODE__=(\d+)\s*$/.exec(stdout);
+  if (!marker) return { code: fallback, stdout };
+  return {
+    code: Number(marker[1]),
+    stdout: stdout.slice(0, marker.index).trimEnd(),
+  };
+}
+
 export interface DiscordDeployment {
   target: string;
   unit: string;
@@ -201,8 +210,10 @@ async function resumeDiscord(
 
 const deploymentTransport: DiscordDeploymentTransport = {
   async run(host, command) {
-    const result = await runInfra({ args: ["ssh", "exec", "--host", host, "--cmd", command] });
-    return { code: result.exitCode, stdout: result.stdout, stderr: result.stderr };
+    const wrapped = `set +e; { ${command}; }; status=$?; printf '\\n__APHRODY_EXIT_CODE__=%s\\n' "$status"; exit 0`;
+    const result = await runInfra({ args: ["ssh", "exec", "--host", host, "--cmd", wrapped] });
+    const remote = parseRemoteExit(result.stdout, result.exitCode);
+    return { ...remote, stderr: result.stderr };
   },
   async upload(host, source, target) {
     const result = await runInfra({
