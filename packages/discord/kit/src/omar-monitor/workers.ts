@@ -56,17 +56,34 @@ export class WorkerPool {
     private readonly local: Codex,
   ) {}
 
-  async select(job: Job): Promise<{ hostId: string; policy: Policy; codex: Codex }> {
+  async select(job: Job): Promise<{
+    hostId: string;
+    policy: Policy;
+    codex: Codex;
+    fallbackFrom?: string;
+  }> {
     const hostId = workerHostId(this.policy, job);
     if (hostId === "local") return { hostId, policy: this.policy, codex: this.local };
     const existing = this.clients.get(hostId);
     if (existing) return { hostId, ...existing };
     const host = this.policy.workerHosts?.find((candidate) => candidate.id === hostId);
-    if (!host) throw new WorkerUnavailable(hostId, "host removed from declared policy");
-    const policy = remotePolicy(this.policy, host);
-    const codex = new Codex(policy);
+    const fallback = () => ({
+      hostId: "local",
+      policy: this.policy,
+      codex: this.local,
+      fallbackFrom: hostId,
+    });
+    if (!host) {
+      if (job.worker_thread)
+        throw new WorkerUnavailable(hostId, "host removed from declared policy");
+      return fallback();
+    }
+    let policy: Policy;
+    let codex: Codex | undefined;
     let deadline: ReturnType<typeof setTimeout> | undefined;
     try {
+      policy = remotePolicy(this.policy, host);
+      codex = new Codex(policy);
       await Promise.race([
         codex.initialize(),
         new Promise<never>((_resolve, reject) => {
@@ -74,11 +91,13 @@ export class WorkerPool {
         }),
       ]);
     } catch {
-      codex.close();
+      codex?.close();
+      if (!job.worker_thread) return fallback();
       throw new WorkerUnavailable(hostId, "authenticated SSH/Codex transport unavailable");
     } finally {
       clearTimeout(deadline);
     }
+    if (!codex) throw new WorkerUnavailable(hostId, "Codex worker was not initialized");
     this.clients.set(hostId, { policy, codex });
     return { hostId, policy, codex };
   }

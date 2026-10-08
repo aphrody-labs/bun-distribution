@@ -171,12 +171,14 @@ jour un service arrêté : PID zéro, état effectivement inactif et absence
 d’objectif actif doivent être prouvés avant tout upload. Il refuse toujours
 un service en démarrage, un objectif actif et un reçu provenant d’un autre PID.
 
-Les nouveaux objectifs utilisent le Codex complet du WSL du propriétaire via
-SSH stdio authentifié, sans transmettre les credentials du VPS. Le checkout,
-le MCP et l’authentification restent sur WSL. Les threads déjà persistés
-conservent leur hôte. Les demandes nécessitant explicitement le PC d’Omar
-restent bloquées tant que son endpoint est injoignable et que son environnement
-Codex/MCP n’a pas été qualifié ; aucun accès fictif n’est annoncé.
+Les nouveaux objectifs tentent le Codex complet du WSL du propriétaire via
+SSH stdio authentifié. Si ce worker ne peut pas s’initialiser avant la création
+du thread, le moniteur démarre un thread distinct sur le Codex du VPS et lui
+interdit de prétendre avoir agi sur l’hôte distant ou d’y déplacer une tâche
+qui doit y être exécutée. Il accomplit le travail indépendant et garde bloquée
+toute dépendance d’accès réelle. Un thread déjà persisté conserve son hôte.
+Au démarrage, les pings sans thread et les anciens pings ignorés sont remis en
+file afin qu’ils reçoivent chacun un objectif et un worker.
 
 Les prompts imposent NHITL pour les actions déjà autorisées et les gates du
 dépôt ; une information indispensable manquante doit être décrite dans `needs`,
@@ -205,7 +207,7 @@ validation systemd et activation du plan Infra.
 L’observation est consignée dans
 [`omar-monitor-2026-10-08.md`](../../../tools/config/host/inventory/omar-monitor-2026-10-08.md).
 
-## État recontrôlé le 2026-10-09
+## État recontrôlé le 2026-10-08 à 22:18 UTC
 
 Le contrôle Infra a relu le reçu du PID systemd vivant `2026120` : Gateway
 connecté, drainage inactif, 15 salons, 15 marqueurs d’historique terminés et
@@ -222,7 +224,15 @@ thread. La connexion SSH depuis le VPS vers `10.200.77.2:22` expire; le worker
 WSL et l’exécution de ces cinq objectifs ne sont donc pas qualifiés. Les deux
 messages ignorés n’ont pas de thread exécuteur. La présence du service ne prouve
 pas que chaque ping a été traité avec succès; garder le moniteur actif et
-rétablir le worker WSL avant de conclure l’objectif.
+qualifier toutes les dépendances avant de conclure les objectifs.
+
+Le 2026-10-08 à 22:24 UTC, le workflow Infra a activé le bundle
+`63ab825e57de336d716828f7ab78aeda7935ba6ccbe84995567bdcfb6436e05b` avec le
+repli par thread VPS et la reprise des pings sans worker. À 22:30 UTC, le PID
+`2138001` est actif sans redémarrage; Gateway connecté, 15 salons et 15 threads
+moniteur. La file compte 3 `achieved`, 9 `blocked`, 1 `executing` et 2
+`pending`; 13 pings ont déjà un thread exécuteur, les deux derniers attendent
+leur tour. Cette observation ne ferme pas les objectifs bloqués ou en attente.
 
 Qualification du correctif : 33 tests produit/routage/outbox/livraison réussis,
 TypeScript des deux propriétaires, oxlint strict, oxfmt et liens documentaires

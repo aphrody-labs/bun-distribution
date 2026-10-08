@@ -46,7 +46,7 @@ le même service déclaré.
 Cette observation ne prouve pas que les 7 objectifs `pending` sont terminés.
 La release et l’unification VNC/computer-use restent des chantiers distincts.
 
-## Recontrôle — 2026-10-09
+## Recontrôle — 2026-10-08 22:18 UTC
 
 Le service `aphrody-discord-omar-monitor.service` répond `active/running`,
 PID `2026120`, `ExecMainStatus=0`, `NRestarts=0`. Le contrôle `--ready-check
@@ -64,7 +64,32 @@ La file compte 3 `achieved`, 10 `blocked` et 2 `ignored`; aucun objectif
 n’est actuellement en attente ou en cours. Cinq objectifs bloqués ont un
 thread exécuteur, un est affecté à `local` avec thread, et cinq sont affectés à
 `owner-wsl` sans thread exécuteur. Depuis le VPS, SSH vers `10.200.77.2:22`
-expire après cinq secondes. Le poste de travail de cette session n’a pas
+expire après cinq secondes. Son pair WireGuard n’a plus de handshake depuis
+environ 8 h 25; le port 22 de `10.200.77.4` répond, mais ce PC est un autre pair
+et ne remplace pas le worker WSL. Le poste de travail de cette session n’a pas
 d’interface WireGuard active ni de commande `wg`; cette session ne peut donc
 pas rétablir ce lien. Les cinq objectifs concernés restent ouverts et le
 moniteur reste actif.
+
+## Repli worker installé — 2026-10-08 22:30 UTC
+
+Le workflow `yolo ops discord deploy omar-monitor --target vps --apply` a
+construit, transféré, hashé, sondé et activé le bundle
+`63ab825e57de336d716828f7ab78aeda7935ba6ccbe84995567bdcfb6436e05b`.
+La politique n’a pas changé (`d737f235fc81d0f757d1a371e24ea05921f42b1680c13a10a1c08547247eae81`).
+Le service est `active/running`, PID `2138001`, `NRestarts=0`,
+`ExecMainStatus=0`. Le contrôle readiness a confirmé le PID.
+
+Au démarrage, la nouvelle version a remis en file les 2 pings auparavant
+`ignored` et les 5 objectifs `owner-wsl` qui n’avaient aucun thread. Elle
+attribue un objectif de traitement à toute mention valide, même quand le
+planificateur n’extrait pas de demande détaillée. Si le worker distant ne peut
+pas s’initialiser, un thread Codex séparé démarre sur le VPS avec l’instruction
+de ne pas prétendre avoir modifié l’autre hôte ni d’y déplacer son travail.
+
+Reçu du 2026-10-08 à 22:30:03 UTC : Gateway connecté, 15 salons, 15 threads
+moniteur; 3 `achieved`, 9 `blocked`, 1 `executing`, 2 `pending`; 13/15
+objectifs ont un thread exécuteur. Le worker actif traite un objectif, les deux
+autres attendent leur tour. Les objectifs `blocked` restent ouverts; la tâche
+reste en cours jusqu’à ce que les 15 pings aient un worker et que les
+dépendances réelles soient qualifiées.

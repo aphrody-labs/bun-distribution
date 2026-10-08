@@ -212,13 +212,22 @@ results apply to their named revisions and dates, not current host health.
 
 ## 6. Decision ledger (append-only)
 
-- **2026-10-09:** rechecked the live all-guild Discord monitor. The systemd
+- **2026-10-08:** rechecked the live all-guild Discord monitor. The systemd
   process and installed bundle/policy checksums are healthy; Gateway receipt
   still covers all 15 channels and history markers. The durable queue has 3
   achieved, 10 blocked and 2 ignored goals. Five `owner-wsl` goals have no
   worker thread because VPS SSH to `10.200.77.2:22` times out. Keep this goal
   open until WSL connectivity and those worker threads are restored. Current
   evidence: [`omar-monitor-2026-10-08.md`](../../tools/config/host/inventory/omar-monitor-2026-10-08.md).
+
+- **2026-10-08:** deployed the worker fallback and ping recovery through the
+  Infra Discord workflow. Each valid mention now receives a goal even when
+  planning returns an empty list; unspawned `ignored` and `owner-wsl` blocked
+  pings are requeued. If remote Codex cannot initialize, a dedicated VPS
+  worker thread handles host-independent work and preserves remote-only
+  dependencies as blocked. At 22:30 UTC, 13/15 pings had worker threads and
+  two were queued; service remained active and Gateway connected. Evidence:
+  [`omar-monitor-2026-10-08.md`](../../tools/config/host/inventory/omar-monitor-2026-10-08.md).
 
 - **2026-10-08:** deployed the all-guild Discord monitor on VPS through the Infra
   workspace workflow. Candidate probe, 15-channel Gateway discovery, 15/15

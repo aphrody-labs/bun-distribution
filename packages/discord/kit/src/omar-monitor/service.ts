@@ -348,6 +348,9 @@ export async function startOmarMonitor(policy: Policy, options: OmarMonitorOptio
   }
   await mkdir(dirname(policy.store), { recursive: true, mode: 0o700 });
   const queue = new Queue(policy.store);
+  const recovered = queue.requeueUnspawnedPings();
+  if (recovered.ignored || recovered.unavailableWorkers)
+    console.info(JSON.stringify({ event: "requeued-unspawned-pings", ...recovered }));
   const workers = new WorkerPool(policy, codex);
   await chmod(policy.store, 0o600);
   let stopping = false;
@@ -554,12 +557,16 @@ export async function startOmarMonitor(policy: Policy, options: OmarMonitorOptio
           });
           continue;
         }
-        job.goals = JSON.stringify(plan.goals);
+        const goals = plan.goals.length
+          ? plan.goals
+          : [
+              "Traiter ce ping Discord mentionné : déterminer ce qui est demandé. Si aucune action n’est formulée, répondre brièvement qu’aucune consigne n’accompagne la mention et proposer un prochain pas sans inventer de tâche.",
+            ];
+        job.goals = JSON.stringify(goals);
         queue.update(job.id, {
           goals: job.goals,
-          state: plan.goals.length ? "executing" : "ignored",
+          state: "executing",
         });
-        if (!plan.goals.length) continue;
       }
       let worker: Awaited<ReturnType<WorkerPool["select"]>>;
       try {
@@ -580,10 +587,13 @@ export async function startOmarMonitor(policy: Policy, options: OmarMonitorOptio
       queue.update(job.id, { worker_host: worker.hostId });
       worker.codex.onEvent = codex.onEvent;
       if (!job.worker_thread) {
+        const routingInstructions = worker.fallbackFrom
+          ? `\n\nRoutage de repli : l’hôte ${worker.fallbackFrom} est indisponible. Ce thread s’exécute sur le VPS. N’affirme pas avoir accédé ou modifié cet hôte. Accomplis le travail qui ne dépend pas de lui; ne déplace pas vers le VPS une opération qui doit impérativement s’exécuter sur cet hôte. Si son accès est indispensable, garde l’objectif bloqué et nomme la dépendance précise.`
+          : "";
         job.worker_thread = await worker.codex.thread(
           worker.policy,
           "worker",
-          workerInstructions + "\n" + webInstructions,
+          workerInstructions + "\n" + webInstructions + routingInstructions,
         );
         queue.update(job.id, { worker_thread: job.worker_thread });
       }

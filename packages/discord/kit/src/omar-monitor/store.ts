@@ -172,6 +172,21 @@ export class Queue {
           .run().changes,
     )();
   }
+  requeueUnspawnedPings(): { ignored: number; unavailableWorkers: number } {
+    return this.db.transaction(() => {
+      const ignored = this.db
+        .query(
+          "UPDATE jobs SET state='pending',goals=NULL,worker_host=NULL WHERE state='ignored' AND worker_thread IS NULL",
+        )
+        .run().changes;
+      const unavailableWorkers = this.db
+        .query(
+          "UPDATE jobs SET state='pending',worker_host=NULL WHERE state='blocked' AND worker_thread IS NULL AND worker_host IN ('owner-wsl','omar-wsl')",
+        )
+        .run().changes;
+      return { ignored, unavailableWorkers };
+    })();
+  }
   post(nonce: string, source: string, text: string, channelId = "") {
     this.db
       .query("INSERT OR IGNORE INTO outbox VALUES(?,?,?,?)")
