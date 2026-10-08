@@ -42,31 +42,12 @@ export function parseSemver(input: string): Semver | null {
   };
 }
 
-/** SemVer 2.0 precedence: a pre-release sorts below its release; numeric ids below alphanumeric. */
+/** SemVer 2.0 precedence (Bun.semver.order) after the same validation and prefix stripping as parseSemver. */
 export function compareSemver(a: string, b: string): number {
-  const left = parseSemver(a);
-  const right = parseSemver(b);
-  if (!left || !right) throw new Error(`invalid semver: ${!left ? a : b}`);
-  for (const key of ["major", "minor", "patch"] as const) {
-    if (left[key] !== right[key]) return left[key] < right[key] ? -1 : 1;
-  }
-  if (left.pre.length === 0 && right.pre.length === 0) return 0;
-  if (left.pre.length === 0) return 1;
-  if (right.pre.length === 0) return -1;
-  const length = Math.max(left.pre.length, right.pre.length);
-  for (let index = 0; index < length; index++) {
-    const l = left.pre[index];
-    const r = right.pre[index];
-    if (l === undefined) return -1;
-    if (r === undefined) return 1;
-    const ln = /^\d+$/.test(l);
-    const rn = /^\d+$/.test(r);
-    if (ln && rn) {
-      if (Number(l) !== Number(r)) return Number(l) < Number(r) ? -1 : 1;
-    } else if (ln !== rn) return ln ? -1 : 1;
-    else if (l !== r) return l < r ? -1 : 1;
-  }
-  return 0;
+  if (!parseSemver(a)) throw new Error(`invalid semver: ${a}`);
+  if (!parseSemver(b)) throw new Error(`invalid semver: ${b}`);
+  const bare = (version: string) => version.replace(/^[=^~v\s]*/, "").trim();
+  return Bun.semver.order(bare(a), bare(b));
 }
 
 /** Highest version of the requested major line (pre-releases included), ignoring yanked/invalid ids. */
@@ -822,7 +803,9 @@ export async function runTauriSync(argv: string[]): Promise<number> {
     );
     return message === "help" ? 0 : (console.error(message), 2);
   }
-  const config = parseConfig(await readFile(join(args.root, "tools/config/tauri-upstream.json"), "utf8"));
+  const config = parseConfig(
+    await readFile(join(args.root, "tools/config/tauri-upstream.json"), "utf8"),
+  );
   const report = await buildReport(args.root, config, args.offline);
   console.log(args.json ? JSON.stringify(report, null, 2) : renderReport(report));
   if (args.apply) {

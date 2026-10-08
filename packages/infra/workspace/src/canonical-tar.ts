@@ -29,7 +29,6 @@ function openZlib() {
       args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.u64, FFIType.i32],
       returns: FFIType.i32,
     },
-    crc32: { args: [FFIType.u64, FFIType.ptr, FFIType.u32], returns: FFIType.u64 },
   } as const;
   const names =
     process.platform === "darwin"
@@ -65,16 +64,6 @@ function deflateRaw(data: Uint8Array, level: number): Uint8Array {
   return output.subarray(2, Number(length[0]) - 4);
 }
 
-function crc32(data: Uint8Array): number {
-  zlib ??= openZlib();
-  let crc = 0;
-  for (let offset = 0; offset < data.length; offset += 1 << 30) {
-    const chunk = data.subarray(offset, Math.min(data.length, offset + (1 << 30)));
-    crc = Number(zlib.crc32(crc, ptr(chunk), chunk.length));
-  }
-  return crc;
-}
-
 /** gzip.GzipFile(filename='', compresslevel=9, mtime=0): no FNAME, XFL=2, OS=255. */
 export function gzipCanonical(data: Uint8Array): Uint8Array {
   const body = deflateRaw(data, 9);
@@ -82,7 +71,7 @@ export function gzipCanonical(data: Uint8Array): Uint8Array {
   output.set([0x1f, 0x8b, 8, 0, 0, 0, 0, 0, 2, 255]);
   output.set(body, 10);
   const view = new DataView(output.buffer);
-  view.setUint32(10 + body.length, crc32(data), true);
+  view.setUint32(10 + body.length, Bun.hash.crc32(data), true);
   view.setUint32(14 + body.length, data.length % 2 ** 32, true);
   return output;
 }

@@ -176,14 +176,6 @@ export async function discover(root: string, scanSkip: string[]): Promise<Discov
 // Workspace membership and registry coverage
 // ---------------------------------------------------------------------------------------------------------
 
-function globToRegExp(glob: string): RegExp {
-  const escaped = glob
-    .split("*")
-    .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
-    .join("[^/]*");
-  return new RegExp(`^${escaped}$`);
-}
-
 function stringArray(cargoToml: string, key: "members" | "exclude"): string[] {
   const workspace = /\[workspace\]([\s\S]*?)(?=^\[|(?![\s\S]))/m.exec(cargoToml)?.[1] ?? "";
   const array = new RegExp(`^${key}\\s*=\\s*\\[([\\s\\S]*?)\\]`, "m").exec(workspace)?.[1] ?? "";
@@ -194,9 +186,9 @@ export type WorkspaceState = "member" | "excluded" | "upstream" | "outside";
 
 /** Whether a crate directory is a member of the root Cargo workspace, excluded from it, or elsewhere. */
 export function workspaceState(cargoToml: string, dir: string): WorkspaceState {
-  if (stringArray(cargoToml, "exclude").some((glob) => globToRegExp(glob).test(dir)))
+  if (stringArray(cargoToml, "exclude").some((glob) => new Bun.Glob(glob).match(dir)))
     return "excluded";
-  if (stringArray(cargoToml, "members").some((glob) => globToRegExp(glob).test(dir)))
+  if (stringArray(cargoToml, "members").some((glob) => new Bun.Glob(glob).match(dir)))
     return "member";
   return dir === "upstream" || dir.startsWith("upstream/") ? "upstream" : "outside";
 }
@@ -527,7 +519,9 @@ export async function runTauriApps(argv: string[]): Promise<number> {
     console.log("Usage: yolo ops tauri-apps [--root <repo>] [--check] [--fix] [--json]");
     return message === "help" ? 0 : (console.error(message), 2);
   }
-  const registry = parseRegistry(await readFile(join(args.root, "tools/config/tauri-apps.json"), "utf8"));
+  const registry = parseRegistry(
+    await readFile(join(args.root, "tools/config/tauri-apps.json"), "utf8"),
+  );
   if (args.fix) {
     const version = pinnedTauriVersion(await readFile(join(args.root, "Cargo.toml"), "utf8"));
     if (!version) throw new Error("root Cargo.toml has no pinned tauri version");
