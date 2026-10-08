@@ -8,6 +8,7 @@
 pub mod awesome;
 mod distribution;
 mod github;
+pub mod history;
 pub mod ingest;
 pub mod project;
 mod repository;
@@ -36,6 +37,7 @@ pub use distribution::{
 };
 pub use github::{ApiMethod, ApiResponse, GitHubClient};
 pub use gix;
+pub use history::{Divergence, History, HistoryOptions, Hotspot, LogEntry, repository_history};
 pub use octocrab;
 pub use project::{
     GitBranch, GitCommitGraph, GitCommitNode, GitDiffItem, GitTreeNode, GitWorktreeInfo,

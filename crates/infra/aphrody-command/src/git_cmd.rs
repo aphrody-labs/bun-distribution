@@ -4,19 +4,34 @@
 use std::{path::PathBuf, str::FromStr};
 
 use aphrody_git::{
-    ApiMethod, GitHubClient, GitHubRepository, InstallMode, audit_ecosystem_workflows,
-    inspect_repository, install_consumer_workflow, rollout_ecosystem_workflows,
+    ApiMethod, GitHubClient, GitHubRepository, HistoryOptions, InstallMode,
+    audit_ecosystem_workflows, inspect_repository, install_consumer_workflow, repository_history,
+    rollout_ecosystem_workflows,
 };
 use serde_json::{Value, json};
 
 /// Native Git/GitHub operations.
 #[derive(clap::Subcommand, Debug, Clone)]
 pub(crate) enum GitAction {
-    /// Inspect branch, HEAD, remotes and status with pure-Rust gix.
+    /// Inspect branch, HEAD, remotes, status, ahead/behind remote branches, recent log and
+    /// change hotspots with pure-Rust gix.
     Inspect {
         /// Any path inside the repository.
         #[arg(default_value = ".")]
         path: PathBuf,
+        /// Recent first-parent commits to list.
+        #[arg(long, default_value_t = 10)]
+        log: usize,
+        /// Most changed files to list (0 disables the scan).
+        #[arg(long, default_value_t = 10)]
+        hotspots: usize,
+        /// First-parent commits scanned for hotspots.
+        #[arg(long, default_value_t = 200)]
+        window: usize,
+        /// Revision to count ahead/behind against (repeatable, e.g. upstream/main). Default:
+        /// the tracking branch and every <remote>/<branch> of the current branch.
+        #[arg(long)]
+        against: Vec<String>,
         /// Pretty-print JSON.
         #[arg(long)]
         pretty: bool,
@@ -252,9 +267,25 @@ pub(crate) enum SourceAction {
 
 pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
     match action {
-        GitAction::Inspect { path, pretty } => {
-            let snapshot = inspect_repository(path).map_err(to_report)?;
-            emit(&serde_json::to_value(snapshot).map_err(to_report)?, pretty)?;
+        GitAction::Inspect { path, log, hotspots, window, against, pretty } => {
+            let snapshot = inspect_repository(&path).map_err(to_report)?;
+            let history = repository_history(
+                &path,
+                &HistoryOptions {
+                    log,
+                    hotspots,
+                    window: if hotspots == 0 { 0 } else { window },
+                    against,
+                },
+            )
+            .map_err(to_report)?;
+            let mut value = serde_json::to_value(snapshot).map_err(to_report)?;
+            if let (Some(object), Value::Object(extra)) =
+                (value.as_object_mut(), serde_json::to_value(history).map_err(to_report)?)
+            {
+                object.extend(extra);
+            }
+            emit(&value, pretty)?;
         },
         GitAction::Repo { repository, path, pretty } => {
             let repository = match repository {
