@@ -597,6 +597,7 @@ dependencies = [
  "libc",
  "obscura-net",
  "pretty_assertions",
+ "reqwest 0.13.5",
  "serde",
  "serde_json",
  "sysinfo 0.39.6",
@@ -866,6 +867,7 @@ dependencies = [
  "aphrody-config",
  "aphrody-create-tauri-app",
  "aphrody-diagnostics",
+ "aphrody-discord",
  "aphrody-embed",
  "aphrody-fsindex",
  "aphrody-gateway",
@@ -1062,6 +1064,25 @@ dependencies = [
  "aphrody-bindgen",
  "libc",
  "libloading 0.9.0",
+]
+
+[[package]]
+name = "aphrody-discord"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "aphrody-bun-bridge",
+ "aphrody-web-extract",
+ "chrono",
+ "clap",
+ "hex",
+ "reqwest 0.13.5",
+ "ring",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]

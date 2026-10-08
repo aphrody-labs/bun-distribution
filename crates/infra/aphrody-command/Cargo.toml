@@ -127,6 +127,7 @@ aphrody-proc = { workspace = true }
 rustls                    = { workspace = true }
 aphrody-native            = { workspace = true }
 aphrody-bun-bridge        = { workspace = true }
+aphrody-discord           = { workspace = true }
 aphrody-terminal-backend  = { workspace = true }
 aphrody-term              = { workspace = true }
 # Natural-language fallback (`auto_command`) routes prompts to a running
