@@ -88,7 +88,7 @@ for (const exitCode of [0, 17])
       ...factoryTransientShell(f.transient, f.docker, undefined, "/usr/bin/sudo"),
       'mkdir -p "$TMPDIR/nested"; printf payload > "$TMPDIR/nested/output"',
       `exit ${exitCode}`,
-    ].posix.join("\n");
+    ].join("\n");
     const result = Bun.spawnSync(["bash", "-c", script], { stdout: "pipe", stderr: "pipe" });
     expect(result.exitCode).toBe(exitCode);
     expect(result.stderr.toString()).not.toContain("not qualified");
@@ -107,7 +107,7 @@ linuxTest("scratch symlink is preserved without entering or deleting its target"
       [
         "set -euo pipefail",
         ...factoryTransientShell(f.transient, f.docker, undefined, "/usr/bin/sudo"),
-      ].posix.join("\n"),
+      ].join("\n"),
     ],
     { stderr: "pipe" },
   );
@@ -131,7 +131,7 @@ linuxTest("live background child keeps scratch until its handle terminates", asy
           "set -euo pipefail",
           ...factoryTransientShell(f.transient, f.docker, undefined, "/usr/bin/sudo"),
           'printf payload > "$TMPDIR/output"',
-        ].posix.join("\n"),
+        ].join("\n"),
       ],
       { stderr: "pipe" },
     );
@@ -149,7 +149,7 @@ linuxTest("live background child keeps scratch until its handle terminates", asy
       [
         "set -euo pipefail",
         ...factoryTransientShell(f.transient, f.docker, undefined, "/usr/bin/sudo"),
-      ].posix.join("\n"),
+      ].join("\n"),
     ],
     { stderr: "pipe" },
   );
@@ -172,7 +172,7 @@ linuxTest("Docker bind source preserves scratch without a host process handle", 
       [
         "set -euo pipefail",
         ...factoryTransientShell(f.transient, f.docker, undefined, "/usr/bin/sudo"),
-      ].posix.join("\n"),
+      ].join("\n"),
     ],
     { stderr: "pipe" },
   );
@@ -207,7 +207,7 @@ for (const reference of ["environment", "queued argument"])
           [
             "set -euo pipefail",
             ...factoryTransientShell(f.transient, f.docker, undefined, "/usr/bin/sudo"),
-          ].posix.join("\n"),
+          ].join("\n"),
         ],
         { stderr: "pipe" },
       );
@@ -230,7 +230,7 @@ linuxTest("SIGTERM empties joined scratch and preserves signal exit status", () 
         ...factoryTransientShell(f.transient, f.docker, undefined, "/usr/bin/sudo"),
         'printf payload > "$TMPDIR/output"',
         'kill -TERM "$$"',
-      ].posix.join("\n"),
+      ].join("\n"),
     ],
     { stderr: "pipe" },
   );
