@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { infraExecutable, infraRoot } from "../src/runtime.ts";
+import { infraExecutable, infraRoot, localHostCommand } from "../src/runtime.ts";
 
 test("Infra runtime never compiles implicitly or ignores an invalid explicit binary", async () => {
   const root = await mkdtemp(join(tmpdir(), "infra-runtime-"));
@@ -48,4 +48,19 @@ test("Infra bridge resolves the new monorepo Rust workspace", async () => {
   const root = infraRoot();
   expect(await Bun.file(join(root, "Cargo.toml")).exists()).toBe(true);
   expect(await Bun.file(join(root, "crates/infra/infra/Cargo.toml")).exists()).toBe(true);
+});
+
+test("ssh exec addressed to the current build host runs locally, any other host keeps SSH", () => {
+  const args = ["ssh", "exec", "--host", "vps", "--cmd", "echo ok"];
+  const local = localHostCommand(args, {
+    APHRODY_BUILD_HOST: "vps",
+    APHRODY_SSH_COMMAND_TIMEOUT_SECS: "900",
+  });
+  if (process.platform === "win32") expect(local).toBeUndefined();
+  else expect(local).toEqual(["timeout", "900", "bash", "-c", "echo ok"]);
+  expect(localHostCommand(args, {})).toBeUndefined();
+  expect(localHostCommand(args, { APHRODY_BUILD_HOST: "dbfr" })).toBeUndefined();
+  expect(
+    localHostCommand(["ssh", "sftp", "--host", "vps"], { APHRODY_BUILD_HOST: "vps" }),
+  ).toBeUndefined();
 });

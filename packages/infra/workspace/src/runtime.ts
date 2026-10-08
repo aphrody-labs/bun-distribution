@@ -70,10 +70,29 @@ export async function infraExecutable(
   );
 }
 
+/**
+ * `ssh exec --host <h> --cmd <script>` addressed to the host this process runs on (the declared
+ * APHRODY_BUILD_HOST marker): the host has no SSH alias for itself, so the script runs locally under the
+ * same finite deadline instead of looping through SSH.
+ */
+export function localHostCommand(
+  args: readonly string[],
+  environment: Record<string, string | undefined>,
+): string[] | undefined {
+  if (process.platform === "win32" || args.length !== 6) return undefined;
+  const [ssh, exec, hostFlag, host, cmdFlag, script] = args;
+  if (ssh !== "ssh" || exec !== "exec" || hostFlag !== "--host" || cmdFlag !== "--cmd")
+    return undefined;
+  if (!host || !script || environment.APHRODY_BUILD_HOST !== host) return undefined;
+  const seconds = Number(environment.APHRODY_SSH_COMMAND_TIMEOUT_SECS ?? "30");
+  const deadline = Number.isInteger(seconds) && seconds >= 1 && seconds <= 86400 ? seconds : 30;
+  return ["timeout", String(deadline), "bash", "-c", script];
+}
+
 export async function runInfra(invocation: InfraInvocation): Promise<InfraResult> {
   const root = infraRoot();
   const environment = { ...process.env, ...invocation.env };
-  const command = [
+  const command = localHostCommand(invocation.args, environment) ?? [
     ...(await infraExecutable(root, environment)),
     "--root",
     root,
