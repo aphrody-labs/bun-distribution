@@ -7,7 +7,6 @@
  * Lancer : `bun run scripts/run-fixtures.ts`  (depuis `migration/codemods/`)
  * Régénérer les attendus : `bun run scripts/run-fixtures.ts --update`
  */
-import { execFileSync } from "node:child_process";
 import { copyFileSync, readFileSync, writeFileSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -33,11 +32,19 @@ function runTransform(inputPath: string, transform: string): string {
   const tmp = mkdtempSync(join(tmpdir(), "m3cm-"));
   const work = join(tmp, "f.tsx");
   copyFileSync(inputPath, work);
-  execFileSync(
-    "bunx",
-    ["jscodeshift", "-t", transformPath(transform), "--parser=tsx", "--extensions=tsx", work],
-    { cwd: ROOT, stdio: "ignore" },
+  const run = Bun.spawnSync(
+    [
+      "bunx",
+      "jscodeshift",
+      "-t",
+      transformPath(transform),
+      "--parser=tsx",
+      "--extensions=tsx",
+      work,
+    ],
+    { cwd: ROOT, stdio: ["ignore", "ignore", "ignore"] },
   );
+  if (!run.success) throw new Error(`jscodeshift failed (exit ${run.exitCode}) on ${inputPath}`);
   return readFileSync(work, "utf8");
 }
 
@@ -49,11 +56,14 @@ function runTransform(inputPath: string, transform: string): string {
  * avant comparaison → on teste la sémantique du codemod, pas le style d'impression.
  */
 function format(source: string): string {
-  return execFileSync("oxfmt", ["--stdin-filepath=f.tsx"], {
+  const run = Bun.spawnSync(["oxfmt", "--stdin-filepath=f.tsx"], {
     cwd: ROOT,
-    input: source,
-    encoding: "utf8",
+    stdin: new TextEncoder().encode(source),
+    stdout: "pipe",
+    stderr: "inherit",
   });
+  if (!run.success) throw new Error(`oxfmt failed (exit ${run.exitCode})`);
+  return run.stdout.toString();
 }
 
 let failures = 0;
