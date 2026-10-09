@@ -3027,6 +3027,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-term-caps"
+version = "1.0.0-canary"
+dependencies = [
+ "base64 0.23.1",
+ "image",
+ "libc",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "aphrody-terminal-backend"
 version = "1.0.0-canary"
 dependencies = [

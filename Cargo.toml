@@ -125,6 +125,7 @@ aphrody-shell-vfs = { path = "crates/shell/vfs", version = "1.0.0-canary", featu
 aphrody-terminal-core = { path = "crates/shell/terminal-core", version = "1.0.0-canary", features = [] }
 aphrody-term = { path = "crates/shell/aphrody-term", version = "1.0.0", features = [] }
 aphrody-terminal-backend = { path = "crates/shell/terminal-backend", version = "1.0.0-canary", features = [] }
+aphrody-term-caps = { path = "crates/shell/term-caps", version = "1.0.0-canary", default-features = false }
 aphrody-toolcall = { path = "crates/ai/toolcall", version = "1.0.0", features = [] }
 aphrody-toolcall-repair = { path = "crates/ai/toolcall-repair", version = "1.0.0", features = [] }
 aphrody-toolchains = { path = "crates/compat/toolchains", version = "1.0.0-canary", features = [] }
