@@ -5,13 +5,14 @@ interface FfiSources {
   header: string | null;
   rustConsumer: string | null;
   sdkSymbols: string | null;
+  drift: { missingFromSdk: string[]; missingFromHeader: string[] } | null;
 }
 
 type AbiProbe =
   | { available: true; library: string; version: number; major: number; minor: number }
   | { available: false; library: string; error: string };
 
-const SOURCE_PANES: { key: keyof FfiSources; title: string; path: string }[] = [
+const SOURCE_PANES: { key: Exclude<keyof FfiSources, "drift">; title: string; path: string }[] = [
   { key: "header", title: "aphrody.h (C ABI)", path: "crates/interop/ffi/include/aphrody.h" },
   { key: "sdkSymbols", title: "bun:ffi symbols (@aphrody/runtime-sdk)", path: "packages/engine/runtime/src/index.ts" },
   { key: "rustConsumer", title: "Rust consumer example", path: "examples/runtime-rust-extension/src/lib.rs" },
@@ -101,6 +102,20 @@ export const FFIExplorer: React.FC = () => {
       {sourcesError && (
         <div className="p-4 rounded-2xl bg-rose-950/40 border border-rose-800/50 text-xs text-rose-300 font-mono">
           Sources unavailable (GET /api/ffi/sources): {sourcesError}
+        </div>
+      )}
+
+      {sources?.drift && (
+        <div className="p-4 rounded-2xl bg-[var(--md-sys-color-surface-container)] border border-[var(--md-sys-color-outline-variant)] text-xs font-mono flex flex-col gap-1">
+          <span className="font-bold text-[var(--md-sys-color-on-surface)]">aphrody.h vs SYMBOLS</span>
+          <span className="text-[var(--md-sys-color-on-surface-variant)]">
+            Declared in aphrody.h, not mapped by the SDK:{" "}
+            {sources.drift.missingFromSdk.length ? sources.drift.missingFromSdk.join(", ") : "none"}
+          </span>
+          <span className="text-[var(--md-sys-color-on-surface-variant)]">
+            Mapped by the SDK, absent from aphrody.h:{" "}
+            {sources.drift.missingFromHeader.length ? sources.drift.missingFromHeader.join(", ") : "none"}
+          </span>
         </div>
       )}
 

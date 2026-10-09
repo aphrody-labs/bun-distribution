@@ -9,7 +9,9 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["bun-types"]
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["bun"]
   },
   "include": ["src/**/*", "server.ts", "build.ts"]
 }

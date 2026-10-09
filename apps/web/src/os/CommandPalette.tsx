@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import React, { useState, useEffect, useRef } from 'react';
-import type { AppId } from './types';
-import { DOCK_ITEMS } from './Dock';
+import React, { useState, useEffect, useRef } from "react";
+import type { AppId } from "./types";
+import { DOCK_ITEMS } from "./Dock";
 
 interface CommandItem {
   id: string;
@@ -16,23 +16,16 @@ interface CommandPaletteProps {
   onClose: () => void;
   onLaunchApp: (id: AppId) => void;
   onSetTheme: (seed: string) => void;
-  onRunBenchmarks: () => void;
 }
 
-export const CommandPalette: React.FC<CommandPaletteProps> = ({
-  isOpen,
-  onClose,
-  onLaunchApp,
-  onSetTheme,
-  onRunBenchmarks,
-}) => {
-  const [query, setQuery] = useState('');
+export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, onLaunchApp, onSetTheme }) => {
+  const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      setQuery('');
+      setQuery("");
       setSelectedIndex(0);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
@@ -42,91 +35,80 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     ...DOCK_ITEMS.map(item => ({
       id: `app-${item.id}`,
       title: `Open ${item.title}`,
-      category: 'Applications',
+      category: "Applications",
       icon: item.icon,
       action: () => {
         onLaunchApp(item.id);
         onClose();
-      }
+      },
     })),
     {
-      id: 'theme-emerald',
-      title: 'Theme: Cyber Emerald (#10b981)',
-      category: 'Appearance',
-      icon: '🟢',
+      id: "theme-emerald",
+      title: "Theme: Cyber Emerald (#10b981)",
+      category: "Appearance",
+      icon: "🟢",
       action: () => {
-        onSetTheme('#10b981');
+        onSetTheme("#10b981");
         onClose();
-      }
+      },
     },
     {
-      id: 'theme-sapphire',
-      title: 'Theme: Royal Sapphire (#3b82f6)',
-      category: 'Appearance',
-      icon: '🔵',
+      id: "theme-sapphire",
+      title: "Theme: Royal Sapphire (#3b82f6)",
+      category: "Appearance",
+      icon: "🔵",
       action: () => {
-        onSetTheme('#3b82f6');
+        onSetTheme("#3b82f6");
         onClose();
-      }
+      },
     },
     {
-      id: 'theme-amber',
-      title: 'Theme: Solar Amber (#f59e0b)',
-      category: 'Appearance',
-      icon: '🟡',
+      id: "theme-amber",
+      title: "Theme: Solar Amber (#f59e0b)",
+      category: "Appearance",
+      icon: "🟡",
       action: () => {
-        onSetTheme('#f59e0b');
+        onSetTheme("#f59e0b");
         onClose();
-      }
+      },
     },
     {
-      id: 'theme-rose',
-      title: 'Theme: Neon Rose (#f43f5e)',
-      category: 'Appearance',
-      icon: '🔴',
+      id: "theme-rose",
+      title: "Theme: Neon Rose (#f43f5e)",
+      category: "Appearance",
+      icon: "🔴",
       action: () => {
-        onSetTheme('#f43f5e');
+        onSetTheme("#f43f5e");
         onClose();
-      }
+      },
     },
     {
-      id: 'theme-violet',
-      title: 'Theme: Ultra Violet (#8b5cf6)',
-      category: 'Appearance',
-      icon: '🟣',
+      id: "theme-violet",
+      title: "Theme: Ultra Violet (#8b5cf6)",
+      category: "Appearance",
+      icon: "🟣",
       action: () => {
-        onSetTheme('#8b5cf6');
+        onSetTheme("#8b5cf6");
         onClose();
-      }
+      },
     },
-    {
-      id: 'action-bench',
-      title: 'Run Live Monorepo Benchmark Suite',
-      category: 'Actions',
-      icon: '⚡',
-      action: () => {
-        onLaunchApp('activity-monitor');
-        onRunBenchmarks();
-        onClose();
-      }
-    }
   ];
 
-  const filtered = commands.filter(cmd =>
-    cmd.title.toLowerCase().includes(query.toLowerCase()) ||
-    cmd.category.toLowerCase().includes(query.toLowerCase())
+  const filtered = commands.filter(
+    cmd =>
+      cmd.title.toLowerCase().includes(query.toLowerCase()) || cmd.category.toLowerCase().includes(query.toLowerCase()),
   );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       onClose();
-    } else if (e.key === 'ArrowDown') {
+    } else if (e.key === "ArrowDown") {
       e.preventDefault();
       setSelectedIndex(prev => (prev + 1) % Math.max(1, filtered.length));
-    } else if (e.key === 'ArrowUp') {
+    } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setSelectedIndex(prev => (prev - 1 + filtered.length) % Math.max(1, filtered.length));
-    } else if (e.key === 'Enter') {
+    } else if (e.key === "Enter") {
       if (filtered[selectedIndex]) {
         filtered[selectedIndex].action();
       }
@@ -180,17 +162,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   onMouseEnter={() => setSelectedIndex(idx)}
                   className={`w-full flex items-center justify-between px-4 py-2.5 rounded-2xl text-left transition-colors ${
                     isSelected
-                      ? 'bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)]'
-                      : 'hover:bg-[var(--md-sys-color-surface-container-high)] text-[var(--md-sys-color-on-surface)]'
+                      ? "bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)]"
+                      : "hover:bg-[var(--md-sys-color-surface-container-high)] text-[var(--md-sys-color-on-surface)]"
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-base">{cmd.icon}</span>
                     <span className="text-xs font-semibold">{cmd.title}</span>
                   </div>
-                  <span className="text-[10px] uppercase tracking-wider font-mono opacity-60">
-                    {cmd.category}
-                  </span>
+                  <span className="text-[10px] uppercase tracking-wider font-mono opacity-60">{cmd.category}</span>
                 </button>
               );
             })

@@ -33,6 +33,7 @@
         "@aphrody/m3-tailwind": "workspace:*",
         "@aphrody/m3-theme": "workspace:*",
         "@aphrody/m3-tokens": "workspace:*",
+        "@aphrody/runtime-sdk": "workspace:*",
         "@bjorn3/browser_wasi_shim": "^0.4.2",
         "react": "^19.3.0",
         "react-dom": "^19.3.0",

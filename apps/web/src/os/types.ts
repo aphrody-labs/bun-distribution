@@ -1,14 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
+import type { WasmAppId } from "./wasm/apps";
 
-export type AppId =
-  | 'bunsh'
-  | 'kernel-monitor'
-  | 'spacedrive'
-  | 'codex-studio'
-  | 'apk-manager'
-  | 'm3-fusion'
-  | 'diagnostics'
-  | 'arcade';
+export type CoreAppId =
+  | "bunsh"
+  | "kernel-monitor"
+  | "spacedrive"
+  | "codex-studio"
+  | "apk-manager"
+  | "m3-fusion"
+  | "diagnostics"
+  | "arcade";
+
+/** Pages of the former landing site, opened as windows. */
+export type ToolAppId = "bun-apis" | "benchmarks" | "ffi" | "templates" | "docs" | "bridge" | "m3-components";
+
+export type AppId = CoreAppId | ToolAppId | WasmAppId;
 
 export interface WindowPosition {
   x: number;
@@ -37,7 +43,7 @@ export interface AppMetadata {
   title: string;
   tagline: string;
   icon: string;
-  category: 'kernel' | 'shell' | 'files' | 'ai' | 'packages' | 'design' | 'system' | 'games';
+  category: "kernel" | "shell" | "files" | "ai" | "packages" | "design" | "system" | "games";
   defaultSize: WindowSize;
   defaultPosition: WindowPosition;
 }
@@ -48,16 +54,7 @@ export interface SystemNotification {
   message: string;
   timestamp: string;
   icon?: string;
-  level?: 'info' | 'success' | 'warning' | 'error';
-}
-
-export interface KernelSubsystemInfo {
-  name: string;
-  tier: 'ostd' | 'core' | 'comp' | 'lib';
-  status: 'active' | 'standby' | 'ready';
-  description: string;
-  workers: number;
-  memoryKb: number;
+  level?: "info" | "success" | "warning" | "error";
 }
 
 export interface ApkPackageInfo {

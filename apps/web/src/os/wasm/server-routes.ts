@@ -34,7 +34,7 @@ export interface TcpRelayData {
  * `POST /api/webos/fetch` `{url, method?, headers?, body?}` → upstream response,
  * `GET /api/webos/tcp?host=&port=` → WebSocket upgrade relaying bytes to TCP.
  */
-export async function handleWebOsNet(req: Request, url: URL, server: Server): Promise<Response | undefined> {
+export async function handleWebOsNet(req: Request, url: URL, server: Server<unknown>): Promise<Response | undefined> {
   if (url.pathname === "/api/webos/fetch" && req.method === "POST") {
     const body = (await req.json()) as {
       url: string;

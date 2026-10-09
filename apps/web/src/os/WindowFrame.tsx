@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import React, { useState, useRef, useEffect } from 'react';
-import type { WindowState } from './types';
+import React, { useState, useRef, useEffect } from "react";
+import type { WindowState } from "./types";
 
 interface WindowFrameProps {
   window: WindowState;
@@ -12,6 +12,10 @@ interface WindowFrameProps {
   onUpdatePosition: (x: number, y: number) => void;
   onUpdateSize: (w: number, h: number) => void;
 }
+
+// The `window` prop shadows the global inside the component: read the viewport from globalThis.
+const windowInnerW = () => globalThis.innerWidth ?? 1200;
+const windowInnerH = () => globalThis.innerHeight ?? 800;
 
 export const WindowFrame: React.FC<WindowFrameProps> = ({
   window,
@@ -86,29 +90,26 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
     };
 
     if (isDragging || isResizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
       return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
       };
     }
   }, [isDragging, isResizing, onUpdatePosition, onUpdateSize]);
-
-  const windowInnerW = () => (typeof window !== 'undefined' ? window.innerWidth : 1200);
-  const windowInnerH = () => (typeof window !== 'undefined' ? window.innerHeight : 800);
 
   if (!window.isOpen || window.isMinimized) {
     return null;
   }
 
   const maximizedStyle: React.CSSProperties = {
-    top: '46px',
-    left: '12px',
-    right: '12px',
-    bottom: '76px',
-    width: 'calc(100vw - 24px)',
-    height: 'calc(100vh - 122px)',
+    top: "46px",
+    left: "12px",
+    right: "12px",
+    bottom: "76px",
+    width: "calc(100vw - 24px)",
+    height: "calc(100vh - 122px)",
     zIndex: window.zIndex,
   };
 
@@ -125,7 +126,7 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
       onMouseDown={onFocus}
       style={window.isMaximized ? maximizedStyle : normalStyle}
       className={`fixed flex flex-col rounded-2xl shadow-2xl backdrop-blur-xl border border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface)]/95 overflow-hidden transition-all duration-100 ${
-        isDragging ? 'opacity-90 select-none' : ''
+        isDragging ? "opacity-90 select-none" : ""
       }`}
     >
       {/* Window Header */}
@@ -162,9 +163,9 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
               onMaximizeToggle();
             }}
             className="w-3.5 h-3.5 rounded-full bg-emerald-400 hover:bg-emerald-500 transition-colors flex items-center justify-center text-[9px] text-black/60 font-bold leading-none hover:text-black"
-            title={window.isMaximized ? 'Restore' : 'Maximize'}
+            title={window.isMaximized ? "Restore" : "Maximize"}
           >
-            {window.isMaximized ? '▫' : '+'}
+            {window.isMaximized ? "▫" : "+"}
           </button>
         </div>
 
@@ -176,14 +177,14 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({
 
         {/* Right: Window Status Pills */}
         <div className="flex items-center gap-1.5 text-[10px] text-[var(--md-sys-color-on-surface-variant)] font-mono">
-          <span>{Math.round(window.size.width)}×{Math.round(window.size.height)}</span>
+          <span>
+            {Math.round(window.size.width)}×{Math.round(window.size.height)}
+          </span>
         </div>
       </div>
 
       {/* Window Body */}
-      <div className="flex-1 overflow-auto bg-[var(--md-sys-color-surface)] relative">
-        {children}
-      </div>
+      <div className="flex-1 overflow-auto bg-[var(--md-sys-color-surface)] relative">{children}</div>
 
       {/* Resize Grip (Bottom Right) */}
       {!window.isMaximized && (
