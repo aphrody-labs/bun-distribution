@@ -212,7 +212,7 @@ impl Renderer3d {
         Ok(Self::with_device(device, queue, adapter))
     }
 
-    /// Build a renderer on a device owned by a host (Tauri/Wry, a windowed
+    /// Build a renderer on a device owned by a host (Tauri/CEF, a windowed
     /// app) so 3D shares its GPU context instead of opening a second one.
     #[must_use]
     pub fn with_device(device: wgpu::Device, queue: wgpu::Queue, adapter: AdapterReport) -> Self {

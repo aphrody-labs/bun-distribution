@@ -67,7 +67,7 @@ Measured on this repository: 13.1 s serial against 4.2 s with 16 in parallel, sa
   excluded from workspace membership. On the concurrent tree examined on
   2026-10-05, it reports differences in 103 Obscura files; no engine is reformatted
   by this reorganization.
-- `.cargo/config.toml`: `__TAURI_WORKSPACE__` and the macOS flags wry needs.
+- `.cargo/config.toml`: `__TAURI_WORKSPACE__` and the macOS linker flags.
 - `deny.toml`: cargo-deny policy.
 
 CI separates the minimal Rust job from desktop/imported-source coverage. The

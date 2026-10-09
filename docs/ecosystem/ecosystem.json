@@ -12247,7 +12247,7 @@
         },
         {
           "name": "window_open",
-          "description": "Open a Tauri/Wry interactive preview on an http(s) URL. It gets no desktop capability and is never used as a crawler or artifact source.",
+          "description": "Open a Tauri/CEF interactive preview on an http(s) URL. It gets no desktop capability and is never used as a crawler or artifact source.",
           "file": "crates/ui/app/src/window.rs"
         },
         {

@@ -6,7 +6,7 @@
 //! - N2B parses source statically with OXC and never executes it.
 //! - Bun owns TypeScript tooling, package management and FFI on JavaScriptCore.
 //! - Obscura owns remote-page rendering, DOM, network, CDP and V8.
-//! - Tauri/Wry owns the desktop webview: the trusted Aphrody UI and isolated, interactive previews
+//! - Tauri/CEF owns the desktop webview: the trusted Aphrody UI and isolated, interactive previews
 //!   of remote pages. It is not a crawler or an artifact source.
 //!
 //! Browser subsystems and the `aphrody-web` CLI use the same [`WebSession`]
@@ -116,7 +116,7 @@ pub enum JavaScriptRole {
     BunTooling,
     /// Remote web pages rendered by Obscura on V8.
     RenderedPage,
-    /// Desktop UI and isolated interactive page previews in Tauri/Wry.
+    /// Desktop UI and isolated interactive page previews in Tauri/CEF.
     ///
     /// The Aphrody shell has an explicit CSP and capability allow-list. A
     /// remote preview is opened without those capabilities, so it cannot call
@@ -130,7 +130,7 @@ pub enum JavaScriptEngine {
     Oxc,
     BunJavaScriptCore,
     V8,
-    Wry,
+    Cef,
 }
 
 impl JavaScriptRole {
@@ -141,7 +141,7 @@ impl JavaScriptRole {
             Self::SourceAnalysis => JavaScriptEngine::Oxc,
             Self::BunTooling => JavaScriptEngine::BunJavaScriptCore,
             Self::RenderedPage => JavaScriptEngine::V8,
-            Self::DesktopWebview => JavaScriptEngine::Wry,
+            Self::DesktopWebview => JavaScriptEngine::Cef,
         }
     }
 
@@ -233,7 +233,7 @@ mod tests {
         assert_eq!(JavaScriptRole::SourceAnalysis.engine(), JavaScriptEngine::Oxc);
         assert_eq!(JavaScriptRole::BunTooling.engine(), JavaScriptEngine::BunJavaScriptCore);
         assert_eq!(JavaScriptRole::RenderedPage.engine(), JavaScriptEngine::V8);
-        assert_eq!(JavaScriptRole::DesktopWebview.engine(), JavaScriptEngine::Wry);
+        assert_eq!(JavaScriptRole::DesktopWebview.engine(), JavaScriptEngine::Cef);
         assert!(!JavaScriptRole::SourceAnalysis.executes_javascript());
         assert!(!JavaScriptRole::SourceAnalysis.permits_network());
         assert!(JavaScriptRole::DesktopWebview.executes_javascript());

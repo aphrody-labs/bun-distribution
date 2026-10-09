@@ -107,7 +107,7 @@ impl SystemSubsystem for WindowSubsystem {
             ),
             ToolDefinition::new(
                 "window_open",
-                "Open a Tauri/Wry interactive preview on an http(s) URL. It gets no desktop \
+                "Open a Tauri/CEF interactive preview on an http(s) URL. It gets no desktop \
                  capability and is never used as a crawler or artifact source.",
                 json!({"type": "object", "properties": {
                     "label": {"type": "string", "description": "Unique window id: letters, digits, `-`, `_`."},
@@ -298,7 +298,7 @@ impl SystemSubsystem for WindowSubsystem {
     fn skills(&self) -> Vec<SkillManifest> {
         vec![SkillManifest {
             name: "open_beside".into(),
-            description: "Open an isolated Tauri/Wry URL preview on the right half of a 1920x1080 \
+            description: "Open an isolated Tauri/CEF URL preview on the right half of a 1920x1080 \
                           area and focus it."
                 .into(),
             parameters: vec!["label".into(), "url".into()],

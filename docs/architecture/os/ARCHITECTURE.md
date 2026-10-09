@@ -27,7 +27,7 @@ owns the lowest practical agent authority: a local privileged process hosting sy
 cross-platform coreutils, Windows control, file virtualisation, process policy, PTY, and browser subsystems.
 
 The system targets three execution environments without bare-metal driver bloat:
-1. **Windows 11**: Win32, Job Objects, Named Pipes, Rust `aphrody-winclean`, DirectComposition/Wry.
+1. **Windows 11**: Win32, Job Objects, Named Pipes, Rust `aphrody-winclean`, DirectComposition/CEF.
 2. **Linux**: POSIX/`rustix`, Wayland/X11, Unix domain sockets, cgroups, and Proton/Wine compatibility.
 3. **Web / WASI**: Sandboxed execution, Origin Private File System (OPFS), Web Workers, and WebGPU/Canvas.
 
@@ -144,7 +144,7 @@ The desktop hosts the kernel with the web subsystem when it starts first, or joi
 running kernel with the window subsystem. Tauri is also the desktop runtime authority: its
 `resource_dir` is packaged read-only input and its platform-resolved `app_data_dir` owns the
 canonical `profiles/`, `assets/`, `binaries/` and `sqlite/` state tree exposed by
-`aphrody_runtime_layout`. Wry remains the webview implementation beneath Tauri; Obscura remains
+`aphrody_runtime_layout`. CEF (`tauri-runtime-cef`) is the webview implementation beneath Tauri; Obscura remains
 the browser/crawler implementation and is never substituted by the shell webview. When
 `APHRODY_WEB_MCP_BIN` is configured, the kernel discovers Aphrody Web MCP tools and includes
 them in `aphrody_web`; it does not register a second web subsystem. `http`, `static`, `fast`,
@@ -231,7 +231,7 @@ The same wire protocol serves a uv (Python) process: connect to the endpoint, `i
 | Item of the target design | Status |
 |---|---|
 | WASM plugins (Wasmtime, Component Model, WIT `subsystem-driver`, `ResourceLimiter`) | Architecture defined; remote-subsystem protocol is the extension point. |
-| Dedicated Wayland compositor (Smithay / WGPU) | Research complete; desktop window authority is Tauri/Wry across Windows and Linux. |
+| Dedicated Wayland compositor (Smithay / WGPU) | Research complete; desktop window authority is Tauri/CEF across Windows and Linux. |
 | uv (Python) SDK | Protocol operational via NDJSON endpoint; standalone package planned. |
 | Vision / coding sub-agents (Florence-2, Qwen2.5-Coder) | AI layer (`aphrody-ai`), which consumes OS kernel tools via MCP. |
 | Screen capture & UIA observation | Fully operational via `admin` (`aphrody-winclean`) and wired into `aphrody-app` desktop facades. |

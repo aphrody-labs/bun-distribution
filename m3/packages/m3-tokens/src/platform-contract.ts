@@ -36,5 +36,5 @@ export const M3_PLATFORM_CONTRACT = Object.freeze({
   baseGridDp: 4,
   mediumMarginDp: 24,
   compactMarginDp: 16,
-  platformAdapters: ["tauri-wry", "windows-11", "gnome-libadwaita", "cosmic"],
+  platformAdapters: ["tauri-cef", "windows-11", "gnome-libadwaita", "cosmic"],
 });

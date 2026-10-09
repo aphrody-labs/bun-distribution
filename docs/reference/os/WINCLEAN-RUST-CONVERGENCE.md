@@ -22,7 +22,7 @@ The final state has:
 - one process engine: `aphrody-proc`;
 - one capture engine: `aphrody-capture`;
 - one filesystem index and search path: `aphrody-fsindex` plus `aphrody-search`;
-- one desktop and shell experience: `aphrody-app`, Tauri, Wry, and the M3 packages;
+- one desktop and shell experience: `aphrody-app`, Tauri (CEF runtime), and the M3 packages;
 - the unified agent plugin at `../aphrody-ai/plugins/aphrody`;
 - one tool schema and generated binding pipeline;
 - stable WinClean tool names for all consumers;
@@ -215,7 +215,7 @@ those crates never depend back on it.
 | Coordination state | `aphrody-jobs` plus `aphrody-a2a` | Durable task and status records | `CoordStore`, `CoordTools`, WinClean A2A service |
 | Notifications and clipboard | `aphrody-app` window subsystem, fallback in `aphrody-winclean` for headless sessions | Tauri plugins first, Win32 headless backend second | `NotificationTools`, `ClipboardTools` |
 | Shell execution | kernel `shell` subsystem | Nushell structured evaluation | `power_shell`, WinClean CLI shell helpers |
-| Desktop shell and explorer UX | `aphrody-app` plus M3 packages | Tauri/Wry session shell, adaptive window chrome and explorer surfaces | `Winclean.Shell`, `Winclean.Ui`, Explorer hook UX |
+| Desktop shell and explorer UX | `aphrody-app` plus M3 packages | Tauri/CEF session shell, adaptive window chrome and explorer surfaces | `Winclean.Shell`, `Winclean.Ui`, Explorer hook UX |
 | Bun access | `@aphrody/os`; transitional `packages/os/winclean` alias | Kernel RPC client and generated TypeScript types | `Winclean.Bun`, Bun FFI DLL loading |
 | MCP | `aphrody-kernel` | Single MCP server for all OS subsystems | `Winclean.Mcp`, `Winclean.Mcp.Linux` |
 
@@ -446,7 +446,7 @@ Deliverables:
 - ViGEm virtual Xbox controller backend;
 - `aphrody-app` window tools sharing the same window primitives.
 
-Tauri and Wry retain their public prefixes for source compatibility. The desktop adds M3 adaptive
+Tauri retains its public prefixes for source compatibility. The desktop adds M3 adaptive
 window chrome, close/minimize/maximize controls, dark/light/system themes, global Material Symbols
 and the unified explorer surface. WinClean WinUI pages are not copied; their behaviors are exposed
 through the shared Rust model and rendered by the existing M3 packages.
@@ -508,7 +508,7 @@ After every ledger entry is `rust`:
 3. delete duplicate PowerShell implementations already represented by Rust or canonical scripts;
 4. retain only legally required license/provenance text and non-duplicated fixtures;
 5. move retained historical design records to `docs/products/os/packages/winclean` if still useful;
-6. rename no Tauri/Wry public compatibility symbol;
+6. rename no Tauri public compatibility symbol;
 7. remove .NET, NuGet, NativeAOT and WinClean DLL steps from CI and installers;
 8. remove `libloading` from `aphrody-winclean` (done);
 9. prove the repository contains no active `Winclean.Mcp`, `Winclean.Native`, or second plugin path.
@@ -635,7 +635,7 @@ The convergence is complete only when all conditions are true:
 9. Process and memory logic has one implementation in `aphrody-proc`.
 10. Capture logic has one implementation in `aphrody-capture`.
 11. WinClean Shell and WinUI user flows exist in the adaptive M3 `aphrody-app` interface.
-12. Tauri and Wry compatibility prefixes remain intact.
+12. Tauri compatibility prefixes remain intact.
 13. Windows administrator startup and `sudo.exe` diagnostics are tested.
 14. Workspace Cargo, Bun and desktop gates finish with exit code 0 and no blocking warnings.
 15. A clean checkout reproduces generated catalogs and TypeScript bindings without untracked files.

@@ -71,7 +71,7 @@ Kind: kernel-subsystem. 10 tools.
 | `window_close_label` | Close a window by label. |
 | `window_focus` | Show, unminimize and focus a window. |
 | `window_list` | Every desktop window with its title, URL, state, position and size. |
-| `window_open` | Open a Tauri/Wry interactive preview on an http(s) URL. It gets no desktop capability and is never used as a crawler or artifact source. |
+| `window_open` | Open a Tauri/CEF interactive preview on an http(s) URL. It gets no desktop capability and is never used as a crawler or artifact source. |
 | `window_set_bounds` | Move and/or resize a window (physical pixels). |
 | `window_set_state` | Minimize, maximize, restore, hide or show a window. |
 | `window_set_title` | Change a window title. |

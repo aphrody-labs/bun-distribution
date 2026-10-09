@@ -12,7 +12,7 @@ Ce document constitue la référence unique pour l'architecture, la topologie et
 | `/home/aphro/aphrody` | **Grand Monorepo Produit & Applications** | Monorepo racine Bun + Cargo (Apps, packages TS, Crates Rust, Web, Shenron) |
 | `/home/aphro/aphrody/m3` | **Aphrody Material 3 UI** | Submodule Git racine unifié (Forks Google M3, Base-UI, Fonts, TailwindCSS, Nie-UI) |
 | `/home/aphro/aphrody/crates/compat` | **Tooling & N2B Bridge** | `yolo-tooling` (C ABI), `aphrody-n2b*`, `aphrody-oxc-bridge` bornés |
-| `/home/aphro/yolo` | **Runtime & Engine Factory** | Fork Bun natif, Obscura V8/Headless, Wry, Tao, Tauri, FFI C ABI |
+| `/home/aphro/yolo` | **Runtime & Engine Factory** | Fork Bun natif, Obscura V8/Headless, Tauri (CEF), FFI C ABI |
 | `/home/aphro/aphrody-py` | **ML, Training & Python RAG** | Workspace UV autonome (Python 3.12, DeepMind Gemma 4, Jan, LoRA/QLoRA) |
 | `/mnt/c/iecode` | **Hôte Windows Gaming & IEVR** | Dépôt natif Windows (`nie`, `ievr`, `rg`, `packages/nie-ui` (not in repo)) |
 

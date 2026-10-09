@@ -5,7 +5,7 @@
 //! both lanes: the retained M3 2D scene ([`scene`], [`raster`], `gpu`) and
 //! the M3 3D scene graph ([`scene3d`], [`raster3d`], `gpu3d`, grouped behind
 //! [`pipeline3d::Pipeline3d`]). GPU backends are feature-gated (`gpu`); the
-//! contract remains usable by the kernel, Tauri/Wry and WASM without forcing
+//! contract remains usable by the kernel, Tauri/CEF and WASM without forcing
 //! a graphics runtime into headless processes, and every GPU path has a
 //! deterministic CPU reference it is tested against pixel for pixel.
 
@@ -117,7 +117,7 @@ pub enum SurfaceKind {
 /// Renderer lane selected by the unified policy.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SurfaceRenderer {
-    /// Static M3 HTML/CSS in the system webview hosted by Tauri/Wry.
+    /// Static M3 HTML/CSS in the CEF webview hosted by Tauri.
     WebView,
     /// Native `wgpu`/Vello lane when a GPU is available.
     NativeGpu,

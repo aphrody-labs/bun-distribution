@@ -6,7 +6,7 @@
 //! specification.  The crate is `no_std` by default; the `std` feature
 //! (enabled by default) gates helpers that allocate (e.g. [`export_css`]).
 //!
-//! `facade` (`std` only) is the unified integration surface for native, Tauri/Wry, WASM and FFI
+//! `facade` (`std` only) is the unified integration surface for native, Tauri/CEF, WASM and FFI
 //! consumers (layout contract, accessibility, icon policy, theme); it re-exports the modules
 //! below and owns no token table of its own.
 //!

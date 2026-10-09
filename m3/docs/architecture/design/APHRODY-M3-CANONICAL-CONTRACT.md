@@ -13,7 +13,7 @@ aphrody-m3-tokens (Rust, no_std)
   ├── aphrody-m3-tokens::facade (layout, accessibility, icons, theme)
   ├── @aphrody/m3-tokens, @aphrody/m3-theme (CSS / TS)
   ├── @aphrody/material-web, @aphrody/m3-react, @aphrody/m3-primitives family
-  └── aphrody-app (Tauri/Wry, static frontend)
+  └── aphrody-app (Tauri/CEF, static frontend)
 ```
 
 `aphrody-m3-tokens` alone owns palettes, HCT, typography, elevation, shape, motion, state layers

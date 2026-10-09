@@ -2,7 +2,7 @@
 //! Unified Material 3 facade for Aphrody OS (formerly the `aphrody-m3` crate).
 //!
 //! The sibling modules of this crate remain the implementation and source of truth. `facade` is
-//! the stable integration surface for native Aphrody, Tauri/Wry, WASM and FFI consumers; it
+//! the stable integration surface for native Aphrody, Tauri/CEF, WASM and FFI consumers; it
 //! deliberately contains no duplicate color, typography or breakpoint tables.
 //!
 //! ```rust

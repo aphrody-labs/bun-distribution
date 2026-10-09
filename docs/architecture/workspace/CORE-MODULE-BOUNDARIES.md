@@ -42,9 +42,9 @@ puis des mesures du premier usage desktop/browser ; elle n’est pas acquise.
 
 La précision suivante du même jour conserve JSC/WebKit et la compatibilité V8.
 Tauri reste un plugin desktop et partage à terme le fournisseur WebView de Bun ;
-Obscura porte le headless. Wry ne fournit pas actuellement un moteur Web embarqué :
-ses backends sélectionnent les WebViews des plateformes. Un raccord réel doit
-donc remplacer cette dépendance dans le profil embarqué, sans déclarer cette
+Obscura porte le headless. Depuis la décision 21 (D28 pour la coupe des plugins), le seul
+runtime desktop est `tauri-runtime-cef` (Chromium embarqué) ; wry, tao et les WebViews système sont retirés. Un raccord réel doit
+partager ce fournisseur dans le profil embarqué, sans déclarer cette
 capacité sur la seule base d’un flag. La cible inclut React/Next 16 et une
 application desktop empaquetée en un fichier Bun ; aucune parité Chromium ni
 amélioration du compilateur n’est déduite de cet arbitrage.
@@ -56,7 +56,7 @@ amélioration du compilateur n’est déduite de cet arbitrage.
 | `yolo-core`, `yolo-runtime` : 2 crates propres                              | Cœur natif minimal partagé                                                                         | Primitives communes et ABI C versionnée ; `runtime:system` et `runtime:process`      |
 | `yolo-desktop` : fusionné dans `aphrody-app` (`crates/ui/app`)              | Hôte desktop optionnel : `aphrody-app --host-info` / `--runtime-host` (protocole `yolo.desktop/1`) | `runtime:desktop`, avec supervision et boucle UI native                              |
 | `yolo-pyo3` : 1 crate propre                                                | Adaptateur Python optionnel du même cœur                                                           | `_yolo_native` ; l’IA/ML reste dans Aphrody Python                                   |
-| Tauri/Wry/Tao et outillage : 54 imports, dont 30 plugins Tauri              | Fournisseur desktop et ses outils de fabrication                                                   | Sélection de plugins par application et permissions Tauri ; aucune API Bun par crate |
+| Tauri (runtime CEF) et outillage : 33 crates, dont 15 plugins Tauri         | Fournisseur desktop et ses outils de fabrication                                                   | Sélection de plugins par application et permissions Tauri ; aucune API Bun par crate |
 | Next/Turbo/Turbopack                                                        | Retiré le 2026-10-05 : aucun consommateur, `next` vient de npm                                     | Historique Git                                                                       |
 | Obscura et son V8, dans `crates/web/obscura`                                | Fournisseur navigateur optionnel                                                                   | `runtime:browser` ; conserver le graphe de build du moteur                           |
 | [Fork Bun `aphrody-labs/bun`](../../reference/upstream-bun/APHRODY-FORK.md) | Hôte JavaScript et APIs natives existantes                                                         | Commit dans le fork seulement pour un besoin d’intégration VM ou un gain mesuré      |
@@ -88,7 +88,7 @@ suffit pas : `turbo-tasks` et `turbo-tasks-fs` restent internes au compilateur.
 
 ## Desktop : conserver le fournisseur, sélectionner les extensions
 
-Tauri, Wry et Tao restent ensemble comme plugin optionnel. Le
+Tauri et son runtime CEF restent ensemble comme plugin optionnel. Le
 [SDK desktop](../../../packages/engine/runtime/src/desktop.ts) supervise actuellement un hôte
 précompilé séparé ; ce chemin transitoire n’est pas l’absorption demandée.
 L’intégration dans Bun doit respecter la boucle UI principale et ses règles de thread.

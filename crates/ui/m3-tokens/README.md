@@ -53,7 +53,7 @@ fn main() {
 
 ## Facade (`facade`, `std` only)
 
-`aphrody_m3_tokens::facade` is the one stable import surface for native Rust, Tauri/Wry, WASM
+`aphrody_m3_tokens::facade` is the one stable import surface for native Rust, Tauri/CEF, WASM
 adapters and FFI (it replaces the former `aphrody-m3` crate). The implementation stays in the
 modules above; the facade owns no duplicate token tables, so changes belong here and flow to all
 consumers.

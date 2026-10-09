@@ -432,7 +432,7 @@ fn resolve_chrome_path() -> anyhow::Result<std::path::PathBuf> {
     }
 
     anyhow::bail!(
-        "Aucun moteur desktop externe : utilisez Obscura/Tauri/Wry; le headless utilise \
+        "Aucun moteur desktop externe : utilisez Obscura/Tauri (CEF); le headless utilise \
          curl-impersonate"
     )
 }
