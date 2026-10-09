@@ -198,6 +198,7 @@ def main():
                 f"/var/cache/nginx/{name}:rw,nosuid,uid=33,gid=33,size=256m"
                 for name in ("shenron_images", "shenron_hls")
             ],
+            "/var/cache/nginx/aphrody_cdn:rw,nosuid,uid=33,gid=33,size=64m",
             *[
                 f"/var/lib/nginx/{name}:rw,nosuid,uid=33,gid=33,size=32m"
                 for name in ("body", "proxy", "fastcgi", "uwsgi", "scgi")
@@ -213,6 +214,16 @@ def main():
             mount(
                 "/srv/shenron/shared/site/public-extra", "/srv/shenron-cdn/site-extra"
             ),
+            # aphrody.com and rosegriffon.fr vhosts (zz-*.conf) served by the same gateway.
+            *[
+                mount(path, path)
+                for path in (
+                    "/srv/aphrody-creator",
+                    "/srv/aphrody-downloads",
+                    "/var/www/maintenance",
+                    "/var/www/letsencrypt",
+                )
+            ],
         ],
         healthcheck=health(
             [
