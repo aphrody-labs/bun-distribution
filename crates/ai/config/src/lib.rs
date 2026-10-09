@@ -18,7 +18,7 @@
 //!
 //! # Layout
 //!
-//! - [`ai_env`] — the eighteen canonical `APHRODY_AI_*` environment variable names (and their
+//! - [`ai_env`] — the canonical `APHRODY_AI_*` environment variable names (and their
 //!   legacy aliases) that name aphrody's local/open-source AI stack; mirrors
 //!   `tools/config/local-ai.json`.
 //! - [`wire_api`] / [`policy`] — the small serde enums (`WireApi`, `AskForApproval`,

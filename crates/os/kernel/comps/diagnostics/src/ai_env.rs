@@ -16,7 +16,7 @@ use miette::IntoDiagnostic;
 pub struct ResolvedVar {
     pub canonical: &'static str,
     pub value: Option<String>,
-    /// `true` for `APHRODY_AI_HTTP_TOKEN`: [`Self::value`] is always `None`
+    /// `true` for gateway and chat credentials: [`Self::value`] is always `None`
     /// for a secret, and [`Self::note`] explains where the real value lives.
     pub secret: bool,
     pub note: Option<String>,
@@ -118,6 +118,17 @@ pub fn resolve() -> Vec<ResolvedVar> {
         },
         plain(ai_env::CHAT_BASE_URL, base_url_for(Role::Chat, ai_env::CHAT_BASE_URL)),
         plain(ai_env::CHAT_MODEL, Some(role_model(LocalRole::Chat, ai_env::CHAT_MODEL))),
+        ResolvedVar {
+            canonical: ai_env::CHAT_API_KEY.canonical,
+            value: None,
+            secret: true,
+            note: Some(if let Some(source) = ai_env::CHAT_API_KEY.resolve_source() {
+                format!("set via {source}")
+            } else {
+                "not configured; keep upstream credentials in the host's protected environment store"
+                    .to_owned()
+            }),
+        },
         plain(ai_env::CODE_MODEL, Some(role_model(LocalRole::Code, ai_env::CODE_MODEL))),
         plain(
             ai_env::REASONING_MODEL,
@@ -282,22 +293,23 @@ mod tests {
     use super::*;
 
     #[test]
-    fn resolved_names_are_exactly_the_eighteen_canonical_names() {
+    fn resolved_names_are_exactly_the_canonical_names() {
         let resolved = resolve();
         let names: BTreeSet<&str> = resolved.iter().map(|var| var.canonical).collect();
         let expected: BTreeSet<&str> = ai_env::ALL.iter().map(|v| v.canonical).collect();
         assert_eq!(names, expected);
-        assert_eq!(resolved.len(), 18);
+        assert_eq!(resolved.len(), ai_env::ALL.len());
     }
 
     #[test]
-    fn http_token_never_carries_a_value() {
+    fn gateway_and_chat_credentials_never_carry_values() {
         let resolved = resolve();
-        let token =
-            resolved.iter().find(|var| var.canonical == ai_env::HTTP_TOKEN.canonical).unwrap();
-        assert!(token.secret);
-        assert_eq!(token.value, None);
-        assert!(token.note.is_some());
+        for credential in [ai_env::HTTP_TOKEN, ai_env::CHAT_API_KEY] {
+            let token = resolved.iter().find(|var| var.canonical == credential.canonical).unwrap();
+            assert!(token.secret);
+            assert_eq!(token.value, None);
+            assert!(token.note.is_some());
+        }
     }
 
     #[test]
@@ -314,10 +326,11 @@ mod tests {
     }
 
     #[test]
-    fn json_rendering_never_inlines_the_http_token_value() {
+    fn json_rendering_never_inlines_gateway_or_chat_credential_values() {
         let resolved = resolve();
         let json = to_json(&resolved);
         assert_eq!(json["env"][ai_env::HTTP_TOKEN.canonical], serde_json::Value::Null);
+        assert_eq!(json["env"][ai_env::CHAT_API_KEY.canonical], serde_json::Value::Null);
         assert_eq!(json["schemaVersion"], 1);
     }
 

@@ -11,6 +11,7 @@ use aphrody_models::ModelStore;
 use aphrody_sql::pg::Client;
 use axum::{
     Json, Router,
+    body::Body,
     extract::{DefaultBodyLimit, Query, Request},
     http::{HeaderMap, StatusCode, header},
     middleware::{self, Next},
@@ -162,20 +163,30 @@ fn router_with_shenron_readiness(enabled: bool) -> Router {
 }
 
 fn shenron_auth(headers: &HeaderMap) -> Option<Response> {
-    let Some(expected) = aphrody_config::ai_env::HTTP_TOKEN.resolve() else {
+    gateway_auth(headers, aphrody_config::ai_env::HTTP_TOKEN.resolve().as_deref(), true)
+}
+
+/// A credentialed upstream cannot be exposed through an anonymous REST route.
+/// Legacy keyless loopback chat remains usable without a gateway token.
+fn gateway_auth(headers: &HeaderMap, expected: Option<&str>, required: bool) -> Option<Response> {
+    let Some(expected) = expected.filter(|value| !value.trim().is_empty()) else {
+        if !required {
+            return None;
+        }
         return Some(shenron_error(
             StatusCode::SERVICE_UNAVAILABLE,
             "Shenron API token is not configured",
         ));
     };
-    if expected.is_empty() {
-        return Some(shenron_error(
-            StatusCode::SERVICE_UNAVAILABLE,
-            "Shenron API token is not configured",
-        ));
-    }
-    let supplied = headers.get(header::AUTHORIZATION).and_then(|value| value.to_str().ok());
-    if supplied != Some(format!("Bearer {expected}").as_str()) {
+    let supplied = headers
+        .get(header::AUTHORIZATION)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.split_once(' '))
+        .filter(|(scheme, _)| scheme.eq_ignore_ascii_case("Bearer"))
+        .map(|(_, token)| token.trim());
+    if !supplied.is_some_and(|token| {
+        aphrody_secrets::constant_time_eq(token.as_bytes(), expected.as_bytes())
+    }) {
         return Some(shenron_error(StatusCode::UNAUTHORIZED, "Unauthorized"));
     }
     None
@@ -214,8 +225,7 @@ async fn shenron_health(headers: HeaderMap) -> Response {
         crate::shenron_gemini_web::available().await
     } else if let Some(mut url) = llm_health_url() {
         url.set_path(&format!("{}/models", url.path().trim_end_matches('/')));
-        reqwest::Client::new()
-            .get(url)
+        crate::shenron_llm_backend::chat_request(reqwest::Method::GET, url)
             .timeout(DB_TIMEOUT)
             .send()
             .await
@@ -226,8 +236,7 @@ async fn shenron_health(headers: HeaderMap) -> Response {
     #[cfg(target_arch = "wasm32")]
     let llm = if let Some(mut url) = llm_url() {
         url.set_path(&format!("{}/models", url.path().trim_end_matches('/')));
-        reqwest::Client::new()
-            .get(url)
+        crate::shenron_llm_backend::chat_request(reqwest::Method::GET, url)
             .timeout(DB_TIMEOUT)
             .send()
             .await
@@ -1307,7 +1316,7 @@ async fn shenron_llm_local(request: &ChatRequest) -> Result<Value, (StatusCode, 
         .map(|message| json!({"role": message.role, "content": message.content}))
         .collect::<Vec<_>>();
     let body = json!({"model": model, "messages": messages, "stream": false});
-    let payload = backend::post_json_with_retry(&url, &body, Duration::from_secs(90))
+    let payload = backend::post_chat_json_with_retry(&url, &body, Duration::from_secs(90))
         .await
         .map_err(|failure| failure.describe("LLM"))?;
     let Some(answer) = payload.pointer("/choices/0/message/content").and_then(Value::as_str) else {
@@ -1765,8 +1774,16 @@ async fn openai_models_handler() -> Response {
 }
 
 /// Forwarding or direct execution handler for `/v1/chat/completions`.
-async fn openai_chat_completions_handler(Json(payload): Json<Value>) -> Response {
-    let Some(mut url) = llm_url() else {
+async fn openai_chat_completions_handler(
+    headers: HeaderMap,
+    Json(payload): Json<Value>,
+) -> Response {
+    let token = aphrody_config::ai_env::CHAT_API_KEY.resolve();
+    let gateway_token = aphrody_config::ai_env::HTTP_TOKEN.resolve();
+    if let Some(error) = gateway_auth(&headers, gateway_token.as_deref(), token.is_some()) {
+        return error;
+    }
+    let Some(url) = llm_url() else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
             [(header::CACHE_CONTROL, "no-store")],
@@ -1781,30 +1798,49 @@ async fn openai_chat_completions_handler(Json(payload): Json<Value>) -> Response
             .into_response();
     };
 
-    url.set_path(&format!("{}/chat/completions", url.path().trim_end_matches('/')));
+    forward_openai_chat(url, payload, token.as_deref()).await
+}
 
-    let client = reqwest::Client::new();
-    let upstream = client.post(url).timeout(Duration::from_secs(120)).json(&payload).send().await;
+/// Relay both JSON completions and SSE incrementally. Only response metadata
+/// needed by clients is forwarded; upstream cookies and credentials stay private.
+async fn forward_openai_chat(
+    mut url: reqwest::Url,
+    payload: Value,
+    token: Option<&str>,
+) -> Response {
+    url.set_path(&format!("{}/chat/completions", url.path().trim_end_matches('/')));
+    let upstream =
+        crate::shenron_llm_backend::request_with_token(reqwest::Method::POST, url, token)
+            .timeout(Duration::from_secs(120))
+            .json(&payload)
+            .send()
+            .await;
 
     match upstream {
         Ok(resp) => {
             let status = resp.status();
-            let body = resp.json::<Value>().await.unwrap_or_else(|_| {
-                json!({
-                    "error": {
-                        "message": "Failed to parse upstream response JSON",
-                        "type": "backend_error"
-                    }
-                })
-            });
-            (status, [(header::CACHE_CONTROL, "no-store")], Json(body)).into_response()
+            let headers = resp.headers().clone();
+            let mut response = Response::new(Body::from_stream(resp.bytes_stream()));
+            *response.status_mut() = status;
+            response
+                .headers_mut()
+                .insert(header::CACHE_CONTROL, axum::http::HeaderValue::from_static("no-store"));
+            response
+                .headers_mut()
+                .insert("x-accel-buffering", axum::http::HeaderValue::from_static("no"));
+            for name in [header::CONTENT_TYPE, header::RETRY_AFTER] {
+                if let Some(value) = headers.get(&name) {
+                    response.headers_mut().insert(name, value.clone());
+                }
+            }
+            response
         },
-        Err(e) => (
+        Err(_) => (
             StatusCode::BAD_GATEWAY,
             [(header::CACHE_CONTROL, "no-store")],
             Json(json!({
                 "error": {
-                    "message": format!("Upstream connection failed: {e}"),
+                    "message": "Chat upstream unavailable",
                     "type": "bad_gateway"
                 }
             })),
@@ -1827,8 +1863,7 @@ async fn aphrody_status_handler() -> Response {
     let llm_endpoint = llm_health_url();
     let llm_online = if let Some(mut url) = llm_endpoint.clone() {
         url.set_path(&format!("{}/models", url.path().trim_end_matches('/')));
-        reqwest::Client::new()
-            .get(url)
+        crate::shenron_llm_backend::chat_request(reqwest::Method::GET, url)
             .timeout(DB_TIMEOUT)
             .send()
             .await
@@ -1974,6 +2009,133 @@ mod tests {
     use axum::body::to_bytes;
 
     use super::*;
+
+    #[test]
+    fn credentialed_chat_requires_a_distinct_gateway_credential() {
+        let mut headers = HeaderMap::new();
+        assert_eq!(
+            gateway_auth(&headers, None, true).unwrap().status(),
+            StatusCode::SERVICE_UNAVAILABLE
+        );
+        assert_eq!(
+            gateway_auth(&headers, Some("gateway-fixture"), true).unwrap().status(),
+            StatusCode::UNAUTHORIZED
+        );
+        headers.insert(
+            header::AUTHORIZATION,
+            axum::http::HeaderValue::from_static("Bearer upstream-fixture"),
+        );
+        assert_eq!(
+            gateway_auth(&headers, Some("gateway-fixture"), true).unwrap().status(),
+            StatusCode::UNAUTHORIZED
+        );
+        headers.insert(
+            header::AUTHORIZATION,
+            axum::http::HeaderValue::from_static("bearer gateway-fixture"),
+        );
+        assert!(gateway_auth(&headers, Some("gateway-fixture"), true).is_none());
+        assert!(gateway_auth(&HeaderMap::new(), None, false).is_none());
+        assert_eq!(
+            gateway_auth(&HeaderMap::new(), Some("gateway-fixture"), false).unwrap().status(),
+            StatusCode::UNAUTHORIZED
+        );
+    }
+
+    #[tokio::test]
+    async fn chat_proxy_authenticates_and_streams_before_upstream_completion() {
+        use axum::body::Bytes;
+        use futures_util::StreamExt;
+        use std::{io, sync::Arc};
+        let _ = rustls::crypto::ring::default_provider().install_default();
+        let finish = Arc::new(tokio::sync::Notify::new());
+        let upstream_finish = finish.clone();
+        let app = Router::new().route(
+            "/v1/chat/completions",
+            post(move |headers: HeaderMap, Json(payload): Json<Value>| {
+                let finish = upstream_finish.clone();
+                async move {
+                    assert_eq!(headers[header::AUTHORIZATION], "Bearer chat-only-fixture");
+                    assert_eq!(payload["model"], "qualified-candidate");
+                    assert_eq!(payload["stream"], true);
+                    let first = futures_util::stream::once(async {
+                        Ok::<_, io::Error>(Bytes::from_static(
+                            b"data: {\"choices\":[{\"delta\":{\"content\":\"Bonjour\"}}]}\n\n",
+                        ))
+                    });
+                    let last = futures_util::stream::once(async move {
+                        finish.notified().await;
+                        Ok::<_, io::Error>(Bytes::from_static(b"data: [DONE]\n\n"))
+                    });
+                    (
+                        [
+                            (header::CONTENT_TYPE, "text/event-stream"),
+                            (header::SET_COOKIE, "upstream-private=fixture"),
+                        ],
+                        Body::from_stream(first.chain(last)),
+                    )
+                }
+            }),
+        );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move { axum::serve(listener, app).await });
+        let response = tokio::time::timeout(Duration::from_secs(2), forward_openai_chat(
+            reqwest::Url::parse(&format!("http://{address}/v1")).unwrap(),
+            json!({"model":"qualified-candidate", "messages":[{"role":"user","content":"Bonjour"}], "stream":true}),
+            Some("chat-only-fixture"),
+        )).await.expect("the proxy must return before generation ends");
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.headers()[header::CONTENT_TYPE], "text/event-stream");
+        assert_eq!(response.headers()[header::CACHE_CONTROL], "no-store");
+        assert_eq!(response.headers()["x-accel-buffering"], "no");
+        assert!(!response.headers().contains_key(header::SET_COOKIE));
+        let mut chunks = response.into_body().into_data_stream();
+        let first = tokio::time::timeout(Duration::from_secs(2), chunks.next())
+            .await
+            .expect("first token is available without buffering")
+            .unwrap()
+            .unwrap();
+        assert!(std::str::from_utf8(&first).unwrap().contains("Bonjour"));
+        finish.notify_one();
+        let done = tokio::time::timeout(Duration::from_secs(2), chunks.next())
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap();
+        assert_eq!(&done[..], b"data: [DONE]\n\n");
+        server.abort();
+    }
+
+    #[tokio::test]
+    async fn chat_proxy_preserves_json_error_status_and_retry_after() {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+        let app = Router::new().route(
+            "/v1/chat/completions",
+            post(|| async {
+                (
+                    StatusCode::TOO_MANY_REQUESTS,
+                    [(header::RETRY_AFTER, "3")],
+                    Json(json!({"error":{"message":"capacity reached","type":"rate_limit_error"}})),
+                )
+            }),
+        );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move { axum::serve(listener, app).await });
+        let response = forward_openai_chat(
+            reqwest::Url::parse(&format!("http://{address}/v1")).unwrap(),
+            json!({"model":"candidate", "stream":false}),
+            None,
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::TOO_MANY_REQUESTS);
+        assert_eq!(response.headers()[header::RETRY_AFTER], "3");
+        assert_eq!(response.headers()[header::CONTENT_TYPE], "application/json");
+        let body = to_bytes(response.into_body(), 4096).await.unwrap();
+        let payload: Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(payload["error"]["message"], "capacity reached");
+        server.abort();
+    }
 
     #[test]
     fn shenron_readiness_requires_exact_explicit_configuration() {

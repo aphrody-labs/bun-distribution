@@ -72,7 +72,8 @@
       "defaultModel": "qwen3-30b-a3b-instruct-2507-q4km",
       "env": [
         { "canonical": "APHRODY_AI_CHAT_BASE_URL", "kind": "url", "form": "base", "aliases": ["APHRODY_SHENRON_LLM_BASE_URL", "APHRODY_OSS_BASE_URL", "APHRODY_LOCAL_MODEL_URL"], "aliasForms": { "APHRODY_LOCAL_MODEL_URL": "origin" } },
-        { "canonical": "APHRODY_AI_CHAT_MODEL", "kind": "model", "aliases": ["APHRODY_LLM_MODEL", "APHRODY_SHENRON_LLM_MODEL"] }
+        { "canonical": "APHRODY_AI_CHAT_MODEL", "kind": "model", "aliases": ["APHRODY_LLM_MODEL", "APHRODY_SHENRON_LLM_MODEL"] },
+        { "canonical": "APHRODY_AI_CHAT_API_KEY", "kind": "secret", "aliases": ["APHRODY_AI_CHAT_TOKEN", "VLLM_API_KEY", "SHENRON_OPENAI_API_KEY"] }
       ]
     },
     "code": {
