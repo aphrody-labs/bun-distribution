@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Aphrody build service (compose profile build, aphrody-build image) on the VPS factory
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/aphrody/current
+Environment=APHRODY_BUILD_REPO=/srv/aphrody/current
+ExecStart=/usr/bin/docker compose -f tools/config/container/compose.yaml --profile build up --no-build --remove-orphans
+ExecStop=/usr/bin/docker compose -f tools/config/container/compose.yaml --profile build down
+Restart=always
+RestartSec=15
+TimeoutStopSec=120
+
+[Install]
+WantedBy=multi-user.target

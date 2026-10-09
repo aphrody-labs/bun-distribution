@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Aphrody complete container (compose profile prod)
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+ConditionPathExists=/etc/aphrody/yolo_api_token
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/aphrody/current
+Environment=APHRODY_API_TOKEN_FILE=/etc/aphrody/yolo_api_token
+Environment=APHRODY_PROD_PORT=8999
+ExecStart=/usr/bin/docker compose -f tools/config/container/compose.yaml --profile prod up --no-build --remove-orphans
+ExecStop=/usr/bin/docker compose -f tools/config/container/compose.yaml --profile prod down
+Restart=always
+RestartSec=10
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

@@ -589,6 +589,27 @@
         "host": "local",
         "kind": "windowsService",
         "name": "WireGuardManager"
+      },
+      {
+        "host": "dbfr",
+        "kind": "systemd",
+        "unit": "aphrody-container.service"
+      },
+      {
+        "host": "vps",
+        "kind": "systemd",
+        "unit": "aphrody-container-build.service"
+      },
+      {
+        "host": "local",
+        "kind": "scheduledTask",
+        "name": "Container",
+        "path": "Aphrody\\",
+        "triggers": [
+          "atLogon",
+          "atStartup"
+        ],
+        "principal": "user"
       }
     ]
   }

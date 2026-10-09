@@ -44,6 +44,70 @@ services:
       retries: 3
     restart: unless-stopped
 
+  # Complete Aphrody (API + MCP surfaces) as a long-running PC service. The Windows service registered by
+  # scripts/install/container-service.ps1 starts it with `--profile pc` on the owner PC and on Omar's PC.
+  pc:
+    <<: *runtime
+    container_name: aphrody-pc
+    command: ["api"]
+    environment:
+      YOLO_API_TOKEN: ${YOLO_API_TOKEN:-}
+      PORT: "8999"
+      APHRODY_PC: ${APHRODY_PC:-local}
+    ports:
+      - "127.0.0.1:${APHRODY_PC_PORT:-8999}:8999"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8999/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    profiles: [pc]
+
+  # Production (dbfr): the image shipped by the VPS build service (release-image.ts ship), never built on dbfr.
+  prod:
+    <<: *runtime
+    build: !reset null
+    container_name: aphrody-prod
+    pull_policy: never
+    command: ["api"]
+    environment:
+      YOLO_API_TOKEN: ""
+      YOLO_API_TOKEN_FILE: /run/secrets/yolo_api_token
+      PORT: "8999"
+    secrets:
+      - yolo_api_token
+    ports:
+      - "127.0.0.1:${APHRODY_PROD_PORT:-8999}:8999"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8999/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: always
+    profiles: [prod]
+
+  # Build service (VPS): the shared aphrody-build image, reached over SSH (`aphrody infra ssh exec --host vps`).
+  # It idles; builds enter through `docker exec` or scripts/build/container/aphrody-build.ts run (bounded, locked).
+  build:
+    image: aphrody-build:latest
+    container_name: aphrody-build
+    command: ["sleep", "infinity"]
+    init: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    cpus: ${APHRODY_BUILD_CPUS:-6}
+    mem_limit: ${APHRODY_BUILD_MEMORY:-16g}
+    pids_limit: 8192
+    working_dir: /work
+    volumes:
+      - ${APHRODY_BUILD_REPO:-/srv/aphrody/build/aphrody}:/work
+      - aphrody-build-cargo:/cache/cargo
+      - aphrody-build-sccache:/cache/sccache
+      - aphrody-build-bun:/cache/bun
+    restart: unless-stopped
+    profiles: [build]
+
   mcp:
     <<: *runtime
     command: ["mcp"]
@@ -99,3 +163,13 @@ volumes:
   cargo-target:
   bun-cache:
   uv-cache:
+  aphrody-build-cargo:
+    external: true
+  aphrody-build-sccache:
+    external: true
+  aphrody-build-bun:
+    external: true
+
+secrets:
+  yolo_api_token:
+    file: ${APHRODY_API_TOKEN_FILE:-/etc/aphrody/yolo_api_token}
