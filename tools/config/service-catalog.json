@@ -374,6 +374,16 @@
       "note": "Daily container-owned PostgreSQL, Redis and live SQLite snapshots, integrity/checksum-verified; protected under /home/ubuntu/apps/shenron/shared/backups/container."
     },
     {
+      "id": "shenron-offsite-backup",
+      "application": "shenron",
+      "kind": "backup",
+      "runtime": "bun",
+      "unit": "shenron-offsite-backup.timer",
+      "host": "vps",
+      "public": false,
+      "note": "Daily 04:30 UTC pull of the DBFR container snapshots over wg (scripts/tools/infra/shenron-offsite-backup.ts): SHA-256 verified against VERIFIED.json under /home/ubuntu/build/archive/dbfr/backups/shenron, PostgreSQL dump restored into a disposable pgvector/pgvector:0.8.1-pg18 container and SQLite quick_check (.restore-verified); 14 days, newest three always kept; fails when the newest DBFR snapshot is older than 36 h."
+    },
+    {
       "id": "aphrody-mcp-http-dbfr",
       "application": "aphrody",
       "kind": "rust-http",
@@ -654,24 +664,6 @@
         "workingDirectory": "{root}",
         "timeLimitMinutes": 60,
         "description": "Aphrody Bun hygiene: newest fork release at least 3 days old, package-manager report (scripts/tools/bun-hygiene.ts)."
-      },
-      {
-        "host": "local",
-        "kind": "scheduledTask",
-        "name": "Shenron PostgreSQL off-host backup",
-        "path": "\\",
-        "triggers": [
-          "daily@06:00"
-        ],
-        "principal": "user",
-        "runLevel": "limited",
-        "periodic": true,
-        "execute": "%USERPROFILE%\\.bun\\bin\\bun.exe",
-        "arguments": "--no-env-file scripts/tools/infra/shenron-offsite-backup.ts",
-        "workingDirectory": "{root}",
-        "timeLimitMinutes": 30,
-        "description": "Pull Shenron PostgreSQL and SQLite snapshots from DBFR and verify SHA-256 off-host.",
-        "hold": "producteur DBFR inactif (2026-10-09) : shenron-pg-backup.timer désactivé, shenron-sqlite-replica-backup absent, aucun répertoire ~/apps/shenron/data/backups ; enregistrer après leur déploiement (tools/config/host/systemd/shenron)"
       }
     ]
   }

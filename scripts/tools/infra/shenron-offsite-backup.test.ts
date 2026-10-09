@@ -1,49 +1,47 @@
 // SPDX-License-Identifier: Apache-2.0
-import { afterEach, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { expect, test } from "bun:test";
 
-import { datasets, parseManifests, prune } from "./shenron-offsite-backup.ts";
+import { expired, parseVerified, remoteRoot, stampTime } from "./shenron-offsite-backup.ts";
 
-const dirs: string[] = [];
-afterEach(() => {
-  for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+const sum = "a".repeat(64);
+
+test("the remote root follows shenron-container-backup.service", () => {
+  expect(remoteRoot("/home/ubuntu/")).toBe("/home/ubuntu/apps/shenron/shared/backups/container");
 });
 
-const [pg, sqlite] = datasets("/home/ubuntu/", "D:\\backups");
-
-test("remote directories follow the declared DBFR units", () => {
-  expect(pg!.remoteDir).toBe("/home/ubuntu/apps/shenron/data/backups/shenron-pg");
-  expect(sqlite!.remoteDir).toBe("/home/ubuntu/apps/shenron/data/backups/shenron-sqlite");
-  expect(sqlite!.destination).toBe(join("D:\\backups", "sqlite"));
+test("snapshot names are parsed as UTC timestamps", () => {
+  expect(stampTime("20261009T163140069807Z")).toBe(Date.UTC(2026, 9, 9, 16, 31, 40));
+  expect(stampTime(".20261009T163140069807Z.partial")).toBeNull();
+  expect(stampTime("pull-status.log")).toBeNull();
 });
 
-test("manifests are parsed strictly", () => {
-  const sum = "a".repeat(64);
-  expect(parseManifests(`${sum}  /x/shenron_site-20261009-030000.sql.gz\n\n`, pg!)).toEqual([
-    { sha256: sum, name: "shenron_site-20261009-030000.sql.gz" },
-  ]);
-  expect(parseManifests(`${sum} *bot-20261009-030000.db.gz`, sqlite!)[0]!.name).toBe(
-    "bot-20261009-030000.db.gz",
+test("VERIFIED.json is parsed strictly", () => {
+  const ok = { kind: "shenron-container-backup", files: { "shenron_site.dump": sum, "bot/data/bot.db.gz": sum } };
+  expect(parseVerified(JSON.stringify(ok)).files["bot/data/bot.db.gz"]).toBe(sum);
+  const bad =
+    (files: Record<string, unknown>, kind = "shenron-container-backup") =>
+    () =>
+      parseVerified(JSON.stringify({ kind, files: { "shenron_site.dump": sum, ...files } }));
+  expect(bad({ "../../etc/passwd": sum })).toThrow("unexpected path");
+  expect(bad({ "/etc/passwd": sum })).toThrow("unexpected path");
+  expect(bad({ "a/../b": sum })).toThrow("unexpected path");
+  expect(bad({ "redis.rdb": "nothex" })).toThrow("malformed digest");
+  expect(bad({}, "other")).toThrow("not a shenron-container-backup");
+  expect(() => parseVerified(JSON.stringify({ kind: "shenron-container-backup", files: {} }))).toThrow(
+    "no PostgreSQL dump",
   );
-  expect(() => parseManifests("nothex  shenron_site-20261009-030000.sql.gz", pg!)).toThrow(
-    "malformed",
-  );
-  expect(() => parseManifests(`${sum}  ../../etc/passwd`, pg!)).toThrow("unexpected");
-  expect(() => parseManifests(`${sum}  bot-20261009-030000.db.gz`, pg!)).toThrow("unexpected");
 });
 
-test("retention prunes old artifacts with their sidecars only", () => {
-  const dir = mkdtempSync(join(tmpdir(), "shenron-offsite-"));
-  dirs.push(dir);
-  const old = join(dir, "shenron_site-20260901-030000.sql.gz");
-  const fresh = join(dir, "shenron_site-20261009-030000.sql.gz");
-  for (const path of [old, `${old}.sha256`, fresh, join(dir, "pull-status.log")])
-    writeFileSync(path, "x");
-  const past = new Date(Date.now() - 20 * 86_400_000);
-  utimesSync(old, past, past);
-  expect(prune(dir)).toEqual(["shenron_site-20260901-030000.sql.gz"]);
-  expect(existsSync(old) || existsSync(`${old}.sha256`)).toBe(false);
-  expect(existsSync(fresh) && existsSync(join(dir, "pull-status.log"))).toBe(true);
+test("retention keeps the newest three and anything younger than 14 days", () => {
+  const now = Date.UTC(2026, 9, 30);
+  const names = [
+    "20261001T030000000000Z",
+    "20261002T030000000000Z",
+    "20261003T030000000000Z",
+    "20261020T030000000000Z",
+    "pull-status.log",
+    ".20261029T030000000000Z.partial",
+  ];
+  expect(expired(names, now).sort()).toEqual(["20261001T030000000000Z"]);
+  expect(expired(names.slice(0, 3), now)).toEqual([]);
 });

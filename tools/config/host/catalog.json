@@ -302,21 +302,21 @@
       "site": "bot.dragonballfr.com"
     },
     {
-      "service": "shenron-pg-backup",
-      "unit": "shenron-pg-backup.service",
-      "path": "systemd/shenron/shenron-pg-backup.service",
-      "dropIns": ["run-as-ubuntu", "sandbox-base"],
-      "ownerRepo": "aphrody",
-      "targetHost": "dbfr"
-    },
-    {
-      "service": "shenron-pg-backup",
-      "unit": "shenron-pg-backup.timer",
-      "path": "systemd/shenron/shenron-pg-backup.timer",
+      "service": "shenron-offsite-backup",
+      "unit": "shenron-offsite-backup.service",
+      "path": "systemd/shenron/shenron-offsite-backup.service",
       "dropIns": [],
       "ownerRepo": "aphrody",
-      "targetHost": "dbfr",
-      "pairs": "shenron-pg-backup.service"
+      "targetHost": "vps"
+    },
+    {
+      "service": "shenron-offsite-backup",
+      "unit": "shenron-offsite-backup.timer",
+      "path": "systemd/shenron/shenron-offsite-backup.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "pairs": "shenron-offsite-backup.service"
     },
     {
       "service": "shenron-site",
@@ -396,7 +396,8 @@
       "path": "systemd/shenron/shenron-container-backup.timer",
       "dropIns": [],
       "ownerRepo": "aphrody",
-      "targetHost": "dbfr"
+      "targetHost": "dbfr",
+      "pairs": "shenron-container-backup.service"
     },
     {
       "service": "shenron-embed",

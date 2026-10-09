@@ -1,100 +1,80 @@
 // SPDX-License-Identifier: Apache-2.0
-// Off-host copy of the Shenron backups of DBFR (PostgreSQL dumps and SQLite replica snapshots).
+// Off-host copy of the DBFR container snapshots (backup-shenron-container.py, shenron-container-backup.timer):
+// PostgreSQL custom dump, Redis RDB and the live SQLite stores, one directory per snapshot.
 //
-//   bun scripts/tools/infra/shenron-offsite-backup.ts [--dest <dir>]
+//   bun scripts/tools/infra/shenron-offsite-backup.ts [--dest <dir>] [--restore-check]
 //
-// Reads the SHA-256 manifests written on DBFR by backup-shenron-pg.sh and backup-shenron-sqlite.sh, copies every
-// listed artifact that is not already present with the same digest (raw `ssh cat`, streamed and hashed), verifies
-// it, writes a `.sha256` sidecar and acknowledges the copy on DBFR (`<artifact>.offsite-verified`, which gates the
-// remote retention). Local copies older than 14 days are pruned. Scheduled daily at 06:00 by the boot catalog
-// entry `Shenron PostgreSQL off-host backup` (tools/config/service-catalog.json, `aphrody infra boot`).
+// Lists the published snapshots on DBFR (root-owned, read with `sudo -n`), copies every snapshot that is not
+// already verified locally (raw `ssh cat`, streamed and hashed against its VERIFIED.json), then writes
+// `.offsite-verified`. `--restore-check` restores the newest local PostgreSQL dump into a disposable
+// pgvector/pgvector:0.8.1-pg18 container, checks the SQLite copies with `PRAGMA quick_check`, and writes
+// `.restore-verified`. Local snapshots older than 14 days are pruned; the newest three are always kept. Fails when
+// the newest DBFR snapshot is older than 36 h (stalled producer). Runs daily on the VPS
+// (tools/config/host/systemd/shenron/shenron-offsite-backup.{service,timer}).
 //
-// Environment: SHENRON_OFFSITE_DIR (default ~/vps-offload/db-backups/shenron/dbfr), SHENRON_OFFSITE_HOST (SSH alias,
-// default dbfr), SHENRON_REMOTE_HOME (default: the remote $HOME). Remote directories follow the declared units:
-// <home>/apps/shenron/data/backups/shenron-pg and .../shenron-sqlite.
+// Environment: SHENRON_OFFSITE_DIR (default ~/build/archive/dbfr/backups/shenron), SHENRON_OFFSITE_HOST (SSH alias,
+// default dbfr), SHENRON_REMOTE_HOME (default: the remote $HOME).
 // oxlint-disable no-await-in-loop -- one SSH transfer at a time bounds DBFR load and local disk writes.
-import {
-  appendFileSync,
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  renameSync,
-  rmSync,
-  statSync,
-} from "node:fs";
+import { Database } from "bun:sqlite";
+import { appendFileSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
-export type Dataset = {
-  name: string;
-  remoteDir: string;
-  manifestGlob: string;
-  artifact: RegExp;
-  destination: string;
-};
-
-export type ManifestEntry = { sha256: string; name: string };
+export type Verified = { files: Record<string, string> };
 
 const RETENTION_DAYS = 14;
+const KEEP_NEWEST = 3;
+const STALE_HOURS = 36;
+const RESTORE_IMAGE = "pgvector/pgvector:0.8.1-pg18";
 const SSH_OPTIONS = ["-o", "BatchMode=yes", "-o", "ConnectTimeout=15"];
+const STAMP = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})\d{6}Z$/;
+const RELATIVE = /^[A-Za-z0-9_-][A-Za-z0-9._-]*(\/[A-Za-z0-9_-][A-Za-z0-9._-]*)*$/;
 
-/** Parses `sha256sum` manifest lines; every name must match the dataset artifact pattern. */
-export function parseManifests(
-  text: string,
-  dataset: Pick<Dataset, "name" | "artifact">,
-): ManifestEntry[] {
-  const entries: ManifestEntry[] = [];
-  for (const line of text.split(/\r?\n/)) {
-    if (!line.trim()) continue;
-    const match = /^([0-9a-f]{64})\s+\*?(.+)$/.exec(line.trim());
-    if (!match) throw new Error(`a ${dataset.name} checksum manifest is malformed`);
-    const name = match[2]!.split(/[\\/]/).pop()!;
-    if (!dataset.artifact.test(name))
-      throw new Error(`DBFR returned an unexpected ${dataset.name} filename`);
-    entries.push({ sha256: match[1]!, name });
+/** UTC time of a snapshot directory name (`%Y%m%dT%H%M%S%fZ`), or null when the name is not a snapshot. */
+export function stampTime(name: string): number | null {
+  const m = STAMP.exec(name);
+  if (!m) return null;
+  const [, y, mo, d, h, mi, s] = m.map(Number);
+  return Date.UTC(y!, mo! - 1, d!, h!, mi!, s!);
+}
+
+export function remoteRoot(remoteHome: string): string {
+  return `${remoteHome.replace(/\/+$/, "")}/apps/shenron/shared/backups/container`;
+}
+
+/** Parses a snapshot VERIFIED.json strictly: relative names without `..`, SHA-256 digests, the PostgreSQL dump. */
+export function parseVerified(text: string): Verified {
+  const doc = JSON.parse(text) as { kind?: unknown; files?: unknown };
+  if (doc.kind !== "shenron-container-backup" || !doc.files || typeof doc.files !== "object")
+    throw new Error("VERIFIED.json is not a shenron-container-backup manifest");
+  const files: Record<string, string> = {};
+  for (const [name, digest] of Object.entries(doc.files as Record<string, unknown>)) {
+    if (!RELATIVE.test(name) || name.split("/").includes(".."))
+      throw new Error("VERIFIED.json lists an unexpected path");
+    if (typeof digest !== "string" || !/^[0-9a-f]{64}$/.test(digest))
+      throw new Error("VERIFIED.json lists a malformed digest");
+    files[name] = digest;
   }
-  return entries;
+  if (!files["shenron_site.dump"]) throw new Error("VERIFIED.json has no PostgreSQL dump");
+  return { files };
 }
 
-export function datasets(remoteHome: string, destination: string): Dataset[] {
-  const backups = `${remoteHome.replace(/\/+$/, "")}/apps/shenron/data/backups`;
-  return [
-    {
-      name: "postgresql",
-      remoteDir: `${backups}/shenron-pg`,
-      manifestGlob: "shenron_site-*.sql.gz.sha256",
-      artifact: /^shenron_site-[0-9]{8}-[0-9]{6}\.sql\.gz$/,
-      destination,
-    },
-    {
-      name: "sqlite-replica",
-      remoteDir: `${backups}/shenron-sqlite`,
-      manifestGlob: "bot-*.db.gz.sha256",
-      artifact: /^bot-[0-9]{8}-[0-9]{6}\.db\.gz$/,
-      destination: join(destination, "sqlite"),
-    },
-  ];
-}
-
-/** Removes local artifacts (and their sidecars) older than the retention window. */
-export function prune(dir: string, now = Date.now()): string[] {
+/** Snapshot directories to delete: older than the retention window and not among the newest KEEP_NEWEST. */
+export function expired(names: string[], now = Date.now()): string[] {
   const cutoff = now - RETENTION_DAYS * 86_400_000;
-  const removed: string[] = [];
-  for (const name of existsSync(dir) ? readdirSync(dir) : []) {
-    if (!/\.(sql|db)\.gz$/.test(name)) continue;
-    const path = join(dir, name);
-    if (!statSync(path).isFile() || statSync(path).mtimeMs >= cutoff) continue;
-    rmSync(path, { force: true });
-    rmSync(`${path}.sha256`, { force: true });
-    removed.push(name);
-  }
-  return removed;
+  return names
+    .filter(name => stampTime(name) !== null)
+    .sort()
+    .reverse()
+    .slice(KEEP_NEWEST)
+    .filter(name => stampTime(name)! < cutoff);
 }
 
 const quote = (value: string) => `'${value.replaceAll("'", `'\\''`)}'`;
 
-async function ssh(host: string, command: string): Promise<string> {
-  const proc = Bun.spawn(["ssh", ...SSH_OPTIONS, host, command], {
+async function run(cmd: string[], stdin?: Blob): Promise<string> {
+  const proc = Bun.spawn(cmd, {
+    stdin: stdin ?? "ignore",
     stdout: "pipe",
     stderr: "pipe",
     windowsHide: true,
@@ -104,19 +84,15 @@ async function ssh(host: string, command: string): Promise<string> {
     new Response(proc.stderr).text(),
     proc.exited,
   ]);
-  if (code !== 0) throw new Error(`ssh ${host}: exit ${code} ${err.trim()}`);
+  if (code !== 0) throw new Error(`${cmd.slice(0, 3).join(" ")}: exit ${code} ${err.trim()}`);
   return out;
 }
 
-async function sha256File(path: string): Promise<string> {
-  const hasher = new Bun.CryptoHasher("sha256");
-  for await (const chunk of Bun.file(path).stream()) hasher.update(chunk);
-  return hasher.digest("hex");
-}
+const ssh = (host: string, command: string) => run(["ssh", ...SSH_OPTIONS, host, command]);
 
-/** Streams one remote file to `partial` and returns its SHA-256 and size. */
+/** Streams one remote root-owned file to `partial` and returns its SHA-256 and size. */
 async function fetchRemote(host: string, remote: string, partial: string) {
-  const proc = Bun.spawn(["ssh", ...SSH_OPTIONS, host, `cat ${quote(remote)}`], {
+  const proc = Bun.spawn(["ssh", ...SSH_OPTIONS, host, `sudo -n cat -- ${quote(remote)}`], {
     stdout: "pipe",
     stderr: "pipe",
     windowsHide: true,
@@ -131,81 +107,207 @@ async function fetchRemote(host: string, remote: string, partial: string) {
   }
   await writer.end();
   const code = await proc.exited;
-  if (code !== 0)
-    throw new Error(
-      `transfer of ${remote} failed: ${(await new Response(proc.stderr).text()).trim()}`,
-    );
+  if (code !== 0) throw new Error(`transfer of ${remote} failed: ${(await new Response(proc.stderr).text()).trim()}`);
   return { sha256: hasher.digest("hex"), size };
+}
+
+async function sha256File(path: string): Promise<string> {
+  const hasher = new Bun.CryptoHasher("sha256");
+  for await (const chunk of Bun.file(path).stream()) hasher.update(chunk);
+  return hasher.digest("hex");
+}
+
+/** Copies one snapshot into `<dest>/.<stamp>.partial`, verifies every digest, then publishes `<dest>/<stamp>`. */
+async function pull(host: string, root: string, stamp: string, dest: string) {
+  const verifiedText = await ssh(host, `sudo -n cat -- ${quote(`${root}/${stamp}/VERIFIED.json`)}`);
+  const { files } = parseVerified(verifiedText);
+  const stage = join(dest, `.${stamp}.partial`);
+  rmSync(stage, { recursive: true, force: true });
+  mkdirSync(stage, { recursive: true, mode: 0o700 });
+  let bytes = 0;
+  try {
+    for (const [name, digest] of Object.entries(files)) {
+      const target = join(stage, ...name.split("/"));
+      mkdirSync(dirname(target), { recursive: true, mode: 0o700 });
+      const got = await fetchRemote(host, `${root}/${stamp}/${name}`, target);
+      if (got.sha256 !== digest) throw new Error(`off-host SHA-256 mismatch for ${stamp}/${name}`);
+      bytes += got.size;
+    }
+    await Bun.write(join(stage, "VERIFIED.json"), verifiedText);
+    await Bun.write(
+      join(stage, ".offsite-verified"),
+      `${JSON.stringify({ at: new Date().toISOString(), source: host, bytes, files: Object.keys(files).length })}\n`,
+    );
+    renameSync(stage, join(dest, stamp));
+  } finally {
+    rmSync(stage, { recursive: true, force: true });
+  }
+  return bytes;
+}
+
+/** Re-hashes a local snapshot against its own VERIFIED.json. */
+async function verifyLocal(dir: string): Promise<boolean> {
+  const manifest = join(dir, "VERIFIED.json");
+  if (!existsSync(join(dir, ".offsite-verified")) || !existsSync(manifest)) return false;
+  const { files } = parseVerified(await Bun.file(manifest).text());
+  for (const [name, digest] of Object.entries(files)) {
+    const path = join(dir, ...name.split("/"));
+    if (!existsSync(path) || (await sha256File(path)) !== digest) return false;
+  }
+  return true;
+}
+
+/** Restores the dump into a disposable PostgreSQL 18 and checks the SQLite copies; returns the restore report. */
+export async function restoreCheck(dir: string) {
+  const name = `shenron-restore-check-${process.pid}`;
+  const report: Record<string, unknown> = { at: new Date().toISOString(), image: RESTORE_IMAGE };
+  await run([
+    "docker",
+    "run",
+    "-d",
+    "--rm",
+    "--name",
+    name,
+    "--network",
+    "none",
+    "-e",
+    "POSTGRES_HOST_AUTH_METHOD=trust",
+    RESTORE_IMAGE,
+  ]);
+  try {
+    const deadline = Date.now() + 120_000;
+    for (;;) {
+      const ready = Bun.spawnSync(["docker", "exec", name, "pg_isready", "-U", "postgres"], {
+        stdout: "ignore",
+        stderr: "ignore",
+      });
+      // The entrypoint restarts the server once after initdb; require the final server.
+      const init = Bun.spawnSync(["docker", "logs", name], { stdout: "pipe", stderr: "pipe" });
+      if (ready.exitCode === 0 && /init process complete/.test(String(init.stderr) + String(init.stdout))) break;
+      if (Date.now() > deadline) throw new Error("restore PostgreSQL did not become ready");
+      await Bun.sleep(1000);
+    }
+    await run(["docker", "exec", name, "createdb", "-U", "postgres", "shenron_site"]);
+    const started = Date.now();
+    await run(
+      [
+        "docker",
+        "exec",
+        "-i",
+        name,
+        "pg_restore",
+        "-U",
+        "postgres",
+        "-d",
+        "shenron_site",
+        "--no-owner",
+        "--no-privileges",
+        "--exit-on-error",
+      ],
+      Bun.file(join(dir, "shenron_site.dump")),
+    );
+    report.restoreSeconds = Math.round((Date.now() - started) / 1000);
+    const psql = (sql: string) =>
+      run(["docker", "exec", name, "psql", "-U", "postgres", "-d", "shenron_site", "-tAc", sql]);
+    await psql("ANALYZE");
+    const stats = await psql(
+      "select count(*), coalesce(sum(greatest(c.reltuples, 0)), 0)::bigint, pg_database_size('shenron_site') " +
+        "from pg_class c join pg_namespace n on n.oid = c.relnamespace " +
+        "where c.relkind in ('r', 'p') and n.nspname not in ('pg_catalog', 'information_schema') " +
+        "and n.nspname not like 'pg_toast%'",
+    );
+    const [tables, rows, databaseBytes] = stats.trim().split("|").map(Number);
+    if (!tables) throw new Error("restored database has no user tables");
+    Object.assign(report, { tables, rows, databaseBytes });
+  } finally {
+    Bun.spawnSync(["docker", "rm", "-f", name], { stdout: "ignore", stderr: "ignore" });
+  }
+  const sqlite: Record<string, string> = {};
+  const scratch = join(dir, ".restore-scratch");
+  mkdirSync(scratch, { recursive: true, mode: 0o700 });
+  try {
+    const { files } = parseVerified(await Bun.file(join(dir, "VERIFIED.json")).text());
+    for (const file of Object.keys(files).filter(f => /\.(db|sqlite)\.gz$/.test(f))) {
+      const plain = join(scratch, file.replaceAll("/", "_").replace(/\.gz$/, ""));
+      const gunzip = Bun.spawn(["gzip", "-dc", join(dir, ...file.split("/"))], {
+        stdout: Bun.file(plain),
+      });
+      if ((await gunzip.exited) !== 0) throw new Error(`gzip -d failed for ${file}`);
+      const db = new Database(plain, { readonly: true });
+      try {
+        sqlite[file] = String((db.query("PRAGMA quick_check").get() as Record<string, unknown>)["quick_check"]);
+      } finally {
+        db.close();
+      }
+      rmSync(plain, { force: true });
+      if (sqlite[file] !== "ok") throw new Error(`SQLite quick_check failed for ${file}`);
+    }
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+  report.sqlite = sqlite;
+  await Bun.write(join(dir, ".restore-verified"), `${JSON.stringify(report)}\n`);
+  return report;
 }
 
 export async function main(argv = Bun.argv.slice(2)): Promise<number> {
   const at = argv.indexOf("--dest");
-  const destination =
+  const dest =
     (at >= 0 ? argv[at + 1] : undefined) ??
     process.env.SHENRON_OFFSITE_DIR ??
-    join(homedir(), "vps-offload", "db-backups", "shenron", "dbfr");
+    join(homedir(), "build", "archive", "dbfr", "backups", "shenron");
   const host = process.env.SHENRON_OFFSITE_HOST ?? "dbfr";
-  const remoteHome =
-    process.env.SHENRON_REMOTE_HOME ?? (await ssh(host, 'printf %s "$HOME"')).trim();
+  const remoteHome = process.env.SHENRON_REMOTE_HOME ?? (await ssh(host, 'printf %s "$HOME"')).trim();
   if (!remoteHome.startsWith("/")) throw new Error("remote home is not an absolute path");
-  const sets = datasets(remoteHome, destination);
-  for (const set of sets) mkdirSync(set.destination, { recursive: true });
+  const root = remoteRoot(remoteHome);
+  mkdirSync(dest, { recursive: true, mode: 0o700 });
   const log = (message: string) =>
-    appendFileSync(
-      join(destination, "pull-status.log"),
-      `${new Date().toISOString()} ${message}\n`,
-    );
+    appendFileSync(join(dest, "pull-status.log"), `${new Date().toISOString()} ${message}\n`);
   log("start");
-  let verified = 0;
-  for (const set of sets) {
-    const manifests = await ssh(
-      host,
-      `find ${quote(set.remoteDir)} -maxdepth 1 -type f -name ${quote(set.manifestGlob)} -exec cat {} +`,
-    );
-    const entries = parseManifests(manifests, set);
-    if (entries.length === 0)
-      throw new Error(`no verified ${set.name} backups are available on ${host}`);
-    log(`dataset=${set.name} manifests=${entries.length}`);
-    for (const entry of entries) {
-      const finalPath = join(set.destination, entry.name);
-      const acknowledge = () =>
-        ssh(host, `touch ${quote(`${set.remoteDir}/${entry.name}.offsite-verified`)}`);
-      if (existsSync(finalPath) && (await sha256File(finalPath)) === entry.sha256) {
-        await acknowledge();
-        log(`verified-existing=${set.name}/${entry.name}`);
-        verified++;
-        continue;
-      }
-      const partial = `${finalPath}.partial`;
-      try {
-        const got = await fetchRemote(host, `${set.remoteDir}/${entry.name}`, partial);
-        if (got.sha256 !== entry.sha256)
-          throw new Error(`off-host SHA-256 mismatch for ${entry.name}`);
-        renameSync(partial, finalPath);
-        await Bun.write(`${finalPath}.sha256`, `${got.sha256}  ${entry.name}\n`);
-        await acknowledge();
-        log(`transferred=${set.name}/${entry.name}`);
-        console.log(`Off-host backup verified: ${set.name}/${entry.name} (${got.size} bytes).`);
-        verified++;
-      } finally {
-        rmSync(partial, { force: true });
-      }
+  const listing = await ssh(
+    host,
+    `sudo -n find ${quote(root)} -mindepth 1 -maxdepth 1 -type d -name '2*Z' -printf '%f\\n'`,
+  );
+  const remote = listing
+    .split(/\r?\n/)
+    .filter(name => stampTime(name) !== null)
+    .sort();
+  if (remote.length === 0) throw new Error(`no published container snapshot on ${host}`);
+  let pulled = 0;
+  for (const stamp of remote) {
+    const local = join(dest, stamp);
+    if (existsSync(local) && (await verifyLocal(local))) {
+      log(`verified-existing=${stamp}`);
+      continue;
     }
+    rmSync(local, { recursive: true, force: true });
+    const bytes = await pull(host, root, stamp, dest);
+    log(`transferred=${stamp} bytes=${bytes}`);
+    console.log(`Off-host snapshot verified: ${stamp} (${bytes} bytes).`);
+    pulled++;
   }
-  for (const set of sets)
-    for (const name of prune(set.destination)) log(`pruned=${set.name}/${name}`);
-  console.log(`Off-host Shenron backup set verified: ${verified} file(s).`);
-  log(`complete=${verified}`);
+  const newest = remote.at(-1)!;
+  if (argv.includes("--restore-check")) {
+    const report = await restoreCheck(join(dest, newest));
+    log(`restore-verified=${newest} ${JSON.stringify(report)}`);
+    console.log(`Restore check ${newest}: ${JSON.stringify(report)}`);
+  }
+  for (const name of expired(readdirSync(dest))) {
+    rmSync(join(dest, name), { recursive: true, force: true });
+    log(`pruned=${name}`);
+  }
+  const ageHours = (Date.now() - stampTime(newest)!) / 3_600_000;
+  log(`complete pulled=${pulled} newest=${newest} age=${ageHours.toFixed(1)}h`);
+  console.log(`Off-host Shenron snapshots verified: ${remote.length} (pulled ${pulled}).`);
+  if (ageHours > STALE_HOURS) throw new Error(`newest DBFR snapshot ${newest} is ${ageHours.toFixed(0)} h old`);
   return 0;
 }
 
 if (import.meta.main) {
   main().then(
-    (code) => process.exit(code),
+    code => process.exit(code),
     (error: unknown) => {
-      console.error(
-        `shenron-offsite-backup: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      console.error(`shenron-offsite-backup: ${error instanceof Error ? error.message : String(error)}`);
       process.exit(1);
     },
   );

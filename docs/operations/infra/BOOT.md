@@ -35,9 +35,9 @@ Sans `--host`, tous les hôtes déclarés sont traités. Les hôtes distants pas
 `--entry` limite l'audit, le plan ou l'apply à une entrée : c'est ainsi qu'un autre PC (celui d'Omar, depuis son
 checkout) enregistre une tâche déclarée sans appliquer les entrées propres au PC du propriétaire. Tâches déclarées
 qui remplacent d'anciens scripts PowerShell : `Container` (`scripts/install/container-service.ts`, `--pc` lu dans
-`APHRODY_PC`), `Aphrody self update` (`aphrody self update`), `AphrodyBunHygiene` (`scripts/tools/bun-hygiene.ts`),
-`Shenron PostgreSQL off-host backup` (`scripts/tools/infra/shenron-offsite-backup.ts`, retenue tant que le
-producteur DBFR est inactif).
+`APHRODY_PC`), `Aphrody self update` (`aphrody self update`), `AphrodyBunHygiene` (`scripts/tools/bun-hygiene.ts`).
+La copie hors hôte des sauvegardes Shenron n'est plus une tâche Windows : `shenron-offsite-backup.timer` tourne sur
+le vps (`scripts/tools/infra/shenron-offsite-backup.ts`, restauration à blanc comprise).
 
 ## État observé (2026-10-09)
 
