@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Approximate nearest-neighbour vector index (`aphrody-web-index`: HNSW with int8
 //! quantisation, mmap persistence) exposed over the C ABI.
 //!

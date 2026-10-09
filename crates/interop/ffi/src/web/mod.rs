@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Web ABI adapters hosted by the single Aphrody native library.
 //!
 //! The Web v4 symbols are hosted by this native library. The Rust adapters

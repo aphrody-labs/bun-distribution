@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Optional GPU provider (ABI 1.5). Every host in the process (Bun through this ABI, Obscura
 //! and Tauri through `aphrody-gpu-backend`) shares the one device of the process-wide hub.
 //! Jobs run on bounded runtime workers; only JSON, caller-owned input bytes (copied before the

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Canonical Aphrody Web names for the source network ABI.
 //! The old exports remain only until all consumers use these names.
 

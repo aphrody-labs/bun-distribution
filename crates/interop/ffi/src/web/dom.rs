@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! DOM tree handles: parse once, query many times.
 //!
 //! A tree is owned by the caller through the opaque pointer returned by

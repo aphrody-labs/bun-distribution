@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Non-blocking job handles for network-bound work.
 //!
 //! The synchronous symbols (`web_internal_dns_recon`, `web_internal_gemini_web_ask`, `web_internal_x_*`)

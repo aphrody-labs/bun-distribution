@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Network-bound symbols: DNS OSINT, Gemini web and the X private API.
 //!
 //! Each operation has one async body shared by two entry points:

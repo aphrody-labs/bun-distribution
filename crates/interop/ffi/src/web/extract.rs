@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Main-content extraction, canonical Markdown, chunking and SimHash
 //! (`aphrody-web-extract`) exposed over the C ABI.
 

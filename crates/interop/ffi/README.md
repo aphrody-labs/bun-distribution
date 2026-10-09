@@ -48,7 +48,7 @@ importing its module does not require a built native library.
 | `const char *aphrody_last_error(void)` | last error on this thread (owned by lib, no free). |
 
 The RAG call surface (`aphrody_rag_*`: manifest, `call_json`, `call_vec`, `take`, `last_error`) is
-re-exported from `crates/ai/rag-ffi`, an adapter without logic over `aphrody_rag_core::api` (chunking, fusion,
+exported by `src/rag_ffi.rs`, an adapter without logic over `aphrody_rag_core::api` (chunking, fusion,
 MMR, eval, vector kernels). Caller-owned buffers, no `free`. Typed Bun binding: `@aphrody/rag-core/ffi`
 (`packages/ai/rag-core`); contract: [Shenron targets](../../../docs/plans/ai/shenron-targets.md).
 

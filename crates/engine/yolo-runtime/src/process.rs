@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Capability `process.supervise` and `http.probe`: spawn a child in its own process group,
 //! observe it without blocking, stop it gracefully (SIGTERM, then SIGKILL after a grace period)
 //! and probe an HTTP endpoint for readiness. Everything a consumer needs to supervise a local

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Native Obscura HTTP transport exposed to Bun.
 //!
 //! This is the single low-level HTTP entrypoint for Aphrody Web. Plain requests use

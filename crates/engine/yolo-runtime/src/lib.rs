@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Versioned C ABI of the precompiled YOLO native runtime.
 //!
 //! First vertical slice (phase R0 of PLAN.md): one capability family (system statistics and a
@@ -668,13 +669,11 @@ pub extern "C" fn yolo_operation_release(operation: YoloHandle) -> YoloStatus {
   })
 }
 
-/// Symbole exporté extern "C" pour chargement dynamique instantané sous Bun (bun:ffi).
-/// Accepte un pointeur de données f64 et sa longueur, garantissant zéro copie.
+/// Sum of squares over a caller-owned `f64` slice, read in place (no copy).
 ///
 /// # Safety
 ///
-/// L'appelant garantit que `ptr` pointe vers une plage mémoire valide et lisible
-/// d'au moins `len` éléments `f64`, ou que `ptr` est NULL lorsque `len == 0`.
+/// `ptr` must point to at least `len` readable `f64` values, or be NULL when `len == 0`.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ffi_sum_squares(ptr: *const f64, len: usize) -> f64 {
   if ptr.is_null() || len == 0 {

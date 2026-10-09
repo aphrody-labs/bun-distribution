@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Text-level helpers that operate on raw HTML strings without building a
 //! DOM tree: title, tag stripping, Markdown, links, plain text and URL
 //! normalisation.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! X native job API (Web ABI 5): client handles, operations and batches over `aphrody-x`.
 //!
 //! One generic, versioned JSON surface replaces one export per operation. A caller opens a client

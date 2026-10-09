@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Optional R4 browser provider. Obscura and every V8 object stay on the context's owner thread.
 //! Only bounded JSON commands and library-owned buffers cross the existing C ABI.
 

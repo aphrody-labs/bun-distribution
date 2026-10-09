@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 //! Chromium cookie store access (local file I/O, synchronous by design).
 
 use std::{ffi::CStr, os::raw::c_char};
