@@ -453,7 +453,7 @@ const FIT_INTERVALS: usize = 64;
 #[allow(clippy::cast_precision_loss)]
 pub fn curve_rms_error(curve: CubicBezier, spring: M3Spring, ms: u16) -> f32 {
     let samples = response_samples(spring, ms);
-    (squared_error(curve, &samples) / (FIT_INTERVALS + 1) as f32).sqrt()
+    sqrt_f32(squared_error(curve, &samples) / (FIT_INTERVALS + 1) as f32)
 }
 
 #[allow(clippy::cast_possible_truncation)]

@@ -41,6 +41,9 @@ pub mod cam16;
 pub mod color;
 #[cfg(feature = "std")]
 pub mod color_math;
+/// Material 3 component tokens (`md.comp.*`) mirrored from the pinned Google token sets.
+#[cfg(feature = "std")]
+pub mod component;
 #[cfg(feature = "std")]
 pub mod contrast;
 /// Dynamic color — HCT seed → 13-tone tonal palette generation (the M3

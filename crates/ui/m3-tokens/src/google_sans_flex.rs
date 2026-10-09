@@ -144,8 +144,7 @@ pub fn font_variation_settings(s: &AxisSettings) -> String {
 }
 
 /// Raw TTF bytes for Google Sans Flex.
-pub const TTF_DATA: &[u8] =
-    include_bytes!("../fonts/google-sans-flex/GoogleSansFlex-Variable.ttf");
+pub const TTF_DATA: &[u8] = include_bytes!("../fonts/google-sans-flex/GoogleSansFlex-Variable.ttf");
 
 /// Emit a `@font-face` declaration block pointing at the variable font
 /// shipped at

@@ -44,8 +44,8 @@ pub mod motion {
 
 /// Aphrody/Gemini brand tokens and SpaceUI compatibility aliases.
 pub mod theme {
-    pub use crate::{gemini_brand::*, spaceui::*};
     pub use crate::theme::{SCHEMA_VERSION, SPEC_VERSION, ThemeExport, ThemeRequest};
+    pub use crate::{gemini_brand::*, spaceui::*};
 }
 
 /// Accessibility invariants shared by native and web components.
@@ -54,8 +54,10 @@ pub mod accessibility {
     pub const MIN_TOUCH_TARGET_DP: u32 = 48;
     /// Standard icon glyph size in density-independent pixels.
     pub const ICON_SIZE_DP: u32 = 24;
-    /// Standard focus-ring thickness in density-independent pixels.
-    pub const FOCUS_RING_DP: u32 = 2;
+    /// Focus-ring thickness in dp (`md.sys.state.focus-indicator.thickness`).
+    pub const FOCUS_RING_DP: u32 = 3;
+    /// Focus-ring offset outside the component in dp (`md.sys.state.focus-indicator.outer-offset`).
+    pub const FOCUS_RING_OFFSET_DP: u32 = 2;
     /// WCAG AA minimum contrast ratio for normal text.
     pub const WCAG_AA_NORMAL_TEXT: f32 = 4.5;
     /// WCAG AA minimum contrast ratio for large text.

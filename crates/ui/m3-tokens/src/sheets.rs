@@ -110,10 +110,12 @@ pub enum Sheet {
     Static,
     /// Gemini / Aphrody brand tokens CSS ([`crate::gemini_brand::export_aphrody_brand_css`]).
     Brand,
+    /// Google-qualified component tokens ([`crate::component::export_css`]).
+    Components,
 }
 
 impl Sheet {
-    /// Parse `tokens`, `tailwind`, `spaceui`, `scheme`, `static` or `brand`.
+    /// Parse `tokens`, `tailwind`, `spaceui`, `scheme`, `static`, `brand` or `components`.
     #[must_use]
     pub fn from_name(name: &str) -> Option<Self> {
         Some(match name {
@@ -123,6 +125,7 @@ impl Sheet {
             "scheme" => Self::Scheme,
             "static" | "m3-tokens" => Self::Static,
             "brand" | "gemini" | "aphrody" => Self::Brand,
+            "components" | "comp" => Self::Components,
             _ => return None,
         })
     }
@@ -138,6 +141,7 @@ pub fn render(request: &SheetRequest) -> String {
         Sheet::Scheme => scheme_css(request.seed, request.variant, request.dark, request.contrast),
         Sheet::Static => static_css(),
         Sheet::Brand => crate::gemini_brand::export_aphrody_brand_css(),
+        Sheet::Components => crate::component::export_css(),
     }
 }
 
@@ -630,6 +634,10 @@ mod tests {
         let brand_css = render(&SheetRequest { sheet: Sheet::Brand, ..SheetRequest::default() });
         assert!(brand_css.contains("--aphrody-brand-blue:"));
         assert!(brand_css.contains("--aphrody-spectrum-shift:"));
+        assert_eq!(Sheet::from_name("components"), Some(Sheet::Components));
+        let components =
+            render(&SheetRequest { sheet: Sheet::Components, ..SheetRequest::default() });
+        assert!(components.contains("--md-comp-switch-track-width: 52px;"));
         assert_eq!(Sheet::from_name("nope"), None);
     }
 }

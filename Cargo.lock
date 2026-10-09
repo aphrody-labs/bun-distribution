@@ -1490,6 +1490,7 @@ version = "1.0.0-canary"
 dependencies = [
  "base64 0.23.1",
  "image",
+ "read-fonts 0.44.0",
  "serde",
  "serde_json",
 ]
