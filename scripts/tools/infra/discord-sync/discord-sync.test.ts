@@ -33,7 +33,11 @@ const cfg: SyncConfig = {
   offlineConfirmTicks: 2,
 };
 
-const snap = (omarOnline: boolean, containers: Record<string, string> = {}, failed: string[] = []): Snapshot => ({
+const snap = (
+  omarOnline: boolean,
+  containers: Record<string, string> = {},
+  failed: string[] = [],
+): Snapshot => ({
   at: "2026-10-09T15:00:00.000Z",
   members: [
     {
@@ -86,11 +90,15 @@ describe("protocole", () => {
   test("messages non structurés ou invalides ignorés", () => {
     expect(decode("bonjour")).toBeNull();
     expect(decode("APHRODY-SYNC/1 event x\n```json\n{pas du json}\n```")).toBeNull();
-    expect(decode('APHRODY-SYNC/1 event x\n```json\n{"v":2,"kind":"event","id":"a"}\n```')).toBeNull();
+    expect(
+      decode('APHRODY-SYNC/1 event x\n```json\n{"v":2,"kind":"event","id":"a"}\n```'),
+    ).toBeNull();
   });
   test("conteneurs docker ps", () => {
     expect(
-      parseContainers("a=Up_3_minutes_(healthy) b=Up_1_hour_(unhealthy) c=Restarting_(1)_5_s_ago d=Up_2_s"),
+      parseContainers(
+        "a=Up_3_minutes_(healthy) b=Up_1_hour_(unhealthy) c=Restarting_(1)_5_s_ago d=Up_2_s",
+      ),
     ).toEqual({
       a: "up",
       b: "unhealthy",
@@ -111,23 +119,26 @@ describe("diff", () => {
     const s = emptyState();
     diff(s, snap(true));
     expect(diff(s, snap(false)).events).toEqual([]);
-    const off = diff(s, snap(false)).events.map(e => e.type);
+    const off = diff(s, snap(false)).events.map((e) => e.type);
     expect(off).toEqual(["member.offline"]);
     expect(diff(s, snap(false)).events).toEqual([]);
-    expect(diff(s, snap(true)).events.map(e => e.type)).toEqual(["member.online"]);
+    expect(diff(s, snap(true)).events.map((e) => e.type)).toEqual(["member.online"]);
   });
   test("conteneur démarré/arrêté/unhealthy et unité en échec", () => {
     const s = emptyState();
     diff(s, snap(true, { a: "up", b: "up" }));
     const r = diff(s, snap(true, { a: "unhealthy", c: "up" }, ["x.service"]));
-    expect(r.events.map(e => e.type).toSorted()).toEqual([
+    expect(r.events.map((e) => e.type).toSorted()).toEqual([
       "container.started",
       "container.stopped",
       "container.unhealthy",
       "task.failed",
     ]);
     const back = diff(s, snap(true, { a: "up", c: "up" }));
-    expect(back.events.map(e => e.type).toSorted()).toEqual(["container.healthy", "task.recovered"]);
+    expect(back.events.map((e) => e.type).toSorted()).toEqual([
+      "container.healthy",
+      "task.recovered",
+    ]);
   });
   test("port d'un membre en ligne qui change", () => {
     const s = emptyState();
@@ -142,7 +153,7 @@ describe("collecte", () => {
     const c = await collect(
       { ...cfg, ignoreContainers: ["^yolo-rel-"] },
       {
-        run: async cmd => (cmd[0] === "wg" ? "" : "containers=yolo-rel-1=Up_1_s keep=Up_2_s\n"),
+        run: async (cmd) => (cmd[0] === "wg" ? "" : "containers=yolo-rel-1=Up_1_s keep=Up_2_s\n"),
         probe: async () => false,
         readPushed: () => undefined,
         nowS: () => 1,
@@ -152,7 +163,9 @@ describe("collecte", () => {
   });
   test("wgView lit les sous-commandes sans clé privée", () => {
     const v = wgView("K1\t10.200.77.10/32", "K1\t100", "K1\t92.1.2.3:5000", "K1\t7\t9");
-    expect(v).toEqual([{ address: "10.200.77.10", handshake: 100, endpoint: "92.1.2.3:5000", rx: 7, tx: 9 }]);
+    expect(v).toEqual([
+      { address: "10.200.77.10", handshake: 100, endpoint: "92.1.2.3:5000", rx: 7, tx: 9 },
+    ]);
   });
   test("faits poussés : seulement le membre demandé", () => {
     const text =
@@ -166,7 +179,7 @@ describe("collecte", () => {
     const now = 10_000;
     const mk = (hs: number, reverse: boolean) =>
       collect(cfg, {
-        run: async c =>
+        run: async (c) =>
           c[0] === "wg"
             ? ((
                 {
@@ -212,7 +225,12 @@ function fake() {
       permission_overwrites: [{ id: "a", type: 0, allow: "1024", deny: "0" }],
     },
   ];
-  const add = (channel: string, content: string, author = { id: "BOT", username: "Aphrody", bot: true }, type = 0) => {
+  const add = (
+    channel: string,
+    content: string,
+    author = { id: "BOT", username: "Aphrody", bot: true },
+    type = 0,
+  ) => {
     const m: Message = {
       id: String((seq += 1n)),
       channel_id: channel,
@@ -228,7 +246,7 @@ function fake() {
   const api: Api = {
     me: async () => ({ id: "BOT", username: "Aphrody" }),
     channels: async () => channels as never,
-    createChannel: async b => {
+    createChannel: async (b) => {
       const c = {
         id: `C${channels.length}`,
         type: b.type as number,
@@ -244,7 +262,7 @@ function fake() {
       const list = msgs.get(ch) ?? [];
       const after = /after=(\d+)/.exec(q)?.[1];
       const limit = Number(/limit=(\d+)/.exec(q)?.[1] ?? 50);
-      const f = after ? list.filter(m => BigInt(m.id) > BigInt(after)) : list.slice(-limit);
+      const f = after ? list.filter((m) => BigInt(m.id) > BigInt(after)) : list.slice(-limit);
       return f.toReversed();
     },
     post: async (ch, b) => {
@@ -252,7 +270,7 @@ function fake() {
       return add(ch, (b.content as string) ?? "");
     },
     edit: async (ch, id, b) => {
-      const m = (msgs.get(ch) ?? []).find(x => x.id === id);
+      const m = (msgs.get(ch) ?? []).find((x) => x.id === id);
       if (!m) throw new DiscordError(404, "PATCH", "x");
       m.content = (b.content as string) ?? m.content;
       log.push(`edit ${ch}`);
@@ -261,7 +279,7 @@ function fake() {
     remove: async (ch, id) => {
       msgs.set(
         ch,
-        (msgs.get(ch) ?? []).filter(m => m.id !== id),
+        (msgs.get(ch) ?? []).filter((m) => m.id !== id),
       );
     },
     pin: async () => {
@@ -272,7 +290,7 @@ function fake() {
       reactions.set(`${ch}/${id}`, [...(reactions.get(`${ch}/${id}`) ?? []), "BOT"]);
     },
     reactors: async (ch, id) =>
-      (reactions.get(`${ch}/${id}`) ?? []).map(u => ({ id: u, username: u, bot: u === "BOT" })),
+      (reactions.get(`${ch}/${id}`) ?? []).map((u) => ({ id: u, username: u, bot: u === "BOT" })),
     upload: async () => {
       throw new Error("upload is not used by sync");
     },
@@ -286,9 +304,9 @@ const memIo = () => {
   const outbox: { name: string; body: string }[] = [];
   const io: Io = {
     outbox: () => [...outbox],
-    dropOutbox: n => void outbox.splice(0, outbox.length, ...outbox.filter(o => o.name !== n)),
-    writeInbox: n => void inbox.push(n),
-    writeAgreement: n => void agreements.push(n),
+    dropOutbox: (n) => void outbox.splice(0, outbox.length, ...outbox.filter((o) => o.name !== n)),
+    writeInbox: (n) => void inbox.push(n),
+    writeAgreement: (n) => void agreements.push(n),
   };
   return { io, inbox, agreements, outbox };
 };
@@ -301,13 +319,13 @@ describe("tick", () => {
     const r1 = await tick(f.api, cfg, state, snap(true), m.io, "G");
     expect(r1.status).toBe("created");
     expect(r1.baseline).toBe(true);
-    expect(f.log.filter(l => l.startsWith("create")).length).toBe(4); // catégorie + 3 salons
+    expect(f.log.filter((l) => l.startsWith("create")).length).toBe(4); // catégorie + 3 salons
     expect(f.log).toContain("pin");
-    expect(f.msgs.get(state.channels.etat!)!.some(x => x.type === 6)).toBe(false);
+    expect(f.msgs.get(state.channels.etat!)!.some((x) => x.type === 6)).toBe(false);
     const r2 = await tick(f.api, cfg, state, snap(true), m.io, "G");
     expect(r2.status).toBe("edited");
-    expect(f.log.filter(l => l.startsWith("create")).length).toBe(4);
-    expect(f.log.filter(l => l === "pin").length).toBe(1);
+    expect(f.log.filter((l) => l.startsWith("create")).length).toBe(4);
+    expect(f.log.filter((l) => l === "pin").length).toBe(1);
     // reprise : état rechargé depuis le disque
     const reloaded = JSON.parse(JSON.stringify(state));
     const r3 = await tick(f.api, cfg, reloaded, snap(true), m.io, "G");
@@ -322,7 +340,7 @@ describe("tick", () => {
     f.msgs.set(state.channels.etat!, []);
     const r = await tick(f.api, cfg, state, snap(true), m.io, "G");
     expect(r.status).toBe("created");
-    expect(f.log.filter(l => l === "pin").length).toBe(2);
+    expect(f.log.filter((l) => l === "pin").length).toBe(2);
   });
   test("Omar hors ligne simulé : événement publié dans sync-evenements, parsable", async () => {
     const f = fake();
@@ -334,9 +352,9 @@ describe("tick", () => {
     expect(r.events).toContain("member.offline");
     const posted = f.msgs
       .get(state.channels.evenements!)!
-      .map(x => decode(x.content))
+      .map((x) => decode(x.content))
       .filter(Boolean);
-    expect(posted.map(e => e!.type)).toContain("member.offline");
+    expect(posted.map((e) => e!.type)).toContain("member.offline");
   });
   test("accord : ✅ de chaque destinataire, ack en réponse, fichier consigné, plus en attente", async () => {
     const f = fake();
@@ -358,7 +376,7 @@ describe("tick", () => {
     expect(r.events).toContain("agreement.complete");
     expect(state.pendingAcks[msg.id]).toBeUndefined();
     expect(m.agreements).toEqual([`${env.id}.json`]);
-    expect(f.msgs.get(demandes)!.some(x => decode(x.content)?.kind === "ack")).toBe(true);
+    expect(f.msgs.get(demandes)!.some((x) => decode(x.content)?.kind === "ack")).toBe(true);
   });
   test("rapport structuré d'Omar : boîte de réception + événement report.received", async () => {
     const f = fake();
@@ -414,7 +432,11 @@ describe("tick", () => {
 import { mergeFiche, scrub } from "./fiche.ts";
 describe("fiche", () => {
   test("retire les secrets et ajoute la partie d'Omar", () => {
-    const out = mergeFiche("a\nPrivateKey = xxx\nNET_SERVICE_VNC=1 vnc-password\nb", { user: "omar" }, new Date(0));
+    const out = mergeFiche(
+      "a\nPrivateKey = xxx\nNET_SERVICE_VNC=1 vnc-password\nb",
+      { user: "omar" },
+      new Date(0),
+    );
     expect(out).not.toContain("PrivateKey");
     expect(out).toContain("vnc-password");
     expect(out).toContain("user : omar");
