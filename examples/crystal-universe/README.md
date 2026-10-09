@@ -36,14 +36,17 @@ bun examples/crystal-universe/serve.js
 Pour le mode multijoueur local, démarrer aussi le service Rust dans un autre terminal :
 
 ```sh
-bun scripts/build/rust/vps-cargo.ts run -- run -p aphrody-web-game-server
+cargo run --locked --manifest-path crates/web/dragon-pixel-server/Cargo.toml
 ```
 
 Construire le cœur de combat WASM avant de lancer le navigateur :
 
 ```sh
-bun scripts/build/rust/wasm-package.ts --crate aphrody-dragon-pixel-wasm --out target/wasm-package-stage/aphrody-dragon-pixel-wasm --name dragon-pixel-wasm
+bun scripts/build/rust/wasm-package.ts --manifest-path crates/web/dragon-pixel-wasm/Cargo.toml --crate aphrody-dragon-pixel-wasm --out target/wasm-package-stage/aphrody-dragon-pixel-wasm --name dragon-pixel-wasm
 ```
+
+Les trois crates `crates/web/dragon-pixel-*` sont exclues du workspace racine :
+chacune a son `[workspace]` et son `Cargo.lock`, d'où `--manifest-path`.
 
 Le paquet WASM active Bevy 0.19.1 pour la cible `wasm32-unknown-unknown` avec
 `3d`, `web` et `webgpu`. Le renderer crée une arène 3D procédurale et reçoit les

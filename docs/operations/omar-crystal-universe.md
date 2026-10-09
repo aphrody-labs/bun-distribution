@@ -328,6 +328,11 @@ adaptateur; le Canvas/WebGPU JS demeure en repli pendant l'initialisation et si 
 cible WASM n'est pas construite. Le code n'importe aucune donnée ou ressource de
 Xenoverse.
 
+Les crates `dragon-pixel-*` sont depuis sorties du workspace racine (`exclude`,
+`[workspace]` et `Cargo.lock` propres) : la commande actuelle est `cargo check
+--manifest-path crates/web/dragon-pixel-wasm/Cargo.toml --target
+wasm32-unknown-unknown --locked`.
+
 Contrôles du lot : `cargo check -p aphrody-dragon-pixel-wasm --target
 wasm32-unknown-unknown --locked`, Clippy WASM strict, le test natif du pont WASM
 (1/1), build WASM release et test de chargement du paquet généré dans Bun avec

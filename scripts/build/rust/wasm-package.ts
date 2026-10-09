@@ -8,12 +8,15 @@
  * wasm-opt -Oz with the JavaScriptCore-safe feature set (never --all-features), validation, the
  * size ratchet and an atomic replacement of the output that keeps the last usable package.
  *
- * bun scripts/build/rust/wasm-package.ts --crate <package> --out <dir> [--name <name>] [--profile <p>] [--max-bytes <N>] [--skip-cargo] [--no-opt]
+ * bun scripts/build/rust/wasm-package.ts --crate <package> --out <dir> [--manifest-path <Cargo.toml>] [--name <name>] [--profile <p>] [--max-bytes <N>] [--skip-cargo] [--no-opt]
+ *
+ * --manifest-path builds a crate excluded from the root workspace (its own [workspace] and Cargo.lock); the
+ * artifact still lands in the repository target directory.
  */
 import { $ } from "bun";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve, sep } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
 const repositoryRoot = resolve(import.meta.dir, "../../..");
 const triple = "wasm32-unknown-unknown";
@@ -23,6 +26,7 @@ export type ToolRunner = (command: string[], cwd: string) => Promise<ToolResult>
 export type BuildOptions = {
   crate: string;
   out: string;
+  manifestPath?: string;
   name?: string;
   profile?: string;
   maxBytes?: number;
@@ -89,20 +93,27 @@ export async function buildWasmPackage(options: BuildOptions, dependencies: Buil
     return result;
   };
 
+  const manifest = options.manifestPath ? relative(root, resolve(root, options.manifestPath)).replaceAll("\\", "/") : undefined;
+  if (manifest !== undefined && (manifest.startsWith("..") || isAbsolute(manifest) || !manifest.endsWith("Cargo.toml")))
+    throw new Error("--manifest-path must be a Cargo.toml inside the repository");
+
   const artifactName = `${crate.replaceAll("-", "_")}.wasm`;
+  const manifestArgs = manifest ? ["--manifest-path", manifest] : [];
   const cargoArgs =
     profile === "release"
-      ? ["build", "--locked", "-p", crate, "--target", triple, "--release"]
-      : ["build", "--locked", "-p", crate, "--target", triple, "--profile", profile];
+      ? ["build", "--locked", ...manifestArgs, "-p", crate, "--target", triple, "--release"]
+      : ["build", "--locked", ...manifestArgs, "-p", crate, "--target", triple, "--profile", profile];
   const targetDir = resolve(root, env.CARGO_TARGET_DIR ?? "target");
+  // The VPS factory sets CARGO_TARGET_DIR remotely; local builds of an excluded crate must not use its own target/.
+  const localArgs = manifest ? [...cargoArgs, "--target-dir", targetDir] : cargoArgs;
   let fetchDir: string | undefined;
   try {
     let artifact: string;
     if (env.CLAUDE_CODE_REMOTE === "true" || env.APHRODY_CLOUD === "1") {
-      if (!options.skipCargo) await checked([join(root, "scripts/build/rust/cargo-serial.sh"), ...cargoArgs]);
+      if (!options.skipCargo) await checked([join(root, "scripts/build/rust/cargo-serial.sh"), ...localArgs]);
       artifact = join(targetDir, triple, profile, artifactName);
     } else if (platform === "win32" || env.APHRODY_LOCAL_CARGO === "1") {
-      if (!options.skipCargo) await checked(["cargo", ...cargoArgs]);
+      if (!options.skipCargo) await checked(["cargo", ...localArgs]);
       artifact = join(targetDir, triple, profile, artifactName);
     } else {
       const vps = join(root, "scripts/build/rust/vps-cargo.ts");
@@ -121,7 +132,7 @@ export async function buildWasmPackage(options: BuildOptions, dependencies: Buil
     const existing = Bun.file(join(out, `${name}_bg.wasm`));
     const previousBytes = (await existing.exists()) ? existing.size : undefined;
     const built = await pack({
-      crate: join(root, "Cargo.toml"),
+      crate: manifest ? join(root, manifest) : join(root, "Cargo.toml"),
       package: crate,
       artifact,
       outdir: out,
@@ -161,12 +172,13 @@ if (import.meta.main) {
   const out = flag("--out");
   if (!crate || !out)
     throw new Error(
-      "usage: wasm-package.ts --crate <package> --out <dir> [--name <n>] [--profile <p>] [--max-bytes <N>] [--skip-cargo] [--no-opt]",
+      "usage: wasm-package.ts --crate <package> --out <dir> [--manifest-path <Cargo.toml>] [--name <n>] [--profile <p>] [--max-bytes <N>] [--skip-cargo] [--no-opt]",
     );
   const maxBytesStr = flag("--max-bytes");
   const result = await buildWasmPackage({
     crate,
     out,
+    manifestPath: flag("--manifest-path"),
     name: flag("--name"),
     profile: flag("--profile"),
     maxBytes: maxBytesStr ? Number.parseInt(maxBytesStr, 10) : undefined,
