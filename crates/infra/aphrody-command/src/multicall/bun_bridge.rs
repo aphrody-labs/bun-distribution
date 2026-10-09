@@ -22,7 +22,7 @@ pub(crate) const ROUTES: &[(&str, &str)] = &[
     // Monorepo state and generated catalogs (Bun.TOML, Bun.Glob over vendor/).
     ("status", "status"),
     ("generate", "generate"),
-    // Desktop/WebOS frontend (apps/web: `bun run build|dev`) and the desktop runtime release.
+    // Desktop frontend (m3/packages/app-ui, embedded by crates/ui/app) and the desktop runtime release.
     ("desktop", "desktop"),
     ("desktop-runtime", "desktop-runtime"),
     // Release artifacts of the aphrody_ffi library (former `yolo runtime`: install, list, rollback,

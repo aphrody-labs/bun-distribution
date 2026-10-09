@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Checkout launcher for `aphrody`: it finds the native Rust binary and runs it. The binary owns every command,
 // including the Bun-owned ones (crates/infra/aphrody-command/src/multicall/bun_bridge.rs runs them through
-// packages/engine/yolo/src/index.ts). apps/web is `aphrody desktop dev|build`.
+// packages/engine/yolo/src/index.ts). `webos` is the Rust Web engine alias; apps/web is `bun run web:dev|web:build`.
 
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
