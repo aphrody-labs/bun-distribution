@@ -155,25 +155,38 @@ impl AiManifest {
     }
 }
 
-/// Walk up from `start` (or cwd) until `ai.json` exists.
+/// Walk up from cwd until `ai.json` exists, else fall back to `APHRODY_ROOT` (agents working in
+/// sibling repos such as the Bun fork share the monorepo manifest and mailbox).
 pub fn find_repo_root() -> Result<PathBuf, ManifestError> {
     let start = std::env::current_dir()?;
-    let mut dir = start.as_path();
-    loop {
-        if dir.join("ai.json").is_file() {
-            return Ok(dir.to_path_buf());
-        }
-        dir = match dir.parent() {
-            Some(p) => p,
-            None => break,
-        };
+    let fallback = std::env::var_os("APHRODY_ROOT").map(PathBuf::from);
+    find_repo_root_from(&start, fallback.as_deref())
+}
+
+fn find_repo_root_from(start: &Path, fallback: Option<&Path>) -> Result<PathBuf, ManifestError> {
+    if let Some(dir) = start.ancestors().find(|d| d.join("ai.json").is_file()) {
+        return Ok(dir.to_path_buf());
     }
-    Err(ManifestError::NotFound(start))
+    match fallback {
+        Some(root) if root.join("ai.json").is_file() => Ok(root.to_path_buf()),
+        _ => Err(ManifestError::NotFound(start.to_path_buf())),
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn repo_root_falls_back_to_aphrody_root_outside_the_monorepo() {
+        let repo = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .ancestors()
+            .find(|d| d.join("ai.json").is_file())
+            .unwrap();
+        let outside = std::env::temp_dir();
+        assert_eq!(find_repo_root_from(&outside, Some(repo)).unwrap(), repo);
+        assert!(find_repo_root_from(&outside, None).is_err());
+    }
 
     /// The repository advertises local coordination until public deployment
     /// has been qualified. Peers live in the monorepo catalogue.
