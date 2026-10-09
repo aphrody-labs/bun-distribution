@@ -586,10 +586,10 @@ pub(crate) enum A2aAction {
         /// Also listen on this Unix socket (mode 0666); env `A2A_SOCKET` when the flag is absent.
         #[arg(long)]
         unix: Option<std::path::PathBuf>,
-        /// Do not bind TCP (Unix socket only, a2a-broker.ts parity).
+        /// Do not bind TCP (Unix socket only).
         #[arg(long)]
         no_tcp: bool,
-        /// Legacy `messages.jsonl`/`tasks.json` directory for `/jsonrpc` and `/events`;
+        /// Coordination directory;
         /// env `COORD_DIR` when the flag is absent.
         #[arg(long)]
         coord_dir: Option<std::path::PathBuf>,

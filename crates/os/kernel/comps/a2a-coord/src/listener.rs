@@ -141,7 +141,7 @@ mod auth_tests {
         let root = tempfile::tempdir().unwrap();
         let private = tempfile::tempdir().unwrap();
         let app =
-            legacy_router(&config(root.path()), private.path(), Some("test-credential".into()));
+            coord_router(&config(root.path()), private.path(), Some("test-credential".into()));
         for (method, path) in [
             ("POST", "/"),
             ("POST", "/a2a"),
@@ -151,8 +151,6 @@ mod auth_tests {
             ("GET", "/tasks"),
             ("GET", "/coord/aphrody/tasks"),
             ("POST", "/coord/aphrody/envelopes"),
-            ("POST", "/jsonrpc"),
-            ("GET", "/events"),
         ] {
             for credential in [None, Some("Bearer wrong")] {
                 let mut request = Request::builder().method(method).uri(path);
@@ -188,7 +186,7 @@ mod auth_tests {
                     token.clone(),
                 ),
                 router_with_token(&cfg, Mailbox::for_profile_root(profile.path()), token.clone()),
-                legacy_router(&cfg, profile.path(), token.clone()),
+                coord_router(&cfg, profile.path(), token.clone()),
             ];
             for app in apps {
                 let response = app
@@ -263,7 +261,7 @@ mod auth_tests {
                     router_with_token(&cfg, Mailbox::new(cfg.manifest.coord_dir(root.path())), None)
                 },
                 1 => router_with_token(&cfg, Mailbox::for_profile_root(profile.path()), None),
-                _ => legacy_router(&cfg, profile.path(), None),
+                _ => coord_router(&cfg, profile.path(), None),
             };
             let (stop, stopped) = tokio::sync::oneshot::channel();
             let server = tokio::spawn(async move {
@@ -321,7 +319,7 @@ mod auth_tests {
         let root = tempfile::tempdir().unwrap();
         let private = tempfile::tempdir().unwrap();
         let app =
-            legacy_router(&config(root.path()), private.path(), Some("test-credential".into()));
+            coord_router(&config(root.path()), private.path(), Some("test-credential".into()));
         let request = Request::builder()
             .method("POST")
             .uri("/coord/aphrody/tasks")
@@ -347,7 +345,7 @@ mod auth_tests {
         let root = tempfile::tempdir().unwrap();
         let private = tempfile::tempdir().unwrap();
         let cfg = config(root.path());
-        let response = legacy_router(&cfg, private.path(), None)
+        let response = coord_router(&cfg, private.path(), None)
             .oneshot(
                 Request::builder()
                     .method("POST")
@@ -376,7 +374,7 @@ mod auth_tests {
             .or_else(|| value["result"]["id"].as_str())
             .expect("completed protocol task");
         assert!(private.path().join("a2a/tasks").join(format!("{task_id}.json")).is_file());
-        let response = legacy_router(&cfg, private.path(), None)
+        let response = coord_router(&cfg, private.path(), None)
             .oneshot(
                 Request::builder().uri(format!("/tasks/{task_id}")).body(Body::empty()).unwrap(),
             )
@@ -393,7 +391,7 @@ mod auth_tests {
 
         let root = tempfile::tempdir().unwrap();
         let private = tempfile::tempdir().unwrap();
-        let response = legacy_router(&config(root.path()), private.path(), None)
+        let response = coord_router(&config(root.path()), private.path(), None)
             .oneshot(
                 Request::builder().method("POST").uri("/")
                     .header("content-type", "application/json")
@@ -438,7 +436,7 @@ mod auth_tests {
 
         let root = tempfile::tempdir().unwrap();
         let private = tempfile::tempdir().unwrap();
-        let response = legacy_router(&config(root.path()), private.path(), None)
+        let response = coord_router(&config(root.path()), private.path(), None)
             .oneshot(
                 Request::builder()
                     .method("POST")
@@ -482,7 +480,7 @@ mod auth_tests {
         std::fs::create_dir_all(root.path().join(".coord/shared")).unwrap();
         std::fs::write(root.path().join(".coord/shared/branch"), "private-branch-detail\n")
             .unwrap();
-        let response = legacy_router(&config(root.path()), private.path(), None)
+        let response = coord_router(&config(root.path()), private.path(), None)
             .oneshot(
                 Request::builder().method("POST").uri("/")
                     .header("content-type", "application/json")
@@ -605,7 +603,7 @@ mod auth_tests {
         let store = FsTaskStore::new(private.path().join("a2a"));
         let task = saved_task("uncancellable-task", TaskState::Working);
         store.create(task.clone()).await.unwrap();
-        let response = legacy_router(&config(root.path()), private.path(), None)
+        let response = coord_router(&config(root.path()), private.path(), None)
             .oneshot(
                 Request::builder()
                     .method("POST")
@@ -788,32 +786,28 @@ async fn bind_tcp(cfg: &mut ListenerConfig, token: Option<&str>) -> std::io::Res
     Ok(listener)
 }
 
-/// Extra bind options for [`serve_with_options`] (legacy `a2a-broker.ts` parity).
+/// Extra bind options for [`serve_with_options`] .
 #[derive(Debug, Clone, Default)]
 pub struct ServeOptions {
     /// Also (or only, with `no_tcp`) listen on this Unix socket (mode 0666, stale file removed).
     pub unix: Option<std::path::PathBuf>,
     /// Skip the TCP listener (requires `unix`).
     pub no_tcp: bool,
-    /// Directory of the legacy `messages.jsonl` / `tasks.json` files for `/jsonrpc` and `/events`;
-    /// defaults to the manifest coord dir.
+    /// Coordination directory; defaults to the manifest coord dir.
     pub coord_dir: Option<std::path::PathBuf>,
 }
 
-/// Router = regular surface + legacy broker (`/jsonrpc`, `/events`).
-pub fn router_with_legacy_broker(cfg: &ListenerConfig, coord_dir: &std::path::Path) -> Router {
-    legacy_router(cfg, coord_dir, crate::auth::token())
+/// Router over `coord_dir`, protected by the configured bearer token.
+pub fn router_with_coord_dir(cfg: &ListenerConfig, coord_dir: &std::path::Path) -> Router {
+    coord_router(cfg, coord_dir, crate::auth::token())
 }
 
-fn legacy_router(
+fn coord_router(
     cfg: &ListenerConfig,
     coord_dir: &std::path::Path,
     token: Option<String>,
 ) -> Router {
-    let app = router_with_mailbox(cfg, Mailbox::new(coord_dir.to_path_buf()), token.is_some())
-        .merge(crate::legacy_broker::legacy_broker_router(
-            crate::legacy_broker::LegacyBroker::new(coord_dir),
-        ));
+    let app = router_with_mailbox(cfg, Mailbox::new(coord_dir.to_path_buf()), token.is_some());
     crate::auth::protect(app, token)
 }
 
@@ -862,7 +856,7 @@ async fn bind_unix(
     Ok(listener)
 }
 
-/// Run the listener with the legacy broker routes, on TCP and/or a Unix socket.
+/// Run the listener on TCP and/or a Unix socket.
 pub async fn serve_with_options(
     mut cfg: ListenerConfig,
     opts: ServeOptions,
@@ -886,7 +880,7 @@ pub async fn serve_with_options(
         None => None,
     };
     reconcile_interrupted_tasks(&coord_dir).await?;
-    let app = legacy_router(&cfg, &coord_dir, token);
+    let app = coord_router(&cfg, &coord_dir, token);
     let tcp = async {
         let Some(listener) = tcp_listener else {
             return std::future::pending::<Result<(), Box<dyn std::error::Error + Send + Sync>>>()

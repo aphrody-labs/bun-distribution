@@ -94,7 +94,7 @@ pub(crate) async fn dispatch_a2a(
             };
             if !opts.no_tcp {
                 println!(
-                    "A2A coord on http://{addr} — agent card, /ping, /msg, /jsonrpc, /events, JSON-RPC, HTTP+REST"
+                    "A2A coord on http://{addr} — agent card, /ping, /msg, JSON-RPC, HTTP+REST"
                 );
             }
             if let Some(sock) = &opts.unix {

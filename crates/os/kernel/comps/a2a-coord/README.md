@@ -48,11 +48,10 @@ Records are stored beneath `<coord-dir>/agents/<agent>/tasks/` and
 `<coord-dir>/agents/<agent>/mailbox/`. Agent and task path segments accept only
 ASCII letters, digits, `_` and `-`. Set `APHRODY_A2A_COORD_TOKEN` on the listener
 to require `Authorization: Bearer <token>` on every task, mailbox, JSON-RPC,
-REST and legacy `/jsonrpc` or `/events` route. Only GET `/ping` and the public
+and REST route. Only GET `/ping` and the public
 agent card remain anonymous. A TCP listener outside loopback refuses to start
 without this credential. Loopback without a token retains local compatibility.
-`--coord-dir` scopes all mailbox and durable-task routes, including the legacy
-broker, so a protected domain home can own their state.
+`--coord-dir` scopes all mailbox and durable-task routes, so a protected domain home can own their state.
 
 Protocol tasks and their results use the native filesystem task store beneath
 `<coord-dir>/a2a/tasks/`, including the JSON-RPC and REST bindings. They remain
