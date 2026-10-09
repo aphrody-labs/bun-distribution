@@ -828,8 +828,9 @@ pub struct Marque {
 /// Origine du CDN.
 pub const CDN: &str = "https://cdn.aphrody.com";
 
-/// Feuille des Material Symbols publiée sur le CDN (chemin stable).
-pub const SYMBOLS_CSS: &str = "https://cdn.aphrody.com/fonts/material-symbols/material-symbols.css";
+/// Feuille des Material Symbols publiée sur le CDN (chemin stable, release du fork
+/// `aphrody-labs/material-design-icons`).
+pub const SYMBOLS_CSS: &str = "https://cdn.aphrody.com/s/symbols/material-symbols.css";
 
 /// URL immuable (`/h/<sha256[..16]>.<ext>`) d'un contenu publié sur le CDN.
 #[must_use]
