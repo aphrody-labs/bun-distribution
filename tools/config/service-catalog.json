@@ -50,6 +50,17 @@
       "host": "dbfr"
     },
     {
+      "id": "aphrody-os",
+      "application": "aphrody",
+      "kind": "nginx-static",
+      "runtime": "none",
+      "sourceRepo": "aphrody",
+      "publicProxy": "nginx",
+      "note": "Aphrody OS web bundle (crates/ui/app/ui-dist) served by nginx from /var/www/os.aphrody.com with SPA fallback (vhost nginx/aphrody/os.aphrody.com.conf), no application origin and no unit; target of the homepage Open Aphrody OS button.",
+      "public": true,
+      "host": "vps"
+    },
+    {
       "id": "aphrody-llama-gemma4",
       "application": "aphrody",
       "kind": "llama-server-openai",
@@ -117,16 +128,16 @@
       "kind": "rust-site",
       "runtime": "rust",
       "unit": "aphrody-site.service",
-      "health": "http://127.0.0.1:80/health",
-      "port": 80,
+      "health": "http://127.0.0.1:8083/health",
+      "port": 8083,
       "host": "vps",
       "sourceRepo": "aphrody",
       "workingDirectory": "/home/ubuntu/apps/aphrody/current",
       "releaseRoot": "/home/ubuntu/apps/aphrody/releases",
       "public": true,
-      "publicProxy": "direct-rust",
+      "publicProxy": "nginx",
       "staged": true,
-      "note": "Owner directive 2026-10-09: native read-only Rust product site on VPS port80, scoped CAP_NET_BIND_SERVICE under systemd. Source owner crates/web/site; templates are deployed read-only. MCP/A2A/host/provider APIs remain separately protected. Activation and source/artifact receipts recorded by Infra."
+      "note": "Native read-only Rust product site (crates/web/site) on loopback 127.0.0.1:8083 behind nginx (vhost nginx/aphrody/aphrody.com.conf, Let's Encrypt), no network capability under systemd since 2026-10-10. nginx serves / and the app-ui assets from /var/www/aphrody.com and proxies the other paths (/docs, templates, Material 3) here. MCP/A2A/host/provider APIs remain separately protected."
     },
     {
       "id": "aphrody-web-api",

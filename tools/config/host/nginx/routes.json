@@ -4,6 +4,8 @@
   "sourceOfTruth": "tools/config/service-catalog.json",
   "vhostRoot": "$YOLO_ROOT/tools/config/host",
   "routes": [
+    { "host": "aphrody.com", "service": "aphrody-site", "upstream": "127.0.0.1:8083", "probePath": "/docs", "vhost": "nginx/aphrody/aphrody.com.conf" },
+    { "host": "os.aphrody.com", "service": "aphrody-os", "upstream": "static:/var/www/os.aphrody.com", "probePath": "/", "vhost": "nginx/aphrody/os.aphrody.com.conf" },
     { "host": "bot.aphrody.com", "service": "aphrody-discord-dev", "upstream": "127.0.0.1:4010", "probePath": "/healthz", "vhost": "nginx/aphrody/bot.aphrody.com.conf" },
     { "host": "downloads.aphrody.com", "service": "aphrody-downloads", "upstream": "127.0.0.1:8797", "probePath": "/health", "vhost": "nginx/aphrody/downloads.aphrody.com.conf" },
     { "host": "creator.aphrody.com", "service": "aphrody-creator", "upstream": "static:/home/ubuntu/apps/creator/current", "probePath": "/latest.json", "vhost": "nginx/aphrody/creator.aphrody.com.conf" },
