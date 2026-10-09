@@ -126,6 +126,16 @@ enum CommandKind {
         #[arg(long)]
         json: bool,
     },
+    /// Persistence at boot: plan, apply or audit the unified desired state (systemd, Docker, Windows tasks and services).
+    Boot {
+        #[arg(value_enum)]
+        action: crate::boot::BootAction,
+        /// Host of the desired state (vps, dbfr, local); all hosts when omitted.
+        #[arg(long)]
+        host: Option<String>,
+        #[arg(long)]
+        json: bool,
+    },
     /// Probe an HTTP or TCP endpoint health.
     Probe {
         /// Target URL or address (e.g. http://127.0.0.1:8083/healthz or tcp://127.0.0.1:15433).
@@ -2255,6 +2265,14 @@ async fn run_cli(cli: Cli) -> Result<()> {
         CommandKind::Sync { target, apply } => sync(&root, target.as_deref(), *apply, &mut run),
         CommandKind::Deploy { target, stack, release, apply } => {
             deploy(target, *stack, release.as_deref(), *apply, &mut run)
+        },
+        CommandKind::Boot { action, host, json } => {
+            let drift = crate::boot::run_boot(&root, *action, host.as_deref(), *json)?;
+            run.action("boot", if drift { "drift" } else { "conforme" }, json!({}));
+            if drift && *action == crate::boot::BootAction::Audit {
+                bail!("dérive de persistance au boot");
+            }
+            Ok(())
         },
         CommandKind::Validate { json } => validate_catalogs(&root, *json, &mut run),
         CommandKind::Reclaim { target, apply } => reclaim_disk(&root, target, *apply, &mut run),

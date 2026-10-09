@@ -103,7 +103,7 @@ SHA-256: `74d541aad16d15afbac0fa9c87309ae85cd48299aa8e11d043835516f29906be`
 
 ## Source: crates/infra/infra/src/lib.rs
 
-SHA-256: `2e0435b98699ad68d7fd48fa92f9df2ef8b3787ca4588fc3bf69effd48a33590`
+SHA-256: `043673ba9e0636e21bbf1f57b95077af099e2fc4c1309ac4b219f8c06fdf9760`
 
 ### Documentation excerpt — source lines 2–6
 

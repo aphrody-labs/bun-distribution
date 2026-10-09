@@ -6,6 +6,7 @@
 //! Git ecosystem automation, Mullvad VPN/proxy control, and embedded HTTP API.
 
 pub mod api;
+pub mod boot;
 pub mod catalog;
 pub mod cli;
 pub mod devenv;

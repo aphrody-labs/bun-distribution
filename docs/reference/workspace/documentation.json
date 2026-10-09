@@ -2046,7 +2046,7 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "847cee37d8c9e5a1a028d9165a2d8f088d931729bb67e1b5badbf17ac5ae56ba",
+      "sha256": "d0a6359279b7cab30138aed997b7e49db2d73ed6f6dc9987f8bbbe0d1690ff2a",
       "bytes": 8060,
       "domain": "",
       "status": "generated",
@@ -2126,7 +2126,7 @@
     {
       "path": "docs/apis/generated/infra-rust.md",
       "title": "Source reference: infra-rust",
-      "sha256": "8f4c6ca390a521d67127fb5216b0156580497dae370ab0724eb57228eb69257a",
+      "sha256": "570be6f71bfb8c532246dd531f37b8b1464b0b95260b2dc2f6c2c551084a0748",
       "bytes": 2762,
       "domain": "generated",
       "status": "generated",
@@ -2606,8 +2606,8 @@
     {
       "path": "docs/ecosystem/CLI.md",
       "title": "CLI command trees",
-      "sha256": "83d9069db3c5908af4db7db558c5b950f04bf299705b7c5f0fe37f28afa6d71b",
-      "bytes": 137604,
+      "sha256": "6c4cd694546268ee64b2b3947fb99dd9674f097368ba94f70e7b122652317c7d",
+      "bytes": 138496,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -2616,7 +2616,7 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "700c65fe468ea50eb43948a2b2c8fc280d6c989b27d5c11368cbd18dde19267c",
+      "sha256": "9c8cd7e031edcddea3890479b1bfd2d7b891570a81b9d4b849e964d9812a252e",
       "bytes": 68015,
       "domain": "",
       "status": "generated",
@@ -3062,6 +3062,26 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/forge-yolo-consolidation.md"
+    },
+    {
+      "path": "docs/operations/infra/AUTO-RELEASE.md",
+      "title": "Automatic release on every push to main",
+      "sha256": "399d32c7cef469408cde3d04337213247ac4ac7b65394f17c16f1f45542126ae",
+      "bytes": 4272,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/AUTO-RELEASE.md"
+    },
+    {
+      "path": "docs/operations/infra/BOOT.md",
+      "title": "Persistance au boot",
+      "sha256": "9c39d46a5877e62b86c65c9ed461fc5449bf556002410fc9ea72537199b760fd",
+      "bytes": 3110,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/BOOT.md"
     },
     {
       "path": "docs/operations/infra/BUILD-FACTORY-JOBS.md",

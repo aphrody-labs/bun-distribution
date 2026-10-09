@@ -69,7 +69,7 @@ fn container_command(action: ServiceAction, container: &str) -> Option<Vec<Strin
     Some(argv)
 }
 
-fn run_on_target(target_id: &str, argv: &[String]) -> std::io::Result<std::process::Output> {
+pub(crate) fn run_on_target(target_id: &str, argv: &[String]) -> std::io::Result<std::process::Output> {
     if is_local_target(target_id) {
         Command::new(&argv[0]).args(&argv[1..]).output()
     } else {

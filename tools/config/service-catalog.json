@@ -460,5 +460,122 @@
     ],
     "databasePolicy": "postgresql-primary-with-sqlite-local-cache",
     "authPolicy": "one-better-auth-contract-per-public-origin"
+  },
+  "boot": {
+    "$comment": "Unified boot-persistence desired state (docs/operations/infra/BOOT.md). Non-retired services above are derived automatically (unit or container on their host); these entries add timers, sockets, wrappers, Windows tasks and services. `hold` = audited, never corrected by apply. Checked with `aphrody infra boot audit`.",
+    "entries": [
+      {
+        "host": "vps",
+        "kind": "systemd",
+        "unit": "aphrody-selfheal.timer"
+      },
+      {
+        "host": "vps",
+        "kind": "systemd",
+        "unit": "aphrody-shenron-build-runner.service"
+      },
+      {
+        "host": "dbfr",
+        "kind": "systemd",
+        "unit": "aphrody-selfheal.timer"
+      },
+      {
+        "host": "dbfr",
+        "kind": "systemd",
+        "unit": "aphrody-web-browser-dbfr.service"
+      },
+      {
+        "host": "dbfr",
+        "kind": "systemd",
+        "unit": "aphrody-wg-proxy@8793.socket"
+      },
+      {
+        "host": "dbfr",
+        "kind": "systemd",
+        "unit": "shenron-bot-docker.service"
+      },
+      {
+        "host": "dbfr",
+        "kind": "systemd",
+        "unit": "shenron-site-docker.service"
+      },
+      {
+        "host": "dbfr",
+        "kind": "systemd",
+        "unit": "shenron-compute.service"
+      },
+      {
+        "host": "dbfr",
+        "kind": "systemd",
+        "unit": "shenron-embed.service"
+      },
+      {
+        "host": "dbfr",
+        "kind": "systemd",
+        "unit": "shenron-timeline-api.service"
+      },
+      {
+        "host": "dbfr",
+        "kind": "systemd",
+        "unit": "shenron-timeline-refresh.timer"
+      },
+      {
+        "host": "dbfr",
+        "kind": "systemd",
+        "unit": "aphrody-jobs-worker-dbfr.service",
+        "hold": "worker jobs corrigé par un autre agent"
+      },
+      {
+        "host": "local",
+        "kind": "scheduledTask",
+        "name": "Aphrody WG aphro-pc",
+        "triggers": [
+          "atStartup"
+        ],
+        "principal": "system"
+      },
+      {
+        "host": "local",
+        "kind": "scheduledTask",
+        "name": "Aphrody MCP HTTP",
+        "triggers": [
+          "atStartup",
+          "atLogon"
+        ],
+        "principal": "user"
+      },
+      {
+        "host": "local",
+        "kind": "scheduledTask",
+        "name": "Aphrody Remote Desktop",
+        "triggers": [
+          "atLogon"
+        ],
+        "principal": "user"
+      },
+      {
+        "host": "local",
+        "kind": "windowsService",
+        "name": "AphrodyHost",
+        "restartOnFailure": true
+      },
+      {
+        "host": "local",
+        "kind": "windowsService",
+        "name": "sshd",
+        "restartOnFailure": true
+      },
+      {
+        "host": "local",
+        "kind": "windowsService",
+        "name": "WireGuardManager"
+      },
+      {
+        "host": "dbfr",
+        "kind": "systemd",
+        "unit": "aphrody-a2a.service",
+        "hold": "unité absente de dbfr malgré le catalogue (déploiement à planifier via aphrody infra deploy)"
+      }
+    ]
   }
 }
