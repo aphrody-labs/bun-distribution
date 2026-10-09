@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Native Yolo Google owner and Workspace sync worker, on the VPS independently of WSL.
+# Native Google owner and Workspace sync worker, on the VPS independently of WSL.
 [Unit]
 Description=Private DBFR Drive sync and retrieval on the Aphrody VPS
 After=network-online.target

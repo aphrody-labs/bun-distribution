@@ -2,7 +2,7 @@
   "version": 1,
   "root": "/srv/aphrody-lab",
   "aphrody": "/home/ubuntu/.local/bin/aphrody",
-  "yolo": "/srv/aphrody-lab/yolo-google.mjs",
+  "google": "/srv/aphrody-lab/google-owner.mjs",
   "receiptRoot": "/home/ubuntu/.aphrody/automation/drive-vps",
   "drive": {
     "home": "/home/ubuntu/.aphrody/workspaces/dbfr",
@@ -20,7 +20,7 @@
     "stateFile": "/home/ubuntu/.aphrody/drive-sync/dbfr-google-markdown.json",
     "baselineDirectory": "/home/ubuntu/.aphrody/drive-sync/markdown-reviewed-baseline",
     "reviewedDirectory": "/home/ubuntu/.aphrody/drive-sync/reviewed-current",
-    "a2aUrl": "http://127.0.0.1:8788/",
+    "a2aUrl": "http://127.0.0.1:23888/",
     "tokenFile": "/home/ubuntu/.aphrody/private/a2a/bearer",
     "peer": "codex",
     "ownerModule": {

@@ -137,8 +137,6 @@ const PUBLIC_ASSETS = new Set([
   "SHA256SUMS",
   "install.sh",
   "install.ps1",
-  "install-yolo.sh",
-  "install-yolo.ps1",
   "pet.webp",
   "icon.svg",
 ]);

@@ -22,10 +22,8 @@ Environment=APHRODY_MCP_NATIVE_DAEMON=/home/aphro/.aphrody/private/connectivity/
 Environment=PATH=/home/aphro/.local/bin:/home/aphro/.bun/bin:/home/aphro/.cargo/bin:/usr/local/bin:/usr/bin:/bin
 # External tool-host processes are disabled in this daemon; native MCP routes
 # and the shared FFI retain their existing capability owners.
-Environment=APHRODY_YOLO_TOOL_HOST=
 Environment=APHRODY_M3_TOOL_HOST=
 Environment=APHRODY_BROWSER_MCP_BIN=
-Environment=APHRODY_YOLO_MCP_BIN=
 Environment=APHRODY_AI_MCP_BIN=
 EnvironmentFile=/home/aphro/.aphrody/private/connectivity/mcp-http.env
 ExecStart=/home/aphro/.bun/bin/bun /home/aphro/.local/lib/aphrody/pc-agent/current/src/pc-agent.ts --bind 127.0.0.1:8793

@@ -27,10 +27,8 @@
   "assets": {
     "install.sh": "packages/infra/workspace/assets/downloads/install.sh",
     "install.ps1": "packages/infra/workspace/assets/downloads/install.ps1",
-    "install-yolo.sh": "packages/engine/yolo/install.sh",
     "pet.webp": "crates/ui/identity/assets/aphrody/sprites/spritesheet.webp",
-    "icon.svg": "packages/infra/workspace/assets/downloads/icon.svg",
-    "install-yolo.ps1": "packages/engine/yolo/install.ps1"
+    "icon.svg": "packages/infra/workspace/assets/downloads/icon.svg"
   },
   "artifacts": [
     {
@@ -219,7 +217,7 @@
       {
         "repository": "aphrody-labs/aphrody",
         "artifacts": ["aphrody", "yolo"],
-        "extra": ["install.sh", "install.ps1", "install-yolo.sh", "SHA256SUMS", "latest.json"]
+        "extra": ["install.sh", "install.ps1", "SHA256SUMS", "latest.json"]
       },
       { "repository": "aphrody-labs/plugin-aphrody", "artifacts": ["plugin-aphrody"], "extra": [] },
       { "repository": "aphrody-labs/plugin-yolo", "artifacts": ["plugin-yolo"], "extra": [] },

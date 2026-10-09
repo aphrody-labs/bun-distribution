@@ -152,10 +152,8 @@ describe("publish-downloads", () => {
     expect(Object.keys(cfg.assets)).toEqual([
       "install.sh",
       "install.ps1",
-      "install-yolo.sh",
       "pet.webp",
       "icon.svg",
-      "install-yolo.ps1",
     ]);
     for (const source of Object.values(cfg.assets))
       expect(existsSync(join(root, source))).toBe(true);

@@ -166,16 +166,9 @@ async fn builtin_kernel(
             kernel.register(plugin).await?;
         }
     }
-    // Bun tool tables served through this one endpoint: no second MCP server (`yolo tool`, `m3 tool-host`).
+    // Bun tool tables served through this one endpoint: no second MCP server (`m3 tool-host`).
     let m3_args = m3_tool_host().map(|script| vec![script.to_string_lossy().into_owned()]);
     let hosts = [
-        (
-            "yolo",
-            "Yolo Bun runtime tools (`yolo tool` host).",
-            "APHRODY_YOLO_TOOL_HOST",
-            "yolo",
-            Some(vec!["tool".to_owned()]),
-        ),
         (
             "m3",
             "Material 3 tokens, themes, symbols and docs (aphrody-m3 tool host).",

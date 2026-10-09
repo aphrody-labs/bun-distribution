@@ -22,7 +22,7 @@ beforeAll(() => {
   writeFileSync(join(outside, "secret.txt"), "secret");
   symlinkSync(join(outside, "secret.txt"), join(root, "files", "escape"));
   writeFileSync(join(root, "install.sh"), "#!/bin/sh\n");
-  writeFileSync(join(root, "install-yolo.ps1"), "Write-Output pinned\n");
+  writeFileSync(join(root, "install.ps1"), "Write-Output pinned\n");
   writeFileSync(join(root, "SHA256SUMS"), "abc  tool-1.0.0.tar.gz\n");
   writeFileSync(join(root, "files", "credentials.json"), "private");
   symlinkSync(join(outside, "secret.txt"), join(root, "icon.svg"));
@@ -109,8 +109,8 @@ describe("download server", () => {
       "immutable",
     );
     expect(await (await get(`${pinned}/SHA256SUMS`)).text()).toContain("abc");
-    expect(await (await get(`${pinned}/install-yolo.ps1`)).text()).toContain("pinned");
-    expect((await get("/install-yolo.ps1")).status).toBe(200);
+    expect(await (await get(`${pinned}/install.ps1`)).text()).toContain("pinned");
+    expect((await get("/install.ps1")).status).toBe(200);
     expect((await get(`${pinned}/manifest.json`)).status).toBe(404);
     expect((await (await get("/releases/r2/manifest.json")).json()).release.id).toBe("r2");
     const part = await get(`${pinned}/files/tool-1.0.0.tar.gz`, {
