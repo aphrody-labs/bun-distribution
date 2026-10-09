@@ -16,6 +16,8 @@ import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 
 const HEAVY = new Set([
+  "package",
+  "publish",
   "build",
   "b",
   "check",
