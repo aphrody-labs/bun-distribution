@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Famille d'icônes Material Symbols du pet Aphrody : grille 960, 24 dp, axe wght 100-700.
 
-Chaque trait est converti en contour à topologie fixe : le nombre de points ne dépend
-pas du poids, ce qui permet d'interpoler les masters wght sans artefacts.
+Chaque pose est détourée depuis son cadre de la spritesheet (silhouette et traits sombres).
+Le trait est le décalage ±s/2 du contour : le nombre de points ne dépend pas du poids, ce qui
+permet d'interpoler les masters wght sans artefacts.
 """
 
 import hashlib
@@ -11,16 +12,21 @@ import math
 import pathlib
 import shutil
 import tempfile
+from array import array
 
 import numpy as np
 from fontTools import varLib
 from fontTools.designspaceLib import AxisDescriptor, DesignSpaceDocument, SourceDescriptor
 from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.ttGlyphPen import TTGlyphPen
-from PIL import Image, ImageDraw
+from fontTools.ttLib.tables import ttProgram
+from fontTools.ttLib.tables._g_l_y_f import Glyph, GlyphCoordinates
+from PIL import Image, ImageDraw, ImageFilter
+from skimage import measure
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 OUT = ROOT / "assets" / "symbols"
+SHEET = ROOT.parents[2] / "crates" / "ui" / "identity" / "assets" / "aphrody" / "sprites" / "spritesheet.webp"
 UPM = 960
 FAMILY = "Aphrody Pet Symbols"
 MAC_EPOCH_OFFSET = 2082844800
@@ -29,82 +35,25 @@ WEIGHT_STOPS = [(100, 36.0), (400, 72.0), (700, 104.0)]
 SVG_WEIGHTS = [100, 300, 400, 500, 700]
 ICO_SIZES = [16, 24, 32, 48, 256]
 ICO_COLOR = (103, 80, 164)
-ARC_STEPS = 6
-RING_STEPS = 72
 STYLES = {
-    "outlined": {"cap": "flat", "join": "mitre", "mitre": 4.0, "label": "Outlined"},
-    "rounded": {"cap": "round", "join": "round", "mitre": 4.0, "label": "Rounded"},
-    "sharp": {"cap": "square", "join": "mitre", "mitre": 2.0, "label": "Sharp"},
+    "outlined": {"smooth": 0, "mitre": 4.0, "label": "Outlined"},
+    "rounded": {"smooth": 3, "mitre": 4.0, "label": "Rounded"},
+    "sharp": {"smooth": 0, "mitre": 2.0, "label": "Sharp"},
 }
 
-
-def ring(cx, cy, r):
-    return ("ring", (cx, cy, r))
-
-
-def line(*points):
-    return ("line", list(points))
-
-
-def translate(items, dx, dy):
-    moved = []
-    for kind, data in items:
-        if kind == "ring":
-            cx, cy, r = data
-            moved.append(("ring", (cx + dx, cy + dy, r)))
-        else:
-            moved.append(("line", [(x + dx, y + dy) for x, y in data]))
-    return moved
-
-
-HEAD = [
-    ring(480, 200, 112),
-    line((372, 176), (398, 118), (480, 96), (562, 118), (588, 176)),
-    line((372, 190), (360, 300), (396, 392)),
-    line((588, 190), (600, 300), (564, 392)),
-]
-
-TORSO = [
-    line((398, 345), (480, 372), (562, 345)),
-    line((430, 350), (540, 500)),
-    line((372, 520), (588, 520)),
-    line((372, 520), (360, 640), (600, 640), (588, 520)),
-]
-
-LEFT_ARM_DOWN = [line((398, 345), (340, 430), (330, 560))]
-RIGHT_ARM_DOWN = [line((562, 345), (620, 430), (630, 560))]
-RIGHT_ARM_UP = [line((562, 345), (620, 260), (640, 170)), line((612, 136), (640, 100), (666, 134))]
-
-LEGS = [
-    line((430, 640), (428, 790)),
-    line((530, 640), (532, 790)),
-    line((405, 820), (455, 820)),
-    line((505, 820), (555, 820)),
-]
-
-STATES = {
-    "idle": HEAD + TORSO + LEFT_ARM_DOWN + RIGHT_ARM_DOWN + LEGS,
-    "wave": HEAD + TORSO + LEFT_ARM_DOWN + RIGHT_ARM_UP + LEGS,
-    "run": translate(HEAD, 40, 0)
-    + translate(TORSO, 30, 0)
-    + [
-        line((430, 360), (360, 420), (300, 380)),
-        line((560, 360), (630, 400), (690, 340)),
-        line((470, 640), (340, 700), (250, 690)),
-        line((540, 640), (620, 740), (700, 790)),
-    ],
-    "jump": translate(HEAD, 0, -12)
-    + TORSO
-    + [
-        line((398, 345), (340, 260), (330, 180)),
-        line((562, 345), (620, 260), (630, 180)),
-        line((440, 640), (400, 720), (430, 790)),
-        line((520, 640), (560, 720), (530, 790)),
-        line((400, 812), (440, 812)),
-        line((520, 812), (560, 812)),
-    ],
-}
-
+CELL_W, CELL_H = 192, 208
+CELL_CENTER_X = 96
+CELL_BASE_Y = 202
+UNITS_PER_PX = 4.0
+CENTER_X = 480
+BASE_Y = 880
+TRACE_SCALE = 4
+TRACE_TOLERANCE = 1.2
+TRACE_BLUR = 1.5
+DARK_LUMA = 110
+DETAIL_MIN_AREA = 2500
+MIN_CONTOUR_POINTS = 6
+POSES = {"idle": (0, 0), "wave": (2, 3), "run": (3, 7), "jump": (2, 4)}
 STATE_ORDER = ["idle", "wave", "run", "jump"]
 CODEPOINTS = {state: 0xE900 + index for index, state in enumerate(STATE_ORDER)}
 
@@ -116,107 +65,91 @@ def stroke_width(wght):
     return v1 + (v2 - v1) * (wght - w1) / (w2 - w1)
 
 
-def add(a, b):
-    return (a[0] + b[0], a[1] + b[1])
+def to_units(points):
+    return [
+        (
+            CENTER_X + (x / TRACE_SCALE - CELL_CENTER_X) * UNITS_PER_PX,
+            BASE_Y - (CELL_BASE_Y - y / TRACE_SCALE) * UNITS_PER_PX,
+        )
+        for y, x in points
+    ]
 
 
-def scale(v, k):
-    return (v[0] * k, v[1] * k)
+def closed_contours(field, level):
+    contours = []
+    for contour in measure.find_contours(field, level):
+        simplified = measure.approximate_polygon(contour, tolerance=TRACE_TOLERANCE)
+        if len(simplified) >= MIN_CONTOUR_POINTS:
+            contours.append(to_units(simplified[:-1]))
+    return contours
 
 
-def unit(v):
-    length = math.hypot(v[0], v[1])
-    return (v[0] / length, v[1] / length)
-
-
-def signed_area(points):
+def polygon_area(points):
     total = 0.0
     for (x0, y0), (x1, y1) in zip(points, points[1:] + points[:1]):
         total += x0 * y1 - x1 * y0
-    return total / 2
+    return abs(total) / 2
 
 
-def join_points(p, na, nb, half, outer, spec):
-    dot = na[0] * nb[0] + na[1] * nb[1]
-    if outer and spec["join"] == "round":
-        a0 = math.atan2(na[1], na[0])
-        a1 = math.atan2(nb[1], nb[0])
-        delta = (a1 - a0 + math.pi) % (2 * math.pi) - math.pi
-        return [
-            (p[0] + half * math.cos(a0 + delta * k / ARC_STEPS), p[1] + half * math.sin(a0 + delta * k / ARC_STEPS))
-            for k in range(ARC_STEPS + 1)
-        ]
-    ratio = math.sqrt(2 / (1 + dot)) if dot > -1 else float("inf")
-    if ratio > spec["mitre"]:
-        return [add(p, scale(na, half)), add(p, scale(nb, half))]
-    miter = scale(add(na, nb), 1 / (1 + dot))
-    return [add(p, scale(miter, half))]
+def trace_pose(col, row):
+    cell = Image.open(SHEET).convert("RGBA").crop((col * CELL_W, row * CELL_H, (col + 1) * CELL_W, (row + 1) * CELL_H))
+    alpha = cell.getchannel("A")
+    size = (CELL_W * TRACE_SCALE, CELL_H * TRACE_SCALE)
+    blur = ImageFilter.GaussianBlur(TRACE_SCALE * TRACE_BLUR)
+    silhouette_field = alpha.resize(size, Image.BICUBIC).filter(blur)
+    silhouette = closed_contours(np.asarray(silhouette_field, dtype=np.float32) / 255.0, 0.5)
+
+    inside = alpha.point(lambda v: 255 if v >= 128 else 0).filter(ImageFilter.MinFilter(3))
+    dark = cell.convert("L").point(lambda v: 255 if v < DARK_LUMA else 0)
+    dark = Image.fromarray(np.minimum(np.asarray(dark), np.asarray(inside)).astype(np.uint8))
+    dark_field = dark.resize(size, Image.BICUBIC).filter(blur)
+    details = [c for c in closed_contours(np.asarray(dark_field, dtype=np.float32) / 255.0, 0.5) if polygon_area(c) >= DETAIL_MIN_AREA]
+    return silhouette + details
 
 
-def side_path(points, dirs, norms, half, sign, spec):
-    n = len(points)
-    path = []
-    for i, p in enumerate(points):
-        if i == 0:
-            path.append(add(p, scale(norms[0], sign * half)))
-        elif i == n - 1:
-            path.append(add(p, scale(norms[-1], sign * half)))
-        else:
-            d0, d1 = dirs[i - 1], dirs[i]
-            cross = d0[0] * d1[1] - d0[1] * d1[0]
-            outer = cross * sign < 0
-            na = scale(norms[i - 1], sign)
-            nb = scale(norms[i], sign)
-            path.extend(join_points(p, na, nb, half, outer, spec))
-    return path
+STATES = {state: trace_pose(*POSES[state]) for state in STATE_ORDER}
 
 
-def end_cap(p, n, d, half, spec):
-    if spec["cap"] == "square":
-        return [add(add(p, scale(n, half)), scale(d, half)), add(add(p, scale(n, -half)), scale(d, half))]
-    if spec["cap"] == "round":
-        return [
-            add(p, (half * (math.cos(math.pi * k / ARC_STEPS) * n[0] + math.sin(math.pi * k / ARC_STEPS) * d[0]),
-                    half * (math.cos(math.pi * k / ARC_STEPS) * n[1] + math.sin(math.pi * k / ARC_STEPS) * d[1])))
-            for k in range(1, ARC_STEPS)
-        ]
-    return []
+def normal(a, b):
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    length = max(math.hypot(dx, dy), 1e-9)
+    return (-dy / length, dx / length)
 
 
-def start_cap(p, n, d, half, spec):
-    if spec["cap"] == "square":
-        return [add(add(p, scale(n, -half)), scale(d, -half)), add(add(p, scale(n, half)), scale(d, -half))]
-    if spec["cap"] == "round":
-        points = []
-        for k in range(ARC_STEPS - 1, 0, -1):
-            a = math.pi * k / ARC_STEPS
-            points.append(
-                (p[0] + half * (math.cos(a) * n[0] - math.sin(a) * d[0]),
-                 p[1] + half * (math.cos(a) * n[1] - math.sin(a) * d[1]))
+def smooth(points, passes):
+    for _ in range(passes):
+        count = len(points)
+        points = [
+            (
+                (points[i - 1][0] + 2 * points[i][0] + points[(i + 1) % count][0]) / 4,
+                (points[i - 1][1] + 2 * points[i][1] + points[(i + 1) % count][1]) / 4,
             )
-        return points
-    return []
+            for i in range(count)
+        ]
+    return points
 
 
-def stroke_contour(points, half, spec):
-    dirs = [unit((points[i + 1][0] - points[i][0], points[i + 1][1] - points[i][1])) for i in range(len(points) - 1)]
-    norms = [(-d[1], d[0]) for d in dirs]
-    left = side_path(points, dirs, norms, half, +1, spec)
-    right = side_path(points, dirs, norms, half, -1, spec)
-    contour = left + end_cap(points[-1], norms[-1], dirs[-1], half, spec)
-    contour += list(reversed(right)) + start_cap(points[0], norms[0], dirs[0], half, spec)
-    if signed_area(contour) < 0:
-        contour.reverse()
-    return contour
+def offset_closed(points, distance, mitre):
+    count = len(points)
+    result = []
+    for i in range(count):
+        prev, cur, nxt = points[i - 1], points[i], points[(i + 1) % count]
+        n1 = normal(prev, cur)
+        n2 = normal(cur, nxt)
+        denom = 1 + n1[0] * n2[0] + n1[1] * n2[1]
+        m = ((n1[0] + n2[0]) / denom, (n1[1] + n2[1]) / denom) if denom > 1e-6 else n1
+        length = math.hypot(*m)
+        if length > mitre:
+            m = (m[0] * mitre / length, m[1] * mitre / length)
+        result.append((cur[0] + m[0] * distance, cur[1] + m[1] * distance))
+    return result
 
 
-def ring_contours(cx, cy, r, half):
-    outer = [(cx + (r + half) * math.cos(2 * math.pi * i / RING_STEPS), cy + (r + half) * math.sin(2 * math.pi * i / RING_STEPS)) for i in range(RING_STEPS)]
-    inner = [(cx + (r - half) * math.cos(2 * math.pi * i / RING_STEPS), cy + (r - half) * math.sin(2 * math.pi * i / RING_STEPS)) for i in range(RING_STEPS)]
-    if signed_area(outer) < 0:
-        outer.reverse()
-    if signed_area(inner) > 0:
-        inner.reverse()
+def band(points, half, spec):
+    base = smooth(points, spec["smooth"])
+    outer = offset_closed(base, half, spec["mitre"])
+    inner = offset_closed(base, -half, spec["mitre"])
+    inner.reverse()
     return [outer, inner]
 
 
@@ -224,12 +157,25 @@ def contours(state, style, wght):
     spec = STYLES[style]
     half = stroke_width(wght) / 2
     result = []
-    for kind, data in STATES[state]:
-        if kind == "ring":
-            result.extend(ring_contours(*data, half))
-        else:
-            result.append(stroke_contour(data, half, spec))
+    for points in STATES[state]:
+        result.extend(band(points, half, spec))
     return result
+
+
+def simple_glyph(all_contours):
+    coordinates, ends = [], []
+    for contour in all_contours:
+        coordinates.extend((round(x), round(UPM - y)) for x, y in contour)
+        ends.append(len(coordinates) - 1)
+    glyph = Glyph()
+    glyph.numberOfContours = len(ends)
+    glyph.endPtsOfContours = ends
+    glyph.coordinates = GlyphCoordinates(coordinates)
+    glyph.flags = array("B", [1] * len(coordinates))
+    glyph.program = ttProgram.Program()
+    glyph.program.fromBytecode(b"")
+    glyph.recalcBounds(None)
+    return glyph
 
 
 def build_master(style, wght, path):
@@ -240,14 +186,7 @@ def build_master(style, wght, path):
     builder.setupCharacterMap({CODEPOINTS[state]: f"pet_{state}" for state in STATE_ORDER})
     glyphs = {".notdef": TTGlyphPen(None).glyph()}
     for state in STATE_ORDER:
-        pen = TTGlyphPen(None)
-        for contour in contours(state, style, wght):
-            points = [(round(x), round(UPM - y)) for x, y in contour]
-            pen.moveTo(points[0])
-            for point in points[1:]:
-                pen.lineTo(point)
-            pen.closePath()
-        glyphs[f"pet_{state}"] = pen.glyph()
+        glyphs[f"pet_{state}"] = simple_glyph(contours(state, style, wght))
     builder.setupGlyf(glyphs)
     builder.setupHorizontalMetrics({name: (UPM, 0) for name in glyph_order})
     builder.setupHorizontalHeader(ascent=UPM, descent=0)
@@ -299,6 +238,13 @@ def write_svg(style, wght, state, path):
         f'<path fill="currentColor" d="{d}"/></svg>\n'
     )
     path.write_text(svg, encoding="utf-8", newline="\n")
+
+
+def signed_area(points):
+    total = 0.0
+    for (x0, y0), (x1, y1) in zip(points, points[1:] + points[:1]):
+        total += x0 * y1 - x1 * y0
+    return total / 2
 
 
 def raster(style, state, size):
