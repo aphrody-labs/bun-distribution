@@ -94,7 +94,14 @@ async fn cors_middleware(req: Request, next: Next) -> Response {
     response
 }
 
-/// Middleware validating `APHRODY_OS_AUTH_TOKEN` when configured in the environment.
+/// Resolve the gateway credential, preserving the prior OS alias.
+fn gateway_token() -> Option<String> {
+    aphrody_config::ai_env::HTTP_TOKEN.resolve().or_else(|| {
+        std::env::var("APHRODY_OS_AUTH_TOKEN").ok().filter(|token| !token.trim().is_empty())
+    })
+}
+
+/// Middleware validating the canonical gateway credential when configured.
 async fn auth_middleware(req: Request, next: Next) -> Response {
     // OPTIONS preflight requests do not carry credentials and must be allowed through
     if req.method() == Method::OPTIONS {
@@ -107,7 +114,7 @@ async fn auth_middleware(req: Request, next: Next) -> Response {
         return next.run(req).await;
     }
 
-    if let Ok(expected_token) = std::env::var("APHRODY_OS_AUTH_TOKEN") {
+    if let Some(expected_token) = gateway_token() {
         let expected_token = expected_token.trim();
         if !expected_token.is_empty() {
             let auth_header =
@@ -164,13 +171,7 @@ pub async fn serve_gateway(
     adapter: Arc<dyn GatewayAdapter>,
     model_ids: Vec<String>,
 ) -> Result<(), GatewayError> {
-    let auth_configured =
-        std::env::var("APHRODY_OS_AUTH_TOKEN").ok().is_some_and(|t| !t.trim().is_empty());
-    if !addr.ip().is_loopback() && !auth_configured {
-        eprintln!(
-            "WARNING [SECURITY]: aphrody-gateway binding to non-loopback address {addr} without APHRODY_OS_AUTH_TOKEN configured! Loopback binding is strongly recommended for unauthenticated gateways."
-        );
-    }
+    validate_bind(addr, gateway_token().as_deref())?;
 
     let state = GatewayState { adapter, model_ids };
     let app = router(state);
@@ -180,6 +181,16 @@ pub async fn serve_gateway(
     axum::serve(listener, app)
         .await
         .map_err(|e| GatewayError::Config(format!("gateway server runtime error: {e}")))?;
+    Ok(())
+}
+
+fn validate_bind(addr: SocketAddr, token: Option<&str>) -> Result<(), GatewayError> {
+    if !addr.ip().is_loopback() && token.is_none_or(|token| token.trim().is_empty()) {
+        return Err(GatewayError::Config(
+            "non-loopback gateway requires APHRODY_AI_HTTP_TOKEN in the protected host environment"
+                .into(),
+        ));
+    }
     Ok(())
 }
 
@@ -315,6 +326,16 @@ async fn cors_preflight() -> impl IntoResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn mesh_binding_requires_a_gateway_credential() {
+        let mesh: SocketAddr = "10.200.77.10:8786".parse().unwrap();
+        assert!(validate_bind(mesh, None).is_err());
+        assert!(validate_bind(mesh, Some(" ")).is_err());
+        assert!(validate_bind(mesh, Some("test-only-token")).is_ok());
+        assert!(validate_bind("127.0.0.1:8786".parse().unwrap(), None).is_ok());
+        assert!(validate_bind("[::1]:8786".parse().unwrap(), None).is_ok());
+    }
 
     #[test]
     fn test_allowed_origins() {

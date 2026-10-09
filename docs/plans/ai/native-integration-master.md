@@ -14,7 +14,7 @@ Références upstream via leurs propriétaires, sans nouveau clone ni copie sour
 | Domaine | Propriétaires | Plan |
 | --- | --- | --- |
 | Retrieval/index/mémoire | `rag*`, `embed`, `memory`, `context` | [RAG](rag-native-integration.md) |
-| Inférence/modèles/protocoles | `model-client`, `models`, `llama-server`, `engine-mistralrs`, `gateway` | [Inférence](inference-native-integration.md) |
+| Inférence/modèles/protocoles | `model-client`, `models`, `llama-server`, `gateway`, runtime Mistral.rs déclaré par Infra | [Inférence](inference-native-integration.md) |
 | CLI/config/MCP/plugins/peers | `crates/infra/aphrody`, `aphrody-command`, propriétaires AI correspondants | [CLI](cli-native-integration.md) |
 | UI et façade toolkit-neutral | `ui/app`, `ui/local-ai`, `ui/gui-core`, `m3-ai`, app-server | [GUI](../../../m3/docs/plans/local-ai-gui-native-integration.md) |
 
@@ -26,10 +26,13 @@ secrets les chemins et endpoints. Les autres services AI conservent leurs owners
 ## Décisions communes
 
 - `ModelClient` est la frontière provider. GGUF local : `koharu-llama` ;
-  mistral.rs reste optionnel et hors build CLI par défaut.
-- Pin mistral.rs déclaré dans [Cargo.toml](../../../Cargo.toml), révision
-  `3f2515e9b5adc2ac44949c128c50a13b15721294` observée le 2026-10-03.
-  Aucun type candle entre owners ; backends GPU sélectionnés par feature.
+  Mistral.rs est un moteur Rust précompilé optionnel sur l'hôte GPU qualifié,
+  hors build CLI par défaut.
+- Le crate `engine-mistralrs` sans consommateur a été retiré le 2026-10-09
+  (`81d968bf69`). La demande propriétaire suivante réutilise le moteur officiel
+  Mistral.rs 0.9.4 CUDA/SM89 et `ModelClient`, avec le digest dans
+  [le contrat runtime](../../../tools/config/container/mistral-fleet/runtime-contract.json).
+  Aucun type candle entre owners ; autres backends GPU qualifiés séparément.
 - `gateway` reste la façade serveur OpenAI-compatible sur les owners modèles.
   Retirer les clients doublons et `router` seulement après migration/parité.
 - Codex : protocole/schémas et tests de conformité, sans seconde implémentation

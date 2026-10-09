@@ -1152,6 +1152,8 @@ dependencies = [
 name = "aphrody-gateway"
 version = "1.0.0"
 dependencies = [
+ "aphrody-config",
+ "aphrody-model-client",
  "async-trait",
  "axum",
  "bytes",
@@ -1278,7 +1280,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-identity"
-version = "1.0.0-canary"
+version = "1.0.0-canary.1"
 dependencies = [
  "aphrody-m3-tokens",
  "aphrody-sprite-sheet",
@@ -1502,7 +1504,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-m3-tokens"
-version = "1.0.0-canary"
+version = "1.0.0-canary.1"
 dependencies = [
  "base64 0.23.1",
  "image",
@@ -2303,7 +2305,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-svg"
-version = "1.0.0-canary"
+version = "1.0.0-canary.1"
 dependencies = [
  "aphrody-m3-tokens",
  "resvg",

@@ -14,6 +14,8 @@ description            = "Provider-agnostic OpenAI-compatible AI gateway: Cloudf
 workspace = true
 
 [dependencies]
+aphrody-config = { workspace = true }
+aphrody-model-client = { workspace = true }
 async-trait   = { workspace = true }
 axum          = { workspace = true }
 bytes         = { workspace = true }
