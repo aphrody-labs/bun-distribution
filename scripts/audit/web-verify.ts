@@ -233,19 +233,37 @@ export function checkConfigFile(root: string): string[] {
   return problems;
 }
 
+export function executionCommand(command: string[], platform = process.platform): string[] {
+  if (command[0] === "bun") return [process.execPath, ...command.slice(1)];
+  if (platform === "win32" && command[0] === "scripts/build/rust/cargo-serial.sh")
+    return [
+      "pwsh.exe",
+      "-NoProfile",
+      "-File",
+      "scripts/dev/windows-cargo.ps1",
+      ...command.slice(1),
+    ];
+  return command;
+}
+
 async function runCommand(
   command: string[],
   cwd: string,
   timeoutMs: number,
 ): Promise<{ ok: boolean; detail: string }> {
-  const child = Bun.spawn(command, {
-    cwd,
-    stdin: "ignore",
-    stdout: "pipe",
-    stderr: "pipe",
-    timeout: timeoutMs,
-    killSignal: "SIGKILL",
-  });
+  let child: Bun.Subprocess<"ignore", "pipe", "pipe">;
+  try {
+    child = Bun.spawn(executionCommand(command), {
+      cwd,
+      stdin: "ignore",
+      stdout: "pipe",
+      stderr: "pipe",
+      timeout: timeoutMs,
+      killSignal: "SIGKILL",
+    });
+  } catch (error) {
+    return { ok: false, detail: error instanceof Error ? error.message : String(error) };
+  }
   const [stdout, stderr, code] = await Promise.all([
     new Response(child.stdout).text(),
     new Response(child.stderr).text(),

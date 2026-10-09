@@ -1,7 +1,82 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
 import { repositoryRoot } from "../../packages/web/agent-browser/src/config.ts";
-import { checkConfigFile, parseArgs, planStages, WEB_CRATES } from "./web-verify.ts";
+import {
+  checkConfigFile,
+  executionCommand,
+  parseArgs,
+  planStages,
+  runStages,
+  WEB_CRATES,
+} from "./web-verify.ts";
+
+describe("native gate execution", () => {
+  test("Windows Cargo uses the native serialized build owner", () => {
+    expect(
+      executionCommand(["scripts/build/rust/cargo-serial.sh", "check", "--locked"], "win32"),
+    ).toEqual([
+      "pwsh.exe",
+      "-NoProfile",
+      "-File",
+      "scripts/dev/windows-cargo.ps1",
+      "check",
+      "--locked",
+    ]);
+  });
+
+  test("Bun child execution uses the running executable and preserves its exit status", async () => {
+    const results = await runStages(
+      [
+        {
+          id: "bun",
+          steps: [
+            {
+              name: "native runtime",
+              command: ["bun", "-e", "console.log(process.execPath);process.exit(7)"],
+              timeoutMs: 10_000,
+            },
+            {
+              name: "later step",
+              command: ["bun", "-e", "console.log('continued')"],
+              timeoutMs: 10_000,
+            },
+          ],
+        },
+      ],
+      repositoryRoot(),
+    );
+    expect(results[0]?.ok).toBe(false);
+    expect(results[0]?.detail).toContain("exit 7");
+    expect(results[0]?.detail).toContain(process.execPath);
+    expect(results[1]?.ok).toBe(true);
+  });
+
+  test("a missing executable reports failure without aborting subsequent gates", async () => {
+    const results = await runStages(
+      [
+        {
+          id: "bun",
+          steps: [
+            {
+              name: "missing",
+              command: ["aphrody-nonexistent-web-gate-20261009"],
+              timeoutMs: 10_000,
+            },
+            {
+              name: "later step",
+              command: ["bun", "-e", "console.log('continued')"],
+              timeoutMs: 10_000,
+            },
+          ],
+        },
+      ],
+      repositoryRoot(),
+    );
+    expect(results[0]?.ok).toBe(false);
+    expect(results[0]?.detail).not.toBeEmpty();
+    expect(results[1]?.ok).toBe(true);
+  });
+});
 
 describe("web verify planning", () => {
   test("default stages run config, bun, build and smoke; rust is opt-in", () => {
@@ -47,6 +122,8 @@ describe("config contract check", () => {
   });
 
   test("a missing config is reported", () => {
-    expect(checkConfigFile("/nonexistent-aphrody-root")).toEqual(["tools/config/web.json is missing"]);
+    expect(checkConfigFile("/nonexistent-aphrody-root")).toEqual([
+      "tools/config/web.json is missing",
+    ]);
   });
 });
