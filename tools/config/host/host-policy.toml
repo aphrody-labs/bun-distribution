@@ -11,6 +11,7 @@ home = "/home/ubuntu"
 src = "~/src"
 # Runtime of one service: ~/apps/<app>/{compose.yaml,.env,data/,releases/,current,shared/}.
 apps = "~/apps"
+# On the vps, ~/src and ~/apps are bind mounts of ~/build/{workspaces,apps} (tools/config/host/vps/etc/fstab.aphrody-build).
 # Build workspace, caches, locks and artifacts (vps): one build per commit, from ~/src/<repo>.
 build = "~/build"
 # Cold data (vps), including the archives moved off dbfr.
