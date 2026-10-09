@@ -9,10 +9,17 @@ phases.
 | Piece                      | Path                                                      |
 | :------------------------- | :-------------------------------------------------------- |
 | Library (cdylib + rlib)    | `crates/engine/yolo-runtime`                                     |
-| C header                   | `crates/interop/ffi/include/aphrody.h` (single header of `aphrody_ffi`; artifacts also carry a `yolo_runtime.h` that includes it) |
+| C header                   | `crates/interop/ffi/include/aphrody.h` (canonical main header of `aphrody_ffi`; packaged `yolo_runtime.h` is a compatibility include) |
 | TypeScript SDK (`bun:ffi`) | `packages/engine/runtime`                                             |
 | Artifact packaging         | `scripts/release/runtime_artifact.ts` → `dist/runtime/<target>/`  |
 | Tests                      | `cargo test -p yolo-runtime`, `test/runtime_sdk.test.ts` |
+
+The main header merges the former `yolo_runtime.h` declarations. Optional feature
+interfaces remain in `crates/interop/ffi/include/aphrody-tooling.h`,
+`crates/interop/ffi/include/aphrody-inference.h` and
+`crates/interop/ffi/include/aphrody-web-pipeline.h`. A single main header does not
+establish complete CLI/FFI/MCP/kernel parity, runtime availability, installation
+or qualification on every platform.
 
 ```bash
 just runtime-build      # cargo build --profile runtime -p aphrody-ffi --features browser,tooling

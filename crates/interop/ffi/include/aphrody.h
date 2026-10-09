@@ -3,7 +3,12 @@
  * @file aphrody.h
  * @brief C ABI for the aphrody native library (crate `aphrody-ffi`): aphrody_*, yolo_* and bun_rs_*.
  *
- * Exposes the ENTIRE aphrody command surface in-process. Link against the
+ * Declares the command-dispatch ABI and the aphrody_*, yolo_* and bun_rs_*
+ * core interfaces. Command availability depends on the library's compiled
+ * features and runtime configuration; this header does not qualify complete
+ * CLI/FFI parity on every target. Optional feature interfaces are declared in
+ * aphrody-tooling.h, aphrody-inference.h and aphrody-web-pipeline.h.
+ * Link against the
  * cdylib (`libaphrody_ffi.so` / `aphrody_ffi.dll` / `libaphrody_ffi.dylib`) or
  * load it dynamically (`dlopen` / `LoadLibrary` / Bun `bun:ffi`).
  *
@@ -50,9 +55,9 @@
  * @brief Revision of this header file as a single contract.
  *
  * 2: the yolo_* runtime ABI (formerly yolo_runtime.h) is declared here, so
- * aphrody.h alone describes every symbol of the aphrody_ffi library
- * (aphrody_*, yolo_*, bun_rs_*; aphrody-tooling.h, aphrody-inference.h and
- * aphrody-web-pipeline.h cover the optional feature sets). Runtime
+ * aphrody.h is the canonical main header of the aphrody_ffi library
+ * (aphrody_*, yolo_*, bun_rs_*). aphrody-tooling.h, aphrody-inference.h and
+ * aphrody-web-pipeline.h declare the optional feature sets. Runtime
  * negotiation is unchanged: ::aphrody_abi_version for aphrody_*,
  * ::yolo_abi_version against YOLO_ABI_MAJOR/YOLO_ABI_MINOR for yolo_*.
  */

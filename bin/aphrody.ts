@@ -1,7 +1,8 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
-// Checkout launcher for `aphrody`: it finds the native Rust binary and runs it. The binary owns every command,
-// including the Bun-owned ones (crates/infra/aphrody-command/src/multicall/bun_bridge.rs runs them through
+// Checkout launcher for `aphrody`: it finds the native Rust binary and runs it, except for the five
+// pending Z1 commands listed below, which still delegate directly to the Bun/Yolo dispatcher.
+// Native routes include Bun-owned commands (crates/infra/aphrody-command/src/multicall/bun_bridge.rs runs them through
 // packages/engine/yolo/src/index.ts). `webos` is the Rust Web engine alias; apps/web is `bun run web:dev|web:build`.
 
 import { existsSync } from "node:fs";
@@ -12,7 +13,13 @@ const yoloEntry = join(rootDir, "packages/engine/yolo/src/index.ts");
 
 // Generic Bun capabilities moving to the Bun fork (chantier Z1). Until Z1 lands they stay in the yolo dispatcher
 // and the native binary does not serve them; this set is the only routing left in the launcher.
-export const Z1_PENDING_COMMANDS: ReadonlySet<string> = new Set(["parse", "bench", "create", "rename", "verify"]);
+export const Z1_PENDING_COMMANDS: ReadonlySet<string> = new Set([
+  "parse",
+  "bench",
+  "create",
+  "rename",
+  "verify",
+]);
 
 const norm = (path: string) => resolve(path).replaceAll("\\", "/").toLowerCase();
 
@@ -50,7 +57,11 @@ export function resolveRustAphrody(root = rootDir, env = process.env): string | 
 
 async function run(cmd: string[]): Promise<number> {
   const env = { ...process.env, APHRODY_ROOT: process.env.APHRODY_ROOT ?? rootDir };
-  const proc = Bun.spawn(cmd, { cwd: process.cwd(), env, stdio: ["inherit", "inherit", "inherit"] });
+  const proc = Bun.spawn(cmd, {
+    cwd: process.cwd(),
+    env,
+    stdio: ["inherit", "inherit", "inherit"],
+  });
   return proc.exited;
 }
 
@@ -60,7 +71,9 @@ async function main(args: string[]): Promise<number> {
   }
   const rust = resolveRustAphrody();
   if (rust === null) {
-    console.error("aphrody: native binary not found (set APHRODY_BIN or run `cargo build --release -p aphrody`).");
+    console.error(
+      "aphrody: native binary not found (set APHRODY_BIN or run `cargo build --release -p aphrody`).",
+    );
     return 1;
   }
   return run([rust, ...args]);
