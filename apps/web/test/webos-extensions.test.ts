@@ -72,6 +72,7 @@ describe("/api/ffi", () => {
     expect(sources.sdkSymbols).toStartWith("export const SYMBOLS = {");
     expect(sources.rustConsumer).not.toBeNull();
     expect(sources.drift?.missingFromHeader).toEqual([]);
+    expect(sources.drift?.missingFromSdk).toEqual([]);
   });
 
   test("header and SYMBOLS parsers", () => {

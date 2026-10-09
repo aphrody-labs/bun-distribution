@@ -126,5 +126,26 @@ describe("aphrody.h contract", () => {
       .filter(([name, def]) => declared.get(name) !== def.args.length)
       .map(([name, def]) => `${name}: sdk ${def.args.length}, header ${declared.get(name)}`);
     expect(drift).toEqual([]);
+
+    // Optional browser/gpu ABI: own dlopen tables, never in the core SYMBOLS.
+    const bound = new Map<string, number>(Object.entries(SYMBOLS).map(([name, def]) => [name, def.args.length]));
+    for (const file of ["browser.ts", "gpu.ts"]) {
+      const source = await Bun.file(join(import.meta.dir, "../src", file)).text();
+      for (const m of source.matchAll(/^ {2}(yolo_\w+): \{\s*args: \[([^\]]*)\]/gm)) {
+        const arity = m[2]!.split(",").filter(a => a.trim()).length;
+        bound.set(m[1]!, arity);
+        if (declared.get(m[1]!) !== arity) drift.push(`${m[1]}: ${file} ${arity}, header ${declared.get(m[1]!)}`);
+      }
+    }
+    expect(drift).toEqual([]);
+    expect([...declared.keys()].filter(name => !bound.has(name)).toSorted()).toEqual([]);
+    for (const name of [
+      "yolo_browser_create",
+      "yolo_browser_call_start",
+      "yolo_browser_close",
+      "yolo_gpu_call_start",
+    ]) {
+      expect(name in SYMBOLS).toBe(false);
+    }
   });
 });

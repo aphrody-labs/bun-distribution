@@ -15,11 +15,18 @@ export const FFI_SOURCE_PATHS = {
   rustConsumer: "examples/runtime-rust-extension/src/lib.rs",
 } as const;
 
+/** Optional-feature ABI (cargo features `browser`, `gpu`): bound by their own dlopen table, since default
+ * artifacts do not export these symbols and one missing symbol fails the whole core `SYMBOLS` dlopen. */
+export const FFI_FEATURE_SYMBOL_PATHS = [
+  "packages/engine/runtime/src/browser.ts",
+  "packages/engine/runtime/src/gpu.ts",
+] as const;
+
 export interface FfiSources {
   header: string | null;
   rustConsumer: string | null;
   sdkSymbols: string | null;
-  /** yolo_* functions declared by aphrody.h and missing from the SDK `SYMBOLS` table, and the reverse. */
+  /** yolo_* functions declared by aphrody.h and bound by no SDK table (core or feature), and the reverse. */
   drift: { missingFromSdk: string[]; missingFromHeader: string[] } | null;
 }
 
@@ -38,8 +45,8 @@ export function headerFunctions(header: string): string[] {
 }
 
 /** The `export const SYMBOLS = { ... }` block of the SDK, the part of index.ts that maps the C ABI. */
-export function symbolsBlock(source: string): string | null {
-  const start = source.indexOf("export const SYMBOLS = {");
+export function symbolsBlock(source: string, opener = "export const SYMBOLS = {"): string | null {
+  const start = source.indexOf(opener);
   if (start < 0) return null;
   const end = source.indexOf("\n}", start);
   if (end < 0) return null;
@@ -52,16 +59,21 @@ export function symbolNames(block: string): string[] {
 }
 
 export async function ffiSources(root = REPO_ROOT): Promise<FfiSources> {
-  const [header, sdk, rustConsumer] = await Promise.all([
+  const [header, sdk, rustConsumer, ...features] = await Promise.all([
     readRepoFile(FFI_SOURCE_PATHS.header, root),
     readRepoFile(FFI_SOURCE_PATHS.sdkSymbols, root),
     readRepoFile(FFI_SOURCE_PATHS.rustConsumer, root),
+    ...FFI_FEATURE_SYMBOL_PATHS.map(path => readRepoFile(path, root)),
   ]);
   const sdkSymbols = sdk === null ? null : (symbolsBlock(sdk) ?? sdk);
   let drift: FfiSources["drift"] = null;
   if (header !== null && sdk !== null && symbolsBlock(sdk) !== null) {
     const declared = new Set(headerFunctions(header));
     const mapped = new Set(symbolNames(sdkSymbols!));
+    for (const source of features) {
+      const block = source === null ? null : symbolsBlock(source, "const SYMBOLS = {");
+      for (const name of block === null ? [] : symbolNames(block)) mapped.add(name);
+    }
     drift = {
       missingFromSdk: [...declared].filter(name => !mapped.has(name)),
       missingFromHeader: [...mapped].filter(name => !declared.has(name)),
