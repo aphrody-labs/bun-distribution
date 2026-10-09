@@ -53,7 +53,8 @@ the executable, so start-up skips parsing. Measured on the fixture app (medians,
 Bytecode output is CommonJS, so the generated entry has no top-level await. `compile: { bytecode: false }` turns it off.
 
 The executable is not static: glibc targets link libc, libm, libdl, libpthread and the loader, musl targets link musl and
-libstdc++. Images carry those libraries (`m3-bun package --rootfs`, the `docker` and `linux-image` targets). Windows
+libstdc++. Images carry those libraries (`m3-bun package --rootfs`, the `linux-image` target); the `docker` target
+compiles and runs on `ghcr.io/aphrody-labs/alpine:3.24-runtime` (musl, libstdc++, CA certificates, tzdata). Windows
 metadata (`compile.windows`) is applied only when compiling on Windows; elsewhere the report says so.
 
 `m3 compile` of `@aphrody/m3` runs this compiler (an optional peer): compiling an HTML entry directly yields an HTML

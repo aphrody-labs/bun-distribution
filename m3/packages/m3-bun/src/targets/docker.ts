@@ -1,36 +1,32 @@
 // SPDX-License-Identifier: Apache-2.0
-// Docker: a multi-stage Dockerfile that compiles the app and ends in `FROM scratch`, with exactly the shared
-// libraries the executable needs copied from `ldd` (a Bun executable is dynamic: glibc, not static). Plus a
-// Dockerfile for a rootfs prepared by `m3-bun package --rootfs`, a compose file and a .dockerignore.
+// Docker: a multi-stage Dockerfile that compiles the app on Aphrody Alpine (musl) and runs the executable on
+// ghcr.io/aphrody-labs/alpine:3.24-runtime (musl, libstdc++, CA certificates, tzdata, user agent 1000; built by
+// scripts/aphrody/alpine/runtime.Dockerfile of aphrody-labs/bun). Plus a Dockerfile for a rootfs prepared by
+// `m3-bun package --rootfs` (the smallest image: scratch plus the executable's libraries), a compose file and a
+// .dockerignore.
 import { GENERATED_NOTE, type GeneratedFile } from "../util.ts";
 import type { Target, TargetContext } from "./types.ts";
 
-/** Shell snippet that copies the executable and every library `ldd` lists into /rootfs, same absolute paths. */
-export const ROOTFS_SCRIPT = [
-  "set -eu",
-  "mkdir -p /rootfs/app",
-  'cp "$BIN" /rootfs/app/server',
-  'for lib in $(ldd "$BIN" | awk \'/=> \\//{print $3} /^[[:space:]]*\\//{print $1}\'); do cp --parents -L "$lib" /rootfs; done',
-].join("; ");
+/** Base image of the build and run stages. */
+export const RUNTIME_IMAGE = "ghcr.io/aphrody-labs/alpine:3.24-runtime";
 
 const dockerfile = (c: TargetContext): string => `# syntax=docker/dockerfile:1
 # ${GENERATED_NOTE}
-# ${c.name} ${c.version}: one executable serves the UI and the API. The final image is \`scratch\` plus the
-# shared libraries of that executable (libc, libm, libdl, libpthread and the loader), no shell, no package manager.
-# \`bun build --compile\` output is dynamically linked: a truly empty image is not possible (see docs/guides/M3-BUN.md).
+# ${c.name} ${c.version}: one executable serves the UI and the API. Both stages use the Aphrody Alpine runtime
+# image, so the executable is compiled by its musl Bun for the build platform (amd64 or arm64) and finds musl,
+# libstdc++, CA certificates and tzdata at run time. It runs as the unprivileged user agent (1000).
+# For the smallest image use Dockerfile.scratch.
 
-FROM oven/bun:${c.bunVersion}-debian AS build
-WORKDIR /src
-COPY . .
+FROM ${RUNTIME_IMAGE} AS build
+WORKDIR /home/agent/src
+COPY --chown=agent:agent . .
 RUN bun install --frozen-lockfile
-RUN ${c.cli} compile --target linux-x64 --outfile /out/${c.binary}
-RUN BIN=/out/${c.binary}; ${ROOTFS_SCRIPT}
+RUN ${c.cli} compile --outfile /home/agent/out/${c.binary}
 
-FROM scratch
-COPY --from=build /rootfs/ /
+FROM ${RUNTIME_IMAGE}
+COPY --from=build /home/agent/out/${c.binary} /app/server
 ENV PORT=${c.port} HOST=0.0.0.0
 EXPOSE ${c.port}
-USER 10001:10001
 HEALTHCHECK --interval=30s --timeout=4s --start-period=5s --retries=3 CMD ["/app/server", "--healthcheck"]
 ENTRYPOINT ["/app/server"]
 `;
@@ -75,7 +71,7 @@ services:
 export const docker: Target = {
   id: "docker",
   title: "Docker",
-  description: "Multi-stage Dockerfile ending in scratch plus the executable's shared libraries, a rootfs Dockerfile, compose and .dockerignore",
+  description: "Multi-stage Dockerfile on the Aphrody Alpine runtime image, a scratch Dockerfile for the rootfs, compose and .dockerignore",
   generate(c): GeneratedFile[] {
     return [
       { path: "Dockerfile", content: dockerfile(c) },

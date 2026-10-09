@@ -10,7 +10,7 @@ import {
   contextFor,
   type TargetContext,
 } from "../src/targets/index.ts";
-import { ROOTFS_SCRIPT } from "../src/targets/docker.ts";
+import { RUNTIME_IMAGE } from "../src/targets/docker.ts";
 import { sharedDropin } from "../src/targets/systemd.ts";
 import { cleanup, FIXTURE, freePort, tmp } from "./helpers.ts";
 
@@ -82,23 +82,18 @@ describe("registry", () => {
 });
 
 describe("docker", () => {
-  test("multi-stage Dockerfile: compile, copy ldd libraries, scratch, healthcheck without a shell", () => {
+  test("multi-stage Dockerfile: compile and run on the Aphrody Alpine runtime image, healthcheck without a shell", () => {
     const file = read("docker", "Dockerfile");
-    expect(file).toContain(`FROM oven/bun:${Bun.version}-debian AS build`);
-    expect(file).toContain("compile --target linux-x64 --outfile /out/hello-m3");
-    expect(file).toContain(ROOTFS_SCRIPT);
-    expect(file).toContain("FROM scratch");
-    expect(file).toContain("COPY --from=build /rootfs/ /");
+    expect(RUNTIME_IMAGE).toBe("ghcr.io/aphrody-labs/alpine:3.24-runtime");
+    expect(file.match(/^FROM .*$/gm)).toEqual([`FROM ${RUNTIME_IMAGE} AS build`, `FROM ${RUNTIME_IMAGE}`]);
+    expect(file).toContain("COPY --chown=agent:agent . .");
+    expect(file).toContain("compile --outfile /home/agent/out/hello-m3");
+    expect(file).toContain("COPY --from=build /home/agent/out/hello-m3 /app/server");
     expect(file).toContain(
       'HEALTHCHECK --interval=30s --timeout=4s --start-period=5s --retries=3 CMD ["/app/server", "--healthcheck"]',
     );
     expect(file).toContain('ENTRYPOINT ["/app/server"]');
-    expect(file).toContain("USER 10001:10001");
-    expect(file).toMatch(/dynamically linked/);
-  });
-  test("the rootfs script is valid shell and copies the executable and every library", () => {
-    expect(Bun.spawnSync(["sh", "-n", "-c", ROOTFS_SCRIPT]).exitCode).toBe(0);
-    expect(ROOTFS_SCRIPT).toContain("cp --parents -L");
+    expect(file).not.toContain("USER root");
   });
   test("Dockerfile.scratch consumes the rootfs of `m3-bun package --rootfs`; compose is read-only with dropped capabilities", () => {
     expect(read("docker", "Dockerfile.scratch")).toContain("COPY rootfs/ /");

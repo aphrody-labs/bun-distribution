@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Fly.io: fly.toml for the Dockerfile of the docker target (copy both to the project root). The image is the
-// scratch image with the one executable; Fly's HTTP check uses the app's own /healthz.
+// Aphrody Alpine runtime image with the one executable; Fly's HTTP check uses the app's own /healthz.
 import { GENERATED_NOTE, type GeneratedFile } from "../util.ts";
 import type { Target, TargetContext } from "./types.ts";
 
@@ -42,6 +42,7 @@ primary_region = "${c.region}"
 export const fly: Target = {
   id: "fly",
   title: "Fly.io",
-  description: "fly.toml: HTTP service with /healthz check, auto stop and start, built from the docker target's Dockerfile",
+  description:
+    "fly.toml: HTTP service with /healthz check, auto stop and start, built from the docker target's Dockerfile",
   generate: (c): GeneratedFile[] => [{ path: "fly.toml", content: flyToml(c) }],
 };
