@@ -522,8 +522,7 @@
       {
         "host": "dbfr",
         "kind": "systemd",
-        "unit": "aphrody-jobs-worker-dbfr.service",
-        "hold": "worker jobs corrigé par un autre agent"
+        "unit": "aphrody-jobs-worker-dbfr.service"
       },
       {
         "host": "local",
