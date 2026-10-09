@@ -377,9 +377,10 @@ fn topology_ports(topology: &Value, host: &str) -> Option<(BTreeSet<u64>, BTreeS
     Some((set("internalOnly"), set("publicPorts")))
 }
 
-/// Every service host must exist in the topology, including health-only listeners.
-/// Every explicit catalog `port` must be internal-only on its declared host
+/// Every active service host must exist in the topology, including health-only listeners.
+/// Every active explicit catalog `port` must be internal-only on its declared host
 /// (or some host when unscoped), and public on none: only nginx owns 80/443.
+/// Retired records preserve historical bindings without reserving live ports.
 pub fn check_topology_ports(catalog: &Value, topology: &Value) -> Report {
     let mut report = Report::default();
     let hosts: Vec<(BTreeSet<u64>, BTreeSet<u64>)> = topology
@@ -388,6 +389,9 @@ pub fn check_topology_ports(catalog: &Value, topology: &Value) -> Report {
         .map(|hosts| hosts.keys().filter_map(|host| topology_ports(topology, host)).collect())
         .unwrap_or_default();
     for service in entries(catalog, "services") {
+        if is_retired_value(service) {
+            continue;
+        }
         let Some(id) = str_field(service, "id") else {
             continue;
         };
@@ -1776,6 +1780,28 @@ mod tests {
         assert_eq!(errors.len(), 2, "{errors:#?}");
         assert_error(&errors, "public: port 443 is a public topology port");
         assert_error(&errors, "stray: port 9999 is not internalOnly");
+    }
+
+    #[test]
+    fn retired_topology_bindings_do_not_reserve_ports_but_active_ones_are_checked() {
+        let topology = json!({ "hosts": {
+            "vps": { "network": { "internalOnly": [], "publicPorts": [] } },
+            "dbfr": { "network": { "internalOnly": [8793], "publicPorts": [80, 443] } }
+        } });
+        let catalog = json!({ "services": [
+            { "id": "retired-mcp", "host": "vps", "port": 8793,
+              "status": "retired", "retiredAt": "2026-10-09" },
+            { "id": "retired-unscoped", "port": 8798,
+              "status": "retired", "retiredAt": "2026-10-09" },
+            { "id": "active-mcp", "host": "dbfr", "port": 8793 },
+            { "id": "active-wrong-host", "host": "vps", "port": 8793 },
+            { "id": "stopped-but-not-retired", "host": "vps", "port": 8798,
+              "status": "stopped" }
+        ] });
+        let errors = check_topology_ports(&catalog, &topology).errors;
+        assert_eq!(errors.len(), 2, "{errors:#?}");
+        assert_error(&errors, "active-wrong-host: port 8793 is not internalOnly on host vps");
+        assert_error(&errors, "stopped-but-not-retired: port 8798 is not internalOnly on host vps");
     }
 
     #[test]

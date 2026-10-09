@@ -10,7 +10,7 @@
 - **Retirés du VPS :** aphrody-mcp-http (fusionné dans mcp-http-dbfr), aphrody-jobs-worker-vps, aphrody-web-browser-vps, shenron-pg-tunnel, redis-server, nginx, certbot.timer et aphrody-wg-proxy@8788/8793. Les unit files sont dans `/var/backups/P-units-20261009`.
 - **VPS, rôle restant :** build (aphrody-shenron-build-runner), docker, sshd et outils système. Le plan de contrôle du hub wg1 y reste aussi : drive-sync, discord-control-plane, discord-lab-telemetry, omar-admin, omar-link et selfheal.
 - **Publication :** `publish-creator.ts` cible dbfr. `publish-downloads.ts` construit et scanne sur la factory du VPS, puis pousse l'archive vers dbfr (`factory.target`/`pushTo`).
-- **production-topology.json (revendiqué par codex), changements à faire :**
-  - `hosts.vps.network` : publicPorts `[]`, et retirer 4010, 8788, 8793, 8796, 8797, 8798, 8799 et 15433 de internalOnly.
-  - `hosts.dbfr.network.internalOnly` : ajouter 4010, 8788, 8796 et 8797.
+- **production-topology.json (codex), alignement des sources effectué :**
+  - `hosts.vps.network` : publicPorts `[]` ; 4010, 8788, 8793, 8796, 8797, 8798, 8799 et 15433 retirés de internalOnly.
+  - `hosts.dbfr.network.internalOnly` : 4010, 8788, 8796 et 8797 déjà déclarés et conservés. Cet alignement ne modifie pas les hôtes ni leurs pare-feu.
 - **Retour arrière :** remettre les units de `/var/backups/P-units-20261009` dans /etc/systemd/system, réactiver nginx, puis `aphrody infra ovh dns set-a <zone> 51.77.147.152 --subdomain … --apply`. Les sauvegardes `*.before-P-*` sont sur dbfr (policies, ssh, hook, compose).
