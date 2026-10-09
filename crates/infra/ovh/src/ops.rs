@@ -11,7 +11,7 @@ use serde_json::{Value, json};
 use crate::{
     client::{AuthMode, OvhClient},
     dns::DnsManager,
-    domain::{DomainInfo, DomainManager},
+    domain::{DnssecKey, DomainInfo, DomainManager, name_server_hosts},
     iam::{IamManager, SyncReport},
     profile::{
         load_legacy_credentials, load_profile_credentials, load_profile_credentials_with_source,
@@ -231,7 +231,8 @@ pub fn send_notification(message: &str) -> Result<()> {
             "no notify channel configured (SLACK_BOT_TOKEN, TELEGRAM_BOT_TOKEN or MATRIX_ACCESS_TOKEN; override with APHRODY_OVH_NOTIFY_CHANNEL)"
         )
     })?;
-    let status = std::process::Command::new("aphrody").no_window()
+    let status = std::process::Command::new("aphrody")
+        .no_window()
         .args(["notify", "--channel", channel, "--message", message])
         .status()
         .context("cannot run `aphrody notify`")?;
@@ -451,6 +452,156 @@ pub async fn domain_autorenew(
     ServicesManager::new(&client).set_renew_mode(info.service_id, on).await?;
     let after = DomainManager::new(&client).info(domain).await?;
     println!("Renouvellement de {domain}: {}", after.renewal_state);
+    Ok(())
+}
+
+pub async fn domain_nameservers(
+    profile: Option<&str>,
+    domain: &str,
+    hosts: &[String],
+    apply: bool,
+) -> Result<()> {
+    let hosts = name_server_hosts(hosts)?;
+    let client = client_for(profile)?;
+    let manager = DomainManager::new(&client);
+    let info = manager.info(domain).await?;
+    println!(
+        "Domaine {}: serveurs de noms actuels ({}) {}",
+        info.domain,
+        info.name_server_type,
+        info.name_servers.join(", ")
+    );
+    let mut current = info.name_servers.clone();
+    current.sort();
+    let mut wanted = hosts.clone();
+    wanted.sort();
+    if current == wanted {
+        println!("Déjà dans l'état demandé, rien à faire.");
+        return Ok(());
+    }
+    if info.dnssec_state == "enabled" && !apply {
+        println!("Attention : DNSSEC est actif ; retirez-le avant de changer de fournisseur DNS.");
+    }
+    if !apply {
+        println!(
+            "[PLAN] Serveurs de noms {domain} -> {}. Passez --apply pour confirmer.",
+            hosts.join(", ")
+        );
+        return Ok(());
+    }
+    if info.dnssec_state == "enabled" && !manager.ds_records(domain).await?.is_empty() {
+        bail!(
+            "DS encore publié pour {domain} : désactivez DNSSEC et attendez son retrait du parent"
+        );
+    }
+    let task = manager.set_name_servers(domain, &hosts).await?;
+    println!(
+        "Tâche registrar {} : {}",
+        task.get("id").map(ToString::to_string).unwrap_or_default(),
+        task.get("status").and_then(Value::as_str).unwrap_or("?")
+    );
+    Ok(())
+}
+
+/// Requested registrar DNSSEC change: stop OVH-hosted signing, or publish provider keys.
+pub struct DnssecChange<'a> {
+    pub disable_hosted: bool,
+    pub keys: &'a [String],
+    pub apply: bool,
+}
+
+pub async fn domain_dnssec(
+    profile: Option<&str>,
+    domain: &str,
+    change: &DnssecChange<'_>,
+    json_output: bool,
+) -> Result<()> {
+    let keys = change.keys.iter().map(|k| DnssecKey::parse(k)).collect::<Result<Vec<_>>>()?;
+    let client = client_for(profile)?;
+    let manager = DomainManager::new(&client);
+    let info = manager.info(domain).await?;
+    let published = manager.ds_records(domain).await?;
+    // Absent when the zone is not hosted on OVH DNS.
+    let hosted = manager.hosted_dnssec(domain).await.ok();
+    if json_output && !change.disable_hosted && keys.is_empty() {
+        return print_json(&json!({
+            "domain": info.domain,
+            "registrarDnssec": info.dnssec_state,
+            "hostedDnssec": hosted,
+            "nameServerType": info.name_server_type,
+            "nameServers": info.name_servers,
+            "dsRecords": published,
+        }));
+    }
+    println!(
+        "Domaine {}: DNSSEC registrar {}, signature OVH {}, {} clé(s) DS publiée(s)",
+        info.domain,
+        info.dnssec_state,
+        hosted.as_deref().unwrap_or("absente"),
+        published.len()
+    );
+    for key in &published {
+        println!(
+            "  DS tag {} algorithme {} flags {} ({})",
+            key.tag,
+            key.algorithm,
+            key.flags,
+            key.status.as_deref().unwrap_or("?")
+        );
+    }
+    if change.disable_hosted {
+        match hosted.as_deref() {
+            Some("disabled" | "disableInProgress") | None => {
+                println!("Signature OVH déjà retirée ou en cours de retrait, rien à faire.");
+            },
+            _ if !change.apply => {
+                println!(
+                    "[PLAN] Désactiver la signature DNSSEC OVH de {domain}. Passez --apply pour confirmer."
+                );
+            },
+            _ => {
+                manager.disable_hosted_dnssec(domain).await?;
+                let after = manager.hosted_dnssec(domain).await?;
+                println!("Signature DNSSEC OVH de {domain}: {after}");
+            },
+        }
+        return Ok(());
+    }
+    if keys.is_empty() {
+        return Ok(());
+    }
+    let same = keys.len() == published.len()
+        && keys.iter().all(|k| {
+            published.iter().any(|p| {
+                p.tag == k.tag
+                    && p.algorithm == k.algorithm
+                    && p.flags == k.flags
+                    && p.public_key == k.public_key
+            })
+        });
+    if same {
+        println!("Clés DS déjà publiées, rien à faire.");
+        return Ok(());
+    }
+    if !change.apply {
+        for key in &keys {
+            println!(
+                "[PLAN] Publier DS tag {} algorithme {} flags {}",
+                key.tag, key.algorithm, key.flags
+            );
+        }
+        println!("Passez --apply pour confirmer.");
+        return Ok(());
+    }
+    if info.name_server_type == "anycast" || hosted.as_deref() == Some("enabled") {
+        bail!("{domain} est encore servi et signé par OVH : basculez les serveurs de noms d'abord");
+    }
+    let task = manager.set_ds_records(domain, &keys).await?;
+    println!(
+        "Tâche registrar {} : {}",
+        task.get("id").map(ToString::to_string).unwrap_or_default(),
+        task.get("status").and_then(Value::as_str).unwrap_or("?")
+    );
     Ok(())
 }
 

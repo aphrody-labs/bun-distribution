@@ -17,7 +17,7 @@ use anyhow::Context;
 use clap::Subcommand;
 pub use client::{ApiVersion, AuthMode, OvhClient, OvhCredentials, sha1_hex, sign_request};
 pub use dns::{DnsAuditReport, DnsManager, DnsRecord, DnsZoneInfo};
-pub use domain::{DomainInfo, DomainManager};
+pub use domain::{DnssecKey, DomainInfo, DomainManager};
 pub use email::{EmailDnsAuditReport, EmailDomainInfo, EmailManager, EmailRedirection};
 pub use iam::{IamManager, SyncReport};
 pub use profile::{
@@ -158,6 +158,33 @@ pub enum OvhDomainSubcommand {
         on: bool,
         #[arg(long)]
         off: bool,
+        #[arg(long)]
+        apply: bool,
+        #[arg(long)]
+        profile: Option<String>,
+    },
+    /// Replace the registrar name servers (plan by default, requires --apply).
+    Nameservers {
+        domain: String,
+        /// Name server host names, at least two (e.g. duke.ns.cloudflare.com veda.ns.cloudflare.com).
+        #[arg(required = true, num_args = 2..)]
+        hosts: Vec<String>,
+        #[arg(long)]
+        apply: bool,
+        #[arg(long)]
+        profile: Option<String>,
+    },
+    /// DNSSEC at the registrar: show state, stop OVH-hosted signing (--disable-hosted) or
+    /// publish an external provider's keys (--key, repeatable). Plan by default, requires --apply.
+    Dnssec {
+        domain: String,
+        #[arg(long, conflicts_with = "keys")]
+        disable_hosted: bool,
+        /// `<flags> <algorithm> <tag> <public key>` of the provider key-signing key.
+        #[arg(long = "key", value_name = "KEY")]
+        keys: Vec<String>,
+        #[arg(long)]
+        json: bool,
         #[arg(long)]
         apply: bool,
         #[arg(long)]
@@ -806,6 +833,25 @@ impl OvhCommand {
                 OvhDomainSubcommand::Autorenew { domain, on, off, apply, profile } => {
                     ops::domain_autorenew(profile.as_deref(), domain, *on, *off, *apply).await
                 },
+                OvhDomainSubcommand::Nameservers { domain, hosts, apply, profile } => {
+                    ops::domain_nameservers(profile.as_deref(), domain, hosts, *apply).await
+                },
+                OvhDomainSubcommand::Dnssec {
+                    domain,
+                    disable_hosted,
+                    keys,
+                    json,
+                    apply,
+                    profile,
+                } => {
+                    ops::domain_dnssec(
+                        profile.as_deref(),
+                        domain,
+                        &ops::DnssecChange { disable_hosted: *disable_hosted, keys, apply: *apply },
+                        *json,
+                    )
+                    .await
+                },
             },
             OvhCommand::Iam { subcommand } => match subcommand {
                 OvhIamSubcommand::Sync { apply, profile } => {
@@ -1052,6 +1098,58 @@ consumer_key = ck_ini
         assert!(
             Harness::try_parse_from(["ovh", "domain", "autorenew", "a.com", "--on", "--off"])
                 .is_err()
+        );
+
+        let ns = Harness::try_parse_from([
+            "ovh",
+            "domain",
+            "nameservers",
+            "a.com",
+            "duke.ns.cloudflare.com",
+            "veda.ns.cloudflare.com",
+        ])
+        .unwrap();
+        assert_matches!(
+            ns.command,
+            OvhCommand::Domain {
+                subcommand: OvhDomainSubcommand::Nameservers { apply: false, ref hosts, .. }
+            } if hosts.len() == 2
+        );
+        assert!(
+            Harness::try_parse_from(["ovh", "domain", "nameservers", "a.com", "x.b.c"]).is_err()
+        );
+        let ds = Harness::try_parse_from([
+            "ovh",
+            "domain",
+            "dnssec",
+            "a.com",
+            "--key",
+            "257 13 2371 AA==",
+            "--apply",
+        ])
+        .unwrap();
+        assert_matches!(
+            ds.command,
+            OvhCommand::Domain {
+                subcommand: OvhDomainSubcommand::Dnssec {
+                    disable_hosted: false,
+                    apply: true,
+                    ref keys,
+                    ..
+                }
+            } if keys.len() == 1
+        );
+        assert!(
+            Harness::try_parse_from([
+                "ovh",
+                "domain",
+                "dnssec",
+                "a.com",
+                "--disable-hosted",
+                "--key",
+                "257 13 1 AA=="
+            ])
+            .is_err()
         );
 
         let sync = Harness::try_parse_from(["ovh", "iam", "sync"]).unwrap();
