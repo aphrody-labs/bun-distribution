@@ -4,14 +4,14 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pipeline } from "./build.ts";
-import { REPO, SHOWCASE, YOLO_CLI, YOLO_COMMAND, YOLO_ROOT, plan } from "./yolo.ts";
+import { REPO, EXAMPLE, YOLO_CLI, YOLO_COMMAND, YOLO_ROOT, plan } from "./yolo.ts";
 
 describe("yolo task plan", () => {
-  test("build runs after a yolo preflight; serve and compile run the single showcase", () => {
+  test("build runs after a yolo preflight; serve and compile run the example app", () => {
     expect(plan("build")[0]!.cmd).toEqual([...YOLO_COMMAND, "version", "--json"]);
     expect(plan("build")[0]!.env).toEqual({ YOLO_HOME: REPO });
-    expect(plan("serve")).toEqual([{ cmd: ["bun", "run", "dev"], cwd: SHOWCASE }]);
-    expect(plan("compile")).toEqual([{ cmd: ["bun", "run", "compile"], cwd: SHOWCASE }]);
+    expect(plan("serve")).toEqual([{ cmd: ["bun", "run", "dev"], cwd: EXAMPLE }]);
+    expect(plan("compile")).toEqual([{ cmd: ["bun", "run", "compile"], cwd: EXAMPLE }]);
   });
   test("build then runs the cached package and app pipeline; typecheck uses the same owner", () => {
     expect(plan("build")[1]!.cmd.slice(1)).toEqual(["scripts/build.ts", "build"]);
@@ -29,7 +29,7 @@ describe("yolo task plan", () => {
         }),
       );
       await Promise.all(
-        ["example", "showcase"].map(async (name) => {
+        ["example", "spa"].map(async (name) => {
           const directory = join(root, "apps", name);
           await Bun.write(
             join(directory, "package.json"),
@@ -54,11 +54,11 @@ describe("yolo task plan", () => {
       const results = await pipeline(options);
       expect(results.map((result) => result.name).toSorted()).toEqual([
         "@aphrody/m3-example",
-        "@aphrody/m3-showcase",
+        "@aphrody/m3-spa",
       ]);
       expect(results.every((result) => result.status === "built")).toBe(true);
-      expect(await Bun.file(join(root, "apps/showcase/dist/index.js")).text()).toContain(
-        '"showcase"',
+      expect(await Bun.file(join(root, "apps/spa/dist/index.js")).text()).toContain(
+        '"spa"',
       );
       expect((await pipeline(options)).every((result) => result.status === "cached")).toBe(true);
     } finally {
