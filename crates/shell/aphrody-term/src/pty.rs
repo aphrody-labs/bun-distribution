@@ -6,7 +6,8 @@ use portable_pty::{CommandBuilder, NativePtySystem, PtyPair, PtySize, PtySystem}
 use std::io::{Read, Write};
 use std::sync::Arc;
 
-/// Starvation-free FairMutex ensuring reader and renderer threads never lock each other out.
+/// Mutex whose `lock` first passes through a queue mutex, so a thread re-locking in a loop
+/// (the PTY reader) cannot repeatedly barge ahead of waiting threads.
 pub struct FairMutex<T> {
     data: Mutex<T>,
     queue: Mutex<()>,
@@ -27,7 +28,7 @@ impl<T> FairMutex<T> {
     }
 }
 
-/// Bounded lease limits (from Rio) to guarantee render & AI thread access within frame budgets.
+/// Maximum PTY bytes ingested per grid lock.
 pub const MAX_LOCKED_READ_BYTES: usize = 256 * 1024; // 256 KB max per PTY lock
 
 pub struct PtyController {
@@ -60,6 +61,11 @@ impl PtyController {
             },
             reader,
         ))
+    }
+
+    /// Shared handle to the PTY input stream (used to answer terminal queries).
+    pub fn writer_handle(&self) -> Arc<Mutex<Box<dyn Write + Send>>> {
+        Arc::clone(&self.writer)
     }
 
     /// Sends input bytes to the PTY.

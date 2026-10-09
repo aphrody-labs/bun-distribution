@@ -2424,26 +2424,6 @@
       "canonical": "docs/architecture/runtime-native/RUNTIME.md"
     },
     {
-      "path": "docs/architecture/runtime-native/STACK-PRODUCTION-2026.md",
-      "title": "La Stack Utile & Optimisée (Production 2026 — Zéro Goulot d'Étranglement)",
-      "sha256": "89b843965557cce4b248b67d6789b3c4fe1c47821891a472585ccb1693e29a7e",
-      "bytes": 22230,
-      "domain": "runtime-native",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/architecture/runtime-native/STACK-PRODUCTION-2026.md"
-    },
-    {
-      "path": "docs/architecture/runtime-native/WASM-CONTAINER-V86.md",
-      "title": "Full-WASM Architecture: MicroVM Container Virtualization (v86 & container2wasm)",
-      "sha256": "d766f792d2e62255831741286625b428c26f39dc57a4b7dde3330cde923853cb",
-      "bytes": 12491,
-      "domain": "runtime-native",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/architecture/runtime-native/WASM-CONTAINER-V86.md"
-    },
-    {
       "path": "docs/architecture/runtime-native/qualification.md",
       "title": "Qualification d'une frontière native",
       "sha256": "fe1c56b3eaffb7eb6d11cd341c023a2e730b63be1b57c30038aae6363c531569",

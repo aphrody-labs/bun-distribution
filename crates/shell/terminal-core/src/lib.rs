@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Portable VT state derived from a terminal byte stream (native, WASM, Tauri).
 
-#[cfg(not(target_arch = "wasm32"))]
-pub use aphrody_term;
-
 use std::sync::{Arc, Mutex, PoisonError};
 
 use rio_vt::{

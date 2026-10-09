@@ -1,19 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 //! # Aphrody Term (`aphrody-term`)
 //!
-//! Autonomous, zero-latency, hardware-accelerated terminal engine designed for
-//! Aphrody Kernel Computer-Use AI inference, native Bun shell scripting, and
-//! cross-platform rendering (Windows ConPTY, Linux PTY, WebGPU & WASM).
+//! Headless terminal engine for agent computer use: a VT/ANSI parser writing into a cell grid,
+//! an optional native PTY (`portable-pty`: ConPTY on Windows, Unix PTY elsewhere), plain-text
+//! screen scraping and a coalesced background/glyph quad batcher for renderers.
 //!
-//! ### Architectural Foundations:
-//! - **From Rio**: 8-byte packed cell concept, circular ring buffer, `FairMutex` with bounded 256KB read leases,
-//!   and vectorized bulk ASCII parsing via `memchr` (3x-5x faster throughput).
-//! - **From WezTerm**: Stable coordinate mapping, OSC 8 hyperlinks, OSC 133 semantic zones,
-//!   and Kitty keyboard protocol support.
-//! - **From Cosmic-Term**: Monospace metric locking, `\u{2066}` LRI BiDi shield, and dual-pass
-//!   coalesced quad batching for instanced GPU rendering.
-//! - **For Aphrody Kernel & AI Computer-Use**: Instantaneous plain-text and structured matrix scraping
-//!   at memory bandwidth (> 10 GB/s) without JSON serialization overhead, and direct programmatic action dispatch.
+//! Scope today: CSI cursor movement, erase, SGR colors/attributes, DSR/CPR replies, cursor
+//! visibility and UTF-8 (width-1 cells). OSC sequences are skipped; there is no wide-cell,
+//! BiDi, hyperlink, semantic-zone or Kitty keyboard support, and no GPU backend in this crate.
 
 pub mod cell;
 pub mod computer_use;
@@ -49,16 +43,16 @@ impl Default for TermConfig {
     }
 }
 
-/// Unified, autonomous terminal engine instance.
+/// Terminal engine instance: grid, parser, render batcher and computer-use controller.
 pub struct AphrodyTerm {
     grid: Arc<FairMutex<TerminalGrid>>,
     parser: VtParser,
     batcher: FrameBatcher,
-    computer_use: ComputerUseController,
+    computer_use: Arc<ComputerUseController>,
 }
 
 impl AphrodyTerm {
-    /// Creates a headless terminal engine.
+    /// Creates a headless terminal engine with no process attached.
     pub fn new(config: TermConfig) -> Self {
         let grid = Arc::new(FairMutex::new(TerminalGrid::new(
             config.cols as usize,
@@ -70,7 +64,7 @@ impl AphrodyTerm {
             grid,
             parser: VtParser::new(),
             batcher: FrameBatcher::new(),
-            computer_use: ComputerUseController::new(None),
+            computer_use: Arc::new(ComputerUseController::new(None)),
         }
     }
 
@@ -88,8 +82,10 @@ impl AphrodyTerm {
         )));
 
         let grid_reader = Arc::clone(&grid);
+        let reply_writer = pty.writer_handle();
 
-        // Background reader thread: continuously pumps PTY bytes into VtParser using FairMutex
+        // Reader thread: feeds PTY output into the grid and answers DSR/CPR queries (ConPTY
+        // blocks on its startup cursor query until it gets a reply).
         std::thread::spawn(move || {
             let mut parser = VtParser::new();
             let mut buf = vec![0u8; MAX_LOCKED_READ_BYTES];
@@ -97,8 +93,19 @@ impl AphrodyTerm {
                 match reader.read(&mut buf) {
                     Ok(0) => break, // EOF
                     Ok(n) => {
-                        let mut g = grid_reader.lock();
-                        parser.ingest(&mut g, &buf[..n]);
+                        {
+                            let mut g = grid_reader.lock();
+                            parser.ingest(&mut g, &buf[..n]);
+                        }
+                        if !parser.replies.is_empty() {
+                            let mut w = reply_writer.lock();
+                            for reply in parser.replies.drain(..) {
+                                if std::io::Write::write_all(&mut **w, reply.as_bytes()).is_err() {
+                                    return;
+                                }
+                            }
+                            let _ = std::io::Write::flush(&mut **w);
+                        }
                     }
                     Err(_) => break,
                 }
@@ -109,7 +116,7 @@ impl AphrodyTerm {
             grid,
             parser: VtParser::new(),
             batcher: FrameBatcher::new(),
-            computer_use: ComputerUseController::new(Some(pty)),
+            computer_use: Arc::new(ComputerUseController::new(Some(pty))),
         })
     }
 
@@ -125,18 +132,19 @@ impl AphrodyTerm {
         g.resize(cols as usize, rows as usize);
     }
 
-    /// Drains any pending replies that must be sent back to the PTY (such as CPR).
+    /// Drains pending replies (such as CPR) produced by `ingest`. PTY-backed terminals answer
+    /// them on the reader thread instead.
     pub fn take_replies(&mut self) -> Vec<String> {
         std::mem::take(&mut self.parser.replies)
     }
 
-    /// Captures the full screen buffer as plain text in under 0.1ms (for AI agents and testing).
+    /// Captures the visible screen as plain text (trailing blanks trimmed per row).
     pub fn scrape_text(&self) -> String {
         let g = self.grid.lock();
         self.computer_use.snapshot_text(&g)
     }
 
-    /// Builds coalesced instanced quad buffers for WebGPU / Canvas rendering.
+    /// Builds coalesced background and glyph quad buffers for a renderer.
     pub fn render_frame(&mut self) -> (&[BgQuad], &[GlyphQuad]) {
         let g = self.grid.lock();
         self.batcher.build_frame(&g);
@@ -146,6 +154,11 @@ impl AphrodyTerm {
     /// Returns direct access to the AI Computer-Use controller.
     pub fn computer_use(&self) -> &ComputerUseController {
         &self.computer_use
+    }
+
+    /// Returns a shared handle to the controller (for backends that outlive this value).
+    pub fn computer_use_handle(&self) -> Arc<ComputerUseController> {
+        Arc::clone(&self.computer_use)
     }
 
     /// Returns the underlying thread-safe grid reference.
@@ -214,6 +227,35 @@ mod tests {
 
         // 11 non-blank characters total ("HELLO" + " " + "WORLD" -> 10 non-blank glyphs)
         assert_eq!(glyphs.len(), 10);
+    }
+
+    #[test]
+    fn test_utf8_split_across_ingest_calls() {
+        let mut term = AphrodyTerm::new(TermConfig::default());
+        let bytes = "héllo €".as_bytes();
+        term.ingest(&bytes[..2]);
+        term.ingest(&bytes[2..]);
+        assert_eq!(term.scrape_text().lines().next(), Some("héllo €"));
+
+        term.ingest(b"\r\n\xFFx");
+        assert!(term.scrape_text().contains("\u{FFFD}x"));
+    }
+
+    #[test]
+    fn test_oversized_csi_parameter_does_not_overflow() {
+        let mut term = AphrodyTerm::new(TermConfig::default());
+        term.ingest(b"\x1b[99999999999999999999Hok");
+        assert!(term.scrape_text().contains("ok"));
+    }
+
+    #[test]
+    fn test_dispatch_without_pty_is_an_error() {
+        let term = AphrodyTerm::new(TermConfig::default());
+        let err = term
+            .computer_use()
+            .dispatch_action(ComputerAction::TypeText("ls".into()))
+            .unwrap_err();
+        assert_eq!(err.kind(), std::io::ErrorKind::NotConnected);
     }
 
     #[test]

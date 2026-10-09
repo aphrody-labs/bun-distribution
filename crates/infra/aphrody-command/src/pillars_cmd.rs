@@ -224,15 +224,15 @@ pub(crate) enum ShellAction {
         #[arg(long)]
         json: bool,
     },
-    /// Launch the autonomous, zero-copy, hardware-accelerated Aphrody Term engine
+    /// Run a command in a headless Aphrody Term PTY and print the settled screen
     Term {
-        /// Optional command or arguments to run inside the terminal session
+        /// Command and arguments to run (without one, only the empty grid state is printed)
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// AI Computer-Use screen scraping and programmatic action interface
+    /// Start the default shell in a headless Aphrody Term PTY, optionally send one action, print the screen
     ComputerUse {
-        /// Optional action to dispatch: "type <text>", "key <key>", "scrape"
+        /// Optional action to dispatch: "type <text>" or "key <key>"
         #[arg(long)]
         action: Option<String>,
         /// Emit result as JSON
@@ -251,6 +251,23 @@ pub(crate) enum ShellAction {
 }
 
 /// Runs `script` with Bun Shell (`bun exec`) in `root`; with `json`, prints `{exit_code, stdout, stderr, duration_ms}`.
+/// Polls the screen until it stops changing for 300 ms (or `max` elapses).
+fn settle_term(term: &aphrody_term::AphrodyTerm, max: Duration) {
+    let deadline = std::time::Instant::now() + max;
+    let mut last = term.scrape_text();
+    let mut stable = 0;
+    while stable < 3 && std::time::Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(100));
+        let now = term.scrape_text();
+        if now == last && !now.trim().is_empty() {
+            stable += 1;
+        } else {
+            stable = 0;
+            last = now;
+        }
+    }
+}
+
 fn bun_exec(script: &str, root: &std::path::Path, json: bool) -> miette::Result<()> {
     let bun = which::which("bun").unwrap_or_else(|_| std::path::PathBuf::from("bun"));
     let mut cmd = std::process::Command::new(&bun);
@@ -373,36 +390,39 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
             let cols = 80;
             let rows = 24;
             let config = aphrody_term::TermConfig { cols, rows, ..Default::default() };
-            let term = aphrody_term::AphrodyTerm::new(config);
-            println!("=== Aphrody Term (Autonomous Zero-Copy Terminal Engine) ===");
-            println!("  * Grid Layout:  16-byte PackedCell (L1 cache aligned)");
-            println!("  * Parser:       SIMD & memchr fast-path ASCII dispatch");
-            println!("  * Lock Leases:  FairMutex bounded 256 KB leases");
-            println!("  * GPU Pipeline: Multi-quad instanced WebGPU runs");
-            println!("  * AI Interface: Zero-latency Computer-Use controller (>10 GB/s)");
+            let term = match args.split_first() {
+                Some((program, rest)) => {
+                    let rest: Vec<&str> = rest.iter().map(String::as_str).collect();
+                    let term = aphrody_term::AphrodyTerm::spawn_pty(program, &rest, config)
+                        .map_err(|e| miette!("cannot start {program} in a PTY: {e}"))?;
+                    settle_term(&term, Duration::from_secs(10));
+                    term
+                },
+                None => aphrody_term::AphrodyTerm::new(config),
+            };
             let (col, row, visible) = term.cursor();
-            println!(
-                "  * State:        Initialized {}x{} (cursor: {}:{}, visible: {})",
-                cols, rows, col, row, visible
-            );
-            if !args.is_empty() {
-                println!("  * Command:      {}", args.join(" "));
-            }
+            println!("=== Aphrody Term {cols}x{rows} (cursor {col}:{row}, visible: {visible}) ===");
+            println!("{}", term.scrape_text());
         },
         ShellAction::ComputerUse { action, json } => {
             let config = aphrody_term::TermConfig { cols: 80, rows: 24, ..Default::default() };
-            let term = aphrody_term::AphrodyTerm::new(config);
-            let controller = term.computer_use();
+            #[cfg(windows)]
+            let shell = std::env::var("COMSPEC").unwrap_or_else(|_| "cmd.exe".into());
+            #[cfg(not(windows))]
+            let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".into());
+            let term = aphrody_term::AphrodyTerm::spawn_pty(&shell, &[], config)
+                .map_err(|e| miette!("cannot start {shell} in a PTY: {e}"))?;
+            settle_term(&term, Duration::from_secs(5));
             if let Some(ref act) = action {
-                if let Some(text) = act.strip_prefix("type ") {
-                    let _ = controller.dispatch_action(
-                        aphrody_term::computer_use::ComputerAction::TypeText(text.to_string()),
-                    );
+                let action = if let Some(text) = act.strip_prefix("type ") {
+                    aphrody_term::computer_use::ComputerAction::TypeText(text.to_string())
                 } else if let Some(key) = act.strip_prefix("key ") {
-                    let _ = controller.dispatch_action(
-                        aphrody_term::computer_use::ComputerAction::PressKey(key.to_string()),
-                    );
-                }
+                    aphrody_term::computer_use::ComputerAction::PressKey(key.to_string())
+                } else {
+                    return Err(miette!("unknown action {act:?}: expected \"type <text>\" or \"key <key>\""));
+                };
+                term.computer_use().dispatch_action(action).into_diagnostic()?;
+                settle_term(&term, Duration::from_secs(5));
             }
             let text = term.scrape_text();
             let (col, row, visible) = term.cursor();

@@ -3335,14 +3335,10 @@ dependencies = [
 name = "aphrody-term"
 version = "1.0.0"
 dependencies = [
- "crossterm",
  "memchr",
  "parking_lot",
  "portable-pty",
- "rio-vt",
  "serde",
- "serde_json",
- "thiserror 2.0.21",
 ]
 
 [[package]]
@@ -3370,7 +3366,6 @@ dependencies = [
 name = "aphrody-terminal-core"
 version = "1.0.0-canary"
 dependencies = [
- "aphrody-term",
  "rio-vt",
 ]
 

@@ -216,8 +216,7 @@ impl TerminalGrid {
         self.dirty.mark_all_dirty(new_rows);
     }
 
-    /// Fast plain text scrape for AI agents and Computer-Use.
-    /// Operates at memory bandwidth (> 10 GB/s) without allocations per cell.
+    /// Plain-text scrape of the visible grid for agents (one `String`, trailing blanks trimmed).
     pub fn scrape_text(&self) -> String {
         let mut out = String::with_capacity(self.rows * (self.cols + 1));
         for r in 0..self.rows {

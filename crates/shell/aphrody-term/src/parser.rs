@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Hardware-accelerated VT/ANSI stream parser with Rio-style bulk ASCII fast path.
+//! VT/ANSI stream parser: printable runs between ESC bytes (located with `memchr`) are printed
+//! in one pass; UTF-8 is decoded to width-1 cells (no East Asian wide-cell handling).
 
 use crate::cell::{CellFlags, PackedCell};
 use crate::grid::TerminalGrid;
@@ -10,6 +11,9 @@ pub struct VtParser {
     bg: u32,
     flags: CellFlags,
     pub replies: Vec<String>,
+    utf8_buf: [u8; 4],
+    utf8_len: usize,
+    utf8_need: usize,
 }
 
 impl Default for VtParser {
@@ -19,6 +23,9 @@ impl Default for VtParser {
             bg: 0x00000000, // Transparent
             flags: CellFlags::NONE,
             replies: Vec::new(),
+            utf8_buf: [0; 4],
+            utf8_len: 0,
+            utf8_need: 0,
         }
     }
 }
@@ -72,32 +79,70 @@ impl VtParser {
                 }
                 0x07 => { // Bell (noop)
                 }
-                0x20..=0x7E => { // Standard printable ASCII
-                    if grid.cursor.col >= grid.cols() {
-                        grid.cursor.col = 0;
-                        if grid.cursor.row + 1 >= grid.rows() {
-                            grid.scroll_up(1);
-                        } else {
-                            grid.cursor.row += 1;
-                        }
-                    }
-
-                    let col = grid.cursor.col;
-                    let row = grid.cursor.row;
-                    if let Some(cell) = grid.cell_mut(col, row) {
-                        cell.codepoint = b as u32;
-                        cell.fg_rgba = self.fg;
-                        cell.bg_rgba = self.bg;
-                        cell.flags = self.flags;
-                        cell.width = 1;
-                        cell.dirty = 1;
-                    }
-                    grid.cursor.col += 1;
-                }
-                _ => {
-                    // Non-ASCII UTF-8 will be handled in full rune parser pass
-                }
+                0x20..=0x7E => self.put_char(grid, b as u32),
+                0x80..=0xFF => self.push_utf8_byte(grid, b),
+                _ => {}
             }
+        }
+    }
+
+    /// Writes one printable codepoint at the cursor (width 1), wrapping at the right margin.
+    fn put_char(&mut self, grid: &mut TerminalGrid, codepoint: u32) {
+        if grid.cursor.col >= grid.cols() {
+            grid.cursor.col = 0;
+            if grid.cursor.row + 1 >= grid.rows() {
+                grid.scroll_up(1);
+            } else {
+                grid.cursor.row += 1;
+            }
+        }
+
+        let col = grid.cursor.col;
+        let row = grid.cursor.row;
+        if let Some(cell) = grid.cell_mut(col, row) {
+            cell.codepoint = codepoint;
+            cell.fg_rgba = self.fg;
+            cell.bg_rgba = self.bg;
+            cell.flags = self.flags;
+            cell.width = 1;
+            cell.dirty = 1;
+        }
+        grid.cursor.col += 1;
+    }
+
+    /// Accumulates a UTF-8 sequence byte; sequences may span `ingest` calls. Invalid input prints U+FFFD.
+    fn push_utf8_byte(&mut self, grid: &mut TerminalGrid, b: u8) {
+        if self.utf8_len == 0 {
+            let need = match b {
+                0xC2..=0xDF => 2,
+                0xE0..=0xEF => 3,
+                0xF0..=0xF4 => 4,
+                _ => {
+                    self.put_char(grid, u32::from(char::REPLACEMENT_CHARACTER));
+                    return;
+                }
+            };
+            self.utf8_buf[0] = b;
+            self.utf8_len = 1;
+            self.utf8_need = need;
+            return;
+        }
+        if b & 0xC0 != 0x80 {
+            self.utf8_len = 0;
+            self.put_char(grid, u32::from(char::REPLACEMENT_CHARACTER));
+            self.push_utf8_byte(grid, b);
+            return;
+        }
+        self.utf8_buf[self.utf8_len] = b;
+        self.utf8_len += 1;
+        if self.utf8_len == self.utf8_need {
+            let len = self.utf8_len;
+            self.utf8_len = 0;
+            let ch = std::str::from_utf8(&self.utf8_buf[..len])
+                .ok()
+                .and_then(|s| s.chars().next())
+                .unwrap_or(char::REPLACEMENT_CHARACTER);
+            self.put_char(grid, u32::from(ch));
         }
     }
 
@@ -156,7 +201,7 @@ impl VtParser {
             match b {
                 b'0'..=b'9' => {
                     let digit = (b - b'0') as u32;
-                    curr_num = Some(curr_num.unwrap_or(0) * 10 + digit);
+                    curr_num = Some(curr_num.unwrap_or(0).saturating_mul(10).saturating_add(digit));
                 }
                 b';' => {
                     params.push(curr_num.unwrap_or(0));

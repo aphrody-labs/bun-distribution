@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-//! AI Inference & Computer-Use Engine for Aphrody Kernel.
-//! Designed for no-human-in-the-loop autonomous agents, instantaneous screen state capture,
-//! and programmatic terminal actions at memory bandwidth.
+//! Computer-use controller: screen text capture from the grid and key/text injection into
+//! the attached PTY.
 
 use crate::grid::TerminalGrid;
 use crate::pty::PtyController;
@@ -30,7 +29,7 @@ pub struct SemanticBlock {
     pub exit_code: Option<i32>,
 }
 
-/// AI Computer-Use controller providing synchronous, zero-latency interactions with the terminal.
+/// Computer-use controller; actions need a PTY (`AphrodyTerm::spawn_pty`).
 pub struct ComputerUseController {
     pty: Option<Mutex<PtyController>>,
 }
@@ -40,7 +39,7 @@ impl ComputerUseController {
         Self { pty: pty.map(Mutex::new) }
     }
 
-    /// Captures the full screen buffer as plain text in under 0.1ms (> 10 GB/s throughput).
+    /// Captures the visible screen as plain text.
     pub fn snapshot_text(&self, grid: &TerminalGrid) -> String {
         grid.scrape_text()
     }
@@ -50,12 +49,20 @@ impl ComputerUseController {
         (grid.cursor.col, grid.cursor.row, grid.cursor.visible)
     }
 
+    /// Whether a PTY is attached (otherwise `dispatch_action` fails with `NotConnected`).
+    pub fn has_pty(&self) -> bool {
+        self.pty.is_some()
+    }
+
     /// Dispatches a programmatic Computer-Use action directly into the PTY.
     pub fn dispatch_action(&self, action: ComputerAction) -> std::io::Result<()> {
         let Some(ref pty_lock) = self.pty else {
-            return Ok(());
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotConnected,
+                "no PTY attached to this terminal (use AphrodyTerm::spawn_pty)",
+            ));
         };
-        let pty = pty_lock.lock().unwrap();
+        let pty = pty_lock.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
 
         match action {
             ComputerAction::TypeText(text) => {
@@ -87,7 +94,7 @@ impl ComputerUseController {
                 pty.write_all(b"\x1b[201~")?;
             }
             ComputerAction::Resize { cols, rows } => {
-                let _ = pty.resize(cols, rows);
+                pty.resize(cols, rows).map_err(std::io::Error::other)?;
             }
         }
 

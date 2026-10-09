@@ -37,7 +37,7 @@ pub enum ComputerEnvironment {
     Browser,
     /// Linux X11 automation.
     Linux,
-    /// Hardware-accelerated, autonomous terminal computer use via `aphrody-term`.
+    /// Terminal computer use via `aphrody-term` (a shell in a native PTY).
     Terminal,
     /// Windows Subsystem for Linux (WSL) automation via `wsl_execute` and guest telemetry.
     Wsl,
@@ -571,8 +571,8 @@ impl ComputerBackend for BrowserComputerBackend {
     }
 }
 
-/// Autonomous, high-performance terminal computer-use backend via `aphrody-term`.
-/// Provides in-memory grid scraping at >10 GB/s without OCR, and direct programmatic PTY action dispatch.
+/// Terminal computer-use backend via `aphrody-term`: reads the screen from the in-memory grid
+/// (no OCR) and writes keys/text into the PTY.
 #[cfg(not(target_arch = "wasm32"))]
 pub struct TerminalComputerBackend {
     grid: Arc<aphrody_term::FairMutex<aphrody_term::TerminalGrid>>,
@@ -590,7 +590,23 @@ impl TerminalComputerBackend {
         Self { grid, controller }
     }
 
-    /// Create a standalone terminal backend with default dimensions.
+    /// Spawn `program` (default: `COMSPEC`/`cmd.exe` on Windows, `SHELL`/`/bin/sh` elsewhere)
+    /// in a native PTY and attach the backend to it.
+    pub fn spawn_shell(
+        program: Option<&str>,
+        cols: u16,
+        rows: u16,
+    ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        let program = program.map(str::to_owned).unwrap_or_else(default_shell);
+        let term = aphrody_term::AphrodyTerm::spawn_pty(
+            &program,
+            &[],
+            aphrody_term::TermConfig { cols, rows, ..Default::default() },
+        )?;
+        Ok(Self { grid: term.grid(), controller: term.computer_use_handle() })
+    }
+
+    /// Create a headless backend with no PTY: `screenshot` works, input actions return an error.
     #[must_use]
     pub fn standalone(cols: usize, rows: usize) -> Self {
         let grid = Arc::new(aphrody_term::FairMutex::new(aphrody_term::TerminalGrid::new(
@@ -599,6 +615,15 @@ impl TerminalComputerBackend {
         let controller = Arc::new(aphrody_term::ComputerUseController::new(None));
         Self { grid, controller }
     }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn default_shell() -> String {
+    #[cfg(windows)]
+    let (var, fallback) = ("COMSPEC", "cmd.exe");
+    #[cfg(not(windows))]
+    let (var, fallback) = ("SHELL", "/bin/sh");
+    std::env::var(var).ok().filter(|s| !s.trim().is_empty()).unwrap_or_else(|| fallback.to_owned())
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -643,20 +668,6 @@ impl ComputerBackend for TerminalComputerBackend {
             ComputerAction::Wait { duration_ms } => {
                 tokio::time::sleep(Duration::from_millis(*duration_ms)).await;
                 Ok(ToolOutput::ok(format!("Waited {duration_ms} ms.")))
-            },
-            ComputerAction::Scroll { delta_y, amount, direction, .. } => {
-                let amt = amount.or(*delta_y).unwrap_or(1);
-                let key = if direction.as_deref() == Some("down") || delta_y.unwrap_or(0) > 0 {
-                    "down"
-                } else {
-                    "up"
-                };
-                for _ in 0..amt.unsigned_abs() {
-                    let _ = self
-                        .controller
-                        .dispatch_action(aphrody_term::ComputerAction::PressKey(key.to_string()));
-                }
-                Ok(ToolOutput::ok(format!("Scrolled terminal {key} by {amt}.")))
             },
             other => Ok(ToolOutput::error(format!(
                 "computer action `{}` is not supported in terminal environment",
@@ -1477,14 +1488,14 @@ fn format_wsl_execution_result(value: &Value, distro: &str, command: &str) -> St
 /// `Windows` requested on a non-Windows host.
 pub struct UnsupportedComputerBackend {
     env: ComputerEnvironment,
-    reason: &'static str,
+    reason: std::borrow::Cow<'static, str>,
 }
 
 impl UnsupportedComputerBackend {
     /// Describe why `env` cannot be driven by this build.
     #[must_use]
-    pub fn new(env: ComputerEnvironment, reason: &'static str) -> Self {
-        Self { env, reason }
+    pub fn new(env: ComputerEnvironment, reason: impl Into<std::borrow::Cow<'static, str>>) -> Self {
+        Self { env, reason: reason.into() }
     }
 }
 
@@ -1672,7 +1683,13 @@ impl ComputerTool {
                 "no X11 desktop backend is compiled into this build",
             )),
             #[cfg(not(target_arch = "wasm32"))]
-            ComputerEnvironment::Terminal => Arc::new(TerminalComputerBackend::standalone(80, 24)),
+            ComputerEnvironment::Terminal => match TerminalComputerBackend::spawn_shell(None, 80, 24) {
+                Ok(backend) => Arc::new(backend),
+                Err(e) => Arc::new(UnsupportedComputerBackend::new(
+                    env,
+                    format!("cannot start a shell in a PTY: {e}"),
+                )),
+            },
             #[cfg(target_arch = "wasm32")]
             ComputerEnvironment::Terminal => Arc::new(UnsupportedComputerBackend::new(
                 env,
@@ -1991,7 +2008,7 @@ mod tests {
 
     #[tokio::test]
     #[cfg(not(target_arch = "wasm32"))]
-    async fn terminal_backend_scrapes_and_executes_actions() {
+    async fn terminal_backend_scrapes_and_rejects_input_without_pty() {
         let tool = ComputerTool::terminal_standalone(80, 24);
         assert_eq!(tool.environment(), ComputerEnvironment::Terminal);
 
@@ -1999,13 +2016,11 @@ mod tests {
         assert!(!snap.is_error);
         assert!(snap.content.contains("Terminal buffer"));
 
-        let type_out = tool.handle(json!({"action": "type", "text": "ls -la"})).await.unwrap();
-        assert!(!type_out.is_error);
-        assert!(type_out.content.contains("Typed 6 character(s)"));
-
-        let key_out = tool.handle(json!({"action": "keypress", "key": "Enter"})).await.unwrap();
-        assert!(!key_out.is_error);
-        assert!(key_out.content.contains("Pressed key 'Enter'"));
+        // Headless backend: no PTY, so input must fail instead of pretending to type.
+        let type_out = tool.handle(json!({"action": "type", "text": "ls -la"})).await;
+        assert!(type_out.is_err());
+        let key_out = tool.handle(json!({"action": "keypress", "key": "Enter"})).await;
+        assert!(key_out.is_err());
 
         let wait_out = tool.handle(json!({"action": "wait", "duration_ms": 5})).await.unwrap();
         assert!(!wait_out.is_error);

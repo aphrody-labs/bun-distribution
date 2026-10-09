@@ -2,16 +2,7 @@
 /** Dedicated-worker local shell with two OPFS image slots. The main thread owns VT rendering. */
 
 export type WorkerRequest =
-  | {
-      type: "init";
-      cols: number;
-      rows: number;
-      engine?: "v86" | "container2wasm" | "local";
-      memoryMb?: number;
-      rootfsUrl?: string;
-      snapshotUrl?: string;
-      mountPoint?: string;
-    }
+  | { type: "init"; cols: number; rows: number }
   | { type: "input"; bytes: ArrayBuffer }
   | { type: "resize"; cols: number; rows: number }
   | { type: "close" };
