@@ -26,6 +26,8 @@ export interface Gate {
   readonly surfaces: readonly string[];
   /** returns the reason to skip, or null when the gate can run */
   readonly precondition?: (root: string) => string | null;
+  /** extra environment of the command */
+  readonly env?: Readonly<Record<string, string>>;
 }
 
 export interface NotRun {
@@ -51,15 +53,18 @@ export const GATES: readonly Gate[] = [
   },
   {
     id: "lint",
-    title: "oxlint",
-    command: ["oxlint", "scripts/", "test/", "packages/", "crates/infra/aphrody/src/", "apps/web/src/"],
+    title: "bun lint (oxlint + n2b)",
+    command: ["bun", "lint", "scripts/", "test/", "packages/", "crates/infra/aphrody/src/", "apps/web/src/"],
     surfaces: TS,
+    // the root package.json has a `lint` script: within it, `bun lint` is Bun's command, not the script
+    env: { npm_lifecycle_event: "lint" },
   },
   {
     id: "fmt-check",
-    title: "oxfmt --check",
+    title: "bun fmt --check (oxfmt)",
     command: [
-      "oxfmt",
+      "bun",
+      "fmt",
       "--check",
       "scripts/",
       "test/",
@@ -418,7 +423,7 @@ export function spawnRunner(root: string, timeoutMs: number): Runner {
       stdout: "pipe",
       stderr: "pipe",
       detached: true,
-      env: { ...process.env, NO_COLOR: "1", CI: "1" },
+      env: { ...process.env, NO_COLOR: "1", CI: "1", ...gate.env },
     });
     let timedOut = false;
     const timer = setTimeout(() => {
