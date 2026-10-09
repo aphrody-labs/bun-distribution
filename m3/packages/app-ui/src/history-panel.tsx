@@ -192,8 +192,13 @@ export function HistoryPanel({
                       </Button>
                     ) : confirming === thread.id ? (
                       <>
-                        <Button variant="text" onClick={() => setConfirming(null)}>
-                          Cancel
+                        <Button
+                          aria-label="Cancel"
+                          title="Cancel"
+                          variant="text"
+                          onClick={() => setConfirming(null)}
+                        >
+                          <Icon name="close" size={18} />
                         </Button>
                         <Button variant="tonal" onClick={() => void remove(thread)}>
                           Archive

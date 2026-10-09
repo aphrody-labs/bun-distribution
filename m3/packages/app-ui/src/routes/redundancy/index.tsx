@@ -44,8 +44,15 @@ function SummaryError({ retry }: { retry: () => void }) {
       <p role="alert" className="text-body-large">
         Redundancy data is unavailable.
       </p>
-      <Button variant="text" size="lg" className="text-on-error-container" onClick={retry}>
-        Retry
+      <Button
+        aria-label="Retry"
+        title="Retry"
+        variant="text"
+        size="lg"
+        className="text-on-error-container"
+        onClick={retry}
+      >
+        <Icon name="refresh" size={18} />
       </Button>
     </div>
   );

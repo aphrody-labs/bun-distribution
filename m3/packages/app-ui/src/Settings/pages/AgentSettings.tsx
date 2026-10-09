@@ -172,8 +172,13 @@ export function AgentSettings({
           <p role="alert" className="text-error">
             Préférences indisponibles.
           </p>
-          <Button variant="tonal" onClick={() => setReload((value) => value + 1)}>
-            Réessayer
+          <Button
+            aria-label="Réessayer"
+            title="Réessayer"
+            variant="tonal"
+            onClick={() => setReload((value) => value + 1)}
+          >
+            <Icon name="refresh" size={18} />
           </Button>
         </div>
       )}
@@ -215,11 +220,13 @@ export function AgentSettings({
                 <div className="space-y-2">
                   <p role="status">Aucun modèle disponible.</p>
                   <Button
+                    aria-label="Réessayer"
+                    title="Réessayer"
                     variant="tonal"
                     disabled={saving}
                     onClick={() => setReload((value) => value + 1)}
                   >
-                    Réessayer
+                    <Icon name="refresh" size={18} />
                   </Button>
                 </div>
               )}

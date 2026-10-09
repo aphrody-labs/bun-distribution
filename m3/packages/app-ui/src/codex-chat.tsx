@@ -306,11 +306,23 @@ export function ThreadDrawer({
                       placeholder="Nom de la session..."
                     />
                     <div className="flex justify-end gap-2 pt-1">
-                      <Button variant="text" size="sm" onClick={() => setEditingThreadId(null)}>
-                        Annuler
+                      <Button
+                        aria-label="Annuler"
+                        title="Annuler"
+                        variant="text"
+                        size="sm"
+                        onClick={() => setEditingThreadId(null)}
+                      >
+                        <Icon name="close" size={18} />
                       </Button>
-                      <Button variant="filled" size="sm" onClick={() => handleSaveRename(t.id)}>
-                        Enregistrer
+                      <Button
+                        aria-label="Enregistrer"
+                        title="Enregistrer"
+                        variant="filled"
+                        size="sm"
+                        onClick={() => handleSaveRename(t.id)}
+                      >
+                        <Icon name="save" size={18} />
                       </Button>
                     </div>
                   </div>
@@ -2462,8 +2474,13 @@ export function CodexChatRoute() {
           className="flex items-center justify-between gap-3 px-4 py-3 bg-error-container text-on-error-container"
         >
           <span>Connexion au service indisponible.</span>
-          <Button variant="text" onClick={() => setConnectionAttempt((attempt) => attempt + 1)}>
-            Réessayer
+          <Button
+            aria-label="Réessayer"
+            title="Réessayer"
+            variant="text"
+            onClick={() => setConnectionAttempt((attempt) => attempt + 1)}
+          >
+            <Icon name="refresh" size={18} />
           </Button>
         </div>
       )}

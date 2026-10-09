@@ -399,11 +399,13 @@ export function QuickBar() {
             <Icon name="forum" size={18} />
             <span className="flex-1 truncate">{activeThread.title}</span>
             <button
+              aria-label="Nouveau fil"
+              title="Nouveau fil"
               type="button"
               onClick={newThread}
               className="min-h-10 rounded-full px-3 text-primary hover:bg-primary/8 focus-visible:outline-2 focus-visible:outline-primary"
             >
-              Nouveau fil
+              <Icon name="add" size={18} />
             </button>
           </div>
         )}

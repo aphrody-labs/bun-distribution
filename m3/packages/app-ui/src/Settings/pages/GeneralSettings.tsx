@@ -194,11 +194,13 @@ export function GeneralSettings({
               <div role="alert" className="space-y-3 text-error">
                 <p>Démarrage automatique indisponible : {autostartError}</p>
                 <Button
+                  aria-label="Réessayer"
+                  title="Réessayer"
                   variant="tonal"
                   disabled={savingAutostart}
                   onClick={() => setReload((value) => value + 1)}
                 >
-                  Réessayer
+                  <Icon name="refresh" size={18} />
                 </Button>
               </div>
             )}

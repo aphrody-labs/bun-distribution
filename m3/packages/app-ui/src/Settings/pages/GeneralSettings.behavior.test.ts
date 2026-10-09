@@ -137,7 +137,7 @@ describe.skipIf(!hasDom)("General settings native acknowledgements", () => {
     expect(switchControl()).toBeNull();
     expect(container!.textContent).not.toContain("automatique activé.");
     const retry = Array.from(container!.querySelectorAll("button")).find(
-      (button) => button.textContent === "Réessayer",
+      (button) => button.getAttribute("aria-label") === "Réessayer",
     )!;
     await act(async () => retry.click());
     await ready(() => switchControl() !== null);

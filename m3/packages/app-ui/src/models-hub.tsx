@@ -326,11 +326,13 @@ export function ModelsHub() {
           <div className="flex items-center justify-between gap-3">
             <span className="text-[18px] text-error">{loadError}</span>
             <Button
+              aria-label="Réessayer"
+              title="Réessayer"
               variant="text"
               className="min-h-[44px] text-[18px]"
               onClick={() => void refreshStore()}
             >
-              <span>Réessayer</span>
+              <Icon name="refresh" size={18} />
             </Button>
           </div>
         </Card>

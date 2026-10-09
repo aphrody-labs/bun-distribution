@@ -14,6 +14,7 @@ import clsx from "clsx";
 import { drawQr } from "@aphrody/qr";
 import { useCoreMutation, useCoreQuery } from "../../contexts/SpacedriveContext";
 import { sounds } from "@aphrody/assets/sounds";
+import { Icon } from "@aphrody/m3-primitives";
 
 interface PairingModalProps {
   isOpen: boolean;
@@ -401,10 +402,12 @@ function GenerateMode({ generatePairing, currentSession, onGenerate, onCancel, o
 
           {/* Cancel Button */}
           <button
+            aria-label="Cancel"
+            title="Cancel"
             onClick={onCancel}
             className="w-full px-4 py-2.5 text-label-large font-medium text-on-surface-variant hover:text-on-surface bg-surface-container hover:bg-on-surface/8 border border-outline-variant rounded-small transition-colors"
           >
-            Cancel
+            <Icon name="close" size={18} />
           </button>
         </>
       )}
@@ -513,10 +516,12 @@ function JoinMode({
       <div className="flex gap-3">
         {state ? (
           <button
+            aria-label="Cancel"
+            title="Cancel"
             onClick={onCancel}
             className="flex-1 px-4 py-2.5 text-label-large font-medium text-on-surface-variant hover:text-on-surface bg-surface-container hover:bg-on-surface/8 border border-outline-variant rounded-small transition-colors"
           >
-            Cancel
+            <Icon name="close" size={18} />
           </button>
         ) : (
           <>
