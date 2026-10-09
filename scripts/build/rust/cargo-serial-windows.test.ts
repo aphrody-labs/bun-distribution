@@ -40,6 +40,12 @@ test("the plan bounds jobs, refuses overrides and isolates the target directory"
   expect(heavy.env.CARGO_INCREMENTAL).toBe("0");
   // An explicit empty wrapper is a deliberate opt-out and survives.
   expect(heavy.env.RUSTC_WRAPPER).toBe("");
+  const incremental = planCargo(["check"], false, {
+    ...base,
+    CARGO_INCREMENTAL: "0",
+    APHRODY_CARGO_INCREMENTAL: "1",
+  });
+  expect("CARGO_INCREMENTAL" in incremental.env).toBe(false);
   const light = planCargo(["fetch", "--locked"], false, base);
   expect(light.heavy).toBe(false);
   expect(light.env.CARGO_BUILD_JOBS).toBeUndefined();

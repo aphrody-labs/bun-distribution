@@ -110,17 +110,21 @@ fi
 if [[ "$help_only" == false && -n "${APHRODY_FACTORY_RESOURCE:-}" && ( "${RUSTC_WRAPPER:-}" == sccache || "${RUSTC_WRAPPER:-}" == */sccache ) ]]; then
     bun "$source_root/packages/infra/workspace/src/build-factory-cleanup.ts" --sccache "$factory_config" "$(command -v "$RUSTC_WRAPPER")"
 fi
+# sccache refuses every compile while CARGO_INCREMENTAL is set. APHRODY_CARGO_INCREMENTAL=1 unsets it instead
+# of forcing 0: the profile default then keeps edit loops incremental for workspace members and sccache still
+# caches dependencies. Factories and CI keep the non-incremental default.
+incremental=(CARGO_INCREMENTAL=0)
+if [[ "${APHRODY_CARGO_INCREMENTAL:-0}" == 1 ]]; then incremental=(-u CARGO_INCREMENTAL); fi
 if ! command -v flock >/dev/null 2>&1; then
     # Git Bash on Windows ships neither flock nor nice: Cargo's own build-directory lock serializes.
     echo "[cargo-serial] flock unavailable; running cargo with jobs=$jobs under Cargo's own lock" >&2
-    exec env CARGO_BUILD_JOBS="$jobs" CARGO_INCREMENTAL=0 CARGO_TERM_COLOR=never cargo "$@"
+    exec env "${incremental[@]}" CARGO_BUILD_JOBS="$jobs" CARGO_TERM_COLOR=never cargo "$@"
 fi
 echo "[cargo-serial] waiting for $lock_file (jobs=$jobs, timeout=${wait_seconds}s)" >&2
 # Keep ownership in flock itself. A spawned sccache daemon must not inherit
 # the descriptor and hold the build lock after Cargo has exited.
 exec flock --exclusive --close --timeout "$wait_seconds" "$lock_file" \
-    nice -n 10 env \
+    nice -n 10 env "${incremental[@]}" \
         CARGO_BUILD_JOBS="$jobs" \
-        CARGO_INCREMENTAL=0 \
         CARGO_TERM_COLOR=never \
         cargo "$@"

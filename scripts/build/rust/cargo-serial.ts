@@ -129,7 +129,10 @@ export function planCargo(args: readonly string[], msvc: boolean, env: Env): Car
   }
   if (heavy) {
     next.CARGO_BUILD_JOBS = jobsText;
-    next.CARGO_INCREMENTAL = "0";
+    // sccache refuses every compile while CARGO_INCREMENTAL is set; the opt-in unsets it so the profile
+    // default keeps workspace members incremental while sccache still caches dependencies.
+    if (env.APHRODY_CARGO_INCREMENTAL === "1") delete next.CARGO_INCREMENTAL;
+    else next.CARGO_INCREMENTAL = "0";
     next.CARGO_TERM_COLOR = "never";
   }
   return { heavy, helpOnly, jobs: Number(jobsText), waitSeconds: Number(waitText), env: next };
