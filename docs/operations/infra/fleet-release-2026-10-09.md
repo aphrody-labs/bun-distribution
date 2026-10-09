@@ -16,7 +16,7 @@ protected stores were preserved.
 | --- | --- | --- |
 | Aphrody | `21ff48ba62cf1bb3affd10f94ecb8a5d4e4ab330` | Rust inference gateway, Docker-independent Mesh recovery, native Windows setup producer, WireGuard peer patch and platform cfg fixes |
 | Shenron | `4332b0bcf4299a5037e5d468cb0baf9b121c530b` | Native pipeline, lazy Aphrody Python SDK adapter, authenticated provider and classified official-crawl ingestion |
-| Bun fork | `73fdb3e193b` | Current committed fork main at the release audit; runtime binary qualification uses the separate immutable release pin below |
+| Bun fork | `292de960af2bff1b8ae9bf50d7dc05409e5797e5` | Owner integrated ConPTY and Python header/exit-status batches during the release; runtime qualification uses the separate immutable release pin below |
 
 The Cargo lock reconciliation in Aphrody was generated on the serialized VPS
 factory from clean main. Its sole delta updates the first-party GPU backend
@@ -148,5 +148,8 @@ database contents, datasets or model weights. Python sources are not a built
 wheel or a distributed native runtime. Local CPU integration evidence with
 external Bun/CPython libraries does not qualify their binary provenance for
 redistribution. Windows artifacts have checksum integrity; no signing key was
-configured. Active Bun ConPTY and native Python changes remain with their owner
-until a completed qualification and handoff.
+configured. The initially active Bun ConPTY and Python batches were subsequently
+committed by their owner as `d84e82a5418`, `c321e648765` and `292de960af2` and
+confirmed on origin/main. No newer Windows runtime binary was qualified by this
+release: the deployed candidate remains the immutable `.4` / `41211b568`.
+Concurrent local settings, skill and manifest edits were preserved.
