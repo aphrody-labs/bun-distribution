@@ -286,6 +286,40 @@
       "pairs": "aphrody-selfheal.service"
     },
     {
+      "service": "aphrody-self-update",
+      "unit": "aphrody-self-update.service",
+      "path": "systemd/aphrody/aphrody-self-update.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-self-update-timer",
+      "unit": "aphrody-self-update.timer",
+      "path": "systemd/aphrody/aphrody-self-update.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "pairs": "aphrody-self-update.service"
+    },
+    {
+      "service": "aphrody-self-update-dbfr",
+      "unit": "aphrody-self-update-dbfr.service",
+      "path": "systemd/aphrody/aphrody-self-update-dbfr.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "aphrody-self-update-dbfr-timer",
+      "unit": "aphrody-self-update-dbfr.timer",
+      "path": "systemd/aphrody/aphrody-self-update-dbfr.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr",
+      "pairs": "aphrody-self-update-dbfr.service"
+    },
+    {
       "service": "nie-model-serve",
       "unit": "nie-model-serve.service",
       "path": "systemd/nie/nie-model-serve.service",
@@ -594,6 +628,16 @@
       "dropIns": [],
       "ownerRepo": "aphrody",
       "targetHost": "vps"
+    }
+  ],
+  "scheduledTasks": [
+    {
+      "task": "Aphrody self update",
+      "hosts": ["windows"],
+      "command": "aphrody self update",
+      "intervalMinutes": 30,
+      "register": "scripts/tools/infra/register-self-update-task.ps1",
+      "ownerRepo": "aphrody"
     }
   ],
   "nginx": [

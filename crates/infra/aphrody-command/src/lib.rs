@@ -78,6 +78,8 @@ mod scan_cmd;
 mod site_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod self_cmd;
+#[cfg(not(target_arch = "wasm32"))]
+mod self_update;
 #[cfg(all(not(target_arch = "wasm32"), feature = "train"))]
 mod train_cmd;
 #[cfg(not(target_arch = "wasm32"))]
@@ -702,6 +704,24 @@ pub(crate) enum SelfAction {
         /// Plan-only: print the intended actions, never mutate PATH/symlinks.
         #[arg(long)]
         dry_run: bool,
+    },
+    /// Update to the release published in latest.json (checksum-verified installer, rollback on failure).
+    Update {
+        /// Download server (default: APHRODY_DOWNLOAD_URL or https://downloads.aphrody.com).
+        #[arg(long)]
+        base: Option<String>,
+        /// Installer components (`all` or a space separated list).
+        #[arg(long, default_value = "aphrody")]
+        components: String,
+        /// Only report the installed and the published release.
+        #[arg(long)]
+        check: bool,
+        /// Reinstall even when the published release is already installed.
+        #[arg(long)]
+        force: bool,
+        /// Return to the previously installed release.
+        #[arg(long)]
+        rollback: bool,
     },
     /// Inventory dev toolchain (rustup, cargo, git, zigbuild, wasm targets).
     /// With `--check`, prints the inventory and exits non-zero on missing
@@ -1463,6 +1483,11 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
         Some(Commands::SelfCmd { action }) => match action {
             SelfAction::InstallPath { bin, build, dry_run } => {
                 self_cmd::InstallPathCommand { bin, build_if_missing: build, dry_run }
+                    .execute(ctx)
+                    .await?;
+            },
+            SelfAction::Update { base, components, check, force, rollback } => {
+                self_update::UpdateCommand { base, components, check, force, rollback }
                     .execute(ctx)
                     .await?;
             },
