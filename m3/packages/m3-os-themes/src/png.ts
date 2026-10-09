@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 // Minimal PNG encoder (8-bit RGB, no interlace) so theme images need no native dependency.
-import { deflateSync } from "node:zlib";
 import { rgb } from "./color.ts";
 
 const SIGNATURE = Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]);
@@ -37,10 +36,12 @@ export function encodePng(
   view.setUint32(4, height);
   header[8] = 8;
   header[9] = 2;
+  // windowBits 15: zlib-wrapped, as PNG requires (Bun's default is raw deflate).
+  const idat = Bun.deflateSync(raw, { windowBits: 15 });
   const parts = [
     SIGNATURE,
     chunk("IHDR", header),
-    chunk("IDAT", deflateSync(raw)),
+    chunk("IDAT", idat),
     chunk("IEND", new Uint8Array()),
   ];
   const png = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));

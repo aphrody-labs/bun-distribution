@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { generate, nearestGnomeAccent, registryValues, themeManifest } from "../src/index.ts";
 import { installCommand, run } from "../src/cli.ts";
+import { encodePng } from "../src/png.ts";
 
 const input = { name: "Test", seed: "#6750a4", mode: "auto" as const };
 const text = (path: string): string => {
@@ -112,6 +113,18 @@ describe("chromium", () => {
       JSON.parse(text("chromium/policies/managed/m3-theme-dark.json")).BrowserThemeColor,
     ).toMatch(/^#[0-9a-f]{6}$/);
     expect(text("chromium/policies/windows/m3-theme-light.reg")).toContain("BraveSoftware\\Brave");
+  });
+  it("stores IDAT in the zlib format", () => {
+    const png = encodePng(3, 2, (x, y) => [x, y, 7]);
+    const view = new DataView(png.buffer, png.byteOffset);
+    const ihdr = 8 + 12 + view.getUint32(8);
+    const idat = png.subarray(ihdr + 8, ihdr + 8 + view.getUint32(ihdr));
+    expect(new TextDecoder().decode(png.subarray(ihdr + 4, ihdr + 8))).toBe("IDAT");
+    expect(idat[0]! & 0x0f).toBe(8);
+    expect(((idat[0]! << 8) | idat[1]!) % 31).toBe(0);
+    expect(Array.from(Bun.inflateSync(idat, { windowBits: 15 }))).toEqual([
+      0, 0, 0, 7, 1, 0, 7, 2, 0, 7, 0, 0, 1, 7, 1, 1, 7, 2, 1, 7,
+    ]);
   });
 });
 
