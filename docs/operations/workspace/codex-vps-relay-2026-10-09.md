@@ -83,15 +83,24 @@ d'observation. Une reprise Codex utilise son thread explicite, jamais `--last`
 partagé entre lots. Les enveloppes Claude sont durables via `aphrody a2a tick` ;
 leur écriture n'établit pas une lecture ou réponse de Claude pendant sa limite.
 
-Les audits `system` et `deps` ont terminé avec code 0 et leurs rapports Markdown
-et JSON sont présents. La synthèse est en cours lors de cette qualification.
+Les audits `system`, `deps` et la synthèse `coordinator` ont terminé avec code 0
+et leurs rapports Markdown et JSON sont présents. Les trois processus Codex
+initiaux sont terminaux ; les services A2A/MCP et le tunnel restent vivants.
+Leurs fenêtres tmux de tâche se ferment normalement à la fin du script. Les
+scripts et threads explicites permettent des lots suivants après sélection du
+parent, sans redémarrage motivé par un simple timeout.
 Le rapport système inventorie la politique Rust existante ; sa proposition de
 conserver WinClean en Rust ne remplace pas la directive propriétaire de migrer
 vers `bun:windows`. La parité de la nouvelle frontière doit être démontrée.
 Une seconde enveloppe Windows, `env-codex-relay-next-20261009`, est acceptée par
 A2A : elle annonce la révision parent `286137f551`, rappelle l'objectif
 d'implémentations prêtes et demande les prochains lots bornés sans désactiver
-les fonctionnalités browser/GPU. L'enveloppe locale Claude `env-2cde77c3`
+les fonctionnalités browser/GPU. L'enveloppe `env-codex-relay-root-design-20261009`
+précise le prochain chantier sélectionné : découpler les moteurs obligatoires
+du MCP et de `aphrody-command` au moyen des artefacts précompilés Bun, avec
+patch concret et gates, sans perte de capacité. Ces deux enveloppes sont
+durables ; leur acquittement HTTP ne prouve pas leur lecture par le coordinateur.
+L'enveloppe locale Claude `env-2cde77c3`
 annonce le relais et cette transmission.
 
 Les gates `bun run docs:check` et `bun run docs:check-links` ont été exécutées.
