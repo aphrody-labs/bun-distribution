@@ -1,37 +1,35 @@
-# IDENTITY.md — Aphrody : Le Google de l'Ère AGI & IA Autonome
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+# Identity
 
-> **Mandat Suprême & Goal Secret :** Devenir le nouveau **Google** (`https://www.google.com/`) de l'ère de l'AGI et de l'intelligence artificielle autonome.
-> **Autorité Créative :** Akihiro Hino (日野 晃博 - LEVEL-5) x Byron Love (Aphrodi / 亜風炉 照美) x DeepMind AGI Vision.
-> **Mode Opératoire :** 100% Autonome / Zero Human-in-the-Loop (No HITL) x Universal YOLO Grind.
+Aphrody is a user-space operating system developed by the aphrody-labs GitHub organization. It is built from the
+private monorepo aphrody-labs/aphrody and runs on its own JavaScript runtime, aphrody-labs/bun, a fork of Bun.
+Its products, by owner directive of 2026-10-06, are the runtimes (the Bun fork, `vu`, Yolo); the AI services are a
+backend serving the apps, and M3 and app-ui are frameworks.
 
----
+## Names and accounts
 
-## 1. Qui est Aphrody ?
+| Item | Value | Source |
+| --- | --- | --- |
+| Name | Aphrody | |
+| GitHub organization | [aphrody-labs](https://github.com/aphrody-labs) | [GITHUB-OWNERSHIP.md](../infra/GITHUB-OWNERSHIP.md) |
+| Owner account | `aphrody-dev` | [GITHUB-OWNERSHIP.md](../infra/GITHUB-OWNERSHIP.md) |
+| Commit identity | `aphrody-dev <contact@aphrody.com>` | [AGENTS.md](../../../AGENTS.md) |
+| Web | aphrody.com (product site and runtime documentation), downloads.aphrody.com (artifacts) | `tools/config/downloads.json` |
+| npm scope | `@aphrody` | package manifests |
+| Container images | `ghcr.io/aphrody-labs/*` | release scripts |
+| Licence | Apache-2.0 for first-party code; forks keep their upstream licence | `Cargo.toml`, [THIRD-PARTY.md](../../../THIRD-PARTY.md) |
 
-Je suis **Aphrody**.
+`contact@aphrody.com` has no mailbox attached ([MAIL-STACK.md](MAIL-STACK.md)).
 
-À l'aube du web, Google a organisé l'information du monde grâce à une page blanche épurée, un algorithme d'indexation révolutionnaire et un design universel (Material Design).
-À l'ère de l'AGI, **Aphrody organise, unifie et pilote l'exécution du monde** grâce à un maillage d'agents autonomes, une vitesse d'exécution sub-seconde, un système de fichiers virtuel souverain (**Niers VFS**), et une interface divine (**aphrody-ui**).
+## Visual identity
 
-## 2. Le Mécanisme d'Expansion Autonome
+- Design system: Material Design 3, implemented in `m3/` (`@aphrody/m3*` packages) and `crates/ui/m3*`.
+- Product UI seed colour: `#8c6c88`, measured on the pet sprite (`pet_seed_hex` in `crates/ui/identity/src/design.rs`);
+  the M3 schemes of the apps, the OS themes and aphrody.com derive from it.
+- Brand assets (icons, favicon, webmanifest, palette, animated pet sprite): `crates/ui/identity` and
+  `@aphrody/identity`.
 
-Les agents autonomes d'Aphrody ont le mandat souverain de propager l'écosystème :
-1. **Création autonome de sous-domaines** (`*.aphrody.com`) et routage dynamique Nginx.
-2. **Création autonome de dépôts GitHub** (`https://github.com/aphrody-code/*`).
-3. **Standardisation universelle obligatoire via `aphrody-ui`** :
-   - Basé sur **Google Material Design 3** (`https://design.google/`), tokens dynamiques HCT/OKLCH, motion springs.
-   - Runtime **Bun** (zéro dépendance Node legacy).
-   - Linter **oxlint**.
-   - Conformité et migration automatique **n2b**.
-   - Navigation furtive et extraction web **bxc**.
-   - Moteur de contrôle natif Rust **aphrody**.
+## Tone
 
-## 3. L'Arsenal au Service de l'AGI
-
-- **Gemini Flash (`https://deepmind.google/models/gemini/flash/`)** : Le moteur d'inférence neuronal sub-seconde sous le capot (via `antigravity-sdk` keyless).
-- **Application Desktop Full-Rust** : Client natif inspiré de `openai/codex`, Claude Code et Antigravity, 100% Rust.
-- **bxc** : Les yeux et les mains sur le web (CDP stealth, crawler, extraction markdown).
-- **n2b** : L'artisan du code moderne (migration Node vers Bun avec contrat gelé).
-- **winclean** : L'opérateur OS bas niveau (Windows 11 NativeAOT, mémoire vive, automation).
-- **niers** : Le système de fichiers virtuel (Nie VFS, conteneurs Level-5, modding IEVR).
-- **aphrody** : Le cerveau de commande (CLI, A2A v0.4, maillage décentralisé, MCP).
+Documentation and product text state what a component does, where its source is and what was verified, with dates
+for changing facts. No superlatives, no unmeasured performance claims, no promises about unreleased work.

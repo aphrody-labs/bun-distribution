@@ -34,6 +34,16 @@
       "canonical": "CLAUDE.md"
     },
     {
+      "path": "CONTRIBUTING.md",
+      "title": "Contributing",
+      "sha256": "3cdd8a0d2fa254950199bc363edae492700216b750b1fa60017794606cc2479a",
+      "bytes": 2456,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "CONTRIBUTING.md"
+    },
+    {
       "path": "GOAL.md",
       "title": "Objectif",
       "sha256": "717d6125b70210416b9f63784c0989f2aeb09e40c92eeef08a1f2c8e79b480c8",
@@ -56,12 +66,22 @@
     {
       "path": "README.md",
       "title": "Aphrody",
-      "sha256": "95bee5b8a7b13be20e5a1af0ddcf800cd21b2db6e87034a12a27f9b53b017a60",
-      "bytes": 3708,
+      "sha256": "634102f77ed7e0396d1d8bd8133430946554db13769fef539cc5111bb2b69393",
+      "bytes": 7718,
       "domain": "",
       "status": "generated",
       "visibility": "private",
       "canonical": "README.md"
+    },
+    {
+      "path": "SECURITY.md",
+      "title": "Security policy",
+      "sha256": "ac49a85ab087c99b6a99a556b34cc3dbba019f65ee5ccbf94394409f1f541797",
+      "bytes": 2191,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "SECURITY.md"
     },
     {
       "path": "START-HERE.md",
@@ -4905,9 +4925,9 @@
     },
     {
       "path": "docs/reference/ai/IDENTITY.md",
-      "title": "IDENTITY.md — Aphrody : Le Google de l'Ère AGI & IA Autonome",
-      "sha256": "49426837d53a3b8d2fff013ed8fa67605cbd6cc510ec627a45f51c4f04e624c9",
-      "bytes": 2466,
+      "title": "Identity",
+      "sha256": "3cc0af7616e35bbeb6b382eda0f563c0bc2b7a6b46e64ce652366c8f07dea01d",
+      "bytes": 1993,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -5056,8 +5076,8 @@
     {
       "path": "docs/reference/ai/SITES-PLATFORM.md",
       "title": "Aphrody public surface",
-      "sha256": "00deeecc5cd94c86731321cc2e0aa02b445a678851eebc0cdc51c7bd1845e628",
-      "bytes": 3332,
+      "sha256": "aee84dc96ae7c1e2db21eaeee38c750ea303418cb7b8b18875691dcade1ccd23",
+      "bytes": 4147,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",

@@ -13,6 +13,21 @@ test("README exposes the canonical agent installation before the inventory", () 
   expect(readme.endsWith("\n")).toBe(true);
 });
 
+test("README sections follow the summary, before installation and inventory", () => {
+  const data = loadRootDocs(root);
+  data.readme.summary = "Summary fixture.";
+  data.readme.sections = [
+    { id: "a", title: "First", public: true, body: ["Alpha body."] },
+    { id: "b", title: "Second", body: ["- beta"] },
+  ];
+  data.readme.installation = ["Installation fixture"];
+  const readme = renderReadme(data, "Totals: fixture.");
+  expect(readme).toContain(
+    "Summary fixture.\n\n## First\n\nAlpha body.\n\n## Second\n\n- beta\n\nInstallation fixture",
+  );
+  expect(readme.indexOf("## Second")).toBeLessThan(readme.indexOf("Totals:"));
+});
+
 test("README installation does not alter generated plan or evidence", () => {
   const data = loadRootDocs(root);
   const before = [renderPlan(data), renderMemory(data)];
