@@ -86,8 +86,10 @@ répertoires ; son total ne prouve pas la couverture complète de `src`.
 
 Le fork Bun observé est `a2671046afbfc818fba21a4925f384b75dc8e109`, Oxc
 `31d5266e150ff17af52f0c2fc798cc27dc9a5a59`. La documentation du fork
-[`ffi.mdx`](../../reference/upstream-bun/runtime/ffi.mdx) décrit FFI comme expérimental ;
-[`node-api.mdx`](../../reference/upstream-bun/runtime/node-api.mdx) présente les addons Node-API.
+[FFI du fork Bun](https://github.com/aphrody-labs/bun/blob/main/docs/runtime/ffi.mdx) décrit FFI comme expérimental ;
+[Node-API du fork Bun](https://github.com/aphrody-labs/bun/blob/main/docs/runtime/node-api.mdx) présente les addons Node-API.
+Ces documents vivent dans le checkout Bun ; le [registre de provenance](../../reference/upstream-bun/SOURCE.json)
+décrit la référence conservée dans Aphrody.
 Aucun choix de transport ne dispense des essais du fork exact distribué.
 Les skills locaux `bun`, `rust-bun` et Rust consultés sont des aides datées ;
 les manifests, sources et types installés tranchent leurs contradictions.
