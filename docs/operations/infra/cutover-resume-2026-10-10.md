@@ -241,3 +241,27 @@ per producer wrote only isolated qualification directories. All fourteen
 archive pairs had identical SHA-256, and every package manifest was unchanged
 across its pair. This does not reproduce per-pack nondeterminism on the current
 inputs; it does not prove registry byte parity or publication completion.
+
+## Native downloads publication, 2026-10-10
+
+The cataloged native VPS publisher now copies qualified prebuilt payloads through
+`node:fs`, removing its local dependency on Unix `cp`. Strict scoped TypeScript,
+oxlint and oxfmt pass; all eighteen publisher tests / 160 assertions pass on the
+isolated VPS qualification snapshot. Four native Windows host/stage checks also
+pass on the installed fork `1.4.3-aphrody.4`.
+
+A read-only plan retained all eleven non-WASM artifacts and increased retention
+to six, preserving all five prior releases. The owner publisher then atomically
+selected `20261009T232000Z-wasm-96378fceaf5e`. Installer assets came from clean
+revision `1fa784f0b362ce9c4c6499237dbe85c65898fe2b`; only the WASM artifact group
+was replaced. No service implementation was overwritten.
+
+Independent public verification found twelve artifacts, with every inherited
+name, SHA-256 and size unchanged. The [published WASM archive](https://downloads.aphrody.com/releases/20261009T232000Z-wasm-96378fceaf5e/files/aphrody-cli-wasm-0.1.3-96378fcea-wasm32-unknown-unknown.tar.gz)
+matched 1,207,705 bytes and SHA-256
+`dd005dc0230bb70832ff3578be41a89dbe3951905e4668b35c8c7e07ba9fc299`.
+Its exact eight-file allowlist and embedded provenance passed. Both loaders
+executed actual RAG ABI, JSON repair, HTML markdown and usage checks, returning
+`ARCHIVE_CONSUMER_PASS`. Native Aphrody Web also read the public release manifest.
+This qualifies this archive and catalog publication; other release artifacts
+retain their original versions and qualification limits.
