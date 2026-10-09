@@ -203,6 +203,9 @@ impl AgentOptions {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Unified native package indexes and verified content-addressed store.
+    #[cfg(not(target_arch = "wasm32"))]
+    Pkg(aphrody_pkg_cli::Cli),
     /// Pure commands (rag, toolcall, html, text): no network, no processes; also built for wasm32.
     Pure(aphrody_command_pure::PureArgs),
     /// Unified AI commands; engines depend on compiled features and configured backends.
@@ -1011,6 +1014,30 @@ use crate::nl_tokens::is_natural_language_prompt;
 async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
     let overrides = cli.agent_options.overrides();
     match cli.command {
+        Some(Commands::Pkg(args)) => {
+            let state = aphrody_agent_home::paths::state_dir()
+                .map_err(|error| miette::miette!("{error}"))?;
+            let profile = cli
+                .agent_options
+                .profile
+                .clone()
+                .or_else(|| std::env::var(aphrody_agent_home::paths::ENV_APHRODY_PROFILE).ok());
+            let home = match profile.as_deref().filter(|value| !value.trim().is_empty()) {
+                Some(profile) => aphrody_agent_home::paths::named_profile_workspace(
+                    &state,
+                    &aphrody_agent_home::paths::sanitize_profile(profile),
+                ),
+                None => state,
+            };
+            let value = args
+                .execute_native(Some(home))
+                .await
+                .map_err(|error| miette::miette!("{error}"))?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&value).map_err(|error| miette::miette!("{error}"))?
+            );
+        },
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Ai { action }) => {
             ai_cmd::run(action, &overrides, ctx).await?;

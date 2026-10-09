@@ -23,6 +23,12 @@ description = "aphrody \u2014 the ultimate cross-platform CLI (Linux/Windows/WAS
 categories = ["command-line-utilities", "development-tools", "web-programming"]
 keywords = ["cli", "cross-platform", "rust", "linux", "wasm"]
 [workspace.dependencies]
+node-semver = "2.2.0"
+pep440_rs = "0.7.3"
+aphrody-pkg-core = { path = "crates/pkg/core", version = "1.0.0" }
+aphrody-pkg-store = { path = "crates/pkg/store", version = "1.0.0" }
+aphrody-pkg-net = { path = "crates/pkg/net", version = "1.0.0" }
+aphrody-pkg-cli = { path = "crates/pkg/cli", version = "1.0.0" }
 taffy = { version = "0.12.1" }
 aphrody-sprite-sheet = { path = "crates/ui/sprite-sheet", version = "1.0.0-canary" }
 crc32fast = { version = "1.5", default-features = false }

@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-pkg-net"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Bounded resumable HTTP ingestion into the shared package store"
+
+[dependencies]
+aphrody-pkg-store.workspace = true
+reqwest.workspace = true
+tokio = { workspace = true, features = ["fs", "io-util", "sync", "time", "macros"] }
+tokio-util = { workspace = true, features = ["rt"] }
+tempfile.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+rustls.workspace = true
+
+[lints]
+workspace = true

@@ -1,37 +1,30 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Unified package capabilities
 
-Owner: Aphrody. Producer integrations: Bun SP/WG and the vcpkg/NuGet forks.
+Product owner: Aphrody. Runtime/system integration owner: the Bun fork.
+The common bindings provide a reusable model for the fork (2026-10-09 LAYERS directive).
 
-- `aphrody-pkg-core`: I/O-free `Source`, `Version`, `Index` and crypto contracts.
-  Version schemes and original integrity strings stay ecosystem-specific.
-  SP/WG absorb the existing system
-  parsers and version/lock models here; none are implemented by this skeleton.
-- `aphrody-pkg-store`: streaming SHA-256 blob ingestion, upstream digest checks,
-  deduplicated publication, verification, logical blob statistics and writable
-  native reflink materialization with an independent-copy fallback.
-  Callers pass the configured `<Aphrody home>/store`; no existing cache is moved.
+- `aphrody-pkg-core`: I/O-free contracts and npm, Cargo sparse, NuGet,
+  vcpkg and PyPI JSON parsers preserving metadata and integrity. npm, NuGet and PEP 440
+  matching use native version schemes. Unsupported floating NuGet/vcpkg constraints error.
+- `aphrody-pkg-store`: streaming SHA-256 CAS, verified reflink/copy materialization,
+  process locks, durable owner references and explicit dry-run/apply garbage collection.
+- `aphrody-pkg-net`: bounded concurrent HTTP downloads, cancellation, strong ETag
+  resume validation and digest verification before publication.
+- `aphrody-pkg-cli`: local store/index commands and remote npm/Cargo/NuGet metadata;
+  integrated into `aphrody pkg` using the configured profile home.
+- `aphrody-pkg-ffi`: versioned C ABI, cbindgen header and C/C++/C#/Python/Bun/Rust
+  examples. See [qualification](ffi/QUALIFICATION.md).
 
-The current store refuses destination overwrite and verifies the bytes being
-materialized. Writable consumers get independent cloned or copied files. Immutable
-hardlink materialization, cache adapters, garbage collection, resume HTTP,
-solver, CLI and FFI remain open work. Full builds and cross-tool performance
-qualification remain main's final pass.
+Native Windows validation: 28 unit tests and strict all-target Clippy pass across
+these five crates; `aphrody-command` checks successfully. C, C++, C#, Python and
+Bun executed the native debug DLL; the Rust example executed the owner library.
+All examples produced the same SHA-256 blob (11 bytes) in isolated stores.
+These results establish this target and debug configuration only.
 
-The workspace lockfile includes the new members. On native Windows, scoped tests
-(four store fixtures) and strict all-target Clippy pass using
-`scripts/dev/windows-cargo.ps1`. Repeat for affected changes or another target:
-
-```sh
-cargo check --locked -p aphrody-pkg-core -p aphrody-pkg-store
-cargo test --locked -p aphrody-pkg-core -p aphrody-pkg-store
-cargo clippy --locked -p aphrody-pkg-core -p aphrody-pkg-store --all-targets -- -D warnings
-```
-
-Store fixtures cover repeated content, consumer mutation isolation, destination
-collision, upstream hash mismatch, corrupt blobs and address path validation.
-They also cover eight concurrent writers and temporary cleanup. The current
-Windows NTFS target exercises copy fallback; native block cloning remains to be
-qualified on ReFS/Dev Drive, Linux btrfs/xfs and macOS APFS. No real
-NuGet/vcpkg installation is qualified. The requested speed and cache savings need the real
-cross-tool workloads after the adapters are connected.
+Remaining work: solver, extraction/signatures, complete package installation,
+shared cache adapters, Python wheel/release packaging, qualified runtime consumer
+migration and real NuGet/vcpkg workload measurements. No installed command
+activation or cross-tool speed improvement is claimed. NTFS exercised copy
+fallback; native cloning needs qualification on other filesystems. Existing
+protected caches and databases were not moved or garbage collected.

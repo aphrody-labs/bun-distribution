@@ -5,6 +5,9 @@
 
 #![forbid(unsafe_code)]
 
+mod maintenance;
+pub use maintenance::GcReport;
+
 use sha2::{Digest, Sha256};
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
@@ -12,7 +15,7 @@ use std::path::{Path, PathBuf};
 use tempfile::NamedTempFile;
 
 /// Validated lowercase SHA-256 content address, safe as a path component.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BlobId(String);
 
 impl BlobId {
@@ -59,6 +62,7 @@ impl Store {
     /// Count recognized regular blob files; never follows directory/file symlinks.
     /// Missing stores are empty; malformed objects are errors rather than hidden.
     pub fn stats(&self) -> io::Result<StoreStats> {
+        let _guard = self.lock(false)?;
         let mut result = StoreStats::default();
         let directory = self.root.join("blobs").join("sha256");
         let shards = match fs::read_dir(directory) {
@@ -96,6 +100,11 @@ impl Store {
     /// Stream to a temporary file and publish without overwriting another writer.
     /// A declared upstream digest must match before any object is published.
     pub fn put(&self, mut reader: impl Read, expected: Option<&BlobId>) -> io::Result<BlobId> {
+        let _guard = self.lock(false)?;
+        self.put_unlocked(&mut reader, expected)
+    }
+
+    fn put_unlocked(&self, mut reader: impl Read, expected: Option<&BlobId>) -> io::Result<BlobId> {
         let staging = self.root.join("staging");
         fs::create_dir_all(&staging)?;
         let mut temporary = NamedTempFile::new_in(&staging)?;
@@ -120,7 +129,7 @@ impl Store {
         match temporary.persist_noclobber(&destination) {
             Ok(_) => {},
             Err(error) if error.error.kind() == io::ErrorKind::AlreadyExists => {
-                self.verify(&id)?;
+                self.verify_unlocked(&id)?;
             },
             Err(error) => return Err(error.error),
         }
@@ -129,6 +138,11 @@ impl Store {
 
     /// Recheck bytes before consuming an object; existence alone is insufficient.
     pub fn verify(&self, id: &BlobId) -> io::Result<()> {
+        let _guard = self.lock(false)?;
+        self.verify_unlocked(id)
+    }
+
+    fn verify_unlocked(&self, id: &BlobId) -> io::Result<()> {
         let mut file = File::open(self.blob_path(id))?;
         let mut hasher = Sha256::new();
         let mut buffer = [0_u8; 64 * 1024];
@@ -157,6 +171,7 @@ impl Store {
         id: &BlobId,
         destination: &Path,
     ) -> io::Result<Materialization> {
+        let _guard = self.lock(false)?;
         let parent =
             destination.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(Path::new("."));
         fs::create_dir_all(parent)?;

@@ -5,6 +5,8 @@
 #![forbid(unsafe_code)]
 
 mod contracts;
+pub mod ecosystem_versions;
+pub mod indexes;
 pub use contracts::{Dependency, Index, PackageVersion, Source, Version, VersionScheme};
 
 /// Signature schemes are explicit; providers must reject unsupported schemes.

@@ -99,6 +99,7 @@ bytes         = { workspace = true }
 
 # --- Native targets (Linux/Windows/macOS) ----------------------------------
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+aphrody-pkg-cli           = { workspace = true }
 toml_edit                 = { workspace = true }
 tempfile                  = { workspace = true }
 tokio                     = { workspace = true }

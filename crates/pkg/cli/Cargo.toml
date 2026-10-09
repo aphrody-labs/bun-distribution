@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-pkg-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Native package store command interface"
+
+[[bin]]
+name = "aphrody-pkg"
+path = "src/main.rs"
+
+[dependencies]
+clap.workspace = true
+aphrody-pkg-store.workspace = true
+aphrody-pkg-core.workspace = true
+serde_json.workspace = true
+tempfile.workspace = true
+aphrody-pkg-net.workspace = true
+reqwest.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+rustls.workspace = true
+rustls-native-certs.workspace = true
+
+[lints]
+workspace = true
