@@ -1,0 +1,204 @@
+{
+  "axes": {
+    "FILL": [
+      0,
+      1
+    ],
+    "GRAD": [
+      -50,
+      200
+    ],
+    "opsz": [
+      20,
+      48
+    ],
+    "wght": [
+      100,
+      700
+    ]
+  },
+  "base": "Material Symbols variable fonts (Apache-2.0), axes preserved",
+  "brand": {
+    "ico": "ico/brand/aphrody-codex.ico",
+    "static": true,
+    "svg": "svg/brand/aphrody-codex.svg"
+  },
+  "family": "Aphrody Codex Symbols",
+  "ico": {
+    "opsz": {
+      "16": 20,
+      "24": 24,
+      "256": 48,
+      "32": 24,
+      "48": 48
+    },
+    "sizes": [
+      16,
+      24,
+      32,
+      48,
+      256
+    ]
+  },
+  "icons": {
+    "add": {
+      "outlined": "E145",
+      "rounded": "E145",
+      "sharp": "E145"
+    },
+    "bolt": {
+      "outlined": "EA0B",
+      "rounded": "EA0B",
+      "sharp": "EA0B"
+    },
+    "call_split": {
+      "outlined": "E0B6",
+      "rounded": "E0B6",
+      "sharp": "E0B6"
+    },
+    "check": {
+      "outlined": "E5CA",
+      "rounded": "E5CA",
+      "sharp": "E5CA"
+    },
+    "close": {
+      "outlined": "E14C",
+      "rounded": "E14C",
+      "sharp": "E14C"
+    },
+    "compress": {
+      "outlined": "E94D",
+      "rounded": "E94D",
+      "sharp": "E94D"
+    },
+    "content_copy": {
+      "outlined": "E14D",
+      "rounded": "E14D",
+      "sharp": "E14D"
+    },
+    "delete_sweep": {
+      "outlined": "E16C",
+      "rounded": "E16C",
+      "sharp": "E16C"
+    },
+    "description": {
+      "outlined": "E873",
+      "rounded": "E873",
+      "sharp": "E873"
+    },
+    "edit": {
+      "outlined": "E150",
+      "rounded": "E150",
+      "sharp": "E150"
+    },
+    "edit_document": {
+      "outlined": "F88C",
+      "rounded": "F88C",
+      "sharp": "F88C"
+    },
+    "gavel": {
+      "outlined": "E90E",
+      "rounded": "E90E",
+      "sharp": "E90E"
+    },
+    "history": {
+      "outlined": "E28E",
+      "rounded": "E28E",
+      "sharp": "E28E"
+    },
+    "keyboard": {
+      "outlined": "E312",
+      "rounded": "E312",
+      "sharp": "E312"
+    },
+    "language": {
+      "outlined": "E894",
+      "rounded": "E894",
+      "sharp": "E894"
+    },
+    "lightbulb": {
+      "outlined": "E0F0",
+      "rounded": "E0F0",
+      "sharp": "E0F0"
+    },
+    "model_training": {
+      "outlined": "F0CF",
+      "rounded": "F0CF",
+      "sharp": "F0CF"
+    },
+    "palette": {
+      "outlined": "E3B7",
+      "rounded": "E3B7",
+      "sharp": "E3B7"
+    },
+    "public": {
+      "outlined": "E80B",
+      "rounded": "E80B",
+      "sharp": "E80B"
+    },
+    "refresh": {
+      "outlined": "E5D5",
+      "rounded": "E5D5",
+      "sharp": "E5D5"
+    },
+    "save": {
+      "outlined": "E161",
+      "rounded": "E161",
+      "sharp": "E161"
+    },
+    "search": {
+      "outlined": "E8B6",
+      "rounded": "E8B6",
+      "sharp": "E8B6"
+    },
+    "search_insights": {
+      "outlined": "F4BC",
+      "rounded": "F4BC",
+      "sharp": "F4BC"
+    },
+    "settings": {
+      "outlined": "E8B8",
+      "rounded": "E8B8",
+      "sharp": "E8B8"
+    },
+    "smart_toy": {
+      "outlined": "F06C",
+      "rounded": "F06C",
+      "sharp": "F06C"
+    },
+    "track_changes": {
+      "outlined": "E8E1",
+      "rounded": "E8E1",
+      "sharp": "E8E1"
+    }
+  },
+  "styles": [
+    "outlined",
+    "rounded",
+    "sharp"
+  ],
+  "variants": {
+    "fill": [
+      0,
+      1
+    ],
+    "grade": [
+      -25,
+      0,
+      200
+    ],
+    "opsz": [
+      20,
+      24,
+      40,
+      48
+    ],
+    "wght": [
+      100,
+      300,
+      400,
+      500,
+      700
+    ]
+  }
+}
