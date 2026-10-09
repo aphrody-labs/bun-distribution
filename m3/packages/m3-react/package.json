@@ -20,7 +20,8 @@
     "adaptive",
     "state",
     "adapters",
-    "wrappers"
+    "wrappers",
+    "data"
   ],
   "type": "module",
   "sideEffects": [
@@ -61,6 +62,12 @@
       "import": "./adapters/tanstack.ts",
       "default": "./dist/adapters/tanstack.js"
     },
+    "./data": {
+      "bun": "./data/index.ts",
+      "types": "./dist/data/index.d.ts",
+      "import": "./data/index.ts",
+      "default": "./dist/data/index.js"
+    },
     "./package.json": "./package.json",
     "./*": {
       "bun": "./wrappers/*.ts",
@@ -82,7 +89,9 @@
   "dependencies": {
     "@aphrody/m3-tokens": "workspace:*",
     "@aphrody/material-web": "catalog:",
-    "@lit/react": "catalog:"
+    "@lit/react": "catalog:",
+    "@tanstack/react-table": "catalog:",
+    "@tanstack/react-virtual": "catalog:"
   },
   "devDependencies": {
     "@aphrody/m3-config": "workspace:*"

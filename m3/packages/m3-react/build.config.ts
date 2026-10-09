@@ -7,6 +7,7 @@ export default m3Package({
     "adaptive/index.ts",
     "state/index.ts",
     "adapters/tanstack.ts",
+    "data/index.ts",
     "wrappers/*.ts",
   ],
 });

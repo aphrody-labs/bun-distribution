@@ -24,6 +24,8 @@
     "transitions/**/*.tsx",
     "adaptive/**/*.ts",
     "state/**/*.ts",
+    "data/**/*.ts",
+    "data/**/*.tsx",
     "*.ts",
     "*.d.ts"
   ],
