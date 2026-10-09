@@ -1880,6 +1880,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-pkg-core"
+version = "1.0.0"
+
+[[package]]
+name = "aphrody-pkg-store"
+version = "1.0.0"
+dependencies = [
+ "hex",
+ "sha2 0.11.0",
+ "tempfile",
+]
+
+[[package]]
 name = "aphrody-proc"
 version = "1.0.0-canary"
 dependencies = [

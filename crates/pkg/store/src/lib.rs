@@ -33,6 +33,13 @@ pub struct Store {
     root: PathBuf,
 }
 
+/// Logical blob size. Filesystem compression/dedup/reflinks are not measured.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct StoreStats {
+    pub blobs: u64,
+    pub bytes: u64,
+}
+
 impl Store {
     /// Callers resolve the configured Aphrody home and pass `<home>/store`.
     pub fn new(root: impl Into<PathBuf>) -> Self {
@@ -41,6 +48,43 @@ impl Store {
 
     pub fn blob_path(&self, id: &BlobId) -> PathBuf {
         self.root.join("blobs").join("sha256").join(&id.0[..2]).join(&id.0)
+    }
+
+    /// Count recognized regular blob files; never follows directory/file symlinks.
+    /// Missing stores are empty; malformed objects are errors rather than hidden.
+    pub fn stats(&self) -> io::Result<StoreStats> {
+        let mut result = StoreStats::default();
+        let directory = self.root.join("blobs").join("sha256");
+        let shards = match fs::read_dir(directory) {
+            Ok(shards) => shards,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(result),
+            Err(error) => return Err(error),
+        };
+        for shard in shards {
+            let shard = shard?;
+            if !shard.file_type()?.is_dir() {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "invalid blob shard"));
+            }
+            for entry in fs::read_dir(shard.path())? {
+                let entry = entry?;
+                let name = entry.file_name();
+                let id = BlobId::parse(name.to_str().ok_or_else(|| {
+                    io::Error::new(io::ErrorKind::InvalidData, "non-UTF8 blob name")
+                })?)?;
+                if entry.path() != self.blob_path(&id) || !entry.file_type()?.is_file() {
+                    return Err(io::Error::new(io::ErrorKind::InvalidData, "invalid blob object"));
+                }
+                result.blobs = result
+                    .blobs
+                    .checked_add(1)
+                    .ok_or_else(|| io::Error::other("blob count overflow"))?;
+                result.bytes = result
+                    .bytes
+                    .checked_add(entry.metadata()?.len())
+                    .ok_or_else(|| io::Error::other("blob size overflow"))?;
+            }
+        }
+        Ok(result)
     }
 
     /// Stream to a temporary file and publish without overwriting another writer.
@@ -59,7 +103,7 @@ impl Store {
             hasher.update(&buffer[..count]);
             temporary.write_all(&buffer[..count])?;
         }
-        let id = BlobId(format!("{:x}", hasher.finalize()));
+        let id = BlobId(hex::encode(hasher.finalize()));
         if expected.is_some_and(|expected| expected != &id) {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "package digest mismatch"));
         }
@@ -89,7 +133,7 @@ impl Store {
             }
             hasher.update(&buffer[..count]);
         }
-        if format!("{:x}", hasher.finalize()) != id.0 {
+        if hex::encode(hasher.finalize()) != id.0 {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "corrupt package blob"));
         }
         Ok(())
@@ -113,7 +157,7 @@ impl Store {
             hasher.update(&buffer[..count]);
             temporary.write_all(&buffer[..count])?;
         }
-        if format!("{:x}", hasher.finalize()) != id.0 {
+        if hex::encode(hasher.finalize()) != id.0 {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "corrupt package blob"));
         }
         temporary.as_file().sync_all()?;
@@ -133,6 +177,7 @@ mod tests {
         let first = store.put(&b"package bytes"[..], None)?;
         let second = store.put(&b"package bytes"[..], Some(&first))?;
         assert_eq!(first, second);
+        assert_eq!(store.stats()?, StoreStats { blobs: 1, bytes: 13 });
         let destination = root.path().join("consumer/package");
         store.materialize(&first, &destination)?;
         fs::write(&destination, b"consumer edits")?;

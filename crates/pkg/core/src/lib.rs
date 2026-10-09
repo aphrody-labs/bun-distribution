@@ -4,6 +4,9 @@
 
 #![forbid(unsafe_code)]
 
+mod contracts;
+pub use contracts::{Dependency, Index, PackageVersion, Source, Version, VersionScheme};
+
 /// Signature schemes are explicit; providers must reject unsupported schemes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SignatureAlgorithm {

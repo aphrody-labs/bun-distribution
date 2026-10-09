@@ -10,6 +10,7 @@ description = "Verified content-addressed package blob store"
 
 [dependencies]
 sha2.workspace = true
+hex.workspace = true
 tempfile.workspace = true
 
 [lints]
