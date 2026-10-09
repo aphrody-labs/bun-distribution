@@ -69,6 +69,7 @@
       },
       "historySize": 100000,
       "padding": "8",
+      "startingDirectory": null,
     },
     "list": [
       {
