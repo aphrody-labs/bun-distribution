@@ -7,12 +7,13 @@
 //   build    the canonical cached package/app pipeline (every package and app)
 //   serve    apps/example `dev`      (m3 dev: App Router, RSC refresh on change)
 //   compile  apps/example `compile`  (m3 compile: one executable embedding the App Router build)
+//            Both fail with a clear message while apps/example is absent.
 //   test / lint / typecheck     workspace gates, after a yolo preflight (`yolo version --json`); typecheck is scripts/build.ts;
 //                               test runs every package, the script tests and check-exports, check-assets, check-links
 //   bench / bench:check         scripts/bench/run.ts: measure the startup, install, bundle and compile numbers of
 //                               docs/reports/PERF.md; `bench:check` fails past docs/reports/perf-budget.json + 10%
 //   install:theme               packages/m3-os-themes CLI (dry-run unless --apply)
-// apps/example is the framework example app (it replaced apps/showcase on 2026-10-09).
+// apps/showcase was removed on 2026-10-09; its App Router replacement apps/example is pending (PLAN.md).
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -82,7 +83,7 @@ export function plan(task: string, rest: string[] = []): Step[] {
           "./scripts/build.test.ts",
         ),
         // Package tests do not need each other's results: `--parallel` runs them all at once, where `--filter` alone
-        // waits for the workspace dependencies' scripts first (5.3 s -> 2.9 s). A failing package fails the task.
+        // waits for the workspace dependencies' scripts first (5.3 s -> 2.9 s, docs/reports/PERF.md). A failing package fails the task.
         bun(REPO, "run", "--parallel", "--no-exit-on-error", ...ALL, "--if-present", "test"),
         // Repository gates: manifests and first-party imports, asset references and app icons, docs links.
         bun(REPO, "scripts/check-exports.ts"),
@@ -115,6 +116,8 @@ if (import.meta.main) {
   try {
     if (task !== "install:theme" && !(await Bun.file(YOLO_CLI).exists()))
       throw new Error(`yolo CLI not found at ${YOLO_CLI}; set YOLO_ROOT`);
+    if ((task === "serve" || task === "compile") && !(await Bun.file(join(EXAMPLE, "package.json")).exists()))
+      throw new Error(`${task}: no example app at ${EXAMPLE} (the App Router example is pending, see PLAN.md)`);
     for (const step of plan(task, rest)) {
       const code = Bun.spawnSync(step.cmd, {
         cwd: step.cwd,

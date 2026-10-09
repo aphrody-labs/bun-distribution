@@ -16,11 +16,16 @@ const SKIP = new Set(["index.ts", "urls.ts"]);
 
 const root = join(import.meta.dir, "..");
 
-/** Names directly inside `dir` (files and folders, dotfiles included), or null when it cannot be read. */
-const readdir = (dir: string): Promise<string[] | null> =>
-  Array.fromAsync(new Bun.Glob("*").scan({ cwd: dir, onlyFiles: false, dot: true })).catch(
+/** Names directly inside `dir` (files and folders, dotfiles included), or null when it is not a readable directory. */
+const readdir = async (dir: string): Promise<string[] | null> => {
+  const info = await Bun.file(dir)
+    .stat()
+    .catch(() => null);
+  if (!info?.isDirectory()) return null;
+  return Array.fromAsync(new Bun.Glob("*").scan({ cwd: dir, onlyFiles: false, dot: true })).catch(
     () => null,
   );
+};
 
 /** `Video-20.png` → `Video20`. */
 const variableName = (fileName: string): string => fileName.split(".")[0]!.replaceAll("-", "");
