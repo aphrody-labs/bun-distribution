@@ -406,7 +406,7 @@ export async function runDocumentation(argv: string[]): Promise<number> {
     const child = Bun.spawn(
       [
         process.execPath,
-        join(root, "packages/engine/yolo/src/index.ts"),
+        join(root, "packages/infra/workspace/src/commands/index.ts"),
         "doc-ai",
         "translate",
         documentationPath(root, path),
@@ -426,8 +426,13 @@ export async function runDocumentation(argv: string[]): Promise<number> {
   // Compatibility adapter: an explicit invocation retains doc-ai's original arguments.
   if (command === "assist") {
     const child = Bun.spawn(
+<<<<<<< HEAD
       [process.execPath, join(root, "packages/engine/yolo/src/index.ts"), "doc-ai", ...rest],
       { windowsHide: true, cwd: root, stdin: "inherit", stdout: "inherit", stderr: "inherit" },
+=======
+      [process.execPath, join(root, "packages/infra/workspace/src/commands/index.ts"), "doc-ai", ...rest],
+      { cwd: root, stdin: "inherit", stdout: "inherit", stderr: "inherit" },
+>>>>>>> claude/radical-native-20261009
     );
     return child.exited;
   }

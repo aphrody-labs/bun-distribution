@@ -12195,7 +12195,7 @@
     },
     {
       "path": "packages/engine/core/README.md",
-      "title": "YOLO Core Library (@aphrody/yolo-core)",
+      "title": "YOLO Core Library (@aphrody/workspace/native)",
       "sha256": "289aa0b9b683890524010cd73c9f334425e34a5c9665fa6481e8d633577bb52d",
       "bytes": 4051,
       "domain": "engine",
@@ -12225,7 +12225,7 @@
     },
     {
       "path": "packages/engine/yolo/README.md",
-      "title": "@aphrody/yolo-cli",
+      "title": "@aphrody/workspace/commands",
       "sha256": "d7398f9dd35d795e855903769a91695c8468fef50199c90cffb05a1c3db2276c",
       "bytes": 1683,
       "domain": "engine",

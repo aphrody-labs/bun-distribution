@@ -100,7 +100,7 @@
       "kind": "bun-compile",
       "description": "yolo Bun CLI (bun build --compile) with its verified native runtime artifact, runtime SDK and project templates",
       "versionFrom": { "file": "packages/engine/yolo/VERSION" },
-      "entry": "packages/engine/yolo/src/index.ts",
+      "entry": "packages/infra/workspace/src/commands/index.ts",
       "compileFlags": [
         "--bytecode",
         "--no-compile-autoload-dotenv",

@@ -43,7 +43,7 @@
       "summaryDescription": "Résumé clair et concis de ce qui s'est passé.",
       "reproductionDescription": "Commandes exactes pour reproduire l'anomalie.",
       "prValidations": [
-        "`bun packages/engine/yolo/src/index.ts verify --json` (Toutes les gates validées)",
+        "`bun packages/infra/workspace/src/commands/index.ts verify --json` (Toutes les gates validées)",
         "`bun run lint` (Oxlint sans erreur)",
         "`bun run fmt:check` (Code TypeScript formaté sans diff)",
         "`ruff check .` (Code Python linté et vérifié)",

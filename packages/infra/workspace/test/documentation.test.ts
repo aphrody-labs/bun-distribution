@@ -126,6 +126,7 @@ describe("unified documentation", () => {
       ["docs-gen", "--help"],
       ["docs", "check", "-h"],
     ]) {
+<<<<<<< HEAD
       const result = Bun.spawnSync(
         [
           process.execPath,
@@ -137,6 +138,16 @@ describe("unified documentation", () => {
         ],
         { windowsHide: true },
       );
+=======
+      const result = Bun.spawnSync([
+        process.execPath,
+        join(import.meta.dir, "../../../../packages/infra/workspace/src/commands/index.ts"),
+        "ops",
+        ...args,
+        "--root",
+        join(tmpdir(), "nonexistent-docs-help-root"),
+      ]);
+>>>>>>> claude/radical-native-20261009
       expect(result.exitCode).toBe(0);
       expect(result.stdout.toString()).toContain("--skip-ecosystem");
       expect(result.stderr.toString()).toBe("");

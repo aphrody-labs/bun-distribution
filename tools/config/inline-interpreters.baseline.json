@@ -2,22 +2,22 @@
   "schemaVersion": 1,
   "$comment": "Ratchet for inline interpreter invocations. Counts may only fall; new files fail the check.",
   "files": {
-    "packages/engine/yolo/test/startup-benchmark.test.ts": {
+    "packages/infra/workspace/test/commands/startup-benchmark.test.ts": {
       "count": 1,
       "scope": "unclassified",
       "reason": ""
     },
-    "packages/engine/yolo/test/upgrade.test.ts": {
+    "packages/infra/workspace/test/commands/upgrade.test.ts": {
       "count": 1,
       "scope": "unclassified",
       "reason": ""
     },
-    "packages/engine/yolo/test/verify-python.test.ts": {
+    "packages/infra/workspace/test/commands/verify-python.test.ts": {
       "count": 1,
       "scope": "unclassified",
       "reason": ""
     },
-    "packages/engine/yolo/test/web-command.test.ts": {
+    "packages/infra/workspace/test/commands/web-command.test.ts": {
       "count": 2,
       "scope": "unclassified",
       "reason": ""
@@ -37,17 +37,17 @@
       "scope": "unclassified",
       "reason": ""
     },
-    "packages/engine/core/src/sys/supervisor-benchmark.ts": {
+    "packages/infra/workspace/src/native/sys/supervisor-benchmark.ts": {
       "count": 2,
       "scope": "unclassified",
       "reason": ""
     },
-    "packages/engine/core/src/verify/engine.ts": {
+    "packages/infra/workspace/src/native/verify/engine.ts": {
       "count": 1,
       "scope": "unclassified",
       "reason": ""
     },
-    "packages/engine/core/test/vendor-catalog.test.ts": {
+    "packages/infra/workspace/test/native/vendor-catalog.test.ts": {
       "count": 1,
       "scope": "unclassified",
       "reason": ""
