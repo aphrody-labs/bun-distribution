@@ -17,8 +17,8 @@ Une version inconnue signifie que la sonde --version a échoué, pas que le bina
 | `agy` | ok | 1.3.1 | `~\AppData\Local\Microsoft\WinGet\Links\agy.exe` |
 | `bun` | ok | 1.4.2 | `~\AppData\Local\Microsoft\WinGet\Links\bun.exe` |
 | `bunx` | ok | 1.4.2 | `~\AppData\Local\Microsoft\WinGet\Links\bunx.exe` |
-| `uv` | ok | uv 0.12.23 (46b84fd0b 2026-10-03 x86_64-pc-windows-msvc) | `~\.cargo\bin\uv.exe` |
-| `uvx` | ok | uvx 0.12.23 (46b84fd0b 2026-10-03 x86_64-pc-windows-msvc) | `~\.cargo\bin\uvx.exe` |
+| `uv` | ok | uv 0.12.24 (46b84fd0b 2026-10-03 x86_64-pc-windows-msvc) | `~\.cargo\bin\uv.exe` |
+| `uvx` | ok | uvx 0.12.24 (46b84fd0b 2026-10-03 x86_64-pc-windows-msvc) | `~\.cargo\bin\uvx.exe` |
 | `cargo` | ok | cargo 1.98.1 (797e8a9bc 2026-08-05) | `~\.cargo\bin\cargo.exe` |
 | `rustc` | ok | rustc 1.98.1 (48a229cea 2026-09-01) | `~\.cargo\bin\rustc.exe` |
 | `rustup` | ok | rustup 1.29.1 (d95a37b6a 2026-08-13) | `~\.cargo\bin\rustup.exe` |

@@ -45,7 +45,7 @@
         { "file": "docs/reference/workspace/CLI.md", "re": "uvx? (\\d+\\.\\d+\\.\\d+) \\(x86_64" },
         {
           "file": "docs/reference/workspace/TOOLS.md",
-          "re": "uvx? (\\d+\\.\\d+\\.\\d+) \\(x86_64"
+          "re": "uvx? (\\d+\\.\\d+\\.\\d+).*x86_64"
         },
         {
           "file": "py/pyproject.toml",
