@@ -122,7 +122,7 @@ describe("chromium", () => {
     expect(new TextDecoder().decode(png.subarray(ihdr + 4, ihdr + 8))).toBe("IDAT");
     expect(idat[0]! & 0x0f).toBe(8);
     expect(((idat[0]! << 8) | idat[1]!) % 31).toBe(0);
-    expect(Array.from(Bun.inflateSync(idat, { windowBits: 15 }))).toEqual([
+    expect(Array.from(Bun.inflateSync(new Uint8Array(idat), { windowBits: 15 }))).toEqual([
       0, 0, 0, 7, 1, 0, 7, 2, 0, 7, 0, 0, 1, 7, 1, 1, 7, 2, 1, 7,
     ]);
   });
