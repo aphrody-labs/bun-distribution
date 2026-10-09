@@ -93,8 +93,9 @@ wrapper change does not prove either operation happened. DBFR remains the
 Shenron runtime host; the VPS produces verified artifacts for delivery there.
 Keep production inputs, databases and credentials in their protected stores.
 
-On Windows `cargo-serial.ps1` retains the existing session mutex and restores
-its temporary build environment on exit. It is not a cross-host lock or a
+On Windows `cargo-serial.ts` (Bun, kernel32 through `bun:ffi`) holds the
+`LocalAphrodyCargoBuild` session mutex and passes its build environment to the
+Cargo child only. It is not a cross-host lock or a
 permission to resume local builds alongside the VPS queue.
 
 ## Evidence — 2026-10-03

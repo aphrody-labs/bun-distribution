@@ -21,7 +21,7 @@ export function parseArgs(argv: string[]) {
     const a = argv[i];
     if (a === "--dry-run") o.dryRun = true;
     else if (a === "--source" && argv[i + 1]) o.source = argv[++i] as Host;
-    else if (a === "--image" && argv[i + 1]) o.images.push(argv[++i]);
+    else if (a === "--image" && argv[i + 1]) o.images.push(argv[++i]!);
     else throw new Error(`unknown or incomplete option: ${a}`);
   }
   if (!HOSTS.includes(o.source)) throw new Error(`unknown source host: ${o.source}`);
@@ -33,7 +33,7 @@ export function parseArgs(argv: string[]) {
 export function plan(source: Host, ids: Record<string, Record<string, string | null>>): Plan {
   const out: Plan = [];
   for (const image of Object.keys(ids[source] ?? {})) {
-    const from = ids[source][image];
+    const from = ids[source]?.[image];
     if (!from) continue;
     for (const host of HOSTS) {
       if (host !== source && ids[host]?.[image] !== from)

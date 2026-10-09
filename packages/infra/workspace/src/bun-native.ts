@@ -353,14 +353,14 @@ export async function runBunNative(
     const serialScript = join(
       repo,
       process.platform === "win32"
-        ? "scripts/dev/windows-cargo.ps1"
+        ? "scripts/build/rust/cargo-serial.ts"
         : "scripts/build/rust/cargo-serial.sh",
     );
     if (!existingArtifact && !existsSync(serialScript))
       throw new Error(`Cargo serialization wrapper missing: ${serialScript}`);
     const serializedCommand =
       process.platform === "win32"
-        ? ["pwsh", "-NoProfile", "-File", serialScript, ...command.slice(1)]
+        ? [process.execPath, serialScript, "--msvc", ...command.slice(1)]
         : ["bash", serialScript, ...command.slice(1)];
     if (!existingArtifact) console.log(`[bun-native] ${command.join(" ")}`);
     const { stdout: messages, code } = existingArtifact

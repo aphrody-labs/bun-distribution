@@ -30,9 +30,10 @@ export const PROBES: { server: string; tool: string; args: Record<string, unknow
   { server: "github-official", tool: "get_me", args: {} },
 ];
 
-const profile = process.argv.includes("--profile")
-  ? process.argv[process.argv.indexOf("--profile") + 1]
-  : "aphrody";
+const profile =
+  (process.argv.includes("--profile")
+    ? process.argv[process.argv.indexOf("--profile") + 1]
+    : undefined) ?? "aphrody";
 const child = spawn("docker", ["mcp", "gateway", "run", "--profile", profile], {
   stdio: ["pipe", "pipe", "ignore"],
 });

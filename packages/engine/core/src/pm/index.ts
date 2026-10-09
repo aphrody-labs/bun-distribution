@@ -5,11 +5,11 @@ import { join, resolve, dirname } from "node:path";
 import { processes } from "../runtime";
 import { yoloRoot } from "../host/index.ts";
 
-/** The Aphrody Cargo serialization wrapper as an argv prefix: the PowerShell twin on Windows, the bash script elsewhere. */
+/** The Aphrody Cargo serialization wrapper as an argv prefix: the Bun twin on Windows, the bash script elsewhere. */
 export function cargoSerialArgv(root = yoloRoot()): string[] {
   const dir = join(root, "scripts", "build", "rust");
   return process.platform === "win32"
-    ? [Bun.which("pwsh") ?? "pwsh", "-NoProfile", "-File", join(dir, "cargo-serial.ps1")]
+    ? [process.execPath, join(dir, "cargo-serial.ts")]
     : [join(dir, "cargo-serial.sh")];
 }
 

@@ -53,7 +53,7 @@ export async function runTauri(args: string[]): Promise<number> {
   const isLinux = process.platform === "linux";
   if (!isWindows && !isLinux) throw new Error("Aphrody desktop targets Windows and Linux");
   // Tauri's CLI starts Cargo internally; route that child through the shared lock too.
-  // CARGO must name an executable, which a PowerShell script is not.
+  // CARGO must name an executable, which a Bun script is not.
   const commandEnv = isWindows ? { ...Bun.env } : { ...Bun.env, CARGO: cargoSerial };
 
   function runSync(command: string[], cwd: string, errorMessage: string) {

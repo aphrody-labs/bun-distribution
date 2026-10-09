@@ -31,7 +31,7 @@ aphrody graph --source graph:aphrody report
 bun packages/engine/yolo/src/index.ts workspace code-edit --help
 bun scripts/build/rust/vps-cargo.ts tunnel up
 bun scripts/build/rust/vps-cargo.ts run -- check -p <crate> --locked
-pwsh -File scripts/dev/windows-cargo.ps1 check -p <crate> --locked
+bun scripts/build/rust/cargo-serial.ts --msvc check -p <crate> --locked
 ```
 
 Le tunnel Windows lance un superviseur Bun natif, SSH natif et le daemon Git
