@@ -84,11 +84,8 @@ L'audit natif a confirmé le bot Aphrody et le propriétaire dans la guilde
 `1554189180030947338`. Le compte Omar `1527405876695142620` est membre et
 dispose de `Manage Guild` ; l'ancien alias `1323725494184841256` renvoie `404`.
 Le compte présent est désormais le principal de
-[la politique administrateur](../../../tools/config/host/omar-admin.json) et le premier
-de [la liste du moniteur](../../../tools/config/host/discord-omar-monitor.json).
-L'ancien compte reste un alias : l'ensemble des identités accepté par le moniteur
-ne change pas. Les deux politiques VPS ont été sauvegardées, vérifiées et mises
-à jour sans changement d'unité ni redémarrage du moniteur. Le réconciliateur
+[la politique administrateur](../../../tools/config/host/omar-admin.json).
+L'ancien compte reste un alias. Le moniteur Codex d'Omar a été supprimé le 2026-10-09. Le réconciliateur
 administrateur relit sa politique toutes les deux minutes.
 
 À 14:52:14 UTC, le peer WireGuard Omar `10.200.77.10` était déclaré, mais n'avait

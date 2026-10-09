@@ -2994,16 +2994,6 @@
       "canonical": "docs/operations/container/SECRETS.md"
     },
     {
-      "path": "docs/operations/discord/OMAR-MONITOR.md",
-      "title": "Moniteur Codex et objectifs d’Omar",
-      "sha256": "7d4831a39cb39a9e6d584e9676bdbd555f096db15973ae2d3564a4a133be942c",
-      "bytes": 13521,
-      "domain": "discord",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/operations/discord/OMAR-MONITOR.md"
-    },
-    {
       "path": "docs/operations/discord/README.md",
       "title": "Discord Operations Runbooks & Guides",
       "sha256": "ed426f2f7cbf4a191ba137fa7a1b4377efa2cc23ae5b0f33b62b3d256d4809ff",
