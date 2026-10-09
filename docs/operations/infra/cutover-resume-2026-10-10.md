@@ -155,3 +155,32 @@ m3-codemods). Sixteen remain absent, including cli-wasm 0.1.4 and product
 0.3.1; no registry query was unavailable. This qualifies registry presence,
 not package installation or all-publication completion. Original publisher
 PID 24788 is still live and its output file remains empty; it was not restarted.
+
+## Autonomous guarded continuation
+
+The native PowerShell 7 run reproduced an unavailable
+`System.IO.Directory.SetAccessControl` method in the cutover and web activation
+adapters. Both now use `Set-Acl -LiteralPath`; live plans pass in PowerShell 5.1
+and 7, with inheritance disabled and only the owner/SYSTEM access rules.
+
+`scripts/tools/infra/domain-cutover-loop.ps1` resumes the existing guarded
+adapters every five minutes for at most 288 attempts. `-Once` runs one check;
+mutation requires `-Apply`. An exclusive protected-state lock prevents duplicate
+loops. A nameserver request is recorded before POST, so an interrupted request
+is not silently repeated. The loop waits for disabled DNSSEC and both parent DS
+proofs, then delegation, then applies strict/proxy/HSTS and the R2 domain adapter.
+It waits for both R2 ownership and TLS to become active before public byte parity
+and native Aphrody Web verification. Unexpected adapter errors stop the loop;
+they do not weaken a guard or trigger repeated mutations.
+
+The offline orchestration gate passes on PowerShell 5.1 and 7: pending DNSSEC
+never mutates, resumed NS requests occur once, pending R2 TLS never completes,
+ready R2 proceeds to verification, and a web apply failure prevents R2 apply.
+The real `-Once -Apply` run remains `waiting-dnssec`, with no mutation.
+
+Background execution uses a checksum-recorded copy of the four adapters in the
+protected Aphrody home, preserving its behavior despite concurrent repository
+changes. State remains under `tasks/domain-cutover-loop/state.json` in that home.
+`infra-verified` covers the provider settings and R2 public content checks;
+consumer URL migration, executable rebuilds and official WASM source provenance
+remain separate delivery work in the R2 receipt. The loop does not claim them.

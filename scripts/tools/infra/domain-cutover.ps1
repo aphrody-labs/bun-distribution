@@ -94,7 +94,7 @@ try{
     New-Item -ItemType Directory -Path $backup|Out-Null
     $acl=New-Object Security.AccessControl.DirectorySecurity;$acl.SetAccessRuleProtection($true,$false)
     foreach($sid in @([Security.Principal.WindowsIdentity]::GetCurrent().User,(New-Object Security.Principal.SecurityIdentifier('S-1-5-18')))){$acl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($sid,'FullControl','ContainerInherit,ObjectInherit','None','Allow')))}
-    [IO.Directory]::SetAccessControl($backup,$acl)
+    Set-Acl -LiteralPath $backup -AclObject $acl
     foreach($entry in @(@{name='ovh-records.json';data=$ovhRecords},@{name='cloudflare-records.json';data=$records},@{name='cloudflare-zone.json';data=$zone})){
         $path=Join-Path $backup $entry.name;[IO.File]::WriteAllText($path,($entry.data|ConvertTo-Json -Depth 15));$hash=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash;[IO.File]::WriteAllText($path+'.sha256',$hash);if((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -ne $hash){throw 'Backup checksum mismatch'}
     }

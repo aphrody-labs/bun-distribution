@@ -54,7 +54,7 @@ try{
     foreach($sid in @([Security.Principal.WindowsIdentity]::GetCurrent().User,(New-Object Security.Principal.SecurityIdentifier('S-1-5-18')))){
         $acl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($sid,'FullControl','ContainerInherit,ObjectInherit','None','Allow')))
     }
-    [IO.Directory]::SetAccessControl($backup,$acl)
+    Set-Acl -LiteralPath $backup -AclObject $acl
     $snapshot=Join-Path $backup 'before.json'
     [IO.File]::WriteAllText($snapshot,(@{zone=$zone;records=$records;ssl=$ssl;security=$security;domains=$domains}|ConvertTo-Json -Depth 20))
     $hash=(Get-FileHash -LiteralPath $snapshot -Algorithm SHA256).Hash
