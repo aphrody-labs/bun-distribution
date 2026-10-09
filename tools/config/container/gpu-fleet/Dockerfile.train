@@ -19,6 +19,7 @@ ENV UV_PYTHON_DOWNLOADS=never \
     TOKENIZERS_PARALLELISM=false \
     HF_HUB_OFFLINE=1 \
     TRANSFORMERS_OFFLINE=1 \
+    APHRODY_LORA_CONVERTER_PYTHON=/opt/aphrody/py/.venv/bin/python \
     APHRODY_LORA_QUANTIZATION=nf4
 
 # Buv/uv consumes the existing root lock; no ad hoc dependencies or model downloads.

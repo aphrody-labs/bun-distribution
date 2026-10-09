@@ -3,6 +3,7 @@
 
 import json
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -11,6 +12,7 @@ from click.testing import CliRunner
 from aphrody_train.lora import (
     load_examples,
     main,
+    resolve_converter_python,
     run_lora_job,
     train,
     validate_converter,
@@ -93,6 +95,24 @@ def test_completed_run_is_never_overwritten_or_loaded(tmp_path):
             "nf4",
         )
     assert artifact.read_bytes() == b"existing verified adapter"
+
+
+def test_embedded_bun_never_launches_itself_as_the_converter_python(
+    tmp_path, monkeypatch
+):
+    qualified_python = Path(sys.executable)
+    bun = tmp_path / "bun.exe"
+    bun.touch()
+    monkeypatch.setattr(sys, "executable", str(bun))
+    monkeypatch.delenv("APHRODY_LORA_CONVERTER_PYTHON", raising=False)
+    with pytest.raises(ValueError, match="absolute qualified CPython executable"):
+        resolve_converter_python()
+    monkeypatch.setenv("APHRODY_LORA_CONVERTER_PYTHON", str(qualified_python))
+    assert resolve_converter_python() == qualified_python
+    monkeypatch.setenv("APHRODY_LORA_CONVERTER_PYTHON", str(bun))
+    assert resolve_converter_python(qualified_python) == qualified_python
+    with pytest.raises(ValueError, match="absolute qualified CPython executable"):
+        resolve_converter_python(tmp_path / "missing-python.exe")
 
 
 def test_invalid_quantization_fails_before_dataset_or_model_loading(tmp_path):

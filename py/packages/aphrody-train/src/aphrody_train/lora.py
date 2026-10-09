@@ -4,6 +4,7 @@
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -78,6 +79,25 @@ def validate_converter(converter: Path) -> None:
         raise ValueError("llama.cpp converter is missing its conversion package")
 
 
+def resolve_converter_python(selected: Path | None = None) -> Path:
+    """Select the qualified CPython CLI, never the embedded host's Bun executable."""
+    configured = os.environ.get("APHRODY_LORA_CONVERTER_PYTHON")
+    executable = selected or Path(configured if configured else sys.executable)
+    if (
+        not executable.is_absolute()
+        or not executable.is_file()
+        or not re.fullmatch(
+            r"python(?:\d+(?:\.\d+)?)?(?:\.exe)?", executable.name.lower()
+        )
+        or not os.access(executable, os.X_OK)
+    ):
+        raise ValueError(
+            "GGUF export requires an absolute qualified CPython executable; set "
+            "APHRODY_LORA_CONVERTER_PYTHON for embedded Bun"
+        )
+    return executable
+
+
 def validate_gguf(path: Path, converter: Path) -> int:
     """Read the GGUF adapter and verify paired LoRA tensors."""
     sys.path.insert(0, str(converter.parent / "gguf-py"))
@@ -111,6 +131,7 @@ def train(
     steps: int,
     emitter: TrainEmitter,
     quantization: str = "none",
+    converter_python: Path | None = None,
 ) -> None:
     """Train a LoRA adapter on guarded rollout examples and export it to GGUF.
 
@@ -135,6 +156,7 @@ def train(
             "--output-dir must differ from the base model and prepared dataset"
         )
     validate_converter(converter)
+    converter_python = resolve_converter_python(converter_python)
     try:
         import torch
         from datasets import Dataset
@@ -272,7 +294,7 @@ def train(
     try:
         conversion = subprocess.run(
             [
-                sys.executable,
+                str(converter_python),
                 str(converter),
                 "--base",
                 str(base_model),
@@ -283,6 +305,7 @@ def train(
             capture_output=True,
             text=True,
             check=False,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
         )
         if conversion.returncode != 0:
             detail = (
@@ -310,6 +333,7 @@ def train(
         "rollouts_sha256": file_sha256(rollout_dir / "rollouts.jsonl"),
         "gold_sha256": file_sha256(gold_file),
         "quantization": quantization,
+        "converter_python": str(converter_python),
         "steps": steps,
         "examples": len(examples),
         "adapter_sha256": hashlib.sha256(payload).hexdigest(),
@@ -345,6 +369,11 @@ def train(
 @click.option("--output-dir", required=True, type=click.Path(path_type=Path))
 @click.option("--steps", default=10, type=int)
 @click.option(
+    "--converter-python",
+    type=click.Path(path_type=Path),
+    envvar="APHRODY_LORA_CONVERTER_PYTHON",
+)
+@click.option(
     "--quantization",
     type=click.Choice(["none", "nf4"]),
     default="none",
@@ -358,6 +387,7 @@ def main(
     base_model: Path,
     output_dir: Path,
     steps: int,
+    converter_python: Path | None,
     quantization: str,
 ) -> None:
     """Train a LoRA adapter from verified rollouts and export it as GGUF."""
@@ -382,6 +412,7 @@ def main(
             steps,
             emitter,
             quantization=quantization,
+            converter_python=converter_python,
         )
     except Exception as exc:
         emitter.error(str(exc))
@@ -400,6 +431,7 @@ def run_lora_job(request: dict[str, Any]) -> dict[str, Any]:
         "gold_file",
         "base_model",
         "converter",
+        "converter_python",
         "output_dir",
         "steps",
         "quantization",
@@ -412,6 +444,13 @@ def run_lora_job(request: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(raw, str) or not Path(raw).is_absolute():
             raise ValueError(f"native LoRA job requires an absolute {name} path")
         paths[name] = Path(raw)
+    if request.get("converter_python") is not None:
+        raw_python = request["converter_python"]
+        if not isinstance(raw_python, str) or not Path(raw_python).is_absolute():
+            raise ValueError(
+                "native LoRA job requires an absolute converter_python path"
+            )
+        paths["converter_python"] = Path(raw_python)
     steps = request.get("steps", 10)
     if isinstance(steps, bool) or not isinstance(steps, int) or steps < 1:
         raise ValueError("native LoRA job requires positive integer steps")
@@ -435,6 +474,7 @@ def run_lora_job(request: dict[str, Any]) -> dict[str, Any]:
             steps,
             emitter,
             quantization=quantization,
+            converter_python=paths.get("converter_python"),
         )
         manifest: dict[str, Any] = json.loads(
             (paths["output_dir"] / "training-manifest.json").read_text(encoding="utf-8")

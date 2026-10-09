@@ -30,6 +30,13 @@ rechecks gold overlap, redacts known secret forms, and verifies nonzero finite
 adapter weights and GGUF tensor pairs before reporting success. Model quality
 still requires an independent evaluation before promotion.
 
+The official converter runs with a qualified CPython entry point. Standalone
+Python uses its own `sys.executable`; native Bun embedding reports Bun there,
+so set `APHRODY_LORA_CONVERTER_PYTHON` (or `--converter-python`) to the absolute
+Python executable from the locked training environment. This selection is
+validated before loading the model. It does not replace the shared interpreter
+used for training or change another SDK consumer's `sys.executable`.
+
 For an exclusive GPU training job, `--quantization nf4` (or
 `APHRODY_LORA_QUANTIZATION=nf4`) loads the same local Hugging Face base through
 bitsandbytes NF4 with double quantization, prepares it with PEFT's
@@ -67,6 +74,15 @@ returns the verified export manifest only after success, and keeps the same
 gold, secret, converter and completed-output guards. The host scheduler must
 hold the exclusive GPU allocation for the entire invocation; runtime/package
 qualification remains separate from this source adapter.
+The optional `converter_python` names that same qualified absolute CPython
+entry point; otherwise the deployed environment supplies it.
+
+CPU receipt of 2026-10-09: Bun `1.4.3-aphrody.4 (41211b568)` and CPython
+3.12.15 execute the SDK job in the same PID, reject gold overlap before
+loading Torch, and select the existing training virtualenv's CPython entry
+point for conversion. Its separate CPU probe reports that virtualenv prefix
+and CPython 3.12.15. This evidence covers the native boundary and interpreter
+selection; it does not qualify GPU training or a GGUF conversion.
 
 Dataset extraction is available as `uv run --package aphrody-train python -m aphrody_train.dataset rollouts --rollout-dir <dir> --gold-file <gold.jsonl> --output-dir <dir>` (or `dpo`). Redaction covers credential fields and common token forms; review generated datasets before external publication because arbitrary secrets cannot be recognized by patterns alone.
 

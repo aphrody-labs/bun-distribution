@@ -22,6 +22,7 @@
     "rollouts": "prepared rollouts.jsonl with untouched gold anti-overlap",
     "gold": "read-only heldout JSONL",
     "converter": "qualified official llama.cpp convert_lora_to_gguf.py with gguf-py and conversion modules",
+    "converterPython": "qualified CPython entry point from the locked training environment; APHRODY_LORA_CONVERTER_PYTHON or explicit native converter_python, never embedded sys.executable Bun",
     "output": "new private run directory, never an existing completed run"
   },
   "allocation": {
