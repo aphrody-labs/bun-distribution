@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-pkg-store"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Verified content-addressed package blob store"
+
+[dependencies]
+sha2.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true
