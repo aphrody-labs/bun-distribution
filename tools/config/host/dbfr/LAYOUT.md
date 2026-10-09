@@ -70,3 +70,26 @@ Sur le vps, l'inventaire reste à faire (`du` lancé dans `~/build/tmp/purge/du.
 - les liens `~/{archive,dbfr-archive,k-archive}` ;
 - `~/apps/{cdn-src,shenron-cdn-src,shenron-cdn-state}` s'ils doublonnent `~/src/forks` ;
 - `docker builder prune -a` et les images sans conteneur, sauf `alpine:3.24` et `ghcr.io/aphrody-labs/bun:1.4.3-aphrody.3`.
+
+### Bascule finale /srv (agent code, interrompue le 2026-10-09 à 17:40 UTC)
+
+État :
+- vps : bascule faite. `/srv` est supprimé, il reste un seul projet compose (`aphrody`) et `systemctl --failed` est vide. aphrody.com répond 200 et docker-doctor donne 7/7.
+  - Il reste du texte `/srv` dans `~/apps` : la release figée `~/apps/shenron/releases/5a8740d3…` (code source, non exécuté ; `shenron-cdn-sync` n'en lit que `apps/site/public`), `~/apps/shenron-cdn-state/last-report.json` (régénéré à chaque passage) et le journal `~/apps/shenron/shared/coord/a2a-tasks.jsonl`.
+  - Pour l'effacer, déployer une release shenron construite depuis origin/main (0 référence /srv).
+- api.aphrody.com : retiré (bloc nginx, DNS OVH, docs).
+- dbfr : rien n'a été modifié par l'agent code. Le marqueur `~/.aphrody/layout-migrated` était absent à 17:40.
+  - Les liens `/srv/*` et les vrais dossiers `/srv/aphrody` (16K) et `/srv/shenron-cdn` (60K) existent encore.
+  - Encore en `/srv` : `aphrody-discord-ai-lab.service` et `aphrody-discord-debate.service`.
+  - `~/src/bun` signale « dubious ownership » (propriétaire root).
+
+Étapes suivantes sur dbfr, une fois le marqueur écrit :
+1. `sudo chown -R ubuntu:aphrody ~/src/bun`, puis `git -C ~/src/aphrody pull --ff-only` et `git -C ~/src/bun pull --ff-only`.
+2. Dans ~/src/aphrody : `bun scripts/tools/infra/host-apps.ts --host dbfr`, puis la même commande avec `--apply`.
+3. Pour chaque unité du dépôt : `bun packages/engine/core/src/host/cli.ts compose-unit <unité>`, installation dans /etc/systemd/system, puis `daemon-reload` et `restart` (aphrody-fonts-proxy, aphrody-discord-dev, aphrody-downloads, shenron-compute, shenron-embed). Vérifier ensuite que les unités répondent.
+4. `systemctl disable --now aphrody-discord-ai-lab aphrody-discord-debate`, puis `rm` des deux unités (sans copie).
+5. Dans ~/src/bun : `sudo -n bun scripts/aphrody/deploy/install-host.ts --role prod --root /home/ubuntu/apps/aphrody-bun`. Corriger `current`, voir la purge ci-dessus.
+6. Pour `/srv/aphrody` et `/srv/shenron-cdn` : `lsof +D`, puis `mv` du contenu vers `~/apps/<app>` s'il est unique.
+7. Contrôles qui doivent rester vides : `sudo lsof +D /srv` et `grep -r /srv /etc/systemd /etc/nginx ~/apps`. Ensuite `sudo rm /srv/*` (liens seulement), puis `sudo rmdir /srv`.
+8. Preuves : `ls /srv`, `docker compose ls` (1 projet), `systemctl --failed`, `bun scripts/aphrody/docker-doctor.ts dbfr vps` (7/7), `curl -sI https://aphrody.com/` (200).
+9. Réactiver sur le vps : `systemctl --user enable --now aphrody-deploy.timer`.
