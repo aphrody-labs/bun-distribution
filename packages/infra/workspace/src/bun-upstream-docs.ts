@@ -48,8 +48,7 @@ const SKIPPED_EXTENSIONS = new Set([
 
 function git(cwd: string, args: string[]): string {
   const proc = Bun.spawnSync(["git", "-C", cwd, ...args], { stdout: "pipe", stderr: "pipe" });
-  if (proc.exitCode !== 0)
-    throw new Error(`git ${args.join(" ")} failed: ${proc.stderr.toString()}`);
+  if (proc.exitCode !== 0) throw new Error(`git ${args.join(" ")} failed: ${proc.stderr.toString()}`);
   return proc.stdout.toString().trim();
 }
 
@@ -68,7 +67,7 @@ export function localBunCheckout(
 /** Whether a path relative to `docs/` belongs to the mirror. */
 export function isMirroredDoc(relativePath: string): boolean {
   const parts = relativePath.split(/[\\/]/);
-  if (parts.slice(0, -1).some((part) => SKIPPED_DIRECTORIES.has(part.toLowerCase()))) return false;
+  if (parts.slice(0, -1).some(part => SKIPPED_DIRECTORIES.has(part.toLowerCase()))) return false;
   const name = parts.at(-1) ?? "";
   const dot = name.lastIndexOf(".");
   return dot < 0 || !SKIPPED_EXTENSIONS.has(name.slice(dot).toLowerCase());
@@ -90,21 +89,17 @@ function sha256(bytes: Uint8Array): string {
 }
 
 async function cloneFork(ref: string): Promise<string> {
-  const mirror =
-    process.env.APHRODY_BUN_MIRROR ?? join(homedir(), ".cache", "aphrody", "upstream", "bun");
+  const mirror = process.env.APHRODY_BUN_MIRROR ?? join(homedir(), ".cache", "aphrody", "upstream", "bun");
   if (existsSync(join(mirror, ".git"))) {
     git(mirror, ["fetch", "--depth", "1", "origin", ref]);
     git(mirror, ["reset", "--hard", "FETCH_HEAD"]);
   } else {
     await rm(mirror, { recursive: true, force: true });
     await mkdir(dirname(mirror), { recursive: true });
-    const clone = Bun.spawnSync(
-      ["git", "clone", "--quiet", "--depth", "1", "--branch", ref, FORK_URL, mirror],
-      {
-        stdout: "pipe",
-        stderr: "pipe",
-      },
-    );
+    const clone = Bun.spawnSync(["git", "clone", "--quiet", "--depth", "1", "--branch", ref, FORK_URL, mirror], {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
     if (clone.exitCode !== 0) throw new Error(`git clone ${FORK_URL} failed: ${clone.stderr}`);
   }
   return mirror;
@@ -128,30 +123,26 @@ export async function runBunUpstreamDocs(args: string[]): Promise<number> {
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }
-  if (!repoRoot || !ref || source === "")
-    throw new Error("--root, --ref and --source require a value");
+  if (!repoRoot || !ref || source === "") throw new Error("--root, --ref and --source require a value");
   repoRoot = resolve(repoRoot);
   const checkout = localBunCheckout(source) ?? (await cloneFork(ref));
   const docs = join(checkout, "docs");
-  if (!existsSync(join(docs, "docs.json")))
-    throw new Error(`${docs} is not the Bun docs site (no docs.json)`);
+  if (!existsSync(join(docs, "docs.json"))) throw new Error(`${docs} is not the Bun docs site (no docs.json)`);
   const commit = git(checkout, ["log", "-1", "--format=%H", "--", "docs"]);
   const date = git(checkout, ["log", "-1", "--format=%cs", "--", "docs"]);
   const target = join(repoRoot, BUN_DOCS_TARGET);
 
   const files: Record<string, string> = {};
   const contents = new Map<string, Uint8Array>();
-  const sources = (await listFiles(docs))
-    .filter(isMirroredDoc)
-    .map((rel) => [rel, join(docs, rel)]);
+  const sources = (await listFiles(docs)).filter(isMirroredDoc).map((rel): [string, string] => [rel, join(docs, rel)]);
   for (const name of ROOT_FILES) sources.push([name, join(checkout, name)]);
   for (const [rel, path] of sources) {
     const bytes = await Bun.file(path).bytes();
     files[rel] = sha256(bytes);
     contents.set(rel, bytes);
   }
-  const existing = (await listFiles(target)).filter((rel) => !KEEP.has(rel));
-  const stale = existing.filter((rel) => !(rel in files));
+  const existing = (await listFiles(target)).filter(rel => !KEEP.has(rel));
+  const stale = existing.filter(rel => !(rel in files));
   const changed: string[] = [];
   for (const [rel, hash] of Object.entries(files)) {
     const path = join(target, rel);
@@ -167,8 +158,7 @@ export async function runBunUpstreamDocs(args: string[]): Promise<number> {
   };
   const receiptText = `${JSON.stringify(receipt, null, 2)}\n`;
   const receiptPath = join(target, "SOURCE.json");
-  const receiptStale =
-    !existsSync(receiptPath) || (await Bun.file(receiptPath).text()) !== receiptText;
+  const receiptStale = !existsSync(receiptPath) || (await Bun.file(receiptPath).text()) !== receiptText;
   const summary = `${Object.keys(files).length} files from ${checkout} docs/ @ ${commit.slice(0, 11)} (${date}): ${changed.length} changed, ${stale.length} stale`;
   if (check) {
     const ok = changed.length === 0 && stale.length === 0 && !receiptStale;
@@ -176,18 +166,13 @@ export async function runBunUpstreamDocs(args: string[]): Promise<number> {
     return ok ? 0 : 1;
   }
   for (const rel of stale) await rm(join(target, rel), { force: true });
-  for (const rel of changed)
-    await Bun.write(join(target, rel), contents.get(rel) ?? new Uint8Array());
+  for (const rel of changed) await Bun.write(join(target, rel), contents.get(rel) ?? new Uint8Array());
   await Bun.write(receiptPath, receiptText);
   // Drop directories emptied by stale deletions.
-  for (const dir of [...new Set(stale.map((rel) => dirname(join(target, rel))))].toSorted(
+  for (const dir of [...new Set(stale.map(rel => dirname(join(target, rel))))].toSorted(
     (a, b) => b.length - a.length,
   )) {
-    for (
-      let current = dir;
-      current.startsWith(target) && current !== target;
-      current = dirname(current)
-    ) {
+    for (let current = dir; current.startsWith(target) && current !== target; current = dirname(current)) {
       if (!existsSync(current) || (await readdir(current)).length > 0) break;
       if ((await stat(current)).isDirectory()) await rm(current, { recursive: true });
     }

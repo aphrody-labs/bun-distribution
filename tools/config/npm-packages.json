@@ -497,10 +497,9 @@
       "name": "@aphrody/plugins",
       "version": "1.0.1",
       "path": "packages/engine/plugins/package.json",
-      "status": "published",
+      "status": "blocked",
       "sha256": "4fc388e968cad51f4812239de0e05dc812d3682fa9ccb7bf0a8c28f57fe56ab0",
-      "integrity": "sha512-WuJYSgyQ5n5cttxhUjqhuwgPqSudoY91SHf9DxhtGqQdDrFfkC7atz9gPNkVOuGAJY0gdXqD4/P1ruaUcb4caA==",
-      "dependencies": []
+      "reason": "Paquet retiré du dépôt le 2026-10-09 (aucun importeur) ; la dernière version npm reste publiée, aucune nouvelle release."
     },
     {
       "name": "@aphrody/runtime-sdk",

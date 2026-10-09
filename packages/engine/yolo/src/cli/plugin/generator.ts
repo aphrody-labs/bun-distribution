@@ -301,7 +301,7 @@ Executes repository gates and returns precise pass/fail diagnostics:
   // Generate README.md
   const readme = `# Unified YOLO & Bun-TS7 Plugin
 
-Generated directly by \`@aphrody/plugins\` from:
+Generated directly by \`@aphrody/yolo-cli/plugin/generator\` from:
 - **Bun Docs MDX**: \`vendor/bun/docs\` (${mdxPages.length} MDX files indexed)
 - **Bun Core TypeScript**: \`vendor/bun/src\` (${bunCoreTsFiles.length} internal TS definitions)
 - **TypeScript Engine**: Version ${tsVersion} (Native Corsa Go compiler)

@@ -75,7 +75,8 @@ GlobalRegistrator.register();
 rendreReseauNatif();
 
 try {
-  await import("element-internals-polyfill");
+  const polyfill = "element-internals-polyfill";
+  await import(polyfill);
 } catch {
   try {
     await import("../m3/packages/m3-config/node_modules/element-internals-polyfill/dist/index.js");

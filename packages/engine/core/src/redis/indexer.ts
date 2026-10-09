@@ -8,8 +8,9 @@
  */
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
-import { wyhash } from "../sys/index";
 import { NativeRedisClient } from "./client";
+
+const wyhash = (input: string) => Bun.hash.wyhash(input).toString(16);
 
 export interface IndexResult {
   branch: string;

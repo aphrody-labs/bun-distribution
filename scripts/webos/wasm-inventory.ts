@@ -180,15 +180,15 @@ export type Pkg = { name: string; dir: string; hits: string[]; verdict: Verdict 
 /** True when a `[target.'cfg(...)'.dependencies]` table may apply to a wasm32 target. */
 export function cfgMayMatchWasm(cfg: string): boolean {
   const c = cfg.replace(/\s+/g, "");
-  if (/wasm|target_family="wasm"|target_os="wasi"/.test(c) && !/^cfg\(not\(/.test(c)) return true;
+  if (/wasm|target_family="wasm"|target_os="wasi"/.test(c) && !c.startsWith("cfg(not(")) return true;
   if (/^cfg\(not\(target_(arch="wasm32"|family="wasm")\)\)$/.test(c)) return false;
-  if (/^cfg\(not\(/.test(c)) return true; // not(windows), not(unix) ... hold on wasm
+  if (c.startsWith("cfg(not(")) return true; // not(windows), not(unix) ... hold on wasm
   if (
     /^cfg\((windows|unix|target_os="[^"]+"|target_vendor=|target_env=|target_arch="(x86_64|aarch64|x86|arm)")/.test(c)
   )
     return false;
-  if (/^cfg\(any\(/.test(c)) return /wasm|wasi/.test(c);
-  if (/^cfg\(all\(/.test(c)) return !/(windows|unix|target_os=")/.test(c) || /wasm|wasi/.test(c);
+  if (c.startsWith("cfg(any(")) return /wasm|wasi/.test(c);
+  if (c.startsWith("cfg(all(")) return !/(windows|unix|target_os=")/.test(c) || /wasm|wasi/.test(c);
   return /wasm/.test(c);
 }
 
@@ -244,7 +244,7 @@ export async function inventoryCrates(root: string): Promise<Crate[]> {
       name: toml.package.name,
       dir,
       description: String(toml.package.description ?? "")
-        .split("\n")[0]
+        .split("\n")[0]!
         .slice(0, 120),
       hasWasmCfg,
       wasmTarget: Object.keys(toml.target ?? {}).some(k => /wasm|wasi/.test(k)),

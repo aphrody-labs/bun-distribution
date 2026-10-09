@@ -12,19 +12,16 @@ export interface SpawnSyncOptions {
   shell?: false;
   windowsHide?: boolean;
 }
-export interface SpawnSyncResult<T extends string | Buffer = string> {
+export interface SpawnSyncResult {
   status: number | null;
   signal: string | null;
-  stdout: T;
-  stderr: T;
+  stdout: string;
+  stderr: string;
   error?: Error;
 }
 
 function run(cmd: string, args: readonly string[], o: SpawnSyncOptions) {
-  const [i, so, se] =
-    typeof o.stdio === "string"
-      ? [o.stdio, o.stdio, o.stdio]
-      : (o.stdio ?? ["pipe", "pipe", "pipe"]);
+  const [i, so, se] = typeof o.stdio === "string" ? [o.stdio, o.stdio, o.stdio] : (o.stdio ?? ["pipe", "pipe", "pipe"]);
   return Bun.spawnSync([cmd, ...args], {
     cwd: o.cwd,
     env: o.env as Record<string, string> | undefined,
@@ -37,19 +34,14 @@ function run(cmd: string, args: readonly string[], o: SpawnSyncOptions) {
   });
 }
 
-export function spawnSync(
-  cmd: string,
-  args: readonly string[] = [],
-  o: SpawnSyncOptions = {},
-): SpawnSyncResult {
-  const text = (b: Uint8Array | undefined | null) => (b ? Buffer.from(b).toString("utf8") : "");
+export function spawnSync(cmd: string, args: readonly string[] = [], o: SpawnSyncOptions = {}): SpawnSyncResult {
   try {
     const r = run(cmd, args, o);
     return {
       status: r.exitCode ?? null,
       signal: r.signalCode == null ? null : String(r.signalCode),
-      stdout: text(r.stdout),
-      stderr: text(r.stderr),
+      stdout: r.stdout?.toString() ?? "",
+      stderr: r.stderr?.toString() ?? "",
     };
   } catch (error) {
     return { status: null, signal: null, stdout: "", stderr: "", error: error as Error };
@@ -63,19 +55,15 @@ export function execFileSync(
   o: SpawnSyncOptions & { encoding: "utf8" | "utf-8" },
 ): string;
 export function execFileSync(cmd: string, args: readonly string[], o?: SpawnSyncOptions): Buffer;
-export function execFileSync(
-  cmd: string,
-  args: readonly string[],
-  o: SpawnSyncOptions = {},
-): string | Buffer {
+export function execFileSync(cmd: string, args: readonly string[], o: SpawnSyncOptions = {}): string | Buffer {
   const r = run(cmd, args, o);
   if (r.exitCode !== 0) {
-    const err = new Error(
-      `Command failed: ${cmd} ${args.join(" ")}\n${r.stderr ? Buffer.from(r.stderr).toString("utf8") : ""}`,
-    ) as Error & { status: number | null };
+    const err = new Error(`Command failed: ${cmd} ${args.join(" ")}\n${r.stderr?.toString() ?? ""}`) as Error & {
+      status: number | null;
+    };
     err.status = r.exitCode ?? null;
     throw err;
   }
-  const out = Buffer.from(r.stdout ?? new Uint8Array());
-  return o.encoding ? out.toString("utf8") : out;
+  const out = r.stdout ?? Buffer.alloc(0);
+  return o.encoding ? out.toString() : out;
 }

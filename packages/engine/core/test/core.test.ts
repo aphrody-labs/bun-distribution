@@ -13,9 +13,6 @@ import {
   curation,
   coord,
   distribution,
-  wyhash,
-  crc32,
-  sha256,
   scanDirectory,
   parseTsSource,
   buildOpenApiSpec,
@@ -27,29 +24,7 @@ import {
 const rootDir = resolve(import.meta.dir, "../../../..");
 
 describe("YOLO Core Library (@aphrody/yolo-core)", () => {
-  describe("sys module (Hardware, Hashing, Benchmarking, Diagnostics)", () => {
-    it("should compute deterministic wyhash for string and Uint8Array with seed", () => {
-      const h1 = wyhash("hello yolo");
-      const h2 = wyhash(new TextEncoder().encode("hello yolo"));
-      expect(h1).toBe(h2);
-      expect(typeof h1).toBe("string");
-      expect(h1.length).toBeGreaterThan(0);
-
-      const hSeedBigInt = wyhash("hello yolo", 42n);
-      const hSeedNumber = wyhash("hello yolo", 42);
-      expect(hSeedBigInt).toBe(hSeedNumber);
-    });
-
-    it("should compute crc32 and sha256 checksums", () => {
-      const crc = crc32("test-payload");
-      expect(crc).toBeDefined();
-      expect(typeof crc).toBe("string");
-
-      const sha = sha256("test-payload");
-      expect(sha).toHaveLength(64);
-      expect(sha).toMatch(/^[0-9a-f]{64}$/);
-    });
-
+  describe("sys module (Hardware, Benchmarking, Diagnostics)", () => {
     it("should collect hardware and system stats", () => {
       const stats = sys.getSystemStats();
       expect(stats.os).toBe(process.platform);

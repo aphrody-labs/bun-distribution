@@ -51,9 +51,6 @@ export {
 
 // Direct flat exports of core capabilities
 export {
-  wyhash,
-  crc32,
-  sha256,
   limiter,
   getSystemStats,
   type SystemStats,

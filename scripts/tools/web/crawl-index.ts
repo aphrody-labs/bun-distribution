@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
+import { $ } from "bun";
 import { parseArgs } from "node:util";
 
 export interface CrawlJob {
@@ -9,8 +10,6 @@ export interface CrawlJob {
   maxRequests: number;
   maxDepth: number;
 }
-
-export const shellQuote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
 
 export function validateJob(job: CrawlJob): CrawlJob {
   if (!["vps", "dbfr"].includes(job.host)) throw new Error("host must be vps or dbfr");
@@ -113,7 +112,7 @@ if (import.meta.main) {
     if (!values.local && !cli) throw new Error("the native aphrody CLI must be on PATH");
     const args = values.local
       ? [process.execPath, "-e", script]
-      : [cli!, "infra", "ssh", "exec", "--host", job.host, "--cmd", "bun -e " + shellQuote(script)];
+      : [cli!, "infra", "ssh", "exec", "--host", job.host, "--cmd", "bun -e " + $.escape(script)];
     const child = Bun.spawn(args, {
       env: { ...process.env, APHRODY_SSH_COMMAND_TIMEOUT_SECS: "3600" },
       stdout: "inherit",

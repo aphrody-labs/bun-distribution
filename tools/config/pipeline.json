@@ -728,24 +728,6 @@
           "command": [
             "run",
             "--filter",
-            "@aphrody/plugins",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugins",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
             "@aphrody/runtime-sdk",
             "typecheck"
           ]

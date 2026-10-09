@@ -444,7 +444,7 @@ test.skipIf(process.platform === "win32")(
 test("factory plans use the existing Infra owner and shared serial lock", () => {
   const plan = buildFactoryPlan(config, "aphrody", revision, ["bun", "run", "build"]);
   expect(plan.transport.slice(0, 4)).toEqual(["ssh", "exec", "--host", "vps"]);
-  expect(plan.transport[5]).toContain("flock --close -- '/srv/aphrody-build/locks/heavy.lock'");
+  expect(plan.transport[5]).toContain("flock --close -- /srv/aphrody-build/locks/heavy.lock");
   expect(plan.commandTimeoutSeconds).toBe(21600);
   expect(plan.transport[5]).toContain("git rev-parse HEAD");
   expect(plan.transport[5]).toContain("git status --porcelain");
@@ -467,7 +467,7 @@ test("Yolo shares factory caches while preserving its canonical packaging target
   expect(plan.transport[5]).toContain("SCCACHE_DIR=/srv/aphrody-build/cache/sccache");
   expect(plan.transport[5]).toContain("git rev-parse HEAD");
   expect(plan.transport[5]).toContain("git status --porcelain");
-  expect(plan.transport[5]).toContain("flock --close -- '/srv/aphrody-build/locks/heavy.lock'");
+  expect(plan.transport[5]).toContain("flock --close -- /srv/aphrody-build/locks/heavy.lock");
   expect(() =>
     buildFactoryPlan({ ...declared, executionOnlyTargets: ["vps"] }, "yolo", revision, ["just"]),
   ).toThrow("execution-only");
@@ -631,7 +631,7 @@ test("source preparations use disjoint locks and builds also protect their pinne
     "check",
   ]);
   expect(build.transport[5]).toContain(
-    "flock --close -- '/srv/aphrody-build/locks/heavy.lock' flock --close -- '/srv/aphrody-build/locks/aphrody.source.lock'",
+    "flock --close -- /srv/aphrody-build/locks/heavy.lock flock --close -- /srv/aphrody-build/locks/aphrody.source.lock",
   );
 });
 

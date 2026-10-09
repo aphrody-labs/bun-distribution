@@ -41,6 +41,7 @@ describe("CLI start-up", () => {
   it("release compiles with a bytecode cache and without cwd autoloads", () => {
     expect(COMPILE_FLAGS).toEqual([
       "--bytecode",
+      "--format=esm",
       "--no-compile-autoload-dotenv",
       "--no-compile-autoload-bunfig",
     ]);

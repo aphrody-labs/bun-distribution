@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import { remoteScript, shellQuote, validateJob, type CrawlJob } from "./crawl-index.ts";
+import { $ } from "bun";
+import { remoteScript, validateJob, type CrawlJob } from "./crawl-index.ts";
 
 const job: CrawlJob = {
   host: "vps",
@@ -23,11 +24,35 @@ test("rejects file navigation and credential URLs", () => {
   expect(() => validateJob({ ...job, seeds: ["file:///etc/passwd"] })).toThrow();
   expect(() => validateJob({ ...job, seeds: ["https://user:secret@example.com"] })).toThrow();
 });
-test("shell quoting leaves substitutions and apostrophes literal", () => {
-  const value = "a'$(echo leaked)`echo leaked`";
-  const result = Bun.spawnSync(["sh", "-c", "printf %s " + shellQuote(value)]);
+// $.escape replaced the POSIX '…'\''…' quoter: every value must reach sh as one literal word.
+test.skipIf(!Bun.which("sh"))("$.escape quotes one literal sh word", () => {
+  const values = [
+    "a'$(echo leaked)`echo leaked`",
+    "a b",
+    "it's",
+    'say "hi"',
+    "$HOME",
+    "${x:-y}",
+    "a\\b",
+    "a\\",
+    "a\\\nb",
+    "\\`",
+    "x\ny",
+    "",
+    "été 悟空 🐉",
+    "!x",
+    "*?[a]",
+    "~",
+    "#x",
+    "a;b|c&d",
+    "{a,b}",
+    "-n",
+  ];
+  const script = values.map(value => `printf '%s\\0' ${$.escape(value)}`).join("\n") + "\n";
+  const result = Bun.spawnSync(["sh", "-s"], { stdin: Buffer.from(script) });
+  expect(result.stderr.toString()).toBe("");
+  expect(result.stdout.toString().split("\0").slice(0, -1)).toEqual(values);
   expect(result.exitCode).toBe(0);
-  expect(result.stdout.toString()).toBe(value);
 });
 test("remote program parses before use and preserves embedded seed characters", () => {
   const source = remoteScript({ ...job, seeds: ["https://example.com/?q='$(echo%20leaked)"] });

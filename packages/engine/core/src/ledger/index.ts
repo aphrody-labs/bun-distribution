@@ -10,7 +10,6 @@ import { Database } from "bun:sqlite";
 import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
-import { wyhash } from "../sys/hash";
 import { findRepoRoot } from "../vfs/index";
 
 /**
@@ -515,7 +514,7 @@ export function indexCodebaseFingerprints(db: Database, rootDir: string): number
         try {
           const ext = entry.name.includes(".") ? entry.name.split(".").pop() || "" : "";
           const content = readFileSync(fullPath);
-          const hash = wyhash(content);
+          const hash = Bun.hash.wyhash(content).toString(16);
           const relPath = relative(root, fullPath).replaceAll("\\", "/");
 
           insertStmt.run(relPath, ext, content.byteLength, hash, now);
