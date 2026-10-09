@@ -12,6 +12,6 @@
     "types": ["bun"],
     "verbatimModuleSyntax": true
   },
-  "include": ["src", "scripts"],
+  "include": ["src", "scripts", "demo"],
   "exclude": ["node_modules"]
 }

@@ -115,7 +115,7 @@ const fn tool(name: &'static str, aliases: &'static [&'static str], target: Targ
 pub(crate) const HELP: &str = "Former standalone binaries, also callable by their old name \
 through the links `aphrody self install-path` creates:
   infra, ovh, yolo, kernel, host-service, ssh, wsl, backend, mcp-server, web-engine, web-worker, x,
-  google, embed, n2b (Node 2 Bun), identity (design | export-assets | pixel), m3-reproduce, canvas,
+  google, embed, n2b (Node 2 Bun), identity (design | export-assets | pet | pixel), m3-reproduce, canvas,
   bindgen, rag-eval, tauri (cargo-tauri), create-tauri-app, home (agent home: status, backup, import,
   index, query), graph (code graph: build, query, explain, path, report, export), codex, app-server,
   workflow (aphrody-infra pipeline stages)
@@ -199,16 +199,17 @@ fn create_tauri_app(args: Vec<OsString>) -> i32 {
     0
 }
 
-/// `aphrody identity design|export-assets|pixel …`: the three former `aphrody-identity` binaries.
+/// `aphrody identity design|export-assets|pet|pixel …`: the `aphrody-identity` entry points.
 fn identity(args: Vec<OsString>) -> i32 {
     let mut rest = args.into_iter().skip(1);
     let Some(tool) = rest.next() else {
-        eprintln!("usage: aphrody identity <design|export-assets|pixel> [args…]");
+        eprintln!("usage: aphrody identity <design|export-assets|pet|pixel> [args…]");
         return 2;
     };
     let entry: fn(Vec<OsString>) -> i32 = match tool.to_str() {
         Some("design") => aphrody_identity::design_main,
         Some("export-assets") => aphrody_identity::export_assets_main,
+        Some("pet") => aphrody_identity::pet_main,
         Some("pixel") => aphrody_identity::pixel_main,
         _ => {
             eprintln!("aphrody identity: unknown tool {}", tool.to_string_lossy());

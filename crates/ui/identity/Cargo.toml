@@ -42,3 +42,9 @@ thiserror = { workspace = true }
 # and `Pet::from_png` are enough; everything else works in memory.
 default = ["fs"]
 fs = []
+
+# Option A of the web pet runtime (the crate clock in wasm32 behind a C ABI), kept to measure it
+# against the TypeScript port: m3/packages/identity/scripts/measure.ts --wasm.
+[[example]]
+name       = "pet_wasm"
+crate-type = ["cdylib"]

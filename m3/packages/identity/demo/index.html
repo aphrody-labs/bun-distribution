@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>&lt;aphrody-pet&gt;</title>
+    <style>
+      body { font: 15px/1.5 system-ui, sans-serif; margin: 2rem; display: grid; gap: 1rem; justify-items: start; }
+      .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+      output { font-variant-numeric: tabular-nums; }
+    </style>
+  </head>
+  <body>
+    <aphrody-pet id="pet" src="/spritesheet.webp" size="208"></aphrody-pet>
+    <div class="row" id="states">
+      <button data-state="running">running</button>
+      <button data-state="waiting">waiting</button>
+      <button data-state="review">review</button>
+      <button data-state="failed">failed</button>
+      <button data-state="">effacer</button>
+    </div>
+    <div class="row" id="tracks"></div>
+    <output id="status"></output>
+    <script type="module" src="./demo.ts"></script>
+  </body>
+</html>
