@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs";
 
 function version(binary: string): string {
-  const result = Bun.spawnSync([binary, "--version"], { stdout: "pipe", stderr: "pipe" });
+  const result = Bun.spawnSync([binary, "--version"], {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   if (result.exitCode !== 0) throw new Error(`${binary} --version failed`);
   return new TextDecoder().decode(result.stdout).trim();
 }

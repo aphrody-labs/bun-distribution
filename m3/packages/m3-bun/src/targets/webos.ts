@@ -111,6 +111,7 @@ const probe = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Respo
 const port = probe.port;
 await probe.stop(true);
 const server = Bun.spawn([values.executable], {
+  windowsHide: true,
   env: { ...process.env, PORT: String(port), HOST: "127.0.0.1" },
   stdout: "inherit",
   stderr: "inherit",

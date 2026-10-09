@@ -424,6 +424,7 @@ export async function runMonorepoGate(args: string[]): Promise<number> {
   const report = await executeMonorepoGate(plan, async (check) => {
     console.error(`Checking ${check.name}`);
     const child = Bun.spawn(check.command, {
+      windowsHide: true,
       cwd: check.cwd,
       stdin: "ignore",
       stdout: json ? "pipe" : "inherit",

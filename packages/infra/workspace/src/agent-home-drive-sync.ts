@@ -351,6 +351,7 @@ async function save(path: string, value: unknown) {
 function runner(config: SyncConfig): Runner {
   return async (argv, environment) => {
     const child = Bun.spawn(argv, {
+      windowsHide: true,
       cwd: config.root,
       env: { ...process.env, ...environment },
       stdin: "ignore",

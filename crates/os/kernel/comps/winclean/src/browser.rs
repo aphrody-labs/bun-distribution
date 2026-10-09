@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Native Chrome inventory and isolated automation setup. Profile contents are never read.
+use aphrody_proc::NoWindow as _;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::{
@@ -262,7 +263,7 @@ pub fn setup(map: &BrowserMap) -> io::Result<Value> {
     if port_file.is_file() {
         fs::remove_file(port_file)?;
     }
-    let mut child = Command::new(binary)
+    let mut child = Command::new(binary).no_window()
         .arg(format!("--user-data-dir={}", map.automation_root.display()))
         .args([
             "--remote-debugging-address=127.0.0.1",

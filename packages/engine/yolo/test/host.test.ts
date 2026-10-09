@@ -1617,11 +1617,14 @@ describe.skipIf(!haveTools)("local apply in a temp directory", () => {
     // the archive restores the data
     const restored = join(root, "restored");
     mkdirSync(restored);
-    const r = Bun.spawnSync([
-      "sh",
-      "-c",
-      `zstd -dc '${join(dest, `${label}-20261003.tar.zst`)}' | tar -C '${restored}' -xf -`,
-    ]);
+    const r = Bun.spawnSync(
+      [
+        "sh",
+        "-c",
+        `zstd -dc '${join(dest, `${label}-20261003.tar.zst`)}' | tar -C '${restored}' -xf -`,
+      ],
+      { windowsHide: true },
+    );
     expect(r.exitCode).toBe(0);
     expect(await Bun.file(join(restored, "src/sub/deep/c.txt")).text()).toBe("gamma");
   });

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Systemd service and unit supervisor, dependency resolver (DAG), and watchdog.
 
+use aphrody_proc::NoWindow as _;
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     sync::{Arc, RwLock},
@@ -339,7 +340,7 @@ impl HostSystemdBackend {
     fn run_systemctl(&self, action: &str, name: &str) -> Result<(), String> {
         #[cfg(unix)]
         {
-            let mut cmd = std::process::Command::new("systemctl");
+            let mut cmd = std::process::Command::new("systemctl").no_window();
             if self.user_mode {
                 cmd.arg("--user");
             }
@@ -381,7 +382,7 @@ impl SystemdSupervisor for HostSystemdBackend {
     async fn unit_status(&self, name: &str) -> Option<UnitStatus> {
         #[cfg(unix)]
         {
-            let mut cmd = std::process::Command::new("systemctl");
+            let mut cmd = std::process::Command::new("systemctl").no_window();
             if self.user_mode {
                 cmd.arg("--user");
             }
@@ -441,7 +442,7 @@ impl SystemdSupervisor for HostSystemdBackend {
     async fn list_units(&self) -> Vec<UnitStatus> {
         #[cfg(unix)]
         {
-            let mut cmd = std::process::Command::new("systemctl");
+            let mut cmd = std::process::Command::new("systemctl").no_window();
             if self.user_mode {
                 cmd.arg("--user");
             }

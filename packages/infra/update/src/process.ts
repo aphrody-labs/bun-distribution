@@ -33,7 +33,7 @@ function run(cmd: string, args: readonly string[], o: SpawnSyncOptions) {
     stdin: i === "pipe" ? "ignore" : i,
     stdout: so,
     stderr: se,
-    windowsHide: o.windowsHide,
+    windowsHide: o.windowsHide ?? true,
   });
 }
 
@@ -79,4 +79,9 @@ export function execFileSync(
   }
   const out = r.stdout ?? Buffer.alloc(0);
   return o.encoding ? out.toString() : out;
+}
+
+/** Spawn options with `windowsHide: true` unless the caller overrides it (no console window on Windows). */
+export function hidden<T extends { windowsHide?: boolean }>(options?: T): T & { windowsHide: boolean } {
+  return { windowsHide: true, ...options } as T & { windowsHide: boolean };
 }

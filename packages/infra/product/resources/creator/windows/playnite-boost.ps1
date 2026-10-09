@@ -392,7 +392,8 @@ function Register-LogonTask {
     $userId = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
     $backup = Save-TaskBackup -TaskName $TaskName
     if ($backup) { Write-Info "Tâche existante sauvegardée : $backup" }
-    $actionArgs = @{ Execute = $Execute; Argument = $Argument }
+    # Session interactive requise (Playnite) : console hébergée par conhost --headless, jamais affichée.
+    $actionArgs = @{ Execute = (Join-Path $env:SystemRoot 'System32\conhost.exe'); Argument = ('--headless "{0}" {1}' -f $Execute, $Argument) }
     if ($WorkingDirectory) { $actionArgs.WorkingDirectory = $WorkingDirectory }
     $action = New-ScheduledTaskAction @actionArgs
     $trigger = New-ScheduledTaskTrigger -AtLogOn -User $userId

@@ -477,6 +477,7 @@ class Doctor {
     const e = merge ? o : this.verbose ? ("inherit" as const) : openSync(logFile, "w");
     const t = Date.now();
     const r = spawnSync("bash", [WRAPPER, ...args], {
+      windowsHide: true,
       cwd: this.c.root,
       stdio: ["ignore", o, e],
       env: { ...process.env, ...env },

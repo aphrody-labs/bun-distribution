@@ -329,7 +329,7 @@ pub fn parse_repo_source(source: &str) -> (String, Option<String>, Option<String
 }
 
 /// Ingest a local filesystem directory into a prompt-ready digest.
-pub fn ingest_path(root_path: &Path, options: &IngestOptions) -> Result<IngestResult, Error> {
+fn ingest_path(root_path: &Path, options: &IngestOptions) -> Result<IngestResult, Error> {
     let root = root_path.canonicalize().unwrap_or_else(|_| root_path.to_path_buf());
     if !root.exists() {
         return Err(Error::Git(format!("directory does not exist: {}", root.display())));
@@ -607,17 +607,72 @@ pub fn ingest_remote(repo_url: &str, options: &IngestOptions) -> Result<IngestRe
     Ok(result)
 }
 
-/// Ingest either a local path or a remote Git URL based on source format.
-pub fn ingest(source: &str, options: &IngestOptions) -> Result<IngestResult, Error> {
-    let trimmed = source.trim();
-    if trimmed.starts_with("http://")
-        || trimmed.starts_with("https://")
-        || trimmed.starts_with("git@")
-        || trimmed.ends_with(".git")
-    {
-        ingest_remote(trimmed, options)
-    } else {
-        let path = Path::new(trimmed);
-        ingest_path(path, options)
+/// True when `source` designates a remote Git repository rather than a local path.
+pub fn is_remote_source(source: &str) -> bool {
+    let t = source.trim();
+    t.starts_with("http://") || t.starts_with("https://") || t.starts_with("git@") || t.ends_with(".git")
+}
+
+#[cfg(test)]
+mod local_tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn ingest_local_path() {
+        let dir = tempfile::tempdir().expect("create tempdir");
+        let root = dir.path();
+        fs::write(root.join("README.md"), "# Project Test
+Description here
+").expect("readme");
+        fs::create_dir_all(root.join("src")).expect("src");
+        fs::write(root.join("src/main.rs"), "fn main() {
+    println!(\"hello\");
+}
+")
+            .expect("main.rs");
+        fs::write(root.join("src/lib.rs"), "pub fn add(a: i32, b: i32) -> i32 { a + b }
+")
+            .expect("lib.rs");
+        fs::create_dir_all(root.join("target")).expect("target");
+        fs::write(root.join("target/dummy.o"), [0u8, 1, 2, 3]).expect("dummy");
+        fs::write(root.join("test.png"), [0u8, 1, 2, 3]).expect("binary");
+
+        let result = ingest_path(root, &IngestOptions::default()).expect("ingest local path");
+        assert_eq!(result.file_count, 3);
+        assert!(result.summary.contains("Files analyzed: 3"));
+        assert!(result.tree.contains("src/"));
+        assert!(result.content.contains("FILE: README.md"));
+        assert!(result.content.contains("FILE: src/main.rs"));
+        assert!(result.content.contains("println!(\"hello\");"));
+        assert!(!result.content.contains("dummy.o"));
+        assert!(!result.content.contains("test.png"));
+        let full = result.full_context();
+        assert!(full.contains(&result.summary) && full.contains(&result.content));
+    }
+
+    #[test]
+    fn ingest_include_filter() {
+        let dir = tempfile::tempdir().expect("create tempdir");
+        let root = dir.path();
+        fs::write(root.join("README.md"), "# Title
+").unwrap();
+        fs::write(root.join("script.py"), "print('py')
+").unwrap();
+        fs::write(root.join("main.rs"), "fn main() {}
+").unwrap();
+        let options =
+            IngestOptions { include_patterns: vec!["*.rs".to_string()], ..IngestOptions::default() };
+        let result = ingest_path(root, &options).expect("ingest filter");
+        assert_eq!(result.file_count, 1);
+        assert!(result.content.contains("FILE: main.rs"));
+        assert!(!result.content.contains("script.py"));
+    }
+
+    #[test]
+    fn remote_detection() {
+        assert!(is_remote_source("https://github.com/a/b"));
+        assert!(is_remote_source("git@github.com:a/b.git"));
+        assert!(!is_remote_source("C:/work/dir"));
     }
 }

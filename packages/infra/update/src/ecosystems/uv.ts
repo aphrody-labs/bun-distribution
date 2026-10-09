@@ -598,6 +598,7 @@ type Run = { status: number | null; stdout: string; stderr: string };
 type Runner = (cmd: string, args: string[], cwd: string, inherit?: boolean) => Run;
 const defaultRunner: Runner = (cmd, args, cwd, inherit) => {
   const r = Bun.spawnSync([cmd, ...args], {
+    windowsHide: true,
     cwd,
     stdout: inherit ? "inherit" : "pipe",
     stderr: inherit ? "inherit" : "pipe",

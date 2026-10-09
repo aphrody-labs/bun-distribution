@@ -492,7 +492,13 @@ async function capture(
   env: Environment,
   timeoutMs: number,
 ): Promise<{ code: number; text: string }> {
-  const child = Bun.spawn(command, { env, stdin: "ignore", stdout: "pipe", stderr: "ignore" });
+  const child = Bun.spawn(command, {
+    windowsHide: true,
+    env,
+    stdin: "ignore",
+    stdout: "pipe",
+    stderr: "ignore",
+  });
   const timer = setTimeout(() => child.kill("SIGKILL"), timeoutMs);
   const reader = child.stdout.getReader();
   let size = 0;

@@ -5,6 +5,7 @@ import { productArgs, VERSION } from "../src/cli.ts";
 
 function run(...args: string[]) {
   return Bun.spawnSync([process.execPath, join(import.meta.dir, "../src/cli.ts"), ...args], {
+    windowsHide: true,
     env: { ...process.env, APHRODY_SETUP_NO_UPDATE: "1" },
   });
 }

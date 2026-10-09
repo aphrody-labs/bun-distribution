@@ -139,6 +139,7 @@ const written = (
 ).filter((f): f is string => f !== null);
 if (written.length > 0) {
   const fmt = Bun.spawnSync(["oxfmt", ...written], {
+    windowsHide: true,
     stdout: "inherit",
     stderr: "inherit",
   });

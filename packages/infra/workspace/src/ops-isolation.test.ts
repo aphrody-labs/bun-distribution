@@ -15,6 +15,7 @@ async function isolatedDispatcher(run: (directory: string) => Promise<void>) {
 
 async function dispatch(directory: string, ...args: string[]) {
   const child = Bun.spawn([process.execPath, join(directory, "ops.ts"), ...args], {
+    windowsHide: true,
     cwd: directory,
     stdout: "pipe",
     stderr: "pipe",

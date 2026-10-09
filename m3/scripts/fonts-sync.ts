@@ -122,6 +122,7 @@ function materialSymbols(lock: LockFile): Promise<string> {
     writeFileSync(tgz, bytes);
     // Relative paths: GNU tar (Git for Windows) reads `C:\…` as a remote host.
     const tar = Bun.spawnSync(["tar", "-xzf", "package.tgz"], {
+      windowsHide: true,
       cwd: dir,
       stdout: "pipe",
       stderr: "pipe",

@@ -25,6 +25,7 @@ test("passes task literally to the owner CLI and preserves its failure", async (
     );
     const task = 'simplify $(touch /tmp/should-not-run) `echo unsafe` "quoted"';
     const child = Bun.spawn([process.execPath, yolo, "optimize", task], {
+      windowsHide: true,
       env: { ...withoutPath(process.env), PATH: dir, CAPTURE: capture },
       stdout: "pipe",
       stderr: "pipe",
@@ -42,11 +43,7 @@ test("passes task literally to the owner CLI and preserves its failure", async (
 test("preview needs no owner executable", async () => {
   const child = Bun.spawn(
     [process.execPath, yolo, "optimize", "--print", "deduplicate selected imports"],
-    {
-      env: { ...process.env, PATH: "" },
-      stdout: "pipe",
-      stderr: "pipe",
-    },
+    { windowsHide: true, env: { ...process.env, PATH: "" }, stdout: "pipe", stderr: "pipe" },
   );
   expect(await child.exited).toBe(0);
   expect(await new Response(child.stdout).text()).toContain("deduplicate selected imports");

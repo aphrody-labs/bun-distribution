@@ -6,6 +6,7 @@
 //! MCP-shaped result (`{"content": [...], "isError": bool}`). `yolo tool` and the M3 package's
 //! `tool-host.ts` implement it; the kernel registers each one as a subsystem.
 
+use aphrody_proc::NoWindow as _;
 use std::{collections::HashSet, path::PathBuf, process::Stdio, sync::Arc, time::Duration};
 
 use async_trait::async_trait;
@@ -83,7 +84,7 @@ impl ToolHostSubsystem {
     }
 
     async fn run(&self, tail: &[&str], timeout: Duration) -> Result<Value, String> {
-        let child = tokio::process::Command::new(&self.command)
+        let child = tokio::process::Command::new(&self.command).no_window()
             .args(&self.args)
             .args(tail)
             .stdin(Stdio::null())

@@ -182,6 +182,7 @@ export async function probeMcp(spec: McpSpec, timeoutMs = 20_000): Promise<McpPr
   let proc: ReturnType<typeof Bun.spawn>;
   try {
     proc = Bun.spawn([spec.command, ...spec.args], {
+      windowsHide: true,
       stdin: "pipe",
       stdout: "pipe",
       stderr: "ignore",

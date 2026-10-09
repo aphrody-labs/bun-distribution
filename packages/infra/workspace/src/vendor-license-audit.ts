@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 
 function gitPaths(root: string, args: string[]) {
   const result = Bun.spawnSync(["git", "-C", root, "ls-files", "-z", ...args], {
+    windowsHide: true,
     stdout: "pipe",
     stderr: "pipe",
   });

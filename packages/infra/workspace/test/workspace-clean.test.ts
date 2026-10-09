@@ -18,7 +18,7 @@ afterEach(async () => {
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), "aphrody-clean-"));
   roots.push(root);
-  Bun.spawnSync(["git", "init", "-q", root]);
+  Bun.spawnSync(["git", "init", "-q", root], { windowsHide: true });
   await writeFile(join(root, ".gitignore"), "target/\nbuild/\n.cache/\n");
   return root;
 }
@@ -26,7 +26,7 @@ test("tracked target sources survive cleanup, ignored nested artifacts are remov
   const root = await fixture();
   await mkdir(join(root, "src/target"), { recursive: true });
   await writeFile(join(root, "src/target/mod.rs"), "pub struct Target;");
-  Bun.spawnSync(["git", "-C", root, "add", "-f", "src/target/mod.rs"]);
+  Bun.spawnSync(["git", "-C", root, "add", "-f", "src/target/mod.rs"], { windowsHide: true });
   await mkdir(join(root, "crates/a/target"), { recursive: true });
   await writeFile(join(root, "crates/a/target/object.o"), "generated");
   const preview = await cleanWorkspace(root);

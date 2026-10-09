@@ -48,6 +48,8 @@ WantedBy=multi-user.target
 `,
 );
 const archive = `${stage}.tar.gz`;
-const tar = Bun.spawnSync(["tar", "-czf", archive, "-C", "dist", `${name}-${hostTarget()}`]);
+const tar = Bun.spawnSync(["tar", "-czf", archive, "-C", "dist", `${name}-${hostTarget()}`], {
+  windowsHide: true,
+});
 if (tar.exitCode !== 0) throw new Error(tar.stderr.toString());
 console.log(`packed ${archive}`);

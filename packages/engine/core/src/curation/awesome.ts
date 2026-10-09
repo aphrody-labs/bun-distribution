@@ -229,7 +229,11 @@ async function githubToken(): Promise<string | undefined> {
   const fromEnv = process.env["GITHUB_TOKEN"] ?? process.env["GH_TOKEN"];
   if (fromEnv) return fromEnv;
   try {
-    const proc = Bun.spawn(["gh", "auth", "token"], { stdout: "pipe", stderr: "ignore" });
+    const proc = Bun.spawn(["gh", "auth", "token"], {
+      windowsHide: true,
+      stdout: "pipe",
+      stderr: "ignore",
+    });
     const out = (await new Response(proc.stdout).text()).trim();
     return (await proc.exited) === 0 && out !== "" ? out : undefined;
   } catch {

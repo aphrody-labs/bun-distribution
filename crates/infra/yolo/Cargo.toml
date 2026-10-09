@@ -12,6 +12,7 @@ name = "aphrody_yolo"
 path = "src/lib.rs"
 
 [dependencies]
+aphrody-proc = { workspace = true }
 yolo-core = { workspace = true, features = ["repository-tools"] }
 anyhow.workspace = true
 aphrody-fsindex = { workspace = true }

@@ -54,6 +54,7 @@ export function resolveRustAphrody(root = rootDir, env = process.env): string | 
 async function run(cmd: string[]): Promise<number> {
   const env = { ...process.env, APHRODY_ROOT: process.env.APHRODY_ROOT ?? rootDir };
   const proc = Bun.spawn(cmd, {
+    windowsHide: true,
     cwd: process.cwd(),
     env,
     stdio: ["inherit", "inherit", "inherit"],

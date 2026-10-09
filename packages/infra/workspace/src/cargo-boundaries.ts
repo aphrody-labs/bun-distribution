@@ -39,7 +39,7 @@ export async function runCargoBoundaries(args: string[]): Promise<number> {
             "--manifest-path",
             `${root}/Cargo.toml`,
           ],
-          { stdout: "pipe", stderr: "pipe" },
+          { windowsHide: true, stdout: "pipe", stderr: "pipe" },
         );
         if (result.exitCode !== 0)
           throw new Error(result.stderr.toString().trim() || "cargo metadata failed");

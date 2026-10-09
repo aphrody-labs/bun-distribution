@@ -552,7 +552,26 @@
         "triggers": [
           "atLogon"
         ],
+        "principal": "user",
+        "desktop": true
+      },
+      {
+        "host": "local",
+        "kind": "scheduledTask",
+        "name": "hub-tunnel",
+        "path": "\\Aphrody\\Native\\",
+        "triggers": [
+          "atLogon"
+        ],
         "principal": "user"
+      },
+      {
+        "host": "local",
+        "kind": "scheduledTask",
+        "name": "Net Env Probe",
+        "triggers": [],
+        "principal": "user",
+        "periodic": true
       },
       {
         "host": "local",

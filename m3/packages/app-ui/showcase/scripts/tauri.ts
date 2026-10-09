@@ -102,7 +102,11 @@ export function showcaseHostPlan(
 async function runSidecar(): Promise<void> {
   let triple = process.env.APHRODY_M3_TAURI_TARGET;
   if (!triple) {
-    const rust = Bun.spawn(["rustc", "-vV"], { stdout: "pipe", stderr: "inherit" });
+    const rust = Bun.spawn(["rustc", "-vV"], {
+      windowsHide: true,
+      stdout: "pipe",
+      stderr: "inherit",
+    });
     const output = await new Response(rust.stdout).text();
     if ((await rust.exited) !== 0) throw new Error("Cannot qualify the installed Rust host triple");
     triple = output.match(/^host: (.+)$/m)?.[1];
@@ -110,7 +114,12 @@ async function runSidecar(): Promise<void> {
   if (!triple) throw new Error("Missing native target triple");
   const command = sidecarCommand(triple);
   await mkdir(SIDECAR_STAGING, { recursive: true });
-  const child = Bun.spawn(command, { cwd: SHOWCASE_ROOT, stdout: "inherit", stderr: "inherit" });
+  const child = Bun.spawn(command, {
+    windowsHide: true,
+    cwd: SHOWCASE_ROOT,
+    stdout: "inherit",
+    stderr: "inherit",
+  });
   const code = await child.exited;
   if (code !== 0) throw new Error(`Native API sidecar compilation failed with exit ${code}`);
   // The desktop resolves its sidecar beside its own executable. Metadata runs through the same
@@ -125,7 +134,7 @@ async function runSidecar(): Promise<void> {
       "--manifest-path",
       resolve(DESKTOP_ROOT, "Cargo.toml"),
     ],
-    { cwd: APHRODY_ROOT, stdout: "pipe", stderr: "inherit" },
+    { windowsHide: true, cwd: APHRODY_ROOT, stdout: "pipe", stderr: "inherit" },
   );
   const output = await new Response(metadata.stdout).text();
   if ((await metadata.exited) !== 0)

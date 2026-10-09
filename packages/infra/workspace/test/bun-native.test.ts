@@ -47,10 +47,7 @@ test("SDK staging resolves transitive source dependencies without copying runtim
       if (value !== 42) throw new Error("wrong staged dependency result");
     `,
       ],
-      {
-        stdout: "pipe",
-        stderr: "pipe",
-      },
+      { windowsHide: true, stdout: "pipe", stderr: "pipe" },
     );
     expect(child.exitCode).toBe(0);
     expect(child.stderr.toString()).toBe("");
@@ -66,6 +63,7 @@ test("SDK staging resolves transitive source dependencies without copying runtim
 
 async function run(args: string[], env = process.env) {
   const child = Bun.spawn([process.execPath, builder, ...args], {
+    windowsHide: true,
     env,
     stdout: "pipe",
     stderr: "pipe",
@@ -128,6 +126,7 @@ async function fixture() {
     ],
   ]) {
     const result = Bun.spawnSync(["git", "-C", root, ...args], {
+      windowsHide: true,
       stdout: "ignore",
       stderr: "pipe",
     });
@@ -257,6 +256,7 @@ test.skipIf(process.platform !== "linux")(
     const child = Bun.spawn(
       [process.execPath, builder, `--root=${root}`, "--debug", "--offline", "--unlocked"],
       {
+        windowsHide: true,
         env: {
           ...process.env,
           PATH: binaryDirectory + ":" + process.env.PATH,
@@ -462,6 +462,7 @@ test.skipIf(!nativeRoot)(
     `,
         ],
         {
+          windowsHide: true,
           cwd: temporary,
           env: {
             ...process.env,

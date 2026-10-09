@@ -75,7 +75,7 @@ describe("smoke", () => {
     if (process.platform === "win32") {
       const compiled = Bun.spawnSync(
         [process.execPath, "build", "--compile", script(), "--outfile", wrapper],
-        { stdout: "pipe", stderr: "pipe" },
+        { windowsHide: true, stdout: "pipe", stderr: "pipe" },
       );
       expect(compiled.stderr.toString()).not.toContain("error");
     } else {

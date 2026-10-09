@@ -45,6 +45,7 @@ export async function runPowerShellSyntax(args: string[]): Promise<number> {
   const child = Bun.spawn(
     [executable(selectedRuntime), "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", parser],
     {
+      windowsHide: true,
       cwd: root,
       env: { ...Bun.env, APHRODY_POWERSHELL_ROOT: root },
       stdout: "pipe",

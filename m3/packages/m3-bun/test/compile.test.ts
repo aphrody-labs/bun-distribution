@@ -84,6 +84,7 @@ describe("compileApp: one executable that serves the UI and the API", () => {
     );
 
     const version = Bun.spawnSync([report.outfile, "--version"], {
+      windowsHide: true,
       stdout: "pipe",
     });
     expect(version.stdout.toString().trim()).toMatch(/^hello-m3 1\.2\.3 \([0-9a-f]{16}\)$/);
@@ -111,6 +112,7 @@ describe("compileApp: one executable that serves the UI and the API", () => {
     const { outfile } = await compileApp({ dir });
     const port = freePort();
     const server = Bun.spawn([outfile], {
+      windowsHide: true,
       env: { ...process.env, PORT: String(port) },
       stdout: "ignore",
       stderr: "ignore",
@@ -128,6 +130,7 @@ describe("compileApp: one executable that serves the UI and the API", () => {
       }
       expect(
         Bun.spawnSync([outfile, "--healthcheck"], {
+          windowsHide: true,
           env: { ...process.env, PORT: String(port) },
         }).exitCode,
       ).toBe(0);
@@ -137,6 +140,7 @@ describe("compileApp: one executable that serves the UI and the API", () => {
     }
     expect(
       Bun.spawnSync([outfile, "--healthcheck"], {
+        windowsHide: true,
         env: { ...process.env, PORT: String(freePort()) },
       }).exitCode,
     ).toBe(1);
@@ -159,11 +163,13 @@ export const bun = defineM3Bun({ api: "src/api.ts", compile: { bytecode: false }
     expect(withBytecode.bytes).toBeGreaterThan(plain.bytes);
     expect(
       Bun.spawnSync([plain.outfile, "--version"], {
+        windowsHide: true,
         stdout: "pipe",
       }).stdout.toString(),
     ).toContain("hello-m3 1.2.3");
     expect(
       Bun.spawnSync([withBytecode.outfile, "--version"], {
+        windowsHide: true,
         stdout: "pipe",
       }).stdout.toString(),
     ).toContain("hello-m3 1.2.3");

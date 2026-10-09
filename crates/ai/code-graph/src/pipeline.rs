@@ -7,6 +7,7 @@
 //! rewrites an identical graph, and an interrupted run resumes at the files still missing a
 //! cache row.
 
+use aphrody_proc::NoWindow as _;
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
@@ -67,7 +68,7 @@ pub fn absolute_root(root: &Path) -> PathBuf {
 /// `git rev-parse HEAD` of `root`, when it is a Git checkout.
 #[must_use]
 pub fn head_commit(root: &Path) -> Option<String> {
-    let out = std::process::Command::new("git")
+    let out = std::process::Command::new("git").no_window()
         .arg("-C")
         .arg(root)
         .args(["rev-parse", "HEAD"])

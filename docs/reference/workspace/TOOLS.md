@@ -162,7 +162,7 @@ Pour dbfr/Shenron, le dossier synchronisé Google Drive conserve corpus/poids et
 | `get_os_info` | Returns OS version info (ProductName, EditionId, DisplayVersion, BuildNumber, UBR, InstallationType, OSArchitecture, MachineName, UserName) as JSON. |
 | `get_registry_value` | Reads a registry value. Path uses PowerShell-style hive prefixes (HKCU:\, HKLM:\, HKCR:\, HKU:\, HKCC:\). |
 | `get_system_profile` | Récupère le profil système complet pour vérifier l'état d'optimisation du poste. |
-| `git_ingest` | Ingest any Git repository or directory into a prompt-ready LLM digest matching https://gitingest.com/llms.txt (token estimation, ASCII tree, delimited file contents) |
+| `git_ingest` | Local directory ingestion moved to the `git_ingest` tool of `bun mcp` (Bun fork, after `bun mcp install`); this tool only returns GIT_INGEST_LOCAL_MOVED |
 | `github_branches` | List local and remote-tracking branches (local first, then by name) with upstream and ahead/behind for local branches; filtered and paginated, 50 per page by default |
 | `github_status` | Inspect current branch, ahead/behind tracking, modified/untracked files and recent commits for a Git repository |
 | `github_tree` | List tree entries (blobs, trees, sizes) at a specific Git reference or path |

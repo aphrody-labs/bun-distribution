@@ -155,6 +155,7 @@ describe("lambda", () => {
         },
       });
       await using proc = Bun.spawn({
+        windowsHide: true,
         cmd: [process.execPath, runtime],
         cwd: task,
         env: {

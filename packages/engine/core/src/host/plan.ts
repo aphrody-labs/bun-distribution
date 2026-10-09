@@ -405,7 +405,9 @@ function unitSteps(
       };
       if (hub.workspace !== dir || hub.branch !== "main")
         throw new Error("A2A fleet workspace and unit must agree on the dedicated main checkout");
-      const revision = Bun.spawnSync(["git", "-C", repoRoot, "rev-parse", "HEAD"]);
+      const revision = Bun.spawnSync(["git", "-C", repoRoot, "rev-parse", "HEAD"], {
+        windowsHide: true,
+      });
       const sha = revision.stdout.toString().trim();
       if (revision.exitCode !== 0 || !/^[0-9a-f]{40}$/.test(sha))
         throw new Error("Cannot qualify the A2A workspace source revision");
@@ -818,6 +820,7 @@ export function renderPlan(
 /** Default runner: `aphrody infra ssh exec` (the Rust SSH operator), one finite deadline per command. */
 export const sshRunner: Runner = async (host, command) => {
   const proc = Bun.spawn(["aphrody", "infra", "ssh", "exec", "--host", host, "--", command], {
+    windowsHide: true,
     env: { ...process.env, APHRODY_SSH_COMMAND_TIMEOUT_SECS: "180" },
     stdout: "pipe",
     stderr: "pipe",

@@ -322,7 +322,11 @@ test("remote receipts use native Bun atomic writes and expose only whitelisted p
       expect(command.endsWith("'")).toBe(true);
       // Undo the single-quote shell escaping so the remote script runs without a POSIX shell.
       const script = command.slice(prefix.length, -1).replaceAll("'\\''", "'");
-      const child = Bun.spawn([process.execPath, "-e", script], { stdout: "pipe", stderr: "pipe" });
+      const child = Bun.spawn([process.execPath, "-e", script], {
+        windowsHide: true,
+        stdout: "pipe",
+        stderr: "pipe",
+      });
       const [output, error, code] = await Promise.all([
         new Response(child.stdout).text(),
         new Response(child.stderr).text(),

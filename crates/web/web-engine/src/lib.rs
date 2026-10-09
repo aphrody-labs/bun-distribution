@@ -4,6 +4,7 @@
 //! [`worker_main`] entry points of this library, reached through the `aphrody` multi-call
 //! binary (invocation name `aphrody-web` / `aphrody-web-worker`).
 
+use aphrody_proc::NoWindow as _;
 use std::{ffi::OsString, sync::Arc, time::Instant};
 
 mod crawl;
@@ -263,14 +264,14 @@ fn multicall_command(name: &str) -> anyhow::Result<std::process::Command> {
     #[cfg(unix)]
     {
         use std::os::unix::process::CommandExt as _;
-        let mut command = std::process::Command::new(exe);
+        let mut command = std::process::Command::new(exe).no_window();
         command.arg0(name);
         Ok(command)
     }
     #[cfg(not(unix))]
     {
         let sibling = exe.with_file_name(format!("{name}.exe"));
-        Ok(std::process::Command::new(if sibling.exists() { sibling } else { exe }))
+        Ok(std::process::Command::new(if sibling.exists() { sibling } else { exe }).no_window())
     }
 }
 

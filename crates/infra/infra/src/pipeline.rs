@@ -3,6 +3,7 @@
 //!
 //! Orchestrates declared Rust and Bun validation stages from tools/config/pipeline.json.
 
+use aphrody_proc::NoWindow as _;
 use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -186,7 +187,7 @@ pub fn execute_step(workspace_root: &Path, step: &PipelineStep) -> StepExecution
         },
     };
 
-    let mut cmd = Command::new(step.runner.program());
+    let mut cmd = Command::new(step.runner.program()).no_window();
     cmd.args(&step.command);
     cmd.current_dir(&repo_dir);
 

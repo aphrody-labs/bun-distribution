@@ -79,6 +79,8 @@ mod site_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod self_cmd;
 #[cfg(not(target_arch = "wasm32"))]
+mod self_install;
+#[cfg(not(target_arch = "wasm32"))]
 mod self_update;
 #[cfg(all(not(target_arch = "wasm32"), feature = "train"))]
 mod train_cmd;
@@ -722,6 +724,35 @@ pub(crate) enum SelfAction {
         /// Return to the previously installed release.
         #[arg(long)]
         rollback: bool,
+    },
+    /// The single install path: canonical layout (bin/lib/share), PATH, multi-call links,
+    /// versioned manifest with checksums, former installations removed, then
+    /// `aphrody infra boot apply --host local` when available.
+    Install {
+        /// Binary to install; defaults to the running one.
+        #[arg(long)]
+        bin: Option<PathBuf>,
+        /// Install root; defaults to the canonical per-user root.
+        #[arg(long)]
+        root: Option<PathBuf>,
+        /// `native` (default) or `wasm` (the published wasm32 artifact).
+        #[arg(long, value_enum, default_value = "native")]
+        target: self_install::InstallTarget,
+        /// `local` (default), or a remote host reached through `aphrody infra ssh`.
+        #[arg(long, value_enum, default_value = "local")]
+        host: self_install::InstallHost,
+        /// Download server base URL (default https://downloads.aphrody.com).
+        #[arg(long)]
+        url: Option<String>,
+        /// Skip `aphrody infra boot apply`.
+        #[arg(long)]
+        no_boot: bool,
+        /// Keep former installation directories.
+        #[arg(long)]
+        keep_legacy: bool,
+        /// Plan only.
+        #[arg(long)]
+        dry_run: bool,
     },
     /// Inventory dev toolchain (rustup, cargo, git, zigbuild, wasm targets).
     /// With `--check`, prints the inventory and exits non-zero on missing
@@ -1490,6 +1521,20 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
                 self_update::UpdateCommand { base, components, check, force, rollback }
                     .execute(ctx)
                     .await?;
+            },
+            SelfAction::Install { bin, root, target, host, url, no_boot, keep_legacy, dry_run } => {
+                self_install::InstallCommand {
+                    bin,
+                    root,
+                    target,
+                    host,
+                    url,
+                    no_boot,
+                    keep_legacy,
+                    dry_run,
+                }
+                .execute(ctx)
+                .await?;
             },
             SelfAction::Bootstrap { check } => {
                 self_cmd::BootstrapCommand { check }.execute(ctx).await?;

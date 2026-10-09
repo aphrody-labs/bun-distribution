@@ -79,6 +79,7 @@ async function fixture() {
     const child = Bun.spawn(
       [process.execPath, join(import.meta.dir, "../src/build-factory.ts"), ...args],
       {
+        windowsHide: true,
         env: {
           ...process.env,
           APHRODY_ROOT: root,

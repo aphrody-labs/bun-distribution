@@ -22,6 +22,7 @@ builtins = [
 ]
 
 [dependencies]
+aphrody-proc = { workspace = true, features = ["tokio"] }
 aphrody-subsystem = { workspace = true }
 aphrody-kernel-client = { workspace = true }
 aphrody-toolchains = { workspace = true }

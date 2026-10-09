@@ -166,7 +166,7 @@ test("discovery uses actual root workspace members, exclusions and overlapping p
     expect(plan.checks.filter((check) => check.name.startsWith("@owner/app:"))).toHaveLength(5);
     const child = Bun.spawn(
       ["bun", join(import.meta.dir, "../src/monorepo-gate.ts"), "--root", root, "--plan", "--json"],
-      { stdout: "pipe", stderr: "pipe" },
+      { windowsHide: true, stdout: "pipe", stderr: "pipe" },
     );
     const [exitCode, output] = await Promise.all([child.exited, new Response(child.stdout).text()]);
     expect(exitCode).toBe(1);

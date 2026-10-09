@@ -58,6 +58,7 @@ export async function runUiDedupManifest(args: string[]): Promise<number> {
   const at = (...parts: string[]) => join(root, ...parts);
   const date = new Date().toISOString().split("T")[0];
   const head = Bun.spawnSync(["git", "rev-parse", "HEAD"], {
+    windowsHide: true,
     cwd: root,
     stdout: "pipe",
     stderr: "pipe",

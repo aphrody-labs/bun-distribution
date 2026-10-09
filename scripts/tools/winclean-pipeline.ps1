@@ -165,7 +165,7 @@ if (-not $SkipIndex) {
     if (Test-Path $fdPath) {
         if (-not (Test-Path "C:\tmp")) { New-Item -ItemType Directory -Path "C:\tmp" -Force | Out-Null }
         Write-Host "  -> Refreshing in-memory C:\ index in background..." -ForegroundColor Gray
-        Start-Process -FilePath "cmd.exe" -ArgumentList "/c `"$fdPath -c never -H -I -a --base-directory C:\ . > C:\tmp\disk_c_index.txt`"" -WindowStyle Hidden
+        Start-Process -FilePath $fdPath -ArgumentList @('-c', 'never', '-H', '-I', '-a', '--base-directory', 'C:\', '.') -RedirectStandardOutput 'C:\tmp\disk_c_index.txt' -NoNewWindow
     }
     Write-Host "  -> Search indexer configured with zero-backoff" -ForegroundColor Green
 }

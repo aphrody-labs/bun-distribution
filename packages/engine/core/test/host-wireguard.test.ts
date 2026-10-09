@@ -195,7 +195,12 @@ test("wg-client refuses to write a conf into the repository and writes it outsid
         "--out",
         out,
       ],
-      { stdout: "pipe", stderr: "pipe", env: { ...process.env, YOLO_ROOT: repo } },
+      {
+        windowsHide: true,
+        stdout: "pipe",
+        stderr: "pipe",
+        env: { ...process.env, YOLO_ROOT: repo },
+      },
     );
     return { code: await p.exited, err: await new Response(p.stderr).text() };
   };
@@ -364,7 +369,10 @@ test("the omar account files: no key invented, root-owned key file, one sudoers 
   ]);
   const visudo = Bun.which("visudo");
   if (visudo)
-    expect(Bun.spawnSync([visudo, "-c", "-f", join(root, "sudoers/omar")]).exitCode).toBe(0);
+    expect(
+      Bun.spawnSync([visudo, "-c", "-f", join(root, "sudoers/omar")], { windowsHide: true })
+        .exitCode,
+    ).toBe(0);
   const sshd = readFileSync(join(root, "ssh/omar-sshd.conf"), "utf8");
   for (const line of [
     "Match User omar",

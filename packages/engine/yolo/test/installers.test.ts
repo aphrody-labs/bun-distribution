@@ -32,7 +32,13 @@ const nativeAvailable = existsSync(join(artifact, "manifest.json"));
 let sequence = 0;
 
 function checked(command: string[], cwd: string) {
-  const result = Bun.spawnSync(command, { cwd, stdout: "pipe", stderr: "pipe", timeout: 90_000 });
+  const result = Bun.spawnSync(command, {
+    windowsHide: true,
+    cwd,
+    stdout: "pipe",
+    stderr: "pipe",
+    timeout: 90_000,
+  });
   if (result.exitCode !== 0) throw new Error(result.stderr.toString());
 }
 
@@ -160,6 +166,7 @@ function run(entry: Fixture, installer: Installer) {
       ]
     : [installer.shell, join(root, "packages/engine/yolo", installer.script)];
   return Bun.spawnSync(args, {
+    windowsHide: true,
     cwd: entry.dir,
     env: {
       PATH: process.platform === "win32" ? process.env["PATH"] : "/usr/bin:/bin",
@@ -286,12 +293,16 @@ for (const installer of installers) {
         checkTempEmpty(entry.temp);
         const installed = join(entry.home, "bin", installer.executable);
         const env = { ...process.env, YOLO_HOME: entry.home, YOLO_RUNTIME_HOME: entry.runtime };
-        const rollback = Bun.spawnSync([installed, "runtime", "rollback"], { env });
+        const rollback = Bun.spawnSync([installed, "runtime", "rollback"], {
+          windowsHide: true,
+          env,
+        });
         expect(rollback.exitCode).toBe(0);
         expect(readlinkSync(join(entry.runtime, hostTarget(), "current"))).toBe("old-artifact");
-        expect(Bun.spawnSync([installed, "runtime", "info", "--installed"], { env }).exitCode).toBe(
-          0,
-        );
+        expect(
+          Bun.spawnSync([installed, "runtime", "info", "--installed"], { windowsHide: true, env })
+            .exitCode,
+        ).toBe(0);
       },
       20_000,
     );

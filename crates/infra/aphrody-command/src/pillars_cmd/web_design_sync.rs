@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Google reference acquisition and M3 generation through the existing native owners.
 
+use aphrody_proc::NoWindow as _;
 use aphrody_rag::home::{HomeLayout, HomeScope};
 use clap::Args;
 use miette::{IntoDiagnostic, miette};
@@ -204,7 +205,7 @@ fn package_commands(output: &Path) -> Vec<Vec<String>> {
 async fn apply_packages(workspace: &Path, output: &Path) -> miette::Result<Vec<Value>> {
     let mut steps = Vec::new();
     for arguments in package_commands(output) {
-        let mut child = tokio::process::Command::new(if cfg!(windows) { "bun.exe" } else { "bun" });
+        let mut child = tokio::process::Command::new(if cfg!(windows) { "bun.exe" } else { "bun" }).no_window();
         child.args(&arguments).current_dir(workspace).kill_on_drop(true);
         let result = tokio::time::timeout(Duration::from_secs(900), child.output()).await;
         let (ok, code, detail) = match result {

@@ -36,7 +36,7 @@ test("state reports byte duplicates, missing Cargo dependencies and malformed li
         "fixture",
       ],
     ]) {
-      expect(Bun.spawnSync(["git", "-C", root, ...args]).exitCode).toBe(0);
+      expect(Bun.spawnSync(["git", "-C", root, ...args], { windowsHide: true }).exitCode).toBe(0);
     }
     const state = await scanRepository(root);
     expect(state.bun.packages).toHaveLength(1);

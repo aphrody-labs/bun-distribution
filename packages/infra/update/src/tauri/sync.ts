@@ -430,10 +430,7 @@ async function npmTimes(name: string): Promise<Record<string, string>> {
 function lsRemote(repository: string, ref: string): string | null {
   const result = Bun.spawnSync(
     ["git", "ls-remote", `https://github.com/${repository}.git`, `refs/heads/${ref}`],
-    {
-      stdout: "pipe",
-      stderr: "pipe",
-    },
+    { windowsHide: true, stdout: "pipe", stderr: "pipe" },
   );
   if (result.exitCode !== 0) return null;
   return new TextDecoder().decode(result.stdout).split(/\s+/)[0] || null;
@@ -468,6 +465,7 @@ async function crateFile(crate: string, version: string, file: string): Promise<
 function run(command: string[], cwd: string): { ok: boolean; output: string } {
   console.log(`[tauri-sync] ${command.join(" ")}`);
   const result = Bun.spawnSync(command, {
+    windowsHide: true,
     cwd,
     stdout: "pipe",
     stderr: "pipe",

@@ -26,7 +26,7 @@ const config: DocumentationConfig = {
 
 function fixture(): { root: string; put: (path: string, content: string) => void } {
   const root = mkdtempSync(join(tmpdir(), "aphrody-documentation-"));
-  execFileSync("git", ["init", "--quiet", root]);
+  execFileSync("git", ["init", "--quiet", root], { windowsHide: true });
   const put = (path: string, content: string) => {
     mkdirSync(dirname(join(root, path)), { recursive: true });
     writeFileSync(join(root, path), content);
@@ -126,14 +126,17 @@ describe("unified documentation", () => {
       ["docs-gen", "--help"],
       ["docs", "check", "-h"],
     ]) {
-      const result = Bun.spawnSync([
-        process.execPath,
-        join(import.meta.dir, "../../../../packages/engine/yolo/src/index.ts"),
-        "ops",
-        ...args,
-        "--root",
-        join(tmpdir(), "nonexistent-docs-help-root"),
-      ]);
+      const result = Bun.spawnSync(
+        [
+          process.execPath,
+          join(import.meta.dir, "../../../../packages/engine/yolo/src/index.ts"),
+          "ops",
+          ...args,
+          "--root",
+          join(tmpdir(), "nonexistent-docs-help-root"),
+        ],
+        { windowsHide: true },
+      );
       expect(result.exitCode).toBe(0);
       expect(result.stdout.toString()).toContain("--skip-ecosystem");
       expect(result.stderr.toString()).toBe("");

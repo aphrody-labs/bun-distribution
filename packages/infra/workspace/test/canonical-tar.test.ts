@@ -81,6 +81,7 @@ beforeAll(async () => {
   for (const launcher of launchers) {
     try {
       const oracle = Bun.spawnSync([...launcher, "-I", "-c", ORACLE, directory], {
+        windowsHide: true,
         stderr: "pipe",
       });
       if (oracle.exitCode === 0) return;

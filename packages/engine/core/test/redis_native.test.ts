@@ -165,7 +165,7 @@ describe.skipIf(Bun.which("redis-server") === null)(
           "--dir",
           directory,
         ],
-        { stdout: "ignore", stderr: "ignore" },
+        { windowsHide: true, stdout: "ignore", stderr: "ignore" },
       );
       const deadline = Date.now() + 5_000;
       while (Date.now() < deadline) {

@@ -65,14 +65,18 @@ describe("generated files", () => {
 
   test("embedded files leave out the server layers and the manifest", async () => {
     const files = (await embeddedFiles(outDir)).map(([path]) => path);
-    expect(files.some(path => path.startsWith("client/boot-"))).toBe(true);
+    expect(files.some((path) => path.startsWith("client/boot-"))).toBe(true);
     expect(files).toContain("static/hello.txt");
-    expect(files.filter(path => path.startsWith("server/") || path === "manifest.json")).toEqual([]);
+    expect(files.filter((path) => path.startsWith("server/") || path === "manifest.json")).toEqual(
+      [],
+    );
   });
 
   test("Dockerfile and server.js", () => {
     const dockerfile = renderDockerfile({ base: DOCKER_BASE_IMAGE, port: 3000 });
-    expect(dockerfile).toContain(`ARG BASE=ghcr.io/aphrody-labs/alpine:3.24-runtime\nFROM \${BASE}`);
+    expect(dockerfile).toContain(
+      `ARG BASE=ghcr.io/aphrody-labs/alpine:3.24-runtime\nFROM \${BASE}`,
+    );
     expect(dockerfile).toContain("COPY --chown=agent:agent dist ./dist");
     expect(dockerfile).toContain(`CMD ["bun", "server.js"]`);
     const server = renderDockerServer("C:\\m3\\host.ts", 3000);
@@ -122,6 +126,7 @@ describe("m3 compile", () => {
     expect(existsSync(outfile)).toBe(true);
 
     await using proc = Bun.spawn([outfile], {
+      windowsHide: true,
       cwd: tmp.dir,
       env: { ...process.env, PORT: "0", HOSTNAME: "127.0.0.1" },
       stdout: "pipe",
@@ -155,7 +160,11 @@ describe("m3 docker", () => {
     expect(existsSync(join(contextDir, "dist", "manifest.json"))).toBe(true);
     expect(existsSync(join(contextDir, "server-entry.ts"))).toBe(false);
     const server = await Bun.file(join(contextDir, "server.js")).text();
-    const specifiers = [...server.matchAll(/from\s*"([^"]+)"/g)].map(match => match[1]);
-    expect(specifiers.filter(specifier => !["path", "url", "node:path", "node:url"].includes(specifier))).toEqual([]);
+    const specifiers = [...server.matchAll(/from\s*"([^"]+)"/g)].map((match) => match[1]);
+    expect(
+      specifiers.filter(
+        (specifier) => !["path", "url", "node:path", "node:url"].includes(specifier),
+      ),
+    ).toEqual([]);
   }, 120_000);
 });

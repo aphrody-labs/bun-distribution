@@ -30,6 +30,7 @@ async function execute(
   signal.throwIfAborted();
   // Each invocation owns its process group, including Cargo/rustc descendants.
   const child = Bun.spawn(command, {
+    windowsHide: true,
     cwd,
     env,
     detached: process.platform !== "win32",
@@ -40,6 +41,7 @@ async function execute(
   const stop = () => {
     if (process.platform === "win32") {
       Bun.spawnSync(["taskkill", "/PID", String(child.pid), "/T", "/F"], {
+        windowsHide: true,
         stdout: "ignore",
         stderr: "ignore",
       });

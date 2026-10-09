@@ -181,6 +181,7 @@ export const M3_TOOLS: M3Tool[] = [
       ];
       if (fill) args.push("--fill", fill);
       const child = Bun.spawn({
+        windowsHide: true,
         cmd: args,
         stdout: "pipe",
         stderr: "pipe",

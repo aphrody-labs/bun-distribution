@@ -30,7 +30,12 @@ export interface ExeBranding {
 const sha256Hex = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex");
 
 async function run(argv: string[], env: Record<string, string>): Promise<void> {
-  const proc = Bun.spawn(argv, { env: { ...process.env, ...env }, stdout: "pipe", stderr: "pipe" });
+  const proc = Bun.spawn(argv, {
+    windowsHide: true,
+    env: { ...process.env, ...env },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),

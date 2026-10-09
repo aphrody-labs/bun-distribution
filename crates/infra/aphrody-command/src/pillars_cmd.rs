@@ -8,6 +8,7 @@
 //! - `aphrody infra` (Infrastructure orchestration, SSH, VPN & nodes)
 //! - `aphrody shell` (Nushell PTY session & Ratatui interface)
 
+use aphrody_proc::NoWindow as _;
 use clap::Subcommand;
 use miette::{IntoDiagnostic, miette};
 
@@ -270,7 +271,7 @@ fn settle_term(term: &aphrody_term::AphrodyTerm, max: Duration) {
 
 fn bun_exec(script: &str, root: &std::path::Path, json: bool) -> miette::Result<()> {
     let bun = which::which("bun").unwrap_or_else(|_| std::path::PathBuf::from("bun"));
-    let mut cmd = std::process::Command::new(&bun);
+    let mut cmd = std::process::Command::new(&bun).no_window();
     cmd.arg("exec").arg(script).current_dir(root);
     if !json {
         let status =
@@ -321,7 +322,7 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
         },
         ShellAction::Start { args } => {
             let nu_path = which::which("nu").unwrap_or_else(|_| std::path::PathBuf::from("nu"));
-            let mut cmd = std::process::Command::new(&nu_path);
+            let mut cmd = std::process::Command::new(&nu_path).no_window();
             let root =
                 std::env::var("APHRODY_ROOT").map(std::path::PathBuf::from).unwrap_or_else(|_| {
                     std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
@@ -352,7 +353,7 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
             }
 
             let nu_path = which::which("nu").unwrap_or_else(|_| std::path::PathBuf::from("nu"));
-            let mut cmd = std::process::Command::new(&nu_path);
+            let mut cmd = std::process::Command::new(&nu_path).no_window();
             let code = if json { format!("{} | to json", pipeline) } else { pipeline };
             cmd.arg("-c").arg(&code);
             cmd.current_dir(&root);

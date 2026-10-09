@@ -24,7 +24,7 @@ const USAGE = `m3-os-themes <install|generate|uninstall> --target windows|gnome|
 install/uninstall only print the plan unless --apply is given. generate writes into --out (default ./m3-os-themes-out).`;
 
 const defaultExec: Exec = (cmd) =>
-  Bun.spawnSync(cmd, { stdio: ["inherit", "inherit", "inherit"] }).exitCode ?? 1;
+  Bun.spawnSync(cmd, { windowsHide: true, stdio: ["inherit", "inherit", "inherit"] }).exitCode ?? 1;
 
 function parse(argv: string[]): { cmd: string; flags: Record<string, string | boolean> } {
   const [cmd = "", ...rest] = argv;

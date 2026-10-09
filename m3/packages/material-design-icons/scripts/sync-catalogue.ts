@@ -19,7 +19,11 @@ const sizes = ["24", ...list("sizes")];
 const grades = list("grades"); // extra grades besides 0 (200, -25 appear as grad200 / gradN25)
 
 const git = (...a: string[]) => {
-  const r = Bun.spawnSync(["git", "-C", FORK, ...a], { stdout: "pipe", stderr: "pipe" });
+  const r = Bun.spawnSync(["git", "-C", FORK, ...a], {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   if (r.exitCode !== 0) throw new Error(`git ${a.join(" ")}: ${r.stderr.toString().trim()}`);
   return r.stdout.toString();
 };
@@ -90,12 +94,13 @@ for (let i = 0; i < oids.length; i += CHUNK) {
       "--filter=blob:none",
       "--stdin",
     ],
-    { stdin: new TextEncoder().encode(body), stdout: "pipe", stderr: "pipe" },
+    { windowsHide: true, stdin: new TextEncoder().encode(body), stdout: "pipe", stderr: "pipe" },
   );
   if (r.exitCode !== 0) throw new Error(`fetch chunk ${i / CHUNK}: ${r.stderr.toString().trim()}`);
 }
 git("config", "core.sparseCheckoutCone", "false");
 const set = Bun.spawnSync(["git", "-C", FORK, "sparse-checkout", "set", "--no-cone", "--stdin"], {
+  windowsHide: true,
   stdin: new TextEncoder().encode(patterns.join("\n") + "\n"),
   stdout: "pipe",
   stderr: "pipe",
@@ -105,6 +110,7 @@ if (set.exitCode !== 0) throw new Error(`sparse-checkout: ${set.stderr.toString(
 const missing = [...wanted].filter((p) => !existsSync(join(FORK, p)));
 if (missing.length > 0) {
   const w = Bun.spawnSync(["git", "-C", FORK, "checkout-index", "-f", "-q", "--stdin"], {
+    windowsHide: true,
     stdin: new TextEncoder().encode(missing.join("\n") + "\n"),
     stdout: "pipe",
     stderr: "pipe",

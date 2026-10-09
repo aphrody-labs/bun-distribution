@@ -159,7 +159,12 @@ async function measurePackage(
 
 async function measureApp(dir: string) {
   const started = performance.now();
-  const proc = Bun.spawnSync(["bun", "run", "build"], { cwd: dir, stdout: "pipe", stderr: "pipe" });
+  const proc = Bun.spawnSync(["bun", "run", "build"], {
+    windowsHide: true,
+    cwd: dir,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const outdir = join(dir, "dist");
   const out = {
     files: 0,

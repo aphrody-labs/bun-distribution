@@ -16,6 +16,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 if (-not $IsWindows) { throw 'This Infra startup adapter requires native Windows.' }
 $configurationPath = (Resolve-Path -LiteralPath $Config).Path
+Import-Module (Join-Path $PSScriptRoot 'AphrodyHiddenTask.psm1') -Force
 $schemaPath = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../tools/config/host/windows/aphrody-startup.schema.json'))
 $configurationText = Get-Content -LiteralPath $configurationPath -Raw
 if (-not (Test-Json -Json $configurationText -SchemaFile $schemaPath -ErrorAction Stop)) {
@@ -101,7 +102,7 @@ if ($RunService) {
         if ($Value.Length -gt 0 -and $Value -notmatch '[\s"]') { return $Value }
         return '"' + ([regex]::Replace([regex]::Replace($Value, '(\\*)"', '$1$1\"'), '(\\+)$', '$1$1')) + '"'
     }
-    $child = Start-Process -FilePath $service.executable -ArgumentList (($serviceArguments | ForEach-Object { ConvertTo-NativeArgument $_ }) -join ' ') -WorkingDirectory $settings.root -WindowStyle Hidden -PassThru
+    $child = Start-Process -FilePath $service.executable -ArgumentList (($serviceArguments | ForEach-Object { ConvertTo-NativeArgument $_ }) -join ' ') -WorkingDirectory $settings.root -NoNewWindow -PassThru
     try {
         $deadline = [DateTime]::UtcNow.AddSeconds(30)
         $ownedListeners = @()
@@ -174,7 +175,8 @@ foreach ($row in $plan) {
     if (-not $PSCmdlet.ShouldProcess("$taskPath$($row.id)", 'Register declared native startup task')) { continue }
     if ($configurationPath.Contains('"') -or $PSCommandPath.Contains('"')) { throw 'Task script/config path contains a quote.' }
     $taskArguments = '-NoProfile -NonInteractive -WindowStyle Hidden -File "{0}" -Config "{1}" -RunService "{2}"' -f $PSCommandPath, $configurationPath, $row.id
-    $action = New-ScheduledTaskAction -Execute $powerShellPath -Argument $taskArguments -WorkingDirectory $settings.root
+    # Interactive principals get the console hosted by `conhost --headless`; SYSTEM/S4U have no window station.
+    $action = New-AphrodyTaskAction -Execute $powerShellPath -Argument $taskArguments -WorkingDirectory $settings.root -Desktop:($row.principal.logonType -eq 'Interactive')
     $trigger = if ($row.trigger.kind -eq 'boot') {
         New-ScheduledTaskTrigger -AtStartup
     } else {

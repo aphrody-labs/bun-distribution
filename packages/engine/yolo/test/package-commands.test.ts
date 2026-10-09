@@ -28,6 +28,7 @@ function owner(name: keyof typeof PACKAGE_COMMANDS, source: string): string {
 
 function yolo(...args: string[]) {
   const result = Bun.spawnSync([process.execPath, entry, ...args], {
+    windowsHide: true,
     cwd: root,
     env: { ...process.env, NO_COLOR: "1" },
     stdout: "pipe",

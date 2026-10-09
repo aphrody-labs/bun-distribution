@@ -99,6 +99,7 @@ async function runNativePythonTool(tool: "uv" | "ruff", args: string[]): Promise
   }
   try {
     const child = Bun.spawn([executable, ...args], {
+      windowsHide: true,
       cwd: process.cwd(),
       env: process.env,
       stdio: ["inherit", "inherit", "inherit"],
@@ -309,6 +310,7 @@ async function main(): Promise<void> {
       if (sub === "dev") {
         console.log(`\x1b[1m\x1b[36m=== Launching Web Dev Server ===\x1b[0m`);
         const proc = Bun.spawn(["bun", "run", "dev"], {
+          windowsHide: true,
           cwd: webDir,
           stdout: "inherit",
           stderr: "inherit",
@@ -317,6 +319,7 @@ async function main(): Promise<void> {
       } else {
         console.log(`\x1b[1m\x1b[36m=== Building Web Frontend ===\x1b[0m`);
         const proc = Bun.spawn(["bun", "run", "build"], {
+          windowsHide: true,
           cwd: webDir,
           stdout: "inherit",
           stderr: "inherit",

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Windows WSL launcher, including invocation from the WSL guest.
 
+use aphrody_proc::NoWindow as _;
 use std::{
     io::{self, Read, Seek, SeekFrom},
     path::PathBuf,
@@ -41,7 +42,7 @@ fn launcher() -> io::Result<PathBuf> {
     }
     // Respect the configured automount root rather than assuming /mnt/c.
     let output = capture(
-        Command::new("wslpath").args(["-u", r"C:\Windows\System32\wsl.exe"]),
+        Command::new("wslpath").no_window().args(["-u", r"C:\Windows\System32\wsl.exe"]),
         Duration::from_secs(5),
     )?;
     let path = PathBuf::from(String::from_utf8_lossy(&output.stdout).trim());
@@ -112,7 +113,7 @@ pub(crate) fn capture(command: &mut Command, timeout: Duration) -> io::Result<Ou
 
 pub(crate) fn result(args: &[String]) -> serde_json::Value {
     let started = Instant::now();
-    match launcher().and_then(|path| capture(Command::new(path).args(args), TIMEOUT)) {
+    match launcher().and_then(|path| capture(Command::new(path).no_window().args(args), TIMEOUT)) {
         Ok(output) => serde_json::json!({
             "Success": output.status.success() && !output.timed_out && !output.truncated,
             "ExitCode": if output.timed_out { 124 } else { output.status.code().unwrap_or(-1) },

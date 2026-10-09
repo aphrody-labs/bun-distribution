@@ -52,7 +52,7 @@ async function fetchRendered(
 ): Promise<Record<string, unknown>> {
   const args = [webBinary(), "fetch", url, "--dump", "artifact", "--quiet", "--timeout", "90"];
   if (profile === "stealth" || profile === "max") args.push("--stealth");
-  const proc = Bun.spawn({ cmd: args, stdout: "pipe", stderr: "pipe" });
+  const proc = Bun.spawn({ windowsHide: true, cmd: args, stdout: "pipe", stderr: "pipe" });
   const [code, output, error] = await Promise.all([
     proc.exited,
     new Response(proc.stdout).text(),

@@ -233,6 +233,7 @@ describe("runCli", () => {
     const port = probe.port;
     await probe.stop(true);
     const server = Bun.spawn([outfile], {
+      windowsHide: true,
       env: { ...process.env, PORT: String(port) },
       stdout: "ignore",
       stderr: "ignore",

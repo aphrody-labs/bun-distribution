@@ -111,7 +111,7 @@ const manifest = {
 
 type CommandResult = { code: number; stdout: string; stderr: string };
 async function run(args: string[]): Promise<CommandResult> {
-  const child = Bun.spawn(args, { stdout: "pipe", stderr: "pipe" });
+  const child = Bun.spawn(args, { windowsHide: true, stdout: "pipe", stderr: "pipe" });
   const [stdout, stderr] = await Promise.all([
     new Response(child.stdout).text(),
     new Response(child.stderr).text(),

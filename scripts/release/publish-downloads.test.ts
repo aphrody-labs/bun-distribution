@@ -152,6 +152,8 @@ describe("publish-downloads", () => {
     expect(Object.keys(cfg.assets)).toEqual([
       "install.sh",
       "install.ps1",
+      "install-full.sh",
+      "install-full.ps1",
       "pet.webp",
       "icon.svg",
     ]);

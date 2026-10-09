@@ -39,6 +39,7 @@ export interface StagedEntry {
 
 async function run(argv: string[], cwd = repo, env: Record<string, string> = {}): Promise<string> {
   const proc = Bun.spawn(argv, {
+    windowsHide: true,
     cwd,
     stdout: "pipe",
     stderr: "pipe",

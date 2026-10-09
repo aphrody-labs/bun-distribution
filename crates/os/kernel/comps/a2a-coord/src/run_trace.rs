@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Launcher evidence; observed Git heads are never commit authorship evidence.
+use aphrody_proc::NoWindow as _;
 use chrono::Utc;
 use serde_json::{Value, json};
 use std::{
@@ -15,7 +16,7 @@ pub(crate) struct RunTrace {
 }
 
 fn git(root: &Path, args: &[&str]) -> Option<String> {
-    let output = Command::new("git").arg("-C").arg(root).args(args).output().ok()?;
+    let output = Command::new("git").no_window().arg("-C").arg(root).args(args).output().ok()?;
     output.status.success().then(|| String::from_utf8_lossy(&output.stdout).trim().to_owned())
 }
 

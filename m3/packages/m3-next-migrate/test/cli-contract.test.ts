@@ -6,7 +6,11 @@ import { join, resolve } from "node:path";
 
 const cli = resolve(import.meta.dir, "../src/cli.ts");
 async function run(args: string[]) {
-  const process = Bun.spawn([Bun.which("bun")!, cli, ...args], { stdout: "pipe", stderr: "pipe" });
+  const process = Bun.spawn([Bun.which("bun")!, cli, ...args], {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const [stdout, stderr, code] = await Promise.all([
     new Response(process.stdout).text(),
     new Response(process.stderr).text(),

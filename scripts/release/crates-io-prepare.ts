@@ -69,6 +69,7 @@ if (import.meta.main) {
   const apply = Bun.argv.includes("--apply");
   const meta: Meta = JSON.parse(
     Bun.spawnSync(["cargo", "metadata", "--format-version", "1", "--no-deps", "--offline"], {
+      windowsHide: true,
       cwd: ROOT,
       stdout: "pipe",
     }).stdout.toString(),

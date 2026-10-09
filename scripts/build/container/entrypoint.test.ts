@@ -27,6 +27,7 @@ async function fixture(executables: Record<string, string>, checkout = false) {
   if (checkout) await Bun.write(join(app, "bun.lock"), "fixture");
   return async (args: string[], extra: Record<string, string> = {}) => {
     const result = Bun.spawn(["/bin/sh", entrypoint, ...args], {
+      windowsHide: true,
       env: {
         ...process.env,
         PATH: `${bin}:/usr/bin:/bin`,

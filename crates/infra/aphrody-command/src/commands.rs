@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+use aphrody_proc::NoWindow as _;
 use std::{net::SocketAddr, path::PathBuf};
 
 use async_trait::async_trait;
@@ -414,7 +415,7 @@ impl AutoCommand {
             .bright_black()
         );
 
-        let status = std::process::Command::new(cmd)
+        let status = std::process::Command::new(cmd).no_window()
             .args(args)
             .status()
             .map_err(|e| miette::miette!("Erreur lors de l'appel au moteur {}: {}", cmd, e))?;
@@ -772,7 +773,7 @@ impl TerminalCommand for SshCommand {
         if is_openssh_config_dump(&self.args) {
             let ssh = which::which("ssh")
                 .map_err(|_| miette::miette!("OpenSSH `ssh` introuvable dans PATH"))?;
-            let status = std::process::Command::new(&ssh)
+            let status = std::process::Command::new(&ssh).no_window()
                 .args(&self.args)
                 .status()
                 .map_err(|e| miette::miette!("Échec du spawn `{}`: {e}", ssh.display()))?;
@@ -785,7 +786,7 @@ impl TerminalCommand for SshCommand {
         if let Ok(explicit) = std::env::var("APHRODY_SSH_BIN") {
             let p = std::path::PathBuf::from(explicit.trim());
             if !explicit.trim().is_empty() && p.exists() {
-                let status = std::process::Command::new(&p)
+                let status = std::process::Command::new(&p).no_window()
                     .args(&self.args)
                     .status()
                     .map_err(|e| miette::miette!("Échec du spawn `{}`: {e}", p.display()))?;

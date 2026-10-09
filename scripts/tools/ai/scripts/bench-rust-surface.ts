@@ -28,6 +28,7 @@ function runCommand(command: string, args: string[], cwd: string = REPO_ROOT): C
   const fullCommand = `${command} ${args.join(" ")}`;
   const start = performance.now();
   const proc = spawnSync(command, args, {
+    windowsHide: true,
     cwd,
     encoding: "utf8",
     shell: false,

@@ -9,6 +9,7 @@ const ESC = String.fromCharCode(27);
 const strip = (s: string) => s.replaceAll(new RegExp(`${ESC}\\[[0-9;]*m`, "g"), "").trimEnd();
 const run = async (args: string[]) => {
   const p = Bun.spawn(["bun", entry, ...args], {
+    windowsHide: true,
     cwd: root,
     stdout: "pipe",
     stderr: "pipe",
@@ -71,7 +72,9 @@ const out = [
 const helpFlag = (c: string) => (c === "desktop-runtime" ? "--help" : "-h");
 for (const c of commands)
   out.push("", `## yolo ${c} -h`, "", "```", await run([c, helpFlag(c)]), "```");
-const infra = Bun.spawnSync(["aphrody-infra", "--help"], { cwd: root }).stdout.toString().trimEnd();
+const infra = Bun.spawnSync(["aphrody-infra", "--help"], { windowsHide: true, cwd: root })
+  .stdout.toString()
+  .trimEnd();
 if (infra)
   out.push(
     "",

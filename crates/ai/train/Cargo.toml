@@ -23,7 +23,7 @@ registry = ["dep:aphrody-sql"]
 [dependencies]
 aphrody-models   = { workspace = true }
 aphrody-agent-home = { workspace = true }
-aphrody-proc     = { workspace = true }
+aphrody-proc     = { workspace = true, features = ["tokio"] }
 aphrody-rag-core = { workspace = true }
 aphrody-sql      = { workspace = true, features = ["postgres"], optional = true }
 # uv resolution (`$APHRODY_UV_BIN`, else PATH) owned by aphrody-os.

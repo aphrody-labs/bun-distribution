@@ -6,6 +6,7 @@
 //! definitions never leak between calls, output is returned as structured JSON (`to json`), and the
 //! timeout kills the process.
 
+use aphrody_proc::NoWindow as _;
 use std::{
     env,
     path::{Path, PathBuf},
@@ -74,7 +75,7 @@ impl NuShell {
             .as_ref()
             .ok_or_else(|| "`nu` is not installed (cargo install nu --locked)".to_owned())?;
         let dir = cwd.map_or_else(|| self.cwd.clone(), Path::to_path_buf);
-        let mut command = Command::new(binary);
+        let mut command = Command::new(binary).no_window();
         command
             .args(["--no-config-file", "--commands", code])
             .current_dir(&dir)

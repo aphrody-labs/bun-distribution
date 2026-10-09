@@ -36,7 +36,12 @@ export async function runDriveDaemon(args: string[]): Promise<number> {
     throw new Error(`serialized Cargo wrapper missing: ${cargoSerial}`);
   }
   const profile = debug ? "debug" : "release";
-  const rustc = Bun.spawnSync(["rustc", "-vV"], { cwd: repo, stdout: "pipe", stderr: "pipe" });
+  const rustc = Bun.spawnSync(["rustc", "-vV"], {
+    windowsHide: true,
+    cwd: repo,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   if (rustc.exitCode !== 0) throw new Error(new TextDecoder().decode(rustc.stderr));
   const host = /^host: (.+)$/m.exec(new TextDecoder().decode(rustc.stdout))?.[1];
   if (!host) throw new Error("rustc did not report its host target");
@@ -64,6 +69,7 @@ export async function runDriveDaemon(args: string[]): Promise<number> {
     ...(profile === "release" ? ["--release"] : []),
   ];
   const build = Bun.spawnSync(command, {
+    windowsHide: true,
     cwd: repo,
     env: {
       ...Bun.env,

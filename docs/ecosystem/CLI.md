@@ -6,13 +6,13 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 39 binaries with a clap surface, 1362 commands.
+Totals: 39 binaries with a clap surface, 1367 commands.
 
 ## aphrody
 
 ### `aphrody`
 
-Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 361 commands.
+Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 363 commands.
 
 - `aphrody pkg` — Unified native package indexes and verified content-addressed store. _(cfg: not(target_arch = "wasm32"))_
 - `aphrody site` — Native product site, sharing its catalog and renderer with HTTP and MCP. _(cfg: not(target_arch = "wasm32"))_
@@ -352,6 +352,8 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 361 comma
 - `aphrody completions` — Génère des completions shell pour bash / zsh / fish / pwsh / elvish
 - `aphrody self` — Installer / bootstrap natif (remplace les .ps1/.sh scripts/).
   - `aphrody self install-path` — Register the release binary on the user PATH (HKCU on Windows, symlink into $HOME/.local/bin on Unix) and link the former standalone binary names (aphrody-infra, aphrody-kernel, …) to it.
+  - `aphrody self update` — Update to the release published in latest.json (checksum-verified installer, rollback on failure).
+  - `aphrody self install` — The single install path: canonical layout (bin/lib/share), PATH, multi-call links, versioned manifest with checksums, former installations removed, then `aphrody infra boot apply --host local` when a…
   - `aphrody self bootstrap` — Inventory dev toolchain (rustup, cargo, git, zigbuild, wasm targets). With `--check`, prints the inventory and exits non-zero on missing required tools; without it, attempts `rustup target add` to fi…
 - `aphrody package` — Gestionnaire des CLI Aphrody — installer, mettre à jour et désinstaller. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody package catalog` — Afficher le binaire unique, les noms de binaires qu'il remplace et les outils gérés ailleurs.
@@ -422,7 +424,7 @@ Crate `aphrody-kernel`, parser `crates/os/kernel/core/src/cli.rs#Cli`, 6 command
 
 ### `aphrody infra`
 
-Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 465 commands.
+Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 468 commands.
 
 - `aphrody infra status` — Show target, repository and runtime state without mutation.
 - `aphrody infra inventory` — Run the existing deep resource inventory through the canonical Bun adapter.
@@ -435,6 +437,7 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 465 commands.
 - `aphrody infra reclaim` — Reclaim allowlisted disk/tmpfs space on a target; root-level steps run through sudo -n (tools/config/disk-reclaim.json).
 - `aphrody infra dev-env` — Validate or provision the declared development environment.
 - `aphrody infra service` — Manage cataloged services lifecycle (catalog, status, start, stop, restart, journal).
+- `aphrody infra boot` — Persistence at boot: plan, apply or audit the unified desired state (systemd, Docker, Windows tasks and services).
 - `aphrody infra probe` — Probe an HTTP or TCP endpoint health.
 - `aphrody infra pipeline` — Execute declared monorepo validation stages.
 - `aphrody infra serve` — Launch the embedded HTTP API daemon.
@@ -777,6 +780,8 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 465 commands.
   - `aphrody infra ssh completions` — Génère des completions shell pour bash / zsh / fish / pwsh / elvish
   - `aphrody infra ssh self` — Installer / bootstrap natif (remplace les .ps1/.sh scripts/).
     - `aphrody infra ssh self install-path` — Register the release binary on the user PATH (HKCU on Windows, symlink into $HOME/.local/bin on Unix) and link the former standalone binary names (aphrody-infra, aphrody-kernel, …) to it.
+    - `aphrody infra ssh self update` — Update to the release published in latest.json (checksum-verified installer, rollback on failure).
+    - `aphrody infra ssh self install` — The single install path: canonical layout (bin/lib/share), PATH, multi-call links, versioned manifest with checksums, former installations removed, then `aphrody infra boot apply --host local` when a…
     - `aphrody infra ssh self bootstrap` — Inventory dev toolchain (rustup, cargo, git, zigbuild, wasm targets). With `--check`, prints the inventory and exits non-zero on missing required tools; without it, attempts `rustup target add` to fi…
   - `aphrody infra ssh package` — Gestionnaire des CLI Aphrody — installer, mettre à jour et désinstaller. _(cfg: not(target_arch = "wasm32"))_
     - `aphrody infra ssh package catalog` — Afficher le binaire unique, les noms de binaires qu'il remplace et les outils gérés ailleurs.

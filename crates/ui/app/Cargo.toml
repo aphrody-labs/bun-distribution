@@ -44,6 +44,7 @@ custom-protocol = ["tauri/custom-protocol"]
 tauri-build = { workspace = true }
 
 [dependencies]
+aphrody-proc = { workspace = true }
 reqwest = { workspace = true }
 aphrody-app-server = { workspace = true }
 aphrody-capture = { workspace = true }

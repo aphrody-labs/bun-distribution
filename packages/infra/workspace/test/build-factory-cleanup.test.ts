@@ -89,7 +89,11 @@ for (const exitCode of [0, 17])
       'mkdir -p "$TMPDIR/nested"; printf payload > "$TMPDIR/nested/output"',
       `exit ${exitCode}`,
     ].join("\n");
-    const result = Bun.spawnSync(["bash", "-c", script], { stdout: "pipe", stderr: "pipe" });
+    const result = Bun.spawnSync(["bash", "-c", script], {
+      windowsHide: true,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
     expect(result.exitCode).toBe(exitCode);
     expect(result.stderr.toString()).not.toContain("not qualified");
     expect(readdirSync(f.transient)).toEqual([]);
@@ -109,7 +113,7 @@ linuxTest("scratch symlink is preserved without entering or deleting its target"
         ...factoryTransientShell(f.transient, f.docker, undefined, "/usr/bin/sudo"),
       ].join("\n"),
     ],
-    { stderr: "pipe" },
+    { windowsHide: true, stderr: "pipe" },
   );
   expect(result.exitCode).toBe(2);
   expect(readdirSync(retained)).toEqual(["data"]);
@@ -118,6 +122,7 @@ linuxTest("live background child keeps scratch until its handle terminates", asy
   const f = fixture();
   mkdirSync(f.transient);
   const child = Bun.spawn([process.execPath, "-e", "await Bun.sleep(60000)"], {
+    windowsHide: true,
     cwd: f.transient,
     stdout: "ignore",
     stderr: "ignore",
@@ -133,7 +138,7 @@ linuxTest("live background child keeps scratch until its handle terminates", asy
           'printf payload > "$TMPDIR/output"',
         ].join("\n"),
       ],
-      { stderr: "pipe" },
+      { windowsHide: true, stderr: "pipe" },
     );
     expect(result.exitCode).toBe(3);
     expect(result.stderr.toString()).toContain("retained for live process");
@@ -151,7 +156,7 @@ linuxTest("live background child keeps scratch until its handle terminates", asy
         ...factoryTransientShell(f.transient, f.docker, undefined, "/usr/bin/sudo"),
       ].join("\n"),
     ],
-    { stderr: "pipe" },
+    { windowsHide: true, stderr: "pipe" },
   );
   expect(result.exitCode).toBe(0);
   expect(readdirSync(f.transient)).toEqual([]);
@@ -174,7 +179,7 @@ linuxTest("Docker bind source preserves scratch without a host process handle", 
         ...factoryTransientShell(f.transient, f.docker, undefined, "/usr/bin/sudo"),
       ].join("\n"),
     ],
-    { stderr: "pipe" },
+    { windowsHide: true, stderr: "pipe" },
   );
   expect(result.exitCode).toBe(3);
   expect(readdirSync(f.transient)).toEqual(["keep"]);
@@ -193,6 +198,7 @@ for (const reference of ["environment", "queued argument"])
         ...(reference === "queued argument" ? [f.transient] : []),
       ],
       {
+        windowsHide: true,
         cwd: f.root,
         env: { ...process.env, ...(reference === "environment" ? { TMPDIR: f.transient } : {}) },
         stdout: "ignore",
@@ -209,7 +215,7 @@ for (const reference of ["environment", "queued argument"])
             ...factoryTransientShell(f.transient, f.docker, undefined, "/usr/bin/sudo"),
           ].join("\n"),
         ],
-        { stderr: "pipe" },
+        { windowsHide: true, stderr: "pipe" },
       );
       expect(result.exitCode).toBe(3);
       expect(readdirSync(f.transient)).toEqual(["keep"]);
@@ -232,7 +238,7 @@ linuxTest("SIGTERM empties joined scratch and preserves signal exit status", () 
         'kill -TERM "$$"',
       ].join("\n"),
     ],
-    { stderr: "pipe" },
+    { windowsHide: true, stderr: "pipe" },
   );
   expect(result.exitCode).toBe(143);
   expect(readdirSync(f.transient)).toEqual([]);
@@ -248,17 +254,20 @@ linuxTest("resource markers cannot impersonate an inherited heavy lock", async (
     APHRODY_FACTORY_RESOURCE: f.transient,
     APHRODY_FACTORY_LOCK_PATH: f.config.lockPath,
   };
-  const forged = Bun.spawnSync([process.execPath, owner, "--held"], { env });
+  const forged = Bun.spawnSync([process.execPath, owner, "--held"], { windowsHide: true, env });
   expect(forged.exitCode).toBe(1);
   const unrelated = Bun.spawn(
     ["flock", "--close", f.config.lockPath, "bash", "-c", "printf READY; cat >/dev/null"],
-    { stdin: "pipe", stdout: "pipe" },
+    { windowsHide: true, stdin: "pipe", stdout: "pipe" },
   );
   const reader = unrelated.stdout.getReader();
   await reader.read();
   reader.releaseLock();
   try {
-    const forgedWhileBusy = Bun.spawnSync([process.execPath, owner, "--held"], { env });
+    const forgedWhileBusy = Bun.spawnSync([process.execPath, owner, "--held"], {
+      windowsHide: true,
+      env,
+    });
     expect(forgedWhileBusy.exitCode).toBe(1);
   } finally {
     unrelated.stdin.end();
@@ -266,7 +275,7 @@ linuxTest("resource markers cannot impersonate an inherited heavy lock", async (
   }
   const inherited = Bun.spawnSync(
     ["flock", "--close", f.config.lockPath, process.execPath, owner, "--held"],
-    { env },
+    { windowsHide: true, env },
   );
   expect(inherited.exitCode).toBe(0);
 });
@@ -291,7 +300,9 @@ linuxTest(
         async () => {
           expect(process.env.TMPDIR).toBe(f.transient);
           writeFileSync(posix.join(f.transient, "generated"), "temporary");
-          const competitor = Bun.spawnSync(["flock", "--nonblock", config.lockPath, "true"]);
+          const competitor = Bun.spawnSync(["flock", "--nonblock", config.lockPath, "true"], {
+            windowsHide: true,
+          });
           expect(competitor.exitCode).toBe(1);
           expect(factoryLeaseHeld(config.lockPath)).toBe(false); // The in-process route's supervisor is a child, not an inherited ancestor.
           await withFactoryResource(
@@ -308,7 +319,9 @@ linuxTest(
     ).rejects.toThrow("fixture failure");
     expect(process.env.TMPDIR).toBe(previousTmp);
     expect(readdirSync(f.transient)).toEqual([]);
-    const released = Bun.spawnSync(["flock", "--nonblock", config.lockPath, "true"]);
+    const released = Bun.spawnSync(["flock", "--nonblock", config.lockPath, "true"], {
+      windowsHide: true,
+    });
     expect(released.exitCode).toBe(0);
   },
 );
@@ -338,7 +351,11 @@ await withFactoryResource(${JSON.stringify(config)}, async () => {
 }, ${JSON.stringify(f.docker)});
 `,
     );
-    const direct = Bun.spawn([process.execPath, runner], { stdout: "pipe", stderr: "ignore" });
+    const direct = Bun.spawn([process.execPath, runner], {
+      windowsHide: true,
+      stdout: "pipe",
+      stderr: "ignore",
+    });
     const reader = direct.stdout.getReader();
     const ready = await reader.read();
     reader.releaseLock();
@@ -348,7 +365,10 @@ await withFactoryResource(${JSON.stringify(config)}, async () => {
       direct.kill("SIGKILL");
       await direct.exited;
       await Bun.sleep(100);
-      expect(Bun.spawnSync(["flock", "--nonblock", f.config.lockPath, "true"]).exitCode).toBe(1);
+      expect(
+        Bun.spawnSync(["flock", "--nonblock", f.config.lockPath, "true"], { windowsHide: true })
+          .exitCode,
+      ).toBe(1);
       expect(readdirSync(f.transient)).toEqual(["temporary"]);
     } finally {
       process.kill(childPid, "SIGTERM");
@@ -358,7 +378,10 @@ await withFactoryResource(${JSON.stringify(config)}, async () => {
       // Observe this same live lease sequentially; concurrent polling cannot prove release order.
       // eslint-disable-next-line no-await-in-loop
       await Bun.sleep(100);
-      if (Bun.spawnSync(["flock", "--nonblock", f.config.lockPath, "true"]).exitCode === 0) {
+      if (
+        Bun.spawnSync(["flock", "--nonblock", f.config.lockPath, "true"], { windowsHide: true })
+          .exitCode === 0
+      ) {
         released = true;
         break;
       }
@@ -416,7 +439,9 @@ linuxTest("direct startup refuses a symlink and releases the untouched lease", a
   ).rejects.toThrow("isolation");
   expect(invoked).toBe(false);
   expect(readdirSync(retained)).toEqual(["keep"]);
-  expect(Bun.spawnSync(["flock", "--nonblock", config.lockPath, "true"]).exitCode).toBe(0);
+  expect(
+    Bun.spawnSync(["flock", "--nonblock", config.lockPath, "true"], { windowsHide: true }).exitCode,
+  ).toBe(0);
 });
 
 linuxTest(
@@ -437,6 +462,7 @@ linuxTest(
       async () => {
         writeFileSync(posix.join(f.transient, "temporary"), "generated");
         const child = Bun.spawn([process.execPath, "-e", "await Bun.sleep(500)"], {
+          windowsHide: true,
           cwd: f.transient,
           stdin: "ignore",
           stdout: "ignore",
@@ -449,7 +475,10 @@ linuxTest(
     );
     expect(code).toBe(17);
     expect(readdirSync(f.transient)).toEqual([]);
-    expect(Bun.spawnSync(["flock", "--nonblock", config.lockPath, "true"]).exitCode).toBe(0);
+    expect(
+      Bun.spawnSync(["flock", "--nonblock", config.lockPath, "true"], { windowsHide: true })
+        .exitCode,
+    ).toBe(0);
   },
   30000,
 );
@@ -474,7 +503,13 @@ linuxTest(
         writeFileSync(posix.join(f.transient, "temporary"), "generated");
         queued = Bun.spawn(
           ["flock", config.lockPath, "bash", "-c", "true", "queued-build", f.transient],
-          { env: { ...process.env }, stdin: "ignore", stdout: "ignore", stderr: "ignore" },
+          {
+            windowsHide: true,
+            env: { ...process.env },
+            stdin: "ignore",
+            stdout: "ignore",
+            stderr: "ignore",
+          },
         );
         await Bun.sleep(100);
         const waiting = (await Bun.file("/proc/locks").text())
@@ -537,7 +572,7 @@ await Bun.write(${JSON.stringify(receipt)}, JSON.stringify({tmp:process.env.TMPD
               "-e",
               'await Bun.write(process.env.TMPDIR + "/compiler-output", "job");',
             ],
-            { env: { ...process.env }, stdout: "ignore", stderr: "pipe" },
+            { windowsHide: true, env: { ...process.env }, stdout: "ignore", stderr: "pipe" },
           );
           expect(await compiler.exited).toBe(0);
           expect(readFileSync(posix.join(f.transient, "compiler-output"), "utf8")).toBe("job");
@@ -587,6 +622,7 @@ linuxTest(
         code,
       ],
       {
+        windowsHide: true,
         env: { ...process.env, PATH: bin + ":" + process.env.PATH },
         stdout: "pipe",
         stderr: "pipe",

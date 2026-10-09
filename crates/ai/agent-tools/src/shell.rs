@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! The `shell` tool: a sandboxable, streaming command executor.
 
+use aphrody_proc::NoWindow as _;
 use std::{collections::BTreeMap, path::PathBuf, process::Stdio, sync::Arc, time::Duration};
 
 use aphrody_toolcall::{
@@ -216,7 +217,7 @@ impl ToolExecutor for ShellExecTool {
 
         let timeout = args.timeout_ms.map_or(self.config.default_timeout, Duration::from_millis);
 
-        let mut command = Command::new(program);
+        let mut command = Command::new(program).no_window();
         command.args(rest);
         if let Some(cwd) = args.cwd.as_ref() {
             command.current_dir(PathBuf::from(cwd));

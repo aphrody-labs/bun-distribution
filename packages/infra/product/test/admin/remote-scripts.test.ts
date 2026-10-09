@@ -266,7 +266,7 @@ test("stop never signals a process that only happens to have the pid of an old j
   const { ctx } = testContext();
   const dir = join(home, ".aphrody/omar-train/kit-test-stale");
   mkdirSync(dir, { recursive: true });
-  const innocent = Bun.spawn(["sleep", "30"]);
+  const innocent = Bun.spawn(["sleep", "30"], { windowsHide: true });
   writeFileSync(join(dir, "pid"), `${innocent.pid}\n`);
   try {
     expect(await jobState(ctx.paths, "kit-test-stale")).toBe("interrompu");

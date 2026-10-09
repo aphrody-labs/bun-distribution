@@ -1,16 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
 # Windows twin of bun-hygiene.sh (same policy: newest stable Bun older than MinAgeDays, report-only hygiene).
-# Install: pwsh -File bun-hygiene.ps1 -Register  (user-level Scheduled Task, daily 05:30, no elevation).
+# Install: pwsh -File bun-hygiene.ps1 -Register  (user-level hidden S4U Scheduled Task, daily 05:30, no elevation, no window).
 param([int]$MinAgeDays = 3, [switch]$Register)
 $ErrorActionPreference = 'Continue'
 $h = $env:USERPROFILE
 if ($Register) {
   New-Item -ItemType Directory -Force "$h\.local\bin" | Out-Null
   Copy-Item $PSCommandPath "$h\.local\bin\aphrody-bun-hygiene.ps1" -Force
-  $a = New-ScheduledTaskAction -Execute 'pwsh.exe' -Argument "-NoProfile -File `"$h\.local\bin\aphrody-bun-hygiene.ps1`""
-  $t = New-ScheduledTaskTrigger -Daily -At 05:30
-  $s = New-ScheduledTaskSettingsSet -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Hours 1)
-  Register-ScheduledTask -TaskName 'AphrodyBunHygiene' -Action $a -Trigger $t -Settings $s -Force | Out-Null
+  Import-Module (Join-Path $PSScriptRoot 'infra\AphrodyHiddenTask.psm1') -Force
+  $task = @{
+    Name = 'AphrodyBunHygiene'; TaskPath = '\'; Execute = 'pwsh.exe'; Argument = "-NoProfile -NonInteractive -File `"$h\.local\bin\aphrody-bun-hygiene.ps1`""
+    Trigger = New-ScheduledTaskTrigger -Daily -At 05:30; ExecutionTimeLimit = (New-TimeSpan -Hours 1); Description = 'Aphrody Bun hygiene'
+  }
+  Register-AphrodyHiddenTask @task
   Write-Output 'registered AphrodyBunHygiene'; return
 }
 $env:Path = "$h\.bun\bin;$env:LOCALAPPDATA\Microsoft\WinGet\Links;$env:Path"

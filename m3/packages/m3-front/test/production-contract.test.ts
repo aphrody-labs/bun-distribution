@@ -38,7 +38,12 @@ describe("front production contract", () => {
         "-e",
         'const front = await import("@aphrody/m3-front"); front.defineM3Theme(); console.log(front.windowClassFor(600, 480).width);',
       ],
-      { cwd: Bun.fileURLToPath(new URL("..", import.meta.url)), stdout: "pipe", stderr: "pipe" },
+      {
+        windowsHide: true,
+        cwd: Bun.fileURLToPath(new URL("..", import.meta.url)),
+        stdout: "pipe",
+        stderr: "pipe",
+      },
     );
     const [code, stdout, stderr] = await Promise.all([
       child.exited,

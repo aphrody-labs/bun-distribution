@@ -74,7 +74,7 @@ export async function createProject(options: CreateOptions): Promise<string[]> {
       "--aphrody",
       options.yoloPath,
     ],
-    { stdout: "ignore", stderr: "pipe", env: { ...process.env, NO_COLOR: "1" } },
+    { windowsHide: true, stdout: "ignore", stderr: "pipe", env: { ...process.env, NO_COLOR: "1" } },
   );
   const [stderr, exitCode] = await Promise.all([new Response(proc.stderr).text(), proc.exited]);
   if (exitCode !== 0) {

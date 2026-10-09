@@ -17,7 +17,8 @@
 import { spawn, spawnSync } from "node:child_process";
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 
-const TICKS = Number(spawnSync("getconf", ["CLK_TCK"]).stdout.toString().trim()) || 100;
+const TICKS =
+  Number(spawnSync("getconf", ["CLK_TCK"], { windowsHide: true }).stdout.toString().trim()) || 100;
 
 export interface Run {
   /** ms from spawn to the first window mapped for the process tree (xdotool), `null` when none appeared. */
@@ -168,7 +169,9 @@ function evaluate(url: string, expression: string): Promise<unknown> {
 
 function windowMapped(pids: number[]): boolean {
   for (const pid of pids) {
-    const found = spawnSync("xdotool", ["search", "--onlyvisible", "--pid", String(pid)]);
+    const found = spawnSync("xdotool", ["search", "--onlyvisible", "--pid", String(pid)], {
+      windowsHide: true,
+    });
     if (found.status === 0 && found.stdout.toString().trim() !== "") return true;
   }
   return false;
@@ -176,6 +179,7 @@ function windowMapped(pids: number[]): boolean {
 
 function ppollCalls(pid: number, seconds: number): number | null {
   const run = spawnSync("strace", ["-c", "-p", String(pid), "-e", "trace=ppoll"], {
+    windowsHide: true,
     timeout: (seconds + 5) * 1000,
     killSignal: "SIGINT",
     env: process.env,
@@ -195,7 +199,12 @@ async function measureOnce(options: Options): Promise<Run> {
   if (options.cdpPort !== undefined)
     env["APHRODY_CEF_REMOTE_DEBUGGING_PORT"] = String(options.cdpPort);
   const startedAt = Date.now();
-  const child = spawn(options.exe, [], { env, stdio: "ignore", detached: false });
+  const child = spawn(options.exe, [], {
+    windowsHide: true,
+    env,
+    stdio: "ignore",
+    detached: false,
+  });
   const pid = child.pid!;
   let windowMapMs: number | null = null;
   const paint =
@@ -283,7 +292,10 @@ if (import.meta.main) {
   let xvfb: ReturnType<typeof spawn> | undefined;
   if (!process.env["DISPLAY"]) {
     const display = ":93";
-    xvfb = spawn("Xvfb", [display, "-screen", "0", "1280x800x24"], { stdio: "ignore" });
+    xvfb = spawn("Xvfb", [display, "-screen", "0", "1280x800x24"], {
+      windowsHide: true,
+      stdio: "ignore",
+    });
     process.env["DISPLAY"] = display;
     await sleep(1500);
   }

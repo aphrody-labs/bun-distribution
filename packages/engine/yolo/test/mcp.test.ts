@@ -20,6 +20,7 @@ describe("Yolo tool host of aphrody-mcp", () => {
   });
   test("CLI rejects malformed JSON before invoking a capability", async () => {
     const process = Bun.spawn(["bun", "src/index.ts", "tool", "call", "unknown_tool", "{"], {
+      windowsHide: true,
       cwd: resolve(import.meta.dir, ".."),
       stdout: "pipe",
       stderr: "pipe",

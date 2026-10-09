@@ -25,6 +25,7 @@ if (import.meta.main) {
   if (!native)
     throw new Error("Install the native Aphrody CLI or set APHRODY_BIN before serving app-ui.");
   const child = Bun.spawn([native, ...siteArguments(process.env, process.argv.slice(2))], {
+    windowsHide: true,
     cwd: workspaceRoot,
     env: process.env,
     stdin: "inherit",

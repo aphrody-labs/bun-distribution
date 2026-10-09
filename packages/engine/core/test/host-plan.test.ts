@@ -318,6 +318,7 @@ test("socket gates preserve the declared WireGuard relay and reject occupied, wi
       .run.replaceAll("ss -H -ltn", `'${socket}' -H -ltn`)
       .replaceAll("sleep 0.25", `'${sleep}' 0.25`);
     const child = Bun.spawn(["sh", "-c", command], {
+      windowsHide: true,
       env: {
         ...process.env,
         TASK_SOCKET_ROWS: addresses.map((address) => `LISTEN 0 128 ${address}:8789 *:*`).join("\n"),

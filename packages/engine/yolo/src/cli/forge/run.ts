@@ -74,7 +74,13 @@ function capture(
   opts: { cwd?: string; env?: Record<string, string> } = {},
 ): Captured {
   try {
-    const r = Bun.spawnSync(cmd, { cwd: opts.cwd, env: opts.env, stdout: "pipe", stderr: "pipe" });
+    const r = Bun.spawnSync(cmd, {
+      windowsHide: true,
+      cwd: opts.cwd,
+      env: opts.env,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
     return { code: r.exitCode ?? 1, stdout: r.stdout.toString(), stderr: r.stderr.toString() };
   } catch (e) {
     return { code: 127, stdout: "", stderr: (e as Error).message };
@@ -88,6 +94,7 @@ async function run(
 ): Promise<void> {
   log(`$ ${cmd.join(" ")}`);
   const proc = Bun.spawn(cmd, {
+    windowsHide: true,
     cwd: opts.cwd,
     env: opts.env,
     stdout: "pipe",

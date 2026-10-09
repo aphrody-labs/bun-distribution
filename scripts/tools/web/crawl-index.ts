@@ -114,6 +114,7 @@ if (import.meta.main) {
       ? [process.execPath, "-e", script]
       : [cli!, "infra", "ssh", "exec", "--host", job.host, "--cmd", "bun -e " + $.escape(script)];
     const child = Bun.spawn(args, {
+      windowsHide: true,
       env: { ...process.env, APHRODY_SSH_COMMAND_TIMEOUT_SECS: "3600" },
       stdout: "inherit",
       stderr: "inherit",

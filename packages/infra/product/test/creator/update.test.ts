@@ -18,6 +18,7 @@ beforeAll(async () => {
   await writeFile(join(src, "web", "page.html"), "new-page");
   const tar = join(src, "..", `pack-${Date.now()}.tar.gz`);
   Bun.spawnSync(["tar", "-czf", basename(tar), "-C", basename(src), "creator-kit", "web"], {
+    windowsHide: true,
     cwd: dirname(src),
   });
   archive = new Uint8Array(await Bun.file(tar).arrayBuffer());

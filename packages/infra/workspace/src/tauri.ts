@@ -59,6 +59,7 @@ export async function runTauri(args: string[]): Promise<number> {
   function runSync(command: string[], cwd: string, errorMessage: string) {
     console.log(`[tauri] Running: ${command.join(" ")} in ${cwd}`);
     const result = Bun.spawnSync(command, {
+      windowsHide: true,
       cwd,
       env: commandEnv,
       stdin: "inherit",
@@ -71,7 +72,12 @@ export async function runTauri(args: string[]): Promise<number> {
   }
 
   function hostTriple(): string {
-    const rustc = Bun.spawnSync(["rustc", "-vV"], { cwd: repo, stdout: "pipe", stderr: "pipe" });
+    const rustc = Bun.spawnSync(["rustc", "-vV"], {
+      windowsHide: true,
+      cwd: repo,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
     if (rustc.exitCode !== 0) throw new Error(new TextDecoder().decode(rustc.stderr));
     const host = /^host: (.+)$/m.exec(new TextDecoder().decode(rustc.stdout))?.[1];
     if (!host) throw new Error("rustc did not report its host target");
@@ -111,7 +117,13 @@ export async function runTauri(args: string[]): Promise<number> {
       const { manifest } = workspace;
       const metadata = Bun.spawnSync(
         ["cargo", "metadata", "--format-version", "1", "--no-deps", "--manifest-path", manifest],
-        { cwd: workspace.dir, env: commandEnv, stdout: "pipe", stderr: "inherit" },
+        {
+          windowsHide: true,
+          cwd: workspace.dir,
+          env: commandEnv,
+          stdout: "pipe",
+          stderr: "inherit",
+        },
       );
       if (metadata.exitCode !== 0)
         throw new Error("cargo metadata failed for the aphrody workspace");

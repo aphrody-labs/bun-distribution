@@ -37,6 +37,7 @@ try {
     } finally { server.stop(true); }
   `;
     const child = Bun.spawn([process.execPath, "--eval", program], {
+      windowsHide: true,
       cwd: import.meta.dir,
       env: { ...process.env, OBSCURA_ALLOW_PRIVATE_NETWORK: "1" },
       stdout: "pipe",

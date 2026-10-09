@@ -27,7 +27,7 @@ const cmd = (side: Side, script: string, json: object) =>
     ? [BIN.bun, join(DIR, script), JSON.stringify(json)]
     : [BIN.deno, "run", "--allow-all", join(DIR, script), JSON.stringify(json)];
 const spawn = (c: string[], timeout = 120_000) => {
-  const r = Bun.spawnSync(c, { stdout: "pipe", stderr: "pipe", timeout });
+  const r = Bun.spawnSync(c, { windowsHide: true, stdout: "pipe", stderr: "pipe", timeout });
   const stdout = r.stdout.toString().trim();
   if (r.exitCode !== 0) throw new Error(`exit ${r.exitCode}: ${r.stderr.toString().slice(-300)}`);
   return JSON.parse(stdout.split("\n").at(-1)!);
@@ -56,9 +56,11 @@ const sha = async (p: string) =>
 
 const before = { load: await load(), procStat: await procStat(), at: new Date().toISOString() };
 const revisions = {
-  bun: Bun.spawnSync([BIN.bun, "--revision"]).stdout.toString().trim(),
-  webkit: Bun.spawnSync([BIN.bun, "-p", "process.versions.webkit"]).stdout.toString().trim(),
-  deno: Bun.spawnSync([BIN.deno, "--version"])
+  bun: Bun.spawnSync([BIN.bun, "--revision"], { windowsHide: true }).stdout.toString().trim(),
+  webkit: Bun.spawnSync([BIN.bun, "-p", "process.versions.webkit"], { windowsHide: true })
+    .stdout.toString()
+    .trim(),
+  deno: Bun.spawnSync([BIN.deno, "--version"], { windowsHide: true })
     .stdout.toString()
     .split("\n")
     .slice(0, 2)

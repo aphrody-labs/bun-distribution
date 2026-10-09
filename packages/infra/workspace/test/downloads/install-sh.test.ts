@@ -14,7 +14,7 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-const script = resolve(import.meta.dir, "../../assets/downloads/install.sh");
+const script = resolve(import.meta.dir, "../../assets/downloads/install-full.sh");
 const work = mkdtempSync(join(tmpdir(), "install-sh-"));
 afterAll(() => rmSync(work, { recursive: true, force: true }));
 // install.sh installs Linux/macOS builds only (it refuses other kernels and points Windows to install.ps1, covered

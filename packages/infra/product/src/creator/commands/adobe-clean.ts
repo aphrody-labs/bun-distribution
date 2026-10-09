@@ -76,7 +76,7 @@ export async function listProcessesNative(): Promise<ProcInfo[]> {
         "-Command",
         "Get-Process | Select-Object ProcessName,Id,WorkingSet64 | ConvertTo-Json -Compress",
       ],
-      { stdout: "pipe", stderr: "ignore" },
+      { windowsHide: true, stdout: "pipe", stderr: "ignore" },
     );
     const text = await new Response(proc.stdout).text();
     const rows = JSON.parse(text || "[]") as {
@@ -90,7 +90,11 @@ export async function listProcessesNative(): Promise<ProcInfo[]> {
       bytes: row.WorkingSet64,
     }));
   }
-  const proc = Bun.spawn(["ps", "-eo", "pid=,rss=,comm="], { stdout: "pipe", stderr: "ignore" });
+  const proc = Bun.spawn(["ps", "-eo", "pid=,rss=,comm="], {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "ignore",
+  });
   const text = await new Response(proc.stdout).text();
   return text
     .split("\n")
@@ -156,7 +160,7 @@ const nativeIo = (): Io => ({
         process.platform === "win32"
           ? ["taskkill", "/IM", `${name}.exe`, ...(force ? ["/F"] : [])]
           : ["pkill", "-x", name];
-      await Bun.spawn(cmd, { stdout: "ignore", stderr: "ignore" }).exited;
+      await Bun.spawn(cmd, { windowsHide: true, stdout: "ignore", stderr: "ignore" }).exited;
     }
   },
   env: process.env,

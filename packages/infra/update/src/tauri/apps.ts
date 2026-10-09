@@ -306,6 +306,7 @@ const LEGACY_SIBLING =
 
 function git(root: string, args: string[], input?: string): string {
   const result = Bun.spawnSync(["git", ...args], {
+    windowsHide: true,
     cwd: root,
     stdin: input === undefined ? "ignore" : new TextEncoder().encode(input),
     stdout: "pipe",

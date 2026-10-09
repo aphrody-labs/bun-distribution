@@ -243,6 +243,7 @@ export async function run(
   opts: { cwd?: string; env?: Record<string, string>; allowFail?: boolean } = {},
 ) {
   const proc = Bun.spawn(argv, {
+    windowsHide: true,
     cwd: opts.cwd ?? root,
     env: { ...process.env, ...opts.env },
     stdout: "pipe",
@@ -354,13 +355,10 @@ function artifactVersion(artifact: ArtifactConfig): string {
 function pluginVersion(artifact: ArtifactConfig): string {
   const git = artifact.git!;
   const sub = git.subdir ? `${git.subdir}/` : "";
-  const out = Bun.spawnSync([
-    "git",
-    "-C",
-    expand(git.path),
-    "show",
-    `${git.ref}:${sub}${artifact.manifest}`,
-  ]);
+  const out = Bun.spawnSync(
+    ["git", "-C", expand(git.path), "show", `${git.ref}:${sub}${artifact.manifest}`],
+    { windowsHide: true },
+  );
   if (out.exitCode !== 0)
     throw new Error(
       `cannot read ${artifact.manifest} of ${artifact.id}: clone ${artifact.repository ?? "its repository"} into ${expand(git.path)}`,
@@ -594,7 +592,9 @@ export async function stageYolo(
     ]);
     const artifactDir = expand(platform.runtimeArtifact!);
     const real =
-      Bun.spawnSync(["readlink", "-f", artifactDir]).stdout.toString().trim() || artifactDir;
+      Bun.spawnSync(["readlink", "-f", artifactDir], { windowsHide: true })
+        .stdout.toString()
+        .trim() || artifactDir;
     if (!existsSync(join(real, "manifest.json"))) throw new Error(`no runtime artifact at ${real}`);
     await run(["cp", "-r", real, join(work, "artifact")]);
     // the layout of the monorepo under YOLO_HOME: packages/engine/runtime (SDK) and m3/templates
@@ -1477,7 +1477,12 @@ async function github(cfg: DownloadsConfig) {
 
 /** Sends MCP `initialize` on stdin and reads the JSON-RPC reply from stdout. */
 export async function mcpHandshake(exe: string): Promise<string> {
-  const proc = Bun.spawn([exe], { stdin: "pipe", stdout: "pipe", stderr: "ignore" });
+  const proc = Bun.spawn([exe], {
+    windowsHide: true,
+    stdin: "pipe",
+    stdout: "pipe",
+    stderr: "ignore",
+  });
   proc.stdin.write(
     `${JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "verify-downloads", version: "1" } } })}\n`,
   );

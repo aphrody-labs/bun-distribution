@@ -36,6 +36,7 @@ async function fixture() {
   };
   const git = async (cwd: string, ...args: string[]) => {
     const child = Bun.spawn(["git", ...args], {
+      windowsHide: true,
       cwd,
       env,
       stdout: "pipe",
@@ -97,6 +98,7 @@ async function fixture() {
   const pin = { path: source, remote: "origin", url: remoteUrl, owners: ["aphrody-labs"] };
   const execute = async (command: string) => {
     const child = Bun.spawn(["bash", "-c", command], {
+      windowsHide: true,
       env,
       stdout: "pipe",
       stderr: "pipe",

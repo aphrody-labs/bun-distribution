@@ -26,6 +26,7 @@ test("isolated Paths facade runs canonical Workspace code with source and output
     `,
       ],
       {
+        windowsHide: true,
         cwd: root,
         env: { ...process.env, APHRODY_HOME: join(root, "state") },
         stdout: "pipe",

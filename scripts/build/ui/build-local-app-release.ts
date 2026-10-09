@@ -12,6 +12,7 @@ if (Bun.env.APHRODY_BUILD_HOST !== "vps") {
 }
 async function run(args: string[], cwd: string, env: Record<string, string> = {}) {
   const child = Bun.spawn(args, {
+    windowsHide: true,
     cwd,
     env: { ...Bun.env, ...env },
     stdout: "inherit",
@@ -20,7 +21,12 @@ async function run(args: string[], cwd: string, env: Record<string, string> = {}
   if (await child.exited) throw new Error(`Failed: ${args.join(" ")}`);
 }
 async function output(args: string[]) {
-  const child = Bun.spawn(args, { cwd: root, stdout: "pipe", stderr: "inherit" });
+  const child = Bun.spawn(args, {
+    windowsHide: true,
+    cwd: root,
+    stdout: "pipe",
+    stderr: "inherit",
+  });
   const text = await new Response(child.stdout).text();
   if (await child.exited) throw new Error(`Failed: ${args.join(" ")}`);
   return text.trim();
@@ -33,8 +39,13 @@ const release = join(stage, "release");
 await mkdir(source, { recursive: true });
 await mkdir(join(release, "bin"), { recursive: true });
 // Exact committed sources only; no private data, dirty files or sibling engine copies.
-const archive = Bun.spawn(["git", "archive", revision], { cwd: root, stdout: "pipe" });
+const archive = Bun.spawn(["git", "archive", revision], {
+  windowsHide: true,
+  cwd: root,
+  stdout: "pipe",
+});
 const extract = Bun.spawn(["tar", "-x", "-C", source], {
+  windowsHide: true,
   stdin: archive.stdout,
   stderr: "inherit",
 });
@@ -47,7 +58,11 @@ const lock = Bun.TOML.parse(await readFile(join(source, "Cargo.lock"), "utf8")) 
 };
 const bindgenVersion = lock.package.find((pkg) => pkg.name === "wasm-bindgen")?.version;
 if (!bindgenVersion) throw new Error("wasm-bindgen is missing from Cargo.lock");
-const bindgen = Bun.spawn(["wasm-bindgen", "--version"], { stdout: "pipe", stderr: "pipe" });
+const bindgen = Bun.spawn(["wasm-bindgen", "--version"], {
+  windowsHide: true,
+  stdout: "pipe",
+  stderr: "pipe",
+});
 const installedBindgen = (await new Response(bindgen.stdout).text()).trim();
 if ((await bindgen.exited) || installedBindgen !== `wasm-bindgen ${bindgenVersion}`) {
   await run(

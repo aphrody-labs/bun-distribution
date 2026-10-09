@@ -182,7 +182,7 @@ async function scanPlugin(): Promise<Set<string>> {
   const mentioned = new Set<string>();
   const glob = new Glob("{agents,commands,skills,hooks,output-styles}/**/*.md");
   for await (const rel of glob.scan({ cwd: PLUGIN_ROOT })) {
-    const text = await Bun.file(join(PLUGIN_ROOT, rel)).text();
+    const text = await Bun.file(join(PLUGIN_ROOT!, rel)).text();
     for (const m of text.matchAll(API_PATTERNS[0]!)) mentioned.add(`Bun.${m[1]}`);
     for (const m of text.matchAll(API_PATTERNS[1]!)) mentioned.add(`bun:${m[1]}`);
     if (API_PATTERNS[2]!.test(text)) mentioned.add('from "bun"');

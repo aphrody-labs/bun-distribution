@@ -171,7 +171,12 @@ interface RunResult {
 }
 
 async function run(cmd: string[]): Promise<RunResult> {
-  const proc = Bun.spawn(cmd, { stdout: "ignore", stderr: "pipe", stdin: "ignore" });
+  const proc = Bun.spawn(cmd, {
+    windowsHide: true,
+    stdout: "ignore",
+    stderr: "pipe",
+    stdin: "ignore",
+  });
   const [code, stderr] = await Promise.all([proc.exited, new Response(proc.stderr).text()]);
   return { code, stderr: stderr.slice(0, 2000) };
 }
@@ -181,7 +186,12 @@ async function hashStdout(
   cmd: string[],
   filter?: (chunk: string) => string,
 ): Promise<string | null> {
-  const proc = Bun.spawn(cmd, { stdout: "pipe", stderr: "ignore", stdin: "ignore" });
+  const proc = Bun.spawn(cmd, {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "ignore",
+    stdin: "ignore",
+  });
   const hasher = new Bun.CryptoHasher("sha256");
   if (filter) {
     hasher.update(filter(await new Response(proc.stdout).text()));
@@ -571,6 +581,7 @@ function brotli(bytes: Uint8Array, font: boolean): Uint8Array {
 async function gzip(src: string, bytes: Uint8Array<ArrayBuffer>): Promise<Uint8Array | null> {
   if (tools.zopfli) {
     const proc = Bun.spawn([tools.zopfli, "--i15", "-c", src], {
+      windowsHide: true,
       stdout: "pipe",
       stderr: "ignore",
     });

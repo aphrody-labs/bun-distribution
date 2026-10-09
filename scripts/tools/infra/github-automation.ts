@@ -7,7 +7,7 @@ const org = args.includes("--org") ? args[args.indexOf("--org") + 1] : "aphrody-
 const dry = args.includes("--dry-run");
 
 async function gh(...a: string[]): Promise<{ ok: boolean; out: string }> {
-  const p = Bun.spawn(["gh", ...a], { stdout: "pipe", stderr: "pipe" });
+  const p = Bun.spawn(["gh", ...a], { windowsHide: true, stdout: "pipe", stderr: "pipe" });
   const [out, err] = await Promise.all([
     new Response(p.stdout).text(),
     new Response(p.stderr).text(),

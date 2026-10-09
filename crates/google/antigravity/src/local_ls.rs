@@ -39,6 +39,7 @@
 //! [`rustls::client::danger::ServerCertVerifier`].  A CSRF token (generated per
 //! launch, or supplied) is attached to every gRPC call.
 
+use aphrody_proc::NoWindow as _;
 use std::{process::Stdio, sync::Arc, time::Duration};
 
 use rand::RngExt as _;
@@ -238,7 +239,7 @@ impl LanguageServer {
     /// Returns [`SdkError::Spawn`] when the binary cannot be executed.
     pub async fn stamp() -> Result<String, SdkError> {
         let bin = Self::resolve_binary()?;
-        let output = Command::new(&bin)
+        let output = Command::new(&bin).no_window()
             .arg("--stamp")
             .output()
             .await
@@ -259,7 +260,7 @@ impl LanguageServer {
         let bin = Self::resolve_binary()?;
         let csrf = config.resolved_csrf();
 
-        let mut cmd = Command::new(&bin);
+        let mut cmd = Command::new(&bin).no_window();
         cmd.arg("--standalone")
             .arg("--override_ide_name")
             .arg(&config.ide_name)

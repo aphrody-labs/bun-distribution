@@ -1,5 +1,6 @@
 //! `aphrody infra` (former `aphrody-infra` binary): unified infra/workflow orchestrator CLI.
 
+use aphrody_proc::NoWindow as _;
 use crate::{ServiceAction, devenv, reclaim, validate};
 use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand, ValueEnum};
@@ -508,7 +509,7 @@ impl Run {
 }
 
 fn command(root: &Path, program: &str, args: &[&str]) -> Result<String> {
-    let output = Command::new(program)
+    let output = Command::new(program).no_window()
         .args(args)
         .current_dir(root)
         .output()
@@ -583,7 +584,7 @@ fn live_status(target: &Target) -> Option<Value> {
         ),
         _ => return None,
     };
-    let output = Command::new(program).args(args).output().ok()?;
+    let output = Command::new(program).no_window().args(args).output().ok()?;
     Some(json!({
         "ok": output.status.success(),
         "stdout": String::from_utf8_lossy(&output.stdout).trim(),
@@ -693,7 +694,7 @@ fn quality(
             let Some(script) = script else {
                 bail!("{} ne déclare pas de script pour {:?}", row["repo"], stage);
             };
-            let output = Command::new("bun")
+            let output = Command::new("bun").no_window()
                 .args(["run", &script])
                 .current_dir(&path)
                 .output()
@@ -796,7 +797,7 @@ fn maintenance(
     }
     let mut rows = Vec::new();
     for (name, path) in repositories {
-        let dirty = Command::new("git")
+        let dirty = Command::new("git").no_window()
             .args(["status", "--porcelain=v1"])
             .current_dir(&path)
             .output()
@@ -807,7 +808,7 @@ fn maintenance(
             json!({ "repo": name, "path": path, "dirty": dirty, "lockfile": lockfile.is_file() });
         match action {
             MaintenanceAction::Scan => {
-                let output = Command::new("cargo")
+                let output = Command::new("cargo").no_window()
                     .args(["metadata", "--locked", "--no-deps", "--format-version=1"])
                     .current_dir(&path)
                     .output();
@@ -848,7 +849,7 @@ fn maintenance(
                 row["command"] = json!(format!("cargo {}", args.join(" ")));
                 row["applied"] = Value::Bool(apply);
                 if apply {
-                    let output = Command::new("cargo")
+                    let output = Command::new("cargo").no_window()
                         .args(&args)
                         .current_dir(&path)
                         .output()
@@ -882,7 +883,7 @@ fn maintenance(
 }
 
 fn observed_command(tool: &str, args: &[&str]) -> Value {
-    match Command::new(tool).args(args).output() {
+    match Command::new(tool).no_window().args(args).output() {
         Ok(output) => {
             let stdout = String::from_utf8_lossy(&output.stdout);
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -910,14 +911,14 @@ fn local_binary_check(name: &str) -> Value {
 }
 
 fn user_unit_check(name: &str) -> Value {
-    let enabled = Command::new("systemctl")
+    let enabled = Command::new("systemctl").no_window()
         .args(["--user", "is-enabled", name])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .status()
         .map(|status| status.success())
         .unwrap_or(false);
-    let active = Command::new("systemctl")
+    let active = Command::new("systemctl").no_window()
         .args(["--user", "is-active", name])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -1104,7 +1105,7 @@ async fn workspace_git_audit(
     let client = if base_client.is_authenticated() {
         base_client
     } else {
-        let token = Command::new("gh")
+        let token = Command::new("gh").no_window()
             .args(["auth", "token"])
             .output()
             .ok()
@@ -1385,7 +1386,7 @@ fn deploy(
         }
         // Each adapter re-verifies its preconditions (the Aphrody one its SMOKE.json
         // attestation) and rolls its stack back on failure.
-        let output = Command::new("ssh")
+        let output = Command::new("ssh").no_window()
             .args(remote_stack_adapter_args(stack, &adapter, release))
             .output()
             .context("ssh vps indisponible")?;
@@ -1462,7 +1463,7 @@ fn validate_catalogs(root: &Path, as_json: bool, run: &mut Run) -> Result<()> {
 
 /// Pipe `script` to a remote shell's stdin and return its stdout.
 fn run_remote(program: &str, args: &[&str], script: &str) -> Result<String> {
-    let output = Command::new(program)
+    let output = Command::new(program).no_window()
         .args(args)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())

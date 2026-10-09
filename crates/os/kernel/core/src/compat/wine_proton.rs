@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Proton and Wine runtime detection and execution layer for Windows binary compatibility.
 
+use aphrody_proc::NoWindow as _;
 use std::{
     collections::HashMap,
     env,
@@ -87,14 +88,14 @@ pub async fn execute_binary(
     let runtime = detect_wine_runtime();
 
     let mut cmd = if cfg!(windows) {
-        tokio::process::Command::new(executable)
+        tokio::process::Command::new(executable).no_window()
     } else if runtime.kind == "proton" {
         let proton_path = runtime.path.ok_or_else(|| "Proton path not available".to_owned())?;
-        let mut c = tokio::process::Command::new(proton_path);
+        let mut c = tokio::process::Command::new(proton_path).no_window();
         c.arg("run").arg(executable);
         c
     } else if runtime.kind == "wine" {
-        let mut c = tokio::process::Command::new("wine");
+        let mut c = tokio::process::Command::new("wine").no_window();
         c.arg(executable);
         c
     } else {

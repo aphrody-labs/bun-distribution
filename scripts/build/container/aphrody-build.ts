@@ -207,12 +207,21 @@ export function gitToken(
 
 function ghToken(): string | undefined {
   if (!Bun.which("gh")) return undefined;
-  const p = Bun.spawnSync(["gh", "auth", "token"], { stdout: "pipe", stderr: "ignore" });
+  const p = Bun.spawnSync(["gh", "auth", "token"], {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "ignore",
+  });
   return p.exitCode === 0 ? p.stdout.toString().trim() : undefined;
 }
 
 function git(args: string[]): string {
-  const p = Bun.spawnSync(["git", ...args], { cwd: ROOT, stdout: "pipe", stderr: "inherit" });
+  const p = Bun.spawnSync(["git", ...args], {
+    windowsHide: true,
+    cwd: ROOT,
+    stdout: "pipe",
+    stderr: "inherit",
+  });
   if (p.exitCode !== 0) throw new Error(`git ${args.join(" ")} : code ${p.exitCode}`);
   return p.stdout.toString().trim();
 }
@@ -226,6 +235,7 @@ async function image(): Promise<void> {
   const revision = git(["rev-parse", "HEAD"]);
   const started = performance.now();
   const p = Bun.spawnSync(buildArgs(pins, revision), {
+    windowsHide: true,
     cwd: ROOT,
     env: { ...process.env, DOCKER_BUILDKIT: "1" },
     stdio: ["inherit", "inherit", "inherit"],
@@ -233,7 +243,7 @@ async function image(): Promise<void> {
   if (p.exitCode !== 0) process.exit(p.exitCode ?? 1);
   const inspect = Bun.spawnSync(
     ["docker", "image", "inspect", "--format", "{{.Id}} {{.Size}}", imageTag(pins, revision)],
-    { stdout: "pipe" },
+    { windowsHide: true, stdout: "pipe" },
   );
   const [id, size] = inspect.stdout.toString().trim().split(" ");
   console.log(
@@ -275,6 +285,7 @@ function run(argv: string[]): never {
     tty: process.stdin.isTTY === true && process.stdout.isTTY === true,
   });
   const p = Bun.spawnSync(args, {
+    windowsHide: true,
     env: token ? { ...process.env, APHRODY_GIT_TOKEN: token } : process.env,
     stdio: ["inherit", "inherit", "inherit"],
   });

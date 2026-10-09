@@ -48,11 +48,7 @@ export async function runOps(argv: readonly string[]): Promise<number> {
   if (operation === "agent-home-drive-sync" || operation === "drive-sync") {
     const task = Bun.spawn(
       [process.execPath, join(import.meta.dir, "agent-home-drive-sync.ts"), ...rest],
-      {
-        stdin: "inherit",
-        stdout: "inherit",
-        stderr: "inherit",
-      },
+      { windowsHide: true, stdin: "inherit", stdout: "inherit", stderr: "inherit" },
     );
     return await task.exited;
   }

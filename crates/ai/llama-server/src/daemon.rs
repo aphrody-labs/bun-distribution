@@ -13,6 +13,7 @@
 //! both call it from their main thread, which the Linux parent-death signal
 //! relies on (see [`aphrody_proc::SpawnOptions`]).
 
+use aphrody_proc::NoWindow as _;
 use std::{
     fs::OpenOptions,
     path::PathBuf,
@@ -146,7 +147,7 @@ fn spawn_server(
     }
     let log = OpenOptions::new().create(true).append(true).open(&log_path)?;
 
-    let mut command = Command::new(&request.binary);
+    let mut command = Command::new(&request.binary).no_window();
     command
         .args(request.spec.to_args(caps, HOST, port))
         .stdin(Stdio::null())

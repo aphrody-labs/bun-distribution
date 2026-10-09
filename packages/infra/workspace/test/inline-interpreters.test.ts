@@ -56,7 +56,7 @@ test("scanner reports eval, heredoc and spawn forms with their body size", () =>
 test("inventory ratchets tracked automation against owner annotations", async () => {
   const root = await mkdtemp(join(tmpdir(), "inline-interpreters-"));
   const git = (...args: string[]) =>
-    expect(Bun.spawnSync(["git", "-C", root, ...args]).exitCode).toBe(0);
+    expect(Bun.spawnSync(["git", "-C", root, ...args], { windowsHide: true }).exitCode).toBe(0);
   try {
     await mkdir(join(root, "scripts"), { recursive: true });
     await mkdir(join(root, "docs"), { recursive: true });

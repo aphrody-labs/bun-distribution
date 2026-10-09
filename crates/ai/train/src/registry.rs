@@ -19,6 +19,7 @@
 //!
 //! Identifiers are UUIDv7 rendered as text (`id::text`).
 
+use aphrody_proc::NoWindow as _;
 use std::{
     path::{Path, PathBuf},
     time::Duration,
@@ -743,7 +744,7 @@ async fn git_head(repo_root: &Path) -> Option<String> {
             return Some(commit);
         }
     }
-    let output = tokio::process::Command::new("git")
+    let output = tokio::process::Command::new("git").no_window()
         .arg("-C")
         .arg(repo_root)
         .args(["rev-parse", "HEAD"])

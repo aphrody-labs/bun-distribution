@@ -7,6 +7,7 @@
 //! there is one command line while the owners keep their code. Commands with a Rust owner never come
 //! here. Generic devtools reuse the existing Bun fork owners; Workspace retains verification.
 
+use aphrody_proc::NoWindow as _;
 use std::{
     ffi::OsString,
     path::{Path, PathBuf},
@@ -93,7 +94,7 @@ pub(crate) fn dispatch(command: &str, args: impl IntoIterator<Item = OsString>) 
         );
         return 127;
     };
-    let mut child = Command::new(bun());
+    let mut child = Command::new(bun()).no_window();
     child.arg(root.join(DISPATCHER)).arg(command).args(args);
     child.env("APHRODY_ROOT", &root);
     // The TypeScript owners call `aphrody` back (resolveAphrody): keep them on this binary.

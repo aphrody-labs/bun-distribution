@@ -39,7 +39,7 @@ const app = join(here, ${JSON.stringify(appFromTarget(c))});
 const stage = join(here, "out");
 await rm(stage, { recursive: true, force: true });
 
-const ui = Bun.spawnSync([...${JSON.stringify(c.cli.split(" "))}, "build"], { cwd: app, stdout: "inherit", stderr: "inherit" });
+const ui = Bun.spawnSync([...${JSON.stringify(c.cli.split(" "))}, "build"], { windowsHide: true, cwd: app, stdout: "inherit", stderr: "inherit" });
 if (ui.exitCode !== 0) throw new Error("${c.cli} build failed");
 
 const bundle = await Bun.build({ entrypoints: [join(here, "handler.ts")], outdir: stage, target: "bun", minify: true, naming: "handler.js" });

@@ -254,6 +254,7 @@ async function runCommand(
   let child: Bun.Subprocess<"ignore", "pipe", "pipe">;
   try {
     child = Bun.spawn(executionCommand(command), {
+      windowsHide: true,
       cwd,
       stdin: "ignore",
       stdout: "pipe",

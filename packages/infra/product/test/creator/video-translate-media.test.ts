@@ -423,10 +423,7 @@ async function frameBrightness(file: string, second: number): Promise<number> {
       "rawvideo",
       "-",
     ],
-    {
-      stdout: "pipe",
-      stderr: "pipe",
-    },
+    { windowsHide: true, stdout: "pipe", stderr: "pipe" },
   );
   const bytes = new Uint8Array(await new Response(proc.stdout as ReadableStream).arrayBuffer());
   await proc.exited;

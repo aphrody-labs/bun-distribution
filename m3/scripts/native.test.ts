@@ -119,6 +119,7 @@ test.skipIf(!existsSync(RUNTIME_SDK_FFI))(
     const proc = Bun.spawn(
       [process.execPath, script, "status", "--json", ...(real.path ? ["--lib", real.path] : [])],
       {
+        windowsHide: true,
         // The copy lives outside the monorepo, so it cannot find the producer SDK by itself.
         env: { ...process.env, YOLO_ROOT },
         stdout: "pipe",

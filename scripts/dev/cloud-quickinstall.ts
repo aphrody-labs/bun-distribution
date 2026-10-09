@@ -43,7 +43,9 @@ for (const name of crates) {
     const archive = join(dir, "a.tar.gz");
     await Bun.write(archive, await res.arrayBuffer());
     await mkdir(BIN, { recursive: true });
-    const tar = Bun.spawnSync(["tar", "-xzf", archive, "-C", BIN, "--no-same-owner"]);
+    const tar = Bun.spawnSync(["tar", "-xzf", archive, "-C", BIN, "--no-same-owner"], {
+      windowsHide: true,
+    });
     await rm(dir, { recursive: true, force: true });
     if (tar.exitCode === 0) {
       console.log(`ok   ${name} ${v}`);

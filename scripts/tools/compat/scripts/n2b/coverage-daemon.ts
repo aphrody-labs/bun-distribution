@@ -52,6 +52,7 @@ async function runCheck(): Promise<{ ok: boolean; summary?: any }> {
   console.log(`[${new Date().toISOString()}] coverage check — starting`);
   try {
     const proc = Bun.spawn([process.execPath, CHECK_SCRIPT, "--json"], {
+      windowsHide: true,
       cwd: REPO_ROOT,
       stdout: "pipe",
       stderr: "inherit",

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Optional stdio MCP provider hosted as a kernel subsystem.
 
+use aphrody_proc::NoWindow as _;
 use std::{collections::HashSet, path::PathBuf, process::Stdio, sync::Arc, time::Duration};
 
 use async_trait::async_trait;
@@ -193,7 +194,7 @@ impl McpProxySubsystem {
         args: &[String],
         env: &[(String, String)],
     ) -> Result<Self, String> {
-        let mut child = tokio::process::Command::new(command)
+        let mut child = tokio::process::Command::new(command).no_window()
             .args(args)
             .envs(env.iter().map(|(key, value)| (key.as_str(), value.as_str())))
             .stdin(Stdio::piped())

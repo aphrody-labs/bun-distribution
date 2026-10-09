@@ -56,7 +56,12 @@ test("serve registers through the kernel, answers routed calls and fails on kern
   try {
     const child = Bun.spawn(
       [process.execPath, join(import.meta.dir, "../src/workspace-subsystem.ts"), "--serve"],
-      { env: { ...process.env, APHRODY_OS_SOCKET: path }, stdout: "pipe", stderr: "pipe" },
+      {
+        windowsHide: true,
+        env: { ...process.env, APHRODY_OS_SOCKET: path },
+        stdout: "pipe",
+        stderr: "pipe",
+      },
     );
     expect(await child.exited).toBe(1);
     expect(seen.registration).toMatchObject({ name: "workspace", runtime: "bun" });

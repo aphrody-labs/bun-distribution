@@ -35,6 +35,7 @@ export function onPath(bin: string): boolean {
 
 function run(cmd: readonly string[], cwd: string, env: NodeJS.ProcessEnv = {}): number {
   const result = Bun.spawnSync([...cmd], {
+    windowsHide: true,
     cwd,
     stdio: ["inherit", "inherit", "inherit"],
     env: { ...process.env, ...env },
@@ -77,7 +78,7 @@ export function buildFactoryInfo(): (Factory & { cacheRoot?: string }) | null {
 }
 
 const git = (cwd: string, ...args: string[]): string =>
-  Bun.spawnSync(["git", ...args], { cwd, stdout: "pipe", stderr: "pipe" })
+  Bun.spawnSync(["git", ...args], { windowsHide: true, cwd, stdout: "pipe", stderr: "pipe" })
     .stdout.toString()
     .trim();
 
@@ -217,6 +218,7 @@ export function splitExitSentinel(stdout: string): { stdout: string; code: numbe
 async function captureAphrody(argv: readonly string[], timeoutSecs: number): Promise<Captured> {
   const root = aphrodyRoot();
   const proc = Bun.spawn([...argv], {
+    windowsHide: true,
     cwd: root,
     stdout: "pipe",
     stderr: "pipe",
@@ -387,7 +389,7 @@ async function runShip(args: readonly string[], yoloRoot: string): Promise<numbe
         "--sha",
         sha,
       ],
-      { cwd: yoloRoot, detached: true, stdin: "ignore", stdout: fd, stderr: fd },
+      { windowsHide: true, cwd: yoloRoot, detached: true, stdin: "ignore", stdout: fd, stderr: fd },
     );
     child.unref();
     console.log(`yolo ship ${sha.slice(0, 12)} started in the background (var/ship)`);

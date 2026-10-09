@@ -18,6 +18,7 @@
 // The process is owned by `ServerRunner` and killed on drop, so an interrupted
 // batch does not leave a multi-gigabyte process holding the GPU.
 
+use aphrody_proc::NoWindow as _;
 use std::{
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
@@ -68,7 +69,7 @@ impl ServerRunner {
         let source = llama::resolve(LlamaTool::Server).ok_or(OcrError::NoRunner)?;
         let (weights, mmproj) = resolve_artifacts(&options.model_id)?;
 
-        let mut command = Command::new(source.path());
+        let mut command = Command::new(source.path()).no_window();
         command
             .arg("-m")
             .arg(&weights)

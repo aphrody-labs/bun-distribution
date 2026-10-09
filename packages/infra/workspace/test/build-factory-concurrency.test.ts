@@ -12,6 +12,7 @@ import {
 type Environment = Record<string, string | undefined>;
 function launch(args: readonly string[], env: Environment, cwd?: string) {
   const child = Bun.spawn([...args], {
+    windowsHide: true,
     cwd,
     env,
     stdin: "pipe",

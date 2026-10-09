@@ -13,6 +13,7 @@ export function stripAttributionTrailers(message: string): string {
 
 async function git(repo: string, args: string[], input?: string, env?: Record<string, string>) {
   const process = Bun.spawn(["git", "-C", repo, ...args], {
+    windowsHide: true,
     stdin: input ? new Blob([input]) : undefined,
     stdout: "pipe",
     stderr: "pipe",

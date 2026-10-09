@@ -415,6 +415,7 @@ export function spawnRunner(root: string, timeoutMs: number): Runner {
   return async (gate) => {
     // own process group, so a timeout kills the gate's children too instead of leaving them holding the pipes
     const proc = Bun.spawn([...gate.command], {
+      windowsHide: true,
       cwd: root,
       stdout: "pipe",
       stderr: "pipe",
@@ -444,7 +445,7 @@ export function spawnRunner(root: string, timeoutMs: number): Runner {
 }
 
 const git = (root: string, ...args: string[]): string =>
-  spawnSync("git", args, { cwd: root, encoding: "utf8" }).stdout.trim();
+  spawnSync("git", args, { windowsHide: true, cwd: root, encoding: "utf8" }).stdout.trim();
 
 /** Paths changed in the working tree (staged, unstaged, untracked) relative to HEAD. */
 export function changedFiles(root: string): string[] {

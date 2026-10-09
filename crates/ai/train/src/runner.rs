@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Subprocess runner and event streaming engine for training jobs (P10).
 
+use aphrody_proc::NoWindow as _;
 use std::{
     fs::OpenOptions,
     io::Write as _,
@@ -147,7 +148,7 @@ async fn run_training_job_unrecorded(
 
     // 4. Build command
     let py_project = find_python_train_project(repo_root);
-    let mut cmd = Command::new(aphrody_toolchains::Toolchain::Uv.executable());
+    let mut cmd = Command::new(aphrody_toolchains::Toolchain::Uv.executable()).no_window();
     cmd.args(["run", "--project"]).arg(&py_project).args(["--package", "aphrody-train"]);
     if matches!(
         job.kind,

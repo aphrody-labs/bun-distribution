@@ -89,6 +89,7 @@ export async function indexCodebaseToRedis(
   let commitSha = "HEAD";
   try {
     const gitProc = Bun.spawnSync(["git", "rev-parse", "HEAD"], {
+      windowsHide: true,
       cwd: rootDir,
       stdin: "ignore",
       stdout: "pipe",

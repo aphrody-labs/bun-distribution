@@ -4,6 +4,7 @@
 //! Exposes native SSH execution, SFTP remote filesystem navigation, differential
 //! synchronization (`fast_rsync`), and remote Git inspection as kernel tools.
 
+use aphrody_proc::NoWindow as _;
 use std::{
     path::{Path, PathBuf},
     process::Stdio,
@@ -110,7 +111,7 @@ fn resolve_infra_invoker() -> Result<(String, Vec<String>), SubsystemError> {
 
 /// Whether an `aphrody-ssh` found by the operating system's `PATH` lookup runs.
 fn ssh_on_path() -> bool {
-    std::process::Command::new("aphrody-ssh")
+    std::process::Command::new("aphrody-ssh").no_window()
         .arg("--version")
         .output()
         .is_ok_and(|output| output.status.success())
@@ -479,7 +480,7 @@ async fn run_infra_cli(args: &[&str]) -> Result<Value, SubsystemError> {
         cmd_args.push((*arg).to_string());
     }
 
-    let output = Command::new(&program)
+    let output = Command::new(&program).no_window()
         .args(&cmd_args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

@@ -57,6 +57,7 @@ export function runSvgToIco(args: string[]): number {
     return 127;
   }
   const run = Bun.spawnSync([tauri, "icon", svg, "-o", out], {
+    windowsHide: true,
     stdout: "inherit",
     stderr: "inherit",
   });

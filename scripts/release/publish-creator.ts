@@ -96,6 +96,7 @@ export async function sha256File(path: string): Promise<string> {
 
 async function run(argv: string[], cwd = repo, env: Record<string, string> = {}) {
   const proc = Bun.spawn(argv, {
+    windowsHide: true,
     cwd,
     env: { ...process.env, ...env },
     stdout: "pipe",

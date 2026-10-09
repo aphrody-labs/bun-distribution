@@ -8,6 +8,7 @@ pub use cli::cli_main;
 
 pub use recipes::{Step, Target, plan};
 pub use runner::build;
+use aphrody_proc::NoWindow as _;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
@@ -96,7 +97,7 @@ pub fn windows_executable(relative: &str) -> PathBuf {
     if cfg!(windows) || on_path {
         return name;
     }
-    match std::process::Command::new("wslpath").args(["-u", r"C:\Windows\System32"]).output() {
+    match std::process::Command::new("wslpath").no_window().args(["-u", r"C:\Windows\System32"]).output() {
         Ok(out) if out.status.success() => {
             PathBuf::from(String::from_utf8_lossy(&out.stdout).trim()).join(relative)
         },
@@ -304,7 +305,7 @@ pub struct LatestKernel {
 pub fn latest_kernel(config: &Config, config_path: &Path, apply: bool) -> Result<LatestKernel> {
     let source = config.source(MAINLINE_SOURCE)?;
     let output =
-        Command::new("git").args(["ls-remote", "--tags", &source.url, "refs/tags/v*"]).output()?;
+        Command::new("git").no_window().args(["ls-remote", "--tags", &source.url, "refs/tags/v*"]).output()?;
     if !output.status.success() {
         return Err(Error::Invalid(format!("git ls-remote {} failed", source.url)));
     }
@@ -376,7 +377,7 @@ pub fn sources(config: &Config) -> Result<Vec<SourceState>> {
         .collect()
 }
 fn git(path: &Path, args: &[&str]) -> Result<String> {
-    let output = Command::new("git").arg("-C").arg(path).args(args).output()?;
+    let output = Command::new("git").no_window().arg("-C").arg(path).args(args).output()?;
     if !output.status.success() {
         return Err(Error::Invalid(format!("git {} failed at {}", args.join(" "), path.display())));
     }
@@ -482,14 +483,14 @@ pub fn import(config: &Config, install_dir: &Path) -> Result<()> {
         if cfg!(windows) {
             return Ok(path.to_string_lossy().into_owned());
         }
-        let out = Command::new("wslpath").arg("-w").arg(path).output()?;
+        let out = Command::new("wslpath").no_window().arg("-w").arg(path).output()?;
         if !out.status.success() {
             return Err(Error::Invalid("wslpath failed".into()));
         }
         Ok(String::from_utf8_lossy(&out.stdout).trim().into())
     };
     let executable = windows_executable("wsl.exe");
-    let status = Command::new(executable)
+    let status = Command::new(executable).no_window()
         .args([
             "--import",
             &config.distribution,

@@ -33,7 +33,10 @@ test.skipIf(!built)(
 );
 
 test.skipIf(!built)("the tarball contains the wasm, the glue, the typings and the sources", () => {
-  const packed = Bun.spawnSync(["bun", "pm", "pack", "--dry-run"], { cwd: root });
+  const packed = Bun.spawnSync(["bun", "pm", "pack", "--dry-run"], {
+    windowsHide: true,
+    cwd: root,
+  });
   const listing = packed.stdout.toString() + packed.stderr.toString();
   for (const file of [
     "pkg/aphrody_shell_web_bg.wasm",

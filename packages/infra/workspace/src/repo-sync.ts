@@ -131,6 +131,7 @@ function launchFactoryWorker(jobPath: string, logPath: string): JobHandle {
         job.token,
       ],
       {
+        windowsHide: true,
         stdin: "ignore",
         stdout: descriptor,
         stderr: descriptor,

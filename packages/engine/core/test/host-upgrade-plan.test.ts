@@ -43,7 +43,8 @@ async function guard(rows: string[], pid: number, active = true, required = fals
     )
     .replace("systemctl is-active --quiet 'aphrody-mcp-http.service'", active ? "true" : "false")
     .replace("systemctl show 'aphrody-mcp-http.service' -p MainPID --value", `printf %s ${pid}`);
-  return Bun.spawn(["sh", "-c", command], { stdout: "ignore", stderr: "ignore" }).exited;
+  return Bun.spawn(["sh", "-c", command], { windowsHide: true, stdout: "ignore", stderr: "ignore" })
+    .exited;
 }
 const listener = (address: string, pid?: number) =>
   `LISTEN 0 128 ${address}:8793 *:*${pid === undefined ? "" : ` users:(("native",pid=${pid},fd=9))`}`;
@@ -132,7 +133,8 @@ function binaryFixture(sourceRoot = tmpdir()) {
 // The pinned install script targets Linux hosts: its guarantees are POSIX modes, inodes and symlinks.
 const posixTest = test.skipIf(process.platform === "win32");
 const shell = (command: string) =>
-  Bun.spawn(["sh", "-c", command], { stdout: "ignore", stderr: "ignore" }).exited;
+  Bun.spawn(["sh", "-c", command], { windowsHide: true, stdout: "ignore", stderr: "ignore" })
+    .exited;
 
 posixTest(
   "Non-executable or writable native pins are refused without modifying their permissions",

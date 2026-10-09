@@ -1,5 +1,6 @@
 //! `aphrody infra wg`: native WireGuard (wg + wg-quick + WireGuardNT) for the private tunnel.
 
+use aphrody_proc::NoWindow as _;
 use std::io::Read as _;
 use std::path::{Path, PathBuf};
 
@@ -353,16 +354,10 @@ fn detach_up(
     let log = driver::state_dir().join(format!("{name}.log"));
     std::fs::create_dir_all(driver::state_dir())?;
     let file = std::fs::File::create(&log)?;
-    let mut cmd = std::process::Command::new(exe);
+    let mut cmd = std::process::Command::new(exe).detached();
     cmd.args(&args).stdin(std::process::Stdio::null()).stdout(file.try_clone()?).stderr(file);
     #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt as _;
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        const DETACHED_PROCESS: u32 = 0x0000_0008;
-        cmd.creation_flags(CREATE_NO_WINDOW | DETACHED_PROCESS);
-        disinherit_std_handles();
-    }
+    disinherit_std_handles();
     let child = cmd.spawn()?;
     let out = json!({ "name": name, "detached": child.id(), "log": log });
     println!("{}", serde_json::to_string_pretty(&out)?);

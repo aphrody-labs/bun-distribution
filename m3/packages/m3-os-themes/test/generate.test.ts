@@ -212,6 +212,7 @@ describe("icon theme", () => {
         await Bun.write(key, '"Cosmic"');
         const sh = (script: string, ...a: string[]) =>
           Bun.spawnSync(["bash", join(out, script), ...a], {
+            windowsHide: true,
             env: { ...process.env, XDG_DATA_HOME: data, XDG_CONFIG_HOME: conf },
             stdout: "pipe",
             stderr: "pipe",

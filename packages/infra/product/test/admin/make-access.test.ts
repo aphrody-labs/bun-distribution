@@ -78,40 +78,46 @@ test("the command writes a mode 600 file that the kit itself accepts", async () 
   writeFileSync(join(dir, "block.txt"), BLOCK);
   writeFileSync(join(dir, "hosts.txt"), "# comment\n198.51.100.1 ssh-ed25519 AAAAFakeKey\n");
   const out = join(dir, "out", "aphrody-omar-acces.json");
-  const proc = Bun.spawnSync([
-    "bun",
-    join(import.meta.dir, "../../src/cli.ts"),
-    "admin",
-    "access-pack",
-    "--tunnel",
-    join(dir, "tunnel.json"),
-    "--peer",
-    "omar",
-    "--wg-block",
-    join(dir, "block.txt"),
-    "--host-keys",
-    join(dir, "hosts.txt"),
-    "--train-host",
-    "vps",
-    "--out",
-    out,
-  ]);
+  const proc = Bun.spawnSync(
+    [
+      "bun",
+      join(import.meta.dir, "../../src/cli.ts"),
+      "admin",
+      "access-pack",
+      "--tunnel",
+      join(dir, "tunnel.json"),
+      "--peer",
+      "omar",
+      "--wg-block",
+      join(dir, "block.txt"),
+      "--host-keys",
+      join(dir, "hosts.txt"),
+      "--train-host",
+      "vps",
+      "--out",
+      out,
+    ],
+    { windowsHide: true },
+  );
   expect(proc.exitCode).toBe(0);
   expect(proc.stdout.toString()).toContain("1 empreintes");
   const { parseAccessPack } = await import("../../src/admin/lib/profile.ts");
   const pack = parseAccessPack(JSON.parse(readFileSync(out, "utf8")));
   expect(pack.hostKeys).toEqual(["198.51.100.1 ssh-ed25519 AAAAFakeKey"]);
   expect(pack.trainHost).toBe("vps");
-  const inRepo = Bun.spawnSync([
-    "bun",
-    join(import.meta.dir, "../../src/cli.ts"),
-    "admin",
-    "access-pack",
-    "--peer",
-    "omar",
-    "--out",
-    join(import.meta.dir, "leak.json"),
-  ]);
+  const inRepo = Bun.spawnSync(
+    [
+      "bun",
+      join(import.meta.dir, "../../src/cli.ts"),
+      "admin",
+      "access-pack",
+      "--peer",
+      "omar",
+      "--out",
+      join(import.meta.dir, "leak.json"),
+    ],
+    { windowsHide: true },
+  );
   expect(inRepo.exitCode).toBe(1);
   expect(inRepo.stderr.toString()).toContain("refus");
 });

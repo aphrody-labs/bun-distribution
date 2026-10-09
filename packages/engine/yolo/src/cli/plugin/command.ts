@@ -57,6 +57,7 @@ function discoverPlugins(pluginsDir: string): PluginInfo[] {
       let gitCommit: string | undefined;
       try {
         const gitProc = Bun.spawnSync(["git", "rev-parse", "--short", "HEAD"], {
+          windowsHide: true,
           cwd: pluginPath,
           stdin: "ignore",
           stdout: "pipe",

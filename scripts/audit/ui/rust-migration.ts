@@ -19,7 +19,12 @@ const end = "<!-- END generated uirust inventory -->";
 const output = resolve(root, "docs/ui-rust-migration.md");
 
 function git(cwd: string, ...args: string[]): string {
-  const result = Bun.spawnSync(["git", ...args], { cwd, stdout: "pipe", stderr: "pipe" });
+  const result = Bun.spawnSync(["git", ...args], {
+    windowsHide: true,
+    cwd,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   if (result.exitCode !== 0) throw new Error(result.stderr.toString());
   return result.stdout.toString().trim();
 }

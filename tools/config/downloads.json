@@ -25,8 +25,10 @@
     "pushTo": "dbfr"
   },
   "assets": {
-    "install.sh": "packages/infra/workspace/assets/downloads/install.sh",
-    "install.ps1": "packages/infra/workspace/assets/downloads/install.ps1",
+    "install.sh": "scripts/install/install.sh",
+    "install.ps1": "scripts/install/install.ps1",
+    "install-full.sh": "packages/infra/workspace/assets/downloads/install-full.sh",
+    "install-full.ps1": "packages/infra/workspace/assets/downloads/install-full.ps1",
     "pet.webp": "crates/ui/identity/assets/aphrody/sprites/spritesheet.webp",
     "icon.svg": "packages/infra/workspace/assets/downloads/icon.svg"
   },

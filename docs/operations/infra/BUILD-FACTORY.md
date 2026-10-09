@@ -116,41 +116,13 @@ verified pinned IECODE archives use the existing Infra payload shape. Transfer t
 `assemble` mode and native Infra deployment plan/apply. Packaging fixture gates
 do not establish a successful real site build or runtime deployment.
 
-## Direct shared-state migration
+## Completed VPS-to-DBFR migration
 
-Existing VPS-to-DBFR SSH authentication was verified read-only on 2026-10-03;
-no temporary credentials or WSL data relay are required. Invoke the existing
-Infra-owned migration adapter from the qualified VPS checkout:
+The one-shot migration adapters (shared state, private environment transfer, old-IP Nginx forwarder and Redis
+cutover) were removed after the 2026-10-09 cutover: Redis, Nginx and the PostgreSQL tunnel are retired from the VPS
+([migration record](migration-vps-dbfr-2026-10-09.md)). Git history keeps their sources.
 
-```sh
-bash scripts/migration/shenron-shared-transfer.sh prepass
-bash scripts/migration/shenron-shared-transfer.sh prepass --apply
-# Pause source site, bot, backup service/timer through Infra before final pass.
-bash scripts/migration/shenron-shared-transfer.sh final --apply
-```
-
-The destination and `/srv/aphrody-infra/migrations/shenron-transfer-partial`
-must already exist with owner write access. Only `site`, `bot` and `coord` are
-transferred; historical backup stores remain on VPS. Transfer defaults to
-50 MiB/s, bounded by validated `SHENRON_TRANSFER_KIB_PER_SEC`. Partial files
-stay in the Infra migration directory outside protected shared stores. Prepass keeps
-source services running; final pass refuses active source writers and checks
-all source file hashes on DBFR. It never deletes destination stores. Evidence
-manifests remain private host-local files, and all large objects move directly
-between servers. Private runtime environment files require separate scoped
-host-to-host transfer through Infra, retaining 0600 permissions.
-
-## Private runtime configuration and Nginx qualification
-
-`shenron-env-transfer.sh` plans by default. Run `--apply` only on VPS through
-Infra SSH: site/bot and optional compute environment streams directly to DBFR,
-with no private payload stored in the source checkout or on WSL. Source files
-must be regular 0600 files. Runtime PostgreSQL and Redis URLs become DBFR-local;
-explicit remote/build database URLs retain their semantics. Destination files
-are root-owned 0600, installed atomically, with private preexisting-file backups.
-Run the same adapter `--probe` on DBFR to test its configured local PostgreSQL
-connection without putting credentials in argv or logs. This is a connection
-probe, not schema or product qualification.
+## Nginx qualification
 
 DBFR Nginx 1.28.3 was observed with SSL and HTTP/3 modules; certificates for
 site, bot and CDN were readable through root. Install the committed Infra
@@ -197,25 +169,6 @@ This explicit revision mode reads the five regular files directly from Git
 objects and seals their hashes. It verifies the requested commit is present
 and leaves HEAD and working files untouched. Default HEAD export retains its
 clean-source requirement. No fake Git metadata is installed on DBFR.
-
-## Old-IP compatibility during DNS propagation
-
-The observed VPS file `/etc/nginx/conf.d/shenron.conf` owns only apex, www,
-bot and CDN; unrelated hosts have separate files. The bounded existing Infra
-migration adapter `shenron-nginx-forwarder.sh` plans by default. Apply it as
-root on VPS only after DBFR has passed TLS/readiness and source site/bot are
-stopped. It uses the fixed DBFR IPv4 from the Ubuntu SSH alias, forwards over
-verified HTTPS with explicit SNI and original Host, and preserves WebSockets.
-It backs up only the dedicated Shenron file and rolls back on Nginx or local
-TLS probe failure. No Shenron application process remains on VPS.
-
-Keep this compatibility route through the longest published TTL (600 seconds
-at the observation) plus propagation margin. Change only apex/www/bot/CDN DNS;
-`files` already targets DBFR and retired MCP is excluded. After authoritative
-and client DNS checks converge and old-IP traffic has drained, remove only the
-temporary dedicated file through Infra, retain its backups and validate/reload
-Nginx. `restore BACKUP` restores the old configuration for coordinated runtime
-rollback; it does not restart application services.
 
 ## Isolated Bun runtime dependencies
 
@@ -285,14 +238,6 @@ DBFR monorepo assembly installs with `bun install --frozen-lockfile
 native lifecycle compilation stays on VPS. Legacy assembly behavior remains
 compatible. If runtime qualification reveals a required generated native
 artifact, build/seal it on VPS and transfer it rather than compile on DBFR.
-
-### Redis state cutover
-
-Redis is shared infrastructure. Keep source Redis running; stop only Shenron writers before the final snapshot. The existing replica owner preserves the complete RDB, including all logical databases; this migration follows that contract rather than selecting keys.
-
-Run `bash scripts/migration/shenron-redis-transfer.sh` on VPS for the plan, then `bash scripts/migration/shenron-redis-transfer.sh --apply` through Infra SSH after both hosts' site/bot units are inactive. The adapter requires identical Redis versions, target AOF disabled, target `/var/lib/redis/dump.rdb`, and an empty active target. It captures a fresh source snapshot with `redis-cli --rdb`, checks it privately with `redis-check-rdb`, and streams it directly to DBFR. Root-private evidence and the original target RDB/AOF remain under `/srv/aphrody-infra/migrations/shenron-redis-*`; nothing transits WSL.
-
-Only DBFR Redis restarts; its enabled state is unchanged. SHA-256 must match before import. Qualification requires equal nonexpiring counts per database and allows expiring keys to disappear during transport. Changes in source nonexpiring counts refuse import. Failed target qualification restores the previous target RDB and restarts Redis. Keep every target client inactive throughout this operation, including other potential Redis writers. Aggregate count checks prove transport/expiry consistency; they do not prove application behavior. Do not activate a second bot.
 
 ### Shared compute transport
 

@@ -179,6 +179,7 @@ export async function observeCommand(
     if (/^next(?:\.exe)?$/.test(executable) && command.includes("build"))
       throw new Error("Next builds are excluded");
     const child = Bun.spawn(command, {
+      windowsHide: true,
       cwd,
       stdin: "ignore",
       stdout: "pipe",

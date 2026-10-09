@@ -74,7 +74,11 @@ export interface ResolveBunDocsOptions {
 }
 
 function git(cwd: string, args: string[]): string {
-  const proc = Bun.spawnSync(["git", "-C", cwd, ...args], { stdout: "pipe", stderr: "pipe" });
+  const proc = Bun.spawnSync(["git", "-C", cwd, ...args], {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   if (proc.exitCode !== 0)
     throw new Error(`git ${args.join(" ")} failed: ${proc.stderr.toString().trim()}`);
   return proc.stdout.toString().trim();
@@ -128,6 +132,7 @@ export async function fetchForkDocs(
   await rm(staging, { recursive: true, force: true });
   const run = (args: string[], cwd?: string) => {
     const proc = Bun.spawnSync(cwd ? ["git", "-C", cwd, ...args] : ["git", ...args], {
+      windowsHide: true,
       stdout: "pipe",
       stderr: "pipe",
     });
@@ -214,10 +219,7 @@ function checkoutBase(checkout: string, ref: string | undefined): string {
   if (ref) return ref;
   const probe = Bun.spawnSync(
     ["git", "-C", checkout, "rev-parse", "--verify", "--quiet", "origin/main"],
-    {
-      stdout: "pipe",
-      stderr: "pipe",
-    },
+    { windowsHide: true, stdout: "pipe", stderr: "pipe" },
   );
   return probe.exitCode === 0 ? "origin/main" : "HEAD";
 }
@@ -282,6 +284,7 @@ export async function runBunUpstreamDocs(args: string[]): Promise<number> {
     const contents = new Map<string, Uint8Array>();
     for (const name of ROOT_FILES) {
       const show = Bun.spawnSync(["git", "-C", checkout, "show", `${base}:${name}`], {
+        windowsHide: true,
         stdout: "pipe",
         stderr: "pipe",
       });

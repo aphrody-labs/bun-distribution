@@ -94,6 +94,7 @@ export class AutoSyncEngine {
         : name;
     const run = async (args: string[]) => {
       const proc = Bun.spawn(["git", "-C", canonical, ...args], {
+        windowsHide: true,
         env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
         stdout: "pipe",
         stderr: "ignore",

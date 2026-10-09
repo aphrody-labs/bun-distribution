@@ -37,6 +37,7 @@ export async function runAphrody(
     };
   }
   const proc = Bun.spawn([bin, ...args], {
+    windowsHide: true,
     stdout: opts.inherit ? "inherit" : "pipe",
     stderr: opts.inherit ? "inherit" : "pipe",
     stdin: opts.inherit ? "inherit" : "ignore",

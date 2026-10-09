@@ -9,11 +9,7 @@ if (process.argv[2] === "leaf") {
   const directory = process.argv[3]!;
   const child = Bun.spawn(
     [process.execPath, `${import.meta.dir}/python-workspace.ts`, "leaf", `${directory}/ready`],
-    {
-      stdin: "ignore",
-      stdout: "inherit",
-      stderr: "inherit",
-    },
+    { windowsHide: true, stdin: "ignore", stdout: "inherit", stderr: "inherit" },
   );
   child.unref();
   while (!(await Bun.file(`${directory}/ready`).exists())) await Bun.sleep(5);

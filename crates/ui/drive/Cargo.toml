@@ -31,6 +31,7 @@ tauri-plugin = { workspace = true, features = ["build"] }
 swift-rs = { workspace = true, features = ["build"] }
 
 [dependencies]
+aphrody-proc = { workspace = true }
 aphrody-kernel = { workspace = true }
 aphrody-subsystem = { workspace = true }
 tauri = { workspace = true }

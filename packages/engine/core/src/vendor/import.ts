@@ -138,9 +138,18 @@ function scanSections(lines: readonly string[]): Section[] {
     }
     depth = Math.max(0, depth + bracketDelta(line));
   }
-  return headers.map((h, idx) => (Object.assign(h, { end: idx + 1 < headers.length ? (headers[idx + 1] as {
-	start: number;
-}).start : lines.length })));
+  return headers.map((h, idx) =>
+    Object.assign(h, {
+      end:
+        idx + 1 < headers.length
+          ? (
+              headers[idx + 1] as {
+                start: number;
+              }
+            ).start
+          : lines.length,
+    }),
+  );
 }
 
 /** Ranges `[start, end)` of `key = value` entries (multi-line aware) in a section body. */
@@ -434,7 +443,12 @@ export interface ImportResult {
 }
 
 async function git(cwd: string, args: string[]): Promise<string> {
-  const proc = Bun.spawn(["git", ...args], { cwd, stdout: "pipe", stderr: "pipe" });
+  const proc = Bun.spawn(["git", ...args], {
+    windowsHide: true,
+    cwd,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const [out, err, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),

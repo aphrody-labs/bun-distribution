@@ -35,12 +35,7 @@ export function loadCargoMetadata<P = CargoPackage>(
 ): { packages: P[]; workspace_members: string[] } | { error: string } {
   const result = Bun.spawnSync(
     ["cargo", "metadata", "--format-version", "1", "--no-deps", "--offline"],
-    {
-      cwd: dir,
-      env: process.env,
-      stdout: "pipe",
-      stderr: "pipe",
-    },
+    { windowsHide: true, cwd: dir, env: process.env, stdout: "pipe", stderr: "pipe" },
   );
   if (result.exitCode !== 0) {
     return {

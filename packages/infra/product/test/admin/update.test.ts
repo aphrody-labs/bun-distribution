@@ -22,6 +22,7 @@ beforeAll(() => {
   writeFileSync(join(src, "Guide.html"), "new guide");
   const tar = join(src, "..", `omar-${Date.now()}.tar.gz`);
   Bun.spawnSync(["tar", "-czf", basename(tar), "-C", basename(src), "Aphrody-Omar", "Guide.html"], {
+    windowsHide: true,
     cwd: dirname(src),
   });
   archive = new Uint8Array(readFileSync(tar));

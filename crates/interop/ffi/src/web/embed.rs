@@ -4,6 +4,7 @@
 //! The worker owns model inference and installation. This bridge preserves the
 //! Bun C ABI without linking an AI crate into the OS workspace.
 
+use aphrody_proc::NoWindow as _;
 use std::{os::raw::c_char, process::Stdio, sync::OnceLock, time::Duration};
 
 use serde_json::{Value, json};
@@ -42,7 +43,7 @@ fn worker_binary() -> std::ffi::OsString {
 }
 
 fn spawn_worker() -> Result<Worker, String> {
-    let mut child = Command::new(worker_binary())
+    let mut child = Command::new(worker_binary()).no_window()
         .arg("worker")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())

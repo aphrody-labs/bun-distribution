@@ -14,6 +14,7 @@ test("the CLI dispatch creates a plugin through the absorbed command", () => {
   const run = Bun.spawnSync(
     [process.execPath, join(import.meta.dir, "../src/index.ts"), "plugin", "create", target],
     {
+      windowsHide: true,
       cwd: root,
       env: { ...process.env, APHRODY_YOLO_ROOT: join(root, "empty-yolo") },
       stdout: "pipe",
@@ -85,6 +86,7 @@ describe("generateUnifiedYoloPlugin", async () => {
 
   test("the generated session context runs under Bun and emits hook JSON", () => {
     const run = Bun.spawnSync(["bun", join(result.pluginDir, "hooks/scripts/session-context.ts")], {
+      windowsHide: true,
       cwd: root,
       stdout: "pipe",
     });

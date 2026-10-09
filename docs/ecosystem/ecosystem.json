@@ -5675,6 +5675,20 @@
               "children": []
             },
             {
+              "name": "update",
+              "about": "Update to the release published in latest.json (checksum-verified installer, rollback on failure).",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "install",
+              "about": "The single install path: canonical layout (bin/lib/share), PATH, multi-call links, versioned manifest with checksums, former installations removed, then `aphrody infra boot apply --host local` when available.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
               "name": "bootstrap",
               "about": "Inventory dev toolchain (rustup, cargo, git, zigbuild, wasm targets). With `--check`, prints the inventory and exits non-zero on missing required tools; without it, attempts `rustup target add` to fill gaps.",
               "aliases": [],
@@ -6122,6 +6136,13 @@
         {
           "name": "service",
           "about": "Manage cataloged services lifecycle (catalog, status, start, stop, restart, journal).",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "boot",
+          "about": "Persistence at boot: plan, apply or audit the unified desired state (systemd, Docker, Windows tasks and services).",
           "aliases": [],
           "cfg": [],
           "children": []
@@ -8669,6 +8690,20 @@
                 {
                   "name": "install-path",
                   "about": "Register the release binary on the user PATH (HKCU on Windows, symlink into $HOME/.local/bin on Unix) and link the former standalone binary names (aphrody-infra, aphrody-kernel, …) to it.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "update",
+                  "about": "Update to the release published in latest.json (checksum-verified installer, rollback on failure).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "install",
+                  "about": "The single install path: canonical layout (bin/lib/share), PATH, multi-call links, versioned manifest with checksums, former installations removed, then `aphrody infra boot apply --host local` when available.",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -15591,7 +15626,7 @@
     "bunPackages": 116,
     "pythonPackages": 10,
     "cliBinaries": 39,
-    "cliCommands": 1362,
+    "cliCommands": 1367,
     "mcpServers": 20,
     "mcpTools": 391,
     "mcpUniqueToolNames": 389

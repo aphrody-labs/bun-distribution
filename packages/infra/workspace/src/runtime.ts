@@ -118,6 +118,7 @@ export async function runInfra(invocation: InfraInvocation): Promise<InfraResult
     ...invocation.args,
   ];
   const child = Bun.spawn(command, {
+    windowsHide: true,
     cwd: invocation.cwd ?? root,
     stdout: invocation.stdout ?? "pipe",
     stderr: invocation.stderr ?? "pipe",

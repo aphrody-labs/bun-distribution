@@ -45,6 +45,7 @@ process.exitCode = await child.exited;
   await Bun.write(cargo, '#!/bin/sh\nprintf "fixture-cargo:%s\\n" "$*"\n');
   chmodSync(cargo, 0o700);
   return Bun.spawnSync(["bash", wrapper, "check", "-p", "fixture"], {
+    windowsHide: true,
     env: {
       ...process.env,
       PATH: `${bin}:${process.env.PATH ?? ""}`,

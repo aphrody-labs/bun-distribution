@@ -27,7 +27,12 @@ afterEach(async () => {
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 async function run(cwd: string, ...args: string[]) {
-  const child = Bun.spawn(["git", ...args], { cwd, stdout: "pipe", stderr: "pipe" });
+  const child = Bun.spawn(["git", ...args], {
+    windowsHide: true,
+    cwd,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const [stdout, stderr, code] = await Promise.all([
     new Response(child.stdout).text(),
     new Response(child.stderr).text(),
@@ -221,6 +226,7 @@ test("factory queue coalesces later commits while a real background worker is li
   const queue = new FactoryBuildQueue(value.config, directory, (path) => {
     jobs.push(JSON.parse(readFileSync(path, "utf8")) as FactoryJob);
     const child = Bun.spawn([process.execPath, "-e", "await Bun.sleep(200)"], {
+      windowsHide: true,
       stdout: "ignore",
       stderr: "ignore",
     });
@@ -281,7 +287,11 @@ test("factory queue adopts an existing live handle and watcher stop preserves it
     entry,
     `import { answerFactoryJobProbe } from ${JSON.stringify(join(import.meta.dir, "../src/repo-sync.ts"))};\nconst stop = answerFactoryJobProbe(${JSON.stringify(path)}, ${JSON.stringify(job)});\nawait Bun.sleep(3000);\nstop();\n`,
   );
-  const child = Bun.spawn([process.execPath, entry], { stdout: "ignore", stderr: "pipe" });
+  const child = Bun.spawn([process.execPath, entry], {
+    windowsHide: true,
+    stdout: "ignore",
+    stderr: "pipe",
+  });
   job.pid = child.pid;
   await writeFile(path, JSON.stringify(job));
   let launched = false;
@@ -612,6 +622,7 @@ test("repo-sync status reads live receipts and pending metadata without exposing
   await mkdir(join(state, "builds"), { recursive: true });
   expect((await readRepoSyncStatus(value.root, state)).state).toBe("idle");
   const child = Bun.spawn([process.execPath, "-e", "await Bun.sleep(3000)"], {
+    windowsHide: true,
     stdout: "ignore",
     stderr: "ignore",
   });
@@ -673,6 +684,7 @@ test("repo-sync status reads live receipts and pending metadata without exposing
     expect(unchanged.every(Boolean)).toBe(true);
     const yolo = join(import.meta.dir, "../../../../packages/engine/yolo/src/index.ts");
     const cli = Bun.spawn([process.execPath, yolo, "ops", "repo-sync", "status", "--json"], {
+      windowsHide: true,
       stdout: "pipe",
       stderr: "pipe",
       env: {
@@ -707,6 +719,7 @@ test.skipIf(process.platform === "win32")(
     );
     const home = join(value.root, "protected");
     const child = Bun.spawn([process.execPath, entry], {
+      windowsHide: true,
       stdout: "ignore",
       stderr: "pipe",
       env: { ...process.env, APHRODY_HOME: home },

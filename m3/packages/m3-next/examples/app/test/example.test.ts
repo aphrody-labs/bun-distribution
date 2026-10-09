@@ -13,7 +13,7 @@ beforeAll(() => {
   if (!existsSync(join(m3Next, "dist/index.js"))) {
     const build = Bun.spawnSync(
       ["bun", join(m3Next, "../../scripts/build.ts"), "build", "--only", "@aphrody/m3-next"],
-      { cwd: m3Next },
+      { windowsHide: true, cwd: m3Next },
     );
     if (build.exitCode !== 0) throw new Error(build.stderr.toString());
   }

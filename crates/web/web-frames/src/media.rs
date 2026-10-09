@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! FFmpeg-backed single-frame extraction and streaming video indexing.
 
+use aphrody_proc::NoWindow as _;
 use std::{
     io::{BufReader, Read},
     path::{Path, PathBuf},
@@ -23,7 +24,7 @@ pub fn extract_vector(path: impl AsRef<Path>, at_ms: Option<u64>) -> Result<Colo
     let path = path.as_ref();
     let (width, height) = probe_dimensions(path)?;
     let frame_bytes = checked_rgb_bytes(width, height)?;
-    let mut command = Command::new("ffmpeg");
+    let mut command = Command::new("ffmpeg").no_window();
     command.args(["-v", "error", "-nostdin"]);
     if let Some(ms) = at_ms {
         command.args(["-ss", &format_time(ms)]);
@@ -101,7 +102,7 @@ pub fn index_video(
     let meta = MediaMeta { duration_ms, fps, ..meta };
 
     let fps_filter = format!("fps={fps},scale=128:128:flags=area");
-    let mut child = Command::new("ffmpeg")
+    let mut child = Command::new("ffmpeg").no_window()
         .args([
             "-v",
             "error",
@@ -193,7 +194,7 @@ pub fn index_video(
 }
 
 fn probe_duration(path: &Path) -> Result<i64> {
-    let output = Command::new("ffprobe")
+    let output = Command::new("ffprobe").no_window()
         .args([
             "-v",
             "error",
@@ -239,7 +240,7 @@ struct ProbeStream {
     height: u32,
 }
 fn probe_dimensions(path: &Path) -> Result<(u32, u32)> {
-    let output = Command::new("ffprobe")
+    let output = Command::new("ffprobe").no_window()
         .args([
             "-v",
             "error",

@@ -136,6 +136,7 @@ test.skipIf(process.platform !== "linux" || hostTarget() !== LINUX)(
     const root = temp();
     const git = (...args: string[]) =>
       Bun.spawnSync(["git", "-c", "user.name=t", "-c", "user.email=t@example.test", ...args], {
+        windowsHide: true,
         cwd: root,
         stdout: "pipe",
         stderr: "pipe",

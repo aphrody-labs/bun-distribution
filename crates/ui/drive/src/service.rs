@@ -87,7 +87,8 @@ pub fn systemd_unit(daemon: &Path, data_dir: &Path) -> String {
     )
 }
 
-/// The Task Scheduler definition (logon trigger, least privilege, no time limit).
+/// The Task Scheduler definition (logon trigger, least privilege, no time limit, hidden). The daemon runs behind
+/// `conhost.exe --headless`: the interactive session never gets a console window.
 #[must_use]
 pub fn windows_task_xml(daemon: &Path, data_dir: &Path) -> String {
     format!(
@@ -116,7 +117,7 @@ pub fn windows_task_xml(daemon: &Path, data_dir: &Path) -> String {
     <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
     <AllowStartOnDemand>true</AllowStartOnDemand>
     <Enabled>true</Enabled>
-    <Hidden>false</Hidden>
+    <Hidden>true</Hidden>
     <RunOnlyIfIdle>false</RunOnlyIfIdle>
     <WakeToRun>false</WakeToRun>
     <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
@@ -124,8 +125,8 @@ pub fn windows_task_xml(daemon: &Path, data_dir: &Path) -> String {
   </Settings>
   <Actions>
     <Exec>
-      <Command>{}</Command>
-      <Arguments>--data-dir "{}"</Arguments>
+      <Command>conhost.exe</Command>
+      <Arguments>--headless "{}" --data-dir "{}"</Arguments>
     </Exec>
   </Actions>
 </Task>
@@ -340,8 +341,9 @@ mod tests {
     fn xml_is_escaped() {
         assert_eq!(xml_escape(r#"a&b<c>"d'"#), "a&amp;b&lt;c&gt;&quot;d&apos;");
         let xml = windows_task_xml(Path::new(r"C:\A&B\sd-daemon.exe"), Path::new(r"C:\data"));
-        assert!(xml.contains(r"<Command>C:\A&amp;B\sd-daemon.exe</Command>"));
-        assert!(xml.contains(r#"<Arguments>--data-dir "C:\data"</Arguments>"#));
+        assert!(xml.contains("<Command>conhost.exe</Command>"));
+        assert!(xml.contains(r#"<Arguments>--headless "C:\A&amp;B\sd-daemon.exe" --data-dir "C:\data"</Arguments>"#));
+        assert!(xml.contains("<Hidden>true</Hidden>"));
     }
 
     #[test]

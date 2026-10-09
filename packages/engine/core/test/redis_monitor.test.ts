@@ -19,20 +19,23 @@ it("reads complete Git state and reports invalid repositories explicitly", async
   const root = mkdtempSync(join(tmpdir(), "yolo-monitor-git-"));
   const engine = new AutoSyncEngine({ trackedRepos: [root], beaconPaths: [] });
   try {
-    Bun.spawnSync(["git", "init", "-q", root]);
-    Bun.spawnSync([
-      "git",
-      "-C",
-      root,
-      "-c",
-      "user.name=aphrody-dev",
-      "-c",
-      "user.email=contact@aphrody.com",
-      "commit",
-      "--allow-empty",
-      "-qm",
-      "fixture",
-    ]);
+    Bun.spawnSync(["git", "init", "-q", root], { windowsHide: true });
+    Bun.spawnSync(
+      [
+        "git",
+        "-C",
+        root,
+        "-c",
+        "user.name=aphrody-dev",
+        "-c",
+        "user.email=contact@aphrody.com",
+        "commit",
+        "--allow-empty",
+        "-qm",
+        "fixture",
+      ],
+      { windowsHide: true },
+    );
     const state = await engine.getGitState(root);
     expect(state.commit).toMatch(/^[a-f0-9]{40}$/);
     expect(state.dirty).toBe(false);

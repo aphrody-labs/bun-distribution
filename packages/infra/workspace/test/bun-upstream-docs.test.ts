@@ -24,7 +24,11 @@ function scratch(files: Record<string, string> = {}): string {
 }
 
 function git(cwd: string, ...args: string[]): string {
-  const proc = Bun.spawnSync(["git", "-C", cwd, ...args], { stdout: "pipe", stderr: "pipe" });
+  const proc = Bun.spawnSync(["git", "-C", cwd, ...args], {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   if (proc.exitCode !== 0) throw new Error(proc.stderr.toString());
   return proc.stdout.toString().trim();
 }

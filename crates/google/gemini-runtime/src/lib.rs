@@ -34,6 +34,7 @@ pub mod mcp_config;
 pub mod tools;
 pub mod web_search;
 
+use aphrody_proc::NoWindow as _;
 use std::{path::PathBuf, process::Stdio};
 
 pub use auth::{
@@ -337,7 +338,7 @@ impl GeminiRuntime {
         // Extra caller-supplied flags.
         args.extend(opts.extra_args.iter().cloned());
 
-        let mut cmd = Command::new(&self.bin);
+        let mut cmd = Command::new(&self.bin).no_window();
         cmd.args(&args)
             .env("GEMINI_CLI_TRUST_WORKSPACE", "true")
             .stdin(Stdio::piped())
@@ -538,7 +539,7 @@ fn resolve_bin_in(
 pub async fn detect() -> Result<GeminiRuntime, RuntimeError> {
     let bin = resolve_bin()?;
 
-    let output = Command::new(&bin)
+    let output = Command::new(&bin).no_window()
         .arg("--version")
         .stdin(Stdio::null())
         .stdout(Stdio::piped())

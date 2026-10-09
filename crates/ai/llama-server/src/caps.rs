@@ -7,6 +7,7 @@
 //! fast-moving runtime, so the launch line is derived from the build's own
 //! `--help` instead: a flag is only ever passed when the binary advertises it.
 
+use aphrody_proc::NoWindow as _;
 use std::{path::Path, process::Command};
 
 use serde::{Deserialize, Serialize};
@@ -139,7 +140,7 @@ impl ServerCapabilities {
     /// llama-server usage text.
     pub fn probe(binary: &Path) -> Result<Self, CapabilityError> {
         let run = |flag: &str| {
-            Command::new(binary).arg(flag).output().map(|output| {
+            Command::new(binary).no_window().arg(flag).output().map(|output| {
                 // llama.cpp prints usage on stdout and its banner on stderr;
                 // older builds mix the two.
                 let mut text = String::from_utf8_lossy(&output.stdout).into_owned();

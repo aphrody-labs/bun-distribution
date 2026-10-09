@@ -42,6 +42,7 @@ async function writeTrackedCatalog(
   try {
     await Bun.write(draft, content);
     const formatted = Bun.spawnSync([formatter, draft], {
+      windowsHide: true,
       cwd: rootDir,
       stdout: "ignore",
       stderr: "pipe",

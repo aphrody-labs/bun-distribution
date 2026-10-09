@@ -8,6 +8,7 @@ import { close, loadLib, webExtractTitle, webParseHtml } from "./src/web";
 
 test("all public subpaths can be imported without a native artifact", async () => {
   const child = Bun.spawn({
+    windowsHide: true,
     cmd: [
       process.execPath,
       "-e",
@@ -82,6 +83,7 @@ native("M3, SVG, CLI and Web share one handle and respect close/reload", () => {
 
 async function isolatedLibrary(code: string, extra: Record<string, string | undefined> = {}) {
   const child = Bun.spawn({
+    windowsHide: true,
     cmd: [process.execPath, "-e", code],
     cwd: import.meta.dir,
     env: { ...process.env, APHRODY_FFI_LIB: undefined, ...extra },

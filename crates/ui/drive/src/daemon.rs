@@ -9,6 +9,7 @@
 //! a backoff when it exits, adopts a daemon that already serves the socket (a service install
 //! or another desktop), and kills the child it owns when the application exits.
 
+use aphrody_proc::NoWindow as _;
 use std::{
     ffi::OsStr,
     path::{Path, PathBuf},
@@ -129,7 +130,7 @@ pub async fn is_daemon_running(socket_addr: &str) -> bool {
 
 /// Build the command that starts the daemon on `data_dir`, logging to `data_dir/logs`.
 fn daemon_command(binary: &Path, data_dir: &Path) -> Command {
-    let mut command = Command::new(binary);
+    let mut command = Command::new(binary).no_window();
     command.arg("--data-dir").arg(data_dir).stdin(Stdio::null());
     let logs = data_dir.join("logs");
     let log_file = std::fs::create_dir_all(&logs).and_then(|()| {
@@ -142,12 +143,6 @@ fn daemon_command(binary: &Path, data_dir: &Path) -> Command {
         Err(_) => {
             command.stdout(Stdio::null()).stderr(Stdio::null());
         },
-    }
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        command.creation_flags(CREATE_NO_WINDOW);
     }
     command
 }

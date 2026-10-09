@@ -131,7 +131,7 @@ describe("graph parity", () => {
         await writeFile(graphPath, JSON.stringify(graph));
         const child = Bun.spawn(
           [process.execPath, join(import.meta.dir, "graph-parity.ts"), oraclePath, graphPath],
-          { stdout: "pipe", stderr: "pipe" },
+          { windowsHide: true, stdout: "pipe", stderr: "pipe" },
         );
         const [exitCode, stdout, stderr] = await Promise.all([
           child.exited,

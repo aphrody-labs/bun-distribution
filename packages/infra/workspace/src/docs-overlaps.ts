@@ -69,6 +69,7 @@ export function runDocsOverlaps(args: string[]): number {
   if (includes.some((include) => !include)) throw new Error("--include requires a path substring");
   root = resolve(root);
   const result = Bun.spawnSync(["git", "-C", root, "ls-files", "*.md"], {
+    windowsHide: true,
     stdout: "pipe",
     stderr: "pipe",
   });

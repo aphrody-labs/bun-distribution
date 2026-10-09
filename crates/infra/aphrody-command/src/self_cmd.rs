@@ -7,6 +7,7 @@
 //
 // Phase 3.1 of docs/PLAN_RUST_ONLY.md.
 
+use aphrody_proc::NoWindow as _;
 use std::path::{Path, PathBuf};
 
 use async_trait::async_trait;
@@ -54,7 +55,7 @@ impl InstallPathCommand {
                          --locked",
                         bin.display()
                     );
-                    let status = std::process::Command::new("cargo")
+                    let status = std::process::Command::new("cargo").no_window()
                         .args(["build", "-p", "aphrody", "--release", "--locked"])
                         .status()
                         .into_diagnostic()
@@ -429,7 +430,7 @@ impl TerminalCommand for BootstrapCommand {
         let rustup_present = which::which("rustup").is_ok();
         for t in targets {
             if rustup_present {
-                let out = std::process::Command::new("rustup")
+                let out = std::process::Command::new("rustup").no_window()
                     .args(["target", "list", "--installed"])
                     .output();
                 match out {
@@ -469,7 +470,7 @@ impl TerminalCommand for BootstrapCommand {
         println!();
         println!("Installing missing rust targets via rustup...");
         for t in targets {
-            let status = std::process::Command::new("rustup")
+            let status = std::process::Command::new("rustup").no_window()
                 .args(["target", "add", t])
                 .status()
                 .into_diagnostic()
@@ -482,7 +483,7 @@ impl TerminalCommand for BootstrapCommand {
         println!();
         println!("Installing rust-src component (needed for build-std on wasm/embedded)...");
         let _ =
-            std::process::Command::new("rustup").args(["component", "add", "rust-src"]).status();
+            std::process::Command::new("rustup").no_window().args(["component", "add", "rust-src"]).status();
 
         Ok(())
     }

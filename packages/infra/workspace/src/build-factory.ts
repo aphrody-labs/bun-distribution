@@ -311,6 +311,7 @@ async function declaredFactorySource(
     throw new Error("Factory source must be a declared main repository");
   const git = async (args: string[]): Promise<string> => {
     const child = Bun.spawn(["git", ...args], {
+      windowsHide: true,
       cwd: source.path,
       stdout: "pipe",
       stderr: "ignore",
@@ -398,7 +399,12 @@ export async function routeHeavyBuild(
   const config = await readFactoryConfig(root);
   if (!config || heavyBuildStatus(config, process.env, false).route === "local") return undefined;
   const git = async (args: string[]): Promise<string> => {
-    const child = Bun.spawn(["git", ...args], { cwd: root, stdout: "pipe", stderr: "inherit" });
+    const child = Bun.spawn(["git", ...args], {
+      windowsHide: true,
+      cwd: root,
+      stdout: "pipe",
+      stderr: "inherit",
+    });
     const output = await new Response(child.stdout).text();
     if ((await child.exited) !== 0)
       throw new Error("Cannot qualify the build factory source revision");

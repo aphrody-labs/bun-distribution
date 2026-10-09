@@ -28,77 +28,96 @@ document.getElementById("out").textContent =
 document.title = "done";
 </script>`;
 
-test.skipIf(!ready)("WASM shell works in a real browser, local and over WebSocket", async () => {
-  const ptyPort = 20000 + Math.floor(Math.random() * 10000);
-  const server = Bun.spawn([bin!, `127.0.0.1:${ptyPort}`], {
-    env: { ...process.env, APHRODY_OS_AUTH_TOKEN: "t0k3n" },
-    stdout: "ignore",
-    stderr: "ignore",
-  });
-  const transpiler = new Bun.Transpiler({ loader: "ts" });
-  const http = Bun.serve({
-    port: 0,
-    async fetch(req) {
-      const { pathname } = new URL(req.url);
-      if (pathname === "/") return new Response(page(ptyPort), { headers: { "content-type": "text/html" } });
-      if (pathname === "/src/index.js") {
-        const src = await Bun.file(new URL("../src/index.ts", import.meta.url)).text();
-        return new Response(transpiler.transformSync(src), { headers: { "content-type": "text/javascript" } });
-      }
-      if (pathname.startsWith("/pkg/")) {
-        const f = Bun.file(new URL(`.${pathname.slice(4)}`, pkg));
-        return (await f.exists()) ? new Response(f) : new Response("nf", { status: 404 });
-      }
-      return new Response("nf", { status: 404 });
-    },
-  });
-  try {
-    await Bun.sleep(400);
-    const cdpPort = 30000 + Math.floor(Math.random() * 10000);
-    const proc = Bun.spawn(
-      [chrome!, "--headless=new", "--no-sandbox", "--disable-gpu", `--remote-debugging-port=${cdpPort}`,
-       `--user-data-dir=/tmp/aphrody-shell-chrome-${cdpPort}`, "about:blank"],
-      { stdout: "ignore", stderr: "ignore" },
-    );
+test.skipIf(!ready)(
+  "WASM shell works in a real browser, local and over WebSocket",
+  async () => {
+    const ptyPort = 20000 + Math.floor(Math.random() * 10000);
+    const server = Bun.spawn([bin!, `127.0.0.1:${ptyPort}`], {
+      windowsHide: true,
+      env: { ...process.env, APHRODY_OS_AUTH_TOKEN: "t0k3n" },
+      stdout: "ignore",
+      stderr: "ignore",
+    });
+    const transpiler = new Bun.Transpiler({ loader: "ts" });
+    const http = Bun.serve({
+      port: 0,
+      async fetch(req) {
+        const { pathname } = new URL(req.url);
+        if (pathname === "/")
+          return new Response(page(ptyPort), { headers: { "content-type": "text/html" } });
+        if (pathname === "/src/index.js") {
+          const src = await Bun.file(new URL("../src/index.ts", import.meta.url)).text();
+          return new Response(transpiler.transformSync(src), {
+            headers: { "content-type": "text/javascript" },
+          });
+        }
+        if (pathname.startsWith("/pkg/")) {
+          const f = Bun.file(new URL(`.${pathname.slice(4)}`, pkg));
+          return (await f.exists()) ? new Response(f) : new Response("nf", { status: 404 });
+        }
+        return new Response("nf", { status: 404 });
+      },
+    });
     try {
-      let wsUrl = "";
-      for (let i = 0; i < 50 && !wsUrl; i++) {
-        await Bun.sleep(200);
-        try {
-          const tabs = (await (await fetch(`http://127.0.0.1:${cdpPort}/json`)).json()) as { type: string; url: string; webSocketDebuggerUrl: string }[];
-          wsUrl = tabs.find((t) => t.type === "page")?.webSocketDebuggerUrl ?? "";
-        } catch {}
+      await Bun.sleep(400);
+      const cdpPort = 30000 + Math.floor(Math.random() * 10000);
+      const proc = Bun.spawn(
+        [
+          chrome!,
+          "--headless=new",
+          "--no-sandbox",
+          "--disable-gpu",
+          `--remote-debugging-port=${cdpPort}`,
+          `--user-data-dir=/tmp/aphrody-shell-chrome-${cdpPort}`,
+          "about:blank",
+        ],
+        { windowsHide: true, stdout: "ignore", stderr: "ignore" },
+      );
+      try {
+        let wsUrl = "";
+        for (let i = 0; i < 50 && !wsUrl; i++) {
+          await Bun.sleep(200);
+          try {
+            const tabs = (await (await fetch(`http://127.0.0.1:${cdpPort}/json`)).json()) as {
+              type: string;
+              url: string;
+              webSocketDebuggerUrl: string;
+            }[];
+            wsUrl = tabs.find((t) => t.type === "page")?.webSocketDebuggerUrl ?? "";
+          } catch {}
+        }
+        expect(wsUrl).not.toBe("");
+        const cdp = new WebSocket(wsUrl);
+        await new Promise((r) => (cdp.onopen = r));
+        let id = 0;
+        const pending = new Map<number, (v: any) => void>();
+        cdp.onmessage = (e) => {
+          const m = JSON.parse(String(e.data));
+          pending.get(m.id)?.(m);
+        };
+        const evalJs = (expression: string) =>
+          new Promise<string>((res) => {
+            const n = ++id;
+            pending.set(n, (m) => res(m.result?.result?.value ?? JSON.stringify(m)));
+            cdp.send(JSON.stringify({ id: n, method: "Runtime.evaluate", params: { expression } }));
+          });
+        await evalJs(`location.href = "http://127.0.0.1:${http.port}/"`);
+        let title = "";
+        for (let i = 0; i < 60 && title !== "done"; i++) {
+          await Bun.sleep(250);
+          title = await evalJs("document.title");
+        }
+        const out = `${title} ${await evalJs("location.href")} ${await evalJs("document.body.innerText")}`;
+        expect(out).toContain("browser-wasm");
+        expect(out).toMatch(/REMOTE\[[^\]]*live-42/);
+        cdp.close();
+      } finally {
+        proc.kill();
       }
-      expect(wsUrl).not.toBe("");
-      const cdp = new WebSocket(wsUrl);
-      await new Promise((r) => (cdp.onopen = r));
-      let id = 0;
-      const pending = new Map<number, (v: any) => void>();
-      cdp.onmessage = (e) => {
-        const m = JSON.parse(String(e.data));
-        pending.get(m.id)?.(m);
-      };
-      const evalJs = (expression: string) =>
-        new Promise<string>((res) => {
-          const n = ++id;
-          pending.set(n, (m) => res(m.result?.result?.value ?? JSON.stringify(m)));
-          cdp.send(JSON.stringify({ id: n, method: "Runtime.evaluate", params: { expression } }));
-        });
-      await evalJs(`location.href = "http://127.0.0.1:${http.port}/"`);
-      let title = "";
-      for (let i = 0; i < 60 && title !== "done"; i++) {
-        await Bun.sleep(250);
-        title = await evalJs("document.title");
-      }
-      const out = `${title} ${await evalJs("location.href")} ${await evalJs("document.body.innerText")}`;
-      expect(out).toContain("browser-wasm");
-      expect(out).toMatch(/REMOTE\[[^\]]*live-42/);
-      cdp.close();
     } finally {
-      proc.kill();
+      http.stop(true);
+      server.kill();
     }
-  } finally {
-    http.stop(true);
-    server.kill();
-  }
-}, 60000);
+  },
+  60000,
+);

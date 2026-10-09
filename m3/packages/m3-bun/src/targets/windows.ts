@@ -198,6 +198,7 @@ export function windowsIcon(svg: string, outDir: string): string {
     );
   }
   const run = Bun.spawnSync([process.execPath, cli, svg, "--out", outDir], {
+    windowsHide: true,
     cwd: dirname(svg),
     stdout: "pipe",
     stderr: "pipe",
@@ -239,7 +240,7 @@ if (Test-Path $winsw) {
 } else {
   $action = New-ScheduledTaskAction -Execute (Join-Path $InstallDir '${c.name}.exe') -WorkingDirectory $InstallDir
   $trigger = New-ScheduledTaskTrigger -AtStartup
-  $settings = New-ScheduledTaskSettingsSet -RestartCount 5 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit ([TimeSpan]::Zero)
+  $settings = New-ScheduledTaskSettingsSet -Hidden -RestartCount 5 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit ([TimeSpan]::Zero)
   Register-ScheduledTask -TaskName '${c.name}' -Action $action -Trigger $trigger -Settings $settings -User 'SYSTEM' -RunLevel Highest -Force | Out-Null
   [Environment]::SetEnvironmentVariable('PORT', "$Port", 'Machine')
   Start-ScheduledTask -TaskName '${c.name}'

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+use aphrody_proc::NoWindow as _;
 use crate::wsl::{
     Artifact, Config, Error, Result, SourceState, Target, artifact, expected_artifacts, plan,
     sources,
@@ -40,7 +41,7 @@ fn write_report(config: &Config, report: &BuildReport) -> Result<()> {
     Ok(())
 }
 fn windows_path(path: &std::path::Path) -> Result<String> {
-    let output = Command::new("wslpath").arg("-w").arg(path).output()?;
+    let output = Command::new("wslpath").no_window().arg("-w").arg(path).output()?;
     if !output.status.success() {
         return Err(Error::Invalid("Windows path conversion failed".into()));
     }
@@ -102,7 +103,7 @@ pub fn build(config: &Config, target: Target) -> Result<BuildReport> {
         for step in &report.steps {
             eprintln!("Building {}: log {}", step.name, report.log.display());
             writeln!(log, "{} {:?}", step.program.display(), step.args)?;
-            let mut command = Command::new(&step.program);
+            let mut command = Command::new(&step.program).no_window();
             command
                 .args(&step.args)
                 .current_dir(&step.cwd)

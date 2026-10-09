@@ -629,7 +629,8 @@ function Invoke-InstallTask {
 
     $backup = Save-TaskBackup -TaskName $name
     if ($backup) { Write-Info "Tâche existante sauvegardée : $backup" }
-    $action = New-ScheduledTaskAction -Execute $psExe -Argument $argLine
+    # Session interactive requise (appbar) : console hébergée par conhost --headless, jamais affichée.
+    $action = New-ScheduledTaskAction -Execute (Join-Path $env:SystemRoot 'System32\conhost.exe') -Argument ('--headless "{0}" {1}' -f $psExe, $argLine)
     $trigger = New-ScheduledTaskTrigger -AtLogOn -User $userId
     try { $trigger.Delay = 'PT10S' } catch { Write-Warning "Délai de déclenchement non appliqué : $($_.Exception.Message)" }
     $settings = New-ScheduledTaskSettingsSet -Hidden -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `

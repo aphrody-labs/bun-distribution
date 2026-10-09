@@ -175,6 +175,7 @@ export async function checkMirror(
 
 function api(route: string): unknown {
   const result = spawnSync("aphrody", ["git", "api", route], {
+    windowsHide: true,
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
   });

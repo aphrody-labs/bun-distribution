@@ -142,6 +142,7 @@ async function githubToken(): Promise<string | undefined> {
   if (fromEnv) return fromEnv;
   if (!Bun.which("gh")) return undefined;
   const proc = Bun.spawn(["gh", "auth", "token"], {
+    windowsHide: true,
     stdout: "pipe",
     stderr: "ignore",
     timeout: 5_000,
@@ -358,6 +359,7 @@ export async function runUpgrade(args: readonly string[]): Promise<number> {
       ? [Bun.which("pwsh") ?? "powershell.exe", "-NoProfile", "-NonInteractive", "-Command", "-"]
       : ["sh", "-s", "--"];
   const proc = Bun.spawn(command, {
+    windowsHide: true,
     stdin: script,
     stdout: "inherit",
     stderr: "inherit",

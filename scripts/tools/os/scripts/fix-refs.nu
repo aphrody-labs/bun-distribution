@@ -166,7 +166,7 @@ def tracked [root: string, pattern: string, include_dirty: bool]: nothing -> lis
 }
 
 def skipped [file: string]: nothing -> bool {
-    $file =~ '(^|/)(CHANGELOG[^/]*|llms\.txt|SUMMARY\.md)$|^docs/archive/|^crates/(aphrody-obscura|tauri|tauri-plugins)/|node_modules/|\.lock$|lock\.json$'
+    $file =~ '(^|/)(CHANGELOG[^/]*|llms\.txt|SUMMARY\.md)$|^crates/(aphrody-obscura|tauri|tauri-plugins)/|node_modules/|\.lock$|lock\.json$'
 }
 
 def report [changes: list, apply: bool, unresolved: list] {

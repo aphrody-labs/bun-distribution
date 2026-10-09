@@ -85,6 +85,7 @@ describe("aphrody bridge", () => {
       };
       const git = (...args: string[]): string => {
         const result = Bun.spawnSync(["git", "-C", workspace, ...args], {
+          windowsHide: true,
           stdout: "pipe",
           stderr: "pipe",
           env: {
@@ -109,6 +110,7 @@ describe("aphrody bridge", () => {
         git("commit", "-qam", "second");
         const second = git("rev-parse", "HEAD");
         const prepared = Bun.spawnSync(["bash", "-c", remotePrepareCommand(localFactory, first)], {
+          windowsHide: true,
           stdout: "pipe",
           stderr: "pipe",
         });
@@ -117,6 +119,7 @@ describe("aphrody bridge", () => {
         expect(readFileSync(join(workspace, "source.txt"), "utf8")).toBe("first");
         writeFileSync(join(workspace, "source.txt"), "concurrent work");
         const rejected = Bun.spawnSync(["bash", "-c", remotePrepareCommand(localFactory, second)], {
+          windowsHide: true,
           stdout: "pipe",
           stderr: "pipe",
         });

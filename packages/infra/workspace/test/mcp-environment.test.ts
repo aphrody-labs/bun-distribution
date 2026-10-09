@@ -32,6 +32,7 @@ async function fixtureExecutable(path: string, source: string) {
   const entry = `${path}.ts`;
   writeFileSync(entry, source);
   const build = Bun.spawnSync([process.execPath, "build", "--compile", entry, "--outfile", path], {
+    windowsHide: true,
     stdout: "ignore",
     stderr: "pipe",
   });

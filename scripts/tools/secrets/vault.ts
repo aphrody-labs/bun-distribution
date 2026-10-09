@@ -90,6 +90,7 @@ function privateWrite(path: string, data: string | Uint8Array) {
 
 async function run(args: string[], input?: string, extraEnv: Record<string, string> = {}) {
   const child = Bun.spawn(args, {
+    windowsHide: true,
     env: { ...process.env, ...extraEnv },
     stdin: input === undefined ? "ignore" : "pipe",
     stdout: "pipe",

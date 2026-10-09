@@ -15,7 +15,7 @@ const standalone =
 
 const out = (cmd: string[]): string | null => {
   try {
-    const r = Bun.spawnSync(cmd, { cwd: root, stdout: "pipe", stderr: "pipe" });
+    const r = Bun.spawnSync(cmd, { windowsHide: true, cwd: root, stdout: "pipe", stderr: "pipe" });
     return r.exitCode === 0 ? (r.stdout.toString().trim().split("\n")[0] ?? null) : null;
   } catch {
     return null;
@@ -80,8 +80,9 @@ for (const alias of ["vps", "dbfr", "wsl"]) {
     continue;
   }
   const ok =
-    Bun.spawnSync(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=6", alias, "true"])
-      .exitCode === 0;
+    Bun.spawnSync(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=6", alias, "true"], {
+      windowsHide: true,
+    }).exitCode === 0;
   checks.push([`ssh ${alias}`, ok ? "reachable" : null, !standalone]);
 }
 let failed = 0;

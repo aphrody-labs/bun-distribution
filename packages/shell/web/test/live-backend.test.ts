@@ -16,6 +16,7 @@ test.skipIf(!ready)(
     await mod.default({ module_or_path: readFileSync(new URL("aphrody_shell_web_bg.wasm", pkg)) });
     const port = 20000 + Math.floor(Math.random() * 20000);
     const server = Bun.spawn([bin!, `127.0.0.1:${port}`], {
+      windowsHide: true,
       env: { ...process.env, APHRODY_OS_AUTH_TOKEN: "t0k3n" },
       stdout: "ignore",
       stderr: "ignore",

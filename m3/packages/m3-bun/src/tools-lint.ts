@@ -63,7 +63,11 @@ export function oxlintBinary(explicit?: string): string {
   try {
     const manifest = Bun.resolveSync("oxlint/package.json", import.meta.dir);
     const { bin } = require(manifest) as { bin: string | Record<string, string> };
-    return resolve(manifest, "..", typeof bin === "string" ? bin : (bin.oxlint ?? Object.values(bin)[0]!));
+    return resolve(
+      manifest,
+      "..",
+      typeof bin === "string" ? bin : (bin.oxlint ?? Object.values(bin)[0]!),
+    );
   } catch {
     throw new Error("m3-bun lint: oxlint is not installed (bun add -d oxlint, or put it on PATH)");
   }
@@ -75,17 +79,24 @@ export const ruleName = (code: string): string => code.replace(/^([\w-]+)\((.+)\
 /** Lint an app with the m3 rules. */
 export async function lintApp(options: LintOptions = {}): Promise<LintReport> {
   const dir = resolve(options.dir ?? process.cwd());
-  const plugin = (await loadTool("@aphrody/eslint-plugin-m3", () => import("@aphrody/eslint-plugin-m3"))).default;
+  const plugin = (
+    await loadTool("@aphrody/eslint-plugin-m3", () => import("@aphrody/eslint-plugin-m3"))
+  ).default;
   const preset = options.preset ?? "recommended";
   const rules = plugin.configs[preset]?.rules;
-  if (!rules) throw new Error(`m3-bun lint: unknown preset ${preset} (${Object.keys(plugin.configs).join(", ")})`);
+  if (!rules)
+    throw new Error(
+      `m3-bun lint: unknown preset ${preset} (${Object.keys(plugin.configs).join(", ")})`,
+    );
   const configDir = await mkdtemp(join(tmpdir(), "m3-bun-lint-"));
   try {
     const config = join(configDir, ".oxlintrc.json");
     await Bun.write(
       config,
       JSON.stringify({
-        jsPlugins: [fileURLToPath(import.meta.resolve("@aphrody/eslint-plugin-m3")).replaceAll("\\", "/")],
+        jsPlugins: [
+          fileURLToPath(import.meta.resolve("@aphrody/eslint-plugin-m3")).replaceAll("\\", "/"),
+        ],
         ...(options.correctness ? {} : { categories: { correctness: "off" } }),
         rules,
       }),
@@ -102,7 +113,7 @@ export async function lintApp(options: LintOptions = {}): Promise<LintReport> {
         ...(options.fix ? ["--fix"] : []),
         ...(options.paths?.length ? options.paths : ["."]),
       ],
-      { cwd: dir, stdout: "pipe", stderr: "pipe" },
+      { windowsHide: true, cwd: dir, stdout: "pipe", stderr: "pipe" },
     );
     const [stdout, stderr, exitCode] = await Promise.all([
       new Response(proc.stdout).text(),
@@ -113,7 +124,9 @@ export async function lintApp(options: LintOptions = {}): Promise<LintReport> {
     try {
       json = JSON.parse(stdout) as OxlintJson;
     } catch {
-      throw new Error(`m3-bun lint: oxlint exited ${exitCode} without a JSON report:\n${stderr || stdout}`);
+      throw new Error(
+        `m3-bun lint: oxlint exited ${exitCode} without a JSON report:\n${stderr || stdout}`,
+      );
     }
     const diagnostics = json.diagnostics.map((d): LintDiagnostic => {
       const span = d.labels?.[0]?.span;
@@ -128,8 +141,8 @@ export async function lintApp(options: LintOptions = {}): Promise<LintReport> {
     });
     return {
       diagnostics,
-      errors: diagnostics.filter(d => d.severity === "error").length,
-      warnings: diagnostics.filter(d => d.severity === "warning").length,
+      errors: diagnostics.filter((d) => d.severity === "error").length,
+      warnings: diagnostics.filter((d) => d.severity === "warning").length,
       files: json.number_of_files,
       rules: json.number_of_rules,
       exitCode,

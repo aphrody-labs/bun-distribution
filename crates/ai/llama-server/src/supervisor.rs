@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Attach-or-spawn access to a managed `llama-server`.
 
+use aphrody_proc::NoWindow as _;
 use std::{
     fs::OpenOptions,
     path::{Path, PathBuf},
@@ -257,7 +258,7 @@ impl Supervisor {
         }
         let log = OpenOptions::new().create(true).append(true).open(&log_path)?;
 
-        let mut command = Command::new(&self.daemon.program);
+        let mut command = Command::new(&self.daemon.program).no_window();
         command
             .args(&self.daemon.args)
             .arg("--state-root")

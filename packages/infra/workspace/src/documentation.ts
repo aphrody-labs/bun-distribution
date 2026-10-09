@@ -413,6 +413,7 @@ export async function runDocumentation(argv: string[]): Promise<number> {
         language ?? "fr",
       ],
       {
+        windowsHide: true,
         cwd: root,
         stdin: "inherit",
         stdout: "inherit",
@@ -426,7 +427,7 @@ export async function runDocumentation(argv: string[]): Promise<number> {
   if (command === "assist") {
     const child = Bun.spawn(
       [process.execPath, join(root, "packages/engine/yolo/src/index.ts"), "doc-ai", ...rest],
-      { cwd: root, stdin: "inherit", stdout: "inherit", stderr: "inherit" },
+      { windowsHide: true, cwd: root, stdin: "inherit", stdout: "inherit", stderr: "inherit" },
     );
     return child.exited;
   }

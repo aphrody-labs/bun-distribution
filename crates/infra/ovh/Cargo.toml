@@ -9,6 +9,7 @@ repository.workspace = true
 description = "Native OVHcloud engine: OAuth2 service account and SHA-1 signing, services, domains, DNS, VPS, email and IAM management."
 
 [dependencies]
+aphrody-proc = { workspace = true }
 anyhow = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true, features = ["derive"] }

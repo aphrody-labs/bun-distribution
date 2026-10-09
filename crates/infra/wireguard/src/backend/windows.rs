@@ -4,6 +4,7 @@
 //! An adapter created by this process is deleted when its handle is dropped, exactly like a
 //! WireGuard for Windows tunnel service; other processes attach with [`Handle::open`].
 
+use aphrody_proc::NoWindow as _;
 use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
 use std::process::Command;
 
@@ -51,7 +52,7 @@ fn to_set_peer(p: &Peer) -> Result<SetPeer> {
 }
 
 fn netsh(args: &[&str]) -> Result<()> {
-    let out = Command::new("netsh").args(args).output().map_err(err)?;
+    let out = Command::new("netsh").no_window().args(args).output().map_err(err)?;
     if out.status.success() {
         Ok(())
     } else {

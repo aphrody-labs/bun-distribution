@@ -23,6 +23,7 @@ const envWith = (patch) => {
 };
 const run = (code, env = {}, extra = []) => {
   const r = spawnSync(exe, evalArgs(code, extra), {
+    windowsHide: true,
     env: envWith(env),
     encoding: "utf8",
     timeout: 60000,
@@ -139,6 +140,7 @@ const out = { engine, p: {} };
 {
   const here = new URL("./b3-p1.mjs", import.meta.url).pathname;
   const r = spawnSync(exe, isDeno ? ["run", "--allow-all", here] : [here], {
+    windowsHide: true,
     encoding: "utf8",
     timeout: 90000,
   });

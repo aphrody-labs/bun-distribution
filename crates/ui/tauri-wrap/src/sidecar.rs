@@ -3,6 +3,7 @@
 //! loads it from there. The server is the one that already answers the page and its API, so
 //! nothing is proxied or rewritten.
 
+use aphrody_proc::NoWindow as _;
 use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::path::PathBuf;
@@ -80,7 +81,7 @@ pub fn start<R: Runtime>(
     sidecar: &Sidecar,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let port = if sidecar.port == 0 { free_port()? } else { sidecar.port };
-    let mut command = Command::new(executable(&sidecar.program));
+    let mut command = Command::new(executable(&sidecar.program)).no_window();
     command
         .args(&sidecar.args)
         .env("PORT", port.to_string())

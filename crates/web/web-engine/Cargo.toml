@@ -15,6 +15,7 @@ render = ["aphrody-web-service/render", "obscura-browser/render", "obscura-cdp/r
 stealth = ["render", "aphrody-web-service/stealth", "obscura-browser/stealth", "obscura-net/stealth"]
 
 [dependencies]
+aphrody-proc = { workspace = true }
 obscura-browser = { workspace = true }
 aphrody-web-crawl = { workspace = true }
 aphrody-web-extract = { workspace = true }

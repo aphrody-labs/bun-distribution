@@ -169,7 +169,7 @@ for (const site of sites) {
           "1",
           "--quiet",
         ],
-        { cwd: root, stdout: "pipe", stderr: "pipe" },
+        { windowsHide: true, cwd: root, stdout: "pipe", stderr: "pipe" },
       );
       const [code, stdout, stderr] = await Promise.all([
         crawl.exited,
@@ -297,7 +297,7 @@ for (const site of sites) {
         ssh,
         `journalctl ${units} --since '${since} UTC' --no-pager -q -o cat | grep -E '${pattern}' | sort | uniq -c | sort -rn | head -40`,
       ],
-      { stdout: "pipe", stderr: "pipe" },
+      { windowsHide: true, stdout: "pipe", stderr: "pipe" },
     );
     const lines = (await new Response(journal.stdout).text()).trim();
     await journal.exited;

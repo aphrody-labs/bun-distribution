@@ -10,6 +10,7 @@
 //!   uses a new session and `killpg`; Windows uses a Job Object with `KILL_ON_JOB_CLOSE`, so the
 //!   tree dies even when the owner is killed without running destructors.
 //! - [`spawn_detached`] — start a daemon that deliberately survives its parent.
+//! - [`NoWindow`] - keep spawned console programs from opening a window on Windows.
 //! - [`process_alive`] — liveness probe by pid, used to tell a live daemon from a stale state file.
 //! - [`free_port`] — an ephemeral loopback TCP port.
 //! - [`FileLock`] — advisory whole-file locks (shared / exclusive).
@@ -28,11 +29,14 @@ mod lock;
 #[cfg(not(target_arch = "wasm32"))]
 mod port;
 
+mod no_window;
+
 #[cfg(unix)]
 mod unix;
 #[cfg(windows)]
 mod windows;
 
+pub use no_window::NoWindow;
 #[cfg(not(target_arch = "wasm32"))]
 pub use group::{
     GroupChild, SpawnOptions, process_alive, spawn_detached, spawn_group, terminate_process,

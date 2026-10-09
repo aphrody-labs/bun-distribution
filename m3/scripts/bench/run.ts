@@ -375,6 +375,7 @@ async function compileServer(ctx: Ctx, variant: "default" | "tuned"): Promise<vo
   ctx.metrics[`${key}.start`] = summarize(samples);
   // Gate: the executable serves the embedded HTML.
   const proc = Bun.spawn([exe], {
+    windowsHide: true,
     cwd: SCRATCH,
     stdout: "pipe",
     stderr: "ignore",

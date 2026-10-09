@@ -386,7 +386,9 @@ describe.skipIf(!supported)("yolo py with the vu runtime", () => {
       checked: "quick",
       artifact: dir,
     });
-    const nativeVersion = Bun.spawnSync([process.execPath, "--version"]).stdout.toString().trim();
+    const nativeVersion = Bun.spawnSync([process.execPath, "--version"], { windowsHide: true })
+      .stdout.toString()
+      .trim();
     expect(report.uvVersion).toBe(process.platform === "win32" ? nativeVersion : "uv 0.12.23");
     expect(report.ruffVersion).toBe(process.platform === "win32" ? nativeVersion : "ruff 0.16.10");
   });

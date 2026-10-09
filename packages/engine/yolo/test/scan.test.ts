@@ -37,12 +37,7 @@ describe("yolo scan CLI arguments", () => {
   }> {
     const proc = Bun.spawn(
       [process.execPath, resolve(rootDir, "packages/engine/yolo/src/index.ts"), "scan", ...args],
-      {
-        cwd: fixtureDir,
-        stdin: "ignore",
-        stdout: "pipe",
-        stderr: "pipe",
-      },
+      { windowsHide: true, cwd: fixtureDir, stdin: "ignore", stdout: "pipe", stderr: "pipe" },
     );
     const [code, stdout, stderr] = await Promise.all([
       proc.exited,

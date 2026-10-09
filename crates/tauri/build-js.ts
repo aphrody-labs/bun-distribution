@@ -52,7 +52,7 @@ async function build(dir: string): Promise<void> {
   const tsconfig = existsSync(join(dir, "tsconfig.json")) ? ["-p", join(dir, "tsconfig.json")] : layout.entries;
   const types = Bun.spawnSync(
     [tsgo, ...tsconfig, "--noEmit", "false", "--declaration", "--emitDeclarationOnly", "--rootDir", layout.root, "--outDir", layout.outdir],
-    { cwd: dir, stdout: "inherit", stderr: "inherit" },
+    { windowsHide: true, cwd: dir, stdout: "inherit", stderr: "inherit" },
   );
   if (types.exitCode !== 0) process.exit(types.exitCode ?? 1);
   console.log(`${manifest.name}: ${relative(dir, layout.outdir)}/ (${layout.entries.length} entries)`);

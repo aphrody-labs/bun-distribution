@@ -27,6 +27,7 @@ export async function exec(
   let proc: ReturnType<typeof Bun.spawn>;
   try {
     proc = Bun.spawn([program, ...args], {
+      windowsHide: true,
       cwd: options.cwd,
       env: { ...process.env, ...options.env } as Record<string, string>,
       stdin: "ignore",

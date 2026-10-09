@@ -21,7 +21,12 @@ if (!(await Bun.file(libraryPath).exists())) {
 }
 
 async function git(...args: string[]): Promise<string> {
-  const proc = Bun.spawn(["git", ...args], { cwd: root, stdout: "pipe", stderr: "pipe" });
+  const proc = Bun.spawn(["git", ...args], {
+    windowsHide: true,
+    cwd: root,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const out = await new Response(proc.stdout).text();
   return (await proc.exited) === 0 ? out.trim() : "unknown";
 }

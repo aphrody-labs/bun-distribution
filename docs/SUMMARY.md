@@ -13,10 +13,7 @@
 - [Distribution](operations/release/DISTRIBUTION.md)
 - Fact-check: October 2026
 - Critical issues: October 2026
-- [Stack report: October 2026](archive/snapshots/STACK-REPORT-2026-10.md)
 - [Architecture & Maturation de la Stack](decisions/architecture/STACK-DECISION.md)
 - [Architecture Shell & Terminal](architecture/shell/README.md)
 - [Guide des Meilleures Pratiques (Rust + Python + Bun)](guides/workspace/BEST_PRACTICES.md)
-- [Rapport d'Ingénierie & Convergence Rust-Python](archive/research/RAPPORT_RUST_PYTHON_RESEARCH.md)
-- [Awesome Ecosystem Polyglotte](archive/research/AWESOME-POLYGLOT.md)
 

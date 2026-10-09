@@ -154,13 +154,14 @@ describe.skipIf(!built)("wasm", () => {
     "outputs are identical to the native `aphrody pure`",
     () => {
       for (const [name, args, options] of cases) {
-        const dir = Bun.spawnSync(["mktemp", "-d"]).stdout.toString().trim();
+        const dir = Bun.spawnSync(["mktemp", "-d"], { windowsHide: true }).stdout.toString().trim();
         for (const [file, text] of Object.entries(options.files ?? {})) {
           const path = join(dir, file);
-          Bun.spawnSync(["mkdir", "-p", join(path, "..")]);
+          Bun.spawnSync(["mkdir", "-p", join(path, "..")], { windowsHide: true });
           Bun.write(path, text);
         }
         const proc = Bun.spawnSync([native!, "pure", ...args], {
+          windowsHide: true,
           cwd: dir,
           stdin: new TextEncoder().encode(options.stdin ?? ""),
         });

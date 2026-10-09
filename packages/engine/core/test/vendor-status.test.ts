@@ -15,7 +15,12 @@ import { readWorkspaceCargo } from "../../core/src/vendor/cargo";
 const roots: string[] = [];
 afterEach(() => roots.splice(0).forEach((root) => rmSync(root, { recursive: true, force: true })));
 function git(cwd: string, ...args: string[]) {
-  const child = Bun.spawnSync(["git", ...args], { cwd, stdout: "pipe", stderr: "pipe" });
+  const child = Bun.spawnSync(["git", ...args], {
+    windowsHide: true,
+    cwd,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   if (child.exitCode !== 0) throw new Error(child.stderr.toString());
   return child.stdout.toString().trim();
 }

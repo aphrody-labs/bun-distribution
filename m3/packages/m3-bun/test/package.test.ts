@@ -2,7 +2,13 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative } from "node:path";
-import { archiveDir, bunArchiveSupported, buildRootfs, packageApp, parseLdd } from "../src/package.ts";
+import {
+  archiveDir,
+  bunArchiveSupported,
+  buildRootfs,
+  packageApp,
+  parseLdd,
+} from "../src/package.ts";
 import { sha256 } from "../src/util.ts";
 import { cleanup, fixtureCopy, tmp } from "./helpers.ts";
 
@@ -40,6 +46,7 @@ describe("archiveDir", () => {
     const archive = join(tmp(), "out", "a.tar.gz");
     expect(await archiveDir(staging, archive, "tar.gz")).toBe(await archiver());
     const listing = Bun.spawnSync(["tar", "-tvzf", basename(archive)], {
+      windowsHide: true,
       cwd: dirname(archive),
       stdout: "pipe",
     }).stdout.toString();
@@ -69,6 +76,7 @@ describe("archiveDir", () => {
     const archive = join(tmp(), "a.zip");
     expect(await archiveDir(staging, archive, "zip")).toBe(await archiver());
     const check = Bun.spawnSync(["unzip", "-t", basename(archive)], {
+      windowsHide: true,
       cwd: dirname(archive),
       stdout: "pipe",
     });
@@ -79,23 +87,29 @@ describe("archiveDir", () => {
 });
 
 describe("bunArchiveSupported", () => {
-  test.skipIf(!archiveSupported)("archiveDir writes with Bun.Archive: files only, contents intact, both formats", async () => {
-    const staging = tmp();
-    writeFileSync(join(staging, "app"), "#!/bin/sh\n", { mode: 0o755 });
-    mkdirSync(join(staging, "deploy"));
-    writeFileSync(join(staging, "deploy", "x.conf"), "x");
-    const archives = await Promise.all(
-      (["tar.gz", "zip"] as const).map(async format => {
-        const archive = join(tmp(), `a.${format}`);
-        return { writer: await archiveDir(staging, archive, format), files: await new Bun.Archive(await Bun.file(archive).bytes()).files() };
-      }),
-    );
-    for (const { writer, files } of archives) {
-      expect(writer).toBe("bun-archive");
-      expect([...files.keys()].toSorted()).toEqual(["app", "deploy/x.conf"]);
-      expect(files.get("app")!.size).toBe(10);
-    }
-  });
+  test.skipIf(!archiveSupported)(
+    "archiveDir writes with Bun.Archive: files only, contents intact, both formats",
+    async () => {
+      const staging = tmp();
+      writeFileSync(join(staging, "app"), "#!/bin/sh\n", { mode: 0o755 });
+      mkdirSync(join(staging, "deploy"));
+      writeFileSync(join(staging, "deploy", "x.conf"), "x");
+      const archives = await Promise.all(
+        (["tar.gz", "zip"] as const).map(async (format) => {
+          const archive = join(tmp(), `a.${format}`);
+          return {
+            writer: await archiveDir(staging, archive, format),
+            files: await new Bun.Archive(await Bun.file(archive).bytes()).files(),
+          };
+        }),
+      );
+      for (const { writer, files } of archives) {
+        expect(writer).toBe("bun-archive");
+        expect([...files.keys()].toSorted()).toEqual(["app", "deploy/x.conf"]);
+        expect(files.get("app")!.size).toBe(10);
+      }
+    },
+  );
 });
 
 describe("packageApp", () => {
@@ -129,7 +143,10 @@ describe("packageApp", () => {
     );
     expect(statSync(report.archive).size).toBe(report.bytes);
     const extracted = tmp();
-    Bun.spawnSync(["tar", "-xzf", relative(extracted, report.archive)], { cwd: extracted });
+    Bun.spawnSync(["tar", "-xzf", relative(extracted, report.archive)], {
+      windowsHide: true,
+      cwd: extracted,
+    });
     expect(readFileSync(join(extracted, "SHA256SUMS"), "utf8")).toBe(
       `${sha256(new Uint8Array(readFileSync(stub)))}  hello-m3\n`,
     );
@@ -137,6 +154,7 @@ describe("packageApp", () => {
     if (process.platform !== "win32")
       expect(statSync(join(extracted, "hello-m3")).mode & 0o111).not.toBe(0);
     const listing = Bun.spawnSync(["tar", "-tvzf", basename(report.archive)], {
+      windowsHide: true,
       cwd: dirname(report.archive),
       stdout: "pipe",
     }).stdout.toString();

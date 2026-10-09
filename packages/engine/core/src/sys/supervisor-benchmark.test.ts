@@ -15,6 +15,7 @@ describe("native supervisor benchmark", () => {
       [[], 2, "--artifact is required"],
     ] as const) {
       const result = Bun.spawnSync([process.execPath, script, ...args], {
+        windowsHide: true,
         stdout: "pipe",
         stderr: "pipe",
         timeout: 5000,
@@ -37,13 +38,14 @@ describe("native supervisor benchmark", () => {
       );
       const compiled = Bun.spawnSync(
         [process.execPath, "build", "--compile", ...COMPILE_FLAGS, entry, "--outfile", binary],
-        { stdout: "pipe", stderr: "pipe", timeout: 30000 },
+        { windowsHide: true, stdout: "pipe", stderr: "pipe", timeout: 30000 },
       );
       expect({ code: compiled.exitCode, error: compiled.stderr.toString() }).toEqual({
         code: 0,
         error: "",
       });
       const imported = Bun.spawnSync([binary, "--artifact", "/absent-runtime"], {
+        windowsHide: true,
         cwd: temporary,
         env: { PATH: process.platform === "win32" ? process.env.PATH : "/usr/bin:/bin" },
         stdout: "pipe",

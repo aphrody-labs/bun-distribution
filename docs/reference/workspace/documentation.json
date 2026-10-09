@@ -2046,8 +2046,8 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "d0a6359279b7cab30138aed997b7e49db2d73ed6f6dc9987f8bbbe0d1690ff2a",
-      "bytes": 8060,
+      "sha256": "11843c9395d5c4fa8ee09fd3f6c48f1978c0a27870374b114d674b48ade4409b",
+      "bytes": 7818,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -2056,10 +2056,10 @@
     {
       "path": "docs/SUMMARY.md",
       "title": "Summary",
-      "sha256": "2f91227140eb2023df09b392dd1e1c77fbf61a4662d05acc32a9edd672856ece",
-      "bytes": 1255,
+      "sha256": "71ccecabe61a0d8ecea0440a180e60ef3856db8542d33b50ec429e7b8fe744aa",
+      "bytes": 1008,
       "domain": "",
-      "status": "historical",
+      "status": "canonical",
       "visibility": "private",
       "canonical": "docs/SUMMARY.md"
     },
@@ -2126,7 +2126,7 @@
     {
       "path": "docs/apis/generated/infra-rust.md",
       "title": "Source reference: infra-rust",
-      "sha256": "570be6f71bfb8c532246dd531f37b8b1464b0b95260b2dc2f6c2c551084a0748",
+      "sha256": "ab5557022a20de651e072382f4a2e5f7e6d5c1433a629a64f1fea9063b7d5371",
       "bytes": 2762,
       "domain": "generated",
       "status": "generated",
@@ -2376,8 +2376,8 @@
     {
       "path": "docs/architecture/runtime-native/RUNTIME.md",
       "title": "Unified native runtime",
-      "sha256": "6f01cebbb9c9bcee7e8416a84dd26648c20e740430b08b8743efb10fcb0e4e3b",
-      "bytes": 1211,
+      "sha256": "37c349881ebf6ed19d62bd529b85593db65e4d95db0be0036f8580190f14aa36",
+      "bytes": 1037,
       "domain": "runtime-native",
       "status": "canonical",
       "visibility": "private",
@@ -2484,46 +2484,6 @@
       "canonical": "docs/architecture/workspace/SHENRON-DEDUP.md"
     },
     {
-      "path": "docs/archive/memos/APHRODY-RUST-TAURI-OBSCURA-BUN.md",
-      "title": "Inventaire Rust Aphrody : Tauri, Obscura et Bun",
-      "sha256": "30bedd254fc60bffbfb9d5b1ca45a945fcd017448dc8e214234d4dab6ba9652a",
-      "bytes": 62143,
-      "domain": "memos",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/archive/memos/APHRODY-RUST-TAURI-OBSCURA-BUN.md"
-    },
-    {
-      "path": "docs/archive/research/AWESOME-POLYGLOT.md",
-      "title": "Awesome Rust, Python, Bun, UV, Tauri 3 & PyO3 Ecosystem (2026)",
-      "sha256": "0b5262d7e8b9d26f9d6720dc0ab28ad0483effe759d312872ebf9b24cd7d9347",
-      "bytes": 4237,
-      "domain": "research",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/archive/research/AWESOME-POLYGLOT.md"
-    },
-    {
-      "path": "docs/archive/research/RAPPORT_RUST_PYTHON_RESEARCH.md",
-      "title": "Rapport d'Ingénierie & Convergence Rust-Python (PEP 703 No-GIL)",
-      "sha256": "ac4c0c0a4ab8e242a87363b2d9d6d9b91d225d973535f888c63f721096b0202c",
-      "bytes": 5400,
-      "domain": "research",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/archive/research/RAPPORT_RUST_PYTHON_RESEARCH.md"
-    },
-    {
-      "path": "docs/archive/snapshots/STACK-REPORT-2026-10.md",
-      "title": "Yolo stack report: October 2026",
-      "sha256": "110761e277e4aba3fb148ed4f130c13b177536459b1395874b4e5494eebff028",
-      "bytes": 15128,
-      "domain": "snapshots",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/archive/snapshots/STACK-REPORT-2026-10.md"
-    },
-    {
       "path": "docs/cli/HELP.md",
       "title": "yolo CLI reference",
       "sha256": "a158cc3a16ee0c35b262e8d70e9e3d9056d6bdfb579cc7bb02971fc2baefeedc",
@@ -2626,8 +2586,8 @@
     {
       "path": "docs/ecosystem/MCP-TOOLS.md",
       "title": "MCP tools",
-      "sha256": "a54716802a9455db0f2854fb515991c02e91a43916c1dfb39c9a6e0390e5745a",
-      "bytes": 65443,
+      "sha256": "8f55e51e03eaf0af7b0d1c8fc5013cebc947613b2a0651b1c008ba1db96706b8",
+      "bytes": 65513,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -2796,8 +2756,8 @@
     {
       "path": "docs/guides/workspace/README.md",
       "title": "Parcours Workspace Aphrody",
-      "sha256": "d167fae66729db34860b4226191646be5d4b7481c14dcb58b93740dd48a6cf70",
-      "bytes": 1823,
+      "sha256": "8a40a5a34cc12dedd58e5dbdb748838f9ca974981d40724dea6b5ec8f7304c75",
+      "bytes": 1685,
       "domain": "workspace",
       "status": "canonical",
       "visibility": "private",
@@ -3096,8 +3056,8 @@
     {
       "path": "docs/operations/infra/BUILD-FACTORY.md",
       "title": "VPS build factory and DBFR Shenron runtime",
-      "sha256": "03bbf199e62de5a95d3ee2d93730d3daa2105e7949adb994313a50b77737e7bb",
-      "bytes": 23681,
+      "sha256": "9485c00aa841f5ebbe7faf092eeb54a45a3052c6be1e82488532b9a408c6d350",
+      "bytes": 19368,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -3134,20 +3094,10 @@
       "canonical": "docs/operations/infra/DBFR-FLEET-MCP.md"
     },
     {
-      "path": "docs/operations/infra/DISCORD-SHENRON-AI.md",
-      "title": "Discord Aphrody et Shenron : raccordement IA",
-      "sha256": "ad7e56e505e96199228f71fed1cf3bae746c0b4826bc787f38104efa686398c1",
-      "bytes": 15310,
-      "domain": "infra",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/operations/infra/DISCORD-SHENRON-AI.md"
-    },
-    {
       "path": "docs/operations/infra/DOWNLOADS.md",
       "title": "Aphrody downloads: site, publisher and GitHub releases",
-      "sha256": "ce5b3343abc789e8a5db5655e59e7a9e8d0f619f525ede05fe9d48bd9429bafc",
-      "bytes": 9109,
+      "sha256": "ef028581f2090828f1bdc7d4208d964c7a31a430e7b293980412e1b7cd49b712",
+      "bytes": 9124,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -3204,6 +3154,16 @@
       "canonical": "docs/operations/infra/INFRA-UNIFICATION.md"
     },
     {
+      "path": "docs/operations/infra/INSTALL.md",
+      "title": "Installation: one layout, one path (aphrody self install)",
+      "sha256": "59ef149c231137bf6739a4dea7844aeb60481d94deca590690fd0601a4e79947",
+      "bytes": 3868,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/INSTALL.md"
+    },
+    {
       "path": "docs/operations/infra/LLAMA-MODELS.md",
       "title": "llama-server models",
       "sha256": "a6e91e10070fc5a8c97837b6c24778a58d0cf41d70db5212c2e4eb86fd676da0",
@@ -3216,8 +3176,8 @@
     {
       "path": "docs/operations/infra/MCP-A2A.md",
       "title": "MCP et A2A persistants sur le VPS",
-      "sha256": "7a9532ff0fd06d2d032be0f25bf486f422daf7379c5ee181ca271e9db4538f7d",
-      "bytes": 34792,
+      "sha256": "e0d4126d7d2ddccbcb19efceb383809fb1698ccd2029fc8e97b2c9e930d1a4c7",
+      "bytes": 34949,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -3236,8 +3196,8 @@
     {
       "path": "docs/operations/infra/OMAR-REMOTE-CONTROL.md",
       "title": "Contrôle du PC Windows d'Omar depuis Aphrody (tunnel WireGuard privé)",
-      "sha256": "6e49511efc4bb99afc969c411f65f6fdeffdd56c74b16aaf23197ae455b0edef",
-      "bytes": 37956,
+      "sha256": "44218d93b32b3616aeaa54fa34c81da191788e51c07d4dc961920deeaaf44eb1",
+      "bytes": 37764,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -3336,8 +3296,8 @@
     {
       "path": "docs/operations/infra/TOOLCHAIN-SYNC.md",
       "title": "Toolchain sync (WSL, Windows, vps, dbfr)",
-      "sha256": "774276e28b7500e16584f7fd954620d2f93c1c7be2ef29dc1584f40bbbcfb4c4",
-      "bytes": 3977,
+      "sha256": "5ee4aa80113cf28b215d209b37d8ac090972a44aba00556915260ce593c99710",
+      "bytes": 3829,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -3946,8 +3906,8 @@
     {
       "path": "docs/plans/desktop-web/INVENTORY.md",
       "title": "Single CEF runtime: inventory of wry, tao, GTK3 and WebKitGTK references",
-      "sha256": "ffd5a2fc4caea859dc0b7189e3116b19d9d2c1c2d79d0d762794a96f0c23f7cf",
-      "bytes": 38671,
+      "sha256": "b6ab9bf653604c284711e0c27164bd4977ed5eeeeb3634afb87f1f35ffb58b28",
+      "bytes": 38591,
       "domain": "desktop-web",
       "status": "canonical",
       "visibility": "private",
@@ -4142,26 +4102,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/plans/python-bun/TODO.md"
-    },
-    {
-      "path": "docs/plans/runtime/history/PLAN-before-unified-runtime-2026-10-03.md",
-      "title": "Plan du monorepo Aphrody — 2026-10-01",
-      "sha256": "7ee4d711f93e8ea98421c73f8ee4098d2a0154a428e406f471a951ec7e8b7591",
-      "bytes": 146924,
-      "domain": "runtime",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/plans/runtime/history/PLAN-before-unified-runtime-2026-10-03.md"
-    },
-    {
-      "path": "docs/plans/runtime/history/README.md",
-      "title": "Documents before the unified runtime plan",
-      "sha256": "d36299e011a122e56ab8202ac67c72ae6264ae1bcb2b1877cc6981ea3a5146dc",
-      "bytes": 1734,
-      "domain": "runtime",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/plans/runtime/history/README.md"
     },
     {
       "path": "docs/plans/runtime/rspyts-alignment.md",
@@ -5396,8 +5336,8 @@
     {
       "path": "docs/reference/ai/cargo/SKILLS.md",
       "title": "Agent Skills — Ecosystem & Centralization",
-      "sha256": "03daa1a65bb4c56cfb47a99c2bb392084ec79f784d178597f3a831a81f2b39c6",
-      "bytes": 11795,
+      "sha256": "f859b2c299a622a750ab0c7116cbaea01945d3b2e4662b8bbbd88a235c535e6c",
+      "bytes": 11622,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -6976,8 +6916,8 @@
     {
       "path": "docs/reference/upstream-bun/APHRODY-FORK.md",
       "title": "Bun in Aphrody: the aphrody-labs/bun fork",
-      "sha256": "2b758e3d9bd9d2dc18aa245678a83b77f278f9500e3e4359e67fd40808ced458",
-      "bytes": 6739,
+      "sha256": "63ab78ec01fdc3e359af23be6fc30a792d93d4a0babf00e641ae14886842539e",
+      "bytes": 7197,
       "domain": "upstream-bun",
       "status": "imported",
       "visibility": "private",
@@ -7534,26 +7474,6 @@
       "canonical": "docs/reference/workspace/LAYOUT.md"
     },
     {
-      "path": "docs/reference/workspace/SCRIPTS-INVENTORY.md",
-      "title": "Inventaire des scripts par références entrantes — 2026-10-03",
-      "sha256": "326c115228ea71f8ef7a1cb2ed9c2160e1d9ae9d877232436bcbd20247eeec26",
-      "bytes": 24927,
-      "domain": "workspace",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/workspace/SCRIPTS-INVENTORY.md"
-    },
-    {
-      "path": "docs/reference/workspace/STACK-REPORT-2026-10.md",
-      "title": "Yolo Stack Report: October 2026",
-      "sha256": "13122b694078f183ba03216b594341d97e51b78ec50c05454b745761dd8f5081",
-      "bytes": 4299,
-      "domain": "workspace",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/workspace/STACK-REPORT-2026-10.md"
-    },
-    {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
       "sha256": "b289f8e1d8925204751d6d2cecf2a827c1992cf6b8eec42d34b96fe7d70c4cd2",
@@ -7566,8 +7486,8 @@
     {
       "path": "docs/reference/workspace/TOOLS.md",
       "title": "Outils et contextes Agent Home",
-      "sha256": "ab3ce9a74e947fd84d9782bbdabe22370ee9b866264904352140d379be6dc377",
-      "bytes": 45272,
+      "sha256": "99c8aca1aa2a9e43b2afb2fb05f965cd4a9ca46cbde31fce50ad492ce25f934b",
+      "bytes": 45259,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",
@@ -8256,8 +8176,8 @@
     {
       "path": "docs/ui-rust-migration.md",
       "title": "Migration de l’UI vers Rust",
-      "sha256": "86b7477dc6ff388d105989f9d010a247e72cb7f90e2c3abab8b481233e3f45a8",
-      "bytes": 579496,
+      "sha256": "c54c898b80f54b7343364531d433dfa44f7f54cd94b685a20309804eb112268b",
+      "bytes": 358444,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -12822,26 +12742,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "scripts/README.md"
-    },
-    {
-      "path": "scripts/tools/discord/debate/README.md",
-      "title": "Rivalité Aphrody / Shenron dans Discord",
-      "sha256": "1b3542b8731e5597bdf02a050da4a5a7f612b30e449d8c4239264cb881595e29",
-      "bytes": 12744,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "scripts/tools/discord/debate/README.md"
-    },
-    {
-      "path": "scripts/tools/discord/debate/TODO.md",
-      "title": "Débat Discord demandé le 2026-10-07",
-      "sha256": "e2a9f9f56944859e419980bdfdb0c5560db713364d4198a7ccefc3ca391f8588",
-      "bytes": 2080,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "scripts/tools/discord/debate/TODO.md"
     },
     {
       "path": "tools/config/container/desktop/README.md",

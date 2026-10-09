@@ -12,7 +12,7 @@ async function main() {
 		"--dump",
 		"artifact",
 		"--quiet",
-	], { stdout: "pipe", stderr: "inherit" });
+	], { windowsHide: true, stdout: "pipe", stderr: "inherit" });
 
 	const output = await new Response(child.stdout).text();
 	if (await child.exited !== 0) {

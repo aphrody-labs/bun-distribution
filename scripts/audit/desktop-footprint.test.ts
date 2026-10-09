@@ -10,7 +10,7 @@ test("summarize reports the median and the range, and ignores missing samples", 
 });
 
 test("the process tree follows parents, CPU and PSS come from /proc", async () => {
-  const child = spawn("sh", ["-c", "sleep 30 & wait"], { stdio: "ignore" });
+  const child = spawn("sh", ["-c", "sleep 30 & wait"], { windowsHide: true, stdio: "ignore" });
   try {
     let tree: number[] = [];
     for (let i = 0; i < 40 && tree.length < 2; i++) {

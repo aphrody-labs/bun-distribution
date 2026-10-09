@@ -549,6 +549,7 @@ dependencies = [
  "aphrody-guard",
  "aphrody-jev",
  "aphrody-patch",
+ "aphrody-proc",
  "aphrody-remote-desktop",
  "aphrody-term",
  "aphrody-toolcall",
@@ -573,6 +574,7 @@ dependencies = [
 name = "aphrody-antigravity"
 version = "1.0.0"
 dependencies = [
+ "aphrody-proc",
  "base64 0.23.1",
  "bytes",
  "data-encoding",
@@ -616,6 +618,7 @@ dependencies = [
  "aphrody-llama-server",
  "aphrody-models",
  "aphrody-native",
+ "aphrody-proc",
  "aphrody-shell-tauri",
  "aphrody-sprite-sheet",
  "aphrody-subsystem",
@@ -700,6 +703,7 @@ version = "1.0.0-canary"
 dependencies = [
  "aes-gcm 0.11.1",
  "anyhow",
+ "aphrody-proc",
  "criterion",
  "getrandom 0.4.3",
  "reqwest 0.13.5",
@@ -759,6 +763,7 @@ name = "aphrody-bun-docs"
 version = "1.0.0-canary"
 dependencies = [
  "aphrody-n2b-registry",
+ "aphrody-proc",
  "aphrody-subsystem",
  "async-trait",
  "regex",
@@ -799,6 +804,7 @@ dependencies = [
 name = "aphrody-code-graph"
 version = "1.0.0"
 dependencies = [
+ "aphrody-proc",
  "aphrody-store",
  "clap",
  "oxc_allocator 0.153.0",
@@ -987,6 +993,7 @@ name = "aphrody-discord"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "aphrody-proc",
  "aphrody-web-extract",
  "chrono",
  "clap",
@@ -1005,6 +1012,7 @@ name = "aphrody-drive"
 version = "1.0.0"
 dependencies = [
  "aphrody-kernel",
+ "aphrody-proc",
  "aphrody-subsystem",
  "aphrody-tauri",
  "aphrody-tauri-plugin",
@@ -1090,6 +1098,7 @@ dependencies = [
  "aphrody-models",
  "aphrody-n2b-core",
  "aphrody-oxc-bridge",
+ "aphrody-proc",
  "aphrody-rag-core",
  "aphrody-toolcall-repair",
  "aphrody-web-extract",
@@ -1167,6 +1176,7 @@ version = "1.0.0"
 dependencies = [
  "aphrody-config",
  "aphrody-mcp-client",
+ "aphrody-proc",
  "async-trait",
  "dirs 7.0.0",
  "futures-util",
@@ -1307,6 +1317,7 @@ dependencies = [
  "anyhow",
  "aphrody-git",
  "aphrody-ovh",
+ "aphrody-proc",
  "aphrody-remote-desktop",
  "aphrody-ssh",
  "aphrody-vpn",
@@ -1371,6 +1382,7 @@ dependencies = [
  "aphrody-bun-docs",
  "aphrody-kernel-client",
  "aphrody-nu",
+ "aphrody-proc",
  "aphrody-subsystem",
  "aphrody-toolchains",
  "aphrody-winclean",
@@ -1570,6 +1582,7 @@ name = "aphrody-mcp-client"
 version = "1.0.0"
 dependencies = [
  "aphrody-config",
+ "aphrody-proc",
  "aphrody-toolcall",
  "aphrody-web-service",
  "async-trait",
@@ -1801,6 +1814,7 @@ dependencies = [
 name = "aphrody-nu"
 version = "1.0.0-canary"
 dependencies = [
+ "aphrody-proc",
  "aphrody-subsystem",
  "async-trait",
  "serde_json",
@@ -1864,6 +1878,7 @@ dependencies = [
  "aphrody-infer",
  "aphrody-models",
  "aphrody-ocr-core",
+ "aphrody-proc",
  "reqwest 0.13.5",
  "rustls",
  "serde",
@@ -1878,6 +1893,7 @@ name = "aphrody-ovh"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "aphrody-proc",
  "chrono",
  "clap",
  "reqwest 0.13.5",
@@ -1989,6 +2005,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror 2.0.21",
+ "tokio",
  "tracing",
  "windows 0.62.2",
 ]
@@ -2978,6 +2995,7 @@ dependencies = [
 name = "aphrody-tauri-wrap"
 version = "1.0.0-canary"
 dependencies = [
+ "aphrody-proc",
  "aphrody-tauri",
  "aphrody-tauri-plugin-mcp-bridge",
  "axum",
@@ -3059,6 +3077,7 @@ dependencies = [
 name = "aphrody-toolchains"
 version = "1.0.0-canary"
 dependencies = [
+ "aphrody-proc",
  "serde_json",
  "tempfile",
  "thiserror 2.0.21",
@@ -3090,6 +3109,7 @@ name = "aphrody-translate"
 version = "1.0.0"
 dependencies = [
  "anyhow",
+ "aphrody-proc",
  "aphrody-translate-core",
  "clap",
  "dashmap",
@@ -3136,6 +3156,7 @@ name = "aphrody-voice"
 version = "1.0.0"
 dependencies = [
  "aphrody-models",
+ "aphrody-proc",
  "async-trait",
  "bytes",
  "futures",
@@ -3155,6 +3176,7 @@ dependencies = [
 name = "aphrody-vpn"
 version = "0.1.0"
 dependencies = [
+ "aphrody-proc",
  "reqwest 0.13.5",
  "rustls",
  "serde",
@@ -3204,6 +3226,7 @@ name = "aphrody-web-engine"
 version = "1.0.0"
 dependencies = [
  "anyhow",
+ "aphrody-proc",
  "aphrody-web-crawl",
  "aphrody-web-extract",
  "aphrody-web-service",
@@ -3240,6 +3263,7 @@ dependencies = [
 name = "aphrody-web-frames"
 version = "0.1.0"
 dependencies = [
+ "aphrody-proc",
  "base64 0.23.1",
  "reqwest 0.13.5",
  "rusqlite",
@@ -3322,6 +3346,7 @@ dependencies = [
 name = "aphrody-wireguard"
 version = "0.1.0"
 dependencies = [
+ "aphrody-proc",
  "base64 0.23.1",
  "defguard_wireguard_rs",
  "getrandom 0.4.3",
@@ -3365,6 +3390,7 @@ dependencies = [
  "aphrody-fsindex",
  "aphrody-git",
  "aphrody-kernel-client",
+ "aphrody-proc",
  "chrono",
  "clap",
  "ignore",
@@ -24236,6 +24262,7 @@ name = "yolo-runtime"
 version = "1.0.0"
 dependencies = [
  "aphrody-gpu-backend",
+ "aphrody-proc",
  "async-trait",
  "base64 0.23.1",
  "libc",

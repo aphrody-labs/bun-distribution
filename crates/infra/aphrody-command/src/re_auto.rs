@@ -12,6 +12,7 @@
 //! Latence : seules les passes pure-Rust rapides sont exécutées par défaut.
 //! `--deep` (Ghidra) est strictement opt-in.
 
+use aphrody_proc::NoWindow as _;
 use std::path::{Path, PathBuf};
 
 use aphrody_re::{
@@ -410,7 +411,7 @@ fn run_ghidra(path: &Path, warnings: &mut Vec<String>) -> DeepSummary {
             .unwrap_or(0)
     ));
 
-    let status = std::process::Command::new(&headless_bin)
+    let status = std::process::Command::new(&headless_bin).no_window()
         .arg(&tmp_proj)
         .arg("aphrody_auto_re")
         .args(["-import", &path.to_string_lossy()])
@@ -561,7 +562,7 @@ pub(crate) fn run_redress(path: &Path) -> RedressSummary {
 
     let target = path.to_string_lossy();
     let run = |sub: &str| -> Option<String> {
-        let out = std::process::Command::new(&bin).arg(sub).arg(target.as_ref()).output().ok()?;
+        let out = std::process::Command::new(&bin).no_window().arg(sub).arg(target.as_ref()).output().ok()?;
         if out.status.success() {
             let s = String::from_utf8_lossy(&out.stdout).into_owned();
             (!s.trim().is_empty()).then_some(s)

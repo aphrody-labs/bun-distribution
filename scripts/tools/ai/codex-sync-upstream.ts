@@ -39,6 +39,7 @@ function verifyCrates(): boolean {
   for (const crate of crates) {
     console.log(`Running cargo test -p ${crate}...`);
     const res = spawnSync("cargo", ["test", "-p", crate], {
+      windowsHide: true,
       cwd: ROOT,
       stdio: "inherit",
       shell: true,

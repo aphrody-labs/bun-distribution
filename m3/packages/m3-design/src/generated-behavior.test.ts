@@ -58,7 +58,10 @@ beforeAll(async () => {
   entries.push(featurelessEntry);
   const checkout = resolvePath(import.meta.dir, "../../..");
   const reactTypes = resolvePath(Bun.resolveSync("@types/react/package.json", checkout), "..");
-  const reactDomTypes = resolvePath(Bun.resolveSync("@types/react-dom/package.json", checkout), "..");
+  const reactDomTypes = resolvePath(
+    Bun.resolveSync("@types/react-dom/package.json", checkout),
+    "..",
+  );
   const configuration = join(workspace, "tsconfig.json");
   await Bun.write(
     configuration,
@@ -77,6 +80,7 @@ beforeAll(async () => {
     }),
   );
   const checked = Bun.spawn(["tsc", "--project", configuration, "--noEmit"], {
+    windowsHide: true,
     stdout: "pipe",
     stderr: "pipe",
   });

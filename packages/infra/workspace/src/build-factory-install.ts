@@ -168,6 +168,7 @@ async function probe(path: string, timeoutSeconds: number): Promise<string | nul
 
 function spawnProbe(path: string, timeoutSeconds: number) {
   return Bun.spawn([path, "--version"], {
+    windowsHide: true,
     stdin: "ignore",
     stdout: "ignore",
     stderr: "pipe",

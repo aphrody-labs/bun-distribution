@@ -3,7 +3,7 @@
 //! Bun (TS/JS), uv (Python) and Nushell (scripts).
 //!
 //! Every caller goes through the same three steps instead of re-implementing
-//! them with `Command::new("bun")`:
+//! them with `Command::new("bun").no_window()`:
 //!
 //! 1. **Discovery** ([`Toolchain::discover`]) — `APHRODY_<TOOL>_BIN` override,
 //!    then `PATH` (with `PATHEXT` on Windows), then the tool's standard per-user
@@ -24,6 +24,7 @@
 mod discover;
 mod pin;
 
+use aphrody_proc::NoWindow as _;
 use std::{
     env,
     ffi::{OsStr, OsString},
@@ -178,7 +179,7 @@ impl Toolchain {
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        let mut command = Command::new(self.executable());
+        let mut command = Command::new(self.executable()).no_window();
         command.args(args);
         command
     }
@@ -322,7 +323,7 @@ impl Runtime {
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        let mut command = Command::new(&self.binary.path);
+        let mut command = Command::new(&self.binary.path).no_window();
         command.args(args).current_dir(&self.project_dir).envs(self.env());
         command
     }
@@ -330,7 +331,7 @@ impl Runtime {
 
 /// Run `<path> --version` and extract the semantic version.
 fn probe_version(tool: Toolchain, path: &Path) -> Result<String, ResolveError> {
-    let output = Command::new(path)
+    let output = Command::new(path).no_window()
         .arg("--version")
         .output()
         .map_err(|source| ResolveError::Probe { path: path.to_path_buf(), source })?;

@@ -31,7 +31,7 @@ export type Runner = (argv: string[]) => Promise<{ exitCode: number; stdout: str
 
 export const run: Runner = async (argv) => {
   try {
-    const child = Bun.spawn(argv, { stdout: "pipe", stderr: "pipe" });
+    const child = Bun.spawn(argv, { windowsHide: true, stdout: "pipe", stderr: "pipe" });
     const [stdout, exitCode] = await Promise.all([new Response(child.stdout).text(), child.exited]);
     return { exitCode, stdout };
   } catch {
@@ -198,7 +198,7 @@ export async function applyPackages(
       if (!installer) continue;
       steps.push(
         installer.url.endsWith(".ps1")
-          ? `& ([scriptblock]::Create((Invoke-RestMethod ${quote(installer.url)}))) ${installer.args.map(a => (/^-[A-Za-z]+$/.test(a) ? a : quote(a))).join(" ")}`
+          ? `& ([scriptblock]::Create((Invoke-RestMethod ${quote(installer.url)}))) ${installer.args.map((a) => (/^-[A-Za-z]+$/.test(a) ? a : quote(a))).join(" ")}`
           : `$f = Join-Path $env:TEMP ${quote(`${installer.name}-init.exe`)}; Invoke-WebRequest ${quote(installer.url)} -OutFile $f; & $f ${installer.args.map(quote).join(" ")}; if ($LASTEXITCODE) { exit $LASTEXITCODE }`,
       );
     }

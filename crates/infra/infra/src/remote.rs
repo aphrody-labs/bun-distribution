@@ -1,6 +1,7 @@
 //! `aphrody infra remote`: remote control over the private tunnel, one target model and one
 //! credential source for the WebSocket desktop, RFB (VNC), MCP computer use and the shell.
 
+use aphrody_proc::NoWindow as _;
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
@@ -338,7 +339,7 @@ pub async fn execute_remote(root: &Path, cmd: &RemoteCommand) -> Result<Value> {
             };
             let scheme = if t.secure { "https" } else { "http" };
             let base = format!("{scheme}://{}/", t.addr());
-            std::process::Command::new(if cfg!(windows) { "explorer" } else { "xdg-open" })
+            std::process::Command::new(if cfg!(windows) { "explorer" } else { "xdg-open" }).no_window()
                 .arg(format!("{base}#token={token}"))
                 .spawn()?;
             json!({ "opened": base })

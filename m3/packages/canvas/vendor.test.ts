@@ -20,6 +20,7 @@ const packDir = mkdtempSync(join(tmpdir(), "aphrody-canvas-pack-"));
 afterAll(() => rmSync(packDir, { recursive: true, force: true }));
 const archive = join(packDir, "canvas.tgz");
 const pack = Bun.spawnSync(["bun", "pm", "pack", "--ignore-scripts", "--filename", archive], {
+  windowsHide: true,
   cwd: PACKAGE_DIR,
   stdout: "pipe",
   stderr: "pipe",

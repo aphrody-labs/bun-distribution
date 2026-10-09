@@ -473,7 +473,7 @@ function Invoke-Schedule {
     $repeat = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(5) -RepetitionInterval (New-TimeSpan -Hours $EveryHours) -RepetitionDuration (New-TimeSpan -Days 3650)
     $settings = New-ScheduledTaskSettingsSet -Hidden -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable `
         -ExecutionTimeLimit (New-TimeSpan -Minutes 10) -MultipleInstances IgnoreNew
-    $principal = New-ScheduledTaskPrincipal -UserId $userId -LogonType Interactive -RunLevel Limited
+    $principal = New-ScheduledTaskPrincipal -UserId $userId -LogonType S4U -RunLevel Limited   # S4U : pas de station de fenêtres, donc aucune console visible
     $reg = @{
         TaskName = $script:TaskName; TaskPath = $script:TaskFolder; Action = $action; Trigger = @($logon, $repeat)
         Settings = $settings; Principal = $principal; Force = $true; Description = 'Aphrody creator-kit : rafraîchit cookies.txt pour yt-dlp/Stacher (Firefox)'

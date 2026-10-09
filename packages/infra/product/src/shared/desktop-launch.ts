@@ -61,7 +61,12 @@ export function openInDesktop(
 
 function detachedSpawn(argv: string[]): boolean {
   try {
-    const child = Bun.spawn(argv, { stdin: "ignore", stdout: "ignore", stderr: "ignore" });
+    const child = Bun.spawn(argv, {
+      windowsHide: true,
+      stdin: "ignore",
+      stdout: "ignore",
+      stderr: "ignore",
+    });
     child.unref();
     return true;
   } catch {

@@ -36,9 +36,17 @@ pub enum BootKind {
         execute: Option<String>,
         #[serde(default)]
         arguments: Option<String>,
-        /// `system` (LocalSystem) or `user` (current user, S4U unless `atLogon` needs a desktop).
+        /// `system` (LocalSystem) or `user` (current user, S4U: no window station, so no console).
         #[serde(default = "default_principal")]
         principal: String,
+        /// The task needs the interactive desktop (capture, tray): Interactive logon, action
+        /// wrapped in `conhost.exe --headless` so that no console is ever shown.
+        #[serde(default)]
+        desktop: bool,
+        /// Triggered by its own schedule (not kept running): only visibility and logon type are
+        /// audited and corrected; triggers, restart policy and run state are left untouched.
+        #[serde(default)]
+        periodic: bool,
     },
     /// Windows service: start type Automatic, running, optional failure-restart actions.
     #[serde(rename_all = "camelCase")]
@@ -207,16 +215,43 @@ pub fn evaluate(entry: &BootEntry, observed: &Observed) -> Vec<Finding> {
                 ));
             }
         },
-        (BootKind::ScheduledTask { name, path, triggers, .. }, Observed::Json(j)) => {
+        (BootKind::ScheduledTask { name, path, triggers, principal, desktop, periodic, .. }, Observed::Json(j)) => {
             let have: Vec<&str> =
                 j["Triggers"].as_array().into_iter().flatten().filter_map(Value::as_str).collect();
-            let missing: Vec<&String> =
-                triggers.iter().filter(|t| !have.contains(&t.as_str())).collect();
-            let restart = j["RestartCount"].as_u64().unwrap_or(0);
+            let missing: Vec<&String> = if *periodic {
+                Vec::new()
+            } else {
+                triggers.iter().filter(|t| !have.contains(&t.as_str())).collect()
+            };
+            let restart = if *periodic { 1 } else { j["RestartCount"].as_u64().unwrap_or(0) };
             let enabled = j["Enabled"].as_bool().unwrap_or(false);
-            let running = j["State"].as_str() == Some("Running");
-            if !missing.is_empty() || restart == 0 || !enabled || !running {
+            let running = *periodic || j["State"].as_str() == Some("Running");
+            let hidden = j["Hidden"].as_bool() == Some(true);
+            let want_logon = expected_logon(principal, *desktop);
+            let logon_ok = j["Logon"].as_str() == Some(want_logon);
+            let wrapped = !*desktop
+                || j["Exe"].as_str().is_some_and(|e| e.to_ascii_lowercase().ends_with("conhost.exe"));
+            if !missing.is_empty()
+                || restart == 0
+                || !enabled
+                || !running
+                || !hidden
+                || !logon_ok
+                || !wrapped
+            {
                 let mut why = Vec::new();
+                if !hidden {
+                    why.push("non cachée (Settings.Hidden)".to_owned());
+                }
+                if !logon_ok {
+                    why.push(format!(
+                        "session {} au lieu de {want_logon} (fenêtre possible)",
+                        j["Logon"].as_str().unwrap_or("?")
+                    ));
+                }
+                if !wrapped {
+                    why.push("console non masquée (conhost --headless absent)".to_owned());
+                }
                 if !missing.is_empty() {
                     why.push(format!("déclencheurs manquants {missing:?}"));
                 }
@@ -281,7 +316,8 @@ pub fn evaluate(entry: &BootEntry, observed: &Observed) -> Vec<Finding> {
 /// PowerShell that adds the missing triggers to an existing task (or registers it) with
 /// restart-on-failure, then starts it.
 fn task_script(entry: &BootEntry, name: &str, path: &str) -> String {
-    let BootKind::ScheduledTask { triggers, execute, arguments, principal, .. } = &entry.kind
+    let BootKind::ScheduledTask { triggers, execute, arguments, principal, desktop, periodic, .. } =
+        &entry.kind
     else {
         return String::new();
     };
@@ -296,37 +332,68 @@ fn task_script(entry: &BootEntry, name: &str, path: &str) -> String {
             "if (-not ($trigs | ? {{ $_.CimClass.CimClassName -like '*{type_name}*' }})) {{ $trigs += ({ctor}) }}; "
         ));
     }
-    let principal_ctor = if principal == "system" {
-        "New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest"
-    } else if triggers.iter().any(|t| t == "atLogon") && !triggers.iter().any(|t| t == "atStartup")
-    {
-        "New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Highest"
+    let principal_ctor = match expected_logon(principal, *desktop) {
+        "ServiceAccount" => {
+            "New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest"
+        },
+        "Interactive" => {
+            "New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Highest"
+        },
+        _ => "New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType S4U -RunLevel Highest",
+    };
+    let settings = if *periodic {
+        "$set = if ($t) { $t.Settings } else { New-ScheduledTaskSettingsSet }; $set.Hidden = $true; "
     } else {
-        "New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType S4U -RunLevel Highest"
+        "$set = New-ScheduledTaskSettingsSet -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew -Hidden; "
+    };
+    let start = if *periodic {
+        String::new()
+    } else {
+        format!(
+            "; if ((Get-ScheduledTask -TaskName {n} -TaskPath {p}).State -ne 'Running') {{ Start-ScheduledTask -TaskName {n} -TaskPath {p} }}",
+            n = pq(name),
+            p = pq(path)
+        )
     };
     let register = match execute {
         Some(exe) => format!(
-            "Register-ScheduledTask -TaskName {n} -TaskPath {p} -Action (New-ScheduledTaskAction -Execute {e}{a}) -Trigger $trigs -Settings $set -Principal ({pr}) | Out-Null",
+            "$act = New-ScheduledTaskAction -Execute {e}{a}; {wrap}Register-ScheduledTask -TaskName {n} -TaskPath {p} -Action $act -Trigger $trigs -Settings $set -Principal ({pr}) | Out-Null",
             n = pq(name),
             p = pq(path),
             e = pq(exe),
             a = arguments.as_deref().map_or(String::new(), |a| format!(" -Argument {}", pq(a))),
             pr = principal_ctor,
+            wrap = if *desktop { HEADLESS_WRAP } else { "" },
         ),
         None => format!("throw 'tâche {name} absente et sans commande déclarée'"),
     };
     format!(
         "$ErrorActionPreference='Stop'; $t = Get-ScheduledTask -TaskName {n} -TaskPath {p} -ErrorAction SilentlyContinue; \
 $trigs = @(); if ($t) {{ $trigs = @($t.Triggers) }}; {trig}\
-$set = New-ScheduledTaskSettingsSet -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew; \
-if ($t) {{ Set-ScheduledTask -TaskName {n} -TaskPath {p} -Trigger $trigs -Settings $set -Principal ({pr}) | Out-Null }} else {{ {register} }}; \
-Enable-ScheduledTask -TaskName {n} -TaskPath {p} | Out-Null; \
-if ((Get-ScheduledTask -TaskName {n} -TaskPath {p}).State -ne 'Running') {{ Start-ScheduledTask -TaskName {n} -TaskPath {p} }}",
+{settings}\
+if ($t) {{ $act = $t.Actions[0]; {wrap}Set-ScheduledTask -TaskName {n} -TaskPath {p} -Action $act -Trigger $trigs -Settings $set -Principal ({pr}) | Out-Null }} else {{ {register} }}; \
+Enable-ScheduledTask -TaskName {n} -TaskPath {p} | Out-Null{start}",
         n = pq(name),
         p = pq(path),
         pr = principal_ctor,
+        wrap = if *desktop { HEADLESS_WRAP } else { "" },
+        settings = settings,
+        start = start,
     )
 }
+
+/// Principal logon type of a task: SYSTEM runs in session 0, a user task without a desktop
+/// need runs S4U (no window station): neither can display a console.
+fn expected_logon(principal: &str, desktop: bool) -> &'static str {
+    match (principal, desktop) {
+        ("system", _) => "ServiceAccount",
+        (_, true) => "Interactive",
+        _ => "S4U",
+    }
+}
+
+/// Wraps `$act` in `conhost.exe --headless` unless already wrapped (Interactive tasks only).
+const HEADLESS_WRAP: &str = "if ($act.Execute -notlike '*conhost.exe') { $act = New-ScheduledTaskAction -Execute 'conhost.exe' -Argument ('--headless \"' + $act.Execute.Trim('\"') + '\" ' + $act.Arguments) }; ";
 
 /// Probe script for the Linux entries of one host (`@@<index>` header then `key=value` lines).
 #[must_use]
@@ -355,7 +422,7 @@ pub fn windows_probe(entries: &[(usize, &BootEntry)]) -> String {
         s.push_str(&format!("Write-Output '@@{i}'; "));
         match &e.kind {
             BootKind::ScheduledTask { name, path, .. } => s.push_str(&format!(
-                "$t = Get-ScheduledTask -TaskName {} -TaskPath {}; if ($t) {{ [pscustomobject]@{{ State=[string]$t.State; Enabled=[bool]$t.Settings.Enabled; RestartCount=[int]$t.Settings.RestartCount; Triggers=@($t.Triggers | % {{ $n = $_.CimClass.CimClassName; switch -Wildcard ($n) {{ '*Boot*' {{'atStartup'}} '*Logon*' {{'atLogon'}} default {{$n}} }} }}) }} | ConvertTo-Json -Compress }}; ",
+                "$t = Get-ScheduledTask -TaskName {} -TaskPath {}; if ($t) {{ [pscustomobject]@{{ State=[string]$t.State; Enabled=[bool]$t.Settings.Enabled; Hidden=[bool]$t.Settings.Hidden; Logon=[string]$t.Principal.LogonType; Exe=[string]$t.Actions[0].Execute; RestartCount=[int]$t.Settings.RestartCount; Triggers=@($t.Triggers | % {{ $n = $_.CimClass.CimClassName; switch -Wildcard ($n) {{ '*Boot*' {{'atStartup'}} '*Logon*' {{'atLogon'}} default {{$n}} }} }}) }} | ConvertTo-Json -Compress }}; ",
                 pq(name),
                 pq(path)
             )),
@@ -643,6 +710,8 @@ mod tests {
                 execute: None,
                 arguments: None,
                 principal: "user".into(),
+                desktop: false,
+                periodic: false,
             },
             hold: None,
         }
@@ -650,13 +719,56 @@ mod tests {
 
     #[test]
     fn task_needs_startup_trigger_and_restart() {
-        let ok = Observed::Json(serde_json::json!({"State":"Running","Enabled":true,"RestartCount":999,"Triggers":["atStartup","atLogon"]}));
+        let ok = Observed::Json(serde_json::json!({"State":"Running","Enabled":true,"RestartCount":999,"Hidden":true,"Logon":"S4U","Triggers":["atStartup","atLogon"]}));
         assert!(evaluate(&task(), &ok).is_empty());
         let bad = Observed::Json(serde_json::json!({"State":"Running","Enabled":true,"RestartCount":0,"Triggers":["atLogon"]}));
         let f = evaluate(&task(), &bad);
         assert_eq!(f.len(), 1);
         let fix = f[0].fix.as_deref().unwrap();
         assert!(fix.contains("-AtStartup") && fix.contains("RestartCount 999") && fix.contains("S4U"));
+    }
+
+    #[test]
+    fn visible_or_interactive_task_is_corrected_hidden_s4u() {
+        let vis = Observed::Json(serde_json::json!({"State":"Running","Enabled":true,"RestartCount":999,"Hidden":false,"Logon":"Interactive","Triggers":["atStartup"]}));
+        let f = evaluate(&task(), &vis);
+        assert_eq!(f.len(), 1);
+        assert!(f[0].problem.contains("non cachée") && f[0].problem.contains("session Interactive"));
+        let fix = f[0].fix.as_deref().unwrap();
+        assert!(fix.contains("-Hidden") && fix.contains("S4U") && !fix.contains("conhost"));
+    }
+
+    #[test]
+    fn desktop_task_is_interactive_and_wrapped_headless() {
+        let mut e = task();
+        if let BootKind::ScheduledTask { desktop, execute, .. } = &mut e.kind {
+            *desktop = true;
+            *execute = Some("C:\\x\\a.exe".into());
+        }
+        let bare = Observed::Json(serde_json::json!({"State":"Running","Enabled":true,"RestartCount":999,"Hidden":true,"Logon":"Interactive","Exe":"C:\\x\\a.exe","Triggers":["atStartup"]}));
+        let f = evaluate(&e, &bare);
+        assert_eq!(f.len(), 1);
+        let fix = f[0].fix.as_deref().unwrap();
+        assert!(fix.contains("conhost.exe") && fix.contains("--headless") && fix.contains("Interactive"));
+        let ok = Observed::Json(serde_json::json!({"State":"Running","Enabled":true,"RestartCount":999,"Hidden":true,"Logon":"Interactive","Exe":"C:\\Windows\\system32\\conhost.exe","Triggers":["atStartup"]}));
+        assert!(evaluate(&e, &ok).is_empty());
+        let missing = evaluate(&e, &Observed::Missing);
+        assert!(missing[0].fix.as_deref().unwrap().contains("Register-ScheduledTask"));
+    }
+
+    #[test]
+    fn periodic_task_only_checks_visibility_and_keeps_triggers() {
+        let mut e = task();
+        if let BootKind::ScheduledTask { periodic, .. } = &mut e.kind {
+            *periodic = true;
+        }
+        let ok = Observed::Json(serde_json::json!({"State":"Ready","Enabled":true,"RestartCount":0,"Hidden":true,"Logon":"S4U","Triggers":[]}));
+        assert!(evaluate(&e, &ok).is_empty());
+        let vis = Observed::Json(serde_json::json!({"State":"Ready","Enabled":true,"RestartCount":0,"Hidden":false,"Logon":"Interactive","Triggers":[]}));
+        let f = evaluate(&e, &vis);
+        assert_eq!(f.len(), 1);
+        let fix = f[0].fix.as_deref().unwrap();
+        assert!(fix.contains("$set.Hidden = $true") && !fix.contains("Start-ScheduledTask") && !fix.contains("RestartCount 999"));
     }
 
     #[test]

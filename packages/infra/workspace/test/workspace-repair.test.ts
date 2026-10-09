@@ -23,7 +23,7 @@ test("context repair previews, then applies only clean tracked references and in
   const home = ["", "home", "fixture"].join("/");
   const original = `Open ${home}/aphrody/README.md\n`;
   const git = (...args: string[]) => {
-    const result = Bun.spawnSync(["git", "-C", root, ...args]);
+    const result = Bun.spawnSync(["git", "-C", root, ...args], { windowsHide: true });
     expect(result.exitCode).toBe(0);
   };
   const logs: unknown[] = [];

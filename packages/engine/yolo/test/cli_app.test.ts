@@ -43,6 +43,7 @@ describe("direct native Python tool CLI", () => {
         const proc = Bun.spawn(
           [process.execPath, cliEntryPath, tool, "-e", program, "--", ...forwarded],
           {
+            windowsHide: true,
             cwd: project,
             env: {
               ...process.env,
@@ -82,6 +83,7 @@ describe("direct native Python tool CLI", () => {
     const work = mkdtempSync(join(tmpdir(), "aphrody-python-tool-missing-"));
     try {
       const proc = Bun.spawn([process.execPath, cliEntryPath, "ruff", "--version"], {
+        windowsHide: true,
         cwd: work,
         env: { ...process.env, PATH: work, VU_HOME: join(work, "no-artifact"), YOLO_HOME: "" },
         stdout: "pipe",
@@ -161,6 +163,7 @@ describe("Yolo canonical CLI and native capability owners", () => {
 
   it.skipIf(!haveBunFork)("searches the Bun docs of the fork checkout", async () => {
     const proc = Bun.spawn(["bun", cliEntryPath, "docs", "server", "--json"], {
+      windowsHide: true,
       cwd: rootDir,
       env: { ...process.env, BUN_DOCS_DIR: resolve(bunCheckout()!, "docs") },
       stdout: "pipe",
@@ -200,6 +203,7 @@ describe("Yolo canonical CLI and native capability owners", () => {
     "should execute the CLI binary via Bun.spawn with status, parse, bench, docs, and generate commands",
     async () => {
       const procStatus = Bun.spawn(["bun", cliEntryPath, "status"], {
+        windowsHide: true,
         cwd: rootDir,
         stdout: "pipe",
         stderr: "pipe",
@@ -213,6 +217,7 @@ describe("Yolo canonical CLI and native capability owners", () => {
       for (const source of catalog.sources) expect(stdoutStatus).toContain(source.path);
 
       const procBench = Bun.spawn(["bun", cliEntryPath, "bench"], {
+        windowsHide: true,
         cwd: rootDir,
         stdout: "pipe",
         stderr: "pipe",
@@ -224,6 +229,7 @@ describe("Yolo canonical CLI and native capability owners", () => {
       expect(stdoutBench).toContain("Bun.stringWidth");
 
       const procDocs = Bun.spawn(["bun", cliEntryPath, "docs", "server"], {
+        windowsHide: true,
         cwd: rootDir,
         stdout: "pipe",
         stderr: "pipe",
@@ -235,6 +241,7 @@ describe("Yolo canonical CLI and native capability owners", () => {
       expect(stdoutDocs).toContain("runtime/http/server.mdx");
 
       const procGen = Bun.spawn(["bun", cliEntryPath, "generate"], {
+        windowsHide: true,
         cwd: rootDir,
         stdout: "pipe",
         stderr: "pipe",
@@ -250,6 +257,7 @@ describe("Yolo canonical CLI and native capability owners", () => {
   it("should support --json and --md across commands for Agent-First auditing", async () => {
     // 1. status --json
     const procStatusJson = Bun.spawn(["bun", cliEntryPath, "status", "--json"], {
+      windowsHide: true,
       cwd: rootDir,
       stdout: "pipe",
       stderr: "pipe",
@@ -261,6 +269,7 @@ describe("Yolo canonical CLI and native capability owners", () => {
 
     // 2. parse --json
     const procParseJson = Bun.spawn(["bun", cliEntryPath, "parse", cliEntryPath, "--json"], {
+      windowsHide: true,
       cwd: rootDir,
       stdout: "pipe",
       stderr: "pipe",
@@ -272,6 +281,7 @@ describe("Yolo canonical CLI and native capability owners", () => {
 
     // 3. bench --json
     const procBenchJson = Bun.spawn(["bun", cliEntryPath, "bench", "--json"], {
+      windowsHide: true,
       cwd: rootDir,
       stdout: "pipe",
       stderr: "pipe",
@@ -283,6 +293,7 @@ describe("Yolo canonical CLI and native capability owners", () => {
 
     // 4. doctor --json
     const procDocJson = Bun.spawn(["bun", cliEntryPath, "doctor", "--json"], {
+      windowsHide: true,
       cwd: rootDir,
       stdout: "pipe",
       stderr: "pipe",
@@ -294,6 +305,7 @@ describe("Yolo canonical CLI and native capability owners", () => {
 
     // 5. version --json
     const procVerJson = Bun.spawn(["bun", cliEntryPath, "version", "--json"], {
+      windowsHide: true,
       cwd: rootDir,
       stdout: "pipe",
       stderr: "pipe",
@@ -305,6 +317,7 @@ describe("Yolo canonical CLI and native capability owners", () => {
 
     // 6. status --md
     const procStatusMd = Bun.spawn(["bun", cliEntryPath, "status", "--md"], {
+      windowsHide: true,
       cwd: rootDir,
       stdout: "pipe",
       stderr: "pipe",
@@ -316,6 +329,7 @@ describe("Yolo canonical CLI and native capability owners", () => {
 
     // 7. py status --json
     const procPy = Bun.spawn(["bun", cliEntryPath, "py", "status", "--json"], {
+      windowsHide: true,
       cwd: rootDir,
       stdout: "pipe",
       stderr: "pipe",
@@ -426,9 +440,7 @@ describe("YOLO awesome", () => {
     await Bun.write(path, readme);
     const proc = Bun.spawn(
       ["bun", cliEntryPath, "awesome", "search", "docs", "--file", path, "--json"],
-      {
-        stdout: "pipe",
-      },
+      { windowsHide: true, stdout: "pipe" },
     );
     const out = JSON.parse(await new Response(proc.stdout).text());
     expect(await proc.exited).toBe(0);

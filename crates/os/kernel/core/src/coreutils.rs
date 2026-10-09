@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Kernel adapter for the pinned upstream `uutils/coreutils` multicall binary.
 
+use aphrody_proc::NoWindow as _;
 use std::{
     env,
     ffi::OsString,
@@ -212,7 +213,7 @@ fn installed_utilities() -> Vec<String> {
     let Ok(binary) = resolve_binary() else {
         return Vec::new();
     };
-    let Ok(output) = std::process::Command::new(binary).arg("--list").output() else {
+    let Ok(output) = std::process::Command::new(binary).no_window().arg("--list").output() else {
         return Vec::new();
     };
     if !output.status.success() {
@@ -284,7 +285,7 @@ impl CoreutilsSubsystem {
             DEFAULT_OUTPUT_BYTES as u64,
             MAX_OUTPUT_BYTES as u64,
         )? as usize;
-        let mut command = tokio::process::Command::new(&binary);
+        let mut command = tokio::process::Command::new(&binary).no_window();
         command
             .args(program_args)
             .args(args)

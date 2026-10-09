@@ -200,6 +200,7 @@ if (import.meta.main) {
       );
     for (const step of plan(task, rest)) {
       const code = Bun.spawnSync(step.cmd, {
+        windowsHide: true,
         cwd: step.cwd,
         env: { ...process.env, ...step.env },
         stdio: ["inherit", "inherit", "inherit"],

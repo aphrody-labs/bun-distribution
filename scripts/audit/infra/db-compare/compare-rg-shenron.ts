@@ -79,6 +79,7 @@ async function runHost(host: string): Promise<ProbeOutput> {
   const proc = Bun.spawn(
     ["ssh", "-o", "BatchMode=yes", host, `PROBE_INPUT=${payload} exec ~/.bun/bin/bun run -`],
     {
+      windowsHide: true,
       stdin: probeSource,
       stdout: "pipe",
       stderr: "pipe",

@@ -58,6 +58,7 @@ async function runRecipes(
       ...recipes,
     ],
     {
+      windowsHide: true,
       cwd: workingDirectory,
       env: {
         ...process.env,
@@ -219,6 +220,7 @@ profileTest(
       const child = Bun.spawn(
         ["bash", join(root, "scripts/release/ship_remote.sh"), "fixture", setup.dir, setup.dir],
         {
+          windowsHide: true,
           cwd: setup.dir,
           env: { ...process.env, ...environment },
           stdout: "pipe",

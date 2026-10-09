@@ -60,6 +60,7 @@ describe.skipIf(!binary)("Rust A2A server (aphrody a2a serve, dry run)", () => {
     const port = await freePort();
     url = `http://127.0.0.1:${port}`;
     server = Bun.spawn([binary as string, "a2a", "serve", "--bind", `127.0.0.1:${port}`], {
+      windowsHide: true,
       cwd: dir,
       env: { ...process.env, APHRODY_A2A_DRY_RUN: "1", COORD_DIR: join(dir, ".coord") },
       stdout: "ignore",

@@ -40,6 +40,7 @@ export function isElevated(): boolean {
   if (process.platform === "win32") {
     try {
       const proc = Bun.spawnSync(["net", "session"], {
+        windowsHide: true,
         stdin: "ignore",
         stdout: "ignore",
         stderr: "ignore",
@@ -69,6 +70,7 @@ export function canSudoNonInteractive(): boolean {
 
   try {
     const proc = Bun.spawnSync(["sudo", "-n", "true"], {
+      windowsHide: true,
       stdin: "ignore",
       stdout: "ignore",
       stderr: "ignore",

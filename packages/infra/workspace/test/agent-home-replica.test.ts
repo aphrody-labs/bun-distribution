@@ -60,6 +60,7 @@ test("replica verifies every upload before indexing and repairs corrupted snapsh
         "'" + process.execPath.replaceAll("'", "'\\''") + "'",
       );
       const child = Bun.spawn(["sh", "-c", nativeCommand], {
+        windowsHide: true,
         stdout: "pipe",
         stderr: "ignore",
       });

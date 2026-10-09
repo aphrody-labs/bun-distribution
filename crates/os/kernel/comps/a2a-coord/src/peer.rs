@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+use aphrody_proc::NoWindow as _;
 use std::{
     path::{Path, PathBuf},
     process::{Command, Stdio},
@@ -180,7 +181,7 @@ impl PeerInvoker {
             return Ok(());
         }
         let expected = std::fs::read_to_string(marker)?.trim().to_owned();
-        let output = Command::new("git")
+        let output = Command::new("git").no_window()
             .args(["branch", "--show-current"])
             .current_dir(&self.cwd)
             .output()?;
@@ -258,7 +259,7 @@ impl PeerInvoker {
         let prompt_file =
             std::env::temp_dir().join(format!("aphrody-grok-{}.txt", std::process::id()));
         std::fs::write(&prompt_file, prompt)?;
-        let mut cmd = Command::new(&bin);
+        let mut cmd = Command::new(&bin).no_window();
         cmd.args([
             "--prompt-file",
             prompt_file.to_str().unwrap_or("prompt.txt"),
@@ -277,7 +278,7 @@ impl PeerInvoker {
 
     fn invoke_agy(&self, prompt: &str) -> Result<PeerInvokeResult, PeerError> {
         let bin = Self::resolve_bin("APHRODY_AGY_BIN", "agy");
-        let mut cmd = Command::new(&bin);
+        let mut cmd = Command::new(&bin).no_window();
         cmd.args([
             "-p",
             prompt,
@@ -292,7 +293,7 @@ impl PeerInvoker {
 
     fn invoke_claude(&self, prompt: &str) -> Result<PeerInvokeResult, PeerError> {
         let bin = Self::resolve_bin("CLAUDE_BIN", "claude");
-        let mut cmd = Command::new(&bin);
+        let mut cmd = Command::new(&bin).no_window();
         cmd.args(["-p", prompt, "--dangerously-skip-permissions", "--output-format", "text"]);
         cmd.current_dir(&self.cwd);
         self.run(PeerId::Claude, cmd)
@@ -300,7 +301,7 @@ impl PeerInvoker {
 
     fn invoke_codex(&self, prompt: &str) -> Result<PeerInvokeResult, PeerError> {
         let bin = Self::resolve_bin("CODEX_BIN", "codex");
-        let mut cmd = Command::new(&bin);
+        let mut cmd = Command::new(&bin).no_window();
         cmd.args(["exec", "--dangerously-bypass-approvals-and-sandbox", "--json", "-C"]);
         cmd.arg(&self.cwd);
         cmd.arg(prompt);
@@ -311,7 +312,7 @@ impl PeerInvoker {
     /// name of it): it runs `aphrody web search`, never a separate executable.
     fn invoke_bxc(&self, prompt: &str) -> Result<PeerInvokeResult, PeerError> {
         let bin = Self::resolve_bin("APHRODY_BIN", "aphrody");
-        let mut cmd = Command::new(&bin);
+        let mut cmd = Command::new(&bin).no_window();
         cmd.args(["web", "search", prompt, "--num", "3", "--json"]);
         cmd.current_dir(&self.cwd);
         self.run(PeerId::Bxc, cmd)

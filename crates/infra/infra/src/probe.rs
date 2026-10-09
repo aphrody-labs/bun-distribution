@@ -6,6 +6,7 @@
 //! - HTTP status probing via loopback or target interface
 //! - Systemd active/state inspection
 
+use aphrody_proc::NoWindow as _;
 use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
@@ -134,7 +135,7 @@ pub fn probe_remote(target: &str, url: &str, timeout_secs: u32) -> Result<ProbeR
     let start = Instant::now();
     let script = remote_probe_script(url, timeout_secs);
 
-    let output = Command::new("ssh")
+    let output = Command::new("ssh").no_window()
         .args([
             "-o",
             "BatchMode=yes",

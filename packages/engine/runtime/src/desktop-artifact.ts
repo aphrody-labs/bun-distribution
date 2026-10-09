@@ -112,6 +112,7 @@ function regularUnder(root: string, file: string): string {
 export function inspectDesktopBinary(executable: string): DesktopBuildInfo {
   regular(executable);
   const reply = Bun.spawnSync([executable, "--host-info"], {
+    windowsHide: true,
     stdout: "pipe",
     stderr: "pipe",
     timeout: 5_000,

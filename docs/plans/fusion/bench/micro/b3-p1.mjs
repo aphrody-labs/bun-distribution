@@ -9,6 +9,7 @@ const exe = isDeno ? Deno.execPath() : process.execPath;
 const evalArgs = (code, extra = []) => (isDeno ? ["eval", ...extra, code] : [...extra, "-e", code]);
 const run = (code, env = {}, extra = []) => {
   const r = spawnSync(exe, evalArgs(code, extra), {
+    windowsHide: true,
     env: { ...process.env, ...env },
     encoding: "utf8",
     timeout: 60000,

@@ -44,6 +44,7 @@ function validate(options: StartupOptions): void {
 function invoke(command: StartupCommand, options: StartupOptions): Sample {
   const started = Bun.nanoseconds();
   const process = Bun.spawnSync([...command.argv], {
+    windowsHide: true,
     cwd: options.cwd,
     env: options.env,
     stdin: "ignore",
@@ -130,7 +131,14 @@ async function fingerprint(file: string) {
 }
 
 function probe(argv: string[], cwd: string, env: Record<string, string>): string {
-  const result = Bun.spawnSync(argv, { cwd, env, stdout: "pipe", stderr: "pipe", timeout: 3000 });
+  const result = Bun.spawnSync(argv, {
+    windowsHide: true,
+    cwd,
+    env,
+    stdout: "pipe",
+    stderr: "pipe",
+    timeout: 3000,
+  });
   if (result.exitCode !== 0 || result.stderr.byteLength !== 0)
     throw new Error("Version/provenance probe failed: " + argv[0]);
   return result.stdout.toString();

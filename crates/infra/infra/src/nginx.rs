@@ -5,6 +5,7 @@
 //! and upstream configurations (supporting both loopback TCP and Unix domain sockets),
 //! with mirror validation (`nginx -t -c <candidate> -q`) and atomic SIGHUP worker reload.
 
+use aphrody_proc::NoWindow as _;
 use serde::{Deserialize, Serialize};
 use std::{fmt::Write as _, path::Path};
 
@@ -245,7 +246,7 @@ impl NginxConfig {
     pub fn test_syntax(candidate_path: &Path) -> Result<(), String> {
         #[cfg(unix)]
         {
-            let output = std::process::Command::new("nginx")
+            let output = std::process::Command::new("nginx").no_window()
                 .arg("-t")
                 .arg("-c")
                 .arg(candidate_path)

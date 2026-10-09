@@ -46,7 +46,7 @@ const sha256 = (path: string): string =>
   new Bun.CryptoHasher("sha256").update(new Uint8Array(readFileSync(path))).digest("hex");
 
 async function run(argv: string[], cwd = root): Promise<string> {
-  const proc = Bun.spawn(argv, { cwd, stdout: "pipe", stderr: "pipe" });
+  const proc = Bun.spawn(argv, { windowsHide: true, cwd, stdout: "pipe", stderr: "pipe" });
   const [out, err, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),

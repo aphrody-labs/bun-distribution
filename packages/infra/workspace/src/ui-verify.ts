@@ -62,6 +62,7 @@ export async function runUiVerify(args: string[]): Promise<number> {
     if (quick && !gate.quick) continue;
     const started = performance.now();
     const result = Bun.spawnSync(gate.command, {
+      windowsHide: true,
       cwd: resolve(root, gate.cwd ?? "."),
       env: { ...Bun.env, RUSTC_WRAPPER: "" },
       stdout: "pipe",

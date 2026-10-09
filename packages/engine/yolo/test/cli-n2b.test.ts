@@ -25,6 +25,7 @@ function run(args: string[], cwd = work, library = missingLibrary) {
       ...args,
     ],
     {
+      windowsHide: true,
       cwd,
       env: {
         PATH: process.platform === "win32" ? (process.env["PATH"] ?? "") : "/usr/bin:/bin",

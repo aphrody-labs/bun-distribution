@@ -127,13 +127,13 @@ import { mkdir } from "node:fs/promises";
 
 const source = process.env.SIDECAR_SOURCE ?? ${JSON.stringify(sourceDir)};
 const entry = process.env.SIDECAR_ENTRY ?? ${JSON.stringify(entry)};
-const host = /host: (\\S+)/.exec(new TextDecoder().decode(Bun.spawnSync(["rustc", "-vV"]).stdout))?.[1];
+const host = /host: (\\S+)/.exec(new TextDecoder().decode(Bun.spawnSync(["rustc", "-vV"], { windowsHide: true }).stdout))?.[1];
 if (!host) throw new Error("rustc -vV did not report a host triple");
 const exe = host.includes("windows") ? ".exe" : "";
 await mkdir("src-tauri/binaries", { recursive: true });
 const result = Bun.spawnSync(
   ["bun", "build", "--compile", \`\${source}/\${entry}\`, "--outfile", \`src-tauri/binaries/server-\${host}\${exe}\`],
-  { stdio: ["inherit", "inherit", "inherit"] },
+  { windowsHide: true, stdio: ["inherit", "inherit", "inherit"] },
 );
 process.exit(result.exitCode);
 `;

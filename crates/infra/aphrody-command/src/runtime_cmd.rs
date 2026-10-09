@@ -6,6 +6,7 @@
 //! are never installed implicitly: the command only detects capabilities and
 //! validates the managed runtime selected by `aphrody-infer`.
 
+use aphrody_proc::NoWindow as _;
 use std::{path::PathBuf, process::Command};
 
 use clap::{Subcommand, ValueEnum};
@@ -83,7 +84,7 @@ fn project_root(project: Option<PathBuf>) -> Result<PathBuf> {
 }
 
 fn run_uv(project: &std::path::Path, args: &[&str]) -> Result<std::process::Output> {
-    Command::new(std::env::var_os("APHRODY_UV_BIN").unwrap_or_else(|| "uv".into()))
+    Command::new(std::env::var_os("APHRODY_UV_BIN").unwrap_or_else(|| "uv".into())).no_window()
         .current_dir(project)
         .args(args)
         .output()

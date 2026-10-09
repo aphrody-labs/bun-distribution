@@ -91,7 +91,11 @@ try {
 if (await first !== 0 || await engine.exited !== 0) throw new Error("exit code changed");
 if (!engine.stderrTail().includes("fixture diagnostics")) throw new Error("diagnostics lost");
 `;
-  const child = Bun.spawn([process.execPath, "--eval", script], { stdout: "pipe", stderr: "pipe" });
+  const child = Bun.spawn([process.execPath, "--eval", script], {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const [code, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()]);
   expect(stderr).toBe("");
   expect(code).toBe(0);

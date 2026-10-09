@@ -26,7 +26,10 @@ test("native qualification loads all modules from the selected consumer despite 
     );
     await writeFile(join(decoy, "index.ts"), 'throw new Error("wrong consumer loaded");');
     const script = `${renderNativeConsumerImports(selected)}\nconsole.log([m3, oxc, n2b, cli, web].map(module => module.origin).join(","));`;
-    const result = Bun.spawnSync([process.execPath, "-e", script], { cwd: root });
+    const result = Bun.spawnSync([process.execPath, "-e", script], {
+      windowsHide: true,
+      cwd: root,
+    });
     expect(result.exitCode).toBe(0);
     expect(result.stderr.toString()).toBe("");
     expect(result.stdout.toString().trim()).toBe("index,oxc,n2b,cli,web");

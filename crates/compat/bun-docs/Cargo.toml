@@ -11,6 +11,7 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
+aphrody-proc = { workspace = true }
 aphrody-n2b-registry = { workspace = true }
 aphrody-subsystem = { workspace = true }
 async-trait = { workspace = true }

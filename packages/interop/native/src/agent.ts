@@ -75,6 +75,7 @@ export class AgentClient {
     this.process = Bun.spawn(
       [options.executable ?? "aphrody", ...(options.args ?? ["app-server"])],
       {
+        windowsHide: true,
         cwd: options.cwd,
         env: { ...Bun.env, ...options.env },
         stdin: "pipe",

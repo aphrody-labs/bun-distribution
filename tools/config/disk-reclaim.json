@@ -143,6 +143,10 @@
         {
           "path": ".cache/uv",
           "reason": "uv download and build cache, re-fetched on demand"
+        },
+        {
+          "path": "tmp-uvdbg",
+          "reason": "standalone debug copy of uv (293 MB) outside ~/.local/bin; uv is provided by the unified install"
         }
       ],
       "tmp": {
@@ -236,6 +240,18 @@
         {
           "path": ".cache",
           "reason": "XDG cache of interactive tools, regenerated on demand"
+        },
+        {
+          "path": "aphrody-build",
+          "reason": "non-git factory leftover (workspaces/cache), 2026-10-09: no tmux session or process uses it; dbfr is not the build factory and the context re-seeds on demand"
+        },
+        {
+          "path": ".local/bin/bun.bak-1.4.3-aphrody.2",
+          "reason": "standalone Bun backup binary left by an upgrade; the unified ~/.local/bin/bun is current"
+        },
+        {
+          "path": "target",
+          "reason": "empty stray Cargo target directory in $HOME"
         }
       ],
       "system": {

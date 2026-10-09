@@ -72,15 +72,10 @@ function fixture(abi = 1) {
   const path = join(directory, `libfixture-${abi}.so`);
   const input = join(directory, `fixture-${abi}.c`);
   writeFileSync(input, source);
-  const built = Bun.spawnSync([
-    compiler!,
-    "-shared",
-    "-fPIC",
-    `-DTOOLING_ABI=${abi}`,
-    input,
-    "-o",
-    path,
-  ]);
+  const built = Bun.spawnSync(
+    [compiler!, "-shared", "-fPIC", `-DTOOLING_ABI=${abi}`, input, "-o", path],
+    { windowsHide: true },
+  );
   if (built.exitCode) throw new Error(built.stderr.toString());
   expect(built.exitCode).toBe(0);
   const observer = dlopen(path, {

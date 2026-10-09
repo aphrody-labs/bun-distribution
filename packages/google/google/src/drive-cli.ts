@@ -50,7 +50,11 @@ async function login(): Promise<void> {
     console.log(`Open this Google authorization URL:\n${url}`);
     const opener = Bun.which("xdg-open");
     if (opener) {
-      const process = Bun.spawn([opener, url], { stdout: "ignore", stderr: "ignore" });
+      const process = Bun.spawn([opener, url], {
+        windowsHide: true,
+        stdout: "ignore",
+        stderr: "ignore",
+      });
       void process.exited;
     }
     const timeout = setTimeout(

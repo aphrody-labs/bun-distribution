@@ -3,6 +3,7 @@
 
 //! Stdio child-process transport for MCP servers.
 
+use aphrody_proc::NoWindow as _;
 use std::{collections::BTreeMap, path::Path, process::Stdio, time::Duration};
 
 use async_trait::async_trait;
@@ -36,7 +37,7 @@ impl StdioTransport {
         env: Option<&BTreeMap<String, String>>,
         cwd: Option<&Path>,
     ) -> Result<Self> {
-        let mut cmd = Command::new(command);
+        let mut cmd = Command::new(command).no_window();
         cmd.args(args);
 
         if let Some(env_map) = env {

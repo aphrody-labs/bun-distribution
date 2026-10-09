@@ -2,6 +2,7 @@
 //! Command bodies of `aphrody ovh auth|services|domain|iam`, plus the renewal flow and the alert
 //! notification shared with `aphrody ovh vps`. Kept apart from the clap definitions in `lib.rs`.
 
+use aphrody_proc::NoWindow as _;
 use std::{collections::BTreeSet, path::Path};
 
 use anyhow::{Context, Result, anyhow, bail};
@@ -230,7 +231,7 @@ pub fn send_notification(message: &str) -> Result<()> {
             "no notify channel configured (SLACK_BOT_TOKEN, TELEGRAM_BOT_TOKEN or MATRIX_ACCESS_TOKEN; override with APHRODY_OVH_NOTIFY_CHANNEL)"
         )
     })?;
-    let status = std::process::Command::new("aphrody")
+    let status = std::process::Command::new("aphrody").no_window()
         .args(["notify", "--channel", channel, "--message", message])
         .status()
         .context("cannot run `aphrody notify`")?;

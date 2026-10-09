@@ -230,6 +230,7 @@ export async function trackedFiles(
   minBytes: number,
 ): Promise<{ path: string; size: number; hash: string }[]> {
   const child = Bun.spawn(["git", "-C", root, "ls-files", "-z"], {
+    windowsHide: true,
     stdout: "pipe",
     stderr: "pipe",
   });
@@ -435,7 +436,7 @@ async function cargoMetadata(root: string): Promise<CargoMetadataLite> {
       "--filter-platform",
       "x86_64-unknown-linux-gnu",
     ],
-    { cwd: root, stdout: "pipe", stderr: "pipe" },
+    { windowsHide: true, cwd: root, stdout: "pipe", stderr: "pipe" },
   );
   const [code, stdout, stderr] = await Promise.all([
     child.exited,

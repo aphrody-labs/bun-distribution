@@ -372,6 +372,7 @@ export async function autoUpdateInBackground(
   }
   if (Date.now() - (state.lastCheck ?? 0) < 12 * 3_600_000) return undefined;
   const child = Bun.spawn([process.execPath, app.updateCommand, "--quiet"], {
+    windowsHide: true,
     stdin: "ignore",
     stdout: "ignore",
     stderr: "ignore",

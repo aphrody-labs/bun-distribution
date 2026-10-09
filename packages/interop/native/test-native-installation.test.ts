@@ -88,6 +88,7 @@ unix("SDK resolver prefers an explicit override and then the canonical installed
   const resolver = join(import.meta.dir, "src/library.ts");
   for (const override of [undefined, selected.binary]) {
     const run = Bun.spawnSync({
+      windowsHide: true,
       cmd: [
         process.execPath,
         "-e",
@@ -127,6 +128,7 @@ unix("an installed companion always requires a regular owned manifest", () => {
   writeFileSync(join(target, `libaphrody_ffi.${suffix}`), "development fallback");
   const resolver = join(import.meta.dir, "src/library.ts");
   const run = Bun.spawnSync({
+    windowsHide: true,
     cmd: [
       process.execPath,
       "-e",

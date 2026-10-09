@@ -73,7 +73,12 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
   // the other gates is ignored and therefore never trips the doctor, while a stray commit of it
   // does. Git is used instead of `find` so the checks behave identically on every host.
   const gitList = (args: string[]) => {
-    const result = Bun.spawnSync(["git", ...args], { cwd: root, stdout: "pipe", stderr: "pipe" });
+    const result = Bun.spawnSync(["git", ...args], {
+      windowsHide: true,
+      cwd: root,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
     if (result.exitCode !== 0) {
       failures.push(`git ${args.join(" ")} failed: ${result.stderr.toString().trim()}`);
       return [];
@@ -143,11 +148,7 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
   for (const needle of ["../rg", "../iecode/src", "src/iecode/nie-"]) {
     const result = Bun.spawnSync(
       ["rg", "-n", "--fixed-strings", needle, "src", "Cargo.toml", "package.json"],
-      {
-        cwd: root,
-        stdout: "pipe",
-        stderr: "ignore",
-      },
+      { windowsHide: true, cwd: root, stdout: "pipe", stderr: "ignore" },
     );
     if (result.exitCode === 0) failures.push(`forbidden source reference: ${needle}`);
   }

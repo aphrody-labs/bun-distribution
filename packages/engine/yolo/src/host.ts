@@ -146,6 +146,7 @@ export class LocalTransport implements Transport {
           : [process.env["COMSPEC"] || "cmd.exe", "/c", cmd]
         : ["sh", "-c", cmd];
     const proc = Bun.spawn(shellCmd, {
+      windowsHide: true,
       stdout: "pipe",
       stderr: "pipe",
       timeout: timeoutSecs * 1000,
@@ -1715,7 +1716,11 @@ export function hostCurlCommand(url: string): string {
 }
 
 export async function sshEndpoint(alias: string): Promise<{ hostname: string; port: number }> {
-  const p = Bun.spawn(["ssh", "-G", alias], { stdout: "pipe", stderr: "ignore" });
+  const p = Bun.spawn(["ssh", "-G", alias], {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "ignore",
+  });
   const text = await new Response(p.stdout).text();
   const kv = Object.fromEntries(
     text.split("\n").map((l) => [l.split(" ")[0], l.split(" ").slice(1).join(" ")]),

@@ -26,6 +26,7 @@ const env = {
 
 function run(args: string[], cwd = project, input?: string) {
   return Bun.spawnSync([binary, ...args], {
+    windowsHide: true,
     cwd,
     env,
     stdin: input === undefined ? "ignore" : Buffer.from(input),
@@ -75,7 +76,7 @@ beforeAll(async () => {
       "--outfile",
       binary,
     ],
-    { cwd: root, stdout: "pipe", stderr: "pipe", timeout: 30_000 },
+    { windowsHide: true, cwd: root, stdout: "pipe", stderr: "pipe", timeout: 30_000 },
   );
   if (build.exitCode !== 0) {
     throw new Error(`Standalone compilation failed: ${build.stderr.toString()}`);
@@ -113,6 +114,7 @@ describe("compiled CLI without an installed Bun", () => {
     );
     const candidateEnv = { ...env, YOLO_RUNTIME_HOME: runtimeHome };
     const healthy = Bun.spawnSync([binary, "runtime", "info"], {
+      windowsHide: true,
       cwd: project,
       env: candidateEnv,
       stdout: "pipe",
@@ -120,6 +122,7 @@ describe("compiled CLI without an installed Bun", () => {
     });
     expect(healthy.exitCode).toBe(0);
     const broken = Bun.spawnSync([binary, "runtime", "info", "--installed"], {
+      windowsHide: true,
       cwd: project,
       env: candidateEnv,
       stdout: "pipe",
@@ -250,6 +253,7 @@ describe("compiled CLI without an installed Bun", () => {
 
   it("serves HTTP parsing and scanning with workspace containment and a bounded shutdown", async () => {
     const child = Bun.spawn([binary, "api", "--port", "0"], {
+      windowsHide: true,
       cwd: project,
       env,
       stdout: "pipe",

@@ -130,7 +130,8 @@ export function nginxRenderer(): string[] | undefined {
   if (aphrody) candidates.push([aphrody, "infra", "nginx", "render"]);
   return candidates.find(
     (argv) =>
-      Bun.spawnSync([...argv, "--help"], { stdout: "ignore", stderr: "ignore" }).exitCode === 0,
+      Bun.spawnSync([...argv, "--help"], { windowsHide: true, stdout: "ignore", stderr: "ignore" })
+        .exitCode === 0,
   );
 }
 
@@ -141,6 +142,7 @@ export async function renderNginx(
   comments: string[],
 ): Promise<string> {
   const proc = Bun.spawn([...renderer, ...comments.flatMap((line) => ["--comment", line]), "-"], {
+    windowsHide: true,
     stdin: new TextEncoder().encode(JSON.stringify(model)),
     stdout: "pipe",
     stderr: "pipe",

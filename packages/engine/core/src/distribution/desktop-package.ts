@@ -14,7 +14,12 @@ export function stripLibrary(copy: string): void {
   if (strip === null) {
     throw new Error("`strip` (binutils) is required to package the CEF libraries; pass --no-strip");
   }
-  const reply = Bun.spawnSync([strip, copy], { stdout: "pipe", stderr: "pipe", timeout: 120_000 });
+  const reply = Bun.spawnSync([strip, copy], {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "pipe",
+    timeout: 120_000,
+  });
   if (reply.exitCode !== 0) {
     throw new Error(
       `strip failed on ${copy}: ${new TextDecoder().decode(reply.stderr).slice(0, 512)}`,
@@ -35,6 +40,7 @@ export function packageDesktop(options: {
   const root = resolve(options.root);
   const git = (args: string[]): string => {
     const reply = Bun.spawnSync(["git", ...args], {
+      windowsHide: true,
       cwd: root,
       stdout: "pipe",
       stderr: "pipe",

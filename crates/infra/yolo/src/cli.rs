@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Native Rust YOLO engine CLI (`aphrody yolo`, former `aphrody-yolo` binary).
 
+use aphrody_proc::NoWindow as _;
 use std::{
     fs,
     io::Write,
@@ -448,7 +449,7 @@ fn run_at(cwd: &Path, json: bool, tier: Tier, program: &str, args: &[String]) ->
     if !json {
         eprintln!("== {}: {} {}", tier.name(), program, args.join(" "));
     }
-    let mut command = ProcessCommand::new(program);
+    let mut command = ProcessCommand::new(program).no_window();
     command.args(args).current_dir(cwd);
     if json {
         // Keep stdout reserved for the phase record; child diagnostics remain on stderr.
@@ -1314,7 +1315,7 @@ fn yolo_grind(root: &Path, json: bool, dry_run: bool, goals: &[String]) -> Resul
 fn select_harness(explicit: Option<String>) -> Result<String> {
     if let Some(candidate) = explicit {
         anyhow::ensure!(
-            ProcessCommand::new(&candidate)
+            ProcessCommand::new(&candidate).no_window()
                 .arg("--version")
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
@@ -1327,7 +1328,7 @@ fn select_harness(explicit: Option<String>) -> Result<String> {
     let mut candidates = ["agy".to_owned(), "claude".to_owned(), "gemini".to_owned()].into_iter();
     candidates
         .find(|candidate| {
-            ProcessCommand::new(candidate)
+            ProcessCommand::new(candidate).no_window()
                 .arg("--version")
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
@@ -1341,7 +1342,7 @@ fn select_auditor() -> Result<String> {
     ["gemini", "claude", "agy"]
         .into_iter()
         .find(|candidate| {
-            ProcessCommand::new(candidate)
+            ProcessCommand::new(candidate).no_window()
                 .arg("--version")
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
@@ -1366,7 +1367,7 @@ fn run_lead_lanes(
              Route Windows administration through the running aphrody-kernel admin subsystem.",
             task.id, task.owner, task.title,
         );
-        let child = ProcessCommand::new(harness)
+        let child = ProcessCommand::new(harness).no_window()
             .args(harness_args(harness, &prompt))
             .current_dir(root)
             .spawn()
@@ -1394,7 +1395,7 @@ fn run_auditor_lane(root: &Path, harness: &str, tick: &YoloTick) -> Result<()> {
          verified FAIT/INCOMPLET/NON_FAIT findings with exact paths and commands.",
         tick.run_id, tick.run_id
     );
-    let status = ProcessCommand::new(harness)
+    let status = ProcessCommand::new(harness).no_window()
         .args(harness_args(harness, &prompt))
         .current_dir(root)
         .status()

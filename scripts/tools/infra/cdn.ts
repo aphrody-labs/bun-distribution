@@ -268,7 +268,7 @@ async function publish(catalog: Catalog, out: string, vps: string, dryRun: boole
       console.log(`dry-run: ${step.join(" ")}`);
       continue;
     }
-    const proc = Bun.spawn(step, { stdout: "inherit", stderr: "inherit" });
+    const proc = Bun.spawn(step, { windowsHide: true, stdout: "inherit", stderr: "inherit" });
     if ((await proc.exited) !== 0) throw new Error(`failed: ${step.join(" ")}`);
   }
   return { release, target };

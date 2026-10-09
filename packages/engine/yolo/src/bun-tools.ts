@@ -27,6 +27,7 @@ export async function runBunTool(
   const env = { ...process.env, BUN_BE_BUN: "1" };
   // Probe help only: never replay a potentially mutating command after it fails.
   const probe = Bun.spawnSync([bun, command, "--help"], {
+    windowsHide: true,
     cwd: tmpdir(),
     env,
     stdout: "pipe",
@@ -36,6 +37,7 @@ export async function runBunTool(
     probe.exitCode !== 0 && probe.stderr.toString().includes("Script not found");
   const argv = bunToolArgv(bun, command, args, missingBuiltin);
   await using proc = Bun.spawn({
+    windowsHide: true,
     cmd: argv,
     cwd,
     // A compiled yolo falls back to its own runtime, which BUN_BE_BUN turns back into the bun CLI.

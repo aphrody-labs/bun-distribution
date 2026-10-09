@@ -6,6 +6,7 @@ type Check = { name: string; command: string[] };
 function run(check: Check, root: string): boolean {
   console.log(`\n=== ${check.name} ===`);
   const result = Bun.spawnSync(check.command, {
+    windowsHide: true,
     cwd: root,
     stdout: "pipe",
     stderr: "pipe",

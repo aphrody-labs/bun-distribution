@@ -176,9 +176,9 @@ async function inspectArtifact(directory: string, contract: RuntimeContract, sdk
   }
 }
 
-async function selectedDirectory(home: string, target: string, slot: "current" | "previous") {
-  const name = await readlink(join(home, target, slot)).catch((error: NodeJS.ErrnoException) => {
-    if (error.code === "ENOENT") throw new Error("No installed " + slot + " native runtime");
+async function selectedDirectory(home: string, target: string, which: "current" | "previous") {
+  const name = await readlink(join(home, target, which)).catch((error: NodeJS.ErrnoException) => {
+    if (error.code === "ENOENT") throw new Error("No installed " + which + " native runtime");
     throw error;
   });
   const slot = basename(name);

@@ -31,6 +31,7 @@ let xvfb: Bun.Subprocess | undefined;
 if (!Bun.env.DISPLAY) {
   const display = Bun.env.APHRODY_E2E_DISPLAY ?? ":97";
   xvfb = Bun.spawn(["Xvfb", display, "-screen", "0", "1280x800x24"], {
+    windowsHide: true,
     stdout: "ignore",
     stderr: "ignore",
   });
@@ -46,6 +47,7 @@ try {
     APHRODY_CEF_UNSAFE_NO_SANDBOX: Bun.env.APHRODY_CEF_UNSAFE_NO_SANDBOX ?? "1",
   };
   const run = Bun.spawn([join(root, "target/debug/examples/shell_e2e")], {
+    windowsHide: true,
     env,
     stdout: "pipe",
     stderr: "pipe",

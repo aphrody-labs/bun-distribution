@@ -14,7 +14,6 @@ Workspace/Infra reste le propriétaire de l’orchestration et de la fabrique.
 | Éditer et vérifier les docs | [Documentation](documentation.md) | Propriétaire, inventaires et gates sans génération partagée |
 | Trouver une commande | [CLI du poste](../../reference/workspace/CLI.md) | Pointeur vers les aides installées, à vérifier au moment d’exécuter |
 | Trouver une capacité existante | [Écosystème](../../ecosystem/ECOSYSTEM.md) | Inventaire de navigation, à confirmer dans le propriétaire |
-| Retrouver un ancien choix | [Archives runtime](../../plans/runtime/history/README.md) | Preuves datées, copies exactes à préserver |
 
 Ces guides décrivent les procédures et renvoient aux autorités ; ils ne
 maintiennent pas une deuxième table de statut R0–R8. L’état daté et les limites

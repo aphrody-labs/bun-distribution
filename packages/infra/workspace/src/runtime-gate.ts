@@ -80,6 +80,7 @@ export async function runRuntimeGate(args: string[]): Promise<number> {
   for (const check of checks) {
     const cwd = check.cwd ? resolve(check.cwd) : root;
     const result = Bun.spawnSync([check.command, ...check.args], {
+      windowsHide: true,
       cwd,
       stdout: "pipe",
       stderr: "pipe",

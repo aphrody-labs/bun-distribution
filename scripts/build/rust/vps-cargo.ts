@@ -152,7 +152,7 @@ export function repositoryConfig(
 export function heavyLockBusy(config: VpsCargoConfig): boolean {
   const probe = Bun.spawnSync(
     [...sshBase(config), config.host, `flock -n ${shellQuote(config.remoteHeavyLock)} true`],
-    { stdout: "ignore", stderr: "ignore" },
+    { windowsHide: true, stdout: "ignore", stderr: "ignore" },
   );
   return probe.exitCode === 1;
 }
@@ -559,6 +559,7 @@ export function remoteRunScript(
 
 async function ssh(config: VpsCargoConfig, script: string): Promise<number> {
   const child = Bun.spawn([...sshBase(config), config.host, "bash -s"], {
+    windowsHide: true,
     stdin: new Blob([script]),
     stdout: "inherit",
     stderr: "inherit",
@@ -706,6 +707,7 @@ async function sync(config: VpsCargoConfig, pull: boolean, root = ROOT): Promise
             `${sha}:${pinRef(config, sha)}`,
           ],
           {
+            windowsHide: true,
             cwd: root,
             env: { ...process.env, GIT_SSH_COMMAND: sshBase(config).join(" ") },
             stdout: "inherit",
@@ -739,12 +741,16 @@ async function sync(config: VpsCargoConfig, pull: boolean, root = ROOT): Promise
 }
 
 function tmuxLocal(args: string[]): Promise<number> {
-  return Bun.spawn(["tmux", ...args], { stdout: "inherit", stderr: "inherit" }).exited;
+  return Bun.spawn(["tmux", ...args], { windowsHide: true, stdout: "inherit", stderr: "inherit" })
+    .exited;
 }
 
 async function tunnel(config: VpsCargoConfig, action: string | undefined): Promise<number> {
   const session = config.localSession;
-  const has = Bun.spawn(["tmux", "has-session", "-t", session], { stderr: "ignore" });
+  const has = Bun.spawn(["tmux", "has-session", "-t", session], {
+    windowsHide: true,
+    stderr: "ignore",
+  });
   const alive = (await has.exited) === 0;
   if (action === "up") {
     if (alive) {
@@ -768,7 +774,10 @@ async function tunnel(config: VpsCargoConfig, action: string | undefined): Promi
   if (action === "down") {
     if (alive) await tmuxLocal(["kill-session", "-t", session]);
     if (process.platform !== "win32") {
-      await Bun.spawn([...sshBase(config), "-O", "exit", config.host], { stderr: "ignore" }).exited;
+      await Bun.spawn([...sshBase(config), "-O", "exit", config.host], {
+        windowsHide: true,
+        stderr: "ignore",
+      }).exited;
     }
     console.log("tunnel down");
     return 0;
@@ -777,7 +786,7 @@ async function tunnel(config: VpsCargoConfig, action: string | undefined): Promi
     process.platform === "win32"
       ? [...sshBase(config), "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", config.host, "true"]
       : [...sshBase(config), "-O", "check", config.host],
-    { stderr: "ignore" },
+    { windowsHide: true, stderr: "ignore" },
   );
   const master = (await check.exited) === 0;
   console.log(
@@ -820,10 +829,7 @@ async function fetchArtifact(
       `${config.host}:${remote}`,
       dest,
     ],
-    {
-      stdout: "inherit",
-      stderr: "inherit",
-    },
+    { windowsHide: true, stdout: "inherit", stderr: "inherit" },
   );
   if ((await copy.exited) !== 0) return 1;
   const local = join(dest, bin);
@@ -832,9 +838,7 @@ async function fetchArtifact(
   const digest = hasher.digest("hex");
   const remoteSum = Bun.spawn(
     [...sshBase(config), config.host, `sha256sum ${shellQuote(remote)}`],
-    {
-      stdout: "pipe",
-    },
+    { windowsHide: true, stdout: "pipe" },
   );
   const remoteDigest = (await new Response(remoteSum.stdout).text()).split(/\s+/)[0];
   if (digest !== remoteDigest) throw new Error(`sha256 mismatch for ${bin}`);
@@ -843,7 +847,7 @@ async function fetchArtifact(
     console.log(`${local} sha256=${digest} (not executed)`);
     return 0;
   }
-  const runs = Bun.spawnSync([local, "--version"]).exitCode === 0;
+  const runs = Bun.spawnSync([local, "--version"], { windowsHide: true }).exitCode === 0;
   console.log(`${local} sha256=${digest} ${runs ? "runs here" : "does NOT run here (ABI)"}`);
   return runs ? 0 : 3;
 }
@@ -889,7 +893,7 @@ export async function main(argv: readonly string[]): Promise<number> {
     case "attach":
       return Bun.spawn(
         [...sshBase(config), "-t", config.host, "tmux", "attach", "-t", config.remoteSession],
-        { stdin: "inherit", stdout: "inherit", stderr: "inherit" },
+        { windowsHide: true, stdin: "inherit", stdout: "inherit", stderr: "inherit" },
       ).exited;
     default:
       console.error(USAGE);

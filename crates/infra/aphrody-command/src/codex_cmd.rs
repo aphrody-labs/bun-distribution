@@ -9,6 +9,7 @@
 //! - Read-only MCP, plugins, marketplaces and feature configuration
 //! - Git patch application with an explicit file
 
+use aphrody_proc::NoWindow as _;
 use std::{net::SocketAddr, path::PathBuf, process::Command};
 
 use clap::{Args, Subcommand};
@@ -195,7 +196,7 @@ pub struct FeaturesArgs {
 /// Helper to detect if running in an elevated Windows shell.
 #[cfg(windows)]
 pub fn is_windows_elevated() -> bool {
-    Command::new("net")
+    Command::new("net").no_window()
         .arg("session")
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
@@ -354,7 +355,7 @@ async fn run_exec(_args: ExecArgs) -> Result<()> {
 
 async fn run_review(args: ReviewArgs) -> Result<()> {
     println!("=== Git diff summary (no automated code review) ===");
-    let mut cmd = Command::new("git");
+    let mut cmd = Command::new("git").no_window();
     cmd.args(["diff", "--stat"]);
     if let Some(ref b) = args.branch {
         cmd.arg(b);
@@ -388,7 +389,7 @@ async fn run_fork(_args: SessionArgs) -> Result<()> {
 async fn run_apply(args: ApplyArgs) -> Result<()> {
     if let Some(ref f) = args.file {
         println!("Applying diff from {} to working tree...", f.display());
-        let status = Command::new("git")
+        let status = Command::new("git").no_window()
             .args(["apply"])
             .arg(f)
             .status()

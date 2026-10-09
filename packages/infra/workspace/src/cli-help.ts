@@ -266,6 +266,7 @@ export async function runCliHelp(
         if (seen.has(key)) return;
         seen.add(key);
         const proc = Bun.spawn([executable, ...command.slice(1), "--help"], {
+          windowsHide: true,
           cwd: root,
           stdin: "ignore",
           stdout: "pipe",
@@ -435,6 +436,7 @@ function commandName(entry: string): string {
 async function gitHead(root: string): Promise<string> {
   if (!Bun.which("git")) return "unknown";
   const proc = Bun.spawn(["git", "rev-parse", "HEAD"], {
+    windowsHide: true,
     cwd: root,
     stdout: "pipe",
     stderr: "ignore",

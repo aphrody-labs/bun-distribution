@@ -136,6 +136,7 @@ export async function launch(program: string, options: LaunchOptions): Promise<L
     }
   }
   const proc = Bun.spawn([program, ...(options.args ?? [])], {
+    windowsHide: true,
     cwd: options.cwd,
     env: { ...process.env, ...options.env } as Record<string, string>,
     stdout: "ignore",

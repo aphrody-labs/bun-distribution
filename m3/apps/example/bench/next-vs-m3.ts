@@ -26,7 +26,8 @@ const CONCURRENCY = 32;
 const NEXT_VERSION = flag("next") ?? "16.5.0-canary.4";
 const EXAMPLE = resolve(import.meta.dir, "..");
 const M3_BIN = resolve(EXAMPLE, "node_modules/@aphrody/m3/bin/m3.ts");
-const REACT_VERSION = (await Bun.file(join(EXAMPLE, "node_modules/react/package.json")).json()).version as string;
+const REACT_VERSION = (await Bun.file(join(EXAMPLE, "node_modules/react/package.json")).json())
+  .version as string;
 
 const ITEMS = Array.from({ length: 200 }, (_, i) => `Item ${i + 1}`);
 const SOURCES: Record<string, string> = {
@@ -86,19 +87,27 @@ const frameworks: Framework[] = [
     dir: m3Dir,
     output: ["dist"],
     build: ["bun", M3_BIN, "build"],
-    start: port => ["bun", M3_BIN, "start", "--port", String(port)],
+    start: (port) => ["bun", M3_BIN, "start", "--port", String(port)],
   },
   {
     name: "next",
     dir: nextDir,
     output: [".next"],
     build: ["bun", "--bun", "node_modules/next/dist/bin/next", "build"],
-    start: port => ["bun", "--bun", "node_modules/next/dist/bin/next", "start", "-p", String(port)],
+    start: (port) => [
+      "bun",
+      "--bun",
+      "node_modules/next/dist/bin/next",
+      "start",
+      "-p",
+      String(port),
+    ],
   },
 ];
 
 async function write(dir: string, extra: Record<string, string>) {
-  for (const [file, text] of Object.entries({ ...SOURCES, ...extra })) await Bun.write(join(dir, file), text);
+  for (const [file, text] of Object.entries({ ...SOURCES, ...extra }))
+    await Bun.write(join(dir, file), text);
 }
 await write(m3Dir, { "m3.config.ts": `export default { app: true, port: 3000 };\n` });
 await write(nextDir, {
@@ -111,28 +120,47 @@ await write(nextDir, {
   }),
 });
 const install = Bun.spawnSync(["bun", "install", "--prefer-offline", "--linker", "hoisted"], {
+  windowsHide: true,
   cwd: nextDir,
   stdout: "ignore",
   stderr: "pipe",
 });
-if (install.exitCode !== 0) throw new Error(`bun install of next@${NEXT_VERSION} failed\n${install.stderr}`);
+if (install.exitCode !== 0)
+  throw new Error(`bun install of next@${NEXT_VERSION} failed\n${install.stderr}`);
 
-const env = { ...process.env, NODE_ENV: "production", NEXT_TELEMETRY_DISABLED: "1", APHRODY_FFI_DEV: "1" };
-const median = (values: number[]) => values.toSorted((a, b) => a - b)[Math.floor(values.length / 2)];
+const env = {
+  ...process.env,
+  NODE_ENV: "production",
+  NEXT_TELEMETRY_DISABLED: "1",
+  APHRODY_FFI_DEV: "1",
+};
+const median = (values: number[]) =>
+  values.toSorted((a, b) => a - b)[Math.floor(values.length / 2)];
 const sizeOf = (path: string): number => {
   if (!existsSync(path)) return 0;
   const stat = statSync(path);
   if (!stat.isDirectory()) return stat.size;
   return readdirSync(path)
-    .filter(name => name !== "cache")
+    .filter((name) => name !== "cache")
     .reduce((sum, name) => sum + sizeOf(join(path, name)), 0);
 };
 
 async function build(framework: Framework): Promise<number> {
-  for (const output of framework.output) rmSync(join(framework.dir, output), { recursive: true, force: true });
+  for (const output of framework.output)
+    rmSync(join(framework.dir, output), { recursive: true, force: true });
   const started = performance.now();
-  const proc = Bun.spawn(framework.build, { cwd: framework.dir, env, stdout: "pipe", stderr: "pipe" });
-  const [stdout, stderr, code] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited]);
+  const proc = Bun.spawn(framework.build, {
+    windowsHide: true,
+    cwd: framework.dir,
+    env,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [stdout, stderr, code] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
   if (code !== 0) throw new Error(`${framework.name} build failed (${code})\n${stdout}\n${stderr}`);
   return performance.now() - started;
 }
@@ -148,9 +176,16 @@ async function start(framework: Framework) {
   const port = freePort();
   const origin = `http://127.0.0.1:${port}`;
   const started = performance.now();
-  const proc = Bun.spawn(framework.start(port), { cwd: framework.dir, env, stdout: "ignore", stderr: "pipe" });
+  const proc = Bun.spawn(framework.start(port), {
+    windowsHide: true,
+    cwd: framework.dir,
+    env,
+    stdout: "ignore",
+    stderr: "pipe",
+  });
   for (;;) {
-    if (proc.exitCode !== null) throw new Error(`${framework.name} exited: ${await new Response(proc.stderr).text()}`);
+    if (proc.exitCode !== null)
+      throw new Error(`${framework.name} exited: ${await new Response(proc.stderr).text()}`);
     try {
       if ((await fetch(origin + "/")).status === 200) break;
     } catch {}
@@ -168,17 +203,25 @@ function memory(pid: number): number {
       "while ($ids.Count -gt 0) { $next = @(); foreach ($id in $ids) { if ($seen.ContainsKey($id)) { continue }; " +
       "$seen[$id] = 1; foreach ($p in $all) { if ($p.ProcessId -eq $id) { $sum += $p.WorkingSetSize }; " +
       "if ($p.ParentProcessId -eq $id) { $next += [int]$p.ProcessId } } }; $ids = $next }; $sum";
-    return Number(Bun.spawnSync(["pwsh", "-NoProfile", "-Command", script]).stdout.toString().trim());
+    return Number(
+      Bun.spawnSync(["pwsh", "-NoProfile", "-Command", script], { windowsHide: true })
+        .stdout.toString()
+        .trim(),
+    );
   }
   const children = (id: number): number[] => {
     const file = `/proc/${id}/task/${id}/children`;
-    const list = existsSync(file) ? Bun.spawnSync(["cat", file]).stdout.toString().trim() : "";
+    const list = existsSync(file)
+      ? Bun.spawnSync(["cat", file], { windowsHide: true }).stdout.toString().trim()
+      : "";
     return list ? list.split(/\s+/).map(Number) : [];
   };
   let sum = 0;
-  for (const queue = [pid]; queue.length; ) {
+  for (const queue = [pid]; queue.length;) {
     const id = queue.pop()!;
-    const status = Bun.spawnSync(["cat", `/proc/${id}/status`]).stdout.toString();
+    const status = Bun.spawnSync(["cat", `/proc/${id}/status`], {
+      windowsHide: true,
+    }).stdout.toString();
     sum += Number(status.match(/VmRSS:\s+(\d+)/)?.[1] ?? 0) * 1024;
     queue.push(...children(id));
   }
@@ -188,13 +231,16 @@ function memory(pid: number): number {
 async function clientBytes(origin: string): Promise<number> {
   const html = await (await fetch(origin + "/")).text();
   const urls = new Set(
-    [...html.matchAll(/<script[^>]+src="([^"]+)"|<link[^>]+rel="modulepreload"[^>]+href="([^"]+)"/g)].map(
-      match => match[1] ?? match[2],
-    ),
+    [
+      ...html.matchAll(
+        /<script[^>]+src="([^"]+)"|<link[^>]+rel="modulepreload"[^>]+href="([^"]+)"/g,
+      ),
+    ].map((match) => match[1] ?? match[2]),
   );
   let bytes = 0;
   for (const url of urls)
-    bytes += (await (await fetch(new URL(url.replaceAll("&amp;", "&"), origin))).arrayBuffer()).byteLength;
+    bytes += (await (await fetch(new URL(url.replaceAll("&amp;", "&"), origin))).arrayBuffer())
+      .byteLength;
   return bytes;
 }
 
@@ -214,7 +260,9 @@ async function load(url: string) {
       if (record) latencies.push(performance.now() - sent);
     }
   };
-  await Promise.all(Array.from({ length: CONCURRENCY }, () => run(performance.now() + 1000, false)));
+  await Promise.all(
+    Array.from({ length: CONCURRENCY }, () => run(performance.now() + 1000, false)),
+  );
   const started = performance.now();
   await Promise.all(Array.from({ length: CONCURRENCY }, () => run(started + SECONDS * 1000, true)));
   const elapsed = (performance.now() - started) / 1000;
@@ -234,8 +282,11 @@ try {
     const row: Record<string, string> = {};
     const builds: number[] = [];
     for (let i = 0; i < RUNS; i++) builds.push(await build(framework));
-    row["build cold (median ms)"] = `${Math.round(median(builds))} (${builds.map(Math.round).join(", ")})`;
-    row["output size"] = mib(framework.output.reduce((sum, output) => sum + sizeOf(join(framework.dir, output)), 0));
+    row["build cold (median ms)"] =
+      `${Math.round(median(builds))} (${builds.map(Math.round).join(", ")})`;
+    row["output size"] = mib(
+      framework.output.reduce((sum, output) => sum + sizeOf(join(framework.dir, output)), 0),
+    );
     const starts: number[] = [];
     for (let i = 0; i < RUNS; i++) {
       const server = await start(framework);
@@ -243,7 +294,8 @@ try {
       server.proc.kill();
       await server.proc.exited;
     }
-    row["start to first 200 (median ms)"] = `${Math.round(median(starts))} (${starts.map(Math.round).join(", ")})`;
+    row["start to first 200 (median ms)"] =
+      `${Math.round(median(starts))} (${starts.map(Math.round).join(", ")})`;
     const server = await start(framework);
     try {
       row["memory idle"] = mib(memory(server.proc.pid));
@@ -262,7 +314,9 @@ try {
     console.error(`${framework.name}: done`);
   }
   const keys = Object.keys(results.m3 ?? {});
-  console.log(`| metric | m3 | Next ${(await Bun.file(join(nextDir, "node_modules/next/package.json")).json()).version} |`);
+  console.log(
+    `| metric | m3 | Next ${(await Bun.file(join(nextDir, "node_modules/next/package.json")).json()).version} |`,
+  );
   console.log("| --- | --- | --- |");
   for (const key of keys) console.log(`| ${key} | ${results.m3?.[key]} | ${results.next?.[key]} |`);
   console.log(

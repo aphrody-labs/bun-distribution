@@ -179,7 +179,7 @@ function plain(env: Env): Record<string, string> {
 function versionOf(program: string | null, env: Env): string | null {
   if (!program || !existsSync(program)) return null;
   try {
-    const proc = Bun.spawnSync([program, "--version"], { env: plain(env) });
+    const proc = Bun.spawnSync([program, "--version"], { windowsHide: true, env: plain(env) });
     return proc.stdout.toString().trim() || null;
   } catch {
     return null;
@@ -202,6 +202,7 @@ export async function runPythonCommand(
     deps.run ??
     (async (command: string[], options: { cwd: string; env: Env }): Promise<number> => {
       const proc = Bun.spawn(command, {
+        windowsHide: true,
         cwd: options.cwd,
         env: plain(options.env),
         stdio: ["inherit", "inherit", "inherit"],

@@ -6,6 +6,7 @@
 //! Oxc-based AST syntax and decorator validation, reflection polyfill ordering,
 //! and automated smoke testing without requiring external standalone scripts.
 
+use aphrody_proc::NoWindow as _;
 use std::{
     ffi::{CStr, CString, c_char},
     path::{Path, PathBuf},
@@ -286,7 +287,7 @@ impl DiscordCompiler {
             let css_script = dir.join("scripts/build-dashboard-css.sh");
             if css_script.exists() {
                 println!("  [pre-build] Generating Tailwind CSS for Shenron dashboard...");
-                let status = Command::new("bash")
+                let status = Command::new("bash").no_window()
                     .arg("scripts/build-dashboard-css.sh")
                     .current_dir(&dir)
                     .status()
@@ -314,7 +315,7 @@ impl DiscordCompiler {
         build_args.push(format!("--outfile={outfile}"));
 
         println!("  [bun] {} {}", self.bun_bin.display(), build_args.join(" "));
-        let status = Command::new(&self.bun_bin)
+        let status = Command::new(&self.bun_bin).no_window()
             .args(&build_args)
             .current_dir(&dir)
             .stdout(Stdio::inherit())
@@ -347,7 +348,7 @@ impl DiscordCompiler {
         let mut smoke_output = String::new();
         if options.smoke_check {
             println!("  [smoke] Testing standalone binary with --help...");
-            let output = Command::new(&binary_path)
+            let output = Command::new(&binary_path).no_window()
                 .arg("--help")
                 .current_dir(&dir)
                 .env("NODE_ENV", "production")
@@ -400,7 +401,7 @@ impl DiscordCompiler {
         println!(
             "\n🔍 Running full Discord verification via `bun scripts/audit/discord-verify.ts --full --compile`...\n"
         );
-        let status = Command::new(&self.bun_bin)
+        let status = Command::new(&self.bun_bin).no_window()
             .args(["scripts/audit/discord-verify.ts", "--full", "--compile"])
             .current_dir(&self.root)
             .stdout(Stdio::inherit())

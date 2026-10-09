@@ -125,7 +125,7 @@ obscura-net                       = { workspace = true }
 aphrody-n2b                       = { workspace = true }
 aphrody-translate         = { workspace = true }
 aphrody-backend                   = { workspace = true }
-aphrody-proc = { workspace = true }
+aphrody-proc = { workspace = true, features = ["tokio"] }
 rustls                    = { workspace = true }
 aphrody-native            = { workspace = true }
 aphrody-discord           = { workspace = true }

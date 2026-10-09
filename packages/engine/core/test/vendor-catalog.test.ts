@@ -42,7 +42,9 @@ test("catalog produces a formatted artifact with source/runtime provenance and s
   const generated = await import(report.targetCatalogPath);
   expect(generated.MONOREPO_BUN_CATALOG.sourceRevision).toBe(sourceRevision);
   expect(generated.MONOREPO_BUN_CATALOG.bunRevision).toBe(Bun.revision);
-  const check = Bun.spawnSync([Bun.which("oxfmt")!, "--check", report.targetCatalogPath]);
+  const check = Bun.spawnSync([Bun.which("oxfmt")!, "--check", report.targetCatalogPath], {
+    windowsHide: true,
+  });
   expect(check.exitCode).toBe(0);
   await generateBunCatalog(root);
   expect(await Bun.file(report.targetCatalogPath).text()).toBe(first);
@@ -51,6 +53,7 @@ test("catalog produces a formatted artifact with source/runtime provenance and s
 async function isolatedGeneration(root: string, path: string) {
   const program = `import { generateBunCatalog } from ${JSON.stringify(resolve(import.meta.dir, "../../../../packages/engine/core/src/vendor/catalog.ts"))}; try { await generateBunCatalog(${JSON.stringify(root)}); process.exitCode=0; } catch(error) { console.error(String(error)); process.exitCode=2; }`;
   const child = Bun.spawn([process.execPath, "-e", program], {
+    windowsHide: true,
     stdout: "pipe",
     stderr: "pipe",
     env: { ...process.env, PATH: path, OXFMT_CALLS: join(root, "formatter-calls") },

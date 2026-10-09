@@ -12,10 +12,16 @@ const cli = resolve(import.meta.dir, "../../../../packages/engine/yolo/src/index
 
 describe("CLI start-up", () => {
   it("version prints the same line and JSON through the lazy entry", () => {
-    const text = Bun.spawnSync(["bun", cli, "version"], { stdout: "pipe" }).stdout.toString();
+    const text = Bun.spawnSync(["bun", cli, "version"], {
+      windowsHide: true,
+      stdout: "pipe",
+    }).stdout.toString();
     expect(text).toMatch(/^yolo \S+ \(\S+, Bun \S+\)\n$/);
     const json = JSON.parse(
-      Bun.spawnSync(["bun", cli, "version", "--json"], { stdout: "pipe" }).stdout.toString(),
+      Bun.spawnSync(["bun", cli, "version", "--json"], {
+        windowsHide: true,
+        stdout: "pipe",
+      }).stdout.toString(),
     );
     expect(json.schema).toBe("yolo.version/1");
     expect(json.target).toBe(hostTarget());
@@ -23,7 +29,11 @@ describe("CLI start-up", () => {
   });
 
   it("an unknown command still prints the help and exits 1", () => {
-    const run = Bun.spawnSync(["bun", cli, "no-such-command"], { stdout: "pipe", stderr: "pipe" });
+    const run = Bun.spawnSync(["bun", cli, "no-such-command"], {
+      windowsHide: true,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
     expect(run.exitCode).toBe(1);
     expect(run.stderr.toString()).toContain("Unknown command: no-such-command");
     expect(run.stdout.toString()).toContain("YOLO Industrial Engine CLI");

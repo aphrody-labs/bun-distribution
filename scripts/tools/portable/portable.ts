@@ -145,6 +145,7 @@ export const gib = (bytes: number) => `${(bytes / 2 ** 30).toFixed(2)} GiB`;
 
 function sudoSelf(args: string[]): boolean {
   const r = Bun.spawnSync(["sudo", "-n", process.execPath, import.meta.path, ...args], {
+    windowsHide: true,
     stdout: "inherit",
     stderr: "inherit",
   });
@@ -197,7 +198,9 @@ function chownTree(path: string, own: string): void {
 }
 
 function serviceActive(name: string): boolean {
-  return Bun.spawnSync(["systemctl", "is-active", "--quiet", name]).exitCode === 0;
+  return (
+    Bun.spawnSync(["systemctl", "is-active", "--quiet", name], { windowsHide: true }).exitCode === 0
+  );
 }
 
 function owner(path: string): string | undefined {
@@ -317,11 +320,12 @@ async function save(config: PortableConfig, apply: boolean): Promise<number> {
   for (const dump of config.dumps) {
     if (
       dump.when &&
-      new TextDecoder().decode(Bun.spawnSync(dump.when, { stderr: "ignore" }).stdout).trim() !==
-        "true"
+      new TextDecoder()
+        .decode(Bun.spawnSync(dump.when, { windowsHide: true, stderr: "ignore" }).stdout)
+        .trim() !== "true"
     )
       continue;
-    const r = Bun.spawnSync(dump.command, { stdout: "pipe", stderr: "pipe" });
+    const r = Bun.spawnSync(dump.command, { windowsHide: true, stdout: "pipe", stderr: "pipe" });
     if (r.exitCode !== 0 && r.stdout.length === 0) {
       console.error(
         `skipped dump ${dump.name}: ${r.stderr.toString().trim().split("\n")[0] ?? "failed"}`,
@@ -338,7 +342,9 @@ async function save(config: PortableConfig, apply: boolean): Promise<number> {
     host: hostname(),
     user: userInfo().username,
     home,
-    revision: Bun.spawnSync(["git", "-C", ROOT, "rev-parse", "HEAD"]).stdout.toString().trim(),
+    revision: Bun.spawnSync(["git", "-C", ROOT, "rev-parse", "HEAD"], { windowsHide: true })
+      .stdout.toString()
+      .trim(),
     entries,
     dumps,
     totals: totals(entries),
@@ -387,7 +393,8 @@ async function restore(
       if (!existsSync(stored)) continue;
       console.log(`system  ${item.path}`);
       if (!apply) continue;
-      if (item.service) Bun.spawnSync(["sudo", "-n", "systemctl", "stop", item.service]);
+      if (item.service)
+        Bun.spawnSync(["sudo", "-n", "systemctl", "stop", item.service], { windowsHide: true });
       const own = item.path.startsWith("/var/lib/postgresql")
         ? "postgres:postgres"
         : item.path.startsWith("/var/lib/redis")

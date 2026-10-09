@@ -145,6 +145,7 @@ export async function runSupervisorBenchmark(options: Options) {
   const invoke = async (phase: "cold" | "warm", mode?: Mode) => {
     const started = performance.now();
     const child = Bun.spawn([process.execPath, script, JSON.stringify({ ...base, phase, mode })], {
+      windowsHide: true,
       cwd: temporary,
       env: { ...process.env, YOLO_RUNTIME_LIB: library },
       stdin: "ignore",

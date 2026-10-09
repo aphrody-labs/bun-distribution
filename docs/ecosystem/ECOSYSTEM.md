@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 240 crates, 38 binaries, 116 Bun packages, 10 uv packages, 1362 CLI commands, 391 MCP tools.
+Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 240 crates, 38 binaries, 116 Bun packages, 10 uv packages, 1367 CLI commands, 391 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |

@@ -8,6 +8,7 @@
 //! kit (next to the desktop executable, the Omar install folder, `PATH`, or the sources of a development
 //! checkout through `bun`); the window chooses neither the program nor free arguments.
 
+use aphrody_proc::NoWindow as _;
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
@@ -211,7 +212,7 @@ pub fn aphrody_kit_start(
     let (program, prefix) = locate(kit).ok_or_else(|| {
         format!("the {} kit is not installed next to Aphrody nor on PATH", kit.source_dir())
     })?;
-    let mut command = Command::new(&program);
+    let mut command = Command::new(&program).no_window();
     command
         .args(&prefix)
         .arg("desktop")
@@ -220,12 +221,6 @@ pub fn aphrody_kit_start(
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt as _;
-        // CREATE_NO_WINDOW: the kit is a console program; the desktop shows its output instead.
-        command.creation_flags(0x0800_0000);
-    }
     let mut child = command.spawn().map_err(|error| format!("{}: {error}", program.display()))?;
     let stdout = child.stdout.take().ok_or("kit stdout is not piped")?;
     let stderr = child.stderr.take().ok_or("kit stderr is not piped")?;

@@ -21,6 +21,7 @@ for (const [command, action, code] of [
 ] as const) {
   test(`${command} ${action} preserves the app's failure code`, async () => {
     const proc = Bun.spawn([process.execPath, cli, command, action], {
+      windowsHide: true,
       cwd: fixture,
       env: { ...process.env, YOLO_HOME: fixture },
       stdout: "ignore",

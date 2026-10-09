@@ -32,9 +32,20 @@ async function toolHost(args: string[]): Promise<string> {
       },
     );
   }
-  const child = Bun.spawn([process.execPath, script, ...args], { stdout: "pipe", stderr: "pipe" });
-  const [stdout, stderr, code] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited]);
-  if (code !== 0) throw new Error(`m3-bun ${FEATURE}: tool-host ${args[0]} exited with ${code}: ${stderr.trim()}`);
+  const child = Bun.spawn([process.execPath, script, ...args], {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [stdout, stderr, code] = await Promise.all([
+    new Response(child.stdout).text(),
+    new Response(child.stderr).text(),
+    child.exited,
+  ]);
+  if (code !== 0)
+    throw new Error(
+      `m3-bun ${FEATURE}: tool-host ${args[0]} exited with ${code}: ${stderr.trim()}`,
+    );
   return stdout;
 }
 
@@ -50,7 +61,7 @@ export function m3McpRoutes(options: M3McpOptions = {}): M3Routes {
   return {
     [path]: { GET: async () => Response.json({ tools: await list() }) },
     [`${path}/:tool`]: {
-      POST: async request => {
+      POST: async (request) => {
         let args: unknown = {};
         const text = await request.text();
         if (text.trim() !== "") {

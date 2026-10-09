@@ -20,10 +20,11 @@ export const sidecarScript = (c: TargetContext): string => `// ${GENERATED_NOTE}
 import { resolve } from "node:path";
 
 const app = process.env.SIDECAR_SOURCE ?? resolve(import.meta.dir, "..", ${JSON.stringify(appFromTarget(c))});
-const host = /host: (\\S+)/.exec(Bun.spawnSync(["rustc", "-vV"]).stdout.toString())?.[1];
+const host = /host: (\\S+)/.exec(Bun.spawnSync(["rustc", "-vV"], { windowsHide: true }).stdout.toString())?.[1];
 if (!host) throw new Error("rustc -vV did not report a host triple");
 const outfile = resolve("src-tauri/binaries", \`server-\${host}\${host.includes("windows") ? ".exe" : ""}\`);
 const result = Bun.spawnSync([...${JSON.stringify(c.cli.split(" "))}, "compile", "--outfile", outfile], {
+  windowsHide: true,
   cwd: app,
   stdio: ["inherit", "inherit", "inherit"],
 });

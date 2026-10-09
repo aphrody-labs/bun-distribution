@@ -32,7 +32,9 @@ test("shellQuote survives every shell metacharacter", async () => {
     "-n",
     "",
   ]) {
-    const proc = Bun.spawnSync(["sh", "-c", `printf %s ${shellQuote(value)}`]);
+    const proc = Bun.spawnSync(["sh", "-c", `printf %s ${shellQuote(value)}`], {
+      windowsHide: true,
+    });
     expect(proc.stdout.toString()).toBe(value);
   }
 });
@@ -126,7 +128,7 @@ test("ensureSshKey creates an ed25519 key once and never overwrites it (real ssh
   expect(again.publicKey).toBe(made.publicKey);
   expect(readFileSync(ctx.paths.sshKey, "utf8")).toBe(before);
   // private key without its public half: the public half is derived, the private key untouched
-  Bun.spawnSync(["rm", `${ctx.paths.sshKey}.pub`]);
+  Bun.spawnSync(["rm", `${ctx.paths.sshKey}.pub`], { windowsHide: true });
   const derived = await ensureSshKey(sys, ctx.paths, "omar@PC");
   expect(derived.created).toBe(false);
   expect(existsSync(`${ctx.paths.sshKey}.pub`)).toBe(true);

@@ -67,6 +67,7 @@ async function runStep(root: string, name: MonorepoAuditStep, bun?: string): Pro
   }
   try {
     const child = Bun.spawn(command, {
+      windowsHide: true,
       cwd: root,
       stdin: "ignore",
       stdout: "pipe",

@@ -366,6 +366,7 @@ export async function runVu(
     return 1;
   }
   const child = Bun.spawn([join(state.dir, vuExecutable("vu", state.manifest.target)), ...args], {
+    windowsHide: true,
     env: { ...env, PATH: pathWithVu(state.dir, env["PATH"]) },
     stdin: "inherit",
     stdout: "inherit",

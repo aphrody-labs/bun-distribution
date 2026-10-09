@@ -18,7 +18,7 @@ let out = "";
 let state = "";
 
 async function sh(cmd: string[]): Promise<void> {
-  const p = Bun.spawn(cmd, { stdout: "ignore", stderr: "pipe" });
+  const p = Bun.spawn(cmd, { windowsHide: true, stdout: "ignore", stderr: "pipe" });
   const code = await p.exited;
   if (code !== 0) throw new Error(`${cmd[0]} failed: ${await new Response(p.stderr).text()}`);
 }
@@ -38,10 +38,7 @@ interface Report {
 async function optimize(...extra: string[]): Promise<Report> {
   const p = Bun.spawn(
     ["bun", script, "--src", src, "--out", out, "--state", state, "--jobs", "4", ...extra],
-    {
-      stdout: "pipe",
-      stderr: "pipe",
-    },
+    { windowsHide: true, stdout: "pipe", stderr: "pipe" },
   );
   const [text, err, code] = await Promise.all([
     new Response(p.stdout).text(),
@@ -232,6 +229,7 @@ describe("cdn-optimize", () => {
     const empty = join(root, "empty");
     await mkdir(empty, { recursive: true });
     const p = Bun.spawn(["bun", script, "--src", empty, "--out", out, "--state", state], {
+      windowsHide: true,
       stdout: "ignore",
       stderr: "pipe",
     });

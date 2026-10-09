@@ -3,6 +3,7 @@
 // file explorer.
 //! File commands: reveal in the native file manager, the macOS share sheet, sidecar paths.
 
+use aphrody_proc::NoWindow as _;
 use std::path::{Path, PathBuf};
 
 use tauri::State;
@@ -69,13 +70,13 @@ pub async fn get_sidecar_path(
 
 #[cfg(target_os = "macos")]
 fn reveal_path(path: &Path) -> std::io::Result<()> {
-    std::process::Command::new("open").arg("-R").arg(path).spawn()?.wait().map(drop)
+    std::process::Command::new("open").no_window().arg("-R").arg(path).spawn()?.wait().map(drop)
 }
 
 #[cfg(windows)]
 fn reveal_path(path: &Path) -> std::io::Result<()> {
     // explorer.exe exits with 1 even when it succeeds: only a spawn failure is an error.
-    std::process::Command::new("explorer").arg("/select,").arg(path).spawn()?.wait().map(drop)
+    std::process::Command::new("explorer").no_window().arg("/select,").arg(path).spawn()?.wait().map(drop)
 }
 
 #[cfg(target_os = "linux")]
@@ -83,7 +84,7 @@ fn reveal_path(path: &Path) -> std::io::Result<()> {
     // No portable "select" verb on Linux desktops: open the containing folder.
     match path.parent() {
         Some(parent) => {
-            std::process::Command::new("xdg-open").arg(parent).spawn()?.wait().map(drop)
+            std::process::Command::new("xdg-open").no_window().arg(parent).spawn()?.wait().map(drop)
         },
         None => Ok(()),
     }

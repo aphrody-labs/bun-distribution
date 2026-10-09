@@ -103,10 +103,7 @@ export async function runDiscord(args: string[] = [], root = infraRoot()): Promi
 
     const proc = Bun.spawn(
       [cmd, "discord", "compile", target, smoke ? "--smoke" : "--smoke=false"],
-      {
-        cwd: root,
-        stdio: ["inherit", "inherit", "inherit"],
-      },
+      { windowsHide: true, cwd: root, stdio: ["inherit", "inherit", "inherit"] },
     );
     const exitCode = await proc.exited;
     return exitCode;
@@ -118,6 +115,7 @@ export async function runDiscord(args: string[] = [], root = infraRoot()): Promi
     const cmd = existsSync(cliPath) ? cliPath : "aphrody";
 
     const proc = Bun.spawn([cmd, "discord", "verify"], {
+      windowsHide: true,
       cwd: root,
       stdio: ["inherit", "inherit", "inherit"],
     });
@@ -131,6 +129,7 @@ export async function runDiscord(args: string[] = [], root = infraRoot()): Promi
     const cmd = existsSync(cliPath) ? cliPath : "aphrody";
 
     const proc = Bun.spawn([cmd, "discord", "inspect", target], {
+      windowsHide: true,
       cwd: root,
       stdio: ["inherit", "inherit", "inherit"],
     });

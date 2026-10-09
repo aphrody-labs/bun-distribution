@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! .NET runtime and SDK detection and execution.
 
+use aphrody_proc::NoWindow as _;
 use std::{env, path::Path};
 
 use serde::{Deserialize, Serialize};
@@ -43,17 +44,17 @@ pub async fn detect_dotnet() -> DotnetRuntimeInfo {
         };
     };
 
-    let version_out = tokio::process::Command::new(bin).arg("--version").output().await.ok();
+    let version_out = tokio::process::Command::new(bin).no_window().arg("--version").output().await.ok();
 
     let version = version_out.map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned());
 
-    let sdks_out = tokio::process::Command::new(bin).arg("--list-sdks").output().await.ok();
+    let sdks_out = tokio::process::Command::new(bin).no_window().arg("--list-sdks").output().await.ok();
 
     let sdks = sdks_out
         .map(|o| String::from_utf8_lossy(&o.stdout).lines().map(ToString::to_string).collect())
         .unwrap_or_default();
 
-    let runtimes_out = tokio::process::Command::new(bin).arg("--list-runtimes").output().await.ok();
+    let runtimes_out = tokio::process::Command::new(bin).no_window().arg("--list-runtimes").output().await.ok();
 
     let runtimes = runtimes_out
         .map(|o| String::from_utf8_lossy(&o.stdout).lines().map(ToString::to_string).collect())
@@ -68,7 +69,7 @@ pub async fn execute_assembly(assembly_path: &str, args: &[String]) -> Result<Ex
         return Err("dotnet CLI not found on system".to_owned());
     };
 
-    let mut cmd = tokio::process::Command::new(bin);
+    let mut cmd = tokio::process::Command::new(bin).no_window();
     cmd.arg("exec").arg(assembly_path).args(args);
 
     let output = cmd.output().await.map_err(|e| format!("dotnet exec error: {e}"))?;

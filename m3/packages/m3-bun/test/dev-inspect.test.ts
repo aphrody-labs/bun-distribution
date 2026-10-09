@@ -21,49 +21,53 @@ const resolvable = (specifier: string): boolean => {
     return false;
   }
 };
-const hasInspector = resolvable("@aphrody/bun-inspector-protocol") && resolvable("@aphrody/bun-debug-adapter-protocol");
+const hasInspector =
+  resolvable("@aphrody/bun-inspector-protocol") &&
+  resolvable("@aphrody/bun-debug-adapter-protocol");
 
 const src = (file: string) => JSON.stringify(join(import.meta.dir, "..", "src", file));
 
-describe.skipIf(!hasInspector)("m3-bun dev --inspect (bun-inspector-protocol, bun-debug-adapter-protocol)", () => {
-  test("the child's console and its uncaught exception are relayed through the inspector", async () => {
-    const dir = tmp();
-    const program = join(dir, "server.ts");
-    writeFileSync(
-      program,
-      [
-        'console.log("ready", { port: 0 }, [1, 2]);',
-        'console.warn("careful");',
-        'setTimeout(() => { throw new TypeError("kaboom"); }, 1);',
-      ].join("\n"),
-    );
-    const entries: M3ConsoleEntry[] = [];
-    const thrown = Promise.withResolvers<M3InspectedException>();
-    const inspected = await launchInspected({
-      cmd: [process.execPath, program],
-      cwd: dir,
-      stdio: "ignore",
-      onConsole: entry => void entries.push(entry),
-      onException: exception => thrown.resolve(exception),
+describe.skipIf(!hasInspector)(
+  "m3-bun dev --inspect (bun-inspector-protocol, bun-debug-adapter-protocol)",
+  () => {
+    test("the child's console and its uncaught exception are relayed through the inspector", async () => {
+      const dir = tmp();
+      const program = join(dir, "server.ts");
+      writeFileSync(
+        program,
+        [
+          'console.log("ready", { port: 0 }, [1, 2]);',
+          'console.warn("careful");',
+          'setTimeout(() => { throw new TypeError("kaboom"); }, 1);',
+        ].join("\n"),
+      );
+      const entries: M3ConsoleEntry[] = [];
+      const thrown = Promise.withResolvers<M3InspectedException>();
+      const inspected = await launchInspected({
+        cmd: [process.execPath, program],
+        cwd: dir,
+        stdio: "ignore",
+        onConsole: (entry) => void entries.push(entry),
+        onException: (exception) => thrown.resolve(exception),
+      });
+      try {
+        expect(inspected.inspectorUrl).toMatch(/^ws:\/\/127\.0\.0\.1:\d+\/\w+$/);
+        await inspected.attached;
+        const exception = await thrown.promise;
+        expect(exception.name).toBe("TypeError");
+        expect(exception.message).toBe("kaboom");
+        expect(exception.frames[0]).toMatch(/server\.ts:\d+:\d+$/);
+        expect(entries.slice(0, 2)).toEqual([
+          { level: "log", text: expect.stringMatching(/^ready .*port.*0.*1.*2/) },
+          { level: "warning", text: "careful" },
+        ]);
+        expect(await inspected.child.exited).not.toBe(0);
+      } finally {
+        await inspected.stop();
+      }
     });
-    try {
-      expect(inspected.inspectorUrl).toMatch(/^ws:\/\/127\.0\.0\.1:\d+\/\w+$/);
-      await inspected.attached;
-      const exception = await thrown.promise;
-      expect(exception.name).toBe("TypeError");
-      expect(exception.message).toBe("kaboom");
-      expect(exception.frames[0]).toMatch(/server\.ts:\d+:\d+$/);
-      expect(entries.slice(0, 2)).toEqual([
-        { level: "log", text: expect.stringMatching(/^ready .*port.*0.*1.*2/) },
-        { level: "warning", text: "careful" },
-      ]);
-      expect(await inspected.child.exited).not.toBe(0);
-    } finally {
-      await inspected.stop();
-    }
-  });
-
-});
+  },
+);
 
 describe.skipIf(!resolvable("@aphrody/web-inspector-bun"))(
   "Web Inspector frontend (@aphrody/web-inspector-bun)",
@@ -92,7 +96,10 @@ describe("API errors in dev go to Bun's error overlay (bun-error)", () => {
   test("an API module that fails to load: the dev server starts and its routes render the overlay", async () => {
     // In a child: inside `bun test`, an error that a dev server reports also fails the running test.
     const dir = tmp();
-    writeFileSync(join(dir, "api.ts"), 'throw new Error("api.ts: database url missing");\nexport default {};');
+    writeFileSync(
+      join(dir, "api.ts"),
+      'throw new Error("api.ts: database url missing");\nexport default {};',
+    );
     writeFileSync(join(dir, "index.html"), "<!doctype html><html><body>ui</body></html>");
     writeFileSync(
       join(dir, "dev.ts"),
@@ -108,13 +115,22 @@ await server.stop(true);
 process.exit(0); // a reported handler error would otherwise set exit code 1
 `,
     );
-    await using child = Bun.spawn([process.execPath, "dev.ts"], { cwd: dir, stdout: "pipe", stderr: "pipe" });
+    await using child = Bun.spawn([process.execPath, "dev.ts"], {
+      windowsHide: true,
+      cwd: dir,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
     const [stdout, stderr, code] = await Promise.all([
       new Response(child.stdout).text(),
       new Response(child.stderr).text(),
       child.exited,
     ]);
-    const result = JSON.parse(stdout.trim().split("\n").at(-1)!) as { ui: string; status: number; overlay: string };
+    const result = JSON.parse(stdout.trim().split("\n").at(-1)!) as {
+      ui: string;
+      status: number;
+      overlay: string;
+    };
     expect(result.ui).toContain("ui");
     expect(result.status).toBe(500);
     expect(result.overlay).toContain("__bunfallback");

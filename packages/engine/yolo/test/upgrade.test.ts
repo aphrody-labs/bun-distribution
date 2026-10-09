@@ -42,6 +42,7 @@ runUpgrade(${JSON.stringify(args)}).then(code => { process.exitCode = code; }).c
 });
 `;
   return Bun.spawnSync([process.execPath, "--eval", source], {
+    windowsHide: true,
     cwd: entry.dir,
     env: {
       PATH: process.env["PATH"] ?? "",

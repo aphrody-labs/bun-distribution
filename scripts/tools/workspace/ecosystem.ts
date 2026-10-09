@@ -105,11 +105,7 @@ export function gitFiles(repoDir: string, patterns: string[]): string[] {
   const result = spawnSync(
     "git",
     ["ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", ...patterns],
-    {
-      cwd: repoDir,
-      encoding: "utf8",
-      maxBuffer: 256 * 1024 * 1024,
-    },
+    { windowsHide: true, cwd: repoDir, encoding: "utf8", maxBuffer: 256 * 1024 * 1024 },
   );
   if (result.status !== 0) return [];
   return [

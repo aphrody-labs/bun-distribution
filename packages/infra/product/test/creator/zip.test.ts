@@ -33,6 +33,6 @@ test("buildZip produces an archive that unzip/bsdtar can read back", async () =>
     expect(view.getUint16(10, true)).toBe(2);
     return;
   }
-  const out = Bun.spawnSync([...tool, path, "a.webp"]);
+  const out = Bun.spawnSync([...tool, path, "a.webp"], { windowsHide: true });
   expect(out.stdout.toString()).toBe("hello");
 });

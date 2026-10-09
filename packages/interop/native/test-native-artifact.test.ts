@@ -109,6 +109,7 @@ test("streamed hashing covers multiple chunks and detects changed content", () =
 
 async function isolated(code: string, env: Record<string, string | undefined>, cwd: string) {
   const child = Bun.spawn({
+    windowsHide: true,
     cmd: [process.execPath, "-e", code],
     cwd,
     env: {

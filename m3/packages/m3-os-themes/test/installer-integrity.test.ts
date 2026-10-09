@@ -69,6 +69,7 @@ test.skipIf(process.platform !== "linux")(
         expect(run(["generate", "--target", target, "--out", out]).code).toBe(0);
         const command = (...args: string[]) =>
           Bun.spawnSync(["bash", join(out, target, "install-" + target + ".sh"), ...args], {
+            windowsHide: true,
             env,
             stdout: "pipe",
             stderr: "pipe",

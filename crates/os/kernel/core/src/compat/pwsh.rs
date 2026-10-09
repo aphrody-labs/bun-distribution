@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! PowerShell Core (pwsh) and Windows PowerShell compatibility runner.
 
+use aphrody_proc::NoWindow as _;
 use std::{env, path::Path};
 
 use serde::{Deserialize, Serialize};
@@ -19,7 +20,7 @@ pub async fn detect_pwsh() -> PwshRuntimeInfo {
     // Priority 1: pwsh (PowerShell 7+ Core, cross-platform)
     let pwsh_bin = which("pwsh").or_else(|| which("pwsh.exe"));
     if let Some(bin) = pwsh_bin {
-        let version_out = tokio::process::Command::new(&bin).arg("-Version").output().await.ok();
+        let version_out = tokio::process::Command::new(&bin).no_window().arg("-Version").output().await.ok();
         let version = version_out.map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned());
         return PwshRuntimeInfo {
             available: true,
@@ -50,7 +51,7 @@ pub async fn eval_script(script: &str, cwd: Option<&str>) -> Result<ExecResult, 
         return Err("No PowerShell runtime (pwsh or powershell.exe) detected on system".to_owned());
     };
 
-    let mut cmd = tokio::process::Command::new(bin);
+    let mut cmd = tokio::process::Command::new(bin).no_window();
     cmd.arg("-NoProfile").arg("-NonInteractive").arg("-Command").arg(script);
 
     if let Some(dir) = cwd {

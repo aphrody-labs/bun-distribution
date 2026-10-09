@@ -14,6 +14,7 @@ description            = "Cross-platform Gemini CLI runtime adapter: detect, ver
 workspace = true
 
 [dependencies]
+aphrody-proc = { workspace = true, features = ["tokio"] }
 # The one MCP client (transports, framing, header validation) and the one MCP server model.
 # `mcp_client` is a thin facade over the former; `mcp_config` reads into the latter.
 aphrody-mcp-client = { workspace = true }

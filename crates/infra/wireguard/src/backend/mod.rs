@@ -2,6 +2,7 @@
 //! Live WireGuard interfaces: Linux kernel (netlink), userspace (boringtun, Linux/BSD/macOS) and
 //! WireGuardNT (Windows kernel driver).
 
+use aphrody_proc::NoWindow as _;
 use std::net::SocketAddr;
 use std::time::SystemTime;
 
@@ -168,9 +169,9 @@ fn hooks(cmds: &[String], name: &str) -> Result<()> {
     for c in cmds {
         let line = c.replace("%i", name);
         #[cfg(windows)]
-        let status = std::process::Command::new("cmd").args(["/C", &line]).status();
+        let status = std::process::Command::new("cmd").no_window().args(["/C", &line]).status();
         #[cfg(not(windows))]
-        let status = std::process::Command::new("sh").args(["-c", &line]).status();
+        let status = std::process::Command::new("sh").no_window().args(["-c", &line]).status();
         let status = status.map_err(|e| crate::Error::Backend(format!("hook `{line}`: {e}")))?;
         if !status.success() {
             return Err(crate::Error::Backend(format!("hook `{line}` a échoué ({status})")));

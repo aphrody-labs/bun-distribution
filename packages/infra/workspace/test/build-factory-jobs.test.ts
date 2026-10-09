@@ -24,6 +24,7 @@ type Plan = { transport: readonly string[] };
 const quoted = (text: string) => "'" + text.replaceAll("'", "'\\''") + "'";
 function launch(code: string) {
   const child = Bun.spawn(["bash", "-c", code], {
+    windowsHide: true,
     stdin: "pipe",
     stdout: "pipe",
     stderr: "pipe",
@@ -65,6 +66,7 @@ async function fixture(seconds = 3) {
   );
   async function git(...args: string[]) {
     const child = Bun.spawn(["git", "-C", repository, ...args], {
+      windowsHide: true,
       stdout: "pipe",
       stderr: "pipe",
       env: {

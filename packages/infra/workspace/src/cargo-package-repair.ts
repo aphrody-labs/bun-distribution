@@ -22,7 +22,7 @@ export async function runCargoPackageRepair(args: string[]): Promise<number> {
     const root = resolve(repository);
     const child = Bun.spawn(
       ["git", "-C", root, "grep", "-lE", "--", "(-p|--package)-[a-z0-9]", "--", ":!*.lock"],
-      { stdout: "pipe", stderr: "pipe" },
+      { windowsHide: true, stdout: "pipe", stderr: "pipe" },
     );
     const [code, stdout] = await Promise.all([child.exited, new Response(child.stdout).text()]);
     if (code > 1) throw new Error(`git grep failed for ${root}`);

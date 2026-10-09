@@ -60,6 +60,7 @@ if (!process.argv.includes("--apply")) {
 }
 async function run(args: string[], stdin?: string) {
   const child = Bun.spawn(args, {
+    windowsHide: true,
     stdin: stdin === undefined ? "ignore" : new Blob([stdin]),
     stdout: "pipe",
     stderr: "pipe",
@@ -138,7 +139,8 @@ if (!(await Bun.file(join(privateDir, "tls.key")).exists())) {
   ]);
   await chmod(join(privateDir, "tls.key"), 0o600);
 }
-const yoloRoot = process.env.YOLO_ROOT ?? process.env.APHRODY_YOLO_ROOT ?? join(homedir(), "aphrody");
+const yoloRoot =
+  process.env.YOLO_ROOT ?? process.env.APHRODY_YOLO_ROOT ?? join(homedir(), "aphrody");
 const configPath = join(privateDir, "nginx.conf");
 await Bun.write(
   configPath,

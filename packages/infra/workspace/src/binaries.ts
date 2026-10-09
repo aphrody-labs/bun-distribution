@@ -69,6 +69,7 @@ export async function runAphrodyBinary(name: string, args: string[]): Promise<nu
   const binary = (await discoverAphrodyBinaries()).find((entry) => entry.name === name);
   if (!binary) throw new Error(`Aphrody binary is not installed: ${name}`);
   const child = Bun.spawn([binary.path, ...args], {
+    windowsHide: true,
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",

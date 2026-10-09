@@ -113,6 +113,7 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
   let exitCode: number | null = null;
   const started = Date.now();
   const child = Bun.spawn([exe], {
+    windowsHide: true,
     env: {
       ...process.env,
       WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port} --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding`,
@@ -151,7 +152,7 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
   for (const ws of sockets) ws.close();
   if (alive) {
     if (process.platform === "win32")
-      Bun.spawnSync(["taskkill", "/PID", String(child.pid), "/T", "/F"]);
+      Bun.spawnSync(["taskkill", "/PID", String(child.pid), "/T", "/F"], { windowsHide: true });
     else child.kill("SIGTERM");
   }
   await stdout.close();

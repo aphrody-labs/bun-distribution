@@ -26,7 +26,7 @@ export async function writeBunCommand(
     const path = join(dir, `${name}.exe`);
     const build = Bun.spawnSync(
       [process.execPath, "build", "--compile", script, "--outfile", path],
-      { stdout: "ignore", stderr: "pipe" },
+      { windowsHide: true, stdout: "ignore", stderr: "pipe" },
     );
     if (build.exitCode !== 0) throw new Error(`fixture compile failed: ${build.stderr}`);
     await rm(script);

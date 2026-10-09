@@ -59,6 +59,7 @@ supervisedTest("missing executable is a structured failure", async () => {
 
 supervisedTest("child output cannot contaminate JSON stdout", async () => {
   const child = Bun.spawn([process.execPath, fixture, "measure"], {
+    windowsHide: true,
     stdout: "pipe",
     stderr: "pipe",
   });
@@ -170,6 +171,7 @@ for (const action of ["timeout", "cancel", "orphan"] as const) {
 
 supervisedTest("missing verified artifact is an explicit prerequisite failure", async () => {
   const child = Bun.spawn([process.execPath, fixture, "measure"], {
+    windowsHide: true,
     env: { ...process.env, YOLO_RUNTIME_HOME: "/nonexistent/aphrody-runtime" },
     stdout: "pipe",
     stderr: "pipe",

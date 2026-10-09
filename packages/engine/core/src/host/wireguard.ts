@@ -1344,6 +1344,7 @@ export const defaultRunner: Runner = async (host, command) => {
       ? ["bash", "-c", command]
       : ["aphrody", "infra", "ssh", "exec", "--host", host, "-c", command];
   const p = Bun.spawn(argv, {
+    windowsHide: true,
     stdout: "pipe",
     stderr: "pipe",
     env: { ...process.env, APHRODY_SSH_COMMAND_TIMEOUT_SECS: "60" },

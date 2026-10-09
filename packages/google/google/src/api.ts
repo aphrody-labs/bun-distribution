@@ -83,7 +83,7 @@ export async function gcloudUserClient(): Promise<OAuth2Client> {
       `--account=${account}`,
       "--scopes=https://www.googleapis.com/auth/drive",
     ],
-    { stdout: "pipe", stderr: "pipe" },
+    { windowsHide: true, stdout: "pipe", stderr: "pipe" },
   );
   const [output, errors, exitCode] = await Promise.all([
     new Response(processResult.stdout).text(),

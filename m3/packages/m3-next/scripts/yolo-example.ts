@@ -94,7 +94,7 @@ async function run(
   cwd?: string,
 ): Promise<Timed> {
   const start = performance.now();
-  const proc = Bun.spawn(cmd, { env, cwd, stdout: "pipe", stderr: "pipe" });
+  const proc = Bun.spawn(cmd, { windowsHide: true, env, cwd, stdout: "pipe", stderr: "pipe" });
   const [out, err, exitCode] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
@@ -162,7 +162,14 @@ async function withServer<T>(
     )
   )
     throw new Error(`${url} is already served`);
-  const proc = Bun.spawn(cmd, { env, cwd, stdout: "ignore", stderr: "ignore", detached: true });
+  const proc = Bun.spawn(cmd, {
+    windowsHide: true,
+    env,
+    cwd,
+    stdout: "ignore",
+    stderr: "ignore",
+    detached: true,
+  });
   try {
     if (!(await waitFor(url, 90_000))) throw new Error(`${url} did not come up`);
     return await body();

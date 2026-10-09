@@ -50,6 +50,7 @@ if (args.length === 1 || ${repeatRootHelp}) {
     );
   const capture = async (args: string[]) => {
     const child = Bun.spawn([process.execPath, runner, ...args], {
+      windowsHide: true,
       env: {
         ...withoutPath(process.env),
         PATH: bin,

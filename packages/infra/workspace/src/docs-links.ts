@@ -46,11 +46,7 @@ function deferredPathCheckFiles(root: string): Set<string> {
 }
 
 /** Evidence trees whose backtick paths deliberately record historical or source-repository paths. */
-const HISTORICAL_PATH_TREES = [
-  new Bun.Glob("docs/migration/**"),
-  new Bun.Glob("docs/plans/**/archive/**"),
-  new Bun.Glob("docs/archive/**"),
-];
+const HISTORICAL_PATH_TREES = [new Bun.Glob("docs/migration/**")];
 
 /** Document-level opt-out: the document's backtick paths name another repository layout or git history. */
 export const EXTERNAL_PATHS_MARKER = "<!-- docs-links: external-paths";

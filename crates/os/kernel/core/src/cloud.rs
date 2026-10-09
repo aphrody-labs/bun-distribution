@@ -159,7 +159,7 @@ impl SystemSubsystem for CloudSubsystem {
             .read_only(),
             ToolDefinition::new(
                 "git_ingest",
-                "Ingest any Git repository or directory into a prompt-ready LLM digest matching https://gitingest.com/llms.txt (token estimation, ASCII tree, delimited file contents)",
+                "Local directory ingestion moved to the `git_ingest` tool of `bun mcp` (Bun fork, after `bun mcp install`); this tool only returns GIT_INGEST_LOCAL_MOVED",
                 json!({
                     "type": "object",
                     "properties": {
@@ -260,26 +260,10 @@ impl SystemSubsystem for CloudSubsystem {
                 let (ref_name, subpath) = (ref_name.to_owned(), subpath.to_owned());
                 blocking(move || crate::cloud_git::tree(&repo_path, &ref_name, &subpath)).await
             },
-            "git_ingest" => {
-                let repo_path =
-                    resolve_repo_path(arguments.get("repo_path").and_then(Value::as_str))?;
-                let max_size = arguments
-                    .get("max_file_size")
-                    .and_then(Value::as_u64)
-                    .unwrap_or(10 * 1024 * 1024);
-                let include: Vec<String> = arguments
-                    .get("include_patterns")
-                    .and_then(Value::as_array)
-                    .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
-                    .unwrap_or_default();
-                let exclude: Vec<String> = arguments
-                    .get("exclude_patterns")
-                    .and_then(Value::as_array)
-                    .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
-                    .unwrap_or_default();
-                blocking(move || crate::cloud_git::ingest(&repo_path, max_size, &include, &exclude))
-                    .await
-            },
+            "git_ingest" => Err(SubsystemError::InvalidArguments(
+                "GIT_INGEST_LOCAL_MOVED: local directory ingestion moved to the `git_ingest` tool of `bun mcp` (Bun fork, run `bun mcp install`)"
+                    .into(),
+            )),
             "gcp_status" => {
                 let gemini_key = std::env::var("GEMINI_API_KEY").ok();
                 let google_key = std::env::var("GOOGLE_API_KEY").ok();

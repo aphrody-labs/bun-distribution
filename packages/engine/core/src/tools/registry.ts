@@ -637,7 +637,7 @@ export async function executeTool(
       const dir = context.containPaths ? resolveContainedPath(rootDir, args.dir) : args.dir;
       const records = await scanLinks([dir], {
         run: async (cmd: string) => {
-          const proc = Bun.spawn(["sh", "-c", cmd], { stdout: "pipe" });
+          const proc = Bun.spawn(["sh", "-c", cmd], { windowsHide: true, stdout: "pipe" });
           return await new Response(proc.stdout).text();
         },
         depth,

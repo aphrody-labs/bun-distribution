@@ -104,6 +104,7 @@ async function preparationFixture() {
   };
   const git = async (cwd: string, ...args: string[]) => {
     const child = Bun.spawn(["git", ...args], {
+      windowsHide: true,
       cwd,
       env,
       stdout: "pipe",
@@ -144,6 +145,7 @@ async function preparationFixture() {
     const plan = buildFactoryPreparePlan(declared, "yolo", pinnedRevision, pin);
     // Execute the planned remote body against tiny local Git fixtures; no host or source repository is touched.
     const child = Bun.spawn(["bash", "-c", plan.transport[5]!], {
+      windowsHide: true,
       env,
       stdout: "pipe",
       stderr: "pipe",
@@ -386,6 +388,7 @@ test.skipIf(process.platform === "win32")(
             ...(apply ? ["--apply"] : []),
           ],
           {
+            windowsHide: true,
             env: { ...f.env, APHRODY_ROOT: root, APHRODY_INFRA_BIN: infra },
             stdout: "pipe",
             stderr: "pipe",
@@ -501,7 +504,12 @@ test.skipIf(process.platform === "win32")(
     const root = await mkdtemp(join(tmpdir(), "aphrody-factory-"));
     try {
       const git = async (...args: string[]) => {
-        const child = Bun.spawn(["git", ...args], { cwd: root, stdout: "pipe", stderr: "pipe" });
+        const child = Bun.spawn(["git", ...args], {
+          windowsHide: true,
+          cwd: root,
+          stdout: "pipe",
+          stderr: "pipe",
+        });
         const output = await new Response(child.stdout).text();
         expect(await child.exited).toBe(0);
         return output.trim();
@@ -536,6 +544,7 @@ test.skipIf(process.platform === "win32")(
       ]);
       const run = async () => {
         const child = Bun.spawn(["bash", "-c", plan.transport[5]!], {
+          windowsHide: true,
           stdout: "pipe",
           stderr: "pipe",
         });
@@ -591,7 +600,7 @@ test.skipIf(process.platform === "win32")(
     expect(script).toContain('build-factory.ts" status --route');
     const child = Bun.spawn(
       [process.execPath, join(import.meta.dir, "../src/build-factory.ts"), "status", "--route"],
-      { env: { ...process.env, APHRODY_BUILD_HOST: "vps" }, stdout: "pipe" },
+      { windowsHide: true, env: { ...process.env, APHRODY_BUILD_HOST: "vps" }, stdout: "pipe" },
     );
     expect((await new Response(child.stdout).text()).trim()).toBe("local");
     expect(await child.exited).toBe(0);
@@ -649,7 +658,7 @@ test.skipIf(process.platform === "win32")(
         "-e",
         "console.log('locked');setInterval(()=>{},1000)",
       ],
-      { stdout: "pipe", stderr: "pipe" },
+      { windowsHide: true, stdout: "pipe", stderr: "pipe" },
     );
     const reader = held.stdout.getReader();
     try {

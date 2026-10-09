@@ -31,7 +31,12 @@ export const loadSources = async (): Promise<VendorSource[]> =>
   (await Bun.file(join(REPO, "tools/config/vendor.json")).json()).sources;
 
 const git = (cwd: string, ...args: string[]) => {
-  const r = Bun.spawnSync(["/usr/bin/git", ...args], { cwd, stdout: "pipe", stderr: "pipe" });
+  const r = Bun.spawnSync(["/usr/bin/git", ...args], {
+    windowsHide: true,
+    cwd,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   return { ok: r.exitCode === 0, out: r.stdout.toString().trim(), err: r.stderr.toString().trim() };
 };
 
@@ -63,6 +68,7 @@ export function fetchSource(s: VendorSource): string {
   if (!c.ok) throw new Error(`${s.name}: checkout: ${c.err}`);
   if (s.sparseScript) {
     const r = Bun.spawnSync(["bun", join(REPO, s.sparseScript)], {
+      windowsHide: true,
       cwd: REPO,
       stdout: "pipe",
       stderr: "pipe",

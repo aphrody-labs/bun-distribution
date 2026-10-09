@@ -18,7 +18,7 @@ function parseErrors(script: string): string {
       "-Command",
       "$e=$null;$t=$null;[void][System.Management.Automation.Language.Parser]::ParseInput($env:SNIPPET,[ref]$t,[ref]$e);($e|ForEach-Object Message) -join '|'",
     ],
-    { env: { ...process.env, SNIPPET: script } },
+    { windowsHide: true, env: { ...process.env, SNIPPET: script } },
   );
   return proc.stdout.toString().trim();
 }

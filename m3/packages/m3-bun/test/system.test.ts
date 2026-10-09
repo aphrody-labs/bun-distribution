@@ -14,7 +14,12 @@ afterAll(cleanup);
 
 const enabled = Bun.env.M3_BUN_SYSTEM === "1";
 const sh = (cmd: string[], cwd?: string) => {
-  const proc = Bun.spawnSync(cmd, { ...(cwd ? { cwd } : {}), stdout: "pipe", stderr: "pipe" });
+  const proc = Bun.spawnSync(cmd, {
+    windowsHide: true,
+    ...(cwd ? { cwd } : {}),
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   return {
     code: proc.exitCode ?? 1,
     out: proc.stdout.toString().trim(),
@@ -116,6 +121,7 @@ describe.skipIf(!enabled)("generated images run", () => {
       const qemu = Bun.spawn(
         ["bash", join(dir, "deploy/linux-image/run-qemu.sh"), join(dir, "image/initramfs.cpio.gz")],
         {
+          windowsHide: true,
           env: { ...process.env, KERNEL: Bun.env.M3_BUN_KERNEL!, HOST_PORT: String(port) },
           stdout: "ignore",
           stderr: "ignore",

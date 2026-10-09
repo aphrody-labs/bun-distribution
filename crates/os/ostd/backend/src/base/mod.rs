@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+use aphrody_proc::NoWindow as _;
 use std::{
     collections::HashMap,
     path::PathBuf,
@@ -85,7 +86,7 @@ impl ProcessManager {
 
     pub fn spawn(&mut self, name: &str, command: &str, args: &[&str]) -> Result<()> {
         info!("Lancement du processus : {} ({})", name, command);
-        let child = Command::new(command).args(args).spawn()?;
+        let child = Command::new(command).no_window().args(args).spawn()?;
         self.processes.insert(name.to_string(), child);
         Ok(())
     }

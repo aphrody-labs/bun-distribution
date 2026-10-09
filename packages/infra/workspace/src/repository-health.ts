@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { runDocsLinks } from "./docs-links.ts";
 
 async function command(root: string, args: string[]): Promise<{ code: number; out: string }> {
-  const child = Bun.spawn(args, { cwd: root, stdout: "pipe", stderr: "pipe" });
+  const child = Bun.spawn(args, { windowsHide: true, cwd: root, stdout: "pipe", stderr: "pipe" });
   const [code, stdout] = await Promise.all([child.exited, new Response(child.stdout).text()]);
   return { code, out: stdout.trim() };
 }

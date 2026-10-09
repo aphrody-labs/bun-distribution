@@ -590,6 +590,7 @@ function extensionOf(path: string): string {
 
 function git(root: string, args: string[]): string {
   const result = Bun.spawnSync(["git", "-C", root, "-c", "core.quotepath=off", ...args], {
+    windowsHide: true,
     stdout: "pipe",
     stderr: "pipe",
     maxBuffer: 256 * 1024 * 1024,
@@ -1194,6 +1195,7 @@ function isAllowedDirty(path: string, prefixes: string[]): boolean {
 /** SHA-256 of the committed (HEAD) version of a file, or null when it is not committed. */
 export function committedSha(root: string, path: string): string | null {
   const result = Bun.spawnSync(["git", "-C", root, "show", `HEAD:${path}`], {
+    windowsHide: true,
     stdout: "pipe",
     stderr: "pipe",
     maxBuffer: 256 * 1024 * 1024,

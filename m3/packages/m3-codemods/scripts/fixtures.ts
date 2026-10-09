@@ -49,6 +49,7 @@ export function format(source: string): string {
   const oxfmt = Bun.which("oxfmt");
   if (!oxfmt) throw new Error("oxfmt introuvable sur PATH (requis pour comparer les fixtures)");
   const run = Bun.spawnSync([oxfmt, "--stdin-filepath=f.tsx"], {
+    windowsHide: true,
     cwd: ROOT,
     stdin: new TextEncoder().encode(source),
     stdout: "pipe",

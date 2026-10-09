@@ -23,6 +23,7 @@ workspace = true
 
 # Dependencies available on all targets (wasm-compatible).
 [dependencies]
+aphrody-proc = { workspace = true, features = ["tokio"] }
 async-trait = { workspace = true }
 futures     = { workspace = true }
 serde       = { workspace = true, features = ["derive"] }

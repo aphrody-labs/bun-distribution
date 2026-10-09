@@ -30,6 +30,7 @@ export async function runOptimize(args: string[]): Promise<number> {
   const binary = Bun.which("aphrody");
   if (!binary) throw new Error("aphrody is unavailable; install the capability-owner CLI first.");
   const child = Bun.spawn([binary, "exec", "--cd", resolve(process.cwd()), prompt], {
+    windowsHide: true,
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",

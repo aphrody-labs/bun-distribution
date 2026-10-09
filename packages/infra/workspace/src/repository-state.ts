@@ -15,7 +15,11 @@ type Manifest = {
 };
 type Issue = { path: string; target: string; kind: string };
 function git(root: string, ...args: string[]): string {
-  const p = Bun.spawnSync(["git", "-C", root, ...args], { stdout: "pipe", stderr: "pipe" });
+  const p = Bun.spawnSync(["git", "-C", root, ...args], {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   if (p.exitCode !== 0) throw new Error(new TextDecoder().decode(p.stderr));
   return new TextDecoder().decode(p.stdout);
 }

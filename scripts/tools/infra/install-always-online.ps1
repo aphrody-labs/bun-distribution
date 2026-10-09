@@ -35,19 +35,21 @@ $logs = Join-Path $aphrodyHome 'logs'
 $user = [Security.Principal.WindowsIdentity]::GetCurrent().Name
 $taskPath = '\Aphrody\'
 
+Import-Module (Join-Path $PSScriptRoot 'AphrodyHiddenTask.psm1') -Force
+
+# Policy (AphrodyHiddenTask.psm1): SYSTEM or S4U tasks have no window station, so no console can appear;
+# -Desktop tasks need the interactive session and run behind `conhost.exe --headless`.
 function Register-AphrodyTask {
-    param([string]$Name, [string]$Execute, [string]$Arguments, [ValidateSet('Boot', 'Logon')][string]$At, [switch]$System)
-    $action = New-ScheduledTaskAction -Execute $Execute -Argument $Arguments
+    param([string]$Name, [string]$Execute, [string]$Arguments, [ValidateSet('Boot', 'Logon')][string]$At, [switch]$System, [switch]$Desktop)
     $start = if ($At -eq 'Boot') { New-ScheduledTaskTrigger -AtStartup } else { New-ScheduledTaskTrigger -AtLogOn -User $user }
     $repeat = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 5)
-    $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit ([TimeSpan]::Zero) `
-        -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -Hidden
-    $principal = if ($System) { New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest }
-    else { New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Highest }
-    if ($DryRun) { Write-Output "plan: $taskPath$Name [$At$(if ($System) { ', SYSTEM' })] $Execute $Arguments"; return }
-    Register-ScheduledTask -TaskPath $taskPath -TaskName $Name -Action $action -Trigger @($start, $repeat) -Settings $settings `
-        -Principal $principal -Description 'Aphrody always-online (scripts/tools/infra/install-always-online.ps1)' -Force | Out-Null
-    Start-ScheduledTask -TaskPath $taskPath -TaskName $Name
+    if ($DryRun) { Write-Output "plan: $taskPath$Name [$At$(if ($System) { ', SYSTEM' } elseif ($Desktop) { ', desktop headless' } else { ', S4U' })] $Execute $Arguments"; return }
+    $task = @{
+        Name = $Name; TaskPath = $taskPath; Execute = $Execute; Argument = $Arguments; Trigger = @($start, $repeat)
+        System = $System; Desktop = $Desktop; RunLevel = 'Highest'; Restart = $true; Start = $true
+        Description = 'Aphrody always-online (scripts/tools/infra/install-always-online.ps1)'
+    }
+    Register-AphrodyHiddenTask @task
     Write-Output "task: $taskPath$Name"
 }
 
@@ -68,7 +70,7 @@ Register-AphrodyTask -Name "Aphrody WG $Member" -At Boot -System -Execute "$env:
 
 # 3. Remote desktop (8795) + VNC (5900) in the interactive session (screen capture needs the desktop). The VNC allowlist
 # admits the owner and this PC's own address, the source of the reverse-tunnel connections below.
-Register-AphrodyTask -Name 'Aphrody Remote Desktop' -At Logon -Execute $Aphrody `
+Register-AphrodyTask -Name 'Aphrody Remote Desktop' -At Logon -Desktop -Execute $Aphrody `
     -Arguments "infra remote serve --bind ${Address}:8795 --vnc-allow ${Owner},${Address}"
 
 # 4. MCP HTTP (computer_* WinClean) on loopback, published on the tunnel address by a persistent portproxy.
@@ -109,7 +111,7 @@ if (-not $NoWsl -and (Get-Command wsl.exe -ErrorAction SilentlyContinue)) {
             wsl.exe --shutdown
         }
     }
-    Register-AphrodyTask -Name 'Aphrody WSL sshd' -At Logon -Execute "$env:SystemRoot\System32\wsl.exe" `
+    Register-AphrodyTask -Name 'Aphrody WSL sshd' -At Logon -Desktop -Execute "$env:SystemRoot\System32\wsl.exe" `
         -Arguments "-d $Distro -u root -- sh -c `"service ssh status >/dev/null 2>&1 || service ssh start; exec sleep infinity`""
 }
 

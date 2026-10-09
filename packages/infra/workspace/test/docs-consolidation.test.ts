@@ -460,7 +460,8 @@ async function fixture(): Promise<string> {
       2,
     )}\n`,
   );
-  const git = (...args: string[]) => Bun.spawnSync(["git", "-C", root, ...args]);
+  const git = (...args: string[]) =>
+    Bun.spawnSync(["git", "-C", root, ...args], { windowsHide: true });
   git("init", "-q");
   git("add", "-A");
   git("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "init");
@@ -896,19 +897,11 @@ test("all scope includes Infra and preserves shipped copies while excluding impo
         trees: [{ id: "imported", include: ["docs/reference/imported/**"] }],
       }),
     );
-    Bun.spawnSync(["git", "-C", root, "add", "-A"]);
-    Bun.spawnSync([
-      "git",
-      "-C",
-      root,
-      "-c",
-      "user.email=t@t",
-      "-c",
-      "user.name=t",
-      "commit",
-      "-qm",
-      "docs",
-    ]);
+    Bun.spawnSync(["git", "-C", root, "add", "-A"], { windowsHide: true });
+    Bun.spawnSync(
+      ["git", "-C", root, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "docs"],
+      { windowsHide: true },
+    );
     const ui = await scanScope({ root });
     expect(ui.entries.some((entry) => entry.path === paths[0])).toBe(false);
     const all = await scanScope({ root, scope: ALL_SCOPE });

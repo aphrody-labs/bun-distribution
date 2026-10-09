@@ -2,7 +2,12 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 function command(args: string[], cwd: string): number {
-  const result = Bun.spawnSync(args, { cwd, stdout: "inherit", stderr: "inherit" });
+  const result = Bun.spawnSync(args, {
+    windowsHide: true,
+    cwd,
+    stdout: "inherit",
+    stderr: "inherit",
+  });
   return result.exitCode;
 }
 

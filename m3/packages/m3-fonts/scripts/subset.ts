@@ -8,11 +8,15 @@ import { SUBSET_JOBS } from "../src/index";
 
 const root = join(import.meta.dir, "..");
 await rm(join(root, "fonts", "web"), { recursive: true, force: true });
-const proc = Bun.spawn(["uv", "run", "--quiet", "--script", join(import.meta.dir, "subset.py"), root], {
-  stdin: new TextEncoder().encode(JSON.stringify(SUBSET_JOBS)),
-  stdout: "pipe",
-  stderr: "inherit",
-});
+const proc = Bun.spawn(
+  ["uv", "run", "--quiet", "--script", join(import.meta.dir, "subset.py"), root],
+  {
+    windowsHide: true,
+    stdin: new TextEncoder().encode(JSON.stringify(SUBSET_JOBS)),
+    stdout: "pipe",
+    stderr: "inherit",
+  },
+);
 const out = await new Response(proc.stdout).text();
 if ((await proc.exited) !== 0) throw new Error("scripts/subset.py failed");
 const faces = JSON.parse(out) as { file: string; bytes: number }[];
@@ -20,5 +24,9 @@ await Bun.write(join(root, "src", "subsets.json"), `${JSON.stringify(faces, null
 const total = faces.reduce((n, f) => n + f.bytes, 0);
 console.log(`${faces.length} faces, ${(total / 1024 / 1024).toFixed(2)} MiB`);
 // A fresh process: this one already loaded the manifest with the previous subsets.json.
-const gen = Bun.spawn(["bun", join(import.meta.dir, "generate.ts")], { stdout: "inherit", stderr: "inherit" });
+const gen = Bun.spawn(["bun", join(import.meta.dir, "generate.ts")], {
+  windowsHide: true,
+  stdout: "inherit",
+  stderr: "inherit",
+});
 if ((await gen.exited) !== 0) throw new Error("scripts/generate.ts failed");

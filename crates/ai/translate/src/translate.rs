@@ -11,6 +11,7 @@
 //! La chaîne JP -> FR des databooks Dragon Ball (protection du lexique canonique, contrôle qualité)
 //! appartient à Shenron (`shenron-translate`, aphrody-labs/shenron) et s'appuie sur ce moteur.
 
+use aphrody_proc::NoWindow as _;
 use std::{
     path::{Path, PathBuf},
     sync::Arc,
@@ -279,7 +280,7 @@ impl Translator {
         let web_cmd =
             std::env::var("APHRODY_WEB_GOOGLE_BIN").context("APHRODY_WEB_GOOGLE_BIN absent")?;
 
-        let mut cmd = tokio::process::Command::new(&web_cmd);
+        let mut cmd = tokio::process::Command::new(&web_cmd).no_window();
         cmd.args(["google", "translate", text, "--target", target, "--source", source]);
         cmd.stdout(std::process::Stdio::piped());
         cmd.stderr(std::process::Stdio::piped());

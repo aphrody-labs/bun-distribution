@@ -30,6 +30,7 @@
 //! resolved through `aphrody-models`' store, or a
 //! path to a GGML file the caller already has.
 
+use aphrody_proc::NoWindow as _;
 use std::path::{Path, PathBuf};
 
 use async_trait::async_trait;
@@ -419,7 +420,7 @@ impl SttProvider for WhisperCppBackend {
             .await
             .map_err(|e| SttError::Other(format!("cannot write the work WAV: {e}")))?;
 
-        let mut cmd = tokio::process::Command::new(binary.path());
+        let mut cmd = tokio::process::Command::new(binary.path()).no_window();
         cmd.arg("-m")
             .arg(&weights)
             .arg("-f")

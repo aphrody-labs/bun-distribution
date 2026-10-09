@@ -4,6 +4,7 @@
 //! and probe an HTTP endpoint for readiness. Everything a consumer needs to supervise a local
 //! server without writing its own spawn/poll/kill code.
 
+use aphrody_proc::NoWindow as _;
 use super::*;
 use std::ffi::{CStr, c_char};
 use std::io::{self, Read, Write};
@@ -441,7 +442,7 @@ pub unsafe extern "C" fn yolo_process_spawn(
       }
     };
 
-    let mut command = Command::new(&program);
+    let mut command = Command::new(&program).no_window();
     command.args(&args);
     for entry in &env {
       match entry.split_once('=') {

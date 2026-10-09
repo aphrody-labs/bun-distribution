@@ -30,6 +30,7 @@ function runSurfaceScript(name: string, scriptRelativePath: string): SurfaceBenc
 
   const start = performance.now();
   const proc = spawnSync("bun", [scriptRelativePath], {
+    windowsHide: true,
     cwd: REPO_ROOT,
     encoding: "utf8",
     shell: true,
@@ -65,14 +66,14 @@ export function generateSummary(
     (bunData?.summary?.tests?.yolo?.expectCalls ?? 0) +
     (bunData?.summary?.tests?.m3Tokens?.expectCalls ?? 0);
   const bunOxLintErrors = bunData?.summary?.linter?.errors ?? 0;
-  const bunVersion = bunData?.metadata?.runtimes?.bun || bunData?.environment?.bun_version || "1.4.0";
+  const bunVersion =
+    bunData?.metadata?.runtimes?.bun || bunData?.environment?.bun_version || "1.4.0";
 
   const pyTests = pyData?.pytest_execution?.metrics?.passed ?? 0;
   const pyFails = pyData?.pytest_execution?.metrics?.failed ?? 0;
   const pySkipped = pyData?.pytest_execution?.metrics?.skipped ?? 0;
   const pyErrors = pyData?.pytest_execution?.metrics?.errors ?? 0;
-  const pyHasRust =
-    pyData?.maturin_build_and_dependencies?.native_extension?.has_rust ?? false;
+  const pyHasRust = pyData?.maturin_build_and_dependencies?.native_extension?.has_rust ?? false;
   const pyRuffCheckExit =
     pyData?.linters?.ruff_check?.exit_code ?? pyData?.linters?.ruff_check?.exitCode ?? 0;
   const pyRuffFormatExit =
@@ -134,7 +135,7 @@ export function generateSummary(
 |---|---|---|---|---|
 | **Rust** | ${rustTests} | ${rustFails} | Tous 0 | ${rustFails === 0 ? "**VALIDÉ**" : "**ÉCHEC**"} |
 | **Bun** | ${bunTests} | ${bunFails} | Tous 0 | ${bunFails === 0 ? "**VALIDÉ**" : "**ÉCHEC**"} |
-| **Python** | ${pyTests} | ${pyFails + pyErrors} | Tous 0 | ${(pyFails + pyErrors) === 0 ? "**VALIDÉ**" : "**ÉCHEC**"} |
+| **Python** | ${pyTests} | ${pyFails + pyErrors} | Tous 0 | ${pyFails + pyErrors === 0 ? "**VALIDÉ**" : "**ÉCHEC**"} |
 | **TOTAL** | **${grandTotalTests} tests** | **${grandTotalFails} échec** | — | **${grandTotalFails === 0 ? "PRODUCTION-READY" : "ÉCHEC"}** |
 `;
 }
@@ -201,9 +202,12 @@ async function main() {
       fs.mkdirSync(mirrorDir, { recursive: true });
     }
     fs.writeFileSync(path.join(mirrorDir, "SUMMARY.md"), summaryContent, "utf8");
-    if (fs.existsSync(rustJsonPath)) fs.copyFileSync(rustJsonPath, path.join(mirrorDir, "rust-surface.json"));
-    if (fs.existsSync(bunJsonPath)) fs.copyFileSync(bunJsonPath, path.join(mirrorDir, "bun-surface.json"));
-    if (fs.existsSync(pyJsonPath)) fs.copyFileSync(pyJsonPath, path.join(mirrorDir, "python-surface.json"));
+    if (fs.existsSync(rustJsonPath))
+      fs.copyFileSync(rustJsonPath, path.join(mirrorDir, "rust-surface.json"));
+    if (fs.existsSync(bunJsonPath))
+      fs.copyFileSync(bunJsonPath, path.join(mirrorDir, "bun-surface.json"));
+    if (fs.existsSync(pyJsonPath))
+      fs.copyFileSync(pyJsonPath, path.join(mirrorDir, "python-surface.json"));
   }
 
   console.log(`\n===============================================================================`);

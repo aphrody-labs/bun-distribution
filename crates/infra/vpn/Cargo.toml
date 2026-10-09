@@ -9,6 +9,7 @@ repository.workspace = true
 description = "Native Mullvad VPN controller and auto-proxy/geo-unblock driver for Aphrody and agy."
 
 [dependencies]
+aphrody-proc = { workspace = true, features = ["tokio"] }
 tokio = { workspace = true }
 reqwest = { workspace = true, features = ["socks"] }
 rustls = { workspace = true }

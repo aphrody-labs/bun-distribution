@@ -75,7 +75,12 @@ export async function upstreamCheckedOut(): Promise<boolean> {
 }
 
 function git(cwd: string, ...args: string[]): string {
-  const result = Bun.spawnSync(["git", ...args], { cwd, stdout: "pipe", stderr: "pipe" });
+  const result = Bun.spawnSync(["git", ...args], {
+    windowsHide: true,
+    cwd,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   if (result.exitCode !== 0) {
     throw new Error(`git ${args.join(" ")} failed in ${cwd}: ${result.stderr.toString().trim()}`);
   }
@@ -142,6 +147,7 @@ export async function verifyRegistryCopies(): Promise<Drift[]> {
     const hashes = parseRecordedHashes(record);
     for (const name of VENDORED_FILES) {
       const extracted = Bun.spawnSync(["tar", "-xOf", tarball, `package/${name}`], {
+        windowsHide: true,
         stdout: "pipe",
         stderr: "pipe",
       });

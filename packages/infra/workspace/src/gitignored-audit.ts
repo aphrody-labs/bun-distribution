@@ -32,7 +32,7 @@ export async function runGitignoredAudit(args: string[]): Promise<number> {
   root = resolve(root);
   const result = Bun.spawnSync(
     ["git", "-C", root, "ls-files", "--others", "--ignored", "--exclude-standard", "-z"],
-    { stdout: "pipe", stderr: "pipe" },
+    { windowsHide: true, stdout: "pipe", stderr: "pipe" },
   );
   if (result.exitCode !== 0) throw new Error(new TextDecoder().decode(result.stderr).trim());
   const paths = new TextDecoder()

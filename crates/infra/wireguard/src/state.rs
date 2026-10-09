@@ -2,6 +2,7 @@
 //! Per-tunnel runtime state: the process that owns a non-persistent interface (WireGuardNT,
 //! userspace) and the configuration it was brought up with.
 
+use aphrody_proc::NoWindow as _;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -53,9 +54,9 @@ pub fn stop_owner(name: &str) -> Result<Option<u32>> {
     }
     let pid_s = pid.to_string();
     #[cfg(windows)]
-    let out = Command::new("taskkill").args(["/PID", &pid_s, "/T", "/F"]).output();
+    let out = Command::new("taskkill").no_window().args(["/PID", &pid_s, "/T", "/F"]).output();
     #[cfg(not(windows))]
-    let out = Command::new("kill").args(["-TERM", &pid_s]).output();
+    let out = Command::new("kill").no_window().args(["-TERM", &pid_s]).output();
     let out = out.map_err(|e| Error::Backend(format!("arrêt du processus {pid}: {e}")))?;
     clear(name);
     if out.status.success() {

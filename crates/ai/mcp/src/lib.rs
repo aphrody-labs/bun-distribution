@@ -2394,6 +2394,13 @@ impl GoogleMcpServer {
             subpath,
         }): Parameters<GitIngestRequest>,
     ) -> String {
+        if !aphrody_git::is_remote_source(&source) {
+            return serde_json::to_string_pretty(&json!({
+                "error": "GIT_INGEST_LOCAL_MOVED",
+                "reason": "local directory ingestion moved to the `git_ingest` tool of `bun mcp` (Bun fork); run `bun mcp install` then call that tool",
+            }))
+            .unwrap_or_default();
+        }
         let mut opts = aphrody_git::IngestOptions::default();
         if let Some(s) = max_size {
             opts.max_file_size = s;
@@ -2408,7 +2415,7 @@ impl GoogleMcpServer {
         opts.tag = tag;
         opts.subpath = subpath;
 
-        match aphrody_git::ingest(&source, &opts) {
+        match aphrody_git::ingest_remote(source.trim(), &opts) {
             Ok(result) => result.full_context(),
             Err(e) => serde_json::to_string_pretty(&json!({
                 "error": "GIT_INGEST_FAILED",

@@ -64,6 +64,7 @@ if (import.meta.main) {
         );
       }
       const child = Bun.spawn([Bun.which("bun") ?? process.execPath, "add", ...specs], {
+        windowsHide: true,
         cwd: resolve(cwd),
         stdout: "inherit",
         stderr: "inherit",

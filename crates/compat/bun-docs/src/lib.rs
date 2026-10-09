@@ -14,6 +14,7 @@
 //! at the commit pinned in `docs/reference/upstream-bun/SOURCE.json` ([`download_root`], a partial
 //! `git` clone, reported in `bun_docs_list`); `APHRODY_BUN_DOCS_FETCH=0` turns that into an error.
 
+use aphrody_proc::NoWindow as _;
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
@@ -433,7 +434,7 @@ pub fn download_root() -> Result<PathBuf, String> {
 }
 
 fn git(cwd: Option<&Path>, args: &[&str]) -> Result<(), String> {
-    let mut command = std::process::Command::new("git");
+    let mut command = std::process::Command::new("git").no_window();
     if let Some(cwd) = cwd {
         command.arg("-C").arg(cwd);
     }

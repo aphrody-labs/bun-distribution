@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Bounded shell execution and computer-use reporting for Discord.
 
+use aphrody_proc::NoWindow as _;
 use anyhow::{Context, Result};
 use std::time::Instant;
 use tokio::process::Command;
@@ -26,14 +27,14 @@ pub async fn run_bounded_shell(command_line: &str) -> Result<ShellExecutionResul
 
     #[cfg(target_os = "windows")]
     let mut cmd = {
-        let mut c = Command::new("cmd.exe");
+        let mut c = Command::new("cmd.exe").no_window();
         c.args(["/C", command_line]);
         c
     };
 
     #[cfg(not(target_os = "windows"))]
     let mut cmd = {
-        let mut c = Command::new("sh");
+        let mut c = Command::new("sh").no_window();
         c.args(["-c", command_line]);
         c
     };

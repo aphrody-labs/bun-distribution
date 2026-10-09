@@ -49,7 +49,7 @@ export async function runShenron(args: string[]): Promise<number> {
                 "--label",
                 "shenron:timeline",
               ],
-              { stdout: "pipe", stderr: "pipe" },
+              { windowsHide: true, stdout: "pipe", stderr: "pipe" },
             );
             const timeout = setTimeout(() => child.kill("SIGTERM"), 1800000);
             const killTimeout = setTimeout(() => child.kill("SIGKILL"), 1810000);

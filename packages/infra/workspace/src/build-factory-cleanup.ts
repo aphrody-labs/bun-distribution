@@ -349,7 +349,7 @@ export async function withFactoryResource<T>(
         ),
       ].join("\n"),
     ],
-    { env: leaseEnv, stdin: "pipe", stdout: "pipe", stderr: "inherit" },
+    { windowsHide: true, env: leaseEnv, stdin: "pipe", stdout: "pipe", stderr: "inherit" },
   );
   const reader = lease.stdout.getReader();
   const ready = await reader.read();
@@ -386,7 +386,7 @@ export async function withFactoryResource<T>(
           ),
         ].join("\n"),
       ],
-      { stdout: "inherit", stderr: "inherit" },
+      { windowsHide: true, stdout: "inherit", stderr: "inherit" },
     );
     if (result.exitCode !== 0)
       throw new Error("Factory transient isolation could not be qualified");
@@ -454,6 +454,7 @@ export async function prewarmFactorySccache(config: BuildFactoryConfig, binary =
     delete env[key];
   const run = async (arg: string) => {
     const child = Bun.spawn([binary, arg], {
+      windowsHide: true,
       env,
       stdin: "ignore",
       stdout: "ignore",
@@ -488,6 +489,7 @@ async function resourceMain() {
   }
   const code = await withFactoryResource(config, async () => {
     const child = Bun.spawn(command, {
+      windowsHide: true,
       env: { ...process.env },
       stdin: "inherit",
       stdout: "inherit",

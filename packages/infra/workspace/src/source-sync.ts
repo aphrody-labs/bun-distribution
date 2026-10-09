@@ -73,6 +73,7 @@ async function git(
   if (signal?.aborted) throw new Error("Source synchronization aborted");
   const ownsGroup = process.platform !== "win32";
   const child = Bun.spawn(["git", ...args], {
+    windowsHide: true,
     cwd: repo,
     stdin: "ignore",
     stdout: "pipe",

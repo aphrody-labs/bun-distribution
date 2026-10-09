@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Structured, non-shell repository search for local agent data-mining.
 
+use aphrody_proc::NoWindow as _;
 use std::{collections::BTreeMap, path::PathBuf};
 
 use aphrody_toolcall::{
@@ -52,7 +53,7 @@ impl ToolExecutor for SearchTextTool {
         if args.pattern.trim().is_empty() {
             return Ok(ToolOutput::error("search_text: pattern must not be empty"));
         }
-        let mut command = tokio::process::Command::new("rg");
+        let mut command = tokio::process::Command::new("rg").no_window();
         command.args(["--line-number", "--color", "never", "--hidden", "--glob", "!.git"]);
         if let Some(glob) = args.glob {
             command.args(["--glob", &glob]);

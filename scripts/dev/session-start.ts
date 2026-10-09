@@ -9,7 +9,12 @@ const resumePath = join(root, "agy.md");
 const resume = existsSync(resumePath) ? readFileSync(resumePath, "utf8") : "(agy.md absent)";
 
 async function git(...args: string[]): Promise<string> {
-  const proc = Bun.spawn(["git", ...args], { cwd: root, stdout: "pipe", stderr: "ignore" });
+  const proc = Bun.spawn(["git", ...args], {
+    windowsHide: true,
+    cwd: root,
+    stdout: "pipe",
+    stderr: "ignore",
+  });
   const out = await new Response(proc.stdout).text();
   await proc.exited;
   return out.trim();
@@ -23,10 +28,7 @@ function aliasDefined(alias: string): boolean {
 function reach(alias: string): string {
   const code = Bun.spawnSync(
     ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", alias, "true"],
-    {
-      stdout: "ignore",
-      stderr: "ignore",
-    },
+    { windowsHide: true, stdout: "ignore", stderr: "ignore" },
   ).exitCode;
   return `${alias}: ${code === 0 ? "reachable" : "unavailable"}`;
 }

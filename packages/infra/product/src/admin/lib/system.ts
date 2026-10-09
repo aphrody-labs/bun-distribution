@@ -56,6 +56,7 @@ export function realSystem(env: Env = process.env): System {
       let proc: ReturnType<typeof Bun.spawn>;
       try {
         proc = Bun.spawn([command, ...args], {
+          windowsHide: true,
           cwd: options.cwd,
           env: { ...process.env, ...env, ...options.env },
           stdin: options.input === undefined ? (options.inherit ? "inherit" : "ignore") : "pipe",

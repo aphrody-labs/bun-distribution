@@ -51,6 +51,7 @@ test("SDK, CLI, MCP and HTTP use the same provider contract and schema", async (
     const child = Bun.spawn(
       [process.execPath, entry, "ai", "call", "yolo_ai_infer", JSON.stringify(args)],
       {
+        windowsHide: true,
         cwd: root,
         env: { ...process.env, YOLO_INFERENCE_ENDPOINT: endpointUrl },
         stdout: "pipe",
@@ -85,6 +86,7 @@ test("SDK, CLI, MCP and HTTP use the same provider contract and schema", async (
 
 test("AI CLI lists the owner schemas and rejects invalid input without a provider", async () => {
   const list = Bun.spawn([process.execPath, entry, "ai", "list"], {
+    windowsHide: true,
     cwd: root,
     stdout: "pipe",
     stderr: "pipe",
@@ -96,7 +98,7 @@ test("AI CLI lists the owner schemas and rejects invalid input without a provide
   );
   const invalid = Bun.spawn(
     [process.execPath, entry, "ai", "call", "yolo_ai_infer", '{"prompt":"question","maxTokens":0}'],
-    { cwd: root, stdout: "pipe", stderr: "pipe" },
+    { windowsHide: true, cwd: root, stdout: "pipe", stderr: "pipe" },
   );
   expect(await invalid.exited).toBe(1);
   expect(await new Response(invalid.stderr).text()).toContain("outside the allowed range");

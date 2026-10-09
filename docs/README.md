@@ -71,7 +71,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [os](plans/os/) | 1 | - |
 | plans | [os-kernel](plans/os-kernel/) | 1 | [Architecture cible de aphrody-kernel](plans\os-kernel\PLAN.md) |
 | plans | [python-bun](plans/python-bun/) | 2 | [Python, JavaScript and Rust in the Bun fork](plans\python-bun\PLAN.md) |
-| plans | [runtime](plans/runtime/) | 3 | - |
+| plans | [runtime](plans/runtime/) | 1 | - |
 | plans | [shell](plans/shell/) | 1 | - |
 | plans | [vu](plans/vu/) | 7 | [`vu`: the Aphrody Python runtime](plans\vu\PLAN.md) |
 | plans | [web](plans/web/) | 1 | - |
@@ -88,7 +88,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | products | [shell](products/shell/) | 4 | [Aphrody Shell](products\shell\README.md) |
 | products | [web](products/web/) | 7 | [Aphrody Web](products\web\README.md) |
 | products | [workspace](products/workspace/) | 1 | [Aphrody source workspace](products\workspace\README.md) |
-| reference | [ai](reference/ai/) | 172 | - |
+| reference | [ai](reference/ai/) | 171 | - |
 | reference | [compat](reference/compat/) | 4 | - |
 | reference | [contracts](reference/contracts/) | 2 | - |
 | reference | [infra](reference/infra/) | 33 | - |
@@ -100,7 +100,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | reference | [upstream-bun](reference/upstream-bun/) vendored upstream copy | 3 | - |
 | reference | [upstream-codex](reference/upstream-codex/) vendored upstream copy | 2 | - |
 | reference | [web](reference/web/) | 47 | - |
-| reference | [workspace](reference/workspace/) | 15 | [Workspace documentation](reference\workspace\INDEX.md) |
+| reference | [workspace](reference/workspace/) | 13 | [Workspace documentation](reference\workspace\INDEX.md) |
 | reference | [yolo](reference/yolo/) | 1 | - |
 | research | [ai](research/ai/) | 48 | - |
 | research | [compat](research/compat/) | 1 | - |
@@ -111,10 +111,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | research | [web](research/web/) | 3 | - |
 | research | [workspace](research/workspace/) | 3 | - |
 | (root) (outside the category layout) | [(files)](./) | 4 | - |
-| archive (outside the category layout) | [memos](archive/memos/) | 1 | - |
-| archive (outside the category layout) | [research](archive/research/) | 2 | - |
-| archive (outside the category layout) | [snapshots](archive/snapshots/) | 1 | - |
 | cli (outside the category layout) | [(files)](cli/) | 1 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
 
-Total: 691 files.
+Total: 682 files.

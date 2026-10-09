@@ -118,6 +118,7 @@ export async function buildDependencies(
   for (const item of plan) {
     console.error(`Workspace dependency build: ${item.name}`);
     const child = Bun.spawn([process.execPath, "run", "build"], {
+      windowsHide: true,
       cwd: item.path,
       stdout: "inherit",
       stderr: "inherit",

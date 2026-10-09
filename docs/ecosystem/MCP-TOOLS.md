@@ -103,7 +103,7 @@ Kind: kernel-subsystem. 6 tools.
 | --- | --- |
 | `gcp_status` | Inspect Google Cloud Platform credentials, active project, and Gemini API key availability |
 | `gcp_storage_list` | List objects and storage prefixes in a Google Cloud Storage bucket |
-| `git_ingest` | Ingest any Git repository or directory into a prompt-ready LLM digest matching https://gitingest.com/llms.txt (token estimation, ASCII tree, delimited file contents) |
+| `git_ingest` | Local directory ingestion moved to the `git_ingest` tool of `bun mcp` (Bun fork, after `bun mcp install`); this tool only returns GIT_INGEST_LOCAL_MOVED |
 | `github_branches` | List local and remote-tracking branches (local first, then by name) with upstream and ahead/behind for local branches; filtered and paginated, 50 per page by default |
 | `github_status` | Inspect current branch, ahead/behind tracking, modified/untracked files and recent commits for a Git repository |
 | `github_tree` | List tree entries (blobs, trees, sizes) at a specific Git reference or path |
@@ -230,7 +230,7 @@ Kind: rmcp. 69 tools.
 | `firefly_generative_expand` | Generative expand (Adobe Firefly v3): enlarge an image's canvas to width×height, AI-filling the new area (optional prompt). image_url must be Adobe-readable. Optionally save_dir. Returns { count, ima… |
 | `firefly_generative_fill` | Generative fill (Adobe Firefly v3): replace the masked region of an image with prompt-guided content. image_url + mask_url (white = fill) must be Adobe-readable. Optionally save_dir. Returns { count,… |
 | `firefly_to_photoshop` | Bridge: generate an image with Adobe Firefly, then route it through the cloud Photoshop API. With output_url it converts the result to that URL/format (e.g. an editable PSD); without it, returns the… |
-| `git_ingest` | Ingest a Git repository URL or local directory into a prompt-ready LLM digest (GitIngest standard with directory tree, token counts, and curated file contents). |
+| `git_ingest` | Ingest a remote Git repository URL into a prompt-ready LLM digest (GitIngest standard with directory tree, token counts, and curated file contents). Local directories: use the `git_ingest` tool of `bun mcp` (Bun fork, after `bun mcp install`). |
 | `github_docs_search` | Search GitHub repositories intelligently for documentation, llms.txt, llms-full.txt, and prompt-ready digests. Discovers authoritative open-source repositories matching the query, inspects llms.txt a… |
 | `microsoft_code_sample_search` | Search for official Microsoft / Azure code snippets and examples. Use before writing code (find a working pattern to follow) or after errors (compare your code against a known-good sample). Optional… |
 | `microsoft_docs_fetch` | Fetch and convert a Microsoft documentation page into markdown format. Use after `microsoft_docs_search` when an excerpt is cut off or you need the full tutorial / configuration guide / API reference… |

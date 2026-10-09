@@ -152,12 +152,7 @@ async function invokeOffline(args: string[], cwd: string, requireOnline = false)
       "doc-ai",
       ...args,
     ],
-    {
-      cwd,
-      env,
-      stdout: "pipe",
-      stderr: "pipe",
-    },
+    { windowsHide: true, cwd, env, stdout: "pipe", stderr: "pipe" },
   );
   const [code, stdout, stderr] = await Promise.all([
     child.exited,

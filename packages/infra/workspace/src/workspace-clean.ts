@@ -30,7 +30,11 @@ export type CleanupReport = {
 };
 
 function git(root: string, args: string[]): { code: number; output: string } {
-  const result = Bun.spawnSync(["git", "-C", root, ...args], { stdout: "pipe", stderr: "pipe" });
+  const result = Bun.spawnSync(["git", "-C", root, ...args], {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   return { code: result.exitCode, output: new TextDecoder().decode(result.stdout) };
 }
 function disappeared(error: unknown): boolean {

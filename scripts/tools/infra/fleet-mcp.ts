@@ -13,6 +13,7 @@ if (
 )
   throw new Error("Unexpected declared fleet hub");
 const child = Bun.spawn([hub.stdio], {
+  windowsHide: true,
   cwd: hub.workspace,
   env: {
     ...process.env,

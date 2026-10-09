@@ -49,7 +49,7 @@ async function checkSensitiveFiles(): Promise<void> {
   // or node_modules elsewhere in the consolidated monorepo. Never read values.
   const child = Bun.spawn(
     ["git", "ls-files", "-z", "--", "config", "inventory", "systemd", "nginx"],
-    { cwd: repo, stdout: "pipe", stderr: "pipe" },
+    { windowsHide: true, cwd: repo, stdout: "pipe", stderr: "pipe" },
   );
   const [code, stdout, stderr] = await Promise.all([
     child.exited,
@@ -175,6 +175,7 @@ async function main(): Promise<void> {
 
   const generator = join(import.meta.dir, "gen-local-ai-env.ts");
   const child = Bun.spawn(["bun", generator, "--check"], {
+    windowsHide: true,
     cwd: repo,
     stdout: "inherit",
     stderr: "inherit",

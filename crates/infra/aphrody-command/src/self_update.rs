@@ -4,6 +4,7 @@
 // previous binary when the new one does not start. Timer / scheduled-task entry point of the auto-release
 // chain (docs/operations/infra/AUTO-RELEASE.md).
 
+use aphrody_proc::NoWindow as _;
 use std::path::{Path, PathBuf};
 
 use async_trait::async_trait;
@@ -60,7 +61,7 @@ fn valid_release_id(id: &str) -> bool {
 }
 
 fn runs(bin: &Path) -> bool {
-    std::process::Command::new(bin)
+    std::process::Command::new(bin).no_window()
         .arg("--version")
         .output()
         .map(|o| o.status.success())
@@ -68,7 +69,7 @@ fn runs(bin: &Path) -> bool {
 }
 
 fn relink(bin: &Path) -> miette::Result<()> {
-    let status = std::process::Command::new(bin)
+    let status = std::process::Command::new(bin).no_window()
         .args(["self", "install-path", "--bin"])
         .arg(bin)
         .status()
@@ -185,11 +186,11 @@ impl TerminalCommand for UpdateCommand {
         std::fs::write(&script_path, script).into_diagnostic()?;
 
         let mut cmd = if windows {
-            let mut c = std::process::Command::new("powershell");
+            let mut c = std::process::Command::new("powershell").no_window();
             c.args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"]).arg(&script_path);
             c
         } else {
-            let mut c = std::process::Command::new("sh");
+            let mut c = std::process::Command::new("sh").no_window();
             c.arg(&script_path);
             c
         };

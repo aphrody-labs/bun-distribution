@@ -32,13 +32,16 @@ test("path audit is read-only by default and rewrites only safe code paths on ap
 });
 
 test("the Workspace operation advertises the path-audit command", () => {
-  const output = Bun.spawnSync([
-    process.execPath,
-    join(import.meta.dir, "../../../../packages/engine/yolo/src/index.ts"),
-    "ops",
-    "path-audit",
-    "--help",
-  ]);
+  const output = Bun.spawnSync(
+    [
+      process.execPath,
+      join(import.meta.dir, "../../../../packages/engine/yolo/src/index.ts"),
+      "ops",
+      "path-audit",
+      "--help",
+    ],
+    { windowsHide: true },
+  );
   expect(output.exitCode).toBe(0);
   expect(output.stdout.toString()).toContain("yolo ops path-audit");
 });

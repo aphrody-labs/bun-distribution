@@ -19,7 +19,11 @@ console.log("\x1b[36m==========================================================\
 
 function runCommand(cmd: string, args: string[]) {
   try {
-    const res = Bun.spawnSync([cmd, ...args], { stdout: "ignore", stderr: "ignore" });
+    const res = Bun.spawnSync([cmd, ...args], {
+      windowsHide: true,
+      stdout: "ignore",
+      stderr: "ignore",
+    });
     return res.exitCode === 0;
   } catch {
     return false;
@@ -34,7 +38,7 @@ const targets = [
   join(userProfile, ".cargo", "registry", "cache"),
   join(userProfile, ".cargo", "registry", "src"),
   "C:\\ProgramData\\NVIDIA Corporation\\NVIDIA app\\UpdateFramework\\ota-artifacts",
-  join(localAppData, "CrashDumps")
+  join(localAppData, "CrashDumps"),
 ];
 
 for (const p of targets) {
@@ -72,12 +76,18 @@ if (existsSync(fdPath)) {
   if (!existsSync("C:\\tmp")) {
     mkdirSync("C:\\tmp", { recursive: true });
   }
-  const proc = Bun.spawn(["cmd.exe", "/c", `"${fdPath}" -c never -H -I -a --base-directory C:\\ . > C:\\tmp\\disk_c_index.txt`], {
-    stdout: "ignore",
-    stderr: "ignore"
-  });
+  const proc = Bun.spawn(
+    [
+      "cmd.exe",
+      "/c",
+      `"${fdPath}" -c never -H -I -a --base-directory C:\\ . > C:\\tmp\\disk_c_index.txt`,
+    ],
+    { windowsHide: true, stdout: "ignore", stderr: "ignore" },
+  );
   proc.unref();
-  console.log("  \x1b[32m-> In-memory C:\\ index generation spawned in background (C:\\tmp\\disk_c_index.txt)\x1b[0m");
+  console.log(
+    "  \x1b[32m-> In-memory C:\\ index generation spawned in background (C:\\tmp\\disk_c_index.txt)\x1b[0m",
+  );
 }
 
 console.log("\n\x1b[36m==========================================================\x1b[0m");

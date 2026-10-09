@@ -306,6 +306,7 @@ describe("build environment", () => {
         const r = Bun.spawnSync(
           [join(dir, name), "-e", 'console.log(process.argv0.split("/").pop(), Bun.version)'],
           {
+            windowsHide: true,
             // Probe engine aliases even when the host embeds the Yolo product dispatcher.
             // Product yolo/bun/vu dispatch is qualified separately on the shipped artifact.
             env: { ...process.env, BUN_BE_BUN: "1" },

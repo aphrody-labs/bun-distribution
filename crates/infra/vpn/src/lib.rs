@@ -10,6 +10,7 @@
 //! - Naive auto-wiring for `agy`: before running `agy`, ensures Mullvad is connected or connects to
 //!   a non-EEA exit (defaulting to `us` or `ch`) so `agy` never crashes with 400.
 
+use aphrody_proc::NoWindow as _;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -124,7 +125,7 @@ impl MullvadController {
 
     /// Queries the current tunnel status.
     pub async fn status(&self) -> Result<TunnelState, VpnError> {
-        let output = tokio::process::Command::new(&self.bin_path).arg("status").output().await?;
+        let output = tokio::process::Command::new(&self.bin_path).no_window().arg("status").output().await?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
@@ -179,7 +180,7 @@ impl MullvadController {
     /// Connects to Mullvad VPN (optionally targeting a location).
     pub async fn connect(&self, location: Option<&str>) -> Result<(), VpnError> {
         if let Some(loc) = location {
-            let mut cmd = tokio::process::Command::new(&self.bin_path);
+            let mut cmd = tokio::process::Command::new(&self.bin_path).no_window();
             cmd.args(["relay", "set", "location", loc]);
             let output = cmd.output().await?;
             if !output.status.success() {
@@ -188,7 +189,7 @@ impl MullvadController {
             }
         }
 
-        let output = tokio::process::Command::new(&self.bin_path).arg("connect").output().await?;
+        let output = tokio::process::Command::new(&self.bin_path).no_window().arg("connect").output().await?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
@@ -201,7 +202,7 @@ impl MullvadController {
     /// Disconnects from Mullvad VPN.
     pub async fn disconnect(&self) -> Result<(), VpnError> {
         let output =
-            tokio::process::Command::new(&self.bin_path).arg("disconnect").output().await?;
+            tokio::process::Command::new(&self.bin_path).no_window().arg("disconnect").output().await?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
@@ -277,7 +278,7 @@ impl VpsProxyManager {
         #[cfg(target_os = "windows")]
         {
             let arg_list = format!("'-N', '-L', '{}:{}', '{}'", port, remote, host);
-            let _ = std::process::Command::new("powershell")
+            let _ = std::process::Command::new("powershell").no_window()
                 .args([
                     "-NoProfile",
                     "-Command",
@@ -287,7 +288,7 @@ impl VpsProxyManager {
         }
         #[cfg(not(target_os = "windows"))]
         {
-            let _ = std::process::Command::new("ssh")
+            let _ = std::process::Command::new("ssh").no_window()
                 .args(["-f", "-N", "-L", &format!("{}:{}", port, remote), host])
                 .status();
         }
@@ -319,7 +320,7 @@ impl VpsProxyManager {
                     return Ok(cfg);
                 }
                 // Switch VPS relay to US if it was pointing elsewhere
-                let _ = tokio::process::Command::new("ssh")
+                let _ = tokio::process::Command::new("ssh").no_window()
                     .args([host.as_str(), "sudo /usr/local/bin/mullvad-switch-relay us"])
                     .output()
                     .await;

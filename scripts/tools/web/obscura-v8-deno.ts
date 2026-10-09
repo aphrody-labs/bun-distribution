@@ -552,9 +552,10 @@ async function live(bin: string) {
       },
     },
   });
-  const version = Bun.spawnSync([bin, "--version"]).stdout.toString().trim();
+  const version = Bun.spawnSync([bin, "--version"], { windowsHide: true }).stdout.toString().trim();
   const t0 = performance.now();
   const proc = Bun.spawn([bin, "web", "browser", "snapshot", server.url.href, "--json"], {
+    windowsHide: true,
     stdout: "pipe",
     stderr: "pipe",
   });

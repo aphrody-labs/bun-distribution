@@ -21,7 +21,7 @@ console.log(
 
 function run(cwd: string, ...args: string[]): void {
   console.log(`\n${cwd}: bun ${args.join(" ")}`);
-  const result = spawnSync(process.execPath, args, { cwd, stdio: "inherit" });
+  const result = spawnSync(process.execPath, args, { windowsHide: true, cwd, stdio: "inherit" });
   if (result.error) throw result.error;
   if (result.status !== 0) process.exit(result.status ?? 1);
 }

@@ -198,7 +198,7 @@ export function findWorkspaceRoot(start: string): string | undefined {
 
 async function run(cmd: string[], cwd: string): Promise<number> {
   console.log(`$ ${cmd.join(" ")}  (${cwd})`);
-  const proc = Bun.spawn(cmd, { cwd, stdio: ["inherit", "inherit", "inherit"] });
+  const proc = Bun.spawn(cmd, { windowsHide: true, cwd, stdio: ["inherit", "inherit", "inherit"] });
   return proc.exited;
 }
 

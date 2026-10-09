@@ -17,6 +17,7 @@ crate-type = ["rlib"]
 workspace = true
 
 [dependencies]
+aphrody-proc = { workspace = true }
 aphrody-infer     = { workspace = true }
 aphrody-models    = { workspace = true }
 aphrody-ocr-core  = { workspace = true }

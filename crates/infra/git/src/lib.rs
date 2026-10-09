@@ -22,7 +22,7 @@ pub use awesome::{
 };
 pub use ingest::{
     DEFAULT_IGNORE_PATTERNS, IngestOptions, IngestResult, SEPARATOR, estimate_tokens,
-    format_token_count, ingest, ingest_path, ingest_remote,
+    format_token_count, ingest_remote, is_remote_source,
 };
 pub use search::{
     GitHubDocsReport, GitHubRepoDoc, RepoSearchResult, search_github_docs, search_repositories,

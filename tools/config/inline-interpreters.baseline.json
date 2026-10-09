@@ -137,50 +137,15 @@
       "scope": "test",
       "reason": "Fresh-process isolation fixture."
     },
-    "scripts/aphrody-os/mullvad-switch-relay.sh": {
-      "count": 1,
-      "scope": "host",
-      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
-    },
-    "scripts/aphrody/vps-sync-agent-stack.sh": {
-      "count": 2,
-      "scope": "host",
-      "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
-    },
     "scripts/audit/ai/scripts/test-xai-grok-bxc.sh": {
       "count": 3,
       "scope": "host",
       "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
     },
-    "scripts/audit/live-candidates/deploy-web-fix.sh": {
-      "count": 1,
-      "scope": "host",
-      "reason": "Calls the Bun binary under the VPS home, removed by the 2026-10-03 VPS runtime-only cleanup; broken until moved to a Workspace owner or a yolo single-executable deployable."
-    },
     "scripts/audit/verify-google-pipeline.ps1": {
       "count": 1,
       "scope": "local",
       "reason": "uv import probe of a Python package owner (Python via uv by policy)."
-    },
-    "scripts/migration/shenron-env-transfer.sh": {
-      "count": 2,
-      "scope": "host",
-      "reason": "Host data migration run once through the Infra runbook; system CPython on the host."
-    },
-    "scripts/migration/shenron-nginx-forwarder.sh": {
-      "count": 3,
-      "scope": "host",
-      "reason": "Host data migration run once through the Infra runbook; system CPython on the host."
-    },
-    "scripts/migration/shenron-redis-transfer.sh": {
-      "count": 2,
-      "scope": "host",
-      "reason": "Host data migration run once through the Infra runbook; system CPython on the host."
-    },
-    "scripts/migration/shenron-shared-transfer.sh": {
-      "count": 2,
-      "scope": "host",
-      "reason": "Host data migration run once through the Infra runbook; system CPython on the host."
     },
     "scripts/release/atomic-deploy-aphrody-discord.sh": {
       "count": 3,

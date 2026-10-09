@@ -245,7 +245,11 @@ export function rewriteHostPaths(text: string, area: HostPathArea): string {
 }
 
 function git(root: string, args: string[], allowEmpty = false): string {
-  const result = Bun.spawnSync(["git", "-C", root, ...args], { stdout: "pipe", stderr: "pipe" });
+  const result = Bun.spawnSync(["git", "-C", root, ...args], {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   if (result.exitCode !== 0 && !(allowEmpty && result.exitCode === 1))
     throw new Error(`git ${args[0]} failed: ${result.stderr.toString().trim()}`);
   return result.stdout.toString();

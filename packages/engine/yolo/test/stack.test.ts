@@ -49,7 +49,11 @@ describe("stack manifest", () => {
         : pkg.devDependencies.typescript;
     // Workspace gates use the installed toolchain binaries, not removed root npm dependencies.
     const version = (tool: string): string => {
-      const result = Bun.spawnSync([tool, "--version"], { stdout: "pipe", stderr: "pipe" });
+      const result = Bun.spawnSync([tool, "--version"], {
+        windowsHide: true,
+        stdout: "pipe",
+        stderr: "pipe",
+      });
       expect(result.exitCode).toBe(0);
       const value = result.stdout.toString().match(/\b\d+\.\d+\.\d+\b/)?.[0];
       expect(value).toBeDefined();
@@ -226,6 +230,7 @@ describe("distribution", () => {
     if (!existsSync(join(release, "SHA256SUMS"))) return; // built by `bun run scripts/release/release.ts`
     const home = join(sandbox, "install-home");
     const proc = Bun.spawn(["sh", join(rootDir, "packages/engine/yolo/install.sh")], {
+      windowsHide: true,
       env: {
         ...process.env,
         HOME: home,
@@ -240,6 +245,7 @@ describe("distribution", () => {
     expect(await proc.exited).toBe(0);
     expect(output).toContain(`yolo ${version}`);
     const doctor = Bun.spawn([join(home, ".yolo/bin/yolo"), "doctor"], {
+      windowsHide: true,
       env: { ...process.env, HOME: home, YOLO_HOME: join(home, ".yolo") },
       stdout: "pipe",
     });

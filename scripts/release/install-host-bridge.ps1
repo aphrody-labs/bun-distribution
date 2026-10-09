@@ -72,8 +72,9 @@ else {
 if ($LASTEXITCODE -ne 0) { throw 'Service recovery configuration failed.' }
 & sc.exe failureflag AphrodyHost 1 | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'Service failure recovery configuration failed.' }
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew
-$desktopAction = New-ScheduledTaskAction -Execute $destination -Argument ('--config "{0}" --console' -f $desktopConfig)
+$settings = New-ScheduledTaskSettingsSet -Hidden -StartWhenAvailable -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew
+# Interactive session (desktop bridge): the console is hosted by conhost --headless, never displayed.
+$desktopAction = New-ScheduledTaskAction -Execute (Join-Path $env:SystemRoot 'System32\conhost.exe') -Argument ('--headless "{0}" --config "{1}" --console' -f $destination, $desktopConfig)
 $desktopPrincipal = New-ScheduledTaskPrincipal -UserId $account -LogonType Interactive -RunLevel Highest
 Register-ScheduledTask -TaskName AphrodyDesktopBridge -Action $desktopAction -Trigger (New-ScheduledTaskTrigger -AtLogOn -User $account) -Principal $desktopPrincipal -Settings $settings -Force | Out-Null
 # Retire the former development guest task on installer upgrade. Do not delete guest stores.

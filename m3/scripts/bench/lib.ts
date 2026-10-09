@@ -118,6 +118,7 @@ export function spawnTimed(
 ): Spawned {
   const started = performance.now();
   const proc = Bun.spawnSync(cmd, {
+    windowsHide: true,
     cwd: opts.cwd,
     env: { ...Bun.env, ...opts.env },
     stdout: "pipe",
@@ -135,6 +136,7 @@ export async function timeToFirstLine(
 ): Promise<{ ms: number; line: string }> {
   const started = performance.now();
   const proc = Bun.spawn(cmd, {
+    windowsHide: true,
     cwd: opts.cwd,
     env: { ...Bun.env, ...opts.env },
     stdin: opts.stdin === undefined ? "ignore" : "pipe",
@@ -161,12 +163,17 @@ export async function timeToFirstLine(
 
 /** Bytes of a directory tree (apparent size, hard links counted once per `du` run). */
 export function dirBytes(dir: string): number {
-  const proc = Bun.spawnSync(["du", "-sb", dir], { stdout: "pipe", stderr: "ignore" });
+  const proc = Bun.spawnSync(["du", "-sb", dir], {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "ignore",
+  });
   return Number(proc.stdout.toString().split(/\s/)[0]) || 0;
 }
 
 export function gitHead(dir: string): string {
   const proc = Bun.spawnSync(["git", "-C", dir, "rev-parse", "--short", "HEAD"], {
+    windowsHide: true,
     stdout: "pipe",
     stderr: "ignore",
   });

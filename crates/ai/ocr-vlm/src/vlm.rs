@@ -10,6 +10,7 @@
 // `llama-server` is for, and moving to it is a contained change behind this
 // same interface once throughput matters more than isolation.
 
+use aphrody_proc::NoWindow as _;
 use std::{
     path::{Path, PathBuf},
     process::Command,
@@ -179,7 +180,7 @@ impl VlmRunner {
     pub fn read(&self, image: &Path) -> Result<PageResult> {
         let started = std::time::Instant::now();
 
-        let output = Command::new(&self.binary)
+        let output = Command::new(&self.binary).no_window()
             .arg("-m")
             .arg(&self.weights)
             .arg("--mmproj")

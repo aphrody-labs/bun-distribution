@@ -63,7 +63,7 @@ test("areas separate runtime sources from prose, records and data", () => {
 test("apply skips dirty files and the ratchet reports regressions", async () => {
   const root = await mkdtemp(join(tmpdir(), "host-paths-"));
   const git = (...args: string[]) =>
-    expect(Bun.spawnSync(["git", "-C", root, ...args]).exitCode).toBe(0);
+    expect(Bun.spawnSync(["git", "-C", root, ...args], { windowsHide: true }).exitCode).toBe(0);
   try {
     await mkdir(join(root, "docs/migration"), { recursive: true });
     await writeFile(join(root, "docs/clean.md"), `Open ${HOME}/aphrody/README.md\n`);

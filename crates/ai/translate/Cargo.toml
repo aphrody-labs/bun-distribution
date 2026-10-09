@@ -20,6 +20,7 @@ workspace = true
 
 # --- Unconditional deps (pure Rust, no OS primitives required) ---------------
 [dependencies]
+aphrody-proc = { workspace = true, features = ["tokio"] }
 aphrody-translate-core = { workspace = true }
 serde        = { workspace = true }
 serde_json   = { workspace = true }

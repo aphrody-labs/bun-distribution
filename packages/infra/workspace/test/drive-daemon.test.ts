@@ -58,7 +58,9 @@ printf 'daemon' > "$CARGO_TARGET_DIR/debug/sd-daemon"
     expect(invocation).toContain(`--manifest-path\n${join(drive, "Cargo.toml")}\n`);
     expect(invocation).toContain("-p\nsd-core\n--bin\nsd-daemon\n--locked\n");
     expect(readFileSync(join(root, "rustc-env"), "utf8")).toBe("test-sccache-wrapper");
-    const host = /^host: (.+)$/m.exec(Bun.spawnSync(["rustc", "-vV"]).stdout.toString())?.[1];
+    const host = /^host: (.+)$/m.exec(
+      Bun.spawnSync(["rustc", "-vV"], { windowsHide: true }).stdout.toString(),
+    )?.[1];
     expect(host).toBeDefined();
     expect(existsSync(join(root, "crates/ui/app/binaries", `sd-daemon-${host}${exe}`))).toBe(true);
     expect(existsSync(join(root, `target/debug/sd-daemon${exe}`))).toBe(true);

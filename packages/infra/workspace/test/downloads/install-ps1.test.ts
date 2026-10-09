@@ -14,7 +14,7 @@ import {
 import { tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
 
-const script = resolve(import.meta.dir, "../../assets/downloads/install.ps1");
+const script = resolve(import.meta.dir, "../../assets/downloads/install-full.ps1");
 const pwsh = Bun.which("pwsh");
 const work = mkdtempSync(join(tmpdir(), "install-ps1-"));
 afterAll(() => rmSync(work, { recursive: true, force: true }));

@@ -166,6 +166,7 @@ function pythonCommand(): string[] {
 
 async function pythonReference(text: string): Promise<string> {
   const child = Bun.spawn([...pythonCommand(), "-I", "-c", PYTHON_AST], {
+    windowsHide: true,
     stdin: "pipe",
     stdout: "pipe",
     stderr: "pipe",

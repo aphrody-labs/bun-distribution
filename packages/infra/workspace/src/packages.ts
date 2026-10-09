@@ -134,6 +134,7 @@ export async function runPackageOperation(
     }
     const args = operation === "outdated" ? ["outdated", "--frozen-lockfile"] : ["audit", "--json"];
     const child = Bun.spawn([process.execPath, ...args], {
+      windowsHide: true,
       cwd: workspace.root,
       stdout: "inherit",
       stderr: "inherit",

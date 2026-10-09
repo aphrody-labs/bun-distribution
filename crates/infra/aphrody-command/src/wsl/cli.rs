@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+use aphrody_proc::NoWindow as _;
 use crate::wsl::{
     Config, Result, Target, artifact, build, doctor, expected_artifacts, import, latest_kernel,
     plan, sources,
@@ -119,7 +120,7 @@ pub fn run(action: Action, config_path: PathBuf) -> Result<()> {
             serde_json::json!({"imported":config.distribution})
         },
         Action::Dependencies => {
-            let status = std::process::Command::new("sudo")
+            let status = std::process::Command::new("sudo").no_window()
                 .args([
                     "-n",
                     "env",
@@ -163,13 +164,13 @@ pub fn run(action: Action, config_path: PathBuf) -> Result<()> {
                 return Err(crate::wsl::Error::Invalid("dependency installation failed".into()));
             }
             // Rust-for-Linux needs bindgen >= 0.71.1 (newer than older distro packages) and the rust-src component.
-            let status = std::process::Command::new("cargo")
+            let status = std::process::Command::new("cargo").no_window()
                 .args(["install", "--locked", "bindgen-cli"])
                 .status()?;
             if !status.success() {
                 return Err(crate::wsl::Error::Invalid("bindgen-cli installation failed".into()));
             }
-            let status = std::process::Command::new("rustup")
+            let status = std::process::Command::new("rustup").no_window()
                 .args(["component", "add", "rust-src"])
                 .status()?;
             if !status.success() {

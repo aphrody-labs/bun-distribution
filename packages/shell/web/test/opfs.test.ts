@@ -79,7 +79,9 @@ test.skipIf(!ready)(
       const command = existsSync("/mnt/c/Windows/System32/cmd.exe")
         ? "/mnt/c/Windows/System32/cmd.exe"
         : "cmd.exe";
-      const tempOutput = Bun.spawnSync([command, "/c", "echo", "%TEMP%"]).stdout.toString();
+      const tempOutput = Bun.spawnSync([command, "/c", "echo", "%TEMP%"], {
+        windowsHide: true,
+      }).stdout.toString();
       const windowsTemp = tempOutput
         .split(/\r?\n/)
         .map((line) => line.trim())
@@ -97,7 +99,7 @@ test.skipIf(!ready)(
         `--user-data-dir=${profile}`,
         "about:blank",
       ],
-      { stdout: "ignore", stderr: "ignore" },
+      { windowsHide: true, stdout: "ignore", stderr: "ignore" },
     );
     try {
       let wsUrl = "";

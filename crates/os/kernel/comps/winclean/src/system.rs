@@ -6,6 +6,7 @@
 //! `tcp` modules); no `powershell.exe`, `sc.exe`, `wevtutil`, `netstat`, `reg.exe`, `where.exe`
 //! or `explorer.exe` process is started for them.
 
+use aphrody_proc::NoWindow as _;
 use std::io;
 
 use serde::Serialize;
@@ -524,7 +525,7 @@ pub fn power_shell(command: &str, timeout_seconds: u64) -> io::Result<serde_json
     );
     let started = std::time::Instant::now();
     let output = crate::wsl::capture(
-        std::process::Command::new(executable).args([
+        std::process::Command::new(executable).no_window().args([
             "-NoLogo",
             "-NoProfile",
             "-NonInteractive",
@@ -704,7 +705,7 @@ pub fn launch_app(
             "shell URI launch requires the Windows broker",
         ));
     }
-    let mut command = std::process::Command::new(target);
+    let mut command = std::process::Command::new(target).no_window();
     if let Some(arguments) = args {
         command.args(arguments.split_whitespace());
     }
@@ -722,7 +723,7 @@ pub fn list_power_plans() -> std::io::Result<PowerPlanListResponse> {
             "power plans are Windows-only",
         ));
     }
-    let output = std::process::Command::new("powercfg").arg("/list").output()?;
+    let output = std::process::Command::new("powercfg").no_window().arg("/list").output()?;
     let text = String::from_utf8_lossy(&output.stdout);
     let mut plans = Vec::new();
     for line in text.lines() {
@@ -769,7 +770,7 @@ pub fn set_active_power_plan(guid: &str) -> std::io::Result<String> {
             "invalid power-plan GUID",
         ));
     }
-    let output = std::process::Command::new("powercfg")
+    let output = std::process::Command::new("powercfg").no_window()
         .args(["/setactive", normalized.as_str()])
         .output()?;
     if !output.status.success() {
@@ -791,13 +792,13 @@ pub fn list_scheduled_tasks(folder: &str) -> std::io::Result<ScheduledTaskListRe
     if folder.bytes().any(|byte| byte.is_ascii_control() || matches!(byte, b'"' | b'\'')) {
         return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "invalid task folder"));
     }
-    let targeted = std::process::Command::new("schtasks")
+    let targeted = std::process::Command::new("schtasks").no_window()
         .args(["/Query", "/TN", folder, "/FO", "CSV", "/V", "/NH"])
         .output()?;
     let output = if targeted.status.success() && !targeted.stdout.is_empty() {
         targeted.stdout
     } else {
-        std::process::Command::new("schtasks")
+        std::process::Command::new("schtasks").no_window()
             .args(["/Query", "/FO", "CSV", "/V", "/NH"])
             .output()?
             .stdout
@@ -854,7 +855,7 @@ pub fn control_scheduled_task(action: &str, path: &str) -> std::io::Result<Strin
             ));
         },
     };
-    let output = std::process::Command::new("schtasks").args(args).output()?;
+    let output = std::process::Command::new("schtasks").no_window().args(args).output()?;
     if !output.status.success() {
         return Err(std::io::Error::other(
             String::from_utf8_lossy(&output.stderr).trim().to_owned(),

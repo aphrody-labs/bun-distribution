@@ -16,7 +16,7 @@ import { closeSharedRuntime, getRuntimeStatus } from "../../core/src/runtime";
 import { executeTool, ToolExecutionContext } from "../src/tools/registry";
 
 async function run(argv: string[], cwd: string): Promise<void> {
-  const child = Bun.spawn(argv, { cwd, stdout: "pipe", stderr: "pipe" });
+  const child = Bun.spawn(argv, { windowsHide: true, cwd, stdout: "pipe", stderr: "pipe" });
   const [exitCode, out, err] = await Promise.all([
     child.exited,
     new Response(child.stdout).text(),

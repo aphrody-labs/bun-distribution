@@ -55,11 +55,7 @@ describe("Python verification owners", () => {
           Bun.which("python3")!,
           join(fixtureRoot, ".venv"),
         ],
-        {
-          cwd: fixtureRoot,
-          stdout: "pipe",
-          stderr: "pipe",
-        },
+        { windowsHide: true, cwd: fixtureRoot, stdout: "pipe", stderr: "pipe" },
       );
       const [code, stderr] = await Promise.all([proc.exited, new Response(proc.stderr).text()]);
       if (code !== 0) throw new Error(`Cannot prepare native uv test environment: ${stderr}`);
@@ -75,7 +71,7 @@ describe("Python verification owners", () => {
           "-c",
           "import sysconfig; print(sysconfig.get_path('purelib'))",
         ],
-        { cwd: fixtureRoot, stdout: "pipe", stderr: "pipe" },
+        { windowsHide: true, cwd: fixtureRoot, stdout: "pipe", stderr: "pipe" },
       );
       const [pythonCode, purelib, pythonStderr] = await Promise.all([
         python.exited,
@@ -186,6 +182,7 @@ describe("Python verification owners", () => {
 
   it("includes transitive prerequisites for both explicit and changed-file selection", async () => {
     const init = Bun.spawnSync(["git", "init", "--quiet", fixtureRoot], {
+      windowsHide: true,
       stdout: "pipe",
       stderr: "pipe",
     });

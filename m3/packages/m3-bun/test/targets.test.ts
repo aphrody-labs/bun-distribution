@@ -200,6 +200,7 @@ describe("systemd", () => {
       const file = join(root, "hello-m3.service");
       writeFileSync(file, merged);
       const proc = Bun.spawnSync(["systemd-analyze", "verify", file], {
+        windowsHide: true,
         stdout: "pipe",
         stderr: "pipe",
       });
@@ -327,7 +328,7 @@ describe("nginx", () => {
             "-days",
             "1",
           ],
-          { stdout: "pipe", stderr: "pipe" },
+          { windowsHide: true, stdout: "pipe", stderr: "pipe" },
         );
         expect(made.exitCode).toBe(0);
         tls = { cert, key };
@@ -335,7 +336,7 @@ describe("nginx", () => {
       const target = join(tmp(), "nginx");
       // `http2 on;` needs nginx 1.25.1; older servers take the `listen ... http2` form.
       const version = /nginx\/(\d+)\.(\d+)\.(\d+)/.exec(
-        Bun.spawnSync(["nginx", "-v"], { stderr: "pipe" }).stderr.toString(),
+        Bun.spawnSync(["nginx", "-v"], { windowsHide: true, stderr: "pipe" }).stderr.toString(),
       );
       const modern = version
         ? [Number(version[1]), Number(version[2]), Number(version[3])]
@@ -365,6 +366,7 @@ describe("nginx", () => {
           `pid ${dir}/nginx.pid;\nerror_log ${dir}/error.log;\nevents {}\nhttp {\n  access_log off;\n  client_body_temp_path ${dir}/body;\n  proxy_temp_path ${dir}/proxy;\n  fastcgi_temp_path ${dir}/fcgi;\n  uwsgi_temp_path ${dir}/uwsgi;\n  scgi_temp_path ${dir}/scgi;\n  include ${join(target, "nginx", file)};\n}\n`,
         );
         const proc = Bun.spawnSync(["nginx", "-t", "-p", dir, "-c", main], {
+          windowsHide: true,
           stdout: "pipe",
           stderr: "pipe",
         });
@@ -569,6 +571,7 @@ describe("windows", () => {
       ].map((file) => join(out, "windows", file));
       const script = `foreach ($f in @(${files.map((file) => `'${file}'`).join(", ")})) { $e = $null; $t = $null; [System.Management.Automation.Language.Parser]::ParseFile($f, [ref]$t, [ref]$e) | Out-Null; foreach ($x in $e) { "$(Split-Path $f -Leaf): $($x.Message)" } }`;
       const proc = Bun.spawnSync(["pwsh", "-NoProfile", "-NonInteractive", "-Command", script], {
+        windowsHide: true,
         stdout: "pipe",
         stderr: "pipe",
       });
@@ -602,7 +605,9 @@ describe("linux-image", () => {
   test.skipIf(!bash)("a qualified native Bash validates generated shell syntax", () => {
     for (const file of ["build-image.sh", "run-qemu.sh"]) {
       expect(
-        Bun.spawnSync([bash!, "-n", join(out, "linux-image", file).replaceAll("\\", "/")]).exitCode,
+        Bun.spawnSync([bash!, "-n", join(out, "linux-image", file).replaceAll("\\", "/")], {
+          windowsHide: true,
+        }).exitCode,
       ).toBe(0);
     }
   });
@@ -611,7 +616,7 @@ describe("linux-image", () => {
     () => {
       for (const file of ["build-image.sh", "run-qemu.sh"]) {
         const path = join(out, "linux-image", file);
-        expect(Bun.spawnSync(["test", "-x", path]).exitCode).toBe(0);
+        expect(Bun.spawnSync(["test", "-x", path], { windowsHide: true }).exitCode).toBe(0);
       }
     },
   );

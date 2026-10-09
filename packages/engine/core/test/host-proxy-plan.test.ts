@@ -129,6 +129,7 @@ test("Rollback removes newly owned templates and grants while keeping prior live
     const command = `systemctl() { printf 'systemctl %s\\n' "$*" >> "$TASK_PROXY_LOG"; }; ufw() { printf 'ufw %s\\n' "$*" >> "$TASK_PROXY_LOG"; }; ${tracked.rollback.replaceAll("/etc/systemd/system", units.replaceAll("\\", "/"))}`;
     expect(
       await Bun.spawn(["sh", "-c", command], {
+        windowsHide: true,
         env: { ...process.env, TASK_PROXY_LOG: log },
         stdout: "ignore",
         stderr: "ignore",
@@ -168,6 +169,7 @@ test("Firewall tracking preserves canonical existing rules and refuses ambiguous
           `ufw() { if [ "$1" = show ]; then printf '%s\\n' "$TASK_KNOWN_RULE"; return ${code}; else printf '%s\\n' "$*" >> "$TASK_PROXY_LOG"; fi; }; ${command}`,
         ],
         {
+          windowsHide: true,
           env: { ...process.env, TASK_KNOWN_RULE: known, TASK_PROXY_LOG: log },
           stdout: "ignore",
           stderr: "ignore",

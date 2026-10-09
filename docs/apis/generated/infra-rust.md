@@ -5,7 +5,7 @@ Line documentation excerpts only; this is not an exhaustive API or compilation r
 
 ## Source: crates/infra/git/src/lib.rs
 
-SHA-256: `74d541aad16d15afbac0fa9c87309ae85cd48299aa8e11d043835516f29906be`
+SHA-256: `09234fb0864dd77ad6f6c964493b1118b94d461384c02e1404968619e5437d3d`
 
 ### Documentation excerpt — source lines 2–6
 

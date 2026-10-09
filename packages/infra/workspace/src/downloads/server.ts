@@ -158,6 +158,8 @@ const PUBLIC_ASSETS = new Set([
   "SHA256SUMS",
   "install.sh",
   "install.ps1",
+  "install-full.sh",
+  "install-full.ps1",
   "pet.webp",
   "icon.svg",
 ]);
