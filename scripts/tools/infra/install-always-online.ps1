@@ -13,6 +13,7 @@ Runbook: docs/operations/infra/OMAR-REMOTE-CONTROL.md (section 2.10).
 param(
     [string]$Member = 'omar',
     [string]$Address = '10.200.77.10',
+    [string]$Owner = '10.200.77.4',
     [string]$Hub = '51.77.147.152',
     [string]$HubUser = 'omar',
     [string]$Distro = 'Ubuntu',
@@ -65,8 +66,10 @@ $wgLog = Join-Path $logs 'wg.log'
 Register-AphrodyTask -Name "Aphrody WG $Member" -At Boot -System -Execute "$env:SystemRoot\System32\cmd.exe" `
     -Arguments "/d /c `"set APHRODY_HOME=$aphrodyHome&& `"$Aphrody`" infra wg up $Member --name aphrody >> `"$wgLog`" 2>&1`""
 
-# 3. Remote desktop (8795) + VNC (5900) in the interactive session (screen capture needs the desktop).
-Register-AphrodyTask -Name 'Aphrody Remote Desktop' -At Logon -Execute $Aphrody -Arguments "infra remote serve --bind ${Address}:8795"
+# 3. Remote desktop (8795) + VNC (5900) in the interactive session (screen capture needs the desktop). The VNC allowlist
+# admits the owner and this PC's own address, the source of the reverse-tunnel connections below.
+Register-AphrodyTask -Name 'Aphrody Remote Desktop' -At Logon -Execute $Aphrody `
+    -Arguments "infra remote serve --bind ${Address}:8795 --vnc-allow ${Owner},${Address}"
 
 # 4. MCP HTTP (computer_* WinClean) on loopback, published on the tunnel address by a persistent portproxy.
 $mcpEnv = Join-Path $aphrodyHome 'private\mcp-http.env'
@@ -81,8 +84,9 @@ else {
 
 # 5. Reverse SSH tunnel to the hub: the owner reaches this PC through the vps loopback even without a wg1 handshake.
 if (-not $NoReverse) {
-    $ssh = (Get-Command ssh.exe -ErrorAction Stop).Source
-    $forwards = @('22010:127.0.0.1:22', '28795:127.0.0.1:8795', '28793:127.0.0.1:8793', '22011:127.0.0.1:2222', '25900:127.0.0.1:5900') |
+    $ssh = Join-Path $env:SystemRoot 'System32\OpenSSH\ssh.exe'
+    if (-not (Test-Path -LiteralPath $ssh)) { $ssh = (Get-Command ssh.exe -ErrorAction Stop).Source }
+    $forwards = @('22010:127.0.0.1:22', "28795:${Address}:8795", '28793:127.0.0.1:8793', '22011:127.0.0.1:2222', "25900:${Address}:5900") |
         ForEach-Object { "-R 127.0.0.1:$_" }
     Register-AphrodyTask -Name "Aphrody $Member reverse" -At Logon -Execute $ssh -Arguments (@(
             '-N', '-o BatchMode=yes', '-o ExitOnForwardFailure=yes', '-o ServerAliveInterval=30', '-o ServerAliveCountMax=3',

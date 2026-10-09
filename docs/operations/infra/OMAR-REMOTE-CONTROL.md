@@ -285,6 +285,10 @@ par services nommés (`meshDenied`). Le vps et dbfr joignent les deux PC en SSH.
 
 ## 4. Prompt Codex du PC d'Omar (build source, tunnel, contrôle à distance)
 
+Version courante (2026-10-09, envoyée en DM à Omar et dans #admin-console) : [OMAR-CODEX-PROMPT.md](OMAR-CODEX-PROMPT.md)
+(fork Bun, build source, wg1, bureau + VNC, MCP, SSH Windows et WSL, tunnel inverse, toujours en ligne). Le bloc
+ci-dessous reste la trace du 2026-10-08.
+
 Posté le 2026-10-08 dans le salon admin sécurisé `1557354144149405806` : en-tête `1557857584604516439`, puis
 blocs 1 à 8 `1557857591462469755`, `1557857597871362181`, `1557857604376465439`, `1557857610294632562`,
 `1557857616938532915`, `1557857623175331922`, `1557857629689348199`, `1557857636794499283`. Omar lance Codex en

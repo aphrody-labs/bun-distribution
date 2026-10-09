@@ -2046,7 +2046,7 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "476dcd0be32e8a62d25271c2e2055077e4fd6e2608ff2ba689fc6a3849ab448b",
+      "sha256": "847cee37d8c9e5a1a028d9165a2d8f088d931729bb67e1b5badbf17ac5ae56ba",
       "bytes": 8060,
       "domain": "",
       "status": "generated",
@@ -3204,10 +3204,20 @@
       "canonical": "docs/operations/infra/MCP-A2A.md"
     },
     {
+      "path": "docs/operations/infra/OMAR-CODEX-PROMPT.md",
+      "title": "Prompt Codex du PC d'Omar (2026-10-09)",
+      "sha256": "f96e91594eae4a6c4a1a4a6124aded91a30ec59a512f611ad4a185e3dc7041cf",
+      "bytes": 14106,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/OMAR-CODEX-PROMPT.md"
+    },
+    {
       "path": "docs/operations/infra/OMAR-REMOTE-CONTROL.md",
       "title": "Contrôle du PC Windows d'Omar depuis Aphrody (tunnel WireGuard privé)",
-      "sha256": "9fe4ab2421a39cb5b7dbc5be98b198b0ccfc3ec4b726ed678080603407354fab",
-      "bytes": 37181,
+      "sha256": "62e12f63412d99327013d4762def3baa0fbbcc6bae8fae60c5105816132b72f3",
+      "bytes": 37460,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -11666,8 +11676,8 @@
     {
       "path": "m3/packages/app-ui/DESIGNPLAN.md",
       "title": "Canonical Aphrody surfaces",
-      "sha256": "2de97f8a95bc7bc0a151b6f5179ed79d6055f6f850c2c509613dc0a24fcc6974",
-      "bytes": 1204,
+      "sha256": "b0fa35a5e9df718c6000977cc418a88f61ba331b14d105a4a8e08468eaddaee0",
+      "bytes": 1227,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
