@@ -316,7 +316,7 @@ profileTest(
       join(setup.dir, "packages/engine/yolo/yolo.just"),
       Bun.file(join(root, "packages/engine/yolo/yolo.just")),
     );
-    const yolo = join(setup.dir, "bin/yolo");
+    const yolo = join(setup.dir, "bin/aphrody");
     await Bun.write(yolo, setup.recorder);
     await chmod(yolo, 0o700);
     const revision = "a".repeat(40);

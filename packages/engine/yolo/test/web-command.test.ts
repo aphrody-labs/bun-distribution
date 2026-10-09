@@ -12,7 +12,7 @@ writeFileSync(
   }),
 );
 afterAll(() => rmSync(fixture, { recursive: true, force: true }));
-const cli = resolve(import.meta.dir, "../../../../bin/yolo");
+const cli = resolve(import.meta.dir, "../src/index.ts");
 for (const [command, action, code] of [
   ["web", "build", 23],
   ["desktop", "build", 23],
@@ -20,7 +20,7 @@ for (const [command, action, code] of [
   ["web", "dev", 24],
 ] as const) {
   test(`${command} ${action} preserves the app's failure code`, async () => {
-    const proc = Bun.spawn([cli, command, action], {
+    const proc = Bun.spawn([process.execPath, cli, command, action], {
       cwd: fixture,
       env: { ...process.env, YOLO_HOME: fixture },
       stdout: "ignore",

@@ -35,12 +35,15 @@ describe("yolo scan CLI arguments", () => {
     stdout: string;
     stderr: string;
   }> {
-    const proc = Bun.spawn([resolve(rootDir, "bin/yolo"), "scan", ...args], {
-      cwd: fixtureDir,
-      stdin: "ignore",
-      stdout: "pipe",
-      stderr: "pipe",
-    });
+    const proc = Bun.spawn(
+      [process.execPath, resolve(rootDir, "packages/engine/yolo/src/index.ts"), "scan", ...args],
+      {
+        cwd: fixtureDir,
+        stdin: "ignore",
+        stdout: "pipe",
+        stderr: "pipe",
+      },
+    );
     const [code, stdout, stderr] = await Promise.all([
       proc.exited,
       new Response(proc.stdout).text(),
@@ -197,10 +200,17 @@ describe("yolo scan (Native Bun Parallel Recursive Scanner)", () => {
 
 describe("yolo scan --ingest delegates to the aphrody home pipeline", () => {
   const dir = mkdtempSync(resolve(tmpdir(), "yolo-scan-ingest-"));
-  const fake = resolve(dir, "aphrody");
+  const fake = resolve(dir, process.platform === "win32" ? "aphrody.cmd" : "aphrody");
   const log = resolve(dir, "args.log");
 
   beforeAll(async () => {
+    if (process.platform === "win32") {
+      await Bun.write(
+        fake,
+        `@echo off\r\n(for %%a in (%*) do @echo %%~a) > "${log}"\r\necho {"source":"fake","indexed":1}\r\n`,
+      );
+      return;
+    }
     await Bun.write(
       fake,
       `#!/bin/sh\nprintf '%s\\n' "$@" > "${log}"\necho '{"source":"fake","indexed":1}'\n`,
@@ -221,7 +231,7 @@ describe("yolo scan --ingest delegates to the aphrody home pipeline", () => {
       );
       expect(code).toBe(0);
       expect(JSON.parse(lines.join("\n"))).toEqual({ source: "fake", indexed: 1 });
-      const args = (await Bun.file(log).text()).trim().split("\n");
+      const args = (await Bun.file(log).text()).trim().split(/\r?\n/);
       expect(args).toEqual(["home", "--profile", "dbfr", "index", dir, "--label", "repo"]);
     } finally {
       if (previous === undefined) delete process.env.APHRODY_BIN;

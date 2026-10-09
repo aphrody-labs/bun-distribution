@@ -11,15 +11,11 @@ import { join, resolve } from "node:path";
 const rootDir = resolve(import.meta.dir, "..");
 const yoloEntry = join(rootDir, "packages/engine/yolo/src/index.ts");
 
-// Generic Bun capabilities moving to the Bun fork (chantier Z1). Until Z1 lands they stay in the yolo dispatcher
-// and the native binary does not serve them; this set is the only routing left in the launcher.
-export const Z1_PENDING_COMMANDS: ReadonlySet<string> = new Set([
-  "parse",
-  "bench",
-  "create",
-  "rename",
-  "verify",
-]);
+// Dispatcher commands the Bun fork does not serve: `rename` adds the Aphrody preset to `bun rename`,
+// `bench --supervisor` measures the yolo-runtime supervisor, `verify` runs the repository gate graph. Relayed here
+// because native binaries built before multicall/bun_bridge.rs ROUTES listed them reject them.
+// `parse`, `docs`, `create` are `bun parse|docs|create aphrody/<t>`.
+export const RELAY_COMMANDS: ReadonlySet<string> = new Set(["bench", "rename", "verify"]);
 
 const norm = (path: string) => resolve(path).replaceAll("\\", "/").toLowerCase();
 
@@ -66,15 +62,16 @@ async function run(cmd: string[]): Promise<number> {
 }
 
 async function main(args: string[]): Promise<number> {
-  if (Z1_PENDING_COMMANDS.has(args[0]?.toLowerCase() ?? "")) {
+  if (RELAY_COMMANDS.has(args[0]?.toLowerCase() ?? "")) {
     return run([process.execPath, yoloEntry, ...args]);
   }
   const rust = resolveRustAphrody();
   if (rust === null) {
+    // A checkout without the native build (factory, cloud session) keeps the Bun-owned commands of `bin/yolo`.
     console.error(
-      "aphrody: native binary not found (set APHRODY_BIN or run `cargo build --release -p aphrody`).",
+      "aphrody: native binary not found (set APHRODY_BIN or run `cargo build --release -p aphrody`); using the Bun dispatcher.",
     );
-    return 1;
+    return run([process.execPath, yoloEntry, ...args]);
   }
   return run([rust, ...args]);
 }

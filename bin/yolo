@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
+# Deprecated name of `aphrody` (bin/aphrody.ts): same arguments, same exit code.
 set -e
-# `yolo mcp` is an alias of `aphrody mcp-server` (packages/engine/yolo/src/index.ts): exec it directly instead of
-# loading the yolo dispatcher first.
-if [ "${1:-}" = "mcp" ] && [ $# -eq 1 ]; then
-  exec "${APHRODY_BIN:-aphrody}" mcp-server
-fi
-exec bun run "$(dirname "$0")/../packages/engine/yolo/src/index.ts" "$@"
+echo "yolo: deprecated, use \`aphrody $*\`" >&2
+exec bun run "$(dirname "$0")/aphrody.ts" "$@"

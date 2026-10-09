@@ -20,8 +20,11 @@ const run = async (args: string[]) => {
   return strip(o || e);
 };
 
-// Commands that execute on -h (no usage mode) or are aliases: documented by the top-level help only.
+// Commands that execute on -h (no usage mode) or are aliases: documented by the top-level help only. `rename` and
+// `docs` print the help of the Bun fork's built-in `bun rename|docs`, which an upstream Bun on PATH lacks.
 const SKIP = new Set([
+  "rename",
+  "docs",
   "help",
   "version",
   "uninstall",

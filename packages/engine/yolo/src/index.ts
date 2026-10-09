@@ -101,14 +101,12 @@ ${header}
 \x1b[1mCOMMANDS:\x1b[0m
   \x1b[32mstatus [--json|--md]\x1b[0m Inspect active package forks & Cargo workspace status
   \x1b[32mscan [dir] [--json|--md|--ingest]\x1b[0m Fast parallel recursive scanner (lines, bytes, wyhash); --ingest feeds the agent home
-  \x1b[32mtrain <args>\x1b[0m     Delegate to 'aphrody train' (datasets, jobs, promotion)
   \x1b[32mn2b [dir] [--jobs N] [--fix|--aggressive] [--dry-run] [--json]\x1b[0m Native recursive Node-to-Bun migration
   \x1b[32mai list|call <tool> <json>\x1b[0m Shared AI capabilities (same schemas and owner as MCP/API)
-  \x1b[32mmcp\x1b[0m                 Alias of the single MCP server (aphrody mcp-server); \x1b[32mtool list|call\x1b[0m hosts the yolo_* tools
+  \x1b[32mtool list|call\x1b[0m      Tool host of the single MCP server (aphrody mcp) for the yolo_* tools
   \x1b[32mapi [--port N]\x1b[0m      Serve local HTTP / REST / OpenAPI micro-server (Bun.serve)
   \x1b[32mweb [build|dev]\x1b[0m     Manage and build the Web & Desktop frontend
   \x1b[32mgenerate [--json]\x1b[0m   Autonomously scan upstream Bun and generate code & capability catalogs
-  \x1b[32mparse <file> [--json|--md]\x1b[0m Fast AST & token analysis via Bun file streaming + wyhash
   \x1b[32mdocs [query] [--json|--md]\x1b[0m Search or inspect the Bun docs mirror in docs/reference/upstream-bun
   \x1b[32mversion [--json] | doctor [--json|--md]\x1b[0m Installed version, target; check the installation
   \x1b[32mruntime install|list|verify|rollback|info\x1b[0m  Manage installed runtime artifacts
@@ -132,7 +130,7 @@ ${header}
   \x1b[32mship [--apply] [--prepare] [status|log|attach|stop]\x1b[0m Prepare or build on the factory; \x1b[32mhooks install\x1b[0m ships main/dev pushes
   \x1b[32mplugin <create|status>\x1b[0m Generate or inspect unified YOLO & Bun-TS7 plugin
   \x1b[32mpy [status|test|lint|fmt|build]\x1b[0m Python + uv + PyO3 polyglot runtime toolchain
-  \x1b[32mbench [--json|--md]\x1b[0m Run native Bun nanoseconds and hashing micro-benchmark
+  \x1b[32mbench [--supervisor]\x1b[0m \`bun bench\`; --supervisor measures the yolo-runtime process supervisor
   \x1b[32mhelp\x1b[0m                Display this help message
 
 \x1b[1mAGENT-FIRST PROTOCOLS:\x1b[0m
@@ -341,26 +339,9 @@ async function main(): Promise<void> {
       break;
     }
 
-    case "train": {
-      const { runTrainCommand } = await import("./train");
-      process.exitCode = await runTrainCommand(args.slice(1));
-      break;
-    }
-
     case "ai": {
       const { runAiCommand } = await import("./ai");
       process.exitCode = await runAiCommand(args.slice(1), workspaceRoot());
-      break;
-    }
-
-    case "mcp": {
-      // Alias of the single MCP server: `yolo mcp` runs `aphrody mcp-server` (deprecated alias, 2026-10-07).
-      const child = Bun.spawn(["aphrody", "mcp-server", ...args.slice(1)], {
-        stdin: "inherit",
-        stdout: "inherit",
-        stderr: "inherit",
-      });
-      process.exitCode = await child.exited;
       break;
     }
 

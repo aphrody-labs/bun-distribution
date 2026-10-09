@@ -86,7 +86,8 @@ export async function scanDirectory(
       if (!extsFilter.includes(ext)) continue;
     }
 
-    candidates.push(relPath);
+    // Bun.Glob yields `\` on Windows; reports and the tree fingerprint use `/` on every platform.
+    candidates.push(relPath.replaceAll("\\", "/"));
   }
 
   // Sort candidates for deterministic tree fingerprint

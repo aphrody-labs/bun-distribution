@@ -14,14 +14,12 @@ USAGE:
 COMMANDS:
   status [--json|--md] Inspect active package forks & Cargo workspace status
   scan [dir] [--json|--md|--ingest] Fast parallel recursive scanner (lines, bytes, wyhash); --ingest feeds the agent home
-  train <args>     Delegate to 'aphrody train' (datasets, jobs, promotion)
   n2b [dir] [--jobs N] [--fix|--aggressive] [--dry-run] [--json] Native recursive Node-to-Bun migration
   ai list|call <tool> <json> Shared AI capabilities (same schemas and owner as MCP/API)
-  mcp                 Alias of the single MCP server (aphrody mcp-server); tool list|call hosts the yolo_* tools
+  tool list|call      Tool host of the single MCP server (aphrody mcp) for the yolo_* tools
   api [--port N]      Serve local HTTP / REST / OpenAPI micro-server (Bun.serve)
   web [build|dev]     Manage and build the Web & Desktop frontend
   generate [--json]   Autonomously scan upstream Bun and generate code & capability catalogs
-  parse <file> [--json|--md] Fast AST & token analysis via Bun file streaming + wyhash
   docs [query] [--json|--md] Search or inspect the Bun docs mirror in docs/reference/upstream-bun
   version [--json] | doctor [--json|--md] Installed version, target; check the installation
   runtime install|list|verify|rollback|info  Manage installed runtime artifacts
@@ -45,7 +43,7 @@ COMMANDS:
   ship [--apply] [--prepare] [status|log|attach|stop] Prepare or build on the factory; hooks install ships main/dev pushes
   plugin <create|status> Generate or inspect unified YOLO & Bun-TS7 plugin
   py [status|test|lint|fmt|build] Python + uv + PyO3 polyglot runtime toolchain
-  bench [--json|--md] Run native Bun nanoseconds and hashing micro-benchmark
+  bench [--supervisor] `bun bench`; --supervisor measures the yolo-runtime process supervisor
   help                Display this help message
 
 AGENT-FIRST PROTOCOLS:
@@ -53,7 +51,7 @@ AGENT-FIRST PROTOCOLS:
   --md                GitHub-flavored Markdown tables and summaries
 
 ENGINE BASELINE:
-  Runtime: Bun 1.4.2 (744846f844)
+  Runtime: Bun 1.4.3 (f7a7086b60)
   OS:      win32 (x64)
 ```
 
@@ -75,21 +73,6 @@ The default path is the current directory; the default mode checks without editi
   --help, -h         Print this help without loading a native library
 
 Exit codes: 0 success, 1 findings in check mode, 2 errors or invalid arguments.
-```
-
-## yolo docs -h
-
-```
-=== Bun Docs Corpus (via Bun.Glob) ===
-  Docs directory: docs/reference/upstream-bun (9 root items)
-```
-
-## yolo train -h
-
-```
-Usage: yolo train <aphrody train arguments>
-
-Delegates to `aphrody train` (run `aphrody train --help`).
 ```
 
 ## yolo ai -h
@@ -163,14 +146,6 @@ yolo awesome — browse oven-sh/awesome-bun
 
 Options: --repo owner/name  --ref branch (default main)  --refresh  --offline
          --file README.md   --json
-```
-
-## yolo rename -h
-
-```
-yolo rename [--preset aphrody | --from X --to Y] [--include GLOB] [--exclude GLOB] [--paths] [--apply] [dir...]
-yolo rename --restore JOURNAL [--apply]
-Dry-run by default. Literal identifier boundaries; punctuation-ended patterns support scope prefixes. Git tracked and non-ignored untracked files. Symlinks and collisions rejected. Private JSONL v2 recovery journal includes original bytes and SHA-256 hashes. Restore refuses later edits.
 ```
 
 ## yolo plugin -h
@@ -316,8 +291,10 @@ m3 — the @aphrody Material Design 3 framework CLI
 
 Usage:
   m3 dev      [--port <n>] [--no-hmr] [--config <file>]
-  m3 build    [--tauri [<dir>]] [--outdir <dir>] [--dev] [--config <file>]
-  m3 compile  [--target <t>] [--outfile <file>] [--dev] [--config <file>]
+  m3 build    [--tauri [<dir>]] [--outdir <dir>] [--dev] [--no-prerender] [--config <file>]
+  m3 start    [--port <n>] [--outdir <dir>] [--config <file>]
+  m3 compile  [--target <t>] [--outfile <file>] [--dev] [--no-build] [--config <file>]
+  m3 docker   [--outdir <dir>] [--base <image>] [--tag <image>] [--no-prerender] [--config <file>]
   m3 desktop  [--dev|--build] [--config <file>]
   m3 tokens   [--sheet tokens|tailwind|spaceui|scheme] [--seed <hex>] [--variant <name>] [--dark]
               [--contrast <n>] [--out <file>]
@@ -327,8 +304,13 @@ Usage:
 
 new requires the Aphrody/M3 private source owner workspace; use an apps/* member (for example m3 new apps/my-app).
 dev, build, compile and desktop read m3.config.ts from the working directory.
+With an app/ directory (or 'app' in m3.config.ts), dev, build and start run the App Router:
+React Server Components, server actions, streaming SSR and static generation on Bun.serve + Bun.build.
 compile builds the UI and links it with the Bun runtime into one executable that serves it (and the app's API):
-it runs @aphrody/m3-bun, which must be installed next to this package.
+for an App Router project it embeds the build (server layers, client assets, prerendered pages); otherwise it runs
+@aphrody/m3-bun, which must be installed next to this package.
+docker (App Router) writes a Docker context (Dockerfile on ghcr.io/aphrody-labs/alpine:3.24-runtime, server.js, dist/) in
+.m3/docker, and builds the image when --tag is given.
 
 Tools (yolo m3 <tool> ...):
   next           Next.js 16 on Bun, Turbopack workers included: dev | build | start [next args] [m3-next, runner from @aphrody/next-bun]
@@ -388,6 +370,8 @@ Commands:
   git                  Inspect local or remote Git repository status, remotes and commits
   workspace-git-audit  Audit local workspace Git state and GitHub forks, branches, PRs, commits, releases and packages
   ci                   Ecosystem CI workflow distribution and audit across repositories
+  wg                   Native WireGuard (wg, wg-quick, WireGuardNT) for the private tunnel
+  remote               Remote control over the private tunnel: desktop (WebSocket + VNC), VNC client, status, credentials
   vpn                  Native Mullvad VPN controller and auto-proxy geo-unblock driver
   workflow             Unified ecosystem workflow execution and stage orchestration
   yolo                 Sovereign autonomous YOLO engine (polyglot verification, mapper, doctor, plan)

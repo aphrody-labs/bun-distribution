@@ -2,16 +2,13 @@
 import { expect, test } from "bun:test";
 import { resolve } from "node:path";
 import { UnifiedInferenceEngine } from "../../core/src/gemma4/inference";
-import {
-  executeTool,
-  TOOLS,
-  ToolExecutionContext,
-} from "../../core/src/tools/registry";
+import { executeTool, TOOLS, ToolExecutionContext } from "../../core/src/tools/registry";
 import { callTool } from "../../core/src/tools/host";
 import { NativeRedisClient } from "../../core/src/redis/client";
 import { createApiServer } from "../../core/src/server/http";
 
 const root = resolve(import.meta.dir, "../../../..");
+const entry = resolve(import.meta.dir, "../src/index.ts");
 
 test("SDK, CLI, MCP and HTTP use the same provider contract and schema", async () => {
   const requests: unknown[] = [];
@@ -51,12 +48,15 @@ test("SDK, CLI, MCP and HTTP use the same provider contract and schema", async (
     });
     expect(response.status).toBe(200);
     const fromHttp = await response.json();
-    const child = Bun.spawn(["./bin/yolo", "ai", "call", "yolo_ai_infer", JSON.stringify(args)], {
-      cwd: root,
-      env: { ...process.env, YOLO_INFERENCE_ENDPOINT: endpointUrl },
-      stdout: "pipe",
-      stderr: "pipe",
-    });
+    const child = Bun.spawn(
+      [process.execPath, entry, "ai", "call", "yolo_ai_infer", JSON.stringify(args)],
+      {
+        cwd: root,
+        env: { ...process.env, YOLO_INFERENCE_ENDPOINT: endpointUrl },
+        stdout: "pipe",
+        stderr: "pipe",
+      },
+    );
     const [stdout, stderr, code] = await Promise.all([
       new Response(child.stdout).text(),
       new Response(child.stderr).text(),
@@ -84,7 +84,7 @@ test("SDK, CLI, MCP and HTTP use the same provider contract and schema", async (
 });
 
 test("AI CLI lists the owner schemas and rejects invalid input without a provider", async () => {
-  const list = Bun.spawn(["./bin/yolo", "ai", "list"], {
+  const list = Bun.spawn([process.execPath, entry, "ai", "list"], {
     cwd: root,
     stdout: "pipe",
     stderr: "pipe",
@@ -95,7 +95,7 @@ test("AI CLI lists the owner schemas and rejects invalid input without a provide
     TOOLS.find((tool) => tool.name === "yolo_ai_infer"),
   );
   const invalid = Bun.spawn(
-    ["./bin/yolo", "ai", "call", "yolo_ai_infer", '{"prompt":"question","maxTokens":0}'],
+    [process.execPath, entry, "ai", "call", "yolo_ai_infer", '{"prompt":"question","maxTokens":0}'],
     { cwd: root, stdout: "pipe", stderr: "pipe" },
   );
   expect(await invalid.exited).toBe(1);
