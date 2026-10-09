@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+#![recursion_limit = "512"]
 //! `aphrody` — the cross-platform AI-layer CLI, exposed as a library.
 //!
 //! The binary, FFI bridge and tests share the same command parser and dispatch
@@ -6,6 +7,8 @@
 //! compatible lightweight help/version surface because native process, network
 //! and system dependencies are not linkable there.
 
+#[cfg(not(target_arch = "wasm32"))]
+pub mod ai_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod auto_command;
 #[cfg(not(target_arch = "wasm32"))]
@@ -202,6 +205,28 @@ impl AgentOptions {
 enum Commands {
     /// Pure commands (rag, toolcall, html, text): no network, no processes; also built for wasm32.
     Pure(aphrody_command_pure::PureArgs),
+    /// Unified local-first AI subsystem (rag, model, infer, voice, ocr, translate, memory, gateway, train, agent).
+    #[cfg(not(target_arch = "wasm32"))]
+    Ai {
+        #[command(subcommand)]
+        action: ai_cmd::AiAction,
+    },
+    /// Canonical Shell: Nushell PTY session, Bun Shell (`bun exec`), Ratatui TUI, scriptable pipelines.
+    #[cfg(not(target_arch = "wasm32"))]
+    #[command(alias = "sh")]
+    Shell {
+        #[command(subcommand)]
+        action: Option<pillars_cmd::ShellAction>,
+    },
+    /// Interactive TUI dashboard & status monitor.
+    #[cfg(not(target_arch = "wasm32"))]
+    Tui,
+    /// Offline speech-to-text / audio transcription with Whisper GGML.
+    #[cfg(not(target_arch = "wasm32"))]
+    Voice {
+        #[command(subcommand)]
+        action: ai_cmd::VoiceAction,
+    },
     /// Index and retrieve local code and documentation.
     #[cfg(all(not(target_arch = "wasm32"), feature = "rag"))]
     Rag(rag_cmd::RagArgs),
@@ -242,15 +267,10 @@ enum Commands {
     },
     /// Canonical Web engine: Obscura browser automation, crawling and extraction.
     #[cfg(not(target_arch = "wasm32"))]
+    #[command(alias = "webos")]
     Web {
         #[command(subcommand)]
         action: pillars_cmd::WebAction,
-    },
-    /// Canonical Shell: Nushell PTY session, Ratatui TUI, embedded terminal.
-    #[cfg(not(target_arch = "wasm32"))]
-    Shell {
-        #[command(subcommand)]
-        action: Option<pillars_cmd::ShellAction>,
     },
     /// Machine learning training and fine-tuning engine.
     #[cfg(all(not(target_arch = "wasm32"), feature = "train"))]
@@ -991,6 +1011,18 @@ use crate::nl_tokens::is_natural_language_prompt;
 async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
     let overrides = cli.agent_options.overrides();
     match cli.command {
+        #[cfg(not(target_arch = "wasm32"))]
+        Some(Commands::Ai { action }) => {
+            ai_cmd::run(action, &overrides, ctx).await?;
+        },
+        #[cfg(not(target_arch = "wasm32"))]
+        Some(Commands::Tui) => {
+            pillars_cmd::handle_shell(pillars_cmd::ShellAction::Status { json: false })?;
+        },
+        #[cfg(not(target_arch = "wasm32"))]
+        Some(Commands::Voice { action }) => {
+            ai_cmd::run_voice(action).await?;
+        },
         #[cfg(feature = "rag")]
         Some(Commands::Rag(args)) => rag_cmd::run(args, overrides).await?,
         Some(Commands::LlamaDaemon { state_root, role }) => {
@@ -1429,7 +1461,7 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
             }
         },
         None => {
-            commands::AutoCommand { args: vec![] }.execute(ctx).await?;
+            pillars_cmd::handle_shell(pillars_cmd::ShellAction::Start { args: Vec::new() })?;
         },
     }
 

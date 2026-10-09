@@ -963,6 +963,7 @@ dependencies = [
  "aphrody-x",
  "aphrody-yolo",
  "async-trait",
+ "bytes",
  "chrono",
  "clap",
  "clap_complete",
@@ -3680,6 +3681,18 @@ dependencies = [
  "thiserror 2.0.21",
  "tokio",
  "url",
+]
+
+[[package]]
+name = "aphrody-webos-wasm"
+version = "1.0.0"
+dependencies = [
+ "aphrody-patch",
+ "aphrody-re",
+ "aphrody-shell-vfs",
+ "aphrody-shell-web",
+ "serde_json",
+ "wasm-bindgen",
 ]
 
 [[package]]

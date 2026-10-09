@@ -19,7 +19,6 @@ export const YOLO_ONLY_COMMANDS: ReadonlySet<string> = new Set([
   "bench",
   "desktop",
   "tauri",
-  "ai",
   "tool",
   "api",
   "serve",
@@ -50,6 +49,7 @@ export const YOLO_ONLY_COMMANDS: ReadonlySet<string> = new Set([
 ]);
 
 export const RUST_OWNED_SHARED_COMMANDS: ReadonlySet<string> = new Set([
+  "ai",
   "n2b",
   "web",
   "docs",

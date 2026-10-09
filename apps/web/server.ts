@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { analyzeCodebase } from './src/core/codebase-scanner';
 import { TEMPLATES } from './src/templates/templates-data';
 import { DOCS_ARTICLES } from './src/docs/docs-data';
+import { handleOsRequest } from './src/os/os-router';
 
 const port = Number(process.env.PORT || 3000);
 const startTime = Date.now();
@@ -16,6 +17,12 @@ const server = Bun.serve({
   port,
   async fetch(req, server) {
     const url = new URL(req.url);
+
+    // Aphrody OS & Alpine Bun Backend Router
+    const osResponse = await handleOsRequest(req, url);
+    if (osResponse) {
+      return osResponse;
+    }
 
     // 1. Upgrade WebSockets for live telemetry and Arcade Multiplayer
     if (url.pathname === '/ws') {

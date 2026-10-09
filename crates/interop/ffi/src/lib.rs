@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+#![recursion_limit = "512"]
 //! # aphrody-ffi — aphrody as a native library.
 //!
 //! A thin, stable **C ABI** over the `aphrody-command` library crate so the *entire*

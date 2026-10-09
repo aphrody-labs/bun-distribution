@@ -176,13 +176,7 @@ impl TerminalCommand for AutoCommand {
         // utilisateurs qui veulent invoquer bun passent par BYPASS_ENGINES
         // (`aphrody bun add foo`). Le runtime par défaut est `cargo`.
         if self.args.is_empty() {
-            eprintln!(
-                "⚠️  [Auto] No arguments. Usage: `aphrody <cmd> [args]` or `aphrody \"<NL \
-                 prompt>\"`.\n   Default engine is `cargo` (workspace 100% Rust). Use BYPASS \
-                 engines explicitly: `aphrody bun add foo`, `aphrody uv sync`, `aphrody npm i`, \
-                 etc."
-            );
-            return Err(miette::Report::new(SubprocessExit(2)));
+            return crate::pillars_cmd::handle_shell(crate::pillars_cmd::ShellAction::Start { args: Vec::new() });
         }
 
         let first_arg = &self.args[0];
@@ -216,20 +210,36 @@ impl TerminalCommand for AutoCommand {
         let mut target_engine = "cargo";
 
         if !is_known_technical_command && !is_script_file {
-            // If it's neither a known standard action nor a direct script execution, it's likely a
-            // natural language prompt.
             let prompt = self.args.join(" ");
-            println!("✨ [Auto] Détection de langage naturel, bascule vers l'agent A2A...");
-            return dispatch_a2a(
-                crate::A2aAction::Invoke {
-                    prompt,
-                    peer: "grok".to_string(),
-                    dry_run: false,
-                    claim: Vec::new(),
-                },
-                _ctx,
-            )
-            .await;
+            println!("✨ [Aphrody] Requête locale : {prompt}");
+            let opts = crate::auto_command::AutoCommand::new(&prompt);
+            if let Ok(0) = crate::auto_command::run(opts).await {
+                return Ok(());
+            }
+            #[cfg(feature = "rag")]
+            {
+                println!("🔍 [RAG] Recherche locale pour : {prompt}");
+                return crate::rag_cmd::run(
+                    crate::rag_cmd::RagArgs {
+                        db: None,
+                        action: crate::rag_cmd::RagAction::Search {
+                            query: prompt,
+                            limit: 5,
+                            mode: None,
+                            lang: None,
+                            json: false,
+                            min_score: None,
+                        },
+                    },
+                    _ctx.overrides(),
+                )
+                .await;
+            }
+            #[cfg(not(feature = "rag"))]
+            {
+                println!("✨ Exécuter `aphrody ai status` ou `aphrody shell` pour interagir.");
+                return Ok(());
+            }
         }
 
         if is_run_script && self.args.len() > 1 && self.args[1].ends_with(".py") {

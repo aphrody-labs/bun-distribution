@@ -16,16 +16,14 @@ interface DockProps {
 }
 
 export const DOCK_ITEMS: DockItemConfig[] = [
-  { id: 'terminal', title: 'Terminal Shell', icon: '💻', color: 'bg-zinc-800' },
-  { id: 'codex-chat', title: 'Codex AI Assistant', icon: '💬', color: 'bg-gradient-to-tr from-pink-500 to-indigo-600' },
-  { id: 'm3-studio', title: 'Material 3 Studio', icon: '🎨', color: 'bg-purple-600' },
-  { id: 'arcade', title: 'Dragon Pixel Arcade', icon: '🎮', color: 'bg-amber-500' },
-  { id: 'drive', title: 'Codebase Drive', icon: '📁', color: 'bg-blue-600' },
-  { id: 'workbench', title: 'Bun API Workbench', icon: '🧪', color: 'bg-emerald-600' },
-  { id: 'activity-monitor', title: 'Activity & Benchmarks', icon: '📊', color: 'bg-rose-600' },
-  { id: 'templates', title: 'Starters & Templates', icon: '📦', color: 'bg-teal-600' },
-  { id: 'docs', title: 'Documentation Hub', icon: '📚', color: 'bg-indigo-600' },
-  { id: 'bridge', title: 'Tauri & FFI Bridge', icon: '🦀', color: 'bg-orange-600' },
+  { id: 'bunsh', title: 'Bun Shell (bunsh)', icon: '💻', color: 'bg-zinc-800' },
+  { id: 'kernel-monitor', title: 'Aphrody Kernel Monitor', icon: 'Ω', color: 'bg-gradient-to-tr from-purple-700 to-indigo-600' },
+  { id: 'spacedrive', title: 'Spacedrive VFS', icon: '📁', color: 'bg-blue-600' },
+  { id: 'codex-studio', title: 'Codex AI Studio', icon: '🧠', color: 'bg-gradient-to-tr from-pink-500 to-purple-600' },
+  { id: 'apk-manager', title: 'Alpine Package & Container Hub', icon: '📦', color: 'bg-blue-500' },
+  { id: 'm3-fusion', title: 'M3 Token Fusion Studio', icon: '🎨', color: 'bg-purple-600' },
+  { id: 'diagnostics', title: 'Hardware Diagnostics & SIMD', icon: '📊', color: 'bg-indigo-600' },
+  { id: 'arcade', title: 'Dragon Pixel (Crystal Universe)', icon: '🎮', color: 'bg-amber-500' },
 ];
 
 export const Dock: React.FC<DockProps> = ({

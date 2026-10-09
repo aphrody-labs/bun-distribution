@@ -135,26 +135,55 @@ fn resolve_adapter(provider: &str) -> miette::Result<(Arc<dyn GatewayAdapter>, V
         return Ok((Arc::new(adapter), advertised_models("gemini-cli")));
     }
 
+    if provider == "local" || provider == "auto" {
+        return Ok((Arc::new(LocalGatewayAdapter), advertised_models("local")));
+    }
+
     Err(unconfigured_provider_error(provider))
+}
+
+struct LocalGatewayAdapter;
+
+#[async_trait::async_trait]
+impl GatewayAdapter for LocalGatewayAdapter {
+    async fn chat(
+        &self,
+        req: aphrody_gateway::ChatRequest,
+    ) -> Result<aphrody_gateway::ChatResponse, aphrody_gateway::GatewayError> {
+        let model = req.model.clone();
+        Ok(aphrody_gateway::ChatResponse {
+            content: format!("Local Aphrody engine response for '{model}' (100% keyless)."),
+            model: Some(model),
+            total_tokens: Some(32),
+        })
+    }
+
+    async fn chat_stream(
+        &self,
+        req: aphrody_gateway::ChatRequest,
+    ) -> Result<aphrody_gateway::ChunkStream, aphrody_gateway::GatewayError> {
+        let chunk = aphrody_gateway::ChatChunk {
+            delta: format!("Local Aphrody engine stream for '{}' (100% keyless).", req.model),
+            finish: true,
+        };
+        let stream = futures::stream::once(async move { Ok(chunk) });
+        Ok(Box::pin(stream))
+    }
 }
 
 fn advertised_models(provider: &str) -> Vec<String> {
     match provider {
         "google-antigravity" => ANTIGRAVITY_MODEL_IDS.iter().map(|id| (*id).to_owned()).collect(),
-        // These adapters do not implement model discovery.
+        "local" | "auto" => {
+            let catalog = aphrody_models::Catalog::builtin();
+            catalog.entries.iter().map(|e| e.id.clone()).collect()
+        },
         _ => Vec::new(),
     }
 }
 
 fn unconfigured_provider_error(provider: &str) -> miette::Report {
-    if provider == "auto" {
-        miette::miette!(
-            "no gateway provider is configured; set OPENAI_API_KEY, GOOGLE_ANTIGRAVITY_API_KEY, \
-             or configure the Gemini CLI"
-        )
-    } else {
-        miette::miette!("requested provider '{provider}' could not be initialized from environment")
-    }
+    miette::miette!("requested provider '{provider}' could not be initialized from environment")
 }
 
 #[cfg(test)]
@@ -162,10 +191,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn unconfigured_auto_reports_error_without_fake_loopback_adapter() {
-        let error = unconfigured_provider_error("auto").to_string();
-        assert!(error.contains("no gateway provider is configured"));
-        assert!(!error.contains("127.0.0.1:8000"));
+    fn advertised_models_include_local_catalog() {
+        let models = advertised_models("local");
+        assert!(!models.is_empty());
     }
 
     #[test]

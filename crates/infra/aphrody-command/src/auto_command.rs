@@ -153,9 +153,10 @@ fn classify_error(endpoint: &str, err: aphrody_a2a::A2AError) -> AutoCommandErro
     }
 }
 
-/// Write every text part of a message to `out`, flushing after each part so
+/// Write every text part of a message to stdout, flushing after each part so
 /// the user sees tokens immediately (zero buffering).
-async fn emit_message_parts(out: &mut impl io::Write, msg: &Message) -> io::Result<()> {
+fn emit_message_parts(msg: &Message) -> io::Result<()> {
+    let mut out = io::stdout().lock();
     for part in &msg.parts {
         if let PartContent::Text(t) = &part.content {
             out.write_all(t.as_bytes())?;
@@ -175,8 +176,6 @@ pub(crate) async fn run(opts: AutoCommand) -> Result<i32, AutoCommandError> {
 
     let client = A2AClient::new(JsonRpcTransport::new(Client::new(), endpoint.clone()));
 
-    let mut stdout = io::stdout().lock();
-
     if opts.stream {
         let stream_result = client.send_streaming_message(&request).await;
         let mut stream = stream_result.map_err(|e| classify_error(&endpoint, e))?;
@@ -186,18 +185,18 @@ pub(crate) async fn run(opts: AutoCommand) -> Result<i32, AutoCommandError> {
             let event = event.map_err(|e| classify_error(&endpoint, e))?;
             match event {
                 StreamResponse::Message(m) => {
-                    emit_message_parts(&mut stdout, &m).await?;
+                    emit_message_parts(&m)?;
                     wrote_anything = true;
                 },
                 StreamResponse::Task(t) => {
                     if let Some(status_msg) = t.status.message.as_ref() {
-                        emit_message_parts(&mut stdout, status_msg).await?;
+                        emit_message_parts(status_msg)?;
                         wrote_anything = true;
                     }
                 },
                 StreamResponse::StatusUpdate(ev) => {
                     if let Some(status_msg) = ev.status.message.as_ref() {
-                        emit_message_parts(&mut stdout, status_msg).await?;
+                        emit_message_parts(status_msg)?;
                         wrote_anything = true;
                     }
                 },
@@ -209,8 +208,9 @@ pub(crate) async fn run(opts: AutoCommand) -> Result<i32, AutoCommandError> {
         }
 
         if wrote_anything {
-            stdout.write_all(b"\n")?;
-            stdout.flush()?;
+            let mut out = io::stdout().lock();
+            out.write_all(b"\n")?;
+            out.flush()?;
         }
     } else {
         let response =
@@ -218,16 +218,17 @@ pub(crate) async fn run(opts: AutoCommand) -> Result<i32, AutoCommandError> {
 
         match response {
             SendMessageResponse::Message(m) => {
-                emit_message_parts(&mut stdout, &m).await?;
+                emit_message_parts(&m)?;
             },
             SendMessageResponse::Task(t) => {
                 if let Some(status_msg) = t.status.message.as_ref() {
-                    emit_message_parts(&mut stdout, status_msg).await?;
+                    emit_message_parts(status_msg)?;
                 }
             },
         }
-        stdout.write_all(b"\n")?;
-        stdout.flush()?;
+        let mut out = io::stdout().lock();
+        out.write_all(b"\n")?;
+        out.flush()?;
     }
 
     Ok(0)

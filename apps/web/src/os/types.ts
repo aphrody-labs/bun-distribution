@@ -1,17 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-import type React from 'react';
 
 export type AppId =
-  | 'terminal'
-  | 'codex-chat'
-  | 'm3-studio'
-  | 'arcade'
-  | 'drive'
-  | 'workbench'
-  | 'activity-monitor'
-  | 'templates'
-  | 'docs'
-  | 'bridge';
+  | 'bunsh'
+  | 'kernel-monitor'
+  | 'spacedrive'
+  | 'codex-studio'
+  | 'apk-manager'
+  | 'm3-fusion'
+  | 'diagnostics'
+  | 'arcade';
 
 export interface WindowPosition {
   x: number;
@@ -40,7 +37,7 @@ export interface AppMetadata {
   title: string;
   tagline: string;
   icon: string;
-  category: 'system' | 'design' | 'games' | 'tools' | 'dev';
+  category: 'kernel' | 'shell' | 'files' | 'ai' | 'packages' | 'design' | 'system' | 'games';
   defaultSize: WindowSize;
   defaultPosition: WindowPosition;
 }
@@ -51,4 +48,34 @@ export interface SystemNotification {
   message: string;
   timestamp: string;
   icon?: string;
+  level?: 'info' | 'success' | 'warning' | 'error';
+}
+
+export interface KernelSubsystemInfo {
+  name: string;
+  tier: 'ostd' | 'core' | 'comp' | 'lib';
+  status: 'active' | 'standby' | 'ready';
+  description: string;
+  workers: number;
+  memoryKb: number;
+}
+
+export interface ApkPackageInfo {
+  name: string;
+  version: string;
+  description: string;
+  installed: boolean;
+  size: string;
+  repo: string;
+  signed: boolean;
+}
+
+export interface ContainerInfo {
+  id: string;
+  name: string;
+  image: string;
+  status: string;
+  ports: string;
+  memoryMb: number;
+  cpuPercent: number;
 }
