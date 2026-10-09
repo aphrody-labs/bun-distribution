@@ -130,7 +130,7 @@ export function checkCatalog(root = hostRoot()): string[] {
       for (const f of readdirSync(join(root, c.inventory.dir)))
         if (!c.inventory.files.includes(f)) problems.push(`unlisted inventory file: ${f}`);
   }
-  for (const dir of ["aphrody", "shenron", "rg", "nie"])
+  for (const dir of ["aphrody", "shenron", "nie"])
     for (const f of readdirSync(join(root, "systemd", dir)))
       if (f.endsWith(".service") || f.endsWith(".timer"))
         if (!listed.has(`systemd/${dir}/${f}`)) problems.push(`unlisted unit: systemd/${dir}/${f}`);

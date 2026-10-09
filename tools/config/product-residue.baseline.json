@@ -510,7 +510,6 @@
     "tools/config/host/privoxy/README.md": 5,
     "tools/config/host/privoxy/shenron-media-proxy.env.example": 4,
     "tools/config/host/privoxy/shenron-media.conf": 2,
-    "tools/config/host/rg/service-catalog.json": 11,
     "tools/config/host/systemd/aphrody/aphrody-compute-dbfr-tunnel.service": 1,
     "tools/config/host/systemd/aphrody/aphrody-discord-debate.service": 2,
     "tools/config/host/systemd/aphrody/aphrody-discord-lab-telemetry.service": 1,

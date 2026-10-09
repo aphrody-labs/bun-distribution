@@ -37,8 +37,6 @@
   "serviceCatalogs": {
     "aphrody": "aphrody:tools/config/service-catalog.json",
     "aphrody-routes": "nginx/routes.json",
-    "rg": "rg/service-catalog.json",
-    "rg-routes": "rg/nginx-routes.json",
     "nie": "nie/service-catalog.json"
   },
   "inventory": {
@@ -49,7 +47,6 @@
       "aphrody-discord-dev-2026-09-29.md",
       "build-factory-2026-10-03.json",
       "private-tunnel-2026-10-06.json",
-      "omar-admin-2026-10-07.json",
       "discord-ai-lab-2026-10-07.json",
       "pc-connectivity-2026-10-07.json",
       "shenron-timeline-2026-10-07.json",
@@ -303,151 +300,6 @@
       "targetHost": "vps",
       "status": "retired-2026-09-25",
       "site": "nie-cdn"
-    },
-    {
-      "service": "rg-achillea-bot",
-      "unit": "rg-achillea-bot.service",
-      "path": "systemd/rg/rg-achillea-bot.service",
-      "dropIns": [
-        "run-as-ubuntu",
-        "sandbox-base",
-        "sandbox-home-ro",
-        "sandbox-kernel",
-        "net-inet-only"
-      ],
-      "ownerRepo": "iecode",
-      "targetHost": "vps",
-      "status": "shutdown-requested-2026-10-03"
-    },
-    {
-      "service": "rg-api",
-      "unit": "rg-api.service",
-      "path": "systemd/rg/rg-api.service",
-      "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-home-ro"],
-      "ownerRepo": "iecode",
-      "targetHost": "vps",
-      "status": "shutdown-requested-2026-10-03"
-    },
-    {
-      "service": "rg-bot",
-      "unit": "rg-bot.service",
-      "path": "systemd/rg/rg-bot.service",
-      "dropIns": [
-        "run-as-ubuntu",
-        "sandbox-base",
-        "sandbox-home-ro",
-        "sandbox-kernel",
-        "syscall-service"
-      ],
-      "ownerRepo": "iecode",
-      "targetHost": "vps",
-      "status": "shutdown-requested-2026-10-03"
-    },
-    {
-      "service": "rg-cdn",
-      "unit": "rg-cdn.service",
-      "path": "systemd/rg/rg-cdn.service",
-      "dropIns": ["run-as-ubuntu"],
-      "ownerRepo": "iecode",
-      "targetHost": "vps",
-      "status": "shutdown-requested-2026-10-03"
-    },
-    {
-      "service": "rg-cron",
-      "unit": "rg-cron.service",
-      "path": "systemd/rg/rg-cron.service",
-      "dropIns": [
-        "run-as-ubuntu",
-        "sandbox-base",
-        "sandbox-home-ro",
-        "sandbox-kernel",
-        "syscall-service"
-      ],
-      "ownerRepo": "iecode",
-      "targetHost": "vps",
-      "status": "shutdown-requested-2026-10-03"
-    },
-    {
-      "service": "rg-infra-monitor",
-      "unit": "rg-infra-monitor.service",
-      "path": "systemd/rg/rg-infra-monitor.service",
-      "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-home-ro", "net-inet-only"],
-      "ownerRepo": "iecode",
-      "targetHost": "vps",
-      "status": "shutdown-requested-2026-10-03"
-    },
-    {
-      "service": "rg-infra-monitor",
-      "unit": "rg-infra-monitor.timer",
-      "path": "systemd/rg/rg-infra-monitor.timer",
-      "dropIns": [],
-      "ownerRepo": "iecode",
-      "targetHost": "vps",
-      "pairs": "rg-infra-monitor.service",
-      "status": "shutdown-requested-2026-10-03"
-    },
-    {
-      "service": "rg-realtime",
-      "unit": "rg-realtime.service",
-      "path": "systemd/rg/rg-realtime.service",
-      "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-home-ro", "net-inet-only"],
-      "ownerRepo": "iecode",
-      "targetHost": "vps",
-      "status": "shutdown-requested-2026-10-03"
-    },
-    {
-      "service": "rg-sauvegarde",
-      "unit": "rg-sauvegarde.service",
-      "path": "systemd/rg/rg-sauvegarde.service",
-      "dropIns": [],
-      "ownerRepo": "iecode",
-      "targetHost": "vps",
-      "status": "shutdown-requested-2026-10-03"
-    },
-    {
-      "service": "rg-sauvegarde",
-      "unit": "rg-sauvegarde.timer",
-      "path": "systemd/rg/rg-sauvegarde.timer",
-      "dropIns": [],
-      "ownerRepo": "iecode",
-      "targetHost": "vps",
-      "pairs": "rg-sauvegarde.service",
-      "status": "shutdown-requested-2026-10-03"
-    },
-    {
-      "service": "rg-storage",
-      "unit": "rg-storage.service",
-      "path": "systemd/rg/rg-storage.service",
-      "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-home-ro", "net-inet-only"],
-      "ownerRepo": "iecode",
-      "targetHost": "vps",
-      "status": "shutdown-requested-2026-10-03"
-    },
-    {
-      "service": "rg-website",
-      "unit": "rg-website.service",
-      "path": "systemd/rg/rg-website.service",
-      "dropIns": [
-        "run-as-ubuntu",
-        "sandbox-base",
-        "sandbox-home-ro",
-        "sandbox-kernel",
-        "syscall-service",
-        "net-inet-only"
-      ],
-      "ownerRepo": "iecode",
-      "targetHost": "vps",
-      "status": "shutdown-requested-2026-10-03",
-      "site": "rosegriffon.com"
-    },
-    {
-      "service": "rg-zram-swap",
-      "unit": "rg-zram-swap.service",
-      "path": "systemd/rg/rg-zram-swap.service",
-      "dropIns": [],
-      "ownerRepo": "iecode",
-      "targetHost": "vps",
-      "status": "shutdown-requested-2026-10-03"
     },
     {
       "service": "shenron-backup",
@@ -753,12 +605,6 @@
       "ownerRepo": "iecode",
       "targetHost": "vps",
       "site": "aphrody-nie-cdn"
-    },
-    {
-      "file": "nginx/rg/00-rg-cache.conf",
-      "ownerRepo": "iecode",
-      "targetHost": "vps",
-      "site": "00-rg-cache"
     },
     {
       "file": "nginx/shared/00-default.conf",
