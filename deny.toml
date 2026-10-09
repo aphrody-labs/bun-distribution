@@ -5,7 +5,14 @@ all-features = false
 
 [advisories]
 version = 2
-ignore = []
+# Unmaintained crates count only when a workspace crate depends on them directly; the transitive
+# ones (difference, fxhash, paste, rustls-pemfile, rustybuzz, serial, ttf-parser) have no
+# maintained drop-in in their parents (apple-codesign, selectors, gemm, portable-pty, athena-text).
+unmaintained = "workspace"
+ignore = [
+  # rsa Marvin attack: no fixed release; reached through apple-codesign and jsonwebtoken.
+  { id = "RUSTSEC-2023-0071", reason = "no fixed rsa release; transitive (apple-codesign, jsonwebtoken)" },
+]
 
 [licenses]
 version = 2
@@ -32,6 +39,14 @@ allow = [
   "bzip2-1.0.6",
   "LGPL-2.0-or-later",
   "Unlicense",
+]
+# Per-crate exceptions for licenses not allowed globally: Spacedrive-derived aphrody-drive,
+# the IJG clause of jpeg-encoder (remote-desktop) and libesedb (rookie-cookies in aphrody-ffi).
+exceptions = [
+  { crate = "aphrody-drive", allow = ["FSL-1.1-ALv2"] },
+  { crate = "jpeg-encoder", allow = ["IJG"] },
+  { crate = "libesedb", allow = ["LGPL-3.0-or-later"] },
+  { crate = "libesedb-sys", allow = ["LGPL-3.0-or-later"] },
 ]
 
 # Unpublished workspace crates (publish = false) carry no license of their own.
