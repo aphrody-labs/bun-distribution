@@ -25,8 +25,8 @@ state and the existing `data_frame` / `resize_frame` wire format in
 
 `LocalPtyHost` is a native PTY adapter, not a process isolation boundary. A
 remote provider must confine the process separately, for example through its
-container or microVM boundary. `aphrody-sandbox` owns local command
-confinement and is not replaced by this crate.
+container or microVM boundary. On Linux, local command confinement comes from
+`bun:linux` (landlock, seccomp) in the Bun fork; this crate does not provide it.
 
 ## Limits and lifecycle
 

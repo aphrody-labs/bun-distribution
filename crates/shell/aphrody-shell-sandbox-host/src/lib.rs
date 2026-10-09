@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Remote-capable shell host contract. Local confinement belongs to `aphrody-sandbox`;
+//! Remote-capable shell host contract. Local confinement is not provided here;
 //! this crate owns session lifecycle and file transfer across host boundaries.
 
 #[cfg(not(target_arch = "wasm32"))]

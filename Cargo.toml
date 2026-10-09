@@ -285,7 +285,6 @@ pbjson             = { version = "0.9" }
 pbjson-types       = { version = "0.9" }
 pbjson-build       = { version = "0.9" }
 aphrody-cron = { path = "crates/os/kernel/comps/cron", version = "1.0.0-canary", features = [] }
-aphrody-sandbox = { path = "crates/os/kernel/comps/sandbox", version = "1.0.0-canary", features = [] }
 aphrody-task-runner = { path = "crates/os/kernel/comps/task-runner", version = "1.0.0-canary", features = [] }
 aphrody-telemetry = { path = "crates/os/kernel/comps/telemetry", version = "1.0.0-canary", features = [] }
 aphrody-bun-docs = { path = "crates/compat/bun-docs", version = "1.0.0-canary", features = [] }

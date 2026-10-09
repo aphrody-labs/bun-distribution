@@ -63,6 +63,8 @@ Une évaluation rigoureuse de la littérature et des dépôts open-source Rust b
 
 ## 3. Primitives et Correctifs Bare-Metal de Référence
 
+> Recherche seulement : le code `no_std` de cette section n'existe pas dans le dépôt. L'image système Alpine et son [générateur initramfs](https://github.com/aphrody-labs/bun/blob/main/scripts/aphrody/initramfs.ts) appartiennent au fork Bun externe (chantiers U3 et V). Cette recherche ne qualifie pas un noyau Rust bare-metal.
+
 Dans le cadre des recherches d'ingénierie système menées sur le socle Rust, plusieurs verrous de synchronisation et d'adressage mémoire ont été résolus et formalisés.
 
 ### A. `IrqSafeMutex<T>` : Élimination du danger `preserves_flags` & Mitigation TTAS
@@ -207,45 +209,20 @@ Pour préserver l'étanchéité du système :
 
 ---
 
-## 5. Architecture Réalisée dans `aphrody-os`
+## 5. Composants réels du plan de contrôle Ring-3
 
-L'intégralité de la vision du méta-système d'exploitation et de son shell de bureau est d'ores et déjà matérialisée dans le dépôt :
+Correspondance vérifiée le 2026-10-09 avec les manifestes Cargo. Les noms `aphrody-systemd`, `aphrody-coreutils`, `aphrody-compat`, `aphrody-libaphrody`, `aphrody-shell` et `aphrody-browser` d'une version antérieure de ce document ne sont pas des crates : ce sont des modules de `aphrody-kernel` ou d'autres crates.
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        PACKAGES / FRONTEND SHELL                       │
-│  - design/aphrody-m3/packages/app-ui         : Shell COSMIC/GNOME (TopBar, Activities,   │
-│                              Workspaces 1-4, QuickSettings, Systemd)   │
-│  - packages/m3-*           : Design System Material 3 (tokens, motion) │
-│  - drive/packages/interface: Explorateur de fichiers Aphrody Drive     │
-└────────────────────────────────────────────────────────────────────────┘
-                                    │ Tauri IPC / JSON-RPC
-┌────────────────────────────────────────────────────────────────────────┐
-│                       CRATES / BACKEND & NATIVE                        │
-│  - crates/aphrody-libaphrody : Modèles du Shell (Launcher, TopBar,     │
-│                                Workspaces, Notifications, Fenêtres)    │
-│  - crates/aphrody-app        : Façades typées Desktop & bridge Wry     │
-│  - crates/aphrody-kernel     : Daemon noyau utilisateur & hôte MCP     │
-│  - crates/aphrody-systemd    : Init Ring-3, DAG dépendances, journald  │
-│  - crates/aphrody-coreutils  : Utilitaires POSIX natifs (ls, cat, ps)  │
-│  - crates/aphrody-compat     : Détection/exécution Wine, .NET 10, pwsh │
-│  - crates/aphrody-shell / nu : Terminal Nushell natif typé             │
-│  - crates/aphrody-browser    : Moteur Web Obscura / V8 headless        │
-│  - crates/aphrody-winclean   : Diagnostics & contrôle Windows / UIA    │
-└────────────────────────────────────────────────────────────────────────┘
-```
+| Rôle | Emplacement réel |
+| :--- | :--- |
+| Hôte de contrôle, dispatch d'outils MCP, sous-systèmes | crate `aphrody-kernel` (`crates/os/kernel/core`) |
+| Superviseur d'unités (DAG, journal) | module `systemd` de `aphrody-kernel` (`crates/os/kernel/core/src/systemd`) |
+| Utilitaires POSIX natifs | module `coreutils` de `aphrody-kernel` (`crates/os/kernel/core/src/coreutils.rs`) |
+| Wine / Proton, .NET, `pwsh` | module `compat` de `aphrody-kernel` (`crates/os/kernel/core/src/compat`) |
+| Façades desktop et pont Wry | crate `aphrody-app` (`crates/ui/app`) |
+| Shell Nushell | crate `aphrody-nu` (`crates/shell/nu`) |
+| Navigateur Obscura | crate `aphrody-obscura` (`crates/web/obscura`) |
+| Diagnostics et contrôle Windows / UIA | crate `aphrody-winclean` (`crates/os/kernel/comps/winclean`) |
+| Bureau (TopBar, espaces de travail, réglages rapides) | `m3/packages/app-ui` |
 
-### Couverture des Composants Système
-
-1. **`aphrody-kernel`** : Hôte de contrôle central, dispatch d'outils MCP, bus d'événements A2A et gestionnaire de sous-systèmes.
-2. **`aphrody-systemd`** : Superviseur d'unités de session (parsing d'unités INI, DAG de démarrage, surveillance PID, politique de restart, journal circulaire in-memory avec outils MCP de diagnostic).
-3. **`aphrody-coreutils`** : Utilitaires système universels (`ls`, `cat`, `cp`, `mv`, `rm`, `mkdir`, `touch`, `pwd`, `df`, `head`, `tail`, `wc`, `uname`, `whoami`, `ps`) garantissant la portabilité sans dépendre des exécutables GNU ou PowerShell de l'hôte.
-4. **`aphrody-compat`** : Détection et pont d'exécution pour runtimes externes (Wine / Proton pour binaires Windows sous Linux, .NET 10 NativeAOT, PowerShell Core `pwsh`).
-5. **`libaphrody` & `app-ui`** : Toolkit d'application et environnement de bureau de type COSMIC/GNOME intégrant TopBar, vue d'ensemble des applications (`Ctrl+Space`), sélecteur de 4 espaces de travail, panneau de réglages rapides et intégration directe de l'explorateur Aphrody Drive et du terminal Nushell.
-
-### État de Validation
-
-- **Compilation Rust** : 100 % passée (`cargo check --locked`).
-- **Tests unitaires Rust** : **53/53 tests passés** sans échec.
-- **Vérification Frontend** : `bun run check` dans `design/aphrody-m3/packages/app-ui` (not in repo) passe avec 0 erreur.
-- **Porte documentaire** : `aphrody-ops docs-links --root . --scope repository` passe avec 0 lien rompu sur 190 fichiers scannés.
+Le confinement local de commandes n'a pas de crate dédié : l'ancien `aphrody-sandbox`, sans consommateur, a été retiré. Sous Linux, landlock et seccomp sont fournis par `bun:linux` dans le fork Bun.

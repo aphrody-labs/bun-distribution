@@ -21,7 +21,7 @@ Rules: root `CLAUDE.md`. Workers never run Cargo; the lead runs one check at a t
 | Nushell | `crates/shell/nu` (nu 0.115.1, features `brotli`, `os`, `rmp-serde`, `sqlite`) | Real, native only. Not built for wasm; wasm viability is unproven. |
 | Ratatui TUI | `crates/shell/tui` (not in repo) (retired source path; retained as historical evidence) | Real, native only. Out of scope here. |
 | Coreutils | `crates/os/kernel/core/src/coreutils.rs` | **Adapter only.** `subsystem.rs` spawns a pinned uutils multicall binary (`APHRODY_COREUTILS_BIN` or `target/aphrody-uutils/...`) as a subprocess; also wraps findutils/grep/sed/diffutils/tar companions. No uutils library code is linked, nothing compiles for wasm. MCP tools `coreutils_status/catalog/run` and `uutils_*` front it. uutils sources are not in `.cache/upstream` (not in repo) (generated or machine-local artifact; presence depends on the build host) and not in `tools/config/upstream-sources.json`'s listing; locate or add before T7. |
-| Sandbox | `crates/os/kernel/comps/sandbox` | **Native policy + helper real** (Landlock/seccomp unix, Low-IL windows, `SandboxPolicy`, `CommandRunner` trait, `MockCommandRunner`, `patch_guard`). **wasm is a stub** (`wasm.rs`: two no-op functions; `runner.rs` gates tokio on non-wasm). It is a command-confinement crate, not a remote-sandbox abstraction. |
+| Sandbox (historical) | `crates/os/kernel/comps/sandbox` (not in repo) | The unused crate was removed. Its former native helpers and no-op wasm adapter are not available owners. Linux confinement source lives in the external fork's [bun:linux implementation](https://github.com/aphrody-labs/bun/blob/main/src/js/bun/linux.ts); source presence does not qualify runtime activation or browser isolation. |
 | VFS / OPFS | none | No shell VFS exists. `crates/os/kernel/libs/fsindex` and `crates/os/kernel/comps/drive` are different concerns (indexing, cloud drive); reuse only the ideas. |
 | Renderer | wterm/Ghostty DOM in `crates/ui/app` | Active renderer by decision (ENGINE-SELECTION.md). Native wgpu renderer is the UI owner's future work. |
 
@@ -58,8 +58,8 @@ Decisions:
    adapter. The browser shell runs in a dedicated Web Worker, which opens OPFS files asynchronously at startup and
    then persists versioned, checksummed VFS images through `FileSystemSyncAccessHandle`. The main thread keeps
    renderer + VT. Directory APIs remain asynchronous even inside the worker.
-5. **Serverless/cloud = a `SandboxHost` trait, with providers behind it.** Not `aphrody-sandbox` (that is local
-   confinement). Define `SandboxHost { spawn(spec) -> Session, upload/download via Vfs-like calls, kill, ttl }` and make
+5. **Serverless/cloud = a `SandboxHost` trait, with providers behind it.** Not local confinement (the former
+   `aphrody-sandbox` crate was removed unused). Define `SandboxHost { spawn(spec) -> Session, upload/download via Vfs-like calls, kill, ttl }` and make
    the Session speak the same wire frames as the PTY WebSocket (`resize_frame`/`data_frame`), so L3's WebSocket
    transport serves it unchanged. Providers (Cloudflare Containers/Sandbox, E2B, Fly Machines, Firecracker on the
    vps/dbfr hosts) are adapters, each its own task, none before the trait and a mock host test exist.
@@ -79,7 +79,6 @@ Decisions:
 | wasm bindings | `aphrody-shell-web` | a second wasm crate for the same API; new engines live in new library crates it depends on |
 | Native PTY | `aphrody-terminal-backend`, `aphrody-shell-tauri` | wasm PTY emulation |
 | Native coreutils | `aphrody-coreutils` adapter, MCP `coreutils_*`/`uutils_*` | changes to it for wasm |
-| Native confinement | `aphrody-sandbox` (`SandboxPolicy`, `CommandRunner`) | re-implement policy; only add a wasm `CommandRunner` impl if needed |
 | Wire frames | `crates/shell/web/src/wire.rs` | new framing |
 | TS client | `@aphrody/shell-web` | a second client package |
 | Tests | `packages/shell/web/test/*`, `bun run desktop:e2e`, `scripts/build/shell/build-wasm.sh` | new harness runners |
@@ -185,7 +184,7 @@ serially.
 - Deps: T1.
 - Content: `SandboxHost` trait (spawn/kill/ttl/limits/files), session = `ShellSession` speaking existing wire frames,
   `MockHost` (in-process, backed by `MemVfs` + T3 engine) and `LocalPtyHost` (wraps `aphrody-terminal-backend`, native).
-  No cloud provider code here; do not depend on `aphrody-sandbox` except to reuse `SandboxPolicy` as an optional input.
+  No cloud provider code here.
 - Test: trait conformance suite run on `MockHost` and `LocalPtyHost`; WebSocket round trip via `packages/shell/web`
   live test with `APHRODY_SHELL_LIVE_BIN`.
 
@@ -248,6 +247,6 @@ ENGINE-SELECTION.md.
 - OPFS sync handles need a worker and secure context; Safari/Firefox support differs, so the conformance run in Chrome is
   necessary, not sufficient.
 - Nushell wasm is unproven; the milestone does not depend on it.
-- `crates/os/kernel/comps/sandbox` can mislead: its wasm module is a stub, so no task relies on it for browser isolation (the browser
-  sandbox is the wasm/worker boundary; remote isolation is the SandboxHost provider).
+- The removed local-confinement crate is not a browser-isolation capability. The browser sandbox is the wasm/worker
+  boundary; remote isolation belongs to the SandboxHost provider and needs its own qualification.
 - Working tree already has unrelated uncommitted edits (web-engine, fut, interop); shell tasks must not touch them.

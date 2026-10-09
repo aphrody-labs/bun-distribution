@@ -19,8 +19,8 @@ use crate::{HostError, HostLimits, SandboxHost};
 /// Native host backed by `aphrody-terminal-backend::PtySession`.
 ///
 /// `transfer_root` contains files made available to the PTY. This adapter does
-/// not confine the shell process: apply `aphrody-sandbox` or a provider isolation
-/// boundary when running untrusted commands.
+/// not confine the shell process: apply OS confinement (on Linux, `bun:linux`
+/// landlock/seccomp) or a provider isolation boundary when running untrusted commands.
 pub struct LocalPtyHost {
     root: PathBuf,
     config: PtyConfig,

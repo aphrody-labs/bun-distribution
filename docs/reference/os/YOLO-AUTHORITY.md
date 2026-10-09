@@ -24,10 +24,9 @@ with different authority by OS account and endpoint. Elevation, when required, i
 the native `sudo.exe` invocation of that operation. The kernel does not grant permanent
 elevation or a Windows driver.
 
-`aphrody-execpolicy` evaluates command argv for callers that opt into it. `aphrody-sandbox`
-is a library for policy checks and runner interfaces; its default runner rejects restrictive
-policies because the current process setup cannot enforce filesystem or network confinement.
-Neither library is a universal filter around kernel tool dispatch. Tool-specific validation,
+`aphrody-execpolicy` evaluates command argv for callers that opt into it. It is not a
+universal filter around kernel tool dispatch, and no local filesystem or network confinement
+library sits in that path either. Tool-specific validation,
 host permissions, and the caller's own authority remain in effect.
 
 The JSON policy must use an absolute path and a non-empty `principals` array. Each principal has

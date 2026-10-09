@@ -32,7 +32,7 @@ and scope into each session and authorize tool calls and subsystem registration 
 **Priority: P1 for a policy-enforced control plane; P2 if they are intentionally client-side only.**
 
 `aphrody-execpolicy` is declared by the kernel but has no source-level call site there;
-`aphrody-sandbox` and `aphrody-guard` have no kernel consumer. The kernel's binary registers
+`aphrody-guard` has no kernel consumer (the unused `aphrody-sandbox` crate was removed). The kernel's binary registers
 subsystems and its RPC handler calls them directly, with no policy or sandbox check in between.
 This leaves a gap between the repository's ownership statement (kernel owns execution policy and
 sandboxing) and runtime enforcement, especially for remote subsystem calls and admin operations.
