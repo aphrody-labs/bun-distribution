@@ -284,6 +284,7 @@ fn main() {
   // workaround needed to prevent `STATUS_ENTRYPOINT_NOT_FOUND` error in tests
   // see https://github.com/tauri-apps/tauri/pull/4383#issuecomment-1212221864
   let target_env = std::env::var_os("CARGO_CFG_TARGET_ENV");
+  println!("cargo:rerun-if-env-changed=__TAURI_WORKSPACE__");
   let is_tauri_workspace = std::env::var_os("__TAURI_WORKSPACE__").is_some_and(|v| v == "true");
   if is_tauri_workspace && target_os == "windows" && target_env.is_some_and(|trgt| trgt == "msvc") {
     embed_manifest_for_tests();

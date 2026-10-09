@@ -4,3 +4,8 @@
 # Cargo.lock remains the record of resolved versions.
 [resolver]
 incompatible-rust-versions = "allow"
+
+[env]
+# aphrody-tauri's build.rs embeds the Windows application manifest in its own test binaries
+# (comctl32 v6; without it they exit with STATUS_ENTRYPOINT_NOT_FOUND).
+__TAURI_WORKSPACE__ = "true"

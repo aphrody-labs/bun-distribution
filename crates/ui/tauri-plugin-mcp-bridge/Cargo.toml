@@ -13,6 +13,9 @@ readme = "README.md"
 keywords = ["tauri", "tauri-plugin", "mcp", "ipc", "monitoring"]
 categories = ["api-bindings", "development-tools"]
 links = "tauri-plugin-mcp-bridge"
+# permissions/schemas/schema.json is git-ignored (.gitignore) but the tauri-plugin build writes it
+# into the crate: ship it so the build of the published crate leaves its source unchanged.
+include = ["/src/**", "/build.rs", "/permissions/**", "/guest-js/**", "/package.json", "/tsconfig.json", "/README.md", "/LICENSE", "/CHANGELOG.md"]
 
 [package.metadata.docs.rs]
 all-features = true
