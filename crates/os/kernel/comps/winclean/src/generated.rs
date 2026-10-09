@@ -7982,7 +7982,7 @@ impl Winclean {
         self.call_async("search_files", args).await
     }
 
-    /// Effectue une recherche ultra-rapide sur le disque via l'indexeur natif Windows Search.
+    /// Effectue une recherche sur le disque via l'indexeur natif Windows Search.
     ///
     /// # Errors
     /// Returns an error when the arguments cannot be serialised or the result cannot be decoded.

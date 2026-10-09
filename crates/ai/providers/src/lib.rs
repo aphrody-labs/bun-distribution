@@ -35,7 +35,7 @@
 //! containing `"openai"` fail to decode at the field boundary, never reach
 //! application code, and produce a self-explanatory error message.
 //!
-//! ## Zero-cost composition
+//! ## Value semantics
 //!
 //! `Provider` is `Copy + Eq + Hash + 'static`. Use it freely as a `HashMap`
 //! key, a match scrutinee, a const expression, or an array index.

@@ -19,8 +19,8 @@
  *
  * Sans passer par `rm -rf` : le script doit tourner sous Windows comme sous
  * Linux, et `rmSync` fait exactement la même chose sans dépendre d'un shell.
- * `vendor/` et l'intérieur des `node_modules` ne sont jamais parcourus — c'est
- * ce qui rend le balayage instantané au lieu de plusieurs secondes.
+ * `vendor/` et l'intérieur des `node_modules` ne sont jamais parcourus, ce qui
+ * évite de descendre dans ces arborescences.
  *
  * **Simulation par défaut**, comme les purges X : la liste supprime
  * `node_modules/` et `dist/`, donc plusieurs minutes de réinstallation et de

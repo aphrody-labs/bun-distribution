@@ -411,7 +411,7 @@
       "title": "Qwen3 Embedding 0.6B Q8_0 (GGUF)",
       "task": "text-embedding",
       "backend": "llama-cpp",
-      "summary": "High-performance 0.6B dense text embedding model quantized to Q8_0 GGUF. Directly executable by llama-server with --embedding for sub-millisecond vector encoding.",
+      "summary": "High-performance 0.6B dense text embedding model quantized to Q8_0 GGUF. Directly executable by llama-server with --embedding for vector encoding.",
       "files": [
         {
           "role": "weights",

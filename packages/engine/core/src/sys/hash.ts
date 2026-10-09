@@ -1,6 +1,6 @@
 /**
  * Native Bun zero-copy hashing algorithms:
- * - Wyhash 64-bit: ultra fast, non-cryptographic PRNG/hasher (Bun.hash.wyhash)
+ * - Wyhash 64-bit: non-cryptographic PRNG/hasher (Bun.hash.wyhash)
  * - CRC32: IEEE 802.3 checksum (Bun.hash.crc32)
  * - SHA-256: Cryptographic hasher (Bun.CryptoHasher)
  */

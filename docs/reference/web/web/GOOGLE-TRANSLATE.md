@@ -1,6 +1,6 @@
-# Google Cloud Translation API & Ultra Engine — Open-Source Zero Rate-Limit
+# Google Cloud Translation API & moteur multi-niveaux — Open-Source Zero Rate-Limit
 
-Architecture de reproduction fidele et ultra-optimisee de **Google Cloud Translation API (v2 & v3)** integree dans le moteur Aphrody Web.
+Architecture de reproduction de **Google Cloud Translation API (v2 & v3)** integree dans le moteur Aphrody Web.
 
 Ce module fusionne et depasse les capacites des **3 meilleurs projets open-source mondiaux** de Google Translate :
 1. **vitalets/google-translate-api** (Node.js/TS) : Prononciation phonetique (Romaji, Pinyin, IPA), auto-correction / Did-you-mean ("Essayez avec cette orthographe"), conservation du corps brut de la requete.
@@ -13,7 +13,7 @@ Ce module fusionne et depasse les capacites des **3 meilleurs projets open-sourc
 
 - **Drop-in Compatible Google Cloud API :** Remplace l'API payante `translate.googleapis.com` avec les memes structures JSON (`POST /language/translate/v2`, `POST /language/translate/v2/detect`, `GET /language/translate/v2/languages`, `POST /v3/projects/...:translateText`).
 - **Zero Rate-Limit Garanti (Multi-Tiering) :**
-  1. **Tier 0 : Cache SQLite WAL local** (`~/.bxc/translations.sqlite`) indexe par SHA-256. 0 ms de latence sur requete deja vue.
+  1. **Tier 0 : Cache SQLite WAL local** (`~/.bxc/translations.sqlite`) indexe par SHA-256 ; une requete deja vue ne sort pas sur le reseau.
   2. **Tier 1 : Rotation Web RPC optimiste** avec geo-rotation (`google.com`, `google.fr`, `google.co.jp`, `google.de`, `google.co.uk`) et client Chrome autorise (`dict-chrome-ex`).
   3. **Tier 2 : Session Web Mobile authentifiee** (`translate.google.com/m` avec cookies de session de `~/.bxc/cookies/google.json`).
   4. **Tier 3 : Fallback Gemini LLM (flash)** pour preservation absolue du HTML et du contexte complexe.
@@ -34,7 +34,7 @@ bun src/cli/index.ts google translate --serve --port 8089
 
 ### Endpoints REST Disponibles :
 - `POST/GET /language/translate/v2` : Traduction standard (ou enrichie avec `detailed=true`).
-- `POST/GET /language/translate/v2/detect` : Detection de langue (< 1 ms).
+- `POST/GET /language/translate/v2/detect` : Detection de langue.
 - `GET      /language/translate/v2/languages` : Liste des 195 langues supportees (avec `target=fr` optionnel).
 - `GET/POST /language/translate/v2/tts` : Generation et streaming audio MP3 (`q=texte&tl=fr`).
 - `POST     /v3/projects/:p/locations/:l:translateText` : Emulation de l'API v3.
@@ -60,7 +60,7 @@ bun src/cli/index.ts google tts "Bienvenue sur le moteur Aphrody Web" --target f
 # 5. Entree par pipe STDIN
 echo "Machine learning system" | bun src/cli/index.ts google translate - --target ja
 
-# 6. Detection de langue ultra-rapide
+# 6. Detection de langue
 bun src/cli/index.ts google translate --detect "Bonjour tout le monde"
 
 # 7. 195 langues officielles localisees
@@ -74,7 +74,7 @@ bun src/cli/index.ts google translate --languages --target fr
 Enregistres dans `src/mcp/server.ts` :
 - `aphrody_google_translate` : Traduction unitaire ou par lot (texte ou HTML), supporte `detailed: true` pour prononciation, dictionnaire et auto-correction.
 - `aphrody_google_tts` : Synthese vocale renvoyant soit le fichier sauvegarde, soit le buffer audio encode en Base64.
-- `aphrody_google_detect_language` : Detection de langue instantanee.
+- `aphrody_google_detect_language` : Detection de langue.
 - `aphrody_google_supported_languages` : Repertoire des 195 langues officielles.
 
 ---

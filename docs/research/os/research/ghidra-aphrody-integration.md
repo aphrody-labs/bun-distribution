@@ -7,7 +7,7 @@ Recherche d'intégration entre **`C:\src\ghidra`** (plugin Claude Code « ghidra
 | | aphrody `re` (natif) | ghidra-suite |
 |---|---|---|
 | Techno | Rust pur (goblin, iced-x86), aucun GPL, dans le binaire | Java 21 + Ghidra, externe (install `C:\src\ghidra`) |
-| Vitesse | instantané (ms) | lent (JVM + auto-analysis, secondes→minutes) |
+| Vitesse | millisecondes (bench `aphrody-re` triage : 8,8 ms p50 sur un PE synthétique de 5 Mio, [`PERFORMANCE-HISTORY.md`](../../../reference/ai/PERFORMANCE-HISTORY.md) §4.4) | lent (JVM + auto-analysis, secondes→minutes) |
 | Profondeur | triage, sections+entropie, strings, disasm linéaire, OAuth/endpoints (`re google`), magika | décompilation C, CFG, types, xrefs, symboles, decomp par fonction |
 | Surfaces | `re {triage,strings,sections,disasm,google,classify}` | **headless** (`support/analyzeHeadless` + 6 scripts `Export*.java`) ; **live MCP** (`ghidra` → `http://localhost:8080/mcp`, 38 outils GUI) |
 
@@ -20,7 +20,7 @@ Nouvelle variante `ReAction::Ghidra` qui prolonge la pipeline `re` du triage ver
 - **Résolution Ghidra** (cross-platform, première trouvée) : `$GHIDRA_INSTALL_DIR` > `$GHIDRA_HOME` > détection self-relative du plugin (cf. `find-ghidra.ps1` durci ce jour : walk-up vers `support/analyzeHeadless[.bat]`) > PATH. Sur cette machine → `C:\src\ghidra`.
 - **Exécution** : spawn `analyzeHeadless <projDir> <projName> -import <bin> -scriptPath <ghidra_scripts> -postScript ExportDecompiled.java -deleteProject` (+ `ExportFunctions/ExportSymbols/ExportStrings/ExportCalls` selon flags). Les 6 scripts Java sont à `C:\src\ghidra\skills\ghidra-headless\scripts\ghidra_scripts/`.
 - **Sortie** : JSON sur stdout (contrat scriptable §0.1) — fonctions décompilées, symboles, xrefs.
-- **Latence (directive user)** : Ghidra headless est lent → cette commande est **opt-in explicite**, jamais dans un chemin par défaut. `re triage` (pur Rust, instantané) reste le défaut. Flags `--no-analysis`, `--timeout`, `--scripts a,b` forwardés ; un seul lancement JVM par binaire.
+- **Latence (directive user)** : Ghidra headless est lent → cette commande est **opt-in explicite**, jamais dans un chemin par défaut. `re triage` (pur Rust, quelques millisecondes, cf. bench §4.4 de `PERFORMANCE-HISTORY.md`) reste le défaut. Flags `--no-analysis`, `--timeout`, `--scripts a,b` forwardés ; un seul lancement JVM par binaire.
 - **Coût** : ~120 lignes Rust dans un module `re_ghidra.rs` (spawn + résolution + parse), zéro nouvelle dep, zéro GPL (Ghidra = Apache-2.0, et on ne fait que l'invoquer).
 
 ### B. Live MCP : enregistrer `ghidra` dans la config MCP d'aphrody (trivial, complémentaire)
@@ -34,10 +34,10 @@ Nouvelle variante `ReAction::Ghidra` qui prolonge la pipeline `re` du triage ver
 Le plugin aphrody peut référencer les 8 agents RE du ghidra-suite (binary-triage, malware-analyst, vulnerability-hunter, decompile-cleaner, firmware-analyst, ctf-solver, ds-reverse, 3ds-reverse) pour délégation depuis `aphrody re`/`ide re`. Priorité basse.
 
 ## Chaînage cible dans la pipeline
-1. `aphrody re triage <bin>` → format/sections/entropie (instantané) — déjà là.
+1. `aphrody re triage <bin>` → format/sections/entropie (quelques millisecondes) — déjà là.
 2. `aphrody re google <bin>` / `ide re` → endpoints/OAuth (sidecars Go inclus) — déjà là.
 3. **`aphrody re ghidra <bin>` → décompilation C + symboles (A, nouveau)** — quand le triage justifie l'analyse profonde.
 4. `aphrody mcp call ghidra <tool>` → itération interactive sur le GUI (B).
 
 ## Décision
-Implémenter **A** (haute valeur, prolonge `re`) puis **B** (config, trivial). C plus tard. A et B sont non-destructifs, opt-in, et respectent l'invariant latence (le défaut reste le Rust instantané).
+Implémenter **A** (haute valeur, prolonge `re`) puis **B** (config, trivial). C plus tard. A et B sont non-destructifs, opt-in, et respectent l'invariant latence (le défaut reste le triage Rust).

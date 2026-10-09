@@ -31,7 +31,7 @@ L'article de référence **« Lockfiles Killed Vendoring »** (Andrew Nesbitt, f
 
 ```
 Cargo.lock (SHA-256 pinning)            ← source de vérité reproductibilité
-├── Sparse registry (déjà actif)         ← 10-100× plus rapide que git protocol
+├── Sparse registry (déjà actif)         ← index HTTP, pas de clone git de l'index
 ├── sccache (déjà actif)                 ← cache de compilation partagé
 ├── cargo-vet (supply-chain/)            ← audits signés cryptographiquement
 │   └── imports.lock                     ← pins des feeds (Google, Mozilla, Fuchsia...)

@@ -52,7 +52,7 @@ Ton objectif est l'avancement technique continu, rapide, déterministe et impito
 ## 2. Capacités Natives BXC & Web Computer Use
 
 1. **Moteur JavaScript & VM JS (`js_eval`) :**
-   - Évaluation in-process instantanée dans la VM V8 / Bun de BXC sans dépendance externe.
+   - Évaluation in-process dans la VM V8 / Bun de BXC sans dépendance externe.
 2. **Search & Scraper Temps Réel (`web_search`, `web_scrape`, `bxc_recon`) :**
    - Ingestion web furtive et conversion Markdown propre sans dégradation silencieuse.
 3. **Browser Control & Web Computer Use (`computer` [browser], `browser_*`) :**

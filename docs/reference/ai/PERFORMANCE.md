@@ -2,27 +2,31 @@
 
 # Performance
 
-Performance claims for `aphrody` with reproducible recipes. Complements
+Performance targets for `aphrody` with reproducible recipes. Complements
 [`PERFORMANCE-HISTORY.md`](./PERFORMANCE-HISTORY.md) (historical trend log) by
 covering the wider workspace: CLI cold start, criterion micro-benchmarks in
 `backend`, A2A coordination latency, WASM artifact size, and memory footprint.
 
-Numbers are honest priors from a 2024-class x86_64 laptop (~4.0 GHz, AES-NI,
-NVMe SSD), Windows 11 Insider Canary, Rust nightly 1.97 release profile
-(`lto = "fat"`, `codegen-units = 1`). Yours will differ — run the recipes.
+Unless a section cites a recorded measurement, the numbers below are targets
+and estimates for a 2024-class x86_64 laptop (~4.0 GHz, AES-NI, NVMe SSD),
+Windows 11 Insider Canary, Rust nightly 1.97 release profile (`lto = "fat"`,
+`codegen-units = 1`). No result file for them is committed in this repository;
+run the recipes before quoting any of them as a fact.
 
-## 1. Headline claims (honest)
+## 1. Targets (not measured in this repository)
 
 - `aphrody doctor` cold start: **< 100 ms** on a warm filesystem.
 - `aphrody --version`: **< 30 ms** cold, **< 10 ms** warm.
 - `mrx scan` (historical monolith audit, ~19,213 files, 482 MB): **~1.4 s** warm cache,
-  **~3 s** cold (see §4 below for details).
+  **~3 s** cold, as recorded by the 2026-05-17 audit (see §4 below).
 - AES-256-GCM decrypt of a 1 KiB Chromium-format payload: **< 50 µs**.
 - A2A `file_jsonl` inbox poll with 100 envelopes (~50 KB): **< 5 ms**.
 - WASM bundle (`aphrody-wasm` release, `wasm-pack --target web`): **~91 KB**
   gzip-compressed _(historical — crate extracted to `aphrody-ts` 2026-05-23, see §6)._
 
-These are floors and ceilings the team verifies in CI, not marketing wins.
+The CI workflow that was meant to check these bounds is not in this repository;
+the only recorded criterion results are listed in §3 and in
+[`PERFORMANCE-HISTORY.md`](./PERFORMANCE-HISTORY.md).
 
 ## 2. How to reproduce
 
@@ -54,7 +58,10 @@ Open `index.html` for distribution, regression vs previous run, violin plots.
 The five micro-benches in
 [`crates/os/ostd/backend/benches/backend_bench.rs`](../../../crates/os/ostd/backend/benches/backend_bench.rs)
 exercise the algorithmic primitives that dominate hot paths in the backend
-crate. Expected ranges on the reference laptop:
+crate. Expected ranges on the reference laptop (estimates, not a recorded run;
+the only recorded p50 values are in [`CHANGELOG.md`](./CHANGELOG.md) "Performance":
+`vfs_resolve_hit_short` 233 ns, `aes_gcm_decrypt_64b` 247 ns,
+`aes_gcm_decrypt_64kib` 43.4 µs):
 
 | Bench name               | Expected range | Notes                                                                                                                                                                               |
 | ------------------------ | -------------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -100,7 +107,7 @@ filesystem cost.
 ## 5. A2A coordination performance
 
 The A2A protocol is file-based (JSONL mailbox) with an optional HTTP listener
-for liveness checks. Latency numbers on localhost:
+for liveness checks. Expected latency on localhost (estimates, no recorded run):
 
 - Inbox poll (`file_jsonl` backend): **O(file_size)**. A 100-envelope inbox
   (~50 KB JSONL) parses in **< 5 ms**.
@@ -137,31 +144,28 @@ uncompressed — roughly 10× worse than the release artifact.
 
 ## 7. Memory footprint
 
-Resident set size measured via `ps -o rss=` (Linux) or
-`Get-Process | Select-Object WorkingSet` (PowerShell):
+Expected resident set size (estimates, no recorded run; measure with
+`ps -o rss=` on Linux or `Get-Process | Select-Object WorkingSet` in PowerShell):
 
 - `aphrody --version`: **~5 MB RSS** with the `mimalloc` global allocator.
 - `aphrody doctor`: **~12 MB RSS** (the diagnostic path loads `reqwest` +
   `rustls` for the network probe).
-- Long-running A2A listener: **~15 MB RSS**, stable across an 8-hour grind
-  loop (no leaks observed).
+- Long-running A2A listener: **~15 MB RSS**.
 
-## 8. Comparison to alternatives (honest)
+## 8. Comparison to alternatives (estimates)
 
-Apples-to-oranges — different tools do different things — but useful for
-calibrating expectations:
+Apples-to-oranges — different tools do different things — and none of these
+values comes from a recorded run in this repository:
 
 | Tool                | Cold start | Notes                                                        |
 | ------------------- | ---------: | ------------------------------------------------------------ |
 | `just`              |     ~10 ms | Smaller surface, no diagnostic subcommand.                   |
 | `taskfile`          |     ~50 ms | Go runtime overhead.                                         |
 | `gh`                | ~80-150 ms | Go + HTTP client init.                                       |
-| `aphrody --version` |     ~30 ms | Rust + `mimalloc`; competitive with `just`.                  |
-| `aphrody doctor`    |   < 100 ms | Wider scope than the others; comparable to `gh auth status`. |
+| `aphrody --version` |     ~30 ms | Rust + `mimalloc`.                                           |
+| `aphrody doctor`    |   < 100 ms | Wider scope than the others (network probe included).        |
 
-`aphrody` is competitive with `just` for task-runner use, faster than `gh`
-for environment diagnostics, and the only tool here that also ships an A2A
-coordination protocol.
+Run the recipes in §2 before drawing a ranking from this table.
 
 ## 9. Profiling tips
 

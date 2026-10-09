@@ -79,10 +79,9 @@ nothing to opt out of.
 
 ### How fast is `aphrody doctor`?
 
-Under 50ms on a warm cache for the standard diagnostic profile. For
-local model catalog inspection and diagnostics, `aphrody model doctor`
-runs in under 20ms. The full performance numbers and methodology are
-in [`PERFORMANCE.md`](./PERFORMANCE.md) and [`PERFORMANCE-HISTORY.md`](./PERFORMANCE-HISTORY.md).
+No recorded measurement is committed in this repository. The targets
+(`aphrody doctor` cold start under 100 ms on a warm filesystem) and the
+recipes to measure them are in [`PERFORMANCE.md`](./PERFORMANCE.md) and [`PERFORMANCE-HISTORY.md`](./PERFORMANCE-HISTORY.md).
 
 ### What is the parallel YOLO grind loop?
 

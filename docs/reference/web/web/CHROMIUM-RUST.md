@@ -1,6 +1,6 @@
 # Native Chromium Core (bxc-engine)
 
-Aphrody Web uses a custom, native Rust core for driving Chromium. This architecture replaces legacy wrappers like Puppeteer and Playwright with a direct, high-performance CDP implementation optimized for Bun.
+Aphrody Web uses a custom, native Rust core for driving Chromium. This architecture replaces legacy wrappers like Puppeteer and Playwright with a direct CDP implementation driven from Bun.
 
 ## 🏗 Architecture
 
@@ -14,14 +14,12 @@ The core is built using Rust and integrated into Bun via `bun:ffi`. It consists 
 
 2.  **In-Process V8 Worker**: For the `fast` profile, Aphrody Web utilizes an in-process V8 worker thread. This allows for:
     *   Zero-copy DOM access.
-    *   Sub-50ms JavaScript execution latency.
     *   Native integration with Bun's event loop.
 
 ## 🚀 Performance
 
-By eliminating the overhead of external process communication (JSON-over-WebSocket), Aphrody Web achieves:
-*   **5x faster** CDP command execution compared to Puppeteer.
-*   **3x lower** memory footprint.
+No benchmark against Puppeteer or Playwright is recorded in this repository. What the design changes:
+*   CDP commands are sent from the native core, without a Node.js Puppeteer layer in between.
 *   **Zero-Spawn** capability for static/DOM-only scraping.
 
 ## 🛡 Stealth & Anti-Bot

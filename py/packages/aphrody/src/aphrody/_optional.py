@@ -3,8 +3,8 @@
 """Lazy importers for aphrody's optional (extra-gated) dependencies.
 
 Every heavy third-party dependency is declared in an ``[project.optional-
-dependencies]`` extra rather than in the core dependency set, so the CLI keeps
-a sub-100 ms cold start. Modules therefore import them *inside* the functions
+dependencies]`` extra rather than in the core dependency set, so starting the
+CLI does not import them. Modules therefore import them *inside* the functions
 that need them and surface a single, actionable error when the extra is not
 installed. Centralising those importers here keeps the install hint identical
 everywhere instead of drifting per module.

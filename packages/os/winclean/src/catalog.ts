@@ -2560,7 +2560,7 @@ export const TOOL_CATALOG: ReadonlyArray<{ name: string; description: string; in
   },
   {
     "name": "search_windows",
-    "description": "Effectue une recherche ultra-rapide sur le disque via l'indexeur natif Windows Search.",
+    "description": "Effectue une recherche sur le disque via l'indexeur natif Windows Search.",
     "inputSchema": {
       "type": "object",
       "properties": {

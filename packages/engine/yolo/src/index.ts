@@ -4,7 +4,7 @@
  * Fully leveraging native Bun 1.4+ features:
  * - Bun.file & Bun.write for zero-copy I/O
  * - Bun.Glob for native multithreaded directory traversal across submodules
- * - Bun.hash (wyhash, crc32, cityHash, rapidhash) for instant checksumming
+ * - Bun.hash (wyhash, crc32, cityHash, rapidhash) for checksumming
  * - Bun.TOML, Bun.JSONL, Bun.JSON5, Bun.XML for configuration & structured parsing
  * - Bun.markdown for native GFM rendering
  * - Bun.nanoseconds for sub-microsecond precision benchmarking
@@ -106,7 +106,7 @@ ${header}
   \x1b[32mai list|call <tool> <json>\x1b[0m Shared AI capabilities (same schemas and owner as MCP/API)
   \x1b[32mmcp\x1b[0m                 Alias of the single MCP server (aphrody mcp-server); \x1b[32mtool list|call\x1b[0m hosts the yolo_* tools
   \x1b[32mapi [--port N]\x1b[0m      Serve local HTTP / REST / OpenAPI micro-server (Bun.serve)
-  \x1b[32mweb [build|dev]\x1b[0m     Manage and build the zero-overhead Web & Desktop frontend
+  \x1b[32mweb [build|dev]\x1b[0m     Manage and build the Web & Desktop frontend
   \x1b[32mgenerate [--json]\x1b[0m   Autonomously scan upstream Bun and generate code & capability catalogs
   \x1b[32mparse <file> [--json|--md]\x1b[0m Fast AST & token analysis via Bun file streaming + wyhash
   \x1b[32mdocs [query] [--json|--md]\x1b[0m Search or inspect the Bun docs mirror in docs/reference/upstream-bun

@@ -19,7 +19,7 @@ COMMANDS:
   ai list|call <tool> <json> Shared AI capabilities (same schemas and owner as MCP/API)
   mcp                 Alias of the single MCP server (aphrody mcp-server); tool list|call hosts the yolo_* tools
   api [--port N]      Serve local HTTP / REST / OpenAPI micro-server (Bun.serve)
-  web [build|dev]     Manage and build the zero-overhead Web & Desktop frontend
+  web [build|dev]     Manage and build the Web & Desktop frontend
   generate [--json]   Autonomously scan upstream Bun and generate code & capability catalogs
   parse <file> [--json|--md] Fast AST & token analysis via Bun file streaming + wyhash
   docs [query] [--json|--md] Search or inspect the Bun docs mirror in docs/reference/upstream-bun

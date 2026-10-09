@@ -21,13 +21,13 @@ flowchart TD
 
     subgraph BUN ["2. Bun (Ingestion Furtive, Edge API & Autopilote)"]
         BxcScrape["Scraping Furtif CDP & Lol-HTML"]
-        BunFFI["Bun:FFI (Zéro latence vers Rust cdylib)"]
+        BunFFI["Bun:FFI (appels directs vers Rust cdylib)"]
         McpServer["MCP JSON-RPC 2.0 Stdio / HTTP"]
         YoloOrch["Orchestration Multi-Agents"]
     end
 
     subgraph PYTHON ["3. Python uv (Contextual Enrichment, Reranking & Eval)"]
-        UvFast["uv (Démarrage < 10ms, CPython 3.12+)"]
+        UvFast["uv (CPython 3.12+)"]
         ContextPrep["Contextual Retrieval (Prompt Caching)"]
         Reranker["Cross-Encoder BGE-Reranker-v2-m3"]
         RagasEval["Suite d'Évaluation RAGAS Continue"]
@@ -45,8 +45,8 @@ flowchart TD
 
 ## 2. Rôles et Spécialisations par Langage
 
-### 2.1 Rust — Le Noyau Métal Haute Vélocité
-- **Rôle** : Calcul vectoriel intensif, indexation, stockage in-process et serveur HTTP à latence sub-milliseconde.
+### 2.1 Rust — Le noyau natif
+- **Rôle** : Calcul vectoriel intensif, indexation, stockage in-process et serveur HTTP.
 - **Technologies recommandées** :
   - **Moteur Vectoriel Embarqué** : **LanceDB** (format Apache Arrow columnar, requêtes vectorielles multi-millions en mémoire partagée zéro-copie) pour les gros volumes / multi-modal, et **SQLite WAL + FTS5 + extension SIMD vectorielle** pour le desktop/embarqué léger (< 100k chunks).
   - **Inférence Locale** : `fastembed-rs` et `ort` (ONNX Runtime C++ FFI) pour exécuter `intfloat/multilingual-e5-small` (384d) ou `bge-m3` localement sur GPU (CUDA 13 / TensorRT).
@@ -63,7 +63,7 @@ flowchart TD
 ### 2.3 Python via `uv` — L'Intelligence Sémantique & Évaluation
 - **Rôle** : Enrichissement contextuel des données, modèles complexes de reranking et validation continue de qualité.
 - **Technologies recommandées** :
-  - **Gestionnaire d'environnement** : `uv` (Astral), éliminant les lenteurs de virtualenv/pip avec un cache global et des temps d'installation instantanés.
+  - **Gestionnaire d'environnement** : `uv` (Astral), avec un cache global de paquets.
   - **Enrichissement Contextuel (Anthropic Pattern)** : Génération de 50 à 100 tokens situant chaque fragment dans la structure globale du document, avec **Prompt Caching** pour réduire les coûts d'inférence de 90%.
   - **Reranker** : `BAAI/bge-reranker-v2-m3` ou `cohere-rerank-v3` via FastEmbed ou PyTorch.
   - **Évaluation Continue** : `ragas` (mesure automatique de la fidélité, pertinence des réponses et précision contextuelle).

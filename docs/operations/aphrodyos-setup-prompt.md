@@ -37,7 +37,7 @@ Tu es l'agent d'ingénierie système en charge du déploiement, de la compilatio
 ### PHASE 2 : NOYAU APHRODYOS, FFI & RUNTIMES NATIFS
 1. **Compilation de la couche FFI native** :
    ```sh
-   cargo build --release -p aphrody_ffi
+   cargo build --release -p aphrody-ffi
    ```
    - Vérifier la présence de `target/release/libaphrody_ffi.so` (not in repo) (Linux, build output) ou `aphrody_ffi.dll` (Windows).
 2. **Compilation du binaire multicall canonique `aphrody`** :
@@ -64,7 +64,7 @@ Exécuter les vérifications strictes sur les crates du monorepo :
 3. **Moteur Web Obscura** :
    - `cargo check -p obscura -p obscura-cdp -p obscura-dom`
 4. **Couche UI & Rendu** :
-   - `cargo check -p aphrody-render -p tauri-wrap`
+   - `cargo check -p aphrody-render -p aphrody-tauri-wrap`
 
 ### PHASE 4 : PACKAGES BUN & WORKSPACE TS
 1. **Résolution & synchronisation des dépendances** :
@@ -146,11 +146,11 @@ Exécuter les vérifications strictes sur les crates du monorepo :
   "components": {
     "aphrody_ffi": "COMPILED",
     "aphrody_cli": "INSTALLED",
-    "rust_crates": { "total": 316, "checked": 316, "failures": 0 },
+    "rust_crates": { "total": "<n>", "checked": "<n>", "failures": "<n>" },
     "bun_packages": { "status": "PASS", "typecheck": "PASS", "lint": "PASS" },
     "desktop_app": "READY",
     "docker": { "shenron_bot": "RUNNING", "shenron_site": "RUNNING" },
-    "infra_services": { "systemd_active": 18, "timers_active": 6 },
+    "infra_services": { "systemd_active": "<n>", "timers_active": "<n>" },
     "wireguard_mesh": { "vps": "OK", "dbfr": "OK", "aphro_pc": "OK", "omar_wsl": "PENDING" }
   },
   "next_action": "CONTINUOUS_MONITORING"

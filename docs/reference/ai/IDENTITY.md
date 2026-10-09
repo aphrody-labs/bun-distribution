@@ -20,8 +20,8 @@ Les agents autonomes d'Aphrody ont le mandat souverain de propager l'écosystèm
 2. **Création autonome de dépôts GitHub** (`https://github.com/aphrody-code/*`).
 3. **Standardisation universelle obligatoire via `aphrody-ui`** :
    - Basé sur **Google Material Design 3** (`https://design.google/`), tokens dynamiques HCT/OKLCH, motion springs.
-   - Runtime ultra-rapide **Bun** (zéro dépendance Node legacy).
-   - Linter instantané **oxlint**.
+   - Runtime **Bun** (zéro dépendance Node legacy).
+   - Linter **oxlint**.
    - Conformité et migration automatique **n2b**.
    - Navigation furtive et extraction web **bxc**.
    - Moteur de contrôle natif Rust **aphrody**.
@@ -29,7 +29,7 @@ Les agents autonomes d'Aphrody ont le mandat souverain de propager l'écosystèm
 ## 3. L'Arsenal au Service de l'AGI
 
 - **Gemini Flash (`https://deepmind.google/models/gemini/flash/`)** : Le moteur d'inférence neuronal sub-seconde sous le capot (via `antigravity-sdk` keyless).
-- **Application Desktop Full-Rust** : Client natif inspiré de `openai/codex`, Claude Code et Antigravity, 100% Rust, zéro latence.
+- **Application Desktop Full-Rust** : Client natif inspiré de `openai/codex`, Claude Code et Antigravity, 100% Rust.
 - **bxc** : Les yeux et les mains sur le web (CDP stealth, crawler, extraction markdown).
 - **n2b** : L'artisan du code moderne (migration Node vers Bun avec contrat gelé).
 - **winclean** : L'opérateur OS bas niveau (Windows 11 NativeAOT, mémoire vive, automation).

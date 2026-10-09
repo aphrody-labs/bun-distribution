@@ -5,7 +5,7 @@ build-backend = "maturin"
 [project]
 name = "yolo"
 version = "0.1.0"
-description = "High-performance Python wrapper around YOLO Rust native engine (PyO3 + uv)"
+description = "Python wrapper around YOLO Rust native engine (PyO3 + uv)"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = ["pydantic>=2.8.0", "polars>=1.12.0"]

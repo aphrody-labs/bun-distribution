@@ -237,9 +237,9 @@ Biome (`@biomejs/biome 2.3.12`) remplace ESLint + Prettier pour le lint et le fo
 | STT                        | Whisper (HuggingFace / Python)                 | `aphrody-voice` integre, eventuellement cloud            |
 | Duplication d'etat         | Aucune : le Python est la seule source de verite | Aucune : le Rust est la seule source de verite          |
 | Isolation de crash         | Un crash Python ne tue pas la WebView          | Un panic Rust dans le thread worker ne tue pas le runtime Tauri |
-| Cold start                 | Lent (import PyTorch ~5-30 s sur CPU)          | Rapide (Rust, pas de VM)                                 |
+| Cold start                 | Demarrage du sidecar et import PyTorch (non mesure ici) | Pas de sidecar ni d'interpreteur Python a demarrer (non mesure) |
 
-La difference fondamentale est architecturale : voicebox fait le choix du **sidecar HTTP** pour beneficier de l'ecosysteme Python ML (PyTorch, HuggingFace, Chatterbox, etc.) au prix d'un processus supplementaire et d'une latence de demarrage elevee. aphrody fait le choix de l'**in-process Rust** pour eliminer la latence reseau et le cout de demarrage, mais doit porter les modeles en Rust natif (via ONNX/bindings ou appels cloud).
+La difference fondamentale est architecturale : voicebox fait le choix du **sidecar HTTP** pour beneficier de l'ecosysteme Python ML (PyTorch, HuggingFace, Chatterbox, etc.) au prix d'un processus supplementaire a demarrer. aphrody fait le choix de l'**in-process Rust** pour supprimer le saut HTTP local et le sidecar, mais doit porter les modeles en Rust natif (via ONNX/bindings ou appels cloud).
 
 ---
 

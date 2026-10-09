@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Engineering Research Report: Rust-Python Convergence & Free-Threading (PEP 703)
 
-This research report synthesizes the structural evolution, architectural paradigm shifts, and quantified performance gains arising from the deep convergence between Rust systems programming and modern Python runtimes within the **Aphrody** and **rspyts** ecosystem.
+This research report synthesizes the structural evolution, architectural paradigm shifts, and expected performance effects of the deep convergence between Rust systems programming and modern Python runtimes within the **Aphrody** and **rspyts** ecosystem.
 
 ---
 
@@ -10,8 +10,8 @@ This research report synthesizes the structural evolution, architectural paradig
 Over the 2024–2026 cycle, Python underwent the most significant architectural transformation in its history. This transformation was driven by the convergence of five complementary innovations:
 
 1. **CPython Free-Threaded (PEP 703)**: Eliminating the Global Interpreter Lock (GIL) to enable true multicore parallelism on CPU-bound workloads.
-2. **Astral uv**: Unifying the fragmented packaging ecosystem (pip, poetry, virtualenv, pyenv) into a high-performance native Rust binary.
-3. **Astral ty**: Re-engineering static type checking using the Salsa incremental query engine for sub-millisecond feedback loops.
+2. **Astral uv**: Unifying the fragmented packaging ecosystem (pip, poetry, virtualenv, pyenv) into a native Rust binary.
+3. **Astral ty**: Re-engineering static type checking using the Salsa incremental query engine for incremental feedback loops.
 4. **PyO3 0.29 & Maturin**: Delivering memory-safe bindings with `Bound<'py, T>`, `py.detach()`, and compile-time `Ungil` thread safety.
 5. **Apache Arrow & Polars**: Standardizing in-memory columnar data representations to unlock zero-copy inter-process communication and SIMD analytics.
 
@@ -55,10 +55,10 @@ Under PEP 703, CPython 3.13 and 3.14 provide official free-threaded builds (`pyt
 
 `uv` replaces the Python packaging stack with a unified, high-performance binary:
 - **PubGrub SAT Solver**: Resolves dependency graphs in milliseconds using the PubGrub algorithm with conflict-driven clause learning.
-- **Content-Addressable Storage (CAS)**: Package wheels are cached globally in content-addressed directories. Installations into workspace virtual environments use filesystem hardlinks or reflinks (copy-on-write on Btrfs, XFS, and APFS), making environment creation instantaneous without duplicating disk storage.
+- **Content-Addressable Storage (CAS)**: Package wheels are cached globally in content-addressed directories. Installations into workspace virtual environments use filesystem hardlinks or reflinks (copy-on-write on Btrfs, XFS, and APFS), so environment creation does not duplicate disk storage.
 - **Deterministic Workspace Synchronization**: A single `uv.lock` coordinates all workspace members with reproducible cross-platform hashes.
 
-### Pillar 3: Astral Ty & Sub-Millisecond Typing
+### Pillar 3: Astral Ty & Incremental Typing
 
 Modern codebases require real-time type verification in IDE loops:
 - **Salsa Incremental Engine**: `ty` is built on the same incremental computation framework as `rust-analyzer`. Edits invalidate only the affected functions and downstream dependencies rather than re-parsing entire ASTs.
@@ -81,21 +81,10 @@ Data-intensive applications require cross-language data interchange without seri
 
 ---
 
-## 3. Quantified Performance Benchmarks
+## 3. Performance Measurements
 
-Empirical benchmarks comparing the legacy Python stack against the unified Rust-Python (`rspyts` / Aphrody) architecture:
-
-| Benchmark Scenario | Legacy Stack (Python + C++ / Poetry) | Modern Polyglot Stack (Rust + uv + Bun + OXC) | Improvement Factor |
-| :--- | :--- | :--- | :--- |
-| **Lint & Format Time** | 8.5s (ESLint + Prettier + Flake8) | 31ms (`oxlint` + `oxfmt` + `ruff`) | **~270x faster** |
-| **Dependency Resolution & Lock** | 18.0s (`poetry update`) | 0.25s (`uv lock`) | **~72x faster** |
-| **Vector Similarity (1M f64 vectors)** | 480ms (Pure Python loop) | 5.6ms (`aphrody_rust` Rayon SIMD) | **~85x faster** |
-| **FFI Call Overhead from JS Runtime** | 12.0ms (Node.js C++ N-API) | 0.9ms (`bun:ffi` raw pointers) | **~13x faster** |
-| **Isolated Wheel Packaging & Test** | ~12.5s per package | 0.85s (isolated `uv` virtualenv) | **~15x faster** |
-| **Desktop Application Binary Size** | 165 MB (Electron) | 14 MB (Tauri 3 Alpha) | **~12x smaller** |
-
-### Benchmark Analysis & Findings
-
-1. **Toolchain Latency Elimination**: Replacing JavaScript and interpreted Python linting/formatting with native Rust equivalents (`ruff`, `oxlint`, `oxfmt`) reduces CI and pre-commit hook runtimes from seconds to tens of milliseconds, eliminating developer context switching.
-2. **Deterministic Multi-Core Scaling**: Vector normalization and reciprocal rank fusion operations scale linearly across available CPU cores under Rayon work-stealing, achieving sub-6ms latencies on million-element datasets.
-3. **Storage and Memory Efficiency**: The combination of `uv` CAS reflinks and Arrow zero-copy memory transfers cuts test memory usage by over 60% while speeding up virtual environment initialization by more than an order of magnitude.
+No benchmark in this repository backs the comparison figures that used to stand here
+(lint time, `uv lock`, vector similarity, FFI call overhead, wheel packaging, binary size);
+they were removed. The only recorded Rust-versus-Python kernel measurement is J22 in
+[`docs/plans/vu/PLAN.md`](../../docs/plans/vu/PLAN.md) (`scripts/bench-kernels.py`, 20 000 x 384 float32,
+best of 7): Rust similarities 5.3 ms against NumPy 7.9 ms, Rust normalize 47.5 ms against NumPy 7.1 ms.

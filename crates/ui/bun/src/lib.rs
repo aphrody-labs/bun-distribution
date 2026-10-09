@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #![deny(clippy::all, clippy::undocumented_unsafe_blocks)]
 
-//! Bun-RS FFI module. Exposes optimized C-ABI functions to Bun applications
-//! using `bun:ffi` for maximum performance and zero overhead.
+//! Bun-RS FFI module. Exposes C-ABI functions to Bun applications
+//! through `bun:ffi`.
 
 use std::ffi::c_char;
 

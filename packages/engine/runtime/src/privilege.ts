@@ -34,7 +34,7 @@ if (process.platform !== "win32") {
 
 /**
  * Checks whether the current process is running with elevated privileges (root or Administrator).
- * Uses zero-latency FFI to libc on Unix when available.
+ * Calls libc `geteuid` through FFI on Unix when available.
  */
 export function isElevated(): boolean {
   if (process.platform === "win32") {

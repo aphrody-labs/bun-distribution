@@ -16,7 +16,7 @@ the repository on each session and holds no secret. Status: the layout and comma
    Run `bun scripts/dev/cloud-agent-home.ts --apply` (automated by `cloud-setup.sh` and `entrypoint.sh`).
    It creates the directory hierarchy, seeds `AGENTS.md`, `TOOLS.md`, `SOUL.md`, `IDENTITY.md`, `USER.md`,
    `HEARTBEAT.md`, `BOOT.md`, `BOOTSTRAP.md` (templates: `crates/ai/agent-home/templates`), creates `CONTEXT.md`,
-   and runs a strict security audit ensuring zero credentials, private keys or cookies exist in the home.
+   and flags files whose names look like credentials, private keys or cookies in the home (exit 1 if any).
    Alternatively with the binary:
    `aphrody oc-onboard --non-interactive --accept-risk --workspace "$APHRODY_HOME/workspaces/aphrody"`.
 5. Context: keep the repository's `AGENTS.md`, `MEMORY.md`, `PLAN.md` and

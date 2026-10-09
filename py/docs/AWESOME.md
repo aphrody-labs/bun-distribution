@@ -40,8 +40,8 @@ Curated reference of high-performance technologies, libraries, and canary-grade 
 ## 4. Bun & Native TypeScript Runtime
 
 - **[Bun](https://bun.sh)** (`v1.4.2+`): All-in-one JavaScript and TypeScript runtime written in Zig, providing an embedded bundler, test runner, package manager, and HTTP server.
-- **`bun:ffi`**: Zero-overhead foreign function interface for calling native C (`extern "C"`) libraries directly by passing memory pointers (`ptr(TypedArray)`), bypassing N-API wrappers.
-- **TypeScript 7**: Modernized high-velocity compiler engine providing strict type checking and instantaneous completion for FFI signatures.
+- **`bun:ffi`**: Foreign function interface for calling native C (`extern "C"`) libraries directly by passing memory pointers (`ptr(TypedArray)`), bypassing N-API wrappers.
+- **TypeScript 7**: Native compiler engine providing strict type checking and completion for FFI signatures.
 
 ---
 

@@ -63,7 +63,7 @@ Les outils (`pytest`, `ruff`) sont déclarés dans le groupe PEP 735
 3. **Robustesse réseau** :
    - Les appels réseaux vers les API Google ou d'autres endpoints externes doivent toujours implémenter un mécanisme de retry automatique avec exponential backoff et jitter (gérant spécifiquement HTTP 429 et 503).
 4. **Optimisation du démarrage** :
-   - Pour garantir un boot ultra-rapide (<100ms) de la CLI, utilisez systématiquement le **lazy-loading (chargement différé)** pour les imports lourds (ex: `httpx`, `fastembed`, `numpy`) à l'intérieur des fonctions ou méthodes spécifiques qui en ont besoin, plutôt qu'au niveau du module.
+   - Pour garder un démarrage court de la CLI (objectif < 100 ms, à mesurer), utilisez systématiquement le **lazy-loading (chargement différé)** pour les imports lourds (ex: `httpx`, `fastembed`, `numpy`) à l'intérieur des fonctions ou méthodes spécifiques qui en ont besoin, plutôt qu'au niveau du module.
 
 ---
 

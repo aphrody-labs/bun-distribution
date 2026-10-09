@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Read-only adapter for the Google desktop companion app's `local_files.db`.
 //!
-//! Exposes sub-millisecond full-text search (SQLite FTS5) over the user's
+//! Exposes full-text search (SQLite FTS5) over the user's
 //! local filesystem pre-indexed by the Google Windows App (WGA).
 //! Metadata-only, privacy-bounded, opened strictly in read-only mode (`PRAGMA query_only = ON;`).
 

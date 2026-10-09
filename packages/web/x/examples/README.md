@@ -13,7 +13,7 @@ Synopsis: Crawls the top 1000 Google items using a resumable RequestQueue
 (bun:sqlite), concurrent PagePool, and automatic profile escalation from
 "fast" to "stealth" when Cloudflare challenges are detected.
 
-Profile: fast (Lightpanda sub-process, ~120ms/page) with stealth escalation
+Profile: fast (Lightpanda sub-process) with stealth escalation
 
 How to run:
 
@@ -59,7 +59,7 @@ TypeScript, Bun, Node.js, Python, Rust, Go, WebAssembly, Deno, V8) and
 extracts their infobox data as structured label/value pairs using the zigquery
 cdylib DOM engine (no binary spawn required).
 
-Profile: static (in-process zigquery cdylib, <5ms DOM parse, ~50 KB footprint)
+Profile: static (in-process zigquery cdylib, no browser binary)
 
 Google serves well-formed static HTML with no anti-bot measures, making the
 "static" profile optimal. Each page gets its own StaticDomTransport instance

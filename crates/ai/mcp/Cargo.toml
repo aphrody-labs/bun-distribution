@@ -7,7 +7,7 @@ authors.workspace     = true
 license.workspace     = true
 homepage.workspace    = true
 repository.workspace  = true
-description           = "aphrody-mcp — unified Rust MCP stdio server. Pure Rust, sub-millisecond cold-start."
+description           = "aphrody-mcp — unified Rust MCP stdio server. Pure Rust."
 
 # Library only: the `aphrody-mcp` entry point (`aphrody_mcp::cli_main`) is dispatched by the
 # `aphrody` multi-call binary (symlink `aphrody-mcp` or `aphrody mcp-server`).

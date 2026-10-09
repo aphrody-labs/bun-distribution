@@ -472,7 +472,7 @@ Notre monorepo dispose de trois briques logicielles majeures écrites en Rust qu
 
 ### 6.1 Crate `crates/ai/mcp` (`aphrody-mcp`)
 
-- **Binaire produit :** `aphrody-mcp` (6.5 Mo, compilation pure Rust, cold-start < 1 ms).
+- **Binaire produit :** `aphrody-mcp` (6.5 Mo, compilation pure Rust).
 - **Architecture :** Construit sur le framework `rmcp` avec macro `#[tool_router]`.
 - **Mode Double (Serveur & Client) :**
   - **Serveur stdio :** Expose les outils système de la machine locale (`screen_capture`, `bxc_fetch`, `re_triage`, `firefly_generate`, `photoshop_live_*`).

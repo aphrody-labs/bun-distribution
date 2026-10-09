@@ -7,7 +7,7 @@ Synthèse issue des recherches de pointe menées sur l'évolution des architectu
 ## 1. Contexte : La « Rustification » des Fondations de Python
 L'écosystème Python a franchi un point de bascule historique avec l'arrivée conjointe de :
 1. **CPython Free-Threaded (PEP 703)** : Suppression définitive du verrou global de l'interpréteur (GIL).
-2. **Astral uv** : Unification complète du packaging en binaire natif Rust ultra-rapide.
+2. **Astral uv** : Unification complète du packaging en binaire natif Rust.
 3. **Astral ty** : Vérificateur de types basé sur le framework incrémental Rust Salsa.
 4. **PyO3 `Bound<'py, T>`** : Sécurité de pointeur et gestion fine de la mémoire partagée.
 
@@ -48,7 +48,7 @@ L'écosystème Python a franchi un point de bascule historique avec l'arrivée c
 - Utilisation de *hardlinks* et de *reflinks* (sur Btrfs/XFS/APFS) permettant d'installer des milliers de dépendances en quelques dizaines de millisecondes sans dupliquer l'espace disque.
 - Résolution universelle par le solveur SAT `PubGrub`.
 
-### Pilier 3 : Astral Ty et le typage sub-milliseconde
+### Pilier 3 : Astral Ty et le typage incrémental
 - Architecture paresseuse basée sur la bibliothèque Rust `salsa` (la même qui propulse `rust-analyzer`).
 - Traitement incrémental de l'AST ne recalculant que les fonctions modifiées.
 - Support natif des modèles Pydantic V2 et des types d'intersection stricts.
@@ -64,12 +64,10 @@ L'écosystème Python a franchi un point de bascule historique avec l'arrivée c
 
 ---
 
-## 3. Quantification des Gains de Performance
+## 3. Mesures de performance
 
-| Métrique | Stack Classique (Python + C++ / Poetry) | Stack YOLO (Rust + UV + Bun + OXC) | Facteur d'Amélioration |
-| :--- | :--- | :--- | :--- |
-| **Temps de Lint & Fmt** | 8.5s (ESLint + Prettier + Flake8) | 31ms (`oxlint` + `oxfmt` + `ruff`) | **~270x plus rapide** |
-| **Résolution des Dépendances** | 18s (`poetry update`) | 0.25s (`uv lock`) | **~72x plus rapide** |
-| **Calcul Vectoriel (1M f64)** | 480ms (Boucle Python native) | 5.6ms (`yolo-core` Rayon) | **~85x plus rapide** |
-| **Appel FFI depuis JS** | 12ms (Node.js C++ Addon) | 0.9ms (`bun:ffi` direct zero-copy) | **~13x plus rapide** |
-| **Poids Binaire Desktop** | 165 Mo (Electron) | 14 Mo (Tauri 3 Alpha) | **~12x plus léger** |
+Aucun benchmark du dépôt n'étayait le tableau comparatif qui figurait ici (lint, `uv lock`,
+calcul vectoriel, appel FFI, poids binaire) ; il a été retiré. La seule mesure Rust contre Python
+enregistrée est J22 dans [`docs/plans/vu/PLAN.md`](../../plans/vu/PLAN.md) (`scripts/bench-kernels.py`,
+20 000 x 384 float32, meilleur de 7) : similarités Rust 5,3 ms contre NumPy 7,9 ms, normalisation Rust
+47,5 ms contre NumPy 7,1 ms.

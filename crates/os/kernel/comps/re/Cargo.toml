@@ -61,7 +61,7 @@ iced-x86   = { workspace = true }
 memchr     = { workspace = true }
 # Structured pattern extraction (OAuth IDs, endpoints, version strings).
 regex      = { workspace = true }
-# Zero-cost memory layout validation + safe casting (BSD-2-Clause OR Apache-2.0).
+# Compile-time memory layout validation + safe casting (BSD-2-Clause OR Apache-2.0).
 # Used in aphrody_re::headers for zero-copy ELF/PE magic header inspection.
 zerocopy   = { workspace = true }
 # Google Magika ML file-type classifier (Apache-2.0). Optional: links ONNX

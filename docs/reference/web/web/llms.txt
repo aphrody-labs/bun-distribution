@@ -1,12 +1,12 @@
 # Aphrody Web: Zero-Spawn Browser Engine for AI Agents
 
-Aphrody Web (Browser-X) is a native, zero-spawn, high-performance web browser automation engine designed for the Bun runtime. By combining a Rust-compiled FFI bridge, native Zig DOM bindings, and stealth browser profiles, Aphrody Web achieves sub-millisecond execution times for AI agents.
+Aphrody Web (Browser-X) is a native, zero-spawn web browser automation engine designed for the Bun runtime. By combining a Rust-compiled FFI bridge, native Zig DOM bindings, and stealth browser profiles, Aphrody Web runs browser automation for AI agents inside the Bun process.
 
 ## Core Capabilities
 - **Zero-Spawn**: Native, in-process Chromium CDP and Static DOM transports. No heavy Puppeteer/Playwright headless processes.
 - **Stealth Profiles**: Automated Cloudflare and Turnstile bot bypass using Ghost browsers, custom fingerprinted V8 profiles, and automated human-interaction click models.
 - **Unified Command Profiles**: Supported web commands use five profiles:
-  - `static`: Extremely fast, in-process HTML parser & DOM selector.
+  - `static`: In-process HTML parser & DOM selector (no JavaScript execution).
   - `fast`: Full JS execution using the lightweight Lightpanda WebAssembly browser.
   - `http`: Direct TLS-fingerprinted raw HTTP requests (`curl-impersonate`).
   - `stealth`: Ghost browser with stealth headers, user-agents, and fingerprint patches.
@@ -28,7 +28,7 @@ import { Browser } from "@aphrody/bxc";
 // Initialize stealth browser
 const page = await Browser.newPage({ profile: "stealth" });
 
-// Sub-millisecond navigation
+// Navigate
 await page.goto("https://example.com");
 
 // Extract clean markdown for LLM context

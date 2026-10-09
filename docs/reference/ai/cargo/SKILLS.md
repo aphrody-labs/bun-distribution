@@ -99,7 +99,7 @@ No skills — these wire LSP servers into the harness.
 | `build`                              | Build the WinClean monorepo (Turborepo)           |
 | `debloat`                            | Purge telemetry + bloatware via payload scripts   |
 | `profile`                            | Generate dev environment profile                  |
-| `scan`                               | Ultra-fast streaming scan of Windows install      |
+| `scan`                               | Streaming scan of Windows install                 |
 | `cartographer`                       | Map codebases via parallel subagents              |
 | `cpp-pro`                            | Modern C++ idioms (RAII, smart ptrs, STL)         |
 | `csharp-aot`                         | .NET 10 NativeAOT zero-alloc best practices       |

@@ -118,7 +118,7 @@ In the native PyO3 layer:
 When transferring large structured tabular or columnar datasets:
 - Use the **Apache Arrow C Data Interface** or **Arrow IPC streaming format**.
 - Arrow buffers share memory pages between Rust and Python without copying.
-- In Python, wrap Arrow memory structures into high-performance Polars DataFrames using `pl.from_arrow()` for zero-overhead analytical operations.
+- In Python, wrap Arrow memory structures into Polars DataFrames using `pl.from_arrow()` without copying the buffers.
 
 ### Bun TypeScript Zero-Copy FFI (`bun:ffi`)
 
@@ -168,21 +168,21 @@ All compiled PyO3 and C-ABI modules must be accompanied by an exhaustive `.pyi` 
 
 ---
 
-## 5. High-Velocity Toolchain & Code Quality
+## 5. Toolchain & Code Quality
 
-Development velocity is enforced by sub-millisecond Rust-native linters and task runners.
+Linting, formatting and type checks run through Rust-native tools.
 
 ### Ruff & Astral Ty Integration
 
 - **Ruff**: Enforces strict code formatting, import sorting, and linting rules (target Python 3.12+).
-- **Astral Ty**: Fast static type analysis leveraging Salsa incremental computation.
+- **Astral Ty**: Static type analysis leveraging Salsa incremental computation.
 - Configuration resides centrally in [pyproject.toml](../pyproject.toml) under `[tool.ruff]` and `[tool.ty]`.
 
 ### OXC Toolchain for Web & Hybrid Components
 
 Where TypeScript or web interfaces are developed alongside Python services:
 - Replace ESLint and Prettier with `oxlint` and `oxfmt`.
-- Lint passes execute in **~25ms**, providing near-instant feedback in local loops and continuous integration.
+- Run them in local loops and in continuous integration with the same configuration.
 
 ---
 

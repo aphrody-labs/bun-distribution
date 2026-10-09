@@ -16,7 +16,7 @@ The workspace unifies high-performance systems programming with productive Pytho
 
 2. **Astral uv Package Management**:
    - Monorepo workspace governed by `uv.lock` with deterministic SAT resolution via the `PubGrub` algorithm.
-   - Global content-addressable storage (CAS) leveraging filesystem hardlinks and reflinks for near-instant installation.
+   - Global content-addressable storage (CAS) leveraging filesystem hardlinks and reflinks so installs do not copy package files.
    - Pinned minimum uv version (`==0.12.22`) enforcing reproducible dependency trees across developers and CI.
 
 3. **Free-Threaded CPython (PEP 703 No-GIL)**:
@@ -29,10 +29,10 @@ The workspace unifies high-performance systems programming with productive Pytho
    - Direct exposure of contiguous memory slices (`&[f32]`, `&[f64]`) via Python buffer protocol (`bytes`, `bytearray`, `memoryview`) and Arrow IPC record batches.
    - Direct compatibility with Polars DataFrames for analytical queries.
 
-5. **Sub-Millisecond Developer Toolchain**:
-   - Code formatting and linting powered by **Ruff** (sub-30ms execution).
-   - Fast type analysis configured with **Astral Ty** rules and **mypy** strict typing.
-   - Unified task orchestration powered by **Bun** for instant script dispatch.
+5. **Rust-Native Developer Toolchain**:
+   - Code formatting and linting powered by **Ruff**.
+   - Type analysis configured with **Astral Ty** rules and **mypy** strict typing.
+   - Unified task orchestration powered by **Bun**.
 
 ---
 

@@ -22,7 +22,9 @@ There is no `release-perf`, `release-min`, or `release-android` profile. WASM an
 
 ## 2. Profile selection matrix
 
-| Use case | Profile | Compile time | Binary size | Runtime perf |
+Compile times and runtime ratios below are rough estimates, not recorded measurements.
+
+| Use case | Profile | Compile time (est.) | Binary size | Runtime perf (est.) |
 |---|---|---|---|---|
 | Local dev | `dev` | seconds | large | slow |
 | CI fast smoke | `release-fast` | ~1 min | medium | ~80% of release |
@@ -40,7 +42,7 @@ Settings from the root manifest:
 - `dev`: opt-level 0, lto off, codegen-units 256, panic unwind, debug "limited", incremental, split-debuginfo unpacked. Build scripts and deps overridden to opt-level 3 / 1.
 - `release`: opt-level 3, lto "fat", codegen-units 1, panic abort, strip symbols, debug false, incremental false, rpath false.
 - `dist`: inherits `release`, identical today, reserved for PGO/BOLT.
-- `release-fast`: inherits `release` with `lto = "thin"`, `codegen-units = 16`. ~20% runtime cost for 3-5x faster builds.
+- `release-fast`: inherits `release` with `lto = "thin"`, `codegen-units = 16`: shorter builds than `release` at some runtime cost (not measured here).
 - `release-debug`: inherits `release` with `debug = "line-tables-only"`, `strip = "none"`, `split-debuginfo = "packed"`. For `perf`, ETW, samply.
 - `bench`: inherits `release` with thin LTO, codegen-units 16, line-table debug.
 - `asan`: inherits `release-debug`, opt-level 1, debug full, lto off. Pair with `RUSTFLAGS="-Z sanitizer=address"`.

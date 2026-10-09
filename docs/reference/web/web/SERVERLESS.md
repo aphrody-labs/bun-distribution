@@ -1,13 +1,13 @@
 # Aphrody Web — Serverless
 
 Aphrody Web ships a single-file fetch handler designed for short-lived,
-sub-second serverless invocations. Cold-start budget is dominated by the
-Bun runtime itself plus lazy-loaded modules — typically 100–250 ms on
-warm Vercel/AWS Bun functions.
+short serverless invocations. Cold start is dominated by the Bun runtime
+itself plus lazy-loaded modules. The cold-start column below is an estimate,
+not a recorded measurement.
 
 ## Compatibility matrix
 
-| Target                             | Profile      | Cold-start | Notes                                    |
+| Target                             | Profile      | Cold-start (est.) | Notes                             |
 | ---------------------------------- | ------------ | ---------- | ---------------------------------------- |
 | Vercel Functions (`runtime: "bun"`)| `http`       | ~150 ms    | Best fit — full Bun + FFI                |
 | AWS Lambda (Bun layer)             | `http`       | ~200 ms    | Provided runtime / Bun layer required    |
@@ -92,7 +92,8 @@ export const handler = async (event: { rawPath: string; queryStringParameters?: 
   imported lazily on the first matching request.
 - The handler reuses one HTTP page per request and closes it in `finally`.
 - The Google rich-search route uses a 5-min in-memory cache by default —
-  warm invocations within the same instance return in <5 ms.
+  warm invocations within the same instance are served from that cache
+  without a network request.
 
 ## Limits
 

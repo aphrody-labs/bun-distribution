@@ -3361,7 +3361,7 @@ export abstract class GeneratedTools {
   }
 
   /**
-   * Effectue une recherche ultra-rapide sur le disque via l'indexeur natif Windows Search.
+   * Effectue une recherche sur le disque via l'indexeur natif Windows Search.
    */
   searchWindows(args: SearchWindowsArgs): Promise<ToolResult> {
     return this.call("search_windows", args);

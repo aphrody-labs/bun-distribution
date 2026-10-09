@@ -23,8 +23,9 @@
  *
  * Profile choice: "static"
  * Google serves well-formed static HTML with no anti-bot protections for
- * reasonable request rates. The static profile is 5-10x faster than "fast"
- * (Lightpanda sub-process) for pure DOM extraction tasks.
+ * reasonable request rates. The static profile parses the HTML in-process and
+ * does not start the Lightpanda sub-process that "fast" needs, which is enough
+ * for pure DOM extraction tasks.
  *
  * Usage:
  *   bun run examples/wikipedia-infobox-extractor.ts

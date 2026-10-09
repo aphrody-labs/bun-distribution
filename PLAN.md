@@ -60,7 +60,7 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 | code-graph | Python/TS extractors and `scripts/audit/ai/graph-parity.ts`; Graphify stays the parity oracle |
 | Publication | npm `@aphrody/*`, crates.io (316 crates: metadata, `publish = false`, path versions, 14 taken names), PyPI |
 | Repository hygiene | Archive absorbed GitHub repos and integrated forks; deprecate absorbed npm packages; prune stale worktrees |
-| Known failures | `web:verify`, 4 `packages/engine/yolo` tests (`libaphrody_ffi` absent), `aphrody infra validate` |
+| Known failures | `web:verify`, 4 `packages/engine/yolo` tests (`libaphrody_ffi` absent), `aphrody infra validate`, global typecheck (reported fixed on 2026-10-08 without a reproduced run) |
 
 ## Success
 

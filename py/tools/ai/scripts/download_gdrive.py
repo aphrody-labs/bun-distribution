@@ -7,7 +7,7 @@
 # ]
 # ///
 
-"""Ultra-fast concurrent Google Drive recursive folder downloader.
+"""Concurrent Google Drive recursive folder downloader.
 
 Uses `gdown` for listing public Google Drive folders and resolving directories,
 and downloads files concurrently using a thread pool with visual progress bars.
@@ -27,7 +27,7 @@ from tqdm import tqdm
 def main():
     """Parse the CLI arguments and run the concurrent download."""
     parser = argparse.ArgumentParser(
-        description="Ultra-fast Google Drive recursive folder downloader using parallel workers."
+        description="Google Drive recursive folder downloader using parallel workers."
     )
     parser.add_argument("url_or_id", help="Google Drive folder URL or folder ID.")
     parser.add_argument(

@@ -92,13 +92,13 @@ Intégration transparente dans les shells **Nushell** (`config.nu`) et **PowerSh
 | Commande | Remplacement | Outil Rust 2026 | Usage Clé & Exemple |
 |---|---|---|---|
 | `nu` | `powershell` / `cmd` | **Nushell v0.115.1** | Shell structuré : `ls \| where size > 10MB \| sort-by modified` |
-| Prompt | Prompt Windows | **Starship v1.26.0** | Prompt contextuel instantané avec indication git, bun, rustc. |
+| Prompt | Prompt Windows | **Starship v1.26.0** | Prompt contextuel avec indication git, bun, rustc. |
 | `y`, `fm` | Explorer / Ranger | **Yazi v26.5.6** | `y` : explorateur TUI asynchrone ; change de dossier au `q`. |
 | `ls`, `l`, `ll`| `dir` / GNU `ls` | **Eza v0.23.5** | `ll` : liste détaillée avec icônes, statuts git, format relatif. |
 | `cat`, `type` | `type` / GNU `cat` | **Bat v0.26.1** | `cat main.rs` : coloration syntaxique Material Theme et git diff. |
-| `grep`, `rg` | `findstr` / `grep` | **Ripgrep v15.2.0** | `rg "fn parse" crates/` : recherche instantanée sur tout le monorepo. |
+| `grep`, `rg` | `findstr` / `grep` | **Ripgrep v15.2.0** | `rg "fn parse" crates/` : recherche sur tout le monorepo. |
 | `find`, `fd` | GNU `find` | **Fd v10.5.0** | `fd -e rs model` : recherche de fichiers `.rs` contenant `model`. |
-| `z` | `cd` | **Zoxide v0.10.0** | `z aph` : saut instantané vers `%USERPROFILE%\aphrody`. |
+| `z` | `cd` | **Zoxide v0.10.0** | `z aph` : saut vers `%USERPROFILE%\aphrody`. |
 | `sk` | `fzf` | **Skim v0.16.0** | `sk` : filtre interactif flou sur stdin/stdout. |
 | `top`, `btm` | Task Manager / `htop` | **Bottom v0.14.9** | `top` / `btm` : moniteur CPU, GPU RTX 4070, RAM et processus. |
 | `ps` | `tasklist` | **Procs v0.14.12** | `ps aphrody` : inspection moderne de processus avec ports d'écoute. |
@@ -112,12 +112,12 @@ Intégration transparente dans les shells **Nushell** (`config.nu`) et **PowerSh
 | `jj` | `git` / `hg` | **Jujutsu v0.28.0** | `jj status` : VCS nouvelle génération compatible Git. |
 | `hx` | `vim` / `neovim` | **Helix v25.07.1** | `hx src/lib.rs` : éditeur modal moderne avec LSP intégré. |
 | `hex` | `hexdump` | **Hexyl v0.17.0** | `hex binary.bin` : visualiseur hexadécimal coloré par type. |
-| `tldrp` | `man` pages | **Tealdeer v1.9.0** | `tldrp tar` : exemples de commandes instantanés depuis le cache. |
+| `tldrp` | `man` pages | **Tealdeer v1.9.0** | `tldrp tar` : exemples de commandes depuis le cache. |
 | `bench` | `time` | **Hyperfine v1.20.0** | `bench 'bun test' 'cargo check'` : benchmark statistique comparatif. |
 | `ping` | `ping` | **Gping v1.21.0** | `ping 1.1.1.1` : graphique de latence dynamique en terminal. |
 | `trip` | `traceroute` | **Trippy v0.12.0** | `trip 8.8.8.8` : diagnostic réseau interactif traceroute/ping. |
 | `xh` | `curl` / `httpie` | **xh v0.26.2** | `xh get https://api.aphrody.com/v1/health` : requêtes HTTP ergonomiques. |
-| `qsv` | `csvkit` | **qsv v0.135.0** | `qsv stats data.csv` : manipulation ultra-rapide de tables CSV. |
+| `qsv` | `csvkit` | **qsv v0.135.0** | `qsv stats data.csv` : manipulation de tables CSV. |
 | `br` | `tree` | **Broot v1.60.1** | `br` : explorateur d'arborescence interactif. |
 | `zellij` | `tmux` | **Zellij v0.45.1** | `zellij` : sessions terminal multi-volets avec WASM. |
 | `mise` | `asdf` / `nvm` | **Mise v2026.9.5** | `mise use rust@latest` : gestionnaire d'environnements polyglottes. |
@@ -125,4 +125,4 @@ Intégration transparente dans les shells **Nushell** (`config.nu`) et **PowerSh
 | `numbat` | `bc` / `calc` | **Numbat v1.14.0** | `numbat` : calculs physiques typés (`500 W * 2 hours -> kWh`). |
 | `mdcat` | `cat` markdown | **mdcat v2.16.1** | `mdcat README.md` : affichage Markdown riche dans le terminal. |
 | `rerun` | — | **Rerun v0.37.2** | `rerun` : visualiseur egui 3D/2D de tenseurs et maillages. |
-| `typst` | `pdflatex` | **Typst v0.15.1** | `typst compile doc.typ` : compilation de documents instantanée. |
+| `typst` | `pdflatex` | **Typst v0.15.1** | `typst compile doc.typ` : compilation de documents. |

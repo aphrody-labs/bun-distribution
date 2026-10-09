@@ -195,7 +195,7 @@ export const EN_CATALOG: I18nSchema = {
     palettes: "13 Tonal Dynamic Palettes",
     color_roles: "Material 3 Color Roles Derivation",
     native_cdylib: "Compiled Native Library aphrody-ffi",
-    bun_ffi_bridge: "Zero-Overhead Bun FFI Bridge (@aphrody/bun)",
+    bun_ffi_bridge: "Bun FFI Bridge (@aphrody/bun)",
   },
   errors: {
     network_unreachable: "Remote network endpoint is unreachable.",
@@ -368,7 +368,7 @@ export const FR_CATALOG: I18nSchema = {
     palettes: "13 palettes tonales dynamiques",
     color_roles: "Dérivation des rôles de couleur Material 3",
     native_cdylib: "Bibliothèque native compilée aphrody-ffi",
-    bun_ffi_bridge: "Pont FFI Bun à coût nul (@aphrody/bun)",
+    bun_ffi_bridge: "Pont FFI Bun (@aphrody/bun)",
   },
   errors: {
     network_unreachable: "Le point de terminaison réseau distant est injoignable.",
