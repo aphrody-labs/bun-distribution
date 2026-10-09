@@ -141,24 +141,8 @@
           "reason": "build output of a non-git Shenron copy, rebuildable"
         },
         {
-          "path": "shenron-release/target",
-          "reason": "build output of a non-git Shenron copy, rebuildable"
-        },
-        {
-          "path": "shenron-release/node_modules",
-          "reason": "build output of a non-git Shenron copy, rebuildable"
-        },
-        {
-          "path": "shenron-release/dist",
-          "reason": "build output of a non-git Shenron copy, rebuildable"
-        },
-        {
-          "path": "shenron-xenoverse-map/target",
-          "reason": "build output of a non-git Shenron copy, rebuildable"
-        },
-        {
-          "path": "shenron-xenoverse-map/node_modules",
-          "reason": "build output of a non-git Shenron copy, rebuildable"
+          "path": ".cache/uv",
+          "reason": "uv download and build cache, re-fetched on demand"
         }
       ],
       "tmp": {
