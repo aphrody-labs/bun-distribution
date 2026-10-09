@@ -79,6 +79,20 @@ enum Command {
         #[arg(default_value = "{}")]
         arguments: String,
     },
+    /// Run a program with administrator rights and no new console window: inline Sudo for
+    /// Windows, the UAC prompt (hidden program window) when sudo is not inline, sudo-rs or sudo on
+    /// Unix, directly when already elevated. Exits with the program's exit code.
+    Elevate {
+        /// Print the detected elevation path as JSON instead of running a program.
+        #[arg(long)]
+        probe: bool,
+        /// Working directory of the elevated program (default: the current directory).
+        #[arg(long)]
+        cwd: Option<std::path::PathBuf>,
+        /// Program followed by its arguments (put `--` before arguments that start with `-`).
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true, value_name = "PROGRAM")]
+        command: Vec<std::ffi::OsString>,
+    },
 }
 
 /// The kernel hosted inside the single MCP server (`aphrody-mcp`): every built-in subsystem, the
@@ -251,6 +265,22 @@ async fn request(
     Ok(client.request(method, params, Duration::from_secs(600)).await?)
 }
 
+/// `elevate`: the detected path as JSON with `--probe`, otherwise the program's exit code.
+fn elevate(
+    probe: bool,
+    cwd: Option<&std::path::Path>,
+    command: &[std::ffi::OsString],
+) -> anyhow::Result<i32> {
+    if probe {
+        let path = aphrody_proc::Elevation::detect()?;
+        print(&json!({ "elevated": aphrody_proc::is_elevated(), "path": path.label() }))?;
+        return Ok(0);
+    }
+    let (program, args) =
+        command.split_first().ok_or_else(|| anyhow::anyhow!("elevate: missing PROGRAM"))?;
+    Ok(aphrody_proc::run_elevated(program, args, cwd)?)
+}
+
 fn print(value: &Value) -> anyhow::Result<()> {
     println!("{}", serde_json::to_string_pretty(value)?);
     Ok(())
@@ -344,6 +374,11 @@ async fn run(cli: Cli) -> anyhow::Result<i32> {
             )
             .await?,
         )?,
+        Command::Elevate { probe, cwd, command } => {
+            exit_code =
+                tokio::task::spawn_blocking(move || elevate(probe, cwd.as_deref(), &command))
+                    .await??;
+        },
     }
     Ok(exit_code)
 }
@@ -428,6 +463,25 @@ mod tests {
         } else {
             panic!("expected Command::Serve");
         }
+
+        let elevate_cli = Cli::try_parse_from([
+            "aphrody-kernel",
+            "elevate",
+            "--cwd",
+            r"C:\work",
+            "sc.exe",
+            "query",
+            "-x",
+        ])
+        .unwrap();
+        if let Command::Elevate { probe, cwd, command } = elevate_cli.command {
+            assert!(!probe);
+            assert_eq!(cwd.as_deref(), Some(std::path::Path::new(r"C:\work")));
+            assert_eq!(command, ["sc.exe", "query", "-x"].map(std::ffi::OsString::from));
+        } else {
+            panic!("expected Command::Elevate");
+        }
+        assert!(elevate(false, None, &[]).is_err());
 
         let exec_policy_cli = Cli::try_parse_from([
             "aphrody-kernel",

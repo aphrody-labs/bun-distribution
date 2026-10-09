@@ -2,20 +2,25 @@
 // SPDX-FileCopyrightText: 2026 aphrody contributors
 /**
  * Cross-platform forensic map generator for desktop application directories.
- * Unified Bun implementation replacing map-google-local.ps1 & map-google-local.sh.
+ * Unified Bun implementation (map-google-local.sh delegates here).
  *
  * Usage:
- *   bun scripts/forensics/map-google-local.ts <target-dir> [out-dir] [max-hash-bytes]
+ *   bun scripts/tools/os/scripts/forensics/map-google-local.ts [target-dir] [out-dir] [max-hash-bytes]
+ * The target defaults to %LOCALAPPDATA%\Google\Google on Windows.
  */
 import { createHash } from "node:crypto";
 import { readdir, stat, readFile, mkdir, writeFile } from "node:fs/promises";
 import { join, relative, extname, resolve } from "node:path";
 
 const args = process.argv.slice(2);
-const [targetArg, outArg, hashArg] = args;
+const [targetGiven, outArg, hashArg] = args;
+const localAppData = process.platform === "win32" ? process.env.LOCALAPPDATA : undefined;
+const targetArg =
+  targetGiven || (localAppData === undefined ? undefined : join(localAppData, "Google", "Google"));
 if (targetArg === undefined || args.includes("--help") || args.includes("-h")) {
   console.log(
-    "Usage: bun scripts/forensics/map-google-local.ts <target-dir> [out-dir] [max-hash-bytes]",
+    "Usage: bun scripts/tools/os/scripts/forensics/map-google-local.ts [target-dir] [out-dir] [max-hash-bytes]\n" +
+      "The target defaults to %LOCALAPPDATA%\\Google\\Google on Windows.",
   );
   process.exit(targetArg === undefined ? 2 : 0);
 }

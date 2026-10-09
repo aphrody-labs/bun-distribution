@@ -37,7 +37,10 @@ impl NoWindow for std::process::Command {
     fn no_window(mut self) -> Self {
         #[cfg(windows)]
         if !flags::parent_has_console() {
-            std::os::windows::process::CommandExt::creation_flags(&mut self, flags::CREATE_NO_WINDOW);
+            std::os::windows::process::CommandExt::creation_flags(
+                &mut self,
+                flags::CREATE_NO_WINDOW,
+            );
         }
         self
     }
