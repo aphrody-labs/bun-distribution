@@ -87,10 +87,10 @@ pub fn capture_virtual_screen() -> Result<Vec<u8>> {
 }
 
 /// Find the first visible window whose title contains `substr` (case-sensitive)
-/// and capture its client area to PNG bytes.
+/// and capture its full window to PNG bytes.
 ///
 /// Uses `GetWindowRect` on the matched HWND to determine the region, then
-/// performs a screen blit of that rectangle.
+/// renders the exact window with PrintWindow at physical pixel resolution.
 ///
 /// # Errors
 ///
@@ -98,6 +98,16 @@ pub fn capture_virtual_screen() -> Result<Vec<u8>> {
 #[cfg(windows)]
 pub fn capture_window_by_title(substr: &str) -> Result<Vec<u8>> {
     capture_impl::capture_window_by_title(substr)
+}
+
+/// Render an exact HWND at physical pixel resolution, excluding overlapping windows.
+#[cfg(windows)]
+pub fn capture_window(handle: usize) -> Result<Vec<u8>> {
+    capture_impl::capture_window(handle)
+}
+#[cfg(not(windows))]
+pub fn capture_window(_handle: usize) -> Result<Vec<u8>> {
+    Err(CaptureError::Unsupported)
 }
 
 /// Enumerate all visible top-level windows that have a non-empty title.

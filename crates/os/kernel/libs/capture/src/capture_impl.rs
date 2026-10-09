@@ -24,6 +24,11 @@ use windows::Win32::{
         DIB_RGB_COLORS, DeleteDC, DeleteObject, GetDC, GetDIBits, HBITMAP, HDC, HGDIOBJ, ReleaseDC,
         SRCCOPY, SelectObject,
     },
+    Storage::Xps::{PRINT_WINDOW_FLAGS, PrintWindow},
+    UI::HiDpi::{
+        DPI_AWARENESS_CONTEXT, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2,
+        SetThreadDpiAwarenessContext,
+    },
     UI::WindowsAndMessaging::{
         EnumWindows, GetDesktopWindow, GetForegroundWindow, GetSystemMetrics, GetWindowRect,
         GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId, IsWindowVisible,
@@ -172,6 +177,18 @@ unsafe fn blit_region_to_bgra(
     w: i32,
     h: i32,
 ) -> Result<Vec<u8>> {
+    // Safety: forwards the validated screen DC and positive dimensions.
+    unsafe { render_to_bgra(screen_dc, x, y, w, h, None) }
+}
+
+unsafe fn render_to_bgra(
+    screen_dc: &ScreenDc,
+    x: i32,
+    y: i32,
+    w: i32,
+    h: i32,
+    window: Option<HWND>,
+) -> Result<Vec<u8>> {
     // 1. Create a memory DC compatible with the screen DC.
     // Safety: screen_dc.hdc is a valid screen DC.
     let mem_dc = unsafe { MemDc::create(screen_dc.hdc)? };
@@ -186,7 +203,7 @@ unsafe fn blit_region_to_bgra(
     //    monochrome bitmap we do not need to restore.
     //
     // Safety: mem_dc.hdc and bm.hbm are valid and compatible handles.
-    unsafe { SelectObject(mem_dc.hdc, HGDIOBJ::from(bm.hbm)) };
+    let previous_bitmap = unsafe { SelectObject(mem_dc.hdc, HGDIOBJ::from(bm.hbm)) };
 
     // 4. Blit the requested region from the screen DC into the memory DC.
     //
@@ -194,9 +211,18 @@ unsafe fn blit_region_to_bgra(
     // is the source (valid screen DC), coordinates are in-bounds for the
     // virtual desktop, SRCCOPY is a valid ROP code.
     unsafe {
-        BitBlt(mem_dc.hdc, 0, 0, w, h, Some(screen_dc.hdc), x, y, SRCCOPY)
-            .map_err(|e| CaptureError::Win32(format!("BitBlt failed: {e}")))?;
+        if let Some(hwnd) = window {
+            if !PrintWindow(hwnd, mem_dc.hdc, PRINT_WINDOW_FLAGS(2)).as_bool() {
+                return Err(CaptureError::Win32("PrintWindow failed".into()));
+            }
+        } else {
+            BitBlt(mem_dc.hdc, 0, 0, w, h, Some(screen_dc.hdc), x, y, SRCCOPY)
+                .map_err(|e| CaptureError::Win32(format!("BitBlt failed: {e}")))?;
+        }
     }
+
+    // Safety: GetDIBits requires the bitmap to be deselected from the DC.
+    unsafe { SelectObject(mem_dc.hdc, previous_bitmap) };
 
     // 5. Set up a BITMAPINFO for a top-down 32-bpp RGB DIB. biHeight < 0 requests a top-down
     //    (natural scan-line order) bitmap.
@@ -317,34 +343,46 @@ pub(crate) fn capture_window_by_title(substr: &str) -> Result<Vec<u8>> {
     let hwnd = find_window_by_title_substr(substr)
         .ok_or_else(|| CaptureError::NotFound(substr.to_owned()))?;
 
-    let mut rect = RECT::default();
-    // Safety: hwnd was found by EnumWindows and is a valid top-level window.
-    // GetWindowRect stores the window rectangle (screen coordinates) in rect.
-    unsafe {
-        GetWindowRect(hwnd, &mut rect)
-            .map_err(|e| CaptureError::Win32(format!("GetWindowRect failed: {e}")))?;
-    }
-
-    let x = rect.left;
-    let y = rect.top;
-    let w = rect.right - rect.left;
-    let h = rect.bottom - rect.top;
-
-    if w <= 0 || h <= 0 {
-        return Err(CaptureError::Win32(format!(
-            "window '{substr}' has zero or negative dimensions ({w}×{h})"
-        )));
-    }
-
-    // Capture from the screen DC (includes window decorations + any composited
-    // content visible through the window rectangle).
-    // Safety: GetDC(None) acquires the screen DC.
-    let dc = unsafe { ScreenDc::acquire(None)? };
-    // Safety: dc.hdc is valid; x,y are screen coordinates; w,h > 0.
-    unsafe { blit_region_to_png(&dc, x, y, w, h) }
+    capture_window(hwnd.0 as usize)
 }
 
-// ─── Window enumeration ───────────────────────────────────────────────────────
+struct DpiContext(DPI_AWARENESS_CONTEXT);
+impl Drop for DpiContext {
+    fn drop(&mut self) {
+        // Safety: restore the previous thread-local awareness context.
+        unsafe {
+            SetThreadDpiAwarenessContext(self.0);
+        }
+    }
+}
+
+pub(crate) fn capture_window(handle: usize) -> Result<Vec<u8>> {
+    let hwnd = HWND(handle as *mut core::ffi::c_void);
+    // Safety: the OS validates the opaque handle without dereferencing it.
+    if !unsafe { windows::Win32::UI::WindowsAndMessaging::IsWindow(Some(hwnd)) }.as_bool() {
+        return Err(CaptureError::NotFound(format!("HWND {handle}")));
+    }
+    // Safety: thread-local DPI context, restored on every exit by the guard.
+    let previous =
+        unsafe { SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) };
+    if previous.0.is_null() {
+        return Err(CaptureError::Win32("SetThreadDpiAwarenessContext failed".into()));
+    }
+    let _dpi = DpiContext(previous);
+    let mut rect = RECT::default();
+    // Safety: validated HWND and writable rectangle.
+    unsafe { GetWindowRect(hwnd, &mut rect) }.map_err(|e| CaptureError::Win32(e.to_string()))?;
+    let (w, h) = (rect.right - rect.left, rect.bottom - rect.top);
+    if w <= 0 || h <= 0 {
+        return Err(CaptureError::Win32(format!("invalid window dimensions {w}x{h}")));
+    }
+    // Safety: display-compatible DC; no desktop pixels are copied.
+    let dc = unsafe { ScreenDc::acquire(None)? };
+    // Safety: positive dimensions and valid DC/window.
+    let mut pixels = unsafe { render_to_bgra(&dc, 0, 0, w, h, Some(hwnd))? };
+    crate::bgra_to_rgba(&mut pixels);
+    encode_rgba_to_png(&pixels, w as u32, h as u32)
+}
 
 /// Collect all visible top-level windows with a non-empty title.
 pub(crate) fn list_windows() -> Vec<WindowInfo> {
@@ -942,4 +980,12 @@ pub(crate) fn mouse_drag(
     }
     unsafe { mouse_event(up, 0, 0, 0, 0) };
     Ok(())
+}
+
+#[cfg(test)]
+mod window_capture_tests {
+    #[test]
+    fn invalid_handle_is_rejected_without_desktop_fallback() {
+        assert!(matches!(super::capture_window(0), Err(crate::CaptureError::NotFound(_))));
+    }
 }

@@ -172,16 +172,25 @@ pub fn call_rust(tool: &str, arguments: Value) -> Result<Value, SubsystemError> 
             } else {
                 windows.iter().find(|w| w.handle == requested as usize)
             };
-            let png = if let Some(w) = window {
-                aphrody_capture::capture_window_by_title(&w.title)
-                    .or_else(|_| aphrody_capture::capture_primary_screen())
+            let window = window.ok_or_else(|| {
+                SubsystemError::Failed(format!("window handle {requested} not found"))
+            })?;
+            let png = aphrody_capture::capture_window(window.handle).map_err(failed)?;
+            let ui_tree = if arguments.get("includeUiTree").and_then(Value::as_bool).unwrap_or(true)
+            {
+                let mut target = arguments.clone();
+                target["windowHandle"] = Value::from(window.handle);
+                Some(snapshot::capture(&target)?)
             } else {
-                aphrody_capture::capture_primary_screen()
+                None
+            };
+            if let Some(path) = arguments.get("outputPath").and_then(Value::as_str) {
+                std::fs::write(path, &png).map_err(failed)?;
             }
-            .map_err(failed)?;
-            let metadata = window.map(|w| serde_json::json!({"Handle":w.handle,"ProcessId":w.process_id,"Title":w.title,"X":w.x,"Y":w.y,"Width":w.width,"Height":w.height,"IsForeground":w.is_foreground}));
+            let w = window;
+            let metadata = serde_json::json!({"Handle":w.handle,"ProcessId":w.process_id,"Title":w.title,"X":w.x,"Y":w.y,"Width":w.width,"Height":w.height,"IsForeground":w.is_foreground});
             Ok(
-                serde_json::json!({"window":metadata,"text":"Rust capture observation","image":{"mimeType":"image/png","dataBase64":base64::engine::general_purpose::STANDARD.encode(png)}}),
+                serde_json::json!({"window":metadata,"uiTree":ui_tree,"pid":w.process_id,"text":format!("PID {} / HWND {} / {} / native unscaled capture", w.process_id, w.handle, w.title),"image":{"mimeType":"image/png","dataBase64":base64::engine::general_purpose::STANDARD.encode(png)}}),
             )
         },
         "window_capture" => {
@@ -194,11 +203,12 @@ pub fn call_rust(tool: &str, arguments: Value) -> Result<Value, SubsystemError> 
                 .ok_or_else(|| {
                     SubsystemError::Failed(format!("window handle {handle} not found"))
                 })?;
-            let png = aphrody_capture::capture_window_by_title(&window.title).map_err(failed)?;
+            let png = aphrody_capture::capture_window(window.handle).map_err(failed)?;
             let mut saved =
                 save_bmp(&png, arguments.get("outputPath").and_then(Value::as_str), "window")?;
             if let Some(object) = saved.as_object_mut() {
                 object.insert("hwnd".into(), Value::from(handle));
+                object.insert("pid".into(), Value::from(window.process_id));
             }
             Ok(saved)
         },
