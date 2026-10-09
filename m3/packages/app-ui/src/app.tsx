@@ -12,6 +12,7 @@ import { PlatformProvider, type Platform } from "./contexts/PlatformContext";
 import { Shell } from "./Shell";
 import { explorerRoutes } from "./router";
 import { DesktopPet, DesktopWidget, SplashScreen } from "./desktop-surfaces";
+import { PetGuide } from "./pet-guide-view";
 import { QuickBar } from "./quickbar";
 import { appReady, isTauri, pickDirectory, pickFile, tauriInvoke } from "./tauri-bridge";
 
@@ -102,6 +103,7 @@ function App() {
   return (
     <PlatformProvider platform={nativePlatform}>
       <Shell client={client} routes={explorerRoutes} />
+      <PetGuide />
     </PlatformProvider>
   );
 }
