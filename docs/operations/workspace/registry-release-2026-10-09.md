@@ -102,8 +102,9 @@ The native Windows tests do not establish that the Linux CI workflow has run.
 
 ## Remaining publication work
 
-The full Rust release is incomplete. The initial Aphrody inventory contains 168
-members and IECODE has 73; source permission and declaration preparation do not
+The full Rust release is incomplete. The initial Aphrody inventory contained 168
+members; the licensed Egui compatibility producer brings the current count to
+169. IECODE has 73; source permission and declaration preparation do not
 establish registry availability. crates.io returned HTTP 429 and permits roughly
 one new crate name every ten minutes. Each publisher respects the returned retry
 time and default package verification under the canonical Cargo mutex.
@@ -118,9 +119,13 @@ Rio/VNC consumers; original library names, notices and behavior are retained.
 The names already owned by upstream maintainers are not claimed as Aphrody IDs.
 
 Wii's WASM gate exposed an upstream `egui-winit 0.36.2` native-file-drop implementation
-compiled on WASM. A minimal licensed owner fork is being qualified against exact
+compiled on WASM. A minimal licensed owner fork was qualified against exact
 registry `egui 0.36.2`, using the upstream target guards and no fabricated drop
-handler. Wii bindings and the final web/NIE UI publications remain pending.
+handler. The qualified `aphrody-egui-winit 0.36.2` is now published and consumed
+through IECODE's exact root registry alias. Wii's native WASM build and actual
+Chromium D3D12 fixture pass: four frames, the expected register/program counter,
+and a real rendered canvas. Final web/NIE UI publication is a separate artifact
+and corresponding-source qualification.
 
 The DS build-time `arm-decoder` dependency is absent from crates.io, declares
 `publish = false`, and supplies no license or permission notice in the pinned
@@ -135,5 +140,28 @@ Inagle defaults asset URLs to the current origin and selects PostgreSQL only wit
 an explicit data-source option. An inherited foreign-domain database URL no longer
 activates a connection. Private game payloads and captured catalogues remain in
 their isolated stores; absence is not evidence of complete game content.
-The corresponding NIE inventory repair and final producer refresh are tracked in
-IECODE `PLAN.md`; source and registry qualification remain separate.
+NIE now validates optional editorial manifests rather than compiling private
+catalogue inventories into the crate. Its scoped native tests pass 78 cases;
+ten private catalogue parity tests remain explicitly ignored. Inagle's selected
+SQLite service, text and CPK APIs pass 38 focused tests and 141 assertions.
+Source and registry qualification remain separate.
+
+## Isolated IECODE storage
+
+IECODE's shared storage launcher uses the resolved Aphrody `ie` profile. It
+prefers installed/indexed game VFS, otherwise qualified IE-owned Docker
+PostgreSQL, otherwise a ready existing SQLite game mirror. Explicit selections fail when
+unavailable. Aphrody metadata SQLite and foreign provider/database URLs are not
+game-source candidates. PostgreSQL container health alone does not qualify an
+empty game database.
+
+On the current Windows host the real 180,142,080-byte local game mirror passes
+integrity, required schema and nonempty-data checks and is selected as SQLite.
+The native IECODE DLL builds and loads through the qualified Bun fork; no indexed
+installed game is found, so complete game VFS mounting is not claimed.
+Storage setup and backup operations are scoped to new IE-labeled Docker
+resources, immutable PostgreSQL/Bun images and isolated profile runtime secrets.
+SQLite backups use consistent snapshots and verify integrity and SHA-256 before
+read-only Docker mounting. Existing Aphrody containers and DBFR production
+resources are preserved. No restore or provider-memory synchronization is
+implicit in this storage setup.
