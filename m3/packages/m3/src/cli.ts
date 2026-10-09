@@ -16,12 +16,14 @@ import { buildM3 } from "./build";
 import { loadM3Config } from "./config";
 import type { M3Sheet } from "./native";
 import { createM3Project } from "./new";
+import { findAppProject, runAppCommand } from "./app/cli";
 import { serveM3 } from "./server";
 import { m3Tokens, SHEETS, writeTokenBundle } from "./tokens";
 
 export const COMMANDS = [
   "dev",
   "build",
+  "start",
   "tokens",
   "check",
   "new",
@@ -41,7 +43,7 @@ export interface ParsedArgs {
 }
 
 /** Flags that never take a value. */
-const BOOLEAN_FLAGS = new Set(["dark", "dev", "hmr", "help", "version", "build"]);
+const BOOLEAN_FLAGS = new Set(["dark", "dev", "hmr", "help", "version", "build", "prerender"]);
 /** Flags whose value is optional (`--tauri` alone uses `tauri.uiDist` of the config). */
 const OPTIONAL_VALUE_FLAGS = new Set(["tauri"]);
 const SHORT: Record<string, string> = { h: "help", v: "version", p: "port", o: "out" };
@@ -50,7 +52,8 @@ export const USAGE = `m3 — the @aphrody Material Design 3 framework CLI
 
 Usage:
   m3 dev      [--port <n>] [--no-hmr] [--config <file>]
-  m3 build    [--tauri [<dir>]] [--outdir <dir>] [--dev] [--config <file>]
+  m3 build    [--tauri [<dir>]] [--outdir <dir>] [--dev] [--no-prerender] [--config <file>]
+  m3 start    [--port <n>] [--outdir <dir>] [--config <file>]
   m3 compile  [--target <t>] [--outfile <file>] [--dev] [--config <file>]
   m3 desktop  [--dev|--build] [--config <file>]
   m3 tokens   [--sheet ${SHEETS.join("|")}] [--seed <hex>] [--variant <name>] [--dark]
@@ -61,6 +64,8 @@ Usage:
 
 new requires the Aphrody/M3 private source owner workspace; use an apps/* member (for example m3 new apps/my-app).
 dev, build, compile and desktop read m3.config.ts from the working directory.
+With an app/ directory (or `app` in m3.config.ts), dev, build and start run the App Router:
+React Server Components, server actions, streaming SSR and static generation on Bun.serve + Bun.build.
 compile builds the UI and links it with the Bun runtime into one executable that serves it (and the app's API):
 it runs @aphrody/m3-bun, which must be installed next to this package.`;
 
@@ -217,6 +222,41 @@ async function loadM3Bun(): Promise<M3BunCompiler> {
   }
 }
 
+/** `m3 build` of an HTML-entry project. */
+async function buildCommand(cwd: string, flags: Record<string, FlagValue>): Promise<number> {
+  const config = await loadM3Config(cwd, stringFlag(flags, "config"));
+  const tauriFlag = flags.tauri;
+  let tauri: { uiDist: string } | undefined;
+  if (typeof tauriFlag === "string") tauri = { uiDist: resolve(cwd, tauriFlag) };
+  else if (tauriFlag === true) {
+    if (!config.tauri)
+      throw new Error(
+        "m3 build --tauri: give a directory or set `tauri.uiDist` in m3.config.ts",
+      );
+    tauri = config.tauri;
+  }
+  const outdir = stringFlag(flags, "outdir");
+  const started = performance.now();
+  const result = await buildM3({
+    entry: config.entry,
+    outdir: outdir ? resolve(cwd, outdir) : config.outdir,
+    production: flags.dev !== true,
+    define: config.define,
+    drop: config.drop,
+    minify: config.minify,
+    optimizeImports: config.optimizeImports,
+    tauri,
+    plugin: { theme: config.theme, root: config.root, configDir: config.dir },
+    cwd: config.dir,
+  });
+  const bytes = result.outputs.reduce((sum, o) => sum + o.bytes, 0);
+  for (const output of result.outputs) console.log(`  ${output.path}  ${output.bytes} B`);
+  console.log(
+    `m3 build: ${result.outputs.length} files, ${bytes} B into ${result.outdir} in ${Math.round(performance.now() - started)} ms`,
+  );
+  return 0;
+}
+
 /** Run the CLI; resolves to the process exit code (long-running `dev` resolves once listening). */
 export async function runCli(
   argv: readonly string[],
@@ -230,7 +270,19 @@ export async function runCli(
     case "version":
       console.log(await version());
       return 0;
-    case "dev": {
+    case "dev":
+    case "build":
+    case "start": {
+      const project = await findAppProject(cwd, stringFlag(flags, "config"));
+      if (project)
+        return runAppCommand(command, project, {
+          port: numberFlag(flags, "port"),
+          outdir: stringFlag(flags, "outdir"),
+          dev: flags.dev === true,
+          prerender: flags.prerender === false ? false : undefined,
+        });
+      if (command === "start") throw new Error("m3 start serves App Router builds; this project has no app/ directory");
+      if (command === "build") return buildCommand(cwd, flags);
       const config = await loadM3Config(cwd, stringFlag(flags, "config"));
       if (!(await bunfigHasPlugin(config.dir))) {
         console.warn(
@@ -250,39 +302,6 @@ export async function runCli(
         ([prefix, target]) => `${prefix} -> ${target}`,
       );
       console.log(`m3 dev: ${server.url}${proxied.length ? ` (proxy ${proxied.join(", ")})` : ""}`);
-      return 0;
-    }
-    case "build": {
-      const config = await loadM3Config(cwd, stringFlag(flags, "config"));
-      const tauriFlag = flags.tauri;
-      let tauri: { uiDist: string } | undefined;
-      if (typeof tauriFlag === "string") tauri = { uiDist: resolve(cwd, tauriFlag) };
-      else if (tauriFlag === true) {
-        if (!config.tauri)
-          throw new Error(
-            "m3 build --tauri: give a directory or set `tauri.uiDist` in m3.config.ts",
-          );
-        tauri = config.tauri;
-      }
-      const outdir = stringFlag(flags, "outdir");
-      const started = performance.now();
-      const result = await buildM3({
-        entry: config.entry,
-        outdir: outdir ? resolve(cwd, outdir) : config.outdir,
-        production: flags.dev !== true,
-        define: config.define,
-        drop: config.drop,
-        minify: config.minify,
-        optimizeImports: config.optimizeImports,
-        tauri,
-        plugin: { theme: config.theme, root: config.root, configDir: config.dir },
-        cwd: config.dir,
-      });
-      const bytes = result.outputs.reduce((sum, o) => sum + o.bytes, 0);
-      for (const output of result.outputs) console.log(`  ${output.path}  ${output.bytes} B`);
-      console.log(
-        `m3 build: ${result.outputs.length} files, ${bytes} B into ${result.outdir} in ${Math.round(performance.now() - started)} ms`,
-      );
       return 0;
     }
     case "tokens": {

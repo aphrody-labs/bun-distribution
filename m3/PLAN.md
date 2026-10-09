@@ -10,12 +10,12 @@ remain authoritative for native runtime and installed hosts.
 
 | Surface | Owner |
 | --- | --- |
-| Plugin, theme modules, Bun web build and `m3` CLI | `packages/m3` |
+| Plugin, theme modules, Bun web build, App Router (`@aphrody/m3/app`) and `m3` CLI | `packages/m3` |
 | App API/file server, executable compiler and deployment configuration | `packages/m3-bun` |
 | Shared `Bun.build` preset and workspace build cache | `packages/m3-config`, `scripts/build.ts` |
 | Tokens, themes and renderer adapters | M3 packages; canonical native token contract in Aphrody `crates/ui/m3-tokens` |
 | Package build/test orchestration | `scripts/yolo.ts`, the Bun CLI `$YOLO_ROOT/packages/engine/yolo/src/index.ts` |
-| Minimal web example / adaptive UI and API consumer | `apps/web` / `apps/showcase` |
+| App Router example app (replaces the removed `apps/showcase`) | `apps/` (pending) |
 | Native artifacts and installed desktop/mobile hosts | Aphrody integrator and declared build factory |
 
 See the [framework guide](docs/guides/FRAMEWORK.md),
@@ -58,6 +58,15 @@ task. Run relevant artifact gates when owning the corresponding source batch.
 
 Successful timing, output generation or a source export alone never closes a
 runtime, deployment, performance or installed host milestone.
+
+## App Router (chantier S, Bun fork plan section S)
+
+`@aphrody/m3/app` implements Next.js `app/` conventions on `Bun.build` (rsc/ssr/client layers) and `Bun.serve` with
+`react-server-dom-parcel`; see the [framework guide](docs/guides/FRAMEWORK.md#app-router-aphrodym3app). Tests:
+`packages/m3/test/app/{scan,plugin,router}.test.ts` on `test/fixtures/app-router` (written 2026-10-09, not yet run).
+Next: example app, Shenron slice, compile and Docker Alpine through m3-bun, measured comparison with `next build`/`next
+start`, TanStack Router SPA template, M3 `DataTable`/`VirtualList`. Bun gaps (Bake `"use server"`, production Bake)
+are fixed in the Bun fork core, never shimmed here.
 
 ## Full Bun (chantier T, Bun fork plan section T)
 

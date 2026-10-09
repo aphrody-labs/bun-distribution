@@ -31,8 +31,13 @@ export interface M3TauriConfig {
 }
 
 export interface M3Config {
-  /** HTML entry: served on `/*` by `m3 dev`, bundled by `m3 build`. */
-  entry: string;
+  /** HTML entry: served on `/*` by `m3 dev`, bundled by `m3 build`. Not used in App Router mode. */
+  entry?: string;
+  /**
+   * App Router mode: the `app/` directory (Next.js conventions: React Server Components, server
+   * actions, streaming SSR, prerendering). `true` means `app` or `src/app`.
+   */
+  app?: string | true;
   /** Extra HTML pages, `route -> file`, served next to the entry. */
   routes?: Record<string, string>;
   /** Optional React page directory for streamed SSR in `m3 dev`. */
@@ -63,8 +68,12 @@ export interface M3Config {
 
 /** A config whose paths are absolute. */
 export interface ResolvedM3Config extends M3Config {
+  /** Absolute HTML entry, or the app directory in App Router mode. */
+  entry: string;
   /** Directory the relative paths were resolved against. */
   dir: string;
+  /** App directory relative to `dir`, in App Router mode. */
+  app?: string;
   /** The config file, when one was loaded. */
   file?: string;
   outdir: string;
@@ -91,14 +100,18 @@ export function findM3Config(dir: string): string | undefined {
 
 function assertConfig(value: unknown, source: string): asserts value is M3Config {
   if (typeof value !== "object" || value === null) throw new Error(`${source}: the default export must be an object`);
-  const entry = (value as { entry?: unknown }).entry;
-  if (typeof entry !== "string" || entry.length === 0) throw new Error(`${source}: \`entry\` must be a non-empty string`);
+  const { entry, app } = value as { entry?: unknown; app?: unknown };
+  if (app !== undefined && app !== true && (typeof app !== "string" || app.length === 0))
+    throw new Error(`${source}: \`app\` must be true or a directory`);
+  if (app === undefined && (typeof entry !== "string" || entry.length === 0))
+    throw new Error(`${source}: \`entry\` must be a non-empty string`);
   const proxy = (value as { proxy?: unknown }).proxy;
   if (proxy !== undefined) {
     if (typeof proxy !== "object" || proxy === null) throw new Error(`${source}: \`proxy\` must be an object`);
     for (const [prefix, target] of Object.entries(proxy)) {
       if (!prefix.startsWith("/")) throw new Error(`${source}: proxy prefix ${prefix} must start with "/"`);
-      if (typeof target !== "string" || !URL.canParse(target)) throw new Error(`${source}: proxy target for ${prefix} is not a URL`);
+      if (typeof target !== "string" || !URL.canParse(target))
+        throw new Error(`${source}: proxy target for ${prefix} is not a URL`);
     }
   }
 }
@@ -107,11 +120,20 @@ function assertConfig(value: unknown, source: string): asserts value is M3Config
 export function resolveM3Config(config: M3Config, dir: string, file?: string): ResolvedM3Config {
   assertConfig(config, file ?? "m3 config");
   const abs = (path: string) => resolve(dir, path);
+  const app =
+    config.app === undefined
+      ? undefined
+      : config.app === true
+        ? !existsSync(join(dir, "app")) && existsSync(join(dir, "src", "app"))
+          ? "src/app"
+          : "app"
+        : config.app;
   return {
     ...config,
     dir,
     file,
-    entry: abs(config.entry),
+    app,
+    entry: abs(config.entry ?? app ?? "."),
     pagesDir: config.pagesDir ? abs(config.pagesDir) : undefined,
     outdir: abs(config.outdir ?? "dist"),
     routes: Object.fromEntries(Object.entries(config.routes ?? {}).map(([route, path]) => [route, abs(path)])),

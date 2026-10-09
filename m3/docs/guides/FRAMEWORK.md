@@ -13,11 +13,10 @@ Tailwind v4, build tooling and OS theme installers. Yolo orchestrates build, ser
 | React | `@aphrody/m3-react` | `@lit/react` wrappers for every `md-*` element, adaptive hooks, transitions, form state |
 | Base UI | `@aphrody/m3-baseui` | Base UI parts (fork in `forks/base-ui`) styled with M3 tokens |
 | Tailwind | `@aphrody/m3-tailwind` | Tailwind v4 CSS-first `@theme` generated from the tokens (`preset.css`) |
-| Framework | `@aphrody/m3` | `m3` CLI, Bun plugin, `serveM3`, `buildM3`, `M3App`, `m3.config.ts` |
+| Framework | `@aphrody/m3` | `m3` CLI, Bun plugin, `serveM3`, `buildM3`, `M3App`, `m3.config.ts`, App Router (`@aphrody/m3/app`) |
 | Bun application | `@aphrody/m3-bun` | Build, serve, compile, package and deployment configuration for an app's UI and API |
 | Shared | `m3-config`, `m3-fonts`, `m3-icons`, `m3-motion`, `m3-primitives`, `m3-forms`, `m3-ai`, `m3-explorer`, `m3-design`, `m3-next`, `m3-next-migrate`, `m3-codemods`, `m3-reader`, `m3-mcp`, `material-design-icons`, `scaffold` | Build presets, assets, behaviour, migrations, MCP |
 | OS | `@aphrody/m3-os-themes` | Windows 11, GNOME, COSMIC and Chromium theme generators and installers |
-| Showcase | `apps/showcase` (`@aphrody/m3-showcase`) | The single framework showcase (it absorbed the former `apps/web` example on 2026-10-06): adaptive mobile, desktop and TV package demos with a Bun API, shown by `aphrody-app --showcase` |
 
 Forks (`forks/`): `tailwindcss`, `base-ui`, `material-web`, `material-color-utilities`, `material-design-icons`.
 Shared dependency versions live in the root `workspaces.catalog`; the lockfile pins their resolved versions.
@@ -27,13 +26,11 @@ Packages use `catalog:`, `workspace:*` and explicit dependencies where declared.
 
 Root scripts run [scripts/yolo.ts](../../scripts/yolo.ts), which runs the Bun CLI `bun run $YOLO_ROOT/packages/engine/yolo/src/index.ts` on every platform.
 `YOLO_ROOT` defaults to `$HOME/yolo`; inspect this entry point's live help for Yolo commands.
-The wrapper sets `YOLO_HOME` to this repository for its Yolo preflight; `serve` and `compile` run the showcase's own scripts.
+The wrapper sets `YOLO_HOME` to this repository for its Yolo preflight. The former `apps/showcase` was removed; the App Router example app replaces it (pending).
 
 | Script | Runs |
 | --- | --- |
-| `bun run build` | Yolo preflight, then `scripts/build.ts build`: every package and app, the showcase included, cached |
-| `bun run serve` | apps/showcase `dev` (`yolo m3 bun dev`, HMR) |
-| `bun run compile` | apps/showcase `compile` (`yolo m3 bun compile`, the single executable the desktop runs as its showcase sidecar) |
+| `bun run build` | Yolo preflight, then `scripts/build.ts build`: every package and app, cached |
 | `bun run test` | Yolo preflight (`yolo version --json`), the root script suites, then workspace `test` scripts in parallel, followed by export, asset and documentation link checks |
 | `bun run lint` | Yolo preflight, then `oxlint` over `packages/m3*`, apps and scripts |
 | `bun run typecheck` | Yolo preflight, then `scripts/build.ts typecheck` with its default scope and cache |
@@ -44,7 +41,7 @@ The pipeline's default scope is package names matching `@*/m3*` and workspace me
 Package builds with a `build.config.ts` use the shared `Bun.build` preset, followed by declaration emission
 when `tsconfig.build.json` exists. Members without a build config are reported as skipped; direct package
 scripts may use a different build path. App builds run their declared `build` script after packages.
-The root build's `--no-apps` prevents this final app stage, including `apps/showcase`.
+The root build's `--no-apps` prevents this final app stage.
 
 Typechecking opts in through each member's `typecheck` script, but the pipeline currently executes
 `tsc -p tsconfig.json --noEmit` rather than that script. Alternate configs or multi-command scripts are
@@ -60,23 +57,38 @@ and test runner exclude the host-bound `packages/app-ui`, `packages/rg-ui`, `pac
 installation and gates. `app-ui` builds Rust and belongs to the integrator using the enclosing
 Aphrody repository's `scripts/build/rust/cargo-serial.sh`.
 
-## Showcase commands
+## App Router (`@aphrody/m3/app`)
 
-Run the [adaptive showcase](../../apps/showcase/README.md) from `apps/showcase`:
+A project with an `app/` (or `src/app/`) directory, or `app` in `m3.config.ts`, runs the App Router:
+`m3 dev`, `m3 build [--no-prerender]` and `m3 start`. No Node and no Vite: `Bun.build` produces three layers
+(`rsc` with the `react-server` condition, `ssr`, `client`) and `Bun.serve` hosts them. React Server Components
+use `react-server-dom-parcel` (public React 19 builds).
 
-```sh
-bun run dev
-bun run build
-bun run serve
-bun run compile
-bun run test
-bun run typecheck
-```
+| Next.js convention | m3 |
+| --- | --- |
+| `page`, `layout`, `template`, `loading`, `error`, `not-found`, route groups, `[param]`, `[...all]`, `[[...opt]]` | supported |
+| `route.ts` handlers (GET/POST/…, HEAD from GET, OPTIONS, 405) | supported |
+| `proxy.ts` / `middleware.ts` with `config.matcher`, `NextResponse.next/rewrite/redirect` | supported |
+| Server Components, `"use client"`, `"use server"` actions (fetch and progressive `<form>`), `useActionState` | supported |
+| `metadata` / `generateMetadata` / `viewport`, `robots`, `sitemap`, `manifest`, static icons | supported |
+| `generateStaticParams`, static generation at build, dynamic detection (`headers()`, `cookies()`, `searchParams`) | supported |
+| `next/link`, `next/navigation`, `next/headers`, `next/server`, `next/cache`, `next/image` | aliased to `@aphrody/m3/app/*` |
+| ISR, `next/font`, image optimisation, parallel/intercepting routes, PPR | not yet |
 
-These commands use [m3-bun](../../packages/m3-bun/README.md) and the showcase's own configuration.
-Its inventory step precedes development, build and compile. Root `serve` and `compile` select
-this app. Tauri desktop/mobile packaging additionally needs
-the target toolchains; a configuration or web build does not establish an installed native bundle.
+Development rebuilds into `.m3/dev/<n>` on change and refreshes the RSC payload over `/_m3/hmr` (state kept for
+client components). The Bake dev server of the Bun fork is not used yet: its `"use server"` support and production
+output (SSG only) are core gaps tracked in the Bun fork plan, section S.
+
+### Routing choice
+
+| Application | Router | Data |
+| --- | --- | --- |
+| Server-rendered web (SEO, RSC, actions) | m3 App Router (`app/`) | Server Components; TanStack Query for client caches |
+| SPA, Tauri desktop/mobile, offline | TanStack Router (file or code routes, `Bun.build`) | TanStack Query |
+| Tables and long lists | M3 `DataTable` / `VirtualList` on TanStack Table / Virtual | — |
+
+TanStack Start is not used: its build requires Vite. Forms keep `m3-forms` unless a measurement shows TanStack
+Form is smaller or faster for the same API.
 
 ## Benchmark qualification limits
 

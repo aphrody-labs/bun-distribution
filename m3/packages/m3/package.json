@@ -76,6 +76,42 @@
       "import": "./src/i18n.ts",
       "default": "./dist/i18n.js"
     },
+    "./app": {
+      "bun": "./src/app/index.ts",
+      "types": "./src/app/index.ts",
+      "default": "./src/app/index.ts"
+    },
+    "./app/link": {
+      "bun": "./src/app/link.tsx",
+      "types": "./src/app/link.tsx",
+      "default": "./src/app/link.tsx"
+    },
+    "./app/navigation": {
+      "react-server": "./src/app/navigation.server.ts",
+      "bun": "./src/app/navigation.ts",
+      "types": "./src/app/navigation.ts",
+      "default": "./src/app/navigation.ts"
+    },
+    "./app/headers": {
+      "bun": "./src/app/headers.ts",
+      "types": "./src/app/headers.ts",
+      "default": "./src/app/headers.ts"
+    },
+    "./app/server": {
+      "bun": "./src/app/server.ts",
+      "types": "./src/app/server.ts",
+      "default": "./src/app/server.ts"
+    },
+    "./app/cache": {
+      "bun": "./src/app/cache.ts",
+      "types": "./src/app/cache.ts",
+      "default": "./src/app/cache.ts"
+    },
+    "./app/image": {
+      "bun": "./src/app/image.tsx",
+      "types": "./src/app/image.tsx",
+      "default": "./src/app/image.tsx"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -98,12 +134,16 @@
     "motion": "catalog:"
   },
   "devDependencies": {
-    "@aphrody/m3-config": "workspace:*"
+    "@aphrody/m3-config": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-server-dom-parcel": "catalog:"
   },
   "peerDependencies": {
     "@aphrody/m3-bun": "workspace:*",
     "react": ">=18.0.0",
-    "react-dom": ">=18.0.0"
+    "react-dom": ">=18.0.0",
+    "react-server-dom-parcel": ">=19.0.0"
   },
   "peerDependenciesMeta": {
     "react": {
@@ -113,6 +153,9 @@
       "optional": true
     },
     "@aphrody/m3-bun": {
+      "optional": true
+    },
+    "react-server-dom-parcel": {
       "optional": true
     }
   },
