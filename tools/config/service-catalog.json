@@ -76,7 +76,6 @@
       "application": "aphrody",
       "kind": "llama-server-openai",
       "runtime": "native",
-      "unit": "aphrody-llama-shenron-chat.service",
       "host": "dbfr",
       "container": "shenron-chat-1",
       "health": "http://127.0.0.1:8799/health",
@@ -85,14 +84,13 @@
         "chat"
       ],
       "sourceRepo": "aphrody",
-      "workingDirectory": "/home/ubuntu/.aphrody/runtimes/llama-b11415",
       "model": {
         "catalogId": "shenron-chat-v2-merged-q4km",
         "alias": "shenron-chat-v2",
         "ref": "local:llama-export-lora b11415 (Qwen3-4B-Instruct-2507-F16 + adapter sha256 aab485357c68fdcbb6d4ba55911632b8228964106047db035e0223e2aecc6107) -> llama-quantize Q4_K_M --imatrix unsloth",
         "sha256": "22362d5729eab45a4f2238246e6b5a448d26c01b5a541671e730415ec0d731b4"
       },
-      "note": "Fine-tuned shenron-chat-v2 served on DBFR by the Compose service chat of project shenron (container shenron-chat-1, llama.cpp b11415, OpenAI-compatible /v1 on loopback only, never proxied by nginx). Single merged GGUF /srv/shenron/shared/models/shenron-chat-v2/shenron-chat-v2-merged-Q4_K_M.gguf mounted read-only; --cache-ram 256 -fa on -ctk q8_0 -ctv q8_0, ctx 8192, parallel 1, threads 4, mem_limit 5g. Rollback: the base Q4_K_M (sha256 3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597) and adapter.gguf stay beside it (--lora). The native unit tools/config/host/systemd/aphrody/aphrody-llama-shenron-chat.service is the non-container fallback; see docs/operations/infra/SHENRON-DOCKER.md",
+      "note": "Fine-tuned shenron-chat-v2 served on DBFR by the Compose service chat of project shenron (container shenron-chat-1, llama.cpp b11415, OpenAI-compatible /v1 on loopback only, never proxied by nginx). Single merged GGUF /srv/shenron/shared/models/shenron-chat-v2/shenron-chat-v2-merged-Q4_K_M.gguf mounted read-only; --cache-ram 256 -fa on -ctk q8_0 -ctv q8_0, ctx 8192, parallel 1, threads 4, mem_limit 5g. Rollback: adapter.gguf stays beside it; re-download the base Q4_K_M (hf:unsloth/Qwen3-4B-Instruct-2507-GGUF@a06e946b, sha256 3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597) and serve it with --lora. The native systemd unit was removed on 2026-10-09; see docs/operations/infra/SHENRON-DOCKER.md",
       "public": false
     },
     {
