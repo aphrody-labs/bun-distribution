@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Minimal Win32 bindings through bun:ffi (kernel32, advapi32, wintrust), loaded lazily so that the pure modules and
 // their tests import on every platform. Every handle is closed by its owner; no elevation is attempted here.
-import { dlopen, ptr } from "bun:ffi";
+import { dlopen, ptr, type Pointer } from "bun:ffi";
 
 export const isWindows = process.platform === "win32";
 
@@ -98,8 +98,8 @@ export const FILE_FLAG_BACKUP_SEMANTICS = 0x0200_0000;
 export const INVALID_FILE_ATTRIBUTES = 0xffff_ffff;
 
 /** A pointer-typed handle return is invalid when null/0 or `INVALID_HANDLE_VALUE` (all bits set). */
-export function validHandle(h: number | null): h is number {
-  return h !== null && h !== 0 && h < 2 ** 52;
+export function validHandle(h: Pointer | bigint | null): h is Pointer {
+  return typeof h === "number" && h !== 0 && h < 2 ** 52;
 }
 
 /** Opens a file or volume; returns the handle or the Win32 error code. */
@@ -107,20 +107,20 @@ export function openHandle(
   path: string,
   access = GENERIC_READ,
   flags = FILE_FLAG_BACKUP_SEMANTICS,
-): { handle: number } | { error: number } {
+): { handle: Pointer } | { error: number } {
   const lib = k32();
   const h = lib.CreateFileW(wstr(path), access, FILE_SHARE_ALL, null, OPEN_EXISTING, flags, null);
   if (!validHandle(h)) return { error: lib.GetLastError() };
   return { handle: h };
 }
 
-export function closeHandle(h: number): void {
+export function closeHandle(h: Pointer): void {
   k32().CloseHandle(h);
 }
 
 /** `DeviceIoControl` wrapper: returns the bytes written or the Win32 error code. */
 export function ioctl(
-  handle: number,
+  handle: Pointer,
   code: number,
   input: Uint8Array | null,
   output: Uint8Array,
@@ -169,7 +169,10 @@ export function alternateStreams(path: string): Stream[] {
     do {
       const name = readWstr(data, 8, 296);
       if (name !== "::$DATA") {
-        out.push({ name: name.replace(/:\$DATA$/, "").replace(/^:/, ""), size: Number(view.getBigInt64(0, true)) });
+        out.push({
+          name: name.replace(/:\$DATA$/, "").replace(/^:/, ""),
+          size: Number(view.getBigInt64(0, true)),
+        });
       }
     } while (lib.FindNextStreamW(h, data));
   } finally {
@@ -178,4 +181,4 @@ export function alternateStreams(path: string): Stream[] {
   return out;
 }
 
-export { ptr };
+export { ptr, type Pointer };

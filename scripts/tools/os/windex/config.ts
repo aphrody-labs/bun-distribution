@@ -84,6 +84,16 @@ export function pathKey(path: string): string {
   return path.replaceAll("/", "\\").toLowerCase();
 }
 
+/** 52-bit wyhash of a string: compact keys/values of the incremental state map (millions of entries). */
+export function hash52(s: string): number {
+  return Number(BigInt.asUintN(52, BigInt(Bun.hash(s))));
+}
+
+/** Incremental skip value of a file: equal size and mtime mean unchanged content. */
+export function stateValue(size: number, mtimeMs: number | null): number {
+  return hash52(`${size}/${mtimeMs}`);
+}
+
 /** Normalises a user root (`C:/Windows`, `c:\windows\`) into `C:\Windows` form. */
 export function normalizeRoot(root: string): string {
   let r = root.replaceAll("/", "\\");

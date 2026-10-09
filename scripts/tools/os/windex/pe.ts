@@ -451,7 +451,14 @@ function readVersion(
   return parseVersionInfo(r.bytes(dataOff, size));
 }
 
-type Block = { key: string; valueOff: number; valueBytes: number; type: number; end: number; childrenOff: number };
+type Block = {
+  key: string;
+  valueOff: number;
+  valueBytes: number;
+  type: number;
+  end: number;
+  childrenOff: number;
+};
 
 function readBlock(b: Uint8Array, v: DataView, off: number): Block | null {
   if (off + 6 > b.byteLength) return null;
@@ -482,7 +489,8 @@ function children(b: Uint8Array, v: DataView, parent: Block): Block[] {
   return out;
 }
 
-const verString = (ms: number, ls: number) => `${ms >>> 16}.${ms & 0xffff}.${ls >>> 16}.${ls & 0xffff}`;
+const verString = (ms: number, ls: number) =>
+  `${ms >>> 16}.${ms & 0xffff}.${ls >>> 16}.${ls & 0xffff}`;
 
 /** Parses a VS_VERSIONINFO blob (fixed file info and the first StringTable). */
 export function parseVersionInfo(b: Uint8Array): VersionInfo | null {
@@ -491,7 +499,10 @@ export function parseVersionInfo(b: Uint8Array): VersionInfo | null {
   if (!root || root.key !== "VS_VERSION_INFO") return null;
   const info: VersionInfo = { strings: {} };
   if (root.valueBytes >= 52 && v.getUint32(root.valueOff, true) === 0xfeef04bd) {
-    info.fileVersion = verString(v.getUint32(root.valueOff + 8, true), v.getUint32(root.valueOff + 12, true));
+    info.fileVersion = verString(
+      v.getUint32(root.valueOff + 8, true),
+      v.getUint32(root.valueOff + 12, true),
+    );
     info.productVersion = verString(
       v.getUint32(root.valueOff + 16, true),
       v.getUint32(root.valueOff + 20, true),
@@ -502,7 +513,11 @@ export function parseVersionInfo(b: Uint8Array): VersionInfo | null {
     for (const table of children(b, v, c)) {
       for (const s of children(b, v, table)) {
         if (s.valueBytes <= 0) continue;
-        const raw = Buffer.from(b.buffer, b.byteOffset + s.valueOff, Math.min(s.valueBytes, b.byteLength - s.valueOff));
+        const raw = Buffer.from(
+          b.buffer,
+          b.byteOffset + s.valueOff,
+          Math.min(s.valueBytes, b.byteLength - s.valueOff),
+        );
         const value = raw.toString("utf16le").replace(/\0+$/, "").trim();
         if (value && !(s.key in info.strings)) info.strings[s.key] = value;
       }
@@ -523,7 +538,9 @@ export function parseApiSetSchema(b: Uint8Array): Map<string, string[]> {
   const count = v.getUint32(12, true);
   const entryOff = v.getUint32(16, true);
   const str = (off: number, len: number) =>
-    off + len <= b.byteLength ? Buffer.from(b.buffer, b.byteOffset + off, len).toString("utf16le") : "";
+    off + len <= b.byteLength
+      ? Buffer.from(b.buffer, b.byteOffset + off, len).toString("utf16le")
+      : "";
   for (let i = 0; i < Math.min(count, 65_536); i++) {
     const e = entryOff + i * 24;
     if (e + 24 > b.byteLength) break;

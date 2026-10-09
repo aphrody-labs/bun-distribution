@@ -43,7 +43,8 @@ function kids(b: Uint8Array, t: Tlv): Tlv[] {
   return out;
 }
 
-const eq = (a: Uint8Array, b: Uint8Array) => a.byteLength === b.byteLength && a.every((x, i) => x === b[i]);
+const eq = (a: Uint8Array, b: Uint8Array) =>
+  a.byteLength === b.byteLength && a.every((x, i) => x === b[i]);
 const raw = (b: Uint8Array, t: Tlv) => b.subarray(t.start - t.hdr, t.end);
 
 const OID = {
@@ -83,7 +84,15 @@ export function parseAuthenticode(table: Uint8Array): Authenticode | null {
   const length = v.getUint32(0, true);
   const type = v.getUint16(6, true);
   if (type !== 2 || length < 8 || length > table.byteLength) return null;
-  const b = table.subarray(8, length);
+  return parseSignedData(table.subarray(8, length));
+}
+
+/**
+ * Signer of a DER PKCS#7 ContentInfo (SignedData): an Authenticode blob or a whole security catalog (`.cat`).
+ * The chain is not verified; this reads the declared signer certificate only.
+ */
+export function parseSignedData(b: Uint8Array): Authenticode | null {
+  if (b.byteLength < 4) return null;
   const contentInfo = tlv(b, 0);
   const [oid, explicit] = kids(b, contentInfo);
   if (!oid || hex(b.subarray(oid.start, oid.end)) !== OID.signedData || !explicit) return null;
@@ -108,7 +117,8 @@ export function parseAuthenticode(table: Uint8Array): Authenticode | null {
       }
     }
     const alg = si[2] ? kids(b, si[2])[0] : undefined;
-    if (alg) digest = DIGESTS[hex(b.subarray(alg.start, alg.end))] ?? hex(b.subarray(alg.start, alg.end));
+    if (alg)
+      digest = DIGESTS[hex(b.subarray(alg.start, alg.end))] ?? hex(b.subarray(alg.start, alg.end));
   }
   let signer: string | null = null;
   let issuer: string | null = null;

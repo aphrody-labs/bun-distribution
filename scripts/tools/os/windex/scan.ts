@@ -3,7 +3,7 @@
 // attributes, analysis in the worker pool and ordered delivery of the records to the sinks.
 import { readdirSync } from "node:fs";
 import type { EntryRecord, Task } from "./analyze.ts";
-import { pathKey, type HashMode } from "./config.ts";
+import { hash52, pathKey, type HashMode } from "./config.ts";
 import type { MftIndex } from "./ntfs.ts";
 import type { Pool } from "./pool.ts";
 import { recordOf } from "./usn.ts";
@@ -65,10 +65,14 @@ export type ScanOptions = {
   hash: HashMode;
   maxHashBytes: number;
   excludes: string[];
+  /** Per-path policy (a deeper registered root may hash more than the scanned one); defaults to `hash`. */
+  hashFor?: (path: string) => HashMode;
   pool: Pool;
   mft?: MftIndex;
-  /** `path_lc -> size/mtimeMs` of the stored records (incremental skip). */
-  prev?: Map<string, string>;
+  /** `hash52(path_lc) -> stateValue(size, mtimeMs)` of the stored records (incremental skip). */
+  prev?: Map<number, number>;
+  /** Directories that could not be listed (their stored subtree must survive the sweep). */
+  unreadable?: string[];
   batch?: number;
   /** Receives records in completion order; awaited sequentially (back-pressure). */
   sink: (records: EntryRecord[]) => Promise<void>;
@@ -127,7 +131,7 @@ export async function scanRoot(opts: ScanOptions): Promise<ScanStats> {
   };
 
   const dispatch = async (tasks: Task[]) => {
-    const done = await opts.pool.submit(tasks);
+    const { done } = await opts.pool.submit(tasks);
     const p: Promise<void> = done.then(deliver).finally(() => inflight.delete(p));
     inflight.add(p);
     // The sinks (PostgreSQL) bound the scan: never queue more than a few batches ahead of them.
@@ -136,13 +140,17 @@ export async function scanRoot(opts: ScanOptions): Promise<ScanStats> {
   };
 
   let batch: Task[] = [];
-  for (const e of walk(opts.root, opts.excludes, () => stats.walkErrors++)) {
+  const onError = (path: string) => {
+    stats.walkErrors++;
+    opts.unreadable?.push(path);
+  };
+  for (const e of walk(opts.root, opts.excludes, onError)) {
     batch.push({
       path: e.path,
       dir: e.dir,
-      hash: opts.hash,
+      hash: opts.hashFor ? opts.hashFor(e.path) : opts.hash,
       maxHashBytes: opts.maxHashBytes,
-      prev: e.dir ? undefined : opts.prev?.get(pathKey(e.path)),
+      prev: e.dir || !opts.prev?.size ? undefined : opts.prev.get(hash52(pathKey(e.path))),
       skipAttrs: opts.mft !== undefined,
     });
     if (batch.length >= size) {

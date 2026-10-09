@@ -94,11 +94,9 @@ export function parseUsnRecord(buf: Uint8Array, offset = 0): UsnRecord | undefin
   const nameLength = v.getUint16(base + 32, true);
   const nameOffset = v.getUint16(base + 34, true);
   if (nameOffset + nameLength > length) return undefined;
-  const name = Buffer.from(
-    buf.buffer,
-    buf.byteOffset + offset + nameOffset,
-    nameLength,
-  ).toString("utf16le");
+  const name = Buffer.from(buf.buffer, buf.byteOffset + offset + nameOffset, nameLength).toString(
+    "utf16le",
+  );
   return {
     major,
     frn,
@@ -131,7 +129,8 @@ export function parseUsnRecords(buf: Uint8Array): UsnRecord[] {
 /** Human-readable reason names (logs, NDJSON journal). */
 export function reasonNames(reason: number): string[] {
   const names: string[] = [];
-  for (const [k, bit] of Object.entries(USN_REASON)) if ((reason & bit) >>> 0 === bit) names.push(k);
+  for (const [k, bit] of Object.entries(USN_REASON))
+    if ((reason & bit) >>> 0 === bit) names.push(k);
   return names;
 }
 

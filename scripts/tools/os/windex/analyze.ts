@@ -2,7 +2,8 @@
 // Per-entry analysis shared by the worker pool and the real-time watcher: Bun fs stat (FRN, size, timestamps),
 // NTFS attributes, streaming SHA-256, PE parsing, alternate data streams and catalog signature.
 import { closeSync, fstatSync, openSync, readSync, statSync } from "node:fs";
-import { catalogOf } from "./catalog.ts";
+import { catalogSignature, type CatalogSignature } from "./catalog.ts";
+import { stateValue } from "./config.ts";
 import { looksLikePe, parsePe, type ByteSource, type PeInfo } from "./pe.ts";
 import { alternateStreams, fileAttributes, isWindows, type Stream } from "./win32.ts";
 
@@ -11,8 +12,8 @@ export type Task = {
   dir: boolean;
   /** Attributes already known from the MFT. */
   attrs?: number;
-  /** `size/mtimeMs` of the stored record: equal means unchanged, the content is not re-read. */
-  prev?: string;
+  /** `stateValue(size, mtimeMs)` of the stored record: equal means unchanged, the content is not re-read. */
+  prev?: number;
   hash: "all" | "pe" | "none";
   /** Files above this size are not hashed (still stat'ed and PE-probed). */
   maxHashBytes: number;
@@ -20,6 +21,11 @@ export type Task = {
   skipAttrs?: boolean;
   /** Metadata-only change (USN without data reasons): stat, never re-read the content. */
   metaOnly?: boolean;
+  /**
+   * Inline catalog-signature lookup for PE files without an embedded signature (wintrust, slow): the watcher's
+   * single-file updates set it; scans leave it off and run the deferred catalog pass instead.
+   */
+  catalog?: boolean;
 };
 
 export type PeSummary = {
@@ -47,6 +53,8 @@ export type PeSummary = {
   signerIssuer: string | null;
   digest: string | null;
   catalog: string | null;
+  /** False until the catalog lookup ran for an image without an embedded signature (deferred pass). */
+  catalogChecked: boolean;
   exportName: string | null;
   imports: { module: string; delay: boolean; functions: string[] }[];
   exports: { ordinal: number; name: string | null; forwarder: string | null }[];
@@ -94,7 +102,8 @@ function fdSource(fd: number, size: number): ByteSource {
   };
 }
 
-export function summarize(pe: PeInfo, catalog: string | null): PeSummary {
+/** `catalog` is the lookup result (null: listed in no catalog), undefined when the lookup did not run. */
+export function summarize(pe: PeInfo, catalog?: CatalogSignature | null): PeSummary {
   const s = pe.version?.strings ?? {};
   return {
     kind: pe.kind,
@@ -117,10 +126,11 @@ export function summarize(pe: PeInfo, catalog: string | null): PeSummary {
     internalName: s.InternalName ?? null,
     copyright: s.LegalCopyright ?? null,
     signature: pe.authenticode ? "embedded" : catalog ? "catalog" : "none",
-    signer: pe.authenticode?.signer ?? (catalog ? "Microsoft Windows (catalog)" : null),
-    signerIssuer: pe.authenticode?.issuer ?? null,
-    digest: pe.authenticode?.digest ?? null,
-    catalog,
+    signer: pe.authenticode ? pe.authenticode.signer : (catalog?.signer ?? null),
+    signerIssuer: pe.authenticode ? pe.authenticode.issuer : (catalog?.issuer ?? null),
+    digest: pe.authenticode ? pe.authenticode.digest : (catalog?.digest ?? null),
+    catalog: pe.authenticode ? null : (catalog?.catalog ?? null),
+    catalogChecked: pe.authenticode !== null || catalog !== undefined,
     exportName: pe.exportName,
     imports: pe.imports,
     exports: pe.exports,
@@ -163,9 +173,13 @@ export function analyze(task: Task): EntryRecord {
     rec.error = (e as NodeJS.ErrnoException).code ?? String(e);
     return rec;
   }
-  if (task.attrs === undefined && !task.skipAttrs && isWindows) rec.attrs = fileAttributes(task.path) ?? 0;
+  if (task.attrs === undefined && !task.skipAttrs && isWindows)
+    rec.attrs = fileAttributes(task.path) ?? 0;
   if (task.dir) return rec;
-  if (task.metaOnly || (task.prev && task.prev === `${rec.size}/${rec.mtimeMs}`)) {
+  if (
+    task.metaOnly ||
+    (task.prev !== undefined && task.prev === stateValue(rec.size, rec.mtimeMs))
+  ) {
     rec.unchanged = true;
     return rec;
   }
@@ -211,9 +225,13 @@ export function analyze(task: Task): EntryRecord {
     }
     if (isPe) {
       const name = task.path.slice(task.path.lastIndexOf("\\") + 1);
-      const pe = parsePe(image ? { size, read: (o, l) => image!.subarray(o, o + l) } : fdSource(fd, size), name);
+      const pe = parsePe(
+        image ? { size, read: (o, l) => image!.subarray(o, o + l) } : fdSource(fd, size),
+        name,
+      );
       if (pe) {
-        const catalog = !pe.authenticode && isWindows ? catalogOf(task.path) : null;
+        const catalog =
+          !pe.authenticode && isWindows && task.catalog ? catalogSignature(task.path) : undefined;
         rec.pe = summarize(pe, catalog);
       }
     }

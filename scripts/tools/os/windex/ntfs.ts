@@ -3,7 +3,7 @@
 // journal reads (FSCTL_READ_USN_JOURNAL). Same documented controls as crates/os/kernel/libs/fsindex/src/ntfs_win.rs.
 // Opening `\\.\C:` requires an administrator token (elevated session or a SYSTEM task); without it every call
 // returns ERROR_ACCESS_DENIED and the callers fall back to the Bun fs walk, never to a fake result.
-import { closeHandle, ioctl, openHandle } from "./win32.ts";
+import { closeHandle, ioctl, openHandle, type Pointer } from "./win32.ts";
 import { DirTree, FILE_ATTRIBUTE_DIRECTORY, parseUsnRecords, type UsnRecord } from "./usn.ts";
 
 export type { UsnRecord };
@@ -41,7 +41,7 @@ export type Journal = {
 export class Volume {
   private constructor(
     readonly drive: string,
-    private handle: number,
+    private handle: Pointer | null,
   ) {}
 
   static open(drive = "C"): Volume {
@@ -52,12 +52,17 @@ export class Volume {
 
   close(): void {
     if (this.handle) closeHandle(this.handle);
-    this.handle = 0;
+    this.handle = null;
+  }
+
+  private get h(): Pointer {
+    if (!this.handle) throw new Error(`volume : fermé`);
+    return this.handle;
   }
 
   query(): Journal {
     const out = new Uint8Array(80);
-    const r = ioctl(this.handle, FSCTL_QUERY_USN_JOURNAL, null, out);
+    const r = ioctl(this.h, FSCTL_QUERY_USN_JOURNAL, null, out);
     if ("error" in r) throw new Win32Error("FSCTL_QUERY_USN_JOURNAL", r.error);
     const v = new DataView(out.buffer);
     return {
@@ -85,7 +90,7 @@ export class Volume {
       const v = new DataView(input.buffer);
       v.setBigUint64(0, 32n * 1024n * 1024n, true);
       v.setBigUint64(8, 4n * 1024n * 1024n, true);
-      const r = ioctl(this.handle, FSCTL_CREATE_USN_JOURNAL, input, new Uint8Array(0));
+      const r = ioctl(this.h, FSCTL_CREATE_USN_JOURNAL, input, new Uint8Array(0));
       if ("error" in r) throw new Win32Error("FSCTL_CREATE_USN_JOURNAL", r.error);
       return this.query();
     }
@@ -109,7 +114,7 @@ export class Volume {
     const decoder = new TextDecoder("utf-16le");
     let count = 0;
     for (;;) {
-      const r = ioctl(this.handle, FSCTL_ENUM_USN_DATA, input, out);
+      const r = ioctl(this.h, FSCTL_ENUM_USN_DATA, input, out);
       if ("error" in r) {
         if (r.error === ERROR_HANDLE_EOF) return count;
         throw new Win32Error("FSCTL_ENUM_USN_DATA", r.error);
@@ -139,7 +144,11 @@ export class Volume {
    * Reads the journal from `startUsn` without waiting (Timeout 0, BytesToWaitFor 0): returns the decoded records
    * and the USN to resume from. ERROR_JOURNAL_ENTRY_DELETED means the checkpoint fell out of the journal.
    */
-  read(startUsn: bigint, journalId: bigint, bufferBytes = 1 << 20): { records: UsnRecord[]; next: bigint } {
+  read(
+    startUsn: bigint,
+    journalId: bigint,
+    bufferBytes = 1 << 20,
+  ): { records: UsnRecord[]; next: bigint } {
     const out = new Uint8Array(bufferBytes);
     // READ_USN_JOURNAL_DATA_V0: StartUsn, ReasonMask, ReturnOnlyOnClose, Timeout, BytesToWaitFor, UsnJournalID.
     const input = new Uint8Array(40);
@@ -150,7 +159,7 @@ export class Volume {
     iv.setBigUint64(16, 0n, true);
     iv.setBigUint64(24, 0n, true);
     iv.setBigUint64(32, journalId, true);
-    const r = ioctl(this.handle, FSCTL_READ_USN_JOURNAL, input, out);
+    const r = ioctl(this.h, FSCTL_READ_USN_JOURNAL, input, out);
     if ("error" in r) throw new Win32Error("FSCTL_READ_USN_JOURNAL", r.error);
     if (r.bytes < 8) return { records: [], next: startUsn };
     const next = new DataView(out.buffer).getBigInt64(0, true);
@@ -192,7 +201,7 @@ export type MftIndex = {
  * Reads the whole MFT of `drive`: the directory tree (record -> parent + name) and the attributes of every record.
  * The journal is queried first so that changes made during the enumeration are replayed from `journal.nextUsn`.
  */
-export function readMft(drive = "C"): MftIndex {
+export function readMft(drive = "C", withAttributes = true): MftIndex {
   const t0 = performance.now();
   const vol = Volume.open(drive);
   try {
@@ -200,7 +209,7 @@ export function readMft(drive = "C"): MftIndex {
     const tree = new DirTree(vol.drive);
     const attributes = new AttrTable();
     const records = vol.enumerate((record, parent, attrs, name) => {
-      attributes.set(record, attrs);
+      if (withAttributes) attributes.set(record, attrs);
       if (attrs & FILE_ATTRIBUTE_DIRECTORY) tree.set(record, parent, name());
     });
     return { tree, attributes, records, journal, ms: performance.now() - t0 };
