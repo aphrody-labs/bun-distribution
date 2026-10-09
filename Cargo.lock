@@ -3322,12 +3322,12 @@ name = "aphrody-yolo"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "aphrody-fsindex",
  "aphrody-git",
  "aphrody-kernel-client",
  "chrono",
  "clap",
  "ignore",
- "rusqlite",
  "serde",
  "serde_json",
  "tokio",

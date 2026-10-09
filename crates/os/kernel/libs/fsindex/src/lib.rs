@@ -7,6 +7,8 @@
 //! name, extension, size, mtime — never file contents), so it is cheap and
 //! privacy-bounded. Backs `aphrody index build` / `aphrody index search`.
 //!
+//! [`PathIndex`] is the substring (trigram) path index behind `aphrody yolo fs`.
+//!
 //! ```no_run
 //! use aphrody_fsindex::FsIndex;
 //! # fn run() -> Result<(), aphrody_fsindex::FsIndexError> {
@@ -29,13 +31,15 @@ pub mod google;
 pub mod mft;
 #[cfg(windows)]
 pub mod ntfs_win;
+pub mod paths;
 pub mod walk;
 
 pub use google::{GoogleFileHit, GoogleFilesDb};
 pub use mft::{MftTree, UsnEntry, UsnRecordHeader, parse_usn_record};
+pub use paths::{PathHit, PathIndex};
 pub use walk::build_tree_walk;
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
@@ -50,6 +54,26 @@ pub enum FsIndexError {
     /// The query reduced to no searchable terms.
     #[error("empty query")]
     EmptyQuery,
+    /// A database file could not be opened or created.
+    #[error("cannot open filesystem index: {}", path.display())]
+    Open {
+        /// Database file.
+        path: PathBuf,
+        /// Underlying SQLite error.
+        #[source]
+        source: rusqlite::Error,
+    },
+    /// A filesystem operation on an index file failed.
+    #[error("{action}: {}", path.display())]
+    Io {
+        /// What was being done.
+        action: &'static str,
+        /// File concerned.
+        path: PathBuf,
+        /// Underlying I/O error.
+        #[source]
+        source: std::io::Error,
+    },
 }
 
 /// One indexed filesystem entry.
