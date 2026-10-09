@@ -170,7 +170,7 @@ export async function runStartupBenchmark(
       bun,
       installed,
       launcher,
-      join(root, "crates/infra/aphrody/src/index.ts"),
+      join(root, "packages/engine/yolo/src/index.ts"),
       join(root, "VERSION"),
     ];
     const before = await Promise.all(files.map(fingerprint));

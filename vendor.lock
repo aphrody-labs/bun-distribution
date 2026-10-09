@@ -4,11 +4,11 @@
   "sources": [
     {
       "name": "tauri",
-      "sha": "890a4e24143bf3957907dfe878c4b82c4b369846"
+      "sha": "c55221c72a996b041a423c6ce4b32068e87cb097"
     },
     {
       "name": "plugins-workspace",
-      "sha": "a50a1b7baf3bb5955eb95cf1595007382d276fb6"
+      "sha": "7e44012db3c1ef7896158484a7afc626b04c691a"
     },
     {
       "name": "create-tauri-app",

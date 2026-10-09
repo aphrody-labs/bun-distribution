@@ -60,7 +60,7 @@
       "@tauri-apps/plugin-opener"
     ],
     "cli": {
-      "package": "@tauri-crates/infra/aphrody",
+      "package": "@tauri-apps/cli",
       "version": "3.0.0-alpha.4"
     }
   },
@@ -71,25 +71,6 @@
     ]
   },
   "patches": [
-    {
-      "id": "tauri-plugin-dialog-manager-import",
-      "kind": "vendored-crate",
-      "crate": "tauri-plugin-dialog",
-      "base": "3.0.0-alpha.2",
-      "path": "crates/tauri/aphrody-tauri-plugin-dialog",
-      "patchFile": "patches/tauri-plugin-dialog-3.0.0-alpha.2.patch",
-      "appliedFile": "crates/tauri/aphrody-tauri-plugin-dialog/src/desktop.rs",
-      "appliedMarker": "use tauri::{AppHandle, Manager, Runtime, plugin::PluginApi};",
-      "cargoPatch": "[patch.crates-io] tauri-plugin-dialog",
-      "rationale": "tauri 3.0.0-alpha.3 moved run_on_main_thread to the Manager trait; tauri-plugin-dialog 3.0.0-alpha.2 (and plugins-workspace v3 HEAD d9be6d04) still call AppHandle::run_on_main_thread without importing Manager and fail to compile.",
-      "upstreamContains": {
-        "crate": "tauri-plugin-dialog",
-        "file": "src/desktop.rs",
-        "regex": "use tauri::\\{[^}]*\\bManager\\b"
-      },
-      "disposition": "drop the vendored copy once a published dialog release imports Manager; contribute upstream",
-      "localChanges": "2026-10-05 (decision 21): default feature xdg-portal instead of gtk3 (no GTK 3 library is linked); the gtk3 feature is removed. Carried by vendor.toml rewrites, not by the patch file."
-    },
     {
       "id": "tauri-runtime-cef-glib-work-source",
       "kind": "vendored-crate",
@@ -143,7 +124,7 @@
         "pluginOpener": "tauri-plugin-opener",
         "jsApi": "@tauri-apps/api",
         "jsPluginOpener": "@tauri-apps/plugin-opener",
-        "jsCli": "@tauri-crates/infra/aphrody"
+        "jsCli": "@tauri-apps/cli"
       }
     }
   ],

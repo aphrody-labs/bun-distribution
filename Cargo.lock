@@ -2936,7 +2936,7 @@ dependencies = [
 
 [[package]]
 name = "aphrody-tauri-plugin-dialog"
-version = "3.0.0-alpha.2"
+version = "3.0.0-alpha.3"
 dependencies = [
  "aphrody-tauri",
  "aphrody-tauri-plugin",

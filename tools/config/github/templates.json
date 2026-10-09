@@ -36,14 +36,14 @@
         "`packages/python` (Package Python / uv)",
         "`packages/runtime` (SDK Bun FFI)",
         "`packages/core` (Librairie Core TypeScript)",
-        "`crates/infra/aphrody` (CLI universelle yolo)",
+        "`packages/engine/yolo` (CLI universelle yolo)",
         "`apps/web` (Application Web)",
         "`docs/` (Documentation)"
       ],
       "summaryDescription": "Résumé clair et concis de ce qui s'est passé.",
       "reproductionDescription": "Commandes exactes pour reproduire l'anomalie.",
       "prValidations": [
-        "`bun crates/infra/aphrody/src/index.ts verify --json` (Toutes les gates validées)",
+        "`bun packages/engine/yolo/src/index.ts verify --json` (Toutes les gates validées)",
         "`bun run lint` (Oxlint sans erreur)",
         "`bun run fmt:check` (Code TypeScript formaté sans diff)",
         "`ruff check .` (Code Python linté et vérifié)",

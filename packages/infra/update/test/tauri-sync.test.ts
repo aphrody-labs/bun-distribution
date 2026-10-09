@@ -198,13 +198,13 @@ test("the committed config parses and lists every tracked crate", async () => {
   expect(config.line).toBe(3);
   expect(config.rust.crates).toContain("tauri-runtime-cef");
   expect(config.rust.crates).not.toContain("tauri-runtime-wry");
-  expect(config.patches.map((patch) => patch.id)).toContain("tauri-plugin-dialog-manager-import");
+  expect(config.patches.map((patch) => patch.id)).toContain("tauri-runtime-cef-glib-work-source");
   expect(() => parseConfig('{"schemaVersion":2}')).toThrow();
 });
 
 const mirror = {
   file: "scaffolder.ts",
-  keys: { tauri: "tauri", jsApi: "@tauri-apps/api", jsCli: "@tauri-crates/infra/aphrody" },
+  keys: { tauri: "tauri", jsApi: "@tauri-apps/api", jsCli: "@tauri-apps/cli" },
 };
 const mirrorText =
   'export const TAURI_3 = {\n  tauri: "3.0.0-alpha.2",\n  jsApi: "3.0.0-alpha.2",\n  jsCli: "3.0.0-alpha.3",\n} as const;\n';
@@ -213,7 +213,7 @@ test("mirror drift detection and rewriting", () => {
   const central = {
     tauri: "3.0.0-alpha.3",
     "@tauri-apps/api": "3.0.0-alpha.2",
-    "@tauri-crates/infra/aphrody": "3.0.0-alpha.3",
+    "@tauri-apps/cli": "3.0.0-alpha.3",
     unused: null,
   };
   const drift = mirrorDrift(mirrorText, mirror, central);

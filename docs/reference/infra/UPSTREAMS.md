@@ -14,7 +14,7 @@ Source, tests and licences are tracked in the monorepo; Cargo needs no sibling c
 | `tauri-plugin-mcp-bridge` | 0.13.0 | `crates/ui/tauri-plugin-mcp-bridge` | `patches/tauri-plugin-mcp-bridge-0.13.0-registry.patch` |
 | `rfb-encodings` | 0.1.7 | `crates/compat/rfb-encodings` | `patches/rfb-encodings-0.1.7-truecolour.patch` |
 | `simdutf` | 0.7.0 | `crates/native/simdutf` | `patches/simdutf-rio-0.7.0.patch` |
-| `tauri-plugin-dialog` | 3.0.0-alpha.2 | `crates/tauri/aphrody-tauri-plugin-dialog` | `patches/tauri-plugin-dialog-3.0.0-alpha.2.patch` |
+| `tauri-plugin-dialog` | 3.0.0-alpha.3 | `crates/tauri/aphrody-tauri-plugin-dialog` | - |
 | `serde-saphyr` | 0.0.16 | `crates/compat/serde-saphyr` | `patches/serde-saphyr-0.0.16-regex.patch` |
 | `aphrody-llama` | 0.83.5 | `crates/ml/llama` |  |
 | `aphrody-obscura` | 0.1.0 | `crates/web/obscura` |  |

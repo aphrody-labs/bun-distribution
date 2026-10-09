@@ -39,7 +39,7 @@ Root `package.json` `workspaces.catalog` holds `@aphrody/api` and
 | `tauri-build`, `tauri-plugin`, all `tauri-plugin-*`                 | 3.0.0-alpha.2                     |
 | `tauri-runtime-cef`                                                 | 3.0.0-alpha.5 (`cef =152.3.0`)    |
 | `tauri-specta` (git tag `v2.0.0-rc.25-koharu.1`)                    | 2.0.0-rc.25                       |
-| `@aphrody/api` / `@aphrody/plugin-opener` / `@tauri-crates/infra/aphrody` | 3.0.0-alpha.2 / alpha.1 / alpha.3 |
+| `@aphrody/api` / `@aphrody/plugin-opener` / `@tauri-apps/cli` | 3.0.0-alpha.2 / alpha.1 / alpha.3 |
 
 `plugin-opener` JS stays at alpha.1 while alpha.2 is younger than the repository
 `minimumReleaseAge` (3 days, `bunfig.toml`); the sync script reports it as
@@ -90,7 +90,6 @@ project in the registry in the same change that adds it.
 
 | Id                                   | What                                                                                                                                                                                                                                                                                    | Exit condition                                                       |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `tauri-plugin-dialog-manager-import` | `.cache/upstream/tauri-plugin-dialog` is crates.io 3.0.0-alpha.2 plus `use ...Manager` (`patches/tauri-plugin-dialog-3.0.0-alpha.2.patch`), wired by `[patch.crates-io]`. alpha.3 of `tauri` moved `run_on_main_thread` to `Manager`; the published dialog plugin does not compile against it. | A published dialog release imports `Manager`; the script detects it. |
 | `tauri-specta-tauri3`                | `koharu-rs/tauri-specta` tag `v2.0.0-rc.25-koharu.1`: one commit allowing `tauri >= 3.0.0-alpha.0`.                                                                                                                                                                                     | Upstream `specta-rs/tauri-specta` accepts Tauri 3.                   |
 
 Retired (verified 2026-10-01): `aphrody-code/tauri` rev `89499afc` (only change:
