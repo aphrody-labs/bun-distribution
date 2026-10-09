@@ -444,6 +444,22 @@
       "targetHost": "vps"
     },
     {
+      "service": "aphrody-omar-watch",
+      "unit": "aphrody-omar-watch.service",
+      "path": "systemd/aphrody/aphrody-omar-watch.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-omar-watch-timer",
+      "unit": "aphrody-omar-watch.timer",
+      "path": "systemd/aphrody/aphrody-omar-watch.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
       "service": "aphrody-discord-debate",
       "unit": "aphrody-discord-debate.service",
       "path": "systemd/aphrody/aphrody-discord-debate.service",

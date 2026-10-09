@@ -197,6 +197,27 @@ Mode NAT (si `mirrored` est impossible) : `netsh interface portproxy add v4tov4 
 listenport=2222 connectaddress=$(wsl hostname -I) connectport=2222`, à rejouer à chaque ouverture de session (l'IP
 WSL change). Côté propriétaire : `ssh omar-wsl` (wg1) ou `ssh omar-wsl-rt` (tunnel inverse, ProxyJump vps).
 
+### 2.10 Toujours en ligne (2026-10-09)
+
+Une seule commande, en PowerShell 7 administrateur, une fois les sections 2.1 à 2.9 et la clé SSH en place :
+
+```powershell
+pwsh -File scripts/tools/infra/install-always-online.ps1 -DryRun   # plan
+pwsh -File scripts/tools/infra/install-always-online.ps1
+```
+
+Le script coupe la veille et l'hibernation sur secteur, puis crée des tâches `\Aphrody\` relancées toutes les 5 minutes
+(`IgnoreNew`, 999 redémarrages, sans limite de durée) : `Aphrody WG omar` (démarrage, SYSTEM : WireGuardNT vit avec ce
+processus), `Aphrody Remote Desktop` (8795 + VNC 5900), `Aphrody MCP HTTP` (127.0.0.1:8793, portproxy permanent sur
+10.200.77.10:8793), `Aphrody omar reverse` (tunnel inverse de la section 4 ter, secours sans handshake) et
+`Aphrody WSL sshd` (`.wslconfig` mirrored, sshd 2222 maintenu). Options : `-NoWsl`, `-NoReverse`, `-Member`,
+`-Address`, `-IdentityFile`. Idempotent ; aucun secret lu ni affiché ; journaux dans `<aphrody home>\logs`.
+
+Côté hub, `aphrody-omar-watch.timer` (catalogue `tools/config/host/catalog.json`, script
+`tools/config/host/hub/aphrody-omar-watch`) vérifie chaque minute le handshake wg1 du pair d'Omar (moins de 180 s) ou
+l'écoute du tunnel inverse 127.0.0.1:22010, publie chaque changement d'état dans #admin-console et relance Omar toutes
+les 6 h tant que son PC reste hors ligne.
+
 ## 3. Côté propriétaire (aphro-pc)
 
 ```powershell

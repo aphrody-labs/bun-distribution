@@ -374,7 +374,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-sprite-sheet` | [crates/ui/sprite-sheet](../../../crates/ui/sprite-sheet) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
 | `aphrody-svg` | [crates/ui/svg](../../../crates/ui/svg) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-09 |
 | `aphrody-taffy` | [crates/ui/taffy](../../../crates/ui/taffy) | rust crate | 0.12.1 | lib | yes | 0 | 2026-10-09 |
-| `aphrody-tauri-plugin-mcp-bridge` | [crates/ui/tauri-plugin-mcp-bridge](../../../crates/ui/tauri-plugin-mcp-bridge) | rust crate | 0.13.0 | rlib | yes | 0 | 2026-10-06 |
+| `aphrody-tauri-plugin-mcp-bridge` | [crates/ui/tauri-plugin-mcp-bridge](../../../crates/ui/tauri-plugin-mcp-bridge) | rust crate | 0.13.0 | rlib | yes | 0 | 2026-10-09 |
 | `aphrody-tauri-wrap` | [crates/ui/tauri-wrap](../../../crates/ui/tauri-wrap) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-06 |
 
 ## web

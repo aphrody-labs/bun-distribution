@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
+# Installed as /usr/local/libexec/aphrody-omar-watch on the vps (hub), run by aphrody-omar-watch.timer.
+# Omar's PC counts as online when its wg1 peer handshook within 180 s or its reverse tunnel (127.0.0.1:22010) listens.
+# Posts to #admin-console only on a state change, and re-pings Omar every 6 h while offline. No secret is read or printed.
+set -euo pipefail
+PEER=lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=
+CHANNEL=1557354144149405806
+MENTION='<@1527405876695142620>'
+STATE=/var/lib/aphrody-omar-watch/state
+DISCORD=(/home/ubuntu/.local/bin/aphrody discord send "$CHANNEL" --env-file /etc/aphrody-discord.env -m -)
+now=$(date +%s)
+last=$(wg show wg1 latest-handshakes | awk -v p="$PEER" '$1 == p { print $2 }')
+age=$(( now - ${last:-0} ))
+wg=down; [ "${last:-0}" -gt 0 ] && [ "$age" -lt 180 ] && wg=up
+rt=down; ss -Hltn 'sport = :22010' | grep -q . && rt=up
+state=offline; { [ "$wg" = up ] || [ "$rt" = up ]; } && state=online
+{ read -r prev since pinged < "$STATE"; } 2>/dev/null || { prev=unknown; since=$now; pinged=$now; }
+[ "$state" != "$prev" ] && since=$now
+post() { printf '%s\n' "$1" | "${DISCORD[@]}" >/dev/null; }
+if [ "$state" != "$prev" ] && [ "$prev" != unknown ]; then
+  if [ "$state" = online ]; then
+    post "PC d'Omar en ligne (wg1: $wg, tunnel inverse: $rt)."
+  else
+    post "$MENTION ton PC est hors ligne pour Aphrody (wg1: aucun handshake récent, tunnel inverse absent). Lance en PowerShell 7 admin : \`scripts/tools/infra/install-always-online.ps1\` (OMAR-REMOTE-CONTROL.md section 2.10) ; il garde wg1, le tunnel inverse, le bureau, le MCP et le sshd WSL actifs tout seuls."
+    pinged=$now
+  fi
+elif [ "$state" = offline ] && [ $(( now - pinged )) -ge 21600 ]; then
+  post "$MENTION toujours hors ligne depuis $(( (now - since) / 3600 )) h : \`install-always-online.ps1\` (OMAR-REMOTE-CONTROL.md section 2.10)."
+  pinged=$now
+fi
+printf '%s %s %s\n' "$state" "$since" "$pinged" > "$STATE"

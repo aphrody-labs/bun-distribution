@@ -3206,8 +3206,8 @@
     {
       "path": "docs/operations/infra/OMAR-REMOTE-CONTROL.md",
       "title": "Contrôle du PC Windows d'Omar depuis Aphrody (tunnel WireGuard privé)",
-      "sha256": "33bd8c9a43e06ec30132c1d4efd383fa6543b379e93d400a4dfea38d58d3e67f",
-      "bytes": 32807,
+      "sha256": "9fe4ab2421a39cb5b7dbc5be98b198b0ccfc3ec4b726ed678080603407354fab",
+      "bytes": 37181,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -3236,8 +3236,8 @@
     {
       "path": "docs/operations/infra/PRIVATE-TUNNEL.md",
       "title": "Private WireGuard tunnel and Omar administrator access",
-      "sha256": "615b21cacc7a9408d08c12db8f325368cfde6ea992fb2cca4f51702cedf437cd",
-      "bytes": 26808,
+      "sha256": "a69064bdc27c7829790c5ec6918ad6ddfe5f36620a092b120b29c4a38e0cf977",
+      "bytes": 27119,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -6946,8 +6946,8 @@
     {
       "path": "docs/reference/upstream-bun/APHRODY-FORK.md",
       "title": "Bun in Aphrody: the aphrody-labs/bun fork",
-      "sha256": "88d16cdce81fa62e00d01d8bb1810a02675e57d8da1b86b19ad7cba476c51f6b",
-      "bytes": 6628,
+      "sha256": "2b758e3d9bd9d2dc18aa245678a83b77f278f9500e3e4359e67fd40808ced458",
+      "bytes": 6739,
       "domain": "upstream-bun",
       "status": "imported",
       "visibility": "private",
@@ -7526,7 +7526,7 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "90c9f8392127dd8f0a663dc28e996b672af6b576c5856071cfddc5c6e50451e3",
+      "sha256": "b289f8e1d8925204751d6d2cecf2a827c1992cf6b8eec42d34b96fe7d70c4cd2",
       "bytes": 39807,
       "domain": "workspace",
       "status": "generated",
@@ -12106,8 +12106,8 @@
     {
       "path": "m3/packages/m3-theme/README.md",
       "title": "@aphrody/m3-theme",
-      "sha256": "37c0df7eabb130387726b591db8811fc5751529125baef189395f80fe3d5cfa2",
-      "bytes": 7858,
+      "sha256": "b152678caf1e4976b23a963fc70ba1514c38c6319598918569d830dff665b23a",
+      "bytes": 7337,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
