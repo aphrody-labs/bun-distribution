@@ -16,3 +16,11 @@
 
 The product queue lives in [PLAN.md](PLAN.md); completed batch evidence lives in
 [MEMORY.md](MEMORY.md). This file is a bounded checklist, not another product plan.
+
+## Cloudflare account setup
+
+- [x] Install and verify the official Cloudflare plugin and Rust build tool.
+- [x] Prepare the configurable private environment and Infra secrets contract; validate Windows ACLs and preservation of existing files.
+- [ ] Connect Chrome and authenticate the selected Cloudflare account.
+- [ ] Provision account-owned automation tokens, AI access and R2 credentials; verify live service permissions.
+- [ ] Finish the cross-platform runtime batch and qualify the provider targets separately.
