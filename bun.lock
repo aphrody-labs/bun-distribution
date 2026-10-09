@@ -23,7 +23,7 @@
     },
     "crates/tauri/aphrody-tauri-api": {
       "name": "@aphrody/api",
-      "version": "3.0.0-alpha.3",
+      "version": "3.0.0-alpha.4",
     },
     "crates/tauri/aphrody-tauri-plugin-autostart": {
       "name": "@aphrody/plugin-autostart",
@@ -48,7 +48,7 @@
     },
     "crates/tauri/aphrody-tauri-plugin-dialog": {
       "name": "@aphrody/plugin-dialog",
-      "version": "3.0.0-alpha.3",
+      "version": "3.0.0-alpha.4",
       "dependencies": {
         "@aphrody/api": "workspace:*",
       },
@@ -215,7 +215,7 @@
     },
     "m3/packages/assets": {
       "name": "@aphrody/assets",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "devDependencies": {
         "@types/react": "catalog:",
         "react": "catalog:",
@@ -252,7 +252,7 @@
     },
     "m3/packages/eslint-plugin-m3": {
       "name": "@aphrody/eslint-plugin-m3",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
       },
@@ -265,7 +265,7 @@
     },
     "m3/packages/identity": {
       "name": "@aphrody/identity",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "devDependencies": {
         "@aphrody/m3": "workspace:*",
         "@types/react": "catalog:",
@@ -277,7 +277,7 @@
     },
     "m3/packages/m3": {
       "name": "@aphrody/m3",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "bin": {
         "m3": "./bin/m3.ts",
       },
@@ -313,7 +313,7 @@
     },
     "m3/packages/m3-ai": {
       "name": "@aphrody/m3-ai",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "dependencies": {
         "@ag-ui/a2ui-toolkit": "catalog:",
         "@ag-ui/client": "catalog:",
@@ -340,7 +340,7 @@
     },
     "m3/packages/m3-baseui": {
       "name": "@aphrody/m3-baseui",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "dependencies": {
         "@base-ui/react": "catalog:",
       },
@@ -361,7 +361,7 @@
     },
     "m3/packages/m3-bun": {
       "name": "@aphrody/m3-bun",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "bin": {
         "m3-bun": "./bin/m3-bun.ts",
       },
@@ -438,14 +438,14 @@
     },
     "m3/packages/m3-codemods": {
       "name": "@aphrody/m3-codemods",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
       },
     },
     "m3/packages/m3-config": {
       "name": "@aphrody/m3-config",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "dependencies": {
         "@happy-dom/global-registrator": "catalog:",
         "element-internals-polyfill": "catalog:",
@@ -453,7 +453,7 @@
     },
     "m3/packages/m3-design": {
       "name": "@aphrody/m3-design",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "dependencies": {
         "@aphrody/bun": "^3.3.0",
         "@material/material-color-utilities": "catalog:",
@@ -464,7 +464,7 @@
     },
     "m3/packages/m3-explorer": {
       "name": "@aphrody/m3-explorer",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "dependencies": {
         "@aphrody/m3-primitives": "workspace:*",
         "clsx": "catalog:",
@@ -480,14 +480,14 @@
     },
     "m3/packages/m3-fonts": {
       "name": "@aphrody/m3-fonts",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
       },
     },
     "m3/packages/m3-forms": {
       "name": "@aphrody/m3-forms",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "dependencies": {
         "@aphrody/m3-primitives": "workspace:*",
         "clsx": "catalog:",
@@ -505,7 +505,7 @@
     },
     "m3/packages/m3-front": {
       "name": "@aphrody/m3-front",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "dependencies": {
         "@aphrody/m3-tokens": "workspace:*",
         "@aphrody/material-web": "catalog:",
@@ -518,7 +518,7 @@
     },
     "m3/packages/m3-icons": {
       "name": "@aphrody/m3-icons",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "dependencies": {
         "@aphrody/bun": "^3.3.0",
       },
@@ -538,7 +538,7 @@
     },
     "m3/packages/m3-mcp": {
       "name": "@aphrody/m3-mcp",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "dependencies": {
         "@aphrody/m3-os-themes": "workspace:*",
         "@aphrody/material-design-icons": "workspace:*",
@@ -547,7 +547,7 @@
     },
     "m3/packages/m3-motion": {
       "name": "@aphrody/m3-motion",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "dependencies": {
         "motion": "catalog:",
       },
@@ -562,7 +562,7 @@
     },
     "m3/packages/m3-next": {
       "name": "@aphrody/m3-next",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "bin": {
         "m3-next": "./bin/m3-next.ts",
       },
@@ -594,7 +594,7 @@
     },
     "m3/packages/m3-next-migrate": {
       "name": "@aphrody/m3-next-migrate",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "bin": {
         "m3-next-migrate": "./dist/cli.js",
         "next-migrate": "./dist/cli.js",
@@ -610,7 +610,7 @@
     },
     "m3/packages/m3-os-themes": {
       "name": "@aphrody/m3-os-themes",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "bin": {
         "m3-os-themes": "./src/cli.ts",
       },
@@ -626,7 +626,7 @@
     },
     "m3/packages/m3-primitives": {
       "name": "@aphrody/m3-primitives",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "dependencies": {
         "@aphrody/m3-motion": "workspace:*",
         "@base-ui/react": "catalog:",
@@ -649,7 +649,7 @@
     },
     "m3/packages/m3-react": {
       "name": "@aphrody/m3-react",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "dependencies": {
         "@aphrody/m3-tokens": "workspace:*",
         "@aphrody/material-web": "catalog:",
@@ -667,7 +667,7 @@
     },
     "m3/packages/m3-reader": {
       "name": "@aphrody/m3-reader",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "dependencies": {
         "@tanstack/react-virtual": "catalog:",
         "lucide-react": "catalog:",
@@ -684,7 +684,7 @@
     },
     "m3/packages/m3-tailwind": {
       "name": "@aphrody/m3-tailwind",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "dependencies": {
         "@aphrody/m3-tokens": "workspace:*",
       },
@@ -701,7 +701,7 @@
     },
     "m3/packages/m3-theme": {
       "name": "@aphrody/m3-theme",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "dependencies": {
         "@aphrody/m3-tokens": "workspace:*",
       },
@@ -716,7 +716,7 @@
     },
     "m3/packages/m3-tokens": {
       "name": "@aphrody/m3-tokens",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "dependencies": {
         "@material/material-color-utilities": "catalog:",
       },
@@ -727,7 +727,7 @@
     },
     "m3/packages/material-design-icons": {
       "name": "@aphrody/material-design-icons",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "bin": {
         "m3-svg-to-ico": "./scripts/svg-to-ico.ts",
       },
@@ -737,7 +737,7 @@
     },
     "m3/packages/scaffold": {
       "name": "@aphrody/scaffold",
-      "version": "1.0.0-canary.1",
+      "version": "1.0.0-canary.2",
       "bin": {
         "aphrody-scaffold": "./src/cli.ts",
       },
@@ -763,9 +763,6 @@
     "packages/ai/doc-ai": {
       "name": "@aphrody/doc-ai",
       "version": "3.2.7",
-      "bin": {
-        "doc-ai": "./src/cli.ts",
-      },
       "dependencies": {
         "@ai-sdk/google-vertex": "catalog:",
         "@opentelemetry/api": "catalog:",
@@ -811,7 +808,7 @@
     },
     "packages/engine/runtime": {
       "name": "@aphrody/runtime-sdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
     },
     "packages/engine/yolo": {
       "name": "@aphrody/yolo-cli",
@@ -848,21 +845,18 @@
     "packages/infra/ovh": {
       "name": "@aphrody/ovh",
       "version": "0.2.1",
-      "bin": {
-        "aphrody-ovh": "./src/cli.ts",
-      },
     },
     "packages/infra/paths": {
       "name": "@aphrody/paths",
-      "version": "0.1.1",
+      "version": "0.1.2",
     },
     "packages/infra/product": {
       "name": "@aphrody/product",
       "version": "0.3.0",
       "bin": {
+        "aphrody-omar": "src/cli.ts",
         "aphrody-product": "src/cli.ts",
         "aphrody-setup": "src/cli.ts",
-        "aphrody-omar": "src/cli.ts",
         "creator-kit": "src/cli.ts",
       },
     },
@@ -969,14 +963,14 @@
     },
     "packages/web/fuzzy": {
       "name": "@aphrody/fuzzy",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "devDependencies": {
         "@types/bun": "catalog:",
       },
     },
     "packages/web/qr": {
       "name": "@aphrody/qr",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "devDependencies": {
         "@types/bun": "catalog:",
       },
@@ -1006,7 +1000,10 @@
     "@ag-ui/core@1.0.1": "patches/ag-ui-core-1.0.1.patch",
   },
   "overrides": {
+    "@next/env": "file:third_party/next-fork/next-env-16.5.0-canary.5-dac376c6fe-f32e63fa.tgz",
+    "@next/third-parties": "file:third_party/next-fork/next-third-parties-16.5.0-canary.5-dac376c6fe-14a34de8.tgz",
     "axios": "^1.20.0",
+    "next": "file:third_party/next-fork/next-16.5.0-canary.5-dac376c6fe-80cae9ab.tgz",
     "qs": "^6.16.0",
     "undici": "^7.30.0",
   },
@@ -1108,7 +1105,7 @@
     "lucide-react": "^1.48.0",
     "maplibre-gl": "^6.4.1",
     "motion": "^13.4.4",
-    "next": "16.3.8",
+    "next": "16.5.0-canary.5",
     "next-themes": "^0.4.6",
     "ogl": "^1.0.11",
     "prismjs": "^1.30.0",
@@ -1560,23 +1557,23 @@
 
     "@neon/sdk": ["@neon/sdk@7.0.0", "", {}, "sha512-hF/Om50SmpKK2PQldcwYxi6b3p7S2wlwW8fX+54jx88xHaEu7hB4dojuuuP8nwQz24qq/p/jxVm0P9DztKPoJA=="],
 
-    "@next/env": ["@next/env@16.3.8", "", {}, "sha512-Al9zqHVV7TJv0eFuOU4U7Lvv74PTih4Ch63sk2xCIpSTkE3udFnaOcnzP2lQVymiL7yS9Cj2iClUXlR3EQ5sEw=="],
+    "@next/env": ["@next/env@third_party/next-fork/next-env-16.5.0-canary.5-dac376c6fe-f32e63fa.tgz", {}, "sha512-9ZjrwtU6JrvjcSMX65ReicaahIIbMTtd3RAqm3Yfz8PDLiFXBIDwZJiTjIffbC/TOiaxnsTw/C6p7v56IA7Rpg=="],
 
-    "@next/swc-darwin-arm64": ["@next/swc-darwin-arm64@16.3.8", "", { "os": "darwin", "cpu": "arm64" }, "sha512-2JPRMh2nmQG5CiL7cXGL9AGwnPWJQ//cTtAUCT+w511QHk79SYz3LGv/pc5X643B/WEO0rvu3Yww0hqwt3kgeA=="],
+    "@next/swc-darwin-arm64": ["@next/swc-darwin-arm64@16.5.0-canary.5", "", { "os": "darwin", "cpu": "arm64" }, "sha512-6V8QETfpxTotWNw0PPQlZeNUgzBsDbc7JSVM4gyJR8iBaZD744OUAQkfAqmX63gdD57TA9ybiQXmARY+DHNuYQ=="],
 
-    "@next/swc-darwin-x64": ["@next/swc-darwin-x64@16.3.8", "", { "os": "darwin", "cpu": "x64" }, "sha512-GZtCCOBKJ4leVIT/Th0llWKhD1ca92lzbQiS5R5ON9QkoiFnilFsebDae1JU2a3HWoKMEmEZWGs1AGLavVM72Q=="],
+    "@next/swc-darwin-x64": ["@next/swc-darwin-x64@16.5.0-canary.5", "", { "os": "darwin", "cpu": "x64" }, "sha512-Yiy0NopYTMhXBXCprv2A23ZRpUY4sOGI0IGm6kFnLuI6lfIGYfzHBLUW0+5rBHO8a9fRflWwYA/JbZ43bO1hRA=="],
 
-    "@next/swc-linux-arm64-gnu": ["@next/swc-linux-arm64-gnu@16.3.8", "", { "os": "linux", "cpu": "arm64" }, "sha512-O659ygeQYqneJ1fBKMpFxIFqYkYswu8IAS1OCKK/4f3ZgJJm1dRz4fVJZRi/kLLWjnBKnebOePA4WNv+sV1pVA=="],
+    "@next/swc-linux-arm64-gnu": ["@next/swc-linux-arm64-gnu@16.5.0-canary.5", "", { "os": "linux", "cpu": "arm64" }, "sha512-v8e8IioVVProNkKwAiDAHBRDgNzjtrBwlgE/XZMXMcct/vvCRQK59qczliu7btU8JGCuuClvIQjzJ/ACLDu8+w=="],
 
-    "@next/swc-linux-arm64-musl": ["@next/swc-linux-arm64-musl@16.3.8", "", { "os": "linux", "cpu": "arm64" }, "sha512-dSjKSyWpzxoO1d3DIZZcP4XJcNaKeLmxQMFOiYl5vuBRMmweIqnAhty8tAmRsvTss779cK1FtYnDMj40e4TQlg=="],
+    "@next/swc-linux-arm64-musl": ["@next/swc-linux-arm64-musl@16.5.0-canary.5", "", { "os": "linux", "cpu": "arm64" }, "sha512-VVrS+YP6x+18TFKpN8JJ/ynn4HOFL6W4OByDzRDS205FeAJmoWx9CaOpIDbIx23tFCAhIO9vMUl7p7hO+va+hA=="],
 
-    "@next/swc-linux-x64-gnu": ["@next/swc-linux-x64-gnu@16.3.8", "", { "os": "linux", "cpu": "x64" }, "sha512-lbqOuz3RPRcv+o9msNsJw5x4+Y1ZwPTs6vmL6DCf7i0fZfvng/F59wyeDwqHIvV0mK//RBy/jJkZ+nCKsSMXjQ=="],
+    "@next/swc-linux-x64-gnu": ["@next/swc-linux-x64-gnu@16.5.0-canary.5", "", { "os": "linux", "cpu": "x64" }, "sha512-2OJ2oVBOUYoph2dh7g/cu1KcAF+CbmRYrEn7drSb3ycGmXH9eupKSHfMVnCJ57fA4T72Zp9zlNPimDrkA8Cc/g=="],
 
-    "@next/swc-linux-x64-musl": ["@next/swc-linux-x64-musl@16.3.8", "", { "os": "linux", "cpu": "x64" }, "sha512-+316WswI8ScVgZeUd+1KGaXkHhaYQzCjvH/05TZSpJ8zBizb1a4G7DtO7F12jcBIqMOtsz9ji1t48fmKtzqsGA=="],
+    "@next/swc-linux-x64-musl": ["@next/swc-linux-x64-musl@16.5.0-canary.5", "", { "os": "linux", "cpu": "x64" }, "sha512-9vF/j1HSJkjx/2svAG1ebqFKvmNEubZ9a7W9uAyyNYs/Tc4QIAUsxVPSfB9wjr/rvfNVzbhvrIY7eWPYEr+IqQ=="],
 
-    "@next/swc-win32-arm64-msvc": ["@next/swc-win32-arm64-msvc@16.3.8", "", { "os": "win32", "cpu": "arm64" }, "sha512-ji0gd4kMYUxO+1fJBIbiBVRCjzG/lloiyCccnlebvb1ZJ5qXCPZqYg4Jl1DrrixnWNMKylzgpmMWx0yNDYXlzw=="],
+    "@next/swc-win32-arm64-msvc": ["@next/swc-win32-arm64-msvc@16.5.0-canary.5", "", { "os": "win32", "cpu": "arm64" }, "sha512-jPrUXfxVAyGpkRex4mKunCC6Mm+Tb7je7GRg4ZG6cUcRnvh2tnrqL7XhNaaqzDoTT9kpEDnHh/PQxvUk4J9hKg=="],
 
-    "@next/swc-win32-x64-msvc": ["@next/swc-win32-x64-msvc@16.3.8", "", { "os": "win32", "cpu": "x64" }, "sha512-WcTlaKt/TWkh5kUjdJcUmB1XgZ+1c6fz4Y9fDHL73YNSdGaUWjceeWrrlwF0nv19iABYWC4iAq1oX1w4Bn0vfg=="],
+    "@next/swc-win32-x64-msvc": ["@next/swc-win32-x64-msvc@16.5.0-canary.5", "", { "os": "win32", "cpu": "x64" }, "sha512-5A1f3UORBVsxF3baDqi3xuBGpCaipP61mxCcxKVx8Qlv7jNHChlPToEjDFmuQbvz2EGdN4ZFtTThwQMeTm74kw=="],
 
     "@opentelemetry/api": ["@opentelemetry/api@1.9.1", "", {}, "sha512-gLyJlPHPZYdAk1JENA9LeHejZe1Ti77/pTeFm/nMXmQH/HFZlcS/O2XJB+L8fkbrNSqhdtlvjBVjxwUYanNH5Q=="],
 
@@ -2494,7 +2491,7 @@
 
     "negotiator": ["negotiator@1.1.0", "", { "dependencies": { "content-type": "^2.1.0" } }, "sha512-NMPBRMJgiQHjbd8phG3Vebdx4kZ1H121rbl5IkMqeOsahptB9BKo/d7oJ3zTXqTgagn2bWlNSXkh0QUGM31RYg=="],
 
-    "next": ["next@16.3.8", "", { "dependencies": { "@next/env": "16.3.8", "@swc/helpers": "0.5.23", "baseline-browser-mapping": "^2.9.19", "caniuse-lite": "^1.0.30001579", "postcss": "8.5.23", "styled-jsx": "5.1.6" }, "optionalDependencies": { "@next/swc-darwin-arm64": "16.3.8", "@next/swc-darwin-x64": "16.3.8", "@next/swc-linux-arm64-gnu": "16.3.8", "@next/swc-linux-arm64-musl": "16.3.8", "@next/swc-linux-x64-gnu": "16.3.8", "@next/swc-linux-x64-musl": "16.3.8", "@next/swc-win32-arm64-msvc": "16.3.8", "@next/swc-win32-x64-msvc": "16.3.8", "sharp": "^0.35.4" }, "peerDependencies": { "@opentelemetry/api": "^1.1.0", "@playwright/test": "^1.51.1", "babel-plugin-react-compiler": "*", "react": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0", "react-dom": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0", "sass": "^1.3.0" }, "optionalPeers": ["@opentelemetry/api", "@playwright/test", "babel-plugin-react-compiler", "sass"], "bin": { "next": "dist/bin/next" } }, "sha512-U7QEZaTini6wKrb8A8hqLLqYQyCetegKjCpJOyxk642vWoMoU1x5PyZCJFvgYgiptA8xc5j/9xYlZFO7w9Sjmw=="],
+    "next": ["next@third_party/next-fork/next-16.5.0-canary.5-dac376c6fe-80cae9ab.tgz", { "dependencies": { "@next/env": "16.5.0-canary.5", "@swc/helpers": "0.5.23", "baseline-browser-mapping": "^2.9.19", "caniuse-lite": "^1.0.30001579", "postcss": "8.5.23", "styled-jsx": "5.1.6" }, "optionalDependencies": { "@next/swc-darwin-arm64": "16.5.0-canary.5", "@next/swc-darwin-x64": "16.5.0-canary.5", "@next/swc-linux-arm64-gnu": "16.5.0-canary.5", "@next/swc-linux-arm64-musl": "16.5.0-canary.5", "@next/swc-linux-x64-gnu": "16.5.0-canary.5", "@next/swc-linux-x64-musl": "16.5.0-canary.5", "@next/swc-win32-arm64-msvc": "16.5.0-canary.5", "@next/swc-win32-x64-msvc": "16.5.0-canary.5", "sharp": "^0.35.4" }, "peerDependencies": { "@opentelemetry/api": "^1.1.0", "@playwright/test": "^1.51.1", "babel-plugin-react-compiler": "*", "react": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0", "react-dom": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0", "sass": "^1.3.0" }, "optionalPeers": ["@opentelemetry/api", "@playwright/test", "babel-plugin-react-compiler", "sass"], "bin": { "next": "./dist/bin/next" } }, "sha512-ndjtCiNEzFC8d+sZ8VOh29l9axmbAHqmvpnrmegs/sM5FV/SS6UXWcMsDS5jCCfU082yelYiRBx9yanT4DiYJA=="],
 
     "node-domexception": ["node-domexception@1.0.0", "", {}, "sha512-/jKZoMpw0F8GRwl4/eLROPA3cfcXtLApP0QzLmUT/HuPCZWyB7IY9ZrMeKw2O/nFIqPQB3PVM9aYm0F312AXDQ=="],
 
