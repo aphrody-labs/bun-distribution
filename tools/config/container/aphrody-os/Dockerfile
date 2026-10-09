@@ -18,20 +18,38 @@
 # lines are POSIX sh, which neither Nushell nor Ion implement.
 
 ARG ALPINE_VERSION=3.24
-ARG BUN_VERSION=1.4.2
+ARG BUN_VERSION=1.4.3-aphrody.2
 
-# Official Bun image, used only as a source for its verified musl binary.
-FROM oven/bun:${BUN_VERSION}-alpine AS bun
+# Fetch Aphrody's pinned musl release for the target architecture and verify it
+# against the checksum manifest published with that GitHub release.
+FROM alpine:${ALPINE_VERSION} AS bun
+ARG BUN_VERSION
+ARG TARGETARCH
+RUN set -eu; \
+    case "$TARGETARCH" in \
+      amd64) bun_arch=x64 ;; \
+      arm64) bun_arch=aarch64 ;; \
+      *) echo "Unsupported Bun target architecture: $TARGETARCH" >&2; exit 64 ;; \
+    esac; \
+    apk add --no-cache ca-certificates curl unzip; \
+    asset="bun-linux-${bun_arch}-musl.zip"; \
+    release_url="https://github.com/aphrody-labs/bun/releases/download/aphrody-v${BUN_VERSION}"; \
+    curl -fsSL "$release_url/$asset" -o "/tmp/$asset"; \
+    curl -fsSL "$release_url/SHA256SUMS.txt" -o /tmp/SHA256SUMS.txt; \
+    cd /tmp; \
+    grep "  $asset$" SHA256SUMS.txt | sha256sum -c -; \
+    unzip -q "/tmp/$asset" -d /tmp/bun; \
+    install -m 0755 "/tmp/bun/bun-linux-${bun_arch}-musl/bun" /usr/local/bin/bun
 
 FROM alpine:${ALPINE_VERSION} AS runtime
 
 LABEL org.opencontainers.image.title="aphrody/bun-alpine" \
-      org.opencontainers.image.description="Minimal non-root Alpine runtime using the official musl Bun binary" \
+      org.opencontainers.image.description="Minimal non-root Alpine runtime using Aphrody's verified musl Bun release" \
       org.opencontainers.image.licenses="Apache-2.0"
 
-# Keep the runtime free of compilers and agent/desktop tools. The official
-# Alpine Bun image supplies the musl-linked binary; GNU/glibc release artifacts
-# must not be copied into this image.
+# Keep the runtime free of download tools, compilers and agent/desktop tools.
+# The preceding stage supplies the verified musl-linked binary; GNU/glibc
+# release artifacts must not be copied into this image.
 RUN apk add --no-cache ca-certificates libgcc libstdc++ tzdata \
     && addgroup -g 1000 agent \
     && adduser -D -u 1000 -G agent -h /home/agent agent \
