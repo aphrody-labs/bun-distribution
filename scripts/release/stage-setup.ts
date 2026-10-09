@@ -4,14 +4,15 @@
 /**
  * Build the one-click Windows installer of packages/infra/product locally. Nothing is uploaded or published.
  *
- *   bun scripts/release/stage-setup.ts [--out <dir>] [--smoke]
+ *   bun scripts/release/stage-setup.ts [--out <dir>] [--smoke] [--compile-executable-path <Windows x64 Bun>]
  *
  * Writes into `<out>` (default packages/infra/product/dist, ignored by Git):
  *   aphrody-setup-<version>-<commit9>-x86_64-pc-windows-msvc.exe     the download (« Download Aphrody », kind `desktop`)
  *   aphrody-setup-<version>-<commit9>-x86_64-pc-windows-msvc.tar.gz  flat update archive (kind `update`) read by its updater
  *   SHA256SUMS and aphrody-setup.manifest.json (the entries scripts/release/publish-downloads.ts publishes).
  * The exe is compiled with Bun, branded with the pet icon by the shared rcedit-under-Wine helper and NOT signed: the
- * repository has no signing key. `--smoke` runs `--version` and a `--oui --simuler` dry run under Wine.
+ * repository has no signing key. Native Windows x64 uses the running Bun; other build hosts may supply a qualified
+ * Windows x64 Bun with `--compile-executable-path`. `--smoke` runs natively on Windows and under Wine elsewhere.
  */
 import { copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -60,7 +61,31 @@ export const setupFiles = (version: string, commit: string) => ({
   update: `aphrody-setup-${version}-${commit}-${TARGET}.tar.gz`,
 });
 
-export async function stageSetup(out: string, smoke: boolean): Promise<StagedEntry[]> {
+export function setupCompileCommand(
+  outfile: string,
+  options: {
+    executable?: string;
+    platform?: NodeJS.Platform;
+    arch?: string;
+    targetExecutable?: string;
+  } = {},
+): string[] {
+  const argv = [options.executable ?? process.execPath, "build", "--compile"];
+  if (
+    (options.platform ?? process.platform) !== "win32" ||
+    (options.arch ?? process.arch) !== "x64"
+  )
+    argv.push("--target=bun-windows-x64");
+  if (options.targetExecutable)
+    argv.push("--compile-executable-path", resolve(options.targetExecutable));
+  return [...argv, "src/cli.ts", "--outfile", outfile];
+}
+
+export async function stageSetup(
+  out: string,
+  smoke: boolean,
+  targetExecutable?: string,
+): Promise<StagedEntry[]> {
   const { version } = JSON.parse(await readFile(join(appDir, "package.json"), "utf8")) as {
     version: string;
   };
@@ -70,18 +95,7 @@ export async function stageSetup(out: string, smoke: boolean): Promise<StagedEnt
   try {
     const pack = join(work, "pack");
     await mkdir(pack, { recursive: true });
-    await run(
-      [
-        "bun",
-        "build",
-        "--compile",
-        "--target=bun-windows-x64-baseline",
-        "src/cli.ts",
-        "--outfile",
-        join(pack, EXE),
-      ],
-      appDir,
-    );
+    await run(setupCompileCommand(join(pack, EXE), { targetExecutable }), appDir);
     await brandExe(join(pack, EXE), {
       icon: ICON,
       version: `${version}.0`,
@@ -167,8 +181,12 @@ export async function stageSetup(out: string, smoke: boolean): Promise<StagedEnt
 if (import.meta.main) {
   const args = Bun.argv.slice(2);
   const at = args.indexOf("--out");
+  const targetAt = args.indexOf("--compile-executable-path");
+  if (targetAt >= 0 && (!args[targetAt + 1] || args[targetAt + 1]?.startsWith("--")))
+    throw new Error("--compile-executable-path requires a qualified Windows x64 Bun executable");
   await stageSetup(
     resolve(at >= 0 ? (args[at + 1] ?? "") : join(appDir, "dist")),
     args.includes("--smoke"),
+    targetAt >= 0 ? resolve(args[targetAt + 1]!) : undefined,
   );
 }
