@@ -275,12 +275,11 @@ pub async fn execute_remote(root: &Path, cmd: &RemoteCommand) -> Result<Value> {
             } else {
                 let vnc_bind = vnc.unwrap_or_else(|| SocketAddr::new(bind.ip(), 5900));
                 let inventory = rd::target::inventory(Some(root))?;
-                let entries =
-                    if vnc_allow.is_empty() {
-                        vnc_grantees(&inventory, &vnc_bind.ip().to_string())
-                    } else {
-                        vnc_allow.clone()
-                    };
+                let entries = if vnc_allow.is_empty() {
+                    vnc_grantees(&inventory, &vnc_bind.ip().to_string())
+                } else {
+                    vnc_allow.clone()
+                };
                 let mut allow = Vec::new();
                 for e in &entries {
                     allow.extend(rd::vnc::server::parse_allow(e)?);

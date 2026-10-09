@@ -168,15 +168,13 @@ async fn builtin_kernel(
     }
     // Bun tool tables served through this one endpoint: no second MCP server (`m3 tool-host`).
     let m3_args = m3_tool_host().map(|script| vec![script.to_string_lossy().into_owned()]);
-    let hosts = [
-        (
-            "m3",
-            "Material 3 tokens, themes, symbols and docs (aphrody-m3 tool host).",
-            "APHRODY_M3_TOOL_HOST",
-            "bun",
-            m3_args,
-        ),
-    ];
+    let hosts = [(
+        "m3",
+        "Material 3 tokens, themes, symbols and docs (aphrody-m3 tool host).",
+        "APHRODY_M3_TOOL_HOST",
+        "bun",
+        m3_args,
+    )];
     for (name, description, env, binary, args) in hosts {
         let Some(args) = args else { continue };
         if let Some(host) = crate::tool_host::ToolHostSubsystem::configured(
