@@ -4,7 +4,7 @@
 //   host-plan <unit>... [--target H] [--expect-tools N] [--binary-from PATH --binary-sha256 HEX] [--observe] [--json]   steps to install the units (dry run)
 //   host-apply <unit>... --target H [--expect-tools N] [--binary-from PATH --binary-sha256 HEX] [--apply]               same plan; executes it only with --apply
 //   wg-plan [--observe] [--json]                                               private tunnel and omar account plan (no apply)
-//   net-env [--member M] [--probe] [--write] [--ssh-config] [--file F]          network map block of <aphrody home>/private/network.env
+//   net-env [--member M] [--probe] [--facts] [--write] [--ssh-config] [--file F]          network map block of <aphrody home>/private/network.env
 //   wg-client <peer> [--hub-public-key K] [--format sections|paste|conf] [--private-key-file F|--private-key-stdin] [--out F]
 import { readFileSync } from "node:fs";
 import { checkCatalog, composeNginx, composeUnit, hostRoot, loadCatalog } from "./index.ts";
