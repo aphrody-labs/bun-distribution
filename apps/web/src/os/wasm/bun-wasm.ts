@@ -28,9 +28,9 @@ export interface BunWasm {
   markdownHtml(markdown: string): string;
 }
 
-/** wasip1-threads imports a shared memory; 1 GiB matches rustc's default `--max-memory`. */
+/** wasip1-threads imports a shared memory; 512 MiB matches bun_wasm's `--max-memory` (32-bit `bun_core::String` tag bits). */
 const SHARED_INITIAL_PAGES = 512;
-const SHARED_MAX_PAGES = 16384;
+const SHARED_MAX_PAGES = 8192;
 
 export async function loadBunWasm(url: string = BUN_WASM): Promise<BunWasm> {
   const module = await WebAssembly.compileStreaming(fetch(url));
