@@ -134,6 +134,9 @@ enum CommandKind {
         /// Host of the desired state (vps, dbfr, local); all hosts when omitted.
         #[arg(long)]
         host: Option<String>,
+        /// Only this entry, by name (`Container`, `nginx.service`) or label (`local:Container`).
+        #[arg(long)]
+        entry: Option<String>,
         #[arg(long)]
         json: bool,
     },
@@ -2268,8 +2271,9 @@ async fn run_cli(cli: Cli) -> Result<()> {
         CommandKind::Deploy { target, stack, release, apply } => {
             deploy(target, *stack, release.as_deref(), *apply, &mut run)
         },
-        CommandKind::Boot { action, host, json } => {
-            let drift = crate::boot::run_boot(&root, *action, host.as_deref(), *json)?;
+        CommandKind::Boot { action, host, entry, json } => {
+            let drift =
+                crate::boot::run_boot(&root, *action, host.as_deref(), entry.as_deref(), *json)?;
             run.action("boot", if drift { "drift" } else { "conforme" }, json!({}));
             if drift && *action == crate::boot::BootAction::Audit {
                 bail!("dérive de persistance au boot");

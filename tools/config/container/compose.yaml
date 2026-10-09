@@ -48,8 +48,9 @@ services:
     # Naming the service (`up api`) enables it; a host project (~/apps/compose.yaml) never starts it next to prod.
     profiles: [api]
 
-  # Complete Aphrody (API + MCP surfaces) as a long-running PC service. The Windows service registered by
-  # scripts/install/container-service.ps1 starts it with `--profile pc` on the owner PC and on Omar's PC.
+  # Complete Aphrody (API + MCP surfaces) as a long-running PC service. The hidden task AphrodyContainer (boot
+  # catalog entry `Container`) runs scripts/install/container-service.ts, which starts it with `--profile pc` on the
+  # owner PC and on Omar's PC.
   pc:
     <<: *runtime
     container_name: aphrody-pc

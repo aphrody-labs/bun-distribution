@@ -50,8 +50,9 @@ Exit code is non-zero on any failure, so the unit shows `failed` and `aphrody-se
 
 - `tools/config/host/systemd/aphrody/aphrody-self-update.{service,timer}` (vps) and `-dbfr` twins, catalog entries
   `aphrody-self-update*`. Run as `ubuntu` with `~/.local/bin/aphrody`; the condition skips hosts without the binary.
-- Windows: catalog `scheduledTasks` entry `Aphrody self update`, registered by
-  `scripts/tools/infra/register-self-update-task.ps1` (`-Remove` to delete).
+- Windows: catalog `scheduledTasks` entry `Aphrody self update` (`bootEntry`), declared in the boot catalog
+  (`tools/config/service-catalog.json`) and registered by `aphrody infra boot apply --host local --entry "Aphrody self update"`
+  (hidden S4U task, every 30 minutes and at logon, 15-minute limit). Removal: `schtasks /Delete /TN "Aphrody self update" /F`.
 
 Apply: `bun packages/core/src/host/cli.ts` host plan (plan first), then `systemctl enable --now aphrody-self-update.timer`.
 

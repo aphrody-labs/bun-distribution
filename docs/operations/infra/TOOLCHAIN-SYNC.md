@@ -34,12 +34,14 @@ services, nginx, units, databases, models or persistent stores.
 ## Bun version policy and hygiene
 
 Pin: Bun 1.4.2 (`packageManager`). A user timer (`aphrody-bun-hygiene`, Windows task
-`AphrodyBunHygiene`) runs `scripts/tools/bun-hygiene.sh` / `.ps1` daily: it upgrades Bun to the
+`AphrodyBunHygiene`, boot catalog entry) runs `scripts/tools/bun-hygiene.sh` / `.ts` daily: it upgrades Bun to the
 newest stable release at least three days old (same window as `bunfig.toml`
 `minimumReleaseAge`), then reports global packages, `bun outdated`, untrusted lifecycle scripts and
 cache size (prunes entries unused for 30 days above 5 GB), and runs
 `bun install --frozen-lockfile --dry-run` on a temporary copy of the manifests where a checkout
-exists. It never rewrites a lockfile or a shared tree and never restarts a service. Repository pins
+exists (Linux; on Windows the checkout gates own it). The Windows upgrade is native: release zip checked against
+`SHA256SUMS.txt`, the running `bun.exe` renamed aside, `bunx`/`node`/`npm`/`npx` hardlinks relinked; it never
+downgrades a newer build. It never rewrites a lockfile or a shared tree and never restarts a service. Repository pins
 stay owned by `yolo update pins` and `yolo update bun`; bump the pin there, then re-run the
 sync scripts. Logs: `~/.local/state/aphrody/log/bun-hygiene.log` (Windows
 `%LOCALAPPDATA%\aphrody\log`).

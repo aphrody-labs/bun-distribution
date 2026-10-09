@@ -499,7 +499,7 @@
       "hosts": ["windows"],
       "command": "aphrody self update",
       "intervalMinutes": 30,
-      "register": "scripts/tools/infra/register-self-update-task.ps1",
+      "bootEntry": "local:Aphrody self update",
       "ownerRepo": "aphrody"
     }
   ],

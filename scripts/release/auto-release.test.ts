@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { checkCatalog } from "../../packages/engine/core/src/host/index.ts";
 
@@ -12,7 +12,13 @@ test("the host catalog stays consistent with the self-update units", () => {
   expect(checkCatalog(host)).toEqual([]);
   const catalog = JSON.parse(read("tools/config/host/catalog.json")) as {
     units: { unit: string; targetHost: string; pairs?: string }[];
-    scheduledTasks: { task: string; command: string; register: string; hosts: string[] }[];
+    scheduledTasks: {
+      task: string;
+      command: string;
+      bootEntry: string;
+      intervalMinutes: number;
+      hosts: string[];
+    }[];
   };
   for (const [suffix, target] of [
     ["", "vps"],
@@ -28,7 +34,13 @@ test("the host catalog stays consistent with the self-update units", () => {
   }
   const task = catalog.scheduledTasks.find((t) => t.task === "Aphrody self update");
   expect(task?.command).toBe("aphrody self update");
-  expect(existsSync(join(root, task!.register))).toBe(true);
+  // Registered by `aphrody infra boot apply` from the boot catalog entry (hidden S4U task).
+  const boot = JSON.parse(read("tools/config/service-catalog.json")) as {
+    boot: { entries: { host: string; name?: string; arguments?: string; triggers?: string[] }[] };
+  };
+  const entry = boot.boot.entries.find((e) => `${e.host}:${e.name}` === task!.bootEntry);
+  expect(`aphrody ${entry?.arguments}`).toBe(task!.command);
+  expect(entry?.triggers).toContain(`every:${task!.intervalMinutes}m`);
 });
 
 test("release-main.yml has gates, a build matrix, publication and host deployment, and no inline secret", () => {

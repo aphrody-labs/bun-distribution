@@ -102,14 +102,19 @@ pub struct BootEntry {
 }
 
 impl BootEntry {
+    /// Unit, container, task or service name.
     #[must_use]
-    pub fn label(&self) -> String {
-        let name = match &self.kind {
+    pub fn name(&self) -> &str {
+        match &self.kind {
             BootKind::Systemd { unit } => unit,
             BootKind::Docker { container } => container,
             BootKind::ScheduledTask { name, .. } | BootKind::WindowsService { name, .. } => name,
-        };
-        format!("{}:{name}", self.host)
+        }
+    }
+
+    #[must_use]
+    pub fn label(&self) -> String {
+        format!("{}:{}", self.host, self.name())
     }
 
     fn is_windows(&self) -> bool {
@@ -731,8 +736,21 @@ fn audit_host(entries: &[BootEntry], host: &str) -> Result<(usize, Vec<Finding>)
     Ok((checked, findings))
 }
 
-pub fn run_boot(root: &Path, action: BootAction, host: Option<&str>, json: bool) -> Result<bool> {
-    let entries = load_entries(root)?;
+/// `entry` limits the run to one entry, by name (`Container`, `nginx.service`) or label (`local:Container`).
+pub fn run_boot(
+    root: &Path,
+    action: BootAction,
+    host: Option<&str>,
+    entry: Option<&str>,
+    json: bool,
+) -> Result<bool> {
+    let mut entries = load_entries(root)?;
+    if let Some(wanted) = entry {
+        entries.retain(|e| e.name() == wanted || e.label() == wanted);
+        if entries.is_empty() {
+            bail!("aucune entrée de boot nommée {wanted}");
+        }
+    }
     let hosts = hosts_of(&entries, host);
     if hosts.is_empty() {
         bail!("aucune entrée de boot pour l'hôte {}", host.unwrap_or("<tous>"));

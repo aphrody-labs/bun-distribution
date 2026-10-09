@@ -563,7 +563,8 @@
         "principal": "user",
         "periodic": true,
         "execute": "conhost.exe",
-        "arguments": "--headless \"C:Usersaphro.bun\bin\bun.exe\" packages/engine/core/src/host/cli.ts net-env --probe --facts --write --ssh-config --push vps --fiche vps --fiche-memory C:/Users/aphro/.claude/projects/C--aphrody/memory/aphro/omar.md"
+        "arguments": "--headless \"%USERPROFILE%\\.bun\\bin\\bun.exe\" packages/engine/core/src/host/cli.ts net-env --probe --facts --write --ssh-config --push vps --fiche vps --fiche-memory C:/Users/aphro/.claude/projects/C--aphrody/memory/aphro/omar.md",
+        "workingDirectory": "{root}"
       },
       {
         "host": "local",
@@ -591,7 +592,11 @@
         ],
         "principal": "user",
         "desktop": true,
-        "periodic": true
+        "periodic": true,
+        "execute": "%USERPROFILE%\\.bun\\bin\\bun.exe",
+        "arguments": "scripts/install/container-service.ts",
+        "workingDirectory": "{root}",
+        "description": "Aphrody container (compose profile pc) on the loopback API: scripts/install/container-service.ts."
       },
       {
         "host": "local",
@@ -601,6 +606,58 @@
         "principal": "user",
         "desktop": true,
         "periodic": true
+      },
+      {
+        "host": "local",
+        "kind": "scheduledTask",
+        "name": "Aphrody self update",
+        "path": "\\",
+        "triggers": [
+          "every:30m",
+          "atLogon"
+        ],
+        "principal": "user",
+        "runLevel": "limited",
+        "periodic": true,
+        "execute": "%LOCALAPPDATA%\\aphrody\\bin\\aphrody.exe",
+        "arguments": "self update",
+        "timeLimitMinutes": 15,
+        "description": "Install the release published in latest.json (aphrody self update, with rollback)."
+      },
+      {
+        "host": "local",
+        "kind": "scheduledTask",
+        "name": "AphrodyBunHygiene",
+        "path": "\\",
+        "triggers": [
+          "daily@05:30"
+        ],
+        "principal": "user",
+        "runLevel": "limited",
+        "periodic": true,
+        "execute": "%USERPROFILE%\\.bun\\bin\\bun.exe",
+        "arguments": "scripts/tools/bun-hygiene.ts",
+        "workingDirectory": "{root}",
+        "timeLimitMinutes": 60,
+        "description": "Aphrody Bun hygiene: newest fork release at least 3 days old, package-manager report (scripts/tools/bun-hygiene.ts)."
+      },
+      {
+        "host": "local",
+        "kind": "scheduledTask",
+        "name": "Shenron PostgreSQL off-host backup",
+        "path": "\\",
+        "triggers": [
+          "daily@06:00"
+        ],
+        "principal": "user",
+        "runLevel": "limited",
+        "periodic": true,
+        "execute": "%USERPROFILE%\\.bun\\bin\\bun.exe",
+        "arguments": "scripts/tools/infra/shenron-offsite-backup.ts",
+        "workingDirectory": "{root}",
+        "timeLimitMinutes": 30,
+        "description": "Pull Shenron PostgreSQL and SQLite snapshots from DBFR and verify SHA-256 off-host.",
+        "hold": "producteur DBFR inactif (2026-10-09) : shenron-pg-backup.timer désactivé, shenron-sqlite-replica-backup absent, aucun répertoire ~/apps/shenron/data/backups ; enregistrer après leur déploiement (tools/config/host/systemd/shenron)"
       }
     ]
   }

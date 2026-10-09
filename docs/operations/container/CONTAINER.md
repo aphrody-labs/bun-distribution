@@ -247,8 +247,8 @@ baked into an image.
 
 | Target             | Profile | Service                                                                                                                         | Token                                                       |
 | ------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| Owner PC (Windows) | `pc`    | scheduled task `\Aphrody\Container` ← `scripts/install/container-service.ps1 -Pc local`                                         | `~\.aphrody\private\aphrody_mcp_http_token`, generated once |
-| Omar PC (Windows)  | `pc`    | same script, `-Pc omar`, run by Omar on his PC (his consent scope: services he authorizes)                                      | his own private file                                        |
+| Owner PC (Windows) | `pc`    | scheduled task `\Aphrody\Container` ← `scripts/install/container-service.ts` (boot entry `Container`)                          | `~\.aphrody\private\aphrody_mcp_http_token`, generated once |
+| Omar PC (Windows)  | `pc`    | same task, `APHRODY_PC=omar`, applied by Omar on his PC (his consent scope: services he authorizes)                              | his own private file                                        |
 | dbfr (production)  | `prod`  | `~/apps/aphrody/compose.yaml`, included by the host project `~/apps/compose.yaml` (`restart: always`)                           | `/etc/aphrody/aphrody_mcp_http_token` (0400)                |
 | vps (build, SSH)   | `build` | idle `aphrody-build` container of the host project `~/apps/compose.yaml`; builds enter by `ssh vps docker exec aphrody-build …` | none                                                        |
 

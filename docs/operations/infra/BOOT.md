@@ -27,9 +27,17 @@ Champs d'une tâche : `name`, `path` (défaut `\Aphrody\`), `triggers` (`atStart
 aphrody infra boot audit [--host vps|dbfr|local] [--json]   # lit l'état réel ; code de sortie 1 s'il reste une dérive non retenue
 aphrody infra boot plan  [--host ...]                         # liste les commandes qui corrigeraient, sans rien exécuter
 aphrody infra boot apply [--host ...]                         # exécute le plan puis relit l'état
+aphrody infra boot apply --host local --entry Container       # une seule entrée (nom ou libellé hôte:nom)
 ```
 
 Sans `--host`, tous les hôtes déclarés sont traités. Les hôtes distants passent par SSH (`sudo -n` pour systemd) ; `local` est la machine courante : les entrées Windows sont lues et corrigées en processus (Planificateur de tâches COM, Service Control Manager), sans PowerShell ni console. Si une correction Windows est due et que le jeton n'est pas élevé, `apply` se relance élevé (`sudo.exe` en ligne quand Sudo pour Windows est activé, sinon invite UAC) puis relit l'état.
+
+`--entry` limite l'audit, le plan ou l'apply à une entrée : c'est ainsi qu'un autre PC (celui d'Omar, depuis son
+checkout) enregistre une tâche déclarée sans appliquer les entrées propres au PC du propriétaire. Tâches déclarées
+qui remplacent d'anciens scripts PowerShell : `Container` (`scripts/install/container-service.ts`, `--pc` lu dans
+`APHRODY_PC`), `Aphrody self update` (`aphrody self update`), `AphrodyBunHygiene` (`scripts/tools/bun-hygiene.ts`),
+`Shenron PostgreSQL off-host backup` (`scripts/tools/infra/shenron-offsite-backup.ts`, retenue tant que le
+producteur DBFR est inactif).
 
 ## État observé (2026-10-09)
 
