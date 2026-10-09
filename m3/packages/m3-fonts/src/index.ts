@@ -331,3 +331,20 @@ export function renderStylesheet(base = "", sheet: FontSheet = "core"): string {
     .join("\n");
   return `${head}${body}\n\n:root {\n${vars}\n}\n`;
 }
+
+/** Public object layout keeps native/local font paths unchanged and preserves face metadata. */
+export function publicFontUrl(file: string, base: string): string {
+  const url = new URL(base);
+  if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash)
+    throw new Error("Public fonts require an HTTPS base without credentials");
+  const name = file.split("/").pop();
+  if (!name || !/^[\w.-]+\.woff2$/.test(name)) throw new Error("Invalid public WOFF2 filename");
+  return new URL(`m3/fonts/${name}`, url.href.replace(/\/?$/, "/")).href;
+}
+
+export function renderPublicStylesheet(base: string, sheet: FontSheet = "core"): string {
+  return renderStylesheet("", sheet).replace(
+    /url\("([^"\n]+\.woff2)"\)/g,
+    (_match, file: string) => `url("${publicFontUrl(file, base)}")`,
+  );
+}

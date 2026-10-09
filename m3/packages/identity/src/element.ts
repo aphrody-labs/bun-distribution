@@ -11,6 +11,7 @@
 // Attributes: `src` (atlas URL, required), `size` (height in CSS px, default 208), `state`,
 // `animation`, `label`, `no-gaze`. Registration is explicit: `defineAphrodyPet()`.
 import { Ambient, gaze, PET_WEB, type PetWebData, resolve, type Tick } from "./runtime";
+import { publicPetAtlas } from "./public-assets";
 
 /** Pointer distance (CSS px at scale 1) beyond which the pet stops following it. */
 const GAZE_RADIUS = 480;
@@ -142,7 +143,7 @@ export class AphrodyPetElement extends HostBase {
     this.setAttribute("aria-label", this.getAttribute("label") ?? this.data.displayName);
     if (!this.#sprite) return;
     this.#sprite.style.transform = s === 1 ? "" : `scale(${s})`;
-    const src = this.getAttribute("src");
+    const src = this.getAttribute("src") || publicPetAtlas("");
     this.#sprite.style.backgroundImage = src ? `url(${JSON.stringify(src)})` : "";
   }
 

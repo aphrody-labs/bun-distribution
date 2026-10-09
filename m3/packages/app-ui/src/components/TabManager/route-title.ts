@@ -66,3 +66,16 @@ export function deriveTitleFromPath(pathname: string, search: string): string | 
   if (pathname.startsWith("/sources/")) return null;
   return "Aphrody";
 }
+
+/** Public preview titles preserve homepage SEO after hydration without changing native tabs. */
+export function browserDocumentTitle(
+  pathname: string,
+  title: string | null,
+  publicPreview: boolean,
+): string {
+  const route = pathname.replace(/\/+$/, "") || "/";
+  if (publicPreview && (route === "/" || route === "/index.html"))
+    return "Aphrody — Search, workspace and native OS";
+  if (publicPreview && route === "/os") return "Aphrody OS — Browser workspace";
+  return title ? `${title} — Aphrody OS` : "Aphrody OS";
+}

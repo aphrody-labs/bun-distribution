@@ -314,6 +314,7 @@ export function siteOptions(
       "APP_UI_ROOT must contain a complete canonical app-ui build including public-home.html",
     );
   }
+  if (appUiRoot) artifactAssetsBase(appUiRoot);
   return {
     appUiRoot,
     root: resolve(
@@ -352,7 +353,21 @@ const SITE_TYPES: Record<string, string> = {
 
 /** The site loads its M3 tokens, fonts and Material Symbols from cdn.aphrody.com. */
 const SITE_CSP =
-  "default-src 'self'; img-src 'self' data: https:; media-src 'self' https:; style-src 'self' 'unsafe-inline' https://cdn.aphrody.com; font-src 'self' https://cdn.aphrody.com; script-src 'self'; connect-src 'self' https://api.github.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+  "default-src 'self'; img-src 'self' data: https:; media-src 'self' https:; style-src 'self' 'unsafe-inline' https://cdn.aphrody.com; font-src 'self' https://cdn.aphrody.com https://pub-0b56d0e2b2134c988df85460fe516cd2.r2.dev; script-src 'self'; connect-src 'self' https://api.github.com https://pub-0b56d0e2b2134c988df85460fe516cd2.r2.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+
+const PUBLIC_ASSETS_ORIGIN = "https://pub-0b56d0e2b2134c988df85460fe516cd2.r2.dev";
+function artifactAssetsBase(root: string): string | undefined {
+  const file = resolveSiteFile(root, "/public-assets.json");
+  if (!file) return undefined;
+  const value = JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
+  if (
+    value.schemaVersion !== 1 ||
+    value.baseUrl !== PUBLIC_ASSETS_ORIGIN ||
+    Object.keys(value).length !== 2
+  )
+    throw new Error("Unqualified app-ui public asset origin");
+  return PUBLIC_ASSETS_ORIGIN;
+}
 
 /** `/docs/x` -> `<site>/docs/x`, `<site>/docs/x/index.html` or `<site>/docs/x.html`, contained in the site. */
 export function resolveSiteFile(siteRoot: string, pathname: string): string | null {
@@ -497,28 +512,78 @@ async function siteResponse(request: Request, file: string, status = 200): Promi
 }
 
 /** Serve only explicit app-ui pages/assets; native RPC is deliberately unavailable. */
+// Explicit router.tsx surfaces; parameterized native resource IDs are not public fallbacks.
+export const APP_UI_ROUTES = new Set([
+  "/os",
+  "/studio",
+  "/templates",
+  "/material-3",
+  "/showcase",
+  "/docs",
+  "/chat",
+  "/codex",
+  "/explorer",
+  "/models",
+  "/creator",
+  "/admin",
+  "/favorites",
+  "/recents",
+  "/file-kinds",
+  "/redundancy",
+  "/redundancy/at-risk",
+  "/redundancy/compare",
+  "/sources",
+  "/sources/adapters",
+  "/search",
+  "/jobs",
+  "/tasks",
+  "/settings",
+  "/settings/appearance",
+  ...[
+    "overview",
+    "theme",
+    "components",
+    "primitives",
+    "forms",
+    "explorer",
+    "motion",
+    "icons",
+    "ai",
+    "reader",
+    "design",
+    "next",
+    "system",
+    "brands",
+    "adaptive",
+  ].flatMap((page) => [`/material-3/${page}`, `/showcase/${page}`]),
+]);
 async function appUiResponse(request: Request, root: string): Promise<Response | null> {
   const pathname = new URL(request.url).pathname;
   const home = pathname === "/" || pathname === "/index.html";
   const os = pathname === "/os" || pathname === "/os/";
+  const shell = APP_UI_ROUTES.has(pathname.replace(/\/+$/, ""));
   const asset = pathname.startsWith("/_app-ui/");
-  if (!home && !os && !asset) return null;
+  if (!home && !shell && !asset) return null;
   const file = resolveSiteFile(
     root,
-    home ? "/public-home.html" : os ? "/index.html" : pathname.slice("/_app-ui".length),
+    home ? "/public-home.html" : shell ? "/index.html" : pathname.slice("/_app-ui".length),
   );
   const headers = withHeaders({
-    "content-security-policy":
-      "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+    "content-security-policy": `default-src 'self'; img-src 'self' data: ${PUBLIC_ASSETS_ORIGIN}; style-src 'self' 'unsafe-inline'; font-src 'self' ${PUBLIC_ASSETS_ORIGIN}; script-src 'self'; connect-src 'self' ${PUBLIC_ASSETS_ORIGIN}; base-uri 'self'; form-action 'self'; frame-ancestors 'none'`,
     "content-type": file
       ? (SITE_TYPES[extname(file)] ?? "application/octet-stream")
       : "text/plain; charset=utf-8",
-    "cache-control": home || os ? "public, max-age=60" : "public, max-age=3600",
+    "cache-control": home || shell ? "public, max-age=60" : "public, max-age=3600",
     "referrer-policy": "strict-origin-when-cross-origin",
   });
   if (!file) return new Response("App UI artifact unavailable", { status: 404, headers });
-  if (home || os) {
+  if (home || shell) {
     const html = await new HTMLRewriter()
+      .on("title", {
+        element(element) {
+          if (os) element.setInnerContent("Aphrody OS — Browser workspace");
+        },
+      })
       .on("base", {
         element(element) {
           element.setAttribute("href", "/_app-ui/");
@@ -527,6 +592,11 @@ async function appUiResponse(request: Request, root: string): Promise<Response |
       .on("head", {
         element(element) {
           element.append('<meta name="aphrody-rpc" content="unavailable">', { html: true });
+          const assetsBase = artifactAssetsBase(root);
+          if (assetsBase)
+            element.append(`<meta name="aphrody-assets-base" content="${assetsBase}">`, {
+              html: true,
+            });
           if (os)
             element.append(
               '<meta name="description" content="Explore the shared Aphrody OS browser workspace. Native capabilities require the installed application."><link rel="canonical" href="https://aphrody.com/os">',
@@ -580,7 +650,10 @@ export function createHandler(
       (request.method !== "GET" && request.method !== "HEAD")
     )
       return downloads(request);
-    if (site.appUiRoot) {
+    if (
+      site.appUiRoot &&
+      (pathname === "/" || pathname === "/index.html" || pathname.startsWith("/_app-ui/"))
+    ) {
       const appUi = await appUiResponse(request, site.appUiRoot);
       if (appUi) return appUi;
     }
@@ -589,6 +662,8 @@ export function createHandler(
     if (site.appUiRoot) {
       const docs = await appUiDocsResponse(request, site.appUiRoot);
       if (docs) return docs;
+      const appUi = await appUiResponse(request, site.appUiRoot);
+      if (appUi) return appUi;
     }
     const response = await downloads(request);
     if (response.status === 404) {

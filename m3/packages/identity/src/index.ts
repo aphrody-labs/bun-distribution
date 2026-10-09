@@ -8,3 +8,10 @@ export { AphrodyPet, type AphrodyPetProps } from "./AphrodyPet";
 export { PET_COLORS } from "./pet";
 export { BRAND_ICONS, brandIcon, brandSrcSet } from "./brand";
 export * from "./pet";
+export {
+  publicAssetsBase,
+  publicAssetUrl,
+  publicPetAtlas,
+  publicPetSymbol,
+  publicMaterialSymbolsIndex,
+} from "./public-assets";

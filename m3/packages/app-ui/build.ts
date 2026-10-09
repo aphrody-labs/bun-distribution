@@ -10,6 +10,8 @@ import { MemoryRouter } from "react-router-dom";
 import { ProductSearchHome } from "./src/routes/product/ProductSearchHome";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
+import { publicFontUrl, renderPublicStylesheet } from "@aphrody/m3-fonts";
+import { prunePublicFontCopies } from "./public-assets-package";
 const escape = (value: string) =>
   value.replace(/[&<>"']/g, (character) => `&#${character.charCodeAt(0)};`);
 
@@ -19,9 +21,26 @@ if (import.meta.main) {
   const dev = process.argv.includes("--dev");
   const { values } = parseArgs({
     args: process.argv.slice(2),
-    options: { out: { type: "string" }, dev: { type: "boolean" } },
+    options: {
+      out: { type: "string" },
+      dev: { type: "boolean" },
+      "public-assets": { type: "boolean" },
+    },
   });
   const tauri = values.out ? { ...config.tauri, uiDist: resolve(values.out) } : config.tauri;
+  if (values["public-assets"] && !values.out)
+    throw new Error("--public-assets requires an isolated --out artifact directory");
+  const assets = values["public-assets"]
+    ? ((await Bun.file(
+        join(import.meta.dir, "../../../tools/config/public-assets.json"),
+      ).json()) as { schemaVersion: number; baseUrl: string; localFontFallbacks: string[] })
+    : undefined;
+  if (
+    assets &&
+    (assets.schemaVersion !== 1 ||
+      assets.baseUrl !== "https://pub-0b56d0e2b2134c988df85460fe516cd2.r2.dev")
+  )
+    throw new Error("Unqualified public assets configuration");
   const started = performance.now();
   const result = await buildM3({
     entry: config.entry,
@@ -41,10 +60,41 @@ if (import.meta.main) {
   });
   const bytes = result.outputs.reduce((sum, output) => sum + output.bytes, 0);
   const shell = await Bun.file(`${result.outdir}/index.html`).text();
+  if (assets) {
+    const cssFile = join(result.outdir, "app.css");
+    const css = (await Bun.file(cssFile).text()).replace(
+      /url\((?:["'])?\.\/fonts\/([^"'()]+\.woff2)(?:["'])?\)/g,
+      (_match, file: string) =>
+        `url("${assets.localFontFallbacks.includes(file) ? "./fonts/" + file : publicFontUrl(file, assets.baseUrl)}")`,
+    );
+    await Bun.write(cssFile, css);
+    await Bun.write(
+      join(result.outdir, "fonts.css"),
+      ["core", "jp"]
+        .map((sheet) => renderPublicStylesheet(assets.baseUrl, sheet as "core" | "jp" | "symbols"))
+        .join("\n"),
+    );
+    await Bun.write(
+      join(result.outdir, "public-assets.json"),
+      JSON.stringify({ schemaVersion: 1, baseUrl: assets.baseUrl }) + "\n",
+    );
+    const trimmed = prunePublicFontCopies(
+      result.outdir,
+      [css, await Bun.file(join(result.outdir, "fonts.css")).text()],
+      assets.baseUrl,
+    );
+    console.log(
+      `public fonts: removed ${trimmed.files} duplicate WOFF2 files, ${trimmed.bytes} B; retained declared local glyph fallback`,
+    );
+  }
   const home = renderToStaticMarkup(
-    createElement(MemoryRouter, null, createElement(ProductSearchHome, { publicPreview: true })),
+    createElement(
+      MemoryRouter,
+      null,
+      createElement(ProductSearchHome, { publicPreview: true, assetBase: assets?.baseUrl }),
+    ),
   ).replaceAll(
-    /(?:[A-Za-z]:[\\/]|\/)[^"<>]*?([\\/])(?:icon-(?:64|128|192)\.png|spritesheet\.webp)/g,
+    /(?<![:\w/\\])(?:[A-Za-z]:[\\/]|\/)[^"<>]*?([\\/])(?:icon-(?:64|128|192)\.png|spritesheet\.webp)/g,
     (path) => `./fonts/${path.split(/[\\/]/).pop()}`,
   );
   await Promise.all(

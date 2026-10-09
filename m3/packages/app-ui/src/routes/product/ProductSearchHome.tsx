@@ -1,12 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
-import { AphrodyAvatar, AphrodyPet } from "@aphrody/identity";
+import { AphrodyAvatar, AphrodyPet, publicPetAtlas } from "@aphrody/identity";
 import { PET_ATLAS_URL } from "@aphrody/identity/atlas";
 import { Button } from "@aphrody/m3-primitives";
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { searchGoogle, type GoogleSearchPage } from "../../google-search";
 
-export function ProductSearchHome({ publicPreview = false }: { publicPreview?: boolean }) {
+export function ProductSearchHome({
+  publicPreview = false,
+  assetBase,
+}: {
+  publicPreview?: boolean;
+  assetBase?: string;
+}) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState<GoogleSearchPage | null>(null);
   const [busy, setBusy] = useState(false);
@@ -107,7 +113,11 @@ export function ProductSearchHome({ publicPreview = false }: { publicPreview?: b
           Search images, news, videos and books
         </Link>
         <div className="mt-7" aria-hidden="true">
-          <AphrodyPet atlasUrl={PET_ATLAS_URL} height={80} label="Aphrody pet" />
+          <AphrodyPet
+            atlasUrl={publicPetAtlas(PET_ATLAS_URL, assetBase)}
+            height={80}
+            label="Aphrody pet"
+          />
         </div>
       </section>
       <section
