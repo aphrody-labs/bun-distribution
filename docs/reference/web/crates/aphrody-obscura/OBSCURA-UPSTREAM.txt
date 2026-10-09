@@ -1,3 +1,5 @@
+Fork 2026-10-09: aphrody-labs/obscura yolo merged upstream main 1f8eb7643 at 41b0d90953aa27fdc5c72d84dd17cc1fb82a4519, so the sync below is now carried by the
+fork. crates/web stays a copy of the fork (manifests: repository = aphrody-labs/obscura); the obscura CLI installed on the hosts is built from that commit.
 Sync 2026-10-09: upstream main 1f8eb7643 (2026-10-08) applied on top of the base below as patches: bf10c461c (word-spacing; the
 vendor/cosmic-text part is replaced by splitting U+0020/U+00A0 into letter-spaced spans in obscura-render inline.rs, because athena-text has
 no Attrs::word_spacing), df5ee6579 (inline transforms), 657cedeef (cache eviction), 192561cee (CDP removeScriptToEvaluateOnNewDocument),
