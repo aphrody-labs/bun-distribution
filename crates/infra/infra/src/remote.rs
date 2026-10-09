@@ -175,26 +175,30 @@ async fn probe(target: &RemoteTarget, timeout: Duration) -> Value {
     let addr = target.addr();
     let result: Result<String> = match target.kind {
         TargetKind::Vnc => rd::vnc::probe(&addr, timeout).await,
-        TargetKind::Ws | TargetKind::McpHttp => async {
-            crate::probe::ensure_crypto_provider();
-            let scheme = if target.secure { "https" } else { "http" };
-            let resp = reqwest::Client::builder()
-                .timeout(timeout)
-                .build()?
-                .get(format!("{scheme}://{addr}/healthz"))
-                .send()
-                .await?;
-            let status = resp.status();
-            if !status.is_success() {
-                bail!("/healthz answered {status}");
+        TargetKind::Ws | TargetKind::McpHttp => {
+            async {
+                crate::probe::ensure_crypto_provider();
+                let scheme = if target.secure { "https" } else { "http" };
+                let resp = reqwest::Client::builder()
+                    .timeout(timeout)
+                    .build()?
+                    .get(format!("{scheme}://{addr}/healthz"))
+                    .send()
+                    .await?;
+                let status = resp.status();
+                if !status.is_success() {
+                    bail!("/healthz answered {status}");
+                }
+                Ok(format!("/healthz {status}"))
             }
-            Ok(format!("/healthz {status}"))
-        }
-        .await,
-        TargetKind::Shell | TargetKind::Local => tokio::time::timeout(timeout, tokio::net::TcpStream::connect(&addr))
             .await
-            .context("timeout")
-            .and_then(|r| r.map(|_| "tcp open".to_owned()).map_err(Into::into)),
+        },
+        TargetKind::Shell | TargetKind::Local => {
+            tokio::time::timeout(timeout, tokio::net::TcpStream::connect(&addr))
+                .await
+                .context("timeout")
+                .and_then(|r| r.map(|_| "tcp open".to_owned()).map_err(Into::into))
+        },
     };
     let credential = target.credential().map(|s| s.describe());
     let mut v = json!({
@@ -223,9 +227,7 @@ fn tunnel_status(root: &Path, inventory: &Inventory) -> Value {
         Ok(s) => s,
         Err(e) => return json!({ "name": name, "up": false, "error": e.to_string() }),
     };
-    let now = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .map_or(0, |d| d.as_secs());
+    let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).map_or(0, |d| d.as_secs());
     let member_of = |key: &str| {
         if inventory.hub.public_key == key {
             return Some(inventory.hub.peer.clone());

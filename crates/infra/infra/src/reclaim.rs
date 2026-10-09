@@ -25,8 +25,9 @@ pub struct Target {
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct System {
-    /// `docker image prune -af --filter until=168h` + `docker builder prune -af`: images older
-    /// than 7 days that no container (running or stopped) references, and the build cache.
+    /// `docker image prune -af --filter until=168h` + `docker builder prune -af --filter
+    /// until=168h`: images and build cache older than 7 days, so concurrent builds keep their
+    /// layers; images referenced by any container (running or stopped) are kept.
     /// Containers and volumes are never pruned, so a stopped service keeps its image.
     #[serde(default)]
     pub docker: bool,
@@ -164,10 +165,10 @@ fn system_script(system: &System, apply: bool, out: &mut String) -> Result<()> {
     out.push_str(&format!("{S} true || {{ echo 'sudo -n indisponible' >&2; exit 3; }}\n"));
     if system.docker {
         let estimate = format!(
-            "{S} docker system df --format '{{{{.Reclaimable}}}}' | awk '{{v=$1; n=v+0; if (v ~ /GB/) n*=1e9; else if (v ~ /MB/) n*=1e6; else if (v ~ /kB/) n*=1e3; s+=n}} END {{printf \"%d\", s}}'"
+            "{S} docker system df --format '{{{{.Type}}}}|{{{{.Reclaimable}}}}' | awk -F'|' '$1==\"Images\" || $1==\"Build Cache\" {{v=$2; n=v+0; if (v ~ /GB/) n*=1e9; else if (v ~ /MB/) n*=1e6; else if (v ~ /kB/) n*=1e3; s+=n}} END {{printf \"%d\", s}}'"
         );
         let command = format!(
-            "{S} docker image prune -af --filter until=168h; {S} docker builder prune -af"
+            "{S} docker image prune -af --filter until=168h; {S} docker builder prune -af --filter until=168h"
         );
         system_step(out, "docker", &estimate, &command, apply);
     }
@@ -176,7 +177,13 @@ fn system_script(system: &System, apply: bool, out: &mut String) -> Result<()> {
             bail!("journalMaxSize refusé: {size}");
         }
         let estimate = format!("{S} du -sb /var/log/journal | cut -f1");
-        system_step(out, "journal", &estimate, &format!("{S} journalctl --vacuum-size={size}"), apply);
+        system_step(
+            out,
+            "journal",
+            &estimate,
+            &format!("{S} journalctl --vacuum-size={size}"),
+            apply,
+        );
     }
     if system.apt {
         let command = format!(
@@ -206,7 +213,13 @@ fn system_script(system: &System, apply: bool, out: &mut String) -> Result<()> {
             "/var/tmp -mindepth 1 -maxdepth 1 -mtime +{days} ! -name 'systemd-private-*' ! -name 'cloud-init'"
         );
         let estimate = format!("{S} find {filter} -exec du -sb {{}} + | {SUM}");
-        system_step(out, "var-tmp", &estimate, &format!("{S} find {filter} -exec rm -rf -- {{}} +"), apply);
+        system_step(
+            out,
+            "var-tmp",
+            &estimate,
+            &format!("{S} find {filter} -exec rm -rf -- {{}} +"),
+            apply,
+        );
     }
     for entry in &system.paths {
         check_system_path(&entry.path)?;
@@ -312,6 +325,8 @@ mod tests {
         assert!(!plan.contains("rm -rf -- '/srv"), "{plan}");
         let apply = script(&t, true).unwrap();
         assert!(apply.contains("sudo -n docker image prune -af --filter until=168h"));
+        assert!(apply.contains("sudo -n docker builder prune -af --filter until=168h"));
+        assert!(plan.contains("$1==\"Build Cache\""), "{plan}");
         assert!(!apply.contains("system prune"));
         assert!(!apply.contains("--volumes"));
         assert!(apply.contains("sudo -n journalctl --vacuum-size=200M"));
