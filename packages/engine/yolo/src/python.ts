@@ -24,7 +24,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { yoloHome, yoloVersion } from "./home";
-import { pathWithVu, resolveVu, type VuState } from "./vu";
+import { pathWithVu, resolveVu, vuExecutable, type VuState } from "./vu";
 
 type Env = Readonly<Record<string, string | undefined>>;
 
@@ -32,6 +32,7 @@ export interface VuStatus {
   readonly state: VuState["state"];
   readonly version?: string;
   readonly revision?: string;
+  readonly target?: string;
   readonly artifact?: string;
   readonly checked?: "quick" | "full";
   readonly problems?: readonly string[];
@@ -106,6 +107,7 @@ export function describeVu(state: VuState): VuStatus {
       state: "verified",
       version: state.manifest.version,
       revision: state.manifest.revision,
+      target: state.manifest.target,
       artifact: state.dir,
       checked: state.full ? "full" : "quick",
     };
@@ -132,13 +134,14 @@ export async function resolveTools(
     full: args.includes("--vu-full"),
   });
   if (state.state === "verified") {
-    const bin = (name: string): string => join(state.dir, "bin", name);
+    const bin = (name: "uv" | "ruff" | "python"): string =>
+      join(state.dir, vuExecutable(name, state.manifest.target));
     return {
       source: "vu",
       vu: describeVu(state),
       uv: bin("uv"),
       ruff: bin("ruff"),
-      python: bin("python3"),
+      python: bin("python"),
       env: { ...env, PATH: pathWithVu(state.dir, env["PATH"]), VU_RUNTIME: state.dir },
       refusal: null,
     };
@@ -314,10 +317,13 @@ export async function runPythonCommand(
       if (arg === "--vu") index++;
       else if (arg !== "--no-vu" && arg !== "--vu-full") forwarded.push(arg);
     }
-    return runCommand([join(tools.vu.artifact, "bin", "vu"), ...forwarded], {
-      cwd: process.cwd(),
-      env: tools.env,
-    });
+    return runCommand(
+      [join(tools.vu.artifact, vuExecutable("vu", tools.vu.target)), ...forwarded],
+      {
+        cwd: process.cwd(),
+        env: tools.env,
+      },
+    );
   }
 
   const supervised = new Set([

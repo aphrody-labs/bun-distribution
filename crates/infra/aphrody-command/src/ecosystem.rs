@@ -31,7 +31,7 @@ pub enum Boundary {
     Operator,
 }
 
-/// Product surface. Distinct MCP entries do not imply a merged catalog.
+/// Product surfaces. AI and OS MCP capabilities share one canonical server.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Surface {
     AgentCli,
@@ -80,8 +80,8 @@ pub const SURFACES: [SurfaceSpec; 6] = [
         surface: Surface::OsMcp,
         owner: Layer::Os,
         boundary: Boundary::LocalStdio,
-        binary: Some("aphrody-kernel"),
-        args: &["mcp"],
+        binary: Some("aphrody-mcp"),
+        args: &["server"],
     },
     SurfaceSpec {
         surface: Surface::PublicSite,
@@ -156,7 +156,8 @@ mod tests {
         assert_eq!(spec(Surface::Deployment).binary, None);
         assert_eq!(spec(Surface::PublicSite).boundary, Boundary::PublicHttp);
         assert_eq!(spec(Surface::AiMcp).args, &["server"]);
-        assert_eq!(spec(Surface::OsMcp).args, &["mcp"]);
+        assert_eq!(spec(Surface::OsMcp).binary, spec(Surface::AiMcp).binary);
+        assert_eq!(spec(Surface::OsMcp).args, spec(Surface::AiMcp).args);
     }
 
     #[test]
@@ -183,7 +184,11 @@ mod tests {
             .expect("AI MCP binary found");
         assert_eq!(ai.executable, executable);
         assert_eq!(ai.spec.owner, Layer::Ai);
-        assert!(find_local_surface(Surface::OsMcp, std::slice::from_ref(&directory)).is_none());
+        let os = find_local_surface(Surface::OsMcp, std::slice::from_ref(&directory))
+            .expect("OS MCP capabilities use the same binary");
+        assert_eq!(os.executable, ai.executable);
+        assert_eq!(os.spec.owner, Layer::Os);
+        assert_eq!(os.spec.args, ai.spec.args);
         std::fs::remove_file(&executable).expect("remove fixture binary");
         std::fs::remove_dir(&directory).expect("remove fixture directory");
     }

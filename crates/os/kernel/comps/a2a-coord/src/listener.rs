@@ -18,7 +18,7 @@ use tokio::net::TcpListener;
 use tracing::info;
 
 use crate::{
-    card::agent_card_from_manifest, envelope::Envelope, executor::CoordPeerExecutor,
+    card::agent_card_from_manifest_with_auth, envelope::Envelope, executor::CoordPeerExecutor,
     mailbox::Mailbox, manifest::AiManifest, proxy::CoordProxy,
 };
 
@@ -40,21 +40,23 @@ struct AppState {
 pub fn router(cfg: &ListenerConfig) -> Router {
     let coord_dir = cfg.manifest.coord_dir(&cfg.repo_root);
     let mailbox = Mailbox::new(coord_dir);
-    crate::auth::protect(router_with_mailbox(cfg, mailbox), crate::auth::token())
+    router_with_token(cfg, mailbox, crate::auth::token())
 }
 
 /// Build the HTTP surface with all A2A files scoped to one Home Agent profile.
 pub fn router_for_profile(cfg: &ListenerConfig, profile_root: &std::path::Path) -> Router {
-    crate::auth::protect(
-        router_with_mailbox(cfg, Mailbox::for_profile_root(profile_root)),
-        crate::auth::token(),
-    )
+    router_with_token(cfg, Mailbox::for_profile_root(profile_root), crate::auth::token())
 }
 
-fn router_with_mailbox(cfg: &ListenerConfig, mailbox: Mailbox) -> Router {
+fn router_with_token(cfg: &ListenerConfig, mailbox: Mailbox, token: Option<String>) -> Router {
+    let app = router_with_mailbox(cfg, mailbox, token.is_some());
+    crate::auth::protect(app, token)
+}
+
+fn router_with_mailbox(cfg: &ListenerConfig, mailbox: Mailbox, requires_bearer: bool) -> Router {
     let base =
         std::env::var("APHRODY_A2A_PUBLIC_URL").unwrap_or_else(|_| format!("http://{}", cfg.bind));
-    let card = agent_card_from_manifest(&cfg.manifest, &base);
+    let card = agent_card_from_manifest_with_auth(&cfg.manifest, &base, requires_bearer);
     let card_producer = Arc::new(StaticAgentCard::new(card));
 
     let dry_run = cfg.dry_run || std::env::var_os("APHRODY_A2A_DRY_RUN").is_some();
@@ -136,10 +138,8 @@ mod auth_tests {
     async fn every_private_binding_rejects_missing_and_wrong_bearers() {
         let root = tempfile::tempdir().unwrap();
         let private = tempfile::tempdir().unwrap();
-        let app = crate::auth::protect(
-            legacy_router(&config(root.path()), private.path()),
-            Some("test-credential".into()),
-        );
+        let app =
+            legacy_router(&config(root.path()), private.path(), Some("test-credential".into()));
         for (method, path) in [
             ("POST", "/"),
             ("POST", "/a2a"),
@@ -174,13 +174,152 @@ mod auth_tests {
     }
 
     #[tokio::test]
+    async fn discovery_and_route_auth_share_one_snapshot_for_every_router() {
+        let root = tempfile::tempdir().unwrap();
+        let profile = tempfile::tempdir().unwrap();
+        let cfg = config(root.path());
+        for token in [None, Some("snapshot-test-credential".to_owned())] {
+            let apps = [
+                router_with_token(
+                    &cfg,
+                    Mailbox::new(cfg.manifest.coord_dir(root.path())),
+                    token.clone(),
+                ),
+                router_with_token(&cfg, Mailbox::for_profile_root(profile.path()), token.clone()),
+                legacy_router(&cfg, profile.path(), token.clone()),
+            ];
+            for app in apps {
+                let response = app
+                    .clone()
+                    .oneshot(
+                        Request::builder()
+                            .uri("/.well-known/agent-card.json")
+                            .body(Body::empty())
+                            .unwrap(),
+                    )
+                    .await
+                    .unwrap();
+                assert_eq!(response.status(), StatusCode::OK);
+                let bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024).await.unwrap();
+                let card: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+                if token.is_some() {
+                    assert_eq!(
+                        card["securitySchemes"]["bearer"]["httpAuthSecurityScheme"]["scheme"],
+                        "Bearer"
+                    );
+                    assert_eq!(card["securityRequirements"], serde_json::json!([{ "bearer": [] }]));
+                    assert!(
+                        !String::from_utf8(bytes.to_vec())
+                            .unwrap()
+                            .contains("snapshot-test-credential")
+                    );
+                } else {
+                    assert!(card.get("securitySchemes").is_none());
+                    assert!(card.get("securityRequirements").is_none());
+                }
+                let response = app
+                    .clone()
+                    .oneshot(Request::builder().uri("/coord").body(Body::empty()).unwrap())
+                    .await
+                    .unwrap();
+                assert_eq!(
+                    response.status(),
+                    if token.is_some() { StatusCode::UNAUTHORIZED } else { StatusCode::OK }
+                );
+                if let Some(token) = &token {
+                    let response = app
+                        .oneshot(
+                            Request::builder()
+                                .uri("/coord")
+                                .header("authorization", format!("Bearer {token}"))
+                                .body(Body::empty())
+                                .unwrap(),
+                        )
+                        .await
+                        .unwrap();
+                    assert_eq!(response.status(), StatusCode::OK);
+                }
+            }
+        }
+        assert!(!root.path().join(".coord").exists());
+    }
+
+    #[tokio::test]
+    async fn retained_ephemeral_listener_advertises_its_assigned_tcp_address() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+        let root = tempfile::tempdir().unwrap();
+        let profile = tempfile::tempdir().unwrap();
+        for variant in 0..3 {
+            let mut cfg = config(root.path());
+            cfg.bind = "127.0.0.1:0".parse().unwrap();
+            let listener = bind_tcp(&mut cfg, None).await.unwrap();
+            assert_ne!(cfg.bind.port(), 0);
+            assert_eq!(cfg.bind, listener.local_addr().unwrap());
+            let app = match variant {
+                0 => {
+                    router_with_token(&cfg, Mailbox::new(cfg.manifest.coord_dir(root.path())), None)
+                },
+                1 => router_with_token(&cfg, Mailbox::for_profile_root(profile.path()), None),
+                _ => legacy_router(&cfg, profile.path(), None),
+            };
+            let (stop, stopped) = tokio::sync::oneshot::channel();
+            let server = tokio::spawn(async move {
+                axum::serve(listener, app)
+                    .with_graceful_shutdown(async {
+                        let _ = stopped.await;
+                    })
+                    .await
+            });
+            let response = tokio::time::timeout(std::time::Duration::from_secs(5), async {
+                let mut stream = tokio::net::TcpStream::connect(cfg.bind).await?;
+                stream
+                    .write_all(
+                        format!(
+                            "GET /.well-known/agent-card.json HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n",
+                            cfg.bind
+                        )
+                        .as_bytes(),
+                    )
+                    .await?;
+                let mut bytes = Vec::new();
+                stream.take(1024 * 1024).read_to_end(&mut bytes).await?;
+                Ok::<_, std::io::Error>(bytes)
+            })
+            .await;
+            let _ = stop.send(());
+            server.await.unwrap().unwrap();
+            let response = String::from_utf8(response.unwrap().unwrap()).unwrap();
+            let (headers, body) = response.split_once("\r\n\r\n").unwrap();
+            let status = headers
+                .lines()
+                .next()
+                .unwrap()
+                .split_whitespace()
+                .nth(1)
+                .unwrap()
+                .parse::<u16>()
+                .unwrap();
+            assert_eq!(status, StatusCode::OK.as_u16());
+            let content_length = headers.lines().find_map(|line| {
+                let (name, value) = line.split_once(':')?;
+                name.eq_ignore_ascii_case("content-length")
+                    .then(|| value.trim().parse::<usize>().unwrap())
+            });
+            assert_eq!(content_length, Some(body.len()));
+            let card: serde_json::Value = serde_json::from_str(body).unwrap();
+            let expected_url = std::env::var("APHRODY_A2A_PUBLIC_URL")
+                .unwrap_or_else(|_| format!("http://{}", cfg.bind));
+            assert_eq!(card["supportedInterfaces"][0]["url"], expected_url);
+        }
+    }
+
+    #[tokio::test]
     async fn authenticated_tasks_use_the_explicit_private_directory() {
         let root = tempfile::tempdir().unwrap();
         let private = tempfile::tempdir().unwrap();
-        let app = crate::auth::protect(
-            legacy_router(&config(root.path()), private.path()),
-            Some("test-credential".into()),
-        );
+        let app =
+            legacy_router(&config(root.path()), private.path(), Some("test-credential".into()));
         let request = Request::builder()
             .method("POST")
             .uri("/coord/aphrody/tasks")
@@ -206,7 +345,7 @@ mod auth_tests {
         let root = tempfile::tempdir().unwrap();
         let private = tempfile::tempdir().unwrap();
         let cfg = config(root.path());
-        let response = legacy_router(&cfg, private.path())
+        let response = legacy_router(&cfg, private.path(), None)
             .oneshot(
                 Request::builder()
                     .method("POST")
@@ -235,7 +374,7 @@ mod auth_tests {
             .or_else(|| value["result"]["id"].as_str())
             .expect("completed protocol task");
         assert!(private.path().join("a2a/tasks").join(format!("{task_id}.json")).is_file());
-        let response = legacy_router(&cfg, private.path())
+        let response = legacy_router(&cfg, private.path(), None)
             .oneshot(
                 Request::builder().uri(format!("/tasks/{task_id}")).body(Body::empty()).unwrap(),
             )
@@ -252,7 +391,7 @@ mod auth_tests {
 
         let root = tempfile::tempdir().unwrap();
         let private = tempfile::tempdir().unwrap();
-        let response = legacy_router(&config(root.path()), private.path())
+        let response = legacy_router(&config(root.path()), private.path(), None)
             .oneshot(
                 Request::builder().method("POST").uri("/")
                     .header("content-type", "application/json")
@@ -297,7 +436,7 @@ mod auth_tests {
 
         let root = tempfile::tempdir().unwrap();
         let private = tempfile::tempdir().unwrap();
-        let response = legacy_router(&config(root.path()), private.path())
+        let response = legacy_router(&config(root.path()), private.path(), None)
             .oneshot(
                 Request::builder()
                     .method("POST")
@@ -341,7 +480,7 @@ mod auth_tests {
         std::fs::create_dir_all(root.path().join(".coord/shared")).unwrap();
         std::fs::write(root.path().join(".coord/shared/branch"), "private-branch-detail\n")
             .unwrap();
-        let response = legacy_router(&config(root.path()), private.path())
+        let response = legacy_router(&config(root.path()), private.path(), None)
             .oneshot(
                 Request::builder().method("POST").uri("/")
                     .header("content-type", "application/json")
@@ -464,7 +603,7 @@ mod auth_tests {
         let store = FsTaskStore::new(private.path().join("a2a"));
         let task = saved_task("uncancellable-task", TaskState::Working);
         store.create(task.clone()).await.unwrap();
-        let response = legacy_router(&config(root.path()), private.path())
+        let response = legacy_router(&config(root.path()), private.path(), None)
             .oneshot(
                 Request::builder()
                     .method("POST")
@@ -611,12 +750,15 @@ async fn reconcile_interrupted_tasks(
 }
 
 /// Run the listener until shutdown.
-pub async fn serve(cfg: ListenerConfig) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+pub async fn serve(
+    mut cfg: ListenerConfig,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     crate::executor::default_peer_from_env()?;
-    crate::auth::validate_bind(cfg.bind, crate::auth::token().as_deref())?;
-    let listener = TcpListener::bind(cfg.bind).await?;
+    let token = crate::auth::token();
+    let listener = bind_tcp(&mut cfg, token.as_deref()).await?;
     reconcile_interrupted_tasks(&cfg.manifest.coord_dir(&cfg.repo_root)).await?;
-    let app = router(&cfg);
+    let mailbox = Mailbox::new(cfg.manifest.coord_dir(&cfg.repo_root));
+    let app = router_with_token(&cfg, mailbox, token);
     info!(%cfg.bind, "aphrody A2A coord listener started");
     axum::serve(listener, app).await?;
     Ok(())
@@ -624,17 +766,24 @@ pub async fn serve(cfg: ListenerConfig) -> Result<(), Box<dyn std::error::Error 
 
 /// Run the profile-scoped listener until shutdown.
 pub async fn serve_profile(
-    cfg: ListenerConfig,
+    mut cfg: ListenerConfig,
     profile_root: &std::path::Path,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     crate::executor::default_peer_from_env()?;
-    crate::auth::validate_bind(cfg.bind, crate::auth::token().as_deref())?;
-    let listener = TcpListener::bind(cfg.bind).await?;
+    let token = crate::auth::token();
+    let listener = bind_tcp(&mut cfg, token.as_deref()).await?;
     reconcile_interrupted_tasks(&Mailbox::for_profile_root(profile_root).coord_dir).await?;
-    let app = router_for_profile(&cfg, profile_root);
+    let app = router_with_token(&cfg, Mailbox::for_profile_root(profile_root), token);
     info!(%cfg.bind, profile_root = %profile_root.display(), "aphrody A2A coord listener started");
     axum::serve(listener, app).await?;
     Ok(())
+}
+
+async fn bind_tcp(cfg: &mut ListenerConfig, token: Option<&str>) -> std::io::Result<TcpListener> {
+    crate::auth::validate_bind(cfg.bind, token)?;
+    let listener = TcpListener::bind(cfg.bind).await?;
+    cfg.bind = listener.local_addr()?;
+    Ok(listener)
 }
 
 /// Extra bind options for [`serve_with_options`] (legacy `a2a-broker.ts` parity).
@@ -651,15 +800,19 @@ pub struct ServeOptions {
 
 /// Router = regular surface + legacy broker (`/jsonrpc`, `/events`).
 pub fn router_with_legacy_broker(cfg: &ListenerConfig, coord_dir: &std::path::Path) -> Router {
-    crate::auth::protect(legacy_router(cfg, coord_dir), crate::auth::token())
+    legacy_router(cfg, coord_dir, crate::auth::token())
 }
 
-fn legacy_router(cfg: &ListenerConfig, coord_dir: &std::path::Path) -> Router {
-    router_with_mailbox(cfg, Mailbox::new(coord_dir.to_path_buf())).merge(
-        crate::legacy_broker::legacy_broker_router(crate::legacy_broker::LegacyBroker::new(
-            coord_dir,
-        )),
-    )
+fn legacy_router(
+    cfg: &ListenerConfig,
+    coord_dir: &std::path::Path,
+    token: Option<String>,
+) -> Router {
+    let app = router_with_mailbox(cfg, Mailbox::new(coord_dir.to_path_buf()), token.is_some())
+        .merge(crate::legacy_broker::legacy_broker_router(
+            crate::legacy_broker::LegacyBroker::new(coord_dir),
+        ));
+    crate::auth::protect(app, token)
 }
 
 #[cfg(unix)]
@@ -709,7 +862,7 @@ async fn bind_unix(
 
 /// Run the listener with the legacy broker routes, on TCP and/or a Unix socket.
 pub async fn serve_with_options(
-    cfg: ListenerConfig,
+    mut cfg: ListenerConfig,
     opts: ServeOptions,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     crate::executor::default_peer_from_env()?;
@@ -720,19 +873,18 @@ pub async fn serve_with_options(
     if opts.unix.is_some() {
         return Err("--unix is not supported on this platform".into());
     }
-    if !opts.no_tcp {
-        crate::auth::validate_bind(cfg.bind, crate::auth::token().as_deref())?;
-    }
+    let token = crate::auth::token();
     let coord_dir =
         opts.coord_dir.clone().unwrap_or_else(|| cfg.manifest.coord_dir(&cfg.repo_root));
-    let tcp_listener = if opts.no_tcp { None } else { Some(TcpListener::bind(cfg.bind).await?) };
+    let tcp_listener =
+        if opts.no_tcp { None } else { Some(bind_tcp(&mut cfg, token.as_deref()).await?) };
     #[cfg(unix)]
     let unix_listener = match opts.unix.as_deref() {
         Some(path) => Some(bind_unix(path).await?),
         None => None,
     };
     reconcile_interrupted_tasks(&coord_dir).await?;
-    let app = router_with_legacy_broker(&cfg, &coord_dir);
+    let app = legacy_router(&cfg, &coord_dir, token);
     let tcp = async {
         let Some(listener) = tcp_listener else {
             return std::future::pending::<Result<(), Box<dyn std::error::Error + Send + Sync>>>()

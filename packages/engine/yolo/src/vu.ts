@@ -18,7 +18,8 @@ import {
   realpathSync,
 } from "node:fs";
 import { homedir } from "node:os";
-import { join, relative, resolve } from "node:path";
+import { delimiter, isAbsolute, join, posix, relative, resolve, sep } from "node:path";
+import { SUPPORTED_TARGETS } from "@aphrody/runtime-sdk/src/target.ts";
 
 export const MANIFEST_PATH = "share/vu/manifest.json";
 /** The CLI major version of the runtime this consumer understands (`compatibility.cliMajor`). */
@@ -58,10 +59,15 @@ export function hostTarget(
   arch: string = process.arch,
   platform: string = process.platform,
 ): string | null {
-  if (platform !== "linux") return null;
-  if (arch === "x64") return "x86_64-unknown-linux-gnu";
-  if (arch === "arm64") return "aarch64-unknown-linux-gnu";
-  return null;
+  return SUPPORTED_TARGETS[`${platform}-${arch}`] ?? null;
+}
+
+export function vuExecutable(
+  name: "vu" | "uv" | "ruff" | "python",
+  target: string | null = hostTarget(),
+): string {
+  const windows = target?.endsWith("-windows-msvc") === true;
+  return `bin/${name === "python" && !windows ? "python3" : name}${windows ? ".exe" : ""}`;
 }
 
 export function vuHome(env: Env = process.env, home: string = homedir()): string {
@@ -103,13 +109,82 @@ async function mapLimit<T, R>(
 const sha256 = (bytes: Uint8Array): string =>
   new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
 
-function readManifest(dir: string): VuManifest | string {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function safeManifestPath(path: string): boolean {
+  return (
+    !/[\\:\0]/.test(path) &&
+    path.split("/").every((part) => part !== "" && part !== "." && part !== "..")
+  );
+}
+
+function manifestProblem(value: unknown): string | null {
+  if (!isRecord(value)) return "the manifest must be an object";
+  for (const field of ["name", "version", "target", "toolchain", "revision"]) {
+    if (typeof value[field] !== "string" || value[field] === "") return `invalid manifest ${field}`;
+  }
+  if (!/^[a-f0-9]{40}$/.test(value.revision as string)) return "invalid manifest revision";
+  if (!isRecord(value.pins)) return "invalid manifest pins";
+  if (
+    !isRecord(value.compatibility) ||
+    !Number.isSafeInteger(value.compatibility.cliMajor) ||
+    (value.compatibility.cliMajor as number) < 0
+  )
+    return "invalid manifest compatibility";
+  if (
+    !Array.isArray(value.capabilities) ||
+    value.capabilities.some((item) => typeof item !== "string")
+  )
+    return "invalid manifest capabilities";
+  if (!isRecord(value.files) || !isRecord(value.links)) return "invalid manifest files or links";
+  for (const [path, entry] of Object.entries(value.files)) {
+    if (!safeManifestPath(path)) return `invalid manifest file path: ${path}`;
+    if (
+      !isRecord(entry) ||
+      typeof entry.sha256 !== "string" ||
+      !/^[a-f0-9]{64}$/.test(entry.sha256) ||
+      !Number.isSafeInteger(entry.bytes) ||
+      (entry.bytes as number) < 0 ||
+      (entry.mode !== undefined &&
+        (!Number.isSafeInteger(entry.mode) || (entry.mode as number) < 0))
+    )
+      return `invalid manifest file entry: ${path}`;
+  }
+  for (const [path, target] of Object.entries(value.links)) {
+    if (
+      !safeManifestPath(path) ||
+      typeof target !== "string" ||
+      target === "" ||
+      /[\\:\0]/.test(target) ||
+      target.startsWith("/")
+    )
+      return `invalid manifest link: ${path}`;
+    const destination = posix.normalize(posix.join(posix.dirname(path), target));
+    if (destination === ".." || destination.startsWith("../"))
+      return `outside artifact link: ${path}`;
+  }
+  return null;
+}
+
+function readManifest(dir: string): { manifest: VuManifest } | VuState {
   const path = join(dir, MANIFEST_PATH);
-  if (!existsSync(path)) return `no ${MANIFEST_PATH} in ${dir}`;
+  if (!existsSync(path)) return { state: "absent", reason: `no ${MANIFEST_PATH} in ${dir}` };
   try {
-    return JSON.parse(readFileSync(path, "utf8")) as VuManifest;
+    const value: unknown = JSON.parse(readFileSync(path, "utf8"));
+    const problem = manifestProblem(value);
+    return problem === null
+      ? { manifest: value as VuManifest }
+      : { state: "invalid", dir, problems: [problem] };
   } catch (error) {
-    return `${MANIFEST_PATH} is not valid JSON: ${error instanceof Error ? error.message : String(error)}`;
+    return {
+      state: "invalid",
+      dir,
+      problems: [
+        `cannot read ${MANIFEST_PATH}: ${error instanceof Error ? error.message : String(error)}`,
+      ],
+    };
   }
 }
 
@@ -122,10 +197,14 @@ export function isDerivedPath(path: string): boolean {
 }
 
 function listFiles(root: string, directory: string, out: string[]): void {
+  const actual = relative(root, realpathSync(directory));
+  if (actual === ".." || actual.startsWith(`..${sep}`) || isAbsolute(actual))
+    throw new Error("directory is outside artifact");
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name);
-    if (entry.isDirectory()) listFiles(root, path, out);
-    else if (entry.isFile()) out.push(relative(root, path));
+    const stat = lstatSync(path);
+    if (!stat.isSymbolicLink() && stat.isDirectory()) listFiles(root, path, out);
+    else out.push(relative(root, path).split(sep).join("/"));
   }
 }
 
@@ -134,8 +213,26 @@ export async function verifyVuArtifact(
   dir: string,
   options: { full?: boolean; target?: string | null } = {},
 ): Promise<VuState> {
-  const manifest = readManifest(dir);
-  if (typeof manifest === "string") return { state: "absent", reason: manifest };
+  try {
+    return await verifyArtifact(dir, options);
+  } catch (error) {
+    return {
+      state: "invalid",
+      dir,
+      problems: [
+        `cannot verify artifact: ${error instanceof Error ? error.message : String(error)}`,
+      ],
+    };
+  }
+}
+
+async function verifyArtifact(
+  dir: string,
+  options: { full?: boolean; target?: string | null },
+): Promise<VuState> {
+  const loaded = readManifest(dir);
+  if ("state" in loaded) return loaded;
+  const manifest = loaded.manifest;
   const problems: string[] = [];
   if (manifest.schema !== 1 || manifest.name !== "vu-runtime")
     problems.push("unsupported manifest schema or name");
@@ -155,28 +252,52 @@ export async function verifyVuArtifact(
   const toCheck =
     options.full === true
       ? Object.keys(manifest.files ?? {}).filter((file) => !isDerivedPath(file))
-      : [...REQUIRED_BINARIES];
+      : [
+          vuExecutable("vu", manifest.target),
+          vuExecutable("uv", manifest.target),
+          vuExecutable("ruff", manifest.target),
+        ];
+  for (const name of ["vu", "uv", "ruff"] as const) {
+    const executable = vuExecutable(name, manifest.target);
+    if (!Object.hasOwn(manifest.files, executable)) problems.push(`not listed: ${executable}`);
+  }
+  const root = realpathSync(dir);
   const checked = await mapLimit(toCheck, 32, async (file): Promise<string | null> => {
     const entry = manifest.files?.[file];
     if (entry === undefined) return `not listed: ${file}`;
     const path = join(dir, file);
     if (!existsSync(path)) return `missing: ${file}`;
-    if (lstatSync(path).size !== entry.bytes) return `size: ${file}`;
+    const stat = lstatSync(path);
+    if (!stat.isFile()) return `not a regular file: ${file}`;
+    const actual = relative(root, realpathSync(path));
+    if (actual === ".." || actual.startsWith(`..${sep}`) || isAbsolute(actual))
+      return `outside artifact: ${file}`;
+    if (stat.size !== entry.bytes) return `size: ${file}`;
     const digest = sha256(new Uint8Array(await Bun.file(path).arrayBuffer()));
     return digest === entry.sha256 ? null : `sha256: ${file}`;
   });
   problems.push(...checked.filter((problem): problem is string => problem !== null));
   if (options.full === true) {
     const present: string[] = [];
-    listFiles(dir, dir, present);
+    listFiles(root, root, present);
     for (const file of present) {
-      if (file !== MANIFEST_PATH && !isDerivedPath(file) && !(file in manifest.files)) {
+      if (
+        file !== MANIFEST_PATH &&
+        !isDerivedPath(file) &&
+        !Object.hasOwn(manifest.files, file) &&
+        !Object.hasOwn(manifest.links, file)
+      ) {
         problems.push(`unlisted: ${file}`);
       }
     }
     for (const [link, linkTarget] of Object.entries(manifest.links ?? {})) {
       try {
-        if (readlinkSync(join(dir, link)) !== linkTarget) problems.push(`link target: ${link}`);
+        const path = join(dir, link);
+        if (readlinkSync(path).split(sep).join("/") !== linkTarget)
+          problems.push(`link target: ${link}`);
+        const actual = relative(root, realpathSync(path));
+        if (actual === ".." || actual.startsWith(`..${sep}`) || isAbsolute(actual))
+          problems.push(`outside artifact link: ${link}`);
       } catch {
         problems.push(`missing link: ${link}`);
       }
@@ -212,7 +333,7 @@ export async function resolveVu(
 export function pathWithVu(dir: string, existing: string | undefined): string {
   return existing === undefined || existing === ""
     ? join(dir, "bin")
-    : `${join(dir, "bin")}:${existing}`;
+    : `${join(dir, "bin")}${delimiter}${existing}`;
 }
 
 /** argv0 names the Python alias of the single `yolo` executable (`vu` or `vu.exe`, any directory). */
@@ -244,7 +365,7 @@ export async function runVu(
     );
     return 1;
   }
-  const child = Bun.spawn([join(state.dir, "bin", "vu"), ...args], {
+  const child = Bun.spawn([join(state.dir, vuExecutable("vu", state.manifest.target)), ...args], {
     env: { ...env, PATH: pathWithVu(state.dir, env["PATH"]) },
     stdin: "inherit",
     stdout: "inherit",
