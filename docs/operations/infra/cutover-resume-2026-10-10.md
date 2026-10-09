@@ -101,3 +101,57 @@ DBFR ingress was identified through Docker mount inspection as
 directory. Its successful `nginx -T` contains only Dragonballfr vhosts,
 including mcp.dragonballfr.com. Aphrody ingress must be delivered through the
 existing release/catalog owner, preserving this gateway and its TLS store.
+
+## Follow-up: VPS catalog and public WASM, 22:39 UTC
+
+The concurrent owner delivered the VPS ingress catalog in `c1eb4deb5b`.
+Live SHA-256 matches the complete repository bytes for both
+`tools/config/host/nginx/aphrody/aphrody.com.conf` and
+`tools/config/host/nginx/aphrody/os.aphrody.com.conf`, and for
+`tools/config/host/nginx/snippets/aphrody-security.inc`.
+VPS `nginx -t` passes; native `aphrody infra validate --json` reports zero
+errors/warnings, 28 services and 12 routes. Native Aphrody Web snapshots of
+apex and OS render the product interface. This supersedes the earlier
+apex-documentation-only routing observation. The full Rust/WASM UI migration
+still requires its own qualification.
+
+The web activation plan now includes the exact OS A record alongside apex/www;
+all three direct origin TLS probes pass. The zone remains pending, so no proxy,
+strict-mode or Cloudflare HSTS activation is claimed.
+
+The CLI-WASM parity test formerly invoked Unix `mktemp`/`mkdir` and did not await
+fixture writes. It now creates isolated native temporary directories, awaits
+all fixture writes, and cleans up each owned directory. With the installed
+native `aphrody` explicitly selected, all 8 tests / 58 assertions pass, with
+zero skip or failure. Scoped TypeScript, oxlint and oxfmt pass.
+
+`scripts/audit/live-cli-wasm-browser.ts --out <new-directory>` stages the
+existing typed facade and WASM plus a qualification page and hash manifest.
+It never replaces an existing stage. `--url` verifies the three public payload
+hashes, the WASM MIME and rendered command results through
+`aphrody web browser snapshot`. The native browser's private-IP guard was
+retained after its loopback refusal; no browser policy was bypassed.
+
+The owner-authorized R2 subagent uploaded four new keys under an isolated
+qualification prefix and verified S3/public byte parity. Independent root
+execution of the verifier on the
+[public qualification page](https://pub-2a25b78efa294362ad9d988bb2deffeb.r2.dev/qualification/cli-wasm/715b7713e6f6e62-2f97ff566b71/index.html)
+returns `WASM_BROWSER_PASS`: module version 1.0.0, RAG ABI 1, actual JSON repair
+and HTML-to-Markdown execution. Module: 2,994,287 bytes, SHA-256
+`715b7713e6f6e6237bc17269a3e289dd49928ec4e0a118e88c99bb63c4683fe2`.
+This proves public browser command execution, not complete OS frontend migration
+or signed source provenance for the pre-existing module. The qualification
+manifest states that provenance limit explicitly; it is not an official release.
+
+The separately owned [R2 domain receipt](r2-domains-2026-10-10.md) records the
+real provider rejection of pending-zone custom-domain attachment. No assets/dist
+custom domain activation is claimed while that dependency remains unresolved.
+
+The native registry owner `aphrody pkg remote-info --source npm --version`
+was run for all 28 exact `ready` versions from the existing publication plan.
+Twelve are now present (runtime-sdk, agent-browser, api, update, bun,
+drive-client, eslint-plugin-m3, fuzzy, identity, m3-fonts, m3-react and
+m3-codemods). Sixteen remain absent, including cli-wasm 0.1.4 and product
+0.3.1; no registry query was unavailable. This qualifies registry presence,
+not package installation or all-publication completion. Original publisher
+PID 24788 is still live and its output file remains empty; it was not restarted.
