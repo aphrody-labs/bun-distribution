@@ -143,7 +143,7 @@
     },
     "m3/packages/app-ui": {
       "name": "@aphrody/app-ui",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "dependencies": {
         "@aphrody/api": "workspace:*",
         "@aphrody/assets": "workspace:*",
@@ -445,7 +445,7 @@
     },
     "m3/packages/m3-config": {
       "name": "@aphrody/m3-config",
-      "version": "3.3.8",
+      "version": "3.3.9",
       "dependencies": {
         "@happy-dom/global-registrator": "catalog:",
         "element-internals-polyfill": "catalog:",
@@ -824,7 +824,7 @@
     },
     "packages/google/google": {
       "name": "@aphrody/google",
-      "version": "1.0.0-canary.1",
+      "version": "1.0.0-canary.2",
       "dependencies": {
         "@ai-sdk/google-vertex": "catalog:",
         "@aphrody/yolo-core": "workspace:*",

@@ -19,11 +19,7 @@ if (nativeRS) globalThis.ReadableStream = nativeRS;
 if (nativeWS) globalThis.WritableStream = nativeWS;
 try {
   await import("element-internals-polyfill");
-} catch {
-  try {
-    await import("../node_modules/element-internals-polyfill/dist/index.js");
-  } catch {}
-}
+} catch {}
 
 // Rendering is driven with `flushSync`, not React Testing Library: silence the act() warning.
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = false;
