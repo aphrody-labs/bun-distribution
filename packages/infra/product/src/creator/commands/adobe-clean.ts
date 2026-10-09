@@ -155,13 +155,15 @@ export interface Io {
 const nativeIo = (): Io => ({
   list: listProcessesNative,
   async kill(names, force) {
-    for (const name of names) {
-      const cmd =
-        process.platform === "win32"
-          ? ["taskkill", "/IM", `${name}.exe`, ...(force ? ["/F"] : [])]
-          : ["pkill", "-x", name];
-      await Bun.spawn(cmd, { windowsHide: true, stdout: "ignore", stderr: "ignore" }).exited;
-    }
+    await Promise.all(
+      names.map((name) => {
+        const cmd =
+          process.platform === "win32"
+            ? ["taskkill", "/IM", `${name}.exe`, ...(force ? ["/F"] : [])]
+            : ["pkill", "-x", name];
+        return Bun.spawn(cmd, { windowsHide: true, stdout: "ignore", stderr: "ignore" }).exited;
+      }),
+    );
   },
   env: process.env,
   log: (line) => console.log(line),
@@ -185,7 +187,7 @@ export function topConsumers(
 
 export async function status(io: Io, json = false, top = 8): Promise<number> {
   const procs = await io.list();
-  const adobe = pick(procs, [...BACKGROUND, ...APPS]).sort((a, b) => b.bytes - a.bytes);
+  const adobe = pick(procs, [...BACKGROUND, ...APPS]).toSorted((a, b) => b.bytes - a.bytes);
   const total = totalmem();
   const freeBytes = freemem();
   if (json) {
@@ -246,13 +248,15 @@ export async function cache(
   ];
   let total = 0;
   for (const location of locations) {
+    // oxlint-disable-next-line no-await-in-loop -- parcours séquentiel des emplacements : l'ordre des lignes de journal et le total cumulé doivent rester déterministes
     for (const path of await expandStar(location.pattern)) {
       const isTempPattern = location.pattern.includes("Photoshop Temp");
-      const stats = isTempPattern
-        ? await treeStats(path)
-        : await clearDir(path, apply, olderThanMs);
-      if (isTempPattern && apply)
+      // oxlint-disable-next-line no-await-in-loop -- mesure/suppression séquentielle d'un dossier avant le suivant (journal ordonné, pas de concurrence sur le cache)
+      const stats = await (isTempPattern ? treeStats(path) : clearDir(path, apply, olderThanMs));
+      if (isTempPattern && apply) {
+        // oxlint-disable-next-line no-await-in-loop -- suppression séquentielle du dossier temporaire Photoshop, après sa mesure
         await rm(path, { recursive: true, force: true }).catch(() => undefined);
+      }
       if (stats.bytes === 0) continue;
       total += stats.bytes;
       io.log(`  ${formatBytes(stats.bytes).padStart(9)}  ${location.label}  (${path})`);

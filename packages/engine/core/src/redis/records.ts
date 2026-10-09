@@ -77,9 +77,11 @@ export class IndexedRecords {
       }
       for (const [id, value] of this.#pending) {
         if (value === null) {
+          // oxlint-disable-next-line no-await-in-loop -- écritures séquentielles dans l'ordre d'insertion : la persistance doit rester ordonnée
           await this.#backend.remove(id);
           this.#snapshot.delete(id);
         } else {
+          // oxlint-disable-next-line no-await-in-loop -- écritures séquentielles dans l'ordre d'insertion : la persistance doit rester ordonnée
           await this.#backend.write(id, value);
           this.#snapshot.set(id, value);
         }

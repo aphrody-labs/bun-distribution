@@ -67,9 +67,16 @@ function ico(entries: { side: number; bits: number; png?: boolean }[]): Uint8Arr
   return out;
 }
 
+const b = (...x: number[]) => new Uint8Array(x);
+const text = (s: string) => new TextEncoder().encode(s);
+const entry = (side: number, bits: number) => ({
+  width: side,
+  height: side,
+  bits,
+  png: false,
+});
+
 test("detectFormat reads magic bytes like Format::detecter", () => {
-  const b = (...x: number[]) => new Uint8Array(x);
-  const text = (s: string) => new TextEncoder().encode(s);
   expect(detectFormat(b(0x89, 0x50, 0x4e, 0x47, 13, 10))).toBe("png");
   expect(detectFormat(b(0xff, 0xd8, 0xff, 0xe0))).toBe("jpeg");
   expect(detectFormat(text("RIFF\0\0\0\0WEBPVP8 "))).toBe("webp");
@@ -189,13 +196,7 @@ describe("ico", () => {
   });
 
   test("bestEntry: same answers as meilleure_entree (crate test choix_d_entree)", () => {
-    const e = (side: number, bits: number) => ({
-      width: side,
-      height: side,
-      bits,
-      png: false,
-    });
-    const entries = [e(16, 32), e(32, 8), e(32, 32), e(48, 32), e(256, 32)];
+    const entries = [entry(16, 32), entry(32, 8), entry(32, 32), entry(48, 32), entry(256, 32)];
     expect([24, 32, 49, 512].map((t) => bestEntry(entries, t))).toEqual([2, 2, 4, 4]);
     expect(bestEntry(entries)).toBe(4);
     expect(bestEntry([], 16)).toBe(-1);
@@ -210,7 +211,7 @@ describe("ico", () => {
     );
     const one = new Uint8Array(await icoEntryBlob(bmp!).arrayBuffer());
     expect(icoEntryBlob(bmp!).type).toBe("image/x-icon");
-    expect(icoEntries(one).map(({ width, bits, png }) => [width, bits, png])).toEqual([
+    expect(icoEntries(one).map(({ width, bits, png: isPng }) => [width, bits, isPng])).toEqual([
       [24, 8, false],
     ]);
     expect(one.subarray(22)).toEqual(bmp!.data);

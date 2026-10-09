@@ -1,26 +1,26 @@
-import {CircleButton, CircleButtonGroup} from '@aphrody/m3-primitives';
-import clsx from 'clsx';
-import {useCallback, useEffect, useMemo, useState} from 'react';
-import {TopBarItem, TopBarPortal} from '../../TopBar';
-import {ExpandableSearchButton} from './components/ExpandableSearchButton';
-import {PathBar} from './components/PathBar';
-import {VirtualPathBar} from './components/VirtualPathBar';
-import {useExplorer, type ViewMode} from './context';
-import {useVirtualListing} from './hooks/useVirtualListing';
-import {SearchToolbar} from './SearchToolbar';
-import {SortMenu, SortMenuPanel} from './SortMenu';
-import {TabNavigationGuard} from './TabNavigationGuard';
-import {ViewModeMenu, ViewModeMenuPanel} from './ViewModeMenu';
-import {ColumnView} from './views/ColumnView';
-import {EmptyView} from './views/EmptyView';
-import {GridView} from './views/GridView';
-import {KnowledgeView} from './views/KnowledgeView';
-import {ListView} from './views/ListView';
-import {MediaView} from './views/MediaView';
-import {SearchView} from './views/SearchView';
-import {SizeView} from './views/SizeView';
-import {ViewSettings, ViewSettingsPanel} from './ViewSettings';
-import {FileSelectionAiBar} from './components/FileSelectionAiBar';
+import { CircleButton, CircleButtonGroup } from "@aphrody/m3-primitives";
+import { clsx } from "clsx";
+import { useCallback, useMemo, useState } from "react";
+import { TopBarItem, TopBarPortal } from "../../TopBar";
+import { ExpandableSearchButton } from "./components/ExpandableSearchButton";
+import { PathBar } from "./components/PathBar";
+import { VirtualPathBar } from "./components/VirtualPathBar";
+import { useExplorer, type ViewMode } from "./context";
+import { useVirtualListing } from "./hooks/useVirtualListing";
+import { SearchToolbar } from "./SearchToolbar";
+import { SortMenu, SortMenuPanel } from "./SortMenu";
+import { TabNavigationGuard } from "./TabNavigationGuard";
+import { ViewModeMenu, ViewModeMenuPanel } from "./ViewModeMenu";
+import { ColumnView } from "./views/ColumnView";
+import { EmptyView } from "./views/EmptyView";
+import { GridView } from "./views/GridView";
+import { KnowledgeView } from "./views/KnowledgeView";
+import { ListView } from "./views/ListView";
+import { MediaView } from "./views/MediaView";
+import { SearchView } from "./views/SearchView";
+import { SizeView } from "./views/SizeView";
+import { ViewSettings, ViewSettingsPanel } from "./ViewSettings";
+import { FileSelectionAiBar } from "./components/FileSelectionAiBar";
 
 export function ExplorerView() {
 	const {
@@ -49,21 +49,21 @@ export function ExplorerView() {
 		enterSearchMode,
 		exitSearchMode,
 		currentFiles,
-		columnStack
+		columnStack,
 	} = useExplorer();
 
-	const {isVirtualView} = useVirtualListing();
+	const { isVirtualView } = useVirtualListing();
 	const isPreviewActive = !!quickPreviewFileId;
 
 	// In column view, the path bar should reflect the deepest column, not the root
 	const pathBarPath = useMemo(() => {
-		if (viewMode === 'column' && columnStack.length > 1) {
+		if (viewMode === "column" && columnStack.length > 1) {
 			return columnStack[columnStack.length - 1];
 		}
 		return currentPath;
 	}, [viewMode, columnStack, currentPath]);
 
-	const [searchValue, setSearchValue] = useState('');
+	const [searchValue, setSearchValue] = useState("");
 
 	const handleSearchChange = useCallback(
 		(value: string) => {
@@ -74,49 +74,43 @@ export function ExplorerView() {
 					enterSearchMode(value);
 				}, 300);
 				return () => clearTimeout(timeoutId);
-			} else if (value.length === 0 && mode.type === 'search') {
+			} else if (value.length === 0 && mode.type === "search") {
 				exitSearchMode();
 			}
 		},
-		[enterSearchMode, exitSearchMode, mode.type]
+		[enterSearchMode, exitSearchMode, mode.type],
 	);
 
 	const handleSearchClear = useCallback(() => {
-		setSearchValue('');
+		setSearchValue("");
 		exitSearchMode();
 	}, [exitSearchMode]);
 
-	useEffect(() => {
-		if (mode.type !== 'search') {
-			setSearchValue('');
+	// Clear the search box when the mode leaves search (state adjusted during render, not in an effect).
+	const [prevModeType, setPrevModeType] = useState(mode.type);
+	if (prevModeType !== mode.type) {
+		setPrevModeType(mode.type);
+		if (mode.type !== "search") {
+			setSearchValue("");
 		}
-	}, [mode.type]);
+	}
 
 	// When leaving column view, navigate to the deepest column so the
 	// new view shows the directory the user was actually looking at.
 	const handleViewModeChange = useCallback(
 		(newMode: string) => {
-			if (
-				viewMode === 'column' &&
-				newMode !== 'column' &&
-				columnStack.length > 1
-			) {
+			if (viewMode === "column" && newMode !== "column" && columnStack.length > 1) {
 				navigateToPath(columnStack[columnStack.length - 1]);
 			}
 			setViewMode(newMode as ViewMode);
 		},
-		[viewMode, columnStack, navigateToPath, setViewMode]
+		[viewMode, columnStack, navigateToPath, setViewMode],
 	);
 
 	// Memoize submenu content to prevent infinite re-renders
 	const viewModeSubmenu = useMemo(
-		() => (
-			<ViewModeMenuPanel
-				viewMode={viewMode}
-				onViewModeChange={handleViewModeChange}
-			/>
-		),
-		[viewMode, handleViewModeChange]
+		() => <ViewModeMenuPanel viewMode={viewMode} onViewModeChange={handleViewModeChange} />,
+		[viewMode, handleViewModeChange],
 	);
 
 	const viewSettingsSubmenu = useMemo(
@@ -128,23 +122,17 @@ export function ExplorerView() {
 				totalFileCount={currentFiles.length}
 			/>
 		),
-		[viewSettings, setViewSettings, viewMode, currentFiles.length]
+		[viewSettings, setViewSettings, viewMode, currentFiles.length],
 	);
 
 	const sortSubmenu = useMemo(
-		() => (
-			<SortMenuPanel
-				sortBy={sortBy}
-				onSortChange={setSortBy}
-				viewMode={viewMode as any}
-			/>
-		),
-		[sortBy, setSortBy, viewMode]
+		() => <SortMenuPanel sortBy={sortBy} onSortChange={setSortBy} viewMode={viewMode as any} />,
+		[sortBy, setSortBy, viewMode],
 	);
 
 	// Allow rendering if we have a currentPath, a virtual view, or a special mode
 	// (tag/recents/filtered). Only the plain "browse" mode without a path is empty.
-	if (!currentPath && !isVirtualView && mode.type === 'browse') {
+	if (!currentPath && !isVirtualView && mode.type === "browse") {
 		return <EmptyView />;
 	}
 
@@ -158,24 +146,16 @@ export function ExplorerView() {
 								id="sidebar-toggle"
 								label="Sidebar"
 								priority="normal"
-								onClick={() =>
-									setSidebarVisible(!sidebarVisible)
-								}
+								onClick={() => setSidebarVisible(!sidebarVisible)}
 							>
 								<CircleButton
 									icon="dock_to_right"
 									title="Sidebar"
-									onClick={() =>
-										setSidebarVisible(!sidebarVisible)
-									}
+									onClick={() => setSidebarVisible(!sidebarVisible)}
 									active={!sidebarVisible}
 								/>
 							</TopBarItem>
-							<TopBarItem
-								id="navigation"
-								label="Navigation"
-								priority="high"
-							>
+							<TopBarItem id="navigation" label="Navigation" priority="high">
 								<CircleButtonGroup>
 									<CircleButton
 										icon="arrow_back"
@@ -192,45 +172,22 @@ export function ExplorerView() {
 								</CircleButtonGroup>
 							</TopBarItem>
 							{pathBarPath && (
-								<TopBarItem
-									id="path-bar"
-									label="Path"
-									priority="high"
-								>
-									<PathBar
-										path={pathBarPath}
-										devices={devices}
-										onNavigate={navigateToPath}
-									/>
+								<TopBarItem id="path-bar" label="Path" priority="high">
+									<PathBar path={pathBarPath} devices={devices} onNavigate={navigateToPath} />
 								</TopBarItem>
 							)}
 							{currentView && (
-								<TopBarItem
-									id="virtual-path-bar"
-									label="Path"
-									priority="high"
-								>
-									<VirtualPathBar
-										view={currentView}
-										devices={devices}
-									/>
+								<TopBarItem id="virtual-path-bar" label="Path" priority="high">
+									<VirtualPathBar view={currentView} devices={devices} />
 								</TopBarItem>
 							)}
 						</>
 					}
 					right={
 						<>
-							<TopBarItem
-								id="search"
-								label="Search"
-								priority="high"
-							>
+							<TopBarItem id="search" label="Search" priority="high">
 								<ExpandableSearchButton
-									placeholder={
-										currentPath
-											? 'Search in current folder...'
-											: 'Search...'
-									}
+									placeholder={currentPath ? "Search in current folder..." : "Search..."}
 									value={searchValue}
 									onChange={handleSearchChange}
 									onClear={handleSearchClear}
@@ -245,9 +202,7 @@ export function ExplorerView() {
 								<CircleButton
 									icon="label"
 									title="Tag mode"
-									onClick={() =>
-										setTagModeActive(!tagModeActive)
-									}
+									onClick={() => setTagModeActive(!tagModeActive)}
 									active={tagModeActive}
 								/>
 							</TopBarItem>
@@ -257,10 +212,7 @@ export function ExplorerView() {
 								priority="normal"
 								submenuContent={viewModeSubmenu}
 							>
-								<ViewModeMenu
-									viewMode={viewMode}
-									onViewModeChange={handleViewModeChange}
-								/>
+								<ViewModeMenu viewMode={viewMode} onViewModeChange={handleViewModeChange} />
 							</TopBarItem>
 							<TopBarItem
 								id="view-settings"
@@ -268,36 +220,21 @@ export function ExplorerView() {
 								priority="low"
 								submenuContent={viewSettingsSubmenu}
 							>
-								<ViewSettings
-									totalFileCount={currentFiles.length}
-								/>
+								<ViewSettings totalFileCount={currentFiles.length} />
 							</TopBarItem>
-							<TopBarItem
-								id="sort"
-								label="Sort"
-								priority="low"
-								submenuContent={sortSubmenu}
-							>
-								<SortMenu
-									sortBy={sortBy}
-									onSortChange={setSortBy}
-									viewMode={viewMode as any}
-								/>
+							<TopBarItem id="sort" label="Sort" priority="low" submenuContent={sortSubmenu}>
+								<SortMenu sortBy={sortBy} onSortChange={setSortBy} viewMode={viewMode as any} />
 							</TopBarItem>
 							<TopBarItem
 								id="inspector-toggle"
 								label="Inspector"
 								priority="high"
-								onClick={() =>
-									setInspectorVisible(!inspectorVisible)
-								}
+								onClick={() => setInspectorVisible(!inspectorVisible)}
 							>
 								<CircleButton
 									icon="info"
 									title="Inspector"
-									onClick={() =>
-										setInspectorVisible(!inspectorVisible)
-									}
+									onClick={() => setInspectorVisible(!inspectorVisible)}
 									active={!inspectorVisible}
 								/>
 							</TopBarItem>
@@ -309,31 +246,26 @@ export function ExplorerView() {
 			<div className="relative flex h-full w-full flex-col overflow-hidden p-2 bg-surface">
 				<div
 					className={clsx(
-						'relative flex h-full w-full flex-col overflow-hidden rounded-2xl border border-outline-variant/40 shadow-md3-1 transition-colors duration-200',
-						viewMode === 'size' ? 'bg-surface-container-lowest/80' : 'bg-surface-container-lowest'
+						"relative flex h-full w-full flex-col overflow-hidden rounded-2xl border border-outline-variant/40 shadow-md3-1 transition-colors duration-200",
+						viewMode === "size" ? "bg-surface-container-lowest/80" : "bg-surface-container-lowest",
 					)}
 				>
-					{mode.type === 'search' && <SearchToolbar />}
+					{mode.type === "search" && <SearchToolbar />}
 					<div
-						className={clsx(
-							'flex-1',
-							viewMode === 'size'
-								? 'overflow-visible'
-								: 'overflow-auto'
-						)}
+						className={clsx("flex-1", viewMode === "size" ? "overflow-visible" : "overflow-auto")}
 					>
 						<TabNavigationGuard>
-							{mode.type === 'search' ? (
+							{mode.type === "search" ? (
 								<SearchView />
-							) : viewMode === 'grid' ? (
+							) : viewMode === "grid" ? (
 								<GridView />
-							) : viewMode === 'list' ? (
+							) : viewMode === "list" ? (
 								<ListView />
-							) : viewMode === 'column' ? (
+							) : viewMode === "column" ? (
 								<ColumnView />
-							) : viewMode === 'size' ? (
+							) : viewMode === "size" ? (
 								<SizeView />
-							) : viewMode === 'knowledge' ? (
+							) : viewMode === "knowledge" ? (
 								<KnowledgeView />
 							) : (
 								<MediaView />

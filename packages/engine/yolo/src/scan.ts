@@ -131,7 +131,7 @@ export async function runScanCommand(
 }
 
 if (import.meta.main) {
-  void runScanCommand(process.argv.slice(2), process.cwd()).then((code) => {
-    process.exitCode = code;
-  });
+  void runScanCommand(process.argv.slice(2), process.cwd()).then(
+    (code) => (process.exitCode = code),
+  );
 }

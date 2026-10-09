@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { useLibraryQuery, useSpacedriveClient } from '../../../contexts/SpacedriveContext';
-import type { SyncPeerActivity, SyncActivity, SyncState } from '../types';
+import { useState, useEffect, useRef } from "react";
+import { useLibraryQuery, useSpacedriveClient } from "../../../contexts/SpacedriveContext";
+import type { SyncPeerActivity, SyncActivity, SyncState } from "../types";
 
 interface SyncMonitorState {
 	currentState: SyncState;
@@ -12,7 +12,7 @@ interface SyncMonitorState {
 
 export function useSyncMonitor() {
 	const [state, setState] = useState<SyncMonitorState>({
-		currentState: 'Uninitialized',
+		currentState: "Uninitialized",
 		peers: [],
 		recentActivity: [],
 		errorCount: 0,
@@ -22,7 +22,7 @@ export function useSyncMonitor() {
 	const client = useSpacedriveClient();
 
 	const { data, refetch } = useLibraryQuery({
-		type: 'sync.activity',
+		type: "sync.activity",
 		input: {},
 	});
 
@@ -31,23 +31,26 @@ export function useSyncMonitor() {
 		refetchRef.current = refetch;
 	}, [refetch]);
 
-	useEffect(() => {
+	// Apply each new query result during render (state adjusted from a changed input, not an effect)
+	const [appliedData, setAppliedData] = useState(data);
+	if (data !== appliedData) {
+		setAppliedData(data);
 		if (data) {
 			const stateValue = data.currentState;
 			let normalizedState: SyncState;
 
-			if (typeof stateValue === 'string') {
+			if (typeof stateValue === "string") {
 				normalizedState = stateValue as SyncState;
-			} else if (typeof stateValue === 'object' && stateValue !== null) {
-				if ('Backfilling' in stateValue) {
-					normalizedState = 'Backfilling';
-				} else if ('CatchingUp' in stateValue) {
-					normalizedState = 'CatchingUp';
+			} else if (typeof stateValue === "object" && stateValue !== null) {
+				if ("Backfilling" in stateValue) {
+					normalizedState = "Backfilling";
+				} else if ("CatchingUp" in stateValue) {
+					normalizedState = "CatchingUp";
 				} else {
-					normalizedState = 'Uninitialized';
+					normalizedState = "Uninitialized";
 				}
 			} else {
-				normalizedState = 'Uninitialized';
+				normalizedState = "Uninitialized";
 			}
 
 			setState((prev) => ({
@@ -67,7 +70,7 @@ export function useSyncMonitor() {
 				hasActivity: data.peers.some((p: any) => p.isOnline),
 			}));
 		}
-	}, [data]);
+	}
 
 	useEffect(() => {
 		if (!client) return;
@@ -76,37 +79,37 @@ export function useSyncMonitor() {
 		let isCancelled = false;
 
 		const handleEvent = (event: any) => {
-			if ('SyncStateChanged' in event) {
+			if ("SyncStateChanged" in event) {
 				const { newState } = event.SyncStateChanged;
 				setState((prev) => ({ ...prev, currentState: newState }));
-			} else if ('SyncActivity' in event) {
+			} else if ("SyncActivity" in event) {
 				const activity = event.SyncActivity;
 				const activityType = activity.activityType;
 
-				let eventType: SyncActivity['eventType'] = 'broadcast';
-				let description = 'Activity';
+				let eventType: SyncActivity["eventType"] = "broadcast";
+				let description = "Activity";
 
-				if ('BroadcastSent' in activityType) {
-					eventType = 'broadcast';
+				if ("BroadcastSent" in activityType) {
+					eventType = "broadcast";
 					description = `Broadcast ${activityType.BroadcastSent.changes} changes`;
-				} else if ('ChangesReceived' in activityType) {
-					eventType = 'received';
+				} else if ("ChangesReceived" in activityType) {
+					eventType = "received";
 					description = `Received ${activityType.ChangesReceived.changes} changes`;
-				} else if ('ChangesApplied' in activityType) {
-					eventType = 'applied';
+				} else if ("ChangesApplied" in activityType) {
+					eventType = "applied";
 					description = `Applied ${activityType.ChangesApplied.changes} changes`;
-				} else if ('BackfillStarted' in activityType) {
-					eventType = 'backfill';
-					description = 'Backfill started';
-				} else if ('BackfillCompleted' in activityType) {
-					eventType = 'backfill';
+				} else if ("BackfillStarted" in activityType) {
+					eventType = "backfill";
+					description = "Backfill started";
+				} else if ("BackfillCompleted" in activityType) {
+					eventType = "backfill";
 					description = `Backfill completed (${activityType.BackfillCompleted.records} records)`;
-				} else if ('CatchUpStarted' in activityType) {
-					eventType = 'backfill';
-					description = 'Catch-up started';
-				} else if ('CatchUpCompleted' in activityType) {
-					eventType = 'backfill';
-					description = 'Catch-up completed';
+				} else if ("CatchUpStarted" in activityType) {
+					eventType = "backfill";
+					description = "Catch-up started";
+				} else if ("CatchUpCompleted" in activityType) {
+					eventType = "backfill";
+					description = "Catch-up completed";
 				}
 
 				setState((prev) => ({
@@ -121,26 +124,26 @@ export function useSyncMonitor() {
 						...prev.recentActivity.slice(0, 49),
 					],
 				}));
-			} else if ('SyncConnectionChanged' in event) {
+			} else if ("SyncConnectionChanged" in event) {
 				const { peerDeviceId, peerName, connected } = event.SyncConnectionChanged;
 
 				setState((prev) => ({
 					...prev,
 					peers: prev.peers.map((p) =>
-						p.deviceId === peerDeviceId ? { ...p, isOnline: connected } : p
+						p.deviceId === peerDeviceId ? { ...p, isOnline: connected } : p,
 					),
 					hasActivity: connected || prev.peers.some((p) => p.isOnline),
 					recentActivity: [
 						{
 							timestamp: event.SyncConnectionChanged.timestamp,
-							eventType: 'connection',
+							eventType: "connection",
 							peerDeviceId,
-							description: `${peerName} ${connected ? 'connected' : 'disconnected'}`,
+							description: `${peerName} ${connected ? "connected" : "disconnected"}`,
 						},
 						...prev.recentActivity.slice(0, 49),
 					],
 				}));
-			} else if ('SyncError' in event) {
+			} else if ("SyncError" in event) {
 				const { message } = event.SyncError;
 				setState((prev) => ({
 					...prev,
@@ -148,7 +151,7 @@ export function useSyncMonitor() {
 					recentActivity: [
 						{
 							timestamp: event.SyncError.timestamp,
-							eventType: 'error',
+							eventType: "error",
 							peerDeviceId: event.SyncError.peerDeviceId,
 							description: message,
 						},
@@ -160,12 +163,7 @@ export function useSyncMonitor() {
 		};
 
 		const filter = {
-			event_types: [
-				'SyncStateChanged',
-				'SyncActivity',
-				'SyncConnectionChanged',
-				'SyncError',
-			],
+			event_types: ["SyncStateChanged", "SyncActivity", "SyncConnectionChanged", "SyncError"],
 		};
 
 		client.subscribeFiltered(filter, handleEvent).then((unsub) => {
@@ -174,6 +172,7 @@ export function useSyncMonitor() {
 			} else {
 				unsubscribe = unsub;
 			}
+			return undefined;
 		});
 
 		return () => {

@@ -38,8 +38,11 @@ export async function scanRepository(root: string) {
   const files = git(root, "ls-files", "-z").split("\0").filter(Boolean);
   const existing: { path: string; bytes: number }[] = [];
   const missingTracked: string[] = [];
-  for (const path of files) {
-    const info = await lstat(join(root, path)).catch(() => undefined);
+  const infos = await Promise.all(
+    files.map((path) => lstat(join(root, path)).catch(() => undefined)),
+  );
+  for (const [index, path] of files.entries()) {
+    const info = infos[index];
     if (!info) missingTracked.push(path);
     else if (info.isFile()) existing.push({ path, bytes: info.size });
   }
@@ -55,6 +58,7 @@ export async function scanRepository(root: string) {
     if (entries.length < 2) continue;
     const groups = new Map<string, string[]>();
     for (const entry of entries) {
+      // oxlint-disable-next-line no-await-in-loop -- hachage séquentiel : un seul gros fichier est lu en mémoire à la fois
       const digest = await hash(join(root, entry.path));
       const group = groups.get(digest) ?? [];
       group.push(entry.path);
@@ -69,24 +73,29 @@ export async function scanRepository(root: string) {
     : (rootPackage.workspaces?.packages ?? []);
   const bun: Manifest[] = [],
     unmatched: string[] = [];
-  for (const pattern of declared as string[]) {
-    const paths = await Array.fromAsync(
-      new Bun.Glob(`${pattern}/package.json`).scan({ cwd: root, onlyFiles: true }),
-    );
-    if (!paths.length) unmatched.push(pattern);
-    for (const path of paths) {
-      const pkg = await Bun.file(join(root, path)).json();
-      bun.push({
-        path,
-        name: String(pkg.name ?? ""),
-        scripts: pkg.scripts ?? {},
-        dependencies: Object.keys({
-          ...pkg.dependencies,
-          ...pkg.devDependencies,
-          ...pkg.peerDependencies,
-        }),
-      });
-    }
+  const patterns = declared as string[];
+  const matches = await Promise.all(
+    patterns.map((pattern) =>
+      Array.fromAsync(new Bun.Glob(`${pattern}/package.json`).scan({ cwd: root, onlyFiles: true })),
+    ),
+  );
+  for (const [index, pattern] of patterns.entries()) {
+    if (!matches[index]!.length) unmatched.push(pattern);
+  }
+  const manifests = await Promise.all(
+    matches.flat().map(async (path) => ({ path, pkg: await Bun.file(join(root, path)).json() })),
+  );
+  for (const { path, pkg } of manifests) {
+    bun.push({
+      path,
+      name: String(pkg.name ?? ""),
+      scripts: pkg.scripts ?? {},
+      dependencies: Object.keys({
+        ...pkg.dependencies,
+        ...pkg.devDependencies,
+        ...pkg.peerDependencies,
+      }),
+    });
   }
   const packages = [...new Map(bun.map((p) => [p.path, p])).values()].toSorted((a, b) =>
     a.path.localeCompare(b.path),
@@ -113,6 +122,7 @@ export async function scanRepository(root: string) {
       continue;
     if (path.endsWith("Cargo.toml")) {
       try {
+        // oxlint-disable-next-line no-await-in-loop -- lecture séquentielle des manifestes : borne les descripteurs ouverts sur un dépôt entier et garde l'ordre des rapports
         const manifest = object(Bun.TOML.parse(await readFile(join(root, path), "utf8")));
         const pkg = object(manifest.package);
         const dependencies = {
@@ -143,6 +153,7 @@ export async function scanRepository(root: string) {
       /\.(md|ts|tsx|rs|py|sh|nu|ps1|json|toml|service)$/.test(path) &&
       !path.startsWith("docs/migration/")
     ) {
+      // oxlint-disable-next-line no-await-in-loop -- lecture séquentielle des fichiers : borne les descripteurs ouverts sur un dépôt entier et garde l'ordre des rapports
       const content = await readFile(join(root, path), "utf8");
       if (
         !path.startsWith("docs/") &&
@@ -165,6 +176,7 @@ export async function scanRepository(root: string) {
             continue;
           }
           if (!clean) continue;
+          // oxlint-disable-next-line no-await-in-loop -- contrôle séquentiel des liens : borne les accès disque et garde l'ordre des rapports
           if (!(await lstat(resolve(root, dirname(path), clean)).catch(() => undefined)))
             docsIssues.push({ path, target, kind: "missing-local-link" });
         }

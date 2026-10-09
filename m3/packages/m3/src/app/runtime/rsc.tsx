@@ -14,7 +14,12 @@ import {
 import { ErrorBoundary, NotFoundBoundary, type ErrorProps } from "../boundaries";
 import type { AppRoute, MetadataRoute, Params, Segment } from "../scan";
 import { fillPattern, findRoute } from "../scan";
-import { MIDDLEWARE_NEXT, MIDDLEWARE_REQUEST_HEADER, MIDDLEWARE_REWRITE, NextRequest } from "../server";
+import {
+  MIDDLEWARE_NEXT,
+  MIDDLEWARE_REQUEST_HEADER,
+  MIDDLEWARE_REWRITE,
+  NextRequest,
+} from "../server";
 import { matcherToRegExp } from "./matcher";
 import { renderMetadata, resolveMetadata } from "./metadata";
 import { installParcelRequire, loaders, modules } from "./registry";
@@ -50,7 +55,7 @@ export function setApp(definition: AppDefinition): void {
       return ns;
     });
   // Each action module is its own bundle (its id) loaded on demand by `loadServerAction`.
-  registerServerActions(Object.fromEntries(definition.actions.map(id => [id, [id]])));
+  registerServerActions(Object.fromEntries(definition.actions.map((id) => [id, [id]])));
 }
 
 /** Stylesheets linked by every page (set by the host from the client manifest). */
@@ -114,7 +119,9 @@ function withStoreHeaders(response: Response, store: RequestStore): Response {
 function middlewareMatches(config: unknown, pathname: string): boolean {
   const matcher = (config as { matcher?: string | string[] } | undefined)?.matcher;
   if (!matcher) return !pathname.startsWith("/_m3/");
-  return (Array.isArray(matcher) ? matcher : [matcher]).some(m => matcherToRegExp(m).test(pathname));
+  return (Array.isArray(matcher) ? matcher : [matcher]).some((m) =>
+    matcherToRegExp(m).test(pathname),
+  );
 }
 
 async function runMiddleware(
@@ -126,7 +133,8 @@ async function runMiddleware(
   const fn = (mod.default ?? mod.middleware ?? mod.proxy) as
     | ((req: NextRequest, event: unknown) => Response | undefined | Promise<Response | undefined>)
     | undefined;
-  if (typeof fn !== "function") throw new Error("@aphrody/m3: middleware must export a default function");
+  if (typeof fn !== "function")
+    throw new Error("@aphrody/m3: middleware must export a default function");
   const result = await fn(new NextRequest(request), {
     waitUntil: (p: Promise<unknown>) => void p.catch(console.error),
   });
@@ -169,13 +177,15 @@ function robotsTxt(value: Record<string, unknown>): string {
   return `${lines.join("\n").trim()}\n`;
 }
 
-const xmlEscape = (s: string) => s.replace(/[<>&'"]/g, c => `&#${c.charCodeAt(0)};`);
+const xmlEscape = (s: string) => s.replace(/[<>&'"]/g, (c) => `&#${c.charCodeAt(0)};`);
 
 function sitemapXml(entries: Record<string, unknown>[]): string {
-  const urls = entries.map(entry => {
+  const urls = entries.map((entry) => {
     const parts = [`<loc>${xmlEscape(String(entry.url))}</loc>`];
     if (entry.lastModified)
-      parts.push(`<lastmod>${new Date(entry.lastModified as string | Date).toISOString()}</lastmod>`);
+      parts.push(
+        `<lastmod>${new Date(entry.lastModified as string | Date).toISOString()}</lastmod>`,
+      );
     if (entry.changeFrequency) parts.push(`<changefreq>${entry.changeFrequency}</changefreq>`);
     if (entry.priority !== undefined) parts.push(`<priority>${entry.priority}</priority>`);
     return `<url>\n${parts.join("\n")}\n</url>`;
@@ -187,7 +197,9 @@ async function metadataRoute(route: MetadataRoute): Promise<Response> {
   const mod = await load(route.file);
   const value = await (mod.default as () => unknown)();
   if (route.kind === "robots")
-    return new Response(robotsTxt(value as Record<string, unknown>), { headers: { "content-type": "text/plain" } });
+    return new Response(robotsTxt(value as Record<string, unknown>), {
+      headers: { "content-type": "text/plain" },
+    });
   if (route.kind === "sitemap")
     return new Response(sitemapXml(value as Record<string, unknown>[]), {
       headers: { "content-type": "application/xml" },
@@ -197,16 +209,26 @@ async function metadataRoute(route: MetadataRoute): Promise<Response> {
 
 const METHODS = ["GET", "HEAD", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"];
 
-async function routeHandler(request: Request, route: AppRoute, params: Params, store: RequestStore): Promise<Response> {
+async function routeHandler(
+  request: Request,
+  route: AppRoute,
+  params: Params,
+  store: RequestStore,
+): Promise<Response> {
   const mod = await load(route.file);
   const method = request.method.toUpperCase();
   const fn = (mod[method] ?? (method === "HEAD" ? mod.GET : undefined)) as
     | ((req: Request, ctx: { params: Promise<Params> }) => Response | Promise<Response>)
     | undefined;
-  const allow = METHODS.filter(m => typeof mod[m] === "function" || (m === "HEAD" && typeof mod.GET === "function"));
+  const allow = METHODS.filter(
+    (m) => typeof mod[m] === "function" || (m === "HEAD" && typeof mod.GET === "function"),
+  );
   if (!fn) {
     if (method === "OPTIONS")
-      return new Response(null, { status: 204, headers: { allow: [...allow, "OPTIONS"].join(", ") } });
+      return new Response(null, {
+        status: 204,
+        headers: { allow: [...allow, "OPTIONS"].join(", ") },
+      });
     return new Response(null, { status: 405, headers: { allow: allow.join(", ") } });
   }
   store.dynamic = true;
@@ -238,11 +260,11 @@ async function loadSegment(segment: Segment): Promise<LoadedSegment> {
   const out: LoadedSegment = { segment };
   const { files } = segment;
   await Promise.all([
-    files.layout && load(files.layout).then(m => (out.layout = m)),
-    files.template && load(files.template).then(m => (out.template = m)),
-    files.loading && load(files.loading).then(m => (out.loading = m)),
-    files.error && load(files.error).then(m => (out.error = m)),
-    files["not-found"] && load(files["not-found"]).then(m => (out.notFound = m)),
+    files.layout && load(files.layout).then((m) => (out.layout = m)),
+    files.template && load(files.template).then((m) => (out.template = m)),
+    files.loading && load(files.loading).then((m) => (out.loading = m)),
+    files.error && load(files.error).then((m) => (out.error = m)),
+    files["not-found"] && load(files["not-found"]).then((m) => (out.notFound = m)),
   ]);
   return out;
 }
@@ -313,13 +335,18 @@ function buildTree(
   );
   for (let i = segments.length - 1; i >= 0; i--) {
     const s = segments[i]!;
-    if (s.notFound?.default) node = <NotFoundBoundary fallback={notFoundElement(segments, i)}>{node}</NotFoundBoundary>;
+    if (s.notFound?.default)
+      node = <NotFoundBoundary fallback={notFoundElement(segments, i)}>{node}</NotFoundBoundary>;
     if (s.loading?.default) {
       const Loading = s.loading.default as AnyComponent;
       node = <Suspense fallback={<Loading />}>{node}</Suspense>;
     }
     if (s.error?.default)
-      node = <ErrorBoundary fallback={s.error.default as ComponentType<ErrorProps>}>{node}</ErrorBoundary>;
+      node = (
+        <ErrorBoundary fallback={s.error.default as ComponentType<ErrorProps>}>
+          {node}
+        </ErrorBoundary>
+      );
     if (s.template?.default) {
       const Template = s.template.default as AnyComponent;
       node = <Template key={pathname}>{node}</Template>;
@@ -338,7 +365,9 @@ function buildTree(
 }
 
 function stylesheetLinks(): ReactNode {
-  return stylesheets.map(href => <link key={href} rel="stylesheet" href={href} precedence="m3" />);
+  return stylesheets.map((href) => (
+    <link key={href} rel="stylesheet" href={href} precedence="m3" />
+  ));
 }
 
 async function renderRoute(
@@ -354,7 +383,9 @@ async function renderRoute(
   if (!match) {
     store.status = 404;
     const segment = await loadSegment(def.rootSegment);
-    const meta = await resolveMetadata(segment.layout ? [segment.layout] : [], { params: Promise.resolve({}) });
+    const meta = await resolveMetadata(segment.layout ? [segment.layout] : [], {
+      params: Promise.resolve({}),
+    });
     root = buildTree(
       [{ segment: segment.segment, layout: segment.layout }],
       () => notFoundElement([segment], 0),
@@ -365,18 +396,27 @@ async function renderRoute(
     store.shell.resolve();
   } else {
     const { route, params } = match;
-    const props = { params: Promise.resolve(params), searchParams: searchParamsPromise(store, searchParams) };
-    const [segments, page] = await Promise.all([Promise.all(route.segments.map(loadSegment)), load(route.file)]);
+    const props = {
+      params: Promise.resolve(params),
+      searchParams: searchParamsPromise(store, searchParams),
+    };
+    const [segments, page] = await Promise.all([
+      Promise.all(route.segments.map(loadSegment)),
+      load(route.file),
+    ]);
     if (page.dynamic === "force-dynamic") store.dynamic = true;
     let head: ReactNode[];
     try {
-      const meta = await resolveMetadata([...segments.flatMap(s => (s.layout ? [s.layout] : [])), page], props);
+      const meta = await resolveMetadata(
+        [...segments.flatMap((s) => (s.layout ? [s.layout] : [])), page],
+        props,
+      );
       head = [...renderMetadata(meta), stylesheetLinks()];
     } catch (error) {
       if (!isNotFoundError(error)) throw error;
       store.status = 404;
       head = [stylesheetLinks()];
-      root = buildTree(segments, fallback => fallback, params, url.pathname, head);
+      root = buildTree(segments, (fallback) => fallback, params, url.pathname, head);
       store.shell.resolve();
       return renderToReadableStream(payload(root, url, params, extra), {
         onError,
@@ -384,10 +424,10 @@ async function renderRoute(
       });
     }
     // Under a loading boundary the page streams: the response starts before it renders.
-    if (segments.some(s => s.loading?.default)) store.shell.resolve();
+    if (segments.some((s) => s.loading?.default)) store.shell.resolve();
     root = buildTree(
       segments,
-      fallback => <Run component={page.default} props={props} fallback={fallback} gate />,
+      (fallback) => <Run component={page.default} props={props} fallback={fallback} gate />,
       params,
       url.pathname,
       head,
@@ -414,14 +454,26 @@ function searchParamsPromise(
   return {
     // oxlint-disable-next-line unicorn/no-thenable
     then: (ok, fail) => settle().then(ok, fail),
-    catch: fail => settle().catch(fail),
-    finally: done => settle().finally(done),
+    catch: (fail) => settle().catch(fail),
+    finally: (done) => settle().finally(done),
     [Symbol.toStringTag]: "Promise",
   } as Promise<Record<string, string | string[]>>;
 }
 
-function payload(root: ReactNode, url: URL, params: Params, extra: Partial<RscPayload>): RscPayload {
-  return { root, pathname: url.pathname, search: url.search, params, buildId: definition().buildId, ...extra };
+function payload(
+  root: ReactNode,
+  url: URL,
+  params: Params,
+  extra: Partial<RscPayload>,
+): RscPayload {
+  return {
+    root,
+    pathname: url.pathname,
+    search: url.search,
+    params,
+    buildId: definition().buildId,
+    ...extra,
+  };
 }
 
 function onError(error: unknown): string | undefined {
@@ -439,12 +491,15 @@ export async function handle(request: Request, options: HandleOptions = {}): Pro
     let url = store.url;
     if (def.middleware && !options.skipMiddleware && !options.prerender) {
       const result = await runMiddleware(request, store);
-      if (result.response) return { kind: "response", response: withStoreHeaders(result.response, store) };
+      if (result.response)
+        return { kind: "response", response: withStoreHeaders(result.response, store) };
       if (result.rewrite) url = result.rewrite;
       request = result.request;
       store.request = request;
     }
-    const metadataRoute_ = def.metadata.find(m => m.kind !== "static" && m.pathname === url.pathname);
+    const metadataRoute_ = def.metadata.find(
+      (m) => m.kind !== "static" && m.pathname === url.pathname,
+    );
     if (metadataRoute_) return { kind: "response", response: await metadataRoute(metadataRoute_) };
 
     if (url.pathname.length > 1 && url.pathname.endsWith("/")) {
@@ -452,13 +507,19 @@ export async function handle(request: Request, options: HandleOptions = {}): Pro
       target.pathname = url.pathname.replace(/\/+$/, "");
       return {
         kind: "response",
-        response: new Response(null, { status: 308, headers: { location: target.pathname + target.search } }),
+        response: new Response(null, {
+          status: 308,
+          headers: { location: target.pathname + target.search },
+        }),
       };
     }
 
     const match = findRoute(def.routes, url.pathname);
     if (match?.route.kind === "route")
-      return { kind: "response", response: await routeHandler(request, match.route, match.params, store) };
+      return {
+        kind: "response",
+        response: await routeHandler(request, match.route, match.params, store),
+      };
     const pageMatch = match?.route.kind === "page" ? match : undefined;
 
     const extra: Partial<RscPayload> = {};
@@ -469,7 +530,9 @@ export async function handle(request: Request, options: HandleOptions = {}): Pro
       if (actionId) {
         store.dynamic = true;
         temporaryReferences = createTemporaryReferenceSet();
-        const body = contentType.startsWith("multipart/form-data") ? await request.formData() : await request.text();
+        const body = contentType.startsWith("multipart/form-data")
+          ? await request.formData()
+          : await request.text();
         const args = (await decodeReply(body, { temporaryReferences } as never)) as unknown[];
         const action = (await loadServerAction(actionId)) as (...a: unknown[]) => unknown;
         try {
@@ -536,9 +599,11 @@ function storeHeaders(store: RequestStore): Headers {
 export async function staticParams(route: AppRoute): Promise<Params[] | undefined> {
   const page = await load(route.file);
   if (page.dynamic === "force-dynamic") return undefined;
-  const dynamicParts = route.parts.filter(p => p.kind !== "static");
+  const dynamicParts = route.parts.filter((p) => p.kind !== "static");
   if (!dynamicParts.length) return [{}];
-  const generate = page.generateStaticParams as ((ctx: { params: Params }) => Promise<Params[]> | Params[]) | undefined;
+  const generate = page.generateStaticParams as
+    | ((ctx: { params: Params }) => Promise<Params[]> | Params[])
+    | undefined;
   if (typeof generate !== "function") return undefined;
   return await generate({ params: {} });
 }
@@ -548,6 +613,7 @@ export async function prerenderPaths(): Promise<string[]> {
   const paths: string[] = [];
   for (const route of definition().routes) {
     if (route.kind !== "page") continue;
+    // oxlint-disable-next-line no-await-in-loop -- user generateStaticParams run one route at a time, in route order, so data sources are not hit concurrently and the first failure stops the prerender
     const params = await staticParams(route);
     for (const p of params ?? []) paths.push(fillPattern(route, p));
   }

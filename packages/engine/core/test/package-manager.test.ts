@@ -226,6 +226,7 @@ describe("native unified dependency synchronization", () => {
       stall = true;
       pending = syncPackages({ root, apply: true, signal: controller.signal, timeoutMs: 5000 });
       const deadline = Date.now() + 3000;
+      // oxlint-disable-next-line no-await-in-loop, no-unmodified-loop-condition -- polling : pendingDownload est mis à jour par le téléchargement asynchrone en cours
       while (!pendingDownload && Date.now() < deadline) await Bun.sleep(5);
       expect(pendingDownload).toBe(true);
       await expect(syncPackages({ root, apply: true })).rejects.toThrow("already running");

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useId } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { m3Durations, m3Easings } from "@aphrody/m3-motion";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import { useExplorer } from "./context";
 import { CircleButton, Slider, Switch } from "@aphrody/m3-primitives";
 
@@ -79,13 +79,12 @@ export function ViewSettingsPanel({
 	viewMode,
 	totalFileCount,
 }: ViewSettingsPanelProps) {
-	const sizeViewLimit = Math.min(
-		viewSettings.sizeViewItemLimit || 500,
-		totalFileCount || 500,
-	);
+	const sizeViewLimit = Math.min(viewSettings.sizeViewItemLimit || 500, totalFileCount || 500);
 	return (
 		<div className="w-72 bg-surface-container rounded-medium shadow-md3-3 p-4 space-y-4 border border-outline-variant/50">
-			<div className="text-title-small text-on-surface font-medium border-b border-outline-variant/60 pb-2">Paramètres d'affichage</div>
+			<div className="text-title-small text-on-surface font-medium border-b border-outline-variant/60 pb-2">
+				Paramètres d'affichage
+			</div>
 
 			{/* Column Width (Column View Only) */}
 			{viewMode === "column" && (
@@ -142,108 +141,104 @@ export function ViewSettingsPanel({
 			<SwitchSetting
 				label="Afficher la taille des fichiers"
 				checked={!!viewSettings.showFileSize}
-				onChange={() =>
-					setViewSettings({ showFileSize: !viewSettings.showFileSize })
-				}
+				onChange={() => setViewSettings({ showFileSize: !viewSettings.showFileSize })}
 			/>
 
 			<SwitchSetting
 				label="Dossiers en premier"
 				checked={!!viewSettings.foldersFirst}
-				onChange={() =>
-					setViewSettings({ foldersFirst: !viewSettings.foldersFirst })
-				}
+				onChange={() => setViewSettings({ foldersFirst: !viewSettings.foldersFirst })}
 			/>
 		</div>
 	);
 }
 
 interface ViewSettingsProps {
-  className?: string;
-  totalFileCount?: number;
+	className?: string;
+	totalFileCount?: number;
 }
 
 export function ViewSettings({ className, totalFileCount }: ViewSettingsProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ top: 0, right: 0 });
-  const { viewSettings, setViewSettings, viewMode } = useExplorer();
+	const [isOpen, setIsOpen] = useState(false);
+	const buttonRef = useRef<HTMLButtonElement>(null);
+	const panelRef = useRef<HTMLDivElement>(null);
+	const [position, setPosition] = useState({ top: 0, right: 0 });
+	const { viewSettings, setViewSettings, viewMode } = useExplorer();
 
-  // Update position when opened
-  useEffect(() => {
-    if (isOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setPosition({
-        top: rect.bottom + 8, // 8px gap (mt-2)
-        right: window.innerWidth - rect.right,
-      });
-    }
-  }, [isOpen]);
+	// Update position when opened
+	useEffect(() => {
+		if (isOpen && buttonRef.current) {
+			const rect = buttonRef.current.getBoundingClientRect();
+			setPosition({
+				top: rect.bottom + 8, // 8px gap (mt-2)
+				right: window.innerWidth - rect.right,
+			});
+		}
+	}, [isOpen]);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        panelRef.current &&
-        buttonRef.current &&
-        !panelRef.current.contains(e.target as Node) &&
-        !buttonRef.current.contains(e.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
+	useEffect(() => {
+		const handleClickOutside = (e: MouseEvent) => {
+			if (
+				panelRef.current &&
+				buttonRef.current &&
+				!panelRef.current.contains(e.target as Node) &&
+				!buttonRef.current.contains(e.target as Node)
+			) {
+				setIsOpen(false);
+			}
+		};
 
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [isOpen]);
+		if (isOpen) {
+			document.addEventListener("mousedown", handleClickOutside);
+			return () => document.removeEventListener("mousedown", handleClickOutside);
+		}
+	}, [isOpen]);
 
-  return (
-    <>
-      <div className={clsx(className)}>
-        <CircleButton
-          ref={buttonRef}
-          icon="tune"
-          onClick={() => setIsOpen(!isOpen)}
-          active={isOpen}
-          title="View settings"
-        />
-      </div>
+	return (
+		<>
+			<div className={clsx(className)}>
+				<CircleButton
+					ref={buttonRef}
+					icon="tune"
+					onClick={() => setIsOpen(!isOpen)}
+					active={isOpen}
+					title="View settings"
+				/>
+			</div>
 
-      {isOpen &&
-        createPortal(
-          <AnimatePresence>
-            <motion.div
-              ref={panelRef}
-              initial={{ opacity: 0, y: -8 }}
-              animate={{
-                opacity: 1,
-                y: 0,
-                transition: { duration: m3Durations.medium1, ease: m3Easings.emphasizedDecelerate },
-              }}
-              exit={{
-                opacity: 0,
-                y: -8,
-                transition: { duration: m3Durations.short3, ease: m3Easings.emphasizedAccelerate },
-              }}
-              style={{
-                position: "fixed",
-                top: `${position.top}px`,
-                right: `${position.right}px`,
-              }}
-              className="z-50"
-            >
-              <ViewSettingsPanel
-                viewSettings={viewSettings}
-                setViewSettings={setViewSettings}
-                viewMode={viewMode}
-                totalFileCount={totalFileCount}
-              />
-            </motion.div>
-          </AnimatePresence>,
-          document.body
-        )}
-    </>
-  );
+			{isOpen &&
+				createPortal(
+					<AnimatePresence>
+						<motion.div
+							ref={panelRef}
+							initial={{ opacity: 0, y: -8 }}
+							animate={{
+								opacity: 1,
+								y: 0,
+								transition: { duration: m3Durations.medium1, ease: m3Easings.emphasizedDecelerate },
+							}}
+							exit={{
+								opacity: 0,
+								y: -8,
+								transition: { duration: m3Durations.short3, ease: m3Easings.emphasizedAccelerate },
+							}}
+							style={{
+								position: "fixed",
+								top: `${position.top}px`,
+								right: `${position.right}px`,
+							}}
+							className="z-50"
+						>
+							<ViewSettingsPanel
+								viewSettings={viewSettings}
+								setViewSettings={setViewSettings}
+								viewMode={viewMode}
+								totalFileCount={totalFileCount}
+							/>
+						</motion.div>
+					</AnimatePresence>,
+					document.body,
+				)}
+		</>
+	);
 }

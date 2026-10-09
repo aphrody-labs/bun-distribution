@@ -331,6 +331,7 @@ class Translator {
     let repairs = 0;
     for (let attempt = 0; attempt <= retries; attempt += 1) {
       // transport-level failures were already retried by the client and propagate
+      // oxlint-disable-next-line no-await-in-loop -- retries are sequential: each attempt follows the previous failed reply, and LLM calls are rate-limited
       const raw = await this.deps.llm.chat(messages, { maxTokens });
       let problems: string[];
       let validation: Validation | undefined;
@@ -378,6 +379,7 @@ class Translator {
     const rolling = [...previous];
     for (const [index, cue] of input.cues.entries()) {
       const next = [...input.cues.slice(index + 1), ...input.next].slice(0, this.options.after);
+      // oxlint-disable-next-line no-await-in-loop -- cue windows roll: each batch's context is the previous batch's output
       const result = await this.batch(
         { cues: [cue], previous: rolling.slice(-this.options.before), next },
         1,
@@ -474,11 +476,13 @@ class Translator {
         input.next.map((cue) => [cue.id, cue.text]),
       );
       this.stats.windows += 1;
+      // oxlint-disable-next-line no-await-in-loop -- window translation is sequential: each window depends on the previous output and on the cache state
       let texts = await cache.get<Record<string, string>>("window", key);
       if (texts) {
         this.stats.cachedWindows += 1;
         log(`[${index}/${total}] ${slice.length} cues (cache)`);
       } else {
+        // oxlint-disable-next-line no-await-in-loop -- window translation is sequential: each window depends on the previous output and on the cache state
         const result = await this.batch(input, this.options.retries);
         this.stats.repairs += result.repairs;
         let map = result.texts;
@@ -489,10 +493,13 @@ class Translator {
           log(
             `[${index}/${total}] réponse invalide (${result.warnings.slice(0, 2).join("; ")}), repli cue par cue`,
           );
+          // oxlint-disable-next-line no-await-in-loop -- window translation is sequential: each window depends on the previous output and on the cache state
           map = await this.singles(input, history);
         }
+        // oxlint-disable-next-line no-await-in-loop -- window translation is sequential: each window depends on the previous output and on the cache state
         map = await this.fixGlossary(slice, map);
         texts = Object.fromEntries([...map.entries()].map(([id, text]) => [String(id), text]));
+        // oxlint-disable-next-line no-await-in-loop -- window translation is sequential: each window depends on the previous output and on the cache state
         await cache.set("window", key, texts);
         log(
           `[${index}/${total}] ${slice.length} cues${result.repairs ? ` (${result.repairs} réparation${result.repairs > 1 ? "s" : ""})` : ""}`,
@@ -581,6 +588,7 @@ class Translator {
         .slice(start, start + size)
         .map((cue) => ({ id: cue.id, src: cue.text, en: texts.get(cue.id) ?? "" }));
       try {
+        // oxlint-disable-next-line no-await-in-loop -- chunks are sent one at a time: LLM calls are rate-limited and replies are applied in order
         const reply = await this.deps.llm.chat(
           [
             {
@@ -641,7 +649,7 @@ export function consistencyReport(
   }
   return [...rows.values()]
     .filter((row) => row.total >= 2 && row.used < row.total)
-    .sort((a, b) => b.total - b.used - (a.total - a.used));
+    .toSorted((a, b) => b.total - b.used - (a.total - a.used));
 }
 
 /** Capitalised words (not sentence-initial) that neither the current line nor the glossary knows. */

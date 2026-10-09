@@ -8,7 +8,17 @@ import { AphrodyPet, spriteStyle, type PetFrame, PET } from "@aphrody/identity";
 import { PET_ATLAS_URL } from "@aphrody/identity/atlas";
 import { Button, Icon } from "@aphrody/m3-primitives";
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
-import { GAZE_RADIUS, gazeToward, idleDelay, type PetMode, trackFor, WALK_PERIOD, WALK_STEP, walkDirection, walkDuration } from "./pet-behavior";
+import {
+  GAZE_RADIUS,
+  gazeToward,
+  idleDelay,
+  type PetMode,
+  trackFor,
+  WALK_PERIOD,
+  WALK_STEP,
+  walkDirection,
+  walkDuration,
+} from "./pet-behavior";
 import { isTauri, tauriInvoke } from "./tauri-bridge";
 
 /** Event carrying the pointer position relative to the pet window (integration.rs). */
@@ -28,7 +38,9 @@ function listen<T>(name: string, handler: (payload: T) => void): () => void {
   let unlisten: (() => void) | undefined;
   let cancelled = false;
   const subscribe = async () => {
-    const stop = await window.__TAURI__?.event?.listen(name, (event) => handler(event.payload as T));
+    const stop = await window.__TAURI__?.event?.listen(name, (event) =>
+      handler(event.payload as T),
+    );
     if (cancelled) stop?.();
     else unlisten = stop;
   };
@@ -45,9 +57,19 @@ export function SplashScreen() {
   return (
     <main className="flex h-screen w-screen items-center justify-center">
       <div className="flex flex-col items-center gap-3 rounded-[28px] bg-surface-container-high/95 px-8 pb-6 pt-4 shadow-lg">
-        <AphrodyPet atlasUrl={PET_ATLAS_URL} animation={PET.tracks.waving ? "waving" : "idle"} height={208} label="Aphrody is starting" />
+        <AphrodyPet
+          atlasUrl={PET_ATLAS_URL}
+          animation={PET.tracks.waving ? "waving" : "idle"}
+          height={208}
+          label="Aphrody is starting"
+        />
         <span className="text-title-medium text-on-surface">Aphrody</span>
-        <div className="h-1 w-40 overflow-hidden rounded-full bg-secondary-container" role="progressbar" aria-label="Loading">
+        <div
+          className="h-1 w-40 overflow-hidden rounded-full bg-secondary-container"
+          // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- a native <progress> cannot host the animated child bar; the ARIA progressbar role is kept
+          role="progressbar"
+          aria-label="Loading"
+        >
           <div className="h-full w-1/3 animate-pulse rounded-full bg-primary" />
         </div>
       </div>
@@ -70,7 +92,16 @@ export function DesktopPet() {
   useEffect(() => {
     const report = () => {
       const rect = sprite.current?.getBoundingClientRect();
-      if (rect) void tauriInvoke("aphrody_pet", { action: { action: "hit_rect", x: rect.x, y: rect.y, width: rect.width, height: rect.height } });
+      if (rect)
+        void tauriInvoke("aphrody_pet", {
+          action: {
+            action: "hit_rect",
+            x: rect.x,
+            y: rect.y,
+            width: rect.width,
+            height: rect.height,
+          },
+        });
     };
     report();
     window.addEventListener("resize", report);
@@ -84,13 +115,12 @@ export function DesktopPet() {
       return () => clearTimeout(timer);
     }
     const dx = mode === "walk-left" ? -WALK_STEP : WALK_STEP;
-    const step = setInterval(() => {
+    const step = setInterval(async () => {
       if (press.current) return;
-      const walk = async () => {
-        const result = await tauriInvoke<{ blocked: boolean }>("aphrody_pet", { action: { action: "step", dx } });
-        if (result?.blocked) setMode(mode === "walk-left" ? "walk-right" : "walk-left");
-      };
-      void walk();
+      const result = await tauriInvoke<{ blocked: boolean }>("aphrody_pet", {
+        action: { action: "step", dx },
+      });
+      if (result?.blocked) setMode(mode === "walk-left" ? "walk-right" : "walk-left");
     }, WALK_PERIOD);
     const stop = setTimeout(() => setMode("idle"), walkDuration());
     return () => {
@@ -106,7 +136,11 @@ export function DesktopPet() {
         const rect = sprite.current?.getBoundingClientRect();
         if (!rect) return;
         const eyes = { x: rect.x + rect.width / 2, y: rect.y + rect.height * 0.36 };
-        const inside = cursor.x >= rect.left && cursor.x < rect.right && cursor.y >= rect.top && cursor.y < rect.bottom;
+        const inside =
+          cursor.x >= rect.left &&
+          cursor.x < rect.right &&
+          cursor.y >= rect.top &&
+          cursor.y < rect.bottom;
         setHovering(inside);
         setGaze(inside ? null : gazeToward(cursor, eyes, GAZE_RADIUS));
       }),
@@ -130,7 +164,8 @@ export function DesktopPet() {
   const onPointerUp = () => {
     const current = press.current;
     press.current = null;
-    if (current && !current.dragging) void tauriInvoke("aphrody_pet", { action: { action: "open_main" } });
+    if (current && !current.dragging)
+      void tauriInvoke("aphrody_pet", { action: { action: "open_main" } });
   };
 
   const scale = PET_HEIGHT / PET.atlas.cellHeight;
@@ -150,9 +185,22 @@ export function DesktopPet() {
         }}
       >
         {still ? (
-          <div role="img" aria-label={PET.displayName} style={{ backgroundImage: `url("${PET_ATLAS_URL}")`, backgroundRepeat: "no-repeat", ...spriteStyle(still, scale) }} />
+          <div
+            // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the still pet is a CSS sprite (background-image offsets); an img element cannot render the atlas frame
+            role="img"
+            aria-label={PET.displayName}
+            style={{
+              backgroundImage: `url("${PET_ATLAS_URL}")`,
+              backgroundRepeat: "no-repeat",
+              ...spriteStyle(still, scale),
+            }}
+          />
         ) : (
-          <AphrodyPet atlasUrl={PET_ATLAS_URL} animation={trackFor(mode, hovering)} height={PET_HEIGHT} />
+          <AphrodyPet
+            atlasUrl={PET_ATLAS_URL}
+            animation={trackFor(mode, hovering)}
+            height={PET_HEIGHT}
+          />
         )}
       </div>
     </main>
@@ -178,7 +226,8 @@ export function DesktopWidget() {
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
-    if (isTauri()) void tauriInvoke<string>("plugin:os|hostname").then((name) => setHost(name ?? ""));
+    if (isTauri())
+      void tauriInvoke<string>("plugin:os|hostname").then((name) => setHost(name ?? ""));
     return () => clearInterval(timer);
   }, []);
 
@@ -196,22 +245,36 @@ export function DesktopWidget() {
         <header
           className="flex cursor-grab items-center gap-2"
           onPointerDown={(event) => {
-            if (event.button === 0 && (event.target as HTMLElement).closest("button") === null) run("start_dragging");
+            if (event.button === 0 && (event.target as HTMLElement).closest("button") === null)
+              run("start_dragging");
           }}
         >
           <div
-            role="img"
             aria-hidden
-            style={{ backgroundImage: `url("${PET_ATLAS_URL}")`, backgroundRepeat: "no-repeat", ...spriteStyle(PET.tracks.idle?.frames[0] ?? PET.directions[0]!, 36 / PET.atlas.cellHeight) }}
+            style={{
+              backgroundImage: `url("${PET_ATLAS_URL}")`,
+              backgroundRepeat: "no-repeat",
+              ...spriteStyle(
+                PET.tracks.idle?.frames[0] ?? PET.directions[0]!,
+                36 / PET.atlas.cellHeight,
+              ),
+            }}
           />
           <div className="flex min-w-0 flex-1 flex-col">
-            <span className="text-title-large leading-none tabular-nums">{now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+            <span className="text-title-large leading-none tabular-nums">
+              {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </span>
             <span className="truncate text-label-small text-on-surface-variant">
               {now.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}
               {host ? ` · ${host}` : ""}
             </span>
           </div>
-          <button type="button" aria-label="Hide widget" className="rounded-full p-1 text-on-surface-variant hover:bg-on-surface/10" onClick={() => run("hide")}>
+          <button
+            type="button"
+            aria-label="Hide widget"
+            className="rounded-full p-1 text-on-surface-variant hover:bg-on-surface/10"
+            onClick={() => run("hide")}
+          >
             <Icon name="close" size={18} />
           </button>
         </header>
@@ -224,7 +287,11 @@ export function DesktopWidget() {
             <Icon name="bolt" size={18} />
             <span>Ask</span>
           </Button>
-          <Button variant={state?.pet ? "tonal" : "outlined"} size="sm" onClick={() => run("toggle_pet")}>
+          <Button
+            variant={state?.pet ? "tonal" : "outlined"}
+            size="sm"
+            onClick={() => run("toggle_pet")}
+          >
             <Icon name="pets" size={18} />
             <span>Pet</span>
           </Button>

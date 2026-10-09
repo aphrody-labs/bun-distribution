@@ -33,6 +33,7 @@ export class EventReplaySimulator {
   }
 
   async replayAll(callback: (event: Event) => void): Promise<void> {
+    // oxlint-disable-next-line no-await-in-loop -- replayNext advances a shared cursor; events must be delivered one at a time, in order
     while (await this.replayNext(callback)) {
       // Continue until all events replayed
     }

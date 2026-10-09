@@ -1,9 +1,9 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useId, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLibraryQuery, useLibraryMutation } from "../../contexts/SpacedriveContext";
 import { TopBarPortal, TopBarItem } from "../../TopBar";
 import { Icon, Button, CircleButton, m3FocusRing, m3StateLayer } from "@aphrody/m3-primitives";
-import clsx from "clsx";
+import { clsx } from "clsx";
 
 /** M3 outlined text field, dense (desktop density step). */
 const fieldClassName =
@@ -169,6 +169,7 @@ function ConfigureForm({
   const syncSource = useLibraryMutation("sources.sync");
 
   const [name, setName] = useState("");
+  const nameId = useId();
   const [values, setValues] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
@@ -261,8 +262,11 @@ function ConfigureForm({
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <label className="text-on-surface-variant mb-1 block text-label-medium">Source name</label>
+        <label htmlFor={nameId} className="text-on-surface-variant mb-1 block text-label-medium">
+          Source name
+        </label>
         <input
+          id={nameId}
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder={`e.g., My ${adapterName}`}

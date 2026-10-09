@@ -183,6 +183,7 @@ export class ChallongeClient {
       headers: this.headers(),
       body: spec.body === undefined ? undefined : JSON.stringify(spec.body),
     };
+    // oxlint-disable no-await-in-loop -- boucle de reprise : tentatives séquentielles avec backoff et Retry-After pour respecter la limite de débit Challonge
     for (let attempt = 0; ; attempt += 1) {
       let res: Response;
       this.requestCount += 1;
@@ -212,6 +213,7 @@ export class ChallongeClient {
       }
       throw await this.failure(res, attempt + 1);
     }
+    // oxlint-enable no-await-in-loop
   }
 
   private retryable(method: Method, status: number): boolean {
@@ -370,6 +372,7 @@ export class ChallongeClient {
     for (let page = 1; page <= MAX_PAGES; page += 1) {
       let res: { data?: T[] };
       try {
+        // oxlint-disable-next-line no-await-in-loop -- pagination séquentielle : la page suivante dépend de l'arrêt (page vide, courte ou déjà vue) et de la limite de débit
         res = await this.request<{ data?: T[] }>({
           method: "GET",
           path,

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+// oxlint-disable-next-line import/no-unassigned-import -- side effect: starts the shared test engine on import
 import "./setup.ts";
 
 /**
@@ -27,6 +28,17 @@ import {
   detectHydrationErrors,
   benchmarkInstantNavigation,
 } from "../src/sites/index.ts";
+
+const mockFetch: FetchLike = async () => {
+  return new Response(JSON.stringify({ status: "healthy", version: "1.0.0" }), {
+    status: 200,
+    headers: { "content-type": "application/json" },
+  });
+};
+
+const mockFailingFetch: FetchLike = async () => {
+  throw new Error("Connection refused");
+};
 
 describe("Rose Griffon site helpers", () => {
   let page: ObscuraPage;
@@ -97,13 +109,6 @@ describe("Rose Griffon site helpers", () => {
   });
 
   test("checkRoseGriffonApiHealth reports latency and status", async () => {
-    const mockFetch: FetchLike = async () => {
-      return new Response(JSON.stringify({ status: "healthy", version: "1.0.0" }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    };
-
     const health = await checkRoseGriffonApiHealth({
       fetch: mockFetch,
       apiOrigin: "https://api.rosegriffon.fr",
@@ -117,10 +122,6 @@ describe("Rose Griffon site helpers", () => {
   });
 
   test("checkRoseGriffonApiHealth handles network errors gracefully", async () => {
-    const mockFailingFetch: FetchLike = async () => {
-      throw new Error("Connection refused");
-    };
-
     const health = await checkRoseGriffonApiHealth({
       fetch: mockFailingFetch,
       apiOrigin: "https://api.rosegriffon.fr",

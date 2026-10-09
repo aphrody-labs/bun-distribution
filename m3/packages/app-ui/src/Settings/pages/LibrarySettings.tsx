@@ -1,5 +1,9 @@
-import { useForm } from "react-hook-form";
-import { useLibraryQuery, useLibraryMutation, useSpacedriveClient } from "../../contexts/SpacedriveContext";
+import { useForm, useWatch } from "react-hook-form";
+import {
+  useLibraryQuery,
+  useLibraryMutation,
+  useSpacedriveClient,
+} from "../../contexts/SpacedriveContext";
 
 interface LibrarySettingsForm {
   generate_thumbnails: boolean;
@@ -14,10 +18,11 @@ interface LibrarySettingsForm {
 export function LibrarySettings() {
   const client = useSpacedriveClient();
   const libraryId = client.getCurrentLibraryId();
-  const { data: config, refetch, isLoading } = useLibraryQuery(
-    { type: "config.library.get", input: null as any },
-    { enabled: !!libraryId }
-  );
+  const {
+    data: config,
+    refetch,
+    isLoading,
+  } = useLibraryQuery({ type: "config.library.get", input: null as any }, { enabled: !!libraryId });
   const updateConfig = useLibraryMutation("config.library.update");
 
   const form = useForm<LibrarySettingsForm>({
@@ -31,6 +36,8 @@ export function LibrarySettings() {
       auto_track_external_volumes: config?.auto_track_external_volumes ?? false,
     },
   });
+
+  const thumbnailQuality = useWatch({ control: form.control, name: "thumbnail_quality" });
 
   const onSubmit = form.handleSubmit(async (data) => {
     await updateConfig.mutateAsync(data);
@@ -78,7 +85,9 @@ export function LibrarySettings() {
           <label className="flex items-center justify-between">
             <div>
               <span className="text-body-medium text-on-surface">Generate thumbnails</span>
-              <p className="text-body-small text-on-surface-variant">Create preview images for media files</p>
+              <p className="text-body-small text-on-surface-variant">
+                Create preview images for media files
+              </p>
             </div>
             <input
               type="checkbox"
@@ -89,7 +98,9 @@ export function LibrarySettings() {
 
           <label className="block">
             <span className="text-body-medium text-on-surface mb-1 block">Thumbnail quality</span>
-            <p className="text-body-small text-on-surface-variant mb-2">Quality setting for generated thumbnails (1-100)</p>
+            <p className="text-body-small text-on-surface-variant mb-2">
+              Quality setting for generated thumbnails (1-100)
+            </p>
             <div className="flex items-center gap-3">
               <input
                 type="range"
@@ -98,17 +109,19 @@ export function LibrarySettings() {
                 {...form.register("thumbnail_quality", { valueAsNumber: true })}
                 className="flex-1 h-2 rounded-small appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:border-0"
                 style={{
-                  background: `linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) ${((form.watch("thumbnail_quality") - 1) / 99) * 100}%, var(--color-app) ${((form.watch("thumbnail_quality") - 1) / 99) * 100}%, var(--color-app) 100%)`
+                  background: `linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) ${((thumbnailQuality - 1) / 99) * 100}%, var(--color-app) ${((thumbnailQuality - 1) / 99) * 100}%, var(--color-app) 100%)`,
                 }}
               />
-              <span className="text-body-medium text-on-surface w-8">{form.watch("thumbnail_quality")}</span>
+              <span className="text-body-medium text-on-surface w-8">{thumbnailQuality}</span>
             </div>
           </label>
 
           <label className="flex items-center justify-between">
             <div>
               <span className="text-body-medium text-on-surface">AI tagging</span>
-              <p className="text-body-small text-on-surface-variant">Enable AI-powered automatic tagging</p>
+              <p className="text-body-small text-on-surface-variant">
+                Enable AI-powered automatic tagging
+              </p>
             </div>
             <input
               type="checkbox"
@@ -125,7 +138,9 @@ export function LibrarySettings() {
           <label className="flex items-center justify-between">
             <div>
               <span className="text-body-medium text-on-surface">Sync enabled</span>
-              <p className="text-body-small text-on-surface-variant">Sync this library across devices</p>
+              <p className="text-body-small text-on-surface-variant">
+                Sync this library across devices
+              </p>
             </div>
             <input
               type="checkbox"
@@ -137,7 +152,9 @@ export function LibrarySettings() {
           <label className="flex items-center justify-between">
             <div>
               <span className="text-body-medium text-on-surface">Encryption</span>
-              <p className="text-body-small text-on-surface-variant">Encrypt library data at rest</p>
+              <p className="text-body-small text-on-surface-variant">
+                Encrypt library data at rest
+              </p>
             </div>
             <input
               type="checkbox"
@@ -154,7 +171,9 @@ export function LibrarySettings() {
           <label className="flex items-center justify-between">
             <div>
               <span className="text-body-medium text-on-surface">System volumes</span>
-              <p className="text-body-small text-on-surface-variant">Automatically track system drives</p>
+              <p className="text-body-small text-on-surface-variant">
+                Automatically track system drives
+              </p>
             </div>
             <input
               type="checkbox"
@@ -166,7 +185,9 @@ export function LibrarySettings() {
           <label className="flex items-center justify-between">
             <div>
               <span className="text-body-medium text-on-surface">External volumes</span>
-              <p className="text-body-small text-on-surface-variant">Automatically track external drives when connected</p>
+              <p className="text-body-small text-on-surface-variant">
+                Automatically track external drives when connected
+              </p>
             </div>
             <input
               type="checkbox"

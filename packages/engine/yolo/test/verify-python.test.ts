@@ -20,6 +20,8 @@ function pythonGate(id: string): Gate {
   return gate;
 }
 
+const selected = (file: string): string[] => selectChanged(GATES, [file]).map((gate) => gate.id);
+
 describe("Python verification owners", () => {
   const fixtureRoot = mkdtempSync(join(tmpdir(), "yolo-verify-python-"));
 
@@ -138,8 +140,6 @@ describe("Python verification owners", () => {
   );
 
   it("selects Python contracts and extension stubs, without treating submodules as owned Python", () => {
-    const selected = (file: string): string[] =>
-      selectChanged(GATES, [file]).map((gate) => gate.id);
     for (const file of [
       "packages/engine/python/python/yolo/_yolo_native.pyi",
       "packages/engine/python/pyproject.toml",
@@ -207,6 +207,7 @@ describe("Python verification owners", () => {
     ];
     for (const args of [["--only", "test"], ["--changed"]]) {
       const executed: string[] = [];
+      // oxlint-disable-next-line no-await-in-loop -- each mode is a full verify run over the same fixture root; the runs are checked one after another
       const code = await runVerifyCommand(args, fixtureRoot, {
         gates: catalog,
         run: async (gate) => {

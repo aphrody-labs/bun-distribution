@@ -171,6 +171,7 @@ function AddLocationDialog(props: { id: number; onLocationAdded?: (locationId: s
   };
 
   const handlePickerKeyDown = (e: React.KeyboardEvent) => {
+    // oxlint-disable-next-line react/incompatible-library -- react-hook-form watch() incompatible avec le compilateur React
     if (e.key === "Enter" && form.watch("path")) {
       e.preventDefault();
       const path = form.watch("path");
@@ -374,6 +375,7 @@ function AddLocationDialog(props: { id: number; onLocationAdded?: (locationId: s
                     <button
                       key={job.id}
                       type="button"
+                      aria-label={job.label}
                       onClick={() => toggleJob(job.id)}
                       className={`
                           flex items-start gap-2 rounded-small border p-3 text-left transition-all

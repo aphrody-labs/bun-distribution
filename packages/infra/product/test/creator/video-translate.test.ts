@@ -337,7 +337,7 @@ describe("layout", () => {
 
 describe("glossary", () => {
   test("built-in files are valid, sourced and labelled", () => {
-    expect(BUILTIN_NAMES.sort()).toEqual(["art-streams", "fgc-common", "guilty-gear"]);
+    expect(BUILTIN_NAMES.toSorted()).toEqual(["art-streams", "fgc-common", "guilty-gear"]);
     const ids = new Set<string>();
     for (const name of BUILTIN_NAMES) {
       const file = builtinGlossary(name);
@@ -945,6 +945,7 @@ describe("pipeline from subtitles", () => {
           "--out",
           join(dir, `o.${format}`),
         ]);
+        // oxlint-disable-next-line no-await-in-loop -- exécutions séquentielles du pipeline : chaque format écrit son fichier de sortie et la boucle reste ordonnée
         await runPipeline(config as never, { env: process.env, io: io().io });
       }
       expect((await readFile(join(dir, "o.vtt"), "utf8")).startsWith("WEBVTT")).toBe(true);

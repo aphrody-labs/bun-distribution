@@ -37,16 +37,16 @@ export function WrappedPopover({
 	...props
 }: WrappedPopoverProps) {
 	const triggerRef = useRef<HTMLButtonElement>(null);
+	const { setOpen } = popover;
 
 	useEffect(() => {
 		const onResize = () => {
-			if (triggerRef.current && triggerRef.current.offsetWidth === 0)
-				popover.setOpen(false);
+			if (triggerRef.current && triggerRef.current.offsetWidth === 0) setOpen(false);
 		};
 
 		window.addEventListener("resize", onResize);
 		return () => window.removeEventListener("resize", onResize);
-	}, [popover.setOpen]);
+	}, [setOpen]);
 
 	return (
 		<Popover.Root open={popover.open} onOpenChange={popover.setOpen}>

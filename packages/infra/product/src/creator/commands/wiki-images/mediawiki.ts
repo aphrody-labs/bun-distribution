@@ -57,9 +57,11 @@ export async function resolveTarget(input: string, fetchImpl: Fetch = fetch): Pr
   );
   for (const candidate of new Set(candidates)) {
     try {
+      // oxlint-disable-next-line no-await-in-loop -- candidates are probed in preference order; the first valid api.php must win, without parallel hits on the wiki
       const res = await fetchImpl(`${candidate}?action=query&meta=siteinfo&format=json`, {
         headers: wikiHeaders(),
       });
+      // oxlint-disable-next-line no-await-in-loop -- same ordered probe: the body decides whether this candidate wins before the next one is tried
       if (res.ok && (await res.json())?.query) return { apiUrl: candidate, title };
     } catch {
       // try next
@@ -105,7 +107,9 @@ async function* query(
   const seen = new Map<string, ApiPage>();
   for (let guard = 0; guard < 10_000; guard += 1) {
     const search = new URLSearchParams({ ...base, ...cont });
+    // oxlint-disable-next-line no-await-in-loop -- MediaWiki continuation chain: each request needs the continue token of the previous response
     const res = await fetchWithRetry(`${apiUrl}?${search}`, fetchImpl);
+    // oxlint-disable-next-line no-await-in-loop -- same continuation chain: the body carries the next continue token
     const body = (await res.json()) as ApiResponse;
     if (body.error) throw new Error(`API MediaWiki : ${body.error.code} ${body.error.info}`);
     for (const [id, page] of Object.entries(body.query?.pages ?? {})) {
@@ -127,10 +131,12 @@ export async function fetchWithRetry(
   let lastError: unknown;
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
+      // oxlint-disable-next-line no-await-in-loop -- retries are sequential by design: each attempt follows the backoff of the previous one
       const res = await fetchImpl(url, { headers: wikiHeaders() });
       if (res.status === 429 || res.status >= 500) {
         const wait = Number(res.headers.get("retry-after")) || 2 ** attempt;
         lastError = new Error(`HTTP ${res.status}`);
+        // oxlint-disable-next-line no-await-in-loop -- honours the server's retry-after before the next attempt
         await Bun.sleep(Math.min(wait, 30) * 1000);
         continue;
       }
@@ -138,7 +144,10 @@ export async function fetchWithRetry(
       return res;
     } catch (error) {
       lastError = error;
-      if (attempt < attempts - 1) await Bun.sleep(2 ** attempt * 500);
+      if (attempt < attempts - 1) {
+        // oxlint-disable-next-line no-await-in-loop -- exponential backoff between sequential attempts
+        await Bun.sleep(2 ** attempt * 500);
+      }
     }
   }
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
@@ -177,11 +186,11 @@ export async function filesOfPages(
   const out: WikiFile[] = [];
   for (let i = 0; i < titles.length; i += 50) {
     const batch = titles.slice(i, i + 50).join("|");
-    out.push(
-      ...(await collect(
-        query(apiUrl, { generator: "images", gimlimit: "max", titles: batch }, fetchImpl),
-      )),
+    // oxlint-disable-next-line no-await-in-loop -- batches run one after another to respect the wiki's maxlag/rate limits and keep output order
+    const files = await collect(
+      query(apiUrl, { generator: "images", gimlimit: "max", titles: batch }, fetchImpl),
     );
+    out.push(...files);
   }
   return out;
 }
@@ -216,7 +225,11 @@ export async function filesOfCategory(
   )) {
     subs.push(page.title);
   }
-  for (const sub of subs) files.push(...(await filesOfCategory(apiUrl, sub, fetchImpl, depth - 1)));
+  for (const sub of subs) {
+    // oxlint-disable-next-line no-await-in-loop -- sub-categories are walked one by one to respect the wiki's rate limits and keep output order
+    const subFiles = await filesOfCategory(apiUrl, sub, fetchImpl, depth - 1);
+    files.push(...subFiles);
+  }
   return files;
 }
 

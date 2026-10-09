@@ -21,6 +21,7 @@ export function FloatingControls() {
       >
         <div className="flex items-center gap-3">
           <button
+            aria-label="Stop"
             className="w-8 h-8 rounded-full bg-error hover:bg-error transition-colors flex items-center justify-center"
             style={{ WebkitAppRegion: "no-drag" } as any}
             onClick={() => alert("Stop!")}

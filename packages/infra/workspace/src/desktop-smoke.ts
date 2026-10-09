@@ -13,6 +13,8 @@
 import { mkdir, open } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
+const viewName = (url: string): string => new URL(url).searchParams.get("view") ?? "main";
+
 export async function runDesktopSmoke(args: string[]): Promise<number> {
   let root = process.cwd();
   const option = (name: string, fallback: string): string => {
@@ -49,8 +51,7 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
 
   const views = new Map<string, ViewReport>();
   const sockets: WebSocket[] = [];
-
-  const viewName = (url: string): string => new URL(url).searchParams.get("view") ?? "main";
+  const exit: { code: number | null } = { code: null };
 
   async function attach(target: {
     id: string;
@@ -70,7 +71,7 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
         pending.set(id, done);
         ws.send(JSON.stringify({ id, method, params }));
       });
-    ws.onmessage = (message) => {
+    ws.addEventListener("message", (message) => {
       const data = JSON.parse(String(message.data));
       if (data.id) pending.get(data.id)?.(data.result);
       else if (data.method === "Runtime.exceptionThrown") {
@@ -81,8 +82,8 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
           `console.error: ${data.params.args.map((arg: any) => arg.value ?? arg.description).join(" ")}`,
         );
       }
-    };
-    await new Promise((done) => (ws.onopen = done));
+    });
+    await new Promise((done) => ws.addEventListener("open", () => done(undefined), { once: true }));
     // Enabling the runtime replays exceptions and console errors raised before attaching.
     await send("Runtime.enable");
     const measure = async () => {
@@ -99,10 +100,13 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
     };
     // Short-lived surfaces (the splash) close after startup: sample every second while open.
     const timer = setInterval(() => void measure().catch(() => undefined), 1000);
-    ws.onclose = () => clearInterval(timer);
+    ws.addEventListener("close", () => clearInterval(timer));
     for (let i = 0; i < 5; i++) {
+      // Retries are sequential by design: each sample must follow the previous one after a delay.
+      // oxlint-disable-next-line no-await-in-loop -- bounded retry loop that waits for the page to render
       await measure();
       if (report.elements > 0) break;
+      // oxlint-disable-next-line no-await-in-loop -- fixed delay between sequential retries
       await Bun.sleep(200);
     }
   }
@@ -110,7 +114,6 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
   await mkdir(logDir, { recursive: true });
   const stdout = await open(join(logDir, "stdout.log"), "w");
   const stderr = await open(join(logDir, "stderr.log"), "w");
-  let exitCode: number | null = null;
   const started = Date.now();
   const child = Bun.spawn([exe], {
     windowsHide: true,
@@ -122,7 +125,7 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
     stdout: stdout.fd,
     stderr: stderr.fd,
     onExit(_process, code, signal) {
-      exitCode = code ?? -1;
+      exit.code = code ?? -1;
       console.log(
         `process exited after ${((Date.now() - started) / 1000).toFixed(1)}s (code ${code}, signal ${signal})`,
       );
@@ -131,8 +134,10 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
   console.log(`started ${exe} (pid ${child.pid}); logs in ${logDir}`);
 
   const deadline = Date.now() + seconds * 1000;
-  while (Date.now() < deadline && exitCode === null) {
+  while (Date.now() < deadline && exit.code === null) {
     try {
+      // Polling the debugging endpoint is sequential by design: one probe per tick.
+      // oxlint-disable-next-line no-await-in-loop -- sequential polling of the debugging endpoint
       const targets = (await (await fetch(`http://127.0.0.1:${port}/json`)).json()) as any[];
       for (const target of targets) {
         if (
@@ -145,9 +150,10 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
     } catch {
       // The debugging endpoint is not up yet.
     }
+    // oxlint-disable-next-line no-await-in-loop -- fixed tick between sequential polls
     await Bun.sleep(400);
   }
-  const alive = exitCode === null;
+  const alive = exit.code === null;
 
   for (const ws of sockets) ws.close();
   if (alive) {
@@ -160,7 +166,7 @@ export async function runDesktopSmoke(args: string[]): Promise<number> {
 
   const expected = ["main", "splash", "pet", "widget", "quickbar"];
   const failures: string[] = [];
-  if (!alive) failures.push(`process exited early with code ${exitCode} (see stderr.log)`);
+  if (!alive) failures.push(`process exited early with code ${exit.code} (see stderr.log)`);
   for (const name of expected) {
     const view = views.get(name);
     if (!view) failures.push(`${name}: no webview seen`);

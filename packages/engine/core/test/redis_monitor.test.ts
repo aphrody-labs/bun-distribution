@@ -11,6 +11,7 @@ async function until(check: () => boolean, timeout = 1500): Promise<void> {
   const deadline = Date.now() + timeout;
   while (!check()) {
     if (Date.now() > deadline) throw new Error("Fixture timed out");
+    // oxlint-disable-next-line no-await-in-loop -- polling loop: the fixture state is re-read after each sleep, so iterations depend on the previous check
     await Bun.sleep(10);
   }
 }

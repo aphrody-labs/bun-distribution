@@ -34,6 +34,7 @@ const TASKS: Record<MonorepoAuditStep, string[]> = {
 async function findRoot(start: string): Promise<string> {
   let current = resolve(start);
   while (true) {
+    // oxlint-disable-next-line no-await-in-loop -- remontée séquentielle : le premier package.json rencontré en remontant définit la racine
     if (await Bun.file(join(current, "package.json")).exists()) return current;
     const parent = dirname(current);
     if (parent === current) break;
@@ -175,6 +176,7 @@ export async function runMonorepoAudit(args: string[]): Promise<number> {
         const name = options.steps[index];
         if (!name) continue;
         if (!options.quiet && !options.json) console.error(`▶ ${name}`);
+        // oxlint-disable-next-line no-await-in-loop -- pool de workers borné par --jobs (1..5) : chaque worker enchaîne ses étapes, la concurrence est volontairement limitée
         results[index] = await runStep(root, name, options.bun);
       }
     }),

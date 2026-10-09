@@ -2,12 +2,13 @@ import {
 	createContext,
 	useCallback,
 	useContext,
+	useMemo,
 	useState,
 	type PropsWithChildren,
 } from "react";
 import { CaretRight } from "@phosphor-icons/react";
 import { DropdownMenu, renderIcon } from "@aphrody/m3-primitives";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import type { ContextMenuItem } from "../hooks/useContextMenu";
 
 interface MenuState {
@@ -30,33 +31,25 @@ export function useWebContextMenuController(): WebContextMenuController | null {
 export function WebContextMenuProvider({ children }: PropsWithChildren) {
 	const [state, setState] = useState<MenuState | null>(null);
 
-	const show = useCallback(
-		(items: ContextMenuItem[], x: number, y: number) => {
-			// If a menu is already open, close it first so the anchor updates
-			// at the new cursor position on the next tick.
-			setState(null);
-			requestAnimationFrame(() => setState({ items, x, y }));
-		},
-		[],
-	);
+	const show = useCallback((items: ContextMenuItem[], x: number, y: number) => {
+		// If a menu is already open, close it first so the anchor updates
+		// at the new cursor position on the next tick.
+		setState(null);
+		requestAnimationFrame(() => setState({ items, x, y }));
+	}, []);
 
 	const close = useCallback(() => setState(null), []);
+	const controller = useMemo(() => ({ show, close }), [show, close]);
 
 	return (
-		<ControllerContext.Provider value={{ show, close }}>
+		<ControllerContext.Provider value={controller}>
 			{children}
 			<WebContextMenu state={state} onClose={close} />
 		</ControllerContext.Provider>
 	);
 }
 
-function WebContextMenu({
-	state,
-	onClose,
-}: {
-	state: MenuState | null;
-	onClose: () => void;
-}) {
+function WebContextMenu({ state, onClose }: { state: MenuState | null; onClose: () => void }) {
 	return (
 		<DropdownMenu.Root open={state !== null} onOpenChange={(open) => !open && onClose()}>
 			<DropdownMenu.Trigger asChild>
@@ -91,26 +84,15 @@ function renderItems(items: ContextMenuItem[]) {
 		const key = `${index}-${item.label ?? item.type ?? "item"}`;
 
 		if (item.type === "separator") {
-			return (
-				<DropdownMenu.Separator
-					key={key}
-					className="bg-outline-variant mx-1 my-1 h-px"
-				/>
-			);
+			return <DropdownMenu.Separator key={key} className="bg-outline-variant mx-1 my-1 h-px" />;
 		}
 
 		if (item.submenu && item.submenu.length > 0) {
 			return (
 				<DropdownMenu.Sub key={key}>
-					<DropdownMenu.SubTrigger
-						disabled={item.disabled}
-						className={menuItemClasses(item)}
-					>
+					<DropdownMenu.SubTrigger disabled={item.disabled} className={menuItemClasses(item)}>
 						<MenuItemInner item={item} />
-						<CaretRight
-							className="text-on-surface-variant ml-auto size-3 shrink-0"
-							weight="bold"
-						/>
+						<CaretRight className="text-on-surface-variant ml-auto size-3 shrink-0" weight="bold" />
 					</DropdownMenu.SubTrigger>
 					<DropdownMenu.Portal>
 						<DropdownMenu.SubContent
@@ -157,9 +139,7 @@ function MenuItemInner({ item }: { item: ContextMenuItem }) {
 			{item.icon ? renderIcon(item.icon, { className: "size-4 shrink-0" }) : null}
 			<span className="flex-1 truncate text-left">{item.label}</span>
 			{item.keybind ? (
-				<span className="text-on-surface-variant ml-2 text-body-small">
-					{item.keybind}
-				</span>
+				<span className="text-on-surface-variant ml-2 text-body-small">{item.keybind}</span>
 			) : null}
 		</>
 	);

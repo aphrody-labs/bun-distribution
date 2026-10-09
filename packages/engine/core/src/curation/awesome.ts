@@ -159,6 +159,7 @@ export async function checkLinks(
   const probe = async (entry: AwesomeEntry): Promise<LinkResult> => {
     for (const method of ["HEAD", "GET"] as const) {
       try {
+        // oxlint-disable-next-line no-await-in-loop -- HEAD puis GET : le second essai ne se lance que si le premier échoue
         const response = await fetch(entry.url, {
           method,
           redirect: "follow",
@@ -183,6 +184,7 @@ export async function checkLinks(
   const workers = Array.from({ length: Math.max(1, options.concurrency) }, async () => {
     while (next < entries.length) {
       const index = next++;
+      // oxlint-disable-next-line no-await-in-loop -- file de travail à concurrence bornée : chaque worker enchaîne ses sondes
       results[index] = await probe(entries[index] as AwesomeEntry);
     }
   });
@@ -349,6 +351,7 @@ export async function auditEntries(
     Array.from({ length: Math.max(1, Math.min(options.concurrency, 6)) }, async () => {
       while (next < repos.length) {
         const repo = repos[next++] as string;
+        // oxlint-disable-next-line no-await-in-loop -- file de travail à concurrence bornée (6 max) : chaque worker enchaîne ses dépôts
         facts.set(repo, await fetchRepoFacts(repo, token));
       }
     }),
@@ -433,6 +436,9 @@ const HELP = `\x1b[1myolo awesome\x1b[0m — browse ${DEFAULT_REPO}
 Options: --repo owner/name  --ref branch (default ${DEFAULT_REF})  --refresh  --offline
          --file README.md   --json`;
 
+const line = (e: AwesomeEntry): string =>
+  `  ${e.name}  \x1b[2m${e.url}\x1b[0m${e.description ? `\n    ${e.description}` : ""}`;
+
 export async function runAwesomeCommand(
   args: readonly string[],
   rootDir: string = process.cwd(),
@@ -486,9 +492,6 @@ export async function runAwesomeCommand(
     if (json) console.log(JSON.stringify(value, null, 2));
     else human();
   };
-  const line = (e: AwesomeEntry): string =>
-    `  ${e.name}  \x1b[2m${e.url}\x1b[0m${e.description ? `\n    ${e.description}` : ""}`;
-
   switch (command) {
     case "stats": {
       const total = sections.reduce((n, s) => n + s.entries.length, 0);

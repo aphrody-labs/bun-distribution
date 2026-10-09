@@ -223,10 +223,10 @@ export function renderScanMarkdown(report: ScanReport): string {
   return lines.join("\n");
 }
 
-export function renderScanTerminal(report: ScanReport): string {
-  const mb = (bytes: number): string => (bytes / (1024 * 1024)).toFixed(2) + " MB";
-  const kb = (bytes: number): string => (bytes / 1024).toFixed(1) + " KB";
+const mb = (bytes: number): string => (bytes / (1024 * 1024)).toFixed(2) + " MB";
+const kb = (bytes: number): string => (bytes / 1024).toFixed(1) + " KB";
 
+export function renderScanTerminal(report: ScanReport): string {
   const out = [
     `\x1b[1m\x1b[36m=== YOLO Recursive Scan ===\x1b[0m`,
     `  Target:      ${report.target}`,

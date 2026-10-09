@@ -31,7 +31,7 @@ import {
   useSpacedriveClient,
 } from "../../../contexts/SpacedriveContext";
 import { usePlatform } from "../../../contexts/PlatformContext";
-import clsx from "clsx";
+import { clsx } from "clsx";
 
 // Import icons
 import FolderIcon from "@aphrody/assets/icons/Folder.png";
@@ -258,7 +258,7 @@ function AddStorageDialog(props: {
   const platform = usePlatform();
 
   // Derive initial folder name from path
-  const initialFolderName = props.initialPath?.split("/").filter(Boolean).pop() || "";
+  const initialFolderName = props.initialPath?.split("/").findLast(Boolean) || "";
 
   const [step, setStep] = useState<ModalStep>(props.initialPath ? "local-config" : "category");
   const [selectedCategory, setSelectedCategory] = useState<StorageCategory | null>(
@@ -309,10 +309,11 @@ function AddStorageDialog(props: {
 
   // Subscribe to the local form's `path` field so the picker step's
   // Continue button reacts as the user types into the input.
-  const localPathTyped = useWatch({ control: localForm.control, name: "path" }) || "";
+  const localPathWatched = useWatch({ control: localForm.control, name: "path" });
+  const localPathTyped = localPathWatched || "";
 
   // Update selected jobs when preset mode changes
-  const currentMode = localForm.watch("mode");
+  const currentMode = useWatch({ control: localForm.control, name: "mode" });
   const [selectedJobs, setSelectedJobs] = useState<Set<string>>(
     new Set(jobOptions.filter((j) => j.presets.includes("Deep")).map((j) => j.id)),
   );
@@ -390,7 +391,7 @@ function AddStorageDialog(props: {
     const path = (data.path || "").trim();
     if (!path) return;
     if (!data.name) {
-      const folderName = path.split("/").filter(Boolean).pop() || path;
+      const folderName = path.split("/").findLast(Boolean) || path;
       localForm.setValue("name", folderName);
     }
     setStep("local-config");
@@ -418,7 +419,7 @@ function AddStorageDialog(props: {
       };
 
       const locationResult = await addLocation.mutateAsync(locationInput);
-      dialog.state.open = false;
+      dialogManager.setState(dialog.id, { open: false });
 
       if (locationResult?.path && props.onStorageAdded) {
         props.onStorageAdded(locationResult.path);
@@ -493,7 +494,7 @@ function AddStorageDialog(props: {
 
     try {
       const result = await addLocation.mutateAsync(input);
-      dialog.state.open = false;
+      dialogManager.setState(dialog.id, { open: false });
 
       if (result?.path && props.onStorageAdded) {
         props.onStorageAdded(result.path);
@@ -560,7 +561,7 @@ function AddStorageDialog(props: {
       };
 
       const locationResult = await addLocation.mutateAsync(locationInput);
-      dialog.state.open = false;
+      dialogManager.setState(dialog.id, { open: false });
 
       if (locationResult?.path && props.onStorageAdded) {
         props.onStorageAdded(locationResult.path);
@@ -589,7 +590,7 @@ function AddStorageDialog(props: {
 
       // Clear validation and close dialog
       setValidationResult(null);
-      dialog.state.open = false;
+      dialogManager.setState(dialog.id, { open: false });
 
       console.log("Volume indexed:", result.message);
     } catch (error) {
@@ -617,6 +618,7 @@ function AddStorageDialog(props: {
             <button
               key={category.id}
               type="button"
+              aria-label={category.label}
               onClick={() => handleCategorySelect(category.id)}
               className={clsx(
                 "flex flex-col items-center gap-3 rounded-lg border p-6",
@@ -801,7 +803,7 @@ function AddStorageDialog(props: {
         onSubmit={onSubmitLocal}
         title="Configure location"
         icon={<Folder size={20} weight="fill" />}
-        description={localForm.watch("path")}
+        description={localPathWatched}
         ctaLabel={validationResult ? "Proceed anyway" : "Add Location"}
         ctaDanger={!!validationResult}
         loading={addLocation.isPending}
@@ -827,8 +829,8 @@ function AddStorageDialog(props: {
                   <p className="text-sm font-medium text-ink">
                     {validationResult.riskLevel === "high" ? "High risk path detected" : "Warning"}
                   </p>
-                  {validationResult.warnings.map((warning, i) => (
-                    <div key={i} className="space-y-1">
+                  {validationResult.warnings.map((warning) => (
+                    <div key={warning.message} className="space-y-1">
                       <p className="text-xs text-ink-dull">{warning.message}</p>
                       {warning.suggestion && (
                         <p className="text-xs text-ink-faint italic">💡 {warning.suggestion}</p>
@@ -916,6 +918,7 @@ function AddStorageDialog(props: {
                       <button
                         key={job.id}
                         type="button"
+                        aria-label={job.label}
                         onClick={() => toggleJob(job.id)}
                         className={clsx(
                           "flex items-start gap-2 rounded-lg border p-3 text-left transition-all",

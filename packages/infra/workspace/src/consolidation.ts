@@ -207,6 +207,7 @@ async function rootSnapshot(
     .filter(Boolean)
     .map(safeKey);
   const entries: Entry[] = [];
+  // oxlint-disable no-await-in-loop -- file hashing runs one file at a time so memory stays bounded to a single file across the checkout
   for (const path of [...new Set(tracked)].toSorted()) {
     if (
       spec.rootDocsOnly &&
@@ -335,6 +336,7 @@ async function rootSnapshot(
                     : {}),
     });
   }
+  // oxlint-enable no-await-in-loop
   const summary = {
     key: spec.key,
     owner: spec.owner,
@@ -516,6 +518,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
     let identical = 0;
     let aliases = 0;
     let conflicts = 0;
+    // oxlint-disable no-await-in-loop -- script import is stateful: each step reads targets written by earlier steps and updates shared counters and index order
     for (const entry of report.entries) {
       if (entry.kind !== "script" || (ownerFilter && !entry.source.startsWith(`${ownerFilter}/`)))
         continue;
@@ -610,6 +613,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
         `- \`${entry.category ?? "tools"}\` — \`${entry.source}\` → \`${entry.importedTarget ?? planned}\` (sha256 \`${sourceHash}\`)`,
       );
     }
+    // oxlint-enable no-await-in-loop
     const indexPath = join(aphrodyRoot, "docs/migration/IMPORTED-SCRIPTS-INDEX.md");
     await mkdir(dirname(indexPath), { recursive: true });
     let indexContent = index;
@@ -668,11 +672,12 @@ export async function runConsolidation(args: string[]): Promise<number> {
       "docs/products/nie/README.md",
     ]);
     const isSelected = (entry: Entry) => {
-      const sourceRoot = entry.source.slice(0, entry.source.indexOf("/"));
+      const rootKey = entry.source.slice(0, entry.source.indexOf("/"));
       return upstreamsOnly
-        ? sourceRoot.startsWith("upstream-")
+        ? rootKey.startsWith("upstream-")
         : !ownerFilter || entry.source.startsWith(`${ownerFilter}/`);
     };
+    // oxlint-disable no-await-in-loop -- fallback reconciliation mutates shared entries and removes files that later steps check
     for (const entry of report.entries) {
       if (
         entry.kind !== "documentation" ||
@@ -724,6 +729,8 @@ export async function runConsolidation(args: string[]): Promise<number> {
         entry.importedSourceSha256 = sourceHash;
       }
     }
+    // oxlint-enable no-await-in-loop
+    // oxlint-disable no-await-in-loop -- docs import is order-dependent: copies, conflict fallbacks and counters depend on earlier writes to the same targets
     for (const entry of report.entries) {
       if (entry.kind !== "documentation" || !isSelected(entry)) continue;
       if (entry.duplicateOf) {
@@ -815,6 +822,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
       rewriteSources.add(entry.source);
       imported.push(entry);
     }
+    // oxlint-enable no-await-in-loop
     const docsByCategory = new Map<string, Entry[]>();
     const importedBySource = new Map<string, string>();
     for (const entry of report.entries) {
@@ -842,6 +850,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
       if (sourceBase)
         importedBySource.set(resolve(sourceBase, entry.source.slice(slash + 1)), destination);
     }
+    // oxlint-disable no-await-in-loop -- later duplicates override earlier importedBySource mappings, so entries are processed in order
     for (const entry of report.entries) {
       if (entry.kind === "documentation" || entry.duplicateOf || !entry.sha256) continue;
       const destination = entry.importedTarget ?? entry.target;
@@ -871,8 +880,10 @@ export async function runConsolidation(args: string[]): Promise<number> {
       }
       if (matchesImport) importedBySource.set(source, destination);
     }
+    // oxlint-enable no-await-in-loop
     let rewrittenLinks = 0;
     const unresolvedLinks: string[] = [];
+    // oxlint-disable no-await-in-loop -- link rewrites read and write target documents and share per-source replacement state and counters
     for (const entry of report.entries) {
       if (!isSelected(entry) || entry.kind !== "documentation" || entry.duplicateOf) continue;
       const destination = entry.importedTarget ?? entry.target;
@@ -941,6 +952,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
       }
       entry.importedSourceSha256 = entry.sha256;
     }
+    // oxlint-enable no-await-in-loop
     const indexFailure = await writeDocumentationIndex(
       aphrodyRoot,
       renderDocumentationIndex([...docsByCategory.values()].flat(), aphrodyRoot),
@@ -1085,6 +1097,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
     return 0;
   }
   const snapshots = [];
+  // oxlint-disable no-await-in-loop -- roots are snapshotted one at a time to bound git and hashing I/O; report order follows spec order
   for (const spec of specs) {
     if (!existsSync(join(spec.path, ".git"))) {
       console.error(`skip missing checkout: ${spec.key} (${spec.path})`);
@@ -1092,6 +1105,7 @@ export async function runConsolidation(args: string[]): Promise<number> {
     }
     snapshots.push(await rootSnapshot(spec));
   }
+  // oxlint-enable no-await-in-loop
   const entries = snapshots.flatMap((snapshot) => snapshot.entries);
   let previousReport: Record<string, unknown> | undefined;
   let previousEntries: Entry[] = [];

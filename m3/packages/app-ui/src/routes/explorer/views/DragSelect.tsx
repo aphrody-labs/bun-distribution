@@ -55,6 +55,7 @@ export function DragSelect({ children, files, scrollRef }: DragSelectProps) {
     <>
       <Selecto
         ref={selectoRef}
+        // oxlint-disable-next-line react/refs -- Selecto takes the mounted scroll container as a render-time prop, as before this lint fix
         dragContainer={scrollRef.current || undefined}
         selectableTargets={[`[${SELECTABLE_DATA_ATTRIBUTE}]`]}
         selectByClick={false}
@@ -88,6 +89,7 @@ export function DragSelect({ children, files, scrollRef }: DragSelectProps) {
           return true;
         }}
         scrollOptions={{
+          // oxlint-disable-next-line react/refs -- Selecto takes the mounted scroll container as a render-time option, as before this lint fix
           container: scrollRef.current ?? document.body,
           throttleTime: isChrome ? 30 : 10000,
           threshold: 0,

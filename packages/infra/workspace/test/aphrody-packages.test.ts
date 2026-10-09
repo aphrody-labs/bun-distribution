@@ -144,14 +144,15 @@ test("JSON imported from outside the package is embedded and its specifier rewri
   }
 });
 
+const entry = (name: string) => ({
+  name,
+  type: "file" as const,
+  mode: 0o644,
+  size: 0,
+  data: new Uint8Array(),
+});
+
 test("private or traversing entries are refused", () => {
-  const entry = (name: string) => ({
-    name,
-    type: "file" as const,
-    mode: 0o644,
-    size: 0,
-    data: new Uint8Array(),
-  });
   expect(() => assertPublicEntries([entry("package/src/index.ts")], "@aphrody/a")).not.toThrow();
   for (const name of [
     "package/.env",

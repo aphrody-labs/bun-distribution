@@ -1,5 +1,5 @@
 import { memo } from "react";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import type { File } from "@aphrody/drive-client";
 import { File as FileComponent } from "../../File";
 import { useExplorer } from "../../context";
@@ -9,7 +9,7 @@ import { TagDot } from "../../../../components/Tags";
 import { useDroppable } from "@dnd-kit/core";
 import { useFileContextMenu } from "../../hooks/useFileContextMenu";
 import { useDraggableFile } from "../../hooks/useDraggableFile";
-import { isVirtualFile } from '@aphrody/drive-client';
+import { isVirtualFile } from "@aphrody/drive-client";
 import { VolumeSizeBar } from "../../components/VolumeSizeBar";
 import { InlineNameEdit } from "../../components/InlineNameEdit";
 import { useOpenWith } from "../../../../hooks/useOpenWith";
@@ -22,12 +22,7 @@ interface FileCardProps {
 	selected: boolean;
 	focused: boolean;
 	selectedFiles: File[];
-	selectFile: (
-		file: File,
-		files: File[],
-		multi?: boolean,
-		range?: boolean,
-	) => void;
+	selectFile: (file: File, files: File[], multi?: boolean, range?: boolean) => void;
 }
 
 export const FileCard = memo(
@@ -92,8 +87,8 @@ export const FileCard = memo(
 
 			// Open regular files with default application
 			if (file.kind === "File" && "Physical" in file.sd_path) {
-				const physicalPath = (file.sd_path as any).Physical.path;
-				await openWithDefault(physicalPath);
+				const filePath = (file.sd_path as any).Physical.path;
+				await openWithDefault(filePath);
 			}
 		};
 
@@ -217,7 +212,8 @@ export const FileCard = memo(
 										: "text-on-surface",
 								)}
 							>
-								{file.name}{file.extension && `.${file.extension}`}
+								{file.name}
+								{file.extension && `.${file.extension}`}
 							</div>
 						)}
 
@@ -241,9 +237,7 @@ export const FileCard = memo(
 						{file.tags && file.tags.length > 0 && (
 							<div
 								className="flex items-center gap-1 mt-1"
-								title={file.tags
-									.map((t) => t.canonical_name)
-									.join(", ")}
+								title={file.tags.map((t) => t.canonical_name).join(", ")}
 							>
 								{file.tags.slice(0, 3).map((tag) => (
 									<TagDot
@@ -253,9 +247,7 @@ export const FileCard = memo(
 									/>
 								))}
 								{file.tags.length > 3 && (
-									<span className="text-label-small text-outline">
-										+{file.tags.length - 3}
-									</span>
+									<span className="text-label-small text-outline">+{file.tags.length - 3}</span>
 								)}
 							</div>
 						)}

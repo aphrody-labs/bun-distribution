@@ -27,6 +27,9 @@ export interface AutonomousGenerationReport {
   readonly elapsedMs: number;
 }
 
+const withoutTimestamps = (text: string): string =>
+  text.replace(/^ \* Timestamp: .*$/m, "").replace(/generatedAt: "[^"]*"/, "");
+
 /**
  * The catalog is tracked and checked by `fmt-check`: formatted with pinned oxfmt.
  */
@@ -52,8 +55,6 @@ async function writeTrackedCatalog(
       throw new Error(
         `Installed oxfmt failed to format the Bun catalog (exit ${formatted.exitCode}): ${formatted.stderr.toString().slice(0, 2048)}`,
       );
-    const withoutTimestamps = (text: string): string =>
-      text.replace(/^ \* Timestamp: .*$/m, "").replace(/generatedAt: "[^"]*"/, "");
     const next = await Bun.file(draft).text();
     const previous = existsSync(targetPath) ? await Bun.file(targetPath).text() : "";
     if (withoutTimestamps(previous) === withoutTimestamps(next)) {

@@ -8,7 +8,9 @@ import { Router } from "./router";
 import { ASSET_PREFIX, type RscPayload } from "./shared";
 
 /** What the generated ssr entry hands to the runtime: a loader per client module id. */
-export function setClientModules(defs: Record<string, () => Promise<Record<string, unknown>>>): void {
+export function setClientModules(
+  defs: Record<string, () => Promise<Record<string, unknown>>>,
+): void {
   installParcelRequire(ASSET_PREFIX);
   for (const [id, loader] of Object.entries(defs))
     loaders.set(id, async () => {
@@ -35,7 +37,10 @@ export interface RenderHtmlOptions {
 const encoder = new TextEncoder();
 
 function scriptFor(text: string, nonce?: string): Uint8Array {
-  const json = JSON.stringify(text).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+  const json = JSON.stringify(text)
+    .replace(/</g, "\\u003c")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
   const attr = nonce ? ` nonce="${nonce.replace(/"/g, "&quot;")}"` : "";
   return encoder.encode(`<script${attr}>(self.__m3_f||=[]).push(${json})</script>`);
 }
@@ -47,7 +52,10 @@ const TAIL = "</body></html>";
  * and flushed at the end of the task, where React's flushes stop on a safe boundary; the payload
  * scripts go after it, once `<body>` is open, and the document tail goes last.
  */
-function injectFlight(flight: ReadableStream<Uint8Array>, nonce?: string): TransformStream<Uint8Array, Uint8Array> {
+function injectFlight(
+  flight: ReadableStream<Uint8Array>,
+  nonce?: string,
+): TransformStream<Uint8Array, Uint8Array> {
   const decoder = new TextDecoder();
   const htmlDecoder = new TextDecoder();
   let pending: string[] = [];
@@ -75,6 +83,7 @@ function injectFlight(flight: ReadableStream<Uint8Array>, nonce?: string): Trans
   const flightDone = (async () => {
     const reader = flight.getReader();
     for (;;) {
+      // oxlint-disable-next-line no-await-in-loop -- lecture séquentielle d'un flux : chaque chunk suit le précédent, dans l'ordre
       const { done, value } = await reader.read();
       if (done) break;
       pending.push(decoder.decode(value, { stream: true }));
@@ -137,7 +146,10 @@ function appendTail(): TransformStream<Uint8Array, Uint8Array> {
 }
 
 /** Render the HTML document of an RSC stream. */
-export async function renderHtml(rsc: ReadableStream<Uint8Array>, options: RenderHtmlOptions): Promise<ReadableStream<Uint8Array>> {
+export async function renderHtml(
+  rsc: ReadableStream<Uint8Array>,
+  options: RenderHtmlOptions,
+): Promise<ReadableStream<Uint8Array>> {
   const [forReact, forInline] = rsc.tee();
   const payload = await createFromReadableStream<RscPayload>(forReact);
   const stream = await renderToReadableStream(<Router initial={payload} />, {
@@ -153,5 +165,8 @@ export async function renderHtml(rsc: ReadableStream<Uint8Array>, options: Rende
       return undefined;
     },
   });
-  return stream.pipeThrough(holdTail()).pipeThrough(injectFlight(forInline, options.nonce)).pipeThrough(appendTail());
+  return stream
+    .pipeThrough(holdTail())
+    .pipeThrough(injectFlight(forInline, options.nonce))
+    .pipeThrough(appendTail());
 }

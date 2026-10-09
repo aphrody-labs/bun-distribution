@@ -60,9 +60,12 @@ export async function clearDir(dir: string, apply: boolean, olderThanMs = 0): Pr
   for (const entry of entries) {
     const full = join(dir, entry.name);
     try {
+      // oxlint-disable-next-line no-await-in-loop -- entries are measured and pruned one at a time in directory order (bounded I/O on large trees; deterministic removal)
       const info = await lstat(full);
       if (olderThanMs > 0 && info.mtimeMs > limit) continue;
+      // oxlint-disable-next-line no-await-in-loop -- entries are measured and pruned one at a time in directory order (bounded I/O on large trees; deterministic removal)
       const stats = entry.isDirectory() ? await treeStats(full) : { bytes: info.size, files: 1 };
+      // oxlint-disable-next-line no-await-in-loop -- entries are measured and pruned one at a time in directory order (bounded I/O on large trees; deterministic removal)
       if (apply) await rm(full, { recursive: true, force: true, maxRetries: 1 });
       result.bytes += stats.bytes;
       result.files += stats.files;

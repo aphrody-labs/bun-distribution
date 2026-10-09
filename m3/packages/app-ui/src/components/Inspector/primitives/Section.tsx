@@ -1,5 +1,5 @@
 import { type IconSource, renderIcon } from "@aphrody/m3-primitives";
-import clsx from "clsx";
+import { clsx } from "clsx";
 
 interface SectionProps {
   title: string;

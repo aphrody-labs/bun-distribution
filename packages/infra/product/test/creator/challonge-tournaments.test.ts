@@ -190,7 +190,7 @@ test("shuffleSeeds : permutation complète, graines 1..n, déterministe avec un 
   const names = ["a", "b", "c", "d", "e"];
   const once = shuffleSeeds(names, () => 0);
   expect(once.map((e) => e.seed)).toEqual([1, 2, 3, 4, 5]);
-  expect(once.map((e) => e.name).sort()).toEqual(names);
+  expect(once.map((e) => e.name).toSorted()).toEqual(names);
   expect(shuffleSeeds(names, () => 0)).toEqual(once);
   let n = 0;
   const pseudo = () => ((n = (n * 7 + 3) % 11), n / 11);

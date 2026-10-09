@@ -68,14 +68,16 @@ export async function resolveMetadata(modules: readonly Module[], props: Props):
   for (const mod of modules) {
     let next = mod.metadata as Metadata | undefined;
     if (typeof mod.generateMetadata === "function")
+      // oxlint-disable-next-line no-await-in-loop -- modules resolve root to leaf: each generateMetadata receives the metadata merged from its parents
       next = (await (mod.generateMetadata as (p: Props, parent: Promise<Metadata>) => unknown)(
         props,
         Promise.resolve(metadata),
       )) as Metadata;
     let view = mod.viewport as Viewport | undefined;
     if (typeof mod.generateViewport === "function")
+      // oxlint-disable-next-line no-await-in-loop -- generateViewport runs in the same ordered root-to-leaf pass as generateMetadata
       view = (await (mod.generateViewport as (p: Props) => unknown)(props)) as Viewport;
-    if (view) viewport = { ...viewport, ...view };
+    if (view) Object.assign(viewport, view);
     if (!next) continue;
     const title = next.title;
     let resolvedTitle = metadata.title;
@@ -86,7 +88,7 @@ export async function resolveMetadata(modules: readonly Module[], props: Props):
       else if (title.default) resolvedTitle = title.default;
       if (title && typeof title === "object" && title.template) template = title.template;
     }
-    metadata = { ...metadata, ...next, title: resolvedTitle };
+    metadata = Object.assign({}, metadata, next, { title: resolvedTitle });
   }
   return { metadata, viewport };
 }
@@ -108,7 +110,8 @@ function viewportContent(viewport: Viewport): string {
   parts.push(`width=${viewport.width ?? "device-width"}`);
   parts.push(`initial-scale=${viewport.initialScale ?? 1}`);
   if (viewport.maximumScale !== undefined) parts.push(`maximum-scale=${viewport.maximumScale}`);
-  if (viewport.userScalable !== undefined) parts.push(`user-scalable=${viewport.userScalable ? "yes" : "no"}`);
+  if (viewport.userScalable !== undefined)
+    parts.push(`user-scalable=${viewport.userScalable ? "yes" : "no"}`);
   if (viewport.viewportFit) parts.push(`viewport-fit=${viewport.viewportFit}`);
   return parts.join(", ");
 }
@@ -121,7 +124,9 @@ export function renderMetadata({ metadata: m, viewport: v }: Resolved): ReactNod
   const link = (attrs: Record<string, string>) => out.push(<link key={k++} {...attrs} />);
   meta({ charSet: "utf-8" });
   meta({ name: "viewport", content: viewportContent(v) });
-  for (const theme of typeof v.themeColor === "string" ? [{ color: v.themeColor }] : (v.themeColor ?? []))
+  for (const theme of typeof v.themeColor === "string"
+    ? [{ color: v.themeColor }]
+    : (v.themeColor ?? []))
     meta(
       theme.media
         ? { name: "theme-color", content: theme.color, media: theme.media }
@@ -143,12 +148,14 @@ export function renderMetadata({ metadata: m, viewport: v }: Resolved): ReactNod
     const content =
       typeof m.robots === "string"
         ? m.robots
-        : [m.robots.index === false ? "noindex" : "index", m.robots.follow === false ? "nofollow" : "follow"].join(
-            ", ",
-          );
+        : [
+            m.robots.index === false ? "noindex" : "index",
+            m.robots.follow === false ? "nofollow" : "follow",
+          ].join(", ");
     meta({ name: "robots", content });
   }
-  if (m.alternates?.canonical) link({ rel: "canonical", href: absolute(m.alternates.canonical, m.metadataBase) });
+  if (m.alternates?.canonical)
+    link({ rel: "canonical", href: absolute(m.alternates.canonical, m.metadataBase) });
   for (const [lang, href] of Object.entries(m.alternates?.languages ?? {}))
     link({ rel: "alternate", hrefLang: lang, href: absolute(href, m.metadataBase) });
   if (m.manifest) link({ rel: "manifest", href: m.manifest });
@@ -178,7 +185,10 @@ export function renderMetadata({ metadata: m, viewport: v }: Resolved): ReactNod
     if (tw.title) meta({ name: "twitter:title", content: tw.title });
     if (tw.description) meta({ name: "twitter:description", content: tw.description });
     for (const image of list(tw.images))
-      meta({ name: "twitter:image", content: absolute(typeof image === "string" ? image : image.url, m.metadataBase) });
+      meta({
+        name: "twitter:image",
+        content: absolute(typeof image === "string" ? image : image.url, m.metadataBase),
+      });
   }
   const icons = m.icons;
   if (icons) {
@@ -200,7 +210,8 @@ export function renderMetadata({ metadata: m, viewport: v }: Resolved): ReactNod
     emit("shortcut icon", grouped.shortcut);
   }
   const verification = m.verification;
-  if (verification?.google) meta({ name: "google-site-verification", content: verification.google });
+  if (verification?.google)
+    meta({ name: "google-site-verification", content: verification.google });
   if (verification?.yandex) meta({ name: "yandex-verification", content: verification.yandex });
   for (const [name, value] of Object.entries({ ...verification?.other, ...m.other }))
     for (const content of list(value)) meta({ name, content });

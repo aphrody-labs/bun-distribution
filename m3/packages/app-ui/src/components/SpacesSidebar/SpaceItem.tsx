@@ -1,16 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import type { SpaceItem as SpaceItemType } from "@aphrody/drive-client";
 import { Thumb } from "../../routes/explorer/File/Thumb";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { renderIcon } from "@aphrody/m3-primitives";
 
-import {
-	resolveItemMetadata,
-	isRawLocation,
-	type IconData,
-} from "./hooks/spaceItemUtils";
+import { resolveItemMetadata, isRawLocation, type IconData } from "./hooks/spaceItemUtils";
 import { useSpaceItemActive } from "./hooks/useSpaceItemActive";
 import { useSpaceItemDropZones } from "./hooks/useSpaceItemDropZones";
 import { useSpaceItemContextMenu } from "./hooks/useSpaceItemContextMenu";
@@ -49,11 +45,7 @@ function ItemIcon({ icon }: { icon: IconData }) {
 	if (icon.type === "image") {
 		return <img src={icon.icon} alt="" className="size-4 shrink-0" />;
 	}
-	return (
-		<span className="shrink-0">
-			{renderIcon(icon.icon, { size: 16 })}
-		</span>
-	);
+	return <span className="shrink-0">{renderIcon(icon.icon, { size: 16 })}</span>;
 }
 
 // Insertion line indicator
@@ -186,9 +178,7 @@ export function SpaceItem({
 	});
 
 	// Get resolved file for thumbnail rendering
-	const resolvedFile = isRawLocation(item)
-		? undefined
-		: (item as SpaceItemType).resolved_file;
+	const resolvedFile = isRawLocation(item) ? undefined : (item as SpaceItemType).resolved_file;
 
 	// Active state detection
 	const isActive = useSpaceItemActive({
@@ -262,13 +252,8 @@ export function SpaceItem({
 
 	// Computed visibility for indicators
 	const showTopLine =
-		dropZones.isOverTop &&
-		!isSortableDragging &&
-		!dropZones.isDraggingSortableItem;
-	const showBottomLine =
-		dropZones.isOverBottom &&
-		isLastItem &&
-		!dropZones.isDraggingSortableItem;
+		dropZones.isOverTop && !isSortableDragging && !dropZones.isDraggingSortableItem;
+	const showBottomLine = dropZones.isOverBottom && isLastItem && !dropZones.isDraggingSortableItem;
 	const showDropHighlight =
 		dropZones.isOverMiddle &&
 		dropZones.isDropTarget &&
@@ -279,10 +264,7 @@ export function SpaceItem({
 		<div
 			ref={setSortableRef}
 			style={style}
-			className={clsx(
-				"relative",
-				isSortableDragging && "opacity-50 z-50",
-			)}
+			className={clsx("relative", isSortableDragging && "opacity-50 z-50")}
 		>
 			<InsertionLine visible={showTopLine} />
 			<DropHighlight visible={showDropHighlight} />
@@ -298,23 +280,20 @@ export function SpaceItem({
 				<button
 					onClick={handleClick}
 					onContextMenu={handleContextMenu}
-					{...(sortable
-						? { ...sortableAttributes, ...sortableListeners }
-						: {})}
+					{...(sortable ? { ...sortableAttributes, ...sortableListeners } : {})}
 					className={clsx(
 						"flex w-full items-center gap-2 rounded-small px-2 py-1.5 text-label-large font-medium transition-colors relative cursor-pointer",
 						isActive
 							? "bg-secondary-container/30 text-on-surface"
-							: [className || "text-sidebar-inkDull", "hover:text-on-surface hover:bg-secondary-container/20"],
+							: [
+									className || "text-sidebar-inkDull",
+									"hover:text-on-surface hover:bg-secondary-container/20",
+								],
 						showDropHighlight && "bg-primary/10",
 					)}
 				>
 					{resolvedFile ? (
-						<Thumb
-							file={resolvedFile}
-							size={16}
-							className="shrink-0"
-						/>
+						<Thumb file={resolvedFile} size={16} className="shrink-0" />
 					) : (
 						<ItemIcon icon={icon} />
 					)}

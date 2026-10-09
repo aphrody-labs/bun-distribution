@@ -64,9 +64,9 @@ export default function Overview({ adaptive, host = "bun" }: PageProps) {
             {info ? (
               <Code>{JSON.stringify(info, null, 2)}</Code>
             ) : (
-              <p className="text-body-small text-error" role="status">
+              <output className="block text-body-small text-error">
                 {error ? `API unreachable: ${error}` : "Loading…"}
-              </p>
+              </output>
             )}
           </Card>
         ) : undefined

@@ -24,15 +24,16 @@ test("missing Bun catalog entry is a non-fixable blocker", () => {
   ]);
 });
 
+const put = async (root: string, path: string, content: string) => {
+  const full = join(root, path);
+  await mkdir(join(full, ".."), { recursive: true });
+  await writeFile(full, content);
+};
+
 test("Web migration gate inventories source, target, and shared host counts", async () => {
   const temp = await mkdtemp(join(tmpdir(), "aphrody-web-migration-"));
   const source = join(temp, "source");
   const target = join(temp, "target");
-  const put = async (root: string, path: string, content: string) => {
-    const full = join(root, path);
-    await mkdir(join(full, ".."), { recursive: true });
-    await writeFile(full, content);
-  };
   try {
     await put(
       source,

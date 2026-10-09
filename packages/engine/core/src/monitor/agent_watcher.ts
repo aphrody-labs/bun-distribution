@@ -13,6 +13,13 @@ import { join } from "node:path";
 import { recordAgentTelemetry } from "../ledger/index";
 import type { NativeRedisClient } from "../redis/client";
 
+const positive = (value: number | undefined, fallback: number) => {
+  const result = value ?? fallback;
+  if (!Number.isSafeInteger(result) || result < 1)
+    throw new RangeError("Watcher limits must be positive integers");
+  return result;
+};
+
 export interface AgentWatcherOptions {
   redisClient?: NativeRedisClient | undefined;
   sqliteDb?: Database | undefined;
@@ -72,19 +79,13 @@ export class AgentWatcher {
     this.#redis = options.redisClient ?? null;
     this.#db = options.sqliteDb ?? null;
 
-    const positive = (value: number | undefined, fallback: number) => {
-      const result = value ?? fallback;
-      if (!Number.isSafeInteger(result) || result < 1)
-        throw new RangeError("Watcher limits must be positive integers");
-      return result;
-    };
     this.#intervalMs = positive(options.pollEndpointsIntervalMs, 10000);
     this.#timeoutMs = positive(options.endpointTimeoutMs, 1500);
     this.#maxSessions = positive(options.maxSessions, 1024);
     this.#retentionMs = positive(options.sessionRetentionMs, 86400000);
-    this.endpoints = (options.endpoints ?? AgentWatcher.defaultEndpoints).map((endpoint) => ({
-      ...endpoint,
-    }));
+    this.endpoints = (options.endpoints ?? AgentWatcher.defaultEndpoints).map((endpoint) =>
+      Object.assign({}, endpoint),
+    );
     const home = homedir();
     this.monitoredDirs = options.customDirs ?? [
       join(home, ".gemini", "antigravity-cli", "brain"),
@@ -208,10 +209,12 @@ export class AgentWatcher {
           const started = performance.now();
           let online = false;
           try {
+            // oxlint-disable-next-line no-await-in-loop -- sondes séquentielles bornées par endpoint : charge locale minimale et arrêt propre via abort
             const response = await fetch(endpoint.url, {
               signal: AbortSignal.any([abort.signal, AbortSignal.timeout(this.#timeoutMs)]),
             });
             online = response.ok;
+            // oxlint-disable-next-line no-await-in-loop -- libère la connexion de la sonde avant la suivante (séquentiel)
             await response.body?.cancel();
           } catch {
             /* A failed probe is recorded as offline. */
@@ -226,6 +229,7 @@ export class AgentWatcher {
           this.#statuses.set(endpoint.name, status);
           if (this.#redis?.isConnected) {
             try {
+              // oxlint-disable-next-line no-await-in-loop -- écritures d'état séquentielles dans l'ordre des endpoints du cycle de sondage
               await this.#redis.hset(
                 "yolo:agents:endpoints",
                 endpoint.name,
@@ -253,7 +257,7 @@ export class AgentWatcher {
   }
 
   getEndpointStatuses(): EndpointStatus[] {
-    return [...this.#statuses.values()].map((status) => ({ ...status }));
+    return Array.from(this.#statuses.values(), (status) => Object.assign({}, status));
   }
 
   getActiveSessions(): Array<{ agent: string; sessionId: string; lastSeen: string; path: string }> {

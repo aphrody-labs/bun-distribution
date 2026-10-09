@@ -25,9 +25,16 @@ const str = (value: unknown) => (typeof value === "string" ? value : "");
 const num = (value: unknown) => (typeof value === "number" && Number.isFinite(value) ? value : 0);
 
 /** Decode a `thread/list` result (`{ threads, nextCursor }`, `data` accepted for older servers). */
-export function normalizeThreads(result: unknown): { threads: ThreadSummary[]; nextCursor?: string } {
+export function normalizeThreads(result: unknown): {
+  threads: ThreadSummary[];
+  nextCursor?: string;
+} {
   const record = (result ?? {}) as { threads?: unknown; data?: unknown; nextCursor?: unknown };
-  const raw = Array.isArray(record.threads) ? record.threads : Array.isArray(record.data) ? record.data : [];
+  const raw = Array.isArray(record.threads)
+    ? record.threads
+    : Array.isArray(record.data)
+      ? record.data
+      : [];
   const threads = (raw as RawThread[])
     .filter((item) => typeof item?.id === "string" && item.id.length > 0)
     .map((item) => ({
@@ -42,9 +49,14 @@ export function normalizeThreads(result: unknown): { threads: ThreadSummary[]; n
   return { threads, nextCursor };
 }
 
+const fold = (text: string) =>
+  text
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+
 /** Case- and accent-insensitive search over title and model; every word must match. */
 export function filterThreads(threads: ThreadSummary[], query: string): ThreadSummary[] {
-  const fold = (text: string) => text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
   const words = fold(query).split(/\s+/).filter(Boolean);
   if (words.length === 0) return threads;
   return threads.filter((thread) => {
@@ -55,10 +67,15 @@ export function filterThreads(threads: ThreadSummary[], query: string): ThreadSu
 
 export type DateGroup = { key: string; label: string; threads: ThreadSummary[] };
 
-const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+const startOfDay = (date: Date) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 
 /** Group threads (already sorted newest first) into Today / Yesterday / 7 days / 30 days / months. */
-export function groupByDate(threads: ThreadSummary[], now: Date = new Date(), locale = "en"): DateGroup[] {
+export function groupByDate(
+  threads: ThreadSummary[],
+  now: Date = new Date(),
+  locale = "en",
+): DateGroup[] {
   const today = startOfDay(now);
   const day = 86_400_000;
   const groups = new Map<string, DateGroup>();
@@ -97,7 +114,9 @@ export function transcript(result: unknown): string {
   for (const turn of turns) {
     for (const item of turn.items ?? []) {
       if (item.type === "userMessage") {
-        const text = (item.content ?? []).flatMap((part) => (part.type === "text" && part.text ? [part.text] : [])).join("\n");
+        const text = (item.content ?? [])
+          .flatMap((part) => (part.type === "text" && part.text ? [part.text] : []))
+          .join("\n");
         if (text) lines.push("", `**You:** ${text}`);
       } else if (item.type === "agentMessage" && item.text) {
         lines.push("", `**Aphrody:** ${item.text}`);

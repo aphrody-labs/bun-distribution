@@ -19,16 +19,29 @@ export function lockMap(text: string): Map<string, Set<string>> {
   return m;
 }
 
-export function lockDiff(before: Map<string, Set<string>>, after: Map<string, Set<string>>): Change[] {
+export function lockDiff(
+  before: Map<string, Set<string>>,
+  after: Map<string, Set<string>>,
+): Change[] {
   const out: Change[] = [];
   for (const [n, vs] of after) {
     const old = before.get(n);
-    if (!old) { out.push({ ecosystem: "cargo-lock", name: n, from: "(new)", to: [...vs].join(",") }); continue; }
+    if (!old) {
+      out.push({ ecosystem: "cargo-lock", name: n, from: "(new)", to: [...vs].join(",") });
+      continue;
+    }
     const a = [...old].toSorted().join(",");
     const b = [...vs].toSorted().join(",");
     if (a !== b) out.push({ ecosystem: "cargo-lock", name: n, from: a, to: b });
   }
-  for (const n of before.keys()) if (!after.has(n)) out.push({ ecosystem: "cargo-lock", name: n, from: [...before.get(n)!].join(","), to: "(removed)" });
+  for (const n of before.keys())
+    if (!after.has(n))
+      out.push({
+        ecosystem: "cargo-lock",
+        name: n,
+        from: [...before.get(n)!].join(","),
+        to: "(removed)",
+      });
   return out;
 }
 
@@ -36,9 +49,16 @@ export function runCargo(c: Ctx, _args: string[]): number {
   const wrapper = "scripts/build/rust/cargo-serial.sh";
   if (!c.apply) {
     const r = c.run("bash", [wrapper, "update", "--dry-run"]);
-    const lines = (r.stderr + r.stdout).split("\n").filter((l) => /^\s+(Updating|Adding|Removing|Downgrading|Locking)|unchanged dependencies/.test(l));
-    console.log(`cargo  dry run: ${lines.filter((l) => /Updating|Locking/.test(l)).length} update(s), ${lines.filter((l) => /Downgrading/.test(l)).length} downgrade(s)`);
-    for (const l of lines.filter((l) => /unchanged dependencies/.test(l))) console.log(`cargo  ${l.trim()}`);
+    const lines = (r.stderr + r.stdout)
+      .split("\n")
+      .filter((l) =>
+        /^\s+(Updating|Adding|Removing|Downgrading|Locking)|unchanged dependencies/.test(l),
+      );
+    console.log(
+      `cargo  dry run: ${lines.filter((l) => /Updating|Locking/.test(l)).length} update(s), ${lines.filter((l) => /Downgrading/.test(l)).length} downgrade(s)`,
+    );
+    for (const line of lines.filter((l) => /unchanged dependencies/.test(l)))
+      console.log(`cargo  ${line.trim()}`);
     return 0;
   }
   const dir = join(c.root, "target", "update");
@@ -47,7 +67,9 @@ export function runCargo(c: Ctx, _args: string[]): number {
   const before = lockMap(c.read("Cargo.lock"));
   if (c.run("bash", [wrapper, "update"], { inherit: true }).status !== 0) return 1;
   const changes = lockDiff(before, lockMap(c.read("Cargo.lock")));
-  console.log(`cargo  lock refreshed: ${changes.length} package change(s); snapshot target/update/Cargo.lock.before`);
+  console.log(
+    `cargo  lock refreshed: ${changes.length} package change(s); snapshot target/update/Cargo.lock.before`,
+  );
   const j = c.journal();
   j.runs.push({ date: new Date().toISOString().slice(0, 10), changes: changes.slice(0, 400) });
   c.saveJournal(j);

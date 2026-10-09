@@ -24,21 +24,24 @@ function Navigation() {
     "div",
     {},
     createElement("button", { id: "launcher", onClick: () => setOpen(true) }, "Navigation"),
-    createElement(RailDrawer, {
-      open,
-      onOpenChange: setOpen,
-      label: "Navigation",
-      children: createElement(
-        "div",
-        {},
-        createElement("button", { id: "destination" }, "Files"),
-        createElement("a", { id: "last", href: "#settings" }, "Settings"),
-        createElement("button", { disabled: true, id: "disabled" }, "Disabled"),
-        createElement("div", { hidden: true }, createElement("button", { id: "hidden" }, "Hidden")),
-        createElement("button", { "aria-disabled": true }, "Unavailable"),
-        createElement("div", { inert: true }, createElement("button", {}, "Inert")),
-      ),
-    }),
+    <RailDrawer open={open} onOpenChange={setOpen} label="Navigation">
+      <div>
+        <button id="destination">Files</button>
+        <a id="last" href="#settings">
+          Settings
+        </a>
+        <button disabled id="disabled">
+          Disabled
+        </button>
+        <div hidden>
+          <button id="hidden">Hidden</button>
+        </div>
+        <button aria-disabled>Unavailable</button>
+        <div inert>
+          <button>Inert</button>
+        </div>
+      </div>
+    </RailDrawer>,
   );
 }
 

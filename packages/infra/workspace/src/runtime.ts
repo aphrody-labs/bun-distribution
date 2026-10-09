@@ -81,6 +81,7 @@ export async function infraExecutable(
     home && join(home, ".local", "bin", name),
     Bun.which(name, { PATH: environment.PATH ?? "" }),
   ]) {
+    // oxlint-disable-next-line no-await-in-loop -- candidates are probed in PATH order; the first executable wins and later probes are skipped
     const direct = await executable(candidate);
     if (direct) return [direct];
   }

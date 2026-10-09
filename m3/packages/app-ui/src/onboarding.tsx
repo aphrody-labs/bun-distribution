@@ -58,6 +58,7 @@ function ModelsFolder({
     return () => {
       active = false;
     };
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- modelsDir est un déclencheur volontaire : chaque changement de dossier relance la lecture de la racine
   }, [modelsDir]);
 
   const choose = async () => {

@@ -36,11 +36,13 @@ export async function walk(
       if (entry.isSymbolicLink()) continue;
       const full = join(dir, entry.name);
       if (entry.isDirectory()) {
+        // oxlint-disable-next-line no-await-in-loop -- parcours récursif séquentiel : ordre stable et nombre de handles borné
         await visit(full, bucket ?? full);
         continue;
       }
       if (!entry.isFile()) continue;
       try {
+        // oxlint-disable-next-line no-await-in-loop -- les callbacks onFile et les totaux sont cumulés dans l'ordre du parcours
         const info = await lstat(full);
         totalBytes += info.size;
         totalFiles += 1;
@@ -65,7 +67,7 @@ export async function walk(
     files: files.slice(0, opts.topFiles),
     topDirs: [...dirBytes]
       .map(([path, bytes]) => ({ path, bytes }))
-      .sort((a, b) => b.bytes - a.bytes),
+      .toSorted((a, b) => b.bytes - a.bytes),
     totalBytes,
     totalFiles,
   };
@@ -118,6 +120,7 @@ export async function findDuplicates(root: string, minBytes: number): Promise<Du
     const byPartial = new Map<string, string[]>();
     for (const path of paths) {
       try {
+        // oxlint-disable-next-line no-await-in-loop -- un seul fichier ouvert à la fois : évite l'épuisement des descripteurs sur les grands lots de même taille
         const key = await partialHash(path, bytes);
         byPartial.set(key, [...(byPartial.get(key) ?? []), path]);
       } catch {
@@ -129,6 +132,7 @@ export async function findDuplicates(root: string, minBytes: number): Promise<Du
       const byFull = new Map<string, string[]>();
       for (const path of candidates) {
         try {
+          // oxlint-disable-next-line no-await-in-loop -- un seul fichier lu à la fois : borne les I/O disque et la mémoire des flux
           const key = await fullHash(path);
           byFull.set(key, [...(byFull.get(key) ?? []), path]);
         } catch {
@@ -137,9 +141,9 @@ export async function findDuplicates(root: string, minBytes: number): Promise<Du
       }
       for (const [hash, same] of byFull) {
         if (same.length > 1)
-          groups.push({ bytes, hash, paths: same.sort(), wasted: bytes * (same.length - 1) });
+          groups.push({ bytes, hash, paths: same.toSorted(), wasted: bytes * (same.length - 1) });
       }
     }
   }
-  return groups.sort((a, b) => b.wasted - a.wasted);
+  return groups.toSorted((a, b) => b.wasted - a.wasted);
 }

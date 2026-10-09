@@ -99,9 +99,9 @@ export class Gateway {
       let outcome: Outcome;
       this.stable = false;
       try {
-        const base = this.session
-          ? this.session.resumeUrl
-          : (this.cachedUrl ??= await this.options.getUrl());
+        // oxlint-disable-next-line no-await-in-loop -- reconnection loop: the URL is resolved before each connection attempt, after the previous one ended
+        const base = await this.connectionBase();
+        // oxlint-disable-next-line no-await-in-loop -- reconnection loop: each connection must finish (or be abandoned) before the next one starts
         outcome = await this.connect(withParams(base));
       } catch (error) {
         if (error instanceof GatewayFatalError) throw error;
@@ -120,8 +120,14 @@ export class Gateway {
       const delay = outcome.delayMs ?? backoffMs(attempt, this.random);
       attempt += 1;
       this.log(`Reconnexion Gateway (${outcome.kind}) dans ${delay} ms.`);
+      // oxlint-disable-next-line no-await-in-loop -- reconnection backoff: the next connection waits for this delay
       await this.abortableSleep(delay);
     }
+  }
+
+  /** URL de connexion : `resume_gateway_url` pendant une session, sinon l'URL Gateway (récupérée une fois). */
+  private async connectionBase(): Promise<string> {
+    return this.session ? this.session.resumeUrl : (this.cachedUrl ??= await this.options.getUrl());
   }
 
   private async abortableSleep(ms: number): Promise<void> {

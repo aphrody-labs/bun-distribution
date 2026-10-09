@@ -192,6 +192,7 @@ export class BrowserRuntime implements Disposable {
           return JSON.parse(raw as string) as T;
         }
         if (options.signal?.aborted) cancel();
+        // oxlint-disable-next-line no-await-in-loop -- sondage du résultat natif à intervalle fixe, jusqu'à la fin de l'opération
         await Bun.sleep(10);
       }
     } finally {

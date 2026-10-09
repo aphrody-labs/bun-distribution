@@ -1,7 +1,7 @@
 import { Button } from "@mui/material";
 
 const s = "<Button>not jsx</Button>";
-const t = `<Button variant="outlined">${s}</Button>`;
+const _t = `<Button variant="outlined">${s}</Button>`;
 // <Button sx={{}}> in a comment
 
 export function Q() {

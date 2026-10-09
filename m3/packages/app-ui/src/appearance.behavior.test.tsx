@@ -69,12 +69,13 @@ test("appearance settings persist before applying and retain the current theme o
   expect(light.getAttribute("aria-pressed")).toBe("true");
 });
 
+function ShellAppearance() {
+  useTheme();
+  return null;
+}
+
 test("shell appearance loads without a Drive connection", async () => {
   localStorage.setItem("aphrody.preferences", JSON.stringify({ theme: "light", fontSize: 20 }));
-  function ShellAppearance() {
-    useTheme();
-    return null;
-  }
   root = createRoot(host);
   await act(async () => root!.render(createElement(ShellAppearance)));
   expect(document.documentElement.classList.contains("light")).toBe(true);

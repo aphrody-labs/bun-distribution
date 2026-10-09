@@ -76,6 +76,11 @@ const MODEL_PREFERENCE = [
   "tiny",
 ];
 
+const rank = (path: string): number => {
+  const index = MODEL_PREFERENCE.findIndex((label) => path.includes(`ggml-${label}`));
+  return index < 0 ? MODEL_PREFERENCE.length : index;
+};
+
 /** Looks for a ggml model in the usual whisper.cpp locations. */
 export async function findWhisperModel(env: Env): Promise<string | undefined> {
   const home = env.HOME ?? env.USERPROFILE ?? homedir();
@@ -86,20 +91,20 @@ export async function findWhisperModel(env: Env): Promise<string | undefined> {
     join(home, "whisper.cpp", "models"),
     join(process.cwd(), "models"),
   ].filter((dir): dir is string => Boolean(dir));
-  const found: string[] = [];
-  for (const dir of dirs) {
-    try {
-      for (const name of await readdir(dir))
-        if (/^ggml-.*\.bin$/.test(name)) found.push(join(dir, name));
-    } catch {
-      // directory missing
-    }
-  }
-  const rank = (path: string): number => {
-    const index = MODEL_PREFERENCE.findIndex((label) => path.includes(`ggml-${label}`));
-    return index < 0 ? MODEL_PREFERENCE.length : index;
-  };
-  return found.sort((a, b) => rank(a) - rank(b))[0];
+  const listed = await Promise.all(
+    dirs.map(async (dir) => {
+      try {
+        return (await readdir(dir))
+          .filter((name) => /^ggml-.*\.bin$/.test(name))
+          .map((name) => join(dir, name));
+      } catch {
+        // directory missing
+        return [];
+      }
+    }),
+  );
+  const found = listed.flat();
+  return found.toSorted((a, b) => rank(a) - rank(b))[0];
 }
 
 /**
@@ -125,6 +130,7 @@ export async function detectAsr(options: AsrOptions, env: Env = process.env): Pr
         options.whisperModel ??
         env.WHISPER_MODEL ??
         env.APHRODY_WHISPER_MODEL ??
+        // oxlint-disable-next-line no-await-in-loop -- candidates are probed in preference order and the first usable backend returns early
         (await findWhisperModel(env));
       if (!model) {
         notes.push(
@@ -132,6 +138,7 @@ export async function detectAsr(options: AsrOptions, env: Env = process.env): Pr
         );
         continue;
       }
+      // oxlint-disable-next-line no-await-in-loop -- candidates are probed in preference order and the first usable backend returns early
       if (!(await Bun.file(model).exists())) {
         notes.push(`whisper-cli : modèle introuvable (${model})`);
         continue;
@@ -262,6 +269,12 @@ export function mergeChunks(results: { chunk: Chunk; segments: AsrSegment[] }[])
 const CJK_CHARS = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
 
 /** Splits segments longer than `maxChars` at the biggest word gap near the middle (needs word timestamps). */
+const joinWords = (list: AsrWord[]): string =>
+  list
+    .map((word) => word.word)
+    .join("")
+    .trim();
+
 export function splitLongSegments(
   segments: AsrSegment[],
   maxChars = 90,
@@ -292,11 +305,6 @@ export function splitLongSegments(
     }
     const left = words.slice(0, best);
     const right = words.slice(best);
-    const joinWords = (list: AsrWord[]): string =>
-      list
-        .map((word) => word.word)
-        .join("")
-        .trim();
     const first = left[0];
     const lastLeft = left[left.length - 1];
     const firstRight = right[0];
@@ -518,7 +526,7 @@ export interface AsrResult {
 function majority(values: (string | undefined)[]): string | undefined {
   const counts = new Map<string, number>();
   for (const value of values) if (value) counts.set(value, (counts.get(value) ?? 0) + 1);
-  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  return [...counts.entries()].toSorted((a, b) => b[1] - a[1])[0]?.[0];
 }
 
 export async function transcribeMedia(
@@ -537,6 +545,7 @@ export async function transcribeMedia(
   try {
     for (const chunk of chunks) {
       const wav = join(work, `chunk-${String(chunk.index + 1).padStart(4, "0")}.wav`);
+      // oxlint-disable-next-line no-await-in-loop -- chunks run in order, one ASR process at a time, each result cached before the next chunk
       await extractWav(
         input,
         wav,
@@ -544,6 +553,7 @@ export async function transcribeMedia(
         chunks.length === 1 ? undefined : chunk.length,
         env,
       );
+      // oxlint-disable-next-line no-await-in-loop -- chunks run in order, one ASR process at a time, each result cached before the next chunk
       const hash = sha256(new Uint8Array(await Bun.file(wav).arrayBuffer()));
       const key = keyOf(
         "asr",
@@ -556,6 +566,7 @@ export async function transcribeMedia(
         options.fwCompute,
         hash,
       );
+      // oxlint-disable-next-line no-await-in-loop -- chunks run in order, one ASR process at a time, each result cached before the next chunk
       let result = await cache.get<ChunkResult>("asr", key);
       if (result) {
         cached += 1;
@@ -564,10 +575,14 @@ export async function transcribeMedia(
         log(`ASR [${chunk.index + 1}/${chunks.length}] ${selection.backend}`);
         result =
           selection.backend === "whisper-cli"
-            ? await runWhisperCli(selection, options, wav, env)
+            ? // oxlint-disable-next-line no-await-in-loop -- chunks run in order, one ASR process at a time, each result cached before the next chunk
+              await runWhisperCli(selection, options, wav, env)
             : selection.backend === "faster-whisper"
-              ? await runFasterWhisper(selection, options, wav, env)
-              : await runEndpoint(options, wav);
+              ? // oxlint-disable-next-line no-await-in-loop -- chunks run in order, one ASR process at a time, each result cached before the next chunk
+                await runFasterWhisper(selection, options, wav, env)
+              : // oxlint-disable-next-line no-await-in-loop -- chunks run in order, one ASR process at a time, each result cached before the next chunk
+                await runEndpoint(options, wav);
+        // oxlint-disable-next-line no-await-in-loop -- chunks run in order, one ASR process at a time, each result cached before the next chunk
         await cache.set("asr", key, result);
       }
       languages.push(result.language);
@@ -586,6 +601,7 @@ export async function transcribeMedia(
           }),
         ),
       });
+      // oxlint-disable-next-line no-await-in-loop -- chunks run in order, one ASR process at a time, each result cached before the next chunk
       await rm(wav, { force: true });
     }
   } finally {

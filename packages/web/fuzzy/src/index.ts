@@ -332,7 +332,7 @@ class Searcher {
         indices: this.options.includeMatches ? [[0, text.length - 1]] : [],
       };
     }
-    let allIndices: [number, number][] = [];
+    const allIndices: [number, number][] = [];
     let totalScore = 0;
     let hasMatches = false;
     for (const { pattern, alphabet, startIndex } of this.chunks) {
@@ -347,7 +347,7 @@ class Searcher {
       });
       if (isMatch) hasMatches = true;
       totalScore += score;
-      if (isMatch && indices) allIndices = [...allIndices, ...indices];
+      if (isMatch && indices) allIndices.push(...indices);
     }
     return {
       isMatch: hasMatches,
@@ -484,12 +484,13 @@ export class FuzzySearch<T> {
       if (this.options.includeMatches) {
         out.matches = result.matches
           .filter((match) => match.indices.length)
-          .map((match) => ({
-            indices: match.indices,
-            value: match.value,
-            ...(match.key ? { key: match.key.id } : {}),
-            ...(match.idx !== undefined ? { refIndex: match.idx } : {}),
-          }));
+          .map((match): FuzzyMatch =>
+            Object.assign(
+              { indices: match.indices, value: match.value },
+              match.key ? { key: match.key.id } : {},
+              match.idx !== undefined ? { refIndex: match.idx } : {},
+            ),
+          );
       }
       if (this.options.includeScore) out.score = result.score;
       return out;

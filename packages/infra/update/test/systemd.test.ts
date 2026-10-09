@@ -10,7 +10,7 @@ const temporary: string[] = [];
 afterEach(async () => {
   delete process.env.APHRODY_SYSTEMD_USER_DIR;
   delete process.env.APHRODY_YOLO_ROOT;
-  for (const path of temporary.splice(0)) await rm(path, { recursive: true, force: true });
+  await Promise.all(temporary.splice(0).map((path) => rm(path, { recursive: true, force: true })));
 });
 
 test("install plans only the named repo units and refuses unknown names", async () => {

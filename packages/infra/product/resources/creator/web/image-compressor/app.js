@@ -2,9 +2,7 @@
 (function () {
   "use strict";
 
-  var $ = function (id) {
-    return document.getElementById(id);
-  };
+  var $ = document.getElementById.bind(document);
   var state = { items: [], runId: 0, formats: {} };
 
   var MIME = { webp: "image/webp", jpeg: "image/jpeg", png: "image/png", avif: "image/avif" };
@@ -31,6 +29,7 @@
       names.map(function (name) {
         return toBlob(probe, MIME[name], 0.8).then(function (blob) {
           state.formats[name] = !!blob && blob.type === MIME[name];
+          return;
         });
       }),
     );
@@ -175,12 +174,15 @@
             used[out.toLowerCase()] = true;
             item.result = result;
             item.outName = out;
+            return;
           })
           .catch(function (error) {
             item.error = error && error.message ? error.message : String(error);
+            return;
           })
           .then(function () {
             if (run === state.runId) render();
+            return;
           });
       });
     }, Promise.resolve());
@@ -212,6 +214,7 @@
       setTimeout(function () {
         URL.revokeObjectURL(a.href);
       }, 10000);
+      return;
     });
   }
 
@@ -224,6 +227,7 @@
       $("note").textContent = state.formats.avif
         ? ""
         : "AVIF indisponible dans ce navigateur (Chrome/Edge récents l'ont).";
+      return;
     });
     $("quality").addEventListener("input", function () {
       $("qualityValue").textContent = $("quality").value;

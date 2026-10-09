@@ -267,6 +267,7 @@ export async function benchmarkInstantNavigation(
 
   for (let i = 0; i < runs; i++) {
     const start = performance.now();
+    // oxlint-disable-next-line no-await-in-loop -- benchmark runs are timed one after another so each run measures alone
     await instant(
       page,
       async () => {

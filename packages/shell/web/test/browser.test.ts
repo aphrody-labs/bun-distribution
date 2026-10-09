@@ -76,8 +76,10 @@ test.skipIf(!ready)(
       try {
         let wsUrl = "";
         for (let i = 0; i < 50 && !wsUrl; i++) {
+          // oxlint-disable-next-line no-await-in-loop -- polls the DevTools endpoint until the page target appears; each attempt is a fresh request
           await Bun.sleep(200);
           try {
+            // oxlint-disable-next-line no-await-in-loop -- polls the DevTools endpoint until the page target appears; each attempt is a fresh request
             const tabs = (await (await fetch(`http://127.0.0.1:${cdpPort}/json`)).json()) as {
               type: string;
               url: string;
@@ -88,13 +90,13 @@ test.skipIf(!ready)(
         }
         expect(wsUrl).not.toBe("");
         const cdp = new WebSocket(wsUrl);
-        await new Promise((r) => (cdp.onopen = r));
+        await new Promise((r) => cdp.addEventListener("open", r, { once: true }));
         let id = 0;
         const pending = new Map<number, (v: any) => void>();
-        cdp.onmessage = (e) => {
+        cdp.addEventListener("message", (e) => {
           const m = JSON.parse(String(e.data));
           pending.get(m.id)?.(m);
-        };
+        });
         const evalJs = (expression: string) =>
           new Promise<string>((res) => {
             const n = ++id;
@@ -104,7 +106,9 @@ test.skipIf(!ready)(
         await evalJs(`location.href = "http://127.0.0.1:${http.port}/"`);
         let title = "";
         for (let i = 0; i < 60 && title !== "done"; i++) {
+          // oxlint-disable-next-line no-await-in-loop -- polls the page title at a fixed interval until the page reports done
           await Bun.sleep(250);
+          // oxlint-disable-next-line no-await-in-loop -- polls the page title at a fixed interval until the page reports done
           title = await evalJs("document.title");
         }
         const out = `${title} ${await evalJs("location.href")} ${await evalJs("document.body.innerText")}`;

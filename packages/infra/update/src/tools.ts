@@ -61,6 +61,7 @@ export async function plan(c: Ctx): Promise<ToolRow[]> {
       tool,
       pinned: pins.get(tool),
       installed: installed(c, tool),
+      // oxlint-disable-next-line no-await-in-loop -- tool latest-version lookups run one by one: upstream registries rate-limit and the rows keep tool order
       latest: await latest(tool, def.latest),
     });
   }

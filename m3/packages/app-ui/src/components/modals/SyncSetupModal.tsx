@@ -79,7 +79,7 @@ function SyncSetupDialog(props: SyncSetupDialogProps) {
   const syncSetupMutation = useCoreMutation("network.sync_setup", {
     onSuccess: () => {
       // Close dialog on success
-      dialog.state.open = false;
+      dialogManager.setState(props.id, { open: false });
     },
   });
 
@@ -247,6 +247,7 @@ function SelectDeviceStep({ devices, isLoading, onSelect }: SelectDeviceStepProp
           <button
             key={device.id}
             onClick={() => onSelect(device)}
+            aria-label={device.name}
             className="w-full rounded-small border border-outline-variant bg-surface-container p-4 text-left transition-colors hover:border-primary hover:bg-app-darkBox"
           >
             <div className="flex items-start justify-between">

@@ -1,6 +1,6 @@
 import { Icon } from "@aphrody/m3-primitives";
-import clsx from "clsx";
-import { useEffect, useRef } from "react";
+import { clsx } from "clsx";
+import { useEffect, useMemo, useRef } from "react";
 import { useLibraryQuery } from "../../../contexts/SpacedriveContext";
 import type { JobListItem } from "../types";
 import type { SpeedSample } from "../hooks/useJobs";
@@ -27,15 +27,14 @@ export function CopyJobDetails({ job, speedHistory }: CopyJobDetailsProps) {
     input: { job_id: job.id },
   });
 
-  const files = metadata?.metadata?.files || [];
+  const files = useMemo(() => metadata?.metadata?.files || [], [metadata?.metadata?.files]);
   const fileObjects = metadata?.metadata?.file_objects || [];
 
   // Refetch when completed count changes OR when current file changes
   useEffect(() => {
     const currentCompleted = generic?.completion?.completed || 0;
     const cp = generic?.current_path as any;
-    const currentPath = cp?.Physical?.path ||
-                        generic?.message || "";
+    const currentPath = cp?.Physical?.path || generic?.message || "";
 
     const completedChanged = currentCompleted !== prevCompletedRef.current;
     const currentFileChanged = currentPath !== prevCurrentPathRef.current && currentPath !== "";
@@ -56,7 +55,7 @@ export function CopyJobDetails({ job, speedHistory }: CopyJobDetailsProps) {
     const currentPath: string | undefined = cp?.Physical?.path;
     if (!currentPath) return;
 
-    const currentIndex = files.findIndex(f => {
+    const currentIndex = files.findIndex((f) => {
       const sp = f.source_path as any;
       const filePath: string | undefined = sp?.Physical?.path;
       return filePath === currentPath;
@@ -78,21 +77,17 @@ export function CopyJobDetails({ job, speedHistory }: CopyJobDetailsProps) {
 
     container.scrollBy({
       top: scrollOffset,
-      behavior: "smooth"
+      behavior: "smooth",
     });
   }, [files, generic?.current_path]);
 
   if (!generic) {
-    return (
-      <div className="p-4 text-body-small text-outline">
-        No progress data available
-      </div>
-    );
+    return <div className="p-4 text-body-small text-outline">No progress data available</div>;
   }
 
   // Create a map of entry_id → File for quick lookup
   const fileMap = new Map<string, File>();
-  fileObjects.forEach(file => {
+  fileObjects.forEach((file) => {
     fileMap.set(file.id, file);
   });
 
@@ -115,48 +110,69 @@ export function CopyJobDetails({ job, speedHistory }: CopyJobDetailsProps) {
 
               return (
                 <div
+                  // oxlint-disable-next-line react/no-array-index-key -- the transfer queue is an ordered snapshot: entry_id is optional and source paths may repeat, so the position is the only unique identity
                   key={index}
                   className={clsx(
                     "flex items-center gap-3 px-3 py-2 transition-opacity",
                     isEven ? "bg-surface-container-low" : "bg-surface-container-lowest",
                     index === 0 && "rounded-t-medium",
                     index === files.length - 1 && "rounded-b-medium",
-                    file.status === "completed" && "opacity-50"
+                    file.status === "completed" && "opacity-50",
                   )}
                 >
                   {/* Status icon */}
                   {file.status === "completed" ? (
-                    <Icon name="check_circle" size={14} filled className="text-on-surface-variant flex-shrink-0" />
+                    <Icon
+                      name="check_circle"
+                      size={14}
+                      filled
+                      className="text-on-surface-variant flex-shrink-0"
+                    />
                   ) : file.status === "copying" ? (
-                    <Icon name="progress_activity" size={14} className="text-primary animate-spin flex-shrink-0" />
+                    <Icon
+                      name="progress_activity"
+                      size={14}
+                      className="text-primary animate-spin flex-shrink-0"
+                    />
                   ) : file.status === "failed" ? (
-                    <Icon name="close" size={14} weight={600} className="text-error flex-shrink-0" />
+                    <Icon
+                      name="close"
+                      size={14}
+                      weight={600}
+                      className="text-error flex-shrink-0"
+                    />
                   ) : file.status === "skipped" ? (
-                    <Icon name="radio_button_unchecked" size={14} weight={600} className="text-on-surface-variant flex-shrink-0" />
+                    <Icon
+                      name="radio_button_unchecked"
+                      size={14}
+                      weight={600}
+                      className="text-on-surface-variant flex-shrink-0"
+                    />
                   ) : (
-                    <Icon name="radio_button_unchecked" size={14} className="text-outline flex-shrink-0" />
+                    <Icon
+                      name="radio_button_unchecked"
+                      size={14}
+                      className="text-outline flex-shrink-0"
+                    />
                   )}
 
                   {/* Thumbnail (if File object available) */}
                   {fileObj && (
-                    <Thumb
-                      file={fileObj}
-                      size={32}
-                      className="flex-shrink-0"
-                      iconScale={0.7}
-                    />
+                    <Thumb file={fileObj} size={32} className="flex-shrink-0" iconScale={0.7} />
                   )}
 
                   {/* File name and path */}
                   <div className="flex-1 min-w-0">
-                    <div className={clsx(
-                      "text-body-medium truncate",
-                      file.status === "completed" && "text-on-surface-variant",
-                      file.status === "copying" && "text-on-surface",
-                      file.status === "failed" && "text-error",
-                      file.status === "skipped" && "text-on-surface-variant",
-                      file.status === "pending" && "text-on-surface"
-                    )}>
+                    <div
+                      className={clsx(
+                        "text-body-medium truncate",
+                        file.status === "completed" && "text-on-surface-variant",
+                        file.status === "copying" && "text-on-surface",
+                        file.status === "failed" && "text-error",
+                        file.status === "skipped" && "text-on-surface-variant",
+                        file.status === "pending" && "text-on-surface",
+                      )}
+                    >
                       {fileObj?.name || extractFileName(file.source_path)}
                     </div>
                     <div className="text-label-small text-on-surface-variant truncate font-code">

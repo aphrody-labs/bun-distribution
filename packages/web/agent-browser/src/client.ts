@@ -457,9 +457,11 @@ export class AgentPage {
     const deadline = Date.now() + (this.options.timeoutMs ?? 30_000);
     while (Date.now() < deadline) {
       try {
+        // oxlint-disable-next-line no-await-in-loop -- sondage séquentiel jusqu'à résolution du sélecteur ou expiration du délai
         await this.#resolve(selectorOrMs);
         return;
       } catch {
+        // oxlint-disable-next-line no-await-in-loop -- délai entre deux tentatives d'un sondage séquentiel
         await Bun.sleep(50);
       }
     }

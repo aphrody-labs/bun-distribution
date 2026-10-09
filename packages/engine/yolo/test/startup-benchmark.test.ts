@@ -9,12 +9,13 @@ import {
   type StartupCommand,
 } from "../../../../scripts/audit/bench/startup";
 
+const command = (id: string, code = 'console.log("fixture")'): StartupCommand => ({
+  id,
+  argv: [process.execPath, "-e", code],
+  stdout: "fixture\n",
+});
+
 describe("fresh-process startup benchmark", () => {
-  const command = (id: string, code = 'console.log("fixture")'): StartupCommand => ({
-    id,
-    argv: [process.execPath, "-e", code],
-    stdout: "fixture\n",
-  });
   test("alternates real process pairs, checks output identity and keeps initial/primed raw timings", () => {
     const cwd = mkdtempSync(join(tmpdir(), "startup-test-"));
     try {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { Icon, Button, Card, toast } from "@aphrody/m3-primitives";
 import {
   fetchModelStoreRoot,
@@ -17,14 +17,14 @@ export function ModelsSettings() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const refreshHardware = async () => {
+  const refreshHardware = useCallback(async () => {
     try {
       setHardware(await getHardwareTelemetry());
       setError("");
     } catch {
       setError("Sonde matérielle indisponible.");
     }
-  };
+  }, []);
 
   useEffect(() => {
     void hydratePreferences()
@@ -39,8 +39,9 @@ export function ModelsSettings() {
         return undefined;
       })
       .catch(() => setStoreError("Stockage natif indisponible."));
+    // oxlint-disable-next-line react/set-state-in-effect -- the hardware probe is awaited before it sets state, so the update runs after the effect returns
     void refreshHardware();
-  }, []);
+  }, [refreshHardware]);
 
   const handleChangeLocation = async () => {
     try {

@@ -103,10 +103,7 @@ export class TcpSocketTransport implements Transport {
 									// Log message, forward to callback
 									callback(response.LogMessage);
 								} else {
-									console.warn(
-										"[TcpSocketTransport] Unexpected response:",
-										response,
-									);
+									console.warn("[TcpSocketTransport] Unexpected response:", response);
 								}
 							} catch (e) {
 								console.error("[TcpSocketTransport] Parse error:", e);
@@ -225,8 +222,8 @@ export class UnixSocketTransport implements Transport {
 						}
 					}
 				},
-				open(socket: any) {
-					socket.write(JSON.stringify(subscribeRequest) + "\n");
+				open(conn: any) {
+					conn.write(JSON.stringify(subscribeRequest) + "\n");
 				},
 				error(_socket: any, error: Error) {
 					console.error("[UnixSocketTransport] Socket error:", error);

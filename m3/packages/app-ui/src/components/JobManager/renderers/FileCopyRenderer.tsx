@@ -1,6 +1,6 @@
 import { Icon, m3FocusRing } from "@aphrody/m3-primitives";
 import { m3Durations, m3Easings } from "@aphrody/m3-motion";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import { motion } from "motion/react";
 import type { JobRenderer, JobRendererProps, JobDetailsRendererProps } from "./index";
 import { CopyJobDetails } from "../components/CopyJobDetails";
@@ -30,11 +30,7 @@ function getStrategyLabel(strategyName: string | undefined, _isMove: boolean): s
  */
 function extractFirstFileName(job: JobRendererProps["job"]): string {
 	const actionInput = job.action_context?.action_input;
-	if (
-		typeof actionInput === "object" &&
-		actionInput !== null &&
-		"sources" in actionInput
-	) {
+	if (typeof actionInput === "object" && actionInput !== null && "sources" in actionInput) {
 		const sources = actionInput.sources;
 		if (
 			typeof sources === "object" &&
@@ -44,11 +40,7 @@ function extractFirstFileName(job: JobRendererProps["job"]): string {
 			sources.paths.length > 0
 		) {
 			const firstPath = sources.paths[0];
-			if (
-				typeof firstPath === "object" &&
-				firstPath !== null &&
-				"Physical" in firstPath
-			) {
+			if (typeof firstPath === "object" && firstPath !== null && "Physical" in firstPath) {
 				const physical = firstPath.Physical;
 				if (typeof physical === "object" && physical !== null && "path" in physical) {
 					const path = String(physical.path);
@@ -119,7 +111,10 @@ function FileCopyCardContent({
 	const generic = job.generic_progress;
 	const metadata = (generic as any)?.metadata as any;
 	const strategyName = metadata?.strategy?.strategy_name;
-	const strategyLabel = getStrategyLabel(strategyName, job.action_context?.action_type === "files.move");
+	const strategyLabel = getStrategyLabel(
+		strategyName,
+		job.action_context?.action_type === "files.move",
+	);
 
 	// Determine if this is a move operation
 	const isMove = job.action_context?.action_type === "files.move";
@@ -130,13 +125,12 @@ function FileCopyCardContent({
 	// Calculate title
 	const fileCount = generic?.completion?.total || 0;
 	const fileName = extractFirstFileName(job);
-	const baseTitle = fileCount > 1
-		? `${isMove ? "Moving" : "Copying"} ${fileCount} items`
-		: `${isMove ? "Moving" : "Copying"} '${fileName}'`;
+	const baseTitle =
+		fileCount > 1
+			? `${isMove ? "Moving" : "Copying"} ${fileCount} items`
+			: `${isMove ? "Moving" : "Copying"} '${fileName}'`;
 
-	const title = isCrossDevice
-		? `${baseTitle} to another device`
-		: baseTitle;
+	const title = isCrossDevice ? `${baseTitle} to another device` : baseTitle;
 
 	// Calculate rich subtext with progress, speed, and ETA
 	const completed = generic?.completion?.completed || 0;
@@ -149,22 +143,20 @@ function FileCopyCardContent({
 		job.status === "running" && speed && eta
 			? `${completed}/${fileCount} files • ${speed} • ${eta} remaining`
 			: job.status === "running"
-			? `${completed}/${fileCount} files`
-			: job.status === "completed"
-			? "Completed"
-			: job.status === "failed"
-			? "Failed"
-			: job.status === "paused"
-			? "Paused"
-			: "Preparing...";
+				? `${completed}/${fileCount} files`
+				: job.status === "completed"
+					? "Completed"
+					: job.status === "failed"
+						? "Failed"
+						: job.status === "paused"
+							? "Paused"
+							: "Preparing...";
 
 	return (
 		<>
 			{/* Row 1: Title, badges, status badge, and controls */}
 			<div className="flex items-center gap-3 min-h-0">
-				<span className="flex-1 truncate text-title-small text-on-surface">
-					{title}
-				</span>
+				<span className="flex-1 truncate text-title-small text-on-surface">{title}</span>
 
 				{/* Transfer method badge */}
 				{strategyLabel && (
@@ -196,11 +188,11 @@ function FileCopyCardContent({
 							<button
 								onClick={onAction}
 								className={clsx(
-								"flex-shrink-0 flex items-center justify-center size-5 rounded-full",
-								"bg-secondary-container text-on-secondary-container hover:bg-on-secondary-container/8",
-								"transition-colors duration-200 ease-standard",
-								m3FocusRing,
-							)}
+									"flex-shrink-0 flex items-center justify-center size-5 rounded-full",
+									"bg-secondary-container text-on-secondary-container hover:bg-on-secondary-container/8",
+									"transition-colors duration-200 ease-standard",
+									m3FocusRing,
+								)}
 								title={canPause ? "Pause job" : "Resume job"}
 							>
 								{canPause ? (
@@ -214,11 +206,11 @@ function FileCopyCardContent({
 							<button
 								onClick={onCancel}
 								className={clsx(
-								"flex-shrink-0 flex items-center justify-center size-5 rounded-full",
-								"bg-on-surface/8 text-on-surface-variant hover:bg-error hover:text-on-error",
-								"transition-colors duration-200 ease-standard",
-								m3FocusRing,
-							)}
+									"flex-shrink-0 flex items-center justify-center size-5 rounded-full",
+									"bg-on-surface/8 text-on-surface-variant hover:bg-error hover:text-on-error",
+									"transition-colors duration-200 ease-standard",
+									m3FocusRing,
+								)}
 								title="Cancel job"
 							>
 								<Icon name="close" size={14} />

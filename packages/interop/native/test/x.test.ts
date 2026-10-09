@@ -193,6 +193,7 @@ async function drain(batch: number) {
     const poll = xBatchPoll(batch, 50);
     items.push(...poll.items);
     if (poll.done) return { items, summary: poll.summary };
+    // oxlint-disable-next-line no-await-in-loop -- sondage séquentiel jusqu'à épuisement du lot
     await Bun.sleep(5);
   }
 }

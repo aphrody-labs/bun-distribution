@@ -14,6 +14,13 @@ function pascalToSnake(s) {
     .replace(/^_|_$/g, "");
 }
 
+/** Fixer : remplace le texte enfant du <md-icon> par `replacement`. */
+function fixChild(node, replacement) {
+  const only = (node.children || []).find((c) => !(c.type === "JSXText" && c.value.trim() === ""));
+  if (!only || only.type !== "JSXText") return undefined;
+  return (fixer) => fixer.replaceText(only, replacement);
+}
+
 /**
  * Le contenu d'un <md-icon>/<MdIcon> est le NOM DU GLYPHE Material Symbols
  * (snake_case). Cette règle valide ce nom contre la liste officielle (4253) et
@@ -29,15 +36,6 @@ export default {
     schema: [],
   },
   create(context) {
-    /** Fixer : remplace le texte enfant du <md-icon> par `replacement`. */
-    function fixChild(node, replacement) {
-      const kids = (node.children || []).filter(
-        (c) => !(c.type === "JSXText" && c.value.trim() === ""),
-      );
-      const only = kids[0];
-      if (!only || only.type !== "JSXText") return undefined;
-      return (fixer) => fixer.replaceText(only, replacement);
-    }
     return {
       JSXElement(node) {
         const name = jsxTagName(node.openingElement);

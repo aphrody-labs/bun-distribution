@@ -25,6 +25,19 @@ import {
 const T0 = 1_700_000_000_000;
 const VIEWER = "viewer-1";
 
+const boom = () => new XError("HTTP 500", -1, 500);
+
+function readDeps(clock: ReturnType<typeof fakeClock>, over: Partial<ReadRetryDeps> = {}) {
+  return {
+    rateLimit: () => null,
+    now: clock.now,
+    sleep: clock.sleep,
+    log: () => {},
+    label: "tweets",
+    ...over,
+  } as ReadRetryDeps;
+}
+
 function fakeClock(start = T0) {
   let t = start;
   return {
@@ -426,7 +439,6 @@ describe("purgeTweets", () => {
 
   test("transient errors are retried then parked as failed", async () => {
     const clock = fakeClock();
-    const boom = () => new XError("HTTP 500", -1, 500);
     const { client, deleted } = fakeClient({
       tweets: [post({ id: "a", likes: 1 }), post({ id: "b", likes: 2 })],
       errors: { a: [boom(), boom(), boom(), boom()] },
@@ -603,17 +615,6 @@ describe("resumable journal", () => {
 // ---------------------------------------------------------------------------
 
 describe("readWithBackoff", () => {
-  function readDeps(clock: ReturnType<typeof fakeClock>, over: Partial<ReadRetryDeps> = {}) {
-    return {
-      rateLimit: () => null,
-      now: clock.now,
-      sleep: clock.sleep,
-      log: () => {},
-      label: "tweets",
-      ...over,
-    } as ReadRetryDeps;
-  }
-
   test("passes a successful read straight through", async () => {
     const clock = fakeClock();
     const got = await readWithBackoff(async () => "page", readDeps(clock));

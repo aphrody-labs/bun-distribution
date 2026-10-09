@@ -15,8 +15,11 @@ export function resolveBunMembers(
     for (const match of matches)
       members.add(match.replaceAll("\\", "/").replace(/\/package\.json$/, ""));
   }
-  return [...members].sort();
+  return [...members].toSorted();
 }
+
+const describe = (paths: string[]) =>
+  `${paths.slice(0, 3).join(", ")}${paths.length > 3 ? ` (+${paths.length - 3} more)` : ""}`;
 
 export async function runIecodeDoctor(args: string[]): Promise<number> {
   let root = process.cwd();
@@ -90,8 +93,8 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
   // that are not ignored. Disposable build output (bin/obj, __pycache__, node_modules) produced by
   // the other gates is ignored and therefore never trips the doctor, while a stray commit of it
   // does. Git is used instead of `find` so the checks behave identically on every host.
-  const gitList = (args: string[]) => {
-    const result = Bun.spawnSync(["git", ...args], {
+  const gitList = (gitArgs: string[]) => {
+    const result = Bun.spawnSync(["git", ...gitArgs], {
       windowsHide: true,
       cwd: root,
       stdout: "pipe",
@@ -112,9 +115,6 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
     "--",
     "src",
   ]);
-  const describe = (paths: string[]) =>
-    `${paths.slice(0, 3).join(", ")}${paths.length > 3 ? ` (+${paths.length - 3} more)` : ""}`;
-
   const forbiddenSourceDirectories = ["bin", "obj", "node_modules", ".turbo", "__pycache__"];
   for (const directory of forbiddenSourceDirectories) {
     const offenders = sourceFiles.filter((path) =>

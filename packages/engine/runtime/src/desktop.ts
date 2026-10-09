@@ -299,6 +299,7 @@ export class DesktopSession {
         (window) => {
           signal.removeEventListener("abort", abort);
           resolve(window);
+          return window;
         },
         (error: unknown) => {
           signal.removeEventListener("abort", abort);

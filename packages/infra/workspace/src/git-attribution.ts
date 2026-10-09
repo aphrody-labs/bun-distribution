@@ -79,16 +79,15 @@ export async function runGitAttribution(args: string[]): Promise<number> {
   const mapping = new Map<string, string>();
   let changed = 0;
   for (const commit of commits) {
-    const metadata = (
-      await git(repo, [
-        "show",
-        "-s",
-        "--format=%an%x00%ae%x00%aI%x00%cn%x00%ce%x00%cI%x00%T%x00%P",
-        commit,
-      ])
-    )
-      .trimEnd()
-      .split("\0");
+    // oxlint-disable-next-line no-await-in-loop -- commits are rewritten in order: each replacement feeds its descendants' parents
+    const metadataOutput = await git(repo, [
+      "show",
+      "-s",
+      "--format=%an%x00%ae%x00%aI%x00%cn%x00%ce%x00%cI%x00%T%x00%P",
+      commit,
+    ]);
+    const metadata = metadataOutput.trimEnd().split("\0");
+    // oxlint-disable-next-line no-await-in-loop -- commits are rewritten in order: each replacement feeds its descendants' parents
     const message = await git(repo, ["show", "-s", "--format=%B", commit]);
     const clean = stripAttributionTrailers(message);
     const authorNeedsRewrite =
@@ -104,16 +103,21 @@ export async function runGitAttribution(args: string[]): Promise<number> {
       .filter(Boolean)
       .map((parent) => mapping.get(parent) ?? parent);
     const parentArgs = parents.flatMap((parent) => ["-p", parent]);
-    const replacement = (
-      await git(repo, ["commit-tree", metadata[6] ?? "", ...parentArgs], clean, {
+    // oxlint-disable-next-line no-await-in-loop -- commits are rewritten in order: each replacement feeds its descendants' parents
+    const replacementOutput = await git(
+      repo,
+      ["commit-tree", metadata[6] ?? "", ...parentArgs],
+      clean,
+      {
         GIT_AUTHOR_NAME: canonicalAuthor ? targetAuthorName : (metadata[0] ?? ""),
         GIT_AUTHOR_EMAIL: canonicalAuthor ? targetAuthorEmail : (metadata[1] ?? ""),
         GIT_AUTHOR_DATE: metadata[2] ?? "",
         GIT_COMMITTER_NAME: canonicalAuthor ? targetAuthorName : (metadata[3] ?? ""),
         GIT_COMMITTER_EMAIL: canonicalAuthor ? targetAuthorEmail : (metadata[4] ?? ""),
         GIT_COMMITTER_DATE: metadata[5] ?? "",
-      })
-    ).trim();
+      },
+    );
+    const replacement = replacementOutput.trim();
     mapping.set(commit, replacement);
   }
   const newTip = mapping.get(oldTip) ?? oldTip;

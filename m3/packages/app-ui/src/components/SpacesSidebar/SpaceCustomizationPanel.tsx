@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "motion/react";
 import { X, Plus } from "@phosphor-icons/react";
 import { useDraggable } from "@dnd-kit/core";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import type { ItemType, SpaceItem as SpaceItemType, GroupType } from "@aphrody/drive-client";
 import { SpaceItem } from "./SpaceItem";
 import { createPortal } from "react-dom";
@@ -37,6 +37,9 @@ const PALETTE_ITEMS: PaletteItem[] = [
   },
 ];
 
+// Fixed timestamp for palette previews: these items are never persisted.
+const PALETTE_PREVIEW_CREATED_AT = "1970-01-01T00:00:00.000Z";
+
 function DraggablePaletteItem({ item }: { item: PaletteItem }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `palette-${item.label}`,
@@ -53,7 +56,7 @@ function DraggablePaletteItem({ item }: { item: PaletteItem }) {
     group_id: null,
     item_type: item.type,
     order: 0,
-    created_at: new Date().toISOString(),
+    created_at: PALETTE_PREVIEW_CREATED_AT,
   };
 
   return (

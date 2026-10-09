@@ -6,6 +6,7 @@
 // to its slot. Property/event binding is exercised end-to-end by the aphrody-web gate
 // (real Chromium) since @lit/react property timing is browser-specific.
 // The ElementInternals polyfill (test/setup) lets form-associated elements upgrade.
+// oxlint-disable-next-line import/no-unassigned-import -- side effect: installs the happy-dom DOM globals this test renders into
 import "@aphrody/m3-config/test/dom";
 import { afterEach, describe, expect, test } from "bun:test";
 import * as React from "react";

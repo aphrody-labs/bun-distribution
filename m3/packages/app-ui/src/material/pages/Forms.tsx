@@ -116,9 +116,9 @@ export default function Forms({ adaptive }: PageProps) {
                   Reset form
                 </Button>
               </div>
-              <p role="status" className="text-body-medium text-on-surface-variant">
+              <output className="block text-body-medium text-on-surface-variant">
                 {saved ? "Valid preview ready. No data was sent." : "No profile has been saved."}
-              </p>
+              </output>
             </form>
           </Form>
         </Card>

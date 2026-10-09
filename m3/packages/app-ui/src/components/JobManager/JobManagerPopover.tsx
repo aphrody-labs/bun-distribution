@@ -1,7 +1,7 @@
 import { Popover, usePopover, CircleButton, Icon, m3FocusRing } from "@aphrody/m3-primitives";
 import { m3Durations, m3Easings } from "@aphrody/m3-motion";
-import clsx from "clsx";
-import { useState, useEffect } from "react";
+import { clsx } from "clsx";
+import { useState } from "react";
 import { motion } from "motion/react";
 import { JobList } from "./components/JobList";
 import { useJobsContext } from "./hooks/JobsContext";
@@ -16,14 +16,15 @@ export function JobManagerPopover({ className }: JobManagerPopoverProps) {
   const [showOnlyRunning, setShowOnlyRunning] = useState(true);
 
   // Unified hook for job data and badge/icon
-  const { activeJobCount, hasRunningJobs, jobs, pause, resume, cancel, getSpeedHistory } = useJobsContext();
+  const { activeJobCount, hasRunningJobs, jobs, pause, resume, cancel, getSpeedHistory } =
+    useJobsContext();
 
-  // Reset filter to "active only" when popover opens
-  useEffect(() => {
-    if (popover.open) {
-      setShowOnlyRunning(true);
-    }
-  }, [popover.open]);
+  // Reset filter to "active only" when popover opens (adjusted during render, no effect)
+  const [wasOpen, setWasOpen] = useState(popover.open);
+  if (wasOpen !== popover.open) {
+    setWasOpen(popover.open);
+    if (popover.open) setShowOnlyRunning(true);
+  }
 
   return (
     <Popover.Root open={popover.open} onOpenChange={popover.setOpen}>
@@ -34,7 +35,7 @@ export function JobManagerPopover({ className }: JobManagerPopoverProps) {
             "text-on-surface-variant cursor-default transition-colors duration-200 ease-standard",
             "hover:bg-on-surface/8 active:bg-on-surface/10 data-[state=open]:bg-secondary-container data-[state=open]:text-on-secondary-container",
             m3FocusRing,
-            className
+            className,
           )}
         >
           <div className="size-4">
@@ -52,10 +53,12 @@ export function JobManagerPopover({ className }: JobManagerPopoverProps) {
           )}
         </button>
       </Popover.Trigger>
-      <Popover.Content side="top" align="start" sideOffset={8} className={clsx(
-        "w-[360px] max-h-[480px] z-50",
-        "!p-0"
-      )}>
+      <Popover.Content
+        side="top"
+        align="start"
+        sideOffset={8}
+        className={clsx("w-[360px] max-h-[480px] z-50", "!p-0")}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant">
           <h3 className="text-title-small text-on-surface font-semibold">Tâches</h3>
@@ -127,7 +130,13 @@ function JobManagerPopoverContent({
       }}
       transition={{ duration: m3Durations.short4, ease: m3Easings.standard }}
     >
-      <JobList jobs={filteredJobs} onPause={pause} onResume={resume} onCancel={cancel} getSpeedHistory={getSpeedHistory} />
+      <JobList
+        jobs={filteredJobs}
+        onPause={pause}
+        onResume={resume}
+        onCancel={cancel}
+        getSpeedHistory={getSpeedHistory}
+      />
     </motion.div>
   );
 }

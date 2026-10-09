@@ -17,7 +17,7 @@ export function FileSelectionAiBar() {
 
   return (
     <AnimatePresence>
-      <motion.div
+      <motion.section
         initial={{ y: 80, opacity: 0, scale: 0.96 }}
         animate={{
           y: 0,
@@ -38,7 +38,6 @@ export function FileSelectionAiBar() {
           },
         }}
         className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex justify-center px-4"
-        role="region"
         aria-label="Actions contextuelles sur les fichiers sélectionnés"
       >
         <div className="pointer-events-auto flex max-w-full flex-wrap items-center gap-2 rounded-full border border-outline-variant/60 bg-surface-container-high/95 p-1.5 pl-4 pr-2 shadow-md3-3 backdrop-blur-md">
@@ -72,7 +71,7 @@ export function FileSelectionAiBar() {
             <Icon name="close" size={18} />
           </button>
         </div>
-      </motion.div>
+      </motion.section>
     </AnimatePresence>
   );
 }

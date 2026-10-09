@@ -328,21 +328,22 @@ describe("rows and plan", () => {
   });
 });
 
+const makeRow = (name: string, kind: Row["kind"] = "major"): Row => ({
+  name,
+  spec: "^1.0.0",
+  where: ["catalog"],
+  kind,
+  inRange: false,
+});
+
 describe("families", () => {
-  const row = (name: string, kind: Row["kind"] = "major"): Row => ({
-    name,
-    spec: "^1.0.0",
-    where: ["catalog"],
-    kind,
-    inRange: false,
-  });
   test("a react major pulls its behind siblings only", () => {
     const rows = [
-      row("react"),
-      row("react-dom"),
-      row("@types/react"),
-      row("@types/react-dom", "patch"),
-      row("zod"),
+      makeRow("react"),
+      makeRow("react-dom"),
+      makeRow("@types/react"),
+      makeRow("@types/react-dom", "patch"),
+      makeRow("zod"),
     ];
     expect(expandMajors(["react"], rows)).toEqual(["@types/react", "react", "react-dom"]);
     expect(expandMajors(["zod"], rows)).toEqual(["zod"]);
@@ -418,9 +419,19 @@ describe("spec edits", () => {
   });
 });
 
+const jsonResponse = (status: number, body: unknown = {}, headers: Record<string, string> = {}) =>
+  new Response(JSON.stringify(body), { status, headers });
+
+const advisoryQuery = async () =>
+  new Map([
+    ["npm:vite@5.4.0", ["GHSA-1"]],
+    ["npm:left-pad@1.0.0", ["GHSA-2", "GHSA-3"]],
+    ["npm:dead@1.0.0", ["GHSA-4"]],
+  ]);
+
+const latestStub = async (n: string) => ({ version: n === "dead" ? "1.0.0" : "2.0.0" });
+
 describe("registry access", () => {
-  const res = (status: number, body: unknown = {}, headers: Record<string, string> = {}) =>
-    new Response(JSON.stringify(body), { status, headers });
   const sleeps: number[] = [];
   const sleep = async (ms: number) => {
     sleeps.push(ms);
@@ -428,7 +439,11 @@ describe("registry access", () => {
 
   test("fetchWithBackoff retries 429 and 5xx with exponential delays and honours Retry-After", async () => {
     sleeps.length = 0;
-    const seq = [res(429, {}, { "retry-after": "7" }), res(503), res(200, { ok: true })];
+    const seq = [
+      jsonResponse(429, {}, { "retry-after": "7" }),
+      jsonResponse(503),
+      jsonResponse(200, { ok: true }),
+    ];
     let i = 0;
     const r = await fetchWithBackoff("https://x", {
       fetcher: async () => seq[i++]!,
@@ -443,14 +458,17 @@ describe("registry access", () => {
     sleeps.length = 0;
     expect(
       await fetchWithBackoff("https://x", {
-        fetcher: async () => res(500),
+        fetcher: async () => jsonResponse(500),
         sleep,
         attempts: 3,
         baseMs: 10,
       }),
     ).toBeUndefined();
     expect(sleeps).toEqual([10, 20]);
-    const notFound = await fetchWithBackoff("https://x", { fetcher: async () => res(404), sleep });
+    const notFound = await fetchWithBackoff("https://x", {
+      fetcher: async () => jsonResponse(404),
+      sleep,
+    });
     expect(notFound?.status).toBe(404);
     expect(
       await fetchWithBackoff("https://x", {
@@ -469,13 +487,13 @@ describe("registry access", () => {
     const ok = await npmLatest("@scope/pkg", {
       fetcher: async (u) => {
         urls.push(u);
-        return res(200, { version: "2.0.0", deprecated: "use y" });
+        return jsonResponse(200, { version: "2.0.0", deprecated: "use y" });
       },
       sleep,
     });
     expect(ok).toEqual({ version: "2.0.0", deprecated: "use y" });
     expect(urls).toEqual(["https://registry.npmjs.org/@scope%2fpkg/latest"]);
-    expect(await npmLatest("gone", { fetcher: async () => res(404), sleep })).toEqual({});
+    expect(await npmLatest("gone", { fetcher: async () => jsonResponse(404), sleep })).toEqual({});
   });
 
   test("openAdvisories splits held from open and marks fixable ones", async () => {
@@ -484,17 +502,10 @@ describe("registry access", () => {
       { ecosystem: "npm" as const, name: "left-pad", version: "1.0.0" },
       { ecosystem: "npm" as const, name: "dead", version: "1.0.0" },
     ];
-    const query = async () =>
-      new Map([
-        ["npm:vite@5.4.0", ["GHSA-1"]],
-        ["npm:left-pad@1.0.0", ["GHSA-2", "GHSA-3"]],
-        ["npm:dead@1.0.0", ["GHSA-4"]],
-      ]);
-    const latest = async (n: string) => ({ version: n === "dead" ? "1.0.0" : "2.0.0" });
     const r = await openAdvisories(
       lock,
       [{ ecosystem: "npm", name: "vite", reason: "dev server only" }],
-      { query, fetchLatest: latest },
+      { query: advisoryQuery, fetchLatest: latestStub },
     );
     expect(r.held.map((a) => a.name)).toEqual(["vite"]);
     expect(r.open.map((a) => [a.name, a.fixable])).toEqual([

@@ -199,14 +199,17 @@ export async function inventoryNestedFiles(submodules: Submodule[], roots: Submo
         target: null,
       };
       try {
+        // oxlint-disable-next-line no-await-in-loop -- inventaire séquentiel des fichiers imbriqués : un fichier à la fois pour borner les descripteurs et garder l'ordre des entrées
         const metadata = await lstat(file);
         if (metadata.isSymbolicLink()) {
+          // oxlint-disable-next-line no-await-in-loop -- inventaire séquentiel des fichiers imbriqués : un fichier à la fois pour borner les descripteurs et garder l'ordre des entrées
           const link = await readlink(file);
           entry.kind = "symlink";
           entry.size = Buffer.byteLength(link);
           entry.sha256 = createHash("sha256").update(link).digest("hex");
           entry.linkTarget = link;
         } else if (metadata.isFile()) {
+          // oxlint-disable-next-line no-await-in-loop -- inventaire séquentiel des fichiers imbriqués : un fichier à la fois pour borner les descripteurs et garder l'ordre des entrées
           const bytes = await readFile(file);
           entry.size = bytes.length;
           entry.sha256 = createHash("sha256").update(bytes).digest("hex");

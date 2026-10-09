@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+// oxlint-disable-next-line import/no-unassigned-import -- enregistre le serveur de test partagé (effet de bord voulu)
 import "./setup.ts";
 
 /**

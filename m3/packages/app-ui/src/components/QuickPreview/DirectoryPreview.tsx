@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import type { File } from "@aphrody/drive-client";
 import { File as FileComponent } from "../../routes/explorer/File";
 import { useNormalizedQuery } from "../../contexts/SpacedriveContext";
@@ -25,9 +24,7 @@ export function DirectoryPreview({ file }: DirectoryPreviewProps) {
 
 	const allFiles = (directoryQuery.data as any)?.files || [];
 
-	const directories = useMemo(() => {
-		return allFiles;
-	}, [allFiles]);
+	const directories = allFiles;
 
 	const gridSize = 120;
 	const gapSize = 12;
@@ -36,14 +33,8 @@ export function DirectoryPreview({ file }: DirectoryPreviewProps) {
 		return (
 			<div className="w-full h-full flex items-center justify-center">
 				<div className="text-center">
-					<img
-						src={Folder}
-						alt="Folder icon"
-						className="w-16 h-16 mb-4 mx-auto"
-					/>
-					<div className="text-title-medium font-medium text-on-surface">
-						{file.name}
-					</div>
+					<img src={Folder} alt="Folder icon" className="w-16 h-16 mb-4 mx-auto" />
+					<div className="text-title-medium font-medium text-on-surface">{file.name}</div>
 					<div className="text-body-medium text-on-surface-variant mt-2">
 						Loading directories...
 					</div>
@@ -56,17 +47,9 @@ export function DirectoryPreview({ file }: DirectoryPreviewProps) {
 		return (
 			<div className="w-full h-full flex items-center justify-center">
 				<div className="text-center">
-					<img
-						src={Folder}
-						alt="Folder icon"
-						className="w-16 h-16 mb-4 mx-auto"
-					/>
-					<div className="text-title-medium font-medium text-on-surface">
-						{file.name}
-					</div>
-					<div className="text-body-medium text-on-surface-variant mt-2">
-						No subdirectories
-					</div>
+					<img src={Folder} alt="Folder icon" className="w-16 h-16 mb-4 mx-auto" />
+					<div className="text-title-medium font-medium text-on-surface">{file.name}</div>
+					<div className="text-body-medium text-on-surface-variant mt-2">No subdirectories</div>
 				</div>
 			</div>
 		);

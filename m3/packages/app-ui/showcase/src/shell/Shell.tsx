@@ -215,6 +215,7 @@ function MoreSheet({
     if (!open && dialog.open) dialog.close();
   }, [open]);
   return (
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- <dialog> natif : Échap ferme via onClose ; le clic sur le fond (event.target === dialog) ferme la feuille
     <dialog
       ref={ref}
       onClose={onClose}
@@ -278,6 +279,8 @@ function PageSlot({
   useEffect(() => {
     // After a route change the page, not the nav, takes focus: screen readers announce the new title. TV keeps the nav focused.
     if (a.mode !== "tv") heading.current?.focus({ preventScroll: true });
+    // `route` is a deliberate trigger: each page change moves focus, even when the mode is unchanged.
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- route déclenche le focus à chaque changement de page (pas lu dans l'effet)
   }, [route, a.mode]);
   return (
     <main
@@ -357,9 +360,9 @@ export function Shell() {
           <PageBoundary key={current.id}>
             <Suspense
               fallback={
-                <div className="p-6 text-body-medium text-on-surface-variant" role="status">
+                <output className="block p-6 text-body-medium text-on-surface-variant">
                   Loading {current.label}…
-                </div>
+                </output>
               }
             >
               <Page adaptive={a} />

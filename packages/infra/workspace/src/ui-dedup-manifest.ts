@@ -9,6 +9,12 @@ async function hashFile(path: string): Promise<string> {
   return createHash("sha256").update(content).digest("hex");
 }
 
+async function fileInfo(
+  fullPath: string,
+): Promise<{ fullPath: string; hash: string; size: number }> {
+  return { fullPath, hash: await hashFile(fullPath), size: (await stat(fullPath)).size };
+}
+
 async function collectFiles(
   dir: string,
   base: string = dir,
@@ -20,12 +26,12 @@ async function collectFiles(
       const full = join(current, entry.name);
       if (entry.isDirectory()) {
         if (["node_modules", ".git", "dist", "target", "ui-dist"].includes(entry.name)) continue;
+        // oxlint-disable-next-line no-await-in-loop -- parcours séquentiel borné : n'ouvre qu'un répertoire à la fois sur les arbres volumineux
         await walk(full);
       } else if (entry.isFile()) {
         const rel = relative(base, full).replace(/\\/g, "/");
-        const h = await hashFile(full);
-        const s = (await stat(full)).size;
-        files.set(rel, { fullPath: full, hash: h, size: s });
+        // oxlint-disable-next-line no-await-in-loop -- hachage séquentiel : borne les descripteurs ouverts sur les arbres volumineux (ui-dist, app-ui) et garde un parcours déterministe
+        files.set(rel, await fileInfo(full));
       }
     }
   }

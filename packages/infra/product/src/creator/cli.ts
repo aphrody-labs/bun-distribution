@@ -66,16 +66,18 @@ async function interactive(): Promise<number> {
     const line = prompt("\ncreator-kit> (q pour quitter)");
     if (line === null || /^(q|quit|exit)$/i.test(line.trim())) return 0;
     if (line.trim() === "") continue;
+    // oxlint-disable-next-line no-await-in-loop --boucle interactive : chaque commande attend la saisie et s'exécute dans l'ordre
     await guarded(splitArgs(line));
   }
 }
 
+function crash(error: unknown): void {
+  logCrash(error, Bun.argv.slice(2));
+  console.error(`Erreur inattendue : ${error instanceof Error ? error.message : String(error)}`);
+  process.exit(1);
+}
+
 if (import.meta.main) {
-  const crash = (error: unknown) => {
-    logCrash(error, Bun.argv.slice(2));
-    console.error(`Erreur inattendue : ${error instanceof Error ? error.message : String(error)}`);
-    process.exit(1);
-  };
   process.on("uncaughtException", crash);
   process.on("unhandledRejection", crash);
   const args = Bun.argv.slice(2);

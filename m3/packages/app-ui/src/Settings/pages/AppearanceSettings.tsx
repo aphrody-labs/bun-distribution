@@ -43,8 +43,6 @@ export function AppearanceSettings() {
 
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
-    setError("");
     void hydratePreferences()
       .then((prefs) => {
         if (mounted) {
@@ -63,6 +61,7 @@ export function AppearanceSettings() {
     return () => {
       mounted = false;
     };
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- revision est un déclencheur volontaire du rechargement (bouton Recharger), non lu dans l'effet
   }, [revision]);
 
   const save = async (partial: Partial<Preferences>) => {
@@ -101,14 +100,18 @@ export function AppearanceSettings() {
         </p>
       </div>
 
-      {loading && <p role="status">Chargement des préférences…</p>}
+      {loading && <output className="block">Chargement des préférences…</output>}
       {error && (
         <div role="alert" className="rounded-xl bg-error-container p-4 text-on-error-container">
           <p>{error}</p>
           <button
             type="button"
             className="mt-2 min-h-12 underline"
-            onClick={() => setRevision((value) => value + 1)}
+            onClick={() => {
+              setLoading(true);
+              setError("");
+              setRevision((value) => value + 1);
+            }}
           >
             Recharger
           </button>

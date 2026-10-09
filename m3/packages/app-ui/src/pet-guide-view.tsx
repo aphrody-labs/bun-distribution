@@ -53,8 +53,12 @@ export function PetGuide() {
   const positionRef = useRef<Point>({ x: 0, y: 0 });
   const gateRef = useRef<MessageGate>(NO_MESSAGES);
   const pointerRef = useRef<Point | null>(null);
-  const lastActivityRef = useRef(performance.now());
-  const scrollRef = useRef<{ prev: Sample | null; last: Sample | null }>({ prev: null, last: null });
+  const [mountedAt] = useState(() => performance.now());
+  const lastActivityRef = useRef(mountedAt);
+  const scrollRef = useRef<{ prev: Sample | null; last: Sample | null }>({
+    prev: null,
+    last: null,
+  });
   const guideRef = useRef<string>("");
   const waveRef = useRef<number | undefined>(undefined);
 
@@ -74,7 +78,10 @@ export function PetGuide() {
       "position:fixed;left:0;top:0;z-index:1000;pointer-events:auto;cursor:pointer;transition:transform 700ms ease-in-out;";
     host.appendChild(pet);
 
-    const start = { x: window.innerWidth - PET_WIDTH - 16, y: window.innerHeight - PET_HEIGHT - 16 };
+    const start = {
+      x: window.innerWidth - PET_WIDTH - 16,
+      y: window.innerHeight - PET_HEIGHT - 16,
+    };
     positionRef.current = start;
     pet.style.transform = `translate(${start.x}px, ${start.y}px)`;
     setPosition(start);
@@ -124,7 +131,8 @@ export function PetGuide() {
       const active = document.activeElement as HTMLElement | null;
       const typing = !!active?.matches(FIELD_SELECTOR);
       const s = scrollRef.current;
-      const speed = s.prev && s.last && now - s.last.t < SCROLL_FRESH_MS ? scrollSpeed(s.prev, s.last) : 0;
+      const speed =
+        s.prev && s.last && now - s.last.t < SCROLL_FRESH_MS ? scrollSpeed(s.prev, s.last) : 0;
 
       const pointer = pointerRef.current;
       const hovered = pointer ? document.elementFromPoint(pointer.x, pointer.y) : null;
@@ -189,8 +197,8 @@ export function PetGuide() {
     <>
       <div ref={hostRef} />
       {message && position ? (
-        <div
-          role="status"
+        // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the speech bubble is transient: a click dismisses it early, and it also clears on its own timer
+        <output
           aria-live="polite"
           onClick={() => setMessage(null)}
           style={{
@@ -210,7 +218,7 @@ export function PetGuide() {
           }}
         >
           {message}
-        </div>
+        </output>
       ) : null}
     </>
   );

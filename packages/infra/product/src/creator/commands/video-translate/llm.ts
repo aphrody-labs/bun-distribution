@@ -93,10 +93,12 @@ export class LlmClient {
     let last: unknown;
     for (let attempt = 1; attempt <= attempts; attempt += 1) {
       try {
+        // oxlint-disable-next-line no-await-in-loop -- réessais séquentiels voulus : chaque tentative suit la précédente après backoff (limite de débit de l'endpoint LLM)
         return await this.once(messages, options);
       } catch (error) {
         last = error;
         if (!(error instanceof LlmError) || !error.retryable || attempt === attempts) break;
+        // oxlint-disable-next-line no-await-in-loop -- backoff exponentiel entre tentatives séquentielles, par conception
         await sleep(delay);
         delay *= 2;
       }
@@ -206,6 +208,7 @@ export async function probeEndpoints(
 ): Promise<{ baseUrl: string; models: ModelInfo[] } | undefined> {
   for (const baseUrl of candidates) {
     try {
+      // oxlint-disable-next-line no-await-in-loop -- sondage séquentiel par priorité : le premier endpoint joignable gagne, les suivants ne doivent pas être contactés
       return { baseUrl, models: await listModels(baseUrl, apiKey, 1200) };
     } catch {
       // try next candidate

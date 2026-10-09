@@ -340,6 +340,28 @@ function FileQuickActions({ file }: { file: File }) {
   );
 }
 
+const formatMediaDate = (dateStr: string | null | undefined) => {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  const weekday = date.toLocaleDateString("en-US", { weekday: "long" });
+  const monthDay = date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const time = date.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  return `${weekday} • ${monthDay} • ${time}`;
+};
+
+const getMegapixels = (width: number, height: number) => {
+  const mp = (width * height) / 1000000;
+  return mp >= 1 ? `${mp.toFixed(1)} MP` : `${(mp * 1000).toFixed(0)} KP`;
+};
+
 // Media Metadata Card Component - iOS Photos style
 function MediaMetadataCard({ file }: { file: File }) {
   const imageData = file.image_media_data;
@@ -348,28 +370,8 @@ function MediaMetadataCard({ file }: { file: File }) {
   if (!imageData && !videoData) return null;
 
   // Format date/time like iOS: "Monday • Jan 19, 2026 • 08:00"
-  const formatMediaDate = (dateStr: string | null | undefined) => {
-    if (!dateStr) return null;
-    const date = new Date(dateStr);
-    const weekday = date.toLocaleDateString("en-US", { weekday: "long" });
-    const monthDay = date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-    const time = date.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-    return `${weekday} • ${monthDay} • ${time}`;
-  };
 
   // Calculate megapixels
-  const getMegapixels = (width: number, height: number) => {
-    const mp = (width * height) / 1000000;
-    return mp >= 1 ? `${mp.toFixed(1)} MP` : `${(mp * 1000).toFixed(0)} KP`;
-  };
 
   // Get format from extension
   const getFormat = () => {
@@ -664,17 +666,17 @@ function TextTranscriptTab({
   );
 }
 
+const formatDate = (dateStr: string) => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
 function OverviewTab({ file }: { file: File }) {
   const askAphrody = useAskAphrody();
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
 
   // Tag mutations — refetch queries on success to update the UI
   const refetchTagQueries = useRefetchTagQueries();
@@ -1179,9 +1181,9 @@ function SidecarsTab({ file }: { file: File }) {
         </div>
       ) : (
         <div className="space-y-2">
-          {sidecars.map((sidecar, i) => (
+          {sidecars.map((sidecar) => (
             <SidecarItem
-              key={i}
+              key={`${sidecar.kind}:${sidecar.variant}:${sidecar.format}`}
               sidecar={sidecar}
               file={file}
               sidecarUrl={getSidecarUrl(sidecar)}
@@ -1442,8 +1444,8 @@ function InstancesTab({ file }: { file: File }) {
 
                   {/* List of instances */}
                   <div className="space-y-0.5">
-                    {deviceInstances.map((instance, i) => (
-                      <InstanceRow key={i} instance={instance} />
+                    {deviceInstances.map((instance) => (
+                      <InstanceRow key={instance.id} instance={instance} />
                     ))}
                   </div>
                 </div>
@@ -1456,6 +1458,14 @@ function InstancesTab({ file }: { file: File }) {
   );
 }
 
+const formatInstanceDate = (dateStr: string) => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+};
+
 function InstanceRow({ instance }: { instance: File }) {
   const getPathDisplay = (sdPath: typeof instance.sd_path) => {
     if ("Physical" in sdPath) {
@@ -1465,14 +1475,6 @@ function InstanceRow({ instance }: { instance: File }) {
     } else {
       return "Content";
     }
-  };
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
   };
 
   return (
@@ -1520,7 +1522,7 @@ function InstanceRow({ instance }: { instance: File }) {
 
         {/* Modified date */}
         <span className="text-on-surface-variant text-[10px]">
-          {formatDate(instance.modified_at)}
+          {formatInstanceDate(instance.modified_at)}
         </span>
 
         {/* Size */}
@@ -1553,7 +1555,7 @@ function ChatTab({ file }: { file?: File }) {
       isAI: boolean;
       isUser: boolean;
     }>
-  >([
+  >(() => [
     {
       id: 1,
       sender: "Aphrody AI",
@@ -1730,9 +1732,9 @@ function ActivityTab({ file }: { file?: File }) {
       <p className="text-on-surface-variant text-body-small">Événements et synchronisation réels</p>
 
       <div className="space-y-1">
-        {items.map((item, i) => (
+        {items.map((item) => (
           <div
-            key={i}
+            key={item.action}
             className="hover:bg-surface-container/40 flex items-start gap-3 rounded-small p-2 transition-colors border border-outline-variant/20"
           >
             <span className="text-primary mt-0.5 shrink-0">

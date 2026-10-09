@@ -1,5 +1,5 @@
 import { Circle, Lightning } from "@phosphor-icons/react";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import type { SyncPeerActivity, SyncState } from "../types";
 import { timeAgo } from "../utils";
 
@@ -30,34 +30,27 @@ export function PeerList({ peers }: PeerListProps) {
   );
 }
 
-function PeerCard({ peer }: { peer: SyncPeerActivity }) {
-  const formatBytes = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
+const formatBytes = (bytes: number) => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
 
+function PeerCard({ peer }: { peer: SyncPeerActivity }) {
   return (
     <div className="bg-surface-container rounded-small p-3 border border-outline-variant">
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
           <div
-            className={clsx(
-              "size-2 rounded-full",
-              peer.isOnline ? "bg-success" : "bg-outline",
-            )}
+            className={clsx("size-2 rounded-full", peer.isOnline ? "bg-success" : "bg-outline")}
           />
-          <span className="text-label-large font-medium text-on-surface">
-            {peer.deviceName}
-          </span>
+          <span className="text-label-large font-medium text-on-surface">{peer.deviceName}</span>
         </div>
 
         {peer.watermarkLagMs && peer.watermarkLagMs > 60000 && (
           <Lightning className="size-4 text-warning" weight="fill" />
         )}
-        <span>
-          {peer.isOnline ? "Online" : `Last seen ${timeAgo(peer.lastSeen)}`}
-        </span>
+        <span>{peer.isOnline ? "Online" : `Last seen ${timeAgo(peer.lastSeen)}`}</span>
       </div>
 
       <div className="flex items-center gap-2 mt-2 text-body-small text-outline">

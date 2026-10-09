@@ -3,7 +3,7 @@ import { DesktopError, DesktopSession } from "../../runtime/src/desktop";
 
 const sessions: DesktopSession[] = [];
 afterEach(async () => {
-  for (const session of sessions.splice(0)) await session.close();
+  await Promise.all(sessions.splice(0).map((session) => session.close()));
 });
 
 test("desktop refuses a missing precompiled artifact before opening the runtime", async () => {
@@ -32,49 +32,50 @@ test("desktop startup preserves an already cancelled caller without spawning", a
 
 // Requires the actual qualified native host. A skipped suite is not R3 rendering evidence.
 const executable = process.env["YOLO_DESKTOP_TEST_BIN"];
-describe.skipIf(executable === undefined)("actual precompiled desktop system-WebView host", () => {
-  const serve = (): ReturnType<typeof Bun.serve> =>
-    Bun.serve({
-      hostname: "127.0.0.1",
-      port: 0,
-      fetch: () =>
-        new Response(
-          `<!doctype html><html><head><title>Desktop R3 qualification</title>
+
+const serve = (): ReturnType<typeof Bun.serve> =>
+  Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    fetch: () =>
+      new Response(
+        `<!doctype html><html><head><title>Desktop R3 qualification</title>
 <style>body{background:#eaddff;font:24px sans-serif;padding:48px;color:#21005d}
 button{background:#6750a4;color:white;border:0;border-radius:20px;padding:16px}</style></head>
 <body><h1>Native desktop R3</h1><button>Rendered system WebView</button>
 <script>navigator.geolocation.getCurrentPosition(()=>{},()=>{});</script></body></html>`,
-          { headers: { "content-type": "text/html" } },
-        ),
-    });
-  const open = async (
-    origin: string,
-    grants: ("window.create" | "window.control" | "window.observe")[],
-  ): Promise<DesktopSession> => {
-    const session = await DesktopSession.open({
-      executable: executable!,
-      grants,
-      allowedOrigins: [origin],
-    });
-    sessions.push(session);
-    return session;
-  };
-  const waitEvent = async (
-    session: DesktopSession,
-    kind: string,
-    window: string,
-  ): Promise<void> => {
-    const deadline = Date.now() + 15_000;
-    let sequence = 0;
-    while (Date.now() < deadline) {
-      const batch = await session.events(sequence);
-      sequence = batch.sequence;
-      if (batch.events.some((event) => event.kind === kind && event.window === window)) return;
-      await Bun.sleep(25);
-    }
-    throw new Error(`missing native event ${kind} for ${window}`);
-  };
+        { headers: { "content-type": "text/html" } },
+      ),
+  });
 
+const open = async (
+  origin: string,
+  grants: ("window.create" | "window.control" | "window.observe")[],
+): Promise<DesktopSession> => {
+  const session = await DesktopSession.open({
+    executable: executable!,
+    grants,
+    allowedOrigins: [origin],
+  });
+  sessions.push(session);
+  return session;
+};
+
+const waitEvent = async (session: DesktopSession, kind: string, window: string): Promise<void> => {
+  const deadline = Date.now() + 15_000;
+  let sequence = 0;
+  while (Date.now() < deadline) {
+    // oxlint-disable-next-line no-await-in-loop -- sondage séquentiel : chaque lot d'événements fixe le curseur du suivant
+    const batch = await session.events(sequence);
+    sequence = batch.sequence;
+    if (batch.events.some((event) => event.kind === kind && event.window === window)) return;
+    // oxlint-disable-next-line no-await-in-loop -- délai entre deux lectures séquentielles du sondage
+    await Bun.sleep(25);
+  }
+  throw new Error(`missing native event ${kind} for ${window}`);
+};
+
+describe.skipIf(executable === undefined)("actual precompiled desktop system-WebView host", () => {
   test("native origin and grant denials do not open privileged pages", async () => {
     const server = serve();
     try {

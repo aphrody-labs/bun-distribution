@@ -109,9 +109,7 @@ export default function Explorer({ adaptive }: PageProps) {
             }}
           />
         </Card>
-        <p role="status" className="text-body-medium">
-          {notice}
-        </p>
+        <output className="block text-body-medium">{notice}</output>
       </Section>
       <Section title="Tags">
         <div className="flex flex-wrap gap-3">

@@ -160,9 +160,12 @@ describe("aphrody.h contract", () => {
     const bound = new Map<string, number>(
       Object.entries(SYMBOLS).map(([name, def]) => [name, def.args.length]),
     );
-    for (const file of ["browser.ts", "gpu.ts"]) {
-      const source = await Bun.file(join(import.meta.dir, "../src", file)).text();
-      for (const m of source.matchAll(/^ {2}(yolo_\w+): \{\s*args: \[([^\]]*)\]/gm)) {
+    const abiFiles = ["browser.ts", "gpu.ts"];
+    const abiSources = await Promise.all(
+      abiFiles.map((file) => Bun.file(join(import.meta.dir, "../src", file)).text()),
+    );
+    for (const [index, file] of abiFiles.entries()) {
+      for (const m of abiSources[index]!.matchAll(/^ {2}(yolo_\w+): \{\s*args: \[([^\]]*)\]/gm)) {
         const arity = m[2]!.split(",").filter((a) => a.trim()).length;
         bound.set(m[1]!, arity);
         if (declared.get(m[1]!) !== arity)

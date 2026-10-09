@@ -20,7 +20,14 @@ const shot = process.argv[2] ?? join(tmpdir(), "aphrody-pet.png");
 const server = serveDemo(0);
 const profile = mkdtempSync(join(tmpdir(), "aphrody-pet-chrome-"));
 const browser = Bun.spawn(
-  [chrome, "--headless=new", "--remote-debugging-port=0", `--user-data-dir=${profile}`, "--window-size=900,700", "about:blank"],
+  [
+    chrome,
+    "--headless=new",
+    "--remote-debugging-port=0",
+    `--user-data-dir=${profile}`,
+    "--window-size=900,700",
+    "about:blank",
+  ],
   { stderr: "pipe", stdout: "ignore" },
 );
 
@@ -56,7 +63,14 @@ async function cdp(method: string, params: object = {}, sessionId?: string): Pro
 
 const { targetId } = await cdp("Target.createTarget", { url: server.url.href });
 const { sessionId } = await cdp("Target.attachToTarget", { targetId, flatten: true });
-await cdp("Page.addScriptToEvaluateOnNewDocument", { source: "globalThis.__errors=[];addEventListener(\"error\",(e)=>__errors.push(String(e.message)));addEventListener(\"unhandledrejection\",(e)=>__errors.push(String(e.reason)))" }, sessionId);
+await cdp(
+  "Page.addScriptToEvaluateOnNewDocument",
+  {
+    source:
+      'globalThis.__errors=[];addEventListener("error",(e)=>__errors.push(String(e.message)));addEventListener("unhandledrejection",(e)=>__errors.push(String(e.reason)))',
+  },
+  sessionId,
+);
 const page = (method: string, params: object = {}) => cdp(method, params, sessionId);
 async function evaluate<T>(expression: string): Promise<T> {
   const r = await page("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true });
@@ -82,15 +96,18 @@ try {
   const t0 = performance.now();
   // The target navigates from about:blank: contexts die until the demo page is up.
   for (;;) {
+    // oxlint-disable-next-line no-await-in-loop -- polling until the demo page paints; each probe depends on the previous result
     const shown = await evaluate<number | null>(cell).catch(() => null);
     if (shown !== null) break;
     if (performance.now() - t0 > 15_000) {
+      // oxlint-disable-next-line no-await-in-loop -- diagnostic read happens only after the polling deadline, once
       const why = await evaluate<string>(
         `JSON.stringify({ url: location.href, ready: document.readyState, defined: !!customElements.get("aphrody-pet"),
           shadow: document.querySelector("aphrody-pet")?.shadowRoot?.innerHTML.slice(0, 200) ?? null, errors: globalThis.__errors ?? [] })`,
       ).catch((e) => String(e));
       throw new Error(`the pet never painted: ${why}`);
     }
+    // oxlint-disable-next-line no-await-in-loop -- fixed-interval polling of the page state
     await Bun.sleep(25);
   }
   check(true, "first frame painted (ms after navigation)", Math.round(performance.now() - t0));
@@ -102,13 +119,29 @@ try {
   await evaluate(`document.querySelector("aphrody-pet").setState("running")`);
   const running = await sample(700);
   const runningCells = new Set(PET_WEB.tracks.running!.frames.map(([c]) => c));
-  check(running.length >= 4 && running.every((c) => runningCells.has(c)), "setState('running') plays running", running);
-  check((await evaluate<string>(`document.querySelector("aphrody-pet").state`)) === "running", "state getter", "running");
+  check(
+    running.length >= 4 && running.every((c) => runningCells.has(c)),
+    "setState('running') plays running",
+    running,
+  );
+  check(
+    (await evaluate<string>(`document.querySelector("aphrody-pet").state`)) === "running",
+    "state getter",
+    "running",
+  );
 
-  await page("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
+  await page("Emulation.setEmulatedMedia", {
+    features: [{ name: "prefers-reduced-motion", value: "reduce" }],
+  });
   const still = await sample(800);
-  check(still.length === 1 && still[0] === PET_WEB.tracks.running!.frames[0]![0], "reduced motion freezes the first frame", still);
-  await page("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "no-preference" }] });
+  check(
+    still.length === 1 && still[0] === PET_WEB.tracks.running!.frames[0]![0],
+    "reduced motion freezes the first frame",
+    still,
+  );
+  await page("Emulation.setEmulatedMedia", {
+    features: [{ name: "prefers-reduced-motion", value: "no-preference" }],
+  });
 
   await evaluate(`document.querySelector("aphrody-pet").clearState()`);
   const box = await evaluate<{ x: number; y: number; w: number; h: number }>(
@@ -122,13 +155,23 @@ try {
     ["up-right", 120, -120, 2],
   ];
   for (const [name, dx, dy, index] of looks) {
-    await page("Input.dispatchMouseEvent", { type: "mouseMoved", x: eyes.x + dx, y: Math.max(1, eyes.y + dy) });
+    // oxlint-disable-next-line no-await-in-loop -- gaze checks run in order: each look must settle before the next sample
+    await page("Input.dispatchMouseEvent", {
+      type: "mouseMoved",
+      x: eyes.x + dx,
+      y: Math.max(1, eyes.y + dy),
+    });
+    // oxlint-disable-next-line no-await-in-loop -- gaze checks run in order: each look must settle before the next sample
     const seen = await sample(150);
     const expected = PET_WEB.directions[index];
     check(seen.at(-1) === expected, `gaze ${name}`, { seen, expected });
   }
   await page("Input.dispatchMouseEvent", { type: "mouseMoved", x: eyes.x + 5, y: eyes.y + 5 });
-  check((await sample(120)).at(-1) === PET_WEB.neutral, "gaze dead zone shows the neutral pose", PET_WEB.neutral);
+  check(
+    (await sample(120)).at(-1) === PET_WEB.neutral,
+    "gaze dead zone shows the neutral pose",
+    PET_WEB.neutral,
+  );
 
   const { data } = await page("Page.captureScreenshot", { format: "png" });
   await Bun.write(shot, Buffer.from(data, "base64"));

@@ -84,6 +84,7 @@ export function AgentSettings({
 
   useEffect(() => {
     let active = true;
+    // oxlint-disable-next-line react/set-state-in-effect -- réinitialisation de l'état de chargement à chaque changement de services ou de reload, synchronisation avec une source externe
     setLoading(true);
     setLoadError(false);
     void Promise.all([
@@ -109,6 +110,7 @@ export function AgentSettings({
     return () => {
       active = false;
     };
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- reload est un déclencheur volontaire du rechargement (boutons Réessayer), non lu dans l'effet
   }, [services, reload]);
 
   const commit = async (partial: Partial<Preferences>, message: string) => {
@@ -166,7 +168,7 @@ export function AgentSettings({
   return (
     <div className="max-w-3xl space-y-8" aria-busy={loading || saving}>
       <h2 className="text-headline-small font-bold text-on-surface">Agent</h2>
-      {loading && <p role="status">Chargement des préférences…</p>}
+      {loading && <output className="block">Chargement des préférences…</output>}
       {!loading && loadError && (
         <div className="space-y-3">
           <p role="alert" className="text-error">
@@ -218,7 +220,7 @@ export function AgentSettings({
                 </DropdownMenuRoot>
               ) : (
                 <div className="space-y-2">
-                  <p role="status">Aucun modèle disponible.</p>
+                  <output className="block">Aucun modèle disponible.</output>
                   <Button
                     aria-label="Réessayer"
                     title="Réessayer"

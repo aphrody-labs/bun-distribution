@@ -172,6 +172,7 @@ describe("useTextFieldState (SSR render path)", () => {
     const captured: { state?: WebTextFieldState } = {};
     function Probe() {
       const state = useTextFieldState("init");
+      // oxlint-disable-next-line react/immutability -- harnais de test : le composant publie l'état rendu pour les assertions
       captured.state = state;
       return createElement("output", null, state.text);
     }
@@ -215,6 +216,7 @@ describe("useTextFieldState (client render path)", () => {
       renders++;
       const state = useTextFieldState("init");
       instances.push(state);
+      // oxlint-disable-next-line react/immutability -- harnais de test : le composant publie l'état rendu pour les assertions
       captured.state = state;
       return createElement("output", null, state.text);
     }
@@ -241,6 +243,7 @@ describe("useTextFieldState (client render path)", () => {
     function Probe() {
       renders++;
       const state = useTextFieldState("abc");
+      // oxlint-disable-next-line react/immutability -- harnais de test : le composant publie l'état rendu pour les assertions
       captured.state = state;
       return createElement("output", null, state.text);
     }

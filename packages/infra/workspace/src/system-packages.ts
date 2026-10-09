@@ -41,6 +41,8 @@ export const run: Runner = async (argv) => {
 
 const PWSH_ARGS = ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command"];
 
+const quote = (value: string) => `'${value.replaceAll("'", "''")}'`;
+
 /**
  * PowerShell 7 (pwsh.exe), preferred, else Windows PowerShell. From WSL the Windows directories are
  * often not on PATH, so the MSIX alias and the MSI location are resolved through wslpath.
@@ -65,7 +67,9 @@ export async function powershell(runner: Runner = run): Promise<string[] | null>
       (name) => `C:\\Users\\${name}\\AppData\\Local\\Microsoft\\WindowsApps\\pwsh.exe`,
     ),
   ]) {
+    // oxlint-disable-next-line no-await-in-loop -- sondage séquentiel : l'ordre de priorité des binaires désigne le premier trouvé
     const linux = await windowsPath(candidate);
+    // oxlint-disable-next-line no-await-in-loop -- même sondage : l'arrêt à la première trouvaille est voulu
     if (linux && (await runner(["test", "-e", linux])).exitCode === 0) return [linux, ...PWSH_ARGS];
   }
   if (await onPath("powershell.exe")) return ["powershell.exe", ...PWSH_ARGS];
@@ -93,8 +97,12 @@ export async function planPackages(
   const entries: PackageEntry[] = [];
   if (host === "linux") {
     const named = profile ? ((config[profile] as string[] | undefined) ?? []) : [];
-    for (const id of new Set([...(config.common ?? []), ...named])) {
-      const status = await runner(["dpkg-query", "-W", "-f=${Status}", id]);
+    const ids = [...new Set([...(config.common ?? []), ...named])];
+    const statuses = await Promise.all(
+      ids.map((id) => runner(["dpkg-query", "-W", "-f=${Status}", id])),
+    );
+    for (const [index, id] of ids.entries()) {
+      const status = statuses[index]!;
       entries.push({
         manager: "apt",
         id,
@@ -179,7 +187,6 @@ export async function applyPackages(
   const shell = await powershell(runner);
   if (!shell)
     throw new Error("Windows is not reachable from this host (no pwsh.exe or powershell.exe)");
-  const quote = (value: string) => `'${value.replaceAll("'", "''")}'`;
   const viaModule = process.platform === "win32";
   const steps = [
     ...(viaModule ? ["Import-Module Microsoft.WinGet.Client"] : []),

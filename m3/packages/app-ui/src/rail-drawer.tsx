@@ -120,11 +120,13 @@ export function RailDrawer({
   }, [open, onOpenChange]);
 
   return (
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- tiroir géré par l'API popover : un div stylé .app-drawer doit garder ses écouteurs clavier et souris
     <div
       ref={popoverRef}
       id="app-rail"
       popover="manual"
       hidden={!open}
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- tiroir géré par l'API popover : un div stylé .app-drawer doit garder son rôle dialog explicite
       role="dialog"
       aria-modal="true"
       aria-label={label}

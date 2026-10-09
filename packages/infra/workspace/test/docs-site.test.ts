@@ -20,6 +20,7 @@ async function fixture(
       },
       { path: "docs/guides/b.md", title: "Guide B", text: "# Guide B\n[Guide A](a.md)" },
     ];
+    // oxlint-disable-next-line no-await-in-loop -- fixture documents are written in order before the export under test
     for (const source of sources) await writeFile(join(root, source.path), source.text);
     await run(
       root,
@@ -63,6 +64,7 @@ describe("private documentation site", () => {
   test("rejects unsafe output, traversal and SHA mismatch before writes", async () => {
     await fixture(async (root, documents) => {
       for (const destination of [root, join(root, "docs/export"), join(root, "apps/site/public")]) {
+        // oxlint-disable-next-line no-await-in-loop -- export destinations are checked one by one; each export is asserted before the next
         await expect(exportDocumentationSite(root, documents, destination)).rejects.toThrow(
           "Output",
         );

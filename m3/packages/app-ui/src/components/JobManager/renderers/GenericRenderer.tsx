@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Icon, m3FocusRing } from "@aphrody/m3-primitives";
 import { m3Durations, m3Easings } from "@aphrody/m3-motion";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import { motion } from "motion/react";
 import type { JobRenderer, JobRendererProps } from "./index";
 import { getJobDisplayName, getJobSubtext } from "../types";
@@ -28,14 +28,17 @@ function GenericCardContent({
 	const subtext = getJobSubtext(job);
 
 	const context = job.action_context?.context as Record<string, unknown> | null;
-	const resultAction = context?.resultAction as {
-		label: "Ouvrir" | "Afficher dans Fichiers";
-		action: () => void | Promise<void>;
-	} | undefined;
+	const resultAction = context?.resultAction as
+		| {
+				label: "Ouvrir" | "Afficher dans Fichiers";
+				action: () => void | Promise<void>;
+		  }
+		| undefined;
 
 	const targetPath =
-		(job.action_context?.action_input as Record<string, unknown> | null)?.path as string | undefined ||
-		(typeof job.current_path === "string" ? job.current_path : undefined);
+		((job.action_context?.action_input as Record<string, unknown> | null)?.path as
+			| string
+			| undefined) || (typeof job.current_path === "string" ? job.current_path : undefined);
 
 	const handleResultClick = async (e: React.MouseEvent) => {
 		e.stopPropagation();
@@ -91,7 +94,7 @@ function GenericCardContent({
 							className={clsx(
 								"flex items-center gap-1.5 rounded-full px-2.5 py-1 text-label-large font-medium",
 								"bg-primary text-on-primary hover:bg-primary/90 transition-all active:scale-95 shadow-sm",
-								m3FocusRing
+								m3FocusRing,
 							)}
 							title={resultAction?.label || (targetPath ? "Afficher dans fichiers" : "Ouvrir")}
 						>
@@ -100,7 +103,9 @@ function GenericCardContent({
 								size={16}
 								filled
 							/>
-							<span>{resultAction?.label || (targetPath ? "Afficher dans fichiers" : "Ouvrir")}</span>
+							<span>
+								{resultAction?.label || (targetPath ? "Afficher dans fichiers" : "Ouvrir")}
+							</span>
 						</button>
 					)}
 
@@ -113,7 +118,7 @@ function GenericCardContent({
 								"flex-shrink-0 flex items-center justify-center size-7 rounded-full",
 								"bg-secondary-container text-on-secondary-container hover:bg-on-secondary-container/12",
 								"transition-colors duration-200 ease-standard",
-								m3FocusRing
+								m3FocusRing,
 							)}
 							title={canPause ? "Mettre en pause" : "Reprendre"}
 						>
@@ -134,7 +139,7 @@ function GenericCardContent({
 								"flex-shrink-0 flex items-center justify-center size-7 rounded-full",
 								"bg-on-surface/8 text-on-surface-variant hover:bg-error hover:text-on-error",
 								"transition-colors duration-200 ease-standard",
-								m3FocusRing
+								m3FocusRing,
 							)}
 							title="Annuler la tâche"
 						>

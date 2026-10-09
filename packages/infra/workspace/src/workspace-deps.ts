@@ -14,6 +14,52 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 
+/** Workspace members of a repository: package name -> directory. */
+function members(repo: string): Map<string, string> {
+  const manifest = JSON.parse(readFileSync(join(repo, "package.json"), "utf8"));
+  const globs: string[] = Array.isArray(manifest.workspaces)
+    ? manifest.workspaces
+    : (manifest.workspaces?.packages ?? []);
+  const found = new Map<string, string>();
+  for (const pattern of globs) {
+    for (const file of new Bun.Glob(`${pattern}/package.json`).scanSync({
+      cwd: repo,
+      onlyFiles: true,
+    })) {
+      if (file.includes("node_modules")) continue;
+      const pkg = JSON.parse(readFileSync(join(repo, file), "utf8"));
+      if (pkg.name) found.set(pkg.name, join(repo, dirname(file)));
+    }
+  }
+  return found;
+}
+
+/** Entry file of a package, relative to its directory. */
+function entry(dir: string): string {
+  const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
+  const candidates = [
+    pkg.exports?.["."]?.import,
+    pkg.exports?.["."]?.default,
+    typeof pkg.exports === "string" ? pkg.exports : undefined,
+    pkg.module,
+    pkg.main,
+    "src/index.ts",
+  ];
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && existsSync(join(dir, candidate)))
+      return candidate.replace(/^\.\//, "");
+  }
+  return "src/index.ts";
+}
+
+function write(path: string, text: string, value: unknown) {
+  const indent = text.match(/^[ \t]+(?=")/m)?.[0] ?? "  ";
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  writeFileSync(path, JSON.stringify(value, null, indent).replaceAll("\n", eol) + eol);
+}
+
+const fwd = (p: string) => p.replaceAll("\\", "/");
+
 export async function runWorkspaceDeps(args: string[]): Promise<number> {
   const flag = (name: string) => {
     const i = args.indexOf(name);
@@ -26,50 +72,6 @@ export async function runWorkspaceDeps(args: string[]): Promise<number> {
     console.error("usage: yolo ops workspace-deps --root <repo> --sibling <repo> [--apply]");
     return 2;
   }
-  /** Workspace members of a repository: package name -> directory. */
-  function members(repo: string): Map<string, string> {
-    const manifest = JSON.parse(readFileSync(join(repo, "package.json"), "utf8"));
-    const globs: string[] = Array.isArray(manifest.workspaces)
-      ? manifest.workspaces
-      : (manifest.workspaces?.packages ?? []);
-    const found = new Map<string, string>();
-    for (const pattern of globs) {
-      for (const file of new Bun.Glob(`${pattern}/package.json`).scanSync({
-        cwd: repo,
-        onlyFiles: true,
-      })) {
-        if (file.includes("node_modules")) continue;
-        const pkg = JSON.parse(readFileSync(join(repo, file), "utf8"));
-        if (pkg.name) found.set(pkg.name, join(repo, dirname(file)));
-      }
-    }
-    return found;
-  }
-
-  /** Entry file of a package, relative to its directory. */
-  function entry(dir: string): string {
-    const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
-    const candidates = [
-      pkg.exports?.["."]?.import,
-      pkg.exports?.["."]?.default,
-      typeof pkg.exports === "string" ? pkg.exports : undefined,
-      pkg.module,
-      pkg.main,
-      "src/index.ts",
-    ];
-    for (const candidate of candidates) {
-      if (typeof candidate === "string" && existsSync(join(dir, candidate)))
-        return candidate.replace(/^\.\//, "");
-    }
-    return "src/index.ts";
-  }
-
-  function write(path: string, text: string, value: unknown) {
-    const indent = text.match(/^[ \t]+(?=")/m)?.[0] ?? "  ";
-    const eol = text.includes("\r\n") ? "\r\n" : "\n";
-    writeFileSync(path, JSON.stringify(value, null, indent).replaceAll("\n", eol) + eol);
-  }
-
   const local = members(root);
   const remote = members(sibling);
   const SECTIONS = [
@@ -79,7 +81,6 @@ export async function runWorkspaceDeps(args: string[]): Promise<number> {
     "optionalDependencies",
   ] as const;
   const changes: string[] = [];
-  const fwd = (p: string) => p.replaceAll("\\", "/");
 
   for (const [name, dir] of local) {
     const manifestPath = join(dir, "package.json");

@@ -47,14 +47,15 @@ export interface Release {
 
 type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 
+const parseVersion = (v: string) =>
+  v
+    .split("-")[0]!
+    .split(".")
+    .map((n) => Number.parseInt(n, 10) || 0);
+
 /** Numeric semver comparison (prerelease tags are ignored). Returns >0 when `a` is newer than `b`. */
 export function compareVersions(a: string, b: string): number {
-  const parse = (v: string) =>
-    v
-      .split("-")[0]!
-      .split(".")
-      .map((n) => Number.parseInt(n, 10) || 0);
-  const [x, y] = [parse(a), parse(b)];
+  const [x, y] = [parseVersion(a), parseVersion(b)];
   for (let i = 0; i < Math.max(x.length, y.length); i += 1) {
     const diff = (x[i] ?? 0) - (y[i] ?? 0);
     if (diff !== 0) return diff;
@@ -173,6 +174,7 @@ export async function extractTarGz(archive: string, dest: string): Promise<void>
     let parent = dest;
     for (const part of ["", ...entry.name.split("/")]) {
       parent = part ? join(parent, part) : parent;
+      // oxlint-disable-next-line no-await-in-loop -- contrôle séquentiel de la chaîne des parents : arrêt au premier lien symbolique, ordre déterministe
       const stat = await lstat(parent).catch((error: NodeJS.ErrnoException) => {
         if (error.code === "ENOENT") return undefined;
         throw error;
@@ -180,9 +182,12 @@ export async function extractTarGz(archive: string, dest: string): Promise<void>
       if (stat?.isSymbolicLink()) throw new Error(`lien refusé : ${parent}`);
     }
     const target = join(dest, entry.name);
+    // oxlint-disable-next-line no-await-in-loop -- écritures séquentielles dans l'ordre de l'archive : un chemin peut être répété (la dernière entrée gagne) et les parents doivent exister
     if (entry.type === "5") await mkdir(target, { recursive: true });
     else {
+      // oxlint-disable-next-line no-await-in-loop -- écriture séquentielle (même raison : ordre de l'archive, parents créés avant fichiers)
       await mkdir(dirname(target), { recursive: true });
+      // oxlint-disable-next-line no-await-in-loop -- écriture séquentielle (même raison : ordre de l'archive)
       await writeFile(target, data.subarray(entry.offset, entry.offset + entry.size));
     }
   }
@@ -217,19 +222,23 @@ export async function applyPack(
       for (const entry of entries) {
         const target = join(installDir, entry);
         try {
+          // oxlint-disable-next-line no-await-in-loop -- bascule séquentielle : chaque déplacement enregistré dans moved/promoted doit permettre une annulation exacte
           await move(target, join(backup, entry));
           moved.push(entry);
         } catch (error) {
           if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
         }
+        // oxlint-disable-next-line no-await-in-loop -- bascule séquentielle (même raison : état de rollback suivi entrée par entrée)
         await move(join(staging, entry), target);
         promoted.push(entry);
       }
     } catch (error) {
       try {
         for (const entry of promoted.toReversed())
+          // oxlint-disable-next-line no-await-in-loop -- annulation séquentielle dans l'ordre inverse de la bascule
           await rm(join(installDir, entry), { recursive: true, force: true });
         for (const entry of moved.toReversed())
+          // oxlint-disable-next-line no-await-in-loop -- restauration séquentielle dans l'ordre inverse de la bascule
           await move(join(backup, entry), join(installDir, entry));
       } catch (rollbackError) {
         preserveBackup = true;

@@ -67,8 +67,12 @@ export default function Primitives({ adaptive }: PageProps) {
       </Section>
       <Section title="Controlled inputs">
         <Card className="flex flex-col gap-4">
-          <label className="flex items-center gap-3">
-            <CheckBox checked={checked} onChange={(event) => setChecked(event.target.checked)} />
+          <label htmlFor="primitives-newsletter" className="flex items-center gap-3">
+            <CheckBox
+              id="primitives-newsletter"
+              checked={checked}
+              onChange={(event) => setChecked(event.target.checked)}
+            />
             Receive a local demonstration newsletter
           </label>
           <label className="flex items-center gap-3">

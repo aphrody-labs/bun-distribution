@@ -89,7 +89,7 @@ export default function Theme({ adaptive }: PageProps) {
       )}
       <Section title="Customise the live theme">
         <Card className="grid gap-4 medium:grid-cols-2">
-          <label className="flex flex-col gap-2 text-label-large">
+          <div className="flex flex-col gap-2 text-label-large">
             Seed colour
             <Input
               type="color"
@@ -97,7 +97,7 @@ export default function Theme({ adaptive }: PageProps) {
               onChange={(event) => theme.setSeedColor(event.target.value)}
               aria-label="Seed colour"
             />
-          </label>
+          </div>
           <label className="flex flex-col gap-2 text-label-large">
             Scheme variant
             <select
@@ -105,8 +105,8 @@ export default function Theme({ adaptive }: PageProps) {
               value={theme.variant}
               onChange={(event) => theme.setVariant(event.target.value as SchemeVariant)}
             >
-              {VARIANTS.map((variant) => (
-                <option key={variant}>{variant}</option>
+              {VARIANTS.map((schemeVariant) => (
+                <option key={schemeVariant}>{schemeVariant}</option>
               ))}
             </select>
           </label>

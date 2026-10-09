@@ -93,15 +93,17 @@ describe("shared native tool transports", () => {
   it("rejects invalid tool arguments", async () => {
     const f = fixture();
     try {
-      for (const args of [
-        { parallel: 0 },
-        { parallel: 1.5 },
-        { parallel: Infinity },
-        { path: [] },
-        { unknown: true },
-      ]) {
-        await expect(executeTool("yolo_scan", args, f.root, f.context)).rejects.toThrow();
-      }
+      await Promise.all(
+        [
+          { parallel: 0 },
+          { parallel: 1.5 },
+          { parallel: Infinity },
+          { path: [] },
+          { unknown: true },
+        ].map((args) =>
+          expect(executeTool("yolo_scan", args, f.root, f.context)).rejects.toThrow(),
+        ),
+      );
       await expect(
         executeTool("yolo_verify", { only: "missing-gate" }, f.root, f.context),
       ).rejects.toThrow("Unknown gates");
@@ -126,18 +128,23 @@ describe("shared native tool transports", () => {
         spec.paths["/api/tools/call"].post.requestBody.content["application/json"].schema.oneOf
           .length,
       ).toBe(TOOLS.length);
-      for (const body of ["{", "null", "[]", '{"parallel":0}']) {
-        expect((await fetch(`${base}/api/scan`, { method: "POST", body })).status).toBe(400);
-      }
-      for (const name of ["yolo_scan", "yolo_parse", "yolo_host_space"]) {
-        const args = name === "yolo_host_space" ? { dir: "escape" } : { path: "escape/private.ts" };
-        const response = await fetch(`${base}/api/tools/call`, {
-          method: "POST",
-          body: JSON.stringify({ name, arguments: args }),
-        });
-        expect(response.status).toBe(400);
-        expect((await response.json()).error).toContain("Path traversal denied");
-      }
+      await Promise.all(
+        ["{", "null", "[]", '{"parallel":0}'].map(async (body) =>
+          expect((await fetch(`${base}/api/scan`, { method: "POST", body })).status).toBe(400),
+        ),
+      );
+      await Promise.all(
+        ["yolo_scan", "yolo_parse", "yolo_host_space"].map(async (name) => {
+          const args =
+            name === "yolo_host_space" ? { dir: "escape" } : { path: "escape/private.ts" };
+          const response = await fetch(`${base}/api/tools/call`, {
+            method: "POST",
+            body: JSON.stringify({ name, arguments: args }),
+          });
+          expect(response.status).toBe(400);
+          expect((await response.json()).error).toContain("Path traversal denied");
+        }),
+      );
       expect((await fetch(`${base}/api/parse`, { method: "POST", body: "{}" })).status).toBe(400);
       expect((await fetch(`${base}/api/bench?iterations=NaN`)).status).toBe(400);
       const cors = await fetch(`${base}/health`, {

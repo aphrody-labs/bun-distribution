@@ -17,14 +17,21 @@ const asJson = args.includes("--json");
 const sizes = (bytes: Uint8Array<ArrayBuffer>) => ({
   raw: bytes.byteLength,
   gzip: Bun.gzipSync(bytes, { level: 9 }).byteLength,
-  brotli: brotliCompressSync(bytes, { params: { [constants.BROTLI_PARAM_QUALITY]: 11 } }).byteLength,
+  brotli: brotliCompressSync(bytes, { params: { [constants.BROTLI_PARAM_QUALITY]: 11 } })
+    .byteLength,
 });
 
-const median = (xs: number[]) => xs.toSorted((a, b) => a - b)[Math.floor(xs.length / 2)] ?? Number.NaN;
+const median = (xs: number[]) =>
+  xs.toSorted((a, b) => a - b)[Math.floor(xs.length / 2)] ?? Number.NaN;
 
 async function bundle(entry: string) {
   const t0 = performance.now();
-  const out = await Bun.build({ entrypoints: [join(root, entry)], minify: true, target: "browser", format: "esm" });
+  const out = await Bun.build({
+    entrypoints: [join(root, entry)],
+    minify: true,
+    target: "browser",
+    format: "esm",
+  });
   const ms = performance.now() - t0;
   if (!out.success) throw new AggregateError(out.logs, `bun build ${entry}`);
   const code = new Uint8Array(await out.outputs[0]!.arrayBuffer());
@@ -94,10 +101,13 @@ if (wasmPath) {
   let instance: WebAssembly.Instance | undefined;
   for (let i = 0; i < 15; i++) {
     const t0 = performance.now();
+    // oxlint-disable-next-line no-await-in-loop -- mesure chronométrée : chaque compilation doit être isolée, sans recouvrement
     const module = await WebAssembly.compile(bytes);
     // wasm-bindgen markers pulled in by dependencies (never called by the clock): stubbed.
     const imports: Record<string, Record<string, () => number>> = {};
-    for (const i of WebAssembly.Module.imports(module)) (imports[i.module] ??= {})[i.name] = () => 0;
+    for (const imp of WebAssembly.Module.imports(module))
+      (imports[imp.module] ??= {})[imp.name] = () => 0;
+    // oxlint-disable-next-line no-await-in-loop -- mesure chronométrée : chaque instanciation doit être isolée, sans recouvrement
     instance = await WebAssembly.instantiate(module, imports);
     compile.push(performance.now() - t0);
   }
@@ -124,7 +134,12 @@ if (wasmPath) {
   let mismatches = 0;
   for (const [t, name, track, sprite, delay] of aphrody.ticks) {
     const r = step(name, t);
-    if ((r?.track ?? null) !== track || (r?.sprite ?? null) !== sprite || (r?.delay ?? null) !== delay) mismatches++;
+    if (
+      (r?.track ?? null) !== track ||
+      (r?.sprite ?? null) !== sprite ||
+      (r?.delay ?? null) !== delay
+    )
+      mismatches++;
   }
   report.optionA = {
     wasm: { ...sizes(raw), wasmOpt: optimised ? sizes(bytes) : null },

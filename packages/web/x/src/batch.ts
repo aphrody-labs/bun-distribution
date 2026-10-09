@@ -113,6 +113,7 @@ export class XBatch<T = unknown> implements AsyncIterable<XBatchResult<T>> {
         if (poll.items.length > 0) {
           delay = 1;
         } else {
+          // oxlint-disable-next-line no-await-in-loop -- sondage avec backoff : chaque interrogation attend le délai courant avant la suivante
           await Bun.sleep(delay);
           delay = Math.min(delay * 2, 25);
         }

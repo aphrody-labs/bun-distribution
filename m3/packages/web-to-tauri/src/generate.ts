@@ -66,13 +66,16 @@ async function fetchIcon(
     .toSorted((a, b) => iconScore(b) - iconScore(a))
     .slice(0, 4);
   let source: { ext: string; bytes: Uint8Array } | null = null;
+  // Sequential on purpose: the first usable icon in candidate order wins and ends the search early.
   for (const icon of candidates) {
     try {
+      // oxlint-disable-next-line no-await-in-loop -- early exit on the first usable icon in candidate order; a parallel fetch would change which icon is chosen and the request volume
       const res = await doFetch(icon.href, {
         signal: AbortSignal.timeout(10_000),
         redirect: "follow",
       });
       if (!res.ok) continue;
+      // oxlint-disable-next-line no-await-in-loop -- body read belongs to the same early-exit candidate; it must finish before the next candidate is tried
       const bytes = new Uint8Array(await res.arrayBuffer());
       if (bytes.length === 0 || bytes.length > 5_000_000) continue;
       if (isUsableAppIcon(bytes)) return { png: bytes, source: { ext: "png", bytes } };
@@ -97,7 +100,7 @@ async function fetchIcon(
 }
 
 async function findProjectIcon(dir: string): Promise<Uint8Array | null> {
-  for (const candidate of [
+  const candidates = [
     "public/icon.png",
     "public/apple-touch-icon.png",
     "public/icons/icon-512x512.png",
@@ -106,13 +109,15 @@ async function findProjectIcon(dir: string): Promise<Uint8Array | null> {
     "src/app/icon.png",
     "assets/icon.png",
     "icon.png",
-  ]) {
-    const path = join(dir, candidate);
-    if (!existsSync(path)) continue;
-    const bytes = new Uint8Array(await Bun.file(path).arrayBuffer());
-    if (isUsableAppIcon(bytes)) return bytes;
-  }
-  return null;
+  ];
+  const found = await Promise.all(
+    candidates.map(async (candidate) => {
+      const path = join(dir, candidate);
+      if (!existsSync(path)) return null;
+      return new Uint8Array(await Bun.file(path).arrayBuffer());
+    }),
+  );
+  return found.find((bytes) => bytes !== null && isUsableAppIcon(bytes)) ?? null;
 }
 
 function relativeCrate(from: string, crate: string): string {

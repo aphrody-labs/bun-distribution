@@ -588,6 +588,7 @@ export async function installAppUpdate(
   let received = 0;
   let total: number | null = null;
   const onEvent = new Channel<UpdaterEvent>();
+  // oxlint-disable-next-line unicorn/prefer-add-event-listener -- Channel Tauri : API onmessage native, pas un EventTarget (addEventListener indisponible)
   onEvent.onmessage = (message) => {
     if (message.event === "Started") total = message.data.contentLength ?? null;
     if (message.event === "Progress") received += message.data.chunkLength;
@@ -694,6 +695,7 @@ export async function aphrodySessionStream(
   if (isTauri()) {
     try {
       const channel = new Channel<unknown>();
+      // oxlint-disable-next-line unicorn/prefer-add-event-listener -- Channel Tauri : API onmessage native, pas un EventTarget (addEventListener indisponible)
       channel.onmessage = onMessage;
       await tauriInvoke("aphrody_session_stream", {
         thread_id: threadId,

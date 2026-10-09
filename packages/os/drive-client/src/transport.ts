@@ -7,26 +7,23 @@ import { DEFAULT_EVENT_SUBSCRIPTION } from "./event-filter";
 import type { SdPath } from "./generated/types";
 
 export interface EventFilter {
-	library_id?: string;
-	job_id?: string;
-	device_id?: string;
-	resource_type?: string;
-	path_scope?: SdPath;
-	include_descendants?: boolean;
+  library_id?: string;
+  job_id?: string;
+  device_id?: string;
+  resource_type?: string;
+  path_scope?: SdPath;
+  include_descendants?: boolean;
 }
 
 export interface SubscriptionOptions {
-	event_types?: string[];
-	filter?: EventFilter;
+  event_types?: string[];
+  filter?: EventFilter;
 }
 
 export interface Transport {
-	sendRequest(request: any): Promise<any>;
-	subscribe(
-		callback: (event: any) => void,
-		options?: SubscriptionOptions,
-	): Promise<() => void>;
-	destroy?(): void;
+  sendRequest(request: any): Promise<any>;
+  subscribe(callback: (event: any) => void, options?: SubscriptionOptions): Promise<() => void>;
+  destroy?(): void;
 }
 
 /**
@@ -34,76 +31,76 @@ export interface Transport {
  * This works in the browser (Tauri webview)
  */
 export class TauriTransport implements Transport {
-	private invoke: (cmd: string, args?: any) => Promise<any>;
-	private listen: (
-		event: string,
-		handler: (event: any) => void,
-	) => Promise<() => void>;
+  private invoke: (cmd: string, args?: any) => Promise<any>;
+  private listen: (event: string, handler: (event: any) => void) => Promise<() => void>;
 
-	constructor(
-		invoke: (cmd: string, args?: any) => Promise<any>,
-		listen: (
-			event: string,
-			handler: (event: any) => void,
-		) => Promise<() => void>,
-		private eventName = "core-event",
-		private scopedEvents = false,
-	) {
-		this.invoke = invoke;
-		this.listen = listen;
-	}
+  constructor(
+    invoke: (cmd: string, args?: any) => Promise<any>,
+    listen: (event: string, handler: (event: any) => void) => Promise<() => void>,
+    private eventName = "core-event",
+    private scopedEvents = false,
+  ) {
+    this.invoke = invoke;
+    this.listen = listen;
+  }
 
-	async sendRequest(request: any): Promise<any> {
-		const response = await this.invoke("daemon_request", { request });
-		return response;
-	}
+  async sendRequest(request: any): Promise<any> {
+    const response = await this.invoke("daemon_request", { request });
+    return response;
+  }
 
-	async subscribe(
-		callback: (event: any) => void,
-		options?: SubscriptionOptions,
-	): Promise<() => void> {
-		const args = {
-			eventTypes: options?.event_types ?? DEFAULT_EVENT_SUBSCRIPTION,
-			filter: options?.filter ?? null,
-		};
+  async subscribe(
+    callback: (event: any) => void,
+    options?: SubscriptionOptions,
+  ): Promise<() => void> {
+    const args = {
+      eventTypes: options?.event_types ?? DEFAULT_EVENT_SUBSCRIPTION,
+      filter: options?.filter ?? null,
+    };
 
-		// Listen FIRST so buffered events replayed by the daemon are not lost.
-		// subscribe_to_events creates a TCP connection that may emit events
-		// before the invoke promise resolves.
-		let subscriptionId: any;
-		const buffered: any[] = [];
-		const unlisten = await this.listen(this.eventName, (tauriEvent: any) => {
-			const payload = tauriEvent.payload;
-			if (!this.scopedEvents) { callback(payload); return; }
-			if (subscriptionId === undefined) { buffered.push(payload); return; }
-			if (payload?.subscription_id === subscriptionId) callback(payload.event);
-		});
+    // Listen FIRST so buffered events replayed by the daemon are not lost.
+    // subscribe_to_events creates a TCP connection that may emit events
+    // before the invoke promise resolves.
+    let subscriptionId: any;
+    const buffered: any[] = [];
+    const unlisten = await this.listen(this.eventName, (tauriEvent: any) => {
+      const payload = tauriEvent.payload;
+      if (!this.scopedEvents) {
+        callback(payload);
+        return;
+      }
+      if (subscriptionId === undefined) {
+        buffered.push(payload);
+        return;
+      }
+      if (payload?.subscription_id === subscriptionId) callback(payload.event);
+    });
 
-		try {
-			subscriptionId = await this.invoke("subscribe_to_events", args);
-			if (this.scopedEvents) {
-				for (const payload of buffered) {
-					if (payload?.subscription_id === subscriptionId) callback(payload.event);
-				}
-				buffered.length = 0;
-			}
-		} catch (e) {
-			unlisten();
-			throw e;
-		}
+    try {
+      subscriptionId = await this.invoke("subscribe_to_events", args);
+      if (this.scopedEvents) {
+        for (const payload of buffered) {
+          if (payload?.subscription_id === subscriptionId) callback(payload.event);
+        }
+        buffered.length = 0;
+      }
+    } catch (e) {
+      unlisten();
+      throw e;
+    }
 
-		// Return cleanup function that properly unsubscribes
-		return async () => {
-			unlisten();
-			try {
-				await this.invoke("unsubscribe_from_events", {
-					subscriptionId,
-				});
-			} catch (e) {
-				console.warn("[TauriTransport] Failed to unsubscribe:", e);
-			}
-		};
-	}
+    // Return cleanup function that properly unsubscribes
+    return async () => {
+      unlisten();
+      try {
+        await this.invoke("unsubscribe_from_events", {
+          subscriptionId,
+        });
+      } catch (e) {
+        console.warn("[TauriTransport] Failed to unsubscribe:", e);
+      }
+    };
+  }
 }
 
 /**
@@ -115,101 +112,98 @@ export class TauriTransport implements Transport {
  * and LogMessage payloads in real time.
  */
 export class HttpTransport implements Transport {
-	private baseUrl: string;
-	// Single shared EventSource for all subscribers. Browsers cap HTTP/1.1
-	// connections at 6 per origin; opening one EventSource per subscription
-	// exhausts the pool and stalls RPC POSTs. The daemon's `/events` stream
-	// is already a broadcast of every event, so we multiplex here and let
-	// subscribers filter client-side.
-	private sharedSource: EventSource | null = null;
-	private sharedCallbacks = new Set<(event: any) => void>();
+  private baseUrl: string;
+  // Single shared EventSource for all subscribers. Browsers cap HTTP/1.1
+  // connections at 6 per origin; opening one EventSource per subscription
+  // exhausts the pool and stalls RPC POSTs. The daemon's `/events` stream
+  // is already a broadcast of every event, so we multiplex here and let
+  // subscribers filter client-side.
+  private sharedSource: EventSource | null = null;
+  private sharedCallbacks = new Set<(event: any) => void>();
 
-	constructor(baseUrl: string = "") {
-		// Strip trailing slash so `${baseUrl}/rpc` is well-formed.
-		this.baseUrl = baseUrl.replace(/\/$/, "");
-	}
+  constructor(baseUrl: string = "") {
+    // Strip trailing slash so `${baseUrl}/rpc` is well-formed.
+    this.baseUrl = baseUrl.replace(/\/$/, "");
+  }
 
-	async sendRequest(request: any): Promise<any> {
-		const response = await fetch(`${this.baseUrl}/rpc`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(request),
-		});
+  async sendRequest(request: any): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/rpc`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    });
 
-		if (!response.ok) {
-			const text = await response.text().catch(() => "");
-			throw new Error(
-				`RPC ${response.status} ${response.statusText}${text ? `: ${text}` : ""}`,
-			);
-		}
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      throw new Error(`RPC ${response.status} ${response.statusText}${text ? `: ${text}` : ""}`);
+    }
 
-		return await response.json();
-	}
+    return await response.json();
+  }
 
-	async subscribe(
-		callback: (event: any) => void,
-		_options?: SubscriptionOptions,
-	): Promise<() => void> {
-		this.sharedCallbacks.add(callback);
-		this.ensureSharedSource();
+  async subscribe(
+    callback: (event: any) => void,
+    _options?: SubscriptionOptions,
+  ): Promise<() => void> {
+    this.sharedCallbacks.add(callback);
+    this.ensureSharedSource();
 
-		return () => {
-			this.sharedCallbacks.delete(callback);
-			if (this.sharedCallbacks.size === 0 && this.sharedSource) {
-				this.sharedSource.close();
-				this.sharedSource = null;
-			}
-		};
-	}
+    return () => {
+      this.sharedCallbacks.delete(callback);
+      if (this.sharedCallbacks.size === 0 && this.sharedSource) {
+        this.sharedSource.close();
+        this.sharedSource = null;
+      }
+    };
+  }
 
-	private ensureSharedSource() {
-		if (this.sharedSource) return;
+  private ensureSharedSource() {
+    if (this.sharedSource) return;
 
-		const EventSourceConstructor = globalThis.EventSource as unknown as new (
-			url: string,
-		) => EventSource;
-		const source = new EventSourceConstructor(`${this.baseUrl}/events`);
+    const EventSourceConstructor = globalThis.EventSource as unknown as new (
+      url: string,
+    ) => EventSource;
+    const source = new EventSourceConstructor(`${this.baseUrl}/events`);
 
-		source.onmessage = (e) => {
-			let parsed: any;
-			try {
-				parsed = JSON.parse(e.data);
-			} catch (err) {
-				console.error("[HttpTransport] Failed to parse SSE event:", err);
-				return;
-			}
+    source.addEventListener("message", (e) => {
+      let parsed: any;
+      try {
+        parsed = JSON.parse(e.data);
+      } catch (err) {
+        console.error("[HttpTransport] Failed to parse SSE event:", err);
+        return;
+      }
 
-			if (!parsed || typeof parsed !== "object") return;
+      if (!parsed || typeof parsed !== "object") return;
 
-			// Match the shape the existing transports forward: callback gets
-			// the inner Event payload (or LogMessage payload), not the
-			// DaemonResponse envelope.
-			let payload: any | undefined;
-			if (parsed.Event !== undefined) {
-				payload = parsed.Event;
-			} else if (parsed.LogMessage !== undefined) {
-				payload = parsed.LogMessage;
-			} else {
-				return;
-			}
+      // Match the shape the existing transports forward: callback gets
+      // the inner Event payload (or LogMessage payload), not the
+      // DaemonResponse envelope.
+      let payload: any | undefined;
+      if (parsed.Event !== undefined) {
+        payload = parsed.Event;
+      } else if (parsed.LogMessage !== undefined) {
+        payload = parsed.LogMessage;
+      } else {
+        return;
+      }
 
-			for (const cb of this.sharedCallbacks) {
-				try {
-					cb(payload);
-				} catch (err) {
-					console.error("[HttpTransport] Subscriber callback threw:", err);
-				}
-			}
-		};
+      for (const cb of this.sharedCallbacks) {
+        try {
+          cb(payload);
+        } catch (err) {
+          console.error("[HttpTransport] Subscriber callback threw:", err);
+        }
+      }
+    });
 
-		source.onerror = (e) => {
-			// EventSource auto-reconnects on transient failures. We log once
-			// and let the browser retry — there's nothing useful to do at
-			// this layer beyond surfacing it.
-			console.warn("[HttpTransport] SSE connection error", e);
-		};
+    source.addEventListener("error", (e) => {
+      // EventSource auto-reconnects on transient failures. We log once
+      // and let the browser retry — there's nothing useful to do at
+      // this layer beyond surfacing it.
+      console.warn("[HttpTransport] SSE connection error", e);
+    });
 
-		this.sharedSource = source;
-	}
+    this.sharedSource = source;
+  }
 }
-

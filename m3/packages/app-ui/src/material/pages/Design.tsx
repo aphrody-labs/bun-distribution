@@ -85,9 +85,7 @@ export default function Design({ adaptive }: PageProps) {
           >
             {busy ? "Generating…" : "Generate design"}
           </Button>
-          <p role="status" className="text-body-medium text-on-surface-variant">
-            {notice}
-          </p>
+          <output className="block text-body-medium text-on-surface-variant">{notice}</output>
         </Card>
       </Section>
       {result ? (

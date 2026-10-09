@@ -3,10 +3,7 @@ import type { File } from "@aphrody/drive-client";
 import { Subtitles, type SubtitleSettings } from "./Subtitles";
 import { SubtitleSettingsMenu } from "./SubtitleSettingsMenu";
 import { useZoomPan } from "./useZoomPan";
-import type {
-	VideoControlsState,
-	VideoControlsCallbacks,
-} from "./VideoControls";
+import type { VideoControlsState, VideoControlsCallbacks } from "./VideoControls";
 
 interface VideoPlayerProps {
 	src: string;
@@ -26,6 +23,12 @@ export function VideoPlayer({
 	getCallbacks,
 }: VideoPlayerProps) {
 	const videoRef = useRef<HTMLVideoElement>(null);
+	// Élément vidéo en état : Subtitles le reçoit sans lire de ref pendant le rendu.
+	const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null);
+	const setVideoNode = useCallback((el: HTMLVideoElement | null) => {
+		videoRef.current = el;
+		setVideoEl(el);
+	}, []);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const videoContainerRef = useRef<HTMLDivElement>(null);
 	const [playing, setPlaying] = useState(false);
@@ -54,8 +57,9 @@ export function VideoPlayer({
 		mouseX: number;
 	} | null>(null);
 	const hideControlsTimeout = useRef<number | undefined>(undefined);
-	const { zoom, zoomIn, zoomOut, reset, isZoomed, transform } =
-		useZoomPan(videoContainerRef as React.RefObject<HTMLElement>);
+	const { zoom, zoomIn, zoomOut, reset, isZoomed, transform } = useZoomPan(
+		videoContainerRef as React.RefObject<HTMLElement>,
+	);
 
 	// Expose controls state to parent
 	useEffect(() => {
@@ -116,14 +120,11 @@ export function VideoPlayer({
 		[duration],
 	);
 
-	const handleTimelineHover = useCallback(
-		(e: React.MouseEvent<HTMLDivElement>) => {
-			const rect = e.currentTarget.getBoundingClientRect();
-			const percent = (e.clientX - rect.left) / rect.width;
-			setTimelineHover({ percent, mouseX: e.clientX });
-		},
-		[],
-	);
+	const handleTimelineHover = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+		const rect = e.currentTarget.getBoundingClientRect();
+		const percent = (e.clientX - rect.left) / rect.width;
+		setTimelineHover({ percent, mouseX: e.clientX });
+	}, []);
 
 	const toggleFullscreen = useCallback(() => {
 		if (!containerRef.current) return;
@@ -143,14 +144,8 @@ export function VideoPlayer({
 	const handleSeekingEnd = useCallback(() => setSeeking(false), []);
 	const handleMuteToggle = useCallback(() => setMuted((m) => !m), []);
 	const handleLoopToggle = useCallback(() => setLoop((l) => !l), []);
-	const handleSubtitlesToggle = useCallback(
-		() => setSubtitlesEnabled((s) => !s),
-		[],
-	);
-	const handleSubtitleSettingsToggle = useCallback(
-		() => setShowSubtitleSettings((s) => !s),
-		[],
-	);
+	const handleSubtitlesToggle = useCallback(() => setSubtitlesEnabled((s) => !s), []);
+	const handleSubtitleSettingsToggle = useCallback(() => setShowSubtitleSettings((s) => !s), []);
 
 	// Show controls on mouse move, hide after 1s of inactivity
 	const handleMouseMove = useCallback(() => {
@@ -216,17 +211,11 @@ export function VideoPlayer({
 					break;
 				case "ArrowLeft":
 					e.preventDefault();
-					videoRef.current.currentTime = Math.max(
-						0,
-						videoRef.current.currentTime - 5,
-					);
+					videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 5);
 					break;
 				case "ArrowRight":
 					e.preventDefault();
-					videoRef.current.currentTime = Math.min(
-						duration,
-						videoRef.current.currentTime + 5,
-					);
+					videoRef.current.currentTime = Math.min(duration, videoRef.current.currentTime + 5);
 					break;
 				case "ArrowUp":
 					e.preventDefault();
@@ -302,28 +291,19 @@ export function VideoPlayer({
 				ref={videoContainerRef}
 				className={`relative flex h-full w-full items-center justify-center ${isZoomed ? "overflow-visible" : "overflow-hidden"}`}
 			>
-				<div
-					style={transform}
-					className="flex items-center justify-center"
-				>
+				<div style={transform} className="flex items-center justify-center">
+					{/* oxlint-disable-next-line jsx-a11y/media-has-caption -- lecteur de fichiers utilisateur sans piste VTT embarquée ; les sous-titres sont rendus par le composant Subtitles superposé */}
 					<video
-						ref={videoRef}
+						ref={setVideoNode}
 						src={src}
 						autoPlay
 						playsInline
 						className="max-h-screen max-w-screen"
 						onPlay={() => setPlaying(true)}
 						onPause={() => setPlaying(false)}
-						onTimeUpdate={(e) =>
-							!seeking &&
-							setCurrentTime(e.currentTarget.currentTime)
-						}
-						onDurationChange={(e) =>
-							setDuration(e.currentTarget.duration)
-						}
-						onLoadedMetadata={(e) =>
-							setDuration(e.currentTarget.duration)
-						}
+						onTimeUpdate={(e) => !seeking && setCurrentTime(e.currentTarget.currentTime)}
+						onDurationChange={(e) => setDuration(e.currentTarget.duration)}
+						onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
 					/>
 				</div>
 			</div>
@@ -331,11 +311,7 @@ export function VideoPlayer({
 			{/* Subtitles */}
 			{subtitlesEnabled && (
 				<div className="absolute inset-0 z-10 pointer-events-none">
-					<Subtitles
-						file={file}
-						videoElement={videoRef.current}
-						settings={subtitleSettings}
-					/>
+					<Subtitles file={file} videoElement={videoEl} settings={subtitleSettings} />
 				</div>
 			)}
 

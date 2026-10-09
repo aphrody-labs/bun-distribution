@@ -21,7 +21,9 @@ export const listTableFeatures = tableFeatures({ columnSizingFeature, columnResi
 // Column definitions for the list view
 export function useTable(files: File[]) {
   // Memoize files array reference to prevent unnecessary table updates
-  const stableFiles = useMemo(() => files, [JSON.stringify(files.map(f => f.id))]);
+  const filesKey = JSON.stringify(files.map((f) => f.id));
+  // oxlint-disable-next-line react-hooks/exhaustive-deps -- la référence ne change que si la liste d'identifiants change ; files est volontairement absent
+  const stableFiles = useMemo(() => files, [filesKey]);
 
   const columns = useMemo<ColumnDef<typeof listTableFeatures, File>[]>(
     () => [
@@ -59,7 +61,7 @@ export function useTable(files: File[]) {
           row.kind === "File" ? row.extension?.toUpperCase() || "—" : "Dossier",
       },
     ],
-    []
+    [],
   );
 
   const table = useReactTableV9({

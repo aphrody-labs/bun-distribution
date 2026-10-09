@@ -106,8 +106,11 @@ const frameworks: Framework[] = [
 ];
 
 async function write(dir: string, extra: Record<string, string>) {
-  for (const [file, text] of Object.entries({ ...SOURCES, ...extra }))
-    await Bun.write(join(dir, file), text);
+  await Promise.all(
+    Object.entries({ ...SOURCES, ...extra }).map(([file, text]) =>
+      Bun.write(join(dir, file), text),
+    ),
+  );
 }
 await write(m3Dir, { "m3.config.ts": `export default { app: true, port: 3000 };\n` });
 await write(nextDir, {
@@ -183,16 +186,31 @@ async function start(framework: Framework) {
     stdout: "ignore",
     stderr: "pipe",
   });
+  let exited = false;
   for (;;) {
-    if (proc.exitCode !== null)
-      throw new Error(`${framework.name} exited: ${await new Response(proc.stderr).text()}`);
+    if (proc.exitCode !== null) {
+      exited = true;
+      break;
+    }
     try {
+      // oxlint-disable-next-line no-await-in-loop -- readiness probes are sequential: each one waits for the server's answer
       if ((await fetch(origin + "/")).status === 200) break;
     } catch {}
+    // oxlint-disable-next-line no-await-in-loop -- polling interval between readiness probes
     await Bun.sleep(5);
   }
+  if (exited)
+    throw new Error(`${framework.name} exited: ${await new Response(proc.stderr).text()}`);
   return { proc, origin, ms: performance.now() - started };
 }
+
+const children = (id: number): number[] => {
+  const file = `/proc/${id}/task/${id}/children`;
+  const list = existsSync(file)
+    ? Bun.spawnSync(["cat", file], { windowsHide: true }).stdout.toString().trim()
+    : "";
+  return list ? list.split(/\s+/).map(Number) : [];
+};
 
 /** Working set of `pid` and its descendants (Windows: Win32_Process; elsewhere: /proc status VmRSS). */
 function memory(pid: number): number {
@@ -209,13 +227,6 @@ function memory(pid: number): number {
         .trim(),
     );
   }
-  const children = (id: number): number[] => {
-    const file = `/proc/${id}/task/${id}/children`;
-    const list = existsSync(file)
-      ? Bun.spawnSync(["cat", file], { windowsHide: true }).stdout.toString().trim()
-      : "";
-    return list ? list.split(/\s+/).map(Number) : [];
-  };
   let sum = 0;
   for (const queue = [pid]; queue.length;) {
     const id = queue.pop()!;
@@ -237,11 +248,13 @@ async function clientBytes(origin: string): Promise<number> {
       ),
     ].map((match) => match[1] ?? match[2]),
   );
-  let bytes = 0;
-  for (const url of urls)
-    bytes += (await (await fetch(new URL(url.replaceAll("&amp;", "&"), origin))).arrayBuffer())
-      .byteLength;
-  return bytes;
+  const sizes = await Promise.all(
+    Array.from(urls, async (url) => {
+      const response = await fetch(new URL(url.replaceAll("&amp;", "&"), origin));
+      return (await response.arrayBuffer()).byteLength;
+    }),
+  );
+  return sizes.reduce((sum, size) => sum + size, 0);
 }
 
 async function load(url: string) {
@@ -251,7 +264,9 @@ async function load(url: string) {
     while (performance.now() < until) {
       const sent = performance.now();
       try {
+        // oxlint-disable-next-line no-await-in-loop -- each load worker sends its requests one after another; concurrency comes from the parallel workers
         const response = await fetch(url);
+        // oxlint-disable-next-line no-await-in-loop -- the body is read before the next request so the connection is reused
         await response.arrayBuffer();
         if (response.status !== 200) errors++;
       } catch {
@@ -281,6 +296,7 @@ try {
   for (const framework of frameworks) {
     const row: Record<string, string> = {};
     const builds: number[] = [];
+    // oxlint-disable-next-line no-await-in-loop -- cold builds are timed one after another; parallel builds would skew each other
     for (let i = 0; i < RUNS; i++) builds.push(await build(framework));
     row["build cold (median ms)"] =
       `${Math.round(median(builds))} (${builds.map(Math.round).join(", ")})`;
@@ -289,18 +305,23 @@ try {
     );
     const starts: number[] = [];
     for (let i = 0; i < RUNS; i++) {
+      // oxlint-disable-next-line no-await-in-loop -- start-up time is measured run after run; overlapping servers would skew each other
       const server = await start(framework);
       starts.push(server.ms);
       server.proc.kill();
+      // oxlint-disable-next-line no-await-in-loop -- the process must exit before the next timed start
       await server.proc.exited;
     }
     row["start to first 200 (median ms)"] =
       `${Math.round(median(starts))} (${starts.map(Math.round).join(", ")})`;
+    // oxlint-disable-next-line no-await-in-loop -- frameworks are measured one after another so they never share the CPU
     const server = await start(framework);
     try {
       row["memory idle"] = mib(memory(server.proc.pid));
+      // oxlint-disable-next-line no-await-in-loop -- measurement step, run once per framework after the server is up
       row["JS for / (bytes)"] = String(await clientBytes(server.origin));
       for (const path of ["/", "/items/7", "/api/ping"]) {
+        // oxlint-disable-next-line no-await-in-loop -- each path is load-tested in turn so the paths do not compete for the CPU
         const r = await load(server.origin + path);
         row[`${path} req/s, p50/p99 ms`] =
           `${r.rps}, ${r.p50.toFixed(1)}/${r.p99.toFixed(1)}${r.errors ? `, ${r.errors} errors` : ""}`;
@@ -308,6 +329,7 @@ try {
       row["memory after load"] = mib(memory(server.proc.pid));
     } finally {
       server.proc.kill();
+      // oxlint-disable-next-line no-await-in-loop -- the process must exit before the next framework is measured
       await server.proc.exited;
     }
     results[framework.name] = row;

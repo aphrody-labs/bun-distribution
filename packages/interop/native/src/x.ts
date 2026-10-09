@@ -362,6 +362,7 @@ async function waitJob(id: number, signal?: AbortSignal): Promise<string> {
       if (text !== null) return text;
       if (signal?.aborted) throw abortReason(signal);
       // Each poll depends on the preceding job state.
+      // oxlint-disable-next-line no-await-in-loop -- poll loop: each poll depends on the preceding job state
       await Bun.sleep(delay);
       delay = Math.min(delay * 2, 16);
     }

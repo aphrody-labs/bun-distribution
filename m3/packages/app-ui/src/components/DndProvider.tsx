@@ -42,6 +42,20 @@ import { useTabManager } from "./TabManager/useTabManager";
  *    - Adds item to space/group
  *    - Data: { type, spaceId, groupId? }
  */
+// Custom collision detection: prefer -top zones over -bottom zones to avoid double lines
+const customCollision: CollisionDetection = (args) => {
+	const collisions = pointerWithin(args);
+	if (!collisions || collisions.length === 0) return collisions;
+
+	// If we have multiple collisions, prefer -top over -bottom
+	const hasTop = collisions.find((c) => String(c.id).endsWith("-top"));
+	const hasMiddle = collisions.find((c) => String(c.id).endsWith("-middle"));
+
+	if (hasMiddle) return [hasMiddle]; // Middle zone takes priority
+	if (hasTop) return [hasTop]; // Top zone over bottom
+	return [collisions[0]]; // First collision
+};
+
 export function DndProvider({ children }: { children: React.ReactNode }) {
 	const sensors = useSensors(
 		useSensor(PointerSensor, {
@@ -61,22 +75,6 @@ export function DndProvider({ children }: { children: React.ReactNode }) {
 	const { data: spacesData } = useSpaces();
 	const spaces = spacesData?.spaces;
 	const { reorderTabs } = useTabManager();
-
-	// Custom collision detection: prefer -top zones over -bottom zones to avoid double lines
-	const customCollision: CollisionDetection = (args) => {
-		const collisions = pointerWithin(args);
-		if (!collisions || collisions.length === 0) return collisions;
-
-		// If we have multiple collisions, prefer -top over -bottom
-		const hasTop = collisions.find((c) => String(c.id).endsWith("-top"));
-		const hasMiddle = collisions.find((c) =>
-			String(c.id).endsWith("-middle"),
-		);
-
-		if (hasMiddle) return [hasMiddle]; // Middle zone takes priority
-		if (hasTop) return [hasTop]; // Top zone over bottom
-		return [collisions[0]]; // First collision
-	};
 
 	const handleDragStart = (event: any) => {
 		setActiveItem(event.active.data.current);
@@ -112,17 +110,11 @@ export function DndProvider({ children }: { children: React.ReactNode }) {
 			});
 
 			const libraryId = client.getCurrentLibraryId();
-			const currentSpace =
-				spaces?.find((s: any) => s.id === currentSpaceId) ??
-				spaces?.[0];
+			const currentSpace = spaces?.find((s: any) => s.id === currentSpaceId) ?? spaces?.[0];
 
 			if (!currentSpace || !libraryId) return;
 
-			const queryKey = [
-				"query:spaces.get_layout",
-				libraryId,
-				{ space_id: currentSpace.id },
-			];
+			const queryKey = ["query:spaces.get_layout", libraryId, { space_id: currentSpace.id }];
 			const layout = queryClient.getQueryData(queryKey) as any;
 
 			if (!layout) return;
@@ -134,16 +126,10 @@ export function DndProvider({ children }: { children: React.ReactNode }) {
 			if (isGroupReorder) {
 				console.log("[DnD] Reordering groups");
 
-				const oldIndex = groups.findIndex(
-					(g: any) => g.id === active.id,
-				);
+				const oldIndex = groups.findIndex((g: any) => g.id === active.id);
 				const newIndex = groups.findIndex((g: any) => g.id === over.id);
 
-				if (
-					oldIndex !== -1 &&
-					newIndex !== -1 &&
-					oldIndex !== newIndex
-				) {
+				if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
 					// Optimistically update the UI
 					const newGroups = [...layout.groups];
 					const [movedGroup] = newGroups.splice(oldIndex, 1);
@@ -174,9 +160,7 @@ export function DndProvider({ children }: { children: React.ReactNode }) {
 			// Reordering space items
 			if (layout?.space_items) {
 				const items = layout.space_items;
-				const oldIndex = items.findIndex(
-					(item: any) => item.id === active.id,
-				);
+				const oldIndex = items.findIndex((item: any) => item.id === active.id);
 
 				// Extract item ID from over.id (could be a drop zone ID like "space-item-{id}-top")
 				let overItemId = String(over.id);
@@ -187,9 +171,7 @@ export function DndProvider({ children }: { children: React.ReactNode }) {
 					overItemId = parts.slice(2, -1).join("-");
 				}
 
-				const newIndex = items.findIndex(
-					(item: any) => item.id === overItemId,
-				);
+				const newIndex = items.findIndex((item: any) => item.id === overItemId);
 
 				console.log("[DnD] Reorder space items:", {
 					oldIndex,
@@ -198,11 +180,7 @@ export function DndProvider({ children }: { children: React.ReactNode }) {
 					extractedOverId: overItemId,
 				});
 
-				if (
-					oldIndex !== -1 &&
-					newIndex !== -1 &&
-					oldIndex !== newIndex
-				) {
+				if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
 					// Optimistically update the UI
 					const newItems = [...items];
 					const [movedItem] = newItems.splice(oldIndex, 1);
@@ -239,9 +217,7 @@ export function DndProvider({ children }: { children: React.ReactNode }) {
 		// Handle palette item drops (from customization panel)
 		if (dragData?.type === "palette-item") {
 			const libraryId = client.getCurrentLibraryId();
-			const currentSpace =
-				spaces?.find((s: any) => s.id === currentSpaceId) ??
-				spaces?.[0];
+			const currentSpace = spaces?.find((s: any) => s.id === currentSpaceId) ?? spaces?.[0];
 
 			if (!currentSpace || !libraryId) return;
 
@@ -301,10 +277,7 @@ export function DndProvider({ children }: { children: React.ReactNode }) {
 		}
 
 		// Insert before/after sidebar items (adds item to space/group)
-		if (
-			dropData?.action === "insert-before" ||
-			dropData?.action === "insert-after"
-		) {
+		if (dropData?.action === "insert-before" || dropData?.action === "insert-after") {
 			if (!dropData.spaceId) return;
 
 			console.log("[DnD] Inserting item:", {
@@ -318,16 +291,12 @@ export function DndProvider({ children }: { children: React.ReactNode }) {
 				const created = await addItem.mutateAsync({
 					space_id: dropData.spaceId,
 					group_id: dropData.groupId || null,
-				item_type: { Path: { sd_path: dragData.sdPath } },
-			});
+					item_type: { Path: { sd_path: dragData.sdPath } },
+				});
 
 				const libraryId = client.getCurrentLibraryId();
 				const currentSpace = spaces?.find((space: any) => space.id === dropData.spaceId);
-				const queryKey = [
-					"query:spaces.get_layout",
-					libraryId,
-					{ space_id: dropData.spaceId },
-				];
+				const queryKey = ["query:spaces.get_layout", libraryId, { space_id: dropData.spaceId }];
 				const layout = queryClient.getQueryData(queryKey) as any;
 				if (!libraryId || !currentSpace || !layout || !dropData.itemId) return;
 
@@ -349,9 +318,7 @@ export function DndProvider({ children }: { children: React.ReactNode }) {
 					? {
 							...layout,
 							groups: layout.groups.map((entry: any) =>
-								entry.group.id === dropData.groupId
-									? { ...entry, items: reorderedItems }
-									: entry,
+								entry.group.id === dropData.groupId ? { ...entry, items: reorderedItems } : entry,
 							),
 						}
 					: { ...layout, space_items: reorderedItems };
@@ -456,32 +423,21 @@ export function DndProvider({ children }: { children: React.ReactNode }) {
 				{activeItem?.type === "palette-item" ? (
 					// Palette item preview
 					<div className="flex items-center gap-2 px-3 py-2 rounded-small bg-primary text-white shadow-md3-3 min-w-[180px]">
-						{activeItem.itemType === "Overview" && (
-							<House size={20} weight="bold" />
-						)}
-						{activeItem.itemType === "Recents" && (
-							<Clock size={20} weight="bold" />
-						)}
-						{activeItem.itemType === "Favorites" && (
-							<Heart size={20} weight="bold" />
-						)}
-						{activeItem.itemType === "FileKinds" && (
-							<Folders size={20} weight="bold" />
-						)}
+						{activeItem.itemType === "Overview" && <House size={20} weight="bold" />}
+						{activeItem.itemType === "Recents" && <Clock size={20} weight="bold" />}
+						{activeItem.itemType === "Favorites" && <Heart size={20} weight="bold" />}
+						{activeItem.itemType === "FileKinds" && <Folders size={20} weight="bold" />}
 						<span className="text-label-large font-medium">
 							{activeItem.itemType === "Overview" && "Overview"}
 							{activeItem.itemType === "Recents" && "Recents"}
 							{activeItem.itemType === "Favorites" && "Favorites"}
-							{activeItem.itemType === "FileKinds" &&
-								"File Kinds"}
+							{activeItem.itemType === "FileKinds" && "File Kinds"}
 						</span>
 					</div>
 				) : activeItem?.label ? (
 					// Group or SpaceItem preview (from sortable context)
 					<div className="flex items-center gap-2 px-3 py-2 rounded-small bg-surface-container-low/95 backdrop-blur-sm text-on-surface shadow-md3-3 border border-outline-variant min-w-[180px]">
-						<span className="text-label-large font-medium">
-							{activeItem.label}
-						</span>
+						<span className="text-label-large font-medium">{activeItem.label}</span>
 					</div>
 				) : activeItem?.file ? (
 					activeItem.gridSize ? (
@@ -491,41 +447,31 @@ export function DndProvider({ children }: { children: React.ReactNode }) {
 								<div className="rounded-small p-2">
 									<FileComponent.Thumb
 										file={activeItem.file}
-										size={Math.max(
-											activeItem.gridSize * 0.6,
-											60,
-										)}
+										size={Math.max(activeItem.gridSize * 0.6, 60)}
 									/>
 								</div>
 								<div className="text-body-medium truncate px-2 py-0.5 rounded-small bg-primary text-white max-w-full">
 									{activeItem.name}
 								</div>
 								{/* Show count badge if dragging multiple files */}
-								{activeItem.selectedFiles &&
-									activeItem.selectedFiles.length > 1 && (
-										<div className="absolute -top-2 -right-2 size-6 rounded-full bg-primary text-white text-label-medium font-bold flex items-center justify-center shadow-md3-3 border-2 border-surface">
-											{activeItem.selectedFiles.length}
-										</div>
-									)}
+								{activeItem.selectedFiles && activeItem.selectedFiles.length > 1 && (
+									<div className="absolute -top-2 -right-2 size-6 rounded-full bg-primary text-white text-label-medium font-bold flex items-center justify-center shadow-md3-3 border-2 border-surface">
+										{activeItem.selectedFiles.length}
+									</div>
+								)}
 							</div>
 						</div>
 					) : (
 						// Column/List view preview
 						<div className="flex items-center gap-2 px-3 py-1.5 rounded-small bg-primary text-white shadow-md3-3 min-w-[200px] max-w-[300px]">
-							<FileComponent.Thumb
-								file={activeItem.file}
-								size={24}
-							/>
-							<span className="text-label-large font-medium truncate">
-								{activeItem.name}
-							</span>
+							<FileComponent.Thumb file={activeItem.file} size={24} />
+							<span className="text-label-large font-medium truncate">{activeItem.name}</span>
 							{/* Show count badge if dragging multiple files */}
-							{activeItem.selectedFiles &&
-								activeItem.selectedFiles.length > 1 && (
-									<div className="ml-auto size-5 rounded-full bg-white text-primary text-label-medium font-bold flex items-center justify-center">
-										{activeItem.selectedFiles.length}
-									</div>
-								)}
+							{activeItem.selectedFiles && activeItem.selectedFiles.length > 1 && (
+								<div className="ml-auto size-5 rounded-full bg-white text-primary text-label-medium font-bold flex items-center justify-center">
+									{activeItem.selectedFiles.length}
+								</div>
+							)}
 						</div>
 					)
 				) : null}

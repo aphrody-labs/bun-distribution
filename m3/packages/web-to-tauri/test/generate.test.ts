@@ -35,7 +35,7 @@ describe("generateProject: remote", () => {
 
   it("writes a configuration-only Tauri 3 project around the runtime plugin", async () => {
     const { out, plan } = await generate();
-    for (const path of [
+    const expected = [
       "src-tauri/wrap.json",
       "src-tauri/tauri.conf.json",
       "src-tauri/Cargo.toml",
@@ -47,9 +47,11 @@ describe("generateProject: remote", () => {
       "package.json",
       "wrap-plan.json",
       "README.md",
-    ]) {
-      expect(await Bun.file(join(out, path)).exists()).toBe(true);
-    }
+    ];
+    const missing = await Promise.all(
+      expected.map(async (path) => ((await Bun.file(join(out, path)).exists()) ? null : path)),
+    );
+    expect(missing.filter((path) => path !== null)).toEqual([]);
     expect(JSON.parse(await read(out, "src-tauri/wrap.json"))).toEqual(
       JSON.parse(JSON.stringify(plan.config)),
     );

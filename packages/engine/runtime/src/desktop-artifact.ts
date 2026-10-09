@@ -154,7 +154,7 @@ export function desktopTreeDigest(manifest: DesktopManifest): string {
   return digest(
     new TextEncoder().encode(
       Object.keys(manifest.files)
-        .sort()
+        .toSorted()
         .map((file) => `${file}\0${manifest.files[file]!.sha256}\n`)
         .join(""),
     ),

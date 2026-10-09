@@ -504,11 +504,15 @@ describe("burn and mux", () => {
     async () => {
       const subs = join(work, "mux.srt");
       await writeFile(subs, SRT);
-      for (const name of ["mux.mkv", "mux.mp4"]) {
-        const output = join(work, name);
-        await muxSubtitles({ input: clip, subtitles: subs, output });
-        const found = await streams(output);
-        expect(found.map((s) => s.codec_type).sort()).toEqual(["audio", "subtitle", "video"]);
+      const probed = await Promise.all(
+        ["mux.mkv", "mux.mp4"].map(async (name) => {
+          const output = join(work, name);
+          await muxSubtitles({ input: clip, subtitles: subs, output });
+          return streams(output);
+        }),
+      );
+      for (const found of probed) {
+        expect(found.map((s) => s.codec_type).toSorted()).toEqual(["audio", "subtitle", "video"]);
         expect(found.find((s) => s.codec_type === "subtitle")?.tags?.language).toBe("eng");
       }
     },

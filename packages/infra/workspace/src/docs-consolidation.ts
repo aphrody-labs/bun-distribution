@@ -188,9 +188,10 @@ export function sha256Of(data: string | Uint8Array): string {
   return createHash("sha256").update(data).digest("hex");
 }
 
+const blank = (text: string) => text.replace(/[^\n]/g, " ");
+
 /** Replace fenced blocks and inline code with spaces so offsets stay stable. */
 export function maskCode(content: string): string {
-  const blank = (text: string) => text.replace(/[^\n]/g, " ");
   return content
     .replace(/```[\s\S]*?```/g, blank)
     .replace(/~~~[\s\S]*?~~~/g, blank)
@@ -497,10 +498,10 @@ function encodeDestination(path: string): string {
 
 /** Destination text for `target` written from `fromFile`, keeping the original query/anchor and `./` style. */
 export function relativeDestination(fromFile: string, target: string, original: string): string {
-  let relative = posix.relative(posix.dirname(fromFile), target) || ".";
-  if (original.startsWith("./") && !relative.startsWith(".")) relative = `./${relative}`;
+  let destination = posix.relative(posix.dirname(fromFile), target) || ".";
+  if (original.startsWith("./") && !destination.startsWith(".")) destination = `./${destination}`;
   const suffix = /[?#].*$/.exec(original)?.[0] ?? "";
-  return `${encodeDestination(relative)}${suffix}`;
+  return `${encodeDestination(destination)}${suffix}`;
 }
 
 export interface RewriteResult {
@@ -563,8 +564,8 @@ export function buildMentionPattern(paths: Iterable<string>): RegExp | null {
 
 /** Pointer stub left in place of a duplicate whose canonical copy lives elsewhere. */
 export function pointerStub(path: string, canonical: string): string {
-  const relative = posix.relative(posix.dirname(path), canonical);
-  return `# Référence canonique\n\nCe document est maintenu dans [${canonical}](${encodeDestination(relative)}).\n`;
+  const destination = posix.relative(posix.dirname(path), canonical);
+  return `# Référence canonique\n\nCe document est maintenu dans [${canonical}](${encodeDestination(destination)}).\n`;
 }
 
 // ---------------------------------------------------------------------------
@@ -715,6 +716,7 @@ export async function scanScope(options: ScanOptions): Promise<ScanResult> {
   const candidates: Array<{ path: string; reason: "path" | "owner" | "mention"; text: string }> =
     [];
   const corpus: Array<{ path: string; text: string }> = [];
+  const readable: Array<{ path: string; extension: string }> = [];
   for (const path of files) {
     if (scope.name === "all" && !safeGlobalPath(root, path)) continue;
     if (
@@ -731,9 +733,17 @@ export async function scanScope(options: ScanOptions): Promise<ScanResult> {
       !scope.includePaths.some((r) => r.test(path))
     )
       continue;
-    const absolute = join(root, path);
-    if (!existsSync(absolute)) continue;
-    const text = await readFile(absolute, "utf8");
+    if (!existsSync(join(root, path))) continue;
+    readable.push({ path, extension });
+  }
+  const loaded = await Promise.all(
+    readable.map(async ({ path, extension }) => ({
+      path,
+      extension,
+      text: await readFile(join(root, path), "utf8"),
+    })),
+  );
+  for (const { path, extension, text } of loaded) {
     texts.set(path, text);
     if (extension === ".md" || extension === ".mdx") corpus.push({ path, text });
     const reason = inScope(path, text, scope);
@@ -770,9 +780,12 @@ export async function scanScope(options: ScanOptions): Promise<ScanResult> {
   }
 
   const entries: DocEntry[] = [];
-  for (const { path, reason, text } of candidates) {
+  const hashes = await Promise.all(
+    candidates.map(async ({ path }) => sha256Of(await readFile(join(root, path)))),
+  );
+  for (const [index, { path, reason, text }] of candidates.entries()) {
     const bytes = Buffer.byteLength(text);
-    const sha256 = sha256Of(await readFile(join(root, path)));
+    const sha256 = hashes[index]!;
     const { domain, category, ownerKind } = domainOf(path);
     const imported = importedBy.get(path);
     const notice = isNoticeFile(path);
@@ -1228,6 +1241,7 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
   const removals = new Map<string, string>();
   const pointers = new Map<string, string>();
   const claimedTargets = new Set<string>();
+  // oxlint-disable no-await-in-loop -- validation séquentielle : claimedTargets, l'ordre des erreurs et les maps moves/removals/pointers dépendent des actions précédentes
   for (const action of plan.actions) {
     if (action.action === "retain") continue;
     if (action.action === "fix-paths") {
@@ -1303,6 +1317,7 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
       }
     }
   }
+  // oxlint-enable no-await-in-loop
   if (errors.length) throw new Error(`plan rejected:\n${errors.join("\n")}`);
 
   // Canonical copies may themselves move in the same plan.
@@ -1329,6 +1344,7 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
   const pending: Array<{ from: string; to: string; content: string }> = [];
   const perAction = new Map<string, Map<string, { links: number; mentions: number }>>();
 
+  const corpusPaths: string[] = [];
   for (const path of files) {
     if (!/\.(md|mdx)$/.test(path)) continue;
     if (plan.scope === "all" && !safeGlobalPath(root, path)) continue;
@@ -1340,7 +1356,11 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
     if (CORPUS_EXCLUDES.some((rule) => rule.test(path))) continue;
     if (removals.has(path)) continue;
     if (!existsSync(join(root, path))) continue;
-    const content = await readFile(join(root, path), "utf8");
+    corpusPaths.push(path);
+  }
+  const contents = await Promise.all(corpusPaths.map((path) => readFile(join(root, path), "utf8")));
+  for (const [index, path] of corpusPaths.entries()) {
+    const content = contents[index]!;
     const newPath = moves.get(path) ?? path;
     const result = rewriteMarkdown(content, path, newPath, finalOf, mentionPattern, mentionTarget);
     for (const destination of result.unresolved)
@@ -1394,9 +1414,18 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
         ),
     );
     const fixes: Array<{ file: string; replacements: number }> = [];
+    // Each matched path is queued at most once, so the queue state read here is the state each iteration sees.
+    const onDisk = new Map(
+      // oxlint-disable-next-line no-await-in-loop -- chaque action lit la file pending produite par les actions précédentes : l'itération suivante ne peut pas être lancée avant
+      await Promise.all(
+        matched
+          .filter((path) => !pending.some((item) => item.to === path))
+          .map(async (path) => [path, await readFile(join(root, path), "utf8")] as const),
+      ),
+    );
     for (const path of matched) {
       const queued = pending.find((item) => item.to === path);
-      const current = queued?.content ?? (await readFile(join(root, path), "utf8"));
+      const current = queued?.content ?? onDisk.get(path)!;
       const fixed = applyPathMap(current, options.legacyPathMap ?? new Map());
       if (!fixed.replacements) continue;
       if (dirty.has(path) && !isAllowedDirty(path, allowed)) {
@@ -1428,10 +1457,12 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
   if (sourceMapPath && existsSync(sourceMapPath)) {
     updatedMap = JSON.parse(await readFile(sourceMapPath, "utf8")) as SourceMapFile;
     // A moved document's recorded hash is the hash of its rewritten content.
-    for (const record of movedRecords) {
-      const rewritten = pending.find((item) => item.from === record.path);
-      record.sha256 = rewritten ? sha256Of(rewritten.content) : await fileHash(record.path);
-    }
+    await Promise.all(
+      movedRecords.map(async (record) => {
+        const rewritten = pending.find((item) => item.from === record.path);
+        record.sha256 = rewritten ? sha256Of(rewritten.content) : await fileHash(record.path);
+      }),
+    );
     const updated = recordInSourceMap(updatedMap, removedRecords, movedRecords, options.reportName);
     sourceMapSummary = { path: options.sourceMapPath as string, entriesUpdated: updated };
   }
@@ -1439,6 +1470,7 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
   // 4. Execute.
   const removedDirectories: string[] = [];
   if (options.write) {
+    // oxlint-disable no-await-in-loop -- exécution séquentielle des mutations de fichiers : un échec laisse un état partiel prévisible, et le rmdir doit suivre le vidage des enfants (plus profond d'abord)
     for (const item of pending) {
       const destination = join(root, item.to);
       await mkdir(dirname(destination), { recursive: true });
@@ -1471,6 +1503,7 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
     }
     if (sourceMapPath && updatedMap)
       await writeFile(sourceMapPath, `${JSON.stringify(updatedMap)}\n`);
+    // oxlint-enable no-await-in-loop
   }
 
   const applied: AppliedAction[] = plan.actions.map((action) => {
@@ -1583,16 +1616,18 @@ export async function verifyReport(
       if (destinations.has(action.path))
         findings.push({ action: action.id, problem: `source map still lists ${action.path}` });
     } else if (action.action === "merge") {
+      // oxlint-disable no-await-in-loop -- les findings sont ajoutés dans l'ordre des sources : lecture séquentielle pour un rapport déterministe
       for (const source of action.sources ?? []) {
         if (source.disposition === "pointer") {
-          if (
-            !existsSync(absolute(source.path)) ||
-            !isPointerStub(await readFile(absolute(source.path), "utf8"))
-          )
+          const isStub =
+            existsSync(absolute(source.path)) &&
+            isPointerStub(await readFile(absolute(source.path), "utf8"));
+          if (!isStub)
             findings.push({ action: action.id, problem: `${source.path} is not a pointer stub` });
         } else if (existsSync(absolute(source.path)))
           findings.push({ action: action.id, problem: `${source.path} still exists` });
       }
+      // oxlint-enable no-await-in-loop
       if (action.canonical && !existsSync(absolute(action.canonical)))
         findings.push({ action: action.id, problem: `canonical ${action.canonical} missing` });
     }
@@ -1610,6 +1645,7 @@ export async function verifyReport(
   const importedUpstream =
     report.scope === "all" ? importedUpstreamMatcher(resolve(root)) : () => undefined;
   const mentionPattern = buildMentionPattern(gone);
+  const corpusPaths: string[] = [];
   for (const path of files) {
     if (!/\.(md|mdx)$/.test(path) || CORPUS_EXCLUDES.some((rule) => rule.test(path))) continue;
     if (report.scope === "all" && !safeGlobalPath(root, path)) continue;
@@ -1619,7 +1655,11 @@ export async function verifyReport(
     )
       continue;
     if (!existsSync(absolute(path))) continue;
-    const content = await readFile(absolute(path), "utf8");
+    corpusPaths.push(path);
+  }
+  const contents = await Promise.all(corpusPaths.map((path) => readFile(absolute(path), "utf8")));
+  for (const [index, path] of corpusPaths.entries()) {
+    const content = contents[index]!;
     for (const site of [...scanLinkSites(content), ...scanDefinitionSites(content)]) {
       const target = resolveLocalLink(path, site.dest);
       if (target && gone.has(target))
@@ -1793,7 +1833,7 @@ export function buildConsolidationReport(input: ConsolidationReportInput): Recor
     },
     actions,
     rewrittenFiles: [...rewritten.entries()]
-      .map(([file, counts]) => ({ file, ...counts }))
+      .map(([file, counts]) => Object.assign({ file }, counts))
       .toSorted((a, b) => a.file.localeCompare(b.file)),
     skippedFiles: input.applies.flatMap((report) => report.skippedFiles),
     unresolvedRewrites: input.applies.flatMap((report) => report.unresolvedRewrites),
@@ -1905,8 +1945,10 @@ export async function runDocsConsolidation(args: string[]): Promise<number> {
     throw new Error(`Unsafe global documentation path: ${sourceMapPath}`);
 
   const pathHistory = new Map<string, string>();
-  for (const file of history) {
-    const earlier = JSON.parse(await readFile(resolve(file), "utf8")) as ApplyReport;
+  const earlierReports = await Promise.all(
+    history.map(async (file) => JSON.parse(await readFile(resolve(file), "utf8")) as ApplyReport),
+  );
+  for (const earlier of earlierReports) {
     for (const action of earlier.actions)
       if (action.action === "move" && action.path && action.to)
         pathHistory.set(action.to, action.path);
@@ -2030,6 +2072,7 @@ export async function runDocsConsolidation(args: string[]): Promise<number> {
         (scope.name !== "all" || safeGlobalPath(root, path)),
     );
     let stale = 0;
+    // oxlint-disable no-await-in-loop -- hubs traités un par un : lecture, écriture et sortie console suivent l'ordre des hubs, et une erreur de lecture arrête les écritures déjà faites
     for (const hub of hubs) {
       const content = await readFile(join(root, hub), "utf8");
       if (!HUB_BEGIN.test(content)) continue;
@@ -2061,6 +2104,7 @@ export async function runDocsConsolidation(args: string[]): Promise<number> {
       if (write) await writeFile(join(root, hub), refreshed);
       console.log(`${write ? "refreshed" : "stale"}: ${hub}`);
     }
+    // oxlint-enable no-await-in-loop
     if (check && stale) return 1;
     return 0;
   }

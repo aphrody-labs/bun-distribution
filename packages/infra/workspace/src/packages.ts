@@ -70,16 +70,18 @@ export async function discoverBunPackageWorkspaces(
       const workspaces = Array.isArray(manifest.workspaces)
         ? manifest.workspaces
         : (manifest.workspaces?.packages ?? []);
-      return {
-        id,
-        name: manifest.name ?? id,
-        version: manifest.version,
-        root: workspaceRoot,
-        packageManager: manifest.packageManager ?? "bun (manifest inferred)",
-        lockfile: join(workspaceRoot, "bun.lock"),
-        workspaces,
-        ...config,
-      } satisfies BunPackageWorkspace;
+      return Object.assign(
+        {
+          id,
+          name: manifest.name ?? id,
+          version: manifest.version,
+          root: workspaceRoot,
+          packageManager: manifest.packageManager ?? "bun (manifest inferred)",
+          lockfile: join(workspaceRoot, "bun.lock"),
+          workspaces,
+        },
+        config,
+      ) satisfies BunPackageWorkspace;
     }),
   );
   return candidates
@@ -119,6 +121,7 @@ export async function runPackageOperation(
     console.error(`@aphrody/workspace ${operation}: ${workspace.id}`);
     if (operation === "install") {
       // One install owner: the yolo-core package facade (also behind the yolo_package_sync MCP tool).
+      // oxlint-disable-next-line no-await-in-loop -- installs run one workspace at a time: they share the Bun cache and print in order
       const report = await syncPackages({
         root: workspace.root,
         managers: ["bun"],
@@ -139,6 +142,7 @@ export async function runPackageOperation(
       stdout: "inherit",
       stderr: "inherit",
     });
+    // oxlint-disable-next-line no-await-in-loop -- children inherit stdout: each workspace report must finish before the next starts
     const result = await child.exited;
     if (result !== 0) exitCode = result;
   }

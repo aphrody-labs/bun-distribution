@@ -49,7 +49,9 @@ export function useFocusTrap(
   // rendait plus le focus au bon endroit. On garde la fonction dans une ref :
   // l'effet ne dépend plus que de ce qui doit réellement le rejouer.
   const onEscapeRef = useRef(onEscape);
-  onEscapeRef.current = onEscape;
+  useEffect(() => {
+    onEscapeRef.current = onEscape;
+  });
 
   useEffect(() => {
     if (!active) return;

@@ -86,8 +86,13 @@ async function catalogGaps(root: string): Promise<CatalogGap[]> {
     "peerDependencies",
   ] as const;
   const gaps: CatalogGap[] = [];
-  for (const manifest of manifests) {
-    const parsed = (await Bun.file(join(root, manifest)).json()) as Record<string, unknown>;
+  const parsedManifests = await Promise.all(
+    manifests.map(async (manifest) => ({
+      manifest,
+      parsed: (await Bun.file(join(root, manifest)).json()) as Record<string, unknown>,
+    })),
+  );
+  for (const { manifest, parsed } of parsedManifests) {
     for (const section of sections) {
       const dependencies = parsed[section] as Record<string, unknown> | undefined;
       for (const [dependency, version] of Object.entries(dependencies ?? {})) {
@@ -143,21 +148,25 @@ async function mcpHosts(root: string): Promise<Component[]> {
 }
 
 async function legacyAbiSymbols(root: string, owners: Component[]): Promise<AbiSymbol[]> {
+  // Lectures indépendantes (une par crate et par fichier) : le résultat est trié en sortie.
+  const sources = await Promise.all(
+    owners.map(async (owner) => {
+      const crateRoot = owner.manifest.replace(/\/Cargo\.toml$/, "");
+      const files = await paths(root, [`${crateRoot}/src/**/*.rs`, `${crateRoot}/include/*.h`]);
+      return Promise.all(
+        files.map(async (path) => ({ path, content: await Bun.file(join(root, path)).text() })),
+      );
+    }),
+  );
   const symbols: AbiSymbol[] = [];
-  for (const owner of owners) {
-    const crateRoot = owner.manifest.replace(/\/Cargo\.toml$/, "");
-    const files = await paths(root, [`${crateRoot}/src/**/*.rs`, `${crateRoot}/include/*.h`]);
-    for (const path of files) {
-      const content = await Bun.file(join(root, path)).text();
-      if (path.endsWith(".rs")) {
-        const exports =
-          /#\[(?:unsafe\(no_mangle\)|no_mangle|export_name\s*=\s*"[^"]+")\]\s*(?:#\[[^\]]+\]\s*)*pub\s+(?:unsafe\s+)?extern\s+"C"\s+fn\s+(bxc_[A-Za-z0-9_]+)/g;
-        for (const match of content.matchAll(exports)) symbols.push({ symbol: match[1]!, path });
-      } else {
-        const declarations = /\b(bxc_[A-Za-z0-9_]+)\s*\(/g;
-        for (const match of content.matchAll(declarations))
-          symbols.push({ symbol: match[1]!, path });
-      }
+  for (const { path, content } of sources.flat()) {
+    if (path.endsWith(".rs")) {
+      const exports =
+        /#\[(?:unsafe\(no_mangle\)|no_mangle|export_name\s*=\s*"[^"]+")\]\s*(?:#\[[^\]]+\]\s*)*pub\s+(?:unsafe\s+)?extern\s+"C"\s+fn\s+(bxc_[A-Za-z0-9_]+)/g;
+      for (const match of content.matchAll(exports)) symbols.push({ symbol: match[1]!, path });
+    } else {
+      const declarations = /\b(bxc_[A-Za-z0-9_]+)\s*\(/g;
+      for (const match of content.matchAll(declarations)) symbols.push({ symbol: match[1]!, path });
     }
   }
   return symbols.toSorted((a, b) => `${a.path}:${a.symbol}`.localeCompare(`${b.path}:${b.symbol}`));

@@ -35,12 +35,17 @@ export function DaemonDisconnectedOverlay({
 }) {
   const { isConnected, isChecking, isInstalled, startDaemon, installAndStartDaemon } = daemonStatus;
   const [installAsService, setInstallAsService] = useState(isInstalled);
+  const [prevIsInstalled, setPrevIsInstalled] = useState(isInstalled);
   const platform = usePlatform();
 
-  // Update checkbox when installation state changes
+  // Update checkbox when installation state changes (état dérivé calculé au rendu, sans effet).
+  if (isInstalled !== prevIsInstalled) {
+    setPrevIsInstalled(isInstalled);
+    setInstallAsService(isInstalled);
+  }
+
   useEffect(() => {
     console.log("[DaemonDisconnectedOverlay] isInstalled changed to:", isInstalled);
-    setInstallAsService(isInstalled);
   }, [isInstalled]);
 
   // Log checkbox state changes

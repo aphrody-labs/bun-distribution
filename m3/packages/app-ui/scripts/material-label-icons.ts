@@ -10,9 +10,9 @@ import { join, relative, resolve } from "node:path";
 const APP = resolve(import.meta.dir, "..");
 const SRC = join(APP, "src");
 const REPO = resolve(APP, "../../..");
-const ts: typeof import("typescript") = createRequire(join(REPO, "packages/infra/workspace/package.json"))(
-  "@typescript/typescript6",
-);
+const ts: typeof import("typescript") = createRequire(
+  join(REPO, "packages/infra/workspace/package.json"),
+)("@typescript/typescript6");
 const MANIFEST = join(import.meta.dir, "material-label-icons.manifest.json");
 const CATALOGUE = join(REPO, "m3/packages/m3-fonts/fonts/upstream/material-symbols/index.d.ts");
 const PRIMITIVES = "@aphrody/m3-primitives";
@@ -31,7 +31,7 @@ export const LABEL_ICONS: Record<string, string> = {
   Search: "search",
   Rechercher: "search",
   Settings: "settings",
-  "Paramètres": "settings",
+  Paramètres: "settings",
   Help: "help",
   Aide: "help",
   Open: "open_in_new",
@@ -47,19 +47,19 @@ export const LABEL_ICONS: Record<string, string> = {
   Copy: "content_copy",
   Copier: "content_copy",
   Download: "download",
-  "Télécharger": "download",
+  Télécharger: "download",
   Upload: "upload",
   Importer: "upload",
   Refresh: "refresh",
   Actualiser: "refresh",
   Retry: "refresh",
-  "Réessayer": "refresh",
+  Réessayer: "refresh",
   Back: "arrow_back",
   Retour: "arrow_back",
   Next: "arrow_forward",
   Suivant: "arrow_forward",
   Preview: "visibility",
-  "Aperçu": "visibility",
+  Aperçu: "visibility",
   "Choose folder": "folder_open",
   "Choisir un dossier": "folder_open",
   Send: "send",
@@ -67,9 +67,9 @@ export const LABEL_ICONS: Record<string, string> = {
   Share: "share",
   Partager: "share",
   Stop: "stop",
-  "Arrêter": "stop",
+  Arrêter: "stop",
   Start: "play_arrow",
-  "Démarrer": "play_arrow",
+  Démarrer: "play_arrow",
   Pause: "pause",
   Skip: "skip_next",
   Passer: "skip_next",
@@ -78,7 +78,7 @@ export const LABEL_ICONS: Record<string, string> = {
   Apply: "check",
   Appliquer: "check",
   Done: "check",
-  "Terminé": "check",
+  Terminé: "check",
 };
 
 const SKIP_TOP_DIRS = new Set(["material", "generated"]);
@@ -99,15 +99,19 @@ function git(args: string[]): string {
 }
 
 function assertIconsExist() {
-  const names = new Set([...readFileSync(CATALOGUE, "utf8").matchAll(/"([a-z0-9_]+)"/g)].map(m => m[1]));
-  const missing = [...new Set(Object.values(LABEL_ICONS))].filter(name => !names.has(name));
-  if (missing.length) throw new Error(`icons absent from the Material Symbols catalogue: ${missing.join(", ")}`);
+  const names = new Set(
+    [...readFileSync(CATALOGUE, "utf8").matchAll(/"([a-z0-9_]+)"/g)].map((m) => m[1]),
+  );
+  const missing = [...new Set(Object.values(LABEL_ICONS))].filter((name) => !names.has(name));
+  if (missing.length)
+    throw new Error(`icons absent from the Material Symbols catalogue: ${missing.join(", ")}`);
 }
 
 function sourceFiles(dir: string, top = true): string[] {
-  return readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const path = join(dir, entry.name);
-    if (entry.isDirectory()) return top && SKIP_TOP_DIRS.has(entry.name) ? [] : sourceFiles(path, false);
+    if (entry.isDirectory())
+      return top && SKIP_TOP_DIRS.has(entry.name) ? [] : sourceFiles(path, false);
     return entry.name.endsWith(".tsx") && !entry.name.endsWith(".test.tsx") ? [path] : [];
   });
 }
@@ -117,17 +121,29 @@ function isButton(tag: ts.JsxTagNameExpression) {
 }
 
 function importsForeignIcon(sf: ts.SourceFile) {
-  return sf.statements.some(statement => {
+  return sf.statements.some((statement) => {
     if (!ts.isImportDeclaration(statement) || !statement.importClause) return false;
-    if (ts.isStringLiteral(statement.moduleSpecifier) && statement.moduleSpecifier.text === PRIMITIVES) return false;
+    if (
+      ts.isStringLiteral(statement.moduleSpecifier) &&
+      statement.moduleSpecifier.text === PRIMITIVES
+    )
+      return false;
     const clause = statement.importClause;
-    const named = clause.namedBindings && ts.isNamedImports(clause.namedBindings) ? clause.namedBindings.elements : [];
-    return clause.name?.text === "Icon" || named.some(element => element.name.text === "Icon");
+    const named =
+      clause.namedBindings && ts.isNamedImports(clause.namedBindings)
+        ? clause.namedBindings.elements
+        : [];
+    return clause.name?.text === "Icon" || named.some((element) => element.name.text === "Icon");
   });
 }
 
-function labelTarget(element: ts.JsxElement, text: string): { label: string; start: number; end: number } | undefined {
-  const content = element.children.filter(child => !(ts.isJsxText(child) && child.containsOnlyTriviaWhiteSpaces));
+function labelTarget(
+  element: ts.JsxElement,
+  text: string,
+): { label: string; start: number; end: number } | undefined {
+  const content = element.children.filter(
+    (child) => !(ts.isJsxText(child) && child.containsOnlyTriviaWhiteSpaces),
+  );
   if (content.length !== 1) return undefined;
   const only = content[0];
   if (ts.isJsxText(only)) {
@@ -138,7 +154,9 @@ function labelTarget(element: ts.JsxElement, text: string): { label: string; sta
     return { label, start, end: start + label.length };
   }
   if (ts.isJsxElement(only) && only.openingElement.tagName.getText() === "span") {
-    const inner = only.children.filter(child => !(ts.isJsxText(child) && child.containsOnlyTriviaWhiteSpaces));
+    const inner = only.children.filter(
+      (child) => !(ts.isJsxText(child) && child.containsOnlyTriviaWhiteSpaces),
+    );
     if (inner.length !== 1 || !ts.isJsxText(inner[0])) return undefined;
     const label = inner[0].getText().trim();
     if (!(label in LABEL_ICONS)) return undefined;
@@ -159,16 +177,30 @@ function transform(path: string, text: string): { text: string; hits: Hit[] } {
       if (target) {
         const icon = LABEL_ICONS[target.label];
         const opening = node.openingElement;
-        edits.push({ start: target.start, end: target.end, text: `<Icon name="${icon}" size={${ICON_SIZE}} />` });
+        edits.push({
+          start: target.start,
+          end: target.end,
+          text: `<Icon name="${icon}" size={${ICON_SIZE}} />`,
+        });
         const present = new Set(
-          opening.attributes.properties.flatMap(p => (ts.isJsxAttribute(p) ? [p.name.getText()] : [])),
+          opening.attributes.properties.flatMap((p) =>
+            ts.isJsxAttribute(p) ? [p.name.getText()] : [],
+          ),
         );
-        const missing = LABEL_ATTRS.filter(attr => !present.has(attr));
+        const missing = LABEL_ATTRS.filter((attr) => !present.has(attr));
         if (missing.length) {
           const pos = opening.tagName.getEnd();
-          edits.push({ start: pos, end: pos, text: missing.map(a => ` ${a}="${target.label}"`).join("") });
+          edits.push({
+            start: pos,
+            end: pos,
+            text: missing.map((a) => ` ${a}="${target.label}"`).join(""),
+          });
         }
-        hits.push({ line: sf.getLineAndCharacterOfPosition(target.start).line + 1, label: target.label, icon });
+        hits.push({
+          line: sf.getLineAndCharacterOfPosition(target.start).line + 1,
+          label: target.label,
+          icon,
+        });
       }
     }
     ts.forEachChild(node, visit);
@@ -178,11 +210,13 @@ function transform(path: string, text: string): { text: string; hits: Hit[] } {
 
   const primitives = sf.statements.find(
     (s): s is ts.ImportDeclaration =>
-      ts.isImportDeclaration(s) && ts.isStringLiteral(s.moduleSpecifier) && s.moduleSpecifier.text === PRIMITIVES,
+      ts.isImportDeclaration(s) &&
+      ts.isStringLiteral(s.moduleSpecifier) &&
+      s.moduleSpecifier.text === PRIMITIVES,
   );
   const named = primitives?.importClause?.namedBindings;
   if (primitives && named && ts.isNamedImports(named)) {
-    if (!named.elements.some(e => e.name.text === "Icon")) {
+    if (!named.elements.some((e) => e.name.text === "Icon")) {
       const pos = named.getStart() + 1;
       edits.push({ start: pos, end: pos, text: "Icon, " });
     }
@@ -193,7 +227,7 @@ function transform(path: string, text: string): { text: string; hits: Hit[] } {
   }
 
   let out = text;
-  for (const edit of edits.sort((a, b) => b.start - a.start)) {
+  for (const edit of edits.toSorted((a, b) => b.start - a.start)) {
     out = out.slice(0, edit.start) + edit.text + out.slice(edit.end);
   }
   return { text: out, hits };
@@ -231,7 +265,12 @@ function apply() {
   const files: FileRecord[] = [];
   for (const r of results) {
     writeFileSync(r.file, r.changed);
-    files.push({ path: rel(r.file), before: sha(r.original), after: sha(r.changed), edits: r.hits });
+    files.push({
+      path: rel(r.file),
+      before: sha(r.original),
+      after: sha(r.changed),
+      edits: r.hits,
+    });
   }
   const manifest: Manifest = { schema: 1, base, files };
   writeFileSync(MANIFEST, `${JSON.stringify(manifest, null, 2)}\n`);
@@ -244,13 +283,19 @@ function apply() {
 function rollback() {
   if (!existsSync(MANIFEST)) throw new Error("aucun manifeste à annuler");
   const manifest: Manifest = JSON.parse(readFileSync(MANIFEST, "utf8"));
-  const drifted = manifest.files.filter(f => sha(readFileSync(join(REPO, f.path), "utf8")) !== f.after);
+  const drifted = manifest.files.filter(
+    (f) => sha(readFileSync(join(REPO, f.path), "utf8")) !== f.after,
+  );
   if (drifted.length) {
-    throw new Error(`fichiers modifiés depuis apply, rollback refusé : ${drifted.map(f => f.path).join(", ")}`);
+    throw new Error(
+      `fichiers modifiés depuis apply, rollback refusé : ${drifted.map((f) => f.path).join(", ")}`,
+    );
   }
   for (const f of manifest.files) git(["checkout", manifest.base, "--", f.path]);
   unlinkSync(MANIFEST);
-  console.log(`rollback: ${manifest.files.length} fichiers restaurés depuis ${manifest.base.slice(0, 12)}`);
+  console.log(
+    `rollback: ${manifest.files.length} fichiers restaurés depuis ${manifest.base.slice(0, 12)}`,
+  );
 }
 
 const command = process.argv[2];

@@ -74,6 +74,13 @@ export function parsePy(v: string): PyVersion | undefined {
 
 const cmpNum = (a: number, b: number) => (a < b ? -1 : a > b ? 1 : 0);
 
+// Clé de comparaison de la phase PEP 440 (pre, post, dev) d'une version.
+const phase = (v: PyVersion): [number, number, number, number] => {
+  // dev of a final release sorts before its pre-releases; a pre-release sorts before the final release.
+  const preKey = v.pre ? v.pre : v.post === undefined && v.dev !== undefined ? [-1, 0] : [3, 0];
+  return [preKey[0]!, preKey[1]!, v.post ?? -1, v.dev ?? Number.POSITIVE_INFINITY];
+};
+
 /** PEP 440 order: epoch, release (zero padded), dev < pre < final < post, then local. */
 export function cmpPy(a: string, b: string): -1 | 0 | 1 {
   const x = parsePy(a);
@@ -84,11 +91,6 @@ export function cmpPy(a: string, b: string): -1 | 0 | 1 {
     const d = cmpNum(x.release[i] ?? 0, y.release[i] ?? 0);
     if (d) return d;
   }
-  const phase = (v: PyVersion): [number, number, number, number] => {
-    // dev of a final release sorts before its pre-releases; a pre-release sorts before the final release.
-    const preKey = v.pre ? v.pre : v.post === undefined && v.dev !== undefined ? [-1, 0] : [3, 0];
-    return [preKey[0]!, preKey[1]!, v.post ?? -1, v.dev ?? Number.POSITIVE_INFINITY];
-  };
   const p = phase(x);
   const q = phase(y);
   for (let i = 0; i < 4; i++) {
@@ -259,6 +261,13 @@ export function lockVersions(info: LockInfo): Map<string, string[]> {
   return m;
 }
 
+// Liste de versions séparées par des virgules, sans espaces ni préfixe v.
+const strip = (s: string) =>
+  s
+    .split(",")
+    .map((x) => x.trim().replace(/^v/, ""))
+    .join(",");
+
 /** Parse the `Update|Add|Remove name vA -> vB` lines of `uv lock` (real and `--dry-run`). */
 export function parseLockOutput(output: string): Change[] {
   const out: Change[] = [];
@@ -266,11 +275,6 @@ export function parseLockOutput(output: string): Change[] {
     const m = /^\s*(Updated?|Add(?:ed)?|Removed?)\s+(\S+)\s+v?(.*)$/.exec(line);
     if (!m) continue;
     const [, verb, name, rest] = m as unknown as [string, string, string, string];
-    const strip = (s: string) =>
-      s
-        .split(",")
-        .map((x) => x.trim().replace(/^v/, ""))
-        .join(",");
     if (verb.startsWith("Add"))
       out.push({ ecosystem: "uv-lock", name, from: "(new)", to: strip(rest) });
     else if (verb.startsWith("Remove"))
@@ -1032,6 +1036,9 @@ export function testDirs(layout: Layout): string[] {
   );
 }
 
+// Dernière ligne non vide de la sortie d'une commande.
+const tail = (r: Run) => (r.stdout + r.stderr).trim().split("\n").findLast(Boolean);
+
 export function verify(
   c: Ctx,
   layout: Layout,
@@ -1043,8 +1050,6 @@ export function verify(
     steps.push({ name, ok, detail });
     console.log(`${ok ? "ok  " : "FAIL"}   ${name}${detail ? `  ${detail}` : ""}`);
   };
-  const tail = (r: Run) => (r.stdout + r.stderr).trim().split("\n").filter(Boolean).at(-1);
-
   const pin = checkPins(c).find((r) => r.tool === "uv");
   step(
     "uv pins agree",

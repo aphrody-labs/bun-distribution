@@ -51,7 +51,7 @@ export function hostLayout(home = String(table["home"])): HostLayout {
   };
   const retired = Object.entries((table["retired"] ?? {}) as Record<string, string>)
     .map(([from, to]): [string, string] => [expandHome(from, home), expandHome(to, home)])
-    .sort((a, b) => b[0].length - a[0].length);
+    .toSorted((a, b) => b[0].length - a[0].length);
   return {
     home,
     src: at("src"),

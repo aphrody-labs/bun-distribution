@@ -78,6 +78,7 @@ export function useFullscreen(containerRef: RefObject<HTMLElement | null>) {
     doc.addEventListener("fullscreenchange", onChange);
     return () => {
       mounted.current = false;
+      // oxlint-disable-next-line react-hooks/exhaustive-deps -- operation est un compteur de génération (pas un nœud DOM) : l'incrément en cleanup invalide les bascules en vol
       operation.current++;
       doc.removeEventListener("fullscreenchange", onChange);
     };

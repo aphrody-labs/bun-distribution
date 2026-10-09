@@ -214,6 +214,7 @@ export async function importInfraConfig(
       throw new Error(`unexpected configuration path: ${path}`);
     const entry = bySource.get(`aphrody-infra/${path}`);
     if (!entry) throw new Error(`catalog absent from source map: ${path}`);
+    // oxlint-disable-next-line no-await-in-loop -- catalog entries are read in order, failing on the first missing source
     const sourceBytes = await readFile(join(source, path));
     const sourceHash = hash(sourceBytes);
     const transformed = remap(path, sourceBytes);
@@ -223,6 +224,7 @@ export async function importInfraConfig(
       throw new Error(`catalog path escapes target: ${path}`);
     const existing = existsSync(destination);
     if (existing) {
+      // oxlint-disable-next-line no-await-in-loop -- existing destinations are hashed one at a time before the write decision for each entry
       const existingHash = hash(await readFile(destination));
       if (
         existingHash !== targetHash ||
@@ -263,7 +265,9 @@ export async function importInfraConfig(
   for (const item of planned) {
     const destination = resolve(target, item.path);
     if (!item.existing) {
+      // oxlint-disable-next-line no-await-in-loop -- entries are written in catalog order; each directory and file write must finish before the next entry
       await mkdir(dirname(destination), { recursive: true });
+      // oxlint-disable-next-line no-await-in-loop -- entries are written in catalog order; each directory and file write must finish before the next entry
       await writeFile(destination, item.bytes, { flag: "wx" });
     }
     item.entry.target = item.path;

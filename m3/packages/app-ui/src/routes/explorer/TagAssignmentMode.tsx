@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "motion/react";
 import { m3Durations, m3Easings } from "@aphrody/m3-motion";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import { Button, Icon, m3FocusRing, toast } from "@aphrody/m3-primitives";
 import { useNormalizedQuery, useLibraryMutation } from "../../contexts/SpacedriveContext";
 import { useSelection } from "./SelectionContext";
@@ -43,19 +43,6 @@ export function TagAssignmentMode({ isActive, onExit }: TagAssignmentModeProps) 
 
   const paletteTags = allTags.slice(0, 10);
 
-  // Keyboard shortcuts using keybind registry
-  useKeybind("explorer.exitTagMode", onExit, { enabled: isActive });
-  useKeybind("explorer.toggleTag1", () => handleToggleTag(0), { enabled: isActive });
-  useKeybind("explorer.toggleTag2", () => handleToggleTag(1), { enabled: isActive });
-  useKeybind("explorer.toggleTag3", () => handleToggleTag(2), { enabled: isActive });
-  useKeybind("explorer.toggleTag4", () => handleToggleTag(3), { enabled: isActive });
-  useKeybind("explorer.toggleTag5", () => handleToggleTag(4), { enabled: isActive });
-  useKeybind("explorer.toggleTag6", () => handleToggleTag(5), { enabled: isActive });
-  useKeybind("explorer.toggleTag7", () => handleToggleTag(6), { enabled: isActive });
-  useKeybind("explorer.toggleTag8", () => handleToggleTag(7), { enabled: isActive });
-  useKeybind("explorer.toggleTag9", () => handleToggleTag(8), { enabled: isActive });
-  useKeybind("explorer.toggleTag10", () => handleToggleTag(9), { enabled: isActive });
-
   const handleToggleTag = async (index: number) => {
     const tag = paletteTags[index];
     if (!tag || selectedFiles.length === 0) return;
@@ -84,6 +71,19 @@ export function TagAssignmentMode({ isActive, onExit }: TagAssignmentModeProps) 
       toast.error(`Failed to apply tag: ${err}`);
     }
   };
+
+  // Keyboard shortcuts using keybind registry
+  useKeybind("explorer.exitTagMode", onExit, { enabled: isActive });
+  useKeybind("explorer.toggleTag1", () => handleToggleTag(0), { enabled: isActive });
+  useKeybind("explorer.toggleTag2", () => handleToggleTag(1), { enabled: isActive });
+  useKeybind("explorer.toggleTag3", () => handleToggleTag(2), { enabled: isActive });
+  useKeybind("explorer.toggleTag4", () => handleToggleTag(3), { enabled: isActive });
+  useKeybind("explorer.toggleTag5", () => handleToggleTag(4), { enabled: isActive });
+  useKeybind("explorer.toggleTag6", () => handleToggleTag(5), { enabled: isActive });
+  useKeybind("explorer.toggleTag7", () => handleToggleTag(6), { enabled: isActive });
+  useKeybind("explorer.toggleTag8", () => handleToggleTag(7), { enabled: isActive });
+  useKeybind("explorer.toggleTag9", () => handleToggleTag(8), { enabled: isActive });
+  useKeybind("explorer.toggleTag10", () => handleToggleTag(9), { enabled: isActive });
 
   // Check if a tag is active (all selected files have it)
   const isTagActive = (tag: Tag) => {

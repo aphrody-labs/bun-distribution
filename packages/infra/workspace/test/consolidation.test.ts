@@ -30,11 +30,13 @@ test("recorded-map indexing uses one canonical catalog without duplicating impor
     await mkdir(join(root, "docs/reference/workspace"), { recursive: true });
     await writeFile(join(root, "docs/reference/workspace/documentation.json"), "{}");
     await writeFile(join(root, "docs/llms.txt"), "# Index\n");
-    for (const entry of entries.slice(0, 2)) {
-      const path = join(root, entry.importedTarget ?? entry.target!);
-      await mkdir(dirname(path), { recursive: true });
-      await writeFile(path, "# Imported document\n");
-    }
+    await Promise.all(
+      entries.slice(0, 2).map(async (entry) => {
+        const path = join(root, entry.importedTarget ?? entry.target!);
+        await mkdir(dirname(path), { recursive: true });
+        await writeFile(path, "# Imported document\n");
+      }),
+    );
     expect(
       await runConsolidation([
         "docs-index",
@@ -52,9 +54,10 @@ test("recorded-map indexing uses one canonical catalog without duplicating impor
     expect(content).not.toContain("crates/owner/lib.rs");
     const links = [...content.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)].map((match) => match[1]!);
     expect(links).toHaveLength(3);
-    for (const href of links) {
-      expect((await stat(resolve(dirname(index), decodeURIComponent(href)))).isFile()).toBe(true);
-    }
+    const linked = await Promise.all(
+      links.map((href) => stat(resolve(dirname(index), decodeURIComponent(href)))),
+    );
+    for (const file of linked) expect(file.isFile()).toBe(true);
     expect(content).toBe(renderDocumentationIndex(entries, root));
     expect(await runConsolidation(["docs-index", "--aphrody-root", root])).toBe(0);
     expect(await readFile(index, "utf8")).toBe(content);

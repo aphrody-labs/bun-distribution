@@ -1,12 +1,21 @@
 "use client";
 // SPDX-License-Identifier: Apache-2.0
 // `next/link`: a plain `<a>` whose same-origin clicks become client navigations.
-import { useContext, type AnchorHTMLAttributes, type MouseEvent, type ReactNode, type Ref } from "react";
+import {
+  useContext,
+  type AnchorHTMLAttributes,
+  type MouseEvent,
+  type ReactNode,
+  type Ref,
+} from "react";
 import { RouterContext } from "./runtime/router-context";
 
 export interface UrlObject {
   pathname?: string;
-  query?: Record<string, string | number | boolean | readonly (string | number | boolean)[] | undefined>;
+  query?: Record<
+    string,
+    string | number | boolean | readonly (string | number | boolean)[] | undefined
+  >;
   hash?: string;
 }
 
@@ -32,7 +41,17 @@ function formatHref(href: string | UrlObject): string {
   return `${href.pathname ?? ""}${query ? `?${query}` : ""}${hash}`;
 }
 
-export default function Link({ href, replace, scroll, prefetch, onClick, onMouseEnter, onFocus, ...rest }: LinkProps) {
+export default function Link({
+  href,
+  replace,
+  scroll,
+  prefetch,
+  onClick,
+  onMouseEnter,
+  onFocus,
+  children,
+  ...rest
+}: LinkProps) {
   const router = useContext(RouterContext);
   const url = formatHref(href);
   const warm = () => {
@@ -52,14 +71,16 @@ export default function Link({ href, replace, scroll, prefetch, onClick, onMouse
       {...rest}
       href={url}
       onClick={click}
-      onMouseEnter={event => {
+      onMouseEnter={(event) => {
         onMouseEnter?.(event);
         warm();
       }}
-      onFocus={event => {
+      onFocus={(event) => {
         onFocus?.(event);
         warm();
       }}
-    />
+    >
+      {children}
+    </a>
   );
 }

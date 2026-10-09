@@ -242,7 +242,6 @@ export async function runDocsLinks(args: string[]): Promise<number> {
 
     // oxlint-disable-next-line no-await-in-loop -- Bound memory while scanning imported documentation.
     const content = await readFile(file, "utf-8");
-    const relativeFile = file.replace(ROOT_DIR, "").replace(/^\//, "");
     const fileDir = dirname(file);
 
     if (

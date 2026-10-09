@@ -97,10 +97,10 @@ const packBits = (data: Uint8Array) => {
   return Buffer.from(out).toString("base64");
 };
 
-const fixtures = cases.map(({ text, options }) => {
-  const symbol = create(text, options);
+const fixtures = cases.map(({ text: input, options }) => {
+  const symbol = create(input, options);
   return {
-    text,
+    text: input,
     options,
     version: symbol.version,
     maskPattern: symbol.maskPattern,

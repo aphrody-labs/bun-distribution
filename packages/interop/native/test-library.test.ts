@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import { join } from "node:path";
 import { add, compileSass, svg } from "./src/index";
 import { getAphrodyAbiVersion } from "./src/cli";
-import { loadNativeLibrary, nativeLibraryLoaded, resolveNativeLibraryPath } from "./src/library";
+import { loadNativeLibrary, nativeLibraryLoaded } from "./src/library";
 import { close, loadLib, webExtractTitle, webParseHtml } from "./src/web";
 
 test("all public subpaths can be imported without a native artifact", async () => {
@@ -80,21 +80,3 @@ native("M3, SVG, CLI and Web share one handle and respect close/reload", () => {
   expect(loadNativeLibrary()).not.toBe(handle);
   close();
 });
-
-async function isolatedLibrary(code: string, extra: Record<string, string | undefined> = {}) {
-  const child = Bun.spawn({
-    windowsHide: true,
-    cmd: [process.execPath, "-e", code],
-    cwd: import.meta.dir,
-    env: { ...process.env, APHRODY_FFI_LIB: undefined, ...extra },
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-  const [stdout, stderr, exit] = await Promise.all([
-    new Response(child.stdout).text(),
-    new Response(child.stderr).text(),
-    child.exited,
-  ]);
-  if (exit !== 0) throw new Error(`Isolated loader failed (${exit}): ${stderr}`);
-  return stdout;
-}

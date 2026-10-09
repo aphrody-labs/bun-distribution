@@ -21,14 +21,17 @@ const GAZE_HOLD_MS = 2000;
 const EYES_Y = 0.42;
 
 const HostBase: typeof HTMLElement =
-  typeof HTMLElement === "undefined" ? (class {} as unknown as typeof HTMLElement) : HTMLElement;
+  typeof HTMLElement === "undefined"
+    ? (function HostFallback() {} as unknown as typeof HTMLElement)
+    : HTMLElement;
 
 let sheet: CSSStyleSheet | undefined;
 function spriteSheet(data: PetWebData): CSSStyleSheet | string {
   const css = `:host{display:inline-block;position:relative;overflow:hidden;vertical-align:middle}
 .nie-sprite{position:absolute;left:0;top:0;transform-origin:0 0}
 ${data.css}`;
-  if (typeof CSSStyleSheet === "undefined" || !("replaceSync" in CSSStyleSheet.prototype)) return css;
+  if (typeof CSSStyleSheet === "undefined" || !("replaceSync" in CSSStyleSheet.prototype))
+    return css;
   if (!sheet) {
     sheet = new CSSStyleSheet();
     sheet.replaceSync(css);
@@ -74,7 +77,8 @@ export class AphrodyPetElement extends HostBase {
     this.#applyState(this.getAttribute("state"));
     const animation = this.getAttribute("animation");
     this.#played = animation ? { name: animation, start: performance.now() } : null;
-    this.#motion = typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : null;
+    this.#motion =
+      typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : null;
     this.#motion?.addEventListener("change", this.#onMotion);
     this.#syncGaze();
     this.#layout();
@@ -126,13 +130,15 @@ export class AphrodyPetElement extends HostBase {
   }
 
   #applyState(state: string | null): void {
-    if (state && Object.hasOwn(this.data.states, state)) this.#ambient.set(state, performance.now());
+    if (state && Object.hasOwn(this.data.states, state))
+      this.#ambient.set(state, performance.now());
     else this.#ambient.clear();
   }
 
   #syncGaze(): void {
     globalThis.removeEventListener?.("pointermove", this.#onPointer);
-    if (!this.hasAttribute("no-gaze")) globalThis.addEventListener?.("pointermove", this.#onPointer, { passive: true });
+    if (!this.hasAttribute("no-gaze"))
+      globalThis.addEventListener?.("pointermove", this.#onPointer, { passive: true });
   }
 
   #layout(): void {
@@ -150,7 +156,8 @@ export class AphrodyPetElement extends HostBase {
   /** The gaze cell when the pet is at rest and the pointer moved recently within reach, else null. */
   #gazeCell(now: number, animation: string): { cell: number; until: number } | null {
     const p = this.#pointer;
-    if (!p || animation !== "idle" || this.hasAttribute("no-gaze") || now - p.at > GAZE_HOLD_MS) return null;
+    if (!p || animation !== "idle" || this.hasAttribute("no-gaze") || now - p.at > GAZE_HOLD_MS)
+      return null;
     const box = this.getBoundingClientRect();
     const s = this.scale;
     const dx = p.x - (box.left + box.width / 2);

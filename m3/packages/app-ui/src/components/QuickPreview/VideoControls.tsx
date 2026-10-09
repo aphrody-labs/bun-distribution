@@ -76,9 +76,7 @@ export function VideoControls({
 	sidebarWidth = 0,
 	inspectorWidth = 0,
 }: VideoControlsProps) {
-	const hasSubs = file.sidecars?.some(
-		(s) => s.kind === "transcript" && s.variant === "srt",
-	);
+	const hasSubs = file.sidecars?.some((s) => s.kind === "transcript" && s.variant === "srt");
 
 	return (
 		<AnimatePresence>
@@ -110,6 +108,8 @@ export function VideoControls({
 
 					{/* Progress Bar with Thick Hover Area */}
 					<div
+						// pointer-only seek track: the time readout in the controls bar carries the position for assistive tech
+						role="presentation"
 						className="group mb-3 cursor-pointer relative py-2 -my-2"
 						onMouseDown={(e) => {
 							callbacks.onSeekingStart();
@@ -154,20 +154,14 @@ export function VideoControls({
 							onClick={callbacks.onTogglePlay}
 							className="rounded-small p-2 text-white transition-colors hover:bg-white/10"
 						>
-							{state.playing ? (
-								<Pause size={20} weight="fill" />
-							) : (
-								<Play size={20} weight="fill" />
-							)}
+							{state.playing ? <Pause size={20} weight="fill" /> : <Play size={20} weight="fill" />}
 						</button>
 
 						{/* Loop */}
 						<button
 							onClick={callbacks.onLoopToggle}
 							className={`rounded-small p-2 transition-colors ${
-								state.loop
-									? "bg-primary/20 text-primary"
-									: "text-white hover:bg-white/10"
+								state.loop ? "bg-primary/20 text-primary" : "text-white hover:bg-white/10"
 							}`}
 							title="Loop (L)"
 						>
@@ -176,8 +170,7 @@ export function VideoControls({
 
 						{/* Time */}
 						<div className="text-label-large font-medium text-white">
-							{formatTime(state.currentTime)} /{" "}
-							{formatTime(state.duration)}
+							{formatTime(state.currentTime)} / {formatTime(state.duration)}
 						</div>
 
 						<div className="flex-1" />
@@ -198,9 +191,7 @@ export function VideoControls({
 								</button>
 								{state.subtitlesEnabled && (
 									<button
-										onClick={
-											callbacks.onSubtitleSettingsToggle
-										}
+										onClick={callbacks.onSubtitleSettingsToggle}
 										className="rounded-small p-2 text-white transition-colors hover:bg-white/10"
 										title="Subtitle settings"
 									>
@@ -234,10 +225,7 @@ export function VideoControls({
 									className="rounded-small p-2 text-white transition-colors hover:bg-white/10"
 									title="Reset zoom (0)"
 								>
-									<ArrowCounterClockwise
-										size={18}
-										weight="bold"
-									/>
+									<ArrowCounterClockwise size={18} weight="bold" />
 								</button>
 							)}
 						</div>
@@ -263,11 +251,7 @@ export function VideoControls({
 									max="1"
 									step="0.01"
 									value={state.volume}
-									onChange={(e) =>
-										callbacks.onVolumeChange(
-											parseFloat(e.target.value),
-										)
-									}
+									onChange={(e) => callbacks.onVolumeChange(parseFloat(e.target.value))}
 									className="h-1 w-full cursor-pointer appearance-none rounded-full bg-white/20 [&::-webkit-slider-thumb]:size-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
 								/>
 							</div>

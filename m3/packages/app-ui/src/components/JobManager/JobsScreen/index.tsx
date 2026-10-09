@@ -72,9 +72,9 @@ export function JobsScreen() {
       {/* Content */}
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isLoading && jobs.length === 0 ? (
-          <p role="status" className="p-6 text-label-large text-on-surface-variant">
+          <output className="block p-6 text-label-large text-on-surface-variant">
             Chargement…
-          </p>
+          </output>
         ) : error && jobs.length === 0 ? (
           <div className="m-4 flex items-center gap-3 rounded-medium bg-error-container p-4 text-on-error-container">
             <p role="alert" className="text-label-large">

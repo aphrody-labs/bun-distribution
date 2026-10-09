@@ -724,11 +724,9 @@ describe("free-space floor finding", () => {
     const a = audit();
     const roomy = {
       ...a,
-      filesystems: a.filesystems.map((x) => ({
-        ...x,
-        availBytes: Math.floor(x.sizeBytes * 0.6),
-        usePercent: 40,
-      })),
+      filesystems: a.filesystems.map((x) =>
+        Object.assign({}, x, { availBytes: Math.floor(x.sizeBytes * 0.6), usePercent: 40 }),
+      ),
     };
     expect(analyze(roomy, 0.5).some((x) => x.id.startsWith("free-floor:"))).toBe(false);
   });
@@ -1440,9 +1438,17 @@ describe("archive plan", () => {
   });
 });
 
-describe("executing plans", () => {
-  const reclaimPlan = (): Plan => planReclaim(audit(), DEFAULT_POLICY, "vps");
+const reclaimPlan = (): Plan => planReclaim(audit(), DEFAULT_POLICY, "vps");
+const planStep = (id: string, cmd: string) => ({
+  id,
+  title: id,
+  kind: "exec" as const,
+  cmd,
+  mutates: true,
+  undo: null,
+});
 
+describe("executing plans", () => {
   it("runs exactly the commands the dry run listed, in order, and journals each with an undo", async () => {
     const root = tmp();
     const plan = reclaimPlan();
@@ -1503,20 +1509,12 @@ describe("executing plans", () => {
 
   it("stops a sequence of ungrouped steps at the first failure", async () => {
     const root = tmp();
-    const step = (id: string, cmd: string) => ({
-      id,
-      title: id,
-      kind: "exec" as const,
-      cmd,
-      mutates: true,
-      undo: null,
-    });
     const plan: Plan = {
       host: "local",
       command: "x",
       notes: [],
       skipped: [],
-      steps: [step("a", "echo a"), step("b", "fail"), step("c", "echo c")],
+      steps: [planStep("a", "echo a"), planStep("b", "fail"), planStep("c", "echo c")],
     };
     const t = new FakeTransport("local", (cmd) =>
       cmd === "fail" ? { code: 2, stdout: "", stderr: "no" } : { code: 0, stdout: "", stderr: "" },
@@ -1579,28 +1577,28 @@ describe("executing plans", () => {
 const haveTools =
   Bun.which("zstd") !== null && Bun.which("tar") !== null && Bun.which("sha256sum") !== null;
 
-describe.skipIf(!haveTools)("local apply in a temp directory", () => {
-  const makeSource = (root: string): string => {
-    const src = join(root, "src");
-    mkdirSync(join(src, "sub/deep"), { recursive: true });
-    writeFileSync(join(src, "a.txt"), "alpha\n".repeat(1000));
-    writeFileSync(join(src, "sub/b.bin"), Buffer.alloc(4096, 7));
-    writeFileSync(join(src, "sub/deep/c.txt"), "gamma");
-    return src;
-  };
-  const archiveArgs = (src: string, dest: string, extra: string[] = []): string[] => [
-    "archive",
-    src,
-    "--to",
-    dest,
-    "--host",
-    "local",
-    "--stamp",
-    "20261003",
-    "--apply",
-    ...extra,
-  ];
+const makeSource = (root: string): string => {
+  const src = join(root, "src");
+  mkdirSync(join(src, "sub/deep"), { recursive: true });
+  writeFileSync(join(src, "a.txt"), "alpha\n".repeat(1000));
+  writeFileSync(join(src, "sub/b.bin"), Buffer.alloc(4096, 7));
+  writeFileSync(join(src, "sub/deep/c.txt"), "gamma");
+  return src;
+};
+const archiveArgs = (src: string, dest: string, extra: string[] = []): string[] => [
+  "archive",
+  src,
+  "--to",
+  dest,
+  "--host",
+  "local",
+  "--stamp",
+  "20261003",
+  "--apply",
+  ...extra,
+];
 
+describe.skipIf(!haveTools)("local apply in a temp directory", () => {
   it("archives, verifies, writes a sha256 manifest and only then removes the source", async () => {
     const root = tmp();
     const src = makeSource(root);

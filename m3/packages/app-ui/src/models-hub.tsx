@@ -74,7 +74,7 @@ export function ModelsHub() {
   const [catalog, setCatalog] = useState<CatalogEntry[]>([]);
   const [installed, setInstalled] = useState<InstalledModels | null>(null);
   const [loadError, setLoadError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [filterKind, setFilterKind] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [downloads, setDownloads] = useState<Record<string, DownloadState>>({});
@@ -87,8 +87,7 @@ export function ModelsHub() {
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [detailsId, setDetailsId] = useState<string | null>(null);
 
-  const refreshStore = useCallback(async () => {
-    setLoading(true);
+  const loadStore = useCallback(async () => {
     try {
       const result = await loadModelInventories(fetchModelCatalog, fetchInstalledModels);
       if (result.catalog) setCatalog(result.catalog);
@@ -101,8 +100,14 @@ export function ModelsHub() {
     }
   }, []);
 
+  const refreshStore = useCallback(() => {
+    setLoading(true);
+    return loadStore();
+  }, [loadStore]);
+
   useEffect(() => {
-    void refreshStore();
+    // oxlint-disable-next-line react/set-state-in-effect -- setState de loadStore uniquement après await (chargement asynchrone), pas de rendu en cascade
+    void loadStore();
     void getActiveModelSetting()
       .then(setActiveModel)
       .catch(() => setLoadError("Modèle actif indisponible."));
@@ -135,7 +140,7 @@ export function ModelsHub() {
       active = false;
       stop?.();
     };
-  }, [refreshStore]);
+  }, [loadStore]);
 
   const installedModelsList = useMemo(() => installed?.models ?? [], [installed]);
   const installedSet = useMemo(() => {
@@ -389,9 +394,8 @@ export function ModelsHub() {
             placeholder="Nom, identifiant ou URL Hugging Face"
           />
         }
-        <div
-          className="flex flex-wrap items-center gap-2"
-          role="group"
+        <fieldset
+          className="flex min-w-0 flex-wrap items-center gap-2"
           aria-label="Filtres par type"
         >
           <Button
@@ -411,7 +415,7 @@ export function ModelsHub() {
               <span>{label}</span>
             </Button>
           ))}
-        </div>
+        </fieldset>
       </div>
 
       {/* TAB 1: INSTALLÉS */}
@@ -570,7 +574,9 @@ export function ModelsHub() {
       {/* TAB 2: CATALOGUE */}
       {activeTab === "catalog" && (
         <div className="grid gap-4 md:grid-cols-2">
-          {visibleCatalog.length === 0 && <p role="status">Aucun modèle dans cette sélection.</p>}
+          {visibleCatalog.length === 0 && (
+            <output className="block">Aucun modèle dans cette sélection.</output>
+          )}
           {visibleCatalog.map((entry) => {
             const size = entryBytes(entry);
             const isInstalled = installedSet.has(entry.id);

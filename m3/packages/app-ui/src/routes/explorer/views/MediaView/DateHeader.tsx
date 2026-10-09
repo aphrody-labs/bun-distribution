@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import clsx from "clsx";
+import { clsx } from "clsx";
 
 export const DATE_HEADER_HEIGHT = 75;
 
@@ -28,9 +28,7 @@ export function DateHeader({ date }: DateHeaderProps) {
     <div
       ref={ref}
       style={{ height: DATE_HEADER_HEIGHT }}
-      className={clsx(
-        "pointer-events-none sticky inset-x-0 -top-px z-10 p-5 text-on-surface",
-      )}
+      className={clsx("pointer-events-none sticky inset-x-0 -top-px z-10 p-5 text-on-surface")}
     >
       <div
         className={clsx(
@@ -38,12 +36,7 @@ export function DateHeader({ date }: DateHeaderProps) {
           isSticky ? "opacity-100" : "opacity-0",
         )}
       />
-      <div
-        className={clsx(
-          "relative text-title-large",
-          !date && "opacity-75",
-        )}
-      >
+      <div className={clsx("relative text-title-large", !date && "opacity-75")}>
         {date ?? "No date"}
       </div>
     </div>

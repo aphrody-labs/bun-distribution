@@ -26,13 +26,14 @@ import { Ctx } from "../context.ts";
 
 // ---------------------------------------------------------------- pure helpers (unit-tested)
 
+const splitVersion = (v: string) => {
+  const [core = "", pre = ""] = v.replace(/^[v=^~]/, "").split("-", 2);
+  return { n: core.split(".").map((x) => Number.parseInt(x, 10) || 0), pre };
+};
+
 export function cmpVersion(a: string, b: string): number {
-  const split = (v: string) => {
-    const [core = "", pre = ""] = v.replace(/^[v=^~]/, "").split("-", 2);
-    return { n: core.split(".").map((x) => Number.parseInt(x, 10) || 0), pre };
-  };
-  const x = split(a);
-  const y = split(b);
+  const x = splitVersion(a);
+  const y = splitVersion(b);
   for (let i = 0; i < 3; i++) {
     const d = (x.n[i] ?? 0) - (y.n[i] ?? 0);
     if (d !== 0) return d < 0 ? -1 : 1;
@@ -299,7 +300,7 @@ export function mergeFactSheet(
     while (trimmed.length && trimmed.at(-1) === "") trimmed.pop();
     merged.set(lib, trimmed);
   }
-  return [...header, ...[...merged.values()].flatMap((body) => [...body, ""])].join("\n");
+  return [...header, ...[...merged.values()].flatMap((body) => body.concat(""))].join("\n");
 }
 
 async function facts(c: Ctx, all: boolean): Promise<string | undefined> {
@@ -324,6 +325,7 @@ async function facts(c: Ctx, all: boolean): Promise<string | undefined> {
     } // first sighting: record, nothing to compare
     const lines: string[] = [`## ${lib.name} ${prev ?? "?"} -> ${cur ?? "?"}`, ""];
     if (lib.github) {
+      // oxlint-disable-next-line no-await-in-loop -- sections séquentielles : ordre stable des fiches et limite de débit de l'API GitHub
       const rels = await registries.github(lib.github).catch((e: Error) => {
         lines.push(`GitHub: ${e.message}`);
         return [];
@@ -340,6 +342,7 @@ async function facts(c: Ctx, all: boolean): Promise<string | undefined> {
       }
     }
     for (const topic of lib.topics ?? []) {
+      // oxlint-disable-next-line no-await-in-loop -- requêtes Context7 séquentielles : limite de débit de l'API et ordre des sections
       const doc = await registries.context7(lib.context7, lib.name, topic).catch(() => "");
       if (doc)
         lines.push("", `### Context7: ${topic}`, "", doc.split("\n").slice(0, 20).join("\n"));
@@ -417,7 +420,9 @@ async function fix(c: Ctx, applyFixes: boolean, record = false): Promise<number>
   }
   const known = new Set(c.jsonFile<{ errors: string[] }>(baselineFile, { errors: [] }).errors);
   const fresh = errors.filter((e) => !known.has(e));
-  const rules = c.jsonFile<{ rules: FixRule[] }>("tools/config/deps/fix-rules.json", { rules: [] }).rules;
+  const rules = c.jsonFile<{ rules: FixRule[] }>("tools/config/deps/fix-rules.json", {
+    rules: [],
+  }).rules;
   const hits = matchRules(
     fresh.join("\n") +
       "\n" +

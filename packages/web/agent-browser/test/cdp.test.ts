@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+// oxlint-disable-next-line import/no-unassigned-import -- démarre le serveur de test par son effet de bord à l'import
 import "./server.ts";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { AgentBrowser, AgentPage } from "../src/index.ts";
@@ -10,10 +11,14 @@ beforeAll(() => {
   fixture = Bun.serve({
     hostname: "127.0.0.1",
     port: 0,
-    fetch: () => new Response(`<!doctype html><html><head><title>Before</title></head><body>
+    fetch: () =>
+      new Response(
+        `<!doctype html><html><head><title>Before</title></head><body>
       <input id="query" aria-label="Query"><button id="submit" onclick="document.title=document.querySelector('#query').value">Go</button>
       <select id="choice"><option value="a">A</option><option value="b">B</option></select>
-      <p id="result">Ready</p></body></html>`, { headers: { "content-type": "text/html" } }),
+      <p id="result">Ready</p></body></html>`,
+        { headers: { "content-type": "text/html" } },
+      ),
   });
   url = `http://127.0.0.1:${fixture.port}/`;
 });

@@ -101,14 +101,15 @@ const fmtDuration = (ms: number): string => {
       : `${s} s`;
 };
 
+async function real(path: string): Promise<string> {
+  try {
+    return await realpath(path);
+  } catch {
+    return resolve(path);
+  }
+}
+
 async function same(a: string, b: string): Promise<boolean> {
-  const real = async (path: string): Promise<string> => {
-    try {
-      return await realpath(path);
-    } catch {
-      return resolve(path);
-    }
-  };
   const [x, y] = await Promise.all([real(a), real(b)]);
   return process.platform === "win32" ? x.toLowerCase() === y.toLowerCase() : x === y;
 }
@@ -144,15 +145,21 @@ async function assertNotSource(
   paths: (string | undefined)[],
   sources: (string | undefined)[],
 ): Promise<void> {
+  const pairs: [string, string][] = [];
   for (const target of paths) {
     if (!target) continue;
     for (const source of sources) {
-      if (source && (await same(target, source))) {
-        throw new UsageError(
-          `${target} est le fichier source : la source n'est jamais écrasée (choisir une autre sortie avec --out / --video-out)`,
-        );
-      }
+      if (source) pairs.push([target, source]);
     }
+  }
+  // Comparaisons indépendantes (lectures seules) : exécution parallèle, première correspondance dans l'ordre conservé.
+  const matches = await Promise.all(pairs.map(([target, source]) => same(target, source)));
+  const match = pairs[matches.indexOf(true)];
+  if (match) {
+    const [target] = match;
+    throw new UsageError(
+      `${target} est le fichier source : la source n'est jamais écrasée (choisir une autre sortie avec --out / --video-out)`,
+    );
   }
 }
 

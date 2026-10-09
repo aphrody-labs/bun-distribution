@@ -2,7 +2,7 @@ import { useNormalizedQuery } from "../../contexts/SpacedriveContext";
 import { usePlatform } from "../../contexts/PlatformContext";
 import type { File } from "@aphrody/drive-client";
 import { getContentKind } from "@aphrody/drive-client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { formatBytes } from "../../routes/explorer/utils";
 import { CircleButton } from "@aphrody/m3-primitives";
 import { ContentRenderer } from "./ContentRenderer";
@@ -13,39 +13,29 @@ function MetadataPanel({ file }: { file: File }) {
 			<div className="space-y-4">
 				<div>
 					<div className="text-body-small text-on-surface-variant mb-1">Name</div>
-					<div className="text-body-medium text-on-surface break-words">
-						{file.name}
-					</div>
+					<div className="text-body-medium text-on-surface break-words">{file.name}</div>
 				</div>
 
 				<div>
 					<div className="text-body-small text-on-surface-variant mb-1">Kind</div>
-					<div className="text-body-medium text-on-surface capitalize">
-						{getContentKind(file)}
-					</div>
+					<div className="text-body-medium text-on-surface capitalize">{getContentKind(file)}</div>
 				</div>
 
 				<div>
 					<div className="text-body-small text-on-surface-variant mb-1">Size</div>
-					<div className="text-body-medium text-on-surface">
-						{formatBytes(file.size || 0)}
-					</div>
+					<div className="text-body-medium text-on-surface">{formatBytes(file.size || 0)}</div>
 				</div>
 
 				{file.extension && (
 					<div>
-						<div className="text-body-small text-on-surface-variant mb-1">
-							Extension
-						</div>
+						<div className="text-body-small text-on-surface-variant mb-1">Extension</div>
 						<div className="text-body-medium text-on-surface">{file.extension}</div>
 					</div>
 				)}
 
 				{file.created_at && (
 					<div>
-						<div className="text-body-small text-on-surface-variant mb-1">
-							Created
-						</div>
+						<div className="text-body-small text-on-surface-variant mb-1">Created</div>
 						<div className="text-body-medium text-on-surface">
 							{new Date(file.created_at).toLocaleString()}
 						</div>
@@ -54,9 +44,7 @@ function MetadataPanel({ file }: { file: File }) {
 
 				{file.modified_at && (
 					<div>
-						<div className="text-body-small text-on-surface-variant mb-1">
-							Modified
-						</div>
+						<div className="text-body-small text-on-surface-variant mb-1">Modified</div>
 						<div className="text-body-medium text-on-surface">
 							{new Date(file.modified_at).toLocaleString()}
 						</div>
@@ -69,19 +57,12 @@ function MetadataPanel({ file }: { file: File }) {
 
 export function QuickPreview() {
 	const platform = usePlatform();
-	const [fileId, setFileId] = useState<string | null>(null);
 
-	useEffect(() => {
-		// Extract file_id from window label
-		if (platform.getCurrentWindowLabel) {
-			const label = platform.getCurrentWindowLabel();
-
-			// Label format: "quick-preview-{file_id}"
-			const match = label.match(/^quick-preview-(.+)$/);
-			if (match) {
-				setFileId(match[1]);
-			}
-		}
+	// Extract file_id from window label. Label format: "quick-preview-{file_id}"
+	const fileId = useMemo(() => {
+		if (!platform.getCurrentWindowLabel) return null;
+		const match = platform.getCurrentWindowLabel().match(/^quick-preview-(.+)$/);
+		return match ? match[1] : null;
 	}, [platform]);
 
 	const {
@@ -96,11 +77,11 @@ export function QuickPreview() {
 		enabled: !!fileId,
 	});
 
-	const handleClose = () => {
+	const handleClose = useCallback(() => {
 		if (platform.closeCurrentWindow) {
 			platform.closeCurrentWindow();
 		}
-	};
+	}, [platform]);
 
 	// Keyboard shortcuts
 	useEffect(() => {
@@ -112,7 +93,7 @@ export function QuickPreview() {
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, []);
+	}, [handleClose]);
 
 	if (isLoading || !file) {
 		return (
@@ -126,9 +107,7 @@ export function QuickPreview() {
 		return (
 			<div className="h-screen flex items-center justify-center bg-surface text-error">
 				<div>
-					<div className="text-title-medium font-medium mb-2">
-						Error loading file
-					</div>
+					<div className="text-title-medium font-medium mb-2">Error loading file</div>
 					<div className="text-body-medium">{error.message}</div>
 				</div>
 			</div>
@@ -139,9 +118,7 @@ export function QuickPreview() {
 		<div className="h-screen flex flex-col bg-surface text-on-surface">
 			{/* Header */}
 			<div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant">
-				<div className="text-title-medium truncate flex-1">
-					{file.name}
-				</div>
+				<div className="text-title-medium truncate flex-1">{file.name}</div>
 				<CircleButton
 					variant="standard"
 					size="sm"

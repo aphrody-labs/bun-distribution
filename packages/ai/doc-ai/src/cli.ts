@@ -225,8 +225,10 @@ async function translateDirectory(dirPath: string, lang: TargetLanguage): Promis
     const fullPath = path.join(dirPath, entry.name);
     if (entry.isSymbolicLink()) continue;
     if (entry.isDirectory()) {
+      // oxlint-disable-next-line no-await-in-loop -- parcours récursif séquentiel : traductions LLM rate-limitées et sorties dans un ordre stable
       await translateDirectory(fullPath, lang);
     } else if (entry.isFile()) {
+      // oxlint-disable-next-line no-await-in-loop -- traductions LLM séquentielles (limite de débit du fournisseur, sorties dans un ordre stable)
       await translateFile(fullPath, lang);
     }
   }
@@ -259,6 +261,7 @@ async function handleSync(lang: TargetLanguage): Promise<void> {
   for (const folder of pathsToSync) {
     let stat: Awaited<ReturnType<typeof fs.stat>>;
     try {
+      // oxlint-disable-next-line no-await-in-loop -- dossiers synchronisés l'un après l'autre : la première erreur interrompt la suite comme avant
       stat = await fs.stat(folder);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
@@ -267,6 +270,7 @@ async function handleSync(lang: TargetLanguage): Promise<void> {
     }
     if (!stat.isDirectory()) throw new IoError(`Expected documentation directory: ${folder}`);
     console.log(`Syncing folder: ${folder}`);
+    // oxlint-disable-next-line no-await-in-loop -- synchronisation séquentielle des dossiers (traductions LLM rate-limitées)
     await translateDirectory(folder, lang);
   }
   console.log("Documentation sync complete!");

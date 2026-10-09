@@ -12,28 +12,28 @@ import {
 	AUDIO_VIDEO_EXTENSIONS,
 } from "./ai-helpers";
 
-describe("Explorer AI Contextual Actions", () => {
-	const makeFile = (id: string, name: string, ext: string, kind?: string, path?: string): File => ({
-		id,
-		name,
-		extension: ext,
-		size: 1024,
-		mime_type: null,
-		type: { mime: null, kind: kind ?? "unknown" },
-		kind: "File",
-		created_at: "2026-01-01T00:00:00Z",
-		modified_at: "2026-01-01T00:00:00Z",
-		sd_path: path ? ({ Physical: { path } } as any) : ({} as any),
-		tags: [],
-		metadata: null,
-		image_media_data: null,
-		video_media_data: null,
-		audio_media_data: null,
-		document_media_data: null,
-		content_identity: kind ? { uuid: id, hash: null, kind: kind as any } : null,
-		sidecars: [],
-	});
+const makeFile = (id: string, name: string, ext: string, kind?: string, path?: string): File => ({
+	id,
+	name,
+	extension: ext,
+	size: 1024,
+	mime_type: null,
+	type: { mime: null, kind: kind ?? "unknown" },
+	kind: "File",
+	created_at: "2026-01-01T00:00:00Z",
+	modified_at: "2026-01-01T00:00:00Z",
+	sd_path: path ? ({ Physical: { path } } as any) : ({} as any),
+	tags: [],
+	metadata: null,
+	image_media_data: null,
+	video_media_data: null,
+	audio_media_data: null,
+	document_media_data: null,
+	content_identity: kind ? { uuid: id, hash: null, kind: kind as any } : null,
+	sidecars: [],
+});
 
+describe("Explorer AI Contextual Actions", () => {
 	it("identifies OCR eligibility for images and PDFs", () => {
 		const image = makeFile("1", "diagram.png", "png");
 		const pdf = makeFile("2", "report.pdf", "pdf");
@@ -168,5 +168,4 @@ describe("Explorer AI Contextual Actions", () => {
 		expect(items.length).toBe(1);
 		expect(items[0]).toEqual({ type: "text", text: "Bonjour Aphrody" });
 	});
-
 });

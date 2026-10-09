@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { MapPin, X } from '@phosphor-icons/react';
-import type * as maplibregl from 'maplibre-gl';
+import { useEffect, useRef, useState } from "react";
+import { MapPin, X } from "@phosphor-icons/react";
+import type * as maplibregl from "maplibre-gl";
 
 interface LocationMapProps {
 	latitude: number;
@@ -10,9 +10,7 @@ interface LocationMapProps {
 
 // Convert HSL string to hex color
 function hslToHex(hslString: string): string {
-	const [h, s, l] = hslString
-		.split(',')
-		.map((v) => parseFloat(v.replace(/[^\d.]/g, '')));
+	const [h, s, l] = hslString.split(",").map((v) => parseFloat(v.replace(/[^\d.]/g, "")));
 
 	const lightness = l / 100;
 	const saturation = s / 100;
@@ -23,7 +21,7 @@ function hslToHex(hslString: string): string {
 		const color = lightness - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
 		return Math.round(255 * color)
 			.toString(16)
-			.padStart(2, '0');
+			.padStart(2, "0");
 	};
 
 	return `#${f(0)}${f(8)}${f(4)}`;
@@ -39,227 +37,225 @@ function getMapStyle() {
 
 	// Map Spacedrive colors to map elements
 	const colors = {
-		background: getColor('--color-app'), // Base map background
-		water: getColor('--color-app-dark-box'), // Water bodies
-		waterway: getColor('--color-app-line'), // Rivers, streams
-		land: getColor('--color-app'), // Default land color
-		park: getColor('--color-app-box'), // Parks and green spaces
-		building: getColor('--color-app-box'), // Buildings
-		buildingOutline: getColor('--color-app-line'), // Building outlines
-		road: getColor('--color-app-line'), // Minor roads
-		roadMajor: getColor('--color-app-selected'), // Major roads
-		roadHighway: getColor('--color-app-hover'), // Highways
-		roadOutline: getColor('--color-app-darker-box'), // Road outlines
-		border: getColor('--color-app-line'), // Country/state borders
-		text: getColor('--color-ink-dull'), // Labels
-		textStroke: getColor('--color-app') // Text outline for readability
+		background: getColor("--color-app"), // Base map background
+		water: getColor("--color-app-dark-box"), // Water bodies
+		waterway: getColor("--color-app-line"), // Rivers, streams
+		land: getColor("--color-app"), // Default land color
+		park: getColor("--color-app-box"), // Parks and green spaces
+		building: getColor("--color-app-box"), // Buildings
+		buildingOutline: getColor("--color-app-line"), // Building outlines
+		road: getColor("--color-app-line"), // Minor roads
+		roadMajor: getColor("--color-app-selected"), // Major roads
+		roadHighway: getColor("--color-app-hover"), // Highways
+		roadOutline: getColor("--color-app-darker-box"), // Road outlines
+		border: getColor("--color-app-line"), // Country/state borders
+		text: getColor("--color-ink-dull"), // Labels
+		textStroke: getColor("--color-app"), // Text outline for readability
 	};
 
 	return {
 		version: 8,
 		sources: {
 			protomaps: {
-				type: 'vector',
-				tiles: [
-					'https://api.protomaps.com/tiles/v3/{z}/{x}/{y}.mvt?key=41392fb7515533a5'
-				],
-				maxzoom: 15
-			}
+				type: "vector",
+				tiles: ["https://api.protomaps.com/tiles/v3/{z}/{x}/{y}.mvt?key=41392fb7515533a5"],
+				maxzoom: 15,
+			},
 		},
-		glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
+		glyphs: "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
 		layers: [
 			// Background
 			{
-				id: 'background',
-				type: 'background',
+				id: "background",
+				type: "background",
 				paint: {
-					'background-color': colors.background
-				}
+					"background-color": colors.background,
+				},
 			},
 			// Water polygons (oceans, lakes)
 			{
-				id: 'water',
-				type: 'fill',
-				source: 'protomaps',
-				'source-layer': 'water',
+				id: "water",
+				type: "fill",
+				source: "protomaps",
+				"source-layer": "water",
 				paint: {
-					'fill-color': colors.water
-				}
+					"fill-color": colors.water,
+				},
 			},
 			// Natural features (parks, forests)
 			{
-				id: 'natural',
-				type: 'fill',
-				source: 'protomaps',
-				'source-layer': 'natural',
-				filter: ['in', 'pmap:kind', 'park', 'nature_reserve', 'wood', 'forest'],
+				id: "natural",
+				type: "fill",
+				source: "protomaps",
+				"source-layer": "natural",
+				filter: ["in", "pmap:kind", "park", "nature_reserve", "wood", "forest"],
 				paint: {
-					'fill-color': colors.park,
-					'fill-opacity': 0.3
-				}
+					"fill-color": colors.park,
+					"fill-opacity": 0.3,
+				},
 			},
 			// Landuse (parks, residential areas)
 			{
-				id: 'landuse',
-				type: 'fill',
-				source: 'protomaps',
-				'source-layer': 'landuse',
-				filter: ['in', 'pmap:kind', 'park', 'cemetery', 'forest', 'wood'],
+				id: "landuse",
+				type: "fill",
+				source: "protomaps",
+				"source-layer": "landuse",
+				filter: ["in", "pmap:kind", "park", "cemetery", "forest", "wood"],
 				paint: {
-					'fill-color': colors.park,
-					'fill-opacity': 0.3
-				}
+					"fill-color": colors.park,
+					"fill-opacity": 0.3,
+				},
 			},
 			// Buildings
 			{
-				id: 'buildings',
-				type: 'fill',
-				source: 'protomaps',
-				'source-layer': 'buildings',
+				id: "buildings",
+				type: "fill",
+				source: "protomaps",
+				"source-layer": "buildings",
 				paint: {
-					'fill-color': colors.building,
-					'fill-opacity': 0.7
-				}
+					"fill-color": colors.building,
+					"fill-opacity": 0.7,
+				},
 			},
 			// Building outlines
 			{
-				id: 'buildings-outline',
-				type: 'line',
-				source: 'protomaps',
-				'source-layer': 'buildings',
+				id: "buildings-outline",
+				type: "line",
+				source: "protomaps",
+				"source-layer": "buildings",
 				paint: {
-					'line-color': colors.buildingOutline,
-					'line-width': 0.5
-				}
+					"line-color": colors.buildingOutline,
+					"line-width": 0.5,
+				},
 			},
 			// Road casings (outlines)
 			{
-				id: 'roads-minor-casing',
-				type: 'line',
-				source: 'protomaps',
-				'source-layer': 'roads',
-				filter: ['in', 'pmap:kind', 'minor_road', 'other'],
+				id: "roads-minor-casing",
+				type: "line",
+				source: "protomaps",
+				"source-layer": "roads",
+				filter: ["in", "pmap:kind", "minor_road", "other"],
 				paint: {
-					'line-color': colors.roadOutline,
-					'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2, 16, 6]
-				}
+					"line-color": colors.roadOutline,
+					"line-width": ["interpolate", ["linear"], ["zoom"], 10, 2, 16, 6],
+				},
 			},
 			{
-				id: 'roads-major-casing',
-				type: 'line',
-				source: 'protomaps',
-				'source-layer': 'roads',
-				filter: ['in', 'pmap:kind', 'major_road', 'medium_road'],
+				id: "roads-major-casing",
+				type: "line",
+				source: "protomaps",
+				"source-layer": "roads",
+				filter: ["in", "pmap:kind", "major_road", "medium_road"],
 				paint: {
-					'line-color': colors.roadOutline,
-					'line-width': ['interpolate', ['linear'], ['zoom'], 10, 3, 16, 8]
-				}
+					"line-color": colors.roadOutline,
+					"line-width": ["interpolate", ["linear"], ["zoom"], 10, 3, 16, 8],
+				},
 			},
 			{
-				id: 'roads-highway-casing',
-				type: 'line',
-				source: 'protomaps',
-				'source-layer': 'roads',
-				filter: ['in', 'pmap:kind', 'highway', 'motorway'],
+				id: "roads-highway-casing",
+				type: "line",
+				source: "protomaps",
+				"source-layer": "roads",
+				filter: ["in", "pmap:kind", "highway", "motorway"],
 				paint: {
-					'line-color': colors.roadOutline,
-					'line-width': ['interpolate', ['linear'], ['zoom'], 10, 4, 16, 12]
-				}
+					"line-color": colors.roadOutline,
+					"line-width": ["interpolate", ["linear"], ["zoom"], 10, 4, 16, 12],
+				},
 			},
 			// Roads
 			{
-				id: 'roads-minor',
-				type: 'line',
-				source: 'protomaps',
-				'source-layer': 'roads',
-				filter: ['in', 'pmap:kind', 'minor_road', 'other'],
+				id: "roads-minor",
+				type: "line",
+				source: "protomaps",
+				"source-layer": "roads",
+				filter: ["in", "pmap:kind", "minor_road", "other"],
 				paint: {
-					'line-color': colors.road,
-					'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1, 16, 4]
-				}
+					"line-color": colors.road,
+					"line-width": ["interpolate", ["linear"], ["zoom"], 10, 1, 16, 4],
+				},
 			},
 			{
-				id: 'roads-major',
-				type: 'line',
-				source: 'protomaps',
-				'source-layer': 'roads',
-				filter: ['in', 'pmap:kind', 'major_road', 'medium_road'],
+				id: "roads-major",
+				type: "line",
+				source: "protomaps",
+				"source-layer": "roads",
+				filter: ["in", "pmap:kind", "major_road", "medium_road"],
 				paint: {
-					'line-color': colors.roadMajor,
-					'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2, 16, 6]
-				}
+					"line-color": colors.roadMajor,
+					"line-width": ["interpolate", ["linear"], ["zoom"], 10, 2, 16, 6],
+				},
 			},
 			{
-				id: 'roads-highway',
-				type: 'line',
-				source: 'protomaps',
-				'source-layer': 'roads',
-				filter: ['in', 'pmap:kind', 'highway', 'motorway'],
+				id: "roads-highway",
+				type: "line",
+				source: "protomaps",
+				"source-layer": "roads",
+				filter: ["in", "pmap:kind", "highway", "motorway"],
 				paint: {
-					'line-color': colors.roadHighway,
-					'line-width': ['interpolate', ['linear'], ['zoom'], 10, 3, 16, 10]
-				}
+					"line-color": colors.roadHighway,
+					"line-width": ["interpolate", ["linear"], ["zoom"], 10, 3, 16, 10],
+				},
 			},
 			// Borders
 			{
-				id: 'boundaries',
-				type: 'line',
-				source: 'protomaps',
-				'source-layer': 'boundaries',
+				id: "boundaries",
+				type: "line",
+				source: "protomaps",
+				"source-layer": "boundaries",
 				paint: {
-					'line-color': colors.border,
-					'line-width': 1,
-					'line-dasharray': [3, 2]
-				}
+					"line-color": colors.border,
+					"line-width": 1,
+					"line-dasharray": [3, 2],
+				},
 			},
 			// Labels - Places
 			{
-				id: 'place-labels',
-				type: 'symbol',
-				source: 'protomaps',
-				'source-layer': 'places',
+				id: "place-labels",
+				type: "symbol",
+				source: "protomaps",
+				"source-layer": "places",
 				layout: {
-					'text-field': ['get', 'name'],
-					'text-font': ['Noto Sans Regular'],
-					'text-size': [
-						'interpolate',
-						['linear'],
-						['zoom'],
+					"text-field": ["get", "name"],
+					"text-font": ["Noto Sans Regular"],
+					"text-size": [
+						"interpolate",
+						["linear"],
+						["zoom"],
 						2,
-						['case', ['==', ['get', 'pmap:kind'], 'country'], 10, 8],
+						["case", ["==", ["get", "pmap:kind"], "country"], 10, 8],
 						10,
-						['case', ['==', ['get', 'pmap:kind'], 'country'], 18, 14]
+						["case", ["==", ["get", "pmap:kind"], "country"], 18, 14],
 					],
-					'text-transform': 'uppercase',
-					'text-letter-spacing': 0.1
+					"text-transform": "uppercase",
+					"text-letter-spacing": 0.1,
 				},
 				paint: {
-					'text-color': colors.text,
-					'text-halo-color': colors.textStroke,
-					'text-halo-width': 2
-				}
+					"text-color": colors.text,
+					"text-halo-color": colors.textStroke,
+					"text-halo-width": 2,
+				},
 			},
 			// Labels - Roads
 			{
-				id: 'road-labels',
-				type: 'symbol',
-				source: 'protomaps',
-				'source-layer': 'roads',
-				filter: ['has', 'name'],
+				id: "road-labels",
+				type: "symbol",
+				source: "protomaps",
+				"source-layer": "roads",
+				filter: ["has", "name"],
 				layout: {
-					'text-field': ['get', 'name'],
-					'text-font': ['Noto Sans Regular'],
-					'text-size': 10,
-					'symbol-placement': 'line',
-					'text-rotation-alignment': 'map'
+					"text-field": ["get", "name"],
+					"text-font": ["Noto Sans Regular"],
+					"text-size": 10,
+					"symbol-placement": "line",
+					"text-rotation-alignment": "map",
 				},
 				paint: {
-					'text-color': colors.text,
-					'text-halo-color': colors.textStroke,
-					'text-halo-width': 1.5
-				}
-			}
-		]
+					"text-color": colors.text,
+					"text-halo-color": colors.textStroke,
+					"text-halo-width": 1.5,
+				},
+			},
+		],
 	};
 }
 
@@ -276,12 +272,12 @@ export function LocationMap({ latitude, longitude, className }: LocationMapProps
 		let marker: maplibregl.Marker;
 
 		(async () => {
-			const maplibregl = await import('maplibre-gl');
-			await import('maplibre-gl/dist/maplibre-gl.css');
+			const maplibregl = await import("maplibre-gl");
+			await import("maplibre-gl/dist/maplibre-gl.css");
 
 			// Create custom marker element
-			const markerEl = document.createElement('div');
-			markerEl.className = 'custom-marker';
+			const markerEl = document.createElement("div");
+			markerEl.className = "custom-marker";
 			markerEl.style.cssText = `
 				width: 32px;
 				height: 32px;
@@ -292,7 +288,7 @@ export function LocationMap({ latitude, longitude, className }: LocationMapProps
 				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 			`;
 
-			const innerDot = document.createElement('div');
+			const innerDot = document.createElement("div");
 			innerDot.style.cssText = `
 				position: absolute;
 				top: 50%;
@@ -310,10 +306,10 @@ export function LocationMap({ latitude, longitude, className }: LocationMapProps
 				style: getMapStyle() as any,
 				center: [longitude, latitude],
 				zoom: 13,
-				attributionControl: false
+				attributionControl: false,
 			});
 
-			marker = new maplibregl.Marker({ element: markerEl, anchor: 'bottom' })
+			marker = new maplibregl.Marker({ element: markerEl, anchor: "bottom" })
 				.setLngLat([longitude, latitude])
 				.addTo(map);
 
@@ -336,9 +332,9 @@ export function LocationMap({ latitude, longitude, className }: LocationMapProps
 		if (mapRef.current && isExpanded) {
 			mapRef.current.addControl(
 				new (window as any).maplibregl.NavigationControl({
-					visualizePitch: false
+					visualizePitch: false,
 				}),
-				'top-right'
+				"top-right",
 			);
 		}
 	}, [isExpanded]);
@@ -366,7 +362,17 @@ export function LocationMap({ latitude, longitude, className }: LocationMapProps
 		<div className={className}>
 			<div
 				className="group relative h-32 cursor-pointer overflow-hidden rounded-t-small"
+				// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- la zone contient le conteneur de carte (div) : un <button> natif serait invalide ; rôle, tabIndex et clavier sont explicites
+				role="button"
+				tabIndex={0}
+				aria-label="Expand map"
 				onClick={() => setIsExpanded(true)}
+				onKeyDown={(e) => {
+					if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+						e.preventDefault();
+						setIsExpanded(true);
+					}
+				}}
 			>
 				<div ref={mapContainerRef} className="h-full w-full" />
 				<div className="absolute inset-0 flex items-center justify-center bg-surface/20 opacity-0 transition-opacity group-hover:opacity-100">
@@ -391,7 +397,7 @@ export function LocationMap({ latitude, longitude, className }: LocationMapProps
 						e.stopPropagation();
 						window.open(
 							`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`,
-							'_blank'
+							"_blank",
 						);
 					}}
 					className="text-label-medium font-medium text-primary opacity-60 transition-opacity hover:opacity-100"

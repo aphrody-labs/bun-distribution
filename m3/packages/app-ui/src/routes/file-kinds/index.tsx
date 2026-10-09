@@ -115,9 +115,9 @@ export function FileKindsView() {
       </header>
       <div className="min-h-0 flex-1 overflow-auto p-4">
         {isLoading && (
-          <p role="status" className="p-4 text-label-large text-on-surface-variant">
+          <output className="block p-4 text-label-large text-on-surface-variant">
             Chargement…
-          </p>
+          </output>
         )}
         {error && (
           <div className="flex items-center gap-3 rounded-medium bg-error-container p-4 text-on-error-container">
@@ -218,9 +218,9 @@ function ContentKindExplorer({ kind }: { kind: ContentKind }) {
         {mode.type === "filtered" && mode.filters.content_types?.[0] === kind ? (
           <ExplorerView />
         ) : (
-          <p role="status" className="p-4 text-label-large text-on-surface-variant">
+          <output className="block p-4 text-label-large text-on-surface-variant">
             Chargement…
-          </p>
+          </output>
         )}
       </div>
     </div>

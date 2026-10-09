@@ -469,6 +469,8 @@ const strings = (v: unknown): string[] | null =>
 const merge = (base: readonly string[], extra: unknown): string[] => [
   ...new Set([...base, ...(strings(extra) ?? [])]),
 ];
+const numberOr = (v: unknown, d: number): number => (typeof v === "number" && v >= 0 ? v : d);
+const stringOr = (v: unknown, d: string): string => (typeof v === "string" ? v : d);
 
 /**
  * Parse host-policy.toml (Bun.TOML). Top-level tables apply to every host; `[hosts.<name>.*]` add to them.
@@ -489,8 +491,6 @@ export function parsePolicy(toml: string | null, host: string): Policy {
     const tune = (layer["tune"] ?? {}) as Json;
     const space = (layer["space"] ?? {}) as Json;
     const locks = (layer["locks"] ?? {}) as Json;
-    const n = (v: unknown, d: number): number => (typeof v === "number" && v >= 0 ? v : d);
-    const s = (v: unknown, d: string): string => (typeof v === "string" ? v : d);
     p = {
       services: {
         keep: merge(p.services.keep, svc["keep"]),
@@ -502,13 +502,13 @@ export function parsePolicy(toml: string | null, host: string): Policy {
         layer["protect"] === undefined ? undefined : (layer["protect"] as Json)["paths"],
       ),
       reclaim: {
-        buildArtifactMinAgeDays: n(
+        buildArtifactMinAgeDays: numberOr(
           rec["build_artifact_min_age_days"],
           p.reclaim.buildArtifactMinAgeDays,
         ),
-        journalMaxSize: s(rec["journal_max_size"], p.reclaim.journalMaxSize),
-        journalMaxAgeDays: n(rec["journal_max_age_days"], p.reclaim.journalMaxAgeDays),
-        rotatedLogAgeDays: n(rec["rotated_log_age_days"], p.reclaim.rotatedLogAgeDays),
+        journalMaxSize: stringOr(rec["journal_max_size"], p.reclaim.journalMaxSize),
+        journalMaxAgeDays: numberOr(rec["journal_max_age_days"], p.reclaim.journalMaxAgeDays),
+        rotatedLogAgeDays: numberOr(rec["rotated_log_age_days"], p.reclaim.rotatedLogAgeDays),
         scanRoots: merge(p.reclaim.scanRoots, rec["scan_roots"]),
         excludeNames: merge(p.reclaim.excludeNames, rec["exclude_names"]),
         cacheDirs: merge(p.reclaim.cacheDirs, rec["cache_dirs"]),
@@ -517,14 +517,14 @@ export function parsePolicy(toml: string | null, host: string): Policy {
       space: {
         minFree: ((v: unknown, d: number): number =>
           typeof v === "number" && v >= 0 && v <= 1 ? v : d)(space["min_free"], p.space.minFree),
-        parallel: Math.max(1, Math.floor(n(space["parallel"], p.space.parallel))),
-        splitDepth: Math.floor(n(space["split_depth"], p.space.splitDepth)),
+        parallel: Math.max(1, Math.floor(numberOr(space["parallel"], p.space.parallel))),
+        splitDepth: Math.floor(numberOr(space["split_depth"], p.space.splitDepth)),
       },
       tune: {
-        nginxWorkers: s(tune["nginx_workers"], p.tune.nginxWorkers),
-        governor: s(tune["governor"], p.tune.governor),
-        thp: s(tune["thp"], p.tune.thp),
-        swappiness: n(tune["swappiness"], p.tune.swappiness),
+        nginxWorkers: stringOr(tune["nginx_workers"], p.tune.nginxWorkers),
+        governor: stringOr(tune["governor"], p.tune.governor),
+        thp: stringOr(tune["thp"], p.tune.thp),
+        swappiness: numberOr(tune["swappiness"], p.tune.swappiness),
       },
     };
   }

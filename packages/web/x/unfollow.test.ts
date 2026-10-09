@@ -27,6 +27,8 @@ import {
 // ---------------------------------------------------------------------------
 
 const T0 = 1_700_000_000_000;
+const rateLimited = () => new XError("X API error 88: Rate limit exceeded", 88);
+const boom = () => new XError("HTTP 500", -1, 500);
 
 /** Deterministic clock whose `sleep` advances time instead of waiting. */
 function fakeClock(start = T0) {
@@ -419,7 +421,6 @@ describe("purgeFollowing", () => {
 
   test("a persistent rate limit stops the run and keeps the target queued", async () => {
     const clock = fakeClock();
-    const rateLimited = () => new XError("X API error 88: Rate limit exceeded", 88);
     const { client } = fakeClient({
       following: [user("1"), user("2")],
       followers: [],
@@ -439,7 +440,6 @@ describe("purgeFollowing", () => {
 
   test("transient errors are retried then parked as failed", async () => {
     const clock = fakeClock();
-    const boom = () => new XError("HTTP 500", -1, 500);
     const { client, calls } = fakeClient({
       following: [user("1"), user("2")],
       followers: [],

@@ -12,7 +12,7 @@ import {
   m3FocusRing,
   usePopover,
 } from "@aphrody/m3-primitives";
-import clsx from "clsx";
+import { clsx } from "clsx";
 
 /** M3 menu item, dense (desktop density step). */
 const menuItemClassName = clsx(
@@ -112,16 +112,17 @@ export function SourceDetail() {
   }, [allItems, searchValue]);
 
   // Virtualizer
+  // oxlint-disable-next-line react/incompatible-library -- @tanstack/react-virtual useVirtualizer() n'est pas memoizable par le compilateur React
   const virtualizer = useVirtualizer({
     count: filteredItems.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => 64,
     overscan: 20,
     // Avoid flushSync during render (React 19 compat)
-    scrollToFn: (offset, { adjustments, behavior }, instance) => {
+    scrollToFn: (scrollOffset, { adjustments, behavior }, instance) => {
       const el = instance.scrollElement;
       if (!el) return;
-      const top = offset + (adjustments ?? 0);
+      const top = scrollOffset + (adjustments ?? 0);
       el.scrollTo({ top, behavior });
     },
   });
@@ -150,18 +151,19 @@ export function SourceDetail() {
 
   // Trigger load more when virtualizer reaches near the end
   const lastVirtualItem = virtualizer.getVirtualItems()[virtualizer.getVirtualItems().length - 1];
+  const lastVirtualIndex = lastVirtualItem?.index;
 
   useEffect(() => {
     if (
-      lastVirtualItem &&
-      lastVirtualItem.index >= filteredItems.length - 10 &&
+      lastVirtualIndex !== undefined &&
+      lastVirtualIndex >= filteredItems.length - 10 &&
       hasMore &&
       !loadingMore &&
       !searchValue
     ) {
       setLoadingMore(true);
     }
-  }, [lastVirtualItem?.index, filteredItems.length, hasMore, loadingMore, searchValue]);
+  }, [lastVirtualIndex, filteredItems.length, hasMore, loadingMore, searchValue]);
 
   if (isLoading) {
     return (

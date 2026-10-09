@@ -144,9 +144,12 @@ function ShellLayoutContent() {
 
   const narrow = useMediaQuery(NARROW_QUERY);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  useEffect(() => {
+  // Close the drawer when leaving the narrow layout (state adjusted during render, not in an effect).
+  const [prevNarrow, setPrevNarrow] = useState(narrow);
+  if (narrow !== prevNarrow) {
+    setPrevNarrow(narrow);
     if (!narrow) setDrawerOpen(false);
-  }, [narrow]);
+  }
   const railWidth = !narrow && sidebarVisible ? 280 : 0;
 
   const isPreviewActive = !!quickPreviewFileId;

@@ -6,8 +6,9 @@
  * autres par `transforms/orchestrator.ts`. Les deux côtés sont normalisés par oxfmt avant
  * comparaison : on teste la sémantique du codemod, pas le style d'impression.
  */
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import icons from "../transforms/icons";
 import orchestrator from "../transforms/orchestrator";
 
@@ -48,14 +49,33 @@ export function runCase(c: FixtureCase, source = readFileSync(c.inputPath, "utf8
 export function format(source: string): string {
   const oxfmt = Bun.which("oxfmt");
   if (!oxfmt) throw new Error("oxfmt introuvable sur PATH (requis pour comparer les fixtures)");
-  const run = Bun.spawnSync([oxfmt, "--stdin-filepath=f.tsx"], {
-    windowsHide: true,
-    cwd: ROOT,
-    stdin: new TextEncoder().encode(source),
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-  if (!run.success)
-    throw new Error(`oxfmt failed (exit ${run.exitCode}): ${run.stderr.toString()}`);
-  return run.stdout.toString();
+  // oxfmt ne lit pas le source sur stdin : formatage d'un fichier temporaire, configuration du dépôt.
+  const dir = mkdtempSync(join(tmpdir(), "codemod-fixture-"));
+  const file = join(dir, "f.tsx");
+  try {
+    writeFileSync(file, source);
+    const run = Bun.spawnSync([oxfmt, `--config=${repoConfig()}`, file], {
+      windowsHide: true,
+      cwd: ROOT,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    if (!run.success)
+      throw new Error(`oxfmt failed (exit ${run.exitCode}): ${run.stderr.toString()}`);
+    return readFileSync(file, "utf8");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+/** Remonte l'arborescence jusqu'au .oxfmtrc.json du dépôt. */
+function repoConfig(): string {
+  let dir = ROOT;
+  for (;;) {
+    const candidate = join(dir, ".oxfmtrc.json");
+    if (existsSync(candidate)) return candidate;
+    const parent = dirname(dir);
+    if (parent === dir) throw new Error("`.oxfmtrc.json` introuvable au-dessus de ROOT");
+    dir = parent;
+  }
 }

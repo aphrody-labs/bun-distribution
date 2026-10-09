@@ -143,6 +143,7 @@ export async function indexCodebaseToRedis(
       if (isBinaryOrLarge) {
         hash = wyhash(`${relPath}:${stat.size}:${stat.mtimeMs}`);
       } else {
+        // oxlint-disable-next-line no-await-in-loop -- indexation fichier par fichier : un seul contenu en mémoire à la fois et ordre d'écriture Redis déterministe
         const fileContent = await Bun.file(file).text();
         hash = wyhash(fileContent);
         lines = fileContent.split("\n").length;
@@ -152,12 +153,14 @@ export async function indexCodebaseToRedis(
 
       const redisKey = `yolo:code:${branch}:file:${relPath}`;
       // Check if existing hash in Redis matches (incremental optimization)
+      // oxlint-disable-next-line no-await-in-loop -- même boucle séquentielle bornée que ci-dessus (pas de concurrence non bornée sur un dépôt entier)
       const existingHash = await redis.hget(redisKey, "wyhash");
       if (existingHash === hash) {
         skippedFiles++;
         continue;
       }
 
+      // oxlint-disable-next-line no-await-in-loop -- même boucle séquentielle bornée : écriture par fichier dans l'ordre de parcours
       await redis.hset(redisKey, {
         path: relPath,
         ext,
@@ -167,6 +170,7 @@ export async function indexCodebaseToRedis(
         indexed_at: now,
       });
 
+      // oxlint-disable-next-line no-await-in-loop -- même boucle séquentielle bornée : écriture par fichier dans l'ordre de parcours
       await redis.sadd(fileKeySet, relPath);
       updatedFiles++;
     } catch {

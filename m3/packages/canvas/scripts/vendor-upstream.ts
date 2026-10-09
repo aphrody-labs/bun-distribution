@@ -98,8 +98,11 @@ export async function readUpstream(): Promise<UpstreamSnapshot> {
     throw new Error(`third_party/canvas is ${manifest.name}, expected ${UPSTREAM_PACKAGE}`);
   }
   const files = new Map<string, string>();
-  for (const name of VENDORED_FILES) {
-    files.set(name, normalizeEol(await Bun.file(join(UPSTREAM_DIR, name)).text()));
+  const vendoredTexts = await Promise.all(
+    VENDORED_FILES.map((name) => Bun.file(join(UPSTREAM_DIR, name)).text()),
+  );
+  for (const [index, name] of VENDORED_FILES.entries()) {
+    files.set(name, normalizeEol(vendoredTexts[index]));
   }
   const platformDirs = await readdir(join(UPSTREAM_DIR, "npm"), { withFileTypes: true });
   const platformPackages = await Promise.all(
@@ -145,20 +148,23 @@ export async function verifyRegistryCopies(): Promise<Drift[]> {
     await Bun.write(tarball, bytes);
     const drift: Drift[] = [];
     const hashes = parseRecordedHashes(record);
-    for (const name of VENDORED_FILES) {
-      const extracted = Bun.spawnSync(["tar", "-xOf", tarball, `package/${name}`], {
+    const extracted = VENDORED_FILES.map((name) => {
+      const result = Bun.spawnSync(["tar", "-xOf", tarball, `package/${name}`], {
         windowsHide: true,
         stdout: "pipe",
         stderr: "pipe",
       });
-      if (extracted.exitCode !== 0) throw new Error(`upstream file missing: ${name}`);
-      const expected = normalizeEol(extracted.stdout.toString());
+      if (result.exitCode !== 0) throw new Error(`upstream file missing: ${name}`);
+      return { name, expected: normalizeEol(result.stdout.toString()) };
+    });
+    const actuals = await Promise.all(extracted.map(({ name }) => readText(`vendor/${name}`)));
+    for (const [index, { name, expected }] of extracted.entries()) {
       if (sha256(expected) !== hashes.get(name))
         drift.push({
           path: `vendor/${name}`,
           reason: "recorded hash differs from immutable npm upstream",
         });
-      if ((await readText(`vendor/${name}`)) !== expected)
+      if (actuals[index] !== expected)
         drift.push({ path: `vendor/${name}`, reason: "differs from immutable npm upstream" });
     }
     if (
@@ -229,8 +235,10 @@ async function readText(path: string): Promise<string | undefined> {
 
 export async function findDrift(upstream: UpstreamSnapshot): Promise<Drift[]> {
   const drift: Drift[] = [];
-  for (const [path, expected] of await expectedFiles(upstream)) {
-    const actual = await readText(path);
+  const entries = [...(await expectedFiles(upstream))];
+  const actuals = await Promise.all(entries.map(([path]) => readText(path)));
+  for (const [index, [path, expected]] of entries.entries()) {
+    const actual = actuals[index];
     if (actual === undefined) drift.push({ path, reason: "missing" });
     else if (actual !== expected) drift.push({ path, reason: "differs from its source" });
   }
@@ -253,11 +261,15 @@ export async function findDrift(upstream: UpstreamSnapshot): Promise<Drift[]> {
 
 export async function writeCopies(upstream: UpstreamSnapshot): Promise<string[]> {
   const written: string[] = [];
-  for (const [path, expected] of await expectedFiles(upstream)) {
-    if ((await readText(path)) === expected) continue;
-    await Bun.write(join(PACKAGE_DIR, path), expected);
-    written.push(path);
-  }
+  const entries = [...(await expectedFiles(upstream))];
+  const changed = await Promise.all(
+    entries.map(async ([path, expected]) => {
+      if ((await readText(path)) === expected) return undefined;
+      await Bun.write(join(PACKAGE_DIR, path), expected);
+      return path;
+    }),
+  );
+  written.push(...changed.filter((path): path is string => path !== undefined));
   const manifestFile = Bun.file(join(PACKAGE_DIR, "package.json"));
   const manifest = await manifestFile.json();
   const expectedOptional = expectedOptionalDependencies(upstream);

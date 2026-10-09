@@ -20,6 +20,7 @@ export function A2AStudio() {
 
   useEffect(() => {
     let active = true;
+    // oxlint-disable-next-line react/set-state-in-effect -- the loading state resets before each inventory load, which the effect starts on mount and on every refresh
     setLoading(true);
     setFailed(false);
     setInventory(null);
@@ -37,6 +38,7 @@ export function A2AStudio() {
     return () => {
       active = false;
     };
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- revision is the refresh trigger that reloads the inventory; the effect body does not read it
   }, [revision]);
 
   const tools = inventory?.tools.filter((tool) =>
@@ -63,7 +65,7 @@ export function A2AStudio() {
           {loading ? "Chargement…" : failed ? "Réessayer" : "Actualiser"}
         </button>
       </header>
-      {loading && <p role="status">Lecture des outils disponibles…</p>}
+      {loading && <output className="block">Lecture des outils disponibles…</output>}
       {failed && (
         <p role="alert" className="rounded-2xl bg-error-container p-5 text-on-error-container">
           Impossible de lire les outils. Vérifiez la connexion au service puis réessayez.
@@ -81,6 +83,7 @@ export function A2AStudio() {
               <ul className="mt-3 grid gap-3 sm:grid-cols-2">
                 {inventory.servers.map((server, index) => (
                   <li
+                    // oxlint-disable-next-line react/no-array-index-key -- servers come from the inventory without an id, and the index keeps repeated names distinct
                     key={server.name + index}
                     className="flex flex-wrap justify-between gap-3 rounded-2xl border border-outline-variant p-4"
                   >
@@ -107,15 +110,16 @@ export function A2AStudio() {
               />
             </label>
             {tools?.length === 0 ? (
-              <p role="status" className="mt-4 text-on-surface-variant">
+              <output className="block mt-4 text-on-surface-variant">
                 {inventory.tools.length === 0
                   ? "Le service ne propose aucun outil."
                   : "Aucun outil ne correspond à votre recherche."}
-              </p>
+              </output>
             ) : (
               <ul className="mt-4 grid gap-4 lg:grid-cols-2">
                 {tools?.map((tool, index) => (
                   <li
+                    // oxlint-disable-next-line react/no-array-index-key -- tools come from the inventory without an id, and the index keeps repeated names distinct
                     key={tool.name + index}
                     className="min-w-0 rounded-2xl border border-outline-variant bg-surface-container-low p-5"
                   >

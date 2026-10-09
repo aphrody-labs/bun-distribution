@@ -38,37 +38,44 @@ function classify(path: string): Script["kind"] {
 
 async function scripts(root: string, current = root): Promise<Script[]> {
   const entries = await readdir(current, { withFileTypes: true }).catch(() => []);
-  const result: Script[] = [];
-  for (const entry of entries) {
-    if (ignored.has(entry.name)) continue;
-    const full = join(current, entry.name);
-    if (entry.isDirectory()) {
-      result.push(...(await scripts(root, full)));
-      continue;
-    }
-    const ext = entry.name.slice(entry.name.lastIndexOf("."));
-    if (extensions.has(ext) && relative(root, full).split(/[\\/]/).includes("scripts")) {
-      const path = relative(root, full).replaceAll("\\", "/");
-      result.push({ path, kind: classify(path) });
-    }
-  }
-  return result;
+  const found = await Promise.all(
+    entries.map(async (entry): Promise<Script[]> => {
+      if (ignored.has(entry.name)) return [];
+      const full = join(current, entry.name);
+      if (entry.isDirectory()) return scripts(root, full);
+      const ext = entry.name.slice(entry.name.lastIndexOf("."));
+      if (extensions.has(ext) && relative(root, full).split(/[\\/]/).includes("scripts")) {
+        const path = relative(root, full).replaceAll("\\", "/");
+        return [{ path, kind: classify(path) }];
+      }
+      return [];
+    }),
+  );
+  return found.flat();
 }
+
+const hasGit = async (path: string) =>
+  stat(join(path, ".git"))
+    .then(() => true)
+    .catch(() => false);
 
 export async function collectAutomationInventory(root: string) {
   root = resolve(root);
-  const hasGit = async (path: string) =>
-    stat(join(path, ".git"))
-      .then(() => true)
-      .catch(() => false);
   const repositories: Repository[] = [];
   if (await hasGit(root)) repositories.push({ name: basename(root), scripts: await scripts(root) });
-  else
-    for (const entry of await readdir(root, { withFileTypes: true })) {
-      if (!entry.isDirectory() || ignored.has(entry.name)) continue;
-      const repo = join(root, entry.name);
-      if (await hasGit(repo)) repositories.push({ name: entry.name, scripts: await scripts(repo) });
-    }
+  else {
+    const candidates = (await readdir(root, { withFileTypes: true })).filter(
+      (entry) => entry.isDirectory() && !ignored.has(entry.name),
+    );
+    const found = await Promise.all(
+      candidates.map(async (entry): Promise<Repository | undefined> => {
+        const repo = join(root, entry.name);
+        if (!(await hasGit(repo))) return undefined;
+        return { name: entry.name, scripts: await scripts(repo) };
+      }),
+    );
+    repositories.push(...found.filter((repo): repo is Repository => repo !== undefined));
+  }
   repositories.sort((a, b) => a.name.localeCompare(b.name));
   const counts = Object.fromEntries(
     ["check", "release", "sync", "deploy", "product"].map((kind) => [

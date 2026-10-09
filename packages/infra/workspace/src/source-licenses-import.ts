@@ -83,6 +83,7 @@ export async function importSourceLicenses(
       const bytes = git(sourcePath, ["show", spec]);
       const sourceBlob = git(sourcePath, ["rev-parse", spec]).toString("utf8").trim();
       const sha256 = hash(bytes);
+      // oxlint-disable-next-line no-await-in-loop -- license files are hashed one at a time in manifest order
       const worktreeSha256 = hash(await readFile(join(sourcePath, name)));
       const rawWorktreeBlob = git(sourcePath, ["hash-object", "--no-filters", name])
         .toString("utf8")
@@ -104,6 +105,7 @@ export async function importSourceLicenses(
       if (!targetPath.startsWith(`${target}/`))
         throw new Error(`license path escapes target: ${entry.source}`);
       const existing = existsSync(targetPath);
+      // oxlint-disable-next-line no-await-in-loop -- targets are compared in manifest order (sequential reads of the existing license files)
       if (existing && hash(await readFile(targetPath)) !== sha256)
         throw new Error(`license target conflict: ${destination}`);
       planned.push({
@@ -126,7 +128,9 @@ export async function importSourceLicenses(
   for (const item of planned) {
     const destination = resolve(target, item.target);
     if (!item.existing && !item.aliasOf) {
+      // oxlint-disable-next-line no-await-in-loop -- license files are written in manifest order; each write must finish before the next
       await mkdir(dirname(destination), { recursive: true });
+      // oxlint-disable-next-line no-await-in-loop -- license files are written in manifest order; each write must finish before the next
       await writeFile(destination, item.bytes, { flag: "wx" });
     }
     item.entry.sha256 = item.worktreeSha256;

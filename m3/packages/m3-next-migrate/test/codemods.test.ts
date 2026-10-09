@@ -146,6 +146,7 @@ describe("composition with @aphrody/next-bun", () => {
     const dir = await project();
     try {
       const reports = await runCodemods({ dir, ids: ["mui", "tailwind-config-v4"], apply: true });
+      // oxlint-disable-next-line unicorn/no-array-sort -- copie fraîche : cible ES2022 du paquet (pas de toSorted)
       expect(reports.map((r) => `${r.file}:${r.codemod}`).sort()).toEqual([
         "app/page.tsx:mui-to-m3",
         "tailwind.config.js:tailwind-config-v4",

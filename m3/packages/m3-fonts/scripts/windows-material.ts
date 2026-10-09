@@ -13,7 +13,8 @@ import windows from "bun:windows";
 import { copyFile, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-if (process.platform !== "win32") throw new Error("windows-material.ts ne s'exécute que sous Windows");
+if (process.platform !== "win32")
+  throw new Error("windows-material.ts ne s'exécute que sous Windows");
 
 const localAppData = process.env.LOCALAPPDATA;
 if (!localAppData) throw new Error("LOCALAPPDATA n'est pas défini");
@@ -29,16 +30,25 @@ const shellIconsKey = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explo
 const icoSizes = [16, 24, 32, 48, 256];
 
 const fonts = [
-  { file: "MaterialSymbolsOutlined.ttf", valueName: "Material Symbols Outlined Regular (TrueType)" },
+  {
+    file: "MaterialSymbolsOutlined.ttf",
+    valueName: "Material Symbols Outlined Regular (TrueType)",
+  },
   { file: "MaterialSymbolsRounded.ttf", valueName: "Material Symbols Rounded Regular (TrueType)" },
   { file: "MaterialSymbolsSharp.ttf", valueName: "Material Symbols Sharp Regular (TrueType)" },
 ];
 
 const user32 = dlopen("user32.dll", {
-  PostMessageW: { args: [FFIType.u64, FFIType.u32, FFIType.u64, FFIType.i64], returns: FFIType.bool },
+  PostMessageW: {
+    args: [FFIType.u64, FFIType.u32, FFIType.u64, FFIType.i64],
+    returns: FFIType.bool,
+  },
 });
 const shell32 = dlopen("shell32.dll", {
-  SHChangeNotify: { args: [FFIType.i32, FFIType.u32, FFIType.u64, FFIType.u64], returns: FFIType.void },
+  SHChangeNotify: {
+    args: [FFIType.i32, FFIType.u32, FFIType.u64, FFIType.u64],
+    returns: FFIType.void,
+  },
 });
 
 const HWND_BROADCAST = 0xffff;
@@ -73,22 +83,26 @@ function encodeIco(images: { size: number; png: Uint8Array }[]): Buffer {
     header.writeUInt32LE(offset, entry + 12);
     offset += png.length;
   });
-  return Buffer.concat([header, ...images.map(image => image.png)]);
+  return Buffer.concat([header, ...images.map((image) => image.png)]);
 }
 
 async function buildIcons(pngDir: string, outDir: string) {
   await rm(outDir, { recursive: true, force: true });
   await mkdir(outDir, { recursive: true });
-  const names = (await readdir(join(pngDir, "256")))
-    .filter(file => file.endsWith(".png"))
-    .map(file => file.slice(0, -4))
-    .sort();
+  // The package tsconfig lib predates ES2023; the runtime (Bun) provides toSorted.
+  const names = (
+    (await readdir(join(pngDir, "256")))
+      .filter((file) => file.endsWith(".png"))
+      .map((file) => file.slice(0, -4)) as string[] & { toSorted(): string[] }
+  ).toSorted();
   const index: Record<string, string> = {};
   for (const name of names) {
     const images = [];
     for (const size of icoSizes) {
+      // oxlint-disable-next-line no-await-in-loop -- sizes are read one by one: the icon set is thousands of PNGs, and a fan-out would open them all at once
       images.push({ size, png: await Bun.file(join(pngDir, String(size), `${name}.png`)).bytes() });
     }
+    // oxlint-disable-next-line no-await-in-loop -- one .ico at a time, matching the sequential PNG reads above (bounded file handles)
     await Bun.write(join(outDir, `${name}.ico`), encodeIco(images));
     index[name] = `${name}.ico`;
   }
@@ -100,30 +114,34 @@ async function installFonts(ttfDir: string) {
   await mkdir(fontsDir, { recursive: true });
   for (const font of fonts) {
     const dest = join(fontsDir, font.file);
+    // oxlint-disable-next-line no-await-in-loop -- fonts are copied then registered in order; a failed copy must stop before later registry writes
     await copyFile(join(ttfDir, font.file), dest);
     windows.registry.set(fontKey, font.valueName, dest, "REG_SZ");
     const check = windows.registry.get(fontKey, font.valueName);
-    if (check === null || check.value !== dest) throw new Error(`registre non écrit : ${font.valueName}`);
+    if (check === null || check.value !== dest)
+      throw new Error(`registre non écrit : ${font.valueName}`);
   }
   broadcastFontChange();
-  console.log(JSON.stringify({ fonts: fonts.map(font => font.valueName) }));
+  console.log(JSON.stringify({ fonts: fonts.map((font) => font.valueName) }));
 }
 
 type ShellEntry = { shellIndex: number; label: string; material: string };
 
 async function shellApply(force: boolean) {
   if (!force && (await Bun.file(rollbackFile).exists())) {
-    throw new Error(`rollback déjà présent (${rollbackFile}) : relancer avec --force après rollback`);
+    throw new Error(
+      `rollback déjà présent (${rollbackFile}) : relancer avec --force après rollback`,
+    );
   }
   const table: ShellEntry[] = JSON.parse(await readFile(shellTableFile, "utf8"));
-  const plan = table.map(entry => {
+  const plan = table.map((entry) => {
     const icon = join(icoDir, `${entry.material}.ico`);
     return { name: String(entry.shellIndex), icon, data: `${icon},0` };
   });
-  for (const step of plan) {
-    if (!(await Bun.file(step.icon).exists())) throw new Error(`icône absente : ${step.icon}`);
-  }
-  const entries = plan.map(step => {
+  const iconPresent = await Promise.all(plan.map((step) => Bun.file(step.icon).exists()));
+  const absent = plan.find((_step, index) => !iconPresent[index]);
+  if (absent) throw new Error(`icône absente : ${absent.icon}`);
+  const entries = plan.map((step) => {
     const current = windows.registry.get(shellIconsKey, step.name);
     return {
       name: step.name,
@@ -139,7 +157,7 @@ async function shellApply(force: boolean) {
   );
   for (const step of plan) windows.registry.set(shellIconsKey, step.name, step.data, "REG_SZ");
   notifyShell();
-  console.log(JSON.stringify({ applied: plan.map(step => step.name), rollback: rollbackFile }));
+  console.log(JSON.stringify({ applied: plan.map((step) => step.name), rollback: rollbackFile }));
 }
 
 async function shellRollback() {
@@ -150,7 +168,9 @@ async function shellRollback() {
   }
   notifyShell();
   await rm(rollbackFile);
-  console.log(JSON.stringify({ restored: saved.entries.map((entry: { name: string }) => entry.name) }));
+  console.log(
+    JSON.stringify({ restored: saved.entries.map((entry: { name: string }) => entry.name) }),
+  );
 }
 
 const [command, sub, ...rest] = Bun.argv.slice(2);
