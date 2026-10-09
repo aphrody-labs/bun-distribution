@@ -14,7 +14,6 @@ import {
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import type { Subprocess } from "bun";
-import { waitEngine } from "./container-service.ts";
 import { updateMain, validateUpdate, type UpdateConfig } from "./mesh-update.ts";
 
 /** The complete native fork surface, loaded lazily; this does not execute any Windows operation. */
@@ -164,19 +163,37 @@ export function environment(text: string): Record<string, string> {
   return result;
 }
 
-async function command(argv: string[], root: string, timeout = 15_000): Promise<boolean> {
-  const child = Bun.spawn(argv, {
-    cwd: root,
-    stdin: "ignore",
-    stdout: "ignore",
-    stderr: "ignore",
-    windowsHide: true,
-  });
-  const timer = setTimeout(() => child.kill(), timeout);
+async function command(
+  argv: string[],
+  root: string,
+  timeout = 15_000,
+  owned?: { children: Set<Subprocess>; signal: AbortSignal; assign(child: Subprocess): void },
+): Promise<boolean> {
+  if (owned?.signal.aborted) return false;
+  let child: Subprocess | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const stop = () => child?.kill("SIGKILL");
   try {
+    child = Bun.spawn(argv, {
+      cwd: root,
+      stdin: "ignore",
+      stdout: "ignore",
+      stderr: "ignore",
+      windowsHide: true,
+    });
+    owned?.children.add(child);
+    owned?.assign(child);
+    owned?.signal.addEventListener("abort", stop, { once: true });
+    timer = setTimeout(stop, timeout);
     return (await child.exited) === 0;
+  } catch {
+    stop();
+    if (child) await child.exited;
+    return false;
   } finally {
     clearTimeout(timer);
+    owned?.signal.removeEventListener("abort", stop);
+    if (child) owned?.children.delete(child);
   }
 }
 
@@ -227,38 +244,40 @@ async function windowsLock(member: string): Promise<() => void> {
 }
 
 async function supervise(config: MeshConfig): Promise<void> {
-  await waitEngine();
-  for (const group of config.compose) {
-    // oxlint-disable-next-line no-await-in-loop -- ordered startup of selected existing projects
-    if (!(await command(composeArgs(group, "up"), config.root, 150_000)))
-      throw new Error("Compose activation failed; existing containers preserved");
-  }
   const children = new Map<string, Subprocess>();
+  const commandChildren = new Set<Subprocess>();
   const started = new Map<string, number>();
   const logs = new Map<string, number>();
+  const adapterErrors = new Map<string, string>();
+  const compose = config.compose.map(() => ({
+    status: "pending" as "pending" | "ready" | "degraded",
+    error: null as string | null,
+    retryAt: 0,
+  }));
+  let composeAttempt: Promise<void> | undefined;
   let lastUpdate = Date.now();
   const job =
     process.platform === "win32" ? new (await windows()).Job({ killOnClose: true }) : undefined;
+  const abort = new AbortController();
+  const owned = {
+    children: commandChildren,
+    signal: abort.signal,
+    assign: (child: Subprocess) => job?.assign(child),
+  };
   let stopping = false;
   const stop = () => {
     stopping = true;
+    abort.abort();
     for (const child of children.values()) child.kill();
+    for (const child of commandChildren) child.kill();
   };
   process.on("SIGTERM", stop);
   process.on("SIGINT", stop);
   const receipt = join(config.home, "run", "mesh.json");
-  mkdirSync(dirname(receipt), { recursive: true });
-  mkdirSync(join(config.home, "logs"), { recursive: true });
   try {
+    mkdirSync(dirname(receipt), { recursive: true });
+    mkdirSync(join(config.home, "logs"), { recursive: true });
     while (!stopping) {
-      if (
-        !(await command(
-          ["docker", "version", "--format", "{{.Server.Version}}"],
-          config.root,
-          60_000,
-        ))
-      )
-        await waitEngine();
       for (const adapter of config.adapters) {
         const previous = children.get(adapter.id);
         if (
@@ -270,23 +289,66 @@ async function supervise(config: MeshConfig): Promise<void> {
           )
         )
           continue;
-        const env = adapter.envFile ? environment(readFileSync(adapter.envFile, "utf8")) : {};
-        let log = logs.get(adapter.id);
-        if (log === undefined) {
-          log = openSync(join(config.home, "logs", `mesh-${adapter.id}.log`), "a", 0o600);
-          logs.set(adapter.id, log);
+        if (
+          !previous &&
+          adapterErrors.has(adapter.id) &&
+          Date.now() - (started.get(adapter.id) ?? 0) < (adapter.intervalSeconds ?? 5) * 1000
+        )
+          continue;
+        try {
+          const env = adapter.envFile ? environment(readFileSync(adapter.envFile, "utf8")) : {};
+          let log = logs.get(adapter.id);
+          if (log === undefined) {
+            log = openSync(join(config.home, "logs", `mesh-${adapter.id}.log`), "a", 0o600);
+            logs.set(adapter.id, log);
+          }
+          const child = Bun.spawn(adapter.argv, {
+            cwd: config.root,
+            env: { ...process.env, ...env, APHRODY_HOME: config.home },
+            stdin: "ignore",
+            stdout: log,
+            stderr: log,
+            windowsHide: true,
+          });
+          children.set(adapter.id, child);
+          started.set(adapter.id, Date.now());
+          job?.assign(child);
+          adapterErrors.delete(adapter.id);
+        } catch {
+          children.get(adapter.id)?.kill();
+          started.set(adapter.id, Date.now());
+          adapterErrors.set(adapter.id, "native adapter or protected environment unavailable");
         }
-        const child = Bun.spawn(adapter.argv, {
-          cwd: config.root,
-          env: { ...process.env, ...env, APHRODY_HOME: config.home },
-          stdin: "ignore",
-          stdout: log,
-          stderr: log,
-          windowsHide: true,
+      }
+      // A slow or absent engine never holds the native recovery plane hostage.
+      // One owned attempt runs in the background, with bounded process deadlines
+      // and a 30-second retry interval; existing containers are never removed.
+      if (!composeAttempt && compose.some((state) => Date.now() >= state.retryAt)) {
+        composeAttempt = (async () => {
+          const engine = await command(
+            ["docker", "version", "--format", "{{.Server.Version}}"],
+            config.root,
+            15_000,
+            owned,
+          );
+          for (const [index, group] of config.compose.entries()) {
+            const state = compose[index]!;
+            if (stopping || Date.now() < state.retryAt) continue;
+            let healthy = false;
+            let error = "docker engine unavailable";
+            if (engine) {
+              error = "Compose configuration or activation unavailable";
+              healthy =
+                (await command(composeArgs(group, "config"), config.root, 15_000, owned)) &&
+                (await command(composeArgs(group, "up"), config.root, 150_000, owned));
+            }
+            state.status = healthy ? "ready" : "degraded";
+            state.error = healthy ? null : error;
+            state.retryAt = Date.now() + 30_000;
+          }
+        })().finally(() => {
+          composeAttempt = undefined;
         });
-        children.set(adapter.id, child);
-        started.set(adapter.id, Date.now());
-        job?.assign(child);
       }
       const health = await probes(config);
       writeFileSync(
@@ -296,11 +358,19 @@ async function supervise(config: MeshConfig): Promise<void> {
             member: config.member,
             pid: process.pid,
             observedAt: new Date().toISOString(),
+            status:
+              compose.some((state) => state.status !== "ready") ||
+              adapterErrors.size ||
+              health.some((h) => !h.healthy)
+                ? "degraded"
+                : "healthy",
+            compose,
             health,
-            adapters: [...children].map(([id, child]) => ({
+            adapters: config.adapters.map(({ id }) => ({
               id,
-              pid: child.pid,
-              exitCode: child.exitCode,
+              pid: children.get(id)?.pid ?? null,
+              exitCode: children.get(id)?.exitCode ?? null,
+              error: adapterErrors.get(id) ?? null,
             })),
           },
           null,
@@ -334,8 +404,10 @@ async function supervise(config: MeshConfig): Promise<void> {
     job?.close();
     const killDeadline = setTimeout(() => {
       for (const child of children.values()) if (child.exitCode === null) child.kill("SIGKILL");
+      for (const child of commandChildren) if (child.exitCode === null) child.kill("SIGKILL");
     }, 5000);
     await Promise.all([...children.values()].map((child) => child.exited));
+    await composeAttempt;
     clearTimeout(killDeadline);
     for (const fd of logs.values()) closeSync(fd);
     process.off("SIGTERM", stop);
@@ -358,21 +430,20 @@ export async function main(argv = Bun.argv.slice(2)): Promise<number> {
     throw new Error("usage: container-service.ts --mesh plan|health|run [--config path]");
   const config = validateConfig(JSON.parse(readFileSync(path, "utf8")));
   if (!existsSync(config.root)) throw new Error("configured checkout missing");
-  for (const item of [...config.compose, ...config.adapters]) {
-    if (item.envFile && !existsSync(item.envFile))
-      throw new Error("configured protected env file missing");
-  }
   if (action === "health") {
     const rows = await probes(config);
     console.log(JSON.stringify(rows));
     return rows.every((r) => r.healthy) ? 0 : 1;
   }
-  for (const group of config.compose) {
-    // oxlint-disable-next-line no-await-in-loop -- each independently installed existing project must validate
-    if (!(await command(composeArgs(group, "config"), config.root)))
-      throw new Error("Compose configuration invalid");
-  }
   if (action === "plan") {
+    for (const item of [...config.compose, ...config.adapters]) {
+      if (item.envFile && !existsSync(item.envFile))
+        throw new Error("configured protected env file missing");
+    }
+    for (const group of config.compose) {
+      if (!(await command(composeArgs(group, "config"), config.root)))
+        throw new Error("Compose configuration invalid");
+    }
     console.log(
       JSON.stringify(
         {
