@@ -42,3 +42,29 @@ Fichiers bruts : `docs/plans/fusion/bench/20261005T203424Z-B1-…json`, `…B2a-
 - `bun-jsc-web.ts`, vérification « WebKit/JSC pinné » : lit `WEBKIT_VERSION` dans les sources et ne le compare pas à `process.versions.webkit`.
 - `arena.ts` : `rssMB` lu par `resourceUsage().maxRSS` inclut le RSS du parent (valeurs identiques pour des charges différentes) ; `factoryLocks` liste des fichiers toujours présents ; C7 « après » compte la charge du banc ; `--quick` (3 mesures, 1 échauffement) inverse le signe de `compute`.
 - Un échauffement de 3 itérations ne suffit pas pour `compute` sous V8 (non stationnaire).
+
+## 5. Suite : chantier W du fork Bun (2026-10-09, code écrit, rien de mesuré)
+
+Le chantier W de `aphrody-labs/bun` (section W de `PLAN-ALPINE-BUN.md`) reprend cette méthode. Son arène
+`bench/aphrody/arena/` (`e97cab02b3f`) remplace l'arène de la session bun et corrige les défauts listés au §4 :
+
+- RSS crête par VmHWM lu dans l'enfant ;
+- verrous testés par `flock -n` ;
+- C7 « après » calculé sur le CPU hors nice ;
+- au moins 10 échauffements pour `compute` ;
+- Deno vérifié contre le sha256 du §1 ;
+- statistique par processus ;
+- JSON brut au format §6.
+
+Elle est branchée sur `scripts/aphrody/perf-gate.ts --arena` : fork contre amont bloquant, Deno informatif. Les sources
+de `shared/` sont nouvelles, donc leurs sommes de contrôle ne sont pas comparables aux mesures du §3.
+
+Écarts du §2 fermés dans le cœur du fork (non construits, non testés à cette date) :
+
+- locale par défaut issue de LC_ALL / LC_MESSAGES / LANG (`efc1be764f0`) ;
+- `--max-old-space-size` et `v8.setHeapSnapshotNearHeapLimit` (`046736e6c49`) ;
+- `vm.Script` qui adopte le `cachedData` (`1ae176a457e`) ;
+- cache de bytecode des modules internes, en opt-in (`010b4bcf97d`).
+
+Le snapshot de démarrage reste un trou, renvoyé au chantier P (fork WebKit). Tant que la passe finale de W n'a pas tourné,
+ce paragraphe ne vaut pas mesure.
