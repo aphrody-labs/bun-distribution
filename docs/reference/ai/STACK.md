@@ -71,12 +71,12 @@ Politique stricte : 100% local, zéro OOM, zéro débordement CPU grâce à une 
 
 ## 3. Surface Bun / TypeScript & Frontend M3
 
-Géré à la racine via Turborepo et le monorepo Bun v1.4+.
+Géré à la racine par les workspaces Bun v1.4+ (`bun run --filter`).
 
 | Rôle | Bibliothèque / Outil | Version | SPDX | Usage & Règle |
 |---|---|---|---|---|
 | **Runtime** | `bun` | 1.4.0+ | MIT | Exécution native TypeScript, SQLite rapide (`bun:sqlite`), Bun Shell (`$`). |
-| **Monorepo** | `turbo` | 2.10.12 | MIT | Orchestration des builds et typechecks parallèles du workspace `@aphrody/*`. |
+| **Monorepo** | `bun run --filter` | Bun | MIT | Orchestration des builds et typechecks du workspace `@aphrody/*`, dans l'ordre des dépendances (turbo retiré le 2026-10-09). |
 | **Linter** | `oxlint` | 1.66.0+ | MIT | Linter écrit en Rust, configuré via `.oxlintrc.json`. |
 | **Formatteur** | `oxfmt` | 0.51.0+ | MIT | Formatage du code source. |
 | **Web Components** | `lit` / `@lit/react` | 3.3.3 / 1.0.8 | BSD-3-Clause | Composants web natifs réactifs. |
