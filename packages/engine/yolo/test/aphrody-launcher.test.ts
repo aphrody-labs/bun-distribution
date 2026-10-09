@@ -1,27 +1,25 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
 import { resolve } from "node:path";
-import {
-  RUST_OWNED_SHARED_COMMANDS,
-  YOLO_ONLY_COMMANDS,
-  isLauncher,
-  resolveRustAphrody,
-} from "../../../../bin/aphrody.ts";
+import { Z1_PENDING_COMMANDS, isLauncher, resolveRustAphrody } from "../../../../bin/aphrody.ts";
 
 const root = resolve(import.meta.dir, "../../../..");
 
-test("every yolo dispatcher command is routed either to yolo or to the Rust binary", async () => {
-  const source = await Bun.file(resolve(import.meta.dir, "../src/index.ts")).text();
-  const commands = new Set([...source.matchAll(/^\s*case "([^"]+)":/gm)].map(m => m[1]!));
-  const unrouted = [...commands].filter(name => !YOLO_ONLY_COMMANDS.has(name) && !RUST_OWNED_SHARED_COMMANDS.has(name));
-  expect(unrouted).toEqual([]);
-  expect([...YOLO_ONLY_COMMANDS].filter(name => !commands.has(name))).toEqual([]);
-  expect([...YOLO_ONLY_COMMANDS].filter(name => RUST_OWNED_SHARED_COMMANDS.has(name))).toEqual([]);
+test("the launcher only relays Z1 commands that the dispatcher has and the native bridge does not route", async () => {
+  const dispatcher = await Bun.file(resolve(import.meta.dir, "../src/index.ts")).text();
+  const cases = new Set([...dispatcher.matchAll(/^\s*case "([^"]+)":/gm)].map(m => m[1]!));
+  expect([...Z1_PENDING_COMMANDS].filter(name => !cases.has(name))).toEqual([]);
+
+  const bridge = await Bun.file(resolve(root, "crates/infra/aphrody-command/src/multicall/bun_bridge.rs")).text();
+  const routes = bridge.slice(bridge.indexOf("pub(crate) const ROUTES"), bridge.indexOf("const DEPRECATED"));
+  const routed = new Set([...routes.matchAll(/\("([^"]+)", "[^"]+"\)/g)].map(m => m[1]!));
+  expect(routed.size).toBeGreaterThan(20);
+  expect([...Z1_PENDING_COMMANDS].filter(name => routed.has(name))).toEqual([]);
 });
 
 test("the Rust aphrody commands never go to yolo", () => {
-  for (const name of ["web", "git", "docs", "scan", "ssh", "infra", "n2b", "mcp", "search", "memory", "graph"]) {
-    expect(YOLO_ONLY_COMMANDS.has(name)).toBe(false);
+  for (const name of ["web", "webos", "git", "docs", "scan", "ssh", "infra", "n2b", "mcp", "search", "memory", "ai"]) {
+    expect(Z1_PENDING_COMMANDS.has(name)).toBe(false);
   }
 });
 

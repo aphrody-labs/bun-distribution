@@ -1,7 +1,8 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
-// Checkout launcher for `aphrody`: the native Rust binary owns every command it implements; this script only adds
-// `webos` (apps/web) and forwards the commands that exist solely in the yolo Bun CLI (packages/engine/yolo).
+// Checkout launcher for `aphrody`: it finds the native Rust binary and runs it. The binary owns every command,
+// including the Bun-owned ones (crates/infra/aphrody-command/src/multicall/bun_bridge.rs runs them through
+// packages/engine/yolo/src/index.ts). apps/web is `aphrody desktop dev|build`.
 
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -9,67 +10,9 @@ import { join, resolve } from "node:path";
 const rootDir = resolve(import.meta.dir, "..");
 const yoloEntry = join(rootDir, "packages/engine/yolo/src/index.ts");
 
-// Commands of packages/engine/yolo/src/index.ts that the Rust binary does not implement. Commands both know
-// (n2b, web, docs, version, doctor, scan, mcp, runtime, awesome, google, git, ssh, infra, train) stay with Rust;
-// packages/engine/yolo/test/aphrody-launcher.test.ts keeps this list in step with the yolo dispatcher.
-export const YOLO_ONLY_COMMANDS: ReadonlySet<string> = new Set([
-  "status",
-  "generate",
-  "parse",
-  "bench",
-  "desktop",
-  "tauri",
-  "tool",
-  "api",
-  "serve",
-  "desktop-runtime",
-  "upgrade",
-  "uninstall",
-  "create",
-  "import",
-  "rename",
-  "plugin",
-  "vu",
-  "py",
-  "python",
-  "uv",
-  "workflow",
-  "ship",
-  "hooks",
-  "ops",
-  "workspace",
-  "optimize",
-  "update",
-  "doc-ai",
-  "browser",
-  "forge",
-  "m3",
-  "host",
-  "verify",
-]);
-
-export const RUST_OWNED_SHARED_COMMANDS: ReadonlySet<string> = new Set([
-  "ai",
-  "n2b",
-  "web",
-  "docs",
-  "version",
-  "--version",
-  "-v",
-  "doctor",
-  "scan",
-  "mcp",
-  "runtime",
-  "awesome",
-  "google",
-  "git",
-  "ssh",
-  "infra",
-  "train",
-  "help",
-  "--help",
-  "-h",
-]);
+// Generic Bun capabilities moving to the Bun fork (chantier Z1). Until Z1 lands they stay in the yolo dispatcher
+// and the native binary does not serve them; this set is the only routing left in the launcher.
+export const Z1_PENDING_COMMANDS: ReadonlySet<string> = new Set(["parse", "bench", "create", "rename", "verify"]);
 
 const norm = (path: string) => resolve(path).replaceAll("\\", "/").toLowerCase();
 
@@ -105,40 +48,22 @@ export function resolveRustAphrody(root = rootDir, env = process.env): string | 
   return usable(debug) ? debug : null;
 }
 
-async function run(cmd: string[], env: Record<string, string | undefined> = process.env): Promise<number> {
+async function run(cmd: string[]): Promise<number> {
+  const env = { ...process.env, APHRODY_ROOT: process.env.APHRODY_ROOT ?? rootDir };
   const proc = Bun.spawn(cmd, { cwd: process.cwd(), env, stdio: ["inherit", "inherit", "inherit"] });
   return proc.exited;
 }
 
 async function main(args: string[]): Promise<number> {
-  const command = args[0]?.toLowerCase() ?? "";
-
-  if (command === "webos") {
-    const build = args[1]?.toLowerCase() === "build";
-    const script = join(rootDir, "apps/web", build ? "build.ts" : "server.ts");
-    return run([process.execPath, script, ...args.slice(build ? 2 : 1)], {
-      ...process.env,
-      PORT: process.env.PORT ?? "3000",
-    });
-  }
-
-  if (YOLO_ONLY_COMMANDS.has(command)) {
+  if (Z1_PENDING_COMMANDS.has(args[0]?.toLowerCase() ?? "")) {
     return run([process.execPath, yoloEntry, ...args]);
   }
-
   const rust = resolveRustAphrody();
   if (rust === null) {
     console.error("aphrody: native binary not found (set APHRODY_BIN or run `cargo build --release -p aphrody`).");
     return 1;
   }
-  const status = await run([rust, ...args]);
-  if (command === "" || command === "help" || command === "--help" || command === "-h") {
-    console.log(
-      "\nCheckout launcher additions:\n  webos [build]   Serve apps/web (PORT, default 3000) or build it\n" +
-        `  ${[...YOLO_ONLY_COMMANDS].join(", ")}\n                  Forwarded to the yolo Bun CLI (packages/engine/yolo)`,
-    );
-  }
-  return status;
+  return run([rust, ...args]);
 }
 
 if (import.meta.main) {
