@@ -296,3 +296,21 @@ Fichiers recensés : **286**. `crates/ui/m3` est absent de ce checkout; les cons
 | `packages/web/x/x-native.test.ts` | Packages web | test ou fixture de package | crate du domaine consommant M3 Rust, ou test Rust | migration à planifier par fonction |
 
 L’état « migration à planifier » ne signifie pas que le comportement est qualifié. Aucun fichier source n’est supprimé tant que sa parité de routes, interactions, sécurité et accessibilité n’est pas prouvée dans sa cible Rust.
+
+<!-- BEGIN uirust-site inventory -->
+## Lot uirust-site : site et serveurs
+
+L'inventaire global est au-dessus; ce bloc détaille les surfaces de ce lot.
+Les états décrivent le code constaté et ne valent pas preuve de parité.
+
+| Fichier | Rôle | Cible Rust | État |
+| --- | --- | --- | --- |
+| `crates/web/site/assets/site.css` | Styles du site Rust | crates/ui/m3 (tokens/styles); servi par crates/web/site | Le serveur Axum existe; rendu/actifs et parité UI restent à qualifier |
+| `apps/web/server.ts` | Lanceur HTTP de l'app web | crates/ai/app-server + crates/web/site (Axum) | Déjà un lanceur du serveur Rust; scripts web:dev/start invoquent encore Bun |
+| `apps/web/webos.ts` | Relais du serveur WebOS du fork Bun | Fork Bun: packages/bun-webos (propriétaire déclaré dans la source) | Délègue à @aphrody/bun-webos; SHA mentionné dans la source, reçu de transfert absent |
+| `apps/web/src/os/ffi-routes.ts` | Routes API FFI | Contrat Axum à définir; préserver le propriétaire runtime/FFI du fork Bun | Handler TS encore présent; parité Axum et retrait non qualifiés |
+| `apps/web/src/os/os-router.ts` | Routes OS de démonstration | Contrat Axum à définir après retrait/qualification des simulations WebOS | Handlers simulés seulement; ne pas les publier comme capacités OS réelles |
+| `apps/web/src/os/server-extensions.ts` | Composition des routes WebOS/FFI | Contrat Axum à définir; préserver le propriétaire runtime/FFI du fork Bun | Handler TS encore présent; parité Axum et retrait non qualifiés |
+| `apps/web/src/os/wasm/server-routes.ts` | Routes bridge fetch/TCP WebOS | Contrat Axum à définir après retrait/qualification des simulations WebOS | Handler TS encore présent; parité Axum et retrait non qualifiés |
+
+<!-- END uirust-site inventory -->
