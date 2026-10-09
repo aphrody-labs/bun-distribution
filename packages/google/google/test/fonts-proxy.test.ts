@@ -2,7 +2,13 @@ import { expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fontsRoute, gstaticId, requestedFamilies, staticFile } from "../src/fonts-proxy.ts";
+import {
+  fontsRoute,
+  gstaticId,
+  requestedFamilies,
+  staticFile,
+  staticFromRoots,
+} from "../src/fonts-proxy.ts";
 
 test("the CDN release tree is served with its type, cache and CORS headers", async () => {
   const root = await mkdtemp(join(tmpdir(), "cdn-release-"));
@@ -36,18 +42,47 @@ test("the CDN release tree is served with its type, cache and CORS headers", asy
   }
 });
 
+test("several release roots are tried in order", async () => {
+  const base = await mkdtemp(join(tmpdir(), "cdn-roots-"));
+  try {
+    const catalog = join(base, "current");
+    const symbols = join(base, "symbols");
+    await mkdir(join(catalog, "h"), { recursive: true });
+    await mkdir(join(symbols, "h"), { recursive: true });
+    await mkdir(join(symbols, "s/symbols"), { recursive: true });
+    await Bun.write(join(catalog, "h/aaaaaaaaaaaaaaaa.css"), "catalog");
+    await Bun.write(join(symbols, "h/aaaaaaaaaaaaaaaa.css"), "symbols");
+    await Bun.write(join(symbols, "h/bbbbbbbbbbbbbbbb.ttf"), "ttf");
+    await Bun.write(join(symbols, "s/symbols/material-symbols.css"), "css");
+    const roots = [join(base, "missing"), catalog, symbols];
+
+    expect(await (await staticFromRoots(roots, "/h/aaaaaaaaaaaaaaaa.css"))?.text()).toBe("catalog");
+    const ttf = await staticFromRoots(roots, "/h/bbbbbbbbbbbbbbbb.ttf");
+    expect(ttf?.headers.get("content-type")).toBe("font/ttf");
+    expect(ttf?.headers.get("cache-control")).toBe("public, max-age=31536000, immutable");
+    expect(await (await staticFromRoots(roots, "/s/symbols/material-symbols.css"))?.text()).toBe(
+      "css",
+    );
+    expect(await staticFromRoots(roots, "/h/cccccccccccccccc.woff2")).toBeNull();
+    expect(await staticFromRoots([], "/h/aaaaaaaaaaaaaaaa.css")).toBeNull();
+  } finally {
+    await rm(base, { recursive: true, force: true });
+  }
+});
+
 const opts = { cacheDir: "/tmp/unused", origin: "https://cdn.aphrody.com/" };
 const route = (path: string, families?: string[] | null) =>
   fontsRoute(new URL(`https://cdn.aphrody.com${path}`), { ...opts, families });
 
 test("family names from css2 and css v1 queries", () => {
   expect(
-    requestedFamilies(new URLSearchParams("family=Roboto+Flex:opsz,wght@8..144,100..1000&family=Noto+Sans+JP")),
+    requestedFamilies(
+      new URLSearchParams("family=Roboto+Flex:opsz,wght@8..144,100..1000&family=Noto+Sans+JP"),
+    ),
   ).toEqual(["Roboto Flex", "Noto Sans JP"]);
-  expect(requestedFamilies(new URLSearchParams("family=Roboto+Mono:400,700|M+PLUS+1+Code"))).toEqual([
-    "Roboto Mono",
-    "M PLUS 1 Code",
-  ]);
+  expect(
+    requestedFamilies(new URLSearchParams("family=Roboto+Mono:400,700|M+PLUS+1+Code")),
+  ).toEqual(["Roboto Mono", "M PLUS 1 Code"]);
   expect(gstaticId("M PLUS 1 Code")).toBe("mplus1code");
 });
 
@@ -79,7 +114,9 @@ test("gstatic font files and Material Symbols SVGs map to the same path", () => 
   expect(font.kind).toBe("immutable");
   const svg = route("/s/i/short-term/release/materialsymbolsoutlined/home/wght300fill1/24px.svg");
   if (!svg || svg instanceof Response) throw new Error("expected a route");
-  expect(svg.cacheKey).toBe("s/i/short-term/release/materialsymbolsoutlined/home/wght300fill1/24px.svg");
+  expect(svg.cacheKey).toBe(
+    "s/i/short-term/release/materialsymbolsoutlined/home/wght300fill1/24px.svg",
+  );
   expect((route("/s/i/materialicons/home/v12/24px.svg") as Response).status).toBe(403);
   expect(route("/s/robotoflex/../../etc/passwd")).toBeNull();
   expect(route("/favicon.ico")).toBeNull();
