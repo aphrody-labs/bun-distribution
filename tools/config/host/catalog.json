@@ -562,6 +562,13 @@
       "service": "aphrody-creator"
     },
     {
+      "file": "nginx/aphrody/bun.aphrody.com.conf",
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "site": "bun.aphrody.com",
+      "service": "aphrody-bun-site"
+    },
+    {
       "file": "nginx/nie/aphrody-nie-cdn.conf",
       "ownerRepo": "iecode",
       "targetHost": "vps",

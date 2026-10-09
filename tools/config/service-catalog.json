@@ -47,6 +47,18 @@
       "host": "vps"
     },
     {
+      "id": "aphrody-bun-site",
+      "application": "aphrody",
+      "kind": "nginx-static",
+      "runtime": "none",
+      "sourceRepo": "aphrody",
+      "releaseRoot": "/var/www/bun.aphrody.com/releases",
+      "publicProxy": "nginx",
+      "note": "static site of the Bun runtime fork aphrody-labs/bun (home, /runtime, full docs with search, downloads, release notes, installers) served from /var/www/bun.aphrody.com/current by the vps nginx (vhost nginx/aphrody/bun.aphrody.com.conf), no application origin; generated and published by the fork's scripts/aphrody/site/publish.ts (user timer aphrody-site-publish on the vps); public and unauthenticated by design (docs/reference/upstream-bun/APHRODY-FORK.md)",
+      "public": true,
+      "host": "vps"
+    },
+    {
       "id": "aphrody-os",
       "application": "aphrody",
       "kind": "nginx-static",
