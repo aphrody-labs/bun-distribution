@@ -650,7 +650,7 @@ dependencies = [
  "thiserror 2.0.21",
  "tokio",
  "url",
- "yolo-core 1.0.0 (git+https://github.com/aphrody-labs/bun?rev=6181424bc2fca4349560832161c07ba85c33e8ef)",
+ "yolo-core",
 ]
 
 [[package]]
@@ -2157,6 +2157,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "aphrody-site"
+version = "1.0.0"
+dependencies = [
+ "axum",
+ "clap",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "toml 1.1.6+spec-1.1.0",
+ "tower",
+ "url",
+]
+
+[[package]]
 name = "aphrody-softraster"
 version = "1.0.0-canary"
 
@@ -3310,7 +3325,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "which 8.0.6",
- "yolo-core 1.0.0 (git+https://github.com/aphrody-labs/bun?rev=6181424bc2fca4349560832161c07ba85c33e8ef)",
+ "yolo-core",
 ]
 
 [[package]]
@@ -24183,35 +24198,6 @@ dependencies = [
 [[package]]
 name = "yolo-core"
 version = "1.0.0"
-dependencies = [
- "anyhow",
- "blake3",
- "chrono",
- "dashmap",
- "dunce",
- "globset",
- "ignore",
- "libc",
- "notify",
- "notify-debouncer-full",
- "oxc_allocator 0.153.0",
- "oxc_ast 0.153.0",
- "oxc_ast_visit",
- "oxc_parser 0.153.0",
- "oxc_span 0.153.0",
- "parking_lot",
- "rayon",
- "regex",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "yolo-core"
-version = "1.0.0"
 source = "git+https://github.com/aphrody-labs/bun?rev=6181424bc2fca4349560832161c07ba85c33e8ef#6181424bc2fca4349560832161c07ba85c33e8ef"
 dependencies = [
  "anyhow",
@@ -24243,7 +24229,7 @@ name = "yolo-pyo3"
 version = "1.0.0"
 dependencies = [
  "pyo3",
- "yolo-core 1.0.0",
+ "yolo-core",
 ]
 
 [[package]]
@@ -24260,7 +24246,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "url",
- "yolo-core 1.0.0",
+ "yolo-core",
 ]
 
 [[package]]
