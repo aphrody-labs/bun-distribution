@@ -40,11 +40,25 @@ def role(path: Path) -> str:
 
 def destination(path: Path) -> tuple[str, str]:
     relative = path.relative_to(ROOT).as_posix()
+    if relative == "apps/web/server.ts":
+        return "crates/web/site + crates/ai/app-server", "logique HTTP Rust et tests présents; lanceur Bun encore actif"
+    if relative == "apps/web/build.ts":
+        return "m3/packages/app-ui/build.ts puis constructeur Rust/WASM", "relai Bun; build Rust/WASM absent"
+    if relative == "apps/web/webos.ts":
+        return "fork Bun, packages/bun-webos", "transfert signalé par le code; reçu de destination absent"
+    if relative.startswith("apps/web/test/") or relative.endswith(".test.ts"):
+        return "tests Rust du propriétaire de la fonctionnalité", "tests Bun seulement; parité Rust à ajouter"
+    if relative.startswith("apps/web/src/"):
+        return "crates/ui/m3 en WASM + crates web Rust", "socle M3 manquant; migration à démarrer"
     if relative.startswith("crates/tauri/"):
-        return "fork Bun (intégration Tauri générique)", "transfert/qualification requis"
+        return "fork Bun (intégration Tauri générique)", "transfert/qualification requis; hors propriétaire Aphrody"
     if relative.startswith("crates/ui/app/"):
-        return "crates/ui/m3 + WASM ou hôte CEF", "remplacement non qualifié"
+        return "crates/ui/m3 + WASM ou hôte CEF", "bundle app-ui React actif; remplacement Rust non qualifié"
     if relative.startswith("packages/web/"):
+        if relative.startswith("packages/web/x/"):
+            return "crates/web/x (aphrody-x)", "façade Rust déjà déclarée; tests/parité à qualifier"
+        if relative.startswith("packages/web/agent-browser/"):
+            return "crates/web/aphrody-web + aphrody-app", "moteur natif consommé; client TypeScript à migrer"
         return "crate du domaine consommant M3 Rust, ou test Rust", "migration à planifier par fonction"
     return "crates/ui/m3 en WASM + crates web Rust", "socle M3 manquant; migration à démarrer"
 
@@ -67,9 +81,18 @@ def main() -> None:
         "",
         f"Fichiers recensés : **{len(rows)}**. `crates/ui/m3` est absent de ce checkout; les consommateurs qui en dépendent restent bloqués jusqu’à réception du socle commun.",
         "",
+        "| Surface | Fichiers |",
+        "| --- | ---: |",
+    ]
+    for _, surface in SURFACES:
+        output.append(f"| {surface} | {sum(1 for row in rows if row[1] == surface)} |")
+    output.extend(
+        [
+            "",
         "| Fichier | Surface | Rôle déduit du chemin | Cible Rust | État |",
         "| --- | --- | --- | --- | --- |",
-    ]
+        ]
+    )
     output.extend(f"| `{file}` | {surface} | {purpose} | {target} | {state} |" for file, surface, purpose, target, state in rows)
     output.extend(
         [
