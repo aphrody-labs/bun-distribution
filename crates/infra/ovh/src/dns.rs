@@ -284,7 +284,7 @@ impl<'a> DnsManager<'a> {
         let mut missing_production_subdomains = Vec::new();
         if zone == "aphrody.com" {
             let expected =
-                ["@", "n2b", "www", "nie", "api", "cdn", "mcp", "bxc", "downloads", "bot", "admin"];
+                ["@", "n2b", "www", "nie", "cdn", "mcp", "bxc", "downloads", "bot", "admin"];
             let found: std::collections::HashSet<String> = records
                 .iter()
                 .filter(|r| r.field_type == "A" || r.field_type == "CNAME")

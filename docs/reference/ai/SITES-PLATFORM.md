@@ -22,7 +22,6 @@ on loopback.
 | Host | Origin | Contract |
 |---|---:|---|
 | `aphrody.com` | Nginx → site :8083 and AI :8788/:8789 | Web portal, Web APIs/MCP and separate AI discovery/REST |
-| `api.aphrody.com` | `aphrody-site :8083` | API-only alias; no HTML application |
 | `mcp.aphrody.com` | `aphrody-site :8083` | Alias for the canonical `/mcp` transport |
 | `bxc.aphrody.com` | `aphrody-site :8083` | Compatibility alias for `/api/v1/bxc/*` |
 | `n2b.aphrody.com` | `aphrody-site :8083` | Compatibility alias for `/api/v1/n2b/*` |

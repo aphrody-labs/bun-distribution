@@ -116,7 +116,7 @@ Intégration transparente dans les shells **Nushell** (`config.nu`) et **PowerSh
 | `bench` | `time` | **Hyperfine v1.20.0** | `bench 'bun test' 'cargo check'` : benchmark statistique comparatif. |
 | `ping` | `ping` | **Gping v1.21.0** | `ping 1.1.1.1` : graphique de latence dynamique en terminal. |
 | `trip` | `traceroute` | **Trippy v0.12.0** | `trip 8.8.8.8` : diagnostic réseau interactif traceroute/ping. |
-| `xh` | `curl` / `httpie` | **xh v0.26.2** | `xh get https://api.aphrody.com/v1/health` : requêtes HTTP ergonomiques. |
+| `xh` | `curl` / `httpie` | **xh v0.26.2** | `xh get https://aphrody.com/healthz` : requêtes HTTP ergonomiques. |
 | `qsv` | `csvkit` | **qsv v0.135.0** | `qsv stats data.csv` : manipulation de tables CSV. |
 | `br` | `tree` | **Broot v1.60.1** | `br` : explorateur d'arborescence interactif. |
 | `zellij` | `tmux` | **Zellij v0.45.1** | `zellij` : sessions terminal multi-volets avec WASM. |

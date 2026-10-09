@@ -15,7 +15,6 @@
   ],
   "internal": [
     { "service": "aphrody-ai-http", "upstream": "127.0.0.1:8789", "via": "nginx", "publicHost": "aphrody.com", "paths": ["/api/v1/models", "/api/v1/rag/query", "/api/v1/rag/stats"], "status": "retired", "retiredAt": "2026-09-25" },
-    { "service": "aphrody-ai-http", "upstream": "127.0.0.1:8789", "via": "nginx", "publicHost": "api.aphrody.com", "paths": ["/api/v1/models", "/api/v1/rag/query", "/api/v1/rag/stats"], "vhost": "nginx/aphrody/aphrody.com.conf", "status": "retired", "retiredAt": "2026-09-25" },
     { "service": "aphrody-web-api", "upstream": "127.0.0.1:3007", "via": "nginx", "publicHost": "aphrody.com", "paths": ["/api/v1/web/"], "status": "retired", "retiredAt": "2026-09-25" }
   ],
   "policy": "one-nginx-instance-one-route-per-public-service"
