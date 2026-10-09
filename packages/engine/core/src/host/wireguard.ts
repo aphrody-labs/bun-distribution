@@ -291,19 +291,26 @@ export function accountProblems(root: string, accounts: HostAccount[], t?: Tunne
     ])
       if (!sshd.includes(need))
         problems.push(`${tag}: ${own?.file ?? "sshd drop-in"} lacks "${need}"`);
-    // Forwarding: none, or reverse (-R) only onto loopback ports, never local (-L) forwarding.
+    // Forwarding: none, or loopback-only: reverse (-R) onto 127.0.0.1 ports (PermitListen) and local (-L)
+    // limited to explicit 127.0.0.1 ports (PermitOpen), never an open or remote destination.
     const forwarding = /^\s*AllowTcpForwarding\s+(\S+)\s*$/m.exec(sshd)?.[1];
-    if (forwarding === "remote") {
-      if (!/^\s*PermitOpen\s+none\s*$/m.test(sshd))
-        problems.push(`${tag}: remote forwarding without "PermitOpen none"`);
+    if (forwarding === "remote" || forwarding === "local" || forwarding === "yes") {
+      const open = /^\s*PermitOpen\s+(.+)$/m.exec(sshd)?.[1]?.trim().split(/\s+/) ?? [];
+      if (open.length === 0 || open.some((o) => o !== "none" && !/^127\.0\.0\.1:\d+$/.test(o)))
+        problems.push(
+          `${tag}: forwarding needs "PermitOpen none" or 127.0.0.1:<port> entries only`,
+        );
       const listen = /^\s*PermitListen\s+(.+)$/m.exec(sshd)?.[1]?.trim().split(/\s+/) ?? [];
-      if (listen.length === 0 || listen.some((l) => !/^127\.0\.0\.1:\d+$/.test(l)))
+      if (
+        forwarding !== "local" &&
+        (listen.length === 0 || listen.some((l) => !/^127\.0\.0\.1:\d+$/.test(l)))
+      )
         problems.push(
           `${tag}: remote forwarding must list PermitListen 127.0.0.1:<port> entries only`,
         );
     } else if (forwarding !== "no")
       problems.push(
-        `${tag}: ${own?.file ?? "sshd drop-in"} lacks "AllowTcpForwarding no" (or remote)`,
+        `${tag}: ${own?.file ?? "sshd drop-in"} lacks "AllowTcpForwarding no" (or loopback-only forwarding)`,
       );
     if (a.postgresAccess === "sudo-only") {
       const deny = a.sshdDropIns

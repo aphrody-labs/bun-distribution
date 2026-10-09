@@ -433,6 +433,70 @@
       "targetHost": "dbfr"
     },
     {
+      "service": "aphrody-desktop-xvfb",
+      "unit": "aphrody-desktop-xvfb.service",
+      "path": "systemd/aphrody/aphrody-desktop-xvfb.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-desktop-wm",
+      "unit": "aphrody-desktop-wm.service",
+      "path": "systemd/aphrody/aphrody-desktop-wm.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-remote",
+      "unit": "aphrody-remote.service",
+      "path": "systemd/aphrody/aphrody-remote.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-desktop-xvfb-dbfr",
+      "unit": "aphrody-desktop-xvfb.service",
+      "path": "systemd/aphrody/aphrody-desktop-xvfb.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "aphrody-desktop-wm-dbfr",
+      "unit": "aphrody-desktop-wm.service",
+      "path": "systemd/aphrody/aphrody-desktop-wm.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "aphrody-remote-dbfr",
+      "unit": "aphrody-remote.service",
+      "path": "systemd/aphrody/aphrody-remote.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "aphrody-container",
+      "unit": "aphrody-container.service",
+      "path": "systemd/aphrody/aphrody-container.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "aphrody-container-build",
+      "unit": "aphrody-container-build.service",
+      "path": "systemd/aphrody/aphrody-container-build.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
       "service": "aphrody-pc-agent",
       "unit": "aphrody-pc-agent.service",
       "path": "systemd/aphrody/aphrody-pc-agent.service",
