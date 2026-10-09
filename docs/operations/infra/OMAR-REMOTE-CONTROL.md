@@ -213,10 +213,8 @@ processus), `Aphrody Remote Desktop` (8795 + VNC 5900), `Aphrody MCP HTTP` (127.
 `Aphrody WSL sshd` (`.wslconfig` mirrored, sshd 2222 maintenu). Options : `-NoWsl`, `-NoReverse`, `-Member`,
 `-Address`, `-IdentityFile`. Idempotent ; aucun secret lu ni affiché ; journaux dans `<aphrody home>\logs`.
 
-Côté hub, `aphrody-omar-watch.timer` (catalogue `tools/config/host/catalog.json`, script
-`tools/config/host/hub/aphrody-omar-watch`) vérifie chaque minute le handshake wg1 du pair d'Omar (moins de 180 s) ou
-l'écoute du tunnel inverse 127.0.0.1:22010, publie chaque changement d'état dans #admin-console et relance Omar toutes
-les 6 h tant que son PC reste hors ligne.
+Le veilleur hub `aphrody-omar-watch` est retiré depuis le 2026-10-09 (unité et script supprimés) ; la joignabilité
+d'Omar se vérifie à la demande depuis aphro-pc (section 3).
 
 ## 3. Côté propriétaire (aphro-pc)
 

@@ -151,8 +151,8 @@ une authentification disponible dans le contexte du service.
 
 Les jetons, conversations, bases, modèles et résultats détaillés des agents
 restent dans les magasins privés. Les éventuels comptes rendus Discord ne
-publient que les métadonnées autorisées, selon le
-[plan de contrôle Discord](DISCORD-SHENRON-AI.md).
+publient que les métadonnées autorisées (le plan de contrôle Discord est retiré
+depuis le 2026-10-09).
 
 ## Transports entre machines
 
@@ -390,6 +390,9 @@ de ports ; une adresse publique, wildcard ou un relais non déclaré est refusé
 Les 18 tests de plan hôte et les contrôles TypeScript/lint/format passent.
 
 ## Synchronisation Drive indépendante des clients
+
+Historique : `aphrody-drive-sync.service` et son timer sont retirés du catalogue
+depuis le 2026-10-09 ; leurs unités ont été supprimées du dépôt.
 
 Le [worker VPS](../../../tools/config/host/agent-sync-vps.json) utilise le propriétaire
 Yolo Google et le pipeline agent home natif. Le timer

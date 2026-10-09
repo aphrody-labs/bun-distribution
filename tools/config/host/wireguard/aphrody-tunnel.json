@@ -94,8 +94,8 @@
       "keyOrigin": "WireGuard app on Omar's Windows PC (empty tunnel); he sends only the public key",
       "publicKeyNote": "key actually configured on Omar's PC, relayed by the owner on 2026-10-08 (pair verified); replaces A42Sm27u… (2026-10-06), which never handshaked. Applied on the vps wg1 the same day",
       "udpSource": {
-        "mode": "ufw",
-        "ips": ["92.170.252.46"],
+        "mode": "open",
+        "note": "2026-10-09: the IP-pinned rule (92.170.252.46) silently dropped every handshake once Omar's dynamic public IP changed, with zero RX ever recorded on the hub for this peer. Widened 51821/udp to Anywhere on vps, matching the existing wg0/51820 precedent; the WireGuard key remains the actual authentication.",
         "comment": "aphrody-wg-omar"
       }
     }

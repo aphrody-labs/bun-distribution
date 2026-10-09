@@ -64,14 +64,14 @@ test("An unbound fresh pinned install is allowed; readiness requires the native 
 });
 
 test("An unpinned bootstrap keeps the strict port-free gate", () => {
-  const bootstrap = hostPlan(["aphrody-mcp-http"], { target: "vps" });
+  const bootstrap = hostPlan(["aphrody-mcp-http-dbfr"], { target: "dbfr" });
   expect(bootstrap.steps.some((step) => step.id.endsWith("/port-free"))).toBe(true);
   expect(bootstrap.steps.some((step) => step.id.endsWith("/port-owner"))).toBe(false);
 });
 
 test("Failed pinned readiness restores the old unit and binary after a real restart", async () => {
-  const plan = hostPlan(["aphrody-mcp-http"], {
-    target: "vps",
+  const plan = hostPlan(["aphrody-mcp-http-dbfr"], {
+    target: "dbfr",
     binary: { from: "/private/qualified/aphrody", sha256: "a".repeat(64) },
   });
   const commands: string[] = [];
@@ -79,9 +79,9 @@ test("Failed pinned readiness restores the old unit and binary after a real rest
     commands.push(command);
     return { code: command.includes("curl -fsS -m 5") ? 1 : 0, stdout: "", stderr: "" };
   };
-  expect(await applyPlan(plan, run, () => {})).toEqual(["aphrody-mcp-http/health"]);
+  expect(await applyPlan(plan, run, () => {})).toEqual(["aphrody-mcp-http-dbfr/health"]);
   expect(
-    commands.some((command) => command.includes("systemctl restart aphrody-mcp-http.service")),
+    commands.some((command) => command.includes("systemctl restart aphrody-mcp-http-dbfr.service")),
   ).toBe(true);
   expect(commands.at(-1)).toContain(".previous");
   expect(commands.at(-1)).toContain(".binary-installed");
@@ -93,7 +93,7 @@ test("Failed pinned readiness restores the old unit and binary after a real rest
 });
 
 test("A failed binary installation rolls back even before replacing the unit", async () => {
-  const plan = hostPlan(["aphrody-jobs-worker-vps"], {
+  const plan = hostPlan(["aphrody-jobs-worker-dbfr"], {
     binary: { from: "/private/qualified/aphrody", sha256: "a".repeat(64) },
   });
   const commands: string[] = [];
@@ -105,7 +105,7 @@ test("A failed binary installation rolls back even before replacing the unit", a
       stderr: "",
     };
   };
-  expect(await applyPlan(plan, run, () => {})).toEqual(["aphrody-jobs-worker-vps/install-binary"]);
+  expect(await applyPlan(plan, run, () => {})).toEqual(["aphrody-jobs-worker-dbfr/install-binary"]);
   expect(commands.at(-1)).toContain(".previous");
   expect(commands.some((command) => command.includes("sudo install -o root"))).toBe(false);
 });

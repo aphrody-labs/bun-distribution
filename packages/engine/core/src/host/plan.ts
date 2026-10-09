@@ -250,6 +250,9 @@ export function pinnedSocketCheck(
   ].join("; ");
 }
 
+const isMcp = (service: string) =>
+  service === "aphrody-mcp-http" || service === "aphrody-mcp-http-dbfr";
+
 /** Steps for one unit. `repoRoot` holds `ai.json`, `tools/config/service-catalog.json` and `scripts/tools/infra`. */
 function unitSteps(
   entry: HostUnit,
@@ -283,9 +286,9 @@ function unitSteps(
   const stage = `${STAGE_DIR}/${f.unit}`;
   const steps: PlanStep[] = [];
 
-  const mcp = f.service === "aphrody-mcp-http" || f.service === "aphrody-mcp-http-dbfr";
+  const mcp = isMcp(f.service);
   const a2a = f.service === "aphrody-a2a";
-  const jobs = /^aphrody-jobs-worker-(vps|dbfr)$/.test(f.service);
+  const jobs = f.service === "aphrody-jobs-worker-dbfr";
   const install = mcp || a2a || jobs ? binary : undefined;
   if (install && !/^[0-9a-f]{64}$/.test(install.sha256)) {
     throw new Error(`${f.unit}: --binary-sha256 must be a 64 hex digit SHA-256`);
@@ -748,7 +751,7 @@ export function hostPlan(units: string[], options: PlanOptions = {}): Plan {
     return entry;
   });
   // MCP consumes the A2A environment file; provision and activate its owner first.
-  const mcpAt = entries.findIndex((entry) => entry.service === "aphrody-mcp-http");
+  const mcpAt = entries.findIndex((entry) => isMcp(entry.service));
   const a2aAt = entries.findIndex((entry) => entry.service === "aphrody-a2a");
   if (mcpAt >= 0 && a2aAt > mcpAt) {
     const [a2aEntry] = entries.splice(a2aAt, 1);
@@ -764,7 +767,7 @@ export function hostPlan(units: string[], options: PlanOptions = {}): Plan {
       entry,
       composeUnit(entry.unit, root),
       repoRoot,
-      entry.service === "aphrody-mcp-http" ? options.expectTools : undefined,
+      isMcp(entry.service) ? options.expectTools : undefined,
       options.binary,
     ),
   );

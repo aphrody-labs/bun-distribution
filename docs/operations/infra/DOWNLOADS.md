@@ -22,8 +22,8 @@ The site is read-only (GET and HEAD only), serves nothing but published, checksu
 write endpoint, so it stays public and unauthenticated like `cdn.aphrody.com`. GitHub release assets of private
 repositories need an authenticated token: the download server is the public path.
 
-The aphrody.com site is a static tree built from aphrody-labs/bun `origin/main` by `scripts/aphrody/site/build.ts` and
-published by `scripts/aphrody/site/publish.ts` (VPS build, tar over `ssh dbfr` into `site/releases/<UTC>-<sha12>`,
+The aphrody.com site is a static tree built from aphrody-labs/bun `origin/main` by the fork's site `build.ts` and
+published by its `publish.ts` (fork directory scripts/aphrody/site; VPS build, tar over `ssh dbfr` into `site/releases/<UTC>-<sha12>`,
 atomic `site/current` flip, last 5 kept; `publish.ts rollback` flips back). The server picks it by `Host`
 (`SITE_HOSTS`, default `aphrody.com,www.aphrody.com`; `SITE_ROOT`, default `<dirname DOWNLOADS_ROOT>/site/current`).
 

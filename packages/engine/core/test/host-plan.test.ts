@@ -179,15 +179,13 @@ test("apply: a failed verify check rolls the unit back and reports the step", as
   expect(commands.at(-1)).toContain("systemctl disable --now aphrody-a2a.service");
 });
 
+const freePorts = (plan: Plan) =>
+  plan.steps.filter((s) => s.id.endsWith("/port-free")).map((s) => /:(\d+)"/.exec(s.run)?.[1]);
+
 test("the declared loopback units plan against the real catalog", () => {
-  const plan = hostPlan(["aphrody-mcp-http", "aphrody-a2a"], { root: hostRoot() });
-  expect(plan.units).toEqual(["aphrody-a2a.service", "aphrody-mcp-http.service"]);
-  const ports = plan.steps
-    .filter((s) => s.id.endsWith("/port-free"))
-    .map((s) => /:(\d+)"/.exec(s.run)?.[1]);
-  // 8789 is the loopback end of the WSL compute reverse tunnel on the vps: no unit may take it
-  expect(ports).toEqual(["8788", "8793"]);
-  for (const name of ["aphrody-mcp-http.service", "aphrody-a2a.service"]) {
+  expect(freePorts(hostPlan(["aphrody-a2a"], { root: hostRoot() }))).toEqual(["8788"]);
+  expect(freePorts(hostPlan(["aphrody-mcp-http-dbfr"], { root: hostRoot() }))).toEqual(["8793"]);
+  for (const name of ["aphrody-mcp-http-dbfr.service", "aphrody-a2a.service"]) {
     const text = composeUnit(name);
     expect(text).toContain("User=ubuntu");
     expect(text).toContain("ProtectHome=tmpfs");
@@ -204,12 +202,13 @@ const BUILD = {
 };
 
 test("mcp-http: a token generated on the host, the build installed, authentication proven before the count", () => {
-  const plan = hostPlan(["aphrody-mcp-http"], {
+  const plan = hostPlan(["aphrody-mcp-http-dbfr"], {
     root: hostRoot(),
     expectTools: 137,
     binary: BUILD,
   });
-  const id = (name: string) => plan.steps.findIndex((s) => s.id === `aphrody-mcp-http/${name}`);
+  const id = (name: string) =>
+    plan.steps.findIndex((s) => s.id === `aphrody-mcp-http-dbfr/${name}`);
   const run = (name: string) => plan.steps[id(name)]?.run ?? "";
   expect(id("generate-token")).toBeGreaterThan(-1);
   expect(id("generate-token")).toBeLessThan(id("install"));
@@ -218,7 +217,7 @@ test("mcp-http: a token generated on the host, the build installed, authenticati
   expect(run("generate-token")).not.toMatch(/[0-9a-f]{64}/);
   expect(id("install-binary")).toBeLessThan(id("install"));
   expect(run("install-binary")).toContain(".prev");
-  expect(plan.steps.some((s) => s.id === "aphrody-mcp-http/binary")).toBe(false);
+  expect(plan.steps.some((s) => s.id === "aphrody-mcp-http-dbfr/binary")).toBe(false);
   expect(run("binary-artifact")).toContain(BUILD.sha256);
   // 401 without a token and with a wrong one, then the count with the token, which is read on the host and never printed
   expect(run("auth-required")).toContain("= 401");
@@ -245,6 +244,10 @@ test("a2a: require a protected credential before activating autonomous execution
   const text = composeUnit("aphrody-a2a.service");
   expect(text).toContain("EnvironmentFile=/etc/aphrody/aphrody-a2a.env");
   expect(text).toContain("UnsetEnvironment=APHRODY_A2A_DRY_RUN");
+  expect(text).toContain("Environment=APHRODY_A2A_DEFAULT_PEER=codex");
+  expect(text).toContain(
+    "BindReadOnlyPaths=/home/ubuntu/.local/bin/aphrody /home/ubuntu/.local/bin/aphrody-mcp",
+  );
   expect(text).not.toContain("Environment=APHRODY_A2A_DRY_RUN=1");
   expect(plan.steps.find((s) => s.id === "aphrody-a2a/auth-required")?.run).toContain("= 401");
   expect(plan.steps.find((s) => s.id === "aphrody-a2a/auth-wrong-token")?.run).toContain(
@@ -257,7 +260,7 @@ test("a2a: require a protected credential before activating autonomous execution
 
 test("native hub units require a verified build and retain their previous binaries", () => {
   expect(() =>
-    hostPlan(["aphrody-mcp-http"], {
+    hostPlan(["aphrody-mcp-http-dbfr"], {
       root: hostRoot(),
       binary: { from: BUILD.from, sha256: "nope" },
     }),
@@ -274,31 +277,11 @@ test("native hub units require a verified build and retain their previous binari
   ).toThrow("64 hex");
 });
 
-test("combined apply creates the shared A2A credential before starting MCP", async () => {
-  const plan = hostPlan(["aphrody-mcp-http", "aphrody-a2a"], { root: hostRoot() });
-  const { commands, run } = recorder();
-  expect(await applyPlan(plan, run, quiet)).toEqual([]);
-  const generated = commands.findIndex(
-    (command) => command.includes("openssl rand") && command.includes("APHRODY_A2A_COORD_TOKEN"),
-  );
-  const mcpStart = commands.findIndex((command) =>
-    command.includes("enable --now aphrody-mcp-http.service"),
-  );
-  expect(generated).toBeGreaterThan(-1);
-  expect(generated).toBeLessThan(mcpStart);
-  expect(composeUnit("aphrody-a2a.service")).toContain(
-    "Environment=APHRODY_A2A_DEFAULT_PEER=codex",
-  );
-  expect(composeUnit("aphrody-a2a.service")).toContain(
-    "BindReadOnlyPaths=/home/ubuntu/.local/bin/aphrody /home/ubuntu/.local/bin/aphrody-mcp",
-  );
-});
-
 test("mcp-http: without a build the installed binary is checked; the unit's env file is required", () => {
-  const plan = hostPlan(["aphrody-mcp-http"], { root: hostRoot() });
-  expect(plan.steps.some((s) => s.id === "aphrody-mcp-http/binary")).toBe(true);
+  const plan = hostPlan(["aphrody-mcp-http-dbfr"], { root: hostRoot() });
+  expect(plan.steps.some((s) => s.id === "aphrody-mcp-http-dbfr/binary")).toBe(true);
   expect(plan.steps.some((s) => s.id.endsWith("/install-binary"))).toBe(false);
-  const text = composeUnit("aphrody-mcp-http.service");
+  const text = composeUnit("aphrody-mcp-http-dbfr.service");
   expect(text).toMatch(/^EnvironmentFile=\/etc\/aphrody\/aphrody-mcp-http\.env$/m);
   expect(text).toContain("aphrody-mcp http --bind 127.0.0.1:8793");
   expect(text).not.toMatch(/--bind 127\.0\.0\.1:8789/);

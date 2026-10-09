@@ -106,33 +106,6 @@
       "targetHost": "dbfr"
     },
     {
-      "service": "aphrody-discord-lab-telemetry",
-      "unit": "aphrody-discord-lab-telemetry.service",
-      "path": "systemd/aphrody/aphrody-discord-lab-telemetry.service",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps",
-      "status": "retired-2026-10-09"
-    },
-    {
-      "service": "aphrody-discord-lab-telemetry-timer",
-      "unit": "aphrody-discord-lab-telemetry.timer",
-      "path": "systemd/aphrody/aphrody-discord-lab-telemetry.timer",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps",
-      "status": "retired-2026-10-09"
-    },
-    {
-      "service": "aphrody-discord-ai-lab",
-      "unit": "aphrody-discord-ai-lab.service",
-      "path": "systemd/aphrody/aphrody-discord-ai-lab.service",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps",
-      "status": "retired-2026-10-09"
-    },
-    {
       "service": "shenron-site-docker",
       "unit": "shenron-site-docker.service",
       "path": "systemd/shenron/shenron-site-docker.service",
@@ -205,20 +178,6 @@
       "ownerRepo": "aphrody",
       "targetHost": "vps",
       "site": "downloads.aphrody.com"
-    },
-    {
-      "service": "aphrody-mcp-http",
-      "unit": "aphrody-mcp-http.service",
-      "path": "systemd/aphrody/aphrody-mcp-http.service",
-      "dropIns": [
-        "run-as-ubuntu",
-        "sandbox-base",
-        "sandbox-kernel",
-        "net-inet-only",
-        "syscall-service"
-      ],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps"
     },
     {
       "service": "aphrody-a2a",
@@ -320,59 +279,6 @@
       "pairs": "aphrody-self-update-dbfr.service"
     },
     {
-      "service": "nie-model-serve",
-      "unit": "nie-model-serve.service",
-      "path": "systemd/nie/nie-model-serve.service",
-      "dropIns": ["run-as-ubuntu"],
-      "ownerRepo": "iecode",
-      "targetHost": "vps",
-      "status": "retired-2026-09-25"
-    },
-    {
-      "service": "nie-site",
-      "unit": "nie-site.service",
-      "path": "systemd/nie/nie-site.service",
-      "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-kernel"],
-      "ownerRepo": "iecode",
-      "targetHost": "vps",
-      "status": "retired-2026-09-25",
-      "site": "nie-cdn"
-    },
-    {
-      "service": "shenron-backup",
-      "unit": "shenron-backup.service",
-      "path": "systemd/shenron/shenron-backup.service",
-      "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-home-ro"],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps"
-    },
-    {
-      "service": "shenron-backup",
-      "unit": "shenron-backup.timer",
-      "path": "systemd/shenron/shenron-backup.timer",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps",
-      "pairs": "shenron-backup.service"
-    },
-    {
-      "service": "shenron-neon-pull",
-      "unit": "shenron-neon-pull.service",
-      "path": "systemd/shenron/shenron-neon-pull.service",
-      "dropIns": ["run-as-ubuntu"],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps"
-    },
-    {
-      "service": "shenron-neon-pull",
-      "unit": "shenron-neon-pull.timer",
-      "path": "systemd/shenron/shenron-neon-pull.timer",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps",
-      "pairs": "shenron-neon-pull.service"
-    },
-    {
       "service": "shenron-cdn-sync",
       "unit": "shenron-cdn-sync.service",
       "path": "systemd/shenron/shenron-cdn-sync.service",
@@ -400,14 +306,6 @@
       "site": "bot.dragonballfr.com"
     },
     {
-      "service": "shenron-mcp-http",
-      "unit": "shenron-mcp-http.service",
-      "path": "systemd/shenron/shenron-mcp-http.service",
-      "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-home-ro", "syscall-service"],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps"
-    },
-    {
       "service": "shenron-pg-backup",
       "unit": "shenron-pg-backup.service",
       "path": "systemd/shenron/shenron-pg-backup.service",
@@ -423,14 +321,6 @@
       "ownerRepo": "aphrody",
       "targetHost": "dbfr",
       "pairs": "shenron-pg-backup.service"
-    },
-    {
-      "service": "shenron-pg-tunnel",
-      "unit": "shenron-pg-tunnel.service",
-      "path": "systemd/shenron/shenron-pg-tunnel.service",
-      "dropIns": ["run-as-ubuntu", "sandbox-base"],
-      "ownerRepo": "aphrody",
-      "targetHost": "dbfr"
     },
     {
       "service": "shenron-site",
@@ -463,51 +353,6 @@
       "ownerRepo": "aphrody",
       "targetHost": "dbfr",
       "pairs": "shenron-sqlite-replica-backup.service"
-    },
-    {
-      "service": "aphrody-discord-control-plane",
-      "unit": "aphrody-discord-control-plane.service",
-      "path": "systemd/aphrody/aphrody-discord-control-plane.service",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps",
-      "status": "retired-2026-10-09"
-    },
-    {
-      "service": "aphrody-discord-control-plane-timer",
-      "unit": "aphrody-discord-control-plane.timer",
-      "path": "systemd/aphrody/aphrody-discord-control-plane.timer",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps",
-      "status": "retired-2026-10-09"
-    },
-    {
-      "service": "aphrody-omar-watch",
-      "unit": "aphrody-omar-watch.service",
-      "path": "systemd/aphrody/aphrody-omar-watch.service",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps",
-      "status": "retired-2026-10-09"
-    },
-    {
-      "service": "aphrody-omar-watch-timer",
-      "unit": "aphrody-omar-watch.timer",
-      "path": "systemd/aphrody/aphrody-omar-watch.timer",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps",
-      "status": "retired-2026-10-09"
-    },
-    {
-      "service": "aphrody-discord-debate",
-      "unit": "aphrody-discord-debate.service",
-      "path": "systemd/aphrody/aphrody-discord-debate.service",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps",
-      "status": "retired-2026-10-09"
     },
     {
       "service": "shenron-timeline-refresh",
@@ -566,14 +411,6 @@
       "targetHost": "dbfr"
     },
     {
-      "service": "aphrody-jobs-worker-vps",
-      "unit": "aphrody-jobs-worker-vps.service",
-      "path": "systemd/aphrody/aphrody-jobs-worker-vps.service",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps"
-    },
-    {
       "service": "aphrody-jobs-worker-dbfr",
       "unit": "aphrody-jobs-worker-dbfr.service",
       "path": "systemd/aphrody/aphrody-jobs-worker-dbfr.service",
@@ -594,24 +431,6 @@
       ],
       "ownerRepo": "aphrody",
       "targetHost": "dbfr"
-    },
-    {
-      "service": "aphrody-drive-sync",
-      "unit": "aphrody-drive-sync.service",
-      "path": "systemd/aphrody/aphrody-drive-sync.service",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps",
-      "status": "retired-2026-10-09"
-    },
-    {
-      "service": "aphrody-drive-sync",
-      "unit": "aphrody-drive-sync.timer",
-      "path": "systemd/aphrody/aphrody-drive-sync.timer",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps",
-      "status": "retired-2026-10-09"
     },
     {
       "service": "aphrody-pc-agent",
