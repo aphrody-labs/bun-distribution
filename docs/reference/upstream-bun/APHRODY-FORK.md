@@ -58,14 +58,15 @@ pin here with `bun run docs:bun:update` and check it with `bun run docs:bun:chec
 
 | Artifact       | Producer in the fork                                                                | Published as                                                                                                                                             |
 | -------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Runtime binary | `.github/workflows/aphrody-release.yml` (tag `aphrody-v*` or dispatch)              | GitHub release `aphrody-v<version>` (`bun-<os>-<arch>.zip`, `SHA256SUMS.txt`); first: `aphrody-v1.4.3-aphrody.1`                                         |
+| Runtime binary | `.github/workflows/aphrody-release.yml` (tag `aphrody-v*` or dispatch)              | GitHub release `aphrody-v<version>` (`bun-<os>-<arch>[-<libc>][-<profile>].zip`, `SHA256SUMS.txt`); first: `aphrody-v1.4.3-aphrody.1`                 |
 | Runtime on npm | `scripts/aphrody/publish-runtime.ts`                                                | `@aphrody/bun-runtime` + `@aphrody/bun-runtime-<os>-<arch>`                                                                                              |
 | npm packages   | `scripts/aphrody/publish-npm.ts`, `.github/workflows/aphrody-publish-npm.yml`       | `@aphrody/bun-types`, `@aphrody/bun-inspector-protocol`, `@aphrody/bun-debug-adapter-protocol`, `@aphrody/bun-plugin-svelte`, `@aphrody/bun-plugin-yaml` |
 | Rust crates    | `scripts/aphrody/publish-crates.ts`, `.github/workflows/aphrody-publish-crates.yml` | crates.io `aphrody-bun-native-plugin`, `aphrody-bun-macro`                                                                                               |
 
 Versions are `<base>-aphrody.<n>`; the binary reports `bun --version` = the upstream base (1.4.3) and
-`bun --revision` = `<base>+<fork sha>`. Release targets: linux-x64, linux-aarch64 (glibc >= 2.38),
-darwin-aarch64, windows-x64; no LTO, musl, darwin-x64, windows-arm64 or baseline builds yet. The npm name
+`bun --revision` = `<base>+<fork sha>`. Release `aphrody-v1.4.3-aphrody.2` includes linux-x64 and
+linux-aarch64 builds for glibc and musl, x64 baseline builds, darwin-x64/aarch64 and windows-x64/aarch64.
+The Alpine Aphrody OS image consumes the musl archives through the checksum-verifying fork installer. The npm name
 `@aphrody/bun` is not the fork runtime; never publish or install the runtime under it.
 
 ## Contributing
