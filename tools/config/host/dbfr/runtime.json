@@ -1,0 +1,95 @@
+{
+  "$comment": "dbfr (production): what runs in Docker and what the host is still allowed to run (decision 2026-10-09: Docker is THE service runtime, no host copy of a containerized service). `purge` is applied by scripts/tools/infra/host-purge.ts (idempotent).",
+  "schemaVersion": 1,
+  "host": "dbfr",
+  "user": "ubuntu",
+  "archive": "/home/ubuntu/archive",
+  "docker": {
+    "compose": "/home/ubuntu/apps/compose.yaml",
+    "containers": {
+      "aphrody-gateway-1": "nginx 80/443 of every public vhost (dragonballfr.com, aphrody.com, rosegriffon.fr); TLS from /etc/aphrody/shenron-tls",
+      "aphrody-site-1": "shenron-server 5011 + shenron-mcp",
+      "aphrody-bot-1": "shenron-bot 5006",
+      "aphrody-chat-1": "llama-server 8799 (shenron-chat-v2)",
+      "aphrody-postgres-1": "PostgreSQL 18, 127.0.0.1:5432, data ~/apps/shenron/shared/state/postgres",
+      "aphrody-redis-1": "Redis, 127.0.0.1:6379, data ~/apps/shenron/shared/state/redis",
+      "aphrody-bun-prod-1": "Bun fork probe 47660 (ghcr.io/aphrody-labs/bun), the only Bun probe outside k8s",
+      "aphrody-prod": "aphrody:runtime, aphrody-mcp http 127.0.0.1:8999 (compose profile prod)",
+      "aphrody-control-plane": "kind (Kubernetes)",
+      "docker-model-runner": "Docker Model Runner 12434"
+    }
+  },
+  "native": {
+    "packages": {
+      "docker.io containerd docker-buildx docker-compose-v2 docker-model-plugin": "Docker engine",
+      "certbot python3-certbot python3-certbot-dns-ovh": "renews /etc/letsencrypt (webroot /var/www/letsencrypt served by the gateway, dns-ovh); deploy hook shenron-container copies to /etc/aphrody/shenron-tls and reloads aphrody-gateway-1 with docker exec",
+      "xvfb openbox": "virtual desktop :99 of aphrody-remote",
+      "wireguard wireguard-tools": "private tunnel wg1"
+    },
+    "units": {
+      "aphrody-desktop-xvfb.service aphrody-desktop-wm.service aphrody-remote.service": "virtual desktop and VNC on wg1 (host X11)",
+      "aphrody-web-browser-dbfr.service": "Obscura CDP 127.0.0.1:9222",
+      "aphrody-jobs-worker-dbfr.service": "native job worker (aphrody job run)",
+      "aphrody-mcp-http-dbfr.service": "aphrody-mcp http 8793 for the wg clients: the aphrody:runtime image lacks the toolbox tools (13 of 341: RAG, jobs, OCR, transcribe, home, remote_vnc, site_catalog), checked 2026-10-09",
+      "shenron-compute.service": "aphrody-mcp http 8789 for shenron-bot (same toolbox gap)",
+      "shenron-embed.service": "aphrody-embed 8085 (no image)",
+      "aphrody-discord-dev.service": "bot.aphrody.com 4010 (Bun); deployed as a unit by atomic-deploy-aphrody-discord.sh",
+      "aphrody-downloads.service": "aphrody.com and downloads.aphrody.com 8797 (Bun); deployed as a unit by publish-downloads.ts",
+      "aphrody-fonts-proxy.service": "cdn.aphrody.com 8796 (Bun)",
+      "shenron-timeline-api.service shenron-timeline-refresh.timer": "timeline projections 8813 (Bun)",
+      "aphrody-wg-proxy@.socket aphrody-wg-proxy@.service": "wg1 forwarder 10.200.77.3:8793 to loopback",
+      "shenron-container-backup.timer": "docker exec pg_dump / redis BGSAVE / SQLite of the containers",
+      "aphrody-selfheal.timer certbot.timer": "self-heal pass, certificate renewal",
+      "aphrody-discord-ai-lab.service aphrody-discord-debate.service": "disabled lab units (Bun)",
+      "nginx.service redis-server.service": "kept masked (/dev/null) as a guard: a reinstalled host nginx or redis cannot take 80/443/6379 from the containers"
+    },
+    "bin": {
+      "/usr/local/bin/rclone /usr/local/bin/rsync": "transfer tools",
+      "/usr/local/bin/bunx": "link to the Bun fork",
+      "/usr/local/bin/proxy-enable /usr/local/bin/proxy-disable /usr/local/bin/proxy-status": "SOCKS proxy switch (wg0)"
+    }
+  },
+  "purge": {
+    "backup": [
+      "/etc/nginx",
+      "/var/www/cdn",
+      "/var/www/files-brand",
+      "/var/www/html",
+      "/usr/local/sbin/shenron-pg-backup"
+    ],
+    "units": [
+      "aphrody-container.service",
+      "aphrody-container.service.pre-layout",
+      "aphrody-bun-probe.service",
+      "nginx.service.d",
+      "shenron-bot-docker.service.d",
+      "shenron-site-docker.service.d",
+      "shenron-pg-backup.service",
+      "shenron-pg-backup.timer",
+      "privoxy.service",
+      "privoxy.service.d",
+      "privoxy-cleanup.service",
+      "privoxy-cleanup.timer"
+    ],
+    "packages": [
+      "nginx",
+      "nginx-common",
+      "libnginx-mod-http-brotli-filter",
+      "libnginx-mod-http-brotli-static",
+      "libnginx-mod-http-headers-more-filter"
+    ],
+    "paths": [
+      "/etc/nginx",
+      "/var/log/nginx",
+      "/var/lib/nginx",
+      "/var/www/cdn",
+      "/var/www/files-brand",
+      "/var/www/html",
+      "/usr/local/sbin/shenron-pg-backup"
+    ],
+    "bin": { "/usr/local/bin": ["aphrody-mcp", "bxc-mcp"] },
+    "dockerImages": [],
+    "dockerVolumes": [],
+    "post": ["docker compose -f /home/ubuntu/apps/compose.yaml up -d --no-build prod"]
+  }
+}

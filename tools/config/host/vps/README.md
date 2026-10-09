@@ -3,6 +3,8 @@
 
 Fichiers copiés tels quels sur l'hôte (chemins relatifs à `/`). Appliqué le 2026-10-09.
 
+`runtime.json` (comme `../dbfr/runtime.json`) liste ce qui tourne dans Docker et ce que l'hôte garde en natif, avec la raison ; son bloc `purge` est appliqué par `sudo bun scripts/tools/infra/host-purge.ts --host vps --apply` (sauvegardes vérifiées dans `~/build/archive/vps/host-purge-<date>/`).
+
 - `etc/systemd/system.conf.d/95-aphrody-limits.conf`, `etc/systemd/user.conf.d/95-aphrody-limits.conf` : limites par défaut des unités (nofile/nproc 1048576, TasksMax infini).
 - `etc/security/limits.d/95-aphrody-build.conf` : nofile/nproc 1048576 pour tous les comptes.
 - `etc/docker/daemon.json` : live-restore, log local, téléchargements/envois parallèles 10/8, GC BuildKit (`builder.gc`, 40 Go gardés). Rechargé par `systemctl reload docker`.
