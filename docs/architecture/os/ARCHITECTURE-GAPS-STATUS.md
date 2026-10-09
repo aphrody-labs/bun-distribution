@@ -11,7 +11,7 @@ of an installed, secured, and monitored production service.
 | 3. RPC backpressure | Implemented locally | `transport.rs` limits inbound/outbound messages, queue depth and in-flight requests, bounds response waits, and cancels on disconnect. Bun receive buffering has the same line limit. |
 | 4. Coordination | Stable compatibility store | [Compatibility contract](../../reference/os/COORDINATION-COMPATIBILITY.md) defines per-user storage, atomic writes and explicit migration. The frozen file tools do not claim to create durable `aphrody-jobs` records. |
 | 5. Events | Durable local bridge implemented | `aphrody-kernel serve --audit-log <absolute-path>` bridges future `AgentBus` events into `aphrody-events` NDJSON. `system/audit_status` exposes whether it runs, lagged event count and write failures. The bridge never blocks tool dispatch. |
-| 6. WinClean bindings | Catalog parity gate added | `scripts/generate-winclean-catalog.ts --check` checks all 166 names and Bun argument field/required parity, and regenerates exact catalog metadata. `verify-winclean-integration.ps1` also probes the running kernel. Full generated type and implementation regeneration remains open. |
+| 6. WinClean bindings | Catalog parity gate added | `scripts/generate-winclean-catalog.ts --check` checks all 166 names and Bun argument field/required parity, and regenerates exact catalog metadata. `scripts/audit/os/verify-winclean-integration.ts` also checks the migration ledger and probes a private hidden kernel. Full generated type and implementation regeneration remains open. |
 | 7. Compatibility dispatcher | Partially decomposed | Coordination, Steam and notification implementations moved into domain modules. Other compatibility cases still route through `dispatch.rs`; the catalog and frozen names are unchanged. |
 | 8. Re-export facade | Removed | `aphrody-os` had no consumers and added no composed API. Consumers use the owning crates. |
 | 9. Backend mirror | Error and destination contract corrected | The mirror has an explicit optional destination, reports failed downloads, and is documented as a legacy asset helper. Live remote download and asset integrity have not been proved. |
@@ -22,7 +22,7 @@ of an installed, secured, and monitored production service.
 `cargo fmt --check`, `cargo check --workspace --all-targets`,
 `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --workspace`,
 `cargo deny check`, `bun install --frozen-lockfile`, `bun run typecheck`, `bun test`,
-and `git diff --check` passed. `scripts/audit/os/scripts/verify-winclean-integration.ps1` started a local kernel,
+and `git diff --check` passed. `verify-winclean-integration.ps1` (now `scripts/audit/os/verify-winclean-integration.ts`) started a local kernel,
 observed 166 catalog, Rust, ledger and kernel tools, and called `get_os_info` through IPC.
 `cargo check --workspace` passed in
 the AI, UI and Web consumers. These are source, build and local runtime checks only.

@@ -111,7 +111,7 @@ addition, `Winclean.listTools()` advertises every tool with the generic schema
 `{ type: "object" }`, even though the Rust catalog carries each input schema. This allows client
 metadata and generated argument types to drift without the documented gate noticing.
 
-Evidence: [`verify-winclean-integration.ps1`](../../../scripts/audit/os/scripts/verify-winclean-integration.ps1),
+Evidence: [`verify-winclean-integration.ts`](../../../scripts/audit/os/verify-winclean-integration.ts) (Bun port of the former `.ps1` verifier),
 [`packages/os/winclean/src/index.ts`](../../../packages/os/winclean/src/index.ts) (`listTools`),
 [`packages/os/winclean/src/generated.ts`](../../../packages/os/winclean/src/generated.ts), and
 [`crates/os/kernel/comps/winclean/src/tools.json`](../../../crates/os/kernel/comps/winclean/src/tools.json).
