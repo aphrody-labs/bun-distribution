@@ -43,7 +43,8 @@ export interface DiscordAppStart {
 }
 
 /**
- * Use Yolo's native process-group supervision, status, output, graceful stop and release.
+ * Use the native owner's process-group supervision, status, output and release.
+ * Stop is graceful on Unix; Windows terminates the owned Job Object and its descendants.
  * The caller owns the returned handle (`using` or `release()`), including on startup failure.
  */
 export async function startDiscordApp(options: DiscordAppStart): Promise<ManagedProcess> {
