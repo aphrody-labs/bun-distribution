@@ -31,6 +31,9 @@ console.log(`== Aphrody container: Bun ${Bun.version}, uid ${process.getuid?.()}
 const coreutils = ["ls", "cp", "mv", "rm", "cat", "sort", "wc", "head", "tail", "chmod", "chown", "id", "date", "env", "sha256sum", "tr", "seq", "mkdir", "ln", "du", "df", "uname", "whoami"];
 const offenders = coreutils.filter((c) => !target(c).endsWith("/uutils"));
 report(`${coreutils.length} coreutils commands resolve to uutils`, offenders.length === 0, offenders.map((c) => `${c} -> ${target(c)}`).join("\n"));
+const uutilsMore: [string, string][] = [["find", "/find"], ["xargs", "/xargs"], ["diff", "/diffutils"], ["cmp", "/diffutils"]];
+const moreOffenders = uutilsMore.filter(([c, end]) => !target(c).endsWith(end) || target(c).includes("busybox"));
+report("find, xargs, diff, cmp resolve to uutils findutils/diffutils", moreOffenders.length === 0, moreOffenders.map(([c]) => `${c} -> ${target(c)}`).join("\n"));
 report("su is sudo-rs, not busybox", !target("su").endsWith("busybox"), `su -> ${target("su")}`);
 report("/bin/sh kept on busybox ash for apk scripts", readlinkSync("/bin/sh").includes("busybox"), `/bin/sh -> ${readlinkSync("/bin/sh")}`);
 
@@ -41,6 +44,11 @@ run("sudo-rs version", ["sudo", "--version"], /sudo-rs/);
 run("sudo-rs: agent -> root, no password (yolo)", ["sudo", "-n", "id", "-u"], /^0$/);
 run("sudo-rs: root -> agent", ["sudo", "-n", "sudo", "-u", "agent", "whoami"], /^agent$/);
 run("sudo-rs su", ["sudo", "-n", "su", "agent", "-c", "id -un"], /^agent$/);
+run("uutils find", ["find", "/usr/local/bin", "-name", "bun", "-type", "f"], /^\/usr\/local\/bin\/bun$/);
+run("uutils diff", ["ion", "-c", "diff /etc/hostname /etc/hostname && echo same"], /^same$/);
+run("ntpd-rs", ["ntp-ctl", "--version"], /ntp-ctl/);
+run("Sequoia sq", ["sq", "version"], /sq/);
+run("fish 4", ["fish", "-c", "echo $version"], /^4\./);
 run("eza", ["eza", "-l", "--no-time", "--no-user", "/usr/local/bin"], /bun/);
 run("Nushell structured pipeline", ["nu", "-c", "[3 1 2] | sort | to json -r"], /^\[1,2,3\]$/);
 run("Nushell starship autoload", ["nu", "-c", "$env.PROMPT_COMMAND | describe"], /closure/);

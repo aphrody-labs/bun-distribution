@@ -8,7 +8,7 @@
 #   docker build -t aphrody/rust-bun tools/config/container/aphrody-os                    # CLI (default)
 #   docker build -t aphrody/cosmic --target desktop tools/config/container/aphrody-os     # + COSMIC Epoch
 #   docker run --rm -it aphrody/rust-bun
-#   docker run --rm aphrody/rust-bun aphrody-selftest                                # 25 checks
+#   docker run --rm aphrody/rust-bun aphrody-selftest                                # 30 checks
 #
 # COSMIC on a host Wayland session (software rendering unless a GPU is passed):
 #   docker run --rm -it -v "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:/tmp/host-wayland/wayland-0" aphrody/cosmic
@@ -51,11 +51,19 @@ USER agent
 WORKDIR /home/agent/app
 CMD ["/usr/local/bin/bun", "--version"]
 
+# The Rust tool list is defined once, by the meta-package aphrody-rust-base of the
+# Aphrody Alpine apk repository (aphrody-labs/aports, aphrody/aphrody-rust-base):
+# uutils coreutils/findutils/diffutils, sudo-rs + su, ntpd-rs, Sequoia sq/sqv,
+# Nushell, fish, Ion, eza, ripgrep, fd, bottom, helix, yazi, zellij, starship.
+# See PLAN-ALPINE-BUN.md section C2 in aphrody-labs/bun.
 FROM runtime AS cli
 
 LABEL org.opencontainers.image.title="aphrody/rust-bun" \
       org.opencontainers.image.description="Alpine with uutils, sudo-rs, eza, Nushell, Ion and Bun instead of GNU/busybox tools" \
       org.opencontainers.image.licenses="Apache-2.0"
+
+ARG APHRODY_APORTS_REF=e435b369e273925538972f45890d341df7f21297
+ADD https://raw.githubusercontent.com/aphrody-labs/aports/${APHRODY_APORTS_REF}/aphrody/keys/aphrody-labs.rsa.pub /etc/apk/keys/aphrody-labs.rsa.pub
 
 USER root
 
@@ -64,14 +72,9 @@ USER root
 RUN --mount=type=secret,id=build_ca,required=false \
     set -eu; \
     if [ -s /run/secrets/build_ca ]; then export SSL_CERT_FILE=/run/secrets/build_ca; fi; \
-    apk add --no-cache \
-        libgcc libstdc++ ca-certificates tzdata \
-        uutils-coreutils uutils-coreutils-groups uutils-coreutils-hostname \
-        uutils-coreutils-more uutils-coreutils-uptime \
-        sudo-rs sudo-rs-su linux-pam \
-        eza ripgrep fd bottom \
-        nushell starship ion-shell \
-        helix yazi zellij; \
+    grep -qF 'aphrody-labs/aports' /etc/apk/repositories \
+        || echo 'https://github.com/aphrody-labs/aports/releases/download/aphrody-3.24-${APK_ARCH}/APKINDEX.tar.gz' >> /etc/apk/repositories; \
+    apk add --no-cache libgcc libstdc++ ca-certificates tzdata linux-pam aphrody-rust-base; \
     # sudo-rs-su ships /usr/bin/su; drop busybox's copy so only one su exists.
     rm -f /bin/su
 
