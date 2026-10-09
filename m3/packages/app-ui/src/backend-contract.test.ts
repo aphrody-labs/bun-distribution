@@ -11,6 +11,9 @@ import { parseAgentInventory } from "./backend-inventory";
 
 const originalFetch = globalThis.fetch;
 beforeEach(() => {
+  (window as unknown as { happyDOM: { setURL(url: string): void } }).happyDOM.setURL(
+    "http://localhost/?backend=http",
+  );
   resetAphrodyInitializationForTesting();
 });
 afterEach(() => {

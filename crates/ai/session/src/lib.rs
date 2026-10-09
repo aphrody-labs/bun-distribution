@@ -73,16 +73,20 @@
 pub mod external;
 
 use std::{
-    collections::HashSet,
     fmt,
-    path::{Path, PathBuf},
     str::FromStr,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+#[cfg(not(target_arch = "wasm32"))]
+use std::{
+    collections::HashSet,
+    path::{Path, PathBuf},
+};
 use thiserror::Error;
+#[cfg(not(target_arch = "wasm32"))]
 use tokio::{fs as afs, io::AsyncWriteExt};
 
 // ---------------------------------------------------------------------------
@@ -529,11 +533,13 @@ pub trait SessionStore: Send + Sync {
 /// All writes go through `tokio::fs` and are made atomic via the
 /// tmp-file + rename pattern. This guards against torn writes if
 /// the process dies mid-save.
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug, Clone)]
 pub struct JsonlFileStore {
     dir: PathBuf,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl JsonlFileStore {
     /// Create a new store rooted at `dir`. The directory is created on first
     /// write — `new` itself never touches the filesystem.
@@ -552,6 +558,7 @@ impl JsonlFileStore {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl SessionStore for JsonlFileStore {
     async fn save_session(&self, session: &Session) -> Result<(), SessionError> {
         let jsonl = session.to_jsonl()?;

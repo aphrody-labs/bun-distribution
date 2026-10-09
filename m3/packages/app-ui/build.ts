@@ -12,6 +12,7 @@ import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { publicFontUrl, renderPublicStylesheet } from "@aphrody/m3-fonts";
 import { prunePublicFontCopies } from "./public-assets-package";
+const WEBOS_WASM_NAME = "aphrody_webos_wasm_bg.wasm";
 const escape = (value: string) =>
   value.replace(/[&<>"']/g, (character) => `&#${character.charCodeAt(0)};`);
 
@@ -58,6 +59,13 @@ if (import.meta.main) {
     ],
     cwd: config.dir,
   });
+  // The Rust WebAssembly backend of the browser OS (packages/web/webos-wasm) ships next to app.js.
+  const webosWasm = join(import.meta.dir, "../../../packages/web/webos-wasm/wasm", WEBOS_WASM_NAME);
+  if (!(await Bun.file(webosWasm).exists()))
+    throw new Error(
+      "missing " + webosWasm + ": run `bun run build:wasm` in packages/web/webos-wasm",
+    );
+  await Bun.write(join(result.outdir, "wasm", WEBOS_WASM_NAME), Bun.file(webosWasm));
   const bytes = result.outputs.reduce((sum, output) => sum + output.bytes, 0);
   const shell = await Bun.file(`${result.outdir}/index.html`).text();
   if (assets) {

@@ -7,6 +7,13 @@
 
 import { Channel } from "@aphrody/api/core";
 import { browserSessionStream } from "./browser-session-stream";
+import {
+  webOsRagSearch,
+  webOsRagStats,
+  webOsReadDir,
+  webOsReadText,
+  wantsHttpBackend,
+} from "./webos-backend";
 
 declare global {
   interface Window {
@@ -48,6 +55,11 @@ export function isTauri(): boolean {
       (window as unknown as { __TAURI_INTERNALS__?: { invoke: unknown } }).__TAURI_INTERNALS__,
     )
   );
+}
+
+/** Plain browser without a remote daemon: the Rust WebAssembly backend answers (`?backend=http` opts out). */
+export function usesBrowserBackend(): boolean {
+  return !isTauri() && typeof window !== "undefined" && !wantsHttpBackend(window.location.search);
 }
 
 export async function tauriInvoke<T>(
@@ -765,6 +777,7 @@ export interface FsDirResult {
 }
 
 export async function fsReadDir(path?: string): Promise<FsDirResult | null> {
+  if (usesBrowserBackend()) return webOsReadDir(path);
   return tauriInvoke<FsDirResult>("aphrody_fs_read_dir", { path });
 }
 
@@ -775,6 +788,7 @@ export interface FsFileResult {
 }
 
 export async function fsReadText(path: string): Promise<FsFileResult | null> {
+  if (usesBrowserBackend()) return webOsReadText(path);
   return tauriInvoke<FsFileResult>("aphrody_fs_read_text", { path });
 }
 
@@ -795,6 +809,17 @@ export interface RagSearchResponse {
 }
 
 export async function runRagSearch(query: string, limit = 5): Promise<RagSearchResponse> {
+  if (usesBrowserBackend()) {
+    const hits = await webOsRagSearch(query, limit);
+    return {
+      results: hits.map((hit) => ({
+        path: hit.path,
+        line: hit.start_line,
+        score: hit.score,
+        text: hit.content,
+      })),
+    };
+  }
   const response = await aphrodyRpc("aphrody/rag/search", { query, topK: limit });
   const results = Array.isArray(response.results) ? response.results : [];
   return {
@@ -815,6 +840,7 @@ export interface RagStats {
 }
 
 export async function getRagStats(): Promise<RagStats> {
+  if (usesBrowserBackend()) return webOsRagStats();
   await ensureAphrodyInitialized();
   const status = await aphrodyRpc("aphrody/rag/status");
   if (typeof status.indexedDocuments !== "number" || typeof status.totalChunks !== "number") {

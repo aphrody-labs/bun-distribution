@@ -8,6 +8,7 @@ import { JobsScreen } from "./components/JobManager";
 import { CodexChatRoute } from "./codex-chat";
 import { ModelsHub } from "./models-hub";
 import { StudioRoute } from "./routes/studio";
+import { TerminalRoute } from "./routes/terminal/TerminalRoute";
 import { AdminRoute } from "./routes/admin";
 import { CreatorRoute } from "./routes/creator";
 import { ExplorerView } from "./routes/explorer";
@@ -83,6 +84,10 @@ export const explorerRoutes = [
       {
         path: "models",
         element: <ModelsHub />,
+      },
+      {
+        path: "terminal",
+        element: <TerminalRoute />,
       },
       {
         path: "studio",

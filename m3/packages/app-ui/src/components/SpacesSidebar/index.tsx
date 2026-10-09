@@ -38,7 +38,7 @@ import { SpaceItem } from "./SpaceItem";
 import { SpaceSwitcher } from "./SpaceSwitcher";
 import { useChatStore, getProjectGroups } from "../../stores/chat-store";
 import { useI18n } from "../../i18n";
-import { desktopRoutes } from "../../desktop-navigation";
+import { browserOnlyRoutes, desktopRoutes } from "../../desktop-navigation";
 import { publicDestinations } from "../../public-navigation";
 import { useKitVisible } from "../../routes/kit/use-kit-visible";
 
@@ -457,6 +457,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
     location.pathname.startsWith("/location");
   const isModelsActive = location.pathname.startsWith("/models");
   const isStudioActive = location.pathname.startsWith("/studio");
+  const isTerminalActive = location.pathname.startsWith(browserOnlyRoutes.terminal);
   const isCreatorActive = location.pathname.startsWith(desktopRoutes.creator);
   const isAdminActive = location.pathname.startsWith(desktopRoutes.admin);
   const showCreator = useKitVisible("creator") || isCreatorActive;
@@ -579,6 +580,28 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
               <span className="truncate">{language === "fr" ? "Fichiers" : "Files"}</span>
             </button>
 
+            {platform.platform !== "tauri" && (
+              <button
+                type="button"
+                onClick={() => navigate(browserOnlyRoutes.terminal)}
+                className={clsx(
+                  "flex h-12 w-full items-center gap-3 rounded-full px-3 text-label-large font-medium transition-colors cursor-pointer text-left select-none",
+                  isTerminalActive && !isSettingsActive
+                    ? "bg-secondary-container text-on-secondary-container font-semibold"
+                    : "text-on-surface-variant hover:text-on-surface hover:bg-secondary-container/20",
+                )}
+              >
+                <span
+                  className={clsx(
+                    "material-symbol text-title-medium",
+                    isTerminalActive && !isSettingsActive && "font-bold",
+                  )}
+                >
+                  terminal
+                </span>
+                <span className="truncate">Terminal</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => navigate(desktopRoutes.models)}

@@ -20,7 +20,6 @@ workspace = true
 
 # --- Unconditional deps (pure Rust, no OS primitives required) ---------------
 [dependencies]
-aphrody-proc = { workspace = true, features = ["tokio"] }
 aphrody-translate-core = { workspace = true }
 serde        = { workspace = true }
 serde_json   = { workspace = true }
@@ -35,6 +34,7 @@ urlencoding  = "2"
 # Everything that requires mio-backed tokio, native TLS, threads, or std::fs
 # file-system walker.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+aphrody-proc = { workspace = true, features = ["tokio"] }
 clap               = { workspace = true }
 tokio              = { workspace = true }
 reqwest            = { workspace = true }

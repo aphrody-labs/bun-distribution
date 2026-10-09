@@ -250,3 +250,33 @@ ENGINE-SELECTION.md.
 - The removed local-confinement crate is not a browser-isolation capability. The browser sandbox is the wasm/worker
   boundary; remote isolation belongs to the SandboxHost provider and needs its own qualification.
 - Working tree already has unrelated uncommitted edits (web-engine, fut, interop); shell tasks must not touch them.
+
+## 8. wasm32-unknown-unknown inventory and browser OS backend (2026-10-10)
+
+Measured with `cargo check --target wasm32-unknown-unknown -p <crate>` (`RUSTC_WRAPPER=` empty: sccache
+fails on the long `web-sys` paths on Windows). Root cause of most failures: the workspace `tokio` has the
+`full` feature (net, so mio), which cannot build for wasm. The fix is per crate: native tokio under
+`cfg(not(target_arch = "wasm32"))`, a minimal tokio (`default-features = false`) under wasm, and the code that
+needs process, net or fs gated the same way (pattern of `crates/google/gemini-web`).
+
+| Crate | wasm32 | Note |
+| --- | --- | --- |
+| contracts: a2a, app-protocol, agent-proto | ok | |
+| ai: translate-core, rag-core, embed, config, models, infer, agent-home | ok | |
+| ai: translate, voice, session, jev | fixed | proc, tokio and rustls moved to the native section; process/file store gated |
+| ai: mcp-client | fail | needs `async_trait(?Send)` on the HTTP transport, `reqwest::redirect` is absent on wasm |
+| ai: mcp, agent-tools, google, antigravity, os/ostd/backend | fail | tokio `full` (net) through their own dependencies; native services by nature |
+| web: web-service | fail | pulls obscura (V8) and getrandom without `wasm_js`; native engine |
+| web: webos-wasm | ok | the browser OS backend (below) |
+| os: ffi, a2a-pb, a2a-client; infra: aphrody-command-pure | ok | |
+| ui: bun, identity, m3, m3-reproduce, m3-tokens, render, softraster, sprite-sheet, svg, taffy | ok | |
+| ui: app, tauri-wrap, tauri-plugin-mcp-bridge, drive | fail | Tauri, mio, `errno`, uuid without js: native desktop |
+| shell: session, term-caps, terminal-core, vfs, web | ok | |
+| shell: aphrody-term, nu, tauri, terminal-backend | fail | PTY, tokio net, Tauri: native by nature |
+
+Browser OS (`https://os.aphrody.com/`): outside Tauri the explorer (`libraries`, `locations`, `devices`,
+`volumes`, `files.directory_listing`, `search.files`, `files.by_path`, rename, delete), the document search (BM25
+over `aphrody-rag-core` chunks), `triage`, `strings`, `apply-patch` and the terminal (`aphrody-shell-web`
+`LocalShell` + `WebTerminal`, route `/terminal`) are served by `crates/web/webos-wasm`, packaged as
+`@aphrody/webos-wasm` (`packages/web/webos-wasm`) over a file system persisted in OPFS. One `WebOsFs` is shared by
+the explorer and the terminal. `?backend=http` selects the remote `/rpc` daemon instead.
