@@ -688,6 +688,21 @@ mod tests {
         );
     }
 
+    /// Live check of the repository apex server file (`cargo test -- --ignored`, needs Docker).
+    #[test]
+    #[ignore = "needs Docker and the nginx:alpine image"]
+    fn repository_apex_passes_nginx_in_a_container() {
+        let apex = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../tools/config/host/nginx/aphrody/aphrody-apex.conf");
+        let report = test_in_container(&apex, "nginx:alpine").unwrap();
+        assert!(report.contains("test is successful"), "{report}");
+        let broken = tempfile::tempdir().unwrap();
+        let path = broken.path().join("broken.conf");
+        std::fs::write(&path, "server { listen 80; location / { bogus_directive on; } }\n")
+            .unwrap();
+        assert!(test_in_container(&path, "nginx:alpine").unwrap_err().contains("bogus_directive"));
+    }
+
     #[test]
     fn json_with_omitted_fields_renders() {
         let config: NginxConfig = serde_json::from_str(

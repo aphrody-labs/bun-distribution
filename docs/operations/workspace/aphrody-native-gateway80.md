@@ -1,7 +1,9 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Native Aphrody through the existing PC port80 gateway
 
-Infra adapter: `scripts/tools/infra/connect-aphrody-site-gateway.ps1`. It adds only
+Infra adapter: `scripts/tools/infra/site-gateway.ts` (Bun, no PowerShell; registry
+proof through `bun:ffi` in `win32-net.ts`). It adds only
 a marked Aphrody server/upstream to the existing Nginx configuration, generated
 by `aphrody infra nginx render` from its typed JSON model. It preserves Shenron,
 bot and CDN blocks, container lifecycle, firewall and authentication stores.
@@ -23,13 +25,15 @@ Paths resolve from this explicit host configuration. Registry PID/start time and
 its loopback listener must be live. Only native read-only site traffic is proxied;
 no agent RPC/MCP/A2A or host-capability transport is exposed through port80.
 
-```powershell
-$gatewayConfig = Join-Path $env:APHRODY_HOME 'host/aphrody-gateway.json'
-pwsh -NoProfile -File ./scripts/tools/infra/connect-aphrody-site-gateway.ps1 -Config $gatewayConfig -DryRun
-pwsh -NoProfile -File ./scripts/tools/infra/connect-aphrody-site-gateway.ps1 -Config $gatewayConfig -Apply
+```sh
+bun --no-env-file scripts/tools/infra/site-gateway.ts plan    # [--config <path>] [--aphrody <exe>]
+bun --no-env-file scripts/tools/infra/site-gateway.ts apply
 ```
 
-Default/DryRun/WhatIf renders and reports the plan with no Docker/file changes.
+The configuration defaults to `<APHRODY_HOME>/host/aphrody-gateway.json`; `--aphrody` selects
+the binary that renders (default `aphrody` on `PATH`). `plan` renders and reports with no
+Docker/file changes. Removing the marked block restores the source exactly, so repeated applies
+do not drift.
 Apply verifies the expected original checksum and declared Docker bind mount,
 creates a checksum-verified backup outside repositories, copies its candidate to
 the container and checks `nginx -t -c` before touching the mounted source. It
@@ -77,4 +81,4 @@ services:
 
 Keep the existing base Compose and protected env-file; this override does not change images, networks or other services. The host source must be the configured home `credentials/tls/local` directory. Applying Compose is a separate declared host operation. Add gateway JSON property `tls` with `enabled: true`, `directory` (absolute host path), `containerDirectory: /etc/aphrody-local-tls`, `quic: true` and `certificateSha256`/`privateKeySha256` copied from the protected certificate manifest. No certificate or private key belongs in Git.
 
-The gateway checks host and container certificate hashes, read-only mounts and published TCP/UDP 443 before changing Nginx. Candidate `nginx -t` must support `http2 on`, and when requested, `http3 on` and QUIC listeners; unsupported binaries fail before live configuration changes. HTTPS health uses ordinary certificate validation under the current user's trust store. HTTP/2 and HTTP/3 still require real client protocol negotiation gates; rendered directives alone do not establish those protocols. TLS verification failure rolls back the gateway configuration. Existing routes remain preserved.
+The gateway checks host and container certificate hashes, read-only mounts and published TCP/UDP 443 before changing Nginx. Candidate `nginx -t` must support `http2 on`, and when requested, `http3 on` and QUIC listeners; unsupported binaries fail before live configuration changes. HTTPS health validates the certificate against the declared local CA (second certificate of the protected `leaf-chain.pem`). HTTP/2 and HTTP/3 still require real client protocol negotiation gates; rendered directives alone do not establish those protocols. TLS verification failure rolls back the gateway configuration. Existing routes remain preserved.
