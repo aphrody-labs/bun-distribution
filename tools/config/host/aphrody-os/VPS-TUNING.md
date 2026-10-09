@@ -6,134 +6,22 @@ configuration: the active host configuration lives under `tools/config/host/` (s
 service catalog (`tools/config/service-catalog.json`, `tools/config/production-topology.json`). Host roles,
 addresses and ports are defined there and are deliberately not repeated here.
 
-## 1. Operating System & Kernel Tuning (`/etc/sysctl.d/99-aphrody-vps.conf`)
+## 1. Operating System & Kernel Tuning (sysctl)
 
-Apply these settings to `/etc/sysctl.d/99-aphrody-vps.conf`:
+The sysctls are owned by the Aphrody Alpine package `aphrody-sysctl`
+([aphrody-labs/aports](https://github.com/aphrody-labs/aports/tree/3.24-stable/aphrody/aphrody-sysctl),
+branch `3.24-stable`):
 
-```ini
-# /etc/sysctl.d/99-aphrody-vps.conf
-# ==============================================================================
-# Production Kernel Tuning: Linux 6.8+ / 7.x on Ubuntu 24.04 / 26.04
-# Optimized for OVH VPS (KVM/VirtIO, 4-16 vCPUs, 8-64 GB RAM)
-# ==============================================================================
+- `90-aphrody-bun.conf` (package `aphrody-sysctl`): BBR + fq, TCP Fast Open, socket buffers,
+  `vm.max_map_count`, overcommit, inotify, `fs.file-max`, `tcp_mtu_probing`; plus
+  `/etc/modules-load.d/aphrody.conf` (`tcp_bbr`, `sch_fq`, ...).
+- `aphrody-server.sysctl.conf`, installed as `/etc/sysctl.d/91-aphrody-server.conf` (sub-package
+  `aphrody-sysctl-server`): the production VPS deltas on top of it (backlogs, default buffers,
+  `tcp_fin_timeout`, `rp_filter`/redirects, `vm.swappiness = 10` without zram, `dirty_ratio`,
+  `min_free_kbytes`, `aio-max-nr`, `kptr_restrict = 2`, BPF hardening).
 
-# ------------------------------------------------------------------------------
-# 1. NETWORK & TCP SUBSYSTEM OPTIMIZATION
-# ------------------------------------------------------------------------------
-
-# Packet Scheduler & Congestion Control (BBR + FQ)
-net.core.default_qdisc = fq
-net.ipv4.tcp_congestion_control = bbr
-
-# TCP Fast Open: Enable for both client (1) and server (2) -> 3
-net.ipv4.tcp_fastopen = 3
-
-# Connection Acceptance & Backlog Limits
-net.core.somaxconn = 65535
-net.ipv4.tcp_max_syn_backlog = 16384
-net.core.netdev_max_backlog = 16384
-
-# Socket Buffer Limits (Dynamic auto-tuning, max 16 MB)
-net.core.rmem_max = 16777216
-net.core.wmem_max = 16777216
-net.core.rmem_default = 262144
-net.core.wmem_default = 262144
-net.core.optmem_max = 2048576
-
-# TCP Read & Write Memory: [min, default, max] in bytes
-net.ipv4.tcp_rmem = 4096 87380 16777216
-net.ipv4.tcp_wmem = 4096 65536 16777216
-
-# Connection Lifecycles & Ephemeral Ports
-net.ipv4.tcp_tw_reuse = 1
-net.ipv4.tcp_fin_timeout = 15
-net.ipv4.ip_local_port_range = 1024 65535
-
-# TCP Protocol Features
-net.ipv4.tcp_window_scaling = 1
-net.ipv4.tcp_timestamps = 1
-net.ipv4.tcp_sack = 1
-net.ipv4.tcp_dsack = 1
-net.ipv4.tcp_fack = 1
-net.ipv4.tcp_slow_start_after_idle = 0
-net.ipv4.tcp_mtu_probing = 1
-net.ipv4.tcp_syncookies = 1
-
-# ------------------------------------------------------------------------------
-# 2. VIRTUAL MEMORY & CACHE MANAGEMENT
-# ------------------------------------------------------------------------------
-
-# Prefer RAM, avoid swap latency spikes
-vm.swappiness = 10
-
-# Retain directory entries and inode cache in RAM
-vm.vfs_cache_pressure = 50
-
-# Smooth dirty page writeback to avoid KVM VirtIO I/O freeze
-vm.dirty_background_ratio = 5
-vm.dirty_ratio = 10
-
-# Max memory map areas for LanceDB, Bun, Chromium, and Rust allocators
-vm.max_map_count = 1048576
-
-# Ensure atomic memory headroom for network packet allocations
-vm.min_free_kbytes = 65536
-
-# Memory overcommit policy (1 = heuristic overcommit for vector DB / fork)
-vm.overcommit_memory = 1
-
-# ------------------------------------------------------------------------------
-# 3. FILESYSTEM & OS DESCRIPTOR LIMITS
-# ------------------------------------------------------------------------------
-
-fs.file-max = 2097152
-fs.inotify.max_user_watches = 524288
-fs.inotify.max_user_instances = 8192
-fs.pipe-max-size = 1048576
-fs.aio-max-nr = 1048576
-
-# ------------------------------------------------------------------------------
-# 4. SECURITY BOUNDARIES & KERNEL HARDENING
-# ------------------------------------------------------------------------------
-
-# Restrict kernel pointer exposure
-kernel.kptr_restrict = 2
-
-# Restrict dmesg inspection to CAP_SYSLOG
-kernel.dmesg_restrict = 1
-
-# Block cross-process memory snooping (ptrace)
-kernel.yama.ptrace_scope = 1
-
-# eBPF JIT hardening (constant blinding) & restrict unprivileged BPF
-net.core.bpf_jit_harden = 2
-kernel.unprivileged_bpf_disabled = 1
-
-# Spoofing protection (Reverse Path Filtering)
-net.ipv4.conf.all.rp_filter = 1
-net.ipv4.conf.default.rp_filter = 1
-
-# Ignore ICMP redirects & source routing
-net.ipv4.conf.all.accept_source_route = 0
-net.ipv4.conf.default.accept_source_route = 0
-net.ipv4.conf.all.accept_redirects = 0
-net.ipv4.conf.default.accept_redirects = 0
-net.ipv4.conf.all.send_redirects = 0
-net.ipv4.conf.default.send_redirects = 0
-net.ipv4.icmp_echo_ignore_broadcasts = 1
-net.ipv4.icmp_ignore_bogus_error_responses = 1
-```
-
-Apply immediately:
-```bash
-sudo sysctl --system
-```
-
-Ensure the BBR module loads on reboot:
-```bash
-echo "tcp_bbr" | sudo tee /etc/modules-load.d/bbr.conf
-sudo modprobe tcp_bbr
-```
+On Aphrody Alpine: `apk add aphrody-sysctl-server`. On another distribution, copy both files to
+`/etc/sysctl.d/` under the same names, then `sudo sysctl --system`.
 
 ---
 
