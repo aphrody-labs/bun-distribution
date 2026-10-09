@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 251 crates, 36 binaries, 118 Bun packages, 10 uv packages, 1314 CLI commands, 390 MCP tools.
+Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 243 crates, 36 binaries, 117 Bun packages, 10 uv packages, 1314 CLI commands, 390 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -18,7 +18,7 @@ Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 251 crates, 36 bina
 
 Canonical Rust/Bun monorepo
 
-### Crates (178)
+### Crates (170)
 
 | Crate | Path | Description | Binaries | Features |
 | --- | --- | --- | --- | --- |
@@ -29,7 +29,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-a2a-grpc` | crates/os/kernel/comps/a2a-grpc | A2A v1 gRPC protocol binding for client and server |  | default, native-tls, rustls, rustls-tls |
 | `aphrody-a2a-pb` | crates/os/kernel/comps/a2a-pb | A2A v1 protobuf-generated types and conversion layer |  |  |
 | `aphrody-a2a-server` | crates/os/kernel/comps/a2a-server | A2A v1 async server framework |  | default, native-tls, rustls, rustls-tls |
-| `aphrody-a2a-ui` | crates/ui/a2a-ui | A2A protocol UI: WASM channel viewer for ai.json + .coord JSONL mailbox. |  |  |
 | `aphrody-acl-tests` | crates/tauri/aphrody-acl-tests | Aphrody platform crate aphrody-acl-tests. |  |  |
 | `aphrody-agent-home` | crates/ai/agent-home | aphrody-agent-home — the agent's persistent home: Soul / Identity / User / Tools, mmap zero-copy file cache, content-addressed cache, bootstrap budget, system-prompt assembler, hot-reload, git backup. |  | default, git |
 | `aphrody-agent-proto` | crates/contracts/agent-proto | Agent submission/event protocol: the Submission{id,op} (client to agent) and Event{id,msg} (agent to client) queues, the Op and EventMsg enums, and a newline-delimited JSON (NDJSON) wire codec shared by every aphrody surface (CLI / TUI / desktop / MCP). Inspired by OpenAI Codex protocol (Apache-2.0). |  |  |
@@ -53,8 +52,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-create-tauri-app` | crates/tauri/aphrody-create-tauri-app | Rapidly scaffold out a new tauri app project. |  |  |
 | `aphrody-cron` | crates/os/kernel/comps/cron | Lightweight async cron / interval / daily-time scheduler with pluggable JSON-backed job store for aphrody background tasks. |  |  |
 | `aphrody-diagnostics` | crates/os/kernel/comps/diagnostics | Doctor, OS/infra status, resolved config and AI environment shared by the CLI and the desktop app. |  |  |
-| `aphrody-diffusion` | crates/ml/diffusion | Safe Rust bindings for stable-diffusion.cpp with runtime dynamic loading. |  |  |
-| `aphrody-diffusion-sys` | crates/ml/diffusion-sys | Low-level dynamically loaded FFI bindings for stable-diffusion.cpp. |  |  |
 | `aphrody-discord` | crates/infra/discord | Native Aphrody Discord engine: Ed25519 interaction verification, REST client, AI answer embeds, Web extraction and timed shell receipts. |  | cli, default, web-extract |
 | `aphrody-dragon-pixel-core` | crates/web/dragon-pixel-core | Deterministic Dragon Pixel combat simulation shared by the browser and Rust services. |  |  |
 | `aphrody-dragon-pixel-wasm` | crates/web/dragon-pixel-wasm | Browser WebAssembly adapter for the shared Dragon Pixel combat simulation. |  |  |
@@ -71,7 +68,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-google` | crates/google/google | Canonical Rust facade for Aphrody Google Cloud, Gemini, Web and Antigravity integrations. |  |  |
 | `aphrody-gpu-backend` | crates/native/gpu-backend | Shared wgpu instance, adapter, device and surface-configuration boundary for Aphrody and IECODE renderers, plus the process-wide GPU hub (wgpu + CUDA). |  | cuda, default, hub, native-backends, webgl, webgpu, wgsl |
 | `aphrody-guard` | crates/os/ostd/guard | Autonomous-agent safety guardrails: pre-main process hardening (disable core dumps, block ptrace attach, strip LD_*/DYLD_* loader env) and a cross-platform shell command-safety classifier (Allow / Prompt / Forbidden) for gating agent-issued commands. Inspired by OpenAI Codex (Apache-2.0). |  |  |
-| `aphrody-gui-core` | crates/ui/gui-core | Neutral GUI abstractions for Aphrody OS: WindowHost, SurfaceProvider, ThemeProvider, KernelBridge |  |  |
 | `aphrody-http-error` | crates/ai/http-error | One JSON error envelope ({"error":{"code","message","data"}}) shared by Aphrody's own HTTP surfaces. |  |  |
 | `aphrody-identity` | crates/ui/identity | Aphrody product identity: brand icons, favicon and webmanifest, the measured palette (design tokens, M3 seed), and the typed 2D pet runtime (RGBA atlas, timed animations, directions). |  | default, fs |
 | `aphrody-infer` | crates/ai/infer | Local ONNX inference backend for aphrody: runtime discovery, execution-provider selection with CUDA/DirectML/CPU fallback, and session loading driven by the aphrody-models catalog. |  | default, onnx |
@@ -154,8 +150,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-tauri-runtime` | crates/tauri/aphrody-tauri-runtime | Runtime for Tauri applications |  | default, devtools |
 | `aphrody-tauri-runtime-cef` | crates/tauri/aphrody-tauri-runtime-cef | Tauri runtime interface for Chromium Embedded Framework |  | default, devtools, unstable |
 | `aphrody-tauri-schema-generator` | crates/tauri/aphrody-tauri-schema-generator | Hosts the schema for the Tauri configuration file. | `tauri-schema-generator` |  |
-| `aphrody-tauri-specta` | crates/tauri/aphrody-tauri-specta | Completely typesafe Tauri commands |  | default, derive, javascript, typescript |
-| `aphrody-tauri-specta-macros` | crates/tauri/aphrody-tauri-specta/macros | Completely typesafe Tauri commands |  |  |
 | `aphrody-tauri-utils` | crates/tauri/aphrody-tauri-utils | Utilities for Tauri |  | aes-gcm, brotli, build, build-2, cargo_metadata, compression, config-json5, config-toml, getrandom, html-manipulation, html-manipulation-2, isolation, json5, proc-macro2, process-relaunch-dangerous-allow-symlink-macos, quote, resources, schema, schemars, serialize-to-javascript, swift-rs, walkdir |
 | `aphrody-tauri-wrap` | crates/ui/tauri-wrap | Runtime plugin of web-to-tauri: turns a website, web app or built bundle into a native Tauri 3 window with the navigation policy, downloads, loopback server and sidecar that keep the page, its API and its backend unchanged. Also hosts the feature-gated debug bridge for Tauri 3 apps (`debug`). |  | bundle, debug-bridge, default |
 | `aphrody-telemetry` | crates/os/kernel/comps/telemetry | In-process observability for aphrody — hierarchical spans, monotonic counters, bucketed histograms, NDJSON exporter. OpenTelemetry-inspired, zero OTLP weight. |  |  |
@@ -165,8 +159,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-toolcall` | crates/ai/toolcall | Tool catalogue model for the aphrody agent engine: ToolDefinition (name / description / JSON-schema input & output), the async ToolExecutor trait, ToolExposure (Direct / Deferred / DirectModelOnly / Hidden), and a JsonSchema type with prompt-budget compaction passes. Inspired by OpenAI Codex tools (Apache-2.0). |  |  |
 | `aphrody-toolcall-repair` | crates/ai/toolcall-repair | Weak open-source model tool-calling robustness layer: a tolerant JSON repairer (markdown fences, trailing commas, single-quoted strings, unquoted keys, Python literals, truncation, double-encoding), inline tool-call extraction for Hermes / Qwen3-Coder XML / Mistral / bare-JSON dialects, a JSON-Schema-subset argument validator + coercer with corrective retry messages, apply_patch normalisation (unified diff / SEARCH-REPLACE / whole-file -> Codex patch), and per-model PromptProfile selection. |  |  |
 | `aphrody-toolchains` | crates/compat/toolchains | Unified Bun / uv / Nushell runtime layer: shell-free discovery, repo-file version pins and consistent launch environment. |  |  |
-| `aphrody-torch` | crates/ml/torch | Rust bindings for LibTorch with a dynamically loaded C++ shim. |  | cuda-tests, image |
-| `aphrody-torch-sys` | crates/ml/torch-sys | Low-level FFI bindings for the LibTorch C++ API. |  |  |
 | `aphrody-train` | crates/ai/train | Training surface for aphrody: exclusive GPU lease, job runner, streaming event protocol, and measured promotion gates (P10, docs/plans/codex-oss.md). |  | default, registry |
 | `aphrody-translate` | crates/ai/translate | aphrody — translate code comments to French, scrub AI-isms and emoji, apply Aphrody prose style |  |  |
 | `aphrody-translate-core` | crates/ai/translate-core | Pure stages of the aphrody comment rewriter: comment extraction, AI-marker scrubbing, Aphrody style, language detection. No network, no runtime; wasm32-safe. |  |  |
@@ -201,7 +193,7 @@ Canonical Rust/Bun monorepo
 | `yolo-pyo3` | crates/engine/yolo-pyo3 | PyO3 0.29 Native Extension Module for YOLO Monorepo (Free-threaded, No-GIL, py.detach) |  |  |
 | `yolo-runtime` | crates/engine/yolo-runtime | Versioned C ABI of the precompiled YOLO native runtime (first slice: system stats and cancellable benchmark) |  | browser, cuda, default, gpu |
 
-### Bun packages (84)
+### Bun packages (83)
 
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
@@ -282,7 +274,6 @@ Canonical Rust/Bun monorepo
 | `@aphrody/yolo-core` | packages/engine/core | Unified core library for YOLO, modeled directly after Bun's core library architecture |  |
 | `@aphrody/yt-subs-sorter` | packages/infra/product/resources/creator/extensions/yt-subs-sorter | WebExtension (Chrome, Edge, Brave, Firefox) to sort YouTube subscriptions into groups. No dependency, no network. |  |
 | `@hypothesi/tauri-plugin-mcp-bridge` | crates/ui/tauri-plugin-mcp-bridge | A Tauri plugin that exposes an MCP server interface via WebSockets. |  |
-| `@rosegriffon/ui` | m3/packages/rg-ui | Composants shadcn/ui partagés (new-york style, Tailwind v4) |  |
 | `@tauri-plugin/mcp-bridge` | crates/ui/tauri-plugin-mcp-bridge/guest-js | Guest bindings for MCP Bridge Tauri plugin |  |
 | `aphrody` | . |  |  |
 | `aphrody-m3` | m3 | Aphrody M3 design monorepo: UI/design packages, tokens, icons, templates and docs. |  |

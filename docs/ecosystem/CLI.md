@@ -79,7 +79,7 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 352 comma
       - `aphrody ai ocr db list` — List stored pages, newest deposit first.
       - `aphrody ai ocr db show` — Print the full stored record for one page.
     - `aphrody ai ocr databooks` — Transcribe a Shenron Dragon Ball databook lot with the safe preset.
-  - `aphrody ai translate` — Local and offline neural translation via aphrody-translate.
+  - `aphrody ai translate` — Web translation through aphrody-translate, with a local result cache.
   - `aphrody ai memory` — Local memory store (write, recall, list, delete, clear, migrate).
     - `aphrody ai memory write` — Store one memory; prints `{"id": …}`. An existing `--id` is replaced.
     - `aphrody ai memory recall` — Records best matching `--query` (lexical); prints `{"records": [… "score"]}`.
@@ -103,7 +103,7 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 352 comma
     - `aphrody ai agent review` — Run a code review non-interactively on the current repository or diff.
     - `aphrody ai agent resume` — Resume a previous session by id or --last.
     - `aphrody ai agent fork` — Fork a previous session by id or --last.
-    - `aphrody ai agent apply` — Apply the latest diff produced by the agent to the local working tree. _(aliases: a)_
+    - `aphrody ai agent apply` — Apply an explicit patch file to the local working tree. _(aliases: a)_
     - `aphrody ai agent mcp` — Manage external Model Context Protocol (MCP) servers.
       - `aphrody ai agent mcp list` — List configured MCP servers.
       - `aphrody ai agent mcp get` — Get details for a configured MCP server.
@@ -148,7 +148,7 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 352 comma
   - `aphrody codex review` — Run a code review non-interactively on the current repository or diff.
   - `aphrody codex resume` — Resume a previous session by id or --last.
   - `aphrody codex fork` — Fork a previous session by id or --last.
-  - `aphrody codex apply` — Apply the latest diff produced by the agent to the local working tree. _(aliases: a)_
+  - `aphrody codex apply` — Apply an explicit patch file to the local working tree. _(aliases: a)_
   - `aphrody codex mcp` — Manage external Model Context Protocol (MCP) servers.
     - `aphrody codex mcp list` — List configured MCP servers.
     - `aphrody codex mcp get` — Get details for a configured MCP server.
@@ -488,7 +488,7 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 453 commands.
         - `aphrody infra ssh ai ocr db list` — List stored pages, newest deposit first.
         - `aphrody infra ssh ai ocr db show` — Print the full stored record for one page.
       - `aphrody infra ssh ai ocr databooks` — Transcribe a Shenron Dragon Ball databook lot with the safe preset.
-    - `aphrody infra ssh ai translate` — Local and offline neural translation via aphrody-translate.
+    - `aphrody infra ssh ai translate` — Web translation through aphrody-translate, with a local result cache.
     - `aphrody infra ssh ai memory` — Local memory store (write, recall, list, delete, clear, migrate).
       - `aphrody infra ssh ai memory write` — Store one memory; prints `{"id": …}`. An existing `--id` is replaced.
       - `aphrody infra ssh ai memory recall` — Records best matching `--query` (lexical); prints `{"records": [… "score"]}`.
@@ -512,7 +512,7 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 453 commands.
       - `aphrody infra ssh ai agent review` — Run a code review non-interactively on the current repository or diff.
       - `aphrody infra ssh ai agent resume` — Resume a previous session by id or --last.
       - `aphrody infra ssh ai agent fork` — Fork a previous session by id or --last.
-      - `aphrody infra ssh ai agent apply` — Apply the latest diff produced by the agent to the local working tree. _(aliases: a)_
+      - `aphrody infra ssh ai agent apply` — Apply an explicit patch file to the local working tree. _(aliases: a)_
       - `aphrody infra ssh ai agent mcp` — Manage external Model Context Protocol (MCP) servers.
         - `aphrody infra ssh ai agent mcp list` — List configured MCP servers.
         - `aphrody infra ssh ai agent mcp get` — Get details for a configured MCP server.
@@ -557,7 +557,7 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 453 commands.
     - `aphrody infra ssh codex review` — Run a code review non-interactively on the current repository or diff.
     - `aphrody infra ssh codex resume` — Resume a previous session by id or --last.
     - `aphrody infra ssh codex fork` — Fork a previous session by id or --last.
-    - `aphrody infra ssh codex apply` — Apply the latest diff produced by the agent to the local working tree. _(aliases: a)_
+    - `aphrody infra ssh codex apply` — Apply an explicit patch file to the local working tree. _(aliases: a)_
     - `aphrody infra ssh codex mcp` — Manage external Model Context Protocol (MCP) servers.
       - `aphrody infra ssh codex mcp list` — List configured MCP servers.
       - `aphrody infra ssh codex mcp get` — Get details for a configured MCP server.

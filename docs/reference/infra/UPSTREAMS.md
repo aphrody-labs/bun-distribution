@@ -57,14 +57,13 @@ Inputs of the WSL build (`tools/config/os/wsl-build.json`, `crates/infra/aphrody
 | `vu-pyo3` | [PyO3/pyo3](https://github.com/PyO3/pyo3) | `v0.29.3` | 451d99fdcd | PyO3 0.29.3, the version of the Aphrody workspace Cargo.lock, pinned for the CPython embedding of the vu runtime. Fork aphrody-labs/pyo3 created 2026-10-05, branch vu-pin-0.29.3 at tag v0.29.3. crates.io pyo3 and pyo3-ffi 0.29.3 carry .cargo_vcs_info.json sha1 451d99fd (verified). Static embedding of libpython is not first-class upstream. Checked by scripts/audit/workspace/vu-pins.ts. | docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json |
 | `vu-python-build-standalone` | [astral-sh/python-build-standalone](https://github.com/astral-sh/python-build-standalone) | `20261003` | 5e46737f64 | Prebuilt CPython 3.12.15 (default, the py workspace baseline) and 3.14.8 distributions (install_only_stripped and full archives) that the vu runtime embeds; consumed as release assets pinned by sha256, not forked. MPL-2.0 covers the build system; the distributions carry CPython (PSF-2.0) and the licences of their bundled libraries. The install_only_stripped sha256 equals the digest pinned by uv 0.12.23 (crates/uv-python/download-metadata.json). Minimum glibc of the gnu targets: 2.17 (running.rst). | docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json |
 
-## Forks (2)
+## Forks (1)
 
 Every fork needs a reason to exist; `yolo update sources forks` compares each with its parent.
 
 | Fork | Parent | Role | Why it stays |
 | --- | --- | --- | --- |
 | `aphrody-labs/bun` | oven-sh/bun | Bun of Aphrody: runtime releases (npm @aphrody/bun-runtime), @aphrody/bun-types, crates aphrody-bun-*, docs mirrored in docs/reference/upstream-bun | Carries every Aphrody Bun change as commits on main (thirdparty built-ins, bun:ffi dlopen global, argv0 aliases, @aphrody packages, Next.js layer); upstream merged by the fork's scripts/aphrody/sync-upstream.ts every 6 hours. |
-| `koharu-rs/tauri-specta` | - | tauri-specta fork (Cargo git dependency) | Third-party fork, not ours: upstream tauri-specta 2.0.0-rc.25 on crates.io requires tauri ^2 while the workspace is on Tauri 3. |
 
 ## Access
 
@@ -79,5 +78,5 @@ Every fork needs a reason to exist; `yolo update sources forks` compares each wi
 | Drift of the observed heads | `yolo update upstream drift`; record them with `upstream refresh --apply` |
 | Agent entry point | skill `upstreams` (`~/plugins/aphrody/skills/upstreams`) |
 
-The Cargo git dependencies (oxc-project/oxc, hf-hub, tauri-specta fork) are tracked by `yolo update sources drift`;
+The Cargo git dependencies (oxc-project/oxc, hf-hub) are tracked by `yolo update sources drift`;
 forks by `yolo update sources forks`. The Bun fork aphrody-labs/bun is the Bun of Aphrody (its own repository, merged with upstream by its scripts/aphrody/sync-upstream.ts); the Oxc fork was retired on 2026-10-02.

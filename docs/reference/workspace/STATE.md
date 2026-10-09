@@ -6,7 +6,7 @@ Facts read from `cargo metadata --no-deps`, the root `package.json` Bun workspac
 Crates are Rust workspace members outside `apps/`; packages are Bun workspaces outside `apps/`;
 apps are Rust or Bun members under `apps/`. `todo!` counts `todo!(` and `unimplemented!(` in `.rs` files.
 
-Totals: **178 crates**, **74 packages**, **1 apps** (178 Rust, 75 Bun).
+Totals: **170 crates**, **73 packages**, **1 apps** (170 Rust, 74 Bun).
 
 ## Per domain
 
@@ -21,13 +21,13 @@ Totals: **178 crates**, **74 packages**, **1 apps** (178 Rust, 75 Bun).
 | [google](#google) | 6 | 1 | 0 | 0 |
 | [infra](#infra) | 14 | 7 | 0 | 0 |
 | [interop](#interop) | 1 | 1 | 0 | 0 |
-| [ml](#ml) | 9 | 0 | 0 | 1 |
+| [ml](#ml) | 5 | 0 | 0 | 0 |
 | [native](#native) | 3 | 0 | 0 | 0 |
 | [os](#os) | 22 | 4 | 0 | 0 |
-| [packages](#packages) | 0 | 32 | 0 | 0 |
+| [packages](#packages) | 0 | 31 | 0 | 0 |
 | [shell](#shell) | 9 | 1 | 0 | 0 |
-| [tauri](#tauri) | 31 | 15 | 0 | 33 |
-| [ui](#ui) | 15 | 0 | 0 | 0 |
+| [tauri](#tauri) | 29 | 15 | 0 | 33 |
+| [ui](#ui) | 13 | 0 | 0 | 0 |
 | [web](#web) | 21 | 6 | 1 | 0 |
 
 ## Workspace exclusions
@@ -92,7 +92,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-llama-server` | [crates/ai/llama-server](../../../crates/ai/llama-server) | rust crate | 1.0.0 | bin, lib | yes | 0 | 2026-10-07 |
 | `aphrody-mcp` | [crates/ai/mcp](../../../crates/ai/mcp) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-09 |
 | `aphrody-mcp-client` | [crates/ai/mcp-client](../../../crates/ai/mcp-client) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-07 |
-| `aphrody-memory` | [crates/ai/memory](../../../crates/ai/memory) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-06 |
+| `aphrody-memory` | [crates/ai/memory](../../../crates/ai/memory) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-09 |
 | `aphrody-model-client` | [crates/ai/model-client](../../../crates/ai/model-client) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-07 |
 | `aphrody-models` | [crates/ai/models](../../../crates/ai/models) | rust crate | 1.0.0 | rlib | yes | 0 | 2026-10-09 |
 | `aphrody-ocr` | [crates/ai/ocr](../../../crates/ai/ocr) | rust crate | 1.0.0 | rlib | no | 0 | 2026-10-05 |
@@ -166,7 +166,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-gemini-web` | [crates/google/gemini-web](../../../crates/google/gemini-web) | rust crate | 0.2.1 | lib | yes | 0 | 2026-10-06 |
 | `aphrody-google` | [crates/google/google](../../../crates/google/google) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-07 |
 | `aphrody-model-antigravity` | [crates/google/model-antigravity](../../../crates/google/model-antigravity) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-05 |
-| `@aphrody/google` | [packages/google/google](../../../packages/google/google) | bun package | 1.0.0-canary.1 | lib | yes | 0 | 2026-10-08 |
+| `@aphrody/google` | [packages/google/google](../../../packages/google/google) | bun package | 1.0.0-canary.1 | lib | yes | 0 | 2026-10-09 |
 
 ## infra
 
@@ -206,14 +206,10 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
 | `aphrody-bindgen` | [crates/ml/bindgen](../../../crates/ml/bindgen) | rust crate | 0.83.5 | lib | no | 0 | 2026-10-05 |
-| `aphrody-diffusion` | [crates/ml/diffusion](../../../crates/ml/diffusion) | rust crate | 0.83.5 | lib | yes | 0 | 2026-10-05 |
-| `aphrody-diffusion-sys` | [crates/ml/diffusion-sys](../../../crates/ml/diffusion-sys) | rust crate | 0.83.5 | lib | no | 0 | 2026-10-05 |
 | `aphrody-llama` | [crates/ml/llama](../../../crates/ml/llama) | rust crate | 0.83.5 | lib | yes | 0 | 2026-10-05 |
 | `aphrody-llama-sys` | [crates/ml/llama-sys](../../../crates/ml/llama-sys) | rust crate | 0.83.5 | lib | no | 0 | 2026-10-05 |
 | `aphrody-ml-config` | [crates/ml/ml-config](../../../crates/ml/ml-config) | rust crate | 0.83.5 | lib | yes | 0 | 2026-10-05 |
 | `aphrody-ml-runtime` | [crates/ml/ml-runtime](../../../crates/ml/ml-runtime) | rust crate | 0.83.5 | lib | yes | 0 | 2026-10-05 |
-| `aphrody-torch` | [crates/ml/torch](../../../crates/ml/torch) | rust crate | 0.83.5 | lib | yes | 1 | 2026-10-05 |
-| `aphrody-torch-sys` | [crates/ml/torch-sys](../../../crates/ml/torch-sys) | rust crate | 0.83.5 | lib | no | 0 | 2026-10-05 |
 
 ## native
 
@@ -262,7 +258,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@aphrody/assets` | [m3/packages/assets](../../../m3/packages/assets) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-09 |
 | `@aphrody/canvas` | [m3/packages/canvas](../../../m3/packages/canvas) | bun package | 1.0.9-aphrody.4 | lib | yes | 0 | 2026-10-09 |
 | `@aphrody/eslint-plugin-m3` | [m3/packages/eslint-plugin-m3](../../../m3/packages/eslint-plugin-m3) | bun package | 3.3.4 | lib | yes | 0 | 2026-10-08 |
-| `@aphrody/identity` | [m3/packages/identity](../../../m3/packages/identity) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-07 |
+| `@aphrody/identity` | [m3/packages/identity](../../../m3/packages/identity) | bun package | 0.1.1 | lib | yes | 0 | 2026-10-09 |
 | `@aphrody/m3` | [m3/packages/m3](../../../m3/packages/m3) | bun package | 3.3.7 | bin, lib | yes | 0 | 2026-10-09 |
 | `@aphrody/m3-ai` | [m3/packages/m3-ai](../../../m3/packages/m3-ai) | bun package | 3.3.7 | lib | yes | 0 | 2026-10-07 |
 | `@aphrody/m3-baseui` | [m3/packages/m3-baseui](../../../m3/packages/m3-baseui) | bun package | 3.3.7 | lib | yes | 0 | 2026-10-07 |
@@ -287,7 +283,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@aphrody/m3-theme` | [m3/packages/m3-theme](../../../m3/packages/m3-theme) | bun package | 3.3.7 | lib | yes | 0 | 2026-10-09 |
 | `@aphrody/m3-tokens` | [m3/packages/m3-tokens](../../../m3/packages/m3-tokens) | bun package | 3.3.7 | lib | yes | 0 | 2026-10-09 |
 | `@aphrody/material-design-icons` | [m3/packages/material-design-icons](../../../m3/packages/material-design-icons) | bun package | 1.0.1 | bin, lib | yes | 0 | 2026-10-09 |
-| `@rosegriffon/ui` | [m3/packages/rg-ui](../../../m3/packages/rg-ui) | bun package | 1.0.3 | lib | yes | 0 | 2026-10-09 |
 | `@aphrody/scaffold` | [m3/packages/scaffold](../../../m3/packages/scaffold) | bun package | 1.0.0-canary.1 | bin, lib | yes | 0 | 2026-10-09 |
 | `@aphrody/web-to-tauri` | [m3/packages/web-to-tauri](../../../m3/packages/web-to-tauri) | bun package | 1.0.0-canary | bin, lib | yes | 0 | 2026-10-09 |
 
@@ -353,19 +348,15 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-tauri-runtime` | [crates/tauri/aphrody-tauri-runtime](../../../crates/tauri/aphrody-tauri-runtime) | rust crate | 3.0.0-alpha.3 | lib | yes | 0 | 2026-10-05 |
 | `aphrody-tauri-runtime-cef` | [crates/tauri/aphrody-tauri-runtime-cef](../../../crates/tauri/aphrody-tauri-runtime-cef) | rust crate | 3.0.0-alpha.5 | lib | yes | 0 | 2026-10-09 |
 | `aphrody-tauri-schema-generator` | [crates/tauri/aphrody-tauri-schema-generator](../../../crates/tauri/aphrody-tauri-schema-generator) | rust crate | 0.0.0 | bin | no | 0 | 2026-10-05 |
-| `aphrody-tauri-specta` | [crates/tauri/aphrody-tauri-specta](../../../crates/tauri/aphrody-tauri-specta) | rust crate | 2.0.0-rc.25 | lib | yes | 0 | 2026-10-05 |
-| `aphrody-tauri-specta-macros` | [crates/tauri/aphrody-tauri-specta/macros](../../../crates/tauri/aphrody-tauri-specta/macros) | rust crate | 2.0.0-rc.25 | proc-macro | no | 0 | 2026-10-05 |
 | `aphrody-tauri-utils` | [crates/tauri/aphrody-tauri-utils](../../../crates/tauri/aphrody-tauri-utils) | rust crate | 3.0.0-alpha.3 | lib | yes | 1 | 2026-10-05 |
 
 ## ui
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `aphrody-a2a-ui` | [crates/ui/a2a-ui](../../../crates/ui/a2a-ui) | rust crate | 1.0.0-canary | cdylib, rlib | yes | 0 | 2026-10-05 |
 | `aphrody-app` | [crates/ui/app](../../../crates/ui/app) | rust crate | 1.0.0-canary | bin, rlib | yes | 0 | 2026-10-09 |
 | `aphrody-bun` | [crates/ui/bun](../../../crates/ui/bun) | rust crate | 1.0.0-canary | rlib | yes | 0 | 2026-10-09 |
 | `aphrody-drive` | [crates/ui/drive](../../../crates/ui/drive) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-07 |
-| `aphrody-gui-core` | [crates/ui/gui-core](../../../crates/ui/gui-core) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
 | `aphrody-identity` | [crates/ui/identity](../../../crates/ui/identity) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-06 |
 | `aphrody-m3-reproduce` | [crates/ui/m3-reproduce](../../../crates/ui/m3-reproduce) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |
 | `aphrody-m3-tokens` | [crates/ui/m3-tokens](../../../crates/ui/m3-tokens) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-09 |
@@ -399,7 +390,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-web-engine` | [crates/web/web-engine](../../../crates/web/web-engine) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-09 |
 | `aphrody-web-extract` | [crates/web/web-extract](../../../crates/web/web-extract) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-09 |
 | `aphrody-web-frames` | [crates/web/web-frames](../../../crates/web/web-frames) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-05 |
-| `aphrody-web-index` | [crates/web/web-index](../../../crates/web/web-index) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-05 |
+| `aphrody-web-index` | [crates/web/web-index](../../../crates/web/web-index) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-09 |
 | `aphrody-web-service` | [crates/web/web-service](../../../crates/web/web-service) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-09 |
 | `aphrody-webos-wasm` | [crates/web/webos-wasm](../../../crates/web/webos-wasm) | rust crate | 1.0.0 | cdylib, rlib | yes | 0 | 2026-10-09 |
 | `aphrody-x` | [crates/web/x](../../../crates/web/x) | rust crate | 0.3.1 | lib | yes | 0 | 2026-10-06 |

@@ -56,7 +56,7 @@
     {
       "path": "README.md",
       "title": "Aphrody",
-      "sha256": "9770fb7ca5c5c55206d0dcc86fad1ff2f7f4ada6d5ca99486f6ba34d502d634d",
+      "sha256": "5381feaaa4b8b8d765b867f752ac0ebac8763fcb85122596892312934db76353",
       "bytes": 3708,
       "domain": "",
       "status": "generated",
@@ -86,8 +86,8 @@
     {
       "path": "TODO.md",
       "title": "Current batch",
-      "sha256": "1e1589587566476eb80760948e0ff4d5a7dd8008570fa955ca59b85d61516bd5",
-      "bytes": 835,
+      "sha256": "95504406d799e95531c6fbe4ccef956af6a1ce4cae2914fc75c0cdfd5092a632",
+      "bytes": 847,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -402,16 +402,6 @@
       "status": "notice",
       "visibility": "private",
       "canonical": "crates/ml/UPSTREAM-README.md"
-    },
-    {
-      "path": "crates/ml/torch/README.md",
-      "title": "tch-rs",
-      "sha256": "945c170078fe84a1b84937fe9136bc0dbd40544a162bc9998e7cf3290a01b9ce",
-      "bytes": 12290,
-      "domain": "ml",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/ml/torch/README.md"
     },
     {
       "path": "crates/native/native/README.md",
@@ -1624,26 +1614,6 @@
       "canonical": "crates/tauri/aphrody-tauri-schema-generator/README.md"
     },
     {
-      "path": "crates/tauri/aphrody-tauri-specta/README.md",
-      "title": "Getting Started",
-      "sha256": "809451f5fa47932dad20adda0c1e04b695fbbe73fe997b710a1f5f8e59b77e20",
-      "bytes": 1751,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tauri-specta/README.md"
-    },
-    {
-      "path": "crates/tauri/aphrody-tauri-specta/UPSTREAM.md",
-      "title": "Vendored from https://github.com/koharu-rs/tauri-specta tag v2.0.0-rc.25-koharu.1 (commit 77e14e0), MIT.",
-      "sha256": "d536fcf9135903a8bdf801c26dfc40db22105b49ba175e3d60195048fb252b2a",
-      "bytes": 251,
-      "domain": "tauri",
-      "status": "notice",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tauri-specta/UPSTREAM.md"
-    },
-    {
       "path": "crates/tauri/aphrody-tauri-utils/CHANGELOG.md",
       "title": "Changelog",
       "sha256": "d43012837706f49a811d342e0f0fa552d2336393f0326d956ec40888b0d482b6",
@@ -1792,16 +1762,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "crates/tauri/aphrody-tauri/src/event/event-system-spec.md"
-    },
-    {
-      "path": "crates/ui/a2a-ui/README.md",
-      "title": "SPDX-License-Identifier: Apache-2.0",
-      "sha256": "b3dd505cee00c6c4e3539a69d557873931e26041fe25dc1dafeb5963e209c19f",
-      "bytes": 2617,
-      "domain": "ui",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/ui/a2a-ui/README.md"
     },
     {
       "path": "crates/ui/app/README.md",
@@ -2376,8 +2336,8 @@
     {
       "path": "docs/architecture/runtime-native/RUNTIME-ABI.md",
       "title": "Runtime C ABI (slice R0, ABI 1.4)",
-      "sha256": "2ad94497329bc4616131894e5c806e79aa509a4dd3837c7f845ff2c458080a47",
-      "bytes": 9684,
+      "sha256": "85940876c45bc09de43b6624a887324d654dddb80a29dd29f8ee50f5fa5ac77a",
+      "bytes": 10093,
       "domain": "runtime-native",
       "status": "canonical",
       "visibility": "private",
@@ -2436,8 +2396,8 @@
     {
       "path": "docs/architecture/web/ARCHITECTURE.md",
       "title": "Aphrody Web layer: architecture, owners, consumers and gaps",
-      "sha256": "79815e8cf0a15530b2fe91d63600aa568bff1a3132fd098e44d349500e2a168b",
-      "bytes": 20319,
+      "sha256": "b78ebd205e5043b00871981c5278fa26cbc15f0e66230465f770817ff0b17a92",
+      "bytes": 20340,
       "domain": "web",
       "status": "historical",
       "visibility": "private",
@@ -2616,8 +2576,8 @@
     {
       "path": "docs/ecosystem/CLI.md",
       "title": "CLI command trees",
-      "sha256": "200bb367eee8152edf98ca1b1f679ade36468d8be15af1e1dc599ec0969dace0",
-      "bytes": 133066,
+      "sha256": "ef1da75de367d362fd838767f1bc1bbbb416b4f81274d3d137a82ac3f07a494b",
+      "bytes": 133026,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -2626,8 +2586,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "bbd43a20b41764ee113a256b2de95a2179201223480b5bf53292b168326080b8",
-      "bytes": 70211,
+      "sha256": "5c289f9b1a5c2ede22f6f707037aeb2c306ab93570f593b5ed72e136a4ac3fb9",
+      "bytes": 69080,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -3486,8 +3446,8 @@
     {
       "path": "docs/operations/workspace/agy-audit-2026-10-09.md",
       "title": "Vérification du rapport agy — 2026-10-09",
-      "sha256": "102d1bd2edbe4f8d57c8c8cec3bde5f7b925c1bafb15292f54bc3025ce68f307",
-      "bytes": 6974,
+      "sha256": "afed20494e54701d23cc1cc54669c2a1013fb993355635182107df34110a47b3",
+      "bytes": 7662,
       "domain": "workspace",
       "status": "historical",
       "visibility": "private",
@@ -3586,8 +3546,8 @@
     {
       "path": "docs/operations/workspace/windows-native.md",
       "title": "Contexte de développement, build et déploiement",
-      "sha256": "d449fc6d9179d67777ccd6f49239e4234e2a7dfc09ee2b8422b12546d7bd5316",
-      "bytes": 4975,
+      "sha256": "09e44dd9795f86d399a859b7044aab4309830d13f5d2607712f70758579610e0",
+      "bytes": 5207,
       "domain": "workspace",
       "status": "canonical",
       "visibility": "private",
@@ -4046,8 +4006,8 @@
     {
       "path": "docs/plans/x-bun-import/INVENTORY.md",
       "title": "@aphrody/x against aphrody-x: inventory",
-      "sha256": "2dd88dfe54d5083cf10fc94d83ff4aaf493acc62b604ae944c8a2bb00da28395",
-      "bytes": 22459,
+      "sha256": "d20816db292b80d0bd46c5c97c458a19cfa1cb9691f4ef98d085167b2db1f589",
+      "bytes": 22531,
       "domain": "x-bun-import",
       "status": "historical",
       "visibility": "private",
@@ -4956,8 +4916,8 @@
     {
       "path": "docs/reference/ai/STACK.md",
       "title": "Unified Polyglot Stack — aphrody (2026)",
-      "sha256": "b611968c691535deb6dda3b9c6120172d000e069de9543155709dfb090c0f3f8",
-      "bytes": 9861,
+      "sha256": "e566e5e07111cc9a33d0455d07272f4444f794df57f3a6205c4b64c2424cdc40",
+      "bytes": 9928,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -5536,8 +5496,8 @@
     {
       "path": "docs/reference/ai/grok/bxc-and-grok.md",
       "title": "bxc vs xAI Grok",
-      "sha256": "87ea28a3d9a829aed1fd5b83613ea4f6dbac35ace4bb4253c07c8fef32a3fb0c",
-      "bytes": 1764,
+      "sha256": "f8d3180e30a890fec17f11708d63e4e03449e006ea1d9a9fda7b146f133c103f",
+      "bytes": 1778,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -6356,8 +6316,8 @@
     {
       "path": "docs/reference/infra/UPSTREAMS.md",
       "title": "Upstreams",
-      "sha256": "ee9fe9a588b06b1c27d7e294e2d2300fc0c427c2ce623867b39e7fa9a0f93976",
-      "bytes": 10518,
+      "sha256": "0387716fe1e35cd2dde97cdef00496fe16488226847907dfc63227f31e94d1f4",
+      "bytes": 10293,
       "domain": "infra",
       "status": "notice",
       "visibility": "private",
@@ -10706,8 +10666,8 @@
     {
       "path": "docs/reference/workspace/BXCTORUST.md",
       "title": "BXC to Rust : Plan Directeur de Migration & d'Absorption Native",
-      "sha256": "455bf941a85422e145e7636447146c4f751a6d1ec5e66b7a8d017da96fec2280",
-      "bytes": 6558,
+      "sha256": "b1e647a8083f7314d0b1ec15f52d0d62c5db777bd5ddef62e286ffcbc1e98bd4",
+      "bytes": 6618,
       "domain": "workspace",
       "status": "canonical",
       "visibility": "private",
@@ -10796,8 +10756,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "45d35a4733a15d5b70f0809ceca199631945ba11655580e98f49d52c7d0ec3bc",
-      "bytes": 41613,
+      "sha256": "399c4ffed65a8a7af4155d653fb5ac29ad5fa0dd24a868fbac3e7fa3f0553e47",
+      "bytes": 40352,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",
@@ -11136,8 +11096,8 @@
     {
       "path": "docs/research/ai/research/openclaw-vs-aphrody.md",
       "title": "OpenClaw vs aphrody — Comparative Audit",
-      "sha256": "e1f7438d6120ca4b486caac943559a09ae811e0af5282ba1cceb27c560bf27fe",
-      "bytes": 13195,
+      "sha256": "5a235da7c8622309f5ca9c8bf5f707a998d29e3680ac3f5ed84dccca20473d10",
+      "bytes": 13223,
       "domain": "ai",
       "status": "historical",
       "visibility": "private",
@@ -11546,8 +11506,8 @@
     {
       "path": "m3/README.md",
       "title": "aphrody-m3",
-      "sha256": "fcb2a436313aaf5ce417bb8942e8a432cd5b2d1a5060e3ea3026817229608b3f",
-      "bytes": 3177,
+      "sha256": "b8b35bd75f34e38c3cc1bce2856774f2a19239ccb5c805bf054fb6a409a6eef0",
+      "bytes": 3158,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -11676,8 +11636,8 @@
     {
       "path": "m3/docs/architecture/DECISIONS.md",
       "title": "Design and UI repository decisions (2026-10-04)",
-      "sha256": "fbdaac54e44fc0e53f1f8f145c1bec6fb6977a49c5e2d4630fc48c44e2c06ac4",
-      "bytes": 3291,
+      "sha256": "a6fdcb42b25f438d6554435f155eb38dfadceeadcf308d4c779c908ef5367977",
+      "bytes": 3355,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -15096,8 +15056,8 @@
     {
       "path": "m3/packages/m3-bun/README.md",
       "title": "@aphrody/m3-bun",
-      "sha256": "4104c1ad8b8f46cf9ac4ec59177325bd00b5bf76fe574af5039b9871d204344f",
-      "bytes": 3373,
+      "sha256": "1d0e30704a01ad9439d84acabdec990dcb850e88f2a4c4eaafa64973fe9ffd7f",
+      "bytes": 3487,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -15392,16 +15352,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "m3/packages/material-design-icons/README.md"
-    },
-    {
-      "path": "m3/packages/rg-ui/README.md",
-      "title": "@rosegriffon/ui — Design System Rose Griffon",
-      "sha256": "c9ff3037ec37a7bc7d3fb7931e242edcfb0fc793225b889278f3525f15d66856",
-      "bytes": 7886,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "m3/packages/rg-ui/README.md"
     },
     {
       "path": "m3/packages/scaffold/README.md",

@@ -85,13 +85,6 @@
           ]
         },
         {
-          "name": "aphrody-a2a-ui",
-          "path": "crates/ui/a2a-ui",
-          "description": "A2A protocol UI: WASM channel viewer for ai.json + .coord JSONL mailbox.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-acl-tests",
           "path": "crates/tauri/aphrody-acl-tests",
           "description": "Aphrody platform crate aphrody-acl-tests.",
@@ -294,20 +287,6 @@
           "features": []
         },
         {
-          "name": "aphrody-diffusion",
-          "path": "crates/ml/diffusion",
-          "description": "Safe Rust bindings for stable-diffusion.cpp with runtime dynamic loading.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-diffusion-sys",
-          "path": "crates/ml/diffusion-sys",
-          "description": "Low-level dynamically loaded FFI bindings for stable-diffusion.cpp.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-discord",
           "path": "crates/infra/discord",
           "description": "Native Aphrody Discord engine: Ed25519 interaction verification, REST client, AI answer embeds, Web extraction and timed shell receipts.",
@@ -449,13 +428,6 @@
           "name": "aphrody-guard",
           "path": "crates/os/ostd/guard",
           "description": "Autonomous-agent safety guardrails: pre-main process hardening (disable core dumps, block ptrace attach, strip LD_*/DYLD_* loader env) and a cross-platform shell command-safety classifier (Allow / Prompt / Forbidden) for gating agent-issued commands. Inspired by OpenAI Codex (Apache-2.0).",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-gui-core",
-          "path": "crates/ui/gui-core",
-          "description": "Neutral GUI abstractions for Aphrody OS: WindowHost, SurfaceProvider, ThemeProvider, KernelBridge",
           "bins": [],
           "features": []
         },
@@ -1245,25 +1217,6 @@
           "features": []
         },
         {
-          "name": "aphrody-tauri-specta",
-          "path": "crates/tauri/aphrody-tauri-specta",
-          "description": "Completely typesafe Tauri commands",
-          "bins": [],
-          "features": [
-            "default",
-            "derive",
-            "javascript",
-            "typescript"
-          ]
-        },
-        {
-          "name": "aphrody-tauri-specta-macros",
-          "path": "crates/tauri/aphrody-tauri-specta/macros",
-          "description": "Completely typesafe Tauri commands",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-tauri-utils",
           "path": "crates/tauri/aphrody-tauri-utils",
           "description": "Utilities for Tauri",
@@ -1352,23 +1305,6 @@
           "name": "aphrody-toolchains",
           "path": "crates/compat/toolchains",
           "description": "Unified Bun / uv / Nushell runtime layer: shell-free discovery, repo-file version pins and consistent launch environment.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-torch",
-          "path": "crates/ml/torch",
-          "description": "Rust bindings for LibTorch with a dynamically loaded C++ shim.",
-          "bins": [],
-          "features": [
-            "cuda-tests",
-            "image"
-          ]
-        },
-        {
-          "name": "aphrody-torch-sys",
-          "path": "crates/ml/torch-sys",
-          "description": "Low-level FFI bindings for the LibTorch C++ API.",
           "bins": [],
           "features": []
         },
@@ -2169,12 +2105,6 @@
           "name": "@hypothesi/tauri-plugin-mcp-bridge",
           "path": "crates/ui/tauri-plugin-mcp-bridge",
           "description": "A Tauri plugin that exposes an MCP server interface via WebSockets.",
-          "bins": []
-        },
-        {
-          "name": "@rosegriffon/ui",
-          "path": "m3/packages/rg-ui",
-          "description": "Composants shadcn/ui partagés (new-york style, Tailwind v4)",
           "bins": []
         },
         {
@@ -3731,7 +3661,7 @@
             },
             {
               "name": "translate",
-              "about": "Local and offline neural translation via aphrody-translate.",
+              "about": "Web translation through aphrody-translate, with a local result cache.",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -3905,7 +3835,7 @@
                 },
                 {
                   "name": "apply",
-                  "about": "Apply the latest diff produced by the agent to the local working tree.",
+                  "about": "Apply an explicit patch file to the local working tree.",
                   "aliases": [
                     "a"
                   ],
@@ -4251,7 +4181,7 @@
             },
             {
               "name": "apply",
-              "about": "Apply the latest diff produced by the agent to the local working tree.",
+              "about": "Apply an explicit patch file to the local working tree.",
               "aliases": [
                 "a"
               ],
@@ -6613,7 +6543,7 @@
                 },
                 {
                   "name": "translate",
-                  "about": "Local and offline neural translation via aphrody-translate.",
+                  "about": "Web translation through aphrody-translate, with a local result cache.",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -6787,7 +6717,7 @@
                     },
                     {
                       "name": "apply",
-                      "about": "Apply the latest diff produced by the agent to the local working tree.",
+                      "about": "Apply an explicit patch file to the local working tree.",
                       "aliases": [
                         "a"
                       ],
@@ -7133,7 +7063,7 @@
                 },
                 {
                   "name": "apply",
-                  "about": "Apply the latest diff produced by the agent to the local working tree.",
+                  "about": "Apply an explicit patch file to the local working tree.",
                   "aliases": [
                     "a"
                   ],
@@ -15302,9 +15232,9 @@
     "aphrodyRepos": 2,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 251,
+    "crates": 243,
     "binaries": 36,
-    "bunPackages": 118,
+    "bunPackages": 117,
     "pythonPackages": 10,
     "cliBinaries": 35,
     "cliCommands": 1314,

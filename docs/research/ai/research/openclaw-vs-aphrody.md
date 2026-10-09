@@ -81,7 +81,7 @@ openclaw's text inbox. Other channels (iMessage Apple, WhatsApp, Signal, …) = 
 | CLI / onboarding | `openclaw onboard/pairing/doctor` | no | `cli` `oc-onboard/oc-pairing/oc-reset/oc-uninstall/doctor` | `cli/src/oc_cmd.rs` (897 LOC) | ✅ (explicit openclaw-compat surface) |
 | DM pairing / allowlist | `dmPolicy`, `pairing approve` | no | `oc-pairing` (`~/.aphrody/pairing.json`) | `cli/src/oc_cmd.rs:340-468` | ✅ |
 | Sandbox (Docker/SSH/OpenShell) | `agents.defaults.sandbox` | no | `SandboxShell` | `aphrody-sdk/src/shell.rs:85-181`, `aphrody-sdk/src/fs.rs` | ⚠️ host shell sandbox only, no Docker/SSH backend (see GAPS) |
-| Web / API surface | `ui/`, web RPC | no | `crates/ui/a2a-ui`, `aphrody-gateway` HTTP, `tuono*` | `a2a-ui/src/native` | ✅ |
+| Web / API surface | `ui/`, web RPC | no | `crates/ui/a2a-ui` (not in repo), `aphrody-gateway` HTTP, `tuono*` | `a2a-ui/src/native` | ✅ |
 | Voice (TTS/STT) | `src/talk`, `elevenlabs`, mlx-tts | macOS TTS partly Apple | `crates/ai/voice` | `voice/src/{elevenlabs,web}.rs`, `stt/` | ✅ (ElevenLabs + STT; system TTS) |
 | Realtime transcription | `src/realtime-transcription` | no | `aphrody-voice/src/stt` | stt module | ✅ |
 | Observability / OTel | `extensions/diagnostics-otel/-prometheus` | no | `crates/os/kernel/comps/telemetry` | `telemetry/src/lib.rs` | ✅ |
@@ -90,7 +90,7 @@ openclaw's text inbox. Other channels (iMessage Apple, WhatsApp, Signal, …) = 
 | **Apple HIG / design** | macOS/iOS SwiftUI, Apple HIG | **Apple** | **Material Design 3 / M3 Expressive** | `crates/ui/m3-tokens` (hct, color, typography Google Sans, motion, shape, elevation, gemini_brand), `aphrody-design`, `mui-rs-components`, `aphrody-wgpu-material` | ✅ Google equivalent |
 | **macOS menu-bar app** | `apps/macos` (not in repo) | **Apple** | M3 native UI (`mui-rs`, `gui`, `a2a-ui`) + cross-platform CLI | `crates/mui-rs*`, `gui` | ✅ Google/cross-plat equivalent |
 | **iOS/Android nodes** | `apps/{ios,android}` | **Apple/mobile** | Android/Compose patterns via M3; `aphrody-react-reconciler` | `m3-tokens/src/adaptive.rs` | ✅ (Google/M3) |
-| **Live Canvas / A2UI** | `apps/.../canvas` | partly Apple | `crates/ui/a2a-ui` + A2A protocol (`crates/a2a*`) | `a2a-ui/src/native`, `a2a-server`, `a2a-pb` | ✅ A2A-based equivalent |
+| **Live Canvas / A2UI** | `apps/.../canvas` | partly Apple | `crates/ui/a2a-ui` (not in repo) + A2A protocol (`crates/a2a*`) | `a2a-ui/src/native`, `a2a-server`, `a2a-pb` | ✅ A2A-based equivalent |
 | **iMessage** | `extensions/imessage` | **Apple** | n/a (Apple channel; Discord/X kept) | — | out-of-scope (Apple) |
 | Link understanding | `src/link-understanding` | no | `aphrody-context`, `universal_web_fetch` MCP | `aphrody-context/src/lib.rs` | ✅ (web fetch + context) |
 | Auto-reply loop | `src/auto-reply` | no | `agy-loop`, hermes agent | `cli/src/agy_loop.rs`, `agent_cmd.rs` | ✅ (agentic loop) |
