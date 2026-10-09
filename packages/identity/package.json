@@ -20,9 +20,7 @@
     "./pet": "./src/pet.ts"
   },
   "scripts": {
-    "gen": "bun scripts/generate.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "bun test src"
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@aphrody/m3": "workspace:*",
