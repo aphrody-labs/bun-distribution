@@ -132,3 +132,11 @@ def cuda_probe_json(_argument: str = "") -> str:
                 }
             )
     return json.dumps({"pid": os.getpid(), "devices": result})
+
+
+if __name__ == "__main__":
+    import sys
+
+    if sys.argv[1:] != ["cuda-probe"]:
+        raise SystemExit("usage: fleet.py cuda-probe")
+    print(cuda_probe_json())

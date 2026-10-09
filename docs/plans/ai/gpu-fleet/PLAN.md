@@ -115,3 +115,20 @@ The VPS artifact transfer is running in the dedicated tmux session
 bytes. The job enforces the expected file size and verifies the pinned SHA-256
 before renaming the partial file. Transfer completion and local Omar cache
 qualification are pending; the model is not yet served.
+
+## Isolated Omar qualification source
+
+The CUDA probe runs fleet.py directly, avoiding imports of unrelated SDK
+providers and their dependencies. Omar has an isolated release source directory
+under its configured Aphrody home; its Compose file and environment were
+updated to use that directory. No source checkout or provider store was replaced.
+The standalone profile removes the distributed layer partition environment
+variable rather than setting it to an empty invalid value. Seven Python tests,
+Ruff and Compose parsing pass for this batch.
+
+VPS metadata, tokenizer, chat template and repository notices were downloaded
+from the pinned revision. Their local checksum manifest verifies rereads;
+weight verification remains tied to the independently recorded registry LFS
+SHA-256. The weight transfer was observed at 4,007,993,344 bytes and active in
+its existing tmux session. Neither partial weights nor interface health count
+as live inference qualification.

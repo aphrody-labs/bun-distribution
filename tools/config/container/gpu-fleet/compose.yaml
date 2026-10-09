@@ -30,8 +30,8 @@ services:
   probe:
     <<: *gpu
     profiles: [probe]
-    entrypoint: [python3, -c]
-    command: ["from aphrody.inference.fleet import cuda_probe_json; print(cuda_probe_json())"]
+    entrypoint: [python3, /opt/aphrody/py/aphrody/inference/fleet.py]
+    command: [cuda-probe]
     restart: "no"
 
   standalone:
@@ -43,7 +43,7 @@ services:
       - "${APHRODY_GPU_HOST_ADDRESS:?declared mesh host required}:8180:8180"
     environment:
       <<: *environment
-      VLLM_PP_LAYER_PARTITION: ""
+      VLLM_PP_LAYER_PARTITION: null
       NCCL_SOCKET_IFNAME: eth0
       GLOO_SOCKET_IFNAME: eth0
       APHRODY_GPU_MODEL_PATH: ${APHRODY_GPU_MODEL_PATH:?verified local model path required}
