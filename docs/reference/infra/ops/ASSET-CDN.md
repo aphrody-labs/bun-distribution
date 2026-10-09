@@ -2,7 +2,7 @@
 # Shared asset CDN — `cdn.aphrody.com`
 
 > **Live on dbfr since 2026-10-09** (`tools/config/asset-catalog.json` `cdn.status: live`, `sshHost: dbfr`).
-> Release `946758212b4e`, 143 files. The former vps deployment was retired on 2026-09-25.
+> Release `7a1d7777796f`, 143 files (previous: `946758212b4e`). The former vps deployment was retired on 2026-09-25.
 
 `cdn.aphrody.com` is the CDN origin of the monorepo's UI design assets and AI
 brand assets, and nothing else. Game assets are not served here: nie publishes decoded assets on its single
