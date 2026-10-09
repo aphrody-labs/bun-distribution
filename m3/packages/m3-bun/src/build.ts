@@ -9,6 +9,7 @@ import { existsSync, readFileSync, rmSync } from "node:fs";
 import { readdir, rm } from "node:fs/promises";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { loadApp, type M3App } from "./config.ts";
+import { graphPath, recordBuild, type GraphRecord } from "./graph.ts";
 import { m3Bun } from "./plugin.ts";
 import { sha256 } from "./util.ts";
 
@@ -47,6 +48,8 @@ export interface BuildReport {
   totalBytes: number;
   totalGzipBytes: number;
   ms: number;
+  /** The `bun:graph` record of this build, when the build was recorded. */
+  graph?: GraphRecord;
 }
 
 /**
@@ -107,6 +110,8 @@ export interface BuildAppOptions {
   outdir?: string;
   /** A pre-loaded app, for callers that already read the config. */
   app?: M3App;
+  /** Record the build in a `bun:graph` registry (default: `bun.graph` of the config): `true` for the app default, or a path. */
+  graph?: boolean | string;
 }
 
 /** Build the UI of an M3 app into its output directory. */
@@ -117,8 +122,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<BuildRepo
   const outdir = resolve(options.outdir ?? app.outdir);
   const minify = options.minify ?? app.minify;
   const { m3 } = app;
+  const graph = options.graph ?? app.bun.graph ?? false;
 
-  await buildM3({
+  const built = await buildM3({
     entry: m3.entry,
     outdir,
     production: options.dev !== true,
@@ -136,6 +142,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<BuildRepo
       }),
     ],
     cwd: m3.dir,
+    metafile: graph !== false,
   });
 
   await hoistEntry(outdir, m3.dir, m3.entry);
@@ -152,7 +159,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<BuildRepo
     files,
   };
   await Bun.write(join(outdir, "m3-bun.manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
-  return {
+  const report: BuildReport = {
     app,
     outdir,
     manifest,
@@ -160,6 +167,10 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<BuildRepo
     totalGzipBytes: files.reduce((n, f) => n + f.gzipBytes, 0),
     ms: Math.round(performance.now() - started),
   };
+  if (graph === false) return report;
+  if (!built.metafile) throw new Error("m3-bun build: Bun.build returned no metafile to record");
+  report.graph = await recordBuild(report, built.metafile, graph === true ? graphPath(app) : resolve(m3.dir, graph));
+  return report;
 }
 
 /** `Bun.build` keeps the HTML entry at its source-relative path (`src/index.html`): make it `index.html`. */

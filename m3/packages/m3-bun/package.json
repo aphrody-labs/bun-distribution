@@ -33,6 +33,7 @@
     "./api": "./src/api.ts",
     "./config": "./src/config.ts",
     "./targets": "./src/targets/index.ts",
+    "./graph": "./src/graph.ts",
     "./runtime": "./src/runtime.ts",
     "./package.json": "./package.json",
     "./client": {

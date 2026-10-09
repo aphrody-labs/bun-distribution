@@ -2,11 +2,12 @@
 // The m3-bun command line (`bin/m3-bun.ts`). Commands run in the app directory (the one with `m3.config.ts`).
 //
 //   m3-bun dev      [--port n] [--no-hmr]                       dev server, HMR, UI and API in one process
-//   m3-bun build    [--minify none|basic|full] [--dev] [--outdir d] [--json]
+//   m3-bun build    [--minify none|basic|full] [--dev] [--outdir d] [--json] [--graph[=registry]]
 //   m3-bun serve    [--port n] [--host h] [--build]            production server of the build directory
 //   m3-bun compile  [--target t] [--outfile f] [--minify l] [--no-build]       one executable
 //   m3-bun package  [--target t] [--format tar.gz|zip] [--out d] [--rootfs] [--deploy] [--executable f]
 //   m3-bun deploy   <target..|all> [--out d] [--domain h] [--name n] [--port n] [--image r] ...      configs, never applied
+//   m3-bun graph    [file] [--registry r] [--json]               recorded builds (bun:graph), or what depends on a file
 //   m3-bun targets                                              the deploy targets
 //   m3-bun smoke    [executable] [--port n]                     run it (yolo runtime when installed), GET /, /healthz, /api/m3/info
 //   m3-bun workspace <build|typecheck|clean> [--only a,b] [--no-cache]          the repository pipeline (scripts/build.ts)
@@ -17,6 +18,7 @@ import { pathToFileURL } from "node:url";
 import type { M3ApiModule } from "./api.ts";
 import { buildApp, type MinifyLevel } from "./build.ts";
 import { compileApp, defaultOutfile } from "./compile.ts";
+import { dependents, graphPath, graphReport } from "./graph.ts";
 import { COMPILE_TARGETS, findWorkspaceRoot, loadApp, type CompileTargetName, type M3App } from "./config.ts";
 import { packageApp, type ArchiveFormat } from "./package.ts";
 import { formatSmoke, smoke } from "./runtime.ts";
@@ -24,7 +26,7 @@ import { dirSource, startM3Server } from "./server.ts";
 import { TARGETS, contextFor, generateTargets } from "./targets/index.ts";
 import { kib } from "./util.ts";
 
-export const COMMANDS = ["dev", "build", "serve", "compile", "package", "deploy", "targets", "smoke", "workspace", "pack", "help", "version"] as const;
+export const COMMANDS = ["dev", "build", "serve", "compile", "package", "deploy", "graph", "targets", "smoke", "workspace", "pack", "help", "version"] as const;
 export type Command = (typeof COMMANDS)[number];
 
 export interface Parsed {
@@ -33,7 +35,7 @@ export interface Parsed {
   flags: Map<string, string | true>;
 }
 
-const BOOLEAN = new Set(["dev", "no-hmr", "no-build", "build", "json", "rootfs", "deploy", "help", "version", "no-cache"]);
+const BOOLEAN = new Set(["dev", "no-hmr", "no-build", "build", "json", "rootfs", "deploy", "help", "version", "no-cache", "graph"]);
 
 /** Parse `argv` (without the runtime and script paths). */
 export function parseArgs(argv: readonly string[]): Parsed {
@@ -73,12 +75,13 @@ export const USAGE = `m3-bun: build, serve, compile, package and deploy configs 
 
 Usage:
   m3-bun dev      [--port <n>] [--no-hmr]
-  m3-bun build    [--minify none|basic|full] [--dev] [--outdir <dir>] [--json]
+  m3-bun build    [--minify none|basic|full] [--dev] [--outdir <dir>] [--json] [--graph[=<registry>]]
   m3-bun serve    [--port <n>] [--host <h>] [--build]
   m3-bun compile  [--target <t>] [--outfile <file>] [--minify <level>] [--no-build]
   m3-bun package  [--target <t>] [--format tar.gz|zip] [--out <dir>] [--rootfs] [--deploy] [--executable <file>]
   m3-bun deploy   <target..|all> [--out <dir>] [--domain <host>] [--name <n>] [--port <n>] [--image <ref>]
                   [--namespace <ns>] [--user <u>] [--region <r>] [--tls-cert <f> --tls-key <f>] [--http2 directive|listen] [--cli "<cmd>"]
+  m3-bun graph    [file] [--registry <file>] [--json]
   m3-bun targets
   m3-bun smoke    [executable] [--port <n>]
   m3-bun workspace <build|typecheck|clean> [--only a,b] [--no-cache]
@@ -190,11 +193,13 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       const app = await loadApp(cwd);
       const minify = level(flags);
       const outdir = str(flags, "outdir");
-      const report = await buildApp({ app, ...(minify ? { minify } : {}), ...(outdir ? { outdir } : {}), dev: flags.has("dev") });
-      if (flags.has("json")) console.log(JSON.stringify({ outdir: report.outdir, ms: report.ms, totalBytes: report.totalBytes, totalGzipBytes: report.totalGzipBytes, manifest: report.manifest }, null, 2));
+      const graph = flags.get("graph");
+      const report = await buildApp({ app, ...(minify ? { minify } : {}), ...(outdir ? { outdir } : {}), ...(graph !== undefined ? { graph: graph === true ? true : resolve(cwd, graph) } : {}), dev: flags.has("dev") });
+      if (flags.has("json")) console.log(JSON.stringify({ outdir: report.outdir, ms: report.ms, totalBytes: report.totalBytes, totalGzipBytes: report.totalGzipBytes, manifest: report.manifest, ...(report.graph ? { graph: report.graph } : {}) }, null, 2));
       else {
         for (const file of report.manifest.files) console.log(`  ${file.path.padEnd(34)} ${kib(file.bytes).padStart(11)}  gzip ${kib(file.gzipBytes)}`);
         console.log(`m3-bun build ${app.name}@${app.version}: ${report.manifest.files.length} files, ${kib(report.totalBytes)} (${kib(report.totalGzipBytes)} gzip), minify ${report.manifest.minify}, build ${report.manifest.buildId}, ${report.ms} ms -> ${report.outdir}`);
+        if (report.graph) console.log(`  graph ${report.graph.nodes} nodes, ${report.graph.edges} edges, run ${report.graph.runId} -> ${report.graph.path}`);
       }
       return 0;
     }
@@ -262,6 +267,20 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       const generated = await generateTargets(ids, context, out);
       for (const g of generated) console.log(`${g.id.padEnd(12)} ${g.files.length} files -> ${g.dir}`);
       console.log("generated only: nothing was applied, pushed or reloaded");
+      return 0;
+    }
+    case "graph": {
+      const app = await loadApp(cwd);
+      const registry = str(flags, "registry");
+      const path = registry ? resolve(cwd, registry) : graphPath(app);
+      const file = positionals[0];
+      if (file === undefined) {
+        console.log(await graphReport(app, path));
+        return 0;
+      }
+      const found = await dependents(app, file, path);
+      if (flags.has("json")) console.log(JSON.stringify(found, null, 2));
+      else for (const node of found) console.log(`${"  ".repeat(node.depth - 1)}${node.label}  (${node.kind})`);
       return 0;
     }
     case "smoke": {

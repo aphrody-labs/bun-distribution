@@ -7,7 +7,7 @@
 //
 // Names carry no hash: the Tauri asset protocol serves the directory as is, and the CSP allows
 // only `'self'` scripts, so every script stays an external module file.
-import { build, type BuildArtifact, type BunPlugin } from "bun";
+import { build, type BuildArtifact, type BuildMetafile, type BunPlugin } from "bun";
 import { mkdir, rename, rm, stat } from "node:fs/promises";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { m3Plugin, type M3PluginOptions } from "./plugin";
@@ -44,6 +44,8 @@ export interface BuildM3Options {
   clean?: boolean;
   /** Base directory for relative paths (default: working directory). */
   cwd?: string;
+  /** Return the module graph of the build (`Bun.build` `metafile`): input keys relative to `cwd`, output keys to `outdir`. */
+  metafile?: boolean;
 }
 
 export interface BuildM3Output {
@@ -56,6 +58,8 @@ export interface BuildM3Output {
 export interface BuildM3Result {
   outdir: string;
   outputs: BuildM3Output[];
+  /** Present when `metafile` is set. The Tauri layout renames are not applied to its output keys. */
+  metafile?: BuildMetafile;
 }
 
 /** Fixed names of the Tauri layout. */
@@ -132,6 +136,7 @@ export async function buildM3(options: BuildM3Options): Promise<BuildM3Result> {
     minify: minifyConfig,
     sourcemap: production ? "none" : "linked",
     splitting: tauri ? false : (options.splitting ?? false),
+    ...(options.metafile ? { metafile: true } : {}),
     define: {
       "process.env.NODE_ENV": JSON.stringify(production ? "production" : "development"),
       ...options.define,
@@ -199,7 +204,7 @@ export async function buildM3(options: BuildM3Options): Promise<BuildM3Result> {
     if (clean) await rm(buildOutdir, { recursive: true, force: true });
     throw error;
   }
-  return { outdir, outputs };
+  return { outdir, outputs, ...(result.metafile ? { metafile: result.metafile } : {}) };
 }
 
 /**

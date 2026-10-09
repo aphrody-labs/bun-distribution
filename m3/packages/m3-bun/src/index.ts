@@ -12,6 +12,8 @@ export { tsM3Css } from "./theme-css.ts";
 export { iconsRoot, parseIconSpecifier, readIcon } from "./icons.ts";
 export { buildApp, hoistHtml, listBuild, minifyOptions, readManifest } from "./build.ts";
 export type { BuildAppOptions, BuildManifest, BuildReport, MinifyLevel } from "./build.ts";
+export { dependents, graphPath, graphReport, moduleGraph, openGraph, recordBuild, repositoryId } from "./graph.ts";
+export type { GraphRecord, ModuleGraph } from "./graph.ts";
 export { compileApp, defaultOutfile, renderEntry } from "./compile.ts";
 export type { CompileOptions, CompileReport } from "./compile.ts";
 export { archiveDir, buildRootfs, packageApp, parseLdd } from "./package.ts";

@@ -8,7 +8,8 @@ from the same process. Full guide: `docs/guides/M3-BUN.md`.
 
 ```sh
 m3-bun dev                     # HMR dev server: UI and API in one process (bunfig [serve.static] plugins)
-m3-bun build [--minify none|basic|full]
+m3-bun build [--minify none|basic|full] [--graph[=<registry>]]
+m3-bun graph [file]            # recorded builds (bun:graph), or what depends on a file
 m3-bun serve                   # production server of the build directory
 m3-bun compile [--target linux-x64-musl|windows-x64|darwin-arm64|...]
 m3-bun package [--rootfs] [--deploy]
@@ -37,6 +38,16 @@ plugins = ["@aphrody/m3-bun/plugin"]
 export default defineM3Config({ entry: "src/index.html", theme: { seed: "#6750a4" } });
 export const bun = defineM3Bun({ api: "src/api/index.ts", port: 3000, compile: { bytecode: true } });
 ```
+
+## Build graph (`bun:graph`)
+
+`m3-bun build --graph` (or `bun: { graph: true }` in `m3.config.ts`) records the build in the `bun:graph` SQLite registry of
+the Aphrody fork of Bun, `.m3-bun/graph.sqlite` by default: the app is a repository, the build a run with its duration
+sample and one artifact (path, SHA-256, bytes) per output file, and the `Bun.build` metafile a graph snapshot. Its nodes
+are the inputs (virtual `m3:` modules included), the outputs and the external imports; its edges the imports, keyed by
+import kind, and `bundled-into` from an input to each output it contributed to. `m3-bun graph` prints the `bun:graphx`
+markdown report; `m3-bun graph src/main.ts` lists the modules that import the file, transitively, and the outputs it went
+into. Runtimes without `bun:graph` fail with an explicit error.
 
 ## One process, UI and API
 
