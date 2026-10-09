@@ -1,6 +1,23 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
+export function resolveBunMembers(
+  root: string,
+  declarations: string[],
+  failures: string[],
+): string[] {
+  const members = new Set<string>();
+  for (const declaration of declarations) {
+    const matches = [
+      ...new Bun.Glob(`${declaration}/package.json`).scanSync({ cwd: root, onlyFiles: true }),
+    ];
+    if (!matches.length) failures.push(`missing Bun workspace member: ${declaration}/package.json`);
+    for (const match of matches)
+      members.add(match.replaceAll("\\", "/").replace(/\/package\.json$/, ""));
+  }
+  return [...members].sort();
+}
+
 export async function runIecodeDoctor(args: string[]): Promise<number> {
   let root = process.cwd();
   for (let index = 0; index < args.length; index++) {
@@ -42,7 +59,7 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
   ])
     file(path);
   for (const member of manifest.rust.members) file(join(member, "Cargo.toml"));
-  for (const member of manifest.bun.members) file(join(member, "package.json"));
+  const bunMembers = resolveBunMembers(root, manifest.bun.members, failures);
 
   const cargo = readFileSync(join(root, "Cargo.toml"), "utf8");
   if (cargo.includes("src/iecode/") || cargo.includes("src/niers/"))
@@ -61,7 +78,8 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
   if (!packageJson.packageManager?.startsWith("bun@"))
     failures.push("package.json must pin Bun with packageManager");
   if (
-    JSON.stringify(packageJson.workspaces?.packages ?? []) !== JSON.stringify(manifest.bun.members)
+    JSON.stringify(resolveBunMembers(root, packageJson.workspaces?.packages ?? [], failures)) !==
+    JSON.stringify(bunMembers)
   ) {
     failures.push("package.json and workspace.manifest.json Bun members differ");
   }
@@ -158,7 +176,7 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
     return 1;
   }
   console.log(
-    `IECODE workspace OK: ${manifest.rust.members.length} Rust, ${manifest.bun.members.length} Bun, ${relative(root, manifestPath)}`,
+    `IECODE workspace OK: ${manifest.rust.members.length} Rust, ${bunMembers.length} Bun, ${relative(root, manifestPath)}`,
   );
   return 0;
 }
