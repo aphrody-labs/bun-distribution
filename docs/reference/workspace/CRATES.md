@@ -8,15 +8,11 @@ Packages are prefixed with `aphrody-`; library and binary names are unchanged.
 | :--- | :--- | :--- | :--- | :--- |
 | `aphrody-acl-tests` | `acl-tests` | 0.1.0 | `tauri` | `crates/tauri/aphrody-acl-tests` |
 | `aphrody-create-tauri-app` | `create-tauri-app` | 4.7.4 | `create-tauri-app` | `crates/tauri/aphrody-create-tauri-app` |
-| `aphrody-create-tauri-app-node` | `create-tauri-app-node` | 0.0.0 | `create-tauri-app` | `crates/tauri/aphrody-create-tauri-app-node` |
-| `aphrody-restart` | `restart` | 0.1.0 | `tauri` | `crates/tauri/aphrody-restart` |
 | `aphrody-tauri` | `tauri` | 3.0.0-alpha.4 | `tauri` | `crates/tauri/aphrody-tauri` |
 | `aphrody-tauri-build` | `tauri-build` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-build` |
 | `aphrody-tauri-bundler` | `tauri-bundler` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-bundler` |
 | `aphrody-tauri-cli` | `tauri-cli` | 3.0.0-alpha.4 | `tauri` | `crates/tauri/aphrody-tauri-cli` |
-| `aphrody-tauri-cli-node` | `tauri-cli-node` | 0.0.0 | `tauri` | `crates/tauri/aphrody-tauri-cli-node` |
 | `aphrody-tauri-codegen` | `tauri-codegen` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-codegen` |
-| `aphrody-tauri-examples` | `tauri-examples` | 0.1.0 | `tauri` | `crates/tauri/aphrody-tauri-examples` |
 | `aphrody-tauri-macos-sign` | `tauri-macos-sign` | 3.0.0-alpha.2 | `tauri` | `crates/tauri/aphrody-tauri-macos-sign` |
 | `aphrody-tauri-macros` | `tauri-macros` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-macros` |
 | `aphrody-tauri-plugin` | `tauri-plugin` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-plugin` |
@@ -53,7 +49,6 @@ Packages are prefixed with `aphrody-`; library and binary names are unchanged.
 | `aphrody-tauri-runtime` | `tauri-runtime` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-runtime` |
 | `aphrody-tauri-runtime-cef` | `tauri-runtime-cef` | 3.0.0-alpha.5 | `tauri` | `crates/tauri/aphrody-tauri-runtime-cef` |
 | `aphrody-tauri-schema-generator` | `tauri-schema-generator` | 0.0.0 | `tauri` | `crates/tauri/aphrody-tauri-schema-generator` |
-| `aphrody-tauri-schema-worker` | `tauri-schema-worker` | 0.0.0 | `tauri` | `crates/tauri/aphrody-tauri-schema-worker` |
 | `aphrody-tauri-utils` | `tauri-utils` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-utils` |
 
 ## Source commits

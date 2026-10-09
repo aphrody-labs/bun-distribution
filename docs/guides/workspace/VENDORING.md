@@ -28,7 +28,7 @@ Each fork keeps `main` as an upstream mirror and `yolo` as the branch the submod
 - drops `[workspace]`, `[profile.*]` and `[patch.*]` tables and copies the upstream `rustfmt.toml`
   (or a marker file for the default style) into the crate;
 - applies the `[[rewrite]]` rules of `vendor.toml` (paths that left the crate, formatting fixes) and
-  the `[[copy]]` rules (the sources of `tauri-examples`);
+  the `[[copy]]` rules (shared plugin README assets);
 - writes `vendor.lock` (source SHAs, crate map) and `docs/reference/workspace/CRATES.md`.
 
 Not vendored on purpose: the migrate fixtures, `cef-rollback`, the benchmark crates and the example

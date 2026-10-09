@@ -30,33 +30,6 @@
       "dependencies": ["@aphrody/api"]
     },
     {
-      "name": "@aphrody/plugin-barcode-scanner",
-      "version": "3.0.0-alpha.3",
-      "path": "crates/tauri/aphrody-tauri-plugin-barcode-scanner/package.json",
-      "status": "published",
-      "sha256": "aefeeb0812a225befe7bea0c50ab2c53325b39e5141968abd34365fccb7b9a31",
-      "integrity": "sha512-g2fEkY5gihKkAsnq5R77ta4SlfP1RM73V0QCNLD9at/3WzNZ0frPt+XouCjAvLikcT+cvcTKww6xM88rTWUtmA==",
-      "dependencies": ["@aphrody/api"]
-    },
-    {
-      "name": "@aphrody/plugin-biometric",
-      "version": "3.0.0-alpha.3",
-      "path": "crates/tauri/aphrody-tauri-plugin-biometric/package.json",
-      "status": "published",
-      "sha256": "3b839e45dfd7e0bbf6b3423526db5096c19253587a43238752bc66225e1cd0ec",
-      "integrity": "sha512-KjPvykoDf1rot3KXsRz8Hv94gmdMfB8GAiQIhNzohOtLkxukj8/Xn1Jd6MemMtPhj2UmEs2psQS3TCUSgYzxxg==",
-      "dependencies": ["@aphrody/api"]
-    },
-    {
-      "name": "@aphrody/plugin-cli",
-      "version": "3.0.0-alpha.3",
-      "path": "crates/tauri/aphrody-tauri-plugin-cli/package.json",
-      "status": "published",
-      "sha256": "3ca9b78f8d790d44e7a3f1ede8c7c13ef64bc65ce2ee90d7c46ce1b6cbd54c39",
-      "integrity": "sha512-Kbvay/tYekvfsjsoKDNGPbpScGbhCjMxTgusDRQB/0JebIZWRLTYS8eEI5kWgIhtWyDXbKWaoVnOVlN1r86FRw==",
-      "dependencies": ["@aphrody/api"]
-    },
-    {
       "name": "@aphrody/plugin-clipboard-manager",
       "version": "3.0.0-alpha.3",
       "path": "crates/tauri/aphrody-tauri-plugin-clipboard-manager/package.json",
@@ -93,15 +66,6 @@
       "dependencies": ["@aphrody/api"]
     },
     {
-      "name": "@aphrody/plugin-geolocation",
-      "version": "3.0.0-alpha.3",
-      "path": "crates/tauri/aphrody-tauri-plugin-geolocation/package.json",
-      "status": "published",
-      "sha256": "dc98b2c4f4073a7cba05ade1b3dcf0d8b7eaccb218104de7034a07504ffd8e86",
-      "integrity": "sha512-0Y9BmB5hwVMj3nqOyj8EvtDXdKvVfMWI5Oi3xOWA26UP8nTJIePlrsyVkykP7nxICwvMxzYeQbHXMYo+7oJkFQ==",
-      "dependencies": ["@aphrody/api"]
-    },
-    {
       "name": "@aphrody/plugin-global-shortcut",
       "version": "3.0.0-alpha.3",
       "path": "crates/tauri/aphrody-tauri-plugin-global-shortcut/package.json",
@@ -111,39 +75,12 @@
       "dependencies": ["@aphrody/api"]
     },
     {
-      "name": "@aphrody/plugin-haptics",
-      "version": "3.0.0-alpha.3",
-      "path": "crates/tauri/aphrody-tauri-plugin-haptics/package.json",
-      "status": "published",
-      "sha256": "9eead952420c8e35598e5844d1c003a8fe2edfbf37a2a609f9f34ef3815b9fb0",
-      "integrity": "sha512-JHXiETwj0giCmMRUSnSN1eupMOPgH9NTcXtHfteOc4qG0Sq37zv7rQQ7NU7IA4I3N4rQfl5Ggv3rxbROj9Vjlw==",
-      "dependencies": ["@aphrody/api"]
-    },
-    {
-      "name": "@aphrody/plugin-http",
-      "version": "3.0.0-alpha.3",
-      "path": "crates/tauri/aphrody-tauri-plugin-http/package.json",
-      "status": "published",
-      "sha256": "c72b4a5f5e6ef7787a1c99939b378293ba48e9e021c6bd6ba4d6c0896c0ffba9",
-      "integrity": "sha512-XSM6W9dHrJqFILoWiPC+RJykrv64Gz6FNEl5Wtqq9tiSoXI2wj3IHuQ9GenDGskvREUPjztuLVGxVjkTX5nQ9g==",
-      "dependencies": ["@aphrody/api"]
-    },
-    {
       "name": "@aphrody/plugin-log",
       "version": "3.0.0-alpha.3",
       "path": "crates/tauri/aphrody-tauri-plugin-log/package.json",
       "status": "published",
       "sha256": "709a0067c451f2159dba3ae333557f1aee51e515cca0b4c308de9548c41fec03",
       "integrity": "sha512-yDGT0EPl9zjIGzh9yMN2MWawj0UeYwOcPWDVFLKhwb+a0zvJM2WONgx4vH/whPXd63K1pK2qt6ZYBxbbwt191A==",
-      "dependencies": ["@aphrody/api"]
-    },
-    {
-      "name": "@aphrody/plugin-nfc",
-      "version": "3.0.0-alpha.3",
-      "path": "crates/tauri/aphrody-tauri-plugin-nfc/package.json",
-      "status": "published",
-      "sha256": "2447e937e5b02affe81064387efa961e781b20486a6a19d9f5a53519c59c2fd0",
-      "integrity": "sha512-WCNyqHUFvFOPxEc5/Pq2uDi5/DuM4/YSDVCCSMumONZtG/J5HC/EO4+62YiA9K+GIczl9Rfyho8RinfM/oDaRQ==",
       "dependencies": ["@aphrody/api"]
     },
     {
@@ -174,39 +111,12 @@
       "dependencies": ["@aphrody/api"]
     },
     {
-      "name": "@aphrody/plugin-positioner",
-      "version": "3.0.0-alpha.3",
-      "path": "crates/tauri/aphrody-tauri-plugin-positioner/package.json",
-      "status": "published",
-      "sha256": "4d3a96e88bee9949b61b990c38475a5cc70988afd9300ef258082a2537c0eb28",
-      "integrity": "sha512-kCm9iApg0uXlSIdNz7EBzkFrNfnUOMkIMiK5l/tKczXcJ67cD2bnc0OskM83TqDOLkZJy8N0c4lutmpDqzVl6w==",
-      "dependencies": ["@aphrody/api"]
-    },
-    {
       "name": "@aphrody/plugin-process",
       "version": "3.0.0-alpha.3",
       "path": "crates/tauri/aphrody-tauri-plugin-process/package.json",
       "status": "published",
       "sha256": "4fb142bfb6c24687ad2aaeb57c6fa94f225df738e0090a1ecce4c2b95250761d",
       "integrity": "sha512-VkjBxF9ywRet7ANHdZgJJXOd3So9s6yOFV5NSn1tlrUCCHE0M8B5+9GM79XTj8vEo7plPI5zSOf4DhcG//8m2w==",
-      "dependencies": ["@aphrody/api"]
-    },
-    {
-      "name": "@aphrody/plugin-shell",
-      "version": "3.0.0-alpha.3",
-      "path": "crates/tauri/aphrody-tauri-plugin-shell/package.json",
-      "status": "published",
-      "sha256": "67be4538d69a3c8663f345fd45877636e0730c6527ba9ae0b0d85d5668d16ee9",
-      "integrity": "sha512-OFJSyzFMRndQH9MPfKyufrbpl5Bvu5Rek7QjazY1SdTHEGMosQKG7cP0eI4GReJSgrr+iMwi5NlGXen2zWcjDA==",
-      "dependencies": ["@aphrody/api"]
-    },
-    {
-      "name": "@aphrody/plugin-sql",
-      "version": "3.0.0-alpha.3",
-      "path": "crates/tauri/aphrody-tauri-plugin-sql/package.json",
-      "status": "published",
-      "sha256": "8431b6c9785bd638149ace13669337294557f62385a13bfff1d955d0936894db",
-      "integrity": "sha512-VtjVktJef7i1rHTbBWsMR8AjehlSmowOA1km25Zd6/gtoceHa8fIj0Ep5hG6PlKb6Kx9upG4d56QY1mWtaCWcQ==",
       "dependencies": ["@aphrody/api"]
     },
     {
@@ -219,39 +129,12 @@
       "dependencies": ["@aphrody/api"]
     },
     {
-      "name": "@aphrody/plugin-stronghold",
-      "version": "3.0.0-alpha.3",
-      "path": "crates/tauri/aphrody-tauri-plugin-stronghold/package.json",
-      "status": "published",
-      "sha256": "f5b384fd65be5b475f7547d65fb92a0f761cbe42b1a45b9ed5f3c1118ec9c3e9",
-      "integrity": "sha512-4YtEyL6MLa1UJstVzcXVuNr4b6AuzwWPafhUBBHnV+jxJQXAgSLMCOok1WsAizZQxbd8yfS7LEiY1o7TDr/nDA==",
-      "dependencies": ["@aphrody/api"]
-    },
-    {
       "name": "@aphrody/plugin-updater",
       "version": "3.0.0-alpha.3",
       "path": "crates/tauri/aphrody-tauri-plugin-updater/package.json",
       "status": "published",
       "sha256": "ff6a319bc0a546dfab307e31b0dc7aa56130afaca86e352a4cead71e77b9f270",
       "integrity": "sha512-r1il3hD7ju4MeiKZUXtomksOQssloEk4H9XsCVLOI0M8/Ol7//VuQACat6TE+fl0VCzxav/foKQZfKLmgxcIAg==",
-      "dependencies": ["@aphrody/api"]
-    },
-    {
-      "name": "@aphrody/plugin-upload",
-      "version": "3.0.0-alpha.3",
-      "path": "crates/tauri/aphrody-tauri-plugin-upload/package.json",
-      "status": "published",
-      "sha256": "88d07b6b00087814b43810388b915bfc887f4a70b8fbb59cfd580883ed0e59d7",
-      "integrity": "sha512-mZUz033NSF/YrqP2h6TWafss9jWkKpNw3DPwDHkdN6FvB3RGXQKU26zIyfcOTIIC/vlvAEt2Npi7xQtikkQ+8w==",
-      "dependencies": ["@aphrody/api"]
-    },
-    {
-      "name": "@aphrody/plugin-websocket",
-      "version": "3.0.0-alpha.3",
-      "path": "crates/tauri/aphrody-tauri-plugin-websocket/package.json",
-      "status": "published",
-      "sha256": "7bf6e8420117e27d53c808fd7a0d619f6866098f95138a3314ff684cef74b722",
-      "integrity": "sha512-kqv/4ekrKGuuAYVOt6OQgFQhKtG5zOcCiNGOdk8c3mepPbVMga2x2FOs4NUTsaY3pY4xJ4DUM1PO5ablCYP99g==",
       "dependencies": ["@aphrody/api"]
     },
     {

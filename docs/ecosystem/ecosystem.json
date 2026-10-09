@@ -292,13 +292,6 @@
           "features": []
         },
         {
-          "name": "aphrody-create-tauri-app-node",
-          "path": "crates/tauri/aphrody-create-tauri-app-node",
-          "description": "Aphrody platform crate aphrody-create-tauri-app-node.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-cron",
           "path": "crates/os/kernel/comps/cron",
           "description": "Lightweight async cron / interval / daily-time scheduler with pluggable JSON-backed job store for aphrody background tasks.",
@@ -881,17 +874,6 @@
           ]
         },
         {
-          "name": "aphrody-restart",
-          "path": "crates/tauri/aphrody-restart",
-          "description": "Aphrody platform crate aphrody-restart.",
-          "bins": [
-            "restart"
-          ],
-          "features": [
-            "process-relaunch-dangerous-allow-symlink-macos"
-          ]
-        },
-        {
           "name": "aphrody-rollout",
           "path": "crates/ai/rollout",
           "description": "Resilient agent-session recorder: appends timestamped JSONL items to ~/.aphrody/sessions/rollout-*.jsonl through an async actor (mpsc + background writer task with Flush/Persist/Shutdown), and resumes a prior session by replaying its JSONL. Inspired by OpenAI Codex rollout (Apache-2.0).",
@@ -1150,17 +1132,6 @@
           ]
         },
         {
-          "name": "aphrody-tauri-cli-node",
-          "path": "crates/tauri/aphrody-tauri-cli-node",
-          "description": "Aphrody platform crate aphrody-tauri-cli-node.",
-          "bins": [],
-          "features": [
-            "default",
-            "native-tls",
-            "native-tls-vendored"
-          ]
-        },
-        {
           "name": "aphrody-tauri-codegen",
           "path": "crates/tauri/aphrody-tauri-codegen",
           "description": "code generation meant to be consumed inside of `tauri` through `tauri-build` or `tauri-macros`",
@@ -1170,15 +1141,6 @@
             "compression",
             "config-json5",
             "config-toml",
-            "isolation"
-          ]
-        },
-        {
-          "name": "aphrody-tauri-examples",
-          "path": "crates/tauri/aphrody-tauri-examples",
-          "description": "Tauri desktop application examples (CEF runtime)",
-          "bins": [],
-          "features": [
             "isolation"
           ]
         },
@@ -1221,27 +1183,6 @@
           "features": []
         },
         {
-          "name": "aphrody-tauri-plugin-barcode-scanner",
-          "path": "crates/tauri/aphrody-tauri-plugin-barcode-scanner",
-          "description": "Scan QR codes, EAN-13 and other kinds of barcodes on Android and iOS",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-tauri-plugin-biometric",
-          "path": "crates/tauri/aphrody-tauri-plugin-biometric",
-          "description": "Prompt the user for biometric authentication on Android and iOS.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-tauri-plugin-cli",
-          "path": "crates/tauri/aphrody-tauri-plugin-cli",
-          "description": "Parse arguments from your Tauri application's command line interface.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-tauri-plugin-clipboard-manager",
           "path": "crates/tauri/aphrody-tauri-plugin-clipboard-manager",
           "description": "Read and write to the system clipboard.",
@@ -1277,67 +1218,9 @@
           ]
         },
         {
-          "name": "aphrody-tauri-plugin-geolocation",
-          "path": "crates/tauri/aphrody-tauri-plugin-geolocation",
-          "description": "Get and track the device's current position",
-          "bins": [],
-          "features": [
-            "specta"
-          ]
-        },
-        {
           "name": "aphrody-tauri-plugin-global-shortcut",
           "path": "crates/tauri/aphrody-tauri-plugin-global-shortcut",
           "description": "Register global hotkeys listeners on your Tauri application.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-tauri-plugin-haptics",
-          "path": "crates/tauri/aphrody-tauri-plugin-haptics",
-          "description": "Haptic feedback and vibrations on Android and iOS",
-          "bins": [],
-          "features": [
-            "specta"
-          ]
-        },
-        {
-          "name": "aphrody-tauri-plugin-http",
-          "path": "crates/tauri/aphrody-tauri-plugin-http",
-          "description": "Access an HTTP client written in Rust.",
-          "bins": [],
-          "features": [
-            "blocking",
-            "brotli",
-            "charset",
-            "cookies",
-            "dangerous-settings",
-            "default",
-            "deflate",
-            "gzip",
-            "http2",
-            "json",
-            "multipart",
-            "native-tls",
-            "native-tls-alpn",
-            "native-tls-vendored",
-            "rustls-tls",
-            "rustls-tls-manual-roots",
-            "rustls-tls-native-roots",
-            "rustls-tls-webpki-roots",
-            "socks",
-            "stream",
-            "system-proxy",
-            "tracing",
-            "trust-dns",
-            "unsafe-headers",
-            "zstd"
-          ]
-        },
-        {
-          "name": "aphrody-tauri-plugin-localhost",
-          "path": "crates/tauri/aphrody-tauri-plugin-localhost",
-          "description": "Expose your apps assets through a localhost server instead of the default custom protocol.",
           "bins": [],
           "features": []
         },
@@ -1355,13 +1238,6 @@
           "name": "aphrody-tauri-plugin-mcp-bridge",
           "path": "crates/ui/tauri-plugin-mcp-bridge",
           "description": "MCP Bridge plugin for use with Tauri applications - enables IPC monitoring and backend inspection",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-tauri-plugin-nfc",
-          "path": "crates/tauri/aphrody-tauri-plugin-nfc",
-          "description": "Read and write NFC tags on Android and iOS.",
           "bins": [],
           "features": []
         },
@@ -1391,34 +1267,9 @@
           "features": []
         },
         {
-          "name": "aphrody-tauri-plugin-persisted-scope",
-          "path": "crates/tauri/aphrody-tauri-plugin-persisted-scope",
-          "description": "Save filesystem and asset scopes and restore them when the app is reopened.",
-          "bins": [],
-          "features": [
-            "protocol-asset"
-          ]
-        },
-        {
-          "name": "aphrody-tauri-plugin-positioner",
-          "path": "crates/tauri/aphrody-tauri-plugin-positioner",
-          "description": "Position your windows at well-known locations.",
-          "bins": [],
-          "features": [
-            "tray-icon"
-          ]
-        },
-        {
           "name": "aphrody-tauri-plugin-process",
           "path": "crates/tauri/aphrody-tauri-plugin-process",
           "description": "Access the current process of your Tauri application.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-tauri-plugin-shell",
-          "path": "crates/tauri/aphrody-tauri-plugin-shell",
-          "description": "Access the system shell. Allows you to spawn child processes.",
           "bins": [],
           "features": []
         },
@@ -1440,16 +1291,6 @@
           "features": []
         },
         {
-          "name": "aphrody-tauri-plugin-stronghold",
-          "path": "crates/tauri/aphrody-tauri-plugin-stronghold",
-          "description": "Store secrets and keys using the IOTA Stronghold secret management engine.",
-          "bins": [],
-          "features": [
-            "default",
-            "kdf"
-          ]
-        },
-        {
           "name": "aphrody-tauri-plugin-updater",
           "path": "crates/tauri/aphrody-tauri-plugin-updater",
           "description": "In-app updates for Tauri applications.",
@@ -1461,31 +1302,6 @@
             "rustls-tls",
             "system-proxy",
             "zip"
-          ]
-        },
-        {
-          "name": "aphrody-tauri-plugin-upload",
-          "path": "crates/tauri/aphrody-tauri-plugin-upload",
-          "description": "Upload files from disk to a remote server over HTTP.",
-          "bins": [],
-          "features": [
-            "default",
-            "native-tls",
-            "native-tls-vendored",
-            "rustls-tls"
-          ]
-        },
-        {
-          "name": "aphrody-tauri-plugin-websocket",
-          "path": "crates/tauri/aphrody-tauri-plugin-websocket",
-          "description": "Expose a WebSocket server to your Tauri frontend.",
-          "bins": [],
-          "features": [
-            "default",
-            "native-tls",
-            "native-tls-vendored",
-            "rustls-tls",
-            "rustls-tls-native-roots"
           ]
         },
         {
@@ -1523,13 +1339,6 @@
           "bins": [
             "tauri-schema-generator"
           ],
-          "features": []
-        },
-        {
-          "name": "aphrody-tauri-schema-worker",
-          "path": "crates/tauri/aphrody-tauri-schema-worker",
-          "description": "Aphrody platform crate aphrody-tauri-schema-worker.",
-          "bins": [],
           "features": []
         },
         {
@@ -2038,83 +1847,9 @@
           "bins": []
         },
         {
-          "name": "@aphrody/cli",
-          "path": "crates/tauri/aphrody-tauri-cli-node",
-          "description": "Command line interface for building Tauri apps",
-          "bins": [
-            "tauri"
-          ]
-        },
-        {
-          "name": "@aphrody/cli-darwin-arm64",
-          "path": "crates/tauri/aphrody-tauri-cli-node/npm/darwin-arm64",
-          "description": "Command line interface for building Tauri apps",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/cli-darwin-x64",
-          "path": "crates/tauri/aphrody-tauri-cli-node/npm/darwin-x64",
-          "description": "Command line interface for building Tauri apps",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/cli-linux-arm-gnueabihf",
-          "path": "crates/tauri/aphrody-tauri-cli-node/npm/linux-arm-gnueabihf",
-          "description": "Command line interface for building Tauri apps",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/cli-linux-arm64-gnu",
-          "path": "crates/tauri/aphrody-tauri-cli-node/npm/linux-arm64-gnu",
-          "description": "Command line interface for building Tauri apps",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/cli-linux-arm64-musl",
-          "path": "crates/tauri/aphrody-tauri-cli-node/npm/linux-arm64-musl",
-          "description": "Command line interface for building Tauri apps",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/cli-linux-riscv64-gnu",
-          "path": "crates/tauri/aphrody-tauri-cli-node/npm/linux-riscv64-gnu",
-          "description": "Command line interface for building Tauri apps",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/cli-linux-x64-gnu",
-          "path": "crates/tauri/aphrody-tauri-cli-node/npm/linux-x64-gnu",
-          "description": "Command line interface for building Tauri apps",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/cli-linux-x64-musl",
-          "path": "crates/tauri/aphrody-tauri-cli-node/npm/linux-x64-musl",
-          "description": "Command line interface for building Tauri apps",
-          "bins": []
-        },
-        {
           "name": "@aphrody/cli-wasm",
           "path": "packages/infra/cli-wasm",
           "description": "The pure aphrody commands (rag, toolcall, html, text) as WebAssembly for the browser, Bun and Node: the same code as `aphrody pure` of the native CLI.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/cli-win32-arm64-msvc",
-          "path": "crates/tauri/aphrody-tauri-cli-node/npm/win32-arm64-msvc",
-          "description": "Command line interface for building Tauri apps",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/cli-win32-ia32-msvc",
-          "path": "crates/tauri/aphrody-tauri-cli-node/npm/win32-ia32-msvc",
-          "description": "Command line interface for building Tauri apps",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/cli-win32-x64-msvc",
-          "path": "crates/tauri/aphrody-tauri-cli-node/npm/win32-x64-msvc",
-          "description": "Command line interface for building Tauri apps",
           "bins": []
         },
         {
@@ -2353,24 +2088,6 @@
           "bins": []
         },
         {
-          "name": "@aphrody/plugin-barcode-scanner",
-          "path": "crates/tauri/aphrody-tauri-plugin-barcode-scanner",
-          "description": "Scan QR codes, EAN-13 and other kinds of barcodes on Android and iOS",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/plugin-biometric",
-          "path": "crates/tauri/aphrody-tauri-plugin-biometric",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/plugin-cli",
-          "path": "crates/tauri/aphrody-tauri-plugin-cli",
-          "description": "",
-          "bins": []
-        },
-        {
           "name": "@aphrody/plugin-clipboard-manager",
           "path": "crates/tauri/aphrody-tauri-plugin-clipboard-manager",
           "description": "",
@@ -2395,26 +2112,8 @@
           "bins": []
         },
         {
-          "name": "@aphrody/plugin-geolocation",
-          "path": "crates/tauri/aphrody-tauri-plugin-geolocation",
-          "description": "",
-          "bins": []
-        },
-        {
           "name": "@aphrody/plugin-global-shortcut",
           "path": "crates/tauri/aphrody-tauri-plugin-global-shortcut",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/plugin-haptics",
-          "path": "crates/tauri/aphrody-tauri-plugin-haptics",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/plugin-http",
-          "path": "crates/tauri/aphrody-tauri-plugin-http",
           "description": "",
           "bins": []
         },
@@ -2422,12 +2121,6 @@
           "name": "@aphrody/plugin-log",
           "path": "crates/tauri/aphrody-tauri-plugin-log",
           "description": "Configurable logging for your Tauri app.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/plugin-nfc",
-          "path": "crates/tauri/aphrody-tauri-plugin-nfc",
-          "description": "",
           "bins": []
         },
         {
@@ -2449,27 +2142,9 @@
           "bins": []
         },
         {
-          "name": "@aphrody/plugin-positioner",
-          "path": "crates/tauri/aphrody-tauri-plugin-positioner",
-          "description": "Position your windows at well-known locations.",
-          "bins": []
-        },
-        {
           "name": "@aphrody/plugin-process",
           "path": "crates/tauri/aphrody-tauri-plugin-process",
           "description": "",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/plugin-shell",
-          "path": "crates/tauri/aphrody-tauri-plugin-shell",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/plugin-sql",
-          "path": "crates/tauri/aphrody-tauri-plugin-sql",
-          "description": "Interface with SQL databases",
           "bins": []
         },
         {
@@ -2479,26 +2154,8 @@
           "bins": []
         },
         {
-          "name": "@aphrody/plugin-stronghold",
-          "path": "crates/tauri/aphrody-tauri-plugin-stronghold",
-          "description": "Store secrets and keys using the IOTA Stronghold encrypted database.",
-          "bins": []
-        },
-        {
           "name": "@aphrody/plugin-updater",
           "path": "crates/tauri/aphrody-tauri-plugin-updater",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/plugin-upload",
-          "path": "crates/tauri/aphrody-tauri-plugin-upload",
-          "description": "Upload files from disk to a remote server over HTTP.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/plugin-websocket",
-          "path": "crates/tauri/aphrody-tauri-plugin-websocket",
           "description": "",
           "bins": []
         },
@@ -2670,74 +2327,6 @@
           "bins": []
         },
         {
-          "name": "create-tauri-app",
-          "path": "crates/tauri/aphrody-create-tauri-app-node",
-          "description": "Rapidly scaffold out a new tauri app project.",
-          "bins": [
-            "create-tauri-app"
-          ]
-        },
-        {
-          "name": "create-tauri-app-darwin-arm64",
-          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/darwin-arm64",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "create-tauri-app-darwin-x64",
-          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/darwin-x64",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "create-tauri-app-linux-arm-gnueabihf",
-          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/linux-arm-gnueabihf",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "create-tauri-app-linux-arm64-gnu",
-          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/linux-arm64-gnu",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "create-tauri-app-linux-arm64-musl",
-          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/linux-arm64-musl",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "create-tauri-app-linux-x64-gnu",
-          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/linux-x64-gnu",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "create-tauri-app-linux-x64-musl",
-          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/linux-x64-musl",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "create-tauri-app-win32-arm64-msvc",
-          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/win32-arm64-msvc",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "create-tauri-app-win32-ia32-msvc",
-          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/win32-ia32-msvc",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "create-tauri-app-win32-x64-msvc",
-          "path": "crates/tauri/aphrody-create-tauri-app-node/npm/win32-x64-msvc",
-          "description": "",
-          "bins": []
-        },
-        {
           "name": "tauri-app",
           "path": "crates/tauri/aphrody-tauri-cli/templates/plugin/__example-api/tauri-app",
           "description": "",
@@ -2746,12 +2335,6 @@
         {
           "name": "tauri-plugin-{{ plugin_name }}-api",
           "path": "crates/tauri/aphrody-tauri-cli/templates/plugin",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "tauri-schema-worker",
-          "path": "crates/tauri/aphrody-tauri-schema-worker",
           "description": "",
           "bins": []
         }
@@ -4030,6 +3613,142 @@
             {
               "name": "import-codex",
               "about": "Import and layer configuration from ~/.codex/config.toml.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "codex",
+          "about": "Codex agent execution, app-server protocol v2, MCP, plugins and session rollouts.",
+          "aliases": [],
+          "cfg": [
+            "not(target_arch = \"wasm32\")"
+          ],
+          "children": [
+            {
+              "name": "exec",
+              "about": "Run Codex non-interactively.",
+              "aliases": [
+                "e"
+              ],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "app-server",
+              "about": "Run the local app-server daemon (stdio JSON-RPC v2 or loopback HTTP).",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "review",
+              "about": "Run a code review non-interactively on the current repository or diff.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "resume",
+              "about": "Resume a previous session by id or --last.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "fork",
+              "about": "Fork a previous session by id or --last.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "apply",
+              "about": "Apply the latest diff produced by the agent to the local working tree.",
+              "aliases": [
+                "a"
+              ],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "mcp",
+              "about": "Manage external Model Context Protocol (MCP) servers.",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "list",
+                  "about": "List configured MCP servers.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "get",
+                  "about": "Get details for a configured MCP server.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "add",
+                  "about": "Add an external MCP server to config.toml.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "remove",
+                  "about": "Remove an external MCP server from config.toml.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "plugin",
+              "about": "Manage Codex plugins and configured marketplaces.",
+              "aliases": [],
+              "cfg": [],
+              "children": [
+                {
+                  "name": "list",
+                  "about": "List plugins available and installed from configured marketplaces.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "marketplace",
+                  "about": "Manage configured plugin marketplaces.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": [
+                    {
+                      "name": "list",
+                      "about": "List configured plugin marketplaces.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "doctor",
+              "about": "Diagnose local installation, elevation status, config, auth and runtime health.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "features",
+              "about": "Inspect or toggle feature flags.",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -5845,7 +5564,7 @@
         },
         {
           "name": "reclaim",
-          "about": "Reclaim allowlisted disk/tmpfs space on a target (tools/config/disk-reclaim.json).",
+          "about": "Reclaim allowlisted disk/tmpfs space on a target; root-level steps run through sudo -n (tools/config/disk-reclaim.json).",
           "aliases": [],
           "cfg": [],
           "children": []
@@ -6130,6 +5849,142 @@
                 {
                   "name": "import-codex",
                   "about": "Import and layer configuration from ~/.codex/config.toml.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "codex",
+              "about": "Codex agent execution, app-server protocol v2, MCP, plugins and session rollouts.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "exec",
+                  "about": "Run Codex non-interactively.",
+                  "aliases": [
+                    "e"
+                  ],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "app-server",
+                  "about": "Run the local app-server daemon (stdio JSON-RPC v2 or loopback HTTP).",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "review",
+                  "about": "Run a code review non-interactively on the current repository or diff.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "resume",
+                  "about": "Resume a previous session by id or --last.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "fork",
+                  "about": "Fork a previous session by id or --last.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "apply",
+                  "about": "Apply the latest diff produced by the agent to the local working tree.",
+                  "aliases": [
+                    "a"
+                  ],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "mcp",
+                  "about": "Manage external Model Context Protocol (MCP) servers.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": [
+                    {
+                      "name": "list",
+                      "about": "List configured MCP servers.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "get",
+                      "about": "Get details for a configured MCP server.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "add",
+                      "about": "Add an external MCP server to config.toml.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "remove",
+                      "about": "Remove an external MCP server from config.toml.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "name": "plugin",
+                  "about": "Manage Codex plugins and configured marketplaces.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": [
+                    {
+                      "name": "list",
+                      "about": "List plugins available and installed from configured marketplaces.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": []
+                    },
+                    {
+                      "name": "marketplace",
+                      "about": "Manage configured plugin marketplaces.",
+                      "aliases": [],
+                      "cfg": [],
+                      "children": [
+                        {
+                          "name": "list",
+                          "about": "List configured plugin marketplaces.",
+                          "aliases": [],
+                          "cfg": [],
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "doctor",
+                  "about": "Diagnose local installation, elevation status, config, auth and runtime health.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "features",
+                  "about": "Inspect or toggle feature flags.",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -12133,11 +11988,6 @@
       "repo": "aphrody"
     },
     {
-      "binary": "restart",
-      "crate": "aphrody-restart",
-      "repo": "aphrody"
-    },
-    {
       "binary": "serde-saphyr",
       "crate": "serde-saphyr",
       "repo": "aphrody"
@@ -14290,12 +14140,12 @@
     "aphrodyRepos": 2,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 282,
-    "binaries": 38,
-    "bunPackages": 157,
+    "crates": 263,
+    "binaries": 37,
+    "bunPackages": 120,
     "pythonPackages": 10,
     "cliBinaries": 35,
-    "cliCommands": 1106,
+    "cliCommands": 1142,
     "mcpServers": 20,
     "mcpTools": 390,
     "mcpUniqueToolNames": 388

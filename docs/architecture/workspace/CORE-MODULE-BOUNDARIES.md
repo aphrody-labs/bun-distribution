@@ -51,15 +51,15 @@ amélioration du compilateur n’est déduite de cet arbitrage.
 
 ## Arbitrage par ensemble
 
-| Ensemble constaté | Destination retenue | Limite publique |
-| :-- | :-- | :-- |
-| `yolo-core`, `yolo-runtime` : 2 crates propres | Cœur natif minimal partagé | Primitives communes et ABI C versionnée ; `runtime:system` et `runtime:process` |
-| `yolo-desktop` : fusionné dans `aphrody-app` (`crates/ui/app`) | Hôte desktop optionnel : `aphrody-app --host-info` / `--runtime-host` (protocole `yolo.desktop/1`) | `runtime:desktop`, avec supervision et boucle UI native |
-| `yolo-pyo3` : 1 crate propre | Adaptateur Python optionnel du même cœur | `_yolo_native` ; l’IA/ML reste dans Aphrody Python |
-| Tauri/Wry/Tao et outillage : 54 imports, dont 30 plugins Tauri | Fournisseur desktop et ses outils de fabrication | Sélection de plugins par application et permissions Tauri ; aucune API Bun par crate |
-| Next/Turbo/Turbopack | Retiré le 2026-10-05 : aucun consommateur, `next` vient de npm | Historique Git |
-| Obscura et son V8, dans `crates/web/obscura` | Fournisseur navigateur optionnel | `runtime:browser` ; conserver le graphe de build du moteur |
-| [Fork Bun `aphrody-labs/bun`](../../reference/upstream-bun/APHRODY-FORK.md) | Hôte JavaScript et APIs natives existantes | Commit dans le fork seulement pour un besoin d’intégration VM ou un gain mesuré |
+| Ensemble constaté                                                           | Destination retenue                                                                                | Limite publique                                                                      |
+| :-------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------- |
+| `yolo-core`, `yolo-runtime` : 2 crates propres                              | Cœur natif minimal partagé                                                                         | Primitives communes et ABI C versionnée ; `runtime:system` et `runtime:process`      |
+| `yolo-desktop` : fusionné dans `aphrody-app` (`crates/ui/app`)              | Hôte desktop optionnel : `aphrody-app --host-info` / `--runtime-host` (protocole `yolo.desktop/1`) | `runtime:desktop`, avec supervision et boucle UI native                              |
+| `yolo-pyo3` : 1 crate propre                                                | Adaptateur Python optionnel du même cœur                                                           | `_yolo_native` ; l’IA/ML reste dans Aphrody Python                                   |
+| Tauri/Wry/Tao et outillage : 54 imports, dont 30 plugins Tauri              | Fournisseur desktop et ses outils de fabrication                                                   | Sélection de plugins par application et permissions Tauri ; aucune API Bun par crate |
+| Next/Turbo/Turbopack                                                        | Retiré le 2026-10-05 : aucun consommateur, `next` vient de npm                                     | Historique Git                                                                       |
+| Obscura et son V8, dans `crates/web/obscura`                                | Fournisseur navigateur optionnel                                                                   | `runtime:browser` ; conserver le graphe de build du moteur                           |
+| [Fork Bun `aphrody-labs/bun`](../../reference/upstream-bun/APHRODY-FORK.md) | Hôte JavaScript et APIs natives existantes                                                         | Commit dans le fork seulement pour un besoin d’intégration VM ou un gain mesuré      |
 
 Les quatre modules `runtime:*` figurent déjà dans le
 [preload](../../../packages/engine/runtime/src/preload.ts). Desktop et browser ont du code en
@@ -95,12 +95,10 @@ L’intégration dans Bun doit respecter la boucle UI principale et ses règles 
 La source générique et les artefacts moteur appartiennent à Yolo ; les fenêtres,
 workflows, capacités accordées et l’UI canonique appartiennent à Aphrody.
 
-Les 30 `tauri-plugin-*` restent des extensions Tauri. En particulier,
-`fs/http/shell/process/os` servent les appels WebView soumis aux permissions
-Tauri ; les opérations serveur utilisent Bun et les services Yolo existants.
-Les transformer chacun en module Bun ajouterait des dépendances GUI aux usages
-serveur. Le [plugin HTTP](../../../crates/tauri/aphrody-tauri-plugin-http/Cargo.toml) dépend
-effectivement de Tauri, du plugin FS et de reqwest.
+Seuls les 15 `tauri-plugin-*` enregistrés par l’app desktop unique (`crates/ui/app`) sont importés
+(décision du 2026-10-09) ; les plugins mobiles et inutilisés (http, shell, sql, stronghold, nfc…) sont
+supprimés. `fs/process/os` servent les appels WebView soumis aux permissions Tauri ; HTTP, shell et
+SQL côté serveur passent par Bun et les services Yolo existants.
 
 `tauri-build`, macros, codegen, bundler, CLI, signature, générateurs de schémas et
 create-tauri-app sont des outils de production des artefacts. `acl-tests`,
@@ -116,13 +114,13 @@ consommait ; `next` vient de npm et la compilation passe par `Bun.build`.
 
 ## Employer le bon mécanisme Bun
 
-| Besoin | Mécanisme retenu | Preuve ou condition |
-| :-- | :-- | :-- |
-| Imports `runtime:*` à l’exécution | `Bun.plugin()` et modules virtuels | [Preload existant](../../../packages/engine/runtime/src/preload.ts) |
-| Résolution de ces imports au build | Plugin `Bun.build` | [Adaptateur existant](../../../packages/engine/runtime/src/bundler.ts) ; l’artefact natif reste à distribuer |
-| Transformations natives du code source | Addon N-API `onBeforeParse`, si le besoin correspond | [Contrat Bun épinglé](../../reference/upstream-bun/bundler/plugins.mdx) ; respecter les threads de parsing |
-| Service natif partagé Rust/Bun/Python | C ABI versionnée, `bun:ffi` côté Bun | [Contrat Yolo](../runtime-native/RUNTIME-ABI.md), ownership et arrêt explicites |
-| Accès interne à la VM | Patch du fork Bun, build et tests propres | Registre des builtins |
+| Besoin                                 | Mécanisme retenu                                     | Preuve ou condition                                                                                          |
+| :------------------------------------- | :--------------------------------------------------- | :----------------------------------------------------------------------------------------------------------- |
+| Imports `runtime:*` à l’exécution      | `Bun.plugin()` et modules virtuels                   | [Preload existant](../../../packages/engine/runtime/src/preload.ts)                                          |
+| Résolution de ces imports au build     | Plugin `Bun.build`                                   | [Adaptateur existant](../../../packages/engine/runtime/src/bundler.ts) ; l’artefact natif reste à distribuer |
+| Transformations natives du code source | Addon N-API `onBeforeParse`, si le besoin correspond | [Contrat Bun épinglé](../../reference/upstream-bun/bundler/plugins.mdx) ; respecter les threads de parsing   |
+| Service natif partagé Rust/Bun/Python  | C ABI versionnée, `bun:ffi` côté Bun                 | [Contrat Yolo](../runtime-native/RUNTIME-ABI.md), ownership et arrêt explicites                              |
+| Accès interne à la VM                  | Patch du fork Bun, build et tests propres            | Registre des builtins                                                                                        |
 
 `Bun.plugin()` ne commute pas JSC vers V8 et ne remplace pas globalement
 `Bun.file`. Obscura possède son propre backend V8 ; R5/R6 qualifient désormais
@@ -133,13 +131,13 @@ Les déclarations `bun-types/tauri.d.ts` ne prouvent pas un builtin Tauri exécu
 
 ## Autres fournisseurs et propriétaires
 
-| Ensemble | Décision |
-| :-- | :-- |
-| VFS / IEVR | Contrat générique de montage, handles, buffers et permissions dans Yolo ; fournisseur IEVR chez son propriétaire IECODE. Réutiliser le trait VFS d’Aphrody avant d’en inventer un. `runtime:vfs` est une surface proposée, absente du preload. |
-| WebGPU / rendu | Fournisseur optionnel ; contrats partagés seulement si nécessaires aux consommateurs. Aphrody garde le rendu produit. `runtime:gpu` n’est ni exposé ni qualifié aujourd’hui. |
-| IA, RAG, entraînement | Aphrody et Aphrody Python conservent les comportements produit, modèles et données ; les transports génériques peuvent être partagés. Le PyO3 Yolo actuel expose du calcul générique, pas un moteur ML. |
-| `plugins/` et `packages/plugins` (not in repo) | Marketplace et génération de plugins agents ; distincts des modules et addons Bun. |
-| `design/aphrody-m3` | Sources et ressources de design ; UI canonique dans Aphrody. Aucun rôle dans le cœur natif. |
+| Ensemble                                       | Décision                                                                                                                                                                                                                                       |
+| :--------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| VFS / IEVR                                     | Contrat générique de montage, handles, buffers et permissions dans Yolo ; fournisseur IEVR chez son propriétaire IECODE. Réutiliser le trait VFS d’Aphrody avant d’en inventer un. `runtime:vfs` est une surface proposée, absente du preload. |
+| WebGPU / rendu                                 | Fournisseur optionnel ; contrats partagés seulement si nécessaires aux consommateurs. Aphrody garde le rendu produit. `runtime:gpu` n’est ni exposé ni qualifié aujourd’hui.                                                                   |
+| IA, RAG, entraînement                          | Aphrody et Aphrody Python conservent les comportements produit, modèles et données ; les transports génériques peuvent être partagés. Le PyO3 Yolo actuel expose du calcul générique, pas un moteur ML.                                        |
+| `plugins/` et `packages/plugins` (not in repo) | Marketplace et génération de plugins agents ; distincts des modules et addons Bun.                                                                                                                                                             |
+| `design/aphrody-m3`                            | Sources et ressources de design ; UI canonique dans Aphrody. Aucun rôle dans le cœur natif.                                                                                                                                                    |
 
 ## Déduplication Yolo / Aphrody
 

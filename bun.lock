@@ -33,27 +33,6 @@
         "@aphrody/api": "workspace:*",
       },
     },
-    "crates/tauri/aphrody-tauri-plugin-barcode-scanner": {
-      "name": "@aphrody/plugin-barcode-scanner",
-      "version": "3.0.0-alpha.3",
-      "dependencies": {
-        "@aphrody/api": "workspace:*",
-      },
-    },
-    "crates/tauri/aphrody-tauri-plugin-biometric": {
-      "name": "@aphrody/plugin-biometric",
-      "version": "3.0.0-alpha.3",
-      "dependencies": {
-        "@aphrody/api": "workspace:*",
-      },
-    },
-    "crates/tauri/aphrody-tauri-plugin-cli": {
-      "name": "@aphrody/plugin-cli",
-      "version": "3.0.0-alpha.3",
-      "dependencies": {
-        "@aphrody/api": "workspace:*",
-      },
-    },
     "crates/tauri/aphrody-tauri-plugin-clipboard-manager": {
       "name": "@aphrody/plugin-clipboard-manager",
       "version": "3.0.0-alpha.3",
@@ -82,13 +61,6 @@
         "@aphrody/api": "workspace:*",
       },
     },
-    "crates/tauri/aphrody-tauri-plugin-geolocation": {
-      "name": "@aphrody/plugin-geolocation",
-      "version": "3.0.0-alpha.3",
-      "dependencies": {
-        "@aphrody/api": "workspace:*",
-      },
-    },
     "crates/tauri/aphrody-tauri-plugin-global-shortcut": {
       "name": "@aphrody/plugin-global-shortcut",
       "version": "3.0.0-alpha.3",
@@ -96,29 +68,8 @@
         "@aphrody/api": "workspace:*",
       },
     },
-    "crates/tauri/aphrody-tauri-plugin-haptics": {
-      "name": "@aphrody/plugin-haptics",
-      "version": "3.0.0-alpha.3",
-      "dependencies": {
-        "@aphrody/api": "workspace:*",
-      },
-    },
-    "crates/tauri/aphrody-tauri-plugin-http": {
-      "name": "@aphrody/plugin-http",
-      "version": "3.0.0-alpha.3",
-      "dependencies": {
-        "@aphrody/api": "workspace:*",
-      },
-    },
     "crates/tauri/aphrody-tauri-plugin-log": {
       "name": "@aphrody/plugin-log",
-      "version": "3.0.0-alpha.3",
-      "dependencies": {
-        "@aphrody/api": "workspace:*",
-      },
-    },
-    "crates/tauri/aphrody-tauri-plugin-nfc": {
-      "name": "@aphrody/plugin-nfc",
       "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
@@ -145,29 +96,8 @@
         "@aphrody/api": "workspace:*",
       },
     },
-    "crates/tauri/aphrody-tauri-plugin-positioner": {
-      "name": "@aphrody/plugin-positioner",
-      "version": "3.0.0-alpha.3",
-      "dependencies": {
-        "@aphrody/api": "workspace:*",
-      },
-    },
     "crates/tauri/aphrody-tauri-plugin-process": {
       "name": "@aphrody/plugin-process",
-      "version": "3.0.0-alpha.3",
-      "dependencies": {
-        "@aphrody/api": "workspace:*",
-      },
-    },
-    "crates/tauri/aphrody-tauri-plugin-shell": {
-      "name": "@aphrody/plugin-shell",
-      "version": "3.0.0-alpha.3",
-      "dependencies": {
-        "@aphrody/api": "workspace:*",
-      },
-    },
-    "crates/tauri/aphrody-tauri-plugin-sql": {
-      "name": "@aphrody/plugin-sql",
       "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
@@ -180,29 +110,8 @@
         "@aphrody/api": "workspace:*",
       },
     },
-    "crates/tauri/aphrody-tauri-plugin-stronghold": {
-      "name": "@aphrody/plugin-stronghold",
-      "version": "3.0.0-alpha.3",
-      "dependencies": {
-        "@aphrody/api": "workspace:*",
-      },
-    },
     "crates/tauri/aphrody-tauri-plugin-updater": {
       "name": "@aphrody/plugin-updater",
-      "version": "3.0.0-alpha.3",
-      "dependencies": {
-        "@aphrody/api": "workspace:*",
-      },
-    },
-    "crates/tauri/aphrody-tauri-plugin-upload": {
-      "name": "@aphrody/plugin-upload",
-      "version": "3.0.0-alpha.3",
-      "dependencies": {
-        "@aphrody/api": "workspace:*",
-      },
-    },
-    "crates/tauri/aphrody-tauri-plugin-websocket": {
-      "name": "@aphrody/plugin-websocket",
       "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
@@ -213,24 +122,6 @@
       "version": "3.0.0-alpha.3",
       "dependencies": {
         "@aphrody/api": "workspace:*",
-      },
-    },
-    "m3/apps/example": {
-      "name": "@aphrody/m3-example",
-      "version": "0.1.0",
-      "dependencies": {
-        "@aphrody/m3": "workspace:*",
-        "@aphrody/m3-react": "workspace:*",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-        "react-server-dom-parcel": "catalog:",
-      },
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-        "@types/bun": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "m3/packages/app-ui": {
@@ -640,49 +531,6 @@
       },
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
-      },
-    },
-    "m3/packages/m3-next/examples/app": {
-      "name": "@aphrody/m3-next-example",
-      "version": "3.3.6",
-      "dependencies": {
-        "@aphrody/m3-baseui": "workspace:*",
-        "@aphrody/m3-next": "workspace:*",
-        "@aphrody/m3-tailwind": "workspace:*",
-        "@aphrody/m3-tokens": "workspace:*",
-        "next": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-      },
-      "devDependencies": {
-        "@tailwindcss/postcss": "catalog:",
-        "@types/bun": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "babel-plugin-react-compiler": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-      },
-    },
-    "m3/packages/m3-next/examples/tauri": {
-      "name": "@aphrody/m3-next-tauri-example",
-      "version": "3.3.6",
-      "dependencies": {
-        "@aphrody/m3-baseui": "workspace:*",
-        "@aphrody/m3-next": "workspace:*",
-        "@aphrody/m3-tailwind": "workspace:*",
-        "@aphrody/m3-tokens": "workspace:*",
-        "next": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-      },
-      "devDependencies": {
-        "@tailwindcss/postcss": "catalog:",
-        "@types/bun": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "m3/packages/m3-os-themes": {
@@ -1344,8 +1192,6 @@
 
     "@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@5.0.53", "", { "dependencies": { "@ai-sdk/provider": "4.0.21", "@standard-schema/spec": "^1.1.0", "@workflow/serde": "4.1.0", "eventsource-parser": "^3.0.8", "undici": "^7.29.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-VVe6UDd0y0/B4TfauuKKzcppqvhTmSluwwUVT4WG2/8h7gFbyFm7PM4UGM+ZXe3/RI6bv+Vl1cw/7aiBoQqdxg=="],
 
-    "@alloc/quick-lru": ["@alloc/quick-lru@5.3.0", "", {}, "sha512-U4+70Pc5ZS9osnCBCE5Jha/ciHM+Yp+CNMNC/7HvYbNRk1Ldd+f7qO65W5qfhu/TCv+/ozljlXXe9Nj8419DMA=="],
-
     "@aphrody/a2a": ["@aphrody/a2a@workspace:packages/os/a2a"],
 
     "@aphrody/agent-browser": ["@aphrody/agent-browser@workspace:packages/web/agent-browser"],
@@ -1398,8 +1244,6 @@
 
     "@aphrody/m3-design": ["@aphrody/m3-design@workspace:m3/packages/m3-design"],
 
-    "@aphrody/m3-example": ["@aphrody/m3-example@workspace:m3/apps/example"],
-
     "@aphrody/m3-explorer": ["@aphrody/m3-explorer@workspace:m3/packages/m3-explorer"],
 
     "@aphrody/m3-fonts": ["@aphrody/m3-fonts@workspace:m3/packages/m3-fonts"],
@@ -1416,11 +1260,7 @@
 
     "@aphrody/m3-next": ["@aphrody/m3-next@workspace:m3/packages/m3-next"],
 
-    "@aphrody/m3-next-example": ["@aphrody/m3-next-example@workspace:m3/packages/m3-next/examples/app"],
-
     "@aphrody/m3-next-migrate": ["@aphrody/m3-next-migrate@workspace:m3/packages/m3-next-migrate"],
-
-    "@aphrody/m3-next-tauri-example": ["@aphrody/m3-next-tauri-example@workspace:m3/packages/m3-next/examples/tauri"],
 
     "@aphrody/m3-os-themes": ["@aphrody/m3-os-themes@workspace:m3/packages/m3-os-themes"],
 
@@ -1452,12 +1292,6 @@
 
     "@aphrody/plugin-autostart": ["@aphrody/plugin-autostart@workspace:crates/tauri/aphrody-tauri-plugin-autostart"],
 
-    "@aphrody/plugin-barcode-scanner": ["@aphrody/plugin-barcode-scanner@workspace:crates/tauri/aphrody-tauri-plugin-barcode-scanner"],
-
-    "@aphrody/plugin-biometric": ["@aphrody/plugin-biometric@workspace:crates/tauri/aphrody-tauri-plugin-biometric"],
-
-    "@aphrody/plugin-cli": ["@aphrody/plugin-cli@workspace:crates/tauri/aphrody-tauri-plugin-cli"],
-
     "@aphrody/plugin-clipboard-manager": ["@aphrody/plugin-clipboard-manager@workspace:crates/tauri/aphrody-tauri-plugin-clipboard-manager"],
 
     "@aphrody/plugin-deep-link": ["@aphrody/plugin-deep-link@workspace:crates/tauri/aphrody-tauri-plugin-deep-link"],
@@ -1466,17 +1300,9 @@
 
     "@aphrody/plugin-fs": ["@aphrody/plugin-fs@workspace:crates/tauri/aphrody-tauri-plugin-fs"],
 
-    "@aphrody/plugin-geolocation": ["@aphrody/plugin-geolocation@workspace:crates/tauri/aphrody-tauri-plugin-geolocation"],
-
     "@aphrody/plugin-global-shortcut": ["@aphrody/plugin-global-shortcut@workspace:crates/tauri/aphrody-tauri-plugin-global-shortcut"],
 
-    "@aphrody/plugin-haptics": ["@aphrody/plugin-haptics@workspace:crates/tauri/aphrody-tauri-plugin-haptics"],
-
-    "@aphrody/plugin-http": ["@aphrody/plugin-http@workspace:crates/tauri/aphrody-tauri-plugin-http"],
-
     "@aphrody/plugin-log": ["@aphrody/plugin-log@workspace:crates/tauri/aphrody-tauri-plugin-log"],
-
-    "@aphrody/plugin-nfc": ["@aphrody/plugin-nfc@workspace:crates/tauri/aphrody-tauri-plugin-nfc"],
 
     "@aphrody/plugin-notification": ["@aphrody/plugin-notification@workspace:crates/tauri/aphrody-tauri-plugin-notification"],
 
@@ -1484,23 +1310,11 @@
 
     "@aphrody/plugin-os": ["@aphrody/plugin-os@workspace:crates/tauri/aphrody-tauri-plugin-os"],
 
-    "@aphrody/plugin-positioner": ["@aphrody/plugin-positioner@workspace:crates/tauri/aphrody-tauri-plugin-positioner"],
-
     "@aphrody/plugin-process": ["@aphrody/plugin-process@workspace:crates/tauri/aphrody-tauri-plugin-process"],
-
-    "@aphrody/plugin-shell": ["@aphrody/plugin-shell@workspace:crates/tauri/aphrody-tauri-plugin-shell"],
-
-    "@aphrody/plugin-sql": ["@aphrody/plugin-sql@workspace:crates/tauri/aphrody-tauri-plugin-sql"],
 
     "@aphrody/plugin-store": ["@aphrody/plugin-store@workspace:crates/tauri/aphrody-tauri-plugin-store"],
 
-    "@aphrody/plugin-stronghold": ["@aphrody/plugin-stronghold@workspace:crates/tauri/aphrody-tauri-plugin-stronghold"],
-
     "@aphrody/plugin-updater": ["@aphrody/plugin-updater@workspace:crates/tauri/aphrody-tauri-plugin-updater"],
-
-    "@aphrody/plugin-upload": ["@aphrody/plugin-upload@workspace:crates/tauri/aphrody-tauri-plugin-upload"],
-
-    "@aphrody/plugin-websocket": ["@aphrody/plugin-websocket@workspace:crates/tauri/aphrody-tauri-plugin-websocket"],
 
     "@aphrody/plugin-window-state": ["@aphrody/plugin-window-state@workspace:crates/tauri/aphrody-tauri-plugin-window-state"],
 
@@ -2046,8 +1860,6 @@
 
     "@tailwindcss/oxide-win32-x64-msvc": ["@tailwindcss/oxide-win32-x64-msvc@4.3.3", "", { "os": "win32", "cpu": "x64" }, "sha512-yJ0pwIVc/nYeGoV02WtsN8KYyLQv7kyI2wDnkezyJlGGjkd4QLwDGAwl47YpPJeuI0M0ObaXGSPjvWDPeTPggw=="],
 
-    "@tailwindcss/postcss": ["@tailwindcss/postcss@4.3.3", "", { "dependencies": { "@alloc/quick-lru": "^5.2.0", "@tailwindcss/node": "4.3.3", "@tailwindcss/oxide": "4.3.3", "postcss": "^8.5.16", "tailwindcss": "4.3.3" } }, "sha512-JTSZZGQi1AyKirbLN3azmjVzef92tcX7h+iSqPdaeStyFpGpDlKvvpxeOE8njhbUanbRwr3z8DyzhICWnMtQeg=="],
-
     "@tanstack/query-core": ["@tanstack/query-core@5.104.0", "", {}, "sha512-JrC2r/JQlXt7khBSdUpsgxNvybzOg+aITa+ARRMlP2AFo93Y8vIqz077rp+e61mJetSZ0T6AJbwW1JHer1vrPQ=="],
 
     "@tanstack/react-query": ["@tanstack/react-query@5.104.0", "", { "dependencies": { "@tanstack/query-core": "5.104.0" }, "peerDependencies": { "react": "^18 || ^19" } }, "sha512-e1TZmDCQnWIfiDVryIHeA6Idj+Lfx1hORLOhXS/l5wcgvtVD4yYqbTDl378sGQKIi2cSgb0TEMC9cKK8GGoJEw=="],
@@ -2329,8 +2141,6 @@
     "aria-query": ["aria-query@5.3.0", "", { "dependencies": { "dequal": "^2.0.3" } }, "sha512-b0P0sZPKtyu8HkeRAfCq0IfURZK+SuwMjY1UXGBU27wpAiTwQAIlq56IbIO+ytk/JjS1fMR14ee5WBBfKi5J6A=="],
 
     "ast-types": ["ast-types@0.16.3", "", { "dependencies": { "tslib": "^2.0.1" } }, "sha512-FvWoWYfSCM6kRxCSH+MGLHIKKGRL6A6AW7Zek2O32REPQRdg131428uRTKMBYAeRd3XXAaHDS60Wpri7CdKDrA=="],
-
-    "babel-plugin-react-compiler": ["babel-plugin-react-compiler@1.0.0", "", { "dependencies": { "@babel/types": "^7.26.0" } }, "sha512-Ixm8tFfoKKIPYdCCKYTsqv+Fd4IJ0DQqMyEimo+pxUOMUR9cVPlwTrFt9Avu+3cb6Zp3mAzl+t1MrG2fxxKsxw=="],
 
     "bail": ["bail@2.0.2", "", {}, "sha512-0xO6mYd7JB2YesxDKplafRpsiOzPt9V02ddPCLbY1xYGPOX24NTyN50qnUxgCPcSoYMhKpAuBTjQoRZCAkUDRw=="],
 

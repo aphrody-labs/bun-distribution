@@ -6,7 +6,6 @@ exclude = [
   "crates/contracts/schema",
   "crates/os/kernel/comps/drive",
   "crates/tauri/aphrody-tauri-api",
-  "crates/tauri/aphrody-tauri-plugin-sql",
 ]
 
 [workspace.package]

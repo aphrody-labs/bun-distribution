@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 282 crates, 38 binaries, 157 Bun packages, 10 uv packages, 1106 CLI commands, 390 MCP tools.
+Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 263 crates, 37 binaries, 120 Bun packages, 10 uv packages, 1142 CLI commands, 390 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -18,7 +18,7 @@ Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 282 crates, 38 bina
 
 Canonical Rust/Bun monorepo
 
-### Crates (209)
+### Crates (190)
 
 | Crate | Path | Description | Binaries | Features |
 | --- | --- | --- | --- | --- |
@@ -52,7 +52,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-config` | crates/ai/config | Codex-compatible config.toml model for aphrody: ConfigToml, model providers (managed llama-server, Ollama, LM Studio, vLLM, Antigravity, OpenAI, Anthropic, ChatGPT), layered merge (built-ins < Codex-compat < user < project < profile < -c overrides < CLI flags), dotted -c override parsing, and the No-Human-In-The-Loop policy defaults. Pure, no filesystem access in the core, wasm32-safe. |  |  |
 | `aphrody-context` | crates/ai/context | LLM context-window manager — in-process token estimation (heuristic, BPE-shaped lexical, exact tokenizer.json), sliding-window trim with pinned-message preservation, summarization triggers, and JSON snapshot/restore. |  | default, tokenizers |
 | `aphrody-create-tauri-app` | crates/tauri/aphrody-create-tauri-app | Rapidly scaffold out a new tauri app project. |  |  |
-| `aphrody-create-tauri-app-node` | crates/tauri/aphrody-create-tauri-app-node | Aphrody platform crate aphrody-create-tauri-app-node. |  |  |
 | `aphrody-cron` | crates/os/kernel/comps/cron | Lightweight async cron / interval / daily-time scheduler with pluggable JSON-backed job store for aphrody background tasks. |  |  |
 | `aphrody-diagnostics` | crates/os/kernel/comps/diagnostics | Doctor, OS/infra status, resolved config and AI environment shared by the CLI and the desktop app. |  |  |
 | `aphrody-diffusion` | crates/ml/diffusion | Safe Rust bindings for stable-diffusion.cpp with runtime dynamic loading. |  |  |
@@ -116,7 +115,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-re` | crates/os/kernel/comps/re | Reverse engineering primitives for aphrody — PE/ELF/Mach-O triage, sections + entropy + hash, ASCII/UTF-16 strings extraction. Pure Rust, no C bindings, no GPL. |  | leveldb, magika, yara |
 | `aphrody-remote-desktop` | crates/infra/remote-desktop | Cross-platform remote-desktop server (JPEG over WebSocket, embedded browser viewer) for `aphrody infra remote serve`. |  | default, vnc, vnc-client, vnc-server |
 | `aphrody-render` | crates/ui/render | Unified Aphrody native renderer contract: M3 layout, 2D GPU backends and CPU fallback. |  | all-gpu, cpu, default, dx12, gpu, metal, parallel, vulkan, webgl, webgpu |
-| `aphrody-restart` | crates/tauri/aphrody-restart | Aphrody platform crate aphrody-restart. | `restart` | process-relaunch-dangerous-allow-symlink-macos |
 | `aphrody-rollout` | crates/ai/rollout | Resilient agent-session recorder: appends timestamped JSONL items to ~/.aphrody/sessions/rollout-*.jsonl through an async actor (mpsc + background writer task with Flush/Persist/Shutdown), and resumes a prior session by replaying its JSONL. Inspired by OpenAI Codex rollout (Apache-2.0). |  |  |
 | `aphrody-router` | crates/ai/router | Provider-whitelisted LLM router (Anthropic + Gemini + Antigravity). |  |  |
 | `aphrody-rust` | crates/ai/rag-python | PyO3 extension module aphrody.aphrody_rust (RAG vector kernels and rank fusion), built into the aphrody Python wheel. |  |  |
@@ -144,46 +142,29 @@ Canonical Rust/Bun monorepo
 | `aphrody-tauri-build` | crates/tauri/aphrody-tauri-build | build time code to pair with https://crates.io/crates/tauri |  | codegen, config-json, config-json5, config-toml, default, isolation, quote, tauri-codegen |
 | `aphrody-tauri-bundler` | crates/tauri/aphrody-tauri-bundler | Wrap rust executables in OS-specific app bundles for Tauri |  | default, native-tls, native-tls-vendored, platform-certs, rustls |
 | `aphrody-tauri-cli` | crates/tauri/aphrody-tauri-cli | Command line interface for building Tauri apps |  | default, native-tls, native-tls-vendored, platform-certs, rustls |
-| `aphrody-tauri-cli-node` | crates/tauri/aphrody-tauri-cli-node | Aphrody platform crate aphrody-tauri-cli-node. |  | default, native-tls, native-tls-vendored |
 | `aphrody-tauri-codegen` | crates/tauri/aphrody-tauri-codegen | code generation meant to be consumed inside of `tauri` through `tauri-build` or `tauri-macros` |  | brotli, compression, config-json5, config-toml, isolation |
-| `aphrody-tauri-examples` | crates/tauri/aphrody-tauri-examples | Tauri desktop application examples (CEF runtime) |  | isolation |
 | `aphrody-tauri-macos-sign` | crates/tauri/aphrody-tauri-macos-sign | Code signing utilities for macOS and iOS apps |  |  |
 | `aphrody-tauri-macros` | crates/tauri/aphrody-tauri-macros | Macros for the tauri crate. |  | compression, config-json5, config-toml, custom-protocol, isolation, tracing |
 | `aphrody-tauri-plugin` | crates/tauri/aphrody-tauri-plugin | Build script and runtime Tauri plugin definitions |  | build, runtime |
 | `aphrody-tauri-plugin-autostart` | crates/tauri/aphrody-tauri-plugin-autostart | Automatically launch your application at startup. |  |  |
-| `aphrody-tauri-plugin-barcode-scanner` | crates/tauri/aphrody-tauri-plugin-barcode-scanner | Scan QR codes, EAN-13 and other kinds of barcodes on Android and iOS |  |  |
-| `aphrody-tauri-plugin-biometric` | crates/tauri/aphrody-tauri-plugin-biometric | Prompt the user for biometric authentication on Android and iOS. |  |  |
-| `aphrody-tauri-plugin-cli` | crates/tauri/aphrody-tauri-plugin-cli | Parse arguments from your Tauri application's command line interface. |  |  |
 | `aphrody-tauri-plugin-clipboard-manager` | crates/tauri/aphrody-tauri-plugin-clipboard-manager | Read and write to the system clipboard. |  |  |
 | `aphrody-tauri-plugin-deep-link` | crates/tauri/aphrody-tauri-plugin-deep-link | Set your Tauri application as the default handler for an URL |  |  |
 | `aphrody-tauri-plugin-dialog` | crates/tauri/aphrody-tauri-plugin-dialog | Native system dialogs for opening and saving files along with message dialogs on your Tauri application. |  | default, xdg-portal |
 | `aphrody-tauri-plugin-fs` | crates/tauri/aphrody-tauri-plugin-fs | Access the file system. |  | notify, notify-debouncer-full, watch |
-| `aphrody-tauri-plugin-geolocation` | crates/tauri/aphrody-tauri-plugin-geolocation | Get and track the device's current position |  | specta |
 | `aphrody-tauri-plugin-global-shortcut` | crates/tauri/aphrody-tauri-plugin-global-shortcut | Register global hotkeys listeners on your Tauri application. |  |  |
-| `aphrody-tauri-plugin-haptics` | crates/tauri/aphrody-tauri-plugin-haptics | Haptic feedback and vibrations on Android and iOS |  | specta |
-| `aphrody-tauri-plugin-http` | crates/tauri/aphrody-tauri-plugin-http | Access an HTTP client written in Rust. |  | blocking, brotli, charset, cookies, dangerous-settings, default, deflate, gzip, http2, json, multipart, native-tls, native-tls-alpn, native-tls-vendored, rustls-tls, rustls-tls-manual-roots, rustls-tls-native-roots, rustls-tls-webpki-roots, socks, stream, system-proxy, tracing, trust-dns, unsafe-headers, zstd |
-| `aphrody-tauri-plugin-localhost` | crates/tauri/aphrody-tauri-plugin-localhost | Expose your apps assets through a localhost server instead of the default custom protocol. |  |  |
 | `aphrody-tauri-plugin-log` | crates/tauri/aphrody-tauri-plugin-log | Configurable logging for your Tauri app. |  | colored, tracing |
 | `aphrody-tauri-plugin-mcp-bridge` | crates/ui/tauri-plugin-mcp-bridge | MCP Bridge plugin for use with Tauri applications - enables IPC monitoring and backend inspection |  |  |
-| `aphrody-tauri-plugin-nfc` | crates/tauri/aphrody-tauri-plugin-nfc | Read and write NFC tags on Android and iOS. |  |  |
 | `aphrody-tauri-plugin-notification` | crates/tauri/aphrody-tauri-plugin-notification | Send desktop and mobile notifications on your Tauri application. |  | win7-notifications, windows-version, windows7-compat |
 | `aphrody-tauri-plugin-opener` | crates/tauri/aphrody-tauri-plugin-opener | Open files and URLs using their default application. |  |  |
 | `aphrody-tauri-plugin-os` | crates/tauri/aphrody-tauri-plugin-os | Read information about the operating system. |  |  |
-| `aphrody-tauri-plugin-persisted-scope` | crates/tauri/aphrody-tauri-plugin-persisted-scope | Save filesystem and asset scopes and restore them when the app is reopened. |  | protocol-asset |
-| `aphrody-tauri-plugin-positioner` | crates/tauri/aphrody-tauri-plugin-positioner | Position your windows at well-known locations. |  | tray-icon |
 | `aphrody-tauri-plugin-process` | crates/tauri/aphrody-tauri-plugin-process | Access the current process of your Tauri application. |  |  |
-| `aphrody-tauri-plugin-shell` | crates/tauri/aphrody-tauri-plugin-shell | Access the system shell. Allows you to spawn child processes. |  |  |
 | `aphrody-tauri-plugin-single-instance` | crates/tauri/aphrody-tauri-plugin-single-instance | Ensure a single instance of your tauri app is running. |  | deep-link, semver |
 | `aphrody-tauri-plugin-store` | crates/tauri/aphrody-tauri-plugin-store | Simple, persistent key-value store. |  |  |
-| `aphrody-tauri-plugin-stronghold` | crates/tauri/aphrody-tauri-plugin-stronghold | Store secrets and keys using the IOTA Stronghold secret management engine. |  | default, kdf |
 | `aphrody-tauri-plugin-updater` | crates/tauri/aphrody-tauri-plugin-updater | In-app updates for Tauri applications. |  | default, native-tls, native-tls-vendored, rustls-tls, system-proxy, zip |
-| `aphrody-tauri-plugin-upload` | crates/tauri/aphrody-tauri-plugin-upload | Upload files from disk to a remote server over HTTP. |  | default, native-tls, native-tls-vendored, rustls-tls |
-| `aphrody-tauri-plugin-websocket` | crates/tauri/aphrody-tauri-plugin-websocket | Expose a WebSocket server to your Tauri frontend. |  | default, native-tls, native-tls-vendored, rustls-tls, rustls-tls-native-roots |
 | `aphrody-tauri-plugin-window-state` | crates/tauri/aphrody-tauri-plugin-window-state | Save window positions and sizes and restore them when the app is reopened. |  |  |
 | `aphrody-tauri-runtime` | crates/tauri/aphrody-tauri-runtime | Runtime for Tauri applications |  | default, devtools |
 | `aphrody-tauri-runtime-cef` | crates/tauri/aphrody-tauri-runtime-cef | Tauri runtime interface for Chromium Embedded Framework |  | default, devtools, unstable |
 | `aphrody-tauri-schema-generator` | crates/tauri/aphrody-tauri-schema-generator | Hosts the schema for the Tauri configuration file. | `tauri-schema-generator` |  |
-| `aphrody-tauri-schema-worker` | crates/tauri/aphrody-tauri-schema-worker | Aphrody platform crate aphrody-tauri-schema-worker. |  |  |
 | `aphrody-tauri-specta` | crates/tauri/aphrody-tauri-specta | Completely typesafe Tauri commands |  | default, derive, javascript, typescript |
 | `aphrody-tauri-specta-macros` | crates/tauri/aphrody-tauri-specta/macros | Completely typesafe Tauri commands |  |  |
 | `aphrody-tauri-utils` | crates/tauri/aphrody-tauri-utils | Utilities for Tauri |  | aes-gcm, brotli, build, build-2, cargo_metadata, compression, config-json5, config-toml, getrandom, html-manipulation, html-manipulation-2, isolation, json5, proc-macro2, process-relaunch-dangerous-allow-symlink-macos, quote, resources, schema, schemars, serialize-to-javascript, swift-rs, walkdir |
@@ -232,7 +213,7 @@ Canonical Rust/Bun monorepo
 | `yolo-pyo3` | crates/engine/yolo-pyo3 | PyO3 0.29 Native Extension Module for YOLO Monorepo (Free-threaded, No-GIL, py.detach) |  |  |
 | `yolo-runtime` | crates/engine/yolo-runtime | Versioned C ABI of the precompiled YOLO native runtime (first slice: system stats and cancellable benchmark) |  | browser, cuda, default, gpu |
 
-### Bun packages (123)
+### Bun packages (86)
 
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
@@ -244,19 +225,7 @@ Canonical Rust/Bun monorepo
 | `@aphrody/assets` | m3/packages/assets | File-kind icons, extension badges, brand logos, images, sounds, videos and lottie animations, with icon resolution (getIcon, getLayeredIcon, getBeardedIcon, getIcon20): the Spacedrive @sd/assets set, merged with SpaceUI's @spacedrive/icons, for the Material Design 3 explorer surfaces. |  |
 | `@aphrody/bun` | packages/interop/native | bun:ffi bindings for the Aphrody native library (aphrody-ffi: M3 tokens, icons, SVG, render, web, X, inference) and the aphrody app-server client. Not the Bun runtime: the aphrody-labs/bun fork binary ships as @aphrody/bun-runtime. |  |
 | `@aphrody/canvas` | m3/packages/canvas | Aphrody native Skia canvas facade over the pinned upstream @napi-rs/canvas runtime |  |
-| `@aphrody/cli` | crates/tauri/aphrody-tauri-cli-node | Command line interface for building Tauri apps | `tauri` |
-| `@aphrody/cli-darwin-arm64` | crates/tauri/aphrody-tauri-cli-node/npm/darwin-arm64 | Command line interface for building Tauri apps |  |
-| `@aphrody/cli-darwin-x64` | crates/tauri/aphrody-tauri-cli-node/npm/darwin-x64 | Command line interface for building Tauri apps |  |
-| `@aphrody/cli-linux-arm-gnueabihf` | crates/tauri/aphrody-tauri-cli-node/npm/linux-arm-gnueabihf | Command line interface for building Tauri apps |  |
-| `@aphrody/cli-linux-arm64-gnu` | crates/tauri/aphrody-tauri-cli-node/npm/linux-arm64-gnu | Command line interface for building Tauri apps |  |
-| `@aphrody/cli-linux-arm64-musl` | crates/tauri/aphrody-tauri-cli-node/npm/linux-arm64-musl | Command line interface for building Tauri apps |  |
-| `@aphrody/cli-linux-riscv64-gnu` | crates/tauri/aphrody-tauri-cli-node/npm/linux-riscv64-gnu | Command line interface for building Tauri apps |  |
-| `@aphrody/cli-linux-x64-gnu` | crates/tauri/aphrody-tauri-cli-node/npm/linux-x64-gnu | Command line interface for building Tauri apps |  |
-| `@aphrody/cli-linux-x64-musl` | crates/tauri/aphrody-tauri-cli-node/npm/linux-x64-musl | Command line interface for building Tauri apps |  |
 | `@aphrody/cli-wasm` | packages/infra/cli-wasm | The pure aphrody commands (rag, toolcall, html, text) as WebAssembly for the browser, Bun and Node: the same code as `aphrody pure` of the native CLI. |  |
-| `@aphrody/cli-win32-arm64-msvc` | crates/tauri/aphrody-tauri-cli-node/npm/win32-arm64-msvc | Command line interface for building Tauri apps |  |
-| `@aphrody/cli-win32-ia32-msvc` | crates/tauri/aphrody-tauri-cli-node/npm/win32-ia32-msvc | Command line interface for building Tauri apps |  |
-| `@aphrody/cli-win32-x64-msvc` | crates/tauri/aphrody-tauri-cli-node/npm/win32-x64-msvc | Command line interface for building Tauri apps |  |
 | `@aphrody/discord-kit` | packages/discord/kit | Unified Discord bot core kit: pre-flight intent negotiation, memory-bounded caching, resilient interaction dispatching, lifecycle management and guards for Bun. |  |
 | `@aphrody/doc-ai` | packages/ai/doc-ai | AI-first documentation and automatic translation system |  |
 | `@aphrody/drive-client` | packages/os/drive-client | Type-safe TypeScript client for Spacedrive daemon |  |
@@ -294,31 +263,18 @@ Canonical Rust/Bun monorepo
 | `@aphrody/ovh` | packages/infra/ovh | OVH cloud library for Aphrody Infra: DNS, VPS, Email, and multi-profile operations in pure Bun (command line: aphrody ovh) |  |
 | `@aphrody/paths` | packages/infra/paths | Cross-platform path resolution for Aphrody workspaces and runtime data |  |
 | `@aphrody/plugin-autostart` | crates/tauri/aphrody-tauri-plugin-autostart |  |  |
-| `@aphrody/plugin-barcode-scanner` | crates/tauri/aphrody-tauri-plugin-barcode-scanner | Scan QR codes, EAN-13 and other kinds of barcodes on Android and iOS |  |
-| `@aphrody/plugin-biometric` | crates/tauri/aphrody-tauri-plugin-biometric |  |  |
-| `@aphrody/plugin-cli` | crates/tauri/aphrody-tauri-plugin-cli |  |  |
 | `@aphrody/plugin-clipboard-manager` | crates/tauri/aphrody-tauri-plugin-clipboard-manager |  |  |
 | `@aphrody/plugin-deep-link` | crates/tauri/aphrody-tauri-plugin-deep-link | Set your Tauri application as the default handler for an URL |  |
 | `@aphrody/plugin-dialog` | crates/tauri/aphrody-tauri-plugin-dialog |  |  |
 | `@aphrody/plugin-fs` | crates/tauri/aphrody-tauri-plugin-fs | Access the file system. |  |
-| `@aphrody/plugin-geolocation` | crates/tauri/aphrody-tauri-plugin-geolocation |  |  |
 | `@aphrody/plugin-global-shortcut` | crates/tauri/aphrody-tauri-plugin-global-shortcut |  |  |
-| `@aphrody/plugin-haptics` | crates/tauri/aphrody-tauri-plugin-haptics |  |  |
-| `@aphrody/plugin-http` | crates/tauri/aphrody-tauri-plugin-http |  |  |
 | `@aphrody/plugin-log` | crates/tauri/aphrody-tauri-plugin-log | Configurable logging for your Tauri app. |  |
-| `@aphrody/plugin-nfc` | crates/tauri/aphrody-tauri-plugin-nfc |  |  |
 | `@aphrody/plugin-notification` | crates/tauri/aphrody-tauri-plugin-notification |  |  |
 | `@aphrody/plugin-opener` | crates/tauri/aphrody-tauri-plugin-opener | Open files and URLs using their default application. |  |
 | `@aphrody/plugin-os` | crates/tauri/aphrody-tauri-plugin-os |  |  |
-| `@aphrody/plugin-positioner` | crates/tauri/aphrody-tauri-plugin-positioner | Position your windows at well-known locations. |  |
 | `@aphrody/plugin-process` | crates/tauri/aphrody-tauri-plugin-process |  |  |
-| `@aphrody/plugin-shell` | crates/tauri/aphrody-tauri-plugin-shell |  |  |
-| `@aphrody/plugin-sql` | crates/tauri/aphrody-tauri-plugin-sql | Interface with SQL databases |  |
 | `@aphrody/plugin-store` | crates/tauri/aphrody-tauri-plugin-store | Simple, persistent key-value store. |  |
-| `@aphrody/plugin-stronghold` | crates/tauri/aphrody-tauri-plugin-stronghold | Store secrets and keys using the IOTA Stronghold encrypted database. |  |
 | `@aphrody/plugin-updater` | crates/tauri/aphrody-tauri-plugin-updater |  |  |
-| `@aphrody/plugin-upload` | crates/tauri/aphrody-tauri-plugin-upload | Upload files from disk to a remote server over HTTP. |  |
-| `@aphrody/plugin-websocket` | crates/tauri/aphrody-tauri-plugin-websocket |  |  |
 | `@aphrody/plugin-window-state` | crates/tauri/aphrody-tauri-plugin-window-state | Save window positions and sizes and restore them when the app is reopened. |  |
 | `@aphrody/plugins` | packages/engine/plugins | Compatibility API for the plugin generator owned by @aphrody/yolo-cli |  |
 | `@aphrody/product` | packages/infra/product | Aphrody installation, administration and creator workflows in one native Bun product. | `aphrody-omar`, `aphrody-product`, `aphrody-setup`, `creator-kit` |
@@ -345,20 +301,8 @@ Canonical Rust/Bun monorepo
 | `aphrody` | . |  |  |
 | `aphrody-m3` | m3 | Aphrody M3 design monorepo: UI/design packages, tokens, icons, templates and docs. |  |
 | `app` | crates/tauri/aphrody-tauri-cli/templates/plugin/__example-basic/vanilla |  |  |
-| `create-tauri-app` | crates/tauri/aphrody-create-tauri-app-node | Rapidly scaffold out a new tauri app project. | `create-tauri-app` |
-| `create-tauri-app-darwin-arm64` | crates/tauri/aphrody-create-tauri-app-node/npm/darwin-arm64 |  |  |
-| `create-tauri-app-darwin-x64` | crates/tauri/aphrody-create-tauri-app-node/npm/darwin-x64 |  |  |
-| `create-tauri-app-linux-arm-gnueabihf` | crates/tauri/aphrody-create-tauri-app-node/npm/linux-arm-gnueabihf |  |  |
-| `create-tauri-app-linux-arm64-gnu` | crates/tauri/aphrody-create-tauri-app-node/npm/linux-arm64-gnu |  |  |
-| `create-tauri-app-linux-arm64-musl` | crates/tauri/aphrody-create-tauri-app-node/npm/linux-arm64-musl |  |  |
-| `create-tauri-app-linux-x64-gnu` | crates/tauri/aphrody-create-tauri-app-node/npm/linux-x64-gnu |  |  |
-| `create-tauri-app-linux-x64-musl` | crates/tauri/aphrody-create-tauri-app-node/npm/linux-x64-musl |  |  |
-| `create-tauri-app-win32-arm64-msvc` | crates/tauri/aphrody-create-tauri-app-node/npm/win32-arm64-msvc |  |  |
-| `create-tauri-app-win32-ia32-msvc` | crates/tauri/aphrody-create-tauri-app-node/npm/win32-ia32-msvc |  |  |
-| `create-tauri-app-win32-x64-msvc` | crates/tauri/aphrody-create-tauri-app-node/npm/win32-x64-msvc |  |  |
 | `tauri-app` | crates/tauri/aphrody-tauri-cli/templates/plugin/__example-api/tauri-app |  |  |
 | `tauri-plugin-{{ plugin_name }}-api` | crates/tauri/aphrody-tauri-cli/templates/plugin |  |  |
-| `tauri-schema-worker` | crates/tauri/aphrody-tauri-schema-worker |  |  |
 
 ### uv packages (8)
 

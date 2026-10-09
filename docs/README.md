@@ -98,8 +98,9 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | reference | [os](reference/os/) | 29 | - |
 | reference | [shell](reference/shell/) | 10 | - |
 | reference | [upstream-bun](reference/upstream-bun/) vendored upstream copy | 344 | [README.md](reference\upstream-bun\README.md) |
+| reference | [upstream-codex](reference/upstream-codex/) vendored upstream copy | 2 | - |
 | reference | [web](reference/web/) | 48 | - |
-| reference | [workspace](reference/workspace/) | 17 | [Workspace documentation](reference\workspace\INDEX.md) |
+| reference | [workspace](reference/workspace/) | 15 | [Workspace documentation](reference\workspace\INDEX.md) |
 | reference | [yolo](reference/yolo/) | 1 | - |
 | research | [ai](research/ai/) | 48 | - |
 | research | [compat](research/compat/) | 1 | - |

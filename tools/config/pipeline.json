@@ -1631,60 +1631,6 @@
           "command": [
             "run",
             "--filter",
-            "@aphrody/plugin-barcode-scanner",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-barcode-scanner",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-biometric",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-biometric",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-cli",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-cli",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
             "@aphrody/plugin-clipboard-manager",
             "typecheck"
           ]
@@ -1757,24 +1703,6 @@
           "command": [
             "run",
             "--filter",
-            "@aphrody/plugin-geolocation",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-geolocation",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
             "@aphrody/plugin-global-shortcut",
             "typecheck"
           ]
@@ -1793,42 +1721,6 @@
           "command": [
             "run",
             "--filter",
-            "@aphrody/plugin-haptics",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-haptics",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-http",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-http",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
             "@aphrody/plugin-log",
             "typecheck"
           ]
@@ -1839,24 +1731,6 @@
             "run",
             "--filter",
             "@aphrody/plugin-log",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-nfc",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-nfc",
             "build"
           ]
         },
@@ -1919,24 +1793,6 @@
           "command": [
             "run",
             "--filter",
-            "@aphrody/plugin-positioner",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-positioner",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
             "@aphrody/plugin-process",
             "typecheck"
           ]
@@ -1947,42 +1803,6 @@
             "run",
             "--filter",
             "@aphrody/plugin-process",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-shell",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-shell",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-sql",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-sql",
             "build"
           ]
         },
@@ -2009,24 +1829,6 @@
           "command": [
             "run",
             "--filter",
-            "@aphrody/plugin-stronghold",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-stronghold",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
             "@aphrody/plugin-updater",
             "typecheck"
           ]
@@ -2037,42 +1839,6 @@
             "run",
             "--filter",
             "@aphrody/plugin-updater",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-upload",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-upload",
-            "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-websocket",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/plugin-websocket",
             "build"
           ]
         },

@@ -30,14 +30,11 @@ crates = [
   "crates/tauri-macos-sign",
   "crates/tauri-macros",
   "crates/tauri-plugin",
-  "crates/tauri-examples",
-  "crates/tauri-schema-worker",
   "crates/tauri-runtime",
   "crates/tauri-runtime-cef",
   "crates/tauri-schema-generator",
   "crates/tauri-utils",
   "crates/tests/acl",
-  "crates/tests/restart",
   "packages/cli",
 ]
 # The Tauri CLI is served by `aphrody tauri` (multi-call binary): no standalone `cargo-tauri` binary.
@@ -48,7 +45,8 @@ exclude = ["crates/tauri-cli/src/main.rs"]
 [[source]]
 name = "plugins-workspace"
 rustfmt = "default"
-crates = ["plugins/*"]
+# Only the plugins the desktop app registers (crates/ui/app); mobile and unused plugins are not imported.
+crates = ["plugins/autostart", "plugins/clipboard-manager", "plugins/deep-link", "plugins/dialog", "plugins/fs", "plugins/global-shortcut", "plugins/log", "plugins/notification", "plugins/opener", "plugins/os", "plugins/process", "plugins/single-instance", "plugins/store", "plugins/updater", "plugins/window-state"]
 # plugins/*/contributors: one shared assets/tauri/contributors (see the [[copy]] and README rewrite below).
 # plugins/*/SECURITY.md: identical upstream policy, kept once as crates/tauri/SECURITY.md.
 exclude = ["plugins/*/examples/**", "plugins/*/tests/**", "plugins/*/contributors/**", "plugins/*/SECURITY.md"]
@@ -56,7 +54,7 @@ exclude = ["plugins/*/examples/**", "plugins/*/tests/**", "plugins/*/contributor
 [[source]]
 name = "create-tauri-app"
 rustfmt = "default"
-crates = [".", "node"]
+crates = ["."]
 # src/main.rs: served by `aphrody create-tauri-app`, no standalone binary.
 exclude = ["worker/**", ".scripts/**", "*.sh", "*.ps1", "package.json", "CONTRIBUTING.md", "src/main.rs"]
 
@@ -73,22 +71,6 @@ to = "assets/tauri/contributors"
 files = "crates/tauri/aphrody-tauri-plugin-*/README.md"
 from = 'src="contributors/'
 to = 'src="../../../assets/tauri/contributors/'
-
-# Sources of the `tauri-examples` crate (its [[example]] entries live outside the crate).
-[[copy]]
-from = "tauri:examples"
-to = "m3/examples/tauri"
-exclude = ["api/**", "cef/**", "file-associations/**", "resources/**"]
-
-[[rewrite]]
-files = "crates/tauri/aphrody-tauri-examples/**"
-from = "../../examples/"
-to = "../../../m3/examples/tauri/"
-
-[[rewrite]]
-files = "m3/examples/tauri/**/*.rs"
-from = "../../examples/"
-to = "../../../m3/examples/tauri/"
 
 [[rewrite]]
 files = "crates/tauri/aphrody-tauri-cli/Cargo.toml"
@@ -146,11 +128,6 @@ to = '''json5 = { version = "1.3", optional = true }'''
 files = "crates/tauri/aphrody-tauri-utils/Cargo.toml"
 from = '''cargo_metadata = { version = "0.19", optional = true }'''
 to = '''cargo_metadata = { version = "0.23", optional = true }'''
-
-[[rewrite]]
-files = "crates/tauri/aphrody-tauri-plugin-http/Cargo.toml"
-from = '''urlpattern = "0.3"'''
-to = '''urlpattern = "0.6"'''
 
 [[rewrite]]
 files = "crates/tauri/aphrody-tauri-plugin-updater/Cargo.toml"
@@ -1001,58 +978,6 @@ fn main() {
 '''
 
 
-# crates/tauri/aphrody-tauri-examples/Cargo.toml
-[[rewrite]]
-files = "crates/tauri/aphrody-tauri-examples/Cargo.toml"
-from = '''name = "aphrody-tauri-examples"
-version = "0.1.0"
-description = "Tauri desktop application examples (wry and CEF runtimes)"
-authors = ["Tauri Programme within The Commons Conservancy"]
-homepage = "https://tauri.app/"
-'''
-to = '''name = "aphrody-tauri-examples"
-version = "0.1.0"
-description = "Tauri desktop application examples (CEF runtime)"
-authors = ["Tauri Programme within The Commons Conservancy"]
-homepage = "https://tauri.app/"
-'''
-
-[[rewrite]]
-files = "crates/tauri/aphrody-tauri-examples/Cargo.toml"
-from = '''[dependencies]
-tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false, features = ["unstable"] }
-tauri-runtime-wry = { version = "~3.0.0-alpha.4", path = "../aphrody-tauri-runtime-wry", package = "aphrody-tauri-runtime-wry", default-features = false, optional = true }
-tauri-runtime-cef = { version = "~3.0.0-alpha.5", path = "../aphrody-tauri-runtime-cef", package = "aphrody-tauri-runtime-cef", default-features = false, optional = true }
-tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils" }
-serde = { workspace = true, features = ["derive"] }
-'''
-to = '''[dependencies]
-tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false, features = ["unstable"] }
-tauri-runtime-cef = { version = "~3.0.0-alpha.5", path = "../aphrody-tauri-runtime-cef", package = "aphrody-tauri-runtime-cef", default-features = false }
-tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils" }
-serde = { workspace = true, features = ["derive"] }
-'''
-
-[[rewrite]]
-files = "crates/tauri/aphrody-tauri-examples/Cargo.toml"
-from = "\n[features]\ndefault = [\"wry\"]\nwry = [\"dep:tauri-runtime-wry\"]\ncef = [\"dep:tauri-runtime-cef\"]\nisolation = [\"tauri/isolation\"]\n\n"
-to = "\n[features]\nisolation = [\"tauri/isolation\"]\n\n"
-
-
-# crates/tauri/aphrody-tauri-examples/src/lib.rs
-[[rewrite]]
-files = "crates/tauri/aphrody-tauri-examples/src/lib.rs"
-from = '''//! Tauri desktop application examples.
-//!
-//! Run with `cargo run --example <name>` (wry runtime, the default)
-//! or `cargo run --example <name> --features cef` (CEF runtime).
-'''
-to = '''//! Tauri desktop application examples.
-//!
-//! Run with `cargo run --example <name>`: the one desktop runtime is CEF (`tauri-runtime-cef`).
-'''
-
-
 # crates/tauri/aphrody-tauri-plugin-dialog/Cargo.toml
 [[rewrite]]
 files = "crates/tauri/aphrody-tauri-plugin-dialog/Cargo.toml"
@@ -1384,243 +1309,6 @@ to = '''#![cfg_attr(docsrs, feature(doc_cfg))]
   any(
 '''
 
-
-# m3/examples/tauri/commands/main.rs
-[[rewrite]]
-files = "m3/examples/tauri/commands/main.rs"
-from = '''}
-
-#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
-fn main() {
-  #[cfg(feature = "cef")]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-  #[cfg(not(feature = "cef"))]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
-
-  builder
-'''
-to = '''}
-
-#[tauri_runtime_cef::cef_entry_point]
-fn main() {
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-
-  builder
-'''
-
-
-# m3/examples/tauri/drag/main.rs
-[[rewrite]]
-files = "m3/examples/tauri/drag/main.rs"
-from = '''#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
-#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
-fn main() {
-  #[cfg(not(feature = "cef"))]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
-  #[cfg(feature = "cef")]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-  builder
-'''
-to = '''#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
-#[tauri_runtime_cef::cef_entry_point]
-fn main() {
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-  builder
-'''
-
-
-# m3/examples/tauri/helloworld/main.rs
-[[rewrite]]
-files = "m3/examples/tauri/helloworld/main.rs"
-from = '''}
-
-#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
-fn main() {
-  #[cfg(not(feature = "cef"))]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
-  #[cfg(feature = "cef")]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-  builder
-'''
-to = '''}
-
-#[tauri_runtime_cef::cef_entry_point]
-fn main() {
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-  builder
-'''
-
-
-# m3/examples/tauri/isolation/main.rs
-[[rewrite]]
-files = "m3/examples/tauri/isolation/main.rs"
-from = '''}
-
-#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
-fn main() {
-  #[cfg(feature = "cef")]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-  #[cfg(not(feature = "cef"))]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
-
-  builder
-'''
-to = '''}
-
-#[tauri_runtime_cef::cef_entry_point]
-fn main() {
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-
-  builder
-'''
-
-
-# m3/examples/tauri/multiwebview/main.rs
-[[rewrite]]
-files = "m3/examples/tauri/multiwebview/main.rs"
-from = '''use tauri::{LogicalPosition, LogicalSize, WebviewUrl};
-
-#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
-fn main() {
-  #[cfg(not(feature = "cef"))]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
-  #[cfg(feature = "cef")]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-  builder
-'''
-to = '''use tauri::{LogicalPosition, LogicalSize, WebviewUrl};
-
-#[tauri_runtime_cef::cef_entry_point]
-fn main() {
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-  builder
-'''
-
-
-# m3/examples/tauri/multiwindow/main.rs
-[[rewrite]]
-files = "m3/examples/tauri/multiwindow/main.rs"
-from = '''use tauri::{Runtime, WebviewWindowBuilder};
-
-#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
-fn main() {
-  #[cfg(feature = "cef")]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-  #[cfg(not(feature = "cef"))]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
-
-  builder
-'''
-to = '''use tauri::{Runtime, WebviewWindowBuilder};
-
-#[tauri_runtime_cef::cef_entry_point]
-fn main() {
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-
-  builder
-'''
-
-
-# m3/examples/tauri/run-return/main.rs
-[[rewrite]]
-files = "m3/examples/tauri/run-return/main.rs"
-from = '''#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
-#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
-fn main() {
-  #[cfg(feature = "cef")]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-  #[cfg(not(feature = "cef"))]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
-
-  let app = builder
-'''
-to = '''#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
-#[tauri_runtime_cef::cef_entry_point]
-fn main() {
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-
-  let app = builder
-'''
-
-
-# m3/examples/tauri/splashscreen/main.rs
-[[rewrite]]
-files = "m3/examples/tauri/splashscreen/main.rs"
-from = '''}
-
-#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
-fn main() {
-  #[cfg(feature = "cef")]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-  #[cfg(not(feature = "cef"))]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
-
-  builder
-'''
-to = '''}
-
-#[tauri_runtime_cef::cef_entry_point]
-fn main() {
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-
-  builder
-'''
-
-
-# m3/examples/tauri/state/main.rs
-[[rewrite]]
-files = "m3/examples/tauri/state/main.rs"
-from = '''}
-
-#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
-fn main() {
-  #[cfg(feature = "cef")]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-  #[cfg(not(feature = "cef"))]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
-
-  builder
-'''
-to = '''}
-
-#[tauri_runtime_cef::cef_entry_point]
-fn main() {
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-
-  builder
-'''
-
-
-# m3/examples/tauri/streaming/main.rs
-[[rewrite]]
-files = "m3/examples/tauri/streaming/main.rs"
-from = '''}
-
-#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
-fn main() {
-  download_video();
-
-  #[cfg(feature = "cef")]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-  #[cfg(not(feature = "cef"))]
-  let builder = tauri::Builder::default().runtime(tauri_runtime_wry::Wry::default());
-
-  builder
-'''
-to = '''}
-
-#[tauri_runtime_cef::cef_entry_point]
-fn main() {
-  download_video();
-
-  let builder = tauri::Builder::default().runtime(tauri_runtime_cef::Cef::default());
-
-  builder
-'''
 
 # crates/tauri/aphrody-tauri-cli/tests/init.rs
 [[rewrite]]

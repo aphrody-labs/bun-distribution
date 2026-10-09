@@ -6,13 +6,13 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 35 binaries with a clap surface, 1106 commands.
+Totals: 35 binaries with a clap surface, 1142 commands.
 
 ## aphrody
 
 ### `aphrody`
 
-Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 248 commands.
+Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 266 commands.
 
 - `aphrody pure` — Pure commands (rag, toolcall, html, text): no network, no processes; also built for wasm32.
   - `aphrody pure rag` — RAG core: chunking, rank fusion, MMR, source weighting, retrieval eval.
@@ -47,6 +47,24 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 248 comma
   - `aphrody config show` — Show the active or effective resolved configuration.
   - `aphrody config path` — Print the path to the user's config.toml file (~/.aphrody/config.toml).
   - `aphrody config import-codex` — Import and layer configuration from ~/.codex/config.toml.
+- `aphrody codex` — Codex agent execution, app-server protocol v2, MCP, plugins and session rollouts. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody codex exec` — Run Codex non-interactively. _(aliases: e)_
+  - `aphrody codex app-server` — Run the local app-server daemon (stdio JSON-RPC v2 or loopback HTTP).
+  - `aphrody codex review` — Run a code review non-interactively on the current repository or diff.
+  - `aphrody codex resume` — Resume a previous session by id or --last.
+  - `aphrody codex fork` — Fork a previous session by id or --last.
+  - `aphrody codex apply` — Apply the latest diff produced by the agent to the local working tree. _(aliases: a)_
+  - `aphrody codex mcp` — Manage external Model Context Protocol (MCP) servers.
+    - `aphrody codex mcp list` — List configured MCP servers.
+    - `aphrody codex mcp get` — Get details for a configured MCP server.
+    - `aphrody codex mcp add` — Add an external MCP server to config.toml.
+    - `aphrody codex mcp remove` — Remove an external MCP server from config.toml.
+  - `aphrody codex plugin` — Manage Codex plugins and configured marketplaces.
+    - `aphrody codex plugin list` — List plugins available and installed from configured marketplaces.
+    - `aphrody codex plugin marketplace` — Manage configured plugin marketplaces.
+      - `aphrody codex plugin marketplace list` — List configured plugin marketplaces.
+  - `aphrody codex doctor` — Diagnose local installation, elevation status, config, auth and runtime health.
+  - `aphrody codex features` — Inspect or toggle feature flags.
 - `aphrody native` — Native platform probes for CPU, memory, CUDA and monotonic time. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody native status` — Diagnostic summary of host platform probes
   - `aphrody native self-test` — Check native topology and monotonic clock probes
@@ -302,7 +320,7 @@ Crate `aphrody-kernel`, parser `crates/os/kernel/core/src/cli.rs#Cli`, 6 command
 
 ### `aphrody infra`
 
-Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 349 commands.
+Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 367 commands.
 
 - `aphrody infra status` — Show target, repository and runtime state without mutation.
 - `aphrody infra inventory` — Run the existing deep resource inventory through the canonical Bun adapter.
@@ -312,7 +330,7 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 349 commands.
 - `aphrody infra sync` — Print the actions that a synchronization would perform.
 - `aphrody infra deploy` — Run a deploy adapter. Mutation requires --apply and an explicit target.
 - `aphrody infra validate` — Check cross-catalog invariants (services, nginx routes, port policy).
-- `aphrody infra reclaim` — Reclaim allowlisted disk/tmpfs space on a target (tools/config/disk-reclaim.json).
+- `aphrody infra reclaim` — Reclaim allowlisted disk/tmpfs space on a target; root-level steps run through sudo -n (tools/config/disk-reclaim.json).
 - `aphrody infra dev-env` — Validate or provision the declared development environment.
 - `aphrody infra service` — Manage cataloged services lifecycle (catalog, status, start, stop, restart, journal).
 - `aphrody infra probe` — Probe an HTTP or TCP endpoint health.
@@ -352,6 +370,24 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 349 commands.
     - `aphrody infra ssh config show` — Show the active or effective resolved configuration.
     - `aphrody infra ssh config path` — Print the path to the user's config.toml file (~/.aphrody/config.toml).
     - `aphrody infra ssh config import-codex` — Import and layer configuration from ~/.codex/config.toml.
+  - `aphrody infra ssh codex` — Codex agent execution, app-server protocol v2, MCP, plugins and session rollouts. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh codex exec` — Run Codex non-interactively. _(aliases: e)_
+    - `aphrody infra ssh codex app-server` — Run the local app-server daemon (stdio JSON-RPC v2 or loopback HTTP).
+    - `aphrody infra ssh codex review` — Run a code review non-interactively on the current repository or diff.
+    - `aphrody infra ssh codex resume` — Resume a previous session by id or --last.
+    - `aphrody infra ssh codex fork` — Fork a previous session by id or --last.
+    - `aphrody infra ssh codex apply` — Apply the latest diff produced by the agent to the local working tree. _(aliases: a)_
+    - `aphrody infra ssh codex mcp` — Manage external Model Context Protocol (MCP) servers.
+      - `aphrody infra ssh codex mcp list` — List configured MCP servers.
+      - `aphrody infra ssh codex mcp get` — Get details for a configured MCP server.
+      - `aphrody infra ssh codex mcp add` — Add an external MCP server to config.toml.
+      - `aphrody infra ssh codex mcp remove` — Remove an external MCP server from config.toml.
+    - `aphrody infra ssh codex plugin` — Manage Codex plugins and configured marketplaces.
+      - `aphrody infra ssh codex plugin list` — List plugins available and installed from configured marketplaces.
+      - `aphrody infra ssh codex plugin marketplace` — Manage configured plugin marketplaces.
+        - `aphrody infra ssh codex plugin marketplace list` — List configured plugin marketplaces.
+    - `aphrody infra ssh codex doctor` — Diagnose local installation, elevation status, config, auth and runtime health.
+    - `aphrody infra ssh codex features` — Inspect or toggle feature flags.
   - `aphrody infra ssh native` — Native platform probes for CPU, memory, CUDA and monotonic time. _(cfg: not(target_arch = "wasm32"))_
     - `aphrody infra ssh native status` — Diagnostic summary of host platform probes
     - `aphrody infra ssh native self-test` — Check native topology and monotonic clock probes
@@ -1312,7 +1348,6 @@ _No subcommands (flags only)._
 - `aphrody-fake-llama-server` (aphrody / `aphrody-llama-server`)
 - `aphrody-llama-daemon` (aphrody / `aphrody-llama-server`)
 - `aphrody-web-game-server` (aphrody / `aphrody-web-game-server`)
-- `restart` (aphrody / `aphrody-restart`)
 - `serde-saphyr` (aphrody / `serde-saphyr`)
 - `tauri-schema-generator` (aphrody / `aphrody-tauri-schema-generator`)
 - `aphrody-homebrew` (iecode / `aphrody-homebrew`)
