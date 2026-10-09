@@ -435,7 +435,11 @@ export interface PublishOutcome {
 
 /** Registry state of one version: absent, or its tarball SHA-1 (npm `dist.shasum`). */
 async function registryShasum(name: string, version: string, registry: string) {
-  const response = await fetch(`${registry}/${name.replace("/", "%2f")}`, {
+  const url = new URL(`${registry.replace(/\/$/, "")}/${name.replace("/", "%2f")}`);
+  // Registry/CDN responses can retain a pre-publication packument despite no-cache.
+  // Give every visibility check a fresh cache key without changing package identity.
+  url.searchParams.set("cache", String(Date.now()));
+  const response = await fetch(url, {
     headers: { accept: "application/json", "cache-control": "no-cache" },
   });
   if (response.status === 404) return { exists: false } as const;
