@@ -3,11 +3,12 @@
 /**
  * @module @aphrody/web-test/page
  *
- * `TestPage` owns a Rust Obscura CDP target and exposes navigation and
- * Playwright-shaped locator factories.
+ * `TestPage` owns an `@aphrody/bun-webview-page` page on the Rust Obscura CDP
+ * server and exposes navigation and Playwright-shaped locator factories.
  */
 
-import { WebCdpPage, type NavigationResponse } from "./cdp.ts";
+import type { Page } from "@aphrody/bun-webview-page";
+import { ObscuraPage, type NavigationResponse } from "./cdp.ts";
 import { WebLocator, type CdpPage } from "./locator.ts";
 import {
   getByAltText,
@@ -37,12 +38,12 @@ export interface TestPageOptions {
  * {@link TestPage.close} (or `await using`).
  */
 export class TestPage {
-  readonly #page: WebCdpPage;
+  readonly #page: ObscuraPage;
   readonly #baseURL?: string;
   readonly #testIdAttribute: string;
   #lastResponse: NavigationResponse | null = null;
 
-  private constructor(page: WebCdpPage, opts: TestPageOptions) {
+  private constructor(page: ObscuraPage, opts: TestPageOptions) {
     this.#page = page;
     this.#baseURL = opts.baseURL;
     this.#testIdAttribute = opts.testIdAttribute ?? "data-testid";
@@ -50,18 +51,18 @@ export class TestPage {
 
   /** Opens a fresh Obscura CDP page and wraps it. */
   static async create(opts: TestPageOptions = {}): Promise<TestPage> {
-    const page = await WebCdpPage.connect(opts.cdpUrl);
+    const page = await ObscuraPage.connect(opts.cdpUrl);
     return new TestPage(page, opts);
   }
 
   /** @internal — the underlying Obscura CDP page (exposes CDP `_send`). */
   get _cdp(): CdpPage {
-    return this.#page as unknown as CdpPage;
+    return this.#page;
   }
 
-  /** The wrapped Aphrody page, for escape-hatch access to the CDP API. */
-  get raw(): WebCdpPage {
-    return this.#page;
+  /** The `@aphrody/bun-webview-page` page, for its full Playwright-shaped API. */
+  get raw(): Page {
+    return this.#page.page;
   }
 
   // --- Navigation --------------------------------------------------------

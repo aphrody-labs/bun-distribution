@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { WebCdpPage } from "./cdp.ts";
+import { ObscuraPage } from "./cdp.ts";
 
 export interface DiagnosticsOptions {
   waitUntil?: "load" | "domcontentloaded" | "commit" | "networkidle";
@@ -26,37 +26,21 @@ export async function collectPageDiagnostics(
   url: string,
   opts: DiagnosticsOptions = {},
 ): Promise<PageDiagnostics> {
-  let page: WebCdpPage;
+  let page: ObscuraPage;
   try {
-    page = await WebCdpPage.connect();
+    page = await ObscuraPage.connect();
   } catch (error) {
     return { available: false, reason: error instanceof Error ? error.message : String(error) };
   }
   const jsErrors: string[] = [];
   const consoleErrors: string[] = [];
   let networkRequests = 0;
-  const events = [
-    "Network.requestWillBeSent",
-    "Runtime.exceptionThrown",
-    "Runtime.consoleAPICalled",
-  ];
-  const unsubscribe = page.onEvent(events, (method, params) => {
-    if (method === "Network.requestWillBeSent") networkRequests++;
-    if (method === "Runtime.exceptionThrown") {
-      const details = params.exceptionDetails as
-        | { text?: string; exception?: { description?: string } }
-        | undefined;
-      jsErrors.push(
-        details?.exception?.description ?? details?.text ?? "Unknown JavaScript exception",
-      );
-    }
-    if (method === "Runtime.consoleAPICalled" && params.type === "error") {
-      const args = params.args as Array<{ value?: unknown; description?: string }> | undefined;
-      consoleErrors.push(
-        (args ?? []).map((arg) => String(arg.value ?? arg.description ?? "")).join(" "),
-      );
-    }
+  page.page.on("pageerror", (error) => jsErrors.push(error.message));
+  page.page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
   });
+  const countRequest = () => networkRequests++;
+  page.page.view.addEventListener("Network.requestWillBeSent", countRequest);
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     if (opts.extraHeaders)
@@ -90,7 +74,7 @@ export async function collectPageDiagnostics(
     };
   } finally {
     if (timer) clearTimeout(timer);
-    unsubscribe();
+    page.page.view.removeEventListener("Network.requestWillBeSent", countRequest);
     await page.close();
   }
 }

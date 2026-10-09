@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "@aphrody/agent-browser": "workspace:*",
+    "@aphrody/bun-webview-page": "0.1.1-aphrody.2",
     "@aphrody/next-bun": "0.2.0-aphrody.1"
   },
   "engines": {

@@ -7,7 +7,7 @@ import "./setup.ts";
  */
 
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { WebCdpPage } from "../src/cdp.ts";
+import { ObscuraPage } from "../src/cdp.ts";
 import {
   adaptPage,
   CdpCookieContext,
@@ -20,17 +20,17 @@ import {
 
 const BASE = "http://localhost:3000";
 
-let page: WebCdpPage;
+let page: ObscuraPage;
 
 beforeEach(async () => {
-  page = await WebCdpPage.connect();
+  page = await ObscuraPage.connect();
 });
 
 afterEach(async () => {
   await page.close();
 });
 
-function jar(p: WebCdpPage): CdpCookieContext {
+function jar(p: ObscuraPage): CdpCookieContext {
   return new CdpCookieContext(p as unknown as CdpSend);
 }
 

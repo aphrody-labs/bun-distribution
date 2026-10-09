@@ -8,7 +8,7 @@ import "./setup.ts";
  */
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { WebCdpPage } from "../src/cdp.ts";
+import { ObscuraPage } from "../src/cdp.ts";
 import type { CdpSend } from "../src/next/index.ts";
 import {
   // Rose Griffon
@@ -29,10 +29,10 @@ import {
 } from "../src/sites/index.ts";
 
 describe("Rose Griffon site helpers", () => {
-  let page: WebCdpPage;
+  let page: ObscuraPage;
 
   beforeEach(async () => {
-    page = await WebCdpPage.connect();
+    page = await ObscuraPage.connect();
   });
 
   afterEach(async () => {
@@ -133,10 +133,10 @@ describe("Rose Griffon site helpers", () => {
 });
 
 describe("Aphrody UI / Next.js site helpers", () => {
-  let page: WebCdpPage;
+  let page: ObscuraPage;
 
   beforeEach(async () => {
-    page = await WebCdpPage.connect();
+    page = await ObscuraPage.connect();
   });
 
   afterEach(async () => {

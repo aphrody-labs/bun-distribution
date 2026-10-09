@@ -181,10 +181,14 @@ export function engineBinaryCandidates(
   env: Record<string, string | undefined> = process.env,
 ): string[] {
   const explicit = env[config.engine.binaryEnv];
-  const listed = config.engine.binaryCandidates.map((candidate) => {
-    const expanded = expandHome(candidate);
-    return resolve(config.root, expanded);
+  const listed = config.engine.binaryCandidates.flatMap((candidate) => {
+    const path = resolve(config.root, expandHome(candidate));
+    return process.platform === "win32" && !path.endsWith(".exe") ? [path, `${path}.exe`] : [path];
   });
+  if (process.platform === "win32") {
+    const localAppData = env.LOCALAPPDATA || join(homedir(), "AppData", "Local");
+    listed.push(join(localAppData, "aphrody", "bin", `${config.engine.binary}.exe`));
+  }
   return [...(explicit ? [resolve(expandHome(explicit))] : []), ...listed];
 }
 
