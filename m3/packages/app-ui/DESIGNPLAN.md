@@ -7,8 +7,8 @@ and navigation remain the single application scaffold. Browser home renders
 immediately; the native desktop retains its explorer default.
 
 Use the genuine identity package's portrait and animated atlas. Derive both
-colour schemes and all semantic surfaces from PET_COLORS.seed using the existing
-Material Color Utilities owner; preserve accessible contrast and reduced motion.
+colour schemes and all semantic surfaces from PET_COLORS.seed through the Rust
+owner (aphrody-m3-tokens ThemeExport in src/generated/); preserve accessible contrast and reduced motion.
 Public content reads the native site catalogs; errors have a bounded retry state.
 Showcase routes mount existing package demonstrations inside the same shell,
 with a local theme target so experimental colours cannot change app preferences.

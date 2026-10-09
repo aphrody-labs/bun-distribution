@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import { schemeFromSeed } from "@aphrody/m3-tokens/dynamic-color";
 import { PET_COLORS } from "@aphrody/identity/pet";
-import { ROLES } from "@aphrody/m3-tokens/dynamic-color";
-import { parseNativeThemeExport } from "@aphrody/m3-tokens/native-theme";
+import {
+  ROLES,
+  nativeThemeColorRoles,
+  parseNativeThemeExport,
+  type NativeThemeExport,
+} from "@aphrody/m3-tokens/native-theme";
 import {
   BRAND_SEED,
   READING_COLUMN,
@@ -20,6 +23,14 @@ import {
 const tokensCss = await Bun.file(
   Bun.fileURLToPath(import.meta.resolve("@aphrody/m3-tokens/m3-tokens.css")),
 ).text();
+const nativeTheme = parseNativeThemeExport(
+  await Bun.file(new URL("./generated/brand-theme.json", import.meta.url)).json(),
+);
+const highContrastTheme = parseNativeThemeExport(
+  await Bun.file(new URL("./generated/brand-theme-high-contrast.json", import.meta.url)).json(),
+);
+const themes = { nativeTheme, highContrastTheme };
+const roles = (theme: NativeThemeExport, dark: boolean) => nativeThemeColorRoles(theme, dark);
 
 function luminance(hex: string): number {
   const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
@@ -34,7 +45,7 @@ function contrast(a: string, b: string): number {
 describe("brand theme", () => {
   test("src/brand.css is the generated sheet for the pet seed", async () => {
     const onDisk = await Bun.file(new URL("./brand.css", import.meta.url)).text();
-    expect(onDisk).toBe(brandCss(tokensCss, BRAND_SEED));
+    expect(onDisk).toBe(brandCss(tokensCss, themes));
   });
 
   test("brand values use the canonical pet palette and semantic gradient roles", () => {
@@ -54,10 +65,13 @@ describe("brand theme", () => {
     expect(WEIGHTS).toEqual({ display: 280, headline: 350, body: 400, bodyStrong: 500 });
   });
 
-  test("colour roles are generated tonal-spot roles, not hand-copied", () => {
-    const css = brandCss(tokensCss);
-    const dark = schemeFromSeed(BRAND_SEED, { dark: true });
-    const light = schemeFromSeed(BRAND_SEED, { dark: false });
+  test("colour roles are the Rust tonal-spot export of the pet seed", () => {
+    const css = brandCss(tokensCss, themes);
+    expect(nativeTheme.seed).toBe(BRAND_SEED);
+    expect(nativeTheme.variant).toBe("tonal-spot");
+    expect(nativeTheme.contrast_level).toBe(0);
+    const dark = roles(nativeTheme, true);
+    const light = roles(nativeTheme, false);
     const lightBlock = css.slice(
       css.indexOf(":root.light,\n.light {"),
       css.indexOf(":root,\n.dark {"),
@@ -74,11 +88,11 @@ describe("brand theme", () => {
   });
 
   test("pet-generated surfaces retain AA contrast with no later colour overrides", () => {
-    const css = brandCss(tokensCss);
+    const css = brandCss(tokensCss, themes);
     expect(css.match(/--md-sys-color-surface:/g)).toHaveLength(4);
     expect(css.match(/--md-sys-color-background:/g)).toHaveLength(4);
-    const light = schemeFromSeed(BRAND_SEED, { dark: false }) as Record<string, string>;
-    const dark = schemeFromSeed(BRAND_SEED, { dark: true }) as Record<string, string>;
+    const light = roles(nativeTheme, false);
+    const dark = roles(nativeTheme, true);
     for (const role of [
       "--md-sys-color-on-surface",
       "--md-sys-color-on-surface-variant",
@@ -90,16 +104,15 @@ describe("brand theme", () => {
   });
 
   test("high contrast preferences use the same pet and scheme variant", () => {
-    const css = brandCss(tokensCss);
+    const css = brandCss(tokensCss, themes);
     const higher = css.slice(css.indexOf("@media (prefers-contrast: more)"));
     expect(higher).toContain("color-scheme: light;");
     expect(higher).toContain("color-scheme: dark;");
     for (const dark of [false, true])
-      for (const [role, value] of Object.entries(
-        schemeFromSeed(BRAND_SEED, { dark, contrastLevel: 1 }),
-      ))
+      for (const [role, value] of Object.entries(roles(highContrastTheme, dark)))
         expect(higher).toContain(`${role}: ${value};`);
-    expect(() => brandCss(tokensCss, BRAND_SEED, { contrastLevel: NaN })).toThrow("M3 contrast");
+    expect(highContrastTheme.seed).toBe(nativeTheme.seed);
+    expect(highContrastTheme.contrast_level).toBe(1);
   });
 
   test("native normal and high contrast exports drive the app without palette replacement", () => {
@@ -112,23 +125,31 @@ describe("brand theme", () => {
       light: Object.fromEntries(ROLES.map((role) => [role, "#aabbcc"])),
       dark: Object.fromEntries(ROLES.map((role) => [role, "#112233"])),
     };
-    const nativeTheme = parseNativeThemeExport(shape);
-    const highContrastTheme = parseNativeThemeExport({ ...shape, contrast_level: 1 });
-    const css = brandCss(tokensCss, BRAND_SEED, { nativeTheme, highContrastTheme });
+    const standard = parseNativeThemeExport(shape);
+    const high = parseNativeThemeExport({ ...shape, contrast_level: 1 });
+    const css = brandCss(tokensCss, { nativeTheme: standard, highContrastTheme: high });
     expect(css).toContain("--md-sys-color-primary: #aabbcc;");
     expect(css).toContain("--md-sys-color-on-surface: #112233;");
     expect(css).toContain("@media (prefers-contrast: more)");
-    expect(() => brandCss(tokensCss, "#123456", { nativeTheme })).toThrow("does not match");
+    const other = parseNativeThemeExport({ ...shape, seed: "#123456", contrast_level: 1 });
+    expect(() => brandCss(tokensCss, { nativeTheme: standard, highContrastTheme: other })).toThrow(
+      "does not match",
+    );
     expect(() =>
-      brandCss(tokensCss, BRAND_SEED, { nativeTheme, highContrastTheme: nativeTheme }),
-    ).toThrow("high contrast");
+      brandCss(tokensCss, { nativeTheme: standard, highContrastTheme: standard }),
+    ).toThrow("does not match");
+  });
+
+  test("a missing Rust export is an explicit error, never a JS fallback", () => {
+    expect(() => brandCss(tokensCss, { nativeTheme })).toThrow("brand_theme_golden");
+    expect(() => brandCss(tokensCss, {})).toThrow("Rust ThemeExport");
   });
 
   test("springs come from m3-tokens.css and render as settling linear() easings", () => {
     const springs = springsFromTokensCss(tokensCss);
     expect(springs["default-spatial"]).toEqual({ damping: 0.9, stiffness: 700 });
     expect(springs["fast-effects"]).toEqual({ damping: 1, stiffness: 3800 });
-    const css = brandCss(tokensCss);
+    const css = brandCss(tokensCss, themes);
     for (const name of SPRING_NAMES) {
       const s = springs[name];
       const easing = springLinear(s);

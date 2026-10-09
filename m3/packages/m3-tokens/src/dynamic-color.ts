@@ -28,6 +28,9 @@ import {
   type DynamicColor,
   type DynamicScheme,
 } from "@material/material-color-utilities";
+import { ROLES } from "./native-theme";
+
+export { ROLES };
 
 export {
   argbFromHex,
@@ -89,64 +92,6 @@ export interface SchemeOptions {
 
 /** A map of `--md-sys-color-*` custom-property names to hex colours. */
 export type ColorRoleMap = Record<string, string>;
-
-// ---------------------------------------------------------------------------
-// Role list
-// ---------------------------------------------------------------------------
-
-// The MaterialDynamicColors roles that map 1:1 onto `--md-sys-color-*` tokens.
-// (Palette key colours and non-colour spec fields are intentionally excluded.)
-export const ROLES = [
-  "background",
-  "onBackground",
-  "surface",
-  "surfaceDim",
-  "surfaceBright",
-  "surfaceContainerLowest",
-  "surfaceContainerLow",
-  "surfaceContainer",
-  "surfaceContainerHigh",
-  "surfaceContainerHighest",
-  "onSurface",
-  "surfaceVariant",
-  "onSurfaceVariant",
-  "inverseSurface",
-  "inverseOnSurface",
-  "outline",
-  "outlineVariant",
-  "shadow",
-  "scrim",
-  "surfaceTint",
-  "primary",
-  "onPrimary",
-  "primaryContainer",
-  "onPrimaryContainer",
-  "inversePrimary",
-  "secondary",
-  "onSecondary",
-  "secondaryContainer",
-  "onSecondaryContainer",
-  "tertiary",
-  "onTertiary",
-  "tertiaryContainer",
-  "onTertiaryContainer",
-  "error",
-  "onError",
-  "errorContainer",
-  "onErrorContainer",
-  "primaryFixed",
-  "primaryFixedDim",
-  "onPrimaryFixed",
-  "onPrimaryFixedVariant",
-  "secondaryFixed",
-  "secondaryFixedDim",
-  "onSecondaryFixed",
-  "onSecondaryFixedVariant",
-  "tertiaryFixed",
-  "tertiaryFixedDim",
-  "onTertiaryFixed",
-  "onTertiaryFixedVariant",
-] as const;
 
 // ---------------------------------------------------------------------------
 // Internal helpers

@@ -1,18 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-// Aphrody brand sheet, generated from the canonical pet by @aphrody/m3-tokens.
-// Material Color Utilities produces every surface and semantic colour role.
+// Aphrody brand sheet. Every colour role comes from the Rust owner (aphrody_m3_tokens::theme
+// ThemeExport of the identity pet seed, committed under src/generated/ by the
+// brand_theme_golden test); this module only lays the roles out as CSS.
 
-import {
-  cssFromSeed,
-  normalizeSeedHex,
-  type SchemeVariant,
-} from "@aphrody/m3-tokens/dynamic-color";
 import {
   nativeThemeCss,
   nativeThemeVariant,
   parseNativeThemeExport,
   type NativeThemeExport,
-  type NativeSchemeVariant,
 } from "@aphrody/m3-tokens/native-theme";
 
 import {
@@ -103,47 +98,30 @@ function brandTokens(springs: Record<SpringName, Spring>): string {
   return `:root {\n${lines.join("\n")}\n}\n`;
 }
 
-export interface BrandThemeOptions {
-  variant?: SchemeVariant | NativeSchemeVariant;
-  contrastLevel?: number;
+/** Rust `ThemeExport`s of one seed and variant: the requested contrast and contrast 1. */
+export interface BrandThemes {
   nativeTheme?: NativeThemeExport;
   highContrastTheme?: NativeThemeExport;
 }
 
-/** Full brand sheet, preserving native roles when a Rust export is supplied. */
-export function brandCss(
-  tokensCss: string,
-  seed: string = BRAND_SEED,
-  options: BrandThemeOptions = {},
-): string {
-  seed = normalizeSeedHex(seed);
-  const native = options.nativeTheme && parseNativeThemeExport(options.nativeTheme);
-  const variant = options.variant ?? (native ? nativeThemeVariant(native) : "tonalSpot");
-  const contrastLevel = options.contrastLevel ?? native?.contrast_level ?? 0;
-  if (!native && (variant === "rainbow" || variant === "fruitSalad"))
-    throw new Error(`Brand variant "${variant}" requires a native theme export`);
-  if (
-    native &&
-    (native.seed !== seed ||
-      nativeThemeVariant(native) !== variant ||
-      native.contrast_level !== contrastLevel)
-  )
-    throw new Error("Native theme does not match the requested brand seed, variant or contrast");
-  const selectors = { lightSelector: ":root.light,\n.light", darkSelector: ":root,\n.dark" };
-  const standardCss = native
-    ? nativeThemeCss(native, selectors)
-    : cssFromSeed(seed, { ...selectors, variant: variant as SchemeVariant, contrastLevel });
-  const high = options.highContrastTheme && parseNativeThemeExport(options.highContrastTheme);
-  if (
-    high &&
-    (high.seed !== seed || nativeThemeVariant(high) !== variant || high.contrast_level !== 1)
-  )
+export const BRAND_THEME_REGENERATE =
+  "APHRODY_UPDATE_TOKENS=1 scripts/build/rust/cargo-serial.sh test -p aphrody-m3-tokens --test brand_theme_golden";
+
+/** Full brand sheet from the Rust theme exports; colours are never derived in JS. */
+export function brandCss(tokensCss: string, themes: BrandThemes): string {
+  if (!themes.nativeTheme || !themes.highContrastTheme)
+    throw new Error(
+      `brandCss needs the Rust ThemeExport at contrast 0 and 1 (src/generated/brand-theme*.json); regenerate with: ${BRAND_THEME_REGENERATE}`,
+    );
+  const native = parseNativeThemeExport(themes.nativeTheme);
+  const high = parseNativeThemeExport(themes.highContrastTheme);
+  const { seed, contrast_level: contrastLevel } = native;
+  const variant = nativeThemeVariant(native);
+  if (high.seed !== seed || high.variant !== native.variant || high.contrast_level !== 1)
     throw new Error("Native high contrast theme does not match the requested brand theme");
-  const highCss = high
-    ? nativeThemeCss(high, selectors)
-    : !native && contrastLevel !== 1
-      ? cssFromSeed(seed, { ...selectors, variant: variant as SchemeVariant, contrastLevel: 1 })
-      : undefined;
+  const selectors = { lightSelector: ":root.light,\n.light", darkSelector: ":root,\n.dark" };
+  const standardCss = nativeThemeCss(native, selectors);
+  const highCss = contrastLevel === 1 ? undefined : nativeThemeCss(high, selectors);
   const header =
     "/* SPDX-License-Identifier: Apache-2.0 */\n" +
     "/*\n" +

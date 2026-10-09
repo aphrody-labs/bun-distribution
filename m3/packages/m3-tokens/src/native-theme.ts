@@ -1,6 +1,60 @@
 // SPDX-License-Identifier: Apache-2.0
 // Adapter for aphrody_m3_tokens::theme::ThemeExport. Rust owns the colours.
-import { ROLES, type ColorRoleMap, type SchemeVariant } from "./dynamic-color";
+import type { ColorRoleMap, SchemeVariant } from "./dynamic-color";
+
+// The Google dynamic-colour roles that map 1:1 onto `--md-sys-color-*` tokens.
+// (Palette key colours and non-colour spec fields are intentionally excluded.)
+export const ROLES = [
+  "background",
+  "onBackground",
+  "surface",
+  "surfaceDim",
+  "surfaceBright",
+  "surfaceContainerLowest",
+  "surfaceContainerLow",
+  "surfaceContainer",
+  "surfaceContainerHigh",
+  "surfaceContainerHighest",
+  "onSurface",
+  "surfaceVariant",
+  "onSurfaceVariant",
+  "inverseSurface",
+  "inverseOnSurface",
+  "outline",
+  "outlineVariant",
+  "shadow",
+  "scrim",
+  "surfaceTint",
+  "primary",
+  "onPrimary",
+  "primaryContainer",
+  "onPrimaryContainer",
+  "inversePrimary",
+  "secondary",
+  "onSecondary",
+  "secondaryContainer",
+  "onSecondaryContainer",
+  "tertiary",
+  "onTertiary",
+  "tertiaryContainer",
+  "onTertiaryContainer",
+  "error",
+  "onError",
+  "errorContainer",
+  "onErrorContainer",
+  "primaryFixed",
+  "primaryFixedDim",
+  "onPrimaryFixed",
+  "onPrimaryFixedVariant",
+  "secondaryFixed",
+  "secondaryFixedDim",
+  "onSecondaryFixed",
+  "onSecondaryFixedVariant",
+  "tertiaryFixed",
+  "tertiaryFixedDim",
+  "onTertiaryFixed",
+  "onTertiaryFixedVariant",
+] as const;
 
 const VARIANTS = {
   "tonal-spot": "tonalSpot",
