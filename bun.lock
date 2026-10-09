@@ -125,7 +125,7 @@
     },
     "m3/apps/example": {
       "name": "@aphrody/m3-example",
-      "version": "0.1.1",
+      "version": "3.3.9",
       "dependencies": {
         "@aphrody/m3": "workspace:*",
         "@aphrody/m3-react": "workspace:*",
