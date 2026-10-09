@@ -51,7 +51,7 @@ endpoint accepts both the legacy `initialize` flow and the 2026-07-28 stateless
 ## Plugin boundary
 
 The central store `~/plugins` contains the `aphrody` plugin for
-`aphrody-kernel mcp` and the `shenron` plugin for `aphrody-mcp server`.
+`aphrody-mcp` and the `shenron` plugin for `aphrody-mcp server`.
 Prepare, validate and register them with the [Workspace manager](AGENT_PLUGINS.md).
 Their activation stays restricted to the permitted workspaces.
 

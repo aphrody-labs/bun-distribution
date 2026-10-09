@@ -186,7 +186,7 @@ Use `yolo workspace plugins status`, `facts` and `validate` for actual registrat
 ## Native dependency synchronization
 
 The core `@aphrody/yolo-core/pm` owner exposes `planPackageSync` and `syncPackages`.
-`yolo mcp` serves `yolo_package_sync`; `yolo api` serves the same tool through
+`aphrody-mcp` serves `yolo_package_sync`; `yolo api` serves the same tool through
 `POST /api/tools/call`. Arguments are `path`, optional `managers` (`bun,uv,cargo`),
 `offline`, `production`, `timeoutMs` and `apply` (false by default). HTTP contains
 project paths within its configured root and applies its existing token policy.

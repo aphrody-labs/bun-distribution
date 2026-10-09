@@ -255,7 +255,7 @@
       "indexes": [],
       "readsToday": ["APHRODY_AI_MCP_BIN"],
       "surfaces": ["crates/aphrody-kernel/src/mcp_proxy.rs"],
-      "migration": "Process boundary only (aphrody-mcp stdio behind the kernel MCP proxy); already reads the canonical name."
+      "migration": "Process boundary only (aphrody-mcp stdio behind the aphrody-mcp host); already reads the canonical name."
     },
     "aphrody-ui": {
       "uses": ["aphrody"],

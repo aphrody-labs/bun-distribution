@@ -101,7 +101,7 @@
       ],
       [
         "MCP",
-        "`aphrody-mcp` (`crates/ai/mcp`) is the only MCP server and hosts the kernel in process; `aphrody kernel mcp`, `yolo mcp` and `m3-mcp` are deprecated aliases (2026-10-07); `yolo tool` and the M3 `tool-host` are tool hosts, not servers"
+        "`aphrody-mcp` (`crates/ai/mcp`) is the only MCP server and hosts the kernel in process; `m3-mcp` is a deprecated alias (2026-10-07); `yolo tool` and the M3 `tool-host` are tool hosts, not servers"
       ],
       [
         "Desktop",
@@ -139,7 +139,7 @@
       ],
       [
         "Single MCP",
-        "`aphrody-mcp` is the only MCP server; `yolo mcp`, `m3-mcp` and kernel MCP become aliases; same-purpose tools merged"
+        "`aphrody-mcp` is the only MCP server; `m3-mcp` becomes an alias; same-purpose tools merged"
       ],
       [
         "Kernel and shell",
@@ -340,7 +340,7 @@
         "rows": [
           [
             "2026-10-05",
-            "`aphrody-mcp` serves 164 tools; `aphrody kernel mcp` 329; `yolo mcp` 14; `aphrody plugins validate` 0 issues.",
+            "`aphrody-mcp` serves 329 tools; `aphrody plugins validate` 0 issues.",
             "Plugin repos kept on their remotes."
           ],
           [

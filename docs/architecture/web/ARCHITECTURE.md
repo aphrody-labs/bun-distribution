@@ -101,7 +101,7 @@ upstream lint relaxations declared in its manifest.
 | -------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | CLI            | `aphrody-web launch\|fetch\|scrape\|crawl\|chrome-path`                                     | `crawl` added 2026-10-01; contract in the API document                                             |
 | CDP            | `ws://127.0.0.1:9222/devtools/browser`, `/json/version`, `/json/list`                       | Default port 9222; workers on `port + 1 + i`; tests use an ephemeral port                          |
-| MCP (remote)   | `aphrody-mcp` tools `aphrody_browser_*`, `aphrody_web_crawl`, `universal_web_fetch`         | Built from `WebSession::tools()`; wired through `aphrody-kernel mcp` (plugin `plugins/aphrody`)    |
+| MCP (remote)   | `aphrody-mcp` tools `aphrody_browser_*`, `aphrody_web_crawl`, `universal_web_fetch`         | Built from `WebSession::tools()`; wired through `aphrody-mcp` (plugin `plugins/aphrody`)    |
 | MCP (desktop)  | `aphrody-mcp`: 14 `aphrody_tauri_*`/`aphrody_webview_*` tools, forwarded to the per-user kernel | Only the Aphrody apps that register `TauriWebviewSubsystem`; see the Tauri debug guide             |
 | Rust           | `aphrody_web_service::WebSession`, `page_artifact`, `aphrody_web_crawl::crawl_bounded`      | Stable JSON shapes are the contract                                                                |
 | Bun            | `@aphrody/agent-browser/service`                                                            | One-shot calls spawn the CLI with a timeout                                                        |
@@ -129,7 +129,7 @@ upstream lint relaxations declared in its manifest.
 | Shenron                | Mostly bypassed         | `curl`/regex scripts (`shenron:apps/site/scripts`, `shenron:apps/bot/scripts`), legacy `bxc` spawn in `shenron:packages/pipeline`, client of a retired HTTP API |
 | Koharu                 | No                      | CEF with remote debugging port 4000 in debug builds; no web-layer dependency                                                              |
 | CLI (`crates/infra/aphrody`)       | Yes                     | `aphrody web` over `aphrody-web-service`, `-crawl`, `-extract` (including `media`), `-detect`; `aphrody bxc` is the compatibility alias of the same binary (parity table in the migration record); `aphrody google` runs in process |
-| Kernel / OS            | Indirect                | `aphrody-kernel mcp` proxies `aphrody-mcp`; optional plugin `aphrody-browser-mcp` has no crate that builds it                             |
+| Kernel / OS            | Indirect                | `aphrody-mcp` hosts the kernel in process; optional plugin `aphrody-browser-mcp` has no crate that builds it                             |
 | Desktop app            | Yes                     | `crates/ui/app` defines and registers `WebSubsystem` (the former `aphrody-web` facade crate); Tauri debug tools live in the same kernel |
 | AI tools               | Partly                  | `crates/ai/mcp` native browser; `crates/ai/tools` (not in repo) `web_fetch` keeps a private `reqwest` scraping client                                   |
 

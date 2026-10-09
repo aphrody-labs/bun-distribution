@@ -56,7 +56,7 @@ versioned rename proves every consumer and route.
 
 ## Unified plugin
 
-The single plugin in `plugins/aphrody` registers both `aphrody-kernel mcp`
+The single plugin in `plugins/aphrody` registers both `aphrody-mcp`
 for system capabilities and `aphrody-mcp server` for AI, RAG and Dragon Ball.
 They remain separate MCP processes and permission boundaries.
 

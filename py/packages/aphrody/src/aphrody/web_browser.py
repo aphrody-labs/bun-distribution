@@ -120,7 +120,7 @@ class WebBrowserClient:
     """Call Aphrody Web Browser tools through the local kernel.
 
     Use as a context manager to release the MCP stdio process. A running
-    kernel is reused by ``aphrody-kernel mcp``; otherwise it hosts one locally.
+    kernel is reused by ``aphrody-mcp``; otherwise it hosts one locally.
     """
 
     def __init__(

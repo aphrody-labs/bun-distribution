@@ -474,7 +474,7 @@
         {
           "name": "aphrody-kernel-client",
           "path": "crates/os/kernel/client",
-          "description": "Cross-platform local JSON-RPC client for the Aphrody OS kernel MCP endpoint.",
+          "description": "Cross-platform local JSON-RPC client for the Aphrody OS kernel endpoint served by aphrody-mcp.",
           "bins": [],
           "features": []
         },

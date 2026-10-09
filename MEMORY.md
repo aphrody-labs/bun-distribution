@@ -44,7 +44,7 @@ Dated evidence only. Decisions and queue live in PLAN.md; rules in AGENTS.md. Hi
 
 | Date | Evidence | Limit |
 | --- | --- | --- |
-| 2026-10-05 | `aphrody-mcp` serves 164 tools; `aphrody kernel mcp` 329; `yolo mcp` 14; `aphrody plugins validate` 0 issues. | Plugin repos kept on their remotes. |
+| 2026-10-05 | `aphrody-mcp` serves 329 tools; `aphrody plugins validate` 0 issues. | Plugin repos kept on their remotes. |
 | 2026-10-06 | `bxc`, `bxc-mcp`, `n2b` are multicall names of `aphrody`; `aphrody-web-bridge` removed; `crates/web/x` is the sole X implementation (Web ABI 5). | Parity doc: `docs/migration/bxc-n2b-unification-2026-10-05.md`. |
 | 2026-10-06 | `aphrody` release installed (`--locked`, VPS, 3 min), `aphrody package doctor` 34/34 links. | Binary 370 MB unstripped vs 129 MB published. |
 | 2026-10-06 | Dedup: removed `aphrody-search`, `aphrody-settings`, `packages/compat/tsconfig.base.json`; 21 orphan Rust files (2,962 lines) and 20 uncalled scripts removed; `docs:check-links` green (was 149 broken links). | `aphrody-tools`/`aphrody-chat` deprecated but still called; `@aphrody/ovh` duplicates `aphrody-ovh`. |

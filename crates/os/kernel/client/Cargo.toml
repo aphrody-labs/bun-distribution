@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 [package]
 name = "aphrody-kernel-client"
-description = "Cross-platform local JSON-RPC client for the Aphrody OS kernel MCP endpoint."
+description = "Cross-platform local JSON-RPC client for the Aphrody OS kernel endpoint served by aphrody-mcp."
 version = "1.0.0-canary"
 edition.workspace = true
 rust-version.workspace = true

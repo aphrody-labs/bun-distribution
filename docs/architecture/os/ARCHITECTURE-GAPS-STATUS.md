@@ -50,5 +50,5 @@ installations; optional Bun docs remain outside the repository.
 - Configure an absolute audit-log destination for every production kernel and monitor
   `system/audit_status` for lagged events or write failures.
 - Complete WinClean binding generation and retire the remaining non-routing compatibility code.
-- Coordinate a safe update of active kernel MCP sessions, then verify service identity,
+- Coordinate a safe update of active aphrody-mcp sessions, then verify service identity,
   endpoint permissions, restart behavior and observability on each supported production target.

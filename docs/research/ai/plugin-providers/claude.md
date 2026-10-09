@@ -79,7 +79,7 @@ Component path rules:
 - `CLAUDE.md` at the plugin root is not loaded (validate warns).
 
 Local example: `~/plugins/aphrody/.claude-plugin/plugin.json` declares `"mcpServers": "./.mcp.json"` and
-`"skills": "./skills/"`. Its `.mcp.json` defines stdio server `aphrody` running `aphrody-kernel mcp`.
+`"skills": "./skills/"`. Its `.mcp.json` defines stdio server `aphrody` running `aphrody-mcp`.
 
 ## Manifest: `.claude-plugin/marketplace.json`
 
@@ -174,7 +174,7 @@ Plugin install scopes (`enabledPlugins`):
 - Plugin servers: tool name `mcp__plugin_<plugin>_<server>__<tool>`, scoped server name `plugin:<plugin>:<server>`.
   Plugin MCP changes need `/reload-plugins`.
 - Current state: `claude mcp list` shows only the connector `claude.ai Claude Docs` (connected). No `aphrody` server is
-  registered; `aphrody-kernel mcp` is only declared inside the `aphrody` plugin.
+  registered; `aphrody-mcp` is only declared inside the `aphrody` plugin.
 - Manager rule: register Aphrody servers through the `aphrody` plugin `.mcp.json` rather than a `claude mcp add`
   duplicate (the same command would be deduplicated, but two names would double the tool inventory).
 

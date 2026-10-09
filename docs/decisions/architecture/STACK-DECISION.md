@@ -88,7 +88,7 @@ Chaque fonctionnalité de la CLI `yolo` est conçue pour être exposée via quat
 - Formatage adaptatif : terminal couleur ANSI pour l'humain, `--json` et `--md` pour les agents IA.
 
 ### 2. MCP (Model Context Protocol 2024-11-05)
-- Commande `yolo mcp`.
+- Commande `aphrody-mcp`.
 - Serveur stdio JSON-RPC 2.0 natif zéro dépendance npm.
 - Expose le catalogue d'outils aux agents IA (Antigravity, Claude Code, Gemini CLI, etc.) :
   - `yolo_verify` : exécution parallèle des quality gates.

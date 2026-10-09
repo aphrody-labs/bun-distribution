@@ -11,7 +11,7 @@ use tokio::sync::Mutex;
 
 const PREFIX: &str = "aphrody_";
 const TIMEOUT: Duration = Duration::from_secs(25);
-const SETUP_INSTRUCTIONS: &str = "Aphrody Tauri tools are served by aphrody-mcp (and the aphrody-kernel MCP); the desktop app registers its Tauri subsystem in the per-user Aphrody kernel. Use aphrody_tauri_window_list, aphrody_tauri_driver_session and aphrody_tauri_manage_window before targeting a webview.";
+const SETUP_INSTRUCTIONS: &str = "Aphrody Tauri tools are served by aphrody-mcp (and the in-process kernel); the desktop app registers its Tauri subsystem in the per-user Aphrody kernel. Use aphrody_tauri_window_list, aphrody_tauri_driver_session and aphrody_tauri_manage_window before targeting a webview.";
 const TOOL_DEFINITIONS: &[(&str, &str, &str)] = &[
     ("aphrody_tauri_window_list", "List local Aphrody Tauri windows.", r#"{"type":"object"}"#),
     (

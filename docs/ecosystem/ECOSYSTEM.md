@@ -72,7 +72,7 @@ Canonical Rust/Bun monorepo
 | `aphrody-jev` | crates/ai/jev | Typed client for TypeSafe Jev System One decisions (Noul, Choice, Score) with SaaS, Cloudflare edge and local jeff routing and failover. |  | default, server |
 | `aphrody-jobs` | crates/os/kernel/comps/jobs | Persistent background job queue (SQLite): submission, leased claims, crash recovery, retries, NDJSON logs. |  |  |
 | `aphrody-kernel` | crates/os/kernel/core | The Aphrody OS privileged user-space control plane: administration, MCP tools, skills and bus events over local IPC. |  | builtins, default |
-| `aphrody-kernel-client` | crates/os/kernel/client | Cross-platform local JSON-RPC client for the Aphrody OS kernel MCP endpoint. |  |  |
+| `aphrody-kernel-client` | crates/os/kernel/client | Cross-platform local JSON-RPC client for the Aphrody OS kernel endpoint served by aphrody-mcp. |  |  |
 | `aphrody-llama` | crates/ml/llama | Safe Rust bindings for llama.cpp with runtime dynamic loading. |  | default, llguidance, sampler |
 | `aphrody-llama-server` | crates/ai/llama-server | Managed local inference: a supervisor for llama.cpp's `llama-server`, driven as an external binary (never linked). Reads GGUF facts, probes what the installed build supports, plans the launch (context, KV precision, MoE/layer placement, LoRA), runs the server under a detached idle-timeout daemon that holds the GPU lease, and gives clients attach-or-spawn access to an OpenAI-compatible endpoint plus the tokenize / LoRA hot-swap / props side channels. | `aphrody-fake-llama-server`, `aphrody-llama-daemon` | in-process, test-support |
 | `aphrody-llama-sys` | crates/ml/llama-sys | Low-level dynamically loaded FFI bindings for llama.cpp. |  |  |

@@ -143,6 +143,6 @@ cookie reader (`aphrody-web-chromium`) redacts values from `Debug` output.
   domain and the Obscura MCP tools.
 - `bxc` (Bun x Chrome) is a name of the `aphrody` binary: `bxc <subcommand>` and
   `aphrody bxc <subcommand>` run the unified commands (`aphrody web ...`, `aphrody x`,
-  `aphrody google`, `aphrody kernel mcp`) or fail with their replacement; no legacy bridge
+  `aphrody google`, `aphrody-mcp`) or fail with their replacement; no legacy bridge
   binary is called. The parity table is in
   bxc-n2b-unification-2026-10-05.

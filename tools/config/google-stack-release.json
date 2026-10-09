@@ -22,7 +22,7 @@
     "bun": "@aphrody/google",
     "pythonSdk": "google-antigravity",
     "python": "aphrody.google",
-    "kernel": "aphrody-kernel mcp"
+    "kernel": "aphrody-mcp"
   },
   "runtime": {
     "project": "GOOGLE_CLOUD_PROJECT",

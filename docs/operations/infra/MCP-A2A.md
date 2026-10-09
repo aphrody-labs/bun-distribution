@@ -17,7 +17,7 @@ de flotte et les observations historiques du 2026-10-06 restent explicites.
 Le port **8793** évite le port 8789 réservé au tunnel de calcul WSL. Les unités
 restent sur loopback, sans publication nginx. `aphrody-mcp` est le serveur MCP
 canonique ; aucune configuration cliente nouvelle n'utilise les anciens alias
-`yolo mcp` ou `aphrody kernel mcp`.
+`aphrody-mcp`.
 
 Les sources de référence sont les [unités et leur catalogue](../../../tools/config/host/catalog.json),
 la [déclaration de flotte](../../../tools/config/host/agent-fleet.json), le

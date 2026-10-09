@@ -81,7 +81,7 @@ training stores**, **more than a dozen user-facing entry points** that index, se
 | Surface | Today | Target |
 | --- | --- | --- |
 | aphrody-mcp (`crates/ai/mcp`) | `aphrody_rag_search`, `aphrody_rag_context` (default `~/.aphrody/rag/index.db`), `aphrody_shenron_rag_search/ingest` (PG, server data, unchanged), `sync_external_agents`, `infra_sync`, `upstream_*` | add `home_*` tools backed by the common library; the two rag tools resolve the common database |
-| yolo MCP tools | `yolo_scan`, `yolo_vector_search`, `yolo_traindb_stats` | delegate to the Rust library through the `aphrody` binary; Redis path removed after parity |
+| aphrody-mcp tools | `yolo_scan`, `yolo_vector_search`, `yolo_traindb_stats` | delegate to the Rust library through the `aphrody` binary; Redis path removed after parity |
 | Plugin skills (`plugins/aphrody`, own repo `aphrody-labs/plugin-aphrody`; `plugins/` is repo `aphrody-labs/plugins`) | `aphrody-rag`, `aphrody-train`, `ecosystem`, `upstreams`, `graphify` (user skill) cite `aphrody rag ...`, `aphrody train ...`, `knowledge.db`, `graphify query` | cite `aphrody index|graph|query|memory|session|train|sync` and the home database |
 | Docs | `docs/ecosystem/{CLI,MCP-TOOLS,ECOSYSTEM}`, `CLAUDE.md`/`AGENTS.md` Graphify paragraph | regenerated or edited after each batch |
 

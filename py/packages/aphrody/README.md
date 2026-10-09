@@ -112,7 +112,7 @@ result = run_actor(actors[0].name, input={"url": "https://example.com"})
 print(result.output, result.storage_dir)
 ```
 
-`WebBrowserClient` connects to `aphrody-kernel mcp`. Actor discovery and runs
+`WebBrowserClient` connects to `aphrody-mcp`. Actor discovery and runs
 use the installed Aphrody Web Browser executable. Set `APHRODY_WEB_BROWSER_BIN`
 to select an explicit executable. Actor input travels in a temporary private
 file, not process arguments. The result directory is retained for inspection;

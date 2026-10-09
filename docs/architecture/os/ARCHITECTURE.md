@@ -47,7 +47,7 @@ the foundational research on Rust OS state-of-the-art and bare-metal fact-checki
    service DAG      POSIX/Win      services/registry Nushell/Obscura Wine/Proton
    journald logs    pure Rust      screen & windows  Web Browser    .NET / pwsh
         ▲
-        │ MCP (stdio: `aphrody-kernel mcp`)
+        │ MCP (stdio: `aphrody-mcp`)
    aphrody agents (AI layer, separate repository)
 ```
 
@@ -105,7 +105,7 @@ incomplete audit record.
   subsystem: the kernel sends it `tools/call` requests and unregisters it when it disconnects.
   `aphrody_kernel::client::host_remote` does this for a Rust process; `@aphrody/os`
   (`packages/os`) for Bun.
-- **Binary.** `aphrody-kernel serve` (admin, shell and browser built in), `aphrody-kernel mcp` (MCP on
+- **Binary.** `aphrody-kernel serve` (admin, shell and browser built in), `aphrody-mcp` (MCP on
   stdio: relays to the running kernel, or runs one in-process), and the client commands `tools`,
   `skills`, `call <tool> <json>`, `run-skill <name> <json>`, and `a2a <target> <tool> <json>`.
   Global flags include `--socket <path|pipe>`, `--auth-file <path>`, and `--exec-policy <path>`.

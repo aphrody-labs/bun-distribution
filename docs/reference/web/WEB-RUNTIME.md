@@ -117,7 +117,7 @@ HTTP statique ─────────────────────►
                                       canonical, chunks, SimHash
 page dynamique ── Obscura / V8 ────► aphrody-web-service ─► même extraction
                                           ├─ aphrody-web : CLI, CDP, MCP, scrape
-                                          └─ aphrody-browser : outils kernel MCP
+                                          └─ aphrody-browser : outils aphrody-mcp
 ```
 
 The kernel registers one `aphrody_web` subsystem for the Obscura browser tools

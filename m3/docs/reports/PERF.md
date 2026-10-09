@@ -105,7 +105,7 @@ runtime on a loaded disk (120 ms to 2.5 s for the same command) and are not a re
   check owned by another session, which has since been fixed). `tsc --noEmit`, oxlint and oxfmt clean on the touched files.
 - yolo differential run of the old and the new entry on 25 read-only commands (`help`, `version`, `status`, `docs`, `parse`,
   `plugin`, `verify --list`, `doctor`, `runtime`, `scan`, `generate`, unknown command): identical output apart from timestamps
-  and `scan`'s `treeFingerprint`, which also differs between two runs of the same entry. `yolo mcp` answers an `initialize` +
+  and `scan`'s `treeFingerprint`, which also differs between two runs of the same entry. `aphrody-mcp` answers an `initialize` +
   `tools/list` session with the same bytes. The compiled bytecode binary and the plain compiled binary print the same for 13
   commands, including a no-argument run (`help`), `ship` and `web build` (handed to the checkout).
 - `yolo status --json`: the full report (apart from the timestamp) and its Markdown are identical old versus new.

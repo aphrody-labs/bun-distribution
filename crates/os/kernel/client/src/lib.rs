@@ -173,7 +173,7 @@ impl KernelClient {
         self.request("tools/list", json!({})).await
     }
 
-    /// Calls a kernel MCP tool and returns its structured content when available.
+    /// Calls a aphrody-mcp tool and returns its structured content when available.
     pub async fn call_tool(
         &self,
         tool: &str,

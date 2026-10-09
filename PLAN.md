@@ -26,7 +26,7 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 | Bun CLI | `yolo` (`packages/engine/yolo`) |
 | FFI | `aphrody_ffi` cdylib (`crates/interop/ffi`): `aphrody_*`, `yolo_*`, `bun_rs_*`, `aphrody_oxc_*`; PyO3 modules stay separate |
 | WASM | `aphrody-command-wasm` (`crates/infra/aphrody-command-wasm`), exposed by `@aphrody/cli-wasm`: pure commands and RAG JSON/vector operations share one module, loader and linear memory. `@aphrody/rag-core/wasm` uses the same loader. |
-| MCP | `aphrody-mcp` (`crates/ai/mcp`) is the only MCP server and hosts the kernel in process; `aphrody kernel mcp`, `yolo mcp` and `m3-mcp` are deprecated aliases (2026-10-07); `yolo tool` and the M3 `tool-host` are tool hosts, not servers |
+| MCP | `aphrody-mcp` (`crates/ai/mcp`) is the only MCP server and hosts the kernel in process; `m3-mcp` is a deprecated alias (2026-10-07); `yolo tool` and the M3 `tool-host` are tool hosts, not servers |
 | Desktop | `aphrody-app` on `tauri-runtime-cef` (CEF + `tauri-winit` + GTK 4); routes `admin`, `creator` |
 | Python | `vu` runtime (uv + ruff + PyO3 + shared CPython), plan in `docs/plans/vu/PLAN.md` |
 | Bun product | One package, `packages/infra/product`, one entrypoint and `Aphrody-Setup.exe`: installation, administration and creator modules; showcase folded into canonical app-ui. |
@@ -50,7 +50,7 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 | Item | Closure |
 | --- | --- |
 | Monorepo consolidation | Fold thin crates/packages into their owner (gates: clippy `-D warnings`, scoped tests on the VPS); root layout aligned on Tauri `dev`, Obscura and Bun `main` (`crates/ packages/ docs/ scripts/ tools/ vendor/ assets/ examples/ bench/ test/ patches/`); absorb `apps/ config/ data/ bin/ m3/ plugins/ py/` |
-| Single MCP | `aphrody-mcp` is the only MCP server; `yolo mcp`, `m3-mcp` and kernel MCP become aliases; same-purpose tools merged |
+| Single MCP | `aphrody-mcp` is the only MCP server; `m3-mcp` becomes an alias; same-purpose tools merged |
 | Kernel and shell | Target in `docs/plans/os-kernel/PLAN.md` (Asterinas `ostd`/`kernel/{core,comps,libs}`, Linux subsystems); replace hand-made coreutils/Nushell by `uutils`, `eza`, `sudo-rs` or Bun Shell |
 | CLI purge | Group AI capabilities under aphrody ai; orient top-level commands around real native capability owners. Qualify parser, dispatch, truthful errors and CLI/FFI/MCP/kernel parity before retiring compatibility paths. No fake execution/session success. |
 | Release downloads | Publish `aphrody-setup` and `omar-kit` (`bun run downloads:publish plan\|build\|release\|verify`) |

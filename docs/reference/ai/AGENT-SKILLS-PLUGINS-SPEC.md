@@ -71,7 +71,7 @@ credentials fournis par l'environnement hôte et ne jamais écrire de secret
 dans le dépôt. Tester séparément son démarrage, `tools/list`, puis chaque
 opération qui muterait un système externe.
 
-`aphrody-kernel mcp` est le serveur MCP du plugin agentique. Le binaire
+`aphrody-mcp` est le serveur MCP du plugin agentique. Le binaire
 `aphrody-mcp` reste le serveur MCP natif de la surface Aphrody Web du dépôt.
 Le provisioning d'`aphrody
 agy` est merge-safe et peut être désactivé avec `APHRODY_AGY_NO_PROVISION` ;
