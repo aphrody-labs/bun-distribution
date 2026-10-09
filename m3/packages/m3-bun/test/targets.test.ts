@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { loadApp } from "../src/config.ts";
 import {
   generateTargets,
@@ -14,6 +14,7 @@ import { RUNTIME_IMAGE } from "../src/targets/docker.ts";
 import {
   httpVhostModel,
   nginxRenderer,
+  renderNginx,
   vhostModel,
   type NginxModel,
 } from "../src/targets/nginx.ts";
@@ -212,6 +213,21 @@ describe("systemd", () => {
 
 describe("nginx", () => {
   const renderer = nginxRenderer();
+  test("renderer reads real Bun process streams and propagates diagnostics on failure", async () => {
+    const script = join(out, "stream-renderer.ts");
+    await Bun.write(
+      script,
+      'const model = await Bun.stdin.json(); console.error("renderer diagnostic"); console.log(JSON.stringify({ model, args: process.argv.slice(2) }));',
+    );
+    const model = vhostModel(ctx);
+    expect(
+      JSON.parse(await renderNginx([process.execPath, script], model, ["owner comment"])),
+    ).toEqual({ model, args: ["--comment", "owner comment", "-"] });
+    await Bun.write(script, 'console.error("renderer denied"); process.exit(23);');
+    await expect(renderNginx([process.execPath, script], model, [])).rejects.toThrow(
+      "failed (23): renderer denied",
+    );
+  });
   test("vhost model: upstream with keepalive, ACME and redirect on :80, TLS on :443, the yolo proxy snippet", () => {
     const model = json("nginx", "hello-m3.nginx.json") as NginxModel;
     expect(model).toEqual(vhostModel(ctx));
@@ -512,17 +528,39 @@ describe("windows", () => {
 });
 
 describe("linux-image", () => {
-  test("README states the limit; the scripts are executable and valid bash", () => {
+  const git = Bun.which("git");
+  const gitBash = git && join(dirname(dirname(git)), "bin/bash.exe");
+  const bash =
+    process.platform === "win32"
+      ? gitBash && existsSync(gitBash)
+        ? gitBash
+        : undefined
+      : Bun.which("bash");
+  test("README states the limit and generated scripts contain executable payloads", () => {
     const readme = read("linux-image", "README.md");
     expect(readme).toContain('a one-file or "no libc" image');
     expect(readme).toContain("libc, libm, libdl, libpthread");
     for (const file of ["build-image.sh", "run-qemu.sh"]) {
       const path = join(out, "linux-image", file);
-      expect(Bun.spawnSync(["bash", "-n", path]).exitCode).toBe(0);
       expect(Bun.file(path).size).toBeGreaterThan(200);
-      expect(Bun.spawnSync(["test", "-x", path]).exitCode).toBe(0);
     }
   });
+  test.skipIf(!bash)("a qualified native Bash validates generated shell syntax", () => {
+    for (const file of ["build-image.sh", "run-qemu.sh"]) {
+      expect(
+        Bun.spawnSync([bash!, "-n", join(out, "linux-image", file).replaceAll("\\", "/")]).exitCode,
+      ).toBe(0);
+    }
+  });
+  test.skipIf(process.platform === "win32")(
+    "a native POSIX host qualifies executable permissions",
+    () => {
+      for (const file of ["build-image.sh", "run-qemu.sh"]) {
+        const path = join(out, "linux-image", file);
+        expect(Bun.spawnSync(["test", "-x", path]).exitCode).toBe(0);
+      }
+    },
+  );
   test("build-image.sh delegates to the fork's initramfs.ts with the executable as the only Bun", () => {
     const script = read("linux-image", "build-image.sh");
     expect(script).toContain('BUN_BE_BUN=1 "$BIN" -e \'require("bun:linux")\'');

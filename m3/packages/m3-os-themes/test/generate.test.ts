@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, it } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { generate, nearestGnomeAccent, registryValues, themeManifest } from "../src/index.ts";
 import { installCommand, run } from "../src/cli.ts";
 import { encodePng } from "../src/png.ts";
+import { PET_COLORS } from "@aphrody/identity/pet";
+import { inflateSync } from "node:zlib";
 
 const input = { name: "Test", seed: "#6750a4", mode: "auto" as const };
 const text = (path: string): string => {
@@ -25,6 +27,28 @@ describe("generate", () => {
   it("rejects bad seeds and names", () => {
     expect(() => generate({ ...input, seed: "nope" })).toThrow();
     expect(() => generate({ ...input, name: "a b" })).toThrow();
+  });
+  it("carries contrast into each OS format and rejects invalid levels", () => {
+    const high = generate({ ...input, contrastLevel: 1 });
+    for (const target of ["windows", "gnome", "cosmic", "chromium"] as const) {
+      const standard = generate(input, [target]);
+      expect(high.filter((file) => file.target === target)).not.toEqual(standard);
+    }
+    expect(run(["generate", "--contrast", "NaN", "--dry-run"]).code).toBe(2);
+    expect(run(["generate", "--contrast", "2", "--dry-run"]).code).toBe(2);
+    expect(run(["generate", "--contrast", "-0.5", "--dry-run"]).code).toBe(0);
+  });
+  it("uses the canonical pet seed for an unspecified CLI seed", () => {
+    const dir = mkdtempSync(join(tmpdir(), "m3-pet-theme-"));
+    try {
+      expect(run(["generate", "--target", "chromium", "--out", dir]).code).toBe(0);
+      const actual = JSON.parse(readFileSync(join(dir, "chromium/dark/manifest.json"), "utf8"));
+      expect(actual).toEqual(
+        themeManifest({ name: "Aphrody", seed: PET_COLORS.seed, mode: "auto" }, "dark"),
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 
@@ -122,7 +146,7 @@ describe("chromium", () => {
     expect(new TextDecoder().decode(png.subarray(ihdr + 4, ihdr + 8))).toBe("IDAT");
     expect(idat[0]! & 0x0f).toBe(8);
     expect(((idat[0]! << 8) | idat[1]!) % 31).toBe(0);
-    expect(Array.from(Bun.inflateSync(new Uint8Array(idat), { windowBits: 15 }))).toEqual([
+    expect(Array.from(inflateSync(idat))).toEqual([
       0, 0, 0, 7, 1, 0, 7, 2, 0, 7, 0, 0, 1, 7, 1, 1, 7, 2, 1, 7,
     ]);
   });

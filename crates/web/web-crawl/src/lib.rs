@@ -2,6 +2,10 @@
 //! Shared crawl frontier, page processing and injectable network transport.
 
 mod blocking;
+/// Native acquisition of Material Design's published structured documents.
+pub mod design;
+/// Verified Markdown exports of the public Google Design mirror.
+pub mod design_google;
 pub mod dragon_ball;
 mod frontier;
 mod mediawiki;
@@ -14,6 +18,10 @@ mod sitemap;
 pub mod wiki;
 
 pub use blocking::BlockingCrawler;
+pub use design::{MaterialSyncError, MaterialSyncReport, sync_material};
+pub use design_google::{
+    GoogleDesignError, export_google_documents, verify_google_documents, verify_mirror,
+};
 pub use frontier::{AddRequest, Frontier, FrontierOptions, FrontierStats, Lease, RequestState};
 pub use mediawiki::{
     MediaWikiDocument, MediaWikiError, MediaWikiOptions, crawl_mediawiki,

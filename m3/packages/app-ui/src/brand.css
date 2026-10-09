@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /*
- * Aphrody brand sheet: M3 tonal-spot roles from seed #8c6c88 (Aphrody pet sock mauve),
+ * Aphrody brand sheet: M3 tonalSpot roles from seed #8c6c88, contrast 0,
  * Pet-derived surfaces and roles, expressive shapes and M3 spring easings.
  * GENERATED - do not hand-edit. Regenerate with: bun run brand
  */
@@ -111,6 +111,116 @@
   --md-sys-color-tertiary-fixed-dim: #f6b8a9;
   --md-sys-color-on-tertiary-fixed: #331109;
   --md-sys-color-on-tertiary-fixed-variant: #663b31;
+}
+
+@media (prefers-contrast: more) {
+:root.light,
+.light {
+  color-scheme: light;
+  --md-sys-color-background: #fff7fa;
+  --md-sys-color-on-background: #201a1e;
+  --md-sys-color-surface: #fff7fa;
+  --md-sys-color-surface-dim: #c1b6bc;
+  --md-sys-color-surface-bright: #fff7fa;
+  --md-sys-color-surface-container-lowest: #ffffff;
+  --md-sys-color-surface-container-low: #faedf4;
+  --md-sys-color-surface-container: #ebdfe6;
+  --md-sys-color-surface-container-high: #ddd1d8;
+  --md-sys-color-surface-container-highest: #cfc3ca;
+  --md-sys-color-on-surface: #000000;
+  --md-sys-color-surface-variant: #eddee8;
+  --md-sys-color-on-surface-variant: #000000;
+  --md-sys-color-inverse-surface: #352e33;
+  --md-sys-color-inverse-on-surface: #ffffff;
+  --md-sys-color-outline: #322a30;
+  --md-sys-color-outline-variant: #50464e;
+  --md-sys-color-shadow: #000000;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-surface-tint: #7e4d7c;
+  --md-sys-color-primary: #461b46;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #673865;
+  --md-sys-color-on-primary-container: #ffffff;
+  --md-sys-color-inverse-primary: #efb4e9;
+  --md-sys-color-secondary: #382736;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #564354;
+  --md-sys-color-on-secondary-container: #ffffff;
+  --md-sys-color-tertiary: #472218;
+  --md-sys-color-on-tertiary: #ffffff;
+  --md-sys-color-tertiary-container: #693e33;
+  --md-sys-color-on-tertiary-container: #ffffff;
+  --md-sys-color-error: #600004;
+  --md-sys-color-on-error: #ffffff;
+  --md-sys-color-error-container: #98000a;
+  --md-sys-color-on-error-container: #ffffff;
+  --md-sys-color-primary-fixed: #673865;
+  --md-sys-color-primary-fixed-dim: #4d224d;
+  --md-sys-color-on-primary-fixed: #ffffff;
+  --md-sys-color-on-primary-fixed-variant: #ffffff;
+  --md-sys-color-secondary-fixed: #564354;
+  --md-sys-color-secondary-fixed-dim: #3f2d3d;
+  --md-sys-color-on-secondary-fixed: #ffffff;
+  --md-sys-color-on-secondary-fixed-variant: #ffffff;
+  --md-sys-color-tertiary-fixed: #693e33;
+  --md-sys-color-tertiary-fixed-dim: #4f281e;
+  --md-sys-color-on-tertiary-fixed: #ffffff;
+  --md-sys-color-on-tertiary-fixed-variant: #ffffff;
+}
+
+:root,
+.dark {
+  color-scheme: dark;
+  --md-sys-color-background: #171216;
+  --md-sys-color-on-background: #ebdfe6;
+  --md-sys-color-surface: #171216;
+  --md-sys-color-surface-dim: #171216;
+  --md-sys-color-surface-bright: #564e53;
+  --md-sys-color-surface-container-lowest: #000000;
+  --md-sys-color-surface-container-low: #241e22;
+  --md-sys-color-surface-container: #352e33;
+  --md-sys-color-surface-container-high: #40393e;
+  --md-sys-color-surface-container-highest: #4c454a;
+  --md-sys-color-on-surface: #ffffff;
+  --md-sys-color-surface-variant: #4e444b;
+  --md-sys-color-on-surface-variant: #ffffff;
+  --md-sys-color-inverse-surface: #ebdfe6;
+  --md-sys-color-inverse-on-surface: #000000;
+  --md-sys-color-outline: #fbecf5;
+  --md-sys-color-outline-variant: #cdbfc8;
+  --md-sys-color-shadow: #000000;
+  --md-sys-color-scrim: #000000;
+  --md-sys-color-surface-tint: #efb4e9;
+  --md-sys-color-primary: #ffeaf9;
+  --md-sys-color-on-primary: #000000;
+  --md-sys-color-primary-container: #ebb0e5;
+  --md-sys-color-on-primary-container: #1c001e;
+  --md-sys-color-inverse-primary: #653764;
+  --md-sys-color-secondary: #ffeaf9;
+  --md-sys-color-on-secondary: #000000;
+  --md-sys-color-secondary-container: #d5bbcf;
+  --md-sys-color-on-secondary-container: #140614;
+  --md-sys-color-tertiary: #ffece8;
+  --md-sys-color-on-tertiary: #000000;
+  --md-sys-color-tertiary-container: #f1b4a6;
+  --md-sys-color-on-tertiary-container: #1d0301;
+  --md-sys-color-error: #ffece9;
+  --md-sys-color-on-error: #000000;
+  --md-sys-color-error-container: #ffaea4;
+  --md-sys-color-on-error-container: #220001;
+  --md-sys-color-primary-fixed: #ffd6f8;
+  --md-sys-color-primary-fixed-dim: #efb4e9;
+  --md-sys-color-on-primary-fixed: #000000;
+  --md-sys-color-on-primary-fixed-variant: #260028;
+  --md-sys-color-secondary-fixed: #f6dbf0;
+  --md-sys-color-secondary-fixed-dim: #d9bfd3;
+  --md-sys-color-on-secondary-fixed: #000000;
+  --md-sys-color-on-secondary-fixed-variant: #1b0c1a;
+  --md-sys-color-tertiary-fixed: #ffdad2;
+  --md-sys-color-tertiary-fixed-dim: #f6b8a9;
+  --md-sys-color-on-tertiary-fixed: #000000;
+  --md-sys-color-on-tertiary-fixed-variant: #250703;
+}
 }
 
 /* Exact Aphrody pet colours (identity PET_COLORS). */

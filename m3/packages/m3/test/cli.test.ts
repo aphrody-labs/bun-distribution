@@ -2,7 +2,7 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, statSync } from "node:fs";
 import { readdir, rm } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { buildM3 } from "../src/build.ts";
 import {
   bunfigHasPlugin,
@@ -16,6 +16,10 @@ import { BUNDLE_FILES, writeTokenBundle } from "../src/tokens.ts";
 import { FIXTURE, fakeCss, REPO_ROOT, tempDir } from "./helpers.ts";
 
 describe("parseArgs", () => {
+  test("maintenance help is available without dispatching an updater", () => {
+    expect(parseArgs(["update", "--help"]).command).toBe("help");
+    expect(parseArgs(["security", "--help"]).command).toBe("help");
+  });
   test("commands, values, booleans and negations", () => {
     expect(parseArgs(["dev", "--port", "4000", "--no-hmr"])).toEqual({
       command: "dev",
@@ -128,6 +132,22 @@ describe("runCli", () => {
     expect(await bunfigHasPlugin(tmp.dir)).toBe(true);
   });
 
+  test("maintenance reaches its real task owner, preserves arguments and child failure", async () => {
+    await using tmp = await tempDir();
+    await Bun.write(
+      join(tmp.dir, "package.json"),
+      JSON.stringify({ name: "aphrody-m3", scripts: { check: "bun check.ts" } }),
+    );
+    await Bun.write(
+      join(tmp.dir, "scripts/yolo.ts"),
+      'await Bun.write("received.txt", process.argv.slice(2).join("\\n")); process.exit(7);',
+    );
+    expect(await runCli(["lint", "--fix", "--only", "@aphrody/m3"], tmp.dir)).toBe(7);
+    expect(await Bun.file(join(tmp.dir, "received.txt")).text()).toBe(
+      "lint\n--fix\n--only\n@aphrody/m3",
+    );
+  });
+
   test("m3 new refuses an external project before creating any directory", async () => {
     await using tmp = await tempDir();
     const project = join(tmp.dir, "absent", "my-app");
@@ -137,11 +157,29 @@ describe("runCli", () => {
     expect(existsSync(join(tmp.dir, "absent"))).toBe(false);
   });
 
-  test("m3 new scaffolds an M3 app in its private owner and refuses to overwrite it", async () => {
+  test("m3 new respects declared private workspace members and refuses to overwrite them", async () => {
     const name = `m3-migrate-contract-cli-${crypto.randomUUID()}`;
     const relativeProject = `apps/${name}`;
     const project = join(REPO_ROOT, relativeProject);
     try {
+      const owner = await Bun.file(join(dirname(REPO_ROOT), "package.json")).json();
+      const patterns: string[] = Array.isArray(owner.workspaces)
+        ? owner.workspaces
+        : (owner.workspaces?.packages ?? []);
+      const destination = relative(dirname(REPO_ROOT), project).replaceAll("\\", "/");
+      const included = patterns.some(
+        (pattern) => !pattern.startsWith("!") && new Bun.Glob(pattern).match(destination),
+      );
+      const excluded = patterns.some(
+        (pattern) => pattern.startsWith("!") && new Bun.Glob(pattern.slice(1)).match(destination),
+      );
+      if (!included || excluded) {
+        await expect(runCli(["new", relativeProject], REPO_ROOT)).rejects.toThrow(
+          "direct declared apps/* member",
+        );
+        expect(existsSync(project)).toBe(false);
+        return;
+      }
       expect(await runCli(["new", relativeProject], REPO_ROOT)).toBe(0);
       const manifest = await Bun.file(join(project, "package.json")).json();
       expect(manifest).toMatchObject({

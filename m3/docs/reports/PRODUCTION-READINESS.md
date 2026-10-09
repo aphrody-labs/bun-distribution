@@ -97,11 +97,11 @@ with its own baseline and limits, not a new performance comparison.
 The regression sources cover
 [components](../../packages/m3-primitives/test/production-contract.test.tsx),
 [front](../../packages/m3-front/test/production-contract.test.ts),
-[Material Web exports](../../forks/material-web/test/production-exports.test.ts),
+Material Web exports (`forks/material-web/test/production-exports.test.ts`, historical fork owner),
 [controlled inputs](../../packages/m3-ai/test/production-contract.test.tsx)
-and [runtime boundaries](../../apps/showcase/test/runtime-api.test.ts).
-Measured results are preserved in this versioned receipt; source links identify
-their reproduction owners. Ignored coordination files and raw logs are not
+and [runtime boundaries](../../packages/app-ui/showcase/test/runtime-api.test.ts).
+Measured results are preserved in this versioned receipt; available source links identify
+their reproduction owners. The historical Material Web fork paths are not current reproduction targets. Ignored coordination files and raw logs are not
 required to read it and are not staged.
 
 The raw summaries contain 1,417 passes and four failures. Five child passes
@@ -123,7 +123,7 @@ delivered fork commit `b3b566d821b738fef19e487b3bb6860944bd01ed`,
 with 18 completed paths, a clean index/diff, the owner identity and a verified
 normal push to the existing private origin.
 
-The [bootstrap owner](../../forks/material-web/scripts/bootstrap-types.ts)
+The historical bootstrap owner (`forks/material-web/scripts/bootstrap-types.ts`)
 rebuilds an isolated `types/` tree from already versioned public
 `.d.ts` files, preserving notices and declaration maps. It needs Bun
 and no compiler dependencies. Only the existing ambient declaration remains

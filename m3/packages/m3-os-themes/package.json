@@ -33,6 +33,7 @@
     "lint": "oxlint src test"
   },
   "dependencies": {
+    "@aphrody/identity": "workspace:*",
     "@aphrody/m3-tokens": "workspace:*"
   },
   "devDependencies": {

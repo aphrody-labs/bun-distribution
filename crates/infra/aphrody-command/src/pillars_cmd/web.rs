@@ -8,6 +8,9 @@ use std::time::Duration;
 #[path = "web_crawl_index.rs"]
 mod crawl_index;
 
+#[path = "web_design_sync.rs"]
+mod design_sync;
+
 #[path = "web_dragon_ball.rs"]
 mod dragon_ball;
 
@@ -27,12 +30,15 @@ pub async fn run_web_pipeline(args: Vec<String>) -> miette::Result<serde_json::V
         WebAction::CrawlIndex(args) => {
             serde_json::to_value(crawl_index::run(args).await?).into_diagnostic()
         },
-        _ => Err(miette!("Web pipeline accepts only dragon-ball and crawl-index actions")),
+        WebAction::DesignSync(args) => design_sync::run(args).await,
+        _ => Err(miette!("Web pipeline accepts dragon-ball, crawl-index and design-sync actions")),
     }
 }
 
 #[derive(Debug, Subcommand)]
 pub(crate) enum WebAction {
+    /// Acquire Google Design/M3 reference data, index it, and generate native themes
+    DesignSync(design_sync::DesignSyncArgs),
     /// Inspect the linked Rust Web runtime
     Status {
         /// Emit status as JSON
@@ -461,6 +467,7 @@ pub(crate) enum WebBrowserAction {
 
 pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
     match action {
+        WebAction::DesignSync(args) => print_web_json(&design_sync::run(args).await?)?,
         WebAction::Status { json } => {
             let status = serde_json::json!({
                 "layer": "web",

@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import { schemeFromSeed } from "@aphrody/m3-tokens/dynamic-color";
+import { schemeFromSeed, type SchemeVariant } from "@aphrody/m3-tokens/dynamic-color";
+import {
+  nativeThemeColorRoles,
+  nativeThemeVariant,
+  parseNativeThemeExport,
+} from "@aphrody/m3-tokens/native-theme";
 import { normalizeHex } from "@aphrody/m3-tokens/theme-to-tokens";
 import type { Mode, Roles, ThemeColors, ThemeInput } from "./types.ts";
 
@@ -16,6 +21,11 @@ export function validate(input: ThemeInput): string {
   if (!["light", "dark", "auto"].includes(input.mode))
     throw new Error(`invalid theme mode "${input.mode}"`);
   if (
+    input.contrastLevel !== undefined &&
+    (!Number.isFinite(input.contrastLevel) || input.contrastLevel < -1 || input.contrastLevel > 1)
+  )
+    throw new RangeError("M3 contrast must be a finite number between -1 and 1");
+  if (
     input.variant !== undefined &&
     ![
       "tonalSpot",
@@ -25,27 +35,46 @@ export function validate(input: ThemeInput): string {
       "vibrant",
       "neutral",
       "monochrome",
+      "rainbow",
+      "fruitSalad",
     ].includes(input.variant)
   )
     throw new Error(`invalid theme variant "${input.variant}"`);
+  if (!input.nativeTheme && (input.variant === "rainbow" || input.variant === "fruitSalad"))
+    throw new Error(`Theme variant "${input.variant}" requires a native theme export`);
   return seed.toLowerCase();
 }
 
-/** Roles are a pure function of seed, variant and mode, and `generate()` asks for the same few dozens of times. */
+/** Roles are a pure function of seed, variant, contrast and mode. */
 const ROLE_CACHE_SIZE = 32;
 const roleCache = new Map<string, ThemeColors>();
 
 /**
- * M3 roles for one mode, keyed by camelCase role name. Memoised per (seed, variant, mode): one `generate()` for all four
+ * M3 roles for one mode, keyed by camelCase role name. Memoised per (seed, variant, contrast, mode): one `generate()` for all four
  * targets calls this ~17 times for the 2 distinct schemes, and each call costs 0.5 ms. The result is frozen, as it is
  * shared between callers.
  */
 export function rolesFor(input: ThemeInput, mode: Mode): ThemeColors {
   const seed = validate(input);
-  const key = `${seed}|${input.variant ?? ""}|${mode}`;
+  const native =
+    input.nativeTheme === undefined ? undefined : parseNativeThemeExport(input.nativeTheme);
+  if (
+    native &&
+    (native.seed !== seed ||
+      nativeThemeVariant(native) !== (input.variant ?? "tonalSpot") ||
+      native.contrast_level !== (input.contrastLevel ?? 0))
+  )
+    throw new Error("Native theme does not match the requested seed, variant or contrast");
+  const key = `${seed}|${input.variant ?? "tonalSpot"}|${input.contrastLevel ?? 0}|${mode}|${native ? JSON.stringify(native) : ""}`;
   const cached = roleCache.get(key);
   if (cached) return cached;
-  const map = schemeFromSeed(seed, { dark: mode === "dark", variant: input.variant });
+  const map = native
+    ? nativeThemeColorRoles(native, mode === "dark")
+    : schemeFromSeed(seed, {
+        dark: mode === "dark",
+        variant: input.variant as SchemeVariant | undefined,
+        contrastLevel: input.contrastLevel,
+      });
   const roles: Roles = {};
   for (const [k, v] of Object.entries(map)) {
     roles[camel(k.replace("--md-sys-color-", ""))] = v.toLowerCase();

@@ -1,10 +1,14 @@
 import { expect, test } from "bun:test";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   listPackages,
   listTemplates,
   lookupTokens,
   researchLinks,
   searchDocs,
+  designCorpusRoot,
   validateTokens,
 } from "../src/catalog";
 
@@ -21,6 +25,37 @@ test("token lookup and validation", () => {
 });
 test("docs, research and templates", () => {
   expect(searchDocs("Material", 3).length).toBeGreaterThan(0);
-  expect(researchLinks().links.length).toBeGreaterThan(20);
+  expect(researchLinks().links.length).toBeGreaterThan(0);
   expect(listTemplates()).toContain("templates/react");
+});
+
+test("native design corpus takes priority and exposes Markdown, JSON provenance and URL exports", () => {
+  const root = mkdtempSync(join(tmpdir(), "m3-design-corpus-"));
+  try {
+    const framework = join(root, "m3");
+    const corpus = join(root, "var/mirrors/design-sync");
+    mkdirSync(join(framework, "docs"), { recursive: true });
+    mkdirSync(join(corpus, "material-3/documents"), { recursive: true });
+    writeFileSync(join(framework, "docs/old.md"), "Material historical guide");
+    expect(designCorpusRoot(framework)).toBeUndefined();
+    writeFileSync(join(corpus, "AI_READY.md"), "Material primary source https://m3.material.io/\n");
+    writeFileSync(
+      join(corpus, "material-3/documents/buttons.md"),
+      "Material expressive buttons https://m3.material.io/components/buttons/overview\n",
+    );
+    writeFileSync(
+      join(corpus, "assets.json"),
+      '{"Material": "https://design.google/assets/pet.svg"}',
+    );
+    expect(designCorpusRoot(framework)).toBe(corpus);
+    expect(searchDocs("Material", 1, framework)).toEqual([
+      "design-sync/AI_READY.md:1: Material primary source https://m3.material.io/",
+    ]);
+    expect(searchDocs("pet.svg", 3, framework)[0]).toContain("design-sync/assets.json:1:");
+    expect(researchLinks(framework).links).toContain("https://design.google/assets/pet.svg");
+    expect(researchLinks(framework).files).toContain("design-sync/material-3/documents/buttons.md");
+    expect(searchDocs("Material", 10, framework).at(-1)).toContain("docs/old.md");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

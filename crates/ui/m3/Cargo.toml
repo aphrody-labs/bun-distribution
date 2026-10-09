@@ -20,6 +20,7 @@ wasm = []
 
 [dependencies]
 aphrody-m3-tokens = { workspace = true, features = ["serde"] }
+aphrody-identity = { workspace = true }
 taffy = { workspace = true }
 aphrody-render = { workspace = true, optional = true }
 serde = { workspace = true, features = ["derive"] }

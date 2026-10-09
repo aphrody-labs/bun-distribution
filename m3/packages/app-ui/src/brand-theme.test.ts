@@ -2,6 +2,8 @@
 import { describe, expect, test } from "bun:test";
 import { schemeFromSeed } from "@aphrody/m3-tokens/dynamic-color";
 import { PET_COLORS } from "@aphrody/identity/pet";
+import { ROLES } from "@aphrody/m3-tokens/dynamic-color";
+import { parseNativeThemeExport } from "@aphrody/m3-tokens/native-theme";
 import {
   BRAND_SEED,
   READING_COLUMN,
@@ -73,8 +75,8 @@ describe("brand theme", () => {
 
   test("pet-generated surfaces retain AA contrast with no later colour overrides", () => {
     const css = brandCss(tokensCss);
-    expect(css.match(/--md-sys-color-surface:/g)).toHaveLength(2);
-    expect(css.match(/--md-sys-color-background:/g)).toHaveLength(2);
+    expect(css.match(/--md-sys-color-surface:/g)).toHaveLength(4);
+    expect(css.match(/--md-sys-color-background:/g)).toHaveLength(4);
     const light = schemeFromSeed(BRAND_SEED, { dark: false }) as Record<string, string>;
     const dark = schemeFromSeed(BRAND_SEED, { dark: true }) as Record<string, string>;
     for (const role of [
@@ -85,6 +87,41 @@ describe("brand theme", () => {
       expect(contrast(light[role]!, light["--md-sys-color-surface"]!)).toBeGreaterThanOrEqual(4.5);
       expect(contrast(dark[role]!, dark["--md-sys-color-surface"]!)).toBeGreaterThanOrEqual(4.5);
     }
+  });
+
+  test("high contrast preferences use the same pet and scheme variant", () => {
+    const css = brandCss(tokensCss);
+    const higher = css.slice(css.indexOf("@media (prefers-contrast: more)"));
+    expect(higher).toContain("color-scheme: light;");
+    expect(higher).toContain("color-scheme: dark;");
+    for (const dark of [false, true])
+      for (const [role, value] of Object.entries(
+        schemeFromSeed(BRAND_SEED, { dark, contrastLevel: 1 }),
+      ))
+        expect(higher).toContain(`${role}: ${value};`);
+    expect(() => brandCss(tokensCss, BRAND_SEED, { contrastLevel: NaN })).toThrow("M3 contrast");
+  });
+
+  test("native normal and high contrast exports drive the app without palette replacement", () => {
+    const shape = {
+      schema_version: 1,
+      spec_version: "2021",
+      seed: BRAND_SEED,
+      variant: "tonal-spot",
+      contrast_level: 0,
+      light: Object.fromEntries(ROLES.map((role) => [role, "#aabbcc"])),
+      dark: Object.fromEntries(ROLES.map((role) => [role, "#112233"])),
+    };
+    const nativeTheme = parseNativeThemeExport(shape);
+    const highContrastTheme = parseNativeThemeExport({ ...shape, contrast_level: 1 });
+    const css = brandCss(tokensCss, BRAND_SEED, { nativeTheme, highContrastTheme });
+    expect(css).toContain("--md-sys-color-primary: #aabbcc;");
+    expect(css).toContain("--md-sys-color-on-surface: #112233;");
+    expect(css).toContain("@media (prefers-contrast: more)");
+    expect(() => brandCss(tokensCss, "#123456", { nativeTheme })).toThrow("does not match");
+    expect(() =>
+      brandCss(tokensCss, BRAND_SEED, { nativeTheme, highContrastTheme: nativeTheme }),
+    ).toThrow("high contrast");
   });
 
   test("springs come from m3-tokens.css and render as settling linear() easings", () => {

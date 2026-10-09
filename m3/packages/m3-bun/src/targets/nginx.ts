@@ -146,8 +146,8 @@ export async function renderNginx(
     stderr: "pipe",
   });
   const [stdout, stderr, code] = await Promise.all([
-    proc.stdout.text(),
-    proc.stderr.text(),
+    Bun.readableStreamToText(proc.stdout),
+    Bun.readableStreamToText(proc.stderr),
     proc.exited,
   ]);
   if (code !== 0) throw new Error(`${renderer.join(" ")} failed (${code}): ${stderr.trim()}`);

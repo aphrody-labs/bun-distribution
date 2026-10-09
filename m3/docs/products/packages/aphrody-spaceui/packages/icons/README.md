@@ -2,7 +2,7 @@
 # Archived SpaceUI icon source
 
 This is a provenance reference, not an installable or buildable package. Production imports use
-[`@aphrody/assets`](../../../assets), which retains the MIT notice and exact canonical copies.
+[`@aphrody/assets`](../../../../../../packages/assets), which retains the MIT notice and exact canonical copies.
 
 On 2026-09-28, 619 byte-identical files (11,121,998 bytes) were retired from this reference
 tree. `RETIRED-DUPLICATES.json` records every source path, SHA-256,

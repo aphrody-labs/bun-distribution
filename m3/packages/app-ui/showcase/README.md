@@ -22,7 +22,7 @@ in all three layouts and both colour schemes. It fails for console errors or
 external assets and writes its receipt outside the repository.
 
 The frontend and Bun API stay in this application. There is no separate native shell: the
-desktop is `aphrody-app` ([`crates/ui/app`](../../../crates/ui/app/Cargo.toml)), which opens a
+desktop is `aphrody-app` ([`crates/ui/app`](../../../../crates/ui/app/Cargo.toml)), which opens a
 showcase window with `aphrody-app --showcase` or its Help > "M3 Showcase" menu entry. That window
 starts the compiled Bun sidecar `m3-showcase` on loopback and loads it, so UI and API share one
 origin; the page gets no Tauri IPC. A static frontend directory alone does not host the API panels.

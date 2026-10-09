@@ -59,9 +59,9 @@ export const M3_TOOLS: M3Tool[] = [
     "m3_token_lookup",
     "Look up Material 3 design tokens (--md-*) by name or value fragment in m3-tokens.",
     { query: z.string(), limit: limit(50) },
-    ({ query, limit }) =>
+    ({ query, limit: maximum }) =>
       text(
-        lookupTokens(query, limit)
+        lookupTokens(query, maximum)
           .map((t) => `${t.name}: ${t.value}  [${t.source}]`)
           .join("\n"),
       ),
@@ -107,13 +107,13 @@ export const M3_TOOLS: M3Tool[] = [
   ),
   tool(
     "m3_docs_search",
-    "Case-insensitive line search over aphrody-m3 docs/ (md, mdx); returns path:line hits.",
+    "Search the canonical native Web design-sync corpus (AI-ready Markdown, specs and asset JSON), followed by local M3 guides; returns source path:line hits.",
     { query: z.string(), limit: limit(20) },
-    ({ query, limit }) => text(searchDocs(query, limit).join("\n")),
+    ({ query, limit: maximum }) => text(searchDocs(query, maximum).join("\n")),
   ),
   tool(
     "m3_research_links",
-    "List docs/research files and the curated dated Google design/research link index.",
+    "List the canonical native Web design-sync corpus files and source URLs; fall back to the dated local research index when no corpus has been acquired.",
     {},
     () => {
       const r = researchLinks();
@@ -152,9 +152,9 @@ export const M3_TOOLS: M3Tool[] = [
     "m3_symbol_search",
     "Search the full Material Symbols catalogue (4150 names) by substring; returns matching symbol names.",
     { query: z.string(), limit: limit(50) },
-    async ({ query, limit }) => {
+    async ({ query, limit: maximum }) => {
       const { searchSymbols, symbolNames } = await symbols();
-      const hits = searchSymbols(query, limit);
+      const hits = searchSymbols(query, maximum);
       return text(
         hits.length > 0 ? hits.join("\n") : `no match among ${symbolNames().length} symbols`,
       );

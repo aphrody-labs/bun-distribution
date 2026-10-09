@@ -94,32 +94,82 @@ export function validateTokens(
   return { checked, unknown: checked.filter((n) => !known.has(n)) };
 }
 
-function* walk(dir: string): Generator<string> {
-  for (const e of readdirSync(dir)) {
-    if (e === "node_modules" || e.startsWith(".git")) continue;
-    const p = join(dir, e);
-    if (statSync(p).isDirectory()) yield* walk(p);
-    else if (/\.(md|mdx)$/.test(e)) yield p;
+function* walk(dir: string, includeJson = false): Generator<string> {
+  for (const e of readdirSync(dir, { withFileTypes: true }).toSorted((a, b) =>
+    a.name.localeCompare(b.name),
+  )) {
+    if (e.name === "node_modules" || e.name.startsWith(".git") || e.isSymbolicLink()) continue;
+    const p = join(dir, e.name);
+    if (e.isDirectory()) yield* walk(p, includeJson);
+    else if ((includeJson ? /\.(md|mdx|json)$/ : /\.(md|mdx)$/).test(e.name)) yield p;
   }
 }
 
-export function searchDocs(query: string, limit = 20, root = ROOT): string[] {
+/** The single native Web acquisition corpus, explicitly configurable for qualified hosts. */
+export function designCorpusRoot(
+  root = ROOT,
+  configured = process.env.APHRODY_DESIGN_CORPUS,
+): string | undefined {
+  const corpus = resolve(configured ?? join(root, "../var/mirrors/design-sync"));
+  return existsSync(join(corpus, "AI_READY.md")) && statSync(corpus).isDirectory()
+    ? corpus
+    : undefined;
+}
+
+export function searchDocs(
+  query: string,
+  limit = 20,
+  root = ROOT,
+  corpus = designCorpusRoot(root),
+): string[] {
   const q = query.toLowerCase();
   const hits: string[] = [];
   const docs = join(root, "docs");
-  if (!existsSync(docs)) return hits;
-  for (const f of walk(docs)) {
-    const lines = read(f).split("\n");
+  const sources = [
+    ...(corpus
+      ? [...walk(corpus, true)].map((file) => ({
+          file,
+          source: `design-sync/${relative(corpus, file).replaceAll("\\", "/")}`,
+        }))
+      : []),
+    ...(existsSync(docs)
+      ? [...walk(docs)].map((file) => ({
+          file,
+          source: relative(root, file).replaceAll("\\", "/"),
+        }))
+      : []),
+  ];
+  for (const { file, source } of sources) {
+    const lines = read(file).split("\n");
     for (let i = 0; i < lines.length && hits.length < limit; i++) {
       if (lines[i]!.toLowerCase().includes(q))
-        hits.push(`${relative(root, f)}:${i + 1}: ${lines[i]!.trim().slice(0, 200)}`);
+        hits.push(`${source}:${i + 1}: ${lines[i]!.trim().slice(0, 200)}`);
     }
     if (hits.length >= limit) break;
   }
   return hits;
 }
 
-export function researchLinks(root = ROOT): { files: string[]; links: string[] } {
+export function researchLinks(
+  root = ROOT,
+  corpus = designCorpusRoot(root),
+): { files: string[]; links: string[] } {
+  if (corpus) {
+    const documents = [...walk(corpus, true)];
+    const links = [
+      ...new Set(
+        documents.flatMap((file) =>
+          [...read(file).matchAll(/https?:\/\/[^\s<>"'\])]+/g)].map((match) =>
+            match[0].replace(/[.,;]+$/, ""),
+          ),
+        ),
+      ),
+    ].toSorted();
+    return {
+      files: documents.map((file) => `design-sync/${relative(corpus, file).replaceAll("\\", "/")}`),
+      links,
+    };
+  }
   const dir = join(root, "docs/research");
   const files = existsSync(dir) ? [...walk(dir)].map((f) => relative(root, f)) : [];
   const links = [

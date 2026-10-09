@@ -848,6 +848,7 @@ dependencies = [
  "aphrody-kernel",
  "aphrody-llama-server",
  "aphrody-m3-reproduce",
+ "aphrody-m3-tokens",
  "aphrody-mcp",
  "aphrody-memory",
  "aphrody-models",
@@ -1456,6 +1457,17 @@ dependencies = [
  "aphrody-bindgen",
  "libc",
  "libloading 0.9.0",
+]
+
+[[package]]
+name = "aphrody-m3"
+version = "1.0.0"
+dependencies = [
+ "aphrody-identity",
+ "aphrody-m3-tokens",
+ "aphrody-render",
+ "serde",
+ "taffy",
 ]
 
 [[package]]

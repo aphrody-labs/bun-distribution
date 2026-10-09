@@ -1,0 +1,8 @@
+{
+  "services": [
+    { "target": "vps:127.0.0.1:23888", "id": "vps-hub-a2a" },
+    { "target": "vps:127.0.0.1:23889", "id": "vps-hub-mcp" }
+  ],
+  "schemaVersion": 1,
+  "owner": "aphrody-infra"
+}

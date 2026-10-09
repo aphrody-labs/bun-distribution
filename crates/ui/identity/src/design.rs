@@ -656,6 +656,14 @@ pub const fn m3_seed_hex() -> &'static str {
     PALETTE[AZUR].hex
 }
 
+/// The canonical Codex pet's sock mauve, measured on its neutral-gaze atlas cell
+/// on 2026-10-06. This is the product UI seed; `m3_seed_hex` retains the earlier
+/// game-atlas palette contract. Native M3 exports use this seed for app and OS themes.
+#[must_use]
+pub const fn pet_seed_hex() -> &'static str {
+    "#8c6c88"
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -664,6 +672,13 @@ mod tests {
     fn la_graine_m3_est_l_accent_azur() {
         assert_eq!(m3_seed_hex(), PALETTE[AZUR].hex);
         assert!(m3_seed_hex().starts_with('#') && m3_seed_hex().len() == 7);
+    }
+
+    #[test]
+    fn canonical_pet_seed_matches_the_bun_identity_contract() {
+        let pet = include_str!("../../../../m3/packages/identity/src/pet.ts");
+        assert!(pet.contains(&format!("seed: \"{}\"", pet_seed_hex())));
+        assert!(pet.contains(&format!("socks: \"{}\"", pet_seed_hex())));
     }
 
     #[test]

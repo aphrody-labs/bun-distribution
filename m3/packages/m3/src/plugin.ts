@@ -14,7 +14,16 @@ import { faceRule, fontFace } from "@aphrody/m3-fonts";
 import { existsSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { findM3Config, loadM3Config, type M3ThemeConfig } from "./config";
-import { cssRequest, defaultM3Css, loadAphrodyBun, type M3CssFn, type M3Sheet } from "./native";
+import {
+  cssRequest,
+  defaultM3Css,
+  findNativeTheme,
+  loadAphrodyBun,
+  nativeThemeMatches,
+  readNativeTheme,
+  type M3CssFn,
+  type M3Sheet,
+} from "./native";
 import { fontPaths, resolveRepoRoot, SYMBOL_STYLES, type SymbolStyle } from "./paths";
 import { setupUrlImports } from "./url-imports";
 import { tailwindM3Plugin } from "./tailwind";
@@ -59,6 +68,9 @@ export interface M3PluginOptions {
   configDir?: string;
   /** Sheet generator. Default: `m3Css` from `@aphrody/bun`, loaded on first use. */
   css?: M3CssFn;
+  /** Paired native ThemeExport JSON/CSS. Default: the selected workspace's design-sync corpus.
+   * Explicit artifacts must match the token request; automatic mismatches use the native generator. */
+  nativeTheme?: string;
   /** Aphrody OS checkout holding the fonts (default: discovered). */
   root?: string;
   /** Compose the separately resolved Tailwind engine and Oxide scanner (default true). */
@@ -86,6 +98,13 @@ export function m3Plugin(options: M3PluginOptions = {}): BunPlugin {
   let generator: Promise<M3CssFn> | undefined;
   let theme: Promise<M3ThemeConfig> | undefined;
   const sheets = new Map<string, Promise<string>>();
+  let artifact: ReturnType<typeof readNativeTheme> | null | undefined;
+
+  const getArtifact = () => {
+    if (artifact !== undefined) return artifact;
+    const path = options.nativeTheme ?? findNativeTheme(options.configDir ?? process.cwd());
+    return (artifact = path ? readNativeTheme(path) : null);
+  };
 
   const getGenerator = () =>
     (generator ??= options.css ? Promise.resolve(options.css) : defaultM3Css());
@@ -99,7 +118,16 @@ export function m3Plugin(options: M3PluginOptions = {}): BunPlugin {
     let css = sheets.get(kind);
     if (!css) {
       css = (async () => {
-        return (await getGenerator())(cssRequest(kind, await getTheme()));
+        const request = cssRequest(kind, await getTheme());
+        if (!options.css && kind === "tokens") {
+          const exported = getArtifact();
+          if (exported && nativeThemeMatches(request, exported.theme)) return exported.css;
+          if (options.nativeTheme)
+            throw new Error(
+              "@aphrody/m3: native theme artifact does not match the requested seed, variant or contrast",
+            );
+        }
+        return (await getGenerator())(request);
       })();
       sheets.set(kind, css);
     }

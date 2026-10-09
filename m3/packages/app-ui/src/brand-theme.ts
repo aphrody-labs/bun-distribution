@@ -2,7 +2,18 @@
 // Aphrody brand sheet, generated from the canonical pet by @aphrody/m3-tokens.
 // Material Color Utilities produces every surface and semantic colour role.
 
-import { cssFromSeed } from "@aphrody/m3-tokens/dynamic-color";
+import {
+  cssFromSeed,
+  normalizeSeedHex,
+  type SchemeVariant,
+} from "@aphrody/m3-tokens/dynamic-color";
+import {
+  nativeThemeCss,
+  nativeThemeVariant,
+  parseNativeThemeExport,
+  type NativeThemeExport,
+  type NativeSchemeVariant,
+} from "@aphrody/m3-tokens/native-theme";
 
 import {
   BRAND_SEED,
@@ -92,18 +103,58 @@ function brandTokens(springs: Record<SpringName, Spring>): string {
   return `:root {\n${lines.join("\n")}\n}\n`;
 }
 
-/** Full text of src/brand.css for `seed`, with springs read from `tokensCss`. */
-export function brandCss(tokensCss: string, seed: string = BRAND_SEED): string {
+export interface BrandThemeOptions {
+  variant?: SchemeVariant | NativeSchemeVariant;
+  contrastLevel?: number;
+  nativeTheme?: NativeThemeExport;
+  highContrastTheme?: NativeThemeExport;
+}
+
+/** Full brand sheet, preserving native roles when a Rust export is supplied. */
+export function brandCss(
+  tokensCss: string,
+  seed: string = BRAND_SEED,
+  options: BrandThemeOptions = {},
+): string {
+  seed = normalizeSeedHex(seed);
+  const native = options.nativeTheme && parseNativeThemeExport(options.nativeTheme);
+  const variant = options.variant ?? (native ? nativeThemeVariant(native) : "tonalSpot");
+  const contrastLevel = options.contrastLevel ?? native?.contrast_level ?? 0;
+  if (!native && (variant === "rainbow" || variant === "fruitSalad"))
+    throw new Error(`Brand variant "${variant}" requires a native theme export`);
+  if (
+    native &&
+    (native.seed !== seed ||
+      nativeThemeVariant(native) !== variant ||
+      native.contrast_level !== contrastLevel)
+  )
+    throw new Error("Native theme does not match the requested brand seed, variant or contrast");
+  const selectors = { lightSelector: ":root.light,\n.light", darkSelector: ":root,\n.dark" };
+  const standardCss = native
+    ? nativeThemeCss(native, selectors)
+    : cssFromSeed(seed, { ...selectors, variant: variant as SchemeVariant, contrastLevel });
+  const high = options.highContrastTheme && parseNativeThemeExport(options.highContrastTheme);
+  if (
+    high &&
+    (high.seed !== seed || nativeThemeVariant(high) !== variant || high.contrast_level !== 1)
+  )
+    throw new Error("Native high contrast theme does not match the requested brand theme");
+  const highCss = high
+    ? nativeThemeCss(high, selectors)
+    : !native && contrastLevel !== 1
+      ? cssFromSeed(seed, { ...selectors, variant: variant as SchemeVariant, contrastLevel: 1 })
+      : undefined;
   const header =
     "/* SPDX-License-Identifier: Apache-2.0 */\n" +
     "/*\n" +
-    ` * Aphrody brand sheet: M3 tonal-spot roles from seed ${seed} (Aphrody pet sock mauve),\n` +
+    ` * Aphrody brand sheet: M3 ${variant} roles from seed ${seed}, contrast ${contrastLevel},\n` +
     " * Pet-derived surfaces and roles, expressive shapes and M3 spring easings.\n" +
     " * GENERATED - do not hand-edit. Regenerate with: bun run brand\n" +
     " */\n\n";
   return (
     header +
-    cssFromSeed(seed, { lightSelector: ":root.light,\n.light", darkSelector: ":root,\n.dark" }) +
+    standardCss +
+    (highCss ? `\n@media (prefers-contrast: more) {\n${highCss}}\n` : "") +
     "\n/* Exact Aphrody pet colours (identity PET_COLORS). */\n" +
     `:root {\n  --aphrody-pet-hair: ${PET_ACCENTS.hair};\n  --aphrody-pet-skin: ${PET_ACCENTS.skin};\n  --aphrody-pet-tunic: ${PET_ACCENTS.tunic};\n}\n` +
     "\n" +

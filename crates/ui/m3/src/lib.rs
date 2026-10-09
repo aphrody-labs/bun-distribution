@@ -15,12 +15,12 @@ pub mod components;
 pub mod forms;
 /// Icon selection and variable-font settings.
 pub mod icons;
-/// The canonical design-token and theme contract.
-pub mod theme;
 /// Taffy-backed layout utilities.
 pub mod layout;
 /// Motion curves and spring state from the canonical M3 token crate.
 pub mod motion;
+/// The canonical design-token and theme contract.
+pub mod theme;
 
 pub use aphrody_m3_tokens::facade;
 /// CPU/native rendering primitives shared with Aphrody render hosts.
@@ -30,9 +30,9 @@ pub use aphrody_render as native_renderer;
 /// Accessibility constants shared by component hosts.
 pub mod accessibility {
     /// Minimum pointer target size in density-independent pixels.
-    pub const MIN_TARGET_DP: u32 = facade::accessibility::MIN_TOUCH_TARGET_DP;
+    pub const MIN_TARGET_DP: u32 = crate::facade::accessibility::MIN_TOUCH_TARGET_DP;
     /// Minimum contrast ratio for ordinary text under WCAG AA.
-    pub const CONTRAST_AA: f32 = facade::accessibility::WCAG_AA_NORMAL_TEXT;
+    pub const CONTRAST_AA: f32 = crate::facade::accessibility::WCAG_AA_NORMAL_TEXT;
 }
 
 #[cfg(test)]
@@ -55,6 +55,6 @@ mod tests {
         let result = tree.compute(root, 320.0, 240.0).unwrap();
         assert_eq!(result.width, 120.0);
         assert_eq!(result.height, 56.0);
-        assert_eq!(Theme::default().mode, facade::platform::ThemeMode::System);
+        assert_eq!(Theme::default().mode, crate::facade::platform::ThemeMode::System);
     }
 }

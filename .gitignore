@@ -161,3 +161,6 @@ npm-debug.log*
 graphify-out/
 GRAPH_REPORT.md
 packages/infra/product/site/dist/
+
+# Native Web reference corpus: regenerable public mirrors and acquisition receipts.
+/var/mirrors/

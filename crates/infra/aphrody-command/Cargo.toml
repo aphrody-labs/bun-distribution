@@ -190,6 +190,7 @@ hex                       = { workspace = true, optional = true }
 # maskable PNG + pixel-perfect terminal rendering (module `aphrody_identity::logo`).
 # Native-only (image+ico).
 aphrody-identity          = { workspace = true }
+aphrody-m3-tokens         = { workspace = true, features = ["serde"] }
 # `aphrody design tokens [--fusion]` — Material 3 color tokens as CSS custom
 # properties (+ shadcn/Tailwind fusion sheet). Native-only (std export).
 # `aphrody chat` — unified turn-loop REPL composing every aphrody building

@@ -45,6 +45,7 @@ pub mod motion {
 /// Aphrody/Gemini brand tokens and SpaceUI compatibility aliases.
 pub mod theme {
     pub use crate::{gemini_brand::*, spaceui::*};
+    pub use crate::theme::{SCHEMA_VERSION, SPEC_VERSION, ThemeExport, ThemeRequest};
 }
 
 /// Accessibility invariants shared by native and web components.

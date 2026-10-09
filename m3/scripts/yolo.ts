@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
 // Root task runner: the m3 packages build, serve and compile through the yolo CLI.
-//   bun scripts/yolo.ts <build|serve|compile|test|lint|typecheck|bench|bench:check|install:theme> [args...]
+//   bun scripts/yolo.ts <build|serve|compile|test|lint|update|security|research|typecheck|bench|bench:check|install:theme> [args...]
 // yolo is resolved from $YOLO_ROOT (default $HOME/yolo) and run as the Bun CLI `bun run $YOLO_ROOT/packages/engine/yolo/src/index.ts`
 // on every platform (bin/yolo is only a bash launcher around that entry).
 //   build    the canonical cached package/app pipeline (every package and app)
@@ -14,7 +14,10 @@
 //   install:theme               packages/m3-os-themes CLI (dry-run unless --apply)
 // apps/example (App Router) replaces apps/showcase, removed on 2026-10-09.
 import { homedir } from "node:os";
-import { join, resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
+import { workspacePackages } from "./lib/workspace.ts";
+import { resolveRustAphrody } from "../../bin/aphrody.ts";
 
 export const REPO = resolve(import.meta.dir, "..");
 /** The Bun entry of the yolo CLI inside a yolo root. */
@@ -54,6 +57,34 @@ const lintPaths = (): string[] => [
 
 const bun = (cwd: string, ...args: string[]): Step => ({ cmd: ["bun", ...args], cwd });
 
+/** Select real workspace members before forwarding flags to the capability owner. */
+function selection(rest: string[]) {
+  const index = rest.indexOf("--only");
+  if (index < 0) return { packages: undefined, args: rest };
+  const names = rest[index + 1]?.split(",").filter(Boolean);
+  if (!names?.length || names.some((name) => name.startsWith("-")))
+    throw new Error("--only requires comma-separated M3 package names");
+  const members = workspacePackages(REPO);
+  const packages = names.map((name) => {
+    const member = members.find((item) => item.name === name);
+    if (!member) throw new Error(`Unknown M3 workspace package: ${name}`);
+    return member;
+  });
+  return { packages, args: rest.filter((_, offset) => offset !== index && offset !== index + 1) };
+}
+
+/** Bun's package manager reads the single enclosing workspace lock. */
+function installRoot() {
+  let directory = REPO;
+  while (!existsSync(join(directory, "bun.lock")) && !existsSync(join(directory, "bun.lockb"))) {
+    const parent = dirname(directory);
+    if (parent === directory)
+      throw new Error("No Bun lockfile above the selected M3 workspace; install its owner first");
+    directory = parent;
+  }
+  return directory;
+}
+
 /** The example app of the framework. */
 export const EXAMPLE = join(REPO, "apps/example");
 
@@ -61,7 +92,7 @@ export const EXAMPLE = join(REPO, "apps/example");
 export function plan(task: string, rest: string[] = []): Step[] {
   switch (task) {
     case "build":
-      return [yolo("version", "--json"), bun(REPO, "scripts/build.ts", "build")];
+      return [yolo("version", "--json"), bun(REPO, "scripts/build.ts", "build", ...rest)];
     case "serve":
       return [bun(EXAMPLE, "run", "dev")];
     case "compile":
@@ -89,10 +120,55 @@ export function plan(task: string, rest: string[] = []): Step[] {
         bun(REPO, "scripts/check-assets.ts"),
         bun(REPO, "scripts/check-links.ts"),
       ];
-    case "lint":
-      return [yolo("version", "--json"), { cmd: ["oxlint", ...lintPaths()], cwd: REPO }];
+    case "lint": {
+      const { packages, args } = selection(rest);
+      return [
+        yolo("version", "--json"),
+        {
+          cmd: ["oxlint", ...(packages?.map((item) => item.rel) ?? lintPaths()), ...args],
+          cwd: REPO,
+        },
+      ];
+    }
+    case "update": {
+      const { packages, args } = selection(rest);
+      const allowed = new Set(["--apply", "--dry-run"]);
+      if (args.some((arg) => !allowed.has(arg)))
+        throw new Error(
+          "m3 update accepts --apply, --dry-run and --only; major/range rewrites need separate qualification",
+        );
+      const root = installRoot();
+      const scope = relative(root, REPO).replaceAll("\\", "/");
+      const filters = packages?.map((item) => `./${scope ? `${scope}/` : ""}${item.rel}`) ?? [
+        `./${scope ? `${scope}/` : ""}packages/*`,
+      ];
+      return [
+        bun(
+          root,
+          "update",
+          "--ignore-scripts",
+          ...filters.flatMap((filter) => ["--filter", filter]),
+          ...(!args.includes("--apply") || args.includes("--dry-run") ? ["--dry-run"] : []),
+        ),
+      ];
+    }
+    case "security":
+      if (rest.includes("fix") || rest.includes("--fix"))
+        throw new Error(
+          "Bun audit fix has no M3 workspace filter; use the shared lock owner's qualified security correction",
+        );
+      return [bun(installRoot(), "audit", ...rest)];
+    case "research": {
+      const root = resolve(process.env.APHRODY_WORKSPACE_ROOT ?? MONOREPO);
+      const native = resolveRustAphrody(root);
+      if (!native)
+        throw new Error(
+          "Install the native Aphrody CLI or set APHRODY_BIN before acquiring the design corpus",
+        );
+      return [{ cmd: [native, "web", "design-sync", "--workspace", root, ...rest], cwd: root }];
+    }
     case "typecheck":
-      return [yolo("version", "--json"), bun(REPO, "scripts/build.ts", "typecheck")];
+      return [yolo("version", "--json"), bun(REPO, "scripts/build.ts", "typecheck", ...rest)];
     case "bench":
       return [bun(REPO, "scripts/bench/run.ts", ...rest)];
     case "bench:check":
@@ -115,8 +191,13 @@ if (import.meta.main) {
   try {
     if (task !== "install:theme" && !(await Bun.file(YOLO_CLI).exists()))
       throw new Error(`yolo CLI not found at ${YOLO_CLI}; set YOLO_ROOT`);
-    if ((task === "serve" || task === "compile") && !(await Bun.file(join(EXAMPLE, "package.json")).exists()))
-      throw new Error(`${task}: no example app at ${EXAMPLE} (m3/apps/example is the App Router example app)`);
+    if (
+      (task === "serve" || task === "compile") &&
+      !(await Bun.file(join(EXAMPLE, "package.json")).exists())
+    )
+      throw new Error(
+        `${task}: no example app at ${EXAMPLE} (m3/apps/example is the App Router example app)`,
+      );
     for (const step of plan(task, rest)) {
       const code = Bun.spawnSync(step.cmd, {
         cwd: step.cwd,

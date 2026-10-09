@@ -87,6 +87,9 @@ pub mod sheets;
 /// and its seven themes as M3 dynamic-scheme seeds.
 pub mod spaceui;
 pub mod state;
+/// Validated, versioned native/Bun/WASM theme exports over the canonical color engine.
+#[cfg(feature = "std")]
+pub mod theme;
 pub mod tonal;
 pub mod typography;
 

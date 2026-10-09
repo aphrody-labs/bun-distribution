@@ -116,7 +116,8 @@ export function references(file: string, text: string): Array<[string, string]> 
       if (ASSET_EXT.test(strip(spec)) && spec.startsWith(".")) add(spec, "import");
     const code = text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
     for (const m of code.matchAll(/new\s+URL\(\s*["']([^"']+)["']\s*,\s*import\.meta\.url\s*\)/g))
-      add(m[1], "url");
+      // Directory URLs select runtime output / traversal roots, not a static asset to ship.
+      if (!m[1]?.endsWith("/")) add(m[1], "url");
   } else if (ext === ".css" || ext === ".scss") {
     // `url()` inside an inline SVG data URI (`filter="url(%23n)"`) is part of that document.
     const css = text

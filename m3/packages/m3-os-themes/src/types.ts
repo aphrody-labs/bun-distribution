@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { SchemeVariant } from "@aphrody/m3-tokens/dynamic-color";
+import type { NativeThemeExport, NativeSchemeVariant } from "@aphrody/m3-tokens/native-theme";
 
 export type Mode = "light" | "dark";
 export type Target = "windows" | "gnome" | "cosmic" | "chromium";
@@ -13,7 +14,11 @@ export interface ThemeInput {
   name: string;
   /** Seed colour `#rrggbb`. */
   seed: string;
-  variant?: SchemeVariant;
+  variant?: SchemeVariant | NativeSchemeVariant;
+  /** M3 contrast, from -1 (reduced) through 0 (standard) to 1 (maximum). */
+  contrastLevel?: number;
+  /** Validated Rust export; colour generation stays with the native token owner. */
+  nativeTheme?: NativeThemeExport;
   mode: ActiveMode;
 }
 

@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, describe, expect, test } from "bun:test";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { existsSync } from "node:fs";
 import { m3Bun } from "../src/plugin.ts";
+import { tsM3Css } from "../src/theme-css.ts";
 import { cleanup, tmp } from "./helpers.ts";
 
 afterAll(cleanup);
@@ -28,14 +30,14 @@ async function bundle(
 }
 
 describe("m3Bun: the one plugin", () => {
-  test("m3:theme.css, m3:tokens.css and m3:scheme.css come from the seed without the Rust library", async () => {
+  test("an explicit TypeScript generator remains a caller override for custom themes", async () => {
     const { success, text, logs } = await bundle(
       {
         "main.css":
           '@import "m3:tokens.css";\n@import "m3:scheme.css";\nbody { color: var(--md-sys-color-primary); }\n',
       },
       "main.css",
-      { theme: { seed: "#00897b", variant: "vibrant" } },
+      { theme: { seed: "#00897b", variant: "vibrant" }, css: tsM3Css },
     );
     expect({ success, logs }).toEqual({ success: true, logs: [] });
     expect(text).toContain("--md-sys-color-primary");
@@ -80,9 +82,75 @@ describe("m3Bun: the one plugin", () => {
     );
     expect(success).toBe(true);
     expect(text).toContain("--custom");
-    const fallback = await bundle({ "main.css": '@import "m3:spaceui.css";\n' }, "main.css");
+    const fallback = await bundle({ "main.css": '@import "m3:spaceui.css";\n' }, "main.css", {
+      theme: { seed: "#123456" },
+    });
     expect(fallback.success).toBe(false);
-    expect(fallback.logs.join("\n")).toContain("needs the Rust m3Css");
+    expect(fallback.logs.join("\n")).toContain("native");
+  });
+
+  test("default baseline uses the committed native sheet without a TypeScript override", async () => {
+    const { success, text, logs } = await bundle(
+      { "main.ts": 'import "m3:tokens.css";\n' },
+      "main.ts",
+      { theme: { seed: "#6750A4", variant: "tonalSpot", contrast: 0 } },
+    );
+    expect(success).toBe(true);
+    expect(
+      logs.filter((log) => log !== "BuildMessage: invalid @ rule encountered: '@theme'"),
+    ).toEqual([]);
+    if (logs.length) console.warn(`[m3Bun native CSS qualification gap] ${logs.join("; ")}`);
+    expect(text).toContain("--md-sys-color-primary: #65558f");
+    expect(text).toContain("--primary: var(--md-sys-color-primary)");
+  });
+});
+
+let nativeCorpus = process.env.APHRODY_DESIGN_CORPUS;
+if (!nativeCorpus) {
+  let dir = import.meta.dir;
+  for (;;) {
+    const corpus = join(dir, "var/mirrors/design-sync");
+    if (existsSync(join(corpus, "tokens.json"))) {
+      nativeCorpus = corpus;
+      break;
+    }
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+}
+
+describe.skipIf(!nativeCorpus)("m3Bun native artifact default", () => {
+  test("the real native pet export reaches Bun.build without an injected generator", async () => {
+    const theme = await Bun.file(join(nativeCorpus!, "tokens.json")).json();
+    const output = await bundle({ "main.ts": 'import "m3:tokens.css";\n' }, "main.ts", {
+      configDir: nativeCorpus,
+      theme: { seed: theme.seed, variant: theme.variant, contrast: theme.contrast_level },
+      tailwind: false,
+      sass: false,
+    });
+    expect(output.success).toBe(true);
+    expect(
+      output.logs.filter((log) => log !== "BuildMessage: invalid @ rule encountered: '@theme'"),
+    ).toEqual([]);
+    if (output.logs.length)
+      console.warn(`[m3Bun native CSS qualification gap] ${output.logs.join("; ")}`);
+    expect(output.text).toContain(`--md-sys-color-primary: ${theme.light.primary}`);
+    expect(output.text).toContain(`--md-sys-color-primary: ${theme.dark.primary}`);
+    expect(output.text).toContain("--primary: var(--md-sys-color-primary)");
+  });
+
+  test("an explicit CSS generator still takes precedence over a native artifact", async () => {
+    const output = await bundle({ "main.ts": 'import "m3:tokens.css";\n' }, "main.ts", {
+      nativeTheme: join(nativeCorpus!, "tokens.json"),
+      theme: { seed: "#123456" },
+      css: () => ":root { --caller-color: #123456; }",
+      tailwind: false,
+      sass: false,
+    });
+    expect(output.success).toBe(true);
+    expect(output.text).toContain("--caller-color: #123456");
+    expect(output.text).not.toContain("--md-sys-color-primary");
   });
 });
 

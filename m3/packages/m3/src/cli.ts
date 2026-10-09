@@ -27,6 +27,10 @@ export const COMMANDS = [
   "start",
   "tokens",
   "check",
+  "lint",
+  "update",
+  "security",
+  "research",
   "new",
   "compile",
   "docker",
@@ -63,6 +67,10 @@ Usage:
               [--contrast <n>] [--out <file>]
   m3 tokens --bundle <dir> [--seed <hex>] [--variant <name>] [--contrast <n>] [--root <dir>]
   m3 check
+  m3 lint     [--fix] [--only <M3-package,...>] [oxlint flags]
+  m3 update   [--apply|--dry-run] [--only <M3-package,...>]
+  m3 security [bun audit flags]
+  m3 research [native aphrody web design-sync flags]
   m3 new <dir>
 
 new requires the Aphrody/M3 private source owner workspace; use an apps/* member (for example m3 new apps/my-app).
@@ -236,9 +244,7 @@ async function buildCommand(cwd: string, flags: Record<string, FlagValue>): Prom
   if (typeof tauriFlag === "string") tauri = { uiDist: resolve(cwd, tauriFlag) };
   else if (tauriFlag === true) {
     if (!config.tauri)
-      throw new Error(
-        "m3 build --tauri: give a directory or set `tauri.uiDist` in m3.config.ts",
-      );
+      throw new Error("m3 build --tauri: give a directory or set `tauri.uiDist` in m3.config.ts");
     tauri = config.tauri;
   }
   const outdir = stringFlag(flags, "outdir");
@@ -268,11 +274,33 @@ export async function runCli(
   argv: readonly string[],
   cwd: string = process.cwd(),
 ): Promise<number> {
+  const maintenance = argv[0];
+  if (
+    ["lint", "update", "security", "research"].includes(maintenance ?? "") &&
+    !argv.includes("--help") &&
+    !argv.includes("-h")
+  ) {
+    const workspace = findWorkspaceRoot(cwd);
+    const candidate =
+      workspace &&
+      (workspaceCheckScript(workspace) === "check" ? workspace : join(workspace, "m3"));
+    const entry = candidate && join(candidate, "scripts/yolo.ts");
+    if (!entry || !existsSync(entry))
+      throw new Error(
+        `m3 ${maintenance}: no M3 capability-owner task runner above the selected workspace`,
+      );
+    return run(["bun", entry, maintenance!, ...argv.slice(1)], candidate!);
+  }
   const { command, flags, positionals } = parseArgs(argv);
   switch (command) {
     case "help":
       console.log(USAGE);
       return 0;
+    case "lint":
+    case "update":
+    case "security":
+    case "research":
+      throw new Error("Maintenance commands must precede their capability-owner flags");
     case "version":
       console.log(await version());
       return 0;
@@ -287,7 +315,8 @@ export async function runCli(
           dev: flags.dev === true,
           prerender: flags.prerender === false ? false : undefined,
         });
-      if (command === "start") throw new Error("m3 start serves App Router builds; this project has no app/ directory");
+      if (command === "start")
+        throw new Error("m3 start serves App Router builds; this project has no app/ directory");
       if (command === "build") return buildCommand(cwd, flags);
       const config = await loadM3Config(cwd, stringFlag(flags, "config"));
       if (!(await bunfigHasPlugin(config.dir))) {
@@ -397,7 +426,9 @@ export async function runCli(
     case "docker": {
       const appProject = await findAppProject(cwd, stringFlag(flags, "config"));
       if (!appProject)
-        throw new Error("m3 docker builds App Router projects; for an HTML entry use m3-bun package --target docker");
+        throw new Error(
+          "m3 docker builds App Router projects; for an HTML entry use m3-bun package --target docker",
+        );
       const outdir = stringFlag(flags, "outdir");
       const report = await dockerAppRouter({
         project: appProject,
@@ -405,12 +436,21 @@ export async function runCli(
         base: stringFlag(flags, "base"),
         prerender: flags.prerender !== false,
       });
-      console.log(`m3 docker: ${report.contextDir} (${report.files.join(", ")}) in ${report.ms} ms`);
+      console.log(
+        `m3 docker: ${report.contextDir} (${report.files.join(", ")}) in ${report.ms} ms`,
+      );
       const tag = stringFlag(flags, "tag");
       if (!tag) return 0;
       const base = stringFlag(flags, "base");
       return run(
-        ["docker", "build", "-t", tag, ...(base ? ["--build-arg", `BASE=${base}`] : []), report.contextDir],
+        [
+          "docker",
+          "build",
+          "-t",
+          tag,
+          ...(base ? ["--build-arg", `BASE=${base}`] : []),
+          report.contextDir,
+        ],
         cwd,
       );
     }

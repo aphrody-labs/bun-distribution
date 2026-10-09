@@ -553,6 +553,7 @@
         "m3-os-themes": "./src/cli.ts",
       },
       "dependencies": {
+        "@aphrody/identity": "workspace:*",
         "@aphrody/m3-tokens": "workspace:*",
       },
       "devDependencies": {

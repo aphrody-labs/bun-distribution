@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // The one Bun plugin of an M3 app. It is `@aphrody/m3`'s plugin (Tailwind v4, Sass, `m3:*` token sheets, `?url`
 // imports) plus what makes it work in a standalone checkout:
-//   - the `m3:theme.css` / `m3:tokens.css` / `m3:scheme.css` sheets from `@aphrody/m3-tokens` when the Rust library
-//     of `@aphrody/bun` is not there (`css` overrides),
+//   - canonical native theme artifacts and the Rust `@aphrody/bun` generator through `m3Plugin`,
+//     with caller-provided `css` overrides preserved,
 //   - `m3:fonts.css`, `m3:fonts-jp.css`, `m3:fonts-symbols.css` from `@aphrody/m3-fonts` when no Aphrody OS checkout
 //     holds the fonts,
 //   - `m3:icons/[style/]name[?fill=1&wght=300]`: Material Symbols SVG markup from the forked catalogue,
@@ -16,7 +16,6 @@ import { m3Plugin, type M3PluginOptions } from "@aphrody/m3/plugin";
 import type { BunPlugin } from "bun";
 import { dirname } from "node:path";
 import { iconsRoot, loadIcon, parseIconSpecifier } from "./icons.ts";
-import { tsM3Css } from "./theme-css.ts";
 
 const FONT_SHEETS: Record<string, string> = {
   "m3:fonts.css": "@aphrody/m3-fonts/fonts.css",
@@ -95,7 +94,7 @@ export function m3Bun(options: M3BunPluginOptions = {}): BunPlugin {
     ...(icons ? { iconsRoot: icons } : {}),
     ...(options.configDir ? { configDir: options.configDir } : {}),
   });
-  const base = m3Plugin({ css: tsM3Css, ...m3Options });
+  const base = m3Plugin(m3Options);
   return {
     name: "@aphrody/m3-bun",
     setup(build) {

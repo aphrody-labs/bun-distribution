@@ -42,6 +42,9 @@ pub struct MirrorOptions {
     pub resolve_cdns: bool,
     /// Explicit additional page hosts enabled by the old resolve-cdns list mode.
     pub cdn_domains: Vec<String>,
+    /// Public assets discovered by a structured content owner (for example
+    /// Material's Carbon documents). They share this mirror's asset budget.
+    pub additional_assets: Vec<Url>,
 }
 
 impl MirrorOptions {
@@ -60,6 +63,7 @@ impl MirrorOptions {
             allowed_domains: Vec::new(),
             resolve_cdns: false,
             cdn_domains: Vec::new(),
+            additional_assets: Vec::new(),
         }
     }
 }
@@ -213,6 +217,9 @@ pub async fn mirror_site(
 
     let mut scheduler = Scheduler::new(options);
     scheduler.enqueue(options.seed_url.clone(), 0, JobKind::Page);
+    for asset in &options.additional_assets {
+        scheduler.enqueue(asset.clone(), 0, JobKind::Asset);
+    }
     let mut report = MirrorReport::default();
     let concurrency = options.max_concurrency.clamp(1, MAX_CONCURRENCY);
     let pacer = Arc::new(Mutex::new(None::<Instant>));
@@ -375,6 +382,13 @@ fn validate_options(options: &MirrorOptions) -> Result<(), MirrorError> {
     if options.max_assets > MAX_ASSETS {
         return Err(MirrorError::InvalidBounds(format!("max_assets must be <= {MAX_ASSETS}")));
     }
+    if options.additional_assets.len() > MAX_ASSETS
+        || options.additional_assets.iter().any(|url| !valid_http_url(url))
+    {
+        return Err(MirrorError::InvalidBounds(
+            "additional_assets must be bounded credential-free HTTP(S) URLs".into(),
+        ));
+    }
     if options.max_response_bytes == 0 || options.max_response_bytes > 128 * 1024 * 1024 {
         return Err(MirrorError::InvalidBounds("max_response_bytes must be 1..=134217728".into()));
     }
@@ -407,7 +421,11 @@ fn is_common_cdn_host(host: &str) -> bool {
         .any(|marker| host.contains(marker))
 }
 
-async fn safe_write(root: &Path, relative_path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+pub(crate) async fn safe_write(
+    root: &Path,
+    relative_path: &Path,
+    bytes: &[u8],
+) -> std::io::Result<()> {
     let canonical_root = tokio::fs::canonicalize(root).await?;
     let mut parent = canonical_root.clone();
     let components = relative_path.components().collect::<Vec<_>>();
@@ -724,7 +742,7 @@ fn without_fragment(mut url: Url) -> Url {
     url
 }
 
-fn local_relative_path(url: &Url, page: bool) -> PathBuf {
+pub(crate) fn local_relative_path(url: &Url, page: bool) -> PathBuf {
     let mut path = PathBuf::new();
     path.push(safe_component(url.host_str().unwrap_or("unknown-host")));
     if let Some(port) = url.port() {
@@ -832,6 +850,30 @@ fn relative_link(from_file: &Path, target_file: &Path) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn additional_assets_share_the_existing_asset_budget_and_deduplicate() {
+        let mut options = MirrorOptions::new(
+            Url::parse("https://example.org/").unwrap(),
+            PathBuf::from("mirror"),
+        );
+        options.max_assets = 1;
+        options.additional_assets = vec![
+            Url::parse("https://cdn.example/one.png").unwrap(),
+            Url::parse("https://cdn.example/two.png").unwrap(),
+        ];
+        assert!(validate_options(&options).is_ok());
+        let mut scheduler = Scheduler::new(&options);
+        assert!(scheduler.enqueue(options.seed_url.clone(), 0, JobKind::Page));
+        assert!(scheduler.enqueue(options.additional_assets[0].clone(), 0, JobKind::Asset));
+        assert!(!scheduler.enqueue(options.additional_assets[0].clone(), 0, JobKind::Asset));
+        assert!(!scheduler.enqueue(options.additional_assets[1].clone(), 0, JobKind::Asset));
+        assert_eq!(scheduler.asset_count, 1);
+        assert_eq!(scheduler.page_count, 1);
+        options.additional_assets =
+            vec![Url::parse("https://user:password@cdn.example/one.png").unwrap()];
+        assert!(validate_options(&options).is_err());
+    }
 
     #[test]
     fn mirror_paths_are_host_scoped_and_query_sensitive() {

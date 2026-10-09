@@ -4,8 +4,10 @@
 //   --seed <hex> --mode light|dark|auto [--name N] [--out DIR] [--variant V] [--dry-run|--apply]
 // In the Aphrody checkout: `yolo m3 os-themes ...` (runOsThemes, in-process).
 // `generate` writes only into --out. `install`/`uninstall` are dry-run unless --apply (then they run the generated scripts).
-import { mkdirSync, writeFileSync, chmodSync, lstatSync } from "node:fs";
+import { mkdirSync, writeFileSync, chmodSync, lstatSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { PET_COLORS } from "@aphrody/identity/pet";
+import { nativeThemeVariant, parseNativeThemeExport } from "@aphrody/m3-tokens/native-theme";
 import { generate } from "./generate.ts";
 import { TARGETS, type ActiveMode, type GeneratedFile, type Target } from "./types.ts";
 
@@ -17,8 +19,8 @@ export interface CliResult {
 }
 
 const USAGE = `m3-os-themes <install|generate|uninstall> --target windows|gnome|cosmic|chromium|all --seed <hex> --mode light|dark|auto
-  [--name <name>] [--variant tonalSpot|content|fidelity|expressive|vibrant|neutral|monochrome] [--out <dir>]
-  [--icons <freedesktop theme dir>] [--dry-run] [--apply]
+  [--name <name>] [--variant tonalSpot|content|fidelity|expressive|vibrant|neutral|monochrome] [--contrast <-1..1>] [--out <dir>]
+  [--native-theme <Rust-theme.json>] [--icons <freedesktop theme dir>] [--dry-run] [--apply]
 install/uninstall only print the plan unless --apply is given. generate writes into --out (default ./m3-os-themes-out).`;
 
 const defaultExec: Exec = (cmd) =>
@@ -144,11 +146,20 @@ export function run(argv: string[], exec: Exec = defaultExec): CliResult {
   const icons = typeof flags["icons"] === "string" ? resolve(flags["icons"]) : undefined;
   let files: GeneratedFile[];
   try {
+    const nativeTheme =
+      typeof flags["native-theme"] === "string"
+        ? parseNativeThemeExport(JSON.parse(readFileSync(flags["native-theme"], "utf8")))
+        : undefined;
     files = generate(
       {
         name: String(flags["name"] ?? "Aphrody"),
-        seed: String(flags["seed"] ?? "#8c6c88"),
-        variant: flags["variant"] as never,
+        seed: String(flags["seed"] ?? nativeTheme?.seed ?? PET_COLORS.seed),
+        variant: (flags["variant"] ?? (nativeTheme && nativeThemeVariant(nativeTheme))) as never,
+        contrastLevel:
+          flags["contrast"] === undefined
+            ? (nativeTheme?.contrast_level ?? 0)
+            : Number(flags["contrast"]),
+        nativeTheme,
         mode,
       },
       targets,
