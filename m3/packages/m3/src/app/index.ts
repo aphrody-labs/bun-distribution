@@ -3,12 +3,35 @@
 // server actions, streaming SSR and static generation on Bun.build + Bun.serve.
 export { buildApp, findServerModules, resolveAppDir } from "./build";
 export type { AppBuildOptions, AppBuildResult, AppManifest } from "./build";
-export { findAppProject, runAppCommand } from "./cli";
+export { buildAppProject, findAppProject, runAppCommand } from "./cli";
 export type { AppCommandFlags, AppProject } from "./cli";
+export {
+  compileAppRouter,
+  DOCKER_BASE_IMAGE,
+  dockerAppRouter,
+  embeddedFiles,
+  renderDockerfile,
+  renderDockerServer,
+  renderExecutableEntry,
+} from "./compile";
+export type {
+  CompileAppRouterOptions,
+  CompileAppRouterReport,
+  DockerAppRouterOptions,
+  DockerAppRouterReport,
+  ExecutableEntryParams,
+} from "./compile";
 export { devApp } from "./dev";
 export type { DevApp, DevAppOptions } from "./dev";
-export { loadApp, serveApp } from "./host";
-export type { AppHandler, LoadAppOptions, ServeAppOptions } from "./host";
+export { directorySource, embeddedSource, loadApp, loadAppSource, serveApp, serveEmbeddedApp } from "./host";
+export type {
+  AppHandler,
+  AppSource,
+  EmbeddedBuild,
+  LoadAppOptions,
+  ServeAppOptions,
+  ServeEmbeddedAppOptions,
+} from "./host";
 export { appPlugin, moduleDirective, NEXT_COMPAT } from "./plugin";
 export type { AppPluginOptions, Layer } from "./plugin";
 export { prerenderApp } from "./prerender";

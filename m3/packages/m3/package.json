@@ -28,7 +28,8 @@
   ],
   "type": "module",
   "sideEffects": [
-    "./dist/lit.js"
+    "./dist/lit.js",
+    "./src/app/runtime/client.tsx"
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",

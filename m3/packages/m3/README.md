@@ -17,6 +17,11 @@ m3 build --tauri ../ui-dist
 m3 tokens --sheet scheme --seed '#6750a4' --dark
 ```
 
+For an App Router project (`app/`), `m3 compile [--target bun-linux-x64-musl] [--outfile]` builds and links one
+executable (`bin/<name>`, `PORT`/`HOSTNAME` from the environment), and `m3 docker [--outdir] [--base] [--tag]` writes
+a Docker context (`.m3/docker`: `server.js`, `dist/`, a Dockerfile on `ghcr.io/aphrody-labs/alpine:3.24-runtime`)
+and runs `docker build` when `--tag` is given.
+
 Inside the Aphrody checkout the same commands run as `yolo m3 <command>`; `yolo m3 --help` also lists the
 m3 package tools (`yolo m3 next|bun|os-themes|next-migrate|svg-to-ico|web-to-tauri|scaffold`).
 

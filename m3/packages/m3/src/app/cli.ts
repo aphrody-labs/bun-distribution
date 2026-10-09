@@ -50,6 +50,33 @@ export interface AppCommandFlags {
   prerender?: boolean;
 }
 
+/** `m3 build` of an App Router project into `options.outDir`, with its console report. */
+export async function buildAppProject(
+  project: AppProject,
+  options: { outDir: string; dev?: boolean; prerender?: boolean },
+): Promise<void> {
+  const { outDir } = options;
+  const started = performance.now();
+  const { manifest } = await buildApp({
+    root: project.root,
+    appDir: project.appDir,
+    outDir,
+    dev: options.dev === true,
+    define: project.define,
+    clientPlugins: clientPlugins(project),
+  });
+  const built = Math.round(performance.now() - started);
+  console.log(
+    `m3 build: ${manifest.routes.length} routes, ${Object.keys(manifest.clientModules).length} client modules in ${built} ms`,
+  );
+  if (options.prerender !== false) {
+    const { pages, dynamic } = await prerenderApp(outDir);
+    for (const page of pages) console.log(`  ○ ${page}`);
+    for (const page of dynamic) console.log(`  λ ${page.path}  (${page.reason})`);
+  }
+  console.log(`m3 build: ${outDir} in ${Math.round(performance.now() - started)} ms`);
+}
+
 /** Run `dev`, `build` or `start` for an App Router project; resolves to the exit code. */
 export async function runAppCommand(
   command: "dev" | "build" | "start",
@@ -70,25 +97,7 @@ export async function runAppCommand(
     return 0;
   }
   if (command === "build") {
-    const started = performance.now();
-    const { manifest } = await buildApp({
-      root: project.root,
-      appDir: project.appDir,
-      outDir,
-      dev: flags.dev === true,
-      define: project.define,
-      clientPlugins: clientPlugins(project),
-    });
-    const built = Math.round(performance.now() - started);
-    console.log(
-      `m3 build: ${manifest.routes.length} routes, ${Object.keys(manifest.clientModules).length} client modules in ${built} ms`,
-    );
-    if (flags.prerender !== false) {
-      const { pages, dynamic } = await prerenderApp(outDir);
-      for (const page of pages) console.log(`  ○ ${page}`);
-      for (const page of dynamic) console.log(`  λ ${page.path}  (${page.reason})`);
-    }
-    console.log(`m3 build: ${outDir} in ${Math.round(performance.now() - started)} ms`);
+    await buildAppProject(project, { outDir, dev: flags.dev, prerender: flags.prerender });
     return 0;
   }
   if (!existsSync(join(outDir, "manifest.json"))) throw new Error(`m3 start: no build in ${outDir} (run m3 build)`);

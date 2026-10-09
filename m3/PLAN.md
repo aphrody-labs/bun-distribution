@@ -67,7 +67,10 @@ runtime, deployment, performance or installed host milestone.
 app `apps/example` builds, prerenders and serves end to end in `apps/example/test/app.test.ts` (7 pass). The `spa`
 scaffold template (TanStack Router on m3-bun) type-checks and bundles against `@tanstack/react-router` 1.170. M3
 `DataTable`/`VirtualList` live in `@aphrody/m3-react` (`test/data.test.tsx`, 6 pass).
-Next: Shenron slice, compile and Docker Alpine through m3-bun, measured comparison with `next build`/`next start`. Bun gaps (Bake `"use server"`, production Bake)
+`m3 compile` links an App Router build into one executable (server layers bundled, the other build files embedded with
+`with { type: "file" }`) and `m3 docker` writes a context (`server.js`, `dist/`, Dockerfile on
+`ghcr.io/aphrody-labs/alpine:3.24-runtime`); `test/app/compile.test.ts` covers both (55 pass in `test/app`).
+Next: Shenron slice, measured comparison with `next build`/`next start`. Bun gaps (Bake `"use server"`, production Bake)
 are fixed in the Bun fork core, never shimmed here.
 
 ## Full Bun (chantier T, Bun fork plan section T)

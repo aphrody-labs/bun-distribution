@@ -17,6 +17,7 @@ import { loadM3Config } from "./config";
 import type { M3Sheet } from "./native";
 import { createM3Project } from "./new";
 import { findAppProject, runAppCommand } from "./app/cli";
+import { compileAppRouter, DOCKER_BASE_IMAGE, dockerAppRouter } from "./app/compile";
 import { serveM3 } from "./server";
 import { m3Tokens, SHEETS, writeTokenBundle } from "./tokens";
 
@@ -28,6 +29,7 @@ export const COMMANDS = [
   "check",
   "new",
   "compile",
+  "docker",
   "desktop",
   "help",
   "version",
@@ -54,7 +56,8 @@ Usage:
   m3 dev      [--port <n>] [--no-hmr] [--config <file>]
   m3 build    [--tauri [<dir>]] [--outdir <dir>] [--dev] [--no-prerender] [--config <file>]
   m3 start    [--port <n>] [--outdir <dir>] [--config <file>]
-  m3 compile  [--target <t>] [--outfile <file>] [--dev] [--config <file>]
+  m3 compile  [--target <t>] [--outfile <file>] [--dev] [--no-build] [--config <file>]
+  m3 docker   [--outdir <dir>] [--base <image>] [--tag <image>] [--no-prerender] [--config <file>]
   m3 desktop  [--dev|--build] [--config <file>]
   m3 tokens   [--sheet ${SHEETS.join("|")}] [--seed <hex>] [--variant <name>] [--dark]
               [--contrast <n>] [--out <file>]
@@ -67,7 +70,10 @@ dev, build, compile and desktop read m3.config.ts from the working directory.
 With an app/ directory (or 'app' in m3.config.ts), dev, build and start run the App Router:
 React Server Components, server actions, streaming SSR and static generation on Bun.serve + Bun.build.
 compile builds the UI and links it with the Bun runtime into one executable that serves it (and the app's API):
-it runs @aphrody/m3-bun, which must be installed next to this package.`;
+for an App Router project it embeds the build (server layers, client assets, prerendered pages); otherwise it runs
+@aphrody/m3-bun, which must be installed next to this package.
+docker (App Router) writes a Docker context (Dockerfile on ${DOCKER_BASE_IMAGE}, server.js, dist/) in
+.m3/docker, and builds the image when --tag is given.`;
 
 /** Parse `argv` (without the runtime and script paths). */
 export function parseArgs(argv: readonly string[]): ParsedArgs {
@@ -354,6 +360,21 @@ export async function runCli(
       return 0;
     }
     case "compile": {
+      const appProject = await findAppProject(cwd, stringFlag(flags, "config"));
+      if (appProject) {
+        const outfile = stringFlag(flags, "outfile");
+        const report = await compileAppRouter({
+          project: appProject,
+          target: stringFlag(flags, "target"),
+          outfile: outfile ? resolve(cwd, outfile) : undefined,
+          build: flags.build !== false,
+          prerender: flags.prerender !== false,
+        });
+        console.log(
+          `m3 compile: ${report.outfile} (${report.bytes} B, ${report.files} embedded files, target ${report.target}) in ${report.ms} ms`,
+        );
+        return 0;
+      }
       // The executable path is @aphrody/m3-bun: it embeds the built UI in a generated server and compiles that. Compiling
       // the HTML entry directly (what this command used to do) yields a standalone HTML file, not an executable.
       const m3Bun = await loadM3Bun();
@@ -372,6 +393,26 @@ export async function runCli(
       );
       for (const warning of report.warnings) console.warn(`m3 compile: ${warning}`);
       return 0;
+    }
+    case "docker": {
+      const appProject = await findAppProject(cwd, stringFlag(flags, "config"));
+      if (!appProject)
+        throw new Error("m3 docker builds App Router projects; for an HTML entry use m3-bun package --target docker");
+      const outdir = stringFlag(flags, "outdir");
+      const report = await dockerAppRouter({
+        project: appProject,
+        contextDir: outdir ? resolve(cwd, outdir) : undefined,
+        base: stringFlag(flags, "base"),
+        prerender: flags.prerender !== false,
+      });
+      console.log(`m3 docker: ${report.contextDir} (${report.files.join(", ")}) in ${report.ms} ms`);
+      const tag = stringFlag(flags, "tag");
+      if (!tag) return 0;
+      const base = stringFlag(flags, "base");
+      return run(
+        ["docker", "build", "-t", tag, ...(base ? ["--build-arg", `BASE=${base}`] : []), report.contextDir],
+        cwd,
+      );
     }
     case "desktop": {
       const config = await loadM3Config(cwd, stringFlag(flags, "config"));

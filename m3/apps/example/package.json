@@ -8,6 +8,8 @@
     "dev": "m3 dev",
     "build": "m3 build",
     "start": "m3 start",
+    "compile": "m3 compile",
+    "docker": "m3 docker",
     "test": "APHRODY_FFI_DEV=1 bun test",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
