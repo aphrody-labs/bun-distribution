@@ -67,7 +67,7 @@
   "plan": {
     "owners": [
       ["Aphrody", "Products, workflows, UI, integrations"],
-      ["Yolo", "Precompiled runtime and SDK (Bun fork + CLI, aliases `bun`, `vu`)"],
+      ["Bun fork (`aphrody-labs/bun`)", "Precompiled runtime and SDK (CLI, aliases `bun`, `vu`); yolo is absorbed and is no longer an owner"],
       ["Workspace/Infra", "Orchestration, inventories, factories, release, hosts"],
       ["`m3/packages/app-ui`, `crates/ui/*`", "Canonical UI"],
       ["Bun fork `bun-python-host`", "Pinned native owner of the `aphrody-rust` Python binding; Python applications remain in Aphrody"],
@@ -90,7 +90,7 @@
         "Rust CLI",
         "`aphrody` multicall binary (`crates/infra/aphrody`, `crates/infra/aphrody-command`); former tool names are links"
       ],
-      ["Bun CLI", "`yolo` (`packages/engine/yolo`)"],
+      ["Bun CLI", "`bun` (fork binary); yolo is absorbed into the fork and is no longer a surface"],
       [
         "FFI",
         "`aphrody_ffi` cdylib (`crates/interop/ffi`): `aphrody_*`, `yolo_*`, `bun_rs_*`, `aphrody_oxc_*`; PyO3 modules stay separate"
@@ -139,7 +139,7 @@
       ],
       [
         "Single MCP",
-        "`aphrody-mcp` is the only MCP server; `m3-mcp` becomes an alias; same-purpose tools merged"
+        "`aphrody-mcp` is the only MCP server; `m3-mcp` becomes an alias; same-purpose tools merged. The client goes through `mcp-launch.ts`: remote mode on 127.0.0.1:24889 (tunnel to the VPS hub, systemd), local stdio fallback. The kernel subcommand alias of the MCP server is removed."
       ],
       [
         "Kernel and shell",
@@ -159,7 +159,11 @@
       ],
       [
         "Runtime activation",
-        "Point `bun`/`yolo`/`vu` on PATH to the fork binary; Windows; embed `libaphrody_ffi`; `bun:ffi` binding"
+        "Point `bun`/`vu` on PATH to the fork binary: dbfr done; Windows and the VPS remain; embed `libaphrody_ffi`; `bun:ffi` binding"
+      ],
+      [
+        "Prod dbfr on the fork Bun",
+        "Done, see 05eb852704. Remaining: yolo-tool-host, `install-yolo.*`"
       ],
       [
         "Native runtime acquisition",
@@ -175,7 +179,7 @@
       ],
       [
         "MCP HTTP auth",
-        "Finish `workspace/wip/infra-mcp-auth` (bearer, free port, `infra validate` fix), gate, rebase, push"
+        "Bearer token in a 0600 EnvironmentFile (`APHRODY_MCP_HTTP_TOKEN`); finish `workspace/wip/infra-mcp-auth` (free port, `infra validate` fix), gate, rebase, push"
       ],
       [
         "agent-home",

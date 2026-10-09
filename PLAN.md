@@ -9,10 +9,10 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 | Owner | Scope |
 | --- | --- |
 | Aphrody | Products, workflows, UI, integrations |
-| Yolo | Precompiled runtime and SDK (Bun fork + CLI, aliases `bun`, `vu`) |
+| Bun fork (`aphrody-labs/bun`) | Precompiled runtime and SDK (CLI, aliases `bun`, `vu`); yolo is absorbed and is no longer an owner |
 | Workspace/Infra | Orchestration, inventories, factories, release, hosts |
 | `m3/packages/app-ui`, `crates/ui/*` | Canonical UI |
-| `crates/ai/rag-python` | Sole owner of the `aphrody-rust` Python binding |
+| Bun fork `bun-python-host` | Pinned native owner of the `aphrody-rust` Python binding; Python applications remain in Aphrody |
 | IECODE | Separate repository, store and authority |
 | Kernel | `aphrody-kernel`: minimal TCB + subsystems; Linux/Asterinas/kernel32 provide the rest |
 | Execution context | Aphrody and Bun can be developed and built on any qualified host/target. Select native, SSH or Docker tools from the current context; local Windows / VPS SSH / DBFR deployment are current environment defaults, not product restrictions. |
@@ -23,7 +23,7 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 | Surface | Target |
 | --- | --- |
 | Rust CLI | `aphrody` multicall binary (`crates/infra/aphrody`, `crates/infra/aphrody-command`); former tool names are links |
-| Bun CLI | `yolo` (`packages/engine/yolo`) |
+| Bun CLI | `bun` (fork binary); yolo is absorbed into the fork and is no longer a surface |
 | FFI | `aphrody_ffi` cdylib (`crates/interop/ffi`): `aphrody_*`, `yolo_*`, `bun_rs_*`, `aphrody_oxc_*`; PyO3 modules stay separate |
 | WASM | `aphrody-command-wasm` (`crates/infra/aphrody-command-wasm`), exposed by `@aphrody/cli-wasm`: pure commands and RAG JSON/vector operations share one module, loader and linear memory. `@aphrody/rag-core/wasm` uses the same loader. |
 | MCP | `aphrody-mcp` (`crates/ai/mcp`) is the only MCP server and hosts the kernel in process; `m3-mcp` is a deprecated alias (2026-10-07); `yolo tool` and the M3 `tool-host` are tool hosts, not servers |
@@ -50,16 +50,17 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 | Item | Closure |
 | --- | --- |
 | Monorepo consolidation | Fold thin crates/packages into their owner (gates: clippy `-D warnings`, scoped tests on the VPS); root layout aligned on Tauri `dev`, Obscura and Bun `main` (`crates/ packages/ docs/ scripts/ tools/ vendor/ assets/ examples/ bench/ test/ patches/`); absorb `apps/ config/ data/ bin/ m3/ plugins/ py/` |
-| Single MCP | `aphrody-mcp` is the only MCP server; `m3-mcp` becomes an alias; same-purpose tools merged |
+| Single MCP | `aphrody-mcp` is the only MCP server; `m3-mcp` becomes an alias; same-purpose tools merged. The client goes through `mcp-launch.ts`: remote mode on 127.0.0.1:24889 (tunnel to the VPS hub, systemd), local stdio fallback. The kernel subcommand alias of the MCP server is removed. |
 | Kernel and shell | Target in `docs/plans/os-kernel/PLAN.md` (Asterinas `ostd`/`kernel/{core,comps,libs}`, Linux subsystems); replace hand-made coreutils/Nushell by `uutils`, `eza`, `sudo-rs` or Bun Shell |
 | CLI purge | Group AI capabilities under aphrody ai; orient top-level commands around real native capability owners. Qualify parser, dispatch, truthful errors and CLI/FFI/MCP/kernel parity before retiring compatibility paths. No fake execution/session success. |
 | Release downloads | Publish `aphrody-setup` and `omar-kit` (`bun run downloads:publish plan\|build\|release\|verify`) |
 | yolo Windows | Cross-build `aphrody-ffi` (profile `runtime`), package, enable the artifact in `tools/config/downloads.json` |
-| Runtime activation | Point `bun`/`yolo`/`vu` on PATH to the fork binary; Windows; embed `libaphrody_ffi`; `bun:ffi` binding |
+| Runtime activation | Point `bun`/`vu` on PATH to the fork binary: dbfr done; Windows and the VPS remain; embed `libaphrody_ffi`; `bun:ffi` binding |
+| Prod dbfr on the fork Bun | Done, see 05eb852704. Remaining: yolo-tool-host, `install-yolo.*` |
 | Native runtime acquisition | Verified artifact on a fresh machine without engine rebuild; install, upgrade, rollback |
 | Desktop | Windows installer for `aphrody-app`; real Windows run; rendering in the real CEF app |
 | Shenron production | Restart `shenron-site`/`shenron-bot` after the release; measure `/api/chat`; verify the agent card |
-| MCP HTTP auth | Finish `workspace/wip/infra-mcp-auth` (bearer, free port, `infra validate` fix), gate, rebase, push |
+| MCP HTTP auth | Bearer token in a 0600 EnvironmentFile (`APHRODY_MCP_HTTP_TOKEN`); finish `workspace/wip/infra-mcp-auth` (free port, `infra validate` fix), gate, rebase, push |
 | agent-home | Land `workspace/wip/agent-home-gaps`; gate `aphrody-agent-home`, `aphrody-config` |
 | code-graph | Python/TS extractors and `scripts/audit/ai/graph-parity.ts`; Graphify stays the parity oracle |
 | Publication | npm `@aphrody/*`, crates.io (316 crates: metadata, `publish = false`, path versions, 14 taken names), PyPI |
