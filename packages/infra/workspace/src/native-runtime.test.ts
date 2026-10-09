@@ -8,6 +8,7 @@ import { acquireNativeRuntime, runNativeRuntime } from "./native-runtime.ts";
 
 const consumer = resolve(import.meta.dir, "../../../..");
 const yolo = resolve(consumer, "bin/yolo");
+const bunCheckout = process.env["APHRODY_BUN_CHECKOUT"];
 const target = "x86_64-unknown-linux-gnu";
 const nativeHome = join(homedir(), ".yolo/runtime", target);
 const older = join(nativeHome, "0.1.0-3d585c67");
@@ -17,7 +18,8 @@ const capabilities = ["system.stats", "bench.compute", "process.supervise", "htt
 const assetTest = test.skipIf(
   process.platform !== "linux" ||
     process.arch !== "x64" ||
-    ![older, newer, abi13, yolo].every(existsSync),
+    ![older, newer, abi13].every(existsSync) ||
+    !bunCheckout,
 );
 const temporary: string[] = [];
 afterEach(async () => {
@@ -48,7 +50,7 @@ async function fixture() {
   };
   await mkdir(join(root, "tools", "config"), { recursive: true });
   await writeFile(join(root, "tools/config/native-runtime.json"), JSON.stringify(configuration));
-  return { root, runtimeHome: join(root, "installed/runtime"), yolo, configuration };
+  return { root, runtimeHome: join(root, "installed/runtime"), yolo, bunCheckout, configuration };
 }
 async function updateConfiguration(f: Awaited<ReturnType<typeof fixture>>) {
   await writeFile(

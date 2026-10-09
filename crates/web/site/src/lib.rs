@@ -77,10 +77,26 @@ pub async fn serve(root: &Path, bind: SocketAddr, webos_url: Option<&str>) -> io
     let listener = tokio::net::TcpListener::bind(bind).await?;
     println!("Aphrody site: http://{}", listener.local_addr()?);
     axum::serve(listener, app)
-        .with_graceful_shutdown(async {
-            let _ = tokio::signal::ctrl_c().await;
-        })
+        .with_graceful_shutdown(shutdown_signal())
         .await
+}
+
+/// Join server work on both terminal interrupt and container/platform termination.
+pub async fn shutdown_signal() {
+    #[cfg(unix)]
+    {
+        match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
+            Ok(mut terminate) => {
+                tokio::select! {
+                    _ = tokio::signal::ctrl_c() => {},
+                    _ = terminate.recv() => {},
+                }
+            },
+            Err(_) => { let _ = tokio::signal::ctrl_c().await; },
+        }
+    }
+    #[cfg(not(unix))]
+    { let _ = tokio::signal::ctrl_c().await; }
 }
 
 async fn app_ui(State(site): State<Arc<Site>>, uri: Uri) -> Response {

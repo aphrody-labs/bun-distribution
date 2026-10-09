@@ -11,11 +11,24 @@
  *   /releases/<id>/...        immutable routes from sibling releases/<id>, same public resources
  *
  * `<root>` is the `current` symlink that scripts/release/publish-downloads.ts flips atomically.
- * Environment: DOWNLOADS_ROOT (default /srv/aphrody-downloads/current), DOWNLOADS_PORT (8797),
+ * Environment: DOWNLOADS_ROOT (default APHRODY_HOME/downloads/current), DOWNLOADS_PORT or PORT (8797),
  * DOWNLOADS_HOST (127.0.0.1).
  */
 import { realpathSync, statSync } from "node:fs";
 import { basename, dirname, join, resolve, sep } from "node:path";
+import { statePath } from "../paths";
+
+/** Resolve a deployment without assuming a VPS layout or a fixed ingress port. */
+export function serverOptions(env: Record<string, string | undefined> = process.env) {
+  const value = env.DOWNLOADS_PORT?.trim() || env.PORT?.trim() || "8797";
+  if (!/^\d{1,5}$/.test(value) || Number(value) > 65535)
+    throw new Error("DOWNLOADS_PORT/PORT must be an integer from 0 to 65535");
+  return {
+    root: resolve(env.DOWNLOADS_ROOT?.trim() || statePath("downloads", "current")),
+    port: Number(value),
+    hostname: env.DOWNLOADS_HOST?.trim() || env.HOST?.trim() || "127.0.0.1",
+  };
+}
 
 export interface Artifact {
   name: string;
@@ -321,9 +334,7 @@ export function createHandler(rootInput: string): (request: Request) => Promise<
 }
 
 if (import.meta.main) {
-  const root = process.env.DOWNLOADS_ROOT ?? "/srv/aphrody-downloads/current";
-  const port = Number(process.env.DOWNLOADS_PORT ?? 8797);
-  const hostname = process.env.DOWNLOADS_HOST ?? "127.0.0.1";
+  const { root, port, hostname } = serverOptions();
   const handler = createHandler(root);
   const server = Bun.serve({ port, hostname, idleTimeout: 120, fetch: handler });
   console.log(

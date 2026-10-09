@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-/** Activate a precompiled Yolo runtime verified by the workspace SDK and the Yolo release owner. */
+/** Activate a pinned precompiled buv runtime through its SDK release owner. */
 import { lstat, mkdir, readFile, readlink, rm } from "node:fs/promises";
-import { homedir } from "node:os";
-import { join, resolve } from "node:path";
-import * as workspaceSdk from "@aphrody/runtime-sdk/artifact";
+import { basename, isAbsolute, join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 interface ArtifactPin {
   target: string;
@@ -22,7 +21,10 @@ interface NativeManifest {
   target: string;
   abi: string;
   files: Record<string, { bytes: number; sha256: string }>;
-  sources: { yolo: { rev: string; dirty: boolean } };
+  sources: {
+    bun?: { rev: string; dirty: boolean };
+    yolo?: { rev: string; dirty: boolean };
+  };
   build: { panicRecovery: boolean };
 }
 interface NativeBuild {
@@ -35,20 +37,26 @@ interface NativeBuild {
 }
 interface RuntimeSdk {
   hostTarget(): string;
-  verifyArtifact(directory: string): unknown;
-  loadArtifact(directory: string): {
+  runtimeHome(): string;
+  verifyArtifactAsync(directory: string): Promise<unknown>;
+  loadArtifactAsync(directory: string): Promise<{
     buildInfo(): NativeBuild;
     capabilities(): string[];
     close(): void;
-  };
+  }>;
+  installArtifact(
+    directory: string,
+    options: { home: string; manifestSha256: string },
+  ): Promise<string>;
+  rollbackArtifact(options: { home: string; manifestSha256: string }): Promise<unknown>;
 }
-const sdk: RuntimeSdk = workspaceSdk;
 export interface NativeRuntimeOptions {
   root: string;
   action: "install" | "verify" | "rollback";
   artifact?: string;
   runtimeHome?: string;
   yolo?: string;
+  bunCheckout?: string;
   apply?: boolean;
 }
 
@@ -61,21 +69,20 @@ async function regular(path: string) {
 async function realDirectory(path: string) {
   if (!(await lstat(path)).isDirectory()) throw new Error("Expected a real directory: " + path);
 }
-async function command(argv: string[], root: string, env?: NodeJS.ProcessEnv) {
-  const child = Bun.spawn(argv, {
-    cwd: root,
-    env,
-    stdout: "pipe",
-    stderr: "pipe",
-    timeout: 60_000,
-  });
-  const [stdout, stderr, code] = await Promise.all([
-    new Response(child.stdout).text(),
-    new Response(child.stderr).text(),
-    child.exited,
-  ]);
-  if (code !== 0) throw new Error(`${argv[0]} ${argv[1]} failed: ${stderr.trim()}`);
-  return stdout.trim();
+async function runtimeSdk(root: string, checkout?: string): Promise<RuntimeSdk> {
+  const selected = checkout || process.env["APHRODY_BUN_CHECKOUT"];
+  let artifact: string;
+  let release: string;
+  if (selected) {
+    const sdk = resolve(root, selected, "packages/bun-runtime-sdk/src");
+    artifact = pathToFileURL(join(sdk, "artifact.ts")).href;
+    release = pathToFileURL(join(sdk, "release.ts")).href;
+  } else {
+    artifact = import.meta.resolve("@aphrody/buv/runtime-artifact");
+    release = import.meta.resolve("@aphrody/buv/runtime-release");
+  }
+  const modules = await Promise.all([import(artifact), import(release)]);
+  return { ...modules[0], ...modules[1] } as RuntimeSdk;
 }
 
 function readContract(value: unknown): RuntimeContract {
@@ -103,7 +110,7 @@ function readContract(value: unknown): RuntimeContract {
   return contract;
 }
 
-async function inspectArtifact(directory: string, contract: RuntimeContract) {
+async function inspectArtifact(directory: string, contract: RuntimeContract, sdk: RuntimeSdk) {
   await realDirectory(directory);
   const manifestPath = join(directory, "manifest.json");
   await regular(manifestPath);
@@ -115,13 +122,14 @@ async function inspectArtifact(directory: string, contract: RuntimeContract) {
   );
   if (!pin) throw new Error("Runtime artifact is not pinned for this host");
   const manifest = JSON.parse(bytes.toString()) as NativeManifest;
+  const source = manifest.name === "buv-runtime" ? manifest.sources?.bun : manifest.sources?.yolo;
   if (
-    manifest.name !== "yolo-runtime" ||
+    (manifest.name !== "buv-runtime" && manifest.name !== "yolo-runtime") ||
     manifest.target !== pin.target ||
     manifest.version !== pin.version ||
     manifest.abi !== pin.abi ||
-    manifest.sources?.yolo?.rev !== pin.revision ||
-    manifest.sources.yolo.dirty !== false ||
+    source?.rev !== pin.revision ||
+    source?.dirty !== false ||
     manifest.build?.panicRecovery !== true
   )
     throw new Error("Runtime manifest differs from the pinned clean, recoverable build");
@@ -134,8 +142,7 @@ async function inspectArtifact(directory: string, contract: RuntimeContract) {
     }),
   );
   // The SDK owns file checksums, target validation and ABI negotiation.
-  sdk.verifyArtifact(directory);
-  const runtime = sdk.loadArtifact(directory);
+  const runtime = await sdk.loadArtifactAsync(directory);
   try {
     const build = runtime.buildInfo();
     const capabilities = runtime.capabilities();
@@ -174,8 +181,13 @@ async function selectedDirectory(home: string, target: string, slot: "current" |
     if (error.code === "ENOENT") throw new Error("No installed " + slot + " native runtime");
     throw error;
   });
-  if (!/^\d+\.\d+\.\d+-[a-f0-9]{8}$/.test(name)) throw new Error("Unsafe runtime slot target");
-  return join(home, target, name);
+  const slot = basename(name);
+  if (
+    !/^\d+\.\d+\.\d+-[a-f0-9]{8}$/.test(slot) ||
+    (isAbsolute(name) ? resolve(name) !== resolve(home, target, slot) : name !== slot)
+  )
+    throw new Error("Unsafe runtime slot target");
+  return join(home, target, slot);
 }
 
 export async function acquireNativeRuntime(options: NativeRuntimeOptions) {
@@ -187,11 +199,8 @@ export async function acquireNativeRuntime(options: NativeRuntimeOptions) {
     throw new Error("Expected install, verify or rollback");
   if (options.action === "install" && !options.artifact)
     throw new Error("install requires --artifact");
-  const home = resolve(
-    options.runtimeHome ??
-      (process.env["YOLO_RUNTIME_HOME"] ||
-        join(process.env["YOLO_HOME"] || join(homedir(), ".yolo"), "runtime")),
-  );
+  const sdk = await runtimeSdk(root, options.bunCheckout);
+  const home = resolve(options.runtimeHome ?? sdk.runtimeHome());
   let lock: string | undefined;
   try {
     const target = sdk.hostTarget();
@@ -206,7 +215,7 @@ export async function acquireNativeRuntime(options: NativeRuntimeOptions) {
     }
     const before =
       options.action === "install"
-        ? await inspectArtifact(resolve(options.artifact!), contract)
+        ? await inspectArtifact(resolve(options.artifact!), contract, sdk)
         : await inspectArtifact(
             await selectedDirectory(
               home,
@@ -214,6 +223,7 @@ export async function acquireNativeRuntime(options: NativeRuntimeOptions) {
               options.action === "rollback" ? "previous" : "current",
             ),
             contract,
+            sdk,
           );
     if (!options.apply || options.action === "verify")
       return {
@@ -229,26 +239,28 @@ export async function acquireNativeRuntime(options: NativeRuntimeOptions) {
         throw error;
       });
       if (existing) {
-        const installed = await inspectArtifact(destination, contract);
+        const installed = await inspectArtifact(destination, contract, sdk);
         if (installed.manifestSha256 !== before.manifestSha256)
           throw new Error("Installed runtime directory conflicts with the requested artifact");
       }
     }
-    const executable =
-      options.yolo ??
-      process.env["APHRODY_YOLO_BIN"] ??
-      Bun.which("yolo") ??
-      join(root, "bin", process.platform === "win32" ? "yolo.exe" : "yolo");
-    await command(
-      options.action === "install"
-        ? [executable, "runtime", "install", before.directory]
-        : [executable, "runtime", "rollback"],
-      root,
-      { ...process.env, YOLO_RUNTIME_HOME: home },
+    if (options.action === "install")
+      await sdk.installArtifact(before.directory, {
+        home,
+        manifestSha256: before.manifestSha256,
+      });
+    else
+      await sdk.rollbackArtifact({
+        home,
+        manifestSha256: before.manifestSha256,
+      });
+    const after = await inspectArtifact(
+      await selectedDirectory(home, target, "current"),
+      contract,
+      sdk,
     );
-    const after = await inspectArtifact(await selectedDirectory(home, target, "current"), contract);
     if (after.manifestSha256 !== before.manifestSha256)
-      throw new Error("Yolo release owner selected an unexpected runtime");
+      throw new Error("buv release owner selected an unexpected runtime");
     return {
       schema: "aphrody.native-runtime/1",
       action: options.action,
@@ -264,7 +276,7 @@ export async function runNativeRuntime(input: readonly string[]): Promise<number
   const args = [...input];
   if (args.includes("--help")) {
     console.log(
-      "Usage: yolo ops native-runtime install|verify|rollback [--root DIR] [--artifact DIR] [--runtime-home DIR] [--yolo BIN] [--apply]. Uses the runtime pins of tools/config/native-runtime.json, the workspace SDK and the Yolo release owner; no source checkout, Cargo or engine rebuild. Default: verify without activation.",
+      "Usage: yolo ops native-runtime install|verify|rollback [--root DIR] [--artifact DIR] [--runtime-home DIR] [--bun-checkout DIR] [--apply]. Uses pinned artifacts and the buv SDK directly. Default: verify without activation.",
     );
     return 0;
   }
@@ -276,11 +288,12 @@ export async function runNativeRuntime(input: readonly string[]): Promise<number
     const arg = args.shift();
     if (arg === "--apply") options.apply = true;
     else {
-      const keys: Record<string, "root" | "artifact" | "runtimeHome" | "yolo"> = {
+      const keys: Record<string, "root" | "artifact" | "runtimeHome" | "yolo" | "bunCheckout"> = {
         "--root": "root",
         "--artifact": "artifact",
         "--runtime-home": "runtimeHome",
         "--yolo": "yolo",
+        "--bun-checkout": "bunCheckout",
       };
       const key = keys[arg ?? ""];
       if (!key) throw new Error("Unknown option: " + arg);

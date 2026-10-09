@@ -23,5 +23,16 @@ test("finds a workspace from a nested source file using all root markers", () =>
 });
 
 test("portablePath normalizes manifest separators", () => {
-  expect(portablePath("crates\\os\\kernel")).toBe("crates/os/kernel/core");
+  expect(portablePath("crates\\os\\kernel")).toBe("crates/os/kernel");
+});
+
+test("a deployed resource root needs no source checkout and is independent of cwd", () => {
+  const root = mkdtempSync(join(tmpdir(), "aphrody-deployed-"));
+  try {
+    expect(findWorkspaceRoot(undefined, { APHRODY_WORKSPACE_ROOT: root })).toBe(root);
+    expect(findWorkspaceRoot(undefined, { APHRODY_ROOT: root, APHRODY_WORKSPACE_ROOT: " " })).toBe(root);
+    expect(() => findWorkspaceRoot(undefined, { APHRODY_ROOT: join(root, "missing") })).toThrow("not a directory");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

@@ -3,7 +3,16 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createHandler, formatSize, renderIndex, resolveFile } from "../../src/downloads/server";
+import { createHandler, formatSize, renderIndex, resolveFile, serverOptions } from "../../src/downloads/server";
+
+test("cloud ingress and relocated downloads honor configuration and reject invalid ports", () => {
+  expect(serverOptions({ DOWNLOADS_ROOT: tmpdir(), PORT: "8080", HOST: "0.0.0.0" })).toEqual({
+    root: tmpdir(), port: 8080, hostname: "0.0.0.0",
+  });
+  expect(serverOptions({ DOWNLOADS_PORT: "0", PORT: "8080" }).port).toBe(0);
+  for (const PORT of ["-1", "65536", "NaN", "80oops"])
+    expect(() => serverOptions({ PORT })).toThrow("integer");
+});
 
 let root: string;
 let published: string;

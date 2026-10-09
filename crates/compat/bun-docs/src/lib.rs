@@ -9,7 +9,7 @@
 //! Skill: `bun_docs_lookup` (search and return the best page in one call).
 //!
 //! Root resolution ([`resolve_root`]): `APHRODY_BUN_DOCS`, the fork checkout
-//! (`APHRODY_BUN_CHECKOUT`, else `C:/bun` on Windows), installed corpora, then a previous
+//! (`APHRODY_BUN_CHECKOUT`, else a sibling of the configured workspace), installed corpora, then a previous
 //! versioned download. When none exists, [`BunDocsSubsystem::index`] downloads `docs/` of the fork
 //! at the commit pinned in `docs/reference/upstream-bun/SOURCE.json` ([`download_root`], a partial
 //! `git` clone, reported in `bun_docs_list`); `APHRODY_BUN_DOCS_FETCH=0` turns that into an error.
@@ -369,7 +369,12 @@ pub fn resolve_root() -> Option<PathBuf> {
     let executable = std::env::current_exe().ok();
     let data = data_dir();
     let mut candidates: Vec<PathBuf> =
-        fork_docs(std::env::var_os(CHECKOUT_ENV).map(PathBuf::from).as_deref(), cfg!(windows))
+        fork_docs(
+            std::env::var_os(CHECKOUT_ENV).filter(|value| !value.is_empty()).map(PathBuf::from).as_deref(),
+            std::env::var_os("APHRODY_WORKSPACE_ROOT").filter(|value| !value.is_empty())
+                .or_else(|| std::env::var_os("APHRODY_ROOT").filter(|value| !value.is_empty()))
+                .map(PathBuf::from).as_deref(),
+        )
             .into_iter()
             .collect();
     candidates.extend(installed_roots(executable.as_deref(), data.as_deref()));
@@ -495,10 +500,10 @@ fn download_into(url: &str, reference: &str, dest: &Path) -> Result<PathBuf, Str
     Ok(docs)
 }
 
-/// `docs/` of the fork checkout (`APHRODY_BUN_CHECKOUT`, else `C:/bun` on Windows), when it holds a corpus.
-fn fork_docs(checkout: Option<&Path>, windows: bool) -> Option<PathBuf> {
-    let checkout =
-        checkout.map(Path::to_path_buf).or_else(|| windows.then(|| PathBuf::from("C:/bun")))?;
+/// Read a configured fork or its sibling layout without assuming any host drive.
+fn fork_docs(checkout: Option<&Path>, workspace: Option<&Path>) -> Option<PathBuf> {
+    let checkout = checkout.map(Path::to_path_buf)
+        .or_else(|| workspace.and_then(Path::parent).map(|parent| parent.join("bun")))?;
     let docs = checkout.join("docs");
     docs.join("docs.json").is_file().then_some(docs)
 }
@@ -964,11 +969,11 @@ mod tests {
     #[test]
     fn fork_checkout_docs_need_a_corpus() {
         let temp = tempfile::tempdir().expect("temporary checkout");
-        assert_eq!(fork_docs(Some(temp.path()), false), None);
+        assert_eq!(fork_docs(Some(temp.path()), None), None);
         std::fs::create_dir_all(temp.path().join("docs")).expect("docs directory");
         std::fs::write(temp.path().join("docs/docs.json"), "{}").expect("docs.json");
-        assert_eq!(fork_docs(Some(temp.path()), true), Some(temp.path().join("docs")));
-        assert_eq!(fork_docs(None, false), None);
+        assert_eq!(fork_docs(Some(temp.path()), None), Some(temp.path().join("docs")));
+        assert_eq!(fork_docs(None, None), None);
     }
 
     #[test]

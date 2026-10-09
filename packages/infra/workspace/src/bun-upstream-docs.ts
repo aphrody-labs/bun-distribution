@@ -13,8 +13,8 @@
  * `--resolve` prints the corpus directory chosen by {@link resolveBunDocs}.
  *
  * Corpus resolution ({@link resolveBunDocs}, same order as the Rust crate `aphrody-bun-docs`):
- * `APHRODY_BUN_DOCS` (authoritative), `docs/` of the fork checkout (`APHRODY_BUN_CHECKOUT`, else `C:\bun`
- * on Windows), an installed corpus `<data>/aphrody/bun/docs`, then a versioned download: a partial clone
+ * `APHRODY_BUN_DOCS` (authoritative), `docs/` of the selected fork checkout (`APHRODY_BUN_CHECKOUT`
+ * or a sibling of the configured workspace), an installed corpus `<data>/aphrody/bun/docs`, then a versioned download: a partial clone
  * of `docs/` at the pinned commit in `<data>/aphrody/bun/docs-<commit12>`, announced on stderr and
  * disabled by `APHRODY_BUN_DOCS_FETCH=0`. `<data>` is `%APPDATA%` on Windows, else `$XDG_DATA_HOME` or
  * `~/.local/share`.
@@ -80,15 +80,19 @@ function git(cwd: string, args: string[]): string {
   return proc.stdout.toString().trim();
 }
 
-/** `--source`, `APHRODY_BUN_CHECKOUT`, `C:\bun` (Windows, when it holds the docs site), else undefined. */
+/** Explicit fork, environment override, or sibling of the configured workspace. */
 export function localBunCheckout(
   explicit?: string,
   env: Env = process.env,
-  platform: string = process.platform,
+  _platform: string = process.platform,
 ): string | undefined {
   if (explicit) return resolve(explicit);
-  if (env.APHRODY_BUN_CHECKOUT) return resolve(env.APHRODY_BUN_CHECKOUT);
-  if (platform === "win32" && existsSync("C:\\bun\\docs\\docs.json")) return "C:\\bun";
+  if (env.APHRODY_BUN_CHECKOUT?.trim()) return resolve(env.APHRODY_BUN_CHECKOUT.trim());
+  const workspace = env.APHRODY_WORKSPACE_ROOT?.trim() || env.APHRODY_ROOT?.trim();
+  if (workspace) {
+    const sibling = resolve(workspace, "..", "bun");
+    if (existsSync(join(sibling, "docs", "docs.json"))) return sibling;
+  }
   return undefined;
 }
 

@@ -18,13 +18,23 @@ const envNames: Record<ExternalCheckout, readonly string[]> = {
 };
 
 /** Find this Aphrody checkout by its root manifests, starting at a file or directory. */
-export function findWorkspaceRoot(from: string = process.cwd()): string {
-  let current = resolve(from);
+export function findWorkspaceRoot(
+  from?: string,
+  env: Record<string, string | undefined> = process.env,
+): string {
+  const explicit = from === undefined && (env.APHRODY_WORKSPACE_ROOT?.trim() || env.APHRODY_ROOT?.trim());
+  if (explicit) {
+    const root = resolve(explicit);
+    if (!isDirectory(root)) throw new Error(`Configured Aphrody root is not a directory: ${root}`);
+    return root;
+  }
+  const start = from ?? process.cwd();
+  let current = resolve(start);
   if (!existsSync(current) || !isDirectory(current)) current = dirname(current);
   while (true) {
     if (rootMarkers.every((marker) => existsSync(join(current, marker)))) return current;
     const parent = dirname(current);
-    if (parent === current) throw new Error(`Aphrody workspace root not found above ${from}`);
+    if (parent === current) throw new Error(`Aphrody workspace root not found above ${start}`);
     current = parent;
   }
 }
@@ -54,7 +64,7 @@ export function checkoutRoot(checkout: ExternalCheckout): string {
     case "aphrody-py":
       return existsSync(join(root, "py")) ? join(root, "py") : resolve(parent, "aphrody-py");
     case "iecode":
-      return existsSync("/mnt/c/iecode") ? "/mnt/c/iecode" : resolve(parent, "iecode");
+      return resolve(parent, "iecode");
     case "rg":
       return root;
     case "source":
@@ -64,7 +74,7 @@ export function checkoutRoot(checkout: ExternalCheckout): string {
     case "yolo":
       return resolve(parent, "yolo");
     case "m3":
-      return existsSync(join(root, "m3")) ? join(root, "m3") : resolve(parent, "aphrody-m3");
+      return join(root, "m3");
   }
 }
 
@@ -117,12 +127,12 @@ export function homePath(...parts: string[]): string {
 
 /** Canonical user-owned agent plugin store, independent of any source checkout. */
 export function pluginStorePath(...parts: string[]): string {
-  return resolve(process.env.APHRODY_PLUGINS_ROOT || homePath("plugins"), ...parts);
+  return resolve(process.env.APHRODY_PLUGINS_ROOT?.trim() || statePath("plugins"), ...parts);
 }
 
 /** Resolve in the host's temporary directory (TMPDIR/TEMP aware). */
 export function tempPath(...parts: string[]): string {
-  return resolve(tmpdir(), ...parts);
+  return resolve(process.env.APHRODY_TMP_DIR?.trim() || tmpdir(), ...parts);
 }
 
 /** Resolve the shared Aphrody state root; matches the Rust APHRODY_HOME contract. */
@@ -134,6 +144,8 @@ export function statePath(...parts: string[]): string {
 
 /** Resolve in the host's cache directory. */
 export function cachePath(...parts: string[]): string {
+  const explicit = process.env.APHRODY_CACHE_DIR?.trim();
+  if (explicit) return resolve(explicit, ...parts);
   if (process.platform === "win32")
     return resolve(
       process.env.LOCALAPPDATA || homePath("AppData", "Local"),

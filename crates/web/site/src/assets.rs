@@ -58,12 +58,20 @@ pub struct AssetEntry {
 
 impl SharedAssets {
     pub fn for_workspace(workspace: &Path) -> io::Result<Self> {
+        let public = std::env::var_os("APHRODY_PUBLIC_ASSET_ROOT")
+            .filter(|value| !value.is_empty()).map(PathBuf::from);
+        Self::for_roots(workspace, public.as_deref())
+    }
+
+    fn for_roots(workspace: &Path, public: Option<&Path>) -> io::Result<Self> {
         let workspace = workspace.canonicalize()?;
+        let public = public.map(Path::canonicalize).transpose()?;
+        let boundary = public.as_deref().unwrap_or(&workspace);
         let roots = SOURCE_ROOTS
             .iter()
             .filter_map(|(name, relative)| {
-                let root = workspace.join(relative).canonicalize().ok()?;
-                (root.is_dir() && root.starts_with(&workspace)).then_some((*name, root))
+                let root = boundary.join(if public.is_some() { name } else { relative }).canonicalize().ok()?;
+                (root.is_dir() && root.starts_with(boundary)).then_some((*name, root))
             })
             .collect();
         let cache = std::env::var_os("APHRODY_ASSET_CACHE").filter(|v| !v.is_empty()).map_or_else(
