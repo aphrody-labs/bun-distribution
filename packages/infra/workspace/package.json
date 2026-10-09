@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/workspace",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Cross-monorepo workspace orchestrator, gates, audits, migration tools and operations",
   "license": "Apache-2.0",
   "author": "Aphrody",

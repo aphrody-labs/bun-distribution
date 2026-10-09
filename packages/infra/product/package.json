@@ -1,7 +1,7 @@
 {
   "name": "@aphrody/product",
   "version": "0.3.0",
-  "private": true,
+  "private": false,
   "description": "Aphrody installation, administration and creator workflows in one native Bun product.",
   "license": "Apache-2.0",
   "bin": {
@@ -10,6 +10,12 @@
     "aphrody-setup": "src/cli.ts",
     "creator-kit": "src/cli.ts"
   },
+  "files": [
+    "src",
+    "README.md",
+    "!src/**/*.test.ts",
+    "resources/creator/glossaries"
+  ],
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -22,6 +28,9 @@
     "./doctor": "./src/admin/lib/doctor.ts",
     "./wireguard": "./src/admin/lib/wireguard.ts",
     "./desktop": "./src/shared/desktop.ts"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "start": "bun src/cli.ts",
