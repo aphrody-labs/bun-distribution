@@ -1,5 +1,5 @@
 {
-  "$comment": "WSL -> VPS Cargo tunnel (scripts/build/rust/vps-cargo.ts). Heavy Cargo never runs in WSL: the exact WSL worktree (HEAD + uncommitted, .gitignore respected) is snapshotted, sent to a dedicated VPS checkout and built there under the factory locks; logs and artifacts come back over the same SSH master. Owner directive 2026-10-08: no Cargo, sccache or other build runs on dbfr (production: Postgres, Redis, nginx, containers); every repository, Shenron included, builds on vps and only binaries are shipped to dbfr.",
+  "$comment": "SSH build context defaults. Override with --config or VPS_CARGO_CONFIG and --host or VPS_CARGO_HOST. Local checkout paths resolve from this worktree. Current factory is vps; production has no implicit build allocation. Existing remote -wsl names are retained store/cache identifiers; no protected data is moved.",
   "schemaVersion": 1,
   "host": "vps",
   "controlPath": "~/.ssh/cm/vps-cargo",
@@ -26,7 +26,7 @@
       {
         "bind": "127.0.0.1:19418",
         "to": "127.0.0.1:9418",
-        "purpose": "VPS fetches the WSL snapshot from the local git daemon: git fetch git://127.0.0.1:19418/aphrody refs/wsl/snapshot"
+        "purpose": "Factory fetches the selected worktree snapshot through the reverse Git forward; no WSL dependency."
       }
     ],
     "local": []
@@ -34,20 +34,20 @@
   "gitDaemon": {
     "listen": "127.0.0.1",
     "port": 9418,
-    "basePath": "~",
-    "repository": "aphrody"
+    "basePath": "",
+    "repository": ""
   },
-  "snapshotRef": "refs/wsl/snapshot",
+  "snapshotRef": "refs/workspace/snapshot",
   "repositories": {
     "vu": {
-      "root": "~/vu",
+      "root": "../vu",
       "remoteWorkspace": "/srv/aphrody-build/workspaces/vu-wsl",
       "remoteTargetDir": "/srv/aphrody-build/cache/cargo/vu-wsl",
       "snapshotRef": "refs/vu/snapshot",
       "cargoSerial": "/srv/aphrody-build/workspaces/aphrody-wsl/scripts/build/rust/cargo-serial.sh"
     },
     "shenron": {
-      "root": "~/shenron",
+      "root": "../shenron",
       "remoteWorkspace": "/srv/aphrody-build/workspaces/shenron-wsl",
       "remoteSeed": "",
       "remoteTargetDir": "/srv/aphrody-build/cache/cargo/shenron-wsl",
@@ -55,7 +55,7 @@
       "cargoSerial": "/srv/aphrody-build/workspaces/aphrody-wsl/scripts/build/rust/cargo-serial.sh"
     },
     "shenron-release": {
-      "root": "~/shenron-release",
+      "root": "../shenron",
       "remoteWorkspace": "/srv/aphrody-build/workspaces/shenron-wsl",
       "remoteSeed": "",
       "remoteTargetDir": "/srv/aphrody-build/cache/cargo/shenron-wsl",
@@ -63,7 +63,7 @@
       "cargoSerial": "/srv/aphrody-build/workspaces/aphrody-wsl/scripts/build/rust/cargo-serial.sh"
     },
     "shenron-omar": {
-      "root": "~/shenron-omar",
+      "root": "../shenron",
       "remoteWorkspace": "/srv/aphrody-build/workspaces/shenron-wsl",
       "remoteSeed": "",
       "remoteTargetDir": "/srv/aphrody-build/cache/cargo/shenron-wsl",

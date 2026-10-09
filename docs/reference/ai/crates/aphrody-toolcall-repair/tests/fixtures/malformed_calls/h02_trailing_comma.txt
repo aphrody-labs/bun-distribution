@@ -1,3 +1,0 @@
-<tool_call>
-{"name": "list_dir", "arguments": {"path": ".", "recursive": true,}}
-</tool_call>

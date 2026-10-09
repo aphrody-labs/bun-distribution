@@ -6,13 +6,13 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 35 binaries with a clap surface, 1142 commands.
+Totals: 35 binaries with a clap surface, 1314 commands.
 
 ## aphrody
 
 ### `aphrody`
 
-Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 266 commands.
+Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 352 commands.
 
 - `aphrody pure` — Pure commands (rag, toolcall, html, text): no network, no processes; also built for wasm32.
   - `aphrody pure rag` — RAG core: chunking, rank fusion, MMR, source weighting, retrieval eval.
@@ -33,6 +33,101 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 266 comma
     - `aphrody pure text scrub` — Remove AI markers and emoji from a comment body.
     - `aphrody pure text aphrodify` — Apply the Aphrody prose style.
     - `aphrody pure text is-japanese` — Print `true` when the text contains Japanese characters.
+- `aphrody ai` — Unified AI commands; engines depend on compiled features and configured backends. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody ai doc-ai` — Documentation generation and translation through the existing Bun capability owner.
+  - `aphrody ai rag` — Local code and documentation retrieval (Raptor F64 vector store in SQLite, hybrid & lexical). _(cfg: feature = "rag")_
+    - `aphrody ai rag index` — Index a directory incrementally, including vectors when configured.
+    - `aphrody ai rag web-ingest` — Scrape one URL through Aphrody OS and index it in the local AI RAG store.
+    - `aphrody ai rag search` — Search the index and report source paths, lines and effective mode.
+    - `aphrody ai rag context` — Assemble source context for a model prompt.
+    - `aphrody ai rag stats` — Report document, chunk and vector counts.
+  - `aphrody ai model` — Local model lifecycle (catalog, pull, inspect, verify, evict under ~/.aphrody/models).
+    - `aphrody ai model hub` — Discover Hugging Face repositories and verify the selected identity.
+      - `aphrody ai model hub search` — Search public or selected-identity repository metadata; no payload download.
+      - `aphrody ai model hub info` — Read repository metadata at a selected revision.
+      - `aphrody ai model hub runtime` — Read Space runtime status; does not start or provision a Space.
+      - `aphrody ai model hub auth` — Verify an existing credential with the official Hub, without printing identity data.
+    - `aphrody ai model list` — List locally installed models. _(aliases: ls)_
+    - `aphrody ai model catalog` — Show the curated catalog of models aphrody knows how to run.
+    - `aphrody ai model accel` — Report the accelerators, GPUs and CUDA toolkit found on this machine.
+    - `aphrody ai model recommend` — Rank the catalog for this machine and a given task.
+    - `aphrody ai model pull` — Download a model into `~/.aphrody/models`, resuming if interrupted.
+    - `aphrody ai model info` — Show what an installed artefact actually is: size, digest, and the decoded GGUF / GGML / safetensors / ONNX header. _(aliases: show)_
+    - `aphrody ai model verify` — Re-hash installed bytes and compare against what was recorded.
+    - `aphrody ai model rm` — Delete an installed model and drop it from the registry. _(aliases: remove)_
+    - `aphrody ai model gc` — Evict least-recently-used models until the store fits a size budget, and sweep interrupted `.part` downloads.
+    - `aphrody ai model doctor` — Report drift between the registry and the files on disk.
+    - `aphrody ai model adopt` — Track a model file that already exists elsewhere on disk, without copying it.
+    - `aphrody ai model ps` — List model servers currently loaded in-process-managed daemons (Ollama `ps`): role, alias, port, readiness. Read-only; reads the state published by `aphrody-llama-server`, spawns nothing.
+    - `aphrody ai model path` — Print the store root, or the resolved path of one artefact.
+  - `aphrody ai infer` — Local ONNX inference backend (runtime discovery and provider probing). _(cfg: feature = "infer")_
+    - `aphrody ai infer runtime` — Report which ONNX Runtime will be loaded and from where.
+    - `aphrody ai infer llama` — Report which llama.cpp binaries are available for the GGUF entries in the catalog (dots.ocr, granite-docling, SmolVLM).
+    - `aphrody ai infer probe` — Load a model and report the execution provider it actually got, plus the graph's inputs and outputs.
+  - `aphrody ai voice` — Offline Speech-To-Text / Text-To-Speech (local Whisper GGML).
+    - `aphrody ai voice transcribe` — Transcribe a WAV audio file using local Whisper GGML weights.
+    - `aphrody ai voice status` — Status of local Whisper speech recognition engine and installed weights.
+  - `aphrody ai ocr` — Read images with local vision-language models or PP-OCRv5. _(cfg: feature = "ocr")_
+    - `aphrody ai ocr page` — Read one image and print its markdown transcription.
+    - `aphrody ai ocr ppocr` — Read one image with local PP-OCRv5 and emit text regions plus geometry.
+    - `aphrody ai ocr audit` — Audit a JSONL for defects before depositing it anywhere.
+    - `aphrody ai ocr clean` — Re-run the text cleanup over an existing JSONL, in place.
+    - `aphrody ai ocr batch` — Read every image in a directory, streaming one JSON object per line.
+    - `aphrody ai ocr db` — Query and fill the local OCR corpus database.
+      - `aphrody ai ocr db ingest` — Deposit one or more JSONL files into the corpus database.
+      - `aphrody ai ocr db stats` — Report how many pages the corpus holds, per final status.
+      - `aphrody ai ocr db list` — List stored pages, newest deposit first.
+      - `aphrody ai ocr db show` — Print the full stored record for one page.
+    - `aphrody ai ocr databooks` — Transcribe a Shenron Dragon Ball databook lot with the safe preset.
+  - `aphrody ai translate` — Local and offline neural translation via aphrody-translate.
+  - `aphrody ai memory` — Local memory store (write, recall, list, delete, clear, migrate).
+    - `aphrody ai memory write` — Store one memory; prints `{"id": …}`. An existing `--id` is replaced.
+    - `aphrody ai memory recall` — Records best matching `--query` (lexical); prints `{"records": [… "score"]}`.
+    - `aphrody ai memory list` — Records newest first; prints `{"records": […]}`.
+    - `aphrody ai memory delete` — Delete one record; prints `{"deleted": bool}`.
+    - `aphrody ai memory clear` — Delete every record of `--agent-id`; prints `{"deleted": n}`.
+    - `aphrody ai memory migrate` — Copy all records for `--agent-id` from one provider to another.
+  - `aphrody ai gateway` — Local OpenAI-compatible HTTP AI Gateway (127.0.0.1:8786).
+    - `aphrody ai gateway serve` — Start serving the OpenAI-compatible HTTP AI Gateway (default: 127.0.0.1:8786).
+    - `aphrody ai gateway status` — Query the status of a running gateway.
+    - `aphrody ai gateway models` — List models available through the gateway.
+  - `aphrody ai train` — Local machine learning training and fine-tuning engine. _(cfg: feature = "train")_
+    - `aphrody ai train status` — Show training status, GPU lock availability, and active jobs.
+    - `aphrody ai train lease` — Test acquiring the exclusive GPU training lease (preempts llama-server).
+    - `aphrody ai train run` — Run a training or fine-tuning job.
+    - `aphrody ai train registry-migrate` — Apply the training registry migrations (schema `training`) over the direct `APHRODY_TRAINING_DATABASE_URL`.
+    - `aphrody ai train promote` — Reserved for measured shadow-index A/B promotion; currently refuses installation.
+  - `aphrody ai agent` — Local agent execution and app-server protocol v2 JSON-RPC daemon.
+    - `aphrody ai agent exec` — Run Codex non-interactively. _(aliases: e)_
+    - `aphrody ai agent app-server` — Run the local app-server daemon (stdio JSON-RPC v2 or loopback HTTP).
+    - `aphrody ai agent review` — Run a code review non-interactively on the current repository or diff.
+    - `aphrody ai agent resume` — Resume a previous session by id or --last.
+    - `aphrody ai agent fork` — Fork a previous session by id or --last.
+    - `aphrody ai agent apply` — Apply the latest diff produced by the agent to the local working tree. _(aliases: a)_
+    - `aphrody ai agent mcp` — Manage external Model Context Protocol (MCP) servers.
+      - `aphrody ai agent mcp list` — List configured MCP servers.
+      - `aphrody ai agent mcp get` — Get details for a configured MCP server.
+      - `aphrody ai agent mcp add` — Add an external MCP server to config.toml.
+      - `aphrody ai agent mcp remove` — Remove an external MCP server from config.toml.
+    - `aphrody ai agent plugin` — Manage Codex plugins and configured marketplaces.
+      - `aphrody ai agent plugin list` — List plugins available and installed from configured marketplaces.
+      - `aphrody ai agent plugin marketplace` — Manage configured plugin marketplaces.
+        - `aphrody ai agent plugin marketplace list` — List configured plugin marketplaces.
+    - `aphrody ai agent doctor` — Diagnose local installation, elevation status, config, auth and runtime health.
+    - `aphrody ai agent features` — Inspect or toggle feature flags.
+  - `aphrody ai status` — Status of all local AI engines (models, providers, acceleration).
+- `aphrody shell` — Nushell sessions and Bun Shell pipelines, with dedicated terminal test commands. _(aliases: sh; cfg: not(target_arch = "wasm32"))_
+  - `aphrody shell status` — Inspect Aphrody Shell capabilities (Nushell, Bun Shell through `bun exec`, PTY, TUI)
+  - `aphrody shell start` — Start interactive Nushell / Ratatui terminal session
+  - `aphrody shell eval` — Evaluate a command or pipeline (Nushell, or Bun Shell through `bun exec`)
+  - `aphrody shell bun` — Run a command with Bun Shell (`bun exec`)
+  - `aphrody shell term` — Run a command in a headless Aphrody Term PTY and print the settled screen
+  - `aphrody shell computer-use` — Start the default shell in a headless Aphrody Term PTY, optionally send one action, print the screen
+  - `aphrody shell serve` — Start the Aphrody Terminal Backend WebSocket server
+- `aphrody tui` — Interactive TUI dashboard & status monitor. _(cfg: not(target_arch = "wasm32"))_
+- `aphrody voice` — Offline speech-to-text / audio transcription with Whisper GGML. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody voice transcribe` — Transcribe a WAV audio file using local Whisper GGML weights.
+  - `aphrody voice status` — Status of local Whisper speech recognition engine and installed weights.
 - `aphrody rag` — Index and retrieve local code and documentation. _(cfg: all(not(target_arch = "wasm32"), feature = "rag"))_
   - `aphrody rag index` — Index a directory incrementally, including vectors when configured.
   - `aphrody rag web-ingest` — Scrape one URL through Aphrody OS and index it in the local AI RAG store.
@@ -71,7 +166,7 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 266 comma
 - `aphrody os` — Canonical OS layer: kernel subsystems, WinClean diagnostics, process isolation. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody os status` — Inspect OS kernel status, active subsystems and diagnostics
   - `aphrody os doctor` — Run WinClean diagnostics on local Windows machine
-- `aphrody web` — Canonical Web engine: Obscura browser automation, crawling and extraction. _(cfg: not(target_arch = "wasm32"))_
+- `aphrody web` — Canonical Web engine: Obscura browser automation, crawling and extraction. _(aliases: webos; cfg: not(target_arch = "wasm32"))_
   - `aphrody web status` — Inspect the linked Rust Web runtime
   - `aphrody web capabilities` — List the linked Rust Web capabilities
   - `aphrody web fetch` — Fetch and convert a URL directly to clean Markdown
@@ -118,14 +213,6 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 266 comma
     - `aphrody web frames list`
     - `aphrody web frames quota`
     - `aphrody web frames index`
-- `aphrody shell` — Canonical Shell: Nushell PTY session, Ratatui TUI, embedded terminal. _(cfg: not(target_arch = "wasm32"))_
-  - `aphrody shell status` — Inspect Aphrody Shell capabilities (Nushell, Bun Shell through `bun exec`, PTY, TUI)
-  - `aphrody shell start` — Start interactive Nushell / Ratatui terminal session
-  - `aphrody shell eval` — Evaluate a command or pipeline (Nushell, or Bun Shell through `bun exec`)
-  - `aphrody shell bun` — Run a command with Bun Shell (`bun exec`)
-  - `aphrody shell term` — Launch the autonomous, zero-copy, hardware-accelerated Aphrody Term engine
-  - `aphrody shell computer-use` — AI Computer-Use screen scraping and programmatic action interface
-  - `aphrody shell serve` — Start the Aphrody Terminal Backend WebSocket server
 - `aphrody train` — Machine learning training and fine-tuning engine. _(cfg: all(not(target_arch = "wasm32"), feature = "train"))_
   - `aphrody train status` — Show training status, GPU lock availability, and active jobs.
   - `aphrody train lease` — Test acquiring the exclusive GPU training lease (preempts llama-server).
@@ -319,7 +406,7 @@ Crate `aphrody-kernel`, parser `crates/os/kernel/core/src/cli.rs#Cli`, 6 command
 
 ### `aphrody infra`
 
-Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 367 commands.
+Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 453 commands.
 
 - `aphrody infra status` — Show target, repository and runtime state without mutation.
 - `aphrody infra inventory` — Run the existing deep resource inventory through the canonical Bun adapter.
@@ -355,6 +442,101 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 367 commands.
       - `aphrody infra ssh pure text scrub` — Remove AI markers and emoji from a comment body.
       - `aphrody infra ssh pure text aphrodify` — Apply the Aphrody prose style.
       - `aphrody infra ssh pure text is-japanese` — Print `true` when the text contains Japanese characters.
+  - `aphrody infra ssh ai` — Unified AI commands; engines depend on compiled features and configured backends. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh ai doc-ai` — Documentation generation and translation through the existing Bun capability owner.
+    - `aphrody infra ssh ai rag` — Local code and documentation retrieval (Raptor F64 vector store in SQLite, hybrid & lexical). _(cfg: feature = "rag")_
+      - `aphrody infra ssh ai rag index` — Index a directory incrementally, including vectors when configured.
+      - `aphrody infra ssh ai rag web-ingest` — Scrape one URL through Aphrody OS and index it in the local AI RAG store.
+      - `aphrody infra ssh ai rag search` — Search the index and report source paths, lines and effective mode.
+      - `aphrody infra ssh ai rag context` — Assemble source context for a model prompt.
+      - `aphrody infra ssh ai rag stats` — Report document, chunk and vector counts.
+    - `aphrody infra ssh ai model` — Local model lifecycle (catalog, pull, inspect, verify, evict under ~/.aphrody/models).
+      - `aphrody infra ssh ai model hub` — Discover Hugging Face repositories and verify the selected identity.
+        - `aphrody infra ssh ai model hub search` — Search public or selected-identity repository metadata; no payload download.
+        - `aphrody infra ssh ai model hub info` — Read repository metadata at a selected revision.
+        - `aphrody infra ssh ai model hub runtime` — Read Space runtime status; does not start or provision a Space.
+        - `aphrody infra ssh ai model hub auth` — Verify an existing credential with the official Hub, without printing identity data.
+      - `aphrody infra ssh ai model list` — List locally installed models. _(aliases: ls)_
+      - `aphrody infra ssh ai model catalog` — Show the curated catalog of models aphrody knows how to run.
+      - `aphrody infra ssh ai model accel` — Report the accelerators, GPUs and CUDA toolkit found on this machine.
+      - `aphrody infra ssh ai model recommend` — Rank the catalog for this machine and a given task.
+      - `aphrody infra ssh ai model pull` — Download a model into `~/.aphrody/models`, resuming if interrupted.
+      - `aphrody infra ssh ai model info` — Show what an installed artefact actually is: size, digest, and the decoded GGUF / GGML / safetensors / ONNX header. _(aliases: show)_
+      - `aphrody infra ssh ai model verify` — Re-hash installed bytes and compare against what was recorded.
+      - `aphrody infra ssh ai model rm` — Delete an installed model and drop it from the registry. _(aliases: remove)_
+      - `aphrody infra ssh ai model gc` — Evict least-recently-used models until the store fits a size budget, and sweep interrupted `.part` downloads.
+      - `aphrody infra ssh ai model doctor` — Report drift between the registry and the files on disk.
+      - `aphrody infra ssh ai model adopt` — Track a model file that already exists elsewhere on disk, without copying it.
+      - `aphrody infra ssh ai model ps` — List model servers currently loaded in-process-managed daemons (Ollama `ps`): role, alias, port, readiness. Read-only; reads the state published by `aphrody-llama-server`, spawns nothing.
+      - `aphrody infra ssh ai model path` — Print the store root, or the resolved path of one artefact.
+    - `aphrody infra ssh ai infer` — Local ONNX inference backend (runtime discovery and provider probing). _(cfg: feature = "infer")_
+      - `aphrody infra ssh ai infer runtime` — Report which ONNX Runtime will be loaded and from where.
+      - `aphrody infra ssh ai infer llama` — Report which llama.cpp binaries are available for the GGUF entries in the catalog (dots.ocr, granite-docling, SmolVLM).
+      - `aphrody infra ssh ai infer probe` — Load a model and report the execution provider it actually got, plus the graph's inputs and outputs.
+    - `aphrody infra ssh ai voice` — Offline Speech-To-Text / Text-To-Speech (local Whisper GGML).
+      - `aphrody infra ssh ai voice transcribe` — Transcribe a WAV audio file using local Whisper GGML weights.
+      - `aphrody infra ssh ai voice status` — Status of local Whisper speech recognition engine and installed weights.
+    - `aphrody infra ssh ai ocr` — Read images with local vision-language models or PP-OCRv5. _(cfg: feature = "ocr")_
+      - `aphrody infra ssh ai ocr page` — Read one image and print its markdown transcription.
+      - `aphrody infra ssh ai ocr ppocr` — Read one image with local PP-OCRv5 and emit text regions plus geometry.
+      - `aphrody infra ssh ai ocr audit` — Audit a JSONL for defects before depositing it anywhere.
+      - `aphrody infra ssh ai ocr clean` — Re-run the text cleanup over an existing JSONL, in place.
+      - `aphrody infra ssh ai ocr batch` — Read every image in a directory, streaming one JSON object per line.
+      - `aphrody infra ssh ai ocr db` — Query and fill the local OCR corpus database.
+        - `aphrody infra ssh ai ocr db ingest` — Deposit one or more JSONL files into the corpus database.
+        - `aphrody infra ssh ai ocr db stats` — Report how many pages the corpus holds, per final status.
+        - `aphrody infra ssh ai ocr db list` — List stored pages, newest deposit first.
+        - `aphrody infra ssh ai ocr db show` — Print the full stored record for one page.
+      - `aphrody infra ssh ai ocr databooks` — Transcribe a Shenron Dragon Ball databook lot with the safe preset.
+    - `aphrody infra ssh ai translate` — Local and offline neural translation via aphrody-translate.
+    - `aphrody infra ssh ai memory` — Local memory store (write, recall, list, delete, clear, migrate).
+      - `aphrody infra ssh ai memory write` — Store one memory; prints `{"id": …}`. An existing `--id` is replaced.
+      - `aphrody infra ssh ai memory recall` — Records best matching `--query` (lexical); prints `{"records": [… "score"]}`.
+      - `aphrody infra ssh ai memory list` — Records newest first; prints `{"records": […]}`.
+      - `aphrody infra ssh ai memory delete` — Delete one record; prints `{"deleted": bool}`.
+      - `aphrody infra ssh ai memory clear` — Delete every record of `--agent-id`; prints `{"deleted": n}`.
+      - `aphrody infra ssh ai memory migrate` — Copy all records for `--agent-id` from one provider to another.
+    - `aphrody infra ssh ai gateway` — Local OpenAI-compatible HTTP AI Gateway (127.0.0.1:8786).
+      - `aphrody infra ssh ai gateway serve` — Start serving the OpenAI-compatible HTTP AI Gateway (default: 127.0.0.1:8786).
+      - `aphrody infra ssh ai gateway status` — Query the status of a running gateway.
+      - `aphrody infra ssh ai gateway models` — List models available through the gateway.
+    - `aphrody infra ssh ai train` — Local machine learning training and fine-tuning engine. _(cfg: feature = "train")_
+      - `aphrody infra ssh ai train status` — Show training status, GPU lock availability, and active jobs.
+      - `aphrody infra ssh ai train lease` — Test acquiring the exclusive GPU training lease (preempts llama-server).
+      - `aphrody infra ssh ai train run` — Run a training or fine-tuning job.
+      - `aphrody infra ssh ai train registry-migrate` — Apply the training registry migrations (schema `training`) over the direct `APHRODY_TRAINING_DATABASE_URL`.
+      - `aphrody infra ssh ai train promote` — Reserved for measured shadow-index A/B promotion; currently refuses installation.
+    - `aphrody infra ssh ai agent` — Local agent execution and app-server protocol v2 JSON-RPC daemon.
+      - `aphrody infra ssh ai agent exec` — Run Codex non-interactively. _(aliases: e)_
+      - `aphrody infra ssh ai agent app-server` — Run the local app-server daemon (stdio JSON-RPC v2 or loopback HTTP).
+      - `aphrody infra ssh ai agent review` — Run a code review non-interactively on the current repository or diff.
+      - `aphrody infra ssh ai agent resume` — Resume a previous session by id or --last.
+      - `aphrody infra ssh ai agent fork` — Fork a previous session by id or --last.
+      - `aphrody infra ssh ai agent apply` — Apply the latest diff produced by the agent to the local working tree. _(aliases: a)_
+      - `aphrody infra ssh ai agent mcp` — Manage external Model Context Protocol (MCP) servers.
+        - `aphrody infra ssh ai agent mcp list` — List configured MCP servers.
+        - `aphrody infra ssh ai agent mcp get` — Get details for a configured MCP server.
+        - `aphrody infra ssh ai agent mcp add` — Add an external MCP server to config.toml.
+        - `aphrody infra ssh ai agent mcp remove` — Remove an external MCP server from config.toml.
+      - `aphrody infra ssh ai agent plugin` — Manage Codex plugins and configured marketplaces.
+        - `aphrody infra ssh ai agent plugin list` — List plugins available and installed from configured marketplaces.
+        - `aphrody infra ssh ai agent plugin marketplace` — Manage configured plugin marketplaces.
+          - `aphrody infra ssh ai agent plugin marketplace list` — List configured plugin marketplaces.
+      - `aphrody infra ssh ai agent doctor` — Diagnose local installation, elevation status, config, auth and runtime health.
+      - `aphrody infra ssh ai agent features` — Inspect or toggle feature flags.
+    - `aphrody infra ssh ai status` — Status of all local AI engines (models, providers, acceleration).
+  - `aphrody infra ssh shell` — Nushell sessions and Bun Shell pipelines, with dedicated terminal test commands. _(aliases: sh; cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh shell status` — Inspect Aphrody Shell capabilities (Nushell, Bun Shell through `bun exec`, PTY, TUI)
+    - `aphrody infra ssh shell start` — Start interactive Nushell / Ratatui terminal session
+    - `aphrody infra ssh shell eval` — Evaluate a command or pipeline (Nushell, or Bun Shell through `bun exec`)
+    - `aphrody infra ssh shell bun` — Run a command with Bun Shell (`bun exec`)
+    - `aphrody infra ssh shell term` — Run a command in a headless Aphrody Term PTY and print the settled screen
+    - `aphrody infra ssh shell computer-use` — Start the default shell in a headless Aphrody Term PTY, optionally send one action, print the screen
+    - `aphrody infra ssh shell serve` — Start the Aphrody Terminal Backend WebSocket server
+  - `aphrody infra ssh tui` — Interactive TUI dashboard & status monitor. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh voice` — Offline speech-to-text / audio transcription with Whisper GGML. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh voice transcribe` — Transcribe a WAV audio file using local Whisper GGML weights.
+    - `aphrody infra ssh voice status` — Status of local Whisper speech recognition engine and installed weights.
   - `aphrody infra ssh rag` — Index and retrieve local code and documentation. _(cfg: all(not(target_arch = "wasm32"), feature = "rag"))_
     - `aphrody infra ssh rag index` — Index a directory incrementally, including vectors when configured.
     - `aphrody infra ssh rag web-ingest` — Scrape one URL through Aphrody OS and index it in the local AI RAG store.
@@ -393,7 +575,7 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 367 commands.
   - `aphrody infra ssh os` — Canonical OS layer: kernel subsystems, WinClean diagnostics, process isolation. _(cfg: not(target_arch = "wasm32"))_
     - `aphrody infra ssh os status` — Inspect OS kernel status, active subsystems and diagnostics
     - `aphrody infra ssh os doctor` — Run WinClean diagnostics on local Windows machine
-  - `aphrody infra ssh web` — Canonical Web engine: Obscura browser automation, crawling and extraction. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh web` — Canonical Web engine: Obscura browser automation, crawling and extraction. _(aliases: webos; cfg: not(target_arch = "wasm32"))_
     - `aphrody infra ssh web status` — Inspect the linked Rust Web runtime
     - `aphrody infra ssh web capabilities` — List the linked Rust Web capabilities
     - `aphrody infra ssh web fetch` — Fetch and convert a URL directly to clean Markdown
@@ -440,14 +622,6 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 367 commands.
       - `aphrody infra ssh web frames list`
       - `aphrody infra ssh web frames quota`
       - `aphrody infra ssh web frames index`
-  - `aphrody infra ssh shell` — Canonical Shell: Nushell PTY session, Ratatui TUI, embedded terminal. _(cfg: not(target_arch = "wasm32"))_
-    - `aphrody infra ssh shell status` — Inspect Aphrody Shell capabilities (Nushell, Bun Shell through `bun exec`, PTY, TUI)
-    - `aphrody infra ssh shell start` — Start interactive Nushell / Ratatui terminal session
-    - `aphrody infra ssh shell eval` — Evaluate a command or pipeline (Nushell, or Bun Shell through `bun exec`)
-    - `aphrody infra ssh shell bun` — Run a command with Bun Shell (`bun exec`)
-    - `aphrody infra ssh shell term` — Launch the autonomous, zero-copy, hardware-accelerated Aphrody Term engine
-    - `aphrody infra ssh shell computer-use` — AI Computer-Use screen scraping and programmatic action interface
-    - `aphrody infra ssh shell serve` — Start the Aphrody Terminal Backend WebSocket server
   - `aphrody infra ssh train` — Machine learning training and fine-tuning engine. _(cfg: all(not(target_arch = "wasm32"), feature = "train"))_
     - `aphrody infra ssh train status` — Show training status, GPU lock availability, and active jobs.
     - `aphrody infra ssh train lease` — Test acquiring the exclusive GPU training lease (preempts llama-server).
@@ -1346,7 +1520,6 @@ _No subcommands (flags only)._
 - `aphrody-fake-llama-server` (aphrody / `aphrody-llama-server`)
 - `aphrody-llama-daemon` (aphrody / `aphrody-llama-server`)
 - `aphrody-web-game-server` (aphrody / `aphrody-web-game-server`)
-- `serde-saphyr` (aphrody / `serde-saphyr`)
 - `tauri-schema-generator` (aphrody / `aphrody-tauri-schema-generator`)
 - `aphrody-homebrew` (iecode / `aphrody-homebrew`)
 - `aphrody-nie-mcp` (iecode / `aphrody-nie-mcp`)

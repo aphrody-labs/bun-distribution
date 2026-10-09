@@ -1,6 +1,9 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # `@aphrody/x`: a thin Bun import over `aphrody-x`
 
+> Contexte courant (2026-10-09) : développement et builds selon l'hôte, la cible et les ressources disponibles ; aucun produit n'est réservé à un poste. Voir le [contexte](../../operations/workspace/windows-native.md).
+
+
 Date: 2026-10-05. Status: in execution, bounded batches (section 8). Inventory and per-export decisions:
 [INVENTORY.md](INVENTORY.md). Everything below is a decision (`tranché`) unless it names its evidence.
 

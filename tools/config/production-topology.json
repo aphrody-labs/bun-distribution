@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "strategy": "vps-build-test-release-factory-dbfr-shenron-local-source",
+  "strategy": "context-selected-development-build-and-deployment",
   "hosts": {
     "vps": {
-      "role": "aphrody-products-and-build-factory",
+      "role": "ssh-build-test-release-factory",
       "capacityObserved": {
         "memoryGiB": 45,
         "diskGiB": 290
@@ -69,53 +69,17 @@
         }
       },
       "network": {
-        "publicPorts": [
-          80,
-          443
-        ],
+        "publicPorts": [80, 443],
         "internalOnly": [
-          3004,
-          3007,
-          3014,
-          4000,
-          4002,
-          4005,
-          4010,
-          5006,
-          5010,
-          5011,
-          8083,
-          8085,
-          8788,
-          8789,
-          8790,
-          8793,
-          8794,
-          8796,
-          8797,
-          8798,
-          8799,
-          8800,
-          8801,
-          8810,
-          8812,
-          15433
+          3004, 3007, 3014, 4000, 4002, 4005, 4010, 5006, 5010, 5011, 8083, 8085, 8788, 8789, 8790,
+          8793, 8794, 8796, 8797, 8798, 8799, 8800, 8801, 8810, 8812, 15433
         ],
-        "reservedNoCurrentOwner": [
-          3000,
-          3005,
-          3006
-        ]
+        "reservedNoCurrentOwner": [3000, 3005, 3006]
       },
-      "forbidden": [
-        "24h-crawler",
-        "duplicate-db-mirror",
-        "per-app-nginx",
-        "per-app-supervisor"
-      ]
+      "forbidden": ["24h-crawler", "duplicate-db-mirror", "per-app-nginx", "per-app-supervisor"]
     },
     "dbfr": {
-      "role": "shenron-runtime-and-primary-data",
+      "role": "production-deployment",
       "capacityObserved": {
         "memoryGiB": 11,
         "diskGiB": 96
@@ -162,52 +126,38 @@
         }
       },
       "network": {
-        "publicPorts": [
-          80,
-          443
-        ],
-        "internalOnly": [
-          5432,
-          6379,
-          3014,
-          5006,
-          5010,
-          5011,
-          8793,
-          8810,
-          8812
-        ]
+        "publicPorts": [80, 443],
+        "internalOnly": [5432, 6379, 3014, 5006, 5010, 5011, 8793, 8810, 8812]
       },
-      "forbidden": [
-        "crawler",
-        "iecode-build"
-      ]
+      "forbidden": ["crawler", "iecode-build"]
     },
     "windows-local": {
-      "role": "desktop-and-source",
+      "role": "native-development-and-source",
       "allocations": {
         "iecode": "full-source-assets-tools",
         "aphrody-ui": "desktop-build",
         "aphrody-os": "kernel-control-plane",
-        "aphrody-ai": "developer-checkout"
+        "aphrody-ai": "developer-checkout",
+        "linux-validation": "bounded-local-docker-alpine-3.24-or-ubuntu-26.04"
       },
-      "forbidden": [
-        "production-secrets",
-        "public-runtime"
-      ]
+      "forbidden": ["production-secrets", "public-runtime"]
     },
     "linux-container-26.04": {
-      "role": "source-and-light-validation",
+      "role": "local-docker-linux-validation",
       "allocations": {
-        "iecode": "source-assets-tools",
-        "rust": "remote-vps-heavy-gates",
-        "bun": "remote-vps-heavy-gates",
-        "uv": "remote-vps-heavy-gates"
+        "rust": "bounded-local-linux-gates-or-remote-vps-heavy-gates",
+        "bun": "bounded-local-linux-gates-or-remote-vps-heavy-gates",
+        "uv": "bounded-local-linux-gates-or-remote-vps-heavy-gates"
       },
-      "forbidden": [
-        "production-database",
-        "public-runtime"
-      ]
+      "forbidden": ["production-database", "public-runtime"]
+    },
+    "alpine-container-3.24": {
+      "role": "local-docker-linux-validation",
+      "allocations": {
+        "runtime": "aphrody-alpine-musl",
+        "build": "bounded-linux-gates"
+      },
+      "forbidden": ["production-database", "public-runtime"]
     }
   },
   "portPolicy": "only-nginx-80-443-public; every application port loopback or private-network",
@@ -220,7 +170,29 @@
   "trainingPlacement": {
     "requestedAt": "2026-10-07",
     "host": "omar-wsl",
-    "ownerLocalWsl": "retirement-planned; do not install or run Shenron training here",
+    "ownerLocalWsl": "retired-from-development; no owner-local WSL training",
     "activation": "requires authenticated access to Omar host and hardware qualification"
+  },
+  "developmentPlacement": {
+    "requestedAt": "2026-10-09",
+    "selection": "current-context-tools-target-resources-and-permissions",
+    "supportedContexts": [
+      "native-windows",
+      "native-linux",
+      "native-macos",
+      "ssh-factory",
+      "docker"
+    ],
+    "currentWorkstation": "windows-local",
+    "checkoutResolution": "current workspace or APHRODY_WORKSPACE / APHRODY_BUN_CHECKOUT",
+    "homeResolution": "configured Aphrody home or platform user home",
+    "wsl": "retired-on-current-owner-workstation",
+    "currentDeployment": "dbfr",
+    "currentSshBuild": "vps",
+    "localLinuxExamples": ["Alpine 3.24", "Ubuntu 26.04"],
+    "authority": {
+      "aphrodyLabs": "yoyo / aphrody-dev",
+      "dbfr": "omar"
+    }
   }
 }

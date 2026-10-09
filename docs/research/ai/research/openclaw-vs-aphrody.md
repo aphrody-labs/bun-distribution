@@ -1,5 +1,7 @@
 # OpenClaw vs aphrody — Comparative Audit
 
+> Qualification du 2026-10-09 : les owners IA retirés du checkout sont signalés « not in repo ». Les constats datés ci-dessous ne prouvent pas leur présence ou leur fonctionnement actuel.
+
 **Audit date:** 2026-05-23
 **Correction 2026-10-05:** rows that cited the gateway `byok/` adapters now cite the live code. That module was never declared by the gateway crate (never compiled since its import in `827bf08a9`) and was removed.
 **openclaw clone:** `var/openclaw` (not in repo) @ `4f0c9020` (`feat(diagnostics): trace gateway secret preparation (#83019)`)
@@ -64,14 +66,14 @@ openclaw's text inbox. Other channels (iMessage Apple, WhatsApp, Signal, …) = 
 | Subsystem | openclaw | Apple-specific? | aphrody equivalent | Evidence | Status |
 |-----------|----------|-----------------|--------------------|----------|--------|
 | Gateway / control plane | `src/gateway` | no | `crates/ai/gateway` | `cloudflare.rs`, `vercel.rs`, `lib.rs` | ✅ |
-| Multi-agent routing | `src/routing` | no | `crates/ai/router` | `router/src/lib.rs` | ✅ |
+| Multi-agent routing | `src/routing` | no | `crates/ai/router` (not in repo) | `router/src/lib.rs` | ✅ |
 | Sessions | `src/sessions` | no | `crates/ai/session` | `session/src/lib.rs` | ✅ |
 | Memory / RAG | `extensions/memory-*`, `memory-lancedb`, `memory-wiki` | no | `crates/ai/memory` | `lancedb.rs`, `hnsw.rs`, `honcho.rs`/`honcho_v3.rs`, `mem0.rs`/`mem0_v3.rs`, `jsonl.rs`, `eviction.rs` | ✅ (richer: LanceDB + HNSW + Honcho/mem0 v3) |
-| Skills | `skills/`, `src/skills` | no | `crates/ai/skills`, `aphrody-skills-forge` | `skills/src/{lib,hooks,permissions}.rs`, `runtime/` | ✅ |
+| Skills | `skills/`, `src/skills` | no | `crates/ai/skills` (not in repo), `aphrody-skills-forge` | `skills/src/{lib,hooks,permissions}.rs`, `runtime/` | ✅ |
 | Skills registry (ClawHub) | `skills/clawhub` | no | `crates/ai/marketplace` (not in repo) | `marketplace/src/awesome.rs` | ✅ |
 | Hooks | `src/hooks` (gmail, message, plugin) | no | `aphrody-skills/src/hooks.rs`, `aphrody-events`, MCP `native_hooks` | `events/src/lib.rs` | ✅ (Gmail Pub/Sub hook = not ported, see GAPS) |
 | Permissions / tool policy | `src/security/audit-tool-policy` | no | `aphrody-skills/src/permissions.rs`, `aphrody-tools/src/permissions.rs` | builtin tools | ✅ |
-| Tools | `src/tools` (browser, canvas, cron, sessions) | no | `crates/ai/tools` | `tools/src/builtin` (not in repo), `aphrody-terminal-browser` | ✅ |
+| Tools | `src/tools` (browser, canvas, cron, sessions) | no | `crates/ai/tools` (not in repo) | `tools/src/builtin` (not in repo), `aphrody-terminal-browser` | ✅ |
 | MCP | `src/mcp` (channel/tools serve) | no | `crates/ai/mcp`→`aphrody-mcp` bin, `aphrody-mcp` (OAuth/PKCE) | `aphrody-mcp/src/{pkce,registration,discovery}.rs`, `google_mcp` | ✅ (50+ tools incl. OAuth flow) |
 | Cron / scheduling | `src/cron` (large) | no | `crates/os/kernel/comps/cron` | `cron/src/lib.rs` | ⚠️ thin (see GAPS) |
 | Auth / secrets | `src/secrets`, auth-profiles | no | `crates/os/ostd/secrets` | `secrets/src/lib.rs` | ✅ |

@@ -68,16 +68,16 @@ Un essai natif séparé a demandé `cargo test -p aphrody-m3-tokens -p aphrody-s
 --all-features --locked`, via le tunnel Cargo sérialisé. Le job
 `2026-10-07T19-34-57-953Z-c6d9b4e8840a` s'est arrêté avec le code 101
 au chargement des manifestes : le manifeste concurrent
-`crates/compat/oxc-bridge/Cargo.toml` hérite de `oxc_formatter`, absent des
+`crates/compat/oxc-bridge/Cargo.toml` (not in repo) hérite de `oxc_formatter`, absent des
 dépendances du workspace. Aucun test de ces deux crates n'a été exécuté.
 Le claim `oxc-bun-ffi-wasm-20261007` couvre ce manifeste et les dépendances Oxc.
-Le journal est conservé dans `.coord/proofs/m3-native-gates-20261007/test.log`.
+Le journal est conservé dans `.coord/proofs/m3-native-gates-20261007/test.log` (not in repo).
 Les gates natifs restent à relancer sur un snapshot cohérent.
 La régénération documentaire s'arrête ensuite sur la même erreur de
 `cargo metadata`, même avec `--skip-ecosystem` ; les liens du reçu passent.
 Le gate documentaire acquis plus tôt ne qualifie pas ce nouvel état concurrent.
 
-Les journaux locaux sont dans `.coord/proofs/config-consumers-20261007/` :
+Les journaux locaux sont dans `.coord/proofs/config-consumers-20261007/` (not in repo) :
 `m3-runner-test.log`, `m3-packages-test.log`, `m3-fonts-check.json`,
 `m3-exports.json`, `m3-assets.json`, `m3-links-final.json`,
 `m3-build-libraries.log`, `m3-typecheck-fresh.log` et `m3-css-default.json`.

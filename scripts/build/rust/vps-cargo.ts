@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
 /**
- * WSL -> VPS Cargo tunnel. Heavy Cargo (check, clippy, test, build --release) never runs in WSL:
- * the exact WSL worktree (HEAD plus uncommitted and untracked files, `.gitignore` respected) is
- * snapshotted into `refs/wsl/snapshot`, sent to a dedicated VPS checkout and built there through
+ * Windows/native -> VPS Cargo tunnel. Heavy Cargo runs on the SSH build host:
+ * the exact local worktree (HEAD plus uncommitted and untracked files, `.gitignore` respected) is
+ * snapshotted into the configured workspace ref, sent to a dedicated VPS checkout and built through
  * `scripts/build/rust/cargo-serial.sh` under the factory heavy lock, inside the remote tmux session.
  * Logs stream back live; artifacts come back with `fetch`. Configuration: tools/config/host/vps-cargo.json.
  *
@@ -22,7 +22,7 @@
 import { $ } from "bun";
 import { mkdir, rm } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
-import { dirname, join, posix, resolve } from "node:path";
+import { basename, dirname, join, posix, resolve } from "node:path";
 import { factoryTransientShell } from "../../../packages/infra/workspace/src/build-factory-cleanup.ts";
 
 export type Forward = { bind: string; to: string; purpose?: string };
@@ -92,6 +92,14 @@ export function shellQuote(value: string): string {
 
 export async function loadConfig(path = CONFIG_PATH, host?: string): Promise<VpsCargoConfig> {
   const base = (await Bun.file(path).json()) as VpsCargoConfig;
+  // Local paths follow this worktree instead of a particular user's machine.
+  if (!base.gitDaemon.basePath) base.gitDaemon.basePath = dirname(ROOT);
+  if (!base.gitDaemon.repository) base.gitDaemon.repository = basename(ROOT);
+  for (const repository of Object.values(base.repositories ?? {})) {
+    if (!repository.root.startsWith("~") && !/^(?:[A-Za-z]:[\\/]|\/)/.test(repository.root)) {
+      repository.root = resolve(ROOT, repository.root);
+    }
+  }
   if (host === undefined || host === base.host) return base;
   const override = base.hosts?.[host];
   if (!override)
@@ -335,21 +343,17 @@ async function ensureHostCanBuild(
 /** `--host <name|auto>` or VPS_CARGO_HOST: the primary host, a named secondary, or the first idle one. */
 export async function selectConfig(options: readonly string[]): Promise<VpsCargoConfig> {
   const requested = flag(options, "--host") ?? process.env["VPS_CARGO_HOST"];
-  const primary = await loadConfig();
+  const configPath = flag(options, "--config") ?? process.env["VPS_CARGO_CONFIG"] ?? CONFIG_PATH;
+  const primary = await loadConfig(configPath);
   if (requested === undefined || requested === primary.host) return primary;
   if (requested !== "auto") {
-    return ensureHostCanBuild(
-      await loadConfig(CONFIG_PATH, requested),
-      primary,
-      options,
-      requested,
-    );
+    return ensureHostCanBuild(await loadConfig(configPath, requested), primary, options, requested);
   }
   if (!heavyLockBusy(primary)) return primary;
   const fallback = Object.keys(primary.hosts ?? {})[0];
   if (!fallback) return primary;
   const candidate = await ensureHostCanBuild(
-    await loadConfig(CONFIG_PATH, fallback),
+    await loadConfig(configPath, fallback),
     primary,
     options,
     requested,
@@ -365,15 +369,19 @@ export function secretLikePaths(paths: readonly string[], patterns: readonly str
   return paths.filter((path) => regexes.some((regex) => regex.test(path)));
 }
 
-export function sshBase(config: VpsCargoConfig): string[] {
+export function sshBase(config: VpsCargoConfig, platform = process.platform): string[] {
   return [
     "ssh",
-    "-o",
-    `ControlPath=${expandHome(config.controlPath)}`,
-    "-o",
-    "ControlMaster=auto",
-    "-o",
-    "ControlPersist=8h",
+    ...(platform === "win32"
+      ? []
+      : [
+          "-o",
+          `ControlPath=${expandHome(config.controlPath)}`,
+          "-o",
+          "ControlMaster=auto",
+          "-o",
+          "ControlPersist=8h",
+        ]),
     "-o",
     "ServerAliveInterval=15",
     "-o",
@@ -382,13 +390,30 @@ export function sshBase(config: VpsCargoConfig): string[] {
 }
 
 /** The persistent, self-reconnecting SSH master carrying both forward directions. */
-export function tunnelCommand(config: VpsCargoConfig): string {
+export function localQuote(value: string, platform = process.platform): string {
+  return platform === "win32" ? `'${value.replaceAll("'", "''")}'` : shellQuote(value);
+}
+
+export function tunnelCommand(config: VpsCargoConfig, platform = process.platform): string {
+  if (platform === "win32") {
+    const args = [
+      ...sshBase(config, platform),
+      "-o",
+      "ExitOnForwardFailure=yes",
+      "-N",
+      ...config.forwards.remote.flatMap((f) => ["-R", `${f.bind}:${f.to}`]),
+      ...config.forwards.local.flatMap((f) => ["-L", `${f.bind}:${f.to}`]),
+      config.host,
+    ];
+    const code = `while(true){const p=Bun.spawn(${JSON.stringify(args)},{stdin:"ignore",stdout:"inherit",stderr:"inherit"});await p.exited;console.error("tunnel lost, reconnecting in 5s");await Bun.sleep(5000)}`;
+    return `& ${localQuote(process.execPath, platform)} -e ${localQuote(code, platform)}`;
+  }
   const forwards = [
     ...config.forwards.remote.map((forward) => `-R ${forward.bind}:${forward.to}`),
     ...config.forwards.local.map((forward) => `-L ${forward.bind}:${forward.to}`),
   ];
   const ssh = [
-    ...sshBase(config).map(shellQuote),
+    ...sshBase(config, platform).map(shellQuote),
     "-o",
     "ControlMaster=yes",
     "-o",
@@ -401,14 +426,21 @@ export function tunnelCommand(config: VpsCargoConfig): string {
 }
 
 /** Read-only git daemon on loopback: the VPS reaches it through the reverse forward. */
-export function gitDaemonCommand(config: VpsCargoConfig): string {
+export function gitDaemonCommand(config: VpsCargoConfig, platform = process.platform): string {
   const base = expandHome(config.gitDaemon.basePath);
+  const normalizedBase = base.replaceAll("\\", "/");
+  // Git daemon appends /<repository>. A drive root ending in / produces C://repo,
+  // which fails its repository allowlist even though Windows accepts that path.
+  const daemonBase =
+    platform === "win32" && /^[A-Za-z]:\/$/.test(normalizedBase)
+      ? normalizedBase.slice(0, -1)
+      : normalizedBase;
   return [
     "git daemon --reuseaddr --export-all --informative-errors",
     `--listen=${config.gitDaemon.listen}`,
     `--port=${config.gitDaemon.port}`,
-    `--base-path=${shellQuote(base)}`,
-    shellQuote(join(base, config.gitDaemon.repository)),
+    `--base-path=${localQuote(daemonBase, platform)}`,
+    localQuote(join(base, config.gitDaemon.repository).replaceAll("\\", "/"), platform),
   ].join(" ");
 }
 
@@ -547,7 +579,7 @@ const COLLISION_PATTERN =
 
 /**
  * Whether an error is a snapshot collision: git exits 128 when it cannot take a lock or update a ref that
- * another session holds (`refs/wsl/snapshot` is shared by every worktree of the repository).
+ * another session holds (the configured snapshot ref is shared by worktrees of the repository).
  * A rejected push can instead exit 1 when the remote ref changed during the transaction.
  */
 export function isSnapshotCollision(error: unknown): boolean {
@@ -633,7 +665,7 @@ async function snapshotOnce(config: VpsCargoConfig, cwd: string): Promise<string
     const tree = (await $`git write-tree`.cwd(cwd).env(env).text()).trim();
     const head = (await $`git rev-parse HEAD`.cwd(cwd).text()).trim();
     const headTree = (await $`git rev-parse HEAD^{tree}`.cwd(cwd).text()).trim();
-    const message = "wsl snapshot";
+    const message = "workspace snapshot";
     const sha =
       tree === headTree
         ? head
@@ -735,14 +767,21 @@ async function tunnel(config: VpsCargoConfig, action: string | undefined): Promi
   }
   if (action === "down") {
     if (alive) await tmuxLocal(["kill-session", "-t", session]);
-    await Bun.spawn([...sshBase(config), "-O", "exit", config.host], { stderr: "ignore" }).exited;
+    if (process.platform !== "win32") {
+      await Bun.spawn([...sshBase(config), "-O", "exit", config.host], { stderr: "ignore" }).exited;
+    }
     console.log("tunnel down");
     return 0;
   }
-  const check = Bun.spawn([...sshBase(config), "-O", "check", config.host], { stderr: "ignore" });
+  const check = Bun.spawn(
+    process.platform === "win32"
+      ? [...sshBase(config), "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", config.host, "true"]
+      : [...sshBase(config), "-O", "check", config.host],
+    { stderr: "ignore" },
+  );
   const master = (await check.exited) === 0;
   console.log(
-    `tmux session ${session}: ${alive ? "up" : "down"}; ssh master: ${master ? "up" : "down"}`,
+    `tmux session ${session}: ${alive ? "up" : "down"}; ssh connection: ${master ? "up" : "down"}`,
   );
   return alive && master ? 0 : 1;
 }
@@ -761,14 +800,31 @@ async function fetchArtifact(
   if (!bin) throw new Error("fetch needs --bin <name>");
   const profile = flag(args, "--profile") ?? "release";
   const sha = (await $`git rev-parse ${config.snapshotRef}`.cwd(root).text()).trim();
-  const dest = expandHome(flag(args, "--dest") ?? `~/.local/lib/aphrody/wsl-${sha.slice(0, 12)}`);
+  const defaultDest =
+    process.platform === "win32"
+      ? join(
+          process.env["LOCALAPPDATA"] ?? join(homedir(), "AppData", "Local"),
+          "Aphrody",
+          "artifacts",
+          sha.slice(0, 12),
+        )
+      : `~/.local/lib/aphrody/workspace-${sha.slice(0, 12)}`;
+  const dest = expandHome(flag(args, "--dest") ?? defaultDest);
   const remote = `${config.remoteTargetDir}/${profile}/${bin}`;
   await mkdir(dest, { recursive: true });
   const control = `ControlPath=${expandHome(config.controlPath)}`;
-  const copy = Bun.spawn(["scp", "-o", control, `${config.host}:${remote}`, dest], {
-    stdout: "inherit",
-    stderr: "inherit",
-  });
+  const copy = Bun.spawn(
+    [
+      "scp",
+      ...(process.platform === "win32" ? [] : ["-o", control]),
+      `${config.host}:${remote}`,
+      dest,
+    ],
+    {
+      stdout: "inherit",
+      stderr: "inherit",
+    },
+  );
   if ((await copy.exited) !== 0) return 1;
   const local = join(dest, bin);
   const hasher = new Bun.CryptoHasher("sha256");
@@ -796,6 +852,10 @@ const USAGE =
   "usage: vps-cargo <tunnel up|down|status | sync [--pull] | run [--jobs N] [--pull] -- <cargo args> | logs <job> | fetch --bin <name> [--profile p] [--dest d] | attach> [--host <name|auto>] [--repo <name>]";
 
 export async function main(argv: readonly string[]): Promise<number> {
+  if (argv[0] === "--help" || argv[0] === "-h" || argv[0] === "help") {
+    console.log(`${USAGE} [--config <path>]`);
+    return 0;
+  }
   const [command, ...rest] = argv;
   const selected = await selectConfig(rest);
   const repo = flag(rest, "--repo");

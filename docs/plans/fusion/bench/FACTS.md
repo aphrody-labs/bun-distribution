@@ -1,5 +1,8 @@
 # Faits vérifiés pour la fusion V8 / JSC (extrait de l'arbitre)
 
+> Contexte courant (2026-10-09) : développement et builds selon l'hôte, la cible et les ressources disponibles ; aucun produit n'est réservé à un poste. Voir le [contexte](../../../operations/workspace/windows-native.md).
+
+
 État du 2026-10-05, 23:13 (Europe/Paris). Extrait tenu par `claude-bench-arbiter`, prêt à être lu ; il n'est envoyé à personne. Source de vérité détaillée : journal §13 de `docs/plans/fusion/drive/PLAN-FUSION-APHRODY (4 de 4).md`, méthode `METHOD.md`, reçu `docs/plans/fusion/engine-equivalence-2026-10-05.json`. Chaque ligne dit comment la revérifier. Règle d'usage : tout fait tiré d'un showcase ou d'un banc doit citer le binaire du fork au pin (c439b6fbd, WebKit 5718a6ec), jamais le Bun installé.
 
 ## 1. Révisions et binaires

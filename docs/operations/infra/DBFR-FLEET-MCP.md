@@ -2,6 +2,8 @@
 
 # MCP de la flotte depuis DBFR
 
+> Autorité actuelle (2026-10-09) : Omar administre DBFR ; Yoyo / aphrody-dev administre tout Aphrody Labs. Les observations et accès historiques ci-dessous ne donnent pas une autorité plus large. La correction de déclaration ne prouve aucune modification des droits actifs.
+
 ## État qualifié le 7 octobre 2026
 
 DBFR (`10.200.77.3`) atteint le hub VPS (`10.200.77.1`) par SSH sur WireGuard.

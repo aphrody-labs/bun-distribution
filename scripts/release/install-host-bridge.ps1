@@ -8,7 +8,6 @@ Install the native Aphrody Hyper-V host service and session companion.
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][string]$Binary,
-    [Parameter(Mandatory)][string]$Distribution,
     [string]$Root = 'C:\ProgramData\Aphrody\Host',
     [uint32]$Port = 47651,
     [uint32]$DesktopPort = 47652
@@ -35,21 +34,22 @@ foreach ($companion in $companions) {
 Copy-Item -LiteralPath $Binary -Destination $destination -Force
 $authPath = Join-Path $Root 'auth.json'
 if (Test-Path -LiteralPath $authPath) {
-    $token = (Get-Content -LiteralPath $authPath -Raw | ConvertFrom-Json).principals[0].token
+    $auth = Get-Content -LiteralPath $authPath -Raw | ConvertFrom-Json
+    $token = $auth.principals[0].token
+    if (-not $token) { throw 'Existing host authentication is invalid; preserve it and repair through the protected workflow.' }
 } else {
     $bytes = New-Object byte[] 32
     $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
     try { $rng.GetBytes($bytes) } finally { $rng.Dispose() }
     $token = -join ($bytes | ForEach-Object { $_.ToString('x2') })
-    @{principals=@(@{id='wsl-bridge';token=$token;toolPrefixes=@('*');registerSubsystems=$true;publishEvents=$true})} |
-        ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $authPath -Encoding UTF8
+    $auth = @{principals=@(@{id='native-host';token=$token;toolPrefixes=@('*');registerSubsystems=$true;publishEvents=$true})}
 }
 # Rust's JSON reader requires UTF-8 without a Windows PowerShell BOM.
 $utf8 = New-Object Text.UTF8Encoding($false)
 function Write-PrivateJson([string]$Path, $Value) {
     [IO.File]::WriteAllText($Path, ($Value | ConvertTo-Json -Depth 8), $utf8)
 }
-Write-PrivateJson $authPath @{principals=@(@{id='wsl-bridge';token=$token;toolPrefixes=@('*');registerSubsystems=$true;publishEvents=$true})}
+Write-PrivateJson $authPath $auth
 $hostConfig = Join-Path $Root 'host.json'
 $desktopConfig = Join-Path $Root 'desktop.json'
 Write-PrivateJson $hostConfig @{port=$Port;authFile=$authPath;peer='windows';localEndpoint='\\.\pipe\aphrody-host';logFile=(Join-Path $Root 'host.log')}
@@ -76,20 +76,13 @@ $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RestartCount 999 -
 $desktopAction = New-ScheduledTaskAction -Execute $destination -Argument ('--config "{0}" --console' -f $desktopConfig)
 $desktopPrincipal = New-ScheduledTaskPrincipal -UserId $account -LogonType Interactive -RunLevel Highest
 Register-ScheduledTask -TaskName AphrodyDesktopBridge -Action $desktopAction -Trigger (New-ScheduledTaskTrigger -AtLogOn -User $account) -Principal $desktopPrincipal -Settings $settings -Force | Out-Null
-# WSL distributions belong to a Windows user, not LocalSystem. S4U lets the
-# registered owner start the guest at boot without storing a password here.
-$wslExecutable = Join-Path $env:ProgramFiles 'WSL\wsl.exe'
-if (-not (Test-Path -LiteralPath $wslExecutable)) { $wslExecutable = Join-Path $env:SystemRoot 'System32\wsl.exe' }
-$bootScript = Join-Path $Root 'start-wsl.ps1'
-# Task Scheduler/cmd quoting can change distribution argv. A protected script
-# preserves literal arguments and returns WSL's exit status to the scheduler.
-$bootContent = "& '{0}' --distribution '{1}' --exec /bin/sleep infinity *> '{2}'`nexit `$LASTEXITCODE`n" -f $wslExecutable.Replace("'", "''"), $Distribution.Replace("'", "''"), (Join-Path $Root 'wsl-boot.log').Replace("'", "''")
-[IO.File]::WriteAllText($bootScript, $bootContent, $utf8)
-$wslAction = New-ScheduledTaskAction -Execute (Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe') -Argument ('-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "{0}"' -f $bootScript)
-$bootPrincipal = New-ScheduledTaskPrincipal -UserId $account -LogonType S4U -RunLevel Highest
-Register-ScheduledTask -TaskName AphrodyWslBoot -Action $wslAction -Trigger (New-ScheduledTaskTrigger -AtStartup) -Principal $bootPrincipal -Settings $settings -Force | Out-Null
+# Retire the former development guest task on installer upgrade. Do not delete guest stores.
+$legacyBoot = Get-ScheduledTask -TaskName AphrodyWslBoot -ErrorAction SilentlyContinue
+if ($legacyBoot) {
+    Stop-ScheduledTask -TaskName AphrodyWslBoot -ErrorAction SilentlyContinue
+    Disable-ScheduledTask -TaskName AphrodyWslBoot | Out-Null
+}
 Start-Service -Name AphrodyHost
 Start-ScheduledTask -TaskName AphrodyDesktopBridge
-Start-ScheduledTask -TaskName AphrodyWslBoot
 Get-Service -Name AphrodyHost | Select-Object Name, Status, StartType
-Get-ScheduledTask -TaskName AphrodyDesktopBridge,AphrodyWslBoot | Select-Object TaskName,State
+Get-ScheduledTask -TaskName AphrodyDesktopBridge | Select-Object TaskName,State

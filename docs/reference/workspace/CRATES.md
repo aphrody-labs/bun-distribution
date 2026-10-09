@@ -17,34 +17,19 @@ Packages are prefixed with `aphrody-`; library and binary names are unchanged.
 | `aphrody-tauri-macros` | `tauri-macros` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-macros` |
 | `aphrody-tauri-plugin` | `tauri-plugin` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-plugin` |
 | `aphrody-tauri-plugin-autostart` | `tauri-plugin-autostart` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-autostart` |
-| `aphrody-tauri-plugin-barcode-scanner` | `tauri-plugin-barcode-scanner` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-barcode-scanner` |
-| `aphrody-tauri-plugin-biometric` | `tauri-plugin-biometric` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-biometric` |
-| `aphrody-tauri-plugin-cli` | `tauri-plugin-cli` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-cli` |
 | `aphrody-tauri-plugin-clipboard-manager` | `tauri-plugin-clipboard-manager` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-clipboard-manager` |
 | `aphrody-tauri-plugin-deep-link` | `tauri-plugin-deep-link` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-deep-link` |
 | `aphrody-tauri-plugin-dialog` | `tauri-plugin-dialog` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-dialog` |
 | `aphrody-tauri-plugin-fs` | `tauri-plugin-fs` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-fs` |
-| `aphrody-tauri-plugin-geolocation` | `tauri-plugin-geolocation` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-geolocation` |
 | `aphrody-tauri-plugin-global-shortcut` | `tauri-plugin-global-shortcut` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-global-shortcut` |
-| `aphrody-tauri-plugin-haptics` | `tauri-plugin-haptics` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-haptics` |
-| `aphrody-tauri-plugin-http` | `tauri-plugin-http` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-http` |
-| `aphrody-tauri-plugin-localhost` | `tauri-plugin-localhost` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-localhost` |
 | `aphrody-tauri-plugin-log` | `tauri-plugin-log` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-log` |
-| `aphrody-tauri-plugin-nfc` | `tauri-plugin-nfc` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-nfc` |
 | `aphrody-tauri-plugin-notification` | `tauri-plugin-notification` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-notification` |
 | `aphrody-tauri-plugin-opener` | `tauri-plugin-opener` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-opener` |
 | `aphrody-tauri-plugin-os` | `tauri-plugin-os` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-os` |
-| `aphrody-tauri-plugin-persisted-scope` | `tauri-plugin-persisted-scope` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-persisted-scope` |
-| `aphrody-tauri-plugin-positioner` | `tauri-plugin-positioner` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-positioner` |
 | `aphrody-tauri-plugin-process` | `tauri-plugin-process` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-process` |
-| `aphrody-tauri-plugin-shell` | `tauri-plugin-shell` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-shell` |
 | `aphrody-tauri-plugin-single-instance` | `tauri-plugin-single-instance` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-single-instance` |
-| `aphrody-tauri-plugin-sql` | `tauri-plugin-sql` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-sql` |
 | `aphrody-tauri-plugin-store` | `tauri-plugin-store` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-store` |
-| `aphrody-tauri-plugin-stronghold` | `tauri-plugin-stronghold` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-stronghold` |
 | `aphrody-tauri-plugin-updater` | `tauri-plugin-updater` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-updater` |
-| `aphrody-tauri-plugin-upload` | `tauri-plugin-upload` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-upload` |
-| `aphrody-tauri-plugin-websocket` | `tauri-plugin-websocket` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-websocket` |
 | `aphrody-tauri-plugin-window-state` | `tauri-plugin-window-state` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-window-state` |
 | `aphrody-tauri-runtime` | `tauri-runtime` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-runtime` |
 | `aphrody-tauri-runtime-cef` | `tauri-runtime-cef` | 3.0.0-alpha.5 | `tauri` | `crates/tauri/aphrody-tauri-runtime-cef` |
@@ -53,7 +38,6 @@ Packages are prefixed with `aphrody-`; library and binary names are unchanged.
 
 ## Source commits
 
-- `tauri`: `890a4e24143b`
-- `plugins-workspace`: `a50a1b7baf3b`
+- `tauri`: `c55221c72a99`
+- `plugins-workspace`: `7e44012db3c1`
 - `create-tauri-app`: `c7692bb0dbd9`
-- `next`: `d2f222004293`

@@ -2,6 +2,8 @@
 
 # Desktop and web engines: Obscura, Tauri/CEF and browser automation
 
+> Qualification du 2026-10-09 : les owners IA retirés du checkout sont signalés « not in repo ». Les constats datés ci-dessous ne prouvent pas leur présence ou leur fonctionnement actuel.
+
 Canonical plan, consolidated on 2026-10-09. It replaces the former `tauri-cef` plan, the superseded in-process
 Tauri plan, the "Playwright killer" plan, the `bxc-bridge` plan, the `@aphrody/bxc-test` package plan and the
 roadmap parts of the Obscura reference notes (all in Git history). Exhaustive record of the wry/tao/GTK 3 removal
@@ -41,7 +43,7 @@ Obscura reference (feature inventory, CDP domains, MCP schemas, local fork diffe
 | 10  | Only the 15 plugins `crates/ui/app` registers stay vendored; server-side capabilities (http, websocket, upload, shell, cli, sql, stronghold) belong to Bun and Yolo (D28).                                                                                                                                                                                                                  | `vendor.toml`, [INVENTORY §H](INVENTORY.md#h-unification-cut-2026-10-09)                  |
 | 11  | The Bun fork declares no Tauri or Obscura API until a runtime binding backs it (`Bun.tauri` types removed, fork `491b447cc7f`) (D28).                                                                                                                                                                                                                                                       | `aphrody-labs/bun`                                                                        |
 | 12  | Obscura is an in-process library family, not an external binary facade (the 2026-05 "binary facade" recommendation is superseded). It is served through the one `aphrody-mcp`; `obscura-ssrf` stays separate so the paint path keeps its synchronous fetch (D28). `render` is optional and `stealth` implies it.                                                                            | `crates/web/obscura*`                                                                     |
-| 13  | Browser automation is Rust: the Bun "Aphrody Web" engine (Zig DOM, Lightpanda, `src/cdp/**` TS server, `bxc_rust_bridge` cdylib) is gone; HTML to Markdown runs in-process through `aphrody-web-extract`, and `@aphrody/web-test` drives the Obscura CDP server.                                                                                                                            | `crates/web`, `crates/ai/tools/src/builtin/web_fetch.rs`, `packages/web/aphrody-web-test` |
+| 13  | Browser automation is Rust: the Bun "Aphrody Web" engine (Zig DOM, Lightpanda, `src/cdp/**` TS server, `bxc_rust_bridge` cdylib) is gone; HTML to Markdown runs in-process through `aphrody-web-extract`, and `@aphrody/web-test` drives the Obscura CDP server.                                                                                                                            | `crates/web`, `crates/ai/tools/src/builtin/web_fetch.rs` (not in repo), `packages/web/aphrody-web-test` |
 
 ## Accepted limits
 

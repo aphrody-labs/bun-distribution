@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 <#
 .SYNOPSIS
-  Run `bun test` natively on Windows against a checkout whose node_modules are Linux symlinks (WSL tree).
+  Run `bun test` natively on Windows against the selected workspace source packages.
 .DESCRIPTION
   Workspace packages (@aphrody/*) are resolved through a generated tsconfig `paths` map pointing at their
   source entry points, so no Windows-side install is written into the shared tree. Run it from the package
   directory under test (no repository bunfig preload is applied there).
 .EXAMPLE
-  Set-Location W:\home\aphro\aphrody\packages\infra\workspace; pwsh -File ..\..\..\scripts\dev\windows-bun-test.ps1 test
+  From packages/infra/workspace: pwsh -File ../../../scripts/dev/windows-bun-test.ps1 test
 #>
 $ErrorActionPreference = 'Stop'
 $package = (Get-Location).Path
@@ -29,7 +29,12 @@ Get-ChildItem (Join-Path $root 'packages') -Filter package.json -Recurse -Depth 
     $paths[$manifest.name] = @($absolute.Replace('\', '/'))
     $paths["$($manifest.name)/*"] = @((Join-Path $_.DirectoryName 'src').Replace('\', '/') + '/*')
   }
-$config = Join-Path $env:TEMP 'aphrody-windows-tsconfig.json'
-@{ compilerOptions = @{ baseUrl = $root.Replace('\', '/'); paths = $paths } } | ConvertTo-Json -Depth 6 | Set-Content $config -Encoding utf8
-& bun @args --tsconfig-override $config
-exit $LASTEXITCODE
+$config = Join-Path $env:TEMP ('aphrody-windows-tsconfig-' + [guid]::NewGuid().ToString('N') + '.json')
+try {
+  @{ compilerOptions = @{ baseUrl = $root.Replace('\', '/'); paths = $paths } } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $config -Encoding utf8
+  & bun @args --tsconfig-override $config
+  $result = $LASTEXITCODE
+} finally {
+  Remove-Item -LiteralPath $config -Force -ErrorAction SilentlyContinue
+}
+exit $result

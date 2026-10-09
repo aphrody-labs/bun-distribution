@@ -1,6 +1,0 @@
-<tool_call><function=apply_patch><parameter=input>
-*** Begin Patch
-*** Add File: hello.txt
-+hello world
-*** End Patch
-</parameter></function></tool_call>

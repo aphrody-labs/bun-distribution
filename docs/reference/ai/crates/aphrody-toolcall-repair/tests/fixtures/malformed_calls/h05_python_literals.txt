@@ -1,1 +1,0 @@
-<tool_call>{"name": "toggle_flag", "arguments": {"enabled": True, "verbose": False, "note": None}}</tool_call>

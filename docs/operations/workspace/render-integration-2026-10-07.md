@@ -60,7 +60,7 @@ La compilation rapporte aussi 16 warnings, notamment un import inutilisé et
 des inférences numériques de repli. Le chemin est revendiqué par le propriétaire
 actif `web_gui_wasm_finish`, état `active-component-fine-tuning`. Les diagnostics
 sont consignés dans
-`.coord/proofs/render-feature-integration-20261007/gate-failure.json` et le journal
+`.coord/proofs/render-feature-integration-20261007/gate-failure.json` (not in repo) et le journal
 `render-test-retry.log` du même dossier. Les ajouts arrivés après le snapshot,
 dont un `Clone` sur le layout, ne sont pas couverts par cette tentative.
 

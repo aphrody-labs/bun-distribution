@@ -5,7 +5,7 @@
 Patched Rust implementations are tracked inside the Aphrody Cargo workspace. Only optional build inputs live under the source root
 (`.cache/upstream` (not in repo), an untracked machine-local cache; override with `APHRODY_SOURCE_ROOT`); everything else is a catalogue entry that is read live.
 
-## Integrated Rust implementations (8)
+## Integrated Rust implementations (7)
 
 Source, tests and licences are tracked in the monorepo; Cargo needs no sibling checkout.
 
@@ -14,8 +14,7 @@ Source, tests and licences are tracked in the monorepo; Cargo needs no sibling c
 | `tauri-plugin-mcp-bridge` | 0.13.0 | `crates/ui/tauri-plugin-mcp-bridge` | `patches/tauri-plugin-mcp-bridge-0.13.0-registry.patch` |
 | `rfb-encodings` | 0.1.7 | `crates/compat/rfb-encodings` | `patches/rfb-encodings-0.1.7-truecolour.patch` |
 | `simdutf` | 0.7.0 | `crates/native/simdutf` | `patches/simdutf-rio-0.7.0.patch` |
-| `tauri-plugin-dialog` | 3.0.0-alpha.3 | `crates/tauri/aphrody-tauri-plugin-dialog` | - |
-| `serde-saphyr` | 0.0.16 | `crates/compat/serde-saphyr` | `patches/serde-saphyr-0.0.16-regex.patch` |
+| `tauri-plugin-dialog` | 3.0.0-alpha.3 | `crates/tauri/aphrody-tauri-plugin-dialog` |  |
 | `aphrody-llama` | 0.83.5 | `crates/ml/llama` |  |
 | `aphrody-obscura` | 0.1.0 | `crates/web/obscura` |  |
 | `taffy` | 0.12.1 | `crates/ui/taffy` |  |
@@ -28,7 +27,7 @@ Restored by `bun run sources:sync` (or `aphrody git source sync --apply`); each 
 | --- | --- | --- | --- |
 
 
-## Reference upstreams (8, never cloned by default)
+## Reference upstreams (7, never cloned by default)
 
 | Id | Repository | Ref | Observed | What it is for | Used by |
 | --- | --- | --- | --- | --- | --- |
@@ -37,7 +36,6 @@ Restored by `bun run sources:sync` (or `aphrody git source sync --apply`); each 
 | `tauri-plugin-webdriver` | [Choochmeque/tauri-plugin-webdriver](https://github.com/Choochmeque/tauri-plugin-webdriver) | `main` | 007d18ece8 | In-process W3C WebDriver server for Tauri 2; reading base for the Tauri 3 downcast_ref patch. | tools/config/tauri-upstream.json debuggers |
 | `victauri` | [4DA-Systems/Victauri](https://github.com/4DA-Systems/Victauri) | `main` | bb17a65296 | Rust-native Tauri MCP; read for its hardening and tool surface. | tools/config/tauri-upstream.json debuggers; aphrody-mcp Tauri tools design |
 | `jan` | [janhq/jan](https://github.com/janhq/jan) | `14a720628f9592c8e60f7e081ef733076db8a6a9` | 14a720628f | Pinned Jan source for owner-authorized absorption; existing Aphrody capability owners remain canonical. Initial model-hub search adapted with Fuse.js 7.1.0; full parity pending. Pinned checkout: ../aphrody-py/vendor/jan. Root LICENSE Apache-2.0, Menlo Research 2025; selected search adaptation retains attribution. Python/JS ADK manifests declare AGPL-3.0; do not assume a uniform repository license. | m3/packages/app-ui/src/models-hub-state.ts; tools/config/jan-absorption.json; docs/migration/jan-absorption |
-| `mistral.rs` | [EricLBuehler/mistral.rs](https://github.com/EricLBuehler/mistral.rs) | `master` | 3f2515e9b5 | mistral.rs; Cargo git dependency (mistralrs) plus native integration reference. | Cargo.toml workspace dependency mistralrs; docs/plans/ai/native-integration-master.md |
 | `bun` | [oven-sh/bun](https://github.com/oven-sh/bun) | `main` | - | Bun runtime upstream; Aphrody runs the aphrody-labs/bun fork, checked out next to this repository, which merges oven-sh/bun main. upstream_search reads that checkout when no GitHub token is available. | docs/reference/upstream-bun; packages/infra/update; aphrody yolo verify (Bun source gates) |
 | `codex` | [openai/codex](https://github.com/openai/codex) | `main` | bd274564e1 | OpenAI Codex CLI upstream and fork aphrody-labs/codex; Aphrody absorbs its app-server v2 protocol, configuration shapes, execution events and agent lifecycle natively into the workspace. | crates/ai/app-server; crates/contracts/app-protocol; crates/ai/config; crates/ai/rollout; crates/ai/engine; crates/ai/session; tools/config/codex-absorption.json; docs/reference/ai/THIRD_PARTY_CODEX.md; docs/plans/ai/plans/codex-oss.md |
 
@@ -81,5 +79,5 @@ Every fork needs a reason to exist; `yolo update sources forks` compares each wi
 | Drift of the observed heads | `yolo update upstream drift`; record them with `upstream refresh --apply` |
 | Agent entry point | skill `upstreams` (`~/plugins/aphrody/skills/upstreams`) |
 
-The Cargo git dependencies (oxc-project/oxc, hf-hub, mistral.rs, tauri-specta fork) are tracked by `yolo update sources drift`;
+The Cargo git dependencies (oxc-project/oxc, hf-hub, tauri-specta fork) are tracked by `yolo update sources drift`;
 forks by `yolo update sources forks`. The Bun fork aphrody-labs/bun is the Bun of Aphrody (its own repository, merged with upstream by its scripts/aphrody/sync-upstream.ts); the Oxc fork was retired on 2026-10-02.

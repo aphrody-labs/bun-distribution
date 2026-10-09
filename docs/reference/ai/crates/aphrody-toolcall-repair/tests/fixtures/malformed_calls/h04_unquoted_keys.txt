@@ -1,1 +1,0 @@
-<tool_call>{name: "get_weather", arguments: {city: "Paris", units: "metric"}}</tool_call>

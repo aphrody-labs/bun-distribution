@@ -1,1 +1,0 @@
-Sure! {"name": "get_time", "arguments": {}} Hope that helps.

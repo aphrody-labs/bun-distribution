@@ -1,1 +1,0 @@
-{"tool_calls": [{"type": "function", "function": {"name": "get_time", "arguments": {}}}]}

@@ -12,7 +12,7 @@
         {
           "name": "start-here",
           "topic": "Mode d'emploi du laboratoire IA Aphrody.",
-          "guide": "Bienvenue dans le laboratoire IA Aphrody.\n• Discussion : salon général existant.\n• assistant : mentionnez @Aphrody avec votre question.\n• experiments / prompts / evaluations : hypothèses, variantes et résultats reproductibles.\n• model-registry / training-jobs / datasets : modèles, suivi des jobs et provenance.\n• admin-console / ops-alerts : pilotage réservé aux administrateurs.\nYoyo et Omar administrent le laboratoire. Les accès et les secrets restent dans les stores protégés ; publiez des références de données et des métriques, jamais les valeurs secrètes."
+          "guide": "Bienvenue dans le laboratoire IA Aphrody.\n• Discussion : salon général existant.\n• assistant : mentionnez @Aphrody avec votre question.\n• experiments / prompts / evaluations : hypothèses, variantes et résultats reproductibles.\n• model-registry / training-jobs / datasets : modèles, suivi des jobs et provenance.\n• admin-console / ops-alerts : pilotage réservé aux administrateurs.\nYoyo / aphrody-dev administre Aphrody Labs ; Omar administre DBFR. Les accès et les secrets restent dans les stores protégés ; publiez des références de données et des métriques, jamais les valeurs secrètes."
         },
         {
           "name": "lab-status",

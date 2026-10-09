@@ -128,10 +128,10 @@ in-process: the TypeScript package re-implements them.
 
 | Consumer | Uses | Action |
 | --- | --- | --- |
-| `packages/ai/xai/src/core/client.ts`, `src/agent.ts`, `src/index.ts` | `XTools`, `xNativeTools`, the five `*ToolDef`, the tool argument types | unchanged API; tests that built `new XTools("auth_token=...; ct0=...")` keep passing without the native library |
-| `packages/ai/xai/examples/grok-x-agent.ts` | `XSession.loadOrEnv()`, `XTools` | unchanged API |
-| `packages/ai/xai/index.test.ts` (line 245) | dynamic `import("@aphrody/x")` | unchanged |
-| `packages/ai/xai/package.json`, `README.md` | dependency `@aphrody/x` (`workspace:*`), prose on the TypeScript client | README updated |
+| `packages/ai/xai/src/core/client.ts` (not in repo), `src/agent.ts`, `src/index.ts` | `XTools`, `xNativeTools`, the five `*ToolDef`, the tool argument types | historical result; SDK TypeScript removed 2026-10-09 |
+| `packages/ai/xai/examples/grok-x-agent.ts` (not in repo) | `XSession.loadOrEnv()`, `XTools` | historical result; removed 2026-10-09 |
+| `packages/ai/xai/index.test.ts` (not in repo) (line 245) | dynamic `import("@aphrody/x")` | historical result; removed 2026-10-09 |
+| `packages/ai/xai/package.json` (not in repo), `README.md` | dependency `@aphrody/x` (`workspace:*`), prose on the TypeScript client | historical result; removed 2026-10-09 |
 | `scripts/tools/web/x-catalog-sync.ts` | `syncCatalogFromBundles`, `DEFAULT_CATALOG_PATH` | calls the native `catalog_sync`; path from the shared constant |
 | `scripts/tools/web/x-coverage.ts` | `XClient`, `XSession`, `buildCoverageReport` | unchanged call shape |
 | `scripts/tools/web/x-premium-dump.ts` | `XClient`, `XSession`, `DEFAULT_CATALOG_PATH`, `client.graphqlWaiting`, `client.whoami`, `client.session` | unchanged call shape; catalog path from the shared constant |

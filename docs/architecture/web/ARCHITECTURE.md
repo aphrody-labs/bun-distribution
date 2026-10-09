@@ -2,6 +2,8 @@
 
 # Aphrody Web layer: architecture, owners, consumers and gaps
 
+> Qualification du 2026-10-09 : les owners IA retirés du checkout sont signalés « not in repo ». Les constats datés ci-dessous ne prouvent pas leur présence ou leur fonctionnement actuel.
+
 Inventory of 2026-10-01, taken from the working tree (not from historical plans).
 Contract of the public surfaces: [`docs/apis/web/WEB-SERVICE-CONTRACT.md`](../../apis/web/WEB-SERVICE-CONTRACT.md).
 Configuration: [`tools/config/web.json`](../../../tools/config/web.json). Operations:
@@ -91,7 +93,7 @@ upstream lint relaxations declared in its manifest.
 | ---------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | `@aphrody/agent-browser` | `AgentBrowser`/`AgentPage`/`WebCdpPage` (CDP), `/service`, `/engine`, `/config`, `/test-preload`; command line `yolo browser` | `iecode/packages/rg/cron` (`web-cdp.ts`), `packages/rg/inagle` (not in repo) (`web-cdp.ts`), `@aphrody/web-test`, `tools/config/pipeline.json` |
 | `@aphrody/web-test`    | Playwright-compatible runner on the same engine; site presets (Rose Griffon, Shenron, Aphrody UI)         | `tools/config/pipeline.json` only; live audits under `scripts/audit/live` still point at a retired sibling checkout   |
-| `@aphrody/x`           | Headless X client, function tools                                                                         | `iecode/packages/rg/cron`, `packages/ai/xai`, `packages/fut/*` (some imports undeclared, see gaps)           |
+| `@aphrody/x`           | Headless X client, function tools                                                                         | `iecode/packages/rg/cron`, ancien `packages/ai/xai` (not in repo), `packages/fut/*` (some imports undeclared, see gaps)           |
 
 ## Public surfaces
 
@@ -129,7 +131,7 @@ upstream lint relaxations declared in its manifest.
 | CLI (`crates/infra/aphrody`)       | Yes                     | `aphrody web` over `aphrody-web-service`, `-crawl`, `-extract` (including `media`), `-detect`; `aphrody bxc` is the compatibility alias of the same binary (parity table in the migration record); `aphrody google` runs in process |
 | Kernel / OS            | Indirect                | `aphrody-kernel mcp` proxies `aphrody-mcp`; optional plugin `aphrody-browser-mcp` has no crate that builds it                             |
 | Desktop app            | Yes                     | `crates/ui/app` defines and registers `WebSubsystem` (the former `aphrody-web` facade crate); Tauri debug tools live in the same kernel |
-| AI tools               | Partly                  | `crates/ai/mcp` native browser; `crates/ai/tools` `web_fetch` keeps a private `reqwest` scraping client                                   |
+| AI tools               | Partly                  | `crates/ai/mcp` native browser; `crates/ai/tools` (not in repo) `web_fetch` keeps a private `reqwest` scraping client                                   |
 
 ## Gaps
 
@@ -143,8 +145,8 @@ Resolved in this change set are marked `FIXED`; the rest are open.
 6. OPEN. `aphrody-web-engine` has no Cargo consumer and nothing builds `target/debug/aphrody-web` (not in repo) in the default gates; `web:verify` builds it explicitly.
 7. DONE 2026-10-05. The executable bridge is deleted: `aphrody-web-bridge` no longer exists, no code resolves or spawns a `bxc` executable (`BXC_BIN` is gone), and `bxc`, `bxc-mcp`, `aphrody bxc` map their arguments to the unified commands.
 8. DONE 2026-10-05. `obscura-mcp` keeps only the tool library (upstream stdio/HTTP loops removed); MCP reaches the engine only through `aphrody-mcp`. The kernel's optional `aphrody-browser-mcp` plugin has no builder.
-9. OPEN. Duplicates: HTML to Markdown (V8-side `obscura-js/src/markdown.rs` and native `aphrody-web-extract`), robots.txt (`obscura-net/src/robots.rs` prefix-only and `aphrody-web-crawl/src/robots.rs`), three HTTP stacks (`ObscuraHttpClient`, `aphrody-web-service` `fetch.rs`, `crates/ai/tools` `ScrapingClient`); the second Google result parser (the bridge search client) is deleted, `crates/google/google/src/search/serp.rs` is the one.
-10. OPEN. Product code outside the layer: `crates/ai/tools/src/builtin/scraping.rs` and `web_fetch.rs` (trivially replaceable by `aphrody_web_service::fetch::fetch`), `crates/interop/ffi/src/web/text.rs` (hand-rolled tag scans), `crates/compat/n2b-core/src/llmstxt/crawl.rs` (external `siteone` crawler, replaceable by `aphrody_web_crawl`). The unused `scraper` dependency of `crates/infra/aphrody` and `aphrody-command` was removed on 2026-10-05.
+9. OPEN. Duplicates: HTML to Markdown (V8-side `obscura-js/src/markdown.rs` and native `aphrody-web-extract`), robots.txt (`obscura-net/src/robots.rs` prefix-only and `aphrody-web-crawl/src/robots.rs`), three HTTP stacks (`ObscuraHttpClient`, `aphrody-web-service` `fetch.rs`, `crates/ai/tools` (not in repo) `ScrapingClient`); the second Google result parser (the bridge search client) is deleted, `crates/google/google/src/search/serp.rs` is the one.
+10. OPEN. Product code outside the layer: `crates/ai/tools/src/builtin/scraping.rs` (not in repo) and `web_fetch.rs` (trivially replaceable by `aphrody_web_service::fetch::fetch`), `crates/interop/ffi/src/web/text.rs` (hand-rolled tag scans), `crates/compat/n2b-core/src/llmstxt/crawl.rs` (not in repo) (external `siteone` crawler, replaceable by `aphrody_web_crawl`). The unused `scraper` dependency of `crates/infra/aphrody` and `aphrody-command` was removed on 2026-10-05.
 11. OPEN. TypeScript scraping that bypasses the layer: cheerio over rendered HTML in `iecode/packages/rg/cron` and `packages/rg/inagle` (not in repo); curl/regex in Shenron scripts; `undici` imports without a declaration; a client of the retired `aphrody-web-api` (`shenron:packages/pipeline/src/aphrody/web.ts`).
 12. OPEN. Undeclared dependencies: `@aphrody/x` imported by `packages/fut/fut` (not in repo) (resolved through tsconfig paths) and by scripts without a manifest; `iecode/scripts/rg/qa/agent-browser-rg.sh` expects the upstream native `agent-browser` CLI that `@aphrody/agent-browser` does not provide.
 13. OPEN. Stale paths to a retired sibling layout: `scripts/audit/live`, `tools/config/live-audit.json`, `tools/config/service-catalog.json` (`aphrody-web-api:3007`, retired), `tools/config/host/nginx/routes.json`, `tools/config/mcp-google-web.json` (`bxc-mcp`), `tools/config/host/systemd/aphrody/aphrody-web-api.service.example` (not in repo), `scripts/build/build-aphrody-stack-release.sh`, `packages/infra/workspace/src/ecosystem-deps.ts`, `plugins/aphrody/hooks` (not in repo) (retired sibling layout) (`apps/bxc` (not in repo)).

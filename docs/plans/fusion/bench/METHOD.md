@@ -1,5 +1,8 @@
 # Méthode du banc V8 / JSC : liste de comparabilité et seuils
 
+> Contexte courant (2026-10-09) : développement et builds selon l'hôte, la cible et les ressources disponibles ; aucun produit n'est réservé à un poste. Voir le [contexte](../../../operations/workspace/windows-native.md).
+
+
 Version 1.1 du 2026-10-05, 22:49 (Europe/Paris) ; la version 1.0 de 22:19 a été rédigée avant tout verdict (voir « Révisions de la méthode » en fin de fichier). Tenue par l'arbitre `claude-bench-arbiter` ; journal en temps réel : partie 4 du plan, §13 (`docs/plans/fusion/drive/PLAN-FUSION-APHRODY (4 de 4).md`). Reçu d'équivalence des symboles : `docs/plans/fusion/engine-equivalence-2026-10-05.json` (`scripts/audit/engine-equivalence.ts`).
 
 Règle d'or : **un chiffre `indicatif` ou `invalide` ne change jamais une décision du §12.** Un chiffre de vitesse ne peut jamais, seul, lever la directive « V8 conservé jusqu'à la parité » (§12 #8) : il peut seulement faire échouer le portage JSC sur un critère de performance. Seule la suite de parité (tests `runtime.rs`, `obscura-cdp`, 119 tests `Bun.WebView`, obstacles, WPT) et les sondes de capacité peuvent lever V8.

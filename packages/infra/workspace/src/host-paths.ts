@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+/* eslint-disable no-await-in-loop -- Apply serializes reviewed file writes in the shared checkout. */
 /**
  * Repository-wide audit of machine- and host-specific paths: removed checkouts (~/source, the
  * pre-monorepo superproject), absolute user homes, WSL mounts and VPS-only homes. Aphrody must run
@@ -95,7 +96,8 @@ const RULES: { rule: HostPathRule; pattern: RegExp; rewrite?: (match: string) =>
   {
     rule: "vps-shenron-checkout",
     pattern: /\/home\/ubuntu\/shenron\/apps\/(?:shenron\/)?(?=[\w-]+\/)/g,
-    rewrite: () => "apps/shenron/",
+    // Shenron is an external owner; normalizing a home must not invent a monorepo move.
+    rewrite: (match) => match.replace(/^\/home\/ubuntu/, "~"),
   },
   {
     rule: "user-home",
@@ -141,6 +143,8 @@ const OWN_FILES = new Set([
 
 export function hostPathArea(path: string): HostPathArea {
   const name = path.split("/").at(-1) ?? "";
+  if (path.startsWith("tools/config/host/")) return "host";
+  if (path.startsWith("tools/config/")) return "config";
   if (
     !path.startsWith("docs/") &&
     !/\.(md|mdx|txt|rst|html)$/.test(name) &&
@@ -150,7 +154,7 @@ export function hostPathArea(path: string): HostPathArea {
   )
     return "platform";
   if (/(^|\/)(examples?|benchmarks\/results|adapters)\//.test(path)) return "test";
-  if (path === "crates/infra/yolo/src/mapper/audit.rs") return "test";
+  if (path === "crates/engine/yolo-core/src/mapper/audit.rs") return "test";
   if (/^(systemd|nginx|config\/infra)\//.test(path)) return "host";
   if (
     /^(config\/(service-catalog\.json|shenron\/deploy\/)|\.github\/)|\/\.github\/workflows\//.test(

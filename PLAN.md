@@ -15,6 +15,8 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 | `crates/ai/rag-python` | Sole owner of the `aphrody-rust` Python binding |
 | IECODE | Separate repository, store and authority |
 | Kernel | `aphrody-kernel`: minimal TCB + subsystems; Linux/Asterinas/kernel32 provide the rest |
+| Execution context | Aphrody and Bun can be developed and built on any qualified host/target. Select native, SSH or Docker tools from the current context; local Windows / VPS SSH / DBFR deployment are current environment defaults, not product restrictions. |
+| Administration | Yoyo / aphrody-dev administers all Aphrody Labs. Omar administers DBFR; technical access does not imply broader administrative authority (owner correction 2026-10-09). |
 
 ## Single surfaces
 
@@ -28,6 +30,7 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 | Desktop | `aphrody-app` on `tauri-runtime-cef` (CEF + `tauri-winit` + GTK 4); routes `admin`, `creator` |
 | Python | `vu` runtime (uv + ruff + PyO3 + shared CPython), plan in `docs/plans/vu/PLAN.md` |
 | Bun product | One package, `packages/infra/product`, one entrypoint and `Aphrody-Setup.exe`: installation, administration and creator modules; showcase folded into canonical app-ui. |
+| Product direction | Browser OS plus full native cross-platform CLI; AI under `aphrody ai`. CLI/FFI/MCP/kernel route to capability owners. This is the owner target; concurrent source work is not installed qualification. |
 
 ## Contracts
 
@@ -40,6 +43,7 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 - Keep API/CLI/permission identities, licences, provenance, features and lockfiles. Remove a replaced path in the batch that qualifies its replacement.
 - Engines build per version/target; refuse an incompatible ABI before any native call.
 - npm `@aphrody` is the only package channel outside the monorepo; `workspace:*` inside it.
+- Select development/build context independently from product capability. Current execution and administrator scope: [execution context](docs/operations/workspace/windows-native.md).
 
 ## Open queue
 
@@ -48,7 +52,7 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 | Monorepo consolidation | Fold thin crates/packages into their owner (gates: clippy `-D warnings`, scoped tests on the VPS); root layout aligned on Tauri `dev`, Obscura and Bun `main` (`crates/ packages/ docs/ scripts/ tools/ vendor/ assets/ examples/ bench/ test/ patches/`); absorb `apps/ config/ data/ bin/ m3/ plugins/ py/` |
 | Single MCP | `aphrody-mcp` is the only MCP server; `yolo mcp`, `m3-mcp` and kernel MCP become aliases; same-purpose tools merged |
 | Kernel and shell | Target in `docs/plans/os-kernel/PLAN.md` (Asterinas `ostd`/`kernel/{core,comps,libs}`, Linux subsystems); replace hand-made coreutils/Nushell by `uutils`, `eza`, `sudo-rs` or Bun Shell |
-| CLI purge | Remove agent-delegating commands (agy, antigravity, hermes, notebooklm…) and every command needing another executable; add maintained crates from crates.io to shrink the build |
+| CLI purge | Group AI capabilities under aphrody ai; orient top-level commands around real native capability owners. Qualify parser, dispatch, truthful errors and CLI/FFI/MCP/kernel parity before retiring compatibility paths. No fake execution/session success. |
 | Release downloads | Publish `aphrody-setup` and `omar-kit` (`bun run downloads:publish plan\|build\|release\|verify`) |
 | yolo Windows | Cross-build `aphrody-ffi` (profile `runtime`), package, enable the artifact in `tools/config/downloads.json` |
 | Runtime activation | Point `bun`/`yolo`/`vu` on PATH to the fork binary; Windows; embed `libaphrody_ffi`; `bun:ffi` binding |
@@ -60,7 +64,8 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 | code-graph | Python/TS extractors and `scripts/audit/ai/graph-parity.ts`; Graphify stays the parity oracle |
 | Publication | npm `@aphrody/*`, crates.io (316 crates: metadata, `publish = false`, path versions, 14 taken names), PyPI |
 | Repository hygiene | Archive absorbed GitHub repos and integrated forks; deprecate absorbed npm packages; prune stale worktrees |
-| Known failures | `web:verify`, 4 `packages/engine/yolo` tests (`libaphrody_ffi` absent), `aphrody infra validate`, global typecheck (reported fixed on 2026-10-08 without a reproduced run) |
+| Known failures | `web:verify`, 4 `packages/engine/yolo` tests (`libaphrody_ffi` absent), `aphrody infra validate` |
+| Context-dependent routing | Resolve checkout, toolchain and build host from the current context. Retire automatic WSL use on the current Windows workstation; qualify native, SSH and Docker routes independently. |
 
 ## Success
 

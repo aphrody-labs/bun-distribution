@@ -1,6 +1,9 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Handoff: GitHub, SQL convergence and data dedup (session 2026-10-01)
 
+> Contexte courant (2026-10-09) : développement et builds selon l'hôte, la cible et les ressources disponibles ; aucun produit n'est réservé à un poste. Voir le [contexte](../../operations/workspace/windows-native.md).
+
+
 Compacted state of one Claude lead session and its background workers, so
 Codex or agy can finish if the lead stops. Rules: [AGENTS.md](../../../AGENTS.md)
 (owner directives section is binding). Claim:

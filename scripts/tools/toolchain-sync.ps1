@@ -119,9 +119,8 @@ if ($have -notmatch "v$ov") {
   Remove-Item $zip, "$env:TEMP\ovh" -Recurse -Force
 }
 Log ovh-rclone-config
-# ~/.ovh.conf and the rclone remotes are copied from the WSL home (secrets stay out of the repository).
-$wslHome = "\\wsl.localhost\Ubuntu-24.04\home\$($env:USERNAME)"
-if ((-not (Test-Path "$home_\.ovh.conf")) -and (Test-Path "$wslHome\.ovh.conf")) { Copy-Item "$wslHome\.ovh.conf" "$home_\.ovh.conf" }
+# Native authentication is provisioned in its protected Windows store; never copy provider credentials.
+if (-not (Test-Path "$home_\.ovh.conf")) { Write-Warning 'Native OVH configuration is absent; provision it through the protected owner workflow.' }
 $rc = "$env:APPDATA\rclone\rclone.conf"
 if (-not (Select-String -Path $rc -Pattern '^\[vps\]' -Quiet -ErrorAction SilentlyContinue)) {
   New-Item -ItemType Directory -Force (Split-Path $rc) | Out-Null

@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 /* eslint-disable no-await-in-loop -- Commit job receipts sequentially, then retry publication. */
 import { chmod, mkdir, rename, rm, stat } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { homedir } from "node:os";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 import { replicateHome, type ReplicaConfig } from "./agent-home-replica.ts";
 import { readRagStatus, type RagMonitorConfig } from "./agent-home-rag-status.ts";
 import {
@@ -26,6 +27,46 @@ export interface SyncConfig {
   replica?: ReplicaConfig;
   ragMonitor?: RagMonitorConfig;
   publication: { host: "vps" | "local"; directory: string; receiptName?: string };
+}
+
+/** Resolve only local paths; remote stores and profile boundaries remain unchanged. */
+export function resolveSyncContext(
+  config: SyncConfig,
+  cwd = process.cwd(),
+  home = homedir(),
+): SyncConfig {
+  const local = (path: string): string =>
+    path.startsWith("~/")
+      ? join(home, path.slice(2))
+      : isAbsolute(path)
+        ? path
+        : resolve(cwd, path);
+  const root = local(config.root);
+  return {
+    ...config,
+    root,
+    aphrody: config.aphrody.startsWith("~/") ? local(config.aphrody) : config.aphrody,
+    yolo: config.yolo.startsWith("~/") ? local(config.yolo) : config.yolo,
+    receiptRoot: local(config.receiptRoot),
+    drive: { ...config.drive, home: local(config.drive.home) },
+    ...(config.retrieval
+      ? { retrieval: { ...config.retrieval, root: local(config.retrieval.root) } }
+      : {}),
+    ...(config.replica
+      ? {
+          replica: {
+            ...config.replica,
+            incoming: local(config.replica.incoming),
+            contract: config.replica.contract.startsWith("~/")
+              ? local(config.replica.contract)
+              : resolve(root, config.replica.contract),
+          },
+        }
+      : {}),
+    ...(config.ragMonitor
+      ? { ragMonitor: { ...config.ragMonitor, reportPath: local(config.ragMonitor.reportPath) } }
+      : {}),
+  };
 }
 export type SyncJobName =
   | "drive"
@@ -447,9 +488,11 @@ if (import.meta.main) {
   if (process.argv.includes("daemon"))
     throw new Error("Use the declared aphrody-agent-sync.timer for periodic synchronization");
   const at = process.argv.indexOf("--config");
-  const config = (await Bun.file(
-    at < 0 ? "tools/config/host/agent-sync.json" : process.argv[at + 1]!,
-  ).json()) as SyncConfig;
+  const config = resolveSyncContext(
+    (await Bun.file(
+      at < 0 ? "tools/config/host/agent-sync.json" : process.argv[at + 1]!,
+    ).json()) as SyncConfig,
+  );
   if (
     config.version !== 1 ||
     (config.homes ?? []).some((home) => !["dbfr", "aphrody"].includes(home.profile))

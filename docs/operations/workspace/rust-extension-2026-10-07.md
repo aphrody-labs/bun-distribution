@@ -71,7 +71,7 @@ Le gate final passe ; sa sortie conserve un avertissement de cleanup protégé.
 Ce reçu ne déclare pas cette réclamation temporaire qualifiée et aucun processus
 concurrent n'a été tué.
 
-Les preuves locales ignorées sont dans `.coord/proofs/rust-extension-20261007/` :
+Les preuves locales ignorées sont dans `.coord/proofs/rust-extension-20261007/` (not in repo) :
 `metadata.json`, `sdk-probe.json`, `test.log`, `check.log`, `clippy-final.log`,
 `build.log`, `debug-smoke.json`, `release-smoke-wsl.json` et `fetch.log`.
 Les jobs finaux partagent le snapshot ci-dessus :

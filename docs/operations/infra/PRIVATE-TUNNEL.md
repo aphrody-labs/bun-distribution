@@ -2,6 +2,8 @@
 
 # Private WireGuard tunnel and Omar administrator access
 
+> Autorité actuelle (2026-10-09) : Omar administre DBFR ; Yoyo / aphrody-dev administre tout Aphrody Labs. Les observations et accès historiques ci-dessous ne donnent pas une autorité plus large. La correction de déclaration ne prouve aucune modification des droits actifs.
+
 The owner authorized deployment on 2026-10-07. SSH and WireGuard are active on VPS,
 DBFR and WSL; MCP/A2A proxy units remain declared and were not activated by this batch.
 The original 2026-10-06 observation remains in

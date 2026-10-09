@@ -1,6 +1,6 @@
 # Rust to Bun FFI layer
 
-> Path reconciliation (2026-10-07): `packages/engine/n2b-plugin/src/index.ts` (not in repo) → `packages/engine/n2b-client/src/plugin.ts`. Original dated observations below retain their historical scope.
+> Path reconciliation (2026-10-07): `packages/engine/n2b-plugin/src/index.ts` (not in repo) → `packages/engine/n2b-client/src/plugin.ts` (not in repo). Original dated observations below retain their historical scope.
 
 State on 2026-10-02 (runtime note 2026-10-08). The Bun runtime is the [aphrody-labs/bun fork](../../reference/upstream-bun/APHRODY-FORK.md); it has no `bun:aphrody` module and links no Aphrody library. Everything goes through `bun:ffi` `dlopen` over one native library. Per-crate facts are in `docs/reference/interop/FFI-CRATE-STATE.md`.
 
@@ -44,7 +44,7 @@ Checked by `packages/interop/native/test/ffi-drift.test.ts` (set equality of nam
 | Rust exports without a dlopen definition | 7: `web_internal_{extract_links,extract_text,extract_title,get_chromium_cookies,html_to_markdown,normalize_url,strip_tags}` (internal duplicates of the canonical `aphrody_web_*`, exported by accident) | 0: the `#[no_mangle]` was removed from these seven functions; they stay `pub` for the in-crate callers |
 | dlopen definitions without a Rust export | 0 | 0 |
 | Width mismatches | 2: `manga_detect_bubbles` and `manga_pipeline_run` declared the length as `u64_fast` while Rust takes `usize` | 0: declared as `"usize"` |
-| Stale fork references | `bun:aphrody` in `crates/os/kernel/core/src/runtimes.rs:23`, `packages/engine/n2b-client/src/plugin.ts` (former source location packages/engine/n2b-plugin/src/index.ts:79), `packages/interop/native/src/library.ts:293`, `fixtures/bun-fork-native.ts` | removed (see below) |
+| Stale fork references | `bun:aphrody` in `crates/os/kernel/core/src/runtimes.rs:23`, `packages/engine/n2b-client/src/plugin.ts` (not in repo) (former source location packages/engine/n2b-plugin/src/index.ts:79), `packages/interop/native/src/library.ts:293`, `fixtures/bun-fork-native.ts` | removed (see below) |
 
 Stale fork removal: the kernel runtime report probes stock `bun:ffi` and publishes `ffi_available` (replacing `aphrody_module_version`; no other consumer of the old key was found by `rg`); the n2b plugin imports `@aphrody/bun/n2b`; `library.ts` no longer has a builtin-first handle owner; the fork fixture and its two `APHRODY_BUN_FORK_BIN` tests are deleted. `docs/` and `PLAN.md` still mention the fork historically and were not rewritten. The n2b plugin does not list `@aphrody/bun` in its `package.json` (adding it changes `bun.lock`); without the package resolvable it falls back to the CLI in `auto` mode.
 

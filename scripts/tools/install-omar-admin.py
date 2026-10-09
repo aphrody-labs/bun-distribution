@@ -4,7 +4,9 @@
 import argparse
 import hashlib
 import json
+import os
 import shlex
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -14,7 +16,10 @@ def main():
     parser.add_argument("--apply", action="store_true")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
-    owner = str(Path.home() / ".local/bin/aphrody")
+    owner = os.environ.get("APHRODY_BIN") or shutil.which("aphrody") or "aphrody"
+    policy = json.loads((root / "tools/config/host/omar-admin.json").read_text())
+    if args.apply:
+        parser.error("The former organization-wide reconciler cannot be installed for the DBFR-only policy; qualify the DBFR guild and host mapping first")
     stage = "/tmp/aphrody-omar-admin-stage-20261007"
     files = {
         "tools/config/host/omar-admin.json": "/srv/aphrody-admin/tools/config/host/omar-admin.json",

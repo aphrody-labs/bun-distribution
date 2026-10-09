@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Local inference stacks and SQL state (2026-10-01)
 
+> Qualification du 2026-10-09 : les owners IA retirés du checkout sont signalés « not in repo ». Les constats datés ci-dessous ne prouvent pas leur présence ou leur fonctionnement actuel.
+
 Question: how do llama.cpp, mistral.rs, Ollama and vLLM keep prompts, caches
 and state, and where does SQL belong? Short answer: **no engine keeps
 inference state in SQL.**
@@ -95,8 +97,8 @@ generations.
 | Track | Owner crates | Engine |
 |---|---|---|
 | T2a in-process llama | `crates/ai/llama-server`, `crates/ai/infer`, `crates/ai/engine` | llama.cpp |
-| T2b wire protocols | `crates/ai/model-client`, `crates/ai/models`, `crates/ai/providers` | Ollama, vLLM, HF |
-| T2c mistral.rs | `crates/ai/engine-mistralrs` (git rev `3f2515e9`, v0.9.4) | mistral.rs |
+| T2b wire protocols | `crates/ai/model-client`, `crates/ai/models`, `crates/ai/providers` (not in repo) | Ollama, vLLM, HF |
+| T2c mistral.rs | `crates/ai/engine-mistralrs` (not in repo) (git rev `3f2515e9`, v0.9.4) | mistral.rs |
 
 - None of these crates depends on rusqlite or tokio-postgres today.
 - `crates/ai/models` (`ModelStore`) already uses `sha2`, so model identity is

@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # CLI du poste Aphrody
 
+Contexte du 2026-10-09 : développement et builds sur tout hôte qualifié, selon la cible et les ressources ; voir le [contexte courant](../../operations/workspace/windows-native.md). Les versions et tableaux WSL ci-dessous sont historiques. Utiliser le home configuré et le serveur unique `aphrody-mcp`. Vérifier les aides natives avant usage.
+
 Inventaire WSL/Linux vérifié le 2026-10-01 : 71 exécutables trouvés sur PATH,
 10 plugins Nushell chargés. Les versions décrivent ce poste ; un chemin trouvé
 ne prouve ni l’authentification d’un fournisseur ni une compilation produit.

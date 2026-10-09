@@ -2,6 +2,8 @@
 
 # vLLM Rust and HTTP integration review — 2026-10-01
 
+> Qualification du 2026-10-09 : les owners IA retirés du checkout sont signalés « not in repo ». Les constats datés ci-dessous ne prouvent pas leur présence ou leur fonctionnement actuel.
+
 The source checkout is a complete vLLM repository containing an experimental
 Rust frontend. Aphrody's integration remains an HTTP client in
 `crates/ai/model-client/src/vllm`, as required by the
@@ -185,7 +187,7 @@ model inference correctness, GPU performance, Python installation or full
 Rust/Python frontend feature parity. No model, weight or secret is downloaded.
 
 The dependent Mistral shell had three further obsolete contract references,
-repaired minimally in `crates/ai/engine-mistralrs/src/client.rs`: owned
+repaired minimally in `crates/ai/engine-mistralrs/src/client.rs` (not in repo): owned
 `ChatTurn`, `ModelCapabilities.images`, and remaining capability defaults.
 This does not implement inference: the existing `engine` feature stream branch
 returns an error stub, and the default constructor reports feature-disabled.

@@ -1,7 +1,0 @@
-Sure, here's the call:
-```
-<tool_call>
-{"name": "get_time", "arguments": {}}
-</tool_call>
-```
-Done.

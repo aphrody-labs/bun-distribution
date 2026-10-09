@@ -1,4 +1,0 @@
-<tool_call><function=write_file><parameter=path>
-notes.txt
-</parameter><parameter=content>
-partial content that never closes

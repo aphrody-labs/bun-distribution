@@ -2,6 +2,9 @@
 
 # Aphrody Infra plan
 
+> Contexte courant (2026-10-09) : développement et builds selon l'hôte, la cible et les ressources disponibles ; aucun produit n'est réservé à un poste. Voir le [contexte](../../operations/workspace/windows-native.md).
+
+
 Open infrastructure work. `config/` owns topology/routing and
 inventory holds dated observations. Execute authorized tasks
 under [NHITL](../../reference/infra/AGENTS.md); backups, integrity checks and rollback remain technical gates.

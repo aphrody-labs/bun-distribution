@@ -27,7 +27,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | architecture | [discord](architecture/discord/) | 4 | [Architecture Discord](architecture\discord\README.md) |
 | architecture | [interop](architecture/interop/) | 1 | - |
 | architecture | [os](architecture/os/) | 4 | - |
-| architecture | [runtime-native](architecture/runtime-native/) | 6 | [Frontière runtime Yolo / produit Aphrody](architecture\runtime-native\README.md) |
+| architecture | [runtime-native](architecture/runtime-native/) | 4 | [Frontière runtime Yolo / produit Aphrody](architecture\runtime-native\README.md) |
 | architecture | [shell](architecture/shell/) | 1 | [Shell and terminal layers](architecture\shell\README.md) |
 | architecture | [web](architecture/web/) | 2 | - |
 | architecture | [workspace](architecture/workspace/) | 4 | - |
@@ -56,7 +56,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | operations | [os](operations/os/) | 1 | - |
 | operations | [release](operations/release/) | 1 | - |
 | operations | [web](operations/web/) | 3 | - |
-| operations | [workspace](operations/workspace/) | 9 | - |
+| operations | [workspace](operations/workspace/) | 12 | - |
 | plans | [agent-home-pipeline](plans/agent-home-pipeline/) | 1 | [Agent home, one database, one pipeline, one RAG](plans\agent-home-pipeline\PLAN.md) |
 | plans | [ai](plans/ai/) | 17 | [Delivery plan](plans\ai\PLAN.md) |
 | plans | [compat](plans/compat/) | 1 | [PLAN — aphrody-compat](plans\compat\PLAN.md) |
@@ -87,7 +87,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | products | [shell](products/shell/) | 4 | [Aphrody Shell](products\shell\README.md) |
 | products | [web](products/web/) | 7 | [Aphrody Web](products\web\README.md) |
 | products | [workspace](products/workspace/) | 1 | [Aphrody source workspace](products\workspace\README.md) |
-| reference | [ai](reference/ai/) | 215 | - |
+| reference | [ai](reference/ai/) | 172 | - |
 | reference | [compat](reference/compat/) | 4 | - |
 | reference | [contracts](reference/contracts/) | 2 | - |
 | reference | [discord](reference/discord/) | 41 | - |
@@ -117,4 +117,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | cli (outside the category layout) | [(files)](cli/) | 1 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
 
-Total: 1095 files.
+Total: 1053 files.

@@ -4,6 +4,8 @@
 Every agent, subagent included, starts from the owners below before generic shell. Checked against the
 installed binaries on 2026-10-06; confirm a command with `--help` before scripting it.
 
+Execution context (2026-10-09): develop and build on any qualified native, SSH or Docker host. Select tools, checkout, target and resource limits from the current context. The current owner workstation uses native Windows; its WSL workflow is retired. See [execution context](workspace/windows-native.md). Load the configured Aphrody/Yolo plugins and canonical `aphrody-mcp`.
+
 ## 1. Load the context first
 
 - Skills: `yolo:yolo` (execution), `yolo:bun-doctrine` (Bun), `yolo:code-intel` (navigation),
@@ -28,7 +30,7 @@ installed binaries on 2026-10-06; confirm a command with `--help` before scripti
 | AST and tokens of one file | `yolo parse <file> --json` |
 | Bun gates | `bun run bun:check`, `typecheck`, `lint`, `format:check`, `test` (root `package.json`) |
 | Declared quality stages | `aphrody infra quality <stage> --repo aphrody --run`, `aphrody infra pipeline`, `aphrody infra workflow <stage>` |
-| Cargo from WSL | `bun scripts/build/rust/vps-cargo.ts run -- <cargo args>` (never local heavy Cargo) |
+| Cargo on the selected context | Native scoped gates, qualified Docker or `bun scripts/build/rust/vps-cargo.ts run -- <cargo args>` for an allocated SSH factory; preserve locks and sccache |
 | Cargo in a cloud session | `scripts/build/rust/cargo-serial.sh <cargo args>` |
 | Hosts, services, probes | `aphrody infra ssh exec\|status\|logs`, `aphrody infra service`, `aphrody infra probe`, `yolo host … --host vps\|dbfr` |
 | Factory build of pushed main | `yolo ship` |

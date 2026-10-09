@@ -416,7 +416,7 @@ Kind: json-catalog. 166 tools.
 | `screenshot` | Captures the primary monitor to a BMP file on disk. Returns the absolute file path. Width/height default to the full virtual screen. |
 | `scroll` | Scrolls at the given screen coordinates. axis: 'vertical' \| 'horizontal'. direction: up/down for vertical, left/right for horizontal. wheelTimes is the number of wheel notches (each notch ≈ 3 lines). |
 | `search_files` | Searches a directory tree for files matching a glob pattern. Exclude basenames with glob patterns; excluded directories are not traversed. Hard cap: 10000 results; result is marked truncated when exc… |
-| `search_windows` | Effectue une recherche ultra-rapide sur le disque via l'indexeur natif Windows Search. |
+| `search_windows` | Effectue une recherche sur le disque via l'indexeur natif Windows Search. |
 | `send_notification` | Displays a Windows tray balloon notification with title and message. Note: balloon tips replace classic Win32 toasts; modern WinRT toast (requires WindowsAppSDK projection) is not yet wired up. |
 | `set_active_power_plan` | Activates a Windows power plan by GUID. Common GUIDs: 381b4222-f694-41f0-9685-ff5bb260df2e (Balanced), 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c (High performance), a1841308-3541-4fab-bc81-f71556f20b4a (P… |
 | `set_clipboard_text` | Writes UTF-16 text to the Windows clipboard. |

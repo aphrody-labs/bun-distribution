@@ -18,8 +18,8 @@ disponibles déterminent les opérations permises.
   avec les versions des manifests et locks. Les scripts
   `scripts/dev/bootstrap.sh` et `scripts/dev/bootstrap.ps1` sont les propriétaires
   de l'environnement source ; inspecte leur comportement avant exécution.
-  Sous WSL, toute compilation lourde, y compris un outil manquant, passe par
-  l'usine VPS et ses verrous. Privilégie les binaires précompilés.
+  Choisis l'hôte de compilation selon le contexte, la cible et ses ressources :
+  natif, Docker ou fabrique SSH qualifiée avec ses verrous. Privilégie les binaires précompilés.
 - Initialise le sous-module `plugins` si nécessaire. Charge uniquement les
   compétences Aphrody/Yolo de ce checkout. Installe le skill Docker fourni
   dans `plugins/yolo/skills/docker` avec le gestionnaire existant.

@@ -1,6 +1,9 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Inventory: `py/` against the rest of the Aphrody monorepo
 
+> Contexte courant (2026-10-09) : développement et builds selon l'hôte, la cible et les ressources disponibles ; aucun produit n'est réservé à un poste. Voir le [contexte](../../operations/workspace/windows-native.md).
+
+
 Date: 2026-10-05. Scope: the 399 tracked files under `py/` against every other tracked
 file of the repository. Owner directive: `py/` is fused into Aphrody (the former rule that
 Python keeps its own repository and store is lifted for `py/`); see [PLAN.md](PLAN.md).

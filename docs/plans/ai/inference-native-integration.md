@@ -1,6 +1,9 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Inférence native — plan propriétaire
 
+> Contexte courant (2026-10-09) : développement et builds selon l'hôte, la cible et les ressources disponibles ; aucun produit n'est réservé à un poste. Voir le [contexte](../../operations/workspace/windows-native.md).
+
+
 Décisions communes : [plan AI](native-integration-master.md).
 Inventaire initial : 2026-10-01 ; état courant à qualifier par lot.
 Aucune parité live Ollama/vLLM/mistral.rs déduite des sources.

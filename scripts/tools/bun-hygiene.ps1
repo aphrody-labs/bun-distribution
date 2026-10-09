@@ -35,5 +35,5 @@ if ($cache -and (Test-Path $cache)) {
   $gb = (Get-ChildItem $cache -Recurse -File -ea 0 | Measure-Object Length -Sum).Sum / 1GB; "cache $cache {0:N1}GB" -f $gb
   if ($gb -gt 5) { Get-ChildItem $cache -Directory | Where-Object LastAccessTime -lt (Get-Date).AddDays(-30) | Remove-Item -Recurse -Force -ea 0; 'pruned entries unused for 30 days' }
 }
-'lockfile verify skipped (no checkout on Windows; WSL/factory own it)'
+'lockfile verification belongs to the selected checkout gates; hygiene does not install workspace dependencies'
 Stop-Transcript | Out-Null

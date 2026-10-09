@@ -1,6 +1,9 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # `vu`: the Aphrody Python runtime
 
+> Contexte courant (2026-10-09) : développement et builds selon l'hôte, la cible et les ressources disponibles ; aucun produit n'est réservé à un poste. Voir le [contexte](../../operations/workspace/windows-native.md).
+
+
 > Path reconciliation (2026-10-07): `crates/interop/python-ffi` (not in repo) → `crates/interop/ffi/src/python_ffi.rs`. Original dated observations below retain their historical scope.
 
 Date: 2026-10-05. Status: forks created and pinned, private repository `aphrody-labs/vu` created, every decision settled

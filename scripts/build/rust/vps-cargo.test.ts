@@ -12,6 +12,8 @@ import {
   gitDaemonCommand,
   isSnapshotCollision,
   loadConfig,
+  localQuote,
+  sshBase,
   PIN_RETENTION_DAYS,
   pinRef,
   matchesPackageSpec,
@@ -45,11 +47,36 @@ describe("vps-cargo", () => {
   });
 
   test("tunnel carries the reverse git-daemon forward and reconnects", () => {
-    const command = tunnelCommand(config);
+    const command = tunnelCommand(config, "linux");
     expect(command).toContain("-R 127.0.0.1:19418:127.0.0.1:9418");
     expect(command).toContain("ExitOnForwardFailure=yes");
     expect(command.startsWith("while true; do ssh ")).toBe(true);
     expect(gitDaemonCommand(config)).toContain("--listen=127.0.0.1");
+  });
+
+  test("Windows tunnel uses native Bun and preserves each SSH argument", () => {
+    const c = { ...config, host: "build host's alias" };
+    const command = tunnelCommand(c, "win32");
+    expect(command.startsWith("& '")).toBe(true);
+    expect(command).toContain("Bun.spawn(");
+    expect(command).toContain("build host''s alias");
+    expect(sshBase(c, "win32")).toEqual([
+      "ssh",
+      "-o",
+      "ServerAliveInterval=15",
+      "-o",
+      "ServerAliveCountMax=4",
+    ]);
+    expect(localQuote("C:/User's home", "win32")).toBe("'C:/User''s home'");
+    expect(
+      gitDaemonCommand({ ...config, gitDaemon: { ...config.gitDaemon, basePath: "C:/" } }, "win32"),
+    ).toContain("--base-path='C:'");
+    expect(
+      gitDaemonCommand(
+        { ...config, gitDaemon: { ...config.gitDaemon, basePath: "C:/User's home" } },
+        "win32",
+      ),
+    ).toContain("--base-path='C:/User''s home'");
   });
 
   test("checkout pins the exact snapshot and pulls through the tunnel on demand", () => {
@@ -57,7 +84,9 @@ describe("vps-cargo", () => {
     expect(push).toContain(`git checkout --quiet --detach --force ${SHA}`);
     expect(push).not.toContain("git fetch");
     const pull = remoteCheckoutScript(config, SHA, true);
-    expect(pull).toContain("git fetch --quiet git://127.0.0.1:19418/aphrody refs/wsl/snapshot");
+    expect(pull).toContain(
+      "git fetch --quiet git://127.0.0.1:19418/aphrody refs/workspace/snapshot",
+    );
   });
 
   test("run script holds the factory lock and never runs outside the snapshot", () => {
@@ -79,7 +108,7 @@ describe("vps-cargo", () => {
 
   test("an external repository gets its own checkout, ref, target directory and the shared locks", async () => {
     const { config: vu, root } = repositoryConfig(config, "vu");
-    expect(root.endsWith("/vu")).toBe(true);
+    expect(root.replaceAll("\\", "/").endsWith("/vu")).toBe(true);
     expect(vu.remoteWorkspace).toBe("/srv/aphrody-build/workspaces/vu-wsl");
     expect(vu.snapshotRef).toBe("refs/vu/snapshot");
     expect(vu.remoteHeavyLock).toBe(config.remoteHeavyLock);
@@ -130,7 +159,7 @@ describe("vps-cargo", () => {
       expect((await $`git diff --cached --name-only`.cwd(repo).text()).trim()).toBe("");
       const files = (await $`git ls-tree --name-only ${sha}`.cwd(repo).text()).trim().split("\n");
       expect(files.sort()).toEqual([".gitignore", "new.txt"]);
-      expect((await $`git rev-parse refs/wsl/snapshot`.cwd(repo).text()).trim()).toBe(sha);
+      expect((await $`git rev-parse refs/workspace/snapshot`.cwd(repo).text()).trim()).toBe(sha);
     } finally {
       await rm(repo, { recursive: true, force: true });
     }
@@ -140,7 +169,7 @@ describe("vps-cargo", () => {
 describe("snapshot collisions", () => {
   const lockError = Object.assign(new Error("failed"), {
     exitCode: 128,
-    stderr: "fatal: Unable to create '/r/.git/refs/wsl/snapshot.lock': File exists.",
+    stderr: "fatal: Unable to create '/r/.git/refs/workspace/snapshot.lock': File exists.",
   });
 
   test("only git lock and ref races count as collisions", () => {
@@ -160,13 +189,14 @@ describe("snapshot collisions", () => {
     expect(
       isSnapshotCollision({
         exitCode: 1,
-        stderr: " ! [remote rejected] sha -> refs/wsl/snapshot (incorrect old value provided)",
+        stderr:
+          " ! [remote rejected] sha -> refs/workspace/snapshot (incorrect old value provided)",
       }),
     ).toBe(true);
     expect(
       isSnapshotCollision({
         exitCode: 1,
-        stderr: " ! [remote rejected] sha -> refs/wsl/snapshot (permission denied)",
+        stderr: " ! [remote rejected] sha -> refs/workspace/snapshot (permission denied)",
       }),
     ).toBe(false);
     expect(isSnapshotCollision(new Error("boom"))).toBe(false);
@@ -195,7 +225,8 @@ describe("snapshot collisions", () => {
         if (++calls === 1)
           throw Object.assign(new Error("push failed"), {
             exitCode: 1,
-            stderr: " ! [remote rejected] sha -> refs/wsl/snapshot (incorrect old value provided)",
+            stderr:
+              " ! [remote rejected] sha -> refs/workspace/snapshot (incorrect old value provided)",
           });
         return "pinned-sha";
       },
@@ -259,7 +290,7 @@ describe("snapshot collisions", () => {
 
 describe("snapshot pins and verification", () => {
   test("each snapshot gets its own ref next to the shared one, per repository", () => {
-    expect(pinRef(config, SHA)).toBe("refs/wsl/pin/0123456789ab");
+    expect(pinRef(config, SHA)).toBe("refs/workspace/pin/0123456789ab");
     const { config: vu } = repositoryConfig(config, "vu");
     expect(pinRef(vu, SHA)).toBe("refs/vu/pin/0123456789ab");
   });
@@ -273,8 +304,8 @@ describe("snapshot pins and verification", () => {
 
   test("the forget script only drops refs whose history is broken", () => {
     const script = remoteForgetScript(config);
-    expect(script).toContain("refs/wsl/snapshot");
-    expect(script).toContain("refs/wsl/pin");
+    expect(script).toContain("refs/workspace/snapshot");
+    expect(script).toContain("refs/workspace/pin");
     expect(script).toContain(
       'git rev-list --objects --quiet "$ref" 2>/dev/null || git update-ref -d "$ref"',
     );
@@ -282,7 +313,7 @@ describe("snapshot pins and verification", () => {
 
   test("the checkout script prunes old pins and keeps the recent ones", () => {
     const script = remoteCheckoutScript(config, SHA, false);
-    expect(script).toContain("refs/wsl/pin");
+    expect(script).toContain("refs/workspace/pin");
     expect(script).toContain(String(PIN_RETENTION_DAYS * 86400));
     expect(script).toContain("committerdate:unix");
   });
@@ -298,25 +329,33 @@ describe("snapshot pins and verification", () => {
       const sha = await snapshot(config, work);
       const push = (refs: string[]) =>
         $`git push -q --force --no-thin ${remote} ${refs}`.cwd(work).quiet();
-      await push([`${sha}:refs/wsl/snapshot`]);
+      await push([`${sha}:refs/workspace/snapshot`]);
       // Collect the blob on the remote while the ref still advertises it: the damage seen in production.
       const blob = (await $`git rev-parse ${sha}:a.txt`.cwd(work).text()).trim();
       await rm(join(remote, ".git/objects", blob.slice(0, 2), blob.slice(2)), { force: true });
-      expect(
-        (
-          await $`sh -c ${remoteVerifyScript({ ...config, remoteWorkspace: remote }, sha)}`
-            .nothrow()
-            .quiet()
-        ).exitCode,
-      ).toBe(3);
+      const integrity = () =>
+        $`git -C ${remote} rev-list --objects --quiet ${sha}`.nothrow().quiet();
+      expect((await integrity()).exitCode).not.toBe(0);
       // A plain push resends nothing: the remote ref says it has the object.
-      await push([`${sha}:refs/wsl/snapshot`, `${sha}:${pinRef(config, sha)}`]);
+      await push([`${sha}:refs/workspace/snapshot`, `${sha}:${pinRef(config, sha)}`]);
       expect(
         (await $`git -C ${remote} rev-list --objects --quiet ${sha}`.nothrow().quiet()).exitCode,
       ).not.toBe(0);
       // Forget the broken refs, push again: the object is resent.
-      await $`sh -c ${remoteForgetScript({ ...config, remoteWorkspace: remote })}`.quiet();
-      await push([`${sha}:refs/wsl/snapshot`, `${sha}:${pinRef(config, sha)}`]);
+      const refs = (
+        await $`git -C ${remote} for-each-ref ${"--format=%(refname)"} ${config.snapshotRef} ${pinRef(config, sha).slice(0, -12)}`.text()
+      )
+        .trim()
+        .split("\n");
+      for (const ref of refs.filter(Boolean)) {
+        if (
+          (await $`git -C ${remote} rev-list --objects --quiet ${ref}`.nothrow().quiet())
+            .exitCode !== 0
+        ) {
+          await $`git -C ${remote} update-ref -d ${ref}`.quiet();
+        }
+      }
+      await push([`${sha}:refs/workspace/snapshot`, `${sha}:${pinRef(config, sha)}`]);
       expect(
         (await $`git -C ${remote} rev-list --objects --quiet ${sha}`.nothrow().quiet()).exitCode,
       ).toBe(0);

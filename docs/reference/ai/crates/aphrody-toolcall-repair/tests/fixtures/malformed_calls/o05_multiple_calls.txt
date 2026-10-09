@@ -1,1 +1,0 @@
-{"tool_calls": [{"type": "function", "function": {"name": "a", "arguments": {}}}, {"type": "function", "function": {"name": "b", "arguments": {"x": 1}}}]}

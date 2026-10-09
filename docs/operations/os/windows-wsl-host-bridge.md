@@ -1,5 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Native Windows–WSL host bridge
+# Native Windows host bridge and optional Linux guests
+
+> Current context (2026-10-09): development and builds follow the selected host. The Windows installer creates native services only and retires its old WSL boot task on upgrade. Guest transport observations below are historical WSL qualification, not proof of Docker/other guest support. Existing authentication principals are preserved.
 
 The Windows host service runs as LocalSystem, the Linux privileged helper as root,
 and the desktop companion as the signed-in Windows user. The user's Linux kernel
@@ -17,24 +19,24 @@ cargo build -p aphrody-kernel --bin aphrody-kernel --bin aphrody-host-service --
 cargo build -p aphrody-kernel --no-default-features --target x86_64-pc-windows-gnu --bin aphrody-host-service --locked
 ```
 
-MSVC is also supported. With the workstation's MSVC wrapper, compiler detection
-currently requires a deliberate per-command `RUSTC_WRAPPER=` opt-out from sccache.
-The deployed Windows artifact in the initial verification was the GNU build.
+MSVC is also supported through `scripts/dev/windows-cargo.ps1`. Preserve the
+configured sccache wrapper; any opt-out requires a demonstrated compiler issue
+and a recorded reason. The initial historical artifact was the GNU build.
 
 Stage the Windows executable and `scripts/release/install-host-bridge.ps1` in a
 Windows administrator-owned directory. Run elevated PowerShell:
 
 ```powershell
-.\install-host-bridge.ps1 -Binary C:\ProgramData\Aphrody\HostStaging\aphrody-host-service.exe -Distribution Ubuntu-24.04
+.\install-host-bridge.ps1 -Binary C:\ProgramData\Aphrody\HostStaging\aphrody-host-service.exe
 ```
 
 The installer puts binaries, private authentication and boot configuration under
 `C:\ProgramData\Aphrody\Host`, restricted to SYSTEM, administrators and the owner.
 It registers the two Hyper-V service GUIDs for ports 47651 and 47652, creates the
 automatic `AphrodyHost` SCM service with restart recovery, the interactive
-`AphrodyDesktopBridge` logon task, and the owner's `AphrodyWslBoot` S4U startup task.
-The boot script runs `wsl --exec /bin/sleep infinity` to retain the guest lifetime.
-WSL rejects LocalSystem as a distribution owner; the separate owner task is required.
+`AphrodyDesktopBridge` logon task. WSL is not started or required by installation.
+
+The following Linux guest setup is optional and retains its historical scope.
 
 With `/etc/wsl.conf` configured for `systemd=true`, run as the Linux owner:
 

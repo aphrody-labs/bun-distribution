@@ -31,7 +31,7 @@ Supprimer la dépendance externe à l'environnement Bun/Zig/Chromium de BXC en t
 | **Archives Web & Wayback** | `archive/`, `cli/archive.ts` | `crates/ai/mcp/src/public_web_tools.rs` | ✅ Porté : Outils natifs Rust `aphrody_archive_wayback`. |
 | **Enregistreur HAR** | `cli/har.ts` | `obscura-net::har` | ✅ Porté : Structures RFC HAR 1.2, export et `from_exchange` en Rust pur. |
 | **CAPTCHA Solving** | `captcha/` (CapSolver, 2Captcha, Turnstile) | `web-service` | In-process native browser automation via `aphrody_web_service`. |
-| **Twitter / X & Grok** | `cli/x.ts`, `cli/grok.ts` | `packages/ai/xai`, `crates/web/x` | ✅ Porté : Module Rust `x` et client cookie natif. |
+| **Twitter / X & Grok** | `cli/x.ts`, `cli/grok.ts` | `crates/web/x` ; ancien `packages/ai/xai` (not in repo) | Module Rust `x` et client cookie natif ; le SDK TypeScript a été retiré le 2026-10-09. |
 | **Frames Indexing** | `cli/frames.ts` (MPEG-7 ColorLayout) | `crates/web/web-frames` | ✅ Porté : Vecteurs MPEG-7 natifs et indexation frames Rust. |
 
 ---

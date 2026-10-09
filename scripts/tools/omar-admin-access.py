@@ -7,7 +7,9 @@ Discord users outside the guild are reported rather than granted by inference.
 
 import argparse
 import json
+import os
 import shlex
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -24,6 +26,8 @@ def main():
     root = Path(__file__).resolve().parents[2]
     policy = json.loads((root / "tools/config/host/omar-admin.json").read_text())
     discord = policy["discord"]
+    if args.apply:
+        parser.error("DBFR administrator policy requires a verified DBFR guild mapping; no organization-wide Discord grant is authorized")
     remote = """
 import json,urllib.request,urllib.error
 policy=json.loads(POLICY)
@@ -87,7 +91,7 @@ print(json.dumps({"apply":apply,"guildId":guild,"roleId":role["id"] if role else
         ["python3", "-c", remote]
         if args.local
         else [
-            str(Path.home() / ".local/bin/aphrody"),
+            os.environ.get("APHRODY_BIN") or shutil.which("aphrody") or "aphrody",
             "infra",
             "ssh",
             "exec",

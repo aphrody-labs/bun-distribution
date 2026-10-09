@@ -1,3 +1,0 @@
-<tool_call><function=configure><parameter=options>
-{"verbose": true, "level": 2}
-</parameter></function></tool_call>

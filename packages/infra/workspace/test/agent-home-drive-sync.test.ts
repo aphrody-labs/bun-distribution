@@ -3,9 +3,43 @@ import { expect, test } from "bun:test";
 import {
   counters,
   nativeAgentReport,
+  resolveSyncContext,
   syncPass,
   type SyncConfig,
 } from "../src/agent-home-drive-sync.ts";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+
+test("local sync paths follow the selected context without rewriting remote stores", () => {
+  const cwd = join(tmpdir(), "selected-checkout");
+  const home = join(tmpdir(), "selected-owner");
+  const resolved = resolveSyncContext(
+    {
+      ...config,
+      root: ".",
+      receiptRoot: "~/.aphrody/automation",
+      drive: { ...config.drive, home: "~/.aphrody/workspaces/dbfr" },
+    },
+    cwd,
+    home,
+  );
+  expect(resolved.root).toBe(cwd);
+  expect(resolved.receiptRoot).toBe(join(home, ".aphrody", "automation"));
+  expect(resolved.drive.home).toBe(join(home, ".aphrody", "workspaces", "dbfr"));
+  expect(resolved.publication).toEqual(config.publication);
+  expect(resolved.aphrody).toBe("aphrody");
+  const replica = {
+    incoming: "~/incoming",
+    contract: "~/contract.json",
+    directory: "/remote",
+    stateRoot: "/state",
+    shenronRoot: "/shenron",
+    intervalSeconds: 300,
+  };
+  expect(resolveSyncContext({ ...config, replica }, cwd, home).replica?.contract).toBe(
+    join(home, "contract.json"),
+  );
+});
 const config: SyncConfig = {
   version: 1,
   root: "/repo",

@@ -16,7 +16,7 @@ import { googleApi } from "../../../packages/google/google/src/api.ts";
 
 const home = homedir();
 const store = join(home, ".aphrody/private/container-vault");
-const cli = "/home/aphro/.local/bin/aphrody";
+const cli = process.env["APHRODY_BIN"] ?? Bun.which("aphrody") ?? "aphrody";
 const repo = "aphrody-labs/aphrody";
 const vaultPath = join(store, "vault.enc.json");
 const keyPath = join(store, "master.key");
@@ -42,7 +42,7 @@ if str(h)=='/root':
  explicit+=list(h.glob('.shenron*.env'))
  explicit += [h/'.config/gh/hosts.yml',h/'.npmrc',h/'.netrc']
 if os.environ.get('APHRODY_VAULT_LOCAL')=='1':
- explicit += [pathlib.Path('/home/aphro/aphrody/.env')]
+ explicit += [pathlib.Path(os.environ.get('APHRODY_WORKSPACE',os.getcwd()))/'.env']
 paths=set(explicit)
 for root in roots:
  if not root.exists(): continue

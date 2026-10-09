@@ -6,6 +6,17 @@ work in progress; shared with Shenron).
 
 ## Authority and scope
 
+Development and builds are context-dependent: native Windows, Linux, macOS,
+SSH factories and Docker may be used when their target, tools, resources and
+permissions qualify. The current owner workstation is native Windows; WSL is
+retired from that workstation's development workflow. Paths and host defaults
+are deployment context, not product constraints. See
+[execution context](docs/operations/workspace/windows-native.md).
+Yoyo (aphrody-dev) administers all Aphrody Labs; Omar administers DBFR.
+Do not infer broader privileges from connectivity or a historical report.
+Use the configured Aphrody home, plugins and canonical aphrody-mcp; preserve
+provider authentication and raw histories in their protected stores.
+
 Read [PLAN.md](PLAN.md) and [MEMORY.md](MEMORY.md). PLAN owns the active
 architecture and queue; MEMORY owns dated evidence. Aphrody owns products and
 Rust/Bun capabilities; Yolo produces the precompiled runtime/SDK. IECODE retains its
@@ -17,8 +28,7 @@ Product positioning (owner directive of 2026-10-06): the runtimes (the Bun fork,
 the real Aphrody products. Aphrody AI is a backend serving the apps; M3 and app-ui are
 frameworks, not products. Prioritise, document and release accordingly.
 
-Bun is our fork [aphrody-labs/bun](docs/reference/upstream-bun/APHRODY-FORK.md) (checkout `C:\bun` or
-`APHRODY_BUN_CHECKOUT`): every Bun change (runtime, built-ins, types, bundler, package manager) lands there as a
+Bun is our fork [aphrody-labs/bun](docs/reference/upstream-bun/APHRODY-FORK.md) (checkout selected by `APHRODY_BUN_CHECKOUT` or the current workspace): every Bun change (runtime, built-ins, types, bundler, package manager) lands there as a
 commit with its test, never as a patch, vendored tree or Rust copy in Aphrody. The only copy of the Bun docs is
 `docs/reference/upstream-bun` (`bun run docs:bun:update|check`); answer Bun API questions from it or the MCP
 `bun_docs_*` tools.
@@ -91,7 +101,7 @@ capability owners where they exist: the Aphrody MCP tools, the single Rust CLI `
 `aphrody infra`, `aphrody ovh`, `aphrody kernel`… ; former names such as `aphrody-infra` are links), the
 Bun CLI `yolo` (`yolo ops`, `yolo workspace`, `yolo update`…) and Bun. Python stays product code under
 `py/`, run through `uv`. Call the binaries on PATH directly (oxlint, oxfmt, tsc). Remote hosts go through
-`aphrody infra ssh` or the MCP `infra_exec`; the `vps-cargo` tunnel is the SSH master for remote Cargo from WSL.
+`aphrody infra ssh` or the MCP `infra_exec`; `vps-cargo` transports the native worktree to the SSH build host.
 Subagents follow the same owners: [agent tooling brief](docs/operations/agent-tooling.md) (skills, MCP tools,
 `aphrody`/`yolo` commands).
 
@@ -122,11 +132,12 @@ Observed limits (2026-10-05): 4 CPU, 15 GB RAM, about 30 GB disk, so scoped `-p 
 engine (V8, Tauri, WebKit) builds go to the VPS factory. The cloud and the local sessions exchange state through
 [the cloud sync journal](docs/operations/cloud/CLOUD-SYNC.md).
 
-A local WSL session does not run heavy Cargo itself (it crashes WSL): it runs
-`bun scripts/build/rust/vps-cargo.ts run -- <cargo args>` (exact WSL worktree built on the VPS under the
-factory locks, tmux sessions `vps-tunnel`/`vps-cargo`, `fetch` for artifacts) or the factory for pushed
-main revisions, with global sccache. Serialize Rust gates on a shared host; `APHRODY_CARGO_JOBS=1..6`
-tunes within the guard.
+Select scoped Cargo gates for the actual host and target. Native Windows can use
+`scripts/dev/windows-cargo.ps1`; SSH factories use
+`bun scripts/build/rust/vps-cargo.ts run -- <cargo args>` with a context configuration.
+Docker and other qualified native hosts are valid build contexts. Honor factory
+locks, resource limits and shared sccache; deployment hosts require their own
+declared build allocation before receiving build jobs.
 
 Bun/TS: scoped oxlint/oxfmt, TypeScript and meaningful Bun tests.
 Rust: scoped check/test/strict Clippy. Docs: content/links, integrity, whitespace

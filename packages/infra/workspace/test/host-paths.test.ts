@@ -39,7 +39,7 @@ test("rewrites make prose, records and data location-independent, never code", (
   expect(rewriteHostPaths(text, "docs")).toBe(
     [
       "Run from `<repo>` then open docs/x.md.",
-      '{"imagePath":"apps/shenron/site/public/a.jpg","bot":"apps/shenron/bot/x"}',
+      '{"imagePath":"~/shenron/apps/site/public/a.jpg","bot":"~/shenron/apps/shenron/bot/x"}',
       "Sibling ../yolo/PLAN.md, cache ~/.cache/x, windows %USERPROFILE%\\x",
     ].join("\n"),
   );
@@ -47,6 +47,9 @@ test("rewrites make prose, records and data location-independent, never code", (
 });
 
 test("areas separate runtime sources from prose, records and data", () => {
+  expect(hostPathArea("tools/config/host/vps-cargo.json")).toBe("host");
+  expect(hostPathArea("tools/config/host/systemd/aphrody/x.service")).toBe("host");
+  expect(hostPathArea("tools/config/production-topology.json")).toBe("config");
   expect(hostPathArea("scripts/a.sh")).toBe("code");
   expect(hostPathArea("config/infra/hosts.json")).toBe("host");
   expect(hostPathArea("crates/os/x/src/tests.rs")).toBe("test");

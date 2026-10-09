@@ -1,5 +1,0 @@
-I'll read that file for you.
-
-<tool_call>
-{"name": "read_file", "arguments": {"path": "src/main.rs"}}
-</tool_call>

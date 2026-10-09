@@ -1,5 +1,0 @@
-<tool_call><function=create_file><parameter=path>
-C:\data\output.txt
-</parameter><parameter=content>
-done
-</parameter></function></tool_call>

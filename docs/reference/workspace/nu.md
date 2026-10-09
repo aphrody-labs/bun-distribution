@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Nushell sur Aphrody
 
+> Configuration historique du poste WSL ; ce guide ne prescrit plus le shell de développement. Le [workflow Windows natif](../../operations/workspace/windows-native.md) du 2026-10-09 fait autorité.
+
 Ce document décrit la configuration Nushell du poste WSL Aphrody, les extensions
 activées, les commandes utiles pour l’administrer et les limites constatées le
 28 septembre 2026. Les fichiers de configuration personnels restent dans

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 [Unit]
-Description=Reconcile owner-authorized Omar Discord administrator access
+Description=Observe declared DBFR administrator access without changing grants
 After=network-online.target
 Wants=network-online.target
 
@@ -9,7 +9,7 @@ Type=oneshot
 User=ubuntu
 Group=ubuntu
 WorkingDirectory=/srv/aphrody-admin
-ExecStart=/usr/bin/python3 /srv/aphrody-admin/scripts/tools/omar-admin-access.py --local --apply
+ExecStart=/usr/bin/python3 /srv/aphrody-admin/scripts/tools/omar-admin-access.py --local
 TimeoutStartSec=90
 NoNewPrivileges=true
 ProtectSystem=strict
