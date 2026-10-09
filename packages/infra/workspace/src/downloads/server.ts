@@ -13,10 +13,15 @@
  * `<root>` is the `current` symlink that scripts/release/publish-downloads.ts flips atomically.
  * Environment: DOWNLOADS_ROOT (default APHRODY_HOME/downloads/current), DOWNLOADS_PORT or PORT (8797),
  * DOWNLOADS_HOST (127.0.0.1).
+ *
+ * Site hosts (SITE_HOSTS, default aphrody.com and www.aphrody.com) are served first from the static tree
+ * SITE_ROOT (default <root>/../site/current): the Bun fork site published by aphrody-labs/bun
+ * scripts/aphrody/site/publish.ts. Paths missing from it fall back to the download routes above.
+ * Deployed alone as /srv/aphrody-downloads/app/server.ts: no relative imports.
  */
-import { realpathSync, statSync } from "node:fs";
-import { basename, dirname, join, resolve, sep } from "node:path";
-import { statePath } from "../paths";
+import { existsSync, realpathSync, statSync } from "node:fs";
+import { homedir } from "node:os";
+import { basename, dirname, extname, join, resolve, sep } from "node:path";
 
 /** Resolve a deployment without assuming a VPS layout or a fixed ingress port. */
 export function serverOptions(env: Record<string, string | undefined> = process.env) {
@@ -24,7 +29,10 @@ export function serverOptions(env: Record<string, string | undefined> = process.
   if (!/^\d{1,5}$/.test(value) || Number(value) > 65535)
     throw new Error("DOWNLOADS_PORT/PORT must be an integer from 0 to 65535");
   return {
-    root: resolve(env.DOWNLOADS_ROOT?.trim() || statePath("downloads", "current")),
+    root: resolve(
+      env.DOWNLOADS_ROOT?.trim() ||
+        join(env.APHRODY_HOME?.trim() || join(homedir(), ".aphrody"), "downloads", "current"),
+    ),
     port: Number(value),
     hostname: env.DOWNLOADS_HOST?.trim() || env.HOST?.trim() || "127.0.0.1",
   };
@@ -226,8 +234,136 @@ async function readManifest(root: string): Promise<Manifest | null> {
   }
 }
 
-export function createHandler(rootInput: string): (request: Request) => Promise<Response> {
-  const root = resolve(rootInput);
+export interface SiteOptions {
+  root: string;
+  hosts: Set<string>;
+}
+
+export function siteOptions(
+  downloadsRoot: string,
+  env: Record<string, string | undefined> = process.env,
+): SiteOptions {
+  return {
+    root: resolve(
+      env.SITE_ROOT?.trim() || join(dirname(resolve(downloadsRoot)), "site", "current"),
+    ),
+    hosts: new Set(
+      (env.SITE_HOSTS ?? "aphrody.com,www.aphrody.com")
+        .split(",")
+        .map((h) => h.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  };
+}
+
+const SITE_TYPES: Record<string, string> = {
+  ".html": "text/html; charset=utf-8",
+  ".md": "text/markdown; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8",
+  ".sh": "text/plain; charset=utf-8",
+  ".ps1": "text/plain; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".xml": "application/xml; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".ico": "image/x-icon",
+  ".mp4": "video/mp4",
+  ".woff2": "font/woff2",
+};
+
+const SITE_CSP =
+  "default-src 'self'; img-src 'self' data: https:; media-src 'self' https:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://api.github.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+
+/** `/docs/x` -> `<site>/docs/x`, `<site>/docs/x/index.html` or `<site>/docs/x.html`, contained in the site. */
+export function resolveSiteFile(siteRoot: string, pathname: string): string | null {
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(pathname);
+  } catch {
+    return null;
+  }
+  if (/[\\\0\r\n]/.test(decoded)) return null;
+  const parts = decoded.split("/").filter(Boolean);
+  if (parts.some((p) => p === ".." || p.startsWith("."))) return null;
+  let realRoot: string;
+  try {
+    realRoot = realpathSync(siteRoot);
+  } catch {
+    return null;
+  }
+  const base = join(realRoot, ...parts);
+  const candidates = parts.length
+    ? [base, join(base, "index.html"), `${base}.html`]
+    : [join(realRoot, "index.html")];
+  for (const candidate of candidates) {
+    try {
+      const real = realpathSync(candidate);
+      if (real.startsWith(realRoot + sep) && statSync(real).isFile()) return real;
+    } catch {}
+  }
+  return null;
+}
+
+function siteResponse(request: Request, file: string, status = 200): Response {
+  const ext = extname(file);
+  const type =
+    SITE_TYPES[ext] ??
+    (basename(file) === "install" ? "text/plain; charset=utf-8" : "application/octet-stream");
+  const cache = /^(\.(html|md|txt|json|xml|sh|ps1))?$/.test(ext)
+    ? "public, max-age=300"
+    : ext === ".css" || ext === ".js"
+      ? "public, max-age=3600"
+      : "public, max-age=86400";
+  const headers = withHeaders({
+    "referrer-policy": "strict-origin-when-cross-origin",
+    "content-security-policy": SITE_CSP,
+    "content-type": type,
+    "cache-control": cache,
+    vary: "accept-encoding",
+  });
+  if (ext !== ".html") headers.set("access-control-allow-origin", "*");
+  let body: Blob = Bun.file(file);
+  if (/\bgzip\b/.test(request.headers.get("accept-encoding") ?? "") && existsSync(`${file}.gz`)) {
+    body = Bun.file(`${file}.gz`);
+    headers.set("content-encoding", "gzip");
+  }
+  return new Response(request.method === "HEAD" ? null : body, { status, headers });
+}
+
+export function createHandler(
+  rootInput: string,
+  site?: SiteOptions,
+): (request: Request) => Promise<Response> {
+  const downloads = downloadsHandler(resolve(rootInput));
+  if (!site) return downloads;
+  return async (request) => {
+    const url = new URL(request.url);
+    const { pathname } = url;
+    if (
+      !site.hosts.has(url.hostname.toLowerCase()) ||
+      pathname === "/health" ||
+      pathname === "/healthz" ||
+      (request.method !== "GET" && request.method !== "HEAD")
+    )
+      return downloads(request);
+    const file = resolveSiteFile(site.root, pathname.replace(/(.)\/+$/, "$1"));
+    if (file) return siteResponse(request, file);
+    const response = await downloads(request);
+    if (response.status === 404) {
+      const notFound = resolveSiteFile(site.root, "/404.html");
+      if (notFound) return siteResponse(request, notFound, 404);
+    }
+    return response;
+  };
+}
+
+function downloadsHandler(root: string): (request: Request) => Promise<Response> {
   return async (request) => {
     const url = new URL(request.url);
     if (request.method !== "GET" && request.method !== "HEAD") {
@@ -335,7 +471,7 @@ export function createHandler(rootInput: string): (request: Request) => Promise<
 
 if (import.meta.main) {
   const { root, port, hostname } = serverOptions();
-  const handler = createHandler(root);
+  const handler = createHandler(root, siteOptions(root));
   const server = Bun.serve({ port, hostname, idleTimeout: 120, fetch: handler });
   console.log(
     `aphrody-downloads listening on http://${server.hostname}:${server.port} (root ${root})`,

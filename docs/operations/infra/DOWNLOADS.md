@@ -10,7 +10,8 @@ existing repositories.
 
 | Path | Content | Auth |
 | --- | --- | --- |
-| `https://downloads.aphrody.com/` (also `https://aphrody.com/`, `https://www.aphrody.com/`) | index page | none, by design |
+| `https://downloads.aphrody.com/` | index page | none, by design |
+| `https://aphrody.com/`, `https://www.aphrody.com/` | Bun fork site (docs, llms.txt, downloads, benchmarks, `/install`, `/install.ps1`) from `/srv/aphrody-downloads/site/current`; unknown paths fall back to the routes below | none, by design |
 | `/latest.json` | manifest: `name`, `version`, `platform`, `target`, `url`, `sha256`, `size` per artifact | none, by design |
 | `/SHA256SUMS`, `/files/<file>.sha256` | checksums of the current release | none, by design |
 | `/install.sh`, `/install.ps1`, `/install-yolo.sh`, `/install-yolo.ps1` | one-line installers | none, by design |
@@ -20,6 +21,11 @@ existing repositories.
 The site is read-only (GET and HEAD only), serves nothing but published, checksummed release files and exposes no
 write endpoint, so it stays public and unauthenticated like `cdn.aphrody.com`. GitHub release assets of private
 repositories need an authenticated token: the download server is the public path.
+
+The aphrody.com site is a static tree built from aphrody-labs/bun `origin/main` by `scripts/aphrody/site/build.ts` and
+published by `scripts/aphrody/site/publish.ts` (VPS build, tar over `ssh dbfr` into `site/releases/<UTC>-<sha12>`,
+atomic `site/current` flip, last 5 kept; `publish.ts rollback` flips back). The server picks it by `Host`
+(`SITE_HOSTS`, default `aphrody.com,www.aphrody.com`; `SITE_ROOT`, default `<dirname DOWNLOADS_ROOT>/site/current`).
 
 One click on Windows: the « Download Aphrody » button of the index takes the first artifact of kind `desktop`,
 `Aphrody-Setup.exe` (`packages/infra/product`, 2026-10-06). It installs or repairs aphrody, yolo, the desktop app (once

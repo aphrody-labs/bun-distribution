@@ -2,6 +2,8 @@
 # Aphrody download server (downloads.aphrody.com, aphrody.com): read-only Bun.serve over the published
 # release tree. Source: packages/infra/workspace/src/downloads/server.ts (installed as /srv/aphrody-downloads/app/server.ts).
 # Release tree: /srv/aphrody-downloads/releases/<id>, `current` is flipped by scripts/release/publish-downloads.ts.
+# aphrody.com and www.aphrody.com serve the Bun fork site from /srv/aphrody-downloads/site/current (SITE_ROOT, SITE_HOSTS
+# defaults; published by scripts/aphrody/site/publish.ts in aphrody-labs/bun), falling back to the download routes.
 # Port 8797 is loopback only; nginx (nginx/aphrody/downloads.aphrody.com.conf) is the single public entry.
 [Unit]
 Description=Aphrody download server (downloads.aphrody.com)

@@ -2,12 +2,22 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { createHandler, formatSize, renderIndex, resolveFile, serverOptions } from "../../src/downloads/server";
+import { join, resolve } from "node:path";
+import {
+  createHandler,
+  formatSize,
+  renderIndex,
+  resolveFile,
+  resolveSiteFile,
+  serverOptions,
+  siteOptions,
+} from "../../src/downloads/server";
 
 test("cloud ingress and relocated downloads honor configuration and reject invalid ports", () => {
   expect(serverOptions({ DOWNLOADS_ROOT: tmpdir(), PORT: "8080", HOST: "0.0.0.0" })).toEqual({
-    root: tmpdir(), port: 8080, hostname: "0.0.0.0",
+    root: tmpdir(),
+    port: 8080,
+    hostname: "0.0.0.0",
   });
   expect(serverOptions({ DOWNLOADS_PORT: "0", PORT: "8080" }).port).toBe(0);
   for (const PORT of ["-1", "65536", "NaN", "80oops"])
@@ -184,5 +194,80 @@ describe("download server", () => {
       artifacts: [],
     });
     expect(html).not.toContain("<script>x");
+  });
+});
+
+describe("site hosts", () => {
+  let siteBase: string;
+  let site: ReturnType<typeof siteOptions>;
+  beforeAll(() => {
+    siteBase = mkdtempSync(join(tmpdir(), "site-"));
+    const tree = join(siteBase, "releases", "s1");
+    mkdirSync(join(tree, "docs", "runtime"), { recursive: true });
+    writeFileSync(join(tree, "index.html"), "<h1>home</h1>");
+    writeFileSync(join(tree, "404.html"), "<h1>missing</h1>");
+    writeFileSync(join(tree, "install"), "#!/usr/bin/env bash\necho bun\n");
+    writeFileSync(join(tree, "docs", "index.html"), "<h1>docs</h1>");
+    writeFileSync(join(tree, "docs", "runtime", "index.html"), "<h1>runtime</h1>");
+    writeFileSync(join(tree, "docs", "quickstart.html"), "<h1>quickstart</h1>");
+    writeFileSync(join(tree, "docs", "quickstart.md"), "# Quickstart\n");
+    writeFileSync(join(tree, "llms.txt"), "# Bun\n");
+    writeFileSync(join(tree, "llms.txt.gz"), Bun.gzipSync(Buffer.from("# Bun\n")));
+    symlinkSync(join(outside, "secret.txt"), join(tree, "leak.txt"));
+    symlinkSync(tree, join(siteBase, "current"));
+    site = siteOptions(root, { SITE_ROOT: join(siteBase, "current"), SITE_HOSTS: "aphrody.test" });
+  });
+  afterAll(() => rmSync(siteBase, { recursive: true, force: true }));
+
+  const at = (host: string, path: string, init?: RequestInit) =>
+    createHandler(root, site)(new Request(`http://${host}${path}`, init));
+
+  test("defaults next to the download tree", () => {
+    const options = siteOptions("/srv/aphrody-downloads/current", {});
+    expect(options.root).toBe(resolve("/srv/aphrody-downloads/site/current"));
+    expect([...options.hosts]).toEqual(["aphrody.com", "www.aphrody.com"]);
+  });
+
+  test("serves pages, markdown, installers and precompressed text on site hosts", async () => {
+    expect(await (await at("aphrody.test", "/")).text()).toBe("<h1>home</h1>");
+    expect(await (await at("aphrody.test", "/docs")).text()).toBe("<h1>docs</h1>");
+    expect(await (await at("aphrody.test", "/docs/runtime/")).text()).toBe("<h1>runtime</h1>");
+    expect(await (await at("aphrody.test", "/docs/quickstart")).text()).toBe("<h1>quickstart</h1>");
+    const md = await at("aphrody.test", "/docs/quickstart.md");
+    expect(md.headers.get("content-type")).toContain("text/markdown");
+    const install = await at("aphrody.test", "/install");
+    expect(install.headers.get("content-type")).toContain("text/plain");
+    expect(await install.text()).toContain("echo bun");
+    const gz = await at("aphrody.test", "/llms.txt", {
+      headers: { "accept-encoding": "gzip, br" },
+    });
+    expect(gz.headers.get("content-encoding")).toBe("gzip");
+    expect((await at("aphrody.test", "/docs", { method: "HEAD" })).status).toBe(200);
+  });
+
+  test("falls back to downloads, then to the site 404, and keeps other hosts untouched", async () => {
+    expect((await (await at("aphrody.test", "/latest.json")).json()).release.id).toBe("r1");
+    expect(await (await at("aphrody.test", "/files/tool-1.0.0.tar.gz")).text()).toBe(payload);
+    const missing = await at("aphrody.test", "/nope");
+    expect(missing.status).toBe(404);
+    expect(await missing.text()).toBe("<h1>missing</h1>");
+    expect(await (await at("downloads.test", "/")).text()).toContain(
+      "https://example.test/install.sh",
+    );
+    expect((await at("aphrody.test", "/health")).status).toBe(200);
+  });
+
+  test("refuses traversal, hidden paths and symlink escapes", async () => {
+    const paths = [
+      "/..%2f..%2fetc%2fpasswd",
+      "/.git/config",
+      "/leak.txt",
+      "/docs/%5c..%5cindex.html",
+    ];
+    const statuses = await Promise.all(
+      paths.map(async (path) => (await at("aphrody.test", path)).status),
+    );
+    expect(statuses).toEqual([404, 404, 404, 404]);
+    expect(resolveSiteFile(site.root, "/%FF")).toBeNull();
   });
 });
