@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Execute the shared Bun monorepo audit contract from any repository root. */
 import { dirname, join, resolve } from "node:path";
-import { BUN_DOCUMENTS, searchBunDocs } from "./bun-reference.ts";
+import { loadBunDocuments, searchBunDocs } from "./bun-reference.ts";
 
 export const MONOREPO_AUDIT_STEPS = [
   "workspace",
@@ -141,12 +141,12 @@ export async function runMonorepoAudit(args: string[]): Promise<number> {
   const options = parseArgs(args);
   if (options.docs !== undefined) {
     const matches = options.docs
-      ? searchBunDocs(options.docs, 12)
-      : BUN_DOCUMENTS.map(({ title, source, content }) => ({
+      ? await searchBunDocs(options.docs, 12)
+      : (await loadBunDocuments()).map(({ title, source, content }) => ({
           title,
           source,
           score: 0,
-          excerpt: `${content.length} embedded characters`,
+          excerpt: `${content.length} characters`,
         }));
     console.log(JSON.stringify(matches, null, 2));
     return 0;

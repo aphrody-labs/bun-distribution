@@ -118,7 +118,7 @@ consommait ; `next` vient de npm et la compilation passe par `Bun.build`.
 | :------------------------------------- | :--------------------------------------------------- | :----------------------------------------------------------------------------------------------------------- |
 | Imports `runtime:*` à l’exécution      | `Bun.plugin()` et modules virtuels                   | [Preload existant](../../../packages/engine/runtime/src/preload.ts)                                          |
 | Résolution de ces imports au build     | Plugin `Bun.build`                                   | [Adaptateur existant](../../../packages/engine/runtime/src/bundler.ts) ; l’artefact natif reste à distribuer |
-| Transformations natives du code source | Addon N-API `onBeforeParse`, si le besoin correspond | [Contrat Bun épinglé](../../reference/upstream-bun/bundler/plugins.mdx) ; respecter les threads de parsing   |
+| Transformations natives du code source | Addon N-API `onBeforeParse`, si le besoin correspond | [Contrat Bun épinglé](https://github.com/aphrody-labs/bun/blob/main/docs/bundler/plugins.mdx) ; respecter les threads de parsing   |
 | Service natif partagé Rust/Bun/Python  | C ABI versionnée, `bun:ffi` côté Bun                 | [Contrat Yolo](../runtime-native/RUNTIME-ABI.md), ownership et arrêt explicites                              |
 | Accès interne à la VM                  | Patch du fork Bun, build et tests propres            | Registre des builtins                                                                                        |
 

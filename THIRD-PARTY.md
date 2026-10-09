@@ -73,6 +73,6 @@ Build-recipe inputs tracked for provenance (not vendored source):
 | vu-ruff | https://github.com/astral-sh/ruff | 0.16.10 | docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json |
 | vu-pyo3 | https://github.com/PyO3/pyo3 | v0.29.3 | docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json |
 | vu-python-build-standalone | https://github.com/astral-sh/python-build-standalone | 20261003 | docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json |
-| bun | https://github.com/oven-sh/bun | main | docs/reference/upstream-bun; packages/infra/update; aphrody yolo verify (Bun sou |
+| bun | https://github.com/oven-sh/bun | main | docs/reference/upstream-bun (pin and licence); packages/infra/update; aphrody yolo verify (Bun sou |
 | codex | https://github.com/openai/codex | main | crates/ai/app-server; crates/contracts/app-protocol; crates/ai/config; crates/ai |
 

@@ -109,7 +109,7 @@ Pour dbfr/Shenron, le dossier synchronisé Google Drive conserve corpus/poids et
 | `binary_xor_decrypt` | Writes 'decrypted' = encryptedFile XOR repeating-key to outputPath. Key in hex (e.g. 'A5 5A 12' or 'A55A12'). Streams large files. If the encryption is a single-byte XOR, pass one byte. Returns sha256 of result. |
 | `bun_docs_list` | List the aphrody-labs/bun fork docs pages (slug, title, description, url), optionally under a slug prefix such as `runtime/` or `guides/test/`. |
 | `bun_docs_read` | Read one page of the aphrody-labs/bun fork docs as Markdown by slug (`runtime/file-io`) or bun.com/docs URL, optionally only the section under a heading. |
-| `bun_docs_search` | Search the Bun docs of the aphrody-labs/bun fork (checkout APHRODY_BUN_CHECKOUT or mirror docs/reference/upstream-bun): runtime, bundler, package manager, test runner, guides. Returns ranked pages with slug, url and a snippet; set include_content to also return the best page. |
+| `bun_docs_search` | Search the Bun docs of the aphrody-labs/bun fork (checkout APHRODY_BUN_CHECKOUT, else a versioned download of its docs/): runtime, bundler, package manager, test runner, guides. Returns ranked pages with slug, url and a snippet; set include_content to also return the best page. |
 | `bun_node_equivalent` | Bun equivalent of a Node module (`fs`, `node:child_process`), npm package (`dotenv`, `jest`) or Node API, from the n2b registry, with matching Bun docs pages. |
 | `click` | Performs a mouse click at the given screen coordinates. button: 'left' \| 'right' \| 'middle'. clicks: 0 = hover only, 1 = single click, 2 = double click. |
 | `compat_dotnet_exec` | Execute a .NET assembly or application using the dotnet CLI |

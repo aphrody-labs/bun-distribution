@@ -5,7 +5,7 @@
     {
       "repo": "aphrody-labs/bun",
       "parent": "oven-sh/bun",
-      "role": "Bun of Aphrody: runtime releases (npm @aphrody/bun-runtime), @aphrody/bun-types, crates aphrody-bun-*, docs mirrored in docs/reference/upstream-bun",
+      "role": "Bun of Aphrody: runtime releases (npm @aphrody/bun-runtime), @aphrody/bun-types, crates aphrody-bun-*, docs read from the fork checkout, commit pinned in docs/reference/upstream-bun/SOURCE.json",
       "keep": "Carries every Aphrody Bun change as commits on main (thirdparty built-ins, bun:ffi dlopen global, argv0 aliases, @aphrody packages, Next.js layer); upstream merged by the fork's scripts/aphrody/sync-upstream.ts every 6 hours."
     }
   ]

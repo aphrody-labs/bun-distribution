@@ -4,7 +4,7 @@ import { pluginStorePath } from "@aphrody/paths";
  * n2b coverage audit
  *
  * Vérifie que le plugin (agents/skills/commands) et n2b (rules) couvrent
- * toutes les APIs Bun documentées dans `docs/bun/`.
+ * toutes les APIs Bun documentées dans `docs/` du fork aphrody-labs/bun.
  *
  * Usage :
  *   bun scripts/audit/compat/scripts/n2b/coverage-check.ts              # run once, print summary + write report
@@ -12,25 +12,46 @@ import { pluginStorePath } from "@aphrody/paths";
  *   bun scripts/audit/compat/scripts/n2b/coverage-check.ts --strict     # exit 1 si coverage < threshold
  *
  * Env vars :
- *   CLAUDE_PLUGIN_ROOT    plugin root scanned for agents/skills/commands (default: ~/plugins/aphrody)
+ *   CLAUDE_PLUGIN_ROOT    plugin root scanned for agents/skills/commands (default: plugins/aphrody, ~/plugins/aphrody,
+ *                         else the aphrody plugin installed by Claude Code)
+ *   N2B_DOCS_BUN          Bun docs directory (default: resolveBunDocs : APHRODY_BUN_DOCS, checkout du fork,
+ *                         corpus installé, sinon téléchargement versionné au commit épinglé)
  *   N2B_COVERAGE_DIR      report output directory (default: var/audit/n2b-coverage)
  *   COVERAGE_THRESHOLD    % minimum pour --strict (default: 80)
  */
 
 import { Glob } from "bun";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { copyFile, mkdir } from "node:fs/promises";
 import { join, dirname, relative, resolve } from "node:path";
+import { resolveBunDocs } from "../../../../../packages/infra/workspace/src/bun-upstream-docs.ts";
 
 const SCRIPT_DIR = dirname(import.meta.path);
 // scripts/audit/compat/scripts/n2b -> repository root is five levels up.
 const REPO_ROOT = resolve(SCRIPT_DIR, "..", "..", "..", "..", "..");
 const REPO_PLUGIN = join(REPO_ROOT, "plugins/aphrody");
+function installedClaudePlugin(name: string): string | undefined {
+  const registry = join(homedir(), ".claude", "plugins", "installed_plugins.json");
+  if (!existsSync(registry)) return undefined;
+  const { plugins = {} } = JSON.parse(readFileSync(registry, "utf8")) as {
+    plugins?: Record<string, Array<{ installPath?: string }>>;
+  };
+  return Object.entries(plugins)
+    .filter(([key]) => key.startsWith(`${name}@`))
+    .flatMap(([, installs]) => installs.map((install) => install.installPath))
+    .find((path): path is string => !!path && existsSync(path));
+}
 const PLUGIN_ROOT =
   process.env.CLAUDE_PLUGIN_ROOT ??
-  (existsSync(REPO_PLUGIN) ? REPO_PLUGIN : pluginStorePath("aphrody"));
-// Canonical Bun docs mirror (the n2b copy was deduplicated on 2026-10-02).
-const DOCS_BUN = process.env.N2B_DOCS_BUN ?? join(REPO_ROOT, "docs/reference/upstream-bun");
+  [REPO_PLUGIN, pluginStorePath("aphrody")].find((path) => existsSync(path)) ??
+  installedClaudePlugin("aphrody");
+if (!PLUGIN_ROOT || !existsSync(PLUGIN_ROOT))
+  throw new Error(
+    `aphrody plugin not found (CLAUDE_PLUGIN_ROOT, ${REPO_PLUGIN}, ${pluginStorePath("aphrody")}, Claude Code installed plugins)`,
+  );
+// docs/ of the Bun fork, read in place (Aphrody keeps no copy since lot 13 of M-produit).
+const DOCS_BUN = process.env.N2B_DOCS_BUN ?? (await resolveBunDocs()).dir;
 const COVERAGE_DIR = process.env.N2B_COVERAGE_DIR ?? join(REPO_ROOT, "var/audit/n2b-coverage");
 const THRESHOLD = Number(process.env.COVERAGE_THRESHOLD ?? "80");
 

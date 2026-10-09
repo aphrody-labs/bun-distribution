@@ -10,12 +10,8 @@
     },
     {
       "id": "discordjs-discordx",
-      "upstream": "https://github.com/discordjs/discord.js @ 8a22bc3e, https://github.com/discordx-ts/discordx @ 017c6e8c (docs/reference/discord/UPSTREAMS.md)",
-      "include": [
-        "docs/*/discord/apps/**",
-        "docs/*/discord/packages/**",
-        "docs/reference/discord/docs/**"
-      ],
+      "upstream": "https://github.com/discordjs/discord.js @ 8a22bc3e, https://github.com/discordx-ts/discordx @ 017c6e8c",
+      "include": ["docs/*/discord/apps/**", "docs/*/discord/packages/**"],
       "except": ["docs/*/discord/packages/aphrody-messaging/**"]
     },
     {

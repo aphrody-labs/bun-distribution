@@ -1,9 +1,10 @@
 # Bun in Aphrody: the aphrody-labs/bun fork
 
 Canonical Aphrody page about Bun. Every other page that discusses the Bun runtime, its sources, its patches or
-its updates links here. This file is kept by `bun run docs:bun:update`; every other file of this directory is a
-byte copy of `docs/` of the fork (see `SOURCE.json`) and is the only copy of the Bun documentation in Aphrody.
-Verified against the fork checkout on 2026-10-08.
+its updates links here. This directory holds only this page, the fork `LICENSE.md` and `SOURCE.json`, the commit of
+`docs/` of the fork pinned by `bun run docs:bun:update`. The Bun docs are read in place in the fork checkout,
+else fetched at the pinned commit (sparse `git clone` of `docs/` into the user data directory). Verified against
+the fork checkout on 2026-10-09.
 
 ## Rules
 
@@ -13,7 +14,7 @@ Verified against the fork checkout on 2026-10-08.
   test under `test/js/first_party/` or `test/internal/`. Its own [APHRODY.md](https://github.com/aphrody-labs/bun/blob/main/APHRODY.md)
   lists what Aphrody consumes from it.
 - Aphrody keeps no Bun patch queue, no vendored Bun tree, no Rust copy of Bun crates and no second copy of the
-  Bun docs. Bun API questions are answered from this directory or the MCP tools `bun_docs_search`,
+  Bun docs. Bun API questions are answered from `docs/` of the fork or the MCP tools `bun_docs_search`,
   `bun_docs_read` and `bun_docs_list`.
 - `oven-sh/bun` is reached only through the fork's `upstream` remote; it is not a direct source of Aphrody.
 
@@ -51,7 +52,7 @@ Verified against the fork checkout on 2026-10-08.
 the fork, merges `upstream/main` into `main`, retries conflicts as a rename-aware three-way merge through
 `scope.ts`, re-applies the `@aphrody` scope and stops (exit 2, merge aborted) on any real conflict. The
 workflow `.github/workflows/aphrody-upstream-sync.yml` runs it every 6 hours. After a merge, refresh the docs
-mirror here with `bun run docs:bun:update` and check it with `bun run docs:bun:check`.
+pin here with `bun run docs:bun:update` and check it with `bun run docs:bun:check`.
 
 ## Distribution
 

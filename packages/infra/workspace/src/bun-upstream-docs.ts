@@ -1,61 +1,89 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Mirrors the Bun documentation site (`docs/` of the aphrody-labs/bun fork, upstream oven-sh/bun) into
- * `docs/reference/upstream-bun`, the corpus served by the `bun_docs_*` MCP tools.
+ * Bun documentation of Aphrody: `docs/` of the aphrody-labs/bun fork (upstream oven-sh/bun), read in place.
+ * Aphrody keeps no copy of it; `docs/reference/upstream-bun` holds only `APHRODY-FORK.md`, the Bun
+ * `LICENSE.md` (shipped by scripts/release/release.ts) and `SOURCE.json`, the pinned fork commit.
  *
  * Usage: bun packages/infra/workspace/src/bun-upstream-docs.ts [--root <repository>]
- *          [--source <bun checkout>] [--ref <branch-or-tag>] [--check]
+ *          [--source <bun checkout>] [--ref <branch-or-commit>] [--check]
+ *        bun packages/infra/workspace/src/bun-upstream-docs.ts --resolve [--no-download] [--ref <commit>]
  *
- * Source: `--source`, else `APHRODY_BUN_CHECKOUT`, else `C:\bun` on Windows when it exists; otherwise a
- * shallow clone of aphrody-labs/bun at `--ref` under `APHRODY_BUN_MIRROR` (`~/.cache/aphrody/upstream/bun`).
- * Only `docs/` is copied (pages, `docs.json`, snippets); binary assets and the `icons`, `images` and
- * `logo` directories are skipped. Outside `docs/` only the repository `LICENSE.md` is copied (release legal
- * notice); repository READMEs and test fixtures never enter.
- * The mirror is exact: stale pages are deleted, except the first-party files in `KEEP`.
- * `SOURCE.json` records the source commit and a SHA-256 per file; `--check` compares without writing.
+ * The default mode pins the last commit touching `docs/` on `--ref` (`origin/main` of a local checkout,
+ * else `main` of a fresh clone) and copies `LICENSE.md`; `--check` compares without writing.
+ * `--resolve` prints the corpus directory chosen by {@link resolveBunDocs}.
+ *
+ * Corpus resolution ({@link resolveBunDocs}, same order as the Rust crate `aphrody-bun-docs`):
+ * `APHRODY_BUN_DOCS` (authoritative), `docs/` of the fork checkout (`APHRODY_BUN_CHECKOUT`, else `C:\bun`
+ * on Windows), an installed corpus `<data>/aphrody/bun/docs`, then a versioned download: a partial clone
+ * of `docs/` at the pinned commit in `<data>/aphrody/bun/docs-<commit12>`, announced on stderr and
+ * disabled by `APHRODY_BUN_DOCS_FETCH=0`. `<data>` is `%APPDATA%` on Windows, else `$XDG_DATA_HOME` or
+ * `~/.local/share`.
  */
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdir, readdir, rm, stat } from "node:fs/promises";
+import { mkdir, readdir, rename, rm } from "node:fs/promises";
 import { homedir } from "node:os";
-import { dirname, join, relative, resolve, sep } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 
-export const BUN_DOCS_TARGET = "docs/reference/upstream-bun";
-const FORK_URL = "https://github.com/aphrody-labs/bun.git";
-const KEEP = new Set(["APHRODY-FORK.md", "SOURCE.json"]);
-/** Repository-root files mirrored next to the docs (Bun licence, shipped by scripts/release/release.ts). */
+/** Pin directory: APHRODY-FORK.md, LICENSE.md and SOURCE.json only. */
+export const BUN_PIN_DIR = "docs/reference/upstream-bun";
+export const FORK_URL = "https://github.com/aphrody-labs/bun.git";
+const FORK_SOURCE = "https://github.com/aphrody-labs/bun (fork of https://github.com/oven-sh/bun)";
+const KEEP = new Set(["APHRODY-FORK.md", "LICENSE.md", "SOURCE.json"]);
+/** Repository-root files copied next to the pin (Bun licence, shipped by scripts/release/release.ts). */
 const ROOT_FILES = ["LICENSE.md"];
-const SKIPPED_DIRECTORIES = new Set(["icons", "images", "logo"]);
-const SKIPPED_EXTENSIONS = new Set([
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".gif",
-  ".svg",
-  ".ico",
-  ".webp",
-  ".woff",
-  ".woff2",
-  ".ttf",
-  ".eot",
-  ".mp4",
-  ".webm",
-  ".mov",
-  ".mp3",
-  ".wav",
-  ".pdf",
-]);
+/** Pages, `docs.json` and snippets of `docs/` plus the licence; the image directories (22 MB) stay remote. */
+export const SPARSE_PATTERNS = [
+  "/docs/",
+  "!/docs/images/",
+  "!/docs/icons/",
+  "!/docs/logo/",
+  "/LICENSE.md",
+];
+const DEFAULT_PIN = join(import.meta.dir, "../../../..", BUN_PIN_DIR, "SOURCE.json");
+
+type Env = Record<string, string | undefined>;
+
+export interface BunDocsPin {
+  source: string;
+  repository: string;
+  path: string;
+  commit: string;
+  date: string;
+  command: string;
+  files: Record<string, string>;
+}
+
+export type BunDocsSource = "override" | "checkout" | "installed" | "download";
+
+export interface ResolvedBunDocs {
+  dir: string;
+  source: BunDocsSource;
+}
+
+export interface ResolveBunDocsOptions {
+  env?: Env;
+  platform?: string;
+  /** false: never download; throw an explicit error instead. Default: unless `APHRODY_BUN_DOCS_FETCH=0`. */
+  download?: boolean;
+  /** Commit or branch to download; default `APHRODY_BUN_DOCS_REF`, else the pinned commit, else `main`. */
+  ref?: string;
+  /** SOURCE.json holding the pin; default the one of this repository. */
+  pinFile?: string;
+  log?: (message: string) => void;
+}
 
 function git(cwd: string, args: string[]): string {
   const proc = Bun.spawnSync(["git", "-C", cwd, ...args], { stdout: "pipe", stderr: "pipe" });
-  if (proc.exitCode !== 0) throw new Error(`git ${args.join(" ")} failed: ${proc.stderr.toString()}`);
+  if (proc.exitCode !== 0)
+    throw new Error(`git ${args.join(" ")} failed: ${proc.stderr.toString().trim()}`);
   return proc.stdout.toString().trim();
 }
 
-/** `--source`, `APHRODY_BUN_CHECKOUT`, `C:\bun` (Windows), else undefined (clone the fork). */
+/** `--source`, `APHRODY_BUN_CHECKOUT`, `C:\bun` (Windows, when it holds the docs site), else undefined. */
 export function localBunCheckout(
   explicit?: string,
-  env: Record<string, string | undefined> = process.env,
+  env: Env = process.env,
   platform: string = process.platform,
 ): string | undefined {
   if (explicit) return resolve(explicit);
@@ -64,121 +92,245 @@ export function localBunCheckout(
   return undefined;
 }
 
-/** Whether a path relative to `docs/` belongs to the mirror. */
-export function isMirroredDoc(relativePath: string): boolean {
-  const parts = relativePath.split(/[\\/]/);
-  if (parts.slice(0, -1).some(part => SKIPPED_DIRECTORIES.has(part.toLowerCase()))) return false;
-  const name = parts.at(-1) ?? "";
-  const dot = name.lastIndexOf(".");
-  return dot < 0 || !SKIPPED_EXTENSIONS.has(name.slice(dot).toLowerCase());
+/** `<data>/aphrody/bun`: `%APPDATA%` on Windows, else `$XDG_DATA_HOME` (absolute) or `~/.local/share`. */
+export function bunDataDir(
+  env: Env = process.env,
+  platform: string = process.platform,
+): string | undefined {
+  if (platform === "win32") return env.APPDATA ? join(env.APPDATA, "aphrody", "bun") : undefined;
+  const xdg = env.XDG_DATA_HOME && isAbsolute(env.XDG_DATA_HOME) ? env.XDG_DATA_HOME : undefined;
+  const home = env.HOME ?? homedir();
+  const data = xdg ?? (home ? join(home, ".local", "share") : undefined);
+  return data ? join(data, "aphrody", "bun") : undefined;
 }
 
-async function listFiles(dir: string, base = dir): Promise<string[]> {
-  if (!existsSync(dir)) return [];
-  const out: string[] = [];
-  for (const entry of await readdir(dir, { withFileTypes: true })) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...(await listFiles(full, base)));
-    else if (entry.isFile()) out.push(relative(base, full).split(sep).join("/"));
+export async function readBunDocsPin(
+  pinFile: string = DEFAULT_PIN,
+): Promise<BunDocsPin | undefined> {
+  const file = Bun.file(pinFile);
+  return (await file.exists()) ? ((await file.json()) as BunDocsPin) : undefined;
+}
+
+const isDocsSite = (dir: string): boolean => existsSync(join(dir, "docs.json"));
+
+/** Partial clone of `docs/` (and `LICENSE.md`) of the fork at `ref`, swapped into `dest` once complete. */
+export async function fetchForkDocs(
+  ref: string,
+  dest: string,
+  url: string = FORK_URL,
+): Promise<string> {
+  await mkdir(dirname(dest), { recursive: true });
+  const staging = `${dest}.partial-${process.pid}`;
+  await rm(staging, { recursive: true, force: true });
+  const run = (args: string[], cwd?: string) => {
+    const proc = Bun.spawnSync(cwd ? ["git", "-C", cwd, ...args] : ["git", ...args], {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    if (proc.exitCode !== 0)
+      throw new Error(`git ${args.join(" ")} failed: ${proc.stderr.toString().trim()}`);
+  };
+  try {
+    run([
+      "clone",
+      "--quiet",
+      "--no-checkout",
+      "--depth",
+      "1",
+      "--filter=blob:none",
+      "--sparse",
+      url,
+      staging,
+    ]);
+    run(["sparse-checkout", "set", "--no-cone", ...SPARSE_PATTERNS], staging);
+    run(["fetch", "--quiet", "--depth", "1", "origin", ref], staging);
+    run(["checkout", "--quiet", "--detach", "FETCH_HEAD"], staging);
+    if (!isDocsSite(join(staging, "docs")))
+      throw new Error(`${url} @ ${ref} has no docs/docs.json`);
+  } catch (error) {
+    await rm(staging, { recursive: true, force: true });
+    throw error;
   }
-  return out.toSorted();
+  await rm(dest, { recursive: true, force: true });
+  await rename(staging, dest);
+  return dest;
+}
+
+/** Corpus directory of the Bun docs; see the module comment for the order. Never fails silently. */
+export async function resolveBunDocs(
+  options: ResolveBunDocsOptions = {},
+): Promise<ResolvedBunDocs> {
+  const env = options.env ?? process.env;
+  const platform = options.platform ?? process.platform;
+  if (env.APHRODY_BUN_DOCS) {
+    const dir = resolve(env.APHRODY_BUN_DOCS);
+    if (!existsSync(dir)) throw new Error(`APHRODY_BUN_DOCS=${dir} does not exist`);
+    return { dir, source: "override" };
+  }
+  const tried: string[] = [];
+  const checkout = localBunCheckout(undefined, env, platform);
+  if (checkout) {
+    const dir = join(checkout, "docs");
+    if (isDocsSite(dir)) return { dir, source: "checkout" };
+    tried.push(dir);
+  }
+  const data = bunDataDir(env, platform);
+  if (!data)
+    throw new Error(
+      "Bun docs not found: no fork checkout and no user data directory to install them",
+    );
+  const installed = join(data, "docs");
+  if (existsSync(installed)) return { dir: installed, source: "installed" };
+  tried.push(installed);
+  const pin = await readBunDocsPin(options.pinFile);
+  const ref = options.ref ?? env.APHRODY_BUN_DOCS_REF ?? pin?.commit ?? "main";
+  const cache = join(data, `docs-${ref.replace(/[^\w.-]/g, "_").slice(0, 12)}`);
+  const cached = join(cache, "docs");
+  if (isDocsSite(cached)) return { dir: cached, source: "download" };
+  tried.push(cached);
+  const download = options.download ?? env.APHRODY_BUN_DOCS_FETCH !== "0";
+  if (!download)
+    throw new Error(
+      `Bun docs not found (tried ${tried.join(", ")}): set APHRODY_BUN_CHECKOUT to the aphrody-labs/bun checkout, ` +
+        `APHRODY_BUN_DOCS to a docs directory, or allow the download (unset APHRODY_BUN_DOCS_FETCH=0)`,
+    );
+  (options.log ?? ((message: string) => console.error(message)))(
+    `Bun docs: no fork checkout; downloading docs/ of ${FORK_URL} @ ${ref} into ${cache}`,
+  );
+  await fetchForkDocs(ref, cache);
+  return { dir: cached, source: "download" };
 }
 
 function sha256(bytes: Uint8Array): string {
   return createHash("sha256").update(bytes).digest("hex");
 }
 
-async function cloneFork(ref: string): Promise<string> {
-  const mirror = process.env.APHRODY_BUN_MIRROR ?? join(homedir(), ".cache", "aphrody", "upstream", "bun");
-  if (existsSync(join(mirror, ".git"))) {
-    git(mirror, ["fetch", "--depth", "1", "origin", ref]);
-    git(mirror, ["reset", "--hard", "FETCH_HEAD"]);
-  } else {
-    await rm(mirror, { recursive: true, force: true });
-    await mkdir(dirname(mirror), { recursive: true });
-    const clone = Bun.spawnSync(["git", "clone", "--quiet", "--depth", "1", "--branch", ref, FORK_URL, mirror], {
+/** Base revision of a local checkout: `--ref`, else `origin/main` when it exists, else `HEAD`. */
+function checkoutBase(checkout: string, ref: string | undefined): string {
+  if (ref) return ref;
+  const probe = Bun.spawnSync(
+    ["git", "-C", checkout, "rev-parse", "--verify", "--quiet", "origin/main"],
+    {
       stdout: "pipe",
       stderr: "pipe",
-    });
-    if (clone.exitCode !== 0) throw new Error(`git clone ${FORK_URL} failed: ${clone.stderr}`);
-  }
-  return mirror;
+    },
+  );
+  return probe.exitCode === 0 ? "origin/main" : "HEAD";
 }
 
 export async function runBunUpstreamDocs(args: string[]): Promise<number> {
-  let ref = "main";
+  let ref: string | undefined;
   let repoRoot = process.cwd();
   let source: string | undefined;
   let check = false;
+  let resolveOnly = false;
+  let download = true;
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
     if (arg === "--root") repoRoot = args[++index] ?? "";
     else if (arg === "--ref") ref = args[++index] ?? "";
     else if (arg === "--source") source = args[++index] ?? "";
     else if (arg === "--check") check = true;
+    else if (arg === "--resolve") resolveOnly = true;
+    else if (arg === "--no-download") download = false;
     else if (arg === "--help" || arg === "-h") {
       console.log(
-        "Usage: bun packages/infra/workspace/src/bun-upstream-docs.ts [--root <repository>] [--source <bun checkout>] [--ref <branch-or-tag>] [--check]",
+        "Usage: bun packages/infra/workspace/src/bun-upstream-docs.ts [--root <repository>] [--source <bun checkout>] [--ref <branch-or-commit>] [--check]\n" +
+          "       bun packages/infra/workspace/src/bun-upstream-docs.ts --resolve [--no-download] [--ref <commit>]",
       );
       return 0;
     } else throw new Error(`Unknown argument: ${arg}`);
   }
-  if (!repoRoot || !ref || source === "") throw new Error("--root, --ref and --source require a value");
+  if (!repoRoot || ref === "" || source === "")
+    throw new Error("--root, --ref and --source require a value");
   repoRoot = resolve(repoRoot);
-  const checkout = localBunCheckout(source) ?? (await cloneFork(ref));
-  const docs = join(checkout, "docs");
-  if (!existsSync(join(docs, "docs.json"))) throw new Error(`${docs} is not the Bun docs site (no docs.json)`);
-  const commit = git(checkout, ["log", "-1", "--format=%H", "--", "docs"]);
-  const date = git(checkout, ["log", "-1", "--format=%cs", "--", "docs"]);
-  const target = join(repoRoot, BUN_DOCS_TARGET);
-
-  const files: Record<string, string> = {};
-  const contents = new Map<string, Uint8Array>();
-  const sources = (await listFiles(docs)).filter(isMirroredDoc).map((rel): [string, string] => [rel, join(docs, rel)]);
-  for (const name of ROOT_FILES) sources.push([name, join(checkout, name)]);
-  for (const [rel, path] of sources) {
-    const bytes = await Bun.file(path).bytes();
-    files[rel] = sha256(bytes);
-    contents.set(rel, bytes);
+  if (resolveOnly) {
+    const found = await resolveBunDocs({
+      download,
+      ref,
+      pinFile: join(repoRoot, BUN_PIN_DIR, "SOURCE.json"),
+    });
+    console.log(`${found.dir}\t${found.source}`);
+    return 0;
   }
-  const existing = (await listFiles(target)).filter(rel => !KEEP.has(rel));
-  const stale = existing.filter(rel => !(rel in files));
-  const changed: string[] = [];
-  for (const [rel, hash] of Object.entries(files)) {
-    const path = join(target, rel);
-    if (!existsSync(path) || sha256(await Bun.file(path).bytes()) !== hash) changed.push(rel);
+  const local = localBunCheckout(source);
+  let checkout: string;
+  let base: string;
+  let cleanup: string | undefined;
+  if (local) {
+    checkout = local;
+    base = checkoutBase(local, ref);
+  } else {
+    const data = bunDataDir() ?? join(homedir(), ".cache", "aphrody", "bun");
+    checkout = await fetchForkDocs(ref ?? "main", join(data, "pin"));
+    cleanup = checkout;
+    base = "HEAD";
   }
-  const receipt = {
-    source: "https://github.com/aphrody-labs/bun (fork of https://github.com/oven-sh/bun)",
-    path: "docs/",
-    commit,
-    date,
-    command: "bun packages/infra/workspace/src/bun-upstream-docs.ts --root .",
-    files,
-  };
-  const receiptText = `${JSON.stringify(receipt, null, 2)}\n`;
-  const receiptPath = join(target, "SOURCE.json");
-  const receiptStale = !existsSync(receiptPath) || (await Bun.file(receiptPath).text()) !== receiptText;
-  const summary = `${Object.keys(files).length} files from ${checkout} docs/ @ ${commit.slice(0, 11)} (${date}): ${changed.length} changed, ${stale.length} stale`;
-  if (check) {
-    const ok = changed.length === 0 && stale.length === 0 && !receiptStale;
-    console.log(`${ok ? "current" : "stale"} ${BUN_DOCS_TARGET}: ${summary}`);
-    return ok ? 0 : 1;
-  }
-  for (const rel of stale) await rm(join(target, rel), { force: true });
-  for (const rel of changed) await Bun.write(join(target, rel), contents.get(rel) ?? new Uint8Array());
-  await Bun.write(receiptPath, receiptText);
-  // Drop directories emptied by stale deletions.
-  for (const dir of [...new Set(stale.map(rel => dirname(join(target, rel))))].toSorted(
-    (a, b) => b.length - a.length,
-  )) {
-    for (let current = dir; current.startsWith(target) && current !== target; current = dirname(current)) {
-      if (!existsSync(current) || (await readdir(current)).length > 0) break;
-      if ((await stat(current)).isDirectory()) await rm(current, { recursive: true });
+  try {
+    if (!isDocsSite(join(checkout, "docs")))
+      throw new Error(`${checkout}/docs is not the Bun docs site (no docs.json)`);
+    // docs/aphrody holds the fork's work plans, not Bun documentation: their commits must not move the pin.
+    const docsPaths = ["--", "docs", ":(exclude)docs/aphrody"];
+    const commit = git(checkout, ["log", "-1", "--format=%H", base, ...docsPaths]);
+    const date = git(checkout, ["log", "-1", "--format=%cs", base, ...docsPaths]);
+    const target = join(repoRoot, BUN_PIN_DIR);
+    const files: Record<string, string> = {};
+    const contents = new Map<string, Uint8Array>();
+    for (const name of ROOT_FILES) {
+      const show = Bun.spawnSync(["git", "-C", checkout, "show", `${base}:${name}`], {
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      if (show.exitCode !== 0)
+        throw new Error(`git show ${base}:${name} failed: ${show.stderr.toString().trim()}`);
+      files[name] = sha256(show.stdout);
+      contents.set(name, show.stdout);
     }
+    const stale = existsSync(target)
+      ? (await readdir(target, { recursive: true, withFileTypes: true }))
+          .filter((entry) => entry.isFile())
+          .map((entry) =>
+            join(entry.parentPath, entry.name)
+              .slice(target.length + 1)
+              .replaceAll("\\", "/"),
+          )
+          .filter((rel) => !KEEP.has(rel))
+          .toSorted()
+      : [];
+    const changed: string[] = [];
+    for (const [rel, hash] of Object.entries(files)) {
+      const path = join(target, rel);
+      if (!existsSync(path) || sha256(await Bun.file(path).bytes()) !== hash) changed.push(rel);
+    }
+    const pin: BunDocsPin = {
+      source: FORK_SOURCE,
+      repository: FORK_URL,
+      path: "docs/",
+      commit,
+      date,
+      command: "bun packages/infra/workspace/src/bun-upstream-docs.ts --root .",
+      files,
+    };
+    const pinText = `${JSON.stringify(pin, null, 2)}\n`;
+    const pinPath = join(target, "SOURCE.json");
+    const pinStale = !existsSync(pinPath) || (await Bun.file(pinPath).text()) !== pinText;
+    const summary = `docs/ of ${checkout} @ ${commit.slice(0, 11)} (${date}, ${base}): ${changed.length} changed, ${stale.length} stale`;
+    if (check) {
+      const ok = changed.length === 0 && stale.length === 0 && !pinStale;
+      console.log(`${ok ? "current" : "stale"} ${BUN_PIN_DIR}: ${summary}`);
+      return ok ? 0 : 1;
+    }
+    for (const rel of changed)
+      await Bun.write(join(target, rel), contents.get(rel) ?? new Uint8Array());
+    await Bun.write(pinPath, pinText);
+    for (const rel of stale) await rm(join(target, rel), { force: true });
+    for (const entry of await readdir(target, { withFileTypes: true }))
+      if (entry.isDirectory()) await rm(join(target, entry.name), { recursive: true, force: true });
+    console.log(`Pinned ${BUN_PIN_DIR}: ${summary}`);
+    return 0;
+  } finally {
+    if (cleanup) await rm(cleanup, { recursive: true, force: true });
   }
-  console.log(`Mirrored ${BUN_DOCS_TARGET}: ${summary}`);
-  return 0;
 }
 
 if (import.meta.main) process.exit(await runBunUpstreamDocs(process.argv.slice(2)));

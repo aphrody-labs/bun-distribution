@@ -125,44 +125,44 @@ jobs run detached (`nohup`) because the ssh exec transport times out after about
 
 ## Bun feature map
 
-"Verified" means the API is present in the fork's `packages/bun-types` (not in repo) and documented under
-[`docs/reference/upstream-bun`](../../reference/upstream-bun/APHRODY-FORK.md), and `typeof` was checked at runtime on this Bun 1.4.2 build. Status: **used** = in
+"Verified" means the API is present in the fork's `packages/bun-types` (not in repo) and documented under `docs/` of the
+[fork](../../reference/upstream-bun/APHRODY-FORK.md) (page paths below are relative to that `docs/` directory), and `typeof` was checked at runtime on this Bun 1.4.2 build. Status: **used** = in
 `crates/infra/aphrody/src/host*.ts` today; **planned** = fits server management, not implemented; **n/a** = verified to
 exist but not relevant to server management.
 
 | Bun feature | Verified in | Use for server management | Status |
 | :--- | :--- | :--- | :--- |
-| `Bun.spawn` / `spawnSync` (`timeout`, `killSignal`, `maxBuffer`, `cgroup`, `signal`) | `docs/reference/upstream-bun/runtime/child-process.mdx`, `bun.d.ts` | `LocalTransport.exec`, the `aphrody-infra` calls, `ssh -G`, local rsync for `--pull`; per-command timeouts. `cgroup` limits for heavy jobs on the server itself | used; cgroup planned |
-| `Bun.$` shell | `docs/reference/upstream-bun/runtime/shell.mdx`, `shell.d.ts` | Not used on purpose: plans are POSIX text that must run identically on a remote shell and be printed verbatim. Fits an on-host agent | planned |
-| `Bun.file` / `Bun.write` / `FileSink` | `docs/reference/upstream-bun/runtime/file-io.mdx` | Journal size/torn-line check, streaming read of the pulled archive, policy and fixtures | used |
-| `Bun.serve` (TCP and `unix:`) | `docs/reference/upstream-bun/runtime/http/server.mdx` | Health/metrics endpoint of an on-host `yolo host` agent on a unix socket | planned |
-| `Bun.connect` / `Bun.listen` (TCP, unix) | `docs/reference/upstream-bun/runtime/networking/tcp.mdx` | `net`: TCP connect and first-byte latency to the ssh port. Unix sockets for local daemons (docker.sock) | used (connect); listen planned |
-| `Bun.udpSocket` | `docs/reference/upstream-bun/runtime/networking/udp.mdx` | UDP reachability probes (DNS, QUIC on 443) | planned |
-| `Bun.dns` (`lookup`, `prefetch`, `getCacheStats`) | `docs/reference/upstream-bun/runtime/networking/dns.mdx` | Resolution timing in `net`, `prefetch` for the repeated ssh endpoint | planned |
-| `Bun.sql` (PostgreSQL, MySQL, SQLite) | `docs/reference/upstream-bun/runtime/sql.mdx`, `sql.d.ts` | Database health in the audit (connections, size, replication lag). Dumps stay `pg_dump -Fc`, checked with `pg_restore -l` | planned |
-| `Bun.redis` / `RedisClient` | `docs/reference/upstream-bun/runtime/redis.mdx`, `redis.d.ts` | `PING` and `INFO memory` for the redis services found by the audit | planned |
-| `bun:sqlite` | `docs/reference/upstream-bun/runtime/sqlite.mdx`, `sqlite.d.ts` | Indexed history of audits and journal entries (the JSONL stays the source of truth) | planned |
+| `Bun.spawn` / `spawnSync` (`timeout`, `killSignal`, `maxBuffer`, `cgroup`, `signal`) | `runtime/child-process.mdx`, `bun.d.ts` | `LocalTransport.exec`, the `aphrody-infra` calls, `ssh -G`, local rsync for `--pull`; per-command timeouts. `cgroup` limits for heavy jobs on the server itself | used; cgroup planned |
+| `Bun.$` shell | `runtime/shell.mdx`, `shell.d.ts` | Not used on purpose: plans are POSIX text that must run identically on a remote shell and be printed verbatim. Fits an on-host agent | planned |
+| `Bun.file` / `Bun.write` / `FileSink` | `runtime/file-io.mdx` | Journal size/torn-line check, streaming read of the pulled archive, policy and fixtures | used |
+| `Bun.serve` (TCP and `unix:`) | `runtime/http/server.mdx` | Health/metrics endpoint of an on-host `yolo host` agent on a unix socket | planned |
+| `Bun.connect` / `Bun.listen` (TCP, unix) | `runtime/networking/tcp.mdx` | `net`: TCP connect and first-byte latency to the ssh port. Unix sockets for local daemons (docker.sock) | used (connect); listen planned |
+| `Bun.udpSocket` | `runtime/networking/udp.mdx` | UDP reachability probes (DNS, QUIC on 443) | planned |
+| `Bun.dns` (`lookup`, `prefetch`, `getCacheStats`) | `runtime/networking/dns.mdx` | Resolution timing in `net`, `prefetch` for the repeated ssh endpoint | planned |
+| `Bun.sql` (PostgreSQL, MySQL, SQLite) | `runtime/sql.mdx`, `sql.d.ts` | Database health in the audit (connections, size, replication lag). Dumps stay `pg_dump -Fc`, checked with `pg_restore -l` | planned |
+| `Bun.redis` / `RedisClient` | `runtime/redis.mdx`, `redis.d.ts` | `PING` and `INFO memory` for the redis services found by the audit | planned |
+| `bun:sqlite` | `runtime/sqlite.mdx`, `sqlite.d.ts` | Indexed history of audits and journal entries (the JSONL stays the source of truth) | planned |
 | `Bun.zstdCompress*` / `zstdDecompress*`, `gzipSync`, `deflateSync` | `bun.d.ts` | One-shot, in memory: not used for archives (those stream through `tar \| zstd` on the host). Journal rotation and small payloads | planned |
 | `CompressionStream("zstd")` | `bun.d.ts` (`CompressionFormat`) | Streaming zstd for a local archive path without the `zstd` binary | planned |
-| `Bun.Archive` (tar create/extract/`files()`; gzip only, no zstd) | `docs/reference/upstream-bun/runtime/archive.mdx` | Listing entries of a small pulled archive in-process; not for multi-GB streams | planned |
-| `Bun.CryptoHasher` (sha256, blake2b, ...) | `bun.d.ts`, `docs/reference/upstream-bun/runtime/hashing.mdx` | SHA-256 of the pulled archive compared with the host manifest (streaming) | used |
-| `Bun.secrets` | `docs/reference/upstream-bun/runtime/secrets.mdx` | On Linux it needs a secret-service daemon (libsecret), absent on a headless server. Secrets stay on the host-local private stores | n/a on servers |
-| `Bun.cron` (in-process, OS-level `crontab` registration, `Bun.cron.parse`) | `docs/reference/upstream-bun/runtime/cron.mdx` | Scheduled `audit` and reclaim plans on the server; next-run computation | planned |
-| `Bun.semver` | `docs/reference/upstream-bun/runtime/semver.mdx` | Version thresholds in the audit (kernel, docker, postgres) | planned |
+| `Bun.Archive` (tar create/extract/`files()`; gzip only, no zstd) | `runtime/archive.mdx` | Listing entries of a small pulled archive in-process; not for multi-GB streams | planned |
+| `Bun.CryptoHasher` (sha256, blake2b, ...) | `bun.d.ts`, `runtime/hashing.mdx` | SHA-256 of the pulled archive compared with the host manifest (streaming) | used |
+| `Bun.secrets` | `runtime/secrets.mdx` | On Linux it needs a secret-service daemon (libsecret), absent on a headless server. Secrets stay on the host-local private stores | n/a on servers |
+| `Bun.cron` (in-process, OS-level `crontab` registration, `Bun.cron.parse`) | `runtime/cron.mdx` | Scheduled `audit` and reclaim plans on the server; next-run computation | planned |
+| `Bun.semver` | `runtime/semver.mdx` | Version thresholds in the audit (kernel, docker, postgres) | planned |
 | `Bun.which` | `bun.d.ts` | Tool detection in tests; `aphrody.ts` still uses `command -v` | used (tests) |
 | `Bun.sleep` / `Bun.nanoseconds` | `bun.d.ts` | `nanoseconds`: step timings and latency samples. `sleep`: retry backoff | used (nanoseconds); sleep planned |
-| Worker threads | `docs/reference/upstream-bun/runtime/workers.mdx` | Parallel audits of several hosts | planned |
-| `Bun.build --compile` | D20/D21, `docs/reference/upstream-bun/bundler` | `yolo host` ships in the standalone `yolo`; copy it to a server and run `--host local` there | used (distribution) |
-| `Bun.Terminal` / spawn `terminal` (PTY) | `docs/reference/upstream-bun/runtime/child-process.mdx` | Not needed: the transport is non-interactive and uses `sudo -n` | n/a |
+| Worker threads | `runtime/workers.mdx` | Parallel audits of several hosts | planned |
+| `Bun.build --compile` | D20/D21, `bundler` | `yolo host` ships in the standalone `yolo`; copy it to a server and run `--host local` there | used (distribution) |
+| `Bun.Terminal` / spawn `terminal` (PTY) | `runtime/child-process.mdx` | Not needed: the transport is non-interactive and uses `sudo -n` | n/a |
 | `fetch` with `unix:` | `globals.d.ts` (`BunFetchRequestInit.unix`) | Docker Engine API over `/var/run/docker.sock` instead of parsing `docker system df` | planned |
 | `Bun.TOML` | `bun.d.ts` | `host-policy.toml` | used |
 | `Bun.JSONL`, `Bun.YAML` | `bun.d.ts` | JSONL journal parsing (a tolerant manual parser is used today); compose files | planned |
 | `Bun.Glob` | `bun.d.ts` | Service keep-list and swap file patterns | used |
 | `Bun.stringWidth` | `bun.d.ts` | Table alignment | used |
 | `Bun.randomUUIDv7` | `bun.d.ts` | Run ids in the journal | used |
-| `Bun.markdown` | `docs/reference/upstream-bun/runtime/markdown.mdx` | Audit report as HTML for the mdBook | planned |
-| `Bun.S3Client` | `docs/reference/upstream-bun/runtime/s3.mdx`, `s3.d.ts` | Off-site archive target in place of `--pull` | planned |
-| `Bun.Image`, `Bun.WebView`, `Bun.password`, `Bun.CSRF`, `Cookie`, `Bun.mmap`, `Bun.peek`, `Bun.gc` | `docs/reference/upstream-bun/runtime/image.mdx`, `webview.mdx`, `bun.d.ts` | Not relevant to server management | n/a |
+| `Bun.markdown` | `runtime/markdown.mdx` | Audit report as HTML for the mdBook | planned |
+| `Bun.S3Client` | `runtime/s3.mdx`, `s3.d.ts` | Off-site archive target in place of `--pull` | planned |
+| `Bun.Image`, `Bun.WebView`, `Bun.password`, `Bun.CSRF`, `Cookie`, `Bun.mmap`, `Bun.peek`, `Bun.gc` | `runtime/image.mdx`, `webview.mdx`, `bun.d.ts` | Not relevant to server management | n/a |
 
 ## Evidence: what was and was not run
 

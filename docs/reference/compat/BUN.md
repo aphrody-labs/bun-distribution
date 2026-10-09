@@ -17,7 +17,7 @@ and states the rules they follow.
 | Runtime access  | `crates/compat/toolchains`                                                            | Resolve installed Bun, repository version pins and launch environment without a shell. Compat owns this crate and OS consumes it; the [Bun fork](../upstream-bun/APHRODY-FORK.md) supplies the runtime and the docs mirror, not a linked library. See [BUN-RUST-INTEGRATION.md](./BUN-RUST-INTEGRATION.md).                                                      |
 | Node to Bun     | crates.io `aphrody-n2b*`, npm `@aphrody/bun-plugin-n2b`                               | Scanner, rule registry, codemods and reports. Sources and docs live in the Bun fork: see [N2B.md](./N2B.md). `aphrody n2b` links the published crates.                                                                                                                                                                                                           |
 | N2B native scan | `crates/interop/ffi/src/n2b_native.rs`                                                | ABI v2 keeps the read-only `node2bun_scan_json` and adds `node2bun_scan_with_options_json` for `mode`, `ignore` and `dry_run`; callers release reports with `node2bun_string_free`. Fix and aggressive modes can write project files. Consumers bind the library through `bun:ffi`; the [Bun fork](../upstream-bun/APHRODY-FORK.md) has no `bun:aphrody` module. |
-| Documentation   | `crates/compat/bun-docs` (`bun_docs` kernel subsystem, registered by `../aphrody-os`) | Offline `bun_docs_search`, `bun_docs_read`, `bun_docs_list` and `bun_node_equivalent` over `APHRODY_BUN_DOCS`, else `docs/reference/upstream-bun` (mirror of the fork docs) and the n2b registry.                                                                                                                                                                |
+| Documentation   | `crates/compat/bun-docs` (`bun_docs` kernel subsystem, registered by `../aphrody-os`) | Offline `bun_docs_search`, `bun_docs_read`, `bun_docs_list` and `bun_node_equivalent` over `APHRODY_BUN_DOCS`, else `docs/` of the fork checkout (`APHRODY_BUN_CHECKOUT`, `C:/bun` on Windows), else a versioned download at the commit pinned in `docs/reference/upstream-bun/SOURCE.json` and the n2b registry.                                                                                                                                                                |
 
 The repository-wide ownership and target integration plan are in [Infra's Bun platform map](../infra/APHRODY-BUN-PLATFORM.md).
 The n2b crate, package, schema and CLI documentation is in the Bun fork ([N2B.md](./N2B.md)).
@@ -51,7 +51,7 @@ bun run test           # turbo; builds the native artifacts it needs
 
 1. Merge upstream in the fork and release it there (see [Bun in Aphrody](../upstream-bun/APHRODY-FORK.md)).
 2. Set the root `packageManager`, the `mise.toml` pin and the `@types/bun` catalog entry.
-3. Refresh the docs mirror: `bun run docs:bun:update` (from the local fork checkout), then `bun run docs:bun:check`.
+3. Refresh the docs pin: `bun run docs:bun:update` (from the local fork checkout), then `bun run docs:bun:check`.
 4. Run `bun install`, then the gates above and the Rust gates in the root README.
 
-The `bun_docs` tools read `APHRODY_BUN_DOCS`, else `docs/reference/upstream-bun`. There is no index to rebuild.
+The `bun_docs` tools read `APHRODY_BUN_DOCS`, else the fork checkout, else the versioned download (`APHRODY_BUN_DOCS_FETCH=0` turns it into an explicit error). There is no index to rebuild.

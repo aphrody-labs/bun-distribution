@@ -73,5 +73,5 @@ release is active.
 ## Support and conduct
 
 Use GitHub issues for reproducible defects and design proposals. Follow the
-[Code of Conduct](../../../reference/discord/.github/CODE_OF_CONDUCT.md). Security reports must use the process in
+[Code of Conduct](https://github.com/discordx-ts/discordx/blob/main/.github/CODE_OF_CONDUCT.md). Security reports must use the process in
 the repository [security policy](../../../research/discord/SECURITY.md), not a public issue.

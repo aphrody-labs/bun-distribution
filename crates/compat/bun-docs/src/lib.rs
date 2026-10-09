@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Bun documentation as an Aphrody OS subsystem.
 //!
-//! The corpus is the `docs/` tree of the Bun fork aphrody-labs/bun: its checkout
-//! (`APHRODY_BUN_CHECKOUT`, else `C:/bun` on Windows) or the mirror `docs/reference/upstream-bun`
-//! (`bun run docs:bun:update`); `APHRODY_BUN_DOCS` overrides both. It is indexed once, in memory, the first time a tool runs,
-//! so every lookup is offline. The n2b registry
+//! The corpus is the `docs/` tree of the Bun fork aphrody-labs/bun, read in place; Aphrody keeps
+//! no copy of it. It is indexed once, in memory, the first time a tool runs. The n2b registry
 //! supplies the Node-to-Bun equivalents (`node:*` modules, npm packages, API call patterns).
 //!
 //! Tools: `bun_docs_search`, `bun_docs_read`, `bun_docs_list`, `bun_node_equivalent`.
 //! Skill: `bun_docs_lookup` (search and return the best page in one call).
 //!
-//! The docs root resolves from `APHRODY_BUN_DOCS`, the fork checkout, installed data directories,
-//! then the mirror in the current checkout or the checkout this crate was built from.
-//! Installed kernels do not require their launch directory to be a source checkout.
+//! Root resolution ([`resolve_root`]): `APHRODY_BUN_DOCS`, the fork checkout
+//! (`APHRODY_BUN_CHECKOUT`, else `C:/bun` on Windows), installed corpora, then a previous
+//! versioned download. When none exists, [`BunDocsSubsystem::index`] downloads `docs/` of the fork
+//! at the commit pinned in `docs/reference/upstream-bun/SOURCE.json` ([`download_root`], a partial
+//! `git` clone, reported in `bun_docs_list`); `APHRODY_BUN_DOCS_FETCH=0` turns that into an error.
 
 use std::{
     collections::HashMap,
@@ -33,8 +33,23 @@ pub const DOCS_BASE_URL: &str = "https://bun.com/docs";
 pub const ROOT_ENV: &str = "APHRODY_BUN_DOCS";
 /// Environment variable naming the Bun fork checkout (aphrody-labs/bun) whose `docs/` is read.
 pub const CHECKOUT_ENV: &str = "APHRODY_BUN_CHECKOUT";
-/// Mirror of the fork's `docs/` inside the Aphrody monorepo.
-pub const MIRROR: &str = "docs/reference/upstream-bun";
+/// Set to `0` to forbid the versioned download fallback.
+pub const FETCH_ENV: &str = "APHRODY_BUN_DOCS_FETCH";
+/// Commit or branch downloaded by the fallback instead of the pinned commit.
+pub const REF_ENV: &str = "APHRODY_BUN_DOCS_REF";
+/// Git URL of the Bun fork.
+pub const FORK_URL: &str = "https://github.com/aphrody-labs/bun.git";
+/// Paths of the fork checked out by the download: `docs/` without its image directories.
+const SPARSE_PATTERNS: [&str; 5] =
+    ["/docs/", "!/docs/images/", "!/docs/icons/", "!/docs/logo/", "/LICENSE.md"];
+/// `docs/reference/upstream-bun/SOURCE.json`: the fork commit Aphrody is pinned to.
+const PIN: &str = include_str!("../../../../docs/reference/upstream-bun/SOURCE.json");
+
+/// Fork commit pinned by `bun run docs:bun:update`.
+#[must_use]
+pub fn pinned_commit() -> Option<String> {
+    serde_json::from_str::<Value>(PIN).ok()?.get("commit")?.as_str().map(str::to_owned)
+}
 
 const DEFAULT_LIMIT: usize = 8;
 const MAX_LIMIT: usize = 50;
@@ -340,7 +355,8 @@ fn snippet(body: &str, terms: &[String]) -> String {
     if cut { format!("{text}…") } else { text.to_owned() }
 }
 
-/// Docs root: `APHRODY_BUN_DOCS`, the fork checkout's `docs/`, installed data, then the mirror.
+/// Docs root: `APHRODY_BUN_DOCS`, the fork checkout's `docs/`, installed corpora, then a previous
+/// versioned download ([`download_root`]).
 ///
 /// Install a corpus at `<executable-directory>/bun-docs`,
 /// `<installation-prefix>/share/aphrody/bun/docs`, or
@@ -351,6 +367,23 @@ fn snippet(body: &str, terms: &[String]) -> String {
 pub fn resolve_root() -> Option<PathBuf> {
     let configured = std::env::var_os(ROOT_ENV).map(PathBuf::from);
     let executable = std::env::current_exe().ok();
+    let data = data_dir();
+    let mut candidates: Vec<PathBuf> =
+        fork_docs(std::env::var_os(CHECKOUT_ENV).map(PathBuf::from).as_deref(), cfg!(windows))
+            .into_iter()
+            .collect();
+    candidates.extend(installed_roots(executable.as_deref(), data.as_deref()));
+    if let Some(data) = &data {
+        candidates.extend(
+            Some(download_dir(data, &download_ref()).join("docs"))
+                .filter(|docs| docs.join("docs.json").is_file()),
+        );
+    }
+    resolve_root_from(configured.as_deref(), &candidates)
+}
+
+/// User data directory: `%APPDATA%` on Windows, else `$XDG_DATA_HOME` or `$HOME/.local/share`.
+fn data_dir() -> Option<PathBuf> {
     #[cfg(windows)]
     let data = std::env::var_os("APPDATA").map(PathBuf::from);
     #[cfg(not(windows))]
@@ -358,17 +391,108 @@ pub fn resolve_root() -> Option<PathBuf> {
         .map(PathBuf::from)
         .filter(|path| path.is_absolute())
         .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/share")));
-    let mut installed: Vec<PathBuf> =
-        fork_docs(std::env::var_os(CHECKOUT_ENV).map(PathBuf::from).as_deref(), cfg!(windows))
-            .into_iter()
-            .collect();
-    installed.extend(installed_roots(executable.as_deref(), data.as_deref()));
-    resolve_root_from(
-        configured.as_deref(),
-        &installed,
-        std::env::current_dir().ok().as_deref(),
-        Path::new(env!("CARGO_MANIFEST_DIR")),
+    data
+}
+
+/// `APHRODY_BUN_DOCS_REF`, else the pinned commit, else `main`.
+fn download_ref() -> String {
+    std::env::var(REF_ENV)
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .or_else(pinned_commit)
+        .unwrap_or_else(|| "main".to_owned())
+}
+
+/// `<data>/aphrody/bun/docs-<ref, 12 characters>`: one checkout per downloaded revision.
+fn download_dir(data: &Path, reference: &str) -> PathBuf {
+    let name: String = reference
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_') { c } else { '_' })
+        .take(12)
+        .collect();
+    data.join("aphrody/bun").join(format!("docs-{name}"))
+}
+
+/// Versioned download fallback: a partial `git` clone of `docs/` of the fork at `APHRODY_BUN_DOCS_REF`
+/// (else the pinned commit) under the user data directory. Returns the downloaded docs root.
+///
+/// # Errors
+/// The download is disabled (`APHRODY_BUN_DOCS_FETCH=0`), no data directory is known, or `git` fails.
+pub fn download_root() -> Result<PathBuf, String> {
+    if std::env::var(FETCH_ENV).is_ok_and(|value| value == "0") {
+        return Err(format!("{FETCH_ENV}=0 forbids downloading the Bun docs"));
+    }
+    let data = data_dir().ok_or("no user data directory (APPDATA, XDG_DATA_HOME or HOME)")?;
+    let reference = download_ref();
+    download_into(FORK_URL, &reference, &download_dir(&data, &reference))
+}
+
+fn git(cwd: Option<&Path>, args: &[&str]) -> Result<(), String> {
+    let mut command = std::process::Command::new("git");
+    if let Some(cwd) = cwd {
+        command.arg("-C").arg(cwd);
+    }
+    let output = command
+        .args(args)
+        .stdin(std::process::Stdio::null())
+        .output()
+        .map_err(|error| format!("git {}: {error}", args.join(" ")))?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(format!(
+            "git {} failed: {}",
+            args.join(" "),
+            String::from_utf8_lossy(&output.stderr).trim()
+        ))
+    }
+}
+
+fn download_into(url: &str, reference: &str, dest: &Path) -> Result<PathBuf, String> {
+    let docs = dest.join("docs");
+    if docs.join("docs.json").is_file() {
+        return Ok(docs);
+    }
+    let parent = dest.parent().ok_or("download directory has no parent")?;
+    std::fs::create_dir_all(parent).map_err(|error| format!("{}: {error}", parent.display()))?;
+    let staging = dest.with_extension(format!("partial-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&staging);
+    let staging_str = staging.to_string_lossy().into_owned();
+    let result = git(
+        None,
+        &[
+            "clone",
+            "--quiet",
+            "--no-checkout",
+            "--depth",
+            "1",
+            "--filter=blob:none",
+            "--sparse",
+            url,
+            &staging_str,
+        ],
     )
+    .and_then(|()| {
+        let mut args = vec!["sparse-checkout", "set", "--no-cone"];
+        args.extend(SPARSE_PATTERNS);
+        git(Some(&staging), &args)
+    })
+    .and_then(|()| git(Some(&staging), &["fetch", "--quiet", "--depth", "1", "origin", reference]))
+    .and_then(|()| git(Some(&staging), &["checkout", "--quiet", "--detach", "FETCH_HEAD"]))
+    .and_then(|()| {
+        if staging.join("docs/docs.json").is_file() {
+            Ok(())
+        } else {
+            Err(format!("{url} @ {reference} has no docs/docs.json"))
+        }
+    });
+    if let Err(error) = result {
+        let _ = std::fs::remove_dir_all(&staging);
+        return Err(error);
+    }
+    let _ = std::fs::remove_dir_all(dest);
+    std::fs::rename(&staging, dest).map_err(|error| format!("{}: {error}", dest.display()))?;
+    Ok(docs)
 }
 
 /// `docs/` of the fork checkout (`APHRODY_BUN_CHECKOUT`, else `C:/bun` on Windows), when it holds a corpus.
@@ -393,21 +517,11 @@ fn installed_roots(executable: Option<&Path>, data: Option<&Path>) -> Vec<PathBu
     roots
 }
 
-fn resolve_root_from(
-    configured: Option<&Path>,
-    installed: &[PathBuf],
-    cwd: Option<&Path>,
-    built: &Path,
-) -> Option<PathBuf> {
+fn resolve_root_from(configured: Option<&Path>, candidates: &[PathBuf]) -> Option<PathBuf> {
     if let Some(root) = configured {
         return Some(root.to_path_buf());
     }
-    if let Some(root) = installed.iter().find(|root| root.is_dir()) {
-        return Some(root.clone());
-    }
-    cwd.into_iter().chain(std::iter::once(built)).find_map(|start| {
-        start.ancestors().find_map(|dir| Some(dir.join(MIRROR)).filter(|root| root.is_dir()))
-    })
+    candidates.iter().find(|root| root.is_dir()).cloned()
 }
 
 /// Node modules, npm packages and Node API call patterns from the n2b registry that match
@@ -501,12 +615,16 @@ impl BunDocsSubsystem {
     pub fn index(&self) -> Result<&DocsIndex, SubsystemError> {
         self.index
             .get_or_init(|| {
-                let root = self.root.clone().or_else(resolve_root).ok_or_else(|| {
-                    format!(
-                        "Bun docs not found: set {ROOT_ENV} to an upstream Bun docs directory \
-                         or install the corpus in the user data directory at aphrody/bun/docs"
-                    )
-                })?;
+                let root = match self.root.clone().or_else(resolve_root) {
+                    Some(root) => root,
+                    None => download_root().map_err(|error| {
+                        format!(
+                            "Bun docs not found and not downloaded ({error}): set {CHECKOUT_ENV} \
+                             to the aphrody-labs/bun checkout, {ROOT_ENV} to a docs directory, or \
+                             install the corpus in the user data directory at aphrody/bun/docs"
+                        )
+                    })?,
+                };
                 DocsIndex::load(&root)
             })
             .as_ref()
@@ -572,7 +690,7 @@ impl SystemSubsystem for BunDocsSubsystem {
         vec![
             ToolDefinition::new(
                 "bun_docs_search",
-                "Search the Bun docs of the aphrody-labs/bun fork (checkout APHRODY_BUN_CHECKOUT or mirror docs/reference/upstream-bun): runtime, bundler, package manager, test runner, guides. Returns ranked pages with slug, url and a snippet; set include_content to also return the best page.",
+                "Search the Bun docs of the aphrody-labs/bun fork (checkout APHRODY_BUN_CHECKOUT, else a versioned download of its docs/): runtime, bundler, package manager, test runner, guides. Returns ranked pages with slug, url and a snippet; set include_content to also return the best page.",
                 json!({
                     "type": "object",
                     "properties": {
@@ -821,22 +939,14 @@ mod tests {
         std::fs::create_dir_all(root.join("runtime")).expect("corpus directory");
         std::fs::write(root.join("runtime/file-io.mdx"), PAGE).expect("corpus page");
         let installed = installed_roots(Some(&temp.path().join("bin/aphrody-kernel")), Some(&data));
-        for launch in ["unrelated", "workspaces/other", ""] {
-            let resolved = resolve_root_from(
-                None,
-                &installed,
-                Some(&temp.path().join(launch)),
-                &temp.path().join("removed-build-checkout"),
-            )
-            .expect("installed corpus");
-            assert_eq!(resolved, root);
-            let docs = DocsIndex::load(&resolved).expect("load installed corpus");
-            assert_eq!(docs.search("Bun.file", 1)[0].page.slug, "runtime/file-io");
-        }
+        let resolved = resolve_root_from(None, &installed).expect("installed corpus");
+        assert_eq!(resolved, root);
+        let docs = DocsIndex::load(&resolved).expect("load installed corpus");
+        assert_eq!(docs.search("Bun.file", 1)[0].page.slug, "runtime/file-io");
     }
 
     #[test]
-    fn executable_bundle_is_preferred_over_user_data_and_checkout() {
+    fn executable_bundle_is_preferred_over_user_data() {
         let temp = tempfile::tempdir().expect("temporary install");
         let executable = temp.path().join("prefix/bin/aphrody-kernel");
         let data = temp.path().join("data");
@@ -844,16 +954,11 @@ mod tests {
         for root in &installed {
             std::fs::create_dir_all(root).expect("bundle directory");
         }
-        assert_eq!(
-            resolve_root_from(None, &installed, None, temp.path()),
-            Some(installed[0].clone())
-        );
+        assert_eq!(resolve_root_from(None, &installed), Some(installed[0].clone()));
         std::fs::remove_dir(&installed[0]).expect("remove portable bundle");
-        assert_eq!(
-            resolve_root_from(None, &installed, None, temp.path()),
-            Some(installed[1].clone())
-        );
+        assert_eq!(resolve_root_from(None, &installed), Some(installed[1].clone()));
         assert_eq!(installed[1], temp.path().join("prefix/share/aphrody/bun/docs"));
+        assert!(resolve_root_from(None, &[temp.path().join("absent")]).is_none());
     }
 
     #[test]
@@ -870,41 +975,86 @@ mod tests {
     fn explicit_corpus_override_does_not_fall_back_when_invalid() {
         let temp = tempfile::tempdir().expect("temporary corpus");
         let missing = temp.path().join("missing-configured-corpus");
-        let configured =
-            resolve_root_from(Some(&missing), &[temp.path().to_owned()], None, temp.path());
+        let configured = resolve_root_from(Some(&missing), &[temp.path().to_owned()]);
         assert_eq!(configured, Some(missing.clone()));
         assert!(DocsIndex::load(&missing).is_err());
     }
 
     #[test]
-    fn checkout_discovery_handles_old_and_consolidated_crate_layouts() {
-        for relative in [MIRROR] {
-            let temp = tempfile::tempdir().expect("temporary checkout");
-            let root = temp.path().join(relative);
-            std::fs::create_dir_all(&root).expect("checkout corpus");
-            for crate_dir in ["crates/aphrody-bun-docs", "crates/compat/bun-docs"] {
-                let built = temp.path().join(crate_dir);
-                assert_eq!(resolve_root_from(None, &[], None, &built), Some(root.clone()));
-                assert_eq!(
-                    resolve_root_from(None, &[], Some(&built), Path::new("missing")),
-                    Some(root.clone())
-                );
-            }
-        }
+    fn download_is_pinned_and_versioned() {
+        let commit = pinned_commit().expect("SOURCE.json pins a commit");
+        assert!(commit.len() == 40 && commit.bytes().all(|b| b.is_ascii_hexdigit()), "{commit}");
+        let data = Path::new("data");
+        assert_eq!(
+            download_dir(data, &commit),
+            data.join(format!("aphrody/bun/docs-{}", &commit[..12]))
+        );
+        assert_eq!(download_dir(data, "feature/x"), data.join("aphrody/bun/docs-feature_x"));
     }
 
     #[test]
-    fn developer_sibling_checkouts_are_not_implicit_corpora() {
-        let temp = tempfile::tempdir().expect("temporary workspace");
-        std::fs::create_dir_all(temp.path().join("bun/docs")).expect("sibling corpus");
-        let checkout = temp.path().join("aphrody-compat/crates/aphrody-bun-docs");
-        assert!(resolve_root_from(None, &[], Some(&checkout), &checkout).is_none());
+    fn download_fetches_only_the_docs_of_the_requested_commit() {
+        let temp = tempfile::tempdir().expect("temporary repositories");
+        let fork = temp.path().join("fork");
+        for (path, text) in [
+            ("docs/docs.json", "{}"),
+            ("docs/runtime/file-io.mdx", PAGE),
+            ("docs/images/logo.svg", "<svg/>"),
+            ("LICENSE.md", "MIT"),
+            ("src/main.rs", "fn main() {}"),
+        ] {
+            let file = fork.join(path);
+            std::fs::create_dir_all(file.parent().expect("parent")).expect("fork directory");
+            std::fs::write(file, text).expect("fork file");
+        }
+        let id = [
+            "-c",
+            "user.name=bun-docs",
+            "-c",
+            "user.email=bun-docs@example.invalid",
+            "-c",
+            "commit.gpgsign=false",
+        ];
+        git(Some(&fork), &["init", "--quiet"]).expect("init");
+        git(Some(&fork), &["config", "uploadpack.allowFilter", "true"]).expect("filter");
+        git(Some(&fork), &["config", "uploadpack.allowAnySHA1InWant", "true"]).expect("want");
+        git(Some(&fork), &["add", "."]).expect("add");
+        git(Some(&fork), &[&id[..], &["commit", "--quiet", "-m", "docs"]].concat())
+            .expect("commit");
+        let head = std::process::Command::new("git")
+            .arg("-C")
+            .arg(&fork)
+            .args(["rev-parse", "HEAD"])
+            .output()
+            .expect("rev-parse");
+        let head = String::from_utf8_lossy(&head.stdout).trim().to_owned();
+        let path = fork.to_string_lossy().replace('\\', "/");
+        let url = if path.starts_with('/') {
+            format!("file://{path}")
+        } else {
+            format!("file:///{path}")
+        };
+        let dest = download_dir(&temp.path().join("data"), &head);
+        let docs = download_into(&url, &head, &dest).expect("download");
+        assert_eq!(docs, dest.join("docs"));
+        assert!(docs.join("runtime/file-io.mdx").is_file());
+        assert!(dest.join("LICENSE.md").is_file());
+        assert!(!docs.join("images").exists() && !dest.join("src").exists());
+        assert_eq!(
+            DocsIndex::load(&docs).expect("index").search("Bun.file", 1)[0].page.slug,
+            "runtime/file-io"
+        );
+        assert_eq!(download_into("file:///absent", &head, &dest).expect("cached"), docs);
+        let failed =
+            download_into("file:///absent-fork", "main", &temp.path().join("other/docs-x"));
+        assert!(failed.is_err_and(|error| error.contains("git clone")));
+        assert!(!temp.path().join("other").read_dir().expect("parent").any(|_| true));
     }
 
     #[tokio::test]
     async fn fork_corpus_answers_real_queries() {
         let Some(root) = resolve_root() else {
-            eprintln!("no Bun docs corpus (fork checkout or {MIRROR}); skipping");
+            eprintln!("no Bun docs corpus (fork checkout, installed or downloaded); skipping");
             return;
         };
         let docs = BunDocsSubsystem::with_root(root);

@@ -26,7 +26,7 @@ Its Carbon profile login requests `identify`. Its separate bot installation
 requests `bot applications.commands` and permission bitfield `8` for the
 development guild; Discord-specific
 scope/approval limits are documented in that repository's
-[`docs/reference/discord/carbon-oauth.md`](https://github.com/aphrody-labs/aphrody).
+[`docs/guides/discord/carbon-oauth.md`](../../guides/discord/carbon-oauth.md).
 
 ## Operations
 

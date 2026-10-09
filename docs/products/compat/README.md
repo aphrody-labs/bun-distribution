@@ -28,4 +28,4 @@ Apache-2.0.
 
 ## Automatisation transversale
 
-`bun run docs:bun:update` (ou `yolo ops bun-upstream-docs`) recopie `docs/` du checkout du fork Bun dans l’unique miroir `docs/reference/upstream-bun/` ; `bun run docs:bun:check` vérifie qu’il est à jour.
+`bun run docs:bun:update` (ou `yolo ops bun-upstream-docs`) épingle dans `docs/reference/upstream-bun/SOURCE.json` le commit de `docs/` du fork Bun (lu en place, sans copie) et copie son `LICENSE.md` ; `bun run docs:bun:check` vérifie que le pin est à jour.

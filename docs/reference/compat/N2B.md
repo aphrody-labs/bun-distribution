@@ -16,5 +16,5 @@ the same analyzer as `bunx @aphrody/bun-plugin-n2b`.
 
 The fork documents the CLI, the `n2b.json` manifest, the rule registry, the JSON report schema v2 and
 the crate architecture. The Node.js API reference is
-[nodejs.org/api](https://nodejs.org/api/), and the Bun docs mirror is
-[`docs/reference/upstream-bun`](../upstream-bun/runtime/nodejs-compat.mdx).
+[nodejs.org/api](https://nodejs.org/api/), and the Bun page is
+[docs/runtime/nodejs-compat.mdx](https://github.com/aphrody-labs/bun/blob/main/docs/runtime/nodejs-compat.mdx) of the fork.

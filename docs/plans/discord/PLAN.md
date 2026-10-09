@@ -35,7 +35,7 @@ own applications.
   the configured test guild and asks for permission bitfield `8` (Administrator);
   consent is forced so Discord displays newly requested scopes. Unsupported or
   approval-gated scopes and the distinction between consent and implemented
-  capabilities are listed in [`carbon-oauth.md`](../../reference/discord/carbon-oauth.md).
+  capabilities are listed in [`carbon-oauth.md`](../../guides/discord/carbon-oauth.md).
 - Deployed release `30f49b8913c01ef5cbc92e7ff557e757e20b776e`. Live checks
   confirm `/healthz` reports Gateway readiness and `/oauth/login` returns 302
   with the expected scopes, test guild, `permissions=8`, `integration_type=0`,

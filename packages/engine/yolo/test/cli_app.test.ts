@@ -65,9 +65,10 @@ describe("Yolo canonical CLI and native capability owners", () => {
     expect(cargo?.members.some(m => m.startsWith("crates/"))).toBe(true);
   });
 
-  it("searches the Bun docs mirror in docs/reference/upstream-bun", async () => {
+  it.skipIf(!haveBunFork)("searches the Bun docs of the fork checkout", async () => {
     const proc = Bun.spawn(["bun", cliEntryPath, "docs", "server", "--json"], {
       cwd: rootDir,
+      env: { ...process.env, BUN_DOCS_DIR: resolve(bunCheckout()!, "docs") },
       stdout: "pipe",
       stderr: "pipe",
     });
