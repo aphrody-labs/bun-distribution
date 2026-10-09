@@ -46,7 +46,17 @@ pub enum Host {
     #[value(alias = "ovh-vps")]
     Vps,
     Dbfr,
+    /// Omar's Windows PC on wg1 (OpenSSH alias `omar-pc`, 10.200.77.10:22).
+    #[value(alias = "omar-pc")]
     Omar,
+    /// Omar's Windows PC through his reverse tunnel on the vps loopback (127.0.0.1:22010).
+    OmarRt,
+    /// Omar's WSL Ubuntu, native OpenSSH on port 2222 (mirrored networking).
+    OmarWsl,
+    /// Omar's WSL Ubuntu through the reverse tunnel (127.0.0.1:22011).
+    OmarWslRt,
+    /// The owner's Windows workstation on wg1 (10.200.77.4).
+    AphroPc,
 }
 
 impl Host {
@@ -55,7 +65,38 @@ impl Host {
         match self {
             Self::Vps => "vps",
             Self::Dbfr => "dbfr",
-            Self::Omar => "omar",
+            Self::Omar => "omar-pc",
+            Self::OmarRt => "omar-rt",
+            Self::OmarWsl => "omar-wsl",
+            Self::OmarWslRt => "omar-wsl-rt",
+            Self::AphroPc => "aphro-pc",
+        }
+    }
+
+    /// Every host, in declaration order.
+    pub const ALL: [Self; 7] = [
+        Self::Vps,
+        Self::Dbfr,
+        Self::Omar,
+        Self::OmarRt,
+        Self::OmarWsl,
+        Self::OmarWslRt,
+        Self::AphroPc,
+    ];
+
+    /// Windows OpenSSH targets: their default shell is cmd.exe, not a POSIX shell.
+    #[must_use]
+    pub const fn is_windows(self) -> bool {
+        matches!(self, Self::Omar | Self::OmarRt | Self::AphroPc)
+    }
+
+    /// Remote interpreter that reads a long command from stdin.
+    #[must_use]
+    pub const fn stdin_shell(self) -> &'static [&'static str] {
+        if self.is_windows() {
+            &["powershell", "-NoProfile", "-NonInteractive", "-Command", "-"]
+        } else {
+            &["bash", "-s"]
         }
     }
 }
@@ -1181,11 +1222,15 @@ pub fn audit_command(services: &[&str]) -> String {
 /// argument near 8 KiB (a 10 KiB build-factory script arrived as 8169 bytes on 2026-10-09).
 const MAX_ARGUMENT_COMMAND: usize = 4096;
 
-/// The script to feed to a remote `bash -s` when the joined command is too long for an argument.
+/// The script to feed to the remote stdin shell ([`Host::stdin_shell`]) when the joined command is too long for an argument.
 fn stdin_script(args: &[&str]) -> Option<String> {
     let joined = args.join(" ");
-    (joined.len() > MAX_ARGUMENT_COMMAND).then(|| format!("{joined}
-"))
+    (joined.len() > MAX_ARGUMENT_COMMAND).then(|| {
+        format!(
+            "{joined}
+"
+        )
+    })
 }
 
 /// Parse the finite native SSH execution timeout without modifying environment.
@@ -1221,7 +1266,7 @@ pub async fn run_ssh(host: Host, args: &[&str]) -> Result<Output, Error> {
     let mut command = Command::new("ssh");
     command.args(["-o", "BatchMode=yes", "-o", "ConnectTimeout=10"]).arg(host.alias());
     match &script {
-        Some(_) => command.args(["bash", "-s"]).stdin(Stdio::piped()),
+        Some(_) => command.args(host.stdin_shell()).stdin(Stdio::piped()),
         None => command.args(args),
     };
     let mut child =
@@ -2120,8 +2165,10 @@ mod tests {
         assert_eq!(super::stdin_script(&[&long]), None);
         let script = super::stdin_script(&[&long, "y"]).expect("long command");
         assert_eq!(script.len(), super::MAX_ARGUMENT_COMMAND + 3);
-        assert!(script.ends_with(" y
-"));
+        assert!(script.ends_with(
+            " y
+"
+        ));
     }
 
     use std::path::Path;
@@ -2153,7 +2200,15 @@ mod tests {
     fn aliases_are_stable() {
         assert_eq!(Host::Vps.alias(), "vps");
         assert_eq!(Host::Dbfr.alias(), "dbfr");
-        assert_eq!(Host::Omar.alias(), "omar");
+        assert_eq!(Host::Omar.alias(), "omar-pc");
+        assert_eq!(Host::OmarWsl.alias(), "omar-wsl");
+        assert_eq!(Host::AphroPc.alias(), "aphro-pc");
+        assert!(Host::Omar.is_windows() && !Host::OmarWsl.is_windows());
+        assert_eq!(Host::AphroPc.stdin_shell()[0], "powershell");
+        assert_eq!(Host::OmarWslRt.stdin_shell(), ["bash", "-s"]);
+        for host in Host::ALL {
+            assert_eq!(<Host as clap::ValueEnum>::from_str(host.alias(), false).unwrap(), host);
+        }
     }
 
     #[test]

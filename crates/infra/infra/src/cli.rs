@@ -2092,14 +2092,12 @@ async fn execute_drive(cmd: &DriveCommand, run: &mut Run) -> Result<()> {
                 println!("{:-<12} {:-<28} {:-<18} {:-<4}", "", "", "", "");
                 for m in &mounts {
                     let type_str = match &m.kind {
-                        crate::drive::MountKind::LocalFs { .. } => "LocalFs",
-                        crate::drive::MountKind::RemoteSftp { host, .. } => match host {
-                            aphrody_ssh::Host::Vps => "RemoteSftp(vps)",
-                            aphrody_ssh::Host::Dbfr => "RemoteSftp(dbfr)",
-                            aphrody_ssh::Host::Omar => "RemoteSftp(omar)",
+                        crate::drive::MountKind::LocalFs { .. } => "LocalFs".to_owned(),
+                        crate::drive::MountKind::RemoteSftp { host, .. } => {
+                            format!("RemoteSftp({})", host.alias())
                         },
-                        crate::drive::MountKind::GitRepo { .. } => "GitRepo",
-                        crate::drive::MountKind::OpenDalFs { .. } => "OpenDalFs",
+                        crate::drive::MountKind::GitRepo { .. } => "GitRepo".to_owned(),
+                        crate::drive::MountKind::OpenDalFs { .. } => "OpenDalFs".to_owned(),
                     };
                     println!(
                         "{:<12} {:<28} {:<18} {}",

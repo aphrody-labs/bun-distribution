@@ -2626,8 +2626,8 @@
     {
       "path": "docs/ecosystem/MCP-TOOLS.md",
       "title": "MCP tools",
-      "sha256": "94ab5d007e85cc49acb8cb54700f6f6f60abca23c3c009dda7242b21d9bdeb83",
-      "bytes": 65401,
+      "sha256": "a54716802a9455db0f2854fb515991c02e91a43916c1dfb39c9a6e0390e5745a",
+      "bytes": 65443,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -3076,8 +3076,8 @@
     {
       "path": "docs/operations/infra/BUILD-FACTORY.md",
       "title": "VPS build factory and DBFR Shenron runtime",
-      "sha256": "e9aa033da476b2d42bc4effccb7125ca9675fc28775845c10a1c35734165bbe0",
-      "bytes": 23117,
+      "sha256": "03bbf199e62de5a95d3ee2d93730d3daa2105e7949adb994313a50b77737e7bb",
+      "bytes": 23681,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",

@@ -1,5 +1,5 @@
 {
-  "$comment": "SSH build context defaults. Override with --config or VPS_CARGO_CONFIG and --host or VPS_CARGO_HOST. Local checkout paths resolve from this worktree. Current factory is vps; production has no implicit build allocation. Existing remote -wsl names are retained store/cache identifiers; no protected data is moved.",
+  "$comment": "SSH build context defaults. Override with --config or VPS_CARGO_CONFIG and --host or VPS_CARGO_HOST. Local checkout paths resolve from this worktree. Primary factory is vps. Owner directive 2026-10-09 (\"exploite nos deux VPS pour build et prod\") restores dbfr as a bounded secondary host (production: Postgres, Redis, nginx, Shenron containers): `--host dbfr`, or `--host auto` when the vps heavy lock is busy; 3 jobs at most, nice 10, sccache 8G, no desktop libraries. Existing remote -wsl names are retained store/cache identifiers; no protected data is moved.",
   "schemaVersion": 1,
   "host": "vps",
   "controlPath": "~/.ssh/cm/vps-cargo",
@@ -77,5 +77,29 @@
     "(^|/)id_(rsa|ed25519|ecdsa)(\\.pub)?$",
     "(^|/)credentials(\\.json)?$",
     "(^|/)secrets?\\.(json|toml|ya?ml)$"
-  ]
+  ],
+  "hosts": {
+    "dbfr": {
+      "host": "dbfr",
+      "controlPath": "~/.ssh/cm/dbfr-cargo",
+      "localSession": "dbfr-tunnel",
+      "remoteSession": "dbfr-cargo",
+      "remoteWorkspace": "/home/ubuntu/aphrody-build/workspaces/aphrody-wsl",
+      "remoteSeed": "",
+      "remoteTargetDir": "/home/ubuntu/aphrody-build/cache/cargo/aphrody-wsl",
+      "remoteLockDir": "/home/ubuntu/aphrody-build/locks",
+      "remoteHeavyLock": "/home/ubuntu/aphrody-build/locks/heavy.lock",
+      "remoteLogDir": "/home/ubuntu/aphrody-build/artifacts/wsl",
+      "desktopLibraries": false,
+      "jobs": 3,
+      "maxJobs": 3,
+      "remoteEnv": {
+        "SCCACHE_DIR": "/home/ubuntu/aphrody-build/cache/sccache",
+        "BUN_INSTALL_CACHE_DIR": "/home/ubuntu/aphrody-build/cache/bun",
+        "SCCACHE_CACHE_SIZE": "8G",
+        "APHRODY_BUILD_HOST": "dbfr",
+        "CEF_PATH": ""
+      }
+    }
+  }
 }

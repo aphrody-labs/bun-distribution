@@ -21,6 +21,12 @@ WSL and Windows retain sources, editing, help, plans and scoped static checks.
 Shenron runtime moves to DBFR; RG runtime is requested stopped completely.
 These are desired placements, not a claim that migration is complete.
 
+Owner directive 2026-10-09 (« exploite nos deux VPS pour build et prod ») restores DBFR as a bounded secondary
+Cargo host beside its production (`hosts.dbfr` of `tools/config/host/vps-cargo.json`): rustup 1.98.1 and
+sccache 0.18.0 under `~ubuntu/.cargo`, checkout and caches under `/home/ubuntu/aphrody-build`, 3 jobs at most, nice
+10, sccache 8G, no desktop libraries. `bun scripts/build/rust/vps-cargo.ts run --host dbfr -- <cargo args>`, or
+`--host auto` to fall back there when the vps heavy lock is busy. Shenron repositories and releases stay on the vps.
+
 Use the Workspace factory facade and existing native Infra SSH operations.
 Read their current help before running. Source transfer uses
 `aphrody-infra ssh sync --host vps --source <clean-owner-checkout> --destination <repository-root>`;

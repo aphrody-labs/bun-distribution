@@ -94,14 +94,9 @@ fn parse_ssh_config(path: &Path, target_alias: &str) -> Option<SshConfigEntry> {
 }
 
 impl HostConfig {
-    /// Resolve configuration for a known host alias (`vps`, `dbfr`).
+    /// Resolve configuration for a known host ([`Host::alias`]).
     pub fn for_host(host: Host) -> Result<Self> {
-        let alias = match host {
-            Host::Vps => "vps",
-            Host::Dbfr => "dbfr",
-            Host::Omar => "omar",
-        };
-        Self::resolve(alias)
+        Self::resolve(host.alias())
     }
 
     /// Resolve configuration for an arbitrary alias or host name dynamically.
@@ -125,7 +120,10 @@ impl HostConfig {
         let (fallback_host, fallback_user, fallback_key) = match alias.to_lowercase().as_str() {
             "vps" => ("51.77.147.152", "ubuntu", home.join(".ssh").join("ovh_vps")),
             "dbfr" => ("51.255.162.6", "ubuntu", home.join(".ssh").join("id_ed25519")),
-            "omar" => ("10.200.77.10", "omar", home.join(".ssh").join("id_ed25519")),
+            "omar" | "omar-pc" | "omar-wsl" => {
+                ("10.200.77.10", "omar", home.join(".ssh").join("id_ed25519"))
+            },
+            "aphro-pc" => ("10.200.77.4", "aphro", home.join(".ssh").join("id_ed25519")),
             _ => (alias, "ubuntu", home.join(".ssh").join("id_ed25519")),
         };
 

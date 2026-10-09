@@ -126,7 +126,7 @@ describe("vps-cargo", () => {
       " scripts/build/rust/cargo-serial.sh check",
     );
     expect(() => repositoryConfig(config, "nope")).toThrow("unknown repository");
-    await expect(loadConfig(undefined, "dbfr")).rejects.toThrow("unknown build host");
+    await expect(loadConfig(undefined, "nope")).rejects.toThrow("unknown build host");
   });
 
   test("secret-like paths are refused", () => {
@@ -451,9 +451,15 @@ describe("desktop-library routing", () => {
   });
 });
 
-test("owner keeps every Shenron build on the VPS factory, never on DBFR", async () => {
+test("dbfr is a bounded secondary factory; every Shenron build stays on the VPS factory", async () => {
   const primary = await loadConfig();
-  expect(primary.hosts?.dbfr).toBeUndefined();
+  const dbfr = await loadConfig(undefined, "dbfr");
+  expect(dbfr.host).toBe("dbfr");
+  expect(dbfr.maxJobs).toBe(3);
+  expect(dbfr.desktopLibraries).toBe(false);
+  expect(dbfr.remoteEnv["SCCACHE_CACHE_SIZE"]).toBe("8G");
+  expect(dbfr.remoteHeavyLock).toContain("/home/ubuntu/aphrody-build/");
+  expect(() => repositoryConfig(dbfr, "shenron")).toThrow("primary host only");
   for (const name of ["shenron", "shenron-release", "shenron-omar"]) {
     const { config } = repositoryConfig(primary, name);
     expect(config.host).toBe("vps");

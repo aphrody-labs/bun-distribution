@@ -182,7 +182,7 @@ fn plan_infra_invoker(
          or beside aphrody-kernel, or set APHRODY_SSH_BIN to its path (inside an Aphrody \
          checkout, APHRODY_INFRA_BUILD_FROM_SOURCE=1 builds it from the workspace located by \
          APHRODY_INFRA_DIR, APHRODY_INFRA_PATH, APHRODY_INFRA_ROOT, APHRODY_ROOT or the working \
-         directory). These tools only serve the Aphrody infrastructure hosts `vps` and `dbfr`."
+         directory). These tools only serve the declared Aphrody SSH hosts (vps, dbfr and the wg1 PCs)."
             .into(),
     ))
 }
@@ -236,13 +236,13 @@ impl SystemSubsystem for InfraSubsystem {
         vec![
             ToolDefinition::new(
                 "infra_exec",
-                "Execute an arbitrary remote command on an Aphrody infrastructure host (vps or dbfr) via in-process SSH",
+                "Execute an arbitrary remote command on an Aphrody SSH host (vps, dbfr, Omar Windows/WSL, aphro-pc; Windows hosts run cmd.exe) via in-process SSH",
                 json!({
                     "type": "object",
                     "properties": {
                         "host": {
                             "type": "string",
-                            "enum": ["vps", "dbfr"],
+                            "enum": SSH_HOSTS,
                             "description": "Target infrastructure host alias"
                         },
                         "command": {
@@ -261,7 +261,7 @@ impl SystemSubsystem for InfraSubsystem {
                     "properties": {
                         "host": {
                             "type": "string",
-                            "enum": ["vps", "dbfr"],
+                            "enum": SSH_HOSTS,
                             "description": "Target infrastructure host alias"
                         },
                         "path": {
@@ -281,7 +281,7 @@ impl SystemSubsystem for InfraSubsystem {
                     "properties": {
                         "host": {
                             "type": "string",
-                            "enum": ["vps", "dbfr"],
+                            "enum": SSH_HOSTS,
                             "description": "Target infrastructure host alias"
                         },
                         "path": {
@@ -301,7 +301,7 @@ impl SystemSubsystem for InfraSubsystem {
                     "properties": {
                         "host": {
                             "type": "string",
-                            "enum": ["vps", "dbfr"],
+                            "enum": SSH_HOSTS,
                             "description": "Target infrastructure host alias"
                         },
                         "source": {
@@ -328,7 +328,7 @@ impl SystemSubsystem for InfraSubsystem {
                     "properties": {
                         "host": {
                             "type": "string",
-                            "enum": ["vps", "dbfr"],
+                            "enum": SSH_HOSTS,
                             "description": "Target infrastructure host alias"
                         },
                         "repo_path": {
@@ -459,9 +459,16 @@ fn git_status_command(repo_path: &str) -> Result<String, SubsystemError> {
     Ok(format!("git -C {path} status --short --branch && git -C {path} log -n 5 --oneline"))
 }
 
+/// SSH hosts of `aphrody infra ssh --host` (`aphrody_ssh::Host` values and aliases).
+const SSH_HOSTS: [&str; 8] =
+    ["vps", "dbfr", "omar", "omar-pc", "omar-rt", "omar-wsl", "omar-wsl-rt", "aphro-pc"];
+
 fn validate_host(host: &str) -> Result<(), SubsystemError> {
-    if host != "vps" && host != "dbfr" {
-        return Err(SubsystemError::InvalidArguments("host must be 'vps' or 'dbfr'".into()));
+    if !SSH_HOSTS.contains(&host) {
+        return Err(SubsystemError::InvalidArguments(format!(
+            "host must be one of {}",
+            SSH_HOSTS.join(", ")
+        )));
     }
     Ok(())
 }
@@ -662,6 +669,8 @@ mod tests {
     fn validate_host_rules() {
         assert!(validate_host("vps").is_ok());
         assert!(validate_host("dbfr").is_ok());
+        assert!(validate_host("omar-wsl").is_ok());
+        assert!(validate_host("aphro-pc").is_ok());
         assert!(validate_host("unknown").is_err());
         assert!(validate_host("").is_err());
     }

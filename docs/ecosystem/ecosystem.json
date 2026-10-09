@@ -13850,7 +13850,7 @@
       "tools": [
         {
           "name": "infra_exec",
-          "description": "Execute an arbitrary remote command on an Aphrody infrastructure host (vps or dbfr) via in-process SSH",
+          "description": "Execute an arbitrary remote command on an Aphrody SSH host (vps, dbfr, Omar Windows/WSL, aphro-pc; Windows hosts run cmd.exe) via in-process SSH",
           "file": "crates/os/kernel/core/src/infra.rs"
         },
         {

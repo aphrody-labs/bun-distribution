@@ -161,7 +161,10 @@ fn route_request(root: &Path, target: &str, method: &str, path: &str) -> (&'stat
             Ok(wts) => ("200 OK", serde_json::to_string_pretty(&wts).unwrap_or_default()),
             Err(e) => ("500 Internal Server Error", json!({ "error": e.to_string() }).to_string()),
         },
-        ("GET", "/api/v1/ssh/hosts") => ("200 OK", json!({ "hosts": ["vps", "dbfr"] }).to_string()),
+        ("GET", "/api/v1/ssh/hosts") => (
+            "200 OK",
+            json!({ "hosts": aphrody_ssh::Host::ALL.map(aphrody_ssh::Host::alias) }).to_string(),
+        ),
         ("POST", p) if p.starts_with("/api/v1/services/") => {
             let sub = p.trim_start_matches("/api/v1/services/");
             let parts: Vec<&str> = sub.split('/').collect();

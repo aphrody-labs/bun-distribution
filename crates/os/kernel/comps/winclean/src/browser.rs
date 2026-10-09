@@ -140,10 +140,9 @@ pub fn discover(binary: Option<PathBuf>, user_data: Option<PathBuf>) -> io::Resu
             if let Ok(value) = crate::registry::get_value(
                 &format!(r"{hive}\Software\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe"),
                 "(default)",
-            ) {
-                if let Some(path) = value["Value"].as_str() {
-                    push_unique(&mut binaries, PathBuf::from(path.trim_matches('"')));
-                }
+            ) && let Some(path) = value["Value"].as_str()
+            {
+                push_unique(&mut binaries, PathBuf::from(path.trim_matches('"')));
             }
             if let Ok(value) = crate::registry::list_key(&format!(
                 r"{hive}\Software\Google\Chrome\NativeMessagingHosts"

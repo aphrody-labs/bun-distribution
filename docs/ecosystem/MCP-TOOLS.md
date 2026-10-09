@@ -137,7 +137,7 @@ Kind: kernel-subsystem. 5 tools.
 
 | Tool | Description |
 | --- | --- |
-| `infra_exec` | Execute an arbitrary remote command on an Aphrody infrastructure host (vps or dbfr) via in-process SSH |
+| `infra_exec` | Execute an arbitrary remote command on an Aphrody SSH host (vps, dbfr, Omar Windows/WSL, aphro-pc; Windows hosts run cmd.exe) via in-process SSH |
 | `infra_git_status` | Inspect the working tree status and recent commits of a production Git repository on an infrastructure host |
 | `infra_sftp_list` | List directory entries and metadata (size, permissions, is_dir) on an Aphrody infrastructure host via native SFTP |
 | `infra_sftp_read` | Read the content of a remote file on an Aphrody infrastructure host via native in-process SFTP |
