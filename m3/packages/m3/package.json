@@ -131,7 +131,7 @@
   },
   "dependencies": {
     "@aphrody/bun": "^3.3.0",
-    "@aphrody/bun-plugin-tailwind": "0.1.0-aphrody.1",
+    "@aphrody/bun-plugin-tailwind": "0.1.0-aphrody.4",
     "@aphrody/m3-fonts": "workspace:*",
     "@aphrody/m3-motion": "workspace:*",
     "@aphrody/m3-react": "workspace:*",

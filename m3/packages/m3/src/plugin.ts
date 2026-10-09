@@ -59,7 +59,7 @@ export const M3_MODULES: readonly string[] = [
   ...Object.keys(SHEET_MODULES),
   ...Object.keys(SYMBOL_MODULES),
   FONTS_MODULE,
-].map((name) => `m3:${name}`);
+].map(name => `m3:${name}`);
 
 export interface M3PluginOptions {
   /** Inputs of the generated sheets. Default: `theme` of the `m3.config.ts` in `configDir`. */
@@ -88,10 +88,7 @@ export function fontsCss(): string {
   return `${faceRule({ ...face, format: "truetype" }, "./GoogleSansFlex-Variable.ttf")}\n`;
 }
 
-type LoadCallback = (args: {
-  path: string;
-  namespace: string;
-}) => OnLoadResult | Promise<OnLoadResult>;
+type LoadCallback = (args: { path: string; namespace: string }) => OnLoadResult | Promise<OnLoadResult>;
 
 /** Build the plugin. */
 export function m3Plugin(options: M3PluginOptions = {}): BunPlugin {
@@ -106,8 +103,7 @@ export function m3Plugin(options: M3PluginOptions = {}): BunPlugin {
     return (artifact = path ? readNativeTheme(path) : null);
   };
 
-  const getGenerator = () =>
-    (generator ??= options.css ? Promise.resolve(options.css) : defaultM3Css());
+  const getGenerator = () => (generator ??= options.css ? Promise.resolve(options.css) : defaultM3Css());
   const getTheme = () =>
     (theme ??= (async () => {
       if (options.theme) return options.theme;
@@ -139,18 +135,16 @@ export function m3Plugin(options: M3PluginOptions = {}): BunPlugin {
     setup(build: PluginBuilder) {
       // The m3 hooks come first: the Tailwind loader would otherwise try to read the virtual
       // font sheet from disk.
-      build.onResolve({ filter: /^m3:/ }, (args) => {
+      build.onResolve({ filter: /^m3:/ }, args => {
         const name = args.path.slice("m3:".length);
         if (name in SHEET_MODULES) return { path: name, namespace: M3_NAMESPACE };
         const fonts = fontPaths(resolveRepoRoot(options.root));
         const style = SYMBOL_MODULES[name];
         if (style) return { path: join(fonts.symbolsDir, `${style}.css`) };
         if (name === FONTS_MODULE) return { path: join(fonts.sansFlexDir, FONTS_VIRTUAL) };
-        throw new Error(
-          `@aphrody/m3: unknown module ${args.path} (known: ${M3_MODULES.join(", ")})`,
-        );
+        throw new Error(`@aphrody/m3: unknown module ${args.path} (known: ${M3_MODULES.join(", ")})`);
       });
-      build.onResolve({ filter: /\.(woff2?|ttf|otf|eot)$/ }, (args) => {
+      build.onResolve({ filter: /\.(woff2?|ttf|otf|eot)$/ }, args => {
         if (args.importer) {
           const directTarget = resolve(dirname(args.importer), args.path);
           if (existsSync(directTarget)) return { path: directTarget };
@@ -166,7 +160,7 @@ export function m3Plugin(options: M3PluginOptions = {}): BunPlugin {
         }
         return undefined;
       });
-      build.onLoad({ filter: /.*/, namespace: M3_NAMESPACE }, async (args) => {
+      build.onLoad({ filter: /.*/, namespace: M3_NAMESPACE }, async args => {
         const kind = SHEET_MODULES[args.path];
         if (!kind) throw new Error(`@aphrody/m3: unknown sheet m3:${args.path}`);
         return { contents: await sheet(kind), loader: "css" };
@@ -178,7 +172,7 @@ export function m3Plugin(options: M3PluginOptions = {}): BunPlugin {
       if (options.sass !== false) {
         const sassOptions = typeof options.sass === "object" ? options.sass : {};
         let compile: Promise<LoadCallback> | undefined;
-        build.onLoad({ filter: /\.scss$/ }, async (args) => {
+        build.onLoad({ filter: /\.scss$/ }, async args => {
           compile ??= (async () => {
             const { sassRustPlugin } = await loadAphrodyBun();
             if (typeof sassRustPlugin !== "function")
@@ -196,7 +190,14 @@ export function m3Plugin(options: M3PluginOptions = {}): BunPlugin {
         });
       }
 
-      if (options.tailwind !== false) void tailwindM3Plugin().setup(build);
+      // The token sheets carry `@theme inline`: Tailwind compiles them with the root that imports them.
+      if (options.tailwind !== false)
+        void tailwindM3Plugin({
+          schemeImport: id => {
+            const name = id.slice("m3:".length);
+            return id.startsWith("m3:") && Object.hasOwn(SHEET_MODULES, name) ? sheet(SHEET_MODULES[name]) : undefined;
+          },
+        }).setup(build);
     },
   };
 }
