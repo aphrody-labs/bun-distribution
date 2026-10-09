@@ -28,7 +28,7 @@
     {
       "scope": "os",
       "repo": "aphrody",
-      "path": "assets/fonts",
+      "path": "crates/ui/m3-tokens/fonts",
       "mount": "fonts",
       "owns": "UI fonts and their OFL notices, published under the historical /s/os/fonts/ paths.",
       "exclude": []

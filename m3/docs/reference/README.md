@@ -71,5 +71,5 @@ historical.
 - `packages/` and `crates/`: remaining import snapshots whose text differs from the owner copy only
   by link paths, upstream changelogs and font/icon license notices. Canonical copies live next to
   the code (`packages/*`, `crates/ui/*`); the consolidation report lists each pending case.
-- `assets/fonts/`: [Google Sans Flex](https://github.com/aphrody-labs/aphrody/blob/main/assets/fonts/google-sans-flex/OFL.txt) and
-  [Google Sans Code](https://github.com/aphrody-labs/aphrody/blob/main/assets/fonts/google-sans-code/OFL.txt) license notices.
+- `crates/ui/m3-tokens/fonts/`: [Google Sans Flex](https://github.com/aphrody-labs/aphrody/blob/main/crates/ui/m3-tokens/fonts/google-sans-flex/OFL.txt) and
+  [Google Sans Code](https://github.com/aphrody-labs/aphrody/blob/main/crates/ui/m3-tokens/fonts/google-sans-code/OFL.txt) license notices.

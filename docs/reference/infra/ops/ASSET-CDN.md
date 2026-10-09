@@ -22,7 +22,7 @@ Scopes come from [`tools/config/asset-catalog.json`](../../../../tools/config/as
 | Scope | Source | Owns |
 | --- | --- | --- |
 | `os` | `aphrody/assets/ui` | Material 3 design references and UI captures (scope name kept so `/s/os/` URLs stay stable) |
-| `os` | `aphrody/assets/fonts`, mounted at `fonts/` | Google Sans fonts and OFL notices; `/s/os/fonts/` stays stable |
+| `os` | `aphrody/crates/ui/m3-tokens/fonts`, mounted at `fonts/` | Google Sans fonts and OFL notices; `/s/os/fonts/` stays stable |
 | `aphrody` | `aphrody/assets/ai` | agent brand (Byron), product captures and renders |
 
 ## Rules

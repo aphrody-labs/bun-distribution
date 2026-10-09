@@ -8,15 +8,14 @@
 //! what keeps the two backends within the documented per-pixel tolerance.
 //!
 //! The default embedded face is Google Sans Flex
-//! (`assets/fonts/google-sans-flex/GoogleSansFlex-Variable.ttf`).
+//! (`aphrody_m3_tokens::google_sans_flex::TTF_DATA`).
 
 use std::sync::OnceLock;
 
 use crate::scene::TypeStyleName;
 
 /// Bytes of the embedded Google Sans Flex variable font.
-static GOOGLE_SANS_FLEX_BYTES: &[u8] =
-    include_bytes!("../../../../assets/fonts/google-sans-flex/GoogleSansFlex-Variable.ttf");
+static GOOGLE_SANS_FLEX_BYTES: &[u8] = aphrody_m3_tokens::google_sans_flex::TTF_DATA;
 
 fn face() -> &'static fontdue::Font {
     static FACE: OnceLock<fontdue::Font> = OnceLock::new();

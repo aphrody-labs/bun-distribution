@@ -8,8 +8,7 @@ use aphrody_svg::{
     raster::{RenderOptions, render},
 };
 
-const FONT: &[u8] =
-    include_bytes!("../../../../assets/fonts/google-sans-code/GoogleSansCode-Variable.ttf");
+const FONT: &[u8] = aphrody_m3_tokens::google_sans_code::CODE_TTF_DATA;
 
 fn ink(svg: &str) -> usize {
     let r = render(svg, RenderOptions { height: Some(64), ..RenderOptions::default() })

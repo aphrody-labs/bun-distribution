@@ -30,3 +30,6 @@ usvg      = { workspace = true, optional = true }
 tiny-skia = { workspace = true, optional = true }
 skrifa    = { workspace = true, optional = true }
 aphrody-m3-tokens = { workspace = true, optional = true, features = ["std"] }
+
+[dev-dependencies]
+aphrody-m3-tokens = { workspace = true }

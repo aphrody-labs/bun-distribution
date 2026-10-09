@@ -14,9 +14,9 @@
 //! official upstream release
 //! <https://github.com/googlefonts/googlesans-code/releases/tag/v7.001>
 //! (`GoogleSansCode-v7.001.zip`), stored as
-//! `assets/fonts/google-sans-code/GoogleSansCode-Variable.ttf` and shipped
+//! `crates/ui/m3-tokens/fonts/google-sans-code/GoogleSansCode-Variable.ttf` and shipped
 //! under the SIL Open Font License v1.1
-//! (`assets/fonts/google-sans-code/OFL.txt`, copied from the same archive).
+//! (`crates/ui/m3-tokens/fonts/google-sans-code/OFL.txt`, copied from the same archive).
 //! SHA-256 of the TTF:
 //! `74642762fae66d5883077794a763e1086394b8cb72f2623e456e06359dc5c64b`.
 //!
@@ -34,12 +34,12 @@ pub const CODE_MONO: Axis = Axis { tag: "MONO", min: 0.0, default: 1.0, max: 1.0
 /// Both axes in the order of the upstream filename (`[MONO,wght]`).
 pub const CODE_ALL_AXES: [&Axis; 2] = [&CODE_MONO, &CODE_WGHT];
 
-/// File name of the variable font under `assets/fonts/google-sans-code/`.
+/// File name of the variable font under `crates/ui/m3-tokens/fonts/google-sans-code/`.
 pub const CODE_TTF_FILE_NAME: &str = "GoogleSansCode-Variable.ttf";
 
 /// Raw TTF bytes for Google Sans Code (upright, `MONO` + `wght` axes).
 pub const CODE_TTF_DATA: &[u8] =
-    include_bytes!("../../../../assets/fonts/google-sans-code/GoogleSansCode-Variable.ttf");
+    include_bytes!("../fonts/google-sans-code/GoogleSansCode-Variable.ttf");
 
 /// Google Sans Code variable-font axis tokens.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -76,7 +76,7 @@ pub fn code_font_variation_settings(a: &GoogleSansCodeAxes) -> String {
 }
 
 /// Emit a `@font-face` declaration block pointing at the variable font
-/// shipped at `assets/fonts/google-sans-code/GoogleSansCode-Variable.ttf`.
+/// shipped at `crates/ui/m3-tokens/fonts/google-sans-code/GoogleSansCode-Variable.ttf`.
 ///
 /// `relative_url` is the URL prefix used in the consumer page (e.g.
 /// `"../../../assets/fonts/google-sans-code/"`).
@@ -132,7 +132,7 @@ mod tests {
 
     #[test]
     fn license_is_ofl() {
-        let ofl = include_str!("../../../../assets/fonts/google-sans-code/OFL.txt");
+        let ofl = include_str!("../fonts/google-sans-code/OFL.txt");
         assert!(ofl.contains("SIL Open Font License, Version 1.1"));
         assert!(ofl.contains("Google Sans Code Project Authors"));
     }

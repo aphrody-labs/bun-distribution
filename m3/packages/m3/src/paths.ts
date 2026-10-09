@@ -2,7 +2,7 @@
 // Where the Aphrody OS assets live. Fonts and icons ship from the crates (docs/design/M3-PLAN.md,
 // decision D5): `crates/ui/bun/icons/material-symbols/*.woff2` and
 // the `@aphrody/m3-fonts` package. Two layouts are recognised: an Aphrody OS checkout
-// (`crates/ui/bun/icons/material-symbols`, `assets/fonts/google-sans-flex`) and an aphrody-m3 checkout
+// (`crates/ui/bun/icons/material-symbols`, `crates/ui/m3-tokens/fonts/google-sans-flex`) and an aphrody-m3 checkout
 // whose `packages/m3-fonts/fonts/upstream` holds the same files, pinned and fetched by
 // `bun scripts/fonts-sync.ts` (standalone, yolo and iecode checkouts). The root is discovered by
 // walking up from a start directory; `APHRODY_OS_ROOT` or an explicit `root` option override it.
@@ -12,7 +12,7 @@ import { dirname, join, resolve } from "node:path";
 /** Repository-relative directory of the Material Symbols woff2 files. */
 export const SYMBOLS_DIR = "crates/ui/bun/icons/material-symbols";
 /** Repository-relative directory of the Google Sans Flex variable font. */
-export const SANS_FLEX_DIR = "assets/fonts/google-sans-flex";
+export const SANS_FLEX_DIR = "crates/ui/m3-tokens/fonts/google-sans-flex";
 /** aphrody-m3 layout: the synced upstream sources of `@aphrody/m3-fonts` (fonts.lock.json). */
 export const M3_FONTS_UPSTREAM_DIR = "packages/m3-fonts/fonts/upstream";
 const M3_SYMBOLS_DIR = `${M3_FONTS_UPSTREAM_DIR}/material-symbols`;

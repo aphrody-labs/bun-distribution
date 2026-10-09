@@ -20,9 +20,9 @@
 //! [`AxisSettings`] tuple.  Cross-platform, `no_std`-friendly (CSS export
 //! gated behind `feature = "std"`).
 //!
-//! The font binary itself lives at `assets/fonts/google-sans-flex/` in the
+//! The font binary itself lives at `crates/ui/m3-tokens/fonts/google-sans-flex/` in the
 //! aphrody workspace and is shipped under the SIL Open Font License v1.1
-//! (`assets/fonts/google-sans-flex/OFL.txt`).
+//! (`crates/ui/m3-tokens/fonts/google-sans-flex/OFL.txt`).
 
 /// One variable-font axis descriptor.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -145,11 +145,11 @@ pub fn font_variation_settings(s: &AxisSettings) -> String {
 
 /// Raw TTF bytes for Google Sans Flex.
 pub const TTF_DATA: &[u8] =
-    include_bytes!("../../../../assets/fonts/google-sans-flex/GoogleSansFlex-Variable.ttf");
+    include_bytes!("../fonts/google-sans-flex/GoogleSansFlex-Variable.ttf");
 
 /// Emit a `@font-face` declaration block pointing at the variable font
 /// shipped at
-/// `assets/fonts/google-sans-flex/GoogleSansFlex-Variable.ttf`.
+/// `crates/ui/m3-tokens/fonts/google-sans-flex/GoogleSansFlex-Variable.ttf`.
 ///
 /// `relative_url` is the URL prefix used in the consumer page (e.g.
 /// `"../../../assets/fonts/google-sans-flex/"` for the
