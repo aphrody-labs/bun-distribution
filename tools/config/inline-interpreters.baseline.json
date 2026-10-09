@@ -142,7 +142,7 @@
       "scope": "host",
       "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
     },
-    "scripts/audit/verify-google-pipeline.ps1": {
+    "scripts/audit/verify-google-pipeline.ts": {
       "count": 1,
       "scope": "local",
       "reason": "uv import probe of a Python package owner (Python via uv by policy)."
