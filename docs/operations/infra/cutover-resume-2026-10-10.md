@@ -71,3 +71,33 @@ does not regenerate or take ownership of those files. The new receipt's local
 script reference exists, and scoped whitespace/integrity checks pass. No engine
 build is required for this documentation-only batch. Global docs closure remains
 pending.
+
+## Guarded web activation adapter
+
+`scripts/tools/infra/cloudflare-web-activate.ps1` fills the installed Infra
+CLI's Cloudflare coverage gap. Plan is the default. It verifies exact owner
+account/zone identities and the apex A / www CNAME, reads current SSL/HSTS
+settings and both qualified R2 buckets' custom domains, and probes the origin
+directly using curl `--resolve` with normal certificate validation.
+Snapshots and a checksum-verified second copy stay under the protected home.
+
+The live plan at 22:30 UTC proved apex TLS/status `0 200` and www `0 301`.
+Cloudflare still had SSL `full`, disabled HSTS, a pending zone and no custom
+domains on either `aphrody-assets` or `aphrody-dist`. An explicit Apply attempt
+was refused before any mutation because the zone was pending; a subsequent
+Plan confirmed unchanged settings. PowerShell parser validation passed.
+The active-zone mutation path is not yet live-qualified.
+
+Once the zone is active, Apply sets SSL `strict`, proxies only the qualified
+apex/www records, enables HSTS for 30 days without include-subdomains/preload,
+and reads back the exact settings and changed records. It checks unrelated
+records against the snapshot. These settings use the official
+[zone settings API](https://developers.cloudflare.com/api/resources/zones/subresources/settings/methods/edit/).
+HSTS does not extend to broken subdomain origins. This adapter does not attach
+R2 domains or repair service ingress; those remain separate required tasks.
+
+DBFR ingress was identified through Docker mount inspection as
+`aphrody-gateway-1`, mounting the current immutable Shenron release nginx
+directory. Its successful `nginx -T` contains only Dragonballfr vhosts,
+including mcp.dragonballfr.com. Aphrody ingress must be delivered through the
+existing release/catalog owner, preserving this gateway and its TLS store.
