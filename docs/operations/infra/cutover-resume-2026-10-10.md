@@ -184,3 +184,37 @@ changes. State remains under `tasks/domain-cutover-loop/state.json` in that home
 `infra-verified` covers the provider settings and R2 public content checks;
 consumer URL migration, executable rebuilds and official WASM source provenance
 remain separate delivery work in the R2 receipt. The loop does not claim them.
+
+## Verified source and public archive consumer
+
+An isolated clean checkout at `96378fceaf5e8680cc6ac17b07a5cbba75ed5fdd`
+was built natively through `cargo-serial.ts --msvc`, with locked dependencies,
+the WASM target and the declared `wasm-release` profile. The existing packager
+converged at 2,994,287 optimized bytes: exactly the public harness module hash
+above. This now supplies rebuild provenance for those bytes. The existing
+stage pipeline froze and checked all four generated inputs before producing
+the versioned cli-wasm 0.1.3 archive; no mutable shared checkout was built.
+
+The R2 subagent published the archive, manifest, checksums and build provenance
+under a new versioned prefix; see the [distribution receipt](r2-domains-2026-10-10.md).
+Independent root public download matched archive SHA-256
+`dd005dc0230bb70832ff3578be41a89dbe3951905e4668b35c8c7e07ba9fc299`.
+Every extracted package payload matched embedded provenance. Both async and
+sync archive loaders executed actual RAG ABI, JSON repair, HTML markdown and
+usage-error checks (`ARCHIVE_CONSUMER_PASS`). Native Aphrody Web also passed
+the byte-identical rebuilt module/facade on the public qualification page.
+
+The clean checkout's global test bootstrap initially failed because its
+Happy DOM dependency was not installed; no clean-workspace installation gate
+is claimed. The configured owner workspace's real native parity recheck then
+exceeded Bun's five-second test default under load. Its integration timeout is
+now sixty seconds for the sixteen native startups; all output checks remain,
+and native exit codes are compared exactly rather than mapping arbitrary
+crashes to usage errors. The rerun passed all eight tests / 58 assertions,
+with no skips. Scoped TypeScript, oxlint, oxfmt and whitespace gates pass.
+
+Publisher PID 24788 subsequently ended with `EXIT 124`. At the last complete
+registry recheck, fourteen of the twenty-eight exact target versions were
+present, with no unavailable queries. A separate concurrent publication
+session resumed the work; it was preserved rather than duplicated. This
+distribution receipt does not claim npm lot completion or OS UI migration.

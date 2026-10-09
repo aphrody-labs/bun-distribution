@@ -172,7 +172,7 @@ describe.skipIf(!built)("wasm", () => {
             });
             const wasm = cli.run(args, options);
             expect(`${name}: ${proc.stdout.toString()}`).toBe(`${name}: ${wasm.stdout}`);
-            expect(proc.exitCode === 0 ? 0 : proc.exitCode === 1 ? 1 : 2, name).toBe(wasm.code);
+            expect(proc.exitCode, name).toBe(wasm.code);
           } finally {
             // Only the absolute directory returned by mkdtempSync is removed.
             rmSync(dir, { recursive: true, force: true });
@@ -180,5 +180,7 @@ describe.skipIf(!built)("wasm", () => {
         }),
       );
     },
+    // Sixteen real native process startups can exceed the unit-test default on a busy host.
+    60_000,
   );
 });
