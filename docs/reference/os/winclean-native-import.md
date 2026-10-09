@@ -15,7 +15,7 @@ Surfaces canoniques :
 Validation :
 
 ```pwsh
-pwsh scripts/verify-winclean-integration.ps1
+bun scripts/audit/os/verify-winclean-integration.ts
 cargo test -p aphrody-winclean --locked --offline
 bun test packages/winclean
 ```

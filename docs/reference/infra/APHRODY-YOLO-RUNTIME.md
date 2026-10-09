@@ -27,13 +27,13 @@ authenticated markers are defined in `~/.codex/YOLO-NHITL.md`.
 | Traceability | Per-tick manifest, JSONL journal, heartbeat and A2A envelopes. |
 | Recovery | Lane prompts request owner gates; Git records changes for audit and rollback. YOLO does not invoke `verify` during `autopilot`. |
 
-The canonical launcher of an administrator kernel is `scripts/tools/os/scripts/aphrody-admin.ps1` in
+The canonical launcher of an administrator kernel is `aphrody kernel elevate` in
 `aphrody-os`. It runs the kernel through the native Windows sudo and keeps the current
 directory. YOLO then connects to the kernel socket:
 
 ```powershell
 # from ../aphrody-os
-pwsh -File scripts/aphrody-admin.ps1 aphrody-kernel serve
+aphrody kernel elevate -- aphrody-kernel serve
 # from this repository
 cargo run -p aphrody-yolo -- win status
 cargo run -p aphrody-yolo -- autopilot --once

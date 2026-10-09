@@ -81,7 +81,7 @@ if (-not $artifact -or -not (Test-Path -LiteralPath $artifact -PathType Leaf)) {
 $artifact = (Resolve-Path -LiteralPath $artifact).Path
 
 # This installer owns the native Rust CLI only. Bun and Python providers remain
-# in their workspace packages and are verified by verify-google-pipeline.ps1.
+# in their workspace packages and are verified by verify-google-pipeline.ts.
 $bin = Join-Path $HomeDirectory 'bin'
 New-Item -ItemType Directory -Force -Path $bin | Out-Null
 $destination = Join-Path $bin ([IO.Path]::GetFileName($artifact))

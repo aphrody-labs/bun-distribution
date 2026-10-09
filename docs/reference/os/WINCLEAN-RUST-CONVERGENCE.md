@@ -364,7 +364,7 @@ Gate:
 ```powershell
 cargo metadata --locked --format-version 1
 cargo test -p aphrody-winclean --locked catalog
-pwsh -NoProfile -File scripts/verify-winclean-integration.ps1
+bun scripts/audit/os/verify-winclean-integration.ts
 ```
 
 ### Wave 1 — typed Rust registry and dual dispatch
@@ -575,7 +575,7 @@ cargo check -p aphrody-winclean -p aphrody-kernel --all-targets --locked
 cargo clippy -p aphrody-winclean -p aphrody-kernel --all-targets --locked -- -D warnings
 cargo test -p aphrody-winclean -p aphrody-kernel --locked
 bun test packages/winclean
-pwsh -NoProfile -File scripts/verify-winclean-integration.ps1
+bun scripts/audit/os/verify-winclean-integration.ts
 ```
 
 Domain waves add their owner:

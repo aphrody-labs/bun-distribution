@@ -58,7 +58,7 @@ and the sibling Python workspace. It also checks that no literal provider key
 assignments are present in their source trees.
 
 ```powershell
-pwsh -NoProfile -File scripts/audit/verify-google-pipeline.ps1 [-StaticOnly]
+bun scripts/audit/verify-google-pipeline.ts [--static-only]
 ```
 
 The script defaults to the monorepo and `../aphrody-py`. `-StaticOnly` stops
