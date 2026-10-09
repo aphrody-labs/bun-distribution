@@ -1,6 +1,6 @@
 /**
  * In-process Python through the shared libpython hosted by `libaphrody` (`aphrody_py_*`,
- * crates/interop/ffi/src/python_ffi.rs; docs/plans/vu/PLAN.md D18).
+ * Bun-owned `bun-python-host`; docs/plans/vu/PLAN.md D18).
  *
  * One CPython per process: the library of the installed `vu` artifact, opened `RTLD_GLOBAL` (process-wide
  * `LoadLibraryW` on Windows) by the Rust host, so the Bun fork, `libaphrody` and any PyO3 extension share it.
@@ -79,7 +79,9 @@ export function vuLibpython(env: NodeJS.ProcessEnv = process.env): string | null
 
 /** The libpython inside a `vu` artifact directory (`lib/` on Unix, the root or `bin/` on Windows), or null. */
 export function libpythonIn(current: string): string | null {
-  for (const dir of process.platform === "win32" ? [current, join(current, "bin")] : [join(current, "lib")]) {
+  for (const dir of process.platform === "win32"
+    ? [current, join(current, "bin")]
+    : [join(current, "lib")]) {
     if (!existsSync(dir)) continue;
     const name = readdirSync(dir)
       .filter((file) => LIBPYTHON.test(file))
@@ -131,7 +133,10 @@ export class Python implements Disposable {
 
   #check(status: number): void {
     if (status !== PyStatus.Ok) {
-      throw new PythonError(status, takeString(this.#symbols, this.#symbols.aphrody_py_last_error()));
+      throw new PythonError(
+        status,
+        takeString(this.#symbols, this.#symbols.aphrody_py_last_error()),
+      );
     }
   }
 

@@ -11,7 +11,7 @@
  *                                    JSON receipt on stdout) through the verified Yolo runtime artifact
  *   yolo py vu <args> | add|remove|sync|lock|run|pip|python|ffi|hf|compile|uv|ruff ...
  *                                    delegated to the installed vu artifact (package manager, interpreters, ffi, hf, compiler)
- *   yolo py build                    builds the aphrody wheel (crates/ai/rag-python via maturin) into py/dist
+ *   yolo py build                    builds the aphrody wheel (pinned Bun native adapter via maturin) into py/dist
  *                                    (--engine: maturin develop of packages/engine/python)
  *
  * Tools: `uv` and `ruff` come from the verified vu runtime artifact (`$VU_HOME`, default ~/.vu, or `--vu <dir>`;
@@ -283,9 +283,14 @@ export async function runPythonCommand(
   // In-process Python on the one shared libpython of the vu artifact, hosted by libaphrody (plan D18): no child
   // process, no second interpreter. `exec` runs statements, `eval` prints str(result).
   if (sub === "eval" || sub === "exec") {
-    const code = args.slice(1).filter((arg) => !arg.startsWith("--")).join(" ");
+    const code = args
+      .slice(1)
+      .filter((arg) => !arg.startsWith("--"))
+      .join(" ");
     if (code === "") {
-      console.error(`Usage: yolo py ${sub} <python ${sub === "eval" ? "expression" : "statements"}>`);
+      console.error(
+        `Usage: yolo py ${sub} <python ${sub === "eval" ? "expression" : "statements"}>`,
+      );
       return 2;
     }
     const { Python, libpythonIn } = await import("@aphrody/runtime-sdk/python");

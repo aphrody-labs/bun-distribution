@@ -2,10 +2,10 @@
 """Build and exercise the native SDK wheel from the Aphrody monorepo checkout.
 
 Run with ``uv run --locked python tools/packaging/qualify_aphrody.py``. The Rust
-extension is the monorepo crate `crates/ai/rag-python`; the wheel is built in
-place with the workspace `Cargo.lock`, so this gate needs Cargo and belongs on
+extension is owned by the pinned Bun fork; the wheel stages its native workspace
+outside the Python product checkout, so this gate needs Cargo and belongs on
 the serialized build host. The recorded revision is HEAD; `dirty_paths` lists
-uncommitted changes under `py/` and `crates/ai/rag-*` so unpublished input is
+uncommitted changes under `py/` and the product `rag-core` so unpublished input is
 never presented as committed source.
 """
 
@@ -30,7 +30,7 @@ from pathlib import Path
 PY_ROOT = Path(__file__).resolve().parents[2]
 REPOSITORY = PY_ROOT.parent
 PACKAGE = PY_ROOT / "packages/aphrody"
-NATIVE_CRATES = ("crates/ai/rag-python", "crates/ai/rag-core")
+NATIVE_CRATES = ("crates/ai/rag-core",)
 
 NATIVE_SMOKE = """
 import importlib.machinery
@@ -231,6 +231,23 @@ def qualify(work: Path, python: str, artifacts: Path | None = None) -> dict:
     env["SOURCE_DATE_EPOCH"] = "1727740800"
     revision = run(["git", "rev-parse", "HEAD"], REPOSITORY, env)
     hashes = package_inputs()
+    native = tomllib.loads((PACKAGE / "pyproject.toml").read_text())["tool"]["aphrody"][
+        "bun-native"
+    ]
+    checkout = env.get("APHRODY_BUN_CHECKOUT")
+    if not checkout:
+        raise RuntimeError("Set APHRODY_BUN_CHECKOUT for native wheel qualification")
+    native_archive = subprocess.check_output(
+        [
+            "git",
+            "-C",
+            checkout,
+            "archive",
+            "--format=tar",
+            native["revision"],
+            native["workspace"],
+        ]
+    )
     dist = work / "dist"
     run(
         [
@@ -285,10 +302,11 @@ def qualify(work: Path, python: str, artifacts: Path | None = None) -> dict:
         shutil.copy2(wheel, artifacts / wheel.name)
     return {
         "schema_version": 2,
-        "input_mode": "monorepo-in-place",
+        "input_mode": "python-product-with-pinned-bun-native",
         "git_revision": revision,
         "dirty_paths": dirty_paths(),
-        "native_crate": "crates/ai/rag-python",
+        "native_crate": native["workspace"] + "/" + native["manifest"],
+        "native_source": {**native, "archive_sha256": sha256(native_archive)},
         "input_sha256": hashes,
         "toolchains": {
             "uv": run(["uv", "--version"], work, env),

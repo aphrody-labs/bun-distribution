@@ -79,11 +79,9 @@ mod rag_ffi;
 #[cfg(not(target_arch = "wasm32"))]
 pub use rag_ffi::*;
 
-// Python host (aphrody_py_*): the shared libpython of vu opened RTLD_GLOBAL and bound by dlsym, never linked (plan vu D18).
+// Compatibility exports; the shared CPython host is owned by the pinned Bun fork.
 #[cfg(not(target_arch = "wasm32"))]
-mod python_ffi;
-#[cfg(not(target_arch = "wasm32"))]
-pub use python_ffi::*;
+pub use bun_python_host::*;
 
 // The historical bun_rs ABI remains available in the same native library.
 // Its implementation is an internal rlib; it no longer ships a second cdylib.

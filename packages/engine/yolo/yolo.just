@@ -9,6 +9,7 @@ set working-directory := "../../.."
 cargo_owner := env("YOLO_CARGO_WRAPPER", env("HOME") / "aphrody/scripts/build/rust/cargo-serial.sh")
 # The Bun fork has its own toolchain and build graph.
 bun_toolchain := "nightly-2026-09-15"
+bun_python_manifest := env("APHRODY_BUN_CHECKOUT", "") / "packages/bun-runtime-sdk/Cargo.toml"
 
 default: status
 
@@ -50,7 +51,8 @@ rust-fmt-desktop-check:
     "{{cargo_owner}}" fmt --check -p aphrody-app
 
 rust-fmt-python-check:
-    "{{cargo_owner}}" fmt --check -p yolo-pyo3
+    bun -e 'if (!process.env.APHRODY_BUN_CHECKOUT) throw new Error("Set APHRODY_BUN_CHECKOUT for Bun-owned Python sources")'
+    "{{cargo_owner}}" fmt --manifest-path "{{bun_python_manifest}}" --check -p yolo-pyo3
 
 # Minimal native server graph: no desktop, Python, browser or compiler provider.
 check-core:
@@ -132,13 +134,16 @@ test-browser:
 qualify-browser: rust-fmt-check check-browser clippy-browser test-browser
 
 check-python:
-    "{{cargo_owner}}" check --locked -p yolo-pyo3 --all-targets
+    bun -e 'if (!process.env.APHRODY_BUN_CHECKOUT) throw new Error("Set APHRODY_BUN_CHECKOUT for Bun-owned Python sources")'
+    "{{cargo_owner}}" check --manifest-path "{{bun_python_manifest}}" --locked -p yolo-pyo3 --all-targets
 
 clippy-python:
-    "{{cargo_owner}}" clippy --locked -p yolo-pyo3 --all-targets -- -D warnings
+    bun -e 'if (!process.env.APHRODY_BUN_CHECKOUT) throw new Error("Set APHRODY_BUN_CHECKOUT for Bun-owned Python sources")'
+    "{{cargo_owner}}" clippy --manifest-path "{{bun_python_manifest}}" --locked -p yolo-pyo3 --all-targets -- -D warnings
 
 test-python-crate:
-    "{{cargo_owner}}" test --locked -p yolo-pyo3 --lib --bins --tests
+    bun -e 'if (!process.env.APHRODY_BUN_CHECKOUT) throw new Error("Set APHRODY_BUN_CHECKOUT for Bun-owned Python sources")'
+    "{{cargo_owner}}" test --manifest-path "{{bun_python_manifest}}" --locked -p yolo-pyo3 --lib --bins --tests
 
 # uv invokes Maturin/Cargo; run it inside the factory's shared heavy lock.
 test-python:

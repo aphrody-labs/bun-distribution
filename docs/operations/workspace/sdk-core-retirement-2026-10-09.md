@@ -8,8 +8,8 @@ resolve the Bun-owned `yolo-core` at
 `aphrody-yolo` and the desktop manifest; this batch changes the remaining
 `yolo-runtime` and `yolo-pyo3` dependencies to the same workspace entry.
 
-The 12 tracked files under `crates/engine/yolo-core` were clean and matched
-`packages/bun-runtime-sdk/crates/yolo-core` exactly in the configured Bun
+The 12 tracked files under `crates/engine/yolo-core` (not in repo) were clean and matched
+`packages/bun-runtime-sdk/crates/yolo-core` (not in repo) exactly in the configured Bun
 checkout before removal (`git diff --no-index`, exit 0). Git retains the source
 history and the Bun SDK's original MIT/Apache-2.0 provenance remains intact.
 The local duplicate accounted for 2,889 lines. This is a source reduction, not

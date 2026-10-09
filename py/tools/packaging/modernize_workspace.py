@@ -5,7 +5,7 @@
 Run ``python tools/packaging/modernize_workspace.py check``. The one-time layout
 migration that used to live here (``apply``) ran on 2026-10-03 and was removed when
 `py/` was fused into the Aphrody monorepo. The wheel gates build the native extension
-from `crates/ai/rag-python`, so `check` needs Cargo: run it on the serialized
+from the pinned Bun fork, so `check` needs Cargo: run it on the serialized
 build host, never in WSL.
 """
 
@@ -96,8 +96,8 @@ def isolated_distributions(python: str = "3.12") -> None:
         for member in members:
             directory = ROOT / member
             project = load(directory / "pyproject.toml")["project"]
-            # The aphrody wheel compiles crates/ai/rag-python from the monorepo, which
-            # is not part of the package directory: no standalone sdist exists for it.
+            # The SDK wheel uses the pinned Bun-native workspace through its Python
+            # backend. This wheel gate retains its existing wheel-only scope.
             wheel_only = ["--wheel"] if project["name"] == "aphrody" else []
             run(
                 "uv",

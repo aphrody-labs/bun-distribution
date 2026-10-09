@@ -47,7 +47,7 @@ tree-sitter = "0.27"
 tree-sitter-rust = "0.24"
 aphrody-sql = { path = "crates/infra/sql", version = "0.1.0", default-features = false }
 aphrody-store = { path = "crates/ai/store", version = "1.0.0", features = [] }
-pyo3 = { version = "0.29", features = [] }
+bun-python-host = { git = "https://github.com/aphrody-labs/bun", rev = "84a5f33140cef2a63088d8484e84c0a2e5aba785", version = "0.1.0" }
 anyhow = "1.0.104"
 aes-gcm = { version = "0.11", features = [] }
 aphrody = { path = "crates/infra/aphrody", version = "1.0.0", features = [] }

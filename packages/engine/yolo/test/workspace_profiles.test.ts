@@ -64,6 +64,7 @@ async function runRecipes(
         YOLO_CARGO_WRAPPER: setup.wrapper,
         YOLO_PROFILE_LOG: setup.log,
         YOLO_PROFILE_PREFLIGHT_LOG: setup.preflightLog,
+        APHRODY_BUN_CHECKOUT: join(setup.dir, "qualified bun fork"),
         PATH: `${setup.bin}:${process.env.PATH}`,
         ...environment,
       },
@@ -294,7 +295,12 @@ profileTest(
       expect(packages(args)).toEqual(["yolo-runtime"]);
       expect(args[args.indexOf("--features") + 1]).toBe("browser");
     }
-    for (const args of commands.slice(6, 9)) expect(packages(args)).toEqual(["yolo-pyo3"]);
+    for (const args of commands.slice(6, 9)) {
+      expect(packages(args)).toEqual(["yolo-pyo3"]);
+      expect(args[args.indexOf("--manifest-path") + 1]).toBe(
+        join(setup.dir, "qualified bun fork", "packages/bun-runtime-sdk/Cargo.toml"),
+      );
+    }
 
     // Every upstream selector still names a workspace package.
     const names = await workspacePackageNames();

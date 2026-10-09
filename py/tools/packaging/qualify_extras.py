@@ -3,7 +3,7 @@
 
 Inputs come from the Aphrody monorepo checkout (HEAD revision recorded, uncommitted
 paths listed). Tests exercise the installed wheel outside the checkout; absent
-dependencies cannot turn into skips. The wheel compiles crates/ai/rag-python, so this
+dependencies cannot turn into skips. The wheel uses the pinned Bun native adapter, so this
 gate needs Cargo and runs on the serialized build host.
 These local checks do not claim authenticated services, models or GPU parity.
 """

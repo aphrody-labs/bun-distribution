@@ -76,6 +76,7 @@ aphrody-gemini-web = { workspace = true }
 aphrody-x = { workspace = true }
 # Versioned yolo_* C ABI (docs/architecture/runtime-native/RUNTIME-ABI.md), re-exported by this cdylib.
 yolo-runtime = { workspace = true }
+bun-python-host = { workspace = true }
 base64     = { workspace = true }
 # A dlopened library must not reserve mimalloc's initial-exec static TLS.
 mimalloc   = { workspace = true, features = ["local_dynamic_tls"] }
@@ -97,10 +98,6 @@ url        = { workspace = true }
 # on the factory (glibc 2.43) still loads on glibc 2.39 hosts (Ubuntu 24.04 user machines).
 [target.'cfg(all(target_os = "linux", target_env = "gnu"))'.dependencies]
 libm = { workspace = true }
-
-# python_ffi hosts the shared python3XY.dll through LoadLibraryW/GetProcAddress on Windows.
-[target.'cfg(windows)'.dependencies]
-windows-sys = { workspace = true, features = ["Win32_System_LibraryLoader"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tempfile = { workspace = true }

@@ -21,7 +21,10 @@ Read [PLAN.md](PLAN.md) and [MEMORY.md](MEMORY.md). PLAN owns the active
 architecture and queue; MEMORY owns dated evidence. Aphrody owns products and
 Rust/Bun capabilities; Yolo produces the precompiled runtime/SDK. IECODE retains its
 repository, store and authority. By owner directive of 2026-10-05 `py/` is fused into
-Aphrody (single owner for the `aphrody-rust` binding: `crates/ai/rag-python`); the Python
+Aphrody. The owner directive of 2026-10-09 moves native Python ownership (PyO3,
+CPython hosting, uv, Ruff and vu) to the Bun fork; Python application sources
+remain in Aphrody. The `aphrody-rust` binding is built from the pinned fork,
+with its module/ABI identities preserved; see [the Python/Bun plan](docs/plans/python-bun/PLAN.md). The Python
 runtime `vu` follows the Bun/Yolo precedent ([plan](docs/plans/vu/PLAN.md)).
 
 Product positioning (owner directive of 2026-10-06): the runtimes (the Bun fork, `vu`, Yolo) are

@@ -9,7 +9,7 @@ the `bun-re` package from `aphrody-labs/bun` at
 `e4d57537cf3475e443eba9bda390366aa5d9d0a4`.
 
 The receiver absorbed the original source from Aphrody
-`5e55f4615a7d8ed5592839fc60e81067d0813a6a` into `packages/bun-re`, an independent
+`5e55f4615a7d8ed5592839fc60e81067d0813a6a` into `packages/bun-re` (not in repo), an independent
 Rust workspace with its Apache-2.0 licence. Its native implementation stays
 outside the Bun executable. No Bun engine build or runtime activation is needed
 for this Rust dependency change. The Git revision, rather than a workstation

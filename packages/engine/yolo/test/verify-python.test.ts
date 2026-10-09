@@ -152,7 +152,8 @@ describe("Python verification owners", () => {
       expect(selected(file)).toContain("python-native");
       expect(selected(file)).toContain("python-test");
     }
-    expect(selected("crates/engine/yolo-core/src/lib.rs")).toContain("python-native");
+    expect(selected("packages/engine/python/pyproject.toml")).toContain("python-native");
+    expect(selected("crates/engine/yolo-core/src/lib.rs")).not.toContain("python-native");
     expect(selected("plugins/foreign.py")).not.toContain("python-lint");
     expect(selected("design/foreign.py")).not.toContain("python-lint");
   });

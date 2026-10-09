@@ -227,12 +227,15 @@ describe("reports", () => {
 describe("spawnRunner (real processes)", () => {
   it("reports the exit code and the output tail, and kills on timeout", async () => {
     const run = spawnRunner(process.cwd(), 300);
-    const sh = (script: string): Gate => ({ ...gate("x"), command: ["sh", "-c", script] });
-    expect(await run(sh("echo ok; exit 0"))).toEqual({ exitCode: 0, output: "ok\n" });
-    const failed = await run(sh("echo oops >&2; exit 3"));
+    const native = (script: string): Gate => ({
+      ...gate("x"),
+      command: [process.execPath, "-e", script],
+    });
+    expect(await run(native('console.log("ok")'))).toEqual({ exitCode: 0, output: "ok\n" });
+    const failed = await run(native('console.error("oops"); process.exit(3)'));
     expect(failed.exitCode).toBe(3);
     expect(failed.output).toContain("oops");
-    const slow = await run(sh("sleep 5"));
+    const slow = await run(native("await Bun.sleep(5000)"));
     expect(slow.exitCode).toBeNull();
     expect(slow.output).toContain("timed out after 300 ms");
   });

@@ -54,7 +54,15 @@ export const GATES: readonly Gate[] = [
   {
     id: "lint",
     title: "bun lint (oxlint + n2b)",
-    command: ["bun", "lint", "scripts/", "test/", "packages/", "crates/infra/aphrody/src/", "apps/web/src/"],
+    command: [
+      "bun",
+      "lint",
+      "scripts/",
+      "test/",
+      "packages/",
+      "crates/infra/aphrody/src/",
+      "apps/web/src/",
+    ],
     surfaces: TS,
     // the root package.json has a `lint` script: within it, `bun lint` is Bun's command, not the script
     env: { npm_lifecycle_event: "lint" },
@@ -137,13 +145,7 @@ export const GATES: readonly Gate[] = [
       "-c",
       "import yolo._yolo_native",
     ],
-    surfaces: [
-      "packages/engine/python/**",
-      "crates/engine/yolo-pyo3/**",
-      "crates/engine/yolo-core/**",
-      "pyproject.toml",
-      "uv.lock",
-    ],
+    surfaces: ["packages/engine/python/**", "pyproject.toml", "uv.lock"],
     precondition: () => (Bun.which("uv") ? null : "uv is not installed on PATH"),
   },
   {
@@ -164,13 +166,7 @@ export const GATES: readonly Gate[] = [
       "packages/engine/python/tests",
     ],
     needs: ["python-native"],
-    surfaces: [
-      "packages/engine/python/**",
-      "crates/engine/yolo-pyo3/**",
-      "crates/engine/yolo-core/**",
-      "pyproject.toml",
-      "uv.lock",
-    ],
+    surfaces: ["packages/engine/python/**", "pyproject.toml", "uv.lock"],
   },
 ];
 

@@ -5,8 +5,13 @@ Package Python officiel du runtime polyglotte YOLO — Accélération native en 
 ## Installation
 
 ```bash
-uv pip install -e packages/python
+uv pip install -e packages/engine/python
 ```
+
+Définir `APHRODY_BUN_CHECKOUT` vers un checkout qualifié du fork Bun avant
+la construction. Le backend utilise la révision immuable du manifeste ;
+les sources PyO3 et leur Cargo.lock restent dans le fork. Le sdist contient
+seulement le paquet Python et son adaptateur de construction.
 
 ## Utilisation
 
