@@ -29,5 +29,8 @@ while ($true) {
     if ((Get-Date) -gt $deadline) { throw 'docker engine unavailable after 10 minutes' }
     Start-Sleep -Seconds 5
 }
-docker compose -f $Compose --profile pc up -d --no-build --remove-orphans
-exit $LASTEXITCODE
+docker compose -f $Compose --profile pc up -d --no-build --remove-orphans pc
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+# Stay alive while the container runs so the task reports Running; the task restarts if the container stops.
+docker wait aphrody-pc | Out-Null
+exit 1

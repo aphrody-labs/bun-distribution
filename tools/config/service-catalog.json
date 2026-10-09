@@ -604,12 +604,11 @@
         "host": "local",
         "kind": "scheduledTask",
         "name": "Container",
-        "path": "Aphrody\\",
         "triggers": [
-          "atLogon",
-          "atStartup"
+          "atLogon"
         ],
-        "principal": "user"
+        "principal": "user",
+        "desktop": true
       }
     ]
   }

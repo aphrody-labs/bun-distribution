@@ -22,7 +22,8 @@ export function findWorkspaceRoot(
   from?: string,
   env: Record<string, string | undefined> = process.env,
 ): string {
-  const explicit = from === undefined && (env.APHRODY_WORKSPACE_ROOT?.trim() || env.APHRODY_ROOT?.trim());
+  const explicit =
+    from === undefined && (env.APHRODY_WORKSPACE_ROOT?.trim() || env.APHRODY_ROOT?.trim());
   if (explicit) {
     const root = resolve(explicit);
     if (!isDirectory(root)) throw new Error(`Configured Aphrody root is not a directory: ${root}`);
