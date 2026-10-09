@@ -133,6 +133,7 @@ aphrody-tools = { path = "crates/ai/tools", version = "1.0.0", features = [] }
 aphrody-train = { path = "crates/ai/train", version = "1.0.0", features = [] }
 aphrody-translate = { path = "crates/ai/translate", version = "1.0.0", features = [] }
 aphrody-command-wasm = { path = "crates/infra/aphrody-command-wasm", version = "1.0.0", features = [] }
+aphrody-webos-wasm = { path = "crates/web/webos-wasm", version = "1.0.0", features = [] }
 aphrody-command-pure = { path = "crates/infra/aphrody-command-pure", version = "1.0.0", features = [] }
 aphrody-translate-core = { path = "crates/ai/translate-core", version = "1.0.0", features = [] }
 aphrody-vision = { path = "crates/ai/vision", version = "1.0.0", features = [] }

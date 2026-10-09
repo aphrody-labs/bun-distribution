@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-webos-wasm"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "wasm-bindgen surface of the Aphrody WebOS apps: OPFS-backed VFS, binary triage and patch apply over existing crates; no terminal."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+aphrody-patch     = { workspace = true }
+aphrody-re        = { workspace = true }
+aphrody-shell-vfs = { workspace = true }
+aphrody-shell-web = { workspace = true }
+serde_json        = { workspace = true }
+wasm-bindgen      = { workspace = true }
+
+[lints]
+workspace = true

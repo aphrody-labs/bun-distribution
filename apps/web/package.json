@@ -17,7 +17,8 @@
     "@aphrody/m3-motion": "workspace:*",
     "@aphrody/m3-primitives": "workspace:*",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "@bjorn3/browser_wasi_shim": "^0.4.2"
   },
   "devDependencies": {
     "@aphrody/bun-plugin-tailwind": "0.1.0-aphrody.1",

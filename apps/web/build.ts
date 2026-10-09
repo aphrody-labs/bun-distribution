@@ -39,3 +39,21 @@ console.log(`✅ apps/web built in ${elapsed}ms -> dist/`);
 for (const output of result.outputs) {
   console.log(`   - ${output.path} (${(output.size / 1024).toFixed(1)} KB)`);
 }
+
+const workers = await Bun.build({
+  entrypoints: [
+    join(import.meta.dir, "src/os/wasm/fs-worker.ts"),
+    join(import.meta.dir, "src/os/wasm/repl-worker.ts"),
+  ],
+  outdir: join(outdir, "workers"),
+  naming: "[name].[ext]",
+  target: "browser",
+  format: "esm",
+  minify: true,
+  sourcemap: "external",
+});
+if (!workers.success) {
+  console.error("Worker build failed:", workers.logs);
+  process.exit(1);
+}
+for (const output of workers.outputs) console.log(`   - ${output.path} (${(output.size / 1024).toFixed(1)} KB)`);
