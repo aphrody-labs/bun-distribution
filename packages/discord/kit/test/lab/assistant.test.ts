@@ -2,6 +2,8 @@ import { describe, expect, test } from "bun:test";
 import {
   askModel,
   eligiblePrompt,
+  errorSummary,
+  MODEL_UNAVAILABLE_REPLY,
   processMessage,
   type LabMessage,
 } from "../../src/lab/assistant.ts";
@@ -33,6 +35,9 @@ const policy = {
 } as LabPolicy;
 const researcherApi: LabApi = async <T>() => ({ roles: ["researcher"] }) as T;
 const emptyRolesApi: LabApi = async <T>() => ({ roles: [] }) as T;
+const unavailableApi: LabApi = async () => {
+  throw new Error("Discord 503");
+};
 describe("laboratory assistant boundary", () => {
   test("accept only explicit human mentions in configured channel", () => {
     expect(eligiblePrompt(message, state)).toBe("Explain");
@@ -95,6 +100,37 @@ describe("laboratory assistant boundary", () => {
     expect((payload!.content as string).length).toBe(1900);
     expect(payload!.allowed_mentions).toEqual({ parse: [], replied_user: false });
     expect(payload!.enforce_nonce).toBe(true);
+  });
+  test("missing model backend answers once and releases the message", async () => {
+    let payload: Record<string, unknown> | undefined;
+    const api: LabApi = async <T>(_path: string, method?: string, body?: unknown) => {
+      if (method === "POST") payload = body as Record<string, unknown>;
+      return { roles: ["researcher"] } as T;
+    };
+    expect(
+      await processMessage(message, state, policy, "admin", api, async () => {
+        throw new Error("connect ECONNREFUSED 127.0.0.1:8080");
+      }),
+    ).toBe(true);
+    expect(payload!.content).toBe(MODEL_UNAVAILABLE_REPLY);
+    expect(payload!.allowed_mentions).toEqual({ parse: [], replied_user: false });
+    expect(payload!.nonce).toBe("1");
+    expect(payload!.enforce_nonce).toBe(true);
+  });
+  test("discord failures still propagate for retry", async () => {
+    await expect(
+      processMessage(message, state, policy, "admin", unavailableApi, async () => "answer"),
+    ).rejects.toThrow("Discord 503");
+  });
+  test("error summary is bounded and masks credentials", () => {
+    const summary = errorSummary(
+      new Error(
+        `Bot abc.def failed ${"MTk4NjIyNDgzNDcxOTI1MjQ4.Cl2FMQ.ZnCjm1XVW7vRze4b7Cq4se7kKWs"} ${"x".repeat(400)}`,
+      ),
+    );
+    expect(summary.length).toBe(200);
+    expect(summary.startsWith("Error: Bot [masqué] failed [masqué] ")).toBe(true);
+    expect(errorSummary("plain")).toBe("plain");
   });
   test("assistant preserves selected model/profile and system instructions through native adapter", async () => {
     let selection: LocalAISelection | undefined;

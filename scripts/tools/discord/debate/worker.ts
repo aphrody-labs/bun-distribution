@@ -10,7 +10,10 @@ import {
   type LabApi,
   type Channel,
 } from "../../../../packages/discord/kit/src/lab/ai-lab.ts";
-import type { LabMessage } from "../../../../packages/discord/kit/src/lab/assistant.ts";
+import {
+  errorSummary,
+  type LabMessage,
+} from "../../../../packages/discord/kit/src/lab/assistant.ts";
 import { localAI, type NativeLocalAI } from "../../../../packages/discord/kit/src/lab/local-ai.ts";
 import { searchLocalRag } from "../../../../packages/discord/kit/src/lab/local-rag.ts";
 import {
@@ -78,6 +81,29 @@ export function makeBackend(
       return result.text;
     },
   };
+}
+
+export const MAX_MESSAGE_ATTEMPTS = 3;
+
+// Bounds retries of one queued message so a failing backend cannot block the channel cursor.
+export async function handleQueued(
+  messageId: string,
+  failures: Map<string, number>,
+  handle: () => Promise<unknown>,
+  log: (line: string) => void = console.error,
+): Promise<void> {
+  try {
+    await handle();
+    failures.delete(messageId);
+  } catch (error) {
+    const attempts = (failures.get(messageId) ?? 0) + 1;
+    if (attempts < MAX_MESSAGE_ATTEMPTS) {
+      failures.set(messageId, attempts);
+      throw error;
+    }
+    failures.delete(messageId);
+    log(JSON.stringify({ event: "debate-skip", messageId, attempts, error: errorSummary(error) }));
+  }
 }
 
 export async function configureDebate(
@@ -357,6 +383,7 @@ if (import.meta.main) {
     });
   console.log(JSON.stringify({ ready: true, guildId: state.guildId, channelId: state.channelId }));
   let nextBotProbeAt = Date.now() + 300_000;
+  const failures = new Map<string, number>();
   while (true) {
     if (stopping) break;
     try {
@@ -370,7 +397,9 @@ if (import.meta.main) {
       );
       for (const message of messages.toSorted((a, b) => (BigInt(a.id) < BigInt(b.id) ? -1 : 1))) {
         if (stopping) break;
-        await handleMessage(message, state, policy, api, backend, persist);
+        await handleQueued(message.id, failures, () =>
+          handleMessage(message, state, policy, api, backend, persist),
+        );
         state.after = message.id;
         await persist();
       }
@@ -379,7 +408,7 @@ if (import.meta.main) {
       console.error(
         JSON.stringify({
           event: "debate-retry",
-          error: error instanceof Error ? error.name : "unknown",
+          error: errorSummary(error),
         }),
       );
     }

@@ -14,7 +14,13 @@ import {
   type DebateState,
   type Source,
 } from "./debate.ts";
-import { configureDebate, debateMessages, makeBackend } from "./worker.ts";
+import {
+  configureDebate,
+  debateMessages,
+  handleQueued,
+  makeBackend,
+  MAX_MESSAGE_ATTEMPTS,
+} from "./worker.ts";
 import type { LabApi } from "../../../../packages/discord/kit/src/lab/ai-lab.ts";
 import type { LabMessage } from "../../../../packages/discord/kit/src/lab/assistant.ts";
 
@@ -488,4 +494,31 @@ test("the first autonomous debate waits for the actual second bot and a model de
   expect(f.state.session?.spontaneousRounds).toBe(1);
   expect(f.state.session?.topic).toBe(policy.rivalry.starterTopic);
   expect(approvedRollouts(f.state)).toEqual([]);
+});
+
+const failingBackend = async () => {
+  throw new Error("Local AI deadline exceeded");
+};
+test("failing queued message is retried then skipped with an explicit log", async () => {
+  const failures = new Map<string, number>();
+  const logs: string[] = [];
+  const failing = failingBackend;
+  for (let attempt = 1; attempt < MAX_MESSAGE_ATTEMPTS; attempt++)
+    await expect(handleQueued("42", failures, failing, (line) => logs.push(line))).rejects.toThrow(
+      "Local AI deadline exceeded",
+    );
+  expect(failures.get("42")).toBe(MAX_MESSAGE_ATTEMPTS - 1);
+  await handleQueued("42", failures, failing, (line) => logs.push(line));
+  expect(failures.has("42")).toBe(false);
+  expect(logs.map((line) => JSON.parse(line))).toEqual([
+    {
+      event: "debate-skip",
+      messageId: "42",
+      attempts: MAX_MESSAGE_ATTEMPTS,
+      error: "Error: Local AI deadline exceeded",
+    },
+  ]);
+  failures.set("43", 1);
+  await handleQueued("43", failures, async () => true);
+  expect(failures.size).toBe(0);
 });

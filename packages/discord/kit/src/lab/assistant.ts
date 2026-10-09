@@ -53,6 +53,17 @@ export async function askModel(
   });
   return answer.text.trim();
 }
+export const MODEL_UNAVAILABLE_REPLY =
+  "Modèle local indisponible : la demande n'a pas été traitée.";
+// Logs keep the cause actionable without echoing credentials or unbounded payloads.
+export function errorSummary(error: unknown): string {
+  const text =
+    error instanceof Error ? `${error.name}: ${error.message}` : String(error ?? "unknown");
+  return text
+    .replace(/\b(Bot|Bearer)\s+\S+/gi, "$1 [masqué]")
+    .replace(/[\w-]{20,}\.[\w-]{6,}\.[\w-]{20,}/g, "[masqué]")
+    .slice(0, 200);
+}
 export async function processMessage(
   message: LabMessage,
   state: LabState,
@@ -75,10 +86,23 @@ export async function processMessage(
     !member.roles.some((role) => role === adminRoleId || role === state.researcherRoleId)
   )
     return false;
-  const answer = await infer(policy, prompt);
+  let answer: string;
+  try {
+    answer = (await infer(policy, prompt)).slice(0, 1900);
+  } catch (error) {
+    // A missing model backend must not pin the cursor on this message forever.
+    console.error(
+      JSON.stringify({
+        event: "assistant-model-unavailable",
+        messageId: message.id,
+        error: errorSummary(error),
+      }),
+    );
+    answer = MODEL_UNAVAILABLE_REPLY;
+  }
   // Discord messages are bounded; suppress mentions from model-generated text.
   await api(`/channels/${message.channel_id}/messages`, "POST", {
-    content: answer.slice(0, 1900),
+    content: answer,
     message_reference: { message_id: message.id, fail_if_not_exists: false },
     allowed_mentions: { parse: [], replied_user: false },
     nonce: message.id,
@@ -169,7 +193,7 @@ if (import.meta.main) {
       console.error(
         JSON.stringify({
           event: "assistant-retry",
-          error: error instanceof Error ? error.name : "unknown",
+          error: errorSummary(error),
         }),
       );
     }
