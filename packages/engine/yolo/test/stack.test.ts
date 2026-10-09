@@ -169,7 +169,7 @@ describe("yolo create", () => {
   });
 
   it("refuses unknown features, conflicting variants and non-empty targets", async () => {
-    await expect(createProject(options("bad-1", ["nope"]))).rejects.toThrow(/Unknown feature/);
+    await expect(createProject(options("bad-1", ["nope"]))).rejects.toThrow(/Unknown template/);
     await expect(createProject(options("bad-2", ["hono", "elysia"]))).rejects.toThrow(
       /one framework/,
     );

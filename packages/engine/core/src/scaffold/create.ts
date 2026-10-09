@@ -4,14 +4,13 @@
  *
  *   yolo create my-app [--with web|react,desktop] [--framework hono|elysia] [--yolo-path <checkout>]
  *
- * Templates are plain files; `__NAME__`, `__IDENT__` and `__YOLO__` are substituted, `gitignore`
- * becomes `.gitignore`, and the `desktop` template carries its own `src-tauri/icons`.
- * Features are applied in order, a later file replaces an earlier one (the web feature replaces
- * `src/home.ts`). Templates that share an `exclusive` group in stack.toml (frontend: web or react,
- * framework: hono or elysia) cannot be combined. Zero dependencies.
+ * The composition is Bun's: `bun create aphrody/<template>[+<template>...] <dir>` (aphrody-labs/bun,
+ * src/js/eval/toolchain.ts) applies the layers in order, substitutes `__NAME__`, `__IDENT__` and
+ * `__YOLO__`, renames `gitignore` and refuses two templates of one `exclusive` group. The templates
+ * stay here, their only source.
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
-import { basename, dirname, join, resolve } from "node:path";
+import { readdirSync } from "node:fs";
+import { basename, join, resolve } from "node:path";
 
 export interface StackTemplate {
   readonly path: string;
@@ -35,14 +34,11 @@ export async function loadStack(rootDir: string): Promise<StackManifest> {
   ) as StackManifest;
 }
 
-const TEXT_FILE =
-  /\.(json|ts|tsx|js|toml|md|html|css|rs|yml|yaml|txt|sh|service)$|(^|\/)(gitignore|\.gitignore|Dockerfile)$/;
-
 function walk(dir: string, base = dir, acc: string[] = []): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const abs = join(dir, entry.name);
     if (entry.isDirectory()) walk(abs, base, acc);
-    else acc.push(abs.slice(base.length + 1));
+    else acc.push(abs.slice(base.length + 1).replaceAll("\\", "/"));
   }
   return acc;
 }
@@ -63,73 +59,28 @@ export interface CreateOptions {
   readonly yoloPath: string;
 }
 
-/** Writes the project and returns the relative paths of the files created. */
+/** Writes the project with `bun create aphrody/...` and returns the relative paths of the files created. */
 export async function createProject(options: CreateOptions): Promise<string[]> {
-  const stack = await loadStack(options.rootDir);
-  const names = [...new Set(["base", ...options.features])];
-  for (const name of names) {
-    if (stack.template[name] === undefined) {
-      throw new Error(
-        `Unknown feature "${name}" (available: ${Object.keys(stack.template).join(", ")})`,
-      );
-    }
+  const proc = Bun.spawn(
+    [
+      Bun.which("bun") ?? process.execPath,
+      "create",
+      `aphrody/${options.features.join("+")}`,
+      options.target,
+      "--name",
+      options.name,
+      "--templates",
+      resolve(options.rootDir, "m3/templates"),
+      "--aphrody",
+      options.yoloPath,
+    ],
+    { stdout: "ignore", stderr: "pipe", env: { ...process.env, NO_COLOR: "1" } },
+  );
+  const [stderr, exitCode] = await Promise.all([new Response(proc.stderr).text(), proc.exited]);
+  if (exitCode !== 0) {
+    throw new Error(stderr.replace(/^error: /, "").trim() || `bun create exited with ${exitCode}`);
   }
-  const groups = new Map<string, string[]>();
-  for (const name of names) {
-    const group = stack.template[name]?.exclusive;
-    if (group !== undefined) groups.set(group, [...(groups.get(group) ?? []), name]);
-  }
-  for (const [group, members] of groups) {
-    if (members.length > 1) throw new Error(`Choose one ${group} variant: ${members.join(" or ")}`);
-  }
-  if (existsSync(options.target) && readdirSync(options.target).length > 0) {
-    throw new Error(`${options.target} exists and is not empty`);
-  }
-
-  const substitutions: [string, string][] = [
-    ["__NAME__", options.name],
-    ["__IDENT__", toIdent(options.name)],
-    ["__YOLO__", options.yoloPath.replaceAll("\\", "/")],
-  ];
-  const written = new Map<string, string | Uint8Array>();
-  const extraDependencies: Record<string, string> = {};
-  const extraDevDependencies: Record<string, string> = {};
-
-  for (const name of names) {
-    const template = stack.template[name] as StackTemplate;
-    const dir = resolve(options.rootDir, template.path);
-    for (const rel of walk(dir)) {
-      const destRel = rel
-        .split(/[/\\]/)
-        .map((part) => (part === "gitignore" ? ".gitignore" : part))
-        .join("/");
-      const bytes = readFileSync(join(dir, rel));
-      if (TEXT_FILE.test(rel)) {
-        let text = bytes.toString("utf8");
-        for (const [token, value] of substitutions) text = text.split(token).join(value);
-        written.set(destRel, text);
-      } else written.set(destRel, new Uint8Array(bytes));
-    }
-    Object.assign(extraDependencies, template.dependencies ?? {});
-    Object.assign(extraDevDependencies, template.dev_dependencies ?? {});
-  }
-
-  if (Object.keys(extraDependencies).length > 0 || Object.keys(extraDevDependencies).length > 0) {
-    const pkg = JSON.parse(written.get("package.json") as string) as {
-      dependencies: Record<string, string>;
-      devDependencies: Record<string, string>;
-    };
-    Object.assign(pkg.dependencies, extraDependencies);
-    Object.assign(pkg.devDependencies, extraDevDependencies);
-    written.set("package.json", `${JSON.stringify(pkg, null, 2)}\n`);
-  }
-  mkdirSync(options.target, { recursive: true });
-  for (const [rel, content] of written) {
-    const dest = resolve(options.target, rel);
-    mkdirSync(dirname(dest), { recursive: true });
-    await Bun.write(dest, content);
-  }
-  return [...written.keys()].toSorted();
+  return walk(options.target).toSorted();
 }
 
 const HELP = `\x1b[1myolo create\x1b[0m <dir> — scaffold an Aphrody stack project
