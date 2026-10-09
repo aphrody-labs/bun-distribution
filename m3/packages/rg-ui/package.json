@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/rg-ui",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": false,
   "description": "Rose Griffon, Achillea and Azalee shared UI on the Aphrody Bun Base UI fork and native Material 3 tokens",
   "license": "UNLICENSED",
