@@ -169,6 +169,7 @@
     "docs/operations/discord/SYSTEMD-SERVICES.md": 25,
     "docs/operations/infra/BUILD-FACTORY.md": 33,
     "docs/operations/infra/DBFR-FLEET-MCP.md": 1,
+    "docs/operations/infra/dbfr-health-2026-10-09.md": 3,
     "docs/operations/infra/DISCORD-SHENRON-AI.md": 13,
     "docs/operations/infra/DOWNLOADS.md": 7,
     "docs/operations/infra/DRIVE-RECONCILIATION-WORKER.md": 1,
