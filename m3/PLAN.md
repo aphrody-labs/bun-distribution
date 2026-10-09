@@ -1,6 +1,14 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Aphrody M3 — integration plan
 
+## Owner directive — native Rust and Bun targets (2026-10-09)
+
+The [native Rust migration plan](../docs/plans/m3-native-rust/PLAN.md) owns the
+new execution queue: Aphrody sites and application servers move to native Rust,
+M3 supports both Rust and Bun, and generic runtime/framework code transfers to
+the Bun fork through qualified handoffs. Existing Bun milestones below remain
+dated source evidence; they do not qualify the new Rust target.
+
 [GOAL.md](GOAL.md) owns the requested scope. [AGENTS.md](AGENTS.md) owns local
 execution rules. [MEMORY.md](MEMORY.md) records dated validation and limitations.
 The [Aphrody architecture](../PLAN.md) and [Yolo producer plan](../../yolo/PLAN.md)
