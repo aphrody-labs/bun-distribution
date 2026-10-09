@@ -257,6 +257,16 @@ pub(crate) fn cacheable_result<T: CacheableResult>(
     result
 }
 
+/// Qualifies completed owner results for modern MCP; the transport preserves legacy compatibility.
+pub(crate) fn normalize_tool_response(response: &mut rmcp::model::CallToolResponse) {
+    if let rmcp::model::CallToolResponse::Complete(result) = response {
+        // Relayed and JSON-deserialized owners may return the legacy shape.
+        // The SDK strips this discriminator for legacy peers after dispatch.
+        result.result_type.get_or_insert(ResultType::COMPLETE);
+        add_structured_content(result);
+    }
+}
+
 /// Mirrors a single JSON-object text answer into `structuredContent`.
 pub(crate) fn add_structured_content(result: &mut CallToolResult) {
     if result.structured_content.is_some() || result.content.len() != 1 {
@@ -401,6 +411,41 @@ pub(crate) fn get_prompt(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn legacy_owner_tool_result_has_modern_discriminator_and_legacy_wire_shape() {
+        let result: CallToolResult = serde_json::from_value(json!({
+            "content": [{"type": "text", "text": "{\"ok\":true}"}],
+            "isError": false
+        }))
+        .expect("legacy owner response");
+        assert!(result.result_type.is_none());
+        let mut response = result.into();
+        normalize_tool_response(&mut response);
+        let mut wire: rmcp::model::ServerResult = response.into();
+        let modern = serde_json::to_value(&wire).expect("modern wire");
+        assert_eq!(modern["resultType"], "complete");
+        assert_eq!(modern["structuredContent"]["ok"], true);
+        wire.strip_result_type_for_legacy_peer();
+        let legacy = serde_json::to_value(wire).expect("legacy wire");
+        assert!(legacy.get("resultType").is_none());
+        assert_eq!(legacy["content"], modern["content"]);
+    }
+
+    #[test]
+    fn owner_error_remains_an_error_after_tool_response_normalization() {
+        let result: CallToolResult = serde_json::from_value(json!({
+            "content": [{"type": "text", "text": "owner unavailable"}],
+            "isError": true
+        }))
+        .expect("legacy owner error");
+        let mut response = result.into();
+        normalize_tool_response(&mut response);
+        let wire = serde_json::to_value(rmcp::model::ServerResult::from(response)).expect("wire");
+        assert_eq!(wire["resultType"], "complete");
+        assert_eq!(wire["isError"], true);
+        assert_eq!(wire["content"][0]["text"], "owner unavailable");
+    }
 
     #[test]
     fn hints_follow_the_tool_name() {

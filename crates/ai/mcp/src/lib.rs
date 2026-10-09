@@ -2918,69 +2918,77 @@ impl ServerHandler for GoogleMcpServer {
         request: rmcp::model::CallToolRequestParams,
         context: rmcp::service::RequestContext<rmcp::RoleServer>,
     ) -> Result<rmcp::model::CallToolResponse, rmcp::ErrorData> {
-        let router = Self::all_tools();
-        if router.get(request.name.as_ref()).is_none()
-            && public_web_tools::owns(request.name.as_ref())
-        {
-            return Ok(public_web_tools::call(&request).await.into());
+        let mut response = async {
+            let router = Self::all_tools();
+            if router.get(request.name.as_ref()).is_none()
+                && public_web_tools::owns(request.name.as_ref())
+            {
+                return Ok(public_web_tools::call(&request).await.into());
+            }
+            if router.get(request.name.as_ref()).is_none()
+                && native_crawl_tools::owns(request.name.as_ref())
+            {
+                return Ok(native_crawl_tools::call(&request).await.into());
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            if router.get(request.name.as_ref()).is_none()
+                && search_tools::owns(request.name.as_ref())
+            {
+                return Ok(search_tools::call(&request).await.into());
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            if router.get(request.name.as_ref()).is_none()
+                && gemini_tools::owns(request.name.as_ref())
+            {
+                return Ok(gemini_tools::call(&request).await.into());
+            }
+            if router.get(request.name.as_ref()).is_none() && x_tools::owns(request.name.as_ref()) {
+                return Ok(x_tools::call(&request).await.into());
+            }
+            #[cfg(all(feature = "winclean", windows))]
+            if router.get(request.name.as_ref()).is_none()
+                && winclean_tools::owns(request.name.as_ref())
+            {
+                return Ok(winclean_tools::call(&request).await.into());
+            }
+            #[cfg(all(feature = "native-browser", not(target_arch = "wasm32")))]
+            if router.get(request.name.as_ref()).is_none()
+                && browser_tools::owns(request.name.as_ref())
+            {
+                let mut result = browser_tools::call(&request).await;
+                protocol::add_structured_content(&mut result);
+                return Ok(result.into());
+            }
+            if router.get(request.name.as_ref()).is_none()
+                && bxc_tools::owns(request.name.as_ref()).await
+            {
+                let mut result = bxc_tools::call(&request).await;
+                protocol::add_structured_content(&mut result);
+                return Ok(result.into());
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            if router.get(request.name.as_ref()).is_none()
+                && tauri_tools::owns(request.name.as_ref()).await
+            {
+                return Ok(tauri_tools::call(&request).await.into());
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            if router.get(request.name.as_ref()).is_none()
+                && kernel_tools::owns(request.name.as_ref()).await
+            {
+                return Ok(kernel_tools::call(&request).await.into());
+            }
+            let tcc = rmcp::handler::server::tool::ToolCallContext::new(self, request, context);
+            // rmcp 3 returns `CallToolResponse` (MRTR/Tasks): only a completed
+            // result carries content to mirror into `structuredContent`.
+            let mut response = router.call(tcc).await?;
+            if let rmcp::model::CallToolResponse::Complete(result) = &mut response {
+                protocol::add_structured_content(result);
+            }
+            Ok(response)
         }
-        if router.get(request.name.as_ref()).is_none()
-            && native_crawl_tools::owns(request.name.as_ref())
-        {
-            return Ok(native_crawl_tools::call(&request).await.into());
-        }
-        #[cfg(not(target_arch = "wasm32"))]
-        if router.get(request.name.as_ref()).is_none() && search_tools::owns(request.name.as_ref())
-        {
-            return Ok(search_tools::call(&request).await.into());
-        }
-        #[cfg(not(target_arch = "wasm32"))]
-        if router.get(request.name.as_ref()).is_none() && gemini_tools::owns(request.name.as_ref())
-        {
-            return Ok(gemini_tools::call(&request).await.into());
-        }
-        if router.get(request.name.as_ref()).is_none() && x_tools::owns(request.name.as_ref()) {
-            return Ok(x_tools::call(&request).await.into());
-        }
-        #[cfg(all(feature = "winclean", windows))]
-        if router.get(request.name.as_ref()).is_none()
-            && winclean_tools::owns(request.name.as_ref())
-        {
-            return Ok(winclean_tools::call(&request).await.into());
-        }
-        #[cfg(all(feature = "native-browser", not(target_arch = "wasm32")))]
-        if router.get(request.name.as_ref()).is_none() && browser_tools::owns(request.name.as_ref())
-        {
-            let mut result = browser_tools::call(&request).await;
-            protocol::add_structured_content(&mut result);
-            return Ok(result.into());
-        }
-        if router.get(request.name.as_ref()).is_none()
-            && bxc_tools::owns(request.name.as_ref()).await
-        {
-            let mut result = bxc_tools::call(&request).await;
-            protocol::add_structured_content(&mut result);
-            return Ok(result.into());
-        }
-        #[cfg(not(target_arch = "wasm32"))]
-        if router.get(request.name.as_ref()).is_none()
-            && tauri_tools::owns(request.name.as_ref()).await
-        {
-            return Ok(tauri_tools::call(&request).await.into());
-        }
-        #[cfg(not(target_arch = "wasm32"))]
-        if router.get(request.name.as_ref()).is_none()
-            && kernel_tools::owns(request.name.as_ref()).await
-        {
-            return Ok(kernel_tools::call(&request).await.into());
-        }
-        let tcc = rmcp::handler::server::tool::ToolCallContext::new(self, request, context);
-        // rmcp 3 returns `CallToolResponse` (MRTR/Tasks): only a completed
-        // result carries content to mirror into `structuredContent`.
-        let mut response = router.call(tcc).await?;
-        if let rmcp::model::CallToolResponse::Complete(result) = &mut response {
-            protocol::add_structured_content(result);
-        }
+        .await?;
+        protocol::normalize_tool_response(&mut response);
         Ok(response)
     }
 

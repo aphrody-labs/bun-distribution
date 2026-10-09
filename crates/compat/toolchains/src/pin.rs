@@ -41,7 +41,7 @@ impl Pin {
         // A fork/prerelease suffix is part of an exact pin's identity. Numeric
         // prefix matching would silently accept aphrody.3 for aphrody.4.
         if exact.contains('-') {
-            fn identity<'a>(v: &'a str) -> &'a str {
+            fn identity(v: &str) -> &str {
                 v.trim().trim_start_matches('v').split(['+', ' ']).next().unwrap_or(v)
             }
             return identity(exact) == identity(installed);
