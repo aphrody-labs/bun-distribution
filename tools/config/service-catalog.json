@@ -211,8 +211,10 @@
         "agentCardPath": "/.well-known/agent-card.json"
       },
       "public": false,
-      "note": "Persistent native A2A service on loopback 8788, authenticated private routes (APHRODY_A2A_COORD_TOKEN), dedicated main checkout and existing Codex authentication. Protocol tasks/results remain in /srv/aphrody/shared/coord/a2a/tasks across client disconnects and service reconstruction; interrupted coding tasks are not replayed on restart. Canonical MCP child is available. Runbook: docs/operations/infra/MCP-A2A.md. Runs on dbfr since 2026-10-09 (workspace and Codex standalone copied from the vps); wg1 projection 10.200.77.3:8788 via aphrody-wg-proxy@8788.socket.",
-      "host": "dbfr"
+      "note": "Retiré de dbfr : A2A n a plus d unité locale (docs/operations/workspace/codex-vps-relay-2026-10-09.md). Runbook historique: docs/operations/infra/MCP-A2A.md.",
+      "host": "dbfr",
+      "status": "retired",
+      "retiredAt": "2026-10-09"
     },
     {
       "id": "shenron-site",
@@ -568,12 +570,6 @@
         "host": "local",
         "kind": "windowsService",
         "name": "WireGuardManager"
-      },
-      {
-        "host": "dbfr",
-        "kind": "systemd",
-        "unit": "aphrody-a2a.service",
-        "hold": "unité absente de dbfr malgré le catalogue (déploiement à planifier via aphrody infra deploy)"
       }
     ]
   }
