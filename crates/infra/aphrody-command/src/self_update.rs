@@ -90,7 +90,7 @@ fn prune(active: &Path, previous: Option<&Path>) {
         .filter(|e| e.path().is_dir())
         .filter_map(|e| Some((e.metadata().ok()?.modified().ok()?, e.path())))
         .collect();
-    dirs.sort_by(|a, b| b.0.cmp(&a.0));
+    dirs.sort_by_key(|entry| std::cmp::Reverse(entry.0));
     for (_, path) in dirs.into_iter().skip(KEEP_RELEASES) {
         if active.starts_with(&path) || previous.is_some_and(|p| p.starts_with(&path)) {
             continue;
