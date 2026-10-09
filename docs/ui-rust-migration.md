@@ -1538,7 +1538,7 @@ Active app-ui, M3 showcase and Bun WebOS remain TypeScript. Native Rust owns the
 
 ## Actual Bun Rust owners
 
-Configured fork HEAD: `dee10d5d0e483ff2561895167c1c13c3f1c818e6`. Locally verified origin/main ref: `ffcc61c49d5b5ef3dfd9aa5503eb3d9a4c0a9a2f` (tracking-ref observation, not a remote fetch or a new dependency integration). Use this exact rev only after downstream qualification; no Git dependency was added by this inventory.
+Configured fork HEAD: `bcd30a753e2aeaf21b6a8c1fcbddfd15b314236d`. Locally verified origin/main ref: `bcd30a753e2aeaf21b6a8c1fcbddfd15b314236d` (tracking-ref observation, not a remote fetch or a new dependency integration). Use this exact rev only after downstream qualification; no Git dependency was added by this inventory.
 
 Fork toolchain is nightly-2026-09-15 and edition 2024. Direct consumption must qualify the allocator API and generic experimental/nightly feature gates. CSS, HTTP and bundler/JSC boundaries require their own build/link checks against the native Bun engine; manifest existence does not qualify standalone reuse. No native engine build runs in this inventory.
 
