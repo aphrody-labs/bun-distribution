@@ -128,15 +128,15 @@ export class Crawler {
             );
           }
           // Idle wait
-          await new Promise((resolve) => setTimeout(resolve, 30000));
+          await Bun.sleep(30000);
         } else {
           // Politeness delay between requests
-          await new Promise((resolve) => setTimeout(resolve, this.options.delayMs));
+          await Bun.sleep(this.options.delayMs);
         }
       } catch (err: any) {
         console.error(`[crawler] Error in crawl step: ${err.message}`);
         // Backoff on error
-        await new Promise((resolve) => setTimeout(resolve, 15000));
+        await Bun.sleep(15000);
       }
     }
   }
