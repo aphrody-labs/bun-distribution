@@ -260,36 +260,8 @@ async function main(): Promise<void> {
     }
 
     case "parse": {
-      const target = args.find((a) => !a.startsWith("-") && a !== "parse");
-      if (!target) {
-        console.error("\x1b[31mError:\x1b[0m Please provide a file to parse.");
-        process.exit(1);
-      }
-      const absPath = resolve(process.cwd(), target);
-      if (!existsSync(absPath)) {
-        console.error(`\x1b[31mError:\x1b[0m File not found: ${absPath}`);
-        process.exit(1);
-      }
-      const result = await parseTsSource(absPath);
-      if (args.includes("--json")) {
-        console.log(JSON.stringify({ schema: "yolo.parse/1", ...result }, null, 2));
-        break;
-      }
-      if (args.includes("--md")) {
-        console.log(renderParseMarkdown(result));
-        break;
-      }
-      console.log(`\x1b[1m\x1b[36m=== Parsed Source: ${relative(rootDir(), absPath)} ===\x1b[0m`);
-      console.log(`  Lines:    ${result.lines}`);
-      console.log(`  Bytes:    ${result.bytes} B`);
-      console.log(`  Checksum: wyhash:0x${result.checksum}`);
-      console.log(`  Speed:    ${result.parseTimeMs} ms`);
-      console.log(
-        `  Exports:  ${result.exports.length} symbol(s) [${result.exports.slice(0, 10).join(", ")}${result.exports.length > 10 ? "..." : ""}]`,
-      );
-      console.log(
-        `  Imports:  ${result.imports.length} module(s) [${result.imports.slice(0, 8).join(", ")}${result.imports.length > 8 ? "..." : ""}]`,
-      );
+      const { runBunTool } = await import("./bun-tools");
+      process.exitCode = await runBunTool("parse", args.slice(1), process.cwd());
       break;
     }
 
@@ -300,26 +272,8 @@ async function main(): Promise<void> {
         process.exitCode = await runSupervisorBenchCli(args.slice(1));
         break;
       }
-      const metrics = runBenchMetrics();
-      if (args.includes("--json")) {
-        console.log(JSON.stringify(metrics, null, 2));
-        break;
-      }
-      if (args.includes("--md")) {
-        console.log(renderBenchMarkdown(metrics));
-        break;
-      }
-      console.log(`\x1b[1m\x1b[36m=== YOLO Bun Micro-Benchmark Suite ===\x1b[0m`);
-      console.log(
-        `  Bun.hash.wyhash:  ${metrics.iterations.toLocaleString()} iterations in ${metrics.wyhash.elapsedMs.toFixed(2)} ms (${metrics.wyhash.sample})`,
-      );
-      console.log(
-        `  Bun.hash.crc32:   ${metrics.iterations.toLocaleString()} iterations in ${metrics.crc32.elapsedMs.toFixed(2)} ms (${metrics.crc32.sample})`,
-      );
-      console.log(
-        `  Bun.stringWidth:  "${metrics.stringWidth.sample}" -> width = ${metrics.stringWidth.width}`,
-      );
-      console.log(`  Bun.stripANSI:    "${metrics.stringWidth.stripped}"`);
+      const { runBunTool } = await import("./bun-tools");
+      process.exitCode = await runBunTool("bench", args.slice(1), process.cwd());
       break;
     }
 
@@ -354,66 +308,13 @@ async function main(): Promise<void> {
     }
 
     case "docs": {
-      const docsDir = resolve(rootDir(), BUN_DOCS_MIRROR);
-      const query = args.find((a) => !a.startsWith("-") && a !== "docs")?.toLowerCase();
-      let matches: string[] = [];
-      if (existsSync(docsDir)) {
-        if (!query) {
-          const glob = new Bun.Glob("*.{md,mdx}");
-          matches = Array.from(glob.scanSync({ cwd: docsDir, onlyFiles: true })).toSorted();
-        } else {
-          const glob = new Bun.Glob("**/*.{md,mdx}");
-          for (const scanned of glob.scanSync({ cwd: docsDir, onlyFiles: true })) {
-            const filePath = scanned.replaceAll("\\", "/");
-            if (filePath.toLowerCase().includes(query)) {
-              matches.push(filePath);
-            }
-          }
-          matches.sort();
-        }
-      }
-
-      if (args.includes("--json")) {
-        console.log(
-          JSON.stringify(
-            {
-              schema: "yolo.docs/1",
-              query: query ?? null,
-              totalMatches: matches.length,
-              matches,
-            },
-            null,
-            2,
-          ),
-        );
-        break;
-      }
-
-      if (args.includes("--md")) {
-        const mdLines = [
-          `# yolo docs: ${query ? `"${query}"` : BUN_DOCS_MIRROR}`,
-          "",
-          `- **Matches:** ${matches.length}`,
-          "",
-          ...matches.map((m) => `- \`${m}\``),
-        ];
-        console.log(mdLines.join("\n"));
-        break;
-      }
-
-      console.log(`\x1b[1m\x1b[36m=== Bun Docs Corpus (via Bun.Glob) ===\x1b[0m`);
-      if (!existsSync(docsDir)) {
-        console.log(`  \x1b[31mDocs not found at ${docsDir}\x1b[0m`);
-        break;
-      }
-      if (!query) {
-        console.log(`  Docs directory: ${BUN_DOCS_MIRROR} (${matches.length} root items)`);
-      } else {
-        console.log(`  Found ${matches.length} match(es):`);
-        for (const r of matches.slice(0, 10)) {
-          console.log(`    - ${r}`);
-        }
-      }
+      // The pinned upstream docs mirror, unless --dir names another corpus; without it `bun docs` finds one.
+      const docsArgs = args.slice(1);
+      const mirror = resolve(rootDir(), BUN_DOCS_MIRROR);
+      if (!docsArgs.some((a) => a === "--dir" || a.startsWith("--dir=")) && existsSync(mirror))
+        docsArgs.push("--dir", mirror);
+      const { runBunTool } = await import("./bun-tools");
+      process.exitCode = await runBunTool("docs", docsArgs, process.cwd());
       break;
     }
 

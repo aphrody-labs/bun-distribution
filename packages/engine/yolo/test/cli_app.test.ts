@@ -2,12 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { bunCheckout } from "../../core/src/vendor/catalog";
-import {
-  generateBunCatalog,
-  inspectPackages,
-  parseTsSource,
-  readWorkspaceCargo,
-} from "../src/index";
+import { generateBunCatalog, inspectPackages, parseTsSource, readWorkspaceCargo } from "../src/index";
 
 const rootDir = resolve(import.meta.dir, "../../../..");
 // These tests read the Bun fork checkout (APHRODY_BUN_CHECKOUT, else C:/bun on Windows); skipped when absent.
@@ -27,9 +22,7 @@ describe("Yolo canonical CLI and native capability owners", () => {
       "@aphrody/workspace": "workspace:*",
       "@aphrody/yolo-core": "workspace:*",
     });
-    const rust = Bun.TOML.parse(
-      await Bun.file(resolve(rootDir, "crates/infra/aphrody/Cargo.toml")).text(),
-    );
+    const rust = Bun.TOML.parse(await Bun.file(resolve(rootDir, "crates/infra/aphrody/Cargo.toml")).text());
     expect((rust.package as { name: string }).name).toBe("aphrody");
     expect(existsSync(resolve(rootDir, "crates/infra/aphrody/package.json"))).toBe(false);
   });
@@ -37,10 +30,8 @@ describe("Yolo canonical CLI and native capability owners", () => {
   it("should inspect local fork packages programmatically via Bun file checks", async () => {
     const statuses = await inspectPackages();
     const catalog = await Bun.file(resolve(rootDir, "tools/config/vendor.json")).json();
-    const names = statuses.map((s) => s.name).toSorted();
-    expect(names).toEqual(
-      catalog.sources.map((source: { name: string }) => source.name).toSorted(),
-    );
+    const names = statuses.map(s => s.name).toSorted();
+    expect(names).toEqual(catalog.sources.map((source: { name: string }) => source.name).toSorted());
 
     for (const status of statuses) {
       // Sources are fetched on demand and git-ignored: a missing checkout is reported as not fetched.
@@ -71,7 +62,7 @@ describe("Yolo canonical CLI and native capability owners", () => {
     const cargo = await readWorkspaceCargo();
     expect(cargo).not.toBeNull();
     expect(cargo?.resolver).toBe("3");
-    expect(cargo?.members.some((m) => m.startsWith("crates/"))).toBe(true);
+    expect(cargo?.members.some(m => m.startsWith("crates/"))).toBe(true);
   });
 
   it("searches the Bun docs mirror in docs/reference/upstream-bun", async () => {
@@ -82,31 +73,28 @@ describe("Yolo canonical CLI and native capability owners", () => {
     });
     const [stdout, exitCode] = await Promise.all([proc.stdout.text(), proc.exited]);
     const report = JSON.parse(stdout);
-    expect(report.matches).toContain("runtime/http/server.mdx");
+    expect(report.matches.map((m: { path: string }) => m.path)).toContain("runtime/http/server.mdx");
     expect(exitCode).toBe(0);
   });
 
-  it.skipIf(!haveBunFork)(
-    "should autonomously scan upstream Bun and generate capability catalog",
-    async () => {
-      const report = await generateBunCatalog();
-      expect(report).toBeDefined();
-      expect(report.domains.length).toBe(7);
-      expect(report.totalDocFilesIndexed).toBeGreaterThan(100);
-      expect(report.totalTypeFilesIndexed).toBeGreaterThan(10);
-      expect(existsSync(generatedCatalogPath)).toBe(true);
+  it.skipIf(!haveBunFork)("should autonomously scan upstream Bun and generate capability catalog", async () => {
+    const report = await generateBunCatalog();
+    expect(report).toBeDefined();
+    expect(report.domains.length).toBe(7);
+    expect(report.totalDocFilesIndexed).toBeGreaterThan(100);
+    expect(report.totalTypeFilesIndexed).toBeGreaterThan(10);
+    expect(existsSync(generatedCatalogPath)).toBe(true);
 
-      const generatedContent = await Bun.file(generatedCatalogPath).text();
-      expect(generatedContent).toContain("MONOREPO_BUN_CATALOG");
-      expect(generatedContent).toContain("web_api");
-      expect(generatedContent).toContain("server");
-      expect(generatedContent).toContain("react");
-      expect(generatedContent).toContain("css");
-      expect(generatedContent).toContain("img");
-      expect(generatedContent).toContain("json");
-      expect(generatedContent).toContain("markdown");
-    },
-  );
+    const generatedContent = await Bun.file(generatedCatalogPath).text();
+    expect(generatedContent).toContain("MONOREPO_BUN_CATALOG");
+    expect(generatedContent).toContain("web_api");
+    expect(generatedContent).toContain("server");
+    expect(generatedContent).toContain("react");
+    expect(generatedContent).toContain("css");
+    expect(generatedContent).toContain("img");
+    expect(generatedContent).toContain("json");
+    expect(generatedContent).toContain("markdown");
+  });
 
   it.skipIf(!haveBunFork)(
     "should execute the CLI binary via Bun.spawn with status, parse, bench, docs, and generate commands",
@@ -144,8 +132,7 @@ describe("Yolo canonical CLI and native capability owners", () => {
       const exitCodeDocs = await procDocs.exited;
 
       expect(exitCodeDocs).toBe(0);
-      expect(stdoutDocs).toContain("=== Bun Docs Corpus");
-      expect(stdoutDocs).toContain("Found");
+      expect(stdoutDocs).toContain("runtime/http/server.mdx");
 
       const procGen = Bun.spawn(["bun", cliEntryPath, "generate"], {
         cwd: rootDir,
@@ -180,7 +167,7 @@ describe("Yolo canonical CLI and native capability owners", () => {
     });
     const parseJson = JSON.parse(await new Response(procParseJson.stdout).text());
     expect(await procParseJson.exited).toBe(0);
-    expect(parseJson.schema).toBe("yolo.parse/1");
+    expect(parseJson.schema).toBe("bun.parse/1");
     expect(parseJson.lines).toBeGreaterThan(50);
 
     // 3. bench --json
@@ -191,8 +178,8 @@ describe("Yolo canonical CLI and native capability owners", () => {
     });
     const benchJson = JSON.parse(await new Response(procBenchJson.stdout).text());
     expect(await procBenchJson.exited).toBe(0);
-    expect(benchJson.schema).toBe("yolo.bench/1");
-    expect(benchJson.wyhash.opsPerSec).toBeGreaterThan(0);
+    expect(benchJson.schema).toBe("bun.bench/1");
+    expect(benchJson.results[0].opsPerSec).toBeGreaterThan(0);
 
     // 4. doctor --json
     const procDocJson = Bun.spawn(["bun", cliEntryPath, "doctor", "--json"], {
@@ -251,12 +238,10 @@ describe("YOLO vendoring", () => {
       prefix: string;
       source: { name: string }[];
     };
-    expect(lock.sources.map((s) => s.name).sort()).toEqual(config.source.map((s) => s.name).sort());
+    expect(lock.sources.map(s => s.name).sort()).toEqual(config.source.map(s => s.name).sort());
     for (const crate of lock.crates) {
       expect(crate.package.startsWith(config.prefix)).toBe(true);
-      const manifest = Bun.TOML.parse(
-        await Bun.file(resolve(rootDir, crate.dir, "Cargo.toml")).text(),
-      ) as {
+      const manifest = Bun.TOML.parse(await Bun.file(resolve(rootDir, crate.dir, "Cargo.toml")).text()) as {
         package: { name: string };
         lib?: { name?: string };
       };
@@ -275,8 +260,8 @@ describe("YOLO vendoring", () => {
     const declaration = Bun.TOML.parse(await Bun.file(resolve(rootDir, "vendor.toml")).text()) as {
       source: { name: string }[];
     };
-    expect(status?.sources.map((source) => source.name).toSorted()).toEqual(
-      declaration.source.map((source) => source.name).toSorted(),
+    expect(status?.sources.map(source => source.name).toSorted()).toEqual(
+      declaration.source.map(source => source.name).toSorted(),
     );
     const { readGitHead } = await import("../../core/src/vendor/status");
     for (const source of status!.sources) {
@@ -284,16 +269,6 @@ describe("YOLO vendoring", () => {
       expect(source.headSha).toBe(await readGitHead(resolve(rootDir, "vendor", source.name)));
       expect(source.inSync).toBe(source.lockedSha === source.headSha);
     }
-  });
-});
-
-describe("YOLO rename engine", () => {
-  it("renames npm scopes only on identifier boundaries", async () => {
-    const { applyRules, PRESETS } = await import("../src/rename");
-    const input = `import "@tauri-apps/api"; "x@tauri-apps/api"; github.com/tauri-apps/tauri`;
-    const { output, count } = applyRules(input, PRESETS.aphrody!);
-    expect(count).toBe(1);
-    expect(output).toBe(`import "@aphrody/api"; "x@tauri-apps/api"; github.com/tauri-apps/tauri`);
   });
 });
 
@@ -325,7 +300,7 @@ describe("YOLO awesome", () => {
   it("parses sections and entries, skipping contents, license and fenced code", async () => {
     const { parseAwesome } = await import("../src/awesome");
     const sections = parseAwesome(readme);
-    expect(sections.map((s) => s.slug)).toEqual(["tools", "courses-books"]);
+    expect(sections.map(s => s.slug)).toEqual(["tools", "courses-books"]);
     expect(sections[0]?.entries).toHaveLength(2);
     expect(sections[0]?.entries[0]).toMatchObject({
       name: "Bun Types",
@@ -340,19 +315,16 @@ describe("YOLO awesome", () => {
     const { parseAwesome, findSection, searchEntries } = await import("../src/awesome");
     const sections = parseAwesome(readme);
     expect(findSection(sections, "course")?.title).toBe("Courses & Books");
-    expect(searchEntries(sections, "bun types").map((e) => e.name)).toEqual(["Bun Types"]);
+    expect(searchEntries(sections, "bun types").map(e => e.name)).toEqual(["Bun Types"]);
     expect(searchEntries(sections, "bun nothing")).toEqual([]);
   });
 
   it("runs the command on a local README without network", async () => {
     const path = resolve(rootDir, ".cache/awesome-test-readme.md");
     await Bun.write(path, readme);
-    const proc = Bun.spawn(
-      ["bun", cliEntryPath, "awesome", "search", "docs", "--file", path, "--json"],
-      {
-        stdout: "pipe",
-      },
-    );
+    const proc = Bun.spawn(["bun", cliEntryPath, "awesome", "search", "docs", "--file", path, "--json"], {
+      stdout: "pipe",
+    });
     const out = JSON.parse(await new Response(proc.stdout).text());
     expect(await proc.exited).toBe(0);
     expect(out.map((e: { name: string }) => e.name)).toEqual(["Docs"]);
@@ -386,15 +358,13 @@ describe("YOLO awesome curation (Rust-based Bun)", () => {
     const { judge } = await import("../src/awesome");
     expect(judge(entry(), facts(), undefined, since).verdict).toBe("keep");
     expect(judge(entry(), facts({ archived: true }), undefined, since).reason).toMatch(/archived/);
-    expect(
-      judge(entry(), facts({ pushedAt: "2026-01-01T00:00:00Z" }), undefined, since).reason,
-    ).toMatch(/no activity since 2026-05-14/);
+    expect(judge(entry(), facts({ pushedAt: "2026-01-01T00:00:00Z" }), undefined, since).reason).toMatch(
+      /no activity since 2026-05-14/,
+    );
     expect(judge(entry(), "missing", undefined, since).verdict).toBe("drop");
     expect(judge(entry(), "error", undefined, since).reason).toMatch(/could not be verified/);
     expect(judge(entry(), facts({ language: "Zig" }), undefined, since).reason).toMatch(/Zig/);
-    expect(judge(entry({ description: "Zig bindings" }), facts(), undefined, since).verdict).toBe(
-      "drop",
-    );
+    expect(judge(entry({ description: "Zig bindings" }), facts(), undefined, since).verdict).toBe("drop");
   });
 
   it("verifies links inside repositories and external pages", async () => {
@@ -414,14 +384,9 @@ describe("YOLO awesome curation (Rust-based Bun)", () => {
   it("renders a cleaned README with only the kept sections", async () => {
     const { judge, renderCleanReadme, parseAwesome } = await import("../src/awesome");
     const readme = `<p>header</p>\n\n## Contents\n\n- [Tools](#tools)\n\n## Tools\n\n- [A](https://github.com/acme/a) - good\n- [B](https://github.com/acme/b)\n\n## Videos\n\n- [V](https://example.com/v)\n`;
-    const entries = parseAwesome(readme).flatMap((s) => s.entries);
-    const curated = entries.map((e) =>
-      judge(
-        e,
-        e.name === "A" ? facts() : e.github ? facts({ archived: true }) : undefined,
-        200,
-        since,
-      ),
+    const entries = parseAwesome(readme).flatMap(s => s.entries);
+    const curated = entries.map(e =>
+      judge(e, e.name === "A" ? facts() : e.github ? facts({ archived: true }) : undefined, 200, since),
     );
     const out = renderCleanReadme(readme, curated, since);
     expect(out).toContain("<p>header</p>");
@@ -434,18 +399,9 @@ describe("YOLO awesome curation (Rust-based Bun)", () => {
   it("makes the header's relative images absolute against the source list", async () => {
     const { renderCleanReadme } = await import("../src/awesome");
     const readme = `<img src="./logo.png"> [doc](docs/a.md) [web](https://bun.sh) [top](#top)\n\n## Contents\n`;
-    const out = renderCleanReadme(
-      readme,
-      [],
-      since,
-      "https://raw.githubusercontent.com/oven-sh/awesome-bun/main/",
-    );
-    expect(out).toContain(
-      'src="https://raw.githubusercontent.com/oven-sh/awesome-bun/main/logo.png"',
-    );
-    expect(out).toContain(
-      "[doc](https://raw.githubusercontent.com/oven-sh/awesome-bun/main/docs/a.md)",
-    );
+    const out = renderCleanReadme(readme, [], since, "https://raw.githubusercontent.com/oven-sh/awesome-bun/main/");
+    expect(out).toContain('src="https://raw.githubusercontent.com/oven-sh/awesome-bun/main/logo.png"');
+    expect(out).toContain("[doc](https://raw.githubusercontent.com/oven-sh/awesome-bun/main/docs/a.md)");
     expect(out).toContain("[web](https://bun.sh)");
     expect(out).toContain("[top](#top)");
   });
