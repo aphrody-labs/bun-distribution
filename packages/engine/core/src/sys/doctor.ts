@@ -59,7 +59,7 @@ export function aphrodyTools(): { name: string; found: boolean }[] {
 
 /** Language servers and context-reduction tools (yolo `tools/config/host/toolchain.json` codeIntel). */
 export function codeIntelTools(): { name: string; found: boolean }[] {
-  return ["rust-analyzer", "tsc", "rtk", "serena", "ast-grep-server", "context-mode"].map(
+  return ["rust-analyzer", "tsc", "rtk", "context-mode"].map(
     (name) => ({
       name,
       found: Boolean(Bun.which(name)),

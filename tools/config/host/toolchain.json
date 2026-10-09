@@ -41,7 +41,6 @@
     "zellij": "0.45.1",
     "opensshPreview": "10.0.0.0p2-Preview",
     "rtk": "0.51.0",
-    "serena": "main",
     "python313": "3.13"
   },
   "rustToolchain": {
@@ -215,20 +214,7 @@
       "~/.local/bin/bun (release aphrody-labs/bun, also linked as ~/.bun/bin/bun)"
     ]
   },
-  "uvTools": [
-    {
-      "command": "serena",
-      "package": "serena-agent",
-      "from": "git+https://github.com/oraios/serena",
-      "python": "3.12"
-    },
-    {
-      "command": "ast-grep-server",
-      "package": "sg-mcp",
-      "from": "git+https://github.com/ast-grep/ast-grep-mcp",
-      "python": "3.13"
-    }
-  ],
+  "uvTools": [],
   "codeIntel": {
     "lsp": {
       "rust": {
@@ -252,17 +238,16 @@
     "contextTools": {
       "rtk": "shell output compressor (rtk-ai/rtk, Claude PreToolUse hook, Codex hooks, agy plugin)",
       "context-mode": "sandbox + FTS5 MCP (mksglu/context-mode)",
-      "serena": "LSP-backed symbol MCP (oraios/serena); contexts claude-code, codex, antigravity",
-      "ast-grep": "structural search/rewrite CLI (@ast-grep/cli) and MCP (ast-grep-server)",
+      "ast-grep": "structural search/rewrite CLI (@ast-grep/cli)",
       "repomix": "repository packer for bounded external review (yamadashy/repomix)"
     },
     "wiring": {
       "claude": "plugin aphrody-code-intel@aphrody-user (lspServers + MCP) and rtk hook in aphrody-claude user/settings.json",
-      "codex": "codex mcp add serena|ast-grep|context-mode; rtk init -g --codex",
-      "agy": "agy mcp add serena|ast-grep|context-mode; rtk init -g --agent antigravity",
+      "codex": "codex mcp add context-mode; rtk init -g --codex",
+      "agy": "agy mcp add context-mode; rtk init -g --agent antigravity",
       "script": "scripts/tools/toolchain-sync.sh (agent-code-intel step), toolchain-sync.ps1"
     },
-    "evidence": "2026-10-04 GitHub stars: rtk 82k, headroom 74k (proxy, not adopted: separate runtime), serena 30k, context-mode 25k, repomix 29k, ast-grep 16k"
+    "evidence": "2026-10-04 GitHub stars: rtk 82k, headroom 74k (proxy, not adopted: separate runtime), context-mode 25k, repomix 29k, ast-grep 16k"
   },
   "hostTools": {
     "vps": {

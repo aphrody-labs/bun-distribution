@@ -60,11 +60,6 @@
       "category": "essential"
     },
     {
-      "path": ".serena",
-      "mode": "copy",
-      "category": "essential"
-    },
-    {
       "path": ".gemini",
       "mode": "copy",
       "category": "essential",
