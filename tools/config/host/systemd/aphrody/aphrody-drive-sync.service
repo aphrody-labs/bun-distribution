@@ -22,9 +22,7 @@ UMask=0077
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=tmpfs
-BindReadOnlyPaths=/home/ubuntu/.bun/bin/bun /home/ubuntu/.local/bin/aphrody
-# ~/.bun/bin/bun is a shim that execs the pinned Bun-compatible yolo: bind its target too.
-BindReadOnlyPaths=/home/ubuntu/.yolo/bin/pins
+BindReadOnlyPaths=/home/ubuntu/.bun/bin/bun /home/ubuntu/.local/bin/bun /home/ubuntu/.local/bin/aphrody
 BindReadOnlyPaths=/home/ubuntu/.ssh
 BindPaths=/home/ubuntu/.aphrody
 ReadWritePaths=/home/ubuntu/.aphrody /srv/aphrody-lab/state

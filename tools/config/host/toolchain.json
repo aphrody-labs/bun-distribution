@@ -212,7 +212,7 @@
     "dbfr": "~/aphrody",
     "remote": "workspace (git@github.com:aphrody-labs/aphrody.git, blobless clone via forwarded agent)",
     "links": [
-      "~/.local/bin/yolo -> ~/.yolo/bin/yolo (yolo ops|workspace|optimize|update... load packages/* from ~/aphrody or YOLO_APHRODY_ROOT)"
+      "~/.local/bin/bun (release aphrody-labs/bun, also linked as ~/.bun/bin/bun)"
     ]
   },
   "uvTools": [

@@ -164,7 +164,7 @@ async function shenronDiscord(
     "--host",
     "dbfr",
     "--cmd",
-    `sudo -n env BUN_BE_BUN=1 /home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo /usr/local/libexec/aphrody-debate-discord.mjs '${encoded}'`,
+    `sudo -n /home/ubuntu/.local/bin/bun /usr/local/libexec/aphrody-debate-discord.mjs '${encoded}'`,
   ]);
   return JSON.parse(result) as { available?: boolean; botId?: string; messageId?: string };
 }

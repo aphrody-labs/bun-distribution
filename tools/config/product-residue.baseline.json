@@ -440,7 +440,6 @@
     "scripts/tools/discord/debate/rag-install.ts": 9,
     "scripts/tools/discord/debate/rag-probe.ts": 1,
     "scripts/tools/discord/debate/README.md": 22,
-    "scripts/tools/discord/debate/runtime-activate.ts": 4,
     "scripts/tools/discord/debate/shenron-discord.ts": 4,
     "scripts/tools/discord/debate/test_backend.py": 1,
     "scripts/tools/discord/debate/TODO.md": 4,

@@ -27,8 +27,7 @@ La politique des rôles, des modèles et des limites est dans
 
 ## Sources et apprentissage
 
-Le runtime d’exécution est le binaire Yolo installé, appelé directement avec
-`BUN_BE_BUN=1` pour ses APIs compatibles. Le code du worker utilise les propriétaires partagés du kit : `NativeLocalAI`
+Le runtime d’exécution est le binaire Bun du fork (`/home/ubuntu/.local/bin/bun`). Le code du worker utilise les propriétaires partagés du kit : `NativeLocalAI`
 pour l’inférence en processus et `searchLocalRag` pour le client MCP natif par
 FFI. Le RAG appelle uniquement `aphrody_shenron_rag_search` du serveur canonique
 Aphrody, avec le schéma PostgreSQL Shenron existant en lecture seule derrière
@@ -71,10 +70,10 @@ films et jeux n'est revendiqué.
 Exécuter depuis la racine Aphrody :
 
 ```sh
-env BUN_BE_BUN=1 /home/aphro/.yolo/bin/yolo scripts/tools/discord/debate/install.ts
-APHRODY_SSH_COMMAND_TIMEOUT_SECS=480 BUN_BE_BUN=1 /home/aphro/.yolo/bin/yolo scripts/tools/discord/debate/install.ts --apply
+bun scripts/tools/discord/debate/install.ts
+APHRODY_SSH_COMMAND_TIMEOUT_SECS=480 bun scripts/tools/discord/debate/install.ts --apply
 # Un échange demandé par l’opérateur ; le service est arrêté pendant l’écriture.
-APHRODY_SSH_COMMAND_TIMEOUT_SECS=480 BUN_BE_BUN=1 /home/aphro/.yolo/bin/yolo scripts/tools/discord/debate/install.ts --apply --exchange "Goku contre Vegeta : réponds à ton rival avec les sources disponibles"
+APHRODY_SSH_COMMAND_TIMEOUT_SECS=480 bun scripts/tools/discord/debate/install.ts --apply --exchange "Goku contre Vegeta : réponds à ton rival avec les sources disponibles"
 ```
 
 Le plan et l’application passent par Infra, installent le relais Discord du
@@ -175,25 +174,18 @@ restent dans leurs stores de domaine.
 
 Le lot préparé passe 27 tests (123 assertions), TypeScript ciblé, lint strict,
 format et reconstruction des bundles avec l’admission native. Ces gates ont
-été exécutées directement par le Yolo installé ; elles ne qualifient pas
+été exécutées directement par Bun ; elles ne qualifient pas
 l’activation FFI restante. Le worker HTTP actuellement qualifié a servi
 l’échange `1557492036876107777`, avec Shenron `1557492315059257515`,
 Aphrody/Gemma `1557492471590555844` et le bilan d’arbitrage
 `1557493043006021652`. Les limites de logique et de source restent explicites.
 
-La transition du runtime seul utilise `runtime-activate.ts` : plan Infra,
-checksum du pin et de la sauvegarde d’unité, sonde `--help` du bundle existant,
-drain du handler, vérification du processus réel et santé des deux modèles.
-Elle a activé le PID `4099441` sous Yolo `c886d124e138`, avec le bundle HTTP
-`33af90fa46486522db6a2ffd0449f6c3a137fc26dc5992d491b30b299e0dd2c5`
-inchangé et les ports 8798/8799 en HTTP 200. Cette transition ne revendique
-aucune activation FFI ; l’unité précédente reste en sauvegarde privée.
 
 Le pin DBFR est également vérifié : même SHA, 324884560 octets, mode 0555,
 version 1.4.3 et exécution JavaScript réelle. Son relais Discord répond sous
-Yolo avec le vrai compte Shenron. Le worker actif est ensuite passé au PID
+Bun avec le vrai compte Shenron. Le worker actif est ensuite passé au PID
 `4104230` ; seul l’appel historique du relais dans le bundle a changé vers
-Yolo. Le SHA du bundle devient
+Bun. Le SHA du bundle devient
 `4e6cbd36da3d543caa53edffe3e7ad11cdd212fca5f77c6047d44a2d97bb6b93`.
 L’identité du processus est vérifiée via `/proc/<pid>/exe` et son checksum ;
 le nom affiché dans les arguments peut changer au démarrage. La politique
@@ -203,6 +195,6 @@ Les tours enregistrent désormais leur véritable identifiant de message Discord
 après publication. Une reprise réutilise le texte généré et ne republie pas
 un tour déjà livré, même hors de la fenêtre courte de nonce. Le test de panne
 sur la deuxième publication puis de redémarrage vérifie cette transition ;
-28 tests et 130 assertions passent sous Yolo. Les rollouts annotés conservent
+28 tests et 130 assertions passent sous Bun. Les rollouts annotés conservent
 ce reçu comme provenance et restent explicitement candidats, sans statut de
 vérité de référence. Cette source sera installée avec le worker qualifié.

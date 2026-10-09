@@ -11,9 +11,10 @@ Group=ubuntu
 WorkingDirectory=/srv/aphrody-lab/state/debate
 EnvironmentFile=/etc/aphrody-discord-native.env
 EnvironmentFile=/etc/aphrody/aphrody-mcp-http.env
-Environment=BUN_BE_BUN=1
 ExecStart=/home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo /srv/aphrody-lab/debate.mjs --policy /srv/aphrody-lab/debate-policy.json --env-file /etc/aphrody-discord.env --state /srv/aphrody-lab/state/debate/state.json
-Restart=on-failure
+Restart=always
+MemoryHigh=256M
+MemoryMax=512M
 RestartSec=5
 TimeoutStopSec=450
 NoNewPrivileges=true

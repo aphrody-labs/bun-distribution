@@ -122,7 +122,6 @@ print(json.dumps({'verifiedBackup':True}))`;
       const invoke = `import pathlib,os,subprocess,json
 env=dict(os.environ)
 allowed={'APHRODY_FFI_LIB','APHRODY_INFERENCE_LIBRARY','APHRODY_MCP_HTTP_TOKEN'}
-env['BUN_BE_BUN']='1'
 for path in ['/etc/aphrody-discord-native.env','/etc/aphrody/aphrody-mcp-http.env']:
  for line in pathlib.Path(path).read_text().splitlines():
   if '=' in line and not line.startswith('#'):
@@ -130,7 +129,7 @@ for path in ['/etc/aphrody-discord-native.env','/etc/aphrody/aphrody-mcp-http.en
    if key in allowed:env[key]=value.strip().strip('"'+chr(39))
 assert env.get('APHRODY_FFI_LIB')==env.get('APHRODY_INFERENCE_LIBRARY')
 assert pathlib.Path(env['APHRODY_FFI_LIB']).is_file()
-command=['sudo','-n','-u','ubuntu','--preserve-env=BUN_BE_BUN,APHRODY_FFI_LIB,APHRODY_INFERENCE_LIBRARY,APHRODY_MCP_HTTP_TOKEN','/home/ubuntu/.yolo/bin/pins/discord-c886d124e138/yolo','/srv/aphrody-lab/debate.mjs','--policy','/srv/aphrody-lab/debate-policy.json','--env-file','/etc/aphrody-discord.env','--state','/srv/aphrody-lab/state/debate/state.json']+${JSON.stringify(args)}
+command=['sudo','-n','-u','ubuntu','--preserve-env=APHRODY_FFI_LIB,APHRODY_INFERENCE_LIBRARY,APHRODY_MCP_HTTP_TOKEN','/home/ubuntu/.local/bin/bun','/srv/aphrody-lab/debate.mjs','--policy','/srv/aphrody-lab/debate-policy.json','--env-file','/etc/aphrody-discord.env','--state','/srv/aphrody-lab/state/debate/state.json']+${JSON.stringify(args)}
 child=subprocess.run(command,env=env,check=True)
 print(json.dumps({'nativeWorkerCompleted':True}))`;
       return remote("vps", `sudo -n python3 -c ${quote(invoke)}`);
