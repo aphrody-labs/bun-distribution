@@ -17,6 +17,8 @@ import { formatSource, lintSource, minifySource } from "./src/oxc";
 
 const root = mkdtempSync(join(tmpdir(), "aphrody-native-consumer-"));
 const script = join(root, "index.js");
+// N2B reads the first n2b.json found walking up from the scanned root; pin it here so a stray one in %TEMP% is never used.
+writeFileSync(join(root, "n2b.json"), "{}");
 const original = "#!/usr/bin/env node\nconsole.log('hello');\n";
 afterAll(() => {
   closeNativeLibrary();
