@@ -190,3 +190,19 @@ test("public fallback declarations correspond to actual router and Material page
       ).toBe(true);
   }
 });
+
+// oxlint-disable eslint/no-await-in-loop -- three bounded source-contract GET checks
+test("public route metadata is unique, truthful and matches hydrated titles", async () => {
+  const { browserDocumentTitle } =
+    await import("../../../../../m3/packages/app-ui/src/components/TabManager/route-title");
+  for (const path of ["/studio", "/material-3/components", "/material-3/icons"]) {
+    const response = await request(path);
+    const html = await response.text();
+    expect(response.status).toBe(200);
+    expect(html).toContain(`<title>${browserDocumentTitle(path, null, true)}</title>`);
+    expect(html).toContain(`rel="canonical" href="https://aphrody.com${path}"`);
+    expect(html).toContain('name="description"');
+  }
+  const studio = await (await request("/studio")).text();
+  expect(studio).toContain("Connected native tools require the installed application.");
+});

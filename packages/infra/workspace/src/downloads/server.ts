@@ -557,10 +557,45 @@ export const APP_UI_ROUTES = new Set([
     "adaptive",
   ].flatMap((page) => [`/material-3/${page}`, `/showcase/${page}`]),
 ]);
+/** Metadata for explicit public preview routes; native capabilities remain installation-dependent. */
+export function publicRouteSeo(pathname: string) {
+  const path = pathname.replace(/\/+$/, "") || "/";
+  const context = path
+    .slice(1)
+    .split("/")
+    .map((part) =>
+      part
+        .split("-")
+        .map((word) => word[0]?.toUpperCase() + word.slice(1))
+        .join(" "),
+    )
+    .join(" — ");
+  const title =
+    path === "/" || path === "/index.html"
+      ? "Aphrody — Search, workspace and native OS"
+      : path === "/os"
+        ? "Aphrody OS — Browser workspace"
+        : `${context} — Aphrody`;
+  const description =
+    path === "/os"
+      ? "Explore the shared Aphrody OS browser workspace. Native capabilities require the installed application."
+      : path.startsWith("/material-3") || path.startsWith("/showcase")
+        ? `Explore ${context} in Aphrody's Material 3 component and design catalogue.`
+        : path === "/templates"
+          ? "Browse Aphrody project templates and their source descriptions."
+          : path === "/docs"
+            ? "Read Aphrody runtime, native SDK and desktop documentation."
+            : `Explore ${context} in the Aphrody browser preview. Connected native tools require the installed application.`;
+  return {
+    title,
+    description,
+    canonical: `https://aphrody.com${path === "/index.html" ? "/" : path}`,
+  };
+}
 async function appUiResponse(request: Request, root: string): Promise<Response | null> {
   const pathname = new URL(request.url).pathname;
   const home = pathname === "/" || pathname === "/index.html";
-  const os = pathname === "/os" || pathname === "/os/";
+  const seo = publicRouteSeo(pathname);
   const shell = APP_UI_ROUTES.has(pathname.replace(/\/+$/, ""));
   const asset = pathname.startsWith("/_app-ui/");
   if (!home && !shell && !asset) return null;
@@ -581,7 +616,12 @@ async function appUiResponse(request: Request, root: string): Promise<Response |
     const html = await new HTMLRewriter()
       .on("title", {
         element(element) {
-          if (os) element.setInnerContent("Aphrody OS — Browser workspace");
+          if (!home) element.remove();
+        },
+      })
+      .on('meta[name="description"], link[rel="canonical"]', {
+        element(element) {
+          if (!home) element.remove();
         },
       })
       .on("base", {
@@ -597,9 +637,9 @@ async function appUiResponse(request: Request, root: string): Promise<Response |
             element.append(`<meta name="aphrody-assets-base" content="${assetsBase}">`, {
               html: true,
             });
-          if (os)
+          if (!home)
             element.append(
-              '<meta name="description" content="Explore the shared Aphrody OS browser workspace. Native capabilities require the installed application."><link rel="canonical" href="https://aphrody.com/os">',
+              `<title>${seo.title}</title><meta name="description" content="${seo.description.replaceAll("&", "&amp;").replaceAll('"', "&quot;")}"><link rel="canonical" href="${seo.canonical}">`,
               { html: true },
             );
         },

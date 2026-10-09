@@ -23,5 +23,5 @@ test("public homepage and OS retain SEO titles while native tab titles remain na
   );
   expect(browserDocumentTitle("/os/", "Aphrody", true)).toBe("Aphrody OS — Browser workspace");
   expect(browserDocumentTitle("/", "Aphrody", false)).toBe("Aphrody — Aphrody OS");
-  expect(browserDocumentTitle("/studio", "Google", true)).toBe("Google — Aphrody OS");
+  expect(browserDocumentTitle("/studio", "Google", true)).toBe("Studio — Aphrody");
 });

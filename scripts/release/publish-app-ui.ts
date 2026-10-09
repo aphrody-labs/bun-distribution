@@ -53,8 +53,14 @@ export function buildCommand(artifact: string, publicAssets = false): string[] {
   ];
 }
 export function prerequisiteCommands(): string[][] {
-  // The canonical identity owner copies its tracked atlas to gitignored dist for bundling.
-  return [["bun", "run", "--cwd", "m3/packages/identity", "sprite"]];
+  // Build exactly the JS owners imported by app-ui; fonts are checksum-pinned by their owner lock.
+  return [
+    ["bun", "run", "--cwd", "crates/tauri/aphrody-tauri-api", "build"],
+    ["bun", "run", "--cwd", "crates/tauri/aphrody-tauri-plugin-dialog", "build"],
+    ["bun", "m3/scripts/fonts-sync.ts", "--quiet"],
+    ["bun", "m3/scripts/fonts-sync.ts", "--check", "--quiet"],
+    ["bun", "run", "--cwd", "m3/packages/identity", "sprite"],
+  ];
 }
 export function declarationCommand(path: string): string {
   // Source \\n becomes exactly one shell backslash, so printf emits a real newline.
@@ -159,6 +165,7 @@ async function main() {
     serverSource,
     "crates/web/site/data",
     "crates/ui/identity",
+    "crates/tauri",
     "tools/config/downloads.json",
     "tools/config/public-assets.json",
     "scripts/release/publish-app-ui.ts",

@@ -124,6 +124,12 @@ Fresh checkouts also run the identity owner's explicit `sprite` command before b
 it derives the ignored `m3/packages/identity/dist/spritesheet.webp` from the tracked
 `crates/ui/identity/assets/aphrody/sprites/spritesheet.webp`. No installation lifecycle or
 machine setup hooks are required. Source guards include that Rust identity owner input.
+The helper also builds exactly the imported Tauri JavaScript packages (`@aphrody/api` and
+`@aphrody/plugin-dialog`) with their manifest `build` commands. It synchronizes fonts through
+`m3/scripts/fonts-sync.ts` and runs its check-only pass: the existing font lock pins Google
+font commits and file SHA256/size, and Material Symbols tarball SHA512 plus extracted file
+SHA256/size. Missing generated package outputs are recreated from their tracked sources;
+no output from another checkout is copied. Tauri source and builder inputs are guarded too.
 
 ```sh
 bun scripts/release/publish-app-ui.ts --build --public-assets --revision <exact-HEAD> --out <isolated-directory>

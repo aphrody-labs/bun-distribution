@@ -77,5 +77,18 @@ export function browserDocumentTitle(
   if (publicPreview && (route === "/" || route === "/index.html"))
     return "Aphrody — Search, workspace and native OS";
   if (publicPreview && route === "/os") return "Aphrody OS — Browser workspace";
+  if (publicPreview) {
+    const context = route
+      .slice(1)
+      .split("/")
+      .map((part) =>
+        part
+          .split("-")
+          .map((word) => word[0]?.toUpperCase() + word.slice(1))
+          .join(" "),
+      )
+      .join(" — ");
+    return `${context} — Aphrody`;
+  }
   return title ? `${title} — Aphrody OS` : "Aphrody OS";
 }

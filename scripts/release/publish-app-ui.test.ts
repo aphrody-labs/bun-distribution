@@ -23,6 +23,10 @@ import {
 } from "./publish-app-ui";
 test("clean builds prepare identity through its canonical owner, without setup hooks", () => {
   expect(prerequisiteCommands()).toEqual([
+    ["bun", "run", "--cwd", "crates/tauri/aphrody-tauri-api", "build"],
+    ["bun", "run", "--cwd", "crates/tauri/aphrody-tauri-plugin-dialog", "build"],
+    ["bun", "m3/scripts/fonts-sync.ts", "--quiet"],
+    ["bun", "m3/scripts/fonts-sync.ts", "--check", "--quiet"],
     ["bun", "run", "--cwd", "m3/packages/identity", "sprite"],
   ]);
   expect(prerequisiteCommands().flat()).not.toContain("install");
