@@ -69,16 +69,14 @@
       },
       "historySize": 100000,
       "padding": "8",
-      "startingDirectory": "C:\\aphrody"
     },
     "list": [
       {
-        "commandline": "C:\\Users\\aphro\\AppData\\Local\\aphrody\\bin\\aphrody.exe shell start",
+        "commandline": "C:\\Users\\aphro\\.cargo\\bin\\nu.exe",
         "guid": "{a1b2c3d4-e5f6-7890-abcd-ef1234567890}",
         "hidden": false,
         "icon": "C:\\aphrody\\crates\\ui\\identity\\assets\\brand\\favicon.ico",
         "name": "Aphrody Shell",
-        "startingDirectory": "C:\\aphrody",
         "tabTitle": "aphrody"
       },
       {
@@ -87,7 +85,6 @@
         "hidden": false,
         "icon": "C:\\Users\\aphro\\.bun\\bin\\bun.exe",
         "name": "Bun Shell",
-        "startingDirectory": "C:\\bun",
         "tabTitle": "bun"
       },
       {
@@ -97,7 +94,6 @@
         "hidden": false,
         "icon": "ms-appx:///ProfileIcons/pwsh.png",
         "name": "PowerShell (admin)",
-        "startingDirectory": "C:\\aphrody",
         "tabColor": "#91704C",
         "tabTitle": "admin"
       },
@@ -107,7 +103,6 @@
         "hidden": false,
         "icon": "C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe",
         "name": "Docker",
-        "startingDirectory": "C:\\aphrody",
         "tabTitle": "docker"
       },
       {
@@ -135,7 +130,6 @@
         "hidden": true,
         "name": "PowerShell",
         "source": "Windows.Terminal.PowershellCore",
-        "startingDirectory": "C:\\aphrody"
       },
       {
         "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
