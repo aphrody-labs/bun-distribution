@@ -95,7 +95,7 @@ export function ProductSearchHome({
               >
                 {busy ? "Searching…" : "Aphrody Search"}
               </Button>
-              <Button href="/os" variant="filled" className="min-h-12 rounded-full">
+              <Button href="https://os.aphrody.com/" variant="filled" className="min-h-12 rounded-full">
                 Open Aphrody OS
               </Button>
             </div>

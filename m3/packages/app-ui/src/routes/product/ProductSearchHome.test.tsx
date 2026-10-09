@@ -15,7 +15,7 @@ test("homepage exposes a labelled native search and retains product resource des
   expect(html).toContain('type="search"');
   expect(html).toContain('aria-live="polite"');
   for (const href of [
-    "/os",
+    "https://os.aphrody.com/",
     "/docs",
     "/templates",
     "/material-3/components",
