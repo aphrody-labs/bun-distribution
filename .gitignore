@@ -48,6 +48,8 @@ compile_commands.json
 /var/json/
 /var/private/
 /var/unification/
+/var/winclean-live/
+/var/data/
 /tools/var/
 *.pem
 *.key
