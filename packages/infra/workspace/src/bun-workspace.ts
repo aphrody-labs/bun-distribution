@@ -49,6 +49,7 @@ export interface Violation {
 /** What `checkManifest` knows about the package besides its manifest. */
 export interface ManifestContext {
   hasTsconfig: boolean;
+  bunRuntimeVersion?: string;
   /** `extends` of the package `tsconfig.json`, when present. */
   tsconfigExtends?: string;
   /** A `tsconfig.dev.json` exists (path maps the M3 source resolver replaces). */
@@ -61,10 +62,15 @@ type Manifest = Record<string, any>;
 const DEP_SECTIONS = ["dependencies", "devDependencies", "optionalDependencies"] as const;
 const FOREIGN_TOOL = /(^|[\s;&|(])(npx|bunx|npm|pnpm|yarn|node)(?=\s|$)/;
 
-export function minimumBun(packageManager: string): string {
-  const version = /^bun@(\d+\.\d+\.\d+)/.exec(packageManager)?.[1];
+export function minimumBun(packageManager: string, runtimeVersion?: string): string {
+  const version =
+    /^bun@(\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?)(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.exec(
+      packageManager,
+    )?.[1];
   if (!version) throw new Error(`root packageManager must be bun@x.y.z, got ${packageManager}`);
-  return `>=${version}`;
+  if (runtimeVersion && runtimeVersion !== version)
+    throw new Error("Bun runtime contract must match the root packageManager");
+  return `>=${runtimeVersion ?? version.split("-")[0]}`;
 }
 
 /** Check one manifest against the contract; with `fix`, mutate it to comply. */
@@ -78,7 +84,7 @@ export function checkManifest(
   const out: Violation[] = [];
   const catalog: Record<string, string> = root.workspaces?.catalog ?? {};
   const catalogs: Record<string, Record<string, string>> = root.workspaces?.catalogs ?? {};
-  const engine = minimumBun(root.packageManager);
+  const engine = minimumBun(root.packageManager, context.bunRuntimeVersion);
 
   if (manifest.packageManager !== undefined) {
     out.push({
@@ -275,6 +281,12 @@ async function readTsconfigExtends(dir: string): Promise<string | undefined> {
 
 export async function run(repo: string, fix: boolean): Promise<Violation[]> {
   const root = await Bun.file(join(repo, "package.json")).json();
+  const runtimeFile = Bun.file(join(repo, "config", "bun-runtime.json"));
+  const runtimeVersion = (await runtimeFile.exists())
+    ? (await runtimeFile.json()).version
+    : undefined;
+  if ((await runtimeFile.exists()) && typeof runtimeVersion !== "string")
+    throw new Error("Bun runtime contract must declare its version");
   const policy = await installPolicy(repo);
   const isolated = policy.linker === "isolated";
   const perManifest = await Promise.all(
@@ -289,6 +301,7 @@ export async function run(repo: string, fix: boolean): Promise<Violation[]> {
       ]);
       const found = checkManifest(path, manifest, root, {
         hasTsconfig,
+        bunRuntimeVersion: runtimeVersion,
         hasDevTsconfig,
         tsconfigExtends: extended,
         fix,

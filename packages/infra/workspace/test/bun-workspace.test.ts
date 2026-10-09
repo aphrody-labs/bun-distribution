@@ -22,7 +22,15 @@ const root = {
 describe("bun workspace contract", () => {
   test("minimum Bun comes from the root packageManager", () => {
     expect(minimumBun("bun@1.4.2")).toBe(">=1.4.2");
+    expect(minimumBun("bun@1.4.3-aphrody.4")).toBe(">=1.4.3");
+    expect(minimumBun("bun@1.4.3-aphrody.4", "1.4.3-aphrody.4")).toBe(">=1.4.3-aphrody.4");
+    expect(minimumBun("bun@1.4.3-aphrody.4+41211b568", "1.4.3-aphrody.4")).toBe(
+      ">=1.4.3-aphrody.4",
+    );
+    expect(() => minimumBun("bun@1.4.3-aphrody.4", "1.4.3-aphrody.3")).toThrow();
     expect(() => minimumBun("pnpm@9.0.0")).toThrow();
+    expect(() => minimumBun("bun@1.4.3-invalid!")).toThrow();
+    expect(() => minimumBun("bun@1.4.3 trailing")).toThrow();
   });
 
   test("tsconfig JSONC comments are parsed when reading the extends field", () => {
@@ -42,6 +50,17 @@ describe("bun workspace contract", () => {
       dependencies: { zod: "catalog:", x: "workspace:*" },
     };
     expect(checkManifest("p", manifest, root, { hasTsconfig: true })).toEqual([]);
+  });
+
+  test("a qualified fork contract preserves the required fork version", () => {
+    const forkRoot = { ...root, packageManager: "bun@1.4.3-aphrody.4" };
+    const manifest = { name: "@rosegriffon/db", engines: { bun: ">=1.4.3-aphrody.4" } };
+    const context = { hasTsconfig: false, bunRuntimeVersion: "1.4.3-aphrody.4" };
+    expect(checkManifest("p", manifest, forkRoot, context)).toEqual([]);
+    manifest.engines.bun = ">=1.4.3";
+    expect(
+      checkManifest("p", manifest, forkRoot, context).map((violation) => violation.rule),
+    ).toEqual(["engines"]);
   });
 
   test("named catalogs satisfy the centralized dependency contract", () => {
