@@ -6,7 +6,7 @@ Ce consommateur Cargo indépendant produit une bibliothèque dynamique Rust avec
 la bibliothèque standard seule. Il lie le SDK natif installé, sans importer
 les crates moteurs du monorepo ni lancer leur build.
 
-Le contrat est celui de `crates/engine/yolo-runtime/include/yolo_runtime.h` :
+Le contrat est la section yolo_* de `crates/interop/ffi/include/aphrody.h` :
 handle opaque, buffer avec longueur, négociation ABI avant appel de ressource,
 libération du buffer par son allocateur. L'hôte conserve le runtime et la
 bibliothèque chargée ; il libère chaque buffer avec `yolo_buffer_free`.

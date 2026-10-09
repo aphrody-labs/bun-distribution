@@ -3,7 +3,7 @@ import { ptr, suffix } from "bun:ffi";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { defaultLibraryPath, libraryFile, Runtime } from "../src/index.ts";
+import { defaultLibraryPath, libraryFile, Runtime, SYMBOLS } from "../src/index.ts";
 import { hostTarget } from "../src/target.ts";
 import { NativeTooling } from "../src/tooling.ts";
 import {
@@ -25,13 +25,8 @@ describe("runtime SDK ffi helpers", () => {
       mkdirSync(current, { recursive: true });
       const path = join(current, libraryFile());
       symlinkSync(provider!, path, "file");
-      const keys = [
-        "YOLO_HOME",
-        "YOLO_RUNTIME_HOME",
-        "YOLO_RUNTIME_LIB",
-        "YOLO_TOOLING_LIB",
-      ] as const;
-      const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+      const keys = ["YOLO_HOME", "YOLO_RUNTIME_HOME", "YOLO_RUNTIME_LIB", "YOLO_TOOLING_LIB"] as const;
+      const previous = Object.fromEntries(keys.map(key => [key, process.env[key]]));
       try {
         for (const key of keys) delete process.env[key];
         process.env.YOLO_HOME = home;
@@ -40,16 +35,10 @@ describe("runtime SDK ffi helpers", () => {
         const runtime = Runtime.load();
         expect(tooling.probe().libraryPath).toBe(path);
         expect(runtime.systemStats().os).toBe(
-          process.platform === "win32"
-            ? "windows"
-            : process.platform === "darwin"
-              ? "macos"
-              : process.platform,
+          process.platform === "win32" ? "windows" : process.platform === "darwin" ? "macos" : process.platform,
         );
         runtime.close();
-        expect(
-          tooling.analyzeModule("export const retained = 1;", "retained.ts").exports,
-        ).toContain("retained");
+        expect(tooling.analyzeModule("export const retained = 1;", "retained.ts").exports).toContain("retained");
       } finally {
         for (const key of keys) {
           if (previous[key] === undefined) delete process.env[key];
@@ -63,9 +52,7 @@ describe("runtime SDK ffi helpers", () => {
     const stem = process.platform === "win32" ? "aphrody_ffi" : "libaphrody_ffi";
     const path = `/virtual/${stem}.${suffix}`;
     expect(embeddedNativeLibraryPath("aphrody_ffi", [])).toBeNull();
-    expect(
-      embeddedNativeLibraryPath("aphrody_ffi", [new File([], "unrelated.so"), new File([], path)]),
-    ).toBe(path);
+    expect(embeddedNativeLibraryPath("aphrody_ffi", [new File([], "unrelated.so"), new File([], path)])).toBe(path);
   });
 
   it("rejects competing embedded providers before any library load", () => {
@@ -84,7 +71,7 @@ describe("runtime SDK ffi helpers", () => {
   it("readNativeBytes copies and frees", () => {
     const src = new Uint8Array([1, 2, 3]);
     let freed = 0;
-    const out = readNativeBytes(ptr(src), 3, (a) => (freed = a));
+    const out = readNativeBytes(ptr(src), 3, a => (freed = a));
     expect([...out]).toEqual([1, 2, 3]);
     expect(freed).toBe(Number(ptr(src)));
   });
@@ -96,7 +83,7 @@ describe("runtime SDK ffi helpers", () => {
   it("readNativeString copies UTF-8 and releases exactly once", () => {
     const source = toCString('{"value":"🐈"}');
     let releases = 0;
-    const value = readNativeString(ptr(source), (address) => {
+    const value = readNativeString(ptr(source), address => {
       expect(address).toBe(Number(ptr(source)));
       releases++;
     });
@@ -122,5 +109,22 @@ describe("runtime SDK ffi helpers", () => {
     const lib = nativeLibrary({ name: "nope", fileNames: ["Nope.Ffi.so"], symbols: {} });
     expect(lib.isAvailable()).toBe(false);
     expect(lib.loadError()).toContain("Nope.Ffi.so");
+  });
+});
+
+describe("aphrody.h contract", () => {
+  it("declares every yolo_* symbol the SDK binds, with the same arity", async () => {
+    const header = (
+      await Bun.file(join(import.meta.dir, "../../../../crates/interop/ffi/include/aphrody.h")).text()
+    ).replace(/\/\*[\s\S]*?\*\//g, "");
+    const declared = new Map<string, number>();
+    for (const m of header.matchAll(/\b(yolo_\w+)\s*\(([^;{]*)\)\s*;/g)) {
+      const params = m[2]!.trim();
+      declared.set(m[1]!, params === "" || params === "void" ? 0 : params.split(",").length);
+    }
+    const drift = Object.entries(SYMBOLS)
+      .filter(([name, def]) => declared.get(name) !== def.args.length)
+      .map(([name, def]) => `${name}: sdk ${def.args.length}, header ${declared.get(name)}`);
+    expect(drift).toEqual([]);
   });
 });

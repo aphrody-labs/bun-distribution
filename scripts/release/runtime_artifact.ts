@@ -49,9 +49,7 @@ async function crossInfo(
   const bytes = new Uint8Array(await Bun.file(path).arrayBuffer());
   const text = new TextDecoder("latin1").decode(bytes);
   const exports = peExports(bytes, target);
-  const header = await Bun.file(
-    resolve(root, "crates/engine/yolo-runtime/include/yolo_runtime.h"),
-  ).text();
+  const header = await Bun.file(resolve(root, HEADER_SOURCE)).text();
   const capabilities = runtimeCapabilities(exports, header);
   if (!text.includes(target)) throw new Error(`${path} does not embed the target ${target}`);
   const rustc = text.match(
@@ -80,6 +78,14 @@ async function crossInfo(
   };
 }
 
+/** The single header of the aphrody_ffi library; it declares the yolo_* ABI among the others. */
+const HEADER_SOURCE = "crates/interop/ffi/include/aphrody.h";
+/** Former header name, kept in artifacts as a one-line include of aphrody.h for existing C consumers. */
+const COMPAT_HEADER = `/* SPDX-License-Identifier: Apache-2.0 */
+/* Deprecated: the yolo_* runtime ABI is declared in aphrody.h. */
+#include "aphrody.h"
+`;
+
 const crossTarget = process.env["YOLO_RUNTIME_TARGET"];
 let info: BuildInfo;
 let capabilities: string[];
@@ -97,12 +103,14 @@ const outDir = process.env["YOLO_RUNTIME_OUT"]
   : resolve(root, "dist/runtime", info.target);
 mkdirSync(outDir, { recursive: true });
 
-const headerSrc = resolve(root, "crates/engine/yolo-runtime/include/yolo_runtime.h");
+const headerSrc = resolve(root, HEADER_SOURCE);
 const libName = basename(libraryPath);
 const lib = new Uint8Array(await Bun.file(libraryPath).arrayBuffer());
 const header = new Uint8Array(await Bun.file(headerSrc).arrayBuffer());
 await Bun.write(resolve(outDir, libName), lib);
-await Bun.write(resolve(outDir, "yolo_runtime.h"), header);
+const compatHeader = new TextEncoder().encode(COMPAT_HEADER);
+await Bun.write(resolve(outDir, "aphrody.h"), header);
+await Bun.write(resolve(outDir, "yolo_runtime.h"), compatHeader);
 // The workspace has no root LICENSE; use its canonical Apache text by default. Historical
 // artifacts may supply their original license explicitly rather than silently relabeling it.
 const licenseId = process.env["YOLO_RUNTIME_LICENSE_ID"] || "Apache-2.0";
@@ -140,7 +148,8 @@ const manifest = {
   capabilities,
   files: {
     [libName]: { sha256: sha256(lib), bytes: lib.byteLength },
-    "yolo_runtime.h": { sha256: sha256(header), bytes: header.byteLength },
+    "aphrody.h": { sha256: sha256(header), bytes: header.byteLength },
+    "yolo_runtime.h": { sha256: sha256(compatHeader), bytes: compatHeader.byteLength },
     LICENSE: { sha256: sha256(license), bytes: license.byteLength },
   },
   license: licenseId,

@@ -148,7 +148,8 @@ def verify_artifact(directory: Path) -> tuple[Path, dict[str, Any]]:
                 raise ValueError("artifact hash/size mismatch")
             if path.suffix in {".so", ".dll", ".dylib"}:
                 libraries.append(path)
-        if len(libraries) != 1 or "yolo_runtime.h" not in files:
+        # aphrody.h is the single header of the library; older artifacts carry yolo_runtime.h only.
+        if len(libraries) != 1 or not ({"aphrody.h", "yolo_runtime.h"} & set(files)):
             raise ValueError("one library and versioned header required")
         explicit = os.environ.get("YOLO_RUNTIME_LIB")
         if explicit and Path(explicit).expanduser().resolve() != libraries[0]:

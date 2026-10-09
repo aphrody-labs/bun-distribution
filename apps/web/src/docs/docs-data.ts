@@ -26,7 +26,7 @@ The native runtime has three layers:
 The Bun fork \`aphrody-labs/bun\` (JavaScriptCore engine, Web APIs, bundler, test runner).
 
 ## 2. Native C ABI
-\`crates/engine/yolo-runtime\` implements the functions declared in \`include/yolo_runtime.h\`; the shared library that exports them is \`aphrody_ffi\` (\`crates/interop/ffi\`). Excerpt of the header:
+\`crates/engine/yolo-runtime\` implements the yolo_* functions declared in \`crates/interop/ffi/include/aphrody.h\`; the shared library that exports them is \`aphrody_ffi\` (\`crates/interop/ffi\`). Excerpt of the header:
 \`\`\`c
 typedef uint64_t YoloHandle;
 typedef int32_t YoloStatus;

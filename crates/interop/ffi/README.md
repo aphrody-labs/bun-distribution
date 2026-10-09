@@ -141,6 +141,9 @@ to an empty module so `cargo check --target wasm32-unknown-unknown` stays green.
 ## yolo_* runtime ABI
 
 `aphrody_ffi` re-exports the versioned `yolo_*` and `ffi_sum_squares` symbols of
-`crates/engine/yolo-runtime` (see `src/yolo.rs`; header pulled in by `include/aphrody.h`).
+`crates/engine/yolo-runtime` (see `src/yolo.rs`), declared in the yolo_* section of
+`include/aphrody.h` (header revision `APHRODY_HEADER_VERSION` 2; the standalone
+`yolo_runtime.h` is gone, release artifacts keep a `yolo_runtime.h` that includes `aphrody.h`).
+The `bun_rs_*` exports of `crates/ui/bun` are declared in the same header.
 `@aphrody/runtime` loads whichever library its verified artifact manifest names, so an
 `aphrody_ffi` artifact is a drop-in. Browser exports require the `browser` feature.

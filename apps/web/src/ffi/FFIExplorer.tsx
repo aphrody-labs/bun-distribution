@@ -12,7 +12,7 @@ type AbiProbe =
   | { available: false; library: string; error: string };
 
 const SOURCE_PANES: { key: keyof FfiSources; title: string; path: string }[] = [
-  { key: "header", title: "yolo_runtime.h (C ABI)", path: "crates/engine/yolo-runtime/include/yolo_runtime.h" },
+  { key: "header", title: "aphrody.h (C ABI)", path: "crates/interop/ffi/include/aphrody.h" },
   { key: "sdkSymbols", title: "bun:ffi symbols (@aphrody/runtime-sdk)", path: "packages/engine/runtime/src/index.ts" },
   { key: "rustConsumer", title: "Rust consumer example", path: "examples/runtime-rust-extension/src/lib.rs" },
 ];

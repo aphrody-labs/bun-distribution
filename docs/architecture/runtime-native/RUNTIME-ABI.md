@@ -9,7 +9,7 @@ phases.
 | Piece                      | Path                                                      |
 | :------------------------- | :-------------------------------------------------------- |
 | Library (cdylib + rlib)    | `crates/engine/yolo-runtime`                                     |
-| C header                   | `crates/engine/yolo-runtime/include/yolo_runtime.h`              |
+| C header                   | `crates/interop/ffi/include/aphrody.h` (single header of `aphrody_ffi`; artifacts also carry a `yolo_runtime.h` that includes it) |
 | TypeScript SDK (`bun:ffi`) | `packages/engine/runtime`                                             |
 | Artifact packaging         | `scripts/release/runtime_artifact.ts` → `dist/runtime/<target>/`  |
 | Tests                      | `cargo test -p yolo-runtime`, `test/runtime_sdk.test.ts` |

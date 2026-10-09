@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Minimal consumer of the published `yolo_runtime.h` ABI. No engine rlib is linked.
+//! Minimal consumer of the yolo_* ABI published in `aphrody.h`. No engine rlib is linked.
 
 use std::ptr;
 
-/// Library-owned buffer from `yolo_runtime.h`; release through the same SDK.
+/// Library-owned buffer from `aphrody.h`; release through the same SDK.
 #[repr(C)]
 pub struct YoloBuffer {
     pub data: *mut u8,

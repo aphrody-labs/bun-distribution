@@ -407,7 +407,8 @@ fn panics_become_a_status_with_an_error_message() {
 
 #[test]
 fn every_exported_function_is_declared_in_the_c_header() {
-  let header = include_str!("../include/yolo_runtime.h");
+  // The yolo_* ABI is declared in the single header of the aphrody_ffi library.
+  let header = include_str!("../../../interop/ffi/include/aphrody.h");
   for name in [
     "yolo_abi_version",
     "yolo_runtime_create",
@@ -433,7 +434,7 @@ fn every_exported_function_is_declared_in_the_c_header() {
   ] {
     assert!(
       header.contains(&format!("{name}(")),
-      "{name} missing from yolo_runtime.h"
+      "{name} missing from aphrody.h"
     );
   }
   assert!(header.contains(&format!("#define YOLO_ABI_MAJOR {ABI_MAJOR}u")));

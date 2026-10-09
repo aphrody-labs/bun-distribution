@@ -6,7 +6,8 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { exportCrateDirs, repo } from "./export-crates.ts";
 
-const EXPORT_CRATES = exportCrateDirs();
+// aphrody.h also declares the yolo_* runtime ABI, implemented by yolo-runtime and re-exported by the cdylib.
+const EXPORT_CRATES = [...exportCrateDirs(), join(repo, "crates/engine/yolo-runtime/src")];
 const HEADER_DIR = join(repo, "crates/interop/ffi/include");
 // Exports intentionally absent from the C headers (internal runtime / FFI bindings).
 const INTERNAL = new Set<string>([
@@ -74,4 +75,15 @@ test("every Rust export is declared in the C headers", () => {
 
 test("every C header declaration has a Rust export", () => {
   expect([...header].filter((n) => !rust.has(n)).toSorted()).toEqual([]);
+});
+
+test("aphrody.h is the single header of the yolo_* runtime ABI", () => {
+  const yolo = [...rust].filter((n) => n.startsWith("yolo_") && n !== "yolo_tooling_abi_version");
+  expect(yolo.length).toBeGreaterThan(20);
+  expect(yolo.filter((n) => !header.has(n)).toSorted()).toEqual([]);
+  expect(header.has("ffi_sum_squares")).toBe(true);
+  expect(statSync(join(repo, "crates/engine/yolo-runtime/include/yolo_runtime.h"), { throwIfNoEntry: false })).toBeUndefined();
+  const text = readFileSync(join(HEADER_DIR, "aphrody.h"), "utf8");
+  expect(text).not.toContain("#include \"../");
+  expect(text).toMatch(/#define APHRODY_HEADER_VERSION 2u/);
 });

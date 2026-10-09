@@ -5,7 +5,7 @@ import { peExports, runtimeCapabilities } from "./runtime-artifact-info.ts";
 
 const target = "x86_64-pc-windows-msvc";
 const header = readFileSync(
-  new URL("../../crates/engine/yolo-runtime/include/yolo_runtime.h", import.meta.url),
+  new URL("../../crates/interop/ffi/include/aphrody.h", import.meta.url),
   "utf8",
 );
 const core = [

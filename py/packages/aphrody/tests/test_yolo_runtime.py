@@ -146,9 +146,9 @@ def test_native_http_probe(native):
         server.server_close()
 
 
-def synthetic_artifact(tmp_path):
+def synthetic_artifact(tmp_path, header_name="yolo_runtime.h"):
     library = tmp_path / "libyolo_runtime.so"
-    header = tmp_path / "yolo_runtime.h"
+    header = tmp_path / header_name
     library.write_bytes(b"synthetic library: must never load")
     header.write_bytes(b"synthetic header")
     manifest = {
@@ -214,6 +214,19 @@ def test_discovery_home_and_explicit_library(tmp_path, monkeypatch):
     assert artifact_directory() == tmp_path / "override" / host_target() / "current"
     monkeypatch.setenv("YOLO_RUNTIME_LIB", str(tmp_path / "explicit" / "library.so"))
     assert artifact_directory() == tmp_path / "explicit"
+
+
+@pytest.mark.parametrize("header_name", ["aphrody.h", "yolo_runtime.h"])
+def test_accept_either_header_name(tmp_path, header_name):
+    synthetic_artifact(tmp_path, header_name)
+    library, _ = verify_artifact(tmp_path)
+    assert library == (tmp_path / "libyolo_runtime.so").resolve()
+
+
+def test_refuse_artifact_without_header(tmp_path):
+    synthetic_artifact(tmp_path, "notes.txt")
+    with pytest.raises(RuntimeError, match="versioned header required"):
+        verify_artifact(tmp_path)
 
 
 def test_reject_payload_symlink(tmp_path):
