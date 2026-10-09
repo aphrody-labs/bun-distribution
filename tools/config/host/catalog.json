@@ -133,38 +133,6 @@
       "targetHost": "vps"
     },
     {
-      "service": "aphrody-omar-admin",
-      "unit": "aphrody-omar-admin.service",
-      "path": "systemd/aphrody/aphrody-omar-admin.service",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps"
-    },
-    {
-      "service": "aphrody-omar-admin-timer",
-      "unit": "aphrody-omar-admin.timer",
-      "path": "systemd/aphrody/aphrody-omar-admin.timer",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps"
-    },
-    {
-      "service": "aphrody-omar-link",
-      "unit": "aphrody-omar-link.service",
-      "path": "systemd/aphrody/aphrody-omar-link.service",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps"
-    },
-    {
-      "service": "aphrody-omar-link-timer",
-      "unit": "aphrody-omar-link.timer",
-      "path": "systemd/aphrody/aphrody-omar-link.timer",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps"
-    },
-    {
       "service": "shenron-site-docker",
       "unit": "shenron-site-docker.service",
       "path": "systemd/shenron/shenron-site-docker.service",
