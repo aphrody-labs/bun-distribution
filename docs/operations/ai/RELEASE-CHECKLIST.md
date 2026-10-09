@@ -32,7 +32,7 @@ and tick boxes as you go.
 - [ ] `cargo bench --workspace --no-run` exit 0
 - [ ] `cargo doc --workspace --no-deps --locked` exit 0
 - [ ] Cross-target: `cargo check -p aphrody --target wasm32-unknown-unknown --locked` exit 0
-- [ ] WASM: `wasm-pack build crates/aphrody-wasm --target web --release` produces `pkg/`
+- [ ] WASM: `bun scripts/build/rust/wasm-package.ts --crate <crate> --out <dir>` (cargo, then `bun:wasm` of the aphrody-labs/bun fork: wasm-bindgen, wasm-opt -Oz, size ratchet) produces the package
 
 ## 3. Docs sync
 

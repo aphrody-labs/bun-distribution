@@ -58,8 +58,9 @@ using `packages/rg/patreon-bun/.github/ISSUE_TEMPLATE/bug_report.yml` (not in re
 - **Cause**: Bun's global install layout for `wasm-pack` can desync between
   Windows and Linux, leaving the shim pointing at a missing entry file.
 - **Fix**: Direct `cargo build --target wasm32-unknown-unknown --release`
-  works in all known cases and is what CI uses. To reinstall the tool:
-  `bun install -g wasm-pack`.
+  works in all known cases and is what CI uses. `wasm-pack` is replaced by
+  `bun wasm build` of the aphrody-labs/bun fork (https://bun.com/docs/bundler/wasm),
+  which `scripts/build/rust/wasm-package.ts` uses.
 
 ## 7. `aphrody doctor` reports "A2A peer: offline" or "DEGRADED"
 

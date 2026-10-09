@@ -59,7 +59,7 @@ docker build -f tools/config/container/desktop/Dockerfile --target runtime -t ap
 
 `aphrody:desktop-runtime` supplies application/UI libraries for host X11/Wayland display forwarding; it does not
 start a virtual desktop or fetch the CEF bundle. See the desktop README for launch wiring. WASM artifacts use the
-explicit optimizer feature set already declared by `scripts/build/rust/wasm-package.ts`, which keeps generated glue
+explicit optimizer feature set of `bun:wasm` (aphrody-labs/bun, called by `scripts/build/rust/wasm-package.ts`), which keeps generated glue
 compatible with Bun's JavaScriptCore and browser engines.
 
 ## VPS build image (`aphrody-build`)

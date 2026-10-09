@@ -35,7 +35,8 @@ resize, take_replies() -> Vec<String>, lines() -> Vec<String>, snapshot_json()}`
   `js_sys::Uint8Array` as the parameter type to avoid the copy-in when you need a view.
 - Returning `Vec<String>`: supported directly; JS receives `string[]` (copied out
   with `__wbindgen_free`). Returning `Vec<u8>` gives a `Uint8Array`.
-- Build: `wasm-pack build --target web` (or `wasm-bindgen --target web`) emits
+- Build: `bun wasm build --target web` (the aphrody-labs/bun replacement for `wasm-pack`, see
+  https://bun.com/docs/bundler/wasm; `scripts/build/rust/wasm-package.ts` for workspace crates) emits
   `init(moduleOrPath?)` (async default export) and `initSync({ module })`; use
   `--target bundler` when a bundler (Bun build/Vite) handles the `.wasm` import.
   With `--target web`, call `await init()` before constructing `WebTerminal`.

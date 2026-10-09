@@ -2,7 +2,9 @@
 # wgpu and WASM pins
 
 Pins referenced by the root `Cargo.toml`. For API usage, query the current wgpu and
-wasm-bindgen docs (Context7) instead of copying snippets.
+wasm-bindgen docs (Context7) instead of copying snippets. Packaging (cargo, wasm-bindgen, wasm-opt,
+`.d.ts`, WASI p1/p2) is `bun wasm build` / `bun:wasm` of the aphrody-labs/bun fork:
+https://bun.com/docs/bundler/wasm (source: `docs/bundler/wasm.mdx` in aphrody-labs/bun).
 
 ## Pins
 
