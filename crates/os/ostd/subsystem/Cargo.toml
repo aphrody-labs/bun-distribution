@@ -21,7 +21,13 @@ async-trait = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { workspace = true }
+
+# The agent bus is a tokio broadcast channel: wasm32 needs only `sync` (the workspace tokio pulls mio).
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+tokio = { version = "1.52", default-features = false, features = ["sync"] }
 
 [dev-dependencies]
 tokio = { workspace = true }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Shell commands of the WebOS terminal that reach the Rust capability crates: binary triage,
-//! printable strings, patch application and document search, all on the shared file system.
+//! printable strings, patch application, document search and language detection, all on the
+//! shared file system.
 
 use std::rc::Rc;
 
@@ -82,10 +83,35 @@ impl ShellCommand for Search {
     }
 }
 
-/// Add `triage`, `strings`, `apply-patch` and `search` to a shell working on `fs`.
+/// `detect-lang [FILE]` names the language of a file, or of standard input without operand.
+struct DetectLang(SharedOpfsVfs);
+
+impl ShellCommand for DetectLang {
+    fn run(
+        &self,
+        shell: &mut LocalShell,
+        args: &[String],
+        stdin: &[u8],
+    ) -> Result<Vec<u8>, String> {
+        let bytes = if args.is_empty() {
+            stdin.to_vec()
+        } else {
+            read_arg(&mut self.0.clone(), shell, args)?
+        };
+        Ok(format!(
+            "{}
+",
+            crate::detect_language_json(&String::from_utf8_lossy(&bytes))?
+        )
+        .into_bytes())
+    }
+}
+
+/// Add `triage`, `strings`, `apply-patch`, `search` and `detect-lang` to a shell working on `fs`.
 pub(crate) fn register(shell: &mut LocalShell, fs: &SharedOpfsVfs) {
     shell.register_command("triage", Rc::new(Triage(fs.clone())));
     shell.register_command("strings", Rc::new(Strings(fs.clone())));
     shell.register_command("apply-patch", Rc::new(ApplyPatch(fs.clone())));
     shell.register_command("search", Rc::new(Search(fs.clone())));
+    shell.register_command("detect-lang", Rc::new(DetectLang(fs.clone())));
 }

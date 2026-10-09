@@ -16,12 +16,9 @@ workspace = true
 
 [dependencies]
 aphrody-proc = { workspace = true }
-tokio              = { workspace = true }
 serde_json         = { workspace = true }
 anyhow             = { workspace = true }
-reqwest            = { workspace = true }
 tracing            = { workspace = true }
-tracing-subscriber = { workspace = true }
 aes-gcm            = { workspace = true }
 
 # getrandom is gated to wasm32 below; machete cannot see cfg-gated deps.
@@ -42,9 +39,13 @@ windows = { workspace = true, features = [
     "Win32_System_Threading",
 ] }
 
-# stdio capture redirects the OS standard streams: host-only (an empty module on wasm32).
+# stdio capture redirects the OS standard streams and the MD3 mirror writes to disk with a
+# multi-thread runtime: host-only (wasm32 keeps the Vfs model and an empty capture module).
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-tempfile = { workspace = true }
+tempfile           = { workspace = true }
+tokio              = { workspace = true }
+reqwest            = { workspace = true }
+tracing-subscriber = { workspace = true }
 
 [target.'cfg(all(not(target_arch = "wasm32"), unix))'.dependencies]
 rustix = { workspace = true, features = ["stdio"] }

@@ -187,7 +187,8 @@ fn summarize(summary: &AppliedSummary) -> String {
     body
 }
 
-#[async_trait::async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl<F: PatchFileSystem + Send + Sync> ToolExecutor for ApplyPatchTool<F> {
     fn definition(&self) -> &ToolDefinition {
         &self.definition

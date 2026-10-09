@@ -56,6 +56,7 @@ test("RAG search and stats come from the Rust module", async () => {
   const response = await runRagSearch("zebra stripes", 3);
   expect(response.results[0]?.path).toBe("/home/user/zebra.md");
   expect(response.results[0]?.text).toContain("Stripes");
+  expect(response.results[0]?.language).toBe("en");
   expect((await webOsRagSearch("zebra", 1)).length).toBe(1);
   expect(await getRagStats()).toEqual({ documents: 2, chunks: 2 });
 });

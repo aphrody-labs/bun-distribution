@@ -181,10 +181,12 @@ impl HttpTransport {
             extra_headers.insert(AUTHORIZATION, value);
         }
 
-        let client = reqwest::Client::builder()
-            .redirect(reqwest::redirect::Policy::none())
-            .build()
-            .map_err(McpClientError::Http)?;
+        // The browser `fetch` owns redirects on wasm32 and strips `Authorization` on a
+        // cross-origin redirect; reqwest exposes no redirect policy there.
+        let builder = reqwest::Client::builder();
+        #[cfg(not(target_arch = "wasm32"))]
+        let builder = builder.redirect(reqwest::redirect::Policy::none());
+        let client = builder.build().map_err(McpClientError::Http)?;
 
         Ok(Self { client, url: url.into(), headers: extra_headers, session_id: None, next_id: 1 })
     }
@@ -204,7 +206,8 @@ impl HttpTransport {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl Transport for HttpTransport {
     async fn call(
         &mut self,

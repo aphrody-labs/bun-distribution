@@ -14,24 +14,29 @@ description            = "Concrete ToolExecutor implementations for the aphrody 
 workspace = true
 
 [dependencies]
-aphrody-proc = { workspace = true, features = ["tokio"] }
 aphrody-toolcall    = { workspace = true }
-aphrody-agent-proto = { workspace = true }
 aphrody-patch       = { workspace = true }
+aphrody-jev         = { workspace = true }
+serde               = { workspace = true }
+serde_json          = { workspace = true }
+async-trait         = { workspace = true }
+
+# Shell, file, search, computer-use, WinClean and web tools drive processes, the host file
+# system, V8 and native sockets: host-only. wasm32 keeps apply_patch and jev.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+aphrody-proc = { workspace = true, features = ["tokio"] }
+aphrody-agent-proto = { workspace = true }
 aphrody-guard       = { workspace = true }
 aphrody-winclean    = { workspace = true }
 aphrody-google             = { workspace = true }
 aphrody-web-service         = { workspace = true, features = ["render"] }
 aphrody-gemini-web          = { workspace = true }
 obscura-net                = { workspace = true }
-aphrody-jev         = { workspace = true }
 aphrody-remote-desktop = { workspace = true, features = ["vnc-client"] }
+aphrody-term = { workspace = true }
 anyhow              = { workspace = true }
-serde               = { workspace = true }
-serde_json          = { workspace = true }
 thiserror           = { workspace = true }
 tokio               = { workspace = true }
-async-trait         = { workspace = true }
 base64              = { workspace = true }
 reqwest             = { workspace = true }
 tracing             = { workspace = true }
@@ -41,9 +46,6 @@ libc = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
 sysinfo = { workspace = true }
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-aphrody-term = { workspace = true }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }

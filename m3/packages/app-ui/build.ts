@@ -67,7 +67,21 @@ if (import.meta.main) {
     );
   await Bun.write(join(result.outdir, "wasm", WEBOS_WASM_NAME), Bun.file(webosWasm));
   const bytes = result.outputs.reduce((sum, output) => sum + output.bytes, 0);
-  const shell = await Bun.file(`${result.outdir}/index.html`).text();
+  let shell = await Bun.file(`${result.outdir}/index.html`).text();
+  if (values.out) {
+    // Web artifacts keep stable file names: version the entry URLs in the no-cache shell so a
+    // deployment never pairs a cached app.js (wasm-bindgen glue) with a newer .wasm.
+    const hasher = new Bun.CryptoHasher("sha256");
+    const parts = await Promise.all(
+      ["app.js", "app.css", join("wasm", WEBOS_WASM_NAME)].map((file) =>
+        Bun.file(join(result.outdir, file)).bytes(),
+      ),
+    );
+    for (const part of parts) hasher.update(part);
+    const version = hasher.digest("hex").slice(0, 12);
+    shell = shell.replace(/(\.\/app\.(?:js|css))"/g, `$1?v=${version}"`);
+    await Bun.write(`${result.outdir}/index.html`, shell);
+  }
   if (assets) {
     const cssFile = join(result.outdir, "app.css");
     const css = (await Bun.file(cssFile).text()).replace(

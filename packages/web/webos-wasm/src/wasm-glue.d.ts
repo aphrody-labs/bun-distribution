@@ -40,5 +40,6 @@ declare module "#webos-wasm-glue" {
   }
 
   export function unifiedDiff(oldText: string, newText: string): string;
+  export function detectLanguage(text: string): string;
   export function version(): string;
 }

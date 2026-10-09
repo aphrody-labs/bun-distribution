@@ -79,6 +79,8 @@ export interface BrowserRagHit {
   end_line: number;
   score: number;
   content: string;
+  /** ISO 639-1 code detected locally by `aphrody-google` in the Rust module. */
+  language: string;
 }
 
 /** BM25 search over the browser file system, ranked by the Rust module. */

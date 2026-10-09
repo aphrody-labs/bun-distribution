@@ -3464,6 +3464,7 @@ dependencies = [
 name = "aphrody-webos-wasm"
 version = "1.0.0"
 dependencies = [
+ "aphrody-google",
  "aphrody-patch",
  "aphrody-rag-core",
  "aphrody-shell-session",

@@ -65,7 +65,7 @@ impl NoWindow for std::process::Command {
     }
 }
 
-#[cfg(feature = "tokio")]
+#[cfg(all(feature = "tokio", not(target_arch = "wasm32")))]
 impl NoWindow for tokio::process::Command {
     fn no_window(self) -> Self {
         #[cfg(windows)]

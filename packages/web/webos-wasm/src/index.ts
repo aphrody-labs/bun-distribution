@@ -2,7 +2,7 @@
 // Typed facade over crates/web/webos-wasm: the Rust file system, explorer backend and terminal of the
 // browser OS, persisted in OPFS. No logic of the OS lives here; this module loads the module, restores
 // and saves the APFS1 image atomically, and exposes the wire transport the explorer client expects.
-import init, { WebOsFs, version, type InitInput } from "#webos-wasm-glue";
+import init, { WebOsFs, detectLanguage, version, type InitInput } from "#webos-wasm-glue";
 
 export type { WebOsFs } from "#webos-wasm-glue";
 export type WasmInput = InitInput;
@@ -146,6 +146,14 @@ export interface ExplorerTransport {
   subscribe(): Promise<() => void>;
 }
 
+/** Local language detection of `aphrody-google` (scripts and stop words, no network). */
+export interface LanguageDetection {
+  /** ISO 639-1 code, `und` for empty text. */
+  language: string;
+  confidence: number;
+  isReliable: boolean;
+}
+
 export interface WebOs {
   /** The Rust file system; call `flush()` after writing through it directly. */
   readonly fs: WebOsFs;
@@ -155,6 +163,7 @@ export interface WebOs {
   rpc(request: WireRequest): Promise<unknown>;
   transport(): ExplorerTransport;
   terminal(cols?: number, rows?: number): Terminal;
+  detectLanguage(text: string): LanguageDetection;
   /** Wait until every change reached the store. */
   flush(): Promise<void>;
 }
@@ -246,6 +255,7 @@ export async function openWebOs(options: OpenOptions = {}): Promise<WebOs> {
         },
       };
     },
+    detectLanguage: (text) => JSON.parse(detectLanguage(text)) as LanguageDetection,
     flush,
   };
 }

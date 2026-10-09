@@ -278,6 +278,18 @@ pub fn unified_diff(old: &str, new: &str) -> String {
     aphrody_patch::unified_diff(old, new)
 }
 
+/// Local language detection of `aphrody-google` (scripts and stop words, no network):
+/// `{"language","confidence","isReliable"}`.
+#[wasm_bindgen(js_name = detectLanguage)]
+pub fn detect_language(text: &str) -> Result<String, String> {
+    detect_language_json(text)
+}
+
+pub(crate) fn detect_language_json(text: &str) -> Result<String, String> {
+    serde_json::to_string(&aphrody_google::language_detect::detect_single_local(text))
+        .map_err(|e| e.to_string())
+}
+
 /// Crate version, shown in the WebOS About panel.
 #[wasm_bindgen]
 #[must_use]
@@ -411,5 +423,19 @@ mod command_tests {
         fs.apply_patch(patch, "/home/user").expect("patch");
         let out = String::from_utf8(shell.input(b"cat made.txt\r")).expect("utf8");
         assert!(out.contains("patched"), "{out}");
+    }
+
+    #[test]
+    fn terminal_and_module_detect_languages() {
+        let mut fs = WebOsFs::new(&[]).expect("empty image");
+        fs.write("/home/user/fr.txt", "bonjour et merci pour le café\n".as_bytes()).expect("write");
+        let mut shell = fs.shell(100, 40).expect("shell");
+        let out = String::from_utf8(shell.input(b"detect-lang fr.txt\r")).expect("utf8");
+        assert!(out.contains(r#""language":"fr""#), "{out}");
+        let json = super::detect_language("こんにちは").expect("json");
+        assert!(
+            json.contains(r#""language":"ja""#) && json.contains(r#""isReliable":true"#),
+            "{json}"
+        );
     }
 }

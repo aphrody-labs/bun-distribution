@@ -14,7 +14,6 @@ description            = "Model Context Protocol client for Aphrody: the single 
 workspace = true
 
 [dependencies]
-aphrody-proc = { workspace = true }
 aphrody-toolcall = { workspace = true }
 aphrody-config   = { workspace = true }
 async-trait      = { workspace = true }
@@ -27,8 +26,13 @@ thiserror        = { workspace = true }
 tracing          = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+aphrody-proc        = { workspace = true }
 aphrody-web-service = { workspace = true, features = ["render"] }
-tokio      = { workspace = true, features = ["process", "io-util", "sync", "time"] }
+tokio               = { workspace = true, features = ["process", "io-util", "sync", "time"] }
+
+# Browser build: the streamable HTTP transport over `fetch`; no process, no timer driver.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+tokio = { version = "1.52", default-features = false, features = ["sync"] }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }

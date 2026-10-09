@@ -221,10 +221,20 @@ impl McpClient {
             }
             Err(McpClientError::Malformed(format!("{method}: catalogue exceeds 1024 pages")))
         };
-        tokio::time::timeout(budget, operation).await.map_err(|_| McpClientError::Timeout {
-            method: method.to_owned(),
-            seconds: budget.as_secs(),
-        })?
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            tokio::time::timeout(budget, operation).await.map_err(|_| McpClientError::Timeout {
+                method: method.to_owned(),
+                seconds: budget.as_secs(),
+            })?
+        }
+        // wasm32 has no tokio timer driver: every page request already carries the per-request
+        // `fetch` timeout of the HTTP transport.
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = budget;
+            operation.await
+        }
     }
 
     /// All advertised resources, preserving extension fields.

@@ -5,10 +5,11 @@
 
 use std::path::Path;
 
-use aphrody_toolcall::{
-    ToolDefinition, ToolError, ToolExecutor, ToolExposure, ToolImage, ToolOutput,
-};
+#[cfg(not(target_arch = "wasm32"))]
+use aphrody_toolcall::ToolImage;
+use aphrody_toolcall::{ToolDefinition, ToolError, ToolExecutor, ToolExposure, ToolOutput};
 use async_trait::async_trait;
+#[cfg(not(target_arch = "wasm32"))]
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use serde_json::Value as JsonValue;
 
@@ -52,7 +53,8 @@ impl ViewImageTool {
     }
 }
 
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl ToolExecutor for ViewImageTool {
     fn definition(&self) -> &ToolDefinition {
         &self.definition

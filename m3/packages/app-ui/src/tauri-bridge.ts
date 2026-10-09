@@ -801,6 +801,8 @@ export interface RagSearchResultItem {
   line?: number;
   score?: number;
   text?: string;
+  /** ISO 639-1 code of the chunk, when the backend detects it (browser backend). */
+  language?: string;
 }
 
 export interface RagSearchResponse {
@@ -817,6 +819,7 @@ export async function runRagSearch(query: string, limit = 5): Promise<RagSearchR
         line: hit.start_line,
         score: hit.score,
         text: hit.content,
+        language: hit.language,
       })),
     };
   }

@@ -15,6 +15,7 @@ const LIBRARY_ID: &str = "00000000-0000-4000-8000-0000000000a1";
 const LOCATION_ID: &str = "00000000-0000-4000-8000-0000000000b1";
 const DEVICE_ID: &str = "00000000-0000-4000-8000-0000000000c1";
 const VOLUME_ID: &str = "00000000-0000-4000-8000-0000000000d1";
+const SPACE_ID: &str = "00000000-0000-4000-8000-0000000000e1";
 /// Root of the indexed location.
 pub const HOME: &str = "/home/user";
 const DEFAULT_LIMIT: usize = 1000;
@@ -209,6 +210,23 @@ fn library() -> Value {
     json!({ "id": LIBRARY_ID, "name": "Aphrody OS", "path": "opfs://aphrody-webos", "stats": null })
 }
 
+/// The single browser space; the sidebar renders the files groups from its layout.
+fn space(now: &str) -> Value {
+    json!({ "id": SPACE_ID, "name": "Aphrody OS", "icon": "Planet", "color": "#6750A4", "order": 0,
+        "created_at": now, "updated_at": now })
+}
+
+/// Layout of the browser space: the OPFS location and volume groups (members are queried by the groups).
+fn space_layout(now: &str) -> Value {
+    let group = |n: u8, name: &str, kind: &str| {
+        json!({ "group": { "id": format!("00000000-0000-4000-8000-0000000000f{n}"), "space_id": SPACE_ID,
+            "name": name, "group_type": kind, "is_collapsed": false, "order": n, "created_at": now },
+            "items": [] })
+    };
+    json!({ "id": SPACE_ID, "space": space(now), "space_items": [],
+        "groups": [group(1, "Locations", "Locations"), group(2, "Volumes", "Volumes")] })
+}
+
 fn location(fs: &mut impl Vfs, now: &str) -> Value {
     let (mut files, mut dirs, mut bytes) = (0u64, 0u64, 0u64);
     let mut stack = vec![HOME.to_owned()];
@@ -361,6 +379,8 @@ pub fn handle(fs: &mut impl Vfs, request: &Value, now: &str) -> Reply {
     fs.mkdir_all(HOME.as_bytes()).map_err(vfs_err)?;
     match method {
         "query:libraries.list" => Ok(json!([library()])),
+        "query:spaces.list" => Ok(json!({ "spaces": [space(now)] })),
+        "query:spaces.get_layout" => Ok(space_layout(now)),
         "query:locations.list" => Ok(json!({ "locations": [location(fs, now)] })),
         "query:locations.suggested" => Ok(json!({ "locations": [] })),
         "query:devices.list" => Ok(json!([device(now)])),
@@ -445,6 +465,11 @@ mod tests {
             query(&mut fs, "query:locations.list", json!({}))["json"]["locations"][0]["name"],
             "Home"
         );
+        let spaces = query(&mut fs, "query:spaces.list", json!(null));
+        let space_id = spaces["json"]["spaces"][0]["id"].clone();
+        let layout = query(&mut fs, "query:spaces.get_layout", json!({ "space_id": space_id }));
+        assert_eq!(layout["json"]["groups"][0]["group"]["group_type"], "Locations");
+        assert_eq!(layout["json"]["space"]["id"], space_id);
         let del = json!({ "Action": { "method": "action:files.delete", "library_id": null,
             "payload": { "targets": { "paths": [sd_path(HOME)] } } } });
         assert!(envelope(handle(&mut fs, &del, NOW)).contains("protected"));

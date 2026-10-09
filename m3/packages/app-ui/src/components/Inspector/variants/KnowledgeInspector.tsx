@@ -59,7 +59,11 @@ export function KnowledgeInspector() {
           results.length > 0
             ? `Résultats RAG trouvés :\n` +
               results
-                .map((r, i) => `${i + 1}. ${r.path || "Document"} (ligne: ${r.line ?? "N/A"})`)
+                .map(
+                  (r, i) =>
+                    `${i + 1}. ${r.path || "Document"} (ligne: ${r.line ?? "N/A"}` +
+                    `${r.language ? `, langue: ${r.language}` : ""})`,
+                )
                 .join("\n")
             : "Aucune information pertinente trouvée dans la base RAG locale.";
         setMessages((prev) => [

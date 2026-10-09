@@ -121,4 +121,23 @@ describe("explorer backend in Rust WASM", () => {
     expect(os.fs.strings("/home/user/blob", 4, 10)).toContain("hello-triage");
     expect(JSON.parse(os.fs.triage("/home/user/blob"))).toBeObject();
   });
+
+  test("language detection labels search hits and terminal output", async () => {
+    const os = await open(memoryImageStore());
+    expect(os.detectLanguage("こんにちは")).toEqual({
+      language: "ja",
+      confidence: expect.any(Number),
+      isReliable: true,
+    });
+    os.fs.write(
+      "/home/user/lettre.md",
+      new TextEncoder().encode("# Lettre\n\nbonjour et merci pour le colis\n"),
+    );
+    const hits = JSON.parse(os.fs.ragSearch("colis", 5)) as {
+      results: { path: string; language: string }[];
+    };
+    expect(hits.results[0]).toMatchObject({ path: "/home/user/lettre.md", language: "fr" });
+    const screen = os.terminal(100, 30).type("detect-lang lettre.md\r");
+    expect(screen.lines.join("\n")).toContain('"language":"fr"');
+  });
 });

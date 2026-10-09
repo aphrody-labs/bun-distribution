@@ -5,6 +5,7 @@
 
 use std::collections::{HashMap, HashSet};
 
+use aphrody_google::language_detect::detect_single_local;
 use aphrody_rag_core::{ChunkOptions, chunker_for_path};
 use aphrody_shell_vfs::{FileKind, Vfs, path as vpath};
 use serde_json::{Value, json};
@@ -77,7 +78,9 @@ pub fn stats(fs: &mut impl Vfs, root: &str) -> Value {
     json!({ "documents": files.len(), "chunks": docs.len() })
 }
 
-/// BM25 top-`limit` chunks for `query`: `{"results":[{path,start_line,end_line,score,content}]}`.
+/// BM25 top-`limit` chunks for `query`:
+/// `{"results":[{path,start_line,end_line,score,content,language}]}`, `language` being the ISO
+/// 639-1 code `aphrody-google` detects locally for the chunk.
 pub fn search(fs: &mut impl Vfs, root: &str, query: &str, limit: usize) -> Value {
     let docs = collect(fs, root);
     let query_terms: Vec<String> = tokens(query).collect::<HashSet<_>>().into_iter().collect();
@@ -115,6 +118,7 @@ pub fn search(fs: &mut impl Vfs, root: &str, query: &str, limit: usize) -> Value
             json!({
                 "path": d.path, "start_line": d.start_line, "end_line": d.end_line,
                 "score": score, "content": d.text,
+                "language": detect_single_local(&d.text).language,
             })
         })
         .collect();
@@ -139,6 +143,7 @@ mod tests {
         let first = &hits["results"][0];
         assert_eq!(first["path"], "/home/user/cats.md");
         assert!(first["content"].as_str().expect("content").contains("purr"));
+        assert_eq!(first["language"], "en");
         assert_eq!(hits["results"].as_array().expect("array").len(), 1);
         let s = stats(&mut fs, "/home/user");
         assert_eq!(s["documents"], 2);
