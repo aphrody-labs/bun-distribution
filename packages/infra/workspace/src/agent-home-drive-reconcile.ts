@@ -406,6 +406,8 @@ export async function captureDriveReview(
       (await ports.api.docs.documents.get({ documentId: id, includeTabsContent: true })).data,
     );
     if (document.documentId !== id) throw new Error("REMOTE_ID_MISMATCH");
+    if (typeof document.revisionId !== "string" || !document.revisionId)
+      throw new Error("REMOTE_REVISION_UNAVAILABLE");
     const native = JSON.stringify(document);
     if (Buffer.byteLength(native) > MAX_BYTES) throw new Error("NATIVE_SNAPSHOT_TOO_LARGE");
     const input = {
@@ -537,7 +539,14 @@ export async function reconcileDriveReview(
     let captured: Awaited<ReturnType<typeof captureDriveReview>> | undefined;
     if (await exists(active)) hash = string((await json(active)).hash);
     else {
-      captured = await captureDriveReview(config, ports);
+      try {
+        captured = await captureDriveReview(config, ports);
+      } catch (error) {
+        // Google withholds the Docs revision: no write can be guarded, so the review waits instead of failing the timer.
+        if (error instanceof Error && error.message === "REMOTE_REVISION_UNAVAILABLE")
+          return { review_blocked: 1 };
+        throw error;
+      }
       if (!captured.changed) {
         await publishReviewedProjection(config, ports.owner);
         return { unchanged: NAMES.length, verified: NAMES.length };
