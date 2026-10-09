@@ -835,6 +835,7 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 468 commands.
 - `aphrody infra nginx` — Render or check nginx configuration from the typed model (`nginx.rs`); writes no run manifest.
   - `aphrody infra nginx render` — Render a JSON `NginxConfig` (upstreams, servers, locations) to nginx syntax on stdout.
   - `aphrody infra nginx test` — Check a configuration file with `nginx -t -c <path> -q`.
+  - `aphrody infra nginx test --docker [image]` — Same check inside a disposable nginx container (default `nginx:alpine`, no bind mount), with includes from the parent directory and throwaway `/etc/letsencrypt` stand-ins; no local `nginx` binary required, only Docker.
 - `aphrody infra vpn` — Native Mullvad VPN controller and auto-proxy geo-unblock driver.
   - `aphrody infra vpn status` — Show current Mullvad VPN connection status and egress details.
   - `aphrody infra vpn connect` — Connect the VPN tunnel, optionally setting relay location (e.g. us, ch, se).

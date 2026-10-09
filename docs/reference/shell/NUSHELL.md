@@ -116,23 +116,27 @@ exécution destructive.
 
 ### `scripts/tools/shell/scripts/winclean.nu`
 
-Script destiné à Nushell 0.115+ sous Windows. L’aide est consultable avec :
+Script destiné à Nushell 0.115+ sous Windows, seul propriétaire du pipeline
+WinClean depuis le retrait de son jumeau PowerShell (`winclean-pipeline.ps1`).
+L'aide est consultable avec :
 
 ```powershell
-nu scripts/winclean.nu --help
+nu scripts/tools/shell/scripts/winclean.nu --help
 ```
 
-Le script supprime le contenu des dossiers temporaires utilisateur et Windows,
-les caches de registre et de sources Cargo, le cache sccache et des artefacts
-OTA NVIDIA. Il appelle également `powercfg`, `fsutil`, `bcdedit` et `defrag`, et
+Le script supprime le contenu des dossiers temporaires utilisateur et Windows
+(entrées de plus d'un jour) et les artefacts OTA NVIDIA, puis agit sur le
+système via `powercfg`, `fsutil`, `bcdedit` et `defrag` sans console propre, et
 peut générer un index de `C:` avec `fd.exe`. `--skip-index` omet uniquement
-l’indexation.
+l'indexation. Les caches de registre Cargo et sccache sont conservés
+(décision du 1er octobre) : le script ne les purge plus.
 
-Ce script ne possède pas d’option dry-run. Ses suppressions sont irréversibles
-depuis le script et ses commandes système peuvent nécessiter une console élevée.
-Ne l’exécuter qu’après revue de chaque chemin et commande sur la machine visée.
-Les erreurs de certaines commandes externes sont interceptées, ce qui signifie
-que le message de fin ne constitue pas une preuve que chaque étape a réussi.
+`--dry-run` affiche chaque action sans rien modifier. Sans cette option, le
+script exige une session élevée (`sudo nu scripts/tools/shell/scripts/winclean.nu`)
+et refuse de s'exécuter sinon. Chaque étape est individuellement rapportée
+(succès ou code de sortie et raison), et le compte des échecs est visible dans
+la sortie : le message de fin reflète l'état réel de chaque étape plutôt que
+de masquer les erreurs des commandes externes.
 
 ## Configuration du poste et plugins
 
