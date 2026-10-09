@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Génère l'inventaire UI du lot uirust-app à partir des fichiers présents."""
 
+import subprocess
 from pathlib import Path
 
 
@@ -66,8 +67,12 @@ def destination(path: Path) -> tuple[str, str]:
 def main() -> None:
     rows = []
     for directory, surface in SURFACES:
-        base = ROOT / directory
-        for path in sorted(base.rglob("*")):
+        # Tracked files only: ignored build output (dist/, node_modules) is not source to migrate.
+        tracked = subprocess.run(
+            ["git", "-C", str(ROOT), "ls-files", "-z", "--", directory],
+            check=True, capture_output=True,
+        ).stdout.decode("utf-8").split("\0")
+        for path in sorted(ROOT / name for name in tracked if name):
             if path.is_file() and path.suffix.lower() in EXTENSIONS:
                 dest, state = destination(path)
                 rows.append((path.relative_to(ROOT).as_posix(), surface, role(path), dest, state))
@@ -101,7 +106,16 @@ def main() -> None:
             "",
         ]
     )
-    (ROOT / "docs/ui-rust-migration.md").write_text("\n".join(output), encoding="utf-8")
+    # The document holds other sections (M3 inventory, uirust-site, generated uirust): replace only this one.
+    target = ROOT / "docs/ui-rust-migration.md"
+    current = target.read_text(encoding="utf-8") if target.exists() else ""
+    start = current.find(output[1])
+    stop = current.find("<!-- BEGIN uirust-site inventory -->")
+    if start >= 0 and stop > start:
+        document = current[:start] + "\n".join(output[1:]) + "\n" + current[stop:]
+    else:
+        document = "\n".join(output)
+    target.write_text(document, encoding="utf-8", newline="\n")
     print(f"Inventaire généré : {len(rows)} fichiers dans docs/ui-rust-migration.md")
 
 

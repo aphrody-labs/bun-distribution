@@ -132,7 +132,7 @@ The kernel control plane is built for microsecond-scale tool inspection and sust
 | `admin` | `aphrody-kernel` + `aphrody-winclean` | All 166 frozen WinClean compatibility tools dispatch to Rust through the kernel. Calls run with the kernel process token. | — | — |
 | `aphrody_web` | `aphrody-browser` + optional Aphrody Web Browser MCP provider | Obscura `browser_*`, rendered `web_fetch`, profile routed `web_browser_fetch`, and noncolliding provider tools | `read_page` | — |
 | `aphrody-ai` | optional `aphrody-mcp server` process from the sibling AI repository | AI-owned MCP tools not already registered by OS/Web; availability follows the installed binary's feature set | — | — |
-| `bun_docs` | `aphrody-bun-docs` | `bun_docs_search`, `bun_docs_read`, `bun_docs_list`, `bun_node_equivalent` (offline over `third_party/bun/docs` + the n2b registry) | `bun_docs_lookup` | — |
+| `bun_docs` | `aphrody-bun-docs` | `bun_docs_search`, `bun_docs_read`, `bun_docs_list`, `bun_node_equivalent` (offline over the fork docs pinned in `docs/reference/upstream-bun/SOURCE.json` + the n2b registry) | `bun_docs_lookup` | — |
 | `window` | `aphrody-app` | `window_list`, `window_open` (http/https), `window_focus`, `window_close`, `window_set_bounds`, `window_set_state`, `window_set_title`, `desktop_notify`, `clipboard_read`, `clipboard_write` | `open_beside` | full autonomous window authority; agents may control every Aphrody window, including `main`; focus and close are published as `window/focused`, `window/closed` |
 
 Crates of this table that live in sibling category repositories: `aphrody-nu` / `aphrody-shell`

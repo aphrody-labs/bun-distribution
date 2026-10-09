@@ -1209,79 +1209,17 @@ Fichiers inventoriés : **1193**. Chaque ligne représente un fichier source; l�
 
 Inventaire exhaustif par extension (`.ts`, `.tsx`, `.js`, `.jsx`, `.html`, `.css`) pour les surfaces du lot `uirust-app`, généré depuis l’arbre de travail. Les rôles sont déduits des chemins et restent à confirmer lors de la qualification fonctionnelle.
 
-Fichiers recensés : **286**. `crates/ui/m3` est absent de ce checkout; les consommateurs qui en dépendent restent bloqués jusqu’à réception du socle commun.
+Fichiers recensés : **224**. `crates/ui/m3` est absent de ce checkout; les consommateurs qui en dépendent restent bloqués jusqu’à réception du socle commun.
 
 | Surface | Fichiers |
 | --- | ---: |
-| App web | 62 |
+| App web | 0 |
 | App desktop | 4 |
 | Tauri | 115 |
 | Packages web | 105 |
 
 | Fichier | Surface | Rôle déduit du chemin | Cible Rust | État |
 | --- | --- | --- | --- | --- |
-| `apps/web/build.ts` | App web | build frontend | m3/packages/app-ui/build.ts puis constructeur Rust/WASM | relai Bun; build Rust/WASM absent |
-| `apps/web/server.ts` | App web | serveur HTTP | crates/web/site + crates/ai/app-server | logique HTTP Rust et tests présents; lanceur Bun encore actif |
-| `apps/web/src/arcade/ArcadeGame.tsx` | App web | arcade/ArcadeGame | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/arcade/audio.ts` | App web | arcade/audio | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/arcade/avatar.ts` | App web | arcade/avatar | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/arcade/engine.test.ts` | App web | test ou fixture | tests Rust du propriétaire de la fonctionnalité | tests Bun seulement; parité Rust à ajouter |
-| `apps/web/src/arcade/engine.ts` | App web | arcade/engine | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/benchmarks/BenchmarkSuite.tsx` | App web | benchmarks/BenchmarkSuite | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/components/ApiPlayground.tsx` | App web | components/ApiPlayground | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/components/M3Showcase.tsx` | App web | components/M3Showcase | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/components/MultiTargetBridge.tsx` | App web | components/MultiTargetBridge | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/core/codebase-scanner.test.ts` | App web | test ou fixture | tests Rust du propriétaire de la fonctionnalité | tests Bun seulement; parité Rust à ajouter |
-| `apps/web/src/core/codebase-scanner.ts` | App web | core/codebase-scanner | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/core/platform.ts` | App web | core/platform | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/core/theme.ts` | App web | core/theme | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/core/types.ts` | App web | core/types | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/docs/DocsHub.tsx` | App web | docs/DocsHub | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/docs/docs-data.ts` | App web | docs/docs-data | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/env.d.ts` | App web | env.d | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/ffi/FFIExplorer.tsx` | App web | ffi/FFIExplorer | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/CommandPalette.tsx` | App web | os/CommandPalette | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/DesktopOS.tsx` | App web | os/DesktopOS | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/Dock.tsx` | App web | os/Dock | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/TopBar.tsx` | App web | os/TopBar | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/WindowFrame.tsx` | App web | os/WindowFrame | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/apps/AlpinePackageManagerApp.tsx` | App web | os/apps/AlpinePackageManagerApp | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/apps/AphrodyToolsApp.tsx` | App web | os/apps/AphrodyToolsApp | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/apps/BunReplApp.tsx` | App web | os/apps/BunReplApp | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/apps/BunshTerminalApp.tsx` | App web | os/apps/BunshTerminalApp | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/apps/CodexStudioApp.tsx` | App web | os/apps/CodexStudioApp | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/apps/DiagnosticsApp.tsx` | App web | os/apps/DiagnosticsApp | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/apps/FilesApp.tsx` | App web | os/apps/FilesApp | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/apps/KernelMonitorApp.tsx` | App web | os/apps/KernelMonitorApp | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/apps/M3FusionStudioApp.tsx` | App web | os/apps/M3FusionStudioApp | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/apps/ProcessesApp.tsx` | App web | os/apps/ProcessesApp | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/apps/SpacedriveVfsApp.tsx` | App web | os/apps/SpacedriveVfsApp | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/components/PetCompanion.tsx` | App web | os/components/PetCompanion | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/components/QuickAskBar.tsx` | App web | os/components/QuickAskBar | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/ffi-routes.ts` | App web | os/ffi-routes | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/os-router.ts` | App web | os/os-router | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/public-assets.ts` | App web | os/public-assets | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/server-extensions.ts` | App web | os/server-extensions | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/system-client.ts` | App web | os/system-client | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/system-metrics.ts` | App web | os/system-metrics | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/types.ts` | App web | os/types | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/wasm/apps.ts` | App web | os/wasm/apps | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/wasm/bun-api.ts` | App web | os/wasm/bun-api | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/wasm/bun-wasm.ts` | App web | os/wasm/bun-wasm | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/wasm/client.ts` | App web | os/wasm/client | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/wasm/fs-worker.ts` | App web | os/wasm/fs-worker | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/wasm/protocol.ts` | App web | os/wasm/protocol | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/wasm/repl-worker.ts` | App web | os/wasm/repl-worker | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/os/wasm/server-routes.ts` | App web | os/wasm/server-routes | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/styles/main.css` | App web | styles/main | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/templates/TemplatesExplorer.tsx` | App web | templates/TemplatesExplorer | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/templates/templates-data.ts` | App web | templates/templates-data | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/src/templates/templates-source.test.ts` | App web | test ou fixture | tests Rust du propriétaire de la fonctionnalité | tests Bun seulement; parité Rust à ajouter |
-| `apps/web/src/templates/templates-source.ts` | App web | templates/templates-source | crates/ui/m3 en WASM + crates web Rust | socle M3 manquant; migration à démarrer |
-| `apps/web/test/os-endpoints.test.ts` | App web | test ou fixture | tests Rust du propriétaire de la fonctionnalité | tests Bun seulement; parité Rust à ajouter |
-| `apps/web/test/public-assets.test.ts` | App web | test ou fixture | tests Rust du propriétaire de la fonctionnalité | tests Bun seulement; parité Rust à ajouter |
-| `apps/web/test/webos-extensions.test.ts` | App web | test ou fixture | tests Rust du propriétaire de la fonctionnalité | tests Bun seulement; parité Rust à ajouter |
-| `apps/web/webos.ts` | App web | serveur WebOS | fork Bun, packages/bun-webos | transfert signalé par le code; reçu de destination absent |
 | `crates/ui/app/examples/shell_e2e/frontend/index.html` | App desktop | fixture UI desktop | crates/ui/m3 + WASM ou hôte CEF | bundle app-ui React actif; remplacement Rust non qualifié |
 | `crates/ui/app/ui-dist/app.css` | App desktop | assets UI desktop | crates/ui/m3 + WASM ou hôte CEF | bundle app-ui React actif; remplacement Rust non qualifié |
 | `crates/ui/app/ui-dist/app.js` | App desktop | assets UI desktop | crates/ui/m3 + WASM ou hôte CEF | bundle app-ui React actif; remplacement Rust non qualifié |
@@ -1517,13 +1455,13 @@ Les états décrivent le code constaté et ne valent pas preuve de parité.
 
 | Fichier | Rôle | Cible Rust | État |
 | --- | --- | --- | --- |
-| `crates/web/site/assets/site.css` | Styles du site Rust | crates/ui/m3 (tokens/styles); servi par crates/web/site | Le serveur Axum existe; rendu/actifs et parité UI restent à qualifier |
-| `apps/web/server.ts` | Lanceur HTTP de l'app web | crates/ai/app-server + crates/web/site (Axum) | Déjà un lanceur du serveur Rust; scripts web:dev/start invoquent encore Bun |
-| `apps/web/webos.ts` | Relais du serveur WebOS du fork Bun | Fork Bun: packages/bun-webos (propriétaire déclaré dans la source) | Délègue à @aphrody/bun-webos; SHA mentionné dans la source, reçu de transfert absent |
-| `apps/web/src/os/ffi-routes.ts` | Routes API FFI | Contrat Axum à définir; préserver le propriétaire runtime/FFI du fork Bun | Handler TS encore présent; parité Axum et retrait non qualifiés |
-| `apps/web/src/os/os-router.ts` | Routes OS de démonstration | Contrat Axum à définir après retrait/qualification des simulations WebOS | Handlers simulés seulement; ne pas les publier comme capacités OS réelles |
-| `apps/web/src/os/server-extensions.ts` | Composition des routes WebOS/FFI | Contrat Axum à définir; préserver le propriétaire runtime/FFI du fork Bun | Handler TS encore présent; parité Axum et retrait non qualifiés |
-| `apps/web/src/os/wasm/server-routes.ts` | Routes bridge fetch/TCP WebOS | Contrat Axum à définir après retrait/qualification des simulations WebOS | Handler TS encore présent; parité Axum et retrait non qualifiés |
+| crates/web/site/assets/site.css (retiré) | Styles du site Rust | crates/ui/m3 (tokens/styles); servi par crates/web/site | Retiré par cf4c0d6262 (crates/web/site allégé); rendu/actifs et parité UI restent à qualifier |
+| apps/web/server.ts (retiré) | Lanceur HTTP de l'app web | crates/ai/app-server + crates/web/site (Axum) | Retiré par cf4c0d6262; le site et son lanceur vivent dans `m3/packages/app-ui` |
+| apps/web/webos.ts (retiré) | Relais du serveur WebOS du fork Bun | Fork Bun: packages/bun-webos | Retiré par cf4c0d6262; lanceur canonique `m3/packages/app-ui/webos.ts` |
+| apps/web/src/os/ffi-routes.ts (retiré) | Routes API FFI | Contrat Axum à définir; préserver le propriétaire runtime/FFI du fork Bun | Retiré par cf4c0d6262 (absorbé par bun-webos du fork); parité Axum non qualifiée |
+| apps/web/src/os/os-router.ts (retiré) | Routes OS de démonstration | Contrat Axum à définir après retrait/qualification des simulations WebOS | Retiré par cf4c0d6262; ne pas publier comme capacités OS réelles |
+| apps/web/src/os/server-extensions.ts (retiré) | Composition des routes WebOS/FFI | Contrat Axum à définir; préserver le propriétaire runtime/FFI du fork Bun | Retiré par cf4c0d6262 (absorbé par bun-webos du fork); parité Axum non qualifiée |
+| apps/web/src/os/wasm/server-routes.ts (retiré) | Routes bridge fetch/TCP WebOS | Contrat Axum à définir après retrait/qualification des simulations WebOS | Retiré par cf4c0d6262; parité Axum non qualifiée |
 
 <!-- END uirust-site inventory -->
 

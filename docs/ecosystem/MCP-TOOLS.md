@@ -7,7 +7,7 @@ Every MCP tool registered in source, grouped by server: rmcp `#[tool]` routers, 
 full text is in [ecosystem.json](ecosystem.json). The kernel re-exports its subsystems' tools through
 `aphrody-kernel`, so one tool name can appear under several servers.
 
-Totals: 20 servers, 390 tool registrations, 388 unique tool names.
+Totals: 20 servers, 391 tool registrations, 389 unique tool names.
 
 ## aphrody — @aphrody/workspace subsystem `workspace`
 
@@ -193,7 +193,7 @@ Kind: json-catalog. 18 tools.
 
 ## aphrody — aphrody-mcp (GoogleMcpServer)
 
-Kind: rmcp. 68 tools.
+Kind: rmcp. 69 tools.
 
 | Tool | Description |
 | --- | --- |
@@ -216,6 +216,7 @@ Kind: rmcp. 68 tools.
 | `aphrody_shenron_ocr` | Transcribe one base64 image with Aphrody's local OCR for Shenron. Returns text, textless, suspect, findings and languageApplied=false. Requires a binary built with the ocr feature and installed OCR m… |
 | `aphrody_shenron_rag_ingest` | Upsert one Shenron passage into Aphrody's RAG corpus using a stable sourceId such as shenron:<rowid>. Optional originSourceId, kind, lang and entity preserve source metadata. Requires the Aphrody RAG… |
 | `aphrody_shenron_rag_search` | Search the Dragon Ball corpus held by Aphrody. Accepts q, limit, lang, kind, sourceId (the original corpus ID), and entity. Returns stable sourceId values, source URL, a bounded passage, and lexical… |
+| `aphrody_site_catalog` | Read the native Aphrody product documentation/template catalog from an explicit workspace root. Read-only, no network or host execution. Section docs/templates matches HTTP; omit for both. |
 | `aphrody_transcribe` | Transcribe audio fully locally by driving whisper.cpp with weights from the aphrody model store (catalog id such as whisper-base-en, or a GGML path). Never falls back to a network API and never downl… |
 | `aphrody_web_call` | Call native Aphrody Web tools by their public or historical name through this endpoint (browser, crawl, Google, Gemini, X, archive). Use aphrody_capabilities to inspect the tools available in this bu… |
 | `aphrody_web_extract_html` | Extract article text, Markdown and metadata from supplied HTML using the shared Aphrody Rust Web library. No browser subprocess is started. |

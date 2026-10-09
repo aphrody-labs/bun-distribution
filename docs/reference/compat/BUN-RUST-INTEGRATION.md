@@ -4,8 +4,9 @@
 This repository does not link a Rust crate into the Bun executable. Bun is
 discovered and launched as an installed program through the shared
 `aphrody-toolchains` crate. The
-optional `third_party/bun` submodule provides Bun source and documentation; it
-is not a member of this Cargo workspace.
+Bun source lives in the aphrody-labs/bun fork checkout next to this repository
+(`../bun`), and its documentation is mirrored in `docs/reference/upstream-bun`; neither
+is a member of this Cargo workspace.
 
 ## Existing interfaces
 

@@ -6,14 +6,18 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 35 binaries with a clap surface, 1317 commands.
+Totals: 39 binaries with a clap surface, 1362 commands.
 
 ## aphrody
 
 ### `aphrody`
 
-Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 352 commands.
+Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 361 commands.
 
+- `aphrody pkg` — Unified native package indexes and verified content-addressed store. _(cfg: not(target_arch = "wasm32"))_
+- `aphrody site` — Native product site, sharing its catalog and renderer with HTTP and MCP. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody site catalog` — Print the native product catalog as JSON.
+  - `aphrody site serve` — Serve native product pages and JSON APIs through the canonical router.
 - `aphrody pure` — Pure commands (rag, toolcall, html, text): no network, no processes; also built for wasm32.
   - `aphrody pure rag` — RAG core: chunking, rank fusion, MMR, source weighting, retrieval eval.
     - `aphrody pure rag ops` — Manifest of the RAG call surface: ABI and every operation name.
@@ -167,6 +171,7 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 352 comma
   - `aphrody os status` — Inspect OS kernel status, active subsystems and diagnostics
   - `aphrody os doctor` — Run WinClean diagnostics on local Windows machine
 - `aphrody web` — Canonical Web engine: Obscura browser automation, crawling and extraction. _(aliases: webos; cfg: not(target_arch = "wasm32"))_
+  - `aphrody web design-sync` — Acquire Google Design/M3 reference data, index it, and generate native themes
   - `aphrody web status` — Inspect the linked Rust Web runtime
   - `aphrody web capabilities` — List the linked Rust Web capabilities
   - `aphrody web fetch` — Fetch and convert a URL directly to clean Markdown
@@ -226,7 +231,9 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 352 comma
   - `aphrody a2a tick` — Append one JSONL envelope (duel-tick / coord loop).
   - `aphrody a2a invoke` — Invoke a native peer CLI (grok, agy, claude, codex, bxc).
   - `aphrody a2a send` — JSON-RPC `message/send` to a federation peer (HTTP `/a2a` or `.coord` fallback).
-  - `aphrody a2a peers` — List resolved federation peers (env > aphrody-infra catalog > default).
+  - `aphrody a2a peers` — List peers: the hub registry when `APHRODY_A2A_HUB_URL` is set, else the local catalog.
+  - `aphrody a2a inbox` — Read this agent's hub mailbox (newest first); `--ack` sends read receipts.
+  - `aphrody a2a register` — Refresh this agent's presence on the hub and print its identity.
 - `aphrody search` — Recherche Google Native
 - `aphrody google` — Écosystème Google natif (DNS, Suggest, Translate, Gemini Web, Antigravity, Runtime) _(cfg: not(target_arch = "wasm32"))_
 - `aphrody translate` — Traduction unifiée via aphrody-translate _(cfg: not(target_arch = "wasm32"))_
@@ -360,6 +367,8 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 352 comma
   - `aphrody scan tree` — Size + file-count breakdown for top-level groups (vendor/packages/ crates by default).
   - `aphrody scan manifests` — Walk the repo for Cargo.toml / package.json / pyproject.toml / etc. and emit metadata (name, version, dependency count, workspace members).
 - `aphrody winclean` — Native Windows computer use and OS control via the in-process aphrody-winclean crate. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody winclean browser-map` — Discover Chrome binaries, PIDs, HWNDs, profiles and native messaging paths.
+  - `aphrody winclean browser-setup` — Prepare an isolated Aphrody Chrome profile and qualify its loopback CDP endpoint.
   - `aphrody winclean doctor` — Show backend initialisation, the linked version and catalog drift.
   - `aphrody winclean tools` — List the WinClean tool catalog.
   - `aphrody winclean schema` — Print the JSON input schema of one tool.
@@ -387,8 +396,15 @@ Crate `aphrody-code-graph`, parser `crates/ai/code-graph/src/cli.rs#Cli`, 7 comm
 
 ### `aphrody home`
 
-Crate `aphrody-rag`, parser `crates/ai/rag/src/home_cli.rs#Cli`, 3 commands.
+Crate `aphrody-rag`, parser `crates/ai/rag/src/home_cli.rs#Cli`, 10 commands.
 
+- `aphrody home stats`
+- `aphrody home put` — Ingest a file, optionally checking its declared SHA-256 and pinning it.
+- `aphrody home verify`
+- `aphrody home materialize`
+- `aphrody home pin`
+- `aphrody home unpin`
+- `aphrody home gc` — Collect unreferenced blobs. Defaults to reporting without deletion.
 - `aphrody home index` — Scan, extract the code graph, chunk and index a tree (incremental by content hash).
 - `aphrody home import-knowledge` — Import the documents of a legacy `knowledge.db` into the retrieval index (dry run unless `--apply`; the legacy file is opened read-only).
 - `aphrody home query` — Hybrid retrieval over document chunks, code-graph nodes and memories.
@@ -406,7 +422,7 @@ Crate `aphrody-kernel`, parser `crates/os/kernel/core/src/cli.rs#Cli`, 6 command
 
 ### `aphrody infra`
 
-Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 456 commands.
+Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 465 commands.
 
 - `aphrody infra status` — Show target, repository and runtime state without mutation.
 - `aphrody infra inventory` — Run the existing deep resource inventory through the canonical Bun adapter.
@@ -423,6 +439,10 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 456 commands.
 - `aphrody infra pipeline` — Execute declared monorepo validation stages.
 - `aphrody infra serve` — Launch the embedded HTTP API daemon.
 - `aphrody infra ssh` — Remote SSH operator: execute commands, audit host health, sysctl kernel tuning, port inspection.
+  - `aphrody infra ssh pkg` — Unified native package indexes and verified content-addressed store. _(cfg: not(target_arch = "wasm32"))_
+  - `aphrody infra ssh site` — Native product site, sharing its catalog and renderer with HTTP and MCP. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh site catalog` — Print the native product catalog as JSON.
+    - `aphrody infra ssh site serve` — Serve native product pages and JSON APIs through the canonical router.
   - `aphrody infra ssh pure` — Pure commands (rag, toolcall, html, text): no network, no processes; also built for wasm32.
     - `aphrody infra ssh pure rag` — RAG core: chunking, rank fusion, MMR, source weighting, retrieval eval.
       - `aphrody infra ssh pure rag ops` — Manifest of the RAG call surface: ABI and every operation name.
@@ -576,6 +596,7 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 456 commands.
     - `aphrody infra ssh os status` — Inspect OS kernel status, active subsystems and diagnostics
     - `aphrody infra ssh os doctor` — Run WinClean diagnostics on local Windows machine
   - `aphrody infra ssh web` — Canonical Web engine: Obscura browser automation, crawling and extraction. _(aliases: webos; cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh web design-sync` — Acquire Google Design/M3 reference data, index it, and generate native themes
     - `aphrody infra ssh web status` — Inspect the linked Rust Web runtime
     - `aphrody infra ssh web capabilities` — List the linked Rust Web capabilities
     - `aphrody infra ssh web fetch` — Fetch and convert a URL directly to clean Markdown
@@ -635,7 +656,9 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 456 commands.
     - `aphrody infra ssh a2a tick` — Append one JSONL envelope (duel-tick / coord loop).
     - `aphrody infra ssh a2a invoke` — Invoke a native peer CLI (grok, agy, claude, codex, bxc).
     - `aphrody infra ssh a2a send` — JSON-RPC `message/send` to a federation peer (HTTP `/a2a` or `.coord` fallback).
-    - `aphrody infra ssh a2a peers` — List resolved federation peers (env > aphrody-infra catalog > default).
+    - `aphrody infra ssh a2a peers` — List peers: the hub registry when `APHRODY_A2A_HUB_URL` is set, else the local catalog.
+    - `aphrody infra ssh a2a inbox` — Read this agent's hub mailbox (newest first); `--ack` sends read receipts.
+    - `aphrody infra ssh a2a register` — Refresh this agent's presence on the hub and print its identity.
   - `aphrody infra ssh search` — Recherche Google Native
   - `aphrody infra ssh google` — Écosystème Google natif (DNS, Suggest, Translate, Gemini Web, Antigravity, Runtime) _(cfg: not(target_arch = "wasm32"))_
   - `aphrody infra ssh translate` — Traduction unifiée via aphrody-translate _(cfg: not(target_arch = "wasm32"))_
@@ -769,6 +792,8 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 456 commands.
     - `aphrody infra ssh scan tree` — Size + file-count breakdown for top-level groups (vendor/packages/ crates by default).
     - `aphrody infra ssh scan manifests` — Walk the repo for Cargo.toml / package.json / pyproject.toml / etc. and emit metadata (name, version, dependency count, workspace members).
   - `aphrody infra ssh winclean` — Native Windows computer use and OS control via the in-process aphrody-winclean crate. _(cfg: not(target_arch = "wasm32"))_
+    - `aphrody infra ssh winclean browser-map` — Discover Chrome binaries, PIDs, HWNDs, profiles and native messaging paths.
+    - `aphrody infra ssh winclean browser-setup` — Prepare an isolated Aphrody Chrome profile and qualify its loopback CDP endpoint.
     - `aphrody infra ssh winclean doctor` — Show backend initialisation, the linked version and catalog drift.
     - `aphrody infra ssh winclean tools` — List the WinClean tool catalog.
     - `aphrody infra ssh winclean schema` — Print the JSON input schema of one tool.
@@ -864,6 +889,17 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 456 commands.
   - `aphrody infra secrets encrypt` — Encrypt an unencrypted environment file into an EncryptedManifest (.enc.json).
   - `aphrody infra secrets decrypt` — Decrypt an EncryptedManifest to verify integrity or inspect schema.
   - `aphrody infra secrets render` — Safely provision a decrypted environment file for systemd with 0400 permissions.
+
+### `aphrody kernel`
+
+Crate `aphrody-kernel`, parser `crates/os/kernel/core/src/cli.rs#Cli`, 6 commands.
+
+- `aphrody kernel serve` — Serve the kernel with the built-in subsystems on the local endpoint.
+- `aphrody kernel tools` — List tools as JSON.
+- `aphrody kernel skills` — List skills as JSON.
+- `aphrody kernel call` — Call one tool.
+- `aphrody kernel run-skill` — Run one skill.
+- `aphrody kernel a2a` — Send an A2A envelope through the same kernel tool dispatcher.
 
 ### `aphrody m3-reproduce`
 
@@ -1031,6 +1067,14 @@ Crate `aphrody-yolo`, parser `crates/infra/yolo/src/cli.rs#Cli`, 25 commands.
 - `aphrody yolo autopilot` — Dispatch bounded unattended ticks through an installed agent harness.
 - `aphrody yolo ingest` — Ingest a Git repository or directory into a prompt-ready LLM digest (GitIngest standard).
 
+### `aphrody-certificates`
+
+Crate `aphrody-certificates`, parser `crates/infra/certificates/src/main.rs#Cli`, 3 commands.
+
+- `aphrody-certificates issue` — Create a new certificate; staging unless --production is explicit.
+- `aphrody-certificates renew` — Renew through a fresh ACME order, retaining prior certificate generations.
+- `aphrody-certificates inspect` — Inspect metadata and chain checksum without exposing private keys.
+
 ### `aphrody-graph`
 
 Crate `aphrody-code-graph`, parser `crates/ai/code-graph/src/cli.rs#Cli`, 7 commands.
@@ -1042,6 +1086,28 @@ Crate `aphrody-code-graph`, parser `crates/ai/code-graph/src/cli.rs#Cli`, 7 comm
 - `aphrody-graph report` — Print the markdown report.
 - `aphrody-graph export` — Write `graph.json`.
 - `aphrody-graph delete` — Delete the graph named by `--source` (nodes, edges, communities, cache, scan rows). _(aliases: drop)_
+
+### `aphrody-pkg`
+
+Crate `aphrody-pkg-cli`, parser `crates/pkg/cli/src/lib.rs#Cli`, 11 commands.
+
+- `aphrody-pkg remote-info` — Fetch metadata from the source's public registry; no packages installed.
+- `aphrody-pkg search` — Search a public registry. Returns its original search response.
+- `aphrody-pkg info` — Inspect a previously fetched index. No resolution or installation implied.
+- `aphrody-pkg store` — Manage content-addressed blobs; this does not install packages.
+  - `aphrody-pkg store stats`
+  - `aphrody-pkg store put` — Ingest a file, optionally checking its declared SHA-256 and pinning it.
+  - `aphrody-pkg store verify`
+  - `aphrody-pkg store materialize`
+  - `aphrody-pkg store pin`
+  - `aphrody-pkg store unpin`
+  - `aphrody-pkg store gc` — Collect unreferenced blobs. Defaults to reporting without deletion.
+
+### `aphrody-site`
+
+Crate `aphrody-site`, parser `crates/web/site/src/main.rs#Cli`, 0 commands.
+
+_No subcommands (flags only)._
 
 ### `aphrody-store`
 

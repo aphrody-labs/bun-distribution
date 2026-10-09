@@ -17,7 +17,7 @@ qu'on en retient pour aphrody*. Aucune copie verbatim — distillation.
   <https://chromium.googlesource.com/chromium/src/+/refs/tags/135.0.7040.0/docs/rust-unsafe.md>
 - FFI C/C++ ↔ Rust (`docs/rust/ffi.md` (not in repo)) :
   <https://chromium.googlesource.com/experimental/chromium/src/+/HEAD/docs/rust/ffi.md>
-- Politique d'import de crates tierces (`third_party/rust/README-importing-new-crates.md`) :
+- Politique d'import de crates tierces (`chromium/src/third_party/rust/README-importing-new-crates.md`) :
   <https://chromium.googlesource.com/chromium/src.git/+/HEAD/third_party/rust/README-importing-new-crates.md>
 - Process général d'ajout de tiers (`docs/adding_to_third_party.md` (not in repo)), référencé par le doc ci-dessus.
 - `cxx` (FFI sûr Rust↔C++) : <https://github.com/dtolnay/cxx>

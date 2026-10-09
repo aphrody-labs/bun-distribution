@@ -35,7 +35,7 @@ A `--release` kernel build passed, and the binary was installed to
 `%USERPROFILE%\.cargo\bin\aphrody-kernel.exe`. `--help` confirms `--exec-policy` support,
 and live IPC probes answered `tools/list` and `get_os_info` with all 166 WinClean tools verified.
 
-Historical check: `third_party/bun` and `third_party/uv` were initialised at
+Historical check: the former third_party/bun and third_party/uv submodules were initialised at
 `bf80d21c69c3` and `a9e231a7e377`, and
 `scripts/verify-third-party-runtimes.ps1` (not in repo) passed. Commit `c3a99838` later removed
 both source submodules. The current runtime uses the external system Bun/uv

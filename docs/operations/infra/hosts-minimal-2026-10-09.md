@@ -14,6 +14,6 @@
 - Diffs proposés, non appliqués parce que ces fichiers sont claimés :
   - `tools/config/production-topology.json` : `vps` = role build seul.
   - `tools/config/host/catalog.json` et les units `systemd/aphrody/aphrody-llama-{gemma4,shenron-chat}.service`, `aphrody-discord-omar-monitor.service`, `discord-omar-monitor.json` : à retirer (P et D, voir board).
-  - `tools/config/disk-reclaim.json` (D) : retirer `shenron-release/*` et `shenron-xenoverse-map/*` (worktrees supprimés) ; ajouter `.cache/uv` et l'ancienne release `.codex/packages/standalone/releases/*` qui n'est plus `current`.
-  - `tools/config/host/legacy-rg/` : aucun consommateur hors l'index `docs/reference/workspace/documentation.json` (claimé), à retirer avec l'entrée de l'index.
+  - `tools/config/disk-reclaim.json` (D) : retirer `shenron-release/*` et `shenron-xenoverse-map/*` (worktrees supprimés) ; ajouter `~/.cache/uv` et l'ancienne release `.codex/packages/standalone/releases/*` qui n'est plus `current`.
+  - tools/config/host/legacy-rg/ (retiré depuis, ff7c957063) : aucun consommateur hors l'index `docs/reference/workspace/documentation.json` (claimé), à retirer avec l'entrée de l'index.
 - Décisions ouvertes : `/srv/archive/dbxv2-output` (24 Go, régénérable seulement via Steam) à archiver ou supprimer. Pour envoyer l'archive sur Drive, il faut `gcloud auth login --enable-gdrive-access` ou un jeton OAuth avec le scope drive : le compte de service n'a pas de quota. `aphrody-drive-sync` échoue (drive-review, 8 échecs depuis 01:40) et `/srv/aphrody-lab/omar-monitor.*` est mort (tous deux du domaine de P). Le runner `aphrody-shenron-build-runner` est gardé (build).

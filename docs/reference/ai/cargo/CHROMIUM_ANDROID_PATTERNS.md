@@ -153,7 +153,7 @@ a2a-client = { package = "a2a-client-lf", path = "crates/aphrody-a2a-client", de
 
 Chromium `//third_party/rust` + audits manuels.
 Android : `Cargo.toml` formal review.
-Fuchsia : `cargo vet` + `third_party/rust_crates/supply-chain/`.
+Fuchsia : `cargo vet` + `fuchsia/third_party/rust_crates/supply-chain/`.
 
 **Notre application — synthèse moderne** : `cargo-vet` import des audits Google + Mozilla + Fuchsia + ChromeOS + Bytecode Alliance + Embark + Zcash. Cf. `docs/reference/ai/cargo/SUPPLY_CHAIN.md`.
 

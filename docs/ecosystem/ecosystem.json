@@ -165,7 +165,8 @@
           "features": [
             "default",
             "in-process",
-            "rag"
+            "rag",
+            "site"
           ]
         },
         {
@@ -210,6 +211,15 @@
           "path": "crates/os/kernel/libs/capture",
           "description": "Native Windows screen and window capture to PNG. GDI-based, zero unsafe outside FFI wrappers, RAII GDI handle guards.",
           "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-certificates",
+          "path": "crates/infra/certificates",
+          "description": "Native ACME certificate lifecycle using owned OVH DNS challenges",
+          "bins": [
+            "aphrody-certificates"
+          ],
           "features": []
         },
         {
@@ -510,6 +520,17 @@
           "features": []
         },
         {
+          "name": "aphrody-m3",
+          "path": "crates/ui/m3",
+          "description": "Rust Material 3 component and layout contracts for Aphrody.",
+          "bins": [],
+          "features": [
+            "default",
+            "native-render",
+            "wasm"
+          ]
+        },
+        {
           "name": "aphrody-m3-reproduce",
           "path": "crates/ui/m3-reproduce",
           "description": "Reproduce a site in Material 3: seed colors, fonts, shapes and a component tree from a screenshot or a crawl, emitted as an @aphrody/m3 app scaffold.",
@@ -687,6 +708,50 @@
           "features": []
         },
         {
+          "name": "aphrody-pkg-cli",
+          "path": "crates/pkg/cli",
+          "description": "Native package store command interface",
+          "bins": [
+            "aphrody-pkg"
+          ],
+          "features": []
+        },
+        {
+          "name": "aphrody-pkg-core",
+          "path": "crates/pkg/core",
+          "description": "I/O-free package contracts and shared ecosystem parsers",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-pkg-ffi",
+          "path": "crates/pkg/ffi",
+          "description": "Versioned native package store C ABI",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-pkg-net",
+          "path": "crates/pkg/net",
+          "description": "Bounded resumable HTTP ingestion into the shared package store",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-pkg-store",
+          "path": "crates/pkg/store",
+          "description": "Verified content-addressed package blob store",
+          "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-pkg-system",
+          "path": "crates/pkg/system",
+          "description": "I/O-free models and parsers for system package sources (winget, apk, deb, pacman)",
+          "bins": [],
+          "features": []
+        },
+        {
           "name": "aphrody-proc",
           "path": "crates/os/ostd/proc",
           "description": "Process supervision primitives shared by the llama-server supervisor, the command sandbox and the training runner: process groups that die with their owner (Linux session + killpg, Windows Job Object with KILL_ON_JOB_CLOSE), detached daemons, liveness probes, free-port allocation, advisory file locks and the single-GPU lease (shared for inference, exclusive for training).",
@@ -722,17 +787,6 @@
           "features": []
         },
         {
-          "name": "aphrody-re",
-          "path": "crates/os/kernel/comps/re",
-          "description": "Reverse engineering primitives for aphrody — PE/ELF/Mach-O triage, sections + entropy + hash, ASCII/UTF-16 strings extraction. Pure Rust, no C bindings, no GPL.",
-          "bins": [],
-          "features": [
-            "leveldb",
-            "magika",
-            "yara"
-          ]
-        },
-        {
           "name": "aphrody-remote-desktop",
           "path": "crates/infra/remote-desktop",
           "description": "Cross-platform remote-desktop server (JPEG over WebSocket, embedded browser viewer) for `aphrody infra remote serve`.",
@@ -766,13 +820,6 @@
           "name": "aphrody-rollout",
           "path": "crates/ai/rollout",
           "description": "Resilient agent-session recorder: appends timestamped JSONL items to ~/.aphrody/sessions/rollout-*.jsonl through an async actor (mpsc + background writer task with Flush/Persist/Shutdown), and resumes a prior session by replaying its JSONL. Inspired by OpenAI Codex rollout (Apache-2.0).",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-rust",
-          "path": "crates/ai/rag-python",
-          "description": "PyO3 extension module aphrody.aphrody_rust (RAG vector kernels and rank fusion), built into the aphrody Python wheel.",
           "bins": [],
           "features": []
         },
@@ -819,6 +866,15 @@
           "path": "crates/shell/web",
           "description": "Aphrody shell for WebAssembly: browser and Tauri webview terminal, local shell and wire protocol.",
           "bins": [],
+          "features": []
+        },
+        {
+          "name": "aphrody-site",
+          "path": "crates/web/site",
+          "description": "Native product website and catalog APIs, isolated from the Bun WebOS runtime",
+          "bins": [
+            "aphrody-site"
+          ],
           "features": []
         },
         {
@@ -1533,23 +1589,6 @@
           ]
         },
         {
-          "name": "yolo-core",
-          "path": "crates/engine/yolo-core",
-          "description": "Core native engine and system benchmarking logic for YOLO Monorepo",
-          "bins": [],
-          "features": [
-            "default",
-            "repository-tools"
-          ]
-        },
-        {
-          "name": "yolo-pyo3",
-          "path": "crates/engine/yolo-pyo3",
-          "description": "PyO3 0.29 Native Extension Module for YOLO Monorepo (Free-threaded, No-GIL, py.detach)",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "yolo-runtime",
           "path": "crates/engine/yolo-runtime",
           "description": "Versioned C ABI of the precompiled YOLO native runtime (first slice: system stats and cancellable benchmark)",
@@ -1983,12 +2022,6 @@
           "name": "@aphrody/update",
           "path": "packages/infra/update",
           "description": "Unified update pipeline: tool pins, dependency sync, Cargo lock refresh, user systemd units and dev-env checks",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/web",
-          "path": "apps/web",
-          "description": "",
           "bins": []
         },
         {
@@ -3121,6 +3154,39 @@
       "repo": "aphrody",
       "source": "crates/infra/aphrody-command/src/lib.rs#Cli",
       "commands": [
+        {
+          "name": "pkg",
+          "about": "Unified native package indexes and verified content-addressed store.",
+          "aliases": [],
+          "cfg": [
+            "not(target_arch = \"wasm32\")"
+          ],
+          "children": []
+        },
+        {
+          "name": "site",
+          "about": "Native product site, sharing its catalog and renderer with HTTP and MCP.",
+          "aliases": [],
+          "cfg": [
+            "not(target_arch = \"wasm32\")"
+          ],
+          "children": [
+            {
+              "name": "catalog",
+              "about": "Print the native product catalog as JSON.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "serve",
+              "about": "Serve native product pages and JSON APIs through the canonical router.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            }
+          ]
+        },
         {
           "name": "pure",
           "about": "Pure commands (rag, toolcall, html, text): no network, no processes; also built for wasm32.",
@@ -4271,6 +4337,13 @@
           ],
           "children": [
             {
+              "name": "design-sync",
+              "about": "Acquire Google Design/M3 reference data, index it, and generate native themes",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
               "name": "status",
               "about": "Inspect the linked Rust Web runtime",
               "aliases": [],
@@ -4694,7 +4767,21 @@
             },
             {
               "name": "peers",
-              "about": "List resolved federation peers (env > aphrody-infra catalog > default).",
+              "about": "List peers: the hub registry when `APHRODY_A2A_HUB_URL` is set, else the local catalog.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "inbox",
+              "about": "Read this agent's hub mailbox (newest first); `--ack` sends read receipts.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "register",
+              "about": "Refresh this agent's presence on the hub and print its identity.",
               "aliases": [],
               "cfg": [],
               "children": []
@@ -5703,6 +5790,20 @@
           ],
           "children": [
             {
+              "name": "browser-map",
+              "about": "Discover Chrome binaries, PIDs, HWNDs, profiles and native messaging paths.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "browser-setup",
+              "about": "Prepare an isolated Aphrody Chrome profile and qualify its loopback CDP endpoint.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
               "name": "doctor",
               "about": "Show backend initialisation, the linked version and catalog drift.",
               "aliases": [],
@@ -5820,6 +5921,55 @@
       "repo": "aphrody",
       "source": "crates/ai/rag/src/home_cli.rs#Cli",
       "commands": [
+        {
+          "name": "stats",
+          "about": "",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "put",
+          "about": "Ingest a file, optionally checking its declared SHA-256 and pinning it.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "verify",
+          "about": "",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "materialize",
+          "about": "",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "pin",
+          "about": "",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "unpin",
+          "about": "",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "gc",
+          "about": "Collect unreferenced blobs. Defaults to reporting without deletion.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
         {
           "name": "index",
           "about": "Scan, extract the code graph, chunk and index a tree (incremental by content hash).",
@@ -6003,6 +6153,39 @@
           "aliases": [],
           "cfg": [],
           "children": [
+            {
+              "name": "pkg",
+              "about": "Unified native package indexes and verified content-addressed store.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": []
+            },
+            {
+              "name": "site",
+              "about": "Native product site, sharing its catalog and renderer with HTTP and MCP.",
+              "aliases": [],
+              "cfg": [
+                "not(target_arch = \"wasm32\")"
+              ],
+              "children": [
+                {
+                  "name": "catalog",
+                  "about": "Print the native product catalog as JSON.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "serve",
+                  "about": "Serve native product pages and JSON APIs through the canonical router.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                }
+              ]
+            },
             {
               "name": "pure",
               "about": "Pure commands (rag, toolcall, html, text): no network, no processes; also built for wasm32.",
@@ -7153,6 +7336,13 @@
               ],
               "children": [
                 {
+                  "name": "design-sync",
+                  "about": "Acquire Google Design/M3 reference data, index it, and generate native themes",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
                   "name": "status",
                   "about": "Inspect the linked Rust Web runtime",
                   "aliases": [],
@@ -7576,7 +7766,21 @@
                 },
                 {
                   "name": "peers",
-                  "about": "List resolved federation peers (env > aphrody-infra catalog > default).",
+                  "about": "List peers: the hub registry when `APHRODY_A2A_HUB_URL` is set, else the local catalog.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "inbox",
+                  "about": "Read this agent's hub mailbox (newest first); `--ack` sends read receipts.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "register",
+                  "about": "Refresh this agent's presence on the hub and print its identity.",
                   "aliases": [],
                   "cfg": [],
                   "children": []
@@ -8585,6 +8789,20 @@
               ],
               "children": [
                 {
+                  "name": "browser-map",
+                  "about": "Discover Chrome binaries, PIDs, HWNDs, profiles and native messaging paths.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
+                  "name": "browser-setup",
+                  "about": "Prepare an isolated Aphrody Chrome profile and qualify its loopback CDP endpoint.",
+                  "aliases": [],
+                  "cfg": [],
+                  "children": []
+                },
+                {
                   "name": "doctor",
                   "about": "Show backend initialisation, the linked version and catalog drift.",
                   "aliases": [],
@@ -9267,6 +9485,56 @@
               "children": []
             }
           ]
+        }
+      ]
+    },
+    {
+      "binary": "aphrody kernel",
+      "crate": "aphrody-kernel",
+      "repo": "aphrody",
+      "source": "crates/os/kernel/core/src/cli.rs#Cli",
+      "commands": [
+        {
+          "name": "serve",
+          "about": "Serve the kernel with the built-in subsystems on the local endpoint.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "tools",
+          "about": "List tools as JSON.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "skills",
+          "about": "List skills as JSON.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "call",
+          "about": "Call one tool.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "run-skill",
+          "about": "Run one skill.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "a2a",
+          "about": "Send an A2A envelope through the same kernel tool dispatcher.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
         }
       ]
     },
@@ -10217,6 +10485,35 @@
       ]
     },
     {
+      "binary": "aphrody-certificates",
+      "crate": "aphrody-certificates",
+      "repo": "aphrody",
+      "source": "crates/infra/certificates/src/main.rs#Cli",
+      "commands": [
+        {
+          "name": "issue",
+          "about": "Create a new certificate; staging unless --production is explicit.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "renew",
+          "about": "Renew through a fresh ACME order, retaining prior certificate generations.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "inspect",
+          "about": "Inspect metadata and chain checksum without exposing private keys.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        }
+      ]
+    },
+    {
       "binary": "aphrody-graph",
       "crate": "aphrody-code-graph",
       "repo": "aphrody",
@@ -10274,6 +10571,99 @@
           "children": []
         }
       ]
+    },
+    {
+      "binary": "aphrody-pkg",
+      "crate": "aphrody-pkg-cli",
+      "repo": "aphrody",
+      "source": "crates/pkg/cli/src/lib.rs#Cli",
+      "commands": [
+        {
+          "name": "remote-info",
+          "about": "Fetch metadata from the source's public registry; no packages installed.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "search",
+          "about": "Search a public registry. Returns its original search response.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "info",
+          "about": "Inspect a previously fetched index. No resolution or installation implied.",
+          "aliases": [],
+          "cfg": [],
+          "children": []
+        },
+        {
+          "name": "store",
+          "about": "Manage content-addressed blobs; this does not install packages.",
+          "aliases": [],
+          "cfg": [],
+          "children": [
+            {
+              "name": "stats",
+              "about": "",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "put",
+              "about": "Ingest a file, optionally checking its declared SHA-256 and pinning it.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "verify",
+              "about": "",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "materialize",
+              "about": "",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "pin",
+              "about": "",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "unpin",
+              "about": "",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "gc",
+              "about": "Collect unreferenced blobs. Defaults to reporting without deletion.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "binary": "aphrody-site",
+      "crate": "aphrody-site",
+      "repo": "aphrody",
+      "source": "crates/web/site/src/main.rs#Cli",
+      "commands": []
     },
     {
       "binary": "aphrody-store",
@@ -13742,6 +14132,11 @@
           "file": "crates/ai/mcp/src/lib.rs"
         },
         {
+          "name": "aphrody_site_catalog",
+          "description": "Read the native Aphrody product documentation/template catalog from an explicit workspace root. Read-only, no network or host execution. Section docs/templates matches HTTP; omit for both.",
+          "file": "crates/ai/mcp/src/lib.rs"
+        },
+        {
           "name": "aphrody_transcribe",
           "description": "Transcribe audio fully locally by driving whisper.cpp with weights from the aphrody model store (catalog id such as whisper-base-en, or a GGML path). Never falls back to a network API and never downloads: a missing runtime or missing weights is a structured error. Audio must be 16 kHz mono WAV. Returns { text, language, duration_s, segments, backend, binary, model, weights }.",
           "file": "crates/ai/mcp/src/lib.rs"
@@ -15191,14 +15586,14 @@
     "aphrodyRepos": 2,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 235,
-    "binaries": 35,
-    "bunPackages": 117,
+    "crates": 240,
+    "binaries": 38,
+    "bunPackages": 116,
     "pythonPackages": 10,
-    "cliBinaries": 35,
-    "cliCommands": 1317,
+    "cliBinaries": 39,
+    "cliCommands": 1362,
     "mcpServers": 20,
-    "mcpTools": 390,
-    "mcpUniqueToolNames": 388
+    "mcpTools": 391,
+    "mcpUniqueToolNames": 389
   }
 }

@@ -328,7 +328,7 @@ sections current and store operational detail in its existing runbook.
 
   These generated files are not tracked by Git and were not removed during this audit.
 
-- **2026-09-28:** UI owner confirmed `third_party/base-ui` and `third_party/tailwindcss` are
+- **2026-09-28:** UI owner confirmed the then third_party/base-ui and third_party/tailwindcss checkouts are
 
   maintained Aphrody forks optimized for Bun and adapted for M3. Keep their source and fork
 
