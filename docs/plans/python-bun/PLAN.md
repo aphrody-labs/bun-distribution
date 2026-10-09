@@ -8,6 +8,12 @@ This supersedes the separate-runtime ownership in [the earlier vu plan](../vu/PL
 Product RAG algorithms remain with Aphrody; their native Python adapter belongs
 to Bun. Existing installed runtimes remain available until replacement qualifies.
 
+The owner also directs removal of Yolo/vu runtime indirection and bottlenecks:
+call Bun directly, merge useful existing uv/Ruff/PyO3 logic into its capability
+owner, and retire duplicate launchers after behavior and rollback qualification.
+Lazy packaging remains required; source consolidation alone is not evidence of
+lower latency or memory use.
+
 The fork is selected by `APHRODY_BUN_CHECKOUT` or explicit workspace configuration.
 The canonical specification is `docs/aphrody/LAYERS.md` (not in repo) in that checkout.
 Native Windows, qualified SSH factories and other native targets retain their
