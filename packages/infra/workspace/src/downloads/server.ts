@@ -275,12 +275,14 @@ const SITE_TYPES: Record<string, string> = {
   ".gif": "image/gif",
   ".webp": "image/webp",
   ".ico": "image/x-icon",
+  ".webmanifest": "application/manifest+json",
   ".mp4": "video/mp4",
   ".woff2": "font/woff2",
 };
 
+/** The site loads its M3 tokens, fonts and Material Symbols from cdn.aphrody.com. */
 const SITE_CSP =
-  "default-src 'self'; img-src 'self' data: https:; media-src 'self' https:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://api.github.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+  "default-src 'self'; img-src 'self' data: https:; media-src 'self' https:; style-src 'self' 'unsafe-inline' https://cdn.aphrody.com; font-src 'self' https://cdn.aphrody.com; script-src 'self'; connect-src 'self' https://api.github.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
 /** `/docs/x` -> `<site>/docs/x`, `<site>/docs/x/index.html` or `<site>/docs/x.html`, contained in the site. */
 export function resolveSiteFile(siteRoot: string, pathname: string): string | null {
