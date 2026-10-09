@@ -6,7 +6,7 @@
     "paths are relative to the remote $HOME; absolute paths and '..' are rejected",
     "never list data read by a running unit (nie-model-serve reads .local/share/Steam/iecode and nie/var/model-cache; nie-site runs from nie/target/release)",
     "/tmp is tmpfs: reclaiming it frees RAM and swap, not disk",
-    "system steps run through sudo -n: docker prunes only unreferenced images older than 7 days and the build cache (never containers or volumes); absolute system paths must sit below a non-protected root and never under /home, /root, /etc, /boot, /var/lib/docker, /var/lib/postgresql, /var/lib/mysql or /srv/shenron/shared"
+    "system steps run through sudo -n: docker prunes only unreferenced images older than 7 days and the build cache (never containers or volumes); absolute system paths must sit below a non-protected root and never under /home, /root, /etc, /boot, /var/lib/docker, /var/lib/postgresql, /var/lib/mysql or /home/ubuntu/apps/shenron/shared"
   ],
   "targets": {
     "vps": {
@@ -62,7 +62,7 @@
         },
         {
           "path": ".bun/install/cache",
-          "reason": "Bun package download cache, re-fetched on demand; production release dependencies are stored under /srv"
+          "reason": "Bun package download cache, re-fetched on demand; production release dependencies are stored under ~/apps"
         },
         {
           "path": ".cache/sccache",
@@ -102,7 +102,7 @@
         },
         {
           "path": "aphrody",
-          "reason": "stale pre-factory checkout (clean, nothing unpushed 2026-10-05); source lives in /srv/aphrody-build/workspaces/aphrody"
+          "reason": "stale pre-factory checkout (clean, nothing unpushed 2026-10-05); source lives in /home/ubuntu/src/aphrody"
         },
         {
           "path": ".cache/shenron-bench-host",
@@ -147,6 +147,18 @@
         {
           "path": "tmp-uvdbg",
           "reason": "standalone debug copy of uv (293 MB) outside ~/.local/bin; uv is provided by the unified install"
+        },
+        {
+          "path": "build/cache/target-wg-check",
+          "reason": "one-off WireGuard check target, superseded by the container gate"
+        },
+        {
+          "path": "build/cache/bun-forge",
+          "reason": "retired bun-forge cache; the fork builds in aphrody/build-linux"
+        },
+        {
+          "path": "build/transient/remote-unify",
+          "reason": "stopped transient gate clone"
         }
       ],
       "tmp": {
@@ -168,21 +180,7 @@
         "snap": true,
         "rotatedLogs": true,
         "coreDumps": true,
-        "varTmpOlderThanDays": 7,
-        "paths": [
-          {
-            "path": "/srv/aphrody-build/cache/target-wg-check",
-            "reason": "one-off WireGuard check target, superseded by the container gate"
-          },
-          {
-            "path": "/srv/aphrody-build/cache/bun-forge",
-            "reason": "retired bun-forge cache; the fork builds in aphrody/build-linux"
-          },
-          {
-            "path": "/srv/aphrody-build/transient/remote-unify",
-            "reason": "stopped transient gate clone"
-          }
-        ]
+        "varTmpOlderThanDays": 7
       }
     },
     "dbfr-stale-shenron-build": {
@@ -199,7 +197,7 @@
       "paths": [
         {
           "path": "shenron-build/target-aphrody",
-          "reason": "regenerable Shenron Rust build output; no active Cargo/rustc process uses it and the live production release remains on vps under /srv"
+          "reason": "regenerable Shenron Rust build output; no active Cargo/rustc process uses it and the live production release remains under ~/apps"
         },
         {
           "path": "shenron-build/node_modules",
@@ -211,7 +209,7 @@
         },
         {
           "path": ".bun/install/cache",
-          "reason": "4.5 GiB Bun package download cache, unused by the observed services and re-fetched on demand; production release dependencies remain under /srv"
+          "reason": "4.5 GiB Bun package download cache, unused by the observed services and re-fetched on demand; production release dependencies remain under ~/apps"
         },
         {
           "path": ".cargo/registry",
@@ -223,11 +221,11 @@
         },
         {
           "path": ".yolo/transfers",
-          "reason": "image and bundle transfer staging of a finished deploy; the loaded images live in Docker and sealed releases under /srv"
+          "reason": "image and bundle transfer staging of a finished deploy; the loaded images live in Docker and sealed releases under ~/apps"
         },
         {
           "path": "shenron-container-stage",
-          "reason": "staging tree of a finished container release; the sealed release lives under /srv/shenron/releases"
+          "reason": "staging tree of a finished container release; the sealed release lives under /home/ubuntu/apps/shenron/releases"
         },
         {
           "path": "shenron-transfer.oci",

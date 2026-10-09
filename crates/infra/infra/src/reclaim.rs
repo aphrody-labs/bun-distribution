@@ -102,14 +102,11 @@ const PROTECTED: &[&str] = &[
     "/root",
     "/run",
     "/sbin",
-    "/srv",
     "/sys",
     "/usr",
     "/var",
     "/var/lib",
     "/var/log",
-    "/srv/shenron",
-    "/srv/shenron/shared",
     "/var/lib/docker",
     "/var/lib/postgresql",
 ];
@@ -120,7 +117,6 @@ const PROTECTED_TREES: &[&str] = &[
     "/etc",
     "/home",
     "/root",
-    "/srv/shenron/shared",
     "/var/lib/docker",
     "/var/lib/mysql",
     "/var/lib/postgresql",
@@ -317,12 +313,12 @@ mod tests {
         t.system = Some(System {
             docker: true,
             journal_max_size: Some("200M".into()),
-            paths: vec![Entry { path: "/srv/cache/old".into(), reason: "r".into() }],
+            paths: vec![Entry { path: "/var/cache/old".into(), reason: "r".into() }],
             ..System::default()
         });
         let plan = script(&t, false).unwrap();
         assert!(!plan.contains("prune -af"), "{plan}");
-        assert!(!plan.contains("rm -rf -- '/srv"), "{plan}");
+        assert!(!plan.contains("rm -rf -- '/var"), "{plan}");
         let apply = script(&t, true).unwrap();
         assert!(apply.contains("sudo -n docker image prune -af --filter until=168h"));
         assert!(apply.contains("sudo -n docker builder prune -af --filter until=168h"));
@@ -330,21 +326,21 @@ mod tests {
         assert!(!apply.contains("system prune"));
         assert!(!apply.contains("--volumes"));
         assert!(apply.contains("sudo -n journalctl --vacuum-size=200M"));
-        assert!(apply.contains("sudo -n rm -rf -- '/srv/cache/old'"));
+        assert!(apply.contains("sudo -n rm -rf -- '/var/cache/old'"));
         for bad in [
             "/",
-            "/srv",
+            "/var",
             "/etc",
             "/var/lib/docker",
-            "/srv/shenron/shared",
-            "/srv/shenron/shared/db",
+            "/home/ubuntu/apps/shenron/shared",
+            "/home/ubuntu/apps/shenron/shared/db",
             "/home/ubuntu",
             "/var/lib/postgresql/16",
             "/etc/aphrody",
             "rel/x",
             "/a/../b",
             "/x;y",
-            "/srv/*",
+            "/var/*",
         ] {
             t.system.as_mut().unwrap().paths = vec![Entry { path: bad.into(), reason: "r".into() }];
             assert!(script(&t, true).is_err(), "{bad}");

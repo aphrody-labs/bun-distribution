@@ -393,7 +393,7 @@ await withFactoryResource(${JSON.stringify(config)}, async () => {
 );
 
 test("process references distinguish retired targets from live sibling prefixes", () => {
-  const path = "/srv/aphrody-build/cache/cargo/aphrody";
+  const path = "/home/ubuntu/build/cache/cargo/aphrody";
   for (const value of [
     path,
     path + "/debug",

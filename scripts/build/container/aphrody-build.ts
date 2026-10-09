@@ -18,7 +18,7 @@
  * Contract shared with Shenron's scripts/build/container.ts: image `aphrody-build:latest`, caller uid
  * plus the shared build group (gid 1500), named cache volumes aphrody-build-{cargo,sccache,bun,xwin,xdg},
  * bounded resources (APHRODY_BUILD_CPUS, default 6; APHRODY_BUILD_MEMORY, default 16g, no swap) and the
- * factory heavy lock `/srv/aphrody-build/locks/heavy.lock` when it exists.
+ * factory heavy lock `/home/ubuntu/build/locks/heavy.lock` when it exists.
  *
  * Private Git dependencies (Shenron pins aphrody-labs/aphrody by revision): the image's system Git
  * credential helper answers for github.com with `APHRODY_GIT_TOKEN`. `run` resolves it from the
@@ -29,7 +29,7 @@ import { resolve } from "node:path";
 
 export const IMAGE = "aphrody-build";
 export const BUILD_GID = 1500;
-export const HEAVY_LOCK = "/srv/aphrody-build/locks/heavy.lock";
+export const HEAVY_LOCK = "/home/ubuntu/build/locks/heavy.lock";
 export const CACHE_VOLUMES = {
   cargo: "/cache/cargo",
   sccache: "/cache/sccache",

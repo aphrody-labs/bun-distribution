@@ -21,8 +21,9 @@ the site publication timer of the Bun fork is not duplicated.
 ## Concurrency and safety
 
 - `concurrency: release-main`, `cancel-in-progress: false`: a running release is never interrupted; a push during a
-  run queues one newer run. `auto-release.sh` also holds `~/release/auto-release.lock`, so it waits for a manual
-  tmux release instead of overlapping it.
+  run queues one newer run. `auto-release.sh` also holds `~/.aphrody/deploy/auto-release.lock`, so it waits for a manual
+  tmux release instead of overlapping it. It builds in the single checkout `~/src/aphrody` (fast-forward only; a
+  newer `main` is published instead of an older revision).
 - Releases are immutable (`releases/<UTC>-<commit12>`, `current` flipped atomically, five kept). Docs-only pushes
   (`docs/**`, `*.md`, `.coord/**`) do not release.
 - Secrets: repository `release` environment, never in the workflow text. `RELEASE_SSH_KEY` (private key of a
