@@ -1,6 +1,6 @@
 {
   "readme": {
-    "summary": "Aphrody is a user-space operating system built from this monorepo: Rust crates (`crates/`), Bun packages (`packages/`), the Material Design 3 UI framework (`m3/`) and Python packages (`py/`), on its own JavaScript runtime, [aphrody-labs/bun](https://github.com/aphrody-labs/bun), a fork of Bun. This repository is private; the runtime, the component forks and the published builds are public.",
+    "summary": "Aphrody is a user-space operating system built from the aphrody-labs/aphrody monorepo: Rust crates (`crates/`), Bun packages (`packages/`), the Material Design 3 UI framework (`m3/`) and Python packages (`py/`), on its own JavaScript runtime, [aphrody-labs/bun](https://github.com/aphrody-labs/bun), a fork of Bun. The monorepo is private; the runtime, the component forks and the published builds are public.",
     "sections": [
       {
         "id": "os",
@@ -42,8 +42,8 @@
         "public": true,
         "body": [
           "- Runtime: [aphrody.com/docs](https://aphrody.com/docs), built from `docs/` of aphrody-labs/bun (the Bun documentation plus the pages the fork adds); [llms.txt](https://aphrody.com/llms.txt) indexes every page.",
-          "- Components and versions: [aphrody.com/components](https://aphrody.com/components), generated from this repository, the runtime and the aphrody-labs organization at each site build.",
-          "- Distribution internals: `docs/` of this repository (index in `docs/README.md`), private with the repository."
+          "- Components and versions: [aphrody.com/components](https://aphrody.com/components), generated from the monorepo, the runtime and the aphrody-labs organization at each site build.",
+          "- Distribution internals: `docs/` of the monorepo (index in `docs/README.md`), private with it."
         ]
       },
       {
