@@ -16,6 +16,8 @@
 //! qu'il publie. Les résultats sont mis en cache par empreinte SHA-256 du contenu source et de la
 //! requête : deux chemins vers les mêmes octets partagent l'entrée.
 
+#[cfg(feature = "fs")]
+use std::path::{Path, PathBuf};
 use std::{
     collections::{HashMap, VecDeque},
     fmt,
@@ -23,8 +25,6 @@ use std::{
     str::FromStr,
     sync::{Arc, LazyLock, Mutex, PoisonError},
 };
-#[cfg(feature = "fs")]
-use std::path::{Path, PathBuf};
 
 use aphrody_svg::{
     glyph::NumberFormat,
@@ -133,7 +133,8 @@ impl fmt::Display for Format {
 
 fn est_svg(octets: &[u8]) -> bool {
     let tete = &octets[..octets.len().min(4096)];
-    let Ok(texte) = std::str::from_utf8(tete).or_else(|e| std::str::from_utf8(&tete[..e.valid_up_to()]))
+    let Ok(texte) =
+        std::str::from_utf8(tete).or_else(|e| std::str::from_utf8(&tete[..e.valid_up_to()]))
     else {
         return false;
     };
@@ -149,7 +150,8 @@ fn est_svg(octets: &[u8]) -> bool {
             break;
         }
     }
-    reste.starts_with("<svg") && reste[4..].starts_with(|c: char| c.is_whitespace() || c == '>' || c == '/')
+    reste.starts_with("<svg")
+        && reste[4..].starts_with(|c: char| c.is_whitespace() || c == '>' || c == '/')
 }
 
 /// Un glyphe Material Symbols : nom, style, axes.
@@ -170,9 +172,7 @@ impl SymboleSpec {
         let spec = spec.strip_prefix("symbol:").unwrap_or(spec);
         let (nom, requete) = spec.split_once('?').unwrap_or((spec, ""));
         if !symbols::is_symbol_name(nom) {
-            return Err(LoadError::SymboleInvalide(format!(
-                "nom « {nom} » (attendu [a-z0-9_]+)"
-            )));
+            return Err(LoadError::SymboleInvalide(format!("nom « {nom} » (attendu [a-z0-9_]+)")));
         }
         let mut style = SymbolStyle::Outlined;
         let mut axes = SymbolAxes::default();
@@ -429,10 +429,15 @@ impl Loaded {
 /// Téléchargement : `Ok(None)` pour un 404.
 pub type Fetch = dyn Fn(&str) -> Result<Option<Vec<u8>>, String> + Send + Sync;
 
-#[derive(Default)]
 struct Cache<V> {
     entrees: HashMap<[u8; 32], V>,
     ordre: VecDeque<[u8; 32]>,
+}
+
+impl<V> Default for Cache<V> {
+    fn default() -> Self {
+        Self { entrees: HashMap::new(), ordre: VecDeque::new() }
+    }
 }
 
 impl<V: Clone> Cache<V> {
@@ -729,9 +734,9 @@ impl Loader {
                     });
                 }
                 let texte = String::from_utf8_lossy(&octets);
-                aphrody_svg::sanitize::sanitize(&texte, SanitizeOptions::default()).map_err(|e| {
-                    LoadError::Decodage { format: Format::Symbole, message: e.to_string() }
-                })?
+                aphrody_svg::sanitize::sanitize(&texte, SanitizeOptions::default()).map_err(
+                    |e| LoadError::Decodage { format: Format::Symbole, message: e.to_string() },
+                )?
             };
             rendre_svg(&svg, Format::Symbole, Some(opsz), requete, empreinte)
         })
@@ -817,7 +822,10 @@ fn dimensions(
         },
     };
     if u64::from(dims.0) * u64::from(dims.1) > MAX_PIXELS {
-        return Err(LoadError::Requete(format!("{}x{} dépasse {MAX_PIXELS} pixels", dims.0, dims.1)));
+        return Err(LoadError::Requete(format!(
+            "{}x{} dépasse {MAX_PIXELS} pixels",
+            dims.0, dims.1
+        )));
     }
     Ok((dims, recadre))
 }
@@ -847,8 +855,7 @@ fn teinter(img: &mut Image, [r, g, b, a]: [u8; 4]) {
 
 /// Redimensionne (Lanczos 3) selon `fit`, recadre pour `Cover`, teinte.
 fn ajuster(img: Image, requete: &Request) -> Result<Image, LoadError> {
-    let ((w, h), recadre) =
-        dimensions((f64::from(img.largeur), f64::from(img.hauteur)), requete)?;
+    let ((w, h), recadre) = dimensions((f64::from(img.largeur), f64::from(img.hauteur)), requete)?;
     let mut img = if (w, h) == (img.largeur, img.hauteur) {
         img
     } else {
@@ -889,7 +896,11 @@ fn rendre_svg(
         .ok_or_else(|| LoadError::Decodage { format, message: "SVG sans taille".into() })?;
     // Un glyphe se rend à `opsz` px par défaut, comme la police à sa taille optique.
     let (iw, ih) = cote_glyphe.map_or((iw, ih), |c| (f64::from(c), f64::from(c)));
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, reason = "taille d'affichage")]
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "taille d'affichage"
+    )]
     let intrinseque = (iw.round().max(1.0) as u32, ih.round().max(1.0) as u32);
     let base = |contenu| Loaded {
         format,
@@ -904,11 +915,11 @@ fn rendre_svg(
         Output::Svg => {
             let mut doc = svg.to_owned();
             if let Some(t) = requete.tint {
-                doc = aphrody_svg::theme::apply(&doc, &Theme::new().tint(hex(t))).map_err(erreur)?;
+                doc =
+                    aphrody_svg::theme::apply(&doc, &Theme::new().tint(hex(t))).map_err(erreur)?;
             }
             let (w, h) = recadre.map_or((w, h), |c| (c, c));
-            let sizing =
-                Sizing::Fixed { width: Some(f64::from(w)), height: Some(f64::from(h)) };
+            let sizing = Sizing::Fixed { width: Some(f64::from(w)), height: Some(f64::from(h)) };
             let doc = viewbox::normalize(&doc, sizing).map_err(erreur)?;
             Ok(base(Contenu::Svg(doc)))
         },
@@ -938,7 +949,8 @@ pub fn meilleure_entree(entrees: &[EntreeIco], cible: Option<u32>) -> Option<usi
     let plus_grande = |(_, a): &(usize, &EntreeIco), (_, b): &(usize, &EntreeIco)| {
         cote(a).cmp(&cote(b)).then(a.bits.cmp(&b.bits))
     };
-    let couvrantes = entrees.iter().enumerate().filter(|(_, e)| cible.is_some_and(|c| cote(e) >= c));
+    let couvrantes =
+        entrees.iter().enumerate().filter(|(_, e)| cible.is_some_and(|c| cote(e) >= c));
     couvrantes
         .min_by(|(_, a), (_, b)| cote(a).cmp(&cote(b)).then(b.bits.cmp(&a.bits)))
         .or_else(|| entrees.iter().enumerate().max_by(plus_grande))
@@ -1023,12 +1035,17 @@ mod tests {
             .expect("valide");
         assert_eq!(s.nom, "home");
         assert_eq!(s.style, SymbolStyle::Rounded);
-        assert_eq!(s.axes, SymbolAxes { fill: 1.0, weight: 300.0, grade: -25.0, optical_size: 48.0 });
+        assert_eq!(
+            s.axes,
+            SymbolAxes { fill: 1.0, weight: 300.0, grade: -25.0, optical_size: 48.0 }
+        );
         assert_eq!(
             SymboleSpec::parse("home").expect("défauts").canonique(),
             "symbol:home?style=outlined&fill=0&wght=400&grad=0&opsz=24"
         );
-        for faux in ["", "Home", "../x", "a?style=bold", "a?wght=900", "a?fill=x", "a?zoom=2", "a?opsz=NaN"] {
+        for faux in
+            ["", "Home", "../x", "a?style=bold", "a?wght=900", "a?fill=x", "a?zoom=2", "a?opsz=NaN"]
+        {
             assert!(
                 matches!(SymboleSpec::parse(faux), Err(LoadError::SymboleInvalide(_))),
                 "{faux}"
@@ -1061,10 +1078,22 @@ mod tests {
     #[test]
     fn dimensions_selon_fit() {
         let r = |size, fit| Request { size, fit, ..Request::default() };
-        assert_eq!(dimensions((200.0, 100.0), &r(Some(50), Fit::Contain)).ok(), Some(((50, 25), None)));
-        assert_eq!(dimensions((200.0, 100.0), &r(Some(50), Fit::Cover)).ok(), Some(((100, 50), Some(50))));
-        assert_eq!(dimensions((200.0, 100.0), &r(Some(50), Fit::Fill)).ok(), Some(((50, 50), None)));
-        assert_eq!(dimensions((200.0, 100.0), &r(Some(50), Fit::None)).ok(), Some(((200, 100), None)));
+        assert_eq!(
+            dimensions((200.0, 100.0), &r(Some(50), Fit::Contain)).ok(),
+            Some(((50, 25), None))
+        );
+        assert_eq!(
+            dimensions((200.0, 100.0), &r(Some(50), Fit::Cover)).ok(),
+            Some(((100, 50), Some(50)))
+        );
+        assert_eq!(
+            dimensions((200.0, 100.0), &r(Some(50), Fit::Fill)).ok(),
+            Some(((50, 50), None))
+        );
+        assert_eq!(
+            dimensions((200.0, 100.0), &r(Some(50), Fit::None)).ok(),
+            Some(((200, 100), None))
+        );
         let x2 = Request { scale: 2.0, ..r(None, Fit::Contain) };
         assert_eq!(dimensions((20.0, 10.0), &x2).ok(), Some(((40, 20), None)));
         assert!(dimensions((1.0, 1.0), &r(Some(20_000), Fit::Fill)).is_err());

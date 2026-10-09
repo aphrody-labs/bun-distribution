@@ -27,7 +27,8 @@
     "./atlas": "./src/atlas.ts",
     "./pet": "./src/pet.ts",
     "./runtime": "./src/runtime.ts",
-    "./element": "./src/element.ts"
+    "./element": "./src/element.ts",
+    "./load": "./src/load.ts"
   },
   "publishConfig": {
     "access": "public"
