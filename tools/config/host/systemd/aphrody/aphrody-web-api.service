@@ -17,8 +17,9 @@ EnvironmentFile=/etc/aphrody/aphrody-web-api.env
 ExecStart=/home/ubuntu/apps/aphrody/current/bin/aphrody-web-api
 Restart=on-failure
 RestartSec=2
-ProtectHome=true
-ReadWritePaths=/home/ubuntu/apps/aphrody/shared/bxc
+ProtectHome=tmpfs
+BindReadOnlyPaths=/home/ubuntu/apps/aphrody
+BindPaths=/home/ubuntu/apps/aphrody/shared/bxc
 
 [Install]
 WantedBy=multi-user.target
