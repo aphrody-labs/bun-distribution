@@ -942,6 +942,32 @@
           ]
         },
         {
+          "name": "aphrody-taffy",
+          "path": "crates/ui/taffy",
+          "description": "Aphrody fork of Taffy, a flexible UI layout library (flexbox, grid, block, float), with local layout fixes; the library is still imported as `taffy`.",
+          "bins": [],
+          "features": [
+            "alloc",
+            "block_layout",
+            "calc",
+            "content_size",
+            "debug",
+            "default",
+            "detailed_layout_info",
+            "document-features",
+            "flexbox",
+            "float_layout",
+            "grid",
+            "parse",
+            "parse_faster",
+            "profile",
+            "serde",
+            "std",
+            "strict_provenance",
+            "taffy_tree"
+          ]
+        },
+        {
           "name": "aphrody-tauri",
           "path": "crates/tauri/aphrody-tauri",
           "description": "Make tiny, secure apps for all desktop platforms with Tauri",
@@ -1561,32 +1587,6 @@
           "description": "Unicode validation and transcoding at billions of characters per second",
           "bins": [],
           "features": []
-        },
-        {
-          "name": "taffy",
-          "path": "crates/ui/taffy",
-          "description": "A flexible UI layout library",
-          "bins": [],
-          "features": [
-            "alloc",
-            "block_layout",
-            "calc",
-            "content_size",
-            "debug",
-            "default",
-            "detailed_layout_info",
-            "document-features",
-            "flexbox",
-            "float_layout",
-            "grid",
-            "parse",
-            "parse_faster",
-            "profile",
-            "serde",
-            "std",
-            "strict_provenance",
-            "taffy_tree"
-          ]
         },
         {
           "name": "yolo-runtime",

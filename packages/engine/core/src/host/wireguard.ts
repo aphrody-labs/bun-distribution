@@ -67,7 +67,20 @@ export interface Tunnel {
   peers: TunnelPeer[];
   services: TunnelService[];
   grants: Record<string, string[]>;
-  firewall: { marker: string; foreignMarkers: string[]; neverOpen: number[] };
+  firewall: {
+    marker: string;
+    foreignMarkers: string[];
+    neverOpen: number[];
+    meshDenied?: string[];
+  };
+  /** All-port, all-protocol reachability between trusted members (dev PCs, build hub); never towards meshDenied. */
+  mesh?: TunnelMesh[];
+}
+export interface TunnelMesh {
+  id: string;
+  from: string[];
+  to: string[];
+  note?: string;
 }
 
 export function loadTunnel(root: string, file = TUNNEL_FILE): Tunnel {
@@ -205,6 +218,13 @@ export function tunnelProblems(root: string, file = TUNNEL_FILE): string[] {
     )
   )
     problems.push(`${file}: firewall marker collides with a foreign marker`);
+  const members = new Set([t.hub.peer, ...t.peers.map((p) => p.id)]);
+  for (const m of t.mesh ?? [])
+    for (const id of [...m.from, ...m.to]) {
+      if (!members.has(id)) problems.push(`${file}: mesh ${m.id} names unknown member ${id}`);
+      if (m.to.includes(id) && t.firewall.meshDenied?.includes(id))
+        problems.push(`${file}: mesh ${m.id} opens every port of ${id}, which is meshDenied`);
+    }
   for (const rule of ufwRules(t))
     if (t.firewall.foreignMarkers.some((m) => rule.text.includes(m)))
       problems.push(`${file}: ufw rule carries a foreign marker: ${rule.text}`);
@@ -445,6 +465,8 @@ export function ufwRules(t: Tunnel): UfwRule[] {
       if (!s || !p || s.status === "pending" || s.port === undefined || s.address === p.address)
         continue;
       const comment = `comment '${t.firewall.marker}-${peerId}'`;
+      // Traffic the hub originates leaves through OUTPUT, which ufw admits: no forwarding rule applies.
+      if (peerId === t.hub.peer) continue;
       if (s.host === t.hub.peer)
         add(
           peerId,
@@ -460,6 +482,30 @@ export function ufwRules(t: Tunnel): UfwRule[] {
           id,
         );
     }
+  for (const m of t.mesh ?? [])
+    for (const from of m.from)
+      for (const to of m.to) {
+        const src =
+          from === t.hub.peer ? t.hub.address : t.peers.find((x) => x.id === from)?.address;
+        const dst = to === t.hub.peer ? t.hub.address : t.peers.find((x) => x.id === to)?.address;
+        // Hub-originated traffic leaves through OUTPUT; a member never needs a rule towards itself.
+        if (!src || !dst || from === to || from === t.hub.peer) continue;
+        const comment = `comment '${t.firewall.marker}-${from}'`;
+        if (to === t.hub.peer)
+          add(
+            from,
+            "input",
+            `allow in on ${iface} from ${src} to ${dst} ${comment}`,
+            `mesh:${m.id}:${to}`,
+          );
+        else
+          add(
+            from,
+            "route",
+            `route allow in on ${iface} out on ${iface} from ${src} to ${dst} ${comment}`,
+            `mesh:${m.id}:${to}`,
+          );
+      }
   return rules;
 }
 

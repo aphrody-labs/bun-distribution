@@ -87,6 +87,8 @@ test("a declaration that breaks a rule is reported", () => {
     ["world source", (t) => (t.peers[3].udpSource.ips = ["0.0.0.0/0"]), /one public address/],
     ["postgres exposed", (t) => (t.services[0].port = 5432), /never-open port/],
     ["unknown grant", (t) => (t.grants.omar = ["nope"]), /unknown service/],
+    ["mesh to dbfr", (t) => t.mesh[0].to.push("dbfr"), /opens every port of dbfr/],
+    ["mesh unknown member", (t) => t.mesh[0].from.push("nobody"), /unknown member nobody/],
     ["private key in file", (t) => (t.$note = `PrivateKey = ${newKey()}`), /private key material/],
   ];
   for (const [label, mutate, pattern] of bad) {
@@ -248,20 +250,37 @@ test("ufw rules: specific sources, own marker, nothing for postgres, redis or th
     "route:ssh-dbfr",
     "route:ssh-wsl",
     "route:ssh-aphro-pc",
-    "input:mcp-http",
-    "input:a2a",
+    "route:remote-desktop-aphro-pc",
+    "route:vnc-aphro-pc",
+    "route:mcp-http-aphro-pc",
+    "route:mesh:dev-pcs:aphro-pc",
+    "input:mesh:pcs-to-build-hub:vps",
   ]);
+  const mesh = rules.filter((r) => r.service?.startsWith("mesh:"));
+  expect(mesh.map((r) => r.text)).toEqual([
+    "ufw route allow in on wg1 out on wg1 from 10.200.77.4 to 10.200.77.10 comment 'aphrody-wg-aphro-pc'",
+    "ufw route allow in on wg1 out on wg1 from 10.200.77.10 to 10.200.77.4 comment 'aphrody-wg-omar'",
+    "ufw allow in on wg1 from 10.200.77.4 to 10.200.77.1 comment 'aphrody-wg-aphro-pc'",
+    "ufw allow in on wg1 from 10.200.77.10 to 10.200.77.1 comment 'aphrody-wg-omar'",
+    "ufw allow in on wg1 from 10.200.77.3 to 10.200.77.1 comment 'aphrody-wg-dbfr'",
+    "ufw route allow in on wg1 out on wg1 from 10.200.77.3 to 10.200.77.4 comment 'aphrody-wg-dbfr'",
+    "ufw route allow in on wg1 out on wg1 from 10.200.77.3 to 10.200.77.10 comment 'aphrody-wg-dbfr'",
+  ]);
+  // dbfr hosts PostgreSQL and Redis: no all-port rule ever targets it.
+  expect(mesh.some((r) => r.text.includes("to 10.200.77.3 "))).toBe(false);
   expect(
     rules
-      .filter((r) => r.kind === "route")
+      .filter((r) => r.kind === "route" && !r.service?.startsWith("mesh:"))
       .every((r) =>
-        /to 10\.200\.77\.([234] port (22|8793)|10 port (22|5900|8793|8795)) /.test(r.text),
+        /to 10\.200\.77\.([23] port (22|8793)|(4|10) port (22|5900|8793|8795)) /.test(r.text),
       ),
   ).toBe(true);
-  expect(rules.filter((r) => r.peer === "dbfr").map((r) => r.text)).toEqual([
+  expect(
+    rules.filter((r) => r.peer === "dbfr" && !r.service?.startsWith("mesh:")).map((r) => r.text),
+  ).toEqual([
     "ufw route allow in on wg1 out on wg1 from 10.200.77.3 to 10.200.77.4 port 22 proto tcp comment 'aphrody-wg-dbfr'",
     "ufw allow in on wg1 from 10.200.77.3 to 10.200.77.1 port 22 proto tcp comment 'aphrody-wg-dbfr'",
-    "ufw allow in on wg1 from 10.200.77.3 to 10.200.77.1 port 8793 proto tcp comment 'aphrody-wg-dbfr'",
+    "ufw route allow in on wg1 out on wg1 from 10.200.77.3 to 10.200.77.10 port 22 proto tcp comment 'aphrody-wg-dbfr'",
   ]);
 });
 

@@ -560,6 +560,14 @@
       "dropIns": [],
       "ownerRepo": "aphrody",
       "targetHost": "wsl"
+    },
+    {
+      "service": "aphrody-site",
+      "unit": "aphrody-site.service",
+      "path": "systemd/aphrody/aphrody-site.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
     }
   ],
   "nginx": [

@@ -134,7 +134,7 @@ Les routes REST hors `/mcp` ne sont pas derrière le Bearer : garder la règle p
 
 `aphrody infra remote serve` démarre aussi un serveur VNC sur l'adresse de `--bind`, port 5900 (`--vnc <ip:port>`
 pour changer, `--no-vnc` pour le couper). Il n'écoute jamais `0.0.0.0` et n'admet que le loopback et les membres
-autorisés à un service `vnc-*` de l'inventaire, soit `10.200.77.4` (`--vnc-allow` pour remplacer). Mot de passe :
+autorisés au service `vnc-*` lié à cette adresse (`vnc-omar` : `10.200.77.4`) (`--vnc-allow` pour remplacer). Mot de passe :
 `APHRODY_VNC_PASSWORD`, sinon `<aphrody home>\private\vnc.password`, sinon dérivé du jeton du bureau à distance
 (8 caractères) ; il n'est jamais affiché, seule sa source l'est.
 
@@ -200,6 +200,29 @@ agent `computer_*` distante vise `http://10.200.77.10:8793/mcp` avec le jeton MC
 | 8   | Reconnexion                    | fermer/rouvrir l'onglet ; `wg down`/`wg up` ; reprise sans redémarrer `serve` |
 | 9   | Jeton faux                     | refus (401) sur 8795 et `/mcp`                                                |
 | 10  | MCP                            | `tools/list` contient `computer_*`, `computer_observe` renvoie un état        |
+
+## 3 bis. Sens inverse : Omar contrôle aphro-pc (2026-10-09)
+
+Décision du propriétaire du 2026-10-09 : contrôle bidirectionnel complet. Defender et le pare-feu Windows sont
+désactivés exprès sur les deux PC de dev : les règles 2.5 et 2.8 restent déclarées mais sont inertes. Le contrôle
+d'accès repose sur l'adresse wg1, les règles routées ufw du vps, les jetons Bearer et l'allowlist VNC.
+
+aphro-pc sert déjà, via des tâches planifiées auto-réparatrices `\Aphrody\` : bureau `10.200.77.4:8795`, VNC
+`10.200.77.4:5900` (allowlist `10.200.77.10`), MCP `10.200.77.4:8793` (`computer_*` WinClean). Côté Omar :
+
+```powershell
+aphrody infra remote token set remote --target aphro-pc   # jeton reçu hors bande (stdin)
+aphrody infra remote token set vnc --target aphro-pc
+aphrody infra remote status                               # handshakes, 8795/5900/8793 d'aphro-pc
+aphrody infra remote open aphro-pc                        # bureau navigateur
+aphrody infra remote connect aphro-pc --screenshot owner.jpg
+ssh aphro-pc whoami                                       # après installation de sa clé (4 bis)
+```
+
+Les deux PC et le vps sont maillés sur tous les ports (`mesh` `dev-pcs`, `pcs-to-build-hub`) ; dbfr n'est joint que
+par services nommés (`meshDenied`). Le vps et dbfr joignent les deux PC en SSH. Carte réseau locale :
+`bun packages/engine/core/src/host/cli.ts net-env --member omar --probe --write`, voir
+[PRIVATE-TUNNEL.md](PRIVATE-TUNNEL.md#network-map).
 
 ## 4. Prompt Codex du PC d'Omar (build source, tunnel, contrôle à distance)
 

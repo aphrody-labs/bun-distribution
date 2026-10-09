@@ -2,7 +2,7 @@
   "$comment": "Single source of the non-secret variables of Omar's remote setup. No private key, token or public IP here: tokens travel out of band, the public address stays in host logs and ssh/omar.authorized_keys only.",
   "schemaVersion": 1,
   "principal": "omar",
-  "updated": "2026-10-08",
+  "updated": "2026-10-09",
   "identity": {
     "githubLogin": "KyrioFox",
     "discordUserId": "1527405876695142620",
@@ -14,11 +14,18 @@
     "interface": "wg1",
     "address": "10.200.77.10/32",
     "publicKey": "lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=",
-    "hub": { "host": "vps", "endpoint": "51.77.147.152:51821", "address": "10.200.77.1" },
+    "hub": {
+      "host": "vps",
+      "endpoint": "51.77.147.152:51821",
+      "address": "10.200.77.1"
+    },
     "inventory": "tools/config/host/wireguard/aphrody-tunnel.json"
   },
   "services": {
-    "ssh": { "bind": "10.200.77.10:22", "allowedFrom": "10.200.77.4" },
+    "ssh": {
+      "bind": "10.200.77.10:22",
+      "allowedFrom": "10.200.77.4,10.200.77.1,10.200.77.3"
+    },
     "remoteDesktop": {
       "bind": "10.200.77.10:8795",
       "allowedFrom": "10.200.77.4",
@@ -26,8 +33,13 @@
     },
     "mcpHttp": {
       "bind": "10.200.77.10:8793",
-      "allowedFrom": "10.200.77.4",
+      "allowedFrom": "10.200.77.4,10.200.77.1",
       "tokenEnv": "APHRODY_MCP_HTTP_TOKEN"
+    },
+    "vnc": {
+      "bind": "10.200.77.10:5900",
+      "allowedFrom": "10.200.77.4",
+      "passwordEnv": "APHRODY_VNC_PASSWORD"
     }
   },
   "reverseTunnel": {
@@ -36,9 +48,21 @@
     "login": "omar",
     "scheduledTask": "Aphrody Omar reverse",
     "forwards": [
-      { "remote": "127.0.0.1:22010", "local": "127.0.0.1:22", "service": "ssh" },
-      { "remote": "127.0.0.1:28795", "local": "127.0.0.1:8795", "service": "remoteDesktop" },
-      { "remote": "127.0.0.1:28793", "local": "127.0.0.1:8793", "service": "mcpHttp" }
+      {
+        "remote": "127.0.0.1:22010",
+        "local": "127.0.0.1:22",
+        "service": "ssh"
+      },
+      {
+        "remote": "127.0.0.1:28795",
+        "local": "127.0.0.1:8795",
+        "service": "remoteDesktop"
+      },
+      {
+        "remote": "127.0.0.1:28793",
+        "local": "127.0.0.1:8793",
+        "service": "mcpHttp"
+      }
     ]
   },
   "ownerAliases": {
@@ -54,7 +78,16 @@
     "Omar's own SSH public key (replaces the shared windows-aphro key)",
     "first wg1 handshake from 10.200.77.10",
     "Windows user name for the User of the omar-pc / omar-rt aliases",
-    "remote.token and mcp.token delivered out of band"
+    "remote.token and mcp.token delivered out of band",
+    "aphro-pc remote/vnc/mcp tokens delivered to Omar out of band"
   ],
-  "runbook": "docs/operations/infra/OMAR-REMOTE-CONTROL.md"
+  "runbook": "docs/operations/infra/OMAR-REMOTE-CONTROL.md",
+  "ownerServices": {
+    "$comment": "aphro-pc services granted to Omar (owner decision 2026-10-09); tokens out of band.",
+    "ssh": "10.200.77.4:22",
+    "remoteDesktop": "10.200.77.4:8795",
+    "vnc": "10.200.77.4:5900",
+    "mcpHttp": "10.200.77.4:8793",
+    "mesh": "dev-pcs (all ports aphro-pc <-> omar), pcs-to-build-hub (all ports -> vps)"
+  }
 }

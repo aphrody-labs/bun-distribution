@@ -17,7 +17,7 @@ Source, tests and licences are tracked in the monorepo; Cargo needs no sibling c
 | `tauri-plugin-dialog` | 3.0.0-alpha.3 | `crates/tauri/aphrody-tauri-plugin-dialog` |  |
 | `aphrody-llama` | 0.83.5 | `crates/ml/llama` |  |
 | `aphrody-obscura` | 0.1.0 | `crates/web/obscura` |  |
-| `taffy` | 0.12.1 | `crates/ui/taffy` |  |
+| `aphrody-taffy` | 0.12.1 | `crates/ui/taffy` |  |
 
 ## Vital checkouts (0)
 

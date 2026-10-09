@@ -157,7 +157,9 @@
       "upstream": "127.0.0.1:8793",
       "unit": "aphrody-mcp-http",
       "auth": "bearer-token",
-      "caveat": "Private WireGuard socket-proxyd reaches the canonical loopback MCP listener. /mcp requires APHRODY_MCP_HTTP_TOKEN from its protected host store; no public listener. Tool capabilities are verified from the deployed binary."
+      "caveat": "Private WireGuard socket-proxyd reaches the canonical loopback MCP listener. /mcp requires APHRODY_MCP_HTTP_TOKEN from its protected host store; no public listener. Tool capabilities are verified from the deployed binary.",
+      "status": "pending",
+      "pendingReason": "vps reduced to the build machine on 2026-10-09 (docs/operations/infra/hosts-minimal-2026-10-09.md): the unit does not run there; the DBFR MCP (mcp-http-dbfr) serves the tunnel"
     },
     {
       "id": "a2a",
@@ -169,7 +171,9 @@
       "upstream": "127.0.0.1:8788",
       "unit": "aphrody-a2a",
       "auth": "unverified",
-      "caveat": "runs with APHRODY_A2A_DRY_RUN=1 (messages recorded and answered, no peer CLI spawned); no authentication layer is declared for it"
+      "caveat": "runs with APHRODY_A2A_DRY_RUN=1 (messages recorded and answered, no peer CLI spawned); no authentication layer is declared for it",
+      "status": "pending",
+      "pendingReason": "vps reduced to the build machine on 2026-10-09 (docs/operations/infra/hosts-minimal-2026-10-09.md): the unit does not run there; the DBFR MCP (mcp-http-dbfr) serves the tunnel"
     },
     {
       "id": "training",
@@ -221,10 +225,51 @@
       "expose": "peer-listener",
       "auth": "bearer-token",
       "caveat": "aphrody-mcp http with WinClean computer_* tools on Omar PC; per-action computer use target `omar` of crates/ai/agent-tools."
+    },
+    {
+      "id": "remote-desktop-aphro-pc",
+      "host": "windows",
+      "address": "10.200.77.4",
+      "port": 8795,
+      "proto": "tcp",
+      "expose": "peer-listener",
+      "auth": "bearer-token",
+      "caveat": "aphrody infra remote serve on the owner PC (task \\Aphrody\\Aphrody Remote Desktop, interactive session); token in <aphrody home>/private/remote-serve.env, given to Omar out of band; Windows firewall admits the granted peers only."
+    },
+    {
+      "id": "vnc-aphro-pc",
+      "host": "windows",
+      "address": "10.200.77.4",
+      "port": 5900,
+      "proto": "tcp",
+      "expose": "peer-listener",
+      "auth": "vnc-password",
+      "caveat": "RFB server of the same aphrody infra remote serve on the owner PC; allowlist = peers granted vnc-aphro-pc (Omar) in the server and the Windows firewall."
+    },
+    {
+      "id": "mcp-http-aphro-pc",
+      "host": "windows",
+      "address": "10.200.77.4",
+      "port": 8793,
+      "proto": "tcp",
+      "expose": "peer-listener",
+      "auth": "bearer-token",
+      "caveat": "aphrody-mcp http (WinClean computer_* tools) on 127.0.0.1:8793 of the owner PC, published on 10.200.77.4:8793 by netsh portproxy; bearer APHRODY_MCP_HTTP_TOKEN from <aphrody home>/private/mcp-http.env."
     }
   ],
   "grants": {
-    "omar": ["ssh-vps", "ssh-dbfr", "ssh-wsl", "ssh-aphro-pc", "mcp-http", "a2a", "training"],
+    "omar": [
+      "ssh-vps",
+      "ssh-dbfr",
+      "ssh-wsl",
+      "ssh-aphro-pc",
+      "mcp-http",
+      "a2a",
+      "training",
+      "remote-desktop-aphro-pc",
+      "vnc-aphro-pc",
+      "mcp-http-aphro-pc"
+    ],
     "aphro-pc": [
       "ssh-vps",
       "ssh-dbfr",
@@ -238,13 +283,34 @@
       "vnc-omar"
     ],
     "wsl": ["ssh-vps", "ssh-dbfr", "mcp-http", "a2a", "mcp-http-dbfr"],
-    "dbfr": ["ssh-aphro-pc", "ssh-vps", "mcp-http"],
-    "vps": ["mcp-http-dbfr"]
+    "dbfr": ["ssh-aphro-pc", "ssh-vps", "mcp-http", "ssh-omar"],
+    "vps": ["mcp-http-dbfr", "ssh-aphro-pc", "ssh-omar", "mcp-http-aphro-pc", "mcp-http-omar"]
   },
   "firewall": {
     "marker": "aphrody-wg",
     "foreignMarkers": ["shenron-admin"],
     "neverOpen": [5432, 6379],
-    "note": "Rules carry the aphrody-wg-<peer> comment. scripts/ops/admin-access.ts of Shenron only deletes rules whose comment is shenron-admin, so the two never collide. The tunnel subnet is RFC 1918 outside 10.8.0.0/24: admin-access-host.ts skips it (no ufw, fail2ban, pg_hba or admin-IP entry)."
-  }
+    "note": "Rules carry the aphrody-wg-<peer> comment. scripts/ops/admin-access.ts of Shenron only deletes rules whose comment is shenron-admin, so the two never collide. The tunnel subnet is RFC 1918 outside 10.8.0.0/24: admin-access-host.ts skips it (no ufw, fail2ban, pg_hba or admin-IP entry). meshDenied: dbfr hosts PostgreSQL and Redis, so it is reached per declared port only, never through a mesh.",
+    "meshDenied": ["dbfr"]
+  },
+  "mesh": [
+    {
+      "id": "dev-pcs",
+      "from": ["aphro-pc", "omar"],
+      "to": ["aphro-pc", "omar"],
+      "note": "Owner decision 2026-10-09: the two dev PCs (Defender and Windows Firewall off on purpose) reach each other on every port and protocol: SMB, desktop, VNC, MCP, dev servers, debuggers."
+    },
+    {
+      "id": "pcs-to-build-hub",
+      "from": ["aphro-pc", "omar", "dbfr"],
+      "to": ["vps"],
+      "note": "Owner decision 2026-10-09: the vps is the build machine; members reach every port it binds on wg1 or 0.0.0.0 (loopback services stay loopback)."
+    },
+    {
+      "id": "dbfr-to-pcs",
+      "from": ["dbfr"],
+      "to": ["aphro-pc", "omar"],
+      "note": "Owner decision 2026-10-09: the production host reaches every port of both dev PCs (agents, jobs, MCP, SSH)."
+    }
+  ]
 }

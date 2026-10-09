@@ -4,11 +4,13 @@
 //   host-plan <unit>... [--target H] [--expect-tools N] [--binary-from PATH --binary-sha256 HEX] [--observe] [--json]   steps to install the units (dry run)
 //   host-apply <unit>... --target H [--expect-tools N] [--binary-from PATH --binary-sha256 HEX] [--apply]               same plan; executes it only with --apply
 //   wg-plan [--observe] [--json]                                               private tunnel and omar account plan (no apply)
+//   net-env [--member M] [--probe] [--write] [--ssh-config] [--file F]          network map block of <aphrody home>/private/network.env
 //   wg-client <peer> [--hub-public-key K] [--format sections|paste|conf] [--private-key-file F|--private-key-stdin] [--out F]
 import { readFileSync } from "node:fs";
 import { checkCatalog, composeNginx, composeUnit, hostRoot, loadCatalog } from "./index.ts";
 import { applyPlan, hostPlan, observePlan, renderPlan } from "./plan.ts";
-import { wgMain } from "./wireguard.ts";
+import { netEnvMain } from "./net-env.ts";
+import { loadTunnel, wgMain } from "./wireguard.ts";
 
 const [cmd, arg] = process.argv.slice(2);
 const rest = process.argv.slice(3);
@@ -71,6 +73,13 @@ else if (cmd === "host-plan" || cmd === "host-apply") {
     console.error(`host: ${error instanceof Error ? error.message : error}`);
     process.exit(1);
   }
+} else if (cmd === "net-env") {
+  try {
+    await netEnvMain(loadTunnel(hostRoot()), process.argv.slice(3));
+  } catch (error) {
+    console.error(`host: ${error instanceof Error ? error.message : error}`);
+    process.exit(1);
+  }
 } else if (cmd === "list") for (const u of loadCatalog().units) console.log(u.unit, u.targetHost);
 else if (cmd === "check") {
   const problems = checkCatalog();
@@ -79,7 +88,7 @@ else if (cmd === "check") {
   process.exit(problems.length ? 1 : 0);
 } else {
   console.error(
-    "usage: cli.ts compose-unit <unit> | compose-nginx <file> | list | check | host-plan <unit>... | host-apply <unit>... | wg-plan | wg-client <peer>",
+    "usage: cli.ts compose-unit <unit> | compose-nginx <file> | list | check | host-plan <unit>... | host-apply <unit>... | wg-plan | wg-client <peer> | net-env",
   );
   process.exit(2);
 }

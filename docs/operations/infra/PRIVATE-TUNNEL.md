@@ -98,7 +98,7 @@ named in `needs`; the fresh-install adapter above executes the SSH/WireGuard sub
   key is the authentication. A second rule would duplicate Shenron's. The choice holds as long as that list keeps them;
   `wg-plan --observe` re-checks it (`vps.workstation-coverage`).
 - Tunnel access: `allow in on wg1 from <peer> to 10.200.77.1 port P` for vps services, `route allow in on wg1 out on wg1
-from <peer> to <host> port P` for services of another peer. dbfr needs no ufw change (22/tcp is already open). Nothing is
+  from <peer> to <host> port P` for services of another peer. dbfr needs no ufw change (22/tcp is already open). Nothing is
   ever opened for `5432` or `6379`.
 
 ### Who reaches what
@@ -107,8 +107,8 @@ from <peer> to <host> port P` for services of another peer. dbfr needs no ufw ch
 | -------- | ---------------------- | ------- | -------- | --- | ---------------------------------------------------------------------------- |
 | ssh      | vps `10.200.77.1:22`   | yes     | yes      | yes | sshd listener                                                                |
 | ssh      | dbfr `10.200.77.3:22`  | yes     | yes      | yes | routed by the hub                                                            |
-| MCP HTTP | vps `10.200.77.1:8789` | yes     | yes      | yes | `aphrody-wg-proxy@8789` to `127.0.0.1:8789`                                  |
-| A2A      | vps `10.200.77.1:8788` | yes     | yes      | yes | `aphrody-wg-proxy@8788` to `127.0.0.1:8788`                                  |
+| MCP HTTP | vps `10.200.77.1:8789` | pending | pending  | yes | vps reduced to the build machine on 2026-10-09; DBFR MCP serves the tunnel   |
+| A2A      | vps `10.200.77.1:8788` | pending | pending  | yes | same, `status: pending` in the declaration                                   |
 | training | WSL `10.200.77.2`      | pending | pending  | n/a | ports not declared anywhere: no rule is generated until the owner names them |
 
 `aphrody-wg-proxy@<port>` is a stock `systemd-socket-proxyd` behind a socket bound to the hub address only (`FreeBind`,
@@ -270,8 +270,8 @@ model and one credential store, both in `aphrody-remote-desktop`:
 `aphrody infra remote serve` also starts an RFB server (`rustvncserver` 2.2.1, Apache-2.0) fed by the same capture and
 injection as the browser desktop (Windows SendInput, X11 XTEST). It binds the `--bind` address on port 5900 (`--vnc
 <ip:port>` to change, `--no-vnc` to disable), never `0.0.0.0`, and admits loopback plus `--vnc-allow` (addresses, CIDRs,
-`any`); the default allowlist is the members granted a `vnc-*` service, today `aphro-pc` `10.200.77.4` only. Service
-`vnc-omar` (`10.200.77.10:5900`) is declared and granted to `aphro-pc`; the generated vps rule is:
+`any`); the default allowlist is the members granted the `vnc-*` service bound to that address (`vnc-omar` admits `aphro-pc`,
+`vnc-aphro-pc` admits `omar`). `vnc-omar` (`10.200.77.10:5900`) is granted to `aphro-pc`; the generated vps rule is:
 
 ```sh
 ufw route allow in on wg1 out on wg1 from 10.200.77.4 to 10.200.77.10 port 5900 proto tcp comment 'aphrody-wg-aphro-pc'
@@ -286,6 +286,39 @@ reachability of every declared desktop, VNC, MCP and shell service.
 Limits: RFB VNC authentication is DES over the first 8 password characters, so the tunnel stays the security boundary;
 the RFB stream is not encrypted outside WireGuard. `rfb-encodings` 0.1.7 is integrated under `crates/compat` with a
 pixel-format fix (BGRA viewers had red and blue swapped), provenance in `tools/config/upstream-sources.json`.
+
+## Bidirectional control and dev mesh (2026-10-09)
+
+Owner decisions of 2026-10-09: full two-way control between Omar, the owner and both VPS, as many ports as possible.
+Windows Defender and the Windows Firewall are disabled on purpose on both dev PCs; access control rests on the wg1
+binding, the hub's routed ufw rules, bearer tokens and the VNC allowlist.
+
+| Link            | Services                                                                                      | State 2026-10-09                      |
+| --------------- | --------------------------------------------------------------------------------------------- | ------------------------------------- |
+| aphro-pc → omar | `ssh-omar`, `remote-desktop-omar` 8795, `vnc-omar` 5900, `mcp-http-omar` 8793                 | rules applied, waits for Omar         |
+| omar → aphro-pc | `ssh-aphro-pc`, `remote-desktop-aphro-pc` 8795, `vnc-aphro-pc` 5900, `mcp-http-aphro-pc` 8793 | aphro-pc side serving, waits for Omar |
+| vps → PCs       | `ssh-aphro-pc`, `ssh-omar`, `mcp-http-aphro-pc`, `mcp-http-omar`                              | aphro-pc tested from the vps          |
+| dbfr → PCs      | `ssh-aphro-pc`, `ssh-omar` and the `dbfr-to-pcs` mesh                                         | aphro-pc 22/445/8793 tested           |
+| PCs → dbfr      | `mcp-http-dbfr` 8793 (aphro-pc), `ssh-dbfr`                                                   | aphro-pc tested (healthz, 401)        |
+
+The `mesh` array of the declaration opens every port between members: `dev-pcs` (aphro-pc ↔ omar),
+`pcs-to-build-hub` (aphro-pc, omar, dbfr → vps) and `dbfr-to-pcs`. `firewall.meshDenied: ["dbfr"]` forbids any
+all-ports rule towards dbfr (PostgreSQL, Redis): it is reached only through named services, and the generator check
+rejects a mesh that targets it. Rules from the hub itself are not generated (OUTPUT is allowed).
+
+aphro-pc serves through self-healing scheduled tasks under `\Aphrody\` (logon trigger, 5-minute repetition, restart on
+failure): `Aphrody Remote Desktop` (`aphrody infra remote serve --bind 10.200.77.4`, desktop 8795 and VNC 5900),
+`Aphrody MCP HTTP` (aphrody-mcp `http` on loopback 8793 with the WinClean `computer_*` catalog, published on
+`10.200.77.4:8793` by `netsh portproxy`) and `Aphrody WG aphro-pc`. From Omar: `aphrody infra remote open aphro-pc`,
+`vnc://10.200.77.4:5900`, MCP `http://10.200.77.4:8793/mcp` with the bearer token handed over out of band.
+
+### Network map
+
+`bun packages/engine/core/src/host/cli.ts net-env [--member M] [--probe] [--write [--ssh-config]]` renders the map of
+the declaration (members, services, grants, mesh, reachable set of the member, hub rule count, probe results) as `NET_*`
+variables between the `aphrody-net-map` markers of `<aphrody home>/private/network.env`. Only that block is rewritten;
+the secrets around it are never read out or printed. `--ssh-config` mirrors `~/.ssh/config` into `SSH_CONFIG`. The
+scheduled task `\Aphrody\Net Env Probe` refreshes it every 10 minutes on aphro-pc.
 
 ## Order, validation and rollback
 

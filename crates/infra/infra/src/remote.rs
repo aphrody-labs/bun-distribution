@@ -113,14 +113,12 @@ pub enum TokenAction {
     },
 }
 
-/// Addresses granted a `vnc-*` service of the inventory (the default RFB allowlist).
-fn vnc_grantees(inventory: &Inventory) -> Vec<String> {
-    let vnc: Vec<&str> = inventory
-        .services
-        .iter()
-        .filter(|s| s.id == "vnc" || s.id.starts_with("vnc-"))
-        .map(|s| s.id.as_str())
-        .collect();
+/// Addresses granted the `vnc-*` service served at `listen` (the default RFB allowlist); every
+/// `vnc-*` service when none is declared at that address (loopback bind).
+fn vnc_grantees(inventory: &Inventory, listen: &str) -> Vec<String> {
+    let all = || inventory.services.iter().filter(|s| s.id == "vnc" || s.id.starts_with("vnc-"));
+    let own: Vec<&str> = all().filter(|s| s.address == listen).map(|s| s.id.as_str()).collect();
+    let vnc = if own.is_empty() { all().map(|s| s.id.as_str()).collect() } else { own };
     inventory
         .grants
         .iter()
@@ -278,7 +276,11 @@ pub async fn execute_remote(root: &Path, cmd: &RemoteCommand) -> Result<Value> {
                 let vnc_bind = vnc.unwrap_or_else(|| SocketAddr::new(bind.ip(), 5900));
                 let inventory = rd::target::inventory(Some(root))?;
                 let entries =
-                    if vnc_allow.is_empty() { vnc_grantees(&inventory) } else { vnc_allow.clone() };
+                    if vnc_allow.is_empty() {
+                        vnc_grantees(&inventory, &vnc_bind.ip().to_string())
+                    } else {
+                        vnc_allow.clone()
+                    };
                 let mut allow = Vec::new();
                 for e in &entries {
                     allow.extend(rd::vnc::server::parse_allow(e)?);
@@ -429,7 +431,8 @@ mod tests {
     #[test]
     fn inventory_drives_vnc_allowlist_and_declared_targets() {
         let inv = Inventory::embedded().unwrap();
-        assert_eq!(vnc_grantees(&inv), vec!["10.200.77.4".to_owned()]);
+        assert_eq!(vnc_grantees(&inv, "10.200.77.10"), vec!["10.200.77.4".to_owned()]);
+        assert_eq!(vnc_grantees(&inv, "10.200.77.4"), vec!["10.200.77.10".to_owned()]);
         let urls: Vec<String> = declared_targets(&inv).iter().map(RemoteTarget::url).collect();
         assert!(urls.contains(&"vnc://10.200.77.10:5900".to_owned()), "{urls:?}");
         assert!(urls.contains(&"ws://10.200.77.10:8795".to_owned()), "{urls:?}");
