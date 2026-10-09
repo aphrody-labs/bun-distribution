@@ -18,6 +18,8 @@ Profil tuned : `throughput-performance` (paquet `tuned`, service activé).
 
 Comptes : `omar` rejoint le groupe `aphrody` ; `/home/ubuntu` passe en `0750` groupe `aphrody` (propriétaire inchangé).
 
-Non appliqué (à traiter ensuite) : fusion des checkouts `/home/omar/src`, des `~/apps` (les données restent dans `~/build/apps`, pas de copie faute de place sur `/`), `shenron-build` gardé tel quel (le runner est enregistré sous ce compte ; ses données ne sont pas déplacées), dédoublonnage des données live (écritures en place).
+Disposition unique (`layout.json`, appliquée le 2026-10-09) : `~/src` et `~/apps` sont des montages bind (fstab) sur le volume, `~/archive` et les dossiers de build de `/` (`fork-target`, `xmsvc`, `llama-build`, `tools-build`, `~/.cargo/{registry,git}`) pointent vers `~/build`, `/srv` est supprimé, `/home/omar/src` pointe vers `/home/ubuntu/src`, le runner `aphrody-shenron-build-runner` tourne sous `ubuntu` depuis `~/build/runners/shenron` (le compte `shenron-build` reste sans service).
+
+Reste à faire : `~/yolo/w` (28 Go, workspaces des builds yolo en cours) à déplacer vers `~/build` une fois le build arrêté ; les volumes Docker non utilisés (19,9 Go) ne sont pas supprimés sans copie vérifiée.
 
 Tuned : non retenu (le profil `throughput-performance` force `vm.swappiness=10` et `dirty 40/10`, contraire à la config zram) ; paquet purgé.
