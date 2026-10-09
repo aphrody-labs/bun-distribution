@@ -134,7 +134,9 @@ pub fn discover(binary: Option<PathBuf>, user_data: Option<PathBuf>) -> io::Resu
                 .collect(),
         });
     }
-    let mut native_messaging = Vec::new();
+    let native_messaging = Vec::new();
+    #[cfg(windows)]
+    let mut native_messaging = native_messaging;
     #[cfg(windows)]
     {
         for hive in ["HKCU", "HKLM"] {
