@@ -1414,6 +1414,7 @@ impl TextEngine {
             font_size: context.font_size,
             line_height: context.line_height,
             letter_spacing: context.letter_spacing,
+            word_spacing: context.word_spacing,
             letter_spacing_non_normal: context.letter_spacing_non_normal,
             weight: context.weight,
             optical_sizing: context.optical_sizing,
@@ -1601,7 +1602,7 @@ impl TextEngine {
         let marker_attrs = (line_clamp.is_some() || ellipsis_overflow)
             .then(|| spans.last().map(|(_, attrs)| attrs.clone()))
             .flatten();
-        let rich = spans.iter().map(|(text, attrs)| {
+        let rich = spans.iter().flat_map(|(text, attrs)| {
             let variation_index = attrs
                 .variations
                 .as_ref()
@@ -1613,7 +1614,7 @@ impl TextEngine {
                         + 1
                 })
                 .unwrap_or(0);
-            (text.as_str(), attrs.to_attrs(variation_index))
+            split_word_spacing(text.as_str(), attrs, attrs.to_attrs(variation_index))
         });
         let defaults = Attrs::new().family(Family::Name(FAMILY));
         if !template_hit {
@@ -2249,6 +2250,7 @@ struct SpanAttrs {
     font_size: f32,
     line_height: f32,
     letter_spacing: f32,
+    word_spacing: f32,
     letter_spacing_non_normal: bool,
     weight: u16,
     optical_sizing: crate::FontOpticalSizing,
@@ -2360,6 +2362,7 @@ struct SpanCtx {
     font_size: f32,
     line_height: f32,
     letter_spacing: f32,
+    word_spacing: f32,
     letter_spacing_non_normal: bool,
     color: [u8; 4],
     weight: u16,
@@ -2514,6 +2517,7 @@ fn base_span_ctx(base: &LayoutStyle, font: ResolvedFont, collector: &mut Collect
         font_size: base.font_size.unwrap_or(16.0),
         line_height,
         letter_spacing: base.letter_spacing.unwrap_or(0.0),
+        word_spacing: base.word_spacing.unwrap_or(0.0),
         letter_spacing_non_normal: base.letter_spacing_non_normal.unwrap_or(false),
         color: base.color.unwrap_or([0, 0, 0, 255]),
         weight: crate::style::used_font_weight(base),
@@ -2571,6 +2575,7 @@ fn collect_node_spans(
                 font_size: ctx.font_size,
                 line_height: ctx.line_height,
                 letter_spacing: ctx.letter_spacing,
+                word_spacing: ctx.word_spacing,
                 letter_spacing_non_normal: ctx.letter_spacing_non_normal,
                 weight: ctx.weight,
                 optical_sizing: ctx.optical_sizing,
@@ -2605,6 +2610,7 @@ fn collect_node_spans(
                         font_size: ctx.font_size,
                         line_height: ctx.line_height,
                         letter_spacing: ctx.letter_spacing,
+                        word_spacing: ctx.word_spacing,
                         letter_spacing_non_normal: ctx.letter_spacing_non_normal,
                         weight: ctx.weight,
                         optical_sizing: ctx.optical_sizing,
@@ -2671,6 +2677,9 @@ fn collect_node_spans(
                 letter_spacing: style
                     .and_then(|style| style.letter_spacing)
                     .unwrap_or(ctx.letter_spacing),
+                word_spacing: style
+                    .and_then(|style| style.word_spacing)
+                    .unwrap_or(ctx.word_spacing),
                 letter_spacing_non_normal: style
                     .and_then(|style| style.letter_spacing_non_normal)
                     .unwrap_or(ctx.letter_spacing_non_normal),
@@ -4505,6 +4514,7 @@ mod tests {
             font_size: 16.0,
             line_height: 18.0,
             letter_spacing: 0.0,
+            word_spacing: 0.0,
             letter_spacing_non_normal: false,
             weight: 400,
             optical_sizing: crate::FontOpticalSizing::Auto,
@@ -4581,6 +4591,7 @@ mod tests {
             font_size: 20.0,
             line_height: 24.0,
             letter_spacing: 2.0,
+            word_spacing: 0.0,
             letter_spacing_non_normal: true,
             weight: 400,
             optical_sizing: crate::FontOpticalSizing::Auto,
@@ -5293,4 +5304,36 @@ gamma</div>"#,
             "the bundled CBDT face must rasterize as color, not a monochrome mask"
         );
     }
+}
+
+/// CSS `word-spacing` for the shaper. Upstream adds the advance inside its patched cosmic-text
+/// (`Attrs::word_spacing`); athena-text has no such attribute, so every word separator (U+0020,
+/// U+00A0) becomes its own span whose letter-spacing carries the extra advance.
+fn split_word_spacing<'a>(
+    text: &'a str,
+    span: &SpanAttrs,
+    attrs: Attrs<'a>,
+) -> Vec<(&'a str, Attrs<'a>)> {
+    if !span.word_spacing.is_finite() || span.word_spacing == 0.0 {
+        return vec![(text, attrs)];
+    }
+    let letter = if span.letter_spacing.is_finite() { span.letter_spacing } else { 0.0 };
+    let spaced =
+        attrs.clone().letter_spacing((letter + span.word_spacing) / span.font_size.max(1.0));
+    let mut pieces = Vec::new();
+    let mut start = 0;
+    for (index, ch) in text.char_indices() {
+        if matches!(ch, ' ' | ' ') {
+            if start < index {
+                pieces.push((&text[start..index], attrs.clone()));
+            }
+            let end = index + ch.len_utf8();
+            pieces.push((&text[index..end], spaced.clone()));
+            start = end;
+        }
+    }
+    if start < text.len() {
+        pieces.push((&text[start..], attrs));
+    }
+    pieces
 }

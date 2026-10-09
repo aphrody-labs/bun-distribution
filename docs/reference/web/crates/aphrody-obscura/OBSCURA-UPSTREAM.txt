@@ -1,3 +1,8 @@
+Sync 2026-10-09: upstream main 1f8eb7643 (2026-10-08) applied on top of the base below as patches: bf10c461c (word-spacing; the
+vendor/cosmic-text part is replaced by splitting U+0020/U+00A0 into letter-spaced spans in obscura-render inline.rs, because athena-text has
+no Attrs::word_spacing), df5ee6579 (inline transforms), 657cedeef (cache eviction), 192561cee (CDP removeScriptToEvaluateOnNewDocument),
+52d8ddd5e (network error cause chain). Not applied: 4b14a76ff (crates/obscura-cli, not imported). Local fixes in the same sync: paint.rs
+test helper font_face_covers_ascii, private-network env tests serialized, obscura-net SSL_CERT_* tests ignored on Windows.
 obscura crates copied from https://github.com/h4ckf0r0day/obscura, upstream main 1fccab2c1ecd0f7eadc16d7a520ba227f9e7f782 (2026-10-04),
 merged on 2026-10-05 through the fork aphrody-labs/obscura branch yolo at dbea8a7c10fde49bac3e7d0795daddbd537ae7c7 (includes the fork SSRF commit 43ae887).
 Previous base: 1a3169da276d7720732c7b20535474942917fb83 (212 upstream commits merged). Method: three-way merge (old base / monorepo copy / new

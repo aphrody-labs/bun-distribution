@@ -4738,6 +4738,7 @@ fn paint_laid_dom_scrolled(
                                 false,
                                 None,
                                 0.0,
+                                0.0,
                                 clip,
                                 element_clip_mask,
                                 raster_scale,
@@ -4871,6 +4872,7 @@ fn paint_laid_dom_scrolled(
                     false,
                     style.font_family.as_deref(),
                     style.letter_spacing.unwrap_or(0.0),
+                    style.word_spacing.unwrap_or(0.0),
                     clip,
                     element_clip_mask,
                     raster_scale,
@@ -4910,6 +4912,7 @@ fn paint_laid_dom_scrolled(
                     is_bold,
                     style.font_family.as_deref(),
                     style.letter_spacing.unwrap_or(0.0),
+                    style.word_spacing.unwrap_or(0.0),
                     clip,
                     element_clip_mask,
                     raster_scale,
@@ -4936,6 +4939,7 @@ fn paint_laid_dom_scrolled(
                     crate::style::used_font_weight(style) >= 600,
                     style.font_family.as_deref(),
                     style.letter_spacing.unwrap_or(0.0),
+                    style.word_spacing.unwrap_or(0.0),
                     Some(visible_rect),
                     element_clip_mask,
                     raster_scale,
@@ -5109,6 +5113,7 @@ fn paint_laid_dom_scrolled(
                                 false,
                                 style.font_family.as_deref(),
                                 style.letter_spacing.unwrap_or(0.0),
+                                style.word_spacing.unwrap_or(0.0),
                                 clip,
                                 element_clip_mask,
                                 raster_scale,
@@ -5143,6 +5148,7 @@ fn paint_laid_dom_scrolled(
                                 false,
                                 style.font_family.as_deref(),
                                 style.letter_spacing.unwrap_or(0.0),
+                                style.word_spacing.unwrap_or(0.0),
                                 clip,
                                 element_clip_mask,
                                 raster_scale,
@@ -6952,6 +6958,7 @@ fn paint_text_node(
             is_bold,
             style.font_family.as_deref(),
             style.letter_spacing.unwrap_or(0.0),
+            style.word_spacing.unwrap_or(0.0),
             clip,
             clip_mask.as_ref(),
             raster_scale,
@@ -7034,6 +7041,7 @@ fn draw_text(
     is_bold: bool,
     family: Option<&str>,
     letter_spacing: f32,
+    word_spacing: f32,
     clip: Option<crate::Rect>,
     clip_mask: Option<&tiny_skia::Mask>,
     raster_scale: f32,
@@ -7140,11 +7148,13 @@ fn draw_text(
             // each word is its own independently-positioned box.
             caret.x += scaled_font.h_advance(id)
                 + if is_bold { raster_scale } else { 0.0 }
-                + letter_spacing * raster_scale;
+                + letter_spacing * raster_scale
+                + if matches!(c, ' ' | '\u{00a0}') { word_spacing * raster_scale } else { 0.0 };
         } else {
             caret.x += scaled_font.h_advance(id)
                 + if is_bold { raster_scale } else { 0.0 }
-                + letter_spacing * raster_scale;
+                + letter_spacing * raster_scale
+                + if matches!(c, ' ' | '\u{00a0}') { word_spacing * raster_scale } else { 0.0 };
         }
     }
 }
@@ -7262,7 +7272,9 @@ fn collect_web_fonts(
         let excluded = node.parent.and_then(|parent| tree.get_node(parent)).is_some_and(|parent| {
             parent.as_element().is_some_and(|element| matches!(&*element.local, "style" | "script"))
         });
-        if excluded { continue; }
+        if excluded {
+            continue;
+        }
         if let obscura_dom::tree::NodeData::Text { contents } = &node.data {
             characters.extend(contents.chars().map(u32::from));
         }
@@ -12383,8 +12395,12 @@ mod tests {
         (port, hits)
     }
 
+    // Both loader tests flip OBSCURA_ALLOW_PRIVATE_NETWORK; the test harness runs them in parallel.
+    static PRIVATE_NETWORK_ENV: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     #[test]
     fn default_loader_refuses_private_network_hosts() {
+        let _env = PRIVATE_NETWORK_ENV.lock().unwrap_or_else(|e| e.into_inner());
         std::env::remove_var("OBSCURA_ALLOW_PRIVATE_NETWORK");
         let (port, hits) = loopback_http_server(b"png-bytes");
         let mut cache = RenderResourceCache::default();
@@ -12408,11 +12424,14 @@ mod tests {
 
     #[test]
     fn default_loader_honors_the_private_network_opt_in() {
+        let _env = PRIVATE_NETWORK_ENV.lock().unwrap_or_else(|e| e.into_inner());
         std::env::set_var("OBSCURA_ALLOW_PRIVATE_NETWORK", "1");
         let (port, hits) = loopback_http_server(b"png-bytes");
         let mut cache = RenderResourceCache::default();
         let url = format!("http://127.0.0.1:{port}/a.png");
-        assert_eq!(fetch_bytes(&url, None, &mut cache).as_deref(), Some(b"png-bytes".as_slice()));
+        let fetched = fetch_bytes(&url, None, &mut cache);
+        std::env::remove_var("OBSCURA_ALLOW_PRIVATE_NETWORK");
+        assert_eq!(fetched.as_deref(), Some(b"png-bytes".as_slice()));
         assert_eq!(hits.load(std::sync::atomic::Ordering::SeqCst), 1);
     }
 
@@ -17492,6 +17511,10 @@ mod tests {
         );
         assert_eq!(selected[&hero].profile, ImageRequestProfile::CorsInclude);
         assert_eq!(intrinsic[&hero].natural_size(), Some((50.0, 30.0)));
+    }
+
+    fn font_face_covers_ascii(face: &str) -> bool {
+        font_face_covers_characters(face, &(0x20..0x7f).collect())
     }
 
     #[test]

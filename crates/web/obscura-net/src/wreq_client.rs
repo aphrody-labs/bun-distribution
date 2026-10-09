@@ -17,8 +17,8 @@ use url::Url;
 #[cfg(feature = "stealth")]
 use crate::client::{
     CallbackRegistry, InFlightGuard, ObscuraNetError, RequestInfo, RequestMode, ResourceRequest,
-    Response, SsrfGuardResolver, cors_required, env_allows_private_network, fetch_file_url,
-    is_forbidden_ip, redirect_taints_origin, request_fetch_site, request_referrer,
+    Response, SsrfGuardResolver, cors_required, env_allows_private_network, error_chain,
+    fetch_file_url, is_forbidden_ip, redirect_taints_origin, request_fetch_site, request_referrer,
     response_too_large, same_site_context, serialized_request_origin, validate_cors_response,
     validate_request_mode, validate_url,
 };
@@ -146,8 +146,9 @@ async fn read_wreq_body_limited(
     futures_util::pin_mut!(stream);
     let mut body = Vec::with_capacity(capacity);
     while let Some(chunk) = stream.next().await {
-        let chunk = chunk
-            .map_err(|error| ObscuraNetError::Network(format!("Failed to read body: {}", error)))?;
+        let chunk = chunk.map_err(|error| {
+            ObscuraNetError::Network(format!("Failed to read body: {}", error_chain(&error)))
+        })?;
         if chunk.len() > limit.saturating_sub(body.len()) {
             return Err(response_too_large(url, limit));
         }
@@ -391,12 +392,7 @@ impl StealthHttpClient {
             let in_flight = InFlightGuard::new(&self.in_flight);
             let resp =
                 send_get_with_connection_reset_retry(req, &current_url).await.map_err(|e| {
-                    ObscuraNetError::Network(format!(
-                        "{}: {} (source: {:?})",
-                        current_url,
-                        e,
-                        e.source()
-                    ))
+                    ObscuraNetError::Network(format!("{}: {}", current_url, error_chain(&e)))
                 })?;
 
             let status = resp.status();
@@ -553,8 +549,10 @@ impl StealthHttpClient {
         }
 
         let in_flight = InFlightGuard::new(&self.in_flight);
-        let resp =
-            req.send().await.map_err(|e| ObscuraNetError::Network(format!("{}: {}", url, e)))?;
+        let resp = req
+            .send()
+            .await
+            .map_err(|e| ObscuraNetError::Network(format!("{}: {}", url, error_chain(&e))))?;
 
         let status = resp.status();
         if store_cookies {
@@ -844,6 +842,19 @@ mod tests {
         let resp = client.fetch(&url).await.expect("a folded header must not fail the response");
         assert_eq!(resp.status, 200);
         assert_eq!(resp.text(), "folded");
+    }
+
+    #[tokio::test]
+    async fn stealth_network_error_names_the_cause() {
+        // A port nobody listens on: the message must say the connection was
+        // refused instead of only "error sending request", and must not be a
+        // Debug dump of the error structs.
+        let port = std::net::TcpListener::bind("127.0.0.1:0").unwrap().local_addr().unwrap().port();
+        let client = StealthHttpClient::with_proxy(Arc::new(CookieJar::new()), None, true);
+        let url = Url::parse(&format!("http://127.0.0.1:{port}/")).unwrap();
+        let message = client.fetch(&url).await.expect_err("nothing listens").to_string();
+        assert!(message.to_lowercase().contains("refused"), "{message}");
+        assert!(!message.contains("source: Some("), "{message}");
     }
 
     /// Serve one `Content-Encoding: gzip` response on an ephemeral port.

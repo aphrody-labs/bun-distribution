@@ -359,7 +359,7 @@
       "role": "dependency",
       "license": "Apache-2.0",
       "patches": [],
-      "note": "Obscura headless browser crates (obscura, obscura-browser, obscura-cdp, obscura-dom, obscura-js, obscura-mcp, obscura-net, obscura-render, obscura-ssrf) copied under crates/web as aphrody-obscura (facade) and obscura-* packages. Base: upstream main 1fccab2c1ecd0f7eadc16d7a520ba227f9e7f782 (2026-10-04), merged through the fork aphrody-labs/obscura branch yolo (dbea8a7, includes the fork SSRF commit 43ae887). Local changes are kept by three-way merge and listed in docs/reference/web/crates/aphrody-obscura/OBSCURA-UPSTREAM.txt; no patch file is recorded. vendor/taffy stays in aphrody-labs/taffy (git) and cosmic-text resolves to athena-text from crates.io.",
+      "note": "Obscura headless browser crates (obscura, obscura-browser, obscura-cdp, obscura-dom, obscura-js, obscura-mcp, obscura-net, obscura-render, obscura-ssrf) copied under crates/web as aphrody-obscura (facade) and obscura-* packages. Base: upstream main 1fccab2c1ecd0f7eadc16d7a520ba227f9e7f782 (2026-10-04), synced to 1f8eb7643 (2026-10-08) on 2026-10-09, merged through the fork aphrody-labs/obscura branch yolo (dbea8a7, includes the fork SSRF commit 43ae887). Local changes are kept by three-way merge and listed in docs/reference/web/crates/aphrody-obscura/OBSCURA-UPSTREAM.txt; no patch file is recorded. vendor/taffy stays in aphrody-labs/taffy (git) and cosmic-text resolves to athena-text from crates.io.",
       "integratedPath": "crates/web/obscura",
       "upstreamPackageIdentityPreserved": false
     },
