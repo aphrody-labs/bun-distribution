@@ -15,6 +15,7 @@ classifiers = ["Operating System :: POSIX :: Linux"]
 dedup = ["datasketch>=2.0"]
 full = ["datasets>=2.18", "datasketch>=2.0", "numpy>=1.26", "sentence-transformers>=6.1", "onnx>=1.18", "onnxscript>=0.5", "onnxruntime>=1.20", "peft>=0.10", "trl>=0.8", "torch==2.13.0"]
 mine = ["datasets>=2.18", "datasketch>=2.0", "numpy>=1.26", "sentence-transformers>=6.1", "torch==2.13.0"]
+qlora = ["bitsandbytes==0.50.0"]
 
 [tool.uv]
 index = [{ "name" = "pytorch-cu130", "url" = "https://download.pytorch.org/whl/cu130", "explicit" = true }]

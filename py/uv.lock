@@ -348,9 +348,13 @@ mine = [
     { name = "torch", version = "2.13.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux' and sys_platform != 'win32'" },
     { name = "torch", version = "2.13.0+cu130", source = { registry = "https://download.pytorch.org/whl/cu130" }, marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
 ]
+qlora = [
+    { name = "bitsandbytes" },
+]
 
 [package.metadata]
 requires-dist = [
+    { name = "bitsandbytes", marker = "extra == 'qlora'", specifier = "==0.50.0" },
     { name = "click", specifier = ">=8.1" },
     { name = "datasets", marker = "extra == 'full'", specifier = ">=2.18" },
     { name = "datasets", marker = "extra == 'mine'", specifier = ">=2.18" },
@@ -371,7 +375,7 @@ requires-dist = [
     { name = "torch", marker = "sys_platform != 'linux' and sys_platform != 'win32' and extra == 'mine'", specifier = "==2.13.0" },
     { name = "trl", marker = "extra == 'full'", specifier = ">=0.8" },
 ]
-provides-extras = ["dedup", "full", "mine"]
+provides-extras = ["dedup", "full", "mine", "qlora"]
 
 [[package]]
 name = "async-timeout"
@@ -419,6 +423,24 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/43/65/318323f98dbee45d42dff61d8f047181bc6f2268a9068cfad035a46be5af/beautifulsoup4-4.15.0.tar.gz", hash = "sha256:288e3ca7d54b06f2ac191970bc275c1939cb46d450b255bf6718b04aa37ab4f7", size = 632571, upload-time = "2026-06-07T16:44:20.453Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/88/c6/92fcd42f1ba33e1184263f25bfabf3d27c383410470f169e4b8163bf9c17/beautifulsoup4-4.15.0-py3-none-any.whl", hash = "sha256:d6f88de62e1d4e38ecb1077eb9724cd0eff29d2a08ca16a401e9b9e93f117cf9", size = 109924, upload-time = "2026-06-07T16:44:21.566Z" },
+]
+
+[[package]]
+name = "bitsandbytes"
+version = "0.50.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "torch", version = "2.13.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux' and sys_platform != 'win32'" },
+    { name = "torch", version = "2.13.0+cu130", source = { registry = "https://download.pytorch.org/whl/cu130" }, marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8b/6c/b3c2a6b05e0fb06c6258b675436b2b090192450d7f283826e6323471e270/bitsandbytes-0.50.0-py3-none-macosx_14_0_arm64.whl", hash = "sha256:c6f482df4dc18c7c150246577025de40dd0935031ea10a1e4122599a525b39bb", size = 123217, upload-time = "2026-07-24T19:48:51.724Z" },
+    { url = "https://files.pythonhosted.org/packages/d2/3a/fe0f0c7186436038319f15156386e844abc2ae1e54b8cda3f53b81a96cb9/bitsandbytes-0.50.0-py3-none-manylinux_2_24_aarch64.whl", hash = "sha256:824d931d8e77d7db09bb26d940268d36920e0757e2a2f49cce8766e309e13048", size = 23776757, upload-time = "2026-07-25T01:34:17.305Z" },
+    { url = "https://files.pythonhosted.org/packages/22/08/9501f4fc830448a6862bd5313df94a7dd1ae678f4f81087b96569d4a6f8b/bitsandbytes-0.50.0-py3-none-manylinux_2_24_x86_64.whl", hash = "sha256:173d137610468bec9cddbaa2e049254e97792657ab984e3e737bec1772c1668c", size = 40860117, upload-time = "2026-07-25T01:34:21.049Z" },
+    { url = "https://files.pythonhosted.org/packages/78/40/7b2253f94ec8c6235606aa393f315d941d02c44f141b7bccae14202b3fea/bitsandbytes-0.50.0-py3-none-win_amd64.whl", hash = "sha256:7f9ebf51d76a00341711cdd557af97555274b5aad3444975ff9927866a18bc11", size = 37961095, upload-time = "2026-07-25T01:34:24.809Z" },
+    { url = "https://files.pythonhosted.org/packages/b5/e9/3cbda2ff7574753a493fd2bc27c1dc64cb51d97534ad2136f64e68d34344/bitsandbytes-0.50.0-py3-none-win_arm64.whl", hash = "sha256:9c6f63f7f35c4425661256daca56664d2e4f05a5d230a9a148cb14df207bcca2", size = 128508, upload-time = "2026-07-25T01:34:27.322Z" },
 ]
 
 [[package]]
