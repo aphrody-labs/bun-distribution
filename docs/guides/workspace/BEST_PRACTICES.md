@@ -7,7 +7,7 @@ Ce document détaille les standards d'architecture, de mémoire et de concurrenc
 ## 1. Architecture Rust : Cœur Neutre & FFI Découplée
 
 ### Principe de Responsabilité Unique
-Le code de calcul intensif réside exclusivement dans [`crates/engine/yolo-core`](../../../crates/engine/yolo-core). Cette crate ne possède **aucune adhérence** à Python (PyO3) ni à Bun (`bun:ffi`) :
+Le code de calcul intensif réside dans [yolo-core du SDK Bun épinglé](https://github.com/aphrody-labs/bun/tree/6181424bc2fca4349560832161c07ba85c33e8ef/packages/bun-runtime-sdk/crates/yolo-core). Cette crate ne possède **aucune adhérence** à Python (PyO3) ni à Bun (`bun:ffi`) :
 - Pureté algorithmique : calculs vectorisés, `rayon::par_chunks()`.
 - Immutabilité des tranches : passage par référence `&[f64]` plutôt que transfert d'allocation `Vec<f64>` quand c'est possible.
 - Concurrence sûre : isolation des états modifiables via `parking_lot::RwLock` ou structures atomiques.

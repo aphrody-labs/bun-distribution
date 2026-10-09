@@ -5,9 +5,7 @@ import {
   CollectionReader,
   MangaReader,
   type ReaderCollectionEdition,
-} from "@aphrody/m3-reader";
-// oxlint-disable-next-line import/no-unassigned-import -- reader styles provide the portable reader layout and reduced-motion rules
-import "@aphrody/m3-reader/styles.css";
+} from "@aphrody/m3-reader/source";
 import { Card, Page, Section } from "../components/ui.tsx";
 import type { PageProps } from "./index.ts";
 

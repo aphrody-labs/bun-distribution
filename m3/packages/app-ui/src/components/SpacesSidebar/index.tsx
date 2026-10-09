@@ -39,6 +39,7 @@ import { SpaceSwitcher } from "./SpaceSwitcher";
 import { useChatStore, getProjectGroups } from "../../stores/chat-store";
 import { useI18n } from "../../i18n";
 import { desktopRoutes } from "../../desktop-navigation";
+import { publicDestinations } from "../../public-navigation";
 import { useKitVisible } from "../../routes/kit/use-kit-visible";
 
 // Wrapper that adds a space-level drop zone before each group and makes it sortable
@@ -444,7 +445,6 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
 
   // Active Area Detection
   const isChatActive =
-    location.pathname === "/" ||
     location.pathname === "/chat" ||
     location.pathname === "/codex" ||
     location.pathname.startsWith("/chat/");
@@ -511,6 +511,33 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
 
           {/* Les 4 zones principales (icônes M3, 48dp, label-large 18px) */}
           <div className="flex flex-col gap-1 border-b border-outline-variant/30 pb-2">
+            {publicDestinations.map(({ route, label, icon }) => {
+              const selected =
+                route === "/"
+                  ? location.pathname === "/"
+                  : location.pathname === route ||
+                    location.pathname.startsWith(`${route}/`) ||
+                    (route === "/material-3" && location.pathname.startsWith("/showcase"));
+              return (
+                <button
+                  key={route}
+                  type="button"
+                  aria-current={selected ? "page" : undefined}
+                  onClick={() => navigate(route)}
+                  className={clsx(
+                    "flex h-12 w-full items-center gap-3 rounded-full px-3 text-label-large font-medium transition-colors cursor-pointer text-left select-none",
+                    selected
+                      ? "bg-secondary-container text-on-secondary-container"
+                      : "text-on-surface-variant hover:bg-secondary-container/20",
+                  )}
+                >
+                  <span className="material-symbol text-title-medium" aria-hidden="true">
+                    {icon}
+                  </span>
+                  <span className="truncate">{label}</span>
+                </button>
+              );
+            })}
             <button
               type="button"
               onClick={() => navigate(desktopRoutes.chat)}

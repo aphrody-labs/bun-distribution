@@ -2,6 +2,8 @@
 
 # Awesome-Rust-MachineLearning, curated for aphrody
 
+> Source transfer (2026-10-09): native RE now belongs to [bun-re in the pinned Bun fork](https://github.com/aphrody-labs/bun/tree/e4d57537cf3475e443eba9bda390366aa5d9d0a4/packages/bun-re). Removed Aphrody paths below describe the original integration layout; dated observations and measurements retain their original scope.
+
 Curated comparison of the highest-value Rust ML crates for the aphrody
 workspace. This is an original analysis written for aphrody's actual needs
 (file-type classification, embeddings, vector recall, tokenization), not a
@@ -146,7 +148,7 @@ Grepped the workspace `Cargo.toml` files for `candle`, `ort`, `tokenizers`,
 
 | Crate | Status | Where |
 |-------|--------|-------|
-| `magika` | **WIRED** (opt-in `magika` feature) | `crates/os/kernel/comps/re/Cargo.toml` (`magika = "1.1.0"`), impl in `crates/os/kernel/comps/re/src/magika.rs` |
+| `magika` | **WIRED** (opt-in `magika` feature) | `crates/os/kernel/comps/re/Cargo.toml` (not in repo) (`magika = "1.1.0"`), impl in `crates/os/kernel/comps/re/src/magika.rs` (not in repo) |
 | `ort` | **WIRED** (transitive via `magika` + optional direct dep) | `crates/infra/aphrody/Cargo.toml` (`=2.0.0-rc.12`, `magika` feature) |
 | `lancedb` | **WIRED** | workspace `Cargo.toml` (`0.29`), `crates/ai/memory/Cargo.toml` |
 | `arrow-array` / `arrow-schema` | **WIRED** (LanceDB backend) | `crates/ai/memory/Cargo.toml` |
@@ -159,7 +161,7 @@ Grepped the workspace `Cargo.toml` files for `candle`, `ort`, `tokenizers`,
 | `tch` | not used | rejected (libtorch / non-hermetic) |
 
 The magika path is the only neural-ML code currently compiled into aphrody.
-`MagikaClass` / `Classifier` (`crates/os/kernel/comps/re/src/magika.rs`) projects
+`MagikaClass` / `Classifier` (`crates/os/kernel/comps/re/src/magika.rs` (not in repo)) projects
 Magika's `FileType` + `TypeInfo` into an owned, serde-serializable result and
 runs the embedded ONNX model through `ort`. The feature is correctly host-only
 and opt-in because `ort`'s prebuilt-runtime download is incompatible with the

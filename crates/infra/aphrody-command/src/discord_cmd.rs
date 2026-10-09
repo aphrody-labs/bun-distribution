@@ -6,8 +6,8 @@ use std::path::PathBuf;
 
 use crate::discord_compiler::{BotTarget, CompilerOptions, DiscordCompiler};
 use aphrody_discord::{
-    AphrodyDiscordBot, BotConfig, build_shell_embed, build_web_embed,
-    fetch_and_extract_web, run_bounded_shell,
+    AphrodyDiscordBot, BotConfig, build_shell_embed, build_web_embed, fetch_and_extract_web,
+    run_bounded_shell,
 };
 use clap::Subcommand;
 use colored::Colorize;

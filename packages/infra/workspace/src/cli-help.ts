@@ -23,6 +23,22 @@ interface SourceCli {
   parser?: string;
 }
 
+// Capability-owner contracts: these entry points consume a machine protocol or
+// a protected service configuration. Invoking --help is not part of their ABI.
+const PROTOCOL_HELPERS: Record<string, { kind: string; owner: string; reason: string }> = {
+  "aphrody-canvas": {
+    kind: "json-stdin-png-stdout",
+    owner: "crates/ui/render/src/canvas_cli.rs",
+    reason: "Canvas rendering subprocess; stdin is a JSON scene, stdout is PNG.",
+  },
+  "aphrody-host-service": {
+    kind: "configured-service-entry",
+    owner: "crates/os/kernel/core/src/host_service.rs",
+    reason:
+      "Native boot service; requires a protected absolute --config path and has no help mode.",
+  },
+};
+
 async function sourceCliIndex(catalog: any, root: string): Promise<SourceCli[]> {
   const repositories = catalog.repos.filter((repo: any) =>
     ["aphrody", "iecode"].includes(repo.name),
@@ -126,7 +142,8 @@ export async function runCliHelp(
   args: string[],
   root = resolve(import.meta.dir, "../../../.."),
 ): Promise<number> {
-  const usage = "yolo ops cli-help [--out <directory>] [--only <bin[,bin]>] [--no-recursive]";
+  const usage =
+    "yolo ops cli-help [--out <directory>] [--only <bin[,bin]>] [--no-recursive] [--max-pages N]";
   if (args.includes("--help")) {
     console.log(
       `Usage: ${usage}\nCapture installed first-party CLI --help; absent binaries are recorded.\n--only resolves only the named binaries through PATH.\n--no-recursive captures top-level help without invoking advertised subcommands.\nSelected captures default to a separate selected/<bins> directory; --out overrides it.`,
@@ -137,6 +154,7 @@ export async function runCliHelp(
   let explicitOut = false;
   let only: string[] | undefined;
   let recursive = true;
+  let maxPages = 2048;
   for (let i = 0; i < args.length; i++) {
     const option = args[i];
     if (option === "--no-recursive") {
@@ -144,11 +162,20 @@ export async function runCliHelp(
       continue;
     }
     const value = args[i + 1];
-    if ((option !== "--out" && option !== "--only") || !value || value.startsWith("--")) {
+    if (
+      (option !== "--out" && option !== "--only" && option !== "--max-pages") ||
+      !value ||
+      value.startsWith("--")
+    ) {
       throw new Error(`usage: ${usage}`);
     }
     i++;
-    if (option === "--out") {
+    if (option === "--max-pages") {
+      if (!/^\d+$/.test(value) || Number(value) < 1 || Number(value) > 10000) {
+        throw new Error("--max-pages requires an integer from 1 to 10000");
+      }
+      maxPages = Number(value);
+    } else if (option === "--out") {
       out = resolve(value);
       explicitOut = true;
     } else {
@@ -218,10 +245,19 @@ export async function runCliHelp(
         /token|secret|password|api.?key|credential/i.test(key) && value && value.length >= 8,
     )
     .map(([, value]) => value!);
-  const queue = installed.map(({ binary, executable }) => ({ command: [binary], executable }));
+  const protocolHelpers = installed
+    .filter(({ binary }) => PROTOCOL_HELPERS[binary])
+    .map(({ binary, executable }) =>
+      Object.assign({ binary, executable, status: "unsupported-help" }, PROTOCOL_HELPERS[binary]),
+    );
+  const queue = installed
+    .filter(({ binary }) => !PROTOCOL_HELPERS[binary])
+    .map(({ binary, executable }) => ({ command: [binary], executable }));
   const seen = new Set<string>();
-  while (queue.length) {
-    const batch = queue.splice(0, 6);
+  const helpByCommand = new Map<string, string>();
+  const repeatedHelp: string[][] = [];
+  while (queue.length && entries.length < maxPages) {
+    const batch = queue.splice(0, Math.min(6, maxPages - entries.length));
     // Each bounded batch discovers the next level; the queue must finish in order.
     // oxlint-disable-next-line no-await-in-loop
     await Promise.all(
@@ -253,8 +289,15 @@ export async function runCliHelp(
         await Bun.write(join(snapshot, file), help);
         entries.push({ command, executable, exitCode, timedOut, file });
         if (timedOut || exitCode !== 0 || !recursive) return;
+        helpByCommand.set(key, help);
+        for (let length = 1; length < command.length; length++) {
+          if (helpByCommand.get(command.slice(0, length).join(" ")) === help) {
+            repeatedHelp.push(command);
+            return;
+          }
+        }
         const children = helpCommands(help);
-        if (command.length >= 12 && children.length) {
+        if (command.length >= 8 && children.length) {
           unresolved.push(command);
           return;
         }
@@ -264,6 +307,7 @@ export async function runCliHelp(
     if (entries.length % 50 < 6)
       console.error(`CLI help: ${entries.length} captured, ${queue.length} pending`);
   }
+  unresolved.push(...queue.map(({ command }) => command));
   entries = entries.toSorted((a, b) => a.command.join(" ").localeCompare(b.command.join(" ")));
   const failed = entries.filter((entry) => entry.exitCode !== 0 || entry.timedOut);
   const manifest = {
@@ -275,7 +319,10 @@ export async function runCliHelp(
     installed: executableInfo,
     missing,
     unresolved,
+    repeatedHelp,
+    traversalLimits: { maxPages, maxDepth: 8 },
     sourceCli,
+    protocolHelpers,
     entries,
   };
   await Bun.write(join(snapshot, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
@@ -333,7 +380,19 @@ export async function runCliHelp(
     "",
     "## Traversal limits",
     "",
-    ...unresolved.map((command) => `- \`${command.join(" ")}\`: depth limit reached`),
+    ...unresolved.map((command) => `- \`${command.join(" ")}\`: depth or page limit reached`),
+    "",
+    "## Repeated ancestor help",
+    "",
+    "These invocations return the same help as an ancestor; their advertised children are not traversed again.",
+    ...repeatedHelp.map((command) => `- \`${command.join(" ")}\``),
+    "",
+    "## Protocol helpers without a human help mode",
+    "",
+    ...protocolHelpers.map(
+      (helper) =>
+        `- \`${helper.binary}\`: unsupported-help (${helper.kind}); ${helper.reason} Owner: \`${helper.owner}\`. Not invoked by this collector.`,
+    ),
     "",
   ];
   await Bun.write(join(out, "INDEX.md"), lines.join("\n"));
@@ -352,9 +411,12 @@ export async function runCliHelp(
     }),
   );
   if (only) return missing.length === 0 && failed.length === 0 && unresolved.length === 0 ? 0 : 1;
-  return entries.some(
-    (entry) => entry.command.length === 1 && entry.command[0] === "aphrody" && entry.exitCode === 0,
-  )
+  return failed.length === 0 &&
+    unresolved.length === 0 &&
+    entries.some(
+      (entry) =>
+        entry.command.length === 1 && entry.command[0] === "aphrody" && entry.exitCode === 0,
+    )
     ? 0
     : 1;
 }

@@ -57,9 +57,9 @@ struct Ann {
 
 impl Ann {
     fn index_for(&mut self, dim: usize) -> Result<&Index, MemoryError> {
-        if !self.by_dim.contains_key(&dim) {
+        if let std::collections::hash_map::Entry::Vacant(entry) = self.by_dim.entry(dim) {
             let params = IndexParams { quantization: Quantization::None, ..IndexParams::new(dim) };
-            self.by_dim.insert(dim, Index::new(params).map_err(index_error)?);
+            entry.insert(Index::new(params).map_err(index_error)?);
         }
         Ok(&self.by_dim[&dim])
     }

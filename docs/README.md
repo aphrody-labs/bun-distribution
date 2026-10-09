@@ -50,12 +50,12 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | operations | [ai](operations/ai/) | 6 | - |
 | operations | [cloud](operations/cloud/) | 4 | - |
 | operations | [container](operations/container/) | 2 | - |
-| operations | [discord](operations/discord/) | 3 | [Discord Operations Runbooks & Guides](operations\discord\README.md) |
-| operations | [infra](operations/infra/) | 33 | - |
+| operations | [discord](operations/discord/) | 2 | [Discord Operations Runbooks & Guides](operations\discord\README.md) |
+| operations | [infra](operations/infra/) | 36 | - |
 | operations | [os](operations/os/) | 1 | - |
 | operations | [release](operations/release/) | 1 | - |
 | operations | [web](operations/web/) | 3 | - |
-| operations | [workspace](operations/workspace/) | 12 | - |
+| operations | [workspace](operations/workspace/) | 20 | - |
 | plans | [agent-home-pipeline](plans/agent-home-pipeline/) | 1 | [Agent home, one database, one pipeline, one RAG](plans\agent-home-pipeline\PLAN.md) |
 | plans | [ai](plans/ai/) | 17 | [Delivery plan](plans\ai\PLAN.md) |
 | plans | [compat](plans/compat/) | 1 | [PLAN — aphrody-compat](plans\compat\PLAN.md) |
@@ -66,10 +66,11 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [fusion](plans/fusion/) | 13 | - |
 | plans | [gpu-hub](plans/gpu-hub/) | 1 | [GPU hub, Aphrody OS image and WASM target](plans\gpu-hub\PLAN.md) |
 | plans | [infra](plans/infra/) | 5 | [Aphrody Infra plan](plans\infra\PLAN.md) |
-| plans | [m3-native-rust](plans/m3-native-rust/) | 1 | [Aphrody en Rust natif et M3 pour Rust/Bun](plans\m3-native-rust\PLAN.md) |
+| plans | [m3-native-rust](plans/m3-native-rust/) | 3 | [Aphrody en Rust natif et M3 pour Rust/Bun](plans\m3-native-rust\PLAN.md) |
 | plans | [native](plans/native/) | 1 | [PLAN — aphrody-native](plans\native\PLAN.md) |
 | plans | [os](plans/os/) | 1 | - |
 | plans | [os-kernel](plans/os-kernel/) | 1 | [Architecture cible de aphrody-kernel](plans\os-kernel\PLAN.md) |
+| plans | [python-bun](plans/python-bun/) | 2 | [Python, JavaScript and Rust in the Bun fork](plans\python-bun\PLAN.md) |
 | plans | [runtime](plans/runtime/) | 3 | - |
 | plans | [shell](plans/shell/) | 1 | - |
 | plans | [vu](plans/vu/) | 7 | [`vu`: the Aphrody Python runtime](plans\vu\PLAN.md) |
@@ -116,4 +117,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | cli (outside the category layout) | [(files)](cli/) | 1 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
 
-Total: 672 files.
+Total: 686 files.

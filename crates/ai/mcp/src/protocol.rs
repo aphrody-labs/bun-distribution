@@ -66,6 +66,7 @@ const DESTRUCTIVE: &[&str] = &[
     "tune_memory_sqlite",
 ];
 const READ_ONLY: &[&str] = &[
+    "aphrody_site_catalog",
     "search",
     "_get",
     "get_",
@@ -136,6 +137,7 @@ const READ_ONLY: &[&str] = &[
     "rendition",
 ];
 const LOCAL_ONLY: &[&str] = &[
+    "aphrody_site_catalog",
     "re_",
     "sync_external_agents",
     "screen_capture",
@@ -402,6 +404,11 @@ mod tests {
 
     #[test]
     fn hints_follow_the_tool_name() {
+        let site = annotations_for("aphrody_site_catalog");
+        assert_eq!(site.read_only_hint, Some(true));
+        assert_eq!(site.destructive_hint, Some(false));
+        assert_eq!(site.idempotent_hint, Some(true));
+        assert_eq!(site.open_world_hint, Some(false));
         let search = annotations_for("aphrody_search");
         assert_eq!(search.read_only_hint, Some(true));
         assert_eq!(search.destructive_hint, Some(false));

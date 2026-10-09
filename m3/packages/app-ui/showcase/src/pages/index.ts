@@ -3,6 +3,8 @@ import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 import type { AdaptiveState } from "../adaptive/window.ts";
 export interface PageProps {
   adaptive: AdaptiveState;
+  /** Public catalogs do not expose the standalone Bun host's process API. */
+  host?: "native" | "bun";
 }
 type PageComponent = LazyExoticComponent<ComponentType<PageProps>>;
 export const PAGES = {

@@ -2,6 +2,8 @@
 
 # Performance History — `aphrody` Bench Ledger
 
+> Source transfer (2026-10-09): native RE now belongs to [bun-re in the pinned Bun fork](https://github.com/aphrody-labs/bun/tree/e4d57537cf3475e443eba9bda390366aa5d9d0a4/packages/bun-re). Removed Aphrody paths below describe the original integration layout; dated observations and measurements retain their original scope.
+
 Long-term ledger of criterion bench results across releases. Manual entry per
 release, supplemented by the `.github/workflows/bench.yml` (not in repo) CI artifact archive.
 
@@ -159,7 +161,7 @@ CI version captures per-PR deltas. Both views matter.
   (R-A R1.5 phase 1)
 - `crates/ai/mcp/benches/initialize_handshake.rs` — `aphrody-mcp` stdio
   MCP handshake bench (R-A R1.5 phase 2)
-- `crates/os/kernel/comps/re/benches/triage.rs` — RE `triage()` throughput bench at
+- `crates/os/kernel/comps/re/benches/triage.rs` (not in repo) — RE `triage()` throughput bench at
   64 KiB / 1 MiB / 5 MiB + isolated `extract_strings` (pillar R5 metric)
 - `docs/reference/ai/PERFORMANCE.md` — bench claims with reproduction recipes
 - `docs/PLAN.md` (not in repo) §R-A R1.5 — acceptance criterion (p50 cold-start < 5 ms,

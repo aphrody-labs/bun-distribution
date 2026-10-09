@@ -394,6 +394,18 @@ test.skipIf(process.platform !== "linux")(
   async () => {
     const f = await fixture(1);
     const heartbeat = join(f.root, "heartbeat");
+    const unrelatedMarker = join(f.root, "unrelated-owner");
+    const unrelated = launch(
+      [
+        process.execPath,
+        "--eval",
+        "await Bun.write(" +
+          JSON.stringify(unrelatedMarker) +
+          ", 'alive'); await Bun.stdin.text();",
+      ]
+        .map(quoted)
+        .join(" "),
+    );
     const plan = f.plan(
       "active-deadline",
       "import { appendFileSync } from 'node:fs'; setInterval(() => appendFileSync(" +
@@ -401,6 +413,7 @@ test.skipIf(process.platform !== "linux")(
         ", 'x'), 10); await Bun.sleep(30000);",
     );
     try {
+      await until("unrelated owner actually running", () => Bun.file(unrelatedMarker).exists());
       expect((await execute(plan)).exitCode).toBe(0);
       await until("owner actually running", () => Bun.file(heartbeat).exists());
       const terminal = await f.completed("active-deadline");
@@ -408,6 +421,8 @@ test.skipIf(process.platform !== "linux")(
       const before = await Bun.file(heartbeat).text();
       await Bun.sleep(80);
       expect(await Bun.file(heartbeat).text()).toBe(before);
+      expect(unrelated.child.exitCode).toBeNull();
+      expect(await Bun.file(unrelatedMarker).text()).toBe("alive");
       expect((await launch("flock -n -- '" + f.config.lockPath + "' true").result).exitCode).toBe(
         0,
       );
@@ -424,6 +439,8 @@ test.skipIf(process.platform !== "linux")(
       expect((await execute(failed)).exitCode).toBe(0);
       expect((await f.completed("owner-failed")).exitCode).toBe(19);
     } finally {
+      unrelated.child.stdin.end();
+      await unrelated.result;
       await f.cleanup();
     }
   },

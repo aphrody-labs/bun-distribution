@@ -35,7 +35,7 @@ for (const binary of ["yolo", "qualified", "aphrody", "bxc", "n2b", "nie", "nier
 process.exitCode = await runCliHelp(process.argv.slice(2), ${JSON.stringify(root)});
 `,
   );
-  const executable = async (binary: string, exitCode = 0) =>
+  const executable = async (binary: string, exitCode = 0, repeatRootHelp = false) =>
     writeBunCommand(
       bin,
       binary,
@@ -43,7 +43,7 @@ process.exitCode = await runCliHelp(process.argv.slice(2), ${JSON.stringify(root
 const args = process.argv.slice(2);
 appendFileSync(${JSON.stringify(log)}, JSON.stringify({ binary: ${JSON.stringify(binary)}, args }) + "\\n");
 if (${exitCode} !== 0) { console.error("fixture failure"); process.exit(${exitCode}); }
-if (args.length === 1) {
+if (args.length === 1 || ${repeatRootHelp}) {
   console.log("\\x1b[32mUsage: fixture\\x1b[0m\\nCommands:\\n  unsafe  Fixture subcommand\\n" + (process.env.CLI_HELP_TEST_SECRET ?? ""));
 } else { console.log("Fixture child help"); }
 `,
@@ -183,4 +183,56 @@ test("invalid selections are rejected before invoking a binary", async () => {
     await expect(runCliHelp(args, value.root)).rejects.toThrow();
   }
   expect(await value.invocations()).toEqual([]);
+});
+
+test("a binary returning ancestor help cannot multiply recursive invocations", async () => {
+  const value = await fixture();
+  await value.executable("yolo", 0, true);
+  expect(await value.capture(["--only", "yolo"])).toBe(0);
+  expect(await value.invocations()).toEqual([
+    { binary: "yolo", args: ["--help"] },
+    { binary: "yolo", args: ["unsafe", "--help"] },
+  ]);
+  const out = join(value.root, "data/aphrody/cli-help/selected/yolo");
+  const manifest = await value.manifest(out);
+  expect(manifest.repeatedHelp).toEqual([["yolo", "unsafe"]]);
+  expect(manifest.unresolved).toEqual([]);
+});
+
+test("the page budget records unvisited commands without executing them", async () => {
+  const value = await fixture();
+  await value.executable("yolo");
+  expect(await value.capture(["--only", "yolo", "--max-pages", "1"])).toBe(1);
+  expect(await value.invocations()).toEqual([{ binary: "yolo", args: ["--help"] }]);
+  const out = join(value.root, "data/aphrody/cli-help/selected/yolo");
+  const manifest = await value.manifest(out);
+  expect(manifest.unresolved).toEqual([["yolo", "unsafe"]]);
+  expect(manifest.traversalLimits.maxPages).toBe(1);
+});
+
+test("protocol helpers are recorded without feeding their stdin ABI --help", async () => {
+  const value = await fixture();
+  await value.executable("aphrody-canvas", 2);
+  expect(await value.capture(["--only", "aphrody-canvas"])).toBe(0);
+  expect(await value.invocations()).toEqual([]);
+  const out = join(value.root, "data/aphrody/cli-help/selected/aphrody-canvas");
+  const manifest = await value.manifest(out);
+  expect(manifest.protocolHelpers[0]).toMatchObject({
+    binary: "aphrody-canvas",
+    status: "unsupported-help",
+    kind: "json-stdin-png-stdout",
+  });
+  expect(manifest.entries).toEqual([]);
+});
+
+test("a real CLI failure propagates even when primary Aphrody help succeeds", async () => {
+  const value = await fixture();
+  await value.executable("aphrody");
+  await value.executable("catalog-unselected", 3);
+  expect(await value.capture([])).toBe(1);
+  const out = join(value.root, "data/aphrody/cli-help");
+  const manifest = await value.manifest(out);
+  expect(
+    manifest.entries.find((entry: any) => entry.command[0] === "catalog-unselected").exitCode,
+  ).toBe(3);
 });

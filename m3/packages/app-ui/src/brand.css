@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /*
  * Aphrody brand sheet: M3 tonal-spot roles from seed #8c6c88 (Aphrody pet sock mauve),
- * Gemini surfaces, shapes, weights and M3 springs as linear() easings.
+ * Pet-derived surfaces and roles, expressive shapes and M3 spring easings.
  * GENERATED - do not hand-edit. Regenerate with: bun run brand
  */
 
@@ -113,19 +113,6 @@
   --md-sys-color-on-tertiary-fixed-variant: #663b31;
 }
 
-/* Gemini surfaces (docs/research/ui/m3-expressive-gemini-2026.md section 5). */
-:root.light,
-.light {
-  --md-sys-color-background: #f8fafd;
-  --md-sys-color-surface: #f8fafd;
-}
-
-:root,
-.dark {
-  --md-sys-color-background: #131314;
-  --md-sys-color-surface: #131314;
-}
-
 /* Exact Aphrody pet colours (identity PET_COLORS). */
 :root {
   --aphrody-pet-hair: #dcd894;
@@ -134,7 +121,7 @@
 }
 
 :root {
-  --app-title-gradient: linear-gradient(90deg, #4285f4, #9b72cb, #d96570);
+  --app-title-gradient: linear-gradient(90deg, var(--md-sys-color-primary), var(--md-sys-color-secondary), var(--md-sys-color-tertiary));
   --app-shape-prompt-empty: 40px;
   --app-shape-prompt-content: 32px;
   --app-shape-prompt-docked: 24px 24px 0 0;

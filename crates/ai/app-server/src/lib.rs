@@ -1870,19 +1870,21 @@ where
 /// Serve the same JSON-RPC app-server over local HTTP.
 ///
 /// The caller chooses the bind address explicitly; no public interface or
-/// Serve the same JSON-RPC app-server over local HTTP.
-///
-/// The caller chooses the bind address explicitly; no public interface or
 /// credential-bearing cloud transport is enabled implicitly.
 pub async fn serve_http(addr: SocketAddr) -> Result<(), AppServerError> {
-    if !addr.ip().is_loopback() {
-        return Err(AppServerError::InvalidRequest(
-            "the unauthenticated app-server must bind to a loopback address".into(),
-        ));
-    }
+    validate_http_bind(addr)?;
+    serve_http_router(addr, http_router()).await
+}
+
+/// Reusable app transport router. Hosts must preserve the loopback-only listener
+/// boundary when composing it; RPC/event handlers retain their Host/Origin checks.
+pub fn http_router() -> Router {
+    http_routes().route("/", get(web::index))
+}
+
+fn http_routes() -> Router {
     let state = Arc::new(Mutex::new(AppServer::new()));
-    let app = Router::new()
-        .route("/", get(web::index))
+    Router::new()
         .route("/app.js", get(web::script))
         .route("/app.css", get(web::style))
         .route("/health", get(http_health).options(http_cors_preflight))
@@ -1890,7 +1892,42 @@ pub async fn serve_http(addr: SocketAddr) -> Result<(), AppServerError> {
         .route("/rpc", post(http_rpc).options(http_cors_preflight))
         .route("/events", get(http_events).options(http_cors_preflight))
         .route("/notifications", get(http_notifications).options(http_cors_preflight))
-        .with_state(state);
+        .with_state(state)
+}
+
+/// Canonical app-ui at `/` and `/app`. Explicit RPC/event routes win over the
+/// site's fallback, preserving `/health` JSON and host permission boundaries.
+#[cfg(feature = "site")]
+pub fn http_router_with_site(
+    root: &std::path::Path,
+    webos_url: Option<&str>,
+) -> Result<Router, AppServerError> {
+    let site = aphrody_site::router(root, webos_url)?;
+    Ok(http_routes().fallback_service(site))
+}
+
+/// Serve native product site and existing app RPC/events on one loopback-only
+/// listener, consuming the same native catalog/rendering owner as CLI and MCP.
+#[cfg(feature = "site")]
+pub async fn serve_http_with_site(
+    root: &std::path::Path,
+    addr: SocketAddr,
+    webos_url: Option<&str>,
+) -> Result<(), AppServerError> {
+    validate_http_bind(addr)?;
+    serve_http_router(addr, http_router_with_site(root, webos_url)?).await
+}
+
+fn validate_http_bind(addr: SocketAddr) -> Result<(), AppServerError> {
+    if !addr.ip().is_loopback() {
+        return Err(AppServerError::InvalidRequest(
+            "the unauthenticated app-server must bind to a loopback address".into(),
+        ));
+    }
+    Ok(())
+}
+
+async fn serve_http_router(addr: SocketAddr, app: Router) -> Result<(), AppServerError> {
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await.map_err(AppServerError::Io)
 }
@@ -2945,6 +2982,97 @@ model_provider = "fixture"
     #[tokio::test]
     async fn http_refuses_public_bind_before_opening_listener() {
         let error = serve_http("0.0.0.0:0".parse().unwrap()).await.unwrap_err();
+        assert!(error.to_string().contains("loopback"));
+    }
+
+    #[cfg(feature = "site")]
+    #[tokio::test]
+    async fn site_composition_preserves_transport_with_the_canonical_app_ui() {
+        use axum::{
+            body::{Body, to_bytes},
+            http::Request,
+        };
+        use tower::ServiceExt;
+
+        let root = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(root.path().join("m3/templates")).unwrap();
+        std::fs::write(root.path().join("m3/templates/stack.toml"), "").unwrap();
+        let ui = root.path().join("crates/ui/app/ui-dist");
+        std::fs::create_dir_all(&ui).unwrap();
+        let shell = "<div id=\"root\">canonical app-ui</div><script src=\"/app.js\"></script>";
+        std::fs::write(ui.join("index.html"), shell).unwrap();
+        std::fs::write(ui.join("app.js"), "canonical_bundle").unwrap();
+        std::fs::write(ui.join("app.css"), "canonical_theme").unwrap();
+        let app = http_router_with_site(root.path(), Some("http://127.0.0.1:3001")).unwrap();
+        for path in [
+            "/",
+            "/docs",
+            "/templates",
+            "/api/docs",
+            "/api/templates",
+            "/app",
+            "/app/",
+            "/app.js",
+            "/app.css",
+        ] {
+            let response = app
+                .clone()
+                .oneshot(Request::builder().uri(path).body(Body::empty()).unwrap())
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::OK, "{path}");
+            if matches!(path, "/" | "/app" | "/app/" | "/docs" | "/templates") {
+                let bytes = to_bytes(response.into_body(), 2 * 1024 * 1024).await.unwrap();
+                assert_eq!(bytes.as_ref(), shell.as_bytes());
+            }
+        }
+        let response = app
+            .clone()
+            .oneshot(Request::builder().uri("/health").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.headers()[header::ACCESS_CONTROL_ALLOW_ORIGIN], "*");
+        let health: Value =
+            serde_json::from_slice(&to_bytes(response.into_body(), 1024).await.unwrap()).unwrap();
+        assert_eq!(health["service"], "aphrody-app-server");
+        let response = app
+            .clone()
+            .oneshot(Request::builder().method("OPTIONS").uri("/rpc").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NO_CONTENT);
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/rpc")
+                    .header(header::HOST, "evil.invalid")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from("{}"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
+        let response = app
+            .oneshot(Request::builder().uri("/webos").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::TEMPORARY_REDIRECT);
+    }
+
+    #[cfg(feature = "site")]
+    #[tokio::test]
+    async fn site_composition_refuses_public_bind_before_catalog_loading() {
+        let error = serve_http_with_site(
+            std::path::Path::new("nonexistent-template-root"),
+            "0.0.0.0:0".parse().unwrap(),
+            None,
+        )
+        .await
+        .unwrap_err();
         assert!(error.to_string().contains("loopback"));
     }
 

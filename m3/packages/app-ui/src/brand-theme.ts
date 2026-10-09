@@ -1,16 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-// Aphrody brand sheet, rendered from the Gemini brand seed by @aphrody/m3-tokens.
-//
-// Colour roles are generated (Material Color Utilities, tonal spot). The only
-// hand-chosen values are the ones docs/research/ui/m3-expressive-gemini-2026.md
-// section 5 lists as served by the Gemini web app, mirrored in
-// crates/ui/m3-tokens/src/gemini_brand.rs.
+// Aphrody brand sheet, generated from the canonical pet by @aphrody/m3-tokens.
+// Material Color Utilities produces every surface and semantic colour role.
 
 import { cssFromSeed } from "@aphrody/m3-tokens/dynamic-color";
 
 import {
   BRAND_SEED,
-  GEMINI_SURFACE,
   PET_ACCENTS,
   READING_COLUMN,
   SHAPE,
@@ -18,15 +13,7 @@ import {
   WEIGHTS,
 } from "./brand-tokens";
 
-export {
-  BRAND_SEED,
-  GEMINI_SURFACE,
-  PET_ACCENTS,
-  READING_COLUMN,
-  SHAPE,
-  TITLE_GRADIENT_STOPS,
-  WEIGHTS,
-};
+export { BRAND_SEED, PET_ACCENTS, READING_COLUMN, SHAPE, TITLE_GRADIENT_STOPS, WEIGHTS };
 
 /** M3 spring names carried by @aphrody/m3-tokens/m3-tokens.css. */
 export const SPRING_NAMES = [
@@ -105,26 +92,18 @@ function brandTokens(springs: Record<SpringName, Spring>): string {
   return `:root {\n${lines.join("\n")}\n}\n`;
 }
 
-function surfaceOverride(selector: string, hex: string): string {
-  return `${selector} {\n  --md-sys-color-background: ${hex};\n  --md-sys-color-surface: ${hex};\n}\n`;
-}
-
 /** Full text of src/brand.css for `seed`, with springs read from `tokensCss`. */
 export function brandCss(tokensCss: string, seed: string = BRAND_SEED): string {
   const header =
     "/* SPDX-License-Identifier: Apache-2.0 */\n" +
     "/*\n" +
     ` * Aphrody brand sheet: M3 tonal-spot roles from seed ${seed} (Aphrody pet sock mauve),\n` +
-    " * Gemini surfaces, shapes, weights and M3 springs as linear() easings.\n" +
+    " * Pet-derived surfaces and roles, expressive shapes and M3 spring easings.\n" +
     " * GENERATED - do not hand-edit. Regenerate with: bun run brand\n" +
     " */\n\n";
   return (
     header +
     cssFromSeed(seed, { lightSelector: ":root.light,\n.light", darkSelector: ":root,\n.dark" }) +
-    "\n/* Gemini surfaces (docs/research/ui/m3-expressive-gemini-2026.md section 5). */\n" +
-    surfaceOverride(":root.light,\n.light", GEMINI_SURFACE.light) +
-    "\n" +
-    surfaceOverride(":root,\n.dark", GEMINI_SURFACE.dark) +
     "\n/* Exact Aphrody pet colours (identity PET_COLORS). */\n" +
     `:root {\n  --aphrody-pet-hair: ${PET_ACCENTS.hair};\n  --aphrody-pet-skin: ${PET_ACCENTS.skin};\n  --aphrody-pet-tunic: ${PET_ACCENTS.tunic};\n}\n` +
     "\n" +

@@ -6,6 +6,7 @@
 @import "@aphrody/m3-theme/spaceui.css";
 @import "./brand.css";
 @import "@aphrody/m3-theme/tailwind.css";
+@import "@aphrody/m3-reader/styles.css";
 @import "./styles.css";
 
 @source "../../m3-ai/dist";
@@ -13,6 +14,22 @@
 @source "../../m3-forms/dist";
 @source "../../m3-explorer/dist";
 @source "./";
+@source "../showcase/src";
+
+/* Showcase pages are part of the canonical app and inherit its typography. */
+.product-showcase {
+  --m3-gutter: 24px;
+}
+.product-showcase .m3-code {
+  padding: 16px;
+  overflow: auto;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-high);
+  white-space: pre;
+}
+.product-page {
+  user-select: text;
+}
 
 /* The explorer is mounted inside the Aphrody shell, never at viewport height. */
 .drive-pane {

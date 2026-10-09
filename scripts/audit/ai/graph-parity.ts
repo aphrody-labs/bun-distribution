@@ -34,19 +34,36 @@ export function compare(expected: Iterable<string>, actual: Iterable<string>): P
 
 function graphSets(graph: GraphJson) {
   const ids = new Map(graph.nodes.map((node) => [node.id, node]));
+  if (ids.size !== graph.nodes.length) {
+    throw new Error("invalid graph: duplicate node id");
+  }
   const nodes = graph.nodes
     .filter((node) => node.source_file != null)
     .map((node) => `${node.source_file}|${node.label}|${node.file_type}`);
   const edges = graph.links.map((edge) => {
-    const source = ids.get(edge.source)?.label ?? edge.source;
-    const target = ids.get(edge.target)?.label ?? edge.target;
+    const source = ids.get(edge.source)?.label;
+    const target = ids.get(edge.target)?.label;
+    if (source == null || target == null) {
+      throw new Error(
+        `invalid graph: dangling ${edge.relation} edge ${edge.source} -> ${edge.target}`,
+      );
+    }
+    if (!["EXTRACTED", "INFERRED", "AMBIGUOUS"].includes(edge.confidence)) {
+      throw new Error(`invalid graph: unknown confidence ${edge.confidence}`);
+    }
     return `${edge.relation}|${source}|${target}|${edge.confidence}`;
   });
   return { nodes, edges };
 }
 
+function topology(edges: string[]): string[] {
+  return edges.map((edge) => edge.slice(0, edge.lastIndexOf("|")));
+}
+
 export function report(oracle: Oracle, graph: GraphJson) {
   const actual = graphSets(graph);
+  const oracleTopology = topology(oracle.edges);
+  const actualTopology = topology(actual.edges);
   const overall = {
     nodes: compare(oracle.nodes, actual.nodes),
     edges: compare(oracle.edges, actual.edges),
@@ -54,12 +71,12 @@ export function report(oracle: Oracle, graph: GraphJson) {
   const relations = [
     ...new Set([...oracle.edges, ...actual.edges].map((edge) => edge.split("|", 1)[0])),
   ].toSorted();
-  const byRelation = Object.fromEntries(
+  const byRelation: Record<string, Parity> = Object.fromEntries(
     relations.map((relation) => [
       relation,
       compare(
-        oracle.edges.filter((edge) => edge.startsWith(`${relation}|`)),
-        actual.edges.filter((edge) => edge.startsWith(`${relation}|`)),
+        oracleTopology.filter((edge) => edge.startsWith(`${relation}|`)),
+        actualTopology.filter((edge) => edge.startsWith(`${relation}|`)),
       ),
     ]),
   );
@@ -79,7 +96,41 @@ export function report(oracle: Oracle, graph: GraphJson) {
         : shared.filter((edge) => oracleEdges.get(edge) === actualEdges.get(edge)).length /
           shared.length,
   };
-  return { nodes: overall.nodes, edges: overall.edges, byRelation, confidence };
+  return {
+    nodes: overall.nodes,
+    edges: overall.edges,
+    topology: compare(oracleTopology, actualTopology),
+    byRelation,
+    confidence,
+  };
+}
+
+// P2 of docs/plans/agent-home-pipeline/PLAN.md. Native `inherits` is Graphify's
+// inheritance relation; apply the same structural threshold as `extends`.
+const STRUCTURAL_RELATIONS = new Set([
+  "contains",
+  "defines",
+  "imports_from",
+  "method",
+  "extends",
+  "inherits",
+  "implements",
+]);
+
+export function failures(result: ReturnType<typeof report>): string[] {
+  const failed: string[] = [];
+  if (result.nodes.jaccard < 0.95) failed.push("nodes: Jaccard must be >= 0.95");
+  if (result.topology.jaccard < 0.9) failed.push("edges: topology Jaccard must be >= 0.90");
+  for (const [relation, parity] of Object.entries(result.byRelation)) {
+    const minimum = STRUCTURAL_RELATIONS.has(relation) ? 0.95 : 0.9;
+    if (parity.jaccard < minimum) {
+      failed.push(`${relation}: Jaccard must be >= ${minimum.toFixed(2)}`);
+    }
+  }
+  if (result.confidence.agreement < 0.95) {
+    failed.push("confidence: class agreement must be >= 0.95");
+  }
+  return failed;
 }
 
 async function main(args: string[]) {
@@ -94,9 +145,11 @@ async function main(args: string[]) {
     readFile(graphPath!, "utf8").then((text) => JSON.parse(text) as GraphJson),
   ]);
   const result = report(oracle, graph);
-  console.log(JSON.stringify(result, null, 2));
-  const failed = result.nodes.jaccard < 0.95 || result.edges.jaccard < 0.9;
-  if (failed) process.exitCode = 1;
+  const failed = failures(result);
+  console.log(
+    JSON.stringify({ ...result, passed: failed.length === 0, failures: failed }, null, 2),
+  );
+  if (failed.length > 0) process.exitCode = 1;
 }
 
 if (import.meta.main) {

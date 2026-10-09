@@ -2,7 +2,11 @@
 import { studioSection, studioSections } from "../../routes/studio/navigation";
 
 const titles: Record<string, string> = {
-  "/": "Chat",
+  "/": "Aphrody",
+  "/docs": "Documentation",
+  "/templates": "Templates",
+  "/material-3": "Material 3",
+  "/showcase": "Material 3",
   "/chat": "Chat",
   "/codex": "Chat",
   "/explorer": "Fichiers",
@@ -53,6 +57,9 @@ export function deriveTitleFromPath(pathname: string, search: string): string | 
     return "Fichiers";
   }
   if (titles[pathname]) return titles[pathname];
+  if (pathname.startsWith("/docs/")) return "Documentation";
+  if (pathname.startsWith("/templates/")) return "Templates";
+  if (pathname.startsWith("/material-3/") || pathname.startsWith("/showcase/")) return "Material 3";
   if (pathname.startsWith("/tag/")) return `Tag : ${pathname.split("/")[2]?.slice(0, 8) ?? ""}`;
   if (pathname.startsWith("/file-kinds/"))
     return `Fichiers : ${pathname.slice(12).replaceAll("_", " ")}`;

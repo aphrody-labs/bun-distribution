@@ -240,7 +240,11 @@ test.skipIf(process.platform === "win32")(
       "--cacheinfo",
       `160000,${f.nested.revision},vendor/bun`,
     );
-    expect((await f.prepare()).exitCode).toBe(2);
+    const stagedPinRefusal = await f.prepare();
+    expect(stagedPinRefusal.exitCode).toBe(2);
+    expect(stagedPinRefusal.error).toContain("gitlink differs from the parent index or pin");
+    expect(await f.git(f.checkout, "rev-parse", ":vendor/bun")).toBe(f.nested.revision);
+    expect(await f.git(selected, "rev-parse", "HEAD")).toBe(f.selected.revision);
     await f.git(f.checkout, "restore", "--staged", "vendor/bun");
     await writeFile(join(f.checkout, "owner.txt"), "concurrent glue\n");
     expect((await f.prepare()).exitCode).toBe(2);

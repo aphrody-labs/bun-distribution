@@ -176,7 +176,9 @@ impl TerminalCommand for AutoCommand {
         // utilisateurs qui veulent invoquer bun passent par BYPASS_ENGINES
         // (`aphrody bun add foo`). Le runtime par défaut est `cargo`.
         if self.args.is_empty() {
-            return crate::pillars_cmd::handle_shell(crate::pillars_cmd::ShellAction::Start { args: Vec::new() });
+            return crate::pillars_cmd::handle_shell(crate::pillars_cmd::ShellAction::Start {
+                args: Vec::new(),
+            });
         }
 
         let first_arg = &self.args[0];

@@ -1,5 +1,7 @@
 # RAPPORT D'ESTIMATION D'USAGE & CAPACITÉ — GEMINI 3.8 FLASH (THINKING LOW)
 
+> Source transfer (2026-10-09): native RE now belongs to [bun-re in the pinned Bun fork](https://github.com/aphrody-labs/bun/tree/e4d57537cf3475e443eba9bda390366aa5d9d0a4/packages/bun-re). Removed Aphrody paths below describe the original integration layout; dated observations and measurements retain their original scope.
+
 *Date d'évaluation : 2026-09-07T01:55:00+02:00*
 *Environnement : Antigravity CLI (agy v1.1.27) / Bun v1.4.0 / Rust Monorepo `niers`*
 
@@ -35,7 +37,7 @@
 - **`crates/infra/aphrody`** : 35 fichiers, 15 254 lignes (589 Ko)
 - **`crates/aphrody-x-client` (not in repo)** : 15 fichiers, 7 166 lignes (260 Ko)
 - **`crates/ai/memory`** : 19 fichiers, 6 943 lignes (274 Ko)
-- **`crates/os/kernel/comps/re`** : 11 fichiers, 6 594 lignes (256 Ko)
+- **`crates/os/kernel/comps/re` (not in repo)** : 11 fichiers, 6 594 lignes (256 Ko)
 - **`crates/os/kernel/comps/a2a-server`** : 21 fichiers, 6 081 lignes (210 Ko)
 - **`packages/bun-rs` (not in repo)** : 4 fichiers, 5 359 lignes (115 Ko)
 - **`crates/ai/agent-home`** : 21 fichiers, 5 147 lignes (183 Ko)

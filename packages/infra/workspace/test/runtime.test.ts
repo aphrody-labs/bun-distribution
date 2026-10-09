@@ -50,6 +50,44 @@ test("Infra bridge resolves the new monorepo Rust workspace", async () => {
   expect(await Bun.file(join(root, "crates/infra/infra/Cargo.toml")).exists()).toBe(true);
 });
 
+test("Infra uses the canonical Aphrody command prefix and preserves explicit owner selection", async () => {
+  const root = await mkdtemp(join(tmpdir(), "infra-canonical-"));
+  try {
+    const name = `aphrody${process.platform === "win32" ? ".exe" : ""}`;
+    const bin = join(root, name);
+    const alias = join(root, `aphrody-infra${process.platform === "win32" ? ".exe" : ""}`);
+    await writeFile(bin, "fixture", { mode: 0o755 });
+    await writeFile(alias, "fixture", { mode: 0o755 });
+    expect(await infraExecutable(root, { PATH: root })).toEqual([bin, "infra"]);
+    expect(await infraExecutable(root, { PATH: "", APHRODY_BIN: bin })).toEqual([bin, "infra"]);
+    expect(await infraExecutable(root, { APHRODY_BIN: bin, APHRODY_INFRA_BIN: alias })).toEqual([
+      alias,
+    ]);
+    await expect(
+      infraExecutable(root, { PATH: root, APHRODY_BIN: join(root, "missing") }),
+    ).rejects.toThrow("Configured Aphrody binary is missing");
+    expect(
+      await infraExecutable(root, { APHRODY_BIN: bin, APHRODY_INFRA_BUILD_FROM_SOURCE: "1" }),
+    ).toContain("run");
+
+    const installed = join(root, ".aphrody", "bin", name);
+    await mkdir(join(installed, ".."), { recursive: true });
+    await writeFile(installed, "fixture", { mode: 0o755 });
+    expect(await infraExecutable(root, { HOME: root, PATH: "" })).toEqual([installed, "infra"]);
+    if (process.platform === "win32") {
+      const windows = join(root, "Aphrody", "bin", name);
+      await mkdir(join(windows, ".."), { recursive: true });
+      await writeFile(windows, "fixture");
+      expect(await infraExecutable(root, { LOCALAPPDATA: root, PATH: "" })).toEqual([
+        windows,
+        "infra",
+      ]);
+    }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("ssh exec addressed to the current build host runs locally, any other host keeps SSH", () => {
   const args = ["ssh", "exec", "--host", "vps", "--cmd", "echo ok"];
   const local = localHostCommand(args, {

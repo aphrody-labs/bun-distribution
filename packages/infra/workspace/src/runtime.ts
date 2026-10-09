@@ -56,8 +56,27 @@ export async function infraExecutable(
       "infra",
     ];
   }
-  const name = `aphrody-infra${process.platform === "win32" ? ".exe" : ""}`;
+  if (environment.APHRODY_BIN) {
+    const direct = await executable(environment.APHRODY_BIN);
+    if (!direct)
+      throw new Error(`Configured Aphrody binary is missing: ${environment.APHRODY_BIN}`);
+    return [direct, "infra"];
+  }
+  const suffix = process.platform === "win32" ? ".exe" : "";
   const home = environment.HOME ?? environment.USERPROFILE;
+  const canonical = await Promise.all(
+    [
+      Bun.which(`aphrody${suffix}`, { PATH: environment.PATH ?? "" }),
+      process.platform === "win32" && environment.LOCALAPPDATA
+        ? join(environment.LOCALAPPDATA, "Aphrody", "bin", "aphrody.exe")
+        : undefined,
+      home && join(home, ".aphrody", "bin", `aphrody${suffix}`),
+      home && join(home, ".local", "bin", `aphrody${suffix}`),
+    ].map(executable),
+  );
+  const canonicalExecutable = canonical.find((path) => path !== undefined);
+  if (canonicalExecutable) return [canonicalExecutable, "infra"];
+  const name = `aphrody-infra${suffix}`;
   for (const candidate of [
     home && join(home, ".local", "bin", name),
     Bun.which(name, { PATH: environment.PATH ?? "" }),
@@ -66,7 +85,7 @@ export async function infraExecutable(
     if (direct) return [direct];
   }
   throw new Error(
-    "Infra binary is not installed; set APHRODY_INFRA_BIN or explicitly enable APHRODY_INFRA_BUILD_FROM_SOURCE=1 for development",
+    "Infra binary is not installed; install aphrody, set APHRODY_BIN or APHRODY_INFRA_BIN, or explicitly enable APHRODY_INFRA_BUILD_FROM_SOURCE=1 for development",
   );
 }
 

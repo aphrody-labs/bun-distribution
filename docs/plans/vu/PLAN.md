@@ -1,10 +1,12 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # `vu`: the Aphrody Python runtime
 
+> Ownership correction (2026-10-09): [the Python/Bun plan](../python-bun/PLAN.md) supersedes separate native-runtime ownership. The `aphrody-rust` binding now belongs to [the pinned Bun native Python package](https://github.com/aphrody-labs/bun/tree/84a5f33140cef2a63088d8484e84c0a2e5aba785/packages/bun-python-native/crates/aphrody-rust); Python application sources stay in Aphrody. The dated batches and measurements below retain their original scope; removed Aphrody paths are marked `not in repo`.
+
 > Contexte courant (2026-10-09) : développement et builds selon l'hôte, la cible et les ressources disponibles ; aucun produit n'est réservé à un poste. Voir le [contexte](../../operations/workspace/windows-native.md).
 
 
-> Path reconciliation (2026-10-07): `crates/interop/python-ffi` (not in repo) → `crates/interop/ffi/src/python_ffi.rs`. Original dated observations below retain their historical scope.
+> Path reconciliation (2026-10-07): `crates/interop/python-ffi` (not in repo) → `crates/interop/ffi/src/python_ffi.rs` (not in repo). Original dated observations below retain their historical scope.
 
 Date: 2026-10-05. Status: forks created and pinned, private repository `aphrody-labs/vu` created, every decision settled
 (section 9, `tranché`), execution in bounded batches (section 7). Every "verified" below names its source in the journal
@@ -29,7 +31,7 @@ repository.
 
 Batches already delivered (commits on `workspace/main`): inventory
 [INVENTORY-py-vs-aphrody.md](INVENTORY-py-vs-aphrody.md) (`a90c757ee`), absorption of the native crate into
-`crates/ai/rag-python` (`47d2681b5`), deduplication of `py/` (`0e57c2a8c`), rename to `vu` (`0cd1df3a8`), forks, pins,
+`crates/ai/rag-python` (not in repo) (`47d2681b5`), deduplication of `py/` (`0e57c2a8c`), rename to `vu` (`0cd1df3a8`), forks, pins,
 provenance and the first plan (`be67fd6e2`).
 
 ## 1. Goal
@@ -45,7 +47,7 @@ Yolo:
   of the `uv`, `ruff` and `maturin` binaries found on PATH remains only as a fallback until activation.
 
 The Python product code stays in `py/` (a thin Python layer over the Rust runtime); the Rust binding of the SDK stays in
-`crates/ai/rag-python`.
+`crates/ai/rag-python` (not in repo).
 
 ## 2. Verified starting point
 
@@ -77,7 +79,7 @@ The Python product code stays in `py/` (a thin Python layer over the Rust runtim
 
 ### 3.2 Repositories
 
-- Aphrody monorepo (this repository): products, `py/`, the SDK binding `crates/ai/rag-python`, the pins and provenance
+- Aphrody monorepo (this repository): products, `py/`, the SDK binding `crates/ai/rag-python` (not in repo), the pins and provenance
   (tools/config/upstream-sources.json, the mirror in [scaffold/](scaffold/README.md)), `yolo py`. It never builds uv, ruff or
   CPython.
 - Private repository `aphrody-labs/vu` (created 2026-10-05): the workspace that builds, links and packages the runtime,
@@ -129,7 +131,7 @@ vu/
 - Free-threading (D5): `abi3` wheels cannot be loaded by a free-threaded CPython; PyO3 0.29 adds `abi3t` (PEP 803, Python
   3.15 and newer) and maturin >= 1.14 builds such wheels (J10). The SDK wheel stays `abi3-py311`; no free-threaded
   interpreter ships.
-- Aphrody native module: the SDK wheel (`aphrody.aphrody_rust`, crate `crates/ai/rag-python`) is installed in the
+- Aphrody native module: the SDK wheel (`aphrody.aphrody_rust`, crate `crates/ai/rag-python` (not in repo)) is installed in the
   interpreter like any wheel (the build smoke installs it with the runtime's own `uv`). `vu` does not link Aphrody crates, so
   the dependency direction stays Aphrody to `vu` (an artifact), never the reverse.
 
@@ -212,7 +214,7 @@ that a changed `name` makes the stale branch names and ids fail.
   mechanism.
 - Ownership: the pins and provenance belong to the Aphrody monorepo (tools/config/upstream-sources.json); the build, the lock and
   the artifact belong to the `vu` repository; the Python product code and the SDK binding stay with `py/` and
-  `crates/ai/rag-python`. `yolo py` is the only Aphrody consumer.
+  `crates/ai/rag-python` (not in repo). `yolo py` is the only Aphrody consumer.
 - Permissions: no implicit privileged host access for scripts or remote pages; `vu python` runs with the permissions of its
   caller; the runtime opens no network listener. uv's own network use (indexes, optional downloads) is the only network
   surface and is configured through uv.
@@ -265,7 +267,7 @@ tools/config/host/vps-cargo.json); no second build mechanism is added.
 | P3 | `vu python` (embedded CPython) parity and the SDK wheel smoke inside the runtime | done 2026-10-05: the smoke of the receipt proves `vu python` parity (sys.version, prefix, executable, path, extension modules), exit status and stdin, and the SDK wheel (`aphrody.aphrody_rust.cosine_similarity` returned 1.0 inside `vu python`) (J15) |
 | P4 | `yolo py` resolves and verifies the artifact, falls back to PATH | done 2026-10-05 (`caa20e186`, 17 tests); no artifact is installed, so the PATH fallback is the active mode |
 | P5 | Installation and activation through Infra's catalog and runbook; never implied by a source change | done 2026-10-06 (J18): scripts/install.ts of the `vu` repository (plan by default, `--apply` required) archived the artifact `0.1.0-7c3db189` on the build host, downloaded it with `aphrody infra ssh sftp`, compared the sha256, verified every file against the manifest and activated it under `~/.vu`; `yolo py status` uses it; rollback is `--rollback`. Not published to the public downloads channel (D1: private, no publication authority for `vu`) |
-| P6 | Converge `packages/engine/python` and `crates/engine/yolo-pyo3` (second Python package and second PyO3 module crate) with the runtime; untrack the compiled `.so` | done 2026-10-06: the compiled `_yolo_native` extension is untracked and ignored; the two bindings stay separate by design (D17) |
+| P6 | Converge `packages/engine/python` and `crates/engine/yolo-pyo3` (not in repo) (second Python package and second PyO3 module crate) with the runtime; untrack the compiled `.so` | done 2026-10-06: the compiled `_yolo_native` extension is untracked and ignored; the two bindings stay separate by design (D17) |
 | P7 | Scope extension of 2026-10-06 (section 13): AI stack, one tool for Python, Hugging Face, SDK migration with measurements, shared libpython | done at source, test and package level and installed (`0.1.0-cf385dd2`, J23, J24); GPU runs, the 2 times target and `libaphrody` on the shared library stay open (section 13) |
 
 Execution order is the table order; each batch is committed and pushed (aphrody monorepo and, from P2, the private `vu`
@@ -282,7 +284,7 @@ repository) before the next starts.
 | Toolchain deviation | uv and ruff pin 1.99.0 upstream; the build uses 1.98.1 (their MSRV is 1.97) | checked compile (J7); the receipt records the toolchain |
 | Licences | uv MIT OR Apache-2.0, ruff MIT, PyO3 MIT OR Apache-2.0, uv-pep440/508 Apache-2.0 OR BSD-2-Clause, astral-pubgrub and python-build-standalone MPL-2.0 (J1, J8) | recorded; not a blocking criterion (owner: the monorepo is multi-licensed); notices ship in the artifact |
 | Static embedding is not first-class in PyO3 | PyO3 guide (J10) | shared libpython (D4) |
-| `extension-module` is deprecated upstream | PyO3 guide (J10) | closed 2026-10-06: dropped from `crates/ai/rag-python`; the wheel builds and works without it (J17); maturin sets `PYO3_BUILD_EXTENSION_MODULE` itself |
+| `extension-module` is deprecated upstream | PyO3 guide (J10) | closed 2026-10-06: dropped from `crates/ai/rag-python` (not in repo); the wheel builds and works without it (J17); maturin sets `PYO3_BUILD_EXTENSION_MODULE` itself |
 | ty tree mismatch | ty 0.0.84 vendors ruff 11aaa39f, 107 commits behind the pin (J5) | ty is not shipped (D6) |
 | Wheel size grew when the native crate moved to rag-core | `aphrody_rust.abi3.so` 790 160 bytes (old standalone crate) against 1 161 480 bytes (in-tree crate with the default features of rag-core) (J12) | gate the chunkers of rag-core behind a feature if the size matters; not done |
 | Remote pages or scripts gaining host access through the runtime | Repository rule | permissions contract (section 5) |
@@ -311,7 +313,7 @@ Settled by the executing agent on the owner's order of 2026-10-05; each carries 
 | D15 | py/tools/workspace (Bun supervisor) | Moved into `yolo py` on 2026-10-06 (`packages/infra/workspace/src/python-workspace.ts`, subcommands `check`, `locks`, `distributions`, `providers`, `typecheck`, `format:check`, `plan`); the nested py/package.json, py/tsconfig.json and the SDK-archive channel are gone | `@aphrody/runtime-sdk` is a member of the root Bun workspace (`packages/engine/runtime`), so the supervisor and its 12 tests run in the Aphrody checkout against the installed Yolo runtime (J17) |
 | D16 | Order of absorption | Section 7, table order | Each phase needs the previous artifact |
 | D17 | Converge `yolo-pyo3` with `rag-python`? | No: two modules stay (`yolo._yolo_native` over `yolo-core`, `aphrody.aphrody_rust` over `aphrody-rag-core`); both take PyO3 from `workspace.dependencies` (0.29.3); the compiled extension of `packages/engine/python` is untracked | Different capability owners and different wheels; a merged module would couple the Yolo engine release to the RAG kernels; the only duplication was the committed build output |
-| D18 | `vu` et le runtime `yolo` (2026-10-06) | `yolo` charge l'artefact `vu` (`yolo py …`, alias `argv0` `vu`) ; une seule libpython partagée, ouverte en global par `yolo` et `libaphrody` ; pas de lien statique de `vu` dans le binaire Bun ; pas de codename `nub` | Voir [yolo-fork-unified](../yolo-fork-unified/PLAN.md) : cycles de build et plafond glibc séparés, sens de dépendance `yolo` → `vu` Fait (2026-10-06) : module `crates/interop/ffi/src/python_ffi.rs` (`aphrody_py_*`, dlsym, RTLD_GLOBAL, init/attach GIL, run/eval/call, codes d'erreur, chaînes libérables), ré-exporté par `aphrody-ffi`, testé contre la libpython de l'hôte de build. Fait (2026-10-07) : Windows (`LoadLibraryW`/`GetProcAddress`), liaison `bun:ffi` `@aphrody/runtime-sdk/python` et `yolo py eval|exec`. Reste : test contre la libpython de l'artefact `vu` installé et mesure de perf (aucune revendiquée) |
+| D18 | `vu` et le runtime `yolo` (2026-10-06) | `yolo` charge l'artefact `vu` (`yolo py …`, alias `argv0` `vu`) ; une seule libpython partagée, ouverte en global par `yolo` et `libaphrody` ; pas de lien statique de `vu` dans le binaire Bun ; pas de codename `nub` | Voir [yolo-fork-unified](../yolo-fork-unified/PLAN.md) : cycles de build et plafond glibc séparés, sens de dépendance `yolo` → `vu` Fait (2026-10-06) : module `crates/interop/ffi/src/python_ffi.rs` (not in repo) (`aphrody_py_*`, dlsym, RTLD_GLOBAL, init/attach GIL, run/eval/call, codes d'erreur, chaînes libérables), ré-exporté par `aphrody-ffi`, testé contre la libpython de l'hôte de build. Fait (2026-10-07) : Windows (`LoadLibraryW`/`GetProcAddress`), liaison `bun:ffi` `@aphrody/runtime-sdk/python` et `yolo py eval|exec`. Reste : test contre la libpython de l'artefact `vu` installé et mesure de perf (aucune revendiquée) |
 
 ## 10. Follow-ups from the py fusion (closed 2026-10-06)
 
@@ -371,7 +373,7 @@ and Bun scripts; raw outputs were kept in the session scratch space and are summ
 ## 12. Checklist
 
 - [x] Inventory of `py/` against the monorepo.
-- [x] Native crate absorbed into `crates/ai/rag-python`; wheel built and verified on the build host (J12).
+- [x] Native crate absorbed into `crates/ai/rag-python` (not in repo); wheel built and verified on the build host (J12).
 - [x] `py/` deduplicated; follow-ups listed (section 10).
 - [x] Runtime name settled by the owner: `vu`; one constant.
 - [x] Forks created and pinned: uv `vu-pin-0.12.23`, ruff `vu-pin-0.16.10`, pyo3 `vu-pin-0.29.3`.
@@ -384,7 +386,7 @@ and Bun scripts; raw outputs were kept in the session scratch space and are summ
 - [x] Installation and activation through Infra's runbook (J18): plan by default, explicit `--apply`, receipt `install-*.json` in the `vu` repository.
 - [x] Every reference to `aphrody-py` retired from the catalogs and scripts (section 10).
 - [x] D15 done: the supervisor is `yolo py`; P6 verified.
-- [x] `extension-module` dropped from `crates/ai/rag-python` after a wheel build without it (J17).
+- [x] `extension-module` dropped from `crates/ai/rag-python` (not in repo) after a wheel build without it (J17).
 - [x] `py/` pytest: 0 failed through the runtime's uv (J18).
 - [x] Peak memory of the release builds measured (J19: wheel, uv, ruff, vu).
 - [x] Scope extension (section 13): Python version manager, native subcommands, compiler decision, benchmark set, shared libpython with the fork: source, test and package state recorded; installed and active for the artifact `0.1.0-cf385dd2`.

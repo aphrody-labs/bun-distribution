@@ -87,6 +87,7 @@ aphrody-guard = { path = "crates/os/ostd/guard", version = "1.0.0-canary", featu
 aphrody-http-error = { path = "crates/ai/http-error", version = "1.0.0", features = [] }
 aphrody-infer = { path = "crates/ai/infer", version = "1.0.0", features = ["onnx"] }
 aphrody-infra = { path = "crates/infra/infra", version = "0.1.0" }
+aphrody-ovh = { path = "crates/infra/ovh", version = "0.1.0" }
 aphrody-jev = { path = "crates/ai/jev", version = "1.0.0", features = [] }
 aphrody-jobs = { path = "crates/os/kernel/comps/jobs", version = "1.0.0-canary", features = [] }
 aphrody-kernel = { path = "crates/os/kernel/core", version = "1.0.0-canary", default-features = false, features = [] }
@@ -146,6 +147,7 @@ aphrody-web-extract = { path = "crates/web/web-extract", version = "1.0.0", feat
 aphrody-web-frames = { path = "crates/web/web-frames", version = "0.1.0", features = [] }
 aphrody-web-index = { path = "crates/web/web-index", version = "0.1.0", features = [] }
 aphrody-web-service = { path = "crates/web/web-service", version = "1.0.0", features = [] }
+aphrody-site = { path = "crates/web/site", version = "1.0.0" }
 aphrody-x = { path = "crates/web/x", version = "0.3.1", features = [] }
 aphrody-winclean = { path = "crates/os/kernel/comps/winclean", version = "1.0.0-canary", features = [] }
 aphrody-yolo = { path = "crates/infra/yolo", version = "0.1.0" }
@@ -274,6 +276,7 @@ windows = { version = "0.62.2", features = ["Foundation", "Globalization", "Grap
 
 auto_impl          = { version = "1" }
 rcgen              = { version = "0.14", default-features = false, features = ["crypto", "pem", "ring"] }
+instant-acme = { version = "0.8.5", default-features = false, features = ["hyper-rustls", "ring"] }
 getrandom          = { version = "0.4" }
 ipnet              = { version = "2.12" }
 x25519-dalek       = { version = "2.0.1", features = ["static_secrets"] }

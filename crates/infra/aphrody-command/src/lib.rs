@@ -75,6 +75,8 @@ mod runtime_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod scan_cmd;
 #[cfg(not(target_arch = "wasm32"))]
+mod site_cmd;
+#[cfg(not(target_arch = "wasm32"))]
 mod self_cmd;
 #[cfg(all(not(target_arch = "wasm32"), feature = "train"))]
 mod train_cmd;
@@ -206,6 +208,9 @@ enum Commands {
     /// Unified native package indexes and verified content-addressed store.
     #[cfg(not(target_arch = "wasm32"))]
     Pkg(aphrody_pkg_cli::Cli),
+    /// Native product site, sharing its catalog and renderer with HTTP and MCP.
+    #[cfg(not(target_arch = "wasm32"))]
+    Site(site_cmd::SiteCli),
     /// Pure commands (rag, toolcall, html, text): no network, no processes; also built for wasm32.
     Pure(aphrody_command_pure::PureArgs),
     /// Unified AI commands; engines depend on compiled features and configured backends.
@@ -1014,6 +1019,7 @@ use crate::nl_tokens::is_natural_language_prompt;
 async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
     let overrides = cli.agent_options.overrides();
     match cli.command {
+        Some(Commands::Site(args)) => args.execute().await?,
         Some(Commands::Pkg(args)) => {
             let state = aphrody_agent_home::paths::state_dir()
                 .map_err(|error| miette::miette!("{error}"))?;

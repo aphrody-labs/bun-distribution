@@ -85,6 +85,7 @@ pub(crate) const TOOLS: &[Tool] = &[
     bun("py"),
     bun("python"),
     bun("uv"),
+    bun("ruff"),
     bun("vu"),
     bun("ship"),
     bun("hooks"),
@@ -121,7 +122,7 @@ through the links `aphrody self install-path` creates:
 
 Commands owned by Bun packages of the checkout (run as `bun packages/engine/yolo/src/index.ts`):
   status, generate, rename, parse, bench, verify, desktop [build|dev], desktop-runtime, ffi (aphrody_ffi release artifacts),
-  import, plugin, py, python, uv, vu, ship, hooks, ops, workspace, optimize, update, doc-ai,
+  import, plugin, py, python, uv, ruff, vu, ship, hooks, ops, workspace, optimize, update, doc-ai,
   browser, forge, m3, host, api, serve, tool (yolo_* tools: list | call); google drive|fonts.
   `aphrody mcp` without arguments starts the MCP server (= mcp-server).";
 

@@ -111,16 +111,19 @@
     {
       "id": "aphrody-site",
       "application": "aphrody",
-      "kind": "rust-http",
+      "kind": "rust-site",
       "runtime": "rust",
       "unit": "aphrody-site.service",
-      "health": "http://127.0.0.1:8083/healthz",
-      "sourceRepo": "aphrody-web",
+      "health": "http://127.0.0.1:80/health",
+      "port": 80,
+      "host": "vps",
+      "sourceRepo": "aphrody",
       "workingDirectory": "/srv/aphrody/current",
       "releaseRoot": "/srv/aphrody/releases",
       "public": true,
-      "status": "retired",
-      "retiredAt": "2026-09-25"
+      "publicProxy": "direct-rust",
+      "staged": true,
+      "note": "Owner directive 2026-10-09: native read-only Rust product site on VPS port80, scoped CAP_NET_BIND_SERVICE under systemd. Source owner crates/web/site; templates are deployed read-only. MCP/A2A/host/provider APIs remain separately protected. Activation and source/artifact receipts recorded by Infra."
     },
     {
       "id": "aphrody-web-api",

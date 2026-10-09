@@ -13,6 +13,8 @@ mod http_rest;
 #[cfg(not(target_arch = "wasm32"))]
 mod kernel_tools;
 mod native_crawl_tools;
+#[cfg(not(target_arch = "wasm32"))]
+mod site_tools;
 mod public_web_tools;
 #[cfg(not(target_arch = "wasm32"))]
 mod search_tools;
@@ -908,6 +910,14 @@ async fn fetch_page(url: &str, profile: Option<&str>) -> String {
 
 #[tool_router(router = core_router)]
 impl GoogleMcpServer {
+    #[cfg(not(target_arch = "wasm32"))]
+    #[tool(description = "Read the native Aphrody product documentation/template catalog from an explicit workspace root. Read-only, no network or host execution. Section docs/templates matches HTTP; omit for both.")]
+    async fn aphrody_site_catalog(
+        &self,
+        Parameters(request): Parameters<site_tools::SiteCatalogRequest>,
+    ) -> String {
+        site_tools::catalog(request).await
+    }
     // -----------------------------------------------------------------------
     // 1. coding_style_guide — direct fetch + in-process Markdown (aphrody-web-service).
     //

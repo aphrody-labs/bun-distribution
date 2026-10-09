@@ -14,9 +14,10 @@ interface Info {
   api: string[];
 }
 
-function useInfo(): { info?: Info; error?: string } {
+function useInfo(enabled: boolean): { info?: Info; error?: string } {
   const [state, setState] = useState<{ info?: Info; error?: string }>({});
   useEffect(() => {
+    if (!enabled) return;
     const controller = new AbortController();
     fetch("/api/m3/info", { signal: controller.signal })
       .then((response) =>
@@ -27,12 +28,12 @@ function useInfo(): { info?: Info; error?: string } {
       .then((info) => setState({ info }))
       .catch((error: Error) => error.name !== "AbortError" && setState({ error: error.message }));
     return () => controller.abort();
-  }, []);
+  }, [enabled]);
   return state;
 }
 
-export default function Overview({ adaptive }: PageProps) {
-  const { info, error } = useInfo();
+export default function Overview({ adaptive, host = "bun" }: PageProps) {
+  const { info, error } = useInfo(host === "bun");
   const inWorkspace = PACKAGES.filter((p) => p.workspace).length;
   const columns =
     adaptive.mode === "tv"
@@ -45,23 +46,30 @@ export default function Overview({ adaptive }: PageProps) {
   return (
     <Page
       title="Aphrody M3 Showcase"
-      summary="Every package of the aphrody-m3 monorepo in one adaptive app. It is built, served and compiled by @aphrody/m3-bun: the UI files and this page's API come from one Bun process."
+      summary={
+        host === "native"
+          ? "The real Material 3 packages, together in the Aphrody application. Explore components, forms, motion and the pet's generated theme."
+          : "Every package of the aphrody-m3 monorepo in one adaptive app. It is built, served and compiled by @aphrody/m3-bun: the UI files and this page's API come from one Bun process."
+      }
       packages={["@aphrody/m3", "@aphrody/m3-bun"]}
       panes={adaptive.panes}
       aside={
-        <Card>
-          <h3 className="mb-2 text-title-medium">One process: UI and API</h3>
-          <p className="mb-3 text-body-small text-on-surface-variant">
-            This card is a live <code>GET /api/m3/info</code> from the process that served the page.
-          </p>
-          {info ? (
-            <Code>{JSON.stringify(info, null, 2)}</Code>
-          ) : (
-            <p className="text-body-small text-error" role="status">
-              {error ? `API unreachable: ${error}` : "Loading…"}
+        host === "bun" ? (
+          <Card>
+            <h3 className="mb-2 text-title-medium">One process: UI and API</h3>
+            <p className="mb-3 text-body-small text-on-surface-variant">
+              This card is a live <code>GET /api/m3/info</code> from the process that served the
+              page.
             </p>
-          )}
-        </Card>
+            {info ? (
+              <Code>{JSON.stringify(info, null, 2)}</Code>
+            ) : (
+              <p className="text-body-small text-error" role="status">
+                {error ? `API unreachable: ${error}` : "Loading…"}
+              </p>
+            )}
+          </Card>
+        ) : undefined
       }
     >
       <Section title="By the numbers">
@@ -70,7 +78,9 @@ export default function Overview({ adaptive }: PageProps) {
             [String(PACKAGES.length), "packages and apps"],
             [String(inWorkspace), "in the Bun workspace"],
             [String(DESTINATIONS.length), "showcase pages"],
-            [info ? `Bun ${info.bun}` : "…", "serving this page"],
+            host === "native"
+              ? [String(PACKAGES.filter((entry) => !entry.private).length), "reusable packages"]
+              : [info ? `Bun ${info.bun}` : "…", "serving this page"],
           ].map(([value, label]) => (
             <Card key={label}>
               <div className="text-headline-medium text-primary">{value}</div>
@@ -84,7 +94,7 @@ export default function Overview({ adaptive }: PageProps) {
           {DESTINATIONS.filter((d) => d.id !== "overview").map((d) => (
             <a
               key={d.id}
-              href={`#/${d.id}`}
+              href={host === "native" ? `/material-3/${d.id}` : `#/${d.id}`}
               data-dpad
               data-testid={`card-${d.id}`}
               className="state-layer flex flex-col gap-2 rounded-large bg-surface-container p-4 text-left"

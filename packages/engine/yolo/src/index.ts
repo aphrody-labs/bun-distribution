@@ -90,6 +90,26 @@ const workspaceRoot = (): string => findCheckout() ?? process.cwd();
 /** The only copy of the Bun docs in Aphrody, mirrored from the aphrody-labs/bun fork (`bun run docs:bun:update`). */
 const BUN_DOCS_MIRROR = "docs/reference/upstream-bun";
 
+/** Native tools keep their own argv, working directory, environment and standard streams. */
+async function runNativePythonTool(tool: "uv" | "ruff", args: string[]): Promise<number> {
+  const executable = Bun.which(tool, { PATH: process.env.PATH ?? "" });
+  if (executable === null) {
+    console.error(`yolo ${tool}: native ${tool} executable not found on PATH`);
+    return 127;
+  }
+  try {
+    const child = Bun.spawn([executable, ...args], {
+      cwd: process.cwd(),
+      env: process.env,
+      stdio: ["inherit", "inherit", "inherit"],
+    });
+    return await child.exited;
+  } catch (error) {
+    console.error(`yolo ${tool}: ${error instanceof Error ? error.message : String(error)}`);
+    return (error as NodeJS.ErrnoException).code === "ENOENT" ? 127 : 126;
+  }
+}
+
 export function printHelp(): void {
   const header = "\x1b[1m\x1b[36mYOLO Industrial Engine CLI\x1b[0m (100% Native Bun Powered)";
   console.log(`
@@ -130,6 +150,7 @@ ${header}
   \x1b[32mship [--apply] [--prepare] [status|log|attach|stop]\x1b[0m Prepare or build on the factory; \x1b[32mhooks install\x1b[0m ships main/dev pushes
   \x1b[32mplugin <create|status>\x1b[0m Generate or inspect unified YOLO & Bun-TS7 plugin
   \x1b[32mpy [status|test|lint|fmt|build]\x1b[0m Python + uv + PyO3 polyglot runtime toolchain
+  \x1b[32muv|ruff <arguments>\x1b[0m Run the native tool directly with its own arguments
   \x1b[32mbench [--supervisor]\x1b[0m \`bun bench\`; --supervisor measures the yolo-runtime process supervisor
   \x1b[32mhelp\x1b[0m                Display this help message
 
@@ -145,8 +166,9 @@ ${header}
 
 async function main(): Promise<void> {
   // One executable, three names: `yolo`, `bun` (the engine; the runtime handles it before this code) and `vu`.
-  const { isVuArgv0, runVu } = await import("./vu");
-  if (isVuArgv0(process.argv0)) {
+  const invocation = process.argv0.split(/[\\/]/).pop();
+  if (invocation === "vu" || invocation === "vu.exe") {
+    const { runVu } = await import("./vu");
     process.exitCode = await runVu(process.argv.slice(2));
     return;
   }
@@ -165,7 +187,6 @@ async function main(): Promise<void> {
     "import",
     "py",
     "python",
-    "uv",
     "ship",
     "hooks",
   ]);
@@ -421,12 +442,17 @@ async function main(): Promise<void> {
 
     case "vu":
       // The verified vu runtime artifact is loaded, never linked (docs/plans/yolo-fork-unified/PLAN.md).
-      process.exitCode = await runVu(args.slice(1));
+      process.exitCode = await (await import("./vu")).runVu(args.slice(1));
       break;
 
+    case "uv":
+    case "ruff": {
+      process.exitCode = await runNativePythonTool(command, args.slice(1));
+      break;
+    }
+
     case "py":
-    case "python":
-    case "uv": {
+    case "python": {
       const { runPythonCommand } = await import("./python");
       process.exitCode = await runPythonCommand(args.slice(1), rootDir());
       break;

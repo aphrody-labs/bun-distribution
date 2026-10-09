@@ -2,6 +2,7 @@
 // Build the desktop webview with the same native M3 bundler used in development.
 import { buildM3 } from "@aphrody/m3/build";
 import { loadM3Config } from "@aphrody/m3/config";
+import { m3Bun } from "@aphrody/m3-bun/plugin";
 import { undeclaredDependencies } from "./undeclared-deps";
 
 if (import.meta.main) {
@@ -18,8 +19,11 @@ if (import.meta.main) {
     minify: config.minify,
     optimizeImports: config.optimizeImports,
     tauri: config.tauri,
-    plugin: { theme: config.theme, root: config.root, configDir: config.dir },
-    plugins: [undeclaredDependencies],
+    plugin: false,
+    plugins: [
+      m3Bun({ theme: config.theme, root: config.root, configDir: config.dir }),
+      undeclaredDependencies,
+    ],
     cwd: config.dir,
   });
   const bytes = result.outputs.reduce((sum, output) => sum + output.bytes, 0);

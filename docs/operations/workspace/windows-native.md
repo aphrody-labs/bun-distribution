@@ -55,8 +55,14 @@ Les corrections de fichiers réutilisent les propriétaires Workspace :
 chemins d'hôte, `docs-consolidation` pour les doublons et réécritures vérifiées,
 et `docs generate/check/links` pour les références générées et liens.
 Le script historique `fix-refs.nu` exige une table de renommages actuellement
-absente ; il ne constitue pas une correction exécutée. Les commandes du fork
-Bun annoncées en source doivent être installées avant leur utilisation native.
+absente ; il ne constitue pas une correction exécutée. `workspace-repair`
+réutilise désormais ces propriétaires avec `--root` : aperçu par défaut,
+application des corrections de chemins avec préservation des fichiers modifiés,
+inventaire AST et contrôles docs/liens parallèles. Le CLI natif installé route
+rename, parse, bench et verify vers le propriétaire existant du fork sélectionné
+par APHRODY_BUN_CHECKOUT. Si le binaire Bun ne contient pas encore ces builtins,
+le pont exécute le même devtools.ts du fork après une sonde d'aide isolée ; il
+ne rejoue jamais une commande de mutation. Aucune copie du moteur n'est créée.
 
 Les homes `aphrody`, `dbfr` et `ie` restent séparés avec `--profile`.
 Les imports sont additifs, précédés d'un aperçu et d'une sauvegarde vérifiée.
@@ -69,7 +75,17 @@ de sessions Claude/agy dans les homes correspondants. Trois configurations
 ont un manifeste privé de référence ; un fichier de réglages vide est conservé
 sans conversion. La CLI installée n'a pas d'importeur de réglages Claude/agy :
 aucune activation, copie d'authentification ni parité de configuration n'est
-revendiquée. Les reçus et chemins source restent dans le home privé, hors Git.
+revendiquée par cet import. Une opération distincte du propriétaire de plugins
+a ensuite actualisé les caches Claude/Codex et activé Aphrody 2.3.0 dans Codex,
+avec Yolo désactivé et un seul MCP global canonique. Les sessions déjà ouvertes
+doivent être redémarrées pour recharger les hooks. Les reçus et chemins source
+restent dans le home privé, hors Git.
+
+Le graphe natif a été rafraîchi depuis le checkout sélectionné ; trente plans
+actifs Aphrody et cinq plans Bun ont été indexés dans le seul profil aphrody.
+Les 120 mémoires et 367 références importées sont vérifiées présentes dans
+leurs domaines. Les contenus mémoire/session des quatre profils sont inchangés
+par ce rafraîchissement et l'intégrité SQLite passe.
 
 ## Positionnement et qualification
 
@@ -78,4 +94,6 @@ complète, avec les capacités IA sous `aphrody ai`. CLI, FFI, MCP et kernel
 délèguent aux mêmes crates/packages propriétaires. Les contrats et critères
 de qualification restent dans [PLAN.md](../../../PLAN.md) et
 [desktop-web](../../plans/desktop-web/PLAN.md). Les travaux CLI/FFI/UI
-concurrents ne sont pas livrés ni qualifiés par cette correction documentaire.
+concurrents restent distingués des correctifs qualifiés dans
+[le reçu d'audit](agy-audit-2026-10-09.md). Le CLI Windows installé a passé
+127 tests Rust, Clippy strict et les checks des consommateurs CLI/FFI.

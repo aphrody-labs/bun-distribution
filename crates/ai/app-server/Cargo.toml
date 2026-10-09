@@ -18,6 +18,8 @@ default = []
 rag = ["dep:aphrody-rag", "aphrody-agent-runtime/rag"]
 # Managed local models run inside the host process (no re-executed daemon).
 in-process = ["aphrody-agent-runtime/in-process"]
+# Compose the shared native product site on the app-server listener.
+site = ["dep:aphrody-site"]
 
 [dependencies]
 axum = { workspace = true }
@@ -26,6 +28,7 @@ futures = { workspace = true }
 aphrody-agent-runtime = { workspace = true }
 aphrody-agent-proto = { workspace = true }
 aphrody-app-protocol = { workspace = true }
+aphrody-site = { workspace = true, optional = true }
 aphrody-llama-server = { workspace = true }
 aphrody-config = { workspace = true }
 aphrody-model-client = { workspace = true }
@@ -45,3 +48,4 @@ tokio = { workspace = true, features = ["io-util", "macros", "rt", "sync", "time
 
 [dev-dependencies]
 tempfile = { workspace = true }
+tower = { workspace = true, features = ["util"] }

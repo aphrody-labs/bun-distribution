@@ -136,6 +136,7 @@ which              = { workspace = true }
 aphrody-n2b-core           = { workspace = true }
 aphrody-n2b-types          = { workspace = true }
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+aphrody-site.workspace = true
 # aphrody_remote_vnc: RFB client and the shared remote target model / credential store.
 aphrody-remote-desktop = { workspace = true, features = ["vnc-client"] }
 # Voice MCP tool wiring (voice_synthesize + voice_transcribe). The voice_tools

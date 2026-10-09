@@ -38,6 +38,7 @@ pub(crate) const ROUTES: &[(&str, &str)] = &[
     ("py", "py"),
     ("python", "python"),
     ("uv", "uv"),
+    ("ruff", "ruff"),
     ("vu", "vu"),
     // Build factory and its git hooks.
     ("ship", "ship"),

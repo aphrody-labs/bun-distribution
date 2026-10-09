@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
 import { schemeFromSeed } from "@aphrody/m3-tokens/dynamic-color";
+import { PET_COLORS } from "@aphrody/identity/pet";
 import {
   BRAND_SEED,
-  GEMINI_SURFACE,
   READING_COLUMN,
   SHAPE,
   SPRING_NAMES,
@@ -17,9 +17,6 @@ import {
 
 const tokensCss = await Bun.file(
   Bun.fileURLToPath(import.meta.resolve("@aphrody/m3-tokens/m3-tokens.css")),
-).text();
-const rustBrand = await Bun.file(
-  new URL("../../../../crates/ui/m3-tokens/src/gemini_brand.rs", import.meta.url),
 ).text();
 
 function luminance(hex: string): number {
@@ -38,20 +35,19 @@ describe("brand theme", () => {
     expect(onDisk).toBe(brandCss(tokensCss, BRAND_SEED));
   });
 
-  test("brand values mirror crates/ui/m3-tokens/src/gemini_brand.rs", () => {
-    expect(BRAND_SEED).toBe("#8c6c88");
-    expect(rustBrand).toContain("GEMINI_BLUE: u32 = 0xFF31_86FF");
-    expect(TITLE_GRADIENT_STOPS).toEqual(["#4285f4", "#9b72cb", "#d96570"]);
-    expect(rustBrand).toContain("GEMINI_TITLE_BLUE: u32 = 0xFF42_85F4");
-    expect(rustBrand).toContain("GEMINI_TITLE_PURPLE: u32 = 0xFF9B_72CB");
-    expect(rustBrand).toContain("GEMINI_TITLE_PINK: u32 = 0xFFD9_6570");
+  test("brand values use the canonical pet palette and semantic gradient roles", () => {
+    expect(BRAND_SEED).toBe(PET_COLORS.seed);
+    expect(TITLE_GRADIENT_STOPS).toEqual([
+      "var(--md-sys-color-primary)",
+      "var(--md-sys-color-secondary)",
+      "var(--md-sys-color-tertiary)",
+    ]);
     expect(SHAPE).toEqual({
       promptEmpty: "40px",
       promptContent: "32px",
       promptDocked: "24px 24px 0 0",
       chip: "16px",
     });
-    expect(GEMINI_SURFACE).toEqual({ light: "#f8fafd", dark: "#131314" });
     expect(READING_COLUMN).toBe(760);
     expect(WEIGHTS).toEqual({ display: 280, headline: 350, body: 400, bodyStrong: 500 });
   });
@@ -64,7 +60,10 @@ describe("brand theme", () => {
       css.indexOf(":root.light,\n.light {"),
       css.indexOf(":root,\n.dark {"),
     );
-    const darkBlock = css.slice(css.indexOf(":root,\n.dark {"), css.indexOf("/* Gemini surfaces"));
+    const darkBlock = css.slice(
+      css.indexOf(":root,\n.dark {"),
+      css.indexOf("/* Exact Aphrody pet"),
+    );
     expect(lightBlock).toContain("color-scheme: light;");
     expect(darkBlock).toContain("color-scheme: dark;");
     for (const [role, hex] of Object.entries(light))
@@ -72,15 +71,10 @@ describe("brand theme", () => {
     for (const [role, hex] of Object.entries(dark)) expect(darkBlock).toContain(`${role}: ${hex};`);
   });
 
-  test("Gemini surfaces override only surface and background, with AA text contrast", () => {
+  test("pet-generated surfaces retain AA contrast with no later colour overrides", () => {
     const css = brandCss(tokensCss);
-    const overrides = css.slice(css.indexOf("/* Gemini surfaces"));
-    expect(overrides).toContain(
-      `:root.light,\n.light {\n  --md-sys-color-background: #f8fafd;\n  --md-sys-color-surface: #f8fafd;\n}`,
-    );
-    expect(overrides).toContain(
-      `:root,\n.dark {\n  --md-sys-color-background: #131314;\n  --md-sys-color-surface: #131314;\n}`,
-    );
+    expect(css.match(/--md-sys-color-surface:/g)).toHaveLength(2);
+    expect(css.match(/--md-sys-color-background:/g)).toHaveLength(2);
     const light = schemeFromSeed(BRAND_SEED, { dark: false }) as Record<string, string>;
     const dark = schemeFromSeed(BRAND_SEED, { dark: true }) as Record<string, string>;
     for (const role of [
@@ -88,8 +82,8 @@ describe("brand theme", () => {
       "--md-sys-color-on-surface-variant",
       "--md-sys-color-primary",
     ]) {
-      expect(contrast(light[role]!, GEMINI_SURFACE.light)).toBeGreaterThanOrEqual(4.5);
-      expect(contrast(dark[role]!, GEMINI_SURFACE.dark)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(light[role]!, light["--md-sys-color-surface"]!)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(dark[role]!, dark["--md-sys-color-surface"]!)).toBeGreaterThanOrEqual(4.5);
     }
   });
 

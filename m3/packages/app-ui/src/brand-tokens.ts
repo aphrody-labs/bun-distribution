@@ -1,20 +1,24 @@
 // SPDX-License-Identifier: Apache-2.0
 // Aphrody brand constants shared by the generated sheet and the webview (no generator deps).
 // The seed and accents are the colours of the Aphrody pet (m3/packages/identity, PET_COLORS).
-// Mirrors crates/ui/m3-tokens/src/gemini_brand.rs and
-// docs/research/ui/m3-expressive-gemini-2026.md section 5.
+import { PET_COLORS } from "@aphrody/identity/pet";
 
 /** Aphrody pet sock mauve (PET_COLORS.seed in @aphrody/identity). */
-export const BRAND_SEED = "#8c6c88";
+export const BRAND_SEED = PET_COLORS.seed;
 
 /** Exact pet colours kept as accents next to the derived roles. */
-export const PET_ACCENTS = { hair: "#dcd894", skin: "#fce0b4", tunic: "#f4f4f4" } as const;
+export const PET_ACCENTS = {
+  hair: PET_COLORS.hair,
+  skin: PET_COLORS.skin,
+  tunic: PET_COLORS.tunic,
+} as const;
 
-/** Gemini app surfaces (reference section 5: surface-container-low light, surface dark). */
-export const GEMINI_SURFACE = { light: "#f8fafd", dark: "#131314" } as const;
-
-/** Served `bard` title gradient (`GEMINI_TITLE_BLUE/PURPLE/PINK`). Greeting and sparkle only. */
-export const TITLE_GRADIENT_STOPS = ["#4285f4", "#9b72cb", "#d96570"] as const;
+/** Greeting and sparkle follow the pet's generated roles in either colour scheme. */
+export const TITLE_GRADIENT_STOPS = [
+  "var(--md-sys-color-primary)",
+  "var(--md-sys-color-secondary)",
+  "var(--md-sys-color-tertiary)",
+] as const;
 
 /** Prompt bar and chip corners (gemini_brand.rs, reference section 5). */
 export const SHAPE = {

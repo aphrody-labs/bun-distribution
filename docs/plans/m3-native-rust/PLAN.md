@@ -33,7 +33,7 @@ la conversion des interfaces ; les étapes intermédiaires ont un statut explici
 | OS, kernel, shell et terminal génériques | Fork Bun ; identité des crates, ABI et artefacts conservée |
 | API, IA, cloud, HTTP, MCP métier | Aphrody, propriétaires Rust existants |
 | M3, web UI et app UI du produit | Aphrody, contrats partagés et cible Rust native/WASM |
-| WebOS de démonstration du runtime | `packages/bun-webos` dans le fork, relais OS/Claude |
+| WebOS de démonstration du runtime | `packages/bun-webos` (not in repo) dans le fork, relais OS/Claude |
 | Site produit, documentation, templates et branding Aphrody | Aphrody, cible serveur Rust et composants M3 Rust |
 
 « Pure JS » désigne ici un mécanisme générique de runtime/framework. Une règle
@@ -65,7 +65,7 @@ Obscura/JSC et conserver le runtime desktop CEF jusqu'à remplacement qualifié.
   et downloads en Bun, le web API en Bun, et certains endpoints déjà en Rust.
   Une déclaration de catalogue ne prouve pas le processus réellement déployé.
 - Le relais local `.coord/handoff-apps-web.md` prévoit le transfert WebOS vers
-  `packages/bun-webos`, puis la suppression après réception du SHA Bun.
+  `packages/bun-webos` (not in repo), puis la suppression après réception du SHA Bun.
 
 ## Stack retenue
 

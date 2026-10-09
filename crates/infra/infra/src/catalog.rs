@@ -48,10 +48,14 @@ pub struct CatalogService {
     pub release_root: Option<String>,
     pub additional_upstreams: Option<Vec<String>>,
     pub public: Option<bool>,
+    /// Declared public ingress owner. `direct-rust` is restricted by topology
+    /// validation to an explicit native Rust site on its host's public 80/443.
+    pub public_proxy: Option<String>,
     pub staged: Option<bool>,
     pub required: Option<bool>,
     pub note: Option<String>,
-    /// Primary loopback/private listener. Optional for backward compatibility;
+    /// Primary listener, normally loopback/private. Only explicit `direct-rust`
+    /// ingress can use a declared host's public 80/443. Optional for compatibility;
     /// when absent, [`CatalogService::effective_port`] derives it from `health`.
     pub port: Option<u16>,
     /// Capability ids this service provides (for AI services, the capability

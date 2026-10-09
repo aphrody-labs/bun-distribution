@@ -71,6 +71,7 @@ export function selectedSourceClean(): string[] {
     "done < <(git ls-tree -rz --full-tree HEAD)",
     'factory_scope_dirty=$(git status --porcelain --untracked-files=all --ignore-submodules=all -- "${factory_scope_parent_paths[@]}") || { echo "Cannot inspect factory parent files; preserved" >&2; exit 2; }',
     'test -z "$factory_scope_dirty" || { echo "Factory parent source files are dirty; preserved" >&2; exit 2; }',
+    'git diff --cached --quiet --ignore-submodules=none HEAD -- "${factory_scope_paths[@]}" || { echo "Selected source gitlink differs from the parent index or pin; preserved" >&2; exit 2; }',
     'git diff --quiet --ignore-submodules=dirty HEAD -- "${factory_scope_paths[@]}" || { echo "Selected source gitlink differs from the parent index or pin; preserved" >&2; exit 2; }',
     'for factory_scope_path in "${factory_scope_paths[@]}"; do',
     '  factory_scope_selected_root="$factory_scope_root/$factory_scope_path"',

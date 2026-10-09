@@ -67,6 +67,10 @@ fn install(args: &[String]) -> Result<(), String> {
 pub fn cli_main(args: Vec<OsString>) -> i32 {
     let args: Vec<String> =
         args.into_iter().skip(1).map(|a| a.to_string_lossy().into_owned()).collect();
+    if args.iter().any(|arg| matches!(arg.as_str(), "--help" | "-h")) {
+        println!("{USAGE}");
+        return 0;
+    }
     let result = match args.first().map(String::as_str) {
         Some("worker") => worker::run().map_err(|e| e.to_string()),
         Some("install") => install(&args),

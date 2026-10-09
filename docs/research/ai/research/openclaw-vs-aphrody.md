@@ -1,5 +1,7 @@
 # OpenClaw vs aphrody — Comparative Audit
 
+> Source transfer (2026-10-09): native RE now belongs to [bun-re in the pinned Bun fork](https://github.com/aphrody-labs/bun/tree/e4d57537cf3475e443eba9bda390366aa5d9d0a4/packages/bun-re). Removed Aphrody paths below describe the original integration layout; dated observations and measurements retain their original scope.
+
 > Qualification du 2026-10-09 : les owners IA retirés du checkout sont signalés « not in repo ». Les constats datés ci-dessous ne prouvent pas leur présence ou leur fonctionnement actuel.
 
 **Audit date:** 2026-05-23
@@ -86,7 +88,7 @@ openclaw's text inbox. Other channels (iMessage Apple, WhatsApp, Signal, …) = 
 | Realtime transcription | `src/realtime-transcription` | no | `aphrody-voice/src/stt` | stt module | ✅ |
 | Observability / OTel | `extensions/diagnostics-otel/-prometheus` | no | none (`aphrody-telemetry` removed 2026-10-09, no consumer) | - | ❌ |
 | Terminal | (none; uses host) | no | 8× `aphrody-terminal-*` | `aphrody-terminal-{vt,browser,llm,markdown,…}` | ✅ net-new (LLM-first terminal) |
-| Reverse engineering / forensics | (none) | no | `crates/os/kernel/comps/re`, `cli re/forensics/scan` | `aphrody-re/src/` | ✅ net-new |
+| Reverse engineering / forensics | (none) | no | `crates/os/kernel/comps/re` (not in repo), `cli re/forensics/scan` | `aphrody-re/src/` | ✅ net-new |
 | **Apple HIG / design** | macOS/iOS SwiftUI, Apple HIG | **Apple** | **Material Design 3 / M3 Expressive** | `crates/ui/m3-tokens` (hct, color, typography Google Sans, motion, shape, elevation, gemini_brand), `aphrody-design`, `mui-rs-components`, `aphrody-wgpu-material` | ✅ Google equivalent |
 | **macOS menu-bar app** | `apps/macos` (not in repo) | **Apple** | M3 native UI (`mui-rs`, `gui`, `a2a-ui`) + cross-platform CLI | `crates/mui-rs*`, `gui` | ✅ Google/cross-plat equivalent |
 | **iOS/Android nodes** | `apps/{ios,android}` | **Apple/mobile** | Android/Compose patterns via M3; `aphrody-react-reconciler` | `m3-tokens/src/adaptive.rs` | ✅ (Google/M3) |

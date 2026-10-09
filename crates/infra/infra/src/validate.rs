@@ -379,7 +379,9 @@ fn topology_ports(topology: &Value, host: &str) -> Option<(BTreeSet<u64>, BTreeS
 
 /// Every active service host must exist in the topology, including health-only listeners.
 /// Every active explicit catalog `port` must be internal-only on its declared host
-/// (or some host when unscoped), and public on none: only nginx owns 80/443.
+/// (or some host when unscoped), and public on none. The only direct ingress
+/// exception is an explicitly host-scoped public native `rust-site` on 80/443,
+/// with `publicProxy: direct-rust` and the host's matching publicPorts allocation.
 /// Retired records preserve historical bindings without reserving live ports.
 pub fn check_topology_ports(catalog: &Value, topology: &Value) -> Report {
     let mut report = Report::default();
@@ -418,8 +420,42 @@ pub fn check_topology_ports(catalog: &Value, topology: &Value) -> Report {
             None => hosts.iter().flat_map(|(internal, _)| internal.iter().copied()).collect(),
         };
         let Some(port) = service.get("port").and_then(Value::as_u64) else {
+            if str_field(service, "publicProxy") == Some("direct-rust") {
+                report.errors.push(format!("{id}: direct-rust ingress requires an explicit port"));
+            }
             continue;
         };
+        if str_field(service, "publicProxy") == Some("direct-rust") {
+            if str_field(service, "kind") != Some("rust-site")
+                || str_field(service, "runtime") != Some("rust")
+                || service.get("public").and_then(Value::as_bool) != Some(true)
+            {
+                report.errors.push(format!(
+                    "{id}: direct-rust ingress requires kind rust-site, runtime rust and public:true"
+                ));
+                continue;
+            }
+            let Some(host) = declared_host else {
+                report.errors.push(format!("{id}: direct-rust ingress requires an explicit host"));
+                continue;
+            };
+            if !matches!(port, 80 | 443) {
+                report
+                    .errors
+                    .push(format!("{id}: direct-rust ingress only permits port 80 or 443"));
+                continue;
+            }
+            // Host existence was checked above. Allocation on another host
+            // never authorizes exposure here, even for the same public port.
+            let public =
+                topology_ports(topology, host).map(|(_, public)| public).unwrap_or_default();
+            if !public.contains(&port) || internal.contains(&port) {
+                report.errors.push(format!(
+                    "{id}: direct-rust port {port} must be publicPorts and not internalOnly on host {host}"
+                ));
+            }
+            continue;
+        }
         if hosts.iter().any(|(_, public)| public.contains(&port)) {
             report.errors.push(format!("{id}: port {port} is a public topology port"));
         } else if !internal.contains(&port) {
@@ -1849,6 +1885,82 @@ mod tests {
         assert_error(
             &check_topology_ports(&catalog, &topology).errors,
             "private: port 8793 is a public topology port",
+        );
+    }
+
+    fn direct_site(port: u16) -> Value {
+        json!({"id":"native-site","host":"vps","kind":"rust-site","runtime":"rust","public":true,"publicProxy":"direct-rust","port":port})
+    }
+
+    #[test]
+    fn explicit_native_site_ingress_accepts_only_declared_host_public80_and443() {
+        let topology = json!({"hosts":{
+            "vps":{"network":{"publicPorts":[80,443],"internalOnly":[8788,8793]}},
+            "dbfr":{"network":{"publicPorts":[80,443],"internalOnly":[8788,8793]}}
+        }});
+        for port in [80, 443] {
+            let report = check_topology_ports(&json!({"services":[direct_site(port)]}), &topology);
+            assert!(report.errors.is_empty(), "{report:?}");
+        }
+        // The typed catalog preserves the existing explicit ingress field.
+        let typed: crate::catalog::CatalogService =
+            serde_json::from_value(direct_site(80)).unwrap();
+        assert_eq!(typed.public_proxy.as_deref(), Some("direct-rust"));
+    }
+
+    #[test]
+    fn native_ingress_rejects_other_kinds_runtimes_flags_and_undeclared_hosts() {
+        let topology =
+            json!({"hosts":{"vps":{"network":{"publicPorts":[80,443],"internalOnly":[8788]}}}});
+        for (key, value, message) in [
+            ("kind", json!("mcp-server"), "requires kind rust-site"),
+            ("kind", json!("a2a"), "requires kind rust-site"),
+            ("runtime", json!("bun"), "runtime rust"),
+            ("public", json!(false), "public:true"),
+            ("host", json!("unknown"), "unknown topology host"),
+            ("host", Value::Null, "host must be"),
+        ] {
+            let mut service = direct_site(80);
+            service[key] = value;
+            assert_error(
+                &check_topology_ports(&json!({"services":[service]}), &topology).errors,
+                message,
+            );
+        }
+        let mut unscoped = direct_site(80);
+        unscoped.as_object_mut().unwrap().remove("host");
+        assert_error(
+            &check_topology_ports(&json!({"services":[unscoped]}), &topology).errors,
+            "requires an explicit host",
+        );
+    }
+
+    #[test]
+    fn native_ingress_cannot_expose_control_ports_or_use_another_hosts_allocation() {
+        let topology = json!({"hosts":{
+            "vps":{"network":{"publicPorts":[],"internalOnly":[8788,8793]}},
+            "dbfr":{"network":{"publicPorts":[80,443],"internalOnly":[]}}
+        }});
+        assert_error(
+            &check_topology_ports(&json!({"services":[direct_site(80)]}), &topology).errors,
+            "must be publicPorts and not internalOnly on host vps",
+        );
+        for port in [3000, 8788, 8793] {
+            assert_error(
+                &check_topology_ports(&json!({"services":[direct_site(port)]}), &topology).errors,
+                "only permits port 80 or 443",
+            );
+        }
+        let overlap = json!({"hosts":{"vps":{"network":{"publicPorts":[80],"internalOnly":[80]}}}});
+        assert_error(
+            &check_topology_ports(&json!({"services":[direct_site(80)]}), &overlap).errors,
+            "must be publicPorts and not internalOnly",
+        );
+        let mut missing_port = direct_site(80);
+        missing_port.as_object_mut().unwrap().remove("port");
+        assert_error(
+            &check_topology_ports(&json!({"services":[missing_port]}), &topology).errors,
+            "requires an explicit port",
         );
     }
 

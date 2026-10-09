@@ -69,7 +69,7 @@
         }
       },
       "network": {
-        "publicPorts": [],
+        "publicPorts": [80],
         "internalOnly": [
           3004, 3007, 3014, 4000, 4002, 4005, 5006, 5010, 5011, 8083, 8085, 8789, 8790,
           8794, 8800, 8801, 8810, 8812
@@ -160,7 +160,7 @@
       "forbidden": ["production-database", "public-runtime"]
     }
   },
-  "portPolicy": "only-nginx-80-443-public; every application port loopback or private-network",
+  "portPolicy": "nginx or explicitly catalogued read-only native Rust site ingress owns public80/443; MCP/A2A and all other application ports stay loopback or private-network",
   "bandwidthPolicy": "serve-site-api-cdn-first; backups rate-limited; crawlers paused by default",
   "diskBlockerPolicy": {
     "requestedAt": "2026-10-07",

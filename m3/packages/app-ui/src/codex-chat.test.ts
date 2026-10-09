@@ -340,7 +340,7 @@ describe("Codex Chat - Pixel-Perfect Parity & Timeline Cards", () => {
     expect(html).toContain('data-shape="docked"');
     expect(html).toContain("app-prompt-bar");
     // Assistant sparkle mark filled with the title gradient
-    expect(html).toContain('stop-color="#4285f4"');
+    expect(html).toContain('stop-color="var(--md-sys-color-primary)"');
 
     // User message: compact rounded pill (radius 28px extra-large, surface-container-high, max-w-[75%])
     expect(html).toContain("rounded-[28px]");

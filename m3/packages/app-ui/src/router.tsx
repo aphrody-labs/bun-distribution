@@ -20,6 +20,14 @@ import { SourceDetail } from "./routes/sources/SourceDetail";
 import { AdaptersScreen } from "./routes/sources/Adapters";
 import { TagView } from "./routes/tag";
 import { ShellLayout } from "./ShellLayout";
+import {
+  AppearanceRedirect,
+  DocumentsRoute,
+  MaterialRoute,
+  ProductHome,
+  ProductNotFound,
+  TemplatesRoute,
+} from "./routes/product";
 
 /**
  * Unified application routes for the Spacedrive M3 Shell:
@@ -36,7 +44,23 @@ export const explorerRoutes = [
     children: [
       {
         index: true,
-        element: <Navigate to="/explorer" replace />,
+        element: <ProductHome />,
+      },
+      {
+        path: "docs/:id?",
+        element: <DocumentsRoute />,
+      },
+      {
+        path: "templates/:id?",
+        element: <TemplatesRoute />,
+      },
+      {
+        path: "material-3/:page?",
+        element: <MaterialRoute />,
+      },
+      {
+        path: "showcase/:page?",
+        element: <MaterialRoute />,
       },
       {
         path: "chat",
@@ -125,6 +149,14 @@ export const explorerRoutes = [
       {
         path: "settings",
         element: <Settings embedded />,
+      },
+      {
+        path: "settings/appearance",
+        element: <AppearanceRedirect />,
+      },
+      {
+        path: "*",
+        element: <ProductNotFound />,
       },
     ],
   },

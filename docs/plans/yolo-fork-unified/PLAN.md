@@ -59,7 +59,7 @@ nom `yolo` il exécute le CLI embarqué ; sous le nom `vu` le CLI délègue à l
   délègue à l'artefact `~/.vu` (`0.1.0-cf385dd2`).
 - [x] Windows (code) : `install.ps1` crée `bin\bun.exe` et `bin\vu.exe` en liens durs vers `yolo.exe` (aucune copie,
   `YOLO_NO_ALIASES=1` les retire) ; le fork reconnaît `bun.exe`/`bunx.exe` comme moteur, `isVuArgv0` reconnaît `vu.exe`.
-- [x] libpython partagée côté `libaphrody` : `crates/interop/ffi/src/python_ffi.rs` (`aphrody_py_*`) ouvre la
+- [x] libpython partagée côté `libaphrody` : `crates/interop/ffi/src/python_ffi.rs` (not in repo) (`aphrody_py_*`) ouvre la
   bibliothèque en `RTLD_GLOBAL` sous Unix et par `LoadLibraryW`/`GetProcAddress` (`python3XY.dll`, déjà chargée ou
   explicite) sous Windows ; liaison `bun:ffi` `@aphrody/runtime-sdk/python` (`Python.open`, `run`, `eval`, `call`,
   `version`, libpython de l'artefact `vu` actif) ; `yolo py eval|exec` exécute Python en processus sur cette bibliothèque.

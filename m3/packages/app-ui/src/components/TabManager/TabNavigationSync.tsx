@@ -23,11 +23,13 @@ export function TabNavigationSync() {
   // Track previous activeTabId to detect tab switches
   const prevActiveTabIdRef = useRef(activeTabId);
 
-  // Save current location and update title for active tab (only for in-tab navigation)
+  // The opened URL owns startup. Restore saved locations only on an actual tab switch.
   useEffect(() => {
-    // Skip saving during tab switch - currentPath belongs to the old tab
     if (prevActiveTabIdRef.current !== activeTabId) {
       prevActiveTabIdRef.current = activeTabId;
+      if (activeTab && currentPath !== activeTab.savedPath) {
+        void navigate(activeTab.savedPath, { replace: true });
+      }
       return;
     }
 
@@ -51,15 +53,8 @@ export function TabNavigationSync() {
     updateTabTitle,
     location.pathname,
     location.search,
+    navigate,
   ]);
-
-  // Navigate to saved location when switching tabs
-  useEffect(() => {
-    if (activeTab && currentPath !== activeTab.savedPath) {
-      navigate(activeTab.savedPath, { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTabId]);
 
   return null;
 }

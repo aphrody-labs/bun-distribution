@@ -3,9 +3,11 @@
 
 # Electron reverse-engineering intel
 
+> Source transfer (2026-10-09): native RE now belongs to [bun-re in the pinned Bun fork](https://github.com/aphrody-labs/bun/tree/e4d57537cf3475e443eba9bda390366aa5d9d0a4/packages/bun-re). Removed Aphrody paths below describe the original integration layout; dated observations and measurements retain their original scope.
+
 > RE-useful facts mined from `electron/electron`, `electron/asar`, and
 > `electron/fuses` (upstream, `main` branch, fetched 2026-05-21). Used to drive
-> `crates/os/kernel/comps/re/src/electron.rs`. **No secrets.** Everything below is the
+> `crates/os/kernel/comps/re/src/electron.rs` (not in repo). **No secrets.** Everything below is the
 > public on-disk / on-binary wire format of an Electron application.
 
 ## 1. ASAR archive format (`electron/asar`)
@@ -130,7 +132,7 @@ into running arbitrary Node — a "living off the land" surface. `OnlyLoadAppFro
 
 ## What aphrody-re should implement
 
-Implemented in `crates/os/kernel/comps/re/src/electron.rs` over a raw `&[u8]`:
+Implemented in `crates/os/kernel/comps/re/src/electron.rs` (not in repo) over a raw `&[u8]`:
 
 1. **Fuse sentinel scan** via `memchr::memmem::find` for
    `dL7pKGdnNz796PbbjQWNKmHXBZaB9tsX`; on hit, read `version`/`length` header

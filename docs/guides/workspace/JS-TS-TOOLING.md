@@ -24,7 +24,7 @@ remains governed by [GOAL](../../../GOAL.md), [PLAN](../../../PLAN.md) and
 | Runtime discovery and pins | aphrody-toolchains | Bun/uv/Nushell discovery and launch environment; discovery is not engine embedding |
 | Native parser, formatter, linter and minifier | aphrody-oxc-bridge | `aphrody_oxc_*`, ABI 1, official Oxc APIs |
 | Grouped optional provider | [aphrody-ffi](../../../crates/interop/ffi) feature `tooling` | Reexports the two C ABIs from `libaphrody_ffi`; group ABI 1 (`yolo_tooling_abi_version`); no second engine implementation |
-| Repository mapper, watcher and polyglot inspection | [yolo-core](../../../crates/engine/yolo-core) with `repository-tools` | `mapper` and `polyglot`; Aphrody's `aphrody_yolo` library reexports them |
+| Repository mapper, watcher and polyglot inspection | [yolo-core in the pinned Bun SDK](https://github.com/aphrody-labs/bun/tree/6181424bc2fca4349560832161c07ba85c33e8ef/packages/bun-runtime-sdk/crates/yolo-core) with `repository-tools` | `mapper` and `polyglot`; Aphrody's `aphrody_yolo` library reexports them |
 
 The seven transferred crates preserve their package, library and binary identities.
 The `tooling` feature of `aphrody-ffi` (formerly the `yolo-tooling` cdylib) is the grouped artifact owner. The default Cargo members remain
@@ -36,7 +36,7 @@ The N2B Bun package moved to the Bun fork and is consumed from npm:
 
 | Package | Source | Behavior |
 | --- | --- | --- |
-| `@aphrody/bun-plugin-n2b` | aphrody-labs/bun `packages/bun-n2b` | In-process scan, codemods, Bun plugin and the `n2b` CLI (replaces `@aphrody/n2b-core`) |
+| `@aphrody/bun-plugin-n2b` | [Bun fork](https://github.com/aphrody-labs/bun), package bun-n2b | In-process scan, codemods, Bun plugin and the `n2b` CLI (replaces `@aphrody/n2b-core`); check the fork revision before using this dated inventory |
 
 ## Native calls and ownership
 
@@ -75,7 +75,7 @@ owners for their broader CLI behavior; no `npx` or `bunx` execution is needed.
 
 ## Shared scan budget and safe migration boundaries
 
-[The std-only resource owner](../../../crates/engine/yolo-core/src/resources.rs) supplies one
+[The std-only resource owner in the pinned Bun SDK](https://github.com/aphrody-labs/bun/blob/6181424bc2fca4349560832161c07ba85c33e8ef/packages/bun-runtime-sdk/crates/yolo-core/src/resources.rs) supplies one
 exclusive scan lease and a worker budget of 1 through 6. N2B and repository mapping
 use the same owner; defaults cap available parallelism at six. The lease creates
 no worker pool. It serializes scans sharing one linked native library, including

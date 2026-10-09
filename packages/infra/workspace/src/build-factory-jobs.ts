@@ -55,7 +55,7 @@ function jobLocation(config: BuildFactoryConfig, jobId: string) {
   return { artifactRoot, base: posix.join(artifactRoot, "factory-jobs"), jobId };
 }
 
-const IMPORTS = String.raw`import { constants, openSync, closeSync, readSync, writeFileSync, readFileSync, lstatSync, realpathSync, mkdirSync, renameSync, linkSync, unlinkSync } from "node:fs";
+const IMPORTS = String.raw`import { constants, openSync, closeSync, readSync, writeFileSync, readFileSync, readdirSync, lstatSync, realpathSync, mkdirSync, renameSync, linkSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 `;
 
@@ -228,13 +228,40 @@ try {
     fingerprint: meta.fingerprint, status: "active", pid: process.pid, processStart, bootId,
     startedAt: new Date().toISOString()
   });
-  // timeout owns a separate process group inside this detached session. KILL avoids
-  // a grace period in which a lease supervisor could exit while its compiler survives.
+  // Own the session/process group directly: host timeout implementations do not
+  // consistently terminate descendants, and leases must outlive their owner.
   const child = Bun.spawn(
-    ["timeout", "--signal=KILL", String(meta.commandTimeoutSeconds), "bash", "-c", input.remoteCommand],
-    { stdin: "ignore", stdout: "inherit", stderr: "inherit" }
+    ["bash", "-c", input.remoteCommand],
+    { detached: true, stdin: "ignore", stdout: "inherit", stderr: "inherit" }
   );
-  const exitCode = await child.exited;
+  let expired = false;
+  let cancellationError;
+  const deadline = setTimeout(() => {
+    expired = true;
+    try { process.kill(-child.pid, "SIGKILL"); }
+    catch (error) { if (error.code !== "ESRCH") cancellationError = error; }
+  }, meta.commandTimeoutSeconds * 1000);
+  let ownerExit;
+  try { ownerExit = await child.exited; }
+  finally { clearTimeout(deadline); }
+  if (cancellationError) throw cancellationError;
+  if (expired) {
+    const stopDeadline = performance.now() + 5000;
+    for (;;) {
+      const running = readdirSync("/proc").some((entry) => {
+        if (!/^[0-9]+$/.test(entry)) return false;
+        let stat;
+        try { stat = readFileSync("/proc/" + entry + "/stat", "utf8"); }
+        catch (error) { if (error.code === "ENOENT" || error.code === "ESRCH") return false; throw error; }
+        const fields = stat.slice(stat.lastIndexOf(")") + 2).trim().split(/\s+/);
+        return fields[0] !== "Z" && Number(fields[2]) === child.pid && Number(fields[3]) === child.pid;
+      });
+      if (!running) break;
+      if (performance.now() >= stopDeadline) fail("Factory owner group did not stop; completion is indeterminate");
+      await Bun.sleep(10);
+    }
+  }
+  const exitCode = expired ? 124 : ownerExit;
   atomic(join(input.directory, "exit.json"), {
     fingerprint: meta.fingerprint, exitCode, finishedAt: new Date().toISOString()
   }, true);
@@ -287,7 +314,7 @@ try {
 
 const SUBMIT_BODY = String.raw`
 try {
-  for (const tool of ["nohup", "setsid", "flock", "timeout", "bash"])
+  for (const tool of ["nohup", "setsid", "flock", "bash"])
     if (!Bun.which(tool)) fail("Required existing factory tool is missing: " + tool);
   canonicalBase(true);
   const lock = join(input.base, ".submit.lock");
