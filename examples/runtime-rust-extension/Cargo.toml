@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "yolo-rust-extension-example"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "yolo_rust_extension"
+crate-type = ["rlib", "cdylib"]
+
+# This consumer has no engine or repository workspace dependencies.
+[workspace]
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+
