@@ -10,7 +10,7 @@ import {
   SwitchField,
 } from "@aphrody/m3-forms";
 import { Button } from "@aphrody/m3-primitives";
-import { Card, Code, Page, Section } from "../components/ui.tsx";
+import { Card, Code, Page, Section } from "../ui.tsx";
 import type { PageProps } from "./index.ts";
 
 interface Profile {

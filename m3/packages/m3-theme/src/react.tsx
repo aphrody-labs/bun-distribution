@@ -29,6 +29,8 @@ export interface M3ThemeContextType {
   resolvedTheme: "light" | "dark";
   contrastLevel: number;
   variant: SchemeVariant;
+  /** Source of the Rust scheme sheets, when runtime theme changes are possible. */
+  sheet: M3SchemeSheet | undefined;
   /** Failure of the last Rust scheme sheet request; the previous colours stay in place. */
   schemeError: Error | undefined;
   setThemeMode: (mode: ThemeMode) => void;
@@ -158,6 +160,7 @@ export function M3ThemeProvider({
       resolvedTheme,
       contrastLevel,
       variant,
+      sheet,
       schemeError,
       setThemeMode,
       setSeedColor,
@@ -170,6 +173,7 @@ export function M3ThemeProvider({
       resolvedTheme,
       contrastLevel,
       variant,
+      sheet,
       schemeError,
       setSeedColor,
       setContrastLevel,

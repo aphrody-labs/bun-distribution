@@ -2,7 +2,7 @@ import { BREAKPOINTS, HEIGHT_BREAKPOINTS, marginFor, navigationFor, panesFor, WI
 import { useEffect, useRef, useState } from "react";
 import { attachDpad } from "../adaptive/dpad.ts";
 import { LAYOUT_MODES, setLayoutOverride, type LayoutMode } from "../adaptive/window.ts";
-import { Card, Page, Section } from "../components/ui.tsx";
+import { Card, Page, Section } from "../ui.tsx";
 import type { PageProps } from "./index.ts";
 
 const FRAMES: ReadonlyArray<{ mode: LayoutMode; width: number; height: number; label: string }> = [

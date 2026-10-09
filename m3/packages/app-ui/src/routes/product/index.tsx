@@ -3,14 +3,16 @@ import { AphrodyAvatar, AphrodyPet, PET_COLORS } from "@aphrody/identity";
 import { PET_ATLAS_URL } from "@aphrody/identity/atlas";
 import { Button } from "@aphrody/m3-primitives";
 import { Markdown } from "@aphrody/m3-ai";
+import { httpSchemeSheet } from "@aphrody/m3-theme";
 import { M3ThemeProvider } from "@aphrody/m3-theme/react";
 import { Component, Suspense, useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { usePlatform } from "../../contexts/PlatformContext";
 import { publicDestinations } from "../../public-navigation";
-import { PAGES, type PageId } from "../../../showcase/src/pages";
-import { useAdaptive } from "../../../showcase/src/adaptive/window";
-import { PACKAGES } from "../../../showcase/src/inventory";
+import { PAGES, type PageId } from "../../material/pages";
+import { useAdaptive } from "../../material/adaptive/window";
+import { PACKAGES } from "../../material/inventory";
+import { DESTINATIONS } from "../../material/nav";
 import { documentsFrom, templatesFrom, loadCatalog } from "./catalog";
 
 function ProductPage({
@@ -287,25 +289,7 @@ export function TemplatesRoute() {
   );
 }
 
-const pageLabels: Record<PageId, string> = {
-  overview: "Overview",
-  theme: "Theme",
-  components: "Components",
-  primitives: "Primitives",
-  forms: "Forms",
-  explorer: "Explorer",
-  motion: "Motion",
-  icons: "Icons & fonts",
-  ai: "AI",
-  reader: "Reader",
-  design: "Design",
-  next: "Next",
-  system: "System",
-  brands: "Identity & pet",
-  adaptive: "Adaptive layouts",
-};
-
-class ShowcaseBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
+class DemoBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
   state = { error: null as string | null };
   static getDerivedStateFromError(error: Error) {
     return { error: error.message };
@@ -319,6 +303,15 @@ class ShowcaseBoundary extends Component<{ children: ReactNode }, { error: strin
       this.props.children
     );
   }
+}
+
+/** Runtime seed, variant and contrast changes: Rust `scheme` sheets from aphrody-site. */
+const rustSchemeSheet = httpSchemeSheet();
+
+/** Old `/showcase/:page` links land on the Material 3 route. */
+export function LegacyShowcaseRedirect() {
+  const { page } = useParams();
+  return <Navigate to={page ? `/material-3/${page}` : "/material-3"} replace />;
 }
 
 export function MaterialRoute() {
@@ -336,12 +329,13 @@ export function MaterialRoute() {
   return (
     <div
       ref={setTarget}
-      className="product-showcase h-full overflow-auto bg-surface text-on-surface"
+      className="product-material h-full overflow-auto bg-surface text-on-surface"
     >
       {target && (
         <M3ThemeProvider
           target={target}
           defaultSeedColor={PET_COLORS.seed}
+          sheet={rustSchemeSheet}
           defaultThemeMode={document.documentElement.classList.contains("dark") ? "dark" : "light"}
         >
           <div className="flex flex-wrap items-center gap-3 p-6">
@@ -354,7 +348,7 @@ export function MaterialRoute() {
               value={selected}
               onChange={(event) => navigate(`/material-3/${event.target.value}`)}
             >
-              {Object.entries(pageLabels).map(([id, label]) => (
+              {DESTINATIONS.map(({ id, label }) => (
                 <option key={id} value={id}>
                   {label}
                 </option>
@@ -364,11 +358,11 @@ export function MaterialRoute() {
               {PACKAGES.length} real workspace packages and apps
             </span>
           </div>
-          <ShowcaseBoundary key={selected}>
+          <DemoBoundary key={selected}>
             <Suspense fallback={<output className="block p-6">Loading demonstration…</output>}>
               <Demo adaptive={adaptive} host="native" />
             </Suspense>
-          </ShowcaseBoundary>
+          </DemoBoundary>
         </M3ThemeProvider>
       )}
     </div>

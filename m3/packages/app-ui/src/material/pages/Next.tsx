@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useEffect, useState } from "react";
 import { useM3Theme } from "@aphrody/m3-theme/react";
-import { Card, Code, Page, Section } from "../components/ui.tsx";
+import { Card, Code, Page, Section } from "../ui.tsx";
 import type { PageProps } from "./index.ts";
 
 interface NextOutput {
@@ -57,7 +57,7 @@ export default function Next({ adaptive }: PageProps) {
     >
       <Section
         title="Generated integration documents"
-        description="Public helpers run in this Bun showcase; the separate Next example qualifies its App Router host."
+        description="Public helpers run in the standalone Bun host; the separate Next example qualifies its App Router host."
       >
         <Card className="flex flex-col gap-3">
           <label className="flex flex-col gap-2 text-label-large">

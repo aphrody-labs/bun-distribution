@@ -5,6 +5,8 @@ import { afterEach, describe, expect, test } from "bun:test";
 import {
   applyDynamicFusionTheme,
   clearM3Scheme,
+  httpSchemeSheet,
+  schemeRoles,
   type M3SchemeRequest,
   type M3SchemeSheet,
 } from "../src/index.ts";
@@ -36,6 +38,33 @@ afterEach(() => {
 });
 
 describe("runtime theme application", () => {
+  test("httpSchemeSheet sends the m3Css fields and surfaces server errors", async () => {
+    const urls: string[] = [];
+    const ok = httpSchemeSheet("/api/m3/css", async (url) => {
+      urls.push(url);
+      return new Response(
+        ":root {\n  --md-sys-color-primary: #112233;\n  --md-ext-color-x: #000000;\n}\n",
+      );
+    });
+    const request = {
+      sheet: "scheme",
+      seed: "#8c6c88",
+      variant: "tonal-spot",
+      contrast: 0.5,
+      dark: true,
+    } as const;
+    const css = await ok(request);
+    expect(urls).toEqual([
+      "/api/m3/css?sheet=scheme&seed=%238c6c88&variant=tonal-spot&contrast=0.5&dark=true",
+    ]);
+    expect(schemeRoles(css)).toEqual({ "--md-sys-color-primary": "#112233" });
+    const failing = httpSchemeSheet(
+      "/api/m3/css",
+      async () => new Response('unknown variant "content"', { status: 400 }),
+    );
+    expect(failing(request)).rejects.toThrow("answered 400: unknown variant");
+  });
+
   test("without a Rust sheet source a theme change fails and changes nothing", async () => {
     const target = document.createElement("section");
     const before = target.outerHTML;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Card, Code, Page, Section, Svg, Chips } from "../components/ui.tsx";
+import { Card, Code, Page, Section, Svg, Chips } from "../ui.tsx";
 import { PACKAGES } from "../inventory.ts";
-import { DESTINATIONS } from "../shell/nav.ts";
+import { DESTINATIONS } from "../nav.ts";
 import type { PageProps } from "./index.ts";
 import arrowIcon from "m3:icons/chevron_right";
 
@@ -45,7 +45,7 @@ export default function Overview({ adaptive, host = "bun" }: PageProps) {
           : "grid-cols-3";
   return (
     <Page
-      title="Aphrody M3 Showcase"
+      title="Aphrody Material 3"
       summary={
         host === "native"
           ? "The real Material 3 packages, together in the Aphrody application. Explore components, forms, motion and the pet's generated theme."
@@ -77,7 +77,7 @@ export default function Overview({ adaptive, host = "bun" }: PageProps) {
           {[
             [String(PACKAGES.length), "packages and apps"],
             [String(inWorkspace), "in the Bun workspace"],
-            [String(DESTINATIONS.length), "showcase pages"],
+            [String(DESTINATIONS.length), "pages"],
             host === "native"
               ? [String(PACKAGES.filter((entry) => !entry.private).length), "reusable packages"]
               : [info ? `Bun ${info.bun}` : "…", "serving this page"],

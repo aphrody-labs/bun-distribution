@@ -8,10 +8,10 @@ import closeIcon from "m3:icons/close";
 import contrastIcon from "m3:icons/contrast";
 import darkIcon from "m3:icons/dark_mode";
 import lightIcon from "m3:icons/light_mode";
-import { attachDpad } from "../adaptive/dpad.ts";
-import { useAdaptive, type AdaptiveState } from "../adaptive/window.ts";
-import { Svg } from "../components/ui.tsx";
-import { PAGES } from "../pages/index.ts";
+import { attachDpad } from "../../../src/material/adaptive/dpad.ts";
+import { useAdaptive, type AdaptiveState } from "../../../src/material/adaptive/window.ts";
+import { Svg } from "../../../src/material/ui.tsx";
+import { PAGES } from "../../../src/material/pages/index.ts";
 import { useRoute } from "../router.ts";
 import {
   DESTINATIONS,
@@ -20,7 +20,7 @@ import {
   PRIMARY_IDS,
   findDestination,
   type Destination,
-} from "./nav.ts";
+} from "../../../src/material/nav.ts";
 
 const MODE_LABEL = { light: "Light", dark: "Dark", system: "System" } as const;
 

@@ -1,6 +1,6 @@
 // Small building blocks shared by the pages. Plain elements styled with the M3 preset utilities.
 import type { CSSProperties, ReactNode } from "react";
-import { PACKAGES } from "../inventory.ts";
+import { PACKAGES } from "./inventory.ts";
 
 /** Inline SVG markup from `m3:icons/*`. */
 export function Svg({ html, className = "", small = false, label }: { html: string; className?: string; small?: boolean; label?: string }) {

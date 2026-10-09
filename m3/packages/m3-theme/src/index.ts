@@ -16,8 +16,7 @@ export {
   getGeminiBrandCss,
 } from "./brand";
 
-/** Scheme variant names. The Rust owner (`aphrody_m3_tokens::scheme::Variant`) rejects `content` and
- * `fidelity` with an explicit error. */
+/** Scheme variant names, all provided by the Rust owner (`aphrody_m3_tokens::scheme::Variant`). */
 export type SchemeVariant =
   | "tonalSpot"
   | "content"
@@ -97,6 +96,41 @@ function styleElement(target: HTMLElement): HTMLStyleElement | null {
   const id = target.getAttribute(STYLE_ATTRIBUTE);
   if (!id) return null;
   return target.ownerDocument.head.querySelector(`style[${STYLE_ATTRIBUTE}="${id}"]`);
+}
+
+/** `--md-sys-color-*` roles of a Rust `scheme` sheet, in sheet order. */
+export function schemeRoles(css: string): Record<string, string> {
+  const roles: Record<string, string> = {};
+  for (const [, name, value] of schemeDeclarations(css).matchAll(
+    /(--md-sys-color-[\w-]+)\s*:\s*([^;]+);/g,
+  ))
+    roles[name!] = value!.trim();
+  return roles;
+}
+
+/**
+ * Scheme sheets from an HTTP endpoint serving the Rust renderer with the `m3Css` request fields as
+ * query parameters (`GET /api/m3/css` of aphrody-site). A non-2xx answer is an error carrying the
+ * server message.
+ */
+export function httpSchemeSheet(
+  endpoint = "/api/m3/css",
+  fetcher: (url: string) => Promise<Response> = (url) => fetch(url),
+): M3SchemeSheet {
+  return async ({ sheet, seed, variant, contrast, dark }) => {
+    const query = new URLSearchParams({
+      sheet,
+      seed,
+      variant,
+      contrast: String(contrast),
+      dark: String(dark),
+    });
+    const response = await fetcher(`${endpoint}?${query}`);
+    const body = await response.text();
+    if (!response.ok)
+      throw new Error(`@aphrody/m3-theme: ${endpoint} answered ${response.status}: ${body.trim()}`);
+    return body;
+  };
 }
 
 /** Remove the runtime scheme sheet of `target`; the compiled sheets apply again. */

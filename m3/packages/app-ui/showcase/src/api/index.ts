@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Local showcase computations. Providers, credentials and OS writes stay with their native owners.
 import { defineM3Api } from "@aphrody/m3-bun/api";
-import { EventEncoder, EventType, type BaseEvent } from "@aphrody/m3-ai/ag-ui";
 import { DesignCompiler } from "@aphrody/m3-design";
 import { generate, TARGETS, type Target, type ThemeInput } from "@aphrody/m3-os-themes";
 import {
@@ -17,9 +16,8 @@ import {
 import { ownerM3Version, renderTemplate, TEMPLATES } from "@aphrody/scaffold";
 import { transformSource, type MigrationKind } from "@aphrody/m3-codemods";
 import lintPlugin from "@aphrody/eslint-plugin-m3";
-import googleSansCode from "@aphrody/m3-fonts/fonts/web/GoogleSansCode-latin.woff2" with { type: "file" };
-import robotoMono from "@aphrody/m3-fonts/fonts/web/RobotoMono-latin.woff2" with { type: "file" };
-import { PACKAGES } from "../inventory.ts";
+import { PACKAGES } from "../../../src/material/inventory.ts";
+import { FIXTURE_HEADERS, fixtureStream } from "../../../src/material/ai-fixture.ts";
 
 class InputError extends Error {}
 const json = (data: unknown, status = 200) =>
@@ -102,82 +100,6 @@ async function discoverMcpTools(): Promise<unknown[]> {
   return listM3Tools();
 }
 
-const fonts: Readonly<Record<string, string>> = {
-  "GoogleSansCode-latin.woff2": googleSansCode,
-  "RobotoMono-latin.woff2": robotoMono,
-};
-const fontTags = new Map<string, string>();
-
-/** A labelled local AG-UI fixture: real package data, protocol events, no model calls. */
-function fixtureStream(request: Request, prompt: string): Response {
-  const encoder = new EventEncoder();
-  const runId = "fixture-" + crypto.randomUUID();
-  const messageId = runId + "-message";
-  const response =
-    "Local protocol fixture: your draft contains " +
-    prompt.length +
-    " characters. This workspace exposes " +
-    PACKAGES.length +
-    " packages. The transcript below is rendered from AG-UI events.";
-  const events: BaseEvent[] = [
-    { type: EventType.RUN_STARTED, threadId: "showcase-fixture", runId },
-    { type: EventType.TOOL_CALL_START, toolCallId: "inventory", toolCallName: "package_inventory" },
-    { type: EventType.TOOL_CALL_ARGS, toolCallId: "inventory", delta: "{}" },
-    { type: EventType.TOOL_CALL_END, toolCallId: "inventory" },
-    {
-      type: EventType.TOOL_CALL_RESULT,
-      toolCallId: "inventory",
-      messageId: runId + "-inventory",
-      role: "tool",
-      content: JSON.stringify({ packages: PACKAGES.length, source: "build inventory" }),
-    },
-    { type: EventType.TEXT_MESSAGE_START, messageId, role: "assistant" },
-    ...response
-      .match(/.{1,12}/g)!
-      .map((delta) => ({ type: EventType.TEXT_MESSAGE_CONTENT, messageId, delta })),
-    { type: EventType.TEXT_MESSAGE_END, messageId },
-    { type: EventType.RUN_FINISHED, threadId: "showcase-fixture", runId },
-  ] as BaseEvent[];
-  let timer: ReturnType<typeof setInterval> | undefined;
-  let abort: (() => void) | undefined;
-  const cleanup = () => {
-    if (timer) clearInterval(timer);
-    if (abort) request.signal.removeEventListener("abort", abort);
-  };
-  const stream = new ReadableStream<Uint8Array>({
-    start(controller) {
-      if (request.signal.aborted) {
-        controller.error(request.signal.reason);
-        return;
-      }
-      let index = 0;
-      abort = () => {
-        cleanup();
-        controller.error(request.signal.reason);
-      };
-      request.signal.addEventListener("abort", abort, { once: true });
-      timer = setInterval(() => {
-        controller.enqueue(new TextEncoder().encode(encoder.encodeSSE(events[index++])));
-        if (index === events.length) {
-          cleanup();
-          controller.close();
-        }
-      }, 45);
-    },
-    cancel() {
-      cleanup();
-    },
-  });
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-store",
-      "X-M3-Fixture": "true",
-      "X-Content-Type-Options": "nosniff",
-    },
-  });
-}
-
 export default defineM3Api({
   "/api/packages": () =>
     Response.json(PACKAGES, { headers: { "Cache-Control": "public, max-age=60" } }),
@@ -195,29 +117,13 @@ export default defineM3Api({
       }),
     ),
   },
-  "/api/m3/fonts/:name": async (request) => {
-    const name = request.params.name;
-    if (!Object.hasOwn(fonts, name)) return json({ error: "Unknown font." }, 404);
-    const file = Bun.file(fonts[name]);
-    let tag = fontTags.get(name);
-    if (!tag) {
-      tag =
-        '"' + new Bun.CryptoHasher("sha256").update(await file.arrayBuffer()).digest("hex") + '"';
-      fontTags.set(name, tag);
-    }
-    const headers = {
-      "Content-Type": "font/woff2",
-      "Cache-Control": "public, max-age=86400",
-      ETag: tag,
-      "X-Content-Type-Options": "nosniff",
-    };
-    if (request.headers.get("if-none-match") === tag)
-      return new Response(null, { status: 304, headers });
-    return new Response(request.method === "HEAD" ? null : file, { headers });
-  },
   "/api/ai/stream": {
-    POST: guarded(async (request) =>
-      fixtureStream(request, textInput((await readJson(request)).prompt, "prompt")),
+    POST: guarded(
+      async (request) =>
+        new Response(
+          fixtureStream(textInput((await readJson(request)).prompt, "prompt"), request.signal),
+          { headers: FIXTURE_HEADERS },
+        ),
     ),
   },
   "/api/design": {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useMemo, useState } from "react";
 import { GoogleDriveListView, TagPill, type DriveItem } from "@aphrody/m3-explorer";
-import { Card, Page, Section } from "../components/ui.tsx";
+import { Card, Page, Section } from "../ui.tsx";
 import type { PageProps } from "./index.ts";
 
 const SAMPLE_FILES: DriveItem[] = [

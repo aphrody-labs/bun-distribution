@@ -10,7 +10,7 @@ import {
 import { MdOutlinedTextField, MdFilledTextField } from "@aphrody/m3-react/textfield";
 import { MdSwitch } from "@aphrody/m3-react/switch";
 import { MdSlider } from "@aphrody/m3-react/slider";
-import { Card, Page, Section } from "../components/ui.tsx";
+import { Card, Page, Section } from "../ui.tsx";
 import type { PageProps } from "./index.ts";
 
 export default function Components({ adaptive }: PageProps) {

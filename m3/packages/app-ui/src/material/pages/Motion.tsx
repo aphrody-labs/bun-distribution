@@ -13,7 +13,7 @@ import {
   useM3ReducedMotion,
   type M3TransitionPattern,
 } from "@aphrody/m3-motion";
-import { Card, Page, Section } from "../components/ui.tsx";
+import { Card, Page, Section } from "../ui.tsx";
 import type { PageProps } from "./index.ts";
 
 const PATTERNS: M3TransitionPattern[] = [

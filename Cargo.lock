@@ -2189,6 +2189,7 @@ dependencies = [
 name = "aphrody-site"
 version = "1.0.0"
 dependencies = [
+ "aphrody-m3-tokens",
  "axum",
  "clap",
  "hex",

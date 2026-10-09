@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@aphrody/m3-fonts/fonts.css";
 @import "@aphrody/m3-tokens/m3-tokens.css";
 @import "@aphrody/m3-tokens/expressive.css";
 @import "@aphrody/m3-tailwind/preset.css";

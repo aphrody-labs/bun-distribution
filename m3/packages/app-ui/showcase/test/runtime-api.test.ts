@@ -88,27 +88,6 @@ describe("showcase request boundaries", () => {
     );
   });
 
-  test("fonts are allowlisted, immutable per ETag, and HEAD has no body", async () => {
-    const path = "/api/m3/fonts/GoogleSansCode-latin.woff2";
-    const response = await request(path);
-    expect(response.status).toBe(200);
-    expect(response.headers.get("content-type")).toBe("font/woff2");
-    expect(response.headers.get("cache-control")).toContain("max-age");
-    const bytes = new Uint8Array(await response.arrayBuffer());
-    expect(new TextDecoder().decode(bytes.slice(0, 4))).toBe("wOF2");
-    const tag = response.headers.get("etag")!;
-    expect((await request(path, { headers: { "If-None-Match": tag } })).status).toBe(304);
-    const head = await request(path, { method: "HEAD" });
-    expect(head.status).toBe(200);
-    expect(head.headers.get("etag")).toBe(tag);
-    expect(await head.text()).toBe("");
-    const mono = await request("/api/m3/fonts/RobotoMono-latin.woff2");
-    expect(mono.status).toBe(200);
-    await mono.body?.cancel();
-    expect((await request("/api/m3/fonts/unknown.woff2")).status).toBe(404);
-    expect((await request("/api/m3/fonts/%2e%2e%2fRobotoMono-latin.woff2")).status).toBe(404);
-  });
-
   test("AG-UI fixture completes and abort closes its producer", async () => {
     const response = await post("/api/ai/stream", { prompt: "Inspect the package inventory." });
     expect(response.headers.get("x-m3-fixture")).toBe("true");

@@ -14,13 +14,12 @@
 @source "../../m3-forms/dist";
 @source "../../m3-explorer/dist";
 @source "./";
-@source "../showcase/src";
 
-/* Showcase pages are part of the canonical app and inherit its typography. */
-.product-showcase {
+/* Material 3 pages are part of the canonical app and inherit its typography. */
+.product-material {
   --m3-gutter: 24px;
 }
-.product-showcase .m3-code {
+.product-material .m3-code {
   padding: 16px;
   overflow: auto;
   border-radius: var(--md-sys-shape-corner-medium);

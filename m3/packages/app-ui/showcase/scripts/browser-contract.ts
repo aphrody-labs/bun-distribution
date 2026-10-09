@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { isAbsolute, relative, resolve, sep } from "node:path";
 import { chromium, type Page } from "@aphrody/bun-webview-page";
-import { PAGES } from "../src/pages/index.ts";
+import { PAGES } from "../../src/material/pages/index.ts";
 import { CHROMIUM_ARGS } from "./shots.ts";
 
 const RUNS = Bun.fileURLToPath(new URL("../../../../.coord/runs/m3-prod/", import.meta.url));

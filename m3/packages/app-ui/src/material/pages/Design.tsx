@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useM3Theme } from "@aphrody/m3-theme/react";
 import type { GenerationResult } from "@aphrody/m3-design";
 import { Button } from "@aphrody/m3-primitives";
-import { Card, Code, Page, Section, Swatch } from "../components/ui.tsx";
+import { Card, Code, Page, Section, Swatch } from "../ui.tsx";
 import type { PageProps } from "./index.ts";
 
 export default function Design({ adaptive }: PageProps) {

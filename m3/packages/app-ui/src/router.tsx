@@ -24,6 +24,7 @@ import {
   AppearanceRedirect,
   DocumentsRoute,
   MaterialRoute,
+  LegacyShowcaseRedirect,
   ProductHome,
   ProductNotFound,
   TemplatesRoute,
@@ -60,7 +61,7 @@ export const explorerRoutes = [
       },
       {
         path: "showcase/:page?",
-        element: <MaterialRoute />,
+        element: <LegacyShowcaseRedirect />,
       },
       {
         path: "chat",

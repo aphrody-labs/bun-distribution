@@ -9,11 +9,12 @@ import {
 } from "@aphrody/m3-ai";
 import type { BaseEvent } from "@aphrody/m3-ai/ag-ui";
 import { Button } from "@aphrody/m3-primitives";
-import { Card, Code, Page, Section } from "../components/ui.tsx";
+import { Card, Code, Page, Section } from "../ui.tsx";
+import { fixtureStream } from "../ai-fixture.ts";
 import type { PageProps } from "./index.ts";
 
 const initial = (): AgUiStreamState => new AgUiEventAccumulator().snapshot();
-export default function Ai({ adaptive }: PageProps) {
+export default function Ai({ adaptive, host = "bun" }: PageProps) {
   const [draft, setDraft] = useState("Show the Material 3 package inventory.");
   const [prompt, setPrompt] = useState("");
   const [state, setState] = useState(initial);
@@ -32,15 +33,20 @@ export default function Ai({ adaptive }: PageProps) {
     setNotice("");
     setRunning(true);
     try {
-      const response = await fetch("/api/ai/stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: draft.trim() }),
-        signal: controller.signal,
-      });
-      if (!response.ok || !response.body)
-        throw new Error("The local fixture stream is unavailable.");
-      const reader = response.body.getReader();
+      let body: ReadableStream<Uint8Array>;
+      if (host === "native") body = fixtureStream(draft.trim(), controller.signal);
+      else {
+        const response = await fetch("/api/ai/stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: draft.trim() }),
+          signal: controller.signal,
+        });
+        if (!response.ok || !response.body)
+          throw new Error("The local fixture stream is unavailable.");
+        body = response.body;
+      }
+      const reader = body.getReader();
       const decoder = new TextDecoder();
       let pending = "";
       const consume = () => {

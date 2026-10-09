@@ -5,7 +5,7 @@ import { mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { chromium, type Browser } from "@aphrody/bun-webview-page";
 import { pool } from "../../../../scripts/build.ts";
-import { PAGES } from "../src/pages/index.ts";
+import { PAGES } from "../../src/material/pages/index.ts";
 export type Layout = "mobile" | "desktop" | "tv";
 export const VIEWPORTS: Record<Layout, { width: number; height: number }> = {
   mobile: { width: 390, height: 844 },

@@ -6,7 +6,7 @@ import {
   MangaReader,
   type ReaderCollectionEdition,
 } from "@aphrody/m3-reader/source";
-import { Card, Page, Section } from "../components/ui.tsx";
+import { Card, Page, Section } from "../ui.tsx";
 import type { PageProps } from "./index.ts";
 
 function samplePage(number: number): string {

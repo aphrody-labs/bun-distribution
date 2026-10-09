@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useM3Theme } from "@aphrody/m3-theme/react";
 import { Button } from "@aphrody/m3-primitives";
-import { Card, Code, Page, Section } from "../components/ui.tsx";
+import { Card, Code, Page, Section } from "../ui.tsx";
 import type { PageProps } from "./index.ts";
 
 interface ThemeFile {

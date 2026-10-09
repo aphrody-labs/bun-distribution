@@ -1,4 +1,4 @@
-// Destinations of the showcase: one per group of packages, each with the packages it demonstrates.
+// Destinations of the Material 3 pages: one per group of packages, each with the packages it demonstrates.
 import appsIcon from "m3:icons/apps";
 import appsFilled from "m3:icons/apps?fill=1";
 import badgeIcon from "m3:icons/badge";
@@ -32,7 +32,7 @@ import widgetsFilled from "m3:icons/widgets?fill=1";
 import extensionIcon from "m3:icons/extension";
 import extensionFilled from "m3:icons/extension?fill=1";
 
-import type { PageId } from "../pages/index.ts";
+import type { PageId } from "./pages/index.ts";
 
 export interface Destination {
   id: PageId;
