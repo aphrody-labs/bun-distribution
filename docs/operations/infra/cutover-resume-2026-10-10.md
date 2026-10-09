@@ -233,3 +233,11 @@ snapshots for apex/OS. The loop calls it before final R2 verification. Both
 PowerShell orchestration gates pass, including an injected public-web failure
 that prevents completion. The real pending-zone call refuses before public
 verification; successful edge checks remain dependent on delegation/activation.
+
+At 2026-10-09 23:02 UTC, the concurrent publisher's fourteen Tauri plugin
+`3.0.0-alpha.5` producers were independently checked without source changes or
+publication. Two consecutive native `bun pm pack --ignore-scripts` operations
+per producer wrote only isolated qualification directories. All fourteen
+archive pairs had identical SHA-256, and every package manifest was unchanged
+across its pair. This does not reproduce per-pack nondeterminism on the current
+inputs; it does not prove registry byte parity or publication completion.
