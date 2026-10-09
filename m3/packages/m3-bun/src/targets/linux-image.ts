@@ -22,6 +22,7 @@ export const buildScript = (c: TargetContext): string => `#!/usr/bin/env bash
 # Environment:
 #   BUN_SRC   aphrody-labs/bun checkout providing scripts/aphrody/initramfs*.ts (default: fetched from BUN_REF)
 #   BUN_REF   git ref fetched when BUN_SRC is unset (default: main)
+#   INITRAMFS_ARGS   extra initramfs.ts arguments, split on spaces (e.g. --file host:/target)
 #   SYSROOT   where the executable's loader and libraries are taken from (default: /)
 #   M3_IP     dhcp, or a static address with prefix (default: 10.0.2.15/24, QEMU user-mode network)
 #   M3_GW, M3_DNS   gateway and resolver of a static address (default: 10.0.2.2 and 10.0.2.3)
@@ -59,6 +60,8 @@ args=(--bun "$BIN" --argv0 ${c.binary} --sysroot "$SYSROOT" --hostname ${c.name}
 if [ "$M3_IP" != dhcp ]; then args+=(--gateway "\${M3_GW:-10.0.2.2}" --dns "\${M3_DNS:-10.0.2.3}"); fi
 for m in $MODULES; do args+=(--module "$m"); done
 args+=(--env PORT=${c.port} --env HOST=0.0.0.0)
+# shellcheck disable=SC2206
+args+=(\${INITRAMFS_ARGS:-})
 
 mkdir -p "$OUT"
 bun "$SRC/initramfs.ts" "\${args[@]}" --out "$OUT/initramfs.cpio.gz" -- /bin/bun
