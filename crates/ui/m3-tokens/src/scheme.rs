@@ -7,8 +7,9 @@
 //! `dynamiccolor/dynamic_color.ts`. It is the specification `@material/material-color-utilities`
 //! and Material Theme Builder apply by default, so role colours match them bit for bit.
 //!
-//! The Content and Fidelity variants are not provided: they need the temperature and dislike
-//! analyses, which no Aphrody surface uses.
+//! The Content and Fidelity variants keep the source colour's chroma and tone in the primary
+//! container and derive the tertiary palette from the temperature (analogous or complement) and
+//! dislike analyses of the private `temperature` module.
 //!
 //! ```rust
 //! use aphrody_m3_tokens::scheme::{DynamicScheme, Role, Variant};
@@ -19,6 +20,10 @@
 //! ```
 //!
 //! [material-color-utilities]: https://github.com/material-foundation/material-color-utilities
+
+mod temperature;
+
+use temperature::{TemperatureCache, fix_if_disliked};
 
 use crate::{
     color_math::{clamp_double, js_round, lerp, sanitize_degrees},
@@ -44,11 +49,15 @@ pub enum Variant {
     Rainbow,
     /// Primary and secondary rotated -50°.
     FruitSalad,
+    /// The source colour as primary container, tertiary from its analogous temperature.
+    Content,
+    /// The source colour as primary container, tertiary its temperature complement.
+    Fidelity,
 }
 
 impl Variant {
     /// Every provided variant.
-    pub const ALL: [Self; 7] = [
+    pub const ALL: [Self; 9] = [
         Self::Monochrome,
         Self::Neutral,
         Self::TonalSpot,
@@ -56,6 +65,8 @@ impl Variant {
         Self::Expressive,
         Self::Rainbow,
         Self::FruitSalad,
+        Self::Content,
+        Self::Fidelity,
     ];
 
     /// Kebab-case name (`tonal-spot`).
@@ -69,6 +80,8 @@ impl Variant {
             Self::Expressive => "expressive",
             Self::Rainbow => "rainbow",
             Self::FruitSalad => "fruit-salad",
+            Self::Content => "content",
+            Self::Fidelity => "fidelity",
         }
     }
 
@@ -250,12 +263,35 @@ impl Palettes {
     /// The 2021 palettes of `variant` for `source`.
     #[must_use]
     pub fn of(variant: Variant, source: &Hct) -> Self {
-        Self::from_hue(variant, source.hue)
+        let palette = TonalPalette::from_hue_and_chroma;
+        let (hue, chroma) = (source.hue, source.chroma);
+        let tertiary = match variant {
+            Variant::Content => {
+                let (analogous, _) = TemperatureCache::new(*source).analogous(3, 6);
+                TonalPalette::from_hct(fix_if_disliked(analogous[2]))
+            },
+            Variant::Fidelity => {
+                TonalPalette::from_hct(fix_if_disliked(TemperatureCache::new(*source).complement()))
+            },
+            _ => return Self::from_hue(variant, hue),
+        };
+        Self {
+            primary: palette(hue, chroma),
+            secondary: palette(hue, (chroma - 32.0).max(chroma * 0.5)),
+            tertiary,
+            neutral: palette(hue, chroma / 8.0),
+            neutral_variant: palette(hue, chroma / 8.0 + 4.0),
+            error: palette(25.0, 84.0),
+        }
     }
 
-    /// The 2021 palettes of `variant` for a source hue (the provided variants only use the hue).
+    /// The 2021 palettes of `variant` for a source hue. Content and Fidelity need the whole
+    /// source colour (use [`Palettes::of`]); here they stand for a mid-tone, mid-chroma source.
     #[must_use]
     pub fn from_hue(variant: Variant, hue: f64) -> Self {
+        if matches!(variant, Variant::Content | Variant::Fidelity) {
+            return Self::of(variant, &Hct::new(hue, 36.0, 50.0));
+        }
         let palette = TonalPalette::from_hue_and_chroma;
         let (primary, secondary, tertiary, neutral, neutral_variant) = match variant {
             Variant::Monochrome => (
@@ -336,6 +372,7 @@ impl Palettes {
                 palette(hue, 0.0),
                 palette(hue, 0.0),
             ),
+            Variant::Content | Variant::Fidelity => unreachable!("handled above"),
             Variant::FruitSalad => (
                 palette(sanitize_degrees(hue - 50.0), 48.0),
                 palette(sanitize_degrees(hue - 50.0), 36.0),
@@ -355,6 +392,31 @@ fn piecewise_hue(source_hue: f64, breakpoints: &[f64], hues: &[f64]) -> f64 {
     (0..size)
         .find(|&i| source_hue >= breakpoints[i] && source_hue < breakpoints[i + 1])
         .map_or(source_hue, |i| sanitize_degrees(hues[i]))
+}
+
+/// `findDesiredChromaByTone` of the 2021 spec: the tone nearest `tone`, in the given direction,
+/// where `hue` reaches `chroma`.
+fn find_desired_chroma_by_tone(hue: f64, chroma: f64, tone: f64, by_decreasing_tone: bool) -> f64 {
+    let mut answer = tone;
+    let mut closest = Hct::new(hue, chroma, tone);
+    if closest.chroma < chroma {
+        let mut chroma_peak = closest.chroma;
+        while closest.chroma < chroma {
+            answer += if by_decreasing_tone { -1.0 } else { 1.0 };
+            let potential = Hct::new(hue, chroma, answer);
+            if chroma_peak > potential.chroma {
+                break;
+            }
+            if (potential.chroma - chroma).abs() < 0.4 {
+                break;
+            }
+            if (potential.chroma - chroma).abs() < (closest.chroma - chroma).abs() {
+                closest = potential;
+            }
+            chroma_peak = chroma_peak.max(potential.chroma);
+        }
+    }
+    answer
 }
 
 /// `DynamicScheme.getRotatedHue`.
@@ -496,11 +558,44 @@ impl DynamicScheme {
         self.variant == Variant::Monochrome
     }
 
+    fn fidelity(&self) -> bool {
+        matches!(self.variant, Variant::Content | Variant::Fidelity)
+    }
+
     /// The tone the role's definition asks for, before any contrast adjustment.
     fn base_tone(&self, role: Role) -> f64 {
         let mono = self.monochrome();
         let level = self.contrast_level;
         let curve = |values: [f64; 4]| ContrastCurve(values).get(level);
+        if self.fidelity() {
+            match role {
+                Role::PrimaryContainer => return self.source.tone,
+                Role::OnPrimaryContainer => {
+                    return foreground_tone(self.base_tone(Role::PrimaryContainer), 4.5);
+                },
+                Role::SecondaryContainer => {
+                    let secondary = &self.palettes.secondary;
+                    let initial = if self.is_dark { 30.0 } else { 90.0 };
+                    return find_desired_chroma_by_tone(
+                        secondary.hue,
+                        secondary.chroma,
+                        initial,
+                        !self.is_dark,
+                    );
+                },
+                Role::OnSecondaryContainer => {
+                    return foreground_tone(self.base_tone(Role::SecondaryContainer), 4.5);
+                },
+                Role::TertiaryContainer => {
+                    let proposed = self.palettes.tertiary.hct(self.source.tone);
+                    return fix_if_disliked(proposed).tone;
+                },
+                Role::OnTertiaryContainer => {
+                    return foreground_tone(self.base_tone(Role::TertiaryContainer), 4.5);
+                },
+                _ => {},
+            }
+        }
         // (dark, light) per role; fixed roles use the same tone in both modes.
         let (dark, light) = match role {
             Role::PrimaryPaletteKeyColor => return self.palettes.primary.key_color.tone,

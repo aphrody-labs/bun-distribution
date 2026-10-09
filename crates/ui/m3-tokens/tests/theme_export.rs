@@ -62,9 +62,9 @@ fn rejects_invalid_inputs_before_color_generation() {
         assert!(ThemeRequest::parse(Some(seed), None, None).is_err());
     }
     assert!(ThemeRequest::parse(None, Some("unknown"), None).is_err());
-    // These newer variants are not silently relabeled as the implemented spec.
+    // Variants of other specs are not silently relabeled as the implemented spec.
     assert!(ThemeRequest::parse(None, Some("cmf"), None).is_err());
-    assert!(ThemeRequest::parse(None, Some("fidelity"), None).is_err());
+    assert!(ThemeRequest::parse(None, Some("fidelity"), None).is_ok());
 }
 
 #[test]

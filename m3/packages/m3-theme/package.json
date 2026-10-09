@@ -67,7 +67,8 @@
     "typecheck:fast": "tsc --noEmit",
     "generate:fusion": "bun run generate",
     "test": "APHRODY_FFI_DEV=1 bun test",
-    "fixture:mcu": "bun run scripts/mcu-fixture.ts"
+    "fixture:mcu": "bun run scripts/mcu-fixture.ts",
+    "fixture:mcu-fidelity": "bun run scripts/mcu-fidelity-fixture.ts"
   },
   "dependencies": {
     "@aphrody/m3-tokens": "workspace:*"

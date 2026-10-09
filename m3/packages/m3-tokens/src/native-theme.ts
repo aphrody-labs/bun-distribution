@@ -64,13 +64,12 @@ const VARIANTS = {
   monochrome: "monochrome",
   rainbow: "rainbow",
   "fruit-salad": "fruitSalad",
+  content: "content",
+  fidelity: "fidelity",
 } as const;
 
-/** Native 2021 variants; the JS owner separately supports content and fidelity. */
-export type NativeSchemeVariant =
-  | Exclude<SchemeVariant, "content" | "fidelity">
-  | "rainbow"
-  | "fruitSalad";
+/** Native 2021 variants, every one provided by the Rust owner. */
+export type NativeSchemeVariant = SchemeVariant | "rainbow" | "fruitSalad";
 
 export interface NativeThemeExport {
   readonly schema_version: 1;

@@ -38,7 +38,8 @@ describe("native theme export adapter", () => {
       "specification",
     );
     expect(() => parseNativeThemeExport({ ...fixture(), variant: "unknown" })).toThrow("variant");
-    expect(() => parseNativeThemeExport({ ...fixture(), variant: "fidelity" })).toThrow("variant");
+    expect(() => parseNativeThemeExport({ ...fixture(), variant: "cmf" })).toThrow("variant");
+    expect(parseNativeThemeExport({ ...fixture(), variant: "fidelity" }).variant).toBe("fidelity");
     expect(parseNativeThemeExport({ ...fixture(), variant: "fruit-salad" }).variant).toBe(
       "fruit-salad",
     );
