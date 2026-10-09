@@ -13,7 +13,7 @@
       "packages/os/*",
       "packages/engine/*",
       "m3/packages/*",
-      "m3/apps/*",
+      "m3/apps/example",
       "packages/interop/*",
       "crates/tauri/aphrody-tauri-api",
       "crates/tauri/aphrody-tauri-plugin-*"
