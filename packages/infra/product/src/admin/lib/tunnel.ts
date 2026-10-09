@@ -6,7 +6,6 @@
  * non-interactive deployment) from an elevated copy of this program. A plain .conf dropped in WireGuard's Configurations
  * folder is encrypted by its manager (DPAPI) and the original removed, which is what we wait for before installing.
  */
-import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { chmod, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -96,7 +95,7 @@ export async function stageConf(
   const path = join(dir, `${wg.tunnelName}.conf`);
   await writeFile(path, conf, { mode: 0o600 });
   await restrictFile(sys, path);
-  return { path, fingerprint: createHash("sha256").update(conf).digest("hex") };
+  return { path, fingerprint: new Bun.CryptoHasher("sha256").update(conf).digest("hex") };
 }
 
 const fingerprintFile = (paths: KitPaths): string =>

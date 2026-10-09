@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 /** What downloads.aphrody.com publishes (`latest.json`, `SHA256SUMS`) and the checks done before anything is installed. */
-import { createHash } from "node:crypto";
 import type { Context } from "./context.ts";
 import type { Release } from "../../shared/update.ts";
 
@@ -103,7 +102,7 @@ export async function verifiedScript(
   });
   if (!response.ok) throw new Error(`${name} : HTTP ${response.status}`);
   const bytes = new Uint8Array(await response.arrayBuffer());
-  if (createHash("sha256").update(bytes).digest("hex") !== expected.toLowerCase())
+  if (new Bun.CryptoHasher("sha256").update(bytes).digest("hex") !== expected.toLowerCase())
     throw new Error(`SHA-256 invalide pour ${name}`);
   return new TextDecoder().decode(bytes);
 }

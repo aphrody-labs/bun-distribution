@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { lstat, open, readdir } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -80,7 +79,7 @@ async function partialHash(path: string, size: number): Promise<string> {
     await handle.read(head, 0, chunk, 0);
     const tail = Buffer.alloc(chunk);
     await handle.read(tail, 0, chunk, Math.max(0, size - chunk));
-    return createHash("sha1").update(head).update(tail).digest("hex");
+    return new Bun.CryptoHasher("sha1").update(head).update(tail).digest("hex");
   } finally {
     await handle.close();
   }

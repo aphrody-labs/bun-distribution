@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { lstat, mkdir, mkdtemp, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
@@ -108,7 +107,7 @@ export async function downloadVerified(
   });
   if (!res.ok) throw new Error(`HTTP ${res.status} sur ${artifact.url}`);
   const bytes = new Uint8Array(await res.arrayBuffer());
-  const sha = createHash("sha256").update(bytes).digest("hex");
+  const sha = new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
   if (sha !== artifact.sha256.toLowerCase())
     throw new Error(`SHA-256 invalide pour ${artifact.file}`);
   if (bytes.byteLength !== artifact.size) throw new Error(`taille invalide pour ${artifact.file}`);
