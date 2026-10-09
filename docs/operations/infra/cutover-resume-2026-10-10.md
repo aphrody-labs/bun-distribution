@@ -265,3 +265,20 @@ executed actual RAG ABI, JSON repair, HTML markdown and usage checks, returning
 `ARCHIVE_CONSUMER_PASS`. Native Aphrody Web also read the public release manifest.
 This qualifies this archive and catalog publication; other release artifacts
 retain their original versions and qualification limits.
+
+## npm visibility correction, 2026-10-10
+
+The former publisher ended with EXIT 1. Its staged labels for agent-browser
+1.0.0-canary.4 and plugin-log 3.0.0-alpha.5 were contradicted by live public
+registry metadata. A read-only owner publisher recheck matched both local
+archives to registry SHA-1 and reports current. Timestamp-only metadata now
+means unverified visibility, not owner approval; only an explicit staged npm
+response establishes staging. Pending visibility and staged versions block
+dependent publication and completion. Ten tests / 29 assertions, scoped strict
+TypeScript, oxlint and oxfmt pass. No versions were changed or republished.
+
+The same live recheck confirms changed-content blockers for discord-kit,
+m3-os-themes, rg-ui, timeline and web-to-tauri. The six m3 version violations
+come from the actual root lockstep contract (3.3.9 versus selected 3.3.10
+producers); committing alone cannot remove them. A coordinated family release
+and dependency update is still required, preserving active RG/UI ownership.
