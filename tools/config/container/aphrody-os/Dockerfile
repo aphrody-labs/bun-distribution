@@ -108,21 +108,22 @@ CMD ["/usr/bin/nu"]
 # libcosmic/iced applications. Containers have no display of their own, so the
 # session runs nested in the host's Wayland compositor (or apps run directly on
 # it). Mesa llvmpipe/lavapipe provide software rendering when no GPU is passed.
+# The package list is defined once, by the meta-package aphrody-desktop-cosmic of
+# the Aphrody Alpine apk repository (aphrody-labs/aports, aphrody/aphrody-desktop-cosmic):
+# COSMIC 1.0.15 from 3.24 community plus the 1.10 apps 3.24 lacks, portals,
+# PipeWire, Mesa, fonts, Xwayland. Bare-metal/VM hosts add aphrody-desktop-cosmic-host
+# (seatd, cosmic-greeter, system76-scheduler). See PLAN-ALPINE-BUN.md section C1 in aphrody-labs/bun.
 FROM cli AS desktop
+
+ARG APHRODY_APORTS_REF=071286df8e35e7d505c76a9f447bec1dea4c7042
+ADD https://raw.githubusercontent.com/aphrody-labs/aports/${APHRODY_APORTS_REF}/aphrody/keys/aphrody-labs.rsa.pub /etc/apk/keys/aphrody-labs.rsa.pub
 
 USER root
 RUN --mount=type=secret,id=build_ca,required=false \
     set -eu; \
     if [ -s /run/secrets/build_ca ]; then export SSL_CERT_FILE=/run/secrets/build_ca; fi; \
-    apk add --no-cache \
-        cosmic-comp cosmic-session cosmic-panel cosmic-launcher \
-        cosmic-app-library cosmic-applets cosmic-bg cosmic-icons cosmic-idle \
-        cosmic-notifications cosmic-osd cosmic-randr cosmic-screenshot \
-        cosmic-settings cosmic-settings-daemon cosmic-workspaces \
-        cosmic-term cosmic-files cosmic-edit cosmic-store cosmic-player \
-        xdg-desktop-portal-cosmic \
-        dbus mesa-dri-gallium mesa-vulkan-swrast mesa-egl mesa-gles \
-        font-noto font-fira xwayland
+    echo 'https://github.com/aphrody-labs/aports/releases/download/aphrody-3.24-${APK_ARCH}/APKINDEX.tar.gz' >> /etc/apk/repositories; \
+    apk add --no-cache aphrody-desktop-cosmic
 
 COPY desktop/ /
 

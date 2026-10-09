@@ -110,7 +110,7 @@ cmd_status() {
     if command -v cosmic-session >/dev/null 2>&1; then
         log_ok "Environnement COSMIC Epoch détecté dans /usr/bin"
     else
-        log_info "COSMIC Epoch non monté dans /usr/bin (utiliser package-cosmic-sysext.sh --deploy)"
+        log_info "COSMIC Epoch absent : apt install cosmic-session (dépôt apt.pop-os.org, tools/config/os/wsl-build.json) ; sur Aphrody Alpine : apk add aphrody-desktop-cosmic"
     fi
 }
 
