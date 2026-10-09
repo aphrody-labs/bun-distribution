@@ -158,7 +158,7 @@
     "palettes": "13 palettes tonales dynamiques",
     "color_roles": "Dérivation des rôles de couleur Material 3",
     "native_cdylib": "Bibliothèque native compilée aphrody-ffi",
-    "bun_ffi_bridge": "Pont FFI Bun à coût nul (@aphrody/bun)"
+    "bun_ffi_bridge": "Pont FFI Bun (@aphrody/bun)"
   },
   "errors": {
     "network_unreachable": "Le point de terminaison réseau distant est injoignable.",

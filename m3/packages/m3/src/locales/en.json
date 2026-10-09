@@ -158,7 +158,7 @@
     "palettes": "13 Tonal Dynamic Palettes",
     "color_roles": "Material 3 Color Roles Derivation",
     "native_cdylib": "Compiled Native Library aphrody-ffi",
-    "bun_ffi_bridge": "Zero-Overhead Bun FFI Bridge (@aphrody/bun)"
+    "bun_ffi_bridge": "Bun FFI Bridge (@aphrody/bun)"
   },
   "errors": {
     "network_unreachable": "Remote network endpoint is unreachable.",
