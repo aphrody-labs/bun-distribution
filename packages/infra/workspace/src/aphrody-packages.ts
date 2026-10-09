@@ -3,16 +3,7 @@
 /* eslint-disable no-await-in-loop */
 /** Content-addressed archives of @aphrody/* packages for consumers outside this workspace (IECODE). */
 import { createHash } from "node:crypto";
-import {
-  copyFile,
-  mkdir,
-  mkdtemp,
-  readFile,
-  readdir,
-  rename,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, posix, relative, resolve, sep } from "node:path";
 import { existsSync } from "node:fs";
@@ -47,13 +38,11 @@ export function exportTargets(manifest: PackageJson): string[] {
   const targets = new Set<string>();
   const visit = (value: unknown) => {
     if (typeof value === "string") targets.add(value.replace(/^\.\//, ""));
-    else if (value && typeof value === "object")
-      for (const child of Object.values(value)) visit(child);
+    else if (value && typeof value === "object") for (const child of Object.values(value)) visit(child);
   };
   visit(manifest.exports);
-  for (const field of [manifest.main, manifest.module])
-    if (field) targets.add(field.replace(/^\.\//, ""));
-  return [...targets].filter((target) => !target.includes("*"));
+  for (const field of [manifest.main, manifest.module]) if (field) targets.add(field.replace(/^\.\//, ""));
+  return [...targets].filter(target => !target.includes("*"));
 }
 
 /** Archive names carry the content hash, so a pin stays valid across unrelated producer commits. */
@@ -65,8 +54,7 @@ const sha256Of = (bytes: Uint8Array) => createHash("sha256").update(bytes).diges
 
 function git(root: string, args: string[]): string {
   const result = Bun.spawnSync(["git", "-C", root, ...args], { stdout: "pipe", stderr: "pipe" });
-  if (result.exitCode !== 0)
-    throw new Error(`git ${args[0]} failed: ${result.stderr.toString().trim()}`);
+  if (result.exitCode !== 0) throw new Error(`git ${args[0]} failed: ${result.stderr.toString().trim()}`);
   return result.stdout.toString().trim();
 }
 
@@ -78,16 +66,12 @@ export async function aphrodyPackageDirectories(root: string): Promise<Map<strin
   const patterns = (Array.isArray(workspaces) ? workspaces : workspaces?.packages) ?? [];
   const globs = (negated: boolean) =>
     patterns
-      .filter((pattern) => pattern.startsWith("!") === negated)
-      .map((pattern) => new Bun.Glob(`${pattern.replace(/^!/, "")}/package.json`));
+      .filter(pattern => pattern.startsWith("!") === negated)
+      .map(pattern => new Bun.Glob(`${pattern.replace(/^!/, "")}/package.json`));
   const [include, exclude] = [globs(false), globs(true)];
   const directories = new Map<string, string>();
   for (const manifest of git(root, ["ls-files", "--", "*package.json"]).split("\n")) {
-    if (
-      !include.some((glob) => glob.match(manifest)) ||
-      exclude.some((glob) => glob.match(manifest))
-    )
-      continue;
+    if (!include.some(glob => glob.match(manifest)) || exclude.some(glob => glob.match(manifest))) continue;
     const fullPath = join(root, manifest);
     if (!existsSync(fullPath)) continue;
     const { name } = JSON.parse(await readFile(fullPath, "utf8")) as { name?: string };
@@ -122,15 +106,13 @@ export async function aphrodyClosure(root: string, names: string[]) {
       if (dependency.startsWith("@aphrody/")) queue.push(dependency);
   }
   return {
-    members: [...members].toSorted().map((name) => ({ name, directory: directories.get(name)! })),
+    members: [...members].toSorted().map(name => ({ name, directory: directories.get(name)! })),
     external: [...external].toSorted(),
   };
 }
 
 async function archiveVersion(path: string): Promise<string> {
-  const entry = readTar(Bun.gunzipSync(await readFile(path))).find(
-    (item) => item.name === "package/package.json",
-  );
+  const entry = readTar(Bun.gunzipSync(await readFile(path))).find(item => item.name === "package/package.json");
   if (!entry) throw new Error(`${path} has no package/package.json`);
   return (JSON.parse(new TextDecoder().decode(entry.data)) as { version: string }).version;
 }
@@ -153,8 +135,7 @@ export function assertPublicEntries(entries: TarMember[], name: string) {
   }
 }
 
-const IMPORT_SPECIFIER =
-  /(\bfrom\s+|\bimport\s*\(\s*|\brequire\s*\(\s*|^\s*import\s+)(["'])(\.\.?\/[^"']+)\2/gm;
+const IMPORT_SPECIFIER = /(\bfrom\s+|\bimport\s*\(\s*|\brequire\s*\(\s*|^\s*import\s+)(["'])(\.\.?\/[^"']+)\2/gm;
 const EXTERNAL_DIRECTORY = "package/.aphrody-external";
 
 /**
@@ -168,7 +149,7 @@ export async function embedExternalImports(
   root: string,
 ): Promise<TarMember[]> {
   const result = [...entries];
-  const embedded = new Set(entries.map((entry) => entry.name));
+  const embedded = new Set(entries.map(entry => entry.name));
   const encoder = new TextEncoder();
   for (const [index, entry] of entries.entries()) {
     if (entry.type !== "file" || !/\.(?:[cm]?[jt]sx?)$/.test(entry.name)) continue;
@@ -207,25 +188,16 @@ export function portableArchive(entries: TarMember[], pinned: Map<string, string
   const encoder = new TextEncoder();
   return gzipCanonical(
     canonicalTar(
-      entries.map((entry) => {
+      entries.map(entry => {
         if (entry.name !== "package/package.json") return entry;
-        const manifest = JSON.parse(new TextDecoder().decode(entry.data)) as Record<
-          string,
-          unknown
-        >;
+        const manifest = JSON.parse(new TextDecoder().decode(entry.data)) as Record<string, unknown>;
         let changed = false;
-        for (const field of [
-          "dependencies",
-          "devDependencies",
-          "peerDependencies",
-          "optionalDependencies",
-        ]) {
+        for (const field of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
           const specs = manifest[field] as Record<string, string> | undefined;
           for (const [dependency, spec] of Object.entries(specs ?? {})) {
             if (!spec.startsWith("file:")) continue;
             const version = pinned.get(dependency);
-            if (!version)
-              throw new Error(`${name} depends on ${dependency} through unpinned ${spec}`);
+            if (!version) throw new Error(`${name} depends on ${dependency} through unpinned ${spec}`);
             specs![dependency] = version;
             changed = true;
           }
@@ -256,14 +228,10 @@ export async function prepareAphrodyPackages(options: {
   allowDirty?: boolean;
 }): Promise<AphrodyPackagesManifest> {
   // Runtime resolution loads workspace packages; a Windows consumer reading a WSL checkout cannot.
-  const root = resolve(
-    options.root ?? process.env.APHRODY_ROOT ?? (await import("./runtime.ts")).infraRoot(),
-  );
+  const root = resolve(options.root ?? process.env.APHRODY_ROOT ?? (await import("./runtime.ts")).infraRoot());
   const { members, external } = await aphrodyClosure(root, options.names);
   const revision = git(root, ["rev-parse", "HEAD"]);
-  const dirty = Boolean(
-    git(root, ["status", "--porcelain", "--", ...members.map((member) => member.directory)]),
-  );
+  const dirty = Boolean(git(root, ["status", "--porcelain", "--", ...members.map(member => member.directory)]));
   if (dirty && !options.allowDirty)
     throw new Error("Packed @aphrody/* sources are dirty; commit them or pass --allow-dirty.");
   // The workspace resolves pinned external archives through its overrides or catalog.
@@ -271,8 +239,7 @@ export async function prepareAphrodyPackages(options: {
     overrides?: Record<string, string>;
     workspaces?: { catalog?: Record<string, string> };
   };
-  const pinnedSpec = (name: string) =>
-    rootManifest.overrides?.[name] ?? rootManifest.workspaces?.catalog?.[name];
+  const pinnedSpec = (name: string) => rootManifest.overrides?.[name] ?? rootManifest.workspaces?.catalog?.[name];
   const stage = await mkdtemp(join(tmpdir(), "aphrody-packages-"));
   try {
     const packages: AphrodyArchive[] = [];
@@ -289,11 +256,9 @@ export async function prepareAphrodyPackages(options: {
         pinnedVersions.set(name, await archiveVersion(join(root, spec.slice("file:".length))));
     }
     for (const { name, directory } of members) {
-      const manifest = JSON.parse(
-        await readFile(join(directory, "package.json"), "utf8"),
-      ) as PackageJson;
+      const manifest = JSON.parse(await readFile(join(directory, "package.json"), "utf8")) as PackageJson;
       // Packages that export build output are built first; lifecycle scripts never run implicitly.
-      if (exportTargets(manifest).some((target) => !existsSync(join(directory, target)))) {
+      if (exportTargets(manifest).some(target => !existsSync(join(directory, target)))) {
         if (!manifest.scripts?.build)
           throw new Error(`${name} exports files that do not exist and has no build script`);
         const built = Bun.spawnSync(["bun", "run", "build"], {
@@ -301,31 +266,25 @@ export async function prepareAphrodyPackages(options: {
           stdout: "pipe",
           stderr: "pipe",
         });
-        if (built.exitCode !== 0)
-          throw new Error(`bun run build failed for ${name}: ${built.stderr}`);
+        if (built.exitCode !== 0) throw new Error(`bun run build failed for ${name}: ${built.stderr}`);
       }
       const out = join(stage, name.slice("@aphrody/".length));
       await mkdir(out, { recursive: true });
-      const packed = Bun.spawnSync(
-        ["bun", "pm", "pack", "--destination", out, "--quiet", "--ignore-scripts"],
-        {
-          cwd: directory,
-          stdout: "pipe",
-          stderr: "pipe",
-        },
-      );
-      if (packed.exitCode !== 0)
-        throw new Error(`bun pm pack failed for ${name}: ${packed.stderr}`);
+      const packed = Bun.spawnSync(["bun", "pm", "pack", "--destination", out, "--quiet", "--ignore-scripts"], {
+        cwd: directory,
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      if (packed.exitCode !== 0) throw new Error(`bun pm pack failed for ${name}: ${packed.stderr}`);
       const [file] = await readdir(out);
       if (!file) throw new Error(`bun pm pack produced no archive for ${name}`);
       const archived = readTar(Bun.gunzipSync(await readFile(join(out, file))));
       assertPublicEntries(archived, name);
       const contents = await embedExternalImports(archived, directory, root);
       await writeFile(join(out, file), portableArchive(contents, pinnedVersions, name));
-      const entries = new Set(contents.map((entry) => entry.name.replace(/^package\//, "")));
-      const missing = exportTargets(manifest).filter((target) => !entries.has(target));
-      if (missing.length)
-        throw new Error(`${name} archive lacks exported files: ${missing.join(", ")}`);
+      const entries = new Set(contents.map(entry => entry.name.replace(/^package\//, "")));
+      const missing = exportTargets(manifest).filter(target => !entries.has(target));
+      if (missing.length) throw new Error(`${name} archive lacks exported files: ${missing.join(", ")}`);
       await add(name, manifest.version, join(out, file));
     }
     // External packages this workspace itself consumes as pinned archives (the Yolo runtime SDK) pass through.
@@ -352,8 +311,7 @@ export async function prepareAphrodyPackages(options: {
     if (options.apply) {
       const destination = resolve(options.destination);
       await mkdir(destination, { recursive: true });
-      for (const item of packages)
-        await rename(join(stage, item.archive), join(destination, item.archive));
+      for (const item of packages) await rename(join(stage, item.archive), join(destination, item.archive));
       await writeFile(join(destination, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
     }
     return manifest;
@@ -375,19 +333,15 @@ export function auditArchive(entries: TarMember[], name: string): string[] {
   } catch (error) {
     problems.push((error as Error).message);
   }
-  const manifestEntry = entries.find((entry) => entry.name === "package/package.json");
+  const manifestEntry = entries.find(entry => entry.name === "package/package.json");
   if (!manifestEntry) return [...problems, "archive has no package/package.json"];
-  const manifest = JSON.parse(new TextDecoder().decode(manifestEntry.data)) as PackageJson &
-    Record<string, unknown>;
-  const present = new Set(entries.map((entry) => entry.name.replace(/^package\//, "")));
-  const missing = exportTargets(manifest).filter((target) => !present.has(target));
+  const manifest = JSON.parse(new TextDecoder().decode(manifestEntry.data)) as PackageJson & Record<string, unknown>;
+  const present = new Set(entries.map(entry => entry.name.replace(/^package\//, "")));
+  const missing = exportTargets(manifest).filter(target => !present.has(target));
   if (missing.length) problems.push(`exports not shipped: ${missing.join(", ")}`);
   for (const field of ["dependencies", "peerDependencies", "optionalDependencies"])
-    for (const [dependency, spec] of Object.entries(
-      (manifest[field] as Record<string, string> | undefined) ?? {},
-    ))
-      if (/^(?:workspace|catalog|file|link):/.test(spec))
-        problems.push(`unpublishable spec ${dependency}@${spec}`);
+    for (const [dependency, spec] of Object.entries((manifest[field] as Record<string, string> | undefined) ?? {}))
+      if (/^(?:workspace|catalog|file|link):/.test(spec)) problems.push(`unpublishable spec ${dependency}@${spec}`);
   for (const entry of entries) {
     if (entry.type !== "file" || entry.size > 8_000_000) continue;
     const text = new TextDecoder().decode(entry.data);
@@ -406,9 +360,10 @@ export async function publishOrder(root: string, names: string[]): Promise<strin
     if (state.get(name) === "done" || !directories.has(name)) return;
     if (state.get(name) === "visiting") return; // cycles publish in discovery order
     state.set(name, "visiting");
-    const manifest = JSON.parse(
-      await readFile(join(directories.get(name)!, "package.json"), "utf8"),
-    ) as { dependencies?: Record<string, string>; peerDependencies?: Record<string, string> };
+    const manifest = JSON.parse(await readFile(join(directories.get(name)!, "package.json"), "utf8")) as {
+      dependencies?: Record<string, string>;
+      peerDependencies?: Record<string, string>;
+    };
     for (const dependency of Object.keys({
       ...manifest.dependencies,
       ...manifest.peerDependencies,
@@ -443,9 +398,7 @@ async function registryShasum(name: string, version: string, registry: string) {
   const published = packument.versions?.[version];
   // A staged version blocks republication but is absent from `versions`.
   if (!published && packument.time?.[version]) return { exists: true, shasum: undefined } as const;
-  return published
-    ? ({ exists: true, shasum: published.dist?.shasum } as const)
-    : ({ exists: false } as const);
+  return published ? ({ exists: true, shasum: published.dist?.shasum } as const) : ({ exists: false } as const);
 }
 
 /**
@@ -464,16 +417,14 @@ export async function publishAphrodyPackages(options: {
   const registry = options.registry ?? "https://registry.npmjs.org";
   const directories = await aphrodyPackageDirectories(root);
   const names = options.names?.length ? options.names : [...directories.keys()];
-  const unknown = names.filter((name) => !directories.has(name));
+  const unknown = names.filter(name => !directories.has(name));
   if (unknown.length) throw new Error(`Not workspace members: ${unknown.join(", ")}`);
   const outcomes: PublishOutcome[] = [];
   const failed = new Set<string>();
   for (const name of await publishOrder(root, names)) {
     if (!names.includes(name)) continue;
     const directory = directories.get(name)!;
-    const manifest = JSON.parse(
-      await readFile(join(directory, "package.json"), "utf8"),
-    ) as PackageJson & {
+    const manifest = JSON.parse(await readFile(join(directory, "package.json"), "utf8")) as PackageJson & {
       private?: boolean;
       dependencies?: Record<string, string>;
       peerDependencies?: Record<string, string>;
@@ -486,14 +437,14 @@ export async function publishAphrodyPackages(options: {
       outcome("blocked", "private: true");
       continue;
     }
-    const blockers = Object.keys({ ...manifest.dependencies, ...manifest.peerDependencies }).filter(
-      (dependency) => failed.has(dependency),
+    const blockers = Object.keys({ ...manifest.dependencies, ...manifest.peerDependencies }).filter(dependency =>
+      failed.has(dependency),
     );
     if (blockers.length) {
       outcome("blocked", `depends on unpublished ${blockers.join(", ")}`);
       continue;
     }
-    if (exportTargets(manifest).some((target) => !existsSync(join(directory, target)))) {
+    if (exportTargets(manifest).some(target => !existsSync(join(directory, target)))) {
       if (!manifest.scripts?.build) {
         outcome("blocked", "exports missing files and no build script");
         continue;
@@ -510,10 +461,11 @@ export async function publishAphrodyPackages(options: {
     }
     const stage = await mkdtemp(join(tmpdir(), "aphrody-publish-"));
     try {
-      const packed = Bun.spawnSync(
-        ["bun", "pm", "pack", "--destination", stage, "--quiet", "--ignore-scripts"],
-        { cwd: directory, stdout: "pipe", stderr: "pipe" },
-      );
+      const packed = Bun.spawnSync(["bun", "pm", "pack", "--destination", stage, "--quiet", "--ignore-scripts"], {
+        cwd: directory,
+        stdout: "pipe",
+        stderr: "pipe",
+      });
       const [file] = await readdir(stage);
       if (packed.exitCode !== 0 || !file) {
         outcome("failed", `pack: ${packed.stderr.toString().trim().slice(-400)}`);
@@ -554,7 +506,12 @@ export async function publishAphrodyPackages(options: {
         outcome(/previously staged version/.test(output) ? "staged" : "failed", output.slice(-400));
       else {
         // Staged versions stay invisible until approved, so success is confirmed on the registry.
-        const after = await registryShasum(name, manifest.version, registry);
+        // The packument lags a fresh publish by seconds to minutes: poll before calling it staged.
+        let after = await registryShasum(name, manifest.version, registry);
+        for (let attempt = 0; attempt < 12 && !after.exists; attempt++) {
+          await Bun.sleep(10_000);
+          after = await registryShasum(name, manifest.version, registry);
+        }
         outcome(
           after.exists && after.shasum === shasum ? "published" : "staged",
           after.exists ? undefined : "awaiting owner approval on the registry",
@@ -578,17 +535,14 @@ export async function runAphrodyPackages(args: string[]): Promise<number> {
     let apply = false;
     for (let i = 0; i < rest.length; i++) {
       if (rest[i] === "--apply") apply = true;
-      else if (rest[i] === "--package" && rest[i + 1] && !rest[i + 1]!.startsWith("--"))
-        names.push(rest[++i]!);
+      else if (rest[i] === "--package" && rest[i + 1] && !rest[i + 1]!.startsWith("--")) names.push(rest[++i]!);
       else throw new Error(`Unknown or incomplete argument: ${rest[i]}`);
     }
     const outcomes = await publishAphrodyPackages({ names, apply });
     for (const item of outcomes)
-      console.log(
-        `${item.status.padEnd(9)} ${item.name}@${item.version}${item.detail ? `  ${item.detail}` : ""}`,
-      );
+      console.log(`${item.status.padEnd(9)} ${item.name}@${item.version}${item.detail ? `  ${item.detail}` : ""}`);
     // Staged versions are published work awaiting the owner; only refusals fail the command.
-    return outcomes.some((item) => item.status === "failed" || item.status === "blocked") ? 1 : 0;
+    return outcomes.some(item => item.status === "failed" || item.status === "blocked") ? 1 : 0;
   }
   if (action !== "prepare") {
     console.log(usage);
@@ -613,8 +567,7 @@ export async function runAphrodyPackages(args: string[]): Promise<number> {
     else if (flag === "--write-pin") writePin = true;
     else throw new Error(`Unknown argument: ${flag}`);
   }
-  if (!destination || (!names.length && !pinPath))
-    throw new Error("--destination and --package or --pin are required");
+  if (!destination || (!names.length && !pinPath)) throw new Error("--destination and --package or --pin are required");
   if (writePin && !pinPath) throw new Error("--write-pin requires --pin");
   const pin =
     pinPath && existsSync(pinPath)
@@ -627,18 +580,15 @@ export async function runAphrodyPackages(args: string[]): Promise<number> {
       return 0;
     }
   }
-  if (!names.length)
-    names.push(
-      ...(pin?.packages ?? []).map((item) => item.name).filter((n) => n.startsWith("@aphrody/")),
-    );
+  if (!names.length) names.push(...(pin?.packages ?? []).map(item => item.name).filter(n => n.startsWith("@aphrody/")));
   if (!names.length) throw new Error(`${pinPath} lists no packages; pass --package`);
   const manifest = await prepareAphrodyPackages({ names, destination, apply, allowDirty });
   if (pin && !writePin) {
-    const produced = new Map(manifest.packages.map((item) => [item.name, item.sha256]));
-    const drift = pin.packages.filter((item) => produced.get(item.name) !== item.sha256);
+    const produced = new Map(manifest.packages.map(item => [item.name, item.sha256]));
+    const drift = pin.packages.filter(item => produced.get(item.name) !== item.sha256);
     if (drift.length)
       throw new Error(
-        `Pin ${pinPath} is stale for ${drift.map((item) => item.name).join(", ")}; rerun with --write-pin and reinstall.`,
+        `Pin ${pinPath} is stale for ${drift.map(item => item.name).join(", ")}; rerun with --write-pin and reinstall.`,
       );
   }
   if (writePin) await writeFile(pinPath, `${JSON.stringify(manifest, null, 2)}\n`);

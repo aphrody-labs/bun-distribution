@@ -15,6 +15,8 @@
     "adaptive/**/*.ts",
     "state/**/*.ts",
     "adapters/**/*.ts",
+    "data/**/*.ts",
+    "data/**/*.tsx",
     "material-web-shims.d.ts"
   ],
   "exclude": [

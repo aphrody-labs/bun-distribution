@@ -11,6 +11,7 @@ export default m3Package({
     "src/react.tsx",
     "src/lit.ts",
     "src/i18n.ts",
+    "src/data.ts",
   ],
   target: "node",
   useClient: ["react.js"],

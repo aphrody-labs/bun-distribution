@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/identity",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Aphrody product identity for the M3 surfaces: brand emblem and icons, the Aphrody avatar, and the animated pet sprite (atlas, timed tracks, 16-way gaze) drawn from crates/ui/identity.",
   "keywords": [
     "aphrody",

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "date": "2026-10-07",
+  "date": "2026-10-09",
   "minimumBun": "1.4.2",
   "packages": [
     {
@@ -13,11 +13,11 @@
     },
     {
       "name": "@aphrody/api",
-      "version": "3.0.0-alpha.3",
+      "version": "3.0.0-alpha.4",
       "path": "crates/tauri/aphrody-tauri-api/package.json",
       "status": "published",
-      "sha256": "1ae12a2062724291b8e03562292e2e63b18fe0eb2c4b31d6c9918ddb5fb5892e",
-      "integrity": "sha512-I1icW7SwRbGenqjba6X7wFMoiEQPiwdhVB+edFTGzY2qw4OrJ/6teG6FfkQtp1RbxkynrPZDCx3ywmT8IGzH3A==",
+      "sha256": "aedc520ec9a6e05fcdf9d7441ed8d274f5382be34b39bfa0159d6fb12bb12943",
+      "integrity": "sha512-3RYTraclO035adu9djhBSKp6k86Z8KLJvyJocBbOoIF/3lIHD2KeoLWqP8JeA7eM0UiII5PtGeM2A37rk+4cRg==",
       "dependencies": []
     },
     {
@@ -49,11 +49,11 @@
     },
     {
       "name": "@aphrody/plugin-dialog",
-      "version": "3.0.0-alpha.3",
+      "version": "3.0.0-alpha.4",
       "path": "crates/tauri/aphrody-tauri-plugin-dialog/package.json",
       "status": "published",
-      "sha256": "e568f34f8978ae5b94aa906295918b091e6ea1e248cbb5d25126dbd1cc91153a",
-      "integrity": "sha512-KNRm6RWhBVhf3w7nSZpXhTx0IVZ2x1iblysXxeIUtbB/mNRQDYCfaV4awBBWhJeD4GFUEQcZbDmJGaBiH3C9GA==",
+      "sha256": "82df4da2f35640ea4f0957225c2b74601f566ac0b02616a71764a138b3511792",
+      "integrity": "sha512-FhClASVKVbK9d/717ByLx+guyP0EdE0t9fszHyKjcTu4F2GpQkjFK3SzxnzjonAH1NC3If4PilGZt7Zvraae6w==",
       "dependencies": ["@aphrody/api"]
     },
     {
@@ -148,297 +148,400 @@
     },
     {
       "name": "@aphrody/app-ui",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "path": "m3/packages/app-ui/package.json",
-      "status": "blocked",
-      "sha256": "2adcd068c953d9d86cd1455de7321569bca4ad3c34f910d361567c07d2dbaff8",
-      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+      "status": "published",
+      "sha256": "e4d5340a492f25678dc97cb3172d27b5b33b416e9fa83a3aa51dbb2266c5670f",
+      "integrity": "sha512-9tp+R/HJzBkjhh2IjFhtTVoGAldQTPaqgg/aFo4r8BZzHWDRSAxqHwLIzniXr/h8mEqcvDvgbyUXgjUZLQuMBA==",
+      "dependencies": [
+        "d3",
+        "ogl",
+        "clsx",
+        "react",
+        "three",
+        "motion",
+        "prismjs",
+        "zustand",
+        "react-dom",
+        "@aphrody/m3",
+        "@aphrody/qr",
+        "maplibre-gl",
+        "@aphrody/api",
+        "@dnd-kit/core",
+        "react-selecto",
+        "@aphrody/fuzzy",
+        "@aphrody/m3-ai",
+        "@aphrody/assets",
+        "@aphrody/canvas",
+        "@aphrody/m3-bun",
+        "@aphrody/m3-mcp",
+        "react-hook-form",
+        "@aphrody/m3-next",
+        "react-router-dom",
+        "@aphrody/identity",
+        "@aphrody/m3-fonts",
+        "@aphrody/m3-forms",
+        "@aphrody/m3-front",
+        "@aphrody/m3-icons",
+        "@aphrody/m3-react",
+        "@aphrody/m3-theme",
+        "@aphrody/scaffold",
+        "@dnd-kit/sortable",
+        "@aphrody/m3-baseui",
+        "@aphrody/m3-design",
+        "@aphrody/m3-motion",
+        "@aphrody/m3-reader",
+        "@aphrody/m3-tokens",
+        "@dnd-kit/utilities",
+        "@react-three/fiber",
+        "@aphrody/m3-codemods",
+        "@aphrody/m3-explorer",
+        "@aphrody/m3-tailwind",
+        "@aphrody/drive-client",
+        "@aphrody/m3-os-themes",
+        "@phosphor-icons/react",
+        "@tanstack/react-query",
+        "@tanstack/react-table",
+        "@aphrody/m3-primitives",
+        "@aphrody/plugin-dialog",
+        "@tanstack/react-virtual",
+        "@aphrody/bun-webview-page",
+        "@aphrody/eslint-plugin-m3",
+        "@mkkellogg/gaussian-splats-3d",
+        "@aphrody/material-design-icons"
+      ]
     },
     {
       "name": "@aphrody/assets",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "path": "m3/packages/assets/package.json",
       "status": "published",
-      "sha256": "862a8e74d454d668eeaed2ee735132255a8fb061af01470bc25fcfa54a657c25",
-      "integrity": "sha512-WjMc7QVhtZQuKr+tIATba3n3mDR4rYty9zKbPtRz31A6ahLEjvVSmQpBrRVJgeB/7hw62G/72/xCpCFQy8E+XQ==",
+      "sha256": "38e873b63ae16ef01c35eee9ee0a9a40e3c230d838738dbd1392a504e5c2b7f5",
+      "integrity": "sha512-Rm5ZVWNmFdh2Hj5GpgVvuvpsAu0u7zQZsj+dXeE++DdzXeiUvAqMD7ITuy52seY+MQ+Dqb7xFmkFJZwDR6uIWQ==",
       "dependencies": []
     },
     {
       "name": "@aphrody/canvas",
-      "version": "1.0.9-aphrody.4",
+      "version": "1.0.9-aphrody.5",
       "path": "m3/packages/canvas/package.json",
       "status": "published",
-      "sha256": "28fdd766adf510b72cd429d155c185db21ed273e1b11e1d83244a7092f7563ab",
-      "integrity": "sha512-jq9OgADPJH/EsJLHr3MjVQydYRfhfinwpuhQiud5jNVYvM1vRtDBwbVtdUkQr1lPrs2zs+j6bAMTSrDr9t/QFQ==",
+      "sha256": "e13672c532b48678ddf90253941bcb9b9afb1fb5a65a80d114ec95a26a420e7c",
+      "integrity": "sha512-PhswT2TnemykLr1vXtdyP5bUIgDCYEHlFhlSAqkKU0bd4ADCIZKDlV9kmoT2BE5xWSXwFoUiuhInPe8LGuY92w==",
       "dependencies": []
     },
     {
       "name": "@aphrody/eslint-plugin-m3",
-      "version": "3.3.4",
+      "version": "3.3.5",
       "path": "m3/packages/eslint-plugin-m3/package.json",
       "status": "published",
-      "sha256": "88f4176f28e1c4a0337893cb2229f1e8869b61f1968dab8a6fbd0ca44a7d8eec",
-      "integrity": "sha512-nI+UYZq7wCQ/CtpuqBKLsgOHwM8+U3K8lvrgFFa1/yp281Ur7kPaJzgmfh2ZHUp/JqNyIZ0qQRSkZycgGCzoqg==",
+      "sha256": "a44283fb072159c989db4ff89aa84d6c4c0e76c10518a3ee4557079661875ddd",
+      "integrity": "sha512-9rc9o6EjIuChuo2URc5Js1T+/lVSbRvZ8QgH3Lvr404QDmKqfVOlSZPWd45ty8bWU/921y/ELrc3EgCVsZqG9A==",
       "dependencies": []
     },
     {
       "name": "@aphrody/identity",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "path": "m3/packages/identity/package.json",
       "status": "published",
-      "sha256": "e20d3246d82d2fba90cd79bddfea6a29af13d86708c18acb5ca93b83a10ecca5",
-      "integrity": "sha512-9R6YxH6/0s8+gU8rPinr0R2jHYbpsJ8l7EkR2UkmjxPJxL8agp8AJvIvbtxsO5DncmIzMEB9d2p6PP65ECZOIw==",
+      "sha256": "f9872ff5fba08b6d07ddf37a36f75f0a07d5489c1686a9fa825742d6c18d24ce",
+      "integrity": "sha512-QIKv7RBR212INGsl1oosLx1IOZFZWjzxp/kyT6yAO9DjTY11qUflxvo/GokbTyoJWEWMF3/hErWjh2rCRaV6+A==",
       "dependencies": []
     },
     {
       "name": "@aphrody/m3-ai",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-ai/package.json",
       "status": "published",
-      "sha256": "93cf1763a10b73e14537c87008a008bf0615bd5a188810902517c06a43301ca8",
-      "integrity": "sha512-gG7HygGtKDsjuGLFagbTpO+8GwR93o4ToNjxinyUUbGGPG8NytNe6ntbamcNeyye8RdOIFsqUpSFElWLEtX+Mw==",
+      "sha256": "7e74057e7c2478266da09ebcf94782e076fae9727b5f4dfa73a3dc997fb8482e",
+      "integrity": "sha512-T3Dd6Q+PgejD/EkPLfTNFCY0JVYrugW7S1SLZRJxHK4dP5VMikh+Oa95DBI2O4yqQa0lgpEk+30N9fOeExZg5g==",
       "dependencies": [
-        "@ag-ui/a2ui-toolkit",
-        "@ag-ui/client",
-        "@ag-ui/core",
-        "@ag-ui/encoder",
-        "@ag-ui/proto",
-        "@aphrody/m3-motion",
-        "@aphrody/m3-primitives",
-        "@aphrody/mcp-ui",
         "clsx",
         "motion",
-        "react-markdown",
         "rehype-raw",
-        "remark-gfm"
+        "remark-gfm",
+        "@ag-ui/core",
+        "@ag-ui/proto",
+        "@ag-ui/client",
+        "@ag-ui/encoder",
+        "react-markdown",
+        "@aphrody/mcp-ui",
+        "@aphrody/m3-motion",
+        "@ag-ui/a2ui-toolkit",
+        "@aphrody/m3-primitives"
       ]
     },
     {
       "name": "@aphrody/m3-baseui",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-baseui/package.json",
       "status": "published",
-      "sha256": "968902a48c0d8f7fb6a61a0372f1c915c42cff54cd3405fabaa079890f03e003",
-      "integrity": "sha512-WKDRg/gO9XJUky7z/4drGJSEWs/is7M2fNnwUPln0DSj3vWsdzbf+PF+FZAH1fHlHAeo8vmPWKEongDpeWp1jA==",
+      "sha256": "9eeeb790a45a6f5a428519a28a5e130b0fd54999ec14c2bc00a51a943c092471",
+      "integrity": "sha512-Jagd7PV924Ifzn54jhSXaIZeV31Ts4z4oMJUMuakPp1cFP7dwWOYBxF9XZqDL9v53P2E/2wrwZidA5IC2snilw==",
       "dependencies": ["@base-ui/react"]
     },
     {
       "name": "@aphrody/m3-bun",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-bun/package.json",
-      "status": "blocked",
-      "sha256": "97701b5a7901c303697bfae72452c5234b3b798b8c9628d3c8bb73d5369f5c0c",
-      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+      "status": "published",
+      "sha256": "6433c40a72bf33410bd1d105e37f2d7e8c4f802d2114715305f04737503790ee",
+      "integrity": "sha512-gR8dN8XhRwC/LMIQWKrQSU/vq1fY2nZ2Ki9OOJBLoAatfezjJr2+106TCBPRP/LXgSmXJS0henALDlqpbuk3aA==",
+      "dependencies": [
+        "@aphrody/m3",
+        "@aphrody/assets",
+        "@aphrody/identity",
+        "@aphrody/m3-fonts",
+        "@aphrody/m3-icons",
+        "@aphrody/m3-theme",
+        "@aphrody/scaffold",
+        "@aphrody/m3-config",
+        "@aphrody/m3-design",
+        "@aphrody/m3-tokens",
+        "@aphrody/m3-codemods",
+        "@aphrody/m3-os-themes",
+        "@aphrody/web-to-tauri",
+        "@aphrody/eslint-plugin-m3",
+        "@aphrody/material-design-icons"
+      ]
     },
     {
       "name": "@aphrody/m3-codemods",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-codemods/package.json",
       "status": "published",
-      "sha256": "f82901b9b969ff935640eba756f27ee55a30b3113fa299d42775f4351156d21b",
-      "integrity": "sha512-aCpvNLer5LSOfgxcmN383/naUF30TmBVhqVgo8nDTe4pwZQPg/mKkFJfHq+O8MrkWTlLv96b1ybmBLQZwDOy8w==",
-      "dependencies": ["jscodeshift"]
+      "sha256": "f8d2339d87f74acd6e8b129a8dab1465ba8901c6daa44c1bbfcf6dc6bc4b899f",
+      "integrity": "sha512-uZnum1e37TGksNEGCSEcsvO+LiUZDPIyrsQyQ9iGzpm81WxW3GPnSa+gJT0xrll/RFJpO7xws0biu+GHF0CzGA==",
+      "dependencies": []
     },
     {
       "name": "@aphrody/m3-config",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-config/package.json",
       "status": "published",
-      "sha256": "eccab7ea2ecb2985fbce8d6b7abf8eee8c80bf592b4cbedc20776b305fabbb18",
-      "integrity": "sha512-Ni/fnVtM23sMk8dZSdbHCQRj2Vgz88vtxq84mRhitl07ME8fVNk68/inmicaHHvtRADb30p+E92SPxlWoMj3jQ==",
-      "dependencies": ["@happy-dom/global-registrator", "element-internals-polyfill"]
+      "sha256": "7bdb561d93bd2c4d91deb5eb2960371b3d03fc3c82e71f6158226f6147f4a29e",
+      "integrity": "sha512-TLNBcne6hZ26TlMEPx9BN+ZC3j0Q8hC4x3LVPRDUbiFV/sA12ZDhHStJIR0H3vysRaoMGW9leNA8vd3fdAN4IQ==",
+      "dependencies": ["element-internals-polyfill", "@happy-dom/global-registrator"]
     },
     {
       "name": "@aphrody/m3-design",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-design/package.json",
-      "status": "blocked",
-      "sha256": "898107cbbd7fb8b5d9acfb8ee96c343e9f8a7cbae9db4c80b32541a380fc32f3",
-      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+      "status": "published",
+      "sha256": "9fb2b655f0ff779ad0b34d57910bb60ebf6c1f34a759256cbf842840e42e9553",
+      "integrity": "sha512-RibKr/snXQIOGGqg/7en/O71/UPF5hvhoR2qbR2BBuw/Z6hL6Ip8OH/g8cAWu9+qFWqzIpltoPhvTw3OoWTzuw==",
+      "dependencies": ["@aphrody/bun", "@material/material-color-utilities"]
     },
     {
       "name": "@aphrody/m3-explorer",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-explorer/package.json",
       "status": "published",
-      "sha256": "5c3af3ed77d7aeabf3a9ead2fea66e7082b30761502c1a10b9333f2da5d7b797",
-      "integrity": "sha512-8/QZMrmdDVBZf8aLKCGkgt4XXkrjsym3mT+kAOAyeX8rA1Vaa5JyQ23fuIq6Boqnpi0N3g9EomFzCxG3iGpF/g==",
-      "dependencies": ["@aphrody/m3-primitives", "clsx"]
+      "sha256": "d1b6afd657a417a2b386d2625dc8dfef6943a789f2e426cc10e9b4450244f10c",
+      "integrity": "sha512-QxGOGp1kuoRBEOMVYitg2uT9yR+P++3VdjZzVKy2zA+yXO8Mb3iuaM2x5LSRZRtyqi8PnVU2MOSRSzrISdwbtA==",
+      "dependencies": ["clsx", "@aphrody/m3-primitives"]
     },
     {
       "name": "@aphrody/m3-fonts",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-fonts/package.json",
       "status": "published",
-      "sha256": "6c6159e5b7e2ec1a59b320efbedec9d6e8b2026d2aea5a46f2aa886d6cb54bed",
-      "integrity": "sha512-IlyU9Fug6sqotuXSg5I72GG6V2J5gpQk4KRi4EkLAGc8wWzC8Z0ZoMO7PKw8h8AmIKuPLDKGj9Ub+paWhH7SWA==",
+      "sha256": "ba0bc1e7a2bdca6e6dbf6015c5c6b4a5f6e71311407d3d22e275c5ff933160af",
+      "integrity": "sha512-+Lq3OQYwHu5GViF65f05hVdtHOsi+juDRkSoqFfZ8v41gtNQkhx2DWKaOpryi+Da9hxOVz9Q6BP6xzcixkN3jg==",
       "dependencies": []
     },
     {
       "name": "@aphrody/m3-forms",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-forms/package.json",
       "status": "published",
-      "sha256": "da36f43411f2b7c47198d6bda33c4b430872fb13369ec5c6da3ec1676ce49e8c",
-      "integrity": "sha512-u25FUNLmSjIXmhfXzUoTf2X80OPidV7DwyTfQ1pMZTNxH580cVycUTcTcOEf7YepvzSnCaUrsVn4d7E/DF/bDw==",
-      "dependencies": ["@aphrody/m3-primitives", "clsx"]
+      "sha256": "305f252978a460a4a8f46e514686ac08150be4acaab095766674e8184237c1ec",
+      "integrity": "sha512-LZOdVZDcRka1OvIo0b1BVhgiaBzKPyBqzRJut3ALEjB6EIzZp+h8gdS7GEVzU0B9ZaSUcwfqD/AkBUppQRkjVQ==",
+      "dependencies": ["clsx", "@aphrody/m3-primitives"]
     },
     {
       "name": "@aphrody/m3-front",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-front/package.json",
       "status": "published",
-      "sha256": "4918d3682e873bed4ec889d62f10feaa02cfcfbe2ca16150e1665c1ac28e6d66",
-      "integrity": "sha512-qKiD8FTq3OHEIM9ChxQ0W0M6GaHRi1Z8cROaLlOweqAdCfxnxl7uV/DoisCzQ5H542V+zHG4egDWqnkvnK0sXg==",
+      "sha256": "515917c0fece79d50bd57abc07d0e44c48f61fccec222aa59a2f02af7ed8c790",
+      "integrity": "sha512-wuLNggLzxrkya3aj10ps2a4NztVw1EJxbWPtP4cfo32TVu/3ftrMzeABFWVSnkbbEMYB48rHsx12ZqV94kzPhg==",
       "dependencies": ["@aphrody/m3-tokens", "@aphrody/material-web"]
     },
     {
       "name": "@aphrody/m3-icons",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-icons/package.json",
-      "status": "blocked",
-      "sha256": "d045451e14060f836eb144559488acbf2dbb95aa9bd076cfb1187c5dd8685a3b",
-      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+      "status": "published",
+      "sha256": "2375b3f9b2557802b84ec229020dbddb182abee611e98a166d5159d7d292860d",
+      "integrity": "sha512-KigbIOun74ikOUteeAUd77BbLJxNZStb2IOT0SmOa6Vu39gXwVp697g3EtliBaBXYAdfQdY9vz3ZtVuhQPBr2w==",
+      "dependencies": ["@aphrody/bun"]
     },
     {
       "name": "@aphrody/m3-mcp",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-mcp/package.json",
       "status": "published",
-      "sha256": "4671bb0ea6cc198e5ec3e002f9f3fe0ff3cfdca938ec9391a4c9a58510007bf9",
-      "integrity": "sha512-IVICRta32v3WDimjSqjkI1TKo2HxihAKfOAeh6tSfMYy8XjDW5BBs4oUwGszFR2R9EtLHxhZRv8FTj6kB4ZYhw==",
-      "dependencies": ["@aphrody/m3-os-themes", "@aphrody/material-design-icons", "zod"]
+      "sha256": "5f159e4759dfdad306b0e7282740c2b75d94898765338b9788db2a9532160460",
+      "integrity": "sha512-8C7w2NXIp8ELnDkimIj0pci5ynrOIsBWwYRSOUFRdgoDr6Zd3rZP7iLjGJeCAOpCbCMS5gAqqq8w7ij5jVwL/g==",
+      "dependencies": ["zod", "@aphrody/m3-os-themes", "@aphrody/material-design-icons"]
     },
     {
       "name": "@aphrody/m3-motion",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-motion/package.json",
       "status": "published",
-      "sha256": "64d2dcc0c0c3d303a1347b93efc951e667e0f1f54a5e3b1b0fff456e61bf0aea",
-      "integrity": "sha512-EtdtqUGcTqonm1pCTWwbzDxdOTuSJUF/kIjnKCKFR6KzeWK6Y3Q0G4B4+0lGm1zNn8gd45eBLaaMD/ytjsixZQ==",
+      "sha256": "c97a03542e2448c4730cb59116436ecb62fae25c919625037c0492edb25da423",
+      "integrity": "sha512-l72TK/lzf7WoiPnmnRJJNDnP6CbS6hQ3cTdfiGYVqLoqReSiK2iOaru020EDp74+GK0gO8t0KWIEuhcZTVMjmg==",
       "dependencies": ["motion"]
     },
     {
       "name": "@aphrody/m3-next-migrate",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-next-migrate/package.json",
-      "status": "blocked",
-      "sha256": "64c4ed871d1f41dddff2ea98244e931dfb4b6d6597b6b83eba26d83d0f5f1b26",
-      "reason": "Qualification native, intégration ou dépendance non qualifiée restante"
+      "status": "published",
+      "sha256": "9b85f5099652cf1b8f35d11b0e34915115b7d353b10cb29828df987a39fe94c3",
+      "integrity": "sha512-9BVqCmkNZlJehvi+2NNgnBpLE1IMBfyJMFAFgnuomCtB+6Ob8AYNDwIvmHsRORpSs6bdnr0EIgXFnKl9ZZiLXg==",
+      "dependencies": ["react", "@aphrody/next-bun", "@aphrody/scaffold"]
     },
     {
       "name": "@aphrody/m3-next",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-next/package.json",
-      "status": "blocked",
-      "sha256": "ee9abcb1c94c1da82db54c6143319f52a5362021d2eb2010fb872f929f9527a2",
-      "reason": "Qualification native, intégration ou dépendance non qualifiée restante"
+      "status": "published",
+      "sha256": "772c8d388e57a3b06c907ee0f1f544eee8fcdcc6e02015d612f89a3e76b6194c",
+      "integrity": "sha512-zebfT2EQqEx5xtZyZGFha1wqzIoCI5UTuhHZKCNnf6ejWy7sJbezCsk+kjdZLCG2+clD91E0YYCYhP/wXObwtA==",
+      "dependencies": [
+        "@aphrody/bun",
+        "@aphrody/m3-theme",
+        "@aphrody/next-bun",
+        "@aphrody/m3-tokens",
+        "@aphrody/m3-tailwind"
+      ]
     },
     {
       "name": "@aphrody/m3-os-themes",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-os-themes/package.json",
       "status": "published",
-      "sha256": "39d0ed8c60de46b99c313b9ffb8b1e49c3a8af787ccae201d864be113241641a",
-      "integrity": "sha512-Ogw+c24x8OxZh06SC5v6oCYtjLMyn41B0D9tiChI9pi4gdUWlqWRUiS1lLvLVxZtc4qNx8XSex2MlT5OTMjZmw==",
-      "dependencies": ["@aphrody/m3-tokens"]
+      "sha256": "967d0d9ac2065a9863647ee222b19b8807db3154d0646b44228ba087b0d0e67d",
+      "integrity": "sha512-yqRL+/IFv+C5XpqYejh+SwEKV8QaCdg1mk0YPA1A8CdVttAJDo5Zd8BIubjgiKDV52d7t+b+E3Y3yQpfCk7rHQ==",
+      "dependencies": ["@aphrody/identity", "@aphrody/m3-tokens"]
     },
     {
       "name": "@aphrody/m3-primitives",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-primitives/package.json",
       "status": "published",
-      "sha256": "e48aa0e5a5e6779a0478ec41d50563c91f2cea66dfefa6fae4aba319f6f92945",
-      "integrity": "sha512-jeIelP0saJufZz1KoYej4Fe588DOlrseyrwnWK66fnd7gdXUIO7xIXB5XkzhwM/FXuGMq8esOGSJVDf9TFyUDg==",
+      "sha256": "dab77242b1bb9587639e11a743031d6dd57823d92caef103bee5f7314fb6edd0",
+      "integrity": "sha512-C5KeebAc51LW9OON66uE8iw8DXRbBOTz9HgYOh1VnKwDhvEREQdPSrw6SoiQrSQR3DoscdmNfx5gnvlMUrA3/A==",
       "dependencies": [
-        "@aphrody/m3-motion",
-        "@base-ui/react",
-        "class-variance-authority",
+        "zod",
         "clsx",
         "motion",
-        "react-hook-form",
-        "react-resizable-layout",
         "sonner",
-        "zod"
+        "@base-ui/react",
+        "react-hook-form",
+        "@aphrody/m3-motion",
+        "react-resizable-layout",
+        "class-variance-authority"
       ]
     },
     {
       "name": "@aphrody/m3-react",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-react/package.json",
       "status": "published",
-      "sha256": "233e9c6298cfbdc90fe2c90f3439f3422c02a90e98041a50a1641cfe7c4f4cc1",
-      "integrity": "sha512-yjpiDcRuo+0kMG4Xwy/LUrYdCXPD+NqhNOOT7XlxDozJH2EA5fwbQgYdQOobCTQEstj7EqdGF6hce1rzFX+Xng==",
-      "dependencies": ["@aphrody/m3-tokens", "@aphrody/material-web", "@lit/react"]
+      "sha256": "1d081718eab8af9c548c4eea0a3bbc292cce1bb5a1b516f14b7904d0afe377c5",
+      "integrity": "sha512-gdQrrDqkoMBGv9yKEbb7q81BmEVXsi9e0cRk+4jPy0ajfuo22+0yNuwQNlhNpshk4J6nJDZnwABVw7qI2C6vmw==",
+      "dependencies": [
+        "@lit/react",
+        "@aphrody/m3-tokens",
+        "@aphrody/material-web",
+        "@tanstack/react-table",
+        "@tanstack/react-virtual"
+      ]
     },
     {
       "name": "@aphrody/m3-reader",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-reader/package.json",
       "status": "published",
-      "sha256": "92cb391eb1e8063d8ac82a56a8ebdbf7046f36f013aa8737ab11a9c319add937",
-      "integrity": "sha512-ZnDYojsu8qRyIbr2i3RsM2IdVgCAUN/1uI8PYi9rAhu8pq7aqqtfipqbFaKcGrtibjqei3xK0EfsRX2IJWsVTA==",
-      "dependencies": ["@tanstack/react-virtual", "lucide-react", "swiper"]
+      "sha256": "55a733605d6ca213a5cb68a1fc615a947cf98bbbe0919468aadb89ae57680911",
+      "integrity": "sha512-mCuJZ10bNyL1jNQQ4Bq5Yy+TTKsPHtBRYHJ0Tzi/VvnUaevnk1YI+tq4iEvBouj4SHxtoLDsCg1glPbtB24NFA==",
+      "dependencies": ["swiper", "lucide-react", "@tanstack/react-virtual"]
     },
     {
       "name": "@aphrody/m3-tailwind",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-tailwind/package.json",
       "status": "published",
-      "sha256": "548ece0654da2cfdbe1e0ac330179468ad1ce8699c04b0bacbffa18066baa569",
-      "integrity": "sha512-8OiSxdDRM28z03LLAR4cGUhHz+S9tkggSRFhxaD6R6RaVCZikFtz6lbZc26iOMCvW/F7CVAiCnIfoUBWxNajzw==",
+      "sha256": "93eff1d3634490c05c613b6a188196b220d79ac780e89d4b8438ec839dfadc95",
+      "integrity": "sha512-SH4w83xPUOzcDBWU33s5Xr97N+Vd6+lJLdQTljYGKsJiJEt5Xl86eBvqDYsGSEStSWSm58ePic7aWG2Is8X0sg==",
       "dependencies": ["@aphrody/m3-tokens"]
     },
     {
       "name": "@aphrody/m3-theme",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-theme/package.json",
-      "status": "blocked",
-      "sha256": "c2c143f77822c004b530c147d42275dfe7ca0e722c121e490fd7bc75c8c95b99",
-      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+      "status": "published",
+      "sha256": "681afa9895a2d23e391c6bd9c51095853cd76281d0ae09eb9c8551519ff12e28",
+      "integrity": "sha512-Y01G2ARAgv2dOAGmKeYQSy9p8ZoBdA5It0huI8JpxIq+/momFmfIWYEIUvZX6g9AzeWkapXc1A0wZWCr6tasGQ==",
+      "dependencies": ["@aphrody/m3-tokens"]
     },
     {
       "name": "@aphrody/m3-tokens",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3-tokens/package.json",
       "status": "published",
-      "sha256": "8d3b023cf864b2c4b886d154d1640bb25f654a2fe8e10db0a2116aee67381fc2",
-      "integrity": "sha512-SBgjx6Wujh6k+KP8dsOaqweBUa8e82LAmFpkujKlSufDzzxg2Re56trrk9MpS98zveuko5UbjHWdjZsZVw3NOg==",
+      "sha256": "d02d21c64e3f622b8f5e8831bb0e6a1a7d622627b2152320a62f0fbd08099313",
+      "integrity": "sha512-HAr1jHxfcmPGYRJVGb039cn1keAyc1+g7wvuTmLlNvXMH4Q5AUrpgkqMRmO0uaH4YrJDphR3ca10Wp5sM/TUig==",
       "dependencies": ["@material/material-color-utilities"]
     },
     {
       "name": "@aphrody/m3",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "m3/packages/m3/package.json",
-      "status": "blocked",
-      "sha256": "d784ac54f0664705795cd500ea422236893f4afafbce05b22d1b0c9741c5633e",
-      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+      "status": "published",
+      "sha256": "c66347367dd12e5583acd5cf408eaf522149b1734ecbd3963352ddb07be4839c",
+      "integrity": "sha512-UrqyimZuJBsVZKYxp75CqdkkgYGtTDsS02Fg2hR6F9RuUS3AaOZahCbqjXCJmUypR8UnjHsVj82ERt+1BKi6yg==",
+      "dependencies": [
+        "motion",
+        "@aphrody/bun",
+        "@aphrody/m3-fonts",
+        "@aphrody/m3-react",
+        "@aphrody/m3-theme",
+        "@aphrody/scaffold",
+        "@aphrody/m3-motion",
+        "@aphrody/material-web",
+        "@aphrody/bun-plugin-tailwind"
+      ]
     },
     {
       "name": "@aphrody/material-design-icons",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "path": "m3/packages/material-design-icons/package.json",
       "status": "published",
-      "sha256": "3e7d67a2ed99f2ca130fc0bf9b8e3d032c555bd3f9fac2826f30d3a91e052609",
-      "integrity": "sha512-zrSoNL2dtFYe+SKXIfOXyqocuVaH7ik39QyP+1uajfYQ/2R0RGEPVhDhZ1IVcWtrKlr60HDbQQ2uzVS+qJaXbw==",
+      "sha256": "df4f50504e91517440b1e245c09d737a8061809cbe8d82685e33a75e7b6ee44f",
+      "integrity": "sha512-j8TVLvgDQnxuABtyWr8KEhQS3jb16zER9Yo8e/tsRM1q9pSUVzxX/cqXBkg3/24jIHPqdezeFTnPun0e1f90kw==",
       "dependencies": []
     },
     {
       "name": "@aphrody/scaffold",
-      "version": "1.0.0-canary.1",
+      "version": "1.0.0-canary.2",
       "path": "m3/packages/scaffold/package.json",
       "status": "published",
-      "sha256": "3646a0280ac2a7baee5e6831bc899c041f107546b36918031e683df93decc476",
-      "integrity": "sha512-kJIwSbyAKZpCdSou8tAO13cSwJqanH807HmDHt9Ky3m5hm8OKu3avffIiNPp+ANNWWKAOZ+iqZi/nie/8GtYCA==",
+      "sha256": "bc7d9a78481affbd82e1736f28453238128b7c75912c5f8e4c48e886ecd011b7",
+      "integrity": "sha512-Ir+QAxOVrHzMG6lrcuvg6XJeMgpI751PwOlEvCDMemYXBtXK4s45ldxYCB8L8W1Rjb6JQXkhK3wpkcL0WmKPXg==",
       "dependencies": []
     },
     {
       "name": "@aphrody/web-to-tauri",
-      "version": "1.0.0-canary",
+      "version": "1.0.0-canary.1",
       "path": "m3/packages/web-to-tauri/package.json",
-      "status": "blocked",
-      "sha256": "e8728be451b552f16b224bf47645d77737809dabf1b273c5b6fe1c266006e64f",
-      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+      "status": "published",
+      "sha256": "98eeb7c18708936f380e45c6d639fd6cd756b3e642565c2f0d4e4f1ae36d780e",
+      "integrity": "sha512-SASubhqVib9VQVeoilpS4fRiU7l4qmTMGn8NGFctKJxXuTznlzTpLevp1WmRiPr3AdmZD6xjuc4GzmX2PMnL9Q==",
+      "dependencies": ["@aphrody/scaffold", "@aphrody/agent-browser"]
     },
     {
       "name": "@aphrody/doc-ai",
@@ -502,11 +605,11 @@
     },
     {
       "name": "@aphrody/runtime-sdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "path": "packages/engine/runtime/package.json",
       "status": "published",
-      "sha256": "dfc41475692ee387afbe26f56b82b4ecb8d8817a8400a9a89967e57d6ca85326",
-      "integrity": "sha512-lu7ljEgQ5HZvtcMCYOTADCbpO6QmD3nSo7oETVTpBVRM5ECaGIBOwjzIIBd6r/ij4Ujzk8hGRYIvYGOQktQvHQ==",
+      "sha256": "84ba6d5ff83509c9a99db215272c6a2c739fe3e260faed0ffe9bc2f0bdc255d6",
+      "integrity": "sha512-h2fqoQEVn6rFBM6/LMU5XU0oTGpbR4k93MNGCTMwoaU/3v2ScWQXXlC4M3/bpbMj1hX82/JuOoF2eHCYZbfgDQ==",
       "dependencies": []
     },
     {
@@ -544,11 +647,11 @@
     },
     {
       "name": "@aphrody/paths",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "path": "packages/infra/paths/package.json",
       "status": "published",
-      "sha256": "08bafa385019601d2e37e9fa64b85fc304749e7b98e69729a52a15cd2b67a17a",
-      "integrity": "sha512-Vkh5d/Q/VZV71ddqtFCmF1D0CyLaKLtZk6usn2Mbi7u3jrgkyskcGplolBuzrv8QIzzi38oNytaiM4TS6WY0iA==",
+      "sha256": "0071ec312237837cb6d389fc5c2f7277f1c272d71a54756f55b9d7a6465bd504",
+      "integrity": "sha512-TPrnizCIZrW3WWc6GljP62AeF9rw7P6kmVvGefT038ut8UxtdSvt4FXrkZcKV+oDpXkUvyy9EU7B7UBDGLy1Rg==",
       "dependencies": []
     },
     {
@@ -562,11 +665,11 @@
     },
     {
       "name": "@aphrody/update",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "path": "packages/infra/update/package.json",
       "status": "published",
-      "sha256": "9a9892d53e65b393f2a4bf1d456b54c990ddc23aeb2ba80f8065c301259d9747",
-      "integrity": "sha512-XwjyjreWhCI3hYOmkPHU9oHPvmYTIG9NcRj5vpqgOMXwCgx02TjKUOibGYjL1yeDsL2uQUFBH4Jz3MUcW81MQA==",
+      "sha256": "3980277a3f21c0ad1242d5364c2210bdd4b18c8c82886b7b4afda7add8dfa35f",
+      "integrity": "sha512-LHjRUrUJYWwoDarJecnvnMNunSI1vZbMNUA1TBeqLxhZLVbIxh7VZILpsiWdaQOES/hJGSNqC1mUGgYA8V7krQ==",
       "dependencies": ["@aphrody/paths"]
     },
     {
@@ -579,11 +682,12 @@
     },
     {
       "name": "@aphrody/bun",
-      "version": "3.3.7",
+      "version": "3.3.8",
       "path": "packages/interop/native/package.json",
-      "status": "blocked",
-      "sha256": "5c6212d770efa7ba67fed8b0408545feaaf03dafaa278aa6b0136b173c9e80f6",
-      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+      "status": "published",
+      "sha256": "7bef3bee003b7f6daf2eba138e69c1ec6f5364ef8e6110fa134b22365eb53b9a",
+      "integrity": "sha512-DN02BbbK83pLC5R6Mz+/lKEHx6AhL00+YTjLkPWZUFzOUiitM5pO0786mSOcppWQIDvZjxX2bvCYuB1a3Ofxzw==",
+      "dependencies": ["@aphrody/paths", "@aphrody/update", "@aphrody/runtime-sdk"]
     },
     {
       "name": "@aphrody/a2a",
@@ -596,12 +700,12 @@
     },
     {
       "name": "@aphrody/drive-client",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "path": "packages/os/drive-client/package.json",
       "status": "published",
-      "sha256": "a182aaa68ad68379413c1d5aa325371b72c5b751007290baab80f98f7e786472",
-      "integrity": "sha512-VFZrRg10LzmWKFL+5r6zyRaZvB0e/fK17n/zqMa1rbqZNHDqiYHDO3zuI0Iz6JIVNJvTii6xGftyk4Au5BBWog==",
-      "dependencies": ["@aphrody/assets", "type-fest", "valibot", "zustand"]
+      "sha256": "47096319b2ceed1398add5af856a9853f862bf3ddc87dbf9cc05e0a61a1abc45",
+      "integrity": "sha512-Ns2EbHnXoKV0+5hXEOLrgiPOZZIaL/msbfRUYLuCVU7S1zBtTbDRYObMfmUhsWcoG9/i7jS7t0tqICHdQbcezQ==",
+      "dependencies": ["valibot", "zustand", "type-fest", "@aphrody/assets"]
     },
     {
       "name": "@aphrody/os",
@@ -630,11 +734,12 @@
     },
     {
       "name": "@aphrody/agent-browser",
-      "version": "1.0.0-canary",
+      "version": "1.0.0-canary.1",
       "path": "packages/web/agent-browser/package.json",
-      "status": "blocked",
-      "sha256": "534c9a91b131b822096d44209eeb0b76ce7fb47b456fcb08c75208545e689dbb",
-      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+      "status": "published",
+      "sha256": "d2bccfbae28536d185b7c0a68f1d0d1184615ca0420708d566f6a93dd8f3185b",
+      "integrity": "sha512-f1N9kipxXmjty/7q7xbja+a7yvAlKFfVmlMyN4fJs1kThze13nmihUd0bVHraFWprBjVgeQjiMnqJ7KFQYevyw==",
+      "dependencies": ["@aphrody/runtime-sdk"]
     },
     {
       "name": "@aphrody/web-test",
@@ -646,11 +751,11 @@
     },
     {
       "name": "@aphrody/fuzzy",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "path": "packages/web/fuzzy/package.json",
       "status": "published",
-      "sha256": "5046e1c86f8780c7a134113fd0d647944d033e8c884a0fdad22161c59a4ab3b8",
-      "integrity": "sha512-YG2VwP+FRfHz6sAhuFj6ug9os/iLzCZQzAXM8yyFJythoo/cQ4KKhDrjABkIkxR+ZV8gBWbl1uPy20iFew2Mww==",
+      "sha256": "7f43c00c2a125a9f3365d90a8b659324010550485394dbf7fb61aea5591357ce",
+      "integrity": "sha512-ec6C7rbch29vFznmOwOIjoo3c+mIQHhvDQ+4kY4bznHPKomNS/PRkb8MZJIiLpIWlfZHjCs7VUBbcAtJB84Ryg==",
       "dependencies": []
     },
     {
@@ -663,11 +768,11 @@
     },
     {
       "name": "@aphrody/qr",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "path": "packages/web/qr/package.json",
       "status": "published",
-      "sha256": "578ef0a7ebf21d7358282b84d320260782ec106119ac76271cac185e9259c338",
-      "integrity": "sha512-mQTI2Vn+hGFZetm5jwF0JH6IgvE932pIQyezy9YV/eebt3JOc6vkB1JbOoDlBpfnfTx5153IU7UsvNhf3Vg3Hw==",
+      "sha256": "cb307ee01b993d6d121c50d569d18297046cce00af3d4c5ea2d5bf5fa9573b8d",
+      "integrity": "sha512-LCAfuhNwnbufvtf49CZvpax4V4bxB10NAj1zcY5OAeQ8j2k9JewJwB62zLD15u/W5+lEF/kj4fUvdRyHDw3c3g==",
       "dependencies": []
     },
     {
