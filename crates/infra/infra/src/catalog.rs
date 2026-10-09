@@ -63,6 +63,10 @@ pub struct CatalogService {
     pub status: Option<String>,
     /// Required, and only meaningful, when `status` is `retired`.
     pub retired_at: Option<String>,
+    /// Host alias running the service (`vps`, `dbfr`); absent means any target.
+    pub host: Option<String>,
+    /// Docker container running the service: lifecycle commands use `docker`, not systemd.
+    pub container: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
@@ -110,6 +114,16 @@ impl CatalogService {
     #[must_use]
     pub fn is_required(&self) -> bool {
         !self.is_retired() && self.required.unwrap_or(!self.is_staged())
+    }
+
+    #[must_use]
+    pub fn runs_on(&self, target_id: &str) -> bool {
+        self.host.as_deref().is_none_or(|host| host == target_id)
+    }
+
+    #[must_use]
+    pub fn is_supervised(&self) -> bool {
+        self.unit.is_some() || self.container.is_some()
     }
 
     #[must_use]

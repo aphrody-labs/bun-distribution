@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Service lifecycle management for Aphrody infrastructure.
 //!
-//! Controls systemd units locally or remotely through transparent SSH dispatch.
+//! Controls systemd units or Docker containers locally or remotely through transparent SSH dispatch.
 
 use crate::catalog::load_service_catalog;
 use anyhow::{Context, Result, bail};
@@ -49,6 +49,44 @@ pub fn is_local_target(target_id: &str) -> bool {
     target_id == "local"
 }
 
+/// Argv run on the target for a container-backed service; `None` when the action has no Docker form.
+fn container_command(action: ServiceAction, container: &str) -> Option<Vec<String>> {
+    let args: &[&str] = match action {
+        ServiceAction::Status => &[
+            "inspect",
+            "--format",
+            "{{.State.Status}}{{if .State.Health}}/{{.State.Health.Status}}{{end}}",
+        ],
+        ServiceAction::Start => &["start"],
+        ServiceAction::Stop => &["stop"],
+        ServiceAction::Restart => &["restart"],
+        ServiceAction::Journal => &["logs", "--tail", "30"],
+        _ => return None,
+    };
+    let mut argv = vec!["docker".to_owned()];
+    argv.extend(args.iter().map(|a| (*a).to_owned()));
+    argv.push(container.to_owned());
+    Some(argv)
+}
+
+fn run_on_target(target_id: &str, argv: &[String]) -> std::io::Result<std::process::Output> {
+    if is_local_target(target_id) {
+        Command::new(&argv[0]).args(&argv[1..]).output()
+    } else {
+        let remote = argv
+            .iter()
+            .map(|a| format!("'{}'", a.replace('\'', r"'\''")))
+            .collect::<Vec<_>>()
+            .join(" ");
+        Command::new("ssh").args(["-o", "BatchMode=yes", target_id, &remote]).output()
+    }
+}
+
+/// Healthy, or running without a health check.
+fn container_state_is_up(state: &str) -> bool {
+    state == "running" || state == "running/healthy"
+}
+
 pub fn execute_lifecycle(
     root: &Path,
     action: ServiceAction,
@@ -60,13 +98,17 @@ pub fn execute_lifecycle(
     let selected: Vec<_> = catalog
         .services
         .iter()
-        .filter(|s| id.map_or(s.unit.is_some(), |wanted| s.id == wanted))
+        .filter(|s| {
+            id.map_or(s.is_supervised() && !s.is_retired() && s.runs_on(target_id), |wanted| {
+                s.id == wanted
+            })
+        })
         .collect();
 
     if selected.is_empty() {
         bail!("aucun service correspondant à l'identifiant: {}", id.unwrap_or("<tous>"));
     }
-    if let Some(service) = selected.iter().find(|s| s.unit.is_none()) {
+    if let Some(service) = selected.iter().find(|s| !s.is_supervised()) {
         bail!("le service {} n'a pas d'unité systemd (servi par nginx)", service.id);
     }
 
@@ -89,6 +131,31 @@ pub fn execute_lifecycle(
 
     for service in selected {
         let sid = &service.id;
+        if let Some(container) = service.container.as_deref() {
+            let Some(argv) = container_command(action, container) else {
+                bail!("{sid}: action {cmd_str} sans équivalent pour le conteneur {container}");
+            };
+            let out = run_on_target(target_id, &argv)
+                .with_context(|| format!("{target_id}: {}", argv.join(" ")))?;
+            let mut text = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            if action == ServiceAction::Journal {
+                text.push_str(String::from_utf8_lossy(&out.stderr).trim_end());
+            }
+            let success = out.status.success()
+                && (action != ServiceAction::Status || container_state_is_up(&text));
+            results.push(ServiceActionResult {
+                id: sid.clone(),
+                unit: format!("docker:{container}"),
+                action: cmd_str.to_string(),
+                success,
+                message: Some(if text.is_empty() {
+                    if success { "ok" } else { "failed" }.into()
+                } else {
+                    text
+                }),
+            });
+            continue;
+        }
         let Some(unit) = service.systemd_unit_name() else { continue };
 
         if action == ServiceAction::Journal {
@@ -168,13 +235,37 @@ pub fn get_service_statuses(
     let selected: Vec<_> = catalog
         .services
         .iter()
-        .filter(|s| id.map_or(s.unit.is_some(), |wanted| s.id == wanted))
+        .filter(|s| {
+            id.map_or(s.is_supervised() && !s.is_retired() && s.runs_on(target_id), |wanted| {
+                s.id == wanted
+            })
+        })
         .collect();
 
     let is_local = is_local_target(target_id);
     let mut statuses = Vec::new();
 
     for service in selected {
+        if let Some(container) = service.container.as_deref() {
+            let argv = container_command(ServiceAction::Status, container)
+                .expect("status has a docker form");
+            let (active, state) = match run_on_target(target_id, &argv) {
+                Ok(o) if o.status.success() => {
+                    let s = String::from_utf8_lossy(&o.stdout).trim().to_string();
+                    (container_state_is_up(&s), s)
+                },
+                Ok(_) => (false, "absent".to_string()),
+                Err(_) => (false, "unknown".to_string()),
+            };
+            statuses.push(ServiceStatusResult {
+                id: service.id.clone(),
+                unit: format!("docker:{container}"),
+                active,
+                state,
+                enabled: None,
+            });
+            continue;
+        }
         // Status describes the catalogued unit itself. In particular, a timer
         // must be queried as `*.timer`; mapping it to its associated service
         // reports an active timer as inactive whenever its service is idle.
@@ -225,7 +316,10 @@ pub fn get_service_statuses(
 
 #[cfg(test)]
 mod tests {
-    use super::{ServiceAction, execute_lifecycle, get_service_statuses, is_local_target};
+    use super::{
+        ServiceAction, container_command, container_state_is_up, execute_lifecycle,
+        get_service_statuses, is_local_target,
+    };
 
     /// A catalog holding one site nginx serves from disk, which has no unit: none of these calls may reach a host.
     fn unit_less_root() -> tempfile::TempDir {
@@ -257,6 +351,33 @@ mod tests {
             .expect_err("no unit to restart");
         assert!(error.to_string().contains("pas d'unité"), "{error}");
         assert!(execute_lifecycle(root.path(), ServiceAction::Restart, None, "vps").is_err());
+    }
+
+    #[test]
+    fn listing_keeps_live_services_of_the_target_host() {
+        let root = tempfile::tempdir().expect("fixture directory");
+        std::fs::create_dir_all(root.path().join("tools/config")).expect("fixture config");
+        std::fs::write(
+            root.path().join("tools/config/service-catalog.json"),
+            r#"{ "schemaVersion": 1, "owner": "infra", "supervisor": "systemd", "proxy": "nginx",
+                 "services": [
+                   { "id": "old", "kind": "x", "runtime": "bun", "unit": "old.service", "host": "dbfr",
+                     "status": "retired", "retiredAt": "2026-10-09" },
+                   { "id": "vps-only", "kind": "x", "runtime": "bun", "unit": "v.service", "host": "vps" } ] }"#,
+        )
+        .expect("fixture catalog");
+        assert!(get_service_statuses(root.path(), "dbfr", None).expect("listing").is_empty());
+        assert!(execute_lifecycle(root.path(), ServiceAction::Restart, None, "dbfr").is_err());
+    }
+
+    #[test]
+    fn container_services_use_docker() {
+        let argv = container_command(ServiceAction::Restart, "shenron-chat-1").expect("restart");
+        assert_eq!(argv, ["docker", "restart", "shenron-chat-1"]);
+        assert!(container_command(ServiceAction::Enable, "shenron-chat-1").is_none());
+        assert!(container_state_is_up("running/healthy"));
+        assert!(!container_state_is_up("running/unhealthy"));
+        assert!(!container_state_is_up("exited"));
     }
 
     #[test]
