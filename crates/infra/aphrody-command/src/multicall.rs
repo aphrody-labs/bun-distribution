@@ -11,7 +11,7 @@ use std::{
     path::Path,
 };
 
-mod bun_bridge;
+pub(crate) mod bun_bridge;
 
 /// Where a tool's arguments go.
 pub(crate) enum Target {
