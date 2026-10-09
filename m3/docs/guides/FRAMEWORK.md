@@ -51,10 +51,9 @@ Use their declared scripts for their additional checks. To run an uncached pipel
 a member explicitly, call `bun scripts/build.ts typecheck --no-cache --only <name>` directly;
 the root task wrapper currently forwards extra arguments only for benchmarks and theme installation.
 
-Workspace tests include the apps and nested `packages/m3-next/examples/*` members. The root manifest
-and test runner exclude the host-bound `packages/app-ui`, `packages/rg-ui`, `packages/shenron-ui`,
-`packages/web-to-tauri`, and the independent `packages/nie-ui` repository. Those owners keep their own
-installation and gates. `app-ui` builds Rust and belongs to the integrator using the enclosing
+Workspace tests run the `test` script of every `packages/*` member (path filter `./packages/*`); the
+enclosing Aphrody manifest declares `m3/packages/*` only, so there is no `apps/*` or `packages/m3-next/examples/*`
+workspace member. The independent `packages/nie-ui` repository is excluded and keeps its own installation and gates. `app-ui` builds Rust and belongs to the integrator using the enclosing
 Aphrody repository's `scripts/build/rust/cargo-serial.sh`.
 
 ## App Router (`@aphrody/m3/app`)
@@ -74,6 +73,14 @@ use `react-server-dom-parcel` (public React 19 builds).
 | `generateStaticParams`, static generation at build, dynamic detection (`headers()`, `cookies()`, `searchParams`) | supported |
 | `next/link`, `next/navigation`, `next/headers`, `next/server`, `next/cache`, `next/image` | aliased to `@aphrody/m3/app/*` |
 | ISR, `next/font`, image optimisation, parallel/intercepting routes, PPR | not yet |
+
+`packages/m3/test/app/{scan,plugin,router}.test.ts` exercise, on `test/fixtures/app-router`: the build manifest and
+the three layers, prerendering (`generateStaticParams`, dynamic detection), SSR HTML with metadata and the inline RSC
+payload, RSC requests, `notFound()`, `headers()`/`cookies()`, route handlers and 405, middleware redirect and
+matcher, trailing-slash redirect, server actions called with an encoded reply (return value, `redirect()`), robots,
+public files, hashed assets, HEAD and the `rewriter` option of `loadApp`. The fixture has no `template`, `error`,
+route group, `sitemap`, `manifest` or icon file; progressive `<form>` posts, `useActionState` and the
+incremental flushing of streamed SSR behind `loading` boundaries are implemented but not asserted by these tests.
 
 Development rebuilds into `.m3/dev/<n>` on change and refreshes the RSC payload over `/_m3/hmr` (state kept for
 client components). The Bake dev server of the Bun fork is not used yet: its `"use server"` support and production
