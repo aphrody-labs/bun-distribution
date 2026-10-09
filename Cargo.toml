@@ -29,7 +29,7 @@ aphrody-pkg-core = { path = "crates/pkg/core", version = "1.0.0" }
 aphrody-pkg-store = { path = "crates/pkg/store", version = "1.0.0" }
 aphrody-pkg-net = { path = "crates/pkg/net", version = "1.0.0" }
 aphrody-pkg-cli = { path = "crates/pkg/cli", version = "1.0.0" }
-taffy = { version = "0.12.1" }
+taffy = { package = "aphrody-taffy", path = "crates/ui/taffy", version = "0.12.1" }
 aphrody-sprite-sheet = { path = "crates/ui/sprite-sheet", version = "1.0.0-canary" }
 crc32fast = { version = "1.5", default-features = false }
 image-compare = { version = "0.5" }
@@ -421,8 +421,6 @@ correctness = { level = "warn", priority = -1 }
 perf = { level = "warn", priority = -1 }
 
 [patch.crates-io]
-# Modified layout fork (aphrody-labs/taffy @ 4cd8b38f, MIT), integrated so no SSH alias is needed (cloud sessions, CI).
-taffy = { path = "crates/ui/taffy" }
 # Integrated Unicode implementation preserves the private C++ namespace alongside V8.
 simdutf = { path = "crates/native/simdutf" }
 # rfb-encodings 0.1.7 (Apache-2.0, used by rustvncserver): fixes the inverted true-colour test that skipped pixel translation for BGRA clients.

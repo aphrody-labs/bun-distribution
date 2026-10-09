@@ -12,9 +12,8 @@
 [package]
 edition = "2021"
 rust-version = "1.71"
-name = "taffy"
+name = "aphrody-taffy"
 version = "0.12.1"
-publish = false
 authors = [
     "Alice Cecile <alice.i.cecile@gmail.com>",
     "Johnathan Kelley <jkelleyrtp@gmail.com>",
@@ -32,7 +31,7 @@ autobins = false
 autoexamples = false
 autotests = false
 autobenches = false
-description = "A flexible UI layout library "
+description = "Aphrody fork of Taffy, a flexible UI layout library (flexbox, grid, block, float), with local layout fixes; the library is still imported as `taffy`."
 readme = "README.md"
 keywords = [
     "cross-platform",

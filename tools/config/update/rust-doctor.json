@@ -7,7 +7,7 @@
     { "crates": "aphrody-llama", "reason": "vendored upstream (koharu-rs/koharu 0.83.5, crates/ml): not rewritten, keeps its upstream style" },
     { "crates": "aphrody-llama-sys", "reason": "vendored upstream (koharu-rs/koharu 0.83.5, crates/ml): not rewritten, keeps its upstream style" },
     { "crates": "obscura*", "reason": "vendored upstream (h4ckf0r0day/obscura): not rewritten, keeps its upstream style" },
-    { "crates": "taffy", "reason": "vendored upstream (DioxusLabs/taffy) with local patches: not rewritten" }
+    { "crates": "aphrody-taffy", "reason": "vendored upstream (DioxusLabs/taffy) with local patches: not rewritten" }
   ],
   "features": {
     "skip": [

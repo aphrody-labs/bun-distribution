@@ -320,7 +320,7 @@
     {
       "id": "taffy-aphrody-fork",
       "kind": "crate",
-      "crate": "taffy",
+      "crate": "aphrody-taffy",
       "version": "0.12.1",
       "upstreamUrl": "https://github.com/DioxusLabs/taffy",
       "fork": "aphrody-labs/taffy (private)",
@@ -328,9 +328,9 @@
       "pinned": true,
       "role": "dependency",
       "license": "MIT",
-      "note": "Layout fork carrying the upstream Obscura layout changes. Integrated from the pinned revision (src, Cargo.toml, LICENSE, README, MIGRATION.json) as a path patch of crates-io so a build needs no SSH alias to the private repository (cloud sessions, CI, factory). Local patch: TaffyTree::remove releases measured-node context data and invalidates the parent layout cache; LOCAL-PATCHES.md and MIGRATION.json retain the patch and regression fixture. Preserve this patch or qualify its upstream replacement when re-importing the fork revision. Subsequent retained-node removal patch and regression are recorded in crates/ui/taffy/LOCAL-PATCHES.md and MIGRATION.json; native and cross-target source qualification is recorded in docs/operations/workspace/taffy-integration-2026-10-07.md.",
+      "note": "Layout fork carrying the upstream Obscura layout changes. Integrated from the pinned revision (src, Cargo.toml, LICENSE, README, MIGRATION.json) as the aphrody-taffy package (library name taffy, published on crates.io) so a build needs no SSH alias to the private repository (cloud sessions, CI, factory). Local patch: TaffyTree::remove releases measured-node context data and invalidates the parent layout cache; LOCAL-PATCHES.md and MIGRATION.json retain the patch and regression fixture. Preserve this patch or qualify its upstream replacement when re-importing the fork revision. Subsequent retained-node removal patch and regression are recorded in crates/ui/taffy/LOCAL-PATCHES.md and MIGRATION.json; native and cross-target source qualification is recorded in docs/operations/workspace/taffy-integration-2026-10-07.md.",
       "integratedPath": "crates/ui/taffy",
-      "upstreamPackageIdentityPreserved": true
+      "upstreamPackageIdentityPreserved": false
     }
   ]
 }

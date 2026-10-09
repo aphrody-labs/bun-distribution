@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 # Integrated Aphrody Taffy patches
 
-The package remains `taffy` 0.12.1, under its original MIT licence and feature ABI.
+The package is `aphrody-taffy` 0.12.1 on crates.io (library name `taffy`), under its original MIT licence and feature ABI.
 The private fork revision `4cd8b38fc06e1dcec43c13b6962e6e1e87064ec8` remains
 historical provenance. The 2026-10-07 move from `crates/vendor/taffy` to
 `crates/ui/taffy` initially preserved all 54 source files byte for byte.

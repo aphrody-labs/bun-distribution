@@ -14,7 +14,7 @@ default = []
 paint = ["dep:obscura-ssrf", "dep:tiny-skia", "dep:ab_glyph", "dep:cosmic-text", "dep:swash", "dep:image", "dep:ureq", "dep:base64", "dep:resvg", "dep:usvg", "dep:url", "dep:wuff"]
 
 [dependencies]
-taffy = { version = "0.12", default-features = false, features = [
+taffy = { package = "aphrody-taffy", path = "../../ui/taffy", version = "0.12.1", default-features = false, features = [
     "std",
     "taffy_tree",
     "flexbox",

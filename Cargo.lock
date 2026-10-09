@@ -1466,8 +1466,8 @@ dependencies = [
  "aphrody-identity",
  "aphrody-m3-tokens",
  "aphrody-render",
+ "aphrody-taffy",
  "serde",
- "taffy",
 ]
 
 [[package]]
@@ -2290,6 +2290,20 @@ dependencies = [
  "thiserror 2.0.21",
  "tiny-skia",
  "usvg",
+]
+
+[[package]]
+name = "aphrody-taffy"
+version = "0.12.1"
+dependencies = [
+ "arrayvec",
+ "cssparser 0.37.0",
+ "document-features",
+ "grid",
+ "roxmltree 0.21.1",
+ "serde",
+ "serde_json",
+ "slotmap",
 ]
 
 [[package]]
@@ -13837,6 +13851,7 @@ name = "obscura-render"
 version = "0.1.0"
 dependencies = [
  "ab_glyph",
+ "aphrody-taffy",
  "athena-text",
  "base64 0.23.1",
  "cssparser 0.37.0",
@@ -13846,7 +13861,6 @@ dependencies = [
  "obscura-ssrf",
  "resvg",
  "swash",
- "taffy",
  "tiny-skia",
  "ureq",
  "url",
@@ -19963,20 +19977,6 @@ dependencies = [
  "pkg-config",
  "toml 1.1.6+spec-1.1.0",
  "version-compare",
-]
-
-[[package]]
-name = "taffy"
-version = "0.12.1"
-dependencies = [
- "arrayvec",
- "cssparser 0.37.0",
- "document-features",
- "grid",
- "roxmltree 0.21.1",
- "serde",
- "serde_json",
- "slotmap",
 ]
 
 [[package]]

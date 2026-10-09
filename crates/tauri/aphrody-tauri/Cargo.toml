@@ -176,7 +176,7 @@ quickcheck = "1.0.3"
 quickcheck_macros = "1.0.0"
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-tauri = { path = ".", package = "aphrody-tauri", default-features = false, version = "3.0.0-alpha.4" }
+tauri = { path = ".", package = "aphrody-tauri", default-features = false }
 tokio = { workspace = true, features = ["full"] }
 cargo_toml = "1.0"
 http-range = "0.1.5"
