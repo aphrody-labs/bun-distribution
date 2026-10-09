@@ -16,7 +16,7 @@ default: status
 # Status & Diagnostics
 status:
     @echo -e "\033[1;36m=== YOLO Monorepo Status ===\033[0m"
-    @bun run packages/infra/workspace/src/commands/index.ts status
+    @bun run packages/engine/yolo/src/index.ts status
     @echo -e "\n\033[1;36m=== Cargo Workspace ===\033[0m"
     @"{{cargo_owner}}" check --locked --no-default-features -p yolo-core -p yolo-runtime --message-format=short
 
@@ -29,13 +29,13 @@ typecheck:
 
 # Run the installed toolchain binaries directly, without package execution/download runners.
 lint:
-    oxlint packages/infra/workspace/src/commands/ packages/infra/workspace/test/commands/ packages/infra/workspace/src/commands/cli/forge/ packages/engine/
+    oxlint packages/engine/yolo/src/ packages/engine/yolo/test/ packages/engine/yolo/src/cli/forge/ packages/engine/
 
 fmt:
-    oxfmt --write packages/infra/workspace/src/commands/ packages/infra/workspace/test/commands/ packages/infra/workspace/src/commands/cli/forge/ packages/engine/
+    oxfmt --write packages/engine/yolo/src/ packages/engine/yolo/test/ packages/engine/yolo/src/cli/forge/ packages/engine/
 
 fmt-check:
-    oxfmt --check packages/infra/workspace/src/commands/ packages/infra/workspace/test/commands/ packages/infra/workspace/src/commands/cli/forge/ packages/engine/
+    oxfmt --check packages/engine/yolo/src/ packages/engine/yolo/test/ packages/engine/yolo/src/cli/forge/ packages/engine/
 
 # Minimal owned source formatting; imported engines keep an explicit upstream gate.
 rust-fmt:
@@ -95,7 +95,7 @@ test-all: test test-crates
 
 # Applications
 cli *args:
-    bun run packages/infra/workspace/src/commands/index.ts {{args}}
+    bun run packages/engine/yolo/src/index.ts {{args}}
 
 web-build:
     cd m3/packages/app-ui && bun run build
@@ -167,7 +167,7 @@ qualify-bun *args:
     fork="${APHRODY_BUN_CHECKOUT:-../bun}"
     if [[ ! -f "$fork/scripts/aphrody/scope.ts" ]]; then
       [[ -z "${APHRODY_BUN_CHECKOUT:-}" ]] || { echo "APHRODY_BUN_CHECKOUT=$fork is not an aphrody-labs/bun checkout." >&2; exit 64; }
-      exec bun packages/infra/workspace/src/commands/index.ts forge build --branch main "$@"
+      exec bun packages/engine/yolo/src/index.ts forge build --branch main "$@"
     fi
     fork="$(cd "$fork" && pwd)"
     bun "$fork/scripts/aphrody/scope.ts" --check
@@ -175,7 +175,7 @@ qualify-bun *args:
       behind="$(git -C "$fork" rev-list --count HEAD..upstream/main)"
       [[ "$behind" == 0 ]] || echo "fork is $behind commit(s) behind upstream/main: bun scripts/aphrody/sync-upstream.ts in $fork" >&2
     fi
-    exec bun packages/infra/workspace/src/commands/index.ts forge build --branch main --repository "$fork" "$@"
+    exec bun packages/engine/yolo/src/index.ts forge build --branch main --repository "$fork" "$@"
 
 # Native Workspace owner pins the source revision and serializes heavy provider builds.
 [positional-arguments]
@@ -198,7 +198,7 @@ install-cli:
 
 # Autonomous Code Generation Engine (from Bun upstream)
 generate:
-    bun run packages/infra/workspace/src/commands/index.ts generate
+    bun run packages/engine/yolo/src/index.ts generate
 
 # Native runtime (docs/architecture/runtime-native/RUNTIME-ABI.md): the artifact uses the `runtime` profile (unwinding panics)
 runtime-build:
@@ -234,19 +234,19 @@ runtime-list:
 
 # Browse oven-sh/awesome-bun (README cached in .cache/awesome): just awesome search react
 awesome *args:
-    bun run packages/infra/workspace/src/commands/index.ts awesome {{args}}
+    bun run packages/engine/yolo/src/index.ts awesome {{args}}
 
 # Scaffold an Aphrody stack project: just create ../my-app --with web,desktop --framework hono
 create *args:
-    bun run packages/infra/workspace/src/commands/index.ts create {{args}}
+    bun run packages/engine/yolo/src/index.ts create {{args}}
 
 # Manage a Linux server (plan by default, --apply to execute): just host audit --host vps
 host *args:
-    bun run packages/infra/workspace/src/commands/index.ts host {{args}}
+    bun run packages/engine/yolo/src/index.ts host {{args}}
 
 # Re-audit and re-curate awesome-bun for the Rust-based Bun (network): docs/reference/yolo/AWESOME.md + JSON
 awesome-curate:
-    bun run packages/infra/workspace/src/commands/index.ts awesome curate
+    bun run packages/engine/yolo/src/index.ts awesome curate
 
 # Documentation (mdBook)
 docs-build:
@@ -268,10 +268,10 @@ publish-crates-run:
 
 # Plugins Management & Auditing
 plugin-status:
-    bun run packages/infra/workspace/src/commands/index.ts plugin status
+    bun run packages/engine/yolo/src/index.ts plugin status
 
 plugin-check:
-    bun run packages/infra/workspace/src/commands/index.ts plugin check
+    bun run packages/engine/yolo/src/index.ts plugin check
 
 plugin-purge:
-    bun run packages/infra/workspace/src/commands/index.ts plugin purge
+    bun run packages/engine/yolo/src/index.ts plugin purge

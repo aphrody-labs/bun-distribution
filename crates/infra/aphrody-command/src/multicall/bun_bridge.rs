@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Aphrody commands whose owners are Bun packages, served by the single `aphrody` binary.
 //!
-//! The former `yolo` Bun CLI (`packages/infra/workspace/src/commands/index.ts`) dispatches the commands owned by
+//! The former `yolo` Bun CLI (`packages/engine/yolo/src/index.ts`) dispatches the commands owned by
 //! TypeScript packages that depend on Bun itself (`Bun.serve`, in-process package runners, m3, forge,
 //! the build factory). `aphrody <name> …` runs `bun <dispatcher> <command> …` from the checkout, so
 //! there is one command line while the owners keep their code. Commands with a Rust owner never come
@@ -15,7 +15,7 @@ use std::{
 };
 
 /// Dispatcher of the Bun-owned commands, relative to the checkout root.
-pub(crate) const DISPATCHER: &str = "packages/infra/workspace/src/commands/index.ts";
+pub(crate) const DISPATCHER: &str = "packages/engine/yolo/src/index.ts";
 
 /// `aphrody <name>` → `bun <dispatcher> <command>`.
 pub(crate) const ROUTES: &[(&str, &str)] = &[

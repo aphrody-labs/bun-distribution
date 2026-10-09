@@ -82,7 +82,7 @@ if ((await bindgen.exited) || installedBindgen !== `wasm-bindgen ${bindgenVersio
 await run(
   [
     "bun",
-    "packages/infra/workspace/src/commands/index.ts",
+    "packages/engine/yolo/src/index.ts",
     "ops",
     "bun-native",
     `--root=${root}`,

@@ -90,7 +90,7 @@ if (prebuilt) {
     ...(tooling?.flags ?? []),
     "--define",
     `YOLO_VERSION=${JSON.stringify(version)}`,
-    "packages/infra/workspace/src/commands/index.ts",
+    "packages/engine/yolo/src/index.ts",
     "--outfile",
     exe,
   ]);

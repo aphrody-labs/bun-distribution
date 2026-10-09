@@ -647,7 +647,7 @@
           "command": [
             "run",
             "--filter",
-            "@aphrody/workspace/native",
+            "@aphrody/yolo-core",
             "typecheck"
           ]
         },
@@ -656,7 +656,7 @@
           "command": [
             "run",
             "--filter",
-            "@aphrody/workspace/native",
+            "@aphrody/yolo-core",
             "test"
           ]
         },
@@ -1790,7 +1790,7 @@
           "command": [
             "run",
             "--filter",
-            "@aphrody/workspace/commands",
+            "@aphrody/yolo-cli",
             "typecheck"
           ]
         },
@@ -1799,7 +1799,7 @@
           "command": [
             "run",
             "--filter",
-            "@aphrody/workspace/commands",
+            "@aphrody/yolo-cli",
             "test"
           ]
         },
@@ -1808,7 +1808,7 @@
           "command": [
             "run",
             "--filter",
-            "@aphrody/workspace/commands",
+            "@aphrody/yolo-cli",
             "typecheck"
           ]
         },
@@ -1817,7 +1817,7 @@
           "command": [
             "run",
             "--filter",
-            "@aphrody/workspace/commands",
+            "@aphrody/yolo-cli",
             "test"
           ]
         }

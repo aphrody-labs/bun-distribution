@@ -1,5 +1,5 @@
 import { basename, dirname, join } from "node:path";
-import { syncPackages } from "@aphrody/workspace/native/pm";
+import { syncPackages } from "@aphrody/yolo-core/pm";
 import { infraRoot } from "./runtime.ts";
 
 const OFFICIAL_NPM_REGISTRY = "https://registry.npmjs.org";

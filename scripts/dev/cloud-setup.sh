@@ -116,7 +116,7 @@ fi
 step "Yolo wrapper"
 if have bun || (( dry == 1 )); then
   mkdir -p "$HOME/.local/bin"
-  run bash -c "printf '#!/bin/sh\nexec bun \"%s/packages/infra/workspace/src/commands/index.ts\" \"\$@\"\n' '$root' > '$HOME/.local/bin/yolo' && chmod +x '$HOME/.local/bin/yolo'"
+  run bash -c "printf '#!/bin/sh\nexec bun \"%s/packages/engine/yolo/src/index.ts\" \"\$@\"\n' '$root' > '$HOME/.local/bin/yolo' && chmod +x '$HOME/.local/bin/yolo'"
 fi
 
 step "Aphrody and Yolo binaries (download server, when announced)"

@@ -5,11 +5,7 @@
  * User-Agent (WOFF2 + unicode-range subsets) and its gstatic URLs are rewritten to this origin.
  * Only the allowed families are proxied (default: the Material 3 fonts and Material Symbols).
  */
-<<<<<<< HEAD
 import { type EdgeRoute, createEdgeProxy } from "../../../engine/core/src/server/edge-proxy.ts";
-=======
-import { type EdgeRoute, createEdgeProxy } from "@aphrody/workspace/src/native/server/edge-proxy.ts";
->>>>>>> claude/radical-native-20261009
 
 export const M3_FONT_FAMILIES = [
   "Google Sans Flex",

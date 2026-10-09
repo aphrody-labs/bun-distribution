@@ -459,7 +459,7 @@ export async function runDocsGen(args: string[]): Promise<number> {
 
   const bun = process.execPath;
   const upstreamArgs = [
-    "packages/infra/workspace/src/commands/index.ts",
+    "packages/engine/yolo/src/index.ts",
     "update",
     "upstream",
     "docs",
@@ -476,7 +476,7 @@ export async function runDocsGen(args: string[]): Promise<number> {
     if (
       delegate(root, "DEPS-INVENTORY.md", [
         bun,
-        "packages/infra/workspace/src/commands/index.ts",
+        "packages/engine/yolo/src/index.ts",
         "update",
         "deps",
         "inventory",
