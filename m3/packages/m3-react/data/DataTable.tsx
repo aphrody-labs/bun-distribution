@@ -20,6 +20,7 @@ import {
   sortFn_text,
   tableFeatures,
   useTable,
+  type RowData,
 } from "@tanstack/react-table";
 import { type CSSProperties, type ReactNode, useId, useRef } from "react";
 
@@ -36,12 +37,12 @@ export const dataTableFeatures = tableFeatures({
   paginatedRowModel: createPaginatedRowModel(),
 });
 export type DataTableFeatures = typeof dataTableFeatures;
-export type DataColumn<TData> = ColumnDef<DataTableFeatures, TData, any>;
+export type DataColumn<TData extends RowData = any> = ColumnDef<DataTableFeatures, TData, any>;
 
 /** Column helper typed for DataTable: `const col = dataColumns<Person>(); col.accessor("name", { header: "Name" })`. */
-export const dataColumns = <TData,>() => createColumnHelper<DataTableFeatures, TData>();
+export const dataColumns = <TData extends RowData = any>() => createColumnHelper<DataTableFeatures, TData>();
 
-export interface DataTableProps<TData> {
+export interface DataTableProps<TData extends RowData = any> {
   data: TData[];
   columns: DataColumn<TData>[];
   /** Accessible caption (also the table label). */
@@ -128,7 +129,7 @@ const s = {
 
 const SORT_MARK = { asc: " ▲", desc: " ▼" } as const;
 
-export function DataTable<TData>(props: DataTableProps<TData>) {
+export function DataTable<TData extends RowData = any>(props: DataTableProps<TData>) {
   const {
     data,
     columns,
@@ -144,7 +145,7 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
     className,
   } = props;
   const searchId = useId();
-  const table = useTable({
+  const table = useTable<DataTableFeatures, TData>({
     features: dataTableFeatures,
     data,
     columns,
@@ -156,7 +157,7 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
     },
   });
   const rows = table.getRowModel().rows;
-  const columnCount = table.getVisibleLeafColumns().length;
+  const columnCount = table.getAllLeafColumns().length;
   const scrollRef = useRef<HTMLDivElement>(null);
   const rowHeight = virtual?.rowHeight ?? 52;
   const virtualizer = useVirtualizer({
@@ -227,7 +228,7 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
               <tr
                 key={row.id}
                 data-row-id={row.id}
-                onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+                onClick={onRowClick ? () => onRowClick(row.original as TData) : undefined}
                 style={onRowClick ? { cursor: "pointer" } : undefined}
               >
                 {row.getAllCells().map(cell => (

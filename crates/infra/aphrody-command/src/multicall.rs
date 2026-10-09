@@ -63,6 +63,9 @@ pub(crate) const TOOLS: &[Tool] = &[
     tool("m3-reproduce", &["aphrody-m3-reproduce"], Target::Entry(aphrody_m3_reproduce::cli_main)),
     tool("canvas", &["aphrody-canvas"], Target::Entry(aphrody_render::cli_main)),
     tool("bindgen", &["aphrody-bindgen"], Target::Entry(aphrody_bindgen::cli_main)),
+    // Codex OSS and App-Server Protocol v2.
+    tool("codex", &["codex", "aphrody-codex"], Target::Command("codex")),
+    tool("app-server", &["aphrody-app-server"], Target::Entry(app_server)),
 ];
 
 const fn tool(name: &'static str, aliases: &'static [&'static str], target: Target) -> Tool {
@@ -75,7 +78,7 @@ through the links `aphrody self install-path` creates:
   infra, ovh, yolo, kernel, host-service, ssh, wsl, backend, mcp-server, web-engine, web-worker, x,
   google, embed, n2b (Node 2 Bun), identity (design | export-assets | pixel), m3-reproduce, canvas,
   bindgen, rag-eval, tauri (cargo-tauri), create-tauri-app, home (agent home: status, backup, import,
-  index, query), graph (code graph: build, query, explain, path, report, export)";
+  index, query), graph (code graph: build, query, explain, path, report, export), codex, app-server";
 
 /// `aphrody kernel …`: the kernel daemon and its client commands. `kernel mcp` is an alias of the single MCP
 /// server (`aphrody mcp-server`), which hosts the kernel in process (deprecated alias, 2026-10-07).
@@ -153,6 +156,17 @@ fn identity(args: Vec<OsString>) -> i32 {
     let mut argv = vec![tool];
     argv.extend(rest);
     entry(argv)
+}
+
+/// `aphrody app-server …`: local app-server daemon.
+fn app_server(args: Vec<OsString>) -> i32 {
+    let mut argv = vec![
+        OsString::from("aphrody"),
+        OsString::from("codex"),
+        OsString::from("app-server"),
+    ];
+    argv.extend(args.into_iter().skip(1));
+    crate::run_from_args(argv)
 }
 
 /// What [`resolve`] decided for an argument vector.

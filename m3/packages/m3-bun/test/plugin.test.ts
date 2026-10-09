@@ -75,7 +75,7 @@ describe("m3Bun: the one plugin", () => {
       { "main.css": '@import "m3:spaceui.css";\n' },
       "main.css",
       {
-        css: (config) => `/* ${config.sheet} */ :root { --custom: 1; }`,
+        css: (config: any) => `/* ${config.sheet} */ :root { --custom: 1; }`,
       },
     );
     expect(success).toBe(true);

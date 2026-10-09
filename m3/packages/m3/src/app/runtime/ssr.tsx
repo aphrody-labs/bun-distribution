@@ -35,7 +35,7 @@ export interface RenderHtmlOptions {
 const encoder = new TextEncoder();
 
 function scriptFor(text: string, nonce?: string): Uint8Array {
-  const json = JSON.stringify(text).replace(/</g, "\\u003c").replace(/ /g, "\\u2028").replace(/ /g, "\\u2029");
+  const json = JSON.stringify(text).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
   const attr = nonce ? ` nonce="${nonce.replace(/"/g, "&quot;")}"` : "";
   return encoder.encode(`<script${attr}>(self.__m3_f||=[]).push(${json})</script>`);
 }

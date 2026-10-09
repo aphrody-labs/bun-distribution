@@ -28,7 +28,7 @@ function inlinePayload(): ReadableStream<Uint8Array> {
     start(controller) {
       const queued = Array.isArray(self.__m3_f) ? self.__m3_f : [];
       for (const chunk of queued) controller.enqueue(encoder.encode(chunk));
-      self.__m3_f = { push: chunk => controller.enqueue(encoder.encode(chunk)) };
+      self.__m3_f = { push: (chunk: string) => controller.enqueue(encoder.encode(chunk)) };
       const close = () => controller.close();
       if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", close, { once: true });
       else close();

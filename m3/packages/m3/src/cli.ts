@@ -64,7 +64,7 @@ Usage:
 
 new requires the Aphrody/M3 private source owner workspace; use an apps/* member (for example m3 new apps/my-app).
 dev, build, compile and desktop read m3.config.ts from the working directory.
-With an app/ directory (or `app` in m3.config.ts), dev, build and start run the App Router:
+With an app/ directory (or 'app' in m3.config.ts), dev, build and start run the App Router:
 React Server Components, server actions, streaming SSR and static generation on Bun.serve + Bun.build.
 compile builds the UI and links it with the Bun runtime into one executable that serves it (and the app's API):
 it runs @aphrody/m3-bun, which must be installed next to this package.`;

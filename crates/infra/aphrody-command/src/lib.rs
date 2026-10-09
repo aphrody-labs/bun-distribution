@@ -13,6 +13,8 @@ mod commands;
 #[cfg(not(target_arch = "wasm32"))]
 mod config_cmd;
 #[cfg(not(target_arch = "wasm32"))]
+pub mod codex_cmd;
+#[cfg(not(target_arch = "wasm32"))]
 mod context;
 #[cfg(not(target_arch = "wasm32"))]
 mod discord_cmd;
@@ -223,6 +225,9 @@ enum Commands {
         #[command(subcommand)]
         action: config_cmd::ConfigAction,
     },
+    /// Codex agent execution, app-server protocol v2, MCP, plugins and session rollouts.
+    #[cfg(not(target_arch = "wasm32"))]
+    Codex(codex_cmd::CodexArgs),
     /// Native platform probes for CPU, memory, CUDA and monotonic time.
     #[cfg(not(target_arch = "wasm32"))]
     Native {
@@ -1004,6 +1009,10 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
                 cli.agent_options.local_provider.clone(),
             )
             .await?;
+        },
+        #[cfg(not(target_arch = "wasm32"))]
+        Some(Commands::Codex(args)) => {
+            codex_cmd::run(args).await?;
         },
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Native { action }) => {

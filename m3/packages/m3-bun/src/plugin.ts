@@ -30,6 +30,12 @@ const OPTIONAL_NAMESPACE = "m3-optional";
 export interface M3BunPluginOptions extends M3PluginOptions {
   /** Directory of the Material Symbols SVG catalogue (default: discovered, `M3_ICONS_ROOT`). */
   iconsRoot?: string;
+  /** Directory containing the application or config (default: process.cwd()). */
+  configDir?: string;
+  /** Optional theme override */
+  theme?: M3PluginOptions["theme"];
+  /** Optional css generator override */
+  css?: M3PluginOptions["css"];
 }
 
 /** What `m3Bun` adds to `m3Plugin`: icons and the standalone font sheets. Exported for `Bun.build` callers that compose themselves. */

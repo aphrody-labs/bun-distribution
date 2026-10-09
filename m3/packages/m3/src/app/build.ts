@@ -89,7 +89,9 @@ export async function findServerModules(root: string, outDir: string): Promise<s
 
 function logs(result: Bun.BuildOutput, layer: string): void {
   if (result.success) return;
-  const message = result.logs.map(l => String(l)).join("\n");
+  const message = result.logs
+    .map(l => (typeof l === "object" && l !== null ? `${l.name ?? ""}: ${l.message ?? ""} at ${JSON.stringify(l.position ?? {})}` : String(l)))
+    .join("\n");
   throw new Error(`@aphrody/m3: ${layer} build failed\n${message}`);
 }
 
@@ -128,15 +130,18 @@ function rscEntry(tree: AppTree, serverModules: readonly string[], buildId: stri
   return [
     `import { setApp } from ${runtime};`,
     `export * from ${runtime};`,
-    `setApp({`,
-    `  buildId: ${js(buildId)},`,
-    `  routes: ${js(tree.routes)},`,
-    `  metadata: ${js(tree.metadata)},`,
-    `  rootSegment: ${js(tree.rootSegment)},`,
-    `  middleware: ${js(tree.middleware)},`,
-    `  actions: ${js(actions)},`,
-    `  loaders: {\n${loaders}\n  },`,
-    `});`,
+    `export function registerRsc() {`,
+    `  setApp({`,
+    `    buildId: ${js(buildId)},`,
+    `    routes: ${js(tree.routes)},`,
+    `    metadata: ${js(tree.metadata)},`,
+    `    rootSegment: ${js(tree.rootSegment)},`,
+    `    middleware: ${js(tree.middleware)},`,
+    `    actions: ${js(actions)},`,
+    `    loaders: {\n${loaders}\n    },`,
+    `  });`,
+    `}`,
+    `registerRsc();`,
   ].join("\n");
 }
 
@@ -148,7 +153,10 @@ function ssrEntry(root: string, clientRefs: ReferenceMap): string {
   return [
     `import { setClientModules } from ${runtime};`,
     `export * from ${runtime};`,
-    `setClientModules({\n${loaders}\n});`,
+    `export function registerSsr() {`,
+    `  setClientModules({\n${loaders}\n  });`,
+    `}`,
+    `registerSsr();`,
   ].join("\n");
 }
 
@@ -175,6 +183,7 @@ export async function buildApp(options: AppBuildOptions): Promise<AppBuildResult
   const entries = new Map<string, string>([["rsc", rscEntry(tree, serverModules, buildId)]]);
   const rsc = await Bun.build({
     entrypoints: ["m3-entry/rsc"],
+    root,
     outdir: join(outDir, "server", "rsc"),
     target: "bun",
     format: "esm",
@@ -203,6 +212,7 @@ export async function buildApp(options: AppBuildOptions): Promise<AppBuildResult
   const [client, ssr] = await Promise.all([
     Bun.build({
       entrypoints: [...clientEntries.keys()].map(name => `m3-entry/${name}`),
+      root,
       outdir: join(outDir, "client"),
       target: "browser",
       format: "esm",
@@ -220,6 +230,7 @@ export async function buildApp(options: AppBuildOptions): Promise<AppBuildResult
     }),
     Bun.build({
       entrypoints: ["m3-entry/ssr"],
+      root,
       outdir: join(outDir, "server", "ssr"),
       target: "bun",
       format: "esm",

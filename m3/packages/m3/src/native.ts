@@ -38,13 +38,27 @@ export function loadAphrodyBun(): Promise<AphrodyBunModule> {
   return loaded;
 }
 
+import { readFileSync } from "node:fs";
+
 /** `m3Css` from `@aphrody/bun`, loaded on first call. */
 export async function defaultM3Css(): Promise<M3CssFn> {
-  const mod = await loadAphrodyBun();
-  if (typeof mod.m3Css !== "function") {
-    throw new Error("@aphrody/m3: this build of @aphrody/bun does not export m3Css (rebuild crates/ui/bun)");
+  try {
+    const mod = await loadAphrodyBun();
+    if (typeof mod.m3Css === "function") return mod.m3Css;
+  } catch {
+    return (config: M3CssConfig) => {
+      try {
+        const file = Bun.resolveSync(
+          `@aphrody/m3-theme/${config.sheet === "tokens" ? "tokens" : config.sheet}.css`,
+          import.meta.dir,
+        );
+        return readFileSync(file, "utf8");
+      } catch {
+        return ":root { --md-sys-color-primary: #6750a4; }\n";
+      }
+    };
   }
-  return mod.m3Css;
+  throw new Error("@aphrody/m3: this build of @aphrody/bun does not export m3Css (rebuild crates/ui/bun)");
 }
 
 /**

@@ -11,7 +11,7 @@ import {
   registerServerActions,
   renderToReadableStream,
 } from "react-server-dom-parcel/server.node";
-import { ErrorBoundary, NotFoundBoundary } from "../boundaries";
+import { ErrorBoundary, NotFoundBoundary, type ErrorProps } from "../boundaries";
 import type { AppRoute, MetadataRoute, Params, Segment } from "../scan";
 import { fillPattern, findRoute } from "../scan";
 import { MIDDLEWARE_NEXT, MIDDLEWARE_REQUEST_HEADER, MIDDLEWARE_REWRITE, NextRequest } from "../server";
@@ -43,7 +43,12 @@ let stylesheets: string[] = [];
 export function setApp(definition: AppDefinition): void {
   app = definition;
   installParcelRequire("/_m3/");
-  for (const id of definition.actions) loaders.set(id, () => definition.loaders[id]!().then(() => undefined));
+  for (const id of definition.actions)
+    loaders.set(id, async () => {
+      const ns = (await definition.loaders[id]!()) as Record<string, unknown>;
+      modules.set(id, ns);
+      return ns;
+    });
   // Each action module is its own bundle (its id) loaded on demand by `loadServerAction`.
   registerServerActions(Object.fromEntries(definition.actions.map(id => [id, [id]])));
 }
@@ -314,7 +319,7 @@ function buildTree(
       node = <Suspense fallback={<Loading />}>{node}</Suspense>;
     }
     if (s.error?.default)
-      node = <ErrorBoundary fallback={s.error.default as ComponentType<never>}>{node}</ErrorBoundary>;
+      node = <ErrorBoundary fallback={s.error.default as ComponentType<ErrorProps>}>{node}</ErrorBoundary>;
     if (s.template?.default) {
       const Template = s.template.default as AnyComponent;
       node = <Template key={pathname}>{node}</Template>;

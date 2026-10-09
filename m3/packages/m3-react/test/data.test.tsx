@@ -31,7 +31,7 @@ describe("DataTable", () => {
     expect(html).toContain('scope="col"');
     expect(html.match(/data-row-id=/g)?.length).toBe(10);
     expect(cellTexts(html)[0]).toBe("Person 00");
-    expect(html).toContain("1 / 6");
+    expect(html).toMatch(/1(<!-- -->)? \/ (<!-- -->)?6/);
   });
 
   test("initial sorting orders rows and marks the header", () => {

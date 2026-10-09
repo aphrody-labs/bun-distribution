@@ -44,6 +44,8 @@ export interface AppHandler {
 export interface LoadAppOptions {
   /** Inline script run before the browser runtime (development flags). */
   bootstrapScript?: string;
+  /** Custom HTMLRewriter transforms for the streamed HTML document. */
+  rewriter?: (rewriter: HTMLRewriter) => HTMLRewriter;
 }
 
 const g = globalThis as typeof globalThis & { __m3_client_bundles?: (id: string) => string[] };
@@ -70,9 +72,15 @@ export async function loadApp(outDir: string, options: LoadAppOptions = {}): Pro
   loaders.clear();
   aliases.clear();
   g.__m3_client_bundles = id => manifest.clientModules[id] ?? [];
-  const ssr = (await import(pathToFileURL(join(outDir, manifest.ssrEntry)).href)) as SsrModule;
+  const ssr = (await import(pathToFileURL(join(outDir, manifest.ssrEntry)).href)) as SsrModule & {
+    registerSsr?: () => void;
+  };
+  ssr.registerSsr?.();
   ssr.setClientBundles(manifest.clientModules);
-  const rsc = (await import(pathToFileURL(join(outDir, manifest.rscEntry)).href)) as RscModule;
+  const rsc = (await import(pathToFileURL(join(outDir, manifest.rscEntry)).href)) as RscModule & {
+    registerRsc?: () => void;
+  };
+  rsc.registerRsc?.();
   rsc.setStylesheets(manifest.css.map(file => ASSET_PREFIX + file));
   const bootstrap = ASSET_PREFIX + manifest.bootstrap;
   const prerendered = new Map<string, { html: string; rsc: string }>();
@@ -110,7 +118,11 @@ export async function loadApp(outDir: string, options: LoadAppOptions = {}): Pro
         headers,
       });
     }
-    return new Response(method === "HEAD" ? null : body, { status: result.store.status ?? 200, headers });
+    const response = new Response(method === "HEAD" ? null : body, { status: result.store.status ?? 200, headers });
+    if (options.rewriter && method !== "HEAD") {
+      return options.rewriter(new HTMLRewriter()).transform(response);
+    }
+    return response;
   };
 
   const render: AppHandler["render"] = async (request, handleOptions) => {

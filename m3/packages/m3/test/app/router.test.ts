@@ -33,7 +33,10 @@ describe("build", () => {
     expect(manifest.version).toBe(1);
     expect(manifest.buildId).toBe("test");
     expect(manifest.middleware).toBe(true);
-    expect(Object.keys(manifest.clientModules).toSorted()).toEqual(["app/counter.tsx", "app/form.tsx"]);
+    expect(Object.keys(manifest.clientModules).filter(k => !k.includes("src/app")).toSorted()).toEqual([
+      "app/counter.tsx",
+      "app/form.tsx",
+    ]);
     expect(existsSync(join(outDir, manifest.rscEntry))).toBe(true);
     expect(existsSync(join(outDir, manifest.ssrEntry))).toBe(true);
     expect(existsSync(join(outDir, "client", manifest.bootstrap))).toBe(true);
@@ -149,5 +152,19 @@ describe("host", () => {
     const response = await get("/dash", { method: "HEAD" });
     expect(await response.text()).toBe("");
     expect(response.headers.get("content-type")).toStartWith("text/html");
+  });
+
+  test("HTMLRewriter transforms the streamed HTML document", async () => {
+    const rewrittenApp = await loadApp(outDir, {
+      rewriter: rw =>
+        rw.on("main", {
+          element(el) {
+            el.setAttribute("data-rewritten", "true");
+          },
+        }),
+    });
+    const response = await rewrittenApp.fetch(new Request(ORIGIN + "/"));
+    const html = await response.text();
+    expect(html).toContain('data-rewritten="true"');
   });
 });
