@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { mkdtemp, readdir, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { deflateSync } from "node:zlib";
 
 import {
@@ -63,7 +63,7 @@ test("compressFile writes a smaller copy and never touches the original", async 
   const source = join(dir, "pic.png");
   const original = bigPng();
   await Bun.write(source, original);
-  const place = (s: string) => join(dir, "compressed", s.split("/").pop() as string);
+  const place = (s: string) => join(dir, "compressed", basename(s));
   const outcome = await compressFile(source, options, place, false);
   expect(outcome.status).toBe("written");
   expect(outcome.after).toBeLessThan(outcome.before);
@@ -78,15 +78,7 @@ test("webp conversion changes the extension", async () => {
   const outcome = await compressFile(
     source,
     { ...options, format: "webp" },
-    (s, format) =>
-      join(
-        dir,
-        "out",
-        `${s
-          .split("/")
-          .pop()
-          ?.replace(/\.png$/, "")}.${format}`,
-      ),
+    (s, format) => join(dir, "out", `${basename(s, ".png")}.${format}`),
     false,
   );
   expect(outcome.status).toBe("written");

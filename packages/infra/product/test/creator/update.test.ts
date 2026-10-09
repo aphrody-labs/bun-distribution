@@ -2,7 +2,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, dirname, join } from "node:path";
 
 import { compareVersions, isCompiled, updateNow, type Release } from "../../src/shared/update.ts";
 
@@ -17,7 +17,9 @@ beforeAll(async () => {
   await mkdir(join(src, "web"));
   await writeFile(join(src, "web", "page.html"), "new-page");
   const tar = join(src, "..", `pack-${Date.now()}.tar.gz`);
-  Bun.spawnSync(["tar", "-czf", tar, "-C", src, "creator-kit", "web"]);
+  Bun.spawnSync(["tar", "-czf", basename(tar), "-C", basename(src), "creator-kit", "web"], {
+    cwd: dirname(src),
+  });
   archive = new Uint8Array(await Bun.file(tar).arrayBuffer());
   sha = createHash("sha256").update(archive).digest("hex");
   server = Bun.serve({

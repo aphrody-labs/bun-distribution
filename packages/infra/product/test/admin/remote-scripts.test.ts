@@ -56,6 +56,9 @@ case "$kind" in
 esac
 `;
 
+/** The launch script detaches jobs with util-linux `setsid`, present on every Linux host but absent from Windows/macOS shells. */
+const detached = test.skipIf(Bun.which("setsid") === null);
+
 let home = "";
 let repo = "";
 let bin = "";
@@ -150,28 +153,33 @@ test("sonde reports the host in one read-only round trip", async () => {
   expect(missing.aphrodyAbsent).toBe(true);
 });
 
-test("a short job runs detached, finishes and is reported as finished with its log", async () => {
-  const { ctx } = testContext();
-  const started = await launchJob(remote, ctx.paths, request("test", "kit-test-finish"), host);
-  expect(started.ok).toBe(true);
-  expect(started.pid).toMatch(/^\d+$/);
-  expect(
-    await waitFor(async () =>
-      (await jobState(ctx.paths, "kit-test-finish")) === "termine" ? "yes" : undefined,
-    ),
-  ).toBe("yes");
-  const log = await readLog(remote, ctx.paths, "gpu", "kit-test-finish", 20);
-  expect(log.ok).toBe(true);
-  expect(log.stdout).toContain("finished fine");
-  const last = await readLog(remote, ctx.paths, "gpu", undefined, 20);
-  expect(last.stdout).toContain("JOURNAL|kit-test-finish");
-  const jobs = (await listJobs(remote, ctx.paths, "gpu")).jobs;
-  expect(jobs.find((job) => job.id === "kit-test-finish")?.last).toContain("done");
-  // the supervisor's output folder lives inside the job folder, never elsewhere
-  expect(existsSync(join(home, ".aphrody/omar-train/kit-test-finish/out/events.jsonl"))).toBe(true);
-});
+detached(
+  "a short job runs detached, finishes and is reported as finished with its log",
+  async () => {
+    const { ctx } = testContext();
+    const started = await launchJob(remote, ctx.paths, request("test", "kit-test-finish"), host);
+    expect(started.ok).toBe(true);
+    expect(started.pid).toMatch(/^\d+$/);
+    expect(
+      await waitFor(async () =>
+        (await jobState(ctx.paths, "kit-test-finish")) === "termine" ? "yes" : undefined,
+      ),
+    ).toBe("yes");
+    const log = await readLog(remote, ctx.paths, "gpu", "kit-test-finish", 20);
+    expect(log.ok).toBe(true);
+    expect(log.stdout).toContain("finished fine");
+    const last = await readLog(remote, ctx.paths, "gpu", undefined, 20);
+    expect(last.stdout).toContain("JOURNAL|kit-test-finish");
+    const jobs = (await listJobs(remote, ctx.paths, "gpu")).jobs;
+    expect(jobs.find((job) => job.id === "kit-test-finish")?.last).toContain("done");
+    // the supervisor's output folder lives inside the job folder, never elsewhere
+    expect(existsSync(join(home, ".aphrody/omar-train/kit-test-finish/out/events.jsonl"))).toBe(
+      true,
+    );
+  },
+);
 
-test("a failing job is reported as failed", async () => {
+detached("a failing job is reported as failed", async () => {
   const { ctx } = testContext();
   expect(
     (
@@ -191,7 +199,7 @@ test("a failing job is reported as failed", async () => {
   expect((await readLog(remote, ctx.paths, "gpu", "kit-test-fail", 5)).stdout).toContain("boom");
 });
 
-test("flags reach aphrody expanded and quoted; ~/ is expanded on the host", async () => {
+detached("flags reach aphrody expanded and quoted; ~/ is expanded on the host", async () => {
   const { ctx } = testContext();
   const flags = request("embeddings", "kit-test-args", {
     entree: "~/data/triples.jsonl",
@@ -221,7 +229,7 @@ test("flags reach aphrody expanded and quoted; ~/ is expanded on the host", asyn
   expect((await stopJob(remote, ctx.paths, "gpu", "kit-test-args", false)).ok).toBe(true);
 });
 
-test("one job at a time, no overwrite, polite stop that keeps every file", async () => {
+detached("one job at a time, no overwrite, polite stop that keeps every file", async () => {
   const { ctx } = testContext();
   const first = await launchJob(
     remote,

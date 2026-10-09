@@ -3,7 +3,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, dirname, join } from "node:path";
 
 import { currentPlatform } from "../../src/shared/update.ts";
 import { KIT_ARTIFACT, omarApp, updateKit } from "../../src/admin/lib/update.ts";
@@ -21,7 +21,9 @@ beforeAll(() => {
   writeFileSync(join(src, "Aphrody-Omar"), "NEW-EXE");
   writeFileSync(join(src, "Guide.html"), "new guide");
   const tar = join(src, "..", `omar-${Date.now()}.tar.gz`);
-  Bun.spawnSync(["tar", "-czf", tar, "-C", src, "Aphrody-Omar", "Guide.html"]);
+  Bun.spawnSync(["tar", "-czf", basename(tar), "-C", basename(src), "Aphrody-Omar", "Guide.html"], {
+    cwd: dirname(src),
+  });
   archive = new Uint8Array(readFileSync(tar));
   sha = createHash("sha256").update(archive).digest("hex");
   server = Bun.serve({

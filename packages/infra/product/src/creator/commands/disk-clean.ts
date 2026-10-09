@@ -34,6 +34,8 @@ export interface Io {
   env: Record<string, string | undefined>;
   list: () => Promise<ProcInfo[]>;
   log: (line: string) => void;
+  /** Catalog flavour; defaults to the running platform. */
+  platform?: NodeJS.Platform;
 }
 
 const nativeIo = (): Io => ({
@@ -66,7 +68,7 @@ export async function scan(io: Io, root: string, top: number): Promise<number> {
   await volume(root, io);
   io.log("\nCaches récupérables (clean) :");
   let total = 0;
-  for (const target of catalog(io.env)) {
+  for (const target of catalog(io.env, io.platform)) {
     const { bytes } = await targetStats(target);
     total += bytes;
     if (bytes > 0)
@@ -88,7 +90,7 @@ export async function clean(io: Io, apply: boolean, only: string[] | undefined):
   const running = await io.list();
   let total = 0;
   let skipped = 0;
-  for (const target of catalog(io.env)) {
+  for (const target of catalog(io.env, io.platform)) {
     if (only && !only.includes(target.id)) continue;
     const locks = target.lockedBy ? pick(running, target.lockedBy) : [];
     if (locks.length > 0) {

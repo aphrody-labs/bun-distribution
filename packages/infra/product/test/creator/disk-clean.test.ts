@@ -13,6 +13,7 @@ const io = (env: Record<string, string>, names: string[] = []) => {
     env,
     list: async () => names.map((name, i) => ({ name, pid: i + 1, bytes: 1 })),
     log: (line) => void logs.push(line),
+    platform: "linux",
   };
   return { io: value, logs };
 };

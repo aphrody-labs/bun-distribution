@@ -2,7 +2,7 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 
 import {
   PackError,
@@ -116,7 +116,7 @@ test("findPackFiles finds browser-renamed copies, newest first", () => {
     new Date("2026-10-05"),
     new Date("2026-10-05"),
   );
-  expect(findPackFiles([dir, join(dir, "missing")]).map((path) => path.split("/").pop())).toEqual([
+  expect(findPackFiles([dir, join(dir, "missing")]).map((path) => basename(path))).toEqual([
     "aphrody-omar-acces (1).json",
     "aphrody-omar-acces.json",
   ]);
