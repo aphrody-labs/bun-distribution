@@ -150,8 +150,10 @@ service at loopback 8799. Since 2026-10-09 `--model-path` is the single merged G
 (`shared/models/shenron-chat-v2/shenron-chat-v2-merged-Q4_K_M.gguf`, LoRA merged by
 `llama-export-lora` b11415 into the F16 base then re-quantized with the unsloth
 imatrix); `--adapter-path` only restores the old runtime LoRA. The service runs with
-`--cache-ram 256 -fa on -ctk q8_0 -ctv q8_0` (llama.cpp defaults to an 8 GiB host
-prompt cache, which pushed DBFR 6.9 GiB into swap). Every service carries
+`--cache-ram 256 -fa on -ctk q8_0 -ctv q8_0 --no-repack` (llama.cpp defaults to an 8 GiB
+host prompt cache, which pushed DBFR 6.9 GiB into swap; `--no-repack` keeps the weights in
+the file mmap: RssAnon 0.7 GiB instead of 2.4 GiB, 746-token prompt at 19.9 instead of
+21.8 tok/s, generation unchanged at about 6-8 tok/s). Every service carries
 `mem_limit` = `memswap_limit` (chat 5g, postgres 2560m, redis 1536m, site 768m,
 bot 512m, gateway 256m). Build `llama.Dockerfile` from only the
 qualified b11415 runtime. Keep weights and adapter under the protected

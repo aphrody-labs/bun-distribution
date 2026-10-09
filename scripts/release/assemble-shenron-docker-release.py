@@ -305,6 +305,8 @@ def main():
         chat = hardened(args.chat_image_id, "1000:1000")
         # --cache-ram bounds the host prompt cache (llama.cpp default 8 GiB); a q8_0 KV
         # cache with flash attention halves the 8192-token context to about 600 MiB.
+        # --no-repack serves weights from the mmap: 1.7 GiB less anonymous memory for
+        # about 10% slower prompt processing (measured on DBFR 2026-10-09).
         chat.update(
             command=[
                 "--model",
@@ -332,6 +334,7 @@ def main():
                 "q8_0",
                 "-ctv",
                 "q8_0",
+                "--no-repack",
                 "--jinja",
                 "--no-webui",
             ],
