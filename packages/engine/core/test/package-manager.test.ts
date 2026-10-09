@@ -69,6 +69,9 @@ async function fixture() {
   }
 }
 
+/** Both tests drive the real native supervisor; they run only where the precompiled runtime is installed. */
+const itNative = it.skipIf(!getRuntimeStatus().installed);
+
 describe("native unified dependency synchronization", () => {
   it("plans all three managers without modifying files or installing dependencies", async () => {
     const f = await fixture();
@@ -89,39 +92,42 @@ describe("native unified dependency synchronization", () => {
     }
   });
 
-  it("executes global Bun, uv and serialized Cargo under the real native supervisor", async () => {
-    const f = await fixture();
-    try {
-      expect(getRuntimeStatus().installed).toBe(true);
-      const before = Object.fromEntries(
-        ["bun.lock", "uv.lock", "Cargo.lock"].map((name) => [
-          name,
-          readFileSync(join(f.root, name), "utf8"),
-        ]),
-      );
-      const result = await syncPackages({
-        root: f.root,
-        offline: true,
-        apply: true,
-        timeoutMs: 30000,
-      });
-      expect(result.ok).toBe(true);
-      expect(result.results.map((step) => [step.manager, step.status, step.exitCode])).toEqual([
-        ["bun", "pass", 0],
-        ["uv", "pass", 0],
-        ["cargo", "pass", 0],
-      ]);
-      expect(existsSync(join(f.root, "node_modules/local-fixture/package.json"))).toBe(true);
-      expect(existsSync(join(f.root, ".venv/pyvenv.cfg"))).toBe(true);
-      expect(existsSync(join(f.root, "scripts-executed"))).toBe(false);
-      expect(existsSync(join(f.root, "target"))).toBe(false);
-      for (const [name, content] of Object.entries(before))
-        expect(readFileSync(join(f.root, name), "utf8")).toBe(content);
-    } finally {
-      f.cleanup();
-      closeSharedRuntime();
-    }
-  });
+  itNative(
+    "executes global Bun, uv and serialized Cargo under the real native supervisor",
+    async () => {
+      const f = await fixture();
+      try {
+        expect(getRuntimeStatus().installed).toBe(true);
+        const before = Object.fromEntries(
+          ["bun.lock", "uv.lock", "Cargo.lock"].map((name) => [
+            name,
+            readFileSync(join(f.root, name), "utf8"),
+          ]),
+        );
+        const result = await syncPackages({
+          root: f.root,
+          offline: true,
+          apply: true,
+          timeoutMs: 30000,
+        });
+        expect(result.ok).toBe(true);
+        expect(result.results.map((step) => [step.manager, step.status, step.exitCode])).toEqual([
+          ["bun", "pass", 0],
+          ["uv", "pass", 0],
+          ["cargo", "pass", 0],
+        ]);
+        expect(existsSync(join(f.root, "node_modules/local-fixture/package.json"))).toBe(true);
+        expect(existsSync(join(f.root, ".venv/pyvenv.cfg"))).toBe(true);
+        expect(existsSync(join(f.root, "scripts-executed"))).toBe(false);
+        expect(existsSync(join(f.root, "target"))).toBe(false);
+        for (const [name, content] of Object.entries(before))
+          expect(readFileSync(join(f.root, name), "utf8")).toBe(content);
+      } finally {
+        f.cleanup();
+        closeSharedRuntime();
+      }
+    },
+  );
 
   it("preflights every manager before applying and rejects escaping manifest symlinks", async () => {
     const f = await fixture();
@@ -183,7 +189,7 @@ describe("native unified dependency synchronization", () => {
     }
   });
 
-  it("cancels a real stalled package download and refuses a competing sync", async () => {
+  itNative("cancels a real stalled package download and refuses a competing sync", async () => {
     const root = mkdtempSync(join(tmpdir(), "yolo-packages-abort-"));
     const packageDir = join(root, "package");
     mkdirSync(packageDir);

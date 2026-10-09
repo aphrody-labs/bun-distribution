@@ -35,7 +35,6 @@ import {
   stepDepot,
   stepMcp,
   stepPrerequis,
-  stepYolo,
   type Step,
   type StepResult,
 } from "../admin/lib/steps.ts";
@@ -344,7 +343,6 @@ export function stepsFor(roles: ReadonlySet<Role>): Step[] {
   return [
     stepSetup,
     stepAphrody,
-    stepYolo,
     stepDesktop,
     stepPlugins,
     stepMcp,

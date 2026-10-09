@@ -9,8 +9,8 @@ import type { Command } from "./types.ts";
 const HELP = `aphrody-omar installer [--simuler] [--acces <fichier>]
 
 Installe et configure tout ce qu'il faut sur ce PC, étape par étape, sans rien supprimer :
-Git et WireGuard (par Windows), tes clés, le tunnel privé, aphrody, la copie du dépôt GitHub,
-yolo et le MCP dans ton assistant. Chaque étape saute ce qui est déjà fait : tu peux relancer sans risque.
+Git et WireGuard (par Windows), tes clés, le tunnel privé, aphrody, la copie du dépôt GitHub
+et le MCP dans ton assistant. Chaque étape saute ce qui est déjà fait : tu peux relancer sans risque.
 
   --simuler          dit ce qui serait fait, sans rien modifier
   --acces <fichier>  fichier d'accès de l'équipe (sinon cherché dans Téléchargements et le Bureau)`;

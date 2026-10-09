@@ -23,7 +23,7 @@ export const summaries: Record<string, string> = {
   acces: "Clés, fichier d'accès de l'équipe, tunnel privé",
   diagnostic: "Préparer le message d'aide à envoyer à l'équipe",
   guide: "Ouvrir le guide (1 page)",
-  pc: "Mon PC et mes serveurs : état, mémoire, WSL, diagnostic, modèles, yolo",
+  pc: "Mon PC et mes serveurs : état, mémoire, WSL, diagnostic, modèles",
   "mise-a-jour": "Mettre ce programme à jour",
 };
 

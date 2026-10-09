@@ -326,10 +326,9 @@ async function componentChecks(
   const { sys, paths } = ctx;
   const out: Check[] = [];
   const aphrody = findTool(sys, paths, "aphrody");
-  const yolo = findTool(sys, paths, "yolo");
 
   let manifest: Awaited<ReturnType<typeof fetchManifest>> | undefined;
-  if (!aphrody || !yolo) {
+  if (!aphrody) {
     try {
       manifest = await fetchManifest(
         pack?.downloadsBase ?? "https://downloads.aphrody.com",
@@ -410,7 +409,6 @@ async function componentChecks(
     out.push(missing("aphrody", aphrody, "aphrody"));
     out.push(check("mcp", "MCP Aphrody (sur ce PC)", "attente", "dépend d'aphrody", undefined));
   }
-  out.push(missing("yolo", yolo, "yolo et alias bun"));
   const result: { checks: Check[]; aphrodyExe?: string } = { checks: out };
   if (aphrody) result.aphrodyExe = aphrody;
   return result;

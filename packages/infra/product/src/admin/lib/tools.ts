@@ -12,7 +12,6 @@ export type ToolName =
   | "sshKeygen"
   | "aphrody-mcp"
   | "aphrody"
-  | "yolo"
   | "claude"
   | "winget";
 
@@ -32,7 +31,6 @@ export function findTool(sys: System, paths: KitPaths, name: ToolName): string |
     sshKeygen: [join(systemRoot, "System32", "OpenSSH", "ssh-keygen.exe")],
     "aphrody-mcp": [join(paths.home, ".local", "bin", "aphrody-mcp.exe")],
     aphrody: [join(paths.home, ".local", "bin", "aphrody.exe"), ...latestAphrodyBuilds(paths)],
-    yolo: [join(paths.home, ".yolo", "bin", "yolo.exe")],
     claude: [
       join(paths.home, ".local", "bin", "claude.exe"),
       join(paths.appData, "npm", "claude.cmd"),
@@ -46,7 +44,6 @@ export function findTool(sys: System, paths: KitPaths, name: ToolName): string |
     sshKeygen: "ssh-keygen",
     "aphrody-mcp": "aphrody-mcp",
     aphrody: "aphrody",
-    yolo: "yolo",
     claude: "claude",
     winget: "winget",
   };

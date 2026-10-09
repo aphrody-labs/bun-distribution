@@ -6,9 +6,9 @@
  */
 import { existsSync } from "node:fs";
 import { copyFile, mkdir, rm, writeFile } from "node:fs/promises";
-import { basename, dirname, join } from "node:path";
+import { dirname, join } from "node:path";
 
-import { compareVersions, downloadVerified } from "../../shared/update.ts";
+import { compareVersions } from "../../shared/update.ts";
 import { formatBytes } from "../../shared/format.ts";
 import type { Context } from "./context.ts";
 import {
@@ -521,87 +521,6 @@ export const stepDepot: Step = {
   },
 };
 
-export const stepYolo: Step = {
-  id: "yolo",
-  titre: "yolo et alias bun",
-  async run(ctx, mode, state) {
-    const { sys, paths, fetchImpl } = ctx;
-    if (sys.platform !== "win32")
-      return { state: "ignore", detail: "installation Windows seulement" };
-    const base = state.pack?.downloadsBase ?? "https://downloads.aphrody.com";
-    let snapshot;
-    try {
-      snapshot = await downloadsFor(ctx, base);
-    } catch {
-      return {
-        state: "attente",
-        detail: "site de téléchargement injoignable",
-        action: "Réessaie plus tard.",
-      };
-    }
-    const artifact = pickArtifact(snapshot.manifest, "yolo", WINDOWS_PLATFORM, ".tar.gz");
-    if (!artifact)
-      return {
-        state: "attente",
-        detail: "yolo n'est pas encore publié pour Windows sur le site de téléchargement",
-        action: "Rien à faire de ton côté : l'équipe doit le publier.",
-      };
-    const installed = findTool(sys, paths, "yolo");
-    const version = installed ? await toolVersion(sys, installed) : undefined;
-    if (version && compareVersions(version, artifact.version) >= 0)
-      return { state: "deja", detail: `version ${version}` };
-    try {
-      checkArtifact(snapshot.base, artifact, snapshot.sums);
-    } catch (error) {
-      return { state: "echec", detail: `vérification refusée : ${(error as Error).message}` };
-    }
-    if (mode === "simuler")
-      return {
-        state: "a-faire",
-        detail: `installer yolo ${artifact.version} avec son installateur officiel`,
-      };
-    const dir = join(paths.installDir, "tmp", "yolo-release");
-    await rm(dir, { recursive: true, force: true });
-    await mkdir(dir, { recursive: true });
-    const file = artifact.file ?? basename(artifact.url);
-    const script = join(paths.installDir, "tmp", "install-yolo.ps1");
-    try {
-      await downloadVerified(
-        { ...artifact, id: file, file, kind: "update", format: "tar.gz" },
-        join(dir, file),
-        fetchImpl,
-      );
-      await writeFile(join(dir, "SHA256SUMS"), `${artifact.sha256}  ${file}\n`);
-      await writeFile(script, await verifiedScript(snapshot, "install-yolo.ps1", fetchImpl));
-    } catch (error) {
-      await rm(dir, { recursive: true, force: true });
-      return { state: "echec", detail: `vérification refusée : ${(error as Error).message}` };
-    }
-    const run = await sys.run(
-      ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script],
-      {
-        inherit: true,
-        timeoutMs: 1_200_000,
-        env: { YOLO_RELEASE_DIR: dir, YOLO_NO_CRATES: "1" },
-      },
-    );
-    await rm(script, { force: true }).catch(() => undefined);
-    await rm(dir, { recursive: true, force: true }).catch(() => undefined);
-    ctx.log(`install.ps1 yolo -> ${run.code}`);
-    const after = findTool(sys, paths, "yolo");
-    return run.code === 0 && after
-      ? {
-          state: "fait",
-          detail: `yolo ${(await toolVersion(sys, after)) ?? artifact.version} installé (ouvre une nouvelle fenêtre pour qu'il soit reconnu)`,
-        }
-      : {
-          state: "echec",
-          detail: `l'installation de yolo a échoué (code ${run.code})`,
-          action: "Envoie le message d'aide à l'équipe.",
-        };
-  },
-};
-
 export const stepMcp: Step = {
   id: "mcp",
   titre: "MCP Aphrody dans ton assistant",
@@ -653,7 +572,6 @@ export const STEPS: Step[] = [
   stepAcces,
   stepAphrody,
   stepDepot,
-  stepYolo,
   stepMcp,
 ];
 

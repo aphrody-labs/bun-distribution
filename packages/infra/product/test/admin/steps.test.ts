@@ -17,7 +17,6 @@ import {
   stepKit,
   stepMcp,
   stepPrerequis,
-  stepYolo,
   type InstallState,
 } from "../../src/admin/lib/steps.ts";
 import { hubKey, packJson, testContext, type TestContext } from "./helpers.ts";
@@ -45,12 +44,10 @@ function downloads(
         artifacts: options.artifacts ?? [],
         assetChecksums: {
           "install.ps1": hash(INSTALL_SCRIPT),
-          "install-yolo.ps1": hash(INSTALL_SCRIPT),
         },
       });
     if (url.endsWith("/SHA256SUMS")) return new Response(options.sums ?? "");
-    if (url.endsWith("/install.ps1") || url.endsWith("/install-yolo.ps1"))
-      return new Response(options.installScript ?? INSTALL_SCRIPT);
+    if (url.endsWith("/install.ps1")) return new Response(options.installScript ?? INSTALL_SCRIPT);
     if (url.includes("/files/")) return new Response("archive-bytes");
     return new Response("nope", { status: 404 });
   };
@@ -461,74 +458,6 @@ test("repository step: a refused GitHub sign-in points at the invitation", async
   expect(existsSync(ctx.paths.repoDir)).toBe(false);
 });
 
-test("yolo step: waits while unpublished, then uses yolo's own installer on a verified local release folder", async () => {
-  const none = testContext({ fetchImpl: downloads() });
-  expect((await stepYolo.run(none.ctx, "executer", state())).state).toBe("attente");
-  const file = "yolo-0.2.0-x-x86_64-pc-windows-msvc.tar.gz";
-  const artifact = {
-    name: "yolo",
-    version: "0.2.0",
-    platform: "windows-x86_64",
-    url: `${BASE}/files/${file}`,
-    sha256: SHA,
-    size: 13,
-    file,
-  };
-  const { ctx, sys } = testContext({
-    fetchImpl: downloads({ artifacts: [artifact], sums: sumsFor(file) }),
-  });
-  let release: string[] = [];
-  sys.handlers.push({
-    match: /^powershell .*install-yolo\.ps1/,
-    result: (argv) => {
-      release = readdirSync(join(ctx.paths.installDir, "tmp", "yolo-release"));
-      touch(join(ctx.paths.home, ".yolo", "bin", "yolo.exe"));
-      expect(argv.at(-1)).toBe(join(ctx.paths.installDir, "tmp", "install-yolo.ps1"));
-      return {};
-    },
-  });
-  sys.handlers.push({ match: /yolo\.exe --version/, result: { stdout: "yolo 0.2.0" } });
-  const done = await stepYolo.run(ctx, "executer", state());
-  expect(done.state).toBe("fait");
-  expect(release.toSorted()).toEqual(["SHA256SUMS", file]);
-  const call = sys.calls.find((entry) => entry.argv[0] === "powershell")!;
-  expect(call.options.env).toMatchObject({ YOLO_NO_CRATES: "1" });
-  expect(call.options.env?.YOLO_RELEASE_DIR).toContain("yolo-release");
-  expect(existsSync(join(ctx.paths.installDir, "tmp", "yolo-release"))).toBe(false);
-});
-
-test("yolo step without the repository runs the site's verified installer", async () => {
-  const file = "yolo-0.2.0-x-x86_64-pc-windows-msvc.tar.gz";
-  const artifact = {
-    name: "yolo",
-    version: "0.2.0",
-    platform: "windows-x86_64",
-    url: `${BASE}/files/${file}`,
-    sha256: SHA,
-    size: 13,
-    file,
-  };
-  const base = downloads({ artifacts: [artifact], sums: sumsFor(file) });
-  const { ctx, sys } = testContext({
-    fetchImpl: async (input, init) =>
-      String(input).endsWith("/install-yolo.ps1")
-        ? new Response(INSTALL_SCRIPT)
-        : base(input, init),
-  });
-  const script = join(ctx.paths.installDir, "tmp", "install-yolo.ps1");
-  sys.handlers.push({
-    match: /^powershell .*install-yolo\.ps1/,
-    result: () => {
-      expect(readFileSync(script, "utf8")).toContain("Get-FileHash");
-      touch(join(ctx.paths.home, ".yolo", "bin", "yolo.exe"));
-      return {};
-    },
-  });
-  sys.handlers.push({ match: /yolo\.exe --version/, result: { stdout: "yolo 0.2.0" } });
-  expect((await stepYolo.run(ctx, "executer", state())).state).toBe("fait");
-  expect(existsSync(script)).toBe(false);
-});
-
 test("MCP step: declares the server in Claude Desktop with a backup, once", async () => {
   const { ctx, sys } = testContext();
   expect((await stepMcp.run(ctx, "executer", state())).state).toBe("attente");
@@ -562,7 +491,6 @@ test("the install runs every step in order, a failure never stops the others, no
     "acces",
     "aphrody",
     "depot",
-    "yolo",
     "mcp",
   ]);
   expect(report.failed).toBeGreaterThan(0);
@@ -580,7 +508,7 @@ test("simulation changes nothing on disk and runs nothing", async () => {
     .filter((name) => name !== "local")
     .toSorted();
   const report = await runInstall(t.ctx, "simuler", state());
-  expect(report.results.length).toBe(8);
+  expect(report.results.length).toBe(7);
   expect(t.sys.calls.filter((call) => call.argv[0] !== "sc")).toEqual([]);
   expect(
     readdirSync(t.root)

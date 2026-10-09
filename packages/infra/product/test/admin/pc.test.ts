@@ -13,17 +13,16 @@ const touch = (path: string) => {
 };
 const withTools = (t: ReturnType<typeof testContext>) => {
   touch(join(t.ctx.paths.home, ".local", "bin", "aphrody.exe"));
-  touch(join(t.ctx.paths.home, ".yolo", "bin", "yolo.exe"));
   t.sys.handlers.push({ match: /.*/, result: {} });
 };
 
-test("every action maps to a fixed aphrody or yolo argv, never a shell string", () => {
+test("every action maps to a fixed aphrody argv, never a shell string", () => {
   const all = PC_ACTIONS.flatMap((action) =>
     action.commands.map((c) => `${c.tool} ${c.args.join(" ")}`),
   );
   expect(all).toContain("aphrody winclean call get_disk_info");
   expect(all).toContain("aphrody winclean call wsl_list_distributions");
-  expect(all).toContain("yolo upgrade --check");
+  expect(all.join(" ")).not.toContain("yolo");
   expect(all.join(" ")).not.toMatch(/wsl_execute|wsl_send_signal|kill|rm |delete|--apply/i);
 });
 

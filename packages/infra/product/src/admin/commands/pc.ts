@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /* oxlint-disable no-await-in-loop -- commands run one after the other on purpose */
 /**
- * « Mon PC » : simple actions backed by the existing owners (aphrody winclean, aphrody doctor, aphrody model, aphrody infra ssh,
- * yolo). Each one is a fixed argv checked against the real `--help`; the kit adds no logic of its own. Nothing destructive:
+ * « Mon PC » : simple actions backed by the existing owners (aphrody winclean, aphrody doctor, aphrody model, aphrody infra ssh). Each one is a fixed argv checked against the real `--help`; the kit adds no logic of its own. Nothing destructive:
  * actions that change the PC (memory trimming) ask for a typed confirmation first.
  */
 import { parse } from "../../shared/args.ts";
@@ -15,7 +14,7 @@ export interface PcAction {
   key: string;
   titre: string;
   /** Commands run in order; `tool` is the executable looked up on the PC. */
-  commands: { tool: "aphrody" | "yolo"; args: string[] }[];
+  commands: { tool: "aphrody"; args: string[] }[];
   /** Changes the PC (not data): needs OUI. */
   confirm?: string;
   windowsOnly?: boolean;
@@ -67,14 +66,6 @@ export const PC_ACTIONS: PcAction[] = [
     commands: [
       { tool: "aphrody", args: ["model", "list"] },
       { tool: "aphrody", args: ["model", "accel"] },
-    ],
-  },
-  {
-    key: "yolo",
-    titre: "yolo : vérifier l'installation et les mises à jour",
-    commands: [
-      { tool: "yolo", args: ["doctor"] },
-      { tool: "yolo", args: ["upgrade", "--check"] },
     ],
   },
 ];
@@ -147,7 +138,7 @@ export async function serverStatus(ctx: Context): Promise<number> {
 
 const command: Command = {
   name: "pc",
-  summary: "Mon PC et mes serveurs : état, mémoire, WSL, diagnostic, modèles, yolo",
+  summary: "Mon PC et mes serveurs : état, mémoire, WSL, diagnostic, modèles",
   async run(argv, ctx) {
     const { positionals } = parse(argv, {});
     const [key] = positionals;

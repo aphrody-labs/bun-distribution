@@ -47,7 +47,6 @@ async function readyPc(): Promise<TestContext> {
   await saveProfile(ctx.paths, samplePack());
   const aphrody = join(ctx.paths.home, ".local", "bin", "aphrody.exe");
   touch(aphrody);
-  touch(join(ctx.paths.home, ".yolo", "bin", "yolo.exe"));
   sys.handlers.push(
     { match: /git(\.exe)? --version/, result: { stdout: "git version 2.50.0" } },
     { match: /git(\.exe)? -C .* rev-parse/, result: { stdout: "main\n" } },

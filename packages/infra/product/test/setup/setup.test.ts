@@ -92,7 +92,7 @@ test("roles parse in French and English, unknown roles are refused", () => {
   expect([...parseRoles("creator")]).toEqual(["createur"]);
   expect(() => parseRoles("root")).toThrow("rôle inconnu");
   const base = stepsFor(new Set()).map((step) => step.id);
-  expect(base).toEqual(["setup", "aphrody", "yolo", "desktop", "plugins", "mcp", "raccourci"]);
+  expect(base).toEqual(["setup", "aphrody", "desktop", "plugins", "mcp", "raccourci"]);
   expect(stepsFor(new Set(["admin"])).map((s) => s.id)).toContain("admin-tools");
   expect(stepsFor(new Set(["admin"])).map((s) => s.id)).toContain("acces");
   expect(
