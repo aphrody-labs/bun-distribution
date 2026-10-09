@@ -13,7 +13,7 @@ those defaults. The index passed its API, persistence, corruption, concurrency
 and recall tests offline. The source BXC FFI still needs to consume this local
 crate before the source checkout can be retired.
 
-`aphrody-memory::HnswBackend` currently stores records as JSONL and performs
-exact cosine ranking. Adopting this ANN index there requires a format migration
-and a ranking contract decision; the two backends are not interchangeable by
-name alone.
+`aphrody-memory::HnswBackend` ranks embeddings with this index (cosine,
+`Quantization::None`, one index per dimension). It keeps its JSONL record file
+and rebuilds the graph on open; its tests check top-10 recall against exact
+cosine ranking.

@@ -8,22 +8,13 @@ authors.workspace      = true
 homepage.workspace     = true
 repository.workspace   = true
 license.workspace      = true
-description            = "aphrody memory SDK — async MemoryBackend (JSONL/HNSW/SQLite/LanceDB) + MemoryProvider (Mem0/Honcho/SqliteLocal Tier-1)."
+description            = "aphrody memory SDK — async MemoryBackend (JSONL/HNSW/SQLite) + MemoryProvider (Mem0/Honcho/SqliteLocal Tier-1)."
 
 [lints]
 workspace = true
 
 [features]
 default = []
-lancedb = ["dep:lancedb", "dep:arrow-array", "dep:arrow-schema"]
-
-# ---------------------------------------------------------------------------
-# NOTE: instant-distance (HNSW pure Rust) is NOT in the offline registry
-# cache for this workspace.  The `hnsw` module ships a hand-rolled brute-force
-# cosine-similarity index instead.  When the registry is reachable, add:
-#   instant-distance = { version = "0.7", features = ["serde"] }
-# and swap `src/hnsw.rs` for the HNSW-backed implementation.
-# ---------------------------------------------------------------------------
 
 [dependencies]
 # --- async runtime ----------------------------------------------------------
@@ -56,15 +47,9 @@ reqwest      = { workspace = true }
 # (kept hermetic across Linux #1 / Win11 #2 per CLAUDE.md §0).
 rusqlite     = { workspace = true }
 aphrody-sql   = { workspace = true, features = ["sqlite"] }
-aphrody-rag-core = { workspace = true }
+aphrody-web-index = { workspace = true }
 aphrody-agent-home = { workspace = true }
 aphrody-models     = { workspace = true }
-# --- LanceDB backend (ported from openclaw/extensions/memory-lancedb) -------
-# `default-features = false` keeps cloud-backend transitives (aws/azure/gcs)
-# out of the dependency graph for the CLI binary.
-lancedb      = { workspace = true, optional = true }
-arrow-array  = { workspace = true, optional = true }
-arrow-schema = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio        = { workspace = true, features = ["full"] }
@@ -77,13 +62,9 @@ criterion    = { workspace = true }
 
 # ---------------------------------------------------------------------------
 # cargo-machete: `time` is consumed by `sqlite_local`'s timestamp helpers
-# behind type aliases -- machete's symbol scan misses this. arrow-array +
-# arrow-schema are now detected correctly and removed from the ignore list.
+# behind type aliases -- machete's symbol scan misses this.
 # ---------------------------------------------------------------------------
 [package.metadata.cargo-machete]
-# arrow-array + arrow-schema are now correctly detected as used (lancedb.rs) --
-# removed from ignored 2026-05-21. `time` stays: consumed via type aliases in
-# sqlite_local that machete cannot see through.
 ignored = ["time"]
 
 # ---------------------------------------------------------------------------

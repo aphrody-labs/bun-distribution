@@ -127,7 +127,6 @@ Every entry is in `tools/config/deps/rust-holds.json`. Advisory-driven ones are 
 | `ort` | `=2.0.0-rc.12` | `magika 1.1.0` (latest, optional in `aphrody-re`) pins `ort =2.0.0-rc.12`, so `rc.13` cannot resolve in the same graph. |
 | `fastembed` | `5.17.3` | 5.17.4 and 7.x require `ort =2.0.0-rc.13` (see `ort`). |
 | `cssparser`, `selectors` | `0.37`, `0.38` | cssparser 0.38 drops `ParserInput` and the `Parser<'i,'t>` second lifetime; selectors 0.41 removes `Impl` from `NonTSPseudoClass`/`PseudoElement` and needs cssparser 0.38. Porting `obscura-render` (`css.rs`, `style.rs`), `obscura-dom` (`selector.rs`) and the vendored `taffy` parse feature is its own task. |
-| `lancedb`, `arrow-array`, `arrow-schema` | `0.29`, `58` | lancedb 0.39.0 does not compile with `default-features = false` (`job.rs` uses `Error::Http`, which exists only with the `remote` feature); arrow 60 follows lancedb. Retry when a fixed release exists. |
 | Rust toolchain | `1.98.1` | Latest stable is 1.99.0; the pin moves with `tools rust --apply` and the category repositories, followed by a full rebuild. Not part of a crate bump. |
 
 Unused `[workspace.dependencies]` entries (`uu_cp`, `uu_mkdir`, `uu_mv`, `uu_touch`, `uu_uname`, `uu_whoami`, `redis`,
@@ -164,7 +163,7 @@ whole workspace (`cargo check --workspace --all-targets`) and tested on the touc
 | `pollster` | 0.4 | 1.0 | none; `cfg(windows)` only: proven by the doctor's Windows MSVC target check |
 | `getrandom` | 0.2 | 0.4 | `getrandom::getrandom` is `getrandom::fill` (`a2a-coord`, `a2a-client`, `terminal-backend`); the browser backend is the `wasm_js` feature (`aphrody-base`, `aphrody-antigravity`), proven by the wasm32 target check |
 
-Not moved, with the reason in the table above: `fastembed`, `ort`, `cssparser`, `selectors`, `lancedb`, `arrow-*`,
+Not moved, with the reason in the table above: `fastembed`, `ort`, `cssparser`, `selectors`,
 `yara-x`, `portable-pty`.
 
 Found by the first doctor run after the bump and repaired with it: `sha2` 0.11 digest formatting in `aphrody ocr`

@@ -1,18 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 //! # aphrody-memory
 //!
-//! Async [`MemoryBackend`] trait and four production-ready implementations:
+//! Async [`MemoryBackend`] trait and three production-ready implementations:
 //!
 //! - [`jsonl::JsonlBackend`] — durable JSONL file store whose envelope shape mirrors the
 //!   `.coord/inbox-from-aphrody.jsonl` A2A protocol so that a [`MemoryRecord`] **is** a
 //!   coordination envelope.
-//! - [`hnsw::HnswBackend`] — in-process approximate nearest-neighbour index backed by brute-force
-//!   cosine similarity (pure Rust, zero FFI).  Persists the index to `<root>/index.bin` via
-//!   `serde_json`.
+//! - [`hnsw::HnswBackend`] — in-process approximate nearest-neighbour index (HNSW via
+//!   `aphrody-web-index`). Persists the records to `<root>/index.bin` via `serde_json`.
 //! - [`sqlite::SqliteBackend`] — single-file SQLite store via `rusqlite` (bundled). Brute-force
 //!   cosine search over a `BLOB` embedding column; acceptable up to ~100k rows.
-//! - [`lancedb::LanceDbBackend`] — Arrow-native vector database via the `lancedb` crate, ported
-//!   from `openclaw/extensions/memory-lancedb` (TypeScript). Scales past 100k rows with ANN.
 //!
 //! ## Design invariants
 //!
@@ -27,10 +24,6 @@ pub mod agent_home;
 mod cli;
 pub mod hnsw;
 pub mod jsonl;
-#[cfg(feature = "lancedb")]
-pub mod lancedb;
-#[cfg(feature = "lancedb")]
-pub mod lancedb_adapter;
 pub mod sqlite;
 
 pub use cli::cli_main;
@@ -61,10 +54,6 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[cfg(feature = "lancedb")]
-pub use crate::lancedb::LanceDbBackend;
-#[cfg(feature = "lancedb")]
-pub use crate::lancedb_adapter::LanceDbAdapter;
 // Tier-1 provider DTOs: re-exported under disambiguated names so they don't
 // collide with the legacy `MemoryBackend` types defined further down in this
 // file. Tests and downstream consumers can either use these aliases or the

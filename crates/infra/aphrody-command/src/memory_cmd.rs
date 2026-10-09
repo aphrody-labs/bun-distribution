@@ -2,20 +2,18 @@
 // `aphrody memory migrate` — Tier-1 provider-to-provider migration (R3.4 wire).
 //
 // Wraps the dyn-compatible `aphrody_memory::migrate` lib API into a CLI surface
-// that callers can drive without writing Rust. The four shipped Tier-1
-// providers (Mem0, Honcho, SqliteLocal, LanceDb) all implement `MemoryProvider`,
+// that callers can drive without writing Rust. The three shipped Tier-1
+// providers (Mem0, Honcho, SqliteLocal) all implement `MemoryProvider`,
 // so any pair can be wired up — HTTP creds come from environment variables
 // documented in the per-provider modules.
 //
-// Verify: `aphrody memory migrate --from lancedb --to honcho
-//         --from-lancedb-path ./var/memory --lancedb-ndims 768
+// Verify: `aphrody memory migrate --from sqlite_local --to honcho
+//         --from-sqlite-path ./var/memory.sqlite
 //         --agent-id agent-A --dry-run` returns a MigrationDiff JSON.
 
 use std::path::{Path, PathBuf};
 
 use aphrody_config::CliOverrides;
-#[cfg(feature = "memory-lancedb")]
-use aphrody_memory::LanceDbAdapter;
 use aphrody_memory::{
     HonchoProvider, Mem0Provider, MemoryProvider, SqliteLocalProvider, migrate_provider,
 };
@@ -24,10 +22,10 @@ use miette::{IntoDiagnostic, WrapErr};
 
 use crate::context::{GoogleContext, TerminalCommand};
 
-/// Picker mirroring the four Tier-1 `MemoryProvider` implementations.
+/// Picker mirroring the Tier-1 `MemoryProvider` implementations.
 ///
 /// The kebab-case rename matches `aphrody_memory::ProviderKind` snake_case
-/// (`mem0`, `honcho`, `sqlite_local`, `lancedb`) so the CLI surface stays
+/// (`mem0`, `honcho`, `sqlite_local`) so the CLI surface stays
 /// consistent with the discriminator returned by `provider_kind()`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
 pub(crate) enum MemoryProviderArg {
@@ -37,10 +35,7 @@ pub(crate) enum MemoryProviderArg {
     Honcho,
     /// Offline rusqlite store — `--from-sqlite-path` / `--to-sqlite-path`.
     SqliteLocal,
-    /// Embedded LanceDB vector store — `--from-lancedb-path` / `--to-lancedb-path`
-    /// with `--lancedb-ndims`. Records are stored with `ns = agent_id`;
-    /// embeddings are preserved on copies within LanceDB and dropped (set to
-    /// `None`) when writing to HTTP-backed providers that have no vector column.
+    /// Removed LanceDB provider; selecting it fails with an explanatory error.
     LanceDb,
 }
 
@@ -191,30 +186,10 @@ async fn build_provider(
             Ok(Box::new(p))
         },
         MemoryProviderArg::LanceDb => {
-            #[cfg(not(feature = "memory-lancedb"))]
-            {
-                let _ = (lancedb_path, lancedb_ndims);
-                Err(miette::miette!(
-                    "LanceDB is optional; rebuild Aphrody with --features memory-lancedb"
-                ))
-            }
-            #[cfg(feature = "memory-lancedb")]
-            {
-                let path = lancedb_path.map(Path::to_path_buf).unwrap_or_else(default_lancedb_path);
-                let ndims = if lancedb_ndims == 0 { 768 } else { lancedb_ndims };
-                // Ensure directory exists before LanceDB tries to create its layout.
-                if let Some(parent) = path.parent() {
-                    if !parent.as_os_str().is_empty() {
-                        std::fs::create_dir_all(parent).into_diagnostic().wrap_err_with(|| {
-                            format!("failed to create lancedb parent dir {}", parent.display())
-                        })?;
-                    }
-                }
-                let p = LanceDbAdapter::open(&path, ndims)
-                    .await
-                    .map_err(|e| miette::miette!("lancedb: {e} (path={})", path.display()))?;
-                Ok(Box::new(p))
-            }
+            let _ = (lancedb_path, lancedb_ndims);
+            Err(miette::miette!(
+                "the LanceDB memory provider was removed; use sqlite_local, mem0 or honcho"
+            ))
         },
     }
 }
@@ -419,15 +394,6 @@ pub(crate) fn profile_sqlite_path(overrides: &CliOverrides) -> miette::Result<Pa
     })
 }
 
-/// Default LanceDB store location — `$HOME/.aphrody/memory-lancedb/`.
-/// Falls back to `./memory-lancedb` if the home directory cannot be resolved.
-#[cfg(any(feature = "memory-lancedb", test))]
-fn default_lancedb_path() -> PathBuf {
-    // Root from `aphrody_models::paths`, the single authority.
-    aphrody_models::paths::state_subdir("memory-lancedb")
-        .unwrap_or_else(|_| PathBuf::from("memory-lancedb"))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -436,12 +402,6 @@ mod tests {
     fn default_sqlite_path_under_home_when_available() {
         let p = default_sqlite_path();
         assert_eq!(p.file_name().and_then(|s| s.to_str()), Some("memory.sqlite"));
-    }
-
-    #[test]
-    fn default_lancedb_path_under_home_when_available() {
-        let p = default_lancedb_path();
-        assert_eq!(p.file_name().and_then(|s| s.to_str()), Some("memory-lancedb"));
     }
 
     fn make_cmd(

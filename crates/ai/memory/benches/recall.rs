@@ -11,10 +11,9 @@
 // (which is a benchmark-id substring filter, not a Rust symbol) selects this
 // bench precisely.
 //
-// The brute-force cosine implementation in `crates/aphrody-memory/src/hnsw.rs`
-// scans every embedded record per query. With 128-dim vectors and 100 000
-// records that is ~12.8 M f32 multiply-adds per query — comfortably under the
-// 100 ms budget on a 2024-class x86_64 CPU.
+// `crates/ai/memory/src/hnsw.rs` answers each query from an HNSW graph
+// (`aphrody-web-index`), so a query visits a small fraction of the 100 000
+// records instead of scanning them all.
 //
 // ## Why `HnswBackend` and not `SqliteBackend` / Tier-1 providers
 //
@@ -23,9 +22,7 @@
 // three implementations only `HnswBackend` keeps the entire index in process
 // memory ; `SqliteBackend` performs a full table scan over a `BLOB` column
 // (deserialise -> cosine -> sort) which dominates the bench with SQLite-specific
-// overhead unrelated to the recall algorithm. `LanceDbBackend` carries a real
-// ANN index but pulls Arrow/IO transitives and requires Tokio's multi-thread
-// runtime — not the latency we want to publish as the headline number.
+// overhead unrelated to the recall algorithm.
 //
 // The Tier-1 providers (`Mem0Provider`, `HonchoProvider`, `SqliteLocalProvider`)
 // expose keyword search only ; "semantic" there is a property of the remote

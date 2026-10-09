@@ -1,46 +1,26 @@
 // SPDX-License-Identifier: Apache-2.0
 //! # `HnswBackend`
 //!
-//! An in-process approximate nearest-neighbour memory backend.
+//! In-process approximate nearest-neighbour memory backend. Records live in a
+//! `BTreeMap<String, MemoryRecord>`; embeddings are indexed by
+//! [`aphrody_web_index::Index`] (HNSW, cosine, full-precision vectors), one
+//! index per embedding dimension.
 //!
-//! ## Implementation note — brute-force fallback
-//!
-//! The intended implementation uses the [`instant-distance`] crate
-//! (HNSW, pure Rust, no FFI, v0.7+).  However, `instant-distance` is not
-//! present in the offline Cargo registry cache for this workspace.  Until the
-//! registry is reachable and the crate is added to `[workspace.dependencies]`,
-//! this module implements **exact cosine-similarity search** over a
-//! `BTreeMap<String, MemoryRecord>` index.  Exact search is O(n) per query
-//! but is correct, safe, and requires zero external crates.
-//!
-//! ### Migration path to HNSW
-//!
-//! 1. Add to `Cargo.toml` (workspace dep + crate dep): ```toml instant-distance = { version =
-//!    "0.7", features = ["serde"] } ```
-//! 2. Replace the `index` field type with `instant_distance::HnswMap<EmbeddingPoint, String>`.
-//! 3. Implement [`instant_distance::Point`] for a newtype around `Vec<f32>`.
-//! 4. Replace `brute_force_search` with `hnsw.search(…)`.
-//! 5. Replace JSON persistence with `bincode` + `serde` on the HNSW map.
-//!
-//! The public `HnswBackend` API is **identical** before and after this swap.
+//! Records without an embedding, or whose embedding is empty, non-finite or
+//! all zeros, are stored and listed but never returned by `search`.
 //!
 //! ## Persistence
 //!
-//! The in-memory index is serialised to `<root>/index.bin` as newline-delimited
-//! JSON (same format as the JSONL backend) on every `put` and `delete`.  On
-//! construction the index is reloaded from that file if it exists.
-//!
-//! ## Thread safety
-//!
-//! `HnswBackend` is `Send + Sync`.  Callers must wrap it in a `Mutex` or
-//! `RwLock` when shared across tasks.
+//! The records are serialised to `<root>/index.bin` as newline-delimited JSON
+//! `(key, MemoryRecord)` pairs on every `put`, `put_many` and `delete`. The
+//! HNSW graph is rebuilt from that file on `open`.
 
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, HashMap},
     path::{Path, PathBuf},
 };
 
-use aphrody_rag_core::fusion::{cosine_with_norm, norm};
+use aphrody_web_index::{Index, IndexParams, MAX_DIM, Quantization};
 use async_trait::async_trait;
 use serde_json::Deserializer;
 use tokio::fs;
@@ -48,32 +28,98 @@ use tracing::{debug, trace};
 
 use crate::{Embedding, MemoryBackend, MemoryError, MemoryRecord};
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-/// Filename inside `root` where the full index is persisted.
+/// Filename inside `root` where the records are persisted.
 const INDEX_FILE: &str = "index.bin";
 
-// ---------------------------------------------------------------------------
-// Backend struct
-// ---------------------------------------------------------------------------
+/// Minimum HNSW candidate list size at query time.
+const EF_SEARCH: usize = 128;
 
-/// In-process nearest-neighbour memory backend.
-///
-/// Uses brute-force cosine similarity (O(n)) until `instant-distance` is
-/// integrated.  See the module documentation for the HNSW migration path.
+fn indexable(v: &[f32]) -> bool {
+    !v.is_empty()
+        && v.len() <= MAX_DIM
+        && v.iter().all(|x| x.is_finite())
+        && v.iter().any(|x| *x != 0.0)
+}
+
+fn index_error(e: aphrody_web_index::IndexError) -> MemoryError {
+    MemoryError::Internal { message: format!("vector index: {e}") }
+}
+
+/// Key bookkeeping between string record keys and the `u64` keys of the
+/// per-dimension HNSW indexes.
+#[derive(Default)]
+struct Ann {
+    by_dim: HashMap<usize, Index>,
+    slots: HashMap<String, (usize, u64)>,
+    keys: HashMap<u64, String>,
+    next: u64,
+}
+
+impl Ann {
+    fn index_for(&mut self, dim: usize) -> Result<&Index, MemoryError> {
+        if !self.by_dim.contains_key(&dim) {
+            let params = IndexParams { quantization: Quantization::None, ..IndexParams::new(dim) };
+            self.by_dim.insert(dim, Index::new(params).map_err(index_error)?);
+        }
+        Ok(&self.by_dim[&dim])
+    }
+
+    fn remove(&mut self, key: &str) {
+        let Some((dim, id)) = self.slots.remove(key) else { return };
+        self.keys.remove(&id);
+        if let Some(index) = self.by_dim.get(&dim) {
+            index.remove(id);
+            if index.tombstone_count() > index.len().max(64) {
+                // A failed compaction leaves the tombstones in place; search stays correct.
+                let _ = index.compact();
+            }
+        }
+    }
+
+    /// Index every embeddable record of `batch`, replacing earlier entries for
+    /// the same keys. Vectors of one dimension are linked in a single batch.
+    fn insert_all<'a>(
+        &mut self,
+        batch: impl IntoIterator<Item = (&'a str, Option<&'a [f32]>)>,
+    ) -> Result<(), MemoryError> {
+        let mut groups: HashMap<usize, Vec<(u64, Vec<f32>)>> = HashMap::new();
+        for (key, embedding) in batch {
+            self.remove(key);
+            let Some(v) = embedding.filter(|v| indexable(v)) else { continue };
+            let id = self.next;
+            self.next += 1;
+            self.slots.insert(key.to_owned(), (v.len(), id));
+            self.keys.insert(id, key.to_owned());
+            groups.entry(v.len()).or_default().push((id, v.to_vec()));
+        }
+        for (dim, items) in groups {
+            self.index_for(dim)?.add_batch(&items).map_err(index_error)?;
+        }
+        Ok(())
+    }
+
+    fn search(&self, query: &[f32], top_k: usize) -> Result<Vec<(&str, f32)>, MemoryError> {
+        let Some(index) = self.by_dim.get(&query.len()) else { return Ok(Vec::new()) };
+        let hits = index.search(query, top_k, Some(top_k.max(EF_SEARCH))).map_err(index_error)?;
+        Ok(hits
+            .into_iter()
+            .filter_map(|(id, score)| self.keys.get(&id).map(|k| (k.as_str(), score)))
+            .collect())
+    }
+}
+
+/// In-process nearest-neighbour memory backend (HNSW via `aphrody-web-index`).
 pub struct HnswBackend {
     root: PathBuf,
-    /// In-memory index: `key -> record`.
+    /// Records by key.
     index: BTreeMap<String, MemoryRecord>,
+    ann: Ann,
 }
 
 impl HnswBackend {
     /// Open (or create) an `HnswBackend` rooted at `root`.
     ///
-    /// If `<root>/index.bin` exists its contents are loaded into the
-    /// in-memory index.
+    /// If `<root>/index.bin` exists its records are loaded and indexed.
     ///
     /// # Errors
     ///
@@ -84,31 +130,23 @@ impl HnswBackend {
         fs::create_dir_all(&root).await?;
 
         let index_path = root.join(INDEX_FILE);
-        let index: BTreeMap<String, MemoryRecord> = if index_path.exists() {
+        let mut index = BTreeMap::new();
+        if index_path.exists() {
             debug!(path = %index_path.display(), "loading hnsw index");
             let bytes = fs::read(&index_path).await?;
-            let mut map = BTreeMap::new();
             for result in Deserializer::from_slice(&bytes).into_iter::<(String, MemoryRecord)>() {
                 let (key, record) = result?;
                 trace!(key, "loaded hnsw record");
-                map.insert(key, record);
+                index.insert(key, record);
             }
-            map
-        } else {
-            BTreeMap::new()
-        };
+        }
 
-        Ok(Self { root, index })
+        let mut ann = Ann::default();
+        ann.insert_all(index.iter().map(|(k, r)| (k.as_str(), r.embedding.as_deref())))?;
+        Ok(Self { root, index, ann })
     }
 
-    // -----------------------------------------------------------------------
-    // Internal helpers
-    // -----------------------------------------------------------------------
-
-    /// Flush the entire index to `<root>/index.bin`.
-    ///
-    /// Each entry is written as a JSON-encoded `(key, MemoryRecord)` tuple on
-    /// its own line (newline-delimited JSON).
+    /// Flush every record to `<root>/index.bin` as newline-delimited JSON.
     async fn flush(&self) -> Result<(), MemoryError> {
         let index_path = self.root.join(INDEX_FILE);
         let tmp_path = self.root.join(format!(".{INDEX_FILE}.tmp"));
@@ -132,92 +170,30 @@ impl HnswBackend {
         Ok(())
     }
 
-    /// Insert `batch` records into the index and flush **once** at the end.
-    ///
-    /// Equivalent to calling [`MemoryBackend::put`] in a loop, but pays a
-    /// single disk flush rather than `batch.len()`. Useful for bulk imports
-    /// (migration tool R3.4) and benchmarks (R3.7 recall bench) where the
-    /// per-record fsync cost would dominate.
+    /// Insert `batch` records, link their vectors in one pass and flush
+    /// **once** at the end.
     ///
     /// # Errors
     ///
     /// Surfaces a single [`MemoryError::Io`] / [`MemoryError::Serde`] from
-    /// the final flush; partial inserts before the failure remain in the
-    /// in-memory index but are not persisted.
+    /// the final flush; partial inserts before the failure remain in memory
+    /// but are not persisted.
     pub async fn put_many(
         &mut self,
         batch: Vec<(String, MemoryRecord)>,
     ) -> Result<(), MemoryError> {
+        self.ann.insert_all(batch.iter().map(|(k, r)| (k.as_str(), r.embedding.as_deref())))?;
         for (key, value) in batch {
             self.index.insert(key, value);
         }
         self.flush().await
     }
-
-    /// Brute-force nearest-neighbour scan over embedded records.
-    ///
-    /// Exact (not approximate) for any `n`. Time complexity is `O(n · d)` for
-    /// scoring plus `O(n)` quickselect for the top-`k` cut — never the
-    /// `O(n · log n)` of a full sort.
-    ///
-    /// Three constant-factor wins over the naive "score-clone-sort-all" form
-    /// keep the 100k-record p95 under the R3.7 budget without an ANN index:
-    ///
-    /// 1. The **query norm is hoisted out of the loop** (`cosine_similarity` recomputes it per
-    ///    record; here it is computed once with the shared `aphrody-rag-core` kernel
-    ///    [`norm`] and each record is scored by [`cosine_with_norm`]).
-    /// 2. **Scoring borrows** records (`&MemoryRecord`) rather than cloning all `n`; only the `k`
-    ///    survivors are cloned at the very end.
-    /// 3. **`select_nth_unstable_by`** (quickselect) partitions the `k` best in linear time; only
-    ///    that `k`-slice is then sorted for stable ordering.
-    fn brute_force_search(&self, query: &Embedding, top_k: usize) -> Vec<(MemoryRecord, f32)> {
-        // Hoist the query norm: identical for every record, so paying it once
-        // turns the per-record cost from two norms + a dot into one norm + a
-        // dot. A zero-magnitude query yields all-zero cosines (matching
-        // `cosine_similarity`), so there is nothing to rank.
-        let query_norm = norm(query);
-        if query_norm == 0.0 {
-            return Vec::new();
-        }
-
-        let mut scored: Vec<(f32, &MemoryRecord)> = Vec::with_capacity(self.index.len());
-        for r in self.index.values() {
-            let Some(emb) = r.embedding.as_deref() else { continue };
-            if emb.len() != query.len() {
-                continue;
-            }
-            scored.push((cosine_with_norm(query, query_norm, emb), r));
-        }
-
-        // Descending order: best (highest similarity) first. NaN scores are
-        // treated as equal, matching the previous `partial_cmp` fallback.
-        let desc = |a: &(f32, &MemoryRecord), b: &(f32, &MemoryRecord)| {
-            b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal)
-        };
-
-        let k = top_k.min(scored.len());
-        if k == 0 {
-            return Vec::new();
-        }
-        // Quickselect partitions so the k highest-scoring entries occupy
-        // [0, k) (unordered among themselves) in O(n); only that prefix is
-        // then sorted, so the full O(n log n) sort is avoided for large n.
-        if k < scored.len() {
-            scored.select_nth_unstable_by(k - 1, desc);
-        }
-        let top = &mut scored[..k];
-        top.sort_unstable_by(desc);
-        top.iter().map(|(score, r)| ((*r).clone(), *score)).collect()
-    }
 }
-
-// ---------------------------------------------------------------------------
-// MemoryBackend impl
-// ---------------------------------------------------------------------------
 
 #[async_trait]
 impl MemoryBackend for HnswBackend {
     async fn put(&mut self, key: &str, value: MemoryRecord) -> Result<(), MemoryError> {
+        self.ann.insert_all([(key, value.embedding.as_deref())])?;
         self.index.insert(key.to_owned(), value);
         self.flush().await
     }
@@ -239,10 +215,20 @@ impl MemoryBackend for HnswBackend {
                 message: "query embedding must not be empty".into(),
             });
         }
-        Ok(self.brute_force_search(query, top_k))
+        // A zero-magnitude query has no direction: nothing to rank.
+        if !indexable(query) {
+            return Ok(vec![]);
+        }
+        Ok(self
+            .ann
+            .search(query, top_k)?
+            .into_iter()
+            .filter_map(|(key, score)| self.index.get(key).map(|r| (r.clone(), score)))
+            .collect())
     }
 
     async fn delete(&mut self, key: &str) -> Result<(), MemoryError> {
+        self.ann.remove(key);
         self.index.remove(key);
         self.flush().await
     }
@@ -258,10 +244,6 @@ impl MemoryBackend for HnswBackend {
         Ok(records)
     }
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
@@ -288,12 +270,13 @@ mod tests {
     #[tokio::test]
     async fn delete_is_idempotent() {
         let (mut b, _dir) = make_backend().await;
-        let rec = MemoryRecord::new("del", "delete me");
+        let rec = MemoryRecord::new("del", "delete me").with_embedding(vec![1.0, 0.0]);
         let key = format!("{}/{}", rec.ns, rec.id);
         b.put(&key, rec).await.unwrap();
         b.delete(&key).await.unwrap();
         b.delete(&key).await.unwrap();
         assert!(b.get(&key).await.unwrap().is_none());
+        assert!(b.search(&vec![1.0, 0.0], 5).await.unwrap().is_empty());
     }
 
     #[tokio::test]
@@ -322,7 +305,7 @@ mod tests {
     async fn search_top_k_truncates() {
         let (mut b, _dir) = make_backend().await;
         for i in 0..5u8 {
-            let r = MemoryRecord::new("vec", format!("r{i}")).with_embedding(vec![i as f32, 0.0]);
+            let r = MemoryRecord::new("vec", format!("r{i}")).with_embedding(vec![i as f32, 1.0]);
             b.put(&format!("vec/{}", r.id), r).await.unwrap();
         }
         let results = b.search(&[1.0_f32, 0.0].to_vec(), 2).await.unwrap();
@@ -338,6 +321,18 @@ mod tests {
         b.put(&format!("vec/{}", emb.id), emb).await.unwrap();
         let results = b.search(&[1.0_f32, 0.0].to_vec(), 10).await.unwrap();
         assert_eq!(results.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn put_replaces_embedding() {
+        let (mut b, _dir) = make_backend().await;
+        let rec = MemoryRecord::new("vec", "moved").with_embedding(vec![1.0, 0.0]);
+        let key = format!("vec/{}", rec.id);
+        b.put(&key, rec.clone()).await.unwrap();
+        b.put(&key, rec.with_embedding(vec![0.0, 1.0])).await.unwrap();
+        let results = b.search(&vec![0.0, 1.0], 10).await.unwrap();
+        assert_eq!(results.len(), 1);
+        assert!((results[0].1 - 1.0).abs() < 1e-5, "stale vector served: {}", results[0].1);
     }
 
     #[tokio::test]
@@ -373,32 +368,60 @@ mod tests {
         let fetched = b2.get(&key).await.unwrap().expect("must survive reopen");
         assert_eq!(fetched.content, "durable content");
         assert!(fetched.embedding.is_some());
+        let hits = b2.search(&vec![1.0, 1.0], 1).await.unwrap();
+        assert_eq!(hits.len(), 1, "vector index must be rebuilt on open");
     }
 
-    #[test]
-    fn scaled_cosine_matches_reference() {
-        // The optimised per-record scorer must agree with the canonical
-        // `cosine_similarity` so the quickselect path returns identical ranks.
-        let cases: &[(&[f32], &[f32])] = &[
-            (&[1.0, 0.0, 0.0], &[1.0, 0.0, 0.0]),
-            (&[1.0, 0.0, 0.0], &[0.0, 1.0, 0.0]),
-            (&[0.3, 0.7, 0.1], &[0.9, 0.2, 0.4]),
-            (&[2.0, 2.0, 2.0], &[1.0, 1.0, 1.0]),
-        ];
-        for (q, e) in cases {
-            let reference = crate::cosine_similarity(q, e);
-            let scaled = cosine_with_norm(q, norm(q), e);
-            assert!(
-                (reference - scaled).abs() < 1e-6,
-                "scaled_cosine diverged: ref={reference} scaled={scaled} for {q:?} vs {e:?}",
-            );
+    /// Top-10 recall of the HNSW search against exact cosine ranking.
+    #[tokio::test]
+    async fn recall_matches_exact_search() {
+        const N: usize = 500;
+        const DIM: usize = 32;
+        const K: usize = 10;
+        let mut state = 0x9E37_79B9_7F4A_7C15_u64;
+        let mut next = move || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            (state >> 40) as f32 / (1u64 << 24) as f32 - 0.5
+        };
+        let (mut b, _dir) = make_backend().await;
+        let batch: Vec<(String, MemoryRecord)> = (0..N)
+            .map(|i| {
+                let v: Vec<f32> = (0..DIM).map(|_| next()).collect();
+                (format!("r/{i:04}"), MemoryRecord::new("r", format!("{i}")).with_embedding(v))
+            })
+            .collect();
+        let corpus: Vec<(String, Vec<f32>)> = batch
+            .iter()
+            .map(|(k, r)| (k.clone(), r.embedding.clone().expect("embedded")))
+            .collect();
+        b.put_many(batch).await.unwrap();
+
+        let (mut found, mut total) = (0usize, 0usize);
+        for _ in 0..20 {
+            let q: Vec<f32> = (0..DIM).map(|_| next()).collect();
+            let mut exact: Vec<(f32, &str)> =
+                corpus.iter().map(|(k, v)| (crate::cosine_similarity(&q, v), k.as_str())).collect();
+            exact.sort_by(|a, b| b.0.total_cmp(&a.0));
+            let truth: Vec<&str> = exact[..K].iter().map(|(_, k)| *k).collect();
+            let got = b.search(&q, K).await.unwrap();
+            assert_eq!(got.len(), K);
+            for w in got.windows(2) {
+                assert!(w[0].1 >= w[1].1);
+            }
+            for (rec, _) in &got {
+                let key = format!("r/{:04}", rec.content.parse::<usize>().unwrap());
+                found += usize::from(truth.contains(&key.as_str()));
+            }
+            total += K;
         }
+        let recall = found as f64 / total as f64;
+        assert!(recall >= 0.98, "recall@{K} = {recall}");
     }
 
     #[tokio::test]
     async fn zero_query_returns_empty() {
-        // A zero-magnitude query has undefined direction; cosine is 0 for every
-        // record, so there is nothing meaningful to rank.
         let (mut b, _dir) = make_backend().await;
         let r = MemoryRecord::new("vec", "x").with_embedding(vec![1.0, 2.0, 3.0]);
         b.put(&format!("vec/{}", r.id), r).await.unwrap();

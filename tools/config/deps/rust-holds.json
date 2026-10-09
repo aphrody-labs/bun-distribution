@@ -27,18 +27,6 @@
       "reason": "stays 0.38: 0.41 removes the Impl associated type of NonTSPseudoClass/PseudoElement and needs cssparser 0.38 (see cssparser); obscura-dom selector.rs must be ported first."
     },
     {
-      "crate": "lancedb",
-      "reason": "stays 0.29: 0.39.0 does not compile with default-features = false (job.rs uses Error::Http, which exists only with the `remote` feature). arrow-array/arrow-schema 58 follow lancedb (60 needs it). Retry when a fixed lancedb is released."
-    },
-    {
-      "crate": "arrow-array",
-      "reason": "stays 58 with lancedb (see lancedb)."
-    },
-    {
-      "crate": "arrow-schema",
-      "reason": "stays 58 with lancedb (see lancedb)."
-    },
-    {
       "crate": "yara-x-proto",
       "lockVersion": "1.7.0",
       "reason": "companion of yara-x =1.7.0: yara-x's build script needs the matching 1.7.0 generation. A plain `cargo update` moves it to 1.21.0 (in range ^1.7.0), which breaks `cargo check -p aphrody-re --features yara` (ModuleOptions has no field rust_module). apply restores the lock pin."

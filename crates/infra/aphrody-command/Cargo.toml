@@ -19,7 +19,6 @@ default = []
 native = ["aphrody-rag/native"]
 rag = ["aphrody-rag/ort", "aphrody-rag/native", "aphrody-agent-runtime/rag", "aphrody-app-server/rag", "native"]
 train = ["aphrody-train/registry"]
-memory-lancedb = ["aphrody-memory/lancedb"]
 # The MCP server entry point (`aphrody-mcp`, argv0 or `aphrody mcp-server`) with the local-inference toolbox of
 # aphrody-mcp (`toolbox`: ocr, vision, stt-local, jobs, rag-ort). Without it the binary advertises the default tool set
 # (127 over `tools/list`); with it 137. Opt-in because each backend is a dependency the base server has no use for.
