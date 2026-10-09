@@ -17,7 +17,7 @@ Conclusion : **complémentaires, pas concurrents.** `aphrody re` reste le premie
 
 ### A. Headless : `aphrody re ghidra <binary>` (RECOMMANDÉ en premier — valeur max)
 Nouvelle variante `ReAction::Ghidra` qui prolonge la pipeline `re` du triage vers la décompilation, en réutilisant le wrapper que le ghidra-suite ship déjà.
-- **Résolution Ghidra** (cross-platform, première trouvée) : `$GHIDRA_INSTALL_DIR` > `$GHIDRA_HOME` > détection self-relative du plugin (cf. `find-ghidra.ps1` durci ce jour : walk-up vers `support/analyzeHeadless[.bat]`) > PATH. Sur cette machine → `C:\src\ghidra`.
+- **Résolution Ghidra** (cross-platform, première trouvée) : `$GHIDRA_INSTALL_DIR` > `$GHIDRA_HOME` > racines d'installation usuelles et leurs dossiers `ghidra*` versionnés > PATH (cf. `find-ghidra.ts`, Bun multiplateforme, qui remplace `find-ghidra.ps1` ; `ghidra-analyze.ts` remplace `ghidra-analyze.ps1` et lance `analyzeHeadless[.bat]` sans fenêtre). Sur cette machine → `C:\src\ghidra`.
 - **Exécution** : spawn `analyzeHeadless <projDir> <projName> -import <bin> -scriptPath <ghidra_scripts> -postScript ExportDecompiled.java -deleteProject` (+ `ExportFunctions/ExportSymbols/ExportStrings/ExportCalls` selon flags). Les 6 scripts Java sont à `C:\src\ghidra\skills\ghidra-headless\scripts\ghidra_scripts/`.
 - **Sortie** : JSON sur stdout (contrat scriptable §0.1) — fonctions décompilées, symboles, xrefs.
 - **Latence (directive user)** : Ghidra headless est lent → cette commande est **opt-in explicite**, jamais dans un chemin par défaut. `re triage` (pur Rust, quelques millisecondes, cf. bench §4.4 de `PERFORMANCE-HISTORY.md`) reste le défaut. Flags `--no-analysis`, `--timeout`, `--scripts a,b` forwardés ; un seul lancement JVM par binaire.
