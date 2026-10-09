@@ -9,16 +9,16 @@
     "start": "bun run server.ts"
   },
   "dependencies": {
-    "@aphrody/m3-tokens": "workspace:*",
-    "@aphrody/m3-theme": "workspace:*",
-    "@aphrody/m3-tailwind": "workspace:*",
-    "@aphrody/m3-react": "workspace:*",
     "@aphrody/m3-icons": "workspace:*",
     "@aphrody/m3-motion": "workspace:*",
     "@aphrody/m3-primitives": "workspace:*",
+    "@aphrody/m3-react": "workspace:*",
+    "@aphrody/m3-tailwind": "workspace:*",
+    "@aphrody/m3-theme": "workspace:*",
+    "@aphrody/m3-tokens": "workspace:*",
+    "@bjorn3/browser_wasi_shim": "^0.4.2",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "@bjorn3/browser_wasi_shim": "^0.4.2"
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
     "@aphrody/bun-plugin-tailwind": "0.1.0-aphrody.1",
