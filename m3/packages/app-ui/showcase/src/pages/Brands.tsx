@@ -13,9 +13,7 @@ import nieKit, { resolved as nieResolved } from "m3:optional/@aphrody/nie-ui";
 import { Card, Code, Page, Section } from "../components/ui.tsx";
 import type { PageProps } from "./index.ts";
 
-const kits = [
-  { name: "@aphrody/nie-ui", resolved: nieResolved, namespace: nieKit },
-];
+const kits = [{ name: "@aphrody/nie-ui", resolved: nieResolved, namespace: nieKit }];
 export default function Brands({ adaptive }: PageProps) {
   const theme = useM3Theme();
   const [animation, setAnimation] = useState<PetAnimation>("idle");

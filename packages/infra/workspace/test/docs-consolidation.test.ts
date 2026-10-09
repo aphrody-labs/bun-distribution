@@ -210,7 +210,10 @@ test("hub blocks are regenerated between markers and left alone otherwise", () =
     "docs/x/m3/B.md",
   ]);
   expect(matchHubPatterns("docs/x/m3", ["/docs/x/gpu/*.md"], paths)).toEqual(["docs/x/gpu/C.md"]);
-  expect(matchHubPatterns("a", ["**/b.md"], ["a/c/d/b.md", "a/b.md", "a/c/x.md"])).toEqual(["a/b.md", "a/c/d/b.md"]);
+  expect(matchHubPatterns("a", ["**/b.md"], ["a/c/d/b.md", "a/b.md", "a/c/x.md"])).toEqual([
+    "a/b.md",
+    "a/c/d/b.md",
+  ]);
   const hub =
     'Intro\n<!-- docs-hub:begin include="*.md;!README.md" -->\nstale\n<!-- docs-hub:end -->\nOutro';
   const rows = (spec: { patterns: string[] }) =>

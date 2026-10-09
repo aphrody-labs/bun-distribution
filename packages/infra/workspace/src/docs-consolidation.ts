@@ -43,7 +43,14 @@ export type Topic =
   | "ui-architecture"
   | "other";
 
-export type Status = "canonical" | "historical" | "imported" | "generated" | "notice" | "pointer" | "legacy";
+export type Status =
+  | "canonical"
+  | "historical"
+  | "imported"
+  | "generated"
+  | "notice"
+  | "pointer"
+  | "legacy";
 
 export type OwnerKind = "docs" | "package" | "crate" | "app" | "config" | "root";
 
@@ -123,7 +130,7 @@ function safeGlobalPath(root: string, path: string): boolean {
     !path ||
     isAbsolute(path) ||
     path.includes("\\") ||
-    path.split("/").some(part => !part || part === "." || part === "..")
+    path.split("/").some((part) => !part || part === "." || part === "..")
   )
     return false;
   const base = realpathSync(root);
@@ -199,7 +206,7 @@ export function titleOf(text: string, fallback: string): string {
   const body = text.replace(/<!--[\s\S]*?-->/g, "");
   const heading = /^#{1,6}\s+(.+?)\s*#*\s*$/m.exec(body);
   if (heading?.[1]) return heading[1].replace(/[`*_]/g, "");
-  const first = body.split(/\r?\n/).find(line => line.trim() && !line.startsWith("---"));
+  const first = body.split(/\r?\n/).find((line) => line.trim() && !line.startsWith("---"));
   return first ? first.trim().slice(0, 120) : fallback;
 }
 
@@ -213,12 +220,12 @@ export function describeDocument(text: string, max = 150): string {
   const sentenceOf = (block: string): string => {
     const lines = block
       .split(/\r?\n/)
-      .map(line => line.trim())
+      .map((line) => line.trim())
       .filter(Boolean);
     const first = lines[0];
     if (!first || /^(#|\||\{:|!\[|<|-{3,}$|={3,}$)/.test(first)) return "";
     const paragraph = lines
-      .map(line => line.replace(/^>\s*/, ""))
+      .map((line) => line.replace(/^>\s*/, ""))
       .join(" ")
       .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
       .replace(/[`*]/g, "")
@@ -260,11 +267,15 @@ export function pathNormalizedSha(text: string): string {
 
 function shingleSet(tokens: string[], size: number): Set<string> {
   const result = new Set<string>();
-  for (let index = 0; index + size <= tokens.length; index++) result.add(tokens.slice(index, index + size).join(" "));
+  for (let index = 0; index + size <= tokens.length; index++)
+    result.add(tokens.slice(index, index + size).join(" "));
   return result;
 }
 
-export function shingleSimilarity(left: Set<string>, right: Set<string>): { jaccard: number; containment: number } {
+export function shingleSimilarity(
+  left: Set<string>,
+  right: Set<string>,
+): { jaccard: number; containment: number } {
   if (!left.size || !right.size) return { jaccard: 0, containment: 0 };
   const [small, large] = left.size <= right.size ? [left, right] : [right, left];
   let common = 0;
@@ -287,10 +298,12 @@ export function domainOf(path: string): { domain: string; category: string; owne
     const domain = parts.length > 3 ? (parts[2] ?? "") : "";
     return { domain, category, ownerKind: "docs" };
   }
-  if (first === "packages") return { domain: parts[1] ?? "", category: "package", ownerKind: "package" };
+  if (first === "packages")
+    return { domain: parts[1] ?? "", category: "package", ownerKind: "package" };
   if (first === "crates") return { domain: parts[1] ?? "", category: "crate", ownerKind: "crate" };
   if (first === "apps") return { domain: parts[1] ?? "", category: "app", ownerKind: "app" };
-  if (first === "config") return { domain: parts[1] ?? "", category: "config", ownerKind: "config" };
+  if (first === "config")
+    return { domain: parts[1] ?? "", category: "config", ownerKind: "config" };
   return { domain: "", category: "root", ownerKind: "root" };
 }
 
@@ -332,13 +345,17 @@ export function tagsOf(path: string, text: string): string[] {
   if (/google design|google sans|material\.io|m3\.material|\bstitch\b|design\.md/i.test(haystack))
     tags.push("google-design");
   if (/material design|material-web|material 3|\bmd3\b|\bm3\b/i.test(haystack)) tags.push("m3");
-  if (/md-3d-scene|md-native-3d|scene3d|render3d|tauri-3d|aphrody-m3|3d scene/i.test(haystack)) tags.push("m3d");
+  if (/md-3d-scene|md-native-3d|scene3d|render3d|tauri-3d|aphrody-m3|3d scene/i.test(haystack))
+    tags.push("m3d");
   return tags;
 }
 
 export function isNoticeFile(path: string): boolean {
   const name = basename(path);
-  return /^(LICENSE|NOTICE|COPYING|UPSTREAM)/i.test(name) || /(^|[-_.])(OFL|LICENSE-NOTICE)\./i.test(name);
+  return (
+    /^(LICENSE|NOTICE|COPYING|UPSTREAM)/i.test(name) ||
+    /(^|[-_.])(OFL|LICENSE-NOTICE)\./i.test(name)
+  );
 }
 
 export function isGeneratedDocument(path: string, text: string): boolean {
@@ -470,7 +487,7 @@ export function resolveLocalLink(fromFile: string, dest: string): string | null 
 function encodeDestination(path: string): string {
   return path
     .split("/")
-    .map(segment =>
+    .map((segment) =>
       /^[\w@.~+=,-]*$/.test(segment)
         ? segment
         : encodeURIComponent(segment).replace(/\(/g, "%28").replace(/\)/g, "%29"),
@@ -506,7 +523,9 @@ export function rewriteMarkdown(
   mentionPattern: RegExp | null,
   mentionTarget: (path: string) => string,
 ): RewriteResult {
-  const sites = [...scanLinkSites(content), ...scanDefinitionSites(content)].toSorted((a, b) => b.start - a.start);
+  const sites = [...scanLinkSites(content), ...scanDefinitionSites(content)].toSorted(
+    (a, b) => b.start - a.start,
+  );
   let result = content;
   let links = 0;
   const unresolved: string[] = [];
@@ -526,7 +545,7 @@ export function rewriteMarkdown(
   }
   let mentions = 0;
   if (mentionPattern)
-    result = result.replace(mentionPattern, whole => {
+    result = result.replace(mentionPattern, (whole) => {
       const next = mentionTarget(whole);
       if (next !== whole) mentions++;
       return next;
@@ -537,7 +556,7 @@ export function rewriteMarkdown(
 export function buildMentionPattern(paths: Iterable<string>): RegExp | null {
   const escaped = [...paths]
     .toSorted((a, b) => b.length - a.length)
-    .map(path => path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    .map((path) => path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   if (!escaped.length) return null;
   return new RegExp(`(?<![A-Za-z0-9_./~-])(?:${escaped.join("|")})(?![A-Za-z0-9_-])`, "g");
 }
@@ -581,8 +600,12 @@ function git(root: string, args: string[]): string {
 
 export function listRepositoryFiles(root: string): { files: string[]; untracked: Set<string> } {
   const tracked = git(root, ["ls-files", "-z"]).split("\0").filter(Boolean);
-  const others = git(root, ["ls-files", "-z", "--others", "--exclude-standard"]).split("\0").filter(Boolean);
-  const present = [...new Set([...tracked, ...others])].filter(path => existsSync(join(root, path)));
+  const others = git(root, ["ls-files", "-z", "--others", "--exclude-standard"])
+    .split("\0")
+    .filter(Boolean);
+  const present = [...new Set([...tracked, ...others])].filter((path) =>
+    existsSync(join(root, path)),
+  );
   return { files: present.toSorted(), untracked: new Set(others) };
 }
 
@@ -601,7 +624,9 @@ export function dirtyFiles(root: string): Set<string> {
 export function lastGitDates(root: string): Map<string, string> {
   const dates = new Map<string, string>();
   let current = "";
-  for (const line of git(root, ["log", "--name-only", "--format=@@%cs", "--no-renames"]).split("\n")) {
+  for (const line of git(root, ["log", "--name-only", "--format=@@%cs", "--no-renames"]).split(
+    "\n",
+  )) {
     if (line.startsWith("@@")) current = line.slice(2);
     else if (line && !dates.has(line)) dates.set(line, current);
   }
@@ -649,10 +674,14 @@ export interface ScanResult {
   unresolvedOutbound: number;
 }
 
-export function inScope(path: string, text: string, scope: ScopeConfig): "path" | "owner" | "mention" | null {
-  if (scope.excludePaths.some(rule => rule.test(path))) return null;
-  if (scope.includePaths.some(rule => rule.test(path))) return "path";
-  if (scope.ownerRoots.some(rule => rule.test(path))) return "owner";
+export function inScope(
+  path: string,
+  text: string,
+  scope: ScopeConfig,
+): "path" | "owner" | "mention" | null {
+  if (scope.excludePaths.some((rule) => rule.test(path))) return null;
+  if (scope.includePaths.some((rule) => rule.test(path))) return "path";
+  if (scope.ownerRoots.some((rule) => rule.test(path))) return "owner";
   if (!path.startsWith("docs/")) return null;
   const hits = text.match(scope.mentionTerms)?.length ?? 0;
   return hits >= scope.mentionThreshold ? "mention" : null;
@@ -682,16 +711,25 @@ export async function scanScope(options: ScanOptions): Promise<ScanResult> {
   }
 
   const texts = new Map<string, string>();
-  const candidates: Array<{ path: string; reason: "path" | "owner" | "mention"; text: string }> = [];
+  const candidates: Array<{ path: string; reason: "path" | "owner" | "mention"; text: string }> =
+    [];
   const corpus: Array<{ path: string; text: string }> = [];
   for (const path of files) {
     if (scope.name === "all" && !safeGlobalPath(root, path)) continue;
-    if (scope.name === "all" && (scope.excludePaths.some(rule => rule.test(path)) || importedUpstream(path))) continue;
+    if (
+      scope.name === "all" &&
+      (scope.excludePaths.some((rule) => rule.test(path)) || importedUpstream(path))
+    )
+      continue;
     const extension = extensionOf(path);
     const isText = TEXT_EXTENSIONS.has(extension);
     const isData = DATA_EXTENSIONS.has(extension) && /^docs\/[^/]+\/ui\//.test(path);
     if (!isText && !isData) continue;
-    if (CORPUS_EXCLUDES.some(rule => rule.test(path)) && !scope.includePaths.some(r => r.test(path))) continue;
+    if (
+      CORPUS_EXCLUDES.some((rule) => rule.test(path)) &&
+      !scope.includePaths.some((r) => r.test(path))
+    )
+      continue;
     const absolute = join(root, path);
     if (!existsSync(absolute)) continue;
     const text = await readFile(absolute, "utf8");
@@ -702,7 +740,7 @@ export async function scanScope(options: ScanOptions): Promise<ScanResult> {
   }
 
   // Inbound links (markdown destinations and literal path mentions) over the whole corpus.
-  const scopePaths = new Set(candidates.map(candidate => candidate.path));
+  const scopePaths = new Set(candidates.map((candidate) => candidate.path));
   const inbound = new Map<string, Set<string>>();
   const addInbound = (target: string, from: string) => {
     if (!scopePaths.has(target) || target === from) return;
@@ -710,7 +748,8 @@ export async function scanScope(options: ScanOptions): Promise<ScanResult> {
     set.add(from);
     inbound.set(target, set);
   };
-  const mentionRegex = /\b(?:docs|packages|crates|apps|config)\/[\w@.+~/-]+\.(?:md|mdx|txt|json)\b/g;
+  const mentionRegex =
+    /\b(?:docs|packages|crates|apps|config)\/[\w@.+~/-]+\.(?:md|mdx|txt|json)\b/g;
   const outboundOf = new Map<string, string[]>();
   const unresolvedOf = new Map<string, string[]>();
   for (const { path, text } of corpus) {
@@ -737,7 +776,8 @@ export async function scanScope(options: ScanOptions): Promise<ScanResult> {
     const imported = importedBy.get(path);
     const notice = isNoticeFile(path);
     const generated = isGeneratedDocument(path, text);
-    const importedUnchanged = !!imported && (imported.importedSha256 === sha256 || imported.sha256 === sha256);
+    const importedUnchanged =
+      !!imported && (imported.importedSha256 === sha256 || imported.sha256 === sha256);
     const topic = classifyTopic(path, text);
     entries.push({
       path,
@@ -781,15 +821,17 @@ export async function scanScope(options: ScanOptions): Promise<ScanResult> {
     .map(([sha256, group]) => ({
       sha256,
       bytes: group[0]?.bytes ?? 0,
-      paths: group.map(entry => entry.path).toSorted(),
+      paths: group.map((entry) => entry.path).toSorted(),
     }))
     .toSorted((a, b) => (a.paths[0] ?? "").localeCompare(b.paths[0] ?? ""));
 
   // Near duplicates: 5-word shingles, Jaccard / containment, via an inverted index.
   const comparable = entries.filter(
-    entry => /\.(md|mdx|txt)$/.test(entry.path) && !entry.generated && entry.bytes >= 200,
+    (entry) => /\.(md|mdx|txt)$/.test(entry.path) && !entry.generated && entry.bytes >= 200,
   );
-  const tokenSets = comparable.map(entry => shingleSet(normalizedTokens(texts.get(entry.path) ?? ""), 5));
+  const tokenSets = comparable.map((entry) =>
+    shingleSet(normalizedTokens(texts.get(entry.path) ?? ""), 5),
+  );
   const index = new Map<string, number[]>();
   tokenSets.forEach((set, position) => {
     for (const shingle of set) {
@@ -884,7 +926,7 @@ function logicalSegments(path: string): string[] {
   return path
     .split("/")
     .toReversed()
-    .map(segment => segment.replace(/^aphrody-/, ""));
+    .map((segment) => segment.replace(/^aphrody-/, ""));
 }
 
 /** Number of trailing path segments two paths share once the legacy `aphrody-` prefix is ignored. */
@@ -917,11 +959,19 @@ export function planOwnerDuplicates(
 ): Plan & { review: ReviewItem[] } {
   const actions: PlanAction[] = [];
   const review: ReviewItem[] = [];
-  const entryByPath = new Map(scan.entries.map(entry => [entry.path, entry]));
+  const entryByPath = new Map(scan.entries.map((entry) => [entry.path, entry]));
   const isOwner = (entry: DocEntry) =>
-    entry.ownerKind !== "docs" && !entry.untracked && !entry.modified && ownerRoots.some(rule => rule.test(entry.path));
+    entry.ownerKind !== "docs" &&
+    !entry.untracked &&
+    !entry.modified &&
+    ownerRoots.some((rule) => rule.test(entry.path));
   const planned = new Set<string>();
-  const plan = (copy: DocEntry, owner: DocEntry, equivalence: "identical" | "equal-modulo-paths", reason: string) => {
+  const plan = (
+    copy: DocEntry,
+    owner: DocEntry,
+    equivalence: "identical" | "equal-modulo-paths",
+    reason: string,
+  ) => {
     if (planned.has(copy.path)) return;
     planned.add(copy.path);
     const held = retain(copy.path);
@@ -948,14 +998,22 @@ export function planOwnerDuplicates(
     );
   };
   for (const cluster of scan.exactClusters) {
-    const members = cluster.paths.map(path => entryByPath.get(path)).filter((e): e is DocEntry => !!e);
+    const members = cluster.paths
+      .map((path) => entryByPath.get(path))
+      .filter((e): e is DocEntry => !!e);
     const owners = members.filter(isOwner);
-    for (const copy of members.filter(entry => entry.ownerKind === "docs")) {
+    for (const copy of members.filter((entry) => entry.ownerKind === "docs")) {
       const best = owners
-        .map(owner => ({ owner, rank: ownerRank(owner.path, copy.path) }))
-        .filter(candidate => candidate.rank >= 0)
+        .map((owner) => ({ owner, rank: ownerRank(owner.path, copy.path) }))
+        .filter((candidate) => candidate.rank >= 0)
         .toSorted((a, b) => b.rank - a.rank)[0];
-      if (best) plan(copy, best.owner, "identical", "exact duplicate of the owner copy kept next to the code");
+      if (best)
+        plan(
+          copy,
+          best.owner,
+          "identical",
+          "exact duplicate of the owner copy kept next to the code",
+        );
     }
   }
   for (const pair of scan.nearPairs) {
@@ -963,10 +1021,16 @@ export function planOwnerDuplicates(
     const right = entryByPath.get(pair.right);
     if (!left || !right) continue;
     const [copy, owner] = left.ownerKind === "docs" ? [left, right] : [right, left];
-    if (copy.ownerKind !== "docs" || !isOwner(owner) || ownerRank(owner.path, copy.path) < 2) continue;
+    if (copy.ownerKind !== "docs" || !isOwner(owner) || ownerRank(owner.path, copy.path) < 2)
+      continue;
     if (planned.has(copy.path)) continue;
     if (pair.relation === "equal-modulo-paths")
-      plan(copy, owner, "equal-modulo-paths", "same text as the owner copy; only link and layout paths differ");
+      plan(
+        copy,
+        owner,
+        "equal-modulo-paths",
+        "same text as the owner copy; only link and layout paths differ",
+      );
     else if (!isNoticeFile(copy.path))
       review.push({
         path: copy.path,
@@ -1027,7 +1091,10 @@ export type PathMap = Map<string, string>;
  * (`short-paths` and `layout-reorganization`), including the pre-consolidation
  * `crates/aphrody-*` spelling used by documents imported from the UI source repository.
  */
-export function buildLegacyPathMap(shortMoves: Record<string, string>, layoutMoves: Record<string, string>): PathMap {
+export function buildLegacyPathMap(
+  shortMoves: Record<string, string>,
+  layoutMoves: Record<string, string>,
+): PathMap {
   const resolveChain = (path: string): string => {
     let current = path;
     const seen = new Set<string>();
@@ -1042,7 +1109,8 @@ export function buildLegacyPathMap(shortMoves: Record<string, string>, layoutMov
   for (const key of new Set([...Object.keys(shortMoves), ...Object.keys(layoutMoves)])) {
     const final = resolveChain(key);
     if (final === key) continue;
-    if (!/^(crates\/ui\/|packages\/)/.test(key) || !/^(crates|packages)\/ui\//.test(final)) continue;
+    if (!/^(crates\/ui\/|packages\/)/.test(key) || !/^(crates|packages)\/ui\//.test(final))
+      continue;
     map.set(key, final);
     const legacy = /^crates\/ui\/(aphrody-.+)$/.exec(key);
     if (legacy?.[1]) map.set(`crates/${legacy[1]}`, final);
@@ -1054,10 +1122,8 @@ export async function loadLegacyPathMap(root: string): Promise<PathMap> {
   const read = async (name: string): Promise<Record<string, string>> => {
     const file = join(root, "docs/migration", name);
     if (!existsSync(file)) return {};
-    return ((JSON.parse(await readFile(file, "utf8")) as { moves?: Record<string, string> }).moves ?? {}) as Record<
-      string,
-      string
-    >;
+    return ((JSON.parse(await readFile(file, "utf8")) as { moves?: Record<string, string> })
+      .moves ?? {}) as Record<string, string>;
   };
   return buildLegacyPathMap(
     await read("short-paths-2026-10-01.json"),
@@ -1066,14 +1132,17 @@ export async function loadLegacyPathMap(root: string): Promise<PathMap> {
 }
 
 /** Replace legacy repository paths in prose and code spans; link destinations are left to link repair. */
-export function applyPathMap(content: string, map: PathMap): { content: string; replacements: number } {
+export function applyPathMap(
+  content: string,
+  map: PathMap,
+): { content: string; replacements: number } {
   if (!map.size) return { content, replacements: 0 };
   const keys = [...map.keys()]
     .toSorted((a, b) => b.length - a.length)
-    .map(key => key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    .map((key) => key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   const pattern = new RegExp(`(?<![A-Za-z0-9_./~-])(?:${keys.join("|")})(?![A-Za-z0-9_-])`, "g");
   const protectedRanges = [...scanLinkSites(content), ...scanDefinitionSites(content)].map(
-    site => [site.start, site.end] as const,
+    (site) => [site.start, site.end] as const,
   );
   let replacements = 0;
   const result = content.replace(pattern, (whole: string, offset: number) => {
@@ -1092,8 +1161,8 @@ export function recordInSourceMap(
   reportName: string,
 ): number {
   let updated = 0;
-  const removals = new Map(removed.map(item => [item.path, item.canonical]));
-  const moves = new Map(moved.map(item => [item.path, item]));
+  const removals = new Map(removed.map((item) => [item.path, item.canonical]));
+  const moves = new Map(moved.map((item) => [item.path, item]));
   for (const entry of map.entries) {
     if (entry.kind !== "documentation") continue;
     const destination = documentDestination(entry);
@@ -1119,7 +1188,7 @@ export function recordInSourceMap(
 }
 
 function isAllowedDirty(path: string, prefixes: string[]): boolean {
-  return prefixes.some(prefix => path.startsWith(prefix));
+  return prefixes.some((prefix) => path.startsWith(prefix));
 }
 
 /** SHA-256 of the committed (HEAD) version of a file, or null when it is not committed. */
@@ -1137,11 +1206,11 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
   const { plan } = options;
   if (plan.scope === "all") {
     const paths = plan.actions
-      .flatMap(action => [
+      .flatMap((action) => [
         action.path,
         action.canonical,
         action.to,
-        ...(action.sources ?? []).map(source => source.path),
+        ...(action.sources ?? []).map((source) => source.path),
       ])
       .filter((path): path is string => path !== undefined);
     if (options.sourceMapPath) paths.push(options.sourceMapPath);
@@ -1165,10 +1234,13 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
     }
     if (action.action === "move") {
       const { path, to } = action;
-      if (!path || !to || !action.sha256) errors.push(`${action.id}: path, to and sha256 are required`);
+      if (!path || !to || !action.sha256)
+        errors.push(`${action.id}: path, to and sha256 are required`);
       else if (!existsSync(join(root, path))) errors.push(`${action.id}: ${path} does not exist`);
-      else if ((await fileHash(path)) !== action.sha256) errors.push(`${action.id}: ${path} changed`);
-      else if (existsSync(join(root, to))) errors.push(`${action.id}: destination ${to} exists (never overwritten)`);
+      else if ((await fileHash(path)) !== action.sha256)
+        errors.push(`${action.id}: ${path} changed`);
+      else if (existsSync(join(root, to)))
+        errors.push(`${action.id}: destination ${to} exists (never overwritten)`);
       else if (claimedTargets.has(to)) errors.push(`${action.id}: destination ${to} claimed twice`);
       else {
         claimedTargets.add(to);
@@ -1176,10 +1248,13 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
       }
     } else if (action.action === "remove-duplicate") {
       const { path, canonical } = action;
-      if (!path || !canonical || !action.sha256) errors.push(`${action.id}: path, canonical and sha256 are required`);
+      if (!path || !canonical || !action.sha256)
+        errors.push(`${action.id}: path, canonical and sha256 are required`);
       else if (!existsSync(join(root, path))) errors.push(`${action.id}: ${path} does not exist`);
-      else if (!existsSync(join(root, canonical))) errors.push(`${action.id}: canonical ${canonical} does not exist`);
-      else if ((await fileHash(path)) !== action.sha256) errors.push(`${action.id}: ${path} changed`);
+      else if (!existsSync(join(root, canonical)))
+        errors.push(`${action.id}: canonical ${canonical} does not exist`);
+      else if ((await fileHash(path)) !== action.sha256)
+        errors.push(`${action.id}: ${path} changed`);
       else {
         const text = await readFile(join(root, path), "utf8");
         const canonicalText = await readFile(join(root, canonical), "utf8");
@@ -1198,20 +1273,26 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
             equivalent = (await fileHash(canonical)) === action.sha256;
         }
         if (!equivalent)
-          errors.push(`${action.id}: ${canonical} is not ${action.equivalence ?? "identical"} to ${path}`);
+          errors.push(
+            `${action.id}: ${canonical} is not ${action.equivalence ?? "identical"} to ${path}`,
+          );
         else removals.set(path, canonical);
       }
     } else if (action.action === "merge") {
       const { canonical, sources } = action;
-      if (!canonical || !sources?.length) errors.push(`${action.id}: canonical and sources are required`);
-      else if (!existsSync(join(root, canonical))) errors.push(`${action.id}: canonical ${canonical} does not exist`);
+      if (!canonical || !sources?.length)
+        errors.push(`${action.id}: canonical and sources are required`);
+      else if (!existsSync(join(root, canonical)))
+        errors.push(`${action.id}: canonical ${canonical} does not exist`);
       else {
         const canonicalText = await readFile(join(root, canonical), "utf8");
         if (!/^#{2,3}\s+(Historique|Provenance|History)/im.test(canonicalText))
           errors.push(`${action.id}: ${canonical} has no Historique/Provenance section`);
         for (const source of sources) {
-          if (!existsSync(join(root, source.path))) errors.push(`${action.id}: ${source.path} does not exist`);
-          else if ((await fileHash(source.path)) !== source.sha256) errors.push(`${action.id}: ${source.path} changed`);
+          if (!existsSync(join(root, source.path)))
+            errors.push(`${action.id}: ${source.path} does not exist`);
+          else if ((await fileHash(source.path)) !== source.sha256)
+            errors.push(`${action.id}: ${source.path} changed`);
           else if (!canonicalText.includes(source.path))
             errors.push(`${action.id}: ${canonical} does not name merged source ${source.path}`);
           else if (source.disposition === "pointer") pointers.set(source.path, canonical);
@@ -1249,15 +1330,19 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
   for (const path of files) {
     if (!/\.(md|mdx)$/.test(path)) continue;
     if (plan.scope === "all" && !safeGlobalPath(root, path)) continue;
-    if (plan.scope === "all" && (ALL_SCOPE.excludePaths.some(rule => rule.test(path)) || importedUpstream(path)))
+    if (
+      plan.scope === "all" &&
+      (ALL_SCOPE.excludePaths.some((rule) => rule.test(path)) || importedUpstream(path))
+    )
       continue;
-    if (CORPUS_EXCLUDES.some(rule => rule.test(path))) continue;
+    if (CORPUS_EXCLUDES.some((rule) => rule.test(path))) continue;
     if (removals.has(path)) continue;
     if (!existsSync(join(root, path))) continue;
     const content = await readFile(join(root, path), "utf8");
     const newPath = moves.get(path) ?? path;
     const result = rewriteMarkdown(content, path, newPath, finalOf, mentionPattern, mentionTarget);
-    for (const destination of result.unresolved) unresolvedRewrites.push({ file: path, destination });
+    for (const destination of result.unresolved)
+      unresolvedRewrites.push({ file: path, destination });
     if (result.content === content && newPath === path) continue;
     if (protectedFiles.has(path)) {
       skippedFiles.push({ file: path, reason: "protected file (another agent's page)" });
@@ -1297,20 +1382,23 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
   for (const action of plan.actions) {
     if (action.action !== "fix-paths") continue;
     const matched = matchHubPatterns("", action.patterns ?? [], files).filter(
-      path =>
+      (path) =>
         (plan.scope !== "all" || safeGlobalPath(root, path)) &&
         !removals.has(path) &&
         !protectedFiles.has(path) &&
-        !(plan.scope === "all" && (ALL_SCOPE.excludePaths.some(rule => rule.test(path)) || importedUpstream(path))),
+        !(
+          plan.scope === "all" &&
+          (ALL_SCOPE.excludePaths.some((rule) => rule.test(path)) || importedUpstream(path))
+        ),
     );
     const fixes: Array<{ file: string; replacements: number }> = [];
     for (const path of matched) {
-      const queued = pending.find(item => item.to === path);
+      const queued = pending.find((item) => item.to === path);
       const current = queued?.content ?? (await readFile(join(root, path), "utf8"));
       const fixed = applyPathMap(current, options.legacyPathMap ?? new Map());
       if (!fixed.replacements) continue;
       if (dirty.has(path) && !isAllowedDirty(path, allowed)) {
-        if (!skippedFiles.some(item => item.file === path))
+        if (!skippedFiles.some((item) => item.file === path))
           skippedFiles.push({
             file: path,
             reason: "uncommitted changes outside the allowed prefixes",
@@ -1328,8 +1416,8 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
   let sourceMapSummary: ApplyReport["sourceMap"] = null;
   let updatedMap: SourceMapFile | null = null;
   const movedRecords = plan.actions
-    .filter(action => action.action === "move" && action.path && action.to)
-    .map(action => ({ path: action.path!, to: action.to!, sha256: "" }));
+    .filter((action) => action.action === "move" && action.path && action.to)
+    .map((action) => ({ path: action.path!, to: action.to!, sha256: "" }));
   const removedRecords = [...removals.entries()].map(([path, canonical]) => ({
     path,
     canonical: moves.get(canonical) ?? canonical,
@@ -1339,7 +1427,7 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
     updatedMap = JSON.parse(await readFile(sourceMapPath, "utf8")) as SourceMapFile;
     // A moved document's recorded hash is the hash of its rewritten content.
     for (const record of movedRecords) {
-      const rewritten = pending.find(item => item.from === record.path);
+      const rewritten = pending.find((item) => item.from === record.path);
       record.sha256 = rewritten ? sha256Of(rewritten.content) : await fileHash(record.path);
     }
     const updated = recordInSourceMap(updatedMap, removedRecords, movedRecords, options.reportName);
@@ -1358,7 +1446,8 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
       await writeFile(destination, item.content);
     }
     for (const path of removals.keys()) await unlink(join(root, path));
-    for (const [path, canonical] of pointers) await writeFile(join(root, path), pointerStub(path, finalOf(canonical)));
+    for (const [path, canonical] of pointers)
+      await writeFile(join(root, path), pointerStub(path, finalOf(canonical)));
     const emptied = new Set<string>();
     for (const path of [...removals.keys(), ...moves.keys()]) {
       let directory = dirname(path);
@@ -1378,13 +1467,16 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
         // Directory already gone or not empty.
       }
     }
-    if (sourceMapPath && updatedMap) await writeFile(sourceMapPath, `${JSON.stringify(updatedMap)}\n`);
+    if (sourceMapPath && updatedMap)
+      await writeFile(sourceMapPath, `${JSON.stringify(updatedMap)}\n`);
   }
 
-  const applied: AppliedAction[] = plan.actions.map(action => {
+  const applied: AppliedAction[] = plan.actions.map((action) => {
     const subjects =
-      action.action === "merge" ? (action.sources ?? []).map(source => source.path) : [action.path ?? ""];
-    const inboundRewritten = subjects.flatMap(subject =>
+      action.action === "merge"
+        ? (action.sources ?? []).map((source) => source.path)
+        : [action.path ?? ""];
+    const inboundRewritten = subjects.flatMap((subject) =>
       [...(perAction.get(subject) ?? new Map()).entries()].map(([file, counts]) => ({
         file,
         links: counts.links,
@@ -1418,11 +1510,16 @@ export async function applyPlan(options: ApplyOptions): Promise<ApplyReport> {
 
 function recordedEntries(map: SourceMapFile | null, action: PlanAction): number {
   if (!map) return 0;
-  const subjects = action.action === "merge" ? (action.sources ?? []).map(source => source.path) : [action.path];
+  const subjects =
+    action.action === "merge" ? (action.sources ?? []).map((source) => source.path) : [action.path];
   let count = 0;
   for (const entry of map.entries) {
     if (entry.kind !== "documentation") continue;
-    if (entry.duplicateOf && subjects.some(subject => entry.targetReason?.includes(`${subject} removed`))) count++;
+    if (
+      entry.duplicateOf &&
+      subjects.some((subject) => entry.targetReason?.includes(`${subject} removed`))
+    )
+      count++;
     else if (action.action === "move" && entry.importedTarget === action.to) count++;
   }
   return count;
@@ -1444,11 +1541,11 @@ export async function verifyReport(
   const findings: VerifyFinding[] = [];
   if (report.scope === "all") {
     const paths = report.actions
-      .flatMap(action => [
+      .flatMap((action) => [
         action.path,
         action.canonical,
         action.to,
-        ...(action.sources ?? []).map(source => source.path),
+        ...(action.sources ?? []).map((source) => source.path),
       ])
       .filter((path): path is string => path !== undefined);
     if (report.sourceMap) paths.push(report.sourceMap.path);
@@ -1479,13 +1576,17 @@ export async function verifyReport(
     } else if (action.action === "move" && action.path && action.to) {
       if (existsSync(absolute(action.path)))
         findings.push({ action: action.id, problem: `${action.path} still exists` });
-      if (!existsSync(absolute(action.to))) findings.push({ action: action.id, problem: `${action.to} missing` });
+      if (!existsSync(absolute(action.to)))
+        findings.push({ action: action.id, problem: `${action.to} missing` });
       if (destinations.has(action.path))
         findings.push({ action: action.id, problem: `source map still lists ${action.path}` });
     } else if (action.action === "merge") {
       for (const source of action.sources ?? []) {
         if (source.disposition === "pointer") {
-          if (!existsSync(absolute(source.path)) || !isPointerStub(await readFile(absolute(source.path), "utf8")))
+          if (
+            !existsSync(absolute(source.path)) ||
+            !isPointerStub(await readFile(absolute(source.path), "utf8"))
+          )
             findings.push({ action: action.id, problem: `${source.path} is not a pointer stub` });
         } else if (existsSync(absolute(source.path)))
           findings.push({ action: action.id, problem: `${source.path} still exists` });
@@ -1500,21 +1601,27 @@ export async function verifyReport(
     if (action.action === "remove-duplicate" && action.path) gone.add(action.path);
     if (action.action === "move" && action.path) gone.add(action.path);
     if (action.action === "merge")
-      for (const source of action.sources ?? []) if (source.disposition !== "pointer") gone.add(source.path);
+      for (const source of action.sources ?? [])
+        if (source.disposition !== "pointer") gone.add(source.path);
   }
   const { files } = listRepositoryFiles(resolve(root));
-  const importedUpstream = report.scope === "all" ? importedUpstreamMatcher(resolve(root)) : () => undefined;
+  const importedUpstream =
+    report.scope === "all" ? importedUpstreamMatcher(resolve(root)) : () => undefined;
   const mentionPattern = buildMentionPattern(gone);
   for (const path of files) {
-    if (!/\.(md|mdx)$/.test(path) || CORPUS_EXCLUDES.some(rule => rule.test(path))) continue;
+    if (!/\.(md|mdx)$/.test(path) || CORPUS_EXCLUDES.some((rule) => rule.test(path))) continue;
     if (report.scope === "all" && !safeGlobalPath(root, path)) continue;
-    if (report.scope === "all" && (ALL_SCOPE.excludePaths.some(rule => rule.test(path)) || importedUpstream(path)))
+    if (
+      report.scope === "all" &&
+      (ALL_SCOPE.excludePaths.some((rule) => rule.test(path)) || importedUpstream(path))
+    )
       continue;
     if (!existsSync(absolute(path))) continue;
     const content = await readFile(absolute(path), "utf8");
     for (const site of [...scanLinkSites(content), ...scanDefinitionSites(content)]) {
       const target = resolveLocalLink(path, site.dest);
-      if (target && gone.has(target)) findings.push({ action: "links", problem: `${path} still links to ${target}` });
+      if (target && gone.has(target))
+        findings.push({ action: "links", problem: `${path} still links to ${target}` });
     }
     for (const target of new Set(content.match(mentionPattern ?? /$^/g) ?? []))
       findings.push({ action: "links", problem: `${path} still mentions ${target}` });
@@ -1542,12 +1649,16 @@ export function parseHubMarker(line: string): HubSpec | null {
   return {
     patterns: attribute[1]
       .split(";")
-      .map(part => part.trim())
+      .map((part) => part.trim())
       .filter(Boolean),
   };
 }
 
-export function matchHubPatterns(hubDirectory: string, patterns: string[], paths: string[]): string[] {
+export function matchHubPatterns(
+  hubDirectory: string,
+  patterns: string[],
+  paths: string[],
+): string[] {
   const includes: Bun.Glob[] = [];
   const excludes: Bun.Glob[] = [];
   for (const pattern of patterns) {
@@ -1557,7 +1668,10 @@ export function matchHubPatterns(hubDirectory: string, patterns: string[], paths
     (negated ? excludes : includes).push(new Bun.Glob(absolute));
   }
   return paths
-    .filter(path => includes.some(rule => rule.match(path)) && !excludes.some(rule => rule.match(path)))
+    .filter(
+      (path) =>
+        includes.some((rule) => rule.match(path)) && !excludes.some((rule) => rule.match(path)),
+    )
     .toSorted();
 }
 
@@ -1581,7 +1695,11 @@ export function renderHubTable(hubPath: string, rows: HubRow[]): string {
 }
 
 /** Replace the generated blocks of a hub; returns null when nothing changed. */
-export function refreshHub(hubPath: string, content: string, rowsFor: (spec: HubSpec) => HubRow[]): string | null {
+export function refreshHub(
+  hubPath: string,
+  content: string,
+  rowsFor: (spec: HubSpec) => HubRow[],
+): string | null {
   const lines = content.split("\n");
   const output: string[] = [];
   let changed = false;
@@ -1628,7 +1746,7 @@ export interface ConsolidationReportInput {
 
 /** Merge phase reports, cluster evidence and measured numbers into one auditable record. */
 export function buildConsolidationReport(input: ConsolidationReportInput): Record<string, unknown> {
-  const actions = input.applies.flatMap(report => report.actions);
+  const actions = input.applies.flatMap((report) => report.actions);
   const count = (predicate: (action: AppliedAction) => boolean) => actions.filter(predicate).length;
   const rewritten = new Map<string, { links: number; mentions: number }>();
   for (const report of input.applies)
@@ -1649,14 +1767,16 @@ export function buildConsolidationReport(input: ConsolidationReportInput): Recor
       before: input.before.summary,
       after: input.after.summary,
       actions: {
-        removeDuplicate: count(a => a.action === "remove-duplicate"),
-        removeIdentical: count(a => a.action === "remove-duplicate" && a.equivalence === "identical"),
-        removeEqualModuloPaths: count(a => a.equivalence === "equal-modulo-paths"),
-        removeIdenticalAtHead: count(a => a.equivalence === "identical-at-head"),
-        removeSuperseded: count(a => a.equivalence === "superseded"),
-        moves: count(a => a.action === "move"),
-        merges: count(a => a.action === "merge"),
-        retained: count(a => a.action === "retain"),
+        removeDuplicate: count((a) => a.action === "remove-duplicate"),
+        removeIdentical: count(
+          (a) => a.action === "remove-duplicate" && a.equivalence === "identical",
+        ),
+        removeEqualModuloPaths: count((a) => a.equivalence === "equal-modulo-paths"),
+        removeIdenticalAtHead: count((a) => a.equivalence === "identical-at-head"),
+        removeSuperseded: count((a) => a.equivalence === "superseded"),
+        moves: count((a) => a.action === "move"),
+        merges: count((a) => a.action === "merge"),
+        retained: count((a) => a.action === "retain"),
         pathFixFiles: actions.reduce((sum, a) => sum + (a.pathFixes?.length ?? 0), 0),
         sourceMapEntriesUpdated: input.applies.reduce(
           (sum, report) => sum + (report.sourceMap?.entriesUpdated ?? 0),
@@ -1673,9 +1793,9 @@ export function buildConsolidationReport(input: ConsolidationReportInput): Recor
     rewrittenFiles: [...rewritten.entries()]
       .map(([file, counts]) => ({ file, ...counts }))
       .toSorted((a, b) => a.file.localeCompare(b.file)),
-    skippedFiles: input.applies.flatMap(report => report.skippedFiles),
-    unresolvedRewrites: input.applies.flatMap(report => report.unresolvedRewrites),
-    removedDirectories: input.applies.flatMap(report => report.removedDirectories),
+    skippedFiles: input.applies.flatMap((report) => report.skippedFiles),
+    unresolvedRewrites: input.applies.flatMap((report) => report.unresolvedRewrites),
+    removedDirectories: input.applies.flatMap((report) => report.removedDirectories),
   };
 }
 
@@ -1686,35 +1806,43 @@ async function loadSourceMap(root: string, path: string): Promise<SourceMapFile 
 
 export function summarizeScan(scan: ScanResult): Record<string, unknown> {
   const sum = (predicate: (entry: DocEntry) => boolean) => scan.entries.filter(predicate).length;
-  const removable = scan.exactClusters.reduce((total, cluster) => total + cluster.paths.length - 1, 0);
+  const removable = scan.exactClusters.reduce(
+    (total, cluster) => total + cluster.paths.length - 1,
+    0,
+  );
   return {
     scope: scan.scope,
     documents: scan.entries.length,
     bytes: scan.entries.reduce((total, entry) => total + entry.bytes, 0),
     byScopeReason: {
-      path: sum(entry => entry.scopeReason === "path"),
-      owner: sum(entry => entry.scopeReason === "owner"),
-      mention: sum(entry => entry.scopeReason === "mention"),
+      path: sum((entry) => entry.scopeReason === "path"),
+      owner: sum((entry) => entry.scopeReason === "owner"),
+      mention: sum((entry) => entry.scopeReason === "mention"),
     },
     byTopic: scan.byTopic,
     byStatus: Object.fromEntries(
-      ["canonical", "historical", "imported", "generated", "notice", "pointer", "legacy"].map(status => [
-        status,
-        sum(entry => entry.status === status),
-      ]),
+      ["canonical", "historical", "imported", "generated", "notice", "pointer", "legacy"].map(
+        (status) => [status, sum((entry) => entry.status === status)],
+      ),
     ),
-    imported: sum(entry => entry.imported),
-    generated: sum(entry => entry.generated),
-    licensed: sum(entry => entry.licensed),
-    untracked: sum(entry => entry.untracked),
+    imported: sum((entry) => entry.imported),
+    generated: sum((entry) => entry.generated),
+    licensed: sum((entry) => entry.licensed),
+    untracked: sum((entry) => entry.untracked),
     exactClusters: scan.exactClusters.length,
-    filesInExactClusters: scan.exactClusters.reduce((total, cluster) => total + cluster.paths.length, 0),
+    filesInExactClusters: scan.exactClusters.reduce(
+      (total, cluster) => total + cluster.paths.length,
+      0,
+    ),
     redundantFilesInExactClusters: removable,
     nearThreshold: scan.nearThreshold,
     nearPairs: scan.nearPairs.length,
     nearByRelation: {
-      "equal-modulo-paths": scan.nearPairs.filter(pair => pair.relation === "equal-modulo-paths").length,
-      "translation-or-variant": scan.nearPairs.filter(pair => pair.relation === "translation-or-variant").length,
+      "equal-modulo-paths": scan.nearPairs.filter((pair) => pair.relation === "equal-modulo-paths")
+        .length,
+      "translation-or-variant": scan.nearPairs.filter(
+        (pair) => pair.relation === "translation-or-variant",
+      ).length,
     },
     unresolvedOutboundLinks: scan.unresolvedOutbound,
   };
@@ -1778,15 +1906,21 @@ export async function runDocsConsolidation(args: string[]): Promise<number> {
   for (const file of history) {
     const earlier = JSON.parse(await readFile(resolve(file), "utf8")) as ApplyReport;
     for (const action of earlier.actions)
-      if (action.action === "move" && action.path && action.to) pathHistory.set(action.to, action.path);
+      if (action.action === "move" && action.path && action.to)
+        pathHistory.set(action.to, action.path);
   }
 
   if (command === "report") {
-    if (!beforeFile || !afterFile || !output) throw new Error("report requires --before, --after and --output");
-    const before = JSON.parse(await readFile(resolve(beforeFile), "utf8")) as ConsolidationReportInput["before"];
-    const after = JSON.parse(await readFile(resolve(afterFile), "utf8")) as ConsolidationReportInput["after"];
+    if (!beforeFile || !afterFile || !output)
+      throw new Error("report requires --before, --after and --output");
+    const before = JSON.parse(
+      await readFile(resolve(beforeFile), "utf8"),
+    ) as ConsolidationReportInput["before"];
+    const after = JSON.parse(
+      await readFile(resolve(afterFile), "utf8"),
+    ) as ConsolidationReportInput["after"];
     const reports = await Promise.all(
-      applies.map(async file => JSON.parse(await readFile(resolve(file), "utf8")) as ApplyReport),
+      applies.map(async (file) => JSON.parse(await readFile(resolve(file), "utf8")) as ApplyReport),
     );
     const metrics = metricsFile
       ? (JSON.parse(await readFile(resolve(metricsFile), "utf8")) as Record<string, unknown>)
@@ -1796,7 +1930,11 @@ export async function runDocsConsolidation(args: string[]): Promise<number> {
       `${JSON.stringify(buildConsolidationReport({ name: reportName, before, after, applies: reports, metrics }), null, 2)}\n`,
     );
     console.log(
-      JSON.stringify({ report: output, actions: reports.reduce((n, r) => n + r.actions.length, 0) }, null, 2),
+      JSON.stringify(
+        { report: output, actions: reports.reduce((n, r) => n + r.actions.length, 0) },
+        null,
+        2,
+      ),
     );
     return 0;
   }
@@ -1806,7 +1944,10 @@ export async function runDocsConsolidation(args: string[]): Promise<number> {
     const scan = await scanScope({ root, scope, nearThreshold, sourceMap, pathHistory });
     if (command === "scan") {
       if (output)
-        await writeFile(resolve(output), `${JSON.stringify({ summary: summarizeScan(scan), ...scan }, null, 2)}\n`);
+        await writeFile(
+          resolve(output),
+          `${JSON.stringify({ summary: summarizeScan(scan), ...scan }, null, 2)}\n`,
+        );
       console.log(JSON.stringify(summarizeScan(scan), null, 2));
       return 0;
     }
@@ -1815,16 +1956,17 @@ export async function runDocsConsolidation(args: string[]): Promise<number> {
       scope.name === "all" ? ALL_SCOPE.ownerRoots : OWNER_DUPLICATE_ROOTS,
       scope.name === "all"
         ? retainDocumentationCopy
-        : path => (isNoticeFile(path) ? "license or notice file is retained in place" : null),
+        : (path) => (isNoticeFile(path) ? "license or notice file is retained in place" : null),
     );
     if (output) await writeFile(resolve(output), `${JSON.stringify(plan, null, 2)}\n`);
     console.log(
       JSON.stringify(
         {
           scope: plan.scope,
-          removeDuplicate: plan.actions.filter(a => a.action === "remove-duplicate").length,
-          removeEqualModuloPaths: plan.actions.filter(a => a.equivalence === "equal-modulo-paths").length,
-          retained: plan.actions.filter(a => a.action === "retain").length,
+          removeDuplicate: plan.actions.filter((a) => a.action === "remove-duplicate").length,
+          removeEqualModuloPaths: plan.actions.filter((a) => a.equivalence === "equal-modulo-paths")
+            .length,
+          retained: plan.actions.filter((a) => a.action === "retain").length,
           reviewDiverged: plan.review.length,
         },
         null,
@@ -1877,10 +2019,10 @@ export async function runDocsConsolidation(args: string[]): Promise<number> {
   if (command === "hubs") {
     const sourceMap = sourceMapPath ? await loadSourceMap(root, sourceMapPath) : null;
     const scan = await scanScope({ root, scope, nearThreshold, sourceMap, pathHistory });
-    const byPath = new Map(scan.entries.map(entry => [entry.path, entry]));
+    const byPath = new Map(scan.entries.map((entry) => [entry.path, entry]));
     const { files } = listRepositoryFiles(root);
     const hubs = files.filter(
-      path =>
+      (path) =>
         /^docs\/.*README\.md$/.test(path) &&
         existsSync(join(root, path)) &&
         (scope.name !== "all" || safeGlobalPath(root, path)),
@@ -1889,9 +2031,9 @@ export async function runDocsConsolidation(args: string[]): Promise<number> {
     for (const hub of hubs) {
       const content = await readFile(join(root, hub), "utf8");
       if (!HUB_BEGIN.test(content)) continue;
-      const refreshed = refreshHub(hub, content, spec =>
+      const refreshed = refreshHub(hub, content, (spec) =>
         matchHubPatterns(posix.dirname(hub), spec.patterns, files)
-          .filter(path => scope.name !== "all" || safeGlobalPath(root, path))
+          .filter((path) => scope.name !== "all" || safeGlobalPath(root, path))
           .map((path): HubRow => {
             const entry = byPath.get(path);
             const text = existsSync(join(root, path)) ? readFileSync(join(root, path), "utf8") : "";

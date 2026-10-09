@@ -90,125 +90,149 @@ test("contract names come from the owner's seven-document sync contract", () => 
   ]);
 }, 20_000);
 
-posixTest("refreshes only opaque revisions with all-seven frozen bindings, backups and no Google writes", async () => {
-  const f = await fixture(),
-    binding = await freeze(f);
-  const oldPlan = await readFile(f.paths.plan);
-  for (const doc of f.docs.values()) doc.revisionId = "revision-fresh";
-  const result = await refreshRevisions(f.api, owner, f.paths, binding);
-  expect(result.refreshed).toBe(7);
-  expect(f.writes).toHaveLength(0);
-  expect(sha(await readFile(binding.originalPlanPath))).toBe(binding.originalPlanSha);
-  expect(
-    sha(
-      await readFile(
-        join(f.root, "revision-refresh", sha(oldPlan) + "-" + result.planSha, "before-plan.json"),
+posixTest(
+  "refreshes only opaque revisions with all-seven frozen bindings, backups and no Google writes",
+  async () => {
+    const f = await fixture(),
+      binding = await freeze(f);
+    const oldPlan = await readFile(f.paths.plan);
+    for (const doc of f.docs.values()) doc.revisionId = "revision-fresh";
+    const result = await refreshRevisions(f.api, owner, f.paths, binding);
+    expect(result.refreshed).toBe(7);
+    expect(f.writes).toHaveLength(0);
+    expect(sha(await readFile(binding.originalPlanPath))).toBe(binding.originalPlanSha);
+    expect(
+      sha(
+        await readFile(
+          join(f.root, "revision-refresh", sha(oldPlan) + "-" + result.planSha, "before-plan.json"),
+        ),
       ),
-    ),
-  ).toBe(sha(oldPlan));
-  expect((await preflight(f.api, owner, f.paths)).metadata.documents).toBe(7);
-  expect(await refreshRevisions(f.api, owner, f.paths, binding)).toEqual({
-    planSha: result.planSha,
-    refreshed: 0,
-  });
-}, 20_000);
+    ).toBe(sha(oldPlan));
+    expect((await preflight(f.api, owner, f.paths)).metadata.documents).toBe(7);
+    expect(await refreshRevisions(f.api, owner, f.paths, binding)).toEqual({
+      planSha: result.planSha,
+      refreshed: 0,
+    });
+  },
+  20_000,
+);
 
-posixTest("revision refresh refuses any native body or envelope change without publishing a plan", async () => {
-  const f = await fixture(),
-    binding = await freeze(f);
-  const before = sha(await readFile(f.paths.plan));
-  f.docs.get("owned-document-6")!.title = "foreign-title";
-  await expect(refreshRevisions(f.api, owner, f.paths, binding)).rejects.toThrow(
-    "REAL_NATIVE_CHANGE",
-  );
-  expect(sha(await readFile(f.paths.plan))).toBe(before);
-  expect(f.writes).toHaveLength(0);
-}, 20_000);
+posixTest(
+  "revision refresh refuses any native body or envelope change without publishing a plan",
+  async () => {
+    const f = await fixture(),
+      binding = await freeze(f);
+    const before = sha(await readFile(f.paths.plan));
+    f.docs.get("owned-document-6")!.title = "foreign-title";
+    await expect(refreshRevisions(f.api, owner, f.paths, binding)).rejects.toThrow(
+      "REAL_NATIVE_CHANGE",
+    );
+    expect(sha(await readFile(f.paths.plan))).toBe(before);
+    expect(f.writes).toHaveLength(0);
+  },
+  20_000,
+);
 
-posixTest("revision refresh canonicalizes object-key order while retaining exact new snapshot SHA", async () => {
-  const f = await fixture(),
-    binding = await freeze(f);
-  const d = f.docs.get("owned-document-0")!;
-  f.docs.set("owned-document-0", Object.fromEntries(Object.entries(d).toReversed()));
-  const result = await refreshRevisions(f.api, owner, f.paths, binding);
-  expect(result.refreshed).toBe(1);
-  expect(f.writes).toHaveLength(0);
-  expect((await preflight(f.api, owner, f.paths)).metadata.documents).toBe(7);
-}, 20_000);
+posixTest(
+  "revision refresh canonicalizes object-key order while retaining exact new snapshot SHA",
+  async () => {
+    const f = await fixture(),
+      binding = await freeze(f);
+    const d = f.docs.get("owned-document-0")!;
+    f.docs.set("owned-document-0", Object.fromEntries(Object.entries(d).toReversed()));
+    const result = await refreshRevisions(f.api, owner, f.paths, binding);
+    expect(result.refreshed).toBe(1);
+    expect(f.writes).toHaveLength(0);
+    expect((await preflight(f.api, owner, f.paths)).metadata.documents).toBe(7);
+  },
+  20_000,
+);
 
-posixTest("refresh refuses changed reviewed requests, original snapshots and manifest hash", async () => {
-  const f = await fixture(),
-    binding = await freeze(f);
-  const request = (f.files[0]!.requests as { insertText: { text: string } }[])[0]!;
-  request.insertText.text = "foreign-intent";
-  await f.savePlan();
-  await expect(refreshRevisions(f.api, owner, f.paths, binding)).rejects.toThrow(
-    "REVIEWED_PLAN_CHANGED",
-  );
-  const g = await fixture(),
-    other = await freeze(g);
-  await writeFile(join(g.root, "inputs", "BOOT.md.native.json"), "foreign", { mode: 0o600 });
-  await expect(refreshRevisions(g.api, owner, g.paths, other)).rejects.toThrow(
-    "FROZEN_SNAPSHOT_CHANGED",
-  );
-  await expect(
-    refreshRevisions(g.api, owner, g.paths, { ...other, expectedInputHash: sha("forged") }),
-  ).rejects.toThrow("FROZEN_MANIFEST_CHANGED");
-  expect(g.writes).toHaveLength(0);
-}, 20_000);
+posixTest(
+  "refresh refuses changed reviewed requests, original snapshots and manifest hash",
+  async () => {
+    const f = await fixture(),
+      binding = await freeze(f);
+    const request = (f.files[0]!.requests as { insertText: { text: string } }[])[0]!;
+    request.insertText.text = "foreign-intent";
+    await f.savePlan();
+    await expect(refreshRevisions(f.api, owner, f.paths, binding)).rejects.toThrow(
+      "REVIEWED_PLAN_CHANGED",
+    );
+    const g = await fixture(),
+      other = await freeze(g);
+    await writeFile(join(g.root, "inputs", "BOOT.md.native.json"), "foreign", { mode: 0o600 });
+    await expect(refreshRevisions(g.api, owner, g.paths, other)).rejects.toThrow(
+      "FROZEN_SNAPSHOT_CHANGED",
+    );
+    await expect(
+      refreshRevisions(g.api, owner, g.paths, { ...other, expectedInputHash: sha("forged") }),
+    ).rejects.toThrow("FROZEN_MANIFEST_CHANGED");
+    expect(g.writes).toHaveLength(0);
+  },
+  20_000,
+);
 
-posixTest("all-seven local and folder checks reject revision refresh before any private plan update", async () => {
-  const f = await fixture(),
-    binding = await freeze(f);
-  const before = sha(await readFile(f.paths.plan));
-  await writeFile(join(f.paths.home, "BOOT.md"), "concurrent", { mode: 0o600 });
-  await expect(refreshRevisions(f.api, owner, f.paths, binding)).rejects.toThrow(
-    "FROZEN_OR_LOCAL_CHANGED",
-  );
-  expect(sha(await readFile(f.paths.plan))).toBe(before);
-  const g = await fixture(),
-    other = await freeze(g);
-  g.hooks.metadata = (id) => ({
-    id,
-    name: "AGENTS.md",
-    mimeType: "application/vnd.google-apps.document",
-    parents: ["foreign-folder"],
-  });
-  await expect(refreshRevisions(g.api, owner, g.paths, other)).rejects.toThrow(
-    "REMOTE_SCOPE_CHANGED",
-  );
-  expect(g.writes).toHaveLength(0);
-}, 20_000);
+posixTest(
+  "all-seven local and folder checks reject revision refresh before any private plan update",
+  async () => {
+    const f = await fixture(),
+      binding = await freeze(f);
+    const before = sha(await readFile(f.paths.plan));
+    await writeFile(join(f.paths.home, "BOOT.md"), "concurrent", { mode: 0o600 });
+    await expect(refreshRevisions(f.api, owner, f.paths, binding)).rejects.toThrow(
+      "FROZEN_OR_LOCAL_CHANGED",
+    );
+    expect(sha(await readFile(f.paths.plan))).toBe(before);
+    const g = await fixture(),
+      other = await freeze(g);
+    g.hooks.metadata = (id) => ({
+      id,
+      name: "AGENTS.md",
+      mimeType: "application/vnd.google-apps.document",
+      parents: ["foreign-folder"],
+    });
+    await expect(refreshRevisions(g.api, owner, g.paths, other)).rejects.toThrow(
+      "REMOTE_SCOPE_CHANGED",
+    );
+    expect(g.writes).toHaveLength(0);
+  },
+  20_000,
+);
 
-posixTest("only a pre-journal failure with no writer call exposes explicit safe retry flags", async () => {
-  const f = await fixture();
-  await writeFile(join(f.paths.home, "BOOT.md"), "concurrent", { mode: 0o600 });
-  try {
-    await apply(f.api, owner, f.paths);
-    throw Error("expected failure");
-  } catch (error) {
-    expect((error as { noWrites?: boolean }).noWrites).toBe(true);
-    expect((error as { journalCreated?: boolean }).journalCreated).toBe(false);
-  }
-  const g = await fixture();
-  g.hooks.beforeWrite = () => {
-    throw Error("transport-result-unknown");
-  };
-  try {
-    await apply(g.api, owner, g.paths);
-    throw Error("expected failure");
-  } catch (error) {
-    expect((error as { noWrites?: boolean }).noWrites).toBeUndefined();
-    expect((error as { journalCreated?: boolean }).journalCreated).toBeUndefined();
-  }
-  g.hooks.beforeWrite = undefined;
-  try {
-    await apply(g.api, owner, g.paths);
-    throw Error("expected existing journal failure");
-  } catch (error) {
-    expect((error as { noWrites?: boolean }).noWrites).toBeUndefined();
-  }
-}, 20_000);
+posixTest(
+  "only a pre-journal failure with no writer call exposes explicit safe retry flags",
+  async () => {
+    const f = await fixture();
+    await writeFile(join(f.paths.home, "BOOT.md"), "concurrent", { mode: 0o600 });
+    try {
+      await apply(f.api, owner, f.paths);
+      throw Error("expected failure");
+    } catch (error) {
+      expect((error as { noWrites?: boolean }).noWrites).toBe(true);
+      expect((error as { journalCreated?: boolean }).journalCreated).toBe(false);
+    }
+    const g = await fixture();
+    g.hooks.beforeWrite = () => {
+      throw Error("transport-result-unknown");
+    };
+    try {
+      await apply(g.api, owner, g.paths);
+      throw Error("expected failure");
+    } catch (error) {
+      expect((error as { noWrites?: boolean }).noWrites).toBeUndefined();
+      expect((error as { journalCreated?: boolean }).journalCreated).toBeUndefined();
+    }
+    g.hooks.beforeWrite = undefined;
+    try {
+      await apply(g.api, owner, g.paths);
+      throw Error("expected existing journal failure");
+    } catch (error) {
+      expect((error as { noWrites?: boolean }).noWrites).toBeUndefined();
+    }
+  },
+  20_000,
+);
 function document(id: string, lines = ["original", ""]): Obj {
   let index = 1;
   return {
@@ -429,136 +453,168 @@ test("rejects foreign operations, body replacement, newline merges, alternate ta
   expect(() => verifyPlainProposal(model, "one😀  \n\n")).toThrow("PROPOSAL_REQUEST_MISMATCH");
 }, 20_000);
 
-posixTest("preflight validates every owned file, performs zero writes, and leaves unchanged baseline bytes intact", async () => {
-  const f = await fixture();
-  const review = await preflight(f.api, owner, f.paths);
-  expect(review.metadata.documents).toBe(7);
-  expect(review.metadata.changedDocuments).toBe(2);
-  expect(f.writes).toHaveLength(0);
-  f.stateFiles["BOOT.md"] = { ...(f.stateFiles["BOOT.md"] as Obj), remoteHash: sha("stale") };
-  await f.saveState();
-  await expect(preflight(f.api, owner, f.paths)).rejects.toThrow("UNCHANGED_BASELINE_MISMATCH");
-  expect(f.writes).toHaveLength(0);
-}, 20_000);
+posixTest(
+  "preflight validates every owned file, performs zero writes, and leaves unchanged baseline bytes intact",
+  async () => {
+    const f = await fixture();
+    const review = await preflight(f.api, owner, f.paths);
+    expect(review.metadata.documents).toBe(7);
+    expect(review.metadata.changedDocuments).toBe(2);
+    expect(f.writes).toHaveLength(0);
+    f.stateFiles["BOOT.md"] = { ...(f.stateFiles["BOOT.md"] as Obj), remoteHash: sha("stale") };
+    await f.saveState();
+    await expect(preflight(f.api, owner, f.paths)).rejects.toThrow("UNCHANGED_BASELINE_MISMATCH");
+    expect(f.writes).toHaveLength(0);
+  },
+  20_000,
+);
 
-posixTest("strict scope rejects targetRevisionId, missing files, duplicate ids and paths escaping private proposals", async () => {
-  const f = await fixture();
-  const mutations = [
-    (p: Obj) => {
-      (p.files as Obj[])[0]!.writeControl = { targetRevisionId: "revision-1" };
-    },
-    (p: Obj) => {
-      (p.files as Obj[]).pop();
-    },
-    (p: Obj) => {
-      (p.files as Obj[])[1]!.id = (p.files as Obj[])[0]!.id;
-    },
-    (p: Obj) => {
-      (p.files as Obj[])[0]!.proposedLocalFile = join(f.paths.stage, "..", "plan.json");
-    },
-    (p: Obj) => {
-      p.folderId = "foreign";
-    },
-  ];
-  for (const mutation of mutations) {
-    const p = structuredClone(f.plan);
-    mutation(p);
-    expect(() => parsePlan(p, f.paths)).toThrow();
-  }
-}, 20_000);
+posixTest(
+  "strict scope rejects targetRevisionId, missing files, duplicate ids and paths escaping private proposals",
+  async () => {
+    const f = await fixture();
+    const mutations = [
+      (p: Obj) => {
+        (p.files as Obj[])[0]!.writeControl = { targetRevisionId: "revision-1" };
+      },
+      (p: Obj) => {
+        (p.files as Obj[]).pop();
+      },
+      (p: Obj) => {
+        (p.files as Obj[])[1]!.id = (p.files as Obj[])[0]!.id;
+      },
+      (p: Obj) => {
+        (p.files as Obj[])[0]!.proposedLocalFile = join(f.paths.stage, "..", "plan.json");
+      },
+      (p: Obj) => {
+        p.folderId = "foreign";
+      },
+    ];
+    for (const mutation of mutations) {
+      const p = structuredClone(f.plan);
+      mutation(p);
+      expect(() => parsePlan(p, f.paths)).toThrow();
+    }
+  },
+  20_000,
+);
 
-posixTest("rejects symlink proposals and non-private local files without API writes", async () => {
-  const f = await fixture();
-  const proposed = String(f.files[0]!.proposedLocalFile);
-  await rm(proposed);
-  await symlink(join(f.paths.home, "AGENTS.md"), proposed);
-  await expect(preflight(f.api, owner, f.paths)).rejects.toThrow("UNSAFE_PATH");
-  expect(f.writes).toHaveLength(0);
-  await rm(proposed);
-  await writeFile(proposed, "restored", { mode: 0o600 });
-  await chmod(join(f.paths.home, "AGENTS.md"), 0o644);
-  await expect(preflight(f.api, owner, f.paths)).rejects.toThrow("NON_PRIVATE_FILE");
-  expect(f.writes).toHaveLength(0);
-}, 20_000);
+posixTest(
+  "rejects symlink proposals and non-private local files without API writes",
+  async () => {
+    const f = await fixture();
+    const proposed = String(f.files[0]!.proposedLocalFile);
+    await rm(proposed);
+    await symlink(join(f.paths.home, "AGENTS.md"), proposed);
+    await expect(preflight(f.api, owner, f.paths)).rejects.toThrow("UNSAFE_PATH");
+    expect(f.writes).toHaveLength(0);
+    await rm(proposed);
+    await writeFile(proposed, "restored", { mode: 0o600 });
+    await chmod(join(f.paths.home, "AGENTS.md"), 0o644);
+    await expect(preflight(f.api, owner, f.paths)).rejects.toThrow("NON_PRIVATE_FILE");
+    expect(f.writes).toHaveLength(0);
+  },
+  20_000,
+);
 
-posixTest("all-seven guards reject final-file local drift and foreign folder before any write", async () => {
-  const f = await fixture();
-  await writeFile(join(f.paths.home, "BOOT.md"), "concurrent", { mode: 0o600 });
-  await expect(apply(f.api, owner, f.paths)).rejects.toThrow("LOCAL_CHANGED");
-  expect(f.writes).toHaveLength(0);
-  const g = await fixture();
-  g.hooks.metadata = (id) => ({
-    id,
-    name: "AGENTS.md",
-    mimeType: "application/vnd.google-apps.document",
-    parents: ["foreign"],
-  });
-  await expect(apply(g.api, owner, g.paths)).rejects.toThrow("REMOTE_SCOPE_CHANGED");
-  expect(g.writes).toHaveLength(0);
-}, 20_000);
+posixTest(
+  "all-seven guards reject final-file local drift and foreign folder before any write",
+  async () => {
+    const f = await fixture();
+    await writeFile(join(f.paths.home, "BOOT.md"), "concurrent", { mode: 0o600 });
+    await expect(apply(f.api, owner, f.paths)).rejects.toThrow("LOCAL_CHANGED");
+    expect(f.writes).toHaveLength(0);
+    const g = await fixture();
+    g.hooks.metadata = (id) => ({
+      id,
+      name: "AGENTS.md",
+      mimeType: "application/vnd.google-apps.document",
+      parents: ["foreign"],
+    });
+    await expect(apply(g.api, owner, g.paths)).rejects.toThrow("REMOTE_SCOPE_CHANGED");
+    expect(g.writes).toHaveLength(0);
+  },
+  20_000,
+);
 
-posixTest("successful application writes changed Docs only, backs up seven natives and locals privately, and prepares fresh reviewed seed snapshots", async () => {
-  const f = await fixture();
-  const before = await readFile(join(f.paths.home, "BOOT.md"));
-  const result = await apply(f.api, owner, f.paths);
-  expect(result.phase).toBe("complete");
-  expect(f.writes).toHaveLength(2);
-  expect(await readFile(join(f.paths.home, "BOOT.md"))).toEqual(before);
-  expect(await Bun.file(join(f.paths.home, "AGENTS.md")).text()).toBe("reviewed original\n\n");
-  const seed = String(result.seedReviewed);
-  for (const name of NAMES)
-    expect((await Bun.file(join(seed, name + ".json")).json()).documentId).toBe(
-      f.files.find((x) => x.name === name)!.id,
-    );
-  const receipt = await Bun.file(String(result.receipt)).json();
-  expect(receipt.remoteVerified).toHaveLength(7);
-  expect(receipt.localPromoted).toHaveLength(7);
-  const stat = await import("node:fs/promises");
-  expect((await stat.stat(String(result.receipt))).mode & 0o777).toBe(0o600);
-  expect((await stat.stat(seed)).mode & 0o777).toBe(0o700);
-  await expect(apply(f.api, owner, f.paths)).rejects.toThrow();
-  expect(f.writes).toHaveLength(2);
-}, 20_000);
+posixTest(
+  "successful application writes changed Docs only, backs up seven natives and locals privately, and prepares fresh reviewed seed snapshots",
+  async () => {
+    const f = await fixture();
+    const before = await readFile(join(f.paths.home, "BOOT.md"));
+    const result = await apply(f.api, owner, f.paths);
+    expect(result.phase).toBe("complete");
+    expect(f.writes).toHaveLength(2);
+    expect(await readFile(join(f.paths.home, "BOOT.md"))).toEqual(before);
+    expect(await Bun.file(join(f.paths.home, "AGENTS.md")).text()).toBe("reviewed original\n\n");
+    const seed = String(result.seedReviewed);
+    for (const name of NAMES)
+      expect((await Bun.file(join(seed, name + ".json")).json()).documentId).toBe(
+        f.files.find((x) => x.name === name)!.id,
+      );
+    const receipt = await Bun.file(String(result.receipt)).json();
+    expect(receipt.remoteVerified).toHaveLength(7);
+    expect(receipt.localPromoted).toHaveLength(7);
+    const stat = await import("node:fs/promises");
+    expect((await stat.stat(String(result.receipt))).mode & 0o777).toBe(0o600);
+    expect((await stat.stat(seed)).mode & 0o777).toBe(0o700);
+    await expect(apply(f.api, owner, f.paths)).rejects.toThrow();
+    expect(f.writes).toHaveLength(2);
+  },
+  20_000,
+);
 
-posixTest("race on the last revision during the final all-seven check prevents the first write", async () => {
-  const f = await fixture();
-  f.hooks.beforeGet = (id, count) => {
-    if (id === "owned-document-6" && count === 2) f.docs.get(id)!.revisionId = "concurrent";
-  };
-  await expect(apply(f.api, owner, f.paths)).rejects.toThrow("REMOTE_CHANGED");
-  expect(f.writes).toHaveLength(0);
-  expect(await Bun.file(join(f.paths.home, "AGENTS.md")).text()).toBe("original\n\n");
-}, 20_000);
-
-posixTest("strict requiredRevisionId rejects a race at batchUpdate and records safe failure without local promotion", async () => {
-  const f = await fixture();
-  f.hooks.beforeWrite = (id) => {
-    f.docs.get(id)!.revisionId = "concurrent";
-  };
-  await expect(apply(f.api, owner, f.paths)).rejects.toThrow("OWNER_OPERATION_FAILED");
-  expect(f.writes).toHaveLength(0);
-  const receipt = await Bun.file(
-    join(f.paths.journalRoot, sha(await readFile(f.paths.plan)), "receipt.json"),
-  ).json();
-  expect(receipt.phase).toBe("failed");
-  expect(receipt.failedClass).toBe("OWNER_OPERATION_FAILED");
-  expect(JSON.stringify(receipt)).not.toContain("private SDK payload");
-}, 20_000);
-
-posixTest("changed paragraph style after a write is rejected with a durable partial receipt and untouched locals", async () => {
-  const f = await fixture();
-  f.hooks.afterWrite = (id) => {
-    const d = f.docs.get(id)!;
-    const p = (((d.tabs as Obj[])[0]!.documentTab as Obj).body as Obj).content as Obj[];
-    (p[1]!.paragraph as Obj).paragraphStyle = {
-      namedStyleType: "HEADING_1",
-      direction: "LEFT_TO_RIGHT",
+posixTest(
+  "race on the last revision during the final all-seven check prevents the first write",
+  async () => {
+    const f = await fixture();
+    f.hooks.beforeGet = (id, count) => {
+      if (id === "owned-document-6" && count === 2) f.docs.get(id)!.revisionId = "concurrent";
     };
-  };
-  await expect(apply(f.api, owner, f.paths)).rejects.toThrow("PARAGRAPH_CHANGED");
-  expect(f.writes).toHaveLength(1);
-  expect(await Bun.file(join(f.paths.home, "AGENTS.md")).text()).toBe("original\n\n");
-}, 20_000);
+    await expect(apply(f.api, owner, f.paths)).rejects.toThrow("REMOTE_CHANGED");
+    expect(f.writes).toHaveLength(0);
+    expect(await Bun.file(join(f.paths.home, "AGENTS.md")).text()).toBe("original\n\n");
+  },
+  20_000,
+);
+
+posixTest(
+  "strict requiredRevisionId rejects a race at batchUpdate and records safe failure without local promotion",
+  async () => {
+    const f = await fixture();
+    f.hooks.beforeWrite = (id) => {
+      f.docs.get(id)!.revisionId = "concurrent";
+    };
+    await expect(apply(f.api, owner, f.paths)).rejects.toThrow("OWNER_OPERATION_FAILED");
+    expect(f.writes).toHaveLength(0);
+    const receipt = await Bun.file(
+      join(f.paths.journalRoot, sha(await readFile(f.paths.plan)), "receipt.json"),
+    ).json();
+    expect(receipt.phase).toBe("failed");
+    expect(receipt.failedClass).toBe("OWNER_OPERATION_FAILED");
+    expect(JSON.stringify(receipt)).not.toContain("private SDK payload");
+  },
+  20_000,
+);
+
+posixTest(
+  "changed paragraph style after a write is rejected with a durable partial receipt and untouched locals",
+  async () => {
+    const f = await fixture();
+    f.hooks.afterWrite = (id) => {
+      const d = f.docs.get(id)!;
+      const p = (((d.tabs as Obj[])[0]!.documentTab as Obj).body as Obj).content as Obj[];
+      (p[1]!.paragraph as Obj).paragraphStyle = {
+        namedStyleType: "HEADING_1",
+        direction: "LEFT_TO_RIGHT",
+      };
+    };
+    await expect(apply(f.api, owner, f.paths)).rejects.toThrow("PARAGRAPH_CHANGED");
+    expect(f.writes).toHaveLength(1);
+    expect(await Bun.file(join(f.paths.home, "AGENTS.md")).text()).toBe("original\n\n");
+  },
+  20_000,
+);
 
 test("existing owner lock is respected and preserved", async () => {
   const f = await fixture();
@@ -569,19 +625,23 @@ test("existing owner lock is respected and preserved", async () => {
   expect(f.writes).toHaveLength(0);
 }, 20_000);
 
-posixTest("unchanged Docs retain independently reviewed local bytes even when native rendering differs", async () => {
-  const f = await fixture();
-  const entry = f.files.find((x) => x.name === "USER.md")!;
-  const reviewedLocal = "---\nowner: local-profile\n---\noriginal\n";
-  await writeFile(join(f.paths.home, "USER.md"), reviewedLocal, { mode: 0o600 });
-  await writeFile(String(entry.proposedLocalFile), reviewedLocal, { mode: 0o600 });
-  entry.localBeforeSha256 = sha(reviewedLocal);
-  (f.stateFiles["USER.md"] as Obj).localHash = sha(reviewedLocal);
-  await f.savePlan();
-  await f.saveState();
-  expect((await preflight(f.api, owner, f.paths)).metadata.documents).toBe(7);
-  expect(f.writes).toHaveLength(0);
-}, 20_000);
+posixTest(
+  "unchanged Docs retain independently reviewed local bytes even when native rendering differs",
+  async () => {
+    const f = await fixture();
+    const entry = f.files.find((x) => x.name === "USER.md")!;
+    const reviewedLocal = "---\nowner: local-profile\n---\noriginal\n";
+    await writeFile(join(f.paths.home, "USER.md"), reviewedLocal, { mode: 0o600 });
+    await writeFile(String(entry.proposedLocalFile), reviewedLocal, { mode: 0o600 });
+    entry.localBeforeSha256 = sha(reviewedLocal);
+    (f.stateFiles["USER.md"] as Obj).localHash = sha(reviewedLocal);
+    await f.savePlan();
+    await f.saveState();
+    expect((await preflight(f.api, owner, f.paths)).metadata.documents).toBe(7);
+    expect(f.writes).toHaveLength(0);
+  },
+  20_000,
+);
 
 test("raw proposal guard preserves interior trailing spaces and existing terminal vertical-tab", () => {
   const model = modelDocument(document("owned-document", ["line ", "fenced  ", "end\u000b", ""]));

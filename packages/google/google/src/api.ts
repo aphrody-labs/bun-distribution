@@ -31,7 +31,8 @@ export function googlePaths(env: NodeJS.ProcessEnv = process.env) {
 }
 
 async function jsonFile<T>(path: string): Promise<T> {
-  if (!(await Bun.file(path).exists())) throw new Error(`Missing private Google credential file: ${path}`);
+  if (!(await Bun.file(path).exists()))
+    throw new Error(`Missing private Google credential file: ${path}`);
   return (await Bun.file(path).json()) as T;
 }
 
@@ -50,12 +51,14 @@ export async function oauthClient(requireToken = true): Promise<OAuth2Client> {
   const installed = config.installed;
   if (!installed?.client_id || !installed.client_secret)
     throw new Error("Expected an installed Google OAuth client JSON");
-  const redirect = installed.redirect_uris?.find(uri => uri.startsWith("http://localhost")) ?? "http://localhost";
+  const redirect =
+    installed.redirect_uris?.find((uri) => uri.startsWith("http://localhost")) ??
+    "http://localhost";
   const client = new googleAuth.OAuth2(installed.client_id, installed.client_secret, redirect);
   if (await Bun.file(paths.token).exists()) {
     const saved = await jsonFile<TokenFile>(paths.token);
     client.setCredentials(saved);
-    client.on("tokens", tokens => {
+    client.on("tokens", (tokens) => {
       const merged = {
         ...client.credentials,
         ...tokens,
@@ -73,7 +76,13 @@ export async function gcloudUserClient(): Promise<OAuth2Client> {
   const account = process.env.APHRODY_GOOGLE_GCLOUD_ACCOUNT;
   if (!account) throw new Error("APHRODY_GOOGLE_GCLOUD_ACCOUNT is required for gcloud-user auth");
   const processResult = Bun.spawn(
-    ["gcloud", "auth", "print-access-token", `--account=${account}`, "--scopes=https://www.googleapis.com/auth/drive"],
+    [
+      "gcloud",
+      "auth",
+      "print-access-token",
+      `--account=${account}`,
+      "--scopes=https://www.googleapis.com/auth/drive",
+    ],
     { stdout: "pipe", stderr: "pipe" },
   );
   const [output, errors, exitCode] = await Promise.all([
@@ -81,7 +90,8 @@ export async function gcloudUserClient(): Promise<OAuth2Client> {
     new Response(processResult.stderr).text(),
     processResult.exited,
   ]);
-  if (exitCode !== 0 || !output.trim()) throw new Error(`gcloud user access token unavailable: ${errors.trim()}`);
+  if (exitCode !== 0 || !output.trim())
+    throw new Error(`gcloud user access token unavailable: ${errors.trim()}`);
   const client = new googleAuth.OAuth2();
   client.setCredentials({ access_token: output.trim(), expiry_date: Date.now() + 3_000_000 });
   return client;
@@ -90,7 +100,9 @@ export async function gcloudUserClient(): Promise<OAuth2Client> {
 export type GoogleIdentity = "oauth-user" | "gcloud-user" | "service-account";
 
 export async function googleApi(
-  identity: GoogleIdentity = (process.env.APHRODY_GOOGLE_DRIVE_AUTH as GoogleIdentity | undefined) ?? "oauth-user",
+  identity: GoogleIdentity = (process.env.APHRODY_GOOGLE_DRIVE_AUTH as
+    | GoogleIdentity
+    | undefined) ?? "oauth-user",
 ) {
   const auth =
     identity === "oauth-user"

@@ -48,7 +48,7 @@ test.skipIf(!Bun.which("sh"))("$.escape quotes one literal sh word", () => {
     "{a,b}",
     "-n",
   ];
-  const script = values.map(value => `printf '%s\\0' ${$.escape(value)}`).join("\n") + "\n";
+  const script = values.map((value) => `printf '%s\\0' ${$.escape(value)}`).join("\n") + "\n";
   const result = Bun.spawnSync(["sh", "-s"], { stdin: Buffer.from(script) });
   expect(result.stderr.toString()).toBe("");
   expect(result.stdout.toString().split("\0").slice(0, -1)).toEqual(values);
