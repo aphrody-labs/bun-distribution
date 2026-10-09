@@ -88,7 +88,7 @@ Export collected datasets from SQLite, memory, or disk to relational databases, 
 aphrody web export default --to sqlite --out ./crawled_data.sqlite
 
 # Export to PostgreSQL with ON CONFLICT (url) DO UPDATE
-aphrody web export default --to postgres --pg-url postgresql://postgres:postgres@localhost:5432/aphrody
+aphrody web export default --to postgres --pg-url "$APHRODY_DATABASE_URL"
 
 # Export to JSON, CSV, or HTML
 aphrody web export products --to json --out ./products.json

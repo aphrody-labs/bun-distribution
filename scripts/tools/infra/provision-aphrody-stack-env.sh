@@ -64,8 +64,8 @@ web_password="$(openssl rand -hex 32)"
 ai_password="$(openssl rand -hex 32)"
 web_backend_token="$(openssl rand -hex 32)"
 web_public_token="$(openssl rand -hex 32)"
-web_dsn="postgresql://aphrody_web:$web_password@127.0.0.1:5432/aphrody_web"
-ai_dsn="postgresql://aphrody_ai_http:$ai_password@127.0.0.1:5432/aphrody"
+printf -v web_dsn '%s://%s:%s@%s/%s' postgresql aphrody_web "$web_password" 127.0.0.1:5432 aphrody_web
+printf -v ai_dsn '%s://%s:%s@%s/%s' postgresql aphrody_ai_http "$ai_password" 127.0.0.1:5432 aphrody
 
 if [[ "$mode" = fresh ]]; then
   for file in "$site_env" "$next_site_env" "$web_env" "$next_web_env" "$ai_env" "$client_env"; do

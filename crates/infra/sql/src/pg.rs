@@ -505,9 +505,9 @@ mod tests {
     #[test]
     fn url_normalisation_maps_libpq_options() {
         let (url, root) = normalize_url(
-            "postgres://u:p@h/db?sslmode=verify-full&sslrootcert=%2Fetc%2Fca.pem&sslcert=x&application_name=a",
+            "postgres://u:example-password@h/db?sslmode=verify-full&sslrootcert=%2Fetc%2Fca.pem&sslcert=x&application_name=a",
         );
-        assert_eq!(url, "postgres://u:p@h/db?sslmode=require&application_name=a");
+        assert_eq!(url, "postgres://u:example-password@h/db?sslmode=require&application_name=a");
         assert_eq!(root.as_deref(), Some("/etc/ca.pem"));
         let (url, root) = normalize_url("postgres://u@h/db?sslmode=allow");
         assert_eq!(url, "postgres://u@h/db?sslmode=prefer");
@@ -520,11 +520,12 @@ mod tests {
 
     #[test]
     fn local_pool_is_plain_and_remote_pool_uses_tls() {
-        let local = PgPool::connect_lazy("postgres://u:p@localhost/db").unwrap();
+        let local = PgPool::connect_lazy("postgres://u:example-password@localhost/db").unwrap();
         assert!(!local.uses_tls());
-        let remote = PgPool::connect_lazy("postgres://u:p@db.example.com/db").unwrap();
+        let remote =
+            PgPool::connect_lazy("postgres://u:example-password@db.example.com/db").unwrap();
         assert!(remote.uses_tls());
-        assert!(!remote.target().contains(":p@"));
+        assert!(!remote.target().contains(":example-password@"));
         assert!(remote.target().contains(":***@"));
         let forced =
             PgPool::builder("postgres://u@localhost/db").tls(TlsPolicy::Require).build().unwrap();
@@ -536,8 +537,8 @@ mod tests {
 
     #[test]
     fn invalid_url_error_never_contains_the_password() {
-        let error = PgPool::connect_lazy("postgres://u:topsecret@h:notaport/db").unwrap_err();
-        assert!(!error.to_string().contains("topsecret"), "{error}");
+        let error = PgPool::connect_lazy("postgres://u:example-secret@h:notaport/db").unwrap_err();
+        assert!(!error.to_string().contains("example-secret"), "{error}");
         assert!(matches!(error, SqlError::InvalidUrl(_)));
     }
 

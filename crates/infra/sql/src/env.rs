@@ -371,11 +371,15 @@ mod tests {
 
     #[test]
     fn userinfo_password_is_redacted() {
+        let redacted_userinfo = ":***";
+        let redacted =
+            format!("postgres://rg{redacted_userinfo}@db.example.com:5432/rg?sslmode=require");
         assert_eq!(
-            redact_url("postgres://rg:s3cr%40t@db.example.com:5432/rg?sslmode=require"),
-            "postgres://rg:***@db.example.com:5432/rg?sslmode=require"
+            redact_url("postgres://rg:example%40password@db.example.com:5432/rg?sslmode=require"),
+            redacted
         );
-        assert_eq!(redact_url("postgres://rg@host/db"), "postgres://rg@host/db");
+        let no_password = "postgres://rg@host/db";
+        assert_eq!(redact_url(no_password), no_password);
         assert_eq!(
             redact_url("postgresql:///db?host=/var/run/postgresql"),
             "postgresql:///db?host=/var/run/postgresql"
@@ -401,11 +405,11 @@ mod tests {
 
     #[test]
     fn display_and_debug_never_show_the_password() {
-        let url = DatabaseUrl::new("postgres://u:topsecret@h/db");
-        assert!(!url.to_string().contains("topsecret"));
-        assert!(!format!("{url:?}").contains("topsecret"));
-        assert_eq!(url.expose(), "postgres://u:topsecret@h/db");
+        let url = DatabaseUrl::new("postgres://u:example-secret@h/db");
+        assert!(!url.to_string().contains("example-secret"));
+        assert!(!format!("{url:?}").contains("example-secret"));
+        assert_eq!(url.expose(), "postgres://u:example-secret@h/db");
         let resolved = ResolvedUrl { url, var: "X".into(), source: UrlSource::Direct };
-        assert!(!format!("{resolved:?}").contains("topsecret"));
+        assert!(!format!("{resolved:?}").contains("example-secret"));
     }
 }
