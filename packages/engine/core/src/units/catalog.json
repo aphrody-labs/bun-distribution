@@ -73,38 +73,6 @@
       }
     },
     {
-      "name": "aphrody-agent-session-sync",
-      "unit": {
-        "Description": "Aphrody domain native MCP session and memory ingestion"
-      },
-      "service": {
-        "WorkingDirectory": "%h/aphrody",
-        "ExecStart": "%h/.bun/bin/bun %h/aphrody/packages/engine/yolo/src/index.ts ops agent-sync --domain aphrody --watch --interval-secs 2",
-        "Restart": "on-failure",
-        "RestartSec": "10",
-        "UMask": "0077",
-        "StandardOutput": "null",
-        "StandardError": "journal"
-      }
-    },
-    {
-      "name": "aphrody-workspace-subsystem",
-      "unit": {
-        "Description": "Aphrody Workspace read-only tools published as a kernel subsystem",
-        "After": "aphrody-kernel.service",
-        "PartOf": "aphrody-kernel.service"
-      },
-      "service": {
-        "WorkingDirectory": "%h/aphrody",
-        "ExecStart": "%h/.bun/bin/bun %h/aphrody/packages/engine/yolo/src/index.ts ops workspace-subsystem --serve",
-        "Restart": "on-failure",
-        "RestartSec": "10",
-        "UMask": "0077",
-        "StandardOutput": "null",
-        "StandardError": "journal"
-      }
-    },
-    {
       "name": "aphrody-bun-hygiene",
       "kind": "oneshot",
       "unit": {
@@ -132,30 +100,8 @@
         "Environment": [
           "APHRODY_AGENT_DOMAIN=aphrody",
           "PATH=%h/.local/bin:%h/.bun/bin:%h/.cargo/bin:/usr/local/bin:/usr/bin:/bin",
-          "\"APHRODY_YOLO_TOOL_HOST=%h/aphrody/bin/yolo tool\"",
-          "APHRODY_YOLO_MCP_BIN=",
           "APHRODY_AI_MCP_BIN="
         ]
-      }
-    },
-    {
-      "name": "aphrody-update",
-      "kind": "oneshot",
-      "unit": {
-        "Description": "Aphrody update report (tools, Cargo lock, dependency fact sheets); report only, never applies"
-      },
-      "service": {
-        "WorkingDirectory": "%h/aphrody",
-        "ExecStart": [
-          "%h/.bun/bin/bun packages/engine/yolo/src/index.ts update tools --root %h/aphrody",
-          "%h/.bun/bin/bun packages/engine/yolo/src/index.ts update deps facts --root %h/aphrody",
-          "%h/.bun/bin/bun packages/engine/yolo/src/index.ts update check --root %h/aphrody"
-        ]
-      },
-      "timer": {
-        "description": "Weekly Aphrody update report",
-        "OnCalendar": "Mon *-*-* 06:00:00",
-        "RandomizedDelaySec": "30m"
       }
     },
     {
@@ -256,7 +202,10 @@
         "Description": "Shenron dbfr read-only native Markdown Drive projection and memory reconciliation",
         "After": "network-online.target",
         "Wants": "network-online.target",
-        "ConditionPathExists": ["%h/.aphrody/workspaces/dbfr", "%h/aphrody/.env"]
+        "ConditionPathExists": [
+          "%h/.aphrody/workspaces/dbfr",
+          "%h/aphrody/.env"
+        ]
       },
       "service": {
         "WorkingDirectory": "%h/aphrody",
@@ -321,7 +270,10 @@
         "Description": "Verified resumable backup of dbfr Shenron trained models and datasets",
         "After": "network-online.target",
         "Wants": "network-online.target",
-        "ConditionPathExists": ["%h/aphrody/.env", "%h/.aphrody/private/shenron/home/models"],
+        "ConditionPathExists": [
+          "%h/aphrody/.env",
+          "%h/.aphrody/private/shenron/home/models"
+        ],
         "StartLimitIntervalSec": "900",
         "StartLimitBurst": "5"
       },
@@ -386,22 +338,6 @@
       }
     },
     {
-      "name": "aphrody-agent-live",
-      "unit": {
-        "Description": "Aphrody live agent sessions and monorepo metadata",
-        "After": "aphrody-agent-session-sync.service"
-      },
-      "service": {
-        "WorkingDirectory": "%h/aphrody",
-        "ExecStart": "%h/.bun/bin/bun %h/aphrody/packages/engine/yolo/src/index.ts ops agent-live --watch --interval-secs 30 --json",
-        "Restart": "on-failure",
-        "RestartSec": "10",
-        "UMask": "0077",
-        "StandardOutput": "null",
-        "StandardError": "journal"
-      }
-    },
-    {
       "name": "shenron-rag-sync",
       "kind": "oneshot",
       "unit": {
@@ -422,25 +358,6 @@
         "description": "Keep the Shenron editorial RAG fresh",
         "OnBootSec": "2min",
         "OnUnitInactiveSec": "15min"
-      }
-    },
-    {
-      "name": "aphrody-docs",
-      "kind": "oneshot",
-      "unit": {
-        "Description": "Regenerate Aphrody generated docs (STATE.md, index, llms.txt, ecosystem, upstreams, dependency inventory); writes the working tree, never commits"
-      },
-      "service": {
-        "Nice": "15",
-        "IOSchedulingClass": "idle",
-        "WorkingDirectory": "%h/aphrody",
-        "Environment": "PATH=%h/.cargo/bin:%h/.bun/bin:/usr/local/bin:/usr/bin:/bin",
-        "ExecStart": "%h/.bun/bin/bun packages/engine/yolo/src/index.ts ops docs generate --root %h/aphrody --deps"
-      },
-      "timer": {
-        "description": "Daily refresh of the Aphrody generated docs",
-        "OnCalendar": "*-*-* 05:30:00",
-        "RandomizedDelaySec": "20m"
       }
     },
     {

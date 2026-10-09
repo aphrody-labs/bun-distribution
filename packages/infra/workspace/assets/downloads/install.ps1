@@ -4,12 +4,12 @@
 #
 # The command-line twin of Aphrody-Setup.exe (the « Download Aphrody » button, one double click). By default
 # (`all`) it installs the single `aphrody` multi-call binary (MCP server included, linked as aphrody-mcp.exe by
-# `aphrody self install-path`), yolo, the desktop app, the Claude plugins, and declares the aphrody MCP server and
+# `aphrody self install-path`), the desktop app, the Claude plugins, and declares the aphrody MCP server and
 # the plugins in Claude Code. With `all`, a component not published for Windows is skipped with a note; a component
 # named explicitly must install. Environment:
 #   APHRODY_DOWNLOAD_URL  base URL (default https://downloads.aphrody.com)
 #   APHRODY_RELEASE       immutable release ID (default: select latest.json once)
-#   APHRODY_COMPONENTS    `all` (default) or space separated: aphrody yolo desktop plugin-aphrody plugin-yolo
+#   APHRODY_COMPONENTS    `all` (default) or space separated: aphrody desktop plugin-aphrody plugin-yolo
 #                         plugin-shenron mcp
 #   APHRODY_PREFIX        install prefix (default %USERPROFILE%\.local)
 #   APHRODY_NO_LINKS=1    do not run `aphrody self install-path`
@@ -21,7 +21,7 @@ $ProgressPreference = "SilentlyContinue"
 $Base = if ($env:APHRODY_DOWNLOAD_URL) { $env:APHRODY_DOWNLOAD_URL.TrimEnd("/") } else { "https://downloads.aphrody.com" }
 $Requested = if ($env:APHRODY_COMPONENTS) { $env:APHRODY_COMPONENTS.Trim() } else { "all" }
 $All = $Requested -eq "all"
-$Components = if ($All) { @("aphrody", "yolo", "desktop", "plugin-aphrody", "plugin-yolo", "plugin-shenron", "mcp") } else { $Requested -split "\s+" | Where-Object { $_ } }
+$Components = if ($All) { @("aphrody", "desktop", "plugin-aphrody", "plugin-yolo", "plugin-shenron", "mcp") } else { $Requested -split "\s+" | Where-Object { $_ } }
 $Prefix = if ($env:APHRODY_PREFIX) { $env:APHRODY_PREFIX } else { Join-Path $env:USERPROFILE ".local" }
 $Target = "x86_64-pc-windows-msvc"
 if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -ne "X64") { throw "unsupported architecture (x86_64 only)" }
@@ -113,20 +113,6 @@ try {
         }
         $AphrodyExe = $Exe
         Write-Host "aphrody installed in $Dest"
-      }
-      "yolo" {
-        $Name = Find-File "yolo" "-$Target.tar.gz"
-        if (-not $Name) { Skip "no yolo build for $Target in this release"; continue }
-        $Archive = Get-Verified $Name
-        # The yolo installer reads SHA256SUMS and the archive from a local release folder and checks them itself.
-        $ReleaseDir = Join-Path $Tmp "yolo-release"
-        New-Item -ItemType Directory -Force -Path $ReleaseDir | Out-Null
-        Copy-Item $SumsPath, $Archive $ReleaseDir
-        $Installer = Join-Path $Tmp "install-yolo.ps1"
-        Invoke-WebRequest "$ReleaseBase/install-yolo.ps1" -OutFile $Installer -UseBasicParsing
-        $env:YOLO_RELEASE_DIR = $ReleaseDir; $env:YOLO_NO_CRATES = "1"
-        try { & powershell -NoProfile -ExecutionPolicy Bypass -File $Installer } finally { Remove-Item Env:YOLO_RELEASE_DIR, Env:YOLO_NO_CRATES -ErrorAction SilentlyContinue }
-        if ($LASTEXITCODE -ne 0) { throw "the yolo installer failed ($LASTEXITCODE)" }
       }
       "desktop" {
         $Name = Find-File "aphrody-app" "-$Target.exe"

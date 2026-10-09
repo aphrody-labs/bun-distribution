@@ -4,6 +4,7 @@
   "hub": {
     "host": "vps",
     "workspace": "/srv/aphrody/shared/agent-workspaces/aphrody",
+    "seed": "/home/ubuntu/aphrody",
     "branch": "main",
     "remote": "git@github-dev:aphrody-labs/aphrody.git",
     "profile": "/home/ubuntu/.aphrody/workspaces/aphrody",

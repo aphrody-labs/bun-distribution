@@ -6,7 +6,7 @@
 #
 # The command-line twin of Aphrody-Setup.exe (Windows, one click): by default (`all`) it installs the single
 # `aphrody` multi-call binary (it carries the MCP server: `aphrody-mcp`, and every former standalone CLI name,
-# linked by `aphrody self install-path`), yolo, the Claude plugins, and declares the aphrody MCP server and the
+# linked by `aphrody self install-path`), the Claude plugins, and declares the aphrody MCP server and the
 # plugins in Claude Code when it is installed. With `all`, a component not published for this platform is
 # skipped with a note; a component named explicitly must install. One component only:
 #
@@ -15,11 +15,10 @@
 # Environment:
 #   APHRODY_DOWNLOAD_URL  base URL of the download server (default https://downloads.aphrody.com)
 #   APHRODY_RELEASE       immutable release ID (default: select latest.json once)
-#   APHRODY_COMPONENTS    `all` (default) or space separated: aphrody yolo plugin-aphrody plugin-yolo
+#   APHRODY_COMPONENTS    `all` (default) or space separated: aphrody plugin-aphrody plugin-yolo
 #                         plugin-shenron mcp
 #   APHRODY_PREFIX        install prefix (default ~/.local): binaries in <prefix>/lib/aphrody/<release>,
 #                         links in ~/.local/bin, plugins in <prefix>/share/aphrody/plugins
-#   YOLO_HOME             yolo home (default ~/.yolo)
 #   APHRODY_NO_LINKS=1    do not run `aphrody self install-path`
 #
 # Every download is verified against SHA256SUMS of the same release before it is used.
@@ -31,7 +30,7 @@ COMPONENTS="${APHRODY_COMPONENTS:-all}"
 ALL=""
 if [ "$COMPONENTS" = all ]; then
   ALL=1
-  COMPONENTS="aphrody yolo plugin-aphrody plugin-yolo plugin-shenron mcp"
+  COMPONENTS="aphrody plugin-aphrody plugin-yolo plugin-shenron mcp"
 fi
 PREFIX="${APHRODY_PREFIX:-$HOME/.local}"
 
@@ -139,18 +138,6 @@ install_aphrody() {
   case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) say "add $HOME/.local/bin to PATH" ;; esac
 }
 
-install_yolo() {
-  name=$(file_for yolo "-${TARGET}[.]tar[.]gz\$")
-  [ -n "$name" ] || { skip "no yolo build for $TARGET in this release"; return 0; }
-  download "$name"
-  installer="$TMP/install-yolo.sh"
-  fetch "$RELEASE_BASE/install-yolo.sh" "$installer" || die "cannot download install-yolo.sh"
-  # The yolo installer reads SHA256SUMS and the archive from a local release directory.
-  mkdir -p "$TMP/yolo-release"
-  cp "$TMP/SHA256SUMS" "$TMP/$name" "$TMP/yolo-release/"
-  YOLO_RELEASE_DIR="$TMP/yolo-release" YOLO_NO_CRATES=1 sh "$installer"
-}
-
 install_plugin() {
   component="$1"
   name=$(file_for "$component" "[.]tar[.]gz\$")
@@ -223,7 +210,6 @@ for component in $COMPONENTS; do
   say "Installing $component ($TARGET)"
   case "$component" in
     aphrody) install_aphrody ;;
-    yolo) install_yolo ;;
     plugin-aphrody | plugin-yolo | plugin-shenron) install_plugin "$component" ;;
     mcp) install_mcp ;;
     *) die "unknown component: $component" ;;
