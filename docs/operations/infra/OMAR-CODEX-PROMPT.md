@@ -21,7 +21,7 @@ RÈGLES DE SÉCURITÉ (absolues)
 
 FAITS
 - wg1 : réseau 10.200.77.0/24, interface Windows `aphrody`. Hub vps 10.200.77.1, endpoint 51.77.147.152:51821, clé publique McWuNyGdzU81q9MEyfvnxoGYIHqGW1UcRqpcge3NxB4=. dbfr 10.200.77.3. Propriétaire aphro-pc 10.200.77.4.
-- Omar = 10.200.77.10/24, clé publique déclarée lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=.
+- Omar = 10.200.77.10/24, clé publique déclarée EXfatxgVFs8Lr9k7QoJ2wiznY5MYO4C19+4gLbGmCEw=.
 - Services d'Omar : 22 SSH Windows, 2222 SSH WSL Ubuntu, 8795 bureau à distance, 5900 VNC, 8793 MCP HTTP (127.0.0.1 + portproxy sur 10.200.77.10).
 - Tunnel inverse (secours sans handshake) vers omar@51.77.147.152 : 22010→22, 28795→8795, 28793→8793, 22011→2222, 25900→5900 (seuls ports autorisés par le hub).
 - Variables (redéfinis-les à chaque session) : $Repo = "C:\src\aphrody" ; $BunRepo = "C:\bun" ; $AH = "$env:USERPROFILE\.aphrody" ; $Bin = "$env:LOCALAPPDATA\Aphrody\bin"
@@ -54,7 +54,7 @@ En échec de build : lis la première erreur, installe le prérequis manquant, r
 
 5) WIREGUARD wg1
 aphrody infra wg driver install ; aphrody infra wg driver status
-a. Si "$AH\wireguard\aphrody.key" existe : Get-Content "$AH\wireguard\aphrody.key" -Raw | aphrody infra wg pubkey → attendu lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=, puis d.
+a. Si "$AH\wireguard\aphrody.key" existe : Get-Content "$AH\wireguard\aphrody.key" -Raw | aphrody infra wg pubkey → attendu EXfatxgVFs8Lr9k7QoJ2wiznY5MYO4C19+4gLbGmCEw=, puis d.
 b. Sinon, dis à Omar : « Dans une AUTRE fenêtre PowerShell, colle la PrivateKey de ton tunnel (app WireGuard → tunnel → Modifier → ligne PrivateKey) : $k="$env:USERPROFILE\.aphrody\wireguard\aphrody.key"; New-Item -ItemType Directory -Force (Split-Path $k)|Out-Null; Read-Host "PrivateKey" | Set-Content -NoNewline $k » et attends sa confirmation, puis refais a. Ne lui demande JAMAIS de te la coller.
 c. Clé perdue : aphrody infra wg keygen (--force seulement pour remplacer un aphrody.key erroné) ; la clé PUBLIQUE affichée va dans le rapport, le propriétaire met à jour le hub.
 d. icacls "$AH\wireguard\aphrody.key" /inheritance:r /grant:r "${env:USERNAME}:F" /grant:r "SYSTEM:F"

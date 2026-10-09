@@ -125,7 +125,7 @@ test("WireGuard key format: 44 base64 characters, 32 bytes", () => {
 test("registered peers have valid public keys after host-local generation", () => {
   const t = tunnel();
   expect(t.peers.find((p) => p.id === "omar")?.publicKey).toBe(
-    "lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=",
+    "EXfatxgVFs8Lr9k7QoJ2wiznY5MYO4C19+4gLbGmCEw=",
   );
   expect(t.peers.find((p) => p.id === "omar")?.publicKeyNote).toContain("never handshaked");
   expect(t.peers.find((p) => p.id === "aphro-pc")?.publicKey).toBe(
@@ -237,7 +237,7 @@ test("hub config: known keys inline, the others are apply-time inputs, no privat
   expect(h.text).toContain("PublicKey = VewVolGGwY3Lvp78jp9dKB7RIxg2xUR2pbVS+y+uj2I=");
   expect(h.text).toContain("AllowedIPs = 10.200.77.10/32");
   expect(h.needs.map((n) => n.env)).toEqual(["WSL_PUBLIC_KEY", "DBFR_PUBLIC_KEY"]);
-  expect(h.text).toContain("PublicKey = lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=");
+  expect(h.text).toContain("PublicKey = EXfatxgVFs8Lr9k7QoJ2wiznY5MYO4C19+4gLbGmCEw=");
   expect(PRIVATE_KEY_PATTERN.test(h.text)).toBe(false);
   expect(h.text).not.toMatch(/AllowedIPs = [^\n]*\/(0|2[0-3])\b/);
 });
