@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Scoped provider adapter where the installed Infra CLI has no Cloudflare command.
 [CmdletBinding()]
-param([ValidateSet('Plan','Apply')][string]$Action='Plan',[string]$StateRoot)
+param([ValidateSet('Plan','Apply','Verify')][string]$Action='Plan',[string]$StateRoot)
 $ErrorActionPreference='Stop'
 if(-not $StateRoot){$StateRoot=if($env:APHRODY_HOME){$env:APHRODY_HOME}else{Join-Path $env:USERPROFILE '.aphrody'}}
 $zoneId='963461271f885bc3f3c2bfd586f2b7ba'
@@ -82,6 +82,33 @@ try{
         $sts=$afterSecurity.value.strict_transport_security
         if($afterSsl.value -ne 'strict' -or $changed.Count -ne $webRecords.Count -or @($changed|Where-Object {-not $_.proxied}).Count -or -not $sts.enabled -or $sts.max_age -ne 2592000 -or $sts.include_subdomains -or $sts.preload -or -not $sts.nosniff){throw 'Provider activation readback incomplete'}
         $report.applied=$true
+    }
+    if($Action -eq 'Verify'){
+        $sts=$security.value.strict_transport_security
+        if($zone.status -ne 'active' -or $ssl.value -ne 'strict' -or @($webRecords|Where-Object {-not $_.proxied}).Count -or -not $sts.enabled -or $sts.max_age -ne 2592000 -or $sts.include_subdomains -or $sts.preload -or -not $sts.nosniff){throw 'Provider settings not ready for public edge verification'}
+        $edgeProof=@()
+        foreach($name in $webNames){
+            $url='https://'+$name+'/'
+            $headerFile=Join-Path $backup ($name+'-edge-headers.txt')
+            $result=& curl.exe --silent --show-error --noproxy '*' --max-time 30 --dump-header $headerFile --output NUL --write-out '%{ssl_verify_result} %{http_code}' $url 2>$null
+            $expected=if($name -eq 'www.aphrody.com'){'0 301'}else{'0 200'}
+            if($LASTEXITCODE -ne 0 -or $result -ne $expected){throw ('Public TLS/status verification failed: '+$name)}
+            $edgeHeaders=[IO.File]::ReadAllText($headerFile)
+            if($edgeHeaders -notmatch '(?im)^cf-ray:\s*\S+' -or $edgeHeaders -notmatch '(?im)^strict-transport-security:\s*max-age=2592000\s*\r?$' -or $edgeHeaders -notmatch '(?im)^x-content-type-options:\s*nosniff\s*\r?$'){throw ('Public Cloudflare/security headers incomplete: '+$name)}
+            if($name -eq 'www.aphrody.com' -and $edgeHeaders -notmatch '(?im)^location:\s*https://aphrody\.com/\s*\r?$'){throw 'Public www redirect target changed'}
+            $nativeWeb=$false
+            if($name -ne 'www.aphrody.com'){
+                $webOutput=& aphrody web browser snapshot $url --json 2>$null
+                if($LASTEXITCODE){throw ('Native Aphrody Web failed: '+$name)}
+                $web=$webOutput -join "`n"|ConvertFrom-Json
+                if($web.url -ne $url -or $web.snapshot -notmatch '(?m)^Title: Aphrody'){throw ('Rendered public product page unverified: '+$name)}
+                [IO.File]::WriteAllText((Join-Path $backup ($name+'-edge-web.json')),($webOutput -join "`n"))
+                $nativeWeb=$true
+            }
+            $edgeProof+=@{name=$name;tlsVerified=$true;httpResult=[string]$result;cloudflare=$true;hsts=$true;nosniff=$true;nativeWeb=$nativeWeb}
+        }
+        $report.edgeProof=$edgeProof
+        $report.productionVerified=$true
     }
     $json=$report|ConvertTo-Json -Depth 12
     [IO.File]::WriteAllText((Join-Path $backup 'result.json'),$json)

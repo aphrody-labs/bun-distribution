@@ -225,3 +225,11 @@ date. `canRelaunch`, `canCancel` and `canAccelerate` are all false. The declared
 guard therefore continues waiting; no retry, cancellation, acceleration or
 nameserver update was applied. The autonomous loop remains alive and its
 second check still reports `waiting-dnssec` / Cloudflare `pending`.
+
+The activation adapter now also exposes a read-only `Verify` action. Completion
+requires live public TLS/status, Cloudflare edge identity, the declared HSTS and
+nosniff response headers, the exact www redirect, and native Aphrody Web product
+snapshots for apex/OS. The loop calls it before final R2 verification. Both
+PowerShell orchestration gates pass, including an injected public-web failure
+that prevents completion. The real pending-zone call refuses before public
+verification; successful edge checks remain dependent on delegation/activation.

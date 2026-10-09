@@ -76,6 +76,9 @@ try{
             }
             $ready=@($r2.after).Count -eq 2 -and @($r2.after|Where-Object {@($_.settings).Count -ne 1 -or -not $_.settings[0].enabled -or $_.settings[0].status.ownership -ne 'active' -or $_.settings[0].status.ssl -ne 'active'}).Count -eq 0
             if($Apply -and $state.webApplied -and $state.r2Applied -and $ready){
+                $state.phase='verifying-web';Save-State
+                $verified=Adapter 'cloudflare-web-activate' 'Verify'
+                if(-not $verified.productionVerified){throw 'Public web verification not confirmed'}
                 $state.phase='verifying-r2';Save-State
                 $verified=Adapter 'cloudflare-r2-domains' 'Verify'
                 if(-not $verified.productionVerified){throw 'Production verification not confirmed'}

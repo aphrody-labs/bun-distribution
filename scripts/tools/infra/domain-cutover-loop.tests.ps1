@@ -50,7 +50,12 @@ else{@{applied=$true;taskId=42;productionVerified=$true}|ConvertTo-Json}
     try{Run $failure}catch{$threw=$true}
     Assert ($threw -and (State $failure).phase -eq 'adapter-error' -and -not (State $failure).complete) 'Adapter failure must stop without completion'
     Assert (-not ((Get-Content (Join-Path $failure 'calls.txt')) -match 'cloudflare-r2-domains')) 'Web failure must prevent R2 apply'
-    Write-Output 'PASS: DNSSEC guard, single NS request, R2 TLS wait, verification, fail-stop'
+    $edgeFailure=Scenario 'edge-failure' 'active' 'disabled' $true 'cloudflare-web-activate:Verify'
+    $threw=$false
+    try{Run $edgeFailure}catch{$threw=$true}
+    Assert ($threw -and (State $edgeFailure).failedPhase -eq 'verifying-web' -and -not (State $edgeFailure).complete) 'Public web failure must prevent completion'
+    Assert (-not ((Get-Content (Join-Path $edgeFailure 'calls.txt')) -match 'cloudflare-r2-domains:Verify')) 'Public web failure must prevent final R2 verification'
+    Write-Output 'PASS: DNSSEC guard, single NS request, R2 TLS wait, public verification, fail-stop'
 }finally{
     # Only the exact newly-created native temporary directory is removed.
     Remove-Item -LiteralPath $testRoot -Recurse -Force
