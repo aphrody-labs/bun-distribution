@@ -103,6 +103,35 @@ describe("native ThemeExport artifacts", () => {
     expect(readNativeTheme(artifact.path).css).toBe(artifact.css);
   });
 
+  test("without Tailwind the Rust sheets reach Bun's CSS parser as plain CSS", async () => {
+    await using tmp = await tempDir();
+    const artifact = await nativeArtifact(tmp.dir);
+    expect(artifact.css).toContain("@theme inline {");
+    const entry = join(tmp.dir, "entry.ts");
+    await Bun.write(entry, 'import "m3:tokens.css";\nimport "m3:tailwind.css";\n');
+    const custom = (config: { sheet: string }) =>
+      config.sheet === "tailwind"
+        ? '@theme {\n  --color-*: initial;\n  --font-display: "Google Sans Flex";\n  @keyframes m3-spin { to { rotate: 1turn; } }\n}\n@theme inline reference { --color-x: red; }\n'
+        : artifact.css;
+    const result = await Bun.build({
+      entrypoints: [entry],
+      outdir: join(tmp.dir, "out"),
+      target: "browser",
+      plugins: [m3Plugin({ css: custom, theme: {}, tailwind: false, sass: false })],
+    });
+    expect(result.logs.map(String)).toEqual([]);
+    expect(result.success).toBe(true);
+    const css = await result.outputs.find((o) => o.path.endsWith(".css"))!.text();
+    expect(css).not.toContain("@theme");
+    expect(css).not.toContain("--color-primary:");
+    expect(css).not.toContain("--color-x");
+    expect(css).not.toContain("--color-*");
+    expect(css).toMatch(/:root,\s*:host\s*\{\s*--font-display: "Google Sans Flex";?\s*\}/);
+    expect(css).toContain("@keyframes m3-spin");
+    expect(css).toContain(`--md-sys-color-primary: ${artifact.theme.light.primary}`);
+    expect(css).toContain("--primary: var(--md-sys-color-primary)");
+  });
+
   test("explicit mismatches fail the real build rather than emitting another seed's theme", async () => {
     await using tmp = await tempDir();
     const artifact = await nativeArtifact(tmp.dir);

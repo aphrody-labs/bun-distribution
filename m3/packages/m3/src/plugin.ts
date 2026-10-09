@@ -59,7 +59,7 @@ export const M3_MODULES: readonly string[] = [
   ...Object.keys(SHEET_MODULES),
   ...Object.keys(SYMBOL_MODULES),
   FONTS_MODULE,
-].map(name => `m3:${name}`);
+].map((name) => `m3:${name}`);
 
 export interface M3PluginOptions {
   /** Inputs of the generated sheets. Default: `theme` of the `m3.config.ts` in `configDir`. */
@@ -73,7 +73,8 @@ export interface M3PluginOptions {
   nativeTheme?: string;
   /** Aphrody OS checkout holding the fonts (default: discovered). */
   root?: string;
-  /** Compose the separately resolved Tailwind engine and Oxide scanner (default true). */
+  /** Compose the separately resolved Tailwind engine and Oxide scanner (default true). When false,
+   * the `m3:*` sheets are lowered to plain CSS by {@link lowerThemeRules}. */
   tailwind?: boolean;
   /** Compile `.scss` through `@aphrody/bun` (default true), or pass its options. */
   sass?: boolean | { loadPaths?: string[]; style?: "expanded" | "compressed"; quiet?: boolean };
@@ -88,7 +89,101 @@ export function fontsCss(): string {
   return `${faceRule({ ...face, format: "truetype" }, "./GoogleSansFlex-Variable.ttf")}\n`;
 }
 
-type LoadCallback = (args: { path: string; namespace: string }) => OnLoadResult | Promise<OnLoadResult>;
+/** Index just past the comment or string starting at `i`, or `i` when neither starts there. */
+function skipOpaque(css: string, i: number): number {
+  if (css.startsWith("/*", i)) {
+    const end = css.indexOf("*/", i + 2);
+    if (end < 0) throw new Error("@aphrody/m3: unterminated comment in an m3 sheet");
+    return end + 2;
+  }
+  const quote = css[i];
+  if (quote !== '"' && quote !== "'") return i;
+  for (let j = i + 1; j < css.length; j++) {
+    if (css[j] === "\\") j++;
+    else if (css[j] === quote) return j + 1;
+  }
+  throw new Error("@aphrody/m3: unterminated string in an m3 sheet");
+}
+
+/** Index of the `}` closing the block whose `{` is at `open`. */
+function blockEnd(css: string, open: number): number {
+  let depth = 0;
+  for (let i = open; i < css.length;) {
+    const next = skipOpaque(css, i);
+    if (next !== i) {
+      i = next;
+      continue;
+    }
+    if (css[i] === "{") depth++;
+    else if (css[i] === "}" && --depth === 0) return i;
+    i++;
+  }
+  throw new Error("@aphrody/m3: unbalanced braces in an m3 sheet");
+}
+
+/**
+ * Plain CSS for a sheet compiled without Tailwind: `@theme inline` and `@theme reference` only feed
+ * Tailwind utilities and are dropped; any other `@theme` block declares real variables and becomes
+ * `:root, :host`, as Tailwind emits it. Nested at-rules (`@keyframes`) are hoisted after the rule and
+ * namespace resets (`--color-*: initial`) are removed.
+ */
+export function lowerThemeRules(css: string): string {
+  let out = "";
+  let from = 0;
+  for (let i = 0; i < css.length;) {
+    const next = skipOpaque(css, i);
+    if (next !== i) {
+      i = next;
+      continue;
+    }
+    if (!/^@theme(?![\w-])/.test(css.slice(i, i + 7))) {
+      i++;
+      continue;
+    }
+    const open = css.indexOf("{", i);
+    if (open < 0) throw new Error("@aphrody/m3: @theme without a block in an m3 sheet");
+    const params = new Set(
+      css
+        .slice(i + "@theme".length, open)
+        .trim()
+        .split(/\s+/),
+    );
+    const close = blockEnd(css, open);
+    out += css.slice(from, i);
+    if (!params.has("inline") && !params.has("reference")) {
+      const body = css.slice(open + 1, close);
+      let declarations = "";
+      let hoisted = "";
+      let start = 0;
+      for (let j = 0; j < body.length;) {
+        const skipped = skipOpaque(body, j);
+        if (skipped !== j) {
+          j = skipped;
+          continue;
+        }
+        if (body[j] === "@") {
+          const nestedOpen = body.indexOf("{", j);
+          const nestedClose = blockEnd(body, nestedOpen);
+          declarations += body.slice(start, j);
+          hoisted += `\n${body.slice(j, nestedClose + 1)}`;
+          j = start = nestedClose + 1;
+          continue;
+        }
+        j++;
+      }
+      declarations += body.slice(start);
+      declarations = declarations.replace(/^[ \t]*--[\w-]*\*[\w-]*\s*:[^;]*;[ \t]*\r?\n?/gm, "");
+      out += `:root, :host {${declarations}}${hoisted}`;
+    }
+    i = from = close + 1;
+  }
+  return out + css.slice(from);
+}
+
+type LoadCallback = (args: {
+  path: string;
+  namespace: string;
+}) => OnLoadResult | Promise<OnLoadResult>;
 
 /** Build the plugin. */
 export function m3Plugin(options: M3PluginOptions = {}): BunPlugin {
@@ -103,7 +198,8 @@ export function m3Plugin(options: M3PluginOptions = {}): BunPlugin {
     return (artifact = path ? readNativeTheme(path) : null);
   };
 
-  const getGenerator = () => (generator ??= options.css ? Promise.resolve(options.css) : defaultM3Css());
+  const getGenerator = () =>
+    (generator ??= options.css ? Promise.resolve(options.css) : defaultM3Css());
   const getTheme = () =>
     (theme ??= (async () => {
       if (options.theme) return options.theme;
@@ -135,16 +231,18 @@ export function m3Plugin(options: M3PluginOptions = {}): BunPlugin {
     setup(build: PluginBuilder) {
       // The m3 hooks come first: the Tailwind loader would otherwise try to read the virtual
       // font sheet from disk.
-      build.onResolve({ filter: /^m3:/ }, args => {
+      build.onResolve({ filter: /^m3:/ }, (args) => {
         const name = args.path.slice("m3:".length);
         if (name in SHEET_MODULES) return { path: name, namespace: M3_NAMESPACE };
         const fonts = fontPaths(resolveRepoRoot(options.root));
         const style = SYMBOL_MODULES[name];
         if (style) return { path: join(fonts.symbolsDir, `${style}.css`) };
         if (name === FONTS_MODULE) return { path: join(fonts.sansFlexDir, FONTS_VIRTUAL) };
-        throw new Error(`@aphrody/m3: unknown module ${args.path} (known: ${M3_MODULES.join(", ")})`);
+        throw new Error(
+          `@aphrody/m3: unknown module ${args.path} (known: ${M3_MODULES.join(", ")})`,
+        );
       });
-      build.onResolve({ filter: /\.(woff2?|ttf|otf|eot)$/ }, args => {
+      build.onResolve({ filter: /\.(woff2?|ttf|otf|eot)$/ }, (args) => {
         if (args.importer) {
           const directTarget = resolve(dirname(args.importer), args.path);
           if (existsSync(directTarget)) return { path: directTarget };
@@ -160,11 +258,11 @@ export function m3Plugin(options: M3PluginOptions = {}): BunPlugin {
         }
         return undefined;
       });
-      build.onLoad({ filter: /.*/, namespace: M3_NAMESPACE }, async args => {
+      build.onLoad({ filter: /.*/, namespace: M3_NAMESPACE }, async (args) => {
         const kind = SHEET_MODULES[args.path];
         if (!kind) throw new Error(`@aphrody/m3: unknown sheet m3:${args.path}`);
         const css = await sheet(kind);
-        if (options.tailwind === false) return { contents: css, loader: "css" };
+        if (options.tailwind === false) return { contents: lowerThemeRules(css), loader: "css" };
         const base = options.configDir ?? process.cwd();
         return { contents: await compileSheet(`m3-${args.path}`, css, base), loader: "css" };
       });
@@ -175,7 +273,7 @@ export function m3Plugin(options: M3PluginOptions = {}): BunPlugin {
       if (options.sass !== false) {
         const sassOptions = typeof options.sass === "object" ? options.sass : {};
         let compile: Promise<LoadCallback> | undefined;
-        build.onLoad({ filter: /\.scss$/ }, async args => {
+        build.onLoad({ filter: /\.scss$/ }, async (args) => {
           compile ??= (async () => {
             const { sassRustPlugin } = await loadAphrodyBun();
             if (typeof sassRustPlugin !== "function")
@@ -196,9 +294,11 @@ export function m3Plugin(options: M3PluginOptions = {}): BunPlugin {
       // The token sheets carry `@theme inline`: Tailwind compiles them with the root that imports them.
       if (options.tailwind !== false)
         void tailwindM3Plugin({
-          schemeImport: id => {
+          schemeImport: (id) => {
             const name = id.slice("m3:".length);
-            return id.startsWith("m3:") && Object.hasOwn(SHEET_MODULES, name) ? sheet(SHEET_MODULES[name]) : undefined;
+            return id.startsWith("m3:") && Object.hasOwn(SHEET_MODULES, name)
+              ? sheet(SHEET_MODULES[name])
+              : undefined;
           },
         }).setup(build);
     },
