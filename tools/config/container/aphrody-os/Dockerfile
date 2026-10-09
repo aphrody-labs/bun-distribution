@@ -118,14 +118,11 @@ CMD ["/usr/bin/nu"]
 # (seatd, cosmic-greeter, system76-scheduler). See PLAN-ALPINE-BUN.md section C1 in aphrody-labs/bun.
 FROM cli AS desktop
 
-ARG APHRODY_APORTS_REF=071286df8e35e7d505c76a9f447bec1dea4c7042
-ADD https://raw.githubusercontent.com/aphrody-labs/aports/${APHRODY_APORTS_REF}/aphrody/keys/aphrody-labs.rsa.pub /etc/apk/keys/aphrody-labs.rsa.pub
-
+# The Aphrody apk key and repository come from the cli stage.
 USER root
 RUN --mount=type=secret,id=build_ca,required=false \
     set -eu; \
     if [ -s /run/secrets/build_ca ]; then export SSL_CERT_FILE=/run/secrets/build_ca; fi; \
-    echo 'https://github.com/aphrody-labs/aports/releases/download/aphrody-3.24-${APK_ARCH}/APKINDEX.tar.gz' >> /etc/apk/repositories; \
     apk add --no-cache aphrody-desktop-cosmic
 
 COPY desktop/ /
