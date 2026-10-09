@@ -848,7 +848,7 @@
     },
     "packages/infra/paths": {
       "name": "@aphrody/paths",
-      "version": "0.1.2",
+      "version": "0.1.3",
     },
     "packages/infra/product": {
       "name": "@aphrody/product",
@@ -869,7 +869,7 @@
     },
     "packages/infra/update": {
       "name": "@aphrody/update",
-      "version": "0.1.2",
+      "version": "0.1.4",
       "dependencies": {
         "@aphrody/paths": "workspace:*",
       },
@@ -891,7 +891,7 @@
     },
     "packages/interop/native": {
       "name": "@aphrody/bun",
-      "version": "3.3.8",
+      "version": "3.3.10",
       "dependencies": {
         "@aphrody/paths": "workspace:*",
         "@aphrody/runtime-sdk": "workspace:*",
@@ -987,7 +987,7 @@
     },
     "packages/web/x": {
       "name": "@aphrody/x",
-      "version": "1.3.0",
+      "version": "1.3.2",
       "dependencies": {
         "@aphrody/bun": "workspace:*",
         "@aphrody/paths": "workspace:*",
