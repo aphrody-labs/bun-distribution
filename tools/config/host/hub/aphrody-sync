@@ -12,7 +12,6 @@ FEATURES="${APHRODY_SYNC_FEATURES:-jobs,mcp-toolbox}"
 export APHRODY_CARGO_TARGET_DIR=/srv/aphrody-build/cache/cargo/aphrody
 export CARGO_TARGET_DIR="$APHRODY_CARGO_TARGET_DIR"
 export SCCACHE_DIR=/srv/aphrody-build/cache/sccache
-export RUSTC_WRAPPER=sccache
 export PATH="$HOME/.cargo/bin:$HOME/.bun/bin:$BIN:/usr/local/bin:/usr/bin:/bin"
 mkdir -p "$STATE_DIR"
 exec 9>"$STATE_DIR/sync.lock"
