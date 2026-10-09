@@ -33,7 +33,6 @@ def train(
         )
     try:
         import numpy as np
-        import torch
         from datasets import Dataset
         from sentence_transformers import (
             SentenceTransformer,
@@ -87,6 +86,8 @@ def train(
                 lr=float(record.get("learning_rate", 0.0)),
             )
     model.save_pretrained(str(model_dir))
+
+    import torch  # installed with sentence-transformers
 
     model.to("cpu")
     onnx_path = model_dir / "onnx" / "model.onnx"

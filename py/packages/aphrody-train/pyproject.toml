@@ -17,10 +17,10 @@ full = ["datasets>=2.18", "datasketch>=2.0", "numpy>=1.26", "sentence-transforme
 mine = ["datasets>=2.18", "datasketch>=2.0", "numpy>=1.26", "sentence-transformers>=6.1", "torch==2.13.0"]
 
 [tool.uv]
-index = [{ "name" = "pytorch-cu129", "url" = "https://download.pytorch.org/whl/cu129", "explicit" = true }, { "name" = "pytorch-cu130", "url" = "https://download.pytorch.org/whl/cu130", "explicit" = true }]
+index = [{ "name" = "pytorch-cu130", "url" = "https://download.pytorch.org/whl/cu130", "explicit" = true }]
 
 [tool.uv.sources]
-torch = [{ "index" = "pytorch-cu129", "marker" = "sys_platform == 'linux'" }, { "index" = "pytorch-cu130", "marker" = "sys_platform == 'win32'" }]
+torch = [{ "index" = "pytorch-cu130", "marker" = "sys_platform == 'linux' or sys_platform == 'win32'" }]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/aphrody_train"]

@@ -14,9 +14,7 @@ INPUT_NAMES = ("input_ids", "attention_mask", "token_type_ids")
 EXPORT_PROBE = ["onnx export probe", "a second and longer onnx export probe sentence"]
 
 
-def export(
-    transformer: Any, tokenizer: Any, onnx_path: Path, output_name: str
-) -> None:
+def export(transformer: Any, tokenizer: Any, onnx_path: Path, output_name: str) -> None:
     """Write the first output of ``transformer`` as a single-file ONNX graph.
 
     ``onnx_path`` is ``<model_dir>/onnx/model.onnx``; ``<model_dir>`` holds the saved tokenizer.
@@ -41,7 +39,9 @@ def export(
 
     axes = {name: {0: "batch", 1: "sequence"} for name in names}
     axes[output_name] = (
-        {0: "batch", 1: "sequence"} if output_name == "last_hidden_state" else {0: "batch"}
+        {0: "batch", 1: "sequence"}
+        if output_name == "last_hidden_state"
+        else {0: "batch"}
     )
     onnx_path.parent.mkdir(parents=True, exist_ok=True)
     graph = Graph(transformer.to("cpu").eval())
@@ -66,7 +66,9 @@ def export(
         )
 
 
-def run(onnx_path: Path, tokenizer: Any, *texts: list[str]) -> tuple[Any, dict[str, Any]]:
+def run(
+    onnx_path: Path, tokenizer: Any, *texts: list[str]
+) -> tuple[Any, dict[str, Any]]:
     """Tokenize ``texts`` (one list, or two for pairs); return the ONNX output and its int64 feeds."""
     import numpy as np
     import onnxruntime as ort

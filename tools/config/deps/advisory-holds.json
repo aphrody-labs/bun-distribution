@@ -6,13 +6,11 @@
     { "ecosystem": "crates.io", "name": "bincode", "reason": "RUSTSEC-2025-0141 is an unmaintained notice; 3.0.0 is not a drop-in replacement. Transitive (heed-types and others)." },
     { "ecosystem": "crates.io", "name": "glib", "reason": "gtk3-rs 0.18 stack required by tauri/wry on Linux (atk, cairo-rs, gdk); moves with the Tauri toolchain." },
     { "ecosystem": "crates.io", "name": "quick-xml", "reason": "0.38.4 comes from plist 1.7.4; 0.31.0 from an older transitive parent. Moves with its parent." },
-    { "ecosystem": "crates.io", "name": "rand", "reason": "rand 0.7.3 comes from phf_generator 0.8; moves with its parent." },
     { "ecosystem": "crates.io", "name": "ttf-parser", "reason": "fontdb 0.16 and the usvg/rustybuzz text stack; no patched release exists for 0.25.1 either." },
     { "ecosystem": "crates.io", "name": "paste", "reason": "unmaintained notice, transitive (rav1e, specta, safer-bytes); no replacement release." },
     { "ecosystem": "crates.io", "name": "rsa", "reason": "RUSTSEC-2023-0071 has no patched release; transitive of jsonwebtoken 10." },
     { "ecosystem": "crates.io", "name": "serial", "reason": "unmaintained notice; portable-pty 0.8 (pinned, 0.9 breaks headless Windows clients)." },
     { "ecosystem": "crates.io", "name": "rustybuzz", "reason": "usvg and athena-text text stack; no newer release." },
-    { "ecosystem": "crates.io", "name": "fxhash", "reason": "unmaintained notice, transitive (selectors 0.24)." },
     { "ecosystem": "crates.io", "name": "proc-macro-error", "reason": "unmaintained notice; used by glib-macros and gtk3-macros." },
     { "ecosystem": "crates.io", "name": "proc-macro-error2", "reason": "unmaintained notice; used by nu-derive-value." },
     { "ecosystem": "crates.io", "name": "encoding", "reason": "unmaintained notice, transitive; no newer release." },
@@ -23,8 +21,6 @@
     { "ecosystem": "npm", "name": "uuid", "reason": "uuid 9 is a transitive major; only v3/v5/v6 with a caller-supplied buffer is affected." },
     { "ecosystem": "npm", "name": "basic-ftp", "reason": "transitive major (5 to 6); moves with its consumer." },
     { "ecosystem": "npm", "name": "extract-zip", "reason": "no newer release (2.0.1 is latest)." },
-    { "ecosystem": "npm", "name": "quill", "reason": "no newer release (2.0.3 is latest)." },
-    { "ecosystem": "PyPI", "name": "torch", "reason": "pinned ==2.8.0 in aphrody-train: the 2.14.0 Windows wheel failed to import torch.amp in the CPU smoke test." },
-    { "ecosystem": "PyPI", "name": "transformers", "reason": "kept below 4.58 by aphrody-train (sentence-transformers 5.x line); 5.x needs sentence-transformers 6." }
+    { "ecosystem": "npm", "name": "quill", "reason": "no newer release (2.0.3 is latest)." }
   ]
 }

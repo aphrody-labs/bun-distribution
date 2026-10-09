@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import hashlib
 import json
+import os
 import subprocess
 
 import pytest
@@ -85,6 +86,7 @@ def test_corpus_uses_committed_sources_and_keeps_evaluation_disjoint(tmp_path):
     assert hashes(train).isdisjoint(hashes(evaluation))
     assert manifest["splits"]["train"]["rows"] == 13
     assert "Uncommitted content" not in (output / "train.jsonl").read_text()
-    assert output.stat().st_mode & 0o077 == 0
+    if os.name == "posix":
+        assert output.stat().st_mode & 0o077 == 0
     with pytest.raises(ValueError, match="new private directory"):
         build(fork, output)
