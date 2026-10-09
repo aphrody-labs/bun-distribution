@@ -110,6 +110,11 @@ fi
 if [[ "$help_only" == false && -n "${APHRODY_FACTORY_RESOURCE:-}" && ( "${RUSTC_WRAPPER:-}" == sccache || "${RUSTC_WRAPPER:-}" == */sccache ) ]]; then
     bun "$source_root/packages/infra/workspace/src/build-factory-cleanup.ts" --sccache "$factory_config" "$(command -v "$RUSTC_WRAPPER")"
 fi
+if ! command -v flock >/dev/null 2>&1; then
+    # Git Bash on Windows ships neither flock nor nice: Cargo's own build-directory lock serializes.
+    echo "[cargo-serial] flock unavailable; running cargo with jobs=$jobs under Cargo's own lock" >&2
+    exec env CARGO_BUILD_JOBS="$jobs" CARGO_INCREMENTAL=0 CARGO_TERM_COLOR=never cargo "$@"
+fi
 echo "[cargo-serial] waiting for $lock_file (jobs=$jobs, timeout=${wait_seconds}s)" >&2
 # Keep ownership in flock itself. A spawned sccache daemon must not inherit
 # the descriptor and hold the build lock after Cargo has exited.
