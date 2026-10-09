@@ -3126,8 +3126,8 @@
     {
       "path": "docs/operations/infra/DOWNLOADS.md",
       "title": "Aphrody downloads: site, publisher and GitHub releases",
-      "sha256": "f66ae9d848248a8e7b684dd29e23b85dac93be954ad7d6369169ffdf7f923966",
-      "bytes": 8464,
+      "sha256": "ce5b3343abc789e8a5db5655e59e7a9e8d0f619f525ede05fe9d48bd9429bafc",
+      "bytes": 9109,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -3216,8 +3216,8 @@
     {
       "path": "docs/operations/infra/OMAR-REMOTE-CONTROL.md",
       "title": "Contrôle du PC Windows d'Omar depuis Aphrody (tunnel WireGuard privé)",
-      "sha256": "62e12f63412d99327013d4762def3baa0fbbcc6bae8fae60c5105816132b72f3",
-      "bytes": 37460,
+      "sha256": "6e49511efc4bb99afc969c411f65f6fdeffdd56c74b16aaf23197ae455b0edef",
+      "bytes": 37956,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -7456,7 +7456,7 @@
     {
       "path": "docs/reference/workspace/CLI.md",
       "title": "CLI du poste Aphrody",
-      "sha256": "60007e96954bb1d598051ba66d8784ed0901725f75efc271137048b089945697",
+      "sha256": "397cb956cb5f1afb91a19faa5d6fc766d3db53d28b9d4b202904a82094215d28",
       "bytes": 14667,
       "domain": "workspace",
       "status": "canonical",
@@ -7546,7 +7546,7 @@
     {
       "path": "docs/reference/workspace/TOOLS.md",
       "title": "Outils et contextes Agent Home",
-      "sha256": "4f66fe3a74a1fefabcf4728b06fc3d97a47ab10924449ef2e8d4184bdff73c7d",
+      "sha256": "ab3ce9a74e947fd84d9782bbdabe22370ee9b866264904352140d379be6dc377",
       "bytes": 45272,
       "domain": "workspace",
       "status": "generated",
@@ -12546,7 +12546,7 @@
     {
       "path": "py/README.md",
       "title": "Aphrody Python",
-      "sha256": "eb01911740619333004a1452f38ebfe1781717c0ef8cc8c66aefc82d04528d6a",
+      "sha256": "df13b8f3bf388918532c115e73dffcbf9daba8c3571037fd85c08b9fa1e30a15",
       "bytes": 3683,
       "domain": "",
       "status": "canonical",

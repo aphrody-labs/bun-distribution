@@ -514,3 +514,10 @@ AllowedIPs = 10.200.77.0/24
 Endpoint = 51.77.147.152:51821
 PersistentKeepalive = 25
 ```
+
+## 2.11 Recentrage tunnel (2026-10-09)
+
+Les synchronisations et moniteurs Discord sont arrêtés et marqués `retired-2026-10-09` dans `tools/config/host/catalog.json`
+(drive-sync, control-plane, lab-telemetry, omar-watch sur le vps ; ai-lab et debate sur dbfr). Le serveur Discord ne garde que
+`start-here`, `tunnel-omar`, `chat` et `ops-alerts` (catégories 01 Accueil, 02 Tunnel et hôtes). Au boot : `wg-quick@wg1`, `ssh`, `docker`
+et `aphrody-selfheal.timer` sont activés sur vps et dbfr.

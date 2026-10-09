@@ -111,7 +111,8 @@
       "path": "systemd/aphrody/aphrody-discord-lab-telemetry.service",
       "dropIns": [],
       "ownerRepo": "aphrody",
-      "targetHost": "vps"
+      "targetHost": "vps",
+      "status": "retired-2026-10-09"
     },
     {
       "service": "aphrody-discord-lab-telemetry-timer",
@@ -119,7 +120,8 @@
       "path": "systemd/aphrody/aphrody-discord-lab-telemetry.timer",
       "dropIns": [],
       "ownerRepo": "aphrody",
-      "targetHost": "vps"
+      "targetHost": "vps",
+      "status": "retired-2026-10-09"
     },
     {
       "service": "aphrody-discord-ai-lab",
@@ -127,7 +129,8 @@
       "path": "systemd/aphrody/aphrody-discord-ai-lab.service",
       "dropIns": [],
       "ownerRepo": "aphrody",
-      "targetHost": "vps"
+      "targetHost": "vps",
+      "status": "retired-2026-10-09"
     },
     {
       "service": "shenron-site-docker",
@@ -433,7 +436,8 @@
       "path": "systemd/aphrody/aphrody-discord-control-plane.service",
       "dropIns": [],
       "ownerRepo": "aphrody",
-      "targetHost": "vps"
+      "targetHost": "vps",
+      "status": "retired-2026-10-09"
     },
     {
       "service": "aphrody-discord-control-plane-timer",
@@ -441,7 +445,8 @@
       "path": "systemd/aphrody/aphrody-discord-control-plane.timer",
       "dropIns": [],
       "ownerRepo": "aphrody",
-      "targetHost": "vps"
+      "targetHost": "vps",
+      "status": "retired-2026-10-09"
     },
     {
       "service": "aphrody-omar-watch",
@@ -449,7 +454,8 @@
       "path": "systemd/aphrody/aphrody-omar-watch.service",
       "dropIns": [],
       "ownerRepo": "aphrody",
-      "targetHost": "vps"
+      "targetHost": "vps",
+      "status": "retired-2026-10-09"
     },
     {
       "service": "aphrody-omar-watch-timer",
@@ -457,7 +463,8 @@
       "path": "systemd/aphrody/aphrody-omar-watch.timer",
       "dropIns": [],
       "ownerRepo": "aphrody",
-      "targetHost": "vps"
+      "targetHost": "vps",
+      "status": "retired-2026-10-09"
     },
     {
       "service": "aphrody-discord-debate",
@@ -465,7 +472,8 @@
       "path": "systemd/aphrody/aphrody-discord-debate.service",
       "dropIns": [],
       "ownerRepo": "aphrody",
-      "targetHost": "vps"
+      "targetHost": "vps",
+      "status": "retired-2026-10-09"
     },
     {
       "service": "shenron-timeline-refresh",
@@ -559,7 +567,8 @@
       "path": "systemd/aphrody/aphrody-drive-sync.service",
       "dropIns": [],
       "ownerRepo": "aphrody",
-      "targetHost": "vps"
+      "targetHost": "vps",
+      "status": "retired-2026-10-09"
     },
     {
       "service": "aphrody-drive-sync",
@@ -567,7 +576,8 @@
       "path": "systemd/aphrody/aphrody-drive-sync.timer",
       "dropIns": [],
       "ownerRepo": "aphrody",
-      "targetHost": "vps"
+      "targetHost": "vps",
+      "status": "retired-2026-10-09"
     },
     {
       "service": "aphrody-pc-agent",
