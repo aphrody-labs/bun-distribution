@@ -66,6 +66,10 @@ pin here with `bun run docs:bun:update` and check it with `bun run docs:bun:chec
 Versions are `<base>-aphrody.<n>`; the binary reports `bun --version` = the upstream base (1.4.3) and
 `bun --revision` = `<base>+<fork sha>`. Release `aphrody-v1.4.3-aphrody.2` includes linux-x64 and
 linux-aarch64 builds for glibc and musl, x64 baseline builds, darwin-x64/aarch64 and windows-x64/aarch64.
+Repository pin (2026-10-09): `package.json` `packageManager` is `bun@1.4.3-aphrody.3` (revision `d46f0ed6c69`,
+`bun --revision` = `1.4.3-aphrody.3+d46f0ed6c`); `scripts/build/container/aphrody-build.ts` derives the release tag
+`aphrody-v1.4.3-aphrody.3` from it. The `.3` builds are local only: no GitHub release is published yet and there is no
+musl build, so installers and the build image that fetch `aphrody-v1.4.3-aphrody.3` fail until it is published.
 The Alpine Aphrody OS image consumes the musl archives through the checksum-verifying fork installer. The npm name
 `@aphrody/bun` is not the fork runtime; never publish or install the runtime under it.
 
