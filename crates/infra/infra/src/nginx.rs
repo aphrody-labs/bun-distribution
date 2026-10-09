@@ -44,7 +44,9 @@ impl UpstreamTarget {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UpstreamBlock {
     pub name: String,
+    #[serde(default)]
     pub targets: Vec<UpstreamTarget>,
+    #[serde(default)]
     pub keepalive: Option<u32>,
 }
 
@@ -71,9 +73,13 @@ impl UpstreamBlock {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LocationBlock {
     pub path: String,
+    #[serde(default)]
     pub proxy_pass: Option<String>,
+    #[serde(default)]
     pub proxy_http_version: Option<String>,
+    #[serde(default)]
     pub headers: Vec<(String, String)>,
+    #[serde(default)]
     pub custom_directives: Vec<String>,
 }
 
@@ -109,11 +115,16 @@ impl LocationBlock {
 /// Virtual host server block in Nginx.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ServerBlock {
+    #[serde(default)]
     pub server_names: Vec<String>,
     pub listen_ports: Vec<String>,
+    #[serde(default)]
     pub ssl_certificate: Option<String>,
+    #[serde(default)]
     pub ssl_certificate_key: Option<String>,
+    #[serde(default)]
     pub locations: Vec<LocationBlock>,
+    #[serde(default)]
     pub custom_directives: Vec<String>,
 }
 
@@ -148,7 +159,9 @@ impl ServerBlock {
 /// Complete Nginx virtual host or site configuration.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NginxConfig {
+    #[serde(default)]
     pub upstreams: Vec<UpstreamBlock>,
+    #[serde(default)]
     pub servers: Vec<ServerBlock>,
 }
 
@@ -343,5 +356,29 @@ mod tests {
         assert!(rendered.contains("server_name api.rosegriffon.fr;"));
         assert!(rendered.contains("proxy_pass http://rg_api_upstream;"));
         assert!(rendered.contains("proxy_set_header Host $host;"));
+    }
+
+    #[test]
+    fn json_with_omitted_fields_renders() {
+        let config: NginxConfig = serde_json::from_str(
+            r#"{
+              "upstreams": [{ "name": "app", "targets": [{ "type": "Tcp", "target": "127.0.0.1:3000" }], "keepalive": 16 }],
+              "servers": [{
+                "listen_ports": ["127.0.0.1:8080"],
+                "server_names": ["_"],
+                "custom_directives": ["client_max_body_size 2m"],
+                "locations": [
+                  { "path": "/", "proxy_pass": "http://app", "proxy_http_version": "1.1",
+                    "headers": [["Connection", "\"\""]], "custom_directives": ["proxy_read_timeout 30s"] },
+                  { "path": "= /down", "custom_directives": ["return 503"] }
+                ]
+              }]
+            }"#,
+        )
+        .unwrap();
+        assert_eq!(
+            config.render(),
+            "upstream app {\n    server 127.0.0.1:3000;\n    keepalive 16;\n}\n\nserver {\n    listen 127.0.0.1:8080;\n    server_name _;\n    client_max_body_size 2m;\n\n    location / {\n        proxy_pass http://app;\n        proxy_http_version 1.1;\n        proxy_set_header Connection \"\";\n        proxy_read_timeout 30s;\n    }\n\n    location = /down {\n        return 503;\n    }\n}\n\n"
+        );
     }
 }

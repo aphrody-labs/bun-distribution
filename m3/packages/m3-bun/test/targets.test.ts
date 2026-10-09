@@ -11,6 +11,12 @@ import {
   type TargetContext,
 } from "../src/targets/index.ts";
 import { RUNTIME_IMAGE } from "../src/targets/docker.ts";
+import {
+  httpVhostModel,
+  nginxRenderer,
+  vhostModel,
+  type NginxModel,
+} from "../src/targets/nginx.ts";
 import { sharedDropin } from "../src/targets/systemd.ts";
 import { cleanup, FIXTURE, freePort, tmp } from "./helpers.ts";
 
@@ -85,7 +91,10 @@ describe("docker", () => {
   test("multi-stage Dockerfile: compile and run on the Aphrody Alpine runtime image, healthcheck without a shell", () => {
     const file = read("docker", "Dockerfile");
     expect(RUNTIME_IMAGE).toBe("ghcr.io/aphrody-labs/alpine:3.24-runtime");
-    expect(file.match(/^FROM .*$/gm)).toEqual([`FROM ${RUNTIME_IMAGE} AS build`, `FROM ${RUNTIME_IMAGE}`]);
+    expect(file.match(/^FROM .*$/gm)).toEqual([
+      `FROM ${RUNTIME_IMAGE} AS build`,
+      `FROM ${RUNTIME_IMAGE}`,
+    ]);
     expect(file).toContain("COPY --chown=agent:agent . .");
     expect(file).toContain("compile --outfile /home/agent/out/hello-m3");
     expect(file).toContain("COPY --from=build /home/agent/out/hello-m3 /app/server");
@@ -202,26 +211,54 @@ describe("systemd", () => {
 });
 
 describe("nginx", () => {
-  test("vhost: upstream with keepalive, ACME and redirect on :80, TLS on :443, the yolo proxy snippet", () => {
-    const conf = read("nginx", "hello-m3.conf");
-    expect(conf).toContain("upstream hello_m3 {\n    server 127.0.0.1:3456;\n    keepalive 16;\n}");
-    expect(conf).toContain("server_name hello.example.com;");
-    expect(conf).toContain("location ^~ /.well-known/acme-challenge/");
-    expect(conf).toContain("return 301 https://hello.example.com$request_uri;");
-    expect(conf).toContain(
-      "ssl_certificate /etc/letsencrypt/live/hello.example.com/fullchain.pem;",
+  const renderer = nginxRenderer();
+  test("vhost model: upstream with keepalive, ACME and redirect on :80, TLS on :443, the yolo proxy snippet", () => {
+    const model = json("nginx", "hello-m3.nginx.json") as NginxModel;
+    expect(model).toEqual(vhostModel(ctx));
+    expect(model.upstreams).toEqual([
+      { name: "hello_m3", targets: [{ type: "Tcp", target: "127.0.0.1:3456" }], keepalive: 16 },
+    ]);
+    const [redirect, tls] = model.servers;
+    expect(redirect!.listen_ports).toEqual(["80"]);
+    expect(redirect!.locations!.map((l) => l.path)).toEqual([
+      "^~ /.well-known/acme-challenge/",
+      "/",
+    ]);
+    expect(redirect!.locations![1]!.custom_directives).toEqual([
+      "return 301 https://hello.example.com$request_uri",
+    ]);
+    expect(tls!.listen_ports).toEqual(["443 ssl"]);
+    expect(tls!.server_names).toEqual(["hello.example.com"]);
+    expect(tls!.ssl_certificate).toBe("/etc/letsencrypt/live/hello.example.com/fullchain.pem");
+    expect(tls!.custom_directives).toContain("http2 on");
+    expect(tls!.custom_directives).toContain(
+      'add_header Strict-Transport-Security "max-age=31536000" always',
     );
-    expect(conf).toContain("listen 443 ssl;\n    http2 on;");
-    expect(conf).toContain("include snippets/proxy-client-ip.inc;");
-    expect(conf).toContain("proxy_pass http://hello_m3;");
-    expect(conf).toContain("Strict-Transport-Security");
+    expect(tls!.locations![0]!.proxy_pass).toBe("http://hello_m3");
+    expect(tls!.locations![0]!.custom_directives).toContain("include snippets/proxy-client-ip.inc");
+    expect(json("nginx", "hello-m3.http.nginx.json")).toEqual(httpVhostModel(ctx));
   });
-  test("the listen-http2 form is available for nginx older than 1.25.1", async () => {
-    const dir = tmp();
-    await generateTargets(["nginx"], { ...ctx, http2: "listen" }, dir);
-    const conf = readFileSync(join(dir, "nginx", "hello-m3.conf"), "utf8");
-    expect(conf).toContain("listen 443 ssl http2;");
-    expect(conf).not.toContain("http2 on;");
+  test("the listen-http2 form is available for nginx older than 1.25.1", () => {
+    const tls = vhostModel({ ...ctx, http2: "listen" }).servers[1]!;
+    expect(tls.listen_ports).toEqual(["443 ssl http2"]);
+    expect(tls.custom_directives).not.toContain("http2 on");
+  });
+  test("the vhosts are rendered by aphrody infra nginx, or say how to render them", () => {
+    if (renderer) {
+      const conf = read("nginx", "hello-m3.conf");
+      expect(conf).toContain(
+        "upstream hello_m3 {\n    server 127.0.0.1:3456;\n    keepalive 16;\n}",
+      );
+      expect(conf).toContain("listen 443 ssl;\n    server_name hello.example.com;");
+      expect(conf).toContain("    http2 on;\n");
+      expect(conf).toContain("return 301 https://hello.example.com$request_uri;");
+      expect(conf).toContain('proxy_set_header Connection "";');
+      expect(conf).toContain("include snippets/proxy-client-ip.inc;");
+    } else {
+      expect(read("nginx", "hello-m3.conf.todo")).toContain(
+        "aphrody infra nginx render hello-m3.nginx.json > hello-m3.conf",
+      );
+    }
   });
   test("the routes.json entry matches the catalog shape", () => {
     expect(json("nginx", "routes.entry.json")).toEqual({
@@ -232,7 +269,7 @@ describe("nginx", () => {
       vhost: "nginx/aphrody/hello-m3.conf",
     });
   });
-  test.skipIf(!Bun.which("nginx"))(
+  test.skipIf(!Bun.which("nginx") || !nginxRenderer())(
     "nginx -t accepts the TLS vhost (self-signed test certificate) and the HTTP variant",
     async () => {
       const dir = tmp("m3-bun-nginx-");
@@ -486,17 +523,18 @@ describe("linux-image", () => {
       expect(Bun.spawnSync(["test", "-x", path]).exitCode).toBe(0);
     }
   });
-  test("init.c compiles as C and is static-linkable", () => {
-    const cc = Bun.which("cc") ?? Bun.which("gcc");
-    if (!cc) return;
-    const bin = join(tmp(), "init");
-    const proc = Bun.spawnSync(
-      [cc, "-Wall", "-Werror", "-static", "-Os", "-o", bin, join(out, "linux-image", "init.c")],
-      { stdout: "pipe", stderr: "pipe" },
+  test("build-image.sh delegates to the fork's initramfs.ts with the executable as the only Bun", () => {
+    const script = read("linux-image", "build-image.sh");
+    expect(script).toContain('BUN_BE_BUN=1 "$BIN" -e \'require("bun:linux")\'');
+    for (const f of ["initramfs.ts", "initramfs-init.ts", "initramfs-net.ts"])
+      expect(script).toContain(f);
+    expect(script).toContain(
+      'args=(--bun "$BIN" --argv0 hello-m3 --sysroot "$SYSROOT" --hostname hello-m3 --ip "$M3_IP")',
     );
-    expect({ code: proc.exitCode, err: proc.stderr.toString() }).toEqual({ code: 0, err: "" });
-    expect(Bun.spawnSync(["file", bin], { stdout: "pipe" }).stdout.toString()).toMatch(
-      /statically linked/,
+    expect(script).toContain("args+=(--env PORT=3456 --env HOST=0.0.0.0)");
+    expect(script).toContain(
+      'bun "$SRC/initramfs.ts" "${args[@]}" --out "$OUT/initramfs.cpio.gz" -- /bin/bun',
     );
-  }, 30_000);
+    expect(existsSync(join(out, "linux-image", "init.c"))).toBe(false);
+  });
 });

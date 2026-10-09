@@ -203,6 +203,11 @@ enum CommandKind {
         #[command(subcommand)]
         command: crate::remote::RemoteCommand,
     },
+    /// Render or check nginx configuration from the typed model (`nginx.rs`); writes no run manifest.
+    Nginx {
+        #[command(subcommand)]
+        command: NginxCommand,
+    },
     /// Native Mullvad VPN controller and auto-proxy geo-unblock driver.
     Vpn {
         #[command(subcommand)]
@@ -257,6 +262,21 @@ enum MaintenanceAction {
     Update,
     Fix,
     Clean,
+}
+
+#[derive(Debug, Subcommand)]
+enum NginxCommand {
+    /// Render a JSON `NginxConfig` (upstreams, servers, locations) to nginx syntax on stdout.
+    Render {
+        /// JSON file, or `-` for stdin.
+        #[arg(default_value = "-")]
+        config: String,
+        /// Lines written first as `# ` comments.
+        #[arg(long)]
+        comment: Vec<String>,
+    },
+    /// Check a configuration file with `nginx -t -c <path> -q`.
+    Test { path: PathBuf },
 }
 
 #[derive(Debug, Subcommand)]
@@ -1255,24 +1275,22 @@ fn dev_env(root: &Path, target_id: Option<&str>, apply: bool, run: &mut Run) -> 
         let (host, program, args): (&str, &str, Vec<&str>) = match target.id.as_str() {
             "vps" => ("vps", "ssh", vec!["-o", "BatchMode=yes", "vps", "bash", "-s"]),
             "dbfr" => ("dbfr", "ssh", vec!["-o", "BatchMode=yes", "dbfr", "bash", "-s"]),
-            "linux-container-26.04" => {
-                (
-                    "wsl",
-                    "docker",
-                    vec![
-                        "run",
-                        "--rm",
-                        "-i",
-                        "--cpus",
-                        "6",
-                        "--memory",
-                        "6g",
-                        LINUX_BUILD_IMAGE,
-                        "bash",
-                        "-s",
-                    ],
-                )
-            },
+            "linux-container-26.04" => (
+                "wsl",
+                "docker",
+                vec![
+                    "run",
+                    "--rm",
+                    "-i",
+                    "--cpus",
+                    "6",
+                    "--memory",
+                    "6g",
+                    LINUX_BUILD_IMAGE,
+                    "bash",
+                    "-s",
+                ],
+            ),
             _ => {
                 if target_id.is_some() {
                     bail!(
@@ -1372,6 +1390,36 @@ fn deploy(
         println!("{}", String::from_utf8_lossy(&output.stdout).trim());
     }
     Ok(())
+}
+
+fn nginx_command(command: &NginxCommand) -> Result<()> {
+    match command {
+        NginxCommand::Render { config, comment } => {
+            let raw = if config == "-" {
+                let mut raw = String::new();
+                std::io::Read::read_to_string(&mut std::io::stdin(), &mut raw)?;
+                raw
+            } else {
+                fs::read_to_string(config).with_context(|| format!("lecture de {config}"))?
+            };
+            print!("{}", render_nginx(&raw, comment)?);
+            Ok(())
+        },
+        NginxCommand::Test { path } => {
+            crate::NginxConfig::test_syntax(path).map_err(|error| anyhow::anyhow!(error))
+        },
+    }
+}
+
+fn render_nginx(raw: &str, comment: &[String]) -> Result<String> {
+    let config: crate::NginxConfig =
+        serde_json::from_str(raw).context("configuration nginx JSON invalide")?;
+    let mut out = String::new();
+    for line in comment {
+        out.push_str(&format!("# {line}\n"));
+    }
+    out.push_str(&config.render());
+    Ok(out)
 }
 
 fn validate_catalogs(root: &Path, as_json: bool, run: &mut Run) -> Result<()> {
@@ -2174,6 +2222,9 @@ pub fn cli_main(args: Vec<std::ffi::OsString>) -> i32 {
 }
 
 async fn run_cli(cli: Cli) -> Result<()> {
+    if let CommandKind::Nginx { command } = &cli.command {
+        return nginx_command(command);
+    }
     let root = fs::canonicalize(&cli.root).context("racine infra introuvable")?;
     // The default root is the enclosing work tree, so a call from a subdirectory neither misses
     // `config/` nor drops run manifests under that subdirectory.
@@ -2244,6 +2295,7 @@ async fn run_cli(cli: Cli) -> Result<()> {
             execute_ci(repo, source_ref, *apply, *json, &mut run)
         },
         CommandKind::Vpn { command } => execute_vpn(command, &mut run).await,
+        CommandKind::Nginx { command } => nginx_command(command),
         CommandKind::Wg { json, command } => {
             crate::tunnel::execute(&root, command, *json).await.map(|v| run.action("wg", "done", v))
         },
@@ -2293,6 +2345,20 @@ async fn execute_ovh(command: &aphrody_ovh::OvhCommand, run: &mut Run) -> Result
 mod tests {
     use super::*;
     use std::assert_matches;
+
+    #[test]
+    fn nginx_render_prefixes_comments_and_rejects_bad_json() {
+        let rendered = render_nginx(
+            r#"{ "servers": [{ "listen_ports": ["80"], "locations": [{ "path": "/" }] }] }"#,
+            &["generated".to_string()],
+        )
+        .unwrap();
+        assert_eq!(
+            rendered,
+            "# generated\nserver {\n    listen 80;\n\n    location / {\n    }\n}\n\n"
+        );
+        assert!(render_nginx("{ \"servers\": 1 }", &[]).is_err());
+    }
 
     #[test]
     fn pipeline_check_resolves_filtered_monorepo_scripts() {
