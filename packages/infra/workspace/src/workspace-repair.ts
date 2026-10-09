@@ -1,62 +1,69 @@
+// SPDX-License-Identifier: Apache-2.0
 import { resolve } from "node:path";
+import { runDocumentation } from "./documentation.ts";
 import { runDocsLinks } from "./docs-links.ts";
+import { runHostPaths } from "./host-paths.ts";
+import { runImportsExports } from "./imports-exports.ts";
 import { runPowerShellSyntax } from "./powershell-syntax.ts";
-import { runWorkspaceDeps } from "./workspace-deps.ts";
 
-function value(args: string[], name: string): string | undefined {
-  const index = args.indexOf(name);
-  return index === -1 ? undefined : args[index + 1];
+const USAGE =
+  "Usage: yolo ops workspace-repair [--root <repository>] [--workspace <name-or-path>] [--apply] [--powershell]\nPreview is read-only. --apply repairs clean tracked host-path references only; imports and generated documentation are checked by their existing owners.";
+
+/** Owner injection permits isolated integration tests without mutating a shared checkout. */
+export interface WorkspaceRepairOwners {
+  hostPaths: typeof runHostPaths;
+  imports: typeof runImportsExports;
+  documentation: typeof runDocumentation;
+  links: typeof runDocsLinks;
+  powershell: typeof runPowerShellSyntax;
 }
 
-async function run(root: string, command: string[], label: string): Promise<void> {
-  const child = Bun.spawn(command, { cwd: root, stdout: "inherit", stderr: "inherit" });
-  if ((await child.exited) !== 0) throw new Error(`${label} failed`);
-}
+const OWNERS: WorkspaceRepairOwners = {
+  hostPaths: runHostPaths,
+  imports: runImportsExports,
+  documentation: runDocumentation,
+  links: runDocsLinks,
+  powershell: runPowerShellSyntax,
+};
 
-export async function runWorkspaceRepair(args: string[]): Promise<number> {
+export async function runWorkspaceRepair(
+  args: string[],
+  owners: WorkspaceRepairOwners = OWNERS,
+): Promise<number> {
   if (args.includes("--help") || args.includes("-h")) {
-    console.log(
-      "Usage: yolo ops workspace-repair --ai-root <repo> --os-root <repo> --repo <aphrody|aphrody-os> [--apply] [--include-dirty]",
-    );
+    console.log(USAGE);
     return 0;
   }
-  const ai = value(args, "--ai-root");
-  const os = value(args, "--os-root");
-  const selected = value(args, "--repo");
-  const apply = args.includes("--apply");
-  const includeDirty = args.includes("--include-dirty");
-  if (!ai || !os || !selected || !["aphrody", "aphrody-os"].includes(selected))
-    throw new Error(
-      "Usage: yolo ops workspace-repair --ai-root <repo> --os-root <repo> --repo <aphrody|aphrody-os> [--apply] [--include-dirty]",
-    );
-  const roots = { aphrody: resolve(ai), "aphrody-os": resolve(os) };
-  const target = roots[selected as keyof typeof roots];
-  const refScript = resolve(roots["aphrody-os"], "scripts/fix-refs.nu");
-  const refArgs = [
-    "nu",
-    refScript,
-    "links",
-    "--aphrody",
-    roots.aphrody,
-    "--os",
-    roots["aphrody-os"],
-    "--repo",
-    selected,
-  ];
-  if (apply) refArgs.push("--apply");
-  if (includeDirty) refArgs.push("--include-dirty");
-  await run(target, refArgs, "reference link repair");
-  const refsArgs = [...refArgs];
-  refsArgs[2] = "refs";
-  await run(target, refsArgs, "reference repair");
-  const dependencyArgs = [
-    "--root",
-    target,
-    "--sibling",
-    selected === "aphrody" ? roots["aphrody-os"] : roots.aphrody,
-  ];
-  if (apply) dependencyArgs.push("--apply");
-  await runWorkspaceDeps(dependencyArgs);
-  await runPowerShellSyntax(["--root", target]);
-  return runDocsLinks(["--root", target, "--scope", "repository"]);
+  let root = process.cwd();
+  let workspace: string | undefined;
+  let apply = false;
+  let powershell = false;
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index];
+    if (arg === "--root" || arg === "--workspace") {
+      const value = args[++index];
+      if (!value || value.startsWith("--")) throw new Error(`${arg} requires a value`);
+      if (arg === "--root") root = value;
+      else workspace = value;
+    } else if (arg === "--apply") apply = true;
+    else if (arg === "--powershell") powershell = true;
+    else throw new Error(`Unknown argument: ${arg}\n${USAGE}`);
+  }
+  root = resolve(root);
+  // Mutations finish before checks; the host-path owner preserves concurrent dirty files.
+  const paths = await owners.hostPaths(["--root", root, ...(apply ? ["--apply"] : [])]);
+  const results = await Promise.allSettled([
+    owners.imports(workspace ? ["--workspace", workspace] : [], root),
+    owners.documentation(["check", "--root", root]),
+    owners.links(["--root", root, "--scope", "repository"]),
+    ...(powershell ? [owners.powershell(["--root", root])] : []),
+  ]);
+  let code = paths;
+  for (const result of results) {
+    if (result.status === "rejected") {
+      console.error(result.reason instanceof Error ? result.reason.message : result.reason);
+      code ||= 1;
+    } else if (typeof result.value === "number") code ||= result.value;
+  }
+  return code;
 }
