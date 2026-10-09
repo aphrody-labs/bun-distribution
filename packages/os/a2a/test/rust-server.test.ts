@@ -69,8 +69,9 @@ describe.skipIf(!binary)("Rust A2A server (aphrody a2a serve, dry run)", () => {
     await waitReady(url, server);
   }, 30_000);
 
-  afterAll(() => {
+  afterAll(async () => {
     server?.kill();
+    if (server) await server.exited;
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
 

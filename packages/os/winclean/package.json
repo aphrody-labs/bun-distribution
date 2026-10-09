@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/winclean",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Kernel-backed Bun client for the unified Aphrody OS WinClean catalog (166 tools).",
   "license": "Apache-2.0",
   "author": "aphrody",
