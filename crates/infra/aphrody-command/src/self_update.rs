@@ -102,6 +102,13 @@ fn prune(active: &Path, previous: Option<&Path>) {
 impl TerminalCommand for UpdateCommand {
     async fn execute(&self, _ctx: &GoogleContext) -> miette::Result<()> {
         let path = state_path()?;
+        let lock = std::fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(false)
+            .open(path.with_extension("lock"))
+            .into_diagnostic()?;
+        lock.lock().into_diagnostic()?;
         let state = read_state(&path);
 
         if self.rollback {
@@ -209,12 +216,17 @@ impl TerminalCommand for UpdateCommand {
             return Err(miette::miette!("installer did not report the aphrody directory"));
         };
         if !runs(&new_bin) {
-            if let Some(prev) = previous_bin.as_deref().filter(|p| runs(p)) {
-                relink(prev)?;
-            }
+            let restored = match previous_bin.as_deref().filter(|p| runs(p)) {
+                Some(prev) => {
+                    relink(prev)?;
+                    true
+                }
+                None => false,
+            };
             return Err(miette::miette!(
-                "new binary {} does not start; rolled back",
-                new_bin.display()
+                "new binary {} does not start; {}",
+                new_bin.display(),
+                if restored { "rolled back" } else { "no previous binary to restore" }
             ));
         }
         let next = State {
