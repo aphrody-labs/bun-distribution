@@ -25,7 +25,7 @@ async function bundle(
     plugins: [m3Bun({ configDir: dir, ...options })],
     throw: false,
   });
-  const text = (await Promise.all(result.outputs.map((o) => o.text()))).join("\n");
+  const text = (await Promise.all(result.outputs.map(o => o.text()))).join("\n");
   return { success: result.success, logs: result.logs.map(String), text };
 }
 
@@ -47,8 +47,7 @@ describe("m3Bun: the one plugin", () => {
   test("m3:icons/<name> is the SVG markup from the forked catalogue; variants and errors", async () => {
     const ok = await bundle(
       {
-        "main.ts":
-          'import a from "m3:icons/home"; import b from "m3:icons/rounded/home?fill=1"; console.log(a, b);\n',
+        "main.ts": 'import a from "m3:icons/home"; import b from "m3:icons/rounded/home?fill=1"; console.log(a, b);\n',
       },
       "main.ts",
     );
@@ -63,23 +62,16 @@ describe("m3Bun: the one plugin", () => {
   });
 
   test("m3:fonts.css falls back to @aphrody/m3-fonts when no Aphrody OS checkout holds the fonts", async () => {
-    const { success, text, logs } = await bundle(
-      { "main.css": '@import "m3:fonts.css";\n' },
-      "main.css",
-    );
+    const { success, text, logs } = await bundle({ "main.css": '@import "m3:fonts.css";\n' }, "main.css");
     expect({ success, logs }).toEqual({ success: true, logs: [] });
     expect(text).toContain("@font-face");
     expect(text).toContain("Google Sans Flex");
   });
 
   test("an app can pass its own css generator for the sheets the TypeScript one does not know", async () => {
-    const { success, text } = await bundle(
-      { "main.css": '@import "m3:spaceui.css";\n' },
-      "main.css",
-      {
-        css: (config: any) => `/* ${config.sheet} */ :root { --custom: 1; }`,
-      },
-    );
+    const { success, text } = await bundle({ "main.css": '@import "m3:spaceui.css";\n' }, "main.css", {
+      css: (config: any) => `/* ${config.sheet} */ :root { --custom: 1; }`,
+    });
     expect(success).toBe(true);
     expect(text).toContain("--custom");
     const fallback = await bundle({ "main.css": '@import "m3:spaceui.css";\n' }, "main.css", {
@@ -90,18 +82,14 @@ describe("m3Bun: the one plugin", () => {
   });
 
   test("default baseline uses the committed native sheet without a TypeScript override", async () => {
-    const { success, text, logs } = await bundle(
-      { "main.ts": 'import "m3:tokens.css";\n' },
-      "main.ts",
-      { theme: { seed: "#6750A4", variant: "tonalSpot", contrast: 0 } },
-    );
-    expect(success).toBe(true);
-    expect(
-      logs.filter((log) => log !== "BuildMessage: invalid @ rule encountered: '@theme'"),
-    ).toEqual([]);
-    if (logs.length) console.warn(`[m3Bun native CSS qualification gap] ${logs.join("; ")}`);
+    const { success, text, logs } = await bundle({ "main.ts": 'import "m3:tokens.css";\n' }, "main.ts", {
+      theme: { seed: "#6750A4", variant: "tonalSpot", contrast: 0 },
+    });
+    // Tailwind compiles the sheet's `@theme inline`: Bun's CSS parser has nothing to warn about.
+    expect({ success, logs }).toEqual({ success: true, logs: [] });
     expect(text).toContain("--md-sys-color-primary: #65558f");
     expect(text).toContain("--primary: var(--md-sys-color-primary)");
+    expect(text).not.toContain("@theme");
   });
 });
 
@@ -130,11 +118,8 @@ describe.skipIf(!nativeCorpus)("m3Bun native artifact default", () => {
       sass: false,
     });
     expect(output.success).toBe(true);
-    expect(
-      output.logs.filter((log) => log !== "BuildMessage: invalid @ rule encountered: '@theme'"),
-    ).toEqual([]);
-    if (output.logs.length)
-      console.warn(`[m3Bun native CSS qualification gap] ${output.logs.join("; ")}`);
+    expect(output.logs.filter(log => log !== "BuildMessage: invalid @ rule encountered: '@theme'")).toEqual([]);
+    if (output.logs.length) console.warn(`[m3Bun native CSS qualification gap] ${output.logs.join("; ")}`);
     expect(output.text).toContain(`--md-sys-color-primary: ${theme.light.primary}`);
     expect(output.text).toContain(`--md-sys-color-primary: ${theme.dark.primary}`);
     expect(output.text).toContain("--primary: var(--md-sys-color-primary)");

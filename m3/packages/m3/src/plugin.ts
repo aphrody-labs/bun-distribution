@@ -26,7 +26,7 @@ import {
 } from "./native";
 import { fontPaths, resolveRepoRoot, SYMBOL_STYLES, type SymbolStyle } from "./paths";
 import { setupUrlImports } from "./url-imports";
-import { tailwindM3Plugin } from "./tailwind";
+import { compileSheet, tailwindM3Plugin } from "./tailwind";
 
 export type { M3CssConfig, M3CssFn, M3Sheet } from "./native";
 
@@ -163,7 +163,10 @@ export function m3Plugin(options: M3PluginOptions = {}): BunPlugin {
       build.onLoad({ filter: /.*/, namespace: M3_NAMESPACE }, async args => {
         const kind = SHEET_MODULES[args.path];
         if (!kind) throw new Error(`@aphrody/m3: unknown sheet m3:${args.path}`);
-        return { contents: await sheet(kind), loader: "css" };
+        const css = await sheet(kind);
+        if (options.tailwind === false) return { contents: css, loader: "css" };
+        const base = options.configDir ?? process.cwd();
+        return { contents: await compileSheet(`m3-${args.path}`, css, base), loader: "css" };
       });
       build.onLoad({ filter: /__m3-fonts\.css$/ }, () => ({ contents: fontsCss(), loader: "css" }));
 
