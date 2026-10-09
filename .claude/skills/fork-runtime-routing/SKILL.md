@@ -15,9 +15,10 @@ Do not start WSL or modify another session's dirty Bun checkout.
 Run `bun --version` and `bun --revision`, resolve the binary with native
 `Get-Command bun`, and compare the **complete** version against package.json's
 packageManager (remove only its `bun@` prefix). Fork suffixes such as
-`-aphrody.3` and `-aphrody.4` differ. The installed runtime resolver currently
-normalizes suffixes; neither its `satisfies_pin` nor `aphrody update tools bun`
-alone proves exact fork parity.
+`-aphrody.3` and `-aphrody.4` differ. Older runtime resolver binaries normalized
+suffixes; the qualified canonical MCP now preserves exact fork pins. Still read
+the full version and pin together: `aphrody update tools bun` may report only the
+numeric version and does not prove exact fork parity.
 
 The repository owns a checksum-verified native installer in
 `scripts/tools/bun-hygiene.ts` (`install(tag, binDir, log)`). Inspect it before
