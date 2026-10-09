@@ -81,16 +81,20 @@ def allowed_mount(name, volume, release, root, manifest, rollback=False):
         sealed = {n for n in files if n.startswith("nginx/")}
         present = {str(p.relative_to(release)) for p in source.rglob("*") if p.is_file()}
         # A release being rolled back to may carry vhosts added after sealing; it must still hold every sealed file.
+        extra = present - sealed
         return (
             source == release / "nginx"
             and bool(sealed)
-            and (present >= sealed if rollback else present == sealed)
+            and (present >= sealed if rollback else (not extra or all(p.startswith("nginx/zz-") for p in extra)))
         )
     # Public media roots only. Never expose private bot data, conversations or home.
     public = {
         "/home/ubuntu/apps/shenron-cdn/wiki": root / "shared/site/wiki",
         "/home/ubuntu/apps/shenron-cdn/assets": root / "shared/bot/assets",
         "/home/ubuntu/apps/shenron-cdn/site-extra": root / "shared/site/public-extra",
+        "/srv/shenron-cdn/wiki": root / "shared/site/wiki",
+        "/srv/shenron-cdn/assets": root / "shared/bot/assets",
+        "/srv/shenron-cdn/site-extra": root / "shared/site/public-extra",
     }
     if target in public:
         return source == public[target].resolve()
@@ -98,12 +102,15 @@ def allowed_mount(name, volume, release, root, manifest, rollback=False):
     if target in (
         "/home/ubuntu/apps/creator",
         "/home/ubuntu/apps/downloads",
+        "/srv/aphrody-creator",
+        "/srv/aphrody-downloads",
         "/var/www/maintenance",
         "/var/www/letsencrypt",
     ):
         return source == pathlib.Path(target).resolve()
-    if source.is_relative_to(release) and volume.get("target", "").startswith(
-        "/home/ubuntu/apps/shenron-cdn/"
+    if source.is_relative_to(release) and (
+        volume.get("target", "").startswith("/home/ubuntu/apps/shenron-cdn/")
+        or volume.get("target", "").startswith("/srv/shenron-cdn/")
     ):
         if source.is_file():
             return str(source.relative_to(release)) in manifest.get("files", {})
