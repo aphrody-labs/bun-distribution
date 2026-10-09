@@ -85,6 +85,7 @@ fn router_with_mailbox(cfg: &ListenerConfig, mailbox: Mailbox, requires_bearer: 
 
     let state_mailbox = mailbox.clone();
     let task_api_root = mailbox.coord_dir.clone();
+    let task_api_root_peers = task_api_root.clone();
     let state = AppState { mailbox };
 
     let coord = Router::new()
@@ -100,6 +101,7 @@ fn router_with_mailbox(cfg: &ListenerConfig, mailbox: Mailbox, requires_bearer: 
             task_api_root,
             None, // The outer listener layer authenticates every private route.
         ))
+        .merge(crate::hub::peers_router(task_api_root_peers))
         .merge(agent_card_router(card_producer))
         .merge(a2a_rpc)
         .merge(a2a_rest)

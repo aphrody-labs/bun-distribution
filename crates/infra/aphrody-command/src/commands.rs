@@ -74,6 +74,10 @@ pub(crate) async fn dispatch_a2a(
         listener::{self, TickOptions},
     };
 
+    let action = match dispatch_a2a_hub(action).await? {
+        Some(action) => action,
+        None => return Ok(()),
+    };
     let (manifest, repo_root) =
         aphrody_a2a_coord::AiManifest::load_repo_default().map_err(|e| miette::miette!("{e}"))?;
 
@@ -149,6 +153,7 @@ pub(crate) async fn dispatch_a2a(
         crate::A2aAction::Send { instruction, target, source, yolo } => {
             let registry = aphrody_a2a_coord::PeerRegistry::from_env(&repo_root);
             let mailbox = aphrody_a2a_coord::mailbox::Mailbox::new(manifest.coord_dir(&repo_root));
+            let source = source.unwrap_or_else(|| "aphrody".to_owned());
             let params =
                 aphrody_a2a_coord::SendParams { target, source_agent: source, instruction, yolo };
             let out = aphrody_a2a_coord::bridge::send(&registry, &mailbox, &params)
@@ -160,8 +165,68 @@ pub(crate) async fn dispatch_a2a(
             let registry = aphrody_a2a_coord::PeerRegistry::from_env(&repo_root);
             println!("{}", serde_json::to_string_pretty(registry.peers()).unwrap_or_default());
         },
+        crate::A2aAction::Inbox { .. } | crate::A2aAction::Register => {
+            return Err(miette::miette!(
+                "a2a inbox/register need APHRODY_A2A_HUB_URL (and APHRODY_A2A_TOKEN_FILE)"
+            ));
+        },
     }
     Ok(())
+}
+
+/// Hub-backed actions, run without a repository manifest. Returns the action back
+/// when it must go through the local file/catalog path.
+async fn dispatch_a2a_hub(action: crate::A2aAction) -> miette::Result<Option<crate::A2aAction>> {
+    use aphrody_a2a_coord::{EnvelopeKind, HubClient, SelfIdentity};
+
+    let local = matches!(
+        action,
+        crate::A2aAction::Serve { .. }
+            | crate::A2aAction::Tick { .. }
+            | crate::A2aAction::Invoke { .. }
+    );
+    if local {
+        return Ok(Some(action));
+    }
+    let hub = HubClient::from_env().map_err(|e| miette::miette!("a2a hub: {e}"))?;
+    let Some(hub) = hub else { return Ok(Some(action)) };
+    let me = SelfIdentity::detect();
+    let fail = |e: aphrody_a2a_coord::HubError| miette::miette!("a2a hub {}: {e}", hub.base());
+    // Every hub command doubles as a heartbeat.
+    hub.register(&me).await.map_err(fail)?;
+    match action {
+        crate::A2aAction::Peers => {
+            let peers = hub.peers().await.map_err(fail)?;
+            println!("{}", serde_json::to_string_pretty(&peers).unwrap_or_default());
+        },
+        crate::A2aAction::Register => {
+            println!("{}", serde_json::to_string_pretty(&me).unwrap_or_default());
+        },
+        crate::A2aAction::Send { instruction, target, source, .. } => {
+            let from = source.unwrap_or_else(|| me.id.clone());
+            let sent = hub
+                .send(&from, &target, EnvelopeKind::Ask, "a2a.message", &instruction)
+                .await
+                .map_err(fail)?;
+            println!("{}", serde_json::to_string_pretty(&sent).unwrap_or_default());
+        },
+        crate::A2aAction::Inbox { id, limit, ack, all } => {
+            let mailbox = id.unwrap_or_else(|| me.id.clone());
+            let envelopes = hub.inbox(&mailbox, limit).await.map_err(fail)?;
+            let shown: Vec<_> = envelopes
+                .into_iter()
+                .filter(|e| all || e.get("kind").and_then(|k| k.as_str()) != Some("ack"))
+                .collect();
+            if ack {
+                for envelope in &shown {
+                    hub.acknowledge(&mailbox, envelope).await.map_err(fail)?;
+                }
+            }
+            println!("{}", serde_json::to_string_pretty(&shown).unwrap_or_default());
+        },
+        other => return Ok(Some(other)),
+    }
+    Ok(None)
 }
 
 pub(crate) struct AutoCommand {

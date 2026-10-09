@@ -625,13 +625,30 @@ pub(crate) enum A2aAction {
         instruction: String,
         #[arg(long, default_value = "shenron")]
         target: String,
-        #[arg(long, default_value = "aphrody")]
-        source: String,
+        /// Sender peer id; defaults to this agent's hub identity, else `aphrody`.
+        #[arg(long)]
+        source: Option<String>,
         #[arg(long)]
         yolo: bool,
     },
-    /// List resolved federation peers (env > aphrody-infra catalog > default).
+    /// List peers: the hub registry when `APHRODY_A2A_HUB_URL` is set, else the local catalog.
     Peers,
+    /// Read this agent's hub mailbox (newest first); `--ack` sends read receipts.
+    Inbox {
+        /// Mailbox peer id; defaults to this agent's hub identity.
+        #[arg(long)]
+        id: Option<String>,
+        #[arg(long, default_value_t = 20)]
+        limit: usize,
+        /// Send a read receipt to the sender of each shown message.
+        #[arg(long)]
+        ack: bool,
+        /// Include receipts and other non-request kinds.
+        #[arg(long)]
+        all: bool,
+    },
+    /// Refresh this agent's presence on the hub and print its identity.
+    Register,
 }
 
 /// Actions for the `scan` kernel subcommand (repo analytics).
