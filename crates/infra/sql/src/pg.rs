@@ -465,17 +465,28 @@ mod tests {
     }
 
     #[test]
-    fn loopback_and_sockets_are_local() {
+    fn loopback_hosts_are_local() {
         for url in [
             "postgres://u@localhost/db",
             "postgres://u@127.0.0.1:5432/db",
             "host=::1 user=u dbname=d",
             "postgres://u@pg.localhost/db",
-            "postgresql:///db?host=/var/run/postgresql",
             "host=localhost user=u dbname=d",
         ] {
             assert!(is_local(&config(url)), "{url} should be local");
         }
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn unix_socket_paths_are_local() {
+        assert!(is_local(&config("postgresql:///db?host=/var/run/postgresql")));
+    }
+
+    #[test]
+    #[cfg(not(unix))]
+    fn unsupported_socket_paths_do_not_disable_tls() {
+        assert!(!is_local(&config("postgresql:///db?host=/var/run/postgresql")));
     }
 
     #[test]

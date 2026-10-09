@@ -17,6 +17,7 @@ pub mod error;
 pub mod migrate;
 #[cfg(feature = "postgres")]
 pub mod pg;
+pub mod product;
 #[cfg(feature = "sqlite")]
 pub mod sqlite;
 
