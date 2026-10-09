@@ -6,8 +6,8 @@
 # (/home/ubuntu/apps/shenron-cdn-state/manifest.sqlite) keeps hourly runs incremental.
 #
 # Since 2026-10-06 the media live on the vps (/home/ubuntu/apps/shenron/shared: site/wiki 20 GiB, bot/assets
-# 11 GiB, site/public-extra); dbfr has no /home/ubuntu/apps/shenron any more, so the former WireGuard pull
-# (key shenron_cdn_pull, rrsync -ro /home/ubuntu/apps/shenron on dbfr) is retired: every rsync is local.
+# 11 GiB, site/public-extra); dbfr no longer holds these media, so the former WireGuard pull
+# (key shenron_cdn_pull, rrsync -ro on dbfr) is retired: every rsync is local.
 #
 # Scope: wiki media, bot assets and generated public files only. Never databases
 # (shared/bot/data), caches, logs or secrets. Deletions in the source are mirrored, at most 2000

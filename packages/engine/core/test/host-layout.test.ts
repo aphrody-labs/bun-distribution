@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 // Guard of the host disposition (tools/config/host/host-policy.toml [layout]): one home per host, no /srv, no /opt.
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readlinkSync, rmSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   HOST_LAYOUT,
   hostLayout,
   hostPath,
   migratePath,
+  relink,
+  retiredLinks,
   retiredPrefix,
 } from "../src/host/layout.ts";
 import { sourceCheckout } from "../src/host/index.ts";
@@ -114,3 +117,29 @@ test("no retired host location in code or config", () => {
   }
   expect(hits).toEqual([]);
 });
+
+test.skipIf(process.platform === "win32")(
+  "relink points symlinks into retired locations at their replacement",
+  () => {
+    const dir = mkdtempSync(join(tmpdir(), "host-relink-"));
+    try {
+      mkdirSync(join(dir, "app/releases/r1"), { recursive: true });
+      symlinkSync("/srv/aphrody-creator/releases/r1", join(dir, "app/current"));
+      symlinkSync("/home/ubuntu/apps/creator/releases/r1", join(dir, "app/kept"));
+      symlinkSync("releases/r1", join(dir, "app/relative"));
+      const links = retiredLinks([dir]);
+      expect(links).toEqual([
+        {
+          path: join(dir, "app/current"),
+          target: "/srv/aphrody-creator/releases/r1",
+          replacement: "/home/ubuntu/apps/creator/releases/r1",
+        },
+      ]);
+      relink(links);
+      expect(readlinkSync(join(dir, "app/current"))).toBe("/home/ubuntu/apps/creator/releases/r1");
+      expect(retiredLinks([dir])).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
+);

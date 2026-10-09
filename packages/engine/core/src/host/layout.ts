@@ -1,7 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 // Host disposition: ONE home per host (vps, dbfr), no /srv, no /opt. Read from the [layout] table of
 // tools/config/host/host-policy.toml, the single source of truth (Rust: aphrody_infra::layout).
-import { posix } from "node:path";
+import {
+  existsSync,
+  lchownSync,
+  lstatSync,
+  readdirSync,
+  readlinkSync,
+  renameSync,
+  symlinkSync,
+  type Dirent,
+} from "node:fs";
+import { join, posix } from "node:path";
 import policy from "../../../../../tools/config/host/host-policy.toml";
 
 export type LayoutRoot = "src" | "apps" | "build" | "archive" | "state";
@@ -70,4 +80,47 @@ export function migratePath(path: string, layout = HOST_LAYOUT): string {
   if (from === null) return path;
   const to = layout.retired.find(([f]) => f === from)![1];
   return `${to}${path.slice(from.length)}`;
+}
+
+export interface RetiredLink {
+  path: string;
+  target: string;
+  replacement: string;
+}
+
+/**
+ * Absolute symlinks under `roots` whose target is a retired location (`current -> /srv/<app>/releases/x`), with their
+ * replacement. Symlinks are not followed and the walk stays on the filesystem of each root.
+ */
+export function retiredLinks(roots: readonly string[], layout = HOST_LAYOUT): RetiredLink[] {
+  const found: RetiredLink[] = [];
+  const walk = (dir: string, dev: number) => {
+    let entries: Dirent[];
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const path = join(dir, entry.name);
+      if (entry.isSymbolicLink()) {
+        const target = readlinkSync(path);
+        const replacement = migratePath(target, layout);
+        if (replacement !== target) found.push({ path, target, replacement });
+      } else if (entry.isDirectory() && lstatSync(path).dev === dev) walk(path, dev);
+    }
+  };
+  for (const root of roots) if (existsSync(root)) walk(root, lstatSync(root).dev);
+  return found;
+}
+
+/** Points each link at its replacement in place (new link renamed over the old one, owner kept when run as root). */
+export function relink(links: readonly RetiredLink[]): void {
+  for (const { path, replacement } of links) {
+    const tmp = `${path}.relink-${process.pid}`;
+    const { uid, gid } = lstatSync(path);
+    symlinkSync(replacement, tmp);
+    if (process.getuid?.() === 0) lchownSync(tmp, uid, gid);
+    renameSync(tmp, path);
+  }
 }
