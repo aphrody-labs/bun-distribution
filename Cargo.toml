@@ -111,7 +111,8 @@ aphrody-proc = { path = "crates/os/ostd/proc", version = "1.0.0-canary", feature
 aphrody-rag = { path = "crates/ai/rag", version = "1.0.0", features = [] }
 aphrody-rag-core = { path = "crates/ai/rag-core", version = "1.0.0", features = [] }
 aphrody-rag-eval = { path = "crates/ai/rag-eval", version = "1.0.0", features = [] }
-aphrody-re = { path = "crates/os/kernel/comps/re", version = "1.0.0-canary", features = [] }
+aphrody-re = { package = "bun-re", git = "https://github.com/aphrody-labs/bun", rev = "e4d57537cf3475e443eba9bda390366aa5d9d0a4", version = "1.0.0-canary", features = [] }
+yolo-core = { git = "https://github.com/aphrody-labs/bun", rev = "6181424bc2fca4349560832161c07ba85c33e8ef", version = "1.0.0" }
 aphrody-rollout = { path = "crates/ai/rollout", version = "1.0.0", features = [] }
 aphrody-secrets = { path = "crates/os/ostd/secrets", version = "1.0.0-canary", features = [] }
 aphrody-session = { path = "crates/ai/session", version = "1.0.0", features = [] }

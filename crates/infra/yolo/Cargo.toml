@@ -12,7 +12,7 @@ name = "aphrody_yolo"
 path = "src/lib.rs"
 
 [dependencies]
-yolo-core = { path = "../../engine/yolo-core", version = "1.0.0", features = ["repository-tools"] }
+yolo-core = { workspace = true, features = ["repository-tools"] }
 anyhow.workspace = true
 aphrody-fsindex = { workspace = true }
 aphrody-git = { workspace = true }

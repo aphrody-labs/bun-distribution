@@ -67,7 +67,7 @@ aphrody-subsystem = { workspace = true }
 aphrody-tauri-wrap = { workspace = true }
 async-trait = { workspace = true }
 # Host probe and micro-benchmark commands (aphrody_system_stats, aphrody_benchmark).
-yolo-core = { path = "../../engine/yolo-core", version = "1.0.0" }
+yolo-core = { workspace = true }
 base64 = { workspace = true }
 # The process-wide TLS provider the `__llama-daemon` entry installs before any HTTP client exists.
 rustls = { workspace = true }
