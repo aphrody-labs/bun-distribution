@@ -2,6 +2,12 @@
 
 # MCP et A2A persistants sur le VPS
 
+> **Mise à jour 2026-10-09 : ce qui suit décrit l'ancienne topologie système (ports 8788/8793, `/srv/aphrody/shared`).**
+> Elle est remplacée par un hub unique en unités utilisateur sur le VPS : A2A `127.0.0.1:23888`, MCP HTTP
+> `127.0.0.1:23889`, tunnel Windows 24888/24889, présence des pairs (`aphrody a2a peers|send|inbox|register`) et
+> déploiement par `aphrody-sync.timer`. Voir [le hub](../workspace/codex-vps-relay-2026-10-09.md). L'A2A de dbfr
+> est retiré ; le MCP 8793 de dbfr ne sert que le RAG des débats Discord.
+
 État **déployé et vérifié au 2026-10-07** : les deux services système privés sur
 `vps` sont actifs et activés au démarrage, indépendants des terminaux et des
 sessions MCP clientes. Le serveur MCP canonique expose **364 outils uniques** en
