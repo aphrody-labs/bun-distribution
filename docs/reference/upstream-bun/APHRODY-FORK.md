@@ -40,8 +40,7 @@ Verified against the fork checkout on 2026-10-08.
 - Rust native link propagation for the Linux linker: `scripts/build/rust/native-link.ts`,
   `scripts/build/{rust,bun,ninja,timings}.ts`; test `test/internal/build-rust-native-link.test.ts`.
 - Windows: `scripts/vs-shell.ps1` finds a Build Tools-only Visual Studio installation.
-- Types and packages: `packages/bun-types/tauri.d.ts`; publishable npm packages renamed to the `@aphrody`
-  scope, whose single source of truth is `scripts/aphrody/scope.ts` (`--check` lists remaining upstream
+- Packages: publishable npm packages renamed to the `@aphrody` scope, whose single source of truth is `scripts/aphrody/scope.ts` (`--check` lists remaining upstream
   names, `--write` rewrites them).
 - Agent tooling: `.claude/settings.json` unrestricted; SessionStart hooks `scripts/dev/cloud-ssh.sh` and
   `scripts/dev/session-start.ts`; PostToolUse `.claude/hooks/post-edit-format.js`.
@@ -56,12 +55,12 @@ mirror here with `bun run docs:bun:update` and check it with `bun run docs:bun:c
 
 ## Distribution
 
-| Artifact | Producer in the fork | Published as |
-| --- | --- | --- |
-| Runtime binary | `.github/workflows/aphrody-release.yml` (tag `aphrody-v*` or dispatch) | GitHub release `aphrody-v<version>` (`bun-<os>-<arch>.zip`, `SHA256SUMS.txt`); first: `aphrody-v1.4.3-aphrody.1` |
-| Runtime on npm | `scripts/aphrody/publish-runtime.ts` | `@aphrody/bun-runtime` + `@aphrody/bun-runtime-<os>-<arch>` |
-| npm packages | `scripts/aphrody/publish-npm.ts`, `.github/workflows/aphrody-publish-npm.yml` | `@aphrody/bun-types`, `@aphrody/bun-inspector-protocol`, `@aphrody/bun-debug-adapter-protocol`, `@aphrody/bun-plugin-svelte`, `@aphrody/bun-plugin-yaml` |
-| Rust crates | `scripts/aphrody/publish-crates.ts`, `.github/workflows/aphrody-publish-crates.yml` | crates.io `aphrody-bun-native-plugin`, `aphrody-bun-macro` |
+| Artifact       | Producer in the fork                                                                | Published as                                                                                                                                             |
+| -------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Runtime binary | `.github/workflows/aphrody-release.yml` (tag `aphrody-v*` or dispatch)              | GitHub release `aphrody-v<version>` (`bun-<os>-<arch>.zip`, `SHA256SUMS.txt`); first: `aphrody-v1.4.3-aphrody.1`                                         |
+| Runtime on npm | `scripts/aphrody/publish-runtime.ts`                                                | `@aphrody/bun-runtime` + `@aphrody/bun-runtime-<os>-<arch>`                                                                                              |
+| npm packages   | `scripts/aphrody/publish-npm.ts`, `.github/workflows/aphrody-publish-npm.yml`       | `@aphrody/bun-types`, `@aphrody/bun-inspector-protocol`, `@aphrody/bun-debug-adapter-protocol`, `@aphrody/bun-plugin-svelte`, `@aphrody/bun-plugin-yaml` |
+| Rust crates    | `scripts/aphrody/publish-crates.ts`, `.github/workflows/aphrody-publish-crates.yml` | crates.io `aphrody-bun-native-plugin`, `aphrody-bun-macro`                                                                                               |
 
 Versions are `<base>-aphrody.<n>`; the binary reports `bun --version` = the upstream base (1.4.3) and
 `bun --revision` = `<base>+<fork sha>`. Release targets: linux-x64, linux-aarch64 (glibc >= 2.38),
