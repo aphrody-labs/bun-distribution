@@ -58,6 +58,8 @@ location ^~ /s/ {
         font/woff                woff;
         font/woff2               woff2;
         application/json         json;
+        application/manifest+json webmanifest;
+        text/css                 css;
         text/plain               txt md;
         video/mp4                mp4;
         video/webm               webm;
