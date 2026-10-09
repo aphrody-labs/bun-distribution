@@ -33,14 +33,27 @@ export interface TargetContext {
   tls: "letsencrypt" | { cert: string; key: string };
   /** HTTP/2 in the nginx vhost: the `http2 on;` directive of nginx 1.25.1+ (the yolo convention, default) or `listen ... http2`. */
   http2?: "directive" | "listen";
-  /** Windows executable metadata. */
-  windows?: { title?: string; publisher?: string; description?: string };
+  /** Windows executable metadata; `icon` is relative to the app (`.ico` is used as is, `.svg` is converted). */
+  windows?: { title?: string; publisher?: string; description?: string; icon?: string };
+  /** Absolute app directory. Targets that read the app (tauri, windows icon) need it. */
+  appDir?: string;
+  /** Seed colour of the app theme, `#rrggbb` (`theme.seed` of `m3.config.ts`). */
+  seed?: string;
+  /** Scheme variant of the app theme (`theme.variant`). */
+  variant?: string;
+  /** Material Symbol used as the application icon (`rocket_launch`); default: the Aphrody emblem. */
+  iconSymbol?: string;
+  /** Absolute directory this target is written to, set by `generateTargets`. */
+  targetDir?: string;
 }
+
+/** A generated file; binary payloads (icons, wallpapers) are bytes. */
+export type TargetFile = Omit<GeneratedFile, "content"> & { content: string | Uint8Array };
 
 export interface Target {
   id: string;
   title: string;
   /** One line: what is generated and what it is for. */
   description: string;
-  generate(context: TargetContext): GeneratedFile[] | Promise<GeneratedFile[]>;
+  generate(context: TargetContext): TargetFile[] | Promise<TargetFile[]>;
 }

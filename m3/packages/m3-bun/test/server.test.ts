@@ -279,3 +279,28 @@ describe("one process, one socket: UI and API over real HTTP", () => {
     }
   });
 });
+
+describe("serving a build", () => {
+  test("an uncaught API error answers a plain 500, not the development error page", async () => {
+    const server = startM3Server({
+      port: 0,
+      hostname: "127.0.0.1",
+      files: dirSource(dir),
+      api: {
+        "/api/boom": () => {
+          throw new Error("secret detail");
+        },
+      },
+    });
+    try {
+      expect(server.development).toBe(false);
+      const res = await fetch(`http://127.0.0.1:${server.port}/api/boom`);
+      expect(res.status).toBe(500);
+      const body = await res.text();
+      expect(body).not.toContain("secret detail");
+      expect(body).not.toContain("__bunfallback");
+    } finally {
+      await server.stop(true);
+    }
+  });
+});

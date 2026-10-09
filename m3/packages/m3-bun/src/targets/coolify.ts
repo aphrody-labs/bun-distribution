@@ -27,9 +27,13 @@ services:
 export const coolify: Target = {
   id: "coolify",
   title: "Coolify",
-  description: "Docker Compose resource with Coolify's SERVICE_FQDN routing variable and the executable's health check",
+  description:
+    "Docker Compose resource with Coolify's SERVICE_FQDN routing variable and the executable's health check",
   generate: (c): GeneratedFile[] => [
     { path: "docker-compose.yaml", content: composeFile(c) },
-    { path: ".env.example", content: `# ${GENERATED_NOTE}\n# Set secrets in Coolify's environment panel, not here.\nPORT=${c.port}\nHOST=0.0.0.0\n` },
+    {
+      path: ".env.example",
+      content: `# ${GENERATED_NOTE}\n# Set secrets in Coolify's environment panel, not here.\nPORT=${c.port}\nHOST=0.0.0.0\n`,
+    },
   ],
 };

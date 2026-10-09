@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative } from "node:path";
-import { archiveDir, buildRootfs, packageApp, parseLdd } from "../src/package.ts";
+import { archiveDir, bunArchiveSupported, buildRootfs, packageApp, parseLdd } from "../src/package.ts";
 import { sha256 } from "../src/util.ts";
 import { cleanup, fixtureCopy, tmp } from "./helpers.ts";
 
 afterAll(cleanup);
+
+const archiveSupported = await bunArchiveSupported();
+const archiver = async () => ((await bunArchiveSupported()) ? "bun-archive" : "m3-bun");
 
 const LDD = `\tlinux-vdso.so.1 (0x00007e85dea9f000)
 \tlibc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007e85de800000)
@@ -35,14 +38,14 @@ describe("archiveDir", () => {
     mkdirSync(join(staging, "deploy"));
     writeFileSync(join(staging, "deploy", "x.conf"), "x");
     const archive = join(tmp(), "out", "a.tar.gz");
-    await archiveDir(staging, archive, "tar.gz");
+    expect(await archiveDir(staging, archive, "tar.gz")).toBe(await archiver());
     const listing = Bun.spawnSync(["tar", "-tvzf", basename(archive)], {
       cwd: dirname(archive),
       stdout: "pipe",
     }).stdout.toString();
-    expect(listing).toMatch(/-rwxr-xr-x .* \.\/app/);
-    expect(listing).toContain("./deploy/x.conf");
-    expect(listing).toContain("./README.txt");
+    expect(listing).toMatch(/-rwxr-xr-x .* (\.\/)?app\n/);
+    expect(listing).toMatch(/ (\.\/)?deploy\/x\.conf\n/);
+    expect(listing).toMatch(/ (\.\/)?README\.txt\n/);
   });
 
   test("the tarball is byte-reproducible", async () => {
@@ -51,8 +54,7 @@ describe("archiveDir", () => {
     writeFileSync(join(staging, "b"), "b");
     const out = tmp();
     await archiveDir(staging, join(out, "1.tar.gz"), "tar.gz");
-    await Bun.sleep(1100);
-    writeFileSync(join(staging, "a"), "a");
+    utimesSync(join(staging, "a"), new Date(2001, 0, 1), new Date(2001, 0, 1));
     await archiveDir(staging, join(out, "2.tar.gz"), "tar.gz");
     expect(sha256(new Uint8Array(readFileSync(join(out, "1.tar.gz"))))).toBe(
       sha256(new Uint8Array(readFileSync(join(out, "2.tar.gz")))),
@@ -65,7 +67,7 @@ describe("archiveDir", () => {
     mkdirSync(join(staging, "deploy"));
     writeFileSync(join(staging, "deploy", "x.conf"), Buffer.alloc(4096, "x").toString());
     const archive = join(tmp(), "a.zip");
-    await archiveDir(staging, archive, "zip");
+    expect(await archiveDir(staging, archive, "zip")).toBe(await archiver());
     const check = Bun.spawnSync(["unzip", "-t", basename(archive)], {
       cwd: dirname(archive),
       stdout: "pipe",
@@ -73,6 +75,26 @@ describe("archiveDir", () => {
     expect(check.stdout.toString()).toContain("app.exe");
     expect(check.stdout.toString()).toContain("deploy/x.conf");
     expect(check.exitCode).toBe(0);
+  });
+});
+
+describe("bunArchiveSupported", () => {
+  test.skipIf(!archiveSupported)("archiveDir writes with Bun.Archive: files only, contents intact, both formats", async () => {
+    const staging = tmp();
+    writeFileSync(join(staging, "app"), "#!/bin/sh\n", { mode: 0o755 });
+    mkdirSync(join(staging, "deploy"));
+    writeFileSync(join(staging, "deploy", "x.conf"), "x");
+    const archives = await Promise.all(
+      (["tar.gz", "zip"] as const).map(async format => {
+        const archive = join(tmp(), `a.${format}`);
+        return { writer: await archiveDir(staging, archive, format), files: await new Bun.Archive(await Bun.file(archive).bytes()).files() };
+      }),
+    );
+    for (const { writer, files } of archives) {
+      expect(writer).toBe("bun-archive");
+      expect([...files.keys()].toSorted()).toEqual(["app", "deploy/x.conf"]);
+      expect(files.get("app")!.size).toBe(10);
+    }
   });
 });
 
@@ -100,6 +122,7 @@ describe("packageApp", () => {
         "deploy/vscode/.vscode/tasks.json",
       ]),
     );
+    expect(report.archiver).toBe(await archiver());
     expect(sha256(new Uint8Array(readFileSync(report.archive)))).toBe(report.sha256);
     expect(readFileSync(report.checksumFile, "utf8")).toBe(
       `${report.sha256}  ${basename(report.archive)}\n`,
@@ -117,7 +140,7 @@ describe("packageApp", () => {
       cwd: dirname(report.archive),
       stdout: "pipe",
     }).stdout.toString();
-    expect(listing).toMatch(/-rwxr-xr-x .* \.\/hello-m3\n/);
+    expect(listing).toMatch(/-rwxr-xr-x .* (\.\/)?hello-m3\n/);
     expect(existsSync(join(out, ".staging"))).toBe(false);
   }, 60_000);
 

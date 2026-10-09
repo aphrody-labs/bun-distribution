@@ -71,13 +71,19 @@ services:
 export const docker: Target = {
   id: "docker",
   title: "Docker",
-  description: "Multi-stage Dockerfile on the Aphrody Alpine runtime image, a scratch Dockerfile for the rootfs, compose and .dockerignore",
+  description:
+    "Multi-stage Dockerfile on the Aphrody Alpine runtime image, a scratch Dockerfile for the rootfs, compose and .dockerignore",
   generate(c): GeneratedFile[] {
     return [
       { path: "Dockerfile", content: dockerfile(c) },
       { path: "Dockerfile.scratch", content: scratchfile(c) },
       { path: "docker-compose.yml", content: compose(c) },
-      { path: ".dockerignore", content: ["node_modules", ".git", "dist", "bin", "deploy", "**/*.log", ".env*", ""].join("\n") },
+      {
+        path: ".dockerignore",
+        content: ["node_modules", ".git", "dist", "bin", "deploy", "**/*.log", ".env*", ""].join(
+          "\n",
+        ),
+      },
     ];
   },
 };

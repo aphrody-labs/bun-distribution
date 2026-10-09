@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // The m3-bun command line (`bin/m3-bun.ts`). Commands run in the app directory (the one with `m3.config.ts`).
 //
-//   m3-bun dev      [--port n] [--no-hmr]                       dev server, HMR, UI and API in one process
+//   m3-bun dev      [--port n] [--no-hmr] [--inspect] [--inspector-ui]   dev server, HMR, UI and API in one process
 //   m3-bun build    [--minify none|basic|full] [--dev] [--outdir d] [--json] [--graph[=registry]]
 //   m3-bun serve    [--port n] [--host h] [--build]            production server of the build directory
 //   m3-bun compile  [--target t] [--outfile f] [--minify l] [--no-build]       one executable
@@ -12,12 +12,26 @@
 //   m3-bun smoke    [executable] [--port n]                     run it (yolo runtime when installed), GET /, /healthz, /api/m3/info
 //   m3-bun workspace <build|typecheck|clean> [--only a,b] [--no-cache]          the repository pipeline (scripts/build.ts)
 //   m3-bun pack     [package-dir] [--out d]                     build a workspace package and `bun pm pack` it
+//   m3-bun lint     [paths..] [--strict] [--fix] [--correctness]     eslint-plugin-m3 rules through oxlint
+//   m3-bun migrate  [--icons] [--glob g] [--dry-run] | --next <src> <out> [--m3] [--write]   m3-codemods, m3-next-migrate
+//   m3-bun create   <web|app|spa|example> <dir> [--name n] [--target tauri|vite] [--dry-run]   scaffold
+//   m3-bun design   "<brief>" [--color c] [--system s] [--validate] [--out d]       m3-design
+//   m3-bun og       [--dark] [--engine native|mcu] [--title t] [--subtitle s] [--out f.png|webp]   canvas
+//   m3-bun lib      [dir] [--outdir d] [--minify-lib]            m3-config bun-build preset
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import type { M3ApiModule } from "./api.ts";
 import { buildApp, type MinifyLevel } from "./build.ts";
 import { compileApp, defaultOutfile } from "./compile.ts";
+import { loadDevApi } from "./dev-error.ts";
+import { launchInspected, serveInspectorFrontend } from "./dev-inspect.ts";
+import type { M3CssEngine } from "./theme-css.ts";
+import { createApp } from "./tools-create.ts";
+import { designApp } from "./tools-design.ts";
+import { buildLibrary } from "./tools-lib.ts";
+import { lintApp } from "./tools-lint.ts";
+import { migrateApp, migrateNext } from "./tools-migrate.ts";
+import { ogImage } from "./tools-og.ts";
 import { dependents, graphPath, graphReport } from "./graph.ts";
 import { COMPILE_TARGETS, findWorkspaceRoot, loadApp, type CompileTargetName, type M3App } from "./config.ts";
 import { packageApp, type ArchiveFormat } from "./package.ts";
@@ -26,7 +40,7 @@ import { dirSource, startM3Server } from "./server.ts";
 import { TARGETS, contextFor, generateTargets } from "./targets/index.ts";
 import { kib } from "./util.ts";
 
-export const COMMANDS = ["dev", "build", "serve", "compile", "package", "deploy", "graph", "targets", "smoke", "workspace", "pack", "help", "version"] as const;
+export const COMMANDS = ["dev", "build", "serve", "compile", "package", "deploy", "graph", "targets", "smoke", "workspace", "pack", "lint", "migrate", "create", "design", "og", "lib", "help", "version"] as const;
 export type Command = (typeof COMMANDS)[number];
 
 export interface Parsed {
@@ -35,7 +49,7 @@ export interface Parsed {
   flags: Map<string, string | true>;
 }
 
-const BOOLEAN = new Set(["dev", "no-hmr", "no-build", "build", "json", "rootfs", "deploy", "help", "version", "no-cache", "graph"]);
+const BOOLEAN = new Set(["dev", "no-hmr", "no-build", "build", "json", "rootfs", "deploy", "help", "version", "no-cache", "graph", "inspect", "inspector-ui", "strict", "fix", "correctness", "icons", "dry-run", "next", "m3", "write", "validate", "dark", "minify-lib"]);
 
 /** Parse `argv` (without the runtime and script paths). */
 export function parseArgs(argv: readonly string[]): Parsed {
@@ -74,18 +88,25 @@ export function parseArgs(argv: readonly string[]): Parsed {
 export const USAGE = `m3-bun: build, serve, compile, package and deploy configs for M3 apps
 
 Usage:
-  m3-bun dev      [--port <n>] [--no-hmr]
+  m3-bun dev      [--port <n>] [--no-hmr] [--inspect] [--inspector-ui]
   m3-bun build    [--minify none|basic|full] [--dev] [--outdir <dir>] [--json] [--graph[=<registry>]]
   m3-bun serve    [--port <n>] [--host <h>] [--build]
   m3-bun compile  [--target <t>] [--outfile <file>] [--minify <level>] [--no-build]
   m3-bun package  [--target <t>] [--format tar.gz|zip] [--out <dir>] [--rootfs] [--deploy] [--executable <file>]
   m3-bun deploy   <target..|all> [--out <dir>] [--domain <host>] [--name <n>] [--port <n>] [--image <ref>]
-                  [--namespace <ns>] [--user <u>] [--region <r>] [--tls-cert <f> --tls-key <f>] [--http2 directive|listen] [--cli "<cmd>"]
+                  [--namespace <ns>] [--user <u>] [--region <r>] [--tls-cert <f> --tls-key <f>] [--http2 directive|listen] [--cli "<cmd>"] [--icon <symbol>]
   m3-bun graph    [file] [--registry <file>] [--json]
   m3-bun targets
   m3-bun smoke    [executable] [--port <n>]
   m3-bun workspace <build|typecheck|clean> [--only a,b] [--no-cache]
   m3-bun pack     [package-dir] [--out <dir>]
+  m3-bun lint     [paths..] [--strict] [--fix] [--correctness]
+  m3-bun migrate  [--icons] [--glob <g>] [--dry-run]
+  m3-bun migrate  --next <source> <target> [--name <n>] [--m3] [--write]
+  m3-bun create   <web|app|spa|example> <dir> [--name <n>] [--target tauri|vite] [--dry-run]
+  m3-bun design   "<brief>" [--color <hex>] [--system <s>] [--validate] [--out <dir>]
+  m3-bun og       [--dark] [--engine native|mcu] [--title <t>] [--subtitle <s>] [--out <file.png|webp>]
+  m3-bun lib      [dir] [--outdir <dir>] [--minify-lib]
 
 Compile targets: ${COMPILE_TARGETS.join(", ")}
 Deploy targets:  ${TARGETS.map((t) => t.id).join(", ")} (generated, never applied)
@@ -120,9 +141,8 @@ const target = (flags: Map<string, string | true>): CompileTargetName | undefine
   return value as CompileTargetName;
 };
 
-async function importApi(app: M3App): Promise<M3ApiModule | undefined> {
-  if (!app.api) return undefined;
-  return ((await import(pathToFileURL(app.api).href)) as { default?: M3ApiModule }).default;
+async function importApi(app: M3App) {
+  return app.api ? loadDevApi(app.api) : undefined;
 }
 
 /** The m3 plugins Bun may bundle an app's HTML entry with. */
@@ -177,6 +197,18 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       return 0;
     }
     case "dev": {
+      if (flags.has("inspect")) {
+        const args = argv.filter((a) => a !== "--inspect" && a !== "--inspector-ui");
+        const inspected = await launchInspected({
+          cmd: [process.execPath, join(import.meta.dir, "..", "bin", "m3-bun.ts"), ...args],
+          cwd,
+          onConsole: (entry) => console.log(`[${entry.level}] ${entry.text}`),
+          onException: (e) => console.error(`[exception] ${e.name}: ${e.message}${e.frames.map((frame) => "\n  " + frame).join("")}`),
+        });
+        console.log(`m3-bun dev --inspect: inspector ${inspected.inspectorUrl}`);
+        if (flags.has("inspector-ui")) console.log(`  web inspector ${serveInspectorFrontend({ ws: inspected.inspectorUrl }).url}`);
+        return 0;
+      }
       const app = await loadApp(cwd);
       if (!bunfigHasPlugin(app.dir)) {
         console.error(`m3-bun dev: ${join(app.dir, "bunfig.toml")} must list the plugin so Bun can bundle the HTML entry:\n\n[serve.static]\nplugins = ["@aphrody/m3-bun/plugin"]`);
@@ -195,10 +227,11 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       const outdir = str(flags, "outdir");
       const graph = flags.get("graph");
       const report = await buildApp({ app, ...(minify ? { minify } : {}), ...(outdir ? { outdir } : {}), ...(graph !== undefined ? { graph: graph === true ? true : resolve(cwd, graph) } : {}), dev: flags.has("dev") });
-      if (flags.has("json")) console.log(JSON.stringify({ outdir: report.outdir, ms: report.ms, totalBytes: report.totalBytes, totalGzipBytes: report.totalGzipBytes, manifest: report.manifest, ...(report.graph ? { graph: report.graph } : {}) }, null, 2));
+      if (flags.has("json")) console.log(JSON.stringify({ outdir: report.outdir, ms: report.ms, totalBytes: report.totalBytes, totalGzipBytes: report.totalGzipBytes, totalZstdBytes: report.totalZstdBytes, memory: report.memory, warnings: report.warnings, manifest: report.manifest, ...(report.graph ? { graph: report.graph } : {}) }, null, 2));
       else {
         for (const file of report.manifest.files) console.log(`  ${file.path.padEnd(34)} ${kib(file.bytes).padStart(11)}  gzip ${kib(file.gzipBytes)}`);
-        console.log(`m3-bun build ${app.name}@${app.version}: ${report.manifest.files.length} files, ${kib(report.totalBytes)} (${kib(report.totalGzipBytes)} gzip), minify ${report.manifest.minify}, build ${report.manifest.buildId}, ${report.ms} ms -> ${report.outdir}`);
+        console.log(`m3-bun build ${app.name}@${app.version}: ${report.manifest.files.length} files, ${kib(report.totalBytes)} (${kib(report.totalGzipBytes)} gzip, ${kib(report.totalZstdBytes)} zstd), minify ${report.manifest.minify}, build ${report.manifest.buildId}, ${report.ms} ms -> ${report.outdir}`);
+        for (const warning of report.warnings) console.warn(`warning: ${warning}`);
         if (report.graph) console.log(`  graph ${report.graph.nodes} nodes, ${report.graph.edges} edges, run ${report.graph.runId} -> ${report.graph.path}`);
       }
       return 0;
@@ -231,7 +264,7 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       if (format !== undefined && format !== "tar.gz" && format !== "zip") throw new Error(`--format must be tar.gz or zip, got ${format}`);
       const executable = str(flags, "executable");
       const report = await packageApp({ app, ...(t ? { target: t } : {}), ...(out ? { out } : {}), ...(format ? { format } : {}), ...(executable ? { executable } : {}), rootfs: flags.has("rootfs"), deploy: flags.has("deploy") });
-      console.log(`m3-bun package: ${report.archive} (${kib(report.bytes)})\n  sha256 ${report.sha256}\n  files ${report.files.join(", ")}`);
+      console.log(`m3-bun package: ${report.archive} (${kib(report.bytes)}, ${report.archiver})\n  sha256 ${report.sha256}\n  files ${report.files.join(", ")}`);
       if (report.rootfs) console.log(`  rootfs ${report.rootfs.dir}: ${kib(report.rootfs.bytes)}, ${report.rootfs.libraries.length} libraries (${report.rootfs.libraries.join(", ")})`);
       return 0;
     }
@@ -252,7 +285,9 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       if (http2 !== undefined && http2 !== "directive" && http2 !== "listen") throw new Error(`--http2 must be directive or listen, got ${http2}`);
       const name = str(flags, "name");
       const port = num(flags, "port");
+      const icon = str(flags, "icon");
       const context = contextFor(app, {
+        ...(icon ? { iconSymbol: icon } : {}),
         ...(domain ? { domain } : {}),
         ...(image ? { image } : {}),
         ...(namespace ? { namespace } : {}),
@@ -311,6 +346,67 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       }
       const out = resolve(cwd, str(flags, "out") ?? "release");
       return run(["bun", "pm", "pack", "--destination", out], dir);
+    }
+    case "lint": {
+      const report = await lintApp({ dir: cwd, ...(positionals.length ? { paths: positionals } : {}), preset: flags.has("strict") ? "strict" : "recommended", fix: flags.has("fix"), correctness: flags.has("correctness") });
+      for (const d of report.diagnostics) console.log(`${d.file}:${d.line}:${d.column} ${d.severity} ${d.rule}: ${d.message}`);
+      console.log(`m3-bun lint: ${report.files} files, ${report.rules} rules, ${report.errors} errors, ${report.warnings} warnings`);
+      return report.exitCode;
+    }
+    case "migrate": {
+      if (flags.has("next")) {
+        const [source, destination] = positionals;
+        if (!source || !destination) throw new Error("m3-bun migrate --next <source> <target>");
+        const name = str(flags, "name");
+        const report = await migrateNext({ source: resolve(cwd, source), target: resolve(cwd, destination), ...(name ? { name } : {}), m3: flags.has("m3"), write: flags.has("write") });
+        console.log(`m3-bun migrate --next: ${report.migratedFiles} migrated, ${report.unmodifiedFiles} unchanged, ${report.copiedAssets} assets, ${report.skippedFiles.length} skipped${flags.has("write") ? "" : " (dry run)"}`);
+        return 0;
+      }
+      const glob = str(flags, "glob");
+      const report = await migrateApp({ dir: cwd, kind: flags.has("icons") ? "icons" : "mui", ...(glob ? { glob } : {}), dryRun: flags.has("dry-run") });
+      for (const file of report.changed) console.log(`  ${file.path}${file.diagnostics.length ? ` (${file.diagnostics.length} TODO)` : ""}`);
+      console.log(`m3-bun migrate: ${report.changed.length}/${report.scanned} files changed${report.dryRun ? " (dry run)" : ""}`);
+      return 0;
+    }
+    case "create": {
+      const [template, dir] = positionals;
+      if (!template || !dir) throw new Error("m3-bun create <web|app|spa|example> <dir>");
+      if (!["web", "app", "spa", "example"].includes(template)) throw new Error(`m3-bun create: template must be web, app, spa or example, got ${template}`);
+      const name = str(flags, "name");
+      const t = str(flags, "target");
+      if (t !== undefined && t !== "tauri" && t !== "vite") throw new Error(`--target must be tauri or vite, got ${t}`);
+      const report = await createApp({ template: template as "web" | "app" | "spa" | "example", dir: resolve(cwd, dir), ...(name ? { name } : {}), ...(t ? { target: t } : {}), dryRun: flags.has("dry-run") });
+      console.log(`m3-bun create ${report.template} ${report.name}: ${report.files.length} files ${report.written ? "->" : "(dry run)"} ${report.dir}`);
+      return 0;
+    }
+    case "design": {
+      const prompt = positionals.join(" ");
+      if (!prompt) throw new Error(`m3-bun design "<brief>"`);
+      const color = str(flags, "color");
+      const system = str(flags, "system");
+      const out = str(flags, "out");
+      const report = await designApp({ prompt, ...(color ? { color } : {}), ...(system ? { designSystem: system } : {}), validate: flags.has("validate"), ...(out ? { out: resolve(cwd, out) } : {}) });
+      for (const file of report.files) console.log(`  ${file.path.padEnd(34)} ${kib(file.bytes)}`);
+      console.log(`m3-bun design: seed ${report.seed}, ${report.files.length} files${report.written.length ? `, ${report.written.length} written` : ""}`);
+      return 0;
+    }
+    case "og": {
+      const engine = str(flags, "engine");
+      if (engine !== undefined && engine !== "native" && engine !== "mcu") throw new Error(`--engine must be native or mcu, got ${engine}`);
+      const title = str(flags, "title");
+      const subtitle = str(flags, "subtitle");
+      const out = str(flags, "out");
+      const report = await ogImage({ dir: cwd, dark: flags.has("dark"), ...(engine ? { engine: engine as M3CssEngine } : {}), ...(title ? { title } : {}), ...(subtitle ? { subtitle } : {}), ...(out ? { out: resolve(cwd, out) } : {}) });
+      console.log(`m3-bun og: ${report.file} (${report.width}x${report.height}, ${kib(report.bytes)})`);
+      return 0;
+    }
+    case "lib": {
+      const outdir = str(flags, "outdir");
+      const report = await buildLibrary({ dir: resolve(cwd, positionals[0] ?? "."), ...(outdir ? { outDir: outdir } : {}), ...(flags.has("minify-lib") ? { minify: true } : {}) });
+      for (const log of report.logs) console.error(log);
+      for (const file of report.files) console.log(`  ${file.path.padEnd(34)} ${kib(file.bytes).padStart(11)}  zstd ${kib(file.zstdBytes)}`);
+      console.log(`m3-bun lib: ${report.files.length} files -> ${report.outDir}`);
+      return report.success ? 0 : 1;
     }
   }
 }

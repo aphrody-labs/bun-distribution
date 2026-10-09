@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-// Running a compiled app under supervision. Where the YOLO runtime is installed, `@aphrody/runtime-sdk` (yolo's
-// `packages/runtime`, loaded from `$YOLO_ROOT`, over the precompiled library's versioned C ABI) spawns the
-// process, waits for its HTTP port and stops it with a grace period. Without it, `Bun.spawn` does the same.
-// `launch` says which one it used.
+// The installed buv SDK supervises native processes; Bun.spawn handles hosts without its optional library.
 import { existsSync } from "node:fs";
-import { join } from "node:path";
-import { yoloRoot } from "./util.ts";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 export interface LaunchOptions {
   args?: readonly string[];
@@ -21,8 +18,7 @@ export interface LaunchOptions {
 }
 
 export interface Launched {
-  /** `yolo-runtime` (the SDK over the native library) or `bun-spawn`. */
-  via: "yolo-runtime" | "bun-spawn";
+  via: "buv-runtime" | "bun-spawn";
   pid: number;
   /** Status of the wait: the HTTP status the path answered. */
   readyStatus: number;
@@ -44,20 +40,24 @@ interface ManagedLike extends Disposable {
   stopAsync(graceMs?: number): Promise<{ exitCode: number }>;
 }
 
-/** The SDK entry under `$YOLO_ROOT`, or undefined when yolo is not checked out. */
-export function runtimeSdkPath(root: string = yoloRoot()): string | undefined {
-  const file = join(root, "packages/runtime/src/index.ts");
-  return existsSync(file) ? file : undefined;
+export function runtimeSdkPath(root?: string): string | undefined {
+  const checkout = root ?? process.env["APHRODY_BUN_CHECKOUT"];
+  if (checkout) {
+    const file = resolve(checkout, "packages/bun-runtime-sdk/src/index.ts");
+    return existsSync(file) ? file : undefined;
+  }
+  try {
+    const file = fileURLToPath(import.meta.resolve("@aphrody/buv/runtime-sdk"));
+    return existsSync(file) ? file : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 async function loadSdk(): Promise<Sdk | undefined> {
   const path = runtimeSdkPath();
   if (!path) return undefined;
-  try {
-    return (await import(path)) as Sdk;
-  } catch {
-    return undefined;
-  }
+  return (await import(path)) as Sdk;
 }
 
 /** Start `program`, wait until `port` answers, and hand back a handle. */
@@ -76,7 +76,9 @@ export async function launch(program: string, options: LaunchOptions): Promise<L
     let runtime: (Disposable & { spawn(options: unknown): ManagedLike }) | undefined;
     try {
       runtime = sdk.Runtime.load();
-    } catch {
+    } catch (error) {
+      if ((error as { status?: number }).status === 2 || process.env["BUV_RUNTIME_LIB"])
+        throw error;
       runtime = undefined;
     }
     if (runtime) {
@@ -104,7 +106,7 @@ export async function launch(program: string, options: LaunchOptions): Promise<L
         const pid = child.status().pid;
         let stopping: Promise<{ exitCode: number | null }> | undefined;
         return {
-          via: "yolo-runtime",
+          via: "buv-runtime",
           pid,
           readyStatus,
           stop() {

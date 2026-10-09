@@ -59,12 +59,16 @@ export const onRequest = async ({ request, next }: { request: Request; next(): P
 export const cloudflare: Target = {
   id: "cloudflare",
   title: "Cloudflare",
-  description: "Workers with static assets (wrangler.jsonc, src/worker.ts) and a Pages variant (_headers, _redirects, functions/[[path]].ts)",
+  description:
+    "Workers with static assets (wrangler.jsonc, src/worker.ts) and a Pages variant (_headers, _redirects, functions/[[path]].ts)",
   generate(c): GeneratedFile[] {
     return [
       { path: "wrangler.jsonc", content: wranglerJsonc(c) },
       { path: "src/worker.ts", content: workerSource(c) },
-      { path: "pages/_headers", content: `# ${GENERATED_NOTE}\n/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n/chunk-*\n  Cache-Control: public, max-age=31536000, immutable\n/index.html\n  Cache-Control: no-cache\n` },
+      {
+        path: "pages/_headers",
+        content: `# ${GENERATED_NOTE}\n/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n/chunk-*\n  Cache-Control: public, max-age=31536000, immutable\n/index.html\n  Cache-Control: no-cache\n`,
+      },
       { path: "pages/_redirects", content: `# ${GENERATED_NOTE}\n/* /index.html 200\n` },
       { path: "pages/functions/[[path]].ts", content: pagesFunction(c) },
     ];

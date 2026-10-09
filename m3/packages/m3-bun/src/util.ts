@@ -29,7 +29,10 @@ export interface GeneratedFile {
 }
 
 /** Write generated files below `dir`; returns the absolute paths written. Never touches anything else. */
-export async function writeFiles(dir: string, files: readonly GeneratedFile[]): Promise<string[]> {
+export async function writeFiles(
+  dir: string,
+  files: ReadonlyArray<Omit<GeneratedFile, "content"> & { content: string | Uint8Array }>,
+): Promise<string[]> {
   const written: string[] = [];
   /* eslint-disable no-await-in-loop -- Files and ancestor checks are ordered to preserve containment and repeated-path writes. */
   for (const file of files) {

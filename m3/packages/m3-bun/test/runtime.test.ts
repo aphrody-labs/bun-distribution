@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, describe, expect, test } from "bun:test";
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { launch, runtimeSdkPath, smoke } from "../src/runtime.ts";
 import { cleanup, freePort, tmp } from "./helpers.ts";
@@ -19,10 +19,16 @@ function script(): string {
 }
 
 describe("runtimeSdkPath", () => {
-  test("is the SDK entry under $YOLO_ROOT, or undefined when yolo is absent", () => {
-    expect(runtimeSdkPath("/definitely/not/yolo")).toBeUndefined();
+  test("resolves the SDK from the selected Bun checkout", () => {
+    expect(runtimeSdkPath("/definitely/not/bun")).toBeUndefined();
+    const root = tmp();
+    const source = join(root, "packages/bun-runtime-sdk/src");
+    mkdirSync(source, { recursive: true });
+    const entry = join(source, "index.ts");
+    writeFileSync(entry, "export const Runtime = {};\n");
+    expect(runtimeSdkPath(root)).toBe(entry);
     const sdk = runtimeSdkPath();
-    if (sdk) expect(sdk.endsWith("packages/runtime/src/index.ts")).toBe(true);
+    if (sdk) expect(sdk.endsWith("index.ts") || sdk.endsWith("runtime-sdk.ts")).toBe(true);
   });
 });
 
@@ -35,7 +41,7 @@ describe("launch", () => {
       env: { PORT: String(port) },
     });
     try {
-      expect(["yolo-runtime", "bun-spawn"]).toContain(child.via);
+      expect(["buv-runtime", "bun-spawn"]).toContain(child.via);
       expect(child.readyStatus).toBe(200);
       expect(child.pid).toBeGreaterThan(0);
       expect((await fetch(`http://127.0.0.1:${port}/healthz`)).status).toBe(200);
@@ -51,7 +57,11 @@ describe("launch", () => {
     writeFileSync(file, "setInterval(() => {}, 1 << 30);\n");
     const started = Date.now();
     await expect(
-      launch(process.execPath, { args: [file], port: freePort(), timeoutMs: 600 }),
+      launch(process.execPath, {
+        args: [file],
+        port: freePort(),
+        timeoutMs: 600,
+      }),
     ).rejects.toBeDefined();
     expect(Date.now() - started).toBeLessThan(5000);
   }, 30_000);
@@ -80,7 +90,9 @@ describe("smoke", () => {
       ["/", 200],
       ["/healthz", 200],
     ]);
-    const wrong = await smoke(wrapper, freePort(), ["/"], { "/": "application/json" });
+    const wrong = await smoke(wrapper, freePort(), ["/"], {
+      "/": "application/json",
+    });
     expect(wrong.ok).toBe(false);
   }, 30_000);
 });

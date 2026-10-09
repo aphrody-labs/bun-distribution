@@ -33,9 +33,7 @@ export interface RootfsReport {
 /** Root filesystem of a scratch image: `/app/server` plus its libraries at their own absolute paths. Linux only. */
 export async function buildRootfs(executable: string, dir: string): Promise<RootfsReport> {
   if (process.platform !== "linux") {
-    throw new Error(
-      "m3-bun: --rootfs lists the executable's libraries with ldd and needs a Linux host",
-    );
+    throw new Error("m3-bun: --rootfs lists the executable's libraries with ldd and needs a Linux host");
   }
   const ldd = Bun.spawnSync(["ldd", executable], { stdout: "pipe", stderr: "pipe" });
   const text = ldd.stdout.toString();
@@ -84,9 +82,7 @@ function looksExecutable(data: Uint8Array): boolean {
 
 /** Every directory and file under `staging`, sorted by name, with POSIX modes. */
 async function archiveEntries(staging: string): Promise<ArchiveEntry[]> {
-  const paths = await Array.fromAsync(
-    new Bun.Glob("**/*").scan({ cwd: staging, onlyFiles: false, dot: true }),
-  );
+  const paths = await Array.fromAsync(new Bun.Glob("**/*").scan({ cwd: staging, onlyFiles: false, dot: true }));
   const entries: ArchiveEntry[] = [];
   for (const path of paths) {
     const name = path.replaceAll("\\", "/");
@@ -99,8 +95,7 @@ async function archiveEntries(staging: string): Promise<ArchiveEntry[]> {
     }
     // oxlint-disable-next-line no-await-in-loop -- Staged files are read one at a time to bound memory.
     const data = new Uint8Array(await Bun.file(full).arrayBuffer());
-    const mode =
-      process.platform === "win32" ? (looksExecutable(data) ? 0o755 : 0o644) : info.mode & 0o777;
+    const mode = process.platform === "win32" ? (looksExecutable(data) ? 0o755 : 0o644) : info.mode & 0o777;
     entries.push({ name, mode, data });
   }
   return entries.toSorted((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
@@ -207,19 +202,48 @@ function zip(entries: ArchiveEntry[]): Uint8Array {
   return Buffer.concat([...chunks, ...central, end]);
 }
 
+/** Who wrote an archive: `Bun.Archive`, or the writers above on a runtime whose `Bun.Archive` lacks modes and zip. */
+export type Archiver = "bun-archive" | "m3-bun";
+
+let archiveSupport: Promise<boolean> | undefined;
+
+/** `Bun.Archive` with per-entry modes, a fixed `mtime` and zip output (the aphrody-labs fork; 1.4.3-aphrody.2 lacks them). */
+export function bunArchiveSupported(): Promise<boolean> {
+  archiveSupport ??= (async () => {
+    if (typeof Bun.Archive !== "function") return false;
+    try {
+      const bytes = await new Bun.Archive({ x: { data: "x", mode: 0o755 } }, { format: "zip", mtime: 0 }).bytes();
+      const files = await new Bun.Archive(bytes).files();
+      return bytes[0] === 0x50 && bytes[1] === 0x4b && (await files.get("x")?.text()) === "x";
+    } catch {
+      return false;
+    }
+  })();
+  return archiveSupport;
+}
+
 /**
- * Archive the contents of `staging` into `archive`. Bun writes it, so no `tar` or `zip` is needed, and the bytes
- * depend only on the names, contents and modes of the files.
+ * Archive the contents of `staging` into `archive`. Bun writes it (`Bun.Archive` when the runtime has the full
+ * contract), so no `tar` or `zip` is needed, and the bytes depend only on the names, contents and modes of the files.
  */
-export async function archiveDir(
-  staging: string,
-  archive: string,
-  format: ArchiveFormat,
-): Promise<void> {
+export async function archiveDir(staging: string, archive: string, format: ArchiveFormat): Promise<Archiver> {
   await mkdir(dirname(archive), { recursive: true });
   await rm(archive, { force: true });
   const entries = await archiveEntries(staging);
+  if (await bunArchiveSupported()) {
+    const files = Object.fromEntries(
+      entries
+        .filter(entry => !entry.name.endsWith("/"))
+        .map(entry => [entry.name, { data: entry.data, mode: entry.mode }]),
+    );
+    await Bun.write(
+      archive,
+      new Bun.Archive(files, format === "zip" ? { format: "zip", mtime: 0 } : { compress: "gzip", level: 9, mtime: 0 }),
+    );
+    return "bun-archive";
+  }
   await Bun.write(archive, format === "zip" ? zip(entries) : tarGz(entries));
+  return "m3-bun";
 }
 export interface PackageOptions {
   dir?: string;
@@ -243,6 +267,8 @@ export interface PackageReport {
   bytes: number;
   sha256: string;
   checksumFile: string;
+  /** `Bun.Archive` or the built-in writers. */
+  archiver: Archiver;
   files: string[];
   compile?: CompileReport;
   rootfs?: RootfsReport;
@@ -263,8 +289,7 @@ Verify the download with SHA256SUMS. Built with @aphrody/m3-bun; the executable 
 
 /** Compile, stage and archive an app. */
 export async function packageApp(options: PackageOptions = {}): Promise<PackageReport> {
-  const app =
-    options.app ?? (await loadApp(resolve(options.dir ?? process.cwd()), options.configFile));
+  const app = options.app ?? (await loadApp(resolve(options.dir ?? process.cwd()), options.configFile));
   const target = options.target ?? app.bun.compile?.target;
   const windows = (target ?? "").startsWith("windows");
   const format = options.format ?? (windows ? "zip" : "tar.gz");
@@ -304,14 +329,12 @@ export async function packageApp(options: PackageOptions = {}): Promise<PackageR
   if (options.rootfs) rootfs = await buildRootfs(executable, join(out, "rootfs"));
 
   const archive = join(out, `${stem}.${format}`);
-  await archiveDir(staging, archive, format);
+  const archiver = await archiveDir(staging, archive, format);
   const archiveHash = sha256(new Uint8Array(await Bun.file(archive).arrayBuffer()));
   const checksumFile = `${archive}.sha256`;
   await Bun.write(checksumFile, `${archiveHash}  ${basename(archive)}\n`);
-  const files = (
-    await Array.fromAsync(new Bun.Glob("**/*").scan({ cwd: staging, onlyFiles: true, dot: true }))
-  )
-    .map((file) => file.replaceAll("\\", "/"))
+  const files = (await Array.fromAsync(new Bun.Glob("**/*").scan({ cwd: staging, onlyFiles: true, dot: true })))
+    .map(file => file.replaceAll("\\", "/"))
     .toSorted();
   await rm(join(out, ".staging"), { recursive: true, force: true });
   return {
@@ -319,6 +342,7 @@ export async function packageApp(options: PackageOptions = {}): Promise<PackageR
     bytes: Bun.file(archive).size,
     sha256: archiveHash,
     checksumFile,
+    archiver,
     files,
     ...(compile ? { compile } : {}),
     ...(rootfs ? { rootfs } : {}),

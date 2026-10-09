@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-import { describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, test } from "bun:test";
 import { resolve } from "node:path";
 import {
+  iconCacheFile,
   iconFile,
   iconUrl,
   iconVariant,
@@ -10,6 +11,9 @@ import {
   parseIconSpecifier,
   readIcon,
 } from "../src/icons.ts";
+import { cleanup, tmp } from "./helpers.ts";
+
+afterAll(cleanup);
 
 describe("parseIconSpecifier", () => {
   test("name, style and variant query", () => {
@@ -82,28 +86,47 @@ describe("readIcon", () => {
       "https://cdn.aphrody.com/s/i/short-term/release/materialsymbolsrounded/home/fill1/24px.svg",
     );
   });
-  test("loadIcon fetches from the CDN once, then reads the disk cache", async () => {
-    const saved = Bun.env.M3_ICONS_CACHE;
-    const cache = `${Bun.env.TMPDIR ?? "/tmp"}/m3-icons-${process.pid}-${Date.now()}`;
+  test("loadIcon fetches from the icon origin once, then reads its disk cache", async () => {
+    const requests: string[] = [];
+    using server = Bun.serve({
+      port: 0,
+      fetch(request) {
+        const { pathname } = new URL(request.url);
+        requests.push(pathname);
+        if (pathname.includes("/no_such_symbol_xyz/")) return new Response("missing", { status: 404 });
+        return new Response(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><title>${pathname}</title></svg>`);
+      },
+    });
+    const saved = { cache: Bun.env.M3_ICONS_CACHE, origin: Bun.env.M3_ICONS_ORIGIN };
+    const cache = tmp("m3-icons-");
     Bun.env.M3_ICONS_CACHE = cache;
+    Bun.env.M3_ICONS_ORIGIN = server.url.href;
     try {
-      const svg = await loadIcon(
-        { name: "home", style: "outlined", fill: false, weight: 400 },
-        null,
+      const home = { name: "home", style: "outlined", fill: false, weight: 400 } as const;
+      const svg = await loadIcon(home, null);
+      expect(svg).toBe(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><title>/s/i/short-term/release/materialsymbolsoutlined/home/default/24px.svg</title></svg>`,
       );
-      expect(svg).toStartWith("<svg");
-      expect(svg).toContain('viewBox="0 -960 960 960"');
-      expect(await Bun.file(`${cache}/outlined/home/default.svg`).exists()).toBe(true);
-      expect(
-        await loadIcon({ name: "home", style: "rounded", fill: true, weight: 400 }, null),
-      ).not.toBe(svg);
+      const file = iconCacheFile(home);
+      expect(file).toStartWith(`${cache}/`);
+      expect(file).toEndWith("/outlined/home/default.svg");
+      expect(iconCacheFile(home, "https://other.example")).not.toBe(file);
+      expect(await Bun.file(file).text()).toBe(svg);
+      expect(await loadIcon(home, null)).toBe(svg);
+      expect(await loadIcon({ name: "home", style: "rounded", fill: true, weight: 400 }, null)).not.toBe(svg);
       await expect(
         loadIcon({ name: "no_such_symbol_xyz", style: "outlined", fill: false, weight: 400 }, null),
       ).rejects.toThrow(/no icon outlined\/no_such_symbol_xyz_24px\.svg/);
+      expect(requests).toEqual([
+        "/s/i/short-term/release/materialsymbolsoutlined/home/default/24px.svg",
+        "/s/i/short-term/release/materialsymbolsrounded/home/fill1/24px.svg",
+        "/s/i/short-term/release/materialsymbolsoutlined/no_such_symbol_xyz/default/24px.svg",
+      ]);
     } finally {
-      await Bun.$`rm -rf ${cache}`.quiet();
-      if (saved === undefined) delete Bun.env.M3_ICONS_CACHE;
-      else Bun.env.M3_ICONS_CACHE = saved;
+      for (const [key, value] of [["M3_ICONS_CACHE", saved.cache], ["M3_ICONS_ORIGIN", saved.origin]] as const) {
+        if (value === undefined) delete Bun.env[key];
+        else Bun.env[key] = value;
+      }
     }
   });
   test("M3_ICONS_ROOT wins", () => {

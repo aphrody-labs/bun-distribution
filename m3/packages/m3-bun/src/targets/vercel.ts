@@ -26,7 +26,10 @@ export const vercelJson = (c: TargetContext) => ({
         { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
       ],
     },
-    { source: "/chunk-(.*)", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
+    {
+      source: "/chunk-(.*)",
+      headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+    },
     { source: "/index.html", headers: [{ key: "Cache-Control", value: "no-cache" }] },
   ],
 });
@@ -50,7 +53,8 @@ export default {
 export const vercel: Target = {
   id: "vercel",
   title: "Vercel",
-  description: "vercel.json (static output, SPA rewrites, headers, Bun runtime) and an api/index.ts function over the app's routes",
+  description:
+    "vercel.json (static output, SPA rewrites, headers, Bun runtime) and an api/index.ts function over the app's routes",
   generate(c): GeneratedFile[] {
     return [
       { path: "vercel.json", content: `${JSON.stringify(vercelJson(c), null, 2)}\n` },

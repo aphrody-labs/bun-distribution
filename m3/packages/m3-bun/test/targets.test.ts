@@ -32,7 +32,7 @@ beforeAll(async () => {
   out = tmp("m3-bun-targets-");
   ctx = contextFor(await loadApp(FIXTURE));
   await generateTargets(["all"], ctx, out);
-});
+}, 120_000);
 
 describe("the context", () => {
   test("is derived from the app and its deploy section", () => {
@@ -55,7 +55,7 @@ describe("the context", () => {
 });
 
 describe("registry", () => {
-  test("ten targets with unique ids, each with a description; an unknown id lists the known ones", () => {
+  test("sixteen targets with unique ids, each with a description; an unknown id lists the known ones", () => {
     expect(TARGETS.map((t) => t.id)).toEqual([
       "docker",
       "systemd",
@@ -67,6 +67,12 @@ describe("registry", () => {
       "vscode",
       "windows",
       "linux-image",
+      "tauri",
+      "webos",
+      "lambda",
+      "os-themes",
+      "release",
+      "next",
     ]);
     for (const t of TARGETS) expect(t.description.length).toBeGreaterThan(20);
     expect(() => getTarget("heroku")).toThrow(/unknown deploy target heroku \(docker, systemd/);
@@ -222,7 +228,10 @@ describe("nginx", () => {
     const model = vhostModel(ctx);
     expect(
       JSON.parse(await renderNginx([process.execPath, script], model, ["owner comment"])),
-    ).toEqual({ model, args: ["--comment", "owner comment", "-"] });
+    ).toEqual({
+      model,
+      args: ["--comment", "owner comment", "-"],
+    });
     await Bun.write(script, 'console.error("renderer denied"); process.exit(23);');
     await expect(renderNginx([process.execPath, script], model, [])).rejects.toThrow(
       "failed (23): renderer denied",
@@ -490,11 +499,52 @@ describe("vscode", () => {
       "oxc.oxc-vscode",
     ]);
   });
+
+  // The Bun extension of the fork declares what its debugger, tasks and settings accept.
+  const extension = join(
+    process.env.APHRODY_BUN_CHECKOUT ?? "C:/bun",
+    "packages/bun-vscode/package.json",
+  );
+  test.skipIf(!existsSync(extension))(
+    "launch.json and settings.json use only what the Bun extension declares",
+    async () => {
+      const { contributes } = (await Bun.file(extension).json()) as { contributes: any };
+      const debuggerSchema = contributes.debuggers.find(
+        (d: any) => d.type === "bun",
+      ).configurationAttributes;
+      for (const config of json("vscode", ".vscode/launch.json").configurations) {
+        const known = Object.keys(debuggerSchema[config.request].properties);
+        const own = Object.keys(config).filter((key) => !["type", "request", "name"].includes(key));
+        expect({ name: config.name, unknown: own.filter((key) => !known.includes(key)) }).toEqual({
+          name: config.name,
+          unknown: [],
+        });
+      }
+      const properties = contributes.configuration.properties as Record<string, { type: string }>;
+      const settings = json("vscode", ".vscode/settings.json");
+      const bunSettings = Object.entries(settings).filter(([key]) => key.startsWith("bun."));
+      expect(bunSettings.length).toBeGreaterThan(5);
+      for (const [key, value] of bunSettings)
+        expect({ key, type: properties[key]?.type }).toEqual({ key, type: typeof value });
+    },
+  );
 });
 
 describe("windows", () => {
   test("scripts target the .exe, use WinSW or a scheduled task, and never claim sc.exe can run a Bun executable", () => {
-    expect(read("windows", "build-windows.ps1")).toContain("compile --target windows-x64");
+    expect(read("windows", "build-windows.ps1")).toContain("build-windows.ts");
+    const build = read("windows", "build-windows.ts");
+    expect(build).toContain('compileApp({ app, target: "windows-x64"');
+    expect(build).toContain("windowsIcon(");
+    expect(read("windows", "icon.svg")).toStartWith("<svg ");
+    const app = read("windows", "install-app.ps1");
+    expect(app).toContain("WScript.Shell");
+    expect(app).toContain(
+      "Registry::HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\hello-m3",
+    );
+    expect(app).toContain("DisplayVersion = '1.2.3'");
+    expect(read("windows", "uninstall-app.ps1")).toContain("Remove-Item $key -Recurse");
+    expect(read("windows", "windows-check.ts")).toContain("inspectWindows(");
     const install = read("windows", "install-service.ps1");
     expect(install).toContain("WinSW-x64.exe");
     expect(install).toContain("Register-ScheduledTask");
@@ -510,9 +560,13 @@ describe("windows", () => {
   test.skipIf(!Bun.which("pwsh"))(
     "PowerShell parses every script without syntax errors",
     () => {
-      const files = ["build-windows.ps1", "install-service.ps1", "uninstall-service.ps1"].map(
-        (file) => join(out, "windows", file),
-      );
+      const files = [
+        "build-windows.ps1",
+        "install-app.ps1",
+        "uninstall-app.ps1",
+        "install-service.ps1",
+        "uninstall-service.ps1",
+      ].map((file) => join(out, "windows", file));
       const script = `foreach ($f in @(${files.map((file) => `'${file}'`).join(", ")})) { $e = $null; $t = $null; [System.Management.Automation.Language.Parser]::ParseFile($f, [ref]$t, [ref]$e) | Out-Null; foreach ($x in $e) { "$(Split-Path $f -Leaf): $($x.Message)" } }`;
       const proc = Bun.spawnSync(["pwsh", "-NoProfile", "-NonInteractive", "-Command", script], {
         stdout: "pipe",

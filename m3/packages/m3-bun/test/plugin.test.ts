@@ -44,18 +44,23 @@ describe("m3Bun: the one plugin", () => {
     expect(text).toContain("--md-sys-shape-corner-medium");
   });
 
-  test("m3:icons/<name> is the SVG markup from the forked catalogue; variants and errors", async () => {
+  test("m3:icons/<name> is the SVG markup from the catalogue; variants and errors", async () => {
+    const iconsRoot = tmp();
+    await Bun.write(join(iconsRoot, "home/materialsymbolsoutlined/home_24px.svg"), '<svg xmlns="a"/>');
+    await Bun.write(join(iconsRoot, "home/materialsymbolsrounded/home_fill1_24px.svg"), '<svg xmlns="b"/>');
     const ok = await bundle(
       {
         "main.ts": 'import a from "m3:icons/home"; import b from "m3:icons/rounded/home?fill=1"; console.log(a, b);\n',
       },
       "main.ts",
+      { iconsRoot },
     );
     expect(ok.success).toBe(true);
-    expect(ok.text).toContain("<svg xmlns=");
+    expect(ok.text).toContain('<svg xmlns="b"/>');
     const missing = await bundle(
       { "main.ts": 'import a from "m3:icons/no_such_symbol_xyz"; console.log(a);\n' },
       "main.ts",
+      { iconsRoot },
     );
     expect(missing.success).toBe(false);
     expect(missing.logs.join("\n")).toContain("no_such_symbol_xyz");

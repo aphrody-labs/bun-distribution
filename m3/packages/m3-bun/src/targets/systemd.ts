@@ -11,11 +11,23 @@ import type { Target, TargetContext } from "./types.ts";
 
 /** The shared drop-ins this unit uses, in application order, with the text used when yolo is not checked out. */
 export const SHARED_DROPINS: ReadonlyArray<readonly [string, string]> = [
-  ["sandbox-base.conf", "# Baseline sandbox: no privilege gain, private /tmp, read-only OS tree (add ReadWritePaths per unit).\n[Service]\nNoNewPrivileges=true\nPrivateTmp=true\nProtectSystem=strict\n"],
+  [
+    "sandbox-base.conf",
+    "# Baseline sandbox: no privilege gain, private /tmp, read-only OS tree (add ReadWritePaths per unit).\n[Service]\nNoNewPrivileges=true\nPrivateTmp=true\nProtectSystem=strict\n",
+  ],
   ["sandbox-home-ro.conf", "# Home directories read-only.\n[Service]\nProtectHome=read-only\n"],
-  ["sandbox-kernel.conf", "# Kernel tunables, modules and cgroups read-only; no setuid/setgid; no personality changes.\n[Service]\nProtectKernelTunables=true\nProtectKernelModules=true\nProtectControlGroups=true\nRestrictSUIDSGID=true\nLockPersonality=true\n"],
-  ["net-inet-only.conf", "# Restrict sockets to unix, IPv4 and IPv6.\n[Service]\nRestrictAddressFamilies=AF_UNIX AF_INET AF_INET6\n"],
-  ["syscall-service.conf", "# Allow the @system-service syscall set and deny obsolete/privileged calls.\n[Service]\nSystemCallFilter=@system-service\nSystemCallFilter=~@obsolete @privileged\n"],
+  [
+    "sandbox-kernel.conf",
+    "# Kernel tunables, modules and cgroups read-only; no setuid/setgid; no personality changes.\n[Service]\nProtectKernelTunables=true\nProtectKernelModules=true\nProtectControlGroups=true\nRestrictSUIDSGID=true\nLockPersonality=true\n",
+  ],
+  [
+    "net-inet-only.conf",
+    "# Restrict sockets to unix, IPv4 and IPv6.\n[Service]\nRestrictAddressFamilies=AF_UNIX AF_INET AF_INET6\n",
+  ],
+  [
+    "syscall-service.conf",
+    "# Allow the @system-service syscall set and deny obsolete/privileged calls.\n[Service]\nSystemCallFilter=@system-service\nSystemCallFilter=~@obsolete @privileged\n",
+  ],
 ];
 
 /** A shared drop-in from `<yolo>/tools/config/host/systemd/shared`, else the embedded text. */
@@ -66,7 +78,8 @@ export const catalogEntry = (c: TargetContext) => ({
 export const systemd: Target = {
   id: "systemd",
   title: "systemd",
-  description: "Service unit in the yolo host shape, shared sandbox drop-ins, service-catalog entry, env example",
+  description:
+    "Service unit in the yolo host shape, shared sandbox drop-ins, service-catalog entry, env example",
   generate(c): GeneratedFile[] {
     const dropins: GeneratedFile[] = SHARED_DROPINS.map(([name], i) => ({
       path: `${c.name}.service.d/${String(10 + i * 10).padStart(2, "0")}-${name}`,
@@ -75,8 +88,14 @@ export const systemd: Target = {
     return [
       { path: `${c.name}.service`, content: unit(c) },
       ...dropins,
-      { path: `${c.name}.env.example`, content: `# ${GENERATED_NOTE}\n# Installed as /etc/${c.namespace}/${c.name}.env (mode 0640, owner root:${c.user}); never commit real values.\nPORT=${c.port}\nHOST=127.0.0.1\n` },
-      { path: "service-catalog.entry.json", content: `${JSON.stringify(catalogEntry(c), null, 2)}\n` },
+      {
+        path: `${c.name}.env.example`,
+        content: `# ${GENERATED_NOTE}\n# Installed as /etc/${c.namespace}/${c.name}.env (mode 0640, owner root:${c.user}); never commit real values.\nPORT=${c.port}\nHOST=127.0.0.1\n`,
+      },
+      {
+        path: "service-catalog.entry.json",
+        content: `${JSON.stringify(catalogEntry(c), null, 2)}\n`,
+      },
     ];
   },
 };

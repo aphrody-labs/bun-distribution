@@ -2,7 +2,7 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { buildApp, hoistHtml, listBuild, minifyOptions, readManifest } from "../src/build.ts";
+import { buildApp, checkEngine, hoistHtml, listBuild, minifyOptions, readManifest } from "../src/build.ts";
 import { sha256 } from "../src/util.ts";
 import { cleanup, fixtureCopy } from "./helpers.ts";
 
@@ -23,6 +23,24 @@ describe("hoistHtml", () => {
   test("absolute and external references are left alone", () => {
     const html = '<script src="https://cdn.example.com/x.js"></script><img src="/logo.svg">';
     expect(hoistHtml(html, 1)).toBe(html);
+  });
+  test("only attributes are rewritten: script text and comments that look like attributes stay as they are", () => {
+    const html =
+      '<!-- <img src="../c.png"> --><script>document.write(\x27<img src="../a.png">\x27)</script><img data-src="../b.png" src="../b.png">';
+    expect(hoistHtml(html, 1)).toBe(
+      '<!-- <img src="../c.png"> --><script>document.write(\x27<img src="../a.png">\x27)</script><img data-src="../b.png" src="./b.png">',
+    );
+  });
+});
+
+describe("checkEngine", () => {
+  test("warns when the running Bun does not satisfy engines.bun of the app", async () => {
+    const dir = fixtureCopy();
+    expect(checkEngine(dir, "1.4.3")).toBeUndefined();
+    const manifest = await Bun.file(join(dir, "package.json")).json();
+    await Bun.write(join(dir, "package.json"), JSON.stringify({ ...manifest, engines: { bun: ">=1.5.0" } }));
+    expect(checkEngine(dir, "1.5.2")).toBeUndefined();
+    expect(checkEngine(dir, "1.4.3")).toContain(">=1.5.0");
   });
 });
 
@@ -73,7 +91,13 @@ describe("buildApp", () => {
       expect(file.bytes).toBe(bytes.length);
       expect(file.sha256).toBe(sha256(bytes));
       expect(file.gzipBytes).toBe(Bun.gzipSync(bytes).length);
+      expect(file.zstdBytes).toBe(Bun.zstdCompressSync(bytes).length);
     }
+    expect(report.totalZstdBytes).toBe(manifest.files.reduce((n, f) => n + f.zstdBytes, 0));
+    expect(report.memory.heapSize).toBeGreaterThan(0);
+    expect(report.memory.objectCount).toBeGreaterThan(0);
+    expect(report.memory.peakRss).toBeGreaterThanOrEqual(report.memory.rss);
+    expect(report.warnings).toEqual([]);
     expect(manifest.buildId).toBe(sha256(manifest.files.map(f => `${f.path}:${f.sha256}`).join("\n")).slice(0, 16));
     expect(await listBuild(report.outdir)).toEqual(manifest.files);
     expect(report.totalBytes).toBe(manifest.files.reduce((n, f) => n + f.bytes, 0));

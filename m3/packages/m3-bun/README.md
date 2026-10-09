@@ -39,6 +39,11 @@ export default defineM3Config({ entry: "src/index.html", theme: { seed: "#6750a4
 export const bun = defineM3Bun({ api: "src/api/index.ts", port: 3000, compile: { bytecode: true } });
 ```
 
+The fork's Bun plugins compose behind options of `m3Bun` (`src/plugins.ts`): `yaml`, `svelte` (on by default), `mdx`
+(`@aphrody/bun-mdx-rs`, native `onBeforeParse`), `n2b` and `oxc`. Each one is imported on the first module its hooks
+match. The m3 packages are modules too (`src/plugins-m3.ts`): `m3:icon/<style>/<name>` (`@aphrody/m3-icons`),
+`m3:theme/{tokens,tailwind,spaceui}.css` (`@aphrody/m3-theme`) and `m3:assets/<path>[?url]` (`@aphrody/assets`).
+
 ## Build graph (`bun:graph`)
 
 `m3-bun build --graph` (or `bun: { graph: true }` in `m3.config.ts`) records the build in the `bun:graph` SQLite registry of
@@ -54,6 +59,35 @@ into. Runtimes without `bun:graph` fail with an explicit error.
 `src/api` exports Bun routes (`defineM3Api`); `Bun.serve` runs them natively next to the file server (cache headers,
 ETag, brotli and gzip, SPA fallback, `/healthz`, `/api/m3/info`, security headers, traversal guard). `routesToFetch` turns the
 same routes into one `fetch` handler for Cloudflare Workers and Vercel functions.
+
+The server's optional parts load on first use (`src/server-*.ts`), on Bun APIs only:
+
+| Module | What it does |
+| --- | --- |
+| HTML | `HTMLRewriter`: CSP nonce on every script, and the request's theme |
+| Markdown | `Bun.markdown` pages |
+| Crawl | `sitemap.xml`, `robots.txt` and `llms.txt` |
+| Realtime | WebSocket topics |
+| Data | `bun:sqlite` with migrations |
+| Secrets | `Bun.secrets` |
+| Auth | `Bun.password` and sessions |
+| Cache | `Bun.RedisClient` |
+| MCP | `@aphrody/m3-mcp` tools |
+| AG-UI | `@aphrody/m3-ai` |
+| Next | `@aphrody/next-bun` behind a proxy |
+| m3 routes | `@aphrody/m3/server` routes |
+
+`m3-bun dev --inspect [--inspector-ui]` runs the dev server in a child Bun with its inspector on, relays its console and
+exceptions, and serves the WebKit Web Inspector (`@aphrody/web-inspector-bun`). API load and handler errors go to Bun's
+error overlay.
+
+## Tools
+
+`m3-bun lint` (eslint-plugin-m3 through oxlint), `migrate` (m3-codemods, `--next` for m3-next-migrate), `create`
+(scaffold), `design` (m3-design), `og` (canvas Open Graph image) and `lib` (m3-config library build). Each tool package
+loads on first use (`src/tools-*.ts`). If a package is missing, the error names it.
+
+Deploy targets also include `tauri`, `webos`, `lambda`, `os-themes`, `release`, `next` and `windows-inspect`.
 
 ## Compile: bytecode and the limits
 

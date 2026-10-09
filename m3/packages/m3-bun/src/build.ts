@@ -3,8 +3,9 @@
 // one m3-bun plugin, then a layout a file server and every deploy target can use as is:
 //   dist/index.html            the entry, hoisted to the root with its asset references rewritten
 //   dist/chunk-<hash>.{js,css} content-hashed assets (immutable caching)
-//   dist/m3-bun.manifest.json  files, sizes, gzip sizes, SHA-256 and a build id derived from them
+//   dist/m3-bun.manifest.json  files, sizes, gzip and zstd sizes, SHA-256 and a build id derived from them
 import { buildM3, type BuildM3Options } from "@aphrody/m3";
+import { heapStats, memoryUsage } from "bun:jsc";
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { readdir, rm } from "node:fs/promises";
 import { basename, dirname, join, relative, resolve } from "node:path";
@@ -26,6 +27,8 @@ export interface BuildFile {
   path: string;
   bytes: number;
   gzipBytes: number;
+  /** `Bun.zstdCompressSync` size at the default level: what a `zstd` content encoding costs. */
+  zstdBytes: number;
   sha256: string;
 }
 
@@ -41,50 +44,79 @@ export interface BuildManifest {
   files: BuildFile[];
 }
 
+/** Memory of the building process when the build finished (`bun:jsc`), in bytes. */
+export interface BuildMemory {
+  /** JavaScriptCore heap after the last collection, plus extra memory. */
+  heapSize: number;
+  heapCapacity: number;
+  objectCount: number;
+  /** Resident set size, now and at its peak. */
+  rss: number;
+  peakRss: number;
+}
+
 export interface BuildReport {
   app: M3App;
   outdir: string;
   manifest: BuildManifest;
   totalBytes: number;
   totalGzipBytes: number;
+  totalZstdBytes: number;
   ms: number;
+  memory: BuildMemory;
+  /** Problems that did not stop the build, such as a Bun outside the app's `engines.bun` range. */
+  warnings: string[];
   /** The `bun:graph` record of this build, when the build was recorded. */
   graph?: GraphRecord;
 }
 
 /**
  * Move the HTML entry that `Bun.build` placed at `<depth dirs>/index.html` to the build root and strip the
- * `../` the entry used to reach its siblings. `depth` is the number of directories the entry sat in.
+ * `../` the entry used to reach its siblings. `depth` is the number of directories the entry sat in. Only `src`
+ * and `href` attributes are rewritten (`HTMLRewriter`), never text, comments or script bodies.
  */
 export function hoistHtml(html: string, depth: number): string {
   if (depth === 0) return html;
-  return html.replace(
-    /((?:src|href)=["'])((?:\.\.\/)+)/g,
-    (_match, prefix: string, ups: string) => {
-      const remaining = ups.length / 3 - depth;
-      return `${prefix}${remaining > 0 ? "../".repeat(remaining) : "./"}`;
+  const rewriter = new HTMLRewriter().on("[src], [href]", {
+    element(element) {
+      for (const name of ["src", "href"]) {
+        const value = element.getAttribute(name);
+        const ups = value ? /^(?:\.\.\/)+/.exec(value)?.[0] : undefined;
+        if (!value || !ups) continue;
+        const remaining = ups.length / 3 - depth;
+        element.setAttribute(name, `${remaining > 0 ? "../".repeat(remaining) : "./"}${value.slice(ups.length)}`);
+      }
     },
-  );
+  });
+  return rewriter.transform(html);
 }
 
-async function walk(dir: string, base = dir): Promise<string[]> {
-  const out: string[] = [];
-  for (const entry of await readdir(dir, { withFileTypes: true })) {
-    const full = join(dir, entry.name);
-    // oxlint-disable-next-line no-await-in-loop -- Traverse one subtree at a time to bound filesystem work and retained entries.
-    if (entry.isDirectory()) out.push(...(await walk(full, base)));
-    else out.push(relative(base, full).replaceAll("\\", "/"));
-  }
-  return out.toSorted();
+/** `Bun.version` against the `engines.bun` range of the app's `package.json` (`Bun.semver`): a message when outside. */
+export function checkEngine(appDir: string, version: string = Bun.version): string | undefined {
+  const file = join(appDir, "package.json");
+  if (!existsSync(file)) return undefined;
+  const range = (JSON.parse(readFileSync(file, "utf8")) as { engines?: { bun?: string } }).engines?.bun;
+  if (!range || Bun.semver.satisfies(version, range)) return undefined;
+  return `Bun ${version} does not satisfy engines.bun "${range}" of ${file}`;
+}
+
+function buildMemory(): BuildMemory {
+  const heap = heapStats();
+  const usage = memoryUsage();
+  return {
+    heapSize: heap.heapSize,
+    heapCapacity: heap.heapCapacity,
+    objectCount: heap.objectCount,
+    rss: usage.current,
+    peakRss: usage.peak,
+  };
 }
 
 /** Every file of a build directory with sizes and hashes; `manifestName` itself is not listed. */
-export async function listBuild(
-  outdir: string,
-  manifestName = "m3-bun.manifest.json",
-): Promise<BuildFile[]> {
+export async function listBuild(outdir: string, manifestName = "m3-bun.manifest.json"): Promise<BuildFile[]> {
   const files: BuildFile[] = [];
-  for (const path of await walk(outdir)) {
+  const paths = await Array.fromAsync(new Bun.Glob("**/*").scan({ cwd: outdir, onlyFiles: true, dot: true }));
+  for (const path of paths.map(p => p.replaceAll("\\", "/")).toSorted()) {
     if (path === manifestName || path.endsWith(".map")) continue;
     // oxlint-disable-next-line no-await-in-loop -- Hash and compress one asset at a time so memory is bounded by the largest asset.
     const bytes = new Uint8Array(await Bun.file(join(outdir, path)).arrayBuffer());
@@ -92,6 +124,7 @@ export async function listBuild(
       path,
       bytes: bytes.length,
       gzipBytes: Bun.gzipSync(bytes).length,
+      zstdBytes: Bun.zstdCompressSync(bytes).length,
       sha256: sha256(bytes),
     });
   }
@@ -117,12 +150,12 @@ export interface BuildAppOptions {
 /** Build the UI of an M3 app into its output directory. */
 export async function buildApp(options: BuildAppOptions = {}): Promise<BuildReport> {
   const started = performance.now();
-  const app =
-    options.app ?? (await loadApp(resolve(options.dir ?? process.cwd()), options.configFile));
+  const app = options.app ?? (await loadApp(resolve(options.dir ?? process.cwd()), options.configFile));
   const outdir = resolve(options.outdir ?? app.outdir);
   const minify = options.minify ?? app.minify;
   const { m3 } = app;
   const graph = options.graph ?? app.bun.graph ?? false;
+  const engine = checkEngine(app.dir);
 
   const built = await buildM3({
     entry: m3.entry,
@@ -154,7 +187,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<BuildRepo
     version: app.version,
     bun: Bun.version,
     minify,
-    buildId: sha256(files.map((f) => `${f.path}:${f.sha256}`).join("\n")).slice(0, 16),
+    buildId: sha256(files.map(f => `${f.path}:${f.sha256}`).join("\n")).slice(0, 16),
     entry: "index.html",
     files,
   };
@@ -165,7 +198,10 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<BuildRepo
     manifest,
     totalBytes: files.reduce((n, f) => n + f.bytes, 0),
     totalGzipBytes: files.reduce((n, f) => n + f.gzipBytes, 0),
+    totalZstdBytes: files.reduce((n, f) => n + f.zstdBytes, 0),
     ms: Math.round(performance.now() - started),
+    memory: buildMemory(),
+    warnings: engine ? [engine] : [],
   };
   if (graph === false) return report;
   if (!built.metafile) throw new Error("m3-bun build: Bun.build returned no metafile to record");
