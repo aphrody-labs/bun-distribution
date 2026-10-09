@@ -160,7 +160,26 @@ export function captureSshConfig(
   return re.test(envText) ? envText.replace(re, () => line) : `${envText.trimEnd()}\n${line}\n`;
 }
 
-/** `net-env [--member M] [--probe] [--facts] [--write [--ssh-config]] [--file F]`: prints the block unless --write. */
+/** Send only the NET_LIVE_* lines (no secret) to `host` over SSH, atomically, for the Discord synchronisation of the hub. */
+export async function pushLive(lines: string[], host: string, path: string): Promise<boolean> {
+  const proc = Bun.spawn(
+    [
+      "ssh",
+      "-o",
+      "BatchMode=yes",
+      "-o",
+      "ConnectTimeout=8",
+      host,
+      `cat > ${path}.tmp && mv ${path}.tmp ${path}`,
+    ],
+    { stdin: "pipe", stdout: "ignore", stderr: "ignore", timeout: 20_000 },
+  );
+  proc.stdin.write(lines.filter((l) => l.startsWith("NET_LIVE_")).join("\n") + "\n");
+  await proc.stdin.end();
+  return (await proc.exited) === 0;
+}
+
+/** `net-env [--member M] [--probe] [--facts] [--write [--ssh-config]] [--push HOST [--push-path P]] [--file F]`: prints the block unless --write. */
 export async function netEnvMain(t: Tunnel, args: string[]): Promise<void> {
   const value = (name: string) => {
     const at = args.indexOf(`--${name}`);
@@ -186,6 +205,15 @@ export async function netEnvMain(t: Tunnel, args: string[]): Promise<void> {
     console.log(
       `net-env: ${file} updated${probes ? ` (${probes.filter((p) => p.ok).length}/${probes.length} up)` : ""}`,
     );
+  }
+  const pushHost = value("push");
+  if (pushHost && collected) {
+    const ok = await pushLive(
+      renderFacts(collected),
+      pushHost,
+      value("push-path") ?? "/var/lib/aphrody-discord-sync/net-live.env",
+    );
+    console.log(`push: ${pushHost} ${ok ? "ok" : "failed"}`);
   }
   if (args.includes("--ssh-config") && args.includes("--write")) {
     const before = readFileSync(file, "utf8");

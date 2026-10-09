@@ -245,6 +245,23 @@
       "pairs": "aphrody-selfheal.service"
     },
     {
+      "service": "aphrody-discord-sync",
+      "unit": "aphrody-discord-sync.service",
+      "path": "systemd/aphrody/aphrody-discord-sync.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-discord-sync-timer",
+      "unit": "aphrody-discord-sync.timer",
+      "path": "systemd/aphrody/aphrody-discord-sync.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "pairs": "aphrody-discord-sync.service"
+    },
+    {
       "service": "aphrody-self-update",
       "unit": "aphrody-self-update.service",
       "path": "systemd/aphrody/aphrody-self-update.service",
