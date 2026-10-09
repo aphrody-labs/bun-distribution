@@ -607,15 +607,15 @@ fn apply_windows(entry: &BootEntry) -> Result<String> {
 
 /// Runs this same command line with administrator rights (`sudo.exe` inline, else UAC) and
 /// returns its exit code; only the `aphrody` binaries relaunch themselves.
-fn relaunch_elevated() -> Result<i32> {
+pub(crate) fn relaunch_elevated(command: &str) -> Result<i32> {
     let exe = std::env::current_exe().context("exécutable courant")?;
     let stem =
         exe.file_stem().map(|s| s.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
     if !stem.starts_with("aphrody") {
-        bail!("droits administrateur requis : relancer `aphrody infra boot apply` élevé");
+        bail!("droits administrateur requis : relancer `aphrody infra {command}` élevé");
     }
     let path = aphrody_proc::Elevation::detect().context("élévation")?;
-    eprintln!("boot: corrections Windows en attente, relance élevée ({})", path.label());
+    eprintln!("{command}: corrections Windows en attente, relance élevée ({})", path.label());
     let args: Vec<std::ffi::OsString> = std::env::args_os().skip(1).collect();
     aphrody_proc::run_elevated(exe.as_os_str(), &args, None).context("relance élevée")
 }
@@ -785,7 +785,7 @@ pub fn run_boot(
         && !aphrody_proc::is_elevated()
     {
         // The elevated run applies and reports everything; this one only recomputes the drift.
-        let code = relaunch_elevated()?;
+        let code = relaunch_elevated("boot apply")?;
         if code != 0 {
             bail!("apply élevé : code de sortie {code}");
         }

@@ -558,6 +558,20 @@
       {
         "host": "local",
         "kind": "scheduledTask",
+        "name": "site",
+        "path": "\\Aphrody\\Native\\",
+        "triggers": [
+          "atStartup"
+        ],
+        "principal": "system",
+        "execute": "%USERPROFILE%\\.bun\\bin\\bun.exe",
+        "arguments": "--no-env-file scripts/tools/infra/native-startup.ts run site --config %USERPROFILE%\\.aphrody\\host\\aphrody-startup.json",
+        "workingDirectory": "{root}",
+        "description": "Aphrody Infra native startup v1: native product site declared in <home>/host/aphrody-startup.json (scripts/tools/infra/native-startup.ts)."
+      },
+      {
+        "host": "local",
+        "kind": "scheduledTask",
         "name": "Net Env Probe",
         "triggers": [],
         "principal": "user",
@@ -594,7 +608,7 @@
         "desktop": true,
         "periodic": true,
         "execute": "%USERPROFILE%\\.bun\\bin\\bun.exe",
-        "arguments": "scripts/install/container-service.ts",
+        "arguments": "--no-env-file scripts/install/container-service.ts",
         "workingDirectory": "{root}",
         "description": "Aphrody container (compose profile pc) on the loopback API: scripts/install/container-service.ts."
       },
@@ -636,7 +650,7 @@
         "runLevel": "limited",
         "periodic": true,
         "execute": "%USERPROFILE%\\.bun\\bin\\bun.exe",
-        "arguments": "scripts/tools/bun-hygiene.ts",
+        "arguments": "--no-env-file scripts/tools/bun-hygiene.ts",
         "workingDirectory": "{root}",
         "timeLimitMinutes": 60,
         "description": "Aphrody Bun hygiene: newest fork release at least 3 days old, package-manager report (scripts/tools/bun-hygiene.ts)."
@@ -653,7 +667,7 @@
         "runLevel": "limited",
         "periodic": true,
         "execute": "%USERPROFILE%\\.bun\\bin\\bun.exe",
-        "arguments": "scripts/tools/infra/shenron-offsite-backup.ts",
+        "arguments": "--no-env-file scripts/tools/infra/shenron-offsite-backup.ts",
         "workingDirectory": "{root}",
         "timeLimitMinutes": 30,
         "description": "Pull Shenron PostgreSQL and SQLite snapshots from DBFR and verify SHA-256 off-host.",

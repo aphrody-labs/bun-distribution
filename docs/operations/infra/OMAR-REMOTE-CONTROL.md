@@ -166,7 +166,7 @@ service `ssh-omar-wsl`). Règles de compatibilité :
 
 | Couche    | Windows                                                   | WSL Ubuntu                                                                   |
 | --------- | --------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| WireGuard | seul porteur de wg1 (clé `EXfat…`, `10.200.77.10`)         | aucun tunnel propre : réseau `mirrored`, il voit l'adaptateur wg1 de Windows |
+| WireGuard | seul porteur de wg1 (clé `EXfat…`, `10.200.77.10`)        | aucun tunnel propre : réseau `mirrored`, il voit l'adaptateur wg1 de Windows |
 | SSH       | `sshd` Windows `10.200.77.10:22`                          | `sshd` Linux `0.0.0.0:2222` (atteint en `10.200.77.10:2222`)                 |
 | Clés      | `C:\ProgramData\ssh\administrators_authorized_keys`       | `~/.ssh/authorized_keys` : mêmes lignes publiques                            |
 | VNC       | `aphrody infra remote serve` (5900), capture tout l'écran | fenêtres WSLg incluses dans la capture Windows ; pas de second serveur       |
@@ -199,19 +199,22 @@ WSL change). Côté propriétaire : `ssh omar-wsl` (wg1) ou `ssh omar-wsl-rt` (t
 
 ### 2.10 Toujours en ligne (2026-10-09)
 
-Une seule commande, en PowerShell 7 administrateur, une fois les sections 2.1 à 2.9 et la clé SSH en place :
+Une seule commande native, une fois les sections 2.1 à 2.9 et la clé SSH en place (hors session administrateur, elle
+se relance élevée par `sudo.exe` ou l'invite UAC) :
 
 ```powershell
-pwsh -File scripts/tools/infra/install-always-online.ps1 -DryRun   # plan
-pwsh -File scripts/tools/infra/install-always-online.ps1
+aphrody infra --root C:\src\aphrody remote always-online --dry-run   # plan JSON
+aphrody infra --root C:\src\aphrody remote always-online
 ```
 
-Le script coupe la veille et l'hibernation sur secteur, puis crée des tâches `\Aphrody\` relancées toutes les 5 minutes
-(`IgnoreNew`, 999 redémarrages, sans limite de durée) : `Aphrody WG omar` (démarrage, SYSTEM : WireGuardNT vit avec ce
-processus), `Aphrody Remote Desktop` (8795 + VNC 5900), `Aphrody MCP HTTP` (127.0.0.1:8793, portproxy permanent sur
-10.200.77.10:8793), `Aphrody omar reverse` (tunnel inverse de la section 4 ter, secours sans handshake) et
-`Aphrody WSL sshd` (`.wslconfig` mirrored, sshd 2222 maintenu). Options : `-NoWsl`, `-NoReverse`, `-Member`,
-`-Address`, `-IdentityFile`. Idempotent ; aucun secret lu ni affiché ; journaux dans `<aphrody home>\logs`.
+La commande coupe la veille et l'hibernation sur secteur, puis crée des tâches `\Aphrody\` cachées relancées toutes les
+5 minutes (`IgnoreNew`, 999 redémarrages, sans limite de durée) : `Aphrody WG omar` (démarrage, SYSTEM : WireGuardNT vit
+avec ce processus), `Aphrody Remote Desktop` (8795 + VNC 5900, bureau interactif derrière `conhost --headless`),
+`Aphrody MCP HTTP` (127.0.0.1:8793, S4U, portproxy permanent sur 10.200.77.10:8793), `Aphrody omar reverse` (tunnel
+inverse de la section 4 ter, S4U, secours sans handshake) et `Aphrody WSL sshd` (`.wslconfig` mirrored, sshd 2222
+maintenu). L'adresse du membre, le hub et la liste VNC viennent de l'inventaire du tunnel. Options : `--member`,
+`--hub-user`, `--distro`, `--identity-file`, `--aphrody`, `--no-wsl`, `--no-reverse`. Idempotent ; aucun secret lu ni
+affiché ; journaux dans `<aphrody home>\logs`.
 
 Le veilleur hub `aphrody-omar-watch` est retiré depuis le 2026-10-09 (unité et script supprimés) ; la joignabilité
 d'Omar se vérifie à la demande depuis aphro-pc (section 3).
