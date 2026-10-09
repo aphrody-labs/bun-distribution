@@ -72,8 +72,9 @@ USER root
 RUN --mount=type=secret,id=build_ca,required=false \
     set -eu; \
     if [ -s /run/secrets/build_ca ]; then export SSL_CERT_FILE=/run/secrets/build_ca; fi; \
+    apk_arch="$(apk --print-arch)"; \
     grep -qF 'aphrody-labs/aports' /etc/apk/repositories \
-        || echo 'https://github.com/aphrody-labs/aports/releases/download/aphrody-3.24-${APK_ARCH}/APKINDEX.tar.gz' >> /etc/apk/repositories; \
+        || echo "https://github.com/aphrody-labs/aports/releases/download/aphrody-3.24-${apk_arch}/APKINDEX.tar.gz" >> /etc/apk/repositories; \
     apk add --no-cache libgcc libstdc++ ca-certificates tzdata linux-pam aphrody-rust-base; \
     # sudo-rs-su ships /usr/bin/su; drop busybox's copy so only one su exists.
     rm -f /bin/su
