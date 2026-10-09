@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
 set -e
-# `yolo mcp` skips the CLI dispatcher: its static imports cost ~7 ms of the ~22 ms startup.
+# `yolo mcp` is an alias of `aphrody mcp-server` (packages/engine/yolo/src/index.ts): exec it directly instead of
+# loading the yolo dispatcher first.
 if [ "${1:-}" = "mcp" ] && [ $# -eq 1 ]; then
-  exec bun run "$(dirname "$0")/../packages/engine/yolo/src/mcp.ts"
+  exec "${APHRODY_BIN:-aphrody}" mcp-server
 fi
-exec bun run "$(dirname "$0")/aphrody.ts" "$@"
+exec bun run "$(dirname "$0")/../packages/engine/yolo/src/index.ts" "$@"
