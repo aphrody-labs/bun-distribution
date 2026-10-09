@@ -24,10 +24,12 @@ pour un VPS.
 
 ## Préparation
 
-Windows : `pwsh -File scripts/tools/secure-cookie-layout.ps1`
+Tous hôtes : `bun --no-env-file scripts/tools/secure-cookie-layout.ts [--home <dir>] [--dir <cookies>]`
 
-Linux/WSL/VPS : `bash scripts/tools/secure-cookie-layout.sh`
-
-Ces scripts ne lisent ni n'affichent le contenu des fichiers. Ils créent le
-répertoire, imposent les permissions du propriétaire et exportent
-`BXC_COOKIES_DIR` pour le processus appelant.
+Le script ne lit ni n'affiche le contenu des fichiers. Il crée le répertoire et
+le réserve à l'utilisateur courant : DACL protégée accordée à son seul SID via
+`bun:ffi` sur Windows (sans PowerShell ni `icacls`), mode 0700 ailleurs. Sur
+Windows il persiste `APHRODY_HOME` et `BXC_COOKIES_DIR` dans l'environnement
+utilisateur ; ailleurs il affiche les deux affectations à reporter dans le profil
+ou l'unité de l'hôte. Un `BXC_COOKIES_DIR` exporté qui désigne un autre
+répertoire est refusé.
