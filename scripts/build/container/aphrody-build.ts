@@ -46,6 +46,7 @@ export type Pins = {
   rustTargets: string[];
   rustComponents: string[];
   bun: string;
+  bunRelease: string;
   wasmBindgen: string;
 };
 
@@ -58,20 +59,24 @@ export function readPins(toolchain: string, packageJson: string, cargoLock: stri
         /"([^"]+)"/g,
       ),
     ].map((m) => m[1]!);
-  const bun = /^bun@(\d+\.\d+\.\d+)$/.exec(
+  const bunMatch = /^bun@(\d+\.\d+\.\d+)(-aphrody\.\d+)?$/.exec(
     (JSON.parse(packageJson) as { packageManager?: string }).packageManager ?? "",
-  )?.[1];
+  );
+  const bun = bunMatch?.[1];
+  const bunRelease = bun ? `aphrody-v${bun}${bunMatch?.[2] ?? ""}` : undefined;
   const wasmBindgen = /\[\[package\]\]\r?\nname = "wasm-bindgen"\r?\nversion = "([^"]+)"/.exec(
     cargoLock,
   )?.[1];
   if (!channel) throw new Error("rust-toolchain.toml: channel introuvable");
-  if (!bun) throw new Error("package.json: packageManager bun@x.y.z introuvable");
+  if (!bun || !bunRelease)
+    throw new Error("package.json: packageManager bun@x.y.z[-aphrody.N] introuvable");
   if (!wasmBindgen) throw new Error("Cargo.lock: wasm-bindgen introuvable");
   return {
     rustChannel: channel,
     rustTargets: list("targets"),
     rustComponents: list("components"),
     bun,
+    bunRelease,
     wasmBindgen,
   };
 }
@@ -94,6 +99,8 @@ export function buildArgs(pins: Pins, revision: string): string[] {
     `RUST_COMPONENTS=${pins.rustComponents.join(" ")}`,
     "--build-arg",
     `BUN_VERSION=${pins.bun}`,
+    "--build-arg",
+    `BUN_RELEASE_VERSION=${pins.bunRelease}`,
     "--build-arg",
     `WASM_BINDGEN_VERSION=${pins.wasmBindgen}`,
     "--label",

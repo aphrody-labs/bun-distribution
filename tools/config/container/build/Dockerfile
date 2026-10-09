@@ -19,7 +19,8 @@ ARG RUST_CHANNEL
 ARG RUST_TARGETS
 ARG RUST_COMPONENTS
 ARG BUN_VERSION
-ARG UV_VERSION=0.12.22
+ARG BUN_RELEASE_VERSION
+ARG UV_VERSION=0.12.24
 ARG WASM_BINDGEN_VERSION
 ARG SCCACHE_VERSION=0.18.0
 ARG CARGO_XWIN_VERSION=0.23.1
@@ -30,8 +31,8 @@ ARG LLVM=22
 ARG BUILD_GID=1500
 ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8
 
-RUN test -n "${RUST_CHANNEL}" && test -n "${BUN_VERSION}" && test -n "${WASM_BINDGEN_VERSION}" \
- || { echo "RUST_CHANNEL, BUN_VERSION and WASM_BINDGEN_VERSION are required (use aphrody-build.ts image)" >&2; exit 64; }
+RUN test -n "${RUST_CHANNEL}" && test -n "${BUN_VERSION}" && test -n "${BUN_RELEASE_VERSION}" && test -n "${WASM_BINDGEN_VERSION}" \
+ || { echo "RUST_CHANNEL, BUN_VERSION, BUN_RELEASE_VERSION and WASM_BINDGEN_VERSION are required (use aphrody-build.ts image)" >&2; exit 64; }
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
@@ -72,9 +73,9 @@ RUN curl -fsSL "https://github.com/cargo-bins/cargo-binstall/releases/download/v
  && rm -rf /tmp/cargo-binstall /tmp/cargo-binstall.tgz /opt/rust/cargo/registry /opt/rust/cargo/.crates* \
  && sccache --version && cargo-xwin --version && wasm-bindgen --version
 
-# Bun: the aphrody-labs/bun fork, newest aphrody.N release of the pinned base version.
+# Bun: the exact aphrody-labs/bun fork release pinned by package.json.
 RUN curl -fsSL https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.sh \
-      | env BUN_INSTALL=/opt/bun bash -s "${BUN_VERSION}" \
+      | env BUN_INSTALL=/opt/bun bash -s "${BUN_RELEASE_VERSION}" \
  && ln -sf /opt/bun/bin/bun /usr/local/bin/bun && ln -sf /opt/bun/bin/bun /usr/local/bin/bunx \
  && case "$(bun --version)" in "${BUN_VERSION}"*) ;; *) echo "bun $(bun --version) is not ${BUN_VERSION}" >&2; exit 1 ;; esac \
  && curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" | env UV_INSTALL_DIR=/usr/local/bin INSTALLER_NO_MODIFY_PATH=1 sh \
@@ -108,7 +109,7 @@ ENV CARGO_HOME=/cache/cargo \
 LABEL org.opencontainers.image.title="aphrody-build" \
       org.opencontainers.image.description="Aphrody/Shenron VPS build image" \
       org.opencontainers.image.licenses="Apache-2.0" \
-      dev.aphrody.rust="${RUST_CHANNEL}" dev.aphrody.bun="${BUN_VERSION}" \
+      dev.aphrody.rust="${RUST_CHANNEL}" dev.aphrody.bun="${BUN_VERSION}" dev.aphrody.bun-release="${BUN_RELEASE_VERSION}" \
       dev.aphrody.wasm-bindgen="${WASM_BINDGEN_VERSION}"
 WORKDIR /work
 USER 65534:${BUILD_GID}
