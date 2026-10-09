@@ -17,11 +17,11 @@
 
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
+use aphrody_remote_desktop as rd;
 use aphrody_toolcall::{
     AdditionalProperties, JsonSchema, ToolDefinition, ToolError, ToolExecutor, ToolImage,
     ToolOutput,
 };
-use aphrody_remote_desktop as rd;
 use aphrody_web_service::session;
 use base64::Engine as _;
 use serde::{Deserialize, Serialize};
@@ -785,7 +785,6 @@ pub struct RemoteComputerBackend {
     session: tokio::sync::Mutex<Option<String>>,
 }
 
-
 impl RemoteComputerBackend {
     /// Create a new remote backend for the specified target and mode.
     #[must_use]
@@ -1502,7 +1501,10 @@ pub struct UnsupportedComputerBackend {
 impl UnsupportedComputerBackend {
     /// Describe why `env` cannot be driven by this build.
     #[must_use]
-    pub fn new(env: ComputerEnvironment, reason: impl Into<std::borrow::Cow<'static, str>>) -> Self {
+    pub fn new(
+        env: ComputerEnvironment,
+        reason: impl Into<std::borrow::Cow<'static, str>>,
+    ) -> Self {
         Self { env, reason: reason.into() }
     }
 }
@@ -1691,12 +1693,14 @@ impl ComputerTool {
                 "no X11 desktop backend is compiled into this build",
             )),
             #[cfg(not(target_arch = "wasm32"))]
-            ComputerEnvironment::Terminal => match TerminalComputerBackend::spawn_shell(None, 80, 24) {
-                Ok(backend) => Arc::new(backend),
-                Err(e) => Arc::new(UnsupportedComputerBackend::new(
-                    env,
-                    format!("cannot start a shell in a PTY: {e}"),
-                )),
+            ComputerEnvironment::Terminal => {
+                match TerminalComputerBackend::spawn_shell(None, 80, 24) {
+                    Ok(backend) => Arc::new(backend),
+                    Err(e) => Arc::new(UnsupportedComputerBackend::new(
+                        env,
+                        format!("cannot start a shell in a PTY: {e}"),
+                    )),
+                }
             },
             #[cfg(target_arch = "wasm32")]
             ComputerEnvironment::Terminal => Arc::new(UnsupportedComputerBackend::new(
