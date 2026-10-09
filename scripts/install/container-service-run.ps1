@@ -5,6 +5,17 @@
 param([string]$Pc = 'local', [Parameter(Mandatory)][string]$Compose)
 $ErrorActionPreference = 'Stop'
 $env:APHRODY_PC = $Pc
+# Per-PC bearer token, generated once under the user's private Aphrody directory and never committed.
+$private = Join-Path $HOME '.aphrodyprivate'
+$tokenFile = Join-Path $private 'aphrody_mcp_http_token'
+if (-not (Test-Path $tokenFile)) {
+    New-Item -ItemType Directory -Force $private | Out-Null
+    $bytes = [byte[]]::new(32)
+    [Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+    [IO.File]::WriteAllText($tokenFile, ([BitConverter]::ToString($bytes) -replace '-', '').ToLowerInvariant())
+    icacls $tokenFile /inheritance:r /grant:r "$($env:USERNAME):(R,W)" | Out-Null
+}
+$env:APHRODY_MCP_HTTP_TOKEN = (Get-Content -Raw $tokenFile).Trim()
 $deadline = (Get-Date).AddMinutes(10)
 $started = $false
 while ($true) {

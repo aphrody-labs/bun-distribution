@@ -236,3 +236,24 @@ APHRODY_RUNTIME_IMAGE=ghcr.io/aphrody-labs/aphrody@sha256:9584253e39340758b4efcb
 
 The mounted token stays outside the image and repository. Compose 2.40.3 validated the selected image/release,
 read-only filesystem, init process, dropped capabilities, security option and loopback API port.
+
+## Services (complete image, 2026-10-09)
+
+One image, `aphrody:runtime` (verified Aphrody release artifacts only), runs as a service on each target through a
+compose profile of [compose.yaml](../../../tools/config/container/compose.yaml). `aphrody-mcp http` refuses non-loopback
+binds, so the entrypoint keeps it on the container loopback and `socat` exposes the port to the container interface;
+every host publishes it on its own loopback. The bearer token (`APHRODY_MCP_HTTP_TOKEN`, 32 bytes or more) is never
+baked into an image.
+
+| Target             | Profile | Service                                                                                                                          | Token                                                       |
+| ------------------ | ------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Owner PC (Windows) | `pc`    | scheduled task `\Aphrody\Container` ← `scripts/install/container-service.ps1 -Pc local`                                          | `~\.aphrody\private\aphrody_mcp_http_token`, generated once |
+| Omar PC (Windows)  | `pc`    | same script, `-Pc omar`, run by Omar on his PC (his consent scope: services he authorizes)                                       | his own private file                                        |
+| dbfr (production)  | `prod`  | systemd `aphrody-container.service`, compose in `/etc/aphrody/container/`                                                        | `/etc/aphrody/aphrody_mcp_http_token` (0400)                |
+| vps (build, SSH)   | `build` | systemd `aphrody-container-build.service`: idle `aphrody-build` container, builds enter by `ssh vps docker exec aphrody-build …` | none                                                        |
+
+Release: `bun scripts/release/container-image.ts release --on vps --host dbfr` builds on the VPS from a minimal context
+streamed over SSH (no checkout needed), loads the image on dbfr and retags `aphrody:runtime`; `--ref REGISTRY/NAME`
+also pushes. Restart the unit (`systemctl restart aphrody-container`) to activate a new image. PCs load it with
+`ssh vps docker save aphrody:<tag> | gzip -1 | gunzip | docker load`, then `docker tag aphrody:<tag> aphrody:runtime`.
+The installers retry transient download failures (`curl --retry-all-errors`).
