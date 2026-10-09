@@ -6,7 +6,7 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 35 binaries with a clap surface, 1314 commands.
+Totals: 35 binaries with a clap surface, 1317 commands.
 
 ## aphrody
 
@@ -406,7 +406,7 @@ Crate `aphrody-kernel`, parser `crates/os/kernel/core/src/cli.rs#Cli`, 6 command
 
 ### `aphrody infra`
 
-Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 453 commands.
+Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 456 commands.
 
 - `aphrody infra status` — Show target, repository and runtime state without mutation.
 - `aphrody infra inventory` — Run the existing deep resource inventory through the canonical Bun adapter.
@@ -802,6 +802,9 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 453 commands.
   - `aphrody infra remote token` — Credential store (`<aphrody home>/private`): where each channel's secret comes from.
     - `aphrody infra remote token status` — Show the source (never the value) of every channel's credential.
     - `aphrody infra remote token set` — Store a credential read from stdin, or a generated one with --generate.
+- `aphrody infra nginx` — Render or check nginx configuration from the typed model (`nginx.rs`); writes no run manifest.
+  - `aphrody infra nginx render` — Render a JSON `NginxConfig` (upstreams, servers, locations) to nginx syntax on stdout.
+  - `aphrody infra nginx test` — Check a configuration file with `nginx -t -c <path> -q`.
 - `aphrody infra vpn` — Native Mullvad VPN controller and auto-proxy geo-unblock driver.
   - `aphrody infra vpn status` — Show current Mullvad VPN connection status and egress details.
   - `aphrody infra vpn connect` — Connect the VPN tunnel, optionally setting relay location (e.g. us, ch, se).
@@ -1519,7 +1522,6 @@ _No subcommands (flags only)._
 - `aphrody-app` (aphrody / `aphrody-app`)
 - `aphrody-fake-llama-server` (aphrody / `aphrody-llama-server`)
 - `aphrody-llama-daemon` (aphrody / `aphrody-llama-server`)
-- `aphrody-web-game-server` (aphrody / `aphrody-web-game-server`)
 - `tauri-schema-generator` (aphrody / `aphrody-tauri-schema-generator`)
 - `aphrody-homebrew` (iecode / `aphrody-homebrew`)
 - `aphrody-nie-mcp` (iecode / `aphrody-nie-mcp`)

@@ -298,20 +298,6 @@
           ]
         },
         {
-          "name": "aphrody-dragon-pixel-core",
-          "path": "crates/web/dragon-pixel-core",
-          "description": "Deterministic Dragon Pixel combat simulation shared by the browser and Rust services.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-dragon-pixel-wasm",
-          "path": "crates/web/dragon-pixel-wasm",
-          "description": "Browser WebAssembly adapter for the shared Dragon Pixel combat simulation.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-drive",
           "path": "crates/ui/drive",
           "description": "Aphrody Drive, the Aphrody OS file explorer: Tauri 3 plugin that supervises the sd-daemon core and bridges it to the explorer webview.",
@@ -794,13 +780,6 @@
           "name": "aphrody-rust",
           "path": "crates/ai/rag-python",
           "description": "PyO3 extension module aphrody.aphrody_rust (RAG vector kernels and rank fusion), built into the aphrody Python wheel.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-sandbox",
-          "path": "crates/os/kernel/comps/sandbox",
-          "description": "Deterministic command and filesystem sandboxing for aphrody: SandboxPolicy, capability probing (Enforced/BestEffort/Unavailable), denial classification, and platform sandbox backends (Linux Landlock/seccomp, Windows Low-IL/Job Objects, macOS seatbelt).",
           "bins": [],
           "features": []
         },
@@ -1400,15 +1379,6 @@
           "features": []
         },
         {
-          "name": "aphrody-web-game-server",
-          "path": "crates/web/dragon-pixel-server",
-          "description": "Local-authoritative multiplayer room service for Dragon Pixel.",
-          "bins": [
-            "aphrody-web-game-server"
-          ],
-          "features": []
-        },
-        {
           "name": "aphrody-web-index",
           "path": "crates/web/web-index",
           "description": "HNSW approximate nearest-neighbour index with scalar int8 quantisation and mmap persistence",
@@ -1748,7 +1718,7 @@
         {
           "name": "@aphrody/m3-codemods",
           "path": "m3/packages/m3-codemods",
-          "description": "Codemods MUI React -> @aphrody/m3-react (jscodeshift + ast-grep)",
+          "description": "Codemods MUI React -> @aphrody/m3-react (Bun, sans dépendance runtime) + règles ast-grep",
           "bins": []
         },
         {
@@ -8881,6 +8851,28 @@
           ]
         },
         {
+          "name": "nginx",
+          "about": "Render or check nginx configuration from the typed model (`nginx.rs`); writes no run manifest.",
+          "aliases": [],
+          "cfg": [],
+          "children": [
+            {
+              "name": "render",
+              "about": "Render a JSON `NginxConfig` (upstreams, servers, locations) to nginx syntax on stdout.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            },
+            {
+              "name": "test",
+              "about": "Check a configuration file with `nginx -t -c <path> -q`.",
+              "aliases": [],
+              "cfg": [],
+              "children": []
+            }
+          ]
+        },
+        {
           "name": "vpn",
           "about": "Native Mullvad VPN controller and auto-proxy geo-unblock driver.",
           "aliases": [],
@@ -13080,11 +13072,6 @@
       "repo": "aphrody"
     },
     {
-      "binary": "aphrody-web-game-server",
-      "crate": "aphrody-web-game-server",
-      "repo": "aphrody"
-    },
-    {
       "binary": "tauri-schema-generator",
       "crate": "aphrody-tauri-schema-generator",
       "repo": "aphrody"
@@ -13376,7 +13363,7 @@
         },
         {
           "name": "bun_docs_search",
-          "description": "Search the Bun docs of the aphrody-labs/bun fork (checkout APHRODY_BUN_CHECKOUT or mirror docs/reference/upstream-bun): runtime, bundler, package manager, test runner, guides. Returns ranked pages with slug, url and a snippet; set include_content to also return the best page.",
+          "description": "Search the Bun docs of the aphrody-labs/bun fork (checkout APHRODY_BUN_CHECKOUT, else a versioned download of its docs/): runtime, bundler, package manager, test runner, guides. Returns ranked pages with slug, url and a snippet; set include_content to also return the best page.",
           "file": "crates/compat/bun-docs/src/lib.rs"
         },
         {
@@ -15232,12 +15219,12 @@
     "aphrodyRepos": 2,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 243,
-    "binaries": 36,
+    "crates": 239,
+    "binaries": 35,
     "bunPackages": 117,
     "pythonPackages": 10,
     "cliBinaries": 35,
-    "cliCommands": 1314,
+    "cliCommands": 1317,
     "mcpServers": 20,
     "mcpTools": 390,
     "mcpUniqueToolNames": 388

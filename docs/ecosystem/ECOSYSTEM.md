@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 243 crates, 36 binaries, 117 Bun packages, 10 uv packages, 1314 CLI commands, 390 MCP tools.
+Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 239 crates, 35 binaries, 117 Bun packages, 10 uv packages, 1317 CLI commands, 390 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -18,7 +18,7 @@ Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 243 crates, 36 bina
 
 Canonical Rust/Bun monorepo
 
-### Crates (170)
+### Crates (166)
 
 | Crate | Path | Description | Binaries | Features |
 | --- | --- | --- | --- | --- |
@@ -53,8 +53,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-cron` | crates/os/kernel/comps/cron | Lightweight async cron / interval / daily-time scheduler with pluggable JSON-backed job store for aphrody background tasks. |  |  |
 | `aphrody-diagnostics` | crates/os/kernel/comps/diagnostics | Doctor, OS/infra status, resolved config and AI environment shared by the CLI and the desktop app. |  |  |
 | `aphrody-discord` | crates/infra/discord | Native Aphrody Discord engine: Ed25519 interaction verification, REST client, AI answer embeds, Web extraction and timed shell receipts. |  | cli, default, web-extract |
-| `aphrody-dragon-pixel-core` | crates/web/dragon-pixel-core | Deterministic Dragon Pixel combat simulation shared by the browser and Rust services. |  |  |
-| `aphrody-dragon-pixel-wasm` | crates/web/dragon-pixel-wasm | Browser WebAssembly adapter for the shared Dragon Pixel combat simulation. |  |  |
 | `aphrody-drive` | crates/ui/drive | Aphrody Drive, the Aphrody OS file explorer: Tauri 3 plugin that supervises the sd-daemon core and bridges it to the explorer webview. |  |  |
 | `aphrody-embed` | crates/ai/embed | Local, offline text embeddings for aphrody — fastembed (ONNX Runtime) text vectorisation with no external API. Feeds semantic memory/search. |  | candle, default, embeddings, native, server |
 | `aphrody-engine` | crates/ai/engine | The unified aphrody agent turn loop: drives a ModelClient stream, maps unified ModelStreamEvent into the SQ/EQ EventMsg protocol, runs tool calls via a ToolRegistry, re-injects tool results for multi-turn reasoning, and records the session to a rollout. The single engine shared by every surface (CLI / TUI / desktop / MCP). Inspired by OpenAI Codex (Apache-2.0). |  |  |
@@ -107,7 +105,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-render` | crates/ui/render | Unified Aphrody native renderer contract: M3 layout, 2D GPU backends and CPU fallback. |  | all-gpu, cpu, default, dx12, gpu, metal, parallel, vulkan, webgl, webgpu |
 | `aphrody-rollout` | crates/ai/rollout | Resilient agent-session recorder: appends timestamped JSONL items to ~/.aphrody/sessions/rollout-*.jsonl through an async actor (mpsc + background writer task with Flush/Persist/Shutdown), and resumes a prior session by replaying its JSONL. Inspired by OpenAI Codex rollout (Apache-2.0). |  |  |
 | `aphrody-rust` | crates/ai/rag-python | PyO3 extension module aphrody.aphrody_rust (RAG vector kernels and rank fusion), built into the aphrody Python wheel. |  |  |
-| `aphrody-sandbox` | crates/os/kernel/comps/sandbox | Deterministic command and filesystem sandboxing for aphrody: SandboxPolicy, capability probing (Enforced/BestEffort/Unavailable), denial classification, and platform sandbox backends (Linux Landlock/seccomp, Windows Low-IL/Job Objects, macOS seatbelt). |  |  |
 | `aphrody-secrets` | crates/os/ostd/secrets | Secret store abstraction (env + plaintext file + AES-256-GCM/Argon2id encrypted file) with redacted Display/Debug, constant-time equality, and Zeroize-on-drop SecretValue newtype. |  |  |
 | `aphrody-session` | crates/ai/session | Conversation session tracker for aphrody — turns + tool calls + token usage + cost, persisted as JSONL with atomic writes and deterministic replay; incremental mirror of external agent sessions (Antigravity CLI, Codex, Claude Code). |  | default, memory |
 | `aphrody-shell-sandbox-host` | crates/shell/aphrody-shell-sandbox-host | Transport-neutral sandbox host contract and local shell host adapters. |  |  |
@@ -170,7 +167,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-web-engine` | crates/web/web-engine | Aphrody Web browser engine: CDP server, fetch and scrape on Obscura (entry points of the `aphrody-web` and `aphrody-web-worker` multi-call names). |  | default, render, stealth |
 | `aphrody-web-extract` | crates/web/web-extract | Aphrody Web content extraction, Markdown, chunking, SimHash, URL metadata, media and embed resolution. |  | profiling |
 | `aphrody-web-frames` | crates/web/web-frames | MPEG-7 ColorLayout frame indexing and trace.moe client for Aphrody Web |  |  |
-| `aphrody-web-game-server` | crates/web/dragon-pixel-server | Local-authoritative multiplayer room service for Dragon Pixel. | `aphrody-web-game-server` |  |
 | `aphrody-web-index` | crates/web/web-index | HNSW approximate nearest-neighbour index with scalar int8 quantisation and mmap persistence |  |  |
 | `aphrody-web-service` | crates/web/web-service | Canonical web execution contract for Aphrody OS: OXC analysis, Bun tooling and Obscura V8 pages. |  | default, render, stealth |
 | `aphrody-webos-wasm` | crates/web/webos-wasm | wasm-bindgen surface of the Aphrody WebOS apps: OPFS-backed VFS, binary triage and patch apply over existing crates; no terminal. |  |  |
@@ -217,7 +213,7 @@ Canonical Rust/Bun monorepo
 | `@aphrody/m3-ai` | m3/packages/m3-ai | Material Design 3 agent-interaction components (tool calls, markdown, chat composer, workers, tasks): the SpaceUI (@spacedrive/ai) set rebuilt on @aphrody/m3-primitives. |  |
 | `@aphrody/m3-baseui` | m3/packages/m3-baseui | Base UI (aphrody-labs fork, forks/base-ui) with Material 3 styling: every Base UI primitive wrapped with M3 token classes; static CSS, no CSS-in-JS runtime, per-component modules and sheets. |  |
 | `@aphrody/m3-bun` | m3/packages/m3-bun | The one Bun-native tool for M3 apps: a single Bun plugin and the m3-bun CLI that build, minify, serve (HMR), compile to one executable, package and generate deploy configs (Docker, systemd, nginx, Vercel, Fly.io, Cloudflare, Coolify, VS Code, Windows, minimal Linux image). One Bun file server serves the UI and the API from one process. | `m3-bun` |
-| `@aphrody/m3-codemods` | m3/packages/m3-codemods | Codemods MUI React -> @aphrody/m3-react (jscodeshift + ast-grep) |  |
+| `@aphrody/m3-codemods` | m3/packages/m3-codemods | Codemods MUI React -> @aphrody/m3-react (Bun, sans dépendance runtime) + règles ast-grep |  |
 | `@aphrody/m3-config` | m3/packages/m3-config | Shared build, typecheck and test presets for the @aphrody Material Design 3 packages: tsconfig, the Bun.build preset and the happy-dom test preload. |  |
 | `@aphrody/m3-design` | m3/packages/m3-design | Automated design engine for Material Design 3 and Google Design |  |
 | `@aphrody/m3-example` | m3/apps/example | The m3 example app: App Router (React Server Components, server actions, streaming SSR, static generation), M3 theme, Tailwind v4 and the M3 DataTable, on Bun only. |  |

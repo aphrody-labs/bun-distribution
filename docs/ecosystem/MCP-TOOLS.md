@@ -84,7 +84,7 @@ Kind: kernel-subsystem. 4 tools.
 | --- | --- |
 | `bun_docs_list` | List the aphrody-labs/bun fork docs pages (slug, title, description, url), optionally under a slug prefix such as `runtime/` or `guides/test/`. |
 | `bun_docs_read` | Read one page of the aphrody-labs/bun fork docs as Markdown by slug (`runtime/file-io`) or bun.com/docs URL, optionally only the section under a heading. |
-| `bun_docs_search` | Search the Bun docs of the aphrody-labs/bun fork (checkout APHRODY_BUN_CHECKOUT or mirror docs/reference/upstream-bun): runtime, bundler, package manager, test runner, guides. Returns ranked pages wi… |
+| `bun_docs_search` | Search the Bun docs of the aphrody-labs/bun fork (checkout APHRODY_BUN_CHECKOUT, else a versioned download of its docs/): runtime, bundler, package manager, test runner, guides. Returns ranked pages… |
 | `bun_node_equivalent` | Bun equivalent of a Node module (`fs`, `node:child_process`), npm package (`dotenv`, `jest`) or Node API, from the n2b registry, with matching Bun docs pages. |
 
 ## aphrody — aphrody-kernel
