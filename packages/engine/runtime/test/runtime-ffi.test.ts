@@ -12,6 +12,7 @@ import {
   readNativeBytes,
   readNativeString,
   readOwnedBytes,
+  readOwnedString,
   toCString,
 } from "../../runtime/src/ffi";
 
@@ -25,8 +26,13 @@ describe("runtime SDK ffi helpers", () => {
       mkdirSync(current, { recursive: true });
       const path = join(current, libraryFile());
       symlinkSync(provider!, path, "file");
-      const keys = ["YOLO_HOME", "YOLO_RUNTIME_HOME", "YOLO_RUNTIME_LIB", "YOLO_TOOLING_LIB"] as const;
-      const previous = Object.fromEntries(keys.map(key => [key, process.env[key]]));
+      const keys = [
+        "YOLO_HOME",
+        "YOLO_RUNTIME_HOME",
+        "YOLO_RUNTIME_LIB",
+        "YOLO_TOOLING_LIB",
+      ] as const;
+      const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
       try {
         for (const key of keys) delete process.env[key];
         process.env.YOLO_HOME = home;
@@ -35,10 +41,16 @@ describe("runtime SDK ffi helpers", () => {
         const runtime = Runtime.load();
         expect(tooling.probe().libraryPath).toBe(path);
         expect(runtime.systemStats().os).toBe(
-          process.platform === "win32" ? "windows" : process.platform === "darwin" ? "macos" : process.platform,
+          process.platform === "win32"
+            ? "windows"
+            : process.platform === "darwin"
+              ? "macos"
+              : process.platform,
         );
         runtime.close();
-        expect(tooling.analyzeModule("export const retained = 1;", "retained.ts").exports).toContain("retained");
+        expect(
+          tooling.analyzeModule("export const retained = 1;", "retained.ts").exports,
+        ).toContain("retained");
       } finally {
         for (const key of keys) {
           if (previous[key] === undefined) delete process.env[key];
@@ -52,7 +64,9 @@ describe("runtime SDK ffi helpers", () => {
     const stem = process.platform === "win32" ? "aphrody_ffi" : "libaphrody_ffi";
     const path = `/virtual/${stem}.${suffix}`;
     expect(embeddedNativeLibraryPath("aphrody_ffi", [])).toBeNull();
-    expect(embeddedNativeLibraryPath("aphrody_ffi", [new File([], "unrelated.so"), new File([], path)])).toBe(path);
+    expect(
+      embeddedNativeLibraryPath("aphrody_ffi", [new File([], "unrelated.so"), new File([], path)]),
+    ).toBe(path);
   });
 
   it("rejects competing embedded providers before any library load", () => {
@@ -71,7 +85,7 @@ describe("runtime SDK ffi helpers", () => {
   it("readNativeBytes copies and frees", () => {
     const src = new Uint8Array([1, 2, 3]);
     let freed = 0;
-    const out = readNativeBytes(ptr(src), 3, a => (freed = a));
+    const out = readNativeBytes(ptr(src), 3, (a) => (freed = a));
     expect([...out]).toEqual([1, 2, 3]);
     expect(freed).toBe(Number(ptr(src)));
   });
@@ -80,10 +94,23 @@ describe("runtime SDK ffi helpers", () => {
     expect(readOwnedBytes(new Uint8Array(24), () => {})).toBeNull();
   });
 
+  it("readOwnedString decodes the borrowed bytes and releases (data, len, cap) once", () => {
+    const source = new TextEncoder().encode("héllo 🐈");
+    const slot = new Uint8Array(24);
+    const view = new DataView(slot.buffer);
+    const data = BigInt(ptr(source));
+    view.setBigUint64(0, data, true);
+    view.setBigUint64(8, BigInt(source.length), true);
+    view.setBigUint64(16, BigInt(source.length + 4), true);
+    const calls: bigint[][] = [];
+    expect(readOwnedString(slot, (...args) => calls.push(args))).toBe("héllo 🐈");
+    expect(calls).toEqual([[data, BigInt(source.length), BigInt(source.length + 4)]]);
+  });
+
   it("readNativeString copies UTF-8 and releases exactly once", () => {
     const source = toCString('{"value":"🐈"}');
     let releases = 0;
-    const value = readNativeString(ptr(source), address => {
+    const value = readNativeString(ptr(source), (address) => {
       expect(address).toBe(Number(ptr(source)));
       releases++;
     });
@@ -115,7 +142,9 @@ describe("runtime SDK ffi helpers", () => {
 describe("aphrody.h contract", () => {
   it("declares every yolo_* symbol the SDK binds, with the same arity", async () => {
     const header = (
-      await Bun.file(join(import.meta.dir, "../../../../crates/interop/ffi/include/aphrody.h")).text()
+      await Bun.file(
+        join(import.meta.dir, "../../../../crates/interop/ffi/include/aphrody.h"),
+      ).text()
     ).replace(/\/\*[\s\S]*?\*\//g, "");
     const declared = new Map<string, number>();
     for (const m of header.matchAll(/\b(yolo_\w+)\s*\(([^;{]*)\)\s*;/g)) {
@@ -128,17 +157,20 @@ describe("aphrody.h contract", () => {
     expect(drift).toEqual([]);
 
     // Optional browser/gpu ABI: own dlopen tables, never in the core SYMBOLS.
-    const bound = new Map<string, number>(Object.entries(SYMBOLS).map(([name, def]) => [name, def.args.length]));
+    const bound = new Map<string, number>(
+      Object.entries(SYMBOLS).map(([name, def]) => [name, def.args.length]),
+    );
     for (const file of ["browser.ts", "gpu.ts"]) {
       const source = await Bun.file(join(import.meta.dir, "../src", file)).text();
       for (const m of source.matchAll(/^ {2}(yolo_\w+): \{\s*args: \[([^\]]*)\]/gm)) {
-        const arity = m[2]!.split(",").filter(a => a.trim()).length;
+        const arity = m[2]!.split(",").filter((a) => a.trim()).length;
         bound.set(m[1]!, arity);
-        if (declared.get(m[1]!) !== arity) drift.push(`${m[1]}: ${file} ${arity}, header ${declared.get(m[1]!)}`);
+        if (declared.get(m[1]!) !== arity)
+          drift.push(`${m[1]}: ${file} ${arity}, header ${declared.get(m[1]!)}`);
       }
     }
     expect(drift).toEqual([]);
-    expect([...declared.keys()].filter(name => !bound.has(name)).toSorted()).toEqual([]);
+    expect([...declared.keys()].filter((name) => !bound.has(name)).toSorted()).toEqual([]);
     for (const name of [
       "yolo_browser_create",
       "yolo_browser_call_start",

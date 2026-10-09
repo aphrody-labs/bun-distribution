@@ -48,6 +48,26 @@ export function readOwnedBytes(
   slot: Uint8Array,
   free: (data: bigint, len: bigint, cap: bigint) => void,
 ): Uint8Array | null {
+  return withOwnedView(slot, free, (view) => view.slice());
+}
+
+export function readOwnedString(
+  slot: Uint8Array,
+  free: (data: bigint, len: bigint, cap: bigint) => void,
+): string | null {
+  return withOwnedView(slot, free, (view) => decoder.decode(view));
+}
+
+/**
+ * Run `read` on a borrowed view of the slot's bytes, then release them. `free` takes
+ * `(data, len, cap)`, not the `(bytes, ctx)` of a `toArrayBuffer` deallocator, so the
+ * allocation cannot be handed to the GC and the view must not escape `read`.
+ */
+function withOwnedView<T>(
+  slot: Uint8Array,
+  free: (data: bigint, len: bigint, cap: bigint) => void,
+  read: (view: Uint8Array) => T,
+): T | null {
   const view = new DataView(slot.buffer, slot.byteOffset, slot.byteLength);
   const data = view.getBigUint64(0, true);
   const len = view.getBigUint64(8, true);
@@ -57,20 +77,10 @@ export function readOwnedBytes(
     return null;
   }
   try {
-    return new Uint8Array(
-      toArrayBuffer(Number(data) as unknown as Pointer, 0, Number(len)),
-    ).slice();
+    return read(new Uint8Array(toArrayBuffer(Number(data) as unknown as Pointer, 0, Number(len))));
   } finally {
     free(data, len, cap);
   }
-}
-
-export function readOwnedString(
-  slot: Uint8Array,
-  free: (data: bigint, len: bigint, cap: bigint) => void,
-): string | null {
-  const bytes = readOwnedBytes(slot, free);
-  return bytes ? decoder.decode(bytes) : null;
 }
 
 export function readOwnedJson<T = unknown>(
