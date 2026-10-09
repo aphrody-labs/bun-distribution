@@ -27,7 +27,7 @@ pub enum DeviceType {
     Unknown,
 }
 
-/// The process-wide device selected for Torch, llama.cpp, and stable-diffusion.cpp.
+/// The process-wide device selected for llama.cpp.
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash, Serialize)]
 pub struct Device {
     pub index: usize,

@@ -6,7 +6,7 @@ description = "Runtime package discovery, downloading, and dynamic library loadi
 license = "MIT OR Apache-2.0"
 authors = ["Mayo Takanashi <mayo@linux.com>", "Wangchong Zhou <fffonion@gmail.com>"]
 repository.workspace = true
-keywords = ["aphrody", "runtime", "cuda", "libtorch", "machine-learning"]
+keywords = ["aphrody", "runtime", "cuda", "llama", "machine-learning"]
 categories = ["development-tools", "science"]
 publish = true
 

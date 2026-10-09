@@ -50,9 +50,7 @@
       "tauri-plugin-deep-link",
       "tauri-plugin-fs"
     ],
-    "forks": [
-      "tauri-specta"
-    ]
+    "forks": []
   },
   "js": {
     "catalog": [
@@ -96,22 +94,6 @@
       "appliedMarker": "CEF_OPTIONAL_LOCALES",
       "rationale": "The Linux bundlers (deb, rpm, AppImage) shipped only the en-US locale paks of the CEF distribution. The French paks (and gender variants, when present) now ship so Chromium's own strings follow a French session; the runtime locale stays unset. Carried by vendor.toml rewrites.",
       "disposition": "keep: Aphrody-specific packaging"
-    },
-    {
-      "id": "tauri-specta-tauri3",
-      "kind": "git-fork",
-      "crate": "tauri-specta",
-      "repository": "koharu-rs/tauri-specta",
-      "tag": "v2.0.0-rc.25-koharu.1",
-      "commit": "77e14e0a342b604e91d4cebbe018a7cb6eef0582",
-      "upstreamBase": "specta-rs/tauri-specta v2.0.0-rc.25",
-      "cargoPatch": "[workspace.dependencies] tauri-specta (git tag)",
-      "rationale": "One commit (\"allow Tauri 3 and later releases\"): tauri requirement >=3.0.0-alpha.0 instead of 2. Upstream main (ebe38d6e) still depends on tauri 2.",
-      "upstreamContains": {
-        "url": "https://raw.githubusercontent.com/specta-rs/tauri-specta/main/Cargo.toml",
-        "regex": "^tauri = \\{ version = \"(>=)?3"
-      },
-      "disposition": "switch back to crates.io tauri-specta once it accepts tauri 3"
     }
   ],
   "mirrors": [

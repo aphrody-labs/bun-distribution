@@ -55,8 +55,6 @@ aphrody-agent-home = { path = "crates/ai/agent-home", version = "1.0.0", feature
 aphrody-agent-proto = { path = "crates/contracts/agent-proto", version = "1.0.0-canary", features = [] }
 aphrody-agent-runtime = { path = "crates/ai/agent-runtime", version = "1.0.0", features = [] }
 aphrody-agent-tools = { path = "crates/ai/agent-tools", version = "1.0.0", features = [] }
-aphrody-a2a-ui = { path = "crates/ui/a2a-ui", version = "1.0.0-canary" }
-aphrody-gui-core = { path = "crates/ui/gui-core", version = "1.0.0-canary" }
 aphrody-identity = { path = "crates/ui/identity", version = "1.0.0-canary" }
 aphrody-antigravity = { path = "crates/google/antigravity", version = "1.0.0", features = [] }
 aphrody-app-protocol = { path = "crates/contracts/app-protocol", version = "1.0.0-canary", features = [] }
@@ -316,18 +314,12 @@ libloading = "0.9.0"
 windows-sys = { version = "0.61", features = ["Win32_System_SystemInformation"] }
 aphrody-bindgen = { path = "crates/ml/bindgen", version = "0.83.5" }
 aphrody-ml-config = { path = "crates/ml/ml-config", version = "0.83.5" }
-aphrody-diffusion = { path = "crates/ml/diffusion", version = "0.83.5" }
-aphrody-diffusion-sys = { path = "crates/ml/diffusion-sys", version = "0.83.5" }
 aphrody-llama = { path = "crates/ml/llama", version = "0.83.5" }
 aphrody-llama-sys = { path = "crates/ml/llama-sys", version = "0.83.5" }
 aphrody-ml-runtime = { path = "crates/ml/ml-runtime", version = "0.83.5" }
-aphrody-torch = { path = "crates/ml/torch", version = "0.83.5" }
-aphrody-torch-sys = { path = "crates/ml/torch-sys", version = "0.83.5" }
 webp = { version = "0.3.1" }
 backon = { version = "1.6.0", default-features = false, features = ["std", "tokio-sleep"] }
 ab_glyph = "0.2.32"
-specta = { version = "=2.0.0-rc.25", features = ["derive", "url", "uuid"] }
-specta-typescript = "=0.0.12"
 tracing-core = "0.1.36"
 open = "5.4.3"
 strum = { version = "0.28.0", features = ["derive"] }

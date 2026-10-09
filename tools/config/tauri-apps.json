@@ -72,7 +72,7 @@
       "kind": "upstream",
       "path": "crates/tauri",
       "subtree": true,
-      "note": "Vendored Tauri 3 fork (aphrody-tauri*, the 15 plugins aphrody-app registers, tauri-runtime-cef, CLI, specta); upstream line and patches in tools/config/tauri-upstream.json. Its fixtures and templates are covered by this entry."
+      "note": "Vendored Tauri 3 fork (aphrody-tauri*, the 15 plugins aphrody-app registers, tauri-runtime-cef, CLI); upstream line and patches in tools/config/tauri-upstream.json. Its fixtures and templates are covered by this entry."
     },
     {
       "id": "aphrody-command",

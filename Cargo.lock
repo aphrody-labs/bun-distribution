@@ -535,18 +535,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-a2a-ui"
-version = "1.0.0-canary"
-dependencies = [
- "console_error_panic_hook",
- "js-sys",
- "serde",
- "serde_json",
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
 name = "aphrody-acl-tests"
 version = "0.1.0"
 dependencies = [
@@ -1053,26 +1041,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-diffusion"
-version = "0.83.5"
-dependencies = [
- "aphrody-diffusion-sys",
- "image",
- "thiserror 2.0.21",
- "tracing",
-]
-
-[[package]]
-name = "aphrody-diffusion-sys"
-version = "0.83.5"
-dependencies = [
- "anyhow",
- "aphrody-bindgen",
- "libc",
- "libloading 0.9.0",
-]
-
-[[package]]
 name = "aphrody-discord"
 version = "0.1.0"
 dependencies = [
@@ -1366,18 +1334,6 @@ version = "1.0.0-canary"
 dependencies = [
  "libc",
  "pretty_assertions",
-]
-
-[[package]]
-name = "aphrody-gui-core"
-version = "1.0.0-canary"
-dependencies = [
- "aphrody-m3-tokens",
- "async-trait",
- "raw-window-handle",
- "serde",
- "serde_json",
- "tokio",
 ]
 
 [[package]]
@@ -3020,33 +2976,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-tauri-specta"
-version = "2.0.0-rc.25"
-dependencies = [
- "aphrody-tauri",
- "aphrody-tauri-specta-macros",
- "heck 0.5.0",
- "serde",
- "serde_json",
- "specta",
- "specta-serde",
- "specta-typescript",
- "specta-util",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "aphrody-tauri-specta-macros"
-version = "2.0.0-rc.25"
-dependencies = [
- "darling 0.23.0",
- "heck 0.5.0",
- "proc-macro2",
- "quote",
- "syn 2.0.119",
-]
-
-[[package]]
 name = "aphrody-tauri-utils"
 version = "3.0.0-alpha.3"
 dependencies = [
@@ -3195,32 +3124,6 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.21",
  "toml 1.1.6+spec-1.1.0",
-]
-
-[[package]]
-name = "aphrody-torch"
-version = "0.83.5"
-dependencies = [
- "aphrody-torch-sys",
- "half",
- "image",
- "lazy_static",
- "libc",
- "ndarray",
- "rand 0.10.3",
- "safetensors",
- "thiserror 2.0.21",
- "zip 8.6.0",
-]
-
-[[package]]
-name = "aphrody-torch-sys"
-version = "0.83.5"
-dependencies = [
- "anyhow",
- "aphrody-bindgen",
- "libc",
- "libloading 0.9.0",
 ]
 
 [[package]]
@@ -8054,16 +7957,6 @@ dependencies = [
 
 [[package]]
 name = "darling"
-version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25ae13da2f202d56bd7f91c25fba009e7717a1e4a1cc98a76d844b65ae912e9d"
-dependencies = [
- "darling_core 0.23.0",
- "darling_macro 0.23.0",
-]
-
-[[package]]
-name = "darling"
 version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed17f5901b6630b993ca003def43f2f8ef4014fc13b047b57aad617ff32bc2ec"
@@ -8079,19 +7972,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d00b9596d185e565c2207a0b01f8bd1a135483d02d9b7b0a54b11da8d53412e"
 dependencies = [
  "fnv",
- "ident_case",
- "proc-macro2",
- "quote",
- "strsim",
- "syn 2.0.119",
-]
-
-[[package]]
-name = "darling_core"
-version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9865a50f7c335f53564bb694ef660825eb8610e0a53d3e11bf1b0d3df31e03b0"
-dependencies = [
  "ident_case",
  "proc-macro2",
  "quote",
@@ -8119,17 +7999,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc34b93ccb385b40dc71c6fceac4b2ad23662c7eeb248cf10d529b7e055b6ead"
 dependencies = [
  "darling_core 0.20.11",
- "quote",
- "syn 2.0.119",
-]
-
-[[package]]
-name = "darling_macro"
-version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac3984ec7bd6cfa798e62b4a642426a5be0e68f9401cfc2a01e3fa9ea2fcdb8d"
-dependencies = [
- "darling_core 0.23.0",
  "quote",
  "syn 2.0.119",
 ]
@@ -21748,34 +21617,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
-]
-
-[[package]]
-name = "specta-serde"
-version = "0.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee8a72b755ddb8949fd8f17c5db43f0e8a806ea587d9bc602ee3f73240c00029"
-dependencies = [
- "specta",
- "specta-macros",
-]
-
-[[package]]
-name = "specta-typescript"
-version = "0.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "639404ee95557f2f8b7e4cb773ffefd45304c7ab8ba21ac83b69051595e083c0"
-dependencies = [
- "specta",
-]
-
-[[package]]
-name = "specta-util"
-version = "0.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29b1fc02b446f7244a92924fe68c0555921209f1d342990cd1539e9138e69502"
-dependencies = [
- "specta",
 ]
 
 [[package]]

@@ -8,9 +8,7 @@ use anyhow::Result;
 
 use crate::{Device, Hardware};
 use graph::{Component, Plan};
-use packages::{Diffusion, Llama};
-
-pub use packages::Torch;
+use packages::Llama;
 
 mod sealed {
     pub trait Sealed {}
@@ -43,9 +41,7 @@ pub(crate) trait DiscoverablePackage: RuntimePackage {
 /// A process-wide runtime capability requested by a consumer.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Feature {
-    Torch,
     Llama,
-    Diffusion,
 }
 
 /// A discovered, dependency-ordered runtime plan.
@@ -76,9 +72,7 @@ impl Runtime {
 
         for feature in features {
             let Some(node) = (match feature {
-                Feature::Torch => plan.require::<Torch>(hardware)?,
                 Feature::Llama => plan.require::<Llama>(hardware)?,
-                Feature::Diffusion => plan.require::<Diffusion>(hardware)?,
             }) else {
                 return Ok(None);
             };

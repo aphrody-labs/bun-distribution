@@ -2,7 +2,7 @@
 //! File-based A2A coordination + HTTP bridge for aphrody.
 //!
 //! - [`AiManifest`] — rich `ai.json` (peers: Claude Code, Grok, agy, bxc = `aphrody web search`)
-//! - [`Envelope`] — JSONL mailbox format (v1, compatible with `aphrody-a2a-ui` in aphrody-ui)
+//! - [`Envelope`] — JSONL mailbox format (v1)
 //! - [`PeerInvoker`] — headless CLI dispatch with verified Grok flags
 //! - [`CoordProxy`] — a `.coord` JSONL mailbox as an NDJSON/SSE snapshot or a `tail -f` stream
 //! - [`listener::serve`] — `127.0.0.1:8788` with `/ping`, `/msg`, `/coord`, A2A JSON-RPC, agent

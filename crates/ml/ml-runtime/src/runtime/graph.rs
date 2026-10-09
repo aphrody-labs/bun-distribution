@@ -10,7 +10,7 @@ use crate::{
     Device, Hardware,
     runtime::{
         DiscoverablePackage, RuntimePackage,
-        packages::{Cuda, Diffusion, Llama, Rocm, Torch},
+        packages::{Cuda, Llama, Rocm},
     },
 };
 
@@ -18,9 +18,7 @@ use crate::{
 pub(crate) enum Component {
     Cuda(Cuda),
     Rocm(Rocm),
-    Torch(Torch),
     Llama(Llama),
-    Diffusion(Diffusion),
 }
 
 impl Component {
@@ -28,9 +26,7 @@ impl Component {
         match self {
             Self::Cuda(package) => package.dependencies(hardware),
             Self::Rocm(package) => package.dependencies(hardware),
-            Self::Torch(package) => package.dependencies(hardware),
             Self::Llama(package) => package.dependencies(hardware),
-            Self::Diffusion(package) => package.dependencies(hardware),
         }
     }
 
@@ -38,9 +34,7 @@ impl Component {
         match self {
             Self::Cuda(package) => activate(package).await,
             Self::Rocm(package) => activate(package).await,
-            Self::Torch(package) => activate(package).await,
             Self::Llama(package) => activate(package).await,
-            Self::Diffusion(package) => activate(package).await,
         }
     }
 
@@ -48,9 +42,7 @@ impl Component {
         match self {
             Self::Cuda(package) => package.label(),
             Self::Rocm(package) => package.label(),
-            Self::Torch(package) => package.label(),
             Self::Llama(package) => package.label(),
-            Self::Diffusion(package) => package.label(),
         }
     }
 }
@@ -74,21 +66,9 @@ impl From<Rocm> for Component {
     }
 }
 
-impl From<Torch> for Component {
-    fn from(value: Torch) -> Self {
-        Self::Torch(value)
-    }
-}
-
 impl From<Llama> for Component {
     fn from(value: Llama) -> Self {
         Self::Llama(value)
-    }
-}
-
-impl From<Diffusion> for Component {
-    fn from(value: Diffusion) -> Self {
-        Self::Diffusion(value)
     }
 }
 
@@ -176,11 +156,8 @@ mod tests {
             selected: Some(0),
         };
         let mut plan = Plan::default();
-        let llama = plan.insert(Llama::WindowsCuda.into(), &hardware).unwrap();
-        let diffusion = plan
-            .insert(Diffusion::WindowsCuda.into(), &hardware)
-            .unwrap();
-        plan.sequence(llama, diffusion);
+        plan.insert(Llama::WindowsCuda.into(), &hardware).unwrap();
+        plan.insert(Llama::WindowsCuda.into(), &hardware).unwrap();
 
         for package in [Cuda::Runtime13, Cuda::Rtc13, Cuda::Blas13] {
             assert_eq!(
@@ -192,8 +169,6 @@ mod tests {
             );
         }
 
-        let torch = plan.insert(Torch::Cuda.into(), &hardware).unwrap();
-        plan.sequence(diffusion, torch);
         let order = toposort(&plan.graph, None).unwrap();
         let position = |component| {
             order
