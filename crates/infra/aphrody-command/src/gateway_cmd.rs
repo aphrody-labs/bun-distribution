@@ -22,7 +22,7 @@ pub(crate) enum GatewayAction {
         #[arg(long, default_value = "127.0.0.1:8786")]
         addr: String,
 
-        /// Provider adapter: "auto", "google-antigravity", "gemini-cli", or "openai".
+        /// Provider adapter: "auto", "google-antigravity", "gemini-cli", "openai", or "local" (not wired).
         #[arg(long, default_value = "auto")]
         provider: String,
     },
@@ -87,7 +87,7 @@ pub(crate) async fn run(action: GatewayAction) -> miette::Result<()> {
                 },
                 Err(_) => {
                     // Fall back to printing catalog models when server is not running
-                    let (_, models) = resolve_adapter("auto")?;
+                    let models = advertised_models("local");
                     let data: Vec<_> = models
                         .into_iter()
                         .map(|id| serde_json::json!({ "id": id, "object": "model" }))
@@ -136,39 +136,12 @@ fn resolve_adapter(provider: &str) -> miette::Result<(Arc<dyn GatewayAdapter>, V
     }
 
     if provider == "local" || provider == "auto" {
-        return Ok((Arc::new(LocalGatewayAdapter), advertised_models("local")));
+        return Err(miette::miette!(
+            "Local gateway inference is not wired to a model execution backend. Installed/catalogued weights alone do not provide a chat engine; no response was generated."
+        ));
     }
 
     Err(unconfigured_provider_error(provider))
-}
-
-struct LocalGatewayAdapter;
-
-#[async_trait::async_trait]
-impl GatewayAdapter for LocalGatewayAdapter {
-    async fn chat(
-        &self,
-        req: aphrody_gateway::ChatRequest,
-    ) -> Result<aphrody_gateway::ChatResponse, aphrody_gateway::GatewayError> {
-        let model = req.model.clone();
-        Ok(aphrody_gateway::ChatResponse {
-            content: format!("Local Aphrody engine response for '{model}' (100% keyless)."),
-            model: Some(model),
-            total_tokens: Some(32),
-        })
-    }
-
-    async fn chat_stream(
-        &self,
-        req: aphrody_gateway::ChatRequest,
-    ) -> Result<aphrody_gateway::ChunkStream, aphrody_gateway::GatewayError> {
-        let chunk = aphrody_gateway::ChatChunk {
-            delta: format!("Local Aphrody engine stream for '{}' (100% keyless).", req.model),
-            finish: true,
-        };
-        let stream = futures::stream::once(async move { Ok(chunk) });
-        Ok(Box::pin(stream))
-    }
 }
 
 fn advertised_models(provider: &str) -> Vec<String> {
@@ -189,6 +162,13 @@ fn unconfigured_provider_error(provider: &str) -> miette::Report {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn local_gateway_refuses_to_fabricate_inference() {
+        let result = resolve_adapter("local");
+        assert!(result.is_err());
+        assert!(result.err().unwrap().to_string().contains("no response was generated"));
+    }
 
     #[test]
     fn advertised_models_include_local_catalog() {

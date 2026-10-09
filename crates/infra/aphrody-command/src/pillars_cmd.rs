@@ -301,12 +301,12 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
         ShellAction::Status { json } => {
             let status = serde_json::json!({
                 "layer": "shell",
-                "terminal_engine": "aphrody-term-1.0.0",
+                "terminal_engine": "aphrody-term",
                 "backend": "aphrody-terminal-backend",
-                "tui": "ratatui-0.30",
+                "tui": "not_wired",
                 "engine": "nushell",
                 "bun_shell": "bun exec (aphrody-labs/bun)",
-                "status": "ready"
+                "status": "capabilities_declared_not_probed"
             });
             if json {
                 println!("{}", serde_json::to_string_pretty(&status).into_diagnostic()?);
@@ -315,7 +315,7 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
                 println!("  * Terminal:      aphrody-term");
                 println!("  * Shell:         Nushell (eval, start)");
                 println!("  * Bun Shell:     bun exec (shell bun, shell eval --bun)");
-                println!("  * TUI:           Ratatui 0.30");
+                println!("  * TUI:           Dashboard not wired");
                 println!("  * PTY Bridge:    aphrody-terminal-backend (WebSocket/Local)");
             }
         },
@@ -324,11 +324,7 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
             let mut cmd = std::process::Command::new(&nu_path);
             let root =
                 std::env::var("APHRODY_ROOT").map(std::path::PathBuf::from).unwrap_or_else(|_| {
-                    if std::path::Path::new("C:\\aphrody").exists() {
-                        std::path::PathBuf::from("C:\\aphrody")
-                    } else {
-                        std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
-                    }
+                    std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
                 });
             cmd.current_dir(&root);
             if !args.is_empty() {
@@ -348,11 +344,7 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
         ShellAction::Eval { pipeline, json, bun } => {
             let root =
                 std::env::var("APHRODY_ROOT").map(std::path::PathBuf::from).unwrap_or_else(|_| {
-                    if std::path::Path::new("C:\\aphrody").exists() {
-                        std::path::PathBuf::from("C:\\aphrody")
-                    } else {
-                        std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
-                    }
+                    std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
                 });
 
             if bun {
@@ -377,11 +369,7 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
         ShellAction::Bun { command, json } => {
             let root =
                 std::env::var("APHRODY_ROOT").map(std::path::PathBuf::from).unwrap_or_else(|_| {
-                    if std::path::Path::new("C:\\aphrody").exists() {
-                        std::path::PathBuf::from("C:\\aphrody")
-                    } else {
-                        std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
-                    }
+                    std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
                 });
 
             bun_exec(&command, &root, json)?;
@@ -419,7 +407,9 @@ pub(crate) fn handle_shell(action: ShellAction) -> miette::Result<()> {
                 } else if let Some(key) = act.strip_prefix("key ") {
                     aphrody_term::computer_use::ComputerAction::PressKey(key.to_string())
                 } else {
-                    return Err(miette!("unknown action {act:?}: expected \"type <text>\" or \"key <key>\""));
+                    return Err(miette!(
+                        "unknown action {act:?}: expected \"type <text>\" or \"key <key>\""
+                    ));
                 };
                 term.computer_use().dispatch_action(action).into_diagnostic()?;
                 settle_term(&term, Duration::from_secs(5));

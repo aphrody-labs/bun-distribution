@@ -1,21 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 //! CLI implementation for `aphrody codex …` and the multi-call `codex` command.
 //!
-//! Provides 100% feature parity with upstream Codex CLI while backed by Aphrody's
-//! native capability owners:
+//! Compatibility parser backed by Aphrody's native capability owners.
+//! App-server transport and configuration inspection are implemented;
+//! agent execution and session operations reject unsupported requests.
 //! - App-server protocol v2 JSON-RPC daemon (`crates/ai/app-server`)
-//! - Transparent Windows elevation guard (auto `--no-daemon` in admin shells)
-//! - Sol model family and account profiles (`gpt-6-sol`, `gpt-6.1-sol`, `gpt-6.1-sol-wm`)
-//! - MCP server configuration management (`[mcp_servers]`)
-//! - Plugins and marketplaces catalog management
-//! - Diagnostic doctor and system health check
+//! - Inspection of Windows elevation and configured model
+//! - Read-only MCP, plugins, marketplaces and feature configuration
+//! - Git patch application with an explicit file
 
-use std::{
-    io::Read,
-    net::SocketAddr,
-    path::PathBuf,
-    process::Command,
-};
+use std::{net::SocketAddr, path::PathBuf, process::Command};
 
 use clap::{Args, Subcommand};
 use miette::Result;
@@ -44,7 +38,7 @@ pub enum CodexSubcommand {
     Resume(SessionArgs),
     /// Fork a previous session by id or --last.
     Fork(SessionArgs),
-    /// Apply the latest diff produced by the agent to the local working tree.
+    /// Apply an explicit patch file to the local working tree.
     #[command(alias = "a")]
     Apply(ApplyArgs),
     /// Manage external Model Context Protocol (MCP) servers.
@@ -65,7 +59,7 @@ pub enum CodexSubcommand {
 
 #[derive(Args, Debug, Clone)]
 pub struct ExecArgs {
-    /// Optional prompt. If '-' or omitted, reads from stdin.
+    /// Compatibility prompt argument; execution currently returns an unsupported error.
     pub prompt: Option<String>,
     /// Model identifier to use (default from config: gpt-6-sol / gpt-6.1-sol).
     #[arg(short = 'm', long)]
@@ -303,23 +297,22 @@ async fn run_doctor(args: DoctorArgs) -> Result<()> {
     let elevated = is_windows_elevated();
     let config_path = codex_config_path();
 
-    let mut model_found = "gpt-6-sol".to_string();
+    let mut model_found: Option<String> = None;
     let mut plugins_count = 0;
     let mut mcp_count = 0;
 
-    if let Some(ref p) = config_path {
-        if let Ok(content) = std::fs::read_to_string(p) {
-            if let Ok(doc) = content.parse::<toml::Value>() {
-                if let Some(m) = doc.get("model").and_then(|v| v.as_str()) {
-                    model_found = m.to_string();
-                }
-                if let Some(plugins) = doc.get("plugins").and_then(|v| v.as_table()) {
-                    plugins_count = plugins.len();
-                }
-                if let Some(mcp) = doc.get("mcp_servers").and_then(|v| v.as_table()) {
-                    mcp_count = mcp.len();
-                }
-            }
+    if let Some(ref p) = config_path
+        && let Ok(content) = std::fs::read_to_string(p)
+        && let Ok(doc) = content.parse::<toml::Value>()
+    {
+        if let Some(m) = doc.get("model").and_then(|v| v.as_str()) {
+            model_found = Some(m.to_string());
+        }
+        if let Some(plugins) = doc.get("plugins").and_then(|v| v.as_table()) {
+            plugins_count = plugins.len();
+        }
+        if let Some(mcp) = doc.get("mcp_servers").and_then(|v| v.as_table()) {
+            mcp_count = mcp.len();
         }
     }
 
@@ -327,66 +320,40 @@ async fn run_doctor(args: DoctorArgs) -> Result<()> {
         let report = json!({
             "service": "aphrody-agent",
             "windows_elevated": elevated,
-            "elevation_guard_active": true,
             "config_path": config_path.map(|p| p.display().to_string()),
-            "active_model": model_found,
+            "configured_model": model_found,
             "configured_plugins_count": plugins_count,
             "configured_mcp_count": mcp_count,
             "app_server": "Pure v2 JSON-RPC (crates/contracts/app-protocol)",
-            "keyless": true,
-            "local_first": true,
-            "status": "healthy"
+            "agent_execution": "not_wired",
+            "status": "configuration_inspected"
         });
         println!("{report}");
     } else {
         println!("=== Aphrody Local Agent Doctor ===");
-        println!("Status               : [OK] Healthy (100% Local & Keyless)");
-        println!("Windows Elevated     : {}", if elevated { "Yes (auto --no-daemon injected)" } else { "No (standard user)" });
-        println!("Elevation Guard      : Active and transparent");
-        println!("Config Path          : {}", config_path.as_deref().map_or("Not found", |p| p.to_str().unwrap_or("")));
-        println!("Active Model         : {}", model_found);
+        println!("Status               : Configuration inspected; model execution not checked");
+        println!("Windows Elevated     : {}", if elevated { "Yes" } else { "No (standard user)" });
+        println!(
+            "Config Path          : {}",
+            config_path.as_deref().map_or("Not found", |p| p.to_str().unwrap_or(""))
+        );
+        println!("Configured Model     : {}", model_found.as_deref().unwrap_or("not configured"));
         println!("Configured Plugins   : {} enabled", plugins_count);
         println!("Configured MCP       : {} servers", mcp_count);
         println!("App-Server Protocol  : Pure v2 JSON-RPC (crates/contracts/app-protocol)");
-        println!("Execution Runtime    : 100% local on-device (zero cloud keys required)");
+        println!("Execution Runtime    : Agent execution is not wired by this command");
     }
     Ok(())
 }
 
-async fn run_exec(args: ExecArgs) -> Result<()> {
-    let prompt = if let Some(ref p) = args.prompt {
-        if p == "-" {
-            let mut buf = String::new();
-            std::io::stdin().read_to_string(&mut buf).map_err(|e| miette::miette!("stdin read: {e}"))?;
-            buf
-        } else {
-            p.clone()
-        }
-    } else {
-        let mut buf = String::new();
-        std::io::stdin().read_to_string(&mut buf).map_err(|e| miette::miette!("stdin read: {e}"))?;
-        buf
-    };
-
-    if args.json {
-        let report = json!({
-            "status": "completed",
-            "prompt": prompt,
-            "engine": "aphrody-local-agent",
-            "local": true,
-            "keyless": true,
-        });
-        println!("{report}");
-    } else {
-        println!("=== Aphrody Local Agent Turn ===");
-        println!("Prompt: {prompt}");
-        println!("Processed via local Aphrody agent runtime (keyless & offline).");
-    }
-    Ok(())
+async fn run_exec(_args: ExecArgs) -> Result<()> {
+    Err(miette::miette!(
+        "Agent execution is not wired to a model/tool runtime by this command; no turn was executed."
+    ))
 }
 
 async fn run_review(args: ReviewArgs) -> Result<()> {
-    println!("=== Aphrody Local Code Review ===");
+    println!("=== Git diff summary (no automated code review) ===");
     let mut cmd = Command::new("git");
     cmd.args(["diff", "--stat"]);
     if let Some(ref b) = args.branch {
@@ -396,35 +363,44 @@ async fn run_review(args: ReviewArgs) -> Result<()> {
         cmd.arg(c);
     }
     let output = cmd.output().map_err(|e| miette::miette!("git diff: {e}"))?;
+    if !output.status.success() {
+        return Err(miette::miette!(
+            "git diff failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ));
+    }
     if !output.stdout.is_empty() {
         println!("{}", String::from_utf8_lossy(&output.stdout));
-        println!("Local review complete: repository changes verified.");
     } else {
         println!("No changes detected for review.");
     }
     Ok(())
 }
 
-async fn run_resume(args: SessionArgs) -> Result<()> {
-    println!("Resumed local session via Aphrody app-server (id: {:?}, last: {})", args.session_id, args.last);
-    Ok(())
+async fn run_resume(_args: SessionArgs) -> Result<()> {
+    Err(miette::miette!("Session resume is not wired by this command; no session was resumed."))
 }
 
-async fn run_fork(args: SessionArgs) -> Result<()> {
-    println!("Forked local session via Aphrody app-server (id: {:?}, last: {})", args.session_id, args.last);
-    Ok(())
+async fn run_fork(_args: SessionArgs) -> Result<()> {
+    Err(miette::miette!("Session fork is not wired by this command; no session was forked."))
 }
 
 async fn run_apply(args: ApplyArgs) -> Result<()> {
     if let Some(ref f) = args.file {
         println!("Applying diff from {} to working tree...", f.display());
-        let status = Command::new("git").args(["apply"]).arg(f).status().map_err(|e| miette::miette!("git apply: {e}"))?;
+        let status = Command::new("git")
+            .args(["apply"])
+            .arg(f)
+            .status()
+            .map_err(|e| miette::miette!("git apply: {e}"))?;
         if !status.success() {
             return Err(miette::miette!("git apply failed"));
         }
         println!("Diff applied successfully.");
     } else {
-        println!("Applying latest patch to working tree via git apply...");
+        return Err(miette::miette!(
+            "A patch file is required; no implicit latest patch store is wired and no patch was applied."
+        ));
     }
     Ok(())
 }
@@ -433,37 +409,48 @@ async fn run_mcp(action: McpSubcommand) -> Result<()> {
     match action {
         McpSubcommand::List { json } => {
             let config_path = codex_config_path();
-            if let Some(ref p) = config_path {
-                if let Ok(content) = std::fs::read_to_string(p) {
-                    if let Ok(doc) = content.parse::<toml::Value>() {
-                        if let Some(mcp) = doc.get("mcp_servers").and_then(|v| v.as_table()) {
-                            if json {
-                                println!("{}", serde_json::to_string_pretty(&mcp).unwrap());
-                            } else {
-                                println!("NAME                  STATUS      TARGET");
-                                for (k, v) in mcp {
-                                    let enabled = v.get("enabled").and_then(|e| e.as_bool()).unwrap_or(true);
-                                    let target = v.get("url").and_then(|u| u.as_str())
-                                        .or_else(|| v.get("command").and_then(|c| c.as_str()))
-                                        .unwrap_or("-");
-                                    println!("{:<22} {:<11} {}", k, if enabled { "enabled" } else { "disabled" }, target);
-                                }
-                            }
-                            return Ok(());
-                        }
+            if let Some(ref p) = config_path
+                && let Ok(content) = std::fs::read_to_string(p)
+                && let Ok(doc) = content.parse::<toml::Value>()
+                && let Some(mcp) = doc.get("mcp_servers").and_then(|v| v.as_table())
+            {
+                if json {
+                    println!("{}", serde_json::to_string_pretty(&mcp).unwrap());
+                } else {
+                    println!("NAME                  STATUS      TARGET");
+                    for (k, v) in mcp {
+                        let enabled = v.get("enabled").and_then(|e| e.as_bool()).unwrap_or(true);
+                        let target = v
+                            .get("url")
+                            .and_then(|u| u.as_str())
+                            .or_else(|| v.get("command").and_then(|c| c.as_str()))
+                            .unwrap_or("-");
+                        println!(
+                            "{:<22} {:<11} {}",
+                            k,
+                            if enabled { "enabled" } else { "disabled" },
+                            target
+                        );
                     }
                 }
+                return Ok(());
             }
             println!("No MCP servers found in configuration.");
         },
         McpSubcommand::Get { name } => {
-            println!("MCP Server details for '{name}'");
+            return Err(miette::miette!(
+                "MCP detail lookup is not wired by this compatibility command: {name}"
+            ));
         },
         McpSubcommand::Add { name, url: _url, command: _command } => {
-            println!("Adding MCP server '{name}'...");
+            return Err(miette::miette!(
+                "MCP configuration mutation is not wired by this compatibility command; server '{name}' was not added."
+            ));
         },
         McpSubcommand::Remove { name } => {
-            println!("Removing MCP server '{name}'...");
+            return Err(miette::miette!(
+                "MCP configuration mutation is not wired by this compatibility command; server '{name}' was not removed."
+            ));
         },
     }
     Ok(())
@@ -473,46 +460,46 @@ async fn run_plugin(action: PluginSubcommand) -> Result<()> {
     match action {
         PluginSubcommand::List { json } => {
             let config_path = codex_config_path();
-            if let Some(ref p) = config_path {
-                if let Ok(content) = std::fs::read_to_string(p) {
-                    if let Ok(doc) = content.parse::<toml::Value>() {
-                        if let Some(plugins) = doc.get("plugins").and_then(|v| v.as_table()) {
-                            if json {
-                                println!("{}", serde_json::to_string_pretty(&plugins).unwrap());
-                            } else {
-                                println!("PLUGIN                                                  STATUS");
-                                for (k, v) in plugins {
-                                    let enabled = v.get("enabled").and_then(|e| e.as_bool()).unwrap_or(true);
-                                    println!("{:<55} {}", k, if enabled { "installed, enabled" } else { "installed, disabled" });
-                                }
-                            }
-                            return Ok(());
-                        }
+            if let Some(ref p) = config_path
+                && let Ok(content) = std::fs::read_to_string(p)
+                && let Ok(doc) = content.parse::<toml::Value>()
+                && let Some(plugins) = doc.get("plugins").and_then(|v| v.as_table())
+            {
+                if json {
+                    println!("{}", serde_json::to_string_pretty(&plugins).unwrap());
+                } else {
+                    println!("PLUGIN                                                  STATUS");
+                    for (k, v) in plugins {
+                        let enabled = v.get("enabled").and_then(|e| e.as_bool()).unwrap_or(true);
+                        println!(
+                            "{:<55} {}",
+                            k,
+                            if enabled { "installed, enabled" } else { "installed, disabled" }
+                        );
                     }
                 }
+                return Ok(());
             }
             println!("No plugins found in configuration.");
         },
         PluginSubcommand::Marketplace { action } => match action {
             MarketplaceSubcommand::List { json } => {
                 let config_path = codex_config_path();
-                if let Some(ref p) = config_path {
-                    if let Ok(content) = std::fs::read_to_string(p) {
-                        if let Ok(doc) = content.parse::<toml::Value>() {
-                            if let Some(mkts) = doc.get("marketplaces").and_then(|v| v.as_table()) {
-                                if json {
-                                    println!("{}", serde_json::to_string_pretty(&mkts).unwrap());
-                                } else {
-                                    println!("MARKETPLACE             ROOT");
-                                    for (k, v) in mkts {
-                                        let src = v.get("source").and_then(|s| s.as_str()).unwrap_or("-");
-                                        println!("{:<24} {}", k, src);
-                                    }
-                                }
-                                return Ok(());
-                            }
+                if let Some(ref p) = config_path
+                    && let Ok(content) = std::fs::read_to_string(p)
+                    && let Ok(doc) = content.parse::<toml::Value>()
+                    && let Some(mkts) = doc.get("marketplaces").and_then(|v| v.as_table())
+                {
+                    if json {
+                        println!("{}", serde_json::to_string_pretty(&mkts).unwrap());
+                    } else {
+                        println!("MARKETPLACE             ROOT");
+                        for (k, v) in mkts {
+                            let src = v.get("source").and_then(|s| s.as_str()).unwrap_or("-");
+                            println!("{:<24} {}", k, src);
                         }
                     }
+                    return Ok(());
                 }
             },
         },
@@ -520,21 +507,24 @@ async fn run_plugin(action: PluginSubcommand) -> Result<()> {
     Ok(())
 }
 
-async fn run_features(_args: FeaturesArgs) -> Result<()> {
+async fn run_features(args: FeaturesArgs) -> Result<()> {
+    if args.enable.is_some() || args.disable.is_some() {
+        return Err(miette::miette!(
+            "Feature flag mutation is not wired by this command; configuration was not changed."
+        ));
+    }
     let config_path = codex_config_path();
-    if let Some(ref p) = config_path {
-        if let Ok(content) = std::fs::read_to_string(p) {
-            if let Ok(doc) = content.parse::<toml::Value>() {
-                if let Some(features) = doc.get("features").and_then(|v| v.as_table()) {
-                    println!("FEATURE                                 STATE");
-                    for (k, v) in features {
-                        let state = v.as_bool().unwrap_or(false);
-                        println!("{:<40} {}", k, if state { "enabled" } else { "disabled" });
-                    }
-                    return Ok(());
-                }
-            }
+    if let Some(ref p) = config_path
+        && let Ok(content) = std::fs::read_to_string(p)
+        && let Ok(doc) = content.parse::<toml::Value>()
+        && let Some(features) = doc.get("features").and_then(|v| v.as_table())
+    {
+        println!("FEATURE                                 STATE");
+        for (k, v) in features {
+            let state = v.as_bool().unwrap_or(false);
+            println!("{:<40} {}", k, if state { "enabled" } else { "disabled" });
         }
+        return Ok(());
     }
     println!("No feature flags found in configuration.");
     Ok(())
@@ -542,8 +532,8 @@ async fn run_features(_args: FeaturesArgs) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use clap::Parser;
     use super::*;
+    use clap::Parser;
 
     #[derive(Parser, Debug)]
     struct TestCli {
@@ -563,7 +553,15 @@ mod tests {
 
     #[test]
     fn test_cli_parser_codex_exec() {
-        let cli = TestCli::parse_from(["test", "codex", "exec", "ping", "-m", "gpt-6-sol", "--no-daemon"]);
+        let cli = TestCli::parse_from([
+            "test",
+            "codex",
+            "exec",
+            "ping",
+            "-m",
+            "gpt-6-sol",
+            "--no-daemon",
+        ]);
         match cli.command {
             TestCommands::Codex(args) => match args.action {
                 Some(CodexSubcommand::Exec(e)) => {
@@ -615,7 +613,9 @@ mod tests {
         let cli_plug = TestCli::parse_from(["test", "codex", "plugin", "list"]);
         match cli_plug.command {
             TestCommands::Codex(args) => match args.action {
-                Some(CodexSubcommand::Plugin { action: PluginSubcommand::List { json: false } }) => {},
+                Some(CodexSubcommand::Plugin {
+                    action: PluginSubcommand::List { json: false },
+                }) => {},
                 _ => panic!("expected Plugin::List subcommand"),
             },
         }
@@ -626,5 +626,20 @@ mod tests {
         let res = run_doctor(DoctorArgs { json: true }).await;
         assert!(res.is_ok(), "doctor should execute without error");
     }
-}
 
+    #[tokio::test]
+    async fn unsupported_execution_and_mutations_do_not_report_success() {
+        for argv in [
+            vec!["test", "codex", "exec", "hello", "--json"],
+            vec!["test", "codex", "resume", "--last"],
+            vec!["test", "codex", "fork", "--last"],
+            vec!["test", "codex", "apply"],
+            vec!["test", "codex", "mcp", "add", "audit-test"],
+            vec!["test", "codex", "mcp", "remove", "audit-test"],
+            vec!["test", "codex", "features", "--enable", "audit-test"],
+        ] {
+            let TestCommands::Codex(args) = TestCli::parse_from(argv.clone()).command;
+            assert!(run(args).await.is_err(), "unsupported request must fail: {argv:?}");
+        }
+    }
+}

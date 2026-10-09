@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Unified Local-First AI Subsystem (`aphrody ai`).
 //!
-//! Groups all native AI capabilities into a single, cohesive, keyless surface:
+//! Groups AI command routes; availability depends on compiled features and runtime configuration.
 //! - `rag` (Raptor F64 vector store in SQLite, hybrid & lexical search)
 //! - `model` (Local model catalog, pull, inspect, verify, evict under ~/.aphrody/models)
-//! - `infer` (ONNX Runtime and GGUF local inference and provider probing)
+//! - `infer` (ONNX Runtime discovery and provider probing)
 //! - `voice` (Offline speech-to-text with Whisper GGML)
 //! - `ocr` (Local vision-language models and PP-OCRv5)
-//! - `translate` (Local neural translation via aphrody-translate)
+//! - `translate` (Web translation backends with a local result cache)
 //! - `memory` (Local SQLite memory store)
 //! - `gateway` (OpenAI-compatible HTTP AI gateway)
 //! - `train` (Machine learning training engine)
@@ -20,8 +20,65 @@ use clap::Subcommand;
 
 use crate::context::TerminalCommand;
 
+fn translation_backend(value: &str) -> Result<String, String> {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "local" | "offline" => {
+            Err("No local/offline translation runtime is connected; refusing to use a web backend."
+                .to_owned())
+        },
+        "auto" | "web" | "web-google" | "web_google" | "google" | "google-rpc" | "rpc" | "gtx"
+        | "mymemory" | "memory" => Ok(value.to_owned()),
+        _ => Err(format!("Unknown translation backend: {value}")),
+    }
+}
+
+#[cfg(test)]
+mod routing_tests {
+    use clap::Parser;
+
+    #[test]
+    fn offline_translation_requests_cannot_fall_back_to_web() {
+        for backend in ["local", "offline", "LOCAL", " offline "] {
+            let error = match crate::Cli::try_parse_from([
+                "aphrody",
+                "ai",
+                "translate",
+                "private text",
+                "--backend",
+                backend,
+            ]) {
+                Ok(_) => panic!("offline translation must fail before dispatch"),
+                Err(error) => error,
+            };
+            assert!(error.to_string().contains("refusing to use a web backend"));
+        }
+    }
+
+    #[test]
+    fn document_ai_preserves_owner_help_and_arguments() {
+        for tail in [vec!["--help"], vec!["translate", "a file.md", "fr", "--owner-option"]] {
+            let mut argv = vec!["aphrody", "ai", "doc-ai"];
+            argv.extend(tail.iter().copied());
+            let cli = crate::Cli::try_parse_from(argv)
+                .expect("document AI owner arguments must pass through");
+            match cli.command {
+                Some(crate::Commands::Ai { action: super::AiAction::DocAi { args } }) => {
+                    assert_eq!(args, tail);
+                },
+                _ => panic!("document AI must route through the AI namespace"),
+            }
+        }
+    }
+}
+
 #[derive(Subcommand, Debug, Clone)]
 pub(crate) enum AiAction {
+    /// Documentation generation and translation through the existing Bun capability owner.
+    #[command(disable_help_flag = true)]
+    DocAi {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
     /// Local code and documentation retrieval (Raptor F64 vector store in SQLite, hybrid & lexical).
     #[cfg(feature = "rag")]
     Rag(crate::rag_cmd::RagArgs),
@@ -52,7 +109,7 @@ pub(crate) enum AiAction {
         action: crate::ocr_cmd::OcrAction,
     },
 
-    /// Local and offline neural translation via aphrody-translate.
+    /// Web translation through aphrody-translate, with a local result cache.
     Translate {
         /// Text to translate directly
         #[arg(value_name = "TEXT")]
@@ -63,8 +120,8 @@ pub(crate) enum AiAction {
         /// Target language (fr, en, ja...)
         #[arg(short, long, default_value = "fr")]
         target: String,
-        /// Translation backend: auto, local, offline, web
-        #[arg(short, long, default_value = "auto")]
+        /// Translation backend: auto, web, google-rpc or mymemory (network required on cache misses).
+        #[arg(short, long, default_value = "auto", value_parser = translation_backend)]
         backend: String,
         /// File to translate
         #[arg(short, long)]
@@ -126,6 +183,17 @@ pub(crate) async fn run(
     ctx: &crate::context::GoogleContext,
 ) -> miette::Result<()> {
     match action {
+        AiAction::DocAi { args } => {
+            let code = crate::multicall::bun_bridge::dispatch(
+                "doc-ai",
+                args.into_iter().map(std::ffi::OsString::from),
+            );
+            if code != 0 {
+                return Err(miette::miette!(
+                    "Document AI capability owner exited with code {code}"
+                ));
+            }
+        },
         #[cfg(feature = "rag")]
         AiAction::Rag(args) => {
             crate::rag_cmd::run(args, overrides.clone()).await?;
@@ -166,7 +234,8 @@ pub(crate) async fn run(
                 to_lancedb_path,
                 lancedb_ndims,
             } => {
-                let profile_sqlite_path = if (from == crate::memory_cmd::MemoryProviderArg::SqliteLocal
+                let profile_sqlite_path = if (from
+                    == crate::memory_cmd::MemoryProviderArg::SqliteLocal
                     && from_sqlite_path.is_none())
                     || (to == crate::memory_cmd::MemoryProviderArg::SqliteLocal
                         && to_sqlite_path.is_none())
@@ -232,8 +301,9 @@ pub(crate) async fn run_voice(action: VoiceAction) -> miette::Result<()> {
                     ));
                 },
             };
-            let data = std::fs::read(&file)
-                .map_err(|e| miette::miette!("Failed to read audio file {}: {e}", file.display()))?;
+            let data = std::fs::read(&file).map_err(|e| {
+                miette::miette!("Failed to read audio file {}: {e}", file.display())
+            })?;
             let backend = aphrody_voice::stt::whisper_cpp::WhisperCppBackend::new(
                 model_path.to_string_lossy().to_string(),
             );
@@ -294,7 +364,10 @@ pub(crate) async fn run_voice(action: VoiceAction) -> miette::Result<()> {
                 println!("  * Engine:          whisper.cpp (offline)");
                 println!(
                     "  * Binary Source:   {}",
-                    whisper_source.map_or_else(|| "none detected (managed runtime fallback)".to_string(), |s| format!("{s:?}"))
+                    whisper_source.map_or_else(
+                        || "none detected (managed runtime fallback)".to_string(),
+                        |s| format!("{s:?}")
+                    )
                 );
                 println!("  * Local Weights:   {} installed", whisper_models.len());
                 for m in &whisper_models {
@@ -308,13 +381,16 @@ pub(crate) async fn run_voice(action: VoiceAction) -> miette::Result<()> {
 
 pub(crate) async fn run_ai_status(json: bool) -> miette::Result<()> {
     let topology = aphrody_native::NativePlatform::get_topology();
-    let store = aphrody_models::ModelStore::open().ok();
-    let installed_models = store.and_then(|s| s.list().ok()).unwrap_or_default();
+    let (installed_models, model_store_error) =
+        match aphrody_models::ModelStore::open().and_then(|store| store.list()) {
+            Ok(models) => (models, None),
+            Err(error) => (Vec::new(), Some(error.to_string())),
+        };
 
     let summary = serde_json::json!({
-        "status": "ready",
-        "keyless": true,
-        "local_first": true,
+        "status": "inventory",
+        "runtime_readiness": "not_probed",
+        "authentication": "backend_dependent",
         "hardware": {
             "cpus": topology.cpu_count,
             "memory_available_mb": topology.memory_available_mb,
@@ -324,6 +400,7 @@ pub(crate) async fn run_ai_status(json: bool) -> miette::Result<()> {
             "cuda_devices": topology.cuda_device_count,
         },
         "models": {
+            "enumeration_error": model_store_error,
             "installed_count": installed_models.len(),
             "models": installed_models.iter().map(|m| serde_json::json!({
                 "id": m.reference.to_string(),
@@ -331,23 +408,24 @@ pub(crate) async fn run_ai_status(json: bool) -> miette::Result<()> {
             })).collect::<Vec<_>>(),
         },
         "subsystems": {
-            "rag": "Raptor F64 vector store in SQLite (hybrid & lexical)",
-            "infer": "ONNX Runtime & GGUF local engines",
-            "voice": "Whisper GGML offline STT",
-            "ocr": "PP-OCRv5 & local VLM",
-            "translate": "aphrody-translate offline cache",
-            "memory": "SQLite local memory",
-            "gateway": "OpenAI-compatible local gateway (127.0.0.1:8786)",
-            "agent": "App-Server protocol v2 JSON-RPC daemon",
+            "rag": { "compiled": cfg!(feature = "rag"), "runtime": "not_probed" },
+            "infer": { "compiled": cfg!(feature = "infer"), "runtime": "not_probed" },
+            "ocr": { "compiled": cfg!(feature = "ocr"), "runtime": "not_probed" },
+            "train": { "compiled": cfg!(feature = "train"), "runtime": "not_probed" },
+            "voice": { "runtime": "not_probed" },
+            "translate": { "runtime": "backend_dependent" },
+            "memory": { "runtime": "not_probed" },
+            "gateway": { "local_inference": "not_connected" },
+            "agent": { "turn_execution": "not_connected" },
         }
     });
 
     if json {
         println!("{}", serde_json::to_string_pretty(&summary).unwrap());
     } else {
-        println!("=== Aphrody Unified AI Subsystem (100% Local & Keyless) ===");
-        println!("  * Status:        [OK] Ready");
-        println!("  * Cloud Keys:    None required (100% local, on-device)");
+        println!("=== Aphrody AI inventory ===");
+        println!("  * Status:        inventory; runtime readiness has not been probed");
+        println!("  * Authentication: depends on the selected backend");
         println!(
             "  * Compute:       {} CPUs, {}/{} MiB RAM, AVX2={}, CUDA={} ({} devices)",
             topology.cpu_count,
@@ -359,9 +437,22 @@ pub(crate) async fn run_ai_status(json: bool) -> miette::Result<()> {
         );
         println!("  * Local Models:  {} weights in ~/.aphrody/models", installed_models.len());
         for m in &installed_models {
-            println!("    - {:30} ({})", m.reference.to_string(), aphrody_models::human_bytes(m.bytes));
+            println!(
+                "    - {:30} ({})",
+                m.reference.to_string(),
+                aphrody_models::human_bytes(m.bytes)
+            );
         }
-        println!("  * Subsystems:    rag, model, infer, voice, ocr, translate, memory, gateway, train, agent");
+        println!(
+            "  * Feature routes: rag={}, infer={}, ocr={}, train={}",
+            cfg!(feature = "rag"),
+            cfg!(feature = "infer"),
+            cfg!(feature = "ocr"),
+            cfg!(feature = "train")
+        );
+        if let Some(error) = summary["models"]["enumeration_error"].as_str() {
+            println!("  * Model store:   {error}");
+        }
     }
     Ok(())
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #![recursion_limit = "512"]
-//! `aphrody` — the cross-platform AI-layer CLI, exposed as a library.
+//! `aphrody` — the cross-platform capability CLI, exposed as a library.
 //!
 //! The binary, FFI bridge and tests share the same command parser and dispatch
 //! paths. Native targets compile the real integrations; wasm targets retain a
@@ -12,11 +12,11 @@ pub mod ai_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod auto_command;
 #[cfg(not(target_arch = "wasm32"))]
+pub mod codex_cmd;
+#[cfg(not(target_arch = "wasm32"))]
 mod commands;
 #[cfg(not(target_arch = "wasm32"))]
 mod config_cmd;
-#[cfg(not(target_arch = "wasm32"))]
-pub mod codex_cmd;
 #[cfg(not(target_arch = "wasm32"))]
 mod context;
 #[cfg(not(target_arch = "wasm32"))]
@@ -205,13 +205,13 @@ impl AgentOptions {
 enum Commands {
     /// Pure commands (rag, toolcall, html, text): no network, no processes; also built for wasm32.
     Pure(aphrody_command_pure::PureArgs),
-    /// Unified local-first AI subsystem (rag, model, infer, voice, ocr, translate, memory, gateway, train, agent).
+    /// Unified AI commands; engines depend on compiled features and configured backends.
     #[cfg(not(target_arch = "wasm32"))]
     Ai {
         #[command(subcommand)]
         action: ai_cmd::AiAction,
     },
-    /// Canonical Shell: Nushell PTY session, Bun Shell (`bun exec`), Ratatui TUI, scriptable pipelines.
+    /// Nushell sessions and Bun Shell pipelines, with dedicated terminal test commands.
     #[cfg(not(target_arch = "wasm32"))]
     #[command(alias = "sh")]
     Shell {
@@ -1017,7 +1017,9 @@ async fn dispatch(ctx: &GoogleContext, cli: Cli) -> miette::Result<()> {
         },
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Tui) => {
-            pillars_cmd::handle_shell(pillars_cmd::ShellAction::Status { json: false })?;
+            return Err(miette::miette!(
+                "Interactive TUI dashboard is not wired by this command. Use `aphrody shell status` for capability declarations."
+            ));
         },
         #[cfg(not(target_arch = "wasm32"))]
         Some(Commands::Voice { action }) => {

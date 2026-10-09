@@ -29,7 +29,7 @@
 //
 // Cross-platform: this module is only built on native targets. wasm32 has
 // no reqwest/tokio runtime to drive a JSON-RPC client (see
-// `crates/cli/src/main.rs` for the wasm stub).
+// `crates/infra/aphrody-command/src/lib.rs` for target gating).
 
 #![cfg(not(target_arch = "wasm32"))]
 

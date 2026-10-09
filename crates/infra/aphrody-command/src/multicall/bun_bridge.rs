@@ -119,26 +119,23 @@ fn is_checkout(dir: &Path) -> bool {
 }
 
 /// `APHRODY_ROOT`, then the ancestors of the binary (`target/<profile>/aphrody`) and of the working
-/// directory, then `~/aphrody` and, on Windows, `<system drive>\aphrody`.
+/// directory. No machine-specific checkout fallback creates an execution context.
 pub(crate) fn checkout_root() -> Option<PathBuf> {
     let env_dir = |name: &str| std::env::var_os(name).filter(|v| !v.is_empty()).map(PathBuf::from);
-    if let Some(dir) = env_dir("APHRODY_ROOT").filter(|dir| is_checkout(dir)) {
+    if let Some(dir) = env_dir("APHRODY_ROOT")
+        .filter(|dir| is_checkout(dir))
+        .or_else(|| env_dir("APHRODY_WORKSPACE").filter(|dir| is_checkout(dir)))
+    {
         return Some(dir);
     }
     let from_exe = std::env::current_exe().ok();
     let from_cwd = std::env::current_dir().ok();
-    for start in [from_exe, from_cwd].into_iter().flatten() {
+    for start in [from_cwd, from_exe].into_iter().flatten() {
         if let Some(dir) = start.ancestors().find(|dir| is_checkout(dir)) {
             return Some(dir.to_path_buf());
         }
     }
-    let mut fallbacks: Vec<PathBuf> =
-        dirs::home_dir().map(|home| home.join("aphrody")).into_iter().collect();
-    if cfg!(windows) {
-        let drive = std::env::var("SystemDrive").unwrap_or_else(|_| "C:".to_owned());
-        fallbacks.push(PathBuf::from(format!("{drive}\\aphrody")));
-    }
-    fallbacks.into_iter().find(|dir| is_checkout(dir))
+    None
 }
 
 #[cfg(test)]
