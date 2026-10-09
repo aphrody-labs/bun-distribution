@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
   composeArgs,
+  adapterDue,
+  windowsCapabilities,
   environment,
   probes,
   validateConfig,
@@ -19,6 +21,38 @@ const config = (): MeshConfig => ({
   compose: [{ file: join(tmpdir(), "compose.yaml"), services: ["pc"], profiles: ["pc"] }],
   adapters: [],
   health: [],
+});
+
+test.skipIf(process.platform !== "win32")(
+  "exports the installed complete Windows surface without executing its operations",
+  async () => {
+    const result = await windowsCapabilities();
+    expect(result.supported).toBe(true);
+    for (const key of [
+      "Job",
+      "registry",
+      "services",
+      "processes",
+      "clipboard",
+      "eventLog",
+      "storage",
+      "memory",
+      "win32",
+      "toolchain",
+      "wsl",
+    ])
+      expect(result.exports).toContain(key);
+  },
+);
+
+test("periodic maintenance never duplicates a running child or loops after success", () => {
+  const adapter = { id: "update", argv: ["aphrody", "self", "update"], intervalSeconds: 3600 };
+  expect(adapterDue(adapter, false, 4_000_000)).toBe(false);
+  expect(adapterDue(adapter, true, 5000)).toBe(false);
+  expect(adapterDue(adapter, true, 3_600_000)).toBe(true);
+  expect(() =>
+    validateConfig({ ...config(), adapters: [{ ...adapter, intervalSeconds: 0 }] }),
+  ).toThrow();
 });
 
 test("reject credentials in command arguments, URLs and env outside the protected host store", () => {
@@ -101,3 +135,29 @@ test("health fails on errors, redirects and authentication failure instead of ac
     await server.stop(true);
   }
 });
+
+test.skipIf(process.platform !== "win32")(
+  "fork Windows Job closes its owned long-running child",
+  async () => {
+    const { Job } = await import("bun:windows");
+    const job = new Job({ killOnClose: true });
+    const child = Bun.spawn([process.execPath, "-e", "await Bun.sleep(120000)"], {
+      windowsHide: true,
+      stdin: "ignore",
+      stdout: "ignore",
+      stderr: "ignore",
+    });
+    try {
+      job.assign(child);
+      expect(job.info().pids).toContain(child.pid);
+      job.close();
+      expect(
+        await Promise.race([child.exited.then(() => true), Bun.sleep(1000).then(() => false)]),
+      ).toBe(true);
+      expect(job.closed).toBe(true);
+    } finally {
+      if (!job.closed) job.close();
+      child.kill();
+    }
+  },
+);

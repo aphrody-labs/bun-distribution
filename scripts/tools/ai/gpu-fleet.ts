@@ -1,8 +1,74 @@
 // SPDX-License-Identifier: Apache-2.0
 // Native Windows resources and an in-process CPython planner; no alternate Python launcher.
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
+import { homedir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 import type { PythonAsync } from "bun:python";
+
+export async function tunnelKey(home: string, owner: string) {
+  if (!isAbsolute(home)) throw new Error("configured protected home must be absolute");
+  const directory = join(home, "private", "gpu-fleet");
+  mkdirSync(directory, { recursive: true, mode: 0o700 });
+  const path = join(directory, "wireguard.key");
+  async function keyCommand(args: string[], input?: string) {
+    const child = Bun.spawn([owner, "infra", "wg", ...args], {
+      stdin: input ? "pipe" : "ignore",
+      stdout: "pipe",
+      stderr: "ignore",
+      windowsHide: true,
+    });
+    if (input && child.stdin) {
+      child.stdin.write(input);
+      child.stdin.end();
+    }
+    const timeout = setTimeout(() => child.kill("SIGKILL"), 8000);
+    try {
+      const [value, code] = await Promise.all([new Response(child.stdout).text(), child.exited]);
+      if (code !== 0 || !/^[A-Za-z0-9+/]{43}=$/.test(value.trim()))
+        throw new Error("native WireGuard key operation failed");
+      return value.trim();
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+  if (!existsSync(path)) writeFileSync(path, await keyCommand(["genkey"]), { mode: 0o600 });
+  const token = join(directory, "api.token");
+  if (!existsSync(token)) writeFileSync(token, randomBytes(32).toString("hex"), { mode: 0o600 });
+  if (process.platform === "win32") {
+    const w = await import("bun:windows");
+    const identity = w.systemInfo();
+    const child = Bun.spawn(
+      [
+        "icacls",
+        directory,
+        "/inheritance:r",
+        "/grant:r",
+        `${identity.computerName}\\${identity.userName}:(OI)(CI)F`,
+        "SYSTEM:(OI)(CI)F",
+      ],
+      { stdout: "ignore", stderr: "ignore", windowsHide: true },
+    );
+    if ((await child.exited) !== 0) throw new Error("protected GPU key ACL failed");
+    for (const file of [path, token]) {
+      const acl = Bun.spawn(
+        [
+          "icacls",
+          file,
+          "/inheritance:r",
+          "/grant:r",
+          `${identity.computerName}\\${identity.userName}:F`,
+          "SYSTEM:F",
+        ],
+        { stdout: "ignore", stderr: "ignore", windowsHide: true },
+      );
+      if ((await acl.exited) !== 0) throw new Error("protected GPU key file ACL failed");
+    }
+  }
+  const publicKey = await keyCommand(["pubkey"], readFileSync(path, "utf8").trim());
+  writeFileSync(join(directory, "wireguard.pub"), publicKey, { mode: 0o600 });
+  return { publicKey };
+}
 
 export async function nativeInventory(member: "aphro-pc" | "omar", root: string) {
   const w = await import("bun:windows");
@@ -97,6 +163,17 @@ export async function main(argv = Bun.argv.slice(2)): Promise<number> {
     return at < 0 ? undefined : argv[at + 1];
   };
   const root = resolve(flag("--root") ?? join(import.meta.dir, "../../.."));
+  if (argv[0] === "tunnel-key") {
+    console.log(
+      JSON.stringify(
+        await tunnelKey(
+          resolve(flag("--home") ?? join(homedir(), ".aphrody")),
+          flag("--aphrody-bin") ?? "aphrody",
+        ),
+      ),
+    );
+    return 0;
+  }
   const source = resolve(flag("--python-source") ?? join(root, "py/packages/aphrody/src"));
   if (argv[0] === "inventory") {
     const member = flag("--member") ?? "aphro-pc";

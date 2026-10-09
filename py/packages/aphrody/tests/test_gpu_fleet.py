@@ -4,6 +4,16 @@ import json
 import pytest
 
 from aphrody.inference.fleet import Node, pipeline_plan, plan_json
+from aphrody.inference.fleet_runtime import ray_command
+
+
+def test_ray_refuses_unroutable_docker_addresses_before_starting_any_process():
+    with pytest.raises(ValueError, match="routed"):
+        ray_command("head", {"VLLM_HOST_IP": "172.17.0.2"})
+    with pytest.raises(ValueError, match="owner"):
+        ray_command("head", {"VLLM_HOST_IP": "10.201.77.10"})
+    with pytest.raises(ValueError, match="role"):
+        ray_command("arbitrary", {})
 
 
 def node(member="aphro-pc", cuda=True):

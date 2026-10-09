@@ -14,7 +14,7 @@ User=ubuntu
 WorkingDirectory=/home/ubuntu/src/aphrody
 Environment=APHRODY_HOME=/home/ubuntu/.aphrody
 Environment=PATH=/home/ubuntu/.local/bin:/home/ubuntu/.bun/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/home/ubuntu/.local/bin/bun --no-env-file /home/ubuntu/src/aphrody/scripts/install/container-service.ts --mesh run --config /home/ubuntu/.aphrody/host/mesh.json
+ExecStart=/home/ubuntu/.local/bin/bun --no-env-file /home/ubuntu/.aphrody/lib/mesh/container-service.mjs --mesh run --config /home/ubuntu/.aphrody/host/mesh.json
 Restart=on-failure
 RestartSec=10
 TimeoutStopSec=15
