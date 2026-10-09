@@ -49,7 +49,7 @@ describe("parseDiagnostics", () => {
 
 describe("crateFromPackageId", () => {
   test("handles the three id shapes Cargo prints", () => {
-    expect(crateFromPackageId("path+file:///repo/crates/ai/engine-mistralrs#aphrody-engine-mistralrs@1.0.0")).toBe("aphrody-engine-mistralrs");
+    expect(crateFromPackageId("path+file:///repo/crates/ai/engine#aphrody-engine@1.0.0")).toBe("aphrody-engine");
     expect(crateFromPackageId("path+file:///repo/crates/web/taffy#0.9.2")).toBe("taffy");
     expect(crateFromPackageId("registry+https://github.com/rust-lang/crates.io-index#serde@1.0.229")).toBe("serde");
   });

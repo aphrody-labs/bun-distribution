@@ -46,9 +46,7 @@ wildcards = "allow"
 unknown-registry = "deny"
 unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
-# Git dependencies pinned in Cargo.lock (mistral.rs and its candle, the aphrody-labs taffy fork).
+# Git dependencies allowed in Cargo.lock (the aphrody-labs taffy fork).
 allow-git = [
-  "https://github.com/EricLBuehler/mistral.rs.git",
-  "https://github.com/huggingface/candle.git",
   "ssh://git@github-dev/aphrody-labs/taffy.git",
 ]

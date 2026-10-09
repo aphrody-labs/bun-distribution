@@ -113,7 +113,7 @@ that the default build never touches; the first run after a toolchain or lock ch
 - `beyond` rows are the majors. Read the consumer list in `plan`, then the release notes (Context7 or the GitHub release
   page) before attempting one.
 - Only registry dependencies are considered. Path-patched crates (`taffy`, `simdutf`, `tauri-plugin-dialog`,
-  `serde-saphyr`, see `[patch.crates-io]`) and workspace entries that no member uses have no lock entry and are skipped.
+  see `[patch.crates-io]`) and workspace entries that no member uses have no lock entry and are skipped.
 
 ## Held crates
 
@@ -124,7 +124,6 @@ Every entry is in `tools/config/deps/rust-holds.json`. Advisory-driven ones are 
 | `yara-x` | `=1.7.0` | 1.19 to 1.21 need wasmtime ^43 to ^45, which carry RUSTSEC-2026-0222/0269/0316 (fixed from 46.0.3). 1.7.0 keeps wasmtime 36.0.16. Advisory hold. |
 | `yara-x-macros`, `-parser`, `-proto` | lock `1.7.0` | Companions of `yara-x`: their `^1.7.0` range let `cargo update` move them to 1.21.0, which broke `cargo check -p aphrody-re --features yara` (build script: `ModuleOptions` has no field `rust_module`). `apply` restores the lock pin; pinning `yara-x-macros` makes Cargo re-pick the `syn`/`prettyplease` pair of `bindgen 0.73.2` (syn 2 with prettyplease 0.3, which does not compile), so the hold carries `relock: ["bindgen@0.73.2"]` (`cargo update -p bindgen@0.73.2 --recursive`). |
 | `portable-pty` | `0.8` | 0.9.0 breaks headless Windows clients (desktop PTY note). `serial` stays flagged as an unmaintained advisory because of it. |
-| `serde-saphyr` | path 0.0.16 | `mistral.rs` requires `serde-saphyr = "0.0.16"` (a `0.0.x` caret is exact); 0.0.29 needs a mistral.rs API port. The registry 1.x copy belongs to another consumer and refreshes normally. |
 | `ort` | `=2.0.0-rc.12` | `magika 1.1.0` (latest, optional in `aphrody-re`) pins `ort =2.0.0-rc.12`, so `rc.13` cannot resolve in the same graph. |
 | `fastembed` | `5.17.3` | 5.17.4 and 7.x require `ort =2.0.0-rc.13` (see `ort`). |
 | `cssparser`, `selectors` | `0.37`, `0.38` | cssparser 0.38 drops `ParserInput` and the `Parser<'i,'t>` second lifetime; selectors 0.41 removes `Impl` from `NonTSPseudoClass`/`PseudoElement` and needs cssparser 0.38. Porting `obscura-render` (`css.rs`, `style.rs`), `obscura-dom` (`selector.rs`) and the vendored `taffy` parse feature is its own task. |

@@ -1,3 +1,0 @@
-# Explictily disallow unsafe code in all project
-[build]
-rustflags = ["-Funsafe_code"]

@@ -99,5 +99,5 @@ Bun: the runtime is the fork `aphrody-labs/bun`, updated from `oven-sh/bun` insi
   Current holds: yara-x pinned `=1.7.0` (1.19-1.21 need wasmtime 43-45 whose advisories are fixed only in 46.0.3+).
 - `bunfig.toml` `minimumReleaseAge` delays new npm releases; `minimumReleaseAgeExcludes` lists the packages that follow
   the latest immediately (Tauri JS, Next and its `@next/*` binaries, nodemailer, undici). `tauri-sync` honours the list.
-- `tools/config/upstream-sources.json` `hold`: a pin that must not move and why (serde-saphyr: mistral.rs needs exactly 0.0.16).
+- `tools/config/upstream-sources.json` `hold`: a pin that must not move and why.
 - The npm collector of `inventory` retries on HTTP 429 with the `Retry-After` delay and runs 8 requests at a time.

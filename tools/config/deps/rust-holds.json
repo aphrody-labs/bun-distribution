@@ -11,10 +11,6 @@
       "reason": "stays 0.8: 0.9.0 breaks headless Windows clients (desktop PTY note); serial 0.4 unmaintained notice follows it."
     },
     {
-      "crate": "serde-saphyr",
-      "reason": "path-patched to crates/compat/serde-saphyr (0.0.16); mistral.rs requires =0.0.16 (0.0.x caret is exact), 0.0.29 needs a mistral.rs API port first."
-    },
-    {
       "crate": "ort",
       "reason": "stays =2.0.0-rc.12: magika 1.1.0 (latest, optional in aphrody-re) pins ort =2.0.0-rc.12, so rc.13 cannot resolve in the same graph."
     },

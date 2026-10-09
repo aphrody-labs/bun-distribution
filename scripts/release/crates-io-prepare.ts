@@ -10,7 +10,7 @@ import { dirname, join, relative, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dir, "../..");
 // [patch.crates-io] overlays keep upstream names and are never published.
-const SKIP = [/^crates\/compat\/serde-saphyr$/, /^crates\/native\/simdutf$/];
+const SKIP = [/^crates\/native\/simdutf$/];
 
 interface Meta {
   packages: {

@@ -8,8 +8,9 @@
 //
 //   bun scripts/tools/gen-third-party.ts [--check]
 import { Glob } from "bun";
+import { resolve } from "node:path";
 
-const ROOT = new URL("../..", import.meta.url).pathname.replace(/\/$/, "");
+const ROOT = resolve(import.meta.dir, "../..").replaceAll("\\", "/");
 const OUT = `${ROOT}/THIRD-PARTY.md`;
 
 // First-party crate license fields.

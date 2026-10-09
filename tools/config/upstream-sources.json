@@ -95,16 +95,6 @@
       "observedCommit": "14a720628f9592c8e60f7e081ef733076db8a6a9"
     },
     {
-      "id": "mistral.rs",
-      "kind": "git",
-      "url": "https://github.com/EricLBuehler/mistral.rs.git",
-      "ref": "master",
-      "tier": "reference",
-      "purpose": "mistral.rs; Cargo git dependency (mistralrs) plus native integration reference.",
-      "consumers": "Cargo.toml workspace dependency mistralrs; docs/plans/ai/native-integration-master.md",
-      "observedCommit": "3f2515e9b5adc2ac44949c128c50a13b15721294"
-    },
-    {
       "id": "terminal",
       "kind": "git",
       "url": "https://github.com/microsoft/terminal.git",
@@ -292,31 +282,6 @@
       "license": "Apache-2.0 OR MIT",
       "note": "Vendored at plugins-workspace dialog 3.0.0-alpha.3, which imports Manager upstream (patch dropped 2026-10-09).",
       "integratedPath": "crates/tauri/aphrody-tauri-plugin-dialog",
-      "upstreamPackageIdentityPreserved": true
-    },
-    {
-      "id": "serde-saphyr",
-      "kind": "crate",
-      "crate": "serde-saphyr",
-      "version": "0.0.16",
-      "upstreamUrl": "https://github.com/bourumir-wyngs/serde-saphyr",
-      "pinned": true,
-      "role": "dependency",
-      "license": "MIT OR Apache-2.0",
-      "hold": "mistral.rs requires serde-saphyr = \"0.0.16\" (0.0.x caret is exact); a 0.0.29 or 1.x bump needs a mistral.rs API port first",
-      "patches": [
-        {
-          "id": "serde-saphyr-regex-semver",
-          "file": "patches/serde-saphyr-0.0.16-regex.patch",
-          "strip": 1,
-          "marker": {
-            "file": "Cargo.toml",
-            "contains": "version = \">= 1.0, < 2.0\""
-          }
-        }
-      ],
-      "note": "Preserve the Mistral.rs YAML API while allowing SemVer-compatible regex 1.x required by OXC. The upstream test suite must pass against the workspace-selected regex version.",
-      "integratedPath": "crates/compat/serde-saphyr",
       "upstreamPackageIdentityPreserved": true
     },
     {

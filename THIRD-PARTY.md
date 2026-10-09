@@ -15,21 +15,21 @@ Full transitive dependency licenses (crates.io, npm) are produced on demand:
 
 | SPDX | Crates |
 | --- | --: |
-| `Apache-2.0 OR MIT` | 53 |
+| `Apache-2.0 OR MIT` | 30 |
 | `Apache-2.0` | 14 |
-| `MIT OR Apache-2.0` | 12 |
+| `MIT OR Apache-2.0` | 10 |
 | `MIT` | 5 |
 | `FSL-1.1-ALv2` | 2 |
-| `MIT AND Apache-2.0` | 1 |
-| `WTFPL` | 1 |
 | `Unlicense` | 1 |
+| `WTFPL` | 1 |
+| `MIT AND Apache-2.0` | 1 |
 
 ## Non-Apache first-party components
 
 These crates are deliberately not Apache-2.0 and keep their own license:
 
 - **FSL-1.1-ALv2**: `aphrody-drive`, `log-analyzer`
-- **MIT**: `aphrody-oxc-bridge`, `aphrody-tauri-plugin-mcp-bridge`, `aphrody-tauri-specta`, `aphrody-tauri-specta-macros`, `simdutf`
+- **MIT**: `aphrody-tauri-plugin-mcp-bridge`, `aphrody-tauri-specta`, `aphrody-tauri-specta-macros`, `simdutf`, `taffy`
 - **Unlicense**: `whisper-rs-sys`
 - **WTFPL**: `ffmpeg-sys-next`
 
@@ -46,11 +46,12 @@ Vendored under their capability owner with provenance in
 | Component | Upstream | Version | License | Path |
 | --- | --- | --- | --- | --- |
 | tauri-plugin-mcp-bridge | https://github.com/hypothesi/mcp-server-tauri | 0.13.0 | MIT | `crates/ui/tauri-plugin-mcp-bridge` |
+| rfb-encodings | https://github.com/dustinmcafee/rfb-encodings | 0.1.7 | Apache-2.0 | `crates/compat/rfb-encodings` |
 | simdutf-rio | https://github.com/Nugine/simdutf-rs | 0.7.0 | MIT | `crates/native/simdutf` |
-| tauri-plugin-dialog | https://github.com/tauri-apps/plugins-workspace | 3.0.0-alpha.2 | Apache-2.0 OR MIT | `crates/tauri/aphrody-tauri-plugin-dialog` |
-| serde-saphyr | https://github.com/bourumir-wyngs/serde-saphyr | 0.0.16 | MIT OR Apache-2.0 | `crates/compat/serde-saphyr` |
+| tauri-plugin-dialog | https://github.com/tauri-apps/plugins-workspace | 3.0.0-alpha.3 | Apache-2.0 OR MIT | `crates/tauri/aphrody-tauri-plugin-dialog` |
 | koharu-ml-base | https://github.com/koharu-rs/koharu | 0.83.5 | MIT OR Apache-2.0 | `crates/ml/llama` |
 | obscura | https://github.com/h4ckf0r0day/obscura | 0.1.0 | Apache-2.0 | `crates/web/obscura` |
+| taffy-aphrody-fork | https://github.com/DioxusLabs/taffy | 0.12.1 | MIT | `crates/ui/taffy` |
 
 ## Upstream reference sources
 
@@ -59,18 +60,19 @@ Build-recipe inputs tracked for provenance (not vendored source):
 | Source | URL | Ref | Used by |
 | --- | --- | --- | --- |
 | mcp-server-tauri | https://github.com/hypothesi/mcp-server-tauri | main | Cargo.toml tauri-plugin-mcp-bridge; tools/config/tauri-upstream.json |
-| tauri | https://github.com/tauri-apps/tauri | v3 | tools/config/tauri-upstream.json debuggers; docs/guides/web/TAURI-DEBUG.md |
+| tauri | https://github.com/tauri-apps/tauri | v3 | tools/config/tauri-upstream.json patches (tauri-runtime-cef-glib-work-source) an |
 | tauri-plugin-webdriver | https://github.com/Choochmeque/tauri-plugin-webdriver | main | tools/config/tauri-upstream.json debuggers |
 | victauri | https://github.com/4DA-Systems/Victauri | main | tools/config/tauri-upstream.json debuggers; aphrody-mcp Tauri tools design |
-| WSL | https://github.com/microsoft/WSL.git | master | tools/config/os/wsl-build.json; crates/os/aphrody-wsl |
-| WSL2-Linux-Kernel | https://github.com/microsoft/WSL2-Linux-Kernel.git | linux-msft-wsl-6.18.y | tools/config/os/wsl-build.json; crates/os/aphrody-wsl |
-| linux-stable | https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git | v7.2.9 | tools/config/os/wsl-build.json; crates/os/aphrody-wsl |
-| jan | https://github.com/janhq/jan.git | 14a720628f9592c8e60f7e081ef733076db8a6a9 | m3/packages/app-ui/src/models-hub-state.ts; tools/config/jan-absorption.json; docs/mig |
-| mistral.rs | https://github.com/EricLBuehler/mistral.rs.git | master | Cargo.toml workspace dependency mistralrs; docs/plans/ai/native-integration-mast |
+| WSL | https://github.com/microsoft/WSL.git | master | tools/config/os/wsl-build.json; crates/infra/aphrody-command/src/wsl |
+| WSL2-Linux-Kernel | https://github.com/microsoft/WSL2-Linux-Kernel.git | linux-msft-wsl-6.18.y | tools/config/os/wsl-build.json; crates/infra/aphrody-command/src/wsl |
+| linux-stable | https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git | v7.2.9 | tools/config/os/wsl-build.json; crates/infra/aphrody-command/src/wsl |
+| jan | https://github.com/janhq/jan.git | 14a720628f9592c8e60f7e081ef733076db8a6a9 | m3/packages/app-ui/src/models-hub-state.ts; tools/config/jan-absorption.json; do |
 | terminal | https://github.com/microsoft/terminal.git | main | tools/config/os/wsl-build.json |
 | wslg | https://github.com/microsoft/wslg.git | main | tools/config/os/wsl-build.json; scripts/build/os/build-wslg.py |
 | vu-uv | https://github.com/astral-sh/uv | 0.12.23 | docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json |
 | vu-ruff | https://github.com/astral-sh/ruff | 0.16.10 | docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json |
 | vu-pyo3 | https://github.com/PyO3/pyo3 | v0.29.3 | docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json |
 | vu-python-build-standalone | https://github.com/astral-sh/python-build-standalone | 20261003 | docs/plans/vu/PLAN.md; docs/plans/vu/scaffold/vendor.json |
+| bun | https://github.com/oven-sh/bun | main | docs/reference/upstream-bun; packages/infra/update; aphrody yolo verify (Bun sou |
+| codex | https://github.com/openai/codex | main | crates/ai/app-server; crates/contracts/app-protocol; crates/ai/config; crates/ai |
 

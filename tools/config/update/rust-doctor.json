@@ -13,15 +13,7 @@
   ],
   "features": {
     "skip": [
-      { "feature": "taffy/*", "reason": "vendored manifest: the workspace consumes the default feature set only" },
-      { "feature": "aphrody-engine-mistralrs/cuda", "reason": "needs the CUDA toolkit at build time" },
-      { "feature": "aphrody-engine-mistralrs/cudnn", "reason": "needs the CUDA toolkit at build time" },
-      { "feature": "aphrody-engine-mistralrs/cutile", "reason": "needs the CUDA toolkit at build time" },
-      { "feature": "aphrody-engine-mistralrs/flash-attn", "reason": "needs the CUDA toolkit at build time" },
-      { "feature": "aphrody-engine-mistralrs/nccl", "reason": "needs the CUDA toolkit at build time" },
-      { "feature": "aphrody-engine-mistralrs/metal", "reason": "Apple Metal: macOS hosts only" },
-      { "feature": "aphrody-engine-mistralrs/accelerate", "reason": "Apple Accelerate: macOS hosts only" },
-      { "feature": "aphrody-engine-mistralrs/mkl", "reason": "needs Intel MKL at build time" }
+      { "feature": "taffy/*", "reason": "vendored manifest: the workspace consumes the default feature set only" }
     ]
   },
   "targets": [
