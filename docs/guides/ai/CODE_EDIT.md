@@ -50,7 +50,7 @@ exécuter les gates du propriétaire et Oxfmt sur les fichiers modifiés.
 
 ## Renommage et restauration par YOLO
 
-Le moteur natif de `~/yolo` possède le renommage de contenu et de chemins.
+Le moteur natif `packages/engine/yolo` possède le renommage de contenu et de chemins.
 Workspace lui délègue ces opérations sans dupliquer son implémentation.
 `--yolo-root` ou `APHRODY_YOLO_ROOT` permet de sélectionner un autre checkout.
 

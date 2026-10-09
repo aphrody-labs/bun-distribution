@@ -46,7 +46,7 @@ template for a resident loopback CDP engine on `127.0.0.1:9222` (clients attach 
 `systemd-analyze verify` only; it is not installed or started by this repository. To install it:
 
 ```bash
-bun ~/yolo/packages/core/src/units/cli.ts render --out ~/.config/systemd/user aphrody-web.service
+bun ~/src/aphrody/packages/engine/core/src/units/cli.ts render --out ~/.config/systemd/user aphrody-web.service
 systemctl --user daemon-reload
 systemctl --user enable --now aphrody-web.service
 ```
