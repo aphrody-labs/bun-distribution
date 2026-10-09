@@ -27,6 +27,9 @@ pub mod design;
 /// Le logo (`assets/logo/aphrody.webp`, copie sans perte de `assets/logo/source/byron_r0.png`) et
 /// toutes ses déclinaisons : `.ico`, PNG, maskable, SVG vectoriel, wordmark, manifeste, CSS, jetons M3.
 pub mod logo;
+/// Chargeur d'images et d'icônes : PNG, JPEG, WebP, GIF, SVG, ICO et glyphes Material Symbols,
+/// une seule entrée `load(source, &Request)`, cache par empreinte du contenu.
+pub mod loader;
 /// Le contrat « pet » de Codex : manifeste, pistes minutées, états. Dérivé d'`openai/codex`
 /// (Apache-2.0) — voir `NOTICE`.
 pub mod pets;

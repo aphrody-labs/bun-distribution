@@ -400,13 +400,41 @@ pub fn letsencrypt_stand_ins(fixtures: &[TlsFixture]) -> Result<Vec<(String, Str
     Ok(files)
 }
 
-/// Tar stream unpacked at `/` of the check container: the server file as
-/// `etc/nginx/conf.d/<name>` and the stand-ins under `etc/letsencrypt/` (directories first).
-fn check_archive(
-    name: &str,
-    conf: &str,
-    stand_ins: &[(String, String)],
-) -> std::io::Result<Vec<u8>> {
+/// `include` targets of `conf` below `/etc/nginx` (relative, or absolute under `/etc/nginx/`),
+/// ignoring comments, globs, variables and paths that climb out.
+#[must_use]
+pub fn nginx_includes(conf: &str) -> Vec<String> {
+    let mut includes = Vec::new();
+    for line in conf.lines() {
+        let line = line.split('#').next().unwrap_or_default();
+        for statement in line.split(';') {
+            let mut words = statement.split_whitespace();
+            let (Some("include"), Some(value), None) = (words.next(), words.next(), words.next())
+            else {
+                continue;
+            };
+            let value = value.trim_matches(['"', '\'']);
+            let relative = match value.strip_prefix("/etc/nginx/") {
+                Some(relative) => relative,
+                None if value.starts_with('/') => continue,
+                None => value,
+            };
+            if relative.contains(['*', '?', '[', '$'])
+                || relative.split('/').any(|part| part.is_empty() || part == "." || part == "..")
+            {
+                continue;
+            }
+            if !includes.iter().any(|known| known == relative) {
+                includes.push(relative.to_owned());
+            }
+        }
+    }
+    includes
+}
+
+/// Tar stream unpacked at `/` of the check container from `(path below /, content, mode)`;
+/// directory entries come first for every new ancestor (depth 2 or more, `etc/nginx` excluded).
+fn check_archive(files: &[(String, Vec<u8>, u32)]) -> std::io::Result<Vec<u8>> {
     let mut archive = tar::Builder::new(Vec::new());
     let mut entry = |path: &str, mode: u32, content: Option<&[u8]>| {
         let mut header = tar::Header::new_ustar();
@@ -422,41 +450,74 @@ fn check_archive(
         archive.append_data(&mut header, path, content.unwrap_or_default())
     };
     let mut directories = std::collections::BTreeSet::new();
-    for (relative, _) in stand_ins {
-        let mut prefix = String::from("etc/letsencrypt");
-        directories.insert(prefix.clone());
-        for part in relative.split('/').rev().skip(1).collect::<Vec<_>>().into_iter().rev() {
-            prefix = format!("{prefix}/{part}");
-            directories.insert(prefix.clone());
+    for (path, _, _) in files {
+        let parts: Vec<&str> = path.split('/').collect();
+        for depth in 2..parts.len() {
+            let directory = parts[..depth].join("/");
+            if directory != "etc/nginx" {
+                directories.insert(directory);
+            }
         }
     }
     for directory in &directories {
         entry(directory, 0o755, None)?;
     }
-    entry(&format!("etc/nginx/conf.d/{name}"), 0o644, Some(conf.as_bytes()))?;
-    for (relative, content) in stand_ins {
-        entry(&format!("etc/letsencrypt/{relative}"), 0o600, Some(content.as_bytes()))?;
+    for (path, content, mode) in files {
+        entry(path, *mode, Some(content))?;
     }
     archive.into_inner()
 }
 
-/// Checks a server file (`http`-context content, as installed in `conf.d`) with `nginx -t`
-/// in a disposable `image` container, on any host with Docker and without a local nginx.
-/// Nothing is bind-mounted (no Docker file sharing needed): the file and the
-/// [`letsencrypt_stand_ins`] it needs reach the container as a tar stream on stdin.
-/// Returns the nginx report.
-pub fn test_in_container(candidate: &Path, image: &str) -> Result<String, String> {
-    use std::io::Write as _;
-    let conf = std::fs::read_to_string(candidate)
-        .map_err(|error| format!("{}: {error}", candidate.display()))?;
+/// Files of a check: the server file as `etc/nginx/conf.d/<name>.conf`, the includes found in
+/// `nginx_root` (the repository mirror of `/etc/nginx`, followed recursively) as
+/// `etc/nginx/<include>`, and the [`letsencrypt_stand_ins`] all of them need.
+fn check_files(
+    candidate: &Path,
+    nginx_root: Option<&Path>,
+) -> Result<Vec<(String, Vec<u8>, u32)>, String> {
+    let read = |path: &Path| {
+        std::fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))
+    };
+    let conf = read(candidate)?;
     let name = candidate
         .file_name()
         .map(|name| name.to_string_lossy().into_owned())
         .ok_or_else(|| format!("{}: pas un fichier", candidate.display()))?;
     let name = if name.ends_with(".conf") { name } else { format!("{name}.conf") };
-    let stand_ins = letsencrypt_stand_ins(&letsencrypt_fixtures(&conf))?;
-    let archive =
-        check_archive(&name, &conf, &stand_ins).map_err(|error| format!("archive : {error}"))?;
+    let mut fixtures = letsencrypt_fixtures(&conf);
+    let mut pending = nginx_includes(&conf);
+    let mut files = vec![(format!("etc/nginx/conf.d/{name}"), conf.into_bytes(), 0o644)];
+    let mut seen = std::collections::BTreeSet::new();
+    while let Some(relative) = pending.pop() {
+        let Some(path) = nginx_root.map(|root| root.join(&relative)) else { continue };
+        if !seen.insert(relative.clone()) || !path.is_file() {
+            continue;
+        }
+        let text = read(&path)?;
+        pending.extend(nginx_includes(&text));
+        for fixture in letsencrypt_fixtures(&text) {
+            if !fixtures.contains(&fixture) {
+                fixtures.push(fixture);
+            }
+        }
+        files.push((format!("etc/nginx/{relative}"), text.into_bytes(), 0o644));
+    }
+    for (relative, content) in letsencrypt_stand_ins(&fixtures)? {
+        files.push((format!("etc/letsencrypt/{relative}"), content.into_bytes(), 0o600));
+    }
+    Ok(files)
+}
+
+/// Checks a server file (`http`-context content, as installed in `conf.d`) with `nginx -t`
+/// in a disposable `image` container, on any host with Docker and without a local nginx.
+/// Nothing is bind-mounted (no Docker file sharing needed): the file, its includes found in
+/// the parent of its directory (the repository mirror of `/etc/nginx`, e.g.
+/// `tools/config/host/nginx/snippets/`) and the [`letsencrypt_stand_ins`] reach the container
+/// as a tar stream on stdin. Returns the nginx report.
+pub fn test_in_container(candidate: &Path, image: &str) -> Result<String, String> {
+    use std::io::Write as _;
+    let files = check_files(candidate, candidate.parent().and_then(Path::parent))?;
+    let archive = check_archive(&files).map_err(|error| format!("archive : {error}"))?;
     let mut child = std::process::Command::new("docker")
         .no_window()
         .args(["run", "--rm", "-i", "--entrypoint", "sh", image])
@@ -575,28 +636,55 @@ mod tests {
         assert_eq!(der.len(), 268);
         assert_eq!(&der[der.len() - 3..], [0x02, 0x01, 0x02]);
 
-        let archive = check_archive("apex.conf", conf, &stand_ins).unwrap();
+    }
+
+    #[test]
+    fn check_archive_ships_the_file_its_includes_and_stand_ins() {
+        let root = tempfile::tempdir().unwrap();
+        let write = |relative: &str, text: &str| {
+            let path = root.path().join(relative);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(path, text).unwrap();
+        };
+        write(
+            "aphrody/site",
+            "server {\n  include snippets/a.inc;\n  include /etc/nginx/mime.types;\n  include /etc/nginx/snippets/*.inc;\n}\n",
+        );
+        write(
+            "snippets/a.inc",
+            "include snippets/b.inc;\nssl_certificate /etc/letsencrypt/live/x.org/fullchain.pem;\n",
+        );
+        write("snippets/b.inc", "proxy_set_header Host $host;\n");
+        let candidate = root.path().join("aphrody/site");
+        let files = check_files(&candidate, candidate.parent().and_then(Path::parent)).unwrap();
+        let archive = check_archive(&files).unwrap();
         let mut entries = tar::Archive::new(archive.as_slice());
-        let listed: Vec<(String, bool)> = entries
+        let listed: Vec<(String, bool, u32)> = entries
             .entries()
             .unwrap()
             .map(|entry| {
                 let entry = entry.unwrap();
                 let path = entry.path().unwrap().to_string_lossy().into_owned();
-                (path.trim_end_matches('/').to_owned(), entry.header().entry_type().is_dir())
+                let header = entry.header();
+                (
+                    path.trim_end_matches('/').to_owned(),
+                    header.entry_type().is_dir(),
+                    header.mode().unwrap(),
+                )
             })
             .collect();
         assert_eq!(
             listed,
             [
-                ("etc/letsencrypt".to_owned(), true),
-                ("etc/letsencrypt/live".to_owned(), true),
-                ("etc/letsencrypt/live/aphrody.com".to_owned(), true),
-                ("etc/nginx/conf.d/apex.conf".to_owned(), false),
-                ("etc/letsencrypt/live/aphrody.com/fullchain.pem".to_owned(), false),
-                ("etc/letsencrypt/live/aphrody.com/privkey.pem".to_owned(), false),
-                ("etc/letsencrypt/ssl-dhparams.pem".to_owned(), false),
-                ("etc/letsencrypt/options-ssl-nginx.conf".to_owned(), false),
+                ("etc/letsencrypt".to_owned(), true, 0o755),
+                ("etc/letsencrypt/live".to_owned(), true, 0o755),
+                ("etc/letsencrypt/live/x.org".to_owned(), true, 0o755),
+                ("etc/nginx/conf.d".to_owned(), true, 0o755),
+                ("etc/nginx/snippets".to_owned(), true, 0o755),
+                ("etc/nginx/conf.d/site.conf".to_owned(), false, 0o644),
+                ("etc/nginx/snippets/a.inc".to_owned(), false, 0o644),
+                ("etc/nginx/snippets/b.inc".to_owned(), false, 0o644),
+                ("etc/letsencrypt/live/x.org/fullchain.pem".to_owned(), false, 0o600),
             ]
         );
     }

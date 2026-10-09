@@ -24,10 +24,12 @@ png        = { workspace = true }
 
 # "image -> SVG -> raster" chain (module `pixel`); choices and rejections in docs/toolchain-image-2026.md
 # (`dssim` rejected as AGPL, `vtracer` because it would pull a second `image`).
-image         = { workspace = true, features = ["png", "jpeg", "webp"] }
+image         = { workspace = true, features = ["png", "jpeg", "webp", "gif"] }
 image-compare = { workspace = true }
 palette       = { workspace = true, features = ["std"] }
-aphrody-svg   = { workspace = true, features = ["raster", "glyph"] }
+aphrody-svg   = { workspace = true, features = ["raster", "glyph", "symbols"] }
+# Module `loader`: HTTPS download of cdn.aphrody.com sources (feature `net`).
+ureq          = { workspace = true, optional = true }
 
 # Module `logo`: M3 seed and light/dark schemes from the measured palette (`aphrody-m3-tokens`, JSON
 # export through `serde`), data-URI (`base64`), `LogoError` (`thiserror`); `ico` reads back the
@@ -46,6 +48,8 @@ toml = { workspace = true }
 # and `Pet::from_png` are enough; everything else works in memory.
 default = ["fs"]
 fs = []
+# `net`: `loader::fetch_https`, the default downloader of `Loader::from_env`.
+net = ["fs", "dep:ureq"]
 
 # Option A of the web pet runtime (the crate clock in wasm32 behind a C ABI), kept to measure it
 # against the TypeScript port: m3/packages/identity/scripts/measure.ts --wasm.

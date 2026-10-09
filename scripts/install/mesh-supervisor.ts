@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Common lifecycle owner for the existing Compose project and native host adapters.
+// oxlint-disable no-await-in-loop -- one ordered lifecycle loop; adapters are restarted before the next health receipt
+// oxlint-disable no-unmodified-loop-condition -- signal handlers set the shutdown flag
 import {
   closeSync,
   existsSync,

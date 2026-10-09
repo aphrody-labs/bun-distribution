@@ -175,7 +175,7 @@ impl Image {
         Ok(Self { largeur, hauteur, rgba })
     }
 
-    /// Décode une image en mémoire (PNG, JPEG, WebP) et la ramène en RGBA8.
+    /// Décode une image en mémoire (PNG, JPEG, WebP, GIF : première image) et la ramène en RGBA8.
     ///
     /// C'est **le** point d'entrée portable : un navigateur ou un mobile n'a pas de système de
     /// fichiers à offrir, mais toujours des octets. [`Image::charger`] n'en est que la variante
