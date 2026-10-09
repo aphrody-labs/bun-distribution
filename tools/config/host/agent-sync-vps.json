@@ -2,7 +2,7 @@
   "version": 1,
   "root": "/srv/aphrody-lab",
   "aphrody": "/home/ubuntu/.local/bin/aphrody",
-  "google": "/srv/aphrody-lab/google-owner.mjs",
+  "yolo": "/srv/aphrody-lab/google-owner.mjs",
   "receiptRoot": "/home/ubuntu/.aphrody/automation/drive-vps",
   "drive": {
     "home": "/home/ubuntu/.aphrody/workspaces/dbfr",
