@@ -132,3 +132,22 @@ weight verification remains tied to the independently recorded registry LFS
 SHA-256. The weight transfer was observed at 4,007,993,344 bytes and active in
 its existing tmux session. Neither partial weights nor interface health count
 as live inference qualification.
+
+## Live CUDA and verified depot result, 2026-10-09
+
+The pinned vLLM image download completed on Omar. The actual probe container
+executed CUDA torch.arange/dot and returned the exact expected 5,559,680 value
+on its RTX 4060. Reported free VRAM was 7,405,043,712 bytes and total VRAM
+8,585,216,000 bytes. This qualifies CUDA arithmetic in the selected image,
+not model loading or generation. The probe container was removed after exit.
+
+VPS completed the 10,246,621,918-byte weight download. Its independent registry
+LFS SHA-256 check returned OK before the partial file was renamed to
+model.safetensors. Tokenizer/configuration/notices also reside in that private
+depot. A direct VPS SSH connection to Omar was tested and rejected for lack of
+an authorized key; no credential was copied. Delivery to Omar must use the
+existing owner SSH transport or a scoped authenticated private artifact service.
+
+The isolated anonymous Docker configuration omits the Compose plugin discovery
+path. After the image is locally cached, normal Docker Compose with `--pull
+never` runs the qualified probe without touching provider credentials.
