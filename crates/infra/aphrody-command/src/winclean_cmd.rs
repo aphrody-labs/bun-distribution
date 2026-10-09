@@ -22,6 +22,20 @@ use serde_json::{Map, Value};
 
 #[derive(Subcommand, Debug, Clone)]
 pub(crate) enum WincleanAction {
+    /// Discover Chrome binaries, PIDs, HWNDs, profiles and native messaging paths.
+    BrowserMap {
+        #[arg(long)]
+        binary: Option<PathBuf>,
+        #[arg(long)]
+        user_data: Option<PathBuf>,
+    },
+    /// Prepare an isolated Aphrody Chrome profile and qualify its loopback CDP endpoint.
+    BrowserSetup {
+        #[arg(long)]
+        binary: Option<PathBuf>,
+        #[arg(long)]
+        user_data: Option<PathBuf>,
+    },
     /// Show backend initialisation, the linked version and catalog drift.
     Doctor {
         /// Emit JSON.
@@ -83,6 +97,17 @@ pub(crate) enum WincleanAction {
 
 pub(crate) async fn run(action: WincleanAction) -> miette::Result<()> {
     match action {
+        WincleanAction::BrowserMap { binary, user_data } => {
+            let map = aphrody_winclean::browser::discover(binary, user_data).into_diagnostic()?;
+            println!("{}", serde_json::to_string_pretty(&map).into_diagnostic()?);
+            Ok(())
+        },
+        WincleanAction::BrowserSetup { binary, user_data } => {
+            let map = aphrody_winclean::browser::discover(binary, user_data).into_diagnostic()?;
+            let result = aphrody_winclean::browser::setup(&map).into_diagnostic()?;
+            println!("{}", serde_json::to_string_pretty(&result).into_diagnostic()?);
+            Ok(())
+        },
         WincleanAction::Doctor { json } => doctor(json),
         WincleanAction::Tools { filter, live, json } => tools(filter.as_deref(), live, json),
         WincleanAction::Schema { tool } => {

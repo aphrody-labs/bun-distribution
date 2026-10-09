@@ -4,6 +4,7 @@
 //! Generated typed methods call the in-process Rust dispatcher. There is no
 //! managed runtime or external DLL bridge here.
 
+pub mod browser;
 mod clipboard;
 mod coordination;
 mod defender;
