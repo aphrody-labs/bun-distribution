@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * transforms/icons.ts — codemod DÉDIÉ aux icônes : @mui/icons-material -> md-icon.
  *
@@ -20,151 +21,112 @@
  * un TODO si non triviales (fontSize -> --md-icon-size, color -> currentColor).
  *
  * Usage :
- *   bunx jscodeshift -t transforms/icons.ts --parser=tsx --extensions=tsx 'src/**\/*.tsx'
+ *   bun scripts/codemod.ts icons 'src/**\/*.tsx'
  * (à lancer APRÈS l'orchestrateur, ou seul pour ne migrer que les icônes.)
  */
-import type { API, ASTPath, FileInfo, Options } from "jscodeshift";
+import { assertTsx, Edits } from "../lib/edits";
+import type { FileInfo, Options } from "../lib/engine";
 import { resolveMuiIcon } from "../lib/icon-names";
-import { addMigrationTodo, flushMigrationTodos } from "../lib/jsx-helpers";
+import {
+  filterSpecifiers,
+  insertImports,
+  MD_ICON_IMPORT,
+  MD_ICON_SIDE_EFFECT,
+} from "../lib/imports";
+import { JsxChildren, jsxName, MigrationTodos } from "../lib/jsx-helpers";
+import { scanTsx, type ImportDecl } from "../lib/tsx-scan";
 
 const MUI_ICONS_PKG = "@mui/icons-material";
-const MD_ICON_SIDE_EFFECT = "@aphrody/material-web/icon/icon.js";
 
 export const parser = "tsx";
 
-export default function transformer(file: FileInfo, api: API, _options: Options): string {
-  const j = api.jscodeshift;
-  const root = j(file.source);
+export default function transformer(file: FileInfo, _api?: unknown, _options?: Options): string {
+  const src = file.source;
+  assertTsx(src, file.path ?? "source");
+  const scan = scanTsx(src);
 
   // 1) Collecte : localName JSX -> nom d'icône MUI canonique.
   const bindings = new Map<string, string>();
-  const importPathsToDrop: ASTPath<any>[] = [];
+  const importsToClean: ImportDecl[] = [];
 
-  root.find(j.ImportDeclaration).forEach((p) => {
-    const src = p.node.source.value;
-    if (typeof src !== "string") return;
-    if (src === MUI_ICONS_PKG) {
+  for (const decl of scan.imports) {
+    if (decl.source === MUI_ICONS_PKG) {
       // import { Close, Delete as Trash } from '@mui/icons-material'
-      for (const spec of p.node.specifiers || []) {
-        if (spec.type === "ImportSpecifier") {
-          const imported = String((spec.imported as any).name);
-          const local = String(spec.local?.name || imported);
-          bindings.set(local, imported);
-        }
+      for (const spec of decl.specifiers) {
+        if (spec.kind === "named") bindings.set(spec.local, spec.imported);
       }
-      importPathsToDrop.push(p);
-    } else if (src.startsWith(MUI_ICONS_PKG + "/")) {
+      importsToClean.push(decl);
+    } else if (decl.source.startsWith(MUI_ICONS_PKG + "/")) {
       // import CloseIcon from '@mui/icons-material/Close'
-      const iconName = src.slice(MUI_ICONS_PKG.length + 1).split("/")[0];
-      for (const spec of p.node.specifiers || []) {
-        if (spec.type === "ImportDefaultSpecifier" && spec.local?.name) {
-          bindings.set(String(spec.local.name), iconName);
-        }
+      const iconName = decl.source.slice(MUI_ICONS_PKG.length + 1).split("/")[0]!;
+      for (const spec of decl.specifiers) {
+        if (spec.kind === "default") bindings.set(spec.local, iconName);
       }
-      importPathsToDrop.push(p);
+      importsToClean.push(decl);
     }
-  });
+  }
 
-  if (bindings.size === 0) return file.source;
+  if (bindings.size === 0) return src;
+
+  const edits = new Edits(src);
+  const todos = new MigrationTodos();
 
   // 2) Réécriture des usages JSX.
   let needSideEffect = false;
   const usedLocals = new Set<string>();
   const keptLocals = new Set<string>(); // brand/unknown -> on garde l'import
 
-  root.find(j.JSXElement).forEach((path: ASTPath<any>) => {
-    const open = path.node.openingElement;
-    if (open.name.type !== "JSXIdentifier") return;
-    const local = open.name.name;
+  for (const node of scan.nodes) {
+    const local = jsxName(node);
+    if (!local) continue;
     const muiName = bindings.get(local);
-    if (!muiName) return;
+    if (!muiName) continue;
 
     usedLocals.add(local);
     const res = resolveMuiIcon(muiName);
 
     if (res.kind === "symbol" && res.glyph) {
-      // <md-icon>glyph</md-icon>
-      const hadProps = (open.attributes || []).some(
-        (a: any) => a.type === "JSXAttribute" || a.type === "JSXSpreadAttribute",
-      );
-      const el = path.node;
-      el.openingElement.name = j.jsxIdentifier("md-icon");
-      el.openingElement.attributes = [];
-      el.openingElement.selfClosing = false;
-      el.closingElement = j.jsxClosingElement(j.jsxIdentifier("md-icon"));
-      el.children = [j.jsxText(res.glyph)];
+      // <md-icon>glyph</md-icon> : l'élément entier est remplacé (attributs et enfants compris).
+      edits.replace(node.start, node.end, `<md-icon>${res.glyph}</md-icon>`);
       needSideEffect = true;
-      if (hadProps) {
-        addMigrationTodo(
-          j,
-          path,
+      if (node.attrs.length > 0) {
+        todos.add(
+          node,
           `icone ${muiName}: props MUI (fontSize/color/sx) retirees -> piloter via --md-icon-size / --md-icon-fill / currentColor.`,
         );
       }
     } else if (res.kind === "brand") {
       keptLocals.add(local);
-      addMigrationTodo(
-        j,
-        path,
+      todos.add(
+        node,
         `icone ${muiName}: logo de marque absent de Material Symbols -> garder en SVG (set de marque dedie). Slug suggere: ${res.guess}.`,
       );
     } else {
       keptLocals.add(local);
-      addMigrationTodo(
-        j,
-        path,
+      todos.add(
+        node,
         `icone ${muiName}: nom Material Symbols non valide (devine: "${res.guess}") -> verifier sur fonts.google.com/icons puis <md-icon>nom</md-icon>.`,
       );
     }
-  });
+  }
 
-  flushMigrationTodos(j, root);
+  const children = new JsxChildren();
+  todos.flush(edits, children);
+  children.flush(edits);
 
   // 3) Nettoyage des imports : retirer les specifiers d'icônes effectivement
-  //    converties (symbol) ; conserver ceux gardés (brand/unknown).
-  for (const p of importPathsToDrop) {
-    const decl = p.node;
-    decl.specifiers = (decl.specifiers || []).filter((spec: any) => {
-      const local =
-        spec.type === "ImportSpecifier"
-          ? String(spec.local?.name || (spec.imported as any).name)
-          : String(spec.local?.name || "");
-      // garde si non utilisé (laisse tel quel) OU gardé (brand/unknown)
-      if (!usedLocals.has(local)) return true;
-      return keptLocals.has(local);
-    });
-    if ((decl.specifiers || []).length === 0) j(p).remove();
+  //    converties (symbol) ; conserver ceux gardés (brand/unknown) ou inutilisés.
+  for (const decl of importsToClean) {
+    filterSpecifiers(
+      edits,
+      decl,
+      (spec) => !usedLocals.has(spec.local) || keptLocals.has(spec.local),
+    );
   }
 
   // 4) Import d'effet de bord md-icon (après le prologue de directives).
-  if (needSideEffect) {
-    const body = root.get().node.program.body;
-    const alreadyImported = root
-      .find(j.ImportDeclaration)
-      .some((p: ASTPath<any>) => p.node.source.value === MD_ICON_SIDE_EFFECT);
-    if (!alreadyImported) {
-      let insertAt = 0;
-      while (insertAt < body.length) {
-        const st = body[insertAt];
-        const isDirective =
-          st?.type === "ExpressionStatement" &&
-          (st.expression?.type === "StringLiteral" ||
-            (st.expression?.type === "Literal" && typeof st.expression.value === "string"));
-        if (!isDirective) break;
-        insertAt++;
-      }
-      const sideEffect = j.importDeclaration([], j.stringLiteral(MD_ICON_SIDE_EFFECT));
-      sideEffect.comments = [
-        j.commentLine(
-          " oxlint-disable-next-line import/no-unassigned-import -- Registers md-icon used by the migrated JSX.",
-          true,
-          false,
-        ),
-      ];
-      body.splice(insertAt, 0, sideEffect);
-    }
-  }
+  const alreadyImported = scan.imports.some((d) => d.source === MD_ICON_SIDE_EFFECT);
+  if (needSideEffect && !alreadyImported) insertImports(edits, scan, [MD_ICON_IMPORT]);
 
-  const out = root.toSource({ quote: "single" });
-  return out.replace(/^(\s*(['"])use (?:client|strict)\2);;/gm, "$1;");
+  return edits.render();
 }

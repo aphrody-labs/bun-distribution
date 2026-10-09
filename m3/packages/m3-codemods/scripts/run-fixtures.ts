@@ -1,97 +1,42 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * scripts/run-fixtures.ts — test rapide des transforms sur les fixtures.
  *
- * Pour chaque `<name>.input.tsx` de `__testfixtures__/`, applique l'orchestrateur
- * et compare au `<name>.output.tsx` attendu. Sortie non-zero si un écart.
+ * Pour chaque `<name>.input.tsx` de `__testfixtures__/`, applique son transform (en
+ * mémoire, sans sous-processus hors oxfmt) et compare au `<name>.output.tsx` attendu.
+ * Sortie non-zero si un écart.
  *
- * Lancer : `bun run scripts/run-fixtures.ts`  (depuis `migration/codemods/`)
+ * Lancer : `bun run scripts/run-fixtures.ts`
  * Régénérer les attendus : `bun run scripts/run-fixtures.ts --update`
  */
-import { copyFileSync, readFileSync, writeFileSync, mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { readFileSync, writeFileSync } from "node:fs";
+import { fixtureCases, format, runCase } from "./fixtures";
 
-// CommonJS (package.json type=commonjs) : __dirname est défini. Évite
-// import.meta.url qui imposerait un module ESM au typecheck.
-const ROOT = join(__dirname, "..");
-const FIXTURES = join(ROOT, "__testfixtures__");
-const transformPath = (t: string) => join(ROOT, "transforms", `${t}.ts`);
 const update = process.argv.includes("--update");
 
-// Chaque fixture est associée à son transform (défaut : orchestrateur). Les
-// icônes ont un transform dédié (icons.ts) car hors périmètre de l'orchestrateur.
-const cases: { name: string; transform: string }[] = [
-  { name: "button", transform: "orchestrator" },
-  { name: "textfield", transform: "orchestrator" },
-  { name: "checkbox", transform: "orchestrator" },
-  { name: "dialog", transform: "orchestrator" },
-  { name: "icons", transform: "icons" },
-];
-
-function runTransform(inputPath: string, transform: string): string {
-  const tmp = mkdtempSync(join(tmpdir(), "m3cm-"));
-  const work = join(tmp, "f.tsx");
-  copyFileSync(inputPath, work);
-  const run = Bun.spawnSync(
-    [
-      "bunx",
-      "jscodeshift",
-      "-t",
-      transformPath(transform),
-      "--parser=tsx",
-      "--extensions=tsx",
-      work,
-    ],
-    { cwd: ROOT, stdio: ["ignore", "ignore", "ignore"] },
-  );
-  if (!run.success) throw new Error(`jscodeshift failed (exit ${run.exitCode}) on ${inputPath}`);
-  return readFileSync(work, "utf8");
-}
-
-/**
- * Normalise un source TSX via oxfmt (style canonique du dépôt : tabs/quotes,
- * wrapping). Rend la comparaison fixtures stable face au hook PostToolUse
- * (oxfmt) qui reformaterait sinon les `.output.tsx` versionnés à chaque édition.
- * Les deux côtés (`actual` brut recast + `expected` versionné) passent par oxfmt
- * avant comparaison → on teste la sémantique du codemod, pas le style d'impression.
- */
-function format(source: string): string {
-  const run = Bun.spawnSync(["oxfmt", "--stdin-filepath=f.tsx"], {
-    cwd: ROOT,
-    stdin: new TextEncoder().encode(source),
-    stdout: "pipe",
-    stderr: "inherit",
-  });
-  if (!run.success) throw new Error(`oxfmt failed (exit ${run.exitCode})`);
-  return run.stdout.toString();
-}
-
 let failures = 0;
-for (const { name, transform } of cases) {
-  const input = join(FIXTURES, `${name}.input.tsx`);
-  const expectedPath = join(FIXTURES, `${name}.output.tsx`);
-  const actual = format(runTransform(input, transform));
+for (const c of fixtureCases()) {
+  const actual = format(runCase(c));
   if (update) {
-    writeFileSync(expectedPath, actual);
-    console.log(`UPDATED ${name}.output.tsx`);
+    writeFileSync(c.expectedPath, actual);
+    console.log(`UPDATED ${c.name}.output.tsx`);
     continue;
   }
-  const expected = format(readFileSync(expectedPath, "utf8"));
+  const expected = format(readFileSync(c.expectedPath, "utf8"));
   if (actual === expected) {
-    console.log(`PASS  ${name}`);
-  } else {
-    failures++;
-    console.log(`FAIL  ${name}`);
-    // petit diff ligne à ligne
-    const a = actual.split("\n");
-    const e = expected.split("\n");
-    const n = Math.max(a.length, e.length);
-    for (let i = 0; i < n; i++) {
-      if (a[i] !== e[i]) {
-        console.log(
-          `  L${i + 1}\n   attendu: ${JSON.stringify(e[i])}\n   obtenu : ${JSON.stringify(a[i])}`,
-        );
-      }
+    console.log(`PASS  ${c.name}`);
+    continue;
+  }
+  failures++;
+  console.log(`FAIL  ${c.name}`);
+  // petit diff ligne à ligne
+  const a = actual.split("\n");
+  const e = expected.split("\n");
+  for (let i = 0; i < Math.max(a.length, e.length); i++) {
+    if (a[i] !== e[i]) {
+      console.log(
+        `  L${i + 1}\n   attendu: ${JSON.stringify(e[i])}\n   obtenu : ${JSON.stringify(a[i])}`,
+      );
     }
   }
 }

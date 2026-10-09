@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * transforms/orchestrator.ts — transform ORCHESTRATEUR (tout-en-un).
  *
@@ -10,12 +11,11 @@
  * explicitement comme l'orchestrateur attendu par le kit.
  *
  * Usage :
- *   bunx jscodeshift -t transforms/orchestrator.ts --parser=tsx 'src/**\/*.tsx'
+ *   bun scripts/codemod.ts orchestrator 'src/**\/*.tsx'
  */
-import type { API, FileInfo, Options } from "jscodeshift";
-import { runEngine } from "../lib/engine";
+import { runEngine, type FileInfo, type Options } from "../lib/engine";
 
-export default function transformer(file: FileInfo, api: API, options: Options): string {
+export default function transformer(file: FileInfo, api?: unknown, options: Options = {}): string {
   return runEngine(file, api, options);
 }
 

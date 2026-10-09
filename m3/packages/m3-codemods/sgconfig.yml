@@ -1,6 +1,6 @@
 # sgconfig.yml — configuration ast-grep pour le kit de migration MUI -> @aphrody/m3-react.
 #
-# Conforme à 00-CONVENTIONS.md. ast-grep COMPLÈTE jscodeshift :
+# Conforme à 00-CONVENTIONS.md. ast-grep COMPLÈTE transforms/ :
 #   - détection/rapport des occurrences MUI restantes (scan en mode lint)
 #   - transformations SIMPLES, sûres, fixables (`--fix`)
 #

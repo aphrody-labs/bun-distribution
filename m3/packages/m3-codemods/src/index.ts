@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-import jscodeshift, { type API } from "jscodeshift";
 import mui from "../transforms/orchestrator";
 import icons from "../transforms/icons";
 export * from "../lib/mapping";
@@ -14,13 +13,11 @@ export interface MigrationResult {
 /** Transform one TSX source in memory. No files, subprocesses or network calls. */
 export function transformSource(source: string, kind: MigrationKind = "mui"): MigrationResult {
   if (kind !== "mui" && kind !== "icons") throw new TypeError(`unknown migration kind: ${kind}`);
-  const j = jscodeshift.withParser("tsx");
-  const api: API = { jscodeshift: j, j, report() {}, stats() {} };
-  const transformed = (kind === "icons" ? icons : mui)({ path: "input.tsx", source }, api, {});
+  const transformed = (kind === "icons" ? icons : mui)({ path: "input.tsx", source });
   return {
     source: transformed,
     diagnostics: [...transformed.matchAll(/MIGRATION-TODO:\s*([^*\n]+)/g)].map((match) =>
-      match[1].trim(),
+      match[1]!.trim(),
     ),
   };
 }

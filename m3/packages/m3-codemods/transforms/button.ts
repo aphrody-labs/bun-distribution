@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * transforms/button.ts — transform DÉDIÉ Button / IconButton / Fab (variant-aware).
  *
@@ -9,12 +10,11 @@
  * Gère startIcon/endIcon -> slots (§4) et retire la prop `variant`.
  *
  * Usage :
- *   bunx jscodeshift -t transforms/button.ts --parser=tsx <fichiers...>
+ *   bun scripts/codemod.ts button <fichiers...>
  */
-import type { API, FileInfo, Options } from "jscodeshift";
-import { runEngine } from "../lib/engine";
+import { runEngine, type FileInfo, type Options } from "../lib/engine";
 
-export default function transformer(file: FileInfo, api: API, options: Options): string {
+export default function transformer(file: FileInfo, api?: unknown, options: Options = {}): string {
   return runEngine(file, api, {
     ...options,
     only: new Set(["Button", "IconButton", "Fab"]),

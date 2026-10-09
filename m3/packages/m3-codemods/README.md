@@ -9,37 +9,41 @@ wrappers **`@aphrody/m3-react`** (web components `<md-*>` du fork material-web).
 
 Deux outils complémentaires :
 
-| Outil                           | Rôle                                                                   | Force                                        |
-| ------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------- |
-| **jscodeshift** (`transforms/`) | réécriture profonde : imports + JSX + props + slots, **variant-aware** | transformation complète, idempotente, testée |
-| **ast-grep** (`rules/`)         | détection/rapport des occurrences + quelques fix triviaux              | inventaire rapide, zéro setup Node           |
+| Outil                          | Rôle                                                                   | Force                                        |
+| ------------------------------ | ---------------------------------------------------------------------- | -------------------------------------------- |
+| **transforms** (`transforms/`) | réécriture profonde : imports + JSX + props + slots, **variant-aware** | transformation complète, idempotente, testée |
+| **ast-grep** (`rules/`)        | détection/rapport des occurrences + quelques fix triviaux              | inventaire rapide, zéro setup Node           |
 
 ---
 
 ## Installation
 
-Déjà fait dans ce dossier (`package.json` + `bun.lock`) :
+Aucune dépendance runtime : le moteur tourne sous Bun seul.
 
 ```bash
-bun install                       # jscodeshift + @types/jscodeshift
 # ast-grep : pas d'install nécessaire, lancé via bunx @ast-grep/cli (binaire runtime)
 ```
 
 ---
 
-## jscodeshift — transforms
+## Transforms
 
-Tous les transforms utilisent le **parser `tsx`** (exporté par chaque module, donc
-`--parser=tsx` est optionnel mais on le met par sûreté) et partagent le moteur
-`lib/engine.ts` (table de mapping `lib/mapping.ts`, helpers AST `lib/jsx-helpers.ts`).
+Les transforms partagent le moteur `lib/engine.ts` (table de mapping `lib/mapping.ts`,
+helpers JSX `lib/jsx-helpers.ts`). Le source est lu par un scanner TSX (`lib/tsx-scan.ts` :
+imports, prologue de directives, arbre JSX), modifié par éditions de texte positionnées
+(`lib/edits.ts`) : le code non touché garde sa mise en forme. L'entrée doit être un TSX
+valide pour `Bun.Transpiler` (sinon `SyntaxError`, fichier laissé intact).
 
-| Transform                    | Périmètre                                                               | Usage                                                                                         |
-| ---------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `transforms/orchestrator.ts` | **tout** le mapping (recommandé pour migration de masse)                | `bunx jscodeshift -t transforms/orchestrator.ts --parser=tsx --extensions=tsx 'src/**/*.tsx'` |
-| `transforms/mui-imports.ts`  | identique à l'orchestrateur (alias sémantique « imports génériques »)   | idem                                                                                          |
-| `transforms/button.ts`       | **dédié** `Button` / `IconButton` / `Fab` (variant-aware)               | `bunx jscodeshift -t transforms/button.ts --parser=tsx --extensions=tsx <fichiers>`           |
-| `transforms/fields.ts`       | **dédié** `TextField` / `Select` / `NativeSelect` (+ `MenuItem`)        | `bunx jscodeshift -t transforms/fields.ts --parser=tsx --extensions=tsx <fichiers>`           |
-| `transforms/icons.ts`        | **dédié** `@mui/icons-material` → `<md-icon>` (Material Symbols, ~96 %) | `bunx jscodeshift -t transforms/icons.ts --parser=tsx --extensions=tsx <fichiers>`            |
+| Transform                    | Périmètre                                                               | Usage                                                |
+| ---------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------- |
+| `transforms/orchestrator.ts` | **tout** le mapping (recommandé pour migration de masse)                | `bun scripts/codemod.ts orchestrator 'src/**/*.tsx'` |
+| `transforms/mui-imports.ts`  | identique à l'orchestrateur (alias sémantique « imports génériques »)   | `bun scripts/codemod.ts mui-imports <fichiers>`      |
+| `transforms/button.ts`       | **dédié** `Button` / `IconButton` / `Fab` (variant-aware)               | `bun scripts/codemod.ts button <fichiers>`           |
+| `transforms/fields.ts`       | **dédié** `TextField` / `Select` / `NativeSelect` (+ `MenuItem`)        | `bun scripts/codemod.ts fields <fichiers>`           |
+| `transforms/icons.ts`        | **dédié** `@mui/icons-material` → `<md-icon>` (Material Symbols, ~96 %) | `bun scripts/codemod.ts icons <fichiers>`            |
+
+`--dry` liste les fichiers qui changeraient sans les écrire. Chaque transform exporte
+`default (file: { path?, source }, api?, options?) => string`.
 
 Le transform `icons.ts` est **séparé** (l'orchestrateur ne touche pas `@mui/icons-material`) : convertit `<CloseIcon/>` → `<md-icon>close</md-icon>` via `lib/icon-names.ts` (PascalCase → snake_case, validé contre les **4253 glyphes** officiels `data/material-symbols-names.json`). Logos de marque (GitHub, X…) gardés + TODO ; voir `../11-material-symbols.md`. Le mapping consolidé (composants + icônes) est exporté en `../mui-m3-map.json` (`bun run scripts/export-map-json.ts`).
 
@@ -53,7 +57,7 @@ autres imports/JSX MUI sont laissés intacts (migration par lots).
   - imports default sous-chemin `import Button from '@mui/material/Button'`
   - **alias** `import { Button as Btn } from '@mui/material'`
   - regroupe les wrappers en un seul `import { ... } from '@aphrody/m3-react'` (trié)
-  - ajoute l'import d'effet de bord `@material/web/icon/icon.js` si un `<md-icon>` est généré
+  - ajoute l'import d'effet de bord `@aphrody/material-web/icon/icon.js` si un `<md-icon>` est généré
 - **Choix du wrapper variant-aware** (§3) :
   - `Button variant="contained"|absent` → `MdFilledButton`,
     `"outlined"` → `MdOutlinedButton`, `"text"` → `MdTextButton`,
@@ -83,7 +87,7 @@ autres imports/JSX MUI sont laissés intacts (migration par lots).
 - **Composants « gap »** (§3 / `05-gap-analysis.md`) : `Avatar`, `Alert`, `Breadcrumbs`,
   `Rating`, `Skeleton`, `Backdrop`, `Modal`/`Popover`/`Popper`, `Link`, transitions
   (`Collapse`/`Fade`/…), `CssBaseline`… **NON transformés** : le JSX et **son import MUI
-  sont conservés** (pas de référence orpheline), un TODU signale le shim à écrire.
+  sont conservés** (pas de référence orpheline), un TODO signale le shim à écrire.
 - **Imbrication des slots** Dialog/Card : vérifier que les `<div slot>` sont enfants
   **directs** du parent `md-*`.
 
@@ -93,8 +97,9 @@ autres imports/JSX MUI sont laissés intacts (migration par lots).
 - Les composants en notation membre (`<Foo.Bar/>`) ne sont pas traités.
 - Pas de résolution de re-exports indirects (`import { Button } from './ui'`).
 - Le renommage `Tab`→`MdPrimaryTab` ne distingue pas primary/secondary (choix par défaut).
-- jscodeshift via `recast` reformate parfois l'indentation autour des nœuds modifiés
-  (cosmétique — passer un formatter type prettier/biome après coup).
+- Les enfants d'un élément renommé sont réimprimés sans les blancs JSX à saut de ligne
+  (cosmétique — passer `oxfmt` après coup).
+- Un `startIcon`/`endIcon` sur un élément auto-fermant est retiré sans `<md-icon>` (TODO posé).
 
 ---
 
@@ -116,28 +121,29 @@ Complément léger pour **inventorier** ce qui reste à migrer et appliquer des 
 | `fix-divider`           | **fixable**       | `<Divider …/>` → `<md-divider …>` (mapping 1:1 trivial ; l'import reste à gérer) |
 
 > ast-grep ne fait **pas** le choix variant-aware ni la gestion d'imports propre :
-> pour une vraie migration, utiliser jscodeshift. Les règles servent surtout au **rapport**.
+> pour une vraie migration, utiliser les transforms. Les règles servent surtout au **rapport**.
 
 ---
 
 ## Tests / vérification
 
-Fixtures avant/après dans `__testfixtures__/` (Button, TextField, Checkbox, Dialog) :
+Fixtures avant/après dans `__testfixtures__/` (préfixe `icons-` → transform `icons`,
+sinon orchestrateur ; découverte automatique) :
 
 ```bash
-bun run scripts/run-fixtures.ts            # applique l'orchestrateur et compare aux *.output.tsx
+bun test ./test                            # sortie TSX valide, idempotence, égalité oxfmt avec *.output.tsx
+bun run scripts/run-fixtures.ts            # même comparaison, en PASS/FAIL
 bun run scripts/run-fixtures.ts --update   # régénère les attendus (après modif volontaire d'un transform)
 ```
 
-Sortie attendue : `PASS` sur les 4 cas + « Tous les fixtures passent. ».
-
-Chaque `*.output.tsx` est la **sortie réelle vérifiée** du transform (re-parsée sans
-erreur par jscodeshift). C'est le contrat de non-régression du kit.
+Les sorties sont comparées après `oxfmt` des deux côtés (binaire `oxfmt` requis dans le PATH).
+Les attendus viennent du moteur jscodeshift/recast d'origine (capture avant migration) ;
+seule exception, `jsx-strings.output.tsx` garde l'espace significatif que recast perdait.
 
 ### État vérifié (dernière exécution)
 
-- `bun run scripts/run-fixtures.ts` → 4/4 PASS.
-- `tsc --noEmit --strict` sur `lib/*.ts` + `transforms/*.ts` → 0 erreur.
+- `bun test ./test` → 11 fixtures + scanner + rejet TSX invalide, 0 échec.
+- `tsgo --noEmit -p tsconfig.json` → 0 erreur.
 - `ast-grep scan` sur fichier d'épreuve → 4 règles déclenchées (2 imports, 1 gap, 1 sx, 2 divider).
 
 ---
@@ -147,27 +153,30 @@ erreur par jscodeshift). C'est le contrat de non-régression du kit.
 ```
 codemods/
 ├── README.md                      ← ce fichier
-├── package.json / bun.lock
+├── package.json
 ├── sgconfig.yml                   ← config ast-grep
 ├── lib/
 │   ├── mapping.ts                 ← table MUI→wrappers (source : 00-CONVENTIONS.md §3/§4)
-│   ├── jsx-helpers.ts             ← utilitaires AST (slots, TODO, props)
+│   ├── tsx-scan.ts                ← scanner TSX (imports, directives, arbre JSX)
+│   ├── edits.ts                   ← éditions de texte positionnées + validation Bun.Transpiler
+│   ├── imports.ts                 ← filtrage/insertion d'imports
+│   ├── jsx-helpers.ts             ← utilitaires JSX (slots, TODO, props)
 │   └── engine.ts                  ← moteur partagé (imports + JSX + props)
 ├── transforms/
 │   ├── orchestrator.ts            ← tout-en-un (recommandé)
 │   ├── mui-imports.ts             ← imports génériques (= orchestrateur)
 │   ├── button.ts                  ← dédié Button/IconButton/Fab (variant-aware)
-│   └── fields.ts                  ← dédié TextField/Select/NativeSelect
+│   ├── fields.ts                  ← dédié TextField/Select/NativeSelect
+│   └── icons.ts                   ← dédié @mui/icons-material → <md-icon>
 ├── rules/
 │   ├── detect-mui-imports.yml
 │   ├── detect-gap-components.yml
 │   ├── detect-sx-prop.yml
 │   └── fix-divider.yml
 ├── scripts/
+│   ├── codemod.ts                 ← CLI d'application des transforms
+│   ├── fixtures.ts                ← découverte + exécution des fixtures
 │   └── run-fixtures.ts            ← test rapide avant/après
-└── __testfixtures__/
-    ├── button.input.tsx   / button.output.tsx
-    ├── textfield.input.tsx/ textfield.output.tsx
-    ├── checkbox.input.tsx / checkbox.output.tsx
-    └── dialog.input.tsx   / dialog.output.tsx
+├── test/fixtures.test.ts
+└── __testfixtures__/              ← *.input.tsx / *.output.tsx
 ```

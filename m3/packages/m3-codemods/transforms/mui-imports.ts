@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * transforms/mui-imports.ts — réécriture GÉNÉRIQUE des imports + JSX.
  *
@@ -8,12 +9,11 @@
  * Réécrit vers `@aphrody/m3-react` (§2) en choisissant le wrapper variant-aware.
  *
  * Usage :
- *   bunx jscodeshift -t transforms/mui-imports.ts --parser=tsx <fichiers...>
+ *   bun scripts/codemod.ts mui-imports <fichiers...>
  */
-import type { API, FileInfo, Options } from "jscodeshift";
-import { runEngine } from "../lib/engine";
+import { runEngine, type FileInfo, type Options } from "../lib/engine";
 
-export default function transformer(file: FileInfo, api: API, options: Options): string {
+export default function transformer(file: FileInfo, api?: unknown, options: Options = {}): string {
   // pas de `only` -> traite tous les composants mappés
   return runEngine(file, api, options);
 }

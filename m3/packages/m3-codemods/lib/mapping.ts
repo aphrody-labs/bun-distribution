@@ -8,7 +8,7 @@
  * `packages/m3-react/md-elements.txt`). Mapping confronté à un corpus applicatif
  * anonymisé.
  *
- * Ce module est consommé par TOUS les transforms jscodeshift de `transforms/`.
+ * Ce module est consommé par TOUS les transforms de `transforms/`.
  */
 
 /** Nom du package des wrappers React (cf. §2). */
