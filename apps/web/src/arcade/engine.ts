@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
+// Partial port of the Dragon Pixel game of examples/crystal-universe: single-player Canvas 2D
+// fighting loop only (no multiplayer server, WASM core, lore or WebGPU from the original).
 
 export type FighterStyle = 'balanced' | 'speed' | 'power';
 

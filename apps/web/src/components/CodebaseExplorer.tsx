@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import React, { useState } from 'react';
 import type { CodebaseAnalysis } from '../core/types';
 
@@ -22,44 +23,39 @@ export const CodebaseExplorer: React.FC<CodebaseExplorerProps> = ({ analysis }) 
       <div className="max-w-6xl mx-auto space-y-8">
         <div>
           <span className="text-xs uppercase font-bold tracking-widest text-[var(--md-sys-color-primary)]">
-            Recursive Monorepo Architecture
+            Monorepo Workspace
           </span>
           <h2 className="text-2xl md:text-3xl font-bold text-[var(--md-sys-color-on-surface)] mt-1">
-            🔍 Codebase, Types & Package Graph
+            🔍 Codebase & Workspace Packages
           </h2>
           <p className="text-sm md:text-base text-[var(--md-sys-color-on-surface-variant)] mt-1">
-            Real-time catalog generated recursively across our forks, bun-types, and native C++/Rust bindings.
+            Workspace packages from the root package.json globs, scanned by the Bun server (src/ and package roots).
+            {analysis && ` ${analysis.totalPackages} packages, ${analysis.totalInterfaces} exported interfaces, ${analysis.totalTypes} exported types, ${analysis.totalFunctions} exported functions.`}
           </p>
         </div>
 
-        {/* Monorepo Speedup Table */}
+        {/* Workspace Packages Table */}
         <div className="overflow-x-auto rounded-3xl bg-[var(--md-sys-color-surface-container)] border border-[var(--md-sys-color-outline-variant)] shadow-sm">
           <table className="w-full text-left text-xs md:text-sm">
             <thead className="border-b border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-variant)]/40 text-[var(--md-sys-color-on-surface)]">
               <tr>
-                <th className="py-3 px-4 font-bold">Fork / Monorepo Package</th>
+                <th className="py-3 px-4 font-bold">Package</th>
                 <th className="py-3 px-4 font-bold">Version</th>
-                <th className="py-3 px-4 font-bold">Build Duration</th>
-                <th className="py-3 px-4 font-bold">Native Web Standard Features</th>
+                <th className="py-3 px-4 font-bold">Directory</th>
+                <th className="py-3 px-4 font-bold">TS files</th>
+                <th className="py-3 px-4 font-bold">Description</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--md-sys-color-outline-variant)] text-[var(--md-sys-color-on-surface-variant)]">
               {(analysis?.packages || []).map(pkg => (
-                <tr key={pkg.name} className="hover:bg-[var(--md-sys-color-surface-variant)]/20 transition">
+                <tr key={pkg.dir} className="hover:bg-[var(--md-sys-color-surface-variant)]/20 transition">
                   <td className="py-3 px-4 font-mono font-bold text-[var(--md-sys-color-on-surface)]">
                     {pkg.name}
                   </td>
                   <td className="py-3 px-4 font-mono text-xs">{pkg.version}</td>
-                  <td className="py-3 px-4 font-mono font-bold text-emerald-400">{pkg.speedup}</td>
-                  <td className="py-3 px-4">
-                    <div className="flex flex-wrap gap-1">
-                      {pkg.webFeatures.map(wf => (
-                        <span key={wf} className="px-2 py-0.5 rounded text-[10px] font-mono bg-black/30 border border-white/10 text-emerald-300">
-                          {wf}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
+                  <td className="py-3 px-4 font-mono text-xs">{pkg.dir}</td>
+                  <td className="py-3 px-4 font-mono text-xs">{pkg.sourceFiles}</td>
+                  <td className="py-3 px-4 text-xs">{pkg.description}</td>
                 </tr>
               ))}
             </tbody>
@@ -70,7 +66,7 @@ export const CodebaseExplorer: React.FC<CodebaseExplorerProps> = ({ analysis }) 
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h3 className="text-xl font-bold text-[var(--md-sys-color-on-surface)]">
-              Native Bun & Web Standard API Catalog ({filteredApis.length})
+              Bun APIs used by this app ({filteredApis.length})
             </h3>
             <div className="flex flex-wrap items-center gap-2">
               <input
@@ -127,11 +123,6 @@ export const CodebaseExplorer: React.FC<CodebaseExplorerProps> = ({ analysis }) 
                   {api.description}
                 </p>
 
-                {api.nativeCMethod && (
-                  <div className="text-[10px] font-mono text-[var(--md-sys-color-outline)]">
-                    <span className="text-gray-500">Native Binding: </span>{api.nativeCMethod}
-                  </div>
-                )}
               </div>
             ))}
           </div>

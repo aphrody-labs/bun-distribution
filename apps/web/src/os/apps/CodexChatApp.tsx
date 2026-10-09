@@ -21,10 +21,10 @@ export const CodexChatApp: React.FC<CodexChatAppProps> = ({ onRunInTerminal }) =
     {
       id: '1',
       sender: 'assistant',
-      content: 'Hello! I am Aphrody Codex, your high-precision AI assistant powered by Bun and Rust native bindings. What would you like to build or inspect?',
+      content: 'Offline snippet helper: your question is matched against a few keywords (bun/serve/http, crypto/hash, m3/theme/color) and a fixed snippet is returned. No language model is called.',
       codeSnippet: {
         language: 'typescript',
-        code: `// High-performance Web Streams transform in Bun
+        code: `// Pass-through Web Streams transform
 export function streamCss(stream: ReadableStream<Uint8Array>) {
   return stream.pipeThrough(new TransformStream({
     transform(chunk, controller) {
@@ -37,17 +37,15 @@ export function streamCss(stream: ReadableStream<Uint8Array>) {
     }
   ]);
   const [inputValue, setInputValue] = useState('');
-  const [selectedModel, setSelectedModel] = useState('aphrody-local-7b');
-  const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+  }, [messages]);
 
   const handleSend = () => {
     const trimmed = inputValue.trim();
-    if (!trimmed || isTyping) return;
+    if (!trimmed) return;
 
     const userMsg: ChatMessage = {
       id: Math.random().toString(36).slice(2),
@@ -58,16 +56,14 @@ export function streamCss(stream: ReadableStream<Uint8Array>) {
 
     setMessages(prev => [...prev, userMsg]);
     setInputValue('');
-    setIsTyping(true);
 
-    // Dynamic response generation based on user question
-    setTimeout(() => {
-      let replyContent = `Understood. Processing "${trimmed}" using ${selectedModel}.`;
+    {
+      let replyContent: string;
       let snippet: { language: string; code: string } | undefined;
 
       const lower = trimmed.toLowerCase();
       if (lower.includes('bun') || lower.includes('serve') || lower.includes('http')) {
-        replyContent = 'Here is how to deploy a native HTTP server with zero-copy streaming in Bun:';
+        replyContent = 'Minimal Bun.serve HTTP server:';
         snippet = {
           language: 'typescript',
           code: `Bun.serve({
@@ -80,7 +76,7 @@ export function streamCss(stream: ReadableStream<Uint8Array>) {
 });`
         };
       } else if (lower.includes('crypto') || lower.includes('hash')) {
-        replyContent = 'Using hardware-accelerated BoringSSL via native WebCrypto:';
+        replyContent = 'SHA-256 with WebCrypto:';
         snippet = {
           language: 'typescript',
           code: `const hashBuffer = await crypto.subtle.digest(
@@ -90,14 +86,14 @@ export function streamCss(stream: ReadableStream<Uint8Array>) {
 const hex = Buffer.from(hashBuffer).toString("hex");`
         };
       } else if (lower.includes('m3') || lower.includes('theme') || lower.includes('color')) {
-        replyContent = 'Material Design 3 dynamic HCT color extraction algorithm:';
+        replyContent = 'Apply an M3 scheme derived from a seed colour (apps/web/src/core/theme.ts):';
         snippet = {
           language: 'typescript',
           code: `import { applyM3Theme } from "./core/theme";
-applyM3Theme("#8b5cf6", true); // Sets --md-sys-color-* on :root`
+applyM3Theme("#8b5cf6", true); // writes every --md-sys-color-* role on <html>`
         };
       } else {
-        replyContent = `Execution completed successfully. Monorepo rule verified: 1 App, 1 FFI, 1 CLI, 1 Server.`;
+        replyContent = 'No snippet matches this question. Known keywords: bun, serve, http, crypto, hash, m3, theme, color.';
       }
 
       setMessages(prev => [
@@ -110,8 +106,7 @@ applyM3Theme("#8b5cf6", true); // Sets --md-sys-color-* on :root`
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
-      setIsTyping(false);
-    }, 600);
+    }
   };
 
   return (
@@ -121,22 +116,10 @@ applyM3Theme("#8b5cf6", true); // Sets --md-sys-color-* on :root`
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
           <span className="font-bold text-[var(--md-sys-color-on-surface)]">
-            Aphrody Codex Assistant
+            Snippet helper (offline)
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <select
-            value={selectedModel}
-            onChange={e => setSelectedModel(e.target.value)}
-            className="px-2.5 py-1 rounded-xl bg-[var(--md-sys-color-surface)] border border-[var(--md-sys-color-outline-variant)] text-[11px] font-semibold text-[var(--md-sys-color-on-surface)] outline-none"
-          >
-            <option value="aphrody-local-7b">⚡ Aphrody Local 7B (Rust ONNX)</option>
-            <option value="claude-3-7-sonnet">Claude 3.7 Sonnet</option>
-            <option value="gemini-2-5-flash">Gemini 2.5 Flash</option>
-            <option value="grok-3">Grok 3 (xAI)</option>
-          </select>
-        </div>
       </div>
 
       {/* Messages Scroll Area */}
@@ -178,12 +161,6 @@ applyM3Theme("#8b5cf6", true); // Sets --md-sys-color-* on :root`
           </div>
         ))}
 
-        {isTyping && (
-          <div className="flex items-center gap-2 text-xs text-[var(--md-sys-color-on-surface-variant)] italic">
-            <span className="w-2 h-2 rounded-full bg-[var(--md-sys-color-primary)] animate-ping" />
-            <span>Codex is generating code...</span>
-          </div>
-        )}
         <div ref={bottomRef} />
       </div>
 
@@ -194,12 +171,12 @@ applyM3Theme("#8b5cf6", true); // Sets --md-sys-color-* on :root`
           value={inputValue}
           onChange={e => setInputValue(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSend()}
-          placeholder="Ask a question or request a Bun script..."
+          placeholder="Ask for a snippet (bun, crypto, m3)..."
           className="flex-1 px-4 py-2.5 rounded-2xl bg-[var(--md-sys-color-surface)] border border-[var(--md-sys-color-outline-variant)] text-xs text-[var(--md-sys-color-on-surface)] outline-none focus:border-[var(--md-sys-color-primary)]"
         />
         <button
           onClick={handleSend}
-          disabled={!inputValue.trim() || isTyping}
+          disabled={!inputValue.trim()}
           className="px-4 py-2.5 rounded-2xl bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] font-bold text-xs shadow-sm hover:opacity-90 disabled:opacity-50 transition"
         >
           Send

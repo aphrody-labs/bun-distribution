@@ -1,13 +1,27 @@
 // SPDX-License-Identifier: Apache-2.0
 import React, { useState, useMemo } from 'react';
 
-interface TableRowItem {
-  id: string;
-  package: string;
-  speedup: string;
-  status: 'optimized' | 'verified';
-  allocator: string;
-  latencyMs: number;
+interface ColorRoleRow {
+  role: string;
+  variable: string;
+  value: string;
+}
+
+const COLOR_ROLES = [
+  "primary", "on-primary", "primary-container", "on-primary-container",
+  "secondary", "on-secondary", "secondary-container", "on-secondary-container",
+  "tertiary", "on-tertiary", "tertiary-container", "on-tertiary-container",
+  "error", "on-error", "surface", "on-surface", "surface-container", "surface-container-high",
+  "on-surface-variant", "outline", "outline-variant",
+];
+
+function readColorRoles(): ColorRoleRow[] {
+  if (typeof document === "undefined") return [];
+  const style = getComputedStyle(document.documentElement);
+  return COLOR_ROLES.map(role => {
+    const variable = `--md-sys-color-${role}`;
+    return { role, variable, value: style.getPropertyValue(variable).trim() };
+  });
 }
 
 export const M3Showcase: React.FC = () => {
@@ -18,40 +32,19 @@ export const M3Showcase: React.FC = () => {
   const [activeChip, setActiveChip] = useState('bun');
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [searchTableQuery, setSearchTableQuery] = useState('');
-  const [sortField, setSortField] = useState<keyof TableRowItem>('latencyMs');
   const [sortAsc, setSortAsc] = useState(true);
+  const [roles, setRoles] = useState<ColorRoleRow[]>(readColorRoles);
 
-  const triggerSnackbar = (msg?: string) => {
+  const triggerSnackbar = () => {
     setShowSnackbar(true);
     setTimeout(() => setShowSnackbar(false), 2500);
   };
 
-  const sampleData: TableRowItem[] = [
-    { id: '1', package: '@tailwindcss/oxide', speedup: '54.6x', status: 'verified', allocator: 'mimalloc', latencyMs: 62.6 },
-    { id: '2', package: 'next-canary-bun', speedup: '57.7x', status: 'verified', allocator: 'mimalloc', latencyMs: 1950 },
-    { id: '3', package: '@base-ui/react', speedup: '23.8x', status: 'verified', allocator: 'mimalloc', latencyMs: 1610 },
-    { id: '4', package: 'aphrody-tauri-ipc', speedup: '42.0x', status: 'verified', allocator: 'mimalloc', latencyMs: 0.12 },
-    { id: '5', package: 'aphrody-m3-engine', speedup: '38.5x', status: 'verified', allocator: 'mimalloc', latencyMs: 92.2 },
-    { id: '6', package: 'yolo-runtime-ffi', speedup: '64.2x', status: 'verified', allocator: 'mimalloc', latencyMs: 0.05 },
-    { id: '7', package: '@aphrody/bun-plugin-tailwind', speedup: '50.1x', status: 'verified', allocator: 'mimalloc', latencyMs: 14.8 },
-  ];
-
   const filteredData = useMemo(() => {
     const q = searchTableQuery.toLowerCase();
-    const list = sampleData.filter(item =>
-      item.package.toLowerCase().includes(q) ||
-      item.speedup.toLowerCase().includes(q) ||
-      item.allocator.toLowerCase().includes(q)
-    );
-    return list.sort((a, b) => {
-      const vA = a[sortField];
-      const vB = b[sortField];
-      if (typeof vA === 'number' && typeof vB === 'number') {
-        return sortAsc ? vA - vB : vB - vA;
-      }
-      return sortAsc ? String(vA).localeCompare(String(vB)) : String(vB).localeCompare(String(vA));
-    });
-  }, [searchTableQuery, sortField, sortAsc]);
+    const list = roles.filter(item => item.role.includes(q) || item.value.toLowerCase().includes(q));
+    return list.sort((a, b) => (sortAsc ? a.role.localeCompare(b.role) : b.role.localeCompare(a.role)));
+  }, [roles, searchTableQuery, sortAsc]);
 
   return (
     <section className="py-6 flex flex-col gap-8 w-full max-w-6xl mx-auto">
@@ -64,7 +57,7 @@ export const M3Showcase: React.FC = () => {
           Material Design 3 Component Architecture
         </h2>
         <p className="text-xs md:text-sm text-[var(--md-sys-color-on-surface-variant)] mt-1 max-w-2xl">
-          Rendered with dynamic M3 design tokens, state layers, elevation surfaces, fluid typography, and virtualized data table.
+          Rendered with dynamic M3 design tokens, state layers, elevation surfaces, fluid typography and a sortable table of the colour roles currently applied.
         </p>
       </div>
 
@@ -227,26 +220,26 @@ export const M3Showcase: React.FC = () => {
           {/* Progress indicators */}
           <div className="space-y-2 pt-2">
             <div className="text-xs text-[var(--md-sys-color-on-surface-variant)] flex justify-between">
-              <span>Build Acceleration Ratio</span>
-              <span className="font-bold text-emerald-400">54.6x</span>
+              <span>Linear progress (slider value)</span>
+              <span className="font-bold text-[var(--md-sys-color-primary)]">{Math.round((sliderVal / 256) * 100)}%</span>
             </div>
             <div className="w-full h-2 rounded-full bg-[var(--md-sys-color-surface-variant)] overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-[var(--md-sys-color-primary)] to-emerald-400 rounded-full w-[96%]" />
+              <div className="h-full bg-gradient-to-r from-[var(--md-sys-color-primary)] to-emerald-400 rounded-full" style={{ width: `${(sliderVal / 256) * 100}%` }} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* M3 High-Performance Data Table */}
+      {/* M3 data table: colour roles read from <html> */}
       <div className="rounded-3xl bg-[var(--md-sys-color-surface-container)] border border-[var(--md-sys-color-outline-variant)] overflow-hidden shadow-sm flex flex-col">
         {/* Table Toolbar */}
         <div className="p-4 border-b border-[var(--md-sys-color-outline-variant)] flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="text-base font-bold text-[var(--md-sys-color-on-surface)]">
-              Monorepo Accelerated Packages
+              Colour roles on &lt;html&gt;
             </span>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)] font-semibold">
-              {filteredData.length} active
+              {filteredData.length} roles
             </span>
           </div>
 
@@ -254,7 +247,7 @@ export const M3Showcase: React.FC = () => {
             type="text"
             value={searchTableQuery}
             onChange={e => setSearchTableQuery(e.target.value)}
-            placeholder="Filter packages or allocators..."
+            placeholder="Filter roles or values..."
             className="px-3 py-1.5 rounded-xl bg-[var(--md-sys-color-surface)] border border-[var(--md-sys-color-outline)] text-xs text-[var(--md-sys-color-on-surface)] focus:outline-none focus:border-[var(--md-sys-color-primary)] w-64"
           />
         </div>
@@ -265,46 +258,31 @@ export const M3Showcase: React.FC = () => {
             <thead className="bg-[var(--md-sys-color-surface-container-high)] text-[var(--md-sys-color-on-surface-variant)] uppercase font-mono text-[10px]">
               <tr>
                 <th
-                  onClick={() => { setSortField('package'); setSortAsc(!sortAsc); }}
+                  onClick={() => setSortAsc(!sortAsc)}
                   className="p-3 cursor-pointer hover:text-[var(--md-sys-color-primary)]"
                 >
-                  Package {sortField === 'package' ? (sortAsc ? '▲' : '▼') : ''}
+                  Role {sortAsc ? "▲" : "▼"}
                 </th>
-                <th
-                  onClick={() => { setSortField('speedup'); setSortAsc(!sortAsc); }}
-                  className="p-3 cursor-pointer hover:text-[var(--md-sys-color-primary)]"
-                >
-                  Speedup {sortField === 'speedup' ? (sortAsc ? '▲' : '▼') : ''}
+                <th className="p-3">CSS variable</th>
+                <th className="p-3">Computed value</th>
+                <th className="p-3">
+                  <button onClick={() => setRoles(readColorRoles())} className="text-[var(--md-sys-color-primary)]">
+                    Refresh
+                  </button>
                 </th>
-                <th
-                  onClick={() => { setSortField('latencyMs'); setSortAsc(!sortAsc); }}
-                  className="p-3 cursor-pointer hover:text-[var(--md-sys-color-primary)]"
-                >
-                  Latency {sortField === 'latencyMs' ? (sortAsc ? '▲' : '▼') : ''}
-                </th>
-                <th className="p-3">Allocator</th>
-                <th className="p-3">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--md-sys-color-outline-variant)]">
               {filteredData.map(row => (
-                <tr key={row.id} className="hover:bg-[var(--md-sys-color-surface-container-highest)]/50 transition-colors">
-                  <td className="p-3 font-mono font-semibold text-[var(--md-sys-color-on-surface)]">
-                    {row.package}
-                  </td>
-                  <td className="p-3 font-bold text-emerald-400">
-                    {row.speedup}
-                  </td>
-                  <td className="p-3 font-mono text-[var(--md-sys-color-on-surface-variant)]">
-                    {row.latencyMs < 1 ? `${(row.latencyMs * 1000).toFixed(0)}µs` : `${row.latencyMs}ms`}
-                  </td>
-                  <td className="p-3 font-mono text-[var(--md-sys-color-primary)]">
-                    {row.allocator}
-                  </td>
+                <tr key={row.role} className="hover:bg-[var(--md-sys-color-surface-container-highest)]/50 transition-colors">
+                  <td className="p-3 font-mono font-semibold text-[var(--md-sys-color-on-surface)]">{row.role}</td>
+                  <td className="p-3 font-mono text-[var(--md-sys-color-on-surface-variant)]">{row.variable}</td>
+                  <td className="p-3 font-mono text-[var(--md-sys-color-on-surface-variant)]">{row.value || "(unset)"}</td>
                   <td className="p-3">
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
-                      {row.status}
-                    </span>
+                    <span
+                      className="inline-block w-6 h-6 rounded-md border border-[var(--md-sys-color-outline-variant)]"
+                      style={{ backgroundColor: `var(${row.variable})` }}
+                    />
                   </td>
                 </tr>
               ))}
@@ -317,7 +295,7 @@ export const M3Showcase: React.FC = () => {
       {showSnackbar && (
         <div className="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-2xl bg-[var(--md-sys-color-on-surface)] text-[var(--md-sys-color-surface)] shadow-2xl flex items-center gap-3 animate-bounce">
           <span>🚀</span>
-          <span className="text-xs font-semibold">Material 3 action dispatched via Bun engine!</span>
+          <span className="text-xs font-semibold">Button clicked (no action attached)</span>
         </div>
       )}
     </section>

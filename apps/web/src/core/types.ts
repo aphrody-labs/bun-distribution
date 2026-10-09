@@ -1,10 +1,12 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
- * Core types shared across Web, Tauri Desktop, and React Native targets.
+ * Types shared by the browser UI and the Bun server of apps/web.
  */
 
 export interface SystemMetrics {
   bunVersion: string;
   uptimeSeconds: number;
+  /** JS heap in use by the Bun server process (process.memoryUsage().heapUsed), in MB. */
   memoryUsageMb: number;
   timestampNs: bigint | string;
   platform: string;
@@ -20,7 +22,6 @@ export interface BunApiEntry {
   signature: string;
   description: string;
   example: string;
-  nativeCMethod?: string;
   isWebStandard: boolean;
 }
 
@@ -28,40 +29,19 @@ export interface MonorepoPackageInfo {
   name: string;
   version: string;
   description: string;
+  /** Directory relative to the monorepo root. */
   dir: string;
-  speedup: string;
-  webFeatures: string[];
-}
-
-export interface M3Palette {
-  primary: string;
-  onPrimary: string;
-  primaryContainer: string;
-  onPrimaryContainer: string;
-  secondary: string;
-  onSecondary: string;
-  secondaryContainer: string;
-  onSecondaryContainer: string;
-  tertiary: string;
-  onTertiary: string;
-  tertiaryContainer: string;
-  onTertiaryContainer: string;
-  surface: string;
-  onSurface: string;
-  surfaceVariant: string;
-  onSurfaceVariant: string;
-  background: string;
-  onBackground: string;
-  outline: string;
-  outlineVariant: string;
-  error: string;
-  onError: string;
+  /** TypeScript files counted under the package (node_modules and dist excluded). */
+  sourceFiles: number;
 }
 
 export interface CodebaseAnalysis {
   scannedAt: string;
+  /** Exported type aliases found in the scanned workspace TypeScript files. */
   totalTypes: number;
+  /** Exported interfaces found in the scanned workspace TypeScript files. */
   totalInterfaces: number;
+  /** Exported functions found in the scanned workspace TypeScript files. */
   totalFunctions: number;
   totalPackages: number;
   bunApis: BunApiEntry[];

@@ -19,13 +19,11 @@ export const PetCompanion: React.FC<PetCompanionProps> = ({ soundEnabled, onOpen
 
   // Floating speech bubble tips
   const tips = [
-    'Bun compile apps/web en seulement 92ms ! ⚡',
     'Essaie "neofetch" dans le Terminal 💻',
     'La palette M3 utilise l\'espace colorimétrique HCT 🎨',
-    'Dragon Pixel tourne à 60 FPS en WebGPU/Canvas 🎮',
+    'Dragon Pixel se joue dans l\'Arcade (Canvas 2D) 🎮',
     'Toutes les fenêtres peuvent être déplacées ou agrandies ! 🪟',
     'Appuie sur ⌘K pour ouvrir la Palette de Commandes 🔍',
-    '1 Monorepo = 1 App • 1 CLI • 1 FFI • 1 Server 🦀',
   ];
 
   // Mouse gaze tracking

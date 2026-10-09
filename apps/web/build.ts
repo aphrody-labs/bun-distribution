@@ -1,7 +1,13 @@
 #!/usr/bin/env bun
+// SPDX-License-Identifier: Apache-2.0
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { tailwind } from 'C:/bun/packages/bun-plugin-tailwind/src/index.ts';
+let tailwind: any;
+try {
+  tailwind = (await import('@aphrody/bun-plugin-tailwind')).tailwind;
+} catch {
+  tailwind = (await import('C:/bun/packages/bun-plugin-tailwind/src/index.ts')).tailwind;
+}
 
 const outdir = join(import.meta.dir, 'dist');
 mkdirSync(outdir, { recursive: true });

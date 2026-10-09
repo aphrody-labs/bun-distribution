@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'bun:test';
 import { createGame, step } from './engine';
 
-describe('Dragon Pixel Arcade Engine (Unified in apps/web)', () => {
+describe('Dragon Pixel arcade engine (partial port of examples/crystal-universe)', () => {
   it('initializes game state with chosen style', () => {
     const game = createGame('speed');
     expect(game.player.hp).toBe(100);

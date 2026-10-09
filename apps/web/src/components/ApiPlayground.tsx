@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import React, { useState } from 'react';
 
 export const ApiPlayground: React.FC = () => {
@@ -98,17 +99,17 @@ export const ApiPlayground: React.FC = () => {
             ⚡ Native Bun & Web Standard API Playground
           </h2>
           <p className="text-sm md:text-base text-[var(--md-sys-color-on-surface-variant)] mt-1">
-            Execute real-time hardware-accelerated APIs running live on Bun's engine.
+            Web Crypto runs in this browser; the other tabs call the Bun server (apps/web/server.ts).
           </p>
         </div>
 
         {/* Navigation Tabs */}
         <div className="flex flex-wrap gap-2 mb-6 border-b border-[var(--md-sys-color-outline-variant)] pb-3">
           {[
-            { id: 'crypto', label: 'crypto.subtle (BoringSSL)' },
+            { id: 'crypto', label: 'crypto.subtle (browser)' },
             { id: 'transpile', label: 'Bun.Transpiler (AST)' },
             { id: 'password', label: 'Bun.password (Argon2id/Bcrypt)' },
-            { id: 'compression', label: 'Bun.deflateSync (SIMD)' },
+            { id: 'compression', label: 'Bun.deflateSync' },
             { id: 'rewriter', label: 'HTMLRewriter (Streaming)' },
           ].map(tab => (
             <button
@@ -224,7 +225,7 @@ export const ApiPlayground: React.FC = () => {
                 onChange={e => setPasswordAlgo(e.target.value as any)}
                 className="p-3 rounded-xl bg-[var(--md-sys-color-surface)] border border-[var(--md-sys-color-outline)] text-[var(--md-sys-color-on-surface)] text-sm font-semibold"
               >
-                <option value="argon2id">Argon2id (SIMD)</option>
+                <option value="argon2id">Argon2id</option>
                 <option value="bcrypt">Bcrypt</option>
               </select>
             </div>
@@ -246,7 +247,7 @@ export const ApiPlayground: React.FC = () => {
         {activeTab === 'compression' && (
           <div className="p-6 rounded-2xl bg-[var(--md-sys-color-surface-container)] border border-[var(--md-sys-color-outline-variant)] space-y-4">
             <h3 className="text-lg font-bold text-[var(--md-sys-color-on-surface)]">
-              Bun.deflateSync (SIMD libdeflate Engine)
+              Bun.deflateSync (zlib)
             </h3>
             <textarea
               value={compressText}

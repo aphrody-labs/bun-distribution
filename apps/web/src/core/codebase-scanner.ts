@@ -1,183 +1,211 @@
+// SPDX-License-Identifier: Apache-2.0
+/**
+ * Server-side catalog of the monorepo: workspace packages read from the root
+ * package.json globs, and exported TypeScript declarations counted in their
+ * `src/` trees and package roots. Also carries a short reference list of the
+ * Bun APIs the apps/web server calls.
+ */
+import { join, relative } from 'node:path';
 import type { BunApiEntry, CodebaseAnalysis, MonorepoPackageInfo } from './types';
 
-/**
- * Scans Bun API definitions and monorepo packages to produce an on-demand,
- * comprehensive catalog of the entire runtime and framework stack.
- */
-export async function analyzeCodebase(): Promise<CodebaseAnalysis> {
-  const bunApis: BunApiEntry[] = [
-    {
-      id: 'bun-serve',
-      name: 'Bun.serve',
-      category: 'runtime',
-      signature: 'Bun.serve(options: ServeOptions): Server',
-      description: 'High-performance HTTP/HTTPS, WebSocket, and SSE server built on uSockets and picohttpparser.',
-      example: 'Bun.serve({ port: 3000, fetch(req) { return new Response("Hello Bun!"); } });',
-      nativeCMethod: 'JSC::JSValue jsFunctionBunServe',
-      isWebStandard: true,
-    },
-    {
-      id: 'bun-build',
-      name: 'Bun.build',
-      category: 'bundler',
-      signature: 'Bun.build(options: BuildConfig): Promise<BuildOutput>',
-      description: 'Fast native JavaScript/TypeScript/CSS bundler with tree-shaking, code-splitting, and plugin hooks.',
-      example: 'await Bun.build({ entrypoints: ["./src/index.ts"], outdir: "./dist", minify: true });',
-      nativeCMethod: 'bun_bundler::bundle',
-      isWebStandard: false,
-    },
-    {
-      id: 'web-crypto-subtle',
-      name: 'crypto.subtle',
-      category: 'crypto',
-      signature: 'crypto.subtle.digest(algorithm, data): Promise<ArrayBuffer>',
-      description: 'Native Web Crypto API powered by BoringSSL for hardware-accelerated SHA, HMAC, AES, and RSA operations.',
-      example: 'const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("data"));',
-      nativeCMethod: 'BoringSSL EVP_Digest',
-      isWebStandard: true,
-    },
-    {
-      id: 'web-html-rewriter',
-      name: 'HTMLRewriter',
-      category: 'web-standards',
-      signature: 'new HTMLRewriter().on(selector, handlers).transform(response)',
-      description: 'High-speed streaming HTML parser and rewriter powered by Cloudflare lol-html written in Rust.',
-      example: 'new HTMLRewriter().on("title", { text(t) { t.replace("New Title"); } }).transform(res);',
-      nativeCMethod: 'lol_html::HtmlRewriter',
-      isWebStandard: true,
-    },
-    {
-      id: 'web-readable-stream',
-      name: 'ReadableStream & TransformStream',
-      category: 'streams',
-      signature: 'new ReadableStream(underlyingSource, strategy)',
-      description: 'Standard Web Streams API implemented directly in C++ with backpressure, byte streams, and pipelining.',
-      example: 'const stream = new ReadableStream({ start(c) { c.enqueue("chunk"); c.close(); } });',
-      nativeCMethod: 'JSC::JSReadableStream',
-      isWebStandard: true,
-    },
-    {
-      id: 'bun-transpiler',
-      name: 'Bun.Transpiler',
-      category: 'runtime',
-      signature: 'new Bun.Transpiler(options: TranspilerOptions): Transpiler',
-      description: 'Instant AST-based transpiler for TSX, JSX, TypeScript, and modern JavaScript syntax at native speed.',
-      example: 'const js = new Bun.Transpiler({ loader: "tsx" }).transformSync("<div>Hello</div>");',
-      nativeCMethod: 'bun_transpiler::transform',
-      isWebStandard: false,
-    },
-    {
-      id: 'bun-password',
-      name: 'Bun.password',
-      category: 'crypto',
-      signature: 'Bun.password.hash(password, options): Promise<string>',
-      description: 'Secure native password hashing implementing Argon2id and Bcrypt with SIMD optimizations.',
-      example: 'const hash = await Bun.password.hash("secret", { algorithm: "argon2id" });',
-      nativeCMethod: 'rust_argon2::hash',
-      isWebStandard: false,
-    },
-    {
-      id: 'bun-deflate',
-      name: 'Bun.deflateSync & Bun.gzipSync',
-      category: 'io',
-      signature: 'Bun.deflateSync(data: BufferSource, options?): Uint8Array',
-      description: 'Ultra-fast SIMD compression engine wrapping libdeflate and zlib-ng.',
-      example: 'const compressed = Bun.deflateSync(new TextEncoder().encode("lots of data"));',
-      nativeCMethod: 'libdeflate_deflate_compress',
-      isWebStandard: false,
-    },
-    {
-      id: 'bun-ffi',
-      name: 'bun:ffi',
-      category: 'ffi',
-      signature: 'dlopen(path: string, symbols: Record<string, FFISymbol>): DynamicLibrary',
-      description: 'Foreign Function Interface with JIT-compiled C call thunks via TinyCC for near-zero C call overhead.',
-      example: 'import { dlopen, FFIType } from "bun:ffi"; const lib = dlopen("libm.so", { sin: { ... } });',
-      nativeCMethod: 'tcc_compile / ffi_call',
-      isWebStandard: false,
-    },
-    {
-      id: 'bun-file',
-      name: 'Bun.file & Bun.write',
-      category: 'io',
-      signature: 'Bun.file(path: string): BunFile; Bun.write(dest, data): Promise<number>',
-      description: 'Zero-copy memory-mapped file abstraction with native streaming, splice, and sendfile kernel syscalls.',
-      example: 'await Bun.write("output.txt", "fast data"); const text = await Bun.file("output.txt").text();',
-      nativeCMethod: 'bun_sys::file',
-      isWebStandard: false,
-    },
-    {
-      id: 'bun-glob',
-      name: 'Bun.Glob',
-      category: 'io',
-      signature: 'new Bun.Glob(pattern: string): Glob',
-      description: 'High-speed native filesystem glob matcher without regex recompilation overhead.',
-      example: 'for await (const file of new Bun.Glob("**/*.ts").scan()) { console.log(file); }',
-      nativeCMethod: 'bun_glob::scan',
-      isWebStandard: false,
-    },
-    {
-      id: 'bun-spawn',
-      name: 'Bun.spawn',
-      category: 'runtime',
-      signature: 'Bun.spawn(command: string[], options?): Subprocess',
-      description: 'Subprocess management with posix_spawn on Unix and CreateProcess on Windows, zero shell overhead.',
-      example: 'const proc = Bun.spawn(["git", "status"], { stdout: "pipe" }); const out = await proc.stdout.text();',
-      nativeCMethod: 'bun_spawn::spawn',
-      isWebStandard: false,
+export const REPO_ROOT = join(import.meta.dir, '..', '..', '..', '..');
+
+const BUN_APIS: BunApiEntry[] = [
+  {
+    id: 'bun-serve',
+    name: 'Bun.serve',
+    category: 'runtime',
+    signature: 'Bun.serve(options: ServeOptions): Server',
+    description: 'HTTP and WebSocket server. apps/web/server.ts is built on it.',
+    example: 'Bun.serve({ port: 0, fetch(req) { return new Response("Hello Bun!"); } });',
+    isWebStandard: false,
+  },
+  {
+    id: 'bun-build',
+    name: 'Bun.build',
+    category: 'bundler',
+    signature: 'Bun.build(options: BuildConfig): Promise<BuildOutput>',
+    description: 'JavaScript/TypeScript/CSS bundler with plugins. apps/web/build.ts bundles the UI with it.',
+    example: 'await Bun.build({ entrypoints: ["./src/index.ts"], outdir: "./dist", minify: true });',
+    isWebStandard: false,
+  },
+  {
+    id: 'web-crypto-subtle',
+    name: 'crypto.subtle',
+    category: 'crypto',
+    signature: 'crypto.subtle.digest(algorithm, data): Promise<ArrayBuffer>',
+    description: 'Web Crypto API (digest, HMAC, AES, RSA, ECDSA).',
+    example: 'const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("data"));',
+    isWebStandard: true,
+  },
+  {
+    id: 'web-html-rewriter',
+    name: 'HTMLRewriter',
+    category: 'web-standards',
+    signature: 'new HTMLRewriter().on(selector, handlers).transform(response)',
+    description: 'Streaming HTML rewriter (lol-html), compatible with the Cloudflare Workers API.',
+    example: 'new HTMLRewriter().on("title", { text(t) { t.replace("New Title"); } }).transform(res);',
+    isWebStandard: false,
+  },
+  {
+    id: 'web-readable-stream',
+    name: 'ReadableStream & TransformStream',
+    category: 'streams',
+    signature: 'new ReadableStream(underlyingSource, strategy)',
+    description: 'WHATWG Streams API.',
+    example: 'const stream = new ReadableStream({ start(c) { c.enqueue("chunk"); c.close(); } });',
+    isWebStandard: true,
+  },
+  {
+    id: 'bun-transpiler',
+    name: 'Bun.Transpiler',
+    category: 'runtime',
+    signature: 'new Bun.Transpiler(options: TranspilerOptions): Transpiler',
+    description: 'Transpiles TypeScript, TSX and JSX to JavaScript with the Bun parser.',
+    example: 'const js = new Bun.Transpiler({ loader: "tsx" }).transformSync("<div>Hello</div>");',
+    isWebStandard: false,
+  },
+  {
+    id: 'bun-password',
+    name: 'Bun.password',
+    category: 'crypto',
+    signature: 'Bun.password.hash(password, options): Promise<string>',
+    description: 'Password hashing with argon2id, argon2i, argon2d or bcrypt.',
+    example: 'const hash = await Bun.password.hash("secret", { algorithm: "argon2id" });',
+    isWebStandard: false,
+  },
+  {
+    id: 'bun-deflate',
+    name: 'Bun.deflateSync & Bun.gzipSync',
+    category: 'io',
+    signature: 'Bun.deflateSync(data: BufferSource, options?): Uint8Array',
+    description: 'Synchronous DEFLATE and gzip compression (zlib by default, libdeflate on request).',
+    example: 'const compressed = Bun.deflateSync(new TextEncoder().encode("lots of data"));',
+    isWebStandard: false,
+  },
+  {
+    id: 'bun-ffi',
+    name: 'bun:ffi',
+    category: 'ffi',
+    signature: 'dlopen(path: string, symbols: Record<string, FFIFunction>): Library',
+    description: 'Calls C ABI functions of a shared library. @aphrody/runtime-sdk loads the yolo_* runtime through it.',
+    example: 'import { dlopen, FFIType, suffix } from "bun:ffi"; const lib = dlopen(`libsqlite3.${suffix}`, { sqlite3_libversion: { args: [], returns: FFIType.cstring } });',
+    isWebStandard: false,
+  },
+  {
+    id: 'bun-file',
+    name: 'Bun.file & Bun.write',
+    category: 'io',
+    signature: 'Bun.file(path: string): BunFile; Bun.write(dest, data): Promise<number>',
+    description: 'Lazy file handles and file writes.',
+    example: 'await Bun.write("output.txt", "data"); const text = await Bun.file("output.txt").text();',
+    isWebStandard: false,
+  },
+  {
+    id: 'bun-glob',
+    name: 'Bun.Glob',
+    category: 'io',
+    signature: 'new Bun.Glob(pattern: string): Glob',
+    description: 'Glob matching and directory scanning. This scanner lists the workspace with it.',
+    example: 'for await (const file of new Bun.Glob("**/*.ts").scan()) { console.log(file); }',
+    isWebStandard: false,
+  },
+  {
+    id: 'bun-spawn',
+    name: 'Bun.spawn',
+    category: 'runtime',
+    signature: 'Bun.spawn(command: string[], options?): Subprocess',
+    description: 'Starts a subprocess without a shell.',
+    example: 'const proc = Bun.spawn(["git", "status"], { stdout: "pipe" }); const out = await proc.stdout.text();',
+    isWebStandard: false,
+  },
+];
+
+const EXPORTED_TYPE = /^export\s+(?:declare\s+)?type\s+[A-Za-z_$]/gm;
+const EXPORTED_INTERFACE = /^export\s+(?:declare\s+)?interface\s+[A-Za-z_$]/gm;
+const EXPORTED_FUNCTION = /^export\s+(?:default\s+)?(?:declare\s+)?(?:async\s+)?function\s*\*?\s*[A-Za-z_$]/gm;
+const SOURCE_PATTERNS = ['src/**/*.{ts,tsx}', '*.{ts,tsx}'];
+
+function countMatches(text: string, pattern: RegExp): number {
+  return text.match(pattern)?.length ?? 0;
+}
+
+async function workspaceGlobs(root: string): Promise<string[]> {
+  const manifest = await Bun.file(join(root, 'package.json')).json();
+  const workspaces = manifest.workspaces;
+  const patterns: unknown = Array.isArray(workspaces) ? workspaces : workspaces?.packages;
+  return Array.isArray(patterns) ? patterns.filter((p): p is string => typeof p === 'string') : [];
+}
+
+/** Scans the workspace rooted at `root` (the monorepo by default). */
+export async function scanCodebase(root: string = REPO_ROOT): Promise<CodebaseAnalysis> {
+  const packages: MonorepoPackageInfo[] = [];
+  const seen = new Set<string>();
+  let totalTypes = 0;
+  let totalInterfaces = 0;
+  let totalFunctions = 0;
+
+  for (const pattern of await workspaceGlobs(root)) {
+    const glob = new Bun.Glob(`${pattern.replace(/\/+$/, '')}/package.json`);
+    for await (const manifestPath of glob.scan({ cwd: root, onlyFiles: true })) {
+      if (manifestPath.includes('node_modules')) continue;
+      const dir = join(root, manifestPath, '..');
+      const rel = relative(root, dir).replaceAll('\\', '/');
+      if (seen.has(rel)) continue;
+      seen.add(rel);
+
+      let manifest: { name?: string; version?: string; description?: string };
+      try {
+        manifest = await Bun.file(join(root, manifestPath)).json();
+      } catch {
+        continue;
+      }
+
+      let sourceFiles = 0;
+      const files = new Set<string>();
+      for (const sourcePattern of SOURCE_PATTERNS) {
+        for await (const file of new Bun.Glob(sourcePattern).scan({ cwd: dir, onlyFiles: true })) {
+          if (file.includes('node_modules') || file.endsWith('.d.ts')) continue;
+          files.add(file);
+        }
+      }
+      for (const file of files) {
+        const text = await Bun.file(join(dir, file)).text();
+        sourceFiles += 1;
+        totalTypes += countMatches(text, EXPORTED_TYPE);
+        totalInterfaces += countMatches(text, EXPORTED_INTERFACE);
+        totalFunctions += countMatches(text, EXPORTED_FUNCTION);
+      }
+
+      packages.push({
+        name: manifest.name ?? rel,
+        version: manifest.version ?? '',
+        description: manifest.description ?? '',
+        dir: rel,
+        sourceFiles,
+      });
     }
-  ];
+  }
 
-  const packages: MonorepoPackageInfo[] = [
-    {
-      name: 'aphrody-labs/tailwindcss',
-      version: '4.3.3-aphrody.1',
-      description: 'Tailwind CSS v4 Oxide engine with Bun.build fast pipeline and native Web Streams',
-      dir: 'C:/tailwindcss',
-      speedup: '62.6ms (>50x faster)',
-      webFeatures: ['compileStream (ReadableStream)', 'crypto.subtle candidate hashing', 'TransformStream'],
-    },
-    {
-      name: 'aphrody-labs/base-ui',
-      version: '1.8.0-aphrody.1',
-      description: 'Headless Material Design 3 React components built with parallel Bun.build and Web APIs',
-      dir: 'C:/base-ui',
-      speedup: '1.61s (>20x faster)',
-      webFeatures: ['crypto.randomUUID() fast-path', 'AbortSignal.timeout', 'FormData & ReadableStream forms'],
-    },
-    {
-      name: 'aphrody-labs/next.js',
-      version: '16.5.0-aphrody.1',
-      description: 'Next.js canary with native Bun bundler (--bun), HTMLRewriter, and zero-copy Request/Response',
-      dir: 'C:/next.js',
-      speedup: '1.95s (>50x faster)',
-      webFeatures: ['HTMLRewriter streaming SSR', 'crypto.subtle HMAC/tokens', 'zero-copy NextRequest'],
-    },
-    {
-      name: 'aphrody-labs/shenron',
-      version: '1.0.0-aphrody',
-      description: 'Full-stack production app consuming @aphrody/next-bun and @aphrody/bun-plugin-tailwind',
-      dir: 'C:/shenron',
-      speedup: 'Full Bun runtime',
-      webFeatures: ['Tailwind v4 PostCSS export', 'Bun native execution', 'Clean single-app stack'],
-    },
-    {
-      name: 'aphrody-labs/aphrody',
-      version: '3.3.8',
-      description: 'Master monorepo containing M3 framework, App Router, full Bun toolchain, and unified web app',
-      dir: 'C:/aphrody',
-      speedup: 'Native Bun compilation',
-      webFeatures: ['Full M3 tokens & themes', 'Native WebSocket & SSE', 'Tauri / React Native shared core'],
-    },
-  ];
-
+  packages.sort((a, b) => a.dir.localeCompare(b.dir));
   return {
     scannedAt: new Date().toISOString(),
-    totalTypes: 1240,
-    totalInterfaces: 380,
-    totalFunctions: 460,
+    totalTypes,
+    totalInterfaces,
+    totalFunctions,
     totalPackages: packages.length,
-    bunApis,
+    bunApis: BUN_APIS,
     packages,
   };
+}
+
+let cached: Promise<CodebaseAnalysis> | undefined;
+
+/** Monorepo scan, computed once per server process. */
+export function analyzeCodebase(): Promise<CodebaseAnalysis> {
+  cached ??= scanCodebase().catch(error => {
+    cached = undefined;
+    throw error;
+  });
+  return cached;
 }

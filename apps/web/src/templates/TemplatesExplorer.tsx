@@ -1,11 +1,35 @@
 // SPDX-License-Identifier: Apache-2.0
-import React, { useState } from 'react';
-import { TEMPLATES, type TemplateDefinition, type TemplateFile } from './templates-data';
+import React, { useEffect, useState } from 'react';
+import type { TemplateDefinition, TemplateFile } from './templates-data';
 
 export const TemplatesExplorer: React.FC = () => {
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateDefinition>(TEMPLATES[0]);
+  const [templates, setTemplates] = useState<TemplateDefinition[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [copied, setCopied] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/templates')
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+        return res.json() as Promise<TemplateDefinition[]>;
+      })
+      .then(list => {
+        setTemplates(list);
+        setSelectedId(list[0]?.id ?? null);
+      })
+      .catch(error => setLoadError(error instanceof Error ? error.message : String(error)));
+  }, []);
+
+  const selectedTemplate = templates.find(tpl => tpl.id === selectedId);
+  if (!selectedTemplate) {
+    return (
+      <div className="p-12 rounded-3xl bg-[var(--md-sys-color-surface-container)] border border-[var(--md-sys-color-outline-variant)] text-center text-xs text-[var(--md-sys-color-on-surface-variant)]">
+        {loadError ? `Templates unavailable (GET /api/templates): ${loadError}` : 'Loading m3/templates...'}
+      </div>
+    );
+  }
 
   const activeFile: TemplateFile | undefined = selectedTemplate.files[activeFileIndex] || selectedTemplate.files[0];
 
@@ -20,25 +44,25 @@ export const TemplatesExplorer: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col gap-2">
         <span className="text-xs font-bold tracking-wider uppercase text-[var(--md-sys-color-primary)]">
-          Monorepo Templates & Scaffolding
+          m3/templates
         </span>
         <h2 className="text-3xl font-black text-[var(--md-sys-color-on-surface)]">
-          Production Starters & Framework Templates
+          Project Templates of yolo create
         </h2>
         <p className="text-[var(--md-sys-color-on-surface-variant)] text-sm max-w-2xl">
-          Unified architectures for Bun microservices, Tauri 3 native desktop apps, Elysia/Hono edge APIs, and Material 3 React frontends. Ready for immediate creation via Bun CLI.
+          The templates declared in m3/templates/stack.toml, read from disk by the Bun server. A project always starts from base; the other templates are added with --with or --framework.
         </p>
       </div>
 
       {/* Template Card Selector */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {TEMPLATES.map(tpl => {
+        {templates.map(tpl => {
           const isSelected = selectedTemplate.id === tpl.id;
           return (
             <button
               key={tpl.id}
               onClick={() => {
-                setSelectedTemplate(tpl);
+                setSelectedId(tpl.id);
                 setActiveFileIndex(0);
               }}
               className={`p-5 rounded-3xl text-left border transition-all duration-200 flex flex-col justify-between gap-4 ${

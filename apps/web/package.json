@@ -20,6 +20,7 @@
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
+    "@aphrody/bun-plugin-tailwind": "0.1.0-aphrody.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "tailwindcss": "^4.3.3"

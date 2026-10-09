@@ -1,224 +1,135 @@
 // SPDX-License-Identifier: Apache-2.0
-import React, { useState } from 'react';
+import React, { useEffect, useState } from "react";
 
+interface FfiSources {
+  header: string | null;
+  rustConsumer: string | null;
+  sdkSymbols: string | null;
+}
+
+type AbiProbe =
+  | { available: true; library: string; version: number; major: number; minor: number }
+  | { available: false; library: string; error: string };
+
+const SOURCE_PANES: { key: keyof FfiSources; title: string; path: string }[] = [
+  { key: "header", title: "yolo_runtime.h (C ABI)", path: "crates/engine/yolo-runtime/include/yolo_runtime.h" },
+  { key: "sdkSymbols", title: "bun:ffi symbols (@aphrody/runtime-sdk)", path: "packages/engine/runtime/src/index.ts" },
+  { key: "rustConsumer", title: "Rust consumer example", path: "examples/runtime-rust-extension/src/lib.rs" },
+];
+
+/**
+ * Shows the YOLO runtime C ABI as it is in the repository (files served by GET /api/ffi/sources)
+ * and asks the Bun server to call `yolo_abi_version` through bun:ffi (GET /api/ffi/abi).
+ */
 export const FFIExplorer: React.FC = () => {
-  const [abiVersion, setAbiVersion] = useState<number>(140);
-  const [bufferLen, setBufferLen] = useState<number>(1024);
-  const [copied, setCopied] = useState(false);
+  const [sources, setSources] = useState<FfiSources | null>(null);
+  const [sourcesError, setSourcesError] = useState<string | null>(null);
+  const [probe, setProbe] = useState<AbiProbe | null>(null);
+  const [probing, setProbing] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
 
-  const cHeaderCode = `// crates/engine/yolo-runtime/include/yolo_runtime.h
-// Strict C ABI contract for Bun FFI and native extensions
+  useEffect(() => {
+    fetch("/api/ffi/sources")
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+        return res.json() as Promise<FfiSources>;
+      })
+      .then(setSources)
+      .catch(error => setSourcesError(error instanceof Error ? error.message : String(error)));
+  }, []);
 
-#ifndef YOLO_RUNTIME_H
-#define YOLO_RUNTIME_H
-
-#include <stdint.h>
-#include <stddef.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct {
-    uint8_t* data;
-    size_t len;
-    size_t cap;
-} YoloBuffer;
-
-// Query current ABI version (e.g. 140 for 1.4.0)
-uint32_t yolo_abi_version(void);
-
-// Query engine system stats into caller-provided or library-allocated buffer
-int32_t yolo_system_stats(uint64_t runtime_handle, YoloBuffer* output);
-
-// Release library-owned buffer
-void yolo_buffer_free(YoloBuffer* buffer);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif // YOLO_RUNTIME_H`;
-
-  const rustConsumerCode = `// examples/runtime-rust-extension/src/lib.rs
-// Rust extension consuming yolo_runtime.h ABI without monorepo engine dependency
-
-use std::ptr;
-
-#[repr(C)]
-pub struct YoloBuffer {
-    pub data: *mut u8,
-    pub len: usize,
-    pub cap: usize,
-}
-
-unsafe extern "C" {
-    fn yolo_abi_version() -> u32;
-    fn yolo_system_stats(runtime: u64, output: *mut YoloBuffer) -> i32;
-    fn yolo_buffer_free(buffer: *mut YoloBuffer);
-}
-
-pub fn check_compatibility() -> bool {
-    unsafe { yolo_abi_version() >= 140 }
-}
-
-pub fn read_stats(runtime_handle: u64) -> Result<Vec<u8>, i32> {
-    let mut buf = YoloBuffer {
-        data: ptr::null_mut(),
-        len: 0,
-        cap: 0,
-    };
-    let status = unsafe { yolo_system_stats(runtime_handle, &mut buf) };
-    if status != 0 {
-        return Err(status);
+  const runProbe = async () => {
+    setProbing(true);
+    try {
+      const res = await fetch("/api/ffi/abi");
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      setProbe(await res.json());
+    } catch (error) {
+      setProbe({ available: false, library: "", error: error instanceof Error ? error.message : String(error) });
+    } finally {
+      setProbing(false);
     }
-    let slice = unsafe { std::slice::from_raw_parts(buf.data, buf.len) };
-    let copy = slice.to_vec();
-    unsafe { yolo_buffer_free(&mut buf) };
-    Ok(copy)
-}`;
+  };
 
-  const bunFfiBindingCode = `// packages/engine/runtime/src/ffi.ts
-import { dlopen, FFIType, ptr } from "bun:ffi";
-
-const lib = dlopen("libyolo_runtime.so", {
-  yolo_abi_version: {
-    args: [],
-    returns: FFIType.u32,
-  },
-  yolo_system_stats: {
-    args: [FFIType.u64, FFIType.ptr],
-    returns: FFIType.i32,
-  },
-  yolo_buffer_free: {
-    args: [FFIType.ptr],
-    returns: FFIType.void,
-  }
-});
-
-export function getAbiVersion(): number {
-  return lib.symbols.yolo_abi_version();
-}`;
-
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopied(key);
+    setTimeout(() => setCopied(null), 2000);
   };
 
   return (
     <div className="flex flex-col gap-8 w-full max-w-6xl mx-auto">
-      {/* Header */}
       <div>
         <span className="text-xs font-bold tracking-wider uppercase text-[var(--md-sys-color-primary)]">
-          Unified Native Interop & FFI
+          Native Interop & FFI
         </span>
-        <h2 className="text-3xl font-black text-[var(--md-sys-color-on-surface)]">
-          Native C ABI & bun:ffi Contract
-        </h2>
+        <h2 className="text-3xl font-black text-[var(--md-sys-color-on-surface)]">YOLO Runtime C ABI & bun:ffi</h2>
         <p className="text-xs text-[var(--md-sys-color-on-surface-variant)] mt-1 max-w-2xl">
-          Fulfilling the Single FFI architecture: zero-copy pointer exchanges, C ABI stability, TinyCC JIT call thunks, and Rust extension consumer contract.
+          The yolo_* functions are implemented in crates/engine/yolo-runtime and exported by the aphrody_ffi shared
+          library (crates/interop/ffi). @aphrody/runtime-sdk loads them with dlopen. Library-owned YoloBuffer values are
+          released with yolo_buffer_free.
         </p>
       </div>
 
-      {/* Memory Buffer Layout Visualizer */}
-      <div className="p-6 rounded-3xl bg-[var(--md-sys-color-surface-container)] border border-[var(--md-sys-color-outline-variant)]">
-        <h3 className="text-base font-bold text-[var(--md-sys-color-on-surface)] mb-4">
-          YoloBuffer Memory Contract Visualizer
-        </h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
-          <div className="p-4 rounded-2xl bg-[var(--md-sys-color-surface)] border border-[var(--md-sys-color-outline-variant)]">
-            <span className="text-[10px] uppercase font-bold text-[var(--md-sys-color-primary)] block mb-1">
-              data: *mut uint8_t (64-bit)
-            </span>
-            <div className="text-lg font-bold text-[var(--md-sys-color-on-surface)]">
-              0x00007FF6B4A0
-            </div>
-            <span className="text-[11px] text-[var(--md-sys-color-on-surface-variant)]">
-              Heap pointer allocated by engine allocator (mimalloc)
-            </span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-[var(--md-sys-color-surface)] border border-[var(--md-sys-color-outline-variant)]">
-            <span className="text-[10px] uppercase font-bold text-[var(--md-sys-color-primary)] block mb-1">
-              len: size_t (64-bit)
-            </span>
-            <div className="text-lg font-bold text-cyan-400">
-              {bufferLen.toLocaleString()} bytes
-            </div>
-            <span className="text-[11px] text-[var(--md-sys-color-on-surface-variant)]">
-              Active initialized byte payload length
-            </span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-[var(--md-sys-color-surface)] border border-[var(--md-sys-color-outline-variant)]">
-            <span className="text-[10px] uppercase font-bold text-[var(--md-sys-color-primary)] block mb-1">
-              cap: size_t (64-bit)
-            </span>
-            <div className="text-lg font-bold text-emerald-400">
-              {(bufferLen * 2).toLocaleString()} bytes
-            </div>
-            <span className="text-[11px] text-[var(--md-sys-color-on-surface-variant)]">
-              Total buffer allocated capacity
-            </span>
-          </div>
+      <div className="p-6 rounded-3xl bg-[var(--md-sys-color-surface-container)] border border-[var(--md-sys-color-outline-variant)] flex flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h3 className="text-base font-bold text-[var(--md-sys-color-on-surface)]">ABI probe on the Bun server</h3>
+          <button
+            onClick={runProbe}
+            disabled={probing}
+            className="px-4 py-2 rounded-full bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] font-bold text-xs disabled:opacity-50"
+          >
+            {probing ? "Calling..." : "Call yolo_abi_version()"}
+          </button>
         </div>
-
-        <div className="mt-4 flex items-center gap-4">
-          <span className="text-xs text-[var(--md-sys-color-on-surface-variant)]">Simulate buffer size:</span>
-          <input
-            type="range"
-            min="256"
-            max="65536"
-            step="256"
-            value={bufferLen}
-            onChange={e => setBufferLen(Number(e.target.value))}
-            className="w-64"
-          />
-          <span className="font-mono text-xs font-bold text-[var(--md-sys-color-primary)]">
-            {bufferLen} bytes
-          </span>
-        </div>
+        {probe === null ? (
+          <p className="text-xs text-[var(--md-sys-color-on-surface-variant)]">
+            The server opens the library resolved by defaultLibraryPath() of @aphrody/runtime-sdk, calls
+            yolo_abi_version and closes it. The value is (major &lt;&lt; 16) | minor.
+          </p>
+        ) : probe.available ? (
+          <div className="font-mono text-xs text-emerald-300">
+            {probe.library}: yolo_abi_version() = {probe.version} (ABI {probe.major}.{probe.minor})
+          </div>
+        ) : (
+          <div className="font-mono text-xs text-rose-300">
+            Library not loaded{probe.library ? ` (${probe.library})` : ""}: {probe.error}
+          </div>
+        )}
       </div>
 
-      {/* Code Tabs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* C Header */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-xs font-bold text-[var(--md-sys-color-primary)]">
-              yolo_runtime.h (C ABI)
-            </span>
-            <button
-              onClick={() => copyToClipboard(cHeaderCode)}
-              className="text-[11px] text-[var(--md-sys-color-on-surface-variant)] hover:text-[var(--md-sys-color-on-surface)]"
-            >
-              {copied ? 'Copied!' : 'Copy'}
-            </button>
-          </div>
-          <div className="rounded-2xl bg-[#1e1e1e] p-4 font-mono text-xs text-gray-300 overflow-x-auto h-80">
-            <pre><code>{cHeaderCode}</code></pre>
-          </div>
+      {sourcesError && (
+        <div className="p-4 rounded-2xl bg-rose-950/40 border border-rose-800/50 text-xs text-rose-300 font-mono">
+          Sources unavailable (GET /api/ffi/sources): {sourcesError}
         </div>
+      )}
 
-        {/* Rust Extension Consumer */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-xs font-bold text-emerald-400">
-              extension.rs (Rust Consumer)
-            </span>
-            <button
-              onClick={() => copyToClipboard(rustConsumerCode)}
-              className="text-[11px] text-[var(--md-sys-color-on-surface-variant)] hover:text-[var(--md-sys-color-on-surface)]"
-            >
-              {copied ? 'Copied!' : 'Copy'}
-            </button>
-          </div>
-          <div className="rounded-2xl bg-[#1e1e1e] p-4 font-mono text-xs text-gray-300 overflow-x-auto h-80">
-            <pre><code>{rustConsumerCode}</code></pre>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {SOURCE_PANES.map(pane => {
+          const text = sources?.[pane.key] ?? null;
+          return (
+            <div key={pane.key} className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs font-bold text-[var(--md-sys-color-primary)]" title={pane.path}>
+                  {pane.title}
+                </span>
+                {text && (
+                  <button
+                    onClick={() => copyToClipboard(text, pane.key)}
+                    className="px-3 py-1 rounded-full bg-[var(--md-sys-color-surface-container-high)] text-[var(--md-sys-color-on-surface)] text-[11px] font-semibold"
+                  >
+                    {copied === pane.key ? "Copied!" : "Copy"}
+                  </button>
+                )}
+              </div>
+              <div className="rounded-2xl bg-[#1e1e1e] p-4 font-mono text-xs text-gray-300 overflow-auto h-80">
+                <pre>
+                  <code>{sources === null ? "Loading..." : (text ?? `${pane.path} not found`)}</code>
+                </pre>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

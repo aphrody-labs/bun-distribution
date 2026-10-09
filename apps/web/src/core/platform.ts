@@ -1,9 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
- * Multi-target platform detection and abstraction.
- * Unifies execution across:
- *  1. Bun Web Browser (Native DOM + Web APIs)
- *  2. Tauri Desktop (Rust IPC via lowest-level invoke)
- *  3. React Native / Mobile
+ * Platform detection for apps/web: a Tauri webview (invoke through
+ * __TAURI_INTERNALS__) or a browser (POST /api/bridge/<cmd> on the Bun server).
+ * The React Native branch only detects; no React Native project uses this code.
  */
 
 export type PlatformTarget = 'web' | 'tauri' | 'native';
@@ -25,7 +24,6 @@ export interface NativeBridge {
   target: PlatformTarget;
   isTauri: boolean;
   invoke<T = unknown>(cmd: string, args?: Record<string, unknown>): Promise<T>;
-  sendWsMessage(message: unknown): void;
 }
 
 export function createBridge(): NativeBridge {
@@ -53,10 +51,5 @@ export function createBridge(): NativeBridge {
       }
       return res.json();
     },
-    sendWsMessage(message: unknown) {
-      if (typeof window !== 'undefined' && (window as any).__aphrodyWs?.readyState === WebSocket.OPEN) {
-        (window as any).__aphrodyWs.send(JSON.stringify(message));
-      }
-    }
   };
 }
