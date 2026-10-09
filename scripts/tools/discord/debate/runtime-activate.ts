@@ -25,7 +25,7 @@ if (import.meta.main) {
   console.log(
     await run([
       process.execPath,
-      resolve(root, "packages/engine/core/src/host/cli.ts"),
+      resolve(root, "packages/infra/workspace/src/native/host/cli.ts"),
       "host-plan",
       unit,
       "--target",

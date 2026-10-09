@@ -24,7 +24,7 @@ if (import.meta.main) {
     existingServices: "preserved",
   };
   console.log(JSON.stringify({ plan }));
-  const hostCli = resolve(root, "packages/engine/core/src/host/cli.ts");
+  const hostCli = resolve(root, "packages/infra/workspace/src/native/host/cli.ts");
   console.log(await run([process.execPath, hostCli, "host-plan", plan.unit, "--target", "vps"]));
   if (!process.argv.includes("--apply")) process.exit(0);
   const stage = await mkdtemp(resolve(tmpdir(), "aphrody-debate-"));

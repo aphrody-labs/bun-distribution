@@ -88,7 +88,7 @@
     "@aphrody/runtime-sdk": "workspace:*",
     "@aphrody/timeline": "workspace:*",
     "@aphrody/update": "workspace:*",
-    "@aphrody/yolo-core": "workspace:*",
+    "@aphrody/workspace/native": "workspace:*",
     "@typescript/typescript6": "catalog:",
     "ts-morph": "catalog:"
   },

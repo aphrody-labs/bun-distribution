@@ -119,7 +119,7 @@ through the links `aphrody self install-path` creates:
   index, query), graph (code graph: build, query, explain, path, report, export), codex, app-server,
   workflow (aphrody-infra pipeline stages)
 
-Commands owned by Bun packages of the checkout (run as `bun packages/engine/yolo/src/index.ts`):
+Commands owned by Bun packages of the checkout (run as `bun packages/infra/workspace/src/commands/index.ts`):
   status, generate, rename, parse, bench, verify, desktop [build|dev], desktop-runtime, ffi (aphrody_ffi release artifacts),
   import, plugin, py, python, uv, vu, ship, hooks, ops, workspace, optimize, update, doc-ai,
   browser, forge, m3, host, api, serve, tool (yolo_* tools: list | call); google drive|fonts.

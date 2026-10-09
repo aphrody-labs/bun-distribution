@@ -541,7 +541,7 @@ export async function runInfraAudit(args: string[]): Promise<number> {
     ])
       await observe(`Bun ${commandArgs[0]}`, [
         process.execPath,
-        "packages/engine/yolo/src/index.ts",
+        "packages/infra/workspace/src/commands/index.ts",
         "ops",
         ...commandArgs,
       ]);

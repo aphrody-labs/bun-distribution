@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Root task runner: the m3 packages build, serve and compile through the yolo CLI.
 //   bun scripts/yolo.ts <build|serve|compile|test|lint|typecheck|bench|bench:check|install:theme> [args...]
-// yolo is resolved from $YOLO_ROOT (default $HOME/yolo) and run as the Bun CLI `bun run $YOLO_ROOT/packages/engine/yolo/src/index.ts`
+// yolo is resolved from $YOLO_ROOT (default $HOME/yolo) and run as the Bun CLI `bun run $YOLO_ROOT/packages/infra/workspace/src/commands/index.ts`
 // on every platform (bin/yolo is only a bash launcher around that entry).
 //   build    the canonical cached package/app pipeline (every package and app)
 //   serve    apps/example `dev`      (m3 dev: App Router, RSC refresh on change)

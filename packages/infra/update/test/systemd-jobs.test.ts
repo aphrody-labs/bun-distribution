@@ -34,7 +34,7 @@ function fixture(apply: boolean) {
   const home = mkdtempSync(join(tmpdir(), "local-native-jobs-"));
   temporary.push(home);
   const units = join(home, "installed");
-  const renderer = join(home, "yolo/packages/engine/core/src/units");
+  const renderer = join(home, "yolo/packages/infra/workspace/src/native/units");
   const privateRoot = join(home, ".aphrody/private");
   for (const path of [
     units,

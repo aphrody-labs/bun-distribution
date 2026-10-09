@@ -196,7 +196,7 @@ export async function runTauri(args: string[]): Promise<number> {
       runSync(
         [
           process.execPath,
-          join(repo, "packages/engine/yolo/src/index.ts"),
+          join(repo, "packages/infra/workspace/src/commands/index.ts"),
           "ops",
           "drive-daemon",
           "--root",

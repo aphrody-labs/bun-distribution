@@ -2024,7 +2024,7 @@
           "bins": []
         },
         {
-          "name": "@aphrody/yolo-cli",
+          "name": "@aphrody/workspace/commands",
           "path": "packages/engine/yolo",
           "description": "Zero-dependency programmatic CLI for the YOLO Bun Industrial Engine",
           "bins": [
@@ -2032,7 +2032,7 @@
           ]
         },
         {
-          "name": "@aphrody/yolo-core",
+          "name": "@aphrody/workspace/native",
           "path": "packages/engine/core",
           "description": "Unified core library for YOLO, modeled directly after Bun's core library architecture",
           "bins": []

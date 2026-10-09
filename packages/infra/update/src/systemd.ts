@@ -43,10 +43,10 @@ const unitDir = () =>
   process.env.APHRODY_SYSTEMD_USER_DIR ?? join(homedir(), ".config", "systemd", "user");
 const isUnit = (f: string) => /\.(service|timer|socket|path|target)$/.test(f);
 
-/** The unit catalog and renderer live in yolo (`@aphrody/yolo-core/units`); APHRODY_YOLO_ROOT or ~/aphrody. */
+/** The unit catalog and renderer live in yolo (`@aphrody/workspace/native/units`); APHRODY_YOLO_ROOT or ~/aphrody. */
 export function renderedUnits(): Rendered[] {
   const root = process.env.APHRODY_YOLO_ROOT ?? join(homedir(), "aphrody");
-  const entry = join(root, "packages/engine/core/src/units/index.ts");
+  const entry = join(root, "packages/infra/workspace/src/native/units/index.ts");
   if (!existsSync(entry))
     throw new Error(`yolo unit catalog missing: ${entry} (set APHRODY_YOLO_ROOT)`);
   return (createRequire(import.meta.url)(entry) as { renderAll(): Rendered[] }).renderAll();

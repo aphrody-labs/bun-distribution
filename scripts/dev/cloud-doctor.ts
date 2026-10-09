@@ -42,7 +42,7 @@ const checks: [name: string, value: string | null, required: boolean][] = [
   [
     "yolo",
     out(["yolo", "--version"]) ??
-      (existsSync(join(root, "packages/engine/yolo/src/index.ts"))
+      (existsSync(join(root, "packages/infra/workspace/src/commands/index.ts"))
         ? "source available (run via bun)"
         : null),
     false,

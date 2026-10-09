@@ -52,7 +52,7 @@ if (process.argv.includes("--compile")) {
   run(
     root,
     "run",
-    "packages/engine/yolo/src/index.ts",
+    "packages/infra/workspace/src/commands/index.ts",
     "ops",
     "discord",
     "compile",

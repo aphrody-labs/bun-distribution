@@ -19,8 +19,8 @@
   },
   "scripts": {
     "build": "bun build ./src/index.ts --outdir ./dist --target bun --format esm",
-    "google:status": "bun ../../../packages/engine/yolo/src/index.ts google drive status",
-    "google:sync": "bun ../../../packages/engine/yolo/src/index.ts google drive sync",
+    "google:status": "bun ../../../packages/infra/workspace/src/commands/index.ts google drive status",
+    "google:sync": "bun ../../../packages/infra/workspace/src/commands/index.ts google drive sync",
     "test": "bun test ./test",
     "verify": "bun run test && bun run build"
   },
@@ -30,7 +30,7 @@
     "google-auth-library": "catalog:",
     "@googleapis/docs": "catalog:",
     "@googleapis/drive": "catalog:",
-    "@aphrody/yolo-core": "workspace:*"
+    "@aphrody/workspace/native": "workspace:*"
   },
   "engines": {
     "bun": ">=1.4.3"

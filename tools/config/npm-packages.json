@@ -4,7 +4,7 @@
   "minimumBun": "1.4.2",
   "packages": [
     {
-      "name": "@aphrody/yolo-cli",
+      "name": "@aphrody/workspace/commands",
       "version": "1.0.0",
       "path": "packages/engine/yolo/package.json",
       "status": "blocked",
@@ -484,7 +484,7 @@
       "dependencies": ["@aphrody/runtime-sdk", "discord-api-types", "discord.js", "discordx"]
     },
     {
-      "name": "@aphrody/yolo-core",
+      "name": "@aphrody/workspace/native",
       "version": "1.0.1",
       "path": "packages/engine/core/package.json",
       "status": "published",
@@ -521,7 +521,7 @@
         "ai",
         "google-auth-library",
         "googleapis",
-        "@aphrody/yolo-core"
+        "@aphrody/workspace/native"
       ]
     },
     {

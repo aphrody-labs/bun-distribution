@@ -3,13 +3,13 @@
 // Checkout launcher for `aphrody`: it finds the native Rust binary and runs it, except for the five
 // pending Z1 commands listed below, which still delegate directly to the Bun/Yolo dispatcher.
 // Native routes include Bun-owned commands (crates/infra/aphrody-command/src/multicall/bun_bridge.rs runs them through
-// packages/engine/yolo/src/index.ts). `webos` is the Rust Web engine alias; apps/web is `bun run web:dev|web:build`.
+// packages/infra/workspace/src/commands/index.ts). `webos` is the Rust Web engine alias; apps/web is `bun run web:dev|web:build`.
 
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const rootDir = resolve(import.meta.dir, "..");
-const yoloEntry = join(rootDir, "packages/engine/yolo/src/index.ts");
+const yoloEntry = join(rootDir, "packages/infra/workspace/src/commands/index.ts");
 
 // Dispatcher commands the Bun fork does not serve: `rename` adds the Aphrody preset to `bun rename`,
 // `bench --supervisor` measures the yolo-runtime supervisor, `verify` runs the repository gate graph. Relayed here

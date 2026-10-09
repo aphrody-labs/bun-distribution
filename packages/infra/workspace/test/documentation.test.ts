@@ -128,7 +128,7 @@ describe("unified documentation", () => {
     ]) {
       const result = Bun.spawnSync([
         process.execPath,
-        join(import.meta.dir, "../../../../packages/engine/yolo/src/index.ts"),
+        join(import.meta.dir, "../../../../packages/infra/workspace/src/commands/index.ts"),
         "ops",
         ...args,
         "--root",

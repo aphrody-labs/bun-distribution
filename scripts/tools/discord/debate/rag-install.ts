@@ -35,7 +35,7 @@ async function applyOwnerUnit(hostCli: string): Promise<void> {
 }
 
 if (import.meta.main) {
-  const hostCli = resolve(root, "packages/engine/core/src/host/cli.ts");
+  const hostCli = resolve(root, "packages/infra/workspace/src/native/host/cli.ts");
   console.log(
     JSON.stringify({
       plan: {

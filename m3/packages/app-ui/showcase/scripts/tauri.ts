@@ -23,7 +23,7 @@ export const CARGO_RUNNER = resolve(APHRODY_ROOT, "scripts/build/rust/cargo-seri
 /** Staging directory of the compiled sidecars, inside the ignored Cargo target directory. */
 export const SIDECAR_STAGING = resolve(APHRODY_ROOT, "target/m3-showcase");
 /** `yolo m3 bun`: the m3-bun CLI hosted by the repository's one Bun CLI. */
-const YOLO_CLI = resolve(APHRODY_ROOT, "packages/engine/yolo/src/index.ts");
+const YOLO_CLI = resolve(APHRODY_ROOT, "packages/infra/workspace/src/commands/index.ts");
 
 /** The canonical compiler embeds both UI and API in one executable. */
 export function sidecarCommand(triple: string, root = SIDECAR_STAGING): string[] {
