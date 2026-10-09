@@ -257,3 +257,37 @@ streamed over SSH (no checkout needed), loads the image on dbfr and retags `aphr
 also pushes. Restart the unit (`systemctl restart aphrody-container`) to activate a new image. PCs load it with
 `ssh vps docker save aphrody:<tag> | gzip -1 | gunzip | docker load`, then `docker tag aphrody:<tag> aphrody:runtime`.
 The installers retry transient download failures (`curl --retry-all-errors`).
+
+## Docker plugin and MCP Toolkit (PC, verified 2026-10-09)
+
+Docker publishes the official agent plugin `docker-skills` (marketplace `docker`, source `docker/skills`, 0.3.1:
+skills for Dockerfile, Compose, Sandboxes, Docker Agent and destructive-operation guardrails; it ships no MCP server).
+
+```sh
+claude plugin marketplace add docker/skills && claude plugin install docker-skills@docker
+codex plugin marketplace add docker/skills && codex plugin add docker-skills@docker
+```
+
+The tools come from the Docker MCP Toolkit profile `aphrody`, connected globally to both agents as `MCP_DOCKER`
+(`docker mcp gateway run --profile aphrody`; `docker mcp client connect claude-code --global`, same for `codex`).
+The exportable, secret-free definition is [mcp/aphrody-profile.yaml](../../../tools/config/container/mcp/aphrody-profile.yaml)
+(`docker mcp profile import`). Servers: `fetch`, `context7`, `sequentialthinking`, `docker-docs`, `time` and
+`github-official` restricted to its read-only tools (writes are disabled in the profile). The GitHub token lives only in the
+Docker Desktop secret store (`docker mcp secret set github.personal_access_token`, stdin, no trailing newline).
+
+`bun scripts/tools/docker-mcp-probe.ts` calls one real tool per server through the gateway and exits non-zero on failure.
+Images must be pulled first (the gateway runs with `--pull never`).
+
+Excluded on purpose: `node-code-sandbox` needs the Docker socket inside a third-party container (engine-root access);
+`ast-grep` needs a host path mount; the `terminal_control` profile has missing paths and must not be opened on sensitive folders.
+
+Docker Desktop settings (`%APPDATA%\Docker\settings-store.json`): `MemoryMiB` 16384 (host 32 GB). Model Runner needs
+`%USERPROFILE%\.docker\bin\inference` populated from `C:\Program Files\Docker\Docker\resources\model-runner\bin` (Desktop does not
+recreate it if deleted); then `docker model pull ai/smollm2 && docker model run ai/smollm2 "..."` works.
+`ExposeDockerAPIOnTCP2375` is enabled: the daemon API on tcp/2375 is unauthenticated and unencrypted; keep it
+loopback/firewalled to trusted peers.
+
+Hosts: dbfr and vps run Docker 29.1.3 with `live-restore` and the `local` log driver (20 MB x 5). The systemd units no
+longer pass `--remove-orphans` (it removed same-project containers not in the active profile). Do not prune volumes: the
+build caches and `aphrody-home` volumes are persistent; only `docker image prune` and `docker builder prune --filter until=168h`
+are routine. Images are synchronised with `bun scripts/release/docker-sync.ts` (VPS is the source).
