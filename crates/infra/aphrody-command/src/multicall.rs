@@ -11,6 +11,8 @@ use std::{
     path::Path,
 };
 
+mod bun_bridge;
+
 /// Where a tool's arguments go.
 pub(crate) enum Target {
     /// Rewrite to the existing `aphrody <subcommand>` clap command.
@@ -66,7 +68,39 @@ pub(crate) const TOOLS: &[Tool] = &[
     // Codex OSS and App-Server Protocol v2.
     tool("codex", &["codex", "aphrody-codex"], Target::Command("codex")),
     tool("app-server", &["aphrody-app-server"], Target::Entry(app_server)),
+    // Former `yolo workflow`: the aphrody-infra pipeline stages.
+    tool("workflow", &[], Target::Entry(workflow)),
+    // Commands owned by Bun packages of the checkout (former yolo Bun CLI), see bun_bridge.
+    bun("status"),
+    bun("generate"),
+    bun("desktop"),
+    bun("desktop-runtime"),
+    bun("ffi"),
+    bun("import"),
+    bun("plugin"),
+    bun("py"),
+    bun("python"),
+    bun("uv"),
+    bun("vu"),
+    bun("ship"),
+    bun("hooks"),
+    bun("ops"),
+    bun("workspace"),
+    bun("optimize"),
+    bun("update"),
+    bun("doc-ai"),
+    bun("browser"),
+    bun("forge"),
+    bun("m3"),
+    bun("host"),
+    bun("api"),
+    bun("serve"),
+    bun("tool"),
 ];
+
+const fn bun(name: &'static str) -> Tool {
+    tool(name, &[], Target::Entry(bun_bridge::entry))
+}
 
 const fn tool(name: &'static str, aliases: &'static [&'static str], target: Target) -> Tool {
     Tool { name, aliases, target }
@@ -78,7 +112,14 @@ through the links `aphrody self install-path` creates:
   infra, ovh, yolo, kernel, host-service, ssh, wsl, backend, mcp-server, web-engine, web-worker, x,
   google, embed, n2b (Node 2 Bun), identity (design | export-assets | pixel), m3-reproduce, canvas,
   bindgen, rag-eval, tauri (cargo-tauri), create-tauri-app, home (agent home: status, backup, import,
-  index, query), graph (code graph: build, query, explain, path, report, export), codex, app-server";
+  index, query), graph (code graph: build, query, explain, path, report, export), codex, app-server,
+  workflow (aphrody-infra pipeline stages)
+
+Commands owned by Bun packages of the checkout (run as `bun packages/engine/yolo/src/index.ts`):
+  status, generate, desktop [build|dev], desktop-runtime, ffi (aphrody_ffi release artifacts),
+  import, plugin, py, python, uv, vu, ship, hooks, ops, workspace, optimize, update, doc-ai,
+  browser, forge, m3, host, api, serve, tool (yolo_* tools: list | call); google drive|fonts.
+  `aphrody mcp` without arguments starts the MCP server (= mcp-server).";
 
 /// `aphrody kernel …`: the kernel daemon and its client commands. `kernel mcp` is an alias of the single MCP
 /// server (`aphrody mcp-server`), which hosts the kernel in process (deprecated alias, 2026-10-07).
@@ -97,6 +138,33 @@ fn ovh(args: Vec<OsString>) -> i32 {
     let mut argv = vec![OsString::from("aphrody-infra"), OsString::from("ovh")];
     argv.extend(args.into_iter().skip(1));
     aphrody_infra::cli_main(argv)
+}
+
+/// `aphrody workflow …` is `aphrody infra workflow …` (former `yolo workflow`).
+fn workflow(args: Vec<OsString>) -> i32 {
+    let mut argv = vec![OsString::from("aphrody-infra"), OsString::from("workflow")];
+    argv.extend(args.into_iter().skip(1));
+    aphrody_infra::cli_main(argv)
+}
+
+/// `aphrody mcp` without arguments: the single MCP server, as `yolo mcp` was.
+fn mcp_server(args: Vec<OsString>) -> i32 {
+    let mut argv = vec![OsString::from("aphrody-mcp")];
+    argv.extend(args.into_iter().skip(1));
+    aphrody_mcp::cli_main(argv)
+}
+
+/// Routes that depend on more than the subcommand name: `google drive|fonts` (Bun owner),
+/// bare `mcp` (the server).
+fn compat_route(argv: &[OsString]) -> Option<Resolved> {
+    let word = |index: usize| argv.get(index).and_then(|arg| arg.to_str());
+    match (word(1), word(2)) {
+        (Some("google"), Some("drive" | "fonts")) => {
+            Some(Resolved::Entry(bun_bridge::google, argv[1..].to_vec()))
+        },
+        (Some("mcp"), None) => Some(Resolved::Entry(mcp_server, vec![OsString::from("mcp")])),
+        _ => None,
+    }
 }
 
 /// `aphrody tauri …` / `cargo tauri …`: the Tauri CLI. `args[0]` is the invocation name; `cargo tauri` passes a
@@ -160,14 +228,16 @@ fn identity(args: Vec<OsString>) -> i32 {
 
 /// `aphrody app-server …`: local app-server daemon.
 fn app_server(args: Vec<OsString>) -> i32 {
-    let mut argv = vec![
-        OsString::from("aphrody"),
-        OsString::from("codex"),
-        OsString::from("app-server"),
-    ];
+    let mut argv =
+        vec![OsString::from("aphrody"), OsString::from("codex"), OsString::from("app-server")];
     argv.extend(args.into_iter().skip(1));
     crate::run_from_args(argv)
 }
+
+/// Invocation name of the former Bun CLI, served by this binary. Not linked by
+/// `aphrody self install-path` yet: the Bun fork commands of chantier Z1 (rename, parse, bench,
+/// create, verify) still run through `bin/yolo`.
+const YOLO_NAME: &str = "yolo";
 
 /// What [`resolve`] decided for an argument vector.
 pub(crate) enum Resolved {
@@ -183,10 +253,18 @@ pub(crate) fn invocation_name(argv0: &OsStr) -> Option<&str> {
 }
 
 /// Route `argv` by invocation name first, then by subcommand.
-pub(crate) fn resolve(argv: Vec<OsString>) -> Resolved {
+pub(crate) fn resolve(mut argv: Vec<OsString>) -> Resolved {
     let Some(argv0) = argv.first() else {
         return Resolved::Clap(argv);
     };
+    // `yolo` is a name of `aphrody` itself (the former Bun CLI), not of one tool.
+    if invocation_name(argv0) == Some(YOLO_NAME) {
+        argv[0] = OsString::from("aphrody");
+    }
+    if let Some(resolved) = compat_route(&argv) {
+        return resolved;
+    }
+    let argv0 = &argv[0];
     if let Some(name) = invocation_name(argv0)
         && let Some(tool) = TOOLS.iter().find(|tool| tool.aliases.contains(&name))
     {
@@ -284,6 +362,46 @@ mod tests {
     fn install_path_links_every_compatibility_name() {
         let names: Vec<_> = aliases().collect();
         assert!(names.contains(&"n2b"), "`aphrody self install-path` must link n2b");
+    }
+
+    #[test]
+    fn yolo_invocation_is_aphrody() {
+        let argv = args(&["/home/u/.local/bin/yolo", "doctor"]);
+        assert_eq!(clap_args(resolve(argv)), ["aphrody", "doctor"]);
+        let Resolved::Entry(_, argv) = resolve(args(&["yolo.exe", "m3", "dev"])) else {
+            panic!("expected the Bun bridge");
+        };
+        assert_eq!(argv, args(&["m3", "dev"]));
+    }
+
+    #[test]
+    fn bun_owned_commands_keep_their_name_as_first_argument() {
+        let Resolved::Entry(_, argv) = resolve(args(&["aphrody", "ffi", "list"])) else {
+            panic!("expected the Bun bridge");
+        };
+        assert_eq!(argv, args(&["ffi", "list"]));
+    }
+
+    #[test]
+    fn google_drive_goes_to_bun_and_the_rest_to_rust() {
+        let Resolved::Entry(_, argv) = resolve(args(&["aphrody", "google", "drive", "status"]))
+        else {
+            panic!("expected the Bun google owner");
+        };
+        assert_eq!(argv, args(&["google", "drive", "status"]));
+        assert_eq!(
+            clap_args(resolve(args(&["aphrody", "google", "models"]))),
+            ["aphrody", "google", "models"]
+        );
+    }
+
+    #[test]
+    fn bare_mcp_is_the_server_and_mcp_subcommands_stay_clap() {
+        assert!(matches!(resolve(args(&["aphrody", "mcp"])), Resolved::Entry(..)));
+        assert_eq!(
+            clap_args(resolve(args(&["aphrody", "mcp", "list"]))),
+            ["aphrody", "mcp", "list"]
+        );
     }
 
     #[test]
