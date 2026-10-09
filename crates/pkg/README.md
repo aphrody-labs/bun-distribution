@@ -9,17 +9,17 @@ Owner: Aphrody. Producer integrations: Bun SP/WG and the vcpkg/NuGet forks.
   parsers and version/lock models here; none are implemented by this skeleton.
 - `aphrody-pkg-store`: streaming SHA-256 blob ingestion, upstream digest checks,
   deduplicated publication, verification, logical blob statistics and writable
-  copy materialization.
+  native reflink materialization with an independent-copy fallback.
   Callers pass the configured `<Aphrody home>/store`; no existing cache is moved.
 
 The current store refuses destination overwrite and verifies the bytes being
-materialized. Writable consumers get independent copies. Reflinks, immutable
+materialized. Writable consumers get independent cloned or copied files. Immutable
 hardlink materialization, cache adapters, garbage collection, resume HTTP,
 solver, CLI and FFI remain open work. Full builds and cross-tool performance
 qualification remain main's final pass.
 
 The workspace lockfile includes the new members. On native Windows, scoped tests
-(three store fixtures) and strict all-target Clippy pass using
+(four store fixtures) and strict all-target Clippy pass using
 `scripts/dev/windows-cargo.ps1`. Repeat for affected changes or another target:
 
 ```sh
@@ -30,6 +30,8 @@ cargo clippy --locked -p aphrody-pkg-core -p aphrody-pkg-store --all-targets -- 
 
 Store fixtures cover repeated content, consumer mutation isolation, destination
 collision, upstream hash mismatch, corrupt blobs and address path validation.
-They do not yet cover concurrent writers, the native reflink paths or real
-NuGet/vcpkg installations. The requested speed and cache savings need the real
+They also cover eight concurrent writers and temporary cleanup. The current
+Windows NTFS target exercises copy fallback; native block cloning remains to be
+qualified on ReFS/Dev Drive, Linux btrfs/xfs and macOS APFS. No real
+NuGet/vcpkg installation is qualified. The requested speed and cache savings need the real
 cross-tool workloads after the adapters are connected.

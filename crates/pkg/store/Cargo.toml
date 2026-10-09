@@ -12,6 +12,7 @@ description = "Verified content-addressed package blob store"
 sha2.workspace = true
 hex.workspace = true
 tempfile.workspace = true
+reflink-copy.workspace = true
 
 [lints]
 workspace = true

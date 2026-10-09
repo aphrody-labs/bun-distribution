@@ -236,6 +236,7 @@ similar = { version = "3", features = [] }
 syn = { version = "3.0.5", features = ["full", "extra-traits"] }
 sysinfo = { version = "0.39.6", features = ["system", "disk"], default-features = false }
 tempfile = "3.27.0"
+reflink-copy = "0.1.30"
 thiserror = "2.0.20"
 time = { version = "0.3", features = ["macros", "formatting", "parsing", "serde"] }
 tokenizers = { version = "0.23.2", features = ["fancy-regex", "onig"], default-features = false }

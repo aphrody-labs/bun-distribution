@@ -40,6 +40,12 @@ pub struct StoreStats {
     pub bytes: u64,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Materialization {
+    Reflink,
+    Copy,
+}
+
 impl Store {
     /// Callers resolve the configured Aphrody home and pass `<home>/store`.
     pub fn new(root: impl Into<PathBuf>) -> Self {
@@ -139,12 +145,43 @@ impl Store {
         Ok(())
     }
 
-    /// Materialize writable bytes using a copy. Never clobbers an existing path.
-    /// Reflink and protected immutable-link modes will extend this operation.
+    /// Materialize independent writable bytes. Never clobbers an existing path.
     pub fn materialize(&self, id: &BlobId, destination: &Path) -> io::Result<()> {
+        self.materialize_with_method(id, destination).map(|_| ())
+    }
+
+    /// Native block clone, then independent copy. Original-blob hardlinks are
+    /// excluded for writable consumers. Returns the method actually used.
+    pub fn materialize_with_method(
+        &self,
+        id: &BlobId,
+        destination: &Path,
+    ) -> io::Result<Materialization> {
         let parent =
             destination.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(Path::new("."));
         fs::create_dir_all(parent)?;
+        let staging = tempfile::tempdir_in(parent)?;
+        let cloned_path = staging.path().join("blob");
+        if reflink_copy::reflink(self.blob_path(id), &cloned_path).is_ok() {
+            let mut cloned = File::open(&cloned_path)?;
+            let mut hasher = Sha256::new();
+            let mut buffer = [0_u8; 64 * 1024];
+            loop {
+                let count = cloned.read(&mut buffer)?;
+                if count == 0 {
+                    break;
+                }
+                hasher.update(&buffer[..count]);
+            }
+            if hex::encode(hasher.finalize()) != id.0 {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "corrupt cloned blob"));
+            }
+            drop(cloned);
+            File::options().write(true).open(&cloned_path)?.sync_all()?;
+            // Publish the independently cloned inode, not the store's inode.
+            fs::hard_link(&cloned_path, destination)?;
+            return Ok(Materialization::Reflink);
+        }
         let mut temporary = NamedTempFile::new_in(parent)?;
         let mut source = File::open(self.blob_path(id))?;
         let mut hasher = Sha256::new();
@@ -162,7 +199,7 @@ impl Store {
         }
         temporary.as_file().sync_all()?;
         temporary.persist_noclobber(destination).map_err(|error| error.error)?;
-        Ok(())
+        Ok(Materialization::Copy)
     }
 }
 
@@ -179,7 +216,8 @@ mod tests {
         assert_eq!(first, second);
         assert_eq!(store.stats()?, StoreStats { blobs: 1, bytes: 13 });
         let destination = root.path().join("consumer/package");
-        store.materialize(&first, &destination)?;
+        let method = store.materialize_with_method(&first, &destination)?;
+        eprintln!("materialization method: {method:?}");
         fs::write(&destination, b"consumer edits")?;
         store.verify(&first)?;
         assert_eq!(fs::read(store.blob_path(&first))?, b"package bytes");
@@ -215,6 +253,28 @@ mod tests {
         assert!(BlobId::parse("../other").is_err());
         let uppercase = "A".repeat(64);
         assert_eq!(BlobId::parse(&format!("sha256:{uppercase}"))?.as_str(), "a".repeat(64));
+        Ok(())
+    }
+
+    #[test]
+    fn concurrent_ingestion_deduplicates_and_releases_temporaries() -> io::Result<()> {
+        let root = tempfile::tempdir()?;
+        let store = std::sync::Arc::new(Store::new(root.path()));
+        let handles: Vec<_> = (0..8)
+            .map(|_| {
+                let store = std::sync::Arc::clone(&store);
+                std::thread::spawn(move || store.put(&b"same package"[..], None))
+            })
+            .collect();
+        let ids: Vec<_> = handles
+            .into_iter()
+            .map(|handle| {
+                handle.join().map_err(|_| io::Error::other("ingestion worker panicked"))?
+            })
+            .collect::<io::Result<_>>()?;
+        assert!(ids.iter().all(|id| id == &ids[0]));
+        assert_eq!(store.stats()?, StoreStats { blobs: 1, bytes: 12 });
+        assert_eq!(fs::read_dir(root.path().join("staging"))?.count(), 0);
         Ok(())
     }
 }
