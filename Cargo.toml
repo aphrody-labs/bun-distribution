@@ -64,7 +64,7 @@ aphrody-agent-home = { path = "crates/ai/agent-home", version = "1.0.0", feature
 aphrody-agent-proto = { path = "crates/contracts/agent-proto", version = "1.0.0-canary", features = [] }
 aphrody-agent-runtime = { path = "crates/ai/agent-runtime", version = "1.0.0", features = [] }
 aphrody-agent-tools = { path = "crates/ai/agent-tools", version = "1.0.0", features = [] }
-aphrody-identity = { path = "crates/ui/identity", version = "1.0.0-canary" }
+aphrody-identity = { path = "crates/ui/identity", version = "1.0.0-canary.1" }
 aphrody-antigravity = { path = "crates/google/antigravity", version = "1.0.0", features = [] }
 aphrody-app-protocol = { path = "crates/contracts/app-protocol", version = "1.0.0-canary", features = [] }
 aphrody-app-server = { path = "crates/ai/app-server", version = "1.0.0", features = [] }
