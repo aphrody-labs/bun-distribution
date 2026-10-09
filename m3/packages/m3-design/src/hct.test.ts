@@ -134,7 +134,7 @@ describe("HCT palette and CSS variables compiler", () => {
 
   test("both modes declare every M3 color role and reference existing palette values", async () => {
     const contract = await Bun.file(
-      new URL("../../m3-tokens/src/dynamic-color.ts", import.meta.url),
+      new URL("../../m3-tokens/src/native-theme.ts", import.meta.url),
     ).text();
     const roles = [
       .../export const ROLES = \[([\s\S]*?)\]/.exec(contract)![1]!.matchAll(/"(\w+)"/g),
