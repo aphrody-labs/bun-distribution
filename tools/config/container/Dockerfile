@@ -40,18 +40,14 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 RUN APHRODY_DOWNLOAD_URL="${APHRODY_DOWNLOAD_URL}" \
     APHRODY_RELEASE="${APHRODY_RELEASE}" \
-    APHRODY_COMPONENTS="aphrody yolo" \
+    APHRODY_COMPONENTS="aphrody" \
     APHRODY_PREFIX=/opt/aphrody \
     APHRODY_NO_LINKS=1 \
-    YOLO_HOME=/home/aphrody/.yolo \
-    YOLO_NO_CRATES=1 \
-    YOLO_NO_MODIFY_PATH=1 \
     sh /tmp/aphrody-install.sh \
  && set -- /opt/aphrody/lib/aphrody/*/aphrody \
  && test -x "$1" \
  && strip --strip-unneeded "$1" \
  && "$1" --version >/dev/null \
- && chown -R aphrody:aphrody /home/aphrody/.yolo \
  && rm -f /tmp/aphrody-install.sh
 
 # Developer base. Pins follow package.json (packageManager) and tools/config/system-packages.json.
@@ -101,13 +97,12 @@ RUN --mount=type=cache,target=/home/aphrody/.bun/install/cache,uid=1000,gid=1000
 # Compact runtime: verified Aphrody/Yolo artifacts, no monorepo or node_modules.
 FROM runtime-base AS runtime
 COPY --chown=aphrody:aphrody --from=artifacts /opt/aphrody /opt/aphrody
-COPY --chown=aphrody:aphrody --from=artifacts /home/aphrody/.yolo /home/aphrody/.yolo
 RUN set -- /opt/aphrody/lib/aphrody/*/aphrody \
  && test -x "$1" \
  && ln -s "$1" /usr/local/bin/aphrody \
  && ln -s "$1" /usr/local/bin/aphrody-mcp
 ENV APHRODY_HOME=/home/aphrody/.aphrody PORT=8999
-ENV YOLO_HOME=/home/aphrody/.yolo PATH=/home/aphrody/.yolo/bin:/usr/local/bin:/usr/bin:/bin
+ENV PATH=/usr/local/bin:/usr/bin:/bin
 VOLUME /home/aphrody/.aphrody
 EXPOSE 8999
 USER aphrody
@@ -120,7 +115,6 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends ffmpeg \
  && rm -rf /var/lib/apt/lists/*
 COPY --chown=aphrody:aphrody --from=artifacts /opt/aphrody /opt/aphrody
-COPY --chown=aphrody:aphrody --from=artifacts /home/aphrody/.yolo /home/aphrody/.yolo
 RUN set -- /opt/aphrody/lib/aphrody/*/aphrody \
  && test -x "$1" \
  && ln -s "$1" /usr/local/bin/aphrody \

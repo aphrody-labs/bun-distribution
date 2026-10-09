@@ -54,7 +54,7 @@ case "$arch" in
 esac
 TARGET="$arch_part-$os_part"
 
-if have curl; then fetch() { curl -fsSL "$1" -o "$2"; }
+if have curl; then fetch() { curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 "$1" -o "$2"; }
 elif have wget; then fetch() { wget -qO "$2" "$1"; }
 else die "curl or wget is required"; fi
 if have sha256sum; then sha256() { sha256sum "$1" | cut -d' ' -f1; }

@@ -4,12 +4,12 @@ Description=Aphrody complete container (compose profile prod)
 After=network-online.target docker.service
 Wants=network-online.target
 Requires=docker.service
-ConditionPathExists=/etc/aphrody/yolo_api_token
+ConditionPathExists=/etc/aphrody/aphrody_mcp_http_token
 
 [Service]
 Type=simple
 WorkingDirectory=/srv/aphrody/current
-Environment=APHRODY_API_TOKEN_FILE=/etc/aphrody/yolo_api_token
+Environment=APHRODY_API_TOKEN_FILE=/etc/aphrody/aphrody_mcp_http_token
 Environment=APHRODY_PROD_PORT=8999
 ExecStart=/usr/bin/docker compose -f tools/config/container/compose.yaml --profile prod up --no-build --remove-orphans
 ExecStop=/usr/bin/docker compose -f tools/config/container/compose.yaml --profile prod down
