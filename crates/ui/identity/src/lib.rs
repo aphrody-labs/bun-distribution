@@ -32,11 +32,13 @@ pub mod logo;
 pub mod pets;
 /// Mesure, comparaison et rastérisation — le socle de la skill `pixel-perfect`.
 pub mod pixel;
+/// Thèmes de terminal (Windows Terminal, Rio, Nushell, prompt du Bun Shell) tirés du schéma M3.
+pub mod terminal_theme;
 /// Le pet sur le web : données générées pour `<aphrody-pet>` et suite de parité Rust ↔ web.
 pub mod web;
 
 #[cfg(feature = "fs")]
-pub use cli::{design_main, export_assets_main, pet_main, pixel_main};
+pub use cli::{design_main, export_assets_main, pet_main, pixel_main, terminal_theme_main};
 
 use serde::Deserialize;
 use sha2::{Digest, Sha256};

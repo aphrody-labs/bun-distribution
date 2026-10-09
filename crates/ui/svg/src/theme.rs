@@ -21,6 +21,7 @@ const PAINT_PROPERTIES: &[&str] =
 #[derive(Debug, Clone, Default)]
 pub struct Theme {
     current_color: Option<String>,
+    root_paint: Option<String>,
     vars: HashMap<String, String>,
     remap: Vec<(svgtypes::Color, String)>,
 }
@@ -36,6 +37,17 @@ impl Theme {
     #[must_use]
     pub fn current_color(mut self, color: impl Into<String>) -> Self {
         self.current_color = Some(color.into());
+        self
+    }
+
+    /// Tints a monochrome icon: `currentColor` becomes `color`, and the root `<svg>` gets
+    /// `fill` and `color` set to it (replacing its own), so unpainted shapes take it too.
+    /// Shapes with an explicit colour keep it.
+    #[must_use]
+    pub fn tint(mut self, color: impl Into<String>) -> Self {
+        let color = color.into();
+        self.current_color = Some(color.clone());
+        self.root_paint = Some(color);
         self
     }
 
@@ -177,13 +189,19 @@ fn matching_paren(s: &str) -> Option<usize> {
 impl Rules for Theme {
     fn attribute(
         &self,
-        _node: Node<'_, '_>,
+        node: Node<'_, '_>,
         local: &str,
         ns: Option<&str>,
         value: &str,
     ) -> Option<String> {
         if ns.is_some() {
             return Some(value.to_owned());
+        }
+        if self.root_paint.is_some()
+            && node.parent_element().is_none()
+            && matches!(local, "fill" | "color")
+        {
+            return None;
         }
         Some(if PAINT_PROPERTIES.contains(&local) {
             self.resolve_paint(value)
@@ -192,6 +210,15 @@ impl Rules for Theme {
         } else {
             value.to_owned()
         })
+    }
+
+    fn extra_attributes(&self, node: Node<'_, '_>) -> Vec<(String, String)> {
+        match &self.root_paint {
+            Some(paint) if node.parent_element().is_none() => {
+                vec![("fill".to_owned(), paint.clone()), ("color".to_owned(), paint.clone())]
+            },
+            _ => Vec::new(),
+        }
     }
 
     fn text(&self, parent: Node<'_, '_>, text: &str) -> Option<String> {
@@ -233,6 +260,15 @@ mod tests {
         assert!(out.contains(r##"stroke="#ffffff""##));
         assert!(out.contains("fill:red;opacity:.5"), "{out}");
         assert!(out.contains(r#"fill="var(--nope)""#));
+    }
+
+    #[test]
+    fn tint_paints_the_root_and_current_color() {
+        let svg = r##"<svg xmlns="http://www.w3.org/2000/svg" fill="#000" viewBox="0 0 1 1"><path d="M0 0"/><path stroke="currentColor"/><path fill="red"/></svg>"##;
+        let out = apply(svg, &Theme::new().tint("#6750a4")).expect("ok");
+        assert_eq!(out.matches("#6750a4").count(), 3, "{out}");
+        assert!(!out.contains(r##"fill="#000""##), "{out}");
+        assert!(out.contains(r#"fill="red""#), "{out}");
     }
 
     #[cfg(feature = "m3")]

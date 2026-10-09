@@ -867,6 +867,14 @@ impl RemoteComputerBackend {
             .client
             .post(&self.target.endpoint)
             .header("Accept", "application/json, text/event-stream")
+            // The remote Aphrody MCP binds a loopback address by contract
+            // (`aphrody-mcp http` refuses a non-loopback bind) and is reached over the
+            // tunnel through a netsh portproxy. rmcp's streamable-HTTP transport guards
+            // against DNS rebinding by rejecting any Host header that is not loopback
+            // ("Forbidden: Host header is not allowed"), so the mesh address reqwest would
+            // derive (e.g. 10.200.77.10:8793) is refused. Present the loopback identity the
+            // server actually listens on; the portproxy already routed us there.
+            .header(reqwest::header::HOST, "localhost")
             .json(payload);
         if let Some(token) = self.bearer() {
             req = req.bearer_auth(token);
@@ -2102,6 +2110,13 @@ mod tests {
                     let mut buf = vec![0u8; 4096];
                     let n = socket.read(&mut buf).await.unwrap_or(0);
                     let req = String::from_utf8_lossy(&buf[..n]);
+
+                    // Every request must present the loopback Host the remote MCP listens on,
+                    // not the mesh address, or rmcp's DNS-rebinding guard would reject it.
+                    assert!(
+                        req.to_ascii_lowercase().contains("host: localhost"),
+                        "request must carry `Host: localhost`, got headers: {req}"
+                    );
 
                     if req.contains("notifications/initialized") {
                         let _ = socket

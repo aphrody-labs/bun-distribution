@@ -78,7 +78,7 @@ async function quiet(argv: string[], env?: Record<string, string>): Promise<numb
   return proc.exited;
 }
 
-async function waitEngine(): Promise<void> {
+export async function waitEngine(): Promise<void> {
   const deadline = Date.now() + ENGINE_WAIT_MS;
   let started = false;
   while ((await quiet(["docker", "info"])) !== 0) {
@@ -99,6 +99,7 @@ async function waitEngine(): Promise<void> {
 }
 
 export async function main(argv = Bun.argv.slice(2)): Promise<number> {
+  if (argv[0] === "--mesh") return (await import("./mesh-supervisor.ts")).main(argv.slice(1));
   const value = (flag: string) => {
     const at = argv.indexOf(flag);
     return at >= 0 ? argv[at + 1] : undefined;

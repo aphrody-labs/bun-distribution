@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use html5ever::{
   LocalName,
   interface::QualName,
-  namespace_url, ns,
+  ns,
   serialize::{HtmlSerializer, SerializeOpts, Serializer, TraversalScope},
   tendril::TendrilSink,
 };

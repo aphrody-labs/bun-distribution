@@ -15,7 +15,7 @@ aphrody-embedding-fixture = "aphrody_embedding_fixtures.generate_reference:main"
 aphrody-rerank-fixture = "aphrody_embedding_fixtures.generate_rerank_reference:main"
 
 [project.optional-dependencies]
-generate = ["sentence-transformers[onnx]>=5.0"]
+generate = ["sentence-transformers>=5.0"]
 
 [build-system]
 requires = ["hatchling"]

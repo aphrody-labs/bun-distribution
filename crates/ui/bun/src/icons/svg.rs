@@ -1,45 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
-//! Pixel-perfect SVG path generation from the embedded Material Symbols variable fonts.
+//! Pixel-perfect SVG paths from the embedded Material Symbols variable fonts.
 //!
-//! This module never rasterizes and never ships a font at runtime: it decodes the WOFF2
-//! bytes already embedded by this crate once (pure-Rust `woff2` decoder, itself backed by
-//! the pure-Rust `brotli` decompressor), instances the variable font at the requested axis
-//! values with `skrifa`/`read-fonts` (the [fontations](https://github.com/googlefonts/fontations)
-//! stack used by Chrome, Android and `resvg`), and walks the resulting outline into an SVG
-//! path string with the same coordinate convention Google ships in its own
-//! `materialsymbols*` SVG exports: `viewBox="0 -960 960 960"`, i.e. `x_svg = x_font`,
-//! `y_svg = -y_font`, with the variable font's `unitsPerEm` equal to `1000` (verified by
-//! `tests/icons_svg_parity.rs` against real Google-exported fixtures).
-//!
-//! Name resolution resolves the glyph for an icon name the same way a browser does: through
-//! the font's own `GSUB` ligature lookup, substituting the sequence of glyphs for the ASCII
-//! name (e.g. `h`, `o`, `m`, `e`) with the single glyph that carries the
-//! `wght`/`FILL`/`GRAD`/`opsz` deltas for that icon. Material Symbols implements this under the
-//! `rlig` ("Required Ligatures", always applied by a shaper) feature rather than the optional
-//! `liga` feature its own CSS references (there is no `liga` feature in these fonts at all);
-//! both tags are accepted defensively. This was chosen over a fixed name -> Private Use Area
-//! codepoint table after empirically finding that Google's published `.codepoints` files (one
-//! per font *release*) drift out of sync with specific embedded font builds — e.g. `search`'s
-//! codepoint in the upstream table has no `cmap` entry at all in the `material-symbols`
-//! 0.44.8 fonts embedded here, because Google reassigns a few codepoints between releases as
-//! icons are added. Reading `GSUB` directly is exact for whatever font bytes are actually
-//! embedded, at the cost of implementing a small ligature-substitution-only subset of OpenType
-//! shaping (`LookupType 4`, optionally indirected through `LookupType 7`, single-script `liga`
-//! feature; Material Symbols does not need base "reordering" glyph shaping otherwise).
+//! The fonts embedded by this crate are decoded once per process (WOFF2 -> TTF); the name ->
+//! glyph resolution through the font's `GSUB` ligatures (`rlig`; Google's `.codepoints` tables
+//! drift between releases), axis instancing and the `0 -960 960 960` pen live in
+//! `aphrody_svg::symbols`, shared with `aphrody-identity`. `tests/icons_svg_parity.rs` checks
+//! the output against Google's own SVG exports.
 //!
 //! [`Style::icon_names`] lists the names the same package release declares in its `index.d.ts`.
 
 use std::sync::{Arc, OnceLock};
 
-use aphrody_svg::glyph::{NumberFormat, SvgPathPen};
-
-use read_fonts::{
-    TableProvider,
-    tables::gsub::SubstitutionLookup,
-    types::{GlyphId, Tag},
+use aphrody_svg::{
+    glyph::NumberFormat,
+    symbols::{SymbolAxes, decode_font, symbol_path},
 };
-use skrifa::{FontRef, MetadataProvider, instance::Size, outline::DrawSettings};
 
 /// The three Material Symbols variable-font styles this module can render.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
@@ -66,10 +42,9 @@ impl Style {
         if let Some(bytes) = self.slot().get() {
             return Ok(bytes.clone());
         }
-        let mut cursor = std::io::Cursor::new(self.woff2_data().ok_or(SvgError::FontsUnavailable)?);
-        let ttf = woff2::convert_woff2_to_ttf(&mut cursor)
-            .map_err(|e| SvgError::Woff2(format!("{e}")))?;
-        let arc: Arc<[u8]> = Arc::from(ttf);
+        let woff2 = self.woff2_data().ok_or(SvgError::FontsUnavailable)?;
+        let ttf = decode_font(woff2).map_err(|e| SvgError::Woff2(e.to_string()))?;
+        let arc: Arc<[u8]> = Arc::from(ttf.into_owned());
         // Another thread may have raced us; `OnceLock::get_or_init` would need a closure that
         // can fail, so settle for `set` and re-read on the (rare, harmless) loss.
         let _ = self.slot().set(arc);
@@ -111,14 +86,9 @@ impl Default for Axes {
     }
 }
 
-impl Axes {
-    fn clamped(self) -> Self {
-        Self {
-            fill: self.fill.clamp(0.0, 1.0),
-            weight: self.weight.clamp(100.0, 700.0),
-            grade: self.grade.clamp(-25.0, 200.0),
-            optical_size: self.optical_size.clamp(20.0, 48.0),
-        }
+impl From<Axes> for SymbolAxes {
+    fn from(a: Axes) -> Self {
+        Self { fill: a.fill, weight: a.weight, grade: a.grade, optical_size: a.optical_size }
     }
 }
 
@@ -146,101 +116,6 @@ impl core::fmt::Display for SvgError {
 
 impl std::error::Error for SvgError {}
 
-/// The Google Material Symbols SVG grid: `viewBox="0 -960 960 960"`.
-const GRID_UNITS: f32 = 960.0;
-
-/// Resolves `name` (an ASCII icon name, e.g. `"home"`) to the glyph its `GSUB` `liga` lookup
-/// substitutes the per-character glyph sequence with, exactly like a text shaper (HarfBuzz,
-/// DirectWrite, CoreText) would when rendering the name string with `font-feature-settings:
-/// "liga"` as Material Symbols' own CSS does. Returns `None` if any character has no `cmap`
-/// entry, or no ligature rule matches the full sequence.
-fn ligature_glyph_for_name(font: &FontRef, name: &str) -> Option<GlyphId> {
-    let charmap = font.charmap();
-    let mut chars = name.chars();
-    let first_glyph = charmap.map(chars.next()?)?;
-    let rest_glyphs: Vec<GlyphId> = chars.map(|c| charmap.map(c)).collect::<Option<_>>()?;
-
-    let gsub = font.gsub().ok()?;
-    let script_list = gsub.script_list().ok()?;
-    let feature_list = gsub.feature_list().ok()?;
-    let lookup_list = gsub.lookup_list().ok()?;
-
-    let script_record = script_list
-        .script_records()
-        .iter()
-        .find(|r| r.script_tag() == Tag::new(b"DFLT"))
-        .or_else(|| {
-            script_list.script_records().iter().find(|r| r.script_tag() == Tag::new(b"latn"))
-        })
-        .or_else(|| script_list.script_records().first())?;
-    let script = script_record.script(script_list.offset_data()).ok()?;
-    let lang_sys = script.default_lang_sys()?.ok()?;
-
-    // Material Symbols implements its name ligatures under `rlig` ("Required Ligatures", always
-    // applied by a shaper, unlike optional `liga`) rather than `liga` itself; there is no `liga`
-    // feature in these fonts at all (verified against the embedded `material-symbols` 0.44.8
-    // fonts). Accept either tag defensively.
-    let ligature_feature_tags = [Tag::new(b"rlig"), Tag::new(b"liga")];
-    let lookup_indices = lang_sys.feature_indices().iter().filter_map(|idx| {
-        let record = feature_list.feature_records().get(idx.get() as usize)?;
-        ligature_feature_tags
-            .contains(&record.feature_tag())
-            .then(|| record.feature(feature_list.offset_data()).ok())
-            .flatten()
-    });
-
-    // Every non-extension ligature subtable found, from either a direct `LookupType 4` lookup
-    // or a `LookupType 7` (`Extension`) indirection (used when the subtable's own offset would
-    // not fit in 16 bits, common in large variable fonts like Material Symbols).
-    let ligature_subtables =
-        |lookup_idx: u16| -> Vec<read_fonts::tables::gsub::LigatureSubstFormat1<'_>> {
-            let Ok(lookup) = lookup_list.lookups().get(lookup_idx as usize) else {
-                return Vec::new();
-            };
-            match lookup {
-                SubstitutionLookup::Ligature(lookup) => {
-                    lookup.subtables().iter().flatten().collect()
-                },
-                SubstitutionLookup::Extension(lookup) => lookup
-                    .subtables()
-                    .iter()
-                    .flatten()
-                    .filter_map(|ext| match ext {
-                        read_fonts::tables::gsub::ExtensionSubtable::Ligature(ligature_ext) => {
-                            ligature_ext.extension().ok()
-                        },
-                        _ => None,
-                    })
-                    .collect(),
-                _ => Vec::new(),
-            }
-        };
-
-    for feature in lookup_indices {
-        for lookup_idx in feature.lookup_list_indices() {
-            for subtable in ligature_subtables(lookup_idx.get()) {
-                let Ok(coverage) = subtable.coverage() else { continue };
-                let Some(coverage_index) = coverage.get(first_glyph) else { continue };
-                let Ok(ligature_set) = subtable.ligature_sets().get(coverage_index as usize) else {
-                    continue;
-                };
-                for ligature in ligature_set.ligatures().iter().flatten() {
-                    let matches = ligature.component_glyph_ids().len() == rest_glyphs.len()
-                        && ligature
-                            .component_glyph_ids()
-                            .iter()
-                            .zip(&rest_glyphs)
-                            .all(|(a, b)| GlyphId::from(a.get()) == *b);
-                    if matches {
-                        return Some(GlyphId::from(ligature.ligature_glyph()));
-                    }
-                }
-            }
-        }
-    }
-    None
-}
-
 /// Returns just the SVG path `d` attribute value for `name`, in the font's own
 /// `unitsPerEm` grid renormalized to Google's `0 -960 960 960` convention
 /// (i.e. independent of `size`; `size` only changes the `width`/`height` returned
@@ -250,35 +125,10 @@ pub fn icon_path(name: &str, style: Style, axes: Axes) -> Result<Option<String>,
         return Ok(None);
     }
     let ttf = style.ttf_bytes()?;
-    let font = FontRef::new(&ttf).map_err(|e| SvgError::Font(format!("{e}")))?;
-
-    let Some(glyph_id) = ligature_glyph_for_name(&font, name) else {
-        return Ok(None);
-    };
-
-    let axes = axes.clamped();
-    let location = font.axes().location(&[
-        ("wght", axes.weight),
-        ("FILL", axes.fill),
-        ("GRAD", axes.grade),
-        ("opsz", axes.optical_size),
-    ]);
-
-    let units_per_em = font.metrics(Size::unscaled(), &location).units_per_em as f32;
-    let scale = if units_per_em > 0.0 { GRID_UNITS / units_per_em } else { 1.0 };
-
-    let outlines = font.outline_glyphs();
-    let Some(glyph) = outlines.get(glyph_id) else {
-        return Ok(None);
-    };
-    let settings = DrawSettings::unhinted(Size::unscaled(), &location);
-
-    // The pen is the shared `aphrody-svg` glyph pen (scale + Y flip), kept at fixed two-decimal
-    // output so generated paths stay byte-stable.
-    let mut pen = SvgPathPen::new(scale, NumberFormat::Fixed(2));
-    glyph.draw(settings, &mut pen).map_err(|e| SvgError::Font(format!("{e}")))?;
-
-    Ok(Some(pen.into_path()))
+    // Ligature lookup, axis clamping and the 960-grid pen live in `aphrody_svg::symbols`; fixed
+    // two-decimal output keeps generated paths byte-stable.
+    symbol_path(&ttf, name, axes.into(), NumberFormat::Fixed(2))
+        .map_err(|e| SvgError::Font(e.to_string()))
 }
 
 /// Renders `name` (a Material Symbols icon name, e.g. `"home"`, `"favorite"`) as a

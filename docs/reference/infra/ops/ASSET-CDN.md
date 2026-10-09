@@ -56,3 +56,26 @@ That comparison is required before redeploying the retired CDN.
 
 The vhost keeps its request limits (`nie_assets`: 10 r/s, burst 20) for every path, static
 namespaces included.
+
+## Material Symbols
+
+Owned by the fork `aphrody-labs/material-design-icons`, branch `aphrody` (checkout
+`~/src/forks/material-design-icons` on vps), not by a catalog source: the release is built there and
+published as its own static root, listed in `asset-catalog.json` `releases`.
+
+| URL | Content | Cache |
+| --- | --- | --- |
+| `/s/symbols/material-symbols.css` | `@font-face` Outlined, Rounded, Sharp (variable WOFF2, `font-display: block`) and the Google classes `.material-symbols-{outlined,rounded,sharp}` | 1 h, stale-while-revalidate 1 d |
+| `/s/symbols/release.json` | commit, symbol count, URL, size and sha256 of every file | 1 h |
+| `/h/<sha16>.{css,woff2,ttf}` | the CSS, the web WOFF2 and the desktop TTF of each style | immutable, 1 year |
+
+```sh
+# in ~/src/forks/material-design-icons (vps)
+bun run build && bun run check
+bun run cdn build && bun run cdn publish --host dbfr && bun run cdn verify
+```
+
+`publish` rsyncs `dist/cdn` to `/home/ubuntu/apps/cdn/symbols/releases/<id>` on dbfr and switches
+`/home/ubuntu/apps/cdn/symbols/current`; `aphrody-fonts-proxy` serves it as its second `--static` root,
+after the catalog release `/home/ubuntu/apps/cdn/current`. Rollback: point `current` back to the previous
+release directory. Then update the `releases` entry of `asset-catalog.json` (commit, id, URLs, sha256).

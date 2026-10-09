@@ -28,7 +28,102 @@ x-runtime: &runtime
   cap_drop: [ALL]
   security_opt: ["no-new-privileges:true"]
 
+# dbfr services on aphrody:toolbox (the VPS toolbox build, scripts/release/toolbox-image.ts --ship dbfr-wg; never
+# built on dbfr): host network on the loopback ports of the former units, uid 1000 = ubuntu, host paths bound at the
+# same place, empty tmpfs home as ProtectHome=tmpfs did.
+x-toolbox: &toolbox
+  image: ${APHRODY_TOOLBOX_IMAGE:-aphrody:toolbox}
+  pull_policy: never
+  init: true
+  user: "1000:1000"
+  network_mode: host
+  read_only: true
+  tmpfs: [/tmp, "/home/ubuntu:uid=1000,gid=1000,mode=0700"]
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  restart: unless-stopped
+  profiles: [prod]
+
 services:
+  # MCP Streamable HTTP for the wg clients (aphrody-wg-proxy@ forwards 10.200.77.3:8793 here); Bearer token from the
+  # env file. The M3 tool host runs with the image's bun.
+  mcp-http:
+    <<: *toolbox
+    command: ["aphrody-mcp", "http", "--bind", "127.0.0.1:8793"]
+    working_dir: /home/ubuntu/.aphrody
+    env_file: [/etc/aphrody/aphrody-mcp-http.env, /etc/aphrody/discord-debate-rag.env]
+    environment:
+      HOME: /home/ubuntu
+      XDG_CACHE_HOME: /home/ubuntu/.aphrody/xdg/cache
+      XDG_CONFIG_HOME: /home/ubuntu/.aphrody/xdg/config
+      XDG_DATA_HOME: /home/ubuntu/.aphrody/xdg/data
+      RUST_LOG: info
+      APHRODY_M3_TOOL_HOST: bun /home/ubuntu/apps/lab/m3-tool-host.mjs
+    volumes:
+      - /home/ubuntu/.aphrody:/home/ubuntu/.aphrody
+      - /home/ubuntu/apps/lab:/home/ubuntu/apps/lab:ro
+    mem_limit: 4g
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8793/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Private MCP and RAG bridge of shenron-bot (127.0.0.1:8789).
+  shenron-compute:
+    <<: *toolbox
+    command: ["aphrody-mcp", "http", "--bind", "127.0.0.1:8789"]
+    working_dir: /home/ubuntu/apps/shenron/shared/agent-home
+    env_file: [/etc/aphrody/shenron-compute.env]
+    environment:
+      HOME: /home/ubuntu
+      APHRODY_HOME: /home/ubuntu/apps/shenron/shared/agent-home
+    volumes:
+      - /home/ubuntu/apps/shenron/shared/agent-home:/home/ubuntu/apps/shenron/shared/agent-home
+    mem_limit: 3g
+    depends_on: [shenron-embed]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8789/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Multilingual E5 embeddings (127.0.0.1:8085).
+  shenron-embed:
+    <<: *toolbox
+    command:
+      - aphrody-embed
+      - serve
+      - --host
+      - 127.0.0.1
+      - --port
+      - "8085"
+      - --threads
+      - "4"
+      - --model-dir
+      - /home/ubuntu/apps/shenron/shared/models/intfloat--multilingual-e5-small
+    volumes:
+      - /home/ubuntu/apps/shenron/shared/models:/home/ubuntu/apps/shenron/shared/models:ro
+    mem_limit: 2500m
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8085/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Persistent job worker (jobs.db in ~/.aphrody, shared with mcp-http as on the host).
+  jobs-worker:
+    <<: *toolbox
+    command: ["aphrody", "job", "run", "--forever", "--host", "dbfr", "--worker", "dbfr-native", "--concurrency", "2"]
+    working_dir: /home/ubuntu/.aphrody
+    environment:
+      HOME: /home/ubuntu
+      APHRODY_HOME: /home/ubuntu/.aphrody
+    volumes:
+      - /home/ubuntu/.aphrody:/home/ubuntu/.aphrody
+    mem_limit: 3g
+    stop_grace_period: 30s
+
   api:
     <<: *runtime
     command: ["api"]
@@ -112,11 +207,7 @@ services:
       - aphrody-build-sccache:/cache/sccache
       - aphrody-build-bun:/cache/bun
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "cargo --version >/dev/null && bun --version >/dev/null && test -w /cache/cargo",
-        ]
+      test: ["CMD-SHELL", "cargo --version >/dev/null && bun --version >/dev/null && test -w /cache/cargo"]
       interval: 60s
       timeout: 10s
       retries: 3

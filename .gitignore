@@ -165,3 +165,4 @@ packages/infra/product/site/dist/
 
 # Native Web reference corpus: regenerable public mirrors and acquisition receipts.
 /var/mirrors/
+/var/cdn/

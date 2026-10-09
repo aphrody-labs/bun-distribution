@@ -22,5 +22,8 @@ serde = { workspace = true, features = ["derive"] }
 memchr = { workspace = true }
 parking_lot = { workspace = true }
 
+[dev-dependencies]
+aphrody-terminal-core = { workspace = true }
+
 [features]
 default = []

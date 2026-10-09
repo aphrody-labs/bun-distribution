@@ -24,8 +24,8 @@ brotli = { version = "9", optional = true, default-features = false, features = 
   "std",
 ] }
 url = { workspace = true, features = ["serde"] }
-html5ever = { version = "0.29", optional = true }
-kuchiki = { package = "kuchikiki", version = "0.8.8-speedreader", optional = true }
+html5ever = { version = "0.35", optional = true }
+kuchiki = { package = "kuchikiki", version = "0.8.9-speedreader", optional = true }
 dom_query = { version = "0.28", optional = true, default-features = false }
 proc-macro2 = { workspace = true, optional = true }
 quote = { workspace = true, optional = true }
