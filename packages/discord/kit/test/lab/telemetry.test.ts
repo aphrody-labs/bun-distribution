@@ -32,7 +32,7 @@ test("WireGuard reports identities and freshness without disclosing keys or endp
 test("laboratory telemetry distinguishes verified service states and unreachable hosts", () => {
   expect(
     renderTelemetry([
-      { host: "vps", services: { "aphrody-llama-gemma4.service": "active" } },
+      { host: "vps", services: { "aphrody-shenron-build-runner.service": "active" } },
       { host: "dbfr", services: { "shenron-compute.service": "unreachable" } },
     ]),
   ).toContain("shenron-compute.service: unreachable");

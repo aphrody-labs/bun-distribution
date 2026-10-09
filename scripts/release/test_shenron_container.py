@@ -261,6 +261,31 @@ class ContainerDeploymentTests(unittest.TestCase):
             adapter.allowed_mount("gateway", public, release, self.root, manifest)
         )
 
+    def test_gateway_migrated_site_roots_are_read_only_and_identical(self):
+        release = self.release("a")
+        manifest = self.releases[-1][1]
+        root = {
+            "type": "bind",
+            "source": "/srv/aphrody-creator",
+            "target": "/srv/aphrody-creator",
+            "read_only": True,
+        }
+        self.assertTrue(
+            adapter.allowed_mount("gateway", root, release, self.root, manifest)
+        )
+        root["read_only"] = False
+        self.assertFalse(
+            adapter.allowed_mount("gateway", root, release, self.root, manifest)
+        )
+        root["read_only"] = True
+        root["source"] = "/srv/aphrody-lab"
+        self.assertFalse(
+            adapter.allowed_mount("gateway", root, release, self.root, manifest)
+        )
+        self.assertFalse(
+            adapter.allowed_mount("bot", root, release, self.root, manifest)
+        )
+
     def test_gateway_maintenance_mount_requires_exact_sealed_file(self):
         release = self.release("a")
         public = release / "public"

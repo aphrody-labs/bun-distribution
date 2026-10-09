@@ -14,6 +14,18 @@ HOSTS = {
     "cdn.dragonballfr.com",
     "files.dragonballfr.com",
     "mcp.dragonballfr.com",
+    # Sites migrés du VPS le 2026-10-09 (même conteneur gateway sur dbfr).
+    "aphrody.com",
+    "bot.aphrody.com",
+    "cdn.aphrody.com",
+    "creator.aphrody.com",
+    "downloads.aphrody.com",
+    "rosegriffon.fr",
+    "api.rosegriffon.fr",
+    "cdn.rosegriffon.fr",
+    "azalee.rosegriffon.fr",
+    "mcp.rosegriffon.fr",
+    "ranked.rosegriffon.fr",
 }
 SOURCE = pathlib.Path("/etc/letsencrypt")
 TARGET = pathlib.Path("/etc/aphrody/shenron-tls")

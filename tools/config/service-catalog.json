@@ -15,7 +15,8 @@
       "sourceRepo": "aphrody",
       "workingDirectory": "/srv/aphrody-cdn/app",
       "publicProxy": "nginx",
-      "public": true
+      "public": true,
+      "host": "dbfr"
     },
     {
       "id": "aphrody-downloads",
@@ -30,20 +31,21 @@
       "releaseRoot": "/srv/aphrody-downloads/releases",
       "publicProxy": "nginx",
       "note": "read-only download site (index, latest.json, SHA256SUMS, install.sh, install.ps1, artifacts): public and unauthenticated by design, it serves published checksummed release files only; published by scripts/release/publish-downloads.ts from tools/config/downloads.json (docs/operations/infra/DOWNLOADS.md)",
-      "public": true
+      "public": true,
+      "host": "dbfr"
     },
     {
       "id": "aphrody-creator",
-      "unitSource": "system-package",
       "application": "aphrody",
       "kind": "nginx-static",
       "runtime": "none",
-      "unit": "nginx.service",
       "sourceRepo": "aphrody",
       "releaseRoot": "/srv/aphrody-creator/releases",
       "publicProxy": "nginx",
-      "note": "static download page of creator-kit (Material 3 page, latest.json, packs) served by nginx from /srv/aphrody-creator/current, no application origin and no unit; public and unauthenticated by design, published by scripts/release/publish-creator.ts (docs/operations/infra/CREATOR.md)",
-      "public": true
+      "note": "static download page of creator-kit (Material 3 page, latest.json, packs) served from /srv/aphrody-creator/current by the dbfr gateway container (vhost zz-creator.aphrody.com.conf, read-only bind), no application origin and no unit; public and unauthenticated by design, published by scripts/release/publish-creator.ts (docs/operations/infra/CREATOR.md)",
+      "public": true,
+      "container": "shenron-gateway-1",
+      "host": "dbfr"
     },
     {
       "id": "aphrody-llama-gemma4",
@@ -64,8 +66,10 @@
         "ref": "hf:unsloth/gemma-4-E2B-it-GGUF/gemma-4-E2B-it-Q4_K_M.gguf@0314792d7f1f7e229411f620751375812bb9faf2",
         "sha256": "740185b21d22ceb83a11c3aa62ad5842ef32c70f6096d756bbee85a1e4ec34b8"
       },
-      "note": "Gemma 4 E2B IT preloaded (weights locked in RAM) by upstream llama.cpp b11415, OpenAI-compatible /v1 on loopback only, never proxied by nginx; consumers on the vps (shenron-site, shenron-bot) read APHRODY_AI_CHAT_BASE_URL=http://127.0.0.1:8798/v1 and APHRODY_AI_CHAT_MODEL=gemma4-e2b. Weights pulled by `aphrody model pull gemma-4-e2b-it-q4km`; unit tools/config/host/systemd/aphrody/aphrody-llama-gemma4.service",
-      "public": false
+      "note": "Arrêté sur décision utilisateur (2026-10-09), unit et poids conservés sur le vps, jamais redémarré ; ai-lab et debate utilisent shenron-chat-v2 sur dbfr (127.0.0.1:8799).",
+      "public": false,
+      "status": "retired",
+      "retiredAt": "2026-10-09"
     },
     {
       "id": "aphrody-llama-shenron-chat",
@@ -103,7 +107,8 @@
       "workingDirectory": "/srv/aphrody-discord/current",
       "releaseRoot": "/srv/aphrody-discord/releases",
       "publicProxy": "nginx",
-      "public": true
+      "public": true,
+      "host": "dbfr"
     },
     {
       "id": "aphrody-site",
@@ -164,7 +169,9 @@
       "workingDirectory": "/srv/aphrody/shared/agent-workspaces/aphrody",
       "public": false,
       "host": "vps",
-      "note": "MCP Streamable HTTP of `aphrody-mcp http` (toolbox build), loopback only and never proxied (the binary refuses a non-loopback bind). /mcp requires `Authorization: Bearer` (APHRODY_MCP_HTTP_TOKEN, generated on the host in /etc/aphrody/aphrody-mcp-http.env, constant-time comparison, 503 without a token); /healthz needs none. Port 8793, not 8789: the vps keeps 8789 for the WSL compute tunnel. Runbook: docs/operations/infra/MCP-A2A.md; unit tools/config/host/systemd/aphrody/aphrody-mcp-http.service"
+      "note": "Merged on 2026-10-09 into aphrody-mcp-http-dbfr (drop-in 50-migration-vps.conf: debate RAG database on local 5432, yolo/m3 tool hosts); the vps unit was removed. Runbook: docs/operations/infra/MCP-A2A.md",
+      "status": "retired",
+      "retiredAt": "2026-10-09"
     },
     {
       "id": "aphrody-shenron-embed",
@@ -203,7 +210,8 @@
         "agentCardPath": "/.well-known/agent-card.json"
       },
       "public": false,
-      "note": "Persistent native A2A service on loopback 8788, authenticated private routes (APHRODY_A2A_COORD_TOKEN), dedicated main checkout and existing Codex authentication. Protocol tasks/results remain in /srv/aphrody/shared/coord/a2a/tasks across client disconnects and service reconstruction; interrupted coding tasks are not replayed on restart. Canonical MCP child is available. Runbook: docs/operations/infra/MCP-A2A.md."
+      "note": "Persistent native A2A service on loopback 8788, authenticated private routes (APHRODY_A2A_COORD_TOKEN), dedicated main checkout and existing Codex authentication. Protocol tasks/results remain in /srv/aphrody/shared/coord/a2a/tasks across client disconnects and service reconstruction; interrupted coding tasks are not replayed on restart. Canonical MCP child is available. Runbook: docs/operations/infra/MCP-A2A.md. Runs on dbfr since 2026-10-09 (workspace and Codex standalone copied from the vps); wg1 projection 10.200.77.3:8788 via aphrody-wg-proxy@8788.socket.",
+      "host": "dbfr"
     },
     {
       "id": "shenron-site",
@@ -291,8 +299,10 @@
       "host": "vps",
       "health": "tcp://127.0.0.1:15433",
       "target": "dbfr:127.0.0.1:5432",
-      "note": "private PostgreSQL path VPS -> dbfr (shenron_site); 5432 never public, see docs/reference/infra/SHENRON-MIGRATION.md",
-      "public": false
+      "note": "Removed on 2026-10-09: its only consumer (vps aphrody-mcp-http, debate RAG) now runs on dbfr against 127.0.0.1:5432.",
+      "public": false,
+      "status": "retired",
+      "retiredAt": "2026-10-09"
     },
     {
       "id": "shenron-redis",
@@ -384,7 +394,9 @@
       "workingDirectory": "/home/ubuntu/.aphrody",
       "public": false,
       "host": "vps",
-      "note": "Persistent local SQLite queue with fenced leases, capability filtering and bounded native web-pipeline/transcribe handlers. Inputs and credentials remain in protected host stores; no training role or network transport is granted."
+      "note": "Removed from the vps on 2026-10-09 (vps = build only); aphrody-jobs-worker-dbfr is the production worker.",
+      "status": "retired",
+      "retiredAt": "2026-10-09"
     },
     {
       "id": "aphrody-jobs-worker-dbfr",

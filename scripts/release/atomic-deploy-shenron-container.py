@@ -80,6 +80,14 @@ def allowed_mount(name, volume, release, root, manifest):
     }
     if target in public:
         return source == public[target].resolve()
+    # Sites migrated from the vps (vhosts zz-*.conf): public static roots and the HTTP-01 webroot.
+    if target in (
+        "/srv/aphrody-creator",
+        "/srv/aphrody-downloads",
+        "/var/www/maintenance",
+        "/var/www/letsencrypt",
+    ):
+        return source == pathlib.Path(target).resolve()
     if source.is_relative_to(release) and volume.get("target", "").startswith(
         "/srv/shenron-cdn/"
     ):

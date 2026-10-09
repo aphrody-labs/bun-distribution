@@ -7,13 +7,17 @@ export interface ServiceSnapshot {
   services: Record<string, string>;
 }
 const services = {
-  vps: [
+  vps: ["aphrody-shenron-build-runner.service"],
+  dbfr: [
     "aphrody-discord-dev.service",
     "aphrody-discord-ai-lab.service",
-    "aphrody-llama-gemma4.service",
-    "aphrody-llama-shenron-chat.service",
+    "aphrody-discord-debate.service",
+    "aphrody-a2a.service",
+    "aphrody-mcp-http-dbfr.service",
+    "shenron-bot-docker.service",
+    "shenron-compute.service",
+    "shenron-embed.service",
   ],
-  dbfr: ["shenron-bot-docker.service", "shenron-compute.service", "shenron-embed.service"],
 };
 export async function snapshot(host: ServiceSnapshot["host"]): Promise<ServiceSnapshot> {
   const command = ["systemctl", "is-active", ...services[host]];
