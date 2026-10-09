@@ -539,7 +539,7 @@ fn command(root: &Path, program: &str, args: &[&str]) -> Result<String> {
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_owned())
 }
 
-/// The cross-host target matrix lives in yolo: `$YOLO_ROOT/tools/config/host/inventory/targets.json`.
+/// The cross-host target matrix lives in `$APHRODY_ROOT/tools/config/host/inventory/targets.json`.
 fn load_matrix() -> Result<Matrix> {
     let path = validate::host_config_root().join("inventory/targets.json");
     let bytes = fs::read(&path).with_context(|| format!("manifest absent: {}", path.display()))?;

@@ -36,19 +36,19 @@ fn load(root: &Path, relative: &str) -> Result<Value> {
     serde_json::from_str(&text).with_context(|| format!("JSON invalide: {}", path.display()))
 }
 
-/// Host config (systemd units, nginx sites) lives in yolo: `$YOLO_ROOT/tools/config/host`,
+/// Host config (systemd units, nginx sites) lives in `$APHRODY_ROOT/tools/config/host`,
 /// default `$HOME/src/aphrody` (`%USERPROFILE%\src\aphrody` on Windows).
 pub fn host_systemd_root() -> PathBuf {
     host_config_root().join("systemd")
 }
 
-/// `$YOLO_ROOT/tools/config/host` (default `$HOME/src/aphrody`): systemd units, nginx sites and routes.
+/// `$APHRODY_ROOT/tools/config/host` (default `$HOME/src/aphrody`): systemd units, nginx sites and routes.
 pub fn host_config_root() -> PathBuf {
-    let yolo = std::env::var_os("YOLO_ROOT").map(PathBuf::from).unwrap_or_else(|| {
+    let root = std::env::var_os("APHRODY_ROOT").map(PathBuf::from).unwrap_or_else(|| {
         let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"));
         PathBuf::from(home.unwrap_or_default()).join("src/aphrody")
     });
-    yolo.join("tools/config/host")
+    root.join("tools/config/host")
 }
 
 fn unit_template_exists(systemd_root: &Path, unit: &str) -> bool {
