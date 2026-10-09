@@ -19,6 +19,7 @@
     "app",
     "lib",
     "test",
+    "bench",
     "*.ts"
   ]
 }

@@ -42,8 +42,9 @@ const get = (path: string, init?: RequestInit) => app.fetch(new Request(ORIGIN +
 
 /**
  * The reply `encodeReply([{}, form])` sends from a browser: the root model in field `0`, the FormData argument
- * as `$K1` with its fields prefixed `_1_`. Built by hand because Bun's `FormData.prototype.toJSON` makes React's
- * encoder serialize the form as a plain object.
+ * as `$K1` with its fields prefixed `_1_`. Built by hand because `FormData.prototype.toJSON` of Bun 1.4.3-aphrody.2
+ * makes React's encoder serialize the form as a plain object. The Bun fork removed it (c9408c68abe): switch to
+ * `encodeReply` once that fork release is the runtime.
  */
 function signReply(fields: Record<string, string>): FormData {
   const body = new FormData();

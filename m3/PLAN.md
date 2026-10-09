@@ -70,7 +70,24 @@ scaffold template (TanStack Router on m3-bun) type-checks and bundles against `@
 `m3 compile` links an App Router build into one executable (server layers bundled, the other build files embedded with
 `with { type: "file" }`) and `m3 docker` writes a context (`server.js`, `dist/`, Dockerfile on
 `ghcr.io/aphrody-labs/alpine:3.24-runtime`); `test/app/compile.test.ts` covers both (55 pass in `test/app`).
-Next: Shenron slice, measured comparison with `next build`/`next start`. Bun gaps (Bake `"use server"`, production Bake)
+Measured comparison (`apps/example/bench/next-vs-m3.ts --runs 3 --seconds 5`, 2026-10-09): one small app written once
+(static `/` with 200 links and a client counter, dynamic `/items/[id]` reading `headers()`, route handler
+`/api/ping`), React 19.3.0, both servers on Bun 1.4.3-aphrody.2 (`m3 start`, `bun --bun next start`; no Node.js on the
+host), Windows x64, 24 threads, machine shared with other jobs, Bun fetch client in the same machine (32 connections):
+
+| metric | m3 | Next 16.5.0-canary.4 |
+| --- | --- | --- |
+| cold build, median of 3 | 170 ms | 2691 ms |
+| output size (`dist` / `.next` without cache) | 2.8 MiB | 6.2 MiB |
+| start to first 200, median of 3 | 85 ms | 461 ms |
+| JavaScript downloaded for `/` | 238 175 B | 576 531 B |
+| `/` req/s (p50/p99 ms) | 10 101 (3.1/4.1) | 1 623 (18.9/32.6) |
+| `/items/7` req/s (p50/p99 ms) | 8 703 (3.3/6.3) | 529 (57.3/120.7) |
+| `/api/ping` req/s (p50/p99 ms) | 59 067 (0.5/1.1) | 2 280 (13.5/27.2) |
+| memory idle / after load (process tree working set) | 55.4 / 101.6 MiB | 86.7 / 159.2 MiB |
+
+Not measured: Next on Node.js, Linux, a real app (Shenron slice).
+Next: Shenron slice (blocked: Shenron does not depend on `@aphrody/m3` with `/app` yet). Bun gaps (Bake `"use server"`, production Bake)
 are fixed in the Bun fork core, never shimmed here.
 
 ## Full Bun (chantier T, Bun fork plan section T)
