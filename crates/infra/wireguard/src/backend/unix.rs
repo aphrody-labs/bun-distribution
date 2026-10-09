@@ -8,7 +8,7 @@ use defguard_wireguard_rs::peer::Peer as DgPeer;
 use defguard_wireguard_rs::{InterfaceConfiguration, Userspace, WGApi, WireguardInterfaceApi};
 
 use super::{Backend, InterfaceStatus, PeerStatus, epoch};
-use crate::conf::{Config, Peer};
+use crate::conf::{Config, Peer, PeerPatch};
 use crate::{Error, Key, Result};
 
 fn err(e: impl std::fmt::Display) -> Error {
@@ -137,6 +137,19 @@ impl Handle {
     pub(super) fn set_peer(&self, peer: &Peer) -> Result<()> {
         let p = to_dg(peer)?;
         with_api!(self, a => a.configure_peer(&p).map_err(err))
+    }
+
+    pub(super) fn patch_peer(&self, patch: &PeerPatch) -> Result<()> {
+        let host = with_api!(self, a => a.read_interface_data().map_err(err))?;
+        let current = host.peers.values().find(|p| p.public_key.as_array() == patch.public_key.0);
+        let current = current.map(|p| Peer {
+            public_key: Key(p.public_key.as_array()),
+            preshared_key: p.preshared_key.as_ref().map(|key| Key(key.as_array())),
+            allowed_ips: p.allowed_ips.iter().filter_map(net).collect(),
+            endpoint: p.endpoint.map(|endpoint| endpoint.to_string()),
+            persistent_keepalive: p.persistent_keepalive_interval,
+        });
+        self.set_peer(&patch.merge(current.as_ref())?)
     }
 
     pub(super) fn remove_peer(&self, key: &Key) -> Result<()> {

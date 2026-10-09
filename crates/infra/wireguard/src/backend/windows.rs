@@ -11,7 +11,7 @@ use std::process::Command;
 use wireguard_nt::{Adapter, SetInterface, SetPeer, Wireguard};
 
 use super::{Backend, InterfaceStatus, PeerStatus, epoch};
-use crate::conf::{Config, Peer, Table};
+use crate::conf::{Config, Peer, PeerPatch, Table};
 use crate::{Error, Key, Result, driver};
 
 /// Adapter pool shown in Windows network settings.
@@ -179,7 +179,7 @@ impl Handle {
     }
 
     /// WireGuardNT replaces the whole peer list on every set: rebuild it from the live state.
-    fn replace_peers(&self, edit: impl FnOnce(&mut Vec<SetPeer>)) -> Result<()> {
+    fn replace_peers(&self, edit: impl FnOnce(&mut Vec<SetPeer>) -> Result<()>) -> Result<()> {
         let c = self.adapter.get_config();
         let mut peers: Vec<SetPeer> = c
             .peers
@@ -192,7 +192,7 @@ impl Handle {
                 allowed_ips: p.allowed_ips.clone(),
             })
             .collect();
-        edit(&mut peers);
+        edit(&mut peers)?;
         self.adapter
             .set_config(&SetInterface {
                 listen_port: Some(c.listen_port),
@@ -208,11 +208,32 @@ impl Handle {
         self.replace_peers(|peers| {
             peers.retain(|p| p.public_key != new.public_key);
             peers.push(new);
+            Ok(())
+        })
+    }
+
+    pub(super) fn patch_peer(&self, patch: &PeerPatch) -> Result<()> {
+        self.replace_peers(|peers| {
+            let current = peers.iter().find(|p| p.public_key == Some(patch.public_key.0));
+            let current = current.map(|p| Peer {
+                public_key: patch.public_key,
+                preshared_key: p.preshared_key.map(Key),
+                allowed_ips: p.allowed_ips.clone(),
+                endpoint: Some(p.endpoint).filter(|e| e.port() != 0).map(|e| e.to_string()),
+                persistent_keepalive: p.keep_alive,
+            });
+            let new = to_set_peer(&patch.merge(current.as_ref())?)?;
+            peers.retain(|p| p.public_key != new.public_key);
+            peers.push(new);
+            Ok(())
         })
     }
 
     pub(super) fn remove_peer(&self, key: &Key) -> Result<()> {
-        self.replace_peers(|peers| peers.retain(|p| p.public_key != Some(key.0)))
+        self.replace_peers(|peers| {
+            peers.retain(|p| p.public_key != Some(key.0));
+            Ok(())
+        })
     }
 
     pub(super) fn remove(self) -> Result<()> {
