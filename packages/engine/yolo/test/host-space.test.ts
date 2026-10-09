@@ -27,7 +27,7 @@ describe("estimateReclaim", () => {
   });
 
   it("frees nothing when the other link lives outside the set (the 2026-10-03 shenron case)", () => {
-    // /home/ubuntu/shenron/.../file is hard-linked to /srv/shenron/shared/.../file; only the home copy is deleted
+    // /home/ubuntu/shenron/.../file is hard-linked to /home/ubuntu/apps/shenron/shared/.../file; only the home copy is deleted
     const e = estimateReclaim([link(10, 2, 1_000_000)]);
     expect(e.naiveBytes).toBe(1_000_000 * 512);
     expect(e.freedBytes).toBe(0);
@@ -143,7 +143,17 @@ describe("yolo host space", () => {
     // 30 GiB shared with a live copy (nlink 2, one name inside) + 5 GiB of own files
     const find = `2049 1 2 ${(30 * GIB) / 512}\n2049 2 1 ${(5 * GIB) / 512}\n`;
     const code = await runHostCommand(
-      ["space", "/srv/old", "--host", "local", "--min-free", "50%", "--depth", "0", "--json"],
+      [
+        "space",
+        "/home/ubuntu/apps/old",
+        "--host",
+        "local",
+        "--min-free",
+        "50%",
+        "--depth",
+        "0",
+        "--json",
+      ],
       root,
       { transport: transport(find, dfText(290 * GIB, 100 * GIB)), out: (s) => (printed += s) },
     );
@@ -157,7 +167,17 @@ describe("yolo host space", () => {
   it("exits 0 once the floor is reached", async () => {
     const find = `2049 2 1 ${(60 * GIB) / 512}\n`;
     const code = await runHostCommand(
-      ["space", "/srv/old", "--host", "local", "--min-free", "50%", "--depth", "0", "--json"],
+      [
+        "space",
+        "/home/ubuntu/apps/old",
+        "--host",
+        "local",
+        "--min-free",
+        "50%",
+        "--depth",
+        "0",
+        "--json",
+      ],
       root,
       { transport: transport(find, dfText(290 * GIB, 100 * GIB)), out: () => {} },
     );

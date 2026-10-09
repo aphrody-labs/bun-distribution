@@ -12,7 +12,7 @@ import time
 parser = argparse.ArgumentParser()
 parser.add_argument("--apply", action="store_true")
 args = parser.parse_args()
-root = pathlib.Path("/srv/aphrody-build/cache/cargo/aphrody-wsl/debug/deps")
+root = pathlib.Path("/home/ubuntu/build/cache/cargo/aphrody-wsl/debug/deps")
 if root.is_symlink() or not root.is_dir():
     raise SystemExit("expected real factory test directory")
 active = set()

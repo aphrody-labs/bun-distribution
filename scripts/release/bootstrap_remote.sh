@@ -6,7 +6,7 @@
 # ~/bun) rust-toolchain.toml and scripts/build/ci-images/spec.ts (LLVM 23, nightly Rust, release Bun), cmake/ninja from apt.
 set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
-CACHE=${APHRODY_BUILD_CACHE:-/srv/aphrody-build/cache}
+CACHE=${APHRODY_BUILD_CACHE:-/home/ubuntu/build/cache}
 LLVM=${YOLO_LLVM:-23}
 RUST_STABLE=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' "$ROOT/rust-toolchain.toml" | head -1)
 RUST_BUN=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' "${APHRODY_BUN_CHECKOUT:-$HOME/bun}/rust-toolchain.toml" 2>/dev/null | head -1 || true)

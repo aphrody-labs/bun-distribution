@@ -105,7 +105,7 @@ function healthyHost() {
       }),
     ),
     health: [{ id: "app", kind: "health", url: "http://127.0.0.1/health", status: 200, ok: true }],
-    paths: [{ id: "app", path: "/srv/app/current", exists: true }],
+    paths: [{ id: "app", path: "/home/ubuntu/apps/app/current", exists: true }],
     failedUnits: { exitCode: 0, units: [] as string[] },
     postgresqlReady: { exitCode: 0 },
     redis: { exitCode: 0, stdout: "PONG" },
@@ -116,7 +116,7 @@ const app = {
   id: "app",
   unit: "app.service",
   health: "http://127.0.0.1/health",
-  workingDirectory: "/srv/app/current",
+  workingDirectory: "/home/ubuntu/apps/app/current",
 };
 
 test("host success requires service facts as well as a successful transport", () => {

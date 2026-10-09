@@ -54,7 +54,7 @@ Use the same UID/GID as the host user so the mounted Wayland socket is accessibl
 
 ## Factory qualification — 2026-10-07
 
-Docker 29.1.3 on the VPS built both targets from an isolated context under `/srv/aphrody-build/locks/heavy.lock`. The final qualifier used the shared `/srv/aphrody-build/cache/sccache` cache and exited 0. Source checksums were:
+Docker 29.1.3 on the VPS built both targets from an isolated context under `/home/ubuntu/build/locks/heavy.lock`. The final qualifier used the shared `/home/ubuntu/build/cache/sccache` cache and exited 0. Source checksums were:
 
 - Dockerfile SHA-256: `64a10cec2a3152a6b5aa9f8cb793fc0a05725fe5be9492d345a7e76db78507c6`.
 - `scripts/build/container/desktop-qualify.sh` SHA-256: `841dab72d75fc4dc996e73bf6360cb3845a83d833f343001cada0dc76a6b6c66`.

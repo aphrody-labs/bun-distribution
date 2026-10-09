@@ -94,7 +94,7 @@
       "source": "https://github.com/aphrody-labs/shenron",
       "production": true,
       "monorepoPaths": "apps/site, apps/bot, packages/* (aphrody-labs/shenron, extracted from the Aphrody monorepo on 2026-10-05 with history)",
-      "note": "Imported into the monorepo at shenron 58e03b40 (its last commit); the separate shenron repository was deleted on 2026-10-01 after a verified backup. The running vps release /srv/shenron/releases/4cac743f is a self-contained artifact."
+      "note": "Imported into the monorepo at shenron 58e03b40 (its last commit); the separate shenron repository was deleted on 2026-10-01 after a verified backup. The vps release 4cac743f (now under ~/apps/shenron/releases) is a self-contained artifact."
     },
     {
       "id": "aphrody-discord",

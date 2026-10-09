@@ -102,7 +102,7 @@ docs/        mdBook (this documentation)
 
 **Observed on 2026-10-04:** native SSH probes find Bun 1.4.2, Rust 1.98.1,
 sccache 0.18.0 and uv 0.12.23 on `vps`. Workspace now declares the Yolo source
-checkout at `/srv/aphrody-build/workspaces/yolo`. Preparation and a scoped Cargo
+checkout at `/home/ubuntu/src/yolo`. Preparation and a scoped Cargo
 check were dispatched under the shared heavy lock; completion is still pending.
 
 The active committed-history workflow is `yolo ops repo-sync`: exactly Yolo

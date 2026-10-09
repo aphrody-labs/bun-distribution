@@ -260,7 +260,7 @@ async function probe(url: string) {
 }
 
 async function filesystems() {
-  const paths = ["/", homedir(), "/srv", "/var", "/var/www", "/tmp", "/run", "/boot"];
+  const paths = ["/", homedir(), "/var", "/var/www", "/tmp", "/run", "/boot"];
   const result = await run(["df", "-Pk", ...paths]);
   const rows = result.stdout.trim().split("\n").slice(1);
   const seen = new Set<string>();
@@ -464,7 +464,7 @@ async function osLoadAverage() {
 }
 
 async function inventory() {
-  const paths = ["/", homedir(), "/srv", "/var", "/tmp"];
+  const paths = ["/", homedir(), "/var", "/tmp"];
   const result = await Promise.all(
     paths.map(async (path) => {
       const du = await run([

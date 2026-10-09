@@ -41,10 +41,10 @@
     "onePublicProxy": true,
     "releasePlanes": {},
     "applicationRoots": {
-      "aphrody-web": "/srv/aphrody/current",
-      "aphrody-ai": "/srv/aphrody/current",
-      "rg": "/srv/rg/current",
-      "shenron": "/srv/shenron/current",
+      "aphrody-web": "/home/ubuntu/apps/aphrody/current",
+      "aphrody-ai": "/home/ubuntu/apps/aphrody/current",
+      "rg": "/home/ubuntu/apps/rg/current",
+      "shenron": "/home/ubuntu/apps/shenron/current",
       "nie": "/home/ubuntu/nie"
     },
     "secrets": "operator-managed-environment-files",

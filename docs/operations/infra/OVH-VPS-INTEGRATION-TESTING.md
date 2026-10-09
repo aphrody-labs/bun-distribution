@@ -70,7 +70,7 @@ bun scripts/build/rust/vps-cargo.ts run -- \
 
 # Option C: After renewal, run on the actual VPS (if setup complete)
 ssh ubuntu@51.77.147.152
-cd /srv/aphrody
+cd /home/ubuntu/apps/aphrody
 cargo test -p aphrody-ovh --lib --all-targets
 ```
 
@@ -215,7 +215,7 @@ Once tested:
 3. **Deploy systemd units** (on the actual VPS):
    ```bash
    aphrody-infra ssh exec --host vps -- \
-     'sudo cp /srv/aphrody/tools/config/host/systemd/aphrody/aphrody-ovh-watch.* /etc/systemd/system/ && \
+     'sudo cp /home/ubuntu/apps/aphrody/tools/config/host/systemd/aphrody/aphrody-ovh-watch.* /etc/systemd/system/ && \
       sudo systemctl daemon-reload && \
       sudo systemctl enable aphrody-ovh-watch.timer && \
       sudo systemctl start aphrody-ovh-watch.timer'

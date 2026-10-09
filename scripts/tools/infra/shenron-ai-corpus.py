@@ -15,7 +15,7 @@ import subprocess
 import urllib.parse
 import uuid
 
-ROOT = pathlib.Path("/srv/shenron")
+ROOT = pathlib.Path("/home/ubuntu/apps/shenron")
 SOURCE = ROOT / "shared/bot/data/bot.db"
 
 
@@ -85,7 +85,7 @@ def psql(sql):
             "-i",
             "-u",
             "postgres",
-            "shenron-postgres-1",
+            "aphrody-postgres-1",
             "/usr/lib/postgresql/18/bin/psql",
             "-d",
             "shenron_site",

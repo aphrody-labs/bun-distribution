@@ -372,8 +372,8 @@ const COLLECTED = [
   "@@@ ps",
   PS,
   "@@@ cwds",
-  "3000 /srv/aphrody-build/workspaces/aphrody",
-  "3001 /srv/aphrody-build/workspaces/aphrody",
+  "3000 /home/ubuntu/src/aphrody",
+  "3001 /home/ubuntu/src/aphrody",
   "3500 /",
   "@@@ docker",
   '{"Type":"Images","TotalCount":"5","Active":"3","Size":"2.2GB","Reclaimable":"1.8GB (81%)"}',
@@ -382,8 +382,8 @@ const COLLECTED = [
   "@@@ du",
   "132000000000\t/home",
   "129000000000\t/home/ubuntu",
-  "61000000000\t/srv",
-  "13000000000\t/srv/shenron",
+  "61000000000\t/home/ubuntu/apps",
+  "13000000000\t/home/ubuntu/apps/shenron",
   "4400000000\t/var/lib",
   "2300000000\t/var/lib/postgresql",
   "@@@ cron",
@@ -392,7 +392,7 @@ const COLLECTED = [
   "# comment",
   "0 3 * * * /usr/local/bin/backup",
   "@@@ locks",
-  "/srv/aphrody-build/locks/heavy.lock|free|",
+  "/home/ubuntu/build/locks/heavy.lock|free|",
   "@@@ journal",
   "Archived and active journals take up 1.5G in the file system.",
   "@@@ apt",
@@ -401,10 +401,10 @@ const COLLECTED = [
   "12 52428800",
   "@@@ artifacts",
   "900000000|cargo|old|/home/ubuntu/proj-old/target",
-  "50000000|npm|old|/srv/aphrody-build/workspaces/x/node_modules",
+  "50000000|npm|old|/home/ubuntu/src/x/node_modules",
   "70000000|cargo|recent|/home/ubuntu/proj-new/target",
   "8000000|cargo|old|/home/other/proj/target",
-  "6000000|cargo|old|/srv/aphrody-build/cache/target",
+  "6000000|cargo|old|/home/ubuntu/build/cache/target",
   "@@@ swapfiles",
   "4294967296|SWAPSPACE2|-|/swapfile.old",
   "8589934592|SWAPSPACE2|-|/swapfile2",
@@ -482,10 +482,10 @@ const priorAphrodyRoot = process.env["YOLO_APHRODY_ROOT"];
     JSON.stringify({
       enabled: true,
       target: "vps",
-      workspaceRoot: "/srv/aphrody-build/workspaces/aphrody",
-      cacheRoot: "/srv/aphrody-build/cache",
-      artifactRoot: "/srv/aphrody-build/artifacts",
-      lockPath: "/srv/aphrody-build/locks/heavy.lock",
+      workspaceRoot: "/home/ubuntu/src/aphrody",
+      cacheRoot: "/home/ubuntu/build/cache",
+      artifactRoot: "/home/ubuntu/build/artifacts",
+      lockPath: "/home/ubuntu/build/locks/heavy.lock",
     }),
   );
   process.env["YOLO_APHRODY_ROOT"] = factoryRoot;
@@ -687,7 +687,7 @@ describe("probe parsers", () => {
     expect(a.identity.load).toEqual([0.17, 1.83, 3.72]);
     expect(a.cron).toEqual({ files: ["e2scrub_all"], userEntries: 1 });
     expect(a.buildProcs.map((b) => b.pid)).toEqual([3000, 3001]);
-    expect(a.buildProcs[0]?.cwd).toBe("/srv/aphrody-build/workspaces/aphrody");
+    expect(a.buildProcs[0]?.cwd).toBe("/home/ubuntu/src/aphrody");
     expect(a.reclaim.rotatedLogs).toEqual({ count: 12, bytes: 52428800 });
     expect(a.reclaim.journalBytes).toBe(parseSize("1.5G"));
     expect(a.docker.available).toBe(true);
@@ -738,7 +738,7 @@ describe("safety invariants", () => {
   const ctx = {
     user: "ubuntu",
     home: "/home/ubuntu",
-    preserve: ["/srv/aphrody-build/cache", "/srv/aphrody-build/artifacts"],
+    preserve: ["/home/ubuntu/build/cache", "/home/ubuntu/build/artifacts"],
   };
 
   it("protects /, /home, /etc, /boot, /var/lib, shared trees, databases and other users", () => {
@@ -750,21 +750,21 @@ describe("safety invariants", () => {
       "/boot",
       "/var/lib",
       "/var/lib/foo",
-      "/srv/app/shared",
-      "/srv/app/shared/uploads",
+      "/home/ubuntu/apps/app/shared",
+      "/home/ubuntu/apps/app/shared/uploads",
       "/home/other",
       "/home/other/x/target",
       "/var/lib/postgresql/18",
-      "/srv/aphrody-build/cache/x",
+      "/home/ubuntu/build/cache/x",
     ]) {
       expect(protectedReason(p, ctx)).not.toBeNull();
     }
     expect(protectedReason("/home/ubuntu/proj", ctx)).toBe("a home directory");
-    expect(protectedReason("/srv/app/releases", ctx)).toBeNull();
+    expect(protectedReason("/home/ubuntu/apps/app/releases", ctx)).toBe("a home directory");
     expect(protectedReason("/tmp/x", ctx)).toBeNull();
     expect(isDatabasePath("/var/lib/docker/overlay2")).toBe(true);
-    expect(isDatabasePath("/srv/x/data.sqlite3")).toBe(true);
-    expect(isDatabasePath("/srv/x/app")).toBe(false);
+    expect(isDatabasePath("/home/ubuntu/apps/x/data.sqlite3")).toBe(true);
+    expect(isDatabasePath("/home/ubuntu/apps/x/app")).toBe(false);
   });
 
   it("rejects relative, NUL and newline paths and resolves ..", () => {
@@ -775,16 +775,18 @@ describe("safety invariants", () => {
   });
 
   it("a reclaim rule only deletes marked, aged build output in scan roots, never protected or kept data", () => {
-    const roots = ["/home/ubuntu", "/srv", "/tmp"];
+    const roots = ["/home/ubuntu", "/tmp"];
     expect(canDeleteBuildArtifact("/home/ubuntu/p/target", "cargo", roots, ctx).ok).toBe(true);
-    expect(
-      canDeleteBuildArtifact("/srv/aphrody-build/workspaces/x/node_modules", "npm", roots, ctx).ok,
-    ).toBe(true);
+    expect(canDeleteBuildArtifact("/home/ubuntu/src/x/node_modules", "npm", roots, ctx).ok).toBe(
+      true,
+    );
     expect(canDeleteBuildArtifact("/home/other/p/target", "cargo", roots, ctx).ok).toBe(false);
-    expect(canDeleteBuildArtifact("/srv/aphrody-build/cache/target", "cargo", roots, ctx).ok).toBe(
+    expect(canDeleteBuildArtifact("/home/ubuntu/build/cache/target", "cargo", roots, ctx).ok).toBe(
       false,
     );
-    expect(canDeleteBuildArtifact("/srv/app/shared/target", "cargo", roots, ctx).ok).toBe(false);
+    expect(
+      canDeleteBuildArtifact("/home/ubuntu/apps/app/shared/target", "cargo", roots, ctx).ok,
+    ).toBe(false);
     expect(canDeleteBuildArtifact("/var/lib/foo/target", "cargo", ["/var"], ctx).ok).toBe(false);
     expect(canDeleteBuildArtifact("/home/ubuntu/p/src", "cargo", roots, ctx).ok).toBe(false); // wrong name for the marker
     expect(canDeleteBuildArtifact("/opt/p/target", "cargo", roots, ctx).ok).toBe(false); // outside scan roots
@@ -813,10 +815,12 @@ describe("safety invariants", () => {
   });
 
   it("skips a path used by a build process, but not because of a daemon sitting in /", () => {
-    expect(pathInUse("/srv/w/target", ["/srv/w"])).toBe(true);
-    expect(pathInUse("/srv/w/target", ["/srv/w/target/debug"])).toBe(true);
-    expect(pathInUse("/srv/w/target", ["/srv/other"])).toBe(false);
-    expect(pathInUse("/srv/w/target", ["/", null])).toBe(false);
+    expect(pathInUse("/home/ubuntu/apps/w/target", ["/home/ubuntu/apps/w"])).toBe(true);
+    expect(pathInUse("/home/ubuntu/apps/w/target", ["/home/ubuntu/apps/w/target/debug"])).toBe(
+      true,
+    );
+    expect(pathInUse("/home/ubuntu/apps/w/target", ["/home/ubuntu/apps/other"])).toBe(false);
+    expect(pathInUse("/home/ubuntu/apps/w/target", ["/", null])).toBe(false);
   });
 
   it("removes a source only when every verification passed", () => {
@@ -843,11 +847,11 @@ describe("safety invariants", () => {
       "/boot/x",
       "/etc/ssh",
       "/var/lib/postgresql/18/main",
-      "/srv/aphrody-build/cache/x",
+      "/home/ubuntu/build/cache/x",
       "/var/lib/docker",
     ])
       expect(removalRefusals(p, ctx).length).toBeGreaterThan(0);
-    expect(removalRefusals("/srv/archive/old", ctx)).toEqual([]);
+    expect(removalRefusals("/home/ubuntu/archive/old", ctx)).toEqual([]);
     expect(removalRefusals("/home/ubuntu/projects/old", ctx)).toEqual([]);
   });
 
@@ -882,8 +886,8 @@ describe("safety invariants", () => {
     for (const c of [
       "docker image prune -f",
       "docker container prune -f --filter until=24h",
-      "rm -rf --one-file-system -- '/srv/archive/old'",
-      "tar -C '/srv' -cf - -- 'parted' | zstd -o '/x'",
+      "rm -rf --one-file-system -- '/home/ubuntu/archive/old'",
+      "tar -C '/home/ubuntu/archive' -cf - -- 'parted' | zstd -o '/x'",
     ])
       expect(() => assertSafeCommand(c)).not.toThrow();
   });
@@ -960,7 +964,7 @@ describe("collector and transport helpers", () => {
         "caches",
       ],
       DEFAULT_POLICY,
-      ["/srv/x/heavy.lock"],
+      ["/home/ubuntu/apps/x/heavy.lock"],
     );
     expect(script).not.toMatch(
       /\b(rm|mv|mkfs|mount|umount|swapoff|swapon\s+\/|systemctl\s+(stop|start|restart|disable|enable)|apt-get|-delete|tee|chmod|chown)\b/,
@@ -1030,28 +1034,25 @@ describe("reclaim plan", () => {
     const why = Object.fromEntries(skipped.map((s) => [s.what, s.why]));
     expect(why["/home/ubuntu/proj-new/target"]).toContain("modified within");
     expect(why["/home/other/proj/target"]).toContain("another user");
-    expect(why["/srv/aphrody-build/cache/target"]).toBeDefined();
+    expect(why["/home/ubuntu/build/cache/target"]).toBeDefined();
     expect(candidates.find((c) => c.path === "/swapfile2")).toBeUndefined(); // active swap
     expect(why["/swapfile.fstab"]).toContain("fstab");
     expect(why["~/.cache/sccache"]).toContain("kept on purpose");
   });
 
   it("blocks an artifact a build process works above, and an unreadable build cwd blocks all", () => {
-    // the cargo build runs in /srv/aphrody-build/workspaces/aphrody; the npm candidate is in .../workspaces/x
+    // the cargo build runs in /home/ubuntu/src/aphrody; the npm candidate is in .../workspaces/x
     expect(
-      candidates.find((c) => c.path === "/srv/aphrody-build/workspaces/x/node_modules")?.blocked,
+      candidates.find((c) => c.path === "/home/ubuntu/src/x/node_modules")?.blocked,
     ).toBeUndefined();
     const inUse = audit(
-      COLLECTED.replace(
-        "3000 /srv/aphrody-build/workspaces/aphrody",
-        "3000 /srv/aphrody-build/workspaces/x",
-      ),
+      COLLECTED.replace("3000 /home/ubuntu/src/aphrody", "3000 /home/ubuntu/src/x"),
     );
     const c2 = reclaimCandidates(inUse, DEFAULT_POLICY, "vps").candidates;
-    expect(
-      c2.find((c) => c.path === "/srv/aphrody-build/workspaces/x/node_modules")?.blocked,
-    ).toContain("build process");
-    const blind = audit(COLLECTED.replace("3000 /srv/aphrody-build/workspaces/aphrody\n", ""));
+    expect(c2.find((c) => c.path === "/home/ubuntu/src/x/node_modules")?.blocked).toContain(
+      "build process",
+    );
+    const blind = audit(COLLECTED.replace("3000 /home/ubuntu/src/aphrody\n", ""));
     const c3 = reclaimCandidates(blind, DEFAULT_POLICY, "vps").candidates;
     expect(c3.find((c) => c.kind === "build-artifact")?.blocked).toContain("cannot see");
   });
@@ -1316,7 +1317,7 @@ describe("mount plan", () => {
 describe("archive plan", () => {
   const a = audit();
   const opts = {
-    sources: ["/srv/archive/old"],
+    sources: ["/home/ubuntu/archive/old"],
     to: "/mnt/backup/arc",
     removeSource: true,
     level: 3,
@@ -1363,7 +1364,7 @@ describe("archive plan", () => {
     expect(plan.steps.find((s) => s.id.startsWith("pull:"))?.cmd).toContain(
       "--partial --append-verify",
     );
-    expect(plan.steps.at(-1)?.id).toBe("remove:/srv/archive/old");
+    expect(plan.steps.at(-1)?.id).toBe("remove:/home/ubuntu/archive/old");
     for (const s of plan.steps)
       if (s.kind === "exec") expect(() => assertSafeCommand(s.cmd)).not.toThrow();
   });
@@ -1388,7 +1389,11 @@ describe("archive plan", () => {
   it("refuses the filesystem root, virtual filesystems, and an archive directory inside the source", () => {
     const plan = planArchive(
       a,
-      { ...opts, sources: ["/", "/proc", "/srv/archive/old"], to: "/srv/archive/old/inside" },
+      {
+        ...opts,
+        sources: ["/", "/proc", "/home/ubuntu/archive/old"],
+        to: "/home/ubuntu/archive/old/inside",
+      },
       "vps",
       DEFAULT_POLICY,
       now,
@@ -1406,7 +1411,12 @@ describe("archive plan", () => {
   it("dumps a database once however many sources are archived, and a dump needs its own pull", () => {
     const plan = planArchive(
       a,
-      { ...opts, sources: ["/srv/a", "/srv/b"], pgDump: "shenron", pull: "/tmp/p" },
+      {
+        ...opts,
+        sources: ["/home/ubuntu/apps/a", "/home/ubuntu/apps/b"],
+        pgDump: "shenron",
+        pull: "/tmp/p",
+      },
       "vps",
       DEFAULT_POLICY,
       now,
@@ -1425,7 +1435,7 @@ describe("archive plan", () => {
   });
 
   it("labels archives from the path", () => {
-    expect(archiveLabel("/srv/aphrody-build/cache")).toBe("srv-aphrody-build-cache");
+    expect(archiveLabel("/home/ubuntu/build/cache")).toBe("home-ubuntu-build-cache");
     expect(archiveLabel("/")).toBe("root");
   });
 });
@@ -1462,7 +1472,7 @@ describe("executing plans", () => {
       cmd.includes("base64")
         ? {
             code: 0,
-            stdout: "@@@ locks\n/srv/aphrody-build/locks/heavy.lock|held|4242,\n",
+            stdout: "@@@ locks\n/home/ubuntu/build/locks/heavy.lock|held|4242,\n",
             stderr: "",
           }
         : { code: 0, stdout: "", stderr: "" },
@@ -1706,7 +1716,10 @@ describe.skipIf(!haveTools)("local apply in a temp directory", () => {
     const code = await runHostCommand(
       archiveArgs(src, dest, ["--remove-source", "--pg-dump", "db1"]),
       root,
-      { out: () => {}, transport: new NoPostgres() },
+      {
+        out: () => {},
+        transport: new NoPostgres(),
+      },
     );
     expect(code).toBe(3);
     expect(existsSync(join(src, "a.txt"))).toBe(true);
@@ -1723,7 +1736,10 @@ describe.skipIf(!haveTools)("local apply in a temp directory", () => {
     const code = await runHostCommand(
       archiveArgs(src, dest, ["--pull", pulled, "--remove-source"]),
       root,
-      { out: () => {}, transport: new LocalTransport() },
+      {
+        out: () => {},
+        transport: new LocalTransport(),
+      },
     );
     expect(code).toBe(0);
     const name = `${archiveLabel(src)}-20261003.tar.zst`;
@@ -1740,7 +1756,10 @@ describe.skipIf(!haveTools)("local apply in a temp directory", () => {
     const code = await runHostCommand(
       ["archive", src, "--to", dest, "--host", "local", "--remove-source"],
       root,
-      { out: (l) => void lines.push(l), transport: new LocalTransport() },
+      {
+        out: (l) => void lines.push(l),
+        transport: new LocalTransport(),
+      },
     );
     expect(code).toBe(0);
     expect(lines.join("\n")).toContain("Plan only");

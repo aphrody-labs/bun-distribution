@@ -11,7 +11,7 @@ existing repositories.
 | Path | Content | Auth |
 | --- | --- | --- |
 | `https://downloads.aphrody.com/` | index page | none, by design |
-| `https://aphrody.com/`, `https://www.aphrody.com/` | Bun fork site (docs, llms.txt, downloads, benchmarks, `/install`, `/install.ps1`) from `/srv/aphrody-downloads/site/current`; unknown paths fall back to the routes below | none, by design |
+| `https://aphrody.com/`, `https://www.aphrody.com/` | Bun fork site (docs, llms.txt, downloads, benchmarks, `/install`, `/install.ps1`) from `/home/ubuntu/apps/downloads/site/current`; unknown paths fall back to the routes below | none, by design |
 | `/latest.json` | manifest: `name`, `version`, `platform`, `target`, `url`, `sha256`, `size` per artifact | none, by design |
 | `/SHA256SUMS`, `/files/<file>.sha256` | checksums of the current release | none, by design |
 | `/install.sh`, `/install.ps1`, `/install-yolo.sh`, `/install-yolo.ps1` | one-line installers | none, by design |
@@ -81,7 +81,7 @@ bun run downloads:publish host-plan | host-apply --apply   # unit, vhost, certif
 
 `release` refuses to publish when a staged archive or the factory binary contains a denied file name (`.env`, keys,
 databases, model weights, cookies) or a token-shaped string (patterns in `tools/config/downloads.json`). The release tree
-is `/srv/aphrody-downloads/releases/<UTC>-<commit12>` on the vps; `current` is flipped atomically and the last five
+is `/home/ubuntu/apps/downloads/releases/<UTC>-<commit12>` on the vps; `current` is flipped atomically and the last five
 releases are kept. Run it from a pushed, building revision; never Cargo in WSL.
 
 ## Host (vps, through `aphrody infra ssh`)
@@ -106,7 +106,7 @@ over the current uplink was not practical).
 ## API convergence (vps, 2026-10-06)
 
 Observed with `aphrody infra service status` and `systemctl`: `aphrody-downloads` (new), `aphrody-fonts-proxy` (declared
-active but never installed: unit, app tree `/srv/aphrody-cdn/{app,src}` from the yolo release, certificate and vhost
+active but never installed: unit, app tree `/home/ubuntu/apps/cdn/{app,src}` from the yolo release, certificate and vhost
 `cdn.aphrody.com` now installed; the vhost challenge webroot was aligned on `/var/www/letsencrypt`),
 `aphrody-discord-dev`, `shenron-site`, `shenron-bot`, `shenron-mcp-http`, `shenron-pg-tunnel`, `redis-server`: enabled and active.
 Shenron units were not touched. Declared `retired` services (`aphrody-site`, `aphrody-web-api`, `aphrody-ai-http`,

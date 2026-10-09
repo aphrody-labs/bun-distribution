@@ -17,7 +17,7 @@
  * Site hosts (SITE_HOSTS, default aphrody.com and www.aphrody.com) are served first from the static tree
  * SITE_ROOT (default <root>/../site/current): the Bun fork site published by aphrody-labs/bun
  * scripts/aphrody/site/publish.ts. Paths missing from it fall back to the download routes above.
- * Deployed alone as /srv/aphrody-downloads/app/server.ts: no relative imports.
+ * Deployed alone as /home/ubuntu/apps/downloads/app/server.ts: no relative imports.
  */
 import { existsSync, realpathSync, statSync } from "node:fs";
 import { homedir } from "node:os";

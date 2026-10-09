@@ -1569,7 +1569,7 @@ async function hostCommands(cfg: DownloadsConfig, apply: boolean) {
     `upload packages/infra/workspace/src/downloads/server.ts -> ${rootDir}/app/server.ts`,
     `upload ${unit}, install to /etc/systemd/system, daemon-reload, enable and restart ${cfg.host.service}`,
     `certificate ${cfg.site.certName} (HTTP-01, ${cfg.site.hosts.join(", ")}) through ${cert} when ${certDir} is absent`,
-    `${vhost} ships with the Shenron gateway release (container shenron-gateway-1): nginx -t, reload`,
+    `${vhost} ships with the Shenron gateway release (container aphrody-gateway-1): nginx -t, reload`,
   ];
   console.log(steps.map((s) => `- ${s}`).join("\n"));
   if (!apply) {
@@ -1598,7 +1598,7 @@ async function hostCommands(cfg: DownloadsConfig, apply: boolean) {
   );
   await remote(
     cfg,
-    "sudo docker exec shenron-gateway-1 nginx -t && sudo docker exec shenron-gateway-1 nginx -s reload",
+    "sudo docker exec aphrody-gateway-1 nginx -t && sudo docker exec aphrody-gateway-1 nginx -s reload",
   );
 }
 

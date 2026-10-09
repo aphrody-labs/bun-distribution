@@ -32,7 +32,7 @@ du nouveau binaire par Infra.
   protégé, chargé par `loadCredentials` ; ils ne figurent jamais dans les sorties.
 
 La déclaration lance `ssh -F /home/ubuntu/.ssh/aphrody-fleet-vps.conf`, puis
-`/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/fleet-mcp.mjs` sur le hub. Ce lanceur
+`/home/ubuntu/.bun/bin/bun /home/ubuntu/apps/lab/fleet-mcp.mjs` sur le hub. Ce lanceur
 sert le seul serveur `aphrody-mcp` et charge ses credentials A2A sur le VPS.
 Il ne configure aucun serveur MCP `yolo` ou `aphrody-kernel` séparé.
 

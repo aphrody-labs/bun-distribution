@@ -54,11 +54,11 @@ chmod +x "$fixture/bin/"*
 
 cat > "$fixture/share/service-catalog.json" <<'JSON'
 {"services":[
- {"id":"shenron-site","application":"shenron","unit":"shenron-site.service","health":"http://127.0.0.1:5011/api/health","workingDirectory":"/srv/shenron/current/apps/site"},
+ {"id":"shenron-site","application":"shenron","unit":"shenron-site.service","health":"http://127.0.0.1:5011/api/health","workingDirectory":"/home/ubuntu/apps/shenron/current/apps/site"},
  {"id":"shenron-mcp","application":"aphrody","unit":"shenron-mcp.service","health":"http://127.0.0.1:5010/health","status":"retired","retiredAt":"2026-09-25"},
- {"id":"shenron-bot","application":"shenron","unit":"shenron-bot.service","health":"http://127.0.0.1:5006/health","workingDirectory":"/srv/shenron/current/apps/bot"},
+ {"id":"shenron-bot","application":"shenron","unit":"shenron-bot.service","health":"http://127.0.0.1:5006/health","workingDirectory":"/home/ubuntu/apps/shenron/current/apps/bot"},
  {"id":"shenron-pg-tunnel","application":"shenron","unit":"shenron-pg-tunnel.service","health":"tcp://127.0.0.1:15433"},
- {"id":"shenron-old","application":"shenron","unit":"shenron-old.service","workingDirectory":"/srv/shenron/current/apps/old","status":"retired","retiredAt":"2026-09-26"}
+ {"id":"shenron-old","application":"shenron","unit":"shenron-old.service","workingDirectory":"/home/ubuntu/apps/shenron/current/apps/old","status":"retired","retiredAt":"2026-09-26"}
 ]}
 JSON
 cat > "$fixture/share/nginx-routes.json" <<'JSON'
@@ -90,7 +90,7 @@ make_bundle() {
   for service in site bot; do
     cat > "$dir/systemd/shenron-$service.service" <<UNIT
 [Service]
-WorkingDirectory=/srv/shenron/current/apps/$service
+WorkingDirectory=/home/ubuntu/apps/shenron/current/apps/$service
 EnvironmentFile=-$fixture/etc/shenron-$service.env
 EnvironmentFile=-$fixture/etc/shenron-compute-client.env
 ExecStart=/usr/bin/true
@@ -180,7 +180,7 @@ m.update(repository='aphrody-labs/aphrody', sourceLayout='monorepo', target='dbf
 p.write_text(json.dumps(m) + '\n')
 PYMANIFEST
 sed -i '/^\[Service\]/i [Unit]\nAfter=network-online.target shenron-pg-tunnel.service\nWants=network-online.target shenron-pg-tunnel.service' "$fixture/bundles/third/systemd/"*.service
-sed -i 's|ExecStart=/usr/bin/true|ExecStart=/home/ubuntu/.bun/bin/bun --bun /srv/shenron/current/node_modules/next/dist/bin/next start|' "$fixture/bundles/third/systemd/shenron-site.service"
+sed -i 's|ExecStart=/usr/bin/true|ExecStart=/home/ubuntu/.bun/bin/bun --bun /home/ubuntu/apps/shenron/current/node_modules/next/dist/bin/next start|' "$fixture/bundles/third/systemd/shenron-site.service"
 (cd "$fixture/bundles/third" && find . -type f ! -name SHA256SUMS -printf '%P\0' | sort -z | xargs -0 sha256sum > SHA256SUMS)
 # The isolated monorepo install puts Next under the site owner, not root.
 python3 - "$fixture/bin/bun" <<'PYISOLATED'
@@ -200,7 +200,7 @@ third="$fixture/shenron/releases/$third_sha"
 [[ ! -e "$third/packages/infra/workspace/node_modules/typescript-compiler-api" && ! -L "$third/packages/infra/workspace/node_modules/typescript-compiler-api" ]]
 grep -q '^EnvironmentFile=-/home/other/private.env$' "$third/systemd/unrelated-owner.service"
 grep -q 'ExecStart=.*current/apps/shenron/site/node_modules/next/dist/bin/next' "$third/systemd/shenron-site.service"
-grep -q 'WorkingDirectory=/srv/shenron/current/apps/shenron/site' "$third/systemd/shenron-site.service"
+grep -q 'WorkingDirectory=/home/ubuntu/apps/shenron/current/apps/shenron/site' "$third/systemd/shenron-site.service"
 if grep -q 'shenron-pg-tunnel.service' "$third/systemd/"*.service; then echo 'DBFR retains tunnel dependency' >&2; exit 1; fi
 mkdir -p "$fixture/shenron/releases/.superseded-1111111-20261005T000000Z"
 bash "$script" activate "$third" >"$fixture/out" 2>&1

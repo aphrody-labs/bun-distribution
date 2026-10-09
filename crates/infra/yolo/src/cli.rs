@@ -1737,7 +1737,7 @@ mod tests {
         assert_eq!(strip_verbatim(PathBuf::from(r"\\?\C:\bun")), PathBuf::from(r"C:\bun"));
         let unc = PathBuf::from(r"\\?\UNC\host\share");
         assert_eq!(strip_verbatim(unc.clone()), unc);
-        assert_eq!(strip_verbatim(PathBuf::from("/srv/x")), PathBuf::from("/srv/x"));
+        assert_eq!(strip_verbatim(PathBuf::from("/data/x")), PathBuf::from("/data/x"));
     }
 
     #[test]

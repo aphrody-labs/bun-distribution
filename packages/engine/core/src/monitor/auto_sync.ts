@@ -73,12 +73,12 @@ export class AutoSyncEngine {
     this.#cacheTtlMs = positive(options.docCacheTtlMs, 3600000);
     this.#cacheMaxEntries = positive(options.docCacheMaxEntries, 128);
     this.#beaconPaths = options.beaconPaths ?? [
-      join(homedir(), "aphrody", ".coord", "shared", "YOLO-DAEMON-SYNC.json"),
+      join(homedir(), "src", "aphrody", ".coord", "shared", "YOLO-DAEMON-SYNC.json"),
       join(homedir(), ".aphrody", "ai", "yolo-sync.json"),
       join(findRepoRoot(), "var", "yolo-sync.json"),
     ];
     const yoloRoot = findRepoRoot();
-    const aphrodyRoot = join(homedir(), "aphrody");
+    const aphrodyRoot = join(homedir(), "src", "aphrody");
     this.#trackedRepos = options.trackedRepos ?? [
       yoloRoot,
       ...(existsSync(aphrodyRoot) ? [aphrodyRoot] : []),

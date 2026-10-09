@@ -53,16 +53,21 @@ const HOSTS: Record<string, Omit<ProbeInput, "host">> = {
   },
   // Remote hosts: the account home comes from APHRODY_REMOTE_HOME, never from a fixed user name.
   vps: {
-    sqliteRoots: ["/srv/rg", "/srv/shenron", ...remote("shenron"), "/var/backups/aphrody-unique"],
-    packageRoots: ["/srv/rg", "/srv/shenron", ...remote("")],
+    sqliteRoots: [
+      "/home/ubuntu/apps/rg",
+      "/home/ubuntu/apps/shenron",
+      ...remote("shenron"),
+      "/var/backups/aphrody-unique",
+    ],
+    packageRoots: ["/home/ubuntu/apps/rg", "/home/ubuntu/apps/shenron", ...remote("")],
     vecExtensionDirs: [
-      "/srv/shenron/current/node_modules/sqlite-vec-linux-x64",
+      "/home/ubuntu/apps/shenron/current/node_modules/sqlite-vec-linux-x64",
       ...remote("shenron/node_modules/sqlite-vec-linux-x64"),
     ],
   },
   dbfr: {
-    sqliteRoots: [...remote("shenron"), "/srv", "/var/backups/aphrody-unique"],
-    packageRoots: [...remote(""), "/srv"],
+    sqliteRoots: [...remote("shenron"), "/home/ubuntu/apps", "/var/backups/aphrody-unique"],
+    packageRoots: [...remote(""), "/home/ubuntu/apps"],
     vecExtensionDirs: remote("shenron/node_modules/sqlite-vec-linux-x64"),
   },
 };

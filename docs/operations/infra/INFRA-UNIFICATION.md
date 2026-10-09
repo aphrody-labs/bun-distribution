@@ -127,7 +127,7 @@ aphrody-infra secrets check --service aphrody-web-api
 ### Déploiement & Pré-chauffage
 ```bash
 # Déploiement atomique RG
-./scripts/atomic-deploy-rg.sh /srv/rg/releases/<COMMIT_SHA>
+./scripts/atomic-deploy-rg.sh /home/ubuntu/apps/rg/releases/<COMMIT_SHA>
 
 # Pré-chauffage du cache de modèles 3D NIE
 ./scripts/nie/model-serve-prewarm.sh --json

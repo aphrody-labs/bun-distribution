@@ -45,7 +45,7 @@ test("gate plans locked all-target Rust checks, tests and release builds plus ea
   expect(plan.checks[0]!.command).toEqual(["bun", "install", "--frozen-lockfile"]);
   for (const subcommand of ["check", "clippy", "test", "build"]) {
     const check = plan.checks.find((item) => {
-      const wrapper = item.command.findIndex((arg) => /cargo-serial.(?:sh|ps1)$/.test(arg));
+      const wrapper = item.command.findIndex((arg) => /cargo-serial.(?:sh|ps1|ts)$/.test(arg));
       return wrapper >= 0 && item.command[wrapper + 1] === subcommand;
     })!;
     expect(check.command).toContain("--workspace");

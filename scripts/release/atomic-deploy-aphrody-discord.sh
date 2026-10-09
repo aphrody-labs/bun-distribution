@@ -4,7 +4,7 @@ set -Eeuo pipefail
 usage='usage: atomic-deploy-aphrody-discord.sh RELEASE_DIR'
 [[ $# == 1 ]] || { echo "$usage" >&2; exit 2; }
 [[ "$(id -u)" == 0 ]] || { echo 'run as root' >&2; exit 2; }
-root=/srv/aphrody-discord
+root=/home/ubuntu/apps/discord
 release="$(realpath -e -- "$1")"
 current="$root/current"
 [[ -f "$release/server.js" && -f "$release/release.json" && -f "$release/SHA256SUMS" ]] || { echo 'incomplete Discord release artifact' >&2; exit 2; }

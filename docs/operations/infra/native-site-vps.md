@@ -14,7 +14,7 @@ Le service `aphrody-site` du catalogue utilise `runtime: rust`, `host: vps`,
 Aucun endpoint MCP/Infra/credentials, accès hôte WebOS ou serveur JS n'est ajouté.
 
 Unité source : `tools/config/host/systemd/aphrody/aphrody-site.service`.
-Processus : `/srv/aphrody/current/bin/aphrody-site`, utilisateur système
+Processus : `/home/ubuntu/apps/aphrody/current/bin/aphrody-site`, utilisateur système
 `aphrody-site`, `NoNewPrivileges`, filesystem en lecture, capacité unique
 `CAP_NET_BIND_SERVICE`. Pas de `setcap` global sur le binaire, pas d'exécution
 root, pas de proxy Nginx nécessaire au port 80. Nginx observé inactif reste tel
@@ -56,8 +56,8 @@ du binaire. Le script propriétaire est
 
 Le plan est sans mutation. Apply vérifie le catalogue et le port libre, contrôle
 les hashes, conserve l'unité précédente et son checksum sous
-`/srv/aphrody/shared/native-site-backups/<date>`, puis installe une release
-`/srv/aphrody/releases/native-site-<hash>`. Les templates sont root-owned et
+`/home/ubuntu/apps/aphrody/shared/native-site-backups/<date>`, puis installe une release
+`/home/ubuntu/apps/aphrody/releases/native-site-<hash>`. Les templates sont root-owned et
 immuables ; `current` est basculé atomiquement. Le script vérifie l'unité systemd,
 active/enable le service et contrôle santé, cinq docs, six templates, pages/CSS,
 PID natif, UID et capacités. Un échec après modification restaure l'unité/lien
@@ -73,7 +73,7 @@ pas l'ingress externe ; inversement un HTTP 200 seul ne prouve pas un PID Rust.
 
 ## Reçu live 2026-10-09, 05:28 UTC
 
-- Release : `/srv/aphrody/releases/native-site-02d5e8dba8849368`.
+- Release : `/home/ubuntu/apps/aphrody/releases/native-site-02d5e8dba8849368`.
 - Source snapshot : HEAD de contexte `c58e93d6dc1b4b2d420c3c929a40c67dd071d2f4`,
   avec sources site alors non commitées ; identité autoritative du snapshot :
   SHA256 manifeste `02d5e8dba884936830dc12dcc2daa6744e571d26175a563522dde70410fc7d55`.

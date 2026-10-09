@@ -223,8 +223,8 @@ describe("site hosts", () => {
     createHandler(root, site)(new Request(`http://${host}${path}`, init));
 
   test("defaults next to the download tree", () => {
-    const options = siteOptions("/srv/aphrody-downloads/current", {});
-    expect(options.root).toBe(resolve("/srv/aphrody-downloads/site/current"));
+    const options = siteOptions("/home/ubuntu/apps/downloads/current", {});
+    expect(options.root).toBe(resolve("/home/ubuntu/apps/downloads/site/current"));
     expect([...options.hosts]).toEqual(["aphrody.com", "www.aphrody.com"]);
   });
 

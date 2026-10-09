@@ -10,7 +10,7 @@
   },
   "host": {
     "target": "dbfr",
-    "root": "/srv/aphrody-downloads",
+    "root": "/home/ubuntu/apps/downloads",
     "service": "aphrody-downloads",
     "port": 8797,
     "bun": "/home/ubuntu/.bun/bin/bun",
@@ -18,8 +18,8 @@
   },
   "factory": {
     "repo": "aphrody",
-    "workspace": "/srv/aphrody-build/workspaces/aphrody",
-    "cargoTargetDir": "/srv/aphrody-build/cache/cargo/aphrody",
+    "workspace": "/home/ubuntu/src/aphrody",
+    "cargoTargetDir": "/home/ubuntu/build/cache/cargo/aphrody",
     "jobPrefix": "downloads",
     "target": "vps",
     "pushTo": "dbfr"
@@ -207,7 +207,7 @@
       "id": "plugin-shenron",
       "kind": "plugin",
       "description": "Shenron Claude Code plugin (plugin/ of aphrody-labs/shenron)",
-      "git": { "path": "~/shenron", "ref": "HEAD", "subdir": "plugin" },
+      "git": { "path": "~/src/shenron", "ref": "HEAD", "subdir": "plugin" },
       "manifest": ".claude-plugin/plugin.json",
       "repository": "aphrody-labs/shenron"
     }

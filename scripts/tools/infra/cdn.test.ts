@@ -21,7 +21,7 @@ const catalog = (sources: Catalog["sources"]): Catalog => ({
   cdn: {
     service: "cdn",
     host: "cdn.test",
-    releaseRoot: "/srv/cdn",
+    releaseRoot: "/home/ubuntu/apps/cdn",
     paths: { scoped: "/s/", hashed: "/h/", manifest: "/s/manifest.json" },
     hashLength: 16,
   },

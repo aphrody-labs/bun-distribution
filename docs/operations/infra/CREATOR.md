@@ -42,5 +42,5 @@ hand. A `bun` source run never replaces itself.
 - DNS: `creator` CNAME `aphrody.com` (`aphrody ovh dns add`).
 - Certificate `creator.aphrody.com` (HTTP-01) by `scripts/tools/infra/issue-creator-certificate.sh`.
 - vhost `tools/config/host/nginx/aphrody/creator.aphrody.com.conf`; catalog service `aphrody-creator` (`nginx-static`),
-  route in `tools/config/host/nginx/routes.json`. Releases in `/srv/aphrody-creator/releases/<id>`, last five kept.
+  route in `tools/config/host/nginx/routes.json`. Releases in `/home/ubuntu/apps/creator/releases/<id>`, last five kept.
 - Rollback: repoint the `current` symlink to an older release, or remove the vhost and reload nginx.

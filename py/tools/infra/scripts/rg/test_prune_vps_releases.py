@@ -63,7 +63,7 @@ class PruneVpsReleasesTest(unittest.TestCase):
                 check=False,
             )
             self.assertNotEqual(result.returncode, 0)
-            self.assertIn("--apply requires /srv/rg/releases", result.stderr)
+            self.assertIn("--apply requires /home/ubuntu/apps/rg/releases", result.stderr)
 
 
 if __name__ == "__main__":

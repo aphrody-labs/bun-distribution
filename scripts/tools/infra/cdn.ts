@@ -55,7 +55,7 @@ export interface Problem {
   message: string;
 }
 
-const INFRA_ROOT = resolve(import.meta.dir, "../..");
+const INFRA_ROOT = resolve(import.meta.dir, "../../..");
 
 const TYPES: Record<string, string> = {
   ".png": "image/png",

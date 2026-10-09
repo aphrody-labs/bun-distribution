@@ -4,12 +4,18 @@
 //!
 //! Desired state = non-retired `services` of `tools/config/service-catalog.json` (unit or container
 //! plus `host`) merged with its `boot.entries` section (timers, sockets, scheduled tasks, services).
-//! `audit` reads the real state, `plan` lists the commands that would correct it, `apply` runs them.
+//! `audit` reads the real state, `plan` lists the corrections, `apply` performs them.
+//!
+//! Linux entries are probed and corrected over `sh` (locally or through SSH). Windows entries are
+//! read and corrected in-process through the Task Scheduler COM API ([`crate::wintask`]) and the
+//! Service Control Manager ([`crate::winsvc`]); `apply` relaunches itself elevated (`sudo.exe`
+//! inline, otherwise the UAC prompt) when a Windows correction is pending and the token is not.
 
 use crate::catalog::{CatalogService, load_service_catalog};
+use crate::wintask::{self, Action, Patch, Principal, Scheduler, Settings, TaskSpec, Trigger};
 use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -29,24 +35,37 @@ pub enum BootKind {
         name: String,
         #[serde(default = "default_task_path")]
         path: String,
-        /// `atStartup` and/or `atLogon`.
+        /// `atStartup`, `atLogon`, `every:<N>m` (from midnight, every N minutes) and/or
+        /// `daily@HH:MM` (local time); missing ones are added, extra ones kept.
         triggers: Vec<String>,
-        /// Only used when the task is missing and must be registered.
+        /// Program; `{root}` (checkout) and `%VAR%` are expanded. Registers the task when it is
+        /// missing and replaces a registered action that runs another program.
         #[serde(default)]
         execute: Option<String>,
         #[serde(default)]
         arguments: Option<String>,
+        #[serde(default)]
+        working_directory: Option<String>,
+        /// Registration description, set when the task is registered.
+        #[serde(default)]
+        description: Option<String>,
         /// `system` (LocalSystem) or `user` (current user, S4U: no window station, so no console).
         #[serde(default = "default_principal")]
         principal: String,
+        /// `highest` (default) or `limited`; SYSTEM always runs highest.
+        #[serde(default = "default_run_level")]
+        run_level: String,
         /// The task needs the interactive desktop (capture, tray): Interactive logon, action
         /// wrapped in `conhost.exe --headless` so that no console is ever shown.
         #[serde(default)]
         desktop: bool,
-        /// Triggered by its own schedule (not kept running): only visibility and logon type are
-        /// audited and corrected; triggers, restart policy and run state are left untouched.
+        /// Triggered by its own schedule (not kept running): visibility, logon type, declared
+        /// triggers and action are audited and corrected; restart policy and run state are not.
         #[serde(default)]
         periodic: bool,
+        /// Execution time limit in minutes, set when the task is registered (none by default).
+        #[serde(default)]
+        time_limit_minutes: Option<u32>,
     },
     /// Windows service: start type Automatic, running, optional failure-restart actions.
     #[serde(rename_all = "camelCase")]
@@ -63,6 +82,10 @@ fn default_task_path() -> String {
 
 fn default_principal() -> String {
     "system".to_owned()
+}
+
+fn default_run_level() -> String {
+    "highest".to_owned()
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -105,7 +128,23 @@ pub fn load_entries(root: &Path) -> Result<Vec<BootEntry>> {
         Some(v) => serde_json::from_value(v.clone()).context("boot.entries invalide")?,
         None => Vec::new(),
     };
-    Ok(merge_entries(&catalog.services, explicit))
+    let mut entries = merge_entries(&catalog.services, explicit);
+    for entry in &mut entries {
+        expand_task(root, entry);
+    }
+    Ok(entries)
+}
+
+/// Expands `{root}` and `%VAR%` in the program of a scheduled task (Windows entries are local).
+pub fn expand_task(root: &Path, entry: &mut BootEntry) {
+    let BootKind::ScheduledTask { execute, arguments, working_directory, .. } = &mut entry.kind else {
+        return;
+    };
+    let root = root.to_string_lossy().replace('/', "\\");
+    let root = root.strip_prefix(r"\\?\").unwrap_or(&root);
+    for field in [execute, arguments, working_directory].into_iter().flatten() {
+        *field = wintask::expand_env(&field.replace("{root}", &root));
+    }
 }
 
 #[must_use]
@@ -136,8 +175,9 @@ pub fn merge_entries(services: &[CatalogService], explicit: Vec<BootEntry>) -> V
 pub struct Finding {
     pub entry: String,
     pub problem: String,
-    /// Script that corrects the drift on the target (sh, or PowerShell for Windows entries);
-    /// `None` when the source unit/artifact itself must change.
+    /// Correction: the `sh` script run on a Linux target, or the description of the native
+    /// Task Scheduler / Service Control Manager operations for a Windows entry; `None` when the
+    /// source unit/artifact itself must change.
     pub fix: Option<String>,
     pub held: Option<String>,
 }
@@ -152,10 +192,6 @@ pub enum Observed {
 
 fn q(s: &str) -> String {
     format!("'{}'", s.replace('\'', r"'\''"))
-}
-
-fn pq(s: &str) -> String {
-    format!("'{}'", s.replace('\'', "''"))
 }
 
 #[must_use]

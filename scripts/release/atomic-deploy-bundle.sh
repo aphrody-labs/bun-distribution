@@ -4,25 +4,25 @@ set -Eeuo pipefail
 # Activate one all-in-one bundle (build-aphrody-stack-release.sh) on the VPS:
 # Aphrody stack, then Shenron, then RG, each through its own atomic adapter.
 #
-#   atomic-deploy-bundle.sh /srv/aphrody-infra/bundles/ID
+#   atomic-deploy-bundle.sh /home/ubuntu/apps/infra/bundles/ID
 #   atomic-deploy-bundle.sh --rollback
 #
 # Every component is verified before the first mutation: bundle checksums, the
 # installed adapters' infra commit (ADAPTER.json) against the bundle pin, the
-# Aphrody release copied below /srv/aphrody/releases, the Shenron release
-# assembled below /srv/shenron/releases and the RG release already assembled
+# Aphrody release copied below /home/ubuntu/apps/aphrody/releases, the Shenron release
+# assembled below /home/ubuntu/apps/shenron/releases and the RG release already assembled
 # on the host (scripts/rg/assemble-vps-release.sh RG_SHA). The `current` targets
 # before the run are recorded in BUNDLE.previous.json. When a step fails its
 # adapter restores that stack; this script then restores the steps that had
 # already succeeded, newest first, from their activation backups. A stack whose
 # `current` already is the pinned release is left untouched.
 # `--rollback` undoes the last successful bundle the same way.
-usage='usage: atomic-deploy-bundle.sh /srv/aphrody-infra/bundles/ID | --rollback'
+usage='usage: atomic-deploy-bundle.sh /home/ubuntu/apps/infra/bundles/ID | --rollback'
 [[ $# -eq 1 ]] || { echo "$usage" >&2; exit 2; }
-state_root="${BUNDLE_STATE_ROOT:-/srv/aphrody-infra}"
-aphrody_root="${APHRODY_RELEASE_ROOT:-/srv/aphrody}"
-shenron_root="${SHENRON_RELEASE_ROOT:-/srv/shenron}"
-rg_root="${RG_RELEASE_ROOT:-/srv/rg}"
+state_root="${BUNDLE_STATE_ROOT:-/home/ubuntu/apps/infra}"
+aphrody_root="${APHRODY_RELEASE_ROOT:-/home/ubuntu/apps/aphrody}"
+shenron_root="${SHENRON_RELEASE_ROOT:-/home/ubuntu/apps/shenron}"
+rg_root="${RG_RELEASE_ROOT:-/home/ubuntu/apps/rg}"
 adapter_manifest="${BUNDLE_ADAPTER_MANIFEST:-/usr/local/share/aphrody-infra/ADAPTER.json}"
 aphrody_adapter="${BUNDLE_APHRODY_ADAPTER:-/usr/local/sbin/aphrody-infra-deploy-aphrody}"
 shenron_adapter="${BUNDLE_SHENRON_ADAPTER:-/usr/local/sbin/aphrody-infra-deploy-shenron}"

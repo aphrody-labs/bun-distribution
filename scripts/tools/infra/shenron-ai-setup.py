@@ -13,7 +13,7 @@ import shutil
 import subprocess
 import urllib.parse
 
-ROOT = pathlib.Path("/srv/shenron")
+ROOT = pathlib.Path("/home/ubuntu/apps/shenron")
 
 
 def digest(path):
@@ -80,7 +80,7 @@ def main():
     if digest(args.runtime_artifact) != args.runtime_sha256:
         raise ValueError("runtime checksum mismatch")
     container = json.loads(
-        subprocess.check_output(["docker", "inspect", "shenron-site-1"])
+        subprocess.check_output(["docker", "inspect", "aphrody-site-1"])
     )[0]
     if container["State"]["Health"]["Status"] != "healthy":
         raise ValueError("healthy caller required")

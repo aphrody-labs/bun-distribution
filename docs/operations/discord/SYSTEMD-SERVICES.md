@@ -44,7 +44,7 @@ StartLimitIntervalSec=600
 Type=simple
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/srv/shenron/current/apps/bot
+WorkingDirectory=/home/ubuntu/apps/shenron/current/apps/bot
 
 EnvironmentFile=-/etc/rose-griffon/shenron-bot.env
 EnvironmentFile=-/etc/aphrody/shenron-compute-client.env
@@ -52,12 +52,12 @@ Environment=NODE_ENV=production
 Environment=API_HOST=127.0.0.1
 Environment=API_PORT=5006
 Environment=PORT=5006
-Environment=A2A_COORD_DIR=/srv/shenron/shared/coord
+Environment=A2A_COORD_DIR=/home/ubuntu/apps/shenron/shared/coord
 Environment=UV_THREADPOOL_SIZE=12
 
 # Binaire natif autonome compilé via `aphrody discord compile shenron`
 # Aucun runtime Bun ni répertoire node_modules n'est requis sur l'hôte.
-ExecStart=/srv/shenron/current/apps/bot/dist/shenron
+ExecStart=/home/ubuntu/apps/shenron/current/apps/bot/dist/shenron
 
 ExecStop=/bin/kill -SIGTERM $MAINPID
 TimeoutStopSec=30
@@ -97,8 +97,8 @@ SystemCallArchitectures=native
 SystemCallFilter=@system-service
 SystemCallFilter=~@obsolete @privileged
 
-ExecStartPre=+/bin/mkdir -p /srv/shenron/shared/bot/data /srv/shenron/shared/bot/assets /srv/shenron/shared/site/wiki /srv/shenron/shared/coord
-ReadWritePaths=/srv/shenron/shared/bot/data /srv/shenron/shared/bot /srv/shenron/shared/site/wiki /srv/shenron/shared/coord
+ExecStartPre=+/bin/mkdir -p /home/ubuntu/apps/shenron/shared/bot/data /home/ubuntu/apps/shenron/shared/bot/assets /home/ubuntu/apps/shenron/shared/site/wiki /home/ubuntu/apps/shenron/shared/coord
+ReadWritePaths=/home/ubuntu/apps/shenron/shared/bot/data /home/ubuntu/apps/shenron/shared/bot /home/ubuntu/apps/shenron/shared/site/wiki /home/ubuntu/apps/shenron/shared/coord
 
 StandardOutput=journal
 StandardError=journal
@@ -120,12 +120,12 @@ Wants=network-online.target
 Type=simple
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/srv/rg/current/apps/bot
+WorkingDirectory=/home/ubuntu/apps/rg/current/apps/bot
 
 EnvironmentFile=/etc/rose-griffon/rg-bot.env
 Environment=NODE_ENV=production
 Environment=BOT_SYNC_MEMBRES=0
-Environment=RG_DISCORD_SYNC_SQLITE_PATH=/srv/rg/shared/discord-sync/discord.db
+Environment=RG_DISCORD_SYNC_SQLITE_PATH=/home/ubuntu/apps/rg/shared/discord-sync/discord.db
 Environment=RG_DISCORD_SYNC_REDIS_URL=redis://127.0.0.1:6379
 Environment=WEBSITE_URL=https://rosegriffon.fr
 Environment=WEBSITE_API_URL=https://rosegriffon.fr
@@ -133,7 +133,7 @@ Environment=WEBSITE_API_URL=https://rosegriffon.fr
 # Binaire natif autonome compilé via `aphrody discord compile rg`
 # Aucun runtime Bun ni répertoire node_modules n'est requis sur l'hôte ; le binaire AOT
 # embarque le runtime Bun et résout reflect-metadata et tsconfig à l'avance.
-ExecStart=/srv/rg/current/apps/bot/dist/rg-bot
+ExecStart=/home/ubuntu/apps/rg/current/apps/bot/dist/rg-bot
 
 Restart=always
 RestartSec=5s
@@ -157,7 +157,7 @@ OOMScoreAdjust=-300
 # Durcissement
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/srv/rg/shared/bot /srv/rg/shared/discord-sync /tmp
+ReadWritePaths=/home/ubuntu/apps/rg/shared/bot /home/ubuntu/apps/rg/shared/discord-sync /tmp
 PrivateTmp=true
 PrivateDevices=true
 ProtectKernelTunables=true
@@ -187,7 +187,7 @@ WantedBy=multi-user.target
 Both unit files implement rigorous systemd security features:
 
 1. **`ProtectSystem=strict`**:
-   The entire host file system is mounted read-only for the bot processes. Only paths explicitly declared in `ReadWritePaths` (e.g. `/srv/shenron/shared/bot/data` for local SQLite caching) are writable.
+   The entire host file system is mounted read-only for the bot processes. Only paths explicitly declared in `ReadWritePaths` (e.g. `/home/ubuntu/apps/shenron/shared/bot/data` for local SQLite caching) are writable.
 2. **`MemoryDenyWriteExecute` Prohibited**:
    Notice that `MemoryDenyWriteExecute=true` is deliberately omitted because the embedded Bun engine uses JavaScriptCore (JSC) with JIT compilation, which requires writable and executable memory mappings.
 3. **`LockPersonality=true` & `NoNewPrivileges=true`**:
@@ -220,7 +220,7 @@ Copy only the application release directory and compiled binary to the VPS targe
 
 ```bash
 # Example atomic release directory layout:
-/srv/shenron/releases/20261001-1ab9864e/
+/home/ubuntu/apps/shenron/releases/20261001-1ab9864e/
   ├── apps/
   │   └── bot/
   │       ├── dist/
@@ -233,7 +233,7 @@ Copy only the application release directory and compiled binary to the VPS targe
 
 ```bash
 # Update symlink to point to new release
-ln -sfn /srv/shenron/releases/20261001-1ab9864e /srv/shenron/current
+ln -sfn /home/ubuntu/apps/shenron/releases/20261001-1ab9864e /home/ubuntu/apps/shenron/current
 
 # Reload systemd configuration if service unit changed
 sudo systemctl daemon-reload

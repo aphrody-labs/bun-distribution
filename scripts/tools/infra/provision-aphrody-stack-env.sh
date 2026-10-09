@@ -13,7 +13,7 @@ set -euo pipefail
 #
 #   provision-aphrody-stack-env.sh --fresh-host
 #       Fresh host (no /etc/aphrody env yet, e.g. after the 2026-09-25
-#       retirement): creates the aphrody system user, /srv/aphrody/shared,
+#       retirement): creates the aphrody system user, /home/ubuntu/apps/aphrody/shared,
 #       the two login roles (or rotates their passwords: no env file on the host
 #       holds the old ones), the staged site/Web env, the AI HTTP env and the
 #       Shenron compute client env. Run it after the PostgreSQL cluster is back
@@ -31,7 +31,7 @@ case "${1:-}" in
 esac
 for cmd in openssl psql pg_isready runuser install grep stat id; do command -v "$cmd" >/dev/null || { echo "missing $cmd" >&2; exit 2; }; done
 env_dir=/etc/aphrody
-root=/srv/aphrody
+root=/home/ubuntu/apps/aphrody
 site_env="$env_dir/aphrody-site.env"
 next_site_env="$env_dir/aphrody-site.next.env"
 web_env="$env_dir/aphrody-web-api.env"

@@ -6,8 +6,8 @@
     "host": "cdn.aphrody.com",
     "status": "retired",
     "retiredAt": "2026-09-25",
-    "note": "The release tree /srv/aphrody-cdn and the cdn.aphrody.com vhost (yolo/tools/config/host/nginx/nie/aphrody-nie-cdn.conf) were removed from vps with the Aphrody retirement (yolo/tools/config/host/inventory/vps-source.json). The catalog stays the redeploy shape: `cdn.ts publish` recreates the release root, then the vhost and a certificate must be installed again. The all-in-one bundle does not carry it.",
-    "releaseRoot": "/srv/aphrody-cdn",
+    "note": "The release tree /home/ubuntu/apps/cdn and the cdn.aphrody.com vhost (yolo/tools/config/host/nginx/nie/aphrody-nie-cdn.conf) were removed from vps with the Aphrody retirement (yolo/tools/config/host/inventory/vps-source.json). The catalog stays the redeploy shape: `cdn.ts publish` recreates the release root, then the vhost and a certificate must be installed again. The all-in-one bundle does not carry it.",
+    "releaseRoot": "/home/ubuntu/apps/cdn",
     "paths": {
       "scoped": "/s/",
       "hashed": "/h/",

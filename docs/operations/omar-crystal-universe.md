@@ -395,7 +395,7 @@ Le binaire local du serveur de salles répond `{"service":"dragon-pixel","status
 sur `/health`.
 
 La compilation Rust n'a pas été relancée : le verrou partagé
-`/srv/aphrody-build/locks/heavy.lock` était détenu par plusieurs tâches de build
+`/home/ubuntu/build/locks/heavy.lock` était détenu par plusieurs tâches de build
 au contrôle `lslocks`. Les tests Rust et la production WASM mentionnés dans les
 sections précédentes restent les dernières validations compilées ; ce contrôle
 de santé n'est pas un test de WebSocket ni une validation Bevy. Aucun changement
@@ -422,7 +422,7 @@ renvoie HTTP 200 pour chaque série avec ces comptes, trie correctement les born
 omet les fiches DB auxiliaires, et renvoie 400 pour une série non autorisée; la page
 retourne également 200. Assertions directes sur le normaliseur, bundle navigateur
 (6 modules), Bun (12 tests, 53 expect() calls via `bun test --reporter=dots
-/srv/aphrody-build/workspaces/aphrody-crystal-universe/apps/community/crystal-universe/engine.test.js`
+/home/ubuntu/src/aphrody-crystal-universe/apps/community/crystal-universe/engine.test.js`
 depuis `/tmp` pour éviter le preload `@happy-dom/global-registrator` absent du
 clone sparse), Oxlint strict, Oxfmt et `git diff --check` passent. Ces métadonnées
 n'établissent pas la transcription complète de toutes les pages, l'exhaustivité

@@ -15,7 +15,7 @@ import subprocess
 import tempfile
 from contextlib import closing
 
-ROOT = pathlib.Path("/srv/shenron/shared")
+ROOT = pathlib.Path("/home/ubuntu/apps/shenron/shared")
 BACKUPS = ROOT / "backups/container"
 
 
@@ -52,7 +52,7 @@ def main():
                 [
                     "docker",
                     "exec",
-                    "shenron-postgres-1",
+                    "aphrody-postgres-1",
                     "/usr/lib/postgresql/18/bin/pg_dump",
                     "-U",
                     "postgres",
@@ -74,7 +74,7 @@ def main():
                     "docker",
                     "exec",
                     "-i",
-                    "shenron-postgres-1",
+                    "aphrody-postgres-1",
                     "/usr/lib/postgresql/18/bin/pg_restore",
                     "--list",
                 ],
@@ -115,7 +115,7 @@ def main():
             [
                 "docker",
                 "exec",
-                "shenron-redis-1",
+                "aphrody-redis-1",
                 "redis-cli",
                 "--rdb",
                 redis_snapshot,
@@ -126,7 +126,7 @@ def main():
             [
                 "docker",
                 "exec",
-                "shenron-redis-1",
+                "aphrody-redis-1",
                 "redis-check-rdb",
                 redis_snapshot,
             ],
@@ -134,11 +134,11 @@ def main():
         )
         with (stage / "redis.rdb").open("wb") as output:
             run(
-                ["docker", "exec", "shenron-redis-1", "cat", redis_snapshot],
+                ["docker", "exec", "aphrody-redis-1", "cat", redis_snapshot],
                 stdout=output,
             )
         run(
-            ["docker", "exec", "shenron-redis-1", "rm", "--", redis_snapshot],
+            ["docker", "exec", "aphrody-redis-1", "rm", "--", redis_snapshot],
             stdout=subprocess.DEVNULL,
         )
         files = {

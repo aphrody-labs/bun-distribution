@@ -20,7 +20,7 @@
       "owns": [
         "shenron-bot-sqlite-runtime-cache"
       ],
-      "source": "/srv/shenron/shared/bot/data/bot.db",
+      "source": "/home/ubuntu/apps/shenron/shared/bot/data/bot.db",
       "capacityPolicy": {
         "archiveMaxBytes": 2147483648,
         "minFreeBytes": 4294967296

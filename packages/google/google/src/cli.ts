@@ -33,7 +33,7 @@ export async function runGoogle(argv: readonly string[]): Promise<number> {
     const { serveFontsProxy } = await import("./fonts-proxy.ts");
     const server = serveFontsProxy({
       port: Number(option("port", Bun.env.FONTS_PROXY_PORT ?? "8796")),
-      cacheDir: option("cache", Bun.env.FONTS_PROXY_CACHE ?? "/srv/aphrody-cdn/google"),
+      cacheDir: option("cache", Bun.env.FONTS_PROXY_CACHE ?? "/home/ubuntu/apps/cdn/google"),
       origin: option("origin", Bun.env.FONTS_PROXY_ORIGIN ?? "https://cdn.aphrody.com"),
       families: options.includes("--all-families") ? null : undefined,
     });

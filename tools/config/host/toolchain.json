@@ -207,8 +207,8 @@
     "knownGap": "ssh key github_aphrody_code is not registered on GitHub account aphrody-code (Permission denied); needs `gh auth refresh -h github.com -s admin:public_key` as aphrody-code then `gh ssh-key add`"
   },
   "sourceCheckoutHosts": {
-    "vps": "~/aphrody",
-    "dbfr": "~/aphrody",
+    "vps": "~/src/aphrody",
+    "dbfr": "~/src/aphrody",
     "remote": "workspace (git@github.com:aphrody-labs/aphrody.git, blobless clone via forwarded agent)",
     "links": [
       "~/.local/bin/bun (release aphrody-labs/bun, also linked as ~/.bun/bin/bun)"

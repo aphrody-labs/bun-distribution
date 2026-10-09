@@ -10,7 +10,7 @@
         "StrictHostKeyChecking=yes",
         "aphrody-vps-wg",
         "/home/ubuntu/.bun/bin/bun",
-        "/srv/aphrody-lab/fleet-mcp.mjs"
+        "/home/ubuntu/apps/lab/fleet-mcp.mjs"
       ]
     }
   }

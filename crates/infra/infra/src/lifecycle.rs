@@ -373,9 +373,9 @@ mod tests {
 
     #[test]
     fn container_services_use_docker() {
-        let argv = container_command(ServiceAction::Restart, "shenron-chat-1").expect("restart");
-        assert_eq!(argv, ["docker", "restart", "shenron-chat-1"]);
-        assert!(container_command(ServiceAction::Enable, "shenron-chat-1").is_none());
+        let argv = container_command(ServiceAction::Restart, "aphrody-chat-1").expect("restart");
+        assert_eq!(argv, ["docker", "restart", "aphrody-chat-1"]);
+        assert!(container_command(ServiceAction::Enable, "aphrody-chat-1").is_none());
         assert!(container_state_is_up("running/healthy"));
         assert!(!container_state_is_up("running/unhealthy"));
         assert!(!container_state_is_up("exited"));

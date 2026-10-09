@@ -62,7 +62,7 @@ describe("arguments", () => {
       ],
       {
         HOME: "/h",
-        BUN_FORGE_HOME: "/srv/forge",
+        BUN_FORGE_HOME: "/home/ubuntu/apps/forge",
         BUN_FORGE_REPOSITORY: "https://example.test/bun.git",
       },
     );
@@ -76,8 +76,8 @@ describe("arguments", () => {
     expect(o).toMatchObject({
       jobs: 8,
       once: true,
-      home: "/srv/forge",
-      artifacts: "/srv/forge/artifacts",
+      home: "/home/ubuntu/apps/forge",
+      artifacts: "/home/ubuntu/apps/forge/artifacts",
     });
     expect(DEFAULT_CONFIG.lto).toBe(true);
   });
@@ -261,11 +261,11 @@ describe("build environment", () => {
 
   test("the fork build is one product: binary yolo, aliases bun and vu", () => {
     expect(BINARY).toEqual({ name: "yolo", aliases: ["bun", "vu"] });
-    expect(artifactLayout("/srv/forge/artifacts/abc")).toEqual({
-      binary: "/srv/forge/artifacts/abc/yolo",
+    expect(artifactLayout("/home/ubuntu/apps/forge/artifacts/abc")).toEqual({
+      binary: "/home/ubuntu/apps/forge/artifacts/abc/yolo",
       aliases: {
-        bun: "/srv/forge/artifacts/abc/bun",
-        vu: "/srv/forge/artifacts/abc/vu",
+        bun: "/home/ubuntu/apps/forge/artifacts/abc/bun",
+        vu: "/home/ubuntu/apps/forge/artifacts/abc/vu",
       },
     });
   });
@@ -325,9 +325,9 @@ describe("build environment", () => {
   });
 
   test("systemd unit runs watch with the forge home", () => {
-    const unit = systemdUnit("/usr/local/bin/yolo forge", "/srv/forge", "builder");
+    const unit = systemdUnit("/usr/local/bin/yolo forge", "/home/ubuntu/apps/forge", "builder");
     expect(unit).toContain("ExecStart=/usr/local/bin/yolo forge watch");
-    expect(unit).toContain("Environment=BUN_FORGE_HOME=/srv/forge");
+    expect(unit).toContain("Environment=BUN_FORGE_HOME=/home/ubuntu/apps/forge");
     expect(unit).toContain("User=builder");
   });
 });

@@ -139,17 +139,17 @@ docker build -f aphrody/deploy/Dockerfile -t aphrody-serve aphrody
 ```
 
 ### Run the Container
-Mount your built React/static front-end folder at `/srv/site`:
+Mount your built React/static front-end folder at `/home/ubuntu/apps/site`:
 ```bash
-docker run --rm -p 8080:8080 -v /path/to/dist:/srv/site:ro aphrody-serve
+docker run --rm -p 8080:8080 -v /path/to/dist:/home/ubuntu/apps/site:ro aphrody-serve
 ```
 
 To reverse-proxy API requests (e.g. `/api/*`) to a running backend at `http://backend:3000`, override the container entrypoint or run:
 ```bash
 docker run --rm -p 8080:8080 \
-  -v /path/to/dist:/srv/site:ro \
+  -v /path/to/dist:/home/ubuntu/apps/site:ro \
   aphrody-serve \
-  sh -c 'aphrody serve "/srv/site" --host "0.0.0.0" --port 8080 --proxy "http://backend:3000" --cache'
+  sh -c 'aphrody serve "/home/ubuntu/apps/site" --host "0.0.0.0" --port 8080 --proxy "http://backend:3000" --cache'
 ```
 
 ---

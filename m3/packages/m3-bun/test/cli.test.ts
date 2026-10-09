@@ -112,7 +112,7 @@ describe("runCli", () => {
     expect(code).toBe(0);
     expect(text).toContain("generated only: nothing was applied, pushed or reloaded");
     expect(readFileSync(join(out, "systemd", "hello-m3.service"), "utf8")).toContain(
-      "WorkingDirectory=/srv/demo/current",
+      "WorkingDirectory=/home/svc/apps/demo/current",
     );
     expect(readFileSync(join(out, "systemd", "hello-m3.service"), "utf8")).toContain("User=svc");
     expect(existsSync(join(out, "nginx"))).toBe(false);

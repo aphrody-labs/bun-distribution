@@ -87,8 +87,8 @@ def main():
             staged_link.replace(live)
         changed = True
     if changed:
-        command(["docker", "exec", "shenron-gateway-1", "nginx", "-t"])
-        command(["docker", "exec", "shenron-gateway-1", "nginx", "-s", "reload"])
+        command(["docker", "exec", "aphrody-gateway-1", "nginx", "-t"])
+        command(["docker", "exec", "aphrody-gateway-1", "nginx", "-s", "reload"])
         print("Shenron gateway certificate files published and nginx reloaded")
 
 

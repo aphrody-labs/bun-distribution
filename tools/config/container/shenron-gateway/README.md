@@ -10,7 +10,7 @@ implementation.
 Mount the selected, checksum-sealed route files under `/etc/nginx/conf.d` read-only.
 Mount the dedicated `/etc/aphrody/shenron-tls` store read-only at `/etc/letsencrypt`; certificate
 private keys never enter the context, image or release archive. Bind only the
-public wiki, bot assets and public extra stores under `/srv/shenron-cdn`, and the
+public wiki, bot assets and public extra stores under `/home/ubuntu/apps/shenron-cdn`, and the
 canonical maintenance page at `/var/www/shenron/50x.html`. Never mount home,
 conversation, database, backup or model directories as public content.
 

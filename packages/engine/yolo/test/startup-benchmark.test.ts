@@ -7,7 +7,7 @@ import {
   measureStartupComparison,
   runStartupBenchCli,
   type StartupCommand,
-} from "../../../../scripts/bench/startup";
+} from "../../../../scripts/audit/bench/startup";
 
 describe("fresh-process startup benchmark", () => {
   const command = (id: string, code = 'console.log("fixture")'): StartupCommand => ({

@@ -19,7 +19,7 @@ const BUN_SRC = join(BUN_CHECKOUT, "src");
 const OBSCURA = join(ROOT, "crates/web/obscura-js/src");
 const OBSCURA_JS = join(ROOT, "crates/web/obscura-js/js");
 const WEBKIT_PREBUILT =
-  "/srv/aphrody-build/cache/bun-forge/build-cache/webkit-5718a6ec579b9836-lto/include";
+  "/home/ubuntu/build/cache/bun-forge/build-cache/webkit-5718a6ec579b9836-lto/include";
 const VPS_JSC = `${WEBKIT_PREBUILT}/JavaScriptCore ${WEBKIT_PREBUILT}/wtf`;
 
 interface Capability {

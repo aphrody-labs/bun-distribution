@@ -32,7 +32,7 @@
     "homeDocuments": ["MEMORY.md"],
     "directory": "/home/ubuntu/.aphrody/workspaces/dbfr/incoming/drive",
     "stateRoot": "/home/ubuntu/.aphrody",
-    "shenronRoot": "/srv/shenron/shared/agent-home",
+    "shenronRoot": "/home/ubuntu/apps/shenron/shared/agent-home",
     "intervalSeconds": 300
   },
   "ragMonitor": {
@@ -42,6 +42,6 @@
   },
   "publication": {
     "host": "vps",
-    "directory": "/srv/aphrody-lab/state"
+    "directory": "/home/ubuntu/apps/lab/state"
   }
 }

@@ -11,13 +11,13 @@ export interface TargetContext {
   domain?: string;
   /** Container image reference. */
   image: string;
-  /** Install namespace under `/srv` and `/etc` (yolo host convention). */
+  /** Install namespace under `~/apps` (one home per host) and `/etc` (yolo host convention). */
   namespace: string;
   /** Unprivileged account of the systemd unit. */
   user: string;
   /** Fly.io primary region. */
   region: string;
-  /** Name of the compiled Linux executable, in images and under `/srv/<ns>/current/bin`. */
+  /** Name of the compiled Linux executable, in images and under `~/apps/<ns>/current/bin`. */
   binary: string;
   /** UI build directory, relative to the app. */
   outdir: string;

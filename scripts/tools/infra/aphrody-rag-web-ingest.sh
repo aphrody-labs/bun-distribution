@@ -11,8 +11,8 @@ for file in /etc/aphrody/aphrody-ai-http.env /etc/aphrody/aphrody-web-api.env; d
     echo "missing 0600 service env: $file" >&2; exit 2;
   }
 done
-[[ -x /srv/aphrody/current/bin/aphrody ]] || { echo 'Aphrody release CLI missing' >&2; exit 2; }
-[[ -d /srv/aphrody/shared/ai && "$(stat -c %U /srv/aphrody/shared/ai)" = aphrody ]] || {
+[[ -x /home/ubuntu/apps/aphrody/current/bin/aphrody ]] || { echo 'Aphrody release CLI missing' >&2; exit 2; }
+[[ -d /home/ubuntu/apps/aphrody/shared/ai && "$(stat -c %U /home/ubuntu/apps/aphrody/shared/ai)" = aphrody ]] || {
   echo 'AI state directory must belong to aphrody' >&2; exit 2;
 }
 [[ "$(grep -Ec '^APHRODY_MCP_DATABASE_URL=' /etc/aphrody/aphrody-ai-http.env || true)" = 1 ]] || {
@@ -28,7 +28,7 @@ export APHRODY_MCP_DATABASE_URL APHRODY_WEB_API_TOKEN
   echo 'AI database or Web backend credential is empty' >&2; exit 2;
 }
 export APHRODY_WEB_API_URL=http://127.0.0.1:3007
-export APHRODY_HOME=/srv/aphrody/shared/ai
-export HOME=/srv/aphrody/shared/ai
-cd /srv/aphrody/shared/ai
-exec runuser --preserve-environment -u aphrody -- /srv/aphrody/current/bin/aphrody rag web-ingest "$@"
+export APHRODY_HOME=/home/ubuntu/apps/aphrody/shared/ai
+export HOME=/home/ubuntu/apps/aphrody/shared/ai
+cd /home/ubuntu/apps/aphrody/shared/ai
+exec runuser --preserve-environment -u aphrody -- /home/ubuntu/apps/aphrody/current/bin/aphrody rag web-ingest "$@"

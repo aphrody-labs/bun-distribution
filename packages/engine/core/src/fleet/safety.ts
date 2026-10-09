@@ -9,6 +9,7 @@
  *   4. No mutation while a build lock is held; the transport (ssh) and the keep-list are never stopped.
  */
 import { posix } from "node:path";
+import { hostLayout } from "../host/layout.ts";
 
 // -------------------------------------------------------------------------------------------- paths
 
@@ -28,7 +29,6 @@ export const NEVER_REMOVE = [
   "/root",
   "/run",
   "/sbin",
-  "/srv",
   "/sys",
   "/tmp",
   "/usr",
@@ -117,6 +117,13 @@ export function isDatabasePath(path: string): boolean {
 export function protectedReason(path: string, ctx: PathContext): string | null {
   const p = normalizePath(path);
   if (p === "/") return "the filesystem root";
+  // checked before /home so build output inside an app's persistent data is never reclaimed as "own home"
+  const apps = hostLayout(ctx.home).apps;
+  const app = p.startsWith(`${apps}/`) ? p.slice(apps.length + 1).split("/") : [];
+  if (app.length >= 2 && (app[1] === "shared" || app[1] === "data"))
+    return `an app data tree (${apps}/*/${app[1]})`;
+  for (const extra of ctx.preserve ?? [])
+    if (within(p, normalizePath(extra))) return `preserved by policy (${extra})`;
   for (const root of PROTECTED_TREES) {
     if (within(p, root)) {
       // own home is protected too, but reported precisely
@@ -129,10 +136,7 @@ export function protectedReason(path: string, ctx: PathContext): string | null {
     }
     if (within(root, p)) return `contains protected ${root}`;
   }
-  if (/^\/srv\/[^/]+\/shared(\/|$)/.test(p)) return "a shared tree (/srv/*/shared)";
   if (isDatabasePath(p)) return "database or container-engine state";
-  for (const extra of ctx.preserve ?? [])
-    if (within(p, normalizePath(extra))) return `preserved by policy (${extra})`;
   return null;
 }
 
@@ -449,7 +453,7 @@ export const DEFAULT_POLICY: Policy = {
     journalMaxSize: "500M",
     journalMaxAgeDays: 14,
     rotatedLogAgeDays: 30,
-    scanRoots: ["~", "/srv", "/opt", "/tmp"],
+    scanRoots: ["~", "/tmp"],
     excludeNames: ["aphrody-ui", ".git", ".rustup", ".cargo"],
     cacheDirs: ["~/.cache/pip", "~/.cache/thumbnails", "~/.npm/_logs"],
     swapFileGlobs: ["/swapfile*", "/swap.img", "/var/swapfile*"],

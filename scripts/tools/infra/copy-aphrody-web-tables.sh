@@ -21,7 +21,7 @@ source_db="${APHRODY_WEB_SOURCE_DB:-aphrody}"
 target_db="${APHRODY_WEB_TARGET_DB:-aphrody_web}"
 target_role="${APHRODY_WEB_TARGET_ROLE:-aphrody_web}"
 ai_role="${APHRODY_AI_HTTP_ROLE:-aphrody_ai_http}"
-backup_root="${APHRODY_WEB_BACKUP_ROOT:-/srv/aphrody/shared/db-backups}"
+backup_root="${APHRODY_WEB_BACKUP_ROOT:-/home/ubuntu/apps/aphrody/shared/db-backups}"
 web_tables=(aphrody_bxc_rankings aphrody_seo_entities)
 ai_tables=(aphrody_rag_documents aphrody_rag_chunks)
 [[ "$source_db" =~ ^[a-z_][a-z0-9_]*$ && "$target_db" =~ ^[a-z_][a-z0-9_]*$ && "$target_role" =~ ^[a-z_][a-z0-9_]*$ && "$ai_role" =~ ^[a-z_][a-z0-9_]*$ ]] || { echo 'invalid PostgreSQL identifier' >&2; exit 2; }

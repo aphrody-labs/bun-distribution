@@ -149,7 +149,7 @@ test("a real launch needs the host to be ready AND a typed OUI", async () => {
   expect(launches(yes)).toHaveLength(1);
   const launch = launches(yes)[0]!;
   expect(launch.argv.at(-1)).toContain(
-    "'kit-20261006-120000-test' '/usr/local/bin/aphrody' '/srv/aphrody' '-' 'test' 'dry-run'",
+    "'kit-20261006-120000-test' '/usr/local/bin/aphrody' '/home/ubuntu/apps/aphrody' '-' 'test' 'dry-run'",
   );
   expect(yes.ui.lines.join("\n")).toContain("Lancé : kit-20261006-120000-test (processus 4242)");
   expect(yes.ui.lines.join("\n")).toContain("Tu peux fermer cette fenêtre");

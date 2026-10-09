@@ -396,7 +396,7 @@ function unitSteps(
         `${f.unit}: ${aiJson} is missing (the A2A server needs ai.json in its working directory)`,
       );
     const content = readFileSync(aiJson, "utf8");
-    const dir = f.workingDirectory ?? "/srv/aphrody/shared/a2a";
+    const dir = f.workingDirectory ?? "/home/ubuntu/apps/aphrody/shared/a2a";
     const fleetPath = join(repoRoot, "tools/config/host/agent-fleet.json");
     const fleetConfigured = existsSync(fleetPath);
     if (fleetConfigured) {
@@ -442,7 +442,7 @@ function unitSteps(
         "provision",
         fleetConfigured ? "check" : "mutate",
         "ai-json",
-        `ai.json of the repository revision into ${dir} (replaces the dangling link to the retired /srv/aphrody/current)`,
+        `ai.json of the repository revision into ${dir} (replaces the dangling link to the retired /home/ubuntu/apps/aphrody/current)`,
         fleetConfigured
           ? `test -s ${sq(`${dir}/ai.json`)}`
           : `rm -f ${dir}/ai.json && printf %s ${sq(b64(content))} | base64 -d > ${dir}/ai.json && chmod 0644 ${dir}/ai.json`,
@@ -452,7 +452,7 @@ function unitSteps(
         "mutate",
         "coord-link",
         `${dir}/.coord points at the persistent coord directory (mailbox of /msg and JSON-RPC)`,
-        `[ -e ${dir}/.coord ] || ln -s /srv/aphrody/shared/coord ${dir}/.coord`,
+        `[ -e ${dir}/.coord ] || ln -s /home/ubuntu/apps/aphrody/shared/coord ${dir}/.coord`,
       ),
     );
   }

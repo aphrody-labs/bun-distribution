@@ -366,13 +366,14 @@ enum DeployStack {
 }
 
 impl DeployStack {
-    /// Directory below which the stack's releases (or bundles) live on the VPS.
-    fn release_root(self) -> &'static str {
+    /// Directory below which the stack's releases (or bundles) live on the VPS (`~/apps/<app>/releases/`).
+    fn release_root(self) -> String {
+        let layout = &*crate::layout::HOST_LAYOUT;
         match self {
-            Self::Aphrody | Self::AphrodyCompute => "/srv/aphrody/releases/",
-            Self::Shenron => "/srv/shenron/releases/",
-            Self::Rg => "/srv/rg/releases/",
-            Self::Bundle => "/srv/aphrody-infra/bundles/",
+            Self::Aphrody | Self::AphrodyCompute => format!("{}/releases/", layout.app("aphrody")),
+            Self::Shenron => format!("{}/releases/", layout.app("shenron")),
+            Self::Rg => format!("{}/releases/", layout.app("rg")),
+            Self::Bundle => format!("{}/bundles/", layout.app("infra")),
         }
     }
 
@@ -1328,7 +1329,7 @@ fn dev_env(root: &Path, target_id: Option<&str>, apply: bool, run: &mut Run) -> 
 /// A release below the stack root whose path segments are plain names: the path is
 /// forwarded to a remote shell by ssh, so `.`, `..`, spaces and metacharacters are refused.
 fn release_path_is_valid(release: &str, stack: DeployStack) -> bool {
-    release.strip_prefix(stack.release_root()).is_some_and(|id| {
+    release.strip_prefix(stack.release_root().as_str()).is_some_and(|id| {
         !id.is_empty()
             && id.split('/').all(|part| {
                 !part.is_empty()
@@ -2460,27 +2461,27 @@ mod tests {
 
     #[test]
     fn release_path_rejects_traversal_and_empty_ids() {
-        assert!(release_path_is_valid("/srv/aphrody/releases/20260923-abc", DeployStack::Aphrody));
-        assert!(release_path_is_valid("/srv/rg/releases/20260923-abc", DeployStack::Rg));
-        assert!(!release_path_is_valid("/srv/aphrody/releases/", DeployStack::Aphrody));
-        assert!(!release_path_is_valid("/srv/rg/releases/../etc", DeployStack::Rg));
-        assert!(!release_path_is_valid("/srv/rg/releases/a/./b", DeployStack::Rg));
-        assert!(!release_path_is_valid("/srv/aphrody/current", DeployStack::Aphrody));
-        assert!(!release_path_is_valid("/srv/aphrody/releases/a", DeployStack::Rg));
+        assert!(release_path_is_valid("/home/ubuntu/apps/aphrody/releases/20260923-abc", DeployStack::Aphrody));
+        assert!(release_path_is_valid("/home/ubuntu/apps/rg/releases/20260923-abc", DeployStack::Rg));
+        assert!(!release_path_is_valid("/home/ubuntu/apps/aphrody/releases/", DeployStack::Aphrody));
+        assert!(!release_path_is_valid("/home/ubuntu/apps/rg/releases/../etc", DeployStack::Rg));
+        assert!(!release_path_is_valid("/home/ubuntu/apps/rg/releases/a/./b", DeployStack::Rg));
+        assert!(!release_path_is_valid("/home/ubuntu/apps/aphrody/current", DeployStack::Aphrody));
+        assert!(!release_path_is_valid("/home/ubuntu/apps/aphrody/releases/a", DeployStack::Rg));
         assert!(release_path_is_valid(
-            "/srv/shenron/releases/1111111111111111111111111111111111111111",
+            "/home/ubuntu/apps/shenron/releases/1111111111111111111111111111111111111111",
             DeployStack::Shenron
         ));
         assert!(release_path_is_valid(
-            "/srv/aphrody-infra/bundles/20260926T120000Z-0123abcd",
+            "/home/ubuntu/apps/infra/bundles/20260926T120000Z-0123abcd",
             DeployStack::Bundle
         ));
         assert!(!release_path_is_valid(
-            "/srv/aphrody/releases/20260926T120000Z-0123abcd",
+            "/home/ubuntu/apps/aphrody/releases/20260926T120000Z-0123abcd",
             DeployStack::Bundle
         ));
-        assert!(!release_path_is_valid("/srv/rg/releases/x;reboot", DeployStack::Rg));
-        assert!(!release_path_is_valid("/srv/shenron/releases/a b", DeployStack::Shenron));
+        assert!(!release_path_is_valid("/home/ubuntu/apps/rg/releases/x;reboot", DeployStack::Rg));
+        assert!(!release_path_is_valid("/home/ubuntu/apps/shenron/releases/a b", DeployStack::Shenron));
     }
 
     #[test]
@@ -2501,8 +2502,8 @@ mod tests {
         assert_eq!(DeployStack::Aphrody.adapter(), "/usr/local/sbin/aphrody-infra-deploy-aphrody");
         assert!(DeployStack::Aphrody.requires().iter().any(|item| item.contains("SMOKE.json")));
         assert_eq!(
-            remote_adapter_args("/usr/local/sbin/x", "/srv/rg/releases/a"),
-            ["-o", "BatchMode=yes", "vps", "sudo", "-n", "/usr/local/sbin/x", "/srv/rg/releases/a"]
+            remote_adapter_args("/usr/local/sbin/x", "/home/ubuntu/apps/rg/releases/a"),
+            ["-o", "BatchMode=yes", "vps", "sudo", "-n", "/usr/local/sbin/x", "/home/ubuntu/apps/rg/releases/a"]
         );
     }
 
@@ -2538,11 +2539,11 @@ mod tests {
     fn compute_deployment_selects_only_the_existing_adapters_compute_mode() {
         let compute = DeployStack::AphrodyCompute;
         assert_eq!(serde_json::to_value(compute).unwrap(), "aphrody-compute");
-        let release = "/srv/aphrody/releases/qualified-compute";
+        let release = "/home/ubuntu/apps/aphrody/releases/qualified-compute";
         assert_eq!(compute.adapter(), DeployStack::Aphrody.adapter());
         assert_eq!(compute.adapter_env(), DeployStack::Aphrody.adapter_env());
         assert!(release_path_is_valid(release, compute));
-        assert!(!release_path_is_valid("/srv/shenron/releases/a", compute));
+        assert!(!release_path_is_valid("/home/ubuntu/apps/shenron/releases/a", compute));
         assert_eq!(
             remote_stack_adapter_args(compute, compute.adapter(), release),
             [

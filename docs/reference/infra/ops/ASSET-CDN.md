@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Shared asset CDN — `cdn.aphrody.com`
 
-> **Retired on vps since 2026-09-25.** `/srv/aphrody-cdn` and the `cdn.aphrody.com` vhost were
+> **Retired on vps since 2026-09-25.** `/home/ubuntu/apps/cdn` and the `cdn.aphrody.com` vhost were
 > removed with the Aphrody retirement (`tools/config/asset-catalog.json` `status: retired`,
 > `yolo/tools/config/host/inventory/vps-source.json`). This page stays the redeploy runbook; the all-in-one bundle does
 > not carry the CDN.
@@ -42,8 +42,8 @@ bun scripts/assets/cdn.ts build                    # var/cdn/release: s/, h/, s/
 bun scripts/assets/cdn.ts publish --vps <ssh-host> [--dry-run]
 ```
 
-`publish` rsyncs the release to `/srv/aphrody-cdn/releases/<RELEASE_SHA>` and switches
-`/srv/aphrody-cdn/current` atomically; the previous release stays for rollback (switch the link
+`publish` rsyncs the release to `/home/ubuntu/apps/cdn/releases/<RELEASE_SHA>` and switches
+`/home/ubuntu/apps/cdn/current` atomically; the previous release stays for rollback (switch the link
 back). The vhost is `iecode/config/nie/host/nginx/aphrody-nie-cdn.conf`, installed with
 `yolo/tools/config/host/nginx/aphrody/aphrody-cdn-static.inc` in `/etc/nginx/conf.d/`, then
 `nginx -t && systemctl reload nginx` (first publish and install: 2026-09-23, release

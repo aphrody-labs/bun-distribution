@@ -8,8 +8,8 @@ set -Eeuo pipefail
 # release checksums. Any failure restores the previous units, apex vhost,
 # active env files and `current`, and restarts what was running before.
 #
-#   atomic-deploy-aphrody-stack.sh /srv/aphrody/releases/ID
-#   atomic-deploy-aphrody-stack.sh --compute-only /srv/aphrody/releases/ID
+#   atomic-deploy-aphrody-stack.sh /home/ubuntu/apps/aphrody/releases/ID
+#   atomic-deploy-aphrody-stack.sh --compute-only /home/ubuntu/apps/aphrody/releases/ID
 #   atomic-deploy-aphrody-stack.sh --restore BACKUP_DIR
 #
 # `--compute-only` activates only the Shenron compute roster (aphrody-shenron-embed
@@ -24,12 +24,12 @@ set -Eeuo pipefail
 # `--restore` re-applies the backup written by an earlier activation (the
 # bundle adapter uses it to undo a successful step). APHRODY_STACK_BACKUP_DIR
 # selects where the activation backup goes (default shared/deploy-backups).
-usage='usage: atomic-deploy-aphrody-stack.sh [--compute-only] /srv/aphrody/releases/ID | --restore BACKUP_DIR'
+usage='usage: atomic-deploy-aphrody-stack.sh [--compute-only] /home/ubuntu/apps/aphrody/releases/ID | --restore BACKUP_DIR'
 [[ $# -ge 1 && $# -le 2 ]] || { echo "$usage" >&2; exit 2; }
 mode=full
 if [[ "$1" = --compute-only ]]; then mode=compute; shift; fi
 [[ $# -ge 1 ]] || { echo "$usage" >&2; exit 2; }
-root="${APHRODY_RELEASE_ROOT:-/srv/aphrody}"
+root="${APHRODY_RELEASE_ROOT:-/home/ubuntu/apps/aphrody}"
 current="$root/current"
 env_dir=/etc/aphrody
 conf=/etc/nginx/conf.d/aphrody-apex.conf
@@ -157,7 +157,7 @@ else:
           and llm.get('ready') is True and llm.get('provider') == llm_mode)
 sys.exit(0 if ok else 1)
 PY
-[[ "$mode" = compute ]] || [[ -L "$release/.coord" && "$(readlink -- "$release/.coord")" = /srv/aphrody/shared/coord ]] || { echo 'persistent .coord link missing' >&2; exit 2; }
+[[ "$mode" = compute ]] || [[ -L "$release/.coord" && "$(readlink -- "$release/.coord")" = /home/ubuntu/apps/aphrody/shared/coord ]] || { echo 'persistent .coord link missing' >&2; exit 2; }
 id -u aphrody >/dev/null 2>&1 || { echo 'system user aphrody missing (provision-aphrody-stack-env.sh --fresh-host)' >&2; exit 2; }
 
 # Active site/Web env files are optional (fresh host); staged and AI env are not.
@@ -343,7 +343,7 @@ for spec in "${binary_specs[@]}"; do
   main_pid="$(systemctl show -p MainPID --value "$service.service")"
   configured="$(systemctl show -p ExecStart --value "$service.service")"
   expected_exe="$(realpath -e -- "$release/bin/$binary")"
-  [[ "$main_pid" =~ ^[1-9][0-9]*$ && "$configured" == *"path=/srv/aphrody/current/bin/$binary ;"* ]] || {
+  [[ "$main_pid" =~ ^[1-9][0-9]*$ && "$configured" == *"path=/home/ubuntu/apps/aphrody/current/bin/$binary ;"* ]] || {
     echo "service $service does not start the release binary" >&2; exit 1;
   }
   [[ "$(readlink -e -- "/proc/$main_pid/exe")" = "$expected_exe" ]] || {

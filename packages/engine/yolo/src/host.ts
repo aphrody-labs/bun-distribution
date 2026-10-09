@@ -343,7 +343,7 @@ done`,
     ps: "ps -eo pid=,ppid=,rss=,pcpu=,etimes=,stat=,user:32=,args= 2>/dev/null",
     cwds: String.raw`$S sh -c 'ls -l /proc/[0-9]*/cwd 2>/dev/null' | sed 's#.* /proc/\([0-9]*\)/cwd -> #\1 #'`,
     docker: String.raw`if command -v docker >/dev/null 2>&1; then docker system df --format '{{json .}}' 2>/dev/null; fi`,
-    du: `$S timeout 60 nice -n 19 ionice -c3 du -x -B1 -d1 ${duExclude} /var/lib /var/cache /var/log /var/tmp /home /srv /opt /tmp /usr/local /root /snap 2>/dev/null | sort -rn | head -40`,
+    du: `$S timeout 60 nice -n 19 ionice -c3 du -x -B1 -d1 ${duExclude} /var/lib /var/cache /var/log /var/tmp /home /opt /tmp /usr/local /root /snap 2>/dev/null | sort -rn | head -40`,
     cron: String.raw`ls -1 /etc/cron.d 2>/dev/null
 echo "## user"; crontab -l 2>/dev/null`,
     locks:
@@ -1977,8 +1977,8 @@ export function planMount(a: Audit, o: MountOptions, host: HostName, now: Date):
   } catch (e) {
     return refuse((e as Error).message);
   }
-  if (!(t.startsWith("/mnt/") || t.startsWith("/media/") || t.startsWith("/srv/mnt/")))
-    return refuse(`mount point ${t} must be under /mnt, /media or /srv/mnt`);
+  if (!(t.startsWith("/mnt/") || t.startsWith("/media/")))
+    return refuse(`mount point ${t} must be under /mnt or /media`);
   const opts = o.rw ? "rw,nosuid,nodev,noexec,nofail" : `${readOnlyOptions(fs.fstype)},nofail`;
   const stamp = now.toISOString().replace(/[-:]/g, "").slice(0, 15);
   const id = a.identity;

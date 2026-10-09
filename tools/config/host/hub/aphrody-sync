@@ -32,6 +32,8 @@ status="$(sed -n 's/.*"status":"\([a-z]*\)".*/\1/p' "$STATE" 2>/dev/null)"
 deployed_features="$(sed -n 's/.*"features":"\([^"]*\)".*/\1/p' "$STATE" 2>/dev/null)"
 if [ "$sha" = "$deployed" ] && [ "$status" = ok ] && [ "$deployed_features" = "$FEATURES" ] && [ -x "$BIN/aphrody" ]; then exit 0; fi
 log "build $sha"
+# aphrody-ssh restait « fresh » avec un rlib obsolète : nettoyage ciblé avant le build release.
+cargo clean -p aphrody-ssh --release -q 2>/dev/null || true
 mkdir -p "$BUILD/locks"
 if ! flock "$BUILD/locks/cargo-build.lock" nice -n 15 ionice -c3 cargo build --release -p aphrody --locked --features "$FEATURES" -j "$APHRODY_CARGO_JOBS"; then
   log "build en echec"; write_state "$sha" build-failed; exit 1

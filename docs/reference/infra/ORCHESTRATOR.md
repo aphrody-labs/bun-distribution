@@ -27,9 +27,9 @@ aphrody-infra doctor --json
 aphrody-infra inventory --json
 aphrody-infra dev-env --target linux-container-26.04
 aphrody-infra sync --target windows-local
-aphrody-infra deploy --target vps --stack bundle --release /srv/aphrody-infra/bundles/<id>
-aphrody-infra deploy --target vps --stack bundle --release /srv/aphrody-infra/bundles/<id> --apply
-aphrody-infra deploy --target vps --stack shenron|rg --release /srv/<stack>/releases/<id>
+aphrody-infra deploy --target vps --stack bundle --release /home/ubuntu/apps/infra/bundles/<id>
+aphrody-infra deploy --target vps --stack bundle --release /home/ubuntu/apps/infra/bundles/<id> --apply
+aphrody-infra deploy --target vps --stack shenron|rg --release /home/ubuntu/apps/<stack>/releases/<id>
 aphrody-infra service catalog
 aphrody-infra service status --target local
 ```

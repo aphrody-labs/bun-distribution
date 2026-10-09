@@ -18,11 +18,11 @@ Description=fixture
 
 [Service]
 Type=simple
-WorkingDirectory=/srv/x/shared/a2a
+WorkingDirectory=/home/ubuntu/apps/x/shared/a2a
 EnvironmentFile=-/etc/aphrody/x.env
-ExecStart=/home/ubuntu/.local/bin/aphrody a2a serve --bind ${bind} --coord-dir /srv/x/shared/coord
-ReadWritePaths=/srv/x/shared/a2a /srv/x/shared/coord
-BindPaths=-/srv/x/shared/coord /srv/x/state:/srv/x/state
+ExecStart=/home/ubuntu/.local/bin/aphrody a2a serve --bind ${bind} --coord-dir /home/ubuntu/apps/x/shared/coord
+ReadWritePaths=/home/ubuntu/apps/x/shared/a2a /home/ubuntu/apps/x/shared/coord
+BindPaths=-/home/ubuntu/apps/x/shared/coord /home/ubuntu/apps/x/state:/home/ubuntu/apps/x/state
 `;
 
 const unit = (service: string, port: number, host = "vps") => ({
@@ -80,7 +80,11 @@ test("unit facts: binary, loopback bind, env files and writable paths come from 
   expect(facts.binary).toBe("/home/ubuntu/.local/bin/aphrody");
   expect(facts.bind).toEqual({ host: "127.0.0.1", port: 8788 });
   expect(facts.envFiles).toEqual([{ path: "/etc/aphrody/x.env", optional: true }]);
-  expect(facts.writePaths).toEqual(["/srv/x/shared/a2a", "/srv/x/shared/coord", "/srv/x/state"]);
+  expect(facts.writePaths).toEqual([
+    "/home/ubuntu/apps/x/shared/a2a",
+    "/home/ubuntu/apps/x/shared/coord",
+    "/home/ubuntu/apps/x/state",
+  ]);
 });
 
 test("a unit that would bind anything but loopback is refused", () => {
@@ -197,7 +201,7 @@ test("the declared loopback units plan against the real catalog", () => {
 });
 
 const BUILD = {
-  from: "/srv/aphrody-build/cache/cargo/aphrody-wsl/release/aphrody",
+  from: "/home/ubuntu/build/cache/cargo/aphrody-wsl/release/aphrody",
   sha256: "ab".repeat(32),
 };
 

@@ -34,7 +34,7 @@ export interface M3BunDeploy {
   domain?: string;
   /** Container image reference (default `ghcr.io/aphrody-labs/<name>`). */
   image?: string;
-  /** Install namespace under `/srv` and `/etc` for systemd (default `aphrody`). */
+  /** Install namespace under `~/apps` and `/etc` for systemd (default `aphrody`). */
   namespace?: string;
   /** Unprivileged account of the systemd unit (default `ubuntu`, the yolo host convention). */
   user?: string;

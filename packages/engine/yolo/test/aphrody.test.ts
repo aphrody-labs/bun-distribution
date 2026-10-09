@@ -17,28 +17,28 @@ import { findCheckout } from "../src/home";
 
 const factory = {
   target: "vps",
-  workspaceRoot: "/srv/aphrody-build/workspaces/aphrody",
-  artifactRoot: "/srv/aphrody-build/artifacts",
-  lockPath: "/srv/aphrody-build/locks/heavy.lock",
+  workspaceRoot: "/home/ubuntu/src/aphrody",
+  artifactRoot: "/home/ubuntu/build/artifacts",
+  lockPath: "/home/ubuntu/build/locks/heavy.lock",
 };
 const sha = "abcdef012345".padEnd(40, "0");
 
 describe("aphrody bridge", () => {
   it("places the yolo workspace next to the other first-party workspaces", () => {
     const p = remotePaths(factory, "abc123");
-    expect(p.workspace).toBe("/srv/aphrody-build/workspaces/yolo");
-    expect(p.artifacts).toBe("/srv/aphrody-build/artifacts/yolo/abc123");
+    expect(p.workspace).toBe("/home/ubuntu/src/yolo");
+    expect(p.artifacts).toBe("/home/ubuntu/build/artifacts/yolo/abc123");
   });
 
   it("runs the commit's own unit script from the artifacts in a detached tmux session, behind the heavy lock", () => {
     const cmd = remoteCommand(factory, sha);
-    const art = `/srv/aphrody-build/artifacts/yolo/${sha}`;
+    const art = `/home/ubuntu/build/artifacts/yolo/${sha}`;
     expect(cmd).toContain(
-      `git -C '/srv/aphrody-build/workspaces/yolo' show '${sha}:scripts/release/ship_unit.sh' > '${art}/ship_unit.sh'`,
+      `git -C '/home/ubuntu/src/yolo' show '${sha}:scripts/release/ship_unit.sh' > '${art}/ship_unit.sh'`,
     );
     expect(cmd).toContain("tmux new-session -d -s 'yolo-ship-abcdef012345'");
     expect(cmd).toContain(`bash '${art}/ship_unit.sh'`);
-    expect(cmd).toContain("'/srv/aphrody-build/locks/heavy.lock'");
+    expect(cmd).toContain("'/home/ubuntu/build/locks/heavy.lock'");
   });
 
   it("leaves a build already running for the commit alone unless forced", () => {
@@ -62,7 +62,7 @@ describe("aphrody bridge", () => {
 
   it("prepares a clean pinned workspace under the lock without forcing a checkout or starting engines", () => {
     const cmd = remotePrepareCommand(factory, sha);
-    expect(cmd).toContain("flock --close -- '/srv/aphrody-build/locks/heavy.lock'");
+    expect(cmd).toContain("flock --close -- '/home/ubuntu/build/locks/heavy.lock'");
     expect(cmd).toContain("checkout --detach");
     expect(cmd).toContain("Factory checkout is dirty; preserved");
     expect(cmd).toContain("unowned files; preserved");
@@ -142,7 +142,7 @@ describe("aphrody bridge", () => {
     const cmd = waitCommand(factory, sha);
     expect(cmd).toContain("until grep -qE '^(ok|failed|stopped)'");
     expect(
-      cmd.trimEnd().endsWith(`grep -qx ok '/srv/aphrody-build/artifacts/yolo/${sha}/STATUS'`),
+      cmd.trimEnd().endsWith(`grep -qx ok '/home/ubuntu/build/artifacts/yolo/${sha}/STATUS'`),
     ).toBe(true);
   });
 });
