@@ -232,6 +232,26 @@
         {
           "path": ".local/share/Trash",
           "reason": "60 KiB user trash, already discarded"
+        },
+        {
+          "path": ".yolo/transfers",
+          "reason": "image and bundle transfer staging of a finished deploy; the loaded images live in Docker and sealed releases under /srv"
+        },
+        {
+          "path": "shenron-container-stage",
+          "reason": "staging tree of a finished container release; the sealed release lives under /srv/shenron/releases"
+        },
+        {
+          "path": "shenron-transfer.oci",
+          "reason": "OCI archive already loaded with docker image load; the image ID is pinned in the sealed release"
+        },
+        {
+          "path": "shenron-dev/node_modules",
+          "reason": "regenerable dependencies of a source checkout; DBFR is not the build factory"
+        },
+        {
+          "path": ".cache",
+          "reason": "XDG cache of interactive tools, regenerated on demand"
         }
       ],
       "system": {
