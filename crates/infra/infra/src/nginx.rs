@@ -5,6 +5,7 @@
 //! and upstream configurations (supporting both loopback TCP and Unix domain sockets),
 //! with mirror validation (`nginx -t -c <candidate> -q`) and atomic SIGHUP worker reload.
 
+#[cfg(unix)]
 use aphrody_proc::NoWindow as _;
 use serde::{Deserialize, Serialize};
 use std::{fmt::Write as _, path::Path};

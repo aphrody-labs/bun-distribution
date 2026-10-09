@@ -22,6 +22,8 @@ pub mod remote;
 pub mod secrets;
 pub mod tunnel;
 pub mod validate;
+pub mod winsvc;
+pub mod wintask;
 
 pub use cli::cli_main;
 

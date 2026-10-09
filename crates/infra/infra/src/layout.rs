@@ -61,7 +61,7 @@ impl HostLayout {
         let home = home.unwrap_or(&raw.home).to_owned();
         let mut retired: Vec<(String, String)> =
             raw.retired.iter().map(|(from, to)| (expand(from, &home), expand(to, &home))).collect();
-        retired.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+        retired.sort_by_key(|r| std::cmp::Reverse(r.0.len()));
         Ok(Self {
             src: expand(&raw.src, &home),
             apps: expand(&raw.apps, &home),
