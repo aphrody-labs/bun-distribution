@@ -35,7 +35,7 @@ pub(crate) const TOOLS: &[Tool] = &[
     tool("infra", &["aphrody-infra"], Target::Entry(aphrody_infra::cli_main)),
     tool("ovh", &["aphrody-ovh"], Target::Entry(ovh)),
     tool("yolo", &["aphrody-yolo"], Target::Entry(aphrody_yolo::cli_main)),
-    tool("kernel", &["aphrody-kernel"], Target::Entry(kernel)),
+    tool("kernel", &["aphrody-kernel"], Target::Entry(aphrody_kernel::cli_main)),
     tool(
         "host-service",
         &["aphrody-host-service"],
@@ -126,17 +126,6 @@ Commands owned by Bun packages of the checkout (run as `bun packages/engine/yolo
   browser, forge, m3, host, api, serve, tool (yolo_* tools: list | call); google drive|fonts.
   `aphrody mcp` without arguments starts the MCP server (= mcp-server).";
 
-/// `aphrody kernel …`: the kernel daemon and its client commands. `kernel mcp` is an alias of the single MCP
-/// server (`aphrody mcp-server`), which hosts the kernel in process (deprecated alias, 2026-10-07).
-fn kernel(args: Vec<OsString>) -> i32 {
-    if args.get(1).and_then(|arg| arg.to_str()) == Some("mcp") {
-        let mut argv = vec![OsString::from("aphrody-mcp")];
-        argv.extend(args.into_iter().skip(2));
-        return aphrody_mcp::cli_main(argv);
-    }
-    aphrody_kernel::cli_main(args)
-}
-
 /// `aphrody ovh …` is `aphrody infra ovh …`: the OVHcloud control plane (DNS, email, VPS
 /// inspection, reboot and renewal).
 fn ovh(args: Vec<OsString>) -> i32 {
@@ -152,7 +141,7 @@ fn workflow(args: Vec<OsString>) -> i32 {
     aphrody_infra::cli_main(argv)
 }
 
-/// `aphrody mcp` without arguments: the single MCP server, as `yolo mcp` was.
+/// `aphrody mcp` without arguments: the single MCP server.
 fn mcp_server(args: Vec<OsString>) -> i32 {
     let mut argv = vec![OsString::from("aphrody-mcp")];
     argv.extend(args.into_iter().skip(1));

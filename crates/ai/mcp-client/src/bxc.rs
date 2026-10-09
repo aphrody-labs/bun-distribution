@@ -197,7 +197,7 @@ fn unported_hint(name: &str) -> &'static str {
             "use the agent `web_search` tool or `aphrody web search`: the shared SERP client \
              lives in aphrody-google, which depends on this crate"
         },
-        _ => "see `aphrody web --help` and the MCP tool catalog of `aphrody kernel mcp`",
+        _ => "see `aphrody web --help` and the MCP tool catalog of `aphrody-mcp`",
     }
 }
 

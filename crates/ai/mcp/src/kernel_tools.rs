@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! The Aphrody OS kernel hosted in this server: its subsystems (systemd, compat, coreutils,
 //! Nushell, Bun docs, infra, cloud, runtimes), the browser plugin and the Bun tool hosts
-//! (`yolo tool`, M3) are served through this one MCP endpoint. `aphrody kernel mcp`, `yolo mcp`
-//! and the M3 server are aliases of this server, not second servers.
+//! (`yolo tool`, M3) are served through this one MCP endpoint.
 
 use std::{
     collections::HashSet,
