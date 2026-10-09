@@ -191,7 +191,11 @@ export function gatewayModel(config: GatewayConfig, port: number) {
     const directives = ["http2 on", "ssl_protocols TLSv1.2 TLSv1.3"];
     if (tls.quic) {
       listen.push("443 quic reuseport", "[::]:443 quic reuseport");
-      directives.push("http3 on", "quic_retry on", `add_header Alt-Svc 'h3=":443"; ma=86400' always`);
+      directives.push(
+        "http3 on",
+        "quic_retry on",
+        `add_header Alt-Svc 'h3=":443"; ma=86400' always`,
+      );
     }
     servers.push({
       listen_ports: listen,
@@ -301,13 +305,21 @@ export type Plan = {
 export function prepare(config: GatewayConfig, aphrody: string) {
   const sourceBytes = readFileSync(config.sourceConfig);
   const sourceHash = sha256(sourceBytes);
-  const original = new TextDecoder("utf-8", { fatal: true }).decode(sourceBytes).replace(/^\uFEFF/, "");
+  const original = new TextDecoder("utf-8", { fatal: true })
+    .decode(sourceBytes)
+    .replace(/^\uFEFF/, "");
   const record = JSON.parse(readFileSync(config.registry, "utf8")) as SiteRecord;
   if (!liveSite(record))
-    throw new Error("registre du site natif périmé ou listener non prouvé (native-startup.ts health)");
+    throw new Error(
+      "registre du site natif périmé ou listener non prouvé (native-startup.ts health)",
+    );
   const { base, marked } = stripOwnedBlock(original);
   const closing = httpClosing(base);
-  const candidate = candidateText(base, closing, render(gatewayModel(config, record.port), aphrody));
+  const candidate = candidateText(
+    base,
+    closing,
+    render(gatewayModel(config, record.port), aphrody),
+  );
   return { sourceBytes, sourceHash, record, marked, candidate };
 }
 
@@ -320,7 +332,12 @@ export async function apply(config: GatewayConfig, prepared: ReturnType<typeof p
     NetworkSettings: { Ports: Record<string, { HostPort: string }[] | null> };
   }[];
   if (!inspection) throw new Error(`conteneur ${config.container} introuvable`);
-  if (!samePath(hostPath(mountOf(inspection.Mounts, "/etc/nginx/nginx.conf").Source), config.sourceConfig))
+  if (
+    !samePath(
+      hostPath(mountOf(inspection.Mounts, "/etc/nginx/nginx.conf").Source),
+      config.sourceConfig,
+    )
+  )
     throw new Error("le montage de la passerelle ne correspond pas à la source déclarée");
   const tls = config.tls?.enabled ? config.tls : undefined;
   const tlsFiles = tls
@@ -335,7 +352,11 @@ export async function apply(config: GatewayConfig, prepared: ReturnType<typeof p
     if (!samePath(hostPath(mount.Source), tls.directory))
       throw new Error("le montage TLS diffère du répertoire protégé déclaré");
     for (const protocol of tls.quic ? ["tcp", "udp"] : ["tcp"])
-      if (!(inspection.NetworkSettings.Ports[`443/${protocol}`] ?? []).some((b) => b.HostPort === "443"))
+      if (
+        !(inspection.NetworkSettings.Ports[`443/${protocol}`] ?? []).some(
+          (b) => b.HostPort === "443",
+        )
+      )
         throw new Error(`publier 443/${protocol} dans Compose d'abord`);
     for (const [file, expected] of tlsFiles) {
       if (!sameHash(expected, sha256(readFileSync(join(tls.directory, file)))))
@@ -351,7 +372,8 @@ export async function apply(config: GatewayConfig, prepared: ReturnType<typeof p
   const candidatePath = join(operations, `${id}.candidate.conf`);
   const inContainer = `/tmp/aphrody-site-${id}.conf`;
   writeFileSync(backup, sourceBytes);
-  if (sha256(readFileSync(backup)) !== sourceHash) throw new Error("empreinte de la sauvegarde différente");
+  if (sha256(readFileSync(backup)) !== sourceHash)
+    throw new Error("empreinte de la sauvegarde différente");
   writeFileSync(candidatePath, candidate);
   let changed = false;
   try {

@@ -635,7 +635,6 @@ mod tests {
         // SEQUENCE { INTEGER p (2048 bits), INTEGER g = 2 }
         assert_eq!(der.len(), 268);
         assert_eq!(&der[der.len() - 3..], [0x02, 0x01, 0x02]);
-
     }
 
     #[test]

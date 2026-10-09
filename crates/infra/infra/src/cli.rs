@@ -290,8 +290,9 @@ enum NginxCommand {
         comment: Vec<String>,
     },
     /// Check a configuration file with `nginx -t -c <path> -q`, or with `--docker` a server
-    /// file (`conf.d` content) in a disposable nginx container (no bind mount), throwaway
-    /// `/etc/letsencrypt` stand-ins included, on any host with Docker.
+    /// file (`conf.d` content) in a disposable nginx container (no bind mount) with its
+    /// includes from the parent of its directory (repository mirror of `/etc/nginx`) and
+    /// throwaway `/etc/letsencrypt` stand-ins, on any host with Docker.
     Test {
         path: PathBuf,
         /// Container image for the check (`nginx:alpine` when the flag has no value).

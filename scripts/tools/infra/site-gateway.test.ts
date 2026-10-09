@@ -54,9 +54,9 @@ describe("configuration", () => {
       privateKeySha256: "b".repeat(64),
     };
     expect(validateConfig({ ...config, tls }).tls).toEqual(tls);
-    expect(() => validateConfig({ ...config, tls: { ...tls, containerDirectory: "../x" } })).toThrow(
-      "TLS",
-    );
+    expect(() =>
+      validateConfig({ ...config, tls: { ...tls, containerDirectory: "../x" } }),
+    ).toThrow("TLS");
     expect(() => validateConfig({ ...config, tls: { ...tls, privateKeySha256: "" } })).toThrow(
       "SHA-256",
     );
@@ -97,7 +97,9 @@ describe("gateway text", () => {
   });
 
   test("Docker Desktop bind sources map back to host paths", () => {
-    expect(hostPath("/run/desktop/mnt/host/c/shenron/deploy/x.conf")).toBe("c:/shenron/deploy/x.conf");
+    expect(hostPath("/run/desktop/mnt/host/c/shenron/deploy/x.conf")).toBe(
+      "c:/shenron/deploy/x.conf",
+    );
     expect(hostPath("C:\\shenron\\x.conf")).toBe("C:\\shenron\\x.conf");
   });
 });
