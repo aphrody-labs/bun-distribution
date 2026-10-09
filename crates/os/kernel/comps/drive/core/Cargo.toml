@@ -130,7 +130,7 @@ tokio-rustls     = "0.26"
 webp             = "0.3"
 
 # Speech-to-text dependencies (optional, behind whisper feature)
-whisper-rs = { version = "0.15.1", optional = true }
+whisper-rs = { version = "0.16", optional = true }
 hound      = { version = "3.5", optional = true }   # WAV file reading
 rubato     = { version = "0.16", optional = true }  # Audio resampling to 16kHz
 
@@ -224,7 +224,7 @@ trash = "3.3" # Native trash/recycle bin support on desktop platforms
 windows-sys = { version = "0.52", features = ["Win32_Storage_FileSystem", "Win32_Foundation", "Win32_Security", "Win32_System_Ioctl", "Win32_System_IO", "Win32_System_Registry", "Win32_System_Power"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
-whisper-rs = { version = "0.15.1", features = ["metal"], optional = true }
+whisper-rs = { version = "0.16", features = ["metal"], optional = true }
 
 # iOS-specific dependencies for volume detection via Objective-C FFI
 [target.'cfg(target_os = "ios")'.dependencies]
