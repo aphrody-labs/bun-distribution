@@ -26,12 +26,18 @@ export function assertPrivateOwnerWorkspace(outDir: string): void {
     workspaces?: { packages?: string[] };
   };
   const destination = relative(REPOSITORY_ROOT, resolve(outDir)).replaceAll("\\", "/");
+  const destinationInOwner = relative(PRIVATE_OWNER_ROOT, resolve(outDir)).replaceAll("\\", "/");
   const patterns = workspace.workspaces?.packages ?? [];
   const included = patterns.some(
-    (pattern) => !pattern.startsWith("!") && new Bun.Glob(pattern).match(destination),
+    (pattern) =>
+      !pattern.startsWith("!") &&
+      (new Bun.Glob(pattern).match(destination) || new Bun.Glob(pattern).match(destinationInOwner)),
   );
   const excluded = patterns.some(
-    (pattern) => pattern.startsWith("!") && new Bun.Glob(pattern.slice(1)).match(destination),
+    (pattern) =>
+      pattern.startsWith("!") &&
+      (new Bun.Glob(pattern.slice(1)).match(destination) ||
+        new Bun.Glob(pattern.slice(1)).match(destinationInOwner)),
   );
   let existing = resolve(outDir);
   while (!existsSync(existing)) existing = dirname(existing);

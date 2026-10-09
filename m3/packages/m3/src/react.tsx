@@ -16,6 +16,18 @@ import { createRoot, type Root } from "react-dom/client";
 export { useM3Theme } from "@aphrody/m3-theme/react";
 export type { M3ThemeContextType, SchemeVariant, ThemeMode } from "@aphrody/m3-theme/react";
 export type { WindowSizeClass } from "@aphrody/m3-react/adaptive";
+export {
+  DataTable,
+  dataColumns,
+  dataTableFeatures,
+  VirtualList,
+} from "@aphrody/m3-react/data";
+export type {
+  DataColumn,
+  DataTableFeatures,
+  DataTableProps,
+  VirtualListProps,
+} from "@aphrody/m3-react/data";
 
 /** Speed of the default spring (`m3Springs` of `@aphrody/m3-motion`). */
 export type M3MotionSpeed = keyof typeof m3Springs;

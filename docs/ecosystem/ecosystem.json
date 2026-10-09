@@ -2233,6 +2233,12 @@
           "bins": []
         },
         {
+          "name": "@aphrody/web",
+          "path": "apps/web",
+          "description": "",
+          "bins": []
+        },
+        {
           "name": "@aphrody/web-test",
           "path": "packages/web/aphrody-web-test",
           "description": "Playwright-compatible browser and site test runner for Bun, backed by the shared Rust Obscura CDP server.",
@@ -14142,7 +14148,7 @@
     "sharedRepos": 0,
     "crates": 263,
     "binaries": 37,
-    "bunPackages": 120,
+    "bunPackages": 121,
     "pythonPackages": 10,
     "cliBinaries": 35,
     "cliCommands": 1142,

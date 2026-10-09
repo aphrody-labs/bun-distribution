@@ -293,8 +293,5 @@
     "esbuild",
     "lmdb",
     "msgpackr-extract"
-  ],
-  "bin": {
-    "aphrody": "./bin/aphrody.ts"
-  }
+  ]
 }

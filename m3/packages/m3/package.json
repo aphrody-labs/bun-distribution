@@ -76,6 +76,12 @@
       "import": "./src/i18n.ts",
       "default": "./dist/i18n.js"
     },
+    "./data": {
+      "bun": "./src/data.ts",
+      "types": "./dist/data.d.ts",
+      "import": "./src/data.ts",
+      "default": "./dist/data.js"
+    },
     "./app": {
       "bun": "./src/app/index.ts",
       "types": "./src/app/index.ts",

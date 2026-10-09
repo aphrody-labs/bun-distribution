@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 263 crates, 37 binaries, 120 Bun packages, 10 uv packages, 1142 CLI commands, 390 MCP tools.
+Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 263 crates, 37 binaries, 121 Bun packages, 10 uv packages, 1142 CLI commands, 390 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -213,7 +213,7 @@ Canonical Rust/Bun monorepo
 | `yolo-pyo3` | crates/engine/yolo-pyo3 | PyO3 0.29 Native Extension Module for YOLO Monorepo (Free-threaded, No-GIL, py.detach) |  |  |
 | `yolo-runtime` | crates/engine/yolo-runtime | Versioned C ABI of the precompiled YOLO native runtime (first slice: system stats and cancellable benchmark) |  | browser, cuda, default, gpu |
 
-### Bun packages (86)
+### Bun packages (87)
 
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
@@ -286,6 +286,7 @@ Canonical Rust/Bun monorepo
 | `@aphrody/sql` | packages/infra/sql | Shared Bun database mechanics for Aphrody: env/URL resolution, Bun.SQL and Redis factories, bun:sqlite open policy with optional sqlite-vec |  |
 | `@aphrody/timeline` | packages/web/timeline | Native Bun timeline collection, SQL, Redis, GraphQL and retrieval projections |  |
 | `@aphrody/update` | packages/infra/update | Unified update pipeline: tool pins, dependency sync, Cargo lock refresh, user systemd units and dev-env checks |  |
+| `@aphrody/web` | apps/web |  |  |
 | `@aphrody/web-test` | packages/web/aphrody-web-test | Playwright-compatible browser and site test runner for Bun, backed by the shared Rust Obscura CDP server. |  |
 | `@aphrody/web-to-tauri` | m3/packages/web-to-tauri | Converts a website, web app or built web bundle into a native Tauri 3 app: probes the target, plans a regression-free mode (remote, bundle, sidecar), generates the project and checks parity against the original. | `web-to-tauri` |
 | `@aphrody/winclean` | packages/os/winclean | Kernel-backed Bun client for the unified Aphrody OS WinClean catalog (166 tools). |  |

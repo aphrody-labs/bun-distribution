@@ -16,6 +16,9 @@ import { CodebaseExplorer } from '../components/CodebaseExplorer';
 import { MultiTargetBridge } from '../components/MultiTargetBridge';
 import { ThemePicker } from '../components/ThemePicker';
 import { applyM3Theme } from '../core/theme';
+import { PetCompanion } from './components/PetCompanion';
+import { QuickAskBar } from './components/QuickAskBar';
+import { CodexChatApp } from './apps/CodexChatApp';
 import type { AppId, WindowState } from './types';
 import type { SystemMetrics, CodebaseAnalysis } from '../core/types';
 
@@ -26,6 +29,8 @@ export const DesktopOS: React.FC = () => {
   const [isDark, setIsDark] = useState(true);
   const [seedColor, setSeedColor] = useState('#8b5cf6');
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [quickAskOpen, setQuickAskOpen] = useState(false);
+  const [showPet, setShowPet] = useState(true);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [highestZIndex, setHighestZIndex] = useState(10);
   const [activeAppTitle, setActiveAppTitle] = useState('Desktop');
@@ -42,6 +47,17 @@ export const DesktopOS: React.FC = () => {
       zIndex: 11,
       position: { x: 40, y: 60 },
       size: { width: 680, height: 440 },
+    },
+    {
+      id: 'codex-chat',
+      title: 'Codex AI Assistant',
+      icon: '💬',
+      isOpen: false,
+      isMinimized: false,
+      isMaximized: false,
+      zIndex: 10,
+      position: { x: 90, y: 65 },
+      size: { width: 860, height: 560 },
     },
     {
       id: 'm3-studio',
@@ -171,6 +187,9 @@ export const DesktopOS: React.FC = () => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setCommandPaletteOpen(prev => !prev);
+      } else if (e.altKey && (e.code === 'Space' || e.key === ' ')) {
+        e.preventDefault();
+        setQuickAskOpen(prev => !prev);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -330,6 +349,9 @@ export const DesktopOS: React.FC = () => {
                 onOpenApp={appId => launchApp(appId as AppId)}
               />
             )}
+            {win.id === 'codex-chat' && (
+              <CodexChatApp onRunInTerminal={() => focusWindow('terminal')} />
+            )}
             {win.id === 'm3-studio' && (
               <div className="p-6 overflow-y-auto h-full space-y-6">
                 <ThemePicker />
@@ -391,6 +413,22 @@ export const DesktopOS: React.FC = () => {
         onSetTheme={seed => applyTheme(seed, isDark)}
         onRunBenchmarks={() => {}}
       />
+
+      {/* Quick Ask Bar (Alt+Space) */}
+      <QuickAskBar
+        isOpen={quickAskOpen}
+        onClose={() => setQuickAskOpen(false)}
+        onSubmitPrompt={() => launchApp('codex-chat')}
+        onOpenApp={appId => launchApp(appId as AppId)}
+      />
+
+      {/* Interactive Desktop Pet Companion */}
+      {showPet && (
+        <PetCompanion
+          soundEnabled={soundEnabled}
+          onOpenApp={appId => launchApp(appId as AppId)}
+        />
+      )}
 
       {/* About Aphrody OS Modal */}
       {showAboutModal && (

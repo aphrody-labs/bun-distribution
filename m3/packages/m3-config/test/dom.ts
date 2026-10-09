@@ -7,9 +7,23 @@
 //   preload = ["@aphrody/m3-config/test/dom"]
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
-GlobalRegistrator.register();
-// Dynamic import so it runs after the DOM globals exist; a static import would be hoisted above.
-await import("element-internals-polyfill");
+const nativeTS = globalThis.TransformStream;
+const nativeRS = globalThis.ReadableStream;
+const nativeWS = globalThis.WritableStream;
+
+if (!GlobalRegistrator.isRegistered) {
+  GlobalRegistrator.register();
+}
+if (nativeTS) globalThis.TransformStream = nativeTS;
+if (nativeRS) globalThis.ReadableStream = nativeRS;
+if (nativeWS) globalThis.WritableStream = nativeWS;
+try {
+  await import("element-internals-polyfill");
+} catch {
+  try {
+    await import("../node_modules/element-internals-polyfill/dist/index.js");
+  } catch {}
+}
 
 // Rendering is driven with `flushSync`, not React Testing Library: silence the act() warning.
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = false;

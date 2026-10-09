@@ -17,6 +17,7 @@ interface DockProps {
 
 export const DOCK_ITEMS: DockItemConfig[] = [
   { id: 'terminal', title: 'Terminal Shell', icon: '💻', color: 'bg-zinc-800' },
+  { id: 'codex-chat', title: 'Codex AI Assistant', icon: '💬', color: 'bg-gradient-to-tr from-pink-500 to-indigo-600' },
   { id: 'm3-studio', title: 'Material 3 Studio', icon: '🎨', color: 'bg-purple-600' },
   { id: 'arcade', title: 'Dragon Pixel Arcade', icon: '🎮', color: 'bg-amber-500' },
   { id: 'drive', title: 'Codebase Drive', icon: '📁', color: 'bg-blue-600' },

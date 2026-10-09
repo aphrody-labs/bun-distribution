@@ -3,6 +3,7 @@ import type React from 'react';
 
 export type AppId =
   | 'terminal'
+  | 'codex-chat'
   | 'm3-studio'
   | 'arcade'
   | 'drive'

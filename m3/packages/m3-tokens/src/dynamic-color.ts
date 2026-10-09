@@ -29,6 +29,15 @@ import {
   type DynamicScheme,
 } from "@material/material-color-utilities";
 
+export {
+  argbFromHex,
+  hexFromArgb,
+  Hct,
+  MaterialDynamicColors,
+  type DynamicColor,
+  type DynamicScheme,
+};
+
 // ---------------------------------------------------------------------------
 // Variant type
 // ---------------------------------------------------------------------------
@@ -287,4 +296,76 @@ export function clearDynamicColor(target?: HTMLElement | null): void {
   const el = target ?? (typeof document !== "undefined" ? document.documentElement : null);
   if (!el) return;
   for (const role of ROLES) el.style.removeProperty(`--md-sys-color-${kebab(role)}`);
+}
+
+// ---------------------------------------------------------------------------
+// Fusion CSS exports (shadcn/ui + Tailwind v4 + M3)
+// ---------------------------------------------------------------------------
+
+/**
+ * Mapping from semantic UI-system token name to the M3 `--md-sys-color-*`
+ * role it aliases. Shared by `exportShadcnAliases` and `exportTailwindTheme`.
+ * In exact lockstep with Rust `crates/ui/m3-tokens/src/color.rs:FUSION_ALIAS_MAP`.
+ */
+export const FUSION_ALIAS_MAP = [
+  ["background", "surface"],
+  ["foreground", "on-surface"],
+  ["card", "surface-container-low"],
+  ["card-foreground", "on-surface"],
+  ["popover", "surface-container"],
+  ["popover-foreground", "on-surface"],
+  ["primary", "primary"],
+  ["primary-foreground", "on-primary"],
+  ["secondary", "secondary-container"],
+  ["secondary-foreground", "on-secondary-container"],
+  ["muted", "surface-variant"],
+  ["muted-foreground", "on-surface-variant"],
+  ["accent", "tertiary-container"],
+  ["accent-foreground", "on-tertiary-container"],
+  ["destructive", "error"],
+  ["destructive-foreground", "on-error"],
+  ["border", "outline-variant"],
+  ["input", "outline-variant"],
+  ["ring", "primary"],
+] as const;
+
+/** Alias for backward compatibility */
+export const ALIASES = FUSION_ALIAS_MAP;
+
+/**
+ * Emits a shadcn/ui semantic-token `:root` block aliasing shadcn variables to
+ * the M3 system colors produced by `cssFromSeed`. Pure `var()` references.
+ */
+export function exportShadcnAliases(): string {
+  let out = ":root {\n";
+  for (const [name, role] of FUSION_ALIAS_MAP) {
+    out += `  --${name}: var(--md-sys-color-${role});\n`;
+  }
+  out += "}\n";
+  return out;
+}
+
+/**
+ * Emits a Tailwind v4 `@theme inline { ... }` block mapping Tailwind's
+ * `--color-*` design tokens to the M3 system colors.
+ */
+export function exportTailwindTheme(): string {
+  let out = "@theme inline {\n";
+  for (const [name, role] of FUSION_ALIAS_MAP) {
+    out += `  --color-${name}: var(--md-sys-color-${role});\n`;
+  }
+  out += "}\n";
+  return out;
+}
+
+/**
+ * Emits the complete fusion stylesheet: the M3 system colors (`cssFromSeed`)
+ * followed by the shadcn/ui alias block (`exportShadcnAliases`) and the
+ * Tailwind v4 `@theme inline` block (`exportTailwindTheme`).
+ */
+export function exportFusionCss(seedHex: string, opts: CssFromSeedOptions = {}): string {
+  const m3Css = cssFromSeed(seedHex, opts);
+  const shadcn = exportShadcnAliases();
+  const tailwind = exportTailwindTheme();
+  return `${m3Css}\n${shadcn}\n${tailwind}`;
 }

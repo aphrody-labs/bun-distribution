@@ -6,6 +6,7 @@
 // to its slot. Property/event binding is exercised end-to-end by the aphrody-web gate
 // (real Chromium) since @lit/react property timing is browser-specific.
 // The ElementInternals polyfill (test/setup) lets form-associated elements upgrade.
+import "@aphrody/m3-config/test/dom";
 import { afterEach, describe, expect, test } from "bun:test";
 import * as React from "react";
 import { createRoot, type Root } from "react-dom/client";

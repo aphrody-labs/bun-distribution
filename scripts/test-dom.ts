@@ -42,6 +42,9 @@ const PRIMITIVES_RESEAU = [
   // Les tests réseau échouaient sur un appel bloqué, jamais sur le DOM.
   "AbortController",
   "AbortSignal",
+  "TransformStream",
+  "ReadableStream",
+  "WritableStream",
 ] as const;
 
 const descripteursNatifs = new Map<string, PropertyDescriptor>();
@@ -70,6 +73,14 @@ export function rendreReseauNatif(): void {
 GlobalRegistrator.register();
 
 rendreReseauNatif();
+
+try {
+  await import("element-internals-polyfill");
+} catch {
+  try {
+    await import("../m3/packages/m3-config/node_modules/element-internals-polyfill/dist/index.js");
+  } catch {}
+}
 
 // Conformité WHATWG FormData.append(name, value, filename) :
 // Si value est un Blob et que filename est fourni, happy-dom oublie le nom et force "blob".

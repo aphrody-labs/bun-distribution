@@ -13,29 +13,21 @@ export {
   getGeminiBrandCss,
 } from "./brand";
 
-// shadcn/ui token -> M3 system role mappings.
-// Derived from generate.ts ALIASES.
-export const ALIASES = [
-  ["background", "surface"],
-  ["foreground", "on-surface"],
-  ["card", "surface-container-low"],
-  ["card-foreground", "on-surface"],
-  ["popover", "surface-container"],
-  ["popover-foreground", "on-surface"],
-  ["primary", "primary"],
-  ["primary-foreground", "on-primary"],
-  ["secondary", "secondary-container"],
-  ["secondary-foreground", "on-secondary-container"],
-  ["muted", "surface-variant"],
-  ["muted-foreground", "on-surface-variant"],
-  ["accent", "tertiary-container"],
-  ["accent-foreground", "on-tertiary-container"],
-  ["destructive", "error"],
-  ["destructive-foreground", "on-error"],
-  ["border", "outline-variant"],
-  ["input", "outline-variant"],
-  ["ring", "primary"],
-] as const;
+import {
+  FUSION_ALIAS_MAP,
+  ALIASES,
+  exportShadcnAliases,
+  exportTailwindTheme,
+  exportFusionCss,
+} from "@aphrody/m3-tokens/dynamic-color";
+
+export {
+  FUSION_ALIAS_MAP,
+  ALIASES,
+  exportShadcnAliases,
+  exportTailwindTheme,
+  exportFusionCss,
+};
 
 export interface ApplyDynamicFusionThemeOptions {
   dark?: boolean;
