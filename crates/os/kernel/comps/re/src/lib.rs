@@ -233,6 +233,12 @@ pub struct TriageReport {
     pub imports: Vec<String>,
     /// Names of exported symbols (PE/ELF). Empty for `Format::Unknown`.
     pub exports: Vec<String>,
+    /// Linked libraries: PE import directory DLL names, ELF `DT_NEEDED`.
+    #[serde(default)]
+    pub libraries: Vec<String>,
+    /// PE Windows subsystem (`"console"`, `"gui"`, `"native"`, `"efi_application"`, …).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subsystem: Option<String>,
     /// Sample of ASCII + UTF-16 strings discovered (capped at
     /// [`STRINGS_SAMPLE_LIMIT`] entries, each ≥ [`STRINGS_MIN_LEN`]).
     pub strings_sample: Vec<String>,
@@ -432,6 +438,8 @@ fn unknown_report(size: usize, sha256: String, strings_sample: Vec<String>) -> T
         sections: Vec::new(),
         imports: Vec::new(),
         exports: Vec::new(),
+        libraries: Vec::new(),
+        subsystem: None,
         strings_sample,
     }
 }
@@ -448,8 +456,11 @@ fn triage_pe(
     strings_sample: Vec<String>,
 ) -> TriageReport {
     let format = if pe.is_64 { Format::Pe64 } else { Format::Pe32 };
-    let arch = Some(if pe.is_64 { "x86_64".to_owned() } else { "i386".to_owned() });
+    let arch = Some(pe_machine_name(pe.header.coff_header.machine));
     let entry_point = Some(pe.entry as u64);
+    let libraries = pe.libraries.iter().map(|l| (*l).to_owned()).collect();
+    let subsystem =
+        pe.header.optional_header.map(|oh| pe_subsystem_name(oh.windows_fields.subsystem));
 
     let sections = pe
         .sections
@@ -474,7 +485,38 @@ fn triage_pe(
         sections,
         imports,
         exports,
+        libraries,
+        subsystem,
         strings_sample,
+    }
+}
+
+fn pe_machine_name(machine: u16) -> String {
+    use goblin::pe::header;
+    match machine {
+        header::COFF_MACHINE_X86_64 => "x86_64".to_owned(),
+        header::COFF_MACHINE_X86 => "i386".to_owned(),
+        header::COFF_MACHINE_ARM64 => "aarch64".to_owned(),
+        header::COFF_MACHINE_ARMNT => "arm".to_owned(),
+        other => format!("IMAGE_FILE_MACHINE_{other:#06x}"),
+    }
+}
+
+fn pe_subsystem_name(subsystem: u16) -> String {
+    match subsystem {
+        1 => "native".to_owned(),
+        2 => "gui".to_owned(),
+        3 => "console".to_owned(),
+        5 => "os2_console".to_owned(),
+        7 => "posix_console".to_owned(),
+        9 => "windows_ce_gui".to_owned(),
+        10 => "efi_application".to_owned(),
+        11 => "efi_boot_service_driver".to_owned(),
+        12 => "efi_runtime_driver".to_owned(),
+        13 => "efi_rom".to_owned(),
+        14 => "xbox".to_owned(),
+        16 => "windows_boot_application".to_owned(),
+        other => format!("unknown_{other}"),
     }
 }
 
@@ -517,6 +559,7 @@ fn triage_elf(
         .filter(|s| !s.is_import() && s.st_name != 0)
         .filter_map(|s| elf.dynstrtab.get_at(s.st_name).map(std::borrow::ToOwned::to_owned))
         .collect();
+    let libraries = elf.libraries.iter().map(|l| (*l).to_owned()).collect();
 
     TriageReport {
         format,
@@ -527,6 +570,8 @@ fn triage_elf(
         sections,
         imports,
         exports,
+        libraries,
+        subsystem: None,
         strings_sample,
     }
 }
@@ -1619,7 +1664,31 @@ mod tests {
         assert!(json["sections"].is_array());
         assert!(json["imports"].is_array());
         assert!(json["exports"].is_array());
+        assert!(json["libraries"].is_array());
         assert!(json["strings_sample"].is_array());
+    }
+
+    #[gtest]
+    fn pe_machine_and_subsystem_names() {
+        expect_that!(pe_machine_name(0x8664), eq("x86_64"));
+        expect_that!(pe_machine_name(0xaa64), eq("aarch64"));
+        expect_that!(pe_machine_name(0x14c), eq("i386"));
+        expect_that!(pe_subsystem_name(2), eq("gui"));
+        expect_that!(pe_subsystem_name(3), eq("console"));
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn pe_triage_lists_imported_dlls_and_subsystem() {
+        let exe = std::env::current_exe().expect("test exe path");
+        let r = triage(&std::fs::read(exe).expect("read test exe")).expect("triage");
+        assert!(
+            r.libraries.iter().any(|l| l.eq_ignore_ascii_case("kernel32.dll")),
+            "kernel32.dll missing from {:?}",
+            r.libraries
+        );
+        assert_eq!(r.subsystem.as_deref(), Some("console"));
+        assert_eq!(r.arch.as_deref(), Some(std::env::consts::ARCH));
     }
 
     #[gtest]
