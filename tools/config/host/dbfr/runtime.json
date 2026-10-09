@@ -16,7 +16,15 @@
       "aphrody-bun-prod-1": "Bun fork probe 47660 (ghcr.io/aphrody-labs/bun), the only Bun probe outside k8s",
       "aphrody-prod": "aphrody:runtime, aphrody-mcp http 127.0.0.1:8999 (compose profile prod)",
       "aphrody-control-plane": "kind (Kubernetes)",
-      "docker-model-runner": "Docker Model Runner 12434"
+      "docker-model-runner": "Docker Model Runner 12434",
+      "aphrody-mcp-http-1": "aphrody:toolbox, aphrody-mcp http 127.0.0.1:8793 for the wg clients (341 tools)",
+      "aphrody-shenron-compute-1": "aphrody:toolbox, aphrody-mcp http 127.0.0.1:8789 for shenron-bot",
+      "aphrody-shenron-embed-1": "aphrody:toolbox, aphrody-embed 127.0.0.1:8085",
+      "aphrody-jobs-worker-1": "aphrody:toolbox, aphrody job run (jobs.db in ~/.aphrody)",
+      "aphrody-discord-1": "Bun image, bot.aphrody.com 127.0.0.1:4010 (atomic-deploy-aphrody-discord.sh recreates it)",
+      "aphrody-downloads-1": "Bun image, aphrody.com and downloads.aphrody.com 127.0.0.1:8797 (publish-downloads.ts)",
+      "aphrody-fonts-proxy-1": "Bun image, cdn.aphrody.com 127.0.0.1:8796 (source ~/apps/cdn/src at REVISION)",
+      "aphrody-shenron-timeline-api-1": "Bun image, timeline projections 127.0.0.1:8813"
     }
   },
   "native": {
@@ -29,19 +37,12 @@
     "units": {
       "aphrody-desktop-xvfb.service aphrody-desktop-wm.service aphrody-remote.service": "virtual desktop and VNC on wg1 (host X11)",
       "aphrody-web-browser-dbfr.service": "Obscura CDP 127.0.0.1:9222",
-      "aphrody-jobs-worker-dbfr.service": "native job worker (aphrody job run)",
-      "aphrody-mcp-http-dbfr.service": "aphrody-mcp http 8793 for the wg clients: the aphrody:runtime image lacks the toolbox tools (13 of 341: RAG, jobs, OCR, transcribe, home, remote_vnc, site_catalog), checked 2026-10-09",
-      "shenron-compute.service": "aphrody-mcp http 8789 for shenron-bot (same toolbox gap)",
-      "shenron-embed.service": "aphrody-embed 8085 (no image)",
-      "aphrody-discord-dev.service": "bot.aphrody.com 4010 (Bun); deployed as a unit by atomic-deploy-aphrody-discord.sh",
-      "aphrody-downloads.service": "aphrody.com and downloads.aphrody.com 8797 (Bun); deployed as a unit by publish-downloads.ts",
-      "aphrody-fonts-proxy.service": "cdn.aphrody.com 8796 (Bun)",
-      "shenron-timeline-api.service shenron-timeline-refresh.timer": "timeline projections 8813 (Bun)",
       "aphrody-wg-proxy@.socket aphrody-wg-proxy@.service": "wg1 forwarder 10.200.77.3:8793 to loopback",
-      "shenron-container-backup.timer": "docker exec pg_dump / redis BGSAVE / SQLite of the containers",
+      "shenron-container-backup.timer": "03:00 UTC docker exec pg_dump / redis BGSAVE / SQLite of the containers, newest snapshot only; pulled off-host by vps shenron-offsite-backup.timer",
       "aphrody-selfheal.timer certbot.timer": "self-heal pass, certificate renewal",
       "aphrody-discord-ai-lab.service aphrody-discord-debate.service": "disabled lab units (Bun)",
-      "nginx.service redis-server.service": "kept masked (/dev/null) as a guard: a reinstalled host nginx or redis cannot take 80/443/6379 from the containers"
+      "nginx.service redis-server.service": "kept masked (/dev/null) as a guard: a reinstalled host nginx or redis cannot take 80/443/6379 from the containers",
+      "shenron-timeline-refresh.timer": "hourly refresh of the timeline tree read by aphrody-shenron-timeline-api-1 (host bun; candidate for docker compose run)"
     },
     "bin": {
       "/usr/local/bin/rclone /usr/local/bin/rsync": "transfer tools",
@@ -87,9 +88,20 @@
       "/var/www/html",
       "/usr/local/sbin/shenron-pg-backup"
     ],
-    "bin": { "/usr/local/bin": ["aphrody-mcp", "bxc-mcp"] },
+    "bin": {
+      "/usr/local/bin": ["aphrody-mcp", "bxc-mcp"]
+    },
     "dockerImages": [],
     "dockerVolumes": [],
     "post": ["docker compose -f /home/ubuntu/apps/compose.yaml up -d --no-build prod"]
+  },
+  "remaining": {
+    "$comment": "state 2026-10-09 17:40 UTC, session stopped (quota)",
+    "items": [
+      "vps aphrody-deploy: user timer stopped since 16:03 (last cycle 12fd6f9 activate-failed/rollback-failed). bun-prod on dbfr runs with stale env APP_ROOT=/srv/app, APP_BIN empty: recreate it (sudo docker compose --project-directory ~/apps up -d --force-recreate bun-prod) then on vps: systemctl --user start aphrody-deploy.timer; aphrody-deploy --status. Moving the queue into bun-build needs openssh-client + rsync in the image (absent from ghcr.io/aphrody-labs/bun:1.4.3-aphrody.3) and ~/src/bun mounted rw; not done.",
+      "vps shenron-offsite-backup.service: run once by systemd when ~/src/aphrody is at >= d3bba1bf24 (sudo systemctl start shenron-offsite-backup.service; tail ~/build/archive/dbfr/backups/shenron/pull-status.log).",
+      "dbfr duplicate ~/.local/bin/rclone (same v1.75.1 as /usr/local/bin/rclone): rm.",
+      "final evidence: systemctl --failed on both hosts; from C:\bun bun scripts/aphrody/docker-doctor.ts (7/7 x 3 hosts)."
+    ]
   }
 }
