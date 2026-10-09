@@ -86,14 +86,18 @@ impl SharedAssets {
             .with_state(Arc::new(self))
     }
 
+    fn allowed(&self, namespace: &str, relative: &str) -> bool {
+        self.roots.contains_key(namespace)
+            && !relative.is_empty()
+            && !relative.contains(['\\', '%', ':'])
+            && !relative.chars().any(char::is_control)
+            && !relative.split('/').any(str::is_empty)
+            && Path::new(relative).components().all(|c| matches!(c, Component::Normal(_)))
+            && media_type(namespace, relative).is_some()
+    }
+
     fn source(&self, namespace: &str, relative: &str) -> io::Result<PathBuf> {
-        if relative.is_empty()
-            || relative.contains(['\\', '%', ':'])
-            || relative.chars().any(char::is_control)
-            || relative.split('/').any(str::is_empty)
-            || Path::new(relative).components().any(|c| !matches!(c, Component::Normal(_)))
-            || media_type(namespace, relative).is_none()
-        {
+        if !self.allowed(namespace, relative) {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid public asset"));
         }
         let root =
@@ -174,7 +178,7 @@ impl SharedAssets {
         let Some(content_type) = media_type(namespace, relative) else {
             return StatusCode::NOT_FOUND.into_response();
         };
-        if self.source(namespace, relative).is_err() {
+        if !self.allowed(namespace, relative) {
             return StatusCode::NOT_FOUND.into_response();
         }
         let (digest, path) = if let Some(digest) = expected {
@@ -259,7 +263,27 @@ impl SharedAssets {
 
 fn media_type(namespace: &str, relative: &str) -> Option<&'static str> {
     let extension = Path::new(relative).extension()?.to_str()?;
-    if namespace == "shaders" && extension != "wgsl" {
+    let allowed = match namespace {
+        "icons" | "images" => {
+            matches!(extension, "svg" | "png" | "webp" | "jpg" | "jpeg" | "gif" | "avif" | "ico")
+        },
+        "svgs" => extension == "svg",
+        "brand" => matches!(extension, "png" | "svg" | "ico"),
+        "logo" => matches!(extension, "webp" | "png" | "svg"),
+        "pet" => {
+            matches!(extension, "png" | "webp")
+                || matches!(relative, "pet.json" | "animations.json")
+        },
+        "fonts" => matches!(extension, "woff" | "woff2" | "ttf" | "otf"),
+        "shaders" => extension == "wgsl",
+        "models" => matches!(extension, "glb" | "gltf"),
+        "wasm" => extension == "wasm",
+        "sounds" => matches!(extension, "mp3" | "wav" | "ogg"),
+        "videos" => matches!(extension, "mp4" | "webm"),
+        "lottie" => extension == "json",
+        _ => false,
+    };
+    if !allowed {
         return None;
     }
     match extension {
@@ -324,11 +348,20 @@ mod tests {
         let root = tempfile::tempdir().unwrap();
         let icons = root.path().join("m3/packages/assets/icons");
         std::fs::create_dir_all(&icons).unwrap();
+        for directory in ["models", "wasm", "fonts"] {
+            let relative = if directory == "fonts" {
+                "m3/packages/m3-fonts/fonts".to_owned()
+            } else {
+                format!("m3/packages/assets/{directory}")
+            };
+            std::fs::create_dir_all(root.path().join(relative)).unwrap();
+        }
         std::fs::write(icons.join("sample.png"), b"same asset bytes").unwrap();
         std::fs::write(icons.join("duplicate.png"), b"same asset bytes").unwrap();
         let mut assets = SharedAssets::for_workspace(root.path()).unwrap();
         assets.cache = root.path().join("cache");
         std::fs::create_dir_all(&assets.cache).unwrap();
+        assets.cache = assets.cache.canonicalize().unwrap();
         (root, assets)
     }
 
@@ -382,6 +415,7 @@ mod tests {
             b"same asset bytes"
         );
         let response = app
+            .clone()
             .oneshot(
                 Request::builder().uri("/assets/icons/sample.png").body(Body::empty()).unwrap(),
             )
@@ -389,6 +423,33 @@ mod tests {
             .unwrap();
         assert_eq!(response.headers()[header::CACHE_CONTROL], "public, no-cache");
         assert_eq!(to_bytes(response.into_body(), 1024).await.unwrap().as_ref(), b"new bytes");
+        std::fs::remove_file(root.path().join("m3/packages/assets/icons/sample.png")).unwrap();
+        let response = app
+            .clone()
+            .oneshot(Request::builder().uri(&url).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            to_bytes(response.into_body(), 1024).await.unwrap().as_ref(),
+            b"same asset bytes"
+        );
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/assets/hash/not-a-digest/icons/duplicate.png")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        std::fs::write(root.path().join("cache").join(&entries[1].sha256), b"corrupt snapshot")
+            .unwrap();
+        let response =
+            app.oneshot(Request::builder().uri(&url).body(Body::empty()).unwrap()).await.unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
@@ -399,10 +460,20 @@ mod tests {
         assert!(assets.source("icons", "private.ts").is_err());
         assert!(assets.source("provider", "sample.png").is_err());
         assert!(media_type("pet", "dossier.json").is_none());
+        assert!(media_type("fonts", "private.png").is_none());
+        assert!(media_type("icons", "private.wasm").is_none());
+        assert!(media_type("shaders", "source.rs").is_none());
         assert_eq!(media_type("wasm", "runtime.wasm"), Some("application/wasm"));
         assert_eq!(media_type("models", "scene.glb"), Some("model/gltf-binary"));
         assert_eq!(media_type("fonts", "font.woff2"), Some("font/woff2"));
-        std::fs::write(root.path().join("m3/packages/assets/icons/scene.glb"), b"glTF12345678")
+        std::fs::write(root.path().join("m3/packages/assets/models/scene.glb"), b"glTF12345678")
+            .unwrap();
+        std::fs::write(
+            root.path().join("m3/packages/assets/wasm/runtime.wasm"),
+            [0, 97, 115, 109, 1, 0, 0, 0],
+        )
+        .unwrap();
+        std::fs::write(root.path().join("m3/packages/m3-fonts/fonts/font.woff2"), b"wOF2data")
             .unwrap();
         let app = assets.router();
         let response = app
@@ -420,9 +491,10 @@ mod tests {
         assert_eq!(response.headers()[header::CONTENT_LENGTH], "16");
         assert!(to_bytes(response.into_body(), 1024).await.unwrap().is_empty());
         let response = app
+            .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/assets/icons/scene.glb")
+                    .uri("/assets/models/scene.glb")
                     .header(header::RANGE, "bytes=0-3")
                     .body(Body::empty())
                     .unwrap(),
@@ -432,6 +504,33 @@ mod tests {
         assert_eq!(response.status(), StatusCode::PARTIAL_CONTENT);
         assert_eq!(response.headers()[header::CONTENT_TYPE], "model/gltf-binary");
         assert_eq!(to_bytes(response.into_body(), 1024).await.unwrap().as_ref(), b"glTF");
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder().uri("/assets/wasm/runtime.wasm").body(Body::empty()).unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.headers()[header::CONTENT_TYPE], "application/wasm");
+        assert_eq!(
+            to_bytes(response.into_body(), 1024).await.unwrap().as_ref(),
+            &[0, 97, 115, 109, 1, 0, 0, 0]
+        );
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("HEAD")
+                    .uri("/assets/fonts/font.woff2")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.headers()[header::CONTENT_TYPE], "font/woff2");
+        assert_eq!(response.headers()[header::CONTENT_LENGTH], "8");
+        assert!(to_bytes(response.into_body(), 1024).await.unwrap().is_empty());
     }
 
     #[cfg(unix)]

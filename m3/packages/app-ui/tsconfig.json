@@ -13,13 +13,13 @@
     "paths": {
       "~/*": ["./src/*"]
     },
-    "types": [
-      "@react-three/fiber"
-    ]
+    "types": ["@react-three/fiber"]
   },
   "include": [
     "src",
     "build.ts",
+    "site.ts",
+    "webos.ts",
     "undeclared-deps.ts",
     "m3.config.ts",
     "../assets/types.d.ts",

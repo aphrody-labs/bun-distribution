@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Aphrody product HTTP and SSR. Runtime capabilities remain in the Bun fork.
+//! Canonical app-ui HTTP and shared assets. Runtime capabilities remain in the Bun fork.
 #![forbid(unsafe_code)]
 
+pub mod assets;
 pub mod catalog;
 pub mod docs;
-pub mod render;
 pub mod templates;
 pub mod ui;
 pub use catalog::{Catalog, CatalogView, SearchFilter};
@@ -28,12 +28,15 @@ struct Site {
 /// Build a read-only site from an explicit repository root. No host execution,
 /// mutable filesystem endpoints, provider cookies or implicit privileged proxy.
 pub fn router(root: &Path, webos_url: Option<&str>) -> io::Result<Router> {
-    router_with_ui(Arc::new(Catalog::load(root)?), webos_url, ui::AppUi::for_workspace(root)?)
+    Ok(router_with_ui(Arc::new(Catalog::load(root)?), webos_url, ui::AppUi::for_workspace(root)?)?
+        .merge(assets::SharedAssets::for_workspace(root)?.router()))
 }
 
 /// Compose these product routes into the app/API server using the same snapshot.
 pub fn router_from_catalog(catalog: Arc<Catalog>, webos_url: Option<&str>) -> io::Result<Router> {
-    router_with_ui(catalog, webos_url, ui::AppUi::for_workspace(&std::env::current_dir()?)?)
+    let root = std::env::current_dir()?;
+    Ok(router_with_ui(catalog, webos_url, ui::AppUi::for_workspace(&root)?)?
+        .merge(assets::SharedAssets::for_workspace(&root)?.router()))
 }
 
 fn router_with_ui(

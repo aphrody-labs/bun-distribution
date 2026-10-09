@@ -61,7 +61,7 @@ export const GATES: readonly Gate[] = [
       "test/",
       "packages/",
       "crates/infra/aphrody/src/",
-      "apps/web/src/",
+      "m3/packages/",
     ],
     surfaces: TS,
     // the root package.json has a `lint` script: within it, `bun lint` is Bun's command, not the script
@@ -78,7 +78,7 @@ export const GATES: readonly Gate[] = [
       "test/",
       "packages/",
       "crates/infra/aphrody/src/",
-      "apps/web/src/",
+      "m3/packages/",
     ],
     surfaces: TS,
   },

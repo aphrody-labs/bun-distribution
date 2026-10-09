@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Shared product model for HTTP, SSR, CLI and MCP adapters. All adapters load
+//! Shared product model for HTTP, CLI and MCP adapters. All adapters load
 //! these same docs/templates; no transport-specific catalog or parser is needed.
-use crate::{docs, render, templates};
+use crate::{docs, templates};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{io, path::Path};
@@ -64,10 +64,6 @@ impl Catalog {
         })
     }
 
-    pub fn render(&self, section: &str) -> String {
-        render::render_page(section, &self.docs, &self.templates)
-    }
-
     /// DocsHub search parity: search title/summary/tags/content, case-insensitive;
     /// exact category and article id filters retain catalog order and all fields.
     pub fn search_docs(&self, filter: &SearchFilter) -> Value {
@@ -103,16 +99,6 @@ impl Catalog {
                 })
                 .cloned()
                 .collect(),
-        )
-    }
-
-    pub fn render_filtered_docs(&self, filter: &SearchFilter) -> String {
-        render::render_docs_page(
-            &self.docs,
-            &self.search_docs(filter),
-            &self.templates,
-            filter.q.as_deref().unwrap_or(""),
-            filter.category.as_deref().unwrap_or(""),
         )
     }
 }
@@ -166,13 +152,10 @@ mod tests {
     }
 
     #[test]
-    fn filtering_preserves_metadata_and_pure_renderer() {
+    fn filtering_preserves_complete_article_metadata() {
         let catalog = catalog();
         let filter = SearchFilter { id: Some("runtime-architecture".into()), ..Default::default() };
         assert_eq!(catalog.search_docs(&filter)[0], catalog.docs[0]);
-        let html = catalog.render_filtered_docs(&filter);
-        assert!(html.contains("YOLO Runtime C ABI"));
-        assert!(!html.contains("<script"));
-        assert!(!html.contains("Running apps/web inside Tauri"));
+        assert_eq!(catalog.search_docs(&filter).as_array().unwrap().len(), 1);
     }
 }

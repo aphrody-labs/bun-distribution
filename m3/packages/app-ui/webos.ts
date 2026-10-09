@@ -1,14 +1,14 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
-// Runtime showcase owner: aphrody-labs/bun@499dbd0b9f1 packages/bun-webos.
-import { startWebOS } from "@aphrody/bun-webos";
+import { webosOwnerModule } from "../../../scripts/webos/fork";
 
-/** Separate origin preserves WebOS's loopback/same-origin permission boundary. */
+/** The Bun fork serves WebOS on its own loopback origin, with host access disabled by default. */
 export async function startForkWebOS() {
   const port = Number(process.env.BUN_WEBOS_PORT ?? 3001);
   if (!Number.isInteger(port) || port < 0 || port > 65535) {
     throw new Error("BUN_WEBOS_PORT must be an integer from 0 to 65535");
   }
+  const { startWebOS } = await import(webosOwnerModule("server.ts"));
   return startWebOS({
     port,
     hostname: "127.0.0.1",

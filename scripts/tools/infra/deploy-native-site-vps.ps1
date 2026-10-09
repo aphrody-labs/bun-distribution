@@ -75,6 +75,10 @@ tar --no-same-owner --no-same-permissions -xf "$ui_archive" -C "$ui_stage"
 test -z "$(find "$ui_stage" -type l -print -quit)"
 (cd "$ui_stage"; sha256sum -c "$ui_manifest") >/dev/null
 test "$(find "$ui_stage" -type f | wc -l)" = "$(wc -l < "$ui_manifest")"
+verify_shared_assets() {
+  asset_sums=$(grep -E '  (m3/packages/(assets/|m3-fonts/)|crates/ui/(identity/assets/(brand|logo|aphrody)/|render/src/[^/]+\.wgsl$))' "$factory/source/SOURCE-SHA256SUMS" || true)
+  if test -n "$asset_sums"; then printf '%s\n' "$asset_sums" | (cd "$1"; sha256sum -c -) >/dev/null; fi
+}
 reuse=0
 if test -e "$release" || test -L "$release"; then
   test -d "$release" && ! test -L "$release"
@@ -84,6 +88,7 @@ if test -e "$release" || test -L "$release"; then
   printf '%s  %s\n' '__UI_SHA__' "$release/UI-SHA256SUMS" | sha256sum -c -
   (cd "$release/crates/ui/app/ui-dist"; sha256sum -c "$release/UI-SHA256SUMS") >/dev/null
   grep '  m3/templates/' "$factory/source/SOURCE-SHA256SUMS" | (cd "$release"; sha256sum -c -) >/dev/null
+  verify_shared_assets "$release"
   reuse=1
 fi
 if test -e /srv/aphrody/current && ! test -L /srv/aphrody/current; then echo 'current is not a symlink' >&2; exit 1; fi
@@ -141,6 +146,18 @@ test ! -e "$stage" && ! test -L "$stage"
 sudo install -d -m 0755 "$stage/bin" "$stage/m3" "$stage/crates/ui/app/ui-dist"
 sudo install -m 0755 "$factory/target/release/aphrody-site" "$stage/bin/aphrody-site"
 sudo cp -a "$factory/source/m3/templates" "$stage/m3/templates"
+for relative in m3/packages/assets m3/packages/m3-fonts crates/ui/identity/assets/brand crates/ui/identity/assets/logo crates/ui/identity/assets/aphrody; do
+  if test -d "$factory/source/$relative"; then
+    sudo install -d -m 0755 "$stage/$(dirname "$relative")"
+    sudo cp -a "$factory/source/$relative" "$stage/$relative"
+  fi
+done
+for shader in "$factory/source/crates/ui/render/src/"*.wgsl; do
+  if test -f "$shader"; then
+    sudo install -d -m 0755 "$stage/crates/ui/render/src"
+    sudo install -m 0444 "$shader" "$stage/crates/ui/render/src/$(basename "$shader")"
+  fi
+done
 sudo cp -a "$ui_stage/." "$stage/crates/ui/app/ui-dist/"
 sudo install -m 0444 "$factory/source/source-manifest.json" "$stage/source-manifest.json"
 sudo install -m 0444 "$factory/logs/binary.sha256" "$stage/binary.sha256"
@@ -152,6 +169,7 @@ printf '%s  %s\n' '__BINARY_SHA__' "$stage/bin/aphrody-site" | sha256sum -c -
 printf '%s  %s\n' '__MANIFEST_SHA__' "$stage/source-manifest.json" | sha256sum -c -
 printf '%s  %s\n' '__UNIT_SHA__' "$stage/aphrody-site.service" | sha256sum -c -
 grep '  m3/templates/' "$factory/source/SOURCE-SHA256SUMS" | (cd "$stage"; sha256sum -c -) >/dev/null
+verify_shared_assets "$stage"
 (cd "$stage/crates/ui/app/ui-dist"; sha256sum -c "$stage/UI-SHA256SUMS") >/dev/null
 sudo chown -R root:root "$stage"
 sudo find "$stage" -type d -exec chmod 0755 {} +
@@ -179,6 +197,33 @@ curl --fail --silent http://127.0.0.1/health >/dev/null
 curl --fail --silent http://127.0.0.1/api/docs | python3 -c 'import json,sys; assert len(json.load(sys.stdin))==5'
 curl --fail --silent http://127.0.0.1/api/templates | python3 -c 'import json,sys; assert len(json.load(sys.stdin))==6'
 for route in / /docs /templates /material-3 /assets/site.css; do curl --fail --silent "http://127.0.0.1$route" >/dev/null; done
+if test -d "$release/m3/packages/assets"; then
+  curl --fail --silent --max-time 60 http://127.0.0.1/assets/manifest > "$ui_stage/shared-assets.json"
+  python3 - "$release" "$ui_stage/shared-assets.json" <<'PY'
+import hashlib, json, sys, urllib.parse, urllib.request
+from pathlib import Path
+release = Path(sys.argv[1]).resolve()
+roots = {name: f'm3/packages/assets/{name}' for name in ('icons','images','svgs','sounds','videos','lottie','models','wasm')}
+roots.update(brand='crates/ui/identity/assets/brand', logo='crates/ui/identity/assets/logo', pet='crates/ui/identity/assets/aphrody', fonts='m3/packages/m3-fonts/fonts', shaders='crates/ui/render/src')
+entries = json.loads(Path(sys.argv[2]).read_text())
+seen = set()
+for entry in entries:
+    namespace = entry['namespace']
+    root = (release / roots[namespace]).resolve()
+    source = (root / entry['path']).resolve()
+    assert source.is_relative_to(root) and source.is_file(), 'Asset manifest escaped its declared owner'
+    content = source.read_bytes()
+    assert len(content) == entry['bytes'] and hashlib.sha256(content).hexdigest() == entry['sha256'], 'Shared asset manifest differs from immutable release'
+    if namespace not in seen:
+        url = 'http://127.0.0.1' + urllib.parse.quote(entry['url'], safe='/')
+        with urllib.request.urlopen(url, timeout=5) as response:
+            assert hashlib.sha256(response.read()).hexdigest() == entry['sha256'], 'Served shared asset differs'
+        seen.add(namespace)
+required = {'icons','images','svgs','sounds','videos','lottie','brand','logo','pet','fonts','shaders'}
+assert required <= seen, f'Deployed asset namespaces missing: {required-seen}'
+print(f'shared-assets-verified={len(entries)} namespaces={len(seen)}')
+PY
+fi
 while read -r expected asset; do
   actual=$(curl --fail --silent --max-time 5 "http://127.0.0.1/$asset" | sha256sum | cut -d' ' -f1)
   test "$actual" = "$expected" || { echo "Served app-ui artifact differs: $asset" >&2; false; }

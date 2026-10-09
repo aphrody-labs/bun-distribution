@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Product-site CLI: the same native catalog, renderer and server as HTTP/MCP.
+//! Product-site CLI: the same native catalog and app-ui server as HTTP/MCP.
 use clap::{Args, Subcommand, ValueEnum};
 use miette::IntoDiagnostic;
 use std::{
@@ -36,11 +36,6 @@ pub enum SiteAction {
         #[arg(long)]
         id: Option<String>,
     },
-    /// Render one product page as HTML without JavaScript or a running server.
-    Render {
-        #[arg(value_enum, default_value = "docs")]
-        section: Section,
-    },
     /// Serve native product pages and JSON APIs through the canonical router.
     Serve {
         /// Compose the agent application and RPC/events on the same loopback listener.
@@ -59,24 +54,6 @@ pub enum CatalogKind {
     All,
     Docs,
     Templates,
-}
-
-#[derive(ValueEnum, Debug, Clone, Copy)]
-pub enum Section {
-    Docs,
-    Templates,
-    #[value(name = "material3", alias = "material-3")]
-    Material3,
-}
-
-impl Section {
-    fn as_str(self) -> &'static str {
-        match self {
-            Self::Docs => "docs",
-            Self::Templates => "templates",
-            Self::Material3 => "material3",
-        }
-    }
 }
 
 impl SiteCli {
@@ -110,13 +87,6 @@ impl SiteCli {
                 }
                 .into_diagnostic()?;
                 writeln!(output).into_diagnostic()
-            },
-            SiteAction::Render { section } => {
-                let catalog = aphrody_site::Catalog::load(&root).into_diagnostic()?;
-                io::stdout()
-                    .lock()
-                    .write_all(catalog.render(section.as_str()).as_bytes())
-                    .into_diagnostic()
             },
         }
     }
@@ -156,8 +126,6 @@ mod tests {
             SiteAction::Catalog { kind: CatalogKind::Templates, pretty: true, .. }
         ));
         assert_eq!(cli.site.root, Some(PathBuf::from(".")));
-        let cli = TestCli::try_parse_from(["site", "render", "material-3"]).unwrap();
-        assert!(matches!(cli.site.action, SiteAction::Render { section: Section::Material3 }));
         let cli = TestCli::try_parse_from([
             "site",
             "serve",
@@ -187,7 +155,6 @@ mod tests {
             catalog_value(&catalog, CatalogKind::All, &filter).unwrap()["templates"],
             catalog.templates
         );
-        assert!(!catalog.render("docs").contains("<script"));
     }
 
     #[test]

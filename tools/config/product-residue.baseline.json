@@ -3,7 +3,6 @@
   "files": {
     ".env.example": 15,
     "AGENTS.md": 3,
-    "apps/web/src/os/apps/AlpinePackageManagerApp.tsx": 2,
     "assets/ui/manifest.json": 2,
     "crates/ai/agent-home/src/services.rs": 24,
     "crates/ai/agent-home/tests/dbfr_shenron_test.rs": 14,

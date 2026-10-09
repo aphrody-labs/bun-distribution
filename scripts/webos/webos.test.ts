@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
-import { allowed } from "../../apps/web/src/os/wasm/server-routes";
+import { webosOwnerModule } from "./fork";
 import { MODULES, rootfsSeed } from "./rootfs-seed";
 import { BLOCKERS, cfgMayMatchWasm } from "./wasm-inventory";
 
@@ -33,10 +33,30 @@ describe("wasm inventory", () => {
   });
 });
 
-describe("network relay allowlist", () => {
-  test("defaults to loopback", () => {
-    expect(allowed("localhost", 8080)).toBe(true);
-    expect(allowed("127.0.0.1", 22)).toBe(true);
-    expect(allowed("example.com", 443)).toBe(false);
+describe("Bun fork host access boundary", () => {
+  test("configured owner is required instead of a machine-specific checkout", () => {
+    expect(() => webosOwnerModule("server.ts", "")).toThrow("APHRODY_BUN_CHECKOUT");
+  });
+
+  test("only explicit same-origin loopback host access is allowed", async () => {
+    const { hostAccessProblem, isLoopbackHost } = await import(
+      webosOwnerModule("src/server/guard.ts")
+    );
+    const server = { hostname: "127.0.0.1", requestIP: () => ({ address: "127.0.0.1" }) };
+    const request = new Request("http://127.0.0.1:3001/api/shell");
+    expect(isLoopbackHost("localhost")).toBe(true);
+    expect(isLoopbackHost("example.com")).toBe(false);
+    expect(hostAccessProblem(request, server, { enabled: false })).toContain("disabled");
+    expect(hostAccessProblem(request, server, { enabled: true })).toBeNull();
+    expect(
+      hostAccessProblem(
+        new Request(request, { headers: { origin: "https://example.com" } }),
+        server,
+        { enabled: true },
+      ),
+    ).toContain("origin");
+    expect(
+      hostAccessProblem(request, { ...server, hostname: "0.0.0.0" }, { enabled: true }),
+    ).toContain("loopback listener");
   });
 });

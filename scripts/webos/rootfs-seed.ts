@@ -5,7 +5,7 @@
  * layout, wasm32 apk repository, module registry). The files worker applies it
  * once to an empty OPFS image. No wasm is built here.
  *
- * Usage: bun scripts/webos/rootfs-seed.ts [--out apps/web/dist/wasm/rootfs-seed.json]
+ * Usage: bun scripts/webos/rootfs-seed.ts [--out var/runs/webos/rootfs-seed.json]
  */
 import { mkdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
@@ -16,14 +16,24 @@ const APK_ARCH = "wasm32";
 const REPO = `https://github.com/aphrody-labs/aports/releases/download/aphrody-${ALPINE}-${APK_ARCH}`;
 
 export const MODULES = [
-  { name: "aphrody-webos-wasm", kind: "wasm-bindgen", path: "/dist/wasm/webos/aphrody_webos_wasm.js", apps: ["files"] },
+  {
+    name: "aphrody-webos-wasm",
+    kind: "wasm-bindgen",
+    path: "/dist/wasm/webos/aphrody_webos_wasm.js",
+    apps: ["files"],
+  },
   {
     name: "aphrody-command-wasm",
     kind: "wasm-bindgen",
     path: "/dist/wasm/cli/aphrody_command_wasm.js",
     apps: ["aphrody-tools"],
   },
-  { name: "bun_wasm", kind: "wasi-reactor", path: "/dist/wasm/bun/bun_wasm.wasm", apps: ["bun-repl"] },
+  {
+    name: "bun_wasm",
+    kind: "wasi-reactor",
+    path: "/dist/wasm/bun/bun_wasm.wasm",
+    apps: ["bun-repl"],
+  },
 ];
 
 export function rootfsSeed(): Record<string, string | null> {
@@ -56,7 +66,9 @@ export function rootfsSeed(): Record<string, string | null> {
 
 if (import.meta.main) {
   const { values } = parseArgs({ options: { out: { type: "string" } } });
-  const out = resolve(values.out ?? resolve(import.meta.dir, "../../apps/web/dist/wasm/rootfs-seed.json"));
+  const out = resolve(
+    values.out ?? resolve(import.meta.dir, "../../var/runs/webos/rootfs-seed.json"),
+  );
   await mkdir(dirname(out), { recursive: true });
   await Bun.write(out, `${JSON.stringify(rootfsSeed(), null, 2)}\n`);
   console.log(out);
