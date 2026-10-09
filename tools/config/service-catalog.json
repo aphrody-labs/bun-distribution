@@ -10,14 +10,13 @@
       "kind": "bun-edge-proxy",
       "runtime": "bun",
       "unit": "aphrody-fonts-proxy.service",
-      "container": "aphrody-fonts-proxy-1",
       "health": "http://127.0.0.1:8796/health",
       "port": 8796,
       "sourceRepo": "aphrody",
       "workingDirectory": "/home/ubuntu/apps/cdn/src",
       "publicProxy": "nginx",
       "public": true,
-      "host": "dbfr"
+      "host": "vps"
     },
     {
       "id": "aphrody-downloads",
@@ -25,7 +24,6 @@
       "kind": "bun-download-server",
       "runtime": "bun",
       "unit": "aphrody-downloads.service",
-      "container": "aphrody-downloads-1",
       "health": "http://127.0.0.1:8797/health",
       "port": 8797,
       "sourceRepo": "aphrody",
@@ -34,7 +32,7 @@
       "publicProxy": "nginx",
       "note": "read-only download site (index, latest.json, SHA256SUMS, install.sh, install.ps1, artifacts): public and unauthenticated by design, it serves published checksummed release files only; published by scripts/release/publish-downloads.ts from tools/config/downloads.json (docs/operations/infra/DOWNLOADS.md)",
       "public": true,
-      "host": "dbfr"
+      "host": "vps"
     },
     {
       "id": "aphrody-creator",
@@ -44,10 +42,9 @@
       "sourceRepo": "aphrody",
       "releaseRoot": "/home/ubuntu/apps/creator/releases",
       "publicProxy": "nginx",
-      "note": "static download page of creator-kit (Material 3 page, latest.json, packs) served from /home/ubuntu/apps/creator/current by the dbfr gateway container (vhost zz-creator.aphrody.com.conf, read-only bind), no application origin and no unit; public and unauthenticated by design, published by scripts/release/publish-creator.ts (docs/operations/infra/CREATOR.md)",
+      "note": "static download page of creator-kit (Material 3 page, latest.json, packs) served from /home/ubuntu/apps/creator/current by the vps nginx (vhost nginx/aphrody/creator.aphrody.com.conf), no application origin and no unit; public and unauthenticated by design, published by scripts/release/publish-creator.ts (docs/operations/infra/CREATOR.md)",
       "public": true,
-      "container": "aphrody-gateway-1",
-      "host": "dbfr"
+      "host": "vps"
     },
     {
       "id": "aphrody-os",
@@ -57,6 +54,17 @@
       "sourceRepo": "aphrody",
       "publicProxy": "nginx",
       "note": "Aphrody OS web bundle (crates/ui/app/ui-dist) served by nginx from /var/www/os.aphrody.com with SPA fallback (vhost nginx/aphrody/os.aphrody.com.conf), no application origin and no unit; target of the homepage Open Aphrody OS button.",
+      "public": true,
+      "host": "vps"
+    },
+    {
+      "id": "aphrody-reserved",
+      "application": "aphrody",
+      "kind": "nginx-static",
+      "runtime": "none",
+      "sourceRepo": "aphrody",
+      "publicProxy": "nginx",
+      "note": "reserved hosts bot, mcp, nie and admin on aphrody.com: valid HTTPS answering 410 JSON from nginx (vhost nginx/aphrody/reserved.aphrody.com.conf) until a backend is declared; no application origin and no unit.",
       "public": true,
       "host": "vps"
     },
@@ -119,7 +127,8 @@
       "workingDirectory": "/home/ubuntu/apps/discord/current",
       "releaseRoot": "/home/ubuntu/apps/discord/releases",
       "publicProxy": "nginx",
-      "public": true,
+      "note": "bot.aphrody.com resolves to the vps and answers 410 (reserved) there; the interactions endpoint stays private until a route to this origin is declared.",
+      "public": false,
       "host": "dbfr"
     },
     {

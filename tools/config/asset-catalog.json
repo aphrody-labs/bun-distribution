@@ -5,8 +5,8 @@
     "service": "aphrody-cdn",
     "host": "cdn.aphrody.com",
     "status": "live",
-    "sshHost": "dbfr",
-    "note": "`cdn.ts publish --vps dbfr` rsyncs the release under releaseRoot/releases/<sha> and switches `current`. The release tree is published under /s/ and /h/ by aphrody-fonts-proxy (`--static releaseRoot/current`); the paths it does not hold fall through to the Google Fonts proxy.",
+    "sshHost": "vps",
+    "note": "`cdn.ts publish --vps vps` rsyncs the release under releaseRoot/releases/<sha> and switches `current`. The release tree is published under /s/ and /h/ by aphrody-fonts-proxy (`--static releaseRoot/current`); the paths it does not hold fall through to the Google Fonts proxy.",
     "releaseRoot": "/home/ubuntu/apps/cdn",
     "paths": {
       "scoped": "/s/",

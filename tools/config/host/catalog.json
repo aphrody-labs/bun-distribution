@@ -542,11 +542,24 @@
       "site": "os.aphrody.com"
     },
     {
-      "file": "nginx/aphrody/bot.aphrody.com.conf",
+      "file": "nginx/aphrody/reserved.aphrody.com.conf",
       "ownerRepo": "aphrody",
       "targetHost": "vps",
-      "site": "bot.aphrody.com",
-      "service": "aphrody-discord-dev"
+      "site": "reserved.aphrody.com"
+    },
+    {
+      "file": "nginx/aphrody/downloads.aphrody.com.conf",
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "site": "downloads.aphrody.com",
+      "service": "aphrody-downloads"
+    },
+    {
+      "file": "nginx/aphrody/creator.aphrody.com.conf",
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "site": "creator.aphrody.com",
+      "service": "aphrody-creator"
     },
     {
       "file": "nginx/nie/aphrody-nie-cdn.conf",
