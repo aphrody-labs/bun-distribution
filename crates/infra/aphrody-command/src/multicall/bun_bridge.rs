@@ -5,8 +5,7 @@
 //! TypeScript packages that depend on Bun itself (`Bun.serve`, in-process package runners, m3, forge,
 //! the build factory). `aphrody <name> …` runs `bun <dispatcher> <command> …` from the checkout, so
 //! there is one command line while the owners keep their code. Commands with a Rust owner never come
-//! here; the generic Bun capabilities (rename, parse, docs, lint/scan/verify, create, bench) move to
-//! the Bun fork itself (chantier Z1).
+//! here. Generic devtools reuse the existing Bun fork owners; Workspace retains verification.
 
 use std::{
     ffi::OsString,
@@ -22,6 +21,11 @@ pub(crate) const ROUTES: &[(&str, &str)] = &[
     // Monorepo state and generated catalogs (Bun.TOML, Bun.Glob over vendor/).
     ("status", "status"),
     ("generate", "generate"),
+    // Existing devtools and repository gate owners, including the pre-activation fork bridge.
+    ("rename", "rename"),
+    ("parse", "parse"),
+    ("bench", "bench"),
+    ("verify", "verify"),
     // Desktop frontend (m3/packages/app-ui, embedded by crates/ui/app) and the desktop runtime release.
     ("desktop", "desktop"),
     ("desktop-runtime", "desktop-runtime"),
@@ -168,7 +172,7 @@ mod tests {
         "-h",
     ];
     const RETIRED: &[&str] = &["upgrade", "uninstall"];
-    const Z1_BUN: &[&str] = &["parse", "bench", "create", "rename", "verify"];
+    const Z1_BUN: &[&str] = &["create"];
 
     fn dispatcher_cases() -> Option<Vec<String>> {
         let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..").join(DISPATCHER);

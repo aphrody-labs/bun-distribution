@@ -73,6 +73,10 @@ pub(crate) const TOOLS: &[Tool] = &[
     // Commands owned by Bun packages of the checkout (former yolo Bun CLI), see bun_bridge.
     bun("status"),
     bun("generate"),
+    bun("rename"),
+    bun("parse"),
+    bun("bench"),
+    bun("verify"),
     bun("desktop"),
     bun("desktop-runtime"),
     bun("ffi"),
@@ -116,7 +120,7 @@ through the links `aphrody self install-path` creates:
   workflow (aphrody-infra pipeline stages)
 
 Commands owned by Bun packages of the checkout (run as `bun packages/engine/yolo/src/index.ts`):
-  status, generate, desktop [build|dev], desktop-runtime, ffi (aphrody_ffi release artifacts),
+  status, generate, rename, parse, bench, verify, desktop [build|dev], desktop-runtime, ffi (aphrody_ffi release artifacts),
   import, plugin, py, python, uv, vu, ship, hooks, ops, workspace, optimize, update, doc-ai,
   browser, forge, m3, host, api, serve, tool (yolo_* tools: list | call); google drive|fonts.
   `aphrody mcp` without arguments starts the MCP server (= mcp-server).";
@@ -372,6 +376,16 @@ mod tests {
             panic!("expected the Bun bridge");
         };
         assert_eq!(argv, args(&["m3", "dev"]));
+    }
+
+    #[test]
+    fn every_bun_bridge_route_is_registered_before_clap() {
+        for &(route, _) in bun_bridge::ROUTES {
+            let Resolved::Entry(_, argv) = resolve(args(&["aphrody", route, "--help"])) else {
+                panic!("Bun route {route} must not fall through to natural-language dispatch");
+            };
+            assert_eq!(argv, args(&[route, "--help"]));
+        }
     }
 
     #[test]

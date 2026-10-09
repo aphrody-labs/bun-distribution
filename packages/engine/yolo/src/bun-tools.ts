@@ -1,15 +1,45 @@
-/**
- * `yolo rename|parse|docs|bench` run the built-in commands of the Bun fork (`bun rename`, `bun parse`,
- * `bun docs`, `bun bench`, src/js/eval/devtools.ts in aphrody-labs/bun). An upstream Bun on PATH
- * lacks them and treats the name as a script.
- */
-export async function runBunTool(command: string, args: readonly string[], cwd: string): Promise<number> {
+import { existsSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+/** Reuse the configured fork's actual devtools owner while its built-ins await activation. */
+export function bunToolArgv(
+  bun: string,
+  command: string,
+  args: readonly string[],
+  missingBuiltin: boolean,
+  forkCheckout = process.env.APHRODY_BUN_CHECKOUT,
+): string[] {
+  if (missingBuiltin && forkCheckout) {
+    const entry = join(forkCheckout, "src", "js", "eval", "devtools.ts");
+    if (!existsSync(entry)) throw new Error(`Configured Bun fork has no devtools owner: ${entry}`);
+    return [bun, entry, command, ...args];
+  }
+  return [bun, command, ...args];
+}
+
+export async function runBunTool(
+  command: string,
+  args: readonly string[],
+  cwd: string,
+): Promise<number> {
   const bun = Bun.which("bun") ?? process.execPath;
+  const env = { ...process.env, BUN_BE_BUN: "1" };
+  // Probe help only: never replay a potentially mutating command after it fails.
+  const probe = Bun.spawnSync([bun, command, "--help"], {
+    cwd: tmpdir(),
+    env,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const missingBuiltin =
+    probe.exitCode !== 0 && probe.stderr.toString().includes("Script not found");
+  const argv = bunToolArgv(bun, command, args, missingBuiltin);
   await using proc = Bun.spawn({
-    cmd: [bun, command, ...args],
+    cmd: argv,
     cwd,
     // A compiled yolo falls back to its own runtime, which BUN_BE_BUN turns back into the bun CLI.
-    env: { ...process.env, BUN_BE_BUN: "1" },
+    env,
     stdio: ["inherit", "inherit", "inherit"],
   });
   return await proc.exited;
