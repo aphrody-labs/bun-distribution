@@ -170,7 +170,6 @@ export const DESTINATIONS: readonly Destination[] = [
     iconFilled: badgeFilled,
     summary: "Host-bound UI kits where they resolve, the identity set, canvas and assets.",
     packages: [
-      "@rosegriffon/ui",
       "@aphrody/nie-ui",
       "@aphrody/identity",
       "@aphrody/canvas",

@@ -7,7 +7,7 @@
 //     holds the fonts,
 //   - `m3:icons/[style/]name[?fill=1&wght=300]`: Material Symbols SVG markup from the forked catalogue,
 //   - `m3:optional/<specifier>`: a module that may not be installed. `import brand, { resolved } from
-//     "m3:optional/@rosegriffon/ui/tokens"` is the module namespace and `resolved: true` when the specifier resolves
+//     "m3:optional/@aphrody/nie-ui"` is the module namespace and `resolved: true` when the specifier resolves
 //     from the app, `null` and `resolved: false` when it does not (host-bound packages outside the workspace).
 //
 //   bunfig.toml        [serve.static]  plugins = ["@aphrody/m3-bun/plugin"]

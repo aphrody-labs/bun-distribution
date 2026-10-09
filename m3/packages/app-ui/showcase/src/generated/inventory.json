@@ -62,7 +62,7 @@
     "kind": "package",
     "workspace": true,
     "private": false,
-    "exports": 10,
+    "exports": 18,
     "bin": [
       "m3"
     ]
@@ -132,6 +132,17 @@
     "kind": "package",
     "workspace": true,
     "private": false,
+    "exports": 0,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3-example",
+    "version": "0.1.0",
+    "description": "The m3 example app: App Router (React Server Components, server actions, streaming SSR, static generation), M3 theme, Tailwind v4 and the M3 DataTable, on Bun only.",
+    "dir": "apps/example",
+    "kind": "app",
+    "workspace": true,
+    "private": true,
     "exports": 0,
     "bin": []
   },
@@ -271,7 +282,7 @@
     "kind": "package",
     "workspace": true,
     "private": false,
-    "exports": 7,
+    "exports": 8,
     "bin": []
   },
   {
@@ -356,16 +367,5 @@
     "bin": [
       "web-to-tauri"
     ]
-  },
-  {
-    "name": "@rosegriffon/ui",
-    "version": "1.0.3",
-    "description": "Composants shadcn/ui partagés (new-york style, Tailwind v4)",
-    "dir": "packages/rg-ui",
-    "kind": "package",
-    "workspace": true,
-    "private": true,
-    "exports": 7,
-    "bin": []
   }
 ]
