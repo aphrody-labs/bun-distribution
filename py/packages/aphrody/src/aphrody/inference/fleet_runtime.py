@@ -37,9 +37,41 @@ def ray_command(role: str, env: dict[str, str]) -> list[str]:
     return command + ["--address", env["APHRODY_GPU_HEAD_ADDRESS"] + ":6379", "--block"]
 
 
+def serve_command(role: str, model: Path, env: dict[str, str]) -> list[str]:
+    """Keep standalone and distributed process contracts explicit and testable."""
+    if role not in {"standalone", "head"}:
+        raise ValueError("invalid inference serving role")
+    return [
+        "vllm",
+        "serve",
+        str(model),
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8180",
+        "--served-model-name",
+        env["APHRODY_GPU_MODEL_NAME"],
+        "--distributed-executor-backend",
+        "mp" if role == "standalone" else "ray",
+        "--tensor-parallel-size",
+        "1",
+        "--pipeline-parallel-size",
+        "1" if role == "standalone" else "2",
+        "--dtype",
+        "bfloat16",
+        "--max-model-len",
+        env["APHRODY_GPU_MAX_MODEL_LEN"],
+        "--max-num-seqs",
+        "4",
+        "--gpu-memory-utilization",
+        "0.85",
+        "--enable-prefix-caching",
+    ]
+
+
 def main(role: str) -> int:
     env = dict(os.environ)
-    command = ray_command(role, env)
+    command = ray_command(role, env) if role != "standalone" else []
     children: list[subprocess.Popen] = []
     stopping = threading.Event()
 
@@ -56,19 +88,20 @@ def main(role: str) -> int:
             child = subprocess.Popen(command, env=env)
             children.append(child)
             return child.wait()
-        subprocess.run(command, env=env, check=True, timeout=60)
-        import ray
+        if role != "standalone":
+            subprocess.run(command, env=env, check=True, timeout=60)
+            import ray
 
-        ray.init(address="auto")
-        deadline = time.monotonic() + 180
-        while ray.cluster_resources().get("GPU", 0) < 2:
-            if stopping.is_set():
-                raise RuntimeError("GPU fleet startup cancelled")
-            if time.monotonic() >= deadline:
-                raise RuntimeError(
-                    "both real GPU workers did not join the private Ray cluster"
-                )
-            time.sleep(2)
+            ray.init(address="auto")
+            deadline = time.monotonic() + 180
+            while ray.cluster_resources().get("GPU", 0) < 2:
+                if stopping.is_set():
+                    raise RuntimeError("GPU fleet startup cancelled")
+                if time.monotonic() >= deadline:
+                    raise RuntimeError(
+                        "both real GPU workers did not join the private Ray cluster"
+                    )
+                time.sleep(2)
         model = Path(env["APHRODY_GPU_MODEL_PATH"])
         if not model.is_absolute() or not (model / "config.json").is_file():
             raise RuntimeError("verified local model snapshot is missing")
@@ -76,32 +109,7 @@ def main(role: str) -> int:
         env["VLLM_API_KEY"] = Path("/run/secrets/api-key").read_text().strip()
         if len(env["VLLM_API_KEY"]) < 32:
             raise RuntimeError("inference API token is missing or malformed")
-        command = [
-            "vllm",
-            "serve",
-            str(model),
-            "--host",
-            "0.0.0.0",
-            "--port",
-            "8180",
-            "--served-model-name",
-            env["APHRODY_GPU_MODEL_NAME"],
-            "--distributed-executor-backend",
-            "ray",
-            "--tensor-parallel-size",
-            "1",
-            "--pipeline-parallel-size",
-            "2",
-            "--dtype",
-            "bfloat16",
-            "--max-model-len",
-            env["APHRODY_GPU_MAX_MODEL_LEN"],
-            "--max-num-seqs",
-            "4",
-            "--gpu-memory-utilization",
-            "0.85",
-            "--enable-prefix-caching",
-        ]
+        command = serve_command(role, model, env)
         child = subprocess.Popen(command, env=env)
         children.append(child)
         return child.wait()
@@ -113,7 +121,8 @@ def main(role: str) -> int:
             except subprocess.TimeoutExpired:
                 child.kill()
                 child.wait()
-        subprocess.run(["ray", "stop"], check=False, timeout=30)
+        if role != "standalone":
+            subprocess.run(["ray", "stop"], check=False, timeout=30)
 
 
 if __name__ == "__main__":

@@ -9,18 +9,18 @@ uses the existing DBFR gateway container. The actual domain is
 
 ## Selected topology
 
-1. RTX 4070 and RTX 4060 execute the model through a private two-node vLLM
-   pipeline. Direct PC-to-PC transport is preferred when qualified; the existing
-   VPS WireGuard hub remains the connectivity path where direct reachability
-   is absent. Measure round-trip and throughput before selecting the path.
+1. Omar's RTX 4060 executes the initial single-node vLLM service. The owner
+   PC remains the native development workstation. Use the existing private
+   mesh to reach Omar; a two-PC pipeline is reserved for a later explicitly
+   selected allocation and is not required for this deployment.
 2. VPS holds an immutable model/artifact depot under its own protected Aphrody
    home. Existing authenticated SSH/SFTP serves files; no public model bucket
    or new general Windows share. Allocate an initial 32 GiB depot quota and
    at most 2 GiB RAM cache, preserving the declared build factory allocation.
-3. Each GPU host keeps a checksum-verified local model cache at the same
+3. The dedicated GPU host keeps a checksum-verified local model cache at the same
    container path. Download once, verify revisions and checksums, then reuse
    local disk. Network disk latency never sits on each token's weight path.
-4. A private authenticated Bun gateway on VPS fronts the head GPU API over
+4. A private authenticated Bun gateway on VPS fronts Omar's GPU API over
    the existing tunnel, with streaming and backpressure. Health gates reject
    unavailable models. Retry only before a generation has produced output.
 5. DBFR's existing TLS gateway forwards the selected authenticated
@@ -56,3 +56,11 @@ This is a measured deployment plan; no public inference route or shared depot
 has yet been activated. The current local LinuxKit Docker GPU failure must be
 resolved without starting a local WSL development workflow or disrupting
 concurrent containers.
+
+## Current transport evidence
+
+Both private GPU transport containers are healthy and use isolated named key
+volumes. This proves interface startup, not peer handshake, CUDA arithmetic or
+inference. The initial service must not depend on the development PC's transport.
+The pinned vLLM image download on Omar remains in progress; do not restart it
+because the SSH wrapper has not yet returned output.

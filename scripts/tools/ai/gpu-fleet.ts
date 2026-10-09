@@ -50,20 +50,22 @@ export async function tunnelKey(home: string, owner: string) {
       { stdout: "ignore", stderr: "ignore", windowsHide: true },
     );
     if ((await child.exited) !== 0) throw new Error("protected GPU key ACL failed");
-    for (const file of [path, token]) {
-      const acl = Bun.spawn(
-        [
-          "icacls",
-          file,
-          "/inheritance:r",
-          "/grant:r",
-          `${identity.computerName}\\${identity.userName}:F`,
-          "SYSTEM:F",
-        ],
-        { stdout: "ignore", stderr: "ignore", windowsHide: true },
-      );
-      if ((await acl.exited) !== 0) throw new Error("protected GPU key file ACL failed");
-    }
+    await Promise.all(
+      [path, token].map(async (file) => {
+        const acl = Bun.spawn(
+          [
+            "icacls",
+            file,
+            "/inheritance:r",
+            "/grant:r",
+            `${identity.computerName}\\${identity.userName}:F`,
+            "SYSTEM:F",
+          ],
+          { stdout: "ignore", stderr: "ignore", windowsHide: true },
+        );
+        if ((await acl.exited) !== 0) throw new Error("protected GPU key file ACL failed");
+      }),
+    );
   }
   const publicKey = await keyCommand(["pubkey"], readFileSync(path, "utf8").trim());
   writeFileSync(join(directory, "wireguard.pub"), publicKey, { mode: 0o600 });

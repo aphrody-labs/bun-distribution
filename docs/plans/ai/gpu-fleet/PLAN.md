@@ -1,10 +1,25 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Native Bun/Python two-PC GPU inference
+# Native Bun/Python GPU inference
 
 Owner goal, 2026-10-09: a persistent Docker vLLM fleet using both Windows PCs,
 real bun:windows and bun:python integration in Aphrody py, distributed model
 memory, load allocation, RAM and network storage, and reversible exclusive
 inference mode on Omar.
+
+## Initial host allocation — owner correction, 2026-10-09
+
+The owner PC is the native Windows development workstation. Omar is the
+initial dedicated GPU inference server. VPS owns SSH build factories, a bounded
+artifact cache/file depot, authenticated API proxy and static CDN cache. DBFR
+owns production and its existing TLS gateway. Do not start an inference head or
+persistent GPU worker on the development PC. The previous two-PC planner remains
+an optional later capability, not the initial deployment prerequisite.
+
+Use single-node vLLM on Omar (tensor/pipeline parallel size one). Qualify CUDA
+arithmetic and the pinned model against the RTX 4060 budget before activation;
+select a supported quantized artifact if the catalogue model does not fit.
+Public CDN caching covers immutable permitted artifacts only; never cache
+streamed inference, protected model weights or provider authentication publicly.
 
 ## Plan before apply
 
@@ -66,3 +81,17 @@ Provider credentials are not copied or reconfigured.
 
 Primary references: [vLLM parallelism](https://docs.vllm.ai/en/v0.26.0/serving/parallelism_scaling/),
 [Docker Windows GPU support](https://docs.docker.com/desktop/features/gpu/).
+
+## Dedicated-server qualification, 2026-10-09
+
+The standalone Compose profile serves only Omar, with TP=1 and PP=1 and no Ray
+startup. Six Python tests cover the planner, routed Ray addresses and distinct
+standalone/distributed serving commands. Two native Bun/Python tests pass;
+scoped strict TypeScript, lint, formatting and Compose parsing pass.
+
+The pinned catalogue repository and revision were confirmed through the model
+registry API. Its model.safetensors response declares 10,246,621,918 bytes,
+which exceeds Omar's 8,188 MiB VRAM before runtime/KV allocations. Do not activate
+the BF16 service unchanged. Quantization or measured CPU offload must qualify
+against this exact model and image, with actual token generation. The vLLM image
+pull remains active; no CUDA arithmetic or model generation is yet claimed.

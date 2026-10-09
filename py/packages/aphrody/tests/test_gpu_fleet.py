@@ -4,7 +4,7 @@ import json
 import pytest
 
 from aphrody.inference.fleet import Node, pipeline_plan, plan_json
-from aphrody.inference.fleet_runtime import ray_command
+from aphrody.inference.fleet_runtime import ray_command, serve_command
 
 
 def test_ray_refuses_unroutable_docker_addresses_before_starting_any_process():
@@ -66,3 +66,17 @@ def test_native_json_boundary_refuses_untrusted_host_and_bad_counters():
     request["nodes"][0]["free_vram_mib"] = True
     with pytest.raises(ValueError, match="counters"):
         plan_json(json.dumps(request))
+
+
+def test_dedicated_omar_service_does_not_require_owner_gpu_or_ray():
+    from pathlib import Path
+
+    env = {"APHRODY_GPU_MODEL_NAME": "gemma4-e2b", "APHRODY_GPU_MAX_MODEL_LEN": "4096"}
+    command = serve_command("standalone", Path("/models/gemma4-e2b"), env)
+    assert command[command.index("--pipeline-parallel-size") + 1] == "1"
+    assert command[command.index("--distributed-executor-backend") + 1] == "mp"
+    assert "ray" not in command
+    head = serve_command("head", Path("/models/gemma4-e2b"), env)
+    assert head[head.index("--pipeline-parallel-size") + 1] == "2"
+    with pytest.raises(ValueError, match="serving role"):
+        serve_command("worker", Path("/models/gemma4-e2b"), env)
