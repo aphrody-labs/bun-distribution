@@ -33,3 +33,8 @@ Modifications apportées par rapport à l'original, et leur raison :
 
 Les ASSETS de Codex (spritesheets des pets) ne sont pas repris : ils ne figurent pas
 dans le dépôt d'origine et ne sont donc pas couverts par sa licence.
+
+Le logo d'Aphrody (`assets/logo/source/byron_r0.png`, `byron_r0_fullbody.png`, et tout ce que
+`aphrody identity export-assets` en dérive dans `assets/logo/` et `assets/brand/`) part des rendus
+détourés de face du personnage c01001900 « Byron Love » publiés par l'encyclopédie officielle
+Inazuma Eleven (https://zukan.inazuma.jp/), © LEVEL5 Inc.

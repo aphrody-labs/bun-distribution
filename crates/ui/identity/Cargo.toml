@@ -27,9 +27,12 @@ png        = { workspace = true }
 image         = { workspace = true, features = ["png", "jpeg", "webp"] }
 image-compare = { workspace = true }
 palette       = { workspace = true, features = ["std"] }
-aphrody-svg   = { workspace = true, features = ["raster"] }
+aphrody-svg   = { workspace = true, features = ["raster", "glyph"] }
 
-# Module `logo` (ex-`aphrody-logo`): Windows `.ico` (`ico`), SVG wrapper (`base64`), `LogoError` (`thiserror`).
+# Module `logo`: M3 seed and light/dark schemes from the measured palette (`aphrody-m3-tokens`, JSON
+# export through `serde`), data-URI (`base64`), `LogoError` (`thiserror`); `ico` reads back the
+# `.ico` in tests.
+aphrody-m3-tokens = { workspace = true, features = ["serde"] }
 base64    = { workspace = true }
 ico       = "0.5"
 thiserror = { workspace = true }

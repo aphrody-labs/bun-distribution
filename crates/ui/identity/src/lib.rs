@@ -24,8 +24,8 @@ pub mod codex;
 /// Le design system du site : les couleurs de l'interface **dérivées** de la palette mesurée
 /// d'Aphrody, et la feuille `game-tokens.css` qu'elles produisent.
 pub mod design;
-/// L'icône canonique du personnage (`assets/logo/aphrody.webp`), embarquée une fois et dérivée en
-/// `.ico` Windows, `.svg` embarqué et PNG maskable M3 (ex-crate `aphrody-logo`).
+/// Le logo (`assets/logo/aphrody.webp`, copie sans perte de `assets/logo/source/byron_r0.png`) et
+/// toutes ses déclinaisons : `.ico`, PNG, maskable, SVG vectoriel, wordmark, manifeste, CSS, jetons M3.
 pub mod logo;
 /// Le contrat « pet » de Codex : manifeste, pistes minutées, états. Dérivé d'`openai/codex`
 /// (Apache-2.0) — voir `NOTICE`.

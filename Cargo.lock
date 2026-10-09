@@ -1283,6 +1283,7 @@ dependencies = [
 name = "aphrody-identity"
 version = "1.0.0-canary"
 dependencies = [
+ "aphrody-m3-tokens",
  "aphrody-sprite-sheet",
  "aphrody-svg",
  "base64 0.23.1",

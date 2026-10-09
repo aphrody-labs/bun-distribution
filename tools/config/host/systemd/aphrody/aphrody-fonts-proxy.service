@@ -3,7 +3,8 @@
 # Bun source of @aphrody/google pinned in /home/ubuntu/apps/cdn/src (packages/google/google/src and packages/engine/core/src/server
 # only, no dependency to install), a `git archive` of the revision in /home/ubuntu/apps/cdn/src/REVISION. Upgrade with:
 #   git -C /home/ubuntu/src/aphrody archive <sha> packages/google/google/src packages/engine/core/src/server | tar -x -C /home/ubuntu/apps/cdn/src
-# The cache lives in /home/ubuntu/apps/cdn/google.
+# The cache lives in /home/ubuntu/apps/cdn/google. `--static` serves the asset CDN release tree
+# (`scripts/tools/infra/cdn.ts publish`, /home/ubuntu/apps/cdn/current) under /h/ and /s/<scope>/.
 [Unit]
 Description=Aphrody Google Fonts edge proxy (cdn.aphrody.com)
 After=network-online.target
@@ -14,7 +15,7 @@ Type=simple
 User=ubuntu
 Group=ubuntu
 WorkingDirectory=/home/ubuntu/apps/cdn/src
-ExecStart=/home/ubuntu/.local/bin/bun /home/ubuntu/apps/cdn/src/packages/google/google/src/fonts-serve.ts --port 8796 --cache /home/ubuntu/apps/cdn/google --origin https://cdn.aphrody.com
+ExecStart=/home/ubuntu/.local/bin/bun /home/ubuntu/apps/cdn/src/packages/google/google/src/fonts-serve.ts --port 8796 --cache /home/ubuntu/apps/cdn/google --origin https://cdn.aphrody.com --static /home/ubuntu/apps/cdn/current
 Restart=always
 MemoryHigh=128M
 MemoryMax=256M

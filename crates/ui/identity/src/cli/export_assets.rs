@@ -1,81 +1,139 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Produit les assets de marque d'Aphrody : favicons, `.ico`, SVG, manifeste web.
-//!
-//! Tout est tiré de l'atlas embarqué — aucune image dessinée à côté, donc rien qui puisse se
-//! périmer sans qu'on le voie.
+//! Produit les assets de marque d'Aphrody depuis le logo : `.ico`, PNG, maskable, apple-touch-icon,
+//! SVG vectoriel, wordmark, manifeste web, CSS du logo et des polices, jetons M3 (CSS, JSON).
 //!
 //! # Usage
 //! ```text
-//! aphrody identity export-assets --out var/exports/aphrody
-//! aphrody identity export-assets --animation waving --frame 2
-//! aphrody identity export-assets --tauri --out crates/aphrody-app/icons
+//! aphrody identity export-assets --out crates/ui/identity/assets/brand \
+//!     --source crates/ui/identity/assets/logo/source/byron_r0.png \
+//!     --webp crates/ui/identity/assets/logo/aphrody.webp
+//! aphrody identity export-assets --tauri --out crates/ui/app/icons
+//! aphrody identity export-assets --pet --animation waving --frame 2 --out var/exports/aphrody
 //! ```
+//!
+//! Sans `--source`, le portrait embarqué (`assets/logo/aphrody.webp`) sert de source. Les polices
+//! (`--wordmark-font`, `--fonts-css`) sont lues depuis le monorepo ; absentes, le wordmark et
+//! `aphrody-fonts.css` ne sont pas produits.
 
-use crate::{Pet, assets::TAILLES_FAVICON};
-use std::{ffi::OsString, fs, path::PathBuf};
+use crate::{
+    Pet,
+    assets::{Fichier, TAILLES_FAVICON},
+    logo::{self, CDN, Polices},
+};
+use std::{
+    ffi::OsString,
+    fs,
+    path::{Path, PathBuf},
+};
+
+const WORDMARK_FONT: &str = "crates/ui/m3-tokens/fonts/google-sans-flex/GoogleSansFlex-Variable.ttf";
+const FONTS_CSS: &str = "m3/packages/m3-fonts/src/fonts.css";
 
 /// Entry point of the former `export_assets` binary, now reached through the `aphrody` multi-call binary.
 /// `args[0]` is the program name (argv convention). Returns the process exit code.
 pub fn export_assets_main(args: Vec<OsString>) -> i32 {
-    let args: Vec<String> = args.iter().map(|a| a.to_string_lossy().into_owned()).collect();
-    let lire = |nom: &str, defaut: &str| -> String {
-        args.iter()
-            .position(|a| a == nom)
-            .and_then(|i| args.get(i + 1))
-            .cloned()
-            .unwrap_or_else(|| defaut.to_string())
-    };
-
-    let sortie = PathBuf::from(lire("--out", "var/aphrody-assets"));
-    let animation = lire("--animation", "idle");
-    let index: usize = lire("--frame", "0").parse().unwrap_or(0);
-
-    let pet = match Pet::bundled() {
-        Ok(p) => p,
+    match executer(&args.iter().map(|a| a.to_string_lossy().into_owned()).collect::<Vec<_>>()) {
+        Ok(()) => 0,
         Err(e) => {
-            eprintln!("paquet Aphrody illisible : {e}");
-            return 1;
+            eprintln!("{e}");
+            1
         },
-    };
-
-    let Some(anim) = pet.animation(&animation) else {
-        eprintln!(
-            "animation « {animation} » inconnue. Disponibles : {}",
-            pet.manifest.animations.keys().cloned().collect::<Vec<_>>().join(", ")
-        );
-        return 1;
-    };
-    let Some(frame) = anim.frames.get(index) else {
-        eprintln!("frame {index} hors de « {animation} » ({} frames)", anim.frames.len());
-        return 1;
-    };
-
-    // `--tauri`: the application bundle icon set instead of the web favicons.
-    let tauri = args.iter().any(|a| a == "--tauri");
-    let produits =
-        if tauri { pet.tauri_icons(frame) } else { pet.brand_assets(frame, TAILLES_FAVICON) };
-    let fichiers = match produits {
-        Ok(f) => f,
-        Err(e) => {
-            eprintln!("production des assets : {e}");
-            return 1;
-        },
-    };
-
-    if let Err(e) = fs::create_dir_all(&sortie) {
-        eprintln!("création de {} : {e}", sortie.display());
-        return 1;
     }
+}
+
+fn executer(args: &[String]) -> Result<(), String> {
+    let lire = |nom: &str| -> Option<String> {
+        args.iter().position(|a| a == nom).and_then(|i| args.get(i + 1)).cloned()
+    };
+    let drapeau = |nom: &str| args.iter().any(|a| a == nom);
+    let sortie = PathBuf::from(lire("--out").unwrap_or_else(|| "var/aphrody-assets".into()));
+
+    if drapeau("--pet") {
+        let animation = lire("--animation").unwrap_or_else(|| "idle".into());
+        let index: usize = lire("--frame").and_then(|f| f.parse().ok()).unwrap_or(0);
+        let pet = Pet::bundled().map_err(|e| format!("paquet Aphrody illisible : {e}"))?;
+        let anim = pet.animation(&animation).ok_or_else(|| {
+            format!(
+                "animation « {animation} » inconnue. Disponibles : {}",
+                pet.manifest.animations.keys().cloned().collect::<Vec<_>>().join(", ")
+            )
+        })?;
+        let frame = anim
+            .frames
+            .get(index)
+            .ok_or_else(|| format!("frame {index} hors de « {animation} » ({} frames)", anim.frames.len()))?;
+        let fichiers = pet
+            .brand_assets(frame, TAILLES_FAVICON)
+            .map_err(|e| format!("production des assets : {e}"))?;
+        return ecrire(&sortie, &fichiers);
+    }
+
+    let portrait = match lire("--source") {
+        Some(chemin) => image::open(&chemin).map_err(|e| format!("{chemin} : {e}"))?.to_rgba8(),
+        None => logo::portrait().map_err(|e| e.to_string())?,
+    };
+    if let Some(webp) = lire("--webp") {
+        let octets = logo::webp_sans_perte(&portrait).map_err(|e| e.to_string())?;
+        fs::write(&webp, &octets).map_err(|e| format!("écriture de {webp} : {e}"))?;
+        println!("{:>9} o  {webp}", octets.len());
+    }
+
+    if drapeau("--tauri") {
+        let fichiers = logo::icones_tauri(&portrait).map_err(|e| e.to_string())?;
+        return ecrire(&sortie, &fichiers);
+    }
+
+    let lire_fichier = |chemin: &Path| fs::read(chemin).map_err(|e| format!("{} : {e}", chemin.display()));
+    let wordmark = PathBuf::from(lire("--wordmark-font").unwrap_or_else(|| WORDMARK_FONT.into()));
+    let css_m3 = PathBuf::from(lire("--fonts-css").unwrap_or_else(|| FONTS_CSS.into()));
+    let polices = if wordmark.is_file() && css_m3.is_file() {
+        let css = fs::read_to_string(&css_m3).map_err(|e| format!("{} : {e}", css_m3.display()))?;
+        let (_, url) = logo::font_face(&css, "Google Sans Flex")
+            .ok_or_else(|| format!("{} : pas de @font-face Google Sans Flex", css_m3.display()))?;
+        let woff2 = css_m3.parent().unwrap_or(Path::new(".")).join(&url);
+        Some((lire_fichier(&wordmark)?, css, lire_fichier(&woff2)?))
+    } else {
+        eprintln!(
+            "polices absentes ({} ou {}) : ni wordmark ni aphrody-fonts.css",
+            wordmark.display(),
+            css_m3.display()
+        );
+        None
+    };
+    let cdn = lire("--cdn").unwrap_or_else(|| CDN.into());
+    let marque = logo::marque(
+        &portrait,
+        polices.as_ref().map(|(w, c, f)| Polices { wordmark: w, css_m3: c, woff2: f }),
+        &cdn,
+    )
+    .map_err(|e| e.to_string())?;
+    ecrire(&sortie, &marque.fichiers)?;
+
+    let c = &marque.cadrage;
+    println!(
+        "cadre large {}px en ({}, {}), serré {}px en ({}, {}) ; visage {}..{} x {}..{}",
+        c.large.cote, c.large.x, c.large.y, c.serre.cote, c.serre.x, c.serre.y, c.visage.x0, c.visage.x1, c.visage.y0, c.visage.y1
+    );
+    let palette: Vec<String> =
+        marque.theme.palette.iter().map(|p| format!("{} {:.1} %", p.hex, p.part_pct)).collect();
+    println!("palette : {}", palette.join(", "));
+    println!("graine M3 : {}", marque.theme.export.seed);
+    println!(
+        "icon.svg : {} o, SSIM {:.4}, {:.1} % des pixels à ±16 ({} px, {} couches)",
+        marque.svg.octets, marque.svg.ssim, marque.svg.pixels_proches_pct, marque.svg.resolution, marque.svg.couches
+    );
+    Ok(())
+}
+
+fn ecrire(sortie: &Path, fichiers: &[Fichier]) -> Result<(), String> {
+    fs::create_dir_all(sortie).map_err(|e| format!("création de {} : {e}", sortie.display()))?;
     let mut total = 0usize;
-    for f in &fichiers {
+    for f in fichiers {
         let chemin = sortie.join(&f.nom);
-        if let Err(e) = fs::write(&chemin, &f.octets) {
-            eprintln!("écriture de {} : {e}", chemin.display());
-            return 1;
-        }
+        fs::write(&chemin, &f.octets).map_err(|e| format!("écriture de {} : {e}", chemin.display()))?;
         total += f.octets.len();
         println!("{:>9} o  {}", f.octets.len(), chemin.display());
     }
-    println!("\n{} fichiers, {total} o, depuis {animation}[{index}]", fichiers.len());
-    0
+    println!("{} fichiers, {total} o", fichiers.len());
+    Ok(())
 }
