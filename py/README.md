@@ -8,7 +8,7 @@ monorepo: the SDK wheel builds `crates/ai/rag-python` in place. The longer-term 
 
 ## Development
 
-Requires uv 0.12.22, Bun 1.4+ and CPython 3.12 for the complete workspace.
+Requires uv 0.12.24, Bun 1.4+ and CPython 3.12 for the complete workspace.
 
 ```sh
 # Unified commands (`yolo py`, the bounded supervisor of the Yolo runtime)

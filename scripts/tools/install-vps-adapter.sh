@@ -124,7 +124,7 @@ if [[ "$stack" = shenron ]]; then
 fi
 for name in "${!adapters[@]}"; do install -m 0755 "$infra/scripts/release/${adapters[$name]}" "$sbin/$name"; done
 for catalog in service-catalog secrets-contract; do
-  install -m 0644 "$infra/config/$catalog.json" "$share/$catalog.json"
+  install -m 0644 "$infra/tools/config/$catalog.json" "$share/$catalog.json"
 done
 # Routes come from yolo, or from the sealed package when installing from one.
 routes_src="$yolo_routes"; [[ -f "$infra/config/nginx-routes.json" ]] && routes_src="$infra/config/nginx-routes.json"
