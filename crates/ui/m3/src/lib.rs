@@ -9,18 +9,33 @@
 
 #![deny(missing_docs)]
 
+/// Accessibility tree, WAI-ARIA roles and states.
+pub mod a11y;
 /// Semantic component contracts and validation rules.
 pub mod components;
+/// Material 3 components with state, keyboard, accessibility and token-driven visuals.
+pub mod controls;
+/// Tab order and modal focus traps.
+pub mod focus;
 /// Form field contracts and validation.
 pub mod forms;
 /// Icon selection and variable-font settings.
 pub mod icons;
+/// Hover, focus, pressed, dragged and disabled states with their state layers.
+pub mod interaction;
+/// Logical keys, roving focus and type-ahead.
+pub mod keyboard;
 /// Taffy-backed layout utilities.
 pub mod layout;
 /// Motion curves and spring state from the canonical M3 token crate.
 pub mod motion;
+/// Part-to-scene conversion for the native renderers.
+#[cfg(feature = "native-render")]
+pub mod paint;
 /// The canonical design-token and theme contract.
 pub mod theme;
+/// Host-neutral paint parts (surfaces, state layers, focus rings, glyphs, labels).
+pub mod visual;
 
 pub use aphrody_m3_tokens::facade;
 /// CPU/native rendering primitives shared with Aphrody render hosts.

@@ -228,6 +228,12 @@ component_tokens! {
         HOVER_STATE_LAYER_COLOR = "hover-state-layer-color": Role(Role::OnSurface);
         PRESSED_STATE_LAYER_COLOR = "pressed-state-layer-color": Role(Role::OnSurface);
         FOCUS_INDICATOR_COLOR = "focus-indicator-color": Role(Role::Secondary);
+        DISABLED_LABEL_TEXT_COLOR = "disabled-label-text-color": Role(Role::OnSurface);
+        FLAT_DISABLED_OUTLINE_COLOR = "flat-disabled-outline-color": Role(Role::OnSurface);
+        ELEVATED_DISABLED_CONTAINER_COLOR = "elevated-disabled-container-color": Role(Role::OnSurface);
+        ELEVATED_DISABLED_CONTAINER_OPACITY = "elevated-disabled-container-opacity": Opacity(0.12);
+        WITH_ICON_DISABLED_ICON_COLOR = "with-icon-disabled-icon-color": Role(Role::OnSurface);
+        WITH_ICON_DISABLED_ICON_OPACITY = "with-icon-disabled-icon-opacity": Opacity(0.38);
     }
 }
 
@@ -251,6 +257,10 @@ component_tokens! {
         FLAT_DISABLED_SELECTED_CONTAINER_OPACITY = "flat-disabled-selected-container-opacity": Opacity(0.12);
         DISABLED_LABEL_TEXT_OPACITY = "disabled-label-text-opacity": Opacity(0.38);
         FOCUS_INDICATOR_COLOR = "focus-indicator-color": Role(Role::Secondary);
+        DISABLED_LABEL_TEXT_COLOR = "disabled-label-text-color": Role(Role::OnSurface);
+        FLAT_DISABLED_SELECTED_CONTAINER_COLOR = "flat-disabled-selected-container-color": Role(Role::OnSurface);
+        FLAT_DISABLED_UNSELECTED_OUTLINE_COLOR = "flat-disabled-unselected-outline-color": Role(Role::OnSurface);
+        FLAT_DISABLED_UNSELECTED_OUTLINE_OPACITY = "flat-disabled-unselected-outline-opacity": Opacity(0.12);
     }
 }
 
@@ -264,6 +274,17 @@ component_tokens! {
         OUTLINE_COLOR = "outline-color": Role(Role::Outline);
         LABEL_TEXT_COLOR = "label-text-color": Role(Role::OnSurfaceVariant);
         HOVER_STATE_LAYER_COLOR = "hover-state-layer-color": Role(Role::OnSurfaceVariant);
+        UNSELECTED_OUTLINE_COLOR = "unselected-outline-color": Role(Role::OutlineVariant);
+        SELECTED_CONTAINER_COLOR = "selected-container-color": Role(Role::SecondaryContainer);
+        SELECTED_LABEL_TEXT_COLOR = "selected-label-text-color": Role(Role::OnSecondaryContainer);
+        LABEL_TEXT_SIZE = "label-text-size": Type("label-large");
+        WITH_TRAILING_ICON_TRAILING_ICON_SIZE = "with-trailing-icon-trailing-icon-size": Dp(18.0);
+        DISABLED_LABEL_TEXT_COLOR = "disabled-label-text-color": Role(Role::OnSurface);
+        DISABLED_LABEL_TEXT_OPACITY = "disabled-label-text-opacity": Opacity(0.38);
+        DISABLED_UNSELECTED_OUTLINE_COLOR = "disabled-unselected-outline-color": Role(Role::OnSurface);
+        DISABLED_UNSELECTED_OUTLINE_OPACITY = "disabled-unselected-outline-opacity": Opacity(0.12);
+        DISABLED_SELECTED_CONTAINER_COLOR = "disabled-selected-container-color": Role(Role::OnSurface);
+        DISABLED_SELECTED_CONTAINER_OPACITY = "disabled-selected-container-opacity": Opacity(0.12);
     }
 }
 
@@ -276,6 +297,11 @@ component_tokens! {
         FLAT_OUTLINE_COLOR = "flat-outline-color": Role(Role::OutlineVariant);
         LABEL_TEXT_COLOR = "label-text-color": Role(Role::OnSurfaceVariant);
         HOVER_STATE_LAYER_COLOR = "hover-state-layer-color": Role(Role::OnSurfaceVariant);
+        LABEL_TEXT_SIZE = "label-text-size": Type("label-large");
+        DISABLED_LABEL_TEXT_COLOR = "disabled-label-text-color": Role(Role::OnSurface);
+        DISABLED_LABEL_TEXT_OPACITY = "disabled-label-text-opacity": Opacity(0.38);
+        FLAT_DISABLED_OUTLINE_COLOR = "flat-disabled-outline-color": Role(Role::OnSurface);
+        FLAT_DISABLED_OUTLINE_OPACITY = "flat-disabled-outline-opacity": Opacity(0.12);
     }
 }
 
@@ -367,6 +393,8 @@ component_tokens! {
         DISABLED_CONTAINER_OPACITY = "disabled-container-opacity": Opacity(0.1);
         DISABLED_ICON_COLOR = "disabled-icon-color": Role(Role::OnSurface);
         DISABLED_ICON_OPACITY = "disabled-icon-opacity": Opacity(0.38);
+        SELECTED_CONTAINER_COLOR = "selected-container-color": Role(Role::Primary);
+        SELECTED_ICON_COLOR = "selected-icon-color": Role(Role::OnPrimary);
     }
 }
 
@@ -381,6 +409,7 @@ component_tokens! {
         DISABLED_CONTAINER_OPACITY = "disabled-container-opacity": Opacity(0.1);
         DISABLED_ICON_COLOR = "disabled-icon-color": Role(Role::OnSurface);
         DISABLED_ICON_OPACITY = "disabled-icon-opacity": Opacity(0.38);
+        SELECTED_ICON_COLOR = "selected-icon-color": Role(Role::OnSecondary);
     }
 }
 
@@ -393,6 +422,8 @@ component_tokens! {
         HOVERED_STATE_LAYER_COLOR = "hovered-state-layer-color": Role(Role::OnSurfaceVariant);
         DISABLED_ICON_COLOR = "disabled-icon-color": Role(Role::OnSurface);
         DISABLED_ICON_OPACITY = "disabled-icon-opacity": Opacity(0.38);
+        SELECTED_ICON_COLOR = "selected-icon-color": Role(Role::InverseOnSurface);
+        DISABLED_OUTLINE_COLOR = "disabled-outline-color": Role(Role::OutlineVariant);
     }
 }
 
@@ -464,6 +495,11 @@ component_tokens! {
         DISABLED_INACTIVE_TRACK_OPACITY = "disabled-inactive-track-opacity": Opacity(0.12);
         DISABLED_HANDLE_COLOR = "disabled-handle-color": Role(Role::OnSurface);
         DISABLED_HANDLE_OPACITY = "disabled-handle-opacity": Opacity(0.38);
+        HANDLE_SHAPE = "handle-shape": Shape(shape::FULL);
+        INACTIVE_TRACK_SHAPE = "inactive-track-shape": Shape(shape::FULL);
+        STOP_INDICATOR_TRAILING_SPACE = "stop-indicator-trailing-space": Dp(4.0);
+        DISABLED_STOP_INDICATOR_COLOR = "disabled-stop-indicator-color": Role(Role::OnSurface);
+        DISABLED_STOP_INDICATOR_COLOR_SELECTED = "disabled-stop-indicator-color-selected": Role(Role::InverseOnSurface);
     }
 }
 
@@ -557,6 +593,7 @@ component_tokens! {
         LIST_ITEM_LEADING_ICON_COLOR = "list-item-with-leading-icon-leading-icon-color": Role(Role::OnSurfaceVariant);
         DIVIDER_HEIGHT = "divider-height": Dp(1.0);
         FOCUS_INDICATOR_OUTLINE_OFFSET = "focus-indicator-outline-offset": Dp(focus_indicator::INNER_OFFSET);
+        LIST_ITEM_WITH_LEADING_ICON_DISABLED_LEADING_ICON_COLOR = "list-item-with-leading-icon-disabled-leading-icon-color": Role(Role::OnSurface);
     }
 }
 
@@ -590,6 +627,11 @@ component_tokens! {
         DISABLED_CONTAINER_OPACITY = "disabled-container-opacity": Opacity(0.1);
         DISABLED_LABEL_TEXT_COLOR = "disabled-label-text-color": Role(Role::OnSurface);
         DISABLED_LABEL_TEXT_OPACITY = "disabled-label-text-opacity": Opacity(0.38);
+        SELECTED_CONTAINER_COLOR = "selected-container-color": Role(Role::Primary);
+        SELECTED_LABEL_TEXT_COLOR = "selected-label-text-color": Role(Role::OnPrimary);
+        UNSELECTED_CONTAINER_COLOR = "unselected-container-color": Role(Role::SurfaceContainer);
+        UNSELECTED_LABEL_TEXT_COLOR = "unselected-label-text-color": Role(Role::OnSurfaceVariant);
+        UNSELECTED_ICON_COLOR = "unselected-icon-color": Role(Role::OnSurfaceVariant);
     }
 }
 
