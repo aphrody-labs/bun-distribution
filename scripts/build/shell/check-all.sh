@@ -9,4 +9,4 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
   bun run typecheck
   bun test
 )
-"$root/scripts/build/shell/tauri-e2e.sh"
+bun "$root/scripts/build/desktop/e2e.ts"

@@ -15,7 +15,7 @@ Rules: root `CLAUDE.md`. Workers never run Cargo; the lead runs one check at a t
 | VT state (Rio `rio-vt` 0.5.28) | `crates/shell/terminal-core` | Real. `TerminalState::{new,ingest,resize,take_replies,snapshot,styled_snapshot}`. Compiles for wasm. Selection, scrollback, damage, graphics not exposed (ENGINE-SELECTION.md). |
 | WASM bindings | `crates/shell/web` | Real: `WebTerminal`, `WebShell`, `resize_frame`, `data_frame`. `LocalShell` (`local.rs`) is a toy line editor with 9 builtins (help echo clear env set history version exit). No pipes, no quoting, no files, no coreutils, no scripting. |
 | Tauri PTY plugin | `crates/shell/tauri` | Real: 4 `#[tauri::command]` over native PTY, mock-app test. |
-| Real webview e2e | `crates/ui/app/examples/shell_e2e.rs`, `scripts/build/shell/tauri-e2e.sh` | Real (CEF under Xvfb since decision 21; WebKitGTK on Broadway before, not re-run). |
+| Real webview e2e | `crates/ui/app/examples/shell_e2e.rs`, `bun run desktop:e2e` | Real (CEF under Xvfb since decision 21; WebKitGTK on Broadway before, not re-run). |
 | TS transports | `packages/shell/web/src/index.ts` | Real: `webSocketTransport`, `tauriTransport`, `localTransport`, `attach`. Tests: `shell-web.test.ts`, `browser.test.ts` (headless Chrome), `live-backend.test.ts` (live PTY). |
 | Native PTY + WS server | `crates/shell/terminal-backend` | Real (portable-pty, 1598 lines). Native only. |
 | Nushell | `crates/shell/nu` (nu 0.115.1, features `brotli`, `os`, `rmp-serde`, `sqlite`) | Real, native only. Not built for wasm; wasm viability is unproven. |
@@ -82,7 +82,7 @@ Decisions:
 | Native confinement | `aphrody-sandbox` (`SandboxPolicy`, `CommandRunner`) | re-implement policy; only add a wasm `CommandRunner` impl if needed |
 | Wire frames | `crates/shell/web/src/wire.rs` | new framing |
 | TS client | `@aphrody/shell-web` | a second client package |
-| Tests | `packages/shell/web/test/*`, `scripts/build/shell/tauri-e2e.sh`, `scripts/build/shell/build-wasm.sh` | new harness runners |
+| Tests | `packages/shell/web/test/*`, `bun run desktop:e2e`, `scripts/build/shell/build-wasm.sh` | new harness runners |
 | Tauri driving/verification | MCP `aphrody_tauri_*` tools | custom webdriver code |
 | Nushell | `aphrody-nu` (native) | wasm fork unless T9 proves it |
 
@@ -126,7 +126,7 @@ serially.
 - Deps: none (parallel to T1-T3).
 - Content: add a Tauri 3 `Channel`-based output stream with bounded backpressure alongside existing events; keep current
   command names and capability `aphrody-shell-tauri:default`. Session cleanup on webview close.
-- Test: existing mock-app test extended (lead runs); `scripts/build/shell/tauri-e2e.sh` unchanged and must still pass.
+- Test: existing mock-app test extended (lead runs); `bun run desktop:e2e` unchanged and must still pass.
   `tauriTransport` update is T8's.
 
 ### T5. OPFS Vfs backend + worker host
@@ -201,14 +201,14 @@ serially.
 - Deps: T8.
 - Content: select transport per environment (Tauri -> `tauriTransport`; browser -> `workerTransport`; hosted -> `sandboxTransport`),
   keep wterm/Ghostty DOM renderer; no VT replies duplicated (client VT only feeds snapshots/replies when wterm is not rendering).
-- Test: `scripts/build/shell/tauri-e2e.sh` (LOCAL and REMOTE markers still hold); MCP `aphrody_tauri_*` screenshot/DOM snapshot
+- Test: `bun run desktop:e2e` (LOCAL and REMOTE markers still hold); MCP `aphrody_tauri_*` screenshot/DOM snapshot
   of the running app for the shell panel.
 
 ### T14. Docs and gates
 - Owner: `docs/products/shell/README.md`, `docs/architecture/shell/` (not in repo) (new), `scripts/build/shell/` (new script files only).
 - Deps: after T3, T5, T8 land; update as others land.
 - Content: replace the "WASM, web and Tauri" section with the layer model; add `scripts/build/shell/check-all.sh` (not in repo) that
-  chains the existing owners (`build-wasm.sh`, `bun test`, `tauri-e2e.sh`) without new runners.
+  chains the existing owners (`build-wasm.sh`, `bun test`, `bun run desktop:e2e`) without new runners.
 - Test: running the script (lead); doc links checked by the workspace doc audit (`bun run` owner script of `@aphrody/workspace`).
 
 ## 5. Parallelism and file-collision matrix
@@ -231,7 +231,7 @@ Shared files with a single owner (lead only): root `Cargo.toml`, `Cargo.lock`, `
 | VFS | shared conformance suite on MemVfs, OpfsVfs (Chrome), Tauri-fs adapter | T2, T5 |
 | L2 session | fake-engine tests | T1 |
 | L3 WebSocket | live PTY round trip, auth rejection | `live-backend.test.ts`, T10 tests |
-| L3 Tauri | permission-checked IPC in a real webview, streaming over Channel | `scripts/build/shell/tauri-e2e.sh` (`E2E_RESULT`, `LOCAL[...tauri-wasm]`, `REMOTE[...pty-42]`) |
+| L3 Tauri | permission-checked IPC in a real webview, streaming over Channel | `bun run desktop:e2e` (`E2E_RESULT`, `LOCAL[...tauri-wasm]`, `REMOTE[...pty-42]`) |
 | L3 sandbox | conformance suite on MockHost, LocalPtyHost, then provider (flagged) | T11, T12 |
 | L4 client | `bun test`, `tsc --noEmit` | `packages/shell/web` |
 | L5 renderer | real-webview e2e plus DOM/screenshot via MCP `aphrody_tauri_*` | T13 |

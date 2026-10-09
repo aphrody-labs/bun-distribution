@@ -105,7 +105,7 @@ unsupported restrictive policies are rejected instead of silently ignored.
 
 ## Desktop and SDKs
 
-`scripts/tauri.ps1 -Action dev` (Windows) or `scripts/tauri.sh dev` (Linux) builds
+`bun run desktop:dev` (Windows and Linux) builds
 and launches the same console in Tauri. The desktop calls `aphrody_rpc` directly
 in Rust; existing `aphrody_exec` commands still use the in-process CLI. Its
 binary can host the managed llama daemon before Tauri initialization, so desktop

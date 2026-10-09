@@ -16,6 +16,6 @@ cargo xtask update-contributors
 
 `setup` downloads native desktop dependencies, writes `.cargo/config.toml`, and builds the release
 daemon for the historical Drive Tauri host. For the Aphrody desktop, the supported build and
-packaging entry points are `scripts/tauri.ps1` on Windows and `scripts/tauri.sh` on Linux at the
+packaging entry points are `bun run desktop:<check|build|run|dev|bundle>` at the
 repository root. They build `sd-daemon` from this workspace and stage it as an Aphrody Tauri
 sidecar. See `docs/design/SPACEUI-SPACEDRIVE-MIGRATION.md` for ownership and migration gates.

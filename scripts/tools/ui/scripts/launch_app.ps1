@@ -2,7 +2,7 @@
 # Launch Aphrody Desktop App directly on the user's interactive desktop (WinSta0\Default)
 
 param(
-    [string]$ExePath = (Join-Path $PSScriptRoot "..\target\release\aphrody-app.exe")
+    [string]$ExePath = (Join-Path $PSScriptRoot "..\..\..\..\target\release\aphrody-app.exe")
 )
 
 Add-Type @"

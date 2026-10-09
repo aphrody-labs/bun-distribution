@@ -19,6 +19,7 @@ import {
   gateFromRegistry,
   parseRegistry,
   type Registry,
+  workspaceState,
 } from "./apps.ts";
 
 const USER_AGENT = "aphrody-tauri-sync (https://github.com/aphrody-labs/aphrody)";
@@ -227,7 +228,7 @@ export function evaluatePatch(input: {
       return {
         id: spec.id,
         state: "unapplied",
-        detail: "[patch.crates-io] entry missing in root Cargo.toml",
+        detail: "vendored copy is neither a path dependency nor a workspace member",
       };
     }
   }
@@ -608,12 +609,12 @@ export async function buildReport(
       spec.appliedFile && existsSync(join(root, spec.appliedFile))
         ? await readFile(join(root, spec.appliedFile), "utf8")
         : null;
+    // The vendored copy is wired as a path dependency (workspace.dependencies or
+    // [patch.crates-io]) or as a workspace member of the fork under crates/tauri.
     const cargoPatchPresent =
       spec.kind !== "vendored-crate" ||
-      new RegExp(
-        `^${escapeRegExp(spec.crate)}\\s*=\\s*\\{\\s*path\\s*=\\s*"${escapeRegExp(spec.path ?? "")}"`,
-        "m",
-      ).test(cargoToml);
+      new RegExp(`\\bpath\\s*=\\s*"${escapeRegExp(spec.path ?? "")}"`).test(cargoToml) ||
+      (spec.path !== undefined && workspaceState(cargoToml, spec.path) === "member");
     let contains: boolean | null = null;
     const check = spec.upstreamContains;
     if (!offline && check) {

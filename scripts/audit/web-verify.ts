@@ -14,7 +14,7 @@ import { dirname, join, resolve } from "node:path";
 import { repositoryRoot, validateWebConfig } from "../../packages/web/agent-browser/src/config.ts";
 
 export const WEB_CRATES = [
-  "obscura",
+  "aphrody-obscura",
   "obscura-browser",
   "obscura-cdp",
   "obscura-dom",
@@ -22,12 +22,13 @@ export const WEB_CRATES = [
   "obscura-mcp",
   "obscura-net",
   "obscura-render",
+  "obscura-ssrf",
   "taffy",
-  "aphrody-web-chromium",
   "aphrody-web-crawl",
   "aphrody-web-detect",
   "aphrody-web-engine",
   "aphrody-web-extract",
+  "aphrody-web-frames",
   "aphrody-web-index",
   "aphrody-web-service",
   "aphrody-x",

@@ -254,7 +254,7 @@ Notes for the maintainer of these pins:
   [`tools/config/tauri-upstream.json`](../../../tools/config/tauri-upstream.json) with commit,
   tree hash, license files and the not-forked list. `tauri-sync.ts` validates
   only the keys it knows (`parseConfig`), so the extra block does not affect
-  `bun run tauri:sync`.
+  `bun run desktop:sync`.
 - No `config/web-upstream.json` was created because `tools/config/tauri-upstream.json`
   appeared before editing.
 - `upstream/mcp-server-tauri` puts back a tree that

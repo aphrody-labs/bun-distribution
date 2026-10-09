@@ -15,7 +15,7 @@ Architecture and gaps: [`docs/architecture/web/ARCHITECTURE.md`](../../architect
 | `bun run web:smoke`                          | Starts `aphrody-web launch` on an ephemeral port, serves a local fixture site and checks version, subcommands, fetch (Markdown, artifact, V8 script execution), crawl with robots, CDP discovery, DOM, accessibility refs, click/fill, screenshot, PDF and clean shutdown. 11 checks, about 1 s. |
 | `bun run web:crawl -- <seed>... [options]`   | Native crawl through `WebService.crawl` with the defaults of `tools/config/web.json`.                                                                       |
 | `bun run web:crawlability`                   | UI crawlability gate (see [crawlable UI guide](../../guides/web/CRAWLABLE-UI.md)).                                                                    |
-| `bun run tauri:apps:check`                   | Registry of every Tauri project, including the `aphrody-tauri-wrap` debug bridge and the pinned debugger forks.                                                    |
+| `bun run desktop:apps:check`                   | Registry of every Tauri project, including the `aphrody-tauri-wrap` debug bridge and the pinned debugger forks.                                                    |
 
 `--stage a,b` limits `web:verify`; `--json` and `--out FILE` write a machine-readable report
 (`aphrody-web.verify/1`, `aphrody-web.smoke/1`).

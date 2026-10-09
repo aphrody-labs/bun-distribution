@@ -80,13 +80,13 @@ file actions through `aphrody-drive`; React Native/iOS/Android are outside this 
 ```pwsh
 bun install --frozen-lockfile
 bun run --cwd packages/app-ui build
-pwsh scripts/tauri.ps1 -Action check
-pwsh scripts/tauri.ps1 -Action run
-pwsh scripts/tauri.ps1 -Action bundle         # Windows: NSIS setup executable
-pwsh scripts/tauri.ps1 -Action bundle -Bundles msi
+bun run desktop:check
+bun run desktop:run
+bun run desktop:bundle                       # Windows: NSIS; Linux: deb, AppImage
+bun run desktop:bundle -- --bundles msi
 ```
 
-On Linux, use `bash scripts/tauri.sh check|build|run|dev|bundle`. Both helpers require the
+The same `bun run desktop:check|build|run|dev|bundle` entries serve Linux. They require the
 Drive Cargo graph and the OS Cargo graph to compile on the host. They fail when the daemon
 cannot be built, instead of delivering a desktop bundle with an empty Drive view.
 

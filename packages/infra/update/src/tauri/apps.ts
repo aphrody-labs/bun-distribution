@@ -23,7 +23,9 @@ export type ProjectKind =
   | "generator"
   | "integration"
   | "js-package"
-  | "upstream";
+  | "upstream"
+  /** Standalone project written by a generator; pins its own versions. */
+  | "template";
 
 export type RegistryProject = {
   id: string;
@@ -103,7 +105,8 @@ export function tauriCargoDeps(cargoToml: string): { name: string; inherited: bo
     if (!dep?.[1] || !TAURI_CRATE.test(dep[1])) continue;
     out.push({
       name: dep[1],
-      inherited: Boolean(dep[2]) || /\bworkspace\s*=\s*true\b/.test(dep[3] ?? ""),
+      // A path dependency points at the vendored fork, whose version is the pin itself.
+      inherited: Boolean(dep[2]) || /\b(?:workspace\s*=\s*true\b|path\s*=)/.test(dep[3] ?? ""),
     });
   }
   return out;

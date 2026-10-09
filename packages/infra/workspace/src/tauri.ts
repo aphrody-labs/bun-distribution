@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Cross-platform desktop application builder & packager for Aphrody Tauri.
- * Unified script replacing redundant shell and PowerShell implementations.
+ * Desktop app (crates/ui/app, tauri-runtime-cef) builder and packager: the single owner behind `bun run desktop:*`.
  *
  * Usage:
- *   bun scripts/tauri.ts [check|build|run|dev|bundle] [--bundles <bundles>]
+ *   bun run desktop:<check|build|run|dev|bundle> [-- --bundles <bundles>]
  */
 import { existsSync } from "node:fs";
 import { copyFile, mkdir, stat } from "node:fs/promises";

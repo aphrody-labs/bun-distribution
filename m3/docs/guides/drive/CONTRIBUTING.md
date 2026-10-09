@@ -24,9 +24,9 @@ cargo metadata --manifest-path drive/Cargo.toml --no-deps --locked --format-vers
 cargo build --manifest-path drive/Cargo.toml -p sd-core --bin sd-daemon --locked
 ```
 
-On Windows, `pwsh scripts/tauri.ps1 -Action dev|run|bundle` builds the Aphrody UI, prepares the
-Drive engine and starts or packages the native app. On Linux, use
-`bash scripts/tauri.sh dev|run|bundle`. Optional HTTP delivery reuses `@aphrody/app-ui` and
+`bun run desktop:dev|run|bundle` builds the Aphrody UI, prepares the
+Drive engine and starts or packages the native app on Windows and Linux.
+Optional HTTP delivery reuses `@aphrody/app-ui` and
 requires `sd-server` for its `/rpc` and `/events` endpoints.
 
 The daemon's separate Cargo workspace is a dependency and FSL provenance boundary, not a separate

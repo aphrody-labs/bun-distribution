@@ -16,7 +16,7 @@ for the `app` template and for the projects `web-to-tauri` generates, so the Tau
 explicit CEF runtime (`tauri-runtime-cef`, the one desktop runtime), the lean feature set and the placeholder icon live in one place.
 
 - **Pins**: `src/pins.ts` is the only `TAURI_3` literal. `tools/config/tauri-upstream.json` `mirrors`
-  lists it, `bun run tauri:sync` checks and rewrites it. `m3-next-migrate` and `web-to-tauri`
+  lists it, `bun run desktop:sync` checks and rewrites it. `m3-next-migrate` and `web-to-tauri`
   re-export it.
 - **Writing**: `writeFiles(dir, files, mode)` checks every path before writing; modes `new`
   (directory must not exist), `empty`, `merge` (never overwrites) and `overwrite` (migration output).

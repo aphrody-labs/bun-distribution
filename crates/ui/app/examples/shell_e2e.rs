@@ -6,7 +6,7 @@
 //! and the permission-checked plugin IPC, then reports its result through `report`, which prints
 //! it and exits. The desktop's own `main` window and capability are reused: only the assets are
 //! swapped for the directory named by `APHRODY_SHELL_E2E_FRONTEND`, which
-//! `scripts/build/shell/tauri-e2e.sh` assembles (WASM package and transpiled transports).
+//! `scripts/build/desktop/e2e.ts` assembles (WASM package and transpiled transports).
 //! Build it with `--features custom-protocol` so the window serves those assets.
 
 use std::{
@@ -61,7 +61,7 @@ fn report(text: String) {
 fn main() {
     let Some(frontend) = std::env::var_os("APHRODY_SHELL_E2E_FRONTEND") else {
         eprintln!(
-            "shell_e2e: set APHRODY_SHELL_E2E_FRONTEND (see scripts/build/shell/tauri-e2e.sh)"
+            "shell_e2e: set APHRODY_SHELL_E2E_FRONTEND (run bun run desktop:e2e)"
         );
         std::process::exit(2);
     };

@@ -244,7 +244,6 @@ Méthode : pour chaque fichier `.ts/.sh/.nu/.py/.ps1` sous `scripts/`, nombre de
 - `scripts/tools/ui/drive/scripts/combine.sh`
 - `scripts/tools/ui/drive/scripts/fix-deb.sh`
 - `scripts/tools/ui/scripts/launch_app.ps1`
-- `scripts/tools/ui/scripts/purge-tauri-mobile.nu`
 - scripts/tools/web/apps/bxc/scripts/backfill-empty-markdown.ts (supprimé)
 - `scripts/tools/web/apps/bxc/scripts/cleanup.ts`
 - scripts/tools/web/apps/bxc/scripts/consolidate-dragonball-crawls.ts (supprimé)

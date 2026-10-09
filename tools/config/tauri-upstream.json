@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "line": 3,
-  "description": "Single source of truth for the Tauri 3 upstream line carried by the monorepo. Versions live in root Cargo.toml [workspace.dependencies] and package.json workspaces.catalog; this file records tracked refs, the crates/packages to sync, the gate and the local patches. Driven by `bun run tauri:sync`. The cargo gate packages, generated paths and per-app config files live in tools/config/tauri-apps.json.",
+  "description": "Single source of truth for the Tauri 3 upstream line carried by the monorepo. Versions live in root Cargo.toml [workspace.dependencies] and package.json workspaces.catalog; this file records tracked refs, the crates/packages to sync, the gate and the local patches. Driven by `bun run desktop:sync`. The cargo gate packages, generated paths and per-app config files live in tools/config/tauri-apps.json.",
   "upstream": {
     "tauri": {
       "repository": "tauri-apps/tauri",

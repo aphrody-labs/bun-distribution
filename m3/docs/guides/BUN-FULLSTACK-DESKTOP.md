@@ -149,7 +149,7 @@ bun run bun:check
 bun run monorepo:layout
 
 # 3. Projets Tauri v3
-bun run tauri:apps:check
+bun run desktop:apps:check
 
 # 4. Qualification bundles navigateur (aucun symbole natif/Node dans le browser)
 bun run ui:browser-audit

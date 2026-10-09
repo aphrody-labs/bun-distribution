@@ -185,7 +185,7 @@ bun run bun:check
 bun run monorepo:layout
 
 # Vérification des projets Tauri v3
-bun run tauri:apps:check
+bun run desktop:apps:check
 
 # Qualification des bundles navigateurs (zéro dépendance Node/FFI dans les bundles browser)
 bun run ui:browser-audit
