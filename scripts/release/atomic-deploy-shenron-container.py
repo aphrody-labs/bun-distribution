@@ -37,7 +37,7 @@ def file_digest(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def allowed_mount(name, volume, release, root, manifest):
+def allowed_mount(name, volume, release, root, manifest, rollback=False):
     source = pathlib.Path(volume.get("source", "/missing")).resolve()
     if name in ("postgres", "redis"):
         owned = root / "shared/state" / name
@@ -66,11 +66,13 @@ def allowed_mount(name, volume, release, root, manifest):
         return source == pathlib.Path("/etc/aphrody/shenron-tls").resolve()
     if target == "/etc/nginx/conf.d":
         files = manifest.get("files", {})
+        sealed = {n for n in files if n.startswith("nginx/")}
+        present = {str(p.relative_to(release)) for p in source.rglob("*") if p.is_file()}
+        # A release being rolled back to may carry vhosts added after sealing; it must still hold every sealed file.
         return (
             source == release / "nginx"
-            and bool([n for n in files if n.startswith("nginx/")])
-            and {str(p.relative_to(release)) for p in source.rglob("*") if p.is_file()}
-            == {n for n in files if n.startswith("nginx/")}
+            and bool(sealed)
+            and (present >= sealed if rollback else present == sealed)
         )
     # Public media roots only. Never expose private bot data, conversations or home.
     public = {
@@ -101,7 +103,7 @@ def allowed_mount(name, volume, release, root, manifest):
     return False
 
 
-def verify(release, root):
+def verify(release, root, rollback=False):
     require(
         release.parent == root / "releases",
         "release must be directly under the release root",
@@ -262,7 +264,7 @@ def verify(release, root):
         for volume in service.get("volumes", []):
             require(
                 volume.get("type") == "bind"
-                and allowed_mount(name, volume, release, root, manifest),
+                and allowed_mount(name, volume, release, root, manifest, rollback),
                 "production mounts must stay inside the Shenron shared store",
             )
         if name not in ("site", "bot"):
@@ -374,7 +376,7 @@ def restore_backup(backup, root):
     if previous == target:
         print("same immutable release; current pointer preserved")
         return
-    previous_config = verify(previous, root) if previous else None
+    previous_config = verify(previous, root, True) if previous else None
     previous_services = record.get("previousActiveServices")
     if previous_services is not None:
         require(
@@ -433,7 +435,7 @@ def activate(release, root):
     previous = current.resolve() if current.is_symlink() else None
     previous_services = []
     if previous and previous != release:
-        previous_compose, previous_images = verify(previous, root)
+        previous_compose, previous_images = verify(previous, root, True)
         states = compose_states(previous_compose)
         require(
             all(

@@ -286,6 +286,26 @@ class ContainerDeploymentTests(unittest.TestCase):
             adapter.allowed_mount("bot", root, release, self.root, manifest)
         )
 
+    def test_gateway_nginx_mount_tolerates_extra_vhosts_only_for_rollback(self):
+        release = self.release("a")
+        nginx = release / "nginx"
+        nginx.mkdir()
+        (nginx / "00.conf").write_text("a")
+        manifest = self.releases[-1][1]
+        manifest["files"]["nginx/00.conf"] = adapter.file_digest(nginx / "00.conf")
+        (nginx / "zz-extra.conf").write_text("b")
+        mount = {"source": str(nginx), "target": "/etc/nginx/conf.d", "read_only": True}
+        self.assertFalse(
+            adapter.allowed_mount("gateway", mount, release, self.root, manifest)
+        )
+        self.assertTrue(
+            adapter.allowed_mount("gateway", mount, release, self.root, manifest, True)
+        )
+        (nginx / "00.conf").unlink()
+        self.assertFalse(
+            adapter.allowed_mount("gateway", mount, release, self.root, manifest, True)
+        )
+
     def test_gateway_maintenance_mount_requires_exact_sealed_file(self):
         release = self.release("a")
         public = release / "public"
