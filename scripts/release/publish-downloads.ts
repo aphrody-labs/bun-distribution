@@ -19,6 +19,7 @@
  */
 import { createHash, randomUUID } from "node:crypto";
 import {
+  copyFileSync,
   existsSync,
   lstatSync,
   mkdirSync,
@@ -1103,7 +1104,7 @@ async function adoptPrebuiltStages(
           throw new Error(`staged payload must be regular: ${entry.file}`);
         const copied = join(stage, "files", entry.file);
         // Verify the staged copy itself so later source changes cannot alter the release bytes.
-        await run(["cp", "--", source, copied]);
+        copyFileSync(source, copied);
         if (statSync(copied).size !== entry.size || (await sha256File(copied)) !== entry.sha256)
           throw new Error(`staged size or checksum mismatch: ${entry.file}`);
         if (
