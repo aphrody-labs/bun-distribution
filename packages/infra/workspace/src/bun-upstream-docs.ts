@@ -121,6 +121,16 @@ export async function readBunDocsPin(
 
 const isDocsSite = (dir: string): boolean => existsSync(join(dir, "docs.json"));
 
+function run(args: string[], cwd?: string): void {
+  const proc = Bun.spawnSync(cwd ? ["git", "-C", cwd, ...args] : ["git", ...args], {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  if (proc.exitCode !== 0)
+    throw new Error(`git ${args.join(" ")} failed: ${proc.stderr.toString().trim()}`);
+}
+
 /** Partial clone of `docs/` (and `LICENSE.md`) of the fork at `ref`, swapped into `dest` once complete. */
 export async function fetchForkDocs(
   ref: string,
@@ -130,15 +140,6 @@ export async function fetchForkDocs(
   await mkdir(dirname(dest), { recursive: true });
   const staging = `${dest}.partial-${process.pid}`;
   await rm(staging, { recursive: true, force: true });
-  const run = (args: string[], cwd?: string) => {
-    const proc = Bun.spawnSync(cwd ? ["git", "-C", cwd, ...args] : ["git", ...args], {
-      windowsHide: true,
-      stdout: "pipe",
-      stderr: "pipe",
-    });
-    if (proc.exitCode !== 0)
-      throw new Error(`git ${args.join(" ")} failed: ${proc.stderr.toString().trim()}`);
-  };
   try {
     run([
       "clone",
@@ -304,11 +305,15 @@ export async function runBunUpstreamDocs(args: string[]): Promise<number> {
           .filter((rel) => !KEEP.has(rel))
           .toSorted()
       : [];
-    const changed: string[] = [];
-    for (const [rel, hash] of Object.entries(files)) {
-      const path = join(target, rel);
-      if (!existsSync(path) || sha256(await Bun.file(path).bytes()) !== hash) changed.push(rel);
-    }
+    const changed = (
+      await Promise.all(
+        Object.entries(files).map(async ([rel, hash]) => {
+          const path = join(target, rel);
+          const same = existsSync(path) && sha256(await Bun.file(path).bytes()) === hash;
+          return same ? undefined : rel;
+        }),
+      )
+    ).filter((rel): rel is string => rel !== undefined);
     const pin: BunDocsPin = {
       source: FORK_SOURCE,
       repository: FORK_URL,
@@ -327,10 +332,11 @@ export async function runBunUpstreamDocs(args: string[]): Promise<number> {
       console.log(`${ok ? "current" : "stale"} ${BUN_PIN_DIR}: ${summary}`);
       return ok ? 0 : 1;
     }
-    for (const rel of changed)
-      await Bun.write(join(target, rel), contents.get(rel) ?? new Uint8Array());
+    await Promise.all(
+      changed.map((rel) => Bun.write(join(target, rel), contents.get(rel) ?? new Uint8Array())),
+    );
     await Bun.write(pinPath, pinText);
-    for (const rel of stale) await rm(join(target, rel), { force: true });
+    await Promise.all(stale.map((rel) => rm(join(target, rel), { force: true })));
     for (const entry of await readdir(target, { withFileTypes: true }))
       if (entry.isDirectory()) await rm(join(target, entry.name), { recursive: true, force: true });
     console.log(`Pinned ${BUN_PIN_DIR}: ${summary}`);

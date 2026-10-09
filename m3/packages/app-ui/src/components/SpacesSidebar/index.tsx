@@ -17,7 +17,7 @@ import type {
   SpaceItem as SpaceItemType,
 } from "@aphrody/drive-client";
 import { CircleButton, Popover, usePopover, type IconComponentProps } from "@aphrody/m3-primitives";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import { motion } from "motion/react";
 import { memo, useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
@@ -108,50 +108,57 @@ function SpaceGroupWithDropZone({
   );
 }
 
+const getStateColor = (state: string) => {
+  switch (state) {
+    case "Ready":
+      return "bg-success";
+    case "Backfilling":
+      return "bg-warning";
+    case "CatchingUp":
+      return "bg-primary";
+    case "Uninitialized":
+      return "bg-outline";
+    case "Paused":
+      return "bg-on-surface-variant";
+    default:
+      return "bg-outline";
+  }
+};
+
+function SyncIcon({ className, size }: IconComponentProps) {
+  return <ArrowsClockwise className={className} size={size} />;
+}
+
+function SpinningSyncIcon({ className, size }: IconComponentProps) {
+  return <CircleNotch className={clsx(className, "animate-spin")} size={size} />;
+}
+
+function JobsIcon({ className, size }: IconComponentProps) {
+  return <ListBullets className={className} size={size} />;
+}
+
+function RunningJobsIcon({ className, size }: IconComponentProps) {
+  return <CircleNotch className={clsx(className, "animate-spin text-primary")} size={size} />;
+}
+
 // Sync Monitor Button with Popover
 const SyncButton = memo(function SyncButton() {
   const popover = usePopover();
   const navigate = useNavigate();
   const [showActivityFeed, setShowActivityFeed] = useState(false);
+  const [prevPopoverOpen, setPrevPopoverOpen] = useState(popover.open);
   const { onlinePeerCount, isSyncing } = useSyncCount();
   const sync = useSyncMonitor();
 
-  useEffect(() => {
-    if (popover.open) {
-      setShowActivityFeed(false);
-    }
-  }, [popover.open]);
-
-  const getStateColor = (state: string) => {
-    switch (state) {
-      case "Ready":
-        return "bg-success";
-      case "Backfilling":
-        return "bg-warning";
-      case "CatchingUp":
-        return "bg-primary";
-      case "Uninitialized":
-        return "bg-outline";
-      case "Paused":
-        return "bg-on-surface-variant";
-      default:
-        return "bg-outline";
-    }
-  };
+  if (popover.open !== prevPopoverOpen) {
+    setPrevPopoverOpen(popover.open);
+    if (popover.open) setShowActivityFeed(false);
+  }
 
   return (
     <Popover.Root open={popover.open} onOpenChange={popover.setOpen}>
       <Popover.Trigger asChild>
-        <CircleButton
-          icon={({ className, size }: IconComponentProps) =>
-            isSyncing ? (
-              <CircleNotch className={clsx(className, "animate-spin")} size={size} />
-            ) : (
-              <ArrowsClockwise className={className} size={size} />
-            )
-          }
-          title="Synchro"
-        />
+        <CircleButton icon={isSyncing ? SpinningSyncIcon : SyncIcon} title="Synchro" />
       </Popover.Trigger>
       <Popover.Content
         side="top"
@@ -243,12 +250,12 @@ const JobsButton = memo(
   }) {
     const popover = usePopover();
     const [showOnlyRunning, setShowOnlyRunning] = useState(true);
+    const [prevPopoverOpen, setPrevPopoverOpen] = useState(popover.open);
 
-    useEffect(() => {
-      if (popover.open) {
-        setShowOnlyRunning(true);
-      }
-    }, [popover.open]);
+    if (popover.open !== prevPopoverOpen) {
+      setPrevPopoverOpen(popover.open);
+      if (popover.open) setShowOnlyRunning(true);
+    }
 
     const filteredJobs = showOnlyRunning
       ? jobs.filter(
@@ -259,16 +266,7 @@ const JobsButton = memo(
     return (
       <Popover.Root open={popover.open} onOpenChange={popover.setOpen}>
         <Popover.Trigger asChild>
-          <CircleButton
-            icon={({ className, size }: IconComponentProps) =>
-              hasRunningJobs ? (
-                <CircleNotch className={clsx(className, "animate-spin text-primary")} size={size} />
-              ) : (
-                <ListBullets className={className} size={size} />
-              )
-            }
-            title="Tâches"
-          />
+          <CircleButton icon={hasRunningJobs ? RunningJobsIcon : JobsIcon} title="Tâches" />
         </Popover.Trigger>
         <Popover.Content
           side="top"
@@ -440,6 +438,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
         groups: Array<{ group: SpaceGroupType; items: SpaceItemType[] }>;
       }
     | undefined;
+  const layoutGroups = layout?.groups;
 
   const { language, setLanguage } = useI18n();
 
@@ -469,8 +468,8 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
 
   // Filtered files groups: strictly remove Overview, Redundancy, and isolated Favorites
   const filteredGroups = useMemo(() => {
-    if (!layout?.groups) return [];
-    return layout.groups.filter(({ group }) => {
+    if (!layoutGroups) return [];
+    return layoutGroups.filter(({ group }) => {
       const lower = (group.name || "").toLowerCase();
       return (
         lower !== "overview" &&
@@ -479,7 +478,7 @@ export function SpacesSidebar({ isPreviewActive = false }: SpacesSidebarProps) {
         lower !== "favoris"
       );
     });
-  }, [layout?.groups]);
+  }, [layoutGroups]);
 
   // Filtered settings sections
   const filteredSettingsSections = useMemo(() => {

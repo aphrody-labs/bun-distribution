@@ -48,7 +48,7 @@ export function deriveTitleFromPath(pathname: string, search: string): string | 
             "path" in physical &&
             typeof physical.path === "string"
           )
-            return physical.path.split(/[\\/]/).filter(Boolean).at(-1) ?? "Fichiers";
+            return physical.path.split(/[\\/]/).findLast(Boolean) ?? "Fichiers";
         }
       } catch {
         /* A malformed legacy URL keeps the generic title. */

@@ -31,7 +31,7 @@ const PRESET_ICONS = [
 ];
 
 export function useCreateSpaceDialog() {
-	return dialogManager.create((props) => <CreateSpaceDialog {...props} />);
+	return () => dialogManager.create((props) => <CreateSpaceDialog {...props} />);
 }
 
 function CreateSpaceDialog(props: { id: number }) {
