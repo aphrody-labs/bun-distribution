@@ -208,7 +208,11 @@ to3d = [
     { name = "trimesh" },
 ]
 voice = [
-    { name = "google-antigravity", extra = ["voice"] },
+    { name = "faster-whisper" },
+    { name = "google-antigravity" },
+    { name = "kokoro-onnx" },
+    { name = "numpy" },
+    { name = "sounddevice" },
 ]
 
 [package.metadata]
@@ -219,11 +223,13 @@ requires-dist = [
     { name = "docling", marker = "extra == 'docling'", specifier = ">=2.130" },
     { name = "docling-core", marker = "extra == 'docling'", specifier = ">=2.98" },
     { name = "fastembed", marker = "extra == 'forensic'", specifier = ">=0.8" },
+    { name = "faster-whisper", marker = "extra == 'voice'", specifier = ">=1.0" },
     { name = "google-antigravity", marker = "extra == 'antigravity'", git = "https://github.com/aphrody-labs/antigravity-sdk-python.git?rev=02fa7fa362d815f788074ae09998041b34f9a770" },
-    { name = "google-antigravity", extras = ["voice"], marker = "extra == 'voice'", git = "https://github.com/aphrody-labs/antigravity-sdk-python.git?rev=02fa7fa362d815f788074ae09998041b34f9a770" },
+    { name = "google-antigravity", marker = "extra == 'voice'", git = "https://github.com/aphrody-labs/antigravity-sdk-python.git?rev=02fa7fa362d815f788074ae09998041b34f9a770" },
     { name = "google-auth", specifier = ">=2.30" },
     { name = "google-genai", specifier = ">=1.0" },
     { name = "httpx", specifier = ">=0.28" },
+    { name = "kokoro-onnx", marker = "extra == 'voice'", specifier = ">=0.3" },
     { name = "lief", marker = "extra == 'forensic'", specifier = ">=0.17" },
     { name = "magika", marker = "extra == 'forensic'", specifier = "~=0.6.1" },
     { name = "markitdown", extras = ["pdf", "docx", "pptx", "xlsx"], marker = "extra == 'forensic'", specifier = ">=0.1.5" },
@@ -231,6 +237,7 @@ requires-dist = [
     { name = "numpy", marker = "extra == 'forensic'", specifier = ">=1.26" },
     { name = "numpy", marker = "extra == 'rag'", specifier = ">=1.26" },
     { name = "numpy", marker = "extra == 'to3d'", specifier = ">=1.26" },
+    { name = "numpy", marker = "extra == 'voice'", specifier = ">=1.22" },
     { name = "pillow", marker = "extra == 'docling'", specifier = ">=10.0" },
     { name = "pillow", marker = "extra == 'images'", specifier = ">=12.0" },
     { name = "polars", marker = "extra == 'data'", specifier = ">=1.0" },
@@ -242,6 +249,7 @@ requires-dist = [
     { name = "scikit-learn", marker = "extra == 'rag'", specifier = ">=1.4" },
     { name = "scipy", marker = "extra == 'to3d'", specifier = ">=1.11" },
     { name = "scour", marker = "extra == 'icons'", specifier = ">=0.38" },
+    { name = "sounddevice", marker = "extra == 'voice'", specifier = ">=0.4.6" },
     { name = "tiktoken", marker = "extra == 'rag'", specifier = ">=0.6" },
     { name = "torch", marker = "extra == 'depth'", specifier = ">=2.2" },
     { name = "transformers", marker = "extra == 'depth'", specifier = ">=4.44" },
@@ -1111,14 +1119,6 @@ dependencies = [
     { name = "pydantic" },
     { name = "uvicorn" },
     { name = "websockets" },
-]
-
-[package.optional-dependencies]
-voice = [
-    { name = "faster-whisper" },
-    { name = "kokoro-onnx" },
-    { name = "numpy" },
-    { name = "sounddevice" },
 ]
 
 [[package]]
