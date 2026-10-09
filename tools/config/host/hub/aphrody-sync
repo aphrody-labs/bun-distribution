@@ -7,7 +7,8 @@ STATE_DIR="$HOME/.aphrody/deploy"
 STATE="$STATE_DIR/state.json"
 BIN="$HOME/.local/bin"
 export APHRODY_BUILD_HOST=vps CARGO_INCREMENTAL=0
-export APHRODY_CARGO_JOBS="${APHRODY_CARGO_JOBS:-4}"
+export APHRODY_CARGO_JOBS="${APHRODY_CARGO_JOBS:-12}"
+FEATURES="${APHRODY_SYNC_FEATURES:-jobs,mcp-toolbox}"
 export APHRODY_CARGO_TARGET_DIR=/srv/aphrody-build/cache/cargo/aphrody
 export CARGO_TARGET_DIR="$APHRODY_CARGO_TARGET_DIR"
 export SCCACHE_DIR=/srv/aphrody-build/cache/sccache
@@ -17,7 +18,8 @@ mkdir -p "$STATE_DIR"
 exec 9>"$STATE_DIR/sync.lock"
 flock -n 9 || { echo "sync deja en cours"; exit 0; }
 log() { echo "$(date -u +%FT%TZ) $*"; }
-write_state() { printf '{"sha":"%s","status":"%s","at":"%s"}\n' "$1" "$2" "$(date -u +%FT%TZ)" > "$STATE.tmp" && mv "$STATE.tmp" "$STATE"; }
+write_state() { printf '{"sha":"%s","status":"%s","features":"%s","at":"%s"}
+' "$1" "$2" "$FEATURES" "$(date -u +%FT%TZ)" > "$STATE.tmp" && mv "$STATE.tmp" "$STATE"; }
 cd "$REPO" || exit 1
 git fetch -q origin main || { log "fetch echoue"; exit 1; }
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then log "skip : checkout sale"; exit 0; fi
@@ -26,9 +28,10 @@ git merge -q --ff-only origin/main || { log "skip : historique divergent"; exit 
 sha="$(git rev-parse HEAD)"
 deployed="$(sed -n 's/.*"sha":"\([0-9a-f]*\)".*/\1/p' "$STATE" 2>/dev/null)"
 status="$(sed -n 's/.*"status":"\([a-z]*\)".*/\1/p' "$STATE" 2>/dev/null)"
-if [ "$sha" = "$deployed" ] && [ "$status" = ok ] && [ -x "$BIN/aphrody" ]; then exit 0; fi
+deployed_features="$(sed -n 's/.*"features":"([^"]*)".*//p' "$STATE" 2>/dev/null)"
+if [ "$sha" = "$deployed" ] && [ "$status" = ok ] && [ "$deployed_features" = "$FEATURES" ] && [ -x "$BIN/aphrody" ]; then exit 0; fi
 log "build $sha"
-if ! flock /srv/aphrody-build/locks/cargo-build.lock nice -n 15 ionice -c3 cargo build --release -p aphrody --locked -j "$APHRODY_CARGO_JOBS"; then
+if ! flock /srv/aphrody-build/locks/cargo-build.lock nice -n 15 ionice -c3 cargo build --release -p aphrody --locked --features "$FEATURES" -j "$APHRODY_CARGO_JOBS"; then
   log "build en echec"; write_state "$sha" build-failed; exit 1
 fi
 new="$APHRODY_CARGO_TARGET_DIR/release/aphrody"
