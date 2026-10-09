@@ -224,12 +224,15 @@
       "unit": {
         "Description": "Persistent native Aphrody SSH forward to the authenticated PC MCP over WireGuard",
         "After": "network-online.target",
-        "Wants": "network-online.target"
+        "Wants": "network-online.target",
+        "StartLimitIntervalSec": "0"
       },
       "service": {
         "ExecStart": "%h/.local/bin/aphrody ssh tunnel --catalog %h/.aphrody/private/connectivity/service-catalog.json --services owner-wsl-mcp --offset 10000",
         "Restart": "on-failure",
-        "RestartSec": "3",
+        "RestartSec": "30",
+        "RestartSteps": "5",
+        "RestartMaxDelaySec": "900",
         "UMask": "0077",
         "NoNewPrivileges": "yes"
       }

@@ -25,6 +25,18 @@ def hardened(image, user):
     }
 
 
+# DBFR has 11 GiB of RAM shared with native services: every container gets a hard cap
+# without swap (memswap_limit == mem_limit) so none of them can push the host into swap.
+MEMORY_LIMITS = {
+    "chat": "5g",
+    "postgres": "2560m",
+    "redis": "1536m",
+    "site": "768m",
+    "bot": "512m",
+    "gateway": "256m",
+}
+
+
 def mount(source, target, readonly=True):
     return {
         "type": "bind",
@@ -68,7 +80,11 @@ def main():
     parser.add_argument("--state-image-id")
     parser.add_argument("--chat-image-id")
     parser.add_argument("--model-path", type=pathlib.Path)
-    parser.add_argument("--adapter-path", type=pathlib.Path)
+    parser.add_argument(
+        "--adapter-path",
+        type=pathlib.Path,
+        help="runtime LoRA; omit when --model-path is the merged single GGUF",
+    )
     args = parser.parse_args()
     release = args.release.resolve()
     if release.exists():
@@ -278,15 +294,22 @@ def main():
                 "redis": {"condition": "service_healthy"},
             }
     if args.chat_image_id:
-        if not args.model_path or not args.adapter_path:
-            parser.error("qualified external chat model and adapter paths required")
+        if not args.model_path:
+            parser.error("qualified external chat model path required")
+        lora = ["--lora", "/models/adapter.gguf"] if args.adapter_path else []
+        volumes = [mount(args.model_path.resolve(strict=True), "/models/model.gguf")]
+        if args.adapter_path:
+            volumes.append(
+                mount(args.adapter_path.resolve(strict=True), "/models/adapter.gguf")
+            )
         chat = hardened(args.chat_image_id, "1000:1000")
+        # --cache-ram bounds the host prompt cache (llama.cpp default 8 GiB); a q8_0 KV
+        # cache with flash attention halves the 8192-token context to about 600 MiB.
         chat.update(
             command=[
                 "--model",
-                "/models/base.gguf",
-                "--lora",
-                "/models/adapter.gguf",
+                "/models/model.gguf",
+                *lora,
                 "--alias",
                 "shenron-chat-v2",
                 "--host",
@@ -301,18 +324,26 @@ def main():
                 "4",
                 "--threads-batch",
                 "4",
+                "--cache-ram",
+                "256",
+                "-fa",
+                "on",
+                "-ctk",
+                "q8_0",
+                "-ctv",
+                "q8_0",
                 "--jinja",
                 "--no-webui",
             ],
-            volumes=[
-                mount(args.model_path.resolve(strict=True), "/models/base.gguf"),
-                mount(args.adapter_path.resolve(strict=True), "/models/adapter.gguf"),
-            ],
+            volumes=volumes,
             healthcheck=health(
                 ["curl", "--fail", "--silent", "http://127.0.0.1:8799/health"], "180s"
             ),
         )
         services["chat"] = chat
+    for name, limit in MEMORY_LIMITS.items():
+        if name in services:
+            services[name].update(mem_limit=limit, memswap_limit=limit)
     (release / "compose.yaml").write_text(json.dumps(config, indent=2) + "\n")
     (release / "deploy.env").write_text(
         "# Immutable image identities are sealed directly in Compose.\n"

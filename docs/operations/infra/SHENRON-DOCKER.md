@@ -145,8 +145,15 @@ image identities, read-only roots and mounts contained in verified state.
 Verify database/role counts, extensions, collation version, real authenticated
 SQL, Redis key count and representative values privately before resuming apps.
 
-Optional `--chat-image-id`, `--model-path` and `--adapter-path` add the qualified
-Shenron chat v2 CPU service at loopback 8799. Build `llama.Dockerfile` from only the
+Optional `--chat-image-id` and `--model-path` add the qualified Shenron chat v2 CPU
+service at loopback 8799. Since 2026-10-09 `--model-path` is the single merged GGUF
+(`shared/models/shenron-chat-v2/shenron-chat-v2-merged-Q4_K_M.gguf`, LoRA merged by
+`llama-export-lora` b11415 into the F16 base then re-quantized with the unsloth
+imatrix); `--adapter-path` only restores the old runtime LoRA. The service runs with
+`--cache-ram 256 -fa on -ctk q8_0 -ctv q8_0` (llama.cpp defaults to an 8 GiB host
+prompt cache, which pushed DBFR 6.9 GiB into swap). Every service carries
+`mem_limit` = `memswap_limit` (chat 5g, postgres 2560m, redis 1536m, site 768m,
+bot 512m, gateway 256m). Build `llama.Dockerfile` from only the
 qualified b11415 runtime. Keep weights and adapter under the protected
 `shared/models` store, transferred with verified checksums; never put them in the
 image. Seal using `--service-image chat IMAGE_ID APHRODY_COMMIT`. Verify a real

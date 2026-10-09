@@ -53,7 +53,9 @@
       "unit": "aphrody-llama-gemma4.service",
       "health": "http://127.0.0.1:8798/health",
       "port": 8798,
-      "capabilities": ["chat"],
+      "capabilities": [
+        "chat"
+      ],
       "sourceRepo": "aphrody",
       "workingDirectory": "/home/ubuntu/.aphrody/runtimes/llama-b11415",
       "model": {
@@ -71,18 +73,22 @@
       "kind": "llama-server-openai",
       "runtime": "native",
       "unit": "aphrody-llama-shenron-chat.service",
+      "host": "dbfr",
+      "container": "shenron-chat-1",
       "health": "http://127.0.0.1:8799/health",
       "port": 8799,
-      "capabilities": ["chat"],
+      "capabilities": [
+        "chat"
+      ],
       "sourceRepo": "aphrody",
       "workingDirectory": "/home/ubuntu/.aphrody/runtimes/llama-b11415",
       "model": {
-        "catalogId": "qwen3-4b-instruct-2507-q4km+lora",
+        "catalogId": "shenron-chat-v2-merged-q4km",
         "alias": "shenron-chat-v2",
-        "ref": "hf:unsloth/Qwen3-4B-Instruct-2507-GGUF/Qwen3-4B-Instruct-2507-Q4_K_M.gguf@a06e946bb6b655725eafa393f4a9745d460374c9",
-        "sha256": "3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597"
+        "ref": "local:llama-export-lora b11415 (Qwen3-4B-Instruct-2507-F16 + adapter sha256 aab485357c68fdcbb6d4ba55911632b8228964106047db035e0223e2aecc6107) -> llama-quantize Q4_K_M --imatrix unsloth",
+        "sha256": "22362d5729eab45a4f2238246e6b5a448d26c01b5a541671e730415ec0d731b4"
       },
-      "note": "Fine-tuned shenron-chat-v2 (Qwen3-4B-Instruct-2507 Q4_K_M + LoRA GGUF adapter, sha256 aab485357c68fdcbb6d4ba55911632b8228964106047db035e0223e2aecc6107) by upstream llama.cpp b11415, OpenAI-compatible /v1 on loopback only, never proxied by nginx; consumers on the vps read APHRODY_AI_CHAT_BASE_URL=http://127.0.0.1:8799/v1 and APHRODY_AI_CHAT_MODEL=shenron-chat-v2, fallback gemma4 (APHRODY_AI_CHAT_BASE_URL=http://127.0.0.1:8798/v1, APHRODY_AI_CHAT_MODEL=gemma4-e2b). Adapter at /home/ubuntu/.aphrody/models/adapters/shenron-chat-v2/adapter.gguf; unit tools/config/host/systemd/aphrody/aphrody-llama-shenron-chat.service; see docs/operations/infra/LLAMA-MODELS.md",
+      "note": "Fine-tuned shenron-chat-v2 served on DBFR by the Compose service chat of project shenron (container shenron-chat-1, llama.cpp b11415, OpenAI-compatible /v1 on loopback only, never proxied by nginx). Single merged GGUF /srv/shenron/shared/models/shenron-chat-v2/shenron-chat-v2-merged-Q4_K_M.gguf mounted read-only; --cache-ram 256 -fa on -ctk q8_0 -ctv q8_0, ctx 8192, parallel 1, threads 4, mem_limit 5g. Rollback: the base Q4_K_M (sha256 3605803b982cb64aead44f6c1b2ae36e3acdb41d8e46c8a94c6533bc4c67e597) and adapter.gguf stay beside it (--lora). The native unit tools/config/host/systemd/aphrody/aphrody-llama-shenron-chat.service is the non-container fallback; see docs/operations/infra/SHENRON-DOCKER.md",
       "public": false
     },
     {
@@ -135,7 +141,9 @@
       "unit": "aphrody-ai-http.service",
       "health": "http://127.0.0.1:8789/healthz",
       "port": 8789,
-      "capabilities": ["ai-http"],
+      "capabilities": [
+        "ai-http"
+      ],
       "sourceRepo": "aphrody-ai",
       "workingDirectory": "/srv/aphrody/current",
       "publicProxy": "nginx",
@@ -166,7 +174,9 @@
       "unit": "aphrody-shenron-embed.service",
       "health": "http://127.0.0.1:8794/health",
       "port": 8794,
-      "capabilities": ["embed"],
+      "capabilities": [
+        "embed"
+      ],
       "sourceRepo": "aphrody-ai",
       "workingDirectory": "/srv/aphrody/current",
       "public": false,
@@ -181,7 +191,9 @@
       "unit": "aphrody-a2a.service",
       "health": "http://127.0.0.1:8788/ping",
       "port": 8788,
-      "capabilities": ["a2a"],
+      "capabilities": [
+        "a2a"
+      ],
       "sourceRepo": "aphrody",
       "workingDirectory": "/srv/aphrody/shared/agent-workspaces/aphrody",
       "a2a": {
@@ -199,6 +211,8 @@
       "kind": "next-bun-http",
       "runtime": "bun",
       "unit": "shenron-site.service",
+      "host": "dbfr",
+      "container": "shenron-site-1",
       "health": "http://127.0.0.1:5011/api/health",
       "readiness": "http://127.0.0.1:5011/api/health/ready",
       "port": 5011,
@@ -238,6 +252,8 @@
       "kind": "discord-bot-and-api",
       "runtime": "bun",
       "unit": "shenron-bot.service",
+      "host": "dbfr",
+      "container": "shenron-bot-1",
       "health": "http://127.0.0.1:5006/health",
       "port": 5006,
       "sourceRepo": "shenron",
@@ -261,8 +277,10 @@
       "releaseRoot": "/srv/shenron/releases",
       "sharedRoot": "/srv/shenron/shared",
       "deployAdapter": "scripts/release/atomic-deploy-shenron.sh",
-      "note": "crates/shenron-mcp --http 127.0.0.1:8790 --public (read-only tools, the binary default address), shipped in the Shenron release as bin/shenron-mcp; the site relays https://dragonballfr.com/mcp to it through SHENRON_MCP_URL. Supersedes the retired Bun shenron-mcp (5010)",
-      "public": false
+      "note": "Retired on 2026-10-09: on DBFR shenron-mcp runs inside the site container on 127.0.0.1:3599 and the site relays /mcp to it. The former native unit on 8790 and its SSH forward are gone",
+      "public": false,
+      "status": "retired",
+      "retiredAt": "2026-10-09"
     },
     {
       "id": "shenron-pg-tunnel",
@@ -270,6 +288,7 @@
       "kind": "ssh-tunnel",
       "runtime": "native",
       "unit": "shenron-pg-tunnel.service",
+      "host": "vps",
       "health": "tcp://127.0.0.1:15433",
       "target": "dbfr:127.0.0.1:5432",
       "note": "private PostgreSQL path VPS -> dbfr (shenron_site); 5432 never public, see docs/reference/infra/SHENRON-MIGRATION.md",
@@ -277,16 +296,38 @@
     },
     {
       "id": "shenron-redis",
-      "unitSource": "system-package",
       "application": "shenron",
       "kind": "cache",
       "runtime": "redis",
-      "unit": "redis-server.service",
+      "container": "shenron-redis-1",
       "host": "dbfr",
-      "health": "tcp://127.0.0.1:16379",
+      "health": "tcp://127.0.0.1:6379",
       "target": "dbfr:127.0.0.1:6379",
-      "note": "Private Redis for Shenron live RAG qualification; forwarded with shenron-pg-tunnel by the Infra tunnel owner",
+      "note": "Shenron Redis 8 on DBFR, Compose service redis (container shenron-redis-1, maxmemory 1gb noeviction, mem_limit 1536m). The host redis-server package was purged on 2026-10-09: its unattended restart collided with the container on 6379. The VPS reaches it through shenron-pg-tunnel's forward",
       "public": false
+    },
+    {
+      "id": "shenron-postgres",
+      "application": "shenron",
+      "kind": "database",
+      "runtime": "postgres",
+      "host": "dbfr",
+      "container": "shenron-postgres-1",
+      "health": "tcp://127.0.0.1:5432",
+      "port": 5432,
+      "sourceRepo": "aphrody",
+      "note": "PostgreSQL 18 of Shenron on DBFR, Compose service postgres (container shenron-postgres-1, data /srv/shenron/shared/state/postgres, mem_limit 2560m, shared_buffers 768MB, max_connections 40). Production database: never deleted",
+      "public": false
+    },
+    {
+      "id": "shenron-gateway",
+      "application": "shenron",
+      "kind": "nginx-gateway",
+      "runtime": "nginx",
+      "host": "dbfr",
+      "container": "shenron-gateway-1",
+      "sourceRepo": "aphrody",
+      "note": "Public TLS ingress of DBFR (ports 80/443, host network), Compose service gateway built from tools/config/host/nginx/shenron; mem_limit 256m"
     },
     {
       "id": "shenron-backup",
@@ -294,7 +335,9 @@
       "kind": "backup",
       "runtime": "native",
       "unit": "shenron-backup.timer",
-      "public": false
+      "public": false,
+      "status": "retired",
+      "retiredAt": "2026-10-09"
     },
     {
       "id": "shenron-neon-pull",
@@ -303,7 +346,9 @@
       "runtime": "bun",
       "unit": "shenron-neon-pull.timer",
       "note": "every 15 min: apps/bot/scripts/sync-neon-to-sqlite.ts of /srv/shenron/current refreshes /srv/shenron/shared/bot/data/bot.db from PostgreSQL (never empties a table without --allow-empty)",
-      "public": false
+      "public": false,
+      "status": "retired",
+      "retiredAt": "2026-10-09"
     },
     {
       "id": "shenron-container-backup",
@@ -369,7 +414,10 @@
       "bundle": {
         "root": "/srv/aphrody-infra",
         "adapter": "scripts/release/atomic-deploy-bundle.sh",
-        "order": ["aphrody", "shenron"]
+        "order": [
+          "aphrody",
+          "shenron"
+        ]
       }
     },
     "applicationRoots": {
@@ -391,7 +439,12 @@
       "shenron-zswap.service",
       "filebrowser.service"
     ],
-    "sharedRuntimes": ["bun", "postgresql", "redis", "nginx"],
+    "sharedRuntimes": [
+      "bun",
+      "postgresql",
+      "redis",
+      "nginx"
+    ],
     "databasePolicy": "postgresql-primary-with-sqlite-local-cache",
     "authPolicy": "one-better-auth-contract-per-public-origin"
   }
