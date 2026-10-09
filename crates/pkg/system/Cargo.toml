@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+# Standalone manifest (no workspace inheritance): the Bun fork mirrors this
+# crate verbatim under packages/aphrody-pkg-system as a non-member path dependency.
+[package]
+name = "aphrody-pkg-system"
+version = "1.0.0"
+edition = "2024"
+license = "Apache-2.0"
+repository = "https://github.com/aphrody-labs/aphrody"
+description = "I/O-free models and parsers for system package sources (winget, apk, deb, pacman)"
+
+[dependencies]
