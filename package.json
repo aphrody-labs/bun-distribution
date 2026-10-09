@@ -250,7 +250,9 @@
     "packages:install": "bun scripts/release/install-bun-packages.ts",
     "web:dev": "bun run --watch apps/web/server.ts",
     "web:build": "bun run apps/web/build.ts",
-    "web:start": "bun run apps/web/server.ts"
+    "web:start": "bun run apps/web/server.ts",
+    "aphrody": "bun run bin/aphrody.ts",
+    "cli": "bun run bin/aphrody.ts"
   },
   "dependencies": {
     "@neon/config": "^1.8.2",
@@ -291,5 +293,8 @@
     "esbuild",
     "lmdb",
     "msgpackr-extract"
-  ]
+  ],
+  "bin": {
+    "aphrody": "./bin/aphrody.ts"
+  }
 }
