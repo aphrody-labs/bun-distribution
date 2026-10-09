@@ -14,7 +14,7 @@ pub struct DnsZoneInfo {
     pub dnssec_supported: bool,
     // OVH's current zone response uses dnssecActivated. Keep isSigned for
     // older responses and the existing serialized native API contract.
-    #[serde(alias = "dnssecActivated")]
+    #[serde(rename(serialize = "isSigned", deserialize = "dnssecActivated"), alias = "isSigned")]
     pub is_signed: bool,
     #[serde(default)]
     pub name_servers: Vec<String>,
