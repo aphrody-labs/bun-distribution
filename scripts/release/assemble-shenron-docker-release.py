@@ -169,6 +169,9 @@ def main():
         service.pop("build", None)
         service["image"] = args.image_id
     configure_native_cache(services["bot"])
+    # --smol on DBFR 2026-10-09: site 321 -> 261 MiB, bot 200 -> 179 MiB.
+    for name in ("site", "bot"):
+        services[name].setdefault("environment", {})["BUN_OPTIONS"] = "--smol"
     vfs = args.public_vfs.resolve(strict=True)
     if not vfs.is_relative_to(pathlib.Path("/srv/shenron/shared/server")):
         parser.error("public VFS must stay in server shared store")
