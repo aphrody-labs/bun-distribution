@@ -218,3 +218,10 @@ registry recheck, fourteen of the twenty-eight exact target versions were
 present, with no unavailable queries. A separate concurrent publication
 session resumed the work; it was preserved rather than duplicated. This
 distribution receipt does not claim npm lot completion or OS UI migration.
+
+The focused live OVH task API check found exactly one `DnssecDisable` task:
+`719853951`, created 2026-10-09 22:22:03 UTC, status `doing`, with no completion
+date. `canRelaunch`, `canCancel` and `canAccelerate` are all false. The declared
+guard therefore continues waiting; no retry, cancellation, acceleration or
+nameserver update was applied. The autonomous loop remains alive and its
+second check still reports `waiting-dnssec` / Cloudflare `pending`.
