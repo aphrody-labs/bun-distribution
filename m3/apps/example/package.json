@@ -1,0 +1,31 @@
+{
+  "name": "@aphrody/m3-example",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The m3 example app: App Router (React Server Components, server actions, streaming SSR, static generation), M3 theme, Tailwind v4 and the M3 DataTable, on Bun only.",
+  "type": "module",
+  "scripts": {
+    "dev": "m3 dev",
+    "build": "m3 build",
+    "start": "m3 start",
+    "test": "APHRODY_FFI_DEV=1 bun test",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@aphrody/m3": "workspace:*",
+    "@aphrody/m3-react": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-server-dom-parcel": "catalog:"
+  },
+  "devDependencies": {
+    "@aphrody/m3-config": "workspace:*",
+    "@types/bun": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "typescript": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.2"
+  }
+}

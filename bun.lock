@@ -146,6 +146,24 @@
         "@aphrody/api": "workspace:*",
       },
     },
+    "m3/apps/example": {
+      "name": "@aphrody/m3-example",
+      "version": "0.1.0",
+      "dependencies": {
+        "@aphrody/m3": "workspace:*",
+        "@aphrody/m3-react": "workspace:*",
+        "react": "catalog:",
+        "react-dom": "catalog:",
+        "react-server-dom-parcel": "catalog:",
+      },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+        "@types/bun": "catalog:",
+        "@types/react": "catalog:",
+        "@types/react-dom": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "m3/packages/app-ui": {
       "name": "@aphrody/app-ui",
       "version": "0.1.0",
@@ -1265,6 +1283,8 @@
     "@aphrody/m3-config": ["@aphrody/m3-config@workspace:m3/packages/m3-config"],
 
     "@aphrody/m3-design": ["@aphrody/m3-design@workspace:m3/packages/m3-design"],
+
+    "@aphrody/m3-example": ["@aphrody/m3-example@workspace:m3/apps/example"],
 
     "@aphrody/m3-explorer": ["@aphrody/m3-explorer@workspace:m3/packages/m3-explorer"],
 

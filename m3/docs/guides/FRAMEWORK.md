@@ -26,7 +26,7 @@ Packages use `catalog:`, `workspace:*` and explicit dependencies where declared.
 
 Root scripts run [scripts/yolo.ts](../../scripts/yolo.ts), which runs the Bun CLI `bun run $YOLO_ROOT/packages/engine/yolo/src/index.ts` on every platform.
 `YOLO_ROOT` defaults to `$HOME/yolo`; inspect this entry point's live help for Yolo commands.
-The wrapper sets `YOLO_HOME` to this repository for its Yolo preflight. The former `apps/showcase` was removed; the App Router example app replaces it (pending).
+The wrapper sets `YOLO_HOME` to this repository for its Yolo preflight. The former `apps/showcase` was removed; the App Router example app `apps/example` replaces it.
 
 | Script | Runs |
 | --- | --- |

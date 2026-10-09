@@ -16,7 +16,7 @@ own pinned consumer mount points. Shenron's UI lives in
   `m3-front` (web components), `m3-react`, `m3-baseui` (Base UI), `m3-os-themes` (Windows, GNOME, COSMIC,
   Chromium), plus `m3-fonts`, `m3-icons`, `m3-motion`, `m3-primitives`, `m3-forms`, `m3-ai`, `m3-explorer`,
   `m3-design`, `m3-next`, `m3-next-migrate`, `m3-codemods`, `m3-mcp`, `material-design-icons`, `scaffold`.
-  `apps/web` and `apps/showcase` were removed; the App Router example app is pending ([PLAN.md](PLAN.md)).
+  `apps/example` is the App Router example app (it replaces the removed `apps/web` and `apps/showcase`).
 - `forks/*`: submodules of aphrody-labs forks: tailwindcss, base-ui, material-web,
   material-design-icons, material-color-utilities, fonts (`google/fonts`, sparse on the M3 typefaces).
   `bun scripts/forks.ts` manages them from `.gitmodules`.

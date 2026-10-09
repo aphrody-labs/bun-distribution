@@ -58,7 +58,6 @@ export interface AppBuildResult {
   tree: AppTree;
 }
 
-const SOURCE = /\.(m|c)?(j|t)sx?$/;
 const SKIP_DIRS = new Set(["node_modules", ".git", "dist", "build", ".next", ".turbo", "out", "coverage"]);
 const RUNTIME = join(import.meta.dir, "runtime");
 const toPosix = (path: string) => path.replaceAll("\\", "/");
@@ -90,7 +89,11 @@ export async function findServerModules(root: string, outDir: string): Promise<s
 function logs(result: Bun.BuildOutput, layer: string): void {
   if (result.success) return;
   const message = result.logs
-    .map(l => (typeof l === "object" && l !== null ? `${l.name ?? ""}: ${l.message ?? ""} at ${JSON.stringify(l.position ?? {})}` : String(l)))
+    .map(l =>
+      typeof l === "object" && l !== null
+        ? `${l.name ?? ""}: ${l.message ?? ""} at ${JSON.stringify(l.position ?? {})}`
+        : String(l),
+    )
     .join("\n");
   throw new Error(`@aphrody/m3: ${layer} build failed\n${message}`);
 }

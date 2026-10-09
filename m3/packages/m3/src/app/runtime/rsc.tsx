@@ -400,14 +400,19 @@ async function renderRoute(
 }
 
 /** `searchParams` prop: reading it while prerendering makes the page dynamic. */
-function searchParamsPromise(store: RequestStore, value: Record<string, string | string[]>): Promise<Record<string, string | string[]>> {
+function searchParamsPromise(
+  store: RequestStore,
+  value: Record<string, string | string[]>,
+): Promise<Record<string, string | string[]>> {
   if (!store.prerender) return Promise.resolve(value);
   let promise: Promise<Record<string, string | string[]>> | undefined;
   const settle = () => {
     store.dynamic = true;
     return (promise ??= Promise.reject(new DynamicUsageError("searchParams")));
   };
+  // A lazy promise: only awaiting `searchParams` marks the page dynamic.
   return {
+    // oxlint-disable-next-line unicorn/no-thenable
     then: (ok, fail) => settle().then(ok, fail),
     catch: fail => settle().catch(fail),
     finally: done => settle().finally(done),
