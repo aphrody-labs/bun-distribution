@@ -92,7 +92,7 @@ aphrody-jev = { path = "crates/ai/jev", version = "1.0.0", features = [] }
 aphrody-jobs = { path = "crates/os/kernel/comps/jobs", version = "1.0.0-canary", features = [] }
 aphrody-kernel = { path = "crates/os/kernel/core", version = "1.0.0-canary", default-features = false, features = [] }
 aphrody-llama-server = { path = "crates/ai/llama-server", version = "1.0.0", features = [] }
-aphrody-m3-tokens = { path = "crates/ui/m3-tokens", version = "1.0.0-canary", features = [] }
+aphrody-m3-tokens = { path = "crates/ui/m3-tokens", version = "1.0.0-canary.1", features = [] }
 aphrody-mcp = { path = "crates/ai/mcp", version = "1.0.0" }
 aphrody-mcp-client = { path = "crates/ai/mcp-client", version = "1.0.0", features = [] }
 aphrody-memory = { path = "crates/ai/memory", version = "1.0.0", features = [] }
@@ -382,7 +382,7 @@ quote = "1.0.47"
 aphrody-m3-reproduce = { path = "crates/ui/m3-reproduce", version = "1.0.0-canary" }
 aphrody-tauri-wrap = { path = "crates/ui/tauri-wrap", version = "1.0.0-canary", default-features = false }
 aphrody-render = { path = "crates/ui/render", version = "1.0.0-canary" }
-aphrody-svg = { path = "crates/ui/svg", version = "1.0.0-canary", default-features = false }
+aphrody-svg = { path = "crates/ui/svg", version = "1.0.0-canary.1", default-features = false }
 ts-rs = {"version" = "12", "features" = ["serde-compat"]}
 read-fonts = {"version" = "0.44", "default-features" = false, "features" = ["std"]}
 woff2 = {"package" = "woff2-patched", "version" = "0.4.0"}
