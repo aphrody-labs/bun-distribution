@@ -293,13 +293,13 @@ Owner decisions of 2026-10-09: full two-way control between Omar, the owner and 
 Windows Defender and the Windows Firewall are disabled on purpose on both dev PCs; access control rests on the wg1
 binding, the hub's routed ufw rules, bearer tokens and the VNC allowlist.
 
-| Link            | Services                                                                                      | State 2026-10-09                      |
-| --------------- | --------------------------------------------------------------------------------------------- | ------------------------------------- |
-| aphro-pc → omar | `ssh-omar`, `remote-desktop-omar` 8795, `vnc-omar` 5900, `mcp-http-omar` 8793                 | rules applied, waits for Omar         |
-| omar → aphro-pc | `ssh-aphro-pc`, `remote-desktop-aphro-pc` 8795, `vnc-aphro-pc` 5900, `mcp-http-aphro-pc` 8793 | aphro-pc side serving, waits for Omar |
-| vps → PCs       | `ssh-aphro-pc`, `ssh-omar`, `mcp-http-aphro-pc`, `mcp-http-omar`                              | aphro-pc tested from the vps          |
-| dbfr → PCs      | `ssh-aphro-pc`, `ssh-omar` and the `dbfr-to-pcs` mesh                                         | aphro-pc 22/445/8793 tested           |
-| PCs → dbfr      | `mcp-http-dbfr` 8793 (aphro-pc), `ssh-dbfr`                                                   | aphro-pc tested (healthz, 401)        |
+| Link            | Services                                                                                           | State 2026-10-09                      |
+| --------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| aphro-pc → omar | `ssh-omar`, `ssh-omar-wsl` 2222, `remote-desktop-omar` 8795, `vnc-omar` 5900, `mcp-http-omar` 8793 | rules applied, waits for Omar         |
+| omar → aphro-pc | `ssh-aphro-pc`, `remote-desktop-aphro-pc` 8795, `vnc-aphro-pc` 5900, `mcp-http-aphro-pc` 8793      | aphro-pc side serving, waits for Omar |
+| vps → PCs       | `ssh-aphro-pc`, `ssh-omar`, `ssh-omar-wsl`, `mcp-http-aphro-pc`, `mcp-http-omar`                   | aphro-pc tested from the vps          |
+| dbfr → PCs      | `ssh-aphro-pc`, `ssh-omar`, `ssh-omar-wsl` and the `dbfr-to-pcs` mesh                              | aphro-pc 22/445/8793 tested           |
+| PCs → dbfr      | `mcp-http-dbfr` 8793 (aphro-pc), `ssh-dbfr`                                                        | aphro-pc tested (healthz, 401)        |
 
 The `mesh` array of the declaration opens every port between members: `dev-pcs` (aphro-pc ↔ omar),
 `pcs-to-build-hub` (aphro-pc, omar, dbfr → vps) and `dbfr-to-pcs`. `firewall.meshDenied: ["dbfr"]` forbids any
@@ -311,6 +311,10 @@ failure): `Aphrody Remote Desktop` (`aphrody infra remote serve --bind 10.200.77
 `Aphrody MCP HTTP` (aphrody-mcp `http` on loopback 8793 with the WinClean `computer_*` catalog, published on
 `10.200.77.4:8793` by `netsh portproxy`) and `Aphrody WG aphro-pc`. From Omar: `aphrody infra remote open aphro-pc`,
 `vnc://10.200.77.4:5900`, MCP `http://10.200.77.4:8793/mcp` with the bearer token handed over out of band.
+
+Omar's PC also runs a WSL2 Ubuntu with its native OpenSSH: `ssh-omar-wsl` (`10.200.77.10:2222`, WSL networking
+`mirrored`, no WireGuard inside WSL). Windows OpenSSH keeps port 22; setup and compatibility rules in
+[OMAR-REMOTE-CONTROL.md](OMAR-REMOTE-CONTROL.md) section 2.9.
 
 ### Network map
 

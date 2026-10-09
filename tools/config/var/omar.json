@@ -40,6 +40,11 @@
       "bind": "10.200.77.10:5900",
       "allowedFrom": "10.200.77.4",
       "passwordEnv": "APHRODY_VNC_PASSWORD"
+    },
+    "sshWsl": {
+      "bind": "10.200.77.10:2222",
+      "allowedFrom": "10.200.77.4,10.200.77.1,10.200.77.3",
+      "note": "WSL2 Ubuntu OpenSSH; Windows OpenSSH keeps port 22"
     }
   },
   "reverseTunnel": {
@@ -62,12 +67,24 @@
         "remote": "127.0.0.1:28793",
         "local": "127.0.0.1:8793",
         "service": "mcpHttp"
+      },
+      {
+        "remote": "127.0.0.1:22011",
+        "local": "127.0.0.1:2222",
+        "service": "sshWsl"
+      },
+      {
+        "remote": "127.0.0.1:25900",
+        "local": "127.0.0.1:5900",
+        "service": "vnc"
       }
     ]
   },
   "ownerAliases": {
     "omar-pc": "ssh over wg1 (10.200.77.10)",
-    "omar-rt": "ssh through the reverse tunnel (ProxyJump vps, 127.0.0.1:22010)"
+    "omar-rt": "ssh through the reverse tunnel (ProxyJump vps, 127.0.0.1:22010)",
+    "omar-wsl": "ssh over wg1 to the WSL Ubuntu (10.200.77.10 port 2222)",
+    "omar-wsl-rt": "ssh to the WSL Ubuntu through the reverse tunnel (ProxyJump vps, 127.0.0.1:22011)"
   },
   "sshd": {
     "config": "tools/config/host/ssh/omar-sshd.conf",
@@ -79,7 +96,8 @@
     "first wg1 handshake from 10.200.77.10",
     "Windows user name for the User of the omar-pc / omar-rt aliases",
     "remote.token and mcp.token delivered out of band",
-    "aphro-pc remote/vnc/mcp tokens delivered to Omar out of band"
+    "aphro-pc remote/vnc/mcp tokens delivered to Omar out of band",
+    "WSL Ubuntu user name for the omar-wsl aliases; WSL sshd on 2222 (mirrored networking)"
   ],
   "runbook": "docs/operations/infra/OMAR-REMOTE-CONTROL.md",
   "ownerServices": {

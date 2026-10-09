@@ -159,6 +159,44 @@ Tout visualiseur VNC fonctionne aussi (`10.200.77.10:5900`). Agents : environnem
 `computer` (`VncComputerBackend`) et outil MCP `aphrody_remote_vnc` (cible `omar`). Limites : l'authentification VNC
 est DES sur 8 caractères et le flux RFB n'est pas chiffré hors WireGuard ; le tunnel reste la frontière de sécurité.
 
+### 2.9 WSL Ubuntu à côté de Windows (SSH, WireGuard, VNC)
+
+Le PC d'Omar a deux OpenSSH : le serveur Windows (port 22) et l'OpenSSH natif de sa WSL2 Ubuntu (port 2222,
+service `ssh-omar-wsl`). Règles de compatibilité :
+
+| Couche    | Windows                                                   | WSL Ubuntu                                                                   |
+| --------- | --------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| WireGuard | seul porteur de wg1 (clé `lTH5…`, `10.200.77.10`)         | aucun tunnel propre : réseau `mirrored`, il voit l'adaptateur wg1 de Windows |
+| SSH       | `sshd` Windows `10.200.77.10:22`                          | `sshd` Linux `0.0.0.0:2222` (atteint en `10.200.77.10:2222`)                 |
+| Clés      | `C:\ProgramData\ssh\administrators_authorized_keys`       | `~/.ssh/authorized_keys` : mêmes lignes publiques                            |
+| VNC       | `aphrody infra remote serve` (5900), capture tout l'écran | fenêtres WSLg incluses dans la capture Windows ; pas de second serveur       |
+| MCP       | `aphrody-mcp http` (8793, `computer_*` Windows)           | joignable depuis WSL en `127.0.0.1:8793` (mirrored)                          |
+
+Fichiers en LF et UTF-8 sans BOM (PowerShell 5 `>` écrit de l'UTF-16 que les deux `sshd` refusent ; utiliser
+`Set-Content -Encoding utf8NoBOM` en PowerShell 7). Droits : `~/.ssh` 700 et `authorized_keys` 600 côté Linux ; ACL
+Administrators + SYSTEM seuls sur le fichier Windows.
+
+```powershell
+# Windows : réseau WSL mirrored (une fois), puis redémarrage de WSL
+Set-Content -Encoding utf8NoBOM "$env:USERPROFILE\.wslconfig" "[wsl2]`nnetworkingMode=mirrored`nfirewall=false`n"
+wsl --shutdown
+```
+
+```sh
+# WSL Ubuntu
+sudo apt-get install -y openssh-server
+printf 'Port 2222\nPasswordAuthentication no\nKbdInteractiveAuthentication no\nPubkeyAuthentication yes\n' | sudo tee /etc/ssh/sshd_config.d/60-aphrody-wsl.conf
+install -d -m 700 ~/.ssh && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys
+tr -d '\r' < /mnt/c/ProgramData/ssh/administrators_authorized_keys | sed '/^#/d;/^$/d' >> ~/.ssh/authorized_keys
+sort -u -o ~/.ssh/authorized_keys ~/.ssh/authorized_keys
+sudo systemctl enable --now ssh   # systemd=true dans /etc/wsl.conf ; sinon : sudo service ssh start
+ss -ltn | grep 2222 ; whoami      # le nom d'utilisateur va dans les alias omar-wsl du propriétaire
+```
+
+Mode NAT (si `mirrored` est impossible) : `netsh interface portproxy add v4tov4 listenaddress=10.200.77.10
+listenport=2222 connectaddress=$(wsl hostname -I) connectport=2222`, à rejouer à chaque ouverture de session (l'IP
+WSL change). Côté propriétaire : `ssh omar-wsl` (wg1) ou `ssh omar-wsl-rt` (tunnel inverse, ProxyJump vps).
+
 ## 3. Côté propriétaire (aphro-pc)
 
 ```powershell
@@ -427,14 +465,14 @@ Rollback : `Stop-Service sshd; Set-Service sshd -StartupType Disabled; Remove-Ne
 
 ## 4 ter. Tunnel SSH inverse (tant que wg1 n'a pas de handshake)
 
-Le PC d'Omar publie ses services locaux sur la boucle locale du vps. `omar-sshd.conf` n'autorise que ces trois
-`-R` (`PermitListen`), aucun `-L` (`PermitOpen none`). Tâche planifiée `Aphrody Omar reverse` côté Omar :
+Le PC d'Omar publie ses services locaux sur la boucle locale du vps. `omar-sshd.conf` n'autorise que ces cinq
+`-R` (`PermitListen` : SSH Windows 22010, bureau 28795, MCP 28793, SSH WSL 22011, VNC 25900), aucun `-L` (`PermitOpen none`). Tâche planifiée `Aphrody Omar reverse` côté Omar :
 
 ```powershell
-ssh -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -R 127.0.0.1:22010:127.0.0.1:22 -R 127.0.0.1:28795:127.0.0.1:8795 -R 127.0.0.1:28793:127.0.0.1:8793 omar@51.77.147.152
+ssh -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -R 127.0.0.1:22010:127.0.0.1:22 -R 127.0.0.1:28795:127.0.0.1:8795 -R 127.0.0.1:28793:127.0.0.1:8793 -R 127.0.0.1:22011:127.0.0.1:2222 -R 127.0.0.1:25900:127.0.0.1:5900 omar@51.77.147.152
 ```
 
-Côté propriétaire : `ssh omar-rt` (ProxyJump vps → 127.0.0.1:22010) ; bureau à distance et MCP via
+Côté propriétaire : `ssh omar-rt` (ProxyJump vps → 127.0.0.1:22010), `ssh omar-wsl-rt` (→ 127.0.0.1:22011) ; bureau à distance et MCP via
 `ssh -L 8795:127.0.0.1:28795 -L 8793:127.0.0.1:28793 vps`. Services d'Omar liés à 127.0.0.1 tant que wg1 est coupé.
 
 ## 5. Modèle `wg render omar` (sans PrivateKey)

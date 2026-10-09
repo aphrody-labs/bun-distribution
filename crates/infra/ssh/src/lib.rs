@@ -14,6 +14,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::{
+    io::AsyncWriteExt,
     process::Command,
     time::{Duration, timeout},
 };
@@ -1176,6 +1177,17 @@ pub fn audit_command(services: &[&str]) -> String {
     )
 }
 
+/// Remote commands longer than this go through stdin: Win32-OpenSSH truncates the command
+/// argument near 8 KiB (a 10 KiB build-factory script arrived as 8169 bytes on 2026-10-09).
+const MAX_ARGUMENT_COMMAND: usize = 4096;
+
+/// The script to feed to a remote `bash -s` when the joined command is too long for an argument.
+fn stdin_script(args: &[&str]) -> Option<String> {
+    let joined = args.join(" ");
+    (joined.len() > MAX_ARGUMENT_COMMAND).then(|| format!("{joined}
+"))
+}
+
 /// Parse the finite native SSH execution timeout without modifying environment.
 pub fn command_timeout_seconds(value: Option<&str>) -> Result<u64, Error> {
     let Some(value) = value else { return Ok(30) };
@@ -1205,19 +1217,21 @@ pub async fn run_ssh(host: Host, args: &[&str]) -> Result<Output, Error> {
         },
     };
     let seconds = command_timeout_seconds(configured_timeout.as_deref())?;
-    let output = timeout(
-        Duration::from_secs(seconds),
-        Command::new("ssh")
-            .args(["-o", "BatchMode=yes", "-o", "ConnectTimeout=10"])
-            .arg(host.alias())
-            .args(args)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .kill_on_drop(true)
-            .output(),
-    )
-    .await
-    .map_err(|_| Error::Timeout)??;
+    let script = stdin_script(args);
+    let mut command = Command::new("ssh");
+    command.args(["-o", "BatchMode=yes", "-o", "ConnectTimeout=10"]).arg(host.alias());
+    match &script {
+        Some(_) => command.args(["bash", "-s"]).stdin(Stdio::piped()),
+        None => command.args(args),
+    };
+    let mut child =
+        command.stdout(Stdio::piped()).stderr(Stdio::piped()).kill_on_drop(true).spawn()?;
+    if let (Some(script), Some(mut stdin)) = (script, child.stdin.take()) {
+        stdin.write_all(script.as_bytes()).await?;
+    }
+    let output = timeout(Duration::from_secs(seconds), child.wait_with_output())
+        .await
+        .map_err(|_| Error::Timeout)??;
     let result = Output {
         host: host.alias().into(),
         exit_code: output.status.code(),
@@ -2099,6 +2113,17 @@ async fn probe_proxy_status(host: Host, port: u16, json: bool) -> Result<(), Err
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn long_commands_go_through_stdin() {
+        assert_eq!(super::stdin_script(&["uptime"]), None);
+        let long = "x".repeat(super::MAX_ARGUMENT_COMMAND);
+        assert_eq!(super::stdin_script(&[&long]), None);
+        let script = super::stdin_script(&[&long, "y"]).expect("long command");
+        assert_eq!(script.len(), super::MAX_ARGUMENT_COMMAND + 3);
+        assert!(script.ends_with(" y
+"));
+    }
+
     use std::path::Path;
 
     use clap::CommandFactory;

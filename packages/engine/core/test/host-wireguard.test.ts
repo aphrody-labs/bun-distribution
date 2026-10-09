@@ -272,7 +272,9 @@ test("ufw rules: specific sources, own marker, nothing for postgres, redis or th
     rules
       .filter((r) => r.kind === "route" && !r.service?.startsWith("mesh:"))
       .every((r) =>
-        /to 10\.200\.77\.([23] port (22|8793)|(4|10) port (22|5900|8793|8795)) /.test(r.text),
+        /to 10\.200\.77\.([23] port (22|8793)|(4|10) port (22|5900|8793|8795)|10 port 2222) /.test(
+          r.text,
+        ),
       ),
   ).toBe(true);
   expect(
@@ -281,6 +283,7 @@ test("ufw rules: specific sources, own marker, nothing for postgres, redis or th
     "ufw route allow in on wg1 out on wg1 from 10.200.77.3 to 10.200.77.4 port 22 proto tcp comment 'aphrody-wg-dbfr'",
     "ufw allow in on wg1 from 10.200.77.3 to 10.200.77.1 port 22 proto tcp comment 'aphrody-wg-dbfr'",
     "ufw route allow in on wg1 out on wg1 from 10.200.77.3 to 10.200.77.10 port 22 proto tcp comment 'aphrody-wg-dbfr'",
+    "ufw route allow in on wg1 out on wg1 from 10.200.77.3 to 10.200.77.10 port 2222 proto tcp comment 'aphrody-wg-dbfr'",
   ]);
 });
 
@@ -348,7 +351,7 @@ test("the omar account files: no key invented, root-owned key file, one sudoers 
   const keys = readFileSync(join(root, "ssh/omar.authorized_keys"), "utf8");
   const lines = keys.split("\n").filter((l) => l.trim() && !l.trim().startsWith("#"));
   expect(lines).toEqual([
-    'from="92.170.252.46,10.200.77.0/24",restrict,pty,port-forwarding,permitlisten="127.0.0.1:22010",permitlisten="127.0.0.1:28795",permitlisten="127.0.0.1:28793" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJvmGjMWPLFJZWsACxRqCC0Ll+uXvnyunYdPG4E8jS4V omar (supplied comment: windows-aphro)',
+    'from="92.170.252.46,10.200.77.0/24",restrict,pty,port-forwarding,permitlisten="127.0.0.1:22010",permitlisten="127.0.0.1:28795",permitlisten="127.0.0.1:28793",permitlisten="127.0.0.1:22011",permitlisten="127.0.0.1:25900" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJvmGjMWPLFJZWsACxRqCC0Ll+uXvnyunYdPG4E8jS4V omar (supplied comment: windows-aphro)',
   ]);
   expect(keys).toContain("shared pair");
   expect(catalog.accounts![0]!.findings?.join("\n")).toMatch(
@@ -368,7 +371,7 @@ test("the omar account files: no key invented, root-owned key file, one sudoers 
     "AuthenticationMethods publickey",
     "PasswordAuthentication no",
     "AllowTcpForwarding remote",
-    "PermitListen 127.0.0.1:22010 127.0.0.1:28795 127.0.0.1:28793",
+    "PermitListen 127.0.0.1:22010 127.0.0.1:28795 127.0.0.1:28793 127.0.0.1:22011 127.0.0.1:25900",
     "PermitOpen none",
     "GatewayPorts no",
     "AuthorizedKeysFile /etc/ssh/authorized_keys.d/%u",
