@@ -4,6 +4,8 @@
 #   docker compose -f tools/config/container/compose.yaml run --rm dev            # interactive build shell
 #   docker compose -f tools/config/container/compose.yaml run --rm -T mcp         # MCP over stdio for a client
 # Secrets come from the environment or an untracked env file (tools/config/container/.env), never from the image.
+# On vps and dbfr this file is ~/apps/aphrody/compose.yaml, included by the host project ~/apps/compose.yaml
+# (tools/config/host/apps/<host>/compose.yaml, installed by scripts/tools/infra/host-apps.ts).
 
 name: aphrody
 
@@ -43,6 +45,8 @@ services:
       timeout: 5s
       retries: 3
     restart: unless-stopped
+    # Naming the service (`up api`) enables it; a host project (~/apps/compose.yaml) never starts it next to prod.
+    profiles: [api]
 
   # Complete Aphrody (API + MCP surfaces) as a long-running PC service. The Windows service registered by
   # scripts/install/container-service.ps1 starts it with `--profile pc` on the owner PC and on Omar's PC.
@@ -102,7 +106,7 @@ services:
     working_dir: /work
     user: "${APHRODY_BUILD_UID:-1000}:1500"
     volumes:
-      - ${APHRODY_BUILD_REPO:-/srv/aphrody-build/workspaces/aphrody}:/work
+      - ${APHRODY_BUILD_REPO:-/home/ubuntu/src/aphrody}:/work
       - aphrody-build-cargo:/cache/cargo
       - aphrody-build-sccache:/cache/sccache
       - aphrody-build-bun:/cache/bun

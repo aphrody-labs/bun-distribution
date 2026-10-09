@@ -23,11 +23,6 @@
       "unit": "privoxy.service",
       "path": "systemd/shenron/privoxy.service.d",
       "hosts": ["vps"]
-    },
-    {
-      "unit": "shenron-bot-docker.service",
-      "path": "systemd/shenron/shenron-bot-docker.service.d",
-      "hosts": ["dbfr"]
     }
   ],
   "nginxSnippets": {
@@ -102,22 +97,6 @@
       "unit": "aphrody-web-browser-dbfr.service",
       "path": "systemd/aphrody/aphrody-web-browser-dbfr.service",
       "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-kernel", "net-inet-only"],
-      "ownerRepo": "aphrody",
-      "targetHost": "dbfr"
-    },
-    {
-      "service": "shenron-site-docker",
-      "unit": "shenron-site-docker.service",
-      "path": "systemd/shenron/shenron-site-docker.service",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "dbfr"
-    },
-    {
-      "service": "shenron-bot-docker",
-      "unit": "shenron-bot-docker.service",
-      "path": "systemd/shenron/shenron-bot-docker.service",
-      "dropIns": [],
       "ownerRepo": "aphrody",
       "targetHost": "dbfr"
     },
@@ -496,22 +475,6 @@
       "dropIns": [],
       "ownerRepo": "aphrody",
       "targetHost": "dbfr"
-    },
-    {
-      "service": "aphrody-container",
-      "unit": "aphrody-container.service",
-      "path": "systemd/aphrody/aphrody-container.service",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "dbfr"
-    },
-    {
-      "service": "aphrody-container-build",
-      "unit": "aphrody-container-build.service",
-      "path": "systemd/aphrody/aphrody-container-build.service",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "vps"
     },
     {
       "service": "aphrody-pc-agent",

@@ -9,8 +9,8 @@ Wants=network-online.target shenron-embed.service
 Type=simple
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/srv/shenron/shared/agent-home
-Environment=APHRODY_HOME=/srv/shenron/shared/agent-home
+WorkingDirectory=/home/ubuntu/apps/shenron/shared/agent-home
+Environment=APHRODY_HOME=/home/ubuntu/apps/shenron/shared/agent-home
 Environment=HOME=/home/ubuntu
 EnvironmentFile=/etc/aphrody/shenron-compute.env
 ExecStart=/home/ubuntu/.local/bin/aphrody-mcp http --bind 127.0.0.1:8789
@@ -23,7 +23,7 @@ PrivateTmp=true
 PrivateDevices=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/srv/shenron/shared/agent-home
+ReadWritePaths=/home/ubuntu/apps/shenron/shared/agent-home
 InaccessiblePaths=-/run/docker.sock -/var/run/docker.sock
 CapabilityBoundingSet=
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6

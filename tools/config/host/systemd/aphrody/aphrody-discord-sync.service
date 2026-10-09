@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Synchronisation propriétaire <-> Omar via Discord (hub vps) : un passage = message d'état épinglé édité en place,
 # événements, rapports reçus, accusés ✅, dépôt sortant. Code : scripts/tools/infra/discord-sync/ (déployé dans
-# /opt/aphrody-discord-sync). Jetons : /etc/aphrody-discord.env (lu par systemd, jamais affiché). Remplace
+# ~/apps/discord-sync). Jetons : /etc/aphrody-discord.env (lu par systemd, jamais affiché). Remplace
 # aphrody-omar-watch. Timer : aphrody-discord-sync.timer (chaque minute). Documentation : docs/operations/infra/DISCORD-SYNC.md
 [Unit]
 Description=Aphrody <-> Omar synchronisation through Discord (one pass)
@@ -12,10 +12,10 @@ Wants=network-online.target
 Type=oneshot
 User=ubuntu
 EnvironmentFile=/etc/aphrody-discord.env
-Environment=APHRODY_SYNC_CONFIG=/opt/aphrody-discord-sync/discord-sync.json
+Environment=APHRODY_SYNC_CONFIG=/home/ubuntu/apps/discord-sync/discord-sync.json
 StateDirectory=aphrody-discord-sync
 StateDirectoryMode=0700
-ExecStart=/home/ubuntu/.bun/bin/bun /opt/aphrody-discord-sync/scripts/tools/infra/discord-sync/cli.ts tick
+ExecStart=/home/ubuntu/.bun/bin/bun /home/ubuntu/apps/discord-sync/scripts/tools/infra/discord-sync/cli.ts tick
 TimeoutStartSec=55
 SyslogIdentifier=aphrody-discord-sync
 # `wg show` (sans clé privée) exige CAP_NET_ADMIN ; rien d'autre.

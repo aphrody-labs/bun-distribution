@@ -102,14 +102,14 @@ Run contract (also implemented by Shenron's `scripts/build/container.ts` (not in
 
 - The checkout is bind mounted at its own absolute path; the process runs as the caller's uid/gid plus the shared
   `aphrody-build` group (gid 1500) with umask 002, `--cap-drop ALL`, `no-new-privileges` and `--init`.
-- Caches are named volumes on the system disk (`/srv` is nearly full): `aphrody-build-cargo` (registry and git),
+- Caches are named volumes on the system disk (the release disk is nearly full): `aphrody-build-cargo` (registry and git),
   `-sccache` (local disk, 20 GiB cap), `-bun`, `-xwin`, `-xdg`. Volume roots are setgid and group writable, so
   `ubuntu` (releases) and `shenron-build` (runner) share them. `--target-volume NAME` moves `CARGO_TARGET_DIR` to
   `aphrody-build-target-NAME` for checkouts that CI cleans between jobs.
 - Limits: `--cpus` 6 (`APHRODY_BUILD_CPUS`, at most 6), `--memory` 16g without swap (`APHRODY_BUILD_MEMORY`),
   `--cpu-shares 512`, `--pids-limit 8192` and `--oom-score-adj 500`, so earlyoom and the kernel kill a build before
   the llama-server services. `CARGO_BUILD_JOBS=6`, `CARGO_INCREMENTAL=0`, `RUSTC_WRAPPER=sccache`.
-- The factory heavy lock `/srv/aphrody-build/locks/heavy.lock` wraps the run when it exists (`--no-lock` only when
+- The factory heavy lock `/home/ubuntu/build/locks/heavy.lock` wraps the run when it exists (`--no-lock` only when
   the caller already holds it). `--env NAME` passes a secret by name; its value never reaches argv or the image.
 - `--host-network` is opt-in, for loopback services such as the PostgreSQL tunnel.
 
@@ -245,16 +245,18 @@ binds, so the entrypoint keeps it on the container loopback and `socat` exposes 
 every host publishes it on its own loopback. The bearer token (`APHRODY_MCP_HTTP_TOKEN`, 32 bytes or more) is never
 baked into an image.
 
-| Target             | Profile | Service                                                                                                                          | Token                                                       |
-| ------------------ | ------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| Owner PC (Windows) | `pc`    | scheduled task `\Aphrody\Container` ← `scripts/install/container-service.ps1 -Pc local`                                          | `~\.aphrody\private\aphrody_mcp_http_token`, generated once |
-| Omar PC (Windows)  | `pc`    | same script, `-Pc omar`, run by Omar on his PC (his consent scope: services he authorizes)                                       | his own private file                                        |
-| dbfr (production)  | `prod`  | systemd `aphrody-container.service`, compose in `/etc/aphrody/container/`                                                        | `/etc/aphrody/aphrody_mcp_http_token` (0400)                |
-| vps (build, SSH)   | `build` | systemd `aphrody-container-build.service`: idle `aphrody-build` container, builds enter by `ssh vps docker exec aphrody-build …` | none                                                        |
+| Target             | Profile | Service                                                                                                                         | Token                                                       |
+| ------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Owner PC (Windows) | `pc`    | scheduled task `\Aphrody\Container` ← `scripts/install/container-service.ps1 -Pc local`                                         | `~\.aphrody\private\aphrody_mcp_http_token`, generated once |
+| Omar PC (Windows)  | `pc`    | same script, `-Pc omar`, run by Omar on his PC (his consent scope: services he authorizes)                                      | his own private file                                        |
+| dbfr (production)  | `prod`  | `~/apps/aphrody/compose.yaml`, included by the host project `~/apps/compose.yaml` (`restart: always`)                           | `/etc/aphrody/aphrody_mcp_http_token` (0400)                |
+| vps (build, SSH)   | `build` | idle `aphrody-build` container of the host project `~/apps/compose.yaml`; builds enter by `ssh vps docker exec aphrody-build …` | none                                                        |
 
 Release: `bun scripts/release/container-image.ts release --on vps --host dbfr` builds on the VPS from a minimal context
 streamed over SSH (no checkout needed), loads the image on dbfr and retags `aphrody:runtime`; `--ref REGISTRY/NAME`
-also pushes. Restart the unit (`systemctl restart aphrody-container`) to activate a new image. PCs load it with
+also pushes. `docker compose -f ~/apps/compose.yaml up -d prod` on dbfr activates a new image. Each host runs ONE compose
+project (`aphrody`), versioned in `tools/config/host/apps/<host>/` and installed by
+`bun scripts/tools/infra/host-apps.ts --host <host> --apply`; Docker restart policies replace the former systemd wrappers. PCs load it with
 `ssh vps docker save aphrody:<tag> | gzip -1 | gunzip | docker load`, then `docker tag aphrody:<tag> aphrody:runtime`.
 The installers retry transient download failures (`curl --retry-all-errors`).
 

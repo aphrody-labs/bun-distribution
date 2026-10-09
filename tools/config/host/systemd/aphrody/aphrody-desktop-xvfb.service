@@ -2,7 +2,7 @@
 # Virtual desktop of a headless Aphrody host (vps, dbfr) for computer-use agents: Xvfb :99, unix socket only.
 [Unit]
 Description=Aphrody virtual desktop (Xvfb :99, no TCP)
-Documentation=file:///opt/aphrody/docs/operations/infra/VNC.md
+Documentation=file:///home/ubuntu/src/aphrody/docs/operations/infra/VNC.md
 
 [Service]
 Type=simple

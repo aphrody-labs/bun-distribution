@@ -7,19 +7,19 @@ After=shenron-pg-backup.service
 
 [Service]
 Type=oneshot
-WorkingDirectory=/srv/shenron/current
-Environment=SHENRON_SQLITE_BACKUP_DIR=/home/ubuntu/shenron/data/backups/shenron-sqlite
+WorkingDirectory=/home/ubuntu/apps/shenron/current
+Environment=SHENRON_SQLITE_BACKUP_DIR=/home/ubuntu/apps/shenron/data/backups/shenron-sqlite
 Environment=SHENRON_SQLITE_BACKUP_RETENTION_DAYS=14
-Environment=SHENRON_ROOT=/srv/shenron/current
-Environment=SHENRON_SQLITE_SRC=/srv/shenron/shared/bot/data/bot.db
+Environment=SHENRON_ROOT=/home/ubuntu/apps/shenron/current
+Environment=SHENRON_SQLITE_SRC=/home/ubuntu/apps/shenron/shared/bot/data/bot.db
 Environment=SHENRON_SQLITE_BACKUP_MAX_BYTES=2147483648
 Environment=SHENRON_SQLITE_BACKUP_MIN_FREE_BYTES=4294967296
-ExecStartPre=+/bin/mkdir -p /home/ubuntu/shenron/data/backups/shenron-sqlite
+ExecStartPre=+/bin/mkdir -p /home/ubuntu/apps/shenron/data/backups/shenron-sqlite
 ExecStart=/bin/bash /usr/local/libexec/aphrody-infra/backup-shenron-sqlite.sh
 
 Nice=10
 IOSchedulingClass=idle
-ReadWritePaths=/home/ubuntu/shenron/data/backups/shenron-sqlite
+ReadWritePaths=/home/ubuntu/apps/shenron/data/backups/shenron-sqlite
 
 StandardOutput=journal
 StandardError=journal

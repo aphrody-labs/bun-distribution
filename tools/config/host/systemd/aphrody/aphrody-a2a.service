@@ -4,7 +4,7 @@
 # Loopback only: 127.0.0.1:8788, never proxied by nginx, never published (the former public routes of aphrody.com stay
 # retired). The agent card announces http://127.0.0.1:8788.
 # The dedicated private checkout is independent of the factory and interactive clients.
-# State: --coord-dir /srv/aphrody/shared/coord (mailboxes and a2a/tasks), retained across restarts.
+# State: --coord-dir /home/ubuntu/apps/aphrody/shared/coord (mailboxes and a2a/tasks), retained across restarts.
 # The owner requested persistent autonomous coding agents on 2026-10-07. The required
 # root-owned environment authenticates every private route. Existing Codex authentication
 # remains in its protected home; no provider credentials are copied into the checkout.
@@ -17,17 +17,17 @@ StartLimitIntervalSec=600
 
 [Service]
 Type=simple
-WorkingDirectory=/srv/aphrody/shared/agent-workspaces/aphrody
+WorkingDirectory=/home/ubuntu/apps/aphrody/shared/agent-workspaces/aphrody
 Environment=HOME=/home/ubuntu
 Environment=PATH=/home/ubuntu/.local/bin:/home/ubuntu/.bun/bin:/usr/local/bin:/usr/bin:/bin
 Environment=CODEX_BIN=/home/ubuntu/.codex/packages/standalone/current/bin/codex
 Environment=APHRODY_A2A_DEFAULT_PEER=codex
-Environment="APHRODY_YOLO_TOOL_HOST=/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/yolo-tool-host.mjs"
-Environment="APHRODY_M3_TOOL_HOST=/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/m3-tool-host.mjs"
+Environment="APHRODY_YOLO_TOOL_HOST=/home/ubuntu/.bun/bin/bun /home/ubuntu/apps/lab/yolo-tool-host.mjs"
+Environment="APHRODY_M3_TOOL_HOST=/home/ubuntu/.bun/bin/bun /home/ubuntu/apps/lab/m3-tool-host.mjs"
 UnsetEnvironment=APHRODY_A2A_DRY_RUN A2A_SOCKET
 Environment=RUST_LOG=aphrody_a2a_coord=info
 EnvironmentFile=/etc/aphrody/aphrody-a2a.env
-ExecStart=/home/ubuntu/.local/bin/aphrody a2a serve --bind 127.0.0.1:8788 --coord-dir /srv/aphrody/shared/coord
+ExecStart=/home/ubuntu/.local/bin/aphrody a2a serve --bind 127.0.0.1:8788 --coord-dir /home/ubuntu/apps/aphrody/shared/coord
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=15
@@ -45,7 +45,7 @@ Nice=5
 ProtectHome=tmpfs
 BindReadOnlyPaths=/home/ubuntu/.local/bin/aphrody /home/ubuntu/.local/bin/aphrody-mcp /home/ubuntu/.ssh /home/ubuntu/.bun/bin/bun
 BindPaths=/home/ubuntu/.codex /home/ubuntu/.aphrody
-ReadWritePaths=/srv/aphrody/shared/agent-workspaces/aphrody /srv/aphrody/shared/coord /home/ubuntu/.codex /home/ubuntu/.aphrody
+ReadWritePaths=/home/ubuntu/apps/aphrody/shared/agent-workspaces/aphrody /home/ubuntu/apps/aphrody/shared/coord /home/ubuntu/.codex /home/ubuntu/.aphrody
 InaccessiblePaths=-/run/docker.sock -/var/run/docker.sock -/run/containerd -/var/lib/lxd -/run/user
 ProtectProc=invisible
 PrivateDevices=true
