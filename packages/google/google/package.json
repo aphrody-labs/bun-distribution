@@ -28,7 +28,8 @@
     "@ai-sdk/google-vertex": "catalog:",
     "ai": "catalog:",
     "google-auth-library": "catalog:",
-    "googleapis": "catalog:",
+    "@googleapis/docs": "catalog:",
+    "@googleapis/drive": "catalog:",
     "@aphrody/yolo-core": "workspace:*"
   },
   "engines": {

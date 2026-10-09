@@ -337,16 +337,14 @@ bun add @aphrody/x
 
 Main entry: `src/index.ts` (re-exports core, services, algo, etc.).
 
-`package.json` lists concrete version ranges: within the monorepo, `@aphrody/xai`
-consumes `@aphrody/x` via `workspace:*`.
+`package.json` lists concrete version ranges.
 
 ## Relation to web and AI layers
 
-This is the Bun face of the headless X client (Rust `aphrody-x`) powering the `aphrody web x` CLI, recon, and MCP. The AI layer consumes it, never the reverse: `@aphrody/xai` depends on this package for `XTools` in its Grok agent loops (keyless SuperGrok OIDC + cookie X = zero external keys).
+This is the Bun face of the headless X client (Rust `aphrody-x`) powering the `aphrody web x` CLI, recon, and MCP. The AI layer consumes it, never the reverse: Grok agent loops use its `XTools` (keyless SuperGrok OIDC + cookie X = zero external keys). The former `@aphrody/xai` SDK was removed from this repository on 2026-10-09 (last npm version kept).
 
 See:
 - Root `README.md` and `AGENTS.md`
-- [packages/ai/xai/README.md](../../ai/xai/README.md) (high-level Grok Chat SDK)
 - `src/cli/x.ts`, `src/mcp/server.ts`
 - `docs/web/x/` (X_PRO.md, COVERAGE.md, PREMIUM.md)
 - Examples in `examples/`

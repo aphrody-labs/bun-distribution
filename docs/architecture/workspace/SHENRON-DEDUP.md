@@ -10,7 +10,7 @@ presentation, bot/site policy, sessions, authorization and protected stores.
 | Manga, databook, collection readers | `@aphrody/m3-reader` | `@shenron/ui/reader`, site adapters, M3 |
 | Reader layout and Dragon Ball CSS | `@aphrody/m3-reader` | Existing Shenron CSS exports; live `--dbz-*` variables |
 | Reader/site modal focus lifecycle | `@aphrody/m3-reader/use-focus-trap` | `@shenron/ui/use-focus-trap`, site hook |
-| HTTP/JSON requests | `@aphrody/http` | Shenron API, Aphrody compute, OCR/vision |
+| HTTP/JSON requests | `@aphrody/bun` (`src/http.ts`) | Shenron API, Aphrody compute, OCR/vision |
 | AI wire value types | Shenron pipeline `ai/wire` and `ai/chat` | Historical compute facade uses type aliases |
 
 The HTTP owner makes one request with cancellation and a deadline covering the

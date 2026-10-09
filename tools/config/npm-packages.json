@@ -453,10 +453,9 @@
       "name": "@aphrody/inference",
       "version": "0.1.1",
       "path": "packages/ai/inference/package.json",
-      "status": "published",
+      "status": "blocked",
       "sha256": "b4ef2ea23a5973d8bd8af7a5d45120754d51fa17466a872cc3df0f32eede71af",
-      "integrity": "sha512-JsZMDscK57Y8vVaKSIOWT1KwA6PjR5fTZkSawq2tNRl+3KD8BXAWgWsc9+IGSY8Z/RYih8KN5pO+WfNNQ8jeIg==",
-      "dependencies": ["@aphrody/paths"]
+      "reason": "Paquet retiré du dépôt le 2026-10-09 (aucun importeur) ; la dernière version npm reste publiée, aucune nouvelle release."
     },
     {
       "name": "@aphrody/rag-core",
@@ -473,7 +472,7 @@
       "path": "packages/ai/xai/package.json",
       "status": "blocked",
       "sha256": "b833a0b0750383cba92e8e084808d94dbbd362a79ca74dcdee80a92211e29ec6",
-      "reason": "Qualification native, intégration ou dépendance non qualifiée restante."
+      "reason": "Paquet retiré du dépôt le 2026-10-09 (aucun importeur) ; la dernière version npm reste publiée, aucune nouvelle release."
     },
     {
       "name": "@aphrody/discord-kit",
@@ -658,10 +657,9 @@
       "name": "@aphrody/http",
       "version": "0.1.1",
       "path": "packages/web/http/package.json",
-      "status": "published",
+      "status": "blocked",
       "sha256": "7c6d011e821823c643d003a890f3879c015feba7e4b984be51e157b926a04573",
-      "integrity": "sha512-Vgk/DHIJRFeNLtoK1bKOOt6NL3Pf28ju8lIdU0fKniWTWH6AGUeozDH+IiJbkBgvrfx3YJh+NA7pqicaYJ3LLw==",
-      "dependencies": []
+      "reason": "Paquet retiré du dépôt le 2026-10-09 (aucun importeur) ; la dernière version npm reste publiée, aucune nouvelle release."
     },
     {
       "name": "@aphrody/qr",

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { chmodSync, mkdirSync, renameSync } from "node:fs";
 import { dirname } from "node:path";
-import { google } from "googleapis";
+import { docs } from "@googleapis/docs";
+import { auth as googleAuth, drive } from "@googleapis/drive";
 import type { Credentials } from "google-auth-library";
 
-// Use the client constructor exported by googleapis to avoid private-type
-// collisions when its bundled auth-library differs from the workspace version.
-type OAuth2Client = InstanceType<typeof google.auth.OAuth2>;
+// Use the client constructor exported by googleapis-common to avoid private-type
+// collisions when its auth-library differs from the workspace version.
+type OAuth2Client = InstanceType<typeof googleAuth.OAuth2>;
 
 export const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/drive",
@@ -30,8 +31,7 @@ export function googlePaths(env: NodeJS.ProcessEnv = process.env) {
 }
 
 async function jsonFile<T>(path: string): Promise<T> {
-  if (!(await Bun.file(path).exists()))
-    throw new Error(`Missing private Google credential file: ${path}`);
+  if (!(await Bun.file(path).exists())) throw new Error(`Missing private Google credential file: ${path}`);
   return (await Bun.file(path).json()) as T;
 }
 
@@ -50,14 +50,12 @@ export async function oauthClient(requireToken = true): Promise<OAuth2Client> {
   const installed = config.installed;
   if (!installed?.client_id || !installed.client_secret)
     throw new Error("Expected an installed Google OAuth client JSON");
-  const redirect =
-    installed.redirect_uris?.find((uri) => uri.startsWith("http://localhost")) ??
-    "http://localhost";
-  const client = new google.auth.OAuth2(installed.client_id, installed.client_secret, redirect);
+  const redirect = installed.redirect_uris?.find(uri => uri.startsWith("http://localhost")) ?? "http://localhost";
+  const client = new googleAuth.OAuth2(installed.client_id, installed.client_secret, redirect);
   if (await Bun.file(paths.token).exists()) {
     const saved = await jsonFile<TokenFile>(paths.token);
     client.setCredentials(saved);
-    client.on("tokens", (tokens) => {
+    client.on("tokens", tokens => {
       const merged = {
         ...client.credentials,
         ...tokens,
@@ -75,13 +73,7 @@ export async function gcloudUserClient(): Promise<OAuth2Client> {
   const account = process.env.APHRODY_GOOGLE_GCLOUD_ACCOUNT;
   if (!account) throw new Error("APHRODY_GOOGLE_GCLOUD_ACCOUNT is required for gcloud-user auth");
   const processResult = Bun.spawn(
-    [
-      "gcloud",
-      "auth",
-      "print-access-token",
-      `--account=${account}`,
-      "--scopes=https://www.googleapis.com/auth/drive",
-    ],
+    ["gcloud", "auth", "print-access-token", `--account=${account}`, "--scopes=https://www.googleapis.com/auth/drive"],
     { stdout: "pipe", stderr: "pipe" },
   );
   const [output, errors, exitCode] = await Promise.all([
@@ -89,9 +81,8 @@ export async function gcloudUserClient(): Promise<OAuth2Client> {
     new Response(processResult.stderr).text(),
     processResult.exited,
   ]);
-  if (exitCode !== 0 || !output.trim())
-    throw new Error(`gcloud user access token unavailable: ${errors.trim()}`);
-  const client = new google.auth.OAuth2();
+  if (exitCode !== 0 || !output.trim()) throw new Error(`gcloud user access token unavailable: ${errors.trim()}`);
+  const client = new googleAuth.OAuth2();
   client.setCredentials({ access_token: output.trim(), expiry_date: Date.now() + 3_000_000 });
   return client;
 }
@@ -99,22 +90,20 @@ export async function gcloudUserClient(): Promise<OAuth2Client> {
 export type GoogleIdentity = "oauth-user" | "gcloud-user" | "service-account";
 
 export async function googleApi(
-  identity: GoogleIdentity = (process.env.APHRODY_GOOGLE_DRIVE_AUTH as
-    | GoogleIdentity
-    | undefined) ?? "oauth-user",
+  identity: GoogleIdentity = (process.env.APHRODY_GOOGLE_DRIVE_AUTH as GoogleIdentity | undefined) ?? "oauth-user",
 ) {
   const auth =
     identity === "oauth-user"
       ? await oauthClient()
       : identity === "gcloud-user"
         ? await gcloudUserClient()
-        : new google.auth.GoogleAuth({
+        : new googleAuth.GoogleAuth({
             keyFile: googlePaths().serviceAccount,
             scopes: [...GOOGLE_SCOPES],
           });
   return {
     auth,
-    drive: google.drive({ version: "v3", auth }),
-    docs: google.docs({ version: "v1", auth }),
+    drive: drive({ version: "v3", auth }),
+    docs: docs({ version: "v1", auth }),
   };
 }

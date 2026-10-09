@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { chmod, lstat, mkdir, readdir, rename, rm } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import type { drive_v3 } from "googleapis";
+import type { drive_v3 } from "@googleapis/drive";
 import { googleApi } from "./api.ts";
 import {
   nativeMarkdown,

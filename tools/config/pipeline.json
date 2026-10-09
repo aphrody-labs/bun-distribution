@@ -482,33 +482,6 @@
           "command": [
             "run",
             "--filter",
-            "@aphrody/http",
-            "lint"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/http",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/http",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
             "@aphrody/x",
             "lint"
           ]
@@ -595,42 +568,6 @@
             "--filter",
             "@aphrody/doc-ai",
             "build"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/inference",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/inference",
-            "test"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/xai",
-            "typecheck"
-          ]
-        },
-        {
-          "repo": "aphrody",
-          "command": [
-            "run",
-            "--filter",
-            "@aphrody/xai",
-            "test"
           ]
         }
       ]

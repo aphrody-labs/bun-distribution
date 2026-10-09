@@ -40,7 +40,7 @@ un test de dérive échoue si la façade n'a pas une opération du manifest ; `t
 - `rag-python` (PyO3, `aphrody_rust`) : 12 fonctions (kernels f32/f64, RRF, top-k cosinus). Pas de chunkers,
   MMR, quotas ni eval. Contrat Python inchangé ; non rebranché sur `api.rs` (identité de wheel).
 - `aphrody-ffi` : CLI en processus, `zerocopy` (réparation et validation de tool calls), web (extraction, DOM,
-  HNSW, jobs, embed/rerank, X), `yolo_*`, inférence (feature `inference`, `@aphrody/inference`).
+  HNSW, jobs, embed/rerank, X), `yolo_*`, inférence (feature `inference`, `@aphrody/bun` `src/inference.ts`).
 - Mémoire, llama-server, modèles : lots Shenron non commités du checkout principal, hors périmètre.
 
 ## Contrat FFI `aphrody_rag_*`

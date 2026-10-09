@@ -26,8 +26,8 @@ const LEGACY_TOOLING_EXPORTS = new Set([
   "aphrody_oxc_free",
 ]);
 
-// The in-process inference ABI (cargo feature `inference`) is dlopened by its own package,
-// `@aphrody/inference` (packages/ai/inference), not by the product table of this package.
+// The in-process inference ABI (cargo feature `inference`) has its own dlopen in src/inference.ts,
+// not in the product table of this package.
 const OWN_BINDING_EXPORTS = new Set([
   "aphrody_inference_abi_version",
   "aphrody_inference_submit",
@@ -104,9 +104,9 @@ function rustExports(): Map<string, RustExport> {
       for (const m of text.matchAll(re)) {
         const params = m[2]!
           .split(/,\s*(?=\w+\s*:)/)
-          .map((p) => p.trim().replace(/,$/, ""))
-          .filter((p) => p.includes(":"))
-          .map((p) => normalizeRust(p.slice(p.indexOf(":") + 1)));
+          .map(p => p.trim().replace(/,$/, ""))
+          .filter(p => p.includes(":"))
+          .map(p => normalizeRust(p.slice(p.indexOf(":") + 1)));
         if (found.has(m[1]!)) duplicateRustExports.push(m[1]!);
         found.set(m[1]!, {
           file: relative(repo, file),
@@ -127,7 +127,7 @@ function tsSymbols(): Map<string, { args: string[]; returns: string }> {
   for (const m of body.matchAll(re)) {
     const args = m[2]!
       .split(",")
-      .map((a) =>
+      .map(a =>
         a
           .trim()
           .replace(/^FFIType\./, "")
@@ -161,21 +161,18 @@ test("scanners find the export surface", () => {
 test("every product Rust export has a dlopen definition", () => {
   expect(
     [...rust.keys()]
-      .filter(
-        (name) =>
-          !ts.has(name) && !LEGACY_TOOLING_EXPORTS.has(name) && !OWN_BINDING_EXPORTS.has(name),
-      )
+      .filter(name => !ts.has(name) && !LEGACY_TOOLING_EXPORTS.has(name) && !OWN_BINDING_EXPORTS.has(name))
       .toSorted(),
   ).toEqual([]);
 });
 
 test("legacy tooling C exports are preserved without a second JS binding", () => {
-  expect([...LEGACY_TOOLING_EXPORTS].filter((name) => !rust.has(name))).toEqual([]);
-  expect([...LEGACY_TOOLING_EXPORTS].filter((name) => ts.has(name))).toEqual([]);
+  expect([...LEGACY_TOOLING_EXPORTS].filter(name => !rust.has(name))).toEqual([]);
+  expect([...LEGACY_TOOLING_EXPORTS].filter(name => ts.has(name))).toEqual([]);
 });
 
 test("every dlopen definition has a Rust export", () => {
-  expect([...ts.keys()].filter((name) => !rust.has(name)).toSorted()).toEqual([]);
+  expect([...ts.keys()].filter(name => !rust.has(name)).toSorted()).toEqual([]);
 });
 
 test("Rust exports and dlopen definitions contain no duplicate symbols", () => {
@@ -189,9 +186,7 @@ test("arity, argument and return types agree", () => {
     const t = ts.get(name);
     if (!t) continue;
     if (JSON.stringify(r.args) !== JSON.stringify(t.args) || r.returns !== t.returns) {
-      mismatches.push(
-        `${name}: rust (${r.args}) -> ${r.returns} @ ${r.file}; ts (${t.args}) -> ${t.returns}`,
-      );
+      mismatches.push(`${name}: rust (${r.args}) -> ${r.returns} @ ${r.file}; ts (${t.args}) -> ${t.returns}`);
     }
   }
   expect(mismatches).toEqual([]);
@@ -199,14 +194,13 @@ test("arity, argument and return types agree", () => {
 
 test("no bun:aphrody fork dependence remains in the Bun sources", () => {
   const stale: string[] = [];
-  const roots = ["packages/interop/native/src"].filter((root) => existsSync(join(repo, root)));
+  const roots = ["packages/interop/native/src"].filter(root => existsSync(join(repo, root)));
   const needle = ["bun", "aphrody"].join(":");
   for (const root of roots) {
     for (const entry of readdirSync(join(repo, root), { recursive: true })) {
       const rel = String(entry);
       if (!/\.(ts|tsx|js)$/.test(rel)) continue;
-      if (readFileSync(join(repo, root, rel), "utf8").includes(needle))
-        stale.push(`${root}/${rel}`);
+      if (readFileSync(join(repo, root, rel), "utf8").includes(needle)) stale.push(`${root}/${rel}`);
     }
   }
   expect(stale).toEqual([]);

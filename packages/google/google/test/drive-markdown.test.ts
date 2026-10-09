@@ -190,7 +190,8 @@ async function directory() {
 afterEach(async () => {
   await Promise.all(temporary.splice(0).map((path) => rm(path, { recursive: true, force: true })));
 });
-describe("private candidate retrieval projection", () => {
+// The private projection relies on POSIX mode bits and rename over an open target.
+describe.skipIf(process.platform === "win32")("private candidate retrieval projection", () => {
   test("copies only the remote candidate and leaves its source evidence unchanged", async () => {
     const root = await directory(),
       incoming = join(root, "incoming-markdown", snapshot);

@@ -21,6 +21,9 @@ import {
   type Paths,
 } from "../src/drive-reconcile-review.ts";
 
+// The private store relies on POSIX uid, mode bits and a "/" root.
+const posixTest = test.skipIf(process.platform === "win32");
+
 type Obj = Record<string, unknown>;
 const roots: string[] = [];
 afterEach(async () => {
@@ -87,7 +90,7 @@ test("contract names come from the owner's seven-document sync contract", () => 
   ]);
 }, 20_000);
 
-test("refreshes only opaque revisions with all-seven frozen bindings, backups and no Google writes", async () => {
+posixTest("refreshes only opaque revisions with all-seven frozen bindings, backups and no Google writes", async () => {
   const f = await fixture(),
     binding = await freeze(f);
   const oldPlan = await readFile(f.paths.plan);
@@ -110,7 +113,7 @@ test("refreshes only opaque revisions with all-seven frozen bindings, backups an
   });
 }, 20_000);
 
-test("revision refresh refuses any native body or envelope change without publishing a plan", async () => {
+posixTest("revision refresh refuses any native body or envelope change without publishing a plan", async () => {
   const f = await fixture(),
     binding = await freeze(f);
   const before = sha(await readFile(f.paths.plan));
@@ -122,7 +125,7 @@ test("revision refresh refuses any native body or envelope change without publis
   expect(f.writes).toHaveLength(0);
 }, 20_000);
 
-test("revision refresh canonicalizes object-key order while retaining exact new snapshot SHA", async () => {
+posixTest("revision refresh canonicalizes object-key order while retaining exact new snapshot SHA", async () => {
   const f = await fixture(),
     binding = await freeze(f);
   const d = f.docs.get("owned-document-0")!;
@@ -133,7 +136,7 @@ test("revision refresh canonicalizes object-key order while retaining exact new 
   expect((await preflight(f.api, owner, f.paths)).metadata.documents).toBe(7);
 }, 20_000);
 
-test("refresh refuses changed reviewed requests, original snapshots and manifest hash", async () => {
+posixTest("refresh refuses changed reviewed requests, original snapshots and manifest hash", async () => {
   const f = await fixture(),
     binding = await freeze(f);
   const request = (f.files[0]!.requests as { insertText: { text: string } }[])[0]!;
@@ -154,7 +157,7 @@ test("refresh refuses changed reviewed requests, original snapshots and manifest
   expect(g.writes).toHaveLength(0);
 }, 20_000);
 
-test("all-seven local and folder checks reject revision refresh before any private plan update", async () => {
+posixTest("all-seven local and folder checks reject revision refresh before any private plan update", async () => {
   const f = await fixture(),
     binding = await freeze(f);
   const before = sha(await readFile(f.paths.plan));
@@ -177,7 +180,7 @@ test("all-seven local and folder checks reject revision refresh before any priva
   expect(g.writes).toHaveLength(0);
 }, 20_000);
 
-test("only a pre-journal failure with no writer call exposes explicit safe retry flags", async () => {
+posixTest("only a pre-journal failure with no writer call exposes explicit safe retry flags", async () => {
   const f = await fixture();
   await writeFile(join(f.paths.home, "BOOT.md"), "concurrent", { mode: 0o600 });
   try {
@@ -426,7 +429,7 @@ test("rejects foreign operations, body replacement, newline merges, alternate ta
   expect(() => verifyPlainProposal(model, "one😀  \n\n")).toThrow("PROPOSAL_REQUEST_MISMATCH");
 }, 20_000);
 
-test("preflight validates every owned file, performs zero writes, and leaves unchanged baseline bytes intact", async () => {
+posixTest("preflight validates every owned file, performs zero writes, and leaves unchanged baseline bytes intact", async () => {
   const f = await fixture();
   const review = await preflight(f.api, owner, f.paths);
   expect(review.metadata.documents).toBe(7);
@@ -438,7 +441,7 @@ test("preflight validates every owned file, performs zero writes, and leaves unc
   expect(f.writes).toHaveLength(0);
 }, 20_000);
 
-test("strict scope rejects targetRevisionId, missing files, duplicate ids and paths escaping private proposals", async () => {
+posixTest("strict scope rejects targetRevisionId, missing files, duplicate ids and paths escaping private proposals", async () => {
   const f = await fixture();
   const mutations = [
     (p: Obj) => {
@@ -464,7 +467,7 @@ test("strict scope rejects targetRevisionId, missing files, duplicate ids and pa
   }
 }, 20_000);
 
-test("rejects symlink proposals and non-private local files without API writes", async () => {
+posixTest("rejects symlink proposals and non-private local files without API writes", async () => {
   const f = await fixture();
   const proposed = String(f.files[0]!.proposedLocalFile);
   await rm(proposed);
@@ -478,7 +481,7 @@ test("rejects symlink proposals and non-private local files without API writes",
   expect(f.writes).toHaveLength(0);
 }, 20_000);
 
-test("all-seven guards reject final-file local drift and foreign folder before any write", async () => {
+posixTest("all-seven guards reject final-file local drift and foreign folder before any write", async () => {
   const f = await fixture();
   await writeFile(join(f.paths.home, "BOOT.md"), "concurrent", { mode: 0o600 });
   await expect(apply(f.api, owner, f.paths)).rejects.toThrow("LOCAL_CHANGED");
@@ -494,7 +497,7 @@ test("all-seven guards reject final-file local drift and foreign folder before a
   expect(g.writes).toHaveLength(0);
 }, 20_000);
 
-test("successful application writes changed Docs only, backs up seven natives and locals privately, and prepares fresh reviewed seed snapshots", async () => {
+posixTest("successful application writes changed Docs only, backs up seven natives and locals privately, and prepares fresh reviewed seed snapshots", async () => {
   const f = await fixture();
   const before = await readFile(join(f.paths.home, "BOOT.md"));
   const result = await apply(f.api, owner, f.paths);
@@ -517,7 +520,7 @@ test("successful application writes changed Docs only, backs up seven natives an
   expect(f.writes).toHaveLength(2);
 }, 20_000);
 
-test("race on the last revision during the final all-seven check prevents the first write", async () => {
+posixTest("race on the last revision during the final all-seven check prevents the first write", async () => {
   const f = await fixture();
   f.hooks.beforeGet = (id, count) => {
     if (id === "owned-document-6" && count === 2) f.docs.get(id)!.revisionId = "concurrent";
@@ -527,7 +530,7 @@ test("race on the last revision during the final all-seven check prevents the fi
   expect(await Bun.file(join(f.paths.home, "AGENTS.md")).text()).toBe("original\n\n");
 }, 20_000);
 
-test("strict requiredRevisionId rejects a race at batchUpdate and records safe failure without local promotion", async () => {
+posixTest("strict requiredRevisionId rejects a race at batchUpdate and records safe failure without local promotion", async () => {
   const f = await fixture();
   f.hooks.beforeWrite = (id) => {
     f.docs.get(id)!.revisionId = "concurrent";
@@ -542,7 +545,7 @@ test("strict requiredRevisionId rejects a race at batchUpdate and records safe f
   expect(JSON.stringify(receipt)).not.toContain("private SDK payload");
 }, 20_000);
 
-test("changed paragraph style after a write is rejected with a durable partial receipt and untouched locals", async () => {
+posixTest("changed paragraph style after a write is rejected with a durable partial receipt and untouched locals", async () => {
   const f = await fixture();
   f.hooks.afterWrite = (id) => {
     const d = f.docs.get(id)!;
@@ -566,7 +569,7 @@ test("existing owner lock is respected and preserved", async () => {
   expect(f.writes).toHaveLength(0);
 }, 20_000);
 
-test("unchanged Docs retain independently reviewed local bytes even when native rendering differs", async () => {
+posixTest("unchanged Docs retain independently reviewed local bytes even when native rendering differs", async () => {
   const f = await fixture();
   const entry = f.files.find((x) => x.name === "USER.md")!;
   const reviewedLocal = "---\nowner: local-profile\n---\noriginal\n";

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterEach, describe, expect, test } from "bun:test";
-import { JsonTransportError, parseRetryAfter, requestJson } from "../src";
+import { JsonTransportError, parseRetryAfter, requestJson } from "../src/http.ts";
 const servers: ReturnType<typeof Bun.serve>[] = [];
 function serve(fetch: (request: Request) => Response | Promise<Response>): string {
   const server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch });
@@ -23,11 +23,11 @@ describe("shared service JSON transport", () => {
       {
         method: "POST",
         headers: { authorization: "Bearer isolated-test", "content-type": "application/json" },
-        body: JSON.stringify({ persona: "whis", message: "Dragon Ball" }),
+        body: JSON.stringify({ persona: "assistant", message: "bonjour" }),
       },
       { timeoutMs: 1000 },
     );
-    expect(result.value).toEqual({ persona: "whis", message: "Dragon Ball" });
+    expect(result.value).toEqual({ persona: "assistant", message: "bonjour" });
     expect(result.response.status).toBe(201);
     expect(result.response.headers.get("etag")).toBe('"one"');
   });

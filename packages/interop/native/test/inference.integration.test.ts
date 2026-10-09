@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
-import { NativeInference } from "../src";
+import { NativeInference } from "../src/inference.ts";
 
 test("native profiles and model references are explicit before any library access", async () => {
   await expect(NativeInference.open({ model: "", profile: "dbfr" })).rejects.toThrow("required");
