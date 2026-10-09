@@ -448,6 +448,7 @@ impl TerminalCommand for GoogleCommand {
                 println!("Usage: aphrody google <COMMAND> [OPTIONS]");
                 println!();
                 println!("Commands:");
+                println!("  routes               Print public Google routes and official web guidance as JSON");
                 println!(
                     "  dns <NAME> [TYPE]    Query Google Public DNS-over-HTTPS (A, AAAA, MX, TXT...)"
                 );
@@ -474,6 +475,13 @@ impl TerminalCommand for GoogleCommand {
                 );
                 println!("  generate             Generate one Gemini response with Antigravity");
                 println!("  generate-stream      Stream one Gemini response from stdin");
+                return Ok(());
+            },
+            "routes" => {
+                if self.args.len() > 1 && self.args[1..] != ["--json"] {
+                    return Err(miette::miette!("Usage: aphrody google routes [--json]"));
+                }
+                println!("{}", serde_json::to_string_pretty(&aphrody_google::routes::catalog()).map_err(|error| miette::miette!("{error}"))?);
                 return Ok(());
             },
             "dns" => {

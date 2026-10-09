@@ -31,6 +31,7 @@ aphrody-app-protocol = { workspace = true }
 aphrody-site = { workspace = true, optional = true }
 aphrody-llama-server = { workspace = true }
 aphrody-config = { workspace = true }
+aphrody-google = { workspace = true }
 aphrody-model-client = { workspace = true }
 aphrody-models = { workspace = true }
 aphrody-rollout = { workspace = true }

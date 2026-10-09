@@ -314,7 +314,89 @@ export function resolveSiteFile(siteRoot: string, pathname: string): string | nu
   return null;
 }
 
-function siteResponse(request: Request, file: string, status = 200): Response {
+/** Add public document summaries without modifying the mirrored source tree. */
+export async function documentSeo(html: string, pathname: string): Promise<string> {
+  if (!pathname.startsWith("/docs/")) return html;
+  let descriptionPresent = false;
+  const paragraphs: string[] = [];
+  let paragraph = -1;
+  const collected = new HTMLRewriter()
+    .on('head meta[name="description"]', {
+      element(element) {
+        descriptionPresent ||= Boolean(element.getAttribute("content")?.trim());
+      },
+    })
+    .on("article p", {
+      element() {
+        paragraph = paragraphs.push("") - 1;
+      },
+      text(chunk) {
+        if (paragraph >= 0) paragraphs[paragraph] += chunk.text;
+      },
+    })
+    .transform(new Response(html));
+  await collected.text();
+  const entities: Record<string, string> = {
+    amp: "&",
+    lt: "<",
+    gt: ">",
+    quot: '"',
+    apos: "'",
+    nbsp: " ",
+    ndash: "–",
+    mdash: "—",
+    hellip: "…",
+  };
+  const summary = paragraphs
+    .map((text) =>
+      text
+        .replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (original, entity: string) => {
+          if (!entity.startsWith("#")) return entities[entity] ?? original;
+          const point =
+            entity[1]?.toLowerCase() === "x"
+              ? Number.parseInt(entity.slice(2), 16)
+              : Number(entity.slice(1));
+          return point > 0 && point <= 0x10ffff && !(point >= 0xd800 && point <= 0xdfff)
+            ? String.fromCodePoint(point)
+            : original;
+        })
+        .replace(/\s+/g, " ")
+        .trim(),
+    )
+    .find(Boolean);
+  const description =
+    summary &&
+    (summary.length > 160 ? `${summary.slice(0, 157).replace(/\s+\S*$/, "")}…` : summary);
+  // Preserve each source title while giving independently addressable docs a
+  // route context (cookies, contributing and plugin docs have duplicate titles).
+  const context = pathname
+    .slice(6)
+    .split("/")
+    .map((part) => part.replaceAll("-", " "))
+    .join(" / ");
+  const contextualTitle = html.replace(
+    /<title>([\s\S]*?)<\/title>/i,
+    (_match, title: string) => `<title>${title} · ${escapeHtml(context)}</title>`,
+  );
+  if (descriptionPresent || !description) return contextualTitle;
+  return new HTMLRewriter()
+    .on('head meta[name="description"]', {
+      element(element) {
+        element.remove();
+      },
+    })
+    .on("head", {
+      element(element) {
+        element.append(`<meta name="description" content="${escapeHtml(description)}">`, {
+          html: true,
+        });
+      },
+    })
+    .transform(new Response(contextualTitle))
+    .text();
+}
+
+async function siteResponse(request: Request, file: string, status = 200): Promise<Response> {
   const ext = extname(file);
   const type =
     SITE_TYPES[ext] ??
@@ -333,6 +415,10 @@ function siteResponse(request: Request, file: string, status = 200): Response {
   });
   if (ext !== ".html") headers.set("access-control-allow-origin", "*");
   let body: Blob = Bun.file(file);
+  if (ext === ".html" && new URL(request.url).pathname.startsWith("/docs/") && status === 200) {
+    const html = await documentSeo(await body.text(), new URL(request.url).pathname);
+    return new Response(request.method === "HEAD" ? null : html, { status, headers });
+  }
   if (/\bgzip\b/.test(request.headers.get("accept-encoding") ?? "") && existsSync(`${file}.gz`)) {
     body = Bun.file(`${file}.gz`);
     headers.set("content-encoding", "gzip");

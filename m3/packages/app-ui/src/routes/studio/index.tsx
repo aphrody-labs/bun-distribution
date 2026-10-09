@@ -8,11 +8,13 @@ export { studioSections, type StudioSection } from "./navigation";
 import { DriveStudio } from "./DriveStudio";
 import { A2AStudio } from "./A2AStudio";
 import { RuntimeStudio } from "./RuntimeStudio";
+import { GoogleStudio } from "./GoogleStudio";
 
 const panels: Record<StudioSection, ComponentType> = {
   a2a: A2AStudio,
   drive: DriveStudio,
   runtime: RuntimeStudio,
+  google: GoogleStudio,
 };
 
 export function StudioRoute() {

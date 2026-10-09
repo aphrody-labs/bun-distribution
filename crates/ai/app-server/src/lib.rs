@@ -9,6 +9,7 @@
 #![forbid(unsafe_code)]
 
 mod config;
+mod google_search;
 mod host_tools;
 pub mod web;
 
@@ -800,7 +801,9 @@ impl AppServer {
             }
             return Ok(None);
         };
-        let result = if matches!(
+        let result = if request.method == "aphrody/google/search" {
+            google_search::dispatch(self.aphrody_extensions, &request.params).await
+        } else if matches!(
             request.method.as_str(),
             "tool/respond" | "permission/respond" | "thread/tools/get" | "thread/tools/set"
         ) {
@@ -842,8 +845,7 @@ impl AppServer {
                 self.aphrody_extensions = params
                     .pointer("/capabilities/aphrody")
                     .and_then(Value::as_bool)
-                    .unwrap_or(false)
-                    && cfg!(feature = "rag");
+                    .unwrap_or(false);
                 let home = std::path::absolute(&self.home)?;
                 self.initialize_received = true;
                 Ok(json!({
@@ -852,7 +854,7 @@ impl AppServer {
                     "platformFamily": std::env::consts::FAMILY,
                     "platformOs": std::env::consts::OS,
                     "serverInfo": {"name": "aphrody", "version": env!("CARGO_PKG_VERSION")},
-                    "capabilities": {"threads": true, "turns": true, "localModels": true, "interrupt": true, "hostTools":true, "aphrody": cfg!(feature = "rag")},
+                    "capabilities": {"threads": true, "turns": true, "localModels": true, "interrupt": true, "hostTools":true, "aphrody": true, "googleSearch": true, "rag": cfg!(feature = "rag")},
                     "authentication": {"required": false}
                 }))
             },

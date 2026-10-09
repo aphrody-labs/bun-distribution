@@ -676,6 +676,7 @@ dependencies = [
  "aphrody-app-protocol",
  "aphrody-config",
  "aphrody-engine",
+ "aphrody-google",
  "aphrody-llama-server",
  "aphrody-model-client",
  "aphrody-models",

@@ -32,7 +32,8 @@ import {
 
 /**
  * Unified application routes for the Spacedrive M3 Shell:
- * - "/": the file explorer, the desktop's default surface (redirects to "/explorer")
+ * - "/": the public Aphrody product home
+ * - "/os": the shared desktop/browser file explorer surface
  * - "/explorer": Spacedrive VDFS Native File Explorer
  * - "/chat": Codex Chat (pixel-perfect Codex parity timeline + composer)
  * - "/models": Local Models Lifecycle & Hardware Telemetry
@@ -70,6 +71,10 @@ export const explorerRoutes = [
       {
         path: "codex",
         element: <Navigate to={legacyRouteRedirects.codex} replace />,
+      },
+      {
+        path: "os",
+        element: <ExplorerView />,
       },
       {
         path: "explorer",
