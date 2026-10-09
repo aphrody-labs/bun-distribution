@@ -6,7 +6,16 @@
   "site": {
     "baseUrl": "https://downloads.aphrody.com",
     "hosts": ["downloads.aphrody.com", "aphrody.com", "www.aphrody.com"],
-    "certName": "downloads.aphrody.com"
+    "certName": "downloads.aphrody.com",
+    "appUi": {
+      "owner": "m3/packages/app-ui",
+      "directory": "app-ui",
+      "declaration": "app-ui/deployment.json",
+      "assetsPrefix": "/_app-ui/",
+      "routes": ["/", "/os"],
+      "nativeRpc": false,
+      "runbook": "docs/operations/workspace/public-app-ui-artifact.md"
+    }
   },
   "host": {
     "target": "dbfr",

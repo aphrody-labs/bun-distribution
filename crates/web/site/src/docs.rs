@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Native product documentation catalog. The JSON preserves the former
-//! `/api/docs` response from apps/web/src/docs/docs-data.ts verbatim.
-//! Source TS SHA256: 3e0752550922b19219ae681725c00304ce8afe6f74ec4040dd10a28b9b340ce5.
-//! Catalog SHA256: e7b95fbcd3881eceeb52a7464fca702858641f566be27e645df42bdb0081e8a9.
+//! Native product documentation catalog. Article IDs and API shape retain the
+//! former apps/web catalogue contract; content follows the current source owners.
+//! Original migration source TS SHA256:
+//! 3e0752550922b19219ae681725c00304ce8afe6f74ec4040dd10a28b9b340ce5.
+//! Current content provenance: docs/operations/workspace/product-content-source-audit-2026-10-09.md.
 use serde_json::Value;
 use std::{collections::BTreeSet, io, path::Path};
 
@@ -73,7 +74,7 @@ mod tests {
     }
 
     #[test]
-    fn embedded_product_catalog_is_valid_and_has_all_five_original_articles() {
+    fn embedded_product_catalog_is_valid_and_retains_five_article_identifiers() {
         let catalog = load_docs(Path::new("unused-deployment-root")).unwrap();
         let articles = catalog.as_array().unwrap();
         assert_eq!(articles.len(), 5);

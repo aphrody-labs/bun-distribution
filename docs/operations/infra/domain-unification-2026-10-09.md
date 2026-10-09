@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Aphrody domain qualification, 2026-10-09
 
-Native Windows observations through the installed `aphrody` capability owner and public DNS/HTTPS. No provider or host mutation was performed.
+Native Windows observations through the installed `aphrody` capability owner and public DNS/HTTPS. Initial qualification was read-only. The subsequent scoped site apply is recorded below.
 
 ## Verified public behavior
 
@@ -38,3 +38,7 @@ The session exposes no Cloudflare DNS tool, and the configured Aphrody/Yolo plug
 6. Run the full bounded sitemap audit, browser performance/accessibility measurements and origin/provider health checks after activation. SEO improvement requires subsequent measured crawl/indexing evidence.
 
 Host apply remains governed by [Cloud-ready setup](../cloud/CLOUD-READY.md). Concurrent native DNS/TLS, certificate and site-hosting work retains its existing claims.
+
+## Scoped SEO activation
+
+Commit `f9caa023f3` was pushed normally to the existing private remote. The declared downloads/site service received only its server source through native Infra SFTP, then the existing Compose downloads service was recreated through `aphrody infra ssh exec --host dbfr`. Before replacement, the old source SHA-256 was checked and its preserved backup was checksum-verified. No DNS, certificates, ingress or databases changed. The service health reports nine published artifacts. The paced public audit after activation checks all 362 sitemap URLs and reports zero findings, including the previously missing descriptions and duplicate titles. This validates public metadata responses; rankings, Core Web Vitals and homepage reskin deployment remain separate.

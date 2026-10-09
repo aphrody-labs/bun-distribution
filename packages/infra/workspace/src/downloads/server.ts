@@ -19,7 +19,7 @@
  * scripts/aphrody/site/publish.ts. Paths missing from it fall back to the download routes above.
  * Deployed alone as /home/ubuntu/apps/downloads/app/server.ts: no relative imports.
  */
-import { existsSync, realpathSync, statSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, extname, join, resolve, sep } from "node:path";
 
@@ -239,13 +239,83 @@ async function readManifest(root: string): Promise<Manifest | null> {
 export interface SiteOptions {
   root: string;
   hosts: Set<string>;
+  /** Explicit, separately published canonical app-ui artifact. No native RPC is exposed. */
+  appUiRoot?: string;
+}
+const APP_UI_ARTICLE_IDS = [
+  "runtime-architecture",
+  "bun-native-framework",
+  "material-3-design-tokens",
+  "tauri-desktop-bridge",
+  "llms-txt-standard",
+];
+
+const invalidAppUiDeclaration = () =>
+  new Error(
+    "Invalid app-ui deployment declaration: expected schemaVersion=1 and root=current inside the declared app-ui directory",
+  );
+
+/** Optional explicit opt-in declaration beside the downloads tree; no auth or proxy settings. */
+function declaredAppUiRoot(downloadsRoot: string): string | undefined {
+  const base = dirname(resolve(downloadsRoot));
+  const directory = join(base, "app-ui");
+  const declaration = join(directory, "deployment.json");
+  try {
+    lstatSync(declaration);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+    throw error;
+  }
+  try {
+    const realBase = realpathSync(base);
+    const realDirectory = realpathSync(directory);
+    const realDeclaration = realpathSync(declaration);
+    if (
+      !realDirectory.startsWith(realBase + sep) ||
+      dirname(realDeclaration) !== realDirectory ||
+      !statSync(realDeclaration).isFile() ||
+      statSync(realDeclaration).size > 4096
+    )
+      throw invalidAppUiDeclaration();
+    const value: unknown = JSON.parse(readFileSync(realDeclaration, "utf8"));
+    if (typeof value !== "object" || value === null || Array.isArray(value))
+      throw invalidAppUiDeclaration();
+    const record = value as Record<string, unknown>;
+    if (Object.keys(record).length !== 2 || record.schemaVersion !== 1 || record.root !== "current")
+      throw invalidAppUiDeclaration();
+    const root = realpathSync(join(realDirectory, "current"));
+    if (!root.startsWith(realDirectory + sep) || !statSync(root).isDirectory())
+      throw invalidAppUiDeclaration();
+    return root;
+  } catch {
+    throw invalidAppUiDeclaration();
+  }
 }
 
 export function siteOptions(
   downloadsRoot: string,
   env: Record<string, string | undefined> = process.env,
 ): SiteOptions {
+  const appUiRoot = env.APP_UI_ROOT?.trim()
+    ? resolve(env.APP_UI_ROOT.trim())
+    : declaredAppUiRoot(downloadsRoot);
+  if (
+    appUiRoot &&
+    [
+      "index.html",
+      "public-home.html",
+      "public-docs.json",
+      "app.js",
+      "app.css",
+      ...APP_UI_ARTICLE_IDS.map((id) => `public-docs/${id}.html`),
+    ].some((name) => !resolveSiteFile(appUiRoot, "/" + name))
+  ) {
+    throw new Error(
+      "APP_UI_ROOT must contain a complete canonical app-ui build including public-home.html",
+    );
+  }
   return {
+    appUiRoot,
     root: resolve(
       env.SITE_ROOT?.trim() || join(dirname(resolve(downloadsRoot)), "site", "current"),
     ),
@@ -426,6 +496,74 @@ async function siteResponse(request: Request, file: string, status = 200): Promi
   return new Response(request.method === "HEAD" ? null : body, { status, headers });
 }
 
+/** Serve only explicit app-ui pages/assets; native RPC is deliberately unavailable. */
+async function appUiResponse(request: Request, root: string): Promise<Response | null> {
+  const pathname = new URL(request.url).pathname;
+  const home = pathname === "/" || pathname === "/index.html";
+  const os = pathname === "/os" || pathname === "/os/";
+  const asset = pathname.startsWith("/_app-ui/");
+  if (!home && !os && !asset) return null;
+  const file = resolveSiteFile(
+    root,
+    home ? "/public-home.html" : os ? "/index.html" : pathname.slice("/_app-ui".length),
+  );
+  const headers = withHeaders({
+    "content-security-policy":
+      "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+    "content-type": file
+      ? (SITE_TYPES[extname(file)] ?? "application/octet-stream")
+      : "text/plain; charset=utf-8",
+    "cache-control": home || os ? "public, max-age=60" : "public, max-age=3600",
+    "referrer-policy": "strict-origin-when-cross-origin",
+  });
+  if (!file) return new Response("App UI artifact unavailable", { status: 404, headers });
+  if (home || os) {
+    const html = await new HTMLRewriter()
+      .on("base", {
+        element(element) {
+          element.setAttribute("href", "/_app-ui/");
+        },
+      })
+      .on("head", {
+        element(element) {
+          element.append('<meta name="aphrody-rpc" content="unavailable">', { html: true });
+          if (os)
+            element.append(
+              '<meta name="description" content="Explore the shared Aphrody OS browser workspace. Native capabilities require the installed application."><link rel="canonical" href="https://aphrody.com/os">',
+              { html: true },
+            );
+        },
+      })
+      .transform(new Response(Bun.file(file)))
+      .text();
+    return new Response(request.method === "HEAD" ? null : html, { headers });
+  }
+  return new Response(request.method === "HEAD" ? null : Bun.file(file), { headers });
+}
+
+/** Explicit source-owned catalogue and five product articles; never a catch-all SPA route. */
+async function appUiDocsResponse(request: Request, root: string): Promise<Response | null> {
+  const pathname = new URL(request.url).pathname;
+  const id = pathname.startsWith("/docs/") ? pathname.slice("/docs/".length) : "";
+  const api = pathname === "/api/docs";
+  if (!api && !APP_UI_ARTICLE_IDS.includes(id)) return null;
+  const file = resolveSiteFile(root, api ? "/public-docs.json" : `/public-docs/${id}.html`);
+  if (!file) return null;
+  const response = await siteResponse(request, file);
+  if (api || request.method === "HEAD") return response;
+  const html = await new HTMLRewriter()
+    .on("base", {
+      element(element) {
+        element.setAttribute("href", "/_app-ui/");
+      },
+    })
+    .transform(response)
+    .text();
+  const headers = new Headers(response.headers);
+  headers.set("content-security-policy", SITE_CSP.replace("base-uri 'none'", "base-uri 'self'"));
+  return new Response(html, { headers });
+}
+
 export function createHandler(
   rootInput: string,
   site?: SiteOptions,
@@ -442,8 +580,16 @@ export function createHandler(
       (request.method !== "GET" && request.method !== "HEAD")
     )
       return downloads(request);
+    if (site.appUiRoot) {
+      const appUi = await appUiResponse(request, site.appUiRoot);
+      if (appUi) return appUi;
+    }
     const file = resolveSiteFile(site.root, pathname.replace(/(.)\/+$/, "$1"));
     if (file) return siteResponse(request, file);
+    if (site.appUiRoot) {
+      const docs = await appUiDocsResponse(request, site.appUiRoot);
+      if (docs) return docs;
+    }
     const response = await downloads(request);
     if (response.status === 404) {
       const notFound = resolveSiteFile(site.root, "/404.html");

@@ -55,6 +55,8 @@ function ShellLayoutContent() {
 
   // Suppress inspector on Chat, Web, Models and Settings; show only in Explorer/Files routes
   const isExplorer =
+    location.pathname === "/os" ||
+    location.pathname === "/os/" ||
     location.pathname.startsWith("/explorer") ||
     location.pathname.startsWith("/tag") ||
     location.pathname.startsWith("/sources") ||
