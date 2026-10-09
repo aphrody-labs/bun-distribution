@@ -13,7 +13,7 @@ test("pins come from the repository manifests", async () => {
   );
   expect(pins.rustChannel).toMatch(/^\d+\.\d+\.\d+$/);
   expect(pins.bun).toMatch(/^\d+\.\d+\.\d+$/);
-  expect(pins.bunRelease).toBe("aphrody-v1.4.3-aphrody.3");
+  expect(pins.bunRelease).toBe("aphrody-v1.4.3-aphrody.4");
   expect(pins.wasmBindgen).toMatch(/^\d+\.\d+\.\d+$/);
   expect(pins.rustTargets).toContain("x86_64-pc-windows-msvc");
   expect(pins.rustTargets).toContain("wasm32-unknown-unknown");

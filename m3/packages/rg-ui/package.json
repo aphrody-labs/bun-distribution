@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "@aphrody/m3-tokens": "3.3.9",
-    "@base-ui/react": "npm:@aphrody/base-ui@1.8.0-aphrody.1",
+    "@base-ui/react": "catalog:",
     "@hookform/resolvers": "catalog:",
     "@tanstack/react-table": "catalog:",
     "class-variance-authority": "catalog:",
@@ -53,7 +53,7 @@
     "input-otp": "catalog:",
     "lucide-react": "catalog:",
     "next-themes": "catalog:",
-    "qrcode-generator": "^2.0.4",
+    "qrcode-generator": "catalog:",
     "react-day-picker": "^10.0.1",
     "react-hook-form": "catalog:",
     "react-resizable-panels": "catalog:",

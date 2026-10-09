@@ -28,7 +28,7 @@ for (const r of declared.dns.records) {
   groups.set(key, [...(groups.get(key) ?? []), r]);
 }
 const expectedOf = (rs: Record[]): string => {
-  const type = rs[0].type;
+  const type = rs[0]!.type;
   if (type === "MX") return sorted(rs.map((r) => [r.priority, strip(r.content!)]));
   if (type === "SRV")
     return sorted(
@@ -70,7 +70,7 @@ const checks = await Promise.all(
     const servers = await serversOf(hosts);
     const diffsOf = await Promise.all(
       [...groups].map(async ([key, rs]) => {
-        const [name, type] = key.split("\u0000");
+        const [name = "", type = ""] = key.split("\u0000");
         const want = expectedOf(rs);
         const got = await Promise.all(servers.map((s) => query(s, name, type)));
         const bad = got.filter((g) => g !== want);
