@@ -72,72 +72,58 @@ scheme of the M3 baseline seed `#6750A4`, all 49 roles, light and dark.
 The SpaceUI tables mirror `crates/ui/m3-tokens/src/spaceui.rs`; `bun test` fails when they
 drift or when a committed sheet is stale. Mapping and rules: `docs/architecture/ui/design/SPACEUI-M3-FUSION.md`.
 
-## Dynamic Runtime Theme System
+## Runtime theme
 
-In addition to the static `tokens.css` stylesheet, `@aphrody/m3-theme` provides a fully dynamic runtime theme system for both JavaScript/TypeScript environments and React applications.
+Colours come only from the Rust owner `crates/ui/m3-tokens`. The page's compiled sheets
+(`m3:theme.css` from the `@aphrody/m3` plugin, `tokens.css`, a brand sheet) carry the build-time
+theme. Nothing in this package derives a colour or writes a `--md-sys-color-*` role inline, so the
+Rust `@media (prefers-contrast: more)` blocks keep their effect.
 
-This system derives the complete set of Material 3 custom properties (`--md-sys-color-*`) dynamically from a single seed color, automatically maps the shadcn/ui and Tailwind v4 color variables, and manages light/dark/system mode.
+A different seed, variant or contrast is the Rust `scheme` sheet (`m3Css({ sheet: "scheme", ... })`
+of `@aphrody/bun`, or an app-server route answering with it), installed as one `<style>` element
+together with its contrast-1 twin under `@media (prefers-contrast: more)`. Without a sheet source
+the change fails with an explicit error.
 
 ### 1. Vanilla JS/TS: `applyDynamicFusionTheme`
 
-To dynamically update the theme on the DOM without a full rebuild:
-
 ```ts
-import { applyDynamicFusionTheme } from "@aphrody/m3-theme";
+import { applyDynamicFusionTheme, type M3SchemeSheet } from "@aphrody/m3-theme";
 
-// Applies theme inline to document.documentElement (HTML element)
-applyDynamicFusionTheme("#6750A4", {
-  dark: false, // forces light mode (omitting resolves from DOM/OS preference)
-  contrastLevel: 0.0, // standard contrast, ranges from -1.0 to 1.0
-  variant: "tonalSpot", // "tonalSpot" | "content" | "fidelity" | "expressive" | "vibrant" | "neutral" | "monochrome"
+const sheet: M3SchemeSheet = async (request) =>
+  (
+    await fetch(
+      `/api/m3/scheme.css?${new URLSearchParams(Object.entries(request).map(([k, v]) => [k, String(v)]))}`,
+    )
+  ).text();
+
+await applyDynamicFusionTheme("#6750A4", {
+  dark: false,
+  contrastLevel: 0,
+  variant: "tonalSpot",
+  sheet,
 });
 ```
 
-Options:
+Options: `dark` (default: the target's `.dark` class or `prefers-color-scheme`), `target` (default
+`<html>`; another element is scoped through `data-m3-scheme`), `contrastLevel` in `[-1, 1]`,
+`variant` and `sheet`. `applyM3Mode(dark, target)` sets only the mode classes and `color-scheme`;
+`clearM3Scheme(target)` returns to the compiled theme. Invalid input or a sheet that is not a Rust
+`scheme` sheet rejects and leaves the installed theme unchanged.
 
-- `dark`: Forces light/dark mode. If omitted, it will automatically detect the theme from the target's `.dark` class or the system's `(prefers-color-scheme: dark)` media query.
-- `target`: The target `HTMLElement` (defaults to `document.documentElement`).
-- `contrastLevel`: Color contrast offset in `[-1.0, 1.0]` (0.0 standard).
-- `variant`: The dynamic scheme algorithm variant (defaults to `"tonalSpot"`).
+### 2. React: `M3ThemeProvider` & `useM3Theme`
 
-### 2. React Hook & Provider: `M3ThemeProvider` & `useM3Theme`
-
-Wrap your React app in the provider to handle user-facing theme configuration, light/dark/system mode, and seed color switching. This updates both `@aphrody/material-web` (Lit components) and Tailwind v4 / shadcn/ui (React layout components) synchronously.
+The `default*` props describe the compiled theme. While the theme equals them, the provider only
+sets the mode. `setSeedColor`, `setVariant` and `setContrastLevel` throw when no `sheet` prop is
+given; a failing sheet source is exposed as `schemeError`.
 
 ```tsx
 import { M3ThemeProvider, useM3Theme } from "@aphrody/m3-theme/react";
 
 function App() {
   return (
-    <M3ThemeProvider defaultSeedColor="#6750a4" defaultThemeMode="system">
-      <ThemePicker />
+    <M3ThemeProvider defaultSeedColor="#6750a4" defaultThemeMode="system" sheet={sheet}>
       <YourMainAppLayout />
     </M3ThemeProvider>
-  );
-}
-
-function ThemePicker() {
-  const { themeMode, setThemeMode, seedColor, setSeedColor, resolvedTheme } = useM3Theme();
-
-  return (
-    <div className="p-4 flex gap-4">
-      <select
-        value={themeMode}
-        onChange={(e) => setThemeMode(e.target.value as any)}
-        className="border p-2 rounded"
-      >
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-        <option value="system">System ({resolvedTheme})</option>
-      </select>
-
-      <input
-        type="color"
-        value={seedColor}
-        onChange={(e) => setSeedColor(e.target.value)}
-        className="w-12 h-10 border rounded"
-      />
-    </div>
   );
 }
 ```

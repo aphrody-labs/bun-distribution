@@ -5,10 +5,15 @@
 //
 //   import { applyM3Theme, registerM3Components } from "@aphrody/m3/lit";
 //   await registerM3Components({ core: true });   // also the upstream md-* catalog
-//   applyM3Theme("#6750a4", { variant: "tonalSpot" });
+//   await applyM3Theme("#6750a4", { variant: "tonalSpot", sheet: rustSchemeSheet });
 // oxlint-disable-next-line import/no-unassigned-import -- Importing this public entry point registers the Aphrody custom elements.
 import "@aphrody/material-web/aphrody-components.js";
-import { applyDynamicFusionTheme, type ApplyDynamicFusionThemeOptions } from "@aphrody/m3-theme";
+import {
+  applyDynamicFusionTheme,
+  type ApplyDynamicFusionThemeOptions,
+  type M3SchemeRequest,
+  type M3SchemeSheet,
+} from "@aphrody/m3-theme";
 
 export interface RegisterM3ComponentsOptions {
   /** Also register the upstream `md-*` catalog (`@aphrody/material-web/all.js`). */
@@ -31,11 +36,14 @@ export async function whenM3Defined(tags: readonly string[]): Promise<void> {
 }
 
 /**
- * Apply a dynamic Material You scheme from `seed` to `options.target` (default `<html>`):
- * `--md-sys-color-*`, the shadcn/Tailwind aliases, the `dark` class and `color-scheme`.
+ * Apply the scheme of `seed` to `options.target` (default `<html>`): the mode classes, `color-scheme`
+ * and the Rust `scheme` sheets returned by `options.sheet` (required), installed as a stylesheet.
  */
-export function applyM3Theme(seed: string, options: ApplyDynamicFusionThemeOptions = {}): void {
-  applyDynamicFusionTheme(seed, options);
+export function applyM3Theme(
+  seed: string,
+  options: ApplyDynamicFusionThemeOptions = {},
+): Promise<void> {
+  return applyDynamicFusionTheme(seed, options);
 }
 
-export type { ApplyDynamicFusionThemeOptions };
+export type { ApplyDynamicFusionThemeOptions, M3SchemeRequest, M3SchemeSheet };

@@ -1,27 +1,33 @@
 // SPDX-License-Identifier: Apache-2.0
 // `M3App`: the root of a React @aphrody/m3 application. It composes
-//   - `M3ThemeProvider` (`@aphrody/m3-theme/react`): dynamic colour from a seed, light/dark/system,
-//     contrast and scheme variant, applied as `--md-sys-*` custom properties,
+//   - `M3ThemeProvider` (`@aphrody/m3-theme/react`): light/dark/system over the compiled Rust theme
+//     (`m3:theme.css`); seed, contrast and variant changes install Rust `scheme` sheets from `sheet`,
 //   - the M3 window size class (`@aphrody/m3-react/adaptive`), exposed through `useM3SizeClass` and
 //     mirrored on the root element as `data-window-size-class`,
 //   - the motion defaults (`@aphrody/m3-motion` springs, `motion/react` `MotionConfig`), honouring
 //     the user's reduced-motion preference.
 import { m3Springs } from "@aphrody/m3-motion";
 import { useWindowSizeClass, type WindowSizeClass } from "@aphrody/m3-react/adaptive";
-import { M3ThemeProvider, type SchemeVariant, type ThemeMode } from "@aphrody/m3-theme/react";
+import {
+  M3ThemeProvider,
+  type M3SchemeSheet,
+  type SchemeVariant,
+  type ThemeMode,
+} from "@aphrody/m3-theme/react";
 import { MotionConfig } from "motion/react";
 import { createContext, type ReactNode, StrictMode, useContext, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
 export { useM3Theme } from "@aphrody/m3-theme/react";
-export type { M3ThemeContextType, SchemeVariant, ThemeMode } from "@aphrody/m3-theme/react";
+export type {
+  M3SchemeRequest,
+  M3SchemeSheet,
+  M3ThemeContextType,
+  SchemeVariant,
+  ThemeMode,
+} from "@aphrody/m3-theme/react";
 export type { WindowSizeClass } from "@aphrody/m3-react/adaptive";
-export {
-  DataTable,
-  dataColumns,
-  dataTableFeatures,
-  VirtualList,
-} from "@aphrody/m3-react/data";
+export { DataTable, dataColumns, dataTableFeatures, VirtualList } from "@aphrody/m3-react/data";
 export type {
   DataColumn,
   DataTableFeatures,
@@ -41,8 +47,10 @@ export interface M3AppTheme {
 
 export interface M3AppProps {
   children: ReactNode;
-  /** Initial theme; `useM3Theme()` changes it at runtime. */
+  /** The theme compiled into the page's CSS (`m3.config.ts` `theme`); `useM3Theme()` changes it at runtime. */
   theme?: M3AppTheme;
+  /** Rust `scheme` sheets for runtime theme changes (`m3Css` or an app-server route). */
+  sheet?: M3SchemeSheet;
   /** Default spring for `motion` components (default `default`). */
   motion?: M3MotionSpeed;
   /** `user` follows `prefers-reduced-motion` (default), `always` disables motion, `never` ignores it. */
@@ -62,19 +70,22 @@ export function useM3SizeClass(): WindowSizeClass {
   return value;
 }
 
+const COMPILED_THEME: M3AppTheme = {};
+
 /** Root provider of an @aphrody/m3 React application. */
 export function M3App({
   children,
-  theme = {},
+  theme = COMPILED_THEME,
   motion = "default",
   reducedMotion = "user",
   ssrSizeClass = "compact",
   target,
+  sheet,
 }: M3AppProps) {
   const sizeClass = useWindowSizeClass(ssrSizeClass);
   useEffect(() => {
     if (typeof document === "undefined") return;
-    (target ?? document.documentElement).dataset.windowSizeClass = sizeClass;
+    (target ?? document.documentElement).setAttribute("data-window-size-class", sizeClass);
   }, [sizeClass, target]);
 
   return (
@@ -84,6 +95,7 @@ export function M3App({
       defaultContrastLevel={theme.contrast}
       defaultVariant={theme.variant}
       target={target}
+      sheet={sheet}
     >
       <MotionConfig transition={m3Springs[motion].spatial} reducedMotion={reducedMotion}>
         <SizeClassContext.Provider value={sizeClass}>{children}</SizeClassContext.Provider>
@@ -96,7 +108,11 @@ export function M3App({
  * Mount `app` inside `M3App` (and `StrictMode`) on `container` (an element or a selector).
  * Returns the React root.
  */
-export function mountM3App(container: Element | string, app: ReactNode, props: Omit<M3AppProps, "children"> = {}): Root {
+export function mountM3App(
+  container: Element | string,
+  app: ReactNode,
+  props: Omit<M3AppProps, "children"> = {},
+): Root {
   const element = typeof container === "string" ? document.querySelector(container) : container;
   if (!element) throw new Error(`mountM3App: no element matches ${String(container)}`);
   const root = createRoot(element);
