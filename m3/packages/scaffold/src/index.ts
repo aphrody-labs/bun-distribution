@@ -6,6 +6,7 @@
  * | --------- | ------------------------------------------------ | -------------------------------- |
  * | `web`     | Bun + M3 web project                             | `m3 new`                         |
  * | `app`     | Bun + React app, desktop (Tauri 3) or web       | `next-migrate`, `example`        |
+ * | `spa`     | Bun + React SPA on TanStack Router, served by m3-bun | `aphrody-scaffold new spa`   |
  * | `example` | the canonical example: `app` + Tauri 3 + M3      | docs, CI, `aphrody-scaffold`     |
  *
  * The Tauri 3 shell (`tauriShell`) is also what `web-to-tauri` writes around a wrapped site.
@@ -13,6 +14,7 @@
 import { assertNativeShellOwner, assertPrivateOwnerWorkspace } from "./workspace";
 import { writeFiles, type FileMap, type WriteMode } from "./files.ts";
 import { appFiles, type AppTemplateOptions } from "./templates/app.ts";
+import { spaFiles, TANSTACK_ROUTER_RANGE, type SpaTemplateOptions } from "./templates/spa.ts";
 import { ownerM3Version, webFiles, type WebTemplateOptions } from "./templates/web.ts";
 
 export * from "./files.ts";
@@ -20,15 +22,17 @@ export * from "./workspace";
 export * from "./names.ts";
 export * from "./pins.ts";
 export * from "./png.ts";
+export { cargoToml, capability, mainRs, tauriConf, tauriShell, type TauriShellOptions } from "./tauri.ts";
 export {
-  cargoToml,
-  capability,
-  mainRs,
-  tauriConf,
-  tauriShell,
-  type TauriShellOptions,
-} from "./tauri.ts";
-export { appFiles, ownerM3Version, webFiles, type AppTemplateOptions, type WebTemplateOptions };
+  appFiles,
+  ownerM3Version,
+  spaFiles,
+  TANSTACK_ROUTER_RANGE,
+  webFiles,
+  type AppTemplateOptions,
+  type SpaTemplateOptions,
+  type WebTemplateOptions,
+};
 
 /** Name of the canonical example project. */
 export const EXAMPLE_NAME = "aphrody-example";
@@ -53,7 +57,7 @@ Native Tauri activation requires a registered canonical Rust shell and its Works
   };
 }
 
-export type TemplateName = "web" | "app" | "example";
+export type TemplateName = "web" | "app" | "spa" | "example";
 
 export interface TemplateInfo {
   name: TemplateName;
@@ -63,12 +67,14 @@ export interface TemplateInfo {
 export const TEMPLATES: readonly TemplateInfo[] = [
   { name: "web", summary: "Bun + M3 web project (m3 new)" },
   { name: "app", summary: "Bun + React app with the Next.js shims, desktop (Tauri 3) or web" },
+  { name: "spa", summary: "Bun + React single-page app on TanStack Router, served by m3-bun" },
   { name: "example", summary: "the canonical example: app + Tauri 3 + M3" },
 ];
 
 export type ScaffoldRequest =
   | ({ template: "web" } & WebTemplateOptions)
   | ({ template: "app" } & AppTemplateOptions)
+  | ({ template: "spa" } & SpaTemplateOptions)
   | { template: "example"; name?: string };
 
 /** Files of a template, without writing anything. */
@@ -78,19 +84,17 @@ export function renderTemplate(request: ScaffoldRequest): FileMap {
       return webFiles(request);
     case "app":
       return appFiles(request);
+    case "spa":
+      return spaFiles(request);
     case "example":
       return exampleFiles(request.name);
   }
 }
 
 /** Renders a template and writes it. Returns the paths written. */
-export async function scaffold(
-  outDir: string,
-  request: ScaffoldRequest,
-  mode: WriteMode = "empty",
-): Promise<string[]> {
+export async function scaffold(outDir: string, request: ScaffoldRequest, mode: WriteMode = "empty"): Promise<string[]> {
   assertPrivateOwnerWorkspace(outDir);
-  if (request.template !== "web")
+  if (request.template === "app" || request.template === "example")
     assertNativeShellOwner(request.template === "example" ? "tauri" : (request.target ?? "tauri"));
   return writeFiles(outDir, renderTemplate(request), mode);
 }

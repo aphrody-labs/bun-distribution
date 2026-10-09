@@ -63,9 +63,11 @@ runtime, deployment, performance or installed host milestone.
 
 `@aphrody/m3/app` implements Next.js `app/` conventions on `Bun.build` (rsc/ssr/client layers) and `Bun.serve` with
 `react-server-dom-parcel`; see the [framework guide](docs/guides/FRAMEWORK.md#app-router-aphrodym3app). Tests:
-`packages/m3/test/app/{scan,plugin,router}.test.ts` on `test/fixtures/app-router` (written 2026-10-09, not yet run).
-Next: example app, Shenron slice, compile and Docker Alpine through m3-bun, measured comparison with `next build`/`next
-start`, TanStack Router SPA template, M3 `DataTable`/`VirtualList`. Bun gaps (Bake `"use server"`, production Bake)
+`packages/m3/test/app/{scan,plugin,router}.test.ts` on `test/fixtures/app-router` (40 pass on 2026-10-09). The example
+app `apps/example` builds, prerenders and serves end to end in `apps/example/test/app.test.ts` (7 pass). The `spa`
+scaffold template (TanStack Router on m3-bun) type-checks and bundles against `@tanstack/react-router` 1.170. M3
+`DataTable`/`VirtualList` live in `@aphrody/m3-react` (`test/data.test.tsx`, 6 pass).
+Next: Shenron slice, compile and Docker Alpine through m3-bun, measured comparison with `next build`/`next start`. Bun gaps (Bake `"use server"`, production Bake)
 are fixed in the Bun fork core, never shimmed here.
 
 ## Full Bun (chantier T, Bun fork plan section T)
