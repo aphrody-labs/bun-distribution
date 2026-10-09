@@ -18,6 +18,7 @@ import {
   archiveName,
   buildManifest,
   buildSums,
+  factoryCfg,
   loadConfig,
   planAssetsSnapshot,
   publishAssetsSnapshot,
@@ -125,6 +126,14 @@ describe("publish-downloads", () => {
     }
   });
 
+  test("factory binaries are staged on the build factory and pushed to the release host", () => {
+    expect(cfg.host.target).toBe("dbfr");
+    expect(factoryCfg(cfg).host.target).toBe("vps");
+    expect(cfg.factory.pushTo).toBe("dbfr");
+    const same = { ...cfg, factory: { ...cfg.factory, target: cfg.host.target } };
+    expect(factoryCfg(same)).toBe(same);
+  });
+
   test("the configuration is consistent with the catalog port and the declared assets", () => {
     expect(cfg.host.port).toBe(8797);
     expect(cfg.artifacts.map((a) => a.id)).toEqual([
@@ -183,8 +192,9 @@ describe("publish-downloads", () => {
 });
 
 function snapshotFixture() {
-  const work = mkdtempSync(join(tmpdir(), "assets-snapshot-"));
-  const host = join(work, "host");
+  // Remote paths are POSIX: on Windows the shell (readlink -f) answers with forward slashes.
+  const work = mkdtempSync(join(tmpdir(), "assets-snapshot-")).replaceAll("\\", "/");
+  const host = `${work}/host`;
   const old = join(host, "releases", "old");
   mkdirSync(join(old, "files"), { recursive: true });
   const payload = new TextEncoder().encode("original binary bytes");
@@ -268,143 +278,155 @@ function prebuiltFixture(f: ReturnType<typeof snapshotFixture>) {
   return inputs;
 }
 
+// Activation takes the release lock with flock(1), a util-linux tool absent from Git Bash on Windows.
+const testWithFlock = test.skipIf(!Bun.which("flock"));
+
 describe("immutable installer snapshots", () => {
-  test("adopts the declared portable WASM stage while preserving native artifacts", async () => {
-    const f = snapshotFixture();
-    try {
-      const directory = join(f.work, "wasm-stage");
-      mkdirSync(directory);
-      const bytes = new TextEncoder().encode("qualified portable package");
-      const entry = {
-        name: "aphrody-cli-wasm",
-        version: "0.1.0",
-        platform: "wasm",
-        target: "wasm32-unknown-unknown",
-        kind: "wasm",
-        file: "aphrody-cli-wasm.tar.gz",
-        size: bytes.length,
-        sha256: sha256Bytes(bytes),
-      };
-      writeFileSync(join(directory, entry.file), bytes);
-      writeFileSync(join(directory, "aphrody-cli-wasm.manifest.json"), JSON.stringify([entry]));
-      const published = await publishAssetsSnapshot(f.config, {
-        id: "wasm",
-        assetCommit: "source",
-        sourceRoot: f.work,
-        io: f.io,
-        staged: [{ directory, commit: "8".repeat(40) }],
-      });
-      expect(published.artifacts).toHaveLength(2);
-      expect(published.artifacts[1]).toMatchObject({
-        ...entry,
-        provenance: { revision: "8".repeat(40) },
-      });
-      expect(statSync(join(f.host, "releases/wasm/files", f.artifact.file)).ino).toBe(
-        statSync(join(f.old, "files", f.artifact.file)).ino,
-      );
-      writeFileSync(
-        join(directory, "aphrody-cli-wasm.manifest.json"),
-        JSON.stringify([{ ...entry, kind: "desktop" }]),
-      );
-      await expect(
-        publishAssetsSnapshot(f.config, {
-          id: "bad-wasm",
+  testWithFlock(
+    "adopts the declared portable WASM stage while preserving native artifacts",
+    async () => {
+      const f = snapshotFixture();
+      try {
+        const directory = join(f.work, "wasm-stage");
+        mkdirSync(directory);
+        const bytes = new TextEncoder().encode("qualified portable package");
+        const entry = {
+          name: "aphrody-cli-wasm",
+          version: "0.1.0",
+          platform: "wasm",
+          target: "wasm32-unknown-unknown",
+          kind: "wasm",
+          file: "aphrody-cli-wasm.tar.gz",
+          size: bytes.length,
+          sha256: sha256Bytes(bytes),
+        };
+        writeFileSync(join(directory, entry.file), bytes);
+        writeFileSync(join(directory, "aphrody-cli-wasm.manifest.json"), JSON.stringify([entry]));
+        const published = await publishAssetsSnapshot(f.config, {
+          id: "wasm",
           assetCommit: "source",
           sourceRoot: f.work,
           io: f.io,
           staged: [{ directory, commit: "8".repeat(40) }],
-        }),
-      ).rejects.toThrow("invalid staged entry");
-      expect(realpathSync(join(f.host, "current"))).toBe(join(f.host, "releases/wasm"));
-    } finally {
-      rmSync(f.work, { recursive: true, force: true });
-    }
-  });
-
-  test("adds four qualified installer artifacts and retains nine inherited payloads and build provenance", async () => {
-    const f = snapshotFixture();
-    try {
-      const inherited = Array.from({ length: 9 }, (_, index) => ({
-        ...f.artifact,
-        file: `inherited-${index}.tar.gz`,
-      }));
-      for (const artifact of inherited)
-        writeFileSync(join(f.old, "files", artifact.file), "original binary bytes");
-      writeFileSync(
-        join(f.old, "latest.json"),
-        JSON.stringify({ ...f.manifest, artifacts: inherited }),
-      );
-      writeFileSync(join(f.old, "SHA256SUMS"), buildSums(inherited));
-      const staged = prebuiltFixture(f);
-      const published = await publishAssetsSnapshot(f.config, {
-        id: "new-with-kits",
-        assetCommit: "installer-source",
-        sourceRoot: f.work,
-        staged,
-        io: f.io,
-      });
-      expect(published.artifacts).toHaveLength(13);
-      expect(published.release.commit).toBe("original-build");
-      const next = join(f.host, "releases", "new-with-kits");
-      for (const artifact of inherited) {
-        expect(statSync(join(next, "files", artifact.file)).ino).toBe(
-          statSync(join(f.old, "files", artifact.file)).ino,
+        });
+        expect(published.artifacts).toHaveLength(2);
+        expect(published.artifacts[1]).toMatchObject({
+          ...entry,
+          provenance: { revision: "8".repeat(40) },
+        });
+        expect(statSync(join(f.host, "releases/wasm/files", f.artifact.file)).ino).toBe(
+          statSync(join(f.old, "files", f.artifact.file)).ino,
         );
-        expect(f.uploads).not.toContain(join(next, "files", artifact.file));
+        writeFileSync(
+          join(directory, "aphrody-cli-wasm.manifest.json"),
+          JSON.stringify([{ ...entry, kind: "desktop" }]),
+        );
+        await expect(
+          publishAssetsSnapshot(f.config, {
+            id: "bad-wasm",
+            assetCommit: "source",
+            sourceRoot: f.work,
+            io: f.io,
+            staged: [{ directory, commit: "8".repeat(40) }],
+          }),
+        ).rejects.toThrow("invalid staged entry");
+        expect(realpathSync(join(f.host, "current"))).toBe(join(f.host, "releases/wasm"));
+      } finally {
+        rmSync(f.work, { recursive: true, force: true });
       }
-      for (const input of staged) {
-        for (const entry of input.entries) {
-          expect(
-            published.artifacts.find((artifact) => artifact.file === entry.file),
-          ).toMatchObject({
-            name: entry.name,
-            sha256: entry.sha256,
-            provenance: { revision: input.commit, builder: "staged" },
-          });
-          expect(f.uploads).toContain(join(next, "files", entry.file));
-        }
-      }
-      expect(readFileSync(join(next, "SHA256SUMS"), "utf8").trim().split("\n")).toHaveLength(13);
-      expect(readFileSync(join(next, "SHA256SUMS"), "utf8")).not.toContain("install.sh");
-      expect(realpathSync(join(f.host, "current"))).toBe(next);
-    } finally {
-      rmSync(f.work, { recursive: true, force: true });
-    }
-  });
+    },
+  );
 
-  test("replaces only matching component/platform groups, preserving unrelated native artifacts", async () => {
-    const f = snapshotFixture();
-    try {
-      const oldSetup = {
-        ...f.artifact,
-        name: "aphrody-setup",
-        platform: "windows-x86_64",
-        file: "old-setup.exe",
-      };
-      writeFileSync(join(f.old, "files", oldSetup.file), "original binary bytes");
-      writeFileSync(
-        join(f.old, "latest.json"),
-        JSON.stringify({ ...f.manifest, artifacts: [f.artifact, oldSetup] }),
-      );
-      writeFileSync(join(f.old, "SHA256SUMS"), buildSums([f.artifact, oldSetup]));
-      const published = await publishAssetsSnapshot(f.config, {
-        id: "new",
-        assetCommit: "source",
-        sourceRoot: f.work,
-        staged: prebuiltFixture(f),
-        io: f.io,
-      });
-      expect(published.artifacts).toHaveLength(5);
-      expect(published.artifacts.some((artifact) => artifact.file === oldSetup.file)).toBe(false);
-      expect(existsSync(join(f.old, "files", oldSetup.file))).toBe(true);
-      expect(published.artifacts[0]).toMatchObject({
-        name: "aphrody",
-        provenance: f.artifact.provenance,
-      });
-    } finally {
-      rmSync(f.work, { recursive: true, force: true });
-    }
-  });
+  testWithFlock(
+    "adds four qualified installer artifacts and retains nine inherited payloads and build provenance",
+    async () => {
+      const f = snapshotFixture();
+      try {
+        const inherited = Array.from({ length: 9 }, (_, index) => ({
+          ...f.artifact,
+          file: `inherited-${index}.tar.gz`,
+        }));
+        for (const artifact of inherited)
+          writeFileSync(join(f.old, "files", artifact.file), "original binary bytes");
+        writeFileSync(
+          join(f.old, "latest.json"),
+          JSON.stringify({ ...f.manifest, artifacts: inherited }),
+        );
+        writeFileSync(join(f.old, "SHA256SUMS"), buildSums(inherited));
+        const staged = prebuiltFixture(f);
+        const published = await publishAssetsSnapshot(f.config, {
+          id: "new-with-kits",
+          assetCommit: "installer-source",
+          sourceRoot: f.work,
+          staged,
+          io: f.io,
+        });
+        expect(published.artifacts).toHaveLength(13);
+        expect(published.release.commit).toBe("original-build");
+        const next = join(f.host, "releases", "new-with-kits");
+        for (const artifact of inherited) {
+          expect(statSync(join(next, "files", artifact.file)).ino).toBe(
+            statSync(join(f.old, "files", artifact.file)).ino,
+          );
+          expect(f.uploads).not.toContain(join(next, "files", artifact.file));
+        }
+        for (const input of staged) {
+          for (const entry of input.entries) {
+            expect(
+              published.artifacts.find((artifact) => artifact.file === entry.file),
+            ).toMatchObject({
+              name: entry.name,
+              sha256: entry.sha256,
+              provenance: { revision: input.commit, builder: "staged" },
+            });
+            expect(f.uploads).toContain(join(next, "files", entry.file));
+          }
+        }
+        expect(readFileSync(join(next, "SHA256SUMS"), "utf8").trim().split("\n")).toHaveLength(13);
+        expect(readFileSync(join(next, "SHA256SUMS"), "utf8")).not.toContain("install.sh");
+        expect(realpathSync(join(f.host, "current"))).toBe(next);
+      } finally {
+        rmSync(f.work, { recursive: true, force: true });
+      }
+    },
+  );
+
+  testWithFlock(
+    "replaces only matching component/platform groups, preserving unrelated native artifacts",
+    async () => {
+      const f = snapshotFixture();
+      try {
+        const oldSetup = {
+          ...f.artifact,
+          name: "aphrody-setup",
+          platform: "windows-x86_64",
+          file: "old-setup.exe",
+        };
+        writeFileSync(join(f.old, "files", oldSetup.file), "original binary bytes");
+        writeFileSync(
+          join(f.old, "latest.json"),
+          JSON.stringify({ ...f.manifest, artifacts: [f.artifact, oldSetup] }),
+        );
+        writeFileSync(join(f.old, "SHA256SUMS"), buildSums([f.artifact, oldSetup]));
+        const published = await publishAssetsSnapshot(f.config, {
+          id: "new",
+          assetCommit: "source",
+          sourceRoot: f.work,
+          staged: prebuiltFixture(f),
+          io: f.io,
+        });
+        expect(published.artifacts).toHaveLength(5);
+        expect(published.artifacts.some((artifact) => artifact.file === oldSetup.file)).toBe(false);
+        expect(existsSync(join(f.old, "files", oldSetup.file))).toBe(true);
+        expect(published.artifacts[0]).toMatchObject({
+          name: "aphrody",
+          provenance: f.artifact.provenance,
+        });
+      } finally {
+        rmSync(f.work, { recursive: true, force: true });
+      }
+    },
+  );
 
   test("rejects tampered staged bytes, mismatched metadata, unsafe paths and symlinks before publication", async () => {
     await Promise.all(
@@ -478,50 +500,53 @@ describe("immutable installer snapshots", () => {
     }
   });
 
-  test("reuses artifact bytes without upload and keeps prior release metadata and installers unchanged", async () => {
-    const f = snapshotFixture();
-    try {
-      const previous = readFileSync(join(f.old, "latest.json"), "utf8");
-      const oldInstallerInode = statSync(join(f.old, "install.sh")).ino;
-      const published = await publishAssetsSnapshot(f.config, {
-        id: "new",
-        assetCommit: "installer-source",
-        sourceRoot: f.work,
-        io: f.io,
-      });
-      const next = join(f.host, "releases", "new");
-      expect(realpathSync(join(f.host, "current"))).toBe(next);
-      expect(readFileSync(join(f.old, "latest.json"), "utf8")).toBe(previous);
-      expect(readFileSync(join(f.old, "install.sh"), "utf8")).toBe("old installer");
-      expect(statSync(join(next, "install.sh")).ino).not.toBe(oldInstallerInode);
-      expect(readFileSync(join(next, "install.sh"), "utf8")).toBe("new installer");
-      expect(statSync(join(next, "files", f.artifact.file)).ino).toBe(
-        statSync(join(f.old, "files", f.artifact.file)).ino,
-      );
-      expect(f.uploads).not.toContain(join(next, "files", f.artifact.file));
-      expect(published.release).toMatchObject({
-        id: "new",
-        commit: "original-build",
-        provenance: "retained",
-        assetsFrom: "old",
-        assetsCommit: "installer-source",
-      });
-      expect(published.artifacts[0]).toMatchObject({
-        ...f.artifact,
-        url: "https://example.test/releases/new/files/aphrody.tar.gz",
-      });
-      expect(published.notes).toEqual(f.manifest.notes);
-      expect(readFileSync(join(f.work, "dist/downloads/last-release.json"), "utf8")).toBe(
-        "existing GitHub stage pointer",
-      );
-      expect(JSON.parse(readFileSync(join(next, "latest.json"), "utf8"))).toEqual(published);
-      expect(readFileSync(join(next, "SHA256SUMS"), "utf8")).toBe(
-        readFileSync(join(f.old, "SHA256SUMS"), "utf8"),
-      );
-    } finally {
-      rmSync(f.work, { recursive: true, force: true });
-    }
-  });
+  testWithFlock(
+    "reuses artifact bytes without upload and keeps prior release metadata and installers unchanged",
+    async () => {
+      const f = snapshotFixture();
+      try {
+        const previous = readFileSync(join(f.old, "latest.json"), "utf8");
+        const oldInstallerInode = statSync(join(f.old, "install.sh")).ino;
+        const published = await publishAssetsSnapshot(f.config, {
+          id: "new",
+          assetCommit: "installer-source",
+          sourceRoot: f.work,
+          io: f.io,
+        });
+        const next = join(f.host, "releases", "new");
+        expect(realpathSync(join(f.host, "current"))).toBe(next);
+        expect(readFileSync(join(f.old, "latest.json"), "utf8")).toBe(previous);
+        expect(readFileSync(join(f.old, "install.sh"), "utf8")).toBe("old installer");
+        expect(statSync(join(next, "install.sh")).ino).not.toBe(oldInstallerInode);
+        expect(readFileSync(join(next, "install.sh"), "utf8")).toBe("new installer");
+        expect(statSync(join(next, "files", f.artifact.file)).ino).toBe(
+          statSync(join(f.old, "files", f.artifact.file)).ino,
+        );
+        expect(f.uploads).not.toContain(join(next, "files", f.artifact.file));
+        expect(published.release).toMatchObject({
+          id: "new",
+          commit: "original-build",
+          provenance: "retained",
+          assetsFrom: "old",
+          assetsCommit: "installer-source",
+        });
+        expect(published.artifacts[0]).toMatchObject({
+          ...f.artifact,
+          url: "https://example.test/releases/new/files/aphrody.tar.gz",
+        });
+        expect(published.notes).toEqual(f.manifest.notes);
+        expect(readFileSync(join(f.work, "dist/downloads/last-release.json"), "utf8")).toBe(
+          "existing GitHub stage pointer",
+        );
+        expect(JSON.parse(readFileSync(join(next, "latest.json"), "utf8"))).toEqual(published);
+        expect(readFileSync(join(next, "SHA256SUMS"), "utf8")).toBe(
+          readFileSync(join(f.old, "SHA256SUMS"), "utf8"),
+        );
+      } finally {
+        rmSync(f.work, { recursive: true, force: true });
+      }
+    },
+  );
 
   test("rejects mismatched source checksums, unsafe payloads and duplicate release selection", () => {
     const f = snapshotFixture();

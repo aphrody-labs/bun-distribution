@@ -9,7 +9,7 @@
     "certName": "downloads.aphrody.com"
   },
   "host": {
-    "target": "vps",
+    "target": "dbfr",
     "root": "/srv/aphrody-downloads",
     "service": "aphrody-downloads",
     "port": 8797,
@@ -20,7 +20,9 @@
     "repo": "aphrody",
     "workspace": "/srv/aphrody-build/workspaces/aphrody",
     "cargoTargetDir": "/srv/aphrody-build/cache/cargo/aphrody",
-    "jobPrefix": "downloads"
+    "jobPrefix": "downloads",
+    "target": "vps",
+    "pushTo": "dbfr"
   },
   "assets": {
     "install.sh": "packages/infra/workspace/assets/downloads/install.sh",

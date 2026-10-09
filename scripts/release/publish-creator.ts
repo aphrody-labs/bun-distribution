@@ -19,16 +19,19 @@ import { join, relative, resolve } from "node:path";
 
 export const SITE = {
   baseUrl: "https://creator.aphrody.com",
-  host: "vps",
+  host: "dbfr",
   root: "/srv/aphrody-creator",
   keepReleases: 5,
-  vhost: "tools/config/host/nginx/aphrody/creator.aphrody.com.conf",
+  vhost: "tools/config/host/nginx/shenron/zz-creator.aphrody.com.conf",
   certScript: "scripts/tools/infra/issue-creator-certificate.sh",
 };
 
 const repo = resolve(import.meta.dir, "../..");
 const appDir = join(repo, "packages/infra/product");
-import { build as buildPage, SEED } from "../../packages/infra/product/resources/creator/site/build.ts";
+import {
+  build as buildPage,
+  SEED,
+} from "../../packages/infra/product/resources/creator/site/build.ts";
 import { brandExe } from "./windows-exe.ts";
 const TARGET = {
   platform: "windows-x64",
@@ -348,7 +351,7 @@ async function hostCommands(apply: boolean): Promise<void> {
     `create ${SITE.root}/releases owned by ubuntu`,
     `DNS creator.aphrody.com CNAME aphrody.com (aphrody ovh dns add, done separately with --apply)`,
     `certificate creator.aphrody.com (HTTP-01) through ${SITE.certScript} when absent`,
-    `install ${SITE.vhost} to /etc/nginx/conf.d, nginx -t, reload`,
+    `${SITE.vhost} ships with the Shenron gateway release (container shenron-gateway-1): nginx -t, reload`,
   ];
   console.log(steps.map((s) => `- ${s}`).join("\n"));
   if (!apply) return console.log("plan only: pass --apply to execute");
@@ -358,9 +361,8 @@ async function hostCommands(apply: boolean): Promise<void> {
     "sudo test -d /etc/letsencrypt/live/creator.aphrody.com || sudo bash /tmp/issue-creator-certificate.sh",
     300,
   );
-  await put(join(repo, SITE.vhost), "/tmp/creator.aphrody.com.conf");
   await remote(
-    "sudo install -o root -g root -m 0644 /tmp/creator.aphrody.com.conf /etc/nginx/conf.d/creator.aphrody.com.conf && sudo nginx -t && sudo systemctl reload nginx",
+    "sudo docker exec shenron-gateway-1 nginx -t && sudo docker exec shenron-gateway-1 nginx -s reload",
   );
 }
 

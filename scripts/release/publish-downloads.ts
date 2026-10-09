@@ -88,7 +88,15 @@ export interface DownloadsConfig {
     bun: string;
     keepReleases: number;
   };
-  factory: { repo: string; workspace: string; cargoTargetDir: string; jobPrefix: string };
+  /** `target`: host alias of the build factory; `pushTo`: ssh alias, on the factory, of the release host when they differ. */
+  factory: {
+    repo: string;
+    workspace: string;
+    cargoTargetDir: string;
+    jobPrefix: string;
+    target?: string;
+    pushTo?: string;
+  };
   assets: Record<string, string>;
   artifacts: ArtifactConfig[];
   github: {
@@ -312,6 +320,12 @@ export async function put(cfg: DownloadsConfig, local: string, dest: string) {
     dest,
   ]);
 }
+
+/** Same config addressed to the build factory host (the release host itself when they are not split). */
+export const factoryCfg = (cfg: DownloadsConfig): DownloadsConfig =>
+  cfg.factory.target && cfg.factory.target !== cfg.host.target
+    ? { ...cfg, host: { ...cfg.host, target: cfg.factory.target } }
+    : cfg;
 
 const q = (value: string): string => `'${value.replace(/'/g, `'\\''`)}'`;
 
@@ -642,15 +656,21 @@ async function stageFactoryBinary(
 ): Promise<PublishedFile> {
   const version = artifactVersion(artifact);
   const binary = `${cfg.factory.cargoTargetDir}/${platform.binary}`;
-  const filesDir = `${cfg.host.root}/releases/${id}/files`;
+  // Audit, scan and archive on the factory; a split release host then receives the archive over ssh.
+  const factory = factoryCfg(cfg);
+  const split = factory !== cfg;
+  if (split && !cfg.factory.pushTo)
+    throw new Error("factory.pushTo is required when factory.target differs from host.target");
+  const releaseFiles = `${cfg.host.root}/releases/${id}/files`;
+  const filesDir = split ? `/tmp/aphrody-downloads-stage/${id}` : releaseFiles;
   const ext = platform.archive ?? "tar.gz";
   const file = archiveName(artifact.id, version, commit, platform.target, ext);
   const exe = basename(platform.binary!);
   const workspace = cfg.factory.workspace;
-  await remote(cfg, `test -x ${q(binary)} || test -f ${q(binary)}`);
+  await remote(factory, `test -x ${q(binary)} || test -f ${q(binary)}`);
   if (platform.glibcMax) {
     await remote(
-      cfg,
+      factory,
       `${q(cfg.host.bun)} ${q(`${workspace}/scripts/audit/elf-glibc-imports.ts`)} ${q(binary)} --max ${platform.glibcMax} >/dev/null`,
       300,
     );
@@ -661,7 +681,7 @@ async function stageFactoryBinary(
   const linePatterns = cfg.secrets.contentPatterns.filter((p) => !p.includes("\\n"));
   const grepArgs = linePatterns.map((p) => `-e ${q(p)}`).join(" ");
   const found = await remote(
-    cfg,
+    factory,
     [
       `grep -aEoh ${grepArgs} ${q(binary)} | head -3 | cut -c1-24 || true`,
       `grep -a -A1 -E -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' ${q(binary)} | grep -aE '^[A-Za-z0-9+/]{64}$' | head -1 | cut -c1-8 || true`,
@@ -681,7 +701,7 @@ async function stageFactoryBinary(
   });
   const license = `${workspace}/LICENSE`;
   const stageOut = await remote(
-    cfg,
+    factory,
     [
       "set -e",
       `mkdir -p ${q(filesDir)}`,
@@ -696,6 +716,12 @@ async function stageFactoryBinary(
       `rm -rf "$tmp"`,
       `sha256sum ${q(`${filesDir}/${file}`)} | cut -d' ' -f1`,
       `stat -c %s ${q(`${filesDir}/${file}`)}`,
+      ...(split
+        ? [
+            `rsync -a -e 'ssh -o BatchMode=yes' ${q(`${filesDir}/${file}`)} ${q(`${cfg.factory.pushTo}:${releaseFiles}/`)} >&2`,
+            `rm -f ${q(`${filesDir}/${file}`)}`,
+          ]
+        : []),
     ].join("\n"),
     900,
   );
@@ -845,7 +871,7 @@ async function releaseTree(cfg: DownloadsConfig, commit: string, id: string) {
       }
       if (a.kind === "factory-binary" && p.optional) {
         const present = await remote(
-          cfg,
+          factoryCfg(cfg),
           `test -f ${q(`${cfg.factory.cargoTargetDir}/${p.binary}`)} && echo yes || echo no`,
         );
         if (present.trim() !== "yes") {
@@ -1530,7 +1556,7 @@ async function verify(cfg: DownloadsConfig) {
 async function hostCommands(cfg: DownloadsConfig, apply: boolean) {
   const rootDir = cfg.host.root;
   const unit = "tools/config/host/systemd/aphrody/aphrody-downloads.service";
-  const vhost = "tools/config/host/nginx/aphrody/downloads.aphrody.com.conf";
+  const vhost = "tools/config/host/nginx/shenron/zz-downloads.aphrody.com.conf";
   const cert = "scripts/tools/infra/issue-downloads-certificate.sh";
   const certDir = `/etc/letsencrypt/live/${cfg.site.certName}`;
   const steps = [
@@ -1538,7 +1564,7 @@ async function hostCommands(cfg: DownloadsConfig, apply: boolean) {
     `upload packages/infra/workspace/src/downloads/server.ts -> ${rootDir}/app/server.ts`,
     `upload ${unit}, install to /etc/systemd/system, daemon-reload, enable and restart ${cfg.host.service}`,
     `certificate ${cfg.site.certName} (HTTP-01, ${cfg.site.hosts.join(", ")}) through ${cert} when ${certDir} is absent`,
-    `upload ${vhost}, install to /etc/nginx/conf.d, retire aphrody-acme-temp.conf (saved under /etc/nginx/retired/), nginx -t, reload`,
+    `${vhost} ships with the Shenron gateway release (container shenron-gateway-1): nginx -t, reload`,
   ];
   console.log(steps.map((s) => `- ${s}`).join("\n"));
   if (!apply) {
@@ -1565,16 +1591,9 @@ async function hostCommands(cfg: DownloadsConfig, apply: boolean) {
     `sudo test -d ${certDir} || sudo bash /tmp/issue-downloads-certificate.sh`,
     300,
   );
-  await put(cfg, join(root, vhost), "/tmp/downloads.aphrody.com.conf");
   await remote(
     cfg,
-    [
-      "set -e",
-      "sudo install -o root -g root -m 0644 /tmp/downloads.aphrody.com.conf /etc/nginx/conf.d/downloads.aphrody.com.conf",
-      "if [ -f /etc/nginx/conf.d/aphrody-acme-temp.conf ]; then sudo install -d /etc/nginx/retired && sudo mv /etc/nginx/conf.d/aphrody-acme-temp.conf /etc/nginx/retired/aphrody-acme-temp.conf.$(date +%Y%m%d%H%M%S); fi",
-      "sudo nginx -t",
-      "sudo systemctl reload nginx",
-    ].join("\n"),
+    "sudo docker exec shenron-gateway-1 nginx -t && sudo docker exec shenron-gateway-1 nginx -s reload",
   );
 }
 

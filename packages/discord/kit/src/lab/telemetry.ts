@@ -24,16 +24,7 @@ export async function snapshot(host: ServiceSnapshot["host"]): Promise<ServiceSn
   const argv =
     host === "vps"
       ? command
-      : [
-          "/home/ubuntu/.local/bin/aphrody",
-          "infra",
-          "ssh",
-          "exec",
-          "--host",
-          "dbfr",
-          "--cmd",
-          command.join(" "),
-        ];
+      : ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "dbfr", command.join(" ")];
   const child = Bun.spawn(argv, { stdout: "pipe", stderr: "pipe" });
   const deadline = setTimeout(() => child.kill(), 25_000);
   try {
