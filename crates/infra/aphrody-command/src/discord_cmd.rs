@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 use crate::discord_compiler::{BotTarget, CompilerOptions, DiscordCompiler};
 use aphrody_discord::{
-    AphrodyDiscordBot, BotConfig, build_ai_embed, build_shell_embed, build_web_embed,
+    AphrodyDiscordBot, BotConfig, build_shell_embed, build_web_embed,
     fetch_and_extract_web, run_bounded_shell,
 };
 use clap::Subcommand;
@@ -40,16 +40,6 @@ pub(crate) enum DiscordAction {
         /// Optional path to environment file (e.g. .env or /etc/aphrody-discord.env)
         #[arg(long)]
         env_file: Option<PathBuf>,
-    },
-    /// Ask Aphrody AI and post the grounded response with rich Embeds into Discord.
-    Ask {
-        /// Destination Discord channel ID
-        channel_id: String,
-        /// Question or prompt to answer
-        prompt: String,
-        /// Model name (defaults to gemma4-e2b)
-        #[arg(long, default_value = "gemma4-e2b")]
-        model: String,
     },
     /// Extract a web page using Aphrody Web engine and post the rich summary Embed to Discord.
     Web {
@@ -150,30 +140,6 @@ pub(crate) async fn run_discord(action: DiscordAction) -> Result<()> {
             } else {
                 miette::bail!("Either --message or --file must be specified");
             }
-            Ok(())
-        },
-        DiscordAction::Ask { channel_id, prompt, model } => {
-            let bot = load_bot(None)?;
-            println!("🧠 Grounding query with Aphrody AI/RAG: `{prompt}`...");
-            let meta = aphrody_discord::AiResponseMetadata {
-                model: model.clone(),
-                latency_ms: 12,
-                prompt_tokens: Some(prompt.len() as u32 / 4),
-                completion_tokens: Some(85),
-                citations: vec![aphrody_discord::SourceCitation {
-                    title: "Aphrody Core Architecture".to_string(),
-                    url_or_path: "docs/architecture/README.md".to_string(),
-                    score: 0.96,
-                    excerpt: "Autonomous in-process unified Rust and Bun runtime.".to_string(),
-                }],
-            };
-            let answer = format!(
-                "**Aphrody AI Analysis:**\n\nPrompt evaluated under model `{model}` with grounded context.\n\n> {}\n\nSystem contracts verified, all active runtimes healthy.",
-                prompt
-            );
-            let embed = build_ai_embed(&prompt, &answer, Some(&meta));
-            let msg = bot.send_embed(&channel_id, embed).await.map_err(diag)?;
-            println!("✅ AI answer embed posted to Discord! ID: {}", msg.id.green().bold());
             Ok(())
         },
         DiscordAction::Web { channel_id, url } => {

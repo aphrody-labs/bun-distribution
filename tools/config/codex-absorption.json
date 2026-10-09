@@ -94,16 +94,6 @@
         "packages/interop/native/src/agent.ts"
       ],
       "status": "fully_absorbed_and_verified"
-    },
-    {
-      "id": "project-doc-agents-md",
-      "upstream": [
-        "codex-rs/core/src/agents_md.rs"
-      ],
-      "aphrody": [
-        "crates/ai/project-doc/src/lib.rs"
-      ],
-      "status": "fully_absorbed_and_verified"
     }
   ]
 }

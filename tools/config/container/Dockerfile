@@ -199,7 +199,7 @@ RUN --mount=type=cache,target=/home/aphrody/.cache/uv,uid=1000,gid=1000 \
 WORKDIR /app
 CMD ["shell"]
 
-# Benchmark container: compares all major shells, runtimes, and terminal VT engines
+# Benchmark container: startup, pipe, JSON and file-read timings of dash, bash, zsh, fish, nu and bun
 FROM base AS benchmark
 USER root
 ARG TARGETARCH
@@ -219,5 +219,5 @@ RUN apt-get update \
 USER aphrody
 WORKDIR /app
 COPY --chown=aphrody:aphrody . .
-CMD ["bash", "scripts/benchmark/run-shell-benchmark.sh"]
+CMD ["bash", "scripts/audit/bench/run-shell-benchmark.sh"]
 

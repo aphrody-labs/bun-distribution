@@ -103,7 +103,8 @@ describe("WASM release package", () => {
     expect(f.calls.find((command) => command.includes("build"))).toContain("--locked");
     expect(result.bytes).toBe(8);
     expect(result.rawBytes).toBe(12);
-    expect(result.optimization).toBe("optimized (-Oz)");
+    expect(result.optimization).toBe("optimized (-Oz converged; saved 4 bytes)");
+    expect(f.calls.find((command) => command.includes("build"))).toContain("wasm-release");
     expect(await Bun.file(join(f.out, "working.js")).exists()).toBe(false);
     expect(await Bun.file(join(f.out, "command_wasm.js")).exists()).toBe(true);
     const optimizer = f.calls.find((command) => command[0] === "wasm-opt")!;
@@ -113,7 +114,10 @@ describe("WASM release package", () => {
   });
   test("factory build is locked and checksum-verified fetch exit 3 is accepted", async () => {
     const f = await fixture();
-    await buildWasmPackage({ crate: "command-wasm", out: f.out }, { ...f, env: {} });
+    await buildWasmPackage(
+      { crate: "command-wasm", out: f.out },
+      { ...f, env: {}, platform: "linux" },
+    );
     const cargo = f.calls.find((command) => command.includes("run"))!;
     expect(cargo).toContain("--locked");
     expect(cargo[0]).toBe("bun");
@@ -149,10 +153,31 @@ describe("WASM release package", () => {
     expect(result.bytes).toBe(12);
     expect(result.optimization).toContain("original size retained");
   });
+  test("Windows hosts run locked Cargo directly", async () => {
+    const f = await fixture();
+    await buildWasmPackage({ crate: "command-wasm", out: f.out }, { ...f, env: {}, platform: "win32" });
+    const cargo = f.calls.find((command) => command[0] === "cargo")!;
+    expect(cargo).toContain("--locked");
+    expect(cargo).toContain("wasm-release");
+    expect(f.calls.some((command) => command.includes("fetch"))).toBe(false);
+  });
+  test("--max-bytes rejects an oversized module and keeps the last package", async () => {
+    const f = await fixture();
+    await expect(
+      buildWasmPackage(
+        { crate: "command-wasm", out: f.out, skipCargo: true, maxBytes: 4 },
+        { ...f, env: { APHRODY_CLOUD: "1" } },
+      ),
+    ).rejects.toThrow("WASM size ratchet exceeded");
+    expect(await Bun.file(join(f.out, "working.js")).text()).toBe("previous usable package");
+  });
   test("requires exact lockfile bindgen version after pinned install", async () => {
     const f = await fixture("wrong-pin");
     await expect(
-      buildWasmPackage({ crate: "command-wasm", out: f.out }, { ...f, home: f.root, env: {} }),
+      buildWasmPackage(
+        { crate: "command-wasm", out: f.out },
+        { ...f, home: f.root, env: {}, platform: "linux" },
+      ),
     ).rejects.toThrow("wasm-bindgen 0.2.129 (Cargo.lock) is not available");
     const install = f.calls.find((command) => command.includes("binstall"))!;
     expect(install).toContain("--locked");

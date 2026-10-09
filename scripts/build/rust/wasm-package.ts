@@ -48,6 +48,7 @@ export type BuildDependencies = {
   root?: string;
   home?: string;
   env?: NodeJS.ProcessEnv;
+  platform?: NodeJS.Platform;
   run?: ToolRunner;
 };
 
@@ -63,6 +64,7 @@ export async function buildWasmPackage(
   const root = dependencies.root ?? repositoryRoot;
   const env = dependencies.env ?? process.env;
   const run = dependencies.run ?? runTool;
+  const platform = dependencies.platform ?? process.platform;
   const crate = options.crate;
   const name = options.name ?? crate.replaceAll("-", "_");
   const profile = options.profile ?? "wasm-release";
@@ -88,7 +90,7 @@ export async function buildWasmPackage(
     const result = await run([bin, "--version"], root);
     return result.exitCode === 0 && result.stdout.trim() === `wasm-bindgen ${pinned}`;
   };
-  const exeSuffix = process.platform === "win32" ? ".exe" : "";
+  const exeSuffix = platform === "win32" ? ".exe" : "";
   let bindgen = `wasm-bindgen${exeSuffix}`;
   if (!(await matchesPin(bindgen))) {
     if (await matchesPin("wasm-bindgen")) {
@@ -136,7 +138,7 @@ export async function buildWasmPackage(
       if (!options.skipCargo)
         await checked([join(root, "scripts/build/rust/cargo-serial.sh"), ...cargoArgs]);
       wasmFile = join(resolve(root, env.CARGO_TARGET_DIR ?? "target"), triple, profile, artifact);
-    } else if (process.platform === "win32" || env.APHRODY_LOCAL_CARGO === "1") {
+    } else if (platform === "win32" || env.APHRODY_LOCAL_CARGO === "1") {
       if (!options.skipCargo) await checked(["cargo", ...cargoArgs]);
       wasmFile = join(resolve(root, env.CARGO_TARGET_DIR ?? "target"), triple, profile, artifact);
     } else {

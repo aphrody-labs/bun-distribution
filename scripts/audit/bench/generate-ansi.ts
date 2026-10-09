@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Generates 10MB of realistic ANSI terminal escape sequences (colors, 256-color, truecolor, SGR, cursor)
+// Generates a 100k-line file of ANSI terminal escape sequences (colors, 256-color, truecolor, SGR, cursor)
 
 const chunks: string[] = [];
 const lines = 100_000;

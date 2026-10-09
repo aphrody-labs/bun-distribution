@@ -13,7 +13,7 @@ The verbatim and adapted items below were originally compared with
 `78245b47af2a7aafcabe025828ceecca69db4df1` (2026-09-19). Keep that revision
 as the provenance for those files unless their source is re-audited.
 
-The current reference checkout and private fork is [aphrody-labs/codex](https://github.com/aphrody-labs/codex),
+The current reference checkout is the fork [aphrody-labs/codex](https://github.com/aphrody-labs/codex),
 tracking upstream `openai/codex` main and pinned at
 `bd274564e1b1b3febb3886d274e6d97c2a3d275e` (2026-10-09). Absorption boundaries and mappings
 are declared in [tools/config/codex-absorption.json](../../../tools/config/codex-absorption.json).

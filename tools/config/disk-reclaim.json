@@ -6,7 +6,7 @@
     "paths are relative to the remote $HOME; absolute paths and '..' are rejected",
     "never list data read by a running unit (nie-model-serve reads .local/share/Steam/iecode and nie/var/model-cache; nie-site runs from nie/target/release)",
     "/tmp is tmpfs: reclaiming it frees RAM and swap, not disk",
-    "system steps run through sudo -n: docker prune never touches volumes; absolute paths below protected roots (/srv, /var/lib/docker, /srv/shenron/shared...) only"
+    "system steps run through sudo -n: docker prunes only unreferenced images older than 7 days and the build cache (never containers or volumes); absolute system paths must sit below a non-protected root and never under /home, /root, /etc, /boot, /var/lib/docker, /var/lib/postgresql, /var/lib/mysql or /srv/shenron/shared"
   ],
   "targets": {
     "vps": {

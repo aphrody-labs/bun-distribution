@@ -3,6 +3,18 @@
 
 use serde::{Deserialize, Serialize};
 
+/// Longest prefix of `s` that is at most `max` bytes and ends on a char boundary.
+pub(crate) fn clip(s: &str, max: usize) -> &str {
+    if s.len() <= max {
+        return s;
+    }
+    let mut end = max;
+    while !s.is_char_boundary(end) {
+        end -= 1;
+    }
+    &s[..end]
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct User {
     pub id: String,

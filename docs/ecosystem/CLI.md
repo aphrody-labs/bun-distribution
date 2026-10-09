@@ -155,7 +155,6 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 266 comma
 - `aphrody discord` — Discord bot compilation, inspection, and monorepo verification. _(cfg: not(target_arch = "wasm32"))_
   - `aphrody discord status` — Show Discord bot identity, guild and operational status.
   - `aphrody discord send` — Send a message or upload a file directly to a Discord channel.
-  - `aphrody discord ask` — Ask Aphrody AI and post the grounded response with rich Embeds into Discord.
   - `aphrody discord web` — Extract a web page using Aphrody Web engine and post the rich summary Embed to Discord.
   - `aphrody discord exec` — Execute a bounded shell command and post the execution receipt into Discord.
   - `aphrody discord compile` — Compile one or all Discord bots into a native standalone binary via Bun + Oxc.
@@ -478,7 +477,6 @@ Crate `aphrody-infra`, parser `crates/infra/infra/src/cli.rs#Cli`, 367 commands.
   - `aphrody infra ssh discord` — Discord bot compilation, inspection, and monorepo verification. _(cfg: not(target_arch = "wasm32"))_
     - `aphrody infra ssh discord status` — Show Discord bot identity, guild and operational status.
     - `aphrody infra ssh discord send` — Send a message or upload a file directly to a Discord channel.
-    - `aphrody infra ssh discord ask` — Ask Aphrody AI and post the grounded response with rich Embeds into Discord.
     - `aphrody infra ssh discord web` — Extract a web page using Aphrody Web engine and post the rich summary Embed to Discord.
     - `aphrody infra ssh discord exec` — Execute a bounded shell command and post the execution receipt into Discord.
     - `aphrody infra ssh discord compile` — Compile one or all Discord bots into a native standalone binary via Bun + Oxc.

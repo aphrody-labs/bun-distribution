@@ -1411,7 +1411,7 @@
         {
           "name": "aphrody-term",
           "path": "crates/shell/aphrody-term",
-          "description": "Autonomous, zero-copy, hardware-accelerated terminal engine for Aphrody AI Computer-Use, WezTerm surface protocols, Cosmic rendering, and native Bun shell.",
+          "description": "Headless VT terminal engine (cell grid, native PTY, screen scraping, quad batching) for Aphrody computer use.",
           "bins": [],
           "features": [
             "default"
@@ -4423,13 +4423,6 @@
               "children": []
             },
             {
-              "name": "ask",
-              "about": "Ask Aphrody AI and post the grounded response with rich Embeds into Discord.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
               "name": "web",
               "about": "Extract a web page using Aphrody Web engine and post the rich summary Embed to Discord.",
               "aliases": [],
@@ -6654,13 +6647,6 @@
                 {
                   "name": "send",
                   "about": "Send a message or upload a file directly to a Discord channel.",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "ask",
-                  "about": "Ask Aphrody AI and post the grounded response with rich Embeds into Discord.",
                   "aliases": [],
                   "cfg": [],
                   "children": []

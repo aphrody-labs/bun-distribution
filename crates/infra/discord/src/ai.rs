@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Aphrody AI and RAG integration for Discord: prompt formatting, source citations and rich embeds.
 
-use crate::types::{Embed, EmbedAuthor, EmbedField, EmbedFooter};
+use crate::types::{Embed, EmbedAuthor, EmbedField, EmbedFooter, clip};
 
 #[derive(Debug, Clone)]
 pub struct SourceCitation {
@@ -56,7 +56,7 @@ pub fn build_ai_embed(question: &str, answer: &str, meta: Option<&AiResponseMeta
     }
 
     let description = if answer.len() > 3900 {
-        format!("{}… *(truncated)*", &answer[..3900])
+        format!("{}… *(truncated)*", clip(answer, 3900))
     } else {
         answer.to_string()
     };
@@ -64,7 +64,7 @@ pub fn build_ai_embed(question: &str, answer: &str, meta: Option<&AiResponseMeta
     Embed {
         title: Some(format!(
             "Q: {}",
-            if question.len() > 250 { &question[..250] } else { question }
+            clip(question, 250)
         )),
         description: Some(description),
         color: Some(0x7C3AED), // Aphrody purple accent

@@ -5,7 +5,10 @@ use anyhow::{Context, Result};
 use std::time::Instant;
 use tokio::process::Command;
 
-use crate::types::{Embed, EmbedField, EmbedFooter};
+use crate::types::{Embed, EmbedField, EmbedFooter, clip};
+
+/// Wall-clock limit for `run_bounded_shell`; the child is killed when it is exceeded.
+pub const SHELL_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
 
 #[derive(Debug, Clone)]
 pub struct ShellExecutionResult {
@@ -17,7 +20,7 @@ pub struct ShellExecutionResult {
     pub success: bool,
 }
 
-/// Executes a bounded shell command with stdout/stderr capture and strict limits.
+/// Runs a command through the platform shell, capturing stdout/stderr, killed after [`SHELL_TIMEOUT`].
 pub async fn run_bounded_shell(command_line: &str) -> Result<ShellExecutionResult> {
     let start = Instant::now();
 
@@ -35,9 +38,10 @@ pub async fn run_bounded_shell(command_line: &str) -> Result<ShellExecutionResul
         c
     };
 
-    let output = cmd
-        .output()
+    cmd.kill_on_drop(true);
+    let output = tokio::time::timeout(SHELL_TIMEOUT, cmd.output())
         .await
+        .map_err(|_| anyhow::anyhow!("shell command timed out after {}s: {command_line}", SHELL_TIMEOUT.as_secs()))?
         .with_context(|| format!("Failed to execute shell command: {command_line}"))?;
 
     let duration_ms = start.elapsed().as_millis();
@@ -76,7 +80,7 @@ pub fn build_shell_embed(res: &ShellExecutionResult) -> Embed {
     let stdout_sample = if res.stdout.trim().is_empty() {
         "*(empty)*".to_string()
     } else if res.stdout.len() > 1000 {
-        format!("{}…\n*(truncated)*", &res.stdout[..1000])
+        format!("{}…\n*(truncated)*", clip(&res.stdout, 1000))
     } else {
         res.stdout.clone()
     };
@@ -89,7 +93,7 @@ pub fn build_shell_embed(res: &ShellExecutionResult) -> Embed {
 
     if !res.stderr.trim().is_empty() {
         let stderr_sample = if res.stderr.len() > 800 {
-            format!("{}…\n*(truncated)*", &res.stderr[..800])
+            format!("{}…\n*(truncated)*", clip(&res.stderr, 800))
         } else {
             res.stderr.clone()
         };
@@ -103,7 +107,7 @@ pub fn build_shell_embed(res: &ShellExecutionResult) -> Embed {
     Embed {
         title: Some(format!(
             "Shell: `{}`",
-            if res.command.len() > 80 { &res.command[..80] } else { &res.command }
+            clip(&res.command, 80)
         )),
         description: None,
         color: Some(color),

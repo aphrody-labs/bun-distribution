@@ -25,8 +25,9 @@ pub struct Target {
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct System {
-    /// `docker system prune -af` + `docker builder prune -af`: stopped containers, every image
-    /// not used by a container, build cache. Volumes (databases) are never pruned.
+    /// `docker image prune -af --filter until=168h` + `docker builder prune -af`: images older
+    /// than 7 days that no container (running or stopped) references, and the build cache.
+    /// Containers and volumes are never pruned, so a stopped service keeps its image.
     #[serde(default)]
     pub docker: bool,
     /// `journalctl --vacuum-size=<size>`.
@@ -112,6 +113,18 @@ const PROTECTED: &[&str] = &[
     "/var/lib/postgresql",
 ];
 
+/// Trees holding user data, configuration or live service state: nothing below them is removable.
+const PROTECTED_TREES: &[&str] = &[
+    "/boot",
+    "/etc",
+    "/home",
+    "/root",
+    "/srv/shenron/shared",
+    "/var/lib/docker",
+    "/var/lib/mysql",
+    "/var/lib/postgresql",
+];
+
 fn check_system_path(path: &str) -> Result<()> {
     let Some(rest) = path.strip_prefix('/') else {
         bail!("chemin système refusé (relatif): {path}");
@@ -124,6 +137,9 @@ fn check_system_path(path: &str) -> Result<()> {
     }
     if PROTECTED.contains(&path) || path.matches('/').count() < 2 {
         bail!("chemin système refusé (racine protégée): {path}");
+    }
+    if PROTECTED_TREES.iter().any(|tree| path.starts_with(&format!("{tree}/"))) {
+        bail!("chemin système refusé (arbre de données ou de configuration): {path}");
     }
     Ok(())
 }
@@ -150,7 +166,9 @@ fn system_script(system: &System, apply: bool, out: &mut String) -> Result<()> {
         let estimate = format!(
             "{S} docker system df --format '{{{{.Reclaimable}}}}' | awk '{{v=$1; n=v+0; if (v ~ /GB/) n*=1e9; else if (v ~ /MB/) n*=1e6; else if (v ~ /kB/) n*=1e3; s+=n}} END {{printf \"%d\", s}}'"
         );
-        let command = format!("{S} docker system prune -af; {S} docker builder prune -af");
+        let command = format!(
+            "{S} docker image prune -af --filter until=168h; {S} docker builder prune -af"
+        );
         system_step(out, "docker", &estimate, &command, apply);
     }
     if let Some(size) = &system.journal_max_size {
@@ -293,7 +311,8 @@ mod tests {
         assert!(!plan.contains("prune -af"), "{plan}");
         assert!(!plan.contains("rm -rf -- '/srv"), "{plan}");
         let apply = script(&t, true).unwrap();
-        assert!(apply.contains("sudo -n docker system prune -af"));
+        assert!(apply.contains("sudo -n docker image prune -af --filter until=168h"));
+        assert!(!apply.contains("system prune"));
         assert!(!apply.contains("--volumes"));
         assert!(apply.contains("sudo -n journalctl --vacuum-size=200M"));
         assert!(apply.contains("sudo -n rm -rf -- '/srv/cache/old'"));
@@ -303,6 +322,10 @@ mod tests {
             "/etc",
             "/var/lib/docker",
             "/srv/shenron/shared",
+            "/srv/shenron/shared/db",
+            "/home/ubuntu",
+            "/var/lib/postgresql/16",
+            "/etc/aphrody",
             "rel/x",
             "/a/../b",
             "/x;y",

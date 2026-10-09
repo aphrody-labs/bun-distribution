@@ -69,7 +69,7 @@ export async function runWorkspaceLayout(args: string[]): Promise<number> {
       relative(root, absolutePath).startsWith("..")
     ) {
       errors.push(
-        `workspace must live below packages/, m3/packages/, crates/tauri/, or drive/: ${workspacePath}`,
+        `workspace must live below apps/, examples/, packages/, m3/packages/, crates/tauri/, drive/apps/, or drive/packages/: ${workspacePath}`,
       );
     }
     if (!existsSync(packageManifest)) {

@@ -4,10 +4,10 @@
 //! Native Discord engine for Aphrody:
 //! - Ed25519 webhook signature verification (ring).
 //! - Asynchronous REST API v10 client with rate-limiting and multipart file upload.
-//! - Deep integration with Aphrody AI (RAG grounding, citations, model performance embeds).
-//! - Deep integration with Aphrody Web (SSRF guard, HTML-to-markdown extraction, rich unfurls).
-//! - Deep integration with Aphrody Shell (bounded execution, computer-use monitoring).
-//! - Sovereign Bot orchestrator and CLI bindings.
+//! - Embed builders for AI answers (model, latency, citations) supplied by the caller.
+//! - Web unfurls: literal-address SSRF guard, HTML-to-markdown extraction.
+//! - Shell receipts: platform shell run with a wall-clock timeout.
+//! - Bot wrapper (status, send, upload, signed interaction handling) and CLI bindings.
 
 pub mod ai;
 pub mod bot;
@@ -79,6 +79,24 @@ mod tests {
         let embed = build_ai_embed("How is Rust?", "Rust ensures memory safety.", Some(&meta));
         assert_eq!(embed.title.as_deref(), Some("Q: How is Rust?"));
         assert_eq!(embed.fields.len(), 2);
+    }
+
+    #[test]
+    fn test_embeds_truncate_on_char_boundaries() {
+        let long = "é".repeat(3000);
+        let embed = build_ai_embed(&long, &long, None);
+        assert!(embed.title.unwrap().starts_with("Q: é"));
+        assert!(embed.description.unwrap().ends_with("*(truncated)*"));
+
+        let res = ShellExecutionResult {
+            command: long.clone(),
+            exit_code: Some(0),
+            stdout: long.clone(),
+            stderr: long,
+            duration_ms: 1,
+            success: true,
+        };
+        assert_eq!(build_shell_embed(&res).fields.len(), 3);
     }
 
     #[test]

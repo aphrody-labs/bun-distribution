@@ -6,7 +6,7 @@
 #   1. Startup latency
 #   2. Pipeline throughput
 #   3. Structured data parsing
-#   4. Terminal ANSI stream throughput (100k lines / ~8MB ANSI sequences)
+#   4. Raw read of a 100k-line ANSI file (I/O only: no VT parsing is measured)
 #   5. Memory footprint (RSS)
 
 set -euo pipefail
@@ -60,7 +60,7 @@ hyperfine --warmup 3 --runs 10 \
   -n "dash (seq | wc -l)" "dash -c 'seq 1 100000 | wc -l'" \
   -n "bash (seq | wc -l)" "bash -c 'seq 1 100000 | wc -l'" \
   -n "nu (seq 1 100000 | length)" "nu -c 'seq 1 100000 | length'" \
-  -n "bun shell ($`seq 1 100000 | wc -l`)" "bun scripts/benchmark/bench-bun-pipe.ts"
+  -n 'bun shell (seq 1 100000 | wc -l)' "bun scripts/audit/bench/bench-bun-pipe.ts"
 
 cat /tmp/pipe-bench.md
 echo ""
@@ -84,7 +84,7 @@ echo "Generated /tmp/test_data.json ($(du -h /tmp/test_data.json | cut -f1))"
 
 hyperfine --warmup 2 --runs 5 \
   --export-markdown /tmp/data-bench.md \
-  -n "bun (JSC native parse + filter)" "bun scripts/benchmark/bench-bun-data.ts" \
+  -n "bun (JSC native parse + filter)" "bun scripts/audit/bench/bench-bun-data.ts" \
   -n "nu (open test_data.json | where ... | length)" "nu -c \"open /tmp/test_data.json | where active == true and score > 50 | length\"" \
   -n "bash + jq (jq stream filter | length)" "bash -c \"jq '[.[] | select(.active and .score > 50)] | length' /tmp/test_data.json\""
 
@@ -94,10 +94,10 @@ echo ""
 # -----------------------------------------------------------------------------
 # BENCHMARK 4: Terminal VT Stream Processing (100k lines ANSI)
 # -----------------------------------------------------------------------------
-echo -e "${BOLD}${YELLOW}>>> 4. TERMINAL VT ESCAPE CODE STREAMING (100k lines ANSI)${RESET}"
-echo -e "Measures raw I/O and processing speed when reading ANSI colored streams.\n"
+echo -e "${BOLD}${YELLOW}>>> 4. RAW READ OF AN ANSI FILE (100k lines, no VT parsing)${RESET}"
+echo -e "Copies an ANSI-colored file to /dev/null; terminal emulators are not exercised.\n"
 
-bun scripts/benchmark/generate-ansi.ts
+bun scripts/audit/bench/generate-ansi.ts
 
 hyperfine --warmup 3 --runs 10 \
   --export-markdown /tmp/vt-bench.md \
