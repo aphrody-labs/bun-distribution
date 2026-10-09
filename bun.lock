@@ -800,7 +800,7 @@
     },
     "packages/engine/core": {
       "name": "@aphrody/yolo-core",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "dependencies": {
         "@aphrody/runtime-sdk": "workspace:*",
         "@oxc-project/types": "catalog:",
@@ -812,7 +812,7 @@
     },
     "packages/engine/yolo": {
       "name": "@aphrody/yolo-cli",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "bin": {
         "yolo": "./src/index.ts",
       },

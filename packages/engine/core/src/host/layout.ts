@@ -6,13 +6,18 @@ import {
   lchownSync,
   lstatSync,
   readdirSync,
+  readFileSync,
   readlinkSync,
   renameSync,
   symlinkSync,
   type Dirent,
 } from "node:fs";
-import { join, posix } from "node:path";
-import policy from "../../../../../tools/config/host/host-policy.toml";
+import { join, posix, resolve } from "node:path";
+
+const sourcePolicy = resolve(import.meta.dir, "../../../../../tools/config/host/host-policy.toml");
+const policy = existsSync(sourcePolicy)
+  ? Bun.TOML.parse(readFileSync(sourcePolicy, "utf8"))
+  : JSON.parse(readFileSync(resolve(import.meta.dir, "../../data/host-layout.json"), "utf8"));
 
 export type LayoutRoot = "src" | "apps" | "build" | "archive" | "state";
 
