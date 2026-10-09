@@ -58,10 +58,11 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | operations | [web](operations/web/) | 3 | - |
 | operations | [workspace](operations/workspace/) | 9 | - |
 | plans | [agent-home-pipeline](plans/agent-home-pipeline/) | 1 | [Agent home, one database, one pipeline, one RAG](plans\agent-home-pipeline\PLAN.md) |
-| plans | [ai](plans/ai/) | 18 | [Delivery plan](plans\ai\PLAN.md) |
+| plans | [ai](plans/ai/) | 17 | [Delivery plan](plans\ai\PLAN.md) |
 | plans | [compat](plans/compat/) | 1 | [PLAN — aphrody-compat](plans\compat\PLAN.md) |
 | plans | [contracts](plans/contracts/) | 1 | [PLAN — aphrody-contracts](plans\contracts\PLAN.md) |
 | plans | [convergence](plans/convergence/) | 1 | - |
+| plans | [desktop-web](plans/desktop-web/) | 2 | [Desktop and web engines: Obscura, Tauri/CEF and browser automation](plans\desktop-web\PLAN.md) |
 | plans | [discord](plans/discord/) | 2 | [Aphrody Discord plan](plans\discord\PLAN.md) |
 | plans | [fusion](plans/fusion/) | 13 | - |
 | plans | [gpu-hub](plans/gpu-hub/) | 1 | [GPU hub, Aphrody OS image and WASM target](plans\gpu-hub\PLAN.md) |
@@ -71,9 +72,8 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [os-kernel](plans/os-kernel/) | 1 | [Architecture cible de aphrody-kernel](plans\os-kernel\PLAN.md) |
 | plans | [runtime](plans/runtime/) | 3 | - |
 | plans | [shell](plans/shell/) | 1 | - |
-| plans | [tauri-cef](plans/tauri-cef/) | 2 | [One desktop runtime: `tauri-runtime-cef` (CEF + `tauri-winit` + GTK 4)](plans\tauri-cef\PLAN.md) |
 | plans | [vu](plans/vu/) | 7 | [`vu`: the Aphrody Python runtime](plans\vu\PLAN.md) |
-| plans | [web](plans/web/) | 4 | - |
+| plans | [web](plans/web/) | 1 | - |
 | plans | [workspace](plans/workspace/) | 1 | [Aphrody — FFI unique et consolidation Rust, Python, Bun](plans\workspace\PLAN.md) |
 | plans | [x-bun-import](plans/x-bun-import/) | 2 | [`@aphrody/x`: a thin Bun import over `aphrody-x`](plans\x-bun-import\PLAN.md) |
 | plans | [yolo-fork-unified](plans/yolo-fork-unified/) | 1 | [yolo et le fork Bun : un seul produit runtime](plans\yolo-fork-unified\PLAN.md) |
@@ -99,7 +99,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | reference | [shell](reference/shell/) | 10 | - |
 | reference | [upstream-bun](reference/upstream-bun/) vendored upstream copy | 344 | [README.md](reference\upstream-bun\README.md) |
 | reference | [upstream-codex](reference/upstream-codex/) vendored upstream copy | 2 | - |
-| reference | [web](reference/web/) | 48 | - |
+| reference | [web](reference/web/) | 47 | - |
 | reference | [workspace](reference/workspace/) | 15 | [Workspace documentation](reference\workspace\INDEX.md) |
 | reference | [yolo](reference/yolo/) | 1 | - |
 | research | [ai](research/ai/) | 48 | - |
@@ -117,4 +117,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | cli (outside the category layout) | [(files)](cli/) | 1 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
 
-Total: 1100 files.
+Total: 1095 files.

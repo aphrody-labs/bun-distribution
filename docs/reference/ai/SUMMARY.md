@@ -154,7 +154,7 @@
   - [Gemini-Codex](../../plans/ai/plans/gemini-codex.md)
   - [Local-Inference-Toolbox](../../plans/ai/plans/local-inference-toolbox.md)
   - [Ocr-Monorepo](../../plans/ai/plans/ocr-monorepo.md)
-  - [Tauri-App](../../plans/ai/plans/tauri-app.md)
+  - [Desktop and web](../../plans/desktop-web/PLAN.md)
 - [Research]()
   - [NEXTJS-VERCEL-RUST-CRATES](../../research/ai/research/NEXTJS_VERCEL_RUST_CRATES.md)
   - [Adobe-Creative-Integration](../../research/ai/research/adobe-creative-integration.md)

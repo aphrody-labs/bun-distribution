@@ -2,20 +2,20 @@
 
 # Debugging and testing Tauri 3 apps with aphrody-web
 
-Status 2026-10-05 (one desktop runtime, CEF: [plan](../../plans/tauri-cef/PLAN.md)). Survey 2026-10-01, comparison and fork pins:
+Status 2026-10-05 (one desktop runtime, CEF: [plan](../../plans/desktop-web/PLAN.md)). Survey 2026-10-01, comparison and fork pins:
 [`docs/research/web/tauri-debugging-survey-2026-10-01.md`](../../research/web/tauri-debugging-survey-2026-10-01.md).
 Registry of pins and patches: the `debuggers` block of
 [`tools/config/tauri-upstream.json`](../../../tools/config/tauri-upstream.json).
 
 ## What was built, and what was not verified
 
-| Piece                                   | Where                                                                                     | State                                                                                                                         |
-| --------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Pinned upstream forks                   | `.cache/upstream/mcp-server-tauri` (not in repo) (generated or machine-local artifact; presence depends on the build host) (checkout); tauri-plugin-webdriver and victauri are read live (`aphrody git upstream read <id> <path>`) | One checkout (Cargo path dependency); the others are catalogue entries ([UPSTREAMS.md](../../reference/infra/UPSTREAMS.md)). GitHub forks under `aphrody-code`; nothing pushed.                                          |
-| Patch set over the hypothesi bridge     | `patches/tauri-plugin-mcp-bridge-0.13.0-tauri3.patch` (11 files), applied to `.cache/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge` (not in repo) (generated or machine-local artifact; presence depends on the build host) | Applies to the pristine pin and reproduces the working tree. **Not compiled or run** after patching.        |
-| Feature-gated host plugin               | `crates/ui/tauri-wrap` (`aphrody_tauri_wrap::debug`, feature `debug-bridge`)              | **Not compiled.** Registered in `tools/config/tauri-apps.json`; `bun run tauri:apps:check` passes.                                   |
-| Bun client                              | `@aphrody/agent-browser/tauri` (`listTauriApps`, `TauriBridge`)                           | 6 tests pass against a fake bridge; the DOM snapshot script runs in the aphrody-web engine on a fixture page.                 |
-| App wiring                              | `crates/ui/model-view` (not in repo) feature `debug-bridge`                                             | **Not compiled.** Window launch under X11 was seen with a build that predates the plugin (see below).                          |
+| Piece                               | Where                                                                                                                                                                                                                                    | State                                                                                                                                                                           |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pinned upstream forks               | `.cache/upstream/mcp-server-tauri` (not in repo) (generated or machine-local artifact; presence depends on the build host) (checkout); tauri-plugin-webdriver and victauri are read live (`aphrody git upstream read <id> <path>`)       | One checkout (Cargo path dependency); the others are catalogue entries ([UPSTREAMS.md](../../reference/infra/UPSTREAMS.md)). GitHub forks under `aphrody-code`; nothing pushed. |
+| Patch set over the hypothesi bridge | `patches/tauri-plugin-mcp-bridge-0.13.0-tauri3.patch` (11 files), applied to `.cache/upstream/mcp-server-tauri/packages/tauri-plugin-mcp-bridge` (not in repo) (generated or machine-local artifact; presence depends on the build host) | Applies to the pristine pin and reproduces the working tree. **Not compiled or run** after patching.                                                                            |
+| Feature-gated host plugin           | `crates/ui/tauri-wrap` (`aphrody_tauri_wrap::debug`, feature `debug-bridge`)                                                                                                                                                             | **Not compiled.** Registered in `tools/config/tauri-apps.json`; `bun run desktop:apps:check` passes.                                                                              |
+| Bun client                          | `@aphrody/agent-browser/tauri` (`listTauriApps`, `TauriBridge`)                                                                                                                                                                          | 6 tests pass against a fake bridge; the DOM snapshot script runs in the aphrody-web engine on a fixture page.                                                                   |
+| App wiring                          | `crates/ui/model-view` (not in repo) feature `debug-bridge`                                                                                                                                                                              | **Not compiled.** Window launch under X11 was seen with a build that predates the plugin (see below).                                                                           |
 
 Note (2026-10-04): the model-view Tauri app now lives in `aphrody-labs/nie-ui` (`apps/tauri/model-view` (not in repo), submodule `m3/packages/nie-ui` (not in repo)).
 
@@ -26,10 +26,10 @@ back through a debug channel, so the window is not "verified" in the sense of th
 
 ## Which runtime can do what
 
-| Route                                                      | How                                                                                                                   | Notes                                                                                                                                                                  |
-| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CDP (`tauri-runtime-cef`, the one desktop runtime)         | `RemoteDebugging::Port{..}` or `Pipe`; `aphrody-app` opens a loopback port only when `APHRODY_CEF_REMOTE_DEBUGGING_PORT` is set; attach `WebCdpPage` or Playwright `connectOverCDP` directly. | Full protocol (DOM, Accessibility, Network, Runtime). No plugin needed. The port has no authentication and every local process can reach it: an opt-in of the launcher, never a production default. |
-| `aphrody_tauri_wrap::debug` bridge (debug builds)           | Loopback WebSocket with a per-process token; `@aphrody/agent-browser/tauri`.                                          | DOM, accessibility tree (role/name script), eval, console buffer, IPC trace. The screenshot is `Page.captureScreenshot` through `WebviewCefExt` (`crates/ui/tauri-plugin-mcp-bridge/src/screenshot/cef.rs`), on every platform. |
+| Route                                              | How                                                                                                                                                                                           | Notes                                                                                                                                                                                                                           |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CDP (`tauri-runtime-cef`, the one desktop runtime) | `RemoteDebugging::Port{..}` or `Pipe`; `aphrody-app` opens a loopback port only when `APHRODY_CEF_REMOTE_DEBUGGING_PORT` is set; attach `WebCdpPage` or Playwright `connectOverCDP` directly. | Full protocol (DOM, Accessibility, Network, Runtime). No plugin needed. The port has no authentication and every local process can reach it: an opt-in of the launcher, never a production default.                             |
+| `aphrody_tauri_wrap::debug` bridge (debug builds)  | Loopback WebSocket with a per-process token; `@aphrody/agent-browser/tauri`.                                                                                                                  | DOM, accessibility tree (role/name script), eval, console buffer, IPC trace. The screenshot is `Page.captureScreenshot` through `WebviewCefExt` (`crates/ui/tauri-plugin-mcp-bridge/src/screenshot/cef.rs`), on every platform. |
 
 There is no WebDriver: `tauri-driver` only proxied `WebKitWebDriver` and `msedgedriver` and set
 `TAURI_WEBVIEW_AUTOMATION`, which only the retired wry runtime read; it was removed with wry, tao and the GTK 3 stack
@@ -87,11 +87,11 @@ absent or loopback (upstream issue #36), constant-time token comparison. The URL
 import { TauriBridge } from "@aphrody/agent-browser/tauri";
 
 const { app, bridge } = await TauriBridge.connectToRunning("aphrody-model-view");
-console.log(await bridge.listWindows());            // label, title, url, focused, visible
-const snapshot = await bridge.domSnapshot();        // title, url, text, role/name tree with data-testid
+console.log(await bridge.listWindows()); // label, title, url, focused, visible
+const snapshot = await bridge.domSnapshot(); // title, url, text, role/name tree with data-testid
 await bridge.startIpcTrace();
 await bridge.clickSelector("#reset");
-console.log(await bridge.ipcEvents());              // command, args, result, error, duration_ms
+console.log(await bridge.ipcEvents()); // command, args, result, error, duration_ms
 console.log((await bridge.screenshot()).imageWidth);
 bridge.close();
 ```
@@ -102,9 +102,4 @@ bridge.close();
 
 ## Still open
 
-- Compile and run `aphrody-tauri-wrap` with `--features debug-bridge`, then capture real output
-  from a live window (this is the missing proof).
-- The `aphrody_tauri_*` tools of `aphrody-mcp` still forward to the per-user kernel only; a backend that reads the discovery
-  files would give MCP clients the bridge tools.
-- The CEF screenshot backend (`Page.captureScreenshot`) is compiled on Linux only; mobile targets are dropped from the
-  patched crate (`crate-type = ["rlib"]`) and the per-platform webview capture code was deleted with the wry runtime.
+Tracked in the [desktop and web plan](../../plans/desktop-web/PLAN.md) (open items 6 and 7).

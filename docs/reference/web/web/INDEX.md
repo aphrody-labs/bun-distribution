@@ -9,7 +9,6 @@ Welcome to the Aphrody Web core documentation. Aphrody Web is a high-performance
 - [Google Ecosystem Atlas](./GOOGLE-ATLAS.md) - Mapping and intelligent routing across 5000+ Google domains and infrastructures (Wiz, Angular, Lit, GFE).
 - [Google Module & Chrome DevTools MCP](./bxc-google-module-chrome-mcp.md) - Deep architectural analysis of Google services integration and DevTools protocols.
 - [Chromium & Rust Bridge](./CHROMIUM-RUST.md) - Rust FFI architecture connecting Bun with native DOM, V8, and networking crates.
-- [Native Obscura Engine](./obscura-headless-browser.md) - Headless browser engine integration spec and runtime capabilities.
 - [Obscura Integration Specification](./obscura-integration-spec.md) - Detailed feature inventory, JSON schemas, and command mapping.
 
 ## Deployment & Distribution

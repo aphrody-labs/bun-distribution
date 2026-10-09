@@ -12,7 +12,7 @@
  * an injected script (`packages/injected`). Aphrody's default `static` profile has
  * no JS engine, so we resolve to CSS + a host-side text filter instead. The
  * role table is a deliberate heuristic (documented as "adapted" in
- * `docs/test-package-plan.md` §6), not a full ARIA accessibility tree.
+ * `docs/plans/desktop-web/PLAN.md`, open item 12), not a full ARIA accessibility tree.
  */
 
 /**

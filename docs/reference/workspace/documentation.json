@@ -2076,8 +2076,8 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "d800ac20dae49e6bf6e4bc7370c34600681ed90c9d93af511520405eb31308a8",
-      "bytes": 7945,
+      "sha256": "4c40c7fa566be62a12fecc0d63002eff3d2c00ada667b73ff41ad7e1a19c0a00",
+      "bytes": 7947,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -2636,8 +2636,8 @@
     {
       "path": "docs/decisions/runtime/DECISIONS.md",
       "title": "Runtime decisions",
-      "sha256": "a8772afb9167f14c2e57874211b55e51a8b4ee4bd350fe7377f254f5035147dc",
-      "bytes": 29402,
+      "sha256": "02b21cd88262627101ad8a147ec1030cb428181058f702941ebc8a9bb6611c91",
+      "bytes": 29433,
       "domain": "runtime",
       "status": "historical",
       "visibility": "private",
@@ -2796,8 +2796,8 @@
     {
       "path": "docs/guides/web/TAURI-DEBUG.md",
       "title": "Debugging and testing Tauri 3 apps with aphrody-web",
-      "sha256": "713b5d9668057269e371aa5f2ea2823d68bb51aa4175beb85cf6d46f9092753c",
-      "bytes": 8868,
+      "sha256": "89e59cba2aca7a16d76ce325dbb30f17e5aafc45e64c93e969818693c1379001",
+      "bytes": 9648,
       "domain": "web",
       "status": "canonical",
       "visibility": "private",
@@ -3774,16 +3774,6 @@
       "canonical": "docs/plans/ai/plans/ocr-monorepo.md"
     },
     {
-      "path": "docs/plans/ai/plans/tauri-app.md",
-      "title": "Historical Tauri desktop plan",
-      "sha256": "ba95c4eef5d71dec75a96d7b034b66c5c564fda03a2be52fd0daba0c3ad06b4d",
-      "bytes": 643,
-      "domain": "ai",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/plans/ai/plans/tauri-app.md"
-    },
-    {
       "path": "docs/plans/ai/rag-native-integration.md",
       "title": "RAG natif — plan propriétaire",
       "sha256": "6e8b779a589f38d0febf08f3314852b81eba96356a8926e1db2dd179c64e77bd",
@@ -3834,6 +3824,26 @@
       "canonical": "docs/plans/convergence/ROSE-GRIFFON-ACHILLEA-CONVERGENCE.md"
     },
     {
+      "path": "docs/plans/desktop-web/INVENTORY.md",
+      "title": "Single CEF runtime: inventory of wry, tao, GTK3 and WebKitGTK references",
+      "sha256": "85e1add9efb72756ab7f6b309e2f00ea4e09ac2420e7759babaaaae0480f7264",
+      "bytes": 38559,
+      "domain": "desktop-web",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/plans/desktop-web/INVENTORY.md"
+    },
+    {
+      "path": "docs/plans/desktop-web/PLAN.md",
+      "title": "Desktop and web engines: Obscura, Tauri/CEF and browser automation",
+      "sha256": "ac31686f21f609783085fb4f6efde8729eeec6c8e976acb642b97c54ee7fe23f",
+      "bytes": 14671,
+      "domain": "desktop-web",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/plans/desktop-web/PLAN.md"
+    },
+    {
       "path": "docs/plans/discord/PLAN-DISCORD.md",
       "title": "PLAN-DISCORD — clôture de bout en bout",
       "sha256": "f4b6bf8fb0283fce5df58dfc4935fe7cc10cd0dd7b7f899b1d216830bb93bc6c",
@@ -3876,8 +3886,8 @@
     {
       "path": "docs/plans/gpu-hub/PLAN.md",
       "title": "GPU hub, Aphrody OS image and WASM target",
-      "sha256": "f955c2ba907f29130b93bc7722604257364c193385750243678424163e126a7a",
-      "bytes": 5606,
+      "sha256": "9cb7c71cc85066a08fef320b8dc6ec0d452ca33e0725141c43c8bf866ffc0899",
+      "bytes": 6705,
       "domain": "gpu-hub",
       "status": "canonical",
       "visibility": "private",
@@ -4004,26 +4014,6 @@
       "canonical": "docs/plans/shell/wasm-stack-definitive.md"
     },
     {
-      "path": "docs/plans/tauri-cef/INVENTORY.md",
-      "title": "Single CEF runtime: inventory of wry, tao, GTK3 and WebKitGTK references",
-      "sha256": "6d845eb450cf54e5166b0a6d20756c9e3b84b7a01d6c4104912024c72213c9f7",
-      "bytes": 38559,
-      "domain": "tauri-cef",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/plans/tauri-cef/INVENTORY.md"
-    },
-    {
-      "path": "docs/plans/tauri-cef/PLAN.md",
-      "title": "One desktop runtime: tauri-runtime-cef (CEF + tauri-winit + GTK 4)",
-      "sha256": "3a532163cf8b984e82295a117d21343e0cf585ca30c2dadf622bd882ac5cee03",
-      "bytes": 6748,
-      "domain": "tauri-cef",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/plans/tauri-cef/PLAN.md"
-    },
-    {
       "path": "docs/plans/vu/INVENTORY-py-vs-aphrody.md",
       "title": "Inventory: py/ against the rest of the Aphrody monorepo",
       "sha256": "5e72ee61db21f2f77acf54a15e41058a67da2dffdf9f20fa04df5a71418d4af3",
@@ -4062,36 +4052,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/plans/web/next-fork/PLAN.md"
-    },
-    {
-      "path": "docs/plans/web/web/BXC-BRIDGE-PLAN.md",
-      "title": "Plan bxc-bridge — ce que aphrody web doit garantir à un appelant Rust",
-      "sha256": "fabfc0e1bcb4e62607cccb21fc14b2025fb3eddb6c9f03fdfd0ae3367abab528",
-      "bytes": 16297,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/plans/web/web/BXC-BRIDGE-PLAN.md"
-    },
-    {
-      "path": "docs/plans/web/web/PLAYWRIGHT-KILLER-PLAN.md",
-      "title": "Plan Stratégique : Aphrody Web > Playwright (Le \"Playwright Killer Plan\")",
-      "sha256": "b780de17905cc8f2f650f9a581dcb034e73f4856a4a725e65d1966dc8ea3f658",
-      "bytes": 5022,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/plans/web/web/PLAYWRIGHT-KILLER-PLAN.md"
-    },
-    {
-      "path": "docs/plans/web/web/test-package-plan.md",
-      "title": "@aphrody/bxc-test — Playwright-compatible test package plan",
-      "sha256": "02b66d096246bd1f194d6d4c99909614e48c55500761ebd989fdac73efd0fe54",
-      "bytes": 16490,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/plans/web/web/test-package-plan.md"
     },
     {
       "path": "docs/plans/workspace/PLAN.md",
@@ -5026,8 +4986,8 @@
     {
       "path": "docs/reference/ai/SUMMARY.md",
       "title": "Summary",
-      "sha256": "917953a7a4c371ae326f8d0e2318dd994a75b538b5e20b928581e65ebf8a5cd2",
-      "bytes": 9999,
+      "sha256": "c31c650da29f412a417a4328f19f80306c3c44a3d45fc6def866fd7d5e4a278f",
+      "bytes": 10003,
       "domain": "ai",
       "status": "historical",
       "visibility": "private",
@@ -10556,8 +10516,8 @@
     {
       "path": "docs/reference/web/web/INDEX.md",
       "title": "Aphrody Web Documentation Index",
-      "sha256": "38f8640f424038696c7179c9e0a1cc71c96b87aa74a99f8c73d64489d05f976e",
-      "bytes": 4376,
+      "sha256": "32684b7e372588c0190f274dd11c26b48ce9940c1ffab475278a014bc4f827e8",
+      "bytes": 4250,
       "domain": "web",
       "status": "canonical",
       "visibility": "private",
@@ -10644,20 +10604,10 @@
       "canonical": "docs/reference/web/web/gemini-web-feature-matrix.md"
     },
     {
-      "path": "docs/reference/web/web/obscura-headless-browser.md",
-      "title": "Évaluation : Obscura comme moteur headless du pilier R4 (scraping)",
-      "sha256": "9489a849edfd1172976d2fb598a572de77b186147f72cb07d9c3f132ff1c53d8",
-      "bytes": 5512,
-      "domain": "web",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/obscura-headless-browser.md"
-    },
-    {
       "path": "docs/reference/web/web/obscura-integration-spec.md",
       "title": "Spec d'intégration Obscura → aphrody (R4 scraping headless)",
-      "sha256": "fcfeada48fb4d99f5b6b7021c0f38d6248bb8c4a6c40991e2c9ceefa76c4e6dc",
-      "bytes": 28677,
+      "sha256": "c5f229cb7b25839d106c1f1b344c61b40d046b654fb798bba4eccbea1a26021e",
+      "bytes": 24373,
       "domain": "web",
       "status": "canonical",
       "visibility": "private",
@@ -10866,7 +10816,7 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "a2f77fc09f5004148faa72b4191be0dc20829c4d68f4d588443478d5ab697c55",
+      "sha256": "316bc44b821cfa94823b327cbe0b50cd34f939ac28acd247d6421c154e540a31",
       "bytes": 43333,
       "domain": "workspace",
       "status": "generated",
@@ -12386,8 +12336,8 @@
     {
       "path": "m3/docs/operations/tauri-upstream.md",
       "title": "Tauri 3 upstream line",
-      "sha256": "77265593075ff8c022dff2285b1503fd78c86ef17bc070e3160cbf0842736804",
-      "bytes": 7333,
+      "sha256": "14a9146f6c9487d69bce22edbbf5febc2f964e23c5e625b3dbdb3f01f8ae7993",
+      "bytes": 7335,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -12406,8 +12356,8 @@
     {
       "path": "m3/docs/plans/README.md",
       "title": "UI plans",
-      "sha256": "cdfaccb97f4d67b9087e5d124657f1bf3bc1fec6c6428987043f6cc11fba963f",
-      "bytes": 1733,
+      "sha256": "82b6deccac447c55475c9190f1a41d151ca6a1a7361b8a443df2c60ef898444e",
+      "bytes": 1750,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -14806,8 +14756,8 @@
     {
       "path": "m3/docs/reference/tauri/README.md",
       "title": "Tauri documentation hub",
-      "sha256": "77e286467dd48ea5f717ec5dd92e1b64ad1bf29c9d201f5d18394b7471effeb4",
-      "bytes": 2726,
+      "sha256": "7006a265ca5dbe1af130539844c3aee44c683b018aa974f6df1d407332ef7d6b",
+      "bytes": 2724,
       "domain": "",
       "status": "historical",
       "visibility": "private",

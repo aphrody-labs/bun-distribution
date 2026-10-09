@@ -3,7 +3,7 @@
 # Tauri 3 upstream line
 
 Machine-readable source: [`tools/config/tauri-upstream.json`](https://github.com/aphrody-labs/aphrody/blob/main/tools/config/tauri-upstream.json).
-Sync command: `bun run tauri:sync` (module `packages/infra/workspace/src/tauri-sync.ts` (not in repo)).
+Sync command: `bun run desktop:sync` (module `packages/infra/workspace/src/tauri-sync.ts` (not in repo)).
 
 ## Which upstream ref is current
 
@@ -18,7 +18,7 @@ git branch, except the local patches listed below.
 Tauri 3 has no implicit runtime. Every binary calls
 `Builder::default().runtime(...)` exactly once.
 
-- The one runtime (owner order 2026-10-05, [plan](../../../docs/plans/tauri-cef/PLAN.md)): `tauri-runtime-cef`
+- The one runtime (owner order 2026-10-05, [plan](../../../docs/plans/desktop-web/PLAN.md)): `tauri-runtime-cef`
   (CEF + `tauri-winit` + GTK 4). Used by `aphrody-app` and every other Aphrody desktop app; `wry`, `tao`,
   `tauri-runtime-wry`, `tauri-driver` and the GTK 3 / WebKitGTK stack were removed.
 
@@ -48,10 +48,10 @@ Root `package.json` `workspaces.catalog` holds `@aphrody/api` and
 ## Running the sync
 
 ```sh
-bun run tauri:sync              # report: current vs latest, refs, patches
-bun run tauri:sync:check        # exit 1 when behind or a patch is broken (CI)
-bun run tauri:sync -- --apply   # bump root Cargo.toml + catalog, run the gate
-bun run tauri:sync -- --offline # local patch verification only
+bun run desktop:sync              # report: current vs latest, refs, patches
+bun run desktop:sync:check        # exit 1 when behind or a patch is broken (CI)
+bun run desktop:sync -- --apply   # bump root Cargo.toml + catalog, run the gate
+bun run desktop:sync -- --offline # local patch verification only
 ```
 
 `--apply` edits only the root `Cargo.toml`, root `package.json` and
@@ -72,18 +72,18 @@ commits or pushes.
 (`aphrody-app`, `aphrody-model-view`, `koharu`), plugins and libraries, JS
 packages, the generators (`scaffold`, `web-to-tauri`, `m3-next-migrate`), the
 `aphrody-tauri-wrap` runtime and the upstream-owned fixtures under
-`upstream/`. `bun run tauri:apps` scans the whole tree (git-ignored and
+`upstream/`. `bun run desktop:apps` scans the whole tree (git-ignored and
 workspace-excluded paths included; only `target`, `node_modules`, `.git`, `.turbo`
 and `.coord` are skipped) and prints each project with its owner, kind, Cargo
 workspace state and git state.
 
-`bun run tauri:apps:check` exits 1 on: an unregistered Tauri project or config
+`bun run desktop:apps:check` exits 1 on: an unregistered Tauri project or config
 file, a registered path that vanished, a workspace-membership mismatch, a
 first-party crate that pins its own `tauri*` version instead of
 `workspace = true`, a first-party npm package that pins `@tauri-apps/*` instead of
 `catalog:`, a `$schema` tag different from the pinned Tauri version, and a config
 that still points at the legacy sibling checkouts (`../aphrody-ui`, ...).
-`bun run tauri:apps:fix` rewrites drifted `$schema` tags. Register a new Tauri
+`bun run desktop:apps:fix` rewrites drifted `$schema` tags. Register a new Tauri
 project in the registry in the same change that adds it.
 
 ## Carried patches
