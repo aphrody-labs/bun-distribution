@@ -35,7 +35,12 @@ export async function collectPageDiagnostics(
   const jsErrors: string[] = [];
   const consoleErrors: string[] = [];
   let networkRequests = 0;
-  const unsubscribe = page.onEvent((method, params) => {
+  const events = [
+    "Network.requestWillBeSent",
+    "Runtime.exceptionThrown",
+    "Runtime.consoleAPICalled",
+  ];
+  const unsubscribe = page.onEvent(events, (method, params) => {
     if (method === "Network.requestWillBeSent") networkRequests++;
     if (method === "Runtime.exceptionThrown") {
       const details = params.exceptionDetails as

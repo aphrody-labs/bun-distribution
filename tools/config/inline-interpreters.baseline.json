@@ -132,11 +132,6 @@
       "scope": "test",
       "reason": "Fresh-process isolation fixture."
     },
-    "packages/web/agent-browser/test/cdp-wire.test.ts": {
-      "count": 1,
-      "scope": "test",
-      "reason": "Fresh-process isolation fixture."
-    },
     "packages/web/agent-browser/test/engine-lifecycle.test.ts": {
       "count": 1,
       "scope": "test",
