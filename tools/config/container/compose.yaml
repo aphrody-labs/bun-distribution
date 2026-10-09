@@ -123,6 +123,11 @@ services:
       - /home/ubuntu/.aphrody:/home/ubuntu/.aphrody
     mem_limit: 3g
     stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "aphrody", "job", "stats"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
 
   api:
     <<: *runtime

@@ -13,5 +13,7 @@ RUN for alias in aphrody-mcp aphrody-embed aphrody-infra; do ln -s aphrody "/usr
  && aphrody --version
 USER 1000:1000
 ENV PATH=/usr/local/bin:/usr/bin:/bin
+# The base image probes its own deploy entrypoint; each compose service declares its own check.
+HEALTHCHECK NONE
 ENTRYPOINT []
 CMD ["aphrody", "--version"]

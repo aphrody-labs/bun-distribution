@@ -69,7 +69,7 @@ def main():
         parser.error("immutable runtime checksum required")
     if not args.apply:
         print(
-            "Plan: verify installed runtime; install DBFR private MCP/embed declarations; reuse caller credentials; preserve stores; no corpus mutation or activation"
+            "Plan: verify installed runtime; check the DBFR compose services shenron-compute/shenron-embed; reuse caller credentials; preserve stores; no corpus mutation or activation"
         )
         return
     if os.geteuid() != 0 or not (ROOT / "current").is_symlink():
@@ -130,23 +130,12 @@ def main():
             stream.write(body)
             stream.flush()
             os.fsync(stream.fileno())
-    for name in ("shenron-compute.service", "shenron-embed.service"):
-        source = args.checkout / "tools/config/host/systemd/shenron" / name
-        destination = pathlib.Path("/etc/systemd/system") / name
-        if destination.exists() and digest(destination) != digest(source):
-            raise ValueError("existing service declaration conflict")
-        shutil.copyfile(source, destination)
-        destination.chmod(0o644)
+    # compute and embed run as the compose services shenron-compute/shenron-embed on aphrody:toolbox
+    # (tools/config/container/compose.yaml), never as host units.
     subprocess.run(
-        [
-            "systemd-analyze",
-            "verify",
-            "/etc/systemd/system/shenron-compute.service",
-            "/etc/systemd/system/shenron-embed.service",
-        ],
+        ["docker", "compose", "--project-directory", "/home/ubuntu/apps", "config", "-q"],
         check=True,
     )
-    subprocess.run(["systemctl", "daemon-reload"], check=True)
     print(
         "DBFR private compute prerequisites installed; corpus, model and activation gates remain"
     )

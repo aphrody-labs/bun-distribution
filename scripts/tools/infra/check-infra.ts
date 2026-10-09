@@ -3,7 +3,6 @@
 
 // oxlint-disable no-await-in-loop -- sequential file checks: the first missing file ends the run.
 import { stat } from "node:fs/promises";
-import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
 type JsonObject = Record<string, unknown>;
@@ -28,7 +27,7 @@ type Route = {
 };
 
 const repo = resolve(import.meta.dir, "..", "..", "..");
-const yoloRoot = process.env.YOLO_ROOT ?? join(homedir(), "yolo");
+const yoloRoot = process.env.YOLO_ROOT ?? repo;
 
 function fail(message: string): never {
   throw new Error(message);

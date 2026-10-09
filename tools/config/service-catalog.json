@@ -389,12 +389,13 @@
       "kind": "rust-http",
       "runtime": "rust",
       "unit": "aphrody-mcp-http-dbfr.service",
+      "container": "aphrody-mcp-http-1",
       "health": "http://127.0.0.1:8793/healthz",
       "port": 8793,
       "sourceRepo": "aphrody",
       "workingDirectory": "/home/ubuntu/.aphrody",
       "public": false,
-      "note": "DBFR canonical native MCP with jobs enabled, protected host-local bearer, loopback127.0.0.1:8793. Private WireGuard projection must bind DBFR address10.200.77.3, never the VPS hub address. Activation requires qualified jobs binary and authentication probes.",
+      "note": "DBFR canonical native MCP with jobs enabled, protected host-local bearer, loopback127.0.0.1:8793. Private WireGuard projection must bind DBFR address10.200.77.3, never the VPS hub address. Activation requires qualified jobs binary and authentication probes. Since 2026-10-09 the compose service mcp-http (aphrody:toolbox, tools/config/container/compose.yaml, host network, uid 1000); the unit source stays as rollback.",
       "host": "dbfr"
     },
     {
@@ -417,11 +418,12 @@
       "kind": "rust-worker",
       "runtime": "rust",
       "unit": "aphrody-jobs-worker-dbfr.service",
+      "container": "aphrody-jobs-worker-1",
       "sourceRepo": "aphrody",
       "workingDirectory": "/home/ubuntu/.aphrody",
       "public": false,
       "host": "dbfr",
-      "note": "Persistent local SQLite queue with fenced leases, capability filtering and bounded native web-pipeline/transcribe handlers. Inputs and credentials remain in protected host stores; no training role or network transport is granted."
+      "note": "Persistent local SQLite queue with fenced leases, capability filtering and bounded native web-pipeline/transcribe handlers. Inputs and credentials remain in protected host stores; no training role or network transport is granted. Since 2026-10-09 the compose service jobs-worker (aphrody:toolbox); the unit source stays as rollback."
     }
   ],
   "policies": {
@@ -503,13 +505,13 @@
       },
       {
         "host": "dbfr",
-        "kind": "systemd",
-        "unit": "shenron-compute.service"
+        "kind": "docker",
+        "container": "aphrody-shenron-compute-1"
       },
       {
         "host": "dbfr",
-        "kind": "systemd",
-        "unit": "shenron-embed.service"
+        "kind": "docker",
+        "container": "aphrody-shenron-embed-1"
       },
       {
         "host": "dbfr",
@@ -520,11 +522,6 @@
         "host": "dbfr",
         "kind": "systemd",
         "unit": "shenron-timeline-refresh.timer"
-      },
-      {
-        "host": "dbfr",
-        "kind": "systemd",
-        "unit": "aphrody-jobs-worker-dbfr.service"
       },
       {
         "host": "local",
