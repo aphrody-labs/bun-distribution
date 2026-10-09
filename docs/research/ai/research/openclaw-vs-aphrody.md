@@ -75,7 +75,7 @@ openclaw's text inbox. Other channels (iMessage Apple, WhatsApp, Signal, …) = 
 | Permissions / tool policy | `src/security/audit-tool-policy` | no | `aphrody-skills/src/permissions.rs`, `aphrody-tools/src/permissions.rs` | builtin tools | ✅ |
 | Tools | `src/tools` (browser, canvas, cron, sessions) | no | `crates/ai/tools` (not in repo) | `tools/src/builtin` (not in repo), `aphrody-terminal-browser` | ✅ |
 | MCP | `src/mcp` (channel/tools serve) | no | `crates/ai/mcp`→`aphrody-mcp` bin, `aphrody-mcp` (OAuth/PKCE) | `aphrody-mcp/src/{pkce,registration,discovery}.rs`, `google_mcp` | ✅ (50+ tools incl. OAuth flow) |
-| Cron / scheduling | `src/cron` (large) | no | `crates/os/kernel/comps/cron` | `cron/src/lib.rs` | ⚠️ thin (see GAPS) |
+| Cron / scheduling | `src/cron` (large) | no | none (`aphrody-cron` removed 2026-10-09; `Bun.cron` in the Bun fork) | - | ⚠️ thin (see GAPS) |
 | Auth / secrets | `src/secrets`, auth-profiles | no | `crates/os/ostd/secrets` | `secrets/src/lib.rs` | ✅ |
 | Config | `src/config` | no | `crates/os/settings` (not in repo) | `settings/src/lib.rs` | ✅ |
 | CLI / onboarding | `openclaw onboard/pairing/doctor` | no | `cli` `oc-onboard/oc-pairing/oc-reset/oc-uninstall/doctor` | `cli/src/oc_cmd.rs` (897 LOC) | ✅ (explicit openclaw-compat surface) |
@@ -84,7 +84,7 @@ openclaw's text inbox. Other channels (iMessage Apple, WhatsApp, Signal, …) = 
 | Web / API surface | `ui/`, web RPC | no | `crates/ui/a2a-ui` (not in repo), `aphrody-gateway` HTTP, `tuono*` | `a2a-ui/src/native` | ✅ |
 | Voice (TTS/STT) | `src/talk`, `elevenlabs`, mlx-tts | macOS TTS partly Apple | `crates/ai/voice` | `voice/src/{elevenlabs,web}.rs`, `stt/` | ✅ (ElevenLabs + STT; system TTS) |
 | Realtime transcription | `src/realtime-transcription` | no | `aphrody-voice/src/stt` | stt module | ✅ |
-| Observability / OTel | `extensions/diagnostics-otel/-prometheus` | no | `crates/os/kernel/comps/telemetry` | `telemetry/src/lib.rs` | ✅ |
+| Observability / OTel | `extensions/diagnostics-otel/-prometheus` | no | none (`aphrody-telemetry` removed 2026-10-09, no consumer) | - | ❌ |
 | Terminal | (none; uses host) | no | 8× `aphrody-terminal-*` | `aphrody-terminal-{vt,browser,llm,markdown,…}` | ✅ net-new (LLM-first terminal) |
 | Reverse engineering / forensics | (none) | no | `crates/os/kernel/comps/re`, `cli re/forensics/scan` | `aphrody-re/src/` | ✅ net-new |
 | **Apple HIG / design** | macOS/iOS SwiftUI, Apple HIG | **Apple** | **Material Design 3 / M3 Expressive** | `crates/ui/m3-tokens` (hct, color, typography Google Sans, motion, shape, elevation, gemini_brand), `aphrody-design`, `mui-rs-components`, `aphrody-wgpu-material` | ✅ Google equivalent |
@@ -104,7 +104,7 @@ Honest list of *neutral* subsystems thin/absent in aphrody, or Apple subsystems 
 
 1. **Cron/scheduling is thin.** openclaw's `src/cron` is a large, battle-tested scheduler
    (delivery plans, heartbeats, session reaper, dozens of regression tests). aphrody's
-   `crates/os/kernel/comps/cron` is a single `lib.rs`. The CLI orchestrates scheduling via skills/loops,
+   single-file `aphrody-cron` crate was removed on 2026-10-09 (no consumer). The CLI orchestrates scheduling via skills/loops,
    but there is no equivalent persistent cron service with delivery/heartbeat semantics.
    **Real gap (neutral).**
 

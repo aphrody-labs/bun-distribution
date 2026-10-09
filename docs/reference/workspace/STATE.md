@@ -6,7 +6,7 @@ Facts read from `cargo metadata --no-deps`, the root `package.json` Bun workspac
 Crates are Rust workspace members outside `apps/`; packages are Bun workspaces outside `apps/`;
 apps are Rust or Bun members under `apps/`. `todo!` counts `todo!(` and `unimplemented!(` in `.rs` files.
 
-Totals: **166 crates**, **73 packages**, **1 apps** (166 Rust, 74 Bun).
+Totals: **162 crates**, **73 packages**, **1 apps** (162 Rust, 74 Bun).
 
 ## Per domain
 
@@ -23,9 +23,9 @@ Totals: **166 crates**, **73 packages**, **1 apps** (166 Rust, 74 Bun).
 | [interop](#interop) | 1 | 1 | 0 | 0 |
 | [ml](#ml) | 5 | 0 | 0 | 0 |
 | [native](#native) | 3 | 0 | 0 | 0 |
-| [os](#os) | 21 | 4 | 0 | 0 |
+| [os](#os) | 18 | 4 | 0 | 0 |
 | [packages](#packages) | 0 | 31 | 0 | 0 |
-| [shell](#shell) | 9 | 1 | 0 | 0 |
+| [shell](#shell) | 8 | 1 | 0 | 0 |
 | [tauri](#tauri) | 29 | 15 | 0 | 33 |
 | [ui](#ui) | 13 | 0 | 0 | 0 |
 | [web](#web) | 18 | 6 | 1 | 0 |
@@ -233,12 +233,9 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-a2a-grpc` | [crates/os/kernel/comps/a2a-grpc](../../../crates/os/kernel/comps/a2a-grpc) | rust crate | 0.2.2 | lib | yes | 0 | 2026-10-07 |
 | `aphrody-a2a-pb` | [crates/os/kernel/comps/a2a-pb](../../../crates/os/kernel/comps/a2a-pb) | rust crate | 0.1.8 | lib | yes | 0 | 2026-10-07 |
 | `aphrody-a2a-server` | [crates/os/kernel/comps/a2a-server](../../../crates/os/kernel/comps/a2a-server) | rust crate | 0.3.0 | lib | yes | 0 | 2026-10-07 |
-| `aphrody-cron` | [crates/os/kernel/comps/cron](../../../crates/os/kernel/comps/cron) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-09 |
 | `aphrody-diagnostics` | [crates/os/kernel/comps/diagnostics](../../../crates/os/kernel/comps/diagnostics) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-09 |
 | `aphrody-jobs` | [crates/os/kernel/comps/jobs](../../../crates/os/kernel/comps/jobs) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
 | `aphrody-re` | [crates/os/kernel/comps/re](../../../crates/os/kernel/comps/re) | rust crate | 1.0.0-canary | rlib | yes | 0 | 2026-10-09 |
-| `aphrody-task-runner` | [crates/os/kernel/comps/task-runner](../../../crates/os/kernel/comps/task-runner) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
-| `aphrody-telemetry` | [crates/os/kernel/comps/telemetry](../../../crates/os/kernel/comps/telemetry) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
 | `aphrody-winclean` | [crates/os/kernel/comps/winclean](../../../crates/os/kernel/comps/winclean) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-09 |
 | `aphrody-kernel` | [crates/os/kernel/core](../../../crates/os/kernel/core) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-09 |
 | `aphrody-capture` | [crates/os/kernel/libs/capture](../../../crates/os/kernel/libs/capture) | rust crate | 1.0.0-canary | rlib | yes | 0 | 2026-10-08 |
@@ -293,7 +290,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `aphrody-shell-sandbox-host` | [crates/shell/aphrody-shell-sandbox-host](../../../crates/shell/aphrody-shell-sandbox-host) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-09 |
 | `aphrody-term` | [crates/shell/aphrody-term](../../../crates/shell/aphrody-term) | rust crate | 1.0.0 | lib | yes | 0 | 2026-10-09 |
 | `aphrody-nu` | [crates/shell/nu](../../../crates/shell/nu) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-07 |
 | `aphrody-shell-session` | [crates/shell/session](../../../crates/shell/session) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-05 |

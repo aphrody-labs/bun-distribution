@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Shell and terminal layers
 
-> Path reconciliation (2026-10-07): `crates/shell/aphrody-shell-sandbox-host-e2b` (not in repo) → `crates/shell/aphrody-shell-sandbox-host/src/e2b.rs`; `crates/shell/aphrody-shell-vfs-opfs` (not in repo) → `crates/shell/web/src/opfs.rs`. Original dated observations below retain their historical scope.
+> Path reconciliation (2026-10-07): `crates/shell/aphrody-shell-vfs-opfs` (not in repo) → `crates/shell/web/src/opfs.rs`. Original dated observations below retain their historical scope.
 
 The [current status](../../products/shell/STATUS.md) records which paths have passed real host
 checks. The [implementation plan](../../plans/shell/wasm-stack-definitive.md) tracks remaining
@@ -13,7 +13,7 @@ work.
 | Scripted shells | Bun Shell of the [fork](../../reference/upstream-bun/APHRODY-FORK.md), `crates/shell/nu` | Bun Shell (`$`) runs agent scripts in the Bun process; Nushell serves interactive typed exploration. |
 | Engines and sessions | `crates/shell/web`, `crates/shell/session`, `crates/shell/terminal-backend` | Browser commands use `LocalShell` and `ShellSession`; native and Tauri shells use `PtySession`. All exchange input and output bytes. |
 | Filesystem | `crates/shell/vfs`, `crates/shell/web/src/opfs.rs` | The synchronous `Vfs` trait serves shell commands. `MemVfs` is the reference; `OpfsVfs` encodes bounded, checksummed snapshots. |
-| Hosts | `crates/shell/aphrody-shell-sandbox-host`, `crates/shell/aphrody-shell-sandbox-host/src/e2b.rs` | `SandboxHost` handles session, limits and file transfer. Mock and local PTY adapters are qualified; the E2B adapter awaits live provider conformance. No WASM microVM (v86/container2wasm) adapter exists. |
+| Hosts | none | `aphrody-shell-sandbox-host` (`SandboxHost`, mock, local PTY and E2B adapters) was removed on 2026-10-09: no crate, binary or package consumed it. Native PTY sessions go through `aphrody-terminal-backend`. No WASM microVM (v86/container2wasm) adapter exists. |
 | Transports | `packages/shell/web`, `crates/shell/tauri` | The TypeScript `Transport` interface carries bytes over a dedicated OPFS worker, Tauri Channel, or authenticated WebSocket. |
 | Computer-use controller | `crates/shell/aphrody-term/src/computer_use.rs` | Plain-text screen scrape and key/text injection into the attached PTY; without a PTY, input actions return `NotConnected`. |
 | Renderer | `crates/ui/app` | The existing DOM terminal renderer consumes output; it does not parse shell commands. `aphrody-term` only builds coalesced quad lists; no GPU backend consumes them yet. |

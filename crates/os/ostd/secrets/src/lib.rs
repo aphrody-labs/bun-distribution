@@ -12,7 +12,7 @@
 //! * [`SecretStore`] — async trait every backend implements.
 //! * [`EnvSecretStore`] — read-only adapter over `std::env::var`.
 //! * [`FileSecretStore`] — JSON-on-disk plaintext store with atomic tmp-file + rename writes
-//!   (mirrors the `JsonFileJobStore` pattern from `aphrody-cron`).
+//!   (write to a sibling tmp file, then rename it over the target).
 //! * [`EncryptedFileSecretStore`] — same layout, but the JSON map is encrypted end-to-end with
 //!   AES-256-GCM; the key is derived from a user passphrase via Argon2id (`argon2` crate) with a
 //!   per-file random salt.  Decryption reuses the 3-byte-version / 12-byte-nonce / ciphertext+tag
@@ -46,8 +46,6 @@
 //!   `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `ELEVENLABS_API_KEY`.  The 3-only provider whitelist
 //!   (memory `project_aphrody_providers_3only`) is enforced upstream; this crate just resolves the
 //!   string.
-//! * `aphrody-cron::JsonFileJobStore` already documents the atomic tmp-file + rename pattern reused
-//!   by [`FileSecretStore::save`].
 //! * `crates/base::Crypto::decrypt_aes_gcm` is the canonical AES-256-GCM decryption helper in the
 //!   workspace; this crate uses the same crate (`aes_gcm = "0.10"`) and the same versioned nonce
 //!   framing.
@@ -347,8 +345,7 @@ impl SecretStore for EnvSecretStore {
 
 /// On-disk JSON map: `{ "key": "<base64-of-bytes>", ... }`.
 ///
-/// Atomic write via tmp-file + rename (same recipe as
-/// [`aphrody_cron::JsonFileJobStore`](../aphrody_cron/struct.JsonFileJobStore.html)).
+/// Atomic write via tmp-file + rename.
 #[derive(Debug, Clone)]
 pub struct FileSecretStore {
     path: PathBuf,

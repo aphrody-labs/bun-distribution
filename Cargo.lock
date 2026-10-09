@@ -939,19 +939,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-cron"
-version = "1.0.0-canary"
-dependencies = [
- "chrono",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "tracing",
-]
-
-[[package]]
 name = "aphrody-diagnostics"
 version = "1.0.0"
 dependencies = [
@@ -2103,21 +2090,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-shell-sandbox-host"
-version = "1.0.0-canary"
-dependencies = [
- "aphrody-shell-session",
- "aphrody-shell-vfs",
- "aphrody-shell-web",
- "aphrody-terminal-backend",
- "base64 0.23.1",
- "reqwest 0.13.5",
- "rustls",
- "serde_json",
- "tokio",
-]
-
-[[package]]
 name = "aphrody-shell-session"
 version = "1.0.0-canary"
 
@@ -2237,20 +2209,6 @@ dependencies = [
  "thiserror 2.0.21",
  "tiny-skia",
  "usvg",
-]
-
-[[package]]
-name = "aphrody-task-runner"
-version = "1.0.0-canary"
-dependencies = [
- "async-trait",
- "chrono",
- "futures-util",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "tokio",
- "tracing",
 ]
 
 [[package]]
@@ -2935,21 +2893,6 @@ dependencies = [
  "tokio",
  "url",
  "uuid",
-]
-
-[[package]]
-name = "aphrody-telemetry"
-version = "1.0.0-canary"
-dependencies = [
- "async-trait",
- "chrono",
- "parking_lot",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "tracing",
 ]
 
 [[package]]

@@ -56,7 +56,7 @@
     {
       "path": "README.md",
       "title": "Aphrody",
-      "sha256": "e78f8d3e3fa0f321fb5ab85b9547529bd33ce689af036f707160132370d7c28a",
+      "sha256": "4c6f8302dd1b55884daa85dfa9539008de2021c389eb93284acc288b67bb45dc",
       "bytes": 3708,
       "domain": "",
       "status": "generated",
@@ -2006,8 +2006,8 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "09f38f8e694052db39f96b7b1e3f50b5886d72c901c12003e99516cd090623c4",
-      "bytes": 7846,
+      "sha256": "10f67465dd92937332cd1d396fbf03d8d28cc322e0bf9e6c9e36f2dab6413261",
+      "bytes": 7938,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -2122,16 +2122,6 @@
       "status": "historical",
       "visibility": "private",
       "canonical": "docs/apis/infra/vps/APIS.md"
-    },
-    {
-      "path": "docs/apis/shell/sandbox-host.md",
-      "title": "Shell sandbox host contract",
-      "sha256": "674196993f9aa049ffb6922131e175ba6fc2ebe63f21b23e3d719d4898d5fc18",
-      "bytes": 2727,
-      "domain": "shell",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/apis/shell/sandbox-host.md"
     },
     {
       "path": "docs/apis/web/WEB-SERVICE-CONTRACT.md",
@@ -2386,8 +2376,8 @@
     {
       "path": "docs/architecture/shell/README.md",
       "title": "Shell and terminal layers",
-      "sha256": "01585c297bfbc20faa1ac2fb2a8dae6c30c26ee313e9e37822a467e0a4998535",
-      "bytes": 3803,
+      "sha256": "90add04d311c26d8a4569042b61be3dd1785c79720fad099adfeeba1279b5269",
+      "bytes": 3650,
       "domain": "shell",
       "status": "historical",
       "visibility": "private",
@@ -2556,8 +2546,8 @@
     {
       "path": "docs/decisions/shell/sandbox-provider.md",
       "title": "ADR: First remote shell sandbox provider",
-      "sha256": "d7082782547f8d4583e703eb185f9cfaffb8785dbe35348c2c919e6f87c0e745",
-      "bytes": 3870,
+      "sha256": "79a2690a90d44bfc6fed046942034d51761cf100509302292063adca745c6972",
+      "bytes": 4050,
       "domain": "shell",
       "status": "canonical",
       "visibility": "private",
@@ -2586,8 +2576,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "1a992121637469423ff5d06c8c7738c2cdec7a3078d1af087b1a685aeb17f407",
-      "bytes": 68328,
+      "sha256": "bfdab25f69750a15d45db178d5360a94bb340ee508ba3ef045a35229c0aa6742",
+      "bytes": 67538,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -3586,8 +3576,8 @@
     {
       "path": "docs/plans/ai/PLAN.md",
       "title": "Delivery plan",
-      "sha256": "27c67032d61e72cb3d93b32e92d6f0202630cbb3c4788e25a002cbb4d710a92d",
-      "bytes": 26864,
+      "sha256": "d4954583425e861ff854f97d9f05ffee1424ceb70d3fcab19855b3b8ddd69af5",
+      "bytes": 26783,
       "domain": "ai",
       "status": "historical",
       "visibility": "private",
@@ -3894,6 +3884,16 @@
       "canonical": "docs/plans/infra/unified-release-train/PLAN.md"
     },
     {
+      "path": "docs/plans/m3-native-rust/PLAN.md",
+      "title": "Aphrody en Rust natif et M3 pour Rust/Bun",
+      "sha256": "1c6852f37ba1a1ce28a629f1008f13fe569b1d91378b2ea297c9c74dfa35174d",
+      "bytes": 17666,
+      "domain": "m3-native-rust",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/plans/m3-native-rust/PLAN.md"
+    },
+    {
       "path": "docs/plans/native/PLAN.md",
       "title": "PLAN — aphrody-native",
       "sha256": "2c438c3149e140321f5254cc8b21e427dc65f1ef112b82fac5bbaa19b84b1ad8",
@@ -3956,8 +3956,8 @@
     {
       "path": "docs/plans/shell/wasm-stack-definitive.md",
       "title": "Shell / terminal stack: wasm, web, Tauri, serverless (definitive plan)",
-      "sha256": "789b4e9c91afcaade2f446985a6a8b3b2c5f1e2ecd5230454f67056000916563",
-      "bytes": 22204,
+      "sha256": "b944b69f04636faf806ba232546cb90ebb0015c252e0020bd59b0ef4e89a2a69",
+      "bytes": 22139,
       "domain": "shell",
       "status": "historical",
       "visibility": "private",
@@ -4406,8 +4406,8 @@
     {
       "path": "docs/products/shell/STATUS.md",
       "title": "Shell, terminal and OS: consolidated status (2026-10-02)",
-      "sha256": "e63b6ba3136d29d8608ad937a5d5d874eece37b86621fe9136ca4692ba02d74a",
-      "bytes": 6540,
+      "sha256": "1d096aa1b6792f1906c3e1088bc2fecb787ac01ef7b4137c37b4b091f1e6de57",
+      "bytes": 6276,
       "domain": "shell",
       "status": "canonical",
       "visibility": "private",
@@ -6796,8 +6796,8 @@
     {
       "path": "docs/reference/web/APHRODY-WEB-AUDIT.md",
       "title": "aphrody-web audit (2026-10-02, read-only)",
-      "sha256": "555a92dead4df8e966dab427377712cfc3ff72229a61c1edc60d6c388105484e",
-      "bytes": 13862,
+      "sha256": "4640f4b4d305d3babfd9d19eae4048138a7a39a44e477a70f290b5d405b4dc7f",
+      "bytes": 13824,
       "domain": "web",
       "status": "canonical",
       "visibility": "private",
@@ -7336,8 +7336,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "ed1f6637b04440a364ae12a6e6f56daed55023a742bcd19d5eef599c16a59546",
-      "bytes": 39811,
+      "sha256": "8f2ae49545f3ff1c57a34e2d4dc1ff7937cbca381e8904341270339ee91ce86e",
+      "bytes": 39153,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",
@@ -7676,8 +7676,8 @@
     {
       "path": "docs/research/ai/research/openclaw-vs-aphrody.md",
       "title": "OpenClaw vs aphrody — Comparative Audit",
-      "sha256": "5a235da7c8622309f5ca9c8bf5f707a998d29e3680ac3f5ed84dccca20473d10",
-      "bytes": 13223,
+      "sha256": "c4f02b23a5a786e678765b17a290d5e39e4854597a35c0a6cffc2ba7a4c8112f",
+      "bytes": 13271,
       "domain": "ai",
       "status": "historical",
       "visibility": "private",
@@ -8076,8 +8076,8 @@
     {
       "path": "m3/PLAN.md",
       "title": "Aphrody M3 — integration plan",
-      "sha256": "cfc196f5b88d58b015785a1ed5d6da8402074a6d56bf1e7e907b8a96fab7380a",
-      "bytes": 6092,
+      "sha256": "30a797cf0b6bbcadce939c6f559f46357e5f9dc2ba0fca866bbf94a201474e0b",
+      "bytes": 6539,
       "domain": "",
       "status": "canonical",
       "visibility": "private",

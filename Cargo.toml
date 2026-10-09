@@ -111,7 +111,6 @@ aphrody-secrets = { path = "crates/os/ostd/secrets", version = "1.0.0-canary", f
 aphrody-session = { path = "crates/ai/session", version = "1.0.0", features = [] }
 aphrody-ssh = { path = "crates/infra/ssh", version = "0.1.0", features = [] }
 aphrody-shell-web = { path = "crates/shell/web", version = "1.0.0-canary", features = [] }
-aphrody-shell-sandbox-host = { path = "crates/shell/aphrody-shell-sandbox-host", version = "1.0.0-canary", features = [] }
 aphrody-shell-tauri = { path = "crates/shell/tauri", version = "1.0.0-canary", features = [] }
 aphrody-shell-session = { path = "crates/shell/session", version = "1.0.0-canary", features = [] }
 aphrody-shell-vfs = { path = "crates/shell/vfs", version = "1.0.0-canary", features = [] }
@@ -284,9 +283,6 @@ prost-types        = { version = "0.14" }
 pbjson             = { version = "0.9" }
 pbjson-types       = { version = "0.9" }
 pbjson-build       = { version = "0.9" }
-aphrody-cron = { path = "crates/os/kernel/comps/cron", version = "1.0.0-canary", features = [] }
-aphrody-task-runner = { path = "crates/os/kernel/comps/task-runner", version = "1.0.0-canary", features = [] }
-aphrody-telemetry = { path = "crates/os/kernel/comps/telemetry", version = "1.0.0-canary", features = [] }
 aphrody-bun-docs = { path = "crates/compat/bun-docs", version = "1.0.0-canary", features = [] }
 aes                = { version = "0.9.3" }
 argon2             = { version = "0.6" }

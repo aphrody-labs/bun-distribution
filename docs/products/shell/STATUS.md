@@ -19,8 +19,7 @@ WASM release build, six Bun tests, TypeScript typecheck and real Tauri LOCAL/REM
 | TS client | `@aphrody/shell-web` (WebSocket, Tauri Channel, OPFS worker, sandbox, local transports) | worker and sandbox paths pass Bun tests; OPFS worker passes real Chromium; authenticated reconnect retains the native PTY working directory in a live round trip | web |
 | Desktop panel | `m3/packages/app-ui/src/ShellTerminalPanel.tsx` (not in repo) | Tauri, browser and hosted transport selection; xterm parses and renders raw bytes. Production build emits the worker and WASM. Browser DOM, screenshot and `echo panel-ok` round trip pass; full Tauri app checks, but the requested `aphrody_tauri_*` screenshot/DOM gate has not run | browser, Tauri source |
 | PTY + WebSocket server | `aphrody-terminal-backend` (auth, Origin/Host, session/idle/frame/output limits) | named sessions survive a disconnect for 30 seconds with bounded buffered output; live reconnect and native tests pass | native only |
-| Sandbox host | `aphrody-shell-sandbox-host` (`MockHost`, `LocalPtyHost`) | T11 contract and shared conformance pass; native PTY and live WebSocket round trips pass | Linux tested, wasm32 and Windows GNU checked |
-| Cloud sandbox | `aphrody-shell-sandbox-host-e2b` | T12 adapter compiles and protocol framing tests pass; live E2B conformance is gated and has not run because credentials are unavailable | native |
+| Sandbox host, cloud sandbox | none | `aphrody-shell-sandbox-host` (`MockHost`, `LocalPtyHost`, E2B adapter) removed on 2026-10-09: no consumer | - |
 | Tauri plugin | `aphrody-shell-tauri` (`open`, `open_channel`, `write`, `resize`, `close`) | real, tested, wired in `crates/ui/app` | native (Tauri 3 alpha.3) |
 | Webview e2e | `aphrody-app` example `shell_e2e` + `bun run desktop:e2e` | CEF under Xvfb (X11); not re-run since the WebKitGTK→CEF migration | Linux |
 | Nushell | `aphrody-nu` (nu 0.115.1) | real | native only; no upstream wasm32 target |

@@ -28,8 +28,7 @@
 //! * The agent runtime maintains the *live* working set fed back to the model; `Session` is the
 //!   *cold* archive that survives process exit.
 //!
-//! The on-disk format mirrors the atomic write pattern from
-//! `aphrody-cron::JsonFileJobStore` (tmp-file + rename), the DTO shape from
+//! The on-disk format uses an atomic write (tmp-file + rename), the DTO shape from
 //! `aphrody-memory::types::MemoryRecord` (serde with `#[serde(default)]` and
 //! `serde_json::Value` extension points), and the error envelope shape from
 //! `aphrody-marketplace::MarketplaceError` (thiserror enum, `Io` / `Json`
@@ -528,8 +527,7 @@ pub trait SessionStore: Send + Sync {
 /// JSON-Lines file backed store. One `{session_id}.jsonl` file per session.
 ///
 /// All writes go through `tokio::fs` and are made atomic via the
-/// tmp-file + rename pattern borrowed from
-/// [`aphrody_cron::JsonFileJobStore`]. This guards against torn writes if
+/// tmp-file + rename pattern. This guards against torn writes if
 /// the process dies mid-save.
 #[derive(Debug, Clone)]
 pub struct JsonlFileStore {

@@ -36,7 +36,6 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | apis | [contracts](apis/contracts/) | 1 | - |
 | apis | [generated](apis/generated/) | 3 | - |
 | apis | [infra](apis/infra/) | 1 | - |
-| apis | [shell](apis/shell/) | 1 | - |
 | apis | [web](apis/web/) | 3 | - |
 | decisions | [ai](decisions/ai/) | 1 | - |
 | decisions | [architecture](decisions/architecture/) | 1 | - |
@@ -44,7 +43,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | decisions | [runtime](decisions/runtime/) | 1 | - |
 | decisions | [shell](decisions/shell/) | 2 | - |
 | guides | [ai](guides/ai/) | 8 | - |
-| guides | [discord](guides/discord/) | 1 | - |
+| guides | [discord](guides/discord/) | 2 | - |
 | guides | [web](guides/web/) | 4 | - |
 | guides | [workspace](guides/workspace/) | 8 | [Parcours Workspace Aphrody](guides\workspace\README.md) |
 | operations | [(files)](operations/) | 9 | - |
@@ -67,6 +66,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | plans | [fusion](plans/fusion/) | 13 | - |
 | plans | [gpu-hub](plans/gpu-hub/) | 1 | [GPU hub, Aphrody OS image and WASM target](plans\gpu-hub\PLAN.md) |
 | plans | [infra](plans/infra/) | 5 | [Aphrody Infra plan](plans\infra\PLAN.md) |
+| plans | [m3-native-rust](plans/m3-native-rust/) | 1 | [Aphrody en Rust natif et M3 pour Rust/Bun](plans\m3-native-rust\PLAN.md) |
 | plans | [native](plans/native/) | 1 | [PLAN — aphrody-native](plans\native\PLAN.md) |
 | plans | [os](plans/os/) | 1 | - |
 | plans | [os-kernel](plans/os-kernel/) | 1 | [Architecture cible de aphrody-kernel](plans\os-kernel\PLAN.md) |
@@ -90,14 +90,13 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | reference | [ai](reference/ai/) | 172 | - |
 | reference | [compat](reference/compat/) | 4 | - |
 | reference | [contracts](reference/contracts/) | 2 | - |
-| reference | [discord](reference/discord/) | 41 | - |
 | reference | [infra](reference/infra/) | 33 | - |
 | reference | [interop](reference/interop/) | 1 | - |
 | reference | [licenses](reference/licenses/) | 1 | - |
 | reference | [native](reference/native/) | 2 | - |
 | reference | [os](reference/os/) | 29 | - |
 | reference | [shell](reference/shell/) | 10 | - |
-| reference | [upstream-bun](reference/upstream-bun/) vendored upstream copy | 344 | [README.md](reference\upstream-bun\README.md) |
+| reference | [upstream-bun](reference/upstream-bun/) vendored upstream copy | 3 | - |
 | reference | [upstream-codex](reference/upstream-codex/) vendored upstream copy | 2 | - |
 | reference | [web](reference/web/) | 47 | - |
 | reference | [workspace](reference/workspace/) | 15 | [Workspace documentation](reference\workspace\INDEX.md) |
@@ -117,4 +116,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | cli (outside the category layout) | [(files)](cli/) | 1 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
 
-Total: 1053 files.
+Total: 672 files.

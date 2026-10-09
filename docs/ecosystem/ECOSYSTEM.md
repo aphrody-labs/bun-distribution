@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 239 crates, 35 binaries, 117 Bun packages, 10 uv packages, 1317 CLI commands, 390 MCP tools.
+Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 235 crates, 35 binaries, 117 Bun packages, 10 uv packages, 1317 CLI commands, 390 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -18,7 +18,7 @@ Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 239 crates, 35 bina
 
 Canonical Rust/Bun monorepo
 
-### Crates (166)
+### Crates (162)
 
 | Crate | Path | Description | Binaries | Features |
 | --- | --- | --- | --- | --- |
@@ -50,7 +50,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-command-wasm` | crates/infra/aphrody-command-wasm | wasm-bindgen adapter running the pure aphrody sub-commands (aphrody-command-pure) in the browser; no logic of its own. |  | console_error_panic_hook, default |
 | `aphrody-config` | crates/ai/config | Codex-compatible config.toml model for aphrody: ConfigToml, model providers (managed llama-server, Ollama, LM Studio, vLLM, Antigravity, OpenAI, Anthropic, ChatGPT), layered merge (built-ins < Codex-compat < user < project < profile < -c overrides < CLI flags), dotted -c override parsing, and the No-Human-In-The-Loop policy defaults. Pure, no filesystem access in the core, wasm32-safe. |  |  |
 | `aphrody-create-tauri-app` | crates/tauri/aphrody-create-tauri-app | Rapidly scaffold out a new tauri app project. |  |  |
-| `aphrody-cron` | crates/os/kernel/comps/cron | Lightweight async cron / interval / daily-time scheduler with pluggable JSON-backed job store for aphrody background tasks. |  |  |
 | `aphrody-diagnostics` | crates/os/kernel/comps/diagnostics | Doctor, OS/infra status, resolved config and AI environment shared by the CLI and the desktop app. |  |  |
 | `aphrody-discord` | crates/infra/discord | Native Aphrody Discord engine: Ed25519 interaction verification, REST client, AI answer embeds, Web extraction and timed shell receipts. |  | cli, default, web-extract |
 | `aphrody-drive` | crates/ui/drive | Aphrody Drive, the Aphrody OS file explorer: Tauri 3 plugin that supervises the sd-daemon core and bridges it to the explorer webview. |  |  |
@@ -107,7 +106,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-rust` | crates/ai/rag-python | PyO3 extension module aphrody.aphrody_rust (RAG vector kernels and rank fusion), built into the aphrody Python wheel. |  |  |
 | `aphrody-secrets` | crates/os/ostd/secrets | Secret store abstraction (env + plaintext file + AES-256-GCM/Argon2id encrypted file) with redacted Display/Debug, constant-time equality, and Zeroize-on-drop SecretValue newtype. |  |  |
 | `aphrody-session` | crates/ai/session | Conversation session tracker for aphrody — turns + tool calls + token usage + cost, persisted as JSONL with atomic writes and deterministic replay; incremental mirror of external agent sessions (Antigravity CLI, Codex, Claude Code). |  | default, memory |
-| `aphrody-shell-sandbox-host` | crates/shell/aphrody-shell-sandbox-host | Transport-neutral sandbox host contract and local shell host adapters. |  |  |
 | `aphrody-shell-session` | crates/shell/session | Transport-neutral shell session and engine traits (input bytes in, output bytes out) with a scripted fake engine. |  |  |
 | `aphrody-shell-tauri` | crates/shell/tauri | Tauri 3 plugin exposing native PTY shell sessions to the aphrody-shell-web webview client. |  |  |
 | `aphrody-shell-vfs` | crates/shell/vfs | Byte-path virtual filesystem trait, in-memory backend and shared conformance suite for the WASM shell. |  |  |
@@ -119,7 +117,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-store` | crates/ai/store | aphrody-store: the single agent-home database (`<home>/db/aphrody.sqlite`): per-profile path resolution, versioned migrations, source/file fingerprints, pipeline journal, sync state and checksum-verified backups. | `aphrody-store` | default, vec |
 | `aphrody-subsystem` | crates/os/ostd/subsystem | The Aphrody subsystem contract: MCP tools, skills (parameterised tool sequences), a sub-agent routine and the shared event bus. |  |  |
 | `aphrody-svg` | crates/ui/svg | The single SVG owner of the Aphrody ecosystem: parse, sanitize, optimize, normalize viewBox, M3 theming, sprite sheets, glyph outlines to SVG paths, rasterize to PNG/ICO and pixel diff. |  | default, glyph, m3, raster |
-| `aphrody-task-runner` | crates/os/kernel/comps/task-runner | Parallel DAG task executor with dependency ordering, retries, timeouts, concurrency caps and NDJSON-friendly event stream for aphrody background pipelines. |  |  |
 | `aphrody-tauri` | crates/tauri/aphrody-tauri | Make tiny, secure apps for all desktop platforms with Tauri |  | common-controls-v6, compression, config-json5, config-toml, custom-protocol, data-url, default, devtools, dynamic-acl, gtk4, http-range, image, image-ico, image-png, isolation, linux-libxdo, native-tls, native-tls-vendored, process-relaunch-dangerous-allow-symlink-macos, protocol-asset, rustls-tls, specta, test, tracing, tray-icon, unstable, uuid, webview-data-url, webview2-com |
 | `aphrody-tauri-build` | crates/tauri/aphrody-tauri-build | build time code to pair with https://crates.io/crates/tauri |  | codegen, config-json, config-json5, config-toml, default, isolation, quote, tauri-codegen |
 | `aphrody-tauri-bundler` | crates/tauri/aphrody-tauri-bundler | Wrap rust executables in OS-specific app bundles for Tauri |  | default, native-tls, native-tls-vendored, platform-certs, rustls |
@@ -149,7 +146,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-tauri-schema-generator` | crates/tauri/aphrody-tauri-schema-generator | Hosts the schema for the Tauri configuration file. | `tauri-schema-generator` |  |
 | `aphrody-tauri-utils` | crates/tauri/aphrody-tauri-utils | Utilities for Tauri |  | aes-gcm, brotli, build, build-2, cargo_metadata, compression, config-json5, config-toml, getrandom, html-manipulation, html-manipulation-2, isolation, json5, proc-macro2, process-relaunch-dangerous-allow-symlink-macos, quote, resources, schema, schemars, serialize-to-javascript, swift-rs, walkdir |
 | `aphrody-tauri-wrap` | crates/ui/tauri-wrap | Runtime plugin of web-to-tauri: turns a website, web app or built bundle into a native Tauri 3 window with the navigation policy, downloads, loopback server and sidecar that keep the page, its API and its backend unchanged. Also hosts the feature-gated debug bridge for Tauri 3 apps (`debug`). |  | bundle, debug-bridge, default |
-| `aphrody-telemetry` | crates/os/kernel/comps/telemetry | In-process observability for aphrody — hierarchical spans, monotonic counters, bucketed histograms, NDJSON exporter. OpenTelemetry-inspired, zero OTLP weight. |  |  |
 | `aphrody-term` | crates/shell/aphrody-term | Headless VT terminal engine (cell grid, native PTY, screen scraping, quad batching) for Aphrody computer use. |  | default |
 | `aphrody-terminal-backend` | crates/shell/terminal-backend | Native pty driver and WebSocket server for aphrody-terminal (cross-platform via portable-pty). |  |  |
 | `aphrody-terminal-core` | crates/shell/terminal-core | Portable Rio VT terminal state shared by the native PTY backend, WASM and Tauri hosts. |  |  |

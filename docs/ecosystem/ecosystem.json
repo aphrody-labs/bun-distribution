@@ -273,13 +273,6 @@
           "features": []
         },
         {
-          "name": "aphrody-cron",
-          "path": "crates/os/kernel/comps/cron",
-          "description": "Lightweight async cron / interval / daily-time scheduler with pluggable JSON-backed job store for aphrody background tasks.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-diagnostics",
           "path": "crates/os/kernel/comps/diagnostics",
           "description": "Doctor, OS/infra status, resolved config and AI environment shared by the CLI and the desktop app.",
@@ -801,13 +794,6 @@
           ]
         },
         {
-          "name": "aphrody-shell-sandbox-host",
-          "path": "crates/shell/aphrody-shell-sandbox-host",
-          "description": "Transport-neutral sandbox host contract and local shell host adapters.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-shell-session",
           "path": "crates/shell/session",
           "description": "Transport-neutral shell session and engine traits (input bytes in, output bytes out) with a scripted fake engine.",
@@ -898,13 +884,6 @@
             "m3",
             "raster"
           ]
-        },
-        {
-          "name": "aphrody-task-runner",
-          "path": "crates/os/kernel/comps/task-runner",
-          "description": "Parallel DAG task executor with dependency ordering, retries, timeouts, concurrency caps and NDJSON-friendly event stream for aphrody background pipelines.",
-          "bins": [],
-          "features": []
         },
         {
           "name": "aphrody-tauri",
@@ -1235,13 +1214,6 @@
             "debug-bridge",
             "default"
           ]
-        },
-        {
-          "name": "aphrody-telemetry",
-          "path": "crates/os/kernel/comps/telemetry",
-          "description": "In-process observability for aphrody — hierarchical spans, monotonic counters, bucketed histograms, NDJSON exporter. OpenTelemetry-inspired, zero OTLP weight.",
-          "bins": [],
-          "features": []
         },
         {
           "name": "aphrody-term",
@@ -15219,7 +15191,7 @@
     "aphrodyRepos": 2,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 239,
+    "crates": 235,
     "binaries": 35,
     "bunPackages": 117,
     "pythonPackages": 10,

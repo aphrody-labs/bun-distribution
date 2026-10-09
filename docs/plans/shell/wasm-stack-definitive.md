@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Shell / terminal stack: wasm, web, Tauri, serverless (definitive plan)
 
-> Path reconciliation (2026-10-07): `crates/os/coreutils` (not in repo) → `crates/os/kernel/core/src/coreutils.rs`; `crates/shell/aphrody-shell-sandbox-host-e2b` (not in repo) → `crates/shell/aphrody-shell-sandbox-host/src/e2b.rs`; `crates/shell/aphrody-shell-vfs-opfs` (not in repo) → `crates/shell/web/src/opfs.rs`. Original dated observations below retain their historical scope.
+> Path reconciliation (2026-10-07): `crates/os/coreutils` (not in repo) → `crates/os/kernel/core/src/coreutils.rs`; `crates/shell/aphrody-shell-vfs-opfs` (not in repo) → `crates/shell/web/src/opfs.rs`. Original dated observations below retain their historical scope.
 
 Date: 2026-10-02. Status: active implementation plan. Section 1 is the baseline read from before implementation;
 the task status and [current shell status](../../products/shell/STATUS.md) record subsequent changes.
@@ -179,8 +179,8 @@ serially.
   `packages/shell/web/test/live-backend.test.ts` still passes (it will need the token env; update by T8).
 
 ### T11. SandboxHost trait + mock host + wire contract
-- Owner: `crates/shell/sandbox-host/` (not in repo) (new crate `aphrody-shell-sandbox-host`), contract doc
-  `docs/apis/shell/sandbox-host.md` (not in repo).
+- Status 2026-10-09: done, then removed with T12 (`aphrody-shell-sandbox-host` had no consumer).
+- Owner: new crate `aphrody-shell-sandbox-host` and its contract doc (both removed on 2026-10-09).
 - Deps: T1.
 - Content: `SandboxHost` trait (spawn/kill/ttl/limits/files), session = `ShellSession` speaking existing wire frames,
   `MockHost` (in-process, backed by `MemVfs` + T3 engine) and `LocalPtyHost` (wraps `aphrody-terminal-backend`, native).
@@ -189,7 +189,7 @@ serially.
   live test with `APHRODY_SHELL_LIVE_BIN`.
 
 ### T12. Cloud provider adapter (first one only)
-- Owner: `crates/shell/aphrody-shell-sandbox-host/src/e2b.rs`, `docs/decisions/shell/sandbox-provider.md`.
+- Owner: E2B adapter of `aphrody-shell-sandbox-host` (removed on 2026-10-09), `docs/decisions/shell/sandbox-provider.md`.
 - Deps: T10, T11. Decision first: pick one provider from {Cloudflare Containers/Sandbox, E2B, Fly Machines, Firecracker on
   owned hosts}; use `aphrody:deploy` and `docs` skills for current APIs; record cost, cold start and licence. Secrets stay
   in the existing protected stores; never in the repo.

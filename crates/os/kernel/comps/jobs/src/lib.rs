@@ -5,9 +5,8 @@
 //!
 //! The fourth usage of the toolbox cap — *repeated tasks organised as
 //! background jobs* — needs work to survive the process that submitted it.
-//! `aphrody-cron` decides *when* something should run and `aphrody-task-runner`
-//! runs a DAG *within one process*; neither remembers anything across a crash.
-//! This crate is the missing piece: a `SQLite` file holding one row per job,
+//! Scheduling (*when* something runs) belongs to the caller, for example
+//! `Bun.cron` in the Bun fork. This crate keeps jobs across a crash: a `SQLite` file holding one row per job,
 //! claimed under a lease, with per-job NDJSON logs.
 //!
 //! # The one invariant

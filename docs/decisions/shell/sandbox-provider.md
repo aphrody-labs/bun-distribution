@@ -2,7 +2,9 @@
 # ADR: First remote shell sandbox provider
 
 Status: E2B selected and adapter implemented, 2026-10-02. No live provider session has
-been created or qualified yet.
+been created or qualified yet. Withdrawn 2026-10-09: the adapter crate
+`aphrody-shell-sandbox-host` was removed because nothing consumed it; the comparison
+below stays as the record for a future remote sandbox.
 
 ## Decision
 
