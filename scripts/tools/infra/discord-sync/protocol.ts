@@ -131,6 +131,9 @@ export interface SyncState {
   failed: Record<string, string[]>;
   pendingAcks: Record<string, PendingAck>;
   started?: string;
+  ficheMessageId?: string;
+  ficheHash?: string;
+  omarFiche?: Record<string, unknown>;
 }
 
 export const emptyState = (): SyncState => ({

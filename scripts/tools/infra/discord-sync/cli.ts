@@ -91,6 +91,11 @@ const io: Io = {
   writeInbox: (name, body) => writeFileSync(join(dir("inbox"), name), body, { mode: 0o600 }),
   writeAgreement: (name, body) =>
     writeFileSync(join(dir("agreements"), name), body, { mode: 0o600 }),
+  readFiche: () =>
+    existsSync(join(stateDir, "fiche-owner.md"))
+      ? readFileSync(join(stateDir, "fiche-owner.md"), "utf8")
+      : undefined,
+  writeMerged: (body) => writeFileSync(join(stateDir, "fiche-merged.md"), body, { mode: 0o600 }),
 };
 
 async function run(cmdline: string[], timeoutMs: number): Promise<string> {
@@ -213,7 +218,7 @@ if (cmd === "setup") {
   const type = opt("type");
   const text = opt("text");
   if (!channelKey || !KINDS.includes(kind) || !type || text === undefined)
-    throw new Error('usage : post <etat|evenements|demandes> --kind K --type T --text "…"');
+    throw new Error('usage : post <etat|evenements|demandes|fiche> --kind K --type T --text "…"');
   const spec = {
     channel: channelKey,
     kind,

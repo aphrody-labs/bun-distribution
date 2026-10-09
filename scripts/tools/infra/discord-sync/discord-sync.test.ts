@@ -425,3 +425,18 @@ describe("tick", () => {
     expect(JSON.stringify([content, embed])).not.toMatch(/token|secret|password/i);
   });
 });
+
+import { mergeFiche, scrub } from "./fiche.ts";
+describe("fiche", () => {
+  test("retire les secrets et ajoute la partie d'Omar", () => {
+    const out = mergeFiche(
+      "a\nPrivateKey = xxx\nNET_SERVICE_VNC=1 vnc-password\nb",
+      { user: "omar" },
+      new Date(0),
+    );
+    expect(out).not.toContain("PrivateKey");
+    expect(out).toContain("vnc-password");
+    expect(out).toContain("user : omar");
+    expect(scrub("token = abcdefghijkl")).toBe("");
+  });
+});

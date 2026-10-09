@@ -66,6 +66,40 @@ export class Discord {
     throw new DiscordError(429, method, path.replace(/\d{15,}/g, "#"));
   }
 
+  /** Message avec un fichier joint (multipart) ; en édition, le fichier précédent est remplacé. */
+  async upload(
+    method: "POST" | "PATCH",
+    path: string,
+    payload: Record<string, unknown>,
+    name: string,
+    content: string,
+  ): Promise<Message> {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const form = new FormData();
+      form.set(
+        "payload_json",
+        JSON.stringify({ ...payload, attachments: [{ id: 0, filename: name }] }),
+      );
+      form.set("files[0]", new Blob([content], { type: "text/markdown" }), name);
+      const res = await this.fetchFn(`https://discord.com/api/v10${path}`, {
+        method,
+        headers: {
+          Authorization: `Bot ${this.token}`,
+          "User-Agent": "DiscordBot (https://aphrody.com, 1)",
+        },
+        body: form,
+      });
+      if (res.status === 429) {
+        const j = (await res.json().catch(() => ({}))) as { retry_after?: number };
+        await this.sleep(Math.min(10_000, Math.ceil((j.retry_after ?? 1) * 1000)));
+        continue;
+      }
+      if (!res.ok) throw new DiscordError(res.status, method, path.replace(/d{15,}/g, "#"));
+      return (await res.json()) as Message;
+    }
+    throw new DiscordError(429, method, path.replace(/d{15,}/g, "#"));
+  }
+
   me = () => this.req<{ id: string; username: string }>("GET", "/users/@me");
   channels = () => this.req<Channel[]>("GET", `/guilds/${this.guildId}/channels`);
   createChannel = (body: Record<string, unknown>) =>

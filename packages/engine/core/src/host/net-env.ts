@@ -6,6 +6,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { buildFiche, syncFicheWith, writeMemory } from "./fiche.ts";
 import { collectFacts, renderFacts, setKeys, staticUpdates } from "./net-facts.ts";
 import { ufwRules, type Tunnel } from "./wireguard.ts";
 
@@ -179,7 +180,7 @@ export async function pushLive(lines: string[], host: string, path: string): Pro
   return (await proc.exited) === 0;
 }
 
-/** `net-env [--member M] [--probe] [--facts] [--write [--ssh-config]] [--push HOST [--push-path P]] [--file F]`: prints the block unless --write. */
+/** `net-env [--member M] [--probe] [--facts] [--write [--ssh-config]] [--push HOST [--push-path P]] [--fiche HOST [--fiche-memory F]] [--file F]`: prints the block unless --write. */
 export async function netEnvMain(t: Tunnel, args: string[]): Promise<void> {
   const value = (name: string) => {
     const at = args.indexOf(`--${name}`);
@@ -214,6 +215,13 @@ export async function netEnvMain(t: Tunnel, args: string[]): Promise<void> {
       value("push-path") ?? "/var/lib/aphrody-discord-sync/net-live.env",
     );
     console.log(`push: ${pushHost} ${ok ? "ok" : "failed"}`);
+  }
+  const ficheHost = value("fiche");
+  if (ficheHost && args.includes("--write")) {
+    const merged = await syncFicheWith(ficheHost, await buildFiche(process.cwd(), file));
+    const memory = value("fiche-memory");
+    if (merged && memory) writeMemory(memory, merged);
+    console.log(`fiche: ${ficheHost} ${merged ? "ok" : "failed"}`);
   }
   if (args.includes("--ssh-config") && args.includes("--write")) {
     const before = readFileSync(file, "utf8");

@@ -5,6 +5,7 @@
 // ce seul processus ; les dépendances sont injectées pour les tests.
 import { DiscordError, type Channel, type Discord, type Message } from "./api.ts";
 import type { SyncConfig } from "./collect.ts";
+import { syncFiche } from "./fiche.ts";
 import {
   ACK_EMOJI,
   decode,
@@ -31,6 +32,7 @@ export type Api = Pick<
   | "pin"
   | "react"
   | "reactors"
+  | "upload"
 >;
 
 export interface Io {
@@ -38,6 +40,8 @@ export interface Io {
   dropOutbox: (name: string) => void;
   writeInbox: (name: string, body: string) => void;
   writeAgreement: (name: string, body: string) => void;
+  readFiche?: () => string | undefined;
+  writeMerged?: (body: string) => void;
 }
 
 /** Retrouve ou crée la catégorie et les trois salons, avec les droits de la catégorie « Tunnel et hôtes ». */
@@ -187,6 +191,7 @@ async function scanInbound(
       }
       if (mine || m.author.bot || m.type === 6) continue;
       if (env?.kind === "report") {
+        if (env.type === "fiche" && m.author.id === omarId && env.data) state.omarFiche = env.data;
         io.writeInbox(
           `${m.id}.json`,
           JSON.stringify({
@@ -334,7 +339,12 @@ export async function tick(
   template = "02 · Tunnel et hôtes",
   now = new Date(),
 ): Promise<TickResult> {
-  if (!state.channels.etat || !state.channels.evenements || !state.channels.demandes)
+  if (
+    !state.channels.etat ||
+    !state.channels.evenements ||
+    !state.channels.demandes ||
+    (cfg.channels.fiche && !state.channels.fiche)
+  )
     await ensureChannels(api, cfg, state, template);
   const bot = await api.me();
   const before = structuredClone(state);
@@ -353,6 +363,8 @@ export async function tick(
     await publish(api, state, all, now);
     const status = await updateStatus(api, state, snap);
     const outbox = await flushOutbox(api, state, io);
+    const fiche = await syncFiche(api, state, io.readFiche?.(), now);
+    if (fiche.merged) io.writeMerged?.(fiche.merged);
     return { status, events: all.map((e) => e.type), inbound: inbound.seen, outbox, baseline };
   } catch (error) {
     // Les événements non publiés seront recalculés au prochain passage : on rend l'état d'avant.
