@@ -76,3 +76,16 @@ bun run cdn build && bun run cdn publish --host dbfr && bun run cdn verify
 `/home/ubuntu/apps/cdn/symbols/current`; `aphrody-fonts-proxy` serves it as its second `--static` root,
 after the catalog release `/home/ubuntu/apps/cdn/current`. Rollback: point `current` back to the previous
 release directory. Then update the `releases` entry of `asset-catalog.json` (commit, id, URLs, sha256).
+
+State on 2026-10-09: release `12b46e640adf` (fork commit `24931a5a98`, 4154 symbols) published and verified
+(200, content type, CORS `*`, immutable `/h/`). Branch `aphrody` (tip `b7b971870f`): 25 086 files, 59.4 MiB
+(master: 4 864 516 files, 6 424.8 MiB); depth-1 pack 31.9 MB (master 1.90 GiB). Open items:
+
+- CI `check` run 37967357110 (first run with Aphrody Bun in `ubuntu:26.04`): read it with
+  `gh run view 37967357110 -R aphrody-labs/material-design-icons --log-failed` and fix in the fork.
+- `update.yml` (weekly `bun run update`) lives on `aphrody`, not on the default branch `master`, so GitHub
+  never schedules it; run `bun run update && bun run check` on vps, commit, push, then republish.
+- `aphrody-labs/bun/.github/actions/setup-bun` cannot be used from a runner: unpacking the bun repository
+  fails on the dangling symlink `test/cli/install/registry/fixtures/old_pnpm_node_modules/basic-1`.
+- dbfr: delete `~/apps/cdn/src.prev` and `/tmp/aphrody-fonts-proxy.service.prev` (pre-deploy backups);
+  vps: `~/build/apps/cdn-src/material-design-icons` holds no unique work and can be deleted.
