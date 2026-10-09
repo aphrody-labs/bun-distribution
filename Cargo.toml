@@ -66,7 +66,6 @@ aphrody-boq = { path = "crates/google/boq", version = "1.0.0", features = [] }
 aphrody-capture = { path = "crates/os/kernel/libs/capture", version = "1.0.0-canary", features = [] }
 aphrody-config = { path = "crates/ai/config", version = "1.0.0", features = [] }
 aphrody-diagnostics = { path = "crates/os/kernel/comps/diagnostics", version = "1.0.0" }
-aphrody-context = { path = "crates/ai/context", version = "1.0.0", features = [] }
 aphrody-embed = { path = "crates/ai/embed", version = "1.0.0", default-features = false, features = [] }
 aphrody-engine = { path = "crates/ai/engine", version = "1.0.0", features = [] }
 aphrody-engine-mistralrs = { path = "crates/ai/engine-mistralrs", version = "1.0.0" }
@@ -86,11 +85,9 @@ aphrody-jev = { path = "crates/ai/jev", version = "1.0.0", features = [] }
 aphrody-jobs = { path = "crates/os/kernel/comps/jobs", version = "1.0.0-canary", features = [] }
 aphrody-kernel = { path = "crates/os/kernel/core", version = "1.0.0-canary", default-features = false, features = [] }
 aphrody-llama-server = { path = "crates/ai/llama-server", version = "1.0.0", features = [] }
-aphrody-llm-infra = { path = "crates/ai/llm-infra", version = "1.0.0", features = [] }
 aphrody-m3-tokens = { path = "crates/ui/m3-tokens", version = "1.0.0-canary", features = [] }
 aphrody-mcp = { path = "crates/ai/mcp", version = "1.0.0" }
 aphrody-mcp-client = { path = "crates/ai/mcp-client", version = "1.0.0", features = [] }
-aphrody-mcp-oauth = { path = "crates/ai/mcp-oauth", version = "1.0.0", features = [] }
 aphrody-memory = { path = "crates/ai/memory", version = "1.0.0", features = [] }
 aphrody-model-antigravity = { path = "crates/google/model-antigravity", version = "1.0.0", features = [] }
 aphrody-model-client = { path = "crates/ai/model-client", version = "1.0.0", features = [] }
@@ -105,19 +102,14 @@ aphrody-ocr-onnx = { path = "crates/ai/ocr-onnx", version = "1.0.0", features = 
 aphrody-ocr-vlm = { path = "crates/ai/ocr-vlm", version = "1.0.0", features = [] }
 aphrody-patch = { path = "crates/ai/patch", version = "1.0.0", features = [] }
 aphrody-proc = { path = "crates/os/ostd/proc", version = "1.0.0-canary", features = [] }
-aphrody-prompts = { path = "crates/ai/prompts", version = "1.0.0", features = [] }
-aphrody-providers = { path = "crates/ai/providers", version = "1.0.0", features = [] }
 aphrody-rag = { path = "crates/ai/rag", version = "1.0.0", features = [] }
 aphrody-rag-core = { path = "crates/ai/rag-core", version = "1.0.0", features = [] }
 aphrody-rag-eval = { path = "crates/ai/rag-eval", version = "1.0.0", features = [] }
 aphrody-re = { path = "crates/os/kernel/comps/re", version = "1.0.0-canary", features = [] }
 aphrody-rollout = { path = "crates/ai/rollout", version = "1.0.0", features = [] }
-aphrody-router = { path = "crates/ai/router", version = "1.0.0", features = [] }
 aphrody-secrets = { path = "crates/os/ostd/secrets", version = "1.0.0-canary", features = [] }
 aphrody-session = { path = "crates/ai/session", version = "1.0.0", features = [] }
-aphrody-skills = { path = "crates/ai/skills", version = "1.0.0", features = [] }
 aphrody-ssh = { path = "crates/infra/ssh", version = "0.1.0", features = [] }
-aphrody-supervisor = { path = "crates/ai/supervisor", version = "1.0.0", features = [] }
 aphrody-shell-web = { path = "crates/shell/web", version = "1.0.0-canary", features = [] }
 aphrody-shell-sandbox-host = { path = "crates/shell/aphrody-shell-sandbox-host", version = "1.0.0-canary", features = [] }
 aphrody-shell-tauri = { path = "crates/shell/tauri", version = "1.0.0-canary", features = [] }
@@ -129,7 +121,6 @@ aphrody-terminal-backend = { path = "crates/shell/terminal-backend", version = "
 aphrody-toolcall = { path = "crates/ai/toolcall", version = "1.0.0", features = [] }
 aphrody-toolcall-repair = { path = "crates/ai/toolcall-repair", version = "1.0.0", features = [] }
 aphrody-toolchains = { path = "crates/compat/toolchains", version = "1.0.0-canary", features = [] }
-aphrody-tools = { path = "crates/ai/tools", version = "1.0.0", features = [] }
 aphrody-train = { path = "crates/ai/train", version = "1.0.0", features = [] }
 aphrody-translate = { path = "crates/ai/translate", version = "1.0.0", features = [] }
 aphrody-command-wasm = { path = "crates/infra/aphrody-command-wasm", version = "1.0.0", features = [] }

@@ -1032,18 +1032,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-context"
-version = "1.0.0"
-dependencies = [
- "chrono",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "tokenizers 0.23.2",
- "tracing",
-]
-
-[[package]]
 name = "aphrody-create-tauri-app"
 version = "4.7.4"
 dependencies = [
@@ -1634,24 +1622,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-llm-infra"
-version = "1.0.0"
-dependencies = [
- "aphrody-providers",
- "async-trait",
- "chrono",
- "parking_lot",
- "rand 0.10.3",
- "serde",
- "serde_json",
- "sha2 0.11.0",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "tracing",
-]
-
-[[package]]
 name = "aphrody-m3-reproduce"
 version = "1.0.0-canary"
 dependencies = [
@@ -1762,24 +1732,6 @@ dependencies = [
  "thiserror 2.0.21",
  "tokio",
  "tracing",
-]
-
-[[package]]
-name = "aphrody-mcp-oauth"
-version = "1.0.0"
-dependencies = [
- "base64 0.23.1",
- "rand 0.10.3",
- "reqwest 0.13.5",
- "rustls",
- "serde",
- "serde_json",
- "sha2 0.11.0",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "tracing",
- "url",
 ]
 
 [[package]]
@@ -2132,27 +2084,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-prompts"
-version = "1.0.0"
-dependencies = [
- "minijinja",
- "regex",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "tracing",
-]
-
-[[package]]
-name = "aphrody-providers"
-version = "1.0.0"
-dependencies = [
- "serde",
- "serde_json",
- "thiserror 2.0.21",
-]
-
-[[package]]
 name = "aphrody-rag"
 version = "1.0.0"
 dependencies = [
@@ -2306,28 +2237,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-router"
-version = "1.0.0"
-dependencies = [
- "aphrody-antigravity",
- "aphrody-model-antigravity",
- "aphrody-model-client",
- "aphrody-providers",
- "async-stream",
- "async-trait",
- "axum",
- "bytes",
- "futures-util",
- "reqwest 0.13.5",
- "rustls",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "tokio",
- "tracing",
-]
-
-[[package]]
 name = "aphrody-rust"
 version = "0.1.0"
 dependencies = [
@@ -2345,28 +2254,6 @@ dependencies = [
  "thiserror 2.0.21",
  "tokio",
  "windows 0.62.2",
-]
-
-[[package]]
-name = "aphrody-sdk"
-version = "1.0.0"
-dependencies = [
- "aphrody-gemini-runtime",
- "aphrody-memory",
- "aphrody-session",
- "aphrody-skills",
- "aphrody-tools",
- "async-trait",
- "chrono",
- "futures-util",
- "glob",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "tokio-stream",
- "tracing",
 ]
 
 [[package]]
@@ -2452,41 +2339,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-skills"
-version = "1.0.0"
-dependencies = [
- "anyhow",
- "aphrody-models",
- "clap",
- "dirs 7.0.0",
- "glob",
- "globset",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "tracing",
- "walkdir",
- "yaml_serde",
-]
-
-[[package]]
-name = "aphrody-skills-forge"
-version = "1.0.0"
-dependencies = [
- "once_cell",
- "regex",
- "schemars 1.2.2",
- "serde",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "walkdir",
- "yaml_serde",
-]
-
-[[package]]
 name = "aphrody-softraster"
 version = "1.0.0-canary"
 
@@ -2558,22 +2410,6 @@ dependencies = [
  "async-trait",
  "serde",
  "serde_json",
- "thiserror 2.0.21",
- "tokio",
-]
-
-[[package]]
-name = "aphrody-supervisor"
-version = "1.0.0"
-dependencies = [
- "aphrody-agent-proto",
- "aphrody-engine",
- "aphrody-model-client",
- "aphrody-rollout",
- "aphrody-toolcall",
- "async-trait",
- "futures",
- "serde",
  "thiserror 2.0.21",
  "tokio",
 ]
@@ -3403,31 +3239,6 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.21",
  "toml 1.1.6+spec-1.1.0",
-]
-
-[[package]]
-name = "aphrody-tools"
-version = "1.0.0"
-dependencies = [
- "aphrody-web-extract",
- "aphrody-web-service",
- "async-trait",
- "base64 0.23.1",
- "globset",
- "ignore",
- "regex",
- "reqwest 0.13.5",
- "rustls",
- "schemars 1.2.2",
- "serde",
- "serde_json",
- "sha2 0.11.0",
- "similar 3.2.0",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "tracing",
- "walkdir",
 ]
 
 [[package]]

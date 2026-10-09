@@ -2,7 +2,7 @@
 //! `WorkspaceGuard` — path-containment sandbox for workspace reads (AH-8).
 //!
 //! Port of openclaw `openRootFile` boundary semantics + the `contained_in`
-//! lexical guard from `aphrody-skills::runtime::plugin_manifest`. Every read
+//! lexical guard of the former skills runtime plugin manifest. Every read
 //! of a bootstrap file goes through [`WorkspaceGuard::resolve`], which:
 //!
 //! 1. lexically normalises the candidate (collapse `.` / `..`) so a hostile relative component

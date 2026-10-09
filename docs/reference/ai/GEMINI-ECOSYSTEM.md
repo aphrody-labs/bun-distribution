@@ -29,5 +29,5 @@ Master map of official Google open-source repositories, SDKs, agent blueprints, 
 | `google-antigravity/antigravity-cli` | `crates/infra/aphrody-command/src/commands.rs` (`aphrody agy`) & `agy_loop.rs` | Auto-discovery and direct execution of the official `agy` binary with autonomous looping. |
 | `google-antigravity` (SDK) | `py/antigravity-sdk-python/` (not in repo) (retired source path; retained as historical evidence) | Agent loop, tool context, thinking effort levels (`minimal`, `low`, `medium`, `high`). |
 | `gemini-cli` / Cloud Code | `crates/infra/aphrody-command/src/agy_backend.rs` (not in repo) (retired source path; retained as historical evidence) | High-throughput in-process chat dispatch over Cloud Code daily endpoint. |
-| MCP Servers | `crates/ai/mcp-oauth` | Native Rust MCP client/server implementing RFC 9728/8414 OAuth 2.1 authentication. |
+| MCP Servers | `crates/ai/mcp`, `crates/ai/mcp-client` | Native Rust MCP server and client. |
 | Local Gemma Models | `crates/ai/models` & `~/.aphrody/models` | Local ONNX/GGUF model lifecycle management (pull, verify, evict). |

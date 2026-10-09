@@ -41,6 +41,6 @@ Not hosted at `api.x.ai` for agent turns — uses xAI session via `~/.grok/`:
 
 - Config: `~/.grok/config.toml`, `~/.grok/settings.json`
 
-## aphrody-router note
+## Native provider note
 
-Native `aphrody` Rust router allows **anthropic**, **gemini**, **antigravity** only — not provider id `xai`. Use Grok CLI or direct HTTP for Grok models.
+Native `aphrody` Rust providers allow **anthropic**, **gemini**, **antigravity** only — not provider id `xai`. Use Grok CLI or direct HTTP for Grok models.

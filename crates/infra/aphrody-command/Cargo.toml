@@ -230,8 +230,6 @@ aphrody-google                = { workspace = true }
 # and `aphrody doctor` reports its bootstrap-budget health. The `git` feature
 # lets oc-onboard git-back the seeded workspace.
 aphrody-agent-home        = { workspace = true, features = ["git"] }
-# aphrody-prompts — source of the unified BXC/YOLO doctrine prepended to every
-# agent session's system prompt (see exec_cmd::runtime_config).
 # In-process stdout/stderr capture backing `aphrody::run_captured` (the
 # structured entry the Tauri app + aphrody-ffi consume). Host-only.
 # `aphrody agent "..."` — the flagship autonomous-agent surface (Antigravity

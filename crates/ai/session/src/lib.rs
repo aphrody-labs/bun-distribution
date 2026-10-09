@@ -25,7 +25,7 @@
 //! * **`aphrody-hooks`** dispatches `PreToolUse` / `PostToolUse` hooks; the [`ToolCall`] DTO here
 //!   is the post-hoc *audit record* of what actually ran, regardless of whether a hook
 //!   short-circuited it.
-//! * **`aphrody-context`** maintains the *live* working set fed back to the model; `Session` is the
+//! * The agent runtime maintains the *live* working set fed back to the model; `Session` is the
 //!   *cold* archive that survives process exit.
 //!
 //! The on-disk format mirrors the atomic write pattern from

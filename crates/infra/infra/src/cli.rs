@@ -925,7 +925,6 @@ fn doctor(root: &Path, as_json: bool, strict: bool, run: &mut Run) -> Result<()>
         "aphrody-mcp",
         "aphrody-kernel",
         "aphrody-google",
-        "aphrody-skills",
         "aphrody-infra",
         "aphrody-ssh",
         "aphrody-yolo",

@@ -17,9 +17,7 @@ Obscura tree. Its manifest version is `0.1.1` in the target workspace to avoid
 a Cargo lockfile collision with the still referenced source checkout's `0.1.0`.
 Its upstream license and attribution are in `crates/web/obscura-dom`.
 
-The in-progress `aphrody-tools` `web_fetch` Markdown cutover in the current
-AI worktree calls this crate in process. It is not part of this crate's clean
-clone until the AI workspace import is committed. Existing BXC FFI exports,
+Existing BXC FFI exports,
 CLI/MCP schemas, and Bun consumers still need cutover and parity checks. The
 source gold corpus test is pending fixture migration into the target; see the
 import record. This crate's unit and portable integration tests do not

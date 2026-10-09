@@ -38,7 +38,7 @@ pub const WORKSPACE_STATE_VERSION: u32 = 1;
 
 /// The subdirectory that holds daily memory logs (`memory/YYYY-MM-DD.md`).
 pub const MEMORY_DIRNAME: &str = "memory";
-/// Workspace-local skills directory (consumed by `aphrody-skills`).
+/// Workspace-local skills directory.
 pub const SKILLS_DIRNAME: &str = "skills";
 
 /// A recognised bootstrap file. The variant order is the deterministic

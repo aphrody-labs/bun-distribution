@@ -45,7 +45,6 @@
     "crates/ai/ocr-vlm/src/server.rs": 2,
     "crates/ai/ocr-vlm/src/vlm.rs": 2,
     "crates/ai/ocr/src/lib.rs": 1,
-    "crates/ai/prompts/src/unified_system_prompt.rs": 1,
     "crates/ai/rag-core/Cargo.toml": 1,
     "crates/ai/rag-core/src/api.rs": 5,
     "crates/ai/rag-core/src/chunk.rs": 5,

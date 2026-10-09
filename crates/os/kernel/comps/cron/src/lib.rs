@@ -16,8 +16,7 @@
 //!
 //! ## Cohesion with the wider aphrody workspace
 //!
-//! * **`aphrody-skills-runtime`** stores skill `cron:` triggers verbatim; this crate is the
-//!   canonical parser/dispatcher.
+//! * This crate is the canonical parser/dispatcher for skill `cron:` triggers.
 //! * **`aphrody-mcp`** uses [`Scheduler::tick`] to periodically refresh OAuth tokens before they
 //!   expire (HTTP descriptor).
 //! * **`aphrody-design-daemon`** persists jobs via [`JsonFileJobStore`] alongside its SQLite

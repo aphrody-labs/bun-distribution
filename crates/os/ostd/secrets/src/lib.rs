@@ -42,7 +42,7 @@
 //!
 //! ## Cohesion with the workspace
 //!
-//! * `aphrody-router` / `aphrody-gateway` / `aphrody-voice` all need an abstraction over
+//! * `aphrody-gateway` / `aphrody-voice` both need an abstraction over
 //!   `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `ELEVENLABS_API_KEY`.  The 3-only provider whitelist
 //!   (memory `project_aphrody_providers_3only`) is enforced upstream; this crate just resolves the
 //!   string.

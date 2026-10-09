@@ -5,8 +5,8 @@
 Le propriétaire est `@aphrody/workspace`. Les sources locales sont dans
 `~/plugins`, configurable par `APHRODY_PLUGINS_ROOT`. Les adaptateurs sont dans
 [`agent-plugin-providers.json`](../../../tools/config/ai/agent-plugin-providers.json).
-Le CLI utilise `@aphrody/paths`, `@aphrody/bun`, Bun YAML/TOML, Oxfmt,
-le validateur Rust `aphrody-skills` et les commandes natives disponibles.
+Le CLI utilise `@aphrody/paths`, `@aphrody/bun`, Bun YAML/TOML, Oxfmt
+et les commandes natives disponibles.
 
 ## Préparer et vérifier
 
@@ -95,7 +95,7 @@ scope utilisateur. Un scope interdit échoue avant les mutations.
 | Codex       | Marketplace local; paquet utilisateur désactivé globalement pour les plugins restreints, activation TOML du projet | Contrôles du gestionnaire; aucune commande native de validation de plugins annoncée       |
 | Claude      | Marketplace local et installation native `--scope`                                                                 | `plugin validate --json --strict` sur les manifests, catalogues et dossiers de composants |
 | agy         | Installation native globale; entrée `plugins.json` filtrée pour le projet                                          | `plugin validate`                                                                         |
-| Tous        | YAML, JSON, TOML, chemins confinés, versions, liens et MCP; skills liées avec leurs ressources                     | `aphrody-skills validate --json` si installé                                              |
+| Tous        | YAML, JSON, TOML, chemins confinés, versions, liens et MCP; skills liées avec leurs ressources                     | validation interne de `@aphrody/workspace`                                                |
 
 Pour agy, le MCP du projet est un petit plugin sous `.agents/aphrody-mcp` (not in repo),
 enregistré dans `.agents/plugins.json` (not in repo); un fichier `.agents/mcp_config.json` (not in repo)

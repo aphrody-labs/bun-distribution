@@ -3,15 +3,7 @@ import { spawnSync } from "@aphrody/update/process";
 import { userHome } from "@aphrody/paths";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import {
-  files,
-  inside,
-  object,
-  plugins,
-  readJson,
-  validName,
-  type Json,
-} from "./agent-plugin-store.ts";
+import { inside, object, plugins, readJson, validName, type Json } from "./agent-plugin-store.ts";
 
 export type Provider = {
   id: string;
@@ -274,22 +266,6 @@ export function nativeValidation(
       });
     }
   }
-  if (Bun.which("aphrody-skills")) {
-    for (const plugin of entries)
-      if (files(join(plugin.path, "skills")).some((p) => p.endsWith("/SKILL.md"))) {
-        const result = runner(
-          ["aphrody-skills", "validate", join(plugin.path, "skills"), "--json"],
-          cwd,
-          home,
-        );
-        reports.push({
-          provider: "aphrody-skills",
-          plugin: plugin.name,
-          status: result.exitCode === 0 ? "passed" : "failed",
-          ...result,
-        });
-      }
-  } else reports.push({ provider: "aphrody-skills", status: "unavailable" });
   return reports;
 }
 
