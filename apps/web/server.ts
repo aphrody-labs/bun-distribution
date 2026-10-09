@@ -1,24 +1,32 @@
 #!/usr/bin/env bun
 import { join } from 'node:path';
 import { analyzeCodebase } from './src/core/codebase-scanner';
+import { TEMPLATES } from './src/templates/templates-data';
+import { DOCS_ARTICLES } from './src/docs/docs-data';
 
 const port = Number(process.env.PORT || 3000);
 const startTime = Date.now();
 
-console.log(`🌸 Starting Aphrody Web Server on port ${port}...`);
+console.log(`🌸 Starting Aphrody Unified Web Server on port ${port}...`);
+
+// Simple in-memory room store for arcade multiplayer frames
+const rooms = new Map<string, Set<any>>();
 
 const server = Bun.serve({
   port,
   async fetch(req, server) {
     const url = new URL(req.url);
 
-    // 1. Upgrade WebSockets
+    // 1. Upgrade WebSockets for live telemetry and Arcade Multiplayer
     if (url.pathname === '/ws') {
-      if (server.upgrade(req)) return;
+      const room = url.searchParams.get('room') || 'default';
+      if (server.upgrade(req, { data: { room, id: Math.random().toString(36).slice(2, 9) } })) {
+        return;
+      }
       return new Response('WebSocket upgrade failed', { status: 400 });
     }
 
-    // 2. API Routes
+    // 2. Metrics & Scanner
     if (url.pathname === '/api/metrics') {
       const memory = process.memoryUsage();
       return Response.json({
@@ -38,6 +46,7 @@ const server = Bun.serve({
       return Response.json(analysis);
     }
 
+    // 3. Native Bun API Runners
     if (url.pathname === '/api/transpile' && req.method === 'POST') {
       const body = await req.json();
       const transpiler = new Bun.Transpiler({ loader: body.loader || 'tsx' });
@@ -79,16 +88,85 @@ const server = Bun.serve({
       return Response.json({ rewritten });
     }
 
+    // 4. Live Server Benchmark Execution
+    if (url.pathname === '/api/benchmarks/run' && req.method === 'POST') {
+      const results: any[] = [];
+
+      // Test 1: Bun.Transpiler AST throughput
+      const transpilerIters = 10000;
+      const transpiler = new Bun.Transpiler({ loader: 'tsx' });
+      const testJsx = 'export function Widget({ title }) { return <div className="card"><h1>{title}</h1></div>; }';
+      const t0 = performance.now();
+      for (let i = 0; i < transpilerIters; i++) {
+        transpiler.transformSync(testJsx);
+      }
+      const t1 = performance.now();
+      const transpilerDuration = t1 - t0;
+      results.push({
+        name: 'Bun.Transpiler (TSX AST)',
+        iterations: transpilerIters,
+        durationMs: Math.round(transpilerDuration),
+        opsPerSec: Math.round((transpilerIters / transpilerDuration) * 1000),
+        environment: 'Bun Server',
+      });
+
+      // Test 2: Bun.deflateSync SIMD throughput
+      const deflateIters = 5000;
+      const samplePayload = new TextEncoder().encode('Aphrody unified monorepo framework running with high-performance native Web APIs and Bun runtime.'.repeat(20));
+      const t2 = performance.now();
+      for (let i = 0; i < deflateIters; i++) {
+        Bun.deflateSync(samplePayload);
+      }
+      const t3 = performance.now();
+      const deflateDuration = t3 - t2;
+      results.push({
+        name: 'Bun.deflateSync (SIMD libdeflate)',
+        iterations: deflateIters,
+        durationMs: Math.round(deflateDuration),
+        opsPerSec: Math.round((deflateIters / deflateDuration) * 1000),
+        environment: 'Bun Server',
+      });
+
+      // Test 3: Bun.password.hash (Argon2id)
+      const argonIters = 8;
+      const t4 = performance.now();
+      for (let i = 0; i < argonIters; i++) {
+        await Bun.password.hash('aphrody-secret-key', { algorithm: 'argon2id' });
+      }
+      const t5 = performance.now();
+      const argonDuration = t5 - t4;
+      results.push({
+        name: 'Bun.password.hash (Argon2id SIMD)',
+        iterations: argonIters,
+        durationMs: Math.round(argonDuration),
+        opsPerSec: Math.round((argonIters / argonDuration) * 1000),
+        environment: 'Bun Server',
+      });
+
+      return Response.json({ results });
+    }
+
+    // 5. Templates & Docs API
+    if (url.pathname === '/api/templates') {
+      return Response.json(TEMPLATES);
+    }
+
+    if (url.pathname === '/api/docs') {
+      return Response.json(DOCS_ARTICLES);
+    }
+
+    // 6. Multi-Target Bridge Ping
     if (url.pathname === '/api/bridge/ping' && req.method === 'POST') {
       return Response.json({
         status: 'ok',
         platform: process.platform,
         runtime: 'Bun ' + Bun.version,
         timestamp: Date.now(),
+        nanoseconds: Bun.nanoseconds().toString(),
       });
     }
 
-    // 3. Static Assets in dist/
+    // 7. Static Assets in dist/
     if (url.pathname.startsWith('/dist/')) {
       const filePath = join(import.meta.dir, url.pathname);
       const file = Bun.file(filePath);
@@ -97,7 +175,7 @@ const server = Bun.serve({
       }
     }
 
-    // 4. HTML Entrypoint with HTMLRewriter injection
+    // 8. HTML Entrypoint with HTMLRewriter injection
     const htmlFile = Bun.file(join(import.meta.dir, 'index.html'));
     if (await htmlFile.exists()) {
       const rewriter = new HTMLRewriter()
@@ -105,7 +183,7 @@ const server = Bun.serve({
           element(el) {
             el.append(`<meta name="generator" content="Bun ${Bun.version}">`, { html: true });
             el.append(`<meta name="server-time" content="${new Date().toISOString()}">`, { html: true });
-          }
+          },
         });
       return rewriter.transform(new Response(htmlFile, {
         headers: { 'Content-Type': 'text/html; charset=utf-8' },
@@ -115,10 +193,26 @@ const server = Bun.serve({
     return new Response('Not Found', { status: 404 });
   },
   websocket: {
+    open(ws) {
+      const { room, id } = ws.data as { room: string; id: string };
+      if (!rooms.has(room)) rooms.set(room, new Set());
+      rooms.get(room)!.add(ws);
+      ws.send(JSON.stringify({ type: 'joined', player_id: id }));
+    },
     message(ws, message) {
-      ws.send(JSON.stringify({ echo: message, timestamp: Date.now() }));
+      const { room } = ws.data as { room: string };
+      const peers = rooms.get(room);
+      if (peers) {
+        for (const peer of peers) {
+          if (peer !== ws) peer.send(message);
+        }
+      }
+    },
+    close(ws) {
+      const { room } = ws.data as { room: string };
+      rooms.get(room)?.delete(ws);
     },
   },
 });
 
-console.log(`🚀 Aphrody Web live at http://localhost:${server.port}`);
+console.log(`🚀 Aphrody Unified Web live at http://localhost:${server.port}`);
