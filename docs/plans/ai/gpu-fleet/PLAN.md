@@ -239,3 +239,29 @@ Buv's actual `uv 0.12.24` installed CPython 3.12.15. Buv dispatch depends on the
 supported executable basename: the earlier renamed `.exe` did not expose UV.
 Its unmanaged existing Python launcher was preserved. SDK bridge distribution
 and model-backed Shenron clients still require their host receipts.
+
+## Shenron delivery and remaining host qualification, 2026-10-09
+
+The pinned Shenron pipeline `1545a33f` was built and run on the VPS, then
+delivered to DBFR with its exact locked Zod dependency and SHA-256 receipts.
+Inlining Zod failed before execution; the qualified package keeps it external.
+After a checksum-verified PostgreSQL source-registry backup, the native import
+applied 396 records and preserved 57 from 17 official documents and 436 media
+references. Canon promotion remains zero; references do not prove fetched media
+or fresh RAG embeddings. The crawl respects robots with 25 requests and depth two.
+
+The production audit checked all 381 listed images of Soshuhen volume one,
+receiving 381 image responses with HTTP 206. The other 17 volume API records
+have no listed pages. No complete CDN, OCR, wiki or RAG delivery is inferred.
+
+The configured provider is consumed by `aphrody ai agent app-server` and the
+shared site/desktop daemon. The installed help states that
+`aphrody ai agent exec [PROMPT]` currently returns unsupported. Source-level
+authenticated MCP/SSE changes require newly distributed binaries before
+activation; the older installed binary is not this qualification.
+
+At 19:10 UTC, Omar's direct private SSH connection timed out and the VPS no
+longer listened on reverse ports 22010 or 22011. The earlier real generation
+receipt remains valid, but current reachability, Python host DLL delivery,
+GPU training, Mistral.rs activation and reboot persistence remain unqualified.
+The owner workstation started no Cargo or GPU jobs for this batch.
