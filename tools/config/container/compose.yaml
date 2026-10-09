@@ -44,6 +44,25 @@ x-toolbox: &toolbox
   restart: unless-stopped
   profiles: [prod]
 
+# dbfr Bun services on the published Bun image (the bun-prod tag): host network on the loopback ports of the former
+# units, uid 1000 = ubuntu, release trees bound read-only at their host path (relative `current` links), writable
+# paths bound one by one as the units' ReadWritePaths were.
+x-bun: &bun
+  image: ${APHRODY_BUN_IMAGE:-ghcr.io/aphrody-labs/bun:1.4.3-aphrody.3}
+  pull_policy: missing
+  entrypoint: ["bun"]
+  init: true
+  user: "1000:1000"
+  network_mode: host
+  read_only: true
+  tmpfs: [/tmp]
+  environment:
+    HOME: /tmp
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  restart: unless-stopped
+  profiles: [prod]
+
 services:
   # MCP Streamable HTTP for the wg clients (aphrody-wg-proxy@ forwards 10.200.77.3:8793 here); Bearer token from the
   # env file. The M3 tool host runs with the image's bun.
@@ -127,6 +146,100 @@ services:
       test: ["CMD", "aphrody", "job", "stats"]
       interval: 60s
       timeout: 10s
+      retries: 3
+
+  # Discord gateway and HTTP interactions of bot.aphrody.com (127.0.0.1:4010); releases activated by
+  # scripts/release/atomic-deploy-aphrody-discord.sh, which restarts this service.
+  discord:
+    <<: *bun
+    command: ["/home/ubuntu/apps/discord/current/server.js"]
+    working_dir: /home/ubuntu/apps/discord/current
+    env_file: [/etc/aphrody-discord.env]
+    environment:
+      NODE_ENV: production
+      HOME: /home/ubuntu/apps/discord/shared
+    volumes:
+      - /home/ubuntu/apps/discord:/home/ubuntu/apps/discord:ro
+      - /home/ubuntu/apps/discord/shared:/home/ubuntu/apps/discord/shared
+    mem_limit: 512m
+    stop_signal: SIGINT
+    stop_grace_period: 20s
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:4010/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Google Fonts edge proxy and static CDN of cdn.aphrody.com (127.0.0.1:8796); scripts/tools/infra/cdn.ts publishes
+  # the trees it serves.
+  fonts-proxy:
+    <<: *bun
+    command:
+      - /home/ubuntu/apps/cdn/src/packages/google/google/src/fonts-serve.ts
+      - --port
+      - "8796"
+      - --cache
+      - /home/ubuntu/apps/cdn/google
+      - --origin
+      - https://cdn.aphrody.com
+      - --static
+      - /home/ubuntu/apps/cdn/current
+      - --static
+      - /home/ubuntu/apps/cdn/symbols/current
+    working_dir: /home/ubuntu/apps/cdn/src
+    volumes:
+      - /home/ubuntu/apps/cdn:/home/ubuntu/apps/cdn:ro
+      - /home/ubuntu/apps/cdn/google:/home/ubuntu/apps/cdn/google
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8796/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Private JSON/GraphQL projections of the Shenron timeline (127.0.0.1:8813); the host timer
+  # shenron-timeline-refresh rewrites the tree it reads.
+  shenron-timeline-api:
+    <<: *bun
+    command:
+      - /home/ubuntu/.local/lib/aphrody/shenron/workspace.mjs
+      - timeline
+      - serve
+      - --output
+      - /home/ubuntu/.aphrody/workspaces/dbfr/private/web/timeline
+      - --port
+      - "8813"
+    working_dir: /home/ubuntu/.aphrody/workspaces/dbfr/private/web
+    volumes:
+      - /home/ubuntu/.local/lib/aphrody/shenron:/home/ubuntu/.local/lib/aphrody/shenron:ro
+      - /home/ubuntu/.aphrody/workspaces/dbfr/private/web:/home/ubuntu/.aphrody/workspaces/dbfr/private/web:ro
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8813/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # downloads.aphrody.com origin (127.0.0.1:8797, behind the gateway); scripts/release/publish-downloads.ts swaps
+  # `current` and uploads app/server.ts.
+  downloads:
+    <<: *bun
+    command: ["/home/ubuntu/apps/downloads/app/server.ts"]
+    working_dir: /home/ubuntu/apps/downloads/app
+    environment:
+      HOME: /tmp
+      DOWNLOADS_ROOT: /home/ubuntu/apps/downloads/current
+      DOWNLOADS_PORT: "8797"
+      DOWNLOADS_HOST: 127.0.0.1
+    volumes:
+      - /home/ubuntu/apps/downloads:/home/ubuntu/apps/downloads:ro
+    mem_limit: 384m
+    stop_signal: SIGINT
+    stop_grace_period: 15s
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8797/healthz"]
+      interval: 30s
+      timeout: 5s
       retries: 3
 
   api:

@@ -12,6 +12,6 @@ Nice=10
 IOSchedulingClass=idle
 TimeoutStartSec=30min
 # Each verified snapshot is about 1 GiB; keep the two newest.
-ExecStartPost=/bin/sh -c 'ls -1d /home/ubuntu/apps/shenron/shared/backups/container/2*/ | sort -r | tail -n +3 | xargs -r rm -rf --'
+ExecStartPost=/bin/sh -c 'ls -1d /home/ubuntu/apps/shenron/shared/backups/container/2*/ | sort -r | tail -n +2 | xargs -r rm -rf --'
 StandardOutput=journal
 StandardError=journal

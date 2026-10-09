@@ -16,7 +16,7 @@
       ],
       "unit": "shenron-container-backup.timer",
       "source": "docker exec pg_dump/pg_restore --list (aphrody-postgres-1), redis-cli --rdb + redis-check-rdb (aphrody-redis-1), SQLite online backup + quick_check",
-      "retention": "two newest snapshots under /home/ubuntu/apps/shenron/shared/backups/container",
+      "retention": "newest snapshot only under /home/ubuntu/apps/shenron/shared/backups/container",
       "capacityPolicy": {
         "archiveMaxBytes": 8589934592,
         "minFreeBytes": 4294967296
@@ -33,7 +33,7 @@
       ],
       "unit": "shenron-offsite-backup.timer",
       "destination": "/home/ubuntu/build/archive/dbfr/backups/shenron",
-      "retention": "14 days, newest three always kept"
+      "retention": "rotation 1: the newest snapshot, kept once verified and restored; older ones deleted"
     },
     {
       "id": "infra-sync",

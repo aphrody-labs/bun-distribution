@@ -76,7 +76,7 @@ bun run downloads:publish build   --revision <full-sha>     # factory prepare + 
 bun run downloads:publish release --revision <full-sha>     # stage (local Bun stages included: Wine and rcedit), secret scan, upload, flip `current`
 bun run downloads:publish github                            # releases on the configured existing repositories
 bun run downloads:publish verify                            # public download, SHA-256, `--version`
-bun run downloads:publish host-plan | host-apply --apply   # unit, vhost, certificate (first install or repair)
+bun run downloads:publish host-plan | host-apply --apply   # app, compose service, certificate (first install or repair)
 ```
 
 `release` refuses to publish when a staged archive or the factory binary contains a denied file name (`.env`, keys,
@@ -84,17 +84,18 @@ databases, model weights, cookies) or a token-shaped string (patterns in `tools/
 is `/home/ubuntu/apps/downloads/releases/<UTC>-<commit12>` on the vps; `current` is flipped atomically and the last five
 releases are kept. Run it from a pushed, building revision; never Cargo in WSL.
 
-## Host (vps, through `aphrody infra ssh`)
+## Host (dbfr, through `aphrody infra ssh`)
 
-- `aphrody-downloads.service` (`tools/config/host/systemd/aphrody/aphrody-downloads.service`), Bun on `127.0.0.1:8797`,
-  enabled; catalog entry `aphrody-downloads` in `tools/config/service-catalog.json`, route in
+- Compose service `downloads` (container `aphrody-downloads-1`, `tools/config/container/compose.yaml`, host project
+  `~/apps`), Bun image on `127.0.0.1:8797`, `~/apps/downloads` bound read-only; catalog entry `aphrody-downloads` in `tools/config/service-catalog.json`, route in
   `tools/config/host/nginx/routes.json`, port in `tools/config/production-topology.json`.
 - nginx vhost `tools/config/host/nginx/aphrody/downloads.aphrody.com.conf`: nginx sends `/files/` itself (sendfile, ranges),
   proxies the rest. Certificate `downloads.aphrody.com` (HTTP-01, names `downloads.aphrody.com`, `aphrody.com`,
   `www.aphrody.com`) issued by `scripts/tools/infra/issue-downloads-certificate.sh`; renewal uses the existing
   certbot timer and the shared challenge webroot. The leftover `aphrody-acme-temp.conf` (404 on the apex) was retired
   to `/etc/nginx/retired/`.
-- Rollback: remove the vhost and `nginx -t`/reload, `systemctl disable --now aphrody-downloads`; releases stay on disk.
+- Rollback: remove the vhost and `nginx -t`/reload, `docker compose --project-directory ~/apps rm -sf downloads`;
+  an earlier release is rebuilt from git.
 
 ## Windows cross-build
 

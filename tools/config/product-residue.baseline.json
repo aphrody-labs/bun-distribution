@@ -459,7 +459,7 @@
     "tools/config/asset-catalog.json": 1,
     "tools/config/build-factory.json": 1,
     "tools/config/container/build/Dockerfile": 4,
-    "tools/config/container/compose.yaml": 10,
+    "tools/config/container/compose.yaml": 15,
     "tools/config/container/shenron-gateway/Dockerfile": 4,
     "tools/config/container/shenron-gateway/README.md": 6,
     "tools/config/disk-reclaim.json": 20,

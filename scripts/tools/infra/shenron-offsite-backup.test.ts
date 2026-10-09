@@ -32,16 +32,13 @@ test("VERIFIED.json is parsed strictly", () => {
   );
 });
 
-test("retention keeps the newest three and anything younger than 14 days", () => {
-  const now = Date.UTC(2026, 9, 30);
+test("rotation keeps only the verified newest snapshot", () => {
   const names = [
     "20261001T030000000000Z",
-    "20261002T030000000000Z",
-    "20261003T030000000000Z",
     "20261020T030000000000Z",
     "pull-status.log",
     ".20261029T030000000000Z.partial",
   ];
-  expect(expired(names, now).sort()).toEqual(["20261001T030000000000Z"]);
-  expect(expired(names.slice(0, 3), now)).toEqual([]);
+  expect(expired(names, "20261020T030000000000Z")).toEqual(["20261001T030000000000Z"]);
+  expect(expired(["20261020T030000000000Z"], "20261020T030000000000Z")).toEqual([]);
 });

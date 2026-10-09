@@ -10,6 +10,7 @@
       "kind": "bun-edge-proxy",
       "runtime": "bun",
       "unit": "aphrody-fonts-proxy.service",
+      "container": "aphrody-fonts-proxy-1",
       "health": "http://127.0.0.1:8796/health",
       "port": 8796,
       "sourceRepo": "aphrody",
@@ -24,6 +25,7 @@
       "kind": "bun-download-server",
       "runtime": "bun",
       "unit": "aphrody-downloads.service",
+      "container": "aphrody-downloads-1",
       "health": "http://127.0.0.1:8797/health",
       "port": 8797,
       "sourceRepo": "aphrody",
@@ -99,6 +101,7 @@
       "kind": "discord-interactions-and-gateway",
       "runtime": "bun",
       "unit": "aphrody-discord-dev.service",
+      "container": "aphrody-discord-1",
       "health": "http://127.0.0.1:4010/healthz",
       "port": 4010,
       "sourceRepo": "aphrody-discord",
@@ -381,7 +384,7 @@
       "unit": "shenron-offsite-backup.timer",
       "host": "vps",
       "public": false,
-      "note": "Daily 04:30 UTC pull of the DBFR container snapshots over wg (scripts/tools/infra/shenron-offsite-backup.ts): SHA-256 verified against VERIFIED.json under /home/ubuntu/build/archive/dbfr/backups/shenron, PostgreSQL dump restored into a disposable pgvector/pgvector:0.8.1-pg18 container and SQLite quick_check (.restore-verified); 14 days, newest three always kept; fails when the newest DBFR snapshot is older than 36 h."
+      "note": "Daily 04:30 UTC pull of the DBFR container snapshots over wg (scripts/tools/infra/shenron-offsite-backup.ts): SHA-256 verified against VERIFIED.json under /home/ubuntu/build/archive/dbfr/backups/shenron, PostgreSQL dump restored into a disposable pgvector/pgvector:0.8.1-pg18 container and SQLite quick_check (.restore-verified); rotation 1 (older snapshots deleted only after the newest is verified and restored); fails when the newest DBFR snapshot is older than 36 h."
     },
     {
       "id": "aphrody-mcp-http-dbfr",
@@ -395,7 +398,7 @@
       "sourceRepo": "aphrody",
       "workingDirectory": "/home/ubuntu/.aphrody",
       "public": false,
-      "note": "DBFR canonical native MCP with jobs enabled, protected host-local bearer, loopback127.0.0.1:8793. Private WireGuard projection must bind DBFR address10.200.77.3, never the VPS hub address. Activation requires qualified jobs binary and authentication probes. Since 2026-10-09 the compose service mcp-http (aphrody:toolbox, tools/config/container/compose.yaml, host network, uid 1000); the unit source stays as rollback.",
+      "note": "DBFR canonical native MCP with jobs enabled, protected host-local bearer, loopback127.0.0.1:8793. Private WireGuard projection must bind DBFR address10.200.77.3, never the VPS hub address. Activation requires qualified jobs binary and authentication probes. Since 2026-10-09 the compose service mcp-http (aphrody:toolbox, tools/config/container/compose.yaml, host network, uid 1000).",
       "host": "dbfr"
     },
     {
@@ -423,7 +426,7 @@
       "workingDirectory": "/home/ubuntu/.aphrody",
       "public": false,
       "host": "dbfr",
-      "note": "Persistent local SQLite queue with fenced leases, capability filtering and bounded native web-pipeline/transcribe handlers. Inputs and credentials remain in protected host stores; no training role or network transport is granted. Since 2026-10-09 the compose service jobs-worker (aphrody:toolbox); the unit source stays as rollback."
+      "note": "Persistent local SQLite queue with fenced leases, capability filtering and bounded native web-pipeline/transcribe handlers. Inputs and credentials remain in protected host stores; no training role or network transport is granted. Since 2026-10-09 the compose service jobs-worker (aphrody:toolbox)."
     }
   ],
   "policies": {
@@ -515,8 +518,8 @@
       },
       {
         "host": "dbfr",
-        "kind": "systemd",
-        "unit": "shenron-timeline-api.service"
+        "kind": "docker",
+        "container": "aphrody-shenron-timeline-api-1"
       },
       {
         "host": "dbfr",

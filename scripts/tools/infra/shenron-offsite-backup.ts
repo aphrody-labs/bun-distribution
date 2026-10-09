@@ -4,12 +4,12 @@
 //
 //   bun scripts/tools/infra/shenron-offsite-backup.ts [--dest <dir>] [--restore-check]
 //
-// Lists the published snapshots on DBFR (root-owned, read with `sudo -n`), copies every snapshot that is not
+// Lists the published snapshots on DBFR (root-owned, read with `sudo -n`), copies the newest one unless it is
 // already verified locally (raw `ssh cat`, streamed and hashed against its VERIFIED.json), then writes
-// `.offsite-verified`. `--restore-check` restores the newest local PostgreSQL dump into a disposable
+// `.offsite-verified`. `--restore-check` restores its PostgreSQL dump into a disposable
 // pgvector/pgvector:0.8.1-pg18 container, checks the SQLite copies with `PRAGMA quick_check`, and writes
-// `.restore-verified`. Local snapshots older than 14 days are pruned; the newest three are always kept. Fails when
-// the newest DBFR snapshot is older than 36 h (stalled producer). Runs daily on the VPS
+// `.restore-verified`. Rotation 1: only once the newest copy is verified (and restored, with --restore-check) are
+// all other local snapshots deleted. Fails when the newest DBFR snapshot is older than 36 h (stalled producer). Runs daily on the VPS
 // (tools/config/host/systemd/shenron/shenron-offsite-backup.{service,timer}).
 //
 // Environment: SHENRON_OFFSITE_DIR (default ~/build/archive/dbfr/backups/shenron), SHENRON_OFFSITE_HOST (SSH alias,
@@ -22,8 +22,6 @@ import { dirname, join } from "node:path";
 
 export type Verified = { files: Record<string, string> };
 
-const RETENTION_DAYS = 14;
-const KEEP_NEWEST = 3;
 const STALE_HOURS = 36;
 const RESTORE_IMAGE = "pgvector/pgvector:0.8.1-pg18";
 const SSH_OPTIONS = ["-o", "BatchMode=yes", "-o", "ConnectTimeout=15"];
@@ -59,15 +57,9 @@ export function parseVerified(text: string): Verified {
   return { files };
 }
 
-/** Snapshot directories to delete: older than the retention window and not among the newest KEEP_NEWEST. */
-export function expired(names: string[], now = Date.now()): string[] {
-  const cutoff = now - RETENTION_DAYS * 86_400_000;
-  return names
-    .filter(name => stampTime(name) !== null)
-    .sort()
-    .reverse()
-    .slice(KEEP_NEWEST)
-    .filter(name => stampTime(name)! < cutoff);
+/** Snapshot directories to delete once `kept` (the newest, verified) is in place: every other snapshot. */
+export function expired(names: string[], kept: string): string[] {
+  return names.filter(name => stampTime(name) !== null && name !== kept);
 }
 
 const quote = (value: string) => `'${value.replaceAll("'", `'\\''`)}'`;
@@ -273,32 +265,29 @@ export async function main(argv = Bun.argv.slice(2)): Promise<number> {
     .filter(name => stampTime(name) !== null)
     .sort();
   if (remote.length === 0) throw new Error(`no published container snapshot on ${host}`);
-  let pulled = 0;
-  for (const stamp of remote) {
-    const local = join(dest, stamp);
-    if (existsSync(local) && (await verifyLocal(local))) {
-      log(`verified-existing=${stamp}`);
-      continue;
-    }
-    rmSync(local, { recursive: true, force: true });
-    const bytes = await pull(host, root, stamp, dest);
-    log(`transferred=${stamp} bytes=${bytes}`);
-    console.log(`Off-host snapshot verified: ${stamp} (${bytes} bytes).`);
-    pulled++;
-  }
   const newest = remote.at(-1)!;
+  const local = join(dest, newest);
+  let pulled = 0;
+  if (existsSync(local) && (await verifyLocal(local))) log(`verified-existing=${newest}`);
+  else {
+    rmSync(local, { recursive: true, force: true });
+    const bytes = await pull(host, root, newest, dest);
+    log(`transferred=${newest} bytes=${bytes}`);
+    console.log(`Off-host snapshot verified: ${newest} (${bytes} bytes).`);
+    pulled = 1;
+  }
   if (argv.includes("--restore-check")) {
     const report = await restoreCheck(join(dest, newest));
     log(`restore-verified=${newest} ${JSON.stringify(report)}`);
     console.log(`Restore check ${newest}: ${JSON.stringify(report)}`);
   }
-  for (const name of expired(readdirSync(dest))) {
+  for (const name of expired(readdirSync(dest), newest)) {
     rmSync(join(dest, name), { recursive: true, force: true });
     log(`pruned=${name}`);
   }
   const ageHours = (Date.now() - stampTime(newest)!) / 3_600_000;
   log(`complete pulled=${pulled} newest=${newest} age=${ageHours.toFixed(1)}h`);
-  console.log(`Off-host Shenron snapshots verified: ${remote.length} (pulled ${pulled}).`);
+  console.log(`Off-host Shenron snapshot kept: ${newest} (pulled ${pulled}).`);
   if (ageHours > STALE_HOURS) throw new Error(`newest DBFR snapshot ${newest} is ${ageHours.toFixed(0)} h old`);
   return 0;
 }

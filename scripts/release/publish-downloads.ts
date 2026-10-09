@@ -1560,14 +1560,13 @@ async function verify(cfg: DownloadsConfig) {
 
 async function hostCommands(cfg: DownloadsConfig, apply: boolean) {
   const rootDir = cfg.host.root;
-  const unit = "tools/config/host/systemd/aphrody/aphrody-downloads.service";
   const vhost = "tools/config/host/nginx/shenron/zz-downloads.aphrody.com.conf";
   const cert = "scripts/tools/infra/issue-downloads-certificate.sh";
   const certDir = `/etc/letsencrypt/live/${cfg.site.certName}`;
   const steps = [
     `create ${rootDir}/{releases,app} owned by ubuntu`,
     `upload packages/infra/workspace/src/downloads/server.ts -> ${rootDir}/app/server.ts`,
-    `upload ${unit}, install to /etc/systemd/system, daemon-reload, enable and restart ${cfg.host.service}`,
+    `recreate the compose service downloads (tools/config/container/compose.yaml, host project ~/apps)`,
     `certificate ${cfg.site.certName} (HTTP-01, ${cfg.site.hosts.join(", ")}) through ${cert} when ${certDir} is absent`,
     `${vhost} ships with the Shenron gateway release (container aphrody-gateway-1): nginx -t, reload`,
   ];
@@ -1585,10 +1584,9 @@ async function hostCommands(cfg: DownloadsConfig, apply: boolean) {
     join(root, "packages/infra/workspace/src/downloads/server.ts"),
     `${rootDir}/app/server.ts`,
   );
-  await put(cfg, join(root, unit), "/tmp/aphrody-downloads.service");
   await remote(
     cfg,
-    "sudo install -o root -g root -m 0644 /tmp/aphrody-downloads.service /etc/systemd/system/aphrody-downloads.service && sudo systemctl daemon-reload && sudo systemctl enable aphrody-downloads.service && sudo systemctl restart aphrody-downloads.service",
+    "sudo docker compose --project-directory /home/ubuntu/apps up -d --no-deps --force-recreate downloads",
   );
   await put(cfg, join(root, cert), "/tmp/issue-downloads-certificate.sh");
   await remote(
