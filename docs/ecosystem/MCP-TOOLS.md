@@ -7,7 +7,7 @@ Every MCP tool registered in source, grouped by server: rmcp `#[tool]` routers, 
 full text is in [ecosystem.json](ecosystem.json). The kernel re-exports its subsystems' tools through
 `aphrody-kernel`, so one tool name can appear under several servers.
 
-Totals: 20 servers, 391 tool registrations, 389 unique tool names.
+Totals: 20 servers, 392 tool registrations, 390 unique tool names.
 
 ## aphrody — @aphrody/workspace subsystem `workspace`
 
@@ -168,7 +168,7 @@ Kind: kernel-subsystem. 8 tools.
 
 ## aphrody — aphrody-mcp
 
-Kind: json-catalog. 18 tools.
+Kind: json-catalog. 19 tools.
 
 | Tool | Description |
 | --- | --- |
@@ -183,6 +183,7 @@ Kind: json-catalog. 18 tools.
 | `aphrody_google_calendar_public` | Fetch and parse events from any public Google iCalendar feed by ID. |
 | `aphrody_google_dns` | Query Google Public DNS-over-HTTPS (DoH) for any domain and record type (A, AAAA, MX, TXT, etc.). |
 | `aphrody_google_doc_export` | Export a publicly shared Google Document to plain text. |
+| `aphrody_google_routes` | Read the native catalogue of public Google entry points and official SEO, Web Vitals and accessibility guidance. Dated observations, not a crawl queue or authorization to mirror Search. |
 | `aphrody_google_sheet_export` | Export a publicly shared Google Spreadsheet to CSV. |
 | `aphrody_google_suggest` | Get real-time query suggestions from Google Autocomplete. |
 | `aphrody_google_supported_languages` | List all 195 official supported Google Cloud Translation languages, optionally localized in target language. |
@@ -230,7 +231,7 @@ Kind: rmcp. 69 tools.
 | `firefly_generative_expand` | Generative expand (Adobe Firefly v3): enlarge an image's canvas to width×height, AI-filling the new area (optional prompt). image_url must be Adobe-readable. Optionally save_dir. Returns { count, ima… |
 | `firefly_generative_fill` | Generative fill (Adobe Firefly v3): replace the masked region of an image with prompt-guided content. image_url + mask_url (white = fill) must be Adobe-readable. Optionally save_dir. Returns { count,… |
 | `firefly_to_photoshop` | Bridge: generate an image with Adobe Firefly, then route it through the cloud Photoshop API. With output_url it converts the result to that URL/format (e.g. an editable PSD); without it, returns the… |
-| `git_ingest` | Ingest a remote Git repository URL into a prompt-ready LLM digest (GitIngest standard with directory tree, token counts, and curated file contents). Local directories: use the `git_ingest` tool of `bun mcp` (Bun fork, after `bun mcp install`). |
+| `git_ingest` | Ingest a Git repository URL or local directory into a prompt-ready LLM digest (GitIngest standard with directory tree, token counts, and curated file contents). |
 | `github_docs_search` | Search GitHub repositories intelligently for documentation, llms.txt, llms-full.txt, and prompt-ready digests. Discovers authoritative open-source repositories matching the query, inspects llms.txt a… |
 | `microsoft_code_sample_search` | Search for official Microsoft / Azure code snippets and examples. Use before writing code (find a working pattern to follow) or after errors (compare your code against a known-good sample). Optional… |
 | `microsoft_docs_fetch` | Fetch and convert a Microsoft documentation page into markdown format. Use after `microsoft_docs_search` when an excerpt is cut off or you need the full tutorial / configuration guide / API reference… |
