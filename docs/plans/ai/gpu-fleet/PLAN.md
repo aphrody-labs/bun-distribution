@@ -6,7 +6,7 @@ real bun:windows and bun:python integration in Aphrody py, distributed model
 memory, load allocation, RAM and network storage, and reversible exclusive
 inference mode on Omar.
 
-## Initial host allocation — owner correction, 2026-10-09
+## Initial host allocation â€” owner correction, 2026-10-09
 
 The owner PC is the native Windows development workstation. Omar is the
 initial dedicated GPU inference server. VPS owns SSH build factories, a bounded
@@ -42,20 +42,23 @@ restarts; the existing Mesh entrypoint owns the dedicated Bun process. No
 credentials, session histories, clipboard contents or arbitrary user directories
 are synchronized.
 
-## Qualification queue
+## Initial dedicated-server qualification queue
 
 - [x] Native GPU identities and VRAM measured on both PCs.
 - [x] vLLM parallelism docs queried through the documentation MCP.
 - [x] Local native CPython host loaded by the fork; same-process PID and queued calls tested.
 - [ ] Native CPython host and Python environment qualified on Omar.
-- [ ] Docker CUDA arithmetic qualified on both PCs.
-- [ ] Private Ray/NCCL roundtrip over the container network.
-- [ ] Measured layer partition, RAM budgets, model pin and caches.
+- [x] Real Docker CUDA arithmetic on Omar with the pinned vLLM image.
+- [x] Pinned model weights verified on VPS and transferred atomically into Omar's cache.
 - [x] Python fleet planner and dedicated Bun inventory/planning entrypoint; four Python tests and two Bun tests.
 - [ ] Compose installation and inference client activation.
-- [ ] Two-GPU live token generation, load/latency/memory measurements.
+- [ ] Omar live token generation and load/latency/memory measurements.
 - [ ] Reversible Omar Explorer/browser retirement after execution qualification.
 - [ ] Restart, reboot, protected storage, scoped gates, commit and push.
+
+The two-GPU layer planner and Ray/NCCL roundtrip are deferred while the owner
+workstation is allocated to light Bun/Python development and control. Cargo,
+engine builds, crawl and GPU computation belong on their declared remote hosts.
 
 ## Evidence and current limits
 
@@ -151,3 +154,88 @@ existing owner SSH transport or a scoped authenticated private artifact service.
 The isolated anonymous Docker configuration omits the Compose plugin discovery
 path. After the image is locally cached, normal Docker Compose with `--pull
 never` runs the qualified probe without touching provider credentials.
+
+## Owner integration and Explorer volumes, 2026-10-09
+
+Owner correction: stop isolated tool entrypoints. Native Windows/Python control
+and private artifact delivery move into @aphrody/product's administration owner,
+under `admin flotte`. Python model execution and artifacts remain under the
+Aphrody inference owner. The isolated source launchers are removed after tests.
+
+The fork's Windows job controller uses installed psmux 3.3.8. A selected release
+build reports Bun 1.4.3-aphrody.4 and its `ssh exec --native --json` successfully
+executed hostname on Omar and VPS. The PATH Bun remains the older build and is
+not silently replaced during concurrent work.
+
+Explorer mount plan: install signed WinFsp and SSHFS-Win with verified package
+hashes, then expose reciprocal C: filesystem views through authenticated SFTP,
+existing private WireGuard addresses and host-specific SSH keys. Do not enable
+public SMB or copy owner SSH private keys to Omar. Select unused drive letters;
+register persistence through the existing product/mesh owner after qualification.
+The initial owner-side WinFsp installation has started; mounts are not yet
+qualified. Preserve credentials, cookies and provider stores in their existing
+locations; remote filesystem access is not a provider-memory sync.
+
+A requested research subagent examined actual remote PCIe support. Windows11Home
+plus WireGuard has no qualified mechanism to register either distant RTX as a
+real local CUDA PCIe device. Microsoft GPU partitioning stays on the physical
+Hyper-V host; Dolphin's current PCIe borrowing matrix does not support Windows
+borrowers. A remote API/compute inventory must not masquerade as a local driver.
+
+## Persistent owner depot and serving qualification, 2026-10-09
+
+`admin flotte` owns Windows inventory, same-process Python planning, Explorer
+mount adapters and authenticated private artifact delivery. Four Bun tests pass
+(including real CPython embedding), scoped TypeScript/lint/format pass, and ten
+Python tests pass. The replaced isolated GPU tool entrypoints are removed.
+
+Signed WinFsp 2.1.25156 and SSHFS-Win 3.5.20357 are installed on both PCs.
+Reciprocal protected SSH authentication passed. Existing `\\Aphrody\\Mesh`
+tasks launch the declared mount adapters with the interactive user's token.
+Their process start is verified; graphical Explorer reads and reboot
+persistence remain unqualified.
+
+The declared [VPS user unit](../../../../tools/config/host/systemd/aphrody/aphrody-gpu-depot.service)
+uses that product owner bundle, replacing the temporary artifact tmux session.
+`systemd-analyze --user verify` passed before activation. The unit is enabled
+and active, user linger is enabled, and its declared private mesh address returns
+401 without authentication. Protected weights and provider stores are not public.
+
+Omar's pinned cache transfer exited successfully after the full 10,246,621,918
+weight bytes and independently pinned SHA-256 matched. Native Docker executed a
+real pinned-host-memory CUDA probe. Enabling `VLLM_WSL2_ENABLE_PIN_MEMORY=1`
+resolved vLLM 0.26 V2's unavailable-UVA startup failure on Omar's 6.18 kernel.
+BitsAndBytes loaded the complete model, reporting 6.63 GiB, but the first runtime
+profile had negative available KV memory at 85% GPU utilization. This is a
+failed serving qualification, not a working model API.
+
+The explicit 2 GiB CPU-offload candidate left the same negative KV budget.
+Raising GPU utilization to 93% failed the measured initial free-memory check.
+Both are failed candidates. Their configurable commands remain bounded before
+launch; distributed roles refuse the standalone offload setting. See the exact
+[vLLM 0.26 offload contract](https://github.com/vllm-project/vllm/blob/v0.26.0/vllm/config/offload.py).
+Real generation, stable restart and model-backed client activation still gate
+delivery. This Gemma candidate is distinct from the existing trained
+`shenron-chat-v2` Qwen adapter; no model alias invents a training result.
+
+## Real model API qualification, 2026-10-09
+
+The dedicated chat allocation uses vLLM's explicit language-model-only mode,
+256 MiB of KV cache, 512 batched tokens and 2,048 context tokens. CUDA graphs and
+compilation remain enabled. Actual startup reports 17,256 cache tokens and
+completed graph capture, with restart count zero. Full multimodal loading is
+not qualified by this chat allocation.
+
+The inference owner's `qualify` operation, executed in Omar's real container,
+authenticated against `/v1/models`, checked the exact `gemma4-e2b` identity,
+then completed `/v1/chat/completions`. The arithmetic request returned `Four.`
+with 18 prompt tokens and 3 generated tokens in 0.400 seconds. This is a single
+request receipt, not a throughput benchmark, RAG eval or tool-call qualification.
+Fourteen Python tests now pass, including the SDK's optional-provider-free
+planner import. The inference package retains its public exports lazily.
+
+Omar now has the qualified fork as `bun.exe` in its versioned directory and
+Buv's actual `uv 0.12.24` installed CPython 3.12.15. Buv dispatch depends on the
+supported executable basename: the earlier renamed `.exe` did not expose UV.
+Its unmanaged existing Python launcher was preserved. SDK bridge distribution
+and model-backed Shenron clients still require their host receipts.

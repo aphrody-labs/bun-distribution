@@ -44,12 +44,20 @@ services:
     environment:
       <<: *environment
       VLLM_PP_LAYER_PARTITION: null
+      VLLM_HOST_IP: 127.0.0.1
+      # vLLM 0.26 V2 requires UVA; qualified on Omar's WSL2 6.18 kernel.
+      VLLM_WSL2_ENABLE_PIN_MEMORY: "1"
       NCCL_SOCKET_IFNAME: eth0
       GLOO_SOCKET_IFNAME: eth0
       APHRODY_GPU_MODEL_PATH: ${APHRODY_GPU_MODEL_PATH:?verified local model path required}
       APHRODY_GPU_QUANTIZATION: ${APHRODY_GPU_QUANTIZATION:-none}
+      # Chat allocation: full multimodal loading exhausted the 8 GiB cache budget.
+      APHRODY_GPU_MEMORY_UTILIZATION: "0.85"
+      APHRODY_GPU_CPU_OFFLOAD_GIB: "0"
+      APHRODY_GPU_LANGUAGE_MODEL_ONLY: "1"
+      APHRODY_GPU_KV_CACHE_BYTES: "268435456"
       APHRODY_GPU_MODEL_NAME: gemma4-e2b
-      APHRODY_GPU_MAX_MODEL_LEN: "4096"
+      APHRODY_GPU_MAX_MODEL_LEN: "2048"
     volumes:
       - ${APHRODY_GPU_PYTHON_SOURCE:?qualified Python source required}:/opt/aphrody/py:ro
       - model-cache:/models

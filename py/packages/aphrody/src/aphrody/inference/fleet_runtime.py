@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import json
+import math
 import os
 import signal
 import subprocess
@@ -10,6 +12,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+from urllib.request import Request, urlopen
 
 
 def ray_command(role: str, env: dict[str, str]) -> list[str]:
@@ -41,6 +44,9 @@ def serve_command(role: str, model: Path, env: dict[str, str]) -> list[str]:
     """Keep standalone and distributed process contracts explicit and testable."""
     if role not in {"standalone", "head"}:
         raise ValueError("invalid inference serving role")
+    utilization = float(env.get("APHRODY_GPU_MEMORY_UTILIZATION", "0.85"))
+    if not math.isfinite(utilization) or not 0.5 <= utilization <= 0.95:
+        raise ValueError("GPU utilization exceeds the qualified display reserve")
     command = [
         "vllm",
         "serve",
@@ -64,18 +70,41 @@ def serve_command(role: str, model: Path, env: dict[str, str]) -> list[str]:
         "--max-num-seqs",
         "1" if role == "standalone" else "4",
         "--gpu-memory-utilization",
-        "0.85",
+        str(utilization),
         "--enable-prefix-caching",
     ]
+    cache = env.get("APHRODY_GPU_KV_CACHE_BYTES")
+    if cache is not None:
+        if not cache.isdecimal() or not 64 << 20 <= int(cache) <= 512 << 20:
+            raise ValueError("manual KV cache must be within 64..512 MiB")
+        if role != "standalone":
+            raise ValueError("manual KV cache is only qualified for standalone")
+        command += ["--kv-cache-memory-bytes", cache, "--max-num-batched-tokens", "512"]
     quantization = env.get("APHRODY_GPU_QUANTIZATION", "none")
     if quantization not in {"none", "bitsandbytes"}:
         raise ValueError("unqualified inference quantization method")
     if quantization != "none":
         command += ["--quantization", quantization]
+    offload = float(env.get("APHRODY_GPU_CPU_OFFLOAD_GIB", "0"))
+    if not math.isfinite(offload) or not 0 <= offload <= 2:
+        raise ValueError("CPU weight offload exceeds the qualified RAM budget")
+    if offload:
+        if role != "standalone":
+            raise ValueError("CPU weight offload is only qualified for standalone")
+        command += ["--cpu-offload-gb", str(offload)]
+    text_only = env.get("APHRODY_GPU_LANGUAGE_MODEL_ONLY", "0")
+    if text_only not in {"0", "1"}:
+        raise ValueError("language-model-only must be 0 or 1")
+    if text_only == "1":
+        if role != "standalone":
+            raise ValueError("text-only mode is only qualified for standalone")
+        command += ["--language-model-only"]
     return command
 
 
 def main(role: str) -> int:
+    if role == "qualify":
+        return qualify()
     env = dict(os.environ)
     command = ray_command(role, env) if role != "standalone" else []
     children: list[subprocess.Popen] = []
@@ -129,6 +158,54 @@ def main(role: str) -> int:
                 child.wait()
         if role != "standalone":
             subprocess.run(["ray", "stop"], check=False, timeout=30)
+
+
+def qualify() -> int:
+    """Exercise the real protected serving API from its owning container."""
+    token = Path("/run/secrets/api-key").read_text().strip()
+    if len(token) < 32:
+        raise RuntimeError("inference qualification token is unavailable")
+    model = os.environ["APHRODY_GPU_MODEL_NAME"]
+    headers = {"Authorization": "Bearer " + token}
+    with urlopen(
+        Request("http://127.0.0.1:8180/v1/models", headers=headers), timeout=20
+    ) as response:
+        catalogue = json.load(response)
+    if model not in {row["id"] for row in catalogue["data"]}:
+        raise RuntimeError("serving API exposes a different model")
+    body = {
+        "model": model,
+        "messages": [
+            {"role": "user", "content": "Reply briefly: what is two plus two?"}
+        ],
+        "temperature": 0,
+        "max_tokens": 32,
+        "chat_template_kwargs": {"enable_thinking": False},
+    }
+    started = time.monotonic()
+    with urlopen(
+        Request(
+            "http://127.0.0.1:8180/v1/chat/completions",
+            headers={**headers, "Content-Type": "application/json"},
+            data=json.dumps(body).encode(),
+        ),
+        timeout=120,
+    ) as response:
+        result = json.load(response)
+    answer = result["choices"][0]["message"].get("content")
+    if not isinstance(answer, str) or not answer.strip():
+        raise RuntimeError("model generated no answer")
+    print(
+        json.dumps(
+            {
+                "model": result["model"],
+                "answer": answer,
+                "usage": result.get("usage"),
+                "seconds": round(time.monotonic() - started, 3),
+            }
+        )
+    )
+    return 0
 
 
 if __name__ == "__main__":

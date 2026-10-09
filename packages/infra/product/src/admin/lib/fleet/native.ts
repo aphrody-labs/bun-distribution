@@ -164,7 +164,7 @@ export async function main(argv = Bun.argv.slice(2)): Promise<number> {
     const at = argv.indexOf(name);
     return at < 0 ? undefined : argv[at + 1];
   };
-  const root = resolve(flag("--root") ?? join(import.meta.dir, "../../.."));
+  const root = resolve(flag("--root") ?? process.env.APHRODY_INFRA_ROOT ?? process.cwd());
   if (argv[0] === "tunnel-key") {
     console.log(
       JSON.stringify(
@@ -196,15 +196,6 @@ export async function main(argv = Bun.argv.slice(2)): Promise<number> {
     return 0;
   }
   throw new Error(
-    "usage: gpu-fleet.ts inventory|plan|cuda-probe [--root path] [--python-source path]",
+    "usage: aphrody-product admin flotte inventory|plan|cuda-probe [--root path] [--python-source path]",
   );
-}
-
-if (import.meta.main) {
-  try {
-    process.exitCode = await main();
-  } catch (error) {
-    console.error(error instanceof Error ? error.message : "GPU fleet failed");
-    process.exitCode = 1;
-  }
 }

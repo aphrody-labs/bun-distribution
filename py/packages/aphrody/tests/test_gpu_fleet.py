@@ -7,6 +7,32 @@ from aphrody.inference.fleet import Node, pipeline_plan, plan_json
 from aphrody.inference.fleet_runtime import ray_command, serve_command
 
 
+def test_buv_planner_import_does_not_require_optional_sdk_providers():
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    source = str(Path(__file__).resolve().parents[1] / "src")
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-I",
+            "-S",
+            "-c",
+            "import sys,json; sys.path.insert(0, "
+            + repr(source)
+            + "); import aphrody.inference.fleet; "
+            "print(json.dumps([n for n in sys.modules if "
+            "n.startswith(('torch','httpx','transformers','aphrody.vertex'))]))",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    assert json.loads(result.stdout) == []
+
+
 def test_ray_refuses_unroutable_docker_addresses_before_starting_any_process():
     with pytest.raises(ValueError, match="routed"):
         ray_command("head", {"VLLM_HOST_IP": "172.17.0.2"})
@@ -96,3 +122,110 @@ def test_quantization_selection_is_explicit_and_does_not_inject_arguments():
     env["APHRODY_GPU_QUANTIZATION"] = "bitsandbytes --trust-remote-code"
     with pytest.raises(ValueError, match="quantization"):
         serve_command("standalone", Path("/models/gemma4-e2b"), env)
+
+
+@pytest.mark.parametrize("corrupt", [False, True])
+def test_model_depot_integrity_precedes_atomic_activation(
+    tmp_path, monkeypatch, corrupt
+):
+    import hashlib
+    import io
+
+    from aphrody.inference import fleet_artifacts as artifacts
+
+    token = tmp_path / "depot.token"
+    token.write_text("a" * 64)
+    root = tmp_path / "models"
+    root.mkdir()
+    target = root / "model.safetensors"
+    target.write_bytes(b"previous verified model")
+    expected = b"new pinned model"
+    received = b"corrupted model!" if corrupt else expected
+    monkeypatch.setattr(artifacts, "FILES", ("model.safetensors",))
+    monkeypatch.setattr(artifacts, "WEIGHT_BYTES", len(expected))
+    monkeypatch.setattr(
+        artifacts, "WEIGHT_SHA256", hashlib.sha256(expected).hexdigest()
+    )
+
+    def response(request, timeout):
+        assert request.full_url == "http://10.200.77.1:8182/model.safetensors"
+        assert request.get_header("Authorization") == "Bearer " + "a" * 64
+        return io.BytesIO(received)
+
+    monkeypatch.setattr(artifacts, "urlopen", response)
+    if corrupt:
+        with pytest.raises(RuntimeError, match="integrity"):
+            artifacts.download(root, token)
+        assert target.read_bytes() == b"previous verified model"
+    else:
+        artifacts.download(root, token)
+        assert target.read_bytes() == expected
+
+
+def test_cpu_offload_is_explicit_bounded_and_standalone_only():
+    from pathlib import Path
+
+    env = {
+        "APHRODY_GPU_MODEL_NAME": "gemma4-e2b",
+        "APHRODY_GPU_MAX_MODEL_LEN": "4096",
+        "APHRODY_GPU_CPU_OFFLOAD_GIB": "2",
+    }
+    command = serve_command("standalone", Path("/models/gemma4-e2b"), env)
+    assert command[-2:] == ["--cpu-offload-gb", "2.0"]
+    with pytest.raises(ValueError, match="standalone"):
+        serve_command("head", Path("/models/gemma4-e2b"), env)
+    for invalid in ("nan", "inf", "-1", "3", "2 --trust-remote-code"):
+        env["APHRODY_GPU_CPU_OFFLOAD_GIB"] = invalid
+        with pytest.raises(ValueError):
+            serve_command("standalone", Path("/models/gemma4-e2b"), env)
+
+
+def test_gpu_utilization_preserves_a_display_reserve_before_launch():
+    from pathlib import Path
+
+    env = {
+        "APHRODY_GPU_MODEL_NAME": "gemma4-e2b",
+        "APHRODY_GPU_MAX_MODEL_LEN": "4096",
+        "APHRODY_GPU_MEMORY_UTILIZATION": "0.93",
+    }
+    command = serve_command("standalone", Path("/models/gemma4-e2b"), env)
+    assert command[command.index("--gpu-memory-utilization") + 1] == "0.93"
+    for invalid in ("nan", "inf", "0.99", "0.1", "0.93 --trust-remote-code"):
+        env["APHRODY_GPU_MEMORY_UTILIZATION"] = invalid
+        with pytest.raises(ValueError):
+            serve_command("standalone", Path("/models/gemma4-e2b"), env)
+
+
+def test_chat_allocation_does_not_silently_load_multimodal_encoders():
+    from pathlib import Path
+
+    env = {
+        "APHRODY_GPU_MODEL_NAME": "gemma4-e2b",
+        "APHRODY_GPU_MAX_MODEL_LEN": "4096",
+        "APHRODY_GPU_LANGUAGE_MODEL_ONLY": "1",
+    }
+    assert "--language-model-only" in serve_command(
+        "standalone", Path("/models/gemma4-e2b"), env
+    )
+    with pytest.raises(ValueError, match="standalone"):
+        serve_command("head", Path("/models/gemma4-e2b"), env)
+    env["APHRODY_GPU_LANGUAGE_MODEL_ONLY"] = "true --trust-remote-code"
+    with pytest.raises(ValueError, match="0 or 1"):
+        serve_command("standalone", Path("/models/gemma4-e2b"), env)
+
+
+def test_manual_kv_budget_cannot_exceed_the_measured_candidate_bounds():
+    from pathlib import Path
+
+    env = {
+        "APHRODY_GPU_MODEL_NAME": "gemma4-e2b",
+        "APHRODY_GPU_MAX_MODEL_LEN": "2048",
+        "APHRODY_GPU_KV_CACHE_BYTES": str(256 << 20),
+    }
+    command = serve_command("standalone", Path("/models/gemma4-e2b"), env)
+    assert command[command.index("--kv-cache-memory-bytes") + 1] == str(256 << 20)
+    assert command[command.index("--max-num-batched-tokens") + 1] == "512"
+    for value in ("-1", "inf", str(513 << 20), str(63 << 20)):
+        env["APHRODY_GPU_KV_CACHE_BYTES"] = value
+        with pytest.raises(ValueError):
+            serve_command("standalone", Path("/models/gemma4-e2b"), env)
