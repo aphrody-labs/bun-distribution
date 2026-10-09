@@ -68,6 +68,11 @@ export function files(root: string): string[] {
   visit(root);
   return found;
 }
+function releaseVersion(value: unknown): number[] | undefined {
+  return typeof value === "string" && /^\d+\.\d+\.\d+$/.test(value)
+    ? value.split(".").map(Number)
+    : undefined;
+}
 export function plugins(store: string): Plugin[] {
   if (!existsSync(store)) return [];
   if (lstatSync(store).isSymbolicLink()) throw new Error("Plugin store must not be a symlink");
@@ -81,7 +86,20 @@ export function plugins(store: string): Plugin[] {
       .map((p) => join(path, p))
       .find(existsSync);
     if (!manifestPath) continue;
-    const manifest = readJson(manifestPath);
+    let manifest = readJson(manifestPath);
+    // Provider fusion can advance before the compact root manifest is regenerated.
+    // Preserve the newest matching identity rather than downgrading its overlays.
+    for (const overlay of [".claude-plugin/plugin.json", ".codex-plugin/plugin.json"]) {
+      const candidatePath = join(path, overlay);
+      if (!existsSync(candidatePath)) continue;
+      const candidate = readJson(candidatePath);
+      const current = releaseVersion(manifest.version);
+      const next = releaseVersion(candidate.version);
+      if (candidate.name === manifest.name && current && next) {
+        const difference = next.findIndex((part, index) => part !== current[index]);
+        if (difference >= 0 && next[difference]! > current[difference]!) manifest = candidate;
+      }
+    }
     const name = String(manifest.name ?? "");
     if (!validName(name) || name !== e.name)
       throw new Error(`Plugin name must match its directory: ${path}`);
@@ -169,8 +187,7 @@ export function prepareStore(store: string, marketplace: string, apply: boolean)
       );
       const servers = object(mcp.mcpServers ?? {});
       if (name === "aphrody" && servers.aphrody)
-        // The single MCP endpoint: the kernel also proxies the yolo and m3 subsystems.
-        servers.aphrody = { type: "stdio", command: "aphrody", args: ["kernel", "mcp"] };
+        servers.aphrody = { type: "stdio", command: "aphrody-mcp", args: [] };
       for (const filename of [".mcp.json", "mcp_config.json", "mcp.json"])
         writeJson(join(path, filename), { mcpServers: servers }, apply, changes);
       claude.mcpServers = "./.mcp.json";
@@ -191,6 +208,50 @@ export function prepareStore(store: string, marketplace: string, apply: boolean)
       apply,
       changes,
     );
+    const hookPath = join(path, "hooks/hooks.json");
+    if (
+      name === "aphrody" &&
+      existsSync(hookPath) &&
+      existsSync(join(path, "hooks/scripts/session-context.ts"))
+    ) {
+      const source = readJson(hookPath);
+      const events = object(source.hooks ?? {});
+      let changed = false;
+      for (const event of ["SessionStart", "PermissionRequest"]) {
+        if (!Array.isArray(events[event])) continue;
+        events[event] = (events[event] as Json[]).flatMap((group) => {
+          if (!Array.isArray(group.hooks)) return [group];
+          const hooks = (group.hooks as Json[]).flatMap((hook) => {
+            if (hook.command === 'bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-start.sh"') {
+              changed = true;
+              return [
+                {
+                  ...hook,
+                  command:
+                    'bun --no-install --no-env-file run "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-context.ts"',
+                },
+              ];
+            }
+            if (hook.command === 'bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/permission-allow.sh"') {
+              // The provider's permission policy remains authoritative on every host.
+              changed = true;
+              return [];
+            }
+            return [hook];
+          });
+          return hooks.length ? [{ ...group, hooks }] : [];
+        });
+        if (!(events[event] as unknown[]).length) delete events[event];
+      }
+      if (changed) {
+        writeJson(hookPath, { ...source, hooks: events }, apply, changes);
+        const portable = JSON.stringify({ [name]: { enabled: true, ...events } }).replaceAll(
+          "${CLAUDE_PLUGIN_ROOT}",
+          path.replaceAll("\\", "/"),
+        );
+        writeJson(join(path, "hooks.json"), JSON.parse(portable), apply, changes);
+      }
+    }
     const nested = join(path, ".claude-plugin/marketplace.json");
     if (existsSync(nested)) {
       changes.push({ path: nested, action: "remove-obsolete-marketplace" });
@@ -202,7 +263,7 @@ export function prepareStore(store: string, marketplace: string, apply: boolean)
         { [name]: { enabled: true, ...object(hooks.hooks ?? {}) } },
         null,
         2,
-      ).replaceAll("${CLAUDE_PLUGIN_ROOT}", path);
+      ).replaceAll("${CLAUDE_PLUGIN_ROOT}", path.replaceAll("\\", "/"));
       writeChanged(join(path, "hooks.json"), `${serialized}\n`, apply, changes);
     }
   }
