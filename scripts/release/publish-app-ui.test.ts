@@ -15,11 +15,18 @@ import {
   artifactManifest,
   buildCommand,
   declarationCommand,
+  prerequisiteCommands,
   smokeCommand,
   verifyArtifactProvenance,
   releasePlan,
   type ReleaseConfig,
 } from "./publish-app-ui";
+test("clean builds prepare identity through its canonical owner, without setup hooks", () => {
+  expect(prerequisiteCommands()).toEqual([
+    ["bun", "run", "--cwd", "m3/packages/identity", "sprite"],
+  ]);
+  expect(prerequisiteCommands().flat()).not.toContain("install");
+});
 const nativeShell =
   process.platform === "win32"
     ? join(process.env.ProgramFiles ?? "C:/Program Files", "Git/bin/bash.exe")

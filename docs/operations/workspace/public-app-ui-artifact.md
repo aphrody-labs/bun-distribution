@@ -120,6 +120,10 @@ to the canonical app-ui build, requires its exported `public-assets.json`, and i
 the release manifest. Pass the same flag when publishing an existing artifact; mismatched
 build modes, revision or file checksums fail before upload. Source guards include the entire
 M3 tree (font and identity transforms), the public asset catalog and this release helper.
+Fresh checkouts also run the identity owner's explicit `sprite` command before bundling:
+it derives the ignored `m3/packages/identity/dist/spritesheet.webp` from the tracked
+`crates/ui/identity/assets/aphrody/sprites/spritesheet.webp`. No installation lifecycle or
+machine setup hooks are required. Source guards include that Rust identity owner input.
 
 ```sh
 bun scripts/release/publish-app-ui.ts --build --public-assets --revision <exact-HEAD> --out <isolated-directory>

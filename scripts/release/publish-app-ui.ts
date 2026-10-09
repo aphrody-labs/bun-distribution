@@ -52,6 +52,10 @@ export function buildCommand(artifact: string, publicAssets = false): string[] {
     ...(publicAssets ? ["--public-assets"] : []),
   ];
 }
+export function prerequisiteCommands(): string[][] {
+  // The canonical identity owner copies its tracked atlas to gitignored dist for bundling.
+  return [["bun", "run", "--cwd", "m3/packages/identity", "sprite"]];
+}
 export function declarationCommand(path: string): string {
   // Source \\n becomes exactly one shell backslash, so printf emits a real newline.
   return `printf '%s\\n' '{"schemaVersion":1,"root":"current"}' > ${quote(path)}`;
@@ -154,6 +158,7 @@ async function main() {
     "m3",
     serverSource,
     "crates/web/site/data",
+    "crates/ui/identity",
     "tools/config/downloads.json",
     "tools/config/public-assets.json",
     "scripts/release/publish-app-ui.ts",
@@ -167,7 +172,10 @@ async function main() {
   const artifact = resolve(values.artifact ?? values.out ?? join(workspace, "artifact"));
   if (artifact === repository || artifact.startsWith(repository + sep))
     throw new Error("Use an isolated artifact directory outside the checkout");
-  if (values.build) await run(buildCommand(artifact, publicAssets));
+  if (values.build) {
+    for (const command of prerequisiteCommands()) await run(command);
+    await run(buildCommand(artifact, publicAssets));
+  }
   const manifest = artifactManifest(artifact, revision, publicAssets);
   if (!values.build) {
     const prior = await Bun.file(join(artifact, "release-manifest.json")).json();
