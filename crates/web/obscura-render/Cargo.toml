@@ -34,6 +34,10 @@ ab_glyph = { workspace = true, optional = true }
 # fonts (no system-font scan) so layout stays deterministic across hosts.
 # Upstream Obscura enables `shape-run-cache` on its patched vendor/cosmic-text (cache reset in
 # FontSystem::db_mut). athena-text 0.14.2 lacks that reset, so the feature stays off here.
+# Fork kept over cosmic-text (checked against 0.14.2 and 0.19.0): inline.rs needs its per-span
+# Attrs::css_line_break (CSS word-break/overflow-wrap, Wrap::WordOrGlyphMinContent),
+# font_variations/font_optical_size/font_italic_axis (arbitrary OpenType axes), font_id (pinned
+# face, FontFallbackIter skip) and LayoutGlyph axis fields. Upstream 0.19 only matches `wght`.
 cosmic-text = { package = "athena-text", version = "=0.14.2", default-features = false, features = ["std", "swash"], optional = true }
 # Keep this exactly aligned with the athena-text 0.14.2 raster backend. Cosmic
 # and the renderer consume the same canonical variation coordinates for
