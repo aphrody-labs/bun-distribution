@@ -47,6 +47,7 @@ services:
       NCCL_SOCKET_IFNAME: eth0
       GLOO_SOCKET_IFNAME: eth0
       APHRODY_GPU_MODEL_PATH: ${APHRODY_GPU_MODEL_PATH:?verified local model path required}
+      APHRODY_GPU_QUANTIZATION: ${APHRODY_GPU_QUANTIZATION:-none}
       APHRODY_GPU_MODEL_NAME: gemma4-e2b
       APHRODY_GPU_MAX_MODEL_LEN: "4096"
     volumes:

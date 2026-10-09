@@ -41,7 +41,7 @@ def serve_command(role: str, model: Path, env: dict[str, str]) -> list[str]:
     """Keep standalone and distributed process contracts explicit and testable."""
     if role not in {"standalone", "head"}:
         raise ValueError("invalid inference serving role")
-    return [
+    command = [
         "vllm",
         "serve",
         str(model),
@@ -62,11 +62,17 @@ def serve_command(role: str, model: Path, env: dict[str, str]) -> list[str]:
         "--max-model-len",
         env["APHRODY_GPU_MAX_MODEL_LEN"],
         "--max-num-seqs",
-        "4",
+        "1" if role == "standalone" else "4",
         "--gpu-memory-utilization",
         "0.85",
         "--enable-prefix-caching",
     ]
+    quantization = env.get("APHRODY_GPU_QUANTIZATION", "none")
+    if quantization not in {"none", "bitsandbytes"}:
+        raise ValueError("unqualified inference quantization method")
+    if quantization != "none":
+        command += ["--quantization", quantization]
+    return command
 
 
 def main(role: str) -> int:

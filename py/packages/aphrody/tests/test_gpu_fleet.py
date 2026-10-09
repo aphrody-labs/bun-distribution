@@ -80,3 +80,19 @@ def test_dedicated_omar_service_does_not_require_owner_gpu_or_ray():
     assert head[head.index("--pipeline-parallel-size") + 1] == "2"
     with pytest.raises(ValueError, match="serving role"):
         serve_command("worker", Path("/models/gemma4-e2b"), env)
+
+
+def test_quantization_selection_is_explicit_and_does_not_inject_arguments():
+    from pathlib import Path
+
+    env = {
+        "APHRODY_GPU_MODEL_NAME": "gemma4-e2b",
+        "APHRODY_GPU_MAX_MODEL_LEN": "4096",
+        "APHRODY_GPU_QUANTIZATION": "bitsandbytes",
+    }
+    command = serve_command("standalone", Path("/models/gemma4-e2b"), env)
+    assert command[-2:] == ["--quantization", "bitsandbytes"]
+    assert command[command.index("--max-num-seqs") + 1] == "1"
+    env["APHRODY_GPU_QUANTIZATION"] = "bitsandbytes --trust-remote-code"
+    with pytest.raises(ValueError, match="quantization"):
+        serve_command("standalone", Path("/models/gemma4-e2b"), env)

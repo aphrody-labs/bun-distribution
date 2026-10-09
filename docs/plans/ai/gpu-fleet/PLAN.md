@@ -95,3 +95,23 @@ which exceeds Omar's 8,188 MiB VRAM before runtime/KV allocations. Do not activa
 the BF16 service unchanged. Quantization or measured CPU offload must qualify
 against this exact model and image, with actual token generation. The vLLM image
 pull remains active; no CUDA arithmetic or model generation is yet claimed.
+
+## Quantization candidate and artifact integrity
+
+The initial single-GPU command now accepts the explicitly selected
+`bitsandbytes` four-bit candidate, and starts with one concurrent sequence.
+It does not silently enable remote model code or install dependencies. The
+candidate follows [vLLM 0.26 BitsAndBytes documentation](https://docs.vllm.ai/en/v0.26.0/features/quantization/bnb/);
+Gemma compatibility, installed bitsandbytes version and actual generation still
+require container qualification. Seven scoped Python tests now pass.
+
+The [fleet catalogue](../../../../tools/config/ai/gpu-fleet.json) pins the model
+revision, exact weight byte count and registry LFS SHA-256. The depot is private,
+limited to 32 GiB and contains no prompt cache. VPS capacity was rechecked:
+145 GiB free. The declaration is not evidence of a downloaded or verified cache.
+
+The VPS artifact transfer is running in the dedicated tmux session
+`aphrody-gpu-model-cache`. Its first inspected partial file was 594,161,664
+bytes. The job enforces the expected file size and verifies the pinned SHA-256
+before renaming the partial file. Transfer completion and local Omar cache
+qualification are pending; the model is not yet served.
