@@ -13,3 +13,9 @@ Disposition du volume de build : `~/build/{cache,artifacts,locks,transient}`, `~
 Sysctl : `/etc/sysctl.d/95-aphrody-vps-build.conf` et `90-aphrody-bun.conf` sont déjà optimisés pour la machine (swappiness 100 avec zram, dirty 5/15 %, inotify, max_map_count, file-max) ; aucun changement ici.
 
 Profil tuned : `throughput-performance` (paquet `tuned`, service activé).
+
+Comptes : `omar` rejoint le groupe `aphrody` ; `/home/ubuntu` passe en `0750` groupe `aphrody` (propriétaire inchangé).
+
+Non appliqué (à traiter ensuite) : fusion des checkouts `/home/omar/src`, des `~/apps` (les données restent dans `~/build/apps`, pas de copie faute de place sur `/`), `shenron-build` gardé tel quel (le runner est enregistré sous ce compte ; ses données ne sont pas déplacées), dédoublonnage des données live (écritures en place).
+
+Tuned : non retenu (le profil `throughput-performance` force `vm.swappiness=10` et `dirty 40/10`, contraire à la config zram) ; paquet purgé.
