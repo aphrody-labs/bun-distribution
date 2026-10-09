@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0
-# Déploie la synchronisation Discord sur le hub vps (idempotent) : code dans /opt/aphrody-discord-sync, unités du
+# Déploie la synchronisation Discord sur le hub vps (idempotent) : code dans ~/apps/discord-sync, unités du
 # catalogue, retrait de l'ancien veilleur aphrody-omar-watch. Usage (racine du dépôt) : install.sh [--plan] [host]
 # Aucun secret : /etc/aphrody-discord.env existe déjà sur l'hôte et n'est ni lu ni copié.
 set -euo pipefail
 plan=0; [ "${1:-}" = "--plan" ] && { plan=1; shift; }
 host=${1:-vps}
-dest=/opt/aphrody-discord-sync
+dest='~/apps/discord-sync'
 src=scripts/tools/infra/discord-sync
-files=("$src/api.ts" "$src/collect.ts" "$src/protocol.ts" "$src/sync.ts" "$src/cli.ts" packages/engine/core/src/host/net-facts.ts)
+files=("$src/api.ts" "$src/collect.ts" "$src/protocol.ts" "$src/sync.ts" "$src/cli.ts" "$src/fiche.ts" packages/engine/core/src/host/net-facts.ts)
 units=(tools/config/host/systemd/aphrody/aphrody-discord-sync.service tools/config/host/systemd/aphrody/aphrody-discord-sync.timer)
 echo "plan: $host:$dest <- ${files[*]}"
 echo "plan: unités ${units[*]} -> /etc/systemd/system, enable --now aphrody-discord-sync.timer"

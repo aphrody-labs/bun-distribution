@@ -72,7 +72,7 @@ Le JSON compact est dans un bloc de code `json` (3 accents graves). `kind` : `st
 
 - Code : `scripts/tools/infra/discord-sync/` (`protocol.ts`, `collect.ts`, `sync.ts`, `api.ts`, `cli.ts`, tests
   `discord-sync.test.ts`), déployé par `scripts/tools/infra/discord-sync/install.sh [--plan] [hôte]` dans
-  `/opt/aphrody-discord-sync` (root, lecture seule).
+  `~/apps/discord-sync` (root, lecture seule).
 - Unités du catalogue : `aphrody-discord-sync.service` (oneshot, `User=ubuntu`, `EnvironmentFile=/etc/aphrody-discord.env`,
   `StateDirectory=aphrody-discord-sync`, `CAP_NET_ADMIN` seulement pour `wg show`, `ProtectSystem=strict`) et
   `aphrody-discord-sync.timer` (45 s après le démarrage, puis chaque minute). Journaux : `journalctl -u aphrody-discord-sync`.
@@ -108,3 +108,13 @@ Le JSON compact est dans un bloc de code `json` (3 accents graves). `kind` : `st
   plutôt que `.coord` pour les échanges avec Omar.
 - Les unités `aphrody-discord-control-plane` et `aphrody-discord-lab-telemetry` (retirées, désactivées) existent encore
   sur le vps ; hors périmètre ici.
+
+## Fiche factuelle (#sync-fiche)
+
+`#sync-fiche` porte un message épinglé avec le fichier `fiche-aphro-omar.md` : réseau en direct (wg1, SSH, VNC, ports,
+conteneurs, adresses publiques), inventaire WireGuard (clés publiques), variables d'Omar, alias SSH, état de boot, tâches
+planifiées du PC propriétaire et liste « Ce qu'Omar doit compléter » cochée d'après les sondes. Le PC propriétaire
+génère la fiche chaque minute (`net-env --fiche vps`, tâche `Net Env Probe`) et la dépose sur le vps ; le tick la fusionne
+avec la partie déclarée par Omar (rapport `APHRODY-SYNC/1 report fiche`, champs libres : nom d'utilisateur, ports, services,
+tâches de boot), édite le message seulement si le contenu change et écrit `fiche-merged.md`, relue par le PC puis recopiée dans
+le bloc `fiche-auto-sync` du fichier mémoire. Aucun secret : lignes `private|preshared|password|secret|token=` retirées.
