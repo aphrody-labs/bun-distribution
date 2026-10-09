@@ -331,3 +331,18 @@ the `omar` account, Windows tunnels, verification. Each host has `verify` steps 
 bound to the hub address only, handshakes, no ufw rule with an `Anywhere` source, effective `sshd -T -C user=omar`, `sudo -n
 -l -U omar`, no direct postgres login) and one `rollback` step that removes only what this lot created (tunnel, units, the
 `aphrody-wg` ufw rules, `omar` locked, grants removed; `wg0`, `shenron-admin` rules, the home directory and databases stay).
+
+## Maillage ouvert sur tous les ports (décision du propriétaire, 2026-10-09)
+
+Le propriétaire a ouvert tous les ports entre les membres du maillage wg1 (PC propriétaire, PC d'Omar et son WSL, vps, dbfr)
+et le réseau Docker, sans ouvrir quoi que ce soit à Internet.
+
+- vps et dbfr : règles ufw `aphrody-wg-mesh-all` (entrée depuis 10.200.77.0/24 sur wg1), `aphrody-docker-bridge-all`
+  (entrée sur docker0), `aphrody-wg-mesh-forward`, `aphrody-wg-to-docker` et `aphrody-docker-to-wg` (routage wg1 et docker0).
+- PC propriétaire : règles `Aphrody wg1 mesh (tous ports)` (entrée et sortie, 10.200.77.0/24, groupe Aphrody) ; Pare-feu Windows et
+  Defender restent désactivés exprès.
+- PostgreSQL et Redis de dbfr n'écoutent que sur loopback : ils ne sont donc pas joignables par le maillage ; ne les rebinde pas
+  hors loopback (`firewall.neverOpen`).
+- PC d'Omar et son WSL : ses ports se règlent de son côté (accord n°2) ; l'API Docker TCP 2375 du PC propriétaire écoute sur loopback
+  seulement.
+- Retrait : `ufw delete` des règles portant ces commentaires, `Remove-NetFirewallRule -Group Aphrody`.
