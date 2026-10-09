@@ -52,7 +52,11 @@ case "$cmd" in
       echo "aphrody-entrypoint: aphrody-mcp is not installed in this image" >&2
       exit 127
     }
-    exec aphrody-mcp http --bind "0.0.0.0:${PORT:-8999}" "$@"
+    # aphrody-mcp refuses non-loopback binds by design: it listens on the container loopback and socat exposes
+    # that port on the container interface; the host publishes it on its own loopback only (compose).
+    inner=18793
+    socat "TCP-LISTEN:${PORT:-8999},fork,reuseaddr,bind=0.0.0.0" "TCP:127.0.0.1:$inner" &
+    exec aphrody-mcp http --bind "127.0.0.1:$inner" "$@"
     ;;
   yolo)
     if command -v aphrody >/dev/null 2>&1; then exec aphrody yolo "$@"; fi

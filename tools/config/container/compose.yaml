@@ -100,8 +100,9 @@ services:
     mem_limit: ${APHRODY_BUILD_MEMORY:-16g}
     pids_limit: 8192
     working_dir: /work
+    user: "${APHRODY_BUILD_UID:-1000}:1500"
     volumes:
-      - ${APHRODY_BUILD_REPO:-/srv/aphrody/build/aphrody}:/work
+      - ${APHRODY_BUILD_REPO:-/srv/aphrody-build/workspaces/aphrody}:/work
       - aphrody-build-cargo:/cache/cargo
       - aphrody-build-sccache:/cache/sccache
       - aphrody-build-bun:/cache/bun

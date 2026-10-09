@@ -22,7 +22,7 @@ FROM ubuntu:${UBUNTU} AS runtime-base
 ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-      ca-certificates curl libgcc-s1 libsqlite3-0 libssl3 libstdc++6 \
+      ca-certificates curl libgcc-s1 libsqlite3-0 libssl3 libstdc++6 socat \
  && rm -rf /var/lib/apt/lists/*
 
 COPY --chmod=755 tools/config/container/entrypoint.sh /usr/local/bin/aphrody-entrypoint

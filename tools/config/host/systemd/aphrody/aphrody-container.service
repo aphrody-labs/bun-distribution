@@ -8,11 +8,11 @@ ConditionPathExists=/etc/aphrody/aphrody_mcp_http_token
 
 [Service]
 Type=simple
-WorkingDirectory=/srv/aphrody/current
+WorkingDirectory=/etc/aphrody/container
 Environment=APHRODY_API_TOKEN_FILE=/etc/aphrody/aphrody_mcp_http_token
 Environment=APHRODY_PROD_PORT=8999
-ExecStart=/usr/bin/docker compose -f tools/config/container/compose.yaml --profile prod up --no-build --remove-orphans
-ExecStop=/usr/bin/docker compose -f tools/config/container/compose.yaml --profile prod down
+ExecStart=/usr/bin/docker compose -f /etc/aphrody/container/compose.yaml --profile prod up --no-build --remove-orphans
+ExecStop=/usr/bin/docker compose -f /etc/aphrody/container/compose.yaml --profile prod down
 Restart=always
 RestartSec=10
 TimeoutStopSec=60
