@@ -140,15 +140,9 @@ DNSSEC on, no anycast, nameservers `dns109/ns109.ovh.net`. Everything points at
 `_acme-challenge` `TXT` from DNS-01 renewals run elsewhere; `/etc/letsencrypt/ovh-dbfr.ini`
 exists here for that flow but no certificate on this machine uses it.
 
-### `rpbey.fr` — historically sold; currently visible, still outside managed scope
+### `rpbey.fr` — no records
 
-Measured 2026-09-07 as `@`, `www`, `api`, `cdn`, `play` all `A` to `51.77.147.152`, with nothing
-on this machine serving them (no `server_name`, no certificate). The operator has since sold the
-domain (docs/PLAN.md). The 2026-09-29 read-only `/domain/zone` request nevertheless returned
-`rpbey.fr` for the current `aphrody` credentials. Zone visibility does not establish current
-ownership or authorize changes: keep it outside the managed profile unless ownership and scope
-are reverified. Every `rpbey.fr` nginx template, OVH profile domain entry and `rg` CDN host
-reference has been removed from this ecosystem's live code.
+On 2026-10-09, on the owner's decision, its six `A` records (`@` twice, `www`, `api`, `cdn`, `play` → `51.77.147.152`) were deleted with `aphrody infra ovh dns delete`. The zone itself and the domain registration are untouched. No nginx, certificate, catalogue or profile entry references it.
 
 ## 5. Certificates — the OVH API is not in the loop
 

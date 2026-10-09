@@ -12824,16 +12824,6 @@
       "canonical": "tools/config/host/inventory/aphrody-discord-dev-2026-09-29.md"
     },
     {
-      "path": "tools/config/host/legacy-rg/README.md",
-      "title": "Decommissioned rg host configuration (2026-10-03)",
-      "sha256": "00c9c0cda17e8d92b899bf090621708e7764d05eba92fe89b7fc50d74bfa02da",
-      "bytes": 643,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "tools/config/host/legacy-rg/README.md"
-    },
-    {
       "path": "tools/config/host/privoxy/README.md",
       "title": "Privoxy & WireGuard Mullvad HTTP Bridge",
       "sha256": "0250c57fcd48f9748fb322742e5d3f8ca7e831da7b15343e46741dc8cba199f9",
