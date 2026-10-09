@@ -25,7 +25,10 @@ export async function compileDiscordApp(options: DiscordAppBuild): Promise<strin
   });
   if (!result.success)
     throw new AggregateError(result.logs, "Discord application compilation failed");
-  return outfile;
+  const executable = result.outputs.find((output) => output.kind === "entry-point");
+  if (!executable || !(await Bun.file(executable.path).exists()))
+    throw new Error("Discord application compilation produced no executable");
+  return resolve(executable.path);
 }
 
 export interface DiscordAppStart {

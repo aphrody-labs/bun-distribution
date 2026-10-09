@@ -5,6 +5,22 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { compileDiscordApp, startDiscordApp } from "../src/apps";
 
+test("compilation returns the actual runnable output path on the selected native host", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "aphrody-discord-output-"));
+  try {
+    const entrypoint = join(directory, "app.ts");
+    await Bun.write(entrypoint, "console.log(JSON.stringify({compiled:true}));");
+    const executable = await compileDiscordApp({ entrypoint, outfile: join(directory, "app") });
+    expect(await Bun.file(executable).exists()).toBe(true);
+    const process = Bun.spawn([executable], { windowsHide: true, stdout: "pipe", stderr: "pipe" });
+    const output = await new Response(process.stdout).text();
+    expect(await process.exited).toBe(0);
+    expect(JSON.parse(output)).toEqual({ compiled: true });
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+}, 30_000);
+
 test("a compiled Bun application runs and stops under the installed Yolo supervisor", async () => {
   const directory = await mkdtemp(join(tmpdir(), "aphrody-discord-app-"));
   try {
@@ -23,6 +39,7 @@ test("a compiled Bun application runs and stops under the installed Yolo supervi
       entrypoint,
       outfile: join(directory, "discord-fixture"),
     });
+    expect(await Bun.file(binary).exists()).toBe(true);
     using oneShot = await startDiscordApp({
       binary,
       profile: "dbfr",
