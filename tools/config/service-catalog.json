@@ -608,7 +608,17 @@
           "atLogon"
         ],
         "principal": "user",
-        "desktop": true
+        "desktop": true,
+        "periodic": true
+      },
+      {
+        "host": "local",
+        "kind": "scheduledTask",
+        "name": "VNC Omar Probe",
+        "triggers": [],
+        "principal": "user",
+        "desktop": true,
+        "periodic": true
       }
     ]
   }
