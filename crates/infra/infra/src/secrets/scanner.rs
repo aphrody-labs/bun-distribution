@@ -148,19 +148,13 @@ impl SecretScanner {
                         continue;
                     }
 
-                    let snippet = if matched_str.len() > 10 {
-                        format!("{}...{}", &matched_str[..4], &matched_str[matched_str.len() - 4..])
-                    } else {
-                        "***REDACTED***".to_string()
-                    };
-
                     findings.push(SecretAuditFinding {
                         file: path_str.clone(),
                         line: line_num,
                         rule: rule_id.to_string(),
                         severity: "CRITICAL".into(),
                         description: desc.to_string(),
-                        snippet,
+                        snippet: "***REDACTED***".into(),
                     });
                 }
             }
@@ -207,5 +201,19 @@ mod tests {
         let findings = scanner.scan_content(Path::new("src/main.rs"), sample);
         assert!(!findings.is_empty());
         assert_eq!(findings[0].rule, "PRIVATE_KEY");
+    }
+
+    #[test]
+    fn finding_never_exposes_secret_fragments_or_splits_unicode() {
+        let scanner = SecretScanner::new();
+        let findings = scanner.scan_content(
+            Path::new("src/database.rs"),
+            "postgres://operator:密碼🔐@production.internal/database",
+        );
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].snippet, "***REDACTED***");
+        let serialized = serde_json::to_string(&findings).unwrap();
+        assert!(!serialized.contains("operator"));
+        assert!(!serialized.contains("密碼"));
     }
 }

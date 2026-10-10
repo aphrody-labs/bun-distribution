@@ -642,6 +642,22 @@
       {
         "host": "local",
         "kind": "scheduledTask",
+        "name": "Mesh",
+        "path": "\\Aphrody\\",
+        "triggers": [
+          "atLogon",
+          "every:5m"
+        ],
+        "principal": "user",
+        "desktop": true,
+        "execute": "cmd.exe",
+        "arguments": "/d /q /c \"%USERPROFILE%\\.aphrody\\host\\mesh.cmd\"",
+        "workingDirectory": "{root}",
+        "description": "Aphrody Mesh owner: qualified Bun/native adapters, Compose and checked main updates. Desktop adapters run in the owner's interactive session; WireGuard and sshd keep their boot services."
+      },
+      {
+        "host": "local",
+        "kind": "scheduledTask",
         "name": "Container",
         "triggers": [
           "atLogon"

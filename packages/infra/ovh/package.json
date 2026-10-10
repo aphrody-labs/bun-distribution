@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/ovh",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "OVH cloud library for Aphrody Infra: DNS, VPS, Email, and multi-profile operations in pure Bun (command line: aphrody ovh)",
   "license": "Apache-2.0",
   "files": [

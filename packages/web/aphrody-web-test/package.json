@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/web-test",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Playwright-compatible browser and site test runner for Bun, backed by the shared Rust Obscura CDP server.",
   "keywords": [
     "aphrody",

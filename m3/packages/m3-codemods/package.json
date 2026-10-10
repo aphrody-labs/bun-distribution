@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-codemods",
-  "version": "3.3.9",
+  "version": "3.3.11",
   "description": "Codemods MUI React -> @aphrody/m3-react (Bun, sans dépendance runtime) + règles ast-grep",
   "license": "Apache-2.0",
   "files": [

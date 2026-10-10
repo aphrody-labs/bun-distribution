@@ -1,0 +1,33 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>Aphrody OS: Bun runtime and native SDK architecture — Aphrody</title><meta name="description" content="The Bun fork, shared native C ABI and TypeScript SDK behind Aphrody OS, with separate source and deployment contracts."><link rel="canonical" href="https://aphrody.com/docs/runtime-architecture">
+    <link rel="icon" type="image/svg+xml" href="./fonts/icon.svg">
+    
+    
+  <link rel="stylesheet" crossorigin href="./app.css"></head>
+  <body>
+    <div id="root"><main class="min-h-screen bg-surface p-6 text-on-surface"><nav class="mx-auto mb-8 flex max-w-3xl flex-wrap gap-6"><a class="text-primary underline" href="/">Aphrody</a><a class="text-primary underline" href="/docs">Bun documentation</a><a class="text-primary underline" href="/os">Open Aphrody OS</a></nav><article class="mx-auto max-w-3xl space-y-6 text-body-large"><h1 class="text-headline-large">Aphrody OS runtime and native SDK</h1>
+<p>Aphrody OS brings a browser interface, a desktop shell and a cross-platform CLI around shared capability owners. The runtime comes from the private <code>aphrody-labs/bun</code> fork. Product workflows and the canonical interface remain in the Aphrody monorepo.</p>
+<h2 class="text-headline-small">Bun runtime</h2>
+<p>Bun provides the JavaScriptCore runtime, Web APIs, bundler, package manager and test runner. Fork API documentation lives in the fork's <code>docs/</code> tree. Aphrody records its selected documentation revision in <code>docs/reference/upstream-bun/SOURCE.json</code>; it does not maintain a second Bun documentation tree.</p>
+<h2 class="text-headline-small">Native SDK</h2>
+<p><code>packages/engine/runtime</code> declares <code>@aphrody/runtime-sdk</code>. Its FFI loader uses <code>dlopen</code> from <code>bun:ffi</code>. The native library boundary is <code>aphrody_ffi</code> in <code>crates/interop/ffi</code>, and <code>include/aphrody.h</code> retains the <code>aphrody_*</code> and <code>yolo_*</code> compatibility identities. The ABI contract requires version checks, opaque handles and library-owned buffer release.</p>
+<h2 class="text-headline-small">Qualification</h2>
+<p>Source declarations do not prove that every native module is installed or active on every platform. Check the selected artifact, ABI and target before enabling a native capability.</p>
+<h2 class="text-headline-small">Source references</h2>
+<ul>
+<li><a href="https://github.com/aphrody-labs/aphrody/blob/main/PLAN.md">Aphrody architecture and active plan</a></li>
+<li><a href="https://github.com/aphrody-labs/aphrody/blob/main/crates/interop/ffi/include/aphrody.h">Native ABI header</a></li>
+<li><a href="https://github.com/aphrody-labs/aphrody/tree/main/packages/engine/runtime">Runtime SDK</a></li>
+<li><a href="https://github.com/aphrody-labs/bun/tree/main/docs">Bun fork documentation</a></li>
+</ul>
+<p>Reviewed against repository sources on 2026-10-09. Repository links require authorized access.</p>
+</article></main></div>
+  </body>
+</html>

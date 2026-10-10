@@ -18,6 +18,8 @@ use aphrody_wireguard::Inventory;
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 
+mod sshd;
+
 const FOLDER: &str = "\\Aphrody\\";
 const DESCRIPTION: &str = "Aphrody always-online (aphrody infra remote always-online)";
 /// Reverse forwards opened on the hub loopback: `hub port -> target on this PC`.
@@ -286,6 +288,14 @@ pub fn report(plan: &Plan) -> Value {
         "power": "veille et hibernation sur secteur désactivées, hibernation off",
         "portproxy": format!("{}:8793 -> 127.0.0.1:8793 (iphlpsvc automatique)", plan.address),
         "wslconfig": plan.wsl.then_some("networkingMode=mirrored, firewall=false (puis wsl --shutdown)"),
+        "sshd": {
+            "service": "sshd",
+            "startMode": "Auto",
+            "restartOnFailure": true,
+            "loopback": "127.0.0.1:22",
+            "validation": "sshd -t and effective listen addresses, then a local SSH banner",
+            "backup": "checksum verified before config replacement; restore on failure",
+        },
     })
 }
 
@@ -308,6 +318,9 @@ fn run(program: &str, args: &[&str]) -> Result<()> {
 /// A system command, the Task Scheduler or the Service Control Manager failed.
 pub fn apply(plan: &Plan, paths: &Paths) -> Result<Value> {
     let mut done = Vec::new();
+    // Windows SSH is the recovery channel even while WireGuard has no interface/handshake.
+    let ssh = sshd::Bootstrap::inspect()?.apply()?;
+    done.push("sshd automatique avec redémarrage, écoute SSH locale vérifiée".to_owned());
     std::fs::create_dir_all(paths.home.join("logs")).context("journal")?;
     // An asleep PC drops wg1 and every service.
     run("powercfg", &["/change", "standby-timeout-ac", "0"])?;
@@ -375,7 +388,7 @@ pub fn apply(plan: &Plan, paths: &Paths) -> Result<Value> {
             json!({ "task": full, "state": state })
         })
         .collect();
-    Ok(json!({ "applied": done, "tasks": states }))
+    Ok(json!({ "applied": done, "tasks": states, "sshd": ssh }))
 }
 
 /// `aphrody infra remote always-online`: plan, or apply (relaunched elevated when needed).
@@ -390,6 +403,7 @@ pub fn execute(root: &Path, options: &Options, paths: &Paths, dry_run: bool) -> 
     let plan = plan(&inventory, options, paths)?;
     let mut out = report(&plan);
     if dry_run {
+        out["sshd"] = sshd::Bootstrap::inspect()?.report();
         return Ok(out);
     }
     for binary in [&paths.aphrody, &paths.mcp] {
