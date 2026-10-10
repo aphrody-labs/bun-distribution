@@ -54,7 +54,7 @@ aphrody-drive = { workspace = true }
 aphrody-fsindex = { workspace = true }
 aphrody-shell-tauri = { workspace = true }
 aphrody-identity = { workspace = true }
-aphrody-kernel = { workspace = true }
+aphrody-kernel = { workspace = true, features = ["builtins"] }
 # The `__llama-daemon` entry (src/llama_daemon.rs) hosts `aphrody_llama_server::daemon::run`.
 aphrody-llama-server = { workspace = true }
 # Toolkit-free, in-process model hub (replaces the `aphrody model` CLI child process).
