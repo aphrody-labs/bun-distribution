@@ -406,7 +406,7 @@ tobj = {"version" = "4.0.5", "default-features" = false}
 wgpu = {"version" = "30.0.1", "default-features" = false}
 # CUDA host API (driver + NVRTC), loaded from the official NVIDIA driver at run time: builds
 # without the CUDA toolkit and degrades to "unavailable" on machines without libcuda.
-cudarc = {"version" = "0.19.10", "default-features" = false, "features" = ["std", "driver", "nvrtc", "dynamic-loading", "cuda-12080"]}
+cudarc = {"version" = "0.19.10", "default-features" = false, "features" = ["std", "driver", "nvrtc", "dynamic-loading", "cuda-13040"]}
 bytemuck = {"version" = "1", "features" = ["derive"]}
 roxmltree = {"version" = "0.21"}
 svgtypes = {"version" = "0.16"}
