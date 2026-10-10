@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "preserve",
+    "moduleResolution": "bundler"
+  },
+  "include": ["**/*.ts", "**/*.mts", "**/*.mjs", "../package.json", "../*.mjs", "../*.mts"],
+  "exclude": ["**/node_modules"]
+}

@@ -1,0 +1,12 @@
+# Installed as /etc/sudoers.d/omar (root:root, 0440) on vps and dbfr after `visudo -c -f` passes. Not in group sudo:
+# this one line is the only grant. Omar has no Unix password (key-only ssh), so the rule is NOPASSWD, like the ubuntu
+# user of both hosts; the guard is the journal, not a password.
+# Journaling: the hosts run sudo-rs (/usr/bin/sudo -> cargo/bin/sudo, 0.2.13), which sends every command to syslog
+# (authpriv, journald, persistent journal on both hosts):
+#   journalctl -t sudo --since today | grep 'omar :'
+# sudo-rs has no I/O log (log_input, log_output, sudoreplay); the classic sudo.ws binary is installed but is not the
+# default, and this file does not switch it. use_pty keeps every command on a pty.
+# On dbfr the postgres role is reachable only through this rule (`sudo -u postgres ...`): no group membership, no
+# ssh login as postgres, no pg_hba or ufw entry for the tunnel.
+Defaults:omar use_pty
+omar ALL=(ALL:ALL) NOPASSWD: ALL

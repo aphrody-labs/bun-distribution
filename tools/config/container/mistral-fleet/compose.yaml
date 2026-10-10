@@ -1,0 +1,82 @@
+# SPDX-License-Identifier: Apache-2.0
+# Plan: config --quiet, image --version and serve --help before GPU apply.
+# Exactly one of vLLM, Mistral.rs and training may own Omar's 8 GiB GPU.
+name: aphrody-mistral-fleet
+
+x-runtime: &runtime
+  # Official 0.9.4 CUDA 12.8 / Ada SM89, resolved from the AMD64 manifest.
+  image: ghcr.io/ericlbuehler/mistral.rs@sha256:7daaf33253bffefe9e0ef1e3b8ccfb7b0c6468c15e152cb1ef4167949424dc6f
+  init: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  read_only: true
+  tmpfs: ["/tmp:size=512m", /run]
+
+services:
+  probe:
+    <<: *runtime
+    profiles: [probe]
+    command: [--version]
+    restart: "no"
+
+  standalone:
+    <<: *runtime
+    profiles: [standalone]
+    gpus: all
+    # The upstream server has no bearer authentication. It stays on the
+    # Windows loopback; the authenticated Aphrody gateway owns mesh exposure.
+    ports: ["127.0.0.1:8181:1234"]
+    command:
+      - serve
+      - --host
+      - 0.0.0.0
+      - --port
+      - "1234"
+      - --no-ui
+      - --disable-access-log
+      - --agent-permission
+      - deny
+      - --model-id
+      - ${APHRODY_GPU_MODEL_PATH:?checksum-verified local snapshot required}
+      - --isq
+      - "4"
+      - --dtype
+      - bf16
+      - --max-seqs
+      - "1"
+      - --max-model-len
+      - "2048"
+      - --max-seq-len
+      - "2048"
+      - --max-batch-size
+      - "1"
+      - --paged-attn
+      - "on"
+      - --pa-memory-mb
+      - "256"
+      - --prefix-cache-n
+      - "1"
+    volumes:
+      - model-cache:/models:ro
+      - runtime-cache:/data
+    environment:
+      HF_HOME: /data
+      HF_HUB_OFFLINE: "1"
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      MISTRALRS_NO_NCCL: "1"
+      OMP_NUM_THREADS: "2"
+    shm_size: 2gb
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, curl, -fsS, http://127.0.0.1:1234/health]
+      start_period: 300s
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  model-cache:
+    external: true
+    name: aphrody-gpu-model-cache
+  runtime-cache:
+    name: aphrody-mistral-runtime-cache

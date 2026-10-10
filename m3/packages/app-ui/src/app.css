@@ -1,0 +1,524 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+@import "tailwindcss";
+@import "@aphrody/m3-fonts/fonts.css";
+@import "@aphrody/m3-fonts/fonts-jp.css";
+@import "@aphrody/m3-tokens/m3-tokens.css";
+@import "@aphrody/m3-theme/spaceui.css";
+@import "./brand.css";
+@import "@aphrody/m3-theme/tailwind.css";
+@import "@aphrody/m3-reader/styles.css";
+@import "./styles.css";
+
+@source "../../m3-ai/dist";
+@source "../../m3-primitives/dist";
+@source "../../m3-forms/dist";
+@source "../../m3-explorer/dist";
+@source "./";
+
+/* Material 3 pages are part of the canonical app and inherit its typography. */
+.product-material {
+  --m3-gutter: 24px;
+}
+.product-material .m3-code {
+  padding: 16px;
+  overflow: auto;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-high);
+  white-space: pre;
+}
+.product-page {
+  user-select: text;
+}
+
+/* The explorer is mounted inside the Aphrody shell, never at viewport height. */
+.drive-pane {
+  height: 100%;
+  min-height: 0;
+  font-size: 18px;
+}
+.drive-pane :is([class*="text-body-"], [class*="text-label-"], .text-xs, .text-sm, .text-base) {
+  font-size: 18px;
+}
+.drive-pane :focus-visible {
+  outline: 3px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+:root {
+  font-family: var(--aphrody-font-brand);
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  color-scheme: light dark;
+  interpolate-size: allow-keywords;
+  scrollbar-gutter: stable;
+  scrollbar-width: auto;
+  scrollbar-color: var(--md-sys-color-outline) transparent;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  min-width: 320px;
+  min-height: 420px;
+  height: 100%;
+  margin: 0;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+/* A single static focus treatment across navigation, tools and content controls. */
+#root :focus-visible {
+  outline: 3px solid var(--md-sys-color-primary);
+  outline-offset: 3px;
+}
+#root :where(input, textarea, select):focus-visible {
+  outline-offset: 2px;
+}
+.app-shell {
+  isolation: isolate;
+}
+.app-shell :where(button, a, input, select, textarea) {
+  touch-action: manipulation;
+}
+
+@media (forced-colors: active) {
+  #root :focus-visible {
+    outline-color: Highlight;
+  }
+}
+
+/* LOW_VISION is a product invariant, not an Explorer-only exception. M3 type
+ * roles may increase this floor but cannot reduce readable product copy below it. */
+#root
+  :where(
+    button,
+    input,
+    select,
+    textarea,
+    p,
+    span,
+    label,
+    li,
+    dt,
+    dd,
+    td,
+    th,
+    summary,
+    code,
+    pre,
+    small,
+    [class*="text-body-"],
+    [class*="text-label-"]
+  ) {
+  font-size: max(var(--aphrody-base-font-size, 18px), 1em);
+}
+
+/* 2026 Modern Typography Standards */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-wrap: balance;
+}
+p,
+.prose {
+  text-wrap: pretty;
+}
+
+/* 2026 Performance: content-visibility for off-screen list virtualization without external deps */
+.journal-log-entry {
+  content-visibility: auto;
+  contain-intrinsic-size: auto none auto 24px;
+}
+
+.chat-turn-item {
+  content-visibility: auto;
+  contain-intrinsic-size: auto none auto 48px;
+}
+
+/* 2026 Top-Layer Transitions with @starting-style & allow-discrete */
+dialog[open],
+[popover]:popover-open {
+  opacity: 1;
+  transform: scale(1);
+
+  @starting-style {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+dialog,
+[popover] {
+  opacity: 0;
+  transform: scale(0.96);
+  transition-property: opacity, transform, display, overlay;
+  transition-duration: 0.2s;
+  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  transition-behavior: allow-discrete;
+}
+
+dialog::backdrop,
+[popover]::backdrop {
+  background-color: transparent;
+  transition:
+    display 0.2s allow-discrete,
+    overlay 0.2s allow-discrete,
+    background-color 0.2s ease-out;
+}
+
+dialog[open]::backdrop,
+[popover]:popover-open::backdrop {
+  background-color: color-mix(in srgb, var(--md-sys-color-scrim) 45%, transparent);
+
+  @starting-style {
+    background-color: transparent;
+  }
+}
+
+.material-symbol {
+  display: inline-block;
+  direction: ltr;
+  font-family: "Material Symbols Outlined";
+  font-size: 20px;
+  line-height: 1;
+  white-space: nowrap;
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 500,
+    "GRAD" 0,
+    "opsz" 24;
+}
+
+.titlebar {
+  height: 40px;
+  user-select: none;
+}
+.window-control {
+  width: 46px;
+  height: 40px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.window-control:hover {
+  background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+}
+.window-control.close:hover {
+  background: var(--md-sys-color-error);
+  color: var(--md-sys-color-on-error);
+}
+
+@media (max-width: 760px) {
+  .titlebar {
+    height: 36px;
+  }
+  .window-control {
+    width: 40px;
+    height: 36px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog,
+  [popover] {
+    transform: none;
+    transition: none;
+  }
+
+  @starting-style {
+    dialog[open],
+    [popover]:popover-open {
+      transform: none;
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Gemini-style chat (tokens from ./brand.css, docs/research/ui/m3-expressive-gemini-2026.md).
+ * Motion only on user-triggered changes; no entrance animations.
+ * ------------------------------------------------------------------------- */
+.codex-chat-pane {
+  font-weight: var(--app-weight-body);
+}
+.codex-chat-pane :is(h1, h2, h3) {
+  font-weight: var(--app-weight-headline);
+}
+.codex-chat-pane :is(strong, b) {
+  font-weight: var(--app-weight-body-strong);
+}
+
+.app-reading-column {
+  width: 100%;
+  max-width: var(--app-reading-column);
+  margin-inline: auto;
+}
+
+/* Size lives on the h2 (outside the LOW_VISION :where list); the span inherits 1em. */
+.app-greeting {
+  margin: 0;
+  text-align: start;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  line-height: 1.15;
+  font-weight: var(--app-weight-display);
+}
+.app-greeting .app-sparkle {
+  display: inline-block;
+  width: 0.72em;
+  height: 0.72em;
+  vertical-align: 0;
+  margin-inline-end: 0.3em;
+}
+.app-greeting-text {
+  font-size: 1em;
+  font-weight: var(--app-weight-display);
+  font-variation-settings: "ROND" 100;
+  color: var(--md-sys-color-primary);
+  background: var(--app-title-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.app-sparkle {
+  flex: none;
+}
+@media (forced-colors: active) {
+  .app-greeting-text {
+    background: none;
+    -webkit-text-fill-color: CanvasText;
+  }
+}
+
+.app-prompt-bar {
+  background: var(--md-sys-color-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--app-shape-prompt-empty);
+  box-shadow:
+    0 0 16px 0 color-mix(in srgb, var(--md-sys-color-on-surface) 16%, transparent),
+    0 0 2px 0 color-mix(in srgb, var(--md-sys-color-on-surface) 10%, transparent);
+  transition: border-radius var(--md-sys-motion-duration-medium2, 300ms) cubic-bezier(0.2, 0, 0, 1);
+}
+.app-prompt-bar[data-shape="content"] {
+  border-radius: var(--app-shape-prompt-content);
+}
+.app-prompt-bar[data-shape="docked"] {
+  border-radius: var(--app-shape-prompt-docked);
+}
+.app-prompt-bar:focus-within {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+.app-prompt-bar textarea {
+  width: 100%;
+}
+@supports (field-sizing: content) {
+  .app-prompt-bar textarea {
+    field-sizing: content;
+    height: auto;
+    min-block-size: 1lh;
+    max-block-size: 10lh;
+  }
+}
+
+.app-chip {
+  white-space: nowrap;
+  border-radius: var(--app-shape-chip);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+
+/* Narrow windows: chips collapse to their icon; the label stays in aria-label and title. */
+@media (max-width: 839px) {
+  .app-chip-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* Collapsible rail: the panel slides, the slot width snaps after the slide on collapse. */
+.app-rail {
+  position: relative;
+  width: 0;
+  overflow: hidden;
+  background: var(--md-sys-color-surface-container-low);
+  transition: width 0s linear var(--md-sys-motion-duration-medium2, 300ms);
+}
+.app-rail[data-expanded="true"] {
+  width: 280px;
+  transition: width 0s;
+}
+.app-rail-panel {
+  width: 280px;
+  height: 100%;
+  transform: translateX(-100%);
+  opacity: 0;
+  transition:
+    transform var(--md-sys-motion-duration-medium2, 300ms) cubic-bezier(0.2, 0, 0, 1),
+    opacity var(--md-sys-motion-duration-short4, 200ms) cubic-bezier(0.2, 0, 0, 1);
+}
+.app-rail[data-expanded="true"] > .app-rail-panel {
+  transform: none;
+  opacity: 1;
+}
+
+@supports (transition-timing-function: linear(0, 1)) {
+  .app-prompt-bar {
+    transition: border-radius var(--app-motion-spring-default-spatial-duration)
+      var(--app-motion-spring-default-spatial);
+  }
+  .app-rail {
+    transition: width 0s linear var(--app-motion-spring-default-spatial-duration);
+  }
+  .app-rail[data-expanded="true"] {
+    transition: width 0s;
+  }
+  .app-rail-panel {
+    transition:
+      transform var(--app-motion-spring-default-spatial-duration)
+        var(--app-motion-spring-default-spatial),
+      opacity var(--app-motion-spring-fast-effects-duration) var(--app-motion-spring-fast-effects);
+  }
+}
+
+/* Narrow windows: the rail becomes a manual popover drawer, swipe or tap the scrim to close. */
+.app-drawer {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  opacity: 1;
+  transform: none;
+}
+.app-drawer {
+  transition: none;
+  z-index: 100;
+}
+.app-drawer[hidden] {
+  display: none;
+}
+.app-drawer::backdrop {
+  background: transparent;
+}
+.app-drawer-scroller {
+  display: flex;
+  height: 100%;
+  overflow-x: auto;
+  overscroll-behavior: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  background: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
+}
+.app-drawer-panel {
+  flex: none;
+  width: min(280px, 85vw);
+  height: 100%;
+  scroll-snap-align: start;
+  background: var(--md-sys-color-surface-container-low);
+  border-radius: 0 var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-large) 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.app-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+.app-drawer-title {
+  font-weight: var(--app-weight-body-strong);
+}
+.app-drawer-close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  min-width: 48px;
+  min-height: 48px;
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.app-drawer-close:hover {
+  background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+}
+.app-drawer-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.app-drawer-dismiss {
+  flex: none;
+  width: 100vw;
+  height: 100%;
+  scroll-snap-align: start;
+  border: 0;
+  background: transparent;
+}
+@supports (animation-timeline: scroll()) {
+  .app-drawer-scroller {
+    animation: app-drawer-scrim linear both;
+    animation-timeline: scroll(self inline);
+  }
+  @keyframes app-drawer-scrim {
+    from {
+      background-color: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
+    }
+    to {
+      background-color: transparent;
+    }
+  }
+}
+.app-rail-trigger:focus-visible,
+.app-drawer-dismiss:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-prompt-bar,
+  .app-rail,
+  .app-rail[data-expanded="true"],
+  .app-rail-panel {
+    transition: none;
+  }
+  .app-drawer-scroller {
+    scroll-behavior: auto;
+    animation: none;
+  }
+}
+
+/* A saved accessibility preference applies without changing the OS setting. */
+:root.reduce-motion *,
+:root.reduce-motion *::before,
+:root.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}

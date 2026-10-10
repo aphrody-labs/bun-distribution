@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aphrody-meetings"
+version = "0.1.0"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+dependencies = ["aphrody>=0.1.0"]
+classifiers = ["Operating System :: POSIX :: Linux"]
+
+[project.scripts]
+aphrody-meeting = "aphrody_meetings.pipeline:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aphrody_meetings"]
+
+[tool.uv.sources.aphrody]
+workspace = true

@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Aphrody M3 application HTTPS gateway
+After=aphrody-app-server.service
+Requires=aphrody-app-server.service
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/nginx -p %h/.local/share/aphrody/local-app/ -c %h/.config/aphrody/local-app/nginx.conf -g "daemon off;"
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,398 @@
+{
+  "schemaVersion": 1,
+  "scope": "user",
+  "units": [
+    {
+      "name": "shenron-data-tunnel",
+      "unit": {
+        "Description": "Private Shenron PostgreSQL and Redis access through Aphrody Infra",
+        "After": "network-online.target",
+        "Wants": "network-online.target"
+      },
+      "service": {
+        "WorkingDirectory": "%h/aphrody",
+        "ExecStart": "%h/.local/bin/aphrody-ssh tunnel --services shenron-pg-tunnel,shenron-redis",
+        "Restart": "on-failure",
+        "RestartSec": "5",
+        "UMask": "0077",
+        "NoNewPrivileges": "yes"
+      }
+    },
+    {
+      "name": "aphrody-local-mcp",
+      "unit": {
+        "Description": "Aphrody local native MCP and HTTP backend",
+        "After": "network-online.target",
+        "Wants": "network-online.target"
+      },
+      "service": {
+        "WorkingDirectory": "%h/aphrody",
+        "ExecStart": "%h/.local/bin/aphrody-mcp --env-file %h/.aphrody/private/mcp-environment/aphrody.json http --bind 127.0.0.1:8791",
+        "Environment": [
+          "APHRODY_AGENT_DOMAIN=aphrody",
+          "APHRODY_PROFILE=aphrody",
+          "APHRODY_HOME=%h/.aphrody",
+          "PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin"
+        ],
+        "EnvironmentFile": "%h/.aphrody/private/jobs/wsl-mcp.env",
+        "Restart": "on-failure",
+        "RestartSec": "5",
+        "UMask": "0077",
+        "MemoryHigh": "512M",
+        "MemoryMax": "1G",
+        "CPUQuota": "50%",
+        "TasksMax": "512",
+        "NoNewPrivileges": "yes"
+      }
+    },
+    {
+      "name": "aphrody-jobs-worker-wsl",
+      "unit": {
+        "Description": "Bounded persistent native Aphrody jobs worker on the owner's WSL",
+        "After": "network-online.target aphrody-local-mcp.service",
+        "Wants": "aphrody-local-mcp.service"
+      },
+      "service": {
+        "WorkingDirectory": "%h/.aphrody",
+        "ExecStart": "%h/.local/bin/aphrody job run --forever --host wsl --worker wsl-native --concurrency 2",
+        "Environment": [
+          "APHRODY_HOME=%h/.aphrody",
+          "APHRODY_AGENT_DOMAIN=aphrody",
+          "APHRODY_PROFILE=aphrody"
+        ],
+        "Restart": "on-failure",
+        "RestartSec": "10",
+        "TimeoutStopSec": "30",
+        "KillMode": "control-group",
+        "MemoryHigh": "2G",
+        "MemoryMax": "3G",
+        "CPUQuota": "200%",
+        "TasksMax": "512",
+        "NoNewPrivileges": "yes",
+        "UMask": "0077"
+      }
+    },
+    {
+      "name": "aphrody-bun-hygiene",
+      "kind": "oneshot",
+      "unit": {
+        "Description": "Aphrody Bun version policy and package-manager hygiene; upgrades Bun only, report otherwise"
+      },
+      "service": {
+        "Nice": "10",
+        "ExecStart": "%h/.local/bin/aphrody-bun-hygiene"
+      },
+      "timer": {
+        "description": "Daily Aphrody Bun version and hygiene check",
+        "OnCalendar": "*-*-* 05:30:00",
+        "RandomizedDelaySec": "30m"
+      }
+    },
+    {
+      "name": "aphrody-kernel",
+      "unit": {
+        "Description": "Aphrody Linux kernel control plane"
+      },
+      "service": {
+        "ExecStart": "%h/.local/bin/aphrody kernel serve --no-browser",
+        "Restart": "on-failure",
+        "RestartSec": "1",
+        "Environment": [
+          "APHRODY_AGENT_DOMAIN=aphrody",
+          "PATH=%h/.local/bin:%h/.bun/bin:%h/.cargo/bin:/usr/local/bin:/usr/bin:/bin",
+          "APHRODY_AI_MCP_BIN="
+        ]
+      }
+    },
+    {
+      "name": "aphrody-shenron-embed",
+      "unit": {
+        "Description": "Aphrody native multilingual E5 embeddings for the Shenron RAG",
+        "After": "network-online.target"
+      },
+      "service": {
+        "ExecStart": "%h/.local/bin/aphrody-embed serve --host 127.0.0.1 --port 8085 --threads 4",
+        "Restart": "on-failure",
+        "RestartSec": "5",
+        "UMask": "0077",
+        "NoNewPrivileges": "yes"
+      }
+    },
+    {
+      "name": "aphrody-source-sync",
+      "unit": {
+        "Description": "Aphrody source workspace synchronisation",
+        "Documentation": "file://%h/aphrody/README.md",
+        "After": "network-online.target",
+        "Wants": "network-online.target",
+        "ConditionPathExists": "%h/aphrody/scripts/tools/workspace/source-sync.ts"
+      },
+      "service": {
+        "WorkingDirectory": "%h/aphrody",
+        "Environment": "PATH=%h/.local/bin:%h/.bun/bin:%h/.cargo/bin:/usr/local/bin:/usr/bin:/bin",
+        "ExecStart": "%h/.bun/bin/bun scripts/tools/workspace/source-sync.ts --apply --watch --interval 60 --repo aphrody --repo iecode",
+        "Restart": "always",
+        "RestartSec": "10s",
+        "Nice": "15",
+        "CPUQuota": "20%",
+        "MemoryMax": "512M",
+        "NoNewPrivileges": "true",
+        "PrivateTmp": "true"
+      }
+    },
+    {
+      "name": "aphrody-ai-http",
+      "unit": {
+        "Description": "Aphrody AI HTTP (Shenron /api/v1/shenron, managed llama.cpp chat, loopback only)",
+        "Documentation": "file://%h/aphrody/docs/plans/ai/native-integration-master.md"
+      },
+      "service": {
+        "WorkingDirectory": "%h/aphrody",
+        "#1": "llama-server, aphrody-llama-daemon and aphrody are resolved from the user bin dir.",
+        "Environment": "PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin",
+        "#2": "Loopback only. Shenron reads APHRODY_AI_HTTP_URL / APHRODY_AI_HTTP_TOKEN from the same file.",
+        "ExecStart": "%h/.local/bin/aphrody-mcp http --bind 127.0.0.1:8789",
+        "#3": "Outside the repository: APHRODY_AI_HTTP_TOKEN, APHRODY_SHENRON_PRODUCTION_READY=1,",
+        "#4": "APHRODY_AI_CHAT_MODEL (catalog id; the managed llama-server daemon is planned per GPU),",
+        "#5": "optional APHRODY_SHENRON_LLM_FALLBACK=gemini-web.",
+        "EnvironmentFile": "%h/.aphrody/private/shenron/ai-http.env",
+        "Restart": "on-failure",
+        "RestartSec": "5",
+        "UMask": "0077",
+        "NoNewPrivileges": "yes",
+        "TasksMax": "1024",
+        "StandardOutput": "journal",
+        "StandardError": "journal"
+      }
+    },
+    {
+      "name": "aphrody-pc-mcp-forward",
+      "unit": {
+        "Description": "Persistent native Aphrody SSH forward to the authenticated PC MCP over WireGuard",
+        "After": "network-online.target",
+        "Wants": "network-online.target",
+        "StartLimitIntervalSec": "0"
+      },
+      "service": {
+        "ExecStart": "%h/.local/bin/aphrody ssh tunnel --catalog %h/.aphrody/private/connectivity/service-catalog.json --services owner-wsl-mcp --offset 10000",
+        "Restart": "on-failure",
+        "RestartSec": "30",
+        "RestartSteps": "5",
+        "RestartMaxDelaySec": "900",
+        "UMask": "0077",
+        "NoNewPrivileges": "yes"
+      }
+    },
+    {
+      "name": "aphrody-host-bridge@",
+      "unit": {
+        "Description": "Aphrody native Hyper-V tunnel to %i",
+        "Requires": "aphrody-kernel.service",
+        "After": "aphrody-kernel.service"
+      },
+      "service": {
+        "ExecStart": "%h/.local/bin/aphrody host-service --config %h/.config/aphrody/host-bridge/%i.json",
+        "Restart": "on-failure",
+        "RestartSec": "1"
+      }
+    },
+    {
+      "name": "shenron-agent-home-drive-sync",
+      "unit": {
+        "Description": "Shenron dbfr read-only native Markdown Drive projection and memory reconciliation",
+        "After": "network-online.target",
+        "Wants": "network-online.target",
+        "ConditionPathExists": [
+          "%h/.aphrody/workspaces/dbfr",
+          "%h/aphrody/.env"
+        ]
+      },
+      "service": {
+        "WorkingDirectory": "%h/aphrody",
+        "Environment": [
+          "APHRODY_ROOT=%h/aphrody",
+          "APHRODY_AGENT_DOMAIN=dbfr",
+          "APHRODY_WORKSPACE=%h/.aphrody/workspaces/dbfr",
+          "APHRODY_AGENT_HOME=%h/.aphrody/workspaces/dbfr",
+          "PATH=%h/.local/bin:%h/.bun/bin:%h/.cargo/bin:/usr/local/bin:/usr/bin:/bin"
+        ],
+        "ExecStart": "%h/.bun/bin/bun packages/infra/workspace/src/agent-home-drive-sync.ts daemon",
+        "Restart": "on-failure",
+        "RestartSec": "30s",
+        "UMask": "0077",
+        "Nice": "15",
+        "NoNewPrivileges": "true",
+        "PrivateTmp": "true"
+      }
+    },
+    {
+      "name": "aphrody-agent-domain-sync@",
+      "unit": {
+        "Description": "Claude Codex agy %i domain session and memory ingestion",
+        "ConditionPathExists": "%h/.aphrody/workspaces/%i/AGENTS.md"
+      },
+      "service": {
+        "WorkingDirectory": "%h/aphrody",
+        "Environment": [
+          "APHRODY_AGENT_DOMAIN=%i",
+          "APHRODY_PROFILE=%i",
+          "APHRODY_WORKSPACE=%h/.aphrody/workspaces/%i"
+        ],
+        "ExecStart": "%h/.local/bin/aphrody ai sync-sessions --watch --interval-secs 30 --json --shared-workspace %h/aphrody",
+        "Restart": "on-failure",
+        "RestartSec": "10",
+        "UMask": "0077",
+        "Nice": "10",
+        "StandardOutput": "null",
+        "StandardError": "journal"
+      }
+    },
+    {
+      "name": "aphrody-app-ui",
+      "unit": {
+        "Description": "Aphrody M3 application HTTPS gateway",
+        "After": "aphrody-app-server.service",
+        "Requires": "aphrody-app-server.service"
+      },
+      "service": {
+        "ExecStart": "/usr/sbin/nginx -p %h/.local/share/aphrody/local-app/ -c %h/.config/aphrody/local-app/nginx.conf -g \"daemon off;\"",
+        "ExecReload": "/bin/kill -HUP $MAINPID",
+        "Restart": "on-failure",
+        "RestartSec": "3",
+        "UMask": "0077",
+        "NoNewPrivileges": "yes"
+      }
+    },
+    {
+      "name": "shenron-trained-artifact-sync",
+      "kind": "oneshot",
+      "unit": {
+        "Description": "Verified resumable backup of dbfr Shenron trained models and datasets",
+        "After": "network-online.target",
+        "Wants": "network-online.target",
+        "ConditionPathExists": [
+          "%h/aphrody/.env",
+          "%h/.aphrody/private/shenron/home/models"
+        ],
+        "StartLimitIntervalSec": "900",
+        "StartLimitBurst": "5"
+      },
+      "service": {
+        "WorkingDirectory": "%h/aphrody",
+        "Environment": "PATH=%h/.local/bin:%h/.bun/bin:%h/.cargo/bin:/usr/local/bin:/usr/bin:/bin",
+        "ExecStart": "%h/.bun/bin/bun --env-file=%h/aphrody/.env packages/google/google/src/drive-model-sync.ts",
+        "TimeoutStartSec": "12h",
+        "Restart": "on-failure",
+        "RestartSec": "60s",
+        "UMask": "0077",
+        "Nice": "15",
+        "NoNewPrivileges": "true",
+        "PrivateTmp": "true"
+      },
+      "timer": {
+        "description": "Daily dbfr Shenron trained artifact backup",
+        "OnBootSec": "5min",
+        "OnCalendar": "*-*-* 04:00:00"
+      }
+    },
+    {
+      "name": "aphrody-app-server",
+      "unit": {
+        "Description": "Aphrody local native application backend",
+        "After": "network-online.target aphrody-kernel.service",
+        "Wants": "aphrody-kernel.service"
+      },
+      "service": {
+        "WorkingDirectory": "%h/aphrody",
+        "ExecStart": "%h/.local/share/aphrody/local-app/current/bin/aphrody app-server --http --addr 127.0.0.1:8765",
+        "Environment": [
+          "APHRODY_AGENT_DOMAIN=aphrody",
+          "PATH=%h/.local/share/aphrody/local-app/current/bin:%h/.local/bin:/usr/local/bin:/usr/bin:/bin"
+        ],
+        "Restart": "on-failure",
+        "RestartSec": "3",
+        "UMask": "0077"
+      }
+    },
+    {
+      "name": "aphrody-web",
+      "unit": {
+        "Description": "Aphrody Web CDP engine (Obscura, loopback only)",
+        "Documentation": "file://%h/aphrody/docs/operations/web/AUTOMATION.md"
+      },
+      "service": {
+        "WorkingDirectory": "%h/aphrody",
+        "#1": "Loopback only. Clients attach through APHRODY_BROWSER_CDP_URL=ws://127.0.0.1:9222/devtools/browser.",
+        "#2": "Local fixtures need OBSCURA_ALLOW_PRIVATE_NETWORK=1, which is deliberately NOT set here.",
+        "ExecStart": "%h/.local/bin/aphrody-web launch --host 127.0.0.1 --port 9222",
+        "#3": "Optional, outside the repository: OBSCURA_CDP_TOKEN, OBSCURA_PROXY and other secrets.",
+        "EnvironmentFile": "-%h/.config/aphrody/web.env",
+        "Restart": "on-failure",
+        "RestartSec": "5",
+        "UMask": "0077",
+        "NoNewPrivileges": "yes",
+        "MemoryMax": "4G",
+        "TasksMax": "512",
+        "StandardOutput": "null",
+        "StandardError": "journal"
+      }
+    },
+    {
+      "name": "shenron-rag-sync",
+      "kind": "oneshot",
+      "unit": {
+        "Description": "Refresh the full Shenron editorial corpus in the Aphrody RAG",
+        "After": "shenron-data-tunnel.service aphrody-shenron-embed.service aphrody-ai-http.service",
+        "Requires": "shenron-data-tunnel.service aphrody-shenron-embed.service aphrody-ai-http.service"
+      },
+      "service": {
+        "WorkingDirectory": "%h/src/shenron",
+        "Environment": "PATH=%h/.local/bin:%h/.bun/bin:/usr/local/bin:/usr/bin:/bin",
+        "EnvironmentFile": "%h/.aphrody/private/shenron/ai-http.env",
+        "ExecStart": "%h/.bun/bin/bun packages/pipeline/scripts/rag-sync-aphrody.ts --toutes --appliquer --report=%h/.aphrody/workspaces/dbfr/indexes/shenron-rag-latest.json",
+        "TimeoutStartSec": "infinity",
+        "UMask": "0077",
+        "NoNewPrivileges": "yes"
+      },
+      "timer": {
+        "description": "Keep the Shenron editorial RAG fresh",
+        "OnBootSec": "2min",
+        "OnUnitInactiveSec": "15min"
+      }
+    },
+    {
+      "name": "aphrody-supabase",
+      "kind": "oneshot",
+      "unit": {
+        "Description": "Aphrody self-hosted Supabase stack (docker compose, WSL dev)",
+        "Documentation": "file://%h/aphrody/docs/operations/infra/supabase-wsl-docker.md",
+        "After": "default.target"
+      },
+      "service": {
+        "RemainAfterExit": "yes",
+        "WorkingDirectory": "%h/.aphrody/services/supabase",
+        "ExecStart": "/bin/sh %h/.aphrody/services/supabase/start.sh start",
+        "ExecStop": "/bin/sh %h/.aphrody/services/supabase/start.sh stop",
+        "TimeoutStartSec": "600",
+        "TimeoutStopSec": "180"
+      },
+      "install": {
+        "WantedBy": "default.target"
+      }
+    }
+  ],
+  "dropIns": [
+    {
+      "unit": "aphrody-kernel.service",
+      "name": "local-app.conf",
+      "service": {
+        "ExecStart": [
+          "",
+          "%h/.local/share/aphrody/local-app/current/bin/aphrody-kernel serve --no-browser"
+        ],
+        "Environment": "PATH=%h/.local/share/aphrody/local-app/current/bin:%h/.local/bin:/usr/local/bin:/usr/bin:/bin"
+      },
+      "comment": "Preserve the existing kernel unit and endpoint; select the verified local release."
+    }
+  ]
+}

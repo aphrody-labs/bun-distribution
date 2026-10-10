@@ -1,0 +1,9 @@
+# `runtime:*` virtual modules of the YOLO native runtime SDK
+preload = ["./scripts/preload.ts", "@aphrody/runtime-sdk/preload"]
+
+[test]
+preload = ["./scripts/preload.ts", "@aphrody/runtime-sdk/preload"]
+timeout = 10000
+
+[install]
+exact = true

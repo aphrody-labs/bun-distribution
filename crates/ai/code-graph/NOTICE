@@ -1,0 +1,11 @@
+aphrody-code-graph
+Copyright 2026 aphrody contributors, licensed under Apache-2.0.
+
+This crate re-implements, in Rust, the concepts and the `graph.json` interchange format of
+Graphify (https://github.com/Graphify-Labs/graphify, branch v8, Apache-2.0, with LICENSE,
+LICENSE-MIT and NOTICE files in the upstream repository): code nodes, typed edges with
+EXTRACTED / INFERRED / AMBIGUOUS confidence, communities, god nodes, and the query, path and
+explain operations. No Graphify source file is copied verbatim; behaviours are compared with the
+installed Graphify package, used only as a parity oracle in tests, until parity is proven.
+Statement of changes: native Rust implementation, storage in the aphrody home database, no
+language-model labelling and no network access.

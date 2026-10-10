@@ -1,0 +1,44 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+# Aphrody domain qualification, 2026-10-09
+
+Native Windows observations through the installed `aphrody` capability owner and public DNS/HTTPS. Initial qualification was read-only. The subsequent scoped site apply is recorded below.
+
+## Verified public behavior
+
+- `aphrody ovh status`: authenticated EU application-key profile; `aphrody.com` is configured. Authentication values were not read or copied.
+- Authoritative nameservers: `dns200.anycast.me`, `ns200.anycast.me`; apex A `51.255.162.6`; `www` CNAME `aphrody.com` (TTL 300).
+- `aphrody ovh email audit aphrody.com --profile aphrody.com`: SECURE; MX, SPF, DMARC and four DKIM selectors pass. Preserve these records.
+- Apex GET returns HTTP 200, 10,662 bytes, title, description and apex canonical. `/runtime` returns 200 with its own title, description and canonical. HTTP redirects to HTTPS. `www` serves 200 with the apex canonical.
+- Public robots.txt allows crawling and declares the canonical sitemap. The sitemap contains 362 unique routes. The first 12 routes pass the scoped audit below. The full paced 362-route audit at 19:49 UTC finds 196 missing descriptions and three duplicate-title warnings, with no HTTP failures. Duplicate pairs: `/docs/runtime/cookies` and `/docs/runtime/http/cookies`; `/docs/project/contributing` and `/contributing`; `/docs/bundler/plugins` and `/docs/runtime/plugins`. Search rankings and Core Web Vitals remain unmeasured.
+- `aphrody infra ssh exec --host vps|dbfr --cmd hostname` succeeds. Host connectivity is independent from deployment authority.
+
+## Native owner correction
+
+Installed `aphrody ovh dns info|audit` fails because the current OVH response contains `dnssecActivated`, while the native model required `isSigned`. The response reports DNSSEC active and Anycast available. `crates/infra/ovh/src/dns.rs` now accepts both spellings, retains the serialized native `isSigned` contract and rejects absent or non-boolean state. Regression tests cover enabled and disabled states in both formats. Installed CLI activation requires a rebuilt artifact; source correction alone does not repair the installed binary.
+
+## Reproducible SEO audit
+
+The Aphrody downloads/site owner now enriches `/docs/*` HTML at response time without editing the Bun documentation mirror: an absent or blank description uses the first article paragraph, whitespace-normalized, entity-decoded, escaped and bounded to 160 characters. Maintained descriptions remain intact. Document titles retain the source title and append readable route context, distinguishing the observed duplicate pairs without inventing alias redirects. HTML transformations read the source file instead of stale precompressed variants; other resources retain existing compression behavior. HEAD stays bodyless. Sixteen focused SEO and existing server tests (86 assertions), scoped strict TypeScript, oxlint and oxfmt pass. Twelve live pages with missing descriptions were fetched and transformed locally: 12/12 gain a description. This is local consumer evidence; the deployed service has not yet received the change.
+
+```powershell
+bun scripts/audit/live-domain-seo.ts https://aphrody.com 12
+```
+
+The read-only audit checks public nameservers/A records, sitemap discovery, sampled route status, HTML content type, title uniqueness, description, self-referencing canonical, language, H1 and noindex declarations. The optional route limit is 1–500; requests are sequential, paced by 100 ms below the declared nginx rate limit and have a 15-second timeout. Errors set exit code 1; warnings remain visible. It does not use credentials or browser cookies. An initial unpaced full audit triggered HTTP 503 rate limiting; the paced rerun resolves those transport failures while retaining genuine metadata findings.
+
+## Cloudflare and OVH unification plan
+
+The session exposes no Cloudflare DNS tool, and the configured Aphrody/Yolo plugin homes contain no callable Cloudflare DNS owner in the installed Infra CLI. No Cloudflare environment credential names are present. This is a capability/access limitation, not proof that the owner has no Cloudflare account. The explicitly requested Cloudflare plugin cannot be used in this execution context under the configured-plugin restriction.
+
+1. Establish a callable, authenticated Cloudflare account/zone capability; retain OVH as registrar. Verify the precise zone and access without copying tokens.
+2. Export the OVH zone to the protected infrastructure backup store and verify its checksum. Inventory all record types, mail records, delegated subdomains and DNSSEC DS records; compare the Cloudflare candidate zone before changing delegation.
+3. Choose one authoritative DNS provider. Do not maintain competing writable zones. Keep mail records DNS-only and preserve SPF/DMARC/DKIM targets. Proxy web records only after origin TLS and route parity qualify.
+4. Follow the providers' DNSSEC migration sequence before changing nameservers; [OVH's DNSSEC guide](https://docs.ovhcloud.com/en/guides/web-cloud/domains/dns-dnssec) documents the dependency between DNSSEC and nameserver changes. Keep a documented rollback and verify parent DS/delegation as well as authoritative answers.
+5. Prepare a cataloged permanent `www`→apex redirect preserving path/query, validate certificate coverage and nginx configuration, then plan/apply through Infra. The existing canonical hint is present; redirect activation is not claimed.
+6. Run the full bounded sitemap audit, browser performance/accessibility measurements and origin/provider health checks after activation. SEO improvement requires subsequent measured crawl/indexing evidence.
+
+Host apply remains governed by [Cloud-ready setup](../cloud/CLOUD-READY.md). Concurrent native DNS/TLS, certificate and site-hosting work retains its existing claims.
+
+## Scoped SEO activation
+
+Commit `f9caa023f3` was pushed normally to the existing private remote. The declared downloads/site service received only its server source through native Infra SFTP, then the existing Compose downloads service was recreated through `aphrody infra ssh exec --host dbfr`. Before replacement, the old source SHA-256 was checked and its preserved backup was checksum-verified. No DNS, certificates, ingress or databases changed. The service health reports nine published artifacts. The paced public audit after activation checks all 362 sitemap URLs and reports zero findings, including the previously missing descriptions and duplicate titles. This validates public metadata responses; rankings, Core Web Vitals and homepage reskin deployment remain separate.

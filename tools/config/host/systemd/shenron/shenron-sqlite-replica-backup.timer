@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily backup of the Shenron SQLite replica on DBFR
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 UTC
+Persistent=true
+RandomizedDelaySec=180
+
+[Install]
+WantedBy=timers.target

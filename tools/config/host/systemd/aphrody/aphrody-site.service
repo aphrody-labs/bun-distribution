@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: Apache-2.0
+# VPS loopback origin behind nginx (aphrody.com.conf), 2026-10-10.
+[Unit]
+Description=Aphrody native read-only product site
+After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=aphrody-site
+Group=aphrody-site
+WorkingDirectory=/home/ubuntu/apps/aphrody/current
+ExecStart=/home/ubuntu/apps/aphrody/current/bin/aphrody-site --root /home/ubuntu/apps/aphrody/current --bind 127.0.0.1:8083
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+KillSignal=SIGINT
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=tmpfs
+BindReadOnlyPaths=/home/ubuntu/apps/aphrody
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

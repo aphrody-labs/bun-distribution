@@ -1,0 +1,160 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+# Aphrody Web layer: architecture, owners, consumers and gaps
+
+> Qualification du 2026-10-09 : les owners IA retirés du checkout sont signalés « not in repo ». Les constats datés ci-dessous ne prouvent pas leur présence ou leur fonctionnement actuel.
+
+Inventory of 2026-10-01, taken from the working tree (not from historical plans).
+Contract of the public surfaces: [`docs/apis/web/WEB-SERVICE-CONTRACT.md`](../../apis/web/WEB-SERVICE-CONTRACT.md).
+Configuration: [`tools/config/web.json`](../../../tools/config/web.json). Operations:
+[`docs/operations/web/AUTOMATION.md`](../../operations/web/AUTOMATION.md).
+Guides: [smoke and crawl](../../guides/web/WEB-SMOKE-AND-CRAWL.md),
+[debugging Tauri apps](../../guides/web/TAURI-DEBUG.md),
+[crawlable UI](../../guides/web/CRAWLABLE-UI.md).
+
+## Layers
+
+```text
+ Product interfaces        Shenron    RG / Achillea    Koharu    CLI (crates/infra/aphrody)    kernel / OS    desktop apps (aphrody-app)
+                              |            |              |            |                |                 |
+ Access surfaces       -------+------------+--------------+------------+----------------+-----------------+--------
+   Bun client           @aphrody/agent-browser  (service, engine, config, cdp)      @aphrody/web-test   @aphrody/x
+   MCP                  aphrody-mcp (aphrody_browser_*, aphrody_web_crawl; aphrody_tauri_* desktop webviews)
+   CLI                  aphrody-web  launch | fetch | scrape | crawl          aphrody web  (crates/infra/aphrody; `bxc` is a name of the aphrody binary)
+   Rust                 aphrody-web-service (fetch, session)  aphrody-web-index    (desktop: `WebSubsystem` in crates/ui/app)
+                              |
+ Service contract      aphrody-web-service   WebSession (JSON tools) | page_artifact | validate_page_url | flags
+                              |
+ Extraction / crawl    aphrody-web-extract (single extractor)   aphrody-web-crawl (frontier, robots, sitemap)
+                       aphrody-web-detect   aphrody-web-chromium (cookie reader, redacted)   (aphrody-web-extract also hosts `media`)
+                              |
+ Engine (Obscura)      obscura-cdp   obscura-mcp   obscura-browser   obscura-js (V8)   obscura-net   obscura-dom   obscura-render (+ taffy)
+                              |
+ Native webviews       Tauri 3 + tauri-runtime-cef (CEF, GTK 4; the one desktop runtime)  <-- debug bridge: crates/ui/tauri-wrap `debug` (feature gated)
+```
+
+Rules that hold across the layers:
+
+- One engine per role: Obscura/V8 renders remote pages; N2B (OXC) analyses source
+  statically; Bun runs tooling; Tauri/CEF hosts trusted desktop UI. Remote pages
+  never run in the desktop webview, and the desktop webview is never a crawler
+  (see `crates/web/web-service/src/lib.rs`).
+- One extractor: `aphrody-web-extract` (`extract_main`, `html_to_markdown`).
+- One crawl scheduler: `aphrody-web-crawl` (`Frontier`, `crawl_bounded`).
+- One configuration file: `tools/config/web.json`.
+
+## Rust crates (`crates/web`)
+
+| Crate (package)                           | Lines of Rust | Role                                                                          | Direct consumers (workspace)                                        |
+| ----------------------------------------- | ------------: | ----------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `obscura-render` (+ `taffy`)              |  68 787 / 23 004 | Layout and paint for screenshots/PDF; `taffy` replaces the registry crate by `[patch]` | `obscura-js` (feature `render`)                                     |
+| `obscura-js`                              |        29 518 | V8 runtime (deno_core), DOM/fetch/XHR bindings, V8-side Markdown              | `obscura-browser`, `obscura-cdp`, `aphrody-web-engine`              |
+| `obscura-cdp`                             |        19 962 | CDP server (Accessibility, DOM, Input, Network, Page, PDF, Runtime, Target, ...) | `aphrody-web-engine`                                                |
+| `obscura-browser`                         |        10 548 | Page/context lifecycle, navigation, profiles                                  | `obscura`, `obscura-cdp`, `obscura-mcp`, `aphrody-web-engine`       |
+| `obscura-net`                             |         6 035 | HTTP client, SSRF guard, cookies, robots (prefix only)                        | `aphrody-web-crawl`, engine crates, ai tools                       |
+| `obscura-dom`                             |         5 136 | html5ever DOM                                                                 | extract, crawl, service, engine crates                      |
+| `obscura-mcp`                             |         3 602 | MCP tool set (35 tools, 37 with `render`); library only, no transport         | `aphrody-web-service` (`aphrody` module)                            |
+| `obscura`                                 |         2 188 | Facade over the engine                                                        | `crates/infra/aphrody`, `aphrody-web-service`, `crates/google/google`               |
+| `aphrody-web-service`                     |         1 396 | Service contract: `WebSession`, `page_artifact`, validators; native `fetch` (profile to Markdown with itinerary) and shared browser `session` (typed helpers) | `crates/infra/aphrody`, `aphrody-web-engine`, ai agent-tools/mcp/mcp-client/tools |
+| `aphrody-web-engine`                      |         1 421 + crawl | Binaries `aphrody-web` (launch, fetch, scrape, crawl) and `aphrody-web-worker` | none in Cargo; spawned by Bun clients, tests, systemd             |
+| `aphrody-web-extract`                     |         5 588 + 1 039 (`media`) | Main-content extraction, Markdown, chunking, SimHash, URL normalisation; `media` module: media candidates, HLS, embed resolution (formerly `aphrody-web-media`) | CLI, crawl, service, ai mcp/tools, interop ffi |
+| `aphrody-web-crawl`                       |         2 026 | SQLite frontier, bounded crawler, robots, sitemap, revisit policy             | `crates/infra/aphrody`, `crates/ai/mcp`, `aphrody-web-engine`                   |
+| `aphrody-web-index`                       |         4 234 | Page index                                                                    | `crates/interop/ffi` only                                           |
+| `aphrody-web-detect`                      |         1 132 | Framework detection                                                           | `crates/infra/aphrody`, `crates/ai/mcp`                                         |
+| `aphrody-web-chromium`                    |           280 | Chromium profile discovery and cookie reader (values redacted from `Debug`)   | `crates/interop/ffi` only                                           |
+| `aphrody-x`                               |  7 655 + 326 (`algorithm`) | X (Twitter) client; `algorithm` module: For You ranking (formerly `aphrody-x-algorithm`) | CLI, ai mcp, interop ffi, `@aphrody/x`                              |
+| `sd-server` (`drive-server`)              |           774 | Excluded from the workspace; isolated                                         | none                                                                |
+
+Consolidation of 2026-10-01 (Rust workspace, dependency rule: a merge must not add a
+dependency to any dependent): `aphrody-web-media` became `aphrody_web_extract::media`,
+`aphrody-x-algorithm` became `aphrody_x::algorithm`, and the `aphrody-web` facade crate was
+removed (`WebSubsystem` now lives in `crates/ui/app`, its only consumer; the re-exports of
+bridge, extract, index, service and `obscura` had no user). Kept separate on purpose: `aphrody-web-chromium` (`rookie-cookies` alone is 182 third-party packages and
+only `crates/interop/ffi` needs them; no `crates/web` crate that has other dependents can host
+it without giving them 40 to 71 extra packages).
+
+2026-10-05, `bxc` and `n2b` absorbed (one binary, see
+bxc-n2b-unification-2026-10-05):
+`aphrody-web-bridge` was removed. Its executable client, resolvers and Actor driver are gone (`bxc` is a
+name of the `aphrody` binary), its DOM facade was inlined into its only consumer, and what remained, page
+`fetch` and the shared browser `session`, moved into `aphrody-web-service`. The merge that was refused on
+2026-10-01 is acceptable now because `aphrody-translate` and `dirs` (the dependencies that made it costly) are
+not carried over: measured on the resolved graph, `aphrody-web-engine` gains one first-party crate
+(`aphrody-obscura`, the facade over crates it already has) and no third-party package; `aphrody-mcp-client`
+loses 44 packages, `aphrody-messaging` 275, `aphrody-tools` 38 and `aphrody-google` 22.
+
+Owner of all of the above: the web domain (`crates/web`). Imported crates
+(`obscura-*`, `taffy`) keep upstream names and attribution; `obscura-mcp` keeps the
+upstream lint relaxations declared in its manifest.
+
+## Bun packages (`packages/web`)
+
+| Package                | Surface                                                                                                   | Consumers                                                                                              |
+| ---------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `@aphrody/agent-browser` | `AgentBrowser`/`AgentPage`/`WebCdpPage` (CDP), `/service`, `/engine`, `/config`, `/test-preload`; command line `yolo browser` | `iecode/packages/rg/cron` (`web-cdp.ts`), `packages/rg/inagle` (not in repo) (`web-cdp.ts`), `@aphrody/web-test`, `tools/config/pipeline.json` |
+| `@aphrody/web-test`    | Playwright-compatible runner on the same engine; site presets (Rose Griffon, Shenron, Aphrody UI)         | `tools/config/pipeline.json` only; live audits under `scripts/audit/live` still point at a retired sibling checkout   |
+| `@aphrody/x`           | Headless X client, function tools                                                                         | `iecode/packages/rg/cron`, ancien `packages/ai/xai` (not in repo), `packages/fut/*` (some imports undeclared, see gaps)           |
+
+## Public surfaces
+
+| Surface        | Where                                                                                       | Notes                                                                                              |
+| -------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| CLI            | `aphrody-web launch\|fetch\|scrape\|crawl\|chrome-path`                                     | `crawl` added 2026-10-01; contract in the API document                                             |
+| CDP            | `ws://127.0.0.1:9222/devtools/browser`, `/json/version`, `/json/list`                       | Default port 9222; workers on `port + 1 + i`; tests use an ephemeral port                          |
+| MCP (remote)   | `aphrody-mcp` tools `aphrody_browser_*`, `aphrody_web_crawl`, `universal_web_fetch`         | Built from `WebSession::tools()`; wired through `aphrody-mcp` (plugin `plugins/aphrody`)    |
+| MCP (desktop)  | `aphrody-mcp`: 14 `aphrody_tauri_*`/`aphrody_webview_*` tools, forwarded to the per-user kernel | Only the Aphrody apps that register `TauriWebviewSubsystem`; see the Tauri debug guide             |
+| Rust           | `aphrody_web_service::WebSession`, `page_artifact`, `aphrody_web_crawl::crawl_bounded`      | Stable JSON shapes are the contract                                                                |
+| Bun            | `@aphrody/agent-browser/service`                                                            | One-shot calls spawn the CLI with a timeout                                                        |
+
+## Configuration and state
+
+| What                         | Where                                                                                                       |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Layered configuration        | `tools/config/web.json` (read by `@aphrody/agent-browser/config`), environment, flags                              |
+| Engine binary                | `APHRODY_WEB_BIN`, `target/{debug,release}/aphrody-web`, `~/.local/bin/aphrody-web`                         |
+| CDP endpoint                 | `APHRODY_BROWSER_CDP_URL` (alias `APHRODY_CDP_URL`); tests: `APHRODY_WEB_TEST_CDP_URL`                       |
+| Engine tuning                | `OBSCURA_*` (30+ variables: private network, proxy, timeouts, body cap, tokens, profiles, snapshots)        |
+| User agents                  | `aphrody-web-service` fetch Chrome/146 (Windows), engine Chrome/145 (Linux), crawl `AphrodyWeb/1.0`        |
+| Robots                       | off in `obscura-browser` and `crawl_bounded` by default; on in `aphrody_web_crawl` (MCP) and `tools/config/web.json` |
+| Timeouts                     | fetch 30 s, scrape 60 s, crawl 300 s, MCP call 180 s, HTTP client 30 s, service fetch 30 s / 2 MiB          |
+| Storage                      | `~/.aphrody/web` (frontier, reports), `~/.aphrody/x-*` (X session/store); secrets in protected stores only |
+| Service unit                 | yolo unit catalog `aphrody-web.service` (template, not installed)                                         |
+
+## Who uses aphrody-web today
+
+| Product interface      | Uses the web layer?     | How                                                                                                                                       |
+| ---------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| RG (cron, inagle)      | Yes, partly             | `@aphrody/agent-browser` `WebCdpPage` for rendering, then `cheerio` for parsing (about 14 files); still `scripts/rg/inagle/pipeline/*` (not in repo) cheerio |
+| Achillea bot           | No                      | axios REST clients (Twitch, Challonge), not scraping; nothing to migrate                                                                  |
+| Shenron                | Mostly bypassed         | `curl`/regex scripts (`shenron:apps/site/scripts`, `shenron:apps/bot/scripts`), legacy `bxc` spawn in `shenron:packages/pipeline`, client of a retired HTTP API |
+| Koharu                 | No                      | CEF with remote debugging port 4000 in debug builds; no web-layer dependency                                                              |
+| CLI (`crates/infra/aphrody`)       | Yes                     | `aphrody web` over `aphrody-web-service`, `-crawl`, `-extract` (including `media`), `-detect`; `aphrody bxc` is the compatibility alias of the same binary (parity table in the migration record); `aphrody google` runs in process |
+| Kernel / OS            | Indirect                | `aphrody-mcp` hosts the kernel in process; optional plugin `aphrody-browser-mcp` has no crate that builds it                             |
+| Desktop app            | Yes                     | `crates/ui/app` defines and registers `WebSubsystem` (the former `aphrody-web` facade crate); Tauri debug tools live in the same kernel |
+| AI tools               | Partly                  | `crates/ai/mcp` native browser; `crates/ai/tools` (not in repo) `web_fetch` keeps a private `reqwest` scraping client                                   |
+
+## Gaps
+
+Resolved in this change set are marked `FIXED`; the rest are open.
+
+1. FIXED. `aphrody-web` had no crawl command although `aphrody-web-crawl` existed; `aphrody-web crawl` now wraps `crawl_bounded`.
+2. FIXED (compiled, not exercised). `launch --workers N` spawned children that outlived the load balancer; a guard now kills and reaps them on shutdown and every exit path.
+3. FIXED. Test harnesses relied on `process.on("exit")`, which `bun test` does not run, leaking one engine per run; the engine lifecycle is now owned by `@aphrody/agent-browser/engine` and a `[test] preload` hook.
+4. FIXED (written, not yet compiled). `Cookie` derived `Debug` and printed cookie values; a manual `Debug` now redacts them.
+5. FIXED. `cargo clippy -D warnings` failed on three lints in `aphrody-translate` (a former dependency of the removed `aphrody-web-bridge`).
+6. OPEN. `aphrody-web-engine` has no Cargo consumer and nothing builds `target/debug/aphrody-web` (not in repo) in the default gates; `web:verify` builds it explicitly.
+7. DONE 2026-10-05. The executable bridge is deleted: `aphrody-web-bridge` no longer exists, no code resolves or spawns a `bxc` executable (`BXC_BIN` is gone), and `bxc`, `bxc-mcp`, `aphrody bxc` map their arguments to the unified commands.
+8. DONE 2026-10-05. `obscura-mcp` keeps only the tool library (upstream stdio/HTTP loops removed); MCP reaches the engine only through `aphrody-mcp`. The kernel's optional `aphrody-browser-mcp` plugin has no builder.
+9. OPEN. Duplicates: HTML to Markdown (V8-side `obscura-js/src/markdown.rs` and native `aphrody-web-extract`), robots.txt (`obscura-net/src/robots.rs` prefix-only and `aphrody-web-crawl/src/robots.rs`), three HTTP stacks (`ObscuraHttpClient`, `aphrody-web-service` `fetch.rs`, `crates/ai/tools` (not in repo) `ScrapingClient`); the second Google result parser (the bridge search client) is deleted, `crates/google/google/src/search/serp.rs` is the one.
+10. OPEN. Product code outside the layer: `crates/ai/tools/src/builtin/scraping.rs` (not in repo) and `web_fetch.rs` (trivially replaceable by `aphrody_web_service::fetch::fetch`), `crates/interop/ffi/src/web/text.rs` (hand-rolled tag scans), `crates/compat/n2b-core/src/llmstxt/crawl.rs` (not in repo) (external `siteone` crawler, replaceable by `aphrody_web_crawl`). The unused `scraper` dependency of `crates/infra/aphrody` and `aphrody-command` was removed on 2026-10-05.
+11. OPEN. TypeScript scraping that bypasses the layer: cheerio over rendered HTML in `iecode/packages/rg/cron` and `packages/rg/inagle` (not in repo); curl/regex in Shenron scripts; `undici` imports without a declaration; a client of the retired `aphrody-web-api` (`shenron:packages/pipeline/src/aphrody/web.ts`).
+12. OPEN. Undeclared dependencies: `@aphrody/x` imported by `packages/fut/fut` (not in repo) (resolved through tsconfig paths) and by scripts without a manifest; `iecode/scripts/rg/qa/agent-browser-rg.sh` expects the upstream native `agent-browser` CLI that `@aphrody/agent-browser` does not provide.
+13. OPEN. Stale paths to a retired sibling layout: `scripts/audit/live`, `tools/config/live-audit.json`, `tools/config/service-catalog.json` (`aphrody-web-api:3007`, retired), `tools/config/host/nginx/routes.json`, `tools/config/mcp-google-web.json` (`bxc-mcp`), `tools/config/host/systemd/aphrody/aphrody-web-api.service.example` (not in repo), `scripts/build/build-aphrody-stack-release.sh`, `packages/infra/workspace/src/ecosystem-deps.ts`, `plugins/aphrody/hooks` (not in repo) (retired sibling layout) (`apps/bxc` (not in repo)).
+14. OPEN. Docs: `docs/products/web/README.md` and several plans name crates that no longer exist (`crates/aphrody-web-*`, `aphrody-browser`, `aphrody-site`, `apps/bxc` (not in repo)); `docs/guides/web/web/NATIVE-INSTALL.md` documents `aphrody web install`, which the CLI does not have; four broken relative links in `docs/products/web`.
+15. OPEN. Tauri IPC shims and tools that call commands with no Rust handler (`m3/packages/m3-next-migrate/src/shims/tauri-ipc.ts` maps to `action_<name>`; `shenron:packages/pipeline/src/bridge/ipc.ts`; `crates/ui/app/src/desktop.rs` carries ten `#[tauri::command]` functions that are not in `generate_handler!`).
+16. OPEN. Network-dependent tests are not separated by a gate in every crate; the web gates in `web:verify` run only loopback fixtures.
+
+## Verification state
+
+See the dated section of [`PLAN.md`](../../../PLAN.md) for the numbers measured on
+2026-10-01 and the checks that were not run.

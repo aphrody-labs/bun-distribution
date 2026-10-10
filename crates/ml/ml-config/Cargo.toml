@@ -1,0 +1,21 @@
+[package]
+name = "aphrody-ml-config"
+version = "0.83.5"
+edition = "2024"
+description = "Extensible typed TOML configuration storage of the Aphrody ML base (~/.koharu/config.toml)."
+license = "MIT OR Apache-2.0"
+authors = ["Mayo Takanashi <mayo@linux.com>", "Wangchong Zhou <fffonion@gmail.com>"]
+repository.workspace = true
+keywords = ["config", "toml", "settings", "machine-learning"]
+publish = true
+[dependencies]
+anyhow = { workspace = true }
+atomicwrites = { workspace = true }
+dirs = { workspace = true }
+serde = { workspace = true }
+tokio = { workspace = true }
+toml = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

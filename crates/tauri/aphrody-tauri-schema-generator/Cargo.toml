@@ -1,0 +1,23 @@
+[package]
+name = "aphrody-tauri-schema-generator"
+description = "Hosts the schema for the Tauri configuration file."
+license = "Apache-2.0 OR MIT"
+repository.workspace = true
+version = "0.0.0"
+edition = "2024"
+[[bin]]
+name = "tauri-schema-generator"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["schema"] }
+schemars = { workspace = true, features = ["url2", "preserve_order"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+url = { workspace = true, features = ["serde"] }
+
+[lints.clippy]
+collapsible_if = "allow"
+redundant_clone = "warn"
+assigning_clones = "warn"
+or_fun_call = "warn"

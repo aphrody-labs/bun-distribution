@@ -1,0 +1,352 @@
+{
+  "schemaVersion": 1,
+  "description": "What Aphrody needs outside its checkout, gathered into the git-ignored `.portable/` so the checkout moves to a fresh WSL, the VPS or another disk. move: the tree is renamed into .portable/ and a symlink is left behind (no copy, same filesystem). copy: small or secret files duplicated (restore copies them back with their modes). dump: produced by a command. root: read/written through sudo. Categories: essential (config, credentials, binaries), data (stores, databases, sessions); `heavy` subtrees (models, archived backups) are reported apart so a small target disk can leave them behind. Driven by `bun scripts/tools/portable/portable.ts`.",
+  "directory": ".portable",
+  "home": [
+    {
+      "path": ".aphrody",
+      "mode": "move",
+      "category": "data",
+      "heavy": ["models", "private/backups"]
+    },
+    {
+      "path": ".codex",
+      "mode": "move",
+      "category": "data"
+    },
+    {
+      "path": ".local/share/aphrody",
+      "mode": "move",
+      "category": "data"
+    },
+    {
+      "path": ".local/state/aphrody",
+      "mode": "move",
+      "category": "data"
+    },
+    {
+      "path": "aphrody-claude",
+      "mode": "move",
+      "category": "data"
+    },
+    {
+      "path": ".bxc",
+      "mode": "move",
+      "category": "data"
+    },
+    {
+      "path": ".yolo",
+      "mode": "move",
+      "category": "essential"
+    },
+    {
+      "path": ".local/lib/aphrody",
+      "mode": "move",
+      "category": "essential"
+    },
+    {
+      "path": ".claude",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".claude.json",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".agents",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".gemini",
+      "mode": "copy",
+      "category": "essential",
+      "exclude": ["tmp", "antigravity-browser-profile"]
+    },
+    {
+      "path": ".ssh",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".gnupg",
+      "mode": "copy",
+      "category": "essential",
+      "exclude": [
+        "S.gpg-agent",
+        "S.gpg-agent.browser",
+        "S.gpg-agent.extra",
+        "S.gpg-agent.ssh",
+        "S.keyboxd"
+      ]
+    },
+    {
+      "path": ".gitconfig",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".bunfig.toml",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".npmrc",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".pypirc",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".ovh.conf",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".docker/config.json",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".atuin",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".local/bin",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".cargo/bin",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".bun/bin",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".config/aphrody",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".config/aphrody-codex",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".config/nie",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".config/gh",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".config/rclone",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".config/gcloud",
+      "mode": "copy",
+      "category": "essential",
+      "exclude": ["logs"]
+    },
+    {
+      "path": ".config/neon",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".config/ovh",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".config/systemd",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".config/environment.d",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".config/nushell",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".config/atuin",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".config/helix",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".config/zed",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".config/uv",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".config/git",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".bashrc",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".profile",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".zshrc",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".starship.nu",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".zoxide.nu",
+      "mode": "copy",
+      "category": "essential"
+    },
+    {
+      "path": ".atuin.nu",
+      "mode": "copy",
+      "category": "essential"
+    }
+  ],
+  "system": [
+    {
+      "path": "/var/lib/postgresql",
+      "mode": "copy",
+      "category": "data",
+      "root": true,
+      "service": "postgresql"
+    },
+    {
+      "path": "/var/lib/redis",
+      "mode": "copy",
+      "category": "data",
+      "root": true,
+      "service": "redis-server"
+    },
+    {
+      "path": "/var/lib/docker/volumes/supabase_db-config",
+      "mode": "copy",
+      "category": "data",
+      "root": true
+    },
+    {
+      "path": "/etc/apt/sources.list.d",
+      "mode": "copy",
+      "category": "essential",
+      "root": true
+    },
+    {
+      "path": "/etc/apt/keyrings",
+      "mode": "copy",
+      "category": "essential",
+      "root": true
+    },
+    {
+      "path": "/usr/share/keyrings",
+      "mode": "copy",
+      "category": "essential",
+      "root": true
+    },
+    {
+      "path": "/etc/wsl.conf",
+      "mode": "copy",
+      "category": "essential",
+      "root": true
+    },
+    {
+      "path": "/etc/os-release",
+      "mode": "copy",
+      "category": "essential",
+      "root": false
+    }
+  ],
+  "dumps": [
+    {
+      "name": "supabase.sql",
+      "category": "data",
+      "command": ["docker", "exec", "supabase-db", "pg_dumpall", "-U", "postgres"],
+      "when": ["docker", "inspect", "-f", "{{.State.Running}}", "supabase-db"]
+    },
+    {
+      "name": "dpkg-selections.txt",
+      "category": "essential",
+      "command": ["dpkg", "--get-selections"]
+    },
+    {
+      "name": "apt-manual.txt",
+      "category": "essential",
+      "command": ["apt-mark", "showmanual"]
+    },
+    {
+      "name": "crontab.txt",
+      "category": "essential",
+      "command": ["crontab", "-l"]
+    },
+    {
+      "name": "systemd-user-enabled.txt",
+      "category": "essential",
+      "command": ["systemctl", "--user", "list-unit-files", "--state=enabled", "--no-legend"]
+    },
+    {
+      "name": "docker-images.txt",
+      "category": "essential",
+      "command": ["docker", "image", "ls", "--format", "{{.Repository}}:{{.Tag}}"]
+    },
+    {
+      "name": "bun-global.txt",
+      "category": "essential",
+      "command": ["bun", "pm", "ls", "-g"]
+    },
+    {
+      "name": "cargo-installed.txt",
+      "category": "essential",
+      "command": ["cargo", "install", "--list"]
+    },
+    {
+      "name": "uv-tools.txt",
+      "category": "essential",
+      "command": ["uv", "tool", "list"]
+    },
+    {
+      "name": "rustup-toolchains.txt",
+      "category": "essential",
+      "command": ["rustup", "toolchain", "list"]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-boq"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "Google Boq batchexecute codec shared by the Gemini web and NotebookLM clients: f.req encoder, anti-XSSI strip, length-prefixed chunk parser, wrb.fr envelope extraction."
+
+[lints]
+workspace = true
+
+[dependencies]
+serde_json = { workspace = true }

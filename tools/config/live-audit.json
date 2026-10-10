@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "owner": "aphrody-infra",
+  "purpose": "Post-deploy live audit: every public route, page, asset and server-side Next error must be clean before a release is considered done.",
+  "engine": {
+    "crawler": "aphrody-web crawl (native Rust Web engine, bounded HTTP frontier)",
+    "pageTests": "packages/web/aphrody-web-test (TestPage through Obscura CDP)",
+    "crawlReportState": "$XDG_STATE_HOME/aphrody/live-audit/<host>.json"
+  },
+  "sites": [
+    {
+      "host": "rosegriffon.fr",
+      "seeds": ["/", "/sitemap.xml", "/achillea", "/wiki", "/azalee"],
+      "maxPages": 600,
+      "maxDepth": 5,
+      "firstPartyHosts": ["rosegriffon.fr", "cdn.rosegriffon.fr", "achillea.rosegriffon.fr", "ranked.rosegriffon.fr", "api.rosegriffon.fr", "azalee.rosegriffon.fr"],
+      "serverUnits": ["rg-website"],
+      "pages": [
+        { "path": "/", "expectText": "Rose Griffon" },
+        { "path": "/achillea" },
+        { "path": "/achillea/ranked" },
+        { "path": "/achillea/ranked/leaderboard" },
+        { "path": "/achillea/clans" },
+        { "path": "/achillea/tournaments" },
+        { "path": "/achillea/casts" },
+        { "path": "/achillea/licence" },
+        { "path": "/achillea/guide" },
+        { "path": "/wiki" },
+        { "path": "/news" },
+        { "path": "/community" }
+      ]
+    },
+    {
+      "host": "aphrody.com",
+      "seeds": ["/"],
+      "maxPages": 150,
+      "maxDepth": 3,
+      "firstPartyHosts": ["aphrody.com", "cdn.aphrody.com", "nie.aphrody.com"],
+      "serverUnits": ["aphrody-site"],
+      "pages": [{ "path": "/" }],
+      "status": "retired",
+      "retiredAt": "2026-09-25",
+      "note": "aphrody-site, nie-site and their vhosts/certs were retired from vps on 2026-09-25; skip this site until Aphrody redeploys under the convergence plan"
+    },
+    {
+      "host": "dragonballfr.com",
+      "seeds": ["/"],
+      "maxPages": 300,
+      "maxDepth": 4,
+      "firstPartyHosts": ["dragonballfr.com", "bot.dragonballfr.com", "mcp.dragonballfr.com", "cdn.dragonballfr.com"],
+      "serverUnits": ["shenron-site"],
+      "pages": [{ "path": "/" }]
+    }
+  ],
+  "errorMarkers": [
+    "Application error: a server-side exception has occurred",
+    "Application error: a client-side exception has occurred",
+    "This page could not be found",
+    "Internal Server Error",
+    "NEXT_NOT_FOUND",
+    "Unhandled Runtime Error"
+  ],
+  "serverErrorPatterns": ["⨯", "EROFS", "Unhandled", "TypeError", "does not exist", "ECONNREFUSED"],
+  "ignoreAssets": ["^https://cdn\\.discordapp\\.com/avatars/", "^https://pbs\\.twimg\\.com/"]
+}

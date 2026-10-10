@@ -1,0 +1,124 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+
+# Material Web
+
+## Aphrody web composition
+
+`@aphrody/material-web` implements the `md-*` elements with Lit. Each element owns its
+behavior and scoped CSS in its shadow root. A consuming app compiles Tailwind CSS v4 once in
+its own stylesheet and supplies M3 tokens through `@aphrody/m3-theme`. CSS custom properties
+inherit into the shadow root; documented `::part()` hooks allow targeted styling without
+copying the component's internal stylesheet. The button family exposes `button`, `background`,
+`label`, `focus-ring` and `ripple` parts. Its public `--md-*-*` properties remain the primary
+theme interface.
+
+The component styles are currently generated from Sass. The migration to modern CSS is
+incremental by component family: keep Lit's static scoped styles while replacing Sass-only
+glue with native CSS features where parity can be verified. The host stylesheet is the single
+Tailwind compilation point; it is not injected into every shadow root.
+
+The Next.js example demonstrates a
+Lit button with Tailwind v4 arbitrary CSS properties and a Base UI tooltip from
+`@aphrody/m3-primitives`. Base UI is a React library, so its behavior is composed in the React
+host through `@aphrody/m3-react` wrappers. Lit elements remain usable without React or Base UI.
+React Native has its own renderer.
+
+The app's stylesheet owns the Tailwind import and source detection for component packages.
+Tailwind utilities on a custom-element host cannot select arbitrary nodes in its shadow root;
+use inherited CSS properties or the exposed parts. The example applies a Tailwind utility to
+`md-filled-button::part(label)` in its global CSS. Keep focus indication, keyboard behavior,
+accessible names and the low-vision text floor when styling these hooks.
+
+References: [Lit shadow styles](https://lit.dev/docs/components/styles/),
+[Lit React wrappers](https://lit.dev/docs/frameworks/react/),
+[Tailwind arbitrary properties](https://tailwindcss.com/docs/adding-custom-styles),
+[Tailwind source detection](https://tailwindcss.com/docs/detecting-classes-in-source-files),
+[Base UI composition](https://base-ui.com/react/handbook/composition).
+
+<img src="https://raw.githubusercontent.com/material-components/material-web/main/docs/images/material-web.gif"
+  title="Material web components"
+  alt="A collection of Material web components"
+  style="border-radius: 32px">
+
+[![Published on npm](https://img.shields.io/npm/v/%40material%2Fweb)](https://www.npmjs.com/package/@material/web)
+[![Join our Discord](https://img.shields.io/badge/discord-join%20chat-5865F2.svg?logo=discord&logoColor=fff&label=%23material)](https://lit.dev/discord/)
+[![Test status](https://github.com/material-components/material-web/actions/workflows/test.yml/badge.svg)](https://github.com/material-components/material-web/actions/workflows/test.yml)
+[![npm Downloads](https://img.shields.io/npm/dm/%40material%2Fweb?label=npm%20downloads)](https://npm-stat.com/charts.html?package=%40material%2Fweb)
+[![jsDelivr hits (npm)](https://img.shields.io/jsdelivr/npm/hm/%40material%2Fweb)](https://www.jsdelivr.com/package/npm/@material/web?tab=stats)
+
+`@material/web` is a library of
+[web components](https://developer.mozilla.org/en-US/docs/Web/Web_Components)<!-- {.external} -->
+that helps build beautiful and accessible web applications. It uses
+[Material 3](https://m3.material.io/)<!-- {.external} -->, the latest version of Google's
+open-source design system.
+
+**Note:
+[MWC is in maintenance mode pending new maintainers](https://github.com/material-components/material-web/discussions/5642).**
+
+## Resources
+
+- [Introduction](https://github.com/material-components/material-web/blob/main/docs/intro.md)
+- [Roadmap](https://github.com/material-components/material-web/blob/main/docs/roadmap.md)
+- [Component docs](https://github.com/material-components/material-web/blob/main/docs/components/)
+- [Bundle size](https://github.com/material-components/material-web/blob/main/docs/size.md)
+- [Browser support and FAQ](https://github.com/material-components/material-web/blob/main/docs/support.md)
+
+## Quick start
+
+> Tip: Using Angular? We recommend using
+> [Angular Material](https://material.angular.io/)<!-- {.external} --> components
+> instead.
+
+This code snippet is a buildless example that loads `@material/web` from a CDN.
+Check out the [quick start](https://github.com/material-components/material-web/blob/main/docs/quick-start.md) guide to install and build
+for production.
+
+<!-- LINT.IfChange -->
+
+```html
+<head>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  />
+  <script type="importmap">
+    {
+      "imports": {
+        "@material/web/": "https://esm.run/@material/web/"
+      }
+    }
+  </script>
+  <script type="module">
+    import "@material/web/all.js";
+    import { styles as typescaleStyles } from "@material/web/typography/md-typescale-styles.js";
+
+    document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
+  </script>
+</head>
+<body>
+  <h1 class="md-typescale-display-medium">Hello Material!</h1>
+  <form>
+    <p class="md-typescale-body-medium">Check out these controls in a form!</p>
+    <md-checkbox></md-checkbox>
+    <div>
+      <md-radio name="group"></md-radio>
+      <md-radio name="group"></md-radio>
+      <md-radio name="group"></md-radio>
+    </div>
+
+    <md-outlined-text-field label="Favorite color" value="Purple"></md-outlined-text-field>
+
+    <md-outlined-button type="reset">Reset</md-outlined-button>
+  </form>
+  <style>
+    form {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+  </style>
+</body>
+```
+
+<!-- LINT.ThenChange(./g3doc/docs/quick-start.md) -->

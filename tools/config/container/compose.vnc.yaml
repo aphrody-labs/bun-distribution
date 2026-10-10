@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: Apache-2.0
+# Profile "bureau conteneurisé" pour agents Computer-Use (Xvfb + openbox + aphrody infra remote serve).
+# Séparé de compose.yaml. Ports publiés sur la boucle locale de l'hôte uniquement (jamais 0.0.0.0).
+#   APHRODY_HOME=C:/Users/aphro/.aphrody docker compose -f tools/config/container/compose.vnc.yaml up -d --build
+# APHRODY_HOME est obligatoire. Secrets hors dépôt : <APHRODY_HOME>/private/docker/remote.env (APHRODY_REMOTE_TOKEN, APHRODY_VNC_PASSWORD),
+# lus aussi par le magasin d'identifiants du client (private/docker/remote.token, vnc.password).
+# Client : bun scripts/tools/infra/vnc-probe.ts vnc://127.0.0.1:5905 (APHRODY_VNC_PASSWORD de l'environnement).
+name: aphrody-vnc
+services:
+  desktop:
+    build:
+      context: ./vnc
+      args:
+        BASE: aphrody:runtime
+      # Linux aphrody carrying `remote serve --vnc` (aphrody:runtime predates it); drop once the image is rebuilt.
+      additional_contexts:
+        aphrodybin: ${APHRODY_HOME:?set APHRODY_HOME}/bin/linux
+    image: aphrody/desktop-vnc:local
+    container_name: aphrody-desktop-vnc
+    restart: unless-stopped
+    env_file:
+      - ${APHRODY_HOME:?set APHRODY_HOME}/private/docker/remote.env
+    environment:
+      APHRODY_DESKTOP_SIZE: 1600x900x24
+      APHRODY_DESKTOP_TERMINAL: "0"
+      APHRODY_VNC_ALLOW: 172.16.0.0/12
+    ports:
+      - "127.0.0.1:5905:5900"
+      - "127.0.0.1:8805:8795"
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=256m
+      - /home/aphrody:uid=1000,gid=1000,mode=0700,size=128m
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 512
+    mem_limit: 1g
+    shm_size: 256m

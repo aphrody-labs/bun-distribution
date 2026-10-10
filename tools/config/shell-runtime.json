@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schemaVersion": 1,
+  "owner": "aphrody-shell",
+  "runtime": "aphrody-shell",
+  "authority": "aphrody-kernel",
+  "transport": "local-mcp-or-ipc",
+  "defaultEngine": "nushell",
+  "ptyBackend": "aphrody-terminal-backend",
+  "uiBackend": "aphrody-tui",
+  "targets": {
+    "windows": { "launcher": "aphrody-kernel", "fallback": "wsl.exe" },
+    "wsl": { "launcher": "aphrody-kernel", "fallback": "nu" },
+    "linux": { "launcher": "aphrody-kernel", "fallback": "nu" },
+    "vps": { "launcher": "aphrody-kernel", "fallback": "nu" }
+  },
+  "forbiddenApplicationShells": ["cmd.exe", "powershell.exe", "pwsh.exe"],
+  "policy": "application-and-agent-commands-route-through-kernel-shell"
+}

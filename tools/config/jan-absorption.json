@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "upstreamRevision": "14a720628f9592c8e60f7e081ef733076db8a6a9",
+  "privateFork": "https://github.com/aphrody-labs/jan",
+  "upstream": "https://github.com/janhq/jan",
+  "policy": "Every mapped group remains pending until behavior, consumer and lifecycle parity are qualified. Do not create a second engine, model store, MCP client or UI framework.",
+  "comparisons": [
+    {
+      "id": "model-hub-search",
+      "upstream": ["web-app/src/routes/hub/-searchRanking.ts", "web-app/src/routes/hub/index.tsx"],
+      "aphrody": [
+        "m3/packages/app-ui/src/models-hub.tsx",
+        "m3/packages/app-ui/src/models-hub-state.ts"
+      ],
+      "status": "source_migrated_unit_tests_pass_ui_activation_pending"
+    },
+    {
+      "id": "model-catalog-and-store",
+      "upstream": [
+        "src-tauri/src/core/downloads/models.rs",
+        "src-tauri/src/core/downloads/commands.rs"
+      ],
+      "aphrody": [
+        "crates/ai/models/src/catalog.rs",
+        "crates/ai/models/src/store.rs",
+        "crates/ai/models/src/fetch.rs"
+      ],
+      "status": "owner_found_parity_pending"
+    },
+    {
+      "id": "provider-model-metadata-and-pricing",
+      "upstream": ["src-tauri/src/core/cli/model_catalog.rs"],
+      "aphrody": ["crates/ai/config/src/provider.rs", "crates/ai/model-client/src/lib.rs"],
+      "status": "provider_metadata_pricing_behavior_missing",
+      "note": "Jan model_catalog is provider listing/context/token pricing metadata. Aphrody models/catalog.rs is a pinned artifact catalog and does not establish equivalent behavior."
+    },
+    {
+      "id": "managed-local-inference",
+      "upstream": [
+        "extensions/llamacpp-extension/package.json",
+        "src-tauri/plugins/tauri-plugin-llamacpp/Cargo.toml"
+      ],
+      "aphrody": ["crates/ai/llama-server/src/managed.rs"],
+      "status": "owner_found_parity_pending"
+    },
+    {
+      "id": "mcp-client",
+      "upstream": [
+        "src-tauri/src/core/mcp/server/stdio.rs",
+        "src-tauri/src/core/mcp/server/http.rs"
+      ],
+      "aphrody": [
+        "crates/ai/mcp-client/src/transport/stdio.rs",
+        "crates/ai/mcp-client/src/transport/http.rs"
+      ],
+      "status": "owner_found_parity_pending"
+    },
+    {
+      "id": "mcp-server",
+      "upstream": ["src-tauri/src/core/cli/mcp_serve.rs"],
+      "aphrody": ["crates/ai/mcp/src/main.rs"],
+      "status": "owner_found_parity_pending"
+    },
+    {
+      "id": "agent-loop",
+      "upstream": ["src-tauri/src/core/agent/loop.rs", "src-tauri/src/core/agent/goal.rs"],
+      "aphrody": ["crates/ai/engine/src/turn.rs", "crates/ai/engine/src/actor.rs"],
+      "status": "owner_found_parity_pending"
+    },
+    {
+      "id": "sessions-and-rpc",
+      "upstream": ["src-tauri/src/core/cli/rpc.rs", "src-tauri/src/core/agent/transcript.rs"],
+      "aphrody": ["crates/ai/app-server/src/lib.rs"],
+      "python": ["packages/aphrody/src/aphrody/session_db.py"],
+      "status": "owner_found_parity_pending"
+    },
+    {
+      "id": "provider-configuration",
+      "upstream": [
+        "src-tauri/src/core/cli/providers.rs",
+        "src-tauri/src/core/server/provider_secrets.rs"
+      ],
+      "aphrody": ["crates/ai/config/src/provider.rs", "crates/ai/config/src/resolve.rs"],
+      "status": "owner_found_parity_pending"
+    },
+    {
+      "id": "desktop-and-web-ui",
+      "upstream": ["src-tauri/src/lib.rs", "web-app/src/routes/__root.tsx"],
+      "aphrody": ["crates/ui/app/src/lib.rs", "m3/packages/app-ui/src/app.tsx"],
+      "status": "owner_found_parity_pending"
+    },
+    {
+      "id": "python-and-typescript-adk",
+      "upstream": ["adk/python/jan_adk/session.py", "packages/adk/src/index.js"],
+      "aphrody": ["crates/contracts/agent-proto/src/lib.rs", "crates/ai/app-server/src/lib.rs"],
+      "python": ["packages/aphrody/src/aphrody/client.py"],
+      "status": "protocol_comparison_pending"
+    },
+    {
+      "id": "agent-plugin-and-skills",
+      "upstream": ["src-tauri/src/core/agent/plugins.rs", "src-tauri/src/core/agent/skills.rs"],
+      "aphrody": ["packages/infra/workspace/src/agent-plugins.ts"],
+      "status": "owner_found_parity_pending"
+    },
+    {
+      "id": "run-report-and-telemetry",
+      "upstream": ["src-tauri/src/core/cli/run_report.rs", "src-tauri/src/core/cli/usage_view.rs"],
+      "aphrody": ["packages/infra/workspace/src/agent-live.ts"],
+      "status": "behavior_comparison_pending"
+    }
+  ]
+}

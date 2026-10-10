@@ -1,0 +1,89 @@
+{
+  "schema": "m3-bench-budget/1",
+  "tolerance": 0.1,
+  "note": "Lower is better. `bun scripts/bench/run.ts --check` (`bun run bench:check`) fails when a metric exceeds `value` by more than `tolerance`; a failing timing is re-measured twice and the best p50 counts. `baseline` is the figure before the PERF-M3-YOLO fixes. Measured on a shared WSL2 host under load 9-10, so the timing budgets are not tight. task.typecheck (cached package pipeline) and task.test (CPU-bound across 20+ parallel packages, 3.4 s to 3.8 s run to run on this host) are not budgeted; scripts/yolo.test.ts pins the parallel test plan instead. bundle.total.* and install.nm_bytes were re-taken last (2026-10-04, after other sessions grew the tree: 446 KiB gzip, 794 MiB); their `baseline` is the figure before this work.",
+  "env": {
+    "bun": "1.4.2",
+    "kernel": "6.18.33.2-microsoft-standard-WSL2",
+    "wsl": true,
+    "cpu": "13th Gen Intel(R) Core(TM) i7-13700F",
+    "cores": 16
+  },
+  "metrics": {
+    "yolo.version": {
+      "value": 7.591,
+      "unit": "ms",
+      "baseline": 19.903
+    },
+    "yolo.status": {
+      "value": 12.529,
+      "unit": "ms",
+      "baseline": 159.156
+    },
+    "yolo.version_json": {
+      "value": 7.675,
+      "unit": "ms",
+      "baseline": 19.76
+    },
+    "mcp.cold": {
+      "value": 59.173,
+      "unit": "ms",
+      "baseline": 65.405
+    },
+    "themes.cli": {
+      "value": 27.249,
+      "unit": "ms",
+      "baseline": 42.413
+    },
+    "themes.first": {
+      "value": 10.975,
+      "unit": "ms",
+      "baseline": 26.274
+    },
+    "themes.warm": {
+      "value": 1.037,
+      "unit": "ms",
+      "baseline": 10.252
+    },
+    "install.nm_bytes": {
+      "value": 832499579,
+      "unit": "B",
+      "baseline": 815047382
+    },
+    "bundle.total.min": {
+      "value": 1267819,
+      "unit": "B",
+      "baseline": 1039448
+    },
+    "bundle.total.gzip": {
+      "value": 456664,
+      "unit": "B",
+      "baseline": 362356
+    },
+    "compile.server_tuned.size": {
+      "value": 84395488,
+      "unit": "B",
+      "baseline": 84395488
+    },
+    "compile.server_tuned.start": {
+      "value": 3.862,
+      "unit": "ms",
+      "baseline": 3.926
+    },
+    "compile.yolo.size": {
+      "value": 84461024,
+      "unit": "B",
+      "baseline": 81647072
+    },
+    "compile.yolo.start": {
+      "value": 3.248,
+      "unit": "ms",
+      "baseline": 17.096
+    },
+    "task.lint": {
+      "value": 200.63,
+      "unit": "ms",
+      "baseline": 191.753
+    }
+  }
+}

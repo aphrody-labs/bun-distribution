@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-mcp-client"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "Model Context Protocol client for Aphrody: the single MCP client of the workspace. Stdio and streamable HTTP transports, ToolExecutor adapter, fail-closed credential expansion, built-in tools, and shared Rust web tools."
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-toolcall = { workspace = true }
+aphrody-config   = { workspace = true }
+async-trait      = { workspace = true }
+base64           = { workspace = true }
+futures-util     = { workspace = true }
+reqwest          = { workspace = true, features = ["json"] }
+serde            = { workspace = true, features = ["derive"] }
+serde_json       = { workspace = true }
+thiserror        = { workspace = true }
+tracing          = { workspace = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+aphrody-proc        = { workspace = true }
+aphrody-web-service = { workspace = true, features = ["render"] }
+tokio               = { workspace = true, features = ["process", "io-util", "sync", "time"] }
+
+# Browser build: the streamable HTTP transport over `fetch`; no process, no timer driver.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+tokio = { version = "1.52", default-features = false, features = ["sync"] }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }
+# reqwest is built with `rustls-no-provider`: the HTTP transport tests install the ring provider.
+rustls            = { workspace = true }
+tokio             = { workspace = true, features = ["macros", "rt-multi-thread"] }

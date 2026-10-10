@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "principal": "omar",
+  "authorizedBy": "owner correction 2026-10-09: Omar administers DBFR; Yoyo / aphrody-dev administers all Aphrody Labs",
+  "unix": {
+    "user": "omar",
+    "hosts": ["dbfr"],
+    "sudo": "ALL"
+  },
+  "discord": {
+    "primaryUserId": "1527405876695142620",
+    "alternateUserIds": ["1323725494184841256"],
+    "roleName": "DBFR Administrator",
+    "permissions": "8",
+    "credentialFile": "/etc/aphrody-discord.env",
+    "scope": "dbfr",
+    "activation": "Existing permissions are historical; this declaration does not grant organization-wide authority."
+  },
+  "github": {
+    "organization": "aphrody-labs",
+    "login": "KyrioFox",
+    "role": "member",
+    "sshKeys": "none published on github.com/KyrioFox.keys (2026-10-08); own key requested in step 12 of docs/operations/infra/OMAR-REMOTE-CONTROL.md",
+    "scope": "Identity reference only; no organization-wide administrator grant"
+  },
+  "verification": {
+    "discordIdentity": "Discord user lookup and successful DM 1557349160041324594",
+    "githubIdentity": "KyrioFox confirmed as Omar by the owner on 2026-10-08 (session directive: third member of aphrody-labs)"
+  },
+  "authority": {
+    "organizationAdministrator": "yoyo / aphrody-dev",
+    "omarScope": "dbfr",
+    "activation": "Declaration corrected; existing grants have not been revoked or changed by this source edit."
+  }
+}

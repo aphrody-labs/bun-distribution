@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "owner": "aphrody-agent-home",
+  "defaultDomain": "aphrody",
+  "allowedDomains": [
+    "aphrody",
+    "dbfr",
+    "ie"
+  ],
+  "profiles": {
+    "aphrody": {
+      "workspace": "workspaces/aphrody",
+      "codeRoot": ".",
+      "context": "Aphrody monorepo"
+    },
+    "dbfr": {
+      "workspace": "workspaces/dbfr",
+      "codeRoot": ".",
+      "context": "Shenron / Dragon Ball FR",
+      "driveSyncOwner": "packages/infra/workspace/src/agent-home-drive-sync.ts"
+    },
+    "ie": {
+      "workspace": "workspaces/ie",
+      "codeRoot": "../iecode",
+      "context": "Inazuma Eleven"
+    }
+  }
+}

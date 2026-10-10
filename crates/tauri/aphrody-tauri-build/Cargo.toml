@@ -1,0 +1,60 @@
+[package]
+name = "aphrody-tauri-build"
+version = "3.0.0-alpha.3"
+description = "build time code to pair with https://crates.io/crates/tauri"
+exclude = ["CHANGELOG.md", "/target"]
+authors = ["Tauri Programme within The Commons Conservancy"]
+homepage = "https://tauri.app/"
+repository = "https://github.com/aphrody-labs/yolo"
+categories = ["gui", "web-programming"]
+license = "Apache-2.0 OR MIT"
+edition = "2024"
+rust-version = "1.95"
+
+[package.metadata.docs.rs]
+all-features = true
+default-target = "x86_64-unknown-linux-gnu"
+targets = [
+  "x86_64-pc-windows-msvc",
+  "x86_64-unknown-linux-gnu",
+  "x86_64-apple-darwin",
+  "x86_64-linux-android",
+  "x86_64-apple-ios",
+]
+
+[lib]
+name = "tauri_build"
+
+[dependencies]
+anyhow = { workspace = true }
+quote = { workspace = true, optional = true }
+tauri-codegen = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-codegen", package = "aphrody-tauri-codegen", optional = true }
+tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["build-2", "resources"] }
+cargo_toml = "1.0"
+serde = { workspace = true }
+serde_json = { workspace = true }
+heck = "0.5"
+json-patch = "4"
+walkdir = { workspace = true }
+tauri-winres = "0.3"
+semver = { workspace = true }
+dirs = { workspace = true }
+glob = { workspace = true }
+schemars = { workspace = true, features = ["preserve_order"] }
+
+[features]
+default = ["config-json"]
+codegen = ["tauri-codegen", "quote"]
+isolation = ["tauri-codegen/isolation", "tauri-utils/isolation"]
+config-json = []
+config-json5 = ["tauri-utils/config-json5"]
+config-toml = ["tauri-utils/config-toml"]
+
+[lints.clippy]
+collapsible_if = "allow"
+redundant_clone = "warn"
+assigning_clones = "warn"
+or_fun_call = "warn"
+
+[dev-dependencies]
+serial_test = "3.5"

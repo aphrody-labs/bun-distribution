@@ -1,0 +1,137 @@
+{
+  "$comment": "SSH mesh over wg1 between aphro-pc, vps, dbfr and Omar's PC (owner directive 2026-10-08). Public keys and fingerprints only; no private key, token or address outside the tunnel besides the one already declared for Omar. Doc: docs/operations/infra/PRIVATE-TUNNEL.md (SSH mesh).",
+  "schemaVersion": 1,
+  "observedAt": "2026-10-08",
+  "authorizedBy": "owner directive 2026-10-08: tunnel and full SSH between aphrody-dev (aphro-pc), vps, dbfr and KyrioFox (Omar)",
+  "identities": {
+    "owner": { "github": "aphrody-dev", "host": "aphro-pc", "tunnel": "10.200.77.4" },
+    "omar": {
+      "github": "KyrioFox",
+      "githubConfirmed": "owner, 2026-10-08",
+      "githubKeys": "none published (github.com/KyrioFox.keys empty on 2026-10-08)",
+      "tunnel": "10.200.77.10"
+    }
+  },
+  "publicKeys": {
+    "aphrody-owner-pc": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM9fIsjABVye9MqLRBc2ddz2hKJdxNPQm22uzcDKrnkw",
+    "aphrody-dev@github": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+IwnaVjBqNuHwnId41Eug0Q76N0u2A8pkWqltPn+hP",
+    "aphrody-fleet:dbfr-vps": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBLZE8aw5r7JTOcLDX1I3ijtgip0KmU89PjfJkoYx+hP",
+    "aphrody-vps-to-omar-pc": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICXbajabKOH0cOxwgHWtA3Y4cdT/ZTQcck4c3stty709",
+    "aphrody-vps-to-owner-pc": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGUOslAorlj+m8P+5jMjfMvljve2c2iAIA/lxnSgDbOH",
+    "aphrody-dbfr-to-owner-pc": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDIH3LxCjfRJ2UdXglMrTvtkBRn3xadVIIEc8Qzc1aq2",
+    "omar@KyrioFox": null
+  },
+  "links": [
+    {
+      "from": "aphro-pc",
+      "to": "vps",
+      "alias": ["vps", "vps-wg"],
+      "login": "ubuntu",
+      "key": "aphrody-owner-pc",
+      "state": "tested"
+    },
+    {
+      "from": "aphro-pc",
+      "to": "dbfr",
+      "alias": ["dbfr", "dbfr-wg"],
+      "login": "ubuntu",
+      "key": "aphrody-owner-pc",
+      "state": "tested"
+    },
+    {
+      "from": "vps",
+      "to": "dbfr",
+      "alias": ["dbfr-wg"],
+      "login": "ubuntu",
+      "key": "vps ~/.ssh/id_ed25519",
+      "state": "tested"
+    },
+    {
+      "from": "dbfr",
+      "to": "vps",
+      "alias": ["vps-wg", "aphrody-vps-wg"],
+      "login": "ubuntu",
+      "key": "aphrody-fleet:dbfr-vps",
+      "state": "tested"
+    },
+    {
+      "from": "vps",
+      "to": "aphro-pc",
+      "alias": ["aphro-pc"],
+      "login": "aphro",
+      "key": "aphrody-vps-to-owner-pc",
+      "state": "tested"
+    },
+    {
+      "from": "dbfr",
+      "to": "aphro-pc",
+      "alias": ["aphro-pc"],
+      "login": "aphro",
+      "key": "aphrody-dbfr-to-owner-pc",
+      "state": "tested"
+    },
+    {
+      "from": "omar",
+      "to": "vps",
+      "alias": ["vps"],
+      "login": "omar",
+      "key": "omar@KyrioFox",
+      "state": "pending-omar-key"
+    },
+    {
+      "from": "omar",
+      "to": "dbfr",
+      "alias": ["dbfr"],
+      "login": "omar",
+      "key": "omar@KyrioFox",
+      "state": "pending-omar-key"
+    },
+    {
+      "from": "omar",
+      "to": "aphro-pc",
+      "alias": ["aphro-pc"],
+      "login": "aphro",
+      "key": "omar@KyrioFox",
+      "state": "pending-omar-key"
+    },
+    {
+      "from": "aphro-pc",
+      "to": "omar",
+      "alias": ["omar-pc"],
+      "login": "pending (Omar's report)",
+      "key": "aphrody-owner-pc",
+      "state": "pending-omar-sshd"
+    },
+    {
+      "from": "vps",
+      "to": "omar",
+      "login": "pending (Omar's report)",
+      "key": "aphrody-vps-to-omar-pc",
+      "state": "pending-omar-sshd"
+    }
+  ],
+  "hosts": {
+    "vps": {
+      "sshd": "0.0.0.0:22; Match User omar reads /etc/ssh/authorized_keys.d/omar (root-owned)",
+      "omarHome": "/home/omar/.ssh 700 omar:omar (client files only)",
+      "sudoers": "/etc/sudoers.d/omar installed, visudo -c OK",
+      "ufwAdded": [
+        "route allow in on wg1 out on wg1 from 10.200.77.10 to 10.200.77.4 port 22 proto tcp comment 'aphrody-wg-omar'",
+        "route allow in on wg1 out on wg1 from 10.200.77.4 to 10.200.77.10 port 22 proto tcp comment 'aphrody-wg-aphro-pc'"
+      ]
+    },
+    "dbfr": {
+      "sshd": "0.0.0.0:22; same omar drop-in",
+      "omarHome": "/home/omar/.ssh 700 omar:omar",
+      "sudoers": "/etc/sudoers.d/omar installed, visudo -c OK",
+      "ufwAdded": []
+    },
+    "aphro-pc": {
+      "sshd": "ListenAddress 10.200.77.4, key only, AllowUsers edjez aphro; stale dependency WireGuardTunnel$aphrody removed; delayed automatic start; recovery restart",
+      "authorizedKeys": "C:\\ProgramData\\ssh\\administrators_authorized_keys (aphro is an administrator; ACL Administrators + SYSTEM)",
+      "firewall": "Aphrody-SSH-In-Tunnel, group 'Aphrody tunnel', TCP 22, local 10.200.77.4, remote 10.200.77.0/24, any profile"
+    },
+    "omar-pc": { "state": "step 12 posted (Discord 1557864511908745337, 1557864516170027020)" }
+  },
+  "installOmarKey": "~/.aphrody/run/install-omar-ssh-key.ps1 '<public line>' on aphro-pc (elevated PowerShell 7, idempotent), then declare it in tools/config/host/ssh/omar.authorized_keys"
+}

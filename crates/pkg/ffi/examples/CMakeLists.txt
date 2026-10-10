@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+cmake_minimum_required(VERSION 3.20)
+project(aphrody_pkg_smoke LANGUAGES C CXX)
+set(APHRODY_PKG_LIBRARY "" CACHE FILEPATH "Built aphrody_pkg import/static library")
+add_library(aphrody_pkg UNKNOWN IMPORTED)
+set_target_properties(aphrody_pkg PROPERTIES IMPORTED_LOCATION "${APHRODY_PKG_LIBRARY}" INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_LIST_DIR}/../include")
+add_executable(pkg_c smoke.c)
+add_executable(pkg_cpp smoke.cpp)
+target_compile_features(pkg_cpp PRIVATE cxx_std_17)
+target_link_libraries(pkg_c PRIVATE aphrody_pkg)
+target_link_libraries(pkg_cpp PRIVATE aphrody_pkg)

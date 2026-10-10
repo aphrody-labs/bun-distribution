@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-remote-desktop"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Cross-platform remote-desktop server (JPEG over WebSocket, embedded browser viewer) for `aphrody infra remote serve`."
+
+[lib]
+name = "aphrody_remote_desktop"
+
+[features]
+default = []
+# RFB server fed by the capture backend (`aphrody infra remote serve --vnc`).
+vnc-server = ["dep:rustvncserver"]
+# RFB client (`aphrody infra remote connect vnc://`, VNC computer-use backend).
+vnc-client = ["dep:vnc-rs"]
+vnc = ["vnc-server", "vnc-client"]
+
+[dependencies]
+anyhow = { workspace = true }
+aphrody-capture = { workspace = true }
+aphrody-secrets = { workspace = true }
+aphrody-wireguard = { workspace = true }
+axum = { workspace = true, features = ["ws"] }
+getrandom = { workspace = true }
+ipnet = { workspace = true }
+jpeg-encoder = { workspace = true, features = ["std"] }
+rustvncserver = { workspace = true, optional = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+tokio = { workspace = true }
+vnc-rs = { workspace = true, optional = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+x11rb = { workspace = true, features = ["xtest"] }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[lints]
+workspace = true

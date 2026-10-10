@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "output": "CHANGELOG.md",
+  "author": "aphrody-code",
+  "since": "2026-09-01",
+  "types": {
+    "feat": "Features",
+    "fix": "Fixes",
+    "perf": "Performance",
+    "refactor": "Refactors",
+    "test": "Tests",
+    "docs": "Documentation",
+    "chore": "Maintenance",
+    "build": "Build"
+  },
+  "dependencyJournal": "tools/config/deps/journal.json",
+  "domains": {
+    "shell": ["shell", "terminal", "tauri"],
+    "os": ["os", "systemd", "infra", "kernel"],
+    "ai": ["ai", "mcp"],
+    "web": ["web", "ui", "rg"],
+    "deps": ["deps", "tauri,uv"]
+  }
+}

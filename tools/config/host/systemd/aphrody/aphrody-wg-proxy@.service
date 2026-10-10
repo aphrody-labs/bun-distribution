@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: Apache-2.0
+# Forwards the connections accepted by aphrody-wg-proxy@%i.socket (10.200.77.1:%i) to 127.0.0.1:%i with the stock
+# systemd-socket-proxyd. Socket-activated, stops when idle, no state, no capability; it can only talk to loopback and
+# to the tunnel subnet. Owner of the upstream: aphrody-mcp-http (8793) and aphrody-a2a (8788), declared separately and
+# untouched by this unit. See the socket unit and docs/operations/infra/PRIVATE-TUNNEL.md.
+[Unit]
+Description=Private tunnel forwarder 10.200.77.1:%i to 127.0.0.1:%i
+Requires=aphrody-wg-proxy@%i.socket
+After=aphrody-wg-proxy@%i.socket
+
+[Service]
+Type=simple
+ExecStart=/usr/lib/systemd/systemd-socket-proxyd --exit-idle-time=10min 127.0.0.1:%i
+DynamicUser=yes
+PrivateNetwork=false
+IPAddressDeny=any
+IPAddressAllow=127.0.0.0/8 10.200.77.0/24
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectHome=true
+ProtectProc=invisible
+PrivateDevices=true
+RestrictNamespaces=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+UMask=0077
+MemoryMax=64M
+TasksMax=64

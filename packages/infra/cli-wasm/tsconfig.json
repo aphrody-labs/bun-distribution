@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ESNext", "DOM"],
+    "types": ["bun"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "paths": { "#cli-wasm-glue": ["./src/wasm-glue.d.ts"] }
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"]
+}

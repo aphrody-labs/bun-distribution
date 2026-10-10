@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: Apache-2.0
+# ============================================================================
+#  Bun-RS — High-Performance native FFI plugin for Bun (bun:ffi)
+# ============================================================================
+
+[package]
+name = "aphrody-bun"
+repository.workspace = true
+version = "1.0.0-canary"
+edition = "2024"
+license = "Apache-2.0"
+description = "Native Rust plugin for Bun applications using bun:ffi."
+
+[lib]
+name = "bun_rs"
+crate-type = ["rlib"]
+
+[features]
+# Render 3D frames on the GPU (`wgpu`) when an adapter exists; without it
+# `bun_rs_render3d_png` always uses the deterministic CPU rasterizer.
+gpu = ["aphrody-render/gpu"]
+
+[dependencies]
+memchr.workspace = true
+aphrody-m3-tokens = { workspace = true }
+aphrody-m3-reproduce = { workspace = true, features = ["crawl", "network"] }
+# `icons` module (formerly the `aphrody-icons` crate): ligatures, instancing and WOFF2 decoding
+# through `aphrody_svg::symbols`.
+aphrody-svg = { workspace = true, features = ["raster", "glyph", "m3", "symbols"] }
+base64.workspace = true
+aphrody-render = { workspace = true }
+grass.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+ts-rs.workspace = true
+
+[build-dependencies]
+# build.rs verifies the Material Symbols files against m3/packages/m3-fonts/fonts.lock.json.
+serde_json.workspace = true
+sha2.workspace = true

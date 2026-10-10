@@ -1,0 +1,93 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-llama-server"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "Managed local inference: a supervisor for llama.cpp's `llama-server`, driven as an external binary (never linked). Reads GGUF facts, probes what the installed build supports, plans the launch (context, KV precision, MoE/layer placement, LoRA), runs the server under a detached idle-timeout daemon that holds the GPU lease, and gives clients attach-or-spawn access to an OpenAI-compatible endpoint plus the tokenize / LoRA hot-swap / props side channels."
+
+[lints]
+workspace = true
+
+[features]
+# Builds the fake `llama-server` and the daemon host used by the integration tests.
+test-support = []
+# In-process llama.cpp through `aphrody-llama` (libllama / libmtmd are loaded at
+# RUNTIME through libloading, nothing is linked): a `ModelClient` over a GGUF
+# file, embeddings, multimodal (mtmd), and a loopback OpenAI-compatible endpoint
+# so the HTTP-shaped entry points (`Supervisor::ensure`, `ManagedLlamaServer`)
+# keep working without spawning `llama-server`. Off by default: it needs
+# libclang at build time (aphrody-llama-sys runs bindgen). With it on, the
+# supervisor/daemon/`--help` paths are an explicit opt-in
+# (`APHRODY_LLAMA_BACKEND=spawn`), see `Backend`.
+in-process = [
+    "dep:aphrody-infer",
+    "dep:aphrody-model-client",
+    "dep:aphrody-toolcall-repair",
+    "dep:async-trait",
+    "dep:base64",
+    "dep:bytes",
+    "dep:chrono",
+    "dep:encoding_rs",
+    "dep:futures",
+    "dep:aphrody-llama",
+    "dep:aphrody-ml-runtime",
+    "dep:libloading",
+    "dep:minijinja",
+    "dep:minijinja-contrib",
+]
+
+[[bin]]
+name              = "aphrody-llama-daemon"
+path              = "tests/support/llama_daemon.rs"
+test              = false
+doc               = false
+required-features = ["test-support"]
+
+[[bin]]
+name              = "aphrody-fake-llama-server"
+path              = "tests/support/fake_llama_server.rs"
+test              = false
+doc               = false
+required-features = ["test-support"]
+
+[dependencies]
+aphrody-gemini-web = { workspace = true }
+aphrody-models = { workspace = true }
+aphrody-proc   = { workspace = true }
+axum           = { workspace = true }
+reqwest        = { workspace = true }
+rustls         = { workspace = true }
+serde          = { workspace = true }
+serde_json     = { workspace = true }
+thiserror      = { workspace = true }
+tokio          = { workspace = true, features = ["rt", "macros", "time", "fs", "sync", "net"] }
+tracing        = { workspace = true }
+
+# --- feature `in-process` (all optional; the default build is unchanged) ---
+aphrody-infer           = { workspace = true, optional = true }
+aphrody-model-client    = { workspace = true, optional = true }
+aphrody-toolcall-repair = { workspace = true, optional = true }
+async-trait             = { workspace = true, optional = true }
+base64                  = { workspace = true, optional = true }
+bytes                   = { workspace = true, optional = true }
+chrono                  = { workspace = true, optional = true }
+encoding_rs             = { workspace = true, optional = true }
+futures                 = { workspace = true, optional = true }
+aphrody-llama            = { workspace = true, optional = true }
+aphrody-ml-runtime          = { workspace = true, optional = true }
+libloading              = { workspace = true, optional = true }
+# `tojson` (used by every chat template that renders tools) is behind minijinja's `json` feature.
+minijinja               = { workspace = true, optional = true, features = ["json"] }
+minijinja-contrib       = { workspace = true, optional = true }
+
+[dev-dependencies]
+aphrody-model-client = { workspace = true }
+futures              = { workspace = true }
+pretty_assertions    = { workspace = true }
+tempfile          = { workspace = true }
+tokio             = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "time", "fs"] }

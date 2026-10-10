@@ -1,0 +1,37 @@
+[package]
+name = "aphrody-web-engine"
+repository.workspace = true
+description = "Aphrody Web browser engine: CDP server, fetch and scrape on Obscura (entry points of the `aphrody-web` and `aphrody-web-worker` multi-call names)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[features]
+default = ["render"]
+# The public browser includes layout and CDP screenshots by default.
+# Minimal DOM/CDP builds can use --no-default-features.
+render = ["aphrody-web-service/render", "obscura-browser/render", "obscura-cdp/render"]
+# Obscura documents stealth as a render+stealth build variant.
+stealth = ["render", "aphrody-web-service/stealth", "obscura-browser/stealth", "obscura-net/stealth"]
+
+[dependencies]
+aphrody-proc = { workspace = true }
+obscura-browser = { workspace = true }
+aphrody-web-crawl = { workspace = true }
+aphrody-web-extract = { workspace = true }
+aphrody-web-service = { workspace = true }
+obscura-dom = { workspace = true }
+obscura-cdp = { workspace = true }
+obscura-net = { workspace = true }
+obscura-js = { workspace = true }
+tokio = { workspace = true }
+clap = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
+url = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-gemini-runtime"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "Cross-platform Gemini CLI runtime adapter: detect, version, turn streaming, plus the mcp.json loader and the legacy MCP client facade over aphrody-mcp-client."
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-proc = { workspace = true, features = ["tokio"] }
+# The one MCP client (transports, framing, header validation) and the one MCP server model.
+# `mcp_client` is a thin facade over the former; `mcp_config` reads into the latter.
+aphrody-mcp-client = { workspace = true }
+aphrody-config     = { workspace = true }
+tokio        = { workspace = true, features = ["process", "io-util", "macros", "rt-multi-thread", "sync"] }
+serde        = { workspace = true, features = ["derive"] }
+serde_json   = { workspace = true }
+which        = { workspace = true }
+thiserror    = { workspace = true }
+futures-util = { workspace = true }
+reqwest      = { workspace = true }
+url          = { workspace = true }
+dirs         = { workspace = true }
+async-trait  = { workspace = true }
+
+[dev-dependencies]
+tokio        = { workspace = true, features = ["macros", "rt-multi-thread"] }
+rustls       = { workspace = true, features = ["ring"] }
+tempfile     = { workspace = true }
+
+[package.metadata.cargo-machete]
+ignored = []

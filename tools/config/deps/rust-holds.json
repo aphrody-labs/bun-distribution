@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "note": "Direct crates that `yolo update rust apply` must never move, with the reason. Exact `=x.y.z` pins in a manifest are not listed here: they are deliberate, reported as [exact pin] and only moved by an explicit `apply --majors <crate>`. Advisory-driven holds also belong in advisory-holds.json. Remove an entry as soon as its blocker moves; docs/operations/infra/update/RUST.md carries the long form.",
+  "holds": [
+    {
+      "crate": "yara-x",
+      "reason": "stays =1.7.0: 1.19 to 1.21 need wasmtime ^43 to ^45 which carry RUSTSEC-2026-0222/0269/0316 (see advisory-holds.json)."
+    },
+    {
+      "crate": "portable-pty",
+      "reason": "stays 0.8: 0.9.0 breaks headless Windows clients (desktop PTY note); serial 0.4 unmaintained notice follows it."
+    },
+    {
+      "crate": "ort",
+      "reason": "stays =2.0.0-rc.12: magika 1.1.0 (latest, optional in aphrody-re) pins ort =2.0.0-rc.12, so rc.13 cannot resolve in the same graph."
+    },
+    {
+      "crate": "fastembed",
+      "reason": "stays 5.17.3: 5.17.4 and 7.x require ort =2.0.0-rc.13 (see ort)."
+    },
+    {
+      "crate": "cssparser",
+      "reason": "stays 0.37: 0.38 drops cssparser::ParserInput and the Parser<'i,'t> second lifetime; porting obscura-render (css.rs, style.rs), obscura-dom (selector.rs) and the vendored taffy parse feature is a separate task."
+    },
+    {
+      "crate": "selectors",
+      "reason": "stays 0.38: 0.41 removes the Impl associated type of NonTSPseudoClass/PseudoElement and needs cssparser 0.38 (see cssparser); obscura-dom selector.rs must be ported first."
+    },
+    {
+      "crate": "yara-x-proto",
+      "lockVersion": "1.7.0",
+      "reason": "companion of yara-x =1.7.0: yara-x's build script needs the matching 1.7.0 generation. A plain `cargo update` moves it to 1.21.0 (in range ^1.7.0), which breaks `cargo check -p aphrody-re --features yara` (ModuleOptions has no field rust_module). apply restores the lock pin."
+    },
+    {
+      "crate": "yara-x-parser",
+      "lockVersion": "1.7.0",
+      "reason": "companion of yara-x =1.7.0: yara-x's build script needs the matching 1.7.0 generation. A plain `cargo update` moves it to 1.21.0 (in range ^1.7.0), which breaks `cargo check -p aphrody-re --features yara` (ModuleOptions has no field rust_module). apply restores the lock pin."
+    },
+    {
+      "crate": "yara-x-macros",
+      "lockVersion": "1.7.0",
+      "reason": "companion of yara-x =1.7.0: yara-x's build script needs the matching 1.7.0 generation. A plain `cargo update` moves it to 1.21.0 (in range ^1.7.0), which breaks `cargo check -p aphrody-re --features yara` (ModuleOptions has no field rust_module). apply restores the lock pin. Pinning yara-x-macros makes cargo re-pick the syn/prettyplease pair of bindgen 0.73.2 (syn 2 with prettyplease 0.3, which does not compile); relock repairs it with `cargo update -p bindgen@0.73.2 --recursive`.",
+      "relock": [
+        "bindgen@0.73.2"
+      ]
+    }
+  ]
+}

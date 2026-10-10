@@ -1,0 +1,12 @@
+{
+  "name": "Gemini",
+  "provider": "Google",
+  "app_id": "gdfaincndogidkdcdkhapmbffkckdkhn",
+  "source": "Chrome Web Applications",
+  "profile_directory": "Default",
+  "url": "https://gemini.google.com/app",
+  "launcher": "aphrody",
+  "launcher_arguments": ["google", "open", "https://gemini.google.com/app", "--desktop"],
+  "credentials_imported": false,
+  "cookies_imported": false
+}

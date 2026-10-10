@@ -1,0 +1,1719 @@
+{
+  "source": "aphrody-labs/awesome-bun@yolo",
+  "rustBunSince": "2026-05-14",
+  "evidence": "23427dbc12 Rewrite Bun in Rust (#30412), 2026-05-14",
+  "total": 87,
+  "kept": 14,
+  "dropped": 73,
+  "entries": [
+    {
+      "name": "Website",
+      "url": "https://bun.com/",
+      "description": "",
+      "section": "Essentials",
+      "verdict": "keep",
+      "reason": "official Bun site",
+      "httpStatus": 200
+    },
+    {
+      "name": "Docs",
+      "url": "https://bun.com/docs",
+      "description": "",
+      "section": "Essentials",
+      "verdict": "keep",
+      "reason": "official Bun site",
+      "httpStatus": 200
+    },
+    {
+      "name": "Examples",
+      "url": "https://github.com/oven-sh/bun/tree/main/examples",
+      "description": "",
+      "section": "Essentials",
+      "github": "oven-sh/bun",
+      "verdict": "drop",
+      "reason": "link answers 404",
+      "facts": {
+        "repo": "oven-sh/bun",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2026-10-03T12:34:58Z",
+        "stars": 96107,
+        "language": "Rust",
+        "topics": [
+          "bun",
+          "bundler",
+          "javascript",
+          "javascriptcore",
+          "jsx",
+          "nodejs",
+          "npm",
+          "react",
+          "rust",
+          "rust-lang",
+          "transpiler",
+          "typescript"
+        ],
+        "description": "Incredibly fast JavaScript runtime, bundler, test runner, and package manager – all in one",
+        "license": "NOASSERTION"
+      },
+      "httpStatus": 404
+    },
+    {
+      "name": "Exploring Bun",
+      "url": "https://jenil777007.hashnode.dev/lets-bun",
+      "description": "",
+      "section": "Articles",
+      "verdict": "drop",
+      "reason": "undated content from before the Rust rewrite"
+    },
+    {
+      "name": "Scaffolding your bun project",
+      "url": "https://codetea.com/scaffolding-your-bun-project-boilerplate/",
+      "description": "",
+      "section": "Articles",
+      "verdict": "drop",
+      "reason": "undated content from before the Rust rewrite"
+    },
+    {
+      "name": "Bun Tutorial – Getting Started Guide With Examples",
+      "url": "https://codedamn.com/news/backend/bun-js-tutorial-2022",
+      "description": "",
+      "section": "Articles",
+      "verdict": "drop",
+      "reason": "undated content from before the Rust rewrite"
+    },
+    {
+      "name": "Create a react app with bun",
+      "url": "https://dev.to/ashirbadgudu/create-a-react-app-with-bun-125o",
+      "description": "",
+      "section": "Articles",
+      "verdict": "drop",
+      "reason": "undated content from before the Rust rewrite"
+    },
+    {
+      "name": "Let's create a next.js app with bun",
+      "url": "https://dev.to/ashirbadgudu/lets-create-a-nextjs-app-with-bun-48l6",
+      "description": "",
+      "section": "Articles",
+      "verdict": "drop",
+      "reason": "undated content from before the Rust rewrite"
+    },
+    {
+      "name": "Bun: A Complete Overhaul of the JavaScript Ecosystem",
+      "url": "https://www.lunasec.io/docs/blog/bun-first-look/",
+      "description": "",
+      "section": "Articles",
+      "verdict": "drop",
+      "reason": "undated content from before the Rust rewrite"
+    },
+    {
+      "name": "Server-Side Rendering (SSR) With Bun and React",
+      "url": "https://alexkates.dev/server-side-rendering-ssr-with-bun-and-react",
+      "description": "",
+      "section": "Articles",
+      "verdict": "drop",
+      "reason": "undated content from before the Rust rewrite"
+    },
+    {
+      "name": "Bun Security Essentials",
+      "url": "https://www.bunsecurity.dev",
+      "description": "",
+      "section": "Courses & Books",
+      "verdict": "drop",
+      "reason": "external page that cannot be verified against the Rust Bun",
+      "httpStatus": 200
+    },
+    {
+      "name": "Extro - open source browser extension starter kit",
+      "url": "https://github.com/turbostarter/extro",
+      "description": "",
+      "section": "Boilerplates",
+      "github": "turbostarter/extro",
+      "verdict": "keep",
+      "reason": "active since the Rust rewrite (last push 2026-08-21)",
+      "facts": {
+        "repo": "turbostarter/extro",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2026-08-21T10:28:24Z",
+        "stars": 412,
+        "language": "TypeScript",
+        "topics": [
+          "ai",
+          "boilerplate",
+          "browser-extension",
+          "chrome-extension",
+          "edge-extension",
+          "extension",
+          "firefox-addon",
+          "plasmo",
+          "react",
+          "shadcn",
+          "starter-kit",
+          "supabase",
+          "tailwindcss",
+          "typescript"
+        ],
+        "description": "Open source browser extension starter kit 🧩",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "Bun on Railway - Starter",
+      "url": "https://github.com/FarazPatankar/bun-on-railway",
+      "description": "",
+      "section": "Boilerplates",
+      "github": "FarazPatankar/bun-on-railway",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "FarazPatankar/bun-on-railway",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2022-07-06T08:29:38Z",
+        "stars": 7,
+        "language": "Dockerfile",
+        "topics": [],
+        "description": "",
+        "license": null
+      }
+    },
+    {
+      "name": "Bun on Dev Containers & GitHub Codespaces",
+      "url": "https://github.com/alertbox/try-bun",
+      "description": "",
+      "section": "Boilerplates",
+      "github": "alertbox/try-bun",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "alertbox/try-bun",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2025-06-01T06:17:39Z",
+        "stars": 36,
+        "language": null,
+        "topics": [
+          "bun",
+          "bunjs",
+          "devcontainers",
+          "javascript",
+          "jsx",
+          "template-project",
+          "tsx",
+          "typescript"
+        ],
+        "description": "Start a dev container and get to developing a variety of JavaScript-based (or TypeScript) web apps and services.",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "Create Bun Boilerplates",
+      "url": "https://github.com/guocaoyi/create-bun",
+      "description": "",
+      "section": "Boilerplates",
+      "github": "guocaoyi/create-bun",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "guocaoyi/netron",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2023-10-23T07:04:28Z",
+        "stars": 20,
+        "language": null,
+        "topics": [
+          "electron",
+          "electron-framework",
+          "neon",
+          "nest"
+        ],
+        "description": "Netron is a Electron framework for building efficient and reliable desktop applications, and fully supports TypeScript (or pure JS) and OOP (IoC + AOP). ⚛️一款用于构建高效可靠桌面应用的 Electron 框架，支持 TS 语言以及 OOP 编程范式！",
+        "license": null
+      }
+    },
+    {
+      "name": "React Bun Template for Gitpod",
+      "url": "https://github.com/Joshuafrankle/bun-react",
+      "description": "",
+      "section": "Boilerplates",
+      "github": "Joshuafrankle/bun-react",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "Joshuafrankle/bun-react",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2022-07-09T09:45:51Z",
+        "stars": 3,
+        "language": "HTML",
+        "topics": [
+          "bun",
+          "gitpod",
+          "reactjs",
+          "typescript"
+        ],
+        "description": "A Bun starter template for React, configured for Gitpod (www.gitpod.io) to give you pre-built, ephemeral development environments in the cloud.",
+        "license": null
+      }
+    },
+    {
+      "name": "React-Typescript template",
+      "url": "https://github.com/anjiboss/react-ts-template-for-bun",
+      "description": "",
+      "section": "Boilerplates",
+      "github": "anjiboss/react-ts-template-for-bun",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "itsanji/react-ts-template-for-bun",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2022-10-17T04:26:19Z",
+        "stars": 11,
+        "language": "TypeScript",
+        "topics": [],
+        "description": "React@18.x with Typescript works for blazing fast Bun",
+        "license": null
+      }
+    },
+    {
+      "name": "Bun Lib Starter",
+      "url": "https://github.com/wobsoriano/bun-lib-starter",
+      "description": "",
+      "section": "Boilerplates",
+      "github": "wobsoriano/bun-lib-starter",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "wobsoriano/bun-lib-starter",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2024-10-11T05:31:06Z",
+        "stars": 115,
+        "language": "TypeScript",
+        "topics": [
+          "bun",
+          "bunjs"
+        ],
+        "description": "My minimal bun library starter",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "tRPC + Bun",
+      "url": "https://github.com/sachinraja/trpc-bun",
+      "description": "",
+      "section": "Boilerplates",
+      "github": "sachinraja/trpc-bun",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "sachinraja/trpc-bun",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2022-10-07T03:53:36Z",
+        "stars": 67,
+        "language": "TypeScript",
+        "topics": [],
+        "description": "tRPC + Bun",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "remix-bun",
+      "url": "https://github.com/jacob-ebey/remix-bun-testing",
+      "description": "",
+      "section": "Boilerplates",
+      "github": "jacob-ebey/remix-bun-testing",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "jacob-ebey/remix-bun-testing",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2022-07-07T07:20:55Z",
+        "stars": 105,
+        "language": "TypeScript",
+        "topics": [],
+        "description": "",
+        "license": null
+      }
+    },
+    {
+      "name": "Bun Template for Gitpod",
+      "url": "https://github.com/gitpod-io/bun-on-gitpod",
+      "description": "",
+      "section": "Boilerplates",
+      "github": "gitpod-io/bun-on-gitpod",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "gitpod-samples/template-bun",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2023-09-20T07:59:16Z",
+        "stars": 19,
+        "language": null,
+        "topics": [
+          "bun",
+          "bun-starter",
+          "bun-template",
+          "gitpod",
+          "template"
+        ],
+        "description": "A Bun starter template, configured for Gitpod (www.gitpod.io) to give you pre-built, ephemeral development environments in the cloud.",
+        "license": null
+      }
+    },
+    {
+      "name": "Nixpacks Bun web server",
+      "url": "https://github.com/railwayapp/nixpacks/tree/main/examples/node-bun-web-server",
+      "description": "",
+      "section": "Boilerplates",
+      "github": "railwayapp/nixpacks",
+      "verdict": "keep",
+      "reason": "active since the Rust rewrite (last push 2026-10-02)",
+      "facts": {
+        "repo": "railwayapp/nixpacks",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2026-10-02T01:52:28Z",
+        "stars": 3555,
+        "language": "Rust",
+        "topics": [
+          "buildpacks",
+          "cli",
+          "docker",
+          "nix",
+          "nixpkgs",
+          "rust"
+        ],
+        "description": "App source + Nix packages + Docker = Image",
+        "license": "MIT"
+      },
+      "httpStatus": 200
+    },
+    {
+      "name": "sveltekit-bun-template",
+      "url": "https://github.com/TheOtterlord/sveltekit-bun-template",
+      "description": "",
+      "section": "Boilerplates",
+      "github": "TheOtterlord/sveltekit-bun-template",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "theotterlord/sveltekit-bun-template",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2023-01-19T09:40:57Z",
+        "stars": 43,
+        "language": "JavaScript",
+        "topics": [
+          "bun",
+          "svelte",
+          "typescript"
+        ],
+        "description": "Create a Svelte app, powered by Bun",
+        "license": null
+      }
+    },
+    {
+      "name": "react-nostalgia-boilerplate",
+      "url": "https://github.com/boilertowns/react-nostalgia-boilerplate",
+      "description": "",
+      "section": "Boilerplates",
+      "github": "boilertowns/react-nostalgia-boilerplate",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "boilertown/react-nostalgia-boilerplate",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2023-05-02T00:16:06Z",
+        "stars": 5,
+        "language": "TypeScript",
+        "topics": [
+          "eslint",
+          "front-end",
+          "playwright",
+          "prettier",
+          "react",
+          "react-boilerplate",
+          "storybook",
+          "testing-library",
+          "typescript",
+          "webpack"
+        ],
+        "description": "Full fledged boilerplate to quickly kickstart your React applications.",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "Bun OpenAI Whisper Microservice with Docker",
+      "url": "https://github.com/Illyism/whisper-docker",
+      "description": "",
+      "section": "Boilerplates",
+      "github": "Illyism/whisper-docker",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "Illyism/openai-whisper-api",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2023-09-10T19:57:07Z",
+        "stars": 119,
+        "language": "TypeScript",
+        "topics": [
+          "chatgpt",
+          "openai",
+          "openai-whisper",
+          "whisper"
+        ],
+        "description": "OpenAI Whisper API based on Node.js / Bun.sh in a Docker Container + Google Cloud Run Example",
+        "license": null
+      }
+    },
+    {
+      "name": "DBest Stack",
+      "url": "https://github.com/itsyoboieltr/dbest-stack",
+      "description": "",
+      "section": "Boilerplates",
+      "github": "itsyoboieltr/dbest-stack",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "itsyoboieltr/dbest-stack",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2024-08-25T20:20:40Z",
+        "stars": 101,
+        "language": "TypeScript",
+        "topics": [],
+        "description": "",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "🐵 Xmonkey Userscript: Bun + TypeScript Boilerplate",
+      "url": "https://github.com/genzj/bun-ts-userscript-starter",
+      "description": "",
+      "section": "Boilerplates",
+      "github": "genzj/bun-ts-userscript-starter",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "genzj/bun-ts-userscript-starter",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2024-10-04T22:17:50Z",
+        "stars": 26,
+        "language": "TypeScript",
+        "topics": [],
+        "description": "Create your Greasemonkey userscripts with Bun and TypeScript.",
+        "license": null
+      }
+    },
+    {
+      "name": "Elysia",
+      "url": "https://github.com/elysiajs/elysia",
+      "description": "Fast, and friendly Bun web framework.",
+      "section": "Extensions",
+      "github": "elysiajs/elysia",
+      "verdict": "keep",
+      "reason": "active since the Rust rewrite (last push 2026-10-02)",
+      "facts": {
+        "repo": "elysiajs/elysia",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2026-10-02T16:41:29Z",
+        "stars": 19216,
+        "language": "TypeScript",
+        "topics": [
+          "bun",
+          "framework",
+          "http",
+          "server",
+          "typescript",
+          "web"
+        ],
+        "description": "Ergonomic Framework for Humans",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "Hono",
+      "url": "https://github.com/honojs/hono",
+      "description": "Ultrafast web framework for Cloudflare Workers, Deno, and Bun. Fast, but not only fast.",
+      "section": "Extensions",
+      "github": "honojs/hono",
+      "verdict": "keep",
+      "reason": "active since the Rust rewrite (last push 2026-10-02)",
+      "facts": {
+        "repo": "honojs/hono",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2026-10-02T10:04:38Z",
+        "stars": 32402,
+        "language": "TypeScript",
+        "topics": [
+          "aws-lambda",
+          "bun",
+          "cloudflare",
+          "cloudflare-workers",
+          "deno",
+          "npm",
+          "router",
+          "typescript",
+          "web-framework"
+        ],
+        "description": "Web framework built on Web Standards",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "Vixeny",
+      "url": "https://github.com/mimiMonads/vixeny",
+      "description": "A fast, pure functional web framework for Bun and Deno.",
+      "section": "Extensions",
+      "github": "mimiMonads/vixeny",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "mimiMonads/vixeny",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2025-02-05T08:30:49Z",
+        "stars": 172,
+        "language": "TypeScript",
+        "topics": [
+          "bun",
+          "deno",
+          "functional-programming",
+          "javascript",
+          "javascript-library",
+          "node",
+          "typescript"
+        ],
+        "description": "💜 Vixeny: At the forefront of modern web development, runtime-independent, efficiency-driven library dedicated to upholding the principles of FP; Desgined for creating scalable, maintainable, and high-performance web applications.",
+        "license": null
+      }
+    },
+    {
+      "name": "Grace",
+      "url": "https://docs.gracejs.dev",
+      "description": "An innovative, type-safe and easy-to-use API framework.",
+      "section": "Extensions",
+      "verdict": "drop",
+      "reason": "link answers error",
+      "httpStatus": "error"
+    },
+    {
+      "name": "Primate",
+      "url": "https://primatejs.com",
+      "description": "Expressive, minimal and extensible web framework.",
+      "section": "Extensions",
+      "verdict": "drop",
+      "reason": "external page that cannot be verified against the Rust Bun",
+      "httpStatus": 200
+    },
+    {
+      "name": "NBit",
+      "url": "https://github.com/sstur/nbit",
+      "description": "A zero-dependency, strongly-typed web framework for Bun, Node and Cloudflare workers.",
+      "section": "Extensions",
+      "github": "sstur/nbit",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "sstur/nbit",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2024-01-26T15:52:05Z",
+        "stars": 77,
+        "language": "TypeScript",
+        "topics": [],
+        "description": "A zero-dependency, strongly-typed web framework for Bun, Node and Cloudflare workers",
+        "license": null
+      }
+    },
+    {
+      "name": "GraphQL Yoga",
+      "url": "https://github.com/dotansimha/graphql-yoga",
+      "description": "A fast, fully featured GraphQL Framework that [runs on Bun](https://the-guild.dev/graphql/yoga-server/v3/integrations/integration-with-bun), Cloudflare Workers, Deno, and any JS environment.",
+      "section": "Extensions",
+      "github": "dotansimha/graphql-yoga",
+      "verdict": "keep",
+      "reason": "active since the Rust rewrite (last push 2026-10-02)",
+      "facts": {
+        "repo": "graphql-hive/graphql-yoga",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2026-10-02T19:49:23Z",
+        "stars": 8527,
+        "language": "TypeScript",
+        "topics": [
+          "bun",
+          "deno",
+          "fetch",
+          "graphql",
+          "graphql-server",
+          "javascript",
+          "nodejs",
+          "the-guild",
+          "typescript",
+          "w3c",
+          "whatwg"
+        ],
+        "description": "🧘 Rewrite of a fully-featured GraphQL Server with focus on easy setup, performance & great developer experience.  The core of Yoga implements WHATWG Fetch API and can run/deploy on any JS environment.",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "BunWork",
+      "url": "https://github.com/happer64bit/bunwork",
+      "description": "Simple, Fast and Minimalist Backend Framework with No Pain",
+      "section": "Extensions",
+      "github": "happer64bit/bunwork",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "wintkhantlin/Bunwork",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2026-01-11T07:54:50Z",
+        "stars": 15,
+        "language": "TypeScript",
+        "topics": [
+          "api",
+          "backend",
+          "bun",
+          "framework",
+          "javascript",
+          "server",
+          "tools",
+          "typescript"
+        ],
+        "description": "A Lightweight Backend Framework For Bun",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "Blade",
+      "url": "https://github.com/ronin-co/blade",
+      "description": "Build instant web apps with React.",
+      "section": "Extensions",
+      "github": "ronin-co/blade",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "ronin-co/blade",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2025-12-08T11:17:54Z",
+        "stars": 341,
+        "language": "TypeScript",
+        "topics": [
+          "components",
+          "framework",
+          "frontend",
+          "react",
+          "server"
+        ],
+        "description": "A React framework for building instant web apps.",
+        "license": "Apache-2.0"
+      }
+    },
+    {
+      "name": "@stricjs/utils",
+      "url": "https://github.com/bunsvr/utils",
+      "description": "A set of blazingly fast, general-purpose web utilities.",
+      "section": "Extensions",
+      "github": "bunsvr/utils",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "bunsvr/utils",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2024-01-19T01:51:59Z",
+        "stars": 20,
+        "language": "TypeScript",
+        "topics": [],
+        "description": "Utilities for parsing and handling requests",
+        "license": null
+      }
+    },
+    {
+      "name": "Hattip",
+      "url": "https://github.com/hattipjs/hattip",
+      "description": "Set of JavaScript packages for building HTTP server applications, with Bun support.",
+      "section": "Extensions",
+      "github": "hattipjs/hattip",
+      "verdict": "keep",
+      "reason": "active since the Rust rewrite (last push 2026-08-10)",
+      "facts": {
+        "repo": "hattipjs/hattip",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2026-08-10T05:31:10Z",
+        "stars": 1382,
+        "language": "TypeScript",
+        "topics": [],
+        "description": "Like Express, but for the future",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "Siopao",
+      "url": "https://github.com/wobsoriano/siopao",
+      "description": "Minimal routing library. Based on Radix Tree.",
+      "section": "Extensions",
+      "github": "wobsoriano/siopao",
+      "verdict": "drop",
+      "reason": "archived or disabled repository",
+      "facts": {
+        "repo": "wobsoriano/siopao",
+        "archived": true,
+        "disabled": false,
+        "pushedAt": "2024-06-21T18:01:00Z",
+        "stars": 87,
+        "language": "TypeScript",
+        "topics": [
+          "bun",
+          "http",
+          "router"
+        ],
+        "description": "A minimal routing library designed to sit on top of Bun's fast HTTP server.",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "Fluxify",
+      "url": "https://github.com/simylein/fluxify",
+      "description": "A neat little library powered by Bun for building apis.",
+      "section": "Extensions",
+      "github": "simylein/fluxify",
+      "verdict": "keep",
+      "reason": "active since the Rust rewrite (last push 2026-08-19)",
+      "facts": {
+        "repo": "simylein/fluxify",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2026-08-19T20:45:06Z",
+        "stars": 45,
+        "language": "TypeScript",
+        "topics": [
+          "api",
+          "bun",
+          "http",
+          "logger",
+          "repository",
+          "rest",
+          "router",
+          "seed",
+          "service",
+          "sqlite"
+        ],
+        "description": "a neat little http server library powered by bun for building apis",
+        "license": "GPL-3.0"
+      }
+    },
+    {
+      "name": "GraphQL Mesh",
+      "url": "https://github.com/urigo/graphql-mesh",
+      "description": "Gateway that takes any source API and exposes GraphQL. Runs on Bun, Cloudflare Workers, Deno, and any JS environment.",
+      "section": "Extensions",
+      "github": "urigo/graphql-mesh",
+      "verdict": "keep",
+      "reason": "active since the Rust rewrite (last push 2026-10-03)",
+      "facts": {
+        "repo": "ardatan/graphql-mesh",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2026-10-03T10:52:01Z",
+        "stars": 3511,
+        "language": "TypeScript",
+        "topics": [
+          "gateway",
+          "graphql",
+          "grpc",
+          "grpc-gateway",
+          "odata",
+          "openapi",
+          "rest-api",
+          "soap",
+          "swagger",
+          "thrift"
+        ],
+        "description": "🕸️ GraphQL Federation Framework for any API services such as REST, OpenAPI, Swagger, SOAP, gRPC and more...",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "bun-types",
+      "url": "https://www.npmjs.com/package/bun-types",
+      "description": "Typescript with Bun.",
+      "section": "Extensions",
+      "verdict": "drop",
+      "reason": "external page that cannot be verified against the Rust Bun",
+      "httpStatus": 200
+    },
+    {
+      "name": "bun-fs-router-plugin",
+      "url": "https://github.com/m1212e/bun-fs-router-plugin",
+      "description": "Bundler plugin to enable filesystem based routing at build time",
+      "section": "Extensions",
+      "github": "m1212e/bun-fs-router-plugin",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "m1212e/bun-fs-router-plugin",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2023-07-14T20:29:04Z",
+        "stars": 16,
+        "language": "TypeScript",
+        "topics": [],
+        "description": "Bun.js filesystem router plugin",
+        "license": "NOASSERTION"
+      }
+    },
+    {
+      "name": "bun-utilities",
+      "url": "https://www.npmjs.com/package/bun-utilities",
+      "description": "Bindings for useful functions for bun.",
+      "section": "Extensions",
+      "verdict": "drop",
+      "reason": "external page that cannot be verified against the Rust Bun",
+      "httpStatus": 200
+    },
+    {
+      "name": "bun-livereload",
+      "url": "https://github.com/jarred-sumner/bun-livereload",
+      "description": "Automatically reload any imports.",
+      "section": "Extensions",
+      "github": "jarred-sumner/bun-livereload",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "Jarred-Sumner/bun-livereload",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2022-07-03T15:08:34Z",
+        "stars": 31,
+        "language": "TypeScript",
+        "topics": [],
+        "description": "Wrap a function with bun-livereload to automatically reload any imports inside the function the next time it is called",
+        "license": null
+      }
+    },
+    {
+      "name": "bun-html-live-reload",
+      "url": "https://github.com/aabccd021/bun-html-live-reload",
+      "description": "Automatically reload html when Bun server hot reloads.",
+      "section": "Extensions",
+      "github": "aabccd021/bun-html-live-reload",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "aabccd021/bun-html-live-reload",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2025-12-10T04:33:05Z",
+        "stars": 44,
+        "language": "Nix",
+        "topics": [
+          "bun",
+          "live-reload"
+        ],
+        "description": "Automatically reload html when Bun hot reloads",
+        "license": null
+      }
+    },
+    {
+      "name": "bun-wifi-name",
+      "url": "https://github.com/wobsoriano/bun-wifi-name",
+      "description": "Get current wifi name in Bun.",
+      "section": "Extensions",
+      "github": "wobsoriano/bun-wifi-name",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "wobsoriano/bun-wifi-name",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2023-09-11T21:16:43Z",
+        "stars": 19,
+        "language": "TypeScript",
+        "topics": [
+          "bun",
+          "node",
+          "wifi"
+        ],
+        "description": "Get current wifi name in Bun/Node",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "serve-static-bun",
+      "url": "https://www.npmjs.com/package/serve-static-bun",
+      "description": "Serve static files using Bun.serve or Bao.js.",
+      "section": "Extensions",
+      "verdict": "drop",
+      "reason": "link answers 403",
+      "httpStatus": 403
+    },
+    {
+      "name": "bun-promptx",
+      "url": "https://github.com/wobsoriano/bun-promptx",
+      "description": "Terminal prompt library based on bubbles via bun:ffi.",
+      "section": "Extensions",
+      "github": "wobsoriano/bun-promptx",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "wobsoriano/bun-promptx",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2023-09-19T03:54:01Z",
+        "stars": 149,
+        "language": "Go",
+        "topics": [
+          "bun",
+          "bunjs",
+          "cli",
+          "go",
+          "prompt",
+          "tui"
+        ],
+        "description": "Terminal prompt library for the Bun runtime",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "blipgloss",
+      "url": "https://github.com/wobsoriano/blipgloss",
+      "description": "Style definitions for nice terminal layouts 👄.",
+      "section": "Extensions",
+      "github": "wobsoriano/blipgloss",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "wobsoriano/blipgloss",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2025-07-05T18:07:02Z",
+        "stars": 212,
+        "language": "TypeScript",
+        "topics": [
+          "bubbles",
+          "bubbletea",
+          "bun",
+          "bunjs",
+          "cli",
+          "go",
+          "golang",
+          "layout",
+          "lipgloss",
+          "node",
+          "style",
+          "tui"
+        ],
+        "description": "Style definitions for nice terminal layouts 👄",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "Orama",
+      "url": "https://github.com/oramasearch/orama",
+      "description": "🌌 Fast, in-memory, typo-tolerant, full-text search engine written in TypeScript.",
+      "section": "Extensions",
+      "github": "oramasearch/orama",
+      "verdict": "keep",
+      "reason": "active since the Rust rewrite (last push 2026-10-03)",
+      "facts": {
+        "repo": "oramasearch/orama",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2026-10-03T03:35:21Z",
+        "stars": 10569,
+        "language": "TypeScript",
+        "topics": [
+          "algiorithm",
+          "data-structures",
+          "full-text",
+          "javascript",
+          "node",
+          "search",
+          "search-algorithm",
+          "search-engine",
+          "typescript",
+          "typo-tolerance",
+          "vector",
+          "vector-database",
+          "vector-database-embedding",
+          "vector-search",
+          "vector-search-engine"
+        ],
+        "description": "🌌  A complete search engine and RAG pipeline in your browser, server or edge network with support for full-text, vector, and hybrid search in less than 2kb.",
+        "license": "NOASSERTION"
+      }
+    },
+    {
+      "name": "bnx",
+      "url": "https://github.com/wobsoriano/bnx",
+      "description": "zx inspired shell for Bun/Node.",
+      "section": "Extensions",
+      "github": "wobsoriano/bnx",
+      "verdict": "drop",
+      "reason": "archived or disabled repository",
+      "facts": {
+        "repo": "wobsoriano/bnx",
+        "archived": true,
+        "disabled": false,
+        "pushedAt": "2024-01-21T07:14:32Z",
+        "stars": 128,
+        "language": "TypeScript",
+        "topics": [
+          "bash",
+          "bun",
+          "cli",
+          "shell"
+        ],
+        "description": "zx inspired shell for Bun.",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "bun-aws-lambda",
+      "url": "https://github.com/Jarred-Sumner/bun-aws-lambda",
+      "description": "Hacky attempt to get bun to run on AWS Lambda",
+      "section": "Extensions",
+      "github": "Jarred-Sumner/bun-aws-lambda",
+      "verdict": "drop",
+      "reason": "archived or disabled repository",
+      "facts": {
+        "repo": "Jarred-Sumner/bun-aws-lambda",
+        "archived": true,
+        "disabled": false,
+        "pushedAt": "2023-04-25T06:38:57Z",
+        "stars": 58,
+        "language": "TypeScript",
+        "topics": [],
+        "description": "Attempting to get bun to run on AWS Lambda",
+        "license": null
+      }
+    },
+    {
+      "name": "postgres-bun",
+      "url": "https://github.com/lawrencecchen/postgres-bun",
+      "description": "fast postgres bindings for bun runtime (libpq ffi)",
+      "section": "Extensions",
+      "github": "lawrencecchen/postgres-bun",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "lawrencecchen/postgres-bun",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2022-10-05T22:36:02Z",
+        "stars": 32,
+        "language": "TypeScript",
+        "topics": [],
+        "description": "",
+        "license": null
+      }
+    },
+    {
+      "name": "prerender-macro",
+      "url": "https://github.com/aralroca/prerender-macro",
+      "description": "Bun plugin to prerender JSX components using a kind of macro",
+      "section": "Extensions",
+      "github": "aralroca/prerender-macro",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "aralroca/prerender-macro",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2024-03-27T17:46:34Z",
+        "stars": 97,
+        "language": "TypeScript",
+        "topics": [
+          "brisa",
+          "bunjs",
+          "jsx",
+          "macros",
+          "partial-prerendering",
+          "plugin",
+          "preact",
+          "prerender",
+          "react"
+        ],
+        "description": "Bun plugin to prerender JSX components using a kind of macro",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "type-explorer",
+      "url": "https://github.com/triyanox/type-explorer",
+      "description": "Runtime type inspection and schema generation for JS/TS.",
+      "section": "Extensions",
+      "github": "triyanox/type-explorer",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "chaqchase/type-explorer",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2024-12-09T01:05:20Z",
+        "stars": 26,
+        "language": "TypeScript",
+        "topics": [],
+        "description": "A powerful runtime type analysis utility for JavaScript/TypeScript",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "svelte-adapter-bun",
+      "url": "https://github.com/catdadcode/svelte-adapter-bun",
+      "description": "Adapter for SvelteKit apps that generates a standalone Bun server.",
+      "section": "Extensions",
+      "github": "catdadcode/svelte-adapter-bun",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "AlexAllocated/svelte-adapter-bun",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2025-04-08T01:04:39Z",
+        "stars": 21,
+        "language": "JavaScript",
+        "topics": [],
+        "description": "A SvelteKit adapter for Bun",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "kysely-bun-sqlite",
+      "url": "https://www.npmjs.com/package/kysely-bun-sqlite",
+      "description": "Kysely with SQLite, running on Bun.",
+      "section": "Extensions",
+      "verdict": "drop",
+      "reason": "external page that cannot be verified against the Rust Bun",
+      "httpStatus": 200
+    },
+    {
+      "name": "fable-bun",
+      "url": "https://github.com/AngelMunoz/fable-bun",
+      "description": "Fable bindings for Bun.sh.",
+      "section": "Extensions",
+      "github": "AngelMunoz/fable-bun",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "AngelMunoz/fable-bun",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2022-07-17T03:59:20Z",
+        "stars": 26,
+        "language": "F#",
+        "topics": [
+          "bun",
+          "fable",
+          "fsharp",
+          "javascript-runtime",
+          "js"
+        ],
+        "description": "Fable bindings for Bun.sh",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "duckdb",
+      "url": "https://github.com/evanwashere/duckdb",
+      "description": "🦆 fast duckdb bindings for bun runtime.",
+      "section": "Extensions",
+      "github": "evanwashere/duckdb",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "evanwashere/duckdb",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2023-03-12T02:33:24Z",
+        "stars": 114,
+        "language": "JavaScript",
+        "topics": [
+          "bun",
+          "duckdb"
+        ],
+        "description": "🦆 fast duckdb bindings for bun runtime",
+        "license": "Apache-2.0"
+      }
+    },
+    {
+      "name": "JavaScript just got way faster - Fireship",
+      "url": "https://www.youtube.com/watch?v=FMhScnY0dME",
+      "description": "",
+      "section": "Videos",
+      "verdict": "drop",
+      "reason": "undated content from before the Rust rewrite"
+    },
+    {
+      "name": "What is Bun",
+      "url": "https://www.youtube.com/watch?v=Rp5yvwX7orE",
+      "description": "",
+      "section": "Videos",
+      "verdict": "drop",
+      "reason": "undated content from before the Rust rewrite"
+    },
+    {
+      "name": "Install Bun JS In Windows - Faster JavaScript",
+      "url": "https://www.youtube.com/watch?v=aNL3gXW0ZuM",
+      "description": "",
+      "section": "Videos",
+      "verdict": "drop",
+      "reason": "undated content from before the Rust rewrite"
+    },
+    {
+      "name": "Install and Run Bun JS In Real Server",
+      "url": "https://www.youtube.com/watch?v=lDGrDOGyOr0",
+      "description": "",
+      "section": "Videos",
+      "verdict": "drop",
+      "reason": "undated content from before the Rust rewrite"
+    },
+    {
+      "name": "How to create and run Next.js App on Bun JavaScript Runtime",
+      "url": "https://www.youtube.com/watch?v=U4sX83dlZx8",
+      "description": "",
+      "section": "Videos",
+      "verdict": "drop",
+      "reason": "undated content from before the Rust rewrite"
+    },
+    {
+      "name": "How to create and run React App on Bun JavaScript Runtime",
+      "url": "https://www.youtube.com/watch?v=UrO2UhA8SQE",
+      "description": "",
+      "section": "Videos",
+      "verdict": "drop",
+      "reason": "undated content from before the Rust rewrite"
+    },
+    {
+      "name": "New JS runtimes Deno & Bun - Shawn Swyx Wang",
+      "url": "https://www.youtube.com/watch?v=ORI29ot_Zck",
+      "description": "",
+      "section": "Videos",
+      "verdict": "drop",
+      "reason": "undated content from before the Rust rewrite"
+    },
+    {
+      "name": "Esta tecnología es mejor y más rápida que Node.js ¡DESCÚBRELA!",
+      "url": "https://www.youtube.com/watch?v=WzcCVPoX2wQ",
+      "description": "",
+      "section": "Videos",
+      "verdict": "drop",
+      "reason": "undated content from before the Rust rewrite"
+    },
+    {
+      "name": "bun.new",
+      "url": "http://bun.new",
+      "description": "Instant Bun playground in browser.",
+      "section": "Tools",
+      "verdict": "drop",
+      "reason": "link answers error",
+      "httpStatus": "error"
+    },
+    {
+      "name": "Bum",
+      "url": "https://github.com/owenizedd/bum",
+      "description": "A fast Bun version manager written in Rust.",
+      "section": "Tools",
+      "github": "owenizedd/bum",
+      "verdict": "keep",
+      "reason": "active since the Rust rewrite (last push 2026-06-27)",
+      "facts": {
+        "repo": "owenizedd/bum",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2026-06-27T08:49:01Z",
+        "stars": 266,
+        "language": "Rust",
+        "topics": [
+          "bum",
+          "bun",
+          "bun-js",
+          "bun-plugin",
+          "bun-runtime",
+          "bun-version-manager",
+          "bunjs",
+          "napi-rs",
+          "node-js",
+          "nodejs",
+          "npm",
+          "npm-package",
+          "rust",
+          "version-manager"
+        ],
+        "description": "Bun Version Manager written in Rust⚡",
+        "license": null
+      }
+    },
+    {
+      "name": "sublime-bun",
+      "url": "https://github.com/alexkuz/sublime-bun",
+      "description": "Bun binary files viewer and other Bun-related stuff for Sublime Text editor.",
+      "section": "Tools",
+      "github": "alexkuz/sublime-bun",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "alexkuz/sublime-bun",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2023-07-30T13:03:55Z",
+        "stars": 9,
+        "language": "Python",
+        "topics": [],
+        "description": "Bun binary files viewer and other Bun-related stuff",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "Shumai",
+      "url": "https://github.com/AltriusRS/Shumai",
+      "description": "A delicious new outlook on command line argument handling with Bun.",
+      "section": "Tools",
+      "github": "AltriusRS/Shumai",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "AltriusRS/Shumai",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2022-07-12T16:23:55Z",
+        "stars": 29,
+        "language": "TypeScript",
+        "topics": [
+          "args-parser",
+          "bun",
+          "bunjs",
+          "cli",
+          "commanderjs"
+        ],
+        "description": "A delicious new outlook on command line argument handling.",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "asdf-bun",
+      "url": "https://github.com/cometkim/asdf-bun",
+      "description": "asdf version manager plugin for installing Bun.",
+      "section": "Tools",
+      "github": "cometkim/asdf-bun",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "cometkim/asdf-bun",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2025-06-17T07:40:42Z",
+        "stars": 151,
+        "language": "Shell",
+        "topics": [
+          "asdf",
+          "asdf-plugin",
+          "bun",
+          "bunjs",
+          "mise"
+        ],
+        "description": "asdf-vm plugin for installing Bun",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "setup-bun",
+      "url": "https://github.com/oven-sh/setup-bun",
+      "description": "Set up your GitHub Actions workflow with a specific version of Bun.",
+      "section": "Tools",
+      "github": "oven-sh/setup-bun",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "oven-sh/setup-bun",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2026-03-14T09:38:41Z",
+        "stars": 724,
+        "language": "TypeScript",
+        "topics": [
+          "actions",
+          "bun",
+          "github",
+          "github-actions",
+          "setup-bun"
+        ],
+        "description": "Set up your GitHub Actions workflow with a specific version of Bun",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "action-setup-bun",
+      "url": "https://github.com/antongolub/action-setup-bun",
+      "description": "Setup GitHub Actions workflow with a specific version of Bun.",
+      "section": "Tools",
+      "github": "antongolub/action-setup-bun",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "antongolub/action-setup-bun",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2026-05-11T18:25:56Z",
+        "stars": 50,
+        "language": "TypeScript",
+        "topics": [
+          "actions",
+          "bun",
+          "github",
+          "github-actions"
+        ],
+        "description": "Setup GitHub Actions workflow with a specific version of Bun",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "bun-discord-bot",
+      "url": "https://github.com/MiraBellierr/bun-discord-bot",
+      "description": "Interaction Discord bot written in JS and TS using Bun runtime environment.",
+      "section": "Tools",
+      "github": "MiraBellierr/bun-discord-bot",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "MiraBellierr/bun-discord-bot",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2022-07-25T06:40:28Z",
+        "stars": 16,
+        "language": "TypeScript",
+        "topics": [
+          "bunjs",
+          "discord-bot"
+        ],
+        "description": "An interaction Discord bot written in JS and TS using Bun runtime environment. Contains simple get avatar and get user info commands. Starting a bot only takes 0.02 - 0.05 ms.",
+        "license": null
+      }
+    },
+    {
+      "name": "bun-discord-bot(serverless)",
+      "url": "https://github.com/xHyroM/bun-discord-bot",
+      "description": "Official serverless discord bot for bun discord server.",
+      "section": "Tools",
+      "github": "xHyroM/bun-discord-bot",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "xhyrom/bun-discord-bot",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2025-11-09T17:04:46Z",
+        "stars": 40,
+        "language": "TypeScript",
+        "topics": [
+          "bot",
+          "bun",
+          "discord"
+        ],
+        "description": "official discord bot for bun server",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "bunbot",
+      "url": "https://github.com/wobsoriano/bunbot",
+      "description": "Native cross-platform GUI automation for the Bun runtime. Supports Mac and Windows for now.",
+      "section": "Tools",
+      "github": "wobsoriano/bunbot",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "wobsoriano/bunbot",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2023-09-23T04:06:03Z",
+        "stars": 82,
+        "language": "Go",
+        "topics": [
+          "automation",
+          "bun",
+          "bunjs",
+          "cgo",
+          "ffi",
+          "go",
+          "gui",
+          "robot"
+        ],
+        "description": "Desktop automation for Bun",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "Discall",
+      "url": "https://github.com/Discall-Development/Discall",
+      "description": "A async functional discord API wrapper written in bun.",
+      "section": "Tools",
+      "github": "Discall-Development/Discall",
+      "verdict": "drop",
+      "reason": "archived or disabled repository",
+      "facts": {
+        "repo": "Discall-Development/Discall",
+        "archived": true,
+        "disabled": false,
+        "pushedAt": "2022-09-13T12:12:34Z",
+        "stars": 28,
+        "language": "JavaScript",
+        "topics": [],
+        "description": "Functional async discord API",
+        "license": null
+      }
+    },
+    {
+      "name": "bun-doc",
+      "url": "https://github.com/William-McGonagle/bun-doc",
+      "description": "A procedural documentation and website generator written in Bun.",
+      "section": "Tools",
+      "github": "William-McGonagle/bun-doc",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "William-McGonagle/bun-doc",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2022-07-24T15:43:21Z",
+        "stars": 13,
+        "language": "JavaScript",
+        "topics": [
+          "bun",
+          "documentation",
+          "generator",
+          "javascript",
+          "procedural",
+          "typescript",
+          "website"
+        ],
+        "description": "A procedural documentation and website generator written in Bun.",
+        "license": "ISC"
+      }
+    },
+    {
+      "name": "VS Code Bun extension",
+      "url": "https://marketplace.visualstudio.com/items?itemName=oven.bun-vscode",
+      "description": "VS Code extension to execute JavaScript .js file or TypeScript .ts file by Bun.",
+      "section": "Tools",
+      "verdict": "drop",
+      "reason": "external page that cannot be verified against the Rust Bun",
+      "httpStatus": 200
+    },
+    {
+      "name": "Discord",
+      "url": "https://bun.com/discord",
+      "description": "",
+      "section": "Community",
+      "verdict": "keep",
+      "reason": "official Bun site",
+      "httpStatus": 200
+    },
+    {
+      "name": "Bun tagged NPM packages",
+      "url": "https://bun-modules.pages.dev",
+      "description": "",
+      "section": "Community",
+      "verdict": "drop",
+      "reason": "external page that cannot be verified against the Rust Bun",
+      "httpStatus": 200
+    },
+    {
+      "name": "Benchmarks",
+      "url": "https://github.com/xHyroM/benchmarks",
+      "description": "",
+      "section": "Community",
+      "github": "xHyroM/benchmarks",
+      "verdict": "drop",
+      "reason": "archived or disabled repository",
+      "facts": {
+        "repo": "xhyrom-archive/benchmarks",
+        "archived": true,
+        "disabled": false,
+        "pushedAt": "2024-04-24T13:09:09Z",
+        "stars": 12,
+        "language": "TypeScript",
+        "topics": [],
+        "description": "Benchmarks between languages & js runtimes",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "Framework benchmarks",
+      "url": "https://github.com/bunsvr/benchmark",
+      "description": "Comparing Bun HTTP frameworks.",
+      "section": "Community",
+      "github": "bunsvr/benchmark",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "bunsvr/benchmark",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2024-01-16T13:51:27Z",
+        "stars": 28,
+        "language": "TypeScript",
+        "topics": [],
+        "description": "Benchmarking HTTP frameworks",
+        "license": null
+      }
+    },
+    {
+      "name": "Bun HTTP Framework Benchmark",
+      "url": "https://github.com/SaltyAom/bun-http-framework-benchmark",
+      "description": "Compare throughput benchmark from various Bun HTTP frameworks.",
+      "section": "Community",
+      "github": "SaltyAom/bun-http-framework-benchmark",
+      "verdict": "keep",
+      "reason": "active since the Rust rewrite (last push 2026-08-12)",
+      "facts": {
+        "repo": "SaltyAom/bun-http-framework-benchmark",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2026-08-12T18:28:06Z",
+        "stars": 568,
+        "language": "TypeScript",
+        "topics": [],
+        "description": "Compare throughput benchmark from various Bun HTTP framework",
+        "license": null
+      }
+    },
+    {
+      "name": "sveltekit-adapter-bun",
+      "url": "https://github.com/bun-community/sveltekit-adapter-bun",
+      "description": "",
+      "section": "Community",
+      "github": "bun-community/sveltekit-adapter-bun",
+      "verdict": "drop",
+      "reason": "no activity since 2026-05-14",
+      "facts": {
+        "repo": "bun-community/sveltekit-adapter-bun",
+        "archived": false,
+        "disabled": false,
+        "pushedAt": "2023-03-07T14:00:42Z",
+        "stars": 22,
+        "language": "JavaScript",
+        "topics": [],
+        "description": "",
+        "license": null
+      }
+    }
+  ]
+}

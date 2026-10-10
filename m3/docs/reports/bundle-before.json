@@ -1,0 +1,316 @@
+{
+  "bun": "1.4.2",
+  "date": "2026-10-04",
+  "packages": {
+    "@aphrody/ag-ui": {
+      "entries": 1,
+      "jsBytes": 284,
+      "gzipBytes": 170,
+      "cssBytes": 0,
+      "distFiles": 0,
+      "distBytes": 0,
+      "distGzipBytes": 0,
+      "buildMs": 3
+    },
+    "@aphrody/assets": {
+      "entries": 6,
+      "jsBytes": 218961,
+      "gzipBytes": 80614,
+      "cssBytes": 0,
+      "distFiles": 0,
+      "distBytes": 0,
+      "distGzipBytes": 0,
+      "buildMs": 34
+    },
+    "@aphrody/canvas": {
+      "entries": 2,
+      "jsBytes": 28600,
+      "gzipBytes": 9304,
+      "cssBytes": 0,
+      "distFiles": 0,
+      "distBytes": 0,
+      "distGzipBytes": 0,
+      "buildMs": 4
+    },
+    "@aphrody/eslint-plugin-m3": {
+      "entries": 1,
+      "jsBytes": 74357,
+      "gzipBytes": 23278,
+      "cssBytes": 0,
+      "distFiles": 0,
+      "distBytes": 0,
+      "distGzipBytes": 0,
+      "buildMs": 3
+    },
+    "@aphrody/identity": {
+      "entries": 4,
+      "jsBytes": 0,
+      "gzipBytes": 0,
+      "cssBytes": 0,
+      "distFiles": 0,
+      "distBytes": 0,
+      "distGzipBytes": 0,
+      "buildMs": 1,
+      "error": "ResolveMessage: Could not resolve: \"../../../../../crates/ui/identity/assets/aphrody/sprites/spritesheet.webp?url\" | ResolveMessage: Could not resolve: \"../../../../../crates/ui/identity/assets/brand/icon-64.png?url\""
+    },
+    "@aphrody/m3": {
+      "entries": 8,
+      "jsBytes": 32636,
+      "gzipBytes": 15075,
+      "cssBytes": 0,
+      "distFiles": 14,
+      "distBytes": 59301,
+      "distGzipBytes": 21429,
+      "buildMs": 3
+    },
+    "@aphrody/m3-ai": {
+      "entries": 1,
+      "jsBytes": 85534,
+      "gzipBytes": 22244,
+      "cssBytes": 0,
+      "distFiles": 1,
+      "distBytes": 149035,
+      "distGzipBytes": 27990,
+      "buildMs": 3
+    },
+    "@aphrody/m3-baseui": {
+      "entries": 2,
+      "jsBytes": 1487,
+      "gzipBytes": 600,
+      "cssBytes": 4676,
+      "distFiles": 0,
+      "distBytes": 0,
+      "distGzipBytes": 0,
+      "buildMs": 1
+    },
+    "@aphrody/m3-codemods": {
+      "entries": 0,
+      "jsBytes": 0,
+      "gzipBytes": 0,
+      "cssBytes": 0,
+      "distFiles": 0,
+      "distBytes": 0,
+      "distGzipBytes": 0,
+      "buildMs": 0
+    },
+    "@aphrody/m3-config": {
+      "entries": 4,
+      "jsBytes": 4880,
+      "gzipBytes": 2663,
+      "cssBytes": 0,
+      "distFiles": 0,
+      "distBytes": 0,
+      "distGzipBytes": 0,
+      "buildMs": 1
+    },
+    "@aphrody/m3-design": {
+      "entries": 1,
+      "jsBytes": 54112,
+      "gzipBytes": 14230,
+      "cssBytes": 0,
+      "distFiles": 0,
+      "distBytes": 0,
+      "distGzipBytes": 0,
+      "buildMs": 2
+    },
+    "@aphrody/m3-explorer": {
+      "entries": 1,
+      "jsBytes": 12123,
+      "gzipBytes": 3886,
+      "cssBytes": 0,
+      "distFiles": 1,
+      "distBytes": 23136,
+      "distGzipBytes": 4949,
+      "buildMs": 1
+    },
+    "@aphrody/m3-fonts": {
+      "entries": 4,
+      "jsBytes": 0,
+      "gzipBytes": 0,
+      "cssBytes": 0,
+      "distFiles": 0,
+      "distBytes": 0,
+      "distGzipBytes": 0,
+      "buildMs": 3,
+      "error": "ResolveMessage: Could not resolve: \"../../../../../crates/ui/bun/icons/material-symbols/material-symbols-outlined.woff2\" | ResolveMessage: Could not resolve: \"../../../../../crates/ui/bun/icons/material-symbols/material-symbols-rounded.woff2\""
+    },
+    "@aphrody/m3-forms": {
+      "entries": 1,
+      "jsBytes": 7184,
+      "gzipBytes": 2254,
+      "cssBytes": 0,
+      "distFiles": 1,
+      "distBytes": 13871,
+      "distGzipBytes": 2555,
+      "buildMs": 1
+    },
+    "@aphrody/m3-front": {
+      "entries": 4,
+      "jsBytes": 3285,
+      "gzipBytes": 1910,
+      "cssBytes": 0,
+      "distFiles": 0,
+      "distBytes": 0,
+      "distGzipBytes": 0,
+      "buildMs": 2
+    },
+    "@aphrody/m3-icons": {
+      "entries": 5,
+      "jsBytes": 5331,
+      "gzipBytes": 2948,
+      "cssBytes": 0,
+      "distFiles": 6,
+      "distBytes": 8703,
+      "distGzipBytes": 3751,
+      "buildMs": 1
+    },
+    "@aphrody/m3-mcp": {
+      "entries": 1,
+      "jsBytes": 5534,
+      "gzipBytes": 2546,
+      "cssBytes": 0,
+      "distFiles": 0,
+      "distBytes": 0,
+      "distGzipBytes": 0,
+      "buildMs": 1
+    },
+    "@aphrody/m3-motion": {
+      "entries": 1,
+      "jsBytes": 11565,
+      "gzipBytes": 3313,
+      "cssBytes": 0,
+      "distFiles": 1,
+      "distBytes": 22395,
+      "distGzipBytes": 4534,
+      "buildMs": 2
+    },
+    "@aphrody/m3-next": {
+      "entries": 4,
+      "jsBytes": 12372,
+      "gzipBytes": 6078,
+      "cssBytes": 169,
+      "distFiles": 3,
+      "distBytes": 29501,
+      "distGzipBytes": 10200,
+      "buildMs": 2
+    },
+    "@aphrody/m3-next-migrate": {
+      "entries": 14,
+      "jsBytes": 53041,
+      "gzipBytes": 21394,
+      "cssBytes": 0,
+      "distFiles": 14,
+      "distBytes": 122618,
+      "distGzipBytes": 33824,
+      "buildMs": 3
+    },
+    "@aphrody/m3-os-themes": {
+      "entries": 2,
+      "jsBytes": 30410,
+      "gzipBytes": 10674,
+      "cssBytes": 0,
+      "distFiles": 0,
+      "distBytes": 0,
+      "distGzipBytes": 0,
+      "buildMs": 2
+    },
+    "@aphrody/m3-primitives": {
+      "entries": 1,
+      "jsBytes": 110732,
+      "gzipBytes": 28525,
+      "cssBytes": 0,
+      "distFiles": 1,
+      "distBytes": 175546,
+      "distGzipBytes": 34100,
+      "buildMs": 4
+    },
+    "@aphrody/m3-react": {
+      "entries": 69,
+      "jsBytes": 43048,
+      "gzipBytes": 24044,
+      "cssBytes": 0,
+      "distFiles": 133,
+      "distBytes": 75947,
+      "distGzipBytes": 33665,
+      "buildMs": 5
+    },
+    "@aphrody/m3-reader": {
+      "entries": 3,
+      "jsBytes": 32445,
+      "gzipBytes": 8780,
+      "cssBytes": 4675,
+      "distFiles": 1,
+      "distBytes": 59554,
+      "distGzipBytes": 11092,
+      "buildMs": 2
+    },
+    "@aphrody/m3-tailwind": {
+      "entries": 2,
+      "jsBytes": 8421,
+      "gzipBytes": 3268,
+      "cssBytes": 37719,
+      "distFiles": 0,
+      "distBytes": 0,
+      "distGzipBytes": 0,
+      "buildMs": 2
+    },
+    "@aphrody/m3-theme": {
+      "entries": 6,
+      "jsBytes": 8198,
+      "gzipBytes": 3739,
+      "cssBytes": 38445,
+      "distFiles": 5,
+      "distBytes": 13582,
+      "distGzipBytes": 4695,
+      "buildMs": 2
+    },
+    "@aphrody/m3-tokens": {
+      "entries": 8,
+      "jsBytes": 12812,
+      "gzipBytes": 5341,
+      "cssBytes": 15832,
+      "distFiles": 6,
+      "distBytes": 19621,
+      "distGzipBytes": 6621,
+      "buildMs": 3
+    },
+    "@aphrody/material-design-icons": {
+      "entries": 1,
+      "jsBytes": 297,
+      "gzipBytes": 241,
+      "cssBytes": 0,
+      "distFiles": 0,
+      "distBytes": 0,
+      "distGzipBytes": 0,
+      "buildMs": 1
+    },
+    "@aphrody/scaffold": {
+      "entries": 6,
+      "jsBytes": 16172,
+      "gzipBytes": 7474,
+      "cssBytes": 0,
+      "distFiles": 0,
+      "distBytes": 0,
+      "distGzipBytes": 0,
+      "buildMs": 2
+    },
+    "@aphrody/m3-web": {
+      "entries": 0,
+      "jsBytes": 0,
+      "gzipBytes": 0,
+      "cssBytes": 0,
+      "distFiles": 1,
+      "distBytes": 91874,
+      "distGzipBytes": 21418,
+      "buildMs": 0
+    }
+  },
+  "apps": {
+    "@aphrody/m3-web": {
+      "files": 3,
+      "bytes": 115496,
+      "gzipBytes": 25452,
+      "buildMs": 1153
+    }
+  }
+}

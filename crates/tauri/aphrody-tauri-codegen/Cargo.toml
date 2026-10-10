@@ -1,0 +1,52 @@
+[package]
+name = "aphrody-tauri-codegen"
+version = "3.0.0-alpha.3"
+description = "code generation meant to be consumed inside of `tauri` through `tauri-build` or `tauri-macros`"
+exclude = ["CHANGELOG.md", "/target"]
+authors = ["Tauri Programme within The Commons Conservancy"]
+homepage = "https://tauri.app/"
+repository = "https://github.com/aphrody-labs/yolo"
+categories = ["gui", "web-programming"]
+license = "Apache-2.0 OR MIT"
+edition = "2024"
+rust-version = "1.95"
+
+[lib]
+name = "tauri_codegen"
+
+[dependencies]
+sha2 = "0.10"
+base64 = "0.22"
+proc-macro2 = { workspace = true }
+quote = { workspace = true }
+syn = "2"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["build-2"] }
+thiserror = { workspace = true }
+walkdir = { workspace = true }
+brotli = { version = "9", optional = true, default-features = false, features = [
+  "std",
+] }
+uuid = { workspace = true, features = ["v4"] }
+semver = { workspace = true }
+ico = "0.5"
+png = "0.18"
+json-patch = "4"
+url = { workspace = true }
+
+[target."cfg(target_os = \"macos\")".dependencies]
+plist = "1"
+time = { workspace = true, features = ["parsing", "formatting"] }
+
+[features]
+compression = ["brotli", "tauri-utils/compression"]
+isolation = ["tauri-utils/isolation"]
+config-json5 = ["tauri-utils/config-json5"]
+config-toml = ["tauri-utils/config-toml"]
+
+[lints.clippy]
+collapsible_if = "allow"
+redundant_clone = "warn"
+assigning_clones = "warn"
+or_fun_call = "warn"

@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "cookiePolicy": {
+    "storage": "host-local-owner-only",
+    "homeEnv": "APHRODY_HOME",
+    "directoryEnv": "BXC_COOKIES_DIR",
+    "rawValuesInGit": false,
+    "crossHostCopy": false,
+    "rotationRequiredAfterExposure": true,
+    "layout": "tools/config/cookie-layout.env.example"
+  },
+  "providerPipeline": "tools/config/google-gemini-pipeline.json",
+  "generatedAt": "2026-09-22",
+  "targets": [
+    {
+      "id": "windows-local-observation",
+      "kind": "historical-developer-host-observation",
+      "os": "Windows",
+      "repositoryDiscovery": "current-checkout-and-superproject-gitlinks",
+      "observation": {
+        "observedAt": "2026-09-22",
+        "source": "legacy target inventory in this repository",
+        "status": "historical-not-revalidated"
+      }
+    },
+    {
+      "id": "linux-container-26.04",
+      "kind": "reference-build-host",
+      "os": "Ubuntu 26.04 / Docker container aphrody/build-linux:26.04 (glibc 2.43)",
+      "releaseWorkspace": {
+        "build": "scripts/build/build-aphrody-stack-release.sh --compute-only MONOREPO COMMIT",
+        "bundles": "$APHRODY_RELEASE_ROOT/bundles",
+        "cargoTarget": "$APHRODY_RELEASE_ROOT/target",
+        "forbidden": [
+          "building from a Windows filesystem mount when Linux filesystem performance or permissions are required"
+        ]
+      },
+      "toolchain": [
+        "rust",
+        "cargo",
+        "bun",
+        "uv"
+      ],
+      "guiPolicy": "cosmic-native-headless-no-gtk-no-qt",
+      "authority": "reproducible-build-and-check",
+      "observation": {
+        "observedAt": "2026-09-22",
+        "source": "legacy reference-build-host inventory",
+        "status": "historical-not-revalidated"
+      }
+    },
+    {
+      "id": "vps",
+      "kind": "production-host",
+      "os": "Ubuntu 26.04",
+      "applicationRoots": [
+        "/srv/aphrody",
+        "/srv/rg",
+        "/srv/shenron",
+        "/srv/aphrody-infra"
+      ],
+      "consumers": [
+        "aphrody-site",
+        "aphrody-web-api",
+        "aphrody-a2a",
+        "aphrody-ai-http",
+        "aphrody-mcp-http",
+        "aphrody-shenron-embed",
+        "rg-services",
+        "rg-infra-monitor",
+        "shenron"
+      ],
+      "authority": "immutable-release-runtime",
+      "lifecycle": "rg-and-shenron-live; aphrody-redeployed-through-the-all-in-one-bundle",
+      "state": "tools/config/host/inventory/vps-source.json"
+    },
+    {
+      "id": "dbfr",
+      "kind": "secondary-host",
+      "os": "Ubuntu",
+      "lifecycle": "active: postgresql@18 (shenron_site)",
+      "consumers": [
+        "postgresql",
+        "redis",
+        "asset-cdn",
+        "backups",
+        "release-slot"
+      ],
+      "authority": "service-specific"
+    },
+    {
+      "id": "nie-local-data",
+      "kind": "historical-data-location-observation",
+      "os": "Windows",
+      "consumers": [
+        "nie"
+      ],
+      "authority": "owner-defined-location",
+      "observation": {
+        "observedAt": "2026-09-22",
+        "source": "legacy target inventory in this repository",
+        "status": "historical-not-revalidated",
+        "locationPolicy": "resolve from owner configuration; no host path is authoritative here"
+      }
+    },
+    {
+      "id": "nie-repo",
+      "kind": "historical-source-checkout-observation",
+      "os": "Windows + WSL2",
+      "consumers": [
+        "nie"
+      ],
+      "observation": {
+        "observedAt": "2026-09-22",
+        "source": "legacy target inventory in this repository",
+        "recordedRevision": "f5ba852",
+        "status": "historical-not-revalidated"
+      }
+    }
+  ]
+}

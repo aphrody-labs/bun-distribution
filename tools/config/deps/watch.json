@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "note": "Libraries whose releases are fact-checked after a bump (GitHub notes + Context7 docs). Pins themselves come from Cargo.toml, package.json and the toolchain files.",
+  "libs": [
+    {
+      "id": "tauri",
+      "ecosystem": "cargo",
+      "name": "tauri",
+      "github": "tauri-apps/tauri",
+      "context7": "/tauri-apps/tauri-docs",
+      "topics": ["migrate", "breaking changes", "plugin permissions"]
+    },
+    {
+      "id": "wasm-bindgen",
+      "ecosystem": "cargo",
+      "name": "wasm-bindgen",
+      "github": "rustwasm/wasm-bindgen",
+      "context7": "/wasm-bindgen/wasm-bindgen",
+      "topics": ["breaking changes", "getrandom"]
+    },
+    {
+      "id": "rio-vt",
+      "ecosystem": "cargo",
+      "name": "rio-vt",
+      "github": "raphamorim/rio",
+      "topics": ["changelog"]
+    },
+    {
+      "id": "portable-pty",
+      "ecosystem": "cargo",
+      "name": "portable-pty",
+      "github": "wezterm/wezterm",
+      "topics": ["windows conpty"]
+    },
+    {
+      "id": "xterm",
+      "ecosystem": "npm",
+      "name": "@xterm/xterm",
+      "github": "xtermjs/xterm.js",
+      "context7": "/xtermjs/xterm.js",
+      "topics": ["breaking changes", "write callback flow control"]
+    },
+    {
+      "id": "next",
+      "ecosystem": "npm",
+      "name": "next",
+      "github": "vercel/next.js",
+      "context7": "/vercel/next.js",
+      "topics": ["upgrade guide"]
+    },
+    {
+      "id": "discord.js",
+      "ecosystem": "npm",
+      "name": "discord.js",
+      "github": "discordjs/discord.js",
+      "context7": "/discordjs/discord.js",
+      "topics": ["breaking changes"]
+    },
+    {
+      "id": "bun",
+      "ecosystem": "tool",
+      "name": "bun",
+      "github": "oven-sh/bun",
+      "context7": "/oven-sh/bun",
+      "topics": ["breaking changes"]
+    },
+    {
+      "id": "uv",
+      "ecosystem": "tool",
+      "name": "uv",
+      "github": "astral-sh/uv",
+      "pypi": "uv",
+      "context7": "/astral-sh/uv",
+      "topics": ["breaking changes"]
+    }
+  ],
+  "consumers": {
+    "note": "Rust packages and Bun workspaces re-checked when one of these libraries changes.",
+    "tauri": {
+      "cargo": ["aphrody-shell-tauri", "aphrody-app", "aphrody-tauri-wrap"],
+      "bun": []
+    },
+    "xterm": {
+      "bun": ["packages/shell/web"]
+    }
+  },
+  "inventory": {
+    "note": "Extra roots scanned for Python pins (requirements*.txt, uv.lock) besides the repository (installed environments only; upstream reference clones are third-party).",
+    "pythonRoots": ["py"]
+  }
+}

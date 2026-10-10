@@ -1,0 +1,14 @@
+import index from "./index.html";
+
+// Tauri loads the fixed devUrl of src-tauri/tauri.conf.json. Bun.serve fails with EADDRINUSE instead of moving
+// to another port, so a stale server can never answer in place of this one.
+const server = Bun.serve({
+  port: 1420,{% if v2 %}
+  // `tauri android dev` and `tauri ios dev` set TAURI_DEV_HOST so that a device can reach this machine.
+  hostname: process.env.TAURI_DEV_HOST || "localhost",{% else %}
+  hostname: "localhost",{% endif %}
+  routes: { "/*": index },
+  development: true,
+});
+
+console.log(`Dev server: ${server.url}`);

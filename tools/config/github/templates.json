@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "note": "Shared issue and PR template source for the Aphrody repositories that use the French form layout; rendered by scripts/tools/infra/github-templates.ts. iecode keeps its own English forms.",
+  "repos": {
+    "yolo": {
+      "root": "~/aphrody",
+      "product": "YOLO",
+      "bugDescription": "Signaler un dysfonctionnement dans YOLO",
+      "bugIntro": "Merci de remplir ce formulaire pour nous aider à diagnostiquer et résoudre le problème.",
+      "featureDescription": "Suggérer une nouvelle idée ou une amélioration d'optimisation",
+      "featureIntro": "Merci de proposer une amélioration pour l'écosystème YOLO !",
+      "components": [
+        "crates/engine/yolo-core (Cœur Rust)",
+        "crates/engine/yolo-runtime (Export C ABI)",
+        "crates/engine/yolo-pyo3 (Extension PyO3)",
+        "crates/ui/app (aphrody-app, hôte desktop Tauri)",
+        "packages/python (Python / uv)",
+        "packages/runtime (TypeScript / Bun FFI)",
+        "packages/core (YOLO Core Library)",
+        "crates/infra/aphrody (CLI yolo)",
+        "apps/web (Frontend Web)"
+      ],
+      "environment": [
+        "OS: Linux / macOS / Windows",
+        "Rust: 1.95+",
+        "Bun: 1.4.2+",
+        "Python: 3.12+ / uv: 0.12+"
+      ],
+      "environmentDescription": "Version d'OS, Rust, Bun, Python / uv.",
+      "reproductionVerb": "Voir",
+      "prComponents": [
+        "`crates/engine/yolo-core` (Moteur algorithmique Rust)",
+        "`crates/engine/yolo-runtime` (C ABI export)",
+        "`crates/engine/yolo-pyo3` (Extension native PyO3 0.29)",
+        "`crates/ui/app` (aphrody-app, hôte desktop Tauri 3)",
+        "`packages/python` (Package Python / uv)",
+        "`packages/runtime` (SDK Bun FFI)",
+        "`packages/core` (Librairie Core TypeScript)",
+        "`packages/engine/yolo` (CLI universelle yolo)",
+        "`apps/web` (Application Web)",
+        "`docs/` (Documentation)"
+      ],
+      "summaryDescription": "Résumé clair et concis de ce qui s'est passé.",
+      "reproductionDescription": "Commandes exactes pour reproduire l'anomalie.",
+      "prValidations": [
+        "`bun packages/engine/yolo/src/index.ts verify --json` (Toutes les gates validées)",
+        "`bun run lint` (Oxlint sans erreur)",
+        "`bun run fmt:check` (Code TypeScript formaté sans diff)",
+        "`ruff check .` (Code Python linté et vérifié)",
+        "`bun test test/` (Tests unitaires 100% verts)",
+        "`uv run --directory packages/python pytest` (Tests Python verts)"
+      ]
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "note": "Bun/npm bumps that policy refuses until the blocker moves. `yolo update bun status|plan|apply` lists them as held and never bumps them. A hold stops releases above `maxMajor`, or above `maxVersion`. Advisory holds (security findings that no bump can fix) stay in advisory-holds.json. Re-check on every bump and remove an entry as soon as its blocker moves; the table in docs/operations/infra/update/BUN.md mirrors this file.",
+  "holds": [
+    {
+      "name": "undici-types",
+      "maxVersion": "8.9.0",
+      "since": "2026-10-02",
+      "reason": "@types/node 26.6.x depends on undici-types ~8.9.0 (latest 8.11.2): pinned to 8.9.0 so the workspace holds one copy. Moves with @types/node."
+    },
+    {
+      "name": "@aphrody/canvas",
+      "maxMajor": 0,
+      "since": "2026-10-02",
+      "reason": "first-party package (m3/packages/canvas, 1.0.9-aphrody.2 on the workspace); consumers resolve it through workspace:*, the catalog entry is unused. The registry copy is not a source of truth (publishing is an owner decision)."
+    },
+    {
+      "name": "jsdom",
+      "maxMajor": 29,
+      "since": "2026-10-02",
+      "reason": "jsdom 30 declares undici ^8.10.2 but the root override forces undici ^7.30.0 (miniflare, @ai-sdk/provider-utils, cheerio, shadcn and the Discord libraries need 7), so 30 would run on an unsupported undici. Moves when the undici override can go to 8."
+    },
+    {
+      "name": "msw",
+      "maxMajor": 2,
+      "since": "2026-10-02",
+      "reason": "msw 3.0.x does not intercept Bun's native fetch: setupServer + listen leaves fetch un-patched (getaddrinfo ENOTFOUND on a mocked host; packages/rg/patreon-bun goes from 174 passing to 8 failing, requests reach the real API). The renamed option onUnhandledFrame is the only documented source change, so this is a runtime incompatibility, not a migration step. Re-test on each 3.x release."
+    }
+  ]
+}

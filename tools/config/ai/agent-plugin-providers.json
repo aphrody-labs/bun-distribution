@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "marketplace": "aphrody-user",
+  "providers": [
+    {
+      "id": "codex",
+      "binary": "codex",
+      "versionArgs": ["--version"],
+      "pluginHelp": ["plugin", "--help"],
+      "pluginValidation": null,
+      "pluginInstall": [
+        ["plugin", "marketplace", "add", "{store}"],
+        ["plugin", "add", "{name}@{marketplace}", "--json"]
+      ],
+      "pluginRemove": ["plugin", "remove", "{name}@{marketplace}", "--json"],
+      "skillsDirectory": "{home}/.agents/skills",
+      "mcpAdd": ["mcp", "add", "{name}", "--", "{command}", "{args}"],
+      "mcpRemove": ["mcp", "remove", "{name}"],
+      "docs": "https://developers.openai.com/plugins/build/plugins"
+    },
+    {
+      "id": "claude",
+      "binary": "claude",
+      "versionArgs": ["--version"],
+      "pluginHelp": ["plugin", "--help"],
+      "pluginValidation": ["plugin", "validate", "{path}", "--json", "--strict"],
+      "pluginInstall": [
+        ["plugin", "marketplace", "add", "{store}"],
+        ["plugin", "install", "{name}@{marketplace}", "--scope", "{scope}"]
+      ],
+      "pluginRemove": [
+        "plugin",
+        "uninstall",
+        "{name}@{marketplace}",
+        "--scope",
+        "{scope}",
+        "--keep-data",
+        "--json"
+      ],
+      "skillsDirectory": "{home}/.claude/skills",
+      "mcpAdd": ["mcp", "add-json", "--scope", "{scope}", "{name}", "{mcpJson}"],
+      "mcpRemove": ["mcp", "remove", "--scope", "{scope}", "{name}"],
+      "docs": "https://code.claude.com/docs/en/plugins-reference"
+    },
+    {
+      "id": "agy",
+      "binary": "agy",
+      "versionArgs": ["--version"],
+      "pluginHelp": ["plugin", "--help"],
+      "pluginValidation": ["plugin", "validate", "{path}"],
+      "pluginInstall": [["plugin", "install", "{path}"]],
+      "pluginRemove": ["plugin", "uninstall", "{name}"],
+      "skillsDirectory": "{home}/.gemini/config/skills",
+      "mcpAdd": ["mcp", "add", "{name}", "{command}", "{args}"],
+      "mcpRemove": ["mcp", "remove", "{name}"],
+      "docs": "~/.gemini/antigravity-cli/builtin/skills/agy-customizations/docs/plugins.md"
+    }
+  ],
+  "scopes": {
+    "aphrody": ["{home}/aphrody"],
+    "iecode": ["{home}/iecode"],
+    "shenron": ["{home}/shenron"],
+    "rose-griffon": ["{home}/aphrody"],
+    "yolo": ["*"],
+    "aphrody-web": ["*"],
+    "aphrody-google": ["*"]
+  }
+}

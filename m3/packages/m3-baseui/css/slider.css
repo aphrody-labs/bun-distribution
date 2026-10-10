@@ -1,0 +1,73 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Slider: 4dp track (primary over secondary-container), 20dp thumb in a 40dp state layer. */
+@layer components {
+  .m3-bui-slider {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 8px;
+    color: var(--md-sys-color-on-surface);
+    touch-action: none;
+  }
+  .m3-bui-slider__label {
+    font: var(--m3-bui-font-label-large);
+    letter-spacing: var(--md-sys-typescale-label-large-tracking);
+  }
+  .m3-bui-slider__value {
+    color: var(--md-sys-color-on-surface-variant);
+    font: var(--m3-bui-font-label-medium);
+    letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+  }
+  .m3-bui-slider__control {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    grid-column: 1 / -1;
+    inline-size: 100%;
+    block-size: 40px;
+    padding-inline: 10px;
+  }
+  .m3-bui-slider__track {
+    position: relative;
+    flex: 1;
+    block-size: 4px;
+    border-radius: var(--md-sys-shape-corner-full);
+    background: var(--md-sys-color-secondary-container);
+  }
+  .m3-bui-slider__indicator {
+    border-radius: var(--md-sys-shape-corner-full);
+    background: var(--md-sys-color-primary);
+  }
+  .m3-bui-slider__thumb {
+    box-sizing: border-box;
+    inline-size: 20px;
+    block-size: 20px;
+    border-radius: 50%;
+    background: var(--md-sys-color-primary);
+    outline: none;
+    transition: box-shadow var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
+  }
+  .m3-bui-slider__thumb::after {
+    content: "";
+    position: absolute;
+    inset: -10px;
+    border-radius: 50%;
+    background: var(--md-sys-color-primary);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+  }
+  @media (hover: hover) {
+    .m3-bui-slider__thumb:hover::after {
+      opacity: var(--md-sys-state-hover-state-layer-opacity);
+    }
+  }
+  .m3-bui-slider__thumb:focus-within::after {
+    opacity: var(--md-sys-state-focus-state-layer-opacity);
+  }
+  .m3-bui-slider__thumb[data-dragging]::after {
+    opacity: var(--md-sys-state-pressed-state-layer-opacity);
+  }
+  .m3-bui-slider[data-disabled] {
+    opacity: 0.38;
+  }
+}

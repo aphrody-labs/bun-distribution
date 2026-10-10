@@ -1,0 +1,307 @@
+{
+  "schemaVersion": 1,
+  "name": "aphrody-local-ai",
+  "owner": "aphrody-infra",
+  "description": "Single contract exposing the local/open-source AI stack of the aphrody-ai repository to shenron, aphrody-os, aphrody-ui, aphrody-web, rg and nie. Consumers read the canonical env names; legacy aliases stay readable until each consumer has migrated.",
+  "generated": { "envExample": "tools/config/local-ai.env.example", "generator": "scripts/tools/infra/gen-local-ai-env.ts" },
+  "modelAuthority": {
+    "sourceRepo": "aphrody-ai",
+    "catalog": "crates/aphrody-models/catalog.json",
+    "roles": "crates/aphrody-models/src/roles.rs",
+    "roleOverrideEnv": "APHRODY_AI_<ROLE>_MODEL"
+  },
+  "resolution": {
+    "precedence": ["canonical", "alias", "target", "default"],
+    "aliasPolicy": "Consumers read the canonical name first, then each alias in the listed order. Writers emit canonical names, plus legacy names only while a consumer still reads them.",
+    "urlForms": {
+      "base": "scheme://host:port followed by the capability basePath (OpenAI-compatible services include /v1); the client appends the operation path",
+      "origin": "scheme://host:port only; append the capability basePath to obtain the base form",
+      "endpoint": "full operation URL; remove the operation path to obtain the base form"
+    }
+  },
+  "managedServices": {
+    "aphrody-managed-llama": {
+      "owner": "aphrody-ai",
+      "daemon": "aphrody-llama-daemon",
+      "runtime": "llama.cpp llama-server (upstream release binaries, driven not linked)",
+      "ports": "dynamic",
+      "discovery": "aphrody ai env",
+      "hosts": ["windows-local", "linux-container-26.04"],
+      "note": "Planned and supervised by aphrody (process groups, GPU lease, flags probed from the installed build's --help). Ports change per run and are never written into a repository."
+    }
+  },
+  "binaries": {
+    "aphrody": {
+      "sourceRepo": "aphrody-ai",
+      "package": "aphrody",
+      "lookup": ["env", "sibling-of-current-exe", "PATH"],
+      "env": [
+        { "canonical": "APHRODY_BIN", "kind": "path", "aliases": [] }
+      ]
+    },
+    "aphrody-mcp": {
+      "sourceRepo": "aphrody-ai",
+      "package": "aphrody-mcp",
+      "buildFeatures": ["toolbox"],
+      "lookup": ["env", "sibling-of-current-exe", "PATH"],
+      "env": [
+        { "canonical": "APHRODY_AI_MCP_BIN", "kind": "path", "aliases": ["APHRODY_MCP_BIN"] }
+      ]
+    }
+  },
+  "gateways": {
+    "ai-http": {
+      "protocol": "aphrody-rest",
+      "service": "aphrody-ai-http",
+      "basePath": "/api/v1/shenron",
+      "auth": "bearer",
+      "operations": ["/health", "/rag/search", "/rag/document", "/rag/stats", "/rag/ingest", "/rag/sync/finish", "/llm/chat", "/embed", "/vision/structured", "/ocr"],
+      "env": [
+        { "canonical": "APHRODY_AI_HTTP_URL", "kind": "url", "form": "origin", "aliases": ["APHRODY_SHENRON_API_URL"] },
+        { "canonical": "APHRODY_AI_HTTP_TOKEN", "kind": "secret", "aliases": ["APHRODY_SHENRON_API_TOKEN"] }
+      ],
+      "serverEnv": "The canonical Aphrody MCP and compute service consume the private per-profile APHRODY_MCP_DATABASE_URL, including its configured search_path and authenticated host route; canonical AI environment keys and their declared compatibility aliases remain valid."
+    }
+  },
+  "capabilities": {
+    "chat": {
+      "protocol": "openai-compatible",
+      "service": "aphrody-managed-llama",
+      "basePath": "/v1",
+      "operations": ["/chat/completions"],
+      "defaultModel": "qwen3-30b-a3b-instruct-2507-q4km",
+      "env": [
+        { "canonical": "APHRODY_AI_CHAT_BASE_URL", "kind": "url", "form": "base", "aliases": ["APHRODY_SHENRON_LLM_BASE_URL", "APHRODY_OSS_BASE_URL", "APHRODY_LOCAL_MODEL_URL"], "aliasForms": { "APHRODY_LOCAL_MODEL_URL": "origin" } },
+        { "canonical": "APHRODY_AI_CHAT_MODEL", "kind": "model", "aliases": ["APHRODY_LLM_MODEL", "APHRODY_SHENRON_LLM_MODEL"] },
+        { "canonical": "APHRODY_AI_CHAT_API_KEY", "kind": "secret", "aliases": ["APHRODY_AI_CHAT_TOKEN", "VLLM_API_KEY", "SHENRON_OPENAI_API_KEY"] }
+      ]
+    },
+    "code": {
+      "protocol": "openai-compatible",
+      "service": "aphrody-managed-llama",
+      "basePath": "/v1",
+      "baseUrlFrom": "chat",
+      "operations": ["/chat/completions"],
+      "defaultModel": "qwen3-coder-30b-a3b-q4km",
+      "env": [
+        { "canonical": "APHRODY_AI_CODE_MODEL", "kind": "model", "aliases": [] }
+      ]
+    },
+    "reasoning": {
+      "protocol": "openai-compatible",
+      "service": "aphrody-managed-llama",
+      "basePath": "/v1",
+      "baseUrlFrom": "chat",
+      "operations": ["/chat/completions"],
+      "defaultModel": "gpt-oss-20b-mxfp4",
+      "env": [
+        { "canonical": "APHRODY_AI_REASONING_MODEL", "kind": "model", "aliases": [] }
+      ]
+    },
+    "small": {
+      "protocol": "openai-compatible",
+      "service": "aphrody-managed-llama",
+      "basePath": "/v1",
+      "baseUrlFrom": "chat",
+      "operations": ["/chat/completions"],
+      "defaultModel": "qwen3-4b-instruct-2507-q4km",
+      "env": [
+        { "canonical": "APHRODY_AI_SMALL_MODEL", "kind": "model", "aliases": [] }
+      ]
+    },
+    "vision": {
+      "protocol": "openai-compatible",
+      "service": "aphrody-managed-llama",
+      "basePath": "/v1",
+      "operations": ["/chat/completions"],
+      "defaultModel": "qwen3-vl-8b-instruct-q4km",
+      "env": [
+        { "canonical": "APHRODY_AI_VISION_BASE_URL", "kind": "url", "form": "base", "aliases": ["APHRODY_SHENRON_VISION_BASE_URL"] },
+        { "canonical": "APHRODY_AI_VISION_MODEL", "kind": "model", "aliases": ["APHRODY_SHENRON_VISION_MODEL"] }
+      ]
+    },
+    "ocr": {
+      "protocol": "cli",
+      "binary": "aphrody",
+      "command": "aphrody ocr page",
+      "buildFeatures": ["ocr"],
+      "defaultModel": "granite-docling-258m",
+      "env": [
+        { "canonical": "APHRODY_AI_OCR_MODEL", "kind": "model", "aliases": [] }
+      ],
+      "note": "Also exposed as the aphrody_ocr MCP tool (aphrody-mcp --features ocr) and, on vps, as ai-http /ocr."
+    },
+    "stt": {
+      "protocol": "mcp-stdio",
+      "binary": "aphrody-mcp",
+      "tool": "aphrody_transcribe",
+      "buildFeatures": ["stt-local"],
+      "defaultModel": "whisper-large-v3-turbo-q8",
+      "env": [
+        { "canonical": "APHRODY_AI_STT_MODEL", "kind": "model", "aliases": [] }
+      ]
+    },
+    "tts": {
+      "protocol": "mcp-stdio",
+      "binary": "aphrody-mcp",
+      "tool": "voice_synthesize",
+      "local": false,
+      "defaultModel": null,
+      "env": [],
+      "note": "No open-weight TTS model is catalogued in aphrody-models; voice_synthesize calls ElevenLabs (remote, operator key). A local TTS model needs a catalog entry and a role before it gets a canonical env name."
+    },
+    "embed": {
+      "protocol": "openai-compatible",
+      "service": "aphrody-managed-llama",
+      "basePath": "/v1",
+      "operations": ["/embeddings"],
+      "defaultModel": "qwen3-embedding-0.6b",
+      "dimensions": 1024,
+      "env": [
+        { "canonical": "APHRODY_AI_EMBED_BASE_URL", "kind": "url", "form": "base", "aliases": ["APHRODY_SHENRON_EMBED_BASE_URL", "EMBED_URL", "APHRODY_RAG_EMBED_ENDPOINT"], "aliasForms": { "EMBED_URL": "origin", "APHRODY_RAG_EMBED_ENDPOINT": "endpoint" } },
+        { "canonical": "APHRODY_AI_EMBED_MODEL", "kind": "model", "aliases": ["APHRODY_SHENRON_EMBED_MODEL", "APHRODY_RAG_EMBED_MODEL"] },
+        { "canonical": "APHRODY_AI_EMBED_DIMENSIONS", "kind": "dimensions", "aliases": ["APHRODY_RAG_EMBED_DIM"] }
+      ],
+      "note": "The default model is for new local indexes only. Querying an existing index uses that index's model and dimensions (see indexes)."
+    },
+    "rerank": {
+      "protocol": "openai-compatible",
+      "service": "aphrody-managed-llama",
+      "basePath": "/v1",
+      "operations": ["/rerank"],
+      "defaultModel": "qwen3-reranker-0.6b-q8",
+      "env": [
+        { "canonical": "APHRODY_AI_RERANK_BASE_URL", "kind": "url", "form": "base", "aliases": ["RERANK_URL", "APHRODY_RAG_RERANK_ENDPOINT"], "aliasForms": { "RERANK_URL": "endpoint", "APHRODY_RAG_RERANK_ENDPOINT": "endpoint" } },
+        { "canonical": "APHRODY_AI_RERANK_MODEL", "kind": "model", "aliases": ["APHRODY_RAG_RERANK_MODEL"] }
+      ],
+      "note": "llama-server rerank dialect: {model, query, documents} -> {results: [{index, relevance_score}]}. Shenron's RERANK_URL targets its own sidecar dialect ({query, passages} -> {scores}); a consumer falling back to it must keep that dialect."
+    }
+  },
+  "indexes": {
+    "shenron-rag": {
+      "owner": "shenron",
+      "readThrough": "ai-http",
+      "store": "Private PostgreSQL RAG store served by the canonical Aphrody MCP and compute service (per-profile APHRODY_MCP_DATABASE_URL, preserving search_path and authenticated host route)",
+      "model": "multilingual-e5-small",
+      "servedModel": "Xenova/multilingual-e5-small",
+      "quantization": "q8",
+      "dimensions": 384,
+      "service": "aphrody-shenron-embed",
+      "preprocessing": { "queryPrefix": "query: ", "passagePrefix": "passage: ", "pooling": "mean", "normalize": "l2" },
+      "rule": "never-mix-spaces",
+      "onMismatch": "lexical-fallback",
+      "note": "Production vector space of the Shenron RAG corpus. A different model with the same dimension is still a different space: re-indexing is the only way to change it."
+    }
+  },
+  "targets": {
+    "vps": {
+      "resolution": "static",
+      "topologyHost": "vps",
+      "status": "retired",
+      "retiredAt": "2026-09-25",
+      "note": "aphrody-ai-http and aphrody-shenron-embed were retired from vps on 2026-09-25 (see tools/config/service-catalog.json); bindings below are the redeploy recipe, not a live binding, until Aphrody converges back onto vps",
+      "bindings": {
+        "ai-http": {
+          "service": "aphrody-ai-http",
+          "env": { "APHRODY_AI_HTTP_URL": "http://127.0.0.1:8789" },
+          "secretsFrom": "/etc/aphrody/shenron-compute-client.env"
+        },
+        "embed": {
+          "service": "aphrody-shenron-embed",
+          "index": "shenron-rag",
+          "env": {
+            "APHRODY_AI_EMBED_BASE_URL": "http://127.0.0.1:8794/v1",
+            "APHRODY_AI_EMBED_MODEL": "Xenova/multilingual-e5-small",
+            "APHRODY_AI_EMBED_DIMENSIONS": "384"
+          }
+        }
+      },
+      "unavailable": {
+        "chat": "no local LLM on vps; generation goes through ai-http /llm/chat, routed to Gemini Web (remote) by APHRODY_SHENRON_LLM_PROVIDER",
+        "code": "no local LLM on vps",
+        "reasoning": "no local LLM on vps",
+        "small": "no local LLM on vps",
+        "vision": "no local VLM on vps; ai-http /vision/structured forwards to the configured backend",
+        "ocr": "use ai-http /ocr (aphrody OCR engine inside aphrody-ai-http)",
+        "stt": "no STT workload on vps",
+        "tts": "no TTS workload on vps",
+        "rerank": "no rerank service in tools/config/service-catalog.json"
+      }
+    },
+    "windows-local": {
+      "resolution": "runtime",
+      "topologyHost": "windows-local",
+      "resolver": "aphrody ai env",
+      "services": ["aphrody-managed-llama"],
+      "note": "aphrody ai env prints the canonical APHRODY_AI_* names for the llama-server instances aphrody manages on this host (dynamic loopback ports). Nothing is hard-coded."
+    },
+    "linux-container-26.04": {
+      "resolution": "runtime",
+      "topologyHost": "linux-container-26.04",
+      "resolver": "aphrody ai env",
+      "services": ["aphrody-managed-llama"],
+      "note": "Reference build/test host: local Docker container aphrody/build-linux:26.04 (same OS and glibc as vps and dbfr). 127.0.0.1 inside the container does not reach the Windows llama-server: run the resolver inside the container against a container-side aphrody, or leave the capability unset."
+    }
+  },
+  "consumers": {
+    "shenron": {
+      "uses": ["ai-http", "embed", "rerank", "chat"],
+      "indexes": ["shenron-rag"],
+      "readsToday": ["APHRODY_SHENRON_API_URL", "APHRODY_SHENRON_API_TOKEN", "APHRODY_SHENRON_EMBED_BASE_URL", "EMBED_URL", "RERANK_URL", "APHRODY_LLM_MODEL"],
+      "surfaces": ["apps/bot/src/lib/rag.ts", "apps/site", "scripts/dev/local-env.ts"],
+      "migration": "Read APHRODY_AI_* first and keep the aliases as fallback; query embeddings must match indexes.shenron-rag or fall back to lexical search."
+    },
+    "aphrody-os": {
+      "uses": ["aphrody-mcp"],
+      "indexes": [],
+      "readsToday": ["APHRODY_AI_MCP_BIN"],
+      "surfaces": ["crates/aphrody-kernel/src/mcp_proxy.rs"],
+      "migration": "Process boundary only (aphrody-mcp stdio behind the aphrody-mcp host); already reads the canonical name."
+    },
+    "aphrody-ui": {
+      "uses": ["aphrody"],
+      "indexes": [],
+      "readsToday": ["APHRODY_BIN"],
+      "surfaces": ["crates/aphrody-app/src/broker.rs"],
+      "migration": "Process boundary only (aphrody app-server stdio JSON-RPC); already reads the canonical name."
+    },
+    "aphrody-web": {
+      "uses": ["aphrody-mcp"],
+      "indexes": [],
+      "readsToday": ["APHRODY_MCP_BIN"],
+      "surfaces": ["apps/bxc/src/mcp/unified.ts"],
+      "migration": "Process boundary only (aphrody-mcp stdio); apps/bxc moves from APHRODY_MCP_BIN to APHRODY_AI_MCP_BIN."
+    },
+    "aphrody-ai": {
+      "uses": ["chat", "code", "reasoning", "small", "vision", "ocr", "stt", "embed", "rerank"],
+      "indexes": [],
+      "readsToday": ["APHRODY_OSS_BASE_URL", "APHRODY_LOCAL_MODEL_URL", "APHRODY_AI_CHAT_MODEL", "APHRODY_AI_CODE_MODEL", "APHRODY_AI_REASONING_MODEL", "APHRODY_AI_SMALL_MODEL", "APHRODY_AI_VISION_MODEL", "APHRODY_AI_OCR_MODEL", "APHRODY_AI_STT_MODEL", "APHRODY_AI_EMBED_MODEL", "APHRODY_AI_RERANK_MODEL", "APHRODY_RAG_EMBED_ENDPOINT", "APHRODY_RAG_EMBED_MODEL", "APHRODY_RAG_EMBED_DIM", "APHRODY_RAG_RERANK_ENDPOINT", "APHRODY_RAG_RERANK_MODEL", "APHRODY_SHENRON_EMBED_BASE_URL", "APHRODY_SHENRON_EMBED_MODEL", "APHRODY_SHENRON_LLM_BASE_URL", "APHRODY_SHENRON_LLM_MODEL", "APHRODY_SHENRON_VISION_BASE_URL", "APHRODY_SHENRON_VISION_MODEL", "APHRODY_SHENRON_API_TOKEN"],
+      "surfaces": ["crates/aphrody-models/src/roles.rs", "crates/aphrody-config/src/provider.rs", "crates/aphrody-mcp/src/rag_tools.rs", "crates/aphrody-mcp/src/http_rest.rs"],
+      "migration": "Provider of the stack; aphrody ai env is its writer of the canonical names."
+    },
+    "rg": {
+      "uses": [],
+      "indexes": [],
+      "readsToday": [],
+      "surfaces": [],
+      "migration": "No local AI consumption today; packages/cron ie-crawl calls api.x.ai, a remote provider outside this contract. New AI features read the canonical names."
+    },
+    "nie": {
+      "uses": [],
+      "indexes": [],
+      "readsToday": [],
+      "surfaces": [],
+      "migration": "No AI consumption. nie-model-serve (:8792) serves IEVR GLB/3D assets and is not a model server."
+    }
+  },
+  "forbidden": [
+    "mix-embedding-spaces",
+    "public-ai-port",
+    "secret-value-in-contract",
+    "hard-coded-dynamic-port",
+    "non-ai-service-as-ai-backend",
+    "second-ai-endpoint-registry",
+    "alias-only-writer",
+    "link-aphrody-ai-into-aphrody-os"
+  ]
+}

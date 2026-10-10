@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Aphrody Remote Desktop</title>
+<style>
+  html,body{margin:0;height:100%;background:#111;color:#ddd;font:13px system-ui,sans-serif;overflow:hidden}
+  #bar{display:flex;gap:10px;align-items:center;padding:4px 8px;background:#1d1d1d;border-bottom:1px solid #333;flex-wrap:wrap}
+  #bar label{display:flex;gap:4px;align-items:center}
+  #bar input[type=number]{width:3.5em}
+  #stage{position:absolute;top:34px;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:#000}
+  canvas{max-width:100%;max-height:100%;outline:none;cursor:default;background:#000}
+  #status{margin-left:auto;opacity:.8}
+  button{background:#2a2a2a;color:#ddd;border:1px solid #444;border-radius:3px;padding:2px 8px;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="bar">
+  <label>fps <input id="fps" type="number" min="1" max="60" value="15"></label>
+  <label>quality <input id="quality" type="range" min="10" max="100" value="70"><span id="qv">70</span></label>
+  <label>scale
+    <select id="scale"><option value="1">1:1</option><option value="2">1/2</option><option value="3">1/3</option><option value="4">1/4</option></select>
+  </label>
+  <button id="full" type="button">Fullscreen</button>
+  <span id="status">connecting...</span>
+</div>
+<div id="stage"><canvas id="screen" tabindex="0" width="640" height="360"></canvas></div>
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const canvas = $("screen"), ctx = canvas.getContext("2d"), status = $("status");
+  const raw = location.hash.replace(/^#/, "");
+  const token = raw.startsWith("token=") ? decodeURIComponent(raw.slice(6)) : decodeURIComponent(raw);
+  let ws = null, pending = null, decoding = false, frames = 0, lastTick = performance.now();
+  const pressed = new Set();
+
+  function send(obj) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
+
+  function connect() {
+    const proto = location.protocol === "https:" ? "wss:" : "ws:";
+    ws = new WebSocket(`${proto}//${location.host}/ws?token=${encodeURIComponent(token)}`);
+    ws.binaryType = "arraybuffer";
+    ws.onopen = () => { status.textContent = "connected"; sendConfig(); };
+    ws.onclose = () => { status.textContent = "disconnected, retrying..."; setTimeout(connect, 2000); };
+    ws.onmessage = (ev) => {
+      if (typeof ev.data === "string") {
+        const m = JSON.parse(ev.data);
+        if (m.type === "hello") status.textContent = `${m.backend}/${m.os} ${m.width}x${m.height}`;
+        else if (m.type === "error") status.textContent = "error: " + m.message;
+      } else {
+        pending = ev.data;
+        if (!decoding) drain();
+      }
+    };
+  }
+
+  async function drain() {
+    decoding = true;
+    while (pending) {
+      const data = pending; pending = null;
+      try {
+        const bmp = await createImageBitmap(new Blob([data], { type: "image/jpeg" }));
+        if (canvas.width !== bmp.width || canvas.height !== bmp.height) {
+          canvas.width = bmp.width; canvas.height = bmp.height;
+        }
+        ctx.drawImage(bmp, 0, 0);
+        bmp.close();
+        frames++;
+      } catch (_) { /* skip corrupt frame */ }
+    }
+    decoding = false;
+    const now = performance.now();
+    if (now - lastTick > 1000) {
+      document.title = `Aphrody Remote Desktop (${Math.round(frames * 1000 / (now - lastTick))} fps)`;
+      frames = 0; lastTick = now;
+    }
+  }
+
+  function sendConfig() {
+    send({ type: "config", fps: +$("fps").value, quality: +$("quality").value, scale: +$("scale").value });
+  }
+  $("fps").onchange = sendConfig;
+  $("scale").onchange = sendConfig;
+  $("quality").oninput = () => { $("qv").textContent = $("quality").value; };
+  $("quality").onchange = sendConfig;
+  $("full").onclick = () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else $("stage").requestFullscreen().catch(() => {});
+  };
+
+  function pos(ev) {
+    const r = canvas.getBoundingClientRect();
+    return {
+      x: Math.round((ev.clientX - r.left) * canvas.width / r.width),
+      y: Math.round((ev.clientY - r.top) * canvas.height / r.height),
+    };
+  }
+  const BUTTONS = ["left", "middle", "right"];
+  canvas.addEventListener("mousemove", (e) => send({ type: "mouse_move", ...pos(e) }));
+  canvas.addEventListener("mousedown", (e) => {
+    canvas.focus();
+    send({ type: "mouse_move", ...pos(e) });
+    if (e.button < 3) send({ type: "mouse_down", button: BUTTONS[e.button] });
+    e.preventDefault();
+  });
+  window.addEventListener("mouseup", (e) => {
+    if (e.button < 3 && ws) send({ type: "mouse_up", button: BUTTONS[e.button] });
+  });
+  canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+  canvas.addEventListener("wheel", (e) => {
+    const unit = e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? 800 : 1;
+    send({ type: "wheel", dx: Math.round(e.deltaX * unit * 1.2), dy: Math.round(e.deltaY * unit * 1.2) });
+    e.preventDefault();
+  }, { passive: false });
+
+  canvas.addEventListener("keydown", (e) => {
+    // Let Ctrl/Cmd+V reach the paste handler instead of forwarding the keys.
+    if ((e.ctrlKey || e.metaKey) && e.code === "KeyV") return;
+    pressed.add(e.code);
+    send({ type: "key", code: e.code, down: true });
+    e.preventDefault();
+  });
+  canvas.addEventListener("keyup", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.code === "KeyV") return;
+    pressed.delete(e.code);
+    send({ type: "key", code: e.code, down: false });
+    e.preventDefault();
+  });
+  canvas.addEventListener("blur", () => {
+    for (const code of pressed) send({ type: "key", code, down: false });
+    pressed.clear();
+  });
+  document.addEventListener("paste", (e) => {
+    const text = e.clipboardData && e.clipboardData.getData("text");
+    if (text) { send({ type: "text", text }); e.preventDefault(); }
+  });
+
+  connect();
+})();
+</script>
+</body>
+</html>

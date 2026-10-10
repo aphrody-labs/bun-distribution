@@ -1,0 +1,53 @@
+{
+  "$comment": "Read-only observation that sizes the private tunnel and the omar account (2026-10-06). Nothing was changed on any host. Addresses of other admin sources and every key are deliberately left out.",
+  "schemaVersion": 1,
+  "observedAt": "2026-10-06",
+  "mode": "read-only",
+  "source": "aphrody infra ssh exec --host vps|dbfr (ip, ss, wg show interfaces/allowed-ips/listen-port, ufw status, sshd -T, getent, dpkg), local WSL probes",
+  "status": "observed-read-only-not-revalidated",
+  "vps": {
+    "os": "Ubuntu 26.04.1 LTS, kernel 7.0.0-38-generic, systemd 259",
+    "interfaces": {
+      "wg0": "10.8.0.1/24, listen 51820, two peers (10.8.0.2/32, 10.8.0.3/32 = dbfr); PostUp FORWARD accept and MASQUERADE on ens3",
+      "docker0": "172.17.0.1/16",
+      "ens3": "public address, /32"
+    },
+    "ipForward": 1,
+    "ufw": {
+      "state": "active, default deny incoming, deny routed",
+      "rules": "Anywhere on wg0 ALLOW IN (full access to the vps for any wg0 peer); 22, 80, 443 tcp; 51820/udp from anywhere; 443/udp; 3080/tcp; 5901 deny; shenron-admin sources (all ports) for the workstation, the vps and dbfr public addresses, the 10.8.0.0/24 subnet and 92.170.252.46",
+      "udp51821": "no rule, port free"
+    },
+    "listeners": {
+      "8789": "sshd-session on 0.0.0.0 and [::] (reverse tunnel of the WSL compute, GatewayPorts yes), not aphrody-mcp-http",
+      "8788": "free"
+    },
+    "sshd": "PasswordAuthentication yes, PermitRootLogin yes, MaxAuthTries 3, GatewayPorts yes; sshd_config.d: 00-hardening.conf, 50-cloud-init.conf, 60-cloudimg-settings.conf; no /etc/ssh/authorized_keys.d",
+    "accounts": "ubuntu (groups sudo, adm, NOPASSWD:ALL through 90-cloud-init-users), postgres; omar absent",
+    "sudo": "sudo-rs 0.2.13 is /usr/bin/sudo; classic sudo 1.9.17p2 installed as sudo.ws; Defaults use_pty; no I/O log; journald persistent; auditd inactive; fail2ban active",
+    "wireguardTools": "1.0.20250521, systemd-socket-proxyd present"
+  },
+  "dbfr": {
+    "os": "Ubuntu 26.04.1 LTS, kernel 7.0.0-27-generic, systemd 259",
+    "interfaces": {
+      "wg0": "10.8.0.3/24, listen 53275, peer vps 51.77.147.152:51820 (AllowedIPs 10.8.0.0/24, keepalive 25)"
+    },
+    "ipForward": 0,
+    "ufw": "active, default deny incoming, routed disabled; 22/tcp from anywhere; shenron-admin sources (all ports) incl. 10.8.0.0/24 and 92.170.252.46; no 5432 rule",
+    "sshd": "PasswordAuthentication no, PermitRootLogin prohibit-password, MaxAuthTries 6; sshd_config.d: 40-hardening.conf, 50-cloud-init.conf, 60-cloudimg-settings.conf, 99-keepalive.conf",
+    "postgres": "postgresql@18 active; pg_hba: local peer, loopback scram, a shenron-admin scram block (admin sources); the postgres Unix user has shell /bin/bash and group postgres has no member",
+    "accounts": "ubuntu (sudo, adm, NOPASSWD:ALL), postgres; omar absent; sudo-rs 0.2.13"
+  },
+  "wsl": {
+    "kernel": "6.18.33.2-microsoft-standard-WSL2, CONFIG_WIREGUARD=m and the module is installed, systemd=true",
+    "network": "eth0 172.18.126.250/20 (NAT), lo carries 10.255.255.254/32, ip_forward 0",
+    "wireguardTools": "not installed"
+  },
+  "findings": [
+    "wg0 is the live Shenron link, so the hub of the private tunnel is a new interface wg1 on 10.200.77.0/24 (UDP 51821); reusing wg0 would give the guest the full-access ufw rule and the 10.8.0.0/24 trust of the Shenron admin list",
+    "92.170.252.46 already has a shenron-admin ufw rule (all ports) on vps and dbfr, hence PostgreSQL pg_hba scram reachability on dbfr from that address: outside this lot, to remove from the Shenron admin list for the postgres sudo-only rule to hold",
+    "the workstation public address (WSL and Windows share it) and the dbfr address are shenron-admin sources on the vps: the tunnel UDP needs no second rule for them",
+    "port 8789 on the vps is held by sshd (WSL compute reverse tunnel), see docs/operations/infra/MCP-A2A.md",
+    "sudo-rs has no I/O log: sudo journaling is syslog (journald) only"
+  ]
+}

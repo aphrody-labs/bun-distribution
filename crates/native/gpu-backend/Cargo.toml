@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-gpu-backend"
+description = "Shared wgpu instance, adapter, device and surface-configuration boundary for Aphrody and IECODE renderers, plus the process-wide GPU hub (wgpu + CUDA)."
+version = "1.0.0-canary.1"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+[lints]
+workspace = true
+
+[features]
+default = ["wgsl", "native-backends"]
+wgsl = ["wgpu/wgsl"]
+native-backends = ["wgpu/vulkan", "wgpu/dx12", "wgpu/metal"]
+webgpu = ["wgpu/web", "wgpu/webgpu"]
+webgl = ["wgpu/web", "wgpu/webgl"]
+# Process-wide GPU hub shared by Bun, Obscura and Tauri hosts: one wgpu device, adapter
+# inventory and WGSL compute jobs.
+hub = ["wgsl", "native-backends", "dep:pollster", "dep:serde", "dep:serde_json"]
+# NVIDIA CUDA through the official driver (libcuda) and NVRTC, loaded at run time.
+cuda = ["hub", "dep:cudarc"]
+
+[dependencies]
+wgpu.workspace = true
+pollster = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+cudarc = { workspace = true, optional = true }

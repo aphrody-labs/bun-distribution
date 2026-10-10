@@ -1,0 +1,78 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-memory"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "aphrody memory SDK — async MemoryBackend (JSONL/HNSW/SQLite) + MemoryProvider (Mem0/Honcho/SqliteLocal Tier-1)."
+
+[lints]
+workspace = true
+
+[features]
+default = []
+
+[dependencies]
+# --- async runtime ----------------------------------------------------------
+tokio        = { workspace = true, features = ["fs", "macros", "rt", "rt-multi-thread", "io-util", "sync", "time"] }
+async-trait  = { workspace = true }
+futures      = { workspace = true }
+
+# --- serde / formats --------------------------------------------------------
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+
+# --- errors -----------------------------------------------------------------
+thiserror    = { workspace = true }
+
+# --- time + identity --------------------------------------------------------
+chrono       = { workspace = true }
+# uuid workspace dep has v4+v7 features; we additionally need `serde` for
+# Serialize/Deserialize derives on MemoryRecord.
+uuid         = { workspace = true, features = ["serde"] }
+time         = { workspace = true }
+
+# --- tracing ----------------------------------------------------------------
+tracing      = { workspace = true }
+
+# --- HTTP transport (Tier-1 providers: Mem0, Honcho) -----------------------
+reqwest      = { workspace = true }
+
+# --- SQLite backend ---------------------------------------------------------
+# `bundled` feature compiles a static libsqlite3, removing the system dep
+# (kept hermetic across Linux #1 / Win11 #2 per CLAUDE.md §0).
+rusqlite     = { workspace = true }
+aphrody-sql   = { workspace = true, features = ["sqlite"] }
+aphrody-web-index = { workspace = true }
+aphrody-agent-home = { workspace = true }
+aphrody-models     = { workspace = true }
+
+[dev-dependencies]
+tokio        = { workspace = true, features = ["full"] }
+tempfile     = { workspace = true }
+# Local axum mock server for Mem0/Honcho HTTP provider smoke tests (offline-clean).
+axum         = { workspace = true }
+rustls       = { workspace = true }
+# R3.7 recall benchmark — criterion HTML reports, p50/p95/p99 over 100k records.
+criterion    = { workspace = true }
+
+# ---------------------------------------------------------------------------
+# cargo-machete: `time` is consumed by `sqlite_local`'s timestamp helpers
+# behind type aliases -- machete's symbol scan misses this.
+# ---------------------------------------------------------------------------
+[package.metadata.cargo-machete]
+ignored = ["time"]
+
+# ---------------------------------------------------------------------------
+# Bench harness — R3.7 recall benchmark over 100k events.
+# `harness = false` opts out of the default libtest harness so criterion's
+# `criterion_main!` macro owns the entry point. The criterion group inside is
+# named `bench_recall_100k`, matching the PLAN verify filter.
+# ---------------------------------------------------------------------------
+[[bench]]
+name    = "recall"
+harness = false

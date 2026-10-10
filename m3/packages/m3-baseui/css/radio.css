@@ -1,0 +1,55 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Radio (`M3Radio`) and its group. A 40dp target holds the 20dp ring, the 10dp dot and the state layer. */
+@layer components {
+  .m3-bui-radio {
+    --m3-state: var(--md-sys-color-on-surface);
+    box-sizing: border-box;
+    display: inline-grid;
+    place-items: center;
+    inline-size: 40px;
+    block-size: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+  }
+  .m3-bui-radio::before {
+    content: "";
+    position: absolute;
+    inset: 10px;
+    box-sizing: border-box;
+    border: 2px solid var(--md-sys-color-on-surface-variant);
+    border-radius: 50%;
+    transition: border-color var(--md-sys-motion-duration-short2)
+      var(--md-sys-motion-easing-standard);
+  }
+  .m3-bui-radio[data-checked] {
+    --m3-state: var(--md-sys-color-primary);
+  }
+  .m3-bui-radio[data-checked]::before {
+    border-color: var(--md-sys-color-primary);
+  }
+  .m3-bui-radio[data-invalid]::before {
+    border-color: var(--md-sys-color-error);
+  }
+  .m3-bui-radio:is(:disabled, [data-disabled]) {
+    cursor: default;
+  }
+  .m3-bui-radio:is(:disabled, [data-disabled])::before {
+    border-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  }
+  .m3-bui-radio__indicator {
+    position: relative;
+    inline-size: 10px;
+    block-size: 10px;
+    border-radius: 50%;
+    background: var(--md-sys-color-primary);
+  }
+  .m3-bui-radio:is(:disabled, [data-disabled]) .m3-bui-radio__indicator {
+    background: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  }
+  .m3-bui-radio__indicator[data-unchecked] {
+    display: none;
+  }
+}

@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-agent-tools"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "Concrete ToolExecutor implementations for the aphrody agent engine: a streaming sandboxed shell-exec tool and an apply_patch tool that wraps aphrody-patch. These are the real capabilities the engine's ToolRegistry exposes to the model."
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-toolcall    = { workspace = true }
+aphrody-patch       = { workspace = true }
+aphrody-jev         = { workspace = true }
+serde               = { workspace = true }
+serde_json          = { workspace = true }
+async-trait         = { workspace = true }
+
+# Shell, file, search, computer-use, WinClean and web tools drive processes, the host file
+# system, V8 and native sockets: host-only. wasm32 keeps apply_patch and jev.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+aphrody-proc = { workspace = true, features = ["tokio"] }
+aphrody-agent-proto = { workspace = true }
+aphrody-guard       = { workspace = true }
+aphrody-winclean    = { workspace = true }
+aphrody-google             = { workspace = true }
+aphrody-web-service         = { workspace = true, features = ["render"] }
+aphrody-gemini-web          = { workspace = true }
+obscura-net                = { workspace = true }
+aphrody-remote-desktop = { workspace = true, features = ["vnc-client"] }
+aphrody-term = { workspace = true }
+anyhow              = { workspace = true }
+thiserror           = { workspace = true }
+tokio               = { workspace = true }
+base64              = { workspace = true }
+reqwest             = { workspace = true }
+tracing             = { workspace = true }
+
+[target.'cfg(unix)'.dependencies]
+libc = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
+sysinfo = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }
+tempfile          = { workspace = true }
+tokio             = { workspace = true }

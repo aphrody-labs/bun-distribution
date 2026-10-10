@@ -1,0 +1,2 @@
+# Autonomous agents run as "agent" and may become root without a password.
+agent ALL=(ALL:ALL) NOPASSWD: ALL

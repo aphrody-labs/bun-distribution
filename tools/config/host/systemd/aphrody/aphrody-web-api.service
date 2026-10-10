@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Aphrody OS browser and web index HTTP backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ubuntu/apps/aphrody/current
+Environment=PORT=3007
+Environment=BXC_DIR=/home/ubuntu/apps/aphrody/shared/bxc
+Environment=BXC_COOKIES_DIR=/home/ubuntu/apps/aphrody/shared/bxc/cookies
+Environment=BXC_DB_PATH=/home/ubuntu/apps/aphrody/shared/bxc/bxc.sqlite
+Environment=BXC_RUST_BRIDGE_LIB=/home/ubuntu/apps/aphrody/current/lib/libaphrody_web_ffi.so
+Environment=BXC_RENDER_LIB=/home/ubuntu/apps/aphrody/current/lib/libbxc_render.so
+EnvironmentFile=/etc/aphrody/aphrody-web-api.env
+ExecStart=/home/ubuntu/apps/aphrody/current/bin/aphrody-web-api
+Restart=on-failure
+RestartSec=2
+ProtectHome=tmpfs
+BindReadOnlyPaths=/home/ubuntu/apps/aphrody
+BindPaths=/home/ubuntu/apps/aphrody/shared/bxc
+
+[Install]
+WantedBy=multi-user.target

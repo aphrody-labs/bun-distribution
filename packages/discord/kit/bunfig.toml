@@ -1,0 +1,3 @@
+# Discord transport tests require the native multipart primitives.
+[test]
+preload = []

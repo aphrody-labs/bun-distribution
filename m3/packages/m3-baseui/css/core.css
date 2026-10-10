@@ -1,0 +1,154 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Shared by every component sheet: type shorthands, the state layer, the focus ring, popup surfaces and menu
+ * items. Needs m3-tokens.css (and expressive.css for the directional shapes) plus a colour sheet on the page.
+ * Everything lives in `@layer components`, so Tailwind utilities and your own unlayered CSS always win.
+ */
+@layer components {
+  :where(:root) {
+    --m3-bui-font-headline-small: var(--md-sys-typescale-headline-small-weight)
+      var(--md-sys-typescale-headline-small-size) /
+      var(--md-sys-typescale-headline-small-line-height) var(--md-sys-typescale-headline-small-font);
+    --m3-bui-font-headline-large: var(--md-sys-typescale-headline-large-weight)
+      var(--md-sys-typescale-headline-large-size) /
+      var(--md-sys-typescale-headline-large-line-height) var(--md-sys-typescale-headline-large-font);
+    --m3-bui-font-title-medium: var(--md-sys-typescale-title-medium-weight)
+      var(--md-sys-typescale-title-medium-size) / var(--md-sys-typescale-title-medium-line-height)
+      var(--md-sys-typescale-title-medium-font);
+    --m3-bui-font-title-small: var(--md-sys-typescale-title-small-weight)
+      var(--md-sys-typescale-title-small-size) / var(--md-sys-typescale-title-small-line-height)
+      var(--md-sys-typescale-title-small-font);
+    --m3-bui-font-body-large: var(--md-sys-typescale-body-large-weight)
+      var(--md-sys-typescale-body-large-size) / var(--md-sys-typescale-body-large-line-height)
+      var(--md-sys-typescale-body-large-font);
+    --m3-bui-font-body-medium: var(--md-sys-typescale-body-medium-weight)
+      var(--md-sys-typescale-body-medium-size) / var(--md-sys-typescale-body-medium-line-height)
+      var(--md-sys-typescale-body-medium-font);
+    --m3-bui-font-body-small: var(--md-sys-typescale-body-small-weight)
+      var(--md-sys-typescale-body-small-size) / var(--md-sys-typescale-body-small-line-height)
+      var(--md-sys-typescale-body-small-font);
+    --m3-bui-font-label-large: var(--md-sys-typescale-label-large-weight)
+      var(--md-sys-typescale-label-large-size) / var(--md-sys-typescale-label-large-line-height)
+      var(--md-sys-typescale-label-large-font);
+    --m3-bui-font-label-medium: var(--md-sys-typescale-label-medium-weight)
+      var(--md-sys-typescale-label-medium-size) / var(--md-sys-typescale-label-medium-line-height)
+      var(--md-sys-typescale-label-medium-font);
+    --m3-bui-font-label-small: var(--md-sys-typescale-label-small-weight)
+      var(--md-sys-typescale-label-small-size) / var(--md-sys-typescale-label-small-line-height)
+      var(--md-sys-typescale-label-small-font);
+  }
+
+  /*
+   * State layer: the overlay painted in the content colour (`--m3-state`, default currentColor) at the hover,
+   * focus, pressed opacity. All states share one specificity, so pressed (declared last) wins over hover.
+   * `data-highlighted` is Base UI's keyboard and pointer highlight of menu and list items.
+   */
+  :is(.m3-bui-state, .m3-bui-item) {
+    position: relative;
+  }
+  :is(.m3-bui-state, .m3-bui-item)::after {
+    content: "";
+    position: absolute;
+    inset: var(--m3-state-inset, 0);
+    border-radius: var(--m3-state-radius, inherit);
+    background: var(--m3-state, currentColor);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+  }
+  @media (hover: hover) {
+    :is(.m3-bui-state, .m3-bui-item):hover::after {
+      opacity: var(--md-sys-state-hover-state-layer-opacity);
+    }
+  }
+  :is(.m3-bui-state, .m3-bui-item):is(:focus-visible, [data-highlighted])::after {
+    opacity: var(--md-sys-state-focus-state-layer-opacity);
+  }
+  :is(.m3-bui-state, .m3-bui-item):active::after {
+    opacity: var(--md-sys-state-pressed-state-layer-opacity);
+  }
+  :is(.m3-bui-state, .m3-bui-item):is(:disabled, [data-disabled], [aria-disabled="true"])::after {
+    opacity: 0;
+  }
+
+  /* Focus ring: 3dp secondary, 2dp off the edge. */
+  .m3-bui-state:focus-visible {
+    outline: 3px solid var(--md-sys-color-secondary);
+    outline-offset: 2px;
+  }
+
+  /* Group of checkboxes or radios: a plain stack. */
+  .m3-bui-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    color: var(--md-sys-color-on-surface);
+    font: var(--m3-bui-font-body-large);
+  }
+
+  /* Positioned popups (menu, select, combobox, popover, tooltip, navigation menu). */
+  .m3-bui-positioner {
+    z-index: var(--m3-bui-z-popup, 1000);
+    outline: none;
+  }
+
+  /* Popup surface: surface-container, extra-small corners, level 2, scale-and-fade from the anchor. */
+  .m3-bui-popup {
+    box-sizing: border-box;
+    background: var(--md-sys-color-surface-container);
+    color: var(--md-sys-color-on-surface);
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    box-shadow: var(--md-sys-elevation-level2);
+    outline: none;
+    transform-origin: var(--transform-origin);
+    transition:
+      opacity var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
+      transform var(--md-sys-motion-duration-short4)
+        var(--md-sys-motion-easing-emphasized-decelerate);
+  }
+  .m3-bui-popup[data-starting-style],
+  .m3-bui-popup[data-ending-style] {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  .m3-bui-popup[data-ending-style] {
+    transition-duration: var(--md-sys-motion-duration-short2);
+    transition-timing-function: var(--md-sys-motion-easing-emphasized-accelerate);
+  }
+
+  /* Menu-like item: 48dp, label-large, state layer, selected container. */
+  .m3-bui-item {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-block-size: 48px;
+    padding: 0 12px;
+    color: var(--md-sys-color-on-surface);
+    font: var(--m3-bui-font-label-large);
+    letter-spacing: var(--md-sys-typescale-label-large-tracking);
+    cursor: pointer;
+    outline: none;
+    user-select: none;
+    text-decoration: none;
+  }
+  .m3-bui-item[data-selected],
+  .m3-bui-item[data-checked] {
+    background: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
+  }
+  .m3-bui-item:is([data-disabled], [aria-disabled="true"]) {
+    color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+    cursor: default;
+  }
+
+  /* Users who ask for less motion get instant state changes; layered `!important` also beats utilities. */
+  @media (prefers-reduced-motion: reduce) {
+    [class*="m3-bui-"],
+    [class*="m3-bui-"]::before,
+    [class*="m3-bui-"]::after {
+      transition-duration: 1ms !important;
+      animation-duration: 1ms !important;
+    }
+  }
+}

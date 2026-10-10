@@ -1,0 +1,607 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Material 3 preset for Tailwind v4 (CSS-first). GENERATED from @aphrody/m3-tokens: bun run generate.
+ * Usage:
+ *   @import "tailwindcss";
+ *   @import "@aphrody/m3-tokens/m3-tokens.css";
+ *   @import "@aphrody/m3-tokens/expressive.css";
+ *   @import "@aphrody/m3-tailwind/preset.css";
+ * and set the colour roles at runtime (applyDynamicColor / cssFromSeed / @aphrody/m3-theme/tokens.css).
+ */
+
+@theme inline {
+  --color-background: var(--md-sys-color-background);
+  --color-on-background: var(--md-sys-color-on-background);
+  --color-surface: var(--md-sys-color-surface);
+  --color-surface-dim: var(--md-sys-color-surface-dim);
+  --color-surface-bright: var(--md-sys-color-surface-bright);
+  --color-surface-container-lowest: var(--md-sys-color-surface-container-lowest);
+  --color-surface-container-low: var(--md-sys-color-surface-container-low);
+  --color-surface-container: var(--md-sys-color-surface-container);
+  --color-surface-container-high: var(--md-sys-color-surface-container-high);
+  --color-surface-container-highest: var(--md-sys-color-surface-container-highest);
+  --color-on-surface: var(--md-sys-color-on-surface);
+  --color-surface-variant: var(--md-sys-color-surface-variant);
+  --color-on-surface-variant: var(--md-sys-color-on-surface-variant);
+  --color-inverse-surface: var(--md-sys-color-inverse-surface);
+  --color-inverse-on-surface: var(--md-sys-color-inverse-on-surface);
+  --color-outline: var(--md-sys-color-outline);
+  --color-outline-variant: var(--md-sys-color-outline-variant);
+  --color-shadow: var(--md-sys-color-shadow);
+  --color-scrim: var(--md-sys-color-scrim);
+  --color-surface-tint: var(--md-sys-color-surface-tint);
+  --color-primary: var(--md-sys-color-primary);
+  --color-on-primary: var(--md-sys-color-on-primary);
+  --color-primary-container: var(--md-sys-color-primary-container);
+  --color-on-primary-container: var(--md-sys-color-on-primary-container);
+  --color-inverse-primary: var(--md-sys-color-inverse-primary);
+  --color-secondary: var(--md-sys-color-secondary);
+  --color-on-secondary: var(--md-sys-color-on-secondary);
+  --color-secondary-container: var(--md-sys-color-secondary-container);
+  --color-on-secondary-container: var(--md-sys-color-on-secondary-container);
+  --color-tertiary: var(--md-sys-color-tertiary);
+  --color-on-tertiary: var(--md-sys-color-on-tertiary);
+  --color-tertiary-container: var(--md-sys-color-tertiary-container);
+  --color-on-tertiary-container: var(--md-sys-color-on-tertiary-container);
+  --color-error: var(--md-sys-color-error);
+  --color-on-error: var(--md-sys-color-on-error);
+  --color-error-container: var(--md-sys-color-error-container);
+  --color-on-error-container: var(--md-sys-color-on-error-container);
+  --color-primary-fixed: var(--md-sys-color-primary-fixed);
+  --color-primary-fixed-dim: var(--md-sys-color-primary-fixed-dim);
+  --color-on-primary-fixed: var(--md-sys-color-on-primary-fixed);
+  --color-on-primary-fixed-variant: var(--md-sys-color-on-primary-fixed-variant);
+  --color-secondary-fixed: var(--md-sys-color-secondary-fixed);
+  --color-secondary-fixed-dim: var(--md-sys-color-secondary-fixed-dim);
+  --color-on-secondary-fixed: var(--md-sys-color-on-secondary-fixed);
+  --color-on-secondary-fixed-variant: var(--md-sys-color-on-secondary-fixed-variant);
+  --color-tertiary-fixed: var(--md-sys-color-tertiary-fixed);
+  --color-tertiary-fixed-dim: var(--md-sys-color-tertiary-fixed-dim);
+  --color-on-tertiary-fixed: var(--md-sys-color-on-tertiary-fixed);
+  --color-on-tertiary-fixed-variant: var(--md-sys-color-on-tertiary-fixed-variant);
+  --radius-none: var(--md-sys-shape-corner-none);
+  --radius-extra-small: var(--md-sys-shape-corner-extra-small);
+  --radius-small: var(--md-sys-shape-corner-small);
+  --radius-medium: var(--md-sys-shape-corner-medium);
+  --radius-large: var(--md-sys-shape-corner-large);
+  --radius-large-increased: var(--md-sys-shape-corner-large-increased);
+  --radius-extra-large: var(--md-sys-shape-corner-extra-large);
+  --radius-extra-large-increased: var(--md-sys-shape-corner-extra-large-increased);
+  --radius-extra-extra-large: var(--md-sys-shape-corner-extra-extra-large);
+  --radius-full: var(--md-sys-shape-corner-full);
+  --shape-none: var(--md-sys-shape-corner-none);
+  --shape-extra-small: var(--md-sys-shape-corner-extra-small);
+  --shape-small: var(--md-sys-shape-corner-small);
+  --shape-medium: var(--md-sys-shape-corner-medium);
+  --shape-large: var(--md-sys-shape-corner-large);
+  --shape-large-increased: var(--md-sys-shape-corner-large-increased);
+  --shape-extra-large: var(--md-sys-shape-corner-extra-large);
+  --shape-extra-large-increased: var(--md-sys-shape-corner-extra-large-increased);
+  --shape-extra-extra-large: var(--md-sys-shape-corner-extra-extra-large);
+  --shape-full: var(--md-sys-shape-corner-full);
+  --shape-extra-small-top: var(--md-sys-shape-corner-extra-small-top);
+  --shape-large-top: var(--md-sys-shape-corner-large-top);
+  --shape-large-start: var(--md-sys-shape-corner-large-start);
+  --shape-large-end: var(--md-sys-shape-corner-large-end);
+  --shape-extra-large-top: var(--md-sys-shape-corner-extra-large-top);
+  --text-display-large: var(--md-sys-typescale-display-large-size);
+  --text-display-large--line-height: var(--md-sys-typescale-display-large-line-height);
+  --text-display-large--letter-spacing: var(--md-sys-typescale-display-large-tracking);
+  --text-display-large--font-weight: var(--md-sys-typescale-display-large-weight);
+  --text-display-medium: var(--md-sys-typescale-display-medium-size);
+  --text-display-medium--line-height: var(--md-sys-typescale-display-medium-line-height);
+  --text-display-medium--letter-spacing: var(--md-sys-typescale-display-medium-tracking);
+  --text-display-medium--font-weight: var(--md-sys-typescale-display-medium-weight);
+  --text-display-small: var(--md-sys-typescale-display-small-size);
+  --text-display-small--line-height: var(--md-sys-typescale-display-small-line-height);
+  --text-display-small--letter-spacing: var(--md-sys-typescale-display-small-tracking);
+  --text-display-small--font-weight: var(--md-sys-typescale-display-small-weight);
+  --text-headline-large: var(--md-sys-typescale-headline-large-size);
+  --text-headline-large--line-height: var(--md-sys-typescale-headline-large-line-height);
+  --text-headline-large--letter-spacing: var(--md-sys-typescale-headline-large-tracking);
+  --text-headline-large--font-weight: var(--md-sys-typescale-headline-large-weight);
+  --text-headline-medium: var(--md-sys-typescale-headline-medium-size);
+  --text-headline-medium--line-height: var(--md-sys-typescale-headline-medium-line-height);
+  --text-headline-medium--letter-spacing: var(--md-sys-typescale-headline-medium-tracking);
+  --text-headline-medium--font-weight: var(--md-sys-typescale-headline-medium-weight);
+  --text-headline-small: var(--md-sys-typescale-headline-small-size);
+  --text-headline-small--line-height: var(--md-sys-typescale-headline-small-line-height);
+  --text-headline-small--letter-spacing: var(--md-sys-typescale-headline-small-tracking);
+  --text-headline-small--font-weight: var(--md-sys-typescale-headline-small-weight);
+  --text-title-large: var(--md-sys-typescale-title-large-size);
+  --text-title-large--line-height: var(--md-sys-typescale-title-large-line-height);
+  --text-title-large--letter-spacing: var(--md-sys-typescale-title-large-tracking);
+  --text-title-large--font-weight: var(--md-sys-typescale-title-large-weight);
+  --text-title-medium: var(--md-sys-typescale-title-medium-size);
+  --text-title-medium--line-height: var(--md-sys-typescale-title-medium-line-height);
+  --text-title-medium--letter-spacing: var(--md-sys-typescale-title-medium-tracking);
+  --text-title-medium--font-weight: var(--md-sys-typescale-title-medium-weight);
+  --text-title-small: var(--md-sys-typescale-title-small-size);
+  --text-title-small--line-height: var(--md-sys-typescale-title-small-line-height);
+  --text-title-small--letter-spacing: var(--md-sys-typescale-title-small-tracking);
+  --text-title-small--font-weight: var(--md-sys-typescale-title-small-weight);
+  --text-body-large: var(--md-sys-typescale-body-large-size);
+  --text-body-large--line-height: var(--md-sys-typescale-body-large-line-height);
+  --text-body-large--letter-spacing: var(--md-sys-typescale-body-large-tracking);
+  --text-body-large--font-weight: var(--md-sys-typescale-body-large-weight);
+  --text-body-medium: var(--md-sys-typescale-body-medium-size);
+  --text-body-medium--line-height: var(--md-sys-typescale-body-medium-line-height);
+  --text-body-medium--letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+  --text-body-medium--font-weight: var(--md-sys-typescale-body-medium-weight);
+  --text-body-small: var(--md-sys-typescale-body-small-size);
+  --text-body-small--line-height: var(--md-sys-typescale-body-small-line-height);
+  --text-body-small--letter-spacing: var(--md-sys-typescale-body-small-tracking);
+  --text-body-small--font-weight: var(--md-sys-typescale-body-small-weight);
+  --text-label-large: var(--md-sys-typescale-label-large-size);
+  --text-label-large--line-height: var(--md-sys-typescale-label-large-line-height);
+  --text-label-large--letter-spacing: var(--md-sys-typescale-label-large-tracking);
+  --text-label-large--font-weight: var(--md-sys-typescale-label-large-weight);
+  --text-label-medium: var(--md-sys-typescale-label-medium-size);
+  --text-label-medium--line-height: var(--md-sys-typescale-label-medium-line-height);
+  --text-label-medium--letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+  --text-label-medium--font-weight: var(--md-sys-typescale-label-medium-weight);
+  --text-label-small: var(--md-sys-typescale-label-small-size);
+  --text-label-small--line-height: var(--md-sys-typescale-label-small-line-height);
+  --text-label-small--letter-spacing: var(--md-sys-typescale-label-small-tracking);
+  --text-label-small--font-weight: var(--md-sys-typescale-label-small-weight);
+  --text-display-large-emphasized: var(--md-sys-typescale-display-large-emphasized-size);
+  --text-display-large-emphasized--line-height: var(--md-sys-typescale-display-large-emphasized-line-height);
+  --text-display-large-emphasized--letter-spacing: var(--md-sys-typescale-display-large-emphasized-tracking);
+  --text-display-large-emphasized--font-weight: var(--md-sys-typescale-display-large-emphasized-weight);
+  --text-display-medium-emphasized: var(--md-sys-typescale-display-medium-emphasized-size);
+  --text-display-medium-emphasized--line-height: var(--md-sys-typescale-display-medium-emphasized-line-height);
+  --text-display-medium-emphasized--letter-spacing: var(--md-sys-typescale-display-medium-emphasized-tracking);
+  --text-display-medium-emphasized--font-weight: var(--md-sys-typescale-display-medium-emphasized-weight);
+  --text-display-small-emphasized: var(--md-sys-typescale-display-small-emphasized-size);
+  --text-display-small-emphasized--line-height: var(--md-sys-typescale-display-small-emphasized-line-height);
+  --text-display-small-emphasized--letter-spacing: var(--md-sys-typescale-display-small-emphasized-tracking);
+  --text-display-small-emphasized--font-weight: var(--md-sys-typescale-display-small-emphasized-weight);
+  --text-headline-large-emphasized: var(--md-sys-typescale-headline-large-emphasized-size);
+  --text-headline-large-emphasized--line-height: var(--md-sys-typescale-headline-large-emphasized-line-height);
+  --text-headline-large-emphasized--letter-spacing: var(--md-sys-typescale-headline-large-emphasized-tracking);
+  --text-headline-large-emphasized--font-weight: var(--md-sys-typescale-headline-large-emphasized-weight);
+  --text-headline-medium-emphasized: var(--md-sys-typescale-headline-medium-emphasized-size);
+  --text-headline-medium-emphasized--line-height: var(--md-sys-typescale-headline-medium-emphasized-line-height);
+  --text-headline-medium-emphasized--letter-spacing: var(--md-sys-typescale-headline-medium-emphasized-tracking);
+  --text-headline-medium-emphasized--font-weight: var(--md-sys-typescale-headline-medium-emphasized-weight);
+  --text-headline-small-emphasized: var(--md-sys-typescale-headline-small-emphasized-size);
+  --text-headline-small-emphasized--line-height: var(--md-sys-typescale-headline-small-emphasized-line-height);
+  --text-headline-small-emphasized--letter-spacing: var(--md-sys-typescale-headline-small-emphasized-tracking);
+  --text-headline-small-emphasized--font-weight: var(--md-sys-typescale-headline-small-emphasized-weight);
+  --text-title-large-emphasized: var(--md-sys-typescale-title-large-emphasized-size);
+  --text-title-large-emphasized--line-height: var(--md-sys-typescale-title-large-emphasized-line-height);
+  --text-title-large-emphasized--letter-spacing: var(--md-sys-typescale-title-large-emphasized-tracking);
+  --text-title-large-emphasized--font-weight: var(--md-sys-typescale-title-large-emphasized-weight);
+  --text-title-medium-emphasized: var(--md-sys-typescale-title-medium-emphasized-size);
+  --text-title-medium-emphasized--line-height: var(--md-sys-typescale-title-medium-emphasized-line-height);
+  --text-title-medium-emphasized--letter-spacing: var(--md-sys-typescale-title-medium-emphasized-tracking);
+  --text-title-medium-emphasized--font-weight: var(--md-sys-typescale-title-medium-emphasized-weight);
+  --text-title-small-emphasized: var(--md-sys-typescale-title-small-emphasized-size);
+  --text-title-small-emphasized--line-height: var(--md-sys-typescale-title-small-emphasized-line-height);
+  --text-title-small-emphasized--letter-spacing: var(--md-sys-typescale-title-small-emphasized-tracking);
+  --text-title-small-emphasized--font-weight: var(--md-sys-typescale-title-small-emphasized-weight);
+  --text-body-large-emphasized: var(--md-sys-typescale-body-large-emphasized-size);
+  --text-body-large-emphasized--line-height: var(--md-sys-typescale-body-large-emphasized-line-height);
+  --text-body-large-emphasized--letter-spacing: var(--md-sys-typescale-body-large-emphasized-tracking);
+  --text-body-large-emphasized--font-weight: var(--md-sys-typescale-body-large-emphasized-weight);
+  --text-body-medium-emphasized: var(--md-sys-typescale-body-medium-emphasized-size);
+  --text-body-medium-emphasized--line-height: var(--md-sys-typescale-body-medium-emphasized-line-height);
+  --text-body-medium-emphasized--letter-spacing: var(--md-sys-typescale-body-medium-emphasized-tracking);
+  --text-body-medium-emphasized--font-weight: var(--md-sys-typescale-body-medium-emphasized-weight);
+  --text-body-small-emphasized: var(--md-sys-typescale-body-small-emphasized-size);
+  --text-body-small-emphasized--line-height: var(--md-sys-typescale-body-small-emphasized-line-height);
+  --text-body-small-emphasized--letter-spacing: var(--md-sys-typescale-body-small-emphasized-tracking);
+  --text-body-small-emphasized--font-weight: var(--md-sys-typescale-body-small-emphasized-weight);
+  --text-label-large-emphasized: var(--md-sys-typescale-label-large-emphasized-size);
+  --text-label-large-emphasized--line-height: var(--md-sys-typescale-label-large-emphasized-line-height);
+  --text-label-large-emphasized--letter-spacing: var(--md-sys-typescale-label-large-emphasized-tracking);
+  --text-label-large-emphasized--font-weight: var(--md-sys-typescale-label-large-emphasized-weight);
+  --text-label-medium-emphasized: var(--md-sys-typescale-label-medium-emphasized-size);
+  --text-label-medium-emphasized--line-height: var(--md-sys-typescale-label-medium-emphasized-line-height);
+  --text-label-medium-emphasized--letter-spacing: var(--md-sys-typescale-label-medium-emphasized-tracking);
+  --text-label-medium-emphasized--font-weight: var(--md-sys-typescale-label-medium-emphasized-weight);
+  --text-label-small-emphasized: var(--md-sys-typescale-label-small-emphasized-size);
+  --text-label-small-emphasized--line-height: var(--md-sys-typescale-label-small-emphasized-line-height);
+  --text-label-small-emphasized--letter-spacing: var(--md-sys-typescale-label-small-emphasized-tracking);
+  --text-label-small-emphasized--font-weight: var(--md-sys-typescale-label-small-emphasized-weight);
+  --font-brand: var(--md-ref-typeface-brand);
+  --font-plain: var(--md-ref-typeface-plain);
+  --font-code: var(--md-ref-typeface-code);
+  --font-sans: var(--md-ref-typeface-plain);
+  --font-mono: var(--md-ref-typeface-code);
+  --ease-linear: var(--md-sys-motion-easing-linear);
+  --ease-standard: var(--md-sys-motion-easing-standard);
+  --ease-standard-decelerate: var(--md-sys-motion-easing-standard-decelerate);
+  --ease-standard-accelerate: var(--md-sys-motion-easing-standard-accelerate);
+  --ease-emphasized: var(--md-sys-motion-easing-emphasized);
+  --ease-emphasized-decelerate: var(--md-sys-motion-easing-emphasized-decelerate);
+  --ease-emphasized-accelerate: var(--md-sys-motion-easing-emphasized-accelerate);
+  --ease-legacy: var(--md-sys-motion-easing-legacy);
+  --ease-legacy-accelerate: var(--md-sys-motion-easing-legacy-accelerate);
+  --ease-legacy-decelerate: var(--md-sys-motion-easing-legacy-decelerate);
+  --ease-spring-fast-spatial: linear(0, 0.0156, 0.056, 0.1128, 0.1796, 0.2516, 0.3252, 0.3978, 0.4675, 0.533, 0.5936, 0.6489, 0.6988, 0.7434, 0.7828, 0.8174, 0.8475, 0.8736, 0.8959, 0.9149, 0.931, 0.9446, 0.9559, 0.9653, 0.973, 0.9793, 0.9845, 0.9886, 0.9919, 0.9944, 0.9965, 0.998, 1);
+  --ease-spring-fast-effects: linear(0, 0.0304, 0.1024, 0.1945, 0.2932, 0.3902, 0.4809, 0.5628, 0.635, 0.6974, 0.7508, 0.7958, 0.8335, 0.8647, 0.8905, 0.9117, 0.929, 0.943, 0.9544, 0.9636, 0.9709, 0.9769, 0.9816, 0.9854, 0.9885, 0.9909, 0.9928, 0.9943, 0.9955, 0.9965, 0.9972, 0.9978, 1);
+  --ease-spring-default-spatial: linear(0, 0.0148, 0.0533, 0.1076, 0.1718, 0.2415, 0.313, 0.3839, 0.4523, 0.5171, 0.5773, 0.6326, 0.6828, 0.728, 0.7681, 0.8036, 0.8347, 0.8618, 0.8852, 0.9053, 0.9224, 0.937, 0.9492, 0.9595, 0.968, 0.9751, 0.9809, 0.9856, 0.9894, 0.9924, 0.9948, 0.9967, 1);
+  --ease-spring-default-effects: linear(0, 0.0315, 0.1057, 0.2002, 0.301, 0.3995, 0.4911, 0.5733, 0.6454, 0.7075, 0.7603, 0.8046, 0.8414, 0.8718, 0.8968, 0.9172, 0.9337, 0.9471, 0.9579, 0.9665, 0.9734, 0.979, 0.9834, 0.9869, 0.9897, 0.9919, 0.9936, 0.995, 0.9961, 0.9969, 0.9976, 0.9981, 1);
+  --ease-spring-slow-spatial: linear(0, 0.0152, 0.0544, 0.1097, 0.175, 0.2456, 0.318, 0.3896, 0.4586, 0.5236, 0.5841, 0.6394, 0.6895, 0.7344, 0.7743, 0.8094, 0.8401, 0.8667, 0.8897, 0.9093, 0.9261, 0.9402, 0.9521, 0.962, 0.9702, 0.9769, 0.9824, 0.9869, 0.9904, 0.9933, 0.9955, 0.9973, 1);
+  --ease-spring-slow-effects: linear(0, 0.0295, 0.0995, 0.1896, 0.2865, 0.3823, 0.4722, 0.5537, 0.6258, 0.6886, 0.7424, 0.7881, 0.8264, 0.8584, 0.8849, 0.9068, 0.9247, 0.9393, 0.9512, 0.9608, 0.9686, 0.9749, 0.98, 0.9841, 0.9873, 0.9899, 0.992, 0.9937, 0.995, 0.996, 0.9969, 0.9975, 1);
+  --ease-spring-expressive-fast-spatial: linear(0, 0.0421, 0.1471, 0.2872, 0.4404, 0.5905, 0.7265, 0.842, 0.9342, 1.0031, 1.0503, 1.0789, 1.0924, 1.0944, 1.0882, 1.077, 1.0632, 1.0486, 1.0347, 1.0223, 1.0121, 1.004, 0.9981, 0.9942, 0.992, 0.9911, 0.9912, 0.9919, 0.9931, 0.9944, 0.9958, 0.9971, 1);
+  --ease-spring-expressive-default-spatial: linear(0, 0.0285, 0.0994, 0.1946, 0.3008, 0.4087, 0.5119, 0.6066, 0.6904, 0.7627, 0.8233, 0.873, 0.9128, 0.9439, 0.9675, 0.985, 0.9974, 1.0057, 1.011, 1.0139, 1.0151, 1.015, 1.0142, 1.0129, 1.0114, 1.0097, 1.0081, 1.0066, 1.0053, 1.0041, 1.0031, 1.0023, 1);
+  --ease-spring-expressive-slow-spatial: linear(0, 0.0277, 0.0968, 0.1898, 0.2941, 0.4005, 0.5027, 0.5968, 0.6807, 0.7533, 0.8147, 0.8653, 0.9062, 0.9383, 0.963, 0.9814, 0.9947, 1.0039, 1.0098, 1.0132, 1.0148, 1.0151, 1.0146, 1.0134, 1.012, 1.0104, 1.0088, 1.0072, 1.0058, 1.0046, 1.0035, 1.0026, 1);
+  --transition-duration-short1: var(--md-sys-motion-duration-short1);
+  --transition-duration-short2: var(--md-sys-motion-duration-short2);
+  --transition-duration-short3: var(--md-sys-motion-duration-short3);
+  --transition-duration-short4: var(--md-sys-motion-duration-short4);
+  --transition-duration-medium1: var(--md-sys-motion-duration-medium1);
+  --transition-duration-medium2: var(--md-sys-motion-duration-medium2);
+  --transition-duration-medium3: var(--md-sys-motion-duration-medium3);
+  --transition-duration-medium4: var(--md-sys-motion-duration-medium4);
+  --transition-duration-long1: var(--md-sys-motion-duration-long1);
+  --transition-duration-long2: var(--md-sys-motion-duration-long2);
+  --transition-duration-long3: var(--md-sys-motion-duration-long3);
+  --transition-duration-long4: var(--md-sys-motion-duration-long4);
+  --transition-duration-extra-long1: var(--md-sys-motion-duration-extra-long1);
+  --transition-duration-extra-long2: var(--md-sys-motion-duration-extra-long2);
+  --transition-duration-extra-long3: var(--md-sys-motion-duration-extra-long3);
+  --transition-duration-extra-long4: var(--md-sys-motion-duration-extra-long4);
+  --transition-duration-spring-fast-spatial: 160ms;
+  --transition-duration-spring-fast-effects: 140ms;
+  --transition-duration-spring-default-spatial: 220ms;
+  --transition-duration-spring-default-effects: 220ms;
+  --transition-duration-spring-slow-spatial: 340ms;
+  --transition-duration-spring-slow-effects: 300ms;
+  --transition-duration-spring-expressive-fast-spatial: 350ms;
+  --transition-duration-spring-expressive-default-spatial: 420ms;
+  --transition-duration-spring-expressive-slow-spatial: 570ms;
+  --shadow-elevation-0: var(--md-sys-elevation-level0);
+  --shadow-elevation-1: var(--md-sys-elevation-level1);
+  --shadow-elevation-2: var(--md-sys-elevation-level2);
+  --shadow-elevation-3: var(--md-sys-elevation-level3);
+  --shadow-elevation-4: var(--md-sys-elevation-level4);
+  --shadow-elevation-5: var(--md-sys-elevation-level5);
+  --breakpoint-medium: 37.5rem;
+  --breakpoint-expanded: 52.5rem;
+  --breakpoint-large: 75rem;
+  --breakpoint-extra-large: 100rem;
+}
+
+/* Colour scheme: the `.dark` class (M3Html, <m3-theme>) or the OS preference unless `.light` forces light. */
+@custom-variant dark {
+  &:where(.dark, .dark *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:not(.light, .light *)) {
+      @slot;
+    }
+  }
+}
+
+/* Window size classes (width): `medium:` and up come from the breakpoints; `compact:` is the class below them. */
+@custom-variant compact (@media (width < 37.5rem));
+/* Window height classes: `h-compact:` below 480dp, `h-medium:` from 480dp, `h-expanded:` from 900dp. */
+@custom-variant h-compact (@media (height < 30rem));
+@custom-variant h-medium (@media (height >= 30rem));
+@custom-variant h-expanded (@media (height >= 56.25rem));
+
+/* Base UI state attributes (and their ARIA twins) at zero specificity. */
+@custom-variant m3-open (&:where([data-open], [data-popup-open], [open], [aria-expanded="true"]));
+@custom-variant m3-on (&:where([data-checked], [data-selected], [data-pressed], [aria-checked="true"], [aria-selected="true"], [aria-pressed="true"]));
+@custom-variant m3-highlighted (&:where([data-highlighted]));
+@custom-variant m3-disabled (&:where(:disabled, [data-disabled], [aria-disabled="true"]));
+@custom-variant m3-invalid (&:where([data-invalid], [aria-invalid="true"]));
+@custom-variant m3-enter (&:where([data-starting-style]));
+@custom-variant m3-exit (&:where([data-ending-style]));
+@custom-variant m3-vertical (&:where([data-orientation="vertical"]));
+@custom-variant m3-horizontal (&:where([data-orientation="horizontal"]));
+
+/* shape-large-top, shape-extra-small, ...: the corner scale and the directional (RTL-aware) corners. */
+@utility shape-* {
+  border-radius: --value(--shape-*);
+}
+
+/*
+ * state-layer: the M3 state layer (hover, focus, pressed, dragged) painted over the element in its
+ * content colour; `state-layer-primary` picks the role. Base UI `data-highlighted`, `data-pressed`,
+ * `data-dragged` and `data-disabled` are honoured. All states share one specificity, so the later
+ * state (pressed over hover) wins, as in the spec.
+ */
+@utility state-layer {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-color: var(--m3-state-layer-color, currentColor);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+  }
+  @media (hover: hover) {
+    &:hover::after {
+      opacity: var(--md-sys-state-hover-state-layer-opacity);
+    }
+  }
+  &:is(:focus-visible, [data-highlighted])::after {
+    opacity: var(--md-sys-state-focus-state-layer-opacity);
+  }
+  &:is(:active, [data-pressed])::after {
+    opacity: var(--md-sys-state-pressed-state-layer-opacity);
+  }
+  &:is([data-dragged])::after {
+    opacity: var(--md-sys-state-dragged-state-layer-opacity);
+  }
+  &:is(:disabled, [data-disabled], [aria-disabled="true"])::after {
+    opacity: 0;
+  }
+}
+@utility state-layer-* {
+  --m3-state-layer-color: --value(--color-*);
+}
+
+@utility typescale-display-large {
+  font-family: var(--md-sys-typescale-display-large-font);
+  font-weight: var(--md-sys-typescale-display-large-weight);
+  font-size: var(--md-sys-typescale-display-large-size);
+  line-height: var(--md-sys-typescale-display-large-line-height);
+  letter-spacing: var(--md-sys-typescale-display-large-tracking);
+}
+@utility typescale-display-medium {
+  font-family: var(--md-sys-typescale-display-medium-font);
+  font-weight: var(--md-sys-typescale-display-medium-weight);
+  font-size: var(--md-sys-typescale-display-medium-size);
+  line-height: var(--md-sys-typescale-display-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-display-medium-tracking);
+}
+@utility typescale-display-small {
+  font-family: var(--md-sys-typescale-display-small-font);
+  font-weight: var(--md-sys-typescale-display-small-weight);
+  font-size: var(--md-sys-typescale-display-small-size);
+  line-height: var(--md-sys-typescale-display-small-line-height);
+  letter-spacing: var(--md-sys-typescale-display-small-tracking);
+}
+@utility typescale-headline-large {
+  font-family: var(--md-sys-typescale-headline-large-font);
+  font-weight: var(--md-sys-typescale-headline-large-weight);
+  font-size: var(--md-sys-typescale-headline-large-size);
+  line-height: var(--md-sys-typescale-headline-large-line-height);
+  letter-spacing: var(--md-sys-typescale-headline-large-tracking);
+}
+@utility typescale-headline-medium {
+  font-family: var(--md-sys-typescale-headline-medium-font);
+  font-weight: var(--md-sys-typescale-headline-medium-weight);
+  font-size: var(--md-sys-typescale-headline-medium-size);
+  line-height: var(--md-sys-typescale-headline-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-headline-medium-tracking);
+}
+@utility typescale-headline-small {
+  font-family: var(--md-sys-typescale-headline-small-font);
+  font-weight: var(--md-sys-typescale-headline-small-weight);
+  font-size: var(--md-sys-typescale-headline-small-size);
+  line-height: var(--md-sys-typescale-headline-small-line-height);
+  letter-spacing: var(--md-sys-typescale-headline-small-tracking);
+}
+@utility typescale-title-large {
+  font-family: var(--md-sys-typescale-title-large-font);
+  font-weight: var(--md-sys-typescale-title-large-weight);
+  font-size: var(--md-sys-typescale-title-large-size);
+  line-height: var(--md-sys-typescale-title-large-line-height);
+  letter-spacing: var(--md-sys-typescale-title-large-tracking);
+}
+@utility typescale-title-medium {
+  font-family: var(--md-sys-typescale-title-medium-font);
+  font-weight: var(--md-sys-typescale-title-medium-weight);
+  font-size: var(--md-sys-typescale-title-medium-size);
+  line-height: var(--md-sys-typescale-title-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-title-medium-tracking);
+}
+@utility typescale-title-small {
+  font-family: var(--md-sys-typescale-title-small-font);
+  font-weight: var(--md-sys-typescale-title-small-weight);
+  font-size: var(--md-sys-typescale-title-small-size);
+  line-height: var(--md-sys-typescale-title-small-line-height);
+  letter-spacing: var(--md-sys-typescale-title-small-tracking);
+}
+@utility typescale-body-large {
+  font-family: var(--md-sys-typescale-body-large-font);
+  font-weight: var(--md-sys-typescale-body-large-weight);
+  font-size: var(--md-sys-typescale-body-large-size);
+  line-height: var(--md-sys-typescale-body-large-line-height);
+  letter-spacing: var(--md-sys-typescale-body-large-tracking);
+}
+@utility typescale-body-medium {
+  font-family: var(--md-sys-typescale-body-medium-font);
+  font-weight: var(--md-sys-typescale-body-medium-weight);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  line-height: var(--md-sys-typescale-body-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+}
+@utility typescale-body-small {
+  font-family: var(--md-sys-typescale-body-small-font);
+  font-weight: var(--md-sys-typescale-body-small-weight);
+  font-size: var(--md-sys-typescale-body-small-size);
+  line-height: var(--md-sys-typescale-body-small-line-height);
+  letter-spacing: var(--md-sys-typescale-body-small-tracking);
+}
+@utility typescale-label-large {
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  font-size: var(--md-sys-typescale-label-large-size);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
+}
+@utility typescale-label-medium {
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-weight: var(--md-sys-typescale-label-medium-weight);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+}
+@utility typescale-label-small {
+  font-family: var(--md-sys-typescale-label-small-font);
+  font-weight: var(--md-sys-typescale-label-small-weight);
+  font-size: var(--md-sys-typescale-label-small-size);
+  line-height: var(--md-sys-typescale-label-small-line-height);
+  letter-spacing: var(--md-sys-typescale-label-small-tracking);
+}
+@utility typescale-display-large-emphasized {
+  font-family: var(--md-sys-typescale-display-large-emphasized-font);
+  font-weight: var(--md-sys-typescale-display-large-emphasized-weight);
+  font-size: var(--md-sys-typescale-display-large-emphasized-size);
+  line-height: var(--md-sys-typescale-display-large-emphasized-line-height);
+  letter-spacing: var(--md-sys-typescale-display-large-emphasized-tracking);
+}
+@utility typescale-display-medium-emphasized {
+  font-family: var(--md-sys-typescale-display-medium-emphasized-font);
+  font-weight: var(--md-sys-typescale-display-medium-emphasized-weight);
+  font-size: var(--md-sys-typescale-display-medium-emphasized-size);
+  line-height: var(--md-sys-typescale-display-medium-emphasized-line-height);
+  letter-spacing: var(--md-sys-typescale-display-medium-emphasized-tracking);
+}
+@utility typescale-display-small-emphasized {
+  font-family: var(--md-sys-typescale-display-small-emphasized-font);
+  font-weight: var(--md-sys-typescale-display-small-emphasized-weight);
+  font-size: var(--md-sys-typescale-display-small-emphasized-size);
+  line-height: var(--md-sys-typescale-display-small-emphasized-line-height);
+  letter-spacing: var(--md-sys-typescale-display-small-emphasized-tracking);
+}
+@utility typescale-headline-large-emphasized {
+  font-family: var(--md-sys-typescale-headline-large-emphasized-font);
+  font-weight: var(--md-sys-typescale-headline-large-emphasized-weight);
+  font-size: var(--md-sys-typescale-headline-large-emphasized-size);
+  line-height: var(--md-sys-typescale-headline-large-emphasized-line-height);
+  letter-spacing: var(--md-sys-typescale-headline-large-emphasized-tracking);
+}
+@utility typescale-headline-medium-emphasized {
+  font-family: var(--md-sys-typescale-headline-medium-emphasized-font);
+  font-weight: var(--md-sys-typescale-headline-medium-emphasized-weight);
+  font-size: var(--md-sys-typescale-headline-medium-emphasized-size);
+  line-height: var(--md-sys-typescale-headline-medium-emphasized-line-height);
+  letter-spacing: var(--md-sys-typescale-headline-medium-emphasized-tracking);
+}
+@utility typescale-headline-small-emphasized {
+  font-family: var(--md-sys-typescale-headline-small-emphasized-font);
+  font-weight: var(--md-sys-typescale-headline-small-emphasized-weight);
+  font-size: var(--md-sys-typescale-headline-small-emphasized-size);
+  line-height: var(--md-sys-typescale-headline-small-emphasized-line-height);
+  letter-spacing: var(--md-sys-typescale-headline-small-emphasized-tracking);
+}
+@utility typescale-title-large-emphasized {
+  font-family: var(--md-sys-typescale-title-large-emphasized-font);
+  font-weight: var(--md-sys-typescale-title-large-emphasized-weight);
+  font-size: var(--md-sys-typescale-title-large-emphasized-size);
+  line-height: var(--md-sys-typescale-title-large-emphasized-line-height);
+  letter-spacing: var(--md-sys-typescale-title-large-emphasized-tracking);
+}
+@utility typescale-title-medium-emphasized {
+  font-family: var(--md-sys-typescale-title-medium-emphasized-font);
+  font-weight: var(--md-sys-typescale-title-medium-emphasized-weight);
+  font-size: var(--md-sys-typescale-title-medium-emphasized-size);
+  line-height: var(--md-sys-typescale-title-medium-emphasized-line-height);
+  letter-spacing: var(--md-sys-typescale-title-medium-emphasized-tracking);
+}
+@utility typescale-title-small-emphasized {
+  font-family: var(--md-sys-typescale-title-small-emphasized-font);
+  font-weight: var(--md-sys-typescale-title-small-emphasized-weight);
+  font-size: var(--md-sys-typescale-title-small-emphasized-size);
+  line-height: var(--md-sys-typescale-title-small-emphasized-line-height);
+  letter-spacing: var(--md-sys-typescale-title-small-emphasized-tracking);
+}
+@utility typescale-body-large-emphasized {
+  font-family: var(--md-sys-typescale-body-large-emphasized-font);
+  font-weight: var(--md-sys-typescale-body-large-emphasized-weight);
+  font-size: var(--md-sys-typescale-body-large-emphasized-size);
+  line-height: var(--md-sys-typescale-body-large-emphasized-line-height);
+  letter-spacing: var(--md-sys-typescale-body-large-emphasized-tracking);
+}
+@utility typescale-body-medium-emphasized {
+  font-family: var(--md-sys-typescale-body-medium-emphasized-font);
+  font-weight: var(--md-sys-typescale-body-medium-emphasized-weight);
+  font-size: var(--md-sys-typescale-body-medium-emphasized-size);
+  line-height: var(--md-sys-typescale-body-medium-emphasized-line-height);
+  letter-spacing: var(--md-sys-typescale-body-medium-emphasized-tracking);
+}
+@utility typescale-body-small-emphasized {
+  font-family: var(--md-sys-typescale-body-small-emphasized-font);
+  font-weight: var(--md-sys-typescale-body-small-emphasized-weight);
+  font-size: var(--md-sys-typescale-body-small-emphasized-size);
+  line-height: var(--md-sys-typescale-body-small-emphasized-line-height);
+  letter-spacing: var(--md-sys-typescale-body-small-emphasized-tracking);
+}
+@utility typescale-label-large-emphasized {
+  font-family: var(--md-sys-typescale-label-large-emphasized-font);
+  font-weight: var(--md-sys-typescale-label-large-emphasized-weight);
+  font-size: var(--md-sys-typescale-label-large-emphasized-size);
+  line-height: var(--md-sys-typescale-label-large-emphasized-line-height);
+  letter-spacing: var(--md-sys-typescale-label-large-emphasized-tracking);
+}
+@utility typescale-label-medium-emphasized {
+  font-family: var(--md-sys-typescale-label-medium-emphasized-font);
+  font-weight: var(--md-sys-typescale-label-medium-emphasized-weight);
+  font-size: var(--md-sys-typescale-label-medium-emphasized-size);
+  line-height: var(--md-sys-typescale-label-medium-emphasized-line-height);
+  letter-spacing: var(--md-sys-typescale-label-medium-emphasized-tracking);
+}
+@utility typescale-label-small-emphasized {
+  font-family: var(--md-sys-typescale-label-small-emphasized-font);
+  font-weight: var(--md-sys-typescale-label-small-emphasized-weight);
+  font-size: var(--md-sys-typescale-label-small-emphasized-size);
+  line-height: var(--md-sys-typescale-label-small-emphasized-line-height);
+  letter-spacing: var(--md-sys-typescale-label-small-emphasized-tracking);
+}
+
+@utility motion-fast-spatial {
+  --tw-ease: linear(0, 0.0156, 0.056, 0.1128, 0.1796, 0.2516, 0.3252, 0.3978, 0.4675, 0.533, 0.5936, 0.6489, 0.6988, 0.7434, 0.7828, 0.8174, 0.8475, 0.8736, 0.8959, 0.9149, 0.931, 0.9446, 0.9559, 0.9653, 0.973, 0.9793, 0.9845, 0.9886, 0.9919, 0.9944, 0.9965, 0.998, 1);
+  --tw-duration: 160ms;
+  transition-timing-function: linear(0, 0.0156, 0.056, 0.1128, 0.1796, 0.2516, 0.3252, 0.3978, 0.4675, 0.533, 0.5936, 0.6489, 0.6988, 0.7434, 0.7828, 0.8174, 0.8475, 0.8736, 0.8959, 0.9149, 0.931, 0.9446, 0.9559, 0.9653, 0.973, 0.9793, 0.9845, 0.9886, 0.9919, 0.9944, 0.9965, 0.998, 1);
+  transition-duration: 160ms;
+}
+@utility motion-fast-effects {
+  --tw-ease: linear(0, 0.0304, 0.1024, 0.1945, 0.2932, 0.3902, 0.4809, 0.5628, 0.635, 0.6974, 0.7508, 0.7958, 0.8335, 0.8647, 0.8905, 0.9117, 0.929, 0.943, 0.9544, 0.9636, 0.9709, 0.9769, 0.9816, 0.9854, 0.9885, 0.9909, 0.9928, 0.9943, 0.9955, 0.9965, 0.9972, 0.9978, 1);
+  --tw-duration: 140ms;
+  transition-timing-function: linear(0, 0.0304, 0.1024, 0.1945, 0.2932, 0.3902, 0.4809, 0.5628, 0.635, 0.6974, 0.7508, 0.7958, 0.8335, 0.8647, 0.8905, 0.9117, 0.929, 0.943, 0.9544, 0.9636, 0.9709, 0.9769, 0.9816, 0.9854, 0.9885, 0.9909, 0.9928, 0.9943, 0.9955, 0.9965, 0.9972, 0.9978, 1);
+  transition-duration: 140ms;
+}
+@utility motion-default-spatial {
+  --tw-ease: linear(0, 0.0148, 0.0533, 0.1076, 0.1718, 0.2415, 0.313, 0.3839, 0.4523, 0.5171, 0.5773, 0.6326, 0.6828, 0.728, 0.7681, 0.8036, 0.8347, 0.8618, 0.8852, 0.9053, 0.9224, 0.937, 0.9492, 0.9595, 0.968, 0.9751, 0.9809, 0.9856, 0.9894, 0.9924, 0.9948, 0.9967, 1);
+  --tw-duration: 220ms;
+  transition-timing-function: linear(0, 0.0148, 0.0533, 0.1076, 0.1718, 0.2415, 0.313, 0.3839, 0.4523, 0.5171, 0.5773, 0.6326, 0.6828, 0.728, 0.7681, 0.8036, 0.8347, 0.8618, 0.8852, 0.9053, 0.9224, 0.937, 0.9492, 0.9595, 0.968, 0.9751, 0.9809, 0.9856, 0.9894, 0.9924, 0.9948, 0.9967, 1);
+  transition-duration: 220ms;
+}
+@utility motion-default-effects {
+  --tw-ease: linear(0, 0.0315, 0.1057, 0.2002, 0.301, 0.3995, 0.4911, 0.5733, 0.6454, 0.7075, 0.7603, 0.8046, 0.8414, 0.8718, 0.8968, 0.9172, 0.9337, 0.9471, 0.9579, 0.9665, 0.9734, 0.979, 0.9834, 0.9869, 0.9897, 0.9919, 0.9936, 0.995, 0.9961, 0.9969, 0.9976, 0.9981, 1);
+  --tw-duration: 220ms;
+  transition-timing-function: linear(0, 0.0315, 0.1057, 0.2002, 0.301, 0.3995, 0.4911, 0.5733, 0.6454, 0.7075, 0.7603, 0.8046, 0.8414, 0.8718, 0.8968, 0.9172, 0.9337, 0.9471, 0.9579, 0.9665, 0.9734, 0.979, 0.9834, 0.9869, 0.9897, 0.9919, 0.9936, 0.995, 0.9961, 0.9969, 0.9976, 0.9981, 1);
+  transition-duration: 220ms;
+}
+@utility motion-slow-spatial {
+  --tw-ease: linear(0, 0.0152, 0.0544, 0.1097, 0.175, 0.2456, 0.318, 0.3896, 0.4586, 0.5236, 0.5841, 0.6394, 0.6895, 0.7344, 0.7743, 0.8094, 0.8401, 0.8667, 0.8897, 0.9093, 0.9261, 0.9402, 0.9521, 0.962, 0.9702, 0.9769, 0.9824, 0.9869, 0.9904, 0.9933, 0.9955, 0.9973, 1);
+  --tw-duration: 340ms;
+  transition-timing-function: linear(0, 0.0152, 0.0544, 0.1097, 0.175, 0.2456, 0.318, 0.3896, 0.4586, 0.5236, 0.5841, 0.6394, 0.6895, 0.7344, 0.7743, 0.8094, 0.8401, 0.8667, 0.8897, 0.9093, 0.9261, 0.9402, 0.9521, 0.962, 0.9702, 0.9769, 0.9824, 0.9869, 0.9904, 0.9933, 0.9955, 0.9973, 1);
+  transition-duration: 340ms;
+}
+@utility motion-slow-effects {
+  --tw-ease: linear(0, 0.0295, 0.0995, 0.1896, 0.2865, 0.3823, 0.4722, 0.5537, 0.6258, 0.6886, 0.7424, 0.7881, 0.8264, 0.8584, 0.8849, 0.9068, 0.9247, 0.9393, 0.9512, 0.9608, 0.9686, 0.9749, 0.98, 0.9841, 0.9873, 0.9899, 0.992, 0.9937, 0.995, 0.996, 0.9969, 0.9975, 1);
+  --tw-duration: 300ms;
+  transition-timing-function: linear(0, 0.0295, 0.0995, 0.1896, 0.2865, 0.3823, 0.4722, 0.5537, 0.6258, 0.6886, 0.7424, 0.7881, 0.8264, 0.8584, 0.8849, 0.9068, 0.9247, 0.9393, 0.9512, 0.9608, 0.9686, 0.9749, 0.98, 0.9841, 0.9873, 0.9899, 0.992, 0.9937, 0.995, 0.996, 0.9969, 0.9975, 1);
+  transition-duration: 300ms;
+}
+@utility motion-expressive-fast-spatial {
+  --tw-ease: linear(0, 0.0421, 0.1471, 0.2872, 0.4404, 0.5905, 0.7265, 0.842, 0.9342, 1.0031, 1.0503, 1.0789, 1.0924, 1.0944, 1.0882, 1.077, 1.0632, 1.0486, 1.0347, 1.0223, 1.0121, 1.004, 0.9981, 0.9942, 0.992, 0.9911, 0.9912, 0.9919, 0.9931, 0.9944, 0.9958, 0.9971, 1);
+  --tw-duration: 350ms;
+  transition-timing-function: linear(0, 0.0421, 0.1471, 0.2872, 0.4404, 0.5905, 0.7265, 0.842, 0.9342, 1.0031, 1.0503, 1.0789, 1.0924, 1.0944, 1.0882, 1.077, 1.0632, 1.0486, 1.0347, 1.0223, 1.0121, 1.004, 0.9981, 0.9942, 0.992, 0.9911, 0.9912, 0.9919, 0.9931, 0.9944, 0.9958, 0.9971, 1);
+  transition-duration: 350ms;
+}
+@utility motion-expressive-default-spatial {
+  --tw-ease: linear(0, 0.0285, 0.0994, 0.1946, 0.3008, 0.4087, 0.5119, 0.6066, 0.6904, 0.7627, 0.8233, 0.873, 0.9128, 0.9439, 0.9675, 0.985, 0.9974, 1.0057, 1.011, 1.0139, 1.0151, 1.015, 1.0142, 1.0129, 1.0114, 1.0097, 1.0081, 1.0066, 1.0053, 1.0041, 1.0031, 1.0023, 1);
+  --tw-duration: 420ms;
+  transition-timing-function: linear(0, 0.0285, 0.0994, 0.1946, 0.3008, 0.4087, 0.5119, 0.6066, 0.6904, 0.7627, 0.8233, 0.873, 0.9128, 0.9439, 0.9675, 0.985, 0.9974, 1.0057, 1.011, 1.0139, 1.0151, 1.015, 1.0142, 1.0129, 1.0114, 1.0097, 1.0081, 1.0066, 1.0053, 1.0041, 1.0031, 1.0023, 1);
+  transition-duration: 420ms;
+}
+@utility motion-expressive-slow-spatial {
+  --tw-ease: linear(0, 0.0277, 0.0968, 0.1898, 0.2941, 0.4005, 0.5027, 0.5968, 0.6807, 0.7533, 0.8147, 0.8653, 0.9062, 0.9383, 0.963, 0.9814, 0.9947, 1.0039, 1.0098, 1.0132, 1.0148, 1.0151, 1.0146, 1.0134, 1.012, 1.0104, 1.0088, 1.0072, 1.0058, 1.0046, 1.0035, 1.0026, 1);
+  --tw-duration: 570ms;
+  transition-timing-function: linear(0, 0.0277, 0.0968, 0.1898, 0.2941, 0.4005, 0.5027, 0.5968, 0.6807, 0.7533, 0.8147, 0.8653, 0.9062, 0.9383, 0.963, 0.9814, 0.9947, 1.0039, 1.0098, 1.0132, 1.0148, 1.0151, 1.0146, 1.0134, 1.012, 1.0104, 1.0088, 1.0072, 1.0058, 1.0046, 1.0035, 1.0026, 1);
+  transition-duration: 570ms;
+}

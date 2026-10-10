@@ -1,0 +1,1 @@
+Here is the call: {"tool_calls": [{"type": "function", "function": {"name": "search", "arguments": {"query": "openai"}}}]} Done.

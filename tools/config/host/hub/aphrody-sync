@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Sync unique (vps) : fast-forward du checkout unique ~/src/aphrody, un build par commit dans le target unique de ~/build, install atomique, redemarrage.
+# Le checkout est partagé avec l'usine de build (tools/config/build-factory.json) : mêmes verrous, même ordre (heavy puis source).
+set -uo pipefail
+[ -f "$HOME/.aphrody/deploy/sync.env" ] && . "$HOME/.aphrody/deploy/sync.env"
+REPO="${APHRODY_SYNC_REPO:-$HOME/src/aphrody}"
+BUILD="${APHRODY_BUILD_ROOT:-$HOME/build}"
+STATE_DIR="$HOME/.aphrody/deploy"
+STATE="$STATE_DIR/state.json"
+BIN="$HOME/.local/bin"
+export APHRODY_BUILD_HOST=vps CARGO_INCREMENTAL=0
+export RUSTC_WRAPPER=
+export APHRODY_CARGO_JOBS="${APHRODY_CARGO_JOBS:-12}"
+FEATURES="${APHRODY_SYNC_FEATURES:-jobs,mcp-toolbox}"
+export APHRODY_CARGO_TARGET_DIR="$BUILD/cache/cargo/aphrody"
+export CARGO_TARGET_DIR="$APHRODY_CARGO_TARGET_DIR"
+export SCCACHE_DIR="$BUILD/cache/sccache"
+export PATH="$HOME/.cargo/bin:$HOME/.bun/bin:$BIN:/usr/local/bin:/usr/bin:/bin"
+mkdir -p "$STATE_DIR" "$BUILD/locks"
+exec 9>"$STATE_DIR/sync.lock"
+flock -n 9 || { echo "sync deja en cours"; exit 0; }
+log() { echo "$(date -u +%FT%TZ) $*"; }
+exec 8>"$BUILD/locks/heavy.lock"
+flock -w 3600 8 || { log "skip : verrou heavy de l'usine occupe"; exit 0; }
+exec 7>"$BUILD/locks/aphrody.source.lock"
+flock -w 600 7 || { log "skip : verrou source de l'usine occupe"; exit 0; }
+write_state() { printf '{"sha":"%s","status":"%s","features":"%s","at":"%s"}\n' "$1" "$2" "$FEATURES" "$(date -u +%FT%TZ)" > "$STATE.tmp" && mv "$STATE.tmp" "$STATE"; }
+cd "$REPO" || exit 1
+git fetch -q origin main || { log "fetch echoue"; exit 1; }
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then log "skip : checkout sale"; exit 0; fi
+# L'usine laisse HEAD détaché sur la révision qu'elle a construite : retour sur main s'il n'y a aucun commit local.
+if [ "$(git rev-parse --abbrev-ref HEAD)" = HEAD ] && git merge-base --is-ancestor HEAD origin/main; then
+  git checkout -q main || { log "skip : checkout de main impossible"; exit 0; }
+fi
+if [ "$(git rev-parse --abbrev-ref HEAD)" != main ]; then log "skip : branche differente de main"; exit 0; fi
+git merge -q --ff-only origin/main || { log "skip : historique divergent"; exit 0; }
+sha="$(git rev-parse HEAD)"
+deployed="$(sed -n 's/.*"sha":"\([0-9a-f]*\)".*/\1/p' "$STATE" 2>/dev/null)"
+status="$(sed -n 's/.*"status":"\([a-z]*\)".*/\1/p' "$STATE" 2>/dev/null)"
+deployed_features="$(sed -n 's/.*"features":"\([^"]*\)".*/\1/p' "$STATE" 2>/dev/null)"
+if [ "$sha" = "$deployed" ] && [ "$status" = ok ] && [ "$deployed_features" = "$FEATURES" ] && [ -x "$BIN/aphrody" ]; then exit 0; fi
+log "build $sha"
+# aphrody-ssh restait « fresh » avec un rlib obsolète : nettoyage ciblé avant le build release.
+cargo clean -p aphrody-ssh --release -q 2>/dev/null || true
+if ! nice -n 15 ionice -c3 cargo build --release -p aphrody --locked --features "$FEATURES" -j "$APHRODY_CARGO_JOBS"; then
+  log "build en echec"; write_state "$sha" build-failed; exit 1
+fi
+new="$APHRODY_CARGO_TARGET_DIR/release/aphrody"
+[ -x "$new" ] || { log "binaire absent: $new"; write_state "$sha" missing-binary; exit 1; }
+install -m 0755 "$new" "$BIN/aphrody.new" && mv -f "$BIN/aphrody.new" "$BIN/aphrody"
+for alias in aphrody-mcp aphrody-infra aphrody-kernel; do ln -sfn "$BIN/aphrody" "$BIN/$alias"; done
+write_state "$sha" ok
+systemctl --user restart aphrody-a2a.service aphrody-mcp-http.service
+log "deploye $sha"

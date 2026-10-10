@@ -1,0 +1,17 @@
+{
+  "extends": "../m3-config/tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "lib": ["ESNext", "DOM"]
+  },
+  "include": [
+    "index.ts",
+    "site.ts",
+    "scene-types.d.ts",
+    "scripts/vendor-upstream.ts",
+    "index.test.ts",
+    "native.test.ts",
+    "vendor.test.ts"
+  ],
+  "exclude": ["node_modules"]
+}

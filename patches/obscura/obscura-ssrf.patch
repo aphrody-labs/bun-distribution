@@ -1,0 +1,32 @@
+diff -ruN -w -x render-repros a/obscura-ssrf/Cargo.toml b/obscura-ssrf/Cargo.toml
+--- a/obscura-ssrf/Cargo.toml	2026-10-06 18:04:12.710480127 +0200
++++ b/obscura-ssrf/Cargo.toml	2026-10-06 18:04:12.710480127 +0200
+@@ -1,9 +1,23 @@
+ [package]
+ name = "obscura-ssrf"
+-version.workspace = true
+-edition.workspace = true
+-license.workspace = true
+-repository.workspace = true
+-description = "Shared SSRF deny-set and private-network opt-in for Obscura's network transports and renderer."
++description = "Shared SSRF deny-set and private-network opt-in for Obscura network transports and renderer."
++version = "0.1.0"
++edition = "2021"
++license = "Apache-2.0"
++repository = "https://github.com/h4ckf0r0day/obscura"
+ 
+ [dependencies]
++
++# Vendored upstream code (h4ckf0r0day/obscura): not held to the aphrody lint
++# set, so the workspace -D warnings gate does not rewrite upstream style.
++[lints.rust]
++warnings = "allow"
++unexpected_cfgs = "allow"
++# `-D warnings` on the command line outranks the group above; name the groups
++# upstream code actually trips so the vendored tree stays out of the gate.
++unused = { level = "allow", priority = -1 }
++deprecated = "allow"
++
++[lints.clippy]
++all = { level = "allow", priority = -1 }
++pedantic = { level = "allow", priority = -1 }

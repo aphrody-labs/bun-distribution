@@ -1,0 +1,61 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Scan the canonical reader utilities in every host, including isolated installs. */
+@source "./src";
+
+/* Readers inherit the host Material 3 scheme; dark fallback keeps scanned pages legible. */
+.m3-reader {
+  --reader-surface: var(--md-sys-color-surface, #111318);
+  --reader-on-surface: var(--md-sys-color-on-surface, #e2e2e9);
+  --reader-accent: var(--md-sys-color-primary, #bdc5ff);
+  --reader-on-accent: var(--md-sys-color-on-primary, #17227a);
+  --reader-outline: var(--md-sys-color-outline, #8e9099);
+  color: var(--reader-on-surface);
+  background: var(--reader-surface);
+  font-size: 18px;
+  line-height: 1.5;
+}
+.m3-reader .m3-reader-hud {
+  color: var(--reader-on-surface);
+  background: var(--reader-surface);
+  border-bottom: 2px solid var(--reader-outline);
+}
+.m3-reader .m3-reader-btn,
+.m3-reader .m3-reader-btn-active {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .375rem;
+  min-height: 44px;
+  padding: .35rem .75rem;
+  border: 2px solid var(--reader-outline);
+  border-radius: .6rem;
+  color: var(--reader-on-surface);
+  background: var(--reader-surface);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.m3-reader .m3-reader-btn-active {
+  color: var(--reader-on-accent);
+  background: var(--reader-accent);
+  border-color: var(--reader-accent);
+}
+.m3-reader :is(button, a, input):focus-visible {
+  outline: 3px solid var(--reader-accent);
+  outline-offset: 2px;
+}
+.m3-reader :is(button, a):disabled { opacity: .45; cursor: default; }
+.m3-reader .m3-reader-scroll { scrollbar-color: var(--reader-outline) var(--reader-surface); }
+.m3-reader-collection { display: grid; gap: 1rem; padding: 1rem; border-radius: 1rem; }
+.m3-reader-collection-toolbar, .m3-reader-collection-navigation { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; }
+.m3-reader-collection-editions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.m3-reader-collection-contents { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .5rem; padding: 1rem; border: 2px solid var(--reader-outline); border-radius: 1rem; }
+.m3-reader-collection-empty { min-height: 8rem; padding: 2rem; border: 2px solid var(--reader-outline); border-radius: 1rem; font-size: 18px; }
+.m3-reader-collection-navigation { border-top: 1px solid var(--reader-outline); padding-top: .75rem; }
+@media (prefers-reduced-motion: reduce) {
+  .m3-reader *, .m3-reader *::before, .m3-reader *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
+}

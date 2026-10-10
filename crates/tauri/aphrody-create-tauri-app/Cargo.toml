@@ -1,0 +1,24 @@
+[package]
+name = "aphrody-create-tauri-app"
+description = "Rapidly scaffold out a new tauri app project."
+authors = ["Tauri Programme within The Commons Conservancy"]
+version = "4.7.4"
+edition = "2024"
+license = "Apache-2.0 OR MIT"
+readme = "README.md"
+repository = "https://github.com/aphrody-labs/yolo"
+keywords = ["tauri"]
+categories = ["gui"]
+exclude = ["node", "worker", ".github", ".changes", ".scripts"]
+rust-version = "1.85"
+
+[lib]
+name = "create_tauri_app"
+
+[dependencies]
+anyhow = { workspace = true }
+dialoguer = "0.12"
+pico-args = "0.5"
+ctrlc = "3.3"
+rust-embed = { version = "8.3", features = ["interpolate-folder-path"] }
+whoami = { version = "2", default-features = false }

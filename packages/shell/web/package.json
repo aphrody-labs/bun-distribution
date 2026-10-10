@@ -1,0 +1,34 @@
+{
+  "name": "@aphrody/shell-web",
+  "version": "0.1.2",
+  "description": "Aphrody shell for browsers and Tauri webviews: WASM VT core, local shell and WebSocket/Tauri transports.",
+  "license": "Apache-2.0",
+  "files": [
+    "src",
+    "pkg",
+    "!src/**/*.test.ts"
+  ],
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./worker": "./src/worker.ts",
+    "./wasm": "./pkg/aphrody_shell_web_bg.wasm",
+    "./wasm-glue": "./pkg/aphrody_shell_web.js",
+    "./pkg/*": "./pkg/*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bun run build:wasm",
+    "build:wasm": "bash ../../../scripts/build/shell/build-wasm.sh",
+    "lint": "oxlint src test",
+    "test": "bun test",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "engines": {
+    "bun": ">=1.4.3"
+  }
+}

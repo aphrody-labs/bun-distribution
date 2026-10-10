@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "initialAllocation": {
+    "development": "aphro-pc",
+    "gpu": "omar",
+    "factoryCacheProxy": "vps",
+    "production": "dbfr"
+  },
+  "model": {
+    "repository": "unsloth/gemma-4-E2B-it",
+    "revision": "d36bdd3855c82a6a1a23f7c459b749f5724ae75d",
+    "weights": {
+      "file": "model.safetensors",
+      "bytes": 10246621918,
+      "sha256": "2db5482b20d746879bb3ef79b5203e9075a2e2b98f54ec7c2f281c1477ddc550"
+    }
+  },
+  "depot": {
+    "maximumBytes": 34359738368,
+    "public": false,
+    "transport": "infra-ssh-sftp",
+    "promptCache": false
+  },
+  "qualification": {
+    "candidateQuantization": "bitsandbytes",
+    "maximumConcurrentSequences": 1,
+    "maximumContextTokens": 4096,
+    "activated": false
+  }
+}

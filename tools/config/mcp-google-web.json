@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "homeConfig": "${APHRODY_HOME}/config/mcp.json",
+  "geminiConfig": "${USERPROFILE}/.gemini/config/mcp_config.json",
+  "servers": {
+    "aphrody": { "kind": "stdio", "binary": "aphrody-mcp", "role": "kernel-google-cloud-routing" },
+    "bxc": { "kind": "stdio", "binary": "bxc-mcp", "role": "google-search-gemini-web" },
+    "chrome-devtools": { "kind": "stdio", "binary": "chrome-devtools-mcp.cmd", "role": "Chrome DevTools CDP" },
+    "google-drive": { "kind": "streamable-http", "url": "https://drivemcp.googleapis.com/mcp/v1", "role": "Google Drive" }
+  },
+  "plugins": ["chrome-devtools-plugin", "modern-web-guidance-plugin"],
+  "auth": "native-google-oauth-or-adc",
+  "secretsInConfig": false
+}

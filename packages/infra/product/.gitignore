@@ -1,0 +1,3 @@
+# Local builds and dependency caches
+dist/
+node_modules/

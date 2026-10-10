@@ -1,0 +1,38 @@
+[package]
+name = "aphrody-tauri-macos-sign"
+version = "3.0.0-alpha.2"
+authors = ["Tauri Programme within The Commons Conservancy"]
+license = "Apache-2.0 OR MIT"
+keywords = ["codesign", "signing", "macos", "ios", "tauri"]
+repository = "https://github.com/aphrody-labs/yolo"
+description = "Code signing utilities for macOS and iOS apps"
+edition = "2024"
+rust-version = "1.95"
+
+[lib]
+name = "tauri_macos_sign"
+
+[dependencies]
+thiserror = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+tempfile = { workspace = true }
+# This must match the version apple-codesign uses
+x509-certificate = "0.24"
+once_cell = { workspace = true }
+regex = { workspace = true }
+os_pipe = "1"
+plist = "1"
+rand = { workspace = true }
+dirs = { workspace = true }
+log = { workspace = true, features = ["kv"] }
+apple-codesign = { version = "0.29", default-features = false }
+chrono = { workspace = true }
+p12 = "0.6"
+base64 = "0.22"
+
+[lints.clippy]
+collapsible_if = "allow"
+redundant_clone = "warn"
+assigning_clones = "warn"
+or_fun_call = "warn"

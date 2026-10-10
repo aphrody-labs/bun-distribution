@@ -1,0 +1,46 @@
+[package]
+name = "aphrody-tauri-plugin"
+version = "3.0.0-alpha.3"
+description = "Build script and runtime Tauri plugin definitions"
+authors = ["Tauri Programme within The Commons Conservancy"]
+homepage = "https://tauri.app/"
+repository = "https://github.com/aphrody-labs/yolo"
+categories = ["gui", "web-programming"]
+license = "Apache-2.0 OR MIT"
+edition = "2024"
+rust-version = "1.95"
+
+[package.metadata.docs.rs]
+features = ["build", "runtime"]
+
+[lib]
+name = "tauri_plugin"
+
+[features]
+build = [
+  "dep:anyhow",
+  "dep:serde",
+  "dep:serde_json",
+  "dep:glob",
+  "dep:plist",
+  "dep:walkdir",
+]
+runtime = []
+
+[dependencies]
+anyhow = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["build-2"] }
+serde_json = { workspace = true, optional = true }
+glob = { workspace = true, optional = true }
+schemars = { workspace = true, features = ["preserve_order"] }
+walkdir = { workspace = true, optional = true }
+
+[target."cfg(target_os = \"macos\")".dependencies]
+plist = { version = "1", optional = true }
+
+[lints.clippy]
+collapsible_if = "allow"
+redundant_clone = "warn"
+assigning_clones = "warn"
+or_fun_call = "warn"

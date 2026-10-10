@@ -1,0 +1,10 @@
+{
+  "extends": "@aphrody/m3-config/tsconfig.json",
+  "compilerOptions": {
+    "types": ["bun"],
+    "paths": {
+      "@aphrody/m3-next/client": ["./src/client.tsx"]
+    }
+  },
+  "include": ["src/**/*", "test/**/*", "test-dom/**/*", "bin/**/*", "scripts/**/*"]
+}

@@ -1,0 +1,36 @@
+{
+  "name": "@aphrody/ovh",
+  "version": "0.2.2",
+  "description": "OVH cloud library for Aphrody Infra: DNS, VPS, Email, and multi-profile operations in pure Bun (command line: aphrody ovh)",
+  "license": "Apache-2.0",
+  "files": [
+    "README.md",
+    "src"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./dns": "./src/dns.ts",
+    "./vps": "./src/vps.ts",
+    "./email": "./src/email.ts",
+    "./profiles": "./src/profiles.ts"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "bun build src/index.ts --target bun --packages external --outdir dist",
+    "lint": "oxlint src test",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "check": "aphrody ovh status",
+    "dns": "aphrody ovh dns",
+    "vps": "aphrody ovh vps",
+    "email": "aphrody ovh email"
+  },
+  "dependencies": {},
+  "engines": {
+    "bun": ">=1.4.3"
+  }
+}

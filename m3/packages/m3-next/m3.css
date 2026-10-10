@@ -1,0 +1,23 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * @aphrody/m3-next/m3.css: the Material 3 sheets for a Next.js + Tailwind v4 app.
+ * Import it from the app's global stylesheet, right after Tailwind:
+ *
+ *   @import "tailwindcss";
+ *   @import "@aphrody/m3-next/m3.css";
+ *
+ * - m3-tokens.css and expressive.css: shape, typescale (with the emphasized styles), motion (with the Expressive
+ *   springs), elevation and state tokens as runtime vars;
+ * - m3-theme tokens.css: the M3 colour roles (light, dark via prefers-color-scheme and .dark) plus the
+ *   shadcn/ui and Tailwind aliases; m3-theme tailwind.css keeps the shadcn utility names (bg-card, text-muted-foreground);
+ * - m3-tailwind preset.css: every M3 role, shape, type style, elevation, motion and window class as a Tailwind v4
+ *   utility or variant (bg-surface-container, text-label-large, shape-large-top, state-layer, medium:, m3-open:, dark:, ...).
+ *
+ * `dark:` follows the class M3Html puts on <html> (cookie, or system resolved before paint), or the OS preference
+ * unless `.light` forces light, so `dark:` utilities and the M3 roles always agree.
+ */
+@import "@aphrody/m3-tokens/m3-tokens.css";
+@import "@aphrody/m3-tokens/expressive.css";
+@import "@aphrody/m3-theme/tokens.css";
+@import "@aphrody/m3-theme/tailwind.css";
+@import "@aphrody/m3-tailwind/preset.css";

@@ -1,0 +1,50 @@
+[package]
+name = "aphrody-tauri-plugin-mcp-bridge"
+version = "0.13.0"
+description = "MCP Bridge plugin for use with Tauri applications - enables IPC monitoring and backend inspection"
+authors = ["hypothesi"]
+edition = "2021"
+rust-version = "1.97"
+license = "MIT"
+repository = "https://github.com/hypothesi/mcp-server-tauri"
+documentation = "https://docs.rs/tauri-plugin-mcp-bridge"
+homepage = "https://github.com/hypothesi/mcp-server-tauri"
+readme = "README.md"
+keywords = ["tauri", "tauri-plugin", "mcp", "ipc", "monitoring"]
+categories = ["api-bindings", "development-tools"]
+links = "tauri-plugin-mcp-bridge"
+# permissions/schemas/schema.json is git-ignored (.gitignore) but the tauri-plugin build writes it
+# into the crate: ship it so the build of the published crate leaves its source unchanged.
+include = ["/src/**", "/build.rs", "/permissions/**", "/guest-js/**", "/package.json", "/tsconfig.json", "/README.md", "/LICENSE", "/CHANGELOG.md"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lib]
+name = "tauri_plugin_mcp_bridge"
+# Aphrody patch (Tauri 3, desktop only): the mobile static/dynamic library targets are dropped.
+crate-type = ["rlib"]
+
+[dependencies]
+# Aphrody patch: Tauri 3 selects its runtime through the runtime crate; pins mirror the root workspace.
+# The one desktop runtime is CEF: the screenshot goes through its DevTools protocol (src/screenshot/cef.rs),
+# so no WebKitGTK, WKWebView, WebView2, Android or iOS capture code and no platform dependency remains.
+tauri = { workspace = true }
+tauri-runtime = { workspace = true }
+tauri-runtime-cef = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tokio-tungstenite = "0.30"
+futures-util = { workspace = true }
+uuid = { workspace = true, features = ["v4"] }
+base64 = "0.22.1"
+thiserror = "1.0"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+
+[build-dependencies]
+tauri-plugin = { workspace = true, features = ["build"] }
+
+[lints.clippy]
+too_many_lines = "warn"

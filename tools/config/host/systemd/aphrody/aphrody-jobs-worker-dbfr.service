@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Aphrody persistent native jobs worker on DBFR
+After=network-online.target
+Wants=network-online.target
+StartLimitBurst=5
+StartLimitIntervalSec=600
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/.aphrody
+Environment=HOME=/home/ubuntu
+Environment=APHRODY_HOME=/home/ubuntu/.aphrody
+ExecStart=/home/ubuntu/.local/bin/aphrody job run --forever --host dbfr --worker dbfr-native --concurrency 2
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=30
+KillMode=control-group
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=tmpfs
+BindReadOnlyPaths=/home/ubuntu/.local/bin/aphrody
+BindPaths=/home/ubuntu/.aphrody
+ReadWritePaths=/home/ubuntu/.aphrody
+PrivateTmp=true
+PrivateDevices=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryAccounting=true
+MemoryHigh=2G
+MemoryMax=3G
+CPUWeight=20
+Nice=10
+TasksMax=1024
+LimitNOFILE=65536
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

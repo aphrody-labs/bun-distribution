@@ -1,0 +1,82 @@
+body {
+  margin: 0;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  font: var(--md-sys-typescale-body-large-weight, 400) var(--md-sys-typescale-body-large-size, 1rem)
+    / var(--md-sys-typescale-body-large-line-height, 1.5rem) var(--md-sys-typescale-body-large-font);
+}
+
+main {
+  display: grid;
+  justify-items: center;
+  gap: 24px;
+  padding: 48px 24px;
+}
+
+img {
+  width: min(320px, 80vw);
+  height: auto;
+}
+
+.button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 56px;
+  padding: 0 32px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  font: var(--md-sys-typescale-label-large-weight) 1rem / 1.5rem
+    var(--md-sys-typescale-label-large-font);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
+  text-decoration: none;
+  overflow: hidden;
+  transition: box-shadow var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+}
+
+.button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--md-sys-color-on-primary);
+  opacity: 0;
+  transition: opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+.button:hover {
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.3),
+    0 1px 3px 1px rgb(0 0 0 / 0.15);
+}
+
+.button:hover::before {
+  opacity: 0.08;
+}
+
+.button:focus-visible {
+  outline: 3px solid var(--md-sys-color-secondary);
+  outline-offset: 3px;
+}
+
+.button:focus-visible::before,
+.button:active::before {
+  opacity: 0.1;
+}
+
+.button svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+p {
+  margin: 0;
+  color: var(--md-sys-color-on-surface-variant);
+  font: var(--md-sys-typescale-body-medium-weight) var(--md-sys-typescale-body-medium-size) /
+    var(--md-sys-typescale-body-medium-line-height) var(--md-sys-typescale-body-medium-font);
+}

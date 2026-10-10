@@ -1,0 +1,13 @@
+[Unit]
+Description=OVH account watch of every service (daily)
+Documentation=https://github.com/aphrody-labs/aphrody/blob/main/docs/operations/infra/OVH-VPS-OPERATIONS.md
+
+[Timer]
+# 07h00 UTC : after log rotation (00h50) and before factory Cargo builds.
+OnCalendar=*-*-* 07:00:00
+# A machine off at 07h00 must not skip a day of checks.
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

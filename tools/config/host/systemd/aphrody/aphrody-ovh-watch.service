@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+# OVH account watch: expiration, renewal mode, scheduled deletion, suspension and stopped VPS for
+# EVERY service (domains, DNS, email, VPS, IP, cloud, vRack). Replaces aphrody-ovh-vps-watch.
+# Timer: aphrody-ovh-watch.timer (daily 07h00 UTC with 5min random jitter).
+# Credentials are read from the environment files below (never from a home directory):
+#   /etc/aphrody/ovh.env     OVH_CLIENT_ID, OVH_CLIENT_SECRET (OAuth2 service account)
+#   /etc/aphrody/notify.env  SLACK_BOT_TOKEN+SLACK_CHANNEL, TELEGRAM_*, or MATRIX_* (aphrody notify)
+# Key names: tools/config/secrets-contract.json, service aphrody-ovh-watch.
+[Unit]
+Description=OVH account watch (expiration, renewal, state of every service)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# aphrody infra writes its run manifests under <working directory>/var/runs.
+StateDirectory=aphrody-ovh-watch
+WorkingDirectory=/var/lib/aphrody-ovh-watch
+EnvironmentFile=/etc/aphrody/ovh.env
+EnvironmentFile=-/etc/aphrody/notify.env
+# Exit status: 0 healthy, 1 alerts (notified), 2 error.
+ExecStart=/usr/local/bin/aphrody ovh services watch --alerts-only --notify
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aphrody-ovh-watch
+
+# No restart; timer handles scheduling.
+RemainAfterExit=no
+
+# Sandbox (with the run-as-ubuntu, sandbox-base and net-inet-only drop-ins): only the state
+# directory is writable, home directories are hidden.
+ProtectHome=yes
+
+[Install]
+WantedBy=multi-user.target

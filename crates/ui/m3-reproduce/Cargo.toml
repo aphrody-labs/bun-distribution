@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-m3-reproduce"
+version = "1.0.0-canary"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+description = "Reproduce a site in Material 3: seed colors, fonts, shapes and a component tree from a screenshot or a crawl, emitted as an @aphrody/m3 app scaffold."
+
+[lints]
+workspace = true
+
+[features]
+# Image-seeded themes (`sourceColorFromImage`-equivalent): PNG/JPEG capture bytes to a theme.
+default = ["image"]
+image   = ["aphrody-m3-tokens/image", "dep:image"]
+# HTML-heuristic extraction (colors, fonts, radii, layout landmarks) — no network required, takes
+# an already-fetched HTML string. Light: `regex` only, no DOM/CSS engine.
+crawl   = ["dep:regex"]
+# Fetches a URL's HTML over the network before crawling it.
+network = ["crawl", "dep:reqwest"]
+# The `cli_main` entry point (`aphrody m3-reproduce`).
+cli     = ["image", "crawl", "network", "dep:clap"]
+
+[dependencies]
+aphrody-m3-tokens = { workspace = true }
+serde             = { workspace = true, features = ["derive"] }
+serde_json        = { workspace = true }
+thiserror         = { workspace = true }
+regex             = { workspace = true, optional = true }
+reqwest           = { workspace = true, optional = true, features = ["blocking"] }
+clap              = { workspace = true, optional = true }
+image             = { workspace = true, optional = true }
+
+[dev-dependencies]

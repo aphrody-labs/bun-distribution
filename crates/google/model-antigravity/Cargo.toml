@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-model-antigravity"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+license.workspace      = true
+description            = "Antigravity (Google AI Ultra / Cloud Code) ModelClient implementation for aphrody agent engine — keyless token re-read on 401, function calling, reasoning stream."
+
+[lints]
+workspace = true
+
+[dependencies]
+aphrody-antigravity       = { workspace = true }
+aphrody-model-client  = { workspace = true }
+aphrody-toolcall      = { workspace = true }
+async-trait           = { workspace = true }
+futures               = { workspace = true }
+reqwest               = { workspace = true }
+serde                 = { workspace = true }
+serde_json            = { workspace = true }
+tokio                 = { workspace = true, features = ["sync", "time"] }
+tracing               = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }
+rustls            = { workspace = true }

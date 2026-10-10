@@ -1,0 +1,64 @@
+#!/usr/local/bin/bun
+// SPDX-License-Identifier: Apache-2.0
+// Starts COSMIC Epoch inside the container without bash: a Bun port of the
+// parts of /usr/bin/start-cosmic that make sense without systemd.
+//
+//   aphrody-desktop session        full COSMIC session, nested in the host compositor
+//   aphrody-desktop app <cmd...>   one COSMIC app (cosmic-term, cosmic-files...) on the host
+//
+// The host Wayland socket is expected at $HOST_WAYLAND_SOCKET
+// (default /tmp/host-wayland/wayland-0), mounted with `-v`.
+
+import { chmodSync, existsSync, mkdirSync } from "node:fs";
+
+const [mode = "session", ...rest] = process.argv.slice(2);
+const runtimeDir = process.env.XDG_RUNTIME_DIR ?? `/tmp/xdg-runtime-${process.getuid?.()}`;
+mkdirSync(runtimeDir, { recursive: true });
+chmodSync(runtimeDir, 0o700);
+
+const hostSocket = process.env.HOST_WAYLAND_SOCKET ?? "/tmp/host-wayland/wayland-0";
+if (!process.env.WAYLAND_DISPLAY) {
+  if (!existsSync(hostSocket)) {
+    console.error(`aphrody-desktop: no Wayland socket at ${hostSocket}.`);
+    console.error('Mount the host one: -v "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:/tmp/host-wayland/wayland-0"');
+    process.exit(1);
+  }
+  // libwayland accepts an absolute path in WAYLAND_DISPLAY.
+  process.env.WAYLAND_DISPLAY = hostSocket;
+}
+
+Object.assign(process.env, {
+  XDG_RUNTIME_DIR: runtimeDir,
+  XDG_CURRENT_DESKTOP: process.env.XDG_CURRENT_DESKTOP ?? "COSMIC",
+  XDG_SESSION_DESKTOP: process.env.XDG_SESSION_DESKTOP ?? "COSMIC",
+  XDG_SESSION_TYPE: "wayland",
+  DCONF_PROFILE: "/usr/share/dconf/profile/cosmic",
+  GDK_BACKEND: "wayland,x11",
+  QT_QPA_PLATFORM: "wayland;xcb",
+  MOZ_ENABLE_WAYLAND: "1",
+  _JAVA_AWT_WM_NONREPARENTING: "1",
+});
+
+let argv: string[];
+switch (mode) {
+  case "session":
+    argv = ["/usr/bin/cosmic-session"];
+    break;
+  case "app":
+    if (rest.length === 0) {
+      console.error("usage: aphrody-desktop app <command> [args...]");
+      process.exit(2);
+    }
+    argv = rest;
+    break;
+  default:
+    console.error(`aphrody-desktop: unknown mode "${mode}" (expected "session" or "app")`);
+    process.exit(2);
+}
+
+// COSMIC talks to its daemons over D-Bus; give it a private session bus.
+if (!process.env.DBUS_SESSION_BUS_ADDRESS) argv = ["/usr/bin/dbus-run-session", "--", ...argv];
+
+const child = Bun.spawn(argv, { stdin: "inherit", stdout: "inherit", stderr: "inherit", env: process.env });
+for (const sig of ["SIGINT", "SIGTERM"] as const) process.on(sig, () => child.kill(sig));
+process.exit(await child.exited);

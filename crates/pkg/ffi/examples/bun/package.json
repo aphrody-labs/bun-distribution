@@ -1,0 +1,10 @@
+{
+  "name": "@aphrody/pkg",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./index.ts",
+  "scripts": {
+    "smoke": "bun smoke.ts"
+  }
+}

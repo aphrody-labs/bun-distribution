@@ -1,0 +1,5 @@
+Source: google/material-design-icons, `variablefont/MaterialSymbols{Outlined,Rounded,Sharp}[FILL,GRAD,opsz,wght].codepoints`.
+License: Apache-2.0 (see crates/aphrody-icons/LICENSE and https://github.com/google/material-design-icons/blob/master/LICENSE).
+Format: one "<icon-name> <hex-codepoint>" pair per line. Used to resolve a Material Symbols
+icon name to the ligature/PUA codepoint assigned to it in the corresponding variable font,
+without depending on GSUB ligature shaping at runtime.

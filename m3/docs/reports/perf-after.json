@@ -1,0 +1,1179 @@
+{
+  "schema": "m3-bench/1",
+  "repeat": 3,
+  "env": {
+    "date": "2026-10-04T07:14:07.042Z",
+    "bun": "1.4.2",
+    "kernel": "6.18.33.2-microsoft-standard-WSL2",
+    "wsl": true,
+    "cpu": "13th Gen Intel(R) Core(TM) i7-13700F",
+    "cores": 16,
+    "memMiB": 20000,
+    "loadStart": [
+      9.05,
+      7,
+      5.76
+    ],
+    "loadEnd": [
+      9.64,
+      10.46,
+      7.93
+    ],
+    "repos": {
+      "aphrody-m3": "e7febc4",
+      "yolo": "1a3e91c"
+    },
+    "remeasured": {
+      "groups": [
+        "yolo.status (added after the first run)"
+      ],
+      "repos": {
+        "aphrody-m3": "a69f136",
+        "yolo": "f3253ca"
+      }
+    }
+  },
+  "metrics": {
+    "yolo.version": {
+      "value": 7.591,
+      "unit": "ms",
+      "n": 20,
+      "min": 7.103,
+      "p95": 8.337,
+      "max": 9.399
+    },
+    "yolo.version_json": {
+      "value": 7.675,
+      "unit": "ms",
+      "n": 20,
+      "min": 7.124,
+      "p95": 8.789,
+      "max": 9.124
+    },
+    "mcp.cold": {
+      "value": 59.173,
+      "unit": "ms",
+      "n": 10,
+      "min": 57.632,
+      "p95": 117.641,
+      "max": 117.641
+    },
+    "themes.cli": {
+      "value": 27.249,
+      "unit": "ms",
+      "n": 20,
+      "min": 26.679,
+      "p95": 29.697,
+      "max": 30.549
+    },
+    "themes.import": {
+      "value": 12.099,
+      "unit": "ms",
+      "n": 10,
+      "min": 11.921,
+      "p95": 12.759,
+      "max": 12.759
+    },
+    "themes.first": {
+      "value": 10.975,
+      "unit": "ms",
+      "n": 10,
+      "min": 10.571,
+      "p95": 11.77,
+      "max": 11.77
+    },
+    "themes.warm": {
+      "value": 1.037,
+      "unit": "ms",
+      "n": 10,
+      "min": 0.93,
+      "p95": 1.087,
+      "max": 1.087
+    },
+    "install.cold_nm": {
+      "value": 129.786,
+      "unit": "ms",
+      "n": 3,
+      "min": 127.218,
+      "p95": 159.359,
+      "max": 159.359
+    },
+    "install.nm_bytes": {
+      "value": 819045500,
+      "unit": "B"
+    },
+    "install.warm": {
+      "value": 10.075,
+      "unit": "ms",
+      "n": 5,
+      "min": 9.588,
+      "p95": 12.017,
+      "max": 12.017
+    },
+    "install.repo_nm_bytes": {
+      "value": 849489315,
+      "unit": "B"
+    },
+    "install.cold_nm_hoisted": {
+      "value": 433.513,
+      "unit": "ms",
+      "n": 3,
+      "min": 404.126,
+      "p95": 445.382,
+      "max": 445.382
+    },
+    "install.nm_bytes_hoisted": {
+      "value": 818966759,
+      "unit": "B"
+    },
+    "install.cold_cache": {
+      "value": 21758.912,
+      "unit": "ms",
+      "n": 1,
+      "min": 21758.912,
+      "p95": 21758.912,
+      "max": 21758.912
+    },
+    "install.cache_bytes": {
+      "value": 818989094,
+      "unit": "B"
+    },
+    "test.pkg.ag-ui": {
+      "value": 61.098,
+      "unit": "ms",
+      "n": 3,
+      "min": 61.071,
+      "p95": 62.998,
+      "max": 62.998
+    },
+    "test.pkg.assets": {
+      "value": 12.155,
+      "unit": "ms",
+      "n": 3,
+      "min": 11.89,
+      "p95": 13.881,
+      "max": 13.881
+    },
+    "test.pkg.canvas": {
+      "value": 50.989,
+      "unit": "ms",
+      "n": 3,
+      "min": 47.9,
+      "p95": 53.104,
+      "max": 53.104
+    },
+    "test.pkg.eslint-plugin-m3": {
+      "value": 215.273,
+      "unit": "ms",
+      "n": 3,
+      "min": 211.526,
+      "p95": 709.27,
+      "max": 709.27
+    },
+    "test.pkg.identity": {
+      "value": 6.72,
+      "unit": "ms",
+      "n": 3,
+      "min": 6.686,
+      "p95": 7.382,
+      "max": 7.382
+    },
+    "test.pkg.m3": {
+      "value": 468.538,
+      "unit": "ms",
+      "n": 3,
+      "min": 371.52,
+      "p95": 866.995,
+      "max": 866.995
+    },
+    "test.pkg.m3-ai": {
+      "value": 2670.872,
+      "unit": "ms",
+      "n": 3,
+      "min": 2655.607,
+      "p95": 2671.181,
+      "max": 2671.181
+    },
+    "test.pkg.m3-baseui": {
+      "value": 1107.368,
+      "unit": "ms",
+      "n": 3,
+      "min": 1105.985,
+      "p95": 1121.933,
+      "max": 1121.933
+    },
+    "test.pkg.m3-bun": {
+      "value": 146.074,
+      "unit": "ms",
+      "n": 3,
+      "min": 142.14,
+      "p95": 147.374,
+      "max": 147.374
+    },
+    "test.pkg.m3-codemods": {
+      "value": 2155.564,
+      "unit": "ms",
+      "n": 3,
+      "min": 1895.29,
+      "p95": 2166.099,
+      "max": 2166.099
+    },
+    "test.pkg.m3-config": {
+      "value": 24.691,
+      "unit": "ms",
+      "n": 3,
+      "min": 24.588,
+      "p95": 25.498,
+      "max": 25.498
+    },
+    "test.pkg.m3-design": {
+      "value": 24.037,
+      "unit": "ms",
+      "n": 3,
+      "min": 23.577,
+      "p95": 25.004,
+      "max": 25.004
+    },
+    "test.pkg.m3-explorer": {
+      "value": 217.59,
+      "unit": "ms",
+      "n": 3,
+      "min": 215.66,
+      "p95": 219.297,
+      "max": 219.297
+    },
+    "test.pkg.m3-fonts": {
+      "value": 87.771,
+      "unit": "ms",
+      "n": 3,
+      "min": 86.9,
+      "p95": 109.982,
+      "max": 109.982
+    },
+    "test.pkg.m3-forms": {
+      "value": 210.666,
+      "unit": "ms",
+      "n": 3,
+      "min": 200.497,
+      "p95": 236.381,
+      "max": 236.381
+    },
+    "test.pkg.m3-front": {
+      "value": 117.284,
+      "unit": "ms",
+      "n": 3,
+      "min": 112.408,
+      "p95": 117.888,
+      "max": 117.888
+    },
+    "test.pkg.m3-icons": {
+      "value": 103.422,
+      "unit": "ms",
+      "n": 3,
+      "min": 100.428,
+      "p95": 152.906,
+      "max": 152.906
+    },
+    "test.pkg.m3-mcp": {
+      "value": 9.265,
+      "unit": "ms",
+      "n": 3,
+      "min": 9.053,
+      "p95": 9.508,
+      "max": 9.508
+    },
+    "test.pkg.m3-motion": {
+      "value": 39.97,
+      "unit": "ms",
+      "n": 3,
+      "min": 38.49,
+      "p95": 40.178,
+      "max": 40.178
+    },
+    "test.pkg.m3-next": {
+      "value": 553.115,
+      "unit": "ms",
+      "n": 3,
+      "min": 544.218,
+      "p95": 554.14,
+      "max": 554.14
+    },
+    "test.pkg.m3-next-migrate": {
+      "value": 39.713,
+      "unit": "ms",
+      "n": 3,
+      "min": 38.448,
+      "p95": 42.18,
+      "max": 42.18
+    },
+    "test.pkg.m3-os-themes": {
+      "value": 425.111,
+      "unit": "ms",
+      "n": 3,
+      "min": 421.19,
+      "p95": 547.046,
+      "max": 547.046
+    },
+    "test.pkg.m3-primitives": {
+      "value": 2439.586,
+      "unit": "ms",
+      "n": 3,
+      "min": 2423.785,
+      "p95": 2457.167,
+      "max": 2457.167
+    },
+    "test.pkg.m3-react": {
+      "value": 179.774,
+      "unit": "ms",
+      "n": 3,
+      "min": 178.816,
+      "p95": 210.808,
+      "max": 210.808
+    },
+    "test.pkg.m3-reader": {
+      "value": 430.504,
+      "unit": "ms",
+      "n": 3,
+      "min": 428.946,
+      "p95": 458.035,
+      "max": 458.035
+    },
+    "test.pkg.m3-tailwind": {
+      "value": 139.217,
+      "unit": "ms",
+      "n": 3,
+      "min": 138.803,
+      "p95": 141.609,
+      "max": 141.609
+    },
+    "test.pkg.m3-theme": {
+      "value": 15.077,
+      "unit": "ms",
+      "n": 3,
+      "min": 14.971,
+      "p95": 15.184,
+      "max": 15.184
+    },
+    "test.pkg.m3-tokens": {
+      "value": 145.35,
+      "unit": "ms",
+      "n": 3,
+      "min": 144.303,
+      "p95": 145.868,
+      "max": 145.868
+    },
+    "test.pkg.material-design-icons": {
+      "value": 12.314,
+      "unit": "ms",
+      "n": 3,
+      "min": 12.167,
+      "p95": 12.349,
+      "max": 12.349
+    },
+    "test.pkg.scaffold": {
+      "value": 53.143,
+      "unit": "ms",
+      "n": 3,
+      "min": 52.007,
+      "p95": 54.102,
+      "max": 54.102
+    },
+    "test.pkg.web": {
+      "value": 153.977,
+      "unit": "ms",
+      "n": 3,
+      "min": 152.275,
+      "p95": 154.819,
+      "max": 154.819
+    },
+    "test.sum": {
+      "value": 13454.507,
+      "unit": "ms"
+    },
+    "typecheck.pkg.ag-ui": {
+      "value": 87.698,
+      "unit": "ms",
+      "n": 3,
+      "min": 86.932,
+      "p95": 88.673,
+      "max": 88.673
+    },
+    "typecheck.pkg.assets": {
+      "value": 58.241,
+      "unit": "ms",
+      "n": 3,
+      "min": 58.176,
+      "p95": 59.319,
+      "max": 59.319
+    },
+    "typecheck.pkg.canvas": {
+      "value": 208.104,
+      "unit": "ms",
+      "n": 3,
+      "min": 196.283,
+      "p95": 215.162,
+      "max": 215.162
+    },
+    "typecheck.pkg.eslint-plugin-m3": {
+      "value": 83.266,
+      "unit": "ms",
+      "n": 3,
+      "min": 76.269,
+      "p95": 93.488,
+      "max": 93.488
+    },
+    "typecheck.pkg.identity": {
+      "value": 57.465,
+      "unit": "ms",
+      "n": 3,
+      "min": 56.981,
+      "p95": 58.541,
+      "max": 58.541
+    },
+    "typecheck.pkg.m3": {
+      "value": 207.759,
+      "unit": "ms",
+      "n": 3,
+      "min": 202.955,
+      "p95": 221.253,
+      "max": 221.253
+    },
+    "typecheck.pkg.m3-ai": {
+      "value": 542.573,
+      "unit": "ms",
+      "n": 3,
+      "min": 528.532,
+      "p95": 575.96,
+      "max": 575.96
+    },
+    "typecheck.pkg.m3-baseui": {
+      "value": 474.456,
+      "unit": "ms",
+      "n": 3,
+      "min": 471.677,
+      "p95": 474.487,
+      "max": 474.487
+    },
+    "typecheck.pkg.m3-bun": {
+      "value": 104.836,
+      "unit": "ms",
+      "n": 3,
+      "min": 104.829,
+      "p95": 105.316,
+      "max": 105.316
+    },
+    "typecheck.pkg.m3-codemods": {
+      "value": 82.833,
+      "unit": "ms",
+      "n": 3,
+      "min": 82.758,
+      "p95": 86.6,
+      "max": 86.6
+    },
+    "typecheck.pkg.m3-config": {
+      "value": 82.786,
+      "unit": "ms",
+      "n": 3,
+      "min": 79.22,
+      "p95": 92.59,
+      "max": 92.59
+    },
+    "typecheck.pkg.m3-design": {
+      "value": 84.786,
+      "unit": "ms",
+      "n": 3,
+      "min": 80.512,
+      "p95": 93.775,
+      "max": 93.775
+    },
+    "typecheck.pkg.m3-explorer": {
+      "value": 493.432,
+      "unit": "ms",
+      "n": 3,
+      "min": 484.5,
+      "p95": 494.768,
+      "max": 494.768
+    },
+    "typecheck.pkg.m3-fonts": {
+      "value": 78.734,
+      "unit": "ms",
+      "n": 3,
+      "min": 77.77,
+      "p95": 79.849,
+      "max": 79.849
+    },
+    "typecheck.pkg.m3-forms": {
+      "value": 499.408,
+      "unit": "ms",
+      "n": 3,
+      "min": 495.665,
+      "p95": 509.453,
+      "max": 509.453
+    },
+    "typecheck.pkg.m3-front": {
+      "value": 205.254,
+      "unit": "ms",
+      "n": 3,
+      "min": 199.604,
+      "p95": 210.22,
+      "max": 210.22
+    },
+    "typecheck.pkg.m3-icons": {
+      "value": 95.9,
+      "unit": "ms",
+      "n": 3,
+      "min": 91.037,
+      "p95": 98.225,
+      "max": 98.225
+    },
+    "typecheck.pkg.m3-mcp": {
+      "value": 118.499,
+      "unit": "ms",
+      "n": 3,
+      "min": 115.469,
+      "p95": 120.182,
+      "max": 120.182
+    },
+    "typecheck.pkg.m3-motion": {
+      "value": 141.863,
+      "unit": "ms",
+      "n": 3,
+      "min": 137.702,
+      "p95": 143.547,
+      "max": 143.547
+    },
+    "typecheck.pkg.m3-next": {
+      "value": 126.432,
+      "unit": "ms",
+      "n": 3,
+      "min": 125.749,
+      "p95": 135.534,
+      "max": 135.534
+    },
+    "typecheck.pkg.m3-next-migrate": {
+      "value": 142.297,
+      "unit": "ms",
+      "n": 3,
+      "min": 141.475,
+      "p95": 151.759,
+      "max": 151.759
+    },
+    "typecheck.pkg.m3-os-themes": {
+      "value": 85.736,
+      "unit": "ms",
+      "n": 3,
+      "min": 83.607,
+      "p95": 90.006,
+      "max": 90.006
+    },
+    "typecheck.pkg.m3-primitives": {
+      "value": 573.034,
+      "unit": "ms",
+      "n": 3,
+      "min": 571.394,
+      "p95": 578.898,
+      "max": 578.898
+    },
+    "typecheck.pkg.m3-react": {
+      "value": 216.037,
+      "unit": "ms",
+      "n": 3,
+      "min": 215.227,
+      "p95": 217.656,
+      "max": 217.656
+    },
+    "typecheck.pkg.m3-reader": {
+      "value": 142.532,
+      "unit": "ms",
+      "n": 3,
+      "min": 131.596,
+      "p95": 147.151,
+      "max": 147.151
+    },
+    "typecheck.pkg.m3-tailwind": {
+      "value": 86.486,
+      "unit": "ms",
+      "n": 3,
+      "min": 86.211,
+      "p95": 95.682,
+      "max": 95.682
+    },
+    "typecheck.pkg.m3-theme": {
+      "value": 134.991,
+      "unit": "ms",
+      "n": 3,
+      "min": 133.251,
+      "p95": 146.876,
+      "max": 146.876
+    },
+    "typecheck.pkg.m3-tokens": {
+      "value": 94,
+      "unit": "ms",
+      "n": 3,
+      "min": 91.365,
+      "p95": 104.851,
+      "max": 104.851
+    },
+    "typecheck.pkg.material-design-icons": {
+      "value": 93.16,
+      "unit": "ms",
+      "n": 3,
+      "min": 90.554,
+      "p95": 95.048,
+      "max": 95.048
+    },
+    "typecheck.pkg.nie-ui": {
+      "value": 91.163,
+      "unit": "ms",
+      "n": 3,
+      "min": 88.287,
+      "p95": 99.088,
+      "max": 99.088
+    },
+    "typecheck.pkg.scaffold": {
+      "value": 91.706,
+      "unit": "ms",
+      "n": 3,
+      "min": 90.733,
+      "p95": 92.232,
+      "max": 92.232
+    },
+    "typecheck.pkg.web": {
+      "value": 124.752,
+      "unit": "ms",
+      "n": 3,
+      "min": 120.608,
+      "p95": 127.713,
+      "max": 127.713
+    },
+    "typecheck.pkg.app": {
+      "value": 163.842,
+      "unit": "ms",
+      "n": 3,
+      "min": 153.781,
+      "p95": 169.631,
+      "max": 169.631
+    },
+    "typecheck.pkg.tauri": {
+      "value": 199.634,
+      "unit": "ms",
+      "n": 3,
+      "min": 150.412,
+      "p95": 298.141,
+      "max": 298.141
+    },
+    "typecheck.sum": {
+      "value": 6308.591,
+      "unit": "ms"
+    },
+    "lint.oxlint": {
+      "value": 199.281,
+      "unit": "ms",
+      "n": 5,
+      "min": 189.652,
+      "p95": 211.304,
+      "max": 211.304
+    },
+    "task.lint": {
+      "value": 200.63,
+      "unit": "ms",
+      "n": 3,
+      "min": 196.429,
+      "p95": 206.832,
+      "max": 206.832
+    },
+    "task.typecheck": {
+      "value": 391.13,
+      "unit": "ms",
+      "n": 3,
+      "min": 381.724,
+      "p95": 398.84,
+      "max": 398.84
+    },
+    "task.test": {
+      "value": 3427.271,
+      "unit": "ms",
+      "n": 3,
+      "min": 3186.937,
+      "p95": 4065.689,
+      "max": 4065.689
+    },
+    "bundle.pkg.ag-ui.min": {
+      "value": 284,
+      "unit": "B"
+    },
+    "bundle.pkg.ag-ui.gzip": {
+      "value": 170,
+      "unit": "B"
+    },
+    "bundle.pkg.assets.min": {
+      "value": 218961,
+      "unit": "B"
+    },
+    "bundle.pkg.assets.gzip": {
+      "value": 80610,
+      "unit": "B"
+    },
+    "bundle.pkg.canvas.min": {
+      "value": 28600,
+      "unit": "B"
+    },
+    "bundle.pkg.canvas.gzip": {
+      "value": 9302,
+      "unit": "B"
+    },
+    "bundle.pkg.eslint-plugin-m3.min": {
+      "value": 74357,
+      "unit": "B"
+    },
+    "bundle.pkg.eslint-plugin-m3.gzip": {
+      "value": 23278,
+      "unit": "B"
+    },
+    "bundle.pkg.identity.min": {
+      "value": 0,
+      "unit": "B"
+    },
+    "bundle.pkg.identity.gzip": {
+      "value": 0,
+      "unit": "B"
+    },
+    "bundle.pkg.m3.min": {
+      "value": 32996,
+      "unit": "B"
+    },
+    "bundle.pkg.m3.gzip": {
+      "value": 15224,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-ai.min": {
+      "value": 83309,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-ai.gzip": {
+      "value": 22367,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-baseui.min": {
+      "value": 31342,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-baseui.gzip": {
+      "value": 18717,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-baseui.css": {
+      "value": 127884,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-bun.min": {
+      "value": 51647,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-bun.gzip": {
+      "value": 22501,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-codemods.min": {
+      "value": 0,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-codemods.gzip": {
+      "value": 0,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-config.min": {
+      "value": 4779,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-config.gzip": {
+      "value": 2483,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-design.min": {
+      "value": 54112,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-design.gzip": {
+      "value": 14230,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-explorer.min": {
+      "value": 12123,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-explorer.gzip": {
+      "value": 3886,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-fonts.min": {
+      "value": 86726,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-fonts.gzip": {
+      "value": 32597,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-fonts.css": {
+      "value": 832406,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-forms.min": {
+      "value": 7174,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-forms.gzip": {
+      "value": 2267,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-front.min": {
+      "value": 3285,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-front.gzip": {
+      "value": 1912,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-icons.min": {
+      "value": 5331,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-icons.gzip": {
+      "value": 2945,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-mcp.min": {
+      "value": 5952,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-mcp.gzip": {
+      "value": 2686,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-motion.min": {
+      "value": 11313,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-motion.gzip": {
+      "value": 3343,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-next.min": {
+      "value": 25247,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-next.gzip": {
+      "value": 11073,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-next.css": {
+      "value": 210,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-next-migrate.min": {
+      "value": 72184,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-next-migrate.gzip": {
+      "value": 26922,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-os-themes.min": {
+      "value": 32838,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-os-themes.gzip": {
+      "value": 11263,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-primitives.min": {
+      "value": 110732,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-primitives.gzip": {
+      "value": 28525,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-react.min": {
+      "value": 42337,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-react.gzip": {
+      "value": 24079,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-reader.min": {
+      "value": 64257,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-reader.gzip": {
+      "value": 17570,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-reader.css": {
+      "value": 4675,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-tailwind.min": {
+      "value": 8421,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-tailwind.gzip": {
+      "value": 3268,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-tailwind.css": {
+      "value": 37719,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-theme.min": {
+      "value": 8198,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-theme.gzip": {
+      "value": 3735,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-theme.css": {
+      "value": 38445,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-tokens.min": {
+      "value": 12812,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-tokens.gzip": {
+      "value": 5342,
+      "unit": "B"
+    },
+    "bundle.pkg.m3-tokens.css": {
+      "value": 15832,
+      "unit": "B"
+    },
+    "bundle.pkg.material-design-icons.min": {
+      "value": 839,
+      "unit": "B"
+    },
+    "bundle.pkg.material-design-icons.gzip": {
+      "value": 502,
+      "unit": "B"
+    },
+    "bundle.pkg.nie-ui.min": {
+      "value": 25608,
+      "unit": "B"
+    },
+    "bundle.pkg.nie-ui.gzip": {
+      "value": 8906,
+      "unit": "B"
+    },
+    "bundle.pkg.scaffold.min": {
+      "value": 16172,
+      "unit": "B"
+    },
+    "bundle.pkg.scaffold.gzip": {
+      "value": 7489,
+      "unit": "B"
+    },
+    "bundle.pkg.web.min": {
+      "value": 0,
+      "unit": "B"
+    },
+    "bundle.pkg.web.gzip": {
+      "value": 0,
+      "unit": "B"
+    },
+    "bundle.pkg.app.min": {
+      "value": 0,
+      "unit": "B"
+    },
+    "bundle.pkg.app.gzip": {
+      "value": 0,
+      "unit": "B"
+    },
+    "bundle.pkg.tauri.min": {
+      "value": 0,
+      "unit": "B"
+    },
+    "bundle.pkg.tauri.gzip": {
+      "value": 0,
+      "unit": "B"
+    },
+    "bundle.total.min": {
+      "value": 1131936,
+      "unit": "B"
+    },
+    "bundle.total.gzip": {
+      "value": 407192,
+      "unit": "B"
+    },
+    "bundle.total.css": {
+      "value": 1057171,
+      "unit": "B"
+    },
+    "bundle.time": {
+      "value": 119,
+      "unit": "ms"
+    },
+    "compile.server_default.build": {
+      "value": 811.197,
+      "unit": "ms",
+      "n": 3,
+      "min": 180.263,
+      "p95": 1171.458,
+      "max": 1171.458
+    },
+    "compile.server_default.size": {
+      "value": 82093536,
+      "unit": "B"
+    },
+    "compile.server_default.start": {
+      "value": 14.289,
+      "unit": "ms",
+      "n": 20,
+      "min": 13.842,
+      "p95": 15.072,
+      "max": 15.379
+    },
+    "compile.server_tuned.build": {
+      "value": 413.108,
+      "unit": "ms",
+      "n": 3,
+      "min": 189.915,
+      "p95": 7404.977,
+      "max": 7404.977
+    },
+    "compile.server_tuned.size": {
+      "value": 84395488,
+      "unit": "B"
+    },
+    "compile.server_tuned.start": {
+      "value": 3.862,
+      "unit": "ms",
+      "n": 20,
+      "min": 3.503,
+      "p95": 4.36,
+      "max": 4.421
+    },
+    "compile.yolo.build": {
+      "value": 522.116,
+      "unit": "ms",
+      "n": 3,
+      "min": 211.372,
+      "p95": 725.575,
+      "max": 725.575
+    },
+    "compile.yolo.size": {
+      "value": 84461024,
+      "unit": "B"
+    },
+    "compile.yolo.start": {
+      "value": 3.248,
+      "unit": "ms",
+      "n": 20,
+      "min": 3.032,
+      "p95": 3.443,
+      "max": 3.677
+    },
+    "yolo.status": {
+      "value": 12.529,
+      "unit": "ms",
+      "n": 12,
+      "min": 11.439,
+      "p95": 14.287,
+      "max": 14.287
+    }
+  },
+  "gates": {
+    "yolo.version": "yolo 0.1.0 (x86_64-unknown-linux-gnu, Bun 1.4.2)",
+    "yolo.help": "0 9b53c30e72c05589",
+    "yolo.unknown": "1 d3578cfffae1df26",
+    "yolo.runtime_info": "0 1a589456687a4af5",
+    "yolo.plugin_check": "0 ee7e09822299aaa7",
+    "mcp.tools": "11 5f6c2c059e21323c",
+    "mcp.call.3": "6459f1c100e05324",
+    "mcp.call.4": "586c02fddf3e2c43",
+    "mcp.call.5": "eb2686971d9b0fba",
+    "mcp.call.6": "e5af5fccd624263b",
+    "mcp.call.7": "ceeb1e9daea0158d",
+    "themes.output": "48 files 38479 B 64aeceb12c0ee82c",
+    "install.packages": "Checked 500 installs across 645 packages",
+    "test.pkg.ag-ui": "exit 1, 0 pass 1 fail",
+    "test.pkg.assets": "exit 0, 3 pass 0 fail",
+    "test.pkg.canvas": "exit 0, 11 pass 0 fail",
+    "test.pkg.eslint-plugin-m3": "exit 0, ? pass ? fail",
+    "test.pkg.identity": "exit 0, 7 pass 0 fail",
+    "test.pkg.m3": "exit 0, 48 pass 0 fail",
+    "test.pkg.m3-ai": "exit 0, 50 pass 0 fail",
+    "test.pkg.m3-baseui": "exit 0, 82 pass 0 fail",
+    "test.pkg.m3-bun": "exit 1, 45 pass 2 fail",
+    "test.pkg.m3-codemods": "exit 0, ? pass ? fail",
+    "test.pkg.m3-config": "exit 0, 13 pass 0 fail",
+    "test.pkg.m3-design": "exit 0, 25 pass 0 fail",
+    "test.pkg.m3-explorer": "exit 0, 13 pass 0 fail",
+    "test.pkg.m3-fonts": "exit 0, 10 pass 0 fail",
+    "test.pkg.m3-forms": "exit 0, 12 pass 0 fail",
+    "test.pkg.m3-front": "exit 0, 5 pass 0 fail",
+    "test.pkg.m3-icons": "exit 0, 4 pass 0 fail",
+    "test.pkg.m3-mcp": "exit 0, 3 pass 0 fail",
+    "test.pkg.m3-motion": "exit 0, 77 pass 0 fail",
+    "test.pkg.m3-next": "exit 0, 46 pass 0 fail",
+    "test.pkg.m3-next-migrate": "exit 0, 28 pass 0 fail",
+    "test.pkg.m3-os-themes": "exit 0, 19 pass 0 fail",
+    "test.pkg.m3-primitives": "exit 0, 108 pass 0 fail",
+    "test.pkg.m3-react": "exit 0, 52 pass 0 fail",
+    "test.pkg.m3-reader": "exit 0, 10 pass 0 fail",
+    "test.pkg.m3-tailwind": "exit 0, 23 pass 0 fail",
+    "test.pkg.m3-theme": "exit 0, 4 pass 0 fail",
+    "test.pkg.m3-tokens": "exit 0, 126 pass 0 fail",
+    "test.pkg.material-design-icons": "exit 0, 4 pass 0 fail",
+    "test.pkg.scaffold": "exit 0, 21 pass 0 fail",
+    "test.pkg.web": "exit 0, 1 pass 0 fail",
+    "typecheck.pkg.ag-ui": "exit 1",
+    "typecheck.pkg.assets": "exit 1",
+    "typecheck.pkg.canvas": "exit 1",
+    "typecheck.pkg.eslint-plugin-m3": "exit 0",
+    "typecheck.pkg.identity": "exit 1",
+    "typecheck.pkg.m3": "exit 0",
+    "typecheck.pkg.m3-ai": "exit 0",
+    "typecheck.pkg.m3-baseui": "exit 0",
+    "typecheck.pkg.m3-bun": "exit 1",
+    "typecheck.pkg.m3-codemods": "exit 0",
+    "typecheck.pkg.m3-config": "exit 1",
+    "typecheck.pkg.m3-design": "exit 0",
+    "typecheck.pkg.m3-explorer": "exit 0",
+    "typecheck.pkg.m3-fonts": "exit 0",
+    "typecheck.pkg.m3-forms": "exit 0",
+    "typecheck.pkg.m3-front": "exit 0",
+    "typecheck.pkg.m3-icons": "exit 0",
+    "typecheck.pkg.m3-mcp": "exit 0",
+    "typecheck.pkg.m3-motion": "exit 0",
+    "typecheck.pkg.m3-next": "exit 0",
+    "typecheck.pkg.m3-next-migrate": "exit 0",
+    "typecheck.pkg.m3-os-themes": "exit 0",
+    "typecheck.pkg.m3-primitives": "exit 0",
+    "typecheck.pkg.m3-react": "exit 0",
+    "typecheck.pkg.m3-reader": "exit 0",
+    "typecheck.pkg.m3-tailwind": "exit 0",
+    "typecheck.pkg.m3-theme": "exit 1",
+    "typecheck.pkg.m3-tokens": "exit 0",
+    "typecheck.pkg.material-design-icons": "exit 0",
+    "typecheck.pkg.nie-ui": "exit 1",
+    "typecheck.pkg.scaffold": "exit 0",
+    "typecheck.pkg.web": "exit 0",
+    "typecheck.pkg.app": "exit 0",
+    "typecheck.pkg.tauri": "exit 0",
+    "lint.oxlint": "exit 1, 116 warnings, 6 errors",
+    "task.lint": "exit 1",
+    "task.typecheck": "exit 1",
+    "task.test": "exit 0",
+    "compile.server_default.http": "200 text/html title=true",
+    "compile.server_tuned.http": "200 text/html title=true",
+    "compile.yolo.flags": "--bytecode --no-compile-autoload-dotenv --no-compile-autoload-bunfig",
+    "compile.yolo.version": "0 yolo 0.1.0 (x86_64-unknown-linux-gnu, Bun 1.4.2)",
+    "compile.yolo.help": "0 9b53c30e72c05589",
+    "yolo.status": "a418638ca59de1d1"
+  },
+  "errors": {
+    "bundle.pkg.identity": "ResolveMessage: Could not resolve: \"../../../../../crates/ui/identity/assets/brand/icon-64.png?url\" | ResolveMessage: Could not resolve: \"../../../../../crates/ui/identity/assets/brand/icon-128.png?url\""
+  }
+}

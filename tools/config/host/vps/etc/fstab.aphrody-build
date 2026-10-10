@@ -1,0 +1,6 @@
+# Lignes fstab du volume de build (sdb1, ex-/srv) : monté sur ~/build, plus de /srv.
+UUID=4f515ab9-c3cf-4b81-96d5-8c90f7d43c2a /home/ubuntu/build ext4 defaults,noatime,nofail,x-systemd.device-timeout=10 0 2
+# ~/src et ~/apps de la disposition (tools/config/host/host-policy.toml [layout]) vivent sur ce volume : montages bind,
+# pas de liens symboliques (l'usine de build refuse un checkout dont le realpath diffère du chemin déclaré).
+/home/ubuntu/build/workspaces /home/ubuntu/src none bind,nofail,x-systemd.requires-mounts-for=/home/ubuntu/build 0 0
+/home/ubuntu/build/apps /home/ubuntu/apps none bind,nofail,x-systemd.requires-mounts-for=/home/ubuntu/build 0 0
