@@ -55,13 +55,12 @@ mod scm {
         ERROR_INSUFFICIENT_BUFFER, ERROR_SERVICE_ALREADY_RUNNING, ERROR_SERVICE_DOES_NOT_EXIST,
     };
     use windows_sys::Win32::System::Services::{
-        ChangeServiceConfig2W, ChangeServiceConfigW, CloseServiceHandle, ControlService,
-        OpenSCManagerW, OpenServiceW, QUERY_SERVICE_CONFIGW, QueryServiceConfig2W,
-        QueryServiceConfigW, QueryServiceStatusEx, SC_ACTION, SC_ACTION_RESTART, SC_HANDLE,
-        SC_MANAGER_CONNECT, SC_STATUS_PROCESS_INFO, SERVICE_AUTO_START, SERVICE_CHANGE_CONFIG,
-        SERVICE_CONFIG_FAILURE_ACTIONS, SERVICE_CONTROL_STOP, SERVICE_FAILURE_ACTIONSW,
-        SERVICE_NO_CHANGE, SERVICE_QUERY_CONFIG, SERVICE_QUERY_STATUS, SERVICE_RUNNING,
-        SERVICE_START, SERVICE_STATUS, SERVICE_STATUS_PROCESS, SERVICE_STOP, SERVICE_STOPPED,
+        ChangeServiceConfig2W, ChangeServiceConfigW, CloseServiceHandle, OpenSCManagerW,
+        OpenServiceW, QUERY_SERVICE_CONFIGW, QueryServiceConfig2W, QueryServiceConfigW,
+        QueryServiceStatusEx, SC_ACTION, SC_ACTION_RESTART, SC_HANDLE, SC_MANAGER_CONNECT,
+        SC_STATUS_PROCESS_INFO, SERVICE_AUTO_START, SERVICE_CHANGE_CONFIG,
+        SERVICE_CONFIG_FAILURE_ACTIONS, SERVICE_FAILURE_ACTIONSW, SERVICE_NO_CHANGE,
+        SERVICE_QUERY_CONFIG, SERVICE_QUERY_STATUS, SERVICE_START, SERVICE_STATUS_PROCESS,
         StartServiceW,
     };
 
@@ -174,94 +173,6 @@ mod scm {
         }
     }
 
-    /// The installed service's executable command, for capability owners resolving its real config.
-    /// This value is never logged by the SCM owner.
-    pub fn image_command(name: &str) -> Result<Option<String>> {
-        let Some((_manager, service)) = open(name, SERVICE_QUERY_CONFIG)? else {
-            return Ok(None);
-        };
-        let config = sized(
-            // SAFETY: sized supplies a live, aligned buffer of the declared size.
-            |buffer, size, needed| unsafe {
-                QueryServiceConfigW(service.0, buffer.cast(), size, needed)
-            },
-            &format!("QueryServiceConfigW({name})"),
-        )?;
-        // SAFETY: the SCM returned a pointer to a NUL-terminated string inside config.
-        let command = unsafe {
-            let pointer = (*config.as_ptr().cast::<QUERY_SERVICE_CONFIGW>()).lpBinaryPathName;
-            if pointer.is_null() {
-                bail!("service {name}: commande absente");
-            }
-            let mut length = 0;
-            while *pointer.add(length) != 0 {
-                length += 1;
-            }
-            String::from_utf16(std::slice::from_raw_parts(pointer, length))?
-        };
-        Ok(Some(command))
-    }
-
-    fn wait_state(service: SC_HANDLE, name: &str, wanted: u32) -> Result<()> {
-        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
-        loop {
-            let mut status = SERVICE_STATUS_PROCESS::default();
-            let mut needed = 0;
-            // SAFETY: status is a live buffer of the declared SERVICE_STATUS_PROCESS size.
-            let ok = unsafe {
-                QueryServiceStatusEx(
-                    service,
-                    SC_STATUS_PROCESS_INFO,
-                    (&raw mut status).cast(),
-                    u32::try_from(size_of::<SERVICE_STATUS_PROCESS>()).unwrap_or(u32::MAX),
-                    &raw mut needed,
-                )
-            };
-            if ok == 0 {
-                bail!("QueryServiceStatusEx({name}): {}", io::Error::last_os_error());
-            }
-            if status.dwCurrentState == wanted {
-                return Ok(());
-            }
-            if std::time::Instant::now() >= deadline {
-                bail!("service {name}: délai de transition dépassé");
-            }
-            std::thread::sleep(std::time::Duration::from_millis(100));
-        }
-    }
-
-    /// Reloads an installed service and waits for its listener process to reach Running.
-    pub fn restart(name: &str) -> Result<()> {
-        let access = SERVICE_QUERY_CONFIG | SERVICE_QUERY_STATUS | SERVICE_STOP | SERVICE_START;
-        let Some((_manager, service)) = open(name, access)? else {
-            bail!("service {name} absent");
-        };
-        let before = read(service.0, name)?;
-        if matches!(before.state.as_str(), "StartPending" | "ContinuePending") {
-            // ensure() may just have started this service; a pending service cannot accept Stop yet.
-            wait_state(service.0, name, SERVICE_RUNNING)?;
-        }
-        if before.state != "Stopped" {
-            if before.state != "StopPending" {
-                let mut status = SERVICE_STATUS::default();
-                // SAFETY: service has SERVICE_STOP access and status is a live output buffer.
-                if unsafe { ControlService(service.0, SERVICE_CONTROL_STOP, &raw mut status) } == 0
-                {
-                    bail!("ControlService({name}): {}", io::Error::last_os_error());
-                }
-            }
-            wait_state(service.0, name, SERVICE_STOPPED)?;
-        }
-        // SAFETY: no additional service arguments; the installed command remains unchanged.
-        if unsafe { StartServiceW(service.0, 0, std::ptr::null()) } == 0 {
-            let error = io::Error::last_os_error();
-            if error.raw_os_error() != Some(ERROR_SERVICE_ALREADY_RUNNING as i32) {
-                bail!("StartServiceW({name}): {error}");
-            }
-        }
-        wait_state(service.0, name, SERVICE_RUNNING)
-    }
-
     /// Start type Automatic, restart failure actions when asked, then started. Returns the changes.
     pub fn ensure(name: &str, restart_on_failure: bool) -> Result<Vec<String>> {
         let access =
@@ -332,21 +243,7 @@ mod scm {
 }
 
 #[cfg(windows)]
-pub use scm::{ensure, image_command, query, restart};
-
-/// # Errors
-/// Always: the Service Control Manager exists only on Windows.
-#[cfg(not(windows))]
-pub fn image_command(_name: &str) -> anyhow::Result<Option<String>> {
-    anyhow::bail!("le gestionnaire de services n'existe que sous Windows")
-}
-
-/// # Errors
-/// Always: the Service Control Manager exists only on Windows.
-#[cfg(not(windows))]
-pub fn restart(_name: &str) -> anyhow::Result<()> {
-    anyhow::bail!("le gestionnaire de services n'existe que sous Windows")
-}
+pub use scm::{ensure, query};
 
 /// # Errors
 /// Always: the Service Control Manager exists only on Windows.

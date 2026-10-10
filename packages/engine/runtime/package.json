@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/runtime-sdk",
-  "version": "0.1.4",
+  "version": "0.1.3",
   "description": "Light TypeScript SDK of the YOLO native runtime: loads the precompiled library through its versioned C ABI",
   "license": "MIT AND Apache-2.0",
   "repository": {

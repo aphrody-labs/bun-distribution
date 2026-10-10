@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-mcp",
-  "version": "3.3.11",
+  "version": "3.3.9",
   "description": "Design/UI tool host of aphrody-m3 (served through the single aphrody-mcp): packages, M3 tokens (lookup, validate), docs search, research links, templates, Material Symbols SVG, SVG to Tauri icons.",
   "license": "Apache-2.0",
   "files": [

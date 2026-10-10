@@ -51,7 +51,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | operations | [cloud](operations/cloud/) | 4 | - |
 | operations | [container](operations/container/) | 2 | - |
 | operations | [discord](operations/discord/) | 2 | [Discord Operations Runbooks & Guides](operations\discord\README.md) |
-| operations | [infra](operations/infra/) | 51 | - |
+| operations | [infra](operations/infra/) | 49 | - |
 | operations | [os](operations/os/) | 1 | - |
 | operations | [release](operations/release/) | 1 | - |
 | operations | [web](operations/web/) | 4 | - |
@@ -114,4 +114,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | cli (outside the category layout) | [(files)](cli/) | 1 | - |
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
 
-Total: 703 files.
+Total: 701 files.

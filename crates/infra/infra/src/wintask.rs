@@ -414,18 +414,11 @@ pub fn patch_xml(existing: &str, patch: &Patch, user: &str, today: &str) -> Stri
         let inner = format!("{}{missing}", block(&xml, "Triggers").unwrap_or_default());
         xml = replace_block(&xml, "Triggers", &format!("<Triggers>{inner}</Triggers>"));
     }
-    // The principal is canonicalized above even when the existing actions are retained.
-    // Keep their XML body intact, but rebind their context to that principal.
-    let actions = patch
-        .action
-        .as_ref()
-        .map(Action::xml)
-        .or_else(|| block(&xml, "Actions").map(str::to_owned));
-    if let Some(actions) = actions {
+    if let Some(action) = &patch.action {
         xml = replace_block(
             &xml,
             "Actions",
-            &format!("<Actions Context=\"Author\">{actions}</Actions>"),
+            &format!("<Actions Context=\"Author\">{}</Actions>", action.xml()),
         );
     }
     xml
@@ -970,33 +963,6 @@ mod tests {
         assert_eq!(seen.restart_count, 999);
         assert_eq!(seen.triggers, ["atLogon", "every:60m", "atStartup"]);
         assert!(seen.action.unwrap().is_headless());
-    }
-
-    #[test]
-    fn unchanged_actions_rebind_foreign_principal_without_changing_their_body() {
-        let foreign = EXPORTED
-            .replace("<Principal id=\"Author\">", "<Principal id=\"Owner\">")
-            .replace("<Actions Context=\"Author\">", "<Actions Context=\"Owner\">")
-            .replace(
-                "  </Actions>",
-                "    <Exec><Command>C:\\Owner\\second.exe</Command><Arguments>--principal Owner</Arguments></Exec>\n  </Actions>",
-            );
-        let original_actions = block(&foreign, "Actions").unwrap();
-        for principal in [Principal::Interactive, Principal::S4U, Principal::System] {
-            let patch = Patch {
-                principal,
-                highest: true,
-                settings: None,
-                add_triggers: vec![],
-                action: None,
-            };
-            let xml = patch_xml(&foreign, &patch, "PC\\me", "2026-10-09");
-            assert!(xml.contains("<Principal id=\"Author\">"));
-            assert!(xml.contains("<Actions Context=\"Author\">"));
-            assert!(!xml.contains("<Actions Context=\"Owner\">"));
-            assert_eq!(block(&xml, "Actions").unwrap(), original_actions);
-            assert_eq!(xml, patch_xml(&xml, &patch, "PC\\me", "2026-10-09"));
-        }
     }
 
     #[test]

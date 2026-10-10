@@ -132,7 +132,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
 | `aphrody-bun-docs` | [crates/compat/bun-docs](../../../crates/compat/bun-docs) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-09 |
-| `aphrody-egui-winit` | [crates/compat/egui-winit](../../../crates/compat/egui-winit) | rust crate | 0.36.2 | lib | no | 0 | 2026-10-09 |
+| `aphrody-egui-winit` | [crates/compat/egui-winit](../../../crates/compat/egui-winit) | rust crate | 0.36.2 | lib | no | 0 | uncommitted |
 | `rfb-encodings` | [crates/compat/rfb-encodings](../../../crates/compat/rfb-encodings) | rust crate | 0.1.7 | lib | yes | 0 | 2026-10-08 |
 | `aphrody-toolchains` | [crates/compat/toolchains](../../../crates/compat/toolchains) | rust crate | 1.0.0-canary | lib | yes | 0 | 2026-10-09 |
 
@@ -185,7 +185,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-infra` | [crates/infra/infra](../../../crates/infra/infra) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-09 |
 | `aphrody-ovh` | [crates/infra/ovh](../../../crates/infra/ovh) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-09 |
 | `aphrody-remote-desktop` | [crates/infra/remote-desktop](../../../crates/infra/remote-desktop) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-08 |
-| `aphrody-sql` | [crates/infra/sql](../../../crates/infra/sql) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-09 |
+| `aphrody-sql` | [crates/infra/sql](../../../crates/infra/sql) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-07 |
 | `aphrody-ssh` | [crates/infra/ssh](../../../crates/infra/ssh) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-09 |
 | `aphrody-vpn` | [crates/infra/vpn](../../../crates/infra/vpn) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-09 |
 | `aphrody-wireguard` | [crates/infra/wireguard](../../../crates/infra/wireguard) | rust crate | 0.1.0 | lib | yes | 0 | 2026-10-09 |

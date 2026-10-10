@@ -275,9 +275,9 @@
     },
     {
       "path": "crates/compat/egui-winit/README.md",
-      "title": "aphrody-egui-winit",
-      "sha256": "59ffa0cf5bab87ef4f866618a521f009826004b7f7e66c29fe9f6999afcdf871",
-      "bytes": 797,
+      "title": "egui-winit",
+      "sha256": "7a8ccbb9fbddf24243446291b8e5a4e6bddcb6b565602c9561581926d5ae362b",
+      "bytes": 571,
       "domain": "compat",
       "status": "canonical",
       "visibility": "private",
@@ -2096,7 +2096,7 @@
     {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "216b91e1216db0e1f2ebcc51397b89a95045b1fc3cd6e889023367e55c805a2a",
+      "sha256": "eab60513d4e2baa1348acf0d7c2986ef48dcc5529569300a38bcb30145dba593",
       "bytes": 7818,
       "domain": "",
       "status": "generated",
@@ -3426,8 +3426,8 @@
     {
       "path": "docs/operations/infra/aphrody-data-plane-2026-10-09.md",
       "title": "Aphrody shared data plane, 2026-10-09",
-      "sha256": "50832cb2d835f637964f7a9fe0b3f41643852c4c19de2aca28a42d67a0aaa13d",
-      "bytes": 8537,
+      "sha256": "db978c787244acf025c8224e70e689788c1fd84f8e363e29c9c83429eb3d21ed",
+      "bytes": 7811,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -3466,8 +3466,8 @@
     {
       "path": "docs/operations/infra/fleet-release-2026-10-09.md",
       "title": "Native fleet release, 2026-10-09",
-      "sha256": "70f143e163fff57f2e72c4103fcd7fc66fdbae73687afb62e105474f9e47b366",
-      "bytes": 8971,
+      "sha256": "22efc9e66fbbb4789794f67d8d947c681c480332ca2e7ba3b9b80363b08312e3",
+      "bytes": 6724,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -3522,26 +3522,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/infra/native-sudo-rs-20261007.md"
-    },
-    {
-      "path": "docs/operations/infra/ovh-protected-2026-10-09.md",
-      "title": "Protected native OVH audit, 2026-10-09",
-      "sha256": "ded66c44327b968fcc8f0f3013adc8001586ab266a9f3bee2e30b2f3487a26b8",
-      "bytes": 3167,
-      "domain": "infra",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/infra/ovh-protected-2026-10-09.md"
-    },
-    {
-      "path": "docs/operations/infra/r2-native-install-2026-10-09.md",
-      "title": "Native Windows installation from R2, 2026-10-09",
-      "sha256": "24471b303485e2caa3a39458f1bf53d68103dbd144cc44d371d4085ec874d980",
-      "bytes": 4487,
-      "domain": "infra",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/infra/r2-native-install-2026-10-09.md"
     },
     {
       "path": "docs/operations/infra/srv-reclaim-20261007.md",
@@ -3796,8 +3776,8 @@
     {
       "path": "docs/operations/workspace/public-app-ui-artifact.md",
       "title": "Canonical public app-ui artifact",
-      "sha256": "79f7ae8b55fef258f91e0f8066b2644c2ec6f30a03e8367bc7aaa19b6e6ef163",
-      "bytes": 10938,
+      "sha256": "69eb2cc3371bf5d640a9d3606e47aba242af3b1fe575e6a287361947112b90da",
+      "bytes": 5983,
       "domain": "workspace",
       "status": "canonical",
       "visibility": "private",
@@ -3826,8 +3806,8 @@
     {
       "path": "docs/operations/workspace/registry-release-2026-10-09.md",
       "title": "Aphrody and IECODE registry release evidence (2026-10-09)",
-      "sha256": "ee8eeab3d7879e1ce1c0b7a0a680c37d6ad64991b621ef36d4d26deadf87988a",
-      "bytes": 9873,
+      "sha256": "ac9533ef1fca6bd96a493d81fc0e4f4482bc7c3b7c7eb8bc5a966ac136c52c05",
+      "bytes": 8140,
       "domain": "workspace",
       "status": "historical",
       "visibility": "private",
@@ -7726,8 +7706,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "5179489c4229bae691ea3d0f120f891f7e32b35a9780c3e77589a934d2b6a22e",
-      "bytes": 40092,
+      "sha256": "43480f1ddebf2d4b0af85e86a91d0ee43164e48c4167743ffff3c62cb913d7a4",
+      "bytes": 40093,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",

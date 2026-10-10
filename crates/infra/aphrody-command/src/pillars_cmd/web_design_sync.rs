@@ -75,15 +75,9 @@ pub(crate) struct DesignSyncArgs {
     /// Explicit Aphrody state root
     #[arg(long)]
     state: Option<PathBuf>,
-    /// Import an existing protected Google cookie JSON for origin-scoped requests
-    #[arg(long, conflicts_with = "tokens_only")]
-    cookies: Option<PathBuf>,
     /// Validate and reuse an already acquired corpus instead of downloading it again
     #[arg(long)]
     reuse_corpus: bool,
-    /// Reuse checksummed Material data while refreshing the Google Design mirror
-    #[arg(long, conflicts_with_all = ["reuse_corpus", "reuse_google"])]
-    reuse_material: bool,
     /// Reuse a checksum-verified Google Design mirror while refreshing Material
     #[arg(long, conflicts_with = "reuse_corpus")]
     reuse_google: bool,
@@ -169,43 +163,6 @@ fn verify_material(root: &Path, report: &Value) -> miette::Result<()> {
     Ok(())
 }
 
-fn load_google_cookies(
-    client: &obscura_net::ObscuraHttpClient,
-    path: Option<&Path>,
-) -> miette::Result<usize> {
-    #[derive(serde::Deserialize)]
-    struct ImportedCookie {
-        #[serde(flatten)]
-        cookie: obscura_net::CookieInfo,
-        #[serde(default, rename = "hostOnly")]
-        host_only: bool,
-    }
-
-    let Some(path) = path else {
-        return Ok(0);
-    };
-    let payload = std::fs::read(path).into_diagnostic()?;
-    let cookies: Vec<ImportedCookie> = serde_json::from_slice(&payload)
-        .map_err(|error| miette!("invalid Google cookie JSON: {error}"))?;
-    let allowed_domain = |domain: &str| {
-        let domain = domain.trim_start_matches('.').to_ascii_lowercase();
-        ["google.com", "googleapis.com", "googleusercontent.com", "gstatic.com", "design.google"]
-            .iter()
-            .any(|allowed| domain == *allowed || domain.ends_with(&format!(".{allowed}")))
-    };
-    let cookies: Vec<_> = cookies
-        .into_iter()
-        .filter(|entry| allowed_domain(&entry.cookie.domain))
-        .map(|entry| (entry.cookie, entry.host_only))
-        .collect();
-    let count = cookies.len();
-    client.cookie_jar.set_cookies_from_cdp_with_scope(cookies);
-    if count == 0 {
-        return Err(miette!("Google cookie file contains no cookies: {}", path.display()));
-    }
-    Ok(count)
-}
-
 fn package_commands(output: &Path) -> Vec<Vec<String>> {
     let native = output.join("tokens.json").to_string_lossy().into_owned();
     let high = output.join("tokens-high-contrast.json").to_string_lossy().into_owned();
@@ -248,8 +205,7 @@ fn package_commands(output: &Path) -> Vec<Vec<String>> {
 async fn apply_packages(workspace: &Path, output: &Path) -> miette::Result<Vec<Value>> {
     let mut steps = Vec::new();
     for arguments in package_commands(output) {
-        let mut child =
-            tokio::process::Command::new(if cfg!(windows) { "bun.exe" } else { "bun" }).no_window();
+        let mut child = tokio::process::Command::new(if cfg!(windows) { "bun.exe" } else { "bun" }).no_window();
         child.args(&arguments).current_dir(workspace).kill_on_drop(true);
         let result = tokio::time::timeout(Duration::from_secs(900), child.output()).await;
         let (ok, code, detail) = match result {
@@ -307,11 +263,10 @@ pub(super) async fn run(args: DesignSyncArgs) -> miette::Result<Value> {
     }
     let material_root = output.join("material-3");
     let client = obscura_net::ObscuraHttpClient::new();
-    let imported_cookies = load_google_cookies(&client, args.cookies.as_deref())?;
     let releases = upstream_releases(&client, &output).await?;
     let (material, google) = if args.reuse_corpus {
         let material: Value = serde_json::from_slice(
-            &std::fs::read(material_root.join("material-sync-receipt.json")).into_diagnostic()?,
+            &std::fs::read(material_root.join("material-catalog.json")).into_diagnostic()?,
         )
         .into_diagnostic()?;
         let google: Value = serde_json::from_slice(
@@ -327,32 +282,14 @@ pub(super) async fn run(args: DesignSyncArgs) -> miette::Result<Value> {
         }
         (material, google)
     } else {
-        let material = if args.reuse_material {
-            let material: Value = serde_json::from_slice(
-                &std::fs::read(material_root.join("material-sync-receipt.json"))
-                    .into_diagnostic()?,
-            )
-            .into_diagnostic()?;
-            verify_material(&material_root, &material)?;
-            if !material_root.join("AI_READY.md").is_file()
-                || !material_root.join("documents").is_dir()
-            {
-                return Err(miette!("incomplete Material reference corpus; run acquisition first"));
-            }
-            material
-        } else {
-            serde_json::to_value(
-                aphrody_web_crawl::design::sync_material(
-                    &client,
-                    &material_root,
-                    args.max_pages.min(2000) as usize,
-                    args.concurrency as usize,
-                )
-                .await
-                .map_err(|error| miette!("Material acquisition failed: {error}"))?,
-            )
-            .into_diagnostic()?
-        };
+        let material = aphrody_web_crawl::design::sync_material(
+            &client,
+            &material_root,
+            args.max_pages.min(2000) as usize,
+            args.concurrency as usize,
+        )
+        .await
+        .map_err(|error| miette!("Material acquisition failed: {error}"))?;
         let google = if args.reuse_google {
             aphrody_web_crawl::design_google::verify_mirror(&output.join("google-design"))
                 .map_err(|error| miette!("Google mirror verification failed: {error}"))?;
@@ -385,9 +322,7 @@ pub(super) async fn run(args: DesignSyncArgs) -> miette::Result<Value> {
         options.max_depth = 10;
         options.max_concurrency = args.concurrency as usize;
         options.request_delay = Duration::from_millis(250);
-        options.additional_assets =
-            serde_json::from_value(material.get("assets").cloned().unwrap_or_else(|| json!([])))
-                .into_diagnostic()?;
+        options.additional_assets = material.assets.clone();
         let asset_mirror = aphrody_web_crawl::mirror_site(&client, &options)
             .await
             .map_err(|error| miette!("Material asset mirror failed: {error}"))?;
@@ -395,7 +330,7 @@ pub(super) async fn run(args: DesignSyncArgs) -> miette::Result<Value> {
             &output.join("material-mirror.json"),
             &json!({"pages":asset_mirror.pages_written,"assets":asset_mirror.assets_written,"bytes":asset_mirror.bytes_written,"failures":asset_mirror.failures.iter().map(|failure|json!({"url":failure.url,"error":failure.error})).collect::<Vec<_>>()}),
         )?;
-        (material, google)
+        (serde_json::to_value(material).into_diagnostic()?, google)
     };
     let google_documents =
         aphrody_web_crawl::design_google::export_google_documents(&output.join("google-design"))
@@ -420,7 +355,7 @@ pub(super) async fn run(args: DesignSyncArgs) -> miette::Result<Value> {
     )
     .await
     .into_diagnostic()?;
-    let report = json!({"schemaVersion":1,"source":"aphrody-web","corpus":output,"profile":args.profile,"material":material,"googleDesign":google,"googleDocuments":google_documents,"upstreamReleases":releases,"tokens":{"standard":"tokens.json","highContrast":"tokens-high-contrast.json","seed":aphrody_identity::design::pet_seed_hex(),"colorSpec":"2021","rolesPerMode":49},"index":index,"googleIndex":google_index,"authentication":{"cookieFileSupplied":args.cookies.is_some(),"cookiesImported":imported_cookies,"valuesLogged":false},"applied":false});
+    let report = json!({"schemaVersion":1,"source":"aphrody-web","corpus":output,"profile":args.profile,"material":material,"googleDesign":google,"googleDocuments":google_documents,"upstreamReleases":releases,"tokens":{"standard":"tokens.json","highContrast":"tokens-high-contrast.json","seed":aphrody_identity::design::pet_seed_hex(),"colorSpec":"2021","rolesPerMode":49},"index":index,"googleIndex":google_index,"applied":false});
     write_json(&output.join("design-sync.json"), &report)?;
     std::fs::write(output.join("AI_READY.md"), "# Google Design and Material 3 reference exports\n\nNative acquisition: `aphrody web design-sync`.\n\n- [Complete Material reference index](material-3/AI_READY.md)\n- [Material specs and source provenance](material-3/material-catalog.json)\n- [Material assets and full CDN URLs](material-3/assets.json)\n- [Google Design mirror and full source URLs](google-design/manifest.json)\n- [Native light/dark tokens](tokens.json)\n- [Native high contrast tokens](tokens-high-contrast.json)\n- [Acquisition and indexing receipt](design-sync.json)\n\nThe token engine exports MCU's default 2021 color specification. Newer opt-in color specifications and full Rust component/rendering parity remain unqualified. Mirror failures and limits remain explicit in the receipts.\n").into_diagnostic()?;
     if args.apply {
@@ -437,32 +372,6 @@ pub(super) async fn run(args: DesignSyncArgs) -> miette::Result<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn imported_google_cookies_remain_origin_scoped() {
-        let directory = tempfile::tempdir().unwrap();
-        let path = directory.path().join("cookies.json");
-        std::fs::write(
-            &path,
-            r#"[{"name":"session","value":"fixture-only","domain":".google.com","path":"/","secure":true,"httpOnly":true,"sameSite":"Lax"},{"name":"unrelated","value":"must-not-load","domain":"unrelated.test","path":"/","secure":true,"httpOnly":true,"sameSite":"Lax"}]"#,
-        )
-        .unwrap();
-        let client = obscura_net::ObscuraHttpClient::new();
-        assert_eq!(load_google_cookies(&client, Some(&path)).unwrap(), 1);
-        assert!(
-            client
-                .cookie_jar
-                .get_cookie_header(&reqwest::Url::parse("https://accounts.google.com/").unwrap())
-                .contains("session=fixture-only")
-        );
-        assert!(
-            client
-                .cookie_jar
-                .get_cookie_header(&reqwest::Url::parse("https://design.google/").unwrap())
-                .is_empty()
-        );
-    }
-
     #[test]
     fn generation_never_installs_or_applies_os_settings() {
         let commands = package_commands(Path::new("corpus"));
