@@ -66,7 +66,7 @@ pub(crate) const TOOLS: &[Tool] = &[
     tool("canvas", &["aphrody-canvas"], Target::Entry(aphrody_render::cli_main)),
     tool("bindgen", &["aphrody-bindgen"], Target::Entry(aphrody_bindgen::cli_main)),
     // Codex OSS and App-Server Protocol v2.
-    tool("codex", &["codex", "aphrody-codex"], Target::Command("codex")),
+    tool("codex", &["aphrody-codex"], Target::Command("codex")),
     tool("app-server", &["aphrody-app-server"], Target::Entry(app_server)),
     // Former `yolo workflow`: the aphrody-infra pipeline stages.
     tool("workflow", &[], Target::Entry(workflow)),
