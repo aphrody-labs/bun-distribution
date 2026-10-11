@@ -3,7 +3,7 @@ name = "obscura-net"
 description = "Aphrody platform crate obscura-net."
 # Transitional version avoids a same-name/same-version collision with the
 # retained source checkout while its MCP consumers still compile there.
-version = "0.1.1"
+version = "1.4.4"
 edition = "2021"
 license = "Apache-2.0"
 repository = "https://github.com/aphrody-labs/obscura"

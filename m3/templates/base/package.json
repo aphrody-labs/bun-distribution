@@ -7,7 +7,7 @@
     "dev": "bun run scripts/supervise.ts",
     "start": "bun run src/server.ts",
     "test": "bun test",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun check --noEmit",
     "lint": "oxlint src scripts test",
     "fmt": "oxfmt --write src scripts test",
     "fmt:check": "oxfmt --check src scripts test",
@@ -18,8 +18,7 @@
     "@aphrody/runtime-sdk": "file:__YOLO__/packages/engine/runtime"
   },
   "devDependencies": {
-    "@types/bun": "npm:@aphrody/bun-types@1.4.3-aphrody.4",
-    "typescript": "7.0.2"
+    "@types/bun": "npm:@aphrody/bun-types@1.4.3-aphrody.4"
   },
   "engines": {
     "bun": ">=1.4.2"

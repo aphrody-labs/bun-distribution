@@ -460,8 +460,10 @@ pub async fn domain_nameservers(
     domain: &str,
     hosts: &[String],
     apply: bool,
+    ds_cache_expired: bool,
 ) -> Result<()> {
     let hosts = name_server_hosts(hosts)?;
+    validate_nameserver_apply(apply, ds_cache_expired)?;
     let client = client_for(profile)?;
     let manager = DomainManager::new(&client);
     let info = manager.info(domain).await?;
@@ -471,35 +473,119 @@ pub async fn domain_nameservers(
         info.name_server_type,
         info.name_servers.join(", ")
     );
-    let mut current = info.name_servers.clone();
-    current.sort();
-    let mut wanted = hosts.clone();
-    wanted.sort();
-    if current == wanted {
+    let plan = nameserver_plan(&info, &hosts)?;
+    if !plan.set_external_type && !plan.replace_servers {
         println!("Déjà dans l'état demandé, rien à faire.");
         return Ok(());
     }
-    if info.dnssec_state == "enabled" && !apply {
-        println!("Attention : DNSSEC est actif ; retirez-le avant de changer de fournisseur DNS.");
-    }
     if !apply {
+        if plan.set_external_type {
+            println!("[PLAN] PUT /domain/{domain} avec {{\"nameServerType\":\"external\"}}.");
+            println!("[PLAN] Relire le domaine et exiger nameServerType=external avant la suite.");
+        }
+        if plan.replace_servers {
+            let payload = json!({
+                "nameServer": hosts.iter().map(|host| json!({ "host": host })).collect::<Vec<_>>()
+            });
+            println!(
+                "[PLAN] POST /domain/{domain}/nameServers/update avec {payload}; suivre l'ID DomainDnsUpdate retourné."
+            );
+        }
         println!(
-            "[PLAN] Serveurs de noms {domain} -> {}. Passez --apply pour confirmer.",
-            hosts.join(", ")
+            "Le DS doit être absent et son TTL expiré. Appliquer avec --apply --ds-cache-expired."
         );
         return Ok(());
     }
-    if info.dnssec_state == "enabled" && !manager.ds_records(domain).await?.is_empty() {
-        bail!(
-            "DS encore publié pour {domain} : désactivez DNSSEC et attendez son retrait du parent"
-        );
+    if !manager.ds_records(domain).await?.is_empty() {
+        bail!("DS encore publié pour {domain}; stop avant toute modification OVH");
     }
+
+    if plan.set_external_type || plan.replace_servers {
+        ensure_no_pending_dns_update(&manager, domain).await?;
+    }
+
+    let mut current_info = info;
+    if plan.set_external_type {
+        manager.set_external_name_server_type(domain).await?;
+        current_info = manager.info(domain).await?;
+        if current_info.name_server_type != "external" {
+            bail!(
+                "OVH n'a pas confirmé nameServerType=external (état reçu : {}); déclaration des NS non envoyée",
+                current_info.name_server_type
+            );
+        }
+        println!("Type DNS confirmé : external.");
+    }
+
+    if !plan.replace_servers || nameservers_equal(&current_info.name_servers, &hosts) {
+        println!("Serveurs de noms déjà conformes après vérification; aucun POST nécessaire.");
+        return Ok(());
+    }
+
     let task = manager.set_name_servers(domain, &hosts).await?;
+    let task_id =
+        task.get("id").map(ToString::to_string).filter(|id| !id.is_empty()).ok_or_else(|| {
+            anyhow!(
+                "OVH n'a pas renvoyé l'ID de tâche; inspectez les tâches DNS avant toute relance"
+            )
+        })?;
     println!(
         "Tâche registrar {} : {}",
-        task.get("id").map(ToString::to_string).unwrap_or_default(),
+        task_id,
         task.get("status").and_then(Value::as_str).unwrap_or("?")
     );
+    Ok(())
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct NameserverPlan {
+    set_external_type: bool,
+    replace_servers: bool,
+}
+
+fn nameservers_equal(left: &[String], right: &[String]) -> bool {
+    let mut left = left.to_vec();
+    left.sort();
+    let mut right = right.to_vec();
+    right.sort();
+    left == right
+}
+
+fn nameserver_plan(info: &DomainInfo, hosts: &[String]) -> Result<NameserverPlan> {
+    let set_external_type = match info.name_server_type.as_str() {
+        "hosted" | "hosting" => true,
+        "external" => false,
+        other => bail!("type de DNS OVH non pris en charge pour le cutover: {other}"),
+    };
+    Ok(NameserverPlan {
+        set_external_type,
+        replace_servers: !nameservers_equal(&info.name_servers, hosts),
+    })
+}
+
+fn validate_nameserver_apply(apply: bool, ds_cache_expired: bool) -> Result<()> {
+    if apply && !ds_cache_expired {
+        bail!("--apply requiert --ds-cache-expired après vérification de l'expiration du TTL DS");
+    }
+    Ok(())
+}
+
+fn is_pending_dns_update(task: &Value) -> bool {
+    task.get("function").and_then(Value::as_str) == Some("DomainDnsUpdate")
+        && matches!(task.get("status").and_then(Value::as_str), Some("todo" | "doing" | "error"))
+}
+
+async fn ensure_no_pending_dns_update(manager: &DomainManager<'_>, domain: &str) -> Result<()> {
+    for id in manager.task_ids(domain).await? {
+        let task = manager.task(domain, id).await?;
+        if is_pending_dns_update(&task) {
+            bail!(
+                "tâche DomainDnsUpdate {} en statut {}; inspectez-la avant toute nouvelle déclaration",
+                task.get("id").map(ToString::to_string).unwrap_or_else(|| id.to_string()),
+                task.get("status").and_then(Value::as_str).unwrap_or("?")
+            );
+        }
+    }
     Ok(())
 }
 
@@ -798,5 +884,58 @@ mod tests {
         assert!(text.contains(
             "Politique aphrody-automation: 2 ressource(s), 1 identité(s), à mettre à jour"
         ));
+    }
+
+    fn domain_info(name_server_type: &str, name_servers: &[&str]) -> DomainInfo {
+        DomainInfo::from_json(&json!({
+            "domain": "example.com",
+            "nameServerType": name_server_type,
+            "nameServers": name_servers.iter().map(|host| json!({ "nameServer": host })).collect::<Vec<_>>()
+        }))
+    }
+
+    #[test]
+    fn nameserver_plan_switches_hosted_before_replacing_servers() {
+        let info = domain_info("hosting", &["dns109.ovh.net", "ns109.ovh.net"]);
+        let plan = nameserver_plan(
+            &info,
+            &["duke.ns.cloudflare.com".into(), "veda.ns.cloudflare.com".into()],
+        )
+        .expect("supported type");
+
+        assert!(plan.set_external_type);
+        assert!(plan.replace_servers);
+    }
+
+    #[test]
+    fn nameserver_plan_is_idempotent_after_external_declaration() {
+        let info = domain_info("external", &["duke.ns.cloudflare.com", "veda.ns.cloudflare.com"]);
+        let plan = nameserver_plan(
+            &info,
+            &["veda.ns.cloudflare.com".into(), "duke.ns.cloudflare.com".into()],
+        )
+        .expect("supported type");
+
+        assert!(!plan.set_external_type);
+        assert!(!plan.replace_servers);
+    }
+
+    #[test]
+    fn nameserver_apply_requires_ds_cache_expiration_attestation() {
+        assert!(validate_nameserver_apply(true, false).is_err());
+        assert!(validate_nameserver_apply(true, true).is_ok());
+        assert!(validate_nameserver_apply(false, false).is_ok());
+    }
+
+    #[test]
+    fn pending_dns_update_detects_nonterminal_tasks_only() {
+        assert!(is_pending_dns_update(&json!({ "function": "DomainDnsUpdate", "status": "todo" })));
+        assert!(is_pending_dns_update(
+            &json!({ "function": "DomainDnsUpdate", "status": "error" })
+        ));
+        assert!(!is_pending_dns_update(
+            &json!({ "function": "DomainDnsUpdate", "status": "done" })
+        ));
+        assert!(!is_pending_dns_update(&json!({ "function": "DomainRenew", "status": "doing" })));
     }
 }

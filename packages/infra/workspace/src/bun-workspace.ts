@@ -164,7 +164,7 @@ export function checkManifest(
       fixable: true,
     });
     if (fix)
-      manifest.scripts = { ...manifest.scripts, typecheck: "tsgo -p tsconfig.json --noEmit" };
+      manifest.scripts = { ...manifest.scripts, typecheck: "bun check -p tsconfig.json --noEmit" };
   }
   // Private manifests (the presets, the showcases) are never published: no lockstep for them.
   if (M3_FAMILY.test(manifest.name) && !manifest.private) {

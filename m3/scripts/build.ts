@@ -15,7 +15,7 @@
 // in `node_modules/.cache/m3-build/state.json`. `--no-cache` rebuilds everything.
 import { existsSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { cpus } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { m3BunBuild, type M3PackageConfig } from "../packages/m3-config/bun-build.ts";
 import {
   REPO,
@@ -145,8 +145,12 @@ async function saveState(root: string, state: State): Promise<void> {
 }
 
 const TSC = (() => {
-  const local = join(REPO, "node_modules/.bin/tsc");
-  return existsSync(local) ? [local] : [Bun.which("tsc") ?? "tsc"];
+  const local = join(
+    dirname(Bun.resolveSync("typescript/package.json", import.meta.dir)),
+    "bin/tsc",
+  );
+  if (!existsSync(local)) throw new Error("the locked TypeScript declaration emitter is required");
+  return [process.execPath, local];
 })();
 
 async function run(cmd: string[], cwd: string): Promise<{ code: number; text: string }> {

@@ -1,7 +1,7 @@
 [package]
 name = "aphrody-web-index"
 repository.workspace = true
-version = "0.1.0"
+version = "1.4.4"
 edition.workspace = true
 license = "Apache-2.0"
 description = "HNSW approximate nearest-neighbour index with scalar int8 quantisation and mmap persistence"

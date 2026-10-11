@@ -18,18 +18,18 @@ These are dated source observations, not permanent current-main claims. The sele
 The owner documentation check reported a stale pin `57752e1611cdbccfaa0825902390e9ad973a5e24`.
 `bun run docs:bun:update` changed `SOURCE.json` to
 `1a3f3dc4d332bee7b1fae6dc1cc46e995c9f46bc`; `bun run docs:bun:check` then passed.
-The pin selects the latest commit affecting `docs/`, excluding `docs/aphrody` work plans.
+The pin selects the latest commit affecting `docs/`, excluding `docs/aphrody` (not in repo) work plans.
 The plain `git log -- docs` head `c6654dfe852ea78c68b86a323774ffa5719031a4` includes work-plan
 changes and is therefore not the owner workflow's documentation pin.
 
 ## Documentation producers
 
-- Bun API documentation is the fork's MDX corpus and `docs/docs.json` navigation. Aphrody reads it
+- Bun API documentation is the fork's MDX corpus and `docs/docs.json` (not in repo) navigation. Aphrody reads it
   in place and stores its revision and licence, rather than copying the documentation tree.
-- `scripts/aphrody/mcp-docs.ts` in the fork generates the marked tool table in
-  `docs/runtime/mcp.mdx` from the actual `bun mcp tools --markdown` executable output. This audit
+- `scripts/aphrody/mcp-docs.ts` (not in repo) in the fork generates the marked tool table in
+  `docs/runtime/mcp.mdx` (not in repo) from the actual `bun mcp tools --markdown` executable output. This audit
   did not regenerate that table or qualify a different Bun executable.
-- `scripts/aphrody/graph-docs.ts` exports bounded graph-based documentation artifacts with source
+- `scripts/aphrody/graph-docs.ts` (not in repo) exports bounded graph-based documentation artifacts with source
   hashes. Its `published: false` metadata is not proof of public website publication.
 - Aphrody's product articles are its own embedded JSON catalogue:
   `crates/web/site/data/docs.json`, loaded by `crates/web/site/src/docs.rs` and shared through

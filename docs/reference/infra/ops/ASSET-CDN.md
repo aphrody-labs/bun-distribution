@@ -1,8 +1,25 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Shared asset CDN — `cdn.aphrody.com`
 
-> **Live on dbfr since 2026-10-09** (`tools/config/asset-catalog.json` `cdn.status: live`, `sshHost: dbfr`).
-> Release `7a1d7777796f`, 143 files (previous: `946758212b4e`). The former vps deployment was retired on 2026-09-25.
+## Material Symbols restoration, 2026-10-11
+
+The public CDN currently reaches the VPS fonts proxy on port 8796. Its second
+static root, `/home/ubuntu/apps/cdn/symbols/current`, was missing. DBFR retained
+release `12b46e640adf` under `/home/ubuntu/apps/cdn/releases/12b46e640adf`.
+The existing release was transferred through Infra SFTP, verified against all
+seven hashes in `tools/config/asset-catalog.json`, and activated as the VPS
+proxy's second root. The Apache-2.0 licence from the Material Design Icons
+source accompanies `/s/symbols/LICENSE`.
+
+CSS and font bytes remain unchanged; DNS, gateway configuration, the primary
+CDN release and application identity assets were preserved. Rollback removes
+only the newly created symbols `current` link; the immutable release remains.
+The edge caches negative responses for one minute, so an earlier 404 may persist
+until its existing cache entry expires.
+
+> Historical deployment report, 2026-10-09: catalog release `7a1d7777796f`,
+> 143 files (previous: `946758212b4e`), served on DBFR. The current public
+> VPS route and restored symbols root are verified in the section above.
 
 `cdn.aphrody.com` is the CDN origin of the monorepo's UI design assets and AI
 brand assets, and nothing else. Game assets are not served here: nie publishes decoded assets on its single

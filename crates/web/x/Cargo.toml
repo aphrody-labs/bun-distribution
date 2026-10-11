@@ -3,7 +3,7 @@
 # Shared dependencies are inherited from the root workspace.
 [package]
 name = "aphrody-x"
-version     = "0.3.1"
+version     = "1.4.4"
 edition     = "2024"
 license     = "Apache-2.0"
 description = "X / Twitter native GraphQL + REST client (cookie auth, no API key required)"

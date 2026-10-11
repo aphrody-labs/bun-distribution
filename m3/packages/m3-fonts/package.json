@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-fonts",
-  "version": "3.3.9",
+  "version": "1.4.4",
   "description": "Aphrody M3 typefaces: Google Sans Flex, Google Sans Code, Roboto Flex, Roboto Mono and Material Symbols with Japanese fallbacks (Noto Sans JP, M PLUS 1 Code) as @font-face CSS and a typed manifest.",
   "keywords": [
     "aphrody",
@@ -35,7 +35,7 @@
   "scripts": {
     "gen": "bun scripts/generate.ts",
     "subset": "bun scripts/subset.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
     "test": "bun ../../scripts/fonts-sync.ts --quiet && bun test src"
   },
   "devDependencies": {

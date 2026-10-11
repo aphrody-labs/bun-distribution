@@ -1,3 +1,4 @@
+Sync 2026-10-11: imported upstream main 2bda71a557247bd2d6fabf01fa66eb4b07dcb2e8 (2026-10-10) through aphrody-labs/obscura yolo merge 0c6fe8c0bc3f1a717349e207a407666e97d0bb98 (first parent 41b0d90953aa27fdc5c72d84dd17cc1fb82a4519). Three-way source merge updated 11 files under crates/web; CLI/docs remained excluded. Preserved Aphrody-local network policy, cookie persistence, in-process MCP API, and connection scheduling. Three conflicts were resolved by combining upstream behavior with local changes. Rust source parser and diff whitespace checks passed. Aphrody workspace gates are blocked by concurrent workspace manifest changes requiring Cargo.lock reconciliation; the fork full suite had multiple failures/timeouts on Windows, while its release CLI build passed.
 Fork 2026-10-09: aphrody-labs/obscura yolo merged upstream main 1f8eb7643 at 41b0d90953aa27fdc5c72d84dd17cc1fb82a4519, so the sync below is now carried by the
 fork. crates/web stays a copy of the fork (manifests: repository = aphrody-labs/obscura); the obscura CLI installed on the hosts is built from that commit.
 Sync 2026-10-09: upstream main 1f8eb7643 (2026-10-08) applied on top of the base below as patches: bf10c461c (word-spacing; the
@@ -59,3 +60,5 @@ Aphrody delta as patches (2026-10-06, plan fusion decision 4): patches/obscura/<
 upstream 1fccab2c1ecd (GitHub tarball) and crates/web/<crate>, both normalised by the same rustfmt (edition 2021, max_width 100) and
 compared with diff -ruN -w (render-repros excluded). Paths are a/<crate>/... and b/<crate>/...; apply with `patch -p1 -l` inside the crate
 parent directory of an upstream tree laid out as <crate>/. Regenerate on every upstream bump; the copy under crates/web stays the build source.
+
+CLI integration evidence (2026-10-11): `aphrody web` now rejects empty fetch/scrape results with structured JSON diagnostics on stderr, keeps result content on stdout, emits a structured profile diagnostic for scrape, and reports requested/obtained profiles in fetch and recon. Covered by `crates/infra/aphrody/tests/web_cli_contract.rs`; no upstream Obscura source delta.

@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/eslint-plugin-m3",
-  "version": "3.3.6",
+  "version": "1.4.4",
   "description": "Lint rules for sites consuming material-web (@aphrody/m3-react + Material Symbols) — runs under oxlint (jsPlugins) and ESLint.",
   "keywords": [
     "eslint",
@@ -46,7 +46,7 @@
     "pretest": "bun scripts/sync-symbol-names.ts",
     "test": "bun test/run.ts",
     "pretypecheck": "bun scripts/sync-symbol-names.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
     "sync-symbols": "bun scripts/sync-symbol-names.ts",
     "prepack": "bun scripts/sync-symbol-names.ts"
   },

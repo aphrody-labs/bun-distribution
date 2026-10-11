@@ -16,8 +16,8 @@ and records what remains to do. Every cell was read in the source code at the ve
 | Rio | rio-vt 0.5.28 | `src/performer/handler.rs`, `src/crosswords/mod.rs`, `src/ansi/{graphics.rs,mode.rs}`, `src/event/mod.rs` |
 | Ghostty | 1.3.1 | `src/terminal/{osc.zig,osc/parsers/*.zig,modes.zig,Terminal.zig,stream.zig}`, `src/termio/stream_handler.zig`, `src/renderer/{shadertoy.zig,shaders/shadertoy_prefix.glsl}`, `src/config/Config.zig` |
 | Kitty | 0.49.2 | `kitty/{vt-parser.c,screen.c,modes.h}`, `docs/{graphics-protocol,keyboard-protocol,desktop-notifications,misc-protocol,shell-integration,changelog}.rst` |
-| WezTerm | 20240203-110809-5046fc22 | `termwiz/src/escape/{osc.rs,csi.rs}`, `term/src/terminalstate/{mod.rs,performer.rs,kitty.rs,sixel.rs}`, `docs/escape-sequences.md`, `docs/config/lua/config/front_end.md` |
-| Alacritty | 0.17.0 (alacritty_terminal 0.26.0, vte 0.15.0) | `extra/man/alacritty-escapes.7.scd`, `alacritty_terminal/src/term/mod.rs`, `docs/features.md` |
+| WezTerm | 20240203-110809-5046fc22 | `termwiz/src/escape/{osc.rs,csi.rs}` (not in repo), `term/src/terminalstate/{mod.rs,performer.rs,kitty.rs,sixel.rs}` (not in repo), `docs/escape-sequences.md` (not in repo), `docs/config/lua/config/front_end.md` (not in repo) |
+| Alacritty | 0.17.0 (alacritty_terminal 0.26.0, vte 0.15.0) | `extra/man/alacritty-escapes.7.scd` (not in repo), `alacritty_terminal/src/term/mod.rs` (not in repo), `docs/features.md` (not in repo) |
 
 ## Matrix
 
@@ -136,7 +136,7 @@ Command: `APHRODY_LOCAL_CARGO=1 bash scripts/build/rust/cargo-serial.sh run --re
    - Add a WGSL user-shader chain (`fn shade(uv, frag_coord) -> vec4<f32>`, ping-pong, error
      scope).
    - Add `Option<Overlay3d>` over `Renderer3d::with_device`.
-   - Add an `examples/terminal_demo`, and a headless test that is skipped when no adapter is
+   - Add the planned `examples/terminal_demo` (not in repo), and a headless test that is skipped when no adapter is
      available.
 4. **CLI.**
    - Add `ShellAction::{Caps{json,probe}, Img{file,width,protocol}, Links}` to `pillars_cmd.rs`,

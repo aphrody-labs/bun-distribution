@@ -25,7 +25,7 @@ exclude = [
 ]
 
 [workspace.package]
-version = "1.0.0"
+version = "1.4.4"
 edition = "2024"
 rust-version = "1.97"
 repository = "https://github.com/aphrody-labs/aphrody"
@@ -38,133 +38,133 @@ keywords = ["cli", "cross-platform", "rust", "linux", "wasm"]
 [workspace.dependencies]
 node-semver = "2.2.0"
 pep440_rs = "0.7.3"
-aphrody-pkg-core = { path = "crates/pkg/core", version = "1.0.0" }
-aphrody-pkg-store = { path = "crates/pkg/store", version = "1.0.0" }
-aphrody-pkg-net = { path = "crates/pkg/net", version = "1.0.0" }
-aphrody-pkg-cli = { path = "crates/pkg/cli", version = "1.0.0" }
-taffy = { package = "aphrody-taffy", path = "crates/ui/taffy", version = "0.12.1" }
-aphrody-sprite-sheet = { path = "crates/ui/sprite-sheet", version = "1.0.0-canary" }
+aphrody-pkg-core = { path = "crates/pkg/core", version = "1.4.4" }
+aphrody-pkg-store = { path = "crates/pkg/store", version = "1.4.4" }
+aphrody-pkg-net = { path = "crates/pkg/net", version = "1.4.4" }
+aphrody-pkg-cli = { path = "crates/pkg/cli", version = "1.4.4" }
+taffy = { package = "aphrody-taffy", path = "crates/ui/taffy", version = "1.4.4" }
+aphrody-sprite-sheet = { path = "crates/ui/sprite-sheet", version = "1.4.4" }
 crc32fast = { version = "1.5", default-features = false }
 image-compare = { version = "0.5" }
 palette = { version = "0.7", default-features = false }
 aphrody-oxc-bridge = { version = "=0.2.0" }
-aphrody-bun = { path = "crates/ui/bun", version = "1.0.0-canary" }
+aphrody-bun = { path = "crates/ui/bun", version = "1.4.4" }
 tokio-postgres-rustls = { version = "0.14", default-features = false, features = ["ring", "native-certs"] }
 deadpool-postgres = "0.14"
 pgvector = { version = "0.4", features = ["postgres", "halfvec"] }
 sqlite-vec = "0.1.9"
 rustls-native-certs = "0.8"
 webpki-roots = "1"
-aphrody-code-graph = { path = "crates/ai/code-graph", version = "1.0.0", features = [] }
+aphrody-code-graph = { path = "crates/ai/code-graph", version = "1.4.4", features = [] }
 tree-sitter = "0.27"
 tree-sitter-rust = "0.24"
-aphrody-sql = { path = "crates/infra/sql", version = "0.1.0", default-features = false }
-aphrody-store = { path = "crates/ai/store", version = "1.0.0", features = [] }
+aphrody-sql = { path = "crates/infra/sql", version = "1.4.4", default-features = false }
+aphrody-store = { path = "crates/ai/store", version = "1.4.4", features = [] }
 bun-python-host = { git = "https://github.com/aphrody-labs/bun", rev = "84a5f33140cef2a63088d8484e84c0a2e5aba785", version = "0.1.0" }
 anyhow = "1.0.104"
 aes-gcm = { version = "0.11", features = [] }
-aphrody = { path = "crates/infra/aphrody", version = "1.0.0", features = [] }
-aphrody-command = { path = "crates/infra/aphrody-command", version = "1.0.0", features = [] }
-aphrody-discord = { path = "crates/infra/discord", version = "0.1.0", features = [] }
-aphrody-a2a = { path = "crates/contracts/a2a", version = "0.3", features = [] }
-aphrody-a2a-client = { path = "crates/os/kernel/comps/a2a-client", version = "0.1", default-features = false, features = [] }
-aphrody-a2a-coord = { path = "crates/os/kernel/comps/a2a-coord", version = "1.0.0-canary", features = [] }
-aphrody-a2a-server = { path = "crates/os/kernel/comps/a2a-server", version = "0.3", default-features = false, features = [] }
-aphrody-a2a-pb = { path = "crates/os/kernel/comps/a2a-pb", version = "0.1" }
-aphrody-kernel-client = { path = "crates/os/kernel/client", version = "1.0.0-canary" }
-aphrody-subsystem = { path = "crates/os/ostd/subsystem", version = "1.0.0-canary" }
-aphrody-agent-home = { path = "crates/ai/agent-home", version = "1.0.0", features = [] }
-aphrody-agent-proto = { path = "crates/contracts/agent-proto", version = "1.0.0-canary", features = [] }
-aphrody-agent-runtime = { path = "crates/ai/agent-runtime", version = "1.0.0", features = [] }
-aphrody-agent-tools = { path = "crates/ai/agent-tools", version = "1.0.0", features = [] }
-aphrody-identity = { path = "crates/ui/identity", version = "1.0.0-canary.1" }
-aphrody-antigravity = { path = "crates/google/antigravity", version = "1.0.0", features = [] }
-aphrody-app-protocol = { path = "crates/contracts/app-protocol", version = "1.0.0-canary", features = [] }
-aphrody-app-server = { path = "crates/ai/app-server", version = "1.0.0", features = [] }
-aphrody-backend = { path = "crates/os/ostd/backend", version = "1.0.0-canary", features = [] }
-aphrody-boq = { path = "crates/google/boq", version = "1.0.0", features = [] }
-aphrody-capture = { path = "crates/os/kernel/libs/capture", version = "1.0.0-canary", features = [] }
-aphrody-config = { path = "crates/ai/config", version = "1.0.0", features = [] }
-aphrody-diagnostics = { path = "crates/os/kernel/comps/diagnostics", version = "1.0.0" }
-aphrody-embed = { path = "crates/ai/embed", version = "1.0.0", default-features = false, features = [] }
-aphrody-engine = { path = "crates/ai/engine", version = "1.0.0", features = [] }
-aphrody-firefly = { path = "crates/ai/firefly", version = "1.0.0", features = [] }
-aphrody-fsindex = { path = "crates/os/kernel/libs/fsindex", version = "1.0.0-canary", features = [] }
-aphrody-gateway = { path = "crates/ai/gateway", version = "1.0.0", features = [] }
-aphrody-gemini-runtime = { path = "crates/google/gemini-runtime", version = "1.0.0", features = [] }
-aphrody-gemini-web = { path = "crates/google/gemini-web", version = "0.2.1", features = [] }
-aphrody-git = { path = "crates/infra/git", version = "0.1.0", features = [] }
-aphrody-google = { path = "crates/google/google", version = "1.0.0", features = [] }
-aphrody-gpu-backend = { path = "crates/native/gpu-backend", version = "1.0.0-canary.1" }
-aphrody-guard = { path = "crates/os/ostd/guard", version = "1.0.0-canary", features = [] }
-aphrody-http-error = { path = "crates/ai/http-error", version = "1.0.0", features = [] }
-aphrody-infer = { path = "crates/ai/infer", version = "1.0.0", features = ["onnx"] }
-aphrody-infra = { path = "crates/infra/infra", version = "0.1.0" }
-aphrody-ovh = { path = "crates/infra/ovh", version = "0.1.0" }
-aphrody-jev = { path = "crates/ai/jev", version = "1.0.0", features = [] }
-aphrody-jobs = { path = "crates/os/kernel/comps/jobs", version = "1.0.0-canary", features = [] }
-aphrody-kernel = { path = "crates/os/kernel/core", version = "1.0.0-canary", default-features = false, features = [] }
-aphrody-llama-server = { path = "crates/ai/llama-server", version = "1.0.0", features = [] }
-aphrody-m3-tokens = { path = "crates/ui/m3-tokens", version = "1.0.0-canary.1", features = [] }
-aphrody-mcp = { path = "crates/ai/mcp", version = "1.0.0" }
-aphrody-mcp-client = { path = "crates/ai/mcp-client", version = "1.0.0", features = [] }
-aphrody-memory = { path = "crates/ai/memory", version = "1.0.0", features = [] }
-aphrody-model-antigravity = { path = "crates/google/model-antigravity", version = "1.0.0", features = [] }
-aphrody-model-client = { path = "crates/ai/model-client", version = "1.0.0", features = [] }
-aphrody-models = { path = "crates/ai/models", version = "1.0.0", features = [] }
+aphrody = { path = "crates/infra/aphrody", version = "1.4.4", features = [] }
+aphrody-command = { path = "crates/infra/aphrody-command", version = "1.4.4", features = [] }
+aphrody-discord = { path = "crates/infra/discord", version = "1.4.4", features = [] }
+aphrody-a2a = { path = "crates/contracts/a2a", version = "1.4.4", features = [] }
+aphrody-a2a-client = { path = "crates/os/kernel/comps/a2a-client", version = "1.4.4", default-features = false, features = [] }
+aphrody-a2a-coord = { path = "crates/os/kernel/comps/a2a-coord", version = "1.4.4", features = [] }
+aphrody-a2a-server = { path = "crates/os/kernel/comps/a2a-server", version = "1.4.4", default-features = false, features = [] }
+aphrody-a2a-pb = { path = "crates/os/kernel/comps/a2a-pb", version = "1.4.4" }
+aphrody-kernel-client = { path = "crates/os/kernel/client", version = "1.4.4" }
+aphrody-subsystem = { path = "crates/os/ostd/subsystem", version = "1.4.4" }
+aphrody-agent-home = { path = "crates/ai/agent-home", version = "1.4.4", features = [] }
+aphrody-agent-proto = { path = "crates/contracts/agent-proto", version = "1.4.4", features = [] }
+aphrody-agent-runtime = { path = "crates/ai/agent-runtime", version = "1.4.4", features = [] }
+aphrody-agent-tools = { path = "crates/ai/agent-tools", version = "1.4.4", features = [] }
+aphrody-identity = { path = "crates/ui/identity", version = "1.4.4" }
+aphrody-antigravity = { path = "crates/google/antigravity", version = "1.4.4", features = [] }
+aphrody-app-protocol = { path = "crates/contracts/app-protocol", version = "1.4.4", features = [] }
+aphrody-app-server = { path = "crates/ai/app-server", version = "1.4.4", features = [] }
+aphrody-backend = { path = "crates/os/ostd/backend", version = "1.4.4", features = [] }
+aphrody-boq = { path = "crates/google/boq", version = "1.4.4", features = [] }
+aphrody-capture = { path = "crates/os/kernel/libs/capture", version = "1.4.4", features = [] }
+aphrody-config = { path = "crates/ai/config", version = "1.4.4", features = [] }
+aphrody-diagnostics = { path = "crates/os/kernel/comps/diagnostics", version = "1.4.4" }
+aphrody-embed = { path = "crates/ai/embed", version = "1.4.4", default-features = false, features = [] }
+aphrody-engine = { path = "crates/ai/engine", version = "1.4.4", features = [] }
+aphrody-firefly = { path = "crates/ai/firefly", version = "1.4.4", features = [] }
+aphrody-fsindex = { path = "crates/os/kernel/libs/fsindex", version = "1.4.4", features = [] }
+aphrody-gateway = { path = "crates/ai/gateway", version = "1.4.4", features = [] }
+aphrody-gemini-runtime = { path = "crates/google/gemini-runtime", version = "1.4.4", features = [] }
+aphrody-gemini-web = { path = "crates/google/gemini-web", version = "1.4.4", features = [] }
+aphrody-git = { path = "crates/infra/git", version = "1.4.4", features = [] }
+aphrody-google = { path = "crates/google/google", version = "1.4.4", features = [] }
+aphrody-gpu-backend = { path = "crates/native/gpu-backend", version = "1.4.4" }
+aphrody-guard = { path = "crates/os/ostd/guard", version = "1.4.4", features = [] }
+aphrody-http-error = { path = "crates/ai/http-error", version = "1.4.4", features = [] }
+aphrody-infer = { path = "crates/ai/infer", version = "1.4.4", features = ["onnx"] }
+aphrody-infra = { path = "crates/infra/infra", version = "1.4.4" }
+aphrody-ovh = { path = "crates/infra/ovh", version = "1.4.4" }
+aphrody-jev = { path = "crates/ai/jev", version = "1.4.4", features = [] }
+aphrody-jobs = { path = "crates/os/kernel/comps/jobs", version = "1.4.4", features = [] }
+aphrody-kernel = { path = "crates/os/kernel/core", version = "1.4.4", default-features = false, features = [] }
+aphrody-llama-server = { path = "crates/ai/llama-server", version = "1.4.4", features = [] }
+aphrody-m3-tokens = { path = "crates/ui/m3-tokens", version = "1.4.4", features = [] }
+aphrody-mcp = { path = "crates/ai/mcp", version = "1.4.4" }
+aphrody-mcp-client = { path = "crates/ai/mcp-client", version = "1.4.4", features = [] }
+aphrody-memory = { path = "crates/ai/memory", version = "1.4.4", features = [] }
+aphrody-model-antigravity = { path = "crates/google/model-antigravity", version = "1.4.4", features = [] }
+aphrody-model-client = { path = "crates/ai/model-client", version = "1.4.4", features = [] }
+aphrody-models = { path = "crates/ai/models", version = "1.4.4", features = [] }
 aphrody-n2b = { version = "=0.7.0", features = [] }
 aphrody-n2b-core = { version = "=0.7.0", features = [] }
 aphrody-n2b-types = { version = "=0.7.0", features = [] }
-aphrody-native = { path = "crates/native/native", version = "1.0.0-canary", features = [] }
-aphrody-ocr = { path = "crates/ai/ocr", version = "1.0.0", features = [] }
-aphrody-ocr-core = { path = "crates/ai/ocr-core", version = "1.0.0", features = [] }
-aphrody-ocr-onnx = { path = "crates/ai/ocr-onnx", version = "1.0.0", features = [] }
-aphrody-ocr-vlm = { path = "crates/ai/ocr-vlm", version = "1.0.0", features = [] }
-aphrody-patch = { path = "crates/ai/patch", version = "1.0.0", features = [] }
-aphrody-proc = { path = "crates/os/ostd/proc", version = "1.0.0-canary", features = [] }
-aphrody-rag = { path = "crates/ai/rag", version = "1.0.0", features = [] }
-aphrody-rag-core = { path = "crates/ai/rag-core", version = "1.0.0", features = [] }
-aphrody-rag-eval = { path = "crates/ai/rag-eval", version = "1.0.0", features = [] }
+aphrody-native = { path = "crates/native/native", version = "1.4.4", features = [] }
+aphrody-ocr = { path = "crates/ai/ocr", version = "1.4.4", features = [] }
+aphrody-ocr-core = { path = "crates/ai/ocr-core", version = "1.4.4", features = [] }
+aphrody-ocr-onnx = { path = "crates/ai/ocr-onnx", version = "1.4.4", features = [] }
+aphrody-ocr-vlm = { path = "crates/ai/ocr-vlm", version = "1.4.4", features = [] }
+aphrody-patch = { path = "crates/ai/patch", version = "1.4.4", features = [] }
+aphrody-proc = { path = "crates/os/ostd/proc", version = "1.4.4", features = [] }
+aphrody-rag = { path = "crates/ai/rag", version = "1.4.4", features = [] }
+aphrody-rag-core = { path = "crates/ai/rag-core", version = "1.4.4", features = [] }
+aphrody-rag-eval = { path = "crates/ai/rag-eval", version = "1.4.4", features = [] }
 aphrody-re = { package = "bun-re", version = "=1.0.0-canary", features = [] }
 yolo-core = { version = "=1.0.0" }
-aphrody-rollout = { path = "crates/ai/rollout", version = "1.0.0", features = [] }
-aphrody-secrets = { path = "crates/os/ostd/secrets", version = "1.0.0-canary", features = [] }
-aphrody-session = { path = "crates/ai/session", version = "1.0.0", features = [] }
-aphrody-ssh = { path = "crates/infra/ssh", version = "0.1.0", features = [] }
-aphrody-shell-web = { path = "crates/shell/web", version = "1.0.0-canary", features = [] }
-aphrody-shell-tauri = { path = "crates/shell/tauri", version = "1.0.0-canary", features = [] }
-aphrody-shell-session = { path = "crates/shell/session", version = "1.0.0-canary", features = [] }
-aphrody-shell-vfs = { path = "crates/shell/vfs", version = "1.0.0-canary", features = [] }
-aphrody-terminal-core = { path = "crates/shell/terminal-core", version = "1.0.0-canary", features = [] }
-aphrody-term = { path = "crates/shell/aphrody-term", version = "1.0.0", features = [] }
-aphrody-terminal-backend = { path = "crates/shell/terminal-backend", version = "1.0.0-canary", features = [] }
-aphrody-term-caps = { path = "crates/shell/term-caps", version = "1.0.0-canary", default-features = false }
-aphrody-toolcall = { path = "crates/ai/toolcall", version = "1.0.0", features = [] }
-aphrody-toolcall-repair = { path = "crates/ai/toolcall-repair", version = "1.0.0", features = [] }
-aphrody-toolchains = { path = "crates/compat/toolchains", version = "1.0.0-canary", features = [] }
-aphrody-train = { path = "crates/ai/train", version = "1.0.0", features = [] }
-aphrody-translate = { path = "crates/ai/translate", version = "1.0.0", features = [] }
-aphrody-command-wasm = { path = "crates/infra/aphrody-command-wasm", version = "1.0.0", features = [] }
-aphrody-webos-wasm = { path = "crates/web/webos-wasm", version = "1.0.0", features = [] }
-aphrody-command-pure = { path = "crates/infra/aphrody-command-pure", version = "1.0.0", features = [] }
-aphrody-translate-core = { path = "crates/ai/translate-core", version = "1.0.0", features = [] }
-aphrody-vision = { path = "crates/ai/vision", version = "1.0.0", features = [] }
-aphrody-voice = { path = "crates/ai/voice", version = "1.0.0", features = [] }
-aphrody-vpn = { path = "crates/infra/vpn", version = "0.1.0", features = [] }
-aphrody-remote-desktop = { path = "crates/infra/remote-desktop", version = "0.1.0", features = [] }
-aphrody-wireguard = { path = "crates/infra/wireguard", version = "0.1.0", features = [] }
-aphrody-web-crawl = { path = "crates/web/web-crawl", version = "1.0.0", features = [] }
-aphrody-web-detect = { path = "crates/web/web-detect", version = "1.0.0", features = [] }
-yolo-runtime = { path = "crates/engine/yolo-runtime", version = "1.0.0" }
-aphrody-web-engine = { path = "crates/web/web-engine", version = "1.0.0", features = [] }
-aphrody-web-extract = { path = "crates/web/web-extract", version = "1.0.0", features = [] }
-aphrody-web-frames = { path = "crates/web/web-frames", version = "0.1.0", features = [] }
-aphrody-web-index = { path = "crates/web/web-index", version = "0.1.0", features = [] }
-aphrody-web-service = { path = "crates/web/web-service", version = "1.0.0", features = [] }
-aphrody-site = { path = "crates/web/site", version = "1.0.0" }
-aphrody-x = { path = "crates/web/x", version = "0.3.1", features = [] }
-aphrody-winclean = { path = "crates/os/kernel/comps/winclean", version = "1.0.0-canary", features = [] }
-aphrody-yolo = { path = "crates/infra/yolo", version = "0.1.0" }
+aphrody-rollout = { path = "crates/ai/rollout", version = "1.4.4", features = [] }
+aphrody-secrets = { path = "crates/os/ostd/secrets", version = "1.4.4", features = [] }
+aphrody-session = { path = "crates/ai/session", version = "1.4.4", features = [] }
+aphrody-ssh = { path = "crates/infra/ssh", version = "1.4.4", features = [] }
+aphrody-shell-web = { path = "crates/shell/web", version = "1.4.4", features = [] }
+aphrody-shell-tauri = { path = "crates/shell/tauri", version = "1.4.4", features = [] }
+aphrody-shell-session = { path = "crates/shell/session", version = "1.4.4", features = [] }
+aphrody-shell-vfs = { path = "crates/shell/vfs", version = "1.4.4", features = [] }
+aphrody-terminal-core = { path = "crates/shell/terminal-core", version = "1.4.4", features = [] }
+aphrody-term = { path = "crates/shell/aphrody-term", version = "1.4.4", features = [] }
+aphrody-terminal-backend = { path = "crates/shell/terminal-backend", version = "1.4.4", features = [] }
+aphrody-term-caps = { path = "crates/shell/term-caps", version = "1.4.4", default-features = false }
+aphrody-toolcall = { path = "crates/ai/toolcall", version = "1.4.4", features = [] }
+aphrody-toolcall-repair = { path = "crates/ai/toolcall-repair", version = "1.4.4", features = [] }
+aphrody-toolchains = { path = "crates/compat/toolchains", version = "1.4.4", features = [] }
+aphrody-train = { path = "crates/ai/train", version = "1.4.4", features = [] }
+aphrody-translate = { path = "crates/ai/translate", version = "1.4.4", features = [] }
+aphrody-command-wasm = { path = "crates/infra/aphrody-command-wasm", version = "1.4.4", features = [] }
+aphrody-webos-wasm = { path = "crates/web/webos-wasm", version = "1.4.4", features = [] }
+aphrody-command-pure = { path = "crates/infra/aphrody-command-pure", version = "1.4.4", features = [] }
+aphrody-translate-core = { path = "crates/ai/translate-core", version = "1.4.4", features = [] }
+aphrody-vision = { path = "crates/ai/vision", version = "1.4.4", features = [] }
+aphrody-voice = { path = "crates/ai/voice", version = "1.4.4", features = [] }
+aphrody-vpn = { path = "crates/infra/vpn", version = "1.4.4", features = [] }
+aphrody-remote-desktop = { path = "crates/infra/remote-desktop", version = "1.4.4", features = [] }
+aphrody-wireguard = { path = "crates/infra/wireguard", version = "1.4.4", features = [] }
+aphrody-web-crawl = { path = "crates/web/web-crawl", version = "1.4.4", features = [] }
+aphrody-web-detect = { path = "crates/web/web-detect", version = "1.4.4", features = [] }
+yolo-runtime = { path = "crates/engine/yolo-runtime", version = "1.4.4" }
+aphrody-web-engine = { path = "crates/web/web-engine", version = "1.4.4", features = [] }
+aphrody-web-extract = { path = "crates/web/web-extract", version = "1.4.4", features = [] }
+aphrody-web-frames = { path = "crates/web/web-frames", version = "1.4.4", features = [] }
+aphrody-web-index = { path = "crates/web/web-index", version = "1.4.4", features = [] }
+aphrody-web-service = { path = "crates/web/web-service", version = "1.4.4", features = [] }
+aphrody-site = { path = "crates/web/site", version = "1.4.4" }
+aphrody-x = { path = "crates/web/x", version = "1.4.4", features = [] }
+aphrody-winclean = { path = "crates/os/kernel/comps/winclean", version = "1.4.4", features = [] }
+aphrody-yolo = { path = "crates/infra/yolo", version = "1.4.4" }
 arc-swap = "1.9.2"
 assert_cmd = { version = "2", features = [] }
 async-stream = { version = "0.3", features = [] }
@@ -213,15 +213,15 @@ libm = "0.2.16"
 minijinja = "2.24.0"
 notify = { version = "8", features = [] }
 notify-debouncer-full = "0.6"
-obscura-mcp = { path = "crates/web/obscura-mcp", version = "0.1.0", features = [] }
-obscura-browser = { path = "crates/web/obscura-browser", version = "0.1.0", features = [] }
-obscura = { path = "crates/web/obscura", version = "0.1.0", package = "aphrody-obscura" }
-obscura-cdp = { path = "crates/web/obscura-cdp", version = "0.1.0", features = [] }
-obscura-dom = { path = "crates/web/obscura-dom", version = "0.1.1", features = [] }
-obscura-js = { path = "crates/web/obscura-js", version = "0.1.0", features = [] }
-obscura-net = { path = "crates/web/obscura-net", version = "0.1.1", features = [] }
-obscura-ssrf = { path = "crates/web/obscura-ssrf", version = "0.1.0", features = [] }
-obscura-render = { path = "crates/web/obscura-render", version = "0.1.0", features = [] }
+obscura-mcp = { path = "crates/web/obscura-mcp", version = "1.4.4", features = [] }
+obscura-browser = { path = "crates/web/obscura-browser", version = "1.4.4", features = [] }
+obscura = { path = "crates/web/obscura", version = "1.4.4", package = "aphrody-obscura" }
+obscura-cdp = { path = "crates/web/obscura-cdp", version = "1.4.4", features = [] }
+obscura-dom = { path = "crates/web/obscura-dom", version = "1.4.4", features = [] }
+obscura-js = { path = "crates/web/obscura-js", version = "1.4.4", features = [] }
+obscura-net = { path = "crates/web/obscura-net", version = "1.4.4", features = [] }
+obscura-ssrf = { path = "crates/web/obscura-ssrf", version = "1.4.4", features = [] }
+obscura-render = { path = "crates/web/obscura-render", version = "1.4.4", features = [] }
 octocrab = { version = "0.54", features = [] }
 once_cell = { version = "1", features = [] }
 opendal = { version = "0.59", default-features = false, features = ["executors-tokio", "services-fs"] }
@@ -308,7 +308,7 @@ prost-types        = { version = "0.14" }
 pbjson             = { version = "0.9" }
 pbjson-types       = { version = "0.9" }
 pbjson-build       = { version = "0.9" }
-aphrody-bun-docs = { path = "crates/compat/bun-docs", version = "1.0.0-canary", features = [] }
+aphrody-bun-docs = { path = "crates/compat/bun-docs", version = "1.4.4", features = [] }
 aes                = { version = "0.9.3" }
 argon2             = { version = "0.6" }
 goblin             = { version = "0.10", default-features = false, features = ["std", "endian_fd", "pe32", "pe64", "elf32", "elf64"] }
@@ -324,7 +324,7 @@ vigem-rust         = { version = "0.2.0", default-features = false, features = [
 yara-x             = { version = "=1.7.0", default-features = false }
 zerocopy           = { version = "0.8", features = ["derive"] }
 zeroize            = { version = "1", features = ["derive"] }
-aphrody-nu = { path = "crates/shell/nu", version = "1.0.0-canary", features = [] }
+aphrody-nu = { path = "crates/shell/nu", version = "1.4.4", features = [] }
 aphrody-n2b-registry = { version = "=0.7.0", features = [] }
 ratatui = { version = "0.30" }
 crossterm = { version = "0.29" }
@@ -335,11 +335,11 @@ oxc_ast_visit      = { version = "0.153.0" }
 oxc_syntax         = { version = "0.153.0" }
 libloading = "0.9.0"
 windows-sys = { version = "0.61", features = ["Win32_System_SystemInformation"] }
-aphrody-bindgen = { path = "crates/ml/bindgen", version = "0.83.5" }
-aphrody-ml-config = { path = "crates/ml/ml-config", version = "0.83.5" }
-aphrody-llama = { path = "crates/ml/llama", version = "0.83.5" }
-aphrody-llama-sys = { path = "crates/ml/llama-sys", version = "0.83.5" }
-aphrody-ml-runtime = { path = "crates/ml/ml-runtime", version = "0.83.5" }
+aphrody-bindgen = { path = "crates/ml/bindgen", version = "1.4.4" }
+aphrody-ml-config = { path = "crates/ml/ml-config", version = "1.4.4" }
+aphrody-llama = { path = "crates/ml/llama", version = "1.4.4" }
+aphrody-llama-sys = { path = "crates/ml/llama-sys", version = "1.4.4" }
+aphrody-ml-runtime = { path = "crates/ml/ml-runtime", version = "1.4.4" }
 webp = { version = "0.3.1" }
 backon = { version = "1.6.0", default-features = false, features = ["std", "tokio-sleep"] }
 ab_glyph = "0.2.32"
@@ -359,26 +359,26 @@ nvml-wrapper = "0.13.0"
 minijinja-contrib = { version = "2.24.0", features = ["pycompat"] }
 skrifa = "0.47.0"
 pollster = "1.0.1"
-tauri = { package = "aphrody-tauri", path = "crates/tauri/aphrody-tauri", version = "=3.0.0-alpha.4", default-features = false, features = ["compression"] }
-tauri-build = { package = "aphrody-tauri-build", path = "crates/tauri/aphrody-tauri-build", version = "=3.0.0-alpha.3" }
-tauri-runtime-cef = { package = "aphrody-tauri-runtime-cef", path = "crates/tauri/aphrody-tauri-runtime-cef", version = "=3.0.0-alpha.5" }
-tauri-plugin-log = { package = "aphrody-tauri-plugin-log", path = "crates/tauri/aphrody-tauri-plugin-log", version = "=3.0.0-alpha.2" }
-tauri-plugin-opener = { package = "aphrody-tauri-plugin-opener", path = "crates/tauri/aphrody-tauri-plugin-opener", version = "=3.0.0-alpha.2" }
-tauri-plugin-process = { package = "aphrody-tauri-plugin-process", path = "crates/tauri/aphrody-tauri-plugin-process", version = "=3.0.0-alpha.2" }
-tauri-plugin-single-instance = { package = "aphrody-tauri-plugin-single-instance", path = "crates/tauri/aphrody-tauri-plugin-single-instance", version = "=3.0.0-alpha.2" }
-tauri-plugin-window-state = { package = "aphrody-tauri-plugin-window-state", path = "crates/tauri/aphrody-tauri-plugin-window-state", version = "=3.0.0-alpha.2" }
-tauri-plugin-os = { package = "aphrody-tauri-plugin-os", path = "crates/tauri/aphrody-tauri-plugin-os", version = "=3.0.0-alpha.2" }
-tauri-plugin-dialog = { package = "aphrody-tauri-plugin-dialog", path = "crates/tauri/aphrody-tauri-plugin-dialog", version = "=3.0.0-alpha.3" }
-tauri-plugin-clipboard-manager = { package = "aphrody-tauri-plugin-clipboard-manager", path = "crates/tauri/aphrody-tauri-plugin-clipboard-manager", version = "=3.0.0-alpha.2" }
-tauri-plugin-notification = { package = "aphrody-tauri-plugin-notification", path = "crates/tauri/aphrody-tauri-plugin-notification", version = "=3.0.0-alpha.2" }
-tauri-plugin-store = { package = "aphrody-tauri-plugin-store", path = "crates/tauri/aphrody-tauri-plugin-store", version = "=3.0.0-alpha.2" }
-tauri-plugin-updater = { package = "aphrody-tauri-plugin-updater", path = "crates/tauri/aphrody-tauri-plugin-updater", version = "=3.0.0-alpha.2" }
-tauri-plugin-global-shortcut = { package = "aphrody-tauri-plugin-global-shortcut", path = "crates/tauri/aphrody-tauri-plugin-global-shortcut", version = "=3.0.0-alpha.2" }
-tauri-plugin-autostart = { package = "aphrody-tauri-plugin-autostart", path = "crates/tauri/aphrody-tauri-plugin-autostart", version = "=3.0.0-alpha.2" }
-tauri-plugin-deep-link = { package = "aphrody-tauri-plugin-deep-link", path = "crates/tauri/aphrody-tauri-plugin-deep-link", version = "=3.0.0-alpha.2" }
-tauri-plugin-fs = { package = "aphrody-tauri-plugin-fs", path = "crates/tauri/aphrody-tauri-plugin-fs", version = "=3.0.0-alpha.2" }
+tauri = { package = "aphrody-tauri", path = "crates/tauri/aphrody-tauri", version = "1.4.4", default-features = false, features = ["compression"] }
+tauri-build = { package = "aphrody-tauri-build", path = "crates/tauri/aphrody-tauri-build", version = "1.4.4" }
+tauri-runtime-cef = { package = "aphrody-tauri-runtime-cef", path = "crates/tauri/aphrody-tauri-runtime-cef", version = "1.4.4" }
+tauri-plugin-log = { package = "aphrody-tauri-plugin-log", path = "crates/tauri/aphrody-tauri-plugin-log", version = "1.4.4" }
+tauri-plugin-opener = { package = "aphrody-tauri-plugin-opener", path = "crates/tauri/aphrody-tauri-plugin-opener", version = "1.4.4" }
+tauri-plugin-process = { package = "aphrody-tauri-plugin-process", path = "crates/tauri/aphrody-tauri-plugin-process", version = "1.4.4" }
+tauri-plugin-single-instance = { package = "aphrody-tauri-plugin-single-instance", path = "crates/tauri/aphrody-tauri-plugin-single-instance", version = "1.4.4" }
+tauri-plugin-window-state = { package = "aphrody-tauri-plugin-window-state", path = "crates/tauri/aphrody-tauri-plugin-window-state", version = "1.4.4" }
+tauri-plugin-os = { package = "aphrody-tauri-plugin-os", path = "crates/tauri/aphrody-tauri-plugin-os", version = "1.4.4" }
+tauri-plugin-dialog = { package = "aphrody-tauri-plugin-dialog", path = "crates/tauri/aphrody-tauri-plugin-dialog", version = "1.4.4" }
+tauri-plugin-clipboard-manager = { package = "aphrody-tauri-plugin-clipboard-manager", path = "crates/tauri/aphrody-tauri-plugin-clipboard-manager", version = "1.4.4" }
+tauri-plugin-notification = { package = "aphrody-tauri-plugin-notification", path = "crates/tauri/aphrody-tauri-plugin-notification", version = "1.4.4" }
+tauri-plugin-store = { package = "aphrody-tauri-plugin-store", path = "crates/tauri/aphrody-tauri-plugin-store", version = "1.4.4" }
+tauri-plugin-updater = { package = "aphrody-tauri-plugin-updater", path = "crates/tauri/aphrody-tauri-plugin-updater", version = "1.4.4" }
+tauri-plugin-global-shortcut = { package = "aphrody-tauri-plugin-global-shortcut", path = "crates/tauri/aphrody-tauri-plugin-global-shortcut", version = "1.4.4" }
+tauri-plugin-autostart = { package = "aphrody-tauri-plugin-autostart", path = "crates/tauri/aphrody-tauri-plugin-autostart", version = "1.4.4" }
+tauri-plugin-deep-link = { package = "aphrody-tauri-plugin-deep-link", path = "crates/tauri/aphrody-tauri-plugin-deep-link", version = "1.4.4" }
+tauri-plugin-fs = { package = "aphrody-tauri-plugin-fs", path = "crates/tauri/aphrody-tauri-plugin-fs", version = "1.4.4" }
 # Integrated debug bridge implementation, preserving Tauri 3 and security patches.
-tauri-plugin-mcp-bridge = { path = "crates/ui/tauri-plugin-mcp-bridge", version = "0.13.0", package = "aphrody-tauri-plugin-mcp-bridge" }
+tauri-plugin-mcp-bridge = { path = "crates/ui/tauri-plugin-mcp-bridge", version = "1.4.4", package = "aphrody-tauri-plugin-mcp-bridge" }
 atomicwrites = "0.4.4"
 fs4 = "1.1.0"
 llguidance = "1.8.0"
@@ -392,10 +392,10 @@ bindgen = "0.73.2"
 prettyplease = "0.3.0"
 quote = "1.0.47"
 
-aphrody-m3-reproduce = { path = "crates/ui/m3-reproduce", version = "1.0.0-canary" }
-aphrody-tauri-wrap = { path = "crates/ui/tauri-wrap", version = "1.0.0-canary", default-features = false }
-aphrody-render = { path = "crates/ui/render", version = "1.0.0-canary" }
-aphrody-svg = { path = "crates/ui/svg", version = "1.0.0-canary.1", default-features = false }
+aphrody-m3-reproduce = { path = "crates/ui/m3-reproduce", version = "1.4.4" }
+aphrody-tauri-wrap = { path = "crates/ui/tauri-wrap", version = "1.4.4", default-features = false }
+aphrody-render = { path = "crates/ui/render", version = "1.4.4" }
+aphrody-svg = { path = "crates/ui/svg", version = "1.4.4", default-features = false }
 ts-rs = {"version" = "12", "features" = ["serde-compat"]}
 read-fonts = {"version" = "0.44", "default-features" = false, "features" = ["std"]}
 woff2 = {"package" = "woff2-patched", "version" = "0.4.0"}
@@ -414,14 +414,14 @@ resvg = {"version" = "0.48", "default-features" = false}
 usvg = {"version" = "0.48"}
 tiny-skia = {"version" = "0.12"}
 grass = "0.13"
-aphrody-drive = { path = "crates/ui/drive", version = "1.0.0-canary" }
+aphrody-drive = { path = "crates/ui/drive", version = "1.4.4" }
 tokio-util = { version = "0.7", features = ["io"] }
 swift-rs = { version = "1.0" }
-tauri-plugin = { package = "aphrody-tauri-plugin", path = "crates/tauri/aphrody-tauri-plugin", version = "=3.0.0-alpha.3" }
-tauri-utils = { package = "aphrody-tauri-utils", path = "crates/tauri/aphrody-tauri-utils", version = "3.0.0-alpha.3" }
-tauri-runtime = { package = "aphrody-tauri-runtime", path = "crates/tauri/aphrody-tauri-runtime", version = "3.0.0-alpha.3" }
-tauri-macros = { package = "aphrody-tauri-macros", path = "crates/tauri/aphrody-tauri-macros", version = "3.0.0-alpha.3" }
-tauri-codegen = { package = "aphrody-tauri-codegen", path = "crates/tauri/aphrody-tauri-codegen", version = "3.0.0-alpha.3" }
+tauri-plugin = { package = "aphrody-tauri-plugin", path = "crates/tauri/aphrody-tauri-plugin", version = "1.4.4" }
+tauri-utils = { package = "aphrody-tauri-utils", path = "crates/tauri/aphrody-tauri-utils", version = "1.4.4" }
+tauri-runtime = { package = "aphrody-tauri-runtime", path = "crates/tauri/aphrody-tauri-runtime", version = "1.4.4" }
+tauri-macros = { package = "aphrody-tauri-macros", path = "crates/tauri/aphrody-tauri-macros", version = "1.4.4" }
+tauri-codegen = { package = "aphrody-tauri-codegen", path = "crates/tauri/aphrody-tauri-codegen", version = "1.4.4" }
 [workspace.lints.rust]
 unsafe_op_in_unsafe_fn = "deny"
 unused_must_use = "deny"

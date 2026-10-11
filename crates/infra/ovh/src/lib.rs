@@ -163,13 +163,16 @@ pub enum OvhDomainSubcommand {
         #[arg(long)]
         profile: Option<String>,
     },
-    /// Replace the registrar name servers (plan by default, requires --apply).
+    /// Switch to external DNS and replace registrar name servers (plan by default).
     Nameservers {
         domain: String,
         /// Name server host names, at least two (e.g. duke.ns.cloudflare.com veda.ns.cloudflare.com).
         #[arg(required = true, num_args = 2..)]
         hosts: Vec<String>,
+        /// Assert the previously published DS cache TTL has fully expired.
         #[arg(long)]
+        ds_cache_expired: bool,
+        #[arg(long, requires = "ds_cache_expired")]
         apply: bool,
         #[arg(long)]
         profile: Option<String>,
@@ -833,8 +836,21 @@ impl OvhCommand {
                 OvhDomainSubcommand::Autorenew { domain, on, off, apply, profile } => {
                     ops::domain_autorenew(profile.as_deref(), domain, *on, *off, *apply).await
                 },
-                OvhDomainSubcommand::Nameservers { domain, hosts, apply, profile } => {
-                    ops::domain_nameservers(profile.as_deref(), domain, hosts, *apply).await
+                OvhDomainSubcommand::Nameservers {
+                    domain,
+                    hosts,
+                    apply,
+                    ds_cache_expired,
+                    profile,
+                } => {
+                    ops::domain_nameservers(
+                        profile.as_deref(),
+                        domain,
+                        hosts,
+                        *apply,
+                        *ds_cache_expired,
+                    )
+                    .await
                 },
                 OvhDomainSubcommand::Dnssec {
                     domain,
@@ -1117,6 +1133,31 @@ consumer_key = ck_ini
         );
         assert!(
             Harness::try_parse_from(["ovh", "domain", "nameservers", "a.com", "x.b.c"]).is_err()
+        );
+        assert!(
+            Harness::try_parse_from([
+                "ovh",
+                "domain",
+                "nameservers",
+                "a.com",
+                "ns1.example.net",
+                "ns2.example.net",
+                "--apply"
+            ])
+            .is_err()
+        );
+        assert!(
+            Harness::try_parse_from([
+                "ovh",
+                "domain",
+                "nameservers",
+                "a.com",
+                "ns1.example.net",
+                "ns2.example.net",
+                "--apply",
+                "--ds-cache-expired"
+            ])
+            .is_ok()
         );
         let ds = Harness::try_parse_from([
             "ovh",

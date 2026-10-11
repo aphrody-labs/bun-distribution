@@ -1,6 +1,6 @@
 [package]
 name = "obscura-render"
-version = "0.1.0"
+version = "1.4.4"
 edition = "2021"
 license = "Apache-2.0"
 repository = "https://github.com/aphrody-labs/obscura"
@@ -14,7 +14,7 @@ default = []
 paint = ["dep:obscura-ssrf", "dep:tiny-skia", "dep:ab_glyph", "dep:cosmic-text", "dep:swash", "dep:image", "dep:ureq", "dep:base64", "dep:resvg", "dep:usvg", "dep:url", "dep:wuff"]
 
 [dependencies]
-taffy = { package = "aphrody-taffy", path = "../../ui/taffy", version = "0.12.1", default-features = false, features = [
+taffy = { package = "aphrody-taffy", path = "../../ui/taffy", version = "1.4.4", default-features = false, features = [
     "std",
     "taffy_tree",
     "flexbox",

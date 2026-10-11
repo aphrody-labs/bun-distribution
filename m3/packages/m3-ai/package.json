@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-ai",
-  "version": "3.3.9",
+  "version": "1.4.4",
   "description": "Material Design 3 agent-interaction components (tool calls, markdown, chat composer, workers, tasks): the SpaceUI (@spacedrive/ai) set rebuilt on @aphrody/m3-primitives.",
   "keywords": [
     "material-3",
@@ -35,8 +35,8 @@
   },
   "scripts": {
     "build": "bun ../../scripts/build.ts build --only $npm_package_name",
-    "typecheck": "tsc --noEmit",
-    "typecheck:fast": "tsc --noEmit",
+    "typecheck": "bun check --noEmit",
+    "typecheck:fast": "bun check --noEmit",
     "test": "bun test"
   },
   "dependencies": {

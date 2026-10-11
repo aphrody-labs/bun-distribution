@@ -31,8 +31,8 @@ MEMORY_LIMITS = {
     "chat": "5g",
     "postgres": "2560m",
     "redis": "1536m",
-    "site": "768m",
-    "bot": "512m",
+    "site": "1024m",
+    "bot": "640m",
     "gateway": "256m",
 }
 

@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-term-caps"
 description = "Terminal capability detection (environment, DA1, XTVERSION, kitty graphics query) and escape-sequence emission (OSC 8/133/633/7/9;4/52/notifications, Kitty/Sixel/iTerm2 images) for the Aphrody CLI and shell."
-version = "1.0.0-canary"
+version = "1.4.4"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

@@ -19,6 +19,10 @@ spec.loader.exec_module(assembly)
 
 
 class AssemblyPrivacyTests(unittest.TestCase):
+    def test_shenron_memory_limits_include_observed_oom_headroom(self):
+        self.assertEqual(assembly.MEMORY_LIMITS["bot"], "640m")
+        self.assertEqual(assembly.MEMORY_LIMITS["site"], "1024m")
+
     def test_embedded_native_modules_use_a_private_cache_without_relaxing_tmp(self):
         service = {"user": "1234:5678", "tmpfs": ["/tmp:rw,noexec,nosuid,size=64m"]}
         assembly.configure_native_cache(service)

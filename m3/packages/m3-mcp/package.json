@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-mcp",
-  "version": "3.3.9",
+  "version": "1.4.4",
   "description": "Design/UI tool host of aphrody-m3 (served through the single aphrody-mcp): packages, M3 tokens (lookup, validate), docs search, research links, templates, Material Symbols SVG, SVG to Tauri icons.",
   "license": "Apache-2.0",
   "files": [
@@ -18,7 +18,7 @@
   "scripts": {
     "start": "bun src/tool-host.ts list",
     "test": "bun test",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "bun check --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@aphrody/m3-os-themes": "workspace:*",

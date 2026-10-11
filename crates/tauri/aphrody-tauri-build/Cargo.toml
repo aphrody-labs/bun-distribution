@@ -1,6 +1,6 @@
 [package]
 name = "aphrody-tauri-build"
-version = "3.0.0-alpha.3"
+version = "1.4.4"
 description = "build time code to pair with https://crates.io/crates/tauri"
 exclude = ["CHANGELOG.md", "/target"]
 authors = ["Tauri Programme within The Commons Conservancy"]
@@ -28,8 +28,8 @@ name = "tauri_build"
 [dependencies]
 anyhow = { workspace = true }
 quote = { workspace = true, optional = true }
-tauri-codegen = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-codegen", package = "aphrody-tauri-codegen", optional = true }
-tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["build-2", "resources"] }
+tauri-codegen = { version = "1.4.4", path = "../aphrody-tauri-codegen", package = "aphrody-tauri-codegen", optional = true }
+tauri-utils = { version = "1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["build-2", "resources"] }
 cargo_toml = "1.0"
 serde = { workspace = true }
 serde_json = { workspace = true }

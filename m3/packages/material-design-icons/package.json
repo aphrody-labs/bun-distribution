@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/material-design-icons",
-  "version": "1.0.3",
+  "version": "1.4.4",
   "description": "Material Symbols SVG catalogue (forks/material-design-icons) with SVG to ICO/ICNS sync for Tauri desktop icons.",
   "license": "Apache-2.0",
   "bin": {
@@ -20,7 +20,7 @@
   },
   "scripts": {
     "test": "bun test",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
     "icons:ico": "bun scripts/svg-to-ico.ts",
     "icons:sync": "bun scripts/sync-catalogue.ts",
     "icons:check": "bun scripts/sync-catalogue.ts --check",

@@ -1,13 +1,14 @@
 {
   "schemaVersion": 1,
   "owner": "aphrody-dev",
-  "asOf": "2026-10-09",
+  "asOf": "2026-10-11",
   "registrar": {
     "provider": "ovh",
     "profile": "aphrody.com",
     "nameServers": ["dns200.anycast.me", "ns200.anycast.me"],
     "dnssec": {
-      "ds": "62047 8 2 2bdcd28e3fe3dfad3115587801c8b09b7e1fa987674e20298e65fa6da18ad594"
+      "status": "disabled",
+      "previousDs": "62047 8 2 2bdcd28e3fe3dfad3115587801c8b09b7e1fa987674e20298e65fa6da18ad594"
     },
     "backup": "~/.aphrody/backup/dns/2026-10-09/aphrody.com.zone"
   },
@@ -56,7 +57,7 @@
         "name": "aphrody.com",
         "type": "A",
         "ttl": 300,
-        "content": "51.255.162.6"
+        "content": "51.77.147.152"
       },
       {
         "name": "aphrody.com",
@@ -139,6 +140,18 @@
         "content": "51.255.162.6"
       },
       {
+        "name": "os.aphrody.com",
+        "type": "A",
+        "ttl": 300,
+        "content": "51.77.147.152"
+      },
+      {
+        "name": "bun.aphrody.com",
+        "type": "CNAME",
+        "ttl": 300,
+        "content": "aphrody.com"
+      },
+      {
         "name": "nie.aphrody.com",
         "type": "CNAME",
         "ttl": 300,
@@ -217,13 +230,14 @@
   },
   "cutover": {
     "state": "blocked",
-    "blocker": "OVH application key returns 403 on /domain/aphrody.com (registrar scope absent); nameserver change and registrar DS cannot be applied by this session",
+    "blocker": "Registrar write capability for nameserver changes is not available through the current Aphrody Infra command surface. Cloudflare zone is still pending; keep live delegation on OVH until a supported registrar mutation path and full DNS parity are verified. GitHub Pages for the private Omar repository also requires an organization plan that supports private Pages.",
     "steps": [
-      "Disable DNSSEC for aphrody.com at the OVH registrar; wait until the .com parent no longer publishes the DS 62047 (DoH type 43 empty)",
+      "DNSSEC is currently disabled at OVH and no aphrody.com DS is published by the .com parent; recheck immediately before cutover",
+      "Reconcile every current OVH record against this Cloudflare manifest and Cloudflare API state, preserving mail records and deduplicating only identical TXT records",
       "Change registrar nameservers to duke.ns.cloudflare.com and veda.ns.cloudflare.com",
-      "Run bun scripts/audit/live-domain-dns.ts --declared tools/config/cloudflare/aphrody.com.json until it reports 0 diffs against the new delegation",
+      "Run bun scripts/audit/live-domain-dns.ts tools/config/cloudflare/aphrody.com.json until all declared records match both providers and Cloudflare reports the zone active",
       "Add DS 2371 13 2 7E73A5E0016202714CC58E56D2A4310062910D65BED2931CD9D7709453D3C871 at the registrar; confirm DS at the parent and Cloudflare status active",
-      "Rollback: restore OVH nameservers and re-enable DNSSEC at OVH; the OVH zone is kept intact"
+      "Rollback: restore OVH nameservers while DNSSEC remains disabled, verify all OVH records and public answers, then enable DNSSEC only with a verified matching OVH DS"
     ]
   }
 }

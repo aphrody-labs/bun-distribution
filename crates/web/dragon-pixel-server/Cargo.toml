@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-web-game-server"
 description = "Local-authoritative multiplayer room service for Dragon Pixel."
-version = "1.0.0"
+version = "1.4.4"
 edition = "2024"
 rust-version = "1.97"
 license = "Apache-2.0"

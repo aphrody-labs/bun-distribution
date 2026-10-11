@@ -183,6 +183,7 @@ export function noBuildScriptReason(check: GateCheck): string | undefined {
   if (check.name.endsWith(": build")) return "Build stages are excluded in no-build mode";
   const script = check.script?.trim();
   if (!script) return "Only reviewed package leaf commands are executed in no-build mode";
+  if (/^bun check\b[\w\s./:@=,-]*$/.test(script)) return undefined;
   if (/^(?:bunx --bun |bun --bun |bunx |bun )?(?:tsc|tsgo)\b[\w\s./:@=,-]*$/.test(script))
     return undefined;
   if (/^oxlint\b[\w\s./:@=,*-]*$/.test(script)) return undefined;

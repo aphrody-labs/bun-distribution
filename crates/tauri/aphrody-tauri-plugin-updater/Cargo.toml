@@ -1,6 +1,6 @@
 [package]
 name = "aphrody-tauri-plugin-updater"
-version = "3.0.0-alpha.2"
+version = "1.4.4"
 description = "In-app updates for Tauri applications."
 edition = "2024"
 authors = ["Tauri Programme within The Commons Conservancy"]
@@ -32,10 +32,10 @@ ios = { level = "none", notes = "" }
 name = "tauri_plugin_updater"
 
 [build-dependencies]
-tauri-plugin = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
+tauri-plugin = { version = "1.4.4", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
 
 [dependencies]
-tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
+tauri = { version = "1.4.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

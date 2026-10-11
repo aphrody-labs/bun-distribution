@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/rg-ui",
-  "version": "1.0.5",
+  "version": "1.4.4",
   "private": false,
   "description": "Rose Griffon, Achillea and Azalee shared UI on the Aphrody Bun Base UI fork and native Material 3 tokens",
   "license": "UNLICENSED",
@@ -35,13 +35,13 @@
   },
   "scripts": {
     "lint": "oxlint src",
-    "type-check": "bun --bun tsc --noEmit",
+    "type-check": "bun check --noEmit",
     "test": "bun test test",
     "tokens": "bun scripts/generer-tokens.ts",
-    "typecheck": "bun --bun tsc --noEmit"
+    "typecheck": "bun check --noEmit"
   },
   "dependencies": {
-    "@aphrody/m3-tokens": "3.3.9",
+    "@aphrody/m3-tokens": "workspace:*",
     "@base-ui/react": "catalog:",
     "@hookform/resolvers": "catalog:",
     "@tanstack/react-table": "catalog:",
@@ -63,7 +63,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@aphrody/m3-config": "3.3.9",
+    "@aphrody/m3-config": "workspace:*",
     "@rosegriffon/db": "1.0.3",
     "@rosegriffon/preferences": "1.0.3",
     "@rosegriffon/types": "1.0.3",

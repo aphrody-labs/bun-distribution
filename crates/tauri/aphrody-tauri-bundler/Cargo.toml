@@ -1,6 +1,6 @@
 [package]
 name = "aphrody-tauri-bundler"
-version = "3.0.0-alpha.3"
+version = "1.4.4"
 authors = [
   "George Burton <burtonageo@gmail.com>",
   "Tauri Programme within The Commons Conservancy",
@@ -15,7 +15,7 @@ rust-version = "1.95"
 exclude = ["CHANGELOG.md", "/target", "rustfmt.toml"]
 
 [dependencies]
-tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["resources"] }
+tauri-utils = { version = "1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["resources"] }
 image = { workspace = true }
 flate2 = { workspace = true }
 thiserror = { workspace = true }
@@ -56,7 +56,7 @@ features = ["Win32_System_SystemInformation", "Win32_System_Diagnostics_Debug"]
 [target."cfg(target_os = \"macos\")".dependencies]
 icns = { package = "tauri-icns", version = "0.1" }
 time = { workspace = true, features = ["formatting"] }
-tauri-macos-sign = { version = "=3.0.0-alpha.2", path = "../aphrody-tauri-macos-sign", package = "aphrody-tauri-macos-sign" }
+tauri-macos-sign = { version = "1.4.4", path = "../aphrody-tauri-macos-sign", package = "aphrody-tauri-macos-sign" }
 
 [target."cfg(target_os = \"linux\")".dependencies]
 heck = "0.5"

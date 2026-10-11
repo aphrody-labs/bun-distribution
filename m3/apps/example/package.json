@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-example",
-  "version": "3.3.9",
+  "version": "1.4.4",
   "private": false,
   "description": "The m3 example app: App Router (React Server Components, server actions, streaming SSR, static generation), M3 theme, Tailwind v4 and the M3 DataTable, on Bun only.",
   "license": "Apache-2.0",
@@ -26,7 +26,7 @@
     "compile": "m3 compile",
     "docker": "m3 docker",
     "test": "APHRODY_FFI_DEV=1 bun test",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "bun check -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@aphrody/m3": "workspace:*",
