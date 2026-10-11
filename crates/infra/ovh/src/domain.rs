@@ -191,6 +191,23 @@ impl<'a> DomainManager<'a> {
             .await
     }
 
+    /// Select external DNS before changing the registrar's declared name servers.
+    pub async fn set_external_name_server_type(&self, domain: &str) -> Result<Value> {
+        self.client
+            .put(&format!("/domain/{domain}"), Some(external_name_server_type_payload()))
+            .await
+    }
+
+    /// IDs of tasks associated with this domain name.
+    pub async fn task_ids(&self, domain: &str) -> Result<Vec<u64>> {
+        self.client.get(&format!("/domain/{domain}/task")).await
+    }
+
+    /// Details for a registrar task associated with this domain name.
+    pub async fn task(&self, domain: &str, id: u64) -> Result<Value> {
+        self.client.get(&format!("/domain/{domain}/task/{id}")).await
+    }
+
     /// Signing state of the zone hosted on OVH DNS (`enabled`, `disableInProgress`, ...).
     pub async fn hosted_dnssec(&self, zone: &str) -> Result<String> {
         let raw: Value = self.client.get(&format!("/domain/zone/{zone}/dnssec")).await?;
@@ -208,6 +225,10 @@ fn name_servers_payload(hosts: &[String]) -> Result<Value> {
     let servers: Vec<Value> =
         name_server_hosts(hosts)?.into_iter().map(|host| json!({ "host": host })).collect();
     Ok(json!({ "nameServer": servers }))
+}
+
+fn external_name_server_type_payload() -> Value {
+    json!({ "nameServerType": "external" })
 }
 
 #[cfg(test)]
@@ -284,5 +305,10 @@ mod tests {
             })
         );
         assert!(payload.get("nameServers").is_none());
+    }
+
+    #[test]
+    fn external_dns_setup_uses_the_documented_domain_field() {
+        assert_eq!(external_name_server_type_payload(), json!({ "nameServerType": "external" }));
     }
 }
