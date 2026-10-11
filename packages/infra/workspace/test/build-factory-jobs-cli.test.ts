@@ -40,8 +40,8 @@ const fixtureHome = await mkdtemp(join(tmpdir(), "aphrody-factory-job-infra-"));
 const infra = await writeBunCommand(
   fixtureHome,
   "infra-fixture",
-  `import { readFileSync, writeFileSync } from "node:fs";
-writeFileSync(process.env.INFRA_FIXTURE_MARKER, JSON.stringify({args: process.argv.slice(2), timeout: process.env.APHRODY_SSH_COMMAND_TIMEOUT_SECS}));
+  `import { appendFileSync, readFileSync } from "node:fs";
+appendFileSync(process.env.INFRA_FIXTURE_MARKER, JSON.stringify({args: process.argv.slice(2), timeout: process.env.APHRODY_SSH_COMMAND_TIMEOUT_SECS}) + "\\n");
 const reply = JSON.parse(readFileSync(process.env.INFRA_FIXTURE_RESPONSE, "utf8"));
 process.stdout.write(reply.stdout);
 process.stderr.write(reply.stderr ?? "");
@@ -113,8 +113,13 @@ async function fixture() {
   ];
   const reply = async (stdout: string, code = 0, stderr = "") =>
     writeFile(response, JSON.stringify({ stdout, code, stderr }));
-  const invocation = async () => JSON.parse(await readFile(marker, "utf8"));
-  return { run, request, reply, receipt, marker, invocation };
+  const invocations = async () =>
+    (await readFile(marker, "utf8"))
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line));
+  const invocation = async () => (await invocations()).at(-1);
+  return { run, request, reply, receipt, marker, invocation, invocations };
 }
 
 test("detached planning is explicit, deterministic and never dispatches", async () => {
@@ -139,8 +144,27 @@ test("detached run confirms submission through the installed native Infra owner 
   expect(result.value.executed).toBeUndefined();
   expect(result.value.exitCode).toBeUndefined();
   const invocation = await f.invocation();
-  expect(invocation.args.slice(2)).toEqual(durable.transport);
+  expect(invocation.args.slice(2, 7)).toEqual(["ssh", "exec", "--host", "vps", "--cmd"]);
   expect(invocation.timeout).toBe("60");
+  expect(await f.invocations()).toHaveLength(1);
+});
+
+test("detached install request returns after durable submission without polling or activating", async () => {
+  const f = await fixture();
+  const args = f.request("run");
+  args.splice(args.indexOf("--"), 0, "--install");
+  const result = await f.run(...args);
+  expect(result.code).toBe(0);
+  expect(result.value.status).toBe("queued");
+  expect(result.value.dispatchConfirmed).toBe(true);
+  expect(result.value.install).toEqual({
+    status: "pending",
+    next: "Poll build-factory status --job <id>; after succeeded, run the matching build-factory install --job <id> command.",
+  });
+  const invocation = await f.invocation();
+  expect(invocation.args.slice(2, 7)).toEqual(["ssh", "exec", "--host", "vps", "--cmd"]);
+  expect(invocation.timeout).toBe("60");
+  expect(await f.invocations()).toHaveLength(1);
 });
 
 test("status uses a bounded read-only native observation and preserves a terminal failure", async () => {

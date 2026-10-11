@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterEach, expect, test } from "bun:test";
 import { $ } from "bun";
+import { join } from "node:path";
 import type { BuildFactoryConfig } from "../src/build-factory.ts";
 import {
   factoryArtifacts,
@@ -209,4 +210,43 @@ test("rejects a download whose digest differs from the factory copy", async () =
   expect(record!.status).toBe("refused");
   expect(record!.error).toContain("mismatch");
   expect(await Bun.file(`${install.binDir}/tool${EXE}`).exists()).toBe(false);
+});
+
+test("serializes concurrent host installs and removes its owned lock on completion", async () => {
+  const { remote, install } = await remoteFixture(runnable("#!/bin/sh\necho tool 1.0\n"));
+  let entered!: () => void;
+  let releaseGate!: () => void;
+  const waiting = new Promise<void>((resolve) => (entered = resolve));
+  const gate = new Promise<void>((resolve) => (releaseGate = resolve));
+  const delayed: FactoryRemote = {
+    describe: async (path) => {
+      entered();
+      await gate;
+      return remote.describe(path);
+    },
+    fetch: (path, local) => remote.fetch(path, local),
+  };
+  const first = installFactoryArtifacts(artifact, revision, delayed, install);
+  await waiting;
+  await expect(installFactoryArtifacts(artifact, revision, remote, install)).rejects.toThrow(
+    "Factory installation lock exists",
+  );
+  releaseGate();
+  const [record] = await first;
+  expect(record!.status).toBe("installed");
+  expect(await Bun.file(join(install.binDir, ".aphrody-factory-install.lock")).exists()).toBe(
+    false,
+  );
+});
+
+test("preserves a preexisting host install lock without touching the active binary", async () => {
+  const { remote, install } = await remoteFixture(runnable("#!/bin/sh\necho tool 1.0\n"));
+  const lockPath = join(install.binDir, ".aphrody-factory-install.lock");
+  const lock = JSON.stringify({ pid: 123, revision });
+  await Bun.write(lockPath, lock);
+  await expect(installFactoryArtifacts(artifact, revision, remote, install)).rejects.toThrow(
+    "Factory installation lock exists",
+  );
+  expect(await Bun.file(lockPath).text()).toBe(lock);
+  expect(await Bun.file(join(install.binDir, `tool${EXE}`)).exists()).toBe(false);
 });

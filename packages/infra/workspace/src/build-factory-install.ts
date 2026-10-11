@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /* eslint-disable no-await-in-loop -- Artifacts are activated one at a time so a refusal never leaves a partial set behind. */
-import { mkdir, rename, rm } from "node:fs/promises";
+import { lstat, mkdir, open, rename, rm } from "node:fs/promises";
 import type { BuildFactoryConfig } from "./build-factory.ts";
 
 /** Local activation of factory binaries: verified download, ABI probe, atomic replacement on PATH. */
@@ -180,7 +180,7 @@ function spawnProbe(path: string, timeoutSeconds: number) {
 }
 
 /** Download, verify, probe and atomically replace each binary; the previous one is preserved. */
-export async function installFactoryArtifacts(
+async function installFactoryArtifactsUnlocked(
   artifacts: readonly FactoryArtifact[],
   revision: string,
   remote: FactoryRemote,
@@ -251,6 +251,67 @@ export async function installFactoryArtifacts(
     }
   }
   return records;
+}
+
+/** Serialize PATH activation on this host; a stale lock requires explicit reconciliation. */
+export async function installFactoryArtifacts(
+  artifacts: readonly FactoryArtifact[],
+  revision: string,
+  remote: FactoryRemote,
+  install: FactoryInstallConfig,
+): Promise<InstallRecord[]> {
+  if (!/^[a-f0-9]{40}$/u.test(revision)) throw new Error("A full pinned Git revision is required");
+  await Promise.all([
+    mkdir(parent(install.stateFile), { recursive: true }),
+    mkdir(install.binDir, { recursive: true }),
+  ]);
+  const lockPath = join(install.binDir, ".aphrody-factory-install.lock");
+  let lock;
+  try {
+    lock = await open(lockPath, "wx", 0o600);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "EEXIST")
+      throw new Error(`Factory installation lock exists; reconcile before retrying: ${lockPath}`, {
+        cause: error,
+      });
+    throw error;
+  }
+  const identity = await lock.stat();
+  let records: InstallRecord[] | undefined;
+  let installError: unknown;
+  try {
+    await lock.writeFile(
+      `${JSON.stringify({ schemaVersion: 1, pid: process.pid, revision, startedAt: new Date().toISOString() })}\n`,
+    );
+    await lock.sync();
+    records = await installFactoryArtifactsUnlocked(artifacts, revision, remote, install);
+  } catch (error) {
+    installError = error;
+  }
+  let cleanupError: unknown;
+  try {
+    await lock.close();
+    try {
+      const current = await lstat(lockPath);
+      if (
+        current.isFile() &&
+        !current.isSymbolicLink() &&
+        current.dev === identity.dev &&
+        current.ino === identity.ino
+      )
+        await rm(lockPath);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") cleanupError = error;
+    }
+  } catch (error) {
+    cleanupError = error;
+  }
+  if (cleanupError)
+    throw new Error(`Factory installation lock cleanup requires reconciliation: ${lockPath}`, {
+      cause: cleanupError,
+    });
+  if (installError) throw installError;
+  return records!;
 }
 
 /** Remote access through the installed Infra SSH owner (exec for the digest, SFTP for bytes). */

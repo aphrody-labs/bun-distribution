@@ -454,6 +454,7 @@ interface FactoryJobTransport {
   fingerprint?: string;
   repository?: string;
   revision?: string;
+  installRequested?: boolean;
 }
 
 /** Transport failures are ambiguous after submission; a stable job is never automatically replayed. */
@@ -540,6 +541,14 @@ async function runFactoryJobTransport(plan: FactoryJobTransport, root: string): 
           success: true,
           dispatchConfirmed: plan.operation === "submit",
           reconciliationRequired: receipt.status === "indeterminate",
+          ...(plan.operation === "submit" && plan.installRequested
+            ? {
+                install: {
+                  status: "pending",
+                  next: "Poll build-factory status --job <id>; after succeeded, run the matching build-factory install --job <id> command.",
+                },
+              }
+            : {}),
         },
         null,
         2,
@@ -795,17 +804,15 @@ async function runBuildFactoryAction(args: string[], root: string): Promise<numb
       );
       return 0;
     }
-    const submitted = await runFactoryJobTransport(
-      { ...job, repository: plan.repository, revision: plan.revision },
+    return runFactoryJobTransport(
+      {
+        ...job,
+        repository: plan.repository,
+        revision: plan.revision,
+        installRequested: install,
+      },
       root,
     );
-    if (submitted !== 0 || !install) return submitted;
-    const status = await waitFactoryJob(config, jobId, root, plan.commandTimeoutSeconds);
-    if (status !== "succeeded") {
-      console.log(JSON.stringify({ operation: "install", success: false, jobId, status }));
-      return 1;
-    }
-    return installFactoryBuild(config, repository, revision, command, only, root);
   }
   if (action === "plan") {
     console.log(JSON.stringify({ executed: false, ...plan }, null, 2));
