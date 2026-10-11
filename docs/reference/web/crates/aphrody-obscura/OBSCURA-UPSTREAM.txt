@@ -60,3 +60,5 @@ Aphrody delta as patches (2026-10-06, plan fusion decision 4): patches/obscura/<
 upstream 1fccab2c1ecd (GitHub tarball) and crates/web/<crate>, both normalised by the same rustfmt (edition 2021, max_width 100) and
 compared with diff -ruN -w (render-repros excluded). Paths are a/<crate>/... and b/<crate>/...; apply with `patch -p1 -l` inside the crate
 parent directory of an upstream tree laid out as <crate>/. Regenerate on every upstream bump; the copy under crates/web stays the build source.
+
+CLI integration evidence (2026-10-11): `aphrody web` now rejects empty fetch/scrape results with structured JSON diagnostics on stderr, keeps result content on stdout, emits a structured profile diagnostic for scrape, and reports requested/obtained profiles in fetch and recon. Covered by `crates/infra/aphrody/tests/web_cli_contract.rs`; no upstream Obscura source delta.
