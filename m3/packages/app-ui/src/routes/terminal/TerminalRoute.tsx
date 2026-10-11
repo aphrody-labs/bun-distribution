@@ -13,14 +13,15 @@ import {
   type KeyboardEvent,
 } from "react";
 import { getWebOs } from "../../webos-backend";
+import { useI18n } from "../../i18n";
 import { keyToInput } from "./keys";
 
 const MIN_COLS = 40;
 const MAX_COLS = 180;
 const MIN_ROWS = 12;
 const MAX_ROWS = 60;
-const CELL_WIDTH = 8.5;
-const CELL_HEIGHT = 19;
+const FONT_STORAGE_KEY = "aphrody.terminal.font-size";
+const DEFAULT_FONT_SIZE = 18;
 
 function Line({ text, cursorColumn }: { text: string; cursorColumn: number | null }) {
   if (cursorColumn === null) return <div>{text || " "}</div>;
@@ -39,12 +40,21 @@ function clamp(value: number, min: number, max: number) {
 }
 
 export function TerminalRoute() {
+  const { t } = useI18n();
   const terminal = useRef<Terminal | null>(null);
   const terminalPanel = useRef<HTMLDivElement>(null);
   const [screen, setScreen] = useState<Snapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [persistent, setPersistent] = useState<boolean | null>(null);
   const [notice, setNotice] = useState("");
+  const [fontSize, setFontSize] = useState(() => {
+    try {
+      const stored = Number(localStorage.getItem(FONT_STORAGE_KEY));
+      return Number.isFinite(stored) && stored >= 12 && stored <= 36 ? stored : DEFAULT_FONT_SIZE;
+    } catch {
+      return DEFAULT_FONT_SIZE;
+    }
+  });
   const terminalReady = screen !== null;
 
   useEffect(() => {
@@ -72,8 +82,8 @@ export function TerminalRoute() {
     const instance = terminal.current;
     if (!panel || !instance || typeof ResizeObserver === "undefined") return;
     const resize = () => {
-      const columns = clamp(panel.clientWidth / CELL_WIDTH, MIN_COLS, MAX_COLS);
-      const rows = clamp(panel.clientHeight / CELL_HEIGHT, MIN_ROWS, MAX_ROWS);
+      const columns = clamp(panel.clientWidth / (fontSize * 0.6), MIN_COLS, MAX_COLS);
+      const rows = clamp(panel.clientHeight / (fontSize + 6), MIN_ROWS, MAX_ROWS);
       instance.resize(columns, rows);
       setScreen(instance.snapshot());
     };
@@ -81,7 +91,15 @@ export function TerminalRoute() {
     observer.observe(panel);
     resize();
     return () => observer.disconnect();
-  }, [terminalReady]);
+  }, [fontSize, terminalReady]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(FONT_STORAGE_KEY, String(fontSize));
+    } catch {
+      // The browser may disable local storage; the current session still works.
+    }
+  }, [fontSize]);
 
   const send = useCallback((data: string) => {
     const instance = terminal.current;
@@ -114,9 +132,9 @@ export function TerminalRoute() {
     try {
       if (!navigator.clipboard?.writeText || !screen) throw new Error("clipboard unavailable");
       await navigator.clipboard.writeText(screen.lines.join("\n").trimEnd());
-      setNotice("Écran copié");
+      setNotice(t("terminal.copied"));
     } catch {
-      setNotice("Copie indisponible dans ce navigateur");
+      setNotice(t("terminal.clipboardUnavailable"));
     }
   }
 
@@ -124,24 +142,47 @@ export function TerminalRoute() {
     <main className="flex h-full min-h-0 flex-col gap-5 overflow-hidden p-4 sm:p-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-label-large text-primary">APHRODY OS · OUTILS</p>
-          <h1 className="mt-1 text-headline-medium">Terminal</h1>
+          <p className="text-label-large text-primary">{t("terminal.eyebrow")}</p>
+          <h1 className="mt-1 text-headline-medium">{t("terminal.title")}</h1>
           <p className="mt-1 max-w-2xl text-body-medium text-on-surface-variant">
-            Shell Rust dans WebAssembly, avec accès au système de fichiers du navigateur.
+            {t("terminal.description")}
           </p>
         </div>
         <div className="flex items-center gap-2" aria-label="Actions du terminal">
           <Button variant="text" size="md" onClick={() => send("help\r")}>
             <Icon name="help" size={18} />
-            Aide
+            {t("terminal.help")}
           </Button>
           <Button variant="text" size="md" onClick={() => send("clear\r")}>
             <Icon name="backspace" size={18} />
-            Effacer
+            {t("terminal.clear")}
+          </Button>
+          <Button
+            variant="text"
+            size="md"
+            aria-label={t("terminal.fontDecrease")}
+            title={t("terminal.fontDecrease")}
+            disabled={fontSize <= 12}
+            onClick={() => setFontSize((value) => Math.max(12, value - 2))}
+          >
+            <Icon name="text_decrease" size={18} />
+          </Button>
+          <span className="min-w-9 text-center text-label-medium" aria-live="polite">
+            {fontSize}px
+          </span>
+          <Button
+            variant="text"
+            size="md"
+            aria-label={t("terminal.fontIncrease")}
+            title={t("terminal.fontIncrease")}
+            disabled={fontSize >= 36}
+            onClick={() => setFontSize((value) => Math.min(36, value + 2))}
+          >
+            <Icon name="text_increase" size={18} />
           </Button>
           <Button variant="outline" size="md" onClick={() => void copyScreen()} disabled={!screen}>
             <Icon name="content_copy" size={18} />
-            Copier
+            {t("terminal.copy")}
           </Button>
         </div>
       </header>
@@ -150,15 +191,17 @@ export function TerminalRoute() {
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-outline-variant px-4 py-3">
           <div className="flex items-center gap-3">
             <span className="size-2.5 rounded-full bg-primary" aria-hidden="true" />
-            <span className="text-label-large">Session locale</span>
+            <span className="text-label-large">{t("terminal.session")}</span>
             <span className="text-label-medium text-on-surface-variant">·</span>
-            <span className="text-label-medium text-on-surface-variant">WebAssembly</span>
+            <span className="text-label-medium text-on-surface-variant">
+              {t("terminal.webAssembly")}
+            </span>
           </div>
           <div className="flex items-center gap-3 text-label-medium text-on-surface-variant">
-            <span>{screen ? `${screen.columns} × ${screen.rows}` : "Démarrage…"}</span>
+            <span>{screen ? `${screen.columns} × ${screen.rows}` : t("terminal.starting")}</span>
             {persistent !== null && (
               <span className="rounded-full bg-surface-container-high px-3 py-1">
-                {persistent ? "Fichiers persistants" : "Stockage temporaire"}
+                {persistent ? t("terminal.persistent") : t("terminal.temporary")}
               </span>
             )}
           </div>
@@ -167,7 +210,7 @@ export function TerminalRoute() {
         {error ? (
           <div className="m-4 rounded-large bg-error-container p-4 text-on-error-container">
             <p role="alert" className="text-title-medium">
-              Le terminal n’a pas démarré.
+              {t("terminal.startError")}
             </p>
             <p className="mt-1 text-body-medium">{error}</p>
           </div>
@@ -183,7 +226,8 @@ export function TerminalRoute() {
               onKeyDown={onKeyDown}
               onPaste={onPaste}
               onCompositionEnd={onCompositionEnd}
-              className="min-h-full w-max min-w-full rounded-large bg-surface-container-lowest p-4 font-mono text-[13px] leading-[19px] whitespace-pre text-on-surface outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-sm"
+              className="min-h-full w-max min-w-full rounded-large bg-surface-container-lowest p-4 font-mono whitespace-pre text-on-surface outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              style={{ fontSize: `${fontSize}px`, lineHeight: `${fontSize + 6}px` }}
             >
               {screen?.lines.map((text, row) => (
                 <Line
@@ -195,21 +239,17 @@ export function TerminalRoute() {
                   }
                 />
               ))}
-              {!screen && <span className="text-on-surface-variant">Chargement du shell…</span>}
+              {!screen && <span className="text-on-surface-variant">{t("terminal.loading")}</span>}
             </div>
           </div>
         )}
 
         <footer className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-outline-variant px-4 py-3">
           <p id="terminal-help" className="text-label-medium text-on-surface-variant">
-            Entrée pour exécuter · ↑/↓ pour l’historique · Ctrl+L pour effacer · Ctrl+Maj+C pour
-            copier
+            {t("terminal.keyboardHelp")}
           </p>
           <output className="text-label-medium text-on-surface-variant" aria-live="polite">
-            {notice ||
-              (persistent === false
-                ? "Les fichiers de cette session ne seront pas conservés après fermeture."
-                : "")}
+            {notice || (persistent === false ? t("terminal.temporaryNotice") : "")}
           </output>
         </footer>
       </section>
