@@ -9,6 +9,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+aphrody-google.workspace = true
 aphrody-m3-tokens.workspace = true
 axum.workspace = true
 clap = { workspace = true, features = ["derive", "env"] }

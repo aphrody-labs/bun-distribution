@@ -6,30 +6,14 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { searchGoogle, type GoogleSearchPage } from "../../google-search";
 
-export function ProductSearchHome({
-  publicPreview = false,
-  assetBase,
-}: {
-  publicPreview?: boolean;
-  assetBase?: string;
-}) {
+export function ProductSearchHome({ assetBase }: { publicPreview?: boolean; assetBase?: string }) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState<GoogleSearchPage | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const publicReadOnly =
-    publicPreview ||
-    (typeof document !== "undefined" &&
-      document.querySelector('meta[name="aphrody-rpc"][content="unavailable"]') !== null);
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (busy || !query.trim()) return;
-    if (publicReadOnly) {
-      setError(
-        "Native search is unavailable on this public read-only deployment. Open the installed Aphrody application to search.",
-      );
-      return;
-    }
     setBusy(true);
     setError("");
     setPage(null);
@@ -95,16 +79,18 @@ export function ProductSearchHome({
               >
                 {busy ? "Searching…" : "Aphrody Search"}
               </Button>
-              <Button href="https://os.aphrody.com/" variant="filled" className="min-h-12 rounded-full">
+              <Button
+                href="https://os.aphrody.com/"
+                variant="filled"
+                className="min-h-12 rounded-full"
+              >
                 Open Aphrody OS
               </Button>
             </div>
           </form>
         </search>
         <p className="mt-4 text-body-small text-on-surface-variant">
-          {publicReadOnly
-            ? "Public workspace preview. Native search requires the installed Aphrody application."
-            : "Google results via the native Aphrody engine. SafeSearch on, no account cookies."}
+          Google results via the native Aphrody engine. SafeSearch on, no account cookies.
         </p>
         <Link
           to="/studio?section=google"
@@ -131,6 +117,16 @@ export function ProductSearchHome({
             className="mb-8 rounded-extra-large bg-error-container p-5 text-on-error-container"
           >
             {error}
+            {query.trim() && (
+              <a
+                className="mt-3 block min-h-12 content-center underline"
+                href={`https://www.google.com/search?q=${encodeURIComponent(query.trim())}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Search on Google
+              </a>
+            )}
           </p>
         )}
         {page && (

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { aphrodyRpc, ensureAphrodyInitialized } from "./tauri-bridge";
+import { aphrodyRpc, ensureAphrodyInitialized, isTauri } from "./tauri-bridge";
 
 export type SearchVertical = "web" | "images" | "news" | "videos" | "books";
 export interface GoogleSearchRequest {
@@ -89,7 +89,17 @@ export function parseGoogleSearchResponse(response: Record<string, unknown>): Go
 
 export async function searchGoogle(
   request: GoogleSearchRequest,
-  rpc: Rpc = async (method, params) => {
+  rpc: Rpc = async (method, params = {}) => {
+    if (!isTauri()) {
+      const query = new URLSearchParams();
+      for (const key of ["query", "vertical", "hl", "safe", "start"])
+        query.set(key, String(params[key]));
+      const response = await fetch(`/api/search?${query}`);
+      const body = (await response.json()) as Record<string, unknown>;
+      if (!response.ok)
+        throw new Error(typeof body.error === "string" ? body.error : "Search is unavailable");
+      return body;
+    }
     await ensureAphrodyInitialized();
     return aphrodyRpc(method, params);
   },

@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: Apache-2.0
+services:
+  aphrody-site:
+    image: sha256:8b12917085a44f30c1dbee201c62a206be2b2e38b11c2ed2cffbfafa2b091489
+    pull_policy: never
+    entrypoint: ["/opt/aphrody-site"]
+    command: ["--root", "/srv/site", "--bind", "0.0.0.0:3000"]
+    user: "1000:1000"
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 1g
+    pids_limit: 128
+    cpus: 2
+    ports:
+      - "10.200.77.3:18803:3000"
+    volumes:
+      - /home/ubuntu/.local/share/aphrody-runtime-20261011/aphrody-site:/opt/aphrody-site:ro
+      - /home/ubuntu/.local/share/aphrody-runtime-20261011/bun-linux-x64/bun:/usr/local/bin/bun:ro
+      - /srv/aphrody/releases/site-20261011b:/srv/site:ro
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m,uid=1000,gid=1000
+    healthcheck:
+      test: ["CMD", "bun", "-e", "process.exit((await fetch('http://127.0.0.1:3000/health')).status === 204 ? 0 : 1)"]
+      interval: 20s
+      timeout: 5s
+      retries: 3

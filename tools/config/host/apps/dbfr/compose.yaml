@@ -5,8 +5,10 @@
 name: aphrody
 include:
   # Generated from shenron/current by scripts/release/atomic-deploy-shenron-container.py.
-  - shenron/compose.yaml
+  - path: [shenron/compose.yaml, bun-release-gateway.yaml]
   # scripts/aphrody/deploy/docker/compose.yaml of the Bun repository (aphrody-labs/bun).
   - path: [aphrody-bun/compose.yaml, bun-prod-runtime.yaml]
   # tools/config/container/compose.yaml.
   - path: [aphrody/compose.yaml, bun-services-runtime.yaml]
+  - aphrody-bun-release/compose.yaml
+  - aphrody-site/compose.yaml

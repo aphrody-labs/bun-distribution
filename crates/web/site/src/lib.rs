@@ -7,6 +7,7 @@ pub mod catalog;
 pub mod docs;
 pub mod m3;
 pub mod reference;
+pub mod search;
 pub mod templates;
 pub mod ui;
 pub use catalog::{Catalog, CatalogView, SearchFilter};
@@ -68,6 +69,7 @@ fn router_with_ui(
     Ok(Router::new()
         .route("/api/docs", get(documents))
         .route("/api/templates", get(template_catalog))
+        .route("/api/search", get(search::search))
         .route("/webos", get(webos))
         .route("/health", get(|| async { StatusCode::NO_CONTENT }))
         .fallback(app_ui)

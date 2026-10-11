@@ -69,4 +69,31 @@ describe("native Google search", () => {
     });
     expect(result.organic).toEqual([]);
   });
+  test("browser search uses the read-only public endpoint and reports unavailable results", async () => {
+    const previous = globalThis.fetch;
+    let url = "";
+    globalThis.fetch = (async (input) => {
+      url = String(input);
+      return Response.json({ query: "Aphrody", organic: [] });
+    }) as typeof fetch;
+    try {
+      await searchGoogle({ query: "Aphrody", vertical: "web", hl: "en", safe: "active", start: 0 });
+      const actual = new URL(url, "https://aphrody.com");
+      expect(actual.pathname).toBe("/api/search");
+      expect([...actual.searchParams.keys()].toSorted()).toEqual([
+        "hl",
+        "query",
+        "safe",
+        "start",
+        "vertical",
+      ]);
+      globalThis.fetch = (async () =>
+        Response.json({ error: "Search is busy" }, { status: 429 })) as typeof fetch;
+      await expect(
+        searchGoogle({ query: "Aphrody", vertical: "web", hl: "en", safe: "active", start: 0 }),
+      ).rejects.toThrow("Search is busy");
+    } finally {
+      globalThis.fetch = previous;
+    }
+  });
 });
