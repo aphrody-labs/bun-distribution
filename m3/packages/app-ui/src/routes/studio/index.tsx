@@ -3,7 +3,8 @@
 // Each section calls an existing native owner through typed Studio commands.
 import { useState, type ComponentType } from "react";
 import { useSearchParams } from "react-router-dom";
-import { studioSection, studioSections, type StudioSection } from "./navigation";
+import { studioLabel, studioSection, studioSections, type StudioSection } from "./navigation";
+import { useI18n } from "../../i18n";
 export { studioSections, type StudioSection } from "./navigation";
 import { DriveStudio } from "./DriveStudio";
 import { A2AStudio } from "./A2AStudio";
@@ -18,6 +19,7 @@ const panels: Record<StudioSection, ComponentType> = {
 };
 
 export function StudioRoute() {
+  const language = useI18n((state) => state.language);
   const [params, setParams] = useSearchParams();
   const section = studioSection(params.get("section"));
   const [visited, setVisited] = useState<ReadonlySet<StudioSection>>(() => new Set([section]));
@@ -76,7 +78,7 @@ export function StudioRoute() {
               <span className="material-symbol text-title-medium" aria-hidden="true">
                 {entry.icon}
               </span>
-              {entry.label}
+              {studioLabel(entry.id, language)}
             </button>
           ))}
         </div>
