@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/rag-core",
-  "version": "0.1.2",
+  "version": "1.4.4",
   "description": "Aphrody RAG core for the web (WebAssembly) and for Bun (bun:ffi): chunking, fusion, eval and vector kernels behind one typed facade.",
   "license": "Apache-2.0",
   "files": [
@@ -18,7 +18,7 @@
   },
   "scripts": {
     "build:wasm": "bun run --cwd ../../infra/cli-wasm build:wasm",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun check --noEmit",
     "test": "bun test"
   },
   "dependencies": {

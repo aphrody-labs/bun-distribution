@@ -183,14 +183,29 @@ impl<'a> DomainManager<'a> {
 
     /// Replace the registrar name servers; returns the registrar task.
     pub async fn set_name_servers(&self, domain: &str, hosts: &[String]) -> Result<Value> {
-        let servers: Vec<Value> =
-            name_server_hosts(hosts)?.into_iter().map(|host| json!({ "host": host })).collect();
         self.client
             .post(
                 &format!("/domain/{domain}/nameServers/update"),
-                Some(json!({ "nameServers": servers })),
+                Some(name_servers_payload(hosts)?),
             )
             .await
+    }
+
+    /// Select external DNS before changing the registrar's declared name servers.
+    pub async fn set_external_name_server_type(&self, domain: &str) -> Result<Value> {
+        self.client
+            .put(&format!("/domain/{domain}"), Some(external_name_server_type_payload()))
+            .await
+    }
+
+    /// IDs of tasks associated with this domain name.
+    pub async fn task_ids(&self, domain: &str) -> Result<Vec<u64>> {
+        self.client.get(&format!("/domain/{domain}/task")).await
+    }
+
+    /// Details for a registrar task associated with this domain name.
+    pub async fn task(&self, domain: &str, id: u64) -> Result<Value> {
+        self.client.get(&format!("/domain/{domain}/task/{id}")).await
     }
 
     /// Signing state of the zone hosted on OVH DNS (`enabled`, `disableInProgress`, ...).
@@ -204,6 +219,16 @@ impl<'a> DomainManager<'a> {
         let _: Value = self.client.delete(&format!("/domain/zone/{zone}/dnssec")).await?;
         Ok(())
     }
+}
+
+fn name_servers_payload(hosts: &[String]) -> Result<Value> {
+    let servers: Vec<Value> =
+        name_server_hosts(hosts)?.into_iter().map(|host| json!({ "host": host })).collect();
+    Ok(json!({ "nameServer": servers }))
+}
+
+fn external_name_server_type_payload() -> Value {
+    json!({ "nameServerType": "external" })
 }
 
 #[cfg(test)]
@@ -260,5 +285,30 @@ mod tests {
         assert!(name_server_hosts(&["a.example.com".into(), "A.example.com".into()]).is_err());
         assert!(name_server_hosts(&["localhost".into(), "b.example.com".into()]).is_err());
         assert!(name_server_hosts(&["-a.example.com".into(), "b.example.com".into()]).is_err());
+    }
+
+    #[test]
+    fn name_servers_update_uses_the_registrar_payload_key() {
+        let payload = name_servers_payload(&[
+            "Duke.NS.cloudflare.com.".into(),
+            "veda.ns.cloudflare.com".into(),
+        ])
+        .expect("valid name servers");
+
+        assert_eq!(
+            payload,
+            json!({
+                "nameServer": [
+                    { "host": "duke.ns.cloudflare.com" },
+                    { "host": "veda.ns.cloudflare.com" }
+                ]
+            })
+        );
+        assert!(payload.get("nameServers").is_none());
+    }
+
+    #[test]
+    fn external_dns_setup_uses_the_documented_domain_field() {
+        assert_eq!(external_name_server_type_payload(), json!({ "nameServerType": "external" }));
     }
 }

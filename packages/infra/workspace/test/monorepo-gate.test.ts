@@ -199,7 +199,7 @@ test("no-build excludes Cargo compilation, arbitrary adapters, unsafe test hooks
       {
         ...packages[0]!,
         scripts: {
-          typecheck: "tsc --noEmit",
+          typecheck: "bun check --noEmit",
           lint: "oxlint src",
           "format:check": "oxfmt --check src",
           test: "bun test",
@@ -225,7 +225,8 @@ test("no-build excludes Cargo compilation, arbitrary adapters, unsafe test hooks
     false,
   );
   expect(plan.checks.find((check) => check.name === "@owner/app: typecheck")!.command).toEqual([
-    "tsc",
+    "bun",
+    "check",
     "--noEmit",
   ]);
   expect(

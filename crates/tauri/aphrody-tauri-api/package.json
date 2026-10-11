@@ -1,23 +1,30 @@
 {
   "name": "@aphrody/api",
-  "version": "3.0.0-alpha.4",
+  "version": "1.4.4",
   "description": "Tauri API definitions",
-  "funding": {
-    "type": "opencollective",
-    "url": "https://opencollective.com/tauri"
+  "homepage": "https://github.com/tauri-apps/tauri#readme",
+  "bugs": {
+    "url": "https://github.com/tauri-apps/tauri/issues"
   },
+  "license": "Apache-2.0 OR MIT",
+  "contributors": [
+    "Tauri Programme within The Commons Conservancy"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/tauri-apps/tauri.git"
   },
-  "contributors": [
-    "Tauri Programme within The Commons Conservancy"
-  ],
-  "license": "Apache-2.0 OR MIT",
-  "bugs": {
-    "url": "https://github.com/tauri-apps/tauri/issues"
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/tauri"
   },
-  "homepage": "https://github.com/tauri-apps/tauri#readme",
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE-APACHE-2.0",
+    "LICENSE-MIT"
+  ],
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -37,21 +44,14 @@
     },
     "./package.json": "./package.json"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "typecheck": "tsgo --noEmit -p tsconfig.json",
+    "typecheck": "bun check --noEmit -p tsconfig.json",
     "build": "bun ../build-js.ts"
   },
   "engines": {
     "bun": ">=1.4.3"
-  },
-  "files": [
-    "dist",
-    "src",
-    "README.md",
-    "LICENSE-APACHE-2.0",
-    "LICENSE-MIT"
-  ],
-  "publishConfig": {
-    "access": "public"
   }
 }

@@ -66,7 +66,7 @@ After the owner install dry-run, `aphrody self install --no-boot --keep-legacy`
 installed the qualified binary and canonical aliases. Binary SHA-256:
 `135b46a90b6929219d69eb335e14dc2dfbead00c598dda972264f5d2fa234405`.
 The existing plugin's single `aphrody` server entry now targets the canonical
-per-user `bin/aphrody-mcp.exe`; its elevation launcher, profile and isolated model
+per-user `bin/aphrody-mcp.exe` (not in repo); its elevation launcher, profile and isolated model
 environment remain intact. The installed catalog reports 440 tools. Only the
 specific `runtime_resolve` deny entry was removed after live qualification of
 the fixed resolver: old retained Bun `.3` gives `satisfies_pin: false`, installed

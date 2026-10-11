@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/winclean",
-  "version": "0.1.1",
+  "version": "1.4.4",
   "description": "Kernel-backed Bun client for the unified Aphrody OS WinClean catalog (166 tools).",
   "license": "Apache-2.0",
   "author": "aphrody",
@@ -26,7 +26,7 @@
   "scripts": {
     "build": "bun build src/index.ts --target bun --packages external --outdir dist",
     "lint": "oxlint src test",
-    "typecheck": "tsc --noEmit -p .",
+    "typecheck": "bun check --noEmit -p .",
     "test": "bun test"
   },
   "dependencies": {

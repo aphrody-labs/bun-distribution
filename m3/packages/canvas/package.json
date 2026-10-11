@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/canvas",
-  "version": "1.0.9-aphrody.6",
+  "version": "1.4.4",
   "description": "Aphrody native Skia canvas facade over the pinned upstream @napi-rs/canvas runtime",
   "keywords": [
     "aphrody",
@@ -57,7 +57,7 @@
     "access": "public"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.types.json",
+    "typecheck": "bun check --noEmit && bun check --noEmit -p tsconfig.types.json",
     "test": "bun test",
     "lint": "oxlint -c .oxlintrc.json --no-ignore index.ts site.ts scripts/vendor-upstream.ts index.test.ts native.test.ts vendor.test.ts types.check.ts",
     "format:check": "oxfmt --config .oxfmtrc.json --check index.ts index.d.ts site.ts site.d.ts scripts/vendor-upstream.ts index.test.ts native.test.ts vendor.test.ts types.check.ts",

@@ -72,12 +72,11 @@ export async function updateMain(config: UpdateConfig, home: string): Promise<bo
     for (const path of [...sources, ...tests])
       if (!existsSync(join(staging, path))) throw new Error("main lacks the complete mesh release");
     await invoke([process.execPath, "test", ...tests], staging);
-    const compiler = Bun.which("tsgo");
-    if (!compiler) throw new Error("main update requires the qualified TypeScript compiler");
     const typeRoots = join(root, "node_modules", "@types");
     await invoke(
       [
-        compiler,
+        process.execPath,
+        "check",
         "--noEmit",
         "--strict",
         "--skipLibCheck",

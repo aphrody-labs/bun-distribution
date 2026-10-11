@@ -86,7 +86,9 @@ test("portable stage bundles the existing facade, emits usable declarations and 
       kind: "wasm",
     });
     expect(await sha256File(join(out, entry.file))).toBe(entry.sha256);
-    const contents = (await run(["tar", "-tzf", join(out, entry.file)])).stdout.trim().split("\n");
+    const contents = (await run(["tar", "-tzf", join(out, entry.file)])).stdout
+      .trim()
+      .split(/\r?\n/);
     expect(contents.filter((name) => name.endsWith(".wasm"))).toEqual([
       "aphrody_command_wasm_bg.wasm",
     ]);
@@ -120,7 +122,8 @@ void vector;
 `,
     );
     await run([
-      "tsgo",
+      process.execPath,
+      "check",
       "--noEmit",
       "--target",
       "esnext",

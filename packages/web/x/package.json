@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/x",
-  "version": "1.3.3",
+  "version": "1.4.4",
   "description": "Headless X (Twitter) client for Bun: a thin import over the Rust crate aphrody-x (aphrody-ffi), with batch jobs for mass scripting. Cookie-auth GraphQL + REST, no API key. Includes local For You algo (x-algorithm port), store, and X function tools (XTools, x_* JSON Schema definitions) for Grok or any tool-calling model.",
   "keywords": [
     "aphrody",
@@ -40,7 +40,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun check --noEmit",
     "lint": "oxlint",
     "test": "bun test",
     "catalog:sync": "bun ../../../scripts/tools/web/x-catalog-sync.ts",

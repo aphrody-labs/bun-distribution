@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-tailwind",
-  "version": "3.3.9",
+  "version": "1.4.4",
   "description": "Tailwind v4 CSS-first preset for Material 3: generates @theme (colour roles, shape, typescale, elevation, easing) from @aphrody/m3-tokens.",
   "license": "Apache-2.0",
   "author": "aphrody-code",
@@ -27,7 +27,7 @@
   "scripts": {
     "generate": "bun scripts/generate.ts",
     "test": "bun test ./test/",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
     "lint": "oxlint src test scripts"
   },
   "dependencies": {

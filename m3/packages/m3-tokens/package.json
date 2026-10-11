@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-tokens",
-  "version": "3.3.9",
+  "version": "1.4.4",
   "description": "Material 3 design tokens (--md-sys-*) for the @aphrody/material-web fork: MUI-theme → M3 token CSS generation and runtime Material You dynamic colour via material-color-utilities.",
   "homepage": "https://github.com/aphrody-code/material-web/tree/main/packages/m3-tokens#readme",
   "bugs": {
@@ -37,7 +37,7 @@
   },
   "scripts": {
     "build": "bun build.ts && tsc -p tsconfig.build.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
     "lint": "oxlint src test",
     "test": "bun test test/",
     "demo": "bun run src/cli.ts",

@@ -177,8 +177,9 @@ export async function stageCliWasm(options: WasmStageOptions): Promise<StagedEnt
       ],
     });
     if (!bundled.success) throw new Error(`WASM facade bundle failed: ${bundled.logs.join("\n")}`);
-    const compiler = Bun.which("tsgo");
-    if (!compiler) throw new Error("the installed TypeScript compiler tsgo is required");
+    const compiler = join(root, "node_modules/typescript/bin/tsc");
+    if (!(await Bun.file(compiler).exists()))
+      throw new Error("the locked TypeScript declaration emitter is required");
     const tsconfig = join(work, "tsconfig.json");
     await writeFile(
       tsconfig,
@@ -199,7 +200,7 @@ export async function stageCliWasm(options: WasmStageOptions): Promise<StagedEnt
         files: [join(app, "src/index.ts")],
       }),
     );
-    await run([compiler, "--project", tsconfig], { cwd: root });
+    await run([process.execPath, compiler, "--project", tsconfig], { cwd: root });
     await copyFile(join(work, "declarations/index.d.ts"), join(pack, "index.d.ts"));
     await copyFile(join(input, `${wasmName}.d.ts`), join(pack, `${wasmName}.d.ts`));
     await copyFile(join(input, wasmFile), join(pack, wasmFile));

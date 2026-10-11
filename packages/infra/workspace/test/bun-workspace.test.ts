@@ -46,7 +46,7 @@ describe("bun workspace contract", () => {
     const manifest = {
       name: "@aphrody/os",
       engines: { bun: ">=1.4.2" },
-      scripts: { typecheck: "tsgo", test: "bun test" },
+      scripts: { typecheck: "bun check", test: "bun test" },
       dependencies: { zod: "catalog:", x: "workspace:*" },
     };
     expect(checkManifest("p", manifest, root, { hasTsconfig: true })).toEqual([]);
@@ -71,7 +71,7 @@ describe("bun workspace contract", () => {
     const manifest = {
       name: "@aphrody/drive-web",
       engines: { bun: ">=1.4.2" },
-      scripts: { typecheck: "tsc" },
+      scripts: { typecheck: "bun check" },
       dependencies: { tailwindcss: "catalog:drive" },
     };
     expect(checkManifest("drive/apps/web", manifest, catalogRoot, { hasTsconfig: true })).toEqual(
@@ -123,7 +123,7 @@ describe("bun workspace contract", () => {
       name: "@aphrody/m3-forms",
       version: "0.1.0",
       engines: { bun: ">=1.4.2" },
-      scripts: { typecheck: "tsc --noEmit" },
+      scripts: { typecheck: "bun check --noEmit" },
     };
     const found = checkManifest("p", manifest, root, {
       hasTsconfig: true,

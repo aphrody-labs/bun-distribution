@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/agent-browser",
-  "version": "1.0.0-canary.2",
+  "version": "1.4.4",
   "description": "Aphrody Web Bun client: CDP browser automation (agent-browser), engine lifecycle, web service client (fetch, scrape, crawl, sessions) and config reader, backed by the native aphrody-web engine.",
   "license": "Apache-2.0",
   "files": [
@@ -26,7 +26,7 @@
     "access": "public"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun check --noEmit",
     "test": "bun test test/",
     "lint": "oxlint"
   },
