@@ -20,7 +20,8 @@ export async function runOptimize(args: string[]): Promise<number> {
   const print = args[0] === "--print";
   const rest = print ? args.slice(1) : args;
   const taskArgs = rest[0] === "--" ? rest.slice(1) : rest;
-  if (taskArgs[0]?.startsWith("-")) throw new Error("Unknown option; put literal task text after --.");
+  if (taskArgs[0]?.startsWith("-"))
+    throw new Error("Unknown option; put literal task text after --.");
   const prompt = optimizationPrompt(taskArgs.join(" "));
   if (print) {
     console.log(prompt);
