@@ -31,8 +31,26 @@ and the independent namespace, SOCKS service and loopback socket were enabled.
 
 An actual `bun ssh forward` command then exposed only local Windows loopback
 `127.0.0.1:1081`; the same US and Google TLS checks passed through that forward.
-The Windows forward currently belongs to its running owner session; automatic
-restart of that client-side process is not qualified. Remote units persist at boot.
+The Windows forward is owned by the native `BunGoogleUSProxy` scheduled task.
+Its actual principal is the current interactive user with limited privileges;
+the action runs the single System32 Bun runtime through `conhost --headless`.
+It listens only on `127.0.0.1:1081`. Native Task Scheduler auditing reports no
+remaining correction, and the running task passed the US and Google TLS checks.
+The task declares owner logon and restart on failure; reboot recovery has not
+been tested. Remote units persist at boot.
+
+The isolated `windows-catalog` contains exactly this one task. Apply or audit
+it through the qualified native owner:
+
+```powershell
+& "$env:LOCALAPPDATA\Aphrody\bin\aphrody-infra.exe" --root C:\aphrody\tools\config\host\apps\vps\google-us-egress\windows-catalog boot --host local --json plan
+& "$env:LOCALAPPDATA\Aphrody\bin\aphrody-infra.exe" --root C:\aphrody\tools\config\host\apps\vps\google-us-egress\windows-catalog boot --host local --json apply
+```
+
+The existing System32 Aphrody Infra artifact predates this native task owner;
+its older plan emits PowerShell actions and does not qualify this deployment.
+Use the verified owner above. The earlier PowerShell runner was removed after
+the native task succeeded; it is not an alternate startup mechanism.
 
 Use the scoped forwarding plan in `C:\bun\scripts\aphrody\google-egress.ts`.
 No global proxy variables are set. Google clients accept an injected `fetch`

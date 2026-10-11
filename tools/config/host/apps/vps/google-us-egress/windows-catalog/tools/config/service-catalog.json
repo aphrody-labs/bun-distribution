@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "owner": "aphrody-infra",
+  "supervisor": "native Windows Task Scheduler",
+  "proxy": "scoped Google US SOCKS",
+  "services": [],
+  "boot": {
+    "entries": [
+      {
+        "host": "local",
+        "kind": "scheduledTask",
+        "name": "BunGoogleUSProxy",
+        "path": "\\",
+        "triggers": ["atLogon"],
+        "principal": "user",
+        "runLevel": "limited",
+        "desktop": true,
+        "execute": "%WINDIR%\\System32\\bun.exe",
+        "arguments": "ssh forward --system -o BatchMode=yes -o StrictHostKeyChecking=yes -o ExitOnForwardFailure=yes -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -L 127.0.0.1:1081:127.0.0.1:1081 vps",
+        "description": "Owner-scoped Bun SSH forward to existing independent Mullvad Google US namespace; loopback only"
+      }
+    ]
+  }
+}
