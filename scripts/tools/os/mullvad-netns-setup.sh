@@ -1,48 +1,68 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
+# Aphrody-scoped egress namespace. The host's default route and wg1 mesh stay untouched.
 set -euo pipefail
 
-NS="mullvad"
-DEV="wg-mullvad"
-PRIVKEY="/etc/wireguard/mullvad.key"
-ADDRESS="10.72.22.214/32"
-ENV_FILE="/etc/wireguard/mullvad-relay.env"
+NS=mullvad
+DEV=wg-mullvad
+PRIVKEY=/etc/wireguard/mullvad.key
+ENV_FILE=/etc/wireguard/mullvad-relay.env
+WG_ADDRESS=10.72.22.214/32
+HOST_VETH=mullvad0
+NS_VETH=mullvad1
+HOST_ADDRESS=10.200.1.1/30
+NS_ADDRESS=10.200.1.2/30
 
-# Default to US relay (Atlanta)
-ENDPOINT="45.134.140.130:51820"
-PEER_PUBKEY="nvyBkaEXHwyPBAm8spGB0TFzf2W5wPAl8EEuJ0t+bzs="
+[[ $EUID -eq 0 ]] || { echo 'must run as root' >&2; exit 1; }
+[[ -r $PRIVKEY ]] || { echo "missing root-readable WireGuard key file: $PRIVKEY" >&2; exit 1; }
+[[ -r $ENV_FILE ]] || { echo "missing Japan relay cache: $ENV_FILE" >&2; exit 1; }
+# This file is root-owned, mode 0644, and contains public peer metadata only.
+# shellcheck disable=SC1090
+source "$ENV_FILE"
+[[ ${COUNTRY_CODE:-} == jp && ${HOSTNAME:-} == jp-* ]] || { echo 'refusing non-Japan Mullvad relay' >&2; exit 1; }
+[[ ${ENDPOINT:-} =~ ^[0-9.]+:51820$ && ${PEER_PUBKEY:-} =~ ^[A-Za-z0-9+/]{43}=$ ]] || { echo 'invalid Mullvad relay cache' >&2; exit 1; }
 
-if [ -f "$ENV_FILE" ]; then
-    # shellcheck source=/dev/null
-    source "$ENV_FILE"
+mkdir -p /etc/netns/"$NS"
+printf 'nameserver 10.64.0.1\n' > /etc/netns/"$NS"/resolv.conf
+
+if ! ip netns list | awk '{print $1}' | grep -qx "$NS"; then
+  if ip link show dev "$DEV" >/dev/null 2>&1; then
+    echo "refusing to move pre-existing host interface $DEV" >&2; exit 1
+  fi
+  ip link add dev "$DEV" type wireguard
+  wg set "$DEV" private-key "$PRIVKEY" peer "$PEER_PUBKEY" endpoint "$ENDPOINT" allowed-ips 0.0.0.0/0 persistent-keepalive 25
+  ip netns add "$NS"
+  ip link set dev "$DEV" netns "$NS"
 fi
 
-# Clean existing
-ip netns del "$NS" 2>/dev/null || true
-ip link del dev "$DEV" 2>/dev/null || true
-
-# 1. Create WireGuard device in host
-ip link add dev "$DEV" type wireguard
-
-# 2. Configure keys & peer BEFORE moving into netns
-wg set "$DEV" \
-    private-key "$PRIVKEY" \
-    peer "$PEER_PUBKEY" \
-    endpoint "$ENDPOINT" \
-    allowed-ips 0.0.0.0/0 \
-    persistent-keepalive 25
-
-# 3. Create namespace and move wireguard interface inside
-ip netns add "$NS"
-ip link set dev "$DEV" netns "$NS"
-
-# 4. Bring up loopback & wg-mullvad inside namespace
+ip netns exec "$NS" ip link show dev "$DEV" >/dev/null
+ip netns exec "$NS" wg set "$DEV" private-key "$PRIVKEY" peer "$PEER_PUBKEY" endpoint "$ENDPOINT" allowed-ips 0.0.0.0/0 persistent-keepalive 25
 ip netns exec "$NS" ip link set lo up
-ip netns exec "$NS" ip addr add "$ADDRESS" dev "$DEV"
+ip netns exec "$NS" ip addr replace "$WG_ADDRESS" dev "$DEV"
 ip netns exec "$NS" ip link set "$DEV" up
-ip netns exec "$NS" ip route add default dev "$DEV"
+ip netns exec "$NS" ip route replace default dev "$DEV"
 
-# 5. Add DNS inside netns
-mkdir -p /etc/netns/"$NS"
-echo "nameserver 10.64.0.1" > /etc/netns/"$NS"/resolv.conf
+# A point-to-point private link carries only the SOCKS listener between the VPS host
+# and this namespace. The host route/default gateway is never modified.
+if ! ip netns exec "$NS" ip link show dev "$NS_VETH" >/dev/null 2>&1; then
+  if ip link show dev "$HOST_VETH" >/dev/null 2>&1; then
+    echo "refusing to reuse unrelated host interface $HOST_VETH" >&2; exit 1
+  fi
+  ip link add "$HOST_VETH" type veth peer name "$NS_VETH"
+  ip link set "$NS_VETH" netns "$NS"
+fi
+ip addr replace "$HOST_ADDRESS" dev "$HOST_VETH"
+ip link set "$HOST_VETH" up
+ip netns exec "$NS" ip addr replace "$NS_ADDRESS" dev "$NS_VETH"
+ip netns exec "$NS" ip link set "$NS_VETH" up
+ip netns exec "$NS" ip route replace 10.200.1.1/32 dev "$NS_VETH"
 
-echo "Mullvad netns configured successfully targeting $ENDPOINT."
+# The proxy has no credentials: constrain its SOCKS port to the private veth peer.
+if ! ip netns exec "$NS" nft list table inet aphrody_mullvad >/dev/null 2>&1; then
+  ip netns exec "$NS" nft add table inet aphrody_mullvad
+fi
+ip netns exec "$NS" nft flush table inet aphrody_mullvad
+ip netns exec "$NS" nft add chain inet aphrody_mullvad input '{ type filter hook input priority -5; policy accept; }'
+ip netns exec "$NS" nft add rule inet aphrody_mullvad input iifname "$NS_VETH" tcp dport 1080 ip saddr != 10.200.1.1 counter drop
+
+echo "Mullvad namespace ready: $HOSTNAME ($LOCATION); host default route unchanged."
