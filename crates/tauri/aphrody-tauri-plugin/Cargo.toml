@@ -1,6 +1,6 @@
 [package]
 name = "aphrody-tauri-plugin"
-version = "3.0.0-alpha.3"
+version = "1.4.4"
 description = "Build script and runtime Tauri plugin definitions"
 authors = ["Tauri Programme within The Commons Conservancy"]
 homepage = "https://tauri.app/"
@@ -30,7 +30,7 @@ runtime = []
 [dependencies]
 anyhow = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
-tauri-utils = { version = "~3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["build-2"] }
+tauri-utils = { version = "1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["build-2"] }
 serde_json = { workspace = true, optional = true }
 glob = { workspace = true, optional = true }
 schemars = { workspace = true, features = ["preserve_order"] }

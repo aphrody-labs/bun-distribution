@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-svg"
 description = "The single SVG owner of the Aphrody ecosystem: parse, sanitize, optimize, normalize viewBox, M3 theming, sprite sheets, glyph outlines to SVG paths, rasterize to PNG/ICO and pixel diff."
-version                = "1.0.0-canary.1"
+version                = "1.4.4"
 edition.workspace      = true
 rust-version.workspace = true
 authors.workspace      = true

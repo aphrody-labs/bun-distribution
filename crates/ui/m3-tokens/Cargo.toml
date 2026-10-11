@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 [package]
 name = "aphrody-m3-tokens"
-version                = "1.0.0-canary.1"
+version                = "1.4.4"
 edition.workspace      = true
 rust-version.workspace = true
 authors.workspace      = true

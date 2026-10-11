@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-toolchains"
 description = "Unified Bun / uv / Nushell runtime layer: shell-free discovery, repo-file version pins and consistent launch environment."
-version = "1.0.0-canary"
+version = "1.4.4"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

@@ -1,7 +1,7 @@
 [package]
 name = "aphrody-subsystem"
 description = "The Aphrody subsystem contract: MCP tools, skills (parameterised tool sequences), a sub-agent routine and the shared event bus."
-version = "1.0.0-canary"
+version = "1.4.4"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

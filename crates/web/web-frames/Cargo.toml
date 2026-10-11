@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-web-frames"
 repository.workspace = true
-version = "0.1.0"
+version = "1.4.4"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

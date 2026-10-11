@@ -6,7 +6,7 @@
 [package]
 name = "aphrody-bun"
 repository.workspace = true
-version = "1.0.0-canary"
+version = "1.4.4"
 edition = "2024"
 license = "Apache-2.0"
 description = "Native Rust plugin for Bun applications using bun:ffi."

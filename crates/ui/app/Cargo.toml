@@ -12,7 +12,7 @@
 [package]
 name = "aphrody-app"
 description = "Aphrody OS desktop (Tauri 3): the GUI and window manager; drives the aphrody agent over its app-server protocol."
-version = "1.0.0-canary"
+version = "1.4.4"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-tauri-wrap"
 description = "Runtime plugin of web-to-tauri: turns a website, web app or built bundle into a native Tauri 3 window with the navigation policy, downloads, loopback server and sidecar that keep the page, its API and its backend unchanged. Also hosts the feature-gated debug bridge for Tauri 3 apps (`debug`)."
-version = "1.0.0-canary"
+version = "1.4.4"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

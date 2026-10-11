@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-native"
 description = "Host hardware topology and monotonic clock probes for Aphrody."
-version = "1.0.0-canary"
+version = "1.4.4"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

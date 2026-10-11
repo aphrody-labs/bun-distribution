@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-dragon-pixel-core"
 description = "Deterministic Dragon Pixel combat simulation shared by the browser and Rust services."
-version = "1.0.0"
+version = "1.4.4"
 edition = "2024"
 rust-version = "1.97"
 license = "Apache-2.0"

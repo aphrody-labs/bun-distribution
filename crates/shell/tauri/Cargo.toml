@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-shell-tauri"
 description = "Tauri 3 plugin exposing native PTY shell sessions to the aphrody-shell-web webview client."
-version = "1.0.0-canary"
+version = "1.4.4"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

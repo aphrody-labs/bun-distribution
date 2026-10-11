@@ -1,6 +1,6 @@
 [package]
 name = "aphrody-tauri-plugin-deep-link"
-version = "3.0.0-alpha.2"
+version = "1.4.4"
 description = "Set your Tauri application as the default handler for an URL"
 authors = ["Tauri Programme within The Commons Conservancy"]
 license = "Apache-2.0 OR MIT"
@@ -33,8 +33,8 @@ name = "tauri_plugin_deep_link"
 [build-dependencies]
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-tauri-utils = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils" }
-tauri-plugin = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
+tauri-utils = { version = "1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils" }
+tauri-plugin = { version = "1.4.4", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
 
 [target."cfg(target_os = \"macos\")".build-dependencies]
 plist = "1"
@@ -42,8 +42,8 @@ plist = "1"
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
-tauri-utils = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils" }
+tauri = { version = "1.4.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
+tauri-utils = { version = "1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils" }
 tracing = { workspace = true }
 thiserror = { workspace = true }
 url = { workspace = true }

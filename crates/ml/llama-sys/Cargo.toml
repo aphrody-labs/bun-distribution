@@ -1,6 +1,6 @@
 [package]
 name = "aphrody-llama-sys"
-version = "0.83.5"
+version = "1.4.4"
 edition = "2024"
 description = "Low-level dynamically loaded FFI bindings for llama.cpp."
 license = "MIT OR Apache-2.0"

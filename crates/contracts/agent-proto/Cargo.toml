@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-agent-proto"
 publish                = true
-version = "1.0.0-canary"
+version = "1.4.4"
 edition.workspace      = true
 rust-version.workspace = true
 authors.workspace      = true

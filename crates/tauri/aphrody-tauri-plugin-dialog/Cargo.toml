@@ -1,6 +1,6 @@
 [package]
 name = "aphrody-tauri-plugin-dialog"
-version = "3.0.0-alpha.3"
+version = "1.4.4"
 description = "Native system dialogs for opening and saving files along with message dialogs on your Tauri application."
 edition = "2024"
 authors = ["Tauri Programme within The Commons Conservancy"]
@@ -35,16 +35,16 @@ ios = { level = "partial", notes = "Does not support folder picker" }
 name = "tauri_plugin_dialog"
 
 [build-dependencies]
-tauri-plugin = { version = "3.0.0-alpha.3", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
+tauri-plugin = { version = "1.4.4", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
-tauri = { version = "3.0.0-alpha.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
+tauri = { version = "1.4.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false }
 log = { workspace = true }
 thiserror = { workspace = true }
 url = { workspace = true }
-tauri-plugin-fs = { version = "3.0.0-alpha.2", path = "../aphrody-tauri-plugin-fs", package = "aphrody-tauri-plugin-fs" }
+tauri-plugin-fs = { version = "1.4.4", path = "../aphrody-tauri-plugin-fs", package = "aphrody-tauri-plugin-fs" }
 
 [target."cfg(any(target_os = \"macos\", windows, target_os = \"linux\", target_os = \"dragonfly\", target_os = \"freebsd\", target_os = \"openbsd\", target_os = \"netbsd\"))".dependencies]
 rfd = { version = "0.16", default-features = false, features = [
