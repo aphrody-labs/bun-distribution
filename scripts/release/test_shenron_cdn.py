@@ -3,7 +3,9 @@
 
 import importlib.util
 import json
+import os
 import pathlib
+import stat
 import sys
 import tempfile
 import unittest
@@ -22,6 +24,32 @@ seal_spec.loader.exec_module(seal)
 
 
 class CdnStageTests(unittest.TestCase):
+    @unittest.skipIf(os.name == "nt", "POSIX permissions require the Linux factory")
+    def test_private_umask_keeps_public_trees_traversable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = pathlib.Path(directory)
+            base.chmod(0o700)
+            previous_umask = os.umask(0o077)
+            try:
+                release, artifact, previous = self.setup_tree(base)
+                before = stage.digest(previous / "cdn/_next/static/old.js")
+                receipt = stage.stage(release, artifact, previous)
+                for relative in receipt["files"]:
+                    path = release / relative
+                    self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o644)
+                    for parent in path.parents:
+                        if parent == release:
+                            break
+                        self.assertEqual(stat.S_IMODE(parent.stat().st_mode), 0o755)
+                self.assertEqual(stat.S_IMODE(base.stat().st_mode), 0o700)
+                self.assertEqual(stat.S_IMODE(release.stat().st_mode), 0o700)
+                self.assertEqual(stat.S_IMODE(artifact.stat().st_mode), 0o700)
+                self.assertEqual(
+                    before, stage.digest(previous / "cdn/_next/static/old.js")
+                )
+            finally:
+                os.umask(previous_umask)
+
     def setup_tree(self, base):
         release = base / ("docker-" + "a" * 40)
         release.mkdir()

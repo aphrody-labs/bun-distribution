@@ -94,6 +94,12 @@ def stage(release, artifact, previous=None):
             raise ValueError("destination symlink refused")
     for dst, (source, sha) in planned.items():
         dst.parent.mkdir(parents=True, exist_ok=True, mode=0o755)
+        # Private job umasks must not make public bind-mounted trees unreadable.
+        # Only the fresh release's public/CDN subtree belongs to this operation.
+        for directory in dst.parents:
+            if directory == release:
+                break
+            directory.chmod(0o755)
         shutil.copy2(source, dst)
         dst.chmod(0o644)
         if digest(dst) != sha:
