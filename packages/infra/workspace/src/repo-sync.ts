@@ -17,6 +17,7 @@ import {
   runSourceSync,
   sourceSyncStateRoot,
   type SourceSyncConfig,
+  type SyncRepository,
   type SyncReport,
 } from "./source-sync.ts";
 import { runBuildFactory } from "./build-factory.ts";
@@ -33,6 +34,30 @@ export interface FactoryJob {
   finishedAt?: string;
   exitCode?: number;
   reconciliationRequired?: boolean;
+}
+/** Bind native CI to the existing durable job rather than an independently sampled HEAD. */
+export function factoryBuildCommand(repository: SyncRepository, job: FactoryJob): string[] {
+  if (!repository.buildCommand?.length || repository.buildEnabled === false)
+    throw new Error("Factory job has no enabled owner build command");
+  if (repository.id !== "bun-os") return [...repository.buildCommand];
+  if (
+    repository.buildCommand.join("\0") !==
+      ["bun", "scripts/aphrody/native-ci.ts", "worker"].join("\0") ||
+    !/^[a-f0-9]{40}$/u.test(job.revision) ||
+    !Number.isFinite(Date.parse(job.requestedAt))
+  )
+    throw new Error("Invalid native CI owner command or durable source identity");
+  const requested = new Bun.CryptoHasher("sha256")
+    .update(job.requestedAt)
+    .digest("hex")
+    .slice(0, 12);
+  return [
+    ...repository.buildCommand,
+    "--revision",
+    job.revision,
+    "--id",
+    `native-${job.revision.slice(0, 12)}-${requested}`,
+  ];
 }
 type JobHandle = { pid: number; exited: Promise<number>; unref: () => void };
 type JobLauncher = (jobPath: string, logPath: string) => JobHandle;
@@ -161,7 +186,9 @@ export class FactoryBuildQueue {
       const pending: Record<string, string> = JSON.parse(readFileSync(path, "utf8"));
       for (const [repo, revision] of Object.entries(pending))
         if (
-          config.repositories.some((value) => value.id === repo && value.buildCommand) &&
+          config.repositories.some(
+            (value) => value.id === repo && value.buildCommand && value.buildEnabled !== false,
+          ) &&
           /^[a-f0-9]{40}$/u.test(revision)
         )
           this.pending.set(repo, revision);
@@ -180,7 +207,10 @@ export class FactoryBuildQueue {
         !row.sourceHead ||
         row.sourceHead !== row.destinationHead ||
         !this.config.repositories.some(
-          (repository) => repository.id === row.repo && repository.buildCommand,
+          (repository) =>
+            repository.id === row.repo &&
+            repository.buildCommand &&
+            repository.buildEnabled !== false,
         )
       )
         continue;
@@ -323,7 +353,7 @@ export async function runFactoryWorker(
     !validToken(job.token) ||
     job.token !== expectedToken ||
     !/^[a-f0-9]{40}$/u.test(job.revision) ||
-    !["yolo", "aphrody"].includes(job.repo) ||
+    !["yolo", "aphrody", "bun-os"].includes(job.repo) ||
     resolve(path) !== join(expectedStateRoot, "builds", `${job.repo}.json`)
   )
     throw new Error("Invalid protected factory job");
@@ -331,6 +361,7 @@ export async function runFactoryWorker(
   const repository = config.repositories.find((value) => value.id === job.repo);
   if (!repository?.buildCommand?.length)
     throw new Error("Factory job has no declared owner build command");
+  const command = factoryBuildCommand(repository, job);
   const current = () => {
     const observed = readJob(path);
     return !!observed && observed.token === job.token && observed.revision === job.revision;
@@ -351,7 +382,7 @@ export async function runFactoryWorker(
       if (!current()) return (code = 2);
       publish({ ...job, pid: process.pid, status: "running", phase: "build" });
       code = await invokeFactory(
-        ["run", "--repo", job.repo, "--revision", job.revision, "--", ...repository.buildCommand],
+        ["run", "--repo", job.repo, "--revision", job.revision, "--", ...command],
         root,
       );
     }
@@ -389,6 +420,7 @@ export async function readRepoSyncStatus(root = infraRoot(), state = sourceSyncS
     sourceBranch: repository.sourceBranch,
     destinationBranch: repository.destinationBranch,
     buildDeclared: !!repository.buildCommand?.length,
+    buildEnabled: repository.buildEnabled !== false,
   }));
   const ownerRecord = readPrivate<{ pid?: number; at?: string }>(join(state, "owner.lock"));
   const ownerPid =
@@ -562,20 +594,46 @@ export async function runRepoSync(args: string[], root = infraRoot()): Promise<n
               console.log(
                 JSON.stringify({
                   executed: false,
-                  factory: config.repositories.map((repository) => ({
-                    repo: repository.id,
-                    destinationBranch: repository.destinationBranch,
-                    command: repository.buildCommand,
-                    preparation: [
-                      "build-factory",
-                      "prepare",
-                      "--repo",
-                      repository.id,
-                      "--revision",
-                      "<synchronized-main-sha>",
-                      "--apply",
-                    ],
-                  })),
+                  factory: config.repositories.map((repository) => {
+                    const row = report.rows.find((value) => value.repo === repository.id);
+                    const revision = row?.sourceHead;
+                    if (
+                      !revision ||
+                      !/^[a-f0-9]{40}$/u.test(revision) ||
+                      !repository.buildCommand?.length
+                    )
+                      return {
+                        repo: repository.id,
+                        buildEnabled: repository.buildEnabled !== false,
+                        reason: "No verified source revision and declared command available",
+                      };
+                    const job: FactoryJob = {
+                      repo: repository.id,
+                      revision,
+                      requestedAt: report.at,
+                      status: "starting",
+                      phase: "prepare",
+                    };
+                    return {
+                      repo: repository.id,
+                      destinationBranch: repository.destinationBranch,
+                      buildEnabled: repository.buildEnabled !== false,
+                      previewOnly: true,
+                      revision,
+                      requestedAt: job.requestedAt,
+                      sourceDirty: row?.dirty,
+                      command: factoryBuildCommand({ ...repository, buildEnabled: true }, job),
+                      preparation: [
+                        "build-factory",
+                        "prepare",
+                        "--repo",
+                        repository.id,
+                        "--revision",
+                        revision,
+                        "--apply",
+                      ],
+                    };
+                  }),
                 }),
               );
             } else {

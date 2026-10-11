@@ -16,11 +16,13 @@ import {
 } from "../../../../scripts/tools/workspace/source-sync.ts";
 import {
   FactoryBuildQueue,
+  factoryBuildCommand,
   readRepoSyncStatus,
   runFactoryWorker,
   type FactoryJob,
 } from "../src/repo-sync.ts";
 import { hasMode } from "../src/portable-fs.ts";
+import { buildFactoryPlan, readFactoryConfig } from "../src/build-factory.ts";
 
 const roots: string[] = [];
 afterEach(async () => {
@@ -91,7 +93,13 @@ test("declaration uses existing owner remotes and explicit main destinations", a
       repo.sourceBranch,
       repo.destinationBranch,
     ]),
-  ).toEqual([["aphrody", "workspace", "main", "main"]]);
+  ).toEqual([
+    ["aphrody", "workspace", "main", "main"],
+    ["bun-os", "origin", "main", "main"],
+  ]);
+  const bun = config.repositories.find((repository) => repository.id === "bun-os")!;
+  expect(bun.repositoryName).toBe("bun");
+  expect(bun.buildEnabled).toBe(false);
 });
 test("plan does not fetch or push and dirty source commits synchronize without staging private files", async () => {
   const value = await fixture();
@@ -605,6 +613,140 @@ test("native factory worker prepares the exact pin before its declared build and
   expect(supersededCalls.length).toBe(1);
   expect(JSON.parse(await readFile(path, "utf8"))).toEqual(replacement);
 });
+test("Bun native CI worker binds the protected revision and stable receipt id to the existing factory", async () => {
+  const value = await fixture();
+  Object.assign(value.repository, {
+    id: "bun-os",
+    repositoryName: "bun",
+    buildEnabled: true,
+    buildCommand: ["bun", "scripts/aphrody/native-ci.ts", "worker"],
+  });
+  await mkdir(join(value.root, "tools", "config"), { recursive: true });
+  const configPath = join(value.root, "tools", "config", "commit-sync.json");
+  await writeFile(configPath, JSON.stringify(value.config));
+  const state = join(value.root, "state");
+  await mkdir(join(state, "builds"), { recursive: true });
+  const path = join(state, "builds", "bun-os.json");
+  const job: FactoryJob = {
+    repo: "bun-os",
+    revision: "a".repeat(40),
+    token: crypto.randomUUID(),
+    status: "starting",
+    phase: "prepare",
+    requestedAt: "2026-10-11T12:00:00.000Z",
+  };
+  await writeFile(path, JSON.stringify(job));
+  const calls: string[][] = [];
+  expect(
+    await runFactoryWorker(
+      path,
+      value.root,
+      async (args) => {
+        calls.push(args);
+        return 0;
+      },
+      state,
+      job.token,
+    ),
+  ).toBe(0);
+  const command = factoryBuildCommand(value.repository, job);
+  expect(calls).toEqual([
+    ["prepare", "--repo", "bun-os", "--revision", job.revision, "--apply"],
+    ["run", "--repo", "bun-os", "--revision", job.revision, "--", ...command],
+  ]);
+  expect(command.slice(0, 5)).toEqual([
+    "bun",
+    "scripts/aphrody/native-ci.ts",
+    "worker",
+    "--revision",
+    job.revision,
+  ]);
+  expect(command[5]).toBe("--id");
+  expect(command[6]).toMatch(/^native-aaaaaaaaaaaa-[a-f0-9]{12}$/);
+  const factory = await readFactoryConfig(join(import.meta.dir, "../../../.."));
+  const plan = buildFactoryPlan(factory!, "bun-os", job.revision, command);
+  expect(plan.revision).toBe(job.revision);
+  expect(plan.command).toEqual(calls[1]!.slice(calls[1]!.indexOf("--") + 1));
+  expect(plan.transport[5]).toContain(command[6]!);
+  expect(plan.transport[5]).toContain(job.revision);
+  expect(factoryBuildCommand(value.repository, JSON.parse(await readFile(path, "utf8")))).toEqual(
+    command,
+  );
+  expect(
+    factoryBuildCommand(value.repository, { ...job, requestedAt: "2026-10-11T12:01:00.000Z" })[6],
+  ).not.toBe(command[6]);
+  expect(JSON.parse(await readFile(path, "utf8"))).toMatchObject({
+    revision: job.revision,
+    status: "succeeded",
+    exitCode: 0,
+  });
+  value.repository.buildEnabled = false;
+  await writeFile(configPath, JSON.stringify(value.config));
+  await writeFile(path, JSON.stringify(job));
+  calls.length = 0;
+  await expect(
+    runFactoryWorker(
+      path,
+      value.root,
+      async (args) => {
+        calls.push(args);
+        return 0;
+      },
+      state,
+      job.token,
+    ),
+  ).rejects.toThrow("enabled owner build");
+  expect(calls).toEqual([]);
+});
+
+test("disabled Bun builds do not queue and native commands cannot replace their protected pin", async () => {
+  const value = await fixture();
+  Object.assign(value.repository, {
+    id: "bun-os",
+    buildEnabled: false,
+    buildCommand: ["bun", "scripts/aphrody/native-ci.ts", "worker"],
+  });
+  const directory = join(value.root, "builds");
+  let launched = false;
+  const queue = new FactoryBuildQueue(value.config, directory, () => {
+    launched = true;
+    throw Error("disabled");
+  });
+  try {
+    queue.enqueue(factoryReport("bun-os", "a".repeat(40)));
+    expect(launched).toBe(false);
+    expect(JSON.parse(await readFile(join(directory, "pending.json"), "utf8"))).toEqual({});
+  } finally {
+    queue.close();
+  }
+  value.repository.buildEnabled = true;
+  const job: FactoryJob = {
+    repo: "bun-os",
+    revision: "a".repeat(40),
+    status: "starting",
+    phase: "prepare",
+    requestedAt: new Date().toISOString(),
+  };
+  expect(() => factoryBuildCommand(value.repository, { ...job, revision: "main" })).toThrow();
+  value.repository.buildCommand = [
+    "bun",
+    "scripts/aphrody/native-ci.ts",
+    "worker",
+    "--revision",
+    "b".repeat(40),
+  ];
+  expect(() => factoryBuildCommand(value.repository, job)).toThrow();
+  await mkdir(join(value.root, "tools", "config"), { recursive: true });
+  await writeFile(
+    join(value.root, "tools", "config", "commit-sync.json"),
+    JSON.stringify({
+      ...value.config,
+      repositories: [{ ...value.repository, buildEnabled: "false" }],
+    }),
+  );
+  await expect(loadSourceSyncConfig(value.root)).rejects.toThrow("activation policy");
+});
+
 test("repo-sync status reads live receipts and pending metadata without exposing tokens or changing state", async () => {
   const value = await fixture();
   await mkdir(join(value.root, "tools", "config"), { recursive: true });

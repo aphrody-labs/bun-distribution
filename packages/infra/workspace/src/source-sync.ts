@@ -20,12 +20,14 @@ import { dirname, join, resolve } from "node:path";
 
 export interface SyncRepository {
   id: string;
+  repositoryName?: string;
   path: string;
   remote: string;
   sourceBranch: string;
   destinationBranch: string;
   fastForward?: boolean;
   buildCommand?: string[];
+  buildEnabled?: boolean;
 }
 export interface SourceSyncConfig {
   schemaVersion: 1;
@@ -122,7 +124,11 @@ function ownerRemote(url: string, owners: string[], repository: SyncRepository):
     /^(?:https:\/\/github\.com\/|git@(?:github\.com|github-dev):)([A-Za-z0-9-]+)\/([A-Za-z0-9._-]+?)(?:\.git)?\/?$/u.exec(
       url,
     );
-  return !!match && owners.includes(match[1]!) && match[2] === repository.id;
+  return (
+    !!match &&
+    owners.includes(match[1]!) &&
+    match[2] === (repository.repositoryName ?? repository.id)
+  );
 }
 export async function loadSourceSyncConfig(root = sourceRoot): Promise<SourceSyncConfig> {
   const config: SourceSyncConfig = await Bun.file(
@@ -158,6 +164,13 @@ export async function loadSourceSyncConfig(root = sourceRoot): Promise<SourceSyn
     )
       throw new Error("Invalid or duplicate commit-sync repository");
     ids.add(repository.id);
+    if (
+      repository.repositoryName !== undefined &&
+      !/^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(repository.repositoryName)
+    )
+      throw new Error("Invalid source repository name");
+    if (repository.buildEnabled !== undefined && typeof repository.buildEnabled !== "boolean")
+      throw new Error("Invalid factory build activation policy");
     if (
       repository.buildCommand !== undefined &&
       (!Array.isArray(repository.buildCommand) ||
