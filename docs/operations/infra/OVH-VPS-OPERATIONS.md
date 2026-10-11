@@ -8,14 +8,16 @@ and recovery from expired services.
 ## Live status (2026-10-11)
 
 The checks below were run on 2026-10-11 with the native Aphrody CLI and
-`aphrody infra ssh`. Secret values are not recorded here. An Infra reclaim was
-applied on `vps`; no reclaim was applied on `dbfr`.
+`aphrody infra ssh`. Secret values are not recorded here. Infra reclaim was
+applied only on the owner-administered `vps`; DBFR remains under Omar's
+administration and was inspected read-only.
 
 - OVH profile `aphrody.com` authenticated with OAuth2 client credentials on
   the EU endpoint. `aphrody infra ovh services watch --profile aphrody.com
   --alerts-only` and `aphrody infra ovh vps watch --profile aphrody.com`
   returned healthy. The `aphrody-ovh-watch.timer` is active on the VPS; its
-  last service run succeeded at 2026-10-11 07:05 UTC.
+  service run succeeded at 2026-10-11 07:05 UTC. The protected local audit task
+  also completed with result 0.
 - `vps-203bea89.vps.ovh.net` is active, model `vps-2025-model4`, with 12 vCPU,
   48 GiB RAM and a 300 GB OVH disk. Renewal is automatic and expires
   2026-12-01. OVH's operational status route returned HTTP 403
@@ -23,11 +25,12 @@ applied on `vps`; no reclaim was applied on `dbfr`.
 - The remote secrets contract check returned `SECURE`: 5 variables declared,
   2 present, and no required or empty variables. Values remain in the
   protected store and were not printed.
-- SSH health audit classified the host `Critical`: `/home/ubuntu/build`
-  (`/dev/sdb1`) is 100% full with about 67 MiB free. Root (`/dev/sda1`) is at
-  80% with about 58 GB free. RAM is about 19% and swap about 5%; there are no
-  zombie processes or failed units, and nginx, SSH, Docker and journald are
-  active.
+- SSH health audit still classifies the host `Critical`: `/home/ubuntu/build`
+  (`/dev/sdb1`) is 100% full with about 324 MiB free. Root (`/dev/sda1`) is at
+  83% with about 52 GiB free. There are no failed systemd units. A bounded
+  inventory found recent Linux kernel build trees and active Bun previews; the
+  exhaustive size scan exceeded its SSH deadline, so no build-volume paths were
+  deleted.
 - `aphrody infra reclaim --target vps --apply` reported 1,798,890,547 bytes
   reclaimed: Cargo registry cache 278,008,576 bytes, Bun install cache
   1,040,113,231 bytes, `/tmp` tmpfs 425,472,740 bytes, journal 48,287,744
@@ -36,38 +39,49 @@ applied on `vps`; no reclaim was applied on `dbfr`.
   individual cache files and the command has no documented rollback. No active
   Cargo/Rust compiler was observed; a Bun upstream sync and preview services
   remained active. No service failures were found after the operation.
-- After reclaim, `/` was 82% used with about 52 GiB free. The build volume
-  `/home/ubuntu/build` remained Critical at 100%, with about 332 MiB free.
-  Docker still had 9 images, 8 containers and 10 volumes; its pruneable
-  estimate was about 25.45 GB, but the declared prune freed 0 bytes. Do not
-  infer that the cache reclaim resolved the build-volume capacity issue.
-- `dbfr` was not modified. Its root volume was 75% used with about 25 GiB free;
-  the dry-run reclaim estimate was about 4.69 GiB, mostly Docker. The audit
-  reported nginx inactive/unknown while 18 containers were active. Omar
-  administers DBFR; no reclaim apply was performed there.
-- OVH profile `dragonballfr.com` authenticated with application-key credentials
-  for account `ka1038251-ovh`; its protected credential source is
-  `C:\Users\aphro\.ovh.conf`. The service watch returned manual-renewal
-  alerts for `rosegrg.cluster121.hosting.ovh.net` and `rosegriffon.fr`, and the
-  VPS inventory for this profile returned zero VPS. Confirm the intended OVH
-  account/profile before managing services for `dragonballfr.com`.
-- The OVH browser form reports an API key named `Aphrody - dragonballfr.com`
-  was created with unlimited validity. The form's final `DELETE` path was blank
-  at submission, so full `/*` access for all five methods is not established.
-  Key material is not stored in this runbook or repository. Verify the grant
-  and save the credentials only in the protected OVH store before use.
+- A second allowlisted `aphrody infra reclaim --target vps --apply` recovered
+  about 0.15 GiB; Docker and the other system steps recovered 0. The build
+  volume remains full. Its pruning plan only removes unreferenced Docker images
+  and build cache older than seven days; that plan recovered no Docker space.
+- DBFR was not modified. Its root volume is 75% used with about 25 GiB free;
+  all declared Shenron site, bot, PostgreSQL, Redis, gateway, MCP and worker
+  containers reported healthy, and no systemd units were failed. A HEAD request
+  to `https://dragonballfr.com` from DBFR returned HTTP 200. The host audit's
+  `nginx` system-unit finding remains separate from this external probe.
+- The existing Dragon Ball FR profile had pointed at the legacy
+  `ka1038251-ovh` account and zero VPS. The new profile was verified and
+  corrected to the OVH account `gl839461-ovh`, which owns `dragonballfr.com`
+  (domain, zone and email service) and one VPS. Credentials are outside the
+  repository: `~/.config/ovh/dbfr.conf` has owner/SYSTEM-only ACLs, with a
+  CurrentUser-DPAPI copy under `~/.aphrody/auth/ovh/`. The separately supplied
+  OAuth service-account pair is also DPAPI-protected. The legacy `.ovh.conf`
+  was left unchanged.
+- On the corrected profile, `auth status` succeeded; the domain is `ok`,
+  auto-renewing, DNSSEC-enabled and transfer-locked through 2027-05-31. The
+  service watch returned exit 0 with no alerts, 54 DNS records were verified,
+  and one VPS was listed with automatic renewal through 2027-07-07.
+- Two local OVH read-only scheduled audits are now registered at logon and
+  every six hours as the interactive owner at Limited privilege with a
+  five-minute deadline. Both latest task results were 0. The Dragon Ball FR
+  report stores only account/auth status, registrar fields, record count,
+  renewal-watch result and VPS count; `mutation=false`.
+- The key `Aphrody - dragonballfr.com` is active and authenticates as
+  `gl839461-ovh`; its application details endpoint does not return permission
+  paths. The creation form had left the `DELETE` path blank. Therefore full
+  `DELETE /*` remains unverified and is not claimed; the user confirmed that
+  grant, but the minimized Chrome window prevented the required UI update.
 - Local `aphrody infra status --json` still fails because
   `C:\Users\aphro\aphrody\tools/config/host\inventory/targets.json` is
   missing, including when invoked with `--root C:\aphrody`. This local
   catalogue/binary issue did not block the separate OVH and SSH checks.
-- The last documented registrar/DNS read verified 28 records on 2026-10-09;
-  it was not repeated for this status update. The zone metadata schema issue
-  remains as recorded in the [protected OVH audit](ovh-protected-2026-10-09.md).
+- The zone-metadata schema mismatch remains as recorded in the
+  [protected OVH audit](ovh-protected-2026-10-09.md); the new audit verifies
+  DNS records directly and does not claim zone-metadata qualification.
 
-Next steps: reclaim `/home/ubuntu/build` only after owner-aware inventory and
-an Infra plan for that mount; verify the OVH API key's missing DELETE grant and
-protected credential storage; confirm the Dragon Ball FR account/profile; fix
-the local `targets.json` resolution and requalify OVH zone metadata separately.
+Next steps: recover space on `/home/ubuntu/build` only after identifying
+inactive build outputs and an Infra plan for that mount; finish the confirmed
+`DELETE /*` grant in Chrome and verify the resulting permission path; fix the
+local `targets.json` resolution and requalify OVH zone metadata separately.
 
 ## Incident: VPS Expiration Without Alert (2026-10-01 to 2026-10-05)
 
