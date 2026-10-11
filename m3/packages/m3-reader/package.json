@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-reader",
-  "version": "3.3.9",
+  "version": "1.4.4",
   "description": "Material 3 manga and illustrated book readers for React",
   "license": "Apache-2.0",
   "files": [
@@ -34,9 +34,9 @@
   },
   "scripts": {
     "build": "bun ../../scripts/build.ts build --only $npm_package_name",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun check --noEmit",
     "test": "bun test",
-    "typecheck:fast": "tsc --noEmit"
+    "typecheck:fast": "bun check --noEmit"
   },
   "dependencies": {
     "@tanstack/react-virtual": "catalog:",

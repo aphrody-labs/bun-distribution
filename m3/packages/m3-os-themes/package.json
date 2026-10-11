@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-os-themes",
-  "version": "3.3.9",
+  "version": "1.4.4",
   "description": "Material 3 OS theme generators and installers (Windows 11, GNOME Shell, COSMIC, Chromium browsers) derived from @aphrody/m3-tokens dynamic colour roles.",
   "license": "Apache-2.0",
   "author": "aphrody-code",
@@ -29,7 +29,7 @@
   "scripts": {
     "generate": "bun src/cli.ts generate --target all",
     "test": "bun test test/",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
     "lint": "oxlint src test"
   },
   "dependencies": {

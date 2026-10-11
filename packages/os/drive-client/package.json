@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/drive-client",
-  "version": "0.1.2",
+  "version": "1.4.4",
   "description": "Type-safe TypeScript client for Spacedrive daemon",
   "keywords": [
     "client",
@@ -63,7 +63,7 @@
   "scripts": {
     "build": "bun build src/index.ts src/bun.ts src/hooks/index.ts --target bun --packages external --outdir dist",
     "lint": "oxlint src tests",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun check --noEmit",
     "test": "bun test",
     "test:integration": "bun test ./tests/integration",
     "generate-types": "../../../scripts/build/rust/cargo-serial.sh run --bin generate_typescript_types --manifest-path ../../../crates/os/kernel/comps/drive/core/Cargo.toml"

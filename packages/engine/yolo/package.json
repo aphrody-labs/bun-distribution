@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/yolo-cli",
-  "version": "1.0.2",
+  "version": "1.4.4",
   "description": "Yolo command line on Bun: workspace operations, documentation generation, code scan/rename/parse, plugin and forge commands",
   "license": "MIT",
   "repository": {
@@ -30,7 +30,7 @@
   },
   "scripts": {
     "test": "bun test test/cli_app.test.ts test/aphrody.test.ts test/api.test.ts test/host.test.ts test/host-space.test.ts test/import.test.ts test/mcp.test.ts test/package-commands.test.ts test/rename.test.ts test/scan.test.ts test/stack.test.ts test/verify.test.ts test/vu.test.ts test/python-supervised.test.ts test/forge test/plugins.test.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "bun check -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@aphrody/runtime-sdk": "workspace:*",

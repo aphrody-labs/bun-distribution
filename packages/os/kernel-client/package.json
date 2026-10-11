@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/os",
-  "version": "0.1.1",
+  "version": "1.4.4",
   "description": "Bun client for the Aphrody OS kernel: join the OS as a subsystem, call any OS tool or skill.",
   "license": "Apache-2.0",
   "files": [
@@ -19,7 +19,7 @@
     "build": "bun build src/index.ts --target bun --packages external --outdir dist",
     "lint": "oxlint src test",
     "test": "bun test",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "bun check -p tsconfig.json --noEmit"
   },
   "engines": {
     "bun": ">=1.4.3"

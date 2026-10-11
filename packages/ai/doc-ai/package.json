@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/doc-ai",
-  "version": "3.2.8",
+  "version": "1.4.4",
   "description": "AI-first documentation and automatic translation system",
   "homepage": "https://github.com/aphrody-labs/aphrody/tree/main/packages/ai/doc-ai#readme",
   "bugs": {
@@ -30,9 +30,9 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "typecheck:fast": "tsgo -p tsconfig.json --noEmit",
+    "build": "bun check -p tsconfig.build.json",
+    "typecheck": "bun check -p tsconfig.json --noEmit",
+    "typecheck:fast": "bun check -p tsconfig.json --noEmit",
     "test": "bun test"
   },
   "dependencies": {

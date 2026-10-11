@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-primitives",
-  "version": "3.3.9",
+  "version": "1.4.4",
   "description": "Material Design 3 React primitives: the SpaceUI (@spacedrive/primitives) component set rebuilt on the M3 roles, shape, typescale, state layers and motion of the aphrody design system.",
   "keywords": [
     "material-3",
@@ -34,8 +34,8 @@
   },
   "scripts": {
     "build": "bun ../../scripts/build.ts build --only $npm_package_name",
-    "typecheck": "tsc --noEmit",
-    "typecheck:fast": "tsc --noEmit",
+    "typecheck": "bun check --noEmit",
+    "typecheck:fast": "bun check --noEmit",
     "test": "bun test"
   },
   "dependencies": {

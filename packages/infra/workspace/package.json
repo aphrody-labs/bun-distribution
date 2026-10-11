@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/workspace",
-  "version": "0.1.4",
+  "version": "1.4.4",
   "description": "Cross-monorepo workspace orchestrator, gates, audits, migration tools and operations",
   "license": "Apache-2.0",
   "author": "Aphrody",
@@ -76,7 +76,7 @@
   },
   "scripts": {
     "build": "bun build ./src/cli.ts ./src/ops.ts --target=bun --outdir dist --sourcemap=linked",
-    "typecheck": "tsc --project tsconfig.json && tsc --project ../../../scripts/tsconfig.json",
+    "typecheck": "bun check --project tsconfig.json && bun check --project ../../../scripts/tsconfig.json",
     "lint": "oxlint src test",
     "format": "oxfmt src test package.json tsconfig.json",
     "format:check": "oxfmt --check src test package.json tsconfig.json",

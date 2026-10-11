@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/m3-codemods",
-  "version": "3.3.9",
+  "version": "1.4.4",
   "description": "Codemods MUI React -> @aphrody/m3-react (Bun, sans dépendance runtime) + règles ast-grep",
   "license": "Apache-2.0",
   "files": [
@@ -28,7 +28,7 @@
   "scripts": {
     "codemod": "bun scripts/codemod.ts",
     "test": "bun test ./test",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "bun check -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@aphrody/m3-config": "workspace:*"

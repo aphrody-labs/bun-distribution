@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/product",
-  "version": "0.3.0",
+  "version": "1.4.4",
   "private": false,
   "description": "Aphrody installation, administration and creator workflows in one native Bun product.",
   "license": "Apache-2.0",
@@ -35,7 +35,7 @@
   "scripts": {
     "start": "bun src/cli.ts",
     "test": "bun test test",
-    "typecheck": "tsgo --noEmit -p tsconfig.json",
+    "typecheck": "bun check --noEmit -p tsconfig.json",
     "stage": "bun ../../../scripts/release/stage-setup.ts"
   },
   "engines": {

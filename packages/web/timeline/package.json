@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/timeline",
-  "version": "0.1.1",
+  "version": "1.4.4",
   "description": "Native Bun timeline collection, SQL, Redis, GraphQL and retrieval projections",
   "license": "Apache-2.0",
   "files": [
@@ -18,7 +18,7 @@
   },
   "scripts": {
     "test": "bun test test",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun check --noEmit",
     "lint": "oxlint src test",
     "format:check": "oxfmt --check src test package.json tsconfig.json"
   },
