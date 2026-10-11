@@ -22,8 +22,37 @@ import {
   smokeCommand,
   verifyArtifactProvenance,
   releasePlan,
+  runtimeCommand,
   type ReleaseConfig,
 } from "./publish-app-ui";
+test("Bun prerequisites and builds execute the exact selected runtime without changing Infra or Git", () => {
+  const command = runtimeCommand([
+    "bun",
+    "-e",
+    "console.log(JSON.stringify({executable:process.execPath,version:Bun.version}))",
+  ]);
+  const child = Bun.spawnSync(command);
+  expect(child.exitCode).toBe(0);
+  expect(JSON.parse(child.stdout.toString())).toEqual({
+    executable: process.execPath,
+    version: Bun.version,
+  });
+  for (const prerequisite of prerequisiteCommands())
+    expect(runtimeCommand(prerequisite)[0]).toBe(process.execPath);
+  expect(runtimeCommand(buildCommand("C:/artifact"))).toEqual([
+    process.execPath,
+    "m3/packages/app-ui/build.ts",
+    "--out",
+    "C:/artifact",
+  ]);
+  expect(runtimeCommand(["git", "rev-parse", "HEAD"])).toEqual(["git", "rev-parse", "HEAD"]);
+  expect(runtimeCommand(["aphrody", "infra", "ssh", "exec"])).toEqual([
+    "aphrody",
+    "infra",
+    "ssh",
+    "exec",
+  ]);
+});
 test("clean builds prepare identity through its canonical owner, without setup hooks", () => {
   expect(prerequisiteCommands()).toEqual([
     ["bun", "run", "--cwd", "crates/tauri/aphrody-tauri-api", "build"],

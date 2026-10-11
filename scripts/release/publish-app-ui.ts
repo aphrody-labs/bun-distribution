@@ -224,8 +224,11 @@ export function artifactManifest(
       : {}),
   };
 }
+export function runtimeCommand(command: string[], executable = process.execPath): string[] {
+  return command[0] === "bun" ? [executable, ...command.slice(1)] : command;
+}
 async function run(command: string[], cwd = repository, env: Record<string, string> = {}) {
-  const process = Bun.spawn(command, {
+  const process = Bun.spawn(runtimeCommand(command), {
     cwd,
     env: { ...Bun.env, ...env },
     stdout: "pipe",
