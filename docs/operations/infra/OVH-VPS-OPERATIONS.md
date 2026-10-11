@@ -5,6 +5,70 @@ This runbook covers the service account (OAuth2) and IAM, every service of the a
 (`services`), domains, DNS zone backups, VPS renewal, expiration management, health monitoring,
 and recovery from expired services.
 
+## Live status (2026-10-11)
+
+The checks below were run on 2026-10-11 with the native Aphrody CLI and
+`aphrody infra ssh`. Secret values are not recorded here. An Infra reclaim was
+applied on `vps`; no reclaim was applied on `dbfr`.
+
+- OVH profile `aphrody.com` authenticated with OAuth2 client credentials on
+  the EU endpoint. `aphrody infra ovh services watch --profile aphrody.com
+  --alerts-only` and `aphrody infra ovh vps watch --profile aphrody.com`
+  returned healthy. The `aphrody-ovh-watch.timer` is active on the VPS; its
+  last service run succeeded at 2026-10-11 07:05 UTC.
+- `vps-203bea89.vps.ovh.net` is active, model `vps-2025-model4`, with 12 vCPU,
+  48 GiB RAM and a 300 GB OVH disk. Renewal is automatic and expires
+  2026-12-01. OVH's operational status route returned HTTP 403
+  `not implemented`; SSH supplied the host health evidence.
+- The remote secrets contract check returned `SECURE`: 5 variables declared,
+  2 present, and no required or empty variables. Values remain in the
+  protected store and were not printed.
+- SSH health audit classified the host `Critical`: `/home/ubuntu/build`
+  (`/dev/sdb1`) is 100% full with about 67 MiB free. Root (`/dev/sda1`) is at
+  80% with about 58 GB free. RAM is about 19% and swap about 5%; there are no
+  zombie processes or failed units, and nginx, SSH, Docker and journald are
+  active.
+- `aphrody infra reclaim --target vps --apply` reported 1,798,890,547 bytes
+  reclaimed: Cargo registry cache 278,008,576 bytes, Bun install cache
+  1,040,113,231 bytes, `/tmp` tmpfs 425,472,740 bytes, journal 48,287,744
+  bytes, apt cache 3,809,280 bytes and rotated logs 3,198,976 bytes. Docker,
+  Snap, core dumps and `/var/tmp` reclaimed 0 bytes. The receipt does not list
+  individual cache files and the command has no documented rollback. No active
+  Cargo/Rust compiler was observed; a Bun upstream sync and preview services
+  remained active. No service failures were found after the operation.
+- After reclaim, `/` was 82% used with about 52 GiB free. The build volume
+  `/home/ubuntu/build` remained Critical at 100%, with about 332 MiB free.
+  Docker still had 9 images, 8 containers and 10 volumes; its pruneable
+  estimate was about 25.45 GB, but the declared prune freed 0 bytes. Do not
+  infer that the cache reclaim resolved the build-volume capacity issue.
+- `dbfr` was not modified. Its root volume was 75% used with about 25 GiB free;
+  the dry-run reclaim estimate was about 4.69 GiB, mostly Docker. The audit
+  reported nginx inactive/unknown while 18 containers were active. Omar
+  administers DBFR; no reclaim apply was performed there.
+- OVH profile `dragonballfr.com` authenticated with application-key credentials
+  for account `ka1038251-ovh`; its protected credential source is
+  `C:\Users\aphro\.ovh.conf`. The service watch returned manual-renewal
+  alerts for `rosegrg.cluster121.hosting.ovh.net` and `rosegriffon.fr`, and the
+  VPS inventory for this profile returned zero VPS. Confirm the intended OVH
+  account/profile before managing services for `dragonballfr.com`.
+- The OVH browser form reports an API key named `Aphrody - dragonballfr.com`
+  was created with unlimited validity. The form's final `DELETE` path was blank
+  at submission, so full `/*` access for all five methods is not established.
+  Key material is not stored in this runbook or repository. Verify the grant
+  and save the credentials only in the protected OVH store before use.
+- Local `aphrody infra status --json` still fails because
+  `C:\Users\aphro\aphrody\tools/config/host\inventory/targets.json` is
+  missing, including when invoked with `--root C:\aphrody`. This local
+  catalogue/binary issue did not block the separate OVH and SSH checks.
+- The last documented registrar/DNS read verified 28 records on 2026-10-09;
+  it was not repeated for this status update. The zone metadata schema issue
+  remains as recorded in the [protected OVH audit](ovh-protected-2026-10-09.md).
+
+Next steps: reclaim `/home/ubuntu/build` only after owner-aware inventory and
+an Infra plan for that mount; verify the OVH API key's missing DELETE grant and
+protected credential storage; confirm the Dragon Ball FR account/profile; fix
+the local `targets.json` resolution and requalify OVH zone metadata separately.
+
 ## Incident: VPS Expiration Without Alert (2026-10-01 to 2026-10-05)
 
 The VPS `vps-203bea89.vps.ovh.net` (service ID 69570856) expired on 2026-10-01 with
