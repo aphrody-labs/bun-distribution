@@ -90,6 +90,59 @@ test("preparation plans restrict source owners, aliases, revisions and sibling w
   }
 });
 
+test("Bun preparation uses its declared factory allocation and canonical Git repository name", () => {
+  const declared = {
+    ...config,
+    repositories: {
+      ...config.repositories,
+      "bun-os": "/home/ubuntu/builds/bun-os-factory/sources/bun",
+    },
+  };
+  const source = {
+    path: "/source/bun",
+    remote: "origin",
+    url: "https://github.com/aphrody-labs/bun.git",
+    owners: ["aphrody-labs"],
+  };
+  const plan = buildFactoryPreparePlan(declared, "bun-os", revision, source, {
+    initializeSubmodules: false,
+  });
+  expect(plan.repository).toBe("bun-os");
+  expect(plan.workspace).toBe(declared.repositories["bun-os"]);
+  expect(plan.source.url).toBe(source.url);
+  expect(plan.transport[5]).toContain("bun-os.source.lock");
+  expect(plan.transport[5]).toContain("heavy.lock");
+  expect(plan.transport[5]).toContain("Factory source checkout is dirty; preserved");
+  expect(plan.transport[5]).not.toContain("git reset");
+  expect(plan.transport[5]).not.toContain("git clean");
+  expect(() =>
+    buildFactoryPreparePlan(declared, "bun-os", revision, {
+      ...source,
+      url: "https://github.com/aphrody-labs/bun-os.git",
+    }),
+  ).toThrow("declared private");
+  expect(() =>
+    buildFactoryPreparePlan(declared, "bun-os", revision, {
+      ...source,
+      url: "https://github.com/unowned/bun.git",
+    }),
+  ).toThrow("declared private");
+  expect(() =>
+    buildFactoryPreparePlan(
+      {
+        ...declared,
+        repositories: {
+          ...declared.repositories,
+          "bun-os": "/home/ubuntu/builds/bun-os-factory/sources/other",
+        },
+      },
+      "bun-os",
+      revision,
+      source,
+    ),
+  ).toThrow("sibling");
+});
+
 async function preparationFixture() {
   const root = await mkdtemp(join(tmpdir(), "aphrody-factory-prepare-"));
   const source = join(root, "source");

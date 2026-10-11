@@ -175,7 +175,7 @@ function factoryDirectory(path: string): string {
   return `test "$(realpath -m -- ${quoted})" = ${quoted} || { echo 'Factory path resolves outside its declared location; preserved' >&2; exit 2; }; if [ ! -e ${quoted} ]; then install -d -- ${quoted} 2>/dev/null || sudo -n install -d -o "$(id -un)" -g "$(id -gn)" -- ${quoted}; fi; test -d ${quoted} || { echo 'Factory path is not a directory; preserved' >&2; exit 2; }`;
 }
 
-/** Prepare only the owner's three declared sources. No build starts and existing authentication remains local. */
+/** Prepare declared first-party sources. No build starts and authentication remains local. */
 export function buildFactoryPreparePlan(
   config: BuildFactoryConfig,
   repository: string,
@@ -186,12 +186,16 @@ export function buildFactoryPreparePlan(
   const sourceScope = factorySourceScope(options.submodules);
   if (sourceScope.kind === "gitlinks" && options.initializeSubmodules === false)
     throw new Error("Selected submodules cannot be combined with --no-submodules");
-  if (!["yolo", "aphrody"].includes(repository)) {
-    throw new Error("Factory preparation is limited to yolo and aphrody");
+  if (!["yolo", "aphrody", "bun-os"].includes(repository)) {
+    throw new Error("Factory preparation is limited to yolo, aphrody and bun-os");
   }
   const validation = buildFactoryPlan(config, repository, revision, ["git", "checkout"], options);
-  const base = posix.dirname(absolutePath(config.repositories.aphrody!, "aphrody repository"));
-  if (validation.workspace !== posix.join(base, repository) || base === "/") {
+  const repositoryName = repository === "bun-os" ? "bun" : repository;
+  const base =
+    repository === "bun-os"
+      ? posix.dirname(validation.workspace)
+      : posix.dirname(absolutePath(config.repositories.aphrody!, "aphrody repository"));
+  if (validation.workspace !== posix.join(base, repositoryName) || base === "/") {
     throw new Error("Factory repository must stay in its declared sibling workspace");
   }
   for (const path of [config.cacheRoot, config.artifactRoot, config.lockPath]) {
@@ -206,7 +210,7 @@ export function buildFactoryPreparePlan(
   ) {
     throw new Error("Invalid declared factory source path or remote");
   }
-  const remote = factoryRemoteUrl(source.url, repository, source.owners);
+  const remote = factoryRemoteUrl(source.url, repositoryName, source.owners);
   const normalizedExisting = [
     remote,
     remote.replace(/\.git$/, ""),
