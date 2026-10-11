@@ -261,6 +261,43 @@ for (const entry of readdirSync(root)) rmSync(root + "/" + entry, { recursive: t
 
 const localLeases = new Map<string, number>();
 
+/** A direct-route guardian is a sibling of build children, supervised by their Bun ancestor. */
+function supervisedFactoryGuardian(
+  owner: number,
+  lockPath: string,
+  ancestors: Set<number>,
+): boolean {
+  const fields = readFileSync(`/proc/${owner}/stat`, "utf8").split(") ")[1]?.split(" ");
+  const supervisor = Number(fields?.[1]);
+  if (!ancestors.has(supervisor)) return false;
+  const uid = process.getuid?.();
+  if (
+    uid === undefined ||
+    statSync(`/proc/${owner}`).uid !== uid ||
+    statSync(`/proc/${supervisor}`).uid !== uid
+  )
+    return false;
+  const executable = statSync(`/proc/${supervisor}/exe`, { bigint: true });
+  const currentExecutable = statSync(`/proc/self/exe`, { bigint: true });
+  if (executable.dev !== currentExecutable.dev || executable.ino !== currentExecutable.ino)
+    return false;
+  const args = readFileSync(`/proc/${owner}/cmdline`, "utf8").split("\0").filter(Boolean);
+  return (
+    posix.basename(args[0] ?? "") === "flock" &&
+    args[1] === "--exclusive" &&
+    args[2] === "--close" &&
+    args[3] === "--timeout" &&
+    args[4] === "1800" &&
+    args[5] === lockPath &&
+    args[6] === "bash" &&
+    args[7] === "-c" &&
+    args[8] ===
+      'printf READY; action=$(cat); if [ "$action" = ABORT ]; then exit 0; fi; until bash -c "$1"; do sleep 1; done' &&
+    args[9] === "factory-guardian" &&
+    args.length === 11
+  );
+}
+
 /** A marker alone cannot bypass serialization: match the kernel lease to its actual inode and owner. */
 export function factoryLeaseHeld(lockPath: string, directOwner?: number): boolean {
   try {
@@ -286,7 +323,9 @@ export function factoryLeaseHeld(lockPath: string, directOwner?: number): boolea
           inode === String(stat.ino) &&
           BigInt(`0x${lockMajor}`) === major &&
           BigInt(`0x${lockMinor}`) === minor &&
-          (ancestors.has(owner) || owner === directOwner)
+          (ancestors.has(owner) ||
+            owner === directOwner ||
+            supervisedFactoryGuardian(owner, lockPath, ancestors))
         );
       });
   } catch {

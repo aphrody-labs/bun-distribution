@@ -311,7 +311,26 @@ linuxTest(
             windowsHide: true,
           });
           expect(competitor.exitCode).toBe(1);
-          expect(factoryLeaseHeld(config.lockPath)).toBe(false); // The in-process route's supervisor is a child, not an inherited ancestor.
+          expect(factoryLeaseHeld(config.lockPath)).toBe(true);
+          // A compiler wrapper is a sibling of the guardian, not its descendant.
+          const owner = posix.join(import.meta.dir, "../src/build-factory-cleanup.ts");
+          const nested = Bun.spawnSync([process.execPath, owner, "--held"], {
+            windowsHide: true,
+            env: process.env,
+          });
+          expect(nested.exitCode).toBe(0);
+          const otherRoot = posix.join(f.root, "other");
+          mkdirSync(posix.join(otherRoot, "locks"), { recursive: true });
+          writeFileSync(posix.join(otherRoot, "locks/heavy.lock"), "");
+          const differentInode = Bun.spawnSync([process.execPath, owner, "--held"], {
+            windowsHide: true,
+            env: {
+              ...process.env,
+              APHRODY_FACTORY_RESOURCE: posix.join(otherRoot, "transient"),
+              APHRODY_FACTORY_LOCK_PATH: posix.join(otherRoot, "locks/heavy.lock"),
+            },
+          });
+          expect(differentInode.exitCode).toBe(1);
           await withFactoryResource(
             config,
             async () => {
