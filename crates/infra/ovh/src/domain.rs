@@ -183,12 +183,10 @@ impl<'a> DomainManager<'a> {
 
     /// Replace the registrar name servers; returns the registrar task.
     pub async fn set_name_servers(&self, domain: &str, hosts: &[String]) -> Result<Value> {
-        let servers: Vec<Value> =
-            name_server_hosts(hosts)?.into_iter().map(|host| json!({ "host": host })).collect();
         self.client
             .post(
                 &format!("/domain/{domain}/nameServers/update"),
-                Some(json!({ "nameServers": servers })),
+                Some(name_servers_payload(hosts)?),
             )
             .await
     }
@@ -204,6 +202,12 @@ impl<'a> DomainManager<'a> {
         let _: Value = self.client.delete(&format!("/domain/zone/{zone}/dnssec")).await?;
         Ok(())
     }
+}
+
+fn name_servers_payload(hosts: &[String]) -> Result<Value> {
+    let servers: Vec<Value> =
+        name_server_hosts(hosts)?.into_iter().map(|host| json!({ "host": host })).collect();
+    Ok(json!({ "nameServer": servers }))
 }
 
 #[cfg(test)]
@@ -260,5 +264,25 @@ mod tests {
         assert!(name_server_hosts(&["a.example.com".into(), "A.example.com".into()]).is_err());
         assert!(name_server_hosts(&["localhost".into(), "b.example.com".into()]).is_err());
         assert!(name_server_hosts(&["-a.example.com".into(), "b.example.com".into()]).is_err());
+    }
+
+    #[test]
+    fn name_servers_update_uses_the_registrar_payload_key() {
+        let payload = name_servers_payload(&[
+            "Duke.NS.cloudflare.com.".into(),
+            "veda.ns.cloudflare.com".into(),
+        ])
+        .expect("valid name servers");
+
+        assert_eq!(
+            payload,
+            json!({
+                "nameServer": [
+                    { "host": "duke.ns.cloudflare.com" },
+                    { "host": "veda.ns.cloudflare.com" }
+                ]
+            })
+        );
+        assert!(payload.get("nameServers").is_none());
     }
 }
