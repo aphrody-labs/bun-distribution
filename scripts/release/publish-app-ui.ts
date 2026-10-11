@@ -3,7 +3,7 @@
 /* oxlint-disable no-await-in-loop -- publication steps and guards must be sequential */
 import { createHash } from "node:crypto";
 import { lstatSync, readdirSync, readFileSync, realpathSync, mkdtempSync } from "node:fs";
-import { join, resolve, relative, sep, posix } from "node:path";
+import { join, resolve, relative, sep, posix, isAbsolute } from "node:path";
 import { tmpdir } from "node:os";
 import { parseArgs } from "node:util";
 
@@ -12,8 +12,15 @@ const serverSource = "packages/infra/workspace/src/downloads/server.ts";
 const sha = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 const quote = (value: string) => "'" + value.replaceAll("'", "'\\''") + "'";
 export interface ReleaseConfig {
-  host: { target: string; root: string };
-  site: { appUi: { directory: string; declaration: string; nativeRpc: boolean } };
+  host: { target: string; root: string; service?: string };
+  site: {
+    appUi: {
+      directory: string;
+      declaration: string;
+      nativeRpc: boolean;
+      googleSearch?: { owner: string; module: string; environmentFile: string };
+    };
+  };
 }
 export function releasePlan(config: ReleaseConfig, revision: string) {
   if (!/^[a-f0-9]{40}$/.test(revision))
@@ -28,6 +35,16 @@ export function releasePlan(config: ReleaseConfig, revision: string) {
     throw new Error("Unsupported deployment catalog; preserve host and native RPC isolation");
   const id = "app-ui-" + revision;
   const base = posix.join(config.host.root, "app-ui");
+  const service = config.host.service ?? "aphrody-downloads";
+  if (service !== "aphrody-downloads") throw new Error("Unsupported systemd service owner");
+  const search = config.site.appUi.googleSearch;
+  if (
+    search &&
+    (search.owner !== "/home/ubuntu/.local/bin/aphrody" ||
+      search.module !== "current/google-search.ts" ||
+      search.environmentFile !== "current/google-search.env")
+  )
+    throw new Error("Unsupported Google search deployment catalog");
   return {
     revision,
     id,
@@ -37,11 +54,69 @@ export function releasePlan(config: ReleaseConfig, revision: string) {
     server: posix.join(config.host.root, "app/server.ts"),
     declaration: posix.join(base, "deployment.json"),
     restart:
-      "sudo docker compose --project-directory " +
-      quote(posix.dirname(config.host.root)) +
-      " up -d --no-deps --force-recreate downloads",
+      "sudo systemctl restart " +
+      quote(service + ".service") +
+      "; systemctl is-active --quiet " +
+      quote(service + ".service"),
+    ...(search
+      ? {
+          search: {
+            owner: search.owner,
+            module: posix.join(base, search.module),
+            environmentFile: posix.join(base, search.environmentFile),
+          },
+        }
+      : {}),
     nativeRpc: false,
   };
+}
+export function canonicalBunInputs(checkout: string, revision: string) {
+  if (!/^[a-f0-9]{40}$/.test(revision)) throw new Error("Exact Bun source revision required");
+  const checkoutRoot = realpathSync(checkout);
+  const ownedFile = (path: string) => {
+    const file = join(checkoutRoot, path);
+    const inside = relative(checkoutRoot, realpathSync(file));
+    if (inside.startsWith(".." + sep) || isAbsolute(inside) || !lstatSync(file).isFile())
+      throw new Error("Canonical Bun source file escapes the checkout");
+    return file;
+  };
+  const receiptFile = ownedFile("packages/bun-aphrody-web/transfer-receipt.json");
+  const receipt = JSON.parse(readFileSync(receiptFile, "utf8")) as {
+    schemaVersion: number;
+    sourceCommit: string;
+    files: { source: string; destination: string; sha256: string }[];
+  };
+  const entry = receipt.files.find((file) => file.source === "crates/web/site/data/docs.json");
+  if (
+    receipt.schemaVersion !== 1 ||
+    !entry ||
+    entry.destination !== "packages/bun-aphrody-web/crates/site/data/docs.json" ||
+    !/^[a-f0-9]{64}$/.test(entry.sha256) ||
+    !/^[a-f0-9]{40}$/.test(receipt.sourceCommit)
+  )
+    throw new Error("Canonical Bun documentation transfer receipt required");
+  const docs = ownedFile(entry.destination);
+  if (sha(readFileSync(docs)) !== entry.sha256)
+    throw new Error("Bun documentation transfer checksum mismatch");
+  const search = ownedFile("packages/bun-google/src/search.ts");
+  return {
+    revision,
+    transferSourceCommit: receipt.sourceCommit,
+    transferSha256: sha(readFileSync(receiptFile)),
+    docs: { path: entry.destination, sha256: entry.sha256 },
+    search: { path: "packages/bun-google/src/search.ts", sha256: sha(readFileSync(search)) },
+    docsFile: docs,
+    searchFile: search,
+  };
+}
+
+export function searchEnvironment(module: string, owner: string): string {
+  if (
+    !/^\/home\/[a-z0-9_-]+\/apps\/downloads\/app-ui\/current\/google-search\.ts$/.test(module) ||
+    owner !== "/home/ubuntu/.local/bin/aphrody"
+  )
+    throw new Error("Invalid search environment owner");
+  return `GOOGLE_SEARCH_SDK_MODULE=${module}\nGOOGLE_SEARCH_OWNER=${owner}\n`;
 }
 export function buildCommand(artifact: string, publicAssets = false): string[] {
   return [
@@ -90,7 +165,12 @@ export function verifyArtifactProvenance(prior: unknown, current: unknown) {
   if (JSON.stringify(prior) !== JSON.stringify(current))
     throw new Error("Artifact source/checksum provenance does not match");
 }
-export function artifactManifest(directory: string, revision: string, publicAssets = false) {
+export function artifactManifest(
+  directory: string,
+  revision: string,
+  publicAssets = false,
+  sources?: ReturnType<typeof canonicalBunInputs>,
+) {
   if (!/^[a-f0-9]{40}$/.test(revision)) throw new Error("Invalid source revision");
   const root = realpathSync(directory);
   const files: Array<{ path: string; bytes: number; sha256: string }> = [];
@@ -109,6 +189,11 @@ export function artifactManifest(directory: string, revision: string, publicAsse
     }
   }
   walk(root);
+  if (
+    sources &&
+    !files.some((file) => file.path === "google-search.ts" && file.sha256 === sources.search.sha256)
+  )
+    throw new Error("Artifact Google search source checksum mismatch");
   for (const required of [
     "index.html",
     "public-home.html",
@@ -121,10 +206,31 @@ export function artifactManifest(directory: string, revision: string, publicAsse
   if (!files.some((file) => file.path.startsWith("fonts/"))) throw new Error("Missing fonts");
   if (publicAssets && !files.some((file) => file.path === "public-assets.json"))
     throw new Error("Missing public assets declaration");
-  return { schemaVersion: 1, revision, publicAssets, files };
+  return {
+    schemaVersion: 1,
+    revision,
+    publicAssets,
+    files,
+    ...(sources
+      ? {
+          sources: {
+            bun: sources.revision,
+            transferSourceCommit: sources.transferSourceCommit,
+            transferSha256: sources.transferSha256,
+            docs: sources.docs,
+            search: sources.search,
+          },
+        }
+      : {}),
+  };
 }
-async function run(command: string[], cwd = repository) {
-  const process = Bun.spawn(command, { cwd, stdout: "pipe", stderr: "pipe" });
+async function run(command: string[], cwd = repository, env: Record<string, string> = {}) {
+  const process = Bun.spawn(command, {
+    cwd,
+    env: { ...Bun.env, ...env },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
   const [stdout, stderr, code] = await Promise.all([
     new Response(process.stdout).text(),
     new Response(process.stderr).text(),
@@ -163,7 +269,6 @@ async function main() {
     "--",
     "m3",
     serverSource,
-    "crates/web/site/data",
     "crates/ui/identity",
     "crates/tauri",
     "tools/config/downloads.json",
@@ -175,15 +280,49 @@ async function main() {
   ]);
   if (dirty)
     throw new Error("Commit the complete owned UI/source batch before building or publishing");
+  const bunCheckout = resolve(Bun.env.APHRODY_BUN_CHECKOUT || join(repository, "../bun"));
+  const bunRevision = await run(["git", "rev-parse", "HEAD"], bunCheckout);
+  if (
+    await run(
+      [
+        "git",
+        "status",
+        "--porcelain",
+        "--",
+        "packages/bun-google/src/search.ts",
+        "packages/bun-aphrody-web/crates/site/data/docs.json",
+        "packages/bun-aphrody-web/transfer-receipt.json",
+      ],
+      bunCheckout,
+    )
+  )
+    throw new Error("Commit canonical Bun search and documentation sources before publication");
+  const sources = canonicalBunInputs(bunCheckout, bunRevision);
   const workspace = mkdtempSync(join(tmpdir(), "aphrody-app-ui-release-"));
   const artifact = resolve(values.artifact ?? values.out ?? join(workspace, "artifact"));
   if (artifact === repository || artifact.startsWith(repository + sep))
     throw new Error("Use an isolated artifact directory outside the checkout");
   if (values.build) {
     for (const command of prerequisiteCommands()) await run(command);
-    await run(buildCommand(artifact, publicAssets));
+    await run(buildCommand(artifact, publicAssets), repository, {
+      APP_UI_DOCS_CATALOG: sources.docsFile,
+      APHRODY_BUN_CHECKOUT: bunCheckout,
+      APP_UI_BUN_REVISION: bunRevision,
+    });
+    await Bun.write(join(artifact, "google-search.ts"), Bun.file(sources.searchFile));
+    if (plan.search)
+      await Bun.write(
+        join(artifact, "google-search.env"),
+        searchEnvironment(plan.search.module, plan.search.owner),
+      );
   }
-  const manifest = artifactManifest(artifact, revision, publicAssets);
+  if (
+    plan.search &&
+    readFileSync(join(artifact, "google-search.env"), "utf8") !==
+      searchEnvironment(plan.search.module, plan.search.owner)
+  )
+    throw new Error("Artifact Google search environment does not match the declared owner");
+  const manifest = artifactManifest(artifact, revision, publicAssets, sources);
   if (!values.build) {
     const prior = await Bun.file(join(artifact, "release-manifest.json")).json();
     verifyArtifactProvenance(prior, manifest);
@@ -206,6 +345,10 @@ async function main() {
   const ssh = (command: string) =>
     run(["aphrody", "infra", "ssh", "exec", "--host", plan.host, "--cmd", command]);
   const guard = `test "$(sha256sum ${quote(plan.server)} | cut -d ' ' -f 1)" = ${quote(expected)}`;
+  if (plan.search)
+    await ssh(
+      `test -x ${quote(plan.search.owner)}; systemctl cat aphrody-downloads.service | grep -Fq ${quote("EnvironmentFile=-" + plan.search.environmentFile)}`,
+    );
   await ssh("set -eu; " + guard + "; mkdir -p " + quote(plan.base + "/releases"));
   const upload = async (source: string, target: string, large = false) => {
     try {

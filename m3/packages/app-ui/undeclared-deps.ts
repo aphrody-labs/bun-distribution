@@ -11,22 +11,25 @@ export const undeclaredDependencies: BunPlugin = {
   name: "app-ui-shared-dependencies",
   setup(build) {
     build.onResolve({ filter: /^(react|react-dom)(\/.*)?$/ }, (args) => ({
-      path: Bun.resolveSync(args.path, here),
+      path: Bun.resolveSync(args.path, here).replaceAll("\\", "/"),
     }));
     build.onResolve({ filter: /^@aphrody\/plugin-([a-z-]+)$/ }, (args) => {
       const pluginName = args.path.replace("@aphrody/plugin-", "");
-      const guestJs = join(here, `../../../crates/tauri/aphrody-tauri-plugin-${pluginName}/guest-js/index.ts`);
+      const guestJs = join(
+        here,
+        `../../../crates/tauri/aphrody-tauri-plugin-${pluginName}/guest-js/index.ts`,
+      );
       if (existsSync(guestJs)) {
-        return { path: guestJs };
+        return { path: guestJs.replaceAll("\\", "/") };
       }
       return undefined;
     });
     build.onResolve({ filter: /^(framework-utils|@daybrush\/utils)$/ }, (args) => {
-      if (!args.importer.includes("/react-selecto/")) return undefined;
+      if (!args.importer.replaceAll("\\", "/").includes("/react-selecto/")) return undefined;
       const selectoDir = dirname(Bun.resolveSync("selecto/package.json", args.importer));
       for (const from of [selectoDir, here]) {
         try {
-          return { path: Bun.resolveSync(args.path, from) };
+          return { path: Bun.resolveSync(args.path, from).replaceAll("\\", "/") };
         } catch {
           // Try the next declared dependency owner.
         }

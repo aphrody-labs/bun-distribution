@@ -13,6 +13,7 @@ import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
 import { publicFontUrl, renderPublicStylesheet } from "@aphrody/m3-fonts";
 import { prunePublicFontCopies } from "./public-assets-package";
+import { canonicalBunInputs } from "../../../scripts/release/publish-app-ui";
 const WEBOS_WASM_NAME = "aphrody_webos_wasm_bg.wasm";
 const escape = (value: string) =>
   value.replace(/[&<>"']/g, (character) => `&#${character.charCodeAt(0)};`);
@@ -43,6 +44,18 @@ if (import.meta.main) {
       assets.baseUrl !== "https://pub-0b56d0e2b2134c988df85460fe516cd2.r2.dev")
   )
     throw new Error("Unqualified public assets configuration");
+  const bunCheckout = resolve(
+    Bun.env.APHRODY_BUN_CHECKOUT ?? join(import.meta.dir, "../../../../bun"),
+  );
+  const sourceRevision = Bun.spawnSync(["git", "rev-parse", "HEAD"], { cwd: bunCheckout });
+  if (sourceRevision.exitCode !== 0)
+    throw new Error("Canonical Bun checkout must have a source revision");
+  const bunRevision = sourceRevision.stdout.toString().trim();
+  if (Bun.env.APP_UI_BUN_REVISION && Bun.env.APP_UI_BUN_REVISION !== bunRevision)
+    throw new Error("Selected Bun revision must match the canonical checkout HEAD");
+  const docsFile = canonicalBunInputs(bunCheckout, bunRevision).docsFile;
+  if (Bun.env.APP_UI_DOCS_CATALOG && resolve(Bun.env.APP_UI_DOCS_CATALOG) !== resolve(docsFile))
+    throw new Error("APP_UI_DOCS_CATALOG must match the canonical Bun transfer receipt");
   const started = performance.now();
   const result = await buildM3({
     entry: config.entry,
@@ -140,9 +153,7 @@ if (import.meta.main) {
     )
     .replace('<div id="root"></div>', `<div id="root">${home}</div>`);
   await Bun.write(`${result.outdir}/public-home.html`, publicHome);
-  const docsBytes = await Bun.file(
-    join(import.meta.dir, "../../../crates/web/site/data/docs.json"),
-  ).text();
+  const docsBytes = await Bun.file(docsFile).text();
   const docs: Array<{ id: string; title: string; summary: string; content: string }> =
     JSON.parse(docsBytes);
   await Bun.write(join(result.outdir, "public-docs.json"), docsBytes);

@@ -14,6 +14,11 @@
       "assetsPrefix": "/_app-ui/",
       "routes": ["/", "/os"],
       "nativeRpc": false,
+      "googleSearch": {
+        "owner": "/home/ubuntu/.local/bin/aphrody",
+        "module": "current/google-search.ts",
+        "environmentFile": "current/google-search.env"
+      },
       "runbook": "docs/operations/workspace/public-app-ui-artifact.md"
     }
   },

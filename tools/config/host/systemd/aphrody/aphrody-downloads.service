@@ -18,6 +18,7 @@ WorkingDirectory=/home/ubuntu/apps/downloads/app
 Environment=DOWNLOADS_ROOT=/home/ubuntu/apps/downloads/current
 Environment=DOWNLOADS_PORT=8797
 Environment=DOWNLOADS_HOST=127.0.0.1
+EnvironmentFile=-/home/ubuntu/apps/downloads/app-ui/current/google-search.env
 ExecStart=/home/ubuntu/.bun/bin/bun /home/ubuntu/apps/downloads/app/server.ts
 Restart=always
 RestartSec=2

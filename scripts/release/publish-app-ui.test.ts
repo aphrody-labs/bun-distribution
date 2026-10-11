@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
+import { createHash } from "node:crypto";
 import {
   existsSync,
   mkdtempSync,
@@ -13,6 +14,8 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
   artifactManifest,
+  canonicalBunInputs,
+  searchEnvironment,
   buildCommand,
   declarationCommand,
   prerequisiteCommands,
@@ -95,7 +98,8 @@ test("public assets flag reaches the real owner build and binds artifact provena
 test("dry-run plan stays in the declared downloads service and refuses proxy/host drift", () => {
   const plan = releasePlan(config, revision);
   expect(plan.release).toBe("/home/ubuntu/apps/downloads/app-ui/releases/app-ui-" + revision);
-  expect(plan.restart).toContain("--no-deps --force-recreate downloads");
+  expect(plan.restart).toContain("sudo systemctl restart 'aphrody-downloads.service'");
+  expect(plan.restart).toContain("systemctl is-active --quiet");
   expect(plan.nativeRpc).toBe(false);
   expect(() => releasePlan(config, "main")).toThrow("exact");
   expect(() => releasePlan({ ...config, host: { ...config.host, root: "/" } }, revision)).toThrow(
@@ -128,6 +132,78 @@ test("manifest verifies completeness and records changed bytes with exact source
     ).not.toBe(before.files.find((file) => file.path === "app.js")?.sha256);
     symlinkSync(root, join(root, "escape"), "junction");
     expect(() => artifactManifest(root, revision)).toThrow("unsafe");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("Google deployment binds the SDK and environment to the same rollback symlink", () => {
+  const withSearch: ReleaseConfig = {
+    ...config,
+    site: {
+      appUi: {
+        ...config.site.appUi,
+        googleSearch: {
+          owner: "/home/ubuntu/.local/bin/aphrody",
+          module: "current/google-search.ts",
+          environmentFile: "current/google-search.env",
+        },
+      },
+    },
+  };
+  const plan = releasePlan(withSearch, revision);
+  expect(plan.search?.environmentFile).toBe(plan.base + "/current/google-search.env");
+  expect(searchEnvironment(plan.search!.module, plan.search!.owner)).toBe(
+    "GOOGLE_SEARCH_SDK_MODULE=" +
+      plan.base +
+      "/current/google-search.ts\nGOOGLE_SEARCH_OWNER=/home/ubuntu/.local/bin/aphrody\n",
+  );
+  expect(() => searchEnvironment("/tmp/foreign.ts", plan.search!.owner)).toThrow("owner");
+  expect(() =>
+    releasePlan({ ...withSearch, host: { ...config.host, service: "foreign" } }, revision),
+  ).toThrow("service");
+});
+
+test("Bun transferred docs and packaged Google source require verified checksums", () => {
+  const root = mkdtempSync(join(tmpdir(), "app-ui-bun-receipt-"));
+  try {
+    const destination = "packages/bun-aphrody-web/crates/site/data/docs.json";
+    mkdirSync(join(root, "packages/bun-aphrody-web/crates/site/data"), { recursive: true });
+    mkdirSync(join(root, "packages/bun-google/src"), { recursive: true });
+    writeFileSync(join(root, destination), "[]");
+    writeFileSync(join(root, "packages/bun-google/src/search.ts"), "export {};");
+    const hash = createHash("sha256").update("[]").digest("hex");
+    writeFileSync(
+      join(root, "packages/bun-aphrody-web/transfer-receipt.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        sourceCommit: revision,
+        files: [{ source: "crates/web/site/data/docs.json", destination, sha256: hash }],
+      }),
+    );
+    const inputs = canonicalBunInputs(root, revision);
+    expect(inputs.docs.sha256).toBe(hash);
+    expect(inputs.search.path).toBe("packages/bun-google/src/search.ts");
+    const artifact = join(root, "artifact");
+    mkdirSync(join(artifact, "fonts"), { recursive: true });
+    for (const name of [
+      "index.html",
+      "public-home.html",
+      "app.js",
+      "app.css",
+      "public-docs.json",
+      "fonts/fixture.woff2",
+    ])
+      writeFileSync(join(artifact, name), "fixture");
+    writeFileSync(join(artifact, "google-search.ts"), "export {};");
+    expect(artifactManifest(artifact, revision, false, inputs).sources?.bun).toBe(revision);
+    writeFileSync(join(artifact, "google-search.ts"), "altered");
+    expect(() => artifactManifest(artifact, revision, false, inputs)).toThrow(
+      "search source checksum",
+    );
+    expect(() => canonicalBunInputs(root, "main")).toThrow("revision");
+    writeFileSync(join(root, destination), "changed");
+    expect(() => canonicalBunInputs(root, revision)).toThrow("checksum");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
