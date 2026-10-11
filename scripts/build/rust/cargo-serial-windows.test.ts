@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { cargoSubcommand, planCargo, UsageError } from "./cargo-serial.ts";
+import { cargoSubcommand, planCargo, routeSccacheWrapper, UsageError } from "./cargo-serial.ts";
 
 const windowsTest = test.skipIf(process.platform !== "win32");
 const fixtures: string[] = [];
@@ -19,6 +19,95 @@ test("the subcommand skips toolchain selectors and valued global options", () =>
   );
   expect(cargoSubcommand(["-Zunstable-options", "--locked", "fetch"])).toBe("fetch");
   expect(cargoSubcommand(["--version"])).toBeUndefined();
+});
+
+test("the Windows router replaces only sccache and preserves custom or empty wrappers", () => {
+  const router = "C:/Users/test/.cargo/bin/aphrody-rustc-router.exe";
+  expect(routeSccacheWrapper("sccache", router)).toBe(router);
+  expect(routeSccacheWrapper("C:\\tools\\sccache.exe", router)).toBe(router);
+  expect(routeSccacheWrapper("C:\\tools\\custom-rustc-wrapper.exe", router)).toBe(
+    "C:\\tools\\custom-rustc-wrapper.exe",
+  );
+  expect(routeSccacheWrapper("", router)).toBe("");
+  expect(routeSccacheWrapper(undefined, router)).toBeUndefined();
+});
+
+windowsTest(
+  "the plan routes both Cargo wrapper variables and preserves the effective sccache path",
+  () => {
+    const root = mkdtempSync(join(tmpdir(), "aphrody-rustc-router-plan-"));
+    fixtures.push(root);
+    const router = join(root, "aphrody-rustc-router.exe");
+    const cargoSccache = join(root, "cargo", "sccache.exe");
+    const rustcSccache = join(root, "rustc", "sccache.exe");
+    mkdirSync(join(root, "cargo"));
+    mkdirSync(join(root, "rustc"));
+    writeFileSync(router, "router fixture");
+    writeFileSync(cargoSccache, "cargo sccache fixture");
+    writeFileSync(rustcSccache, "rustc sccache fixture");
+    const plan = planCargo(["check", "-p", "x"], true, {
+      PATH: process.env.PATH ?? "",
+      USERPROFILE: root,
+      APHRODY_RUSTC_WRAPPER_ROUTER: router,
+      CARGO_BUILD_RUSTC_WRAPPER: cargoSccache,
+      RUSTC_WRAPPER: rustcSccache,
+      LOCALAPPDATA: join(root, "local"),
+      APHRODY_CARGO_JOBS: "2",
+    });
+    expect(plan.env.CARGO_BUILD_RUSTC_WRAPPER).toBe(router);
+    expect(plan.env.RUSTC_WRAPPER).toBe(router);
+    expect(plan.env.APHRODY_SCCACHE_EXE).toBe(rustcSccache);
+  },
+);
+
+windowsTest("the plan preserves a custom effective wrapper and empty wrapper opt-outs", () => {
+  const root = mkdtempSync(join(tmpdir(), "aphrody-rustc-router-custom-"));
+  fixtures.push(root);
+  const router = join(root, "aphrody-rustc-router.exe");
+  const sccache = join(root, "sccache.exe");
+  const custom = join(root, "custom-wrapper.exe");
+  writeFileSync(router, "router fixture");
+  writeFileSync(sccache, "sccache fixture");
+  writeFileSync(custom, "custom wrapper fixture");
+
+  const customPlan = planCargo(["check", "-p", "x"], true, {
+    PATH: process.env.PATH ?? "",
+    USERPROFILE: root,
+    APHRODY_RUSTC_WRAPPER_ROUTER: router,
+    CARGO_BUILD_RUSTC_WRAPPER: sccache,
+    RUSTC_WRAPPER: custom,
+    LOCALAPPDATA: join(root, "local"),
+    APHRODY_CARGO_JOBS: "2",
+  });
+  expect(customPlan.env.CARGO_BUILD_RUSTC_WRAPPER).toBe(router);
+  expect(customPlan.env.RUSTC_WRAPPER).toBe(custom);
+  expect(customPlan.env.APHRODY_SCCACHE_EXE).toBeUndefined();
+
+  const rustcPlan = planCargo(["check", "-p", "x"], true, {
+    PATH: process.env.PATH ?? "",
+    USERPROFILE: root,
+    APHRODY_RUSTC_WRAPPER_ROUTER: router,
+    CARGO_BUILD_RUSTC_WRAPPER: custom,
+    RUSTC_WRAPPER: sccache,
+    LOCALAPPDATA: join(root, "local"),
+    APHRODY_CARGO_JOBS: "2",
+  });
+  expect(rustcPlan.env.CARGO_BUILD_RUSTC_WRAPPER).toBe(custom);
+  expect(rustcPlan.env.RUSTC_WRAPPER).toBe(router);
+  expect(rustcPlan.env.APHRODY_SCCACHE_EXE).toBe(sccache);
+
+  const emptyPlan = planCargo(["check", "-p", "x"], true, {
+    PATH: process.env.PATH ?? "",
+    USERPROFILE: root,
+    APHRODY_RUSTC_WRAPPER_ROUTER: router,
+    CARGO_BUILD_RUSTC_WRAPPER: "",
+    RUSTC_WRAPPER: "",
+    LOCALAPPDATA: join(root, "local"),
+    APHRODY_CARGO_JOBS: "2",
+  });
+  expect(emptyPlan.env.CARGO_BUILD_RUSTC_WRAPPER).toBe("");
+  expect(emptyPlan.env.RUSTC_WRAPPER).toBe("");
+  expect(emptyPlan.env.APHRODY_SCCACHE_EXE).toBeUndefined();
 });
 
 test("the plan bounds jobs, refuses overrides and isolates the target directory", () => {
@@ -67,6 +156,22 @@ test("the MSVC context appends the private Git alias to inherited process config
   expect(plan.env.CARGO_TARGET_DIR).toBe(join(tmpdir(), "local", "aphrody", "target"));
   expect(plan.env.SCCACHE_SERVER_PORT).toBe("4227");
   expect(plan.env.CARGO_BUILD_JOBS).toBe("4");
+});
+
+test("the MSVC context preserves an explicit empty Cargo wrapper opt-out", () => {
+  const root = mkdtempSync(join(tmpdir(), "aphrody-cargo-wrapper-opt-out-"));
+  fixtures.push(root);
+  const wrapper = join(root, "custom-rustc-wrapper.exe");
+  writeFileSync(wrapper, "fixture");
+  const plan = planCargo(["check", "-p", "x"], true, {
+    PATH: process.env.PATH ?? "",
+    RUSTC_WRAPPER: wrapper,
+    CARGO_BUILD_RUSTC_WRAPPER: "",
+    LOCALAPPDATA: join(tmpdir(), "local"),
+    APHRODY_CARGO_JOBS: "2",
+  });
+  expect(plan.env.CARGO_BUILD_RUSTC_WRAPPER).toBe("");
+  expect(plan.env.RUSTC_WRAPPER).toBe(wrapper);
 });
 
 windowsTest.each(["check", "package", "publish"])(

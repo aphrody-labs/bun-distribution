@@ -28,6 +28,61 @@ Utilise `APHRODY_CARGO_JOBS=1..6` pour réduire la charge sur une machine
 mémoire limitée. Ne lance pas plusieurs Cargo en parallèle et ne passe pas
 `-j`; le verrou et la politique de jobs s’appliquent à toutes les sessions.
 
+### Limite de ligne de commande Windows avec sccache
+
+Sur Windows, le wrapper utilisateur `aphrody-rustc-router.exe` conserve sccache
+pour les invocations courtes. Rustc reçoit un fichier réponse UTF-8 à arguments
+séparés par des lignes lorsque la commande approche 24 000 unités UTF-16. Le
+routeur Rust ([source](../../../scripts/build/rust/sccache-rustc-router.rs),
+tests de qualification dans
+[`cargo-serial-windows.test.ts`](../../../scripts/build/rust/cargo-serial-windows.test.ts))
+couvre aussi l’expansion interne de sccache : si sccache échoue avec
+`sccache: caused by:` et `os error 206` après avoir ajouté ses propres options,
+il retente une seule fois la même compilation via `rustc @response-file`. Les
+autres erreurs et codes de sortie de sccache sont transmis sans retry. Les
+arguments non UTF-8 et contenant CR/LF sont refusés avant création du fichier;
+les fichiers temporaires uniques sont supprimés après l’appel à rustc. Dans les
+deux voies de fallback, le routeur développe une seule couche de response
+files `@...` fournie par Cargo avant d’écrire son propre fichier réponse, car
+rustc ne développe pas les fichiers imbriqués dans ce chemin. Les invocations
+longues et les retries après l’erreur 206 compilent sans sccache, donc sans
+cache pour cette compilation. Une commande Cargo qui dépasse la limite
+CreateProcess Windows avant le démarrage du wrapper ne peut pas être réparée
+par le routeur.
+
+Qualification Windows (2026-10-11) : les sept tests unitaires Rust du routeur
+passent, dont la compilation réelle via un `@response` Cargo aplati; strict
+Clippy, `rustfmt`, les dix tests du wrapper Bun (59 assertions), le contrôle
+TypeScript, `oxfmt` et le lint ciblé passent. Une invocation Cargo longue de
+30 823 unités UTF-16 compile via la voie directe sans cache. Le contrôle réel
+`cargo-serial.ts --msvc check -p uv-auth --locked --message-format=short`
+(nightly 2026-09-15) a reproduit l’erreur sccache 206 puis terminé avec succès
+après retry rustc, en 2,59 s. Une sonde courte a gagné un hit sccache après
+recompilation. L’installation globale vérifie son reçu source/outils/binaire;
+son second passage a signalé `CompileSkipped=true`, sans changement de binaire,
+reçu, configuration ou environnement, et `-WhatIf` n’a planifié aucune écriture.
+Ces résultats qualifient le routeur Windows et `uv-auth`, pas le workspace Bun
+complet ni la fabrique qui invoque rustc directement.
+
+Installe ou répare le routeur depuis une session PowerShell native Windows :
+[`install-sccache-rustc-router.ps1`](../../../scripts/build/rust/install-sccache-rustc-router.ps1).
+
+```powershell
+./scripts/build/rust/install-sccache-rustc-router.ps1
+```
+
+L’installation met à jour le binaire et la configuration Cargo globale de
+l’utilisateur, puis `RUSTC_WRAPPER` utilisateur quand ces valeurs sont absentes
+ou pointent déjà vers sccache/le routeur. Les wrappers personnalisés et les
+valeurs vides explicites restent inchangés. `cargo-serial.ts --msvc` route
+séparément les deux variables `RUSTC_WRAPPER` et
+`CARGO_BUILD_RUSTC_WRAPPER` quand elles désignent sccache, en gardant le chemin
+du sccache effectif pour le cache. L’installation ne modifie pas les variables
+Machine, le `CARGO_BUILD_RUSTC_WRAPPER` du processus courant, les paramètres
+`SCCACHE_*` ni les données du cache. Elle ne détourne pas les compilateurs
+C/C++; le script de factory Bun qui appelle rustc directement conserve ce
+contrat.
+
 ## Outils installés avec Cargo
 
 Le poste dispose de `cargo-nextest`, `cargo-deny`, `cargo-audit` et

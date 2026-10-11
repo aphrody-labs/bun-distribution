@@ -46,6 +46,16 @@ type Env = Record<string, string | undefined>;
 
 export class UsageError extends Error {}
 
+/** Route only sccache through the Windows response-file adapter; preserve deliberate wrappers. */
+export function routeSccacheWrapper(
+  wrapper: string | undefined,
+  router: string,
+): string | undefined {
+  if (!wrapper) return wrapper;
+  const executable = wrapper.split(/[\\/]/).pop()?.toLowerCase();
+  return executable === "sccache" || executable === "sccache.exe" ? router : wrapper;
+}
+
 /** The Cargo subcommand, skipping a `+toolchain` selector and global options. */
 export function cargoSubcommand(args: readonly string[]): string | undefined {
   for (let index = 0; index < args.length; index++) {
@@ -115,10 +125,32 @@ export function planCargo(args: readonly string[], msvc: boolean, env: Env): Car
     const sccache = Bun.which("sccache", { PATH: env.PATH ?? "" });
     if (sccache) next.RUSTC_WRAPPER = sccache;
   }
+  if (process.platform === "win32" && env.USERPROFILE) {
+    const router =
+      env.APHRODY_RUSTC_WRAPPER_ROUTER ??
+      join(env.USERPROFILE, ".cargo", "bin", "aphrody-rustc-router.exe");
+    if (existsSync(router)) {
+      const cargoWrapper = next.CARGO_BUILD_RUSTC_WRAPPER;
+      const rustcWrapper = next.RUSTC_WRAPPER;
+      const routedCargoWrapper = routeSccacheWrapper(cargoWrapper, router);
+      const routedRustcWrapper = routeSccacheWrapper(rustcWrapper, router);
+      if (routedCargoWrapper !== cargoWrapper) next.CARGO_BUILD_RUSTC_WRAPPER = routedCargoWrapper;
+      if (routedRustcWrapper !== rustcWrapper) next.RUSTC_WRAPPER = routedRustcWrapper;
+
+      // Cargo's RUSTC_WRAPPER environment override wins when both variables are set.
+      const selected = rustcWrapper !== undefined ? rustcWrapper : cargoWrapper;
+      if (selected !== undefined && routeSccacheWrapper(selected, router) !== selected) {
+        next.APHRODY_SCCACHE_EXE =
+          (isAbsolute(selected) && existsSync(selected)
+            ? selected
+            : Bun.which(selected, { PATH: next.PATH ?? "" })) ?? selected;
+      }
+    }
+  }
   if (msvc) {
     if (!next.CARGO_TARGET_DIR && env.LOCALAPPDATA)
       next.CARGO_TARGET_DIR = join(env.LOCALAPPDATA, "aphrody", "target");
-    if (!next.CARGO_BUILD_RUSTC_WRAPPER && next.RUSTC_WRAPPER)
+    if (next.CARGO_BUILD_RUSTC_WRAPPER === undefined && next.RUSTC_WRAPPER)
       next.CARGO_BUILD_RUSTC_WRAPPER = next.RUSTC_WRAPPER;
     next.SCCACHE_SERVER_PORT ??= "4227";
     next.CARGO_NET_GIT_FETCH_WITH_CLI = "true";
