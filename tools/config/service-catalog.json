@@ -488,6 +488,41 @@
       "target": "local:127.0.0.1:6379",
       "public": false,
       "note": "Redis 8.10.2, authenticated loopback; Bun native Redis client, durable AOF/RDB volume. Compose owner C:/SSH/omar-server/config/redis.compose.yml; maxmemory 512MiB, Docker memory 768MiB."
+    },
+    {
+      "id": "shenron-cloudflared",
+      "application": "shenron",
+      "kind": "cloudflare-tunnel",
+      "runtime": "native",
+      "unit": "shenron-cloudflared.service",
+      "health": "http://127.0.0.1:20243/ready",
+      "port": 20243,
+      "host": "dbfr",
+      "public": false,
+      "sourceRepo": "shenron",
+      "note": "Remote-managed tunnel f2ddf195-5d19-4321-8b12-259c7c57659b; token via systemd LoadCredential; no DNS cutover by this service."
+    },
+    {
+      "id": "shenron-cloudflare-audit",
+      "application": "shenron",
+      "kind": "read-only-audit",
+      "runtime": "bun",
+      "unit": "shenron-cloudflare-audit.service",
+      "host": "dbfr",
+      "public": false,
+      "sourceRepo": "shenron",
+      "note": "Daily RO reconciliation via shenron-cloudflare-audit.timer; unavailable auth is persisted as failed, never a successful sync."
+    },
+    {
+      "id": "shenron-cloudflare-s3-renew",
+      "application": "shenron",
+      "kind": "credential-renewal",
+      "runtime": "bun",
+      "unit": "shenron-cloudflare-s3-renew.service",
+      "host": "dbfr",
+      "public": false,
+      "sourceRepo": "shenron",
+      "note": "Temporary one-hour R2 object credentials for shenron-cdn prefixes _objects/ and _migration/; no corpus, DNS or worker mutation."
     }
   ],
   "policies": {
@@ -790,6 +825,44 @@
         "host": "local",
         "kind": "docker",
         "container": "omar-redis"
+      },
+      {
+        "host": "dbfr",
+        "kind": "systemd",
+        "unit": "shenron-cloudflare-audit.service",
+        "hold": "oneshot driven by daily read-only timer"
+      },
+      {
+        "host": "dbfr",
+        "kind": "systemd",
+        "unit": "shenron-cloudflare-audit.timer"
+      },
+      {
+        "host": "dbfr",
+        "kind": "systemd",
+        "unit": "shenron-cloudflare-s3-renew.service",
+        "hold": "oneshot driven by scoped credential renewal timer"
+      },
+      {
+        "host": "dbfr",
+        "kind": "systemd",
+        "unit": "shenron-cloudflare-s3-renew.timer"
+      },
+      {
+        "host": "local",
+        "kind": "scheduledTask",
+        "name": "Shenron R2 S3 scoped renewal",
+        "triggers": [
+          "every:10m",
+          "atLogon"
+        ],
+        "principal": "user",
+        "runLevel": "limited",
+        "periodic": true,
+        "execute": "pwsh.exe",
+        "arguments": "-NoLogo -NoProfile -NonInteractive -File \"%USERPROFILE%\\.aphrody\\tools\\cloudflare-cli\\s3-profile.ps1\" -Action renew -Apply -BunExe \"C:/shenron/var/runtimes/bun-1.4.4-current-ae5a09dc/bun.exe\"",
+        "timeLimitMinutes": 3,
+        "description": "Renew one-hour Shenron R2 S3 object credentials scoped to shenron-cdn _objects/ and _migration/, protected by DPAPI CurrentUser."
       }
     ]
   }
