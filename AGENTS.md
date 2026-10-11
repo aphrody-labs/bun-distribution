@@ -1,4 +1,5 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Aphrody repository instructions
 
 **Before any code change, read [START-HERE.md](START-HERE.md)** (team, rules, hosts, tunnel, remote control,
@@ -153,6 +154,22 @@ Separate source, tested behavior, packaging, installation and activation.
 Hosts change through Infra's declared catalog/runbook: plan before apply.
 Checksum-verify protected-data backups before moves; preserve databases, models,
 assets, persistent stores and shared caches. No ad hoc service/Nginx edits.
+
+### VPS storage normalization
+
+For VPS storage work, follow [the storage cleanup policy](docs/operations/infra/VPS-STORAGE-POLICY.md).
+Inventory every block device, partition, filesystem and mount on each in-scope
+host before cleanup. Keep one canonical Git clone/object store per project and
+one declared build factory per host, as configured by Workspace/Infra. Move and
+verify unique commits and working-tree changes before retiring duplicate
+checkouts; an identical HEAD is not proof that a checkout is disposable. Route
+builds through the canonical factory and its shared lock. Delete only exact,
+reviewed paths from an Infra plan after checking Git state, processes, sessions,
+mounts, container binds and retained data. Preserve system partitions, protected
+stores, production state, credentials, model weights, releases, rollback files,
+and shared caches. Never format, repartition, or wipe a disk as part of storage
+cleanup. If a filesystem or checkout cannot be fully inspected, keep it and
+record the blocker; do not treat unknown as empty.
 
 Never stage secrets, private data, database contents, model weights or build output.
 No AI bots/apps added to organizations/repositories. Commits:

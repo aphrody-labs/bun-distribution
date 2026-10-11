@@ -62,6 +62,17 @@ ne sont pas parcourus. Ces arbres sont des ensembles protégés, pas des candida
   système sont actifs. La présence de Steam et de Kubernetes ne suffit pas à
   autoriser leur arrêt ni la destruction de leurs données.
 
+Rafraîchissement lecture seule à 09:05 UTC : `lsblk`, `findmnt` et `df -B1`
+confirment deux disques de données, `sda` et `sdb`, plus `zram0`. `sda1` monté
+sur `/` dispose de 54 927 548 416 octets libres (83 % utilisés) ; ses partitions
+`/boot` et `/boot/efi` sont peu utilisées. `sdb1` fournit le volume `data` de
+300 Gio, avec 347 004 928 octets disponibles et 100 % d'utilisation. Les points
+`/home/ubuntu/apps` et `/home/ubuntu/src` sont des alias bind de sous-répertoires
+de ce même `sdb1`, pas deux copies de disque. `/home/ubuntu/builds` contient
+cinq répertoires de travail Bun ; plusieurs sessions `tmux` de fusion, release
+et previews y sont actives. Ils restent conservés. La purge Docker planifiée
+libérerait surtout de la place sur `sda1` et ne résoudrait pas le volume plein.
+
 Les mesures sont datées et les montages ne doivent pas être additionnés comme
 s'ils étaient des copies indépendantes. Aucun gain de capacité n'est revendiqué.
 
@@ -88,11 +99,12 @@ l'application. Les seuls processus terminés pendant l'audit étaient nos propre
 passages d'inventaire remplacés, après vérification de leurs PID et commandes.
 
 Les sources, changements non commités, données, credentials, conversations,
-modèles, archives, releases et caches partagés restent protégés. La définition
-du périmètre « Aphrody vital » reste nécessaire pour classer les anciens
-environnements, snapshots, kernels et services. Le catalogue historique
-`disk-reclaim.json` ne doit pas être appliqué globalement : certaines entrées
-purgeraient des caches nécessaires à la factory actuelle.
+modèles, archives, releases et caches partagés restent protégés. Le propriétaire
+a délégué le classement des autres éléments : appliquer la
+[politique de stockage VPS](VPS-STORAGE-POLICY.md) et conserver tout élément
+actif, unique ou non inspectable. Le catalogue historique `disk-reclaim.json` ne
+doit pas être appliqué globalement : certaines entrées purgeraient des caches
+nécessaires à la factory actuelle.
 
 ## Qualification
 
