@@ -26,7 +26,7 @@ administration and was inspected read-only.
   2 present, and no required or empty variables. Values remain in the
   protected store and were not printed.
 - SSH health audit still classifies the host `Critical`: `/home/ubuntu/build`
-  (`/dev/sdb1`) is 100% full with about 324 MiB free. Root (`/dev/sda1`) is at
+  (`/dev/sdb1`) is 100% full with about 331 MiB free. Root (`/dev/sda1`) is at
   83% with about 52 GiB free. There are no failed systemd units. A bounded
   inventory found recent Linux kernel build trees and active Bun previews; the
   exhaustive size scan exceeded its SSH deadline, so no build-volume paths were
@@ -67,9 +67,14 @@ administration and was inspected read-only.
   renewal-watch result and VPS count; `mutation=false`.
 - The key `Aphrody - dragonballfr.com` is active and authenticates as
   `gl839461-ovh`; its application details endpoint does not return permission
-  paths. The creation form had left the `DELETE` path blank. Therefore full
-  `DELETE /*` remains unverified and is not claimed; the user confirmed that
-  grant, but the minimized Chrome window prevented the required UI update.
+  paths. The creation form had left the `DELETE` path blank. `DELETE /*` remains
+  unverified and is not claimed. The open OVH Manager session identifies Omar
+  and shows his DBFR key; no access policy was changed in that session.
+- A fresh allowlisted reclaim plan on the Aphrody VPS estimated 23.70 GiB for
+  Docker, but the apply reclaimed 0.01 GiB total. `/home/ubuntu/build` remains
+  full at 100%; its latest `df` reports 331 MiB free. A detailed directory-size
+  scan was still blocked by slow disk I/O, so no build outputs were deleted and
+  no DBFR host changes were made.
 - Local `aphrody infra status --json` still fails because
   `C:\Users\aphro\aphrody\tools/config/host\inventory/targets.json` is
   missing, including when invoked with `--root C:\aphrody`. This local
@@ -79,9 +84,10 @@ administration and was inspected read-only.
   DNS records directly and does not claim zone-metadata qualification.
 
 Next steps: recover space on `/home/ubuntu/build` only after identifying
-inactive build outputs and an Infra plan for that mount; finish the confirmed
-`DELETE /*` grant in Chrome and verify the resulting permission path; fix the
-local `targets.json` resolution and requalify OVH zone metadata separately.
+inactive build outputs and an Infra plan for that mount; have the DBFR account
+administrator authorize and apply any API-key permission change, then verify
+the resulting permission path; fix the local `targets.json` resolution and
+requalify OVH zone metadata separately.
 
 ## Incident: VPS Expiration Without Alert (2026-10-01 to 2026-10-05)
 
