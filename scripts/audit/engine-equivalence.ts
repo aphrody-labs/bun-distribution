@@ -10,14 +10,17 @@
 import { $ } from "bun";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { obscuraSourceRoot } from "../tools/web/obscura-sources";
 
 const ROOT = join(import.meta.dir, "../..");
 // The Bun fork checkout (aphrody-labs/bun): APHRODY_BUN_CHECKOUT, else C:/bun on Windows, else ~/bun.
 const BUN_CHECKOUT =
-  process.env.APHRODY_BUN_CHECKOUT ?? (process.platform === "win32" ? "C:/bun" : join(homedir(), "bun"));
+  process.env.APHRODY_BUN_CHECKOUT ??
+  (process.platform === "win32" ? "C:/bun" : join(homedir(), "bun"));
 const BUN_SRC = join(BUN_CHECKOUT, "src");
-const OBSCURA = join(ROOT, "crates/web/obscura-js/src");
-const OBSCURA_JS = join(ROOT, "crates/web/obscura-js/js");
+const OBSCURA_ROOT = obscuraSourceRoot(ROOT);
+const OBSCURA = join(OBSCURA_ROOT, "obscura-js/src");
+const OBSCURA_JS = join(OBSCURA_ROOT, "obscura-js/js");
 const WEBKIT_PREBUILT =
   "/home/ubuntu/build/cache/bun-forge/build-cache/webkit-5718a6ec579b9836-lto/include";
 const VPS_JSC = `${WEBKIT_PREBUILT}/JavaScriptCore ${WEBKIT_PREBUILT}/wtf`;
