@@ -61,6 +61,8 @@
 
 pub mod ai_env;
 pub mod config_toml;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod credential_file;
 pub mod home_agent;
 pub mod layer;
 pub mod mcp;

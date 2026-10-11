@@ -80,9 +80,20 @@ pub(crate) async fn run(action: GatewayAction) -> miette::Result<()> {
         GatewayAction::Models { addr } => {
             let client = gateway_http_client()?;
             let url = format!("http://{addr}/v1/models");
-            let token = aphrody_config::ai_env::HTTP_TOKEN.resolve().or_else(|| {
-                std::env::var("APHRODY_OS_AUTH_TOKEN").ok().filter(|token| !token.trim().is_empty())
-            });
+            let token = if let Some(path) = std::env::var_os("APHRODY_AI_HTTP_TOKEN_FILE") {
+                Some(
+                    aphrody_config::credential_file::read_credential_file(std::path::Path::new(
+                        &path,
+                    ))
+                    .map_err(|error| miette::miette!("{error}"))?,
+                )
+            } else {
+                aphrody_config::ai_env::HTTP_TOKEN.resolve().or_else(|| {
+                    std::env::var("APHRODY_OS_AUTH_TOKEN")
+                        .ok()
+                        .filter(|token| !token.trim().is_empty())
+                })
+            };
             match gateway_models_request(&client, &url, token.as_deref()).await {
                 Ok(text) => {
                     println!("{text}");

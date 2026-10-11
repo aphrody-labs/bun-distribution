@@ -52,6 +52,9 @@ pub struct ModelProviderInfo {
     /// Environment variable holding the API key or bearer token.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub env_key: Option<String>,
+    /// Protected host file containing the upstream bearer credential.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub api_key_file: Option<String>,
     /// Human-readable instructions for obtaining/setting `env_key`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub env_key_instructions: Option<String>,

@@ -95,14 +95,23 @@ async fn cors_middleware(req: Request, next: Next) -> Response {
 }
 
 /// Resolve the gateway credential, preserving the prior OS alias.
-fn gateway_token() -> Option<String> {
-    aphrody_config::ai_env::HTTP_TOKEN.resolve().or_else(|| {
+fn gateway_token() -> Result<Option<String>, GatewayError> {
+    if let Some(path) = std::env::var_os("APHRODY_AI_HTTP_TOKEN_FILE") {
+        return aphrody_config::credential_file::read_credential_file(std::path::Path::new(&path))
+            .map(Some)
+            .map_err(|error| GatewayError::Config(error.to_string()));
+    }
+    Ok(aphrody_config::ai_env::HTTP_TOKEN.resolve().or_else(|| {
         std::env::var("APHRODY_OS_AUTH_TOKEN").ok().filter(|token| !token.trim().is_empty())
-    })
+    }))
 }
 
 /// Middleware validating the canonical gateway credential when configured.
-async fn auth_middleware(req: Request, next: Next) -> Response {
+async fn auth_middleware(
+    State(token): State<Result<Option<String>, ()>>,
+    req: Request,
+    next: Next,
+) -> Response {
     // OPTIONS preflight requests do not carry credentials and must be allowed through
     if req.method() == Method::OPTIONS {
         return next.run(req).await;
@@ -114,7 +123,14 @@ async fn auth_middleware(req: Request, next: Next) -> Response {
         return next.run(req).await;
     }
 
-    if let Some(expected_token) = gateway_token() {
+    let Ok(token) = token else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({"error":{"message":"protected gateway credential unavailable"}})),
+        )
+            .into_response();
+    };
+    if let Some(expected_token) = token {
         let expected_token = expected_token.trim();
         if !expected_token.is_empty() {
             let auth_header =
@@ -155,12 +171,13 @@ async fn auth_middleware(req: Request, next: Next) -> Response {
 
 /// Construct the Axum router for the gateway HTTP service.
 pub fn router(state: GatewayState) -> Router {
+    let token = gateway_token().map_err(|_| ());
     Router::new()
         .route("/health", get(health_handler).options(cors_preflight))
         .route("/healthz", get(health_handler).options(cors_preflight))
         .route("/v1/models", get(models_handler).options(cors_preflight))
         .route("/v1/chat/completions", post(chat_completions_handler).options(cors_preflight))
-        .layer(middleware::from_fn(auth_middleware))
+        .layer(middleware::from_fn_with_state(token, auth_middleware))
         .layer(middleware::from_fn(cors_middleware))
         .with_state(state)
 }
@@ -171,7 +188,7 @@ pub async fn serve_gateway(
     adapter: Arc<dyn GatewayAdapter>,
     model_ids: Vec<String>,
 ) -> Result<(), GatewayError> {
-    validate_bind(addr, gateway_token().as_deref())?;
+    validate_bind(addr, gateway_token()?.as_deref())?;
 
     let state = GatewayState { adapter, model_ids };
     let app = router(state);
@@ -339,6 +356,35 @@ async fn cors_preflight() -> impl IntoResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn file_auth_failure_is_closed_and_success_requires_the_bound_token() {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+        for (token, expected) in [
+            (Err(()), StatusCode::SERVICE_UNAVAILABLE),
+            (Ok(Some("fixture-token".to_owned())), StatusCode::UNAUTHORIZED),
+        ] {
+            let app = Router::new()
+                .route("/v1/models", get(|| async { "fixture" }))
+                .layer(middleware::from_fn_with_state(token, auth_middleware));
+            let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let address = listener.local_addr().unwrap();
+            let server = tokio::spawn(async move { axum::serve(listener, app).await });
+            let client = reqwest::Client::builder().no_proxy().build().unwrap();
+            let url = format!("http://{address}/v1/models");
+            assert_eq!(client.get(&url).send().await.unwrap().status(), expected);
+            let authenticated = client.get(&url).bearer_auth("fixture-token").send().await.unwrap();
+            assert_eq!(
+                authenticated.status(),
+                if expected == StatusCode::UNAUTHORIZED {
+                    StatusCode::OK
+                } else {
+                    StatusCode::SERVICE_UNAVAILABLE
+                }
+            );
+            server.abort();
+        }
+    }
 
     struct UnreadyAdapter;
 

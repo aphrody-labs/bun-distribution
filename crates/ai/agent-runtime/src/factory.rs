@@ -99,30 +99,40 @@ impl ModelFactory {
 /// The key wins when both are set, mirroring the official SDKs' resolution
 /// order.
 fn anthropic_uses_oauth(info: &aphrody_config::ModelProviderInfo) -> bool {
-    let key_present = info
-        .env_key
-        .as_deref()
-        .and_then(|key| std::env::var(key).ok())
-        .is_some_and(|value| !value.trim().is_empty());
+    let key_present = info.api_key_file.is_some()
+        || info
+            .env_key
+            .as_deref()
+            .and_then(|key| std::env::var(key).ok())
+            .is_some_and(|value| !value.trim().is_empty());
     !key_present
         && std::env::var("ANTHROPIC_AUTH_TOKEN").is_ok_and(|value| !value.trim().is_empty())
 }
 
-/// Resolve the credential for a provider: its `env_key`, then for Anthropic
+/// Resolve the credential for a provider: explicit file, then `env_key`, then for Anthropic
 /// the OAuth token variable the official SDKs also honour.
-fn provider_credential(info: &aphrody_config::ModelProviderInfo) -> Option<String> {
+fn provider_credential(
+    info: &aphrody_config::ModelProviderInfo,
+) -> Result<Option<String>, RuntimeError> {
+    if let Some(path) = &info.api_key_file {
+        return aphrody_config::credential_file::read_credential_file(std::path::Path::new(path))
+            .map(Some)
+            .map_err(|error| RuntimeError::Config(error.to_string()));
+    }
     let from_env_key = info
         .env_key
         .as_ref()
         .and_then(|key| std::env::var(key).ok())
         .filter(|value| !value.trim().is_empty());
     if from_env_key.is_some() {
-        return from_env_key;
+        return Ok(from_env_key);
     }
     if info.wire_api == WireApi::Anthropic {
-        return std::env::var("ANTHROPIC_AUTH_TOKEN").ok().filter(|value| !value.trim().is_empty());
+        return Ok(std::env::var("ANTHROPIC_AUTH_TOKEN")
+            .ok()
+            .filter(|value| !value.trim().is_empty()));
     }
-    None
+    Ok(None)
 }
 
 /// Assemble the transport runtime (endpoint, credential, headers, retries,
@@ -139,7 +149,7 @@ fn provider_runtime(
         ))
     })?;
 
-    let bearer_token = provider_credential(info);
+    let bearer_token = provider_credential(info)?;
 
     let headers = info
         .http_headers
@@ -193,6 +203,16 @@ mod tests {
     };
 
     use super::*;
+
+    #[test]
+    fn explicit_missing_file_never_falls_back_to_another_credential() {
+        let info = aphrody_config::ModelProviderInfo {
+            api_key_file: Some("missing-credential-file".into()),
+            env_key: Some("PATH".into()),
+            ..Default::default()
+        };
+        assert!(provider_credential(&info).is_err());
+    }
 
     #[test]
     fn managed_llama_requires_a_prepared_endpoint() {
