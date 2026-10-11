@@ -20,6 +20,20 @@ use clap::Subcommand;
 
 use crate::context::TerminalCommand;
 
+fn is_installed_whisper(
+    model: &aphrody_models::InstalledModel,
+    catalog: &aphrody_models::Catalog,
+) -> bool {
+    catalog
+        .by_task(aphrody_models::ModelTask::SpeechToText)
+        .iter()
+        .any(|entry| entry.primary().is_some_and(|file| file.reference == model.reference))
+        || matches!(
+            model.inspection.as_ref().and_then(|inspection| inspection.details.as_ref()),
+            Some(aphrody_models::Details::Ggml(_))
+        )
+}
+
 fn translation_backend(value: &str) -> Result<String, String> {
     match value.trim().to_ascii_lowercase().as_str() {
         "local" | "offline" => {
@@ -35,6 +49,54 @@ fn translation_backend(value: &str) -> Result<String, String> {
 #[cfg(test)]
 mod routing_tests {
     use clap::Parser;
+
+    fn installed(reference: aphrody_models::ModelRef) -> aphrody_models::InstalledModel {
+        aphrody_models::InstalledModel {
+            reference,
+            path: std::path::PathBuf::new(),
+            stored_path: String::new(),
+            bytes: 0,
+            sha256: String::new(),
+            format: aphrody_models::ArtifactFormat::Unknown,
+            installed_at: 0,
+            last_used_at: None,
+            catalog_id: None,
+            inspection: None,
+        }
+    }
+
+    #[test]
+    fn voice_status_recognizes_catalogued_hub_weights_by_task() {
+        let catalog = aphrody_models::Catalog::builtin();
+        let mut speech_models = 0;
+        for entry in &catalog.entries {
+            for file in &entry.files {
+                let model = installed(file.reference.clone());
+                let expected = entry.task == aphrody_models::ModelTask::SpeechToText
+                    && entry.primary().is_some_and(|primary| primary.reference == file.reference);
+                assert_eq!(super::is_installed_whisper(&model, catalog), expected, "{}", entry.id);
+                speech_models += usize::from(expected);
+            }
+        }
+        assert!(speech_models > 0);
+    }
+
+    #[test]
+    fn voice_status_accepts_inspected_whisper_and_refuses_name_only() {
+        let catalog = aphrody_models::Catalog::builtin();
+        let mut model = installed(
+            aphrody_models::ModelRef::parse("hf:fixture/whisper/fake-whisper.bin").unwrap(),
+        );
+        assert!(!super::is_installed_whisper(&model, catalog));
+        let mut header = b"lmgg".to_vec();
+        for field in [51864_i32, 1500, 512, 6, 4, 448, 512, 6, 4, 80, 1] {
+            header.extend_from_slice(&field.to_le_bytes());
+        }
+        model.inspection = Some(aphrody_models::inspect_prefix(&header, "custom.bin"));
+        assert!(super::is_installed_whisper(&model, catalog));
+        model.inspection = Some(aphrody_models::inspect_prefix(b"lmgg", "custom.bin"));
+        assert!(!super::is_installed_whisper(&model, catalog));
+    }
 
     #[test]
     fn offline_translation_requests_cannot_fall_back_to_web() {
@@ -334,10 +396,12 @@ pub(crate) async fn run_voice(action: VoiceAction) -> miette::Result<()> {
         VoiceAction::Status { json } => {
             let store = aphrody_models::ModelStore::open()
                 .map_err(|e| miette::miette!("open model store: {e}"))?;
-            let installed = store.list().unwrap_or_default();
+            let installed =
+                store.list().map_err(|error| miette::miette!("list model store: {error}"))?;
+            let catalog = aphrody_models::Catalog::builtin();
             let whisper_models: Vec<_> = installed
                 .into_iter()
-                .filter(|m| m.reference.to_string().starts_with("whisper"))
+                .filter(|model| is_installed_whisper(model, catalog))
                 .map(|m| {
                     serde_json::json!({
                         "id": m.reference.to_string(),
