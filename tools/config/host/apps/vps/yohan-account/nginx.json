@@ -1,0 +1,104 @@
+{
+  "servers": [
+    {
+      "server_names": ["yohan.aphrody.com"],
+      "listen_ports": ["80", "[::]:80"],
+      "locations": [
+        {
+          "path": "^~ /.well-known/acme-challenge/",
+          "custom_directives": [
+            "root /var/www/letsencrypt",
+            "default_type text/plain",
+            "try_files $uri =404"
+          ]
+        },
+        {
+          "path": "/",
+          "custom_directives": ["return 301 https://yohan.aphrody.com$request_uri"]
+        }
+      ]
+    },
+    {
+      "server_names": ["yohan.aphrody.com"],
+      "listen_ports": ["443 ssl", "[::]:443 ssl"],
+      "ssl_certificate": "/etc/letsencrypt/live/yohan.aphrody.com/fullchain.pem",
+      "ssl_certificate_key": "/etc/letsencrypt/live/yohan.aphrody.com/privkey.pem",
+      "custom_directives": [
+        "http2 on",
+        "ssl_protocols TLSv1.2 TLSv1.3",
+        "ssl_prefer_server_ciphers off",
+        "ssl_session_cache shared:yohan_tls:10m",
+        "ssl_session_timeout 1d",
+        "include snippets/aphrody-security.inc"
+      ],
+      "locations": [
+        {
+          "path": "= /auth/google/login",
+          "custom_directives": [
+            "default_type application/json",
+            "add_header Cache-Control \"no-store\" always",
+            "return 503 '{\"error\":\"Google sign-in unavailable\"}'"
+          ]
+        },
+        {
+          "path": "= /auth/google/callback",
+          "custom_directives": [
+            "default_type application/json",
+            "add_header Cache-Control \"no-store\" always",
+            "return 503 '{\"error\":\"Google sign-in unavailable\"}'"
+          ]
+        },
+        {
+          "path": "= /auth/session",
+          "custom_directives": [
+            "default_type application/json",
+            "add_header Cache-Control \"no-store\" always",
+            "return 503 '{\"error\":\"Google sign-in unavailable\"}'"
+          ]
+        },
+        {
+          "path": "= /auth/scopes",
+          "custom_directives": [
+            "default_type application/json",
+            "add_header Cache-Control \"no-store\" always",
+            "return 503 '{\"error\":\"Google sign-in unavailable\"}'"
+          ]
+        },
+        {
+          "path": "= /auth/logout",
+          "custom_directives": [
+            "default_type application/json",
+            "add_header Cache-Control \"no-store\" always",
+            "return 503 '{\"error\":\"Google sign-in unavailable\"}'"
+          ]
+        },
+        {
+          "path": "= /rpc",
+          "custom_directives": ["return 404"]
+        },
+        {
+          "path": "= /events",
+          "custom_directives": ["return 404"]
+        },
+        {
+          "path": "^~ /api/mail",
+          "custom_directives": ["return 404"]
+        },
+        {
+          "path": "^~ /api/gmail",
+          "custom_directives": ["return 404"]
+        },
+        {
+          "path": "/",
+          "proxy_pass": "http://10.200.77.3:18803",
+          "proxy_http_version": "1.1",
+          "headers": [
+            ["Host", "$host"],
+            ["X-Forwarded-Proto", "$scheme"]
+          ],
+          "custom_directives": ["include snippets/proxy-client-ip.inc"]
+        }
+      ]
+    }
+  ]
+}
