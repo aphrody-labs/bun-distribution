@@ -155,6 +155,10 @@ pub enum Rendering {
 pub struct Fetched {
     /// The URL that was requested.
     pub url: String,
+    /// The explicit profile requested by the caller, or `None` when the default was used.
+    pub profile_requested: Option<Profile>,
+    /// The profile that actually produced the response.
+    pub profile_obtained: Profile,
     /// How the bytes arrived.
     pub transport: Transport,
     /// How they were rendered.
@@ -179,6 +183,11 @@ impl Fetched {
     pub fn banner(&self) -> String {
         let mut line = format!("Source: {}", self.url);
         line.push_str(&format!("\nPath: {}", self.path_taken.join(" -> ")));
+        line.push_str(&format!(
+            "\nProfile requested: {}; obtained: {}.",
+            self.profile_requested.map_or("default", Profile::as_str),
+            self.profile_obtained.as_str()
+        ));
         if self.truncated {
             line.push_str(&format!(
                 "\nTruncated at {} bytes of {}.",
@@ -387,6 +396,8 @@ async fn fetch_direct(request: &Request) -> Result<Fetched> {
     let (body, truncated) = truncate(&body, request.max_bytes);
     Ok(Fetched {
         url: request.url.clone(),
+        profile_requested: request.profile,
+        profile_obtained: request.profile.unwrap_or(Profile::Static),
         transport: Transport::Direct { final_url, status: status.as_u16() },
         rendering,
         body,
@@ -487,6 +498,8 @@ async fn fetch_browser(request: &Request, profile: Profile) -> Result<Fetched> {
     let (body, truncated) = truncate(&body, request.max_bytes);
     Ok(Fetched {
         url: request.url.clone(),
+        profile_requested: request.profile,
+        profile_obtained: profile,
         transport: Transport::Browser { profile, final_url },
         rendering,
         body,
@@ -700,6 +713,8 @@ mod tests {
     fn a_degraded_answer_announces_itself() {
         let fetched = Fetched {
             url: "https://example.com".into(),
+            profile_requested: None,
+            profile_obtained: Profile::Static,
             transport: Transport::Direct { final_url: "https://example.com/".into(), status: 200 },
             rendering: Rendering::RawHtml {
                 reason: "aphrody-web-extract produced no text from 6 HTML bytes".into(),
@@ -722,6 +737,8 @@ mod tests {
     fn a_successful_conversion_reports_the_component_that_did_it() {
         let fetched = Fetched {
             url: "https://example.com".into(),
+            profile_requested: Some(Profile::Static),
+            profile_obtained: Profile::Static,
             transport: Transport::Direct { final_url: "https://example.com/".into(), status: 200 },
             rendering: Rendering::Markdown { via: "aphrody-web-extract".into() },
             body: "# Example".into(),

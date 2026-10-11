@@ -540,6 +540,19 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                 request = request.with_profile(selected);
             }
             let result = aphrody_web_service::fetch::fetch(&request).await.into_diagnostic()?;
+            if result.body.trim().is_empty() {
+                eprintln!(
+                    "{}",
+                    serde_json::json!({
+                        "event": "web.fetch.empty",
+                        "url": result.url,
+                        "profileRequested": result.profile_requested,
+                        "profileObtained": result.profile_obtained,
+                        "error": "fetch produced no content"
+                    })
+                );
+                return Err(miette!("fetch produced no content"));
+            }
             if json {
                 println!("{}", serde_json::to_string_pretty(&result).into_diagnostic()?);
             } else {
@@ -679,6 +692,8 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                 "httpStatus": page.status,
                 "bytes": page.html.len(),
                 "profile": profile,
+                "profileRequested": page.profile_requested,
+                "profileObtained": page.profile_obtained,
                 "title": extracted.title,
                 "description": extracted.description,
                 "canonical": extracted.canonical,
@@ -691,13 +706,14 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
                 serde_json::to_string_pretty(&report).into_diagnostic()?
             } else {
                 format!(
-                    "# Recon: {}\n\n- Final URL: {}\n- HTTP: {}\n- Profile: {}\n- Title: {}\n- Canonical: {}\n- Words: {}\n- Scripts: {}\n- Stylesheets: {}\n- Images: {}\n",
+                    "# Recon: {}\n\n- Final URL: {}\n- HTTP: {}\n- Profile requested: {}\n- Profile obtained: {}\n- Title: {}\n- Canonical: {}\n- Words: {}\n- Scripts: {}\n- Stylesheets: {}\n- Images: {}\n",
                     url,
                     report["finalUrl"].as_str().unwrap_or("unknown"),
                     report["httpStatus"]
                         .as_u64()
                         .map_or_else(|| "unavailable".to_owned(), |n| n.to_string()),
-                    profile,
+                    report["profileRequested"].as_str().unwrap_or("unknown"),
+                    report["profileObtained"].as_str().unwrap_or("unknown"),
                     report["title"].as_str().unwrap_or(""),
                     report["canonical"].as_str().unwrap_or(""),
                     report["wordCount"],
@@ -730,12 +746,40 @@ pub(crate) async fn handle_web(action: WebAction) -> miette::Result<()> {
             } else if let Some(selector) = selector {
                 let dom = ParsedPage::parse(&page.html);
                 let mut rows = Vec::new();
-                for (index, text) in dom.texts(&selector)?.into_iter().take(max).enumerate() {
+                for (index, text) in dom
+                    .texts(&selector)?
+                    .into_iter()
+                    .filter(|text| !text.trim().is_empty())
+                    .take(max)
+                    .enumerate()
+                {
                     let text = text.trim().chars().take(500).collect::<String>();
                     rows.push(serde_json::json!({"index": index, "text": text}));
                 }
+                if rows.is_empty() {
+                    eprintln!(
+                        "{}",
+                        serde_json::json!({
+                            "event": "web.scrape.empty",
+                            "url": page.final_url,
+                            "selector": selector,
+                            "profileRequested": page.profile_requested,
+                            "profileObtained": page.profile_obtained,
+                            "error": "selector matched no content"
+                        })
+                    );
+                    return Err(miette!("scrape selector {selector:?} matched no content"));
+                }
                 print_web_json(&serde_json::Value::Array(rows))?;
             }
+            eprintln!(
+                "{}",
+                serde_json::json!({
+                    "event": "web.scrape.profile",
+                    "profileRequested": page.profile_requested,
+                    "profileObtained": page.profile_obtained
+                })
+            );
         },
         WebAction::Extract { url, profile, json } => {
             let page = fetch_web_page(&url, &profile).await?;
@@ -1183,6 +1227,8 @@ struct WebPage {
     html: String,
     final_url: String,
     status: Option<u16>,
+    profile_requested: String,
+    profile_obtained: String,
 }
 
 async fn fetch_web_page(url: &str, profile: &str) -> miette::Result<WebPage> {
@@ -1210,7 +1256,13 @@ async fn fetch_web_page(url: &str, profile: &str) -> miette::Result<WebPage> {
         if html.trim().is_empty() {
             return Err(miette!("browser returned empty HTML for {url}"));
         }
-        return Ok(WebPage { html, final_url: page.url(), status: None });
+        return Ok(WebPage {
+            html,
+            final_url: page.url(),
+            status: None,
+            profile_requested: profile.to_owned(),
+            profile_obtained: selected.as_str().to_owned(),
+        });
     }
     obscura_net::ensure_rustls_crypto_provider();
     let response = obscura_net::ObscuraHttpClient::new().fetch(&url).await.into_diagnostic()?;
@@ -1223,10 +1275,16 @@ async fn fetch_web_page(url: &str, profile: &str) -> miette::Result<WebPage> {
     if !response.is_html() && !response.body.starts_with(b"<") {
         return Err(miette!("{} returned non-HTML content", response.url));
     }
+    let html = response.text();
+    if html.trim().is_empty() {
+        return Err(miette!("web request produced no HTML content for {}", response.url));
+    }
     Ok(WebPage {
-        html: response.text(),
+        html,
         final_url: response.url.to_string(),
         status: Some(response.status),
+        profile_requested: profile.to_owned(),
+        profile_obtained: selected.as_str().to_owned(),
     })
 }
 

@@ -84,10 +84,7 @@ Obscura and browser automation:
    wgpu 30.0.1. Port it to wgpu 30 as an integrated patch under `crates/web/obscura-js` with provenance, share the hub
    device, gate it per context, apply `apply_limit_buckets` for remote pages.
 10. Engine choice (V8 today, JSC seam to write) follows the runtime fusion plan; no Obscura engine swap before parity.
-11. Exit-code contract test for `aphrody web` (fetch, scrape, recon): a run that produced nothing must exit non-zero,
-    stdout carries content only, stderr structured diagnostics; the requested and the obtained profile are both
-    reported. Carried over from the `bxc-bridge` defects D4 to D7 measured on the former Bun binary; not re-measured
-    on the Rust CLI.
+11. [x] Exit-code contract for `aphrody web` (fetch, scrape, recon): empty output fails; stdout contains result content only; requested and obtained profiles are reported. Verified 2026-10-11 by `cargo-serial.ts --msvc nextest run --locked -p aphrody-web-service -p aphrody --test web_cli_contract` (5 passed).
 12. Playwright parity for `@aphrody/web-test`: actionability checks need layout, so visibility stays "adapted"
     (attribute and style based) until the `render` feature backs `DOM.getBoxModel`; semantic `getByRole` maps to CSS,
     not to a full ARIA tree.
