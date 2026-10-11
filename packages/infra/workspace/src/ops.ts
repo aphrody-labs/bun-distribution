@@ -24,6 +24,9 @@ export async function runOps(argv: readonly string[]): Promise<number> {
   if (operation === "build-factory") {
     return await (await import("./build-factory.ts")).runBuildFactory(rest);
   }
+  if (operation === "build-fleet") {
+    return await (await import("./build-fleet.ts")).runBuildFleet(rest);
+  }
   if (operation === "native-runtime") {
     return await (await import("./native-runtime.ts")).runNativeRuntime(rest);
   }
