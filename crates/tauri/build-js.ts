@@ -73,6 +73,7 @@ async function build(dir: string): Promise<void> {
       "false",
       "--declaration",
       "--emitDeclarationOnly",
+      "--allowImportingTsExtensions",
       "--rootDir",
       layout.root,
       "--outDir",

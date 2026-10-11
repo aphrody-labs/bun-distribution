@@ -23,8 +23,63 @@ import {
   verifyArtifactProvenance,
   releasePlan,
   runtimeCommand,
+  run,
   type ReleaseConfig,
 } from "./publish-app-ui";
+test("the canonical Tauri builder emits strict declarations for explicit TypeScript imports", async () => {
+  const root = mkdtempSync(join(tmpdir(), "app-ui-tauri-declarations-"));
+  try {
+    mkdirSync(join(root, "src"));
+    writeFileSync(join(root, "package.json"), JSON.stringify({ name: "declaration-fixture" }));
+    writeFileSync(
+      join(root, "tsconfig.json"),
+      JSON.stringify({
+        compilerOptions: {
+          strict: true,
+          noEmit: true,
+          target: "ESNext",
+          module: "ESNext",
+          moduleResolution: "Bundler",
+          skipLibCheck: true,
+        },
+      }),
+    );
+    writeFileSync(join(root, "src/index.ts"), 'export { value } from "./value.ts";\n');
+    writeFileSync(join(root, "src/value.ts"), "export const value: number = 42;\n");
+    await run(["bun", join(import.meta.dir, "../../crates/tauri/build-js.ts")], root);
+    expect(readFileSync(join(root, "dist/index.d.ts"), "utf8")).toContain("./value.ts");
+    expect(readFileSync(join(root, "dist/value.d.ts"), "utf8")).toContain("value: number");
+    expect(existsSync(join(root, "dist/index.js"))).toBe(true);
+    expect(existsSync(join(root, "dist/index.cjs"))).toBe(true);
+    writeFileSync(join(root, "src/value.ts"), 'export const value: number = "invalid";\n');
+    await expect(
+      run(["bun", join(import.meta.dir, "../../crates/tauri/build-js.ts")], root),
+    ).rejects.toThrow("TS2322");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}, 30_000);
+test("failed build commands retain bounded stdout and stderr compiler diagnostics", async () => {
+  await expect(
+    run([
+      "bun",
+      "-e",
+      "console.log('x'.repeat(5000)+'compiler stdout diagnostic');console.error('compiler stderr diagnostic');process.exit(2)",
+    ]),
+  ).rejects.toThrow("compiler stdout diagnostic");
+  try {
+    await run([
+      "bun",
+      "-e",
+      "console.log('x'.repeat(5000)+'compiler stdout diagnostic');console.error('compiler stderr diagnostic');process.exit(2)",
+    ]);
+    throw new Error("Fixture failure was not reported");
+  } catch (error) {
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toContain("compiler stderr diagnostic");
+    expect((error as Error).message.length).toBeLessThan(3020);
+  }
+});
 test("Bun prerequisites and builds execute the exact selected runtime without changing Infra or Git", () => {
   const command = runtimeCommand([
     "bun",
@@ -55,11 +110,11 @@ test("Bun prerequisites and builds execute the exact selected runtime without ch
 });
 test("clean builds prepare identity through its canonical owner, without setup hooks", () => {
   expect(prerequisiteCommands()).toEqual([
-    ["bun", "run", "--cwd", "crates/tauri/aphrody-tauri-api", "build"],
-    ["bun", "run", "--cwd", "crates/tauri/aphrody-tauri-plugin-dialog", "build"],
+    ["bun", "--cwd", "crates/tauri/aphrody-tauri-api", "../build-js.ts"],
+    ["bun", "--cwd", "crates/tauri/aphrody-tauri-plugin-dialog", "../build-js.ts"],
     ["bun", "m3/scripts/fonts-sync.ts", "--quiet"],
     ["bun", "m3/scripts/fonts-sync.ts", "--check", "--quiet"],
-    ["bun", "run", "--cwd", "m3/packages/identity", "sprite"],
+    ["bun", "--cwd", "m3/packages/identity", "scripts/sprite.ts"],
   ]);
   expect(prerequisiteCommands().flat()).not.toContain("install");
 });

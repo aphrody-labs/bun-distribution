@@ -130,11 +130,11 @@ export function buildCommand(artifact: string, publicAssets = false): string[] {
 export function prerequisiteCommands(): string[][] {
   // Build exactly the JS owners imported by app-ui; fonts are checksum-pinned by their owner lock.
   return [
-    ["bun", "run", "--cwd", "crates/tauri/aphrody-tauri-api", "build"],
-    ["bun", "run", "--cwd", "crates/tauri/aphrody-tauri-plugin-dialog", "build"],
+    ["bun", "--cwd", "crates/tauri/aphrody-tauri-api", "../build-js.ts"],
+    ["bun", "--cwd", "crates/tauri/aphrody-tauri-plugin-dialog", "../build-js.ts"],
     ["bun", "m3/scripts/fonts-sync.ts", "--quiet"],
     ["bun", "m3/scripts/fonts-sync.ts", "--check", "--quiet"],
-    ["bun", "run", "--cwd", "m3/packages/identity", "sprite"],
+    ["bun", "--cwd", "m3/packages/identity", "scripts/sprite.ts"],
   ];
 }
 export function declarationCommand(path: string): string {
@@ -227,7 +227,7 @@ export function artifactManifest(
 export function runtimeCommand(command: string[], executable = process.execPath): string[] {
   return command[0] === "bun" ? [executable, ...command.slice(1)] : command;
 }
-async function run(command: string[], cwd = repository, env: Record<string, string> = {}) {
+export async function run(command: string[], cwd = repository, env: Record<string, string> = {}) {
   const process = Bun.spawn(runtimeCommand(command), {
     cwd,
     env: { ...Bun.env, ...env },
@@ -239,7 +239,7 @@ async function run(command: string[], cwd = repository, env: Record<string, stri
     new Response(process.stderr).text(),
     process.exited,
   ]);
-  if (code !== 0) throw new Error(command[0] + " failed: " + stderr.slice(-3000));
+  if (code !== 0) throw new Error(command[0] + " failed: " + (stdout + "\n" + stderr).slice(-3000));
   return stdout.trim();
 }
 async function main() {
