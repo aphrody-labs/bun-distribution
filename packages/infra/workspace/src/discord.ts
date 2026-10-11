@@ -391,7 +391,7 @@ export async function deployDiscord(
       );
     }
     await exec(
-      `if systemctl is-active --quiet ${quote(deployment.unit)}; then touch ${quote(`${remoteStage}/previous-active`)}; fi`,
+      `if systemctl is-active --quiet ${quote(deployment.unit)}; then sudo -n -u ${quote(deployment.stateOwner)} touch ${quote(`${remoteStage}/previous-active`)}; fi`,
     );
     installedChanged = true;
     for (const file of files) {
