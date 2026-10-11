@@ -4,7 +4,8 @@
   "sourceOfTruth": "tools/config/service-catalog.json",
   "vhostRoot": "$YOLO_ROOT/tools/config/host",
   "routes": [
-    { "host": "aphrody.com", "service": "aphrody-site", "upstream": "127.0.0.1:8083", "probePath": "/docs", "vhost": "nginx/aphrody/aphrody.com.conf" },
+    { "host": "omar.aphrody.com", "service": "aphrody-public-webos", "upstream": "static:403", "probePath": "/", "response": 403, "vhost": "nginx/aphrody/omar.aphrody.com.conf" },
+    { "host": "aphrody.com", "service": "aphrody-dbfr-site", "upstream": "10.200.77.3:18803", "probePath": "/docs", "vhost": "nginx/aphrody/aphrody.com.conf" },
     { "host": "os.aphrody.com", "service": "aphrody-os", "upstream": "static:/var/www/os.aphrody.com", "probePath": "/", "vhost": "nginx/aphrody/os.aphrody.com.conf" },
     { "host": "bot.aphrody.com", "service": "aphrody-reserved", "upstream": "static:410", "probePath": "/", "response": 410, "reservedAt": "2026-10-10", "vhost": "nginx/aphrody/reserved.aphrody.com.conf" },
     { "host": "mcp.aphrody.com", "service": "aphrody-reserved", "upstream": "static:410", "probePath": "/", "response": 410, "reservedAt": "2026-10-10", "vhost": "nginx/aphrody/reserved.aphrody.com.conf" },
