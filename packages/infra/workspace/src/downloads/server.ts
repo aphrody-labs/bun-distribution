@@ -674,15 +674,91 @@ async function appUiDocsResponse(request: Request, root: string): Promise<Respon
   return new Response(html, { headers });
 }
 
+type PublicSearch = (
+  request: {
+    query: string;
+    vertical: "web";
+    safe: "active";
+    hl: string;
+    start: number;
+    num: number;
+  },
+  signal?: AbortSignal,
+) => Promise<unknown>;
+
+let publicSearchOwner: Promise<PublicSearch> | undefined;
+async function defaultPublicSearch(): Promise<PublicSearch> {
+  publicSearchOwner ??= (async () => {
+    // Standalone deployments install the SDK or configure its canonical source module explicitly.
+    const sdk = await import(process.env.GOOGLE_SEARCH_SDK_MODULE || "@aphrody/bun-google/search");
+    return sdk.createGooglePublicSearch({
+      executable: process.env.GOOGLE_SEARCH_OWNER || "aphrody",
+    }) as PublicSearch;
+  })().catch((error: unknown) => {
+    publicSearchOwner = undefined;
+    throw error;
+  });
+  return publicSearchOwner;
+}
+
+export async function publicSearchResponse(
+  request: Request,
+  search?: PublicSearch,
+): Promise<Response> {
+  const headers = { ...SECURITY_HEADERS, "cache-control": "no-store" };
+  if (request.method !== "GET")
+    return Response.json(
+      { error: "method not allowed" },
+      { status: 405, headers: { ...headers, allow: "GET" } },
+    );
+  const params = new URL(request.url).searchParams;
+  const allowed = new Set(["query", "vertical", "hl", "safe", "start", "num"]);
+  const query = params.get("query")?.trim() ?? "";
+  const hl = params.get("hl") ?? "en";
+  const start = params.get("start") ?? "0";
+  const num = params.get("num") ?? "10";
+  if (
+    [...params.keys()].some((key) => !allowed.has(key) || params.getAll(key).length !== 1) ||
+    !query ||
+    new TextEncoder().encode(query).byteLength > 4096 ||
+    Array.from(query).some((char) => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127) ||
+    (params.get("vertical") ?? "web") !== "web" ||
+    (params.get("safe") ?? "active") !== "active" ||
+    !/^[a-z]{2,3}(?:-[A-Za-z]{2,4})?$/.test(hl) ||
+    !/^\d{1,4}$/.test(start) ||
+    Number(start) > 1000 ||
+    !/^\d{1,2}$/.test(num) ||
+    Number(num) < 1 ||
+    Number(num) > 20
+  )
+    return Response.json({ error: "invalid public search request" }, { status: 400, headers });
+  try {
+    const owner = search ?? (await defaultPublicSearch());
+    const result = await owner(
+      { query, vertical: "web", safe: "active", hl, start: Number(start), num: Number(num) },
+      request.signal,
+    );
+    return Response.json(result, { headers });
+  } catch {
+    return Response.json(
+      { error: "Search is unavailable. Please try again." },
+      { status: 503, headers },
+    );
+  }
+}
+
 export function createHandler(
   rootInput: string,
   site?: SiteOptions,
+  search?: PublicSearch,
 ): (request: Request) => Promise<Response> {
   const downloads = downloadsHandler(resolve(rootInput));
   if (!site) return downloads;
   return async (request) => {
     const url = new URL(request.url);
     const { pathname } = url;
+    if (pathname === "/api/search" && site.hosts.has(url.hostname.toLowerCase()))
+      return publicSearchResponse(request, search);
     if (
       !site.hosts.has(url.hostname.toLowerCase()) ||
       pathname === "/health" ||
