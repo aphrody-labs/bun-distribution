@@ -181,6 +181,12 @@ pub type ChunkStream = Pin<Box<dyn Stream<Item = Result<ChatChunk, GatewayError>
 /// and shared across async tasks.
 #[async_trait::async_trait]
 pub trait GatewayAdapter: Send + Sync {
+    /// Checks whether the configured upstream can currently serve requests.
+    /// Adapters without a lightweight provider probe retain construction-time readiness.
+    async fn health_check(&self) -> Result<(), GatewayError> {
+        Ok(())
+    }
+
     /// Sends a blocking (non-streaming) chat completion request and returns
     /// the full assembled response.
     async fn chat(&self, req: ChatRequest) -> Result<ChatResponse, GatewayError>;

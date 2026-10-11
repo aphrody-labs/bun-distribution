@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: Apache-2.0
+[Unit]
+Description=Aphrody authenticated AI gateway on DBFR (loopback only)
+After=network-online.target
+Wants=network-online.target
+StartLimitBurst=5
+StartLimitIntervalSec=600
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+Environment=HOME=/home/ubuntu
+Environment=APHRODY_HOME=/home/ubuntu/.aphrody
+Environment=APHRODY_AI_CHAT_MODEL=shenron-chat-v2
+Environment=OPENAI_BASE_URL=http://127.0.0.1:8799/v1
+Environment=OPENAI_API_KEY=loopback
+EnvironmentFile=/etc/aphrody/aphrody-ai-gateway.env
+ExecStart=/home/ubuntu/.local/bin/aphrody gateway serve --addr 127.0.0.1:8786 --provider openai
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+KillMode=control-group
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=tmpfs
+BindReadOnlyPaths=/home/ubuntu/.local/bin/aphrody
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryAccounting=true
+MemoryHigh=384M
+MemoryMax=512M
+CPUWeight=20
+Nice=10
+TasksMax=128
+UMask=0077
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aphrody-ai-gateway
+
+[Install]
+WantedBy=multi-user.target

@@ -194,13 +194,26 @@ fn validate_bind(addr: SocketAddr, token: Option<&str>) -> Result<(), GatewayErr
     Ok(())
 }
 
-async fn health_handler() -> impl IntoResponse {
+async fn health_handler(State(state): State<GatewayState>) -> Response {
+    if state.adapter.health_check().await.is_err() {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({
+                "ok": false,
+                "status": "unhealthy",
+                "service": "aphrody-gateway",
+                "version": env!("CARGO_PKG_VERSION")
+            })),
+        )
+            .into_response();
+    }
     Json(json!({
         "ok": true,
         "status": "healthy",
         "service": "aphrody-gateway",
         "version": env!("CARGO_PKG_VERSION")
     }))
+    .into_response()
 }
 
 async fn models_handler(State(state): State<GatewayState>) -> impl IntoResponse {
@@ -327,6 +340,29 @@ async fn cors_preflight() -> impl IntoResponse {
 mod tests {
     use super::*;
 
+    struct UnreadyAdapter;
+
+    #[async_trait::async_trait]
+    impl GatewayAdapter for UnreadyAdapter {
+        async fn health_check(&self) -> Result<(), GatewayError> {
+            Err(GatewayError::Config("upstream unavailable".into()))
+        }
+
+        async fn chat(
+            &self,
+            _req: crate::ChatRequest,
+        ) -> Result<crate::ChatResponse, GatewayError> {
+            Err(GatewayError::Config("upstream unavailable".into()))
+        }
+
+        async fn chat_stream(
+            &self,
+            _req: crate::ChatRequest,
+        ) -> Result<crate::ChunkStream, GatewayError> {
+            Err(GatewayError::Config("upstream unavailable".into()))
+        }
+    }
+
     #[test]
     fn mesh_binding_requires_a_gateway_credential() {
         let mesh: SocketAddr = "10.200.77.10:8786".parse().unwrap();
@@ -335,6 +371,16 @@ mod tests {
         assert!(validate_bind(mesh, Some("test-only-token")).is_ok());
         assert!(validate_bind("127.0.0.1:8786".parse().unwrap(), None).is_ok());
         assert!(validate_bind("[::1]:8786".parse().unwrap(), None).is_ok());
+    }
+
+    #[tokio::test]
+    async fn health_is_unavailable_when_the_adapter_reports_an_unready_upstream() {
+        let response = health_handler(State(GatewayState {
+            adapter: Arc::new(UnreadyAdapter),
+            model_ids: vec![],
+        }))
+        .await;
+        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
     }
 
     #[test]

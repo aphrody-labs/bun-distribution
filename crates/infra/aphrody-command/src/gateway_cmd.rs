@@ -193,12 +193,21 @@ fn resolve_adapter(provider: &str) -> miette::Result<(Arc<dyn GatewayAdapter>, V
 }
 
 fn advertised_models(provider: &str) -> Vec<String> {
+    advertised_models_for(provider, aphrody_config::ai_env::CHAT_MODEL.resolve().as_deref())
+}
+
+fn advertised_models_for(provider: &str, configured_chat_model: Option<&str>) -> Vec<String> {
     match provider {
         "google-antigravity" => ANTIGRAVITY_MODEL_IDS.iter().map(|id| (*id).to_owned()).collect(),
         "local" | "auto" => {
             let catalog = aphrody_models::Catalog::builtin();
             catalog.entries.iter().map(|e| e.id.clone()).collect()
         },
+        "openai" => configured_chat_model
+            .map(str::trim)
+            .filter(|model| !model.is_empty())
+            .map(|model| vec![model.to_owned()])
+            .unwrap_or_default(),
         _ => Vec::new(),
     }
 }
@@ -281,7 +290,9 @@ mod tests {
     #[test]
     fn advertised_models_are_provider_specific() {
         assert!(advertised_models("google-antigravity").iter().all(|id| id.starts_with("gemini-")));
-        assert!(advertised_models("openai").is_empty());
+        assert_eq!(advertised_models_for("openai", Some("shenron-chat-v2")), ["shenron-chat-v2"]);
+        assert!(advertised_models_for("openai", Some("  ")).is_empty());
+        assert!(advertised_models_for("openai", None).is_empty());
         assert!(advertised_models("gemini-cli").is_empty());
     }
 }

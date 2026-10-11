@@ -28,6 +28,24 @@ uses the existing DBFR gateway container. The actual domain is
    `dragonballfr.com`. Keep existing sites, cookies and domain profiles isolated.
    An upstream OpenAI-compatible API does not imply OpenAI provider access.
 
+## Active gateway deployment (2026-10-11)
+
+For the current activation, the owner requested deployment through the reachable
+`vps`/`dbfr` Infra hosts. The selected GPU API at `10.200.77.10:8180` timed out
+from both VPS and DBFR, while DBFR's existing `shenron-chat-v2` endpoint passed a
+real local OpenAI-compatible generation. The gateway therefore runs on DBFR at
+`127.0.0.1:8786`, authenticated with a DBFR-local token, and forwards to
+`127.0.0.1:8799/v1`. Port 8786 is declared internal-only, the Nginx route stays
+absent, and the health probe checks upstream model readiness. This deployment
+uses the existing four-billion-parameter CPU model; the selected GPU topology
+remains pending restored transport and CUDA qualification.
+
+The systemd unit is `aphrody-ai-gateway-dbfr.service`, managed by the host unit
+catalog and applied with the pinned Aphrody binary through `host-plan` / `host-apply`.
+The host plan generates `APHRODY_AI_HTTP_TOKEN` on DBFR, installs a checksum-pinned
+binary, rejects unauthenticated and wrong-token requests, and makes one bounded
+generation smoke request without logging response content.
+
 ## Cache and memory behavior
 
 vLLM's prefix/KV cache stays with the GPU execution owner. CPU offload is

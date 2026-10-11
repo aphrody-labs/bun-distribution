@@ -127,6 +127,23 @@
       "public": false
     },
     {
+      "id": "aphrody-ai-gateway-dbfr",
+      "application": "aphrody",
+      "kind": "openai-compatible-gateway",
+      "runtime": "rust",
+      "unit": "aphrody-ai-gateway-dbfr.service",
+      "host": "dbfr",
+      "health": "http://127.0.0.1:8786/health",
+      "port": 8786,
+      "modelId": "shenron-chat-v2",
+      "capabilities": [
+        "chat"
+      ],
+      "sourceRepo": "aphrody",
+      "public": false,
+      "note": "Persistent authenticated Aphrody OpenAI-compatible gateway on DBFR, bound to loopback only. Forwards to the existing Shenron chat model at 127.0.0.1:8799/v1; no Nginx route or public inference endpoint."
+    },
+    {
       "id": "aphrody-discord-dev",
       "application": "aphrody-discord",
       "kind": "discord-interactions-and-gateway",

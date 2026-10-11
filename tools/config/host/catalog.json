@@ -404,6 +404,14 @@
       "targetHost": "dbfr"
     },
     {
+      "service": "aphrody-ai-gateway-dbfr",
+      "unit": "aphrody-ai-gateway-dbfr.service",
+      "path": "systemd/aphrody/aphrody-ai-gateway-dbfr.service",
+      "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-kernel", "net-inet-only", "syscall-service"],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
       "service": "aphrody-mcp-http-dbfr",
       "unit": "aphrody-mcp-http-dbfr.service",
       "path": "systemd/aphrody/aphrody-mcp-http-dbfr.service",
