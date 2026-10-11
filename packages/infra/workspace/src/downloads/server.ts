@@ -21,7 +21,8 @@
  */
 import { existsSync, lstatSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { homedir } from "node:os";
-import { basename, dirname, extname, join, resolve, sep } from "node:path";
+import { basename, dirname, extname, isAbsolute, join, resolve, sep } from "node:path";
+import type { PublicIndexSearch, PublicIndexSdkOptions } from "./public-index.ts";
 
 /** Resolve a deployment without assuming a VPS layout or a fixed ingress port. */
 export function serverOptions(env: Record<string, string | undefined> = process.env) {
@@ -747,16 +748,186 @@ export async function publicSearchResponse(
   }
 }
 
+let publicIndexOwner: { key: string; search: Promise<PublicIndexSearch> } | undefined;
+
+/** Import only an explicitly configured public SDK. Type-only imports keep this server standalone. */
+export async function configuredPublicIndexSearch(
+  env: Record<string, string | undefined> = process.env,
+): Promise<PublicIndexSearch> {
+  const module = env.PUBLIC_INDEX_SDK_MODULE?.trim();
+  const root = env.PUBLIC_INDEX_ROOT?.trim();
+  const encoded = env.PUBLIC_INDEX_COLLECTIONS;
+  if (
+    !module ||
+    module.length > 4096 ||
+    !root ||
+    !isAbsolute(root) ||
+    root.includes("\0") ||
+    !encoded ||
+    encoded.length > 16384
+  )
+    throw new Error("Public index is not configured");
+  const collections = JSON.parse(encoded) as PublicIndexSdkOptions["collections"];
+  if (!collections || typeof collections !== "object" || Array.isArray(collections))
+    throw new Error("Invalid public index configuration");
+  const entries = Object.entries(collections);
+  if (
+    !entries.length ||
+    entries.length > 8 ||
+    entries.some(
+      ([name, policy]) =>
+        !/^[a-z0-9][a-z0-9-]{0,63}$/.test(name) ||
+        !policy ||
+        typeof policy !== "object" ||
+        policy.pointer !== `${name}.pointer.json` ||
+        !Array.isArray(policy.hosts) ||
+        !policy.hosts.length ||
+        policy.hosts.length > 32 ||
+        policy.hosts.some((host) => typeof host !== "string" || !/^[a-z0-9.-]+$/.test(host)) ||
+        typeof policy.policySha256 !== "string" ||
+        !/^[a-f0-9]{64}$/.test(policy.policySha256) ||
+        typeof policy.owner !== "string" ||
+        !policy.owner.trim() ||
+        policy.owner.length > 128,
+    )
+  )
+    throw new Error("Invalid public index configuration");
+  const key = JSON.stringify([module, root, collections]);
+  if (!publicIndexOwner || publicIndexOwner.key !== key) {
+    const search = (async () => {
+      const sdk = await import(module);
+      if (typeof sdk.createPublicIndexSearch !== "function")
+        throw new Error("Public index SDK unavailable");
+      const owner: unknown = sdk.createPublicIndexSearch({
+        root,
+        collections,
+      } satisfies PublicIndexSdkOptions);
+      if (typeof owner !== "function") throw new Error("Public index SDK unavailable");
+      return owner as PublicIndexSearch;
+    })();
+    publicIndexOwner = { key, search };
+    search.catch(() => {
+      if (publicIndexOwner?.key === key) publicIndexOwner = undefined;
+    });
+  }
+  return publicIndexOwner.search;
+}
+
+/** Public projection only; the SDK owns bounded cache, hashes, collection isolation and FTS. */
+export async function publicIndexResponse(
+  request: Request,
+  search?: PublicIndexSearch,
+): Promise<Response> {
+  const headers = { ...SECURITY_HEADERS, "cache-control": "no-store" };
+  if (request.method !== "GET")
+    return Response.json(
+      { error: "method not allowed" },
+      {
+        status: 405,
+        headers: { ...headers, allow: "GET" },
+      },
+    );
+  const params = new URL(request.url).searchParams;
+  const rawQuery = params.get("query") ?? "";
+  const query = rawQuery.trim();
+  const collection = params.get("collection") ?? "";
+  const num = params.get("num") ?? "10";
+  const start = params.get("start") ?? "0";
+  const allowed = new Set(["query", "collection", "num", "start"]);
+  if (
+    [...params.keys()].some((key) => !allowed.has(key) || params.getAll(key).length !== 1) ||
+    !query ||
+    new TextEncoder().encode(rawQuery).byteLength > 4096 ||
+    Array.from(rawQuery).some(
+      (character) => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127,
+    ) ||
+    !/^[a-z0-9][a-z0-9-]{0,63}$/.test(collection) ||
+    !/^\d{1,2}$/.test(num) ||
+    Number(num) < 1 ||
+    Number(num) > 20 ||
+    !/^\d{1,4}$/.test(start) ||
+    Number(start) > 1000
+  )
+    return Response.json({ error: "invalid public index request" }, { status: 400, headers });
+  try {
+    request.signal.throwIfAborted();
+    const owner = search ?? (await configuredPublicIndexSearch());
+    request.signal.throwIfAborted();
+    const result = await owner(
+      { query, collection, num: Number(num), start: Number(start) },
+      request.signal,
+    );
+    request.signal.throwIfAborted();
+    const body = result?.body;
+    if (
+      !body ||
+      body.query !== query ||
+      body.collection !== collection ||
+      body.source !== "public-crawl-cache" ||
+      typeof body.generatedAt !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(
+        body.generatedAt,
+      ) ||
+      !Number.isFinite(Date.parse(body.generatedAt)) ||
+      !Array.isArray(body.organic) ||
+      body.organic.length > Number(num) ||
+      !/^(?:W\/)?"[A-Za-z0-9._:-]{1,128}"$/.test(result.etag) ||
+      !["hit", "miss"].includes(result.cache)
+    )
+      throw new Error("Invalid public index response");
+    const organic = body.organic.map((hit) => {
+      if (
+        !hit ||
+        typeof hit.title !== "string" ||
+        hit.title.length > 2048 ||
+        typeof hit.snippet !== "string" ||
+        hit.snippet.length > 4096 ||
+        typeof hit.url !== "string" ||
+        hit.url.length > 8192
+      )
+        throw new Error("Invalid public index response");
+      const url = new URL(hit.url);
+      if (!["https:", "http:"].includes(url.protocol) || url.username || url.password)
+        throw new Error("Invalid public index response");
+      return { title: hit.title, url: hit.url, snippet: hit.snippet };
+    });
+    const successHeaders = {
+      ...SECURITY_HEADERS,
+      "cache-control": "public, max-age=0, must-revalidate",
+      etag: result.etag,
+      "x-public-index-cache": result.cache,
+    };
+    const conditional = request.headers
+      .get("if-none-match")
+      ?.split(",")
+      .map((value) => value.trim().replace(/^W\//, ""));
+    if (conditional?.some((value) => value === "*" || value === result.etag.replace(/^W\//, "")))
+      return new Response(null, { status: 304, headers: successHeaders });
+    return Response.json(
+      { query, organic, source: body.source, collection, generatedAt: body.generatedAt },
+      { headers: successHeaders },
+    );
+  } catch {
+    return Response.json(
+      { error: "Public index is unavailable. Please try again." },
+      { status: 503, headers },
+    );
+  }
+}
+
 export function createHandler(
   rootInput: string,
   site?: SiteOptions,
   search?: PublicSearch,
+  indexSearch?: PublicIndexSearch,
 ): (request: Request) => Promise<Response> {
   const downloads = downloadsHandler(resolve(rootInput));
   if (!site) return downloads;
   return async (request) => {
     const url = new URL(request.url);
     const { pathname } = url;
+    if (pathname === "/api/index/search" && site.hosts.has(url.hostname.toLowerCase()))
+      return publicIndexResponse(request, indexSearch);
     if (pathname === "/api/search" && site.hosts.has(url.hostname.toLowerCase()))
       return publicSearchResponse(request, search);
     if (
