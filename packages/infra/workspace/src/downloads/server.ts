@@ -705,6 +705,8 @@ async function defaultPublicSearch(): Promise<PublicSearch> {
 export async function publicSearchResponse(
   request: Request,
   search?: PublicSearch,
+  indexSearch?: PublicIndexSearch,
+  env: Record<string, string | undefined> = process.env,
 ): Promise<Response> {
   const headers = { ...SECURITY_HEADERS, "cache-control": "no-store" };
   if (request.method !== "GET")
@@ -734,6 +736,23 @@ export async function publicSearchResponse(
   )
     return Response.json({ error: "invalid public search request" }, { status: 400, headers });
   try {
+    const backend = env.PUBLIC_SEARCH_BACKEND?.trim() || "google";
+    if (backend === "public-index") {
+      const collection = env.PUBLIC_INDEX_DEFAULT_COLLECTION?.trim();
+      if (!collection || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(collection))
+        throw new Error("Public search collection is not configured");
+      const url = new URL("/api/index/search", request.url);
+      url.search = new URLSearchParams({ query, collection, num, start }).toString();
+      const conditional = request.headers.get("if-none-match");
+      return publicIndexResponse(
+        new Request(url, {
+          signal: request.signal,
+          headers: conditional ? { "if-none-match": conditional } : {},
+        }),
+        indexSearch,
+      );
+    }
+    if (backend !== "google") throw new Error("Unsupported public search backend");
     const owner = search ?? (await defaultPublicSearch());
     const result = await owner(
       { query, vertical: "web", safe: "active", hl, start: Number(start), num: Number(num) },
@@ -929,7 +948,7 @@ export function createHandler(
     if (pathname === "/api/index/search" && site.hosts.has(url.hostname.toLowerCase()))
       return publicIndexResponse(request, indexSearch);
     if (pathname === "/api/search" && site.hosts.has(url.hostname.toLowerCase()))
-      return publicSearchResponse(request, search);
+      return publicSearchResponse(request, search, indexSearch);
     if (
       !site.hosts.has(url.hostname.toLowerCase()) ||
       pathname === "/health" ||

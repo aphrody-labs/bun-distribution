@@ -65,6 +65,14 @@ The HTTP adapter does not duplicate that index. A matching `If-None-Match`
 returns 304 without a body. Unconfigured or unavailable indexes return a
 redacted 503; fixtures never supply production results.
 
+To serve the existing M3 search interface from that same public index, explicitly
+set `PUBLIC_SEARCH_BACKEND=public-index` and `PUBLIC_INDEX_DEFAULT_COLLECTION`
+to an approved collection. `/api/search` retains its anonymous request validation
+and delegates to the same index response contract. It forwards cancellation and
+conditional cache headers, not request cookies or authorization. Without that
+configuration its existing Google provider remains selected. An unsupported
+backend or missing index fails; it never silently switches providers.
+
 ## Publication and evidence gates
 
 Before apply, Infra must declare the producer, export root, read-only service
