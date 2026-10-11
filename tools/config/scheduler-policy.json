@@ -85,6 +85,28 @@
       "owns": [
         "stack-observation"
       ]
+    },
+    {
+      "id": "shenron-cloudflare-audit",
+      "host": "dbfr",
+      "cadence": "daily",
+      "priority": "low",
+      "unit": "shenron-cloudflare-audit.timer",
+      "owns": [
+        "shenron-cloudflare-read-only-reconciliation"
+      ],
+      "mutationPolicy": "read-only; no DNS, worker deploy, R2 copy or tunnel config mutation"
+    },
+    {
+      "id": "shenron-cloudflare-s3-renew",
+      "host": "dbfr",
+      "cadence": "every-10-minutes",
+      "priority": "low",
+      "unit": "shenron-cloudflare-s3-renew.timer",
+      "owns": [
+        "shenron-scoped-r2-s3-credential"
+      ],
+      "mutationPolicy": "temporary scoped credential renewal only; no DNS, worker deploy, R2 objects or tunnel mutation"
     }
   ],
   "disabledByDefault": [

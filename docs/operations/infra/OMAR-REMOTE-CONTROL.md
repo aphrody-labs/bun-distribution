@@ -489,18 +489,22 @@ if (-not (Select-String -Quiet -Path "$S\config" -Pattern '^Host aphro-pc' -Erro
 
 Rollback : `Stop-Service sshd; Set-Service sshd -StartupType Disabled; Remove-NetFirewallRule -Name Aphrody-SSH-In-Tunnel`.
 
-## 4 ter. Tunnel SSH inverse (tant que wg1 n'a pas de handshake)
+## 4 ter. Reverse forwards natifs Windows (2026-10-11)
 
-Le PC d'Omar publie ses services locaux sur la boucle locale du vps. `omar-sshd.conf` n'autorise que ces cinq
-`-R` (`PermitListen` : SSH Windows 22010, bureau 28795, MCP 28793, SSH WSL 22011, VNC 25900), aucun `-L` (`PermitOpen none`). Tâche planifiée `Aphrody Omar reverse` côté Omar :
+La tâche Aphrody `\Aphrody\Aphrody omar reverse` tourne sous le profil Omar et lance le client SSH natif de Bun 1.4.4 via `scripts/tools/infra/ssh-reverse-task.ts`. La cible est l'adresse WireGuard du VPS `10.200.77.1:22`; les six binds distants restent strictement sur `127.0.0.1`. L'identité et les journaux restent dans le profil privé Windows.
 
-```powershell
-ssh -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -R 127.0.0.1:22010:127.0.0.1:22 -R 127.0.0.1:28795:127.0.0.1:8795 -R 127.0.0.1:28793:127.0.0.1:8793 -R 127.0.0.1:22011:127.0.0.1:2222 -R 127.0.0.1:25900:127.0.0.1:5900 omar@51.77.147.152
-```
+| Port loopback sur le VPS | Cible sur le PC Omar | Usage |
+| ---: | --- | --- |
+| 22010 | `127.0.0.1:22` | SSH Windows |
+| 28795 | `10.200.77.10:8795` | Bureau Aphrody |
+| 28793 | `127.0.0.1:8793` | MCP (authentification requise) |
+| 25900 | `10.200.77.10:5900` | VNC |
+| 28788 | `127.0.0.1:8788` | A2A (JSON-RPC POST) |
+| 28080 | `127.0.0.1:80` | Nginx Windows, joignable depuis le VPS à `http://127.0.0.1:28080/` |
 
-Côté propriétaire : `ssh omar-rt` (ProxyJump vps → 127.0.0.1:22010), `ssh omar-wsl-rt` (→ 127.0.0.1:22011) ; bureau à distance et MCP via
-`ssh -L 8795:127.0.0.1:28795 -L 8793:127.0.0.1:28793 vps`. Services d'Omar liés à 127.0.0.1 tant que wg1 est coupé.
+Le port 22011 (ancien SSH WSL) est retiré. Le port public 80 du VPS reste celui du Nginx VPS; le forward Windows emploie 28080 loopback et n'expose pas le Nginx Windows publiquement. Aucun DNS public n'est requis pour accéder à ces binds. Pour un nom public, déclarer une route dans le catalogue Nginx VPS vers `127.0.0.1:28080` après validation du vhost. Les routes MCP/A2A conservent leur authentification et leur protocole.
 
+Côté propriétaire, SSH Windows utilise `ssh -p 22010 omar@127.0.0.1` via le VPS; bureau et VNC se joignent par tunnel local vers `127.0.0.1:28795` et `127.0.0.1:25900`. Ne pas réactiver le forward WSL `22011`.
 ## 5. Modèle `wg render omar` (sans PrivateKey)
 
 Sortie de `aphrody infra wg render omar` dans le dépôt (`Inventory::render`, `Config::render`) :

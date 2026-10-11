@@ -12,4 +12,4 @@
 # path only. `restrict` removes forwarding, agent, X11 and the pty; `pty` gives the pty back, `port-forwarding` +
 # `permitlisten` give back only the reverse (-R) loopback ports of omar-sshd.conf (Windows SSH 22010, remote desktop
 # 28795, MCP 28793, WSL Ubuntu SSH 22011, VNC 25900) used while wg1 is down.
-from="92.170.252.46,10.200.77.0/24",restrict,pty,port-forwarding,permitlisten="127.0.0.1:22010",permitlisten="127.0.0.1:28795",permitlisten="127.0.0.1:28793",permitlisten="127.0.0.1:22011",permitlisten="127.0.0.1:25900" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJvmGjMWPLFJZWsACxRqCC0Ll+uXvnyunYdPG4E8jS4V omar (supplied comment: windows-aphro)
+from="92.170.252.46,10.200.77.0/24",restrict,pty,port-forwarding,permitlisten="127.0.0.1:22010",permitlisten="127.0.0.1:28795",permitlisten="127.0.0.1:28793",permitlisten="127.0.0.1:25900",permitlisten="127.0.0.1:28788",permitlisten="127.0.0.1:28080" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJvmGjMWPLFJZWsACxRqCC0Ll+uXvnyunYdPG4E8jS4V omar (supplied comment: windows-aphro)

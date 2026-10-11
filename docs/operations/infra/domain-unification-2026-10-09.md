@@ -28,14 +28,21 @@ The read-only audit checks public nameservers/A records, sitemap discovery, samp
 
 ## Cloudflare and OVH unification plan
 
-The session exposes no Cloudflare DNS tool, and the configured Aphrody/Yolo plugin homes contain no callable Cloudflare DNS owner in the installed Infra CLI. No Cloudflare environment credential names are present. This is a capability/access limitation, not proof that the owner has no Cloudflare account. The explicitly requested Cloudflare plugin cannot be used in this execution context under the configured-plugin restriction.
+### Live status, 2026-10-11
 
-1. Establish a callable, authenticated Cloudflare account/zone capability; retain OVH as registrar. Verify the precise zone and access without copying tokens.
-2. Export the OVH zone to the protected infrastructure backup store and verify its checksum. Inventory all record types, mail records, delegated subdomains and DNSSEC DS records; compare the Cloudflare candidate zone before changing delegation.
+The connected Cloudflare account is `contact@aphrody.com`; the `aphrody.com` zone is present but still `pending` on `duke.ns.cloudflare.com` and `veda.ns.cloudflare.com`. Its candidate DNS set contains 27 records, with all web/mail records DNS-only. Cloudflare has no Access organization/apps enabled, no tunnel and no Pages projects. OVH remains authoritative on `dns200.anycast.me` and `ns200.anycast.me`; its registrar reports DNSSEC disabled, and Google DoH returns no parent DS. The candidate manifest now matches the live OVH/Cloudflare answers: `bun` and `os` were added, and the apex A was corrected to `51.77.147.152`. The read-only DNS audit passes all 24 declared record sets on both providers' authoritative servers. OVH has one redundant duplicate TXT record that Cloudflare has deduplicated.
+
+The installed OVH profile can read the registered domain and DNS zone. The Aphrody Infra CLI has no registrar nameserver mutation command; do not change the delegation through an unreviewed alternate path. The public Omar repository is private, the `aphrody-labs` organization is on GitHub Free, and the repository has no Pages site. GitHub documents private Pages as an Enterprise Cloud capability. Do not publish repository content publicly as a workaround.
+
+`cloudflared` 2026.10.0 is installed on Omar's Windows PC, but it is not authenticated or connected to a tunnel. This is only a prepared client; no public hostname or Access policy is active.
+
+1. Keep the Git source private. For a private GitHub Pages site, obtain an organization plan that supports private Pages; otherwise host a private read-only Omar landing page behind Cloudflare Access without publishing the repository.
+2. Export the OVH zone to the protected infrastructure backup store and verify its checksum. Inventory all record types, mail records, delegated subdomains and DNSSEC DS records; reconcile the full OVH set with the Cloudflare candidate and API state before changing delegation.
 3. Choose one authoritative DNS provider. Do not maintain competing writable zones. Keep mail records DNS-only and preserve SPF/DMARC/DKIM targets. Proxy web records only after origin TLS and route parity qualify.
-4. Follow the providers' DNSSEC migration sequence before changing nameservers; [OVH's DNSSEC guide](https://docs.ovhcloud.com/en/guides/web-cloud/domains/dns-dnssec) documents the dependency between DNSSEC and nameserver changes. Keep a documented rollback and verify parent DS/delegation as well as authoritative answers.
-5. Prepare a cataloged permanent `www`→apex redirect preserving path/query, validate certificate coverage and nginx configuration, then plan/apply through Infra. The existing canonical hint is present; redirect activation is not claimed.
-6. Run the full bounded sitemap audit, browser performance/accessibility measurements and origin/provider health checks after activation. SEO improvement requires subsequent measured crawl/indexing evidence.
+4. Use the installed cloudflared client to create a managed tunnel to the existing private Omar WebOS only after Access, device enrollment and the active zone are ready. Keep the origin reachable only over localhost/WireGuard; do not expose MCP, A2A, host-control or model endpoints publicly.
+5. Follow the providers' DNSSEC migration sequence before changing nameservers; [OVH's DNSSEC guide](https://docs.ovhcloud.com/en/guides/web-cloud/domains/dns-dnssec) documents the dependency between DNSSEC and nameserver changes. Keep a documented rollback and verify parent DS/delegation as well as authoritative answers.
+6. Prepare the Omar hostname and Access policy as a cataloged, device-posture-gated application; restrict identity to Omar and require the enrolled Cloudflare One client. Do not route the hostname until posture and origin probes pass.
+7. Run the full bounded sitemap audit, browser performance/accessibility measurements and origin/provider health checks after activation. SEO improvement requires subsequent measured crawl/indexing evidence.
 
 Host apply remains governed by [Cloud-ready setup](../cloud/CLOUD-READY.md). Concurrent native DNS/TLS, certificate and site-hosting work retains its existing claims.
 

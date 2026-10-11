@@ -16,10 +16,12 @@
   "native": {
     "packages": {
       "docker.io containerd docker-buildx docker-compose-v2 docker-model-plugin": "Docker engine",
-      "xvfb openbox": "virtual desktop :99 of aphrody-remote"
+      "xvfb openbox": "virtual desktop :99 of aphrody-remote",
+      "jq nftables microsocks": "relay metadata selection (jq), namespace-scoped input firewall (nftables), and private SOCKS5 listener bound to the VPS-to-Mullvad veth; callers use it only through the Windows loopback SSH forward or a scoped Shenron crawl"
     },
     "units": {
       "aphrody-desktop-xvfb.service aphrody-desktop-wm.service aphrody-remote.service": "virtual desktop and VNC on wg1 (host X11)",
+      "aphrody-mullvad-netns.service aphrody-mullvad-socks.service aphrody-mullvad-loopback.socket aphrody-mullvad-loopback.service": "Japan-only egress namespace, private SOCKS5 listener and loopback-only SSH bridge for Aphrody Web/Shenron crawl; never changes the VPS default route or public firewall",
       "aphrody-shenron-build-runner.service": "GitHub Actions runner of the Shenron releases (account shenron-build)",
       "aphrody-site.service": "kept native (measured 2026-10-09): static Rust site on public 0.0.0.0:80 (vps.aphrody.com), 4.5 MB RSS, 1.6 ms local response, systemd sandbox (ProtectSystem=strict, only CAP_NET_BIND_SERVICE, dedicated user); a container adds image and daemon overhead and a Docker-published :80 would bypass ufw",
       "aphrody-discord-sync.timer": "Discord sync tick (Bun)",
