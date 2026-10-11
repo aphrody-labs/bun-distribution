@@ -2,7 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 /* oxlint-disable no-await-in-loop -- publication steps and guards must be sequential */
 import { createHash } from "node:crypto";
-import { lstatSync, readdirSync, readFileSync, realpathSync, mkdtempSync } from "node:fs";
+import {
+  lstatSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  mkdtempSync,
+  mkdirSync,
+} from "node:fs";
 import { join, resolve, relative, sep, posix, isAbsolute } from "node:path";
 import { tmpdir } from "node:os";
 import { parseArgs } from "node:util";
@@ -227,6 +234,392 @@ export function artifactManifest(
 export function runtimeCommand(command: string[], executable = process.execPath): string[] {
   return command[0] === "bun" ? [executable, ...command.slice(1)] : command;
 }
+export interface BackendConfig {
+  schemaVersion: 1;
+  module: { revision: string; sha256: string };
+  root: string;
+  collections: Record<
+    string,
+    { pointer: string; hosts: string[]; policySha256: string; owner: "aphrody-web-crawl" }
+  >;
+  /** Explicit opt-in for the existing /api/search route; otherwise retain Google. */
+  searchCollection?: string;
+}
+export function backendReleasePlan(config: ReleaseConfig, revision: string, input: BackendConfig) {
+  const ui = releasePlan(config, revision);
+  if (ui.host !== "vps" || config.host.root !== "/home/ubuntu/apps/downloads")
+    throw new Error("Backend requires the declared VPS Downloads owner");
+  if (
+    !input ||
+    input.schemaVersion !== 1 ||
+    Object.keys(input).some(
+      (key) =>
+        !["schemaVersion", "module", "root", "collections", "searchCollection"].includes(key),
+    ) ||
+    !input.module ||
+    Object.keys(input.module).some((key) => !["revision", "sha256"].includes(key)) ||
+    !/^[a-f0-9]{40}$/.test(input.module.revision) ||
+    !/^[a-f0-9]{64}$/.test(input.module.sha256) ||
+    input.root !== config.host.root + "/public-index" ||
+    !input.collections ||
+    typeof input.collections !== "object" ||
+    Array.isArray(input.collections)
+  )
+    throw new Error("Explicit pinned public backend configuration required");
+  const entries = Object.entries(input.collections);
+  if (entries.length < 1 || entries.length > 8)
+    throw new Error("Bounded explicit public collections required");
+  for (const [name, collection] of entries) {
+    if (
+      !/^[a-z0-9][a-z0-9-]{0,63}$/.test(name) ||
+      !collection ||
+      Object.keys(collection).some(
+        (key) => !["pointer", "hosts", "policySha256", "owner"].includes(key),
+      ) ||
+      collection.pointer !== name + ".pointer.json" ||
+      collection.owner !== "aphrody-web-crawl" ||
+      !/^[a-f0-9]{64}$/.test(collection.policySha256) ||
+      !Array.isArray(collection.hosts) ||
+      collection.hosts.length < 1 ||
+      collection.hosts.length > 32 ||
+      new Set(collection.hosts).size !== collection.hosts.length ||
+      collection.hosts.some(
+        (host) =>
+          typeof host !== "string" ||
+          host.length > 253 ||
+          !/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z][a-z0-9-]*$/.test(host) ||
+          host.split(".").some((label) => label.length > 63) ||
+          /(?:^|\.)(?:localhost|local|internal|home|lan|onion)$/.test(host),
+      )
+    )
+      throw new Error("Invalid public collection policy");
+  }
+  if (
+    Buffer.byteLength(JSON.stringify(input.collections)) > 16384 ||
+    (input.searchCollection !== undefined &&
+      (typeof input.searchCollection !== "string" ||
+        !Object.hasOwn(input.collections, input.searchCollection)))
+  )
+    throw new Error("Search collection must be explicitly declared and bounded");
+  const settings = structuredClone(input);
+  const configSha256 = sha(Buffer.from(JSON.stringify(settings)));
+  const id = `backend-${revision}-${settings.module.revision.slice(0, 12)}-${configSha256.slice(0, 12)}`;
+  const base = posix.join(config.host.root, "backend");
+  return {
+    mode: "backend-only" as const,
+    revision,
+    id,
+    host: ui.host,
+    base,
+    release: posix.join(base, "releases", id),
+    server: ui.server,
+    restart: ui.restart,
+    module: posix.join(base, "current/public-index.ts"),
+    environmentFile: posix.join(base, "current/public-index.env"),
+    settings,
+    configSha256,
+    uiCurrent: ui.base + "/current",
+    googleEnvironment: ui.search?.environmentFile,
+  };
+}
+export function backendEnvironment(plan: ReturnType<typeof backendReleasePlan>): string {
+  return (
+    `PUBLIC_INDEX_SDK_MODULE=${plan.module}\nPUBLIC_INDEX_ROOT=${plan.settings.root}\nPUBLIC_INDEX_COLLECTIONS='${JSON.stringify(plan.settings.collections)}'\n` +
+    (plan.settings.searchCollection
+      ? `PUBLIC_SEARCH_BACKEND=public-index\nPUBLIC_INDEX_DEFAULT_COLLECTION=${plan.settings.searchCollection}\n`
+      : "")
+  );
+}
+export function backendArtifactManifest(
+  directory: string,
+  plan: ReturnType<typeof backendReleasePlan>,
+  serverSha256: string,
+) {
+  const root = realpathSync(directory);
+  if (lstatSync(directory).isSymbolicLink() || resolve(root) !== resolve(directory))
+    throw new Error("Backend artifact directory must be canonical");
+  const allowed = new Set([
+    "server.ts",
+    "public-index.ts",
+    "public-index.env",
+    "release-manifest.json",
+    "SHA256SUMS",
+  ]);
+  if (readdirSync(root).some((name) => !allowed.has(name)))
+    throw new Error("Backend artifact must contain only declared public files");
+  for (const name of readdirSync(root)) {
+    const stat = lstatSync(join(root, name));
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.size > 1024 * 1024)
+      throw new Error("Unsafe backend artifact metadata/file");
+  }
+  const files = ["server.ts", "public-index.ts", "public-index.env"].map((path) => {
+    const file = join(root, path);
+    const stat = lstatSync(file);
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.size > 1024 * 1024)
+      throw new Error("Unsafe backend artifact file");
+    const data = readFileSync(file);
+    return { path, bytes: data.length, sha256: sha(data) };
+  });
+  if (
+    files[0]!.sha256 !== serverSha256 ||
+    files[1]!.sha256 !== plan.settings.module.sha256 ||
+    readFileSync(join(root, "public-index.env"), "utf8") !== backendEnvironment(plan)
+  )
+    throw new Error("Backend source/environment checksum mismatch");
+  return {
+    schemaVersion: 1,
+    mode: "backend-only",
+    revision: plan.revision,
+    bun: plan.settings.module.revision,
+    configSha256: plan.configSha256,
+    files,
+  };
+}
+export function backendActivationCommand(
+  plan: ReturnType<typeof backendReleasePlan>,
+  input: {
+    archiveSha256: string;
+    serverSha256: string;
+    expectedServerSha256: string;
+    expectedCurrent: string;
+    expectedEnvironmentSha256: string;
+  },
+) {
+  if (
+    ![input.archiveSha256, input.serverSha256, input.expectedServerSha256].every((value) =>
+      /^[a-f0-9]{64}$/.test(value),
+    ) ||
+    (input.expectedCurrent !== "absent" &&
+      !/^releases\/backend-[a-f0-9]{40}-[a-f0-9]{12}-[a-f0-9]{12}$/.test(input.expectedCurrent)) ||
+    (input.expectedCurrent === "absent"
+      ? input.expectedEnvironmentSha256 !== "absent"
+      : !/^[a-f0-9]{64}$/.test(input.expectedEnvironmentSha256))
+  )
+    throw new Error("Exact live backend/server rollback guards required");
+  const backup = plan.base + "/backups/" + plan.id;
+  const current = plan.base + "/current";
+  const pending = plan.base + "/" + plan.id + ".tar.gz.pending";
+  const canonical = (path: string) =>
+    `test ! -L ${quote(path)}; test "$(realpath -m -- ${quote(path)})" = ${quote(path)}`;
+  const preserved = [
+    `test "$(readlink ${quote(plan.uiCurrent)} || :)" = "$ui_before"`,
+    ...(plan.googleEnvironment
+      ? [`test "$(sha256sum ${quote(plan.googleEnvironment)} | cut -d ' ' -f1)" = "$google_before"`]
+      : []),
+  ].join("; ");
+  const restore = [
+    `live_server=$(sha256sum ${quote(plan.server)} | cut -d ' ' -f1); test "$live_server" = ${quote(input.serverSha256)} || test "$live_server" = ${quote(input.expectedServerSha256)} || { echo 'Foreign server change preserved; rollback refused' >&2; return 2; }`,
+    `live_current=$(readlink ${quote(current)} || :); test "$live_current" = ${quote("releases/" + plan.id)} || test "$live_current" = ${quote(input.expectedCurrent === "absent" ? "" : input.expectedCurrent)} || { echo 'Foreign backend change preserved; rollback refused' >&2; return 2; }`,
+    ...(input.expectedCurrent === "absent"
+      ? []
+      : [
+          `echo ${quote(input.expectedEnvironmentSha256 + "  " + plan.base + "/" + input.expectedCurrent + "/public-index.env")} | sha256sum -c - || return 2`,
+        ]),
+    `echo ${quote(input.expectedServerSha256 + "  " + backup + "/server.ts")} | sha256sum -c -`,
+    `cp -p ${quote(backup + "/server.ts")} ${quote(plan.server + ".rollback")}; mv ${quote(plan.server + ".rollback")} ${quote(plan.server)}`,
+    input.expectedCurrent === "absent"
+      ? `unlink ${quote(current)} || :`
+      : `ln -s ${quote(input.expectedCurrent)} ${quote(current + ".rollback")}; mv -Tf ${quote(current + ".rollback")} ${quote(current)}`,
+    plan.restart,
+  ].join("; ");
+  const route = `http://127.0.0.1:8797/api/index/search?query=qualification&collection=${Object.keys(plan.settings.collections)[0]}&num=1&start=0`;
+  return [
+    "set -eu; umask 077",
+    canonical(posix.dirname(plan.base)),
+    canonical(plan.base),
+    canonical(plan.base + "/releases"),
+    canonical(plan.base + "/backups"),
+    canonical(plan.server),
+    canonical(plan.settings.root),
+    `test -d ${quote(plan.settings.root)}`,
+    `systemctl cat aphrody-downloads.service | grep -Fxq ${quote("ExecStart=/home/ubuntu/.bun/bin/bun " + plan.server)}`,
+    `systemctl cat aphrody-downloads.service | grep -Fxq ${quote("EnvironmentFile=" + plan.environmentFile)} || systemctl cat aphrody-downloads.service | grep -Fxq ${quote("EnvironmentFile=-" + plan.environmentFile)}`,
+    `test -f ${quote(plan.server)}; echo ${quote(input.expectedServerSha256 + "  " + plan.server)} | sha256sum -c -`,
+    input.expectedCurrent === "absent"
+      ? `test ! -e ${quote(current)} && test ! -L ${quote(current)}`
+      : `${canonical(plan.base + "/" + input.expectedCurrent)}; ${canonical(plan.base + "/" + input.expectedCurrent + "/public-index.env")}; test -L ${quote(current)}; test "$(readlink ${quote(current)})" = ${quote(input.expectedCurrent)}; echo ${quote(input.expectedEnvironmentSha256 + "  " + plan.environmentFile)} | sha256sum -c -`,
+    `ui_before=$(readlink ${quote(plan.uiCurrent)} || :); ${plan.googleEnvironment ? `google_before=$(sha256sum ${quote(plan.googleEnvironment)} | cut -d ' ' -f1)` : ":"}`,
+    `test ! -e ${quote(plan.release)} && test ! -L ${quote(plan.release)}; test ! -e ${quote(backup)} && test ! -L ${quote(backup)}`,
+    ...[
+      plan.server + ".pending",
+      plan.server + ".rollback",
+      current + ".pending",
+      current + ".rollback",
+    ].map((path) => `test ! -e ${quote(path)} && test ! -L ${quote(path)}`),
+    `echo ${quote(input.archiveSha256 + "  " + pending)} | sha256sum -c -; mkdir -p ${quote(plan.release)} ${quote(backup)}`,
+    `tar -xzf ${quote(pending)} -C ${quote(plan.release)}; cd ${quote(plan.release)}; sha256sum -c SHA256SUMS`,
+    `echo ${quote(input.serverSha256 + "  " + plan.release + "/server.ts")} | sha256sum -c -; echo ${quote(plan.settings.module.sha256 + "  " + plan.release + "/public-index.ts")} | sha256sum -c -`,
+    `${quote("/home/ubuntu/.bun/bin/bun")} -e ${quote('const sdk = await import(process.argv[1]); if (typeof sdk.createPublicIndexSearch !== "function") throw new Error("Invalid public SDK"); const search = sdk.createPublicIndexSearch(JSON.parse(process.argv[2])); if (typeof search !== "function") throw new Error("Invalid public SDK factory"); search.close?.();')} -- ${quote(plan.release + "/public-index.ts")} ${quote(JSON.stringify({ root: plan.settings.root, collections: plan.settings.collections }))}`,
+    `cp -p ${quote(plan.server)} ${quote(backup + "/server.ts")}; echo ${quote(input.expectedServerSha256 + "  " + backup + "/server.ts")} | sha256sum -c -`,
+    `printf '%s\\n' ${quote(input.expectedCurrent)} > ${quote(backup + "/previous-current")}`,
+    `rollback() { ${restore}; }; trap 'status=$?; if test "$status" -ne 0; then rollback; fi; exit "$status"' EXIT`,
+    `echo ${quote(input.expectedServerSha256 + "  " + plan.server)} | sha256sum -c -`,
+    `cp -p ${quote(plan.release + "/server.ts")} ${quote(plan.server + ".pending")}; mv ${quote(plan.server + ".pending")} ${quote(plan.server)}`,
+    `ln -s ${quote("releases/" + plan.id)} ${quote(current + ".pending")}; mv -Tf ${quote(current + ".pending")} ${quote(current)}`,
+    plan.restart,
+    `curl -fsS --retry 5 --retry-delay 1 --retry-connrefused --max-time 3 http://127.0.0.1:8797/health > /dev/null`,
+    `status=$(curl -sS --max-time 5 -H 'Host: aphrody.com' -o ${quote(backup + "/index-smoke.json")} -w '%{http_code}' ${quote(route)}); test "$status" = 200 || test "$status" = 503`,
+    `test "$(curl -sS --max-time 3 -H 'Host: aphrody.com' -o /dev/null -w '%{http_code}' 'http://127.0.0.1:8797/api/index/search')" = 400`,
+    preserved,
+    "trap - EXIT",
+  ].join(";\n");
+}
+async function backendMain(values: {
+  apply?: boolean;
+  build?: boolean;
+  artifact?: string;
+  out?: string;
+  revision?: string;
+  "backend-config"?: string;
+  "expected-server-sha"?: string;
+  "expected-backend-current"?: string;
+  "expected-backend-env-sha"?: string;
+  "public-assets"?: boolean;
+}) {
+  if (!values["backend-config"] || values["public-assets"])
+    throw new Error("Backend-only requires explicit configuration and does not build UI assets");
+  const config: ReleaseConfig = await Bun.file(
+    join(repository, "tools/config/downloads.json"),
+  ).json();
+  const revision = values.revision ?? (await run(["git", "rev-parse", "HEAD"]));
+  const configStat = lstatSync(values["backend-config"]);
+  if (
+    !configStat.isFile() ||
+    configStat.isSymbolicLink() ||
+    configStat.nlink !== 1 ||
+    configStat.size > 32768
+  )
+    throw new Error("Bounded regular public backend configuration required");
+  const backendConfig = (await Bun.file(values["backend-config"]).json()) as BackendConfig;
+  const plan = backendReleasePlan(config, revision, backendConfig);
+  console.log(
+    JSON.stringify(
+      {
+        ...plan,
+        prerequisite: `Declare EnvironmentFile=-${plan.environmentFile} through Infra before activation`,
+        uiPreserved: true,
+      },
+      null,
+      2,
+    ),
+  );
+  if (!values.build && !values.apply) return;
+  if (
+    revision !== (await run(["git", "rev-parse", "HEAD"])) ||
+    (await run([
+      "git",
+      "status",
+      "--porcelain",
+      "--",
+      serverSource,
+      "scripts/release/publish-app-ui.ts",
+      "scripts/release/publish-app-ui.test.ts",
+      "tools/config/downloads.json",
+    ]))
+  )
+    throw new Error("Commit exact backend publisher/server source before publication");
+  const bunCheckout = resolve(Bun.env.APHRODY_BUN_CHECKOUT || join(repository, "../bun"));
+  const modulePath = "packages/bun-google/src/public-index.ts";
+  if (
+    plan.settings.module.revision !== (await run(["git", "rev-parse", "HEAD"], bunCheckout)) ||
+    (await run(["git", "status", "--porcelain", "--", modulePath], bunCheckout))
+  )
+    throw new Error("Commit exact canonical Bun SDK source before publication");
+  const moduleFile = join(realpathSync(bunCheckout), modulePath);
+  const moduleStat = lstatSync(moduleFile);
+  if (
+    !moduleStat.isFile() ||
+    moduleStat.isSymbolicLink() ||
+    moduleStat.nlink !== 1 ||
+    realpathSync(moduleFile) !== resolve(moduleFile) ||
+    sha(readFileSync(moduleFile)) !== plan.settings.module.sha256
+  )
+    throw new Error("Pinned canonical SDK checksum mismatch");
+  const workspace = mkdtempSync(join(tmpdir(), "aphrody-backend-release-"));
+  const artifact = resolve(values.artifact ?? values.out ?? join(workspace, "artifact"));
+  if (
+    [repository, bunCheckout].some((root) => artifact === root || artifact.startsWith(root + sep))
+  )
+    throw new Error("Use an isolated backend artifact outside source checkouts");
+  if (
+    realpathSync(posix.dirname(artifact.replaceAll(sep, "/"))) !==
+    resolve(posix.dirname(artifact.replaceAll(sep, "/")))
+  )
+    throw new Error("Artifact parent must be canonical");
+  if (values.build) {
+    // Exclusive staging: never overwrite an existing artifact or foreign symlink.
+    mkdirSync(artifact);
+    await Bun.write(join(artifact, "server.ts"), Bun.file(join(repository, serverSource)));
+    await Bun.write(join(artifact, "public-index.ts"), Bun.file(moduleFile));
+    await Bun.write(join(artifact, "public-index.env"), backendEnvironment(plan));
+  }
+  const serverSha256 = sha(readFileSync(join(repository, serverSource)));
+  const manifest = backendArtifactManifest(artifact, plan, serverSha256);
+  if (!values.build)
+    verifyArtifactProvenance(
+      await Bun.file(join(artifact, "release-manifest.json")).json(),
+      manifest,
+    );
+  await Bun.write(join(artifact, "release-manifest.json"), JSON.stringify(manifest));
+  await Bun.write(
+    join(artifact, "SHA256SUMS"),
+    manifest.files.map((file) => file.sha256 + "  " + file.path).join("\n") + "\n",
+  );
+  const archive = join(workspace, "backend.tar.gz");
+  await run(["tar", "-czf", archive, "-C", artifact, "."]);
+  const archiveSha256 = sha(new Uint8Array(await Bun.file(archive).arrayBuffer()));
+  console.log(
+    JSON.stringify({
+      mode: "backend-only",
+      artifact,
+      archive,
+      archiveSha256,
+      serverSha256,
+      files: manifest.files.length,
+      deployed: false,
+    }),
+  );
+  if (!values.apply) return;
+  const activation = backendActivationCommand(plan, {
+    archiveSha256,
+    serverSha256,
+    expectedServerSha256: values["expected-server-sha"] ?? "",
+    expectedCurrent: values["expected-backend-current"] ?? "",
+    expectedEnvironmentSha256: values["expected-backend-env-sha"] ?? "",
+  });
+  const ssh = (command: string) =>
+    run(["aphrody", "infra", "ssh", "exec", "--host", plan.host, "--cmd", command]);
+  const pending = plan.base + "/" + plan.id + ".tar.gz.pending";
+  await ssh(
+    `set -eu; test ! -L ${quote(plan.base)}; test "$(realpath -m -- ${quote(plan.base)})" = ${quote(plan.base)}; test ! -L ${quote(plan.base + "/publication.lock")}; test ! -e ${quote(plan.base + "/publication.lock")} || test -f ${quote(plan.base + "/publication.lock")}; test ! -e ${quote(pending)} && test ! -L ${quote(pending)}; mkdir -p ${quote(plan.base + "/releases")} ${quote(plan.base + "/backups")}`,
+  );
+  await run([
+    "aphrody",
+    "infra",
+    "ssh",
+    "sftp",
+    "--host",
+    plan.host,
+    "--path",
+    pending,
+    "--put",
+    archive,
+  ]);
+  // Separate from UI publication; no nginx or unit mutation and no UI symlink flip.
+  await ssh(
+    `flock --close -- ${quote(plan.base + "/publication.lock")} bash -c ${quote(activation)}`,
+  );
+  console.log(
+    JSON.stringify({
+      mode: "backend-only",
+      activated: plan.release,
+      serverSha256,
+      archiveSha256,
+      uiPreserved: true,
+      liveSearchQualified: false,
+    }),
+  );
+}
 export async function run(command: string[], cwd = repository, env: Record<string, string> = {}) {
   const process = Bun.spawn(runtimeCommand(command), {
     cwd,
@@ -253,8 +646,19 @@ async function main() {
       "expected-server-sha": { type: "string" },
       "scp-fallback": { type: "boolean" },
       "public-assets": { type: "boolean" },
+      "backend-only": { type: "boolean" },
+      "backend-config": { type: "string" },
+      "expected-backend-current": { type: "string" },
+      "expected-backend-env-sha": { type: "string" },
     },
   });
+  if (values["backend-only"]) return backendMain(values);
+  if (
+    values["backend-config"] ||
+    values["expected-backend-current"] ||
+    values["expected-backend-env-sha"]
+  )
+    throw new Error("Backend options require --backend-only");
   const revision = values.revision ?? (await run(["git", "rev-parse", "HEAD"]));
   const config: ReleaseConfig = await Bun.file(
     join(repository, "tools/config/downloads.json"),
