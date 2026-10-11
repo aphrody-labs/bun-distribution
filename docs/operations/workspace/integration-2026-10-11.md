@@ -63,16 +63,49 @@ and recreates only the affected services with `--no-build --no-deps`.
 - The broader Windows Workspace suite exposed existing failures: 266 passed,
   44 skipped, 22 failed and 18 loader errors, including missing `@aphrody/paths`.
   This is not a green full-workspace qualification.
-- Native Aphrody browser snapshots rendered the public homepage and documentation.
+- Native Aphrody browser renders the deployed public homepage with 26 interactive
+  elements. The documentation snapshot captures its initial loading state;
+  the documentation and template APIs return their real catalogs with HTTP 200.
   Home, docs, templates, Material 3 and `app.js` return HTTP 200.
-- The frontend's live `/rpc` calls for initialization and Google search return
-  HTTP 404. Full application functionality remains unqualified. The native
-  product site intentionally serves read-only routes; host RPC must not be
-  exposed through an implicit public proxy. The existing Bun WebOS owner
-  (`m3/packages/app-ui/webos.ts`, `packages/bun-webos` in the configured fork)
-  must be qualified and deployed with its declared origin and permissions.
+- The browser search adapter now uses the read-only `/api/search` endpoint.
+  Desktop search retains its native RPC contract. The HTTP endpoint reuses
+  `aphrody-google`, forces anonymous requests, restricts accepted fields,
+  bounds query/pagination, and limits concurrent searches to four with a
+  20-second deadline. `/rpc` remains unavailable on the public product site.
+- The site passed serialized native Linux Cargo check, 23 tests with no ignored
+  tests, strict Clippy for all targets and a release build. A separate probe
+  using the exact native Google owner on DBFR received an upstream Google
+  anti-bot interstitial, not usable results. Search returns HTTP 502 honestly;
+  the UI provides an encoded Google search link when this occurs.
+- The deployed fork passed seven search/homepage tests with 34 assertions.
+  The DOM test enters a query, sends the actual browser adapter request, displays
+  an upstream 502, verifies the encoded Google destination and rejects false
+  result presentation. Only the unrelated decorative pet animation is frozen.
+- The isolated DBFR Docker site serves the rebuilt canonical M3 UI, docs and
+  templates. It runs without account cookies, provider/home mounts or host RPC,
+  with a read-only filesystem, one GiB memory limit and a private WireGuard port.
+  Its health runner executes the verified `.4` fork. The container base is an
+  existing local image ID with `pull_policy: never`, not a registry digest.
+- Native Bun checks passed for 85 reviewed package commands after building
+  their actual owner packages. The three remaining package commands hit the
+  published fork's collision with scripts named `check`; the same projects
+  pass from the root with explicit configs (583, 11 and 20 files). The template
+  was qualified by the existing owner generator: its real 21-file base/web
+  project installed five packages and passed native checking without installing
+  TypeScript. Package command activation still requires the dispatcher fix.
+  Declaration producers execute the locked repository TypeScript 7 emitter
+  through Bun, without a PATH compiler fallback; native `bun check`
+  qualification does not establish native declaration emission.
 
 Gateway and domain deployment remain separate from a successful Bun runtime
-upgrade. DBFR's gateway currently declares Shenron vhosts. Its Aphrody TLS
-certificate covers `aphrody.com`, `www.aphrody.com` and `mcp.aphrody.com`,
-not `bun.aphrody.com`.
+upgrade. The Bun release gateway/cache are delivered independently. Aphrody's
+public TLS edge now routes the read-only site to DBFR without changing the apex
+DNS or exposing authenticated provider and host capabilities. The prior edge
+configuration remains in a protected host backup; `nginx -t` and reload passed.
+
+The DBFR default Bun executable was upgraded atomically to the qualified .4
+release after verifying its SHA-256. Its existing bunx symlink resolves to the
+same executable; both report .4. The previous executable is retained in a
+protected host backup. The root Compose catalog now includes the isolated site;
+configuration validation passed before and after installation, and a selective
+no-build start retained the healthy service. No runtime cache was removed.

@@ -30,7 +30,25 @@ export function hostAppFiles(
       join(layout.src, "bun", "scripts/aphrody/deploy/docker/compose.yaml"),
       join(layout.apps, "aphrody-bun", "compose.yaml"),
     ]);
-    for (const filename of ["bun-prod-runtime.yaml", "bun-services-runtime.yaml"])
+    files.push(
+      [
+        join(layout.src, "bun", "scripts/aphrody/deploy/docker/release-compose.yaml"),
+        join(layout.apps, "aphrody-bun-release", "compose.yaml"),
+      ],
+      [
+        join(layout.src, "bun", "scripts/aphrody/deploy/docker/bun-release.conf"),
+        join(layout.apps, "aphrody-bun-release", "bun-release.conf"),
+      ],
+      [
+        join(repo, "tools/config/host/apps/dbfr/aphrody-site/compose.yaml"),
+        join(layout.apps, "aphrody-site", "compose.yaml"),
+      ],
+    );
+    for (const filename of [
+      "bun-prod-runtime.yaml",
+      "bun-services-runtime.yaml",
+      "bun-release-gateway.yaml",
+    ])
       files.push([
         join(repo, "tools/config/host/apps/dbfr", filename),
         join(layout.apps, filename),
@@ -48,6 +66,31 @@ if (import.meta.main) {
   }
   const apply = args.includes("--apply");
   const layout = hostLayout(process.env["HOME"] || homedir());
+  if (host === "dbfr") {
+    const current = Bun.spawnSync([
+      "docker",
+      "exec",
+      "aphrody-gateway-1",
+      "cat",
+      "/etc/nginx/nginx.conf",
+    ]);
+    if (current.exitCode !== 0)
+      throw new Error("Cannot inspect the existing gateway configuration");
+    const include = "    include /etc/nginx/conf.d/*.conf;";
+    const added = "    include /etc/aphrody-bun-release/bun-release.conf;";
+    let config = current.stdout.toString();
+    if (!config.includes(added)) {
+      if (config.split(include).length !== 2) throw new Error("Unexpected gateway configuration");
+      config = config.replace(include, `${include}\n${added}`);
+    }
+    const target = join(layout.apps, "aphrody-bun-release", "gateway-nginx.conf");
+    console.log(`gateway configuration ${target}: inspected existing includes`);
+    if (apply) {
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(`${target}.new`, config);
+      renameSync(`${target}.new`, target);
+    }
+  }
   for (const [source, destination] of hostAppFiles(host, layout)) {
     const text = readFileSync(source, "utf8");
     const state = !existsSync(destination)
