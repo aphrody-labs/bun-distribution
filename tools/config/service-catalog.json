@@ -143,6 +143,20 @@
       "retiredAt": "2026-10-09"
     },
     {
+      "id": "aphrody-ai-gateway-omar",
+      "application": "aphrody",
+      "kind": "openai-compatible-gateway",
+      "runtime": "native",
+      "host": "local",
+      "health": "http://127.0.0.1:8081/health",
+      "port": 8081,
+      "modelId": "omar-qwen3",
+      "capabilities": ["chat"],
+      "sourceRepo": "aphrody",
+      "public": false,
+      "note": "Omar GPU gateway alias over the existing boot-managed Omar Llama CUDA service. The process remains owned by OmarServer and authenticates through its protected api-key file. Replace DBFR gateway only after an authenticated remote health and chat probe through the declared tunnel."
+    },
+    {
       "id": "aphrody-llama-shenron-chat",
       "application": "aphrody",
       "kind": "llama-server-openai",
