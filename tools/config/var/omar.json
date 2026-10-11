@@ -2,7 +2,7 @@
   "$comment": "Single source of the non-secret variables of Omar's remote setup. No private key, token or public IP here: tokens travel out of band, the public address stays in host logs and ssh/omar.authorized_keys only.",
   "schemaVersion": 1,
   "principal": "omar",
-  "updated": "2026-10-09",
+  "updated": "2026-10-11",
   "identity": {
     "githubLogin": "KyrioFox",
     "discordUserId": "1527405876695142620",
@@ -41,51 +41,49 @@
       "bind": "10.200.77.10:5900",
       "allowedFrom": "10.200.77.4",
       "passwordEnv": "APHRODY_VNC_PASSWORD"
-    },
-    "sshWsl": {
-      "bind": "10.200.77.10:2222",
-      "allowedFrom": "10.200.77.4,10.200.77.1,10.200.77.3",
-      "note": "WSL2 Ubuntu OpenSSH; Windows OpenSSH keeps port 22"
     }
   },
   "reverseTunnel": {
     "$comment": "Fallback while wg1 has no handshake: Omar's PC publishes its loopback services on the vps loopback (omar-sshd.conf PermitListen).",
     "host": "vps",
     "login": "omar",
-    "scheduledTask": "Aphrody Omar reverse",
+    "scheduledTask": "Aphrody omar reverse",
     "forwards": [
       {
+        "service": "ssh",
         "remote": "127.0.0.1:22010",
-        "local": "127.0.0.1:22",
-        "service": "ssh"
+        "local": "127.0.0.1:22"
       },
       {
+        "service": "remoteDesktop",
         "remote": "127.0.0.1:28795",
-        "local": "127.0.0.1:8795",
-        "service": "remoteDesktop"
+        "local": "10.200.77.10:8795"
       },
       {
+        "service": "mcpHttp",
         "remote": "127.0.0.1:28793",
-        "local": "127.0.0.1:8793",
-        "service": "mcpHttp"
+        "local": "127.0.0.1:8793"
       },
       {
-        "remote": "127.0.0.1:22011",
-        "local": "127.0.0.1:2222",
-        "service": "sshWsl"
-      },
-      {
+        "service": "vnc",
         "remote": "127.0.0.1:25900",
-        "local": "127.0.0.1:5900",
-        "service": "vnc"
+        "local": "10.200.77.10:5900"
+      },
+      {
+        "service": "a2a",
+        "remote": "127.0.0.1:28788",
+        "local": "127.0.0.1:8788"
+      },
+      {
+        "service": "nginx",
+        "remote": "127.0.0.1:28080",
+        "local": "127.0.0.1:80"
       }
     ]
   },
   "ownerAliases": {
     "omar-pc": "ssh over wg1 (10.200.77.10)",
-    "omar-rt": "ssh through the reverse tunnel (ProxyJump vps, 127.0.0.1:22010)",
-    "omar-wsl": "ssh over wg1 to the WSL Ubuntu (10.200.77.10 port 2222)",
-    "omar-wsl-rt": "ssh to the WSL Ubuntu through the reverse tunnel (ProxyJump vps, 127.0.0.1:22011)"
+    "omar-rt": "ssh through the reverse tunnel (ProxyJump vps, 127.0.0.1:22010)"
   },
   "sshd": {
     "config": "tools/config/host/ssh/omar-sshd.conf",
@@ -94,8 +92,7 @@
   },
   "pending": [
     "Omar's own SSH public key (replaces the shared windows-aphro key)",
-    "aphro-pc remote/vnc/mcp tokens delivered to Omar out of band",
-    "WSL Ubuntu user name for the omar-wsl aliases; WSL sshd on 2222 (mirrored networking)"
+    "aphro-pc remote/vnc/mcp tokens delivered to Omar out of band"
   ],
   "runbook": "docs/operations/infra/OMAR-REMOTE-CONTROL.md",
   "ownerServices": {
