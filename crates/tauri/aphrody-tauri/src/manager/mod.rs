@@ -37,7 +37,7 @@ use crate::app::OnWebContentProcessTerminate;
 mod menu;
 #[cfg(all(desktop, feature = "tray-icon"))]
 mod tray;
-pub mod webview;
+aphrody_web_source::module!("crates/tauri/aphrody-tauri/src/manager/webview.rs", pub mod webview);
 pub mod window;
 
 #[derive(Default)]

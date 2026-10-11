@@ -5,5 +5,5 @@
 mod event_loop;
 mod icon;
 mod monitor;
-mod webview;
+aphrody_web_source::module!("crates/tauri/aphrody-tauri-runtime-cef/src/platform/windows/webview.rs", mod webview);
 mod window;

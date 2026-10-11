@@ -10,7 +10,7 @@ mod monitor;
 mod progress;
 mod utils;
 mod wake;
-mod webview;
+aphrody_web_source::module!("crates/tauri/aphrody-tauri-runtime-cef/src/platform/macos/webview.rs", mod webview);
 mod window;
 
 pub use application::setup_application;

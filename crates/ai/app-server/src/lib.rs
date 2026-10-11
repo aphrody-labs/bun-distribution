@@ -9,9 +9,9 @@
 #![forbid(unsafe_code)]
 
 mod config;
-mod google_search;
+aphrody_web_source::module!("crates/ai/app-server/src/google_search.rs", mod google_search);
 mod host_tools;
-pub mod web;
+aphrody_web_source::module!("crates/ai/app-server/src/web.rs", pub mod web);
 
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap},

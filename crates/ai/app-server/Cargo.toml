@@ -22,6 +22,7 @@ in-process = ["aphrody-agent-runtime/in-process"]
 site = ["dep:aphrody-site"]
 
 [dependencies]
+aphrody-web-source.workspace = true
 axum = { workspace = true }
 async-trait = { workspace = true }
 futures = { workspace = true }

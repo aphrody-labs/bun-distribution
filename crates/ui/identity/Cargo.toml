@@ -14,6 +14,7 @@ license.workspace      = true
 workspace = true
 
 [dependencies]
+aphrody-web-source.workspace = true
 # `pixel` hands an assembled sheet to aphrody-sprite-sheet (CSS, SVG `<symbol>`, JSON) instead
 # of re-implementing them; nie-formats reuses the same crate for `.g4tx` atlases.
 aphrody-sprite-sheet = { workspace = true }

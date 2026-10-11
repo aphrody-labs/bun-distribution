@@ -19,7 +19,7 @@
 
 pub mod cloudflare;
 pub mod gemini_cli;
-pub mod google_antigravity;
+aphrody_web_source::module!("crates/ai/gateway/src/google_antigravity.rs", pub mod google_antigravity);
 mod model_client;
 mod openai_compat;
 pub mod openai_proxy;

@@ -33,7 +33,7 @@ mod sandbox;
 /// Helpers for the Chromium command line the runtime hands to CEF.
 mod switches;
 mod tauri_ext;
-mod webview;
+aphrody_web_source::module!("crates/tauri/aphrody-tauri-runtime-cef/src/webview.rs", mod webview);
 pub use devtools::{DevToolsMessageIdExhausted, allocate_devtools_message_id};
 pub use frame::{FrameEvent, FrameEventHandler, FrameEventKind};
 pub use frame_navigation::{FrameNavigationState, NativeDocumentToken};

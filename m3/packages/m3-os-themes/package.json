@@ -34,7 +34,8 @@
   },
   "dependencies": {
     "@aphrody/identity": "workspace:*",
-    "@aphrody/m3-tokens": "workspace:*"
+    "@aphrody/m3-tokens": "workspace:*",
+    "@aphrody/web-source": "workspace:*"
   },
   "devDependencies": {
     "@aphrody/bun": "^3.3.0",

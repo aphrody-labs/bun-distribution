@@ -86,7 +86,7 @@ pub mod monitor;
 pub mod screenshot;
 pub mod script_registry;
 pub mod utils;
-pub mod websocket;
+aphrody_web_source::module!("crates/ui/tauri-plugin-mcp-bridge/src/websocket.rs", pub mod websocket);
 
 pub use config::{Builder, Config, ListenHook};
 

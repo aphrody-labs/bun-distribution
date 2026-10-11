@@ -1,38 +1,21 @@
 {
   "name": "@aphrody/webos-wasm",
   "version": "1.4.4",
-  "description": "Rust WebAssembly backend of the Aphrody browser OS: OPFS-persisted file system, explorer wire protocol, local shell and terminal, binary triage and patches.",
+  "private": true,
   "license": "Apache-2.0",
   "files": [
     "src",
-    "wasm",
-    "README.md"
+    "wasm"
   ],
   "type": "module",
-  "imports": {
-    "#webos-wasm-glue": "./wasm/aphrody_webos_wasm.js"
-  },
   "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts",
-      "default": "./src/index.ts"
-    },
+    ".": "./src/index.ts",
     "./wasm/*": "./wasm/*"
   },
-  "publishConfig": {
-    "access": "public"
-  },
-  "scripts": {
-    "build:wasm": "bun ../../../scripts/build/rust/wasm-package.ts --crate aphrody-webos-wasm --out packages/web/webos-wasm/wasm",
-    "typecheck": "bun check --noEmit",
-    "test": "bun test"
-  },
-  "devDependencies": {
-    "@types/bun": "catalog:",
-    "typescript": "catalog:"
+  "dependencies": {
+    "@aphrody/web-source": "workspace:*"
   },
   "engines": {
-    "bun": ">=1.4.3"
+    "bun": ">=1.4.4"
   }
 }

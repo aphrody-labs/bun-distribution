@@ -46,6 +46,7 @@ development = ["quickcheck_macros"]
 name = "tauri"
 
 [dependencies]
+aphrody-web-source.workspace = true
 serde_json = { workspace = true, features = ["raw_value"] }
 serde = { workspace = true, features = ["derive", "rc"] }
 tokio = { version = "1", features = [

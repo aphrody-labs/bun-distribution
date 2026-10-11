@@ -18,7 +18,7 @@
 mod process;
 pub use process::*;
 #[cfg(feature = "browser")]
-mod browser;
+aphrody_web_source::module!("crates/engine/yolo-runtime/src/browser.rs", mod browser);
 #[cfg(feature = "gpu")]
 mod gpu;
 #[cfg(feature = "gpu")]

@@ -83,6 +83,7 @@ yara = ["aphrody-re/yara"]
 #   buildable from the same crate.
 
 [dependencies]
+aphrody-web-source.workspace = true
 clap          = { workspace = true }
 # clap_complete is unconditional: Shell is referenced in the Commands enum which
 # compiles on all targets. clap_complete itself has no OS-specific code and

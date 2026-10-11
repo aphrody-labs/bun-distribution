@@ -25,6 +25,7 @@ gpu = ["dep:aphrody-gpu-backend", "aphrody-gpu-backend/hub", "dep:base64"]
 cuda = ["gpu", "aphrody-gpu-backend/cuda"]
 
 [dependencies]
+aphrody-web-source.workspace = true
 aphrody-proc = { workspace = true }
 obscura-browser = { workspace = true, features = ["render"], optional = true }
 obscura-net = { workspace = true, optional = true }

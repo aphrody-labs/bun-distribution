@@ -27,6 +27,7 @@ name = "tauri_plugin_mcp_bridge"
 crate-type = ["rlib"]
 
 [dependencies]
+aphrody-web-source.workspace = true
 # Aphrody patch: Tauri 3 selects its runtime through the runtime crate; pins mirror the root workspace.
 # The one desktop runtime is CEF: the screenshot goes through its DevTools protocol (src/screenshot/cef.rs),
 # so no WebKitGTK, WKWebView, WebView2, Android or iOS capture code and no platform dependency remains.

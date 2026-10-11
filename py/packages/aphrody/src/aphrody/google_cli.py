@@ -1,13 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Compatibility import; implementation is owned by aphrody_cli."""
+# Source owner: @aphrody/web-source in the Bun fork; retain the consumer namespace.
+from pathlib import Path as _SourcePath
+from os import environ as _source_environ
 
-import sys
-from importlib import import_module
-
-try:
-    _implementation = import_module("aphrody_cli.google")
-except ModuleNotFoundError as exc:
-    if exc.name == "aphrody_cli":
-        raise ImportError("Install the aphrody-cli distribution for this API") from exc
-    raise
-sys.modules[__name__] = _implementation
+_source_repo = next(
+    parent for parent in _SourcePath(__file__).resolve().parents
+    if (parent / "Cargo.toml").is_file() and (parent / "PLAN.md").is_file()
+)
+_source_bun = _SourcePath(_source_environ.get("APHRODY_BUN_CHECKOUT", str(_source_repo.parent / "bun")))
+_source_provider = _source_bun / "packages/bun-aphrody-web/integrations/py/packages/aphrody/src/aphrody/google_cli.py"
+exec(compile(_source_provider.read_bytes(), str(_source_provider), "exec"), globals())

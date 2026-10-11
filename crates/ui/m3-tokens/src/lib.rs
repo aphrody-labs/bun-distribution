@@ -55,8 +55,8 @@ pub mod elevation;
 #[cfg(feature = "std")]
 pub mod facade;
 pub mod gemini_brand;
-pub mod google_sans_code;
-pub mod google_sans_flex;
+aphrody_web_source::module!("crates/ui/m3-tokens/src/google_sans_code.rs", pub mod google_sans_code);
+aphrody_web_source::module!("crates/ui/m3-tokens/src/google_sans_flex.rs", pub mod google_sans_flex);
 #[cfg(feature = "std")]
 pub mod hct;
 /// `sourceColorFromImage`/`sourceColorFromImageBytes`: the color most suitable for a UI theme

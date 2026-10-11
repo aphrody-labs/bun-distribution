@@ -76,6 +76,7 @@ winclean  = ["dep:aphrody-winclean"]
 workspace = true
 
 [dependencies]
+aphrody-web-source.workspace = true
 aphrody-jev        = { workspace = true }
 aphrody-models     = { workspace = true }
 # Canonical `APHRODY_AI_*` environment resolution (`ai_env`), used by

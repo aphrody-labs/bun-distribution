@@ -53,5 +53,8 @@
   },
   "engines": {
     "bun": ">=1.4.3"
+  },
+  "dependencies": {
+    "@aphrody/web-source": "workspace:*"
   }
 }

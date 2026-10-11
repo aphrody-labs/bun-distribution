@@ -10,6 +10,7 @@ import { MemoryRouter } from "react-router-dom";
 import { ProductSearchHome } from "./src/routes/product/ProductSearchHome";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
+import { fileURLToPath } from "node:url";
 import { publicFontUrl, renderPublicStylesheet } from "@aphrody/m3-fonts";
 import { prunePublicFontCopies } from "./public-assets-package";
 const WEBOS_WASM_NAME = "aphrody_webos_wasm_bg.wasm";
@@ -60,7 +61,9 @@ if (import.meta.main) {
     cwd: config.dir,
   });
   // The Rust WebAssembly backend of the browser OS (packages/web/webos-wasm) ships next to app.js.
-  const webosWasm = join(import.meta.dir, "../../../packages/web/webos-wasm/wasm", WEBOS_WASM_NAME);
+  const webosWasm = fileURLToPath(
+    import.meta.resolve(`@aphrody/webos-wasm/wasm/${WEBOS_WASM_NAME}`),
+  );
   if (!(await Bun.file(webosWasm).exists()))
     throw new Error(
       "missing " + webosWasm + ": run `bun run build:wasm` in packages/web/webos-wasm",

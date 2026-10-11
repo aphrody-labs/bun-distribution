@@ -136,7 +136,7 @@ pub mod plugin;
 pub(crate) mod protocol;
 mod resources;
 mod vibrancy;
-pub mod webview;
+aphrody_web_source::module!("crates/tauri/aphrody-tauri/src/webview/mod.rs", pub mod webview);
 pub mod window;
 use tauri_runtime::{self as runtime};
 pub mod image;

@@ -9,6 +9,7 @@ repository.workspace = true
 description = "Native Aphrody Discord engine: Ed25519 interaction verification, REST client, AI answer embeds, Web extraction and timed shell receipts."
 
 [dependencies]
+aphrody-web-source.workspace = true
 aphrody-proc = { workspace = true, features = ["tokio"] }
 anyhow = { workspace = true }
 aphrody-web-extract = { workspace = true, optional = true }

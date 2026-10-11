@@ -79,6 +79,7 @@
     "@aphrody/m3-tokens": "workspace:*",
     "@aphrody/material-design-icons": "workspace:*",
     "@aphrody/scaffold": "workspace:*",
+    "@aphrody/web-source": "workspace:*",
     "@aphrody/web-to-tauri": "workspace:*"
   },
   "devDependencies": {

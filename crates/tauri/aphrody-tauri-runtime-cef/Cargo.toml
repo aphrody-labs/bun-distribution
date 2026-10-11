@@ -30,6 +30,7 @@ name = "macos-application-bootstrap"
 harness = false
 
 [dependencies]
+aphrody-web-source.workspace = true
 tauri = { version = "1.4.4", path = "../aphrody-tauri", package = "aphrody-tauri", default-features = false, features = ["gtk4"] }
 tauri-macros = { version = "1.4.4", path = "../aphrody-tauri-macros", package = "aphrody-tauri-macros" }
 base64 = "0.22"

@@ -6,7 +6,7 @@ mod event_loop;
 mod monitor;
 mod taskbar;
 mod utils;
-mod webview;
+aphrody_web_source::module!("crates/tauri/aphrody-tauri-runtime-cef/src/platform/linux/webview.rs", mod webview);
 mod window;
 
 pub(crate) use window::CefX11Host;

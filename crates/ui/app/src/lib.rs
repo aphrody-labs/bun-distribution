@@ -31,7 +31,7 @@ pub mod runtime;
 pub mod runtime_host;
 pub mod showcase;
 pub mod studio;
-pub mod web_subsystem;
+aphrody_web_source::module!("crates/ui/app/src/web_subsystem.rs", pub mod web_subsystem);
 pub mod window;
 
 use std::{

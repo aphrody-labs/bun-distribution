@@ -50,7 +50,7 @@ pub mod whisper_cpp;
 
 // Browser-native module: only compiled when targeting wasm32.
 #[cfg(target_arch = "wasm32")]
-pub mod web;
+aphrody_web_source::module!("crates/ai/voice/src/stt/web.rs", pub mod web);
 
 // ── Native-only: trait + error types ─────────────────────────────────────────
 //

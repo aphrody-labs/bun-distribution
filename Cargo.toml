@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 [workspace]
 resolver = "3"
-members = ["crates/ui/*", "crates/infra/*", "crates/contracts/*", "crates/os/ostd/*", "crates/os/kernel/core", "crates/os/kernel/client", "crates/os/kernel/comps/*", "crates/os/kernel/libs/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/ml/*", "crates/ai/*", "crates/google/*", "crates/interop/*", "crates/web/*", "crates/engine/*", "crates/tauri/*", "crates/pkg/*"]
+members = ["crates/ui/*", "crates/infra/*", "crates/contracts/*", "crates/os/ostd/*", "crates/os/kernel/core", "crates/os/kernel/client", "crates/os/kernel/comps/*", "crates/os/kernel/libs/*", "crates/shell/*", "crates/compat/*", "crates/native/*", "crates/ml/*", "crates/ai/*", "crates/interop/*", "crates/engine/*", "crates/tauri/*", "crates/pkg/*"]
 exclude = [
+  "crates/shell/web",
   "crates/contracts/schema",
   "crates/os/kernel/comps/drive",
   "crates/tauri/aphrody-tauri-api",
@@ -36,6 +37,7 @@ description = "aphrody \u2014 the ultimate cross-platform CLI (Linux/Windows/WAS
 categories = ["command-line-utilities", "development-tools", "web-programming"]
 keywords = ["cli", "cross-platform", "rust", "linux", "wasm"]
 [workspace.dependencies]
+aphrody-web-source = { path = "../bun/packages/bun-aphrody-web", version = "1.4.4" }
 node-semver = "2.2.0"
 pep440_rs = "0.7.3"
 aphrody-pkg-core = { path = "crates/pkg/core", version = "1.4.4" }
@@ -78,11 +80,11 @@ aphrody-agent-proto = { path = "crates/contracts/agent-proto", version = "1.4.4"
 aphrody-agent-runtime = { path = "crates/ai/agent-runtime", version = "1.4.4", features = [] }
 aphrody-agent-tools = { path = "crates/ai/agent-tools", version = "1.4.4", features = [] }
 aphrody-identity = { path = "crates/ui/identity", version = "1.4.4" }
-aphrody-antigravity = { path = "crates/google/antigravity", version = "1.4.4", features = [] }
+aphrody-antigravity = { path = "../bun/packages/bun-google/aphrody/crates/antigravity", version = "1.4.4", features = [] }
 aphrody-app-protocol = { path = "crates/contracts/app-protocol", version = "1.4.4", features = [] }
 aphrody-app-server = { path = "crates/ai/app-server", version = "1.4.4", features = [] }
 aphrody-backend = { path = "crates/os/ostd/backend", version = "1.4.4", features = [] }
-aphrody-boq = { path = "crates/google/boq", version = "1.4.4", features = [] }
+aphrody-boq = { path = "../bun/packages/bun-google/crates/boq", version = "1.4.4", features = [] }
 aphrody-capture = { path = "crates/os/kernel/libs/capture", version = "1.4.4", features = [] }
 aphrody-config = { path = "crates/ai/config", version = "1.4.4", features = [] }
 aphrody-diagnostics = { path = "crates/os/kernel/comps/diagnostics", version = "1.4.4" }
@@ -91,10 +93,10 @@ aphrody-engine = { path = "crates/ai/engine", version = "1.4.4", features = [] }
 aphrody-firefly = { path = "crates/ai/firefly", version = "1.4.4", features = [] }
 aphrody-fsindex = { path = "crates/os/kernel/libs/fsindex", version = "1.4.4", features = [] }
 aphrody-gateway = { path = "crates/ai/gateway", version = "1.4.4", features = [] }
-aphrody-gemini-runtime = { path = "crates/google/gemini-runtime", version = "1.4.4", features = [] }
-aphrody-gemini-web = { path = "crates/google/gemini-web", version = "1.4.4", features = [] }
+aphrody-gemini-runtime = { path = "../bun/packages/bun-google/aphrody/crates/gemini-runtime", version = "1.4.4", features = [] }
+aphrody-gemini-web = { path = "../bun/packages/bun-google/aphrody/crates/gemini-web", version = "1.4.4", features = [] }
 aphrody-git = { path = "crates/infra/git", version = "1.4.4", features = [] }
-aphrody-google = { path = "crates/google/google", version = "1.4.4", features = [] }
+aphrody-google = { path = "../bun/packages/bun-google/aphrody/crates/google", version = "1.4.4", features = [] }
 aphrody-gpu-backend = { path = "crates/native/gpu-backend", version = "1.4.4" }
 aphrody-guard = { path = "crates/os/ostd/guard", version = "1.4.4", features = [] }
 aphrody-http-error = { path = "crates/ai/http-error", version = "1.4.4", features = [] }
@@ -109,7 +111,7 @@ aphrody-m3-tokens = { path = "crates/ui/m3-tokens", version = "1.4.4", features 
 aphrody-mcp = { path = "crates/ai/mcp", version = "1.4.4" }
 aphrody-mcp-client = { path = "crates/ai/mcp-client", version = "1.4.4", features = [] }
 aphrody-memory = { path = "crates/ai/memory", version = "1.4.4", features = [] }
-aphrody-model-antigravity = { path = "crates/google/model-antigravity", version = "1.4.4", features = [] }
+aphrody-model-antigravity = { path = "../bun/packages/bun-google/aphrody/crates/model-antigravity", version = "1.4.4", features = [] }
 aphrody-model-client = { path = "crates/ai/model-client", version = "1.4.4", features = [] }
 aphrody-models = { path = "crates/ai/models", version = "1.4.4", features = [] }
 aphrody-n2b = { version = "=0.7.0", features = [] }
@@ -131,7 +133,7 @@ aphrody-rollout = { path = "crates/ai/rollout", version = "1.4.4", features = []
 aphrody-secrets = { path = "crates/os/ostd/secrets", version = "1.4.4", features = [] }
 aphrody-session = { path = "crates/ai/session", version = "1.4.4", features = [] }
 aphrody-ssh = { path = "crates/infra/ssh", version = "1.4.4", features = [] }
-aphrody-shell-web = { path = "crates/shell/web", version = "1.4.4", features = [] }
+aphrody-shell-web = { path = "../bun/packages/bun-aphrody-web/integrations/crates/shell/web", version = "1.4.4", features = [] }
 aphrody-shell-tauri = { path = "crates/shell/tauri", version = "1.4.4", features = [] }
 aphrody-shell-session = { path = "crates/shell/session", version = "1.4.4", features = [] }
 aphrody-shell-vfs = { path = "crates/shell/vfs", version = "1.4.4", features = [] }
@@ -145,7 +147,7 @@ aphrody-toolchains = { path = "crates/compat/toolchains", version = "1.4.4", fea
 aphrody-train = { path = "crates/ai/train", version = "1.4.4", features = [] }
 aphrody-translate = { path = "crates/ai/translate", version = "1.4.4", features = [] }
 aphrody-command-wasm = { path = "crates/infra/aphrody-command-wasm", version = "1.4.4", features = [] }
-aphrody-webos-wasm = { path = "crates/web/webos-wasm", version = "1.4.4", features = [] }
+aphrody-webos-wasm = { path = "../bun/packages/bun-aphrody-web/crates/webos-wasm", version = "1.4.4", features = [] }
 aphrody-command-pure = { path = "crates/infra/aphrody-command-pure", version = "1.4.4", features = [] }
 aphrody-translate-core = { path = "crates/ai/translate-core", version = "1.4.4", features = [] }
 aphrody-vision = { path = "crates/ai/vision", version = "1.4.4", features = [] }
@@ -153,16 +155,16 @@ aphrody-voice = { path = "crates/ai/voice", version = "1.4.4", features = [] }
 aphrody-vpn = { path = "crates/infra/vpn", version = "1.4.4", features = [] }
 aphrody-remote-desktop = { path = "crates/infra/remote-desktop", version = "1.4.4", features = [] }
 aphrody-wireguard = { path = "crates/infra/wireguard", version = "1.4.4", features = [] }
-aphrody-web-crawl = { path = "crates/web/web-crawl", version = "1.4.4", features = [] }
-aphrody-web-detect = { path = "crates/web/web-detect", version = "1.4.4", features = [] }
+aphrody-web-crawl = { path = "../bun/packages/bun-aphrody-web/crates/web-crawl", version = "1.4.4", features = [] }
+aphrody-web-detect = { path = "../bun/packages/bun-aphrody-web/crates/web-detect", version = "1.4.4", features = [] }
 yolo-runtime = { path = "crates/engine/yolo-runtime", version = "1.4.4" }
-aphrody-web-engine = { path = "crates/web/web-engine", version = "1.4.4", features = [] }
-aphrody-web-extract = { path = "crates/web/web-extract", version = "1.4.4", features = [] }
-aphrody-web-frames = { path = "crates/web/web-frames", version = "1.4.4", features = [] }
-aphrody-web-index = { path = "crates/web/web-index", version = "1.4.4", features = [] }
-aphrody-web-service = { path = "crates/web/web-service", version = "1.4.4", features = [] }
-aphrody-site = { path = "crates/web/site", version = "1.4.4" }
-aphrody-x = { path = "crates/web/x", version = "1.4.4", features = [] }
+aphrody-web-engine = { path = "../bun/packages/bun-aphrody-web/crates/web-engine", version = "1.4.4", features = [] }
+aphrody-web-extract = { path = "../bun/packages/bun-aphrody-web/crates/web-extract", version = "1.4.4", features = [] }
+aphrody-web-frames = { path = "../bun/packages/bun-aphrody-web/crates/web-frames", version = "1.4.4", features = [] }
+aphrody-web-index = { path = "../bun/packages/bun-aphrody-web/crates/web-index", version = "1.4.4", features = [] }
+aphrody-web-service = { path = "../bun/packages/bun-aphrody-web/crates/web-service", version = "1.4.4", features = [] }
+aphrody-site = { path = "../bun/packages/bun-aphrody-web/crates/site", version = "1.4.4" }
+aphrody-x = { path = "../bun/packages/bun-aphrody-web/crates/x", version = "1.4.4", features = [] }
 aphrody-winclean = { path = "crates/os/kernel/comps/winclean", version = "1.4.4", features = [] }
 aphrody-yolo = { path = "crates/infra/yolo", version = "1.4.4" }
 arc-swap = "1.9.2"
@@ -213,15 +215,15 @@ libm = "0.2.16"
 minijinja = "2.24.0"
 notify = { version = "8", features = [] }
 notify-debouncer-full = "0.6"
-obscura-mcp = { path = "crates/web/obscura-mcp", version = "1.4.4", features = [] }
-obscura-browser = { path = "crates/web/obscura-browser", version = "1.4.4", features = [] }
-obscura = { path = "crates/web/obscura", version = "1.4.4", package = "aphrody-obscura" }
-obscura-cdp = { path = "crates/web/obscura-cdp", version = "1.4.4", features = [] }
-obscura-dom = { path = "crates/web/obscura-dom", version = "1.4.4", features = [] }
-obscura-js = { path = "crates/web/obscura-js", version = "1.4.4", features = [] }
-obscura-net = { path = "crates/web/obscura-net", version = "1.4.4", features = [] }
-obscura-ssrf = { path = "crates/web/obscura-ssrf", version = "1.4.4", features = [] }
-obscura-render = { path = "crates/web/obscura-render", version = "1.4.4", features = [] }
+obscura-mcp = { path = "../bun/packages/bun-aphrody-web/crates/obscura-mcp", version = "1.4.4", features = [] }
+obscura-browser = { path = "../bun/packages/bun-aphrody-web/crates/obscura-browser", version = "1.4.4", features = [] }
+obscura = { path = "../bun/packages/bun-aphrody-web/crates/obscura", version = "1.4.4", package = "aphrody-obscura" }
+obscura-cdp = { path = "../bun/packages/bun-aphrody-web/crates/obscura-cdp", version = "1.4.4", features = [] }
+obscura-dom = { path = "../bun/packages/bun-aphrody-web/crates/obscura-dom", version = "1.4.4", features = [] }
+obscura-js = { path = "../bun/packages/bun-aphrody-web/crates/obscura-js", version = "1.4.4", features = [] }
+obscura-net = { path = "../bun/packages/bun-aphrody-web/crates/obscura-net", version = "1.4.4", features = [] }
+obscura-ssrf = { path = "../bun/packages/bun-aphrody-web/crates/obscura-ssrf", version = "1.4.4", features = [] }
+obscura-render = { path = "../bun/packages/bun-aphrody-web/crates/obscura-render", version = "1.4.4", features = [] }
 octocrab = { version = "0.54", features = [] }
 once_cell = { version = "1", features = [] }
 opendal = { version = "0.59", default-features = false, features = ["executors-tokio", "services-fs"] }
@@ -466,3 +468,37 @@ lto = true
 codegen-units = 1
 panic = "abort"
 strip = true
+
+# Use the same local application contracts for the migrated Bun providers.
+[patch."https://github.com/aphrody-labs/aphrody".aphrody-config]
+path = "crates/ai/config"
+
+[patch."https://github.com/aphrody-labs/aphrody".aphrody-m3-tokens]
+path = "crates/ui/m3-tokens"
+
+[patch."https://github.com/aphrody-labs/aphrody".aphrody-mcp-client]
+path = "crates/ai/mcp-client"
+
+[patch."https://github.com/aphrody-labs/aphrody".aphrody-model-client]
+path = "crates/ai/model-client"
+
+[patch."https://github.com/aphrody-labs/aphrody".aphrody-patch]
+path = "crates/ai/patch"
+
+[patch."https://github.com/aphrody-labs/aphrody".aphrody-proc]
+path = "crates/os/ostd/proc"
+
+[patch."https://github.com/aphrody-labs/aphrody".aphrody-rag-core]
+path = "crates/ai/rag-core"
+
+[patch."https://github.com/aphrody-labs/aphrody".aphrody-shell-session]
+path = "crates/shell/session"
+
+[patch."https://github.com/aphrody-labs/aphrody".aphrody-shell-vfs]
+path = "crates/shell/vfs"
+
+[patch."https://github.com/aphrody-labs/aphrody".aphrody-terminal-core]
+path = "crates/shell/terminal-core"
+
+[patch."https://github.com/aphrody-labs/aphrody".aphrody-toolcall]
+path = "crates/ai/toolcall"

@@ -6,6 +6,8 @@
  */
 
 import { Channel } from "@aphrody/api/core";
+// oxlint-disable-next-line import/no-empty-named-blocks, unicorn/require-module-specifiers -- use the canonical global augmentation without a runtime import.
+import type {} from "../../../../crates/tauri/aphrody-tauri-api/src/global";
 import { browserSessionStream } from "./browser-session-stream";
 import {
   webOsRagSearch,
@@ -14,19 +16,6 @@ import {
   webOsReadText,
   wantsHttpBackend,
 } from "./webos-backend";
-
-declare global {
-  interface Window {
-    __TAURI__?: {
-      core?: {
-        invoke<T>(command: string, args?: Record<string, unknown>): Promise<T>;
-      };
-      event?: {
-        listen(name: string, handler: (event: { payload: unknown }) => void): Promise<() => void>;
-      };
-    };
-  }
-}
 
 export interface ShellWindowState {
   label: string;

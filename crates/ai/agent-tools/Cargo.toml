@@ -14,6 +14,7 @@ description            = "Concrete ToolExecutor implementations for the aphrody 
 workspace = true
 
 [dependencies]
+aphrody-web-source.workspace = true
 aphrody-toolcall    = { workspace = true }
 aphrody-patch       = { workspace = true }
 aphrody-jev         = { workspace = true }

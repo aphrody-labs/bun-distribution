@@ -78,6 +78,7 @@
     "@aphrody/plugin-dialog": "workspace:*",
     "@aphrody/qr": "workspace:*",
     "@aphrody/scaffold": "workspace:*",
+    "@aphrody/web-source": "workspace:*",
     "@aphrody/webos-wasm": "workspace:*",
     "@dnd-kit/core": "catalog:",
     "@dnd-kit/sortable": "catalog:",

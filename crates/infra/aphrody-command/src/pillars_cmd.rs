@@ -186,7 +186,7 @@ mod os_status_tests {
     }
 }
 
-pub(crate) mod web;
+aphrody_web_source::module!("crates/infra/aphrody-command/src/pillars_cmd/web.rs", pub(crate) mod web);
 pub(crate) use web::{WebAction, handle_web};
 
 // --- 4. INFRA PILLAR: `aphrody infra` is the aphrody-infra control plane (multicall.rs) ---

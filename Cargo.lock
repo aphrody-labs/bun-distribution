@@ -670,6 +670,7 @@ dependencies = [
  "aphrody-term",
  "aphrody-toolcall",
  "aphrody-web-service",
+ "aphrody-web-source",
  "aphrody-winclean",
  "async-trait",
  "base64 0.23.1",
@@ -696,28 +697,17 @@ dependencies = [
  "data-encoding",
  "futures",
  "getrandom 0.4.3",
- "hyper-rustls",
- "pretty_assertions",
- "prost",
- "protoc-bin-vendored",
  "rand 0.10.3",
- "regex",
  "reqwest 0.13.5",
  "rusqlite",
- "rustls",
  "serde",
  "serde_json",
  "sha2 0.11.0",
- "tempfile",
  "thiserror 2.0.21",
  "tokio",
- "tonic",
- "tonic-prost",
- "tonic-prost-build",
  "tracing",
  "webbrowser",
  "windows-sys 0.61.2",
- "x509-parser",
 ]
 
 [[package]]
@@ -757,6 +747,7 @@ dependencies = [
  "aphrody-tauri-plugin-window-state",
  "aphrody-tauri-runtime-cef",
  "aphrody-tauri-wrap",
+ "aphrody-web-source",
  "async-trait",
  "base64 0.23.1",
  "futures-util",
@@ -800,6 +791,7 @@ dependencies = [
  "aphrody-rollout",
  "aphrody-site",
  "aphrody-toolcall",
+ "aphrody-web-source",
  "async-trait",
  "axum",
  "chrono",
@@ -998,6 +990,7 @@ dependencies = [
  "aphrody-web-extract",
  "aphrody-web-frames",
  "aphrody-web-service",
+ "aphrody-web-source",
  "aphrody-winclean",
  "aphrody-x",
  "aphrody-yolo",
@@ -1109,6 +1102,7 @@ dependencies = [
  "anyhow",
  "aphrody-proc",
  "aphrody-web-extract",
+ "aphrody-web-source",
  "chrono",
  "clap",
  "hex",
@@ -1240,6 +1234,7 @@ dependencies = [
  "aphrody-toolcall-repair",
  "aphrody-web-extract",
  "aphrody-web-index",
+ "aphrody-web-source",
  "aphrody-x",
  "async-trait",
  "base64 0.23.1",
@@ -1280,6 +1275,7 @@ dependencies = [
 name = "aphrody-fsindex"
 version = "1.4.4"
 dependencies = [
+ "aphrody-web-source",
  "rusqlite",
  "serde",
  "tempfile",
@@ -1294,6 +1290,7 @@ version = "1.4.4"
 dependencies = [
  "aphrody-config",
  "aphrody-model-client",
+ "aphrody-web-source",
  "async-trait",
  "axum",
  "bytes",
@@ -1320,10 +1317,8 @@ dependencies = [
  "dirs 7.0.0",
  "futures-util",
  "reqwest 0.13.5",
- "rustls",
  "serde",
  "serde_json",
- "tempfile",
  "thiserror 2.0.21",
  "tokio",
  "url",
@@ -1337,7 +1332,6 @@ dependencies = [
  "aphrody-boq",
  "regex",
  "reqwest 0.13.5",
- "rustls",
  "serde",
  "serde_json",
  "sha2 0.11.0",
@@ -1425,6 +1419,7 @@ dependencies = [
  "aphrody-m3-tokens",
  "aphrody-sprite-sheet",
  "aphrody-svg",
+ "aphrody-web-source",
  "base64 0.23.1",
  "ico",
  "image",
@@ -1531,6 +1526,7 @@ dependencies = [
  "aphrody-proc",
  "aphrody-subsystem",
  "aphrody-toolchains",
+ "aphrody-web-source",
  "aphrody-winclean",
  "async-trait",
  "chrono",
@@ -1646,6 +1642,7 @@ dependencies = [
 name = "aphrody-m3-tokens"
 version = "1.4.4"
 dependencies = [
+ "aphrody-web-source",
  "base64 0.23.1",
  "image",
  "read-fonts 0.44.0",
@@ -1695,6 +1692,7 @@ dependencies = [
  "aphrody-web-detect",
  "aphrody-web-extract",
  "aphrody-web-service",
+ "aphrody-web-source",
  "aphrody-winclean",
  "aphrody-x",
  "axum",
@@ -1731,6 +1729,7 @@ dependencies = [
  "aphrody-proc",
  "aphrody-toolcall",
  "aphrody-web-service",
+ "aphrody-web-source",
  "async-trait",
  "base64 0.23.1",
  "futures-util",
@@ -1824,9 +1823,7 @@ dependencies = [
  "aphrody-toolcall",
  "async-trait",
  "futures",
- "pretty_assertions",
  "reqwest 0.13.5",
- "rustls",
  "serde",
  "serde_json",
  "tokio",
@@ -2337,18 +2334,6 @@ name = "aphrody-shell-vfs"
 version = "1.4.4"
 
 [[package]]
-name = "aphrody-shell-web"
-version = "1.4.4"
-dependencies = [
- "aphrody-shell-session",
- "aphrody-shell-vfs",
- "aphrody-terminal-core",
- "crc32fast",
- "serde_json",
- "wasm-bindgen",
-]
-
-[[package]]
 name = "aphrody-site"
 version = "1.4.4"
 dependencies = [
@@ -2360,10 +2345,8 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.11.0",
- "tempfile",
  "tokio",
  "toml 1.1.6+spec-1.1.0",
- "tower",
  "tower-http 0.7.1",
  "url",
 ]
@@ -2483,6 +2466,7 @@ dependencies = [
  "aphrody-tauri-macros",
  "aphrody-tauri-runtime",
  "aphrody-tauri-utils",
+ "aphrody-web-source",
  "bytes",
  "cargo_toml",
  "cookie",
@@ -2881,6 +2865,7 @@ dependencies = [
  "aphrody-tauri-plugin",
  "aphrody-tauri-runtime",
  "aphrody-tauri-runtime-cef",
+ "aphrody-web-source",
  "base64 0.22.1",
  "futures-util",
  "image",
@@ -3032,6 +3017,7 @@ name = "aphrody-tauri-runtime"
 version = "1.4.4"
 dependencies = [
  "aphrody-tauri-utils",
+ "aphrody-web-source",
  "cookie",
  "dpi",
  "http",
@@ -3054,6 +3040,7 @@ dependencies = [
  "aphrody-tauri-macros",
  "aphrody-tauri-runtime",
  "aphrody-tauri-utils",
+ "aphrody-web-source",
  "base64 0.22.1",
  "cef",
  "cef-dll-sys",
@@ -3316,6 +3303,7 @@ version = "1.4.4"
 dependencies = [
  "aphrody-models",
  "aphrody-proc",
+ "aphrody-web-source",
  "async-trait",
  "bytes",
  "futures",
@@ -3374,7 +3362,6 @@ dependencies = [
  "reqwest 0.13.5",
  "rustls",
  "serde",
- "serde_json",
  "thiserror 2.0.21",
  "tokio",
  "url",
@@ -3414,7 +3401,6 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.21",
- "tokio",
  "url",
 ]
 
@@ -3428,7 +3414,6 @@ dependencies = [
  "rusqlite",
  "serde",
  "serde_json",
- "tempfile",
  "thiserror 2.0.21",
  "tokio",
 ]
@@ -3462,19 +3447,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-webos-wasm"
+name = "aphrody-web-source"
 version = "1.4.4"
-dependencies = [
- "aphrody-google",
- "aphrody-patch",
- "aphrody-rag-core",
- "aphrody-shell-session",
- "aphrody-shell-vfs",
- "aphrody-shell-web",
- "bun-re",
- "serde_json",
- "wasm-bindgen",
-]
 
 [[package]]
 name = "aphrody-winclean"
@@ -3484,6 +3458,7 @@ dependencies = [
  "aphrody-fsindex",
  "aphrody-proc",
  "aphrody-subsystem",
+ "aphrody-web-source",
  "base64 0.23.1",
  "bun-re",
  "image",
@@ -5048,6 +5023,30 @@ dependencies = [
  "yara-x",
  "zerocopy",
 ]
+
+[[package]]
+name = "bun_browser_dom"
+version = "1.4.4"
+dependencies = [
+ "cssparser 0.37.0",
+ "html5ever 0.40.1",
+ "precomputed-hash",
+ "selectors 0.38.0",
+]
+
+[[package]]
+name = "bun_browser_layout"
+version = "1.4.4"
+dependencies = [
+ "arrayvec",
+ "grid",
+ "serde",
+ "slotmap",
+]
+
+[[package]]
+name = "bun_browser_ssrf"
+version = "1.4.4"
 
 [[package]]
 name = "by_address"
@@ -14346,10 +14345,7 @@ dependencies = [
 name = "obscura-dom"
 version = "1.4.4"
 dependencies = [
- "cssparser 0.37.0",
- "html5ever 0.40.1",
- "precomputed-hash",
- "selectors 0.38.0",
+ "bun_browser_dom",
 ]
 
 [[package]]
@@ -14413,16 +14409,13 @@ dependencies = [
  "futures-util",
  "obscura-ssrf",
  "psl",
- "rcgen",
  "reqwest 0.13.5",
  "rustls",
  "serde",
  "serde_json",
- "socket2",
  "tempfile",
  "thiserror 2.0.21",
  "tokio",
- "tokio-rustls",
  "tracing",
  "url",
  "wreq",
@@ -14434,12 +14427,11 @@ name = "obscura-render"
 version = "1.4.4"
 dependencies = [
  "ab_glyph",
- "aphrody-taffy",
  "athena-text",
  "base64 0.23.1",
+ "bun_browser_layout",
  "cssparser 0.37.0",
  "image",
- "log",
  "obscura-dom",
  "obscura-ssrf",
  "resvg",
@@ -14454,6 +14446,9 @@ dependencies = [
 [[package]]
 name = "obscura-ssrf"
 version = "1.4.4"
+dependencies = [
+ "bun_browser_ssrf",
+]
 
 [[package]]
 name = "ocb3"
@@ -24947,6 +24942,7 @@ version = "1.4.4"
 dependencies = [
  "aphrody-gpu-backend",
  "aphrody-proc",
+ "aphrody-web-source",
  "async-trait",
  "base64 0.23.1",
  "libc",

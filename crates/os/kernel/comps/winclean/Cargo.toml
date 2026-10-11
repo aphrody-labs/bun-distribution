@@ -14,6 +14,7 @@ description            = "Rust-owned compatibility surface for 166 WinClean Wind
 workspace = true
 
 [dependencies]
+aphrody-web-source.workspace = true
 aphrody-capture = { workspace = true }
 aphrody-fsindex = { workspace = true }
 aphrody-proc = { workspace = true }

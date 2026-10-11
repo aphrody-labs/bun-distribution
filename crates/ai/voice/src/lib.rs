@@ -27,7 +27,7 @@ pub mod elevenlabs;
 
 // Browser-native module: only compiled when targeting wasm32.
 #[cfg(target_arch = "wasm32")]
-pub mod web;
+aphrody_web_source::module!("crates/ai/voice/src/web.rs", pub mod web);
 
 // Speech-to-text (STT) — unified from the former `aphrody-voice-stt` crate.
 pub mod stt;

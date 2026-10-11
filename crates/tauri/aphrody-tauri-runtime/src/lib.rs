@@ -34,8 +34,8 @@ pub mod dynamic;
 pub mod gtk;
 /// Types useful for interacting with a user's monitors.
 pub mod monitor;
-pub mod webview;
-mod webview_permissions;
+aphrody_web_source::module!("crates/tauri/aphrody-tauri-runtime/src/webview.rs", pub mod webview);
+aphrody_web_source::module!("crates/tauri/aphrody-tauri-runtime/src/webview_permissions.rs", mod webview_permissions);
 pub mod window;
 
 use dpi::{PhysicalPosition, PhysicalSize, Position, Rect, Size};
