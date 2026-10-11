@@ -12,11 +12,11 @@
 Ce document établit la source de vérité unifiée et le bilan de consolidation de l'ensemble des scripts, configurations et documentations d'infrastructure pour l'écosystème Aphrody (`aphrody-infra`, `aphrody`, `aphrody-os`, `rg`, `shenron`, `nie`, `iecode`).
 
 > **Host config home (2026-10-04).** systemd units/drop-ins and nginx sites of
-> aphrody, shenron, rg and nie live in yolo: `$YOLO_ROOT/tools/config/host` (default
-> `~/yolo`), indexed by `catalog.json` (service, unit, site, owner repo, target
+> aphrody, shenron, rg and nie live in this repository: `tools/config/host` (checkout
+> `~/src/aphrody` on the hosts), indexed by `catalog.json` (service, unit, site, owner repo, target
 > host). Shared sandbox/identity directives are drop-ins in `systemd/shared`
 > and proxy headers are `nginx/snippets/*.inc`; compose with
-> `bun $YOLO_ROOT/packages/core/src/host/cli.ts compose-unit|compose-nginx|check`.
+> `bun packages/engine/core/src/host/cli.ts compose-unit|compose-nginx|check`.
 > `tools/config/service-catalog.json` and `tools/config/host/nginx/routes.json` remain here as
 > declared intent (their `vhost` paths are relative to the yolo host config root).
 
@@ -39,13 +39,13 @@ Ce document établit la source de vérité unifiée et le bilan de consolidation
 
 | Domaine / Projet | Emplacement Centralisé (`aphrody-infra`) | Ancien Emplacement (Dépôt Sœur) | Rôle & Optimisations |
 |---|---|---|---|
-| **Shenron Media Bridge** | `shenron:deploy/install-media-vpn-proxy.sh`<br>`~/yolo/tools/config/host/privoxy/shenron-media.conf`<br>`tools/config/host/systemd/shenron/privoxy.service.d/shenron-media.conf` | `shenron/deploy/install-media-vpn-proxy.sh`<br>`shenron/deploy/privoxy/` | Pont Privoxy HTTP (`:8119`) vers SOCKS5 Mullvad (`10.8.0.1:1080`). Idempotence, tests automatiques de connectivité `am.i.mullvad.net`. |
+| **Shenron Media Bridge** | `shenron:deploy/install-media-vpn-proxy.sh`<br>`tools/config/host/privoxy/shenron-media.conf`<br>`tools/config/host/systemd/shenron/privoxy.service.d/shenron-media.conf` | `shenron/deploy/install-media-vpn-proxy.sh`<br>`shenron/deploy/privoxy/` | Pont Privoxy HTTP (`:8119`) vers SOCKS5 Mullvad (`10.8.0.1:1080`). Idempotence, tests automatiques de connectivité `am.i.mullvad.net`. |
 | **Shenron Crawl Sync** | `shenron:scripts/sync-bxc-crawls.ts` | `shenron/scripts/ops/sync-bxc-crawls-to-newvps.ts` | Synchronisation SQLite vers PostgreSQL via Bun pur. Modernisation de l'alias hôte (`vps`), modes `--dry-run` et `--json`. |
-| **Shenron Backups** | `scripts/tools/infra/backup-shenron-pg.sh`<br>`scripts/tools/infra/backup-shenron-sqlite.sh` | `shenron/scripts/backup-shenron-*.sh` | Dépotoir logique MVCC `pg_dump` compressé, manifestes SHA-256, purge différée après accusé de réception offsite Windows. |
+| **Shenron Backups** | `scripts/tools/infra/backup-shenron-container.py` (dbfr)<br>`scripts/tools/infra/shenron-offsite-backup.ts` (vps) | `shenron/scripts/backup-shenron-*.sh` | `pg_dump` dans le conteneur postgres, RDB Redis et SQLite vérifiés (VERIFIED.json) ; copie quotidienne vers le vps vérifiée en SHA-256 puis restaurée à blanc dans un conteneur jetable. |
 | **NIE 3D Model Prewarm** | `scripts/nie/model-serve-prewarm.sh` (not in repo) | `nie/scripts/ops/model-serve-prewarm.sh` | Pré-chauffage du cache 3D (`nie-model-serve` :8792) pour les modèles GLB et Keshin critiques. Support `--json` et paramétrage du port. |
 | **NIE Sync Main** | `iecode/scripts/tools/sync-main.ts` | `nie/scripts/workspace-transfer.ts` | Synchronisation de checkout entre station de travail et VPS. |
 | **RG Release Assembly** | `iecode/scripts/rg/assemble-vps-release.sh`<br>`scripts/release/atomic-deploy-rg.sh` | `rg/scripts/ops/assemble-vps-release.sh` | Empaquetage d'artefact immuable Next.js 16 standalone sous Docker/Node 22 + Bun, génération de manifestes cryptographiques et bascule atomique. |
-| **Kernel & VPS Tuning** | `~/yolo/tools/config/host/sysctl/99-aphrody-tuning.conf` (not in repo)<br>`~/yolo/tools/config/host/aphrody-os/VPS-TUNING.md` | `aphrody/docs/aphrody-os/vps_tuning.md`<br>`aphrody-os/docs/vps_tuning.md` | Configuration sysctl unifiée (BBR, FQ, somaxconn, buffers TCP), optimisation VirtIO KVM. |
+| **Kernel & VPS Tuning** | `tools/config/host/aphrody-os/VPS-TUNING.md` (`90-aphrody-bun.conf`, paquet `aphrody-sysctl`) | `aphrody/docs/aphrody-os/vps_tuning.md`<br>`aphrody-os/docs/vps_tuning.md` | Configuration sysctl unifiée (BBR, FQ, somaxconn, buffers TCP), optimisation VirtIO KVM. |
 | **DNS OVH & Domaines** | `crates/infra/ovh` (`aphrody infra ovh dns`) | Scripts shell et Python OVH disparates | Gestion unifiée DNSSEC, records A/AAAA/CNAME/MX, bascules d'apex et audits de zones en Rust natif. |
 
 ---
@@ -127,7 +127,7 @@ aphrody-infra secrets check --service aphrody-web-api
 ### Déploiement & Pré-chauffage
 ```bash
 # Déploiement atomique RG
-./scripts/atomic-deploy-rg.sh /srv/rg/releases/<COMMIT_SHA>
+./scripts/atomic-deploy-rg.sh /home/ubuntu/apps/rg/releases/<COMMIT_SHA>
 
 # Pré-chauffage du cache de modèles 3D NIE
 ./scripts/nie/model-serve-prewarm.sh --json

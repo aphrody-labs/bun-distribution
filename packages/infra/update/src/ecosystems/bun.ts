@@ -102,18 +102,18 @@ export function specKind(spec: string): SpecKind {
   return "tag"; // latest, next, canary, ...
 }
 
+const numericOrZero = (s: string | undefined) => (s && /^\d+$/.test(s) ? s : "0");
+
 /** Lowest bound of the highest alternative of a range (`^1.2.3`, `~1.2`, `>=1 <2 || ^3.1.0`); undefined when open. */
 export function specBase(spec: string): string | undefined {
   const alt =
     spec
       .split("||")
       .map((a) => a.trim())
-      .filter(Boolean)
-      .at(-1) ?? "";
+      .findLast(Boolean) ?? "";
   const m = /(\d+)(?:\.(\d+|[xX*]))?(?:\.(\d+|[xX*]))?(-[0-9A-Za-z.-]+)?/.exec(alt);
   if (!m) return undefined;
-  const n = (s: string | undefined) => (s && /^\d+$/.test(s) ? s : "0");
-  return `${m[1]}.${n(m[2])}.${n(m[3])}${m[4] ?? ""}`;
+  return `${m[1]}.${numericOrZero(m[2])}.${numericOrZero(m[3])}${m[4] ?? ""}`;
 }
 
 /** Same range operator, new version: `^1.2.3` + `2.0.0` -> `^2.0.0`; exact stays exact; a union collapses to the new floor. */
@@ -317,12 +317,12 @@ export function eligibleVersion(
     return { eligible: latest, ageGated: false };
   const line = parseSemver(latest);
   if (!line) return { eligible: latest, ageGated: false };
-  const pool = line.pre.length
+  const candidates = line.pre.length
     ? times
     : Object.fromEntries(
         Object.entries(times).filter(([v]) => (parseSemver(v)?.pre.length ?? 1) === 0),
       );
-  const { eligible } = pickEligible(pool, line.major, now, age.seconds);
+  const { eligible } = pickEligible(candidates, line.major, now, age.seconds);
   return { eligible: eligible ?? undefined, ageGated: eligible !== latest };
 }
 
@@ -428,6 +428,8 @@ export function specEdits(
   return { edits, errors };
 }
 
+const escapeForPattern = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 /** Replace `"name": "from"` by `"name": "to"` in JSON text, keeping the formatting; returns the new text and the count. */
 export function applyEdit(
   text: string,
@@ -435,8 +437,7 @@ export function applyEdit(
   from: string,
   to: string,
 ): { text: string; count: number } {
-  const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const re = new RegExp(`("${esc(name)}"\\s*:\\s*")${esc(from)}(")`, "g");
+  const re = new RegExp(`("${escapeForPattern(name)}"\\s*:\\s*")${escapeForPattern(from)}(")`, "g");
   let count = 0;
   const out = text.replace(re, (_m, a: string, b: string) => {
     count++;
@@ -466,10 +467,12 @@ export async function fetchWithBackoff(
   const base = opts.baseMs ?? 1000;
   let res: Response | undefined;
   for (let i = 0; i < attempts; i++) {
+    // oxlint-disable-next-line no-await-in-loop -- relances séquentielles avec backoff : la tentative suivante dépend de la précédente
     res = await f(url, { headers: UA, signal: AbortSignal.timeout(30_000) }).catch(() => undefined);
     if (res && res.status !== 429 && res.status < 500) return res;
     if (i === attempts - 1) break;
     const retry = Number(res?.headers.get("retry-after"));
+    // oxlint-disable-next-line no-await-in-loop -- attente de Retry-After entre deux relances séquentielles
     await sleep(
       Math.min(60_000, Number.isFinite(retry) && retry > 0 ? retry * 1000 : base * 2 ** i),
     );
@@ -898,7 +901,9 @@ export function renderPlan(s: Status, majors: string[]): string[] {
   out.push(
     "6 verify    bun:check, monorepo:layout, workspace tests, typecheck of every package whose resolved deps changed",
   );
-  out.push("7 fork      the runtime pin follows the aphrody-labs/bun releases (tools/config/update/pins.json); fork drift: `yolo update sources forks`");
+  out.push(
+    "7 fork      the runtime pin follows the aphrody-labs/bun releases (tools/config/update/pins.json); fork drift: `yolo update sources forks`",
+  );
   return out;
 }
 

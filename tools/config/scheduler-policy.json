@@ -4,38 +4,36 @@
   "principle": "one-scheduler-per-data-class",
   "timers": [
     {
-      "id": "shenron-pg-backup",
+      "id": "shenron-container-backup",
       "host": "dbfr",
       "cadence": "daily",
       "priority": "critical",
       "owns": [
-        "shenron_site-postgresql"
-      ]
-    },
-    {
-      "id": "shenron-sqlite-replica-backup",
-      "host": "dbfr",
-      "cadence": "daily",
-      "priority": "critical",
-      "owns": [
-        "shenron-bot-sqlite-runtime-cache"
+        "shenron_site-postgresql",
+        "shenron-redis",
+        "shenron-bot-sqlite",
+        "shenron-server-sqlite"
       ],
-      "source": "/srv/shenron/shared/bot/data/bot.db",
+      "unit": "shenron-container-backup.timer",
+      "source": "docker exec pg_dump/pg_restore --list (aphrody-postgres-1), redis-cli --rdb + redis-check-rdb (aphrody-redis-1), SQLite online backup + quick_check",
+      "retention": "newest snapshot only under /home/ubuntu/apps/shenron/shared/backups/container",
       "capacityPolicy": {
-        "archiveMaxBytes": 2147483648,
+        "archiveMaxBytes": 8589934592,
         "minFreeBytes": 4294967296
-      },
-      "migration": "retarget existing enabled timer; retain destination and offsite acknowledgement contract"
+      }
     },
     {
-      "id": "shenron-backup-offsite-pull",
-      "host": "windows-local",
+      "id": "shenron-offsite-backup",
+      "host": "vps",
       "cadence": "daily",
       "priority": "critical",
       "owns": [
-        "shenron-postgresql-offsite-copy",
-        "shenron-sqlite-offsite-copy"
-      ]
+        "shenron-container-offsite-copy",
+        "shenron-restore-verification"
+      ],
+      "unit": "shenron-offsite-backup.timer",
+      "destination": "/home/ubuntu/build/archive/dbfr/backups/shenron",
+      "retention": "rotation 1: the newest snapshot, kept once verified and restored; older ones deleted"
     },
     {
       "id": "infra-sync",
@@ -67,7 +65,7 @@
         "shenron-sqlite-local-cache"
       ],
       "desiredState": "stopped-after-dbfr-cutover",
-      "supersededBy": "shenron-sqlite-replica-backup"
+      "supersededBy": "shenron-container-backup"
     },
     {
       "id": "rg-sauvegarde",
@@ -110,10 +108,10 @@
   ],
   "rules": [
     "no crawler runs continuously in production",
-    "primary-data backup creation is infra-owned; the Windows Shenron task only pulls and verifies PostgreSQL and SQLite archives produced on dbfr",
-    "the Shenron offsite pull uses the interactive Windows task scheduler and starts missed runs when the user session returns",
-    "DBFR retention never deletes a Shenron PostgreSQL dump until the Windows copy verifies its SHA-256 and acknowledges receipt",
-    "after DBFR cutover, the existing shenron-sqlite-replica-backup timer owns the bounded active runtime SQLite cache and the former VPS shenron-backup timer is disabled",
+    "primary-data backup creation is infra-owned on dbfr (shenron-container-backup); the VPS shenron-offsite-backup only pulls, verifies SHA-256 and restores into a disposable container",
+    "the Shenron offsite pull runs on the always-on VPS (systemd timer, Persistent=true), not on the owner PC",
+    "DBFR keeps the two newest container snapshots; the VPS copy fails loudly when the newest DBFR snapshot is older than 36 h",
+    "shenron-container-backup owns every Shenron data class on dbfr (PostgreSQL, Redis, bot and server SQLite); the former VPS shenron-backup and the host shenron-pg-backup timers are retired",
     "no database has more than one active mirror direction",
     "sync is checksum-based and resumable",
     "cleanup never touches active release, primary data or non-regenerable assets"

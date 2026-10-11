@@ -116,8 +116,9 @@ describe("olderVersionsPulledDirectly", () => {
   });
 });
 
+const file = (path: string, hash: string, size: number) => ({ path, hash, size });
+
 describe("groupDuplicates", () => {
-  const file = (path: string, hash: string, size: number) => ({ path, hash, size });
   test("groups identical content and counts the bytes of the extra copies", () => {
     const groups = groupDuplicates(
       [

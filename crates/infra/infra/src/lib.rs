@@ -5,12 +5,14 @@
 //! cross-catalog validation, pipeline orchestration, remote SSH operations,
 //! Git ecosystem automation, Mullvad VPN/proxy control, and embedded HTTP API.
 
+pub mod always_online;
 pub mod api;
 pub mod boot;
 pub mod catalog;
 pub mod cli;
 pub mod devenv;
 pub mod drive;
+pub mod layout;
 pub mod lifecycle;
 pub mod local_ai;
 pub mod nginx;
@@ -21,6 +23,8 @@ pub mod remote;
 pub mod secrets;
 pub mod tunnel;
 pub mod validate;
+pub mod winsvc;
+pub mod wintask;
 
 pub use cli::cli_main;
 

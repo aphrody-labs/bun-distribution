@@ -240,7 +240,7 @@ class ContainerDeploymentTests(unittest.TestCase):
         public = {
             "type": "bind",
             "source": str(self.root / "shared/site/wiki"),
-            "target": "/srv/shenron-cdn/wiki",
+            "target": "/home/ubuntu/apps/shenron-cdn/wiki",
             "read_only": True,
         }
         self.assertTrue(
@@ -266,8 +266,8 @@ class ContainerDeploymentTests(unittest.TestCase):
         manifest = self.releases[-1][1]
         root = {
             "type": "bind",
-            "source": "/srv/aphrody-creator",
-            "target": "/srv/aphrody-creator",
+            "source": "/home/ubuntu/apps/creator",
+            "target": "/home/ubuntu/apps/creator",
             "read_only": True,
         }
         self.assertTrue(
@@ -278,7 +278,7 @@ class ContainerDeploymentTests(unittest.TestCase):
             adapter.allowed_mount("gateway", root, release, self.root, manifest)
         )
         root["read_only"] = True
-        root["source"] = "/srv/aphrody-lab"
+        root["source"] = "/home/ubuntu/apps/lab"
         self.assertFalse(
             adapter.allowed_mount("gateway", root, release, self.root, manifest)
         )

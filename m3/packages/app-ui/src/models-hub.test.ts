@@ -209,15 +209,15 @@ describe("models hub state", () => {
   });
 });
 
+const entry = (id: string, ref = `hf:org/${id}/${id}-Q4.gguf@revision`) => ({
+  id,
+  title: id,
+  summary: "Local inference",
+  files: [{ role: "weights", ref }],
+});
+
 // Adapted Jan hub cases: exact identifiers, quant variants, URL queries and stable ranking.
 describe("Jan model search absorbed into the existing catalog", () => {
-  const entry = (id: string, ref = `hf:org/${id}/${id}-Q4.gguf@revision`) => ({
-    id,
-    title: id,
-    summary: "Local inference",
-    files: [{ role: "weights", ref }],
-  });
-
   test("a pasted HF URL resolves its exact repository before nearby names", () => {
     const models = [entry("gemma-nearby"), entry("gemma-target"), entry("another-gemma")];
     const result = searchModelCatalog(models, "https://huggingface.co/org/gemma-target");

@@ -61,12 +61,14 @@ function platform() {
 }
 
 async function fullscreenReader(id = "reader", present = true) {
-  let latest!: ReturnType<typeof useFullscreen>;
-  let renders = 0;
+  // Observation sink written by the rendered component: the test reads the hook's latest result.
+  const observed: { latest?: ReturnType<typeof useFullscreen>; renders: number } = { renders: 0 };
   function Reader() {
     const ref = useRef<HTMLDivElement>(null);
-    latest = useFullscreen(ref);
-    renders++;
+    // oxlint-disable-next-line react/immutability -- harness de test : le composant publie le dernier résultat du hook pour les assertions
+    observed.latest = useFullscreen(ref);
+    // oxlint-disable-next-line react/immutability -- harness de test : compte des rendus observé par le test (fuite de cycle de vie)
+    observed.renders++;
     return present ? <div ref={ref} data-reader={id} /> : null;
   }
   const mounted = await mount(<Reader />);
@@ -82,10 +84,10 @@ async function fullscreenReader(id = "reader", present = true) {
     element,
     request,
     get latest() {
-      return latest;
+      return observed.latest!;
     },
     get renders() {
-      return renders;
+      return observed.renders;
     },
   };
 }

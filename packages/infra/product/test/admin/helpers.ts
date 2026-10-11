@@ -37,7 +37,7 @@ export function packJson(overrides: Record<string, unknown> = {}): Record<string
         port: 22,
         user: "omar",
         roles: ["train"],
-        repoDir: "/srv/aphrody",
+        repoDir: "/home/ubuntu/apps/aphrody",
         aphrodyBin: "/usr/local/bin/aphrody",
       },
     },

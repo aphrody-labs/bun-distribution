@@ -1,0 +1,19 @@
+{
+  "live-restore": true,
+  "log-driver": "local",
+  "log-opts": {
+    "max-size": "20m",
+    "max-file": "5"
+  },
+  "features": {
+    "containerd-snapshotter": true
+  },
+  "max-concurrent-downloads": 10,
+  "max-concurrent-uploads": 8,
+  "builder": {
+    "gc": {
+      "enabled": true,
+      "defaultKeepStorage": "40GB"
+    }
+  }
+}

@@ -21,8 +21,9 @@ the site publication timer of the Bun fork is not duplicated.
 ## Concurrency and safety
 
 - `concurrency: release-main`, `cancel-in-progress: false`: a running release is never interrupted; a push during a
-  run queues one newer run. `auto-release.sh` also holds `~/release/auto-release.lock`, so it waits for a manual
-  tmux release instead of overlapping it.
+  run queues one newer run. `auto-release.sh` also holds `~/.aphrody/deploy/auto-release.lock`, so it waits for a manual
+  tmux release instead of overlapping it. It builds in the single checkout `~/src/aphrody` (fast-forward only; a
+  newer `main` is published instead of an older revision).
 - Releases are immutable (`releases/<UTC>-<commit12>`, `current` flipped atomically, five kept). Docs-only pushes
   (`docs/**`, `*.md`, `.coord/**`) do not release.
 - Secrets: repository `release` environment, never in the workflow text. `RELEASE_SSH_KEY` (private key of a
@@ -49,8 +50,9 @@ Exit code is non-zero on any failure, so the unit shows `failed` and `aphrody-se
 
 - `tools/config/host/systemd/aphrody/aphrody-self-update.{service,timer}` (vps) and `-dbfr` twins, catalog entries
   `aphrody-self-update*`. Run as `ubuntu` with `~/.local/bin/aphrody`; the condition skips hosts without the binary.
-- Windows: catalog `scheduledTasks` entry `Aphrody self update`, registered by
-  `scripts/tools/infra/register-self-update-task.ps1` (`-Remove` to delete).
+- Windows: catalog `scheduledTasks` entry `Aphrody self update` (`bootEntry`), declared in the boot catalog
+  (`tools/config/service-catalog.json`) and registered by `aphrody infra boot apply --host local --entry "Aphrody self update"`
+  (hidden S4U task, every 30 minutes and at logon, 15-minute limit). Removal: `schtasks /Delete /TN "Aphrody self update" /F`.
 
 Apply: `bun packages/core/src/host/cli.ts` host plan (plan first), then `systemctl enable --now aphrody-self-update.timer`.
 

@@ -1,0 +1,130 @@
+# SPDX-License-Identifier: Apache-2.0
+# Plan with --env-file <protected host file> and config --quiet before apply.
+name: aphrody-gpu-fleet
+
+x-gpu: &gpu
+  image: vllm/vllm-openai@sha256:770fe65b2c73ee74a5c42165cf3433de4048cc2cd9c57a937ca4e35aba5aa87b
+  init: true
+  gpus: all
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: [ALL]
+  shm_size: 2gb
+  volumes:
+    - ${APHRODY_GPU_PYTHON_SOURCE:?qualified Python source required}:/opt/aphrody/py:ro
+    - model-cache:/models
+  environment: &environment
+    PYTHONPATH: /opt/aphrody/py
+    VLLM_NO_USAGE_STATS: "1"
+    VLLM_DO_NOT_TRACK: "1"
+    RAY_USAGE_STATS_ENABLED: "0"
+    TOKENIZERS_PARALLELISM: "false"
+    OMP_NUM_THREADS: "2"
+    NCCL_SOCKET_IFNAME: wg0
+    GLOO_SOCKET_IFNAME: wg0
+    NCCL_IB_DISABLE: "1"
+    VLLM_PP_LAYER_PARTITION: ${APHRODY_GPU_LAYER_PARTITION:?measured layer partition required}
+    VLLM_HOST_IP: ${APHRODY_GPU_INNER_ADDRESS:?routable container address required}
+    HF_HOME: /models/hf
+
+services:
+  probe:
+    <<: *gpu
+    profiles: [probe]
+    entrypoint: [python3, /opt/aphrody/py/aphrody/inference/fleet.py]
+    command: [cuda-probe]
+    restart: "no"
+
+  standalone:
+    <<: *gpu
+    profiles: [standalone]
+    entrypoint: [python3, /opt/aphrody/py/aphrody/inference/fleet_runtime.py]
+    command: [standalone]
+    ports:
+      - "${APHRODY_GPU_HOST_ADDRESS:?declared mesh host required}:8180:8180"
+    environment:
+      <<: *environment
+      VLLM_PP_LAYER_PARTITION: null
+      VLLM_HOST_IP: 127.0.0.1
+      # vLLM 0.26 V2 requires UVA; qualified on Omar's WSL2 6.18 kernel.
+      VLLM_WSL2_ENABLE_PIN_MEMORY: "1"
+      NCCL_SOCKET_IFNAME: eth0
+      GLOO_SOCKET_IFNAME: eth0
+      APHRODY_GPU_MODEL_PATH: ${APHRODY_GPU_MODEL_PATH:?verified local model path required}
+      APHRODY_GPU_QUANTIZATION: ${APHRODY_GPU_QUANTIZATION:-none}
+      # Chat allocation: full multimodal loading exhausted the 8 GiB cache budget.
+      APHRODY_GPU_MEMORY_UTILIZATION: "0.85"
+      APHRODY_GPU_CPU_OFFLOAD_GIB: "0"
+      APHRODY_GPU_LANGUAGE_MODEL_ONLY: "1"
+      APHRODY_GPU_KV_CACHE_BYTES: "268435456"
+      APHRODY_GPU_MODEL_NAME: gemma4-e2b
+      APHRODY_GPU_MAX_MODEL_LEN: "2048"
+    volumes:
+      - ${APHRODY_GPU_PYTHON_SOURCE:?qualified Python source required}:/opt/aphrody/py:ro
+      - model-cache:/models
+      - api-key:/run/secrets:ro
+    restart: unless-stopped
+
+  transport:
+    image: aphrody/gpu-network:local
+    build:
+      context: .
+      dockerfile: Dockerfile.network
+    cap_drop: [ALL]
+    cap_add: [NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    read_only: true
+    tmpfs: [/tmp, /run]
+    volumes:
+      - network-key:/etc/wireguard:ro
+    ports:
+      - "${APHRODY_GPU_HOST_ADDRESS:?declared mesh host required}:51822:51822/udp"
+      - "127.0.0.1:8180:8180"
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, "ip address show wg0 | grep -q 'inet '"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  head:
+    <<: *gpu
+    profiles: [head]
+    network_mode: service:transport
+    depends_on:
+      transport: {condition: service_healthy}
+    entrypoint: [python3, /opt/aphrody/py/aphrody/inference/fleet_runtime.py]
+    command: [head]
+    environment:
+      <<: *environment
+      APHRODY_GPU_MODEL_PATH: ${APHRODY_GPU_MODEL_PATH:?verified local model path required}
+      APHRODY_GPU_MODEL_NAME: gemma4-e2b
+      APHRODY_GPU_MAX_MODEL_LEN: "4096"
+      APHRODY_GPU_HEAD_ADDRESS: 10.201.77.4
+    volumes:
+      - ${APHRODY_GPU_PYTHON_SOURCE:?qualified Python source required}:/opt/aphrody/py:ro
+      - model-cache:/models
+      - api-key:/run/secrets:ro
+    restart: unless-stopped
+
+  worker:
+    <<: *gpu
+    profiles: [worker]
+    network_mode: service:transport
+    depends_on:
+      transport: {condition: service_healthy}
+    entrypoint: [python3, /opt/aphrody/py/aphrody/inference/fleet_runtime.py]
+    command: [worker]
+    environment:
+      <<: *environment
+      APHRODY_GPU_HEAD_ADDRESS: 10.201.77.4
+    restart: unless-stopped
+
+volumes:
+  network-key:
+    external: true
+    name: aphrody-gpu-network-key
+  api-key:
+    external: true
+    name: aphrody-gpu-api-key
+  model-cache:
+    name: aphrody-gpu-model-cache

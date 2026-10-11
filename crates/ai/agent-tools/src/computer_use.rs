@@ -17,11 +17,11 @@
 
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
+use aphrody_remote_desktop as rd;
 use aphrody_toolcall::{
     AdditionalProperties, JsonSchema, ToolDefinition, ToolError, ToolExecutor, ToolImage,
     ToolOutput,
 };
-use aphrody_remote_desktop as rd;
 use aphrody_web_service::session;
 use base64::Engine as _;
 use serde::{Deserialize, Serialize};
@@ -785,7 +785,6 @@ pub struct RemoteComputerBackend {
     session: tokio::sync::Mutex<Option<String>>,
 }
 
-
 impl RemoteComputerBackend {
     /// Create a new remote backend for the specified target and mode.
     #[must_use]
@@ -867,6 +866,14 @@ impl RemoteComputerBackend {
             .client
             .post(&self.target.endpoint)
             .header("Accept", "application/json, text/event-stream")
+            // The remote Aphrody MCP binds a loopback address by contract
+            // (`aphrody-mcp http` refuses a non-loopback bind) and is reached over the
+            // tunnel through a netsh portproxy. rmcp's streamable-HTTP transport guards
+            // against DNS rebinding by rejecting any Host header that is not loopback
+            // ("Forbidden: Host header is not allowed"), so the mesh address reqwest would
+            // derive (e.g. 10.200.77.10:8793) is refused. Present the loopback identity the
+            // server actually listens on; the portproxy already routed us there.
+            .header(reqwest::header::HOST, "localhost")
             .json(payload);
         if let Some(token) = self.bearer() {
             req = req.bearer_auth(token);
@@ -1494,7 +1501,10 @@ pub struct UnsupportedComputerBackend {
 impl UnsupportedComputerBackend {
     /// Describe why `env` cannot be driven by this build.
     #[must_use]
-    pub fn new(env: ComputerEnvironment, reason: impl Into<std::borrow::Cow<'static, str>>) -> Self {
+    pub fn new(
+        env: ComputerEnvironment,
+        reason: impl Into<std::borrow::Cow<'static, str>>,
+    ) -> Self {
         Self { env, reason: reason.into() }
     }
 }
@@ -1683,12 +1693,14 @@ impl ComputerTool {
                 "no X11 desktop backend is compiled into this build",
             )),
             #[cfg(not(target_arch = "wasm32"))]
-            ComputerEnvironment::Terminal => match TerminalComputerBackend::spawn_shell(None, 80, 24) {
-                Ok(backend) => Arc::new(backend),
-                Err(e) => Arc::new(UnsupportedComputerBackend::new(
-                    env,
-                    format!("cannot start a shell in a PTY: {e}"),
-                )),
+            ComputerEnvironment::Terminal => {
+                match TerminalComputerBackend::spawn_shell(None, 80, 24) {
+                    Ok(backend) => Arc::new(backend),
+                    Err(e) => Arc::new(UnsupportedComputerBackend::new(
+                        env,
+                        format!("cannot start a shell in a PTY: {e}"),
+                    )),
+                }
             },
             #[cfg(target_arch = "wasm32")]
             ComputerEnvironment::Terminal => Arc::new(UnsupportedComputerBackend::new(
@@ -2102,6 +2114,13 @@ mod tests {
                     let mut buf = vec![0u8; 4096];
                     let n = socket.read(&mut buf).await.unwrap_or(0);
                     let req = String::from_utf8_lossy(&buf[..n]);
+
+                    // Every request must present the loopback Host the remote MCP listens on,
+                    // not the mesh address, or rmcp's DNS-rebinding guard would reject it.
+                    assert!(
+                        req.to_ascii_lowercase().contains("host: localhost"),
+                        "request must carry `Host: localhost`, got headers: {req}"
+                    );
 
                     if req.contains("notifications/initialized") {
                         let _ = socket

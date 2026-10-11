@@ -1,5 +1,5 @@
 import { Icon } from "@aphrody/m3-primitives";
-import clsx from "clsx";
+import { clsx } from "clsx";
 
 interface ThumbnailProps {
   src?: string;

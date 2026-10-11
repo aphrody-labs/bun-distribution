@@ -86,29 +86,29 @@ export class OvhVps {
     const ipStrings = await this.client.get<string[]>(`/vps/${serviceName}/ips`);
     if (!ipStrings || ipStrings.length === 0) return [];
 
-    const ips: VpsIp[] = [];
-    for (const ip of ipStrings) {
-      try {
-        const detail = await this.client.get<Record<string, unknown>>(
-          `/vps/${serviceName}/ips/${ip}`,
-        );
-        ips.push({
-          ip,
-          version: ip.includes(":") ? "v6" : "v4",
-          gateway: (detail.gateway as string) || undefined,
-          reverse: (detail.reverse as string) || undefined,
-          type: (detail.type as string) || "primary",
-        });
-      } catch {
-        ips.push({
-          ip,
-          version: ip.includes(":") ? "v6" : "v4",
-          type: "primary",
-        });
-      }
-    }
-
-    return ips;
+    // Independent per-IP lookups; Promise.all keeps the API order and each failure falls back locally.
+    return Promise.all(
+      ipStrings.map(async (ip): Promise<VpsIp> => {
+        try {
+          const detail = await this.client.get<Record<string, unknown>>(
+            `/vps/${serviceName}/ips/${ip}`,
+          );
+          return {
+            ip,
+            version: ip.includes(":") ? "v6" : "v4",
+            gateway: (detail.gateway as string) || undefined,
+            reverse: (detail.reverse as string) || undefined,
+            type: (detail.type as string) || "primary",
+          };
+        } catch {
+          return {
+            ip,
+            version: ip.includes(":") ? "v6" : "v4",
+            type: "primary",
+          };
+        }
+      }),
+    );
   }
 
   /**

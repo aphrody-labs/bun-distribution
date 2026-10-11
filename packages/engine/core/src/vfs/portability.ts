@@ -132,12 +132,14 @@ export async function auditPortability(
 
       if (entry.isDirectory()) {
         if (!DEFAULT_EXCLUDE_DIRS.has(entry.name)) {
+          // oxlint-disable-next-line no-await-in-loop -- parcours récursif séquentiel : l'ordre des entrées fixe l'ordre des problèmes du rapport
           await walk(fullPath);
         }
         continue;
       }
 
       if (/\.(ts|tsx|js|mjs|rs|toml|json|md|sh)$/.test(entry.name)) {
+        // oxlint-disable-next-line no-await-in-loop -- contrôle séquentiel des fichiers : l'ordre des problèmes du rapport doit rester stable
         await checkFile(fullPath, relPath);
       }
     }

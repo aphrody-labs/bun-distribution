@@ -40,17 +40,18 @@ async function walk(directory: string): Promise<string[]> {
     );
     return [];
   }
-  const files: string[] = [];
-  for (const entry of entries.toSorted((left, right) => left.name.localeCompare(right.name))) {
-    const path = resolve(directory, entry.name);
-    if (entry.isSymbolicLink()) continue;
-    if (entry.isDirectory()) {
-      if (!SKIPPED_DIRECTORIES.has(entry.name)) files.push(...(await walk(path)));
-      continue;
-    }
-    if (entry.isFile()) files.push(path);
-  }
-  return files;
+  // Sibling directories are independent: walk them concurrently and keep the sorted order.
+  const nested = await Promise.all(
+    entries
+      .toSorted((left, right) => left.name.localeCompare(right.name))
+      .map(async (entry): Promise<string[]> => {
+        const path = resolve(directory, entry.name);
+        if (entry.isSymbolicLink()) return [];
+        if (entry.isDirectory()) return SKIPPED_DIRECTORIES.has(entry.name) ? [] : walk(path);
+        return entry.isFile() ? [path] : [];
+      }),
+  );
+  return nested.flat();
 }
 
 export async function scanWindowsPaths(root: string): Promise<WindowsPathFinding[]> {
@@ -60,6 +61,8 @@ export async function scanWindowsPaths(root: string): Promise<WindowsPathFinding
     if (file === resolve(import.meta.dir, "windows-paths.ts")) continue;
     let raw: Buffer;
     try {
+      // Files are read one at a time so that memory stays bounded to a single file across the repository.
+      // oxlint-disable-next-line no-await-in-loop -- sequential reads bound memory to one file at a time
       raw = await readFile(file);
     } catch (error) {
       console.error(

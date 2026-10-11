@@ -464,10 +464,10 @@ export function classify(i: ClassifyInput): OutdatedRow[] {
     const stable = vers
       .filter((v) => allowPre || !v.vers.includes("-"))
       .toSorted((a, b) => cmpVersion(a.vers, b.vers));
-    const within = stable.filter((v) => satisfies(v.vers, d.req)).at(-1);
-    const beyondV = stable
-      .filter((v) => !satisfies(v.vers, d.req) && cmpVersion(v.vers, locked ?? "0.0.0") > 0)
-      .at(-1);
+    const within = stable.findLast((v) => satisfies(v.vers, d.req));
+    const beyondV = stable.findLast(
+      (v) => !satisfies(v.vers, d.req) && cmpVersion(v.vers, locked ?? "0.0.0") > 0,
+    );
     const exact = /^\s*=/.test(d.req);
     const row: OutdatedRow = {
       crate: d.crate,
@@ -577,14 +577,15 @@ export const loadAdvisoryHolds = (c: Ctx) =>
     { holds: [] },
   ).holds;
 
+// Progress goes to stderr so a --json report on stdout stays parseable.
+const say = (line: string) => console.error(line);
+
 /**
  * Put every drifted `lockVersion` hold back (`cargo update -p name@ver --precise X`), then run the `relock` repairs of
  * the holds that moved. Shared by `apply` and by the doctor.
  */
 export function restoreLockPins(c: Ctx): { restored: number; failed: number } {
   const drift = lockPinDrift(parseCargoLock(c.read("Cargo.lock")), loadHolds(c));
-  // Progress goes to stderr so a --json report on stdout stays parseable.
-  const say = (line: string) => console.error(line);
   let failed = 0;
   for (const d of drift) {
     const res = cargo(c, ["update", "-p", `${d.crate}@${d.from}`, "--precise", d.to]);
@@ -602,8 +603,10 @@ export function restoreLockPins(c: Ctx): { restored: number; failed: number } {
 
 function owners(c: Ctx): Map<string, string> {
   const m = new Map<string, string>();
-  for (const n of c.jsonFile<{ rust?: { crates?: string[] } }>("tools/config/tauri-upstream.json", {})
-    .rust?.crates ?? [])
+  for (const n of c.jsonFile<{ rust?: { crates?: string[] } }>(
+    "tools/config/tauri-upstream.json",
+    {},
+  ).rust?.crates ?? [])
     m.set(n, "tauri-sync (yolo ops tauri-sync)");
   return m;
 }
@@ -641,6 +644,7 @@ async function fetchVersions(c: Ctx, crates: string[]): Promise<Map<string, Inde
   await Promise.all(
     Array.from({ length: 16 }, async () => {
       for (let n = queue.pop(); n; n = queue.pop()) {
+        // oxlint-disable-next-line no-await-in-loop -- each pool worker fetches its queue one crate at a time; the 16 workers are the concurrency limit
         const t = await cachedText(cache, `https://index.crates.io/${sparsePath(n)}`);
         out.set(n, t ? parseIndex(t) : []);
       }
@@ -888,6 +892,7 @@ async function apply(c: Ctx, args: string[]): Promise<number> {
 
   // 4. majors, one transaction per comma-separated group
   for (const group of wantMajors)
+    // oxlint-disable-next-line no-await-in-loop -- each major group is one cargo transaction on the same Cargo.lock, so groups must not overlap
     failed += (await applyMajor(
       c,
       group.split("+").filter(Boolean),

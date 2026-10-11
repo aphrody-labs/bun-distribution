@@ -5,12 +5,21 @@
   "runbook": "docs/operations/infra/DOWNLOADS.md",
   "site": {
     "baseUrl": "https://downloads.aphrody.com",
-    "hosts": ["downloads.aphrody.com", "aphrody.com", "www.aphrody.com"],
-    "certName": "downloads.aphrody.com"
+    "hosts": ["downloads.aphrody.com"],
+    "certName": "aphrody.com",
+    "appUi": {
+      "owner": "m3/packages/app-ui",
+      "directory": "app-ui",
+      "declaration": "app-ui/deployment.json",
+      "assetsPrefix": "/_app-ui/",
+      "routes": ["/", "/os"],
+      "nativeRpc": false,
+      "runbook": "docs/operations/workspace/public-app-ui-artifact.md"
+    }
   },
   "host": {
-    "target": "dbfr",
-    "root": "/srv/aphrody-downloads",
+    "target": "vps",
+    "root": "/home/ubuntu/apps/downloads",
     "service": "aphrody-downloads",
     "port": 8797,
     "bun": "/home/ubuntu/.bun/bin/bun",
@@ -18,11 +27,10 @@
   },
   "factory": {
     "repo": "aphrody",
-    "workspace": "/srv/aphrody-build/workspaces/aphrody",
-    "cargoTargetDir": "/srv/aphrody-build/cache/cargo/aphrody",
+    "workspace": "/home/ubuntu/src/aphrody",
+    "cargoTargetDir": "/home/ubuntu/build/cache/cargo/aphrody",
     "jobPrefix": "downloads",
-    "target": "vps",
-    "pushTo": "dbfr"
+    "target": "vps"
   },
   "assets": {
     "install.sh": "scripts/install/install.sh",
@@ -207,7 +215,7 @@
       "id": "plugin-shenron",
       "kind": "plugin",
       "description": "Shenron Claude Code plugin (plugin/ of aphrody-labs/shenron)",
-      "git": { "path": "~/shenron", "ref": "HEAD", "subdir": "plugin" },
+      "git": { "path": "~/src/shenron", "ref": "HEAD", "subdir": "plugin" },
       "manifest": ".claude-plugin/plugin.json",
       "repository": "aphrody-labs/shenron"
     }

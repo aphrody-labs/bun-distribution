@@ -49,13 +49,17 @@ describe("Redis offline invariants", () => {
       new Float32Array([NaN]),
       new Float32Array([Infinity]),
     ]) {
+      // oxlint-disable-next-line no-await-in-loop -- chaque écriture modifie l'état de dimension du store : l'ordre séquentiel est ce qui est testé
       await expect(store.upsert("bad", vector)).rejects.toThrow();
     }
     await store.upsert("valid", new Float32Array([1, 0]));
     await expect(store.upsert("bad", new Float32Array([1]))).rejects.toThrow("dimensions");
     await expect(store.query(new Float32Array([1]))).rejects.toThrow("dimensions");
-    for (const topK of [-1, 1.5, NaN, Infinity])
-      await expect(store.query(new Float32Array([1, 0]), topK)).rejects.toThrow();
+    await Promise.all(
+      [-1, 1.5, NaN, Infinity].map((topK) =>
+        expect(store.query(new Float32Array([1, 0]), topK)).rejects.toThrow(),
+      ),
+    );
     await expect(store.upsert("", new Float32Array([1, 0]))).rejects.toThrow("ID");
     await expect(
       store.upsert("bad", new Float32Array([1, 0]), { nested: 4 } as unknown as Record<
@@ -77,11 +81,18 @@ describe("Redis offline invariants", () => {
     await expect(
       db.addInstruction({ id: "bad", instruction: "i", output: "o", metadata: { bigint: 1n } }),
     ).rejects.toThrow();
-    for (const unsupported of [NaN, Infinity, undefined, () => "dropped", new Date()]) {
-      await expect(
-        db.addInstruction({ id: "bad", instruction: "i", output: "o", metadata: { unsupported } }),
-      ).rejects.toThrow("metadata");
-    }
+    await Promise.all(
+      [NaN, Infinity, undefined, () => "dropped", new Date()].map((unsupported) =>
+        expect(
+          db.addInstruction({
+            id: "bad",
+            instruction: "i",
+            output: "o",
+            metadata: { unsupported },
+          }),
+        ).rejects.toThrow("metadata"),
+      ),
+    );
     const cycle: Record<string, unknown> = {};
     cycle.self = cycle;
     await expect(
@@ -171,12 +182,14 @@ describe.skipIf(Bun.which("redis-server") === null)(
       while (Date.now() < deadline) {
         const client = createClient();
         try {
+          // oxlint-disable-next-line no-await-in-loop -- sondage séquentiel du démarrage du serveur possédé : une requête à la fois jusqu'au PONG
           if ((await client.ping()) === "PONG") return;
         } catch {
           /* The owned server may still be starting. */
         } finally {
           client.close();
         }
+        // oxlint-disable-next-line no-await-in-loop -- pause entre deux sondages de démarrage (boucle de polling volontairement séquentielle)
         await Bun.sleep(25);
       }
       throw new Error("Isolated Redis server failed to start");

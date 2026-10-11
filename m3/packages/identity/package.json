@@ -1,11 +1,13 @@
 {
   "name": "@aphrody/identity",
-  "version": "0.1.2",
-  "description": "Aphrody product identity for the M3 surfaces: brand emblem and icons, the Aphrody avatar, and the animated pet sprite (atlas, timed tracks, 16-way gaze) drawn from crates/ui/identity.",
+  "version": "0.1.3",
+  "description": "Aphrody product identity for the M3 surfaces: brand emblem and icons, the Aphrody avatar, the animated pet (React component and <aphrody-pet> Custom Element, Codex-composed tracks, 16-way gaze) drawn from crates/ui/identity.",
   "keywords": [
     "aphrody",
     "avatar",
     "brand",
+    "codex",
+    "custom-element",
     "material-3",
     "sprite"
   ],
@@ -15,7 +17,8 @@
     "README.md",
     "scripts",
     "src",
-    "assets"
+    "assets",
+    "dist"
   ],
   "type": "module",
   "sideEffects": false,
@@ -23,15 +26,22 @@
     ".": "./src/index.ts",
     "./brand": "./src/brand.ts",
     "./atlas": "./src/atlas.ts",
-    "./pet": "./src/pet.ts"
+    "./pet": "./src/pet.ts",
+    "./runtime": "./src/runtime.ts",
+    "./element": "./src/element.ts",
+    "./load": "./src/load.ts"
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
+    "sprite": "bun scripts/sprite.ts",
+    "prepack": "bun run sprite",
     "gen": "bun scripts/generate.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "bun test src"
+    "typecheck": "bun run sprite && tsc -p tsconfig.json --noEmit",
+    "test": "bun run sprite && bun test src",
+    "demo": "bun demo/serve.ts",
+    "measure": "bun scripts/measure.ts"
   },
   "devDependencies": {
     "@aphrody/m3": "workspace:*",

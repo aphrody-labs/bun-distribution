@@ -174,6 +174,7 @@ export function useMetadata(
     return () => {
       cancelled = true;
     };
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- deps est le contrat du hook (liste fournie par l'appelant, comme pour useEffect), donc non littérale par conception.
   }, deps);
 }
 
@@ -185,11 +186,12 @@ export interface HeadProps {
  * <Head> component for Next.js compatibility (replaces next/head and supports <title>/<meta> syncing)
  */
 export function Head({ children }: HeadProps): ReactNode {
+  // Sans tableau de dépendances : le titre est relu à chaque rendu, donc après tout changement de children.
   useEffect(() => {
     if (typeof document !== "undefined" && document.title) {
       setWindowTitle(document.title);
     }
-  }, [children]);
+  });
 
   return children;
 }

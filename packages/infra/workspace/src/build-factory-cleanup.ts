@@ -457,17 +457,29 @@ export async function prewarmFactorySccache(config: BuildFactoryConfig, binary =
       windowsHide: true,
       env,
       stdin: "ignore",
-      stdout: "ignore",
+      stdout: "pipe",
       stderr: "pipe",
       timeout: 15000,
     });
-    const [code, error] = await Promise.all([child.exited, new Response(child.stderr).text()]);
-    return { code, error };
+    const [code, output, error] = await Promise.all([
+      child.exited,
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+    ]);
+    return { code, output, error };
   };
-  const started = await run("--start-server");
-  // The owner reports a nonzero status when its server already exists. Verify that server responds.
-  if (started.code !== 0 && (await run("--show-stats")).code !== 0)
-    throw new Error(`Shared sccache server could not start: ${started.error.trim()}`);
+  let started = await run("--start-server");
+  if (started.code === 0) return;
+  // The owner reports a nonzero status when its server already exists. With no idle timeout, a server started
+  // for an earlier cache root (the retired /srv layout) outlives it and fails every compile: replace it.
+  const stats = await run("--show-stats");
+  if (stats.code === 0 && stats.output.includes(`Local disk: ${JSON.stringify(cache)}`)) return;
+  if (stats.code === 0) {
+    await run("--stop-server");
+    started = await run("--start-server");
+    if (started.code === 0) return;
+  }
+  throw new Error(`Shared sccache server could not start: ${started.error.trim()}`);
 }
 
 async function resourceMain() {

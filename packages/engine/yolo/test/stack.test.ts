@@ -13,6 +13,29 @@ afterAll(() => rmSync(sandbox, { recursive: true, force: true }));
 const bunTypes = (file: string): string =>
   readFileSync(join(rootDir, "vendor/bun/packages/bun-types", file), "utf8");
 
+// Workspace gates use the installed toolchain binaries, not removed root npm dependencies.
+const toolVersion = (tool: string): string => {
+  const result = Bun.spawnSync([tool, "--version"], {
+    windowsHide: true,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  expect(result.exitCode).toBe(0);
+  const value = result.stdout.toString().match(/\b\d+\.\d+\.\d+\b/)?.[0];
+  expect(value).toBeDefined();
+  return value!;
+};
+
+const options = (name: string, features: string[]) => ({
+  rootDir,
+  target: join(sandbox, name),
+  name,
+  features,
+  yoloPath: rootDir,
+});
+
+const read = (path: string) => JSON.parse(readFileSync(join(rootDir, path), "utf8"));
+
 describe("stack manifest", () => {
   it("points every template and layer path to files that exist", async () => {
     const stack = await loadStack(rootDir);
@@ -47,20 +70,8 @@ describe("stack manifest", () => {
       pkg.devDependencies.typescript === "catalog:"
         ? catalog.typescript
         : pkg.devDependencies.typescript;
-    // Workspace gates use the installed toolchain binaries, not removed root npm dependencies.
-    const version = (tool: string): string => {
-      const result = Bun.spawnSync([tool, "--version"], {
-        windowsHide: true,
-        stdout: "pipe",
-        stderr: "pipe",
-      });
-      expect(result.exitCode).toBe(0);
-      const value = result.stdout.toString().match(/\b\d+\.\d+\.\d+\b/)?.[0];
-      expect(value).toBeDefined();
-      return value!;
-    };
-    const oxlint = version("oxlint");
-    const oxfmt = version("oxfmt");
+    const oxlint = toolVersion("oxlint");
+    const oxfmt = toolVersion("oxfmt");
     expect(stack.meta["typescript"]).toBe(ts);
     expect(stack.meta["oxlint"]).toBe(oxlint);
     expect(stack.meta["oxfmt"]).toBe(oxfmt);
@@ -84,14 +95,6 @@ describe("stack manifest", () => {
 });
 
 describe("yolo create", () => {
-  const options = (name: string, features: string[]) => ({
-    rootDir,
-    target: join(sandbox, name),
-    name,
-    features,
-    yoloPath: rootDir,
-  });
-
   it("scaffolds the base project with substituted names and no leftover tokens", async () => {
     const files = await createProject(options("demo-app", []));
     expect(files).toContain("src/server.ts");
@@ -106,7 +109,7 @@ describe("yolo create", () => {
     const pkg = JSON.parse(readFileSync(join(sandbox, "demo-app/package.json"), "utf8"));
     expect(pkg.name).toBe("demo-app");
     expect(pkg.dependencies["@aphrody/runtime-sdk"]).toMatch(
-      new RegExp(`^file:${rootDir}/packages/(engine/)?runtime$`),
+      new RegExp(`^file:${rootDir.replaceAll("\\", "/")}/packages/(engine/)?runtime$`),
     );
   });
 
@@ -150,14 +153,13 @@ describe("yolo create", () => {
     // the dev dependencies of the base template survive the merge, and the tsconfig compiles TSX
     expect(pkg.devDependencies.typescript).toBeDefined();
     expect(pkg.dependencies["@aphrody/runtime-sdk"]).toMatch(
-      new RegExp(`^file:${rootDir}/packages/(engine/)?runtime$`),
+      new RegExp(`^file:${rootDir.replaceAll("\\", "/")}/packages/(engine/)?runtime$`),
     );
     const tsconfig = JSON.parse(readFileSync(join(sandbox, "react-app/tsconfig.json"), "utf8"));
     expect(tsconfig.compilerOptions.jsx).toBe("react-jsx");
   });
 
   it("keeps the react tsconfig equal to the base one plus the jsx option", () => {
-    const read = (path: string) => JSON.parse(readFileSync(join(rootDir, path), "utf8"));
     const base = read("m3/templates/base/tsconfig.json");
     expect(read("m3/templates/react/tsconfig.json")).toEqual({
       ...base,

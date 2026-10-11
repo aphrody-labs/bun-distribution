@@ -1,26 +1,22 @@
-import LaptopIcon from '@aphrody/assets/icons/Laptop.png';
-import type {Device, SdPath} from '@aphrody/drive-client';
-import {
-	getDeviceIcon,
-	useLibraryMutation,
-	useNormalizedQuery
-} from '@aphrody/drive-client';
-import {m3Durations, m3Easings} from '@aphrody/m3-motion';
+import LaptopIcon from "@aphrody/assets/icons/Laptop.png";
+import type { Device, SdPath } from "@aphrody/drive-client";
+import { getDeviceIcon, useLibraryMutation, useNormalizedQuery } from "@aphrody/drive-client";
+import { m3Durations, m3Easings } from "@aphrody/m3-motion";
 import {
 	Button,
 	CircleButton,
 	Icon,
 	m3FocusRing,
 	Popover,
-	usePopover
-} from '@aphrody/m3-primitives';
-import clsx from 'clsx';
-import {motion} from 'motion/react';
-import {useEffect, useState} from 'react';
-import {useExplorer} from '../context';
-import {useSelection} from '../SelectionContext';
-import {sdPathToUri} from '../utils';
-import {useAddStorageDialog} from './AddStorageModal';
+	usePopover,
+} from "@aphrody/m3-primitives";
+import { clsx } from "clsx";
+import { motion } from "motion/react";
+import { useEffect, useState } from "react";
+import { useExplorer } from "../context";
+import { useSelection } from "../SelectionContext";
+import { sdPathToUri } from "../utils";
+import { useAddStorageDialog } from "./AddStorageModal";
 
 interface PathBarProps {
 	path: SdPath;
@@ -34,27 +30,27 @@ interface PathSegment {
 }
 
 function getCurrentDirectoryName(sdPath: SdPath): string {
-	if ('Physical' in sdPath) {
-		const parts = sdPath.Physical.path.split('/').filter(Boolean);
-		return parts[parts.length - 1] || '/';
+	if ("Physical" in sdPath) {
+		const parts = sdPath.Physical.path.split("/").filter(Boolean);
+		return parts[parts.length - 1] || "/";
 	}
 
-	if ('Cloud' in sdPath) {
-		const parts = sdPath.Cloud.path.split('/').filter(Boolean);
+	if ("Cloud" in sdPath) {
+		const parts = sdPath.Cloud.path.split("/").filter(Boolean);
 		return parts[parts.length - 1] || sdPath.Cloud.identifier;
 	}
 
-	if ('Content' in sdPath) {
-		return 'Content';
+	if ("Content" in sdPath) {
+		return "Content";
 	}
 
-	return '';
+	return "";
 }
 
 function parsePathSegments(sdPath: SdPath): PathSegment[] {
-	if ('Physical' in sdPath) {
-		const {device_slug, path} = sdPath.Physical;
-		const parts = path.split('/').filter(Boolean);
+	if ("Physical" in sdPath) {
+		const { device_slug, path } = sdPath.Physical;
+		const parts = path.split("/").filter(Boolean);
 
 		return [
 			{
@@ -62,25 +58,25 @@ function parsePathSegments(sdPath: SdPath): PathSegment[] {
 				path: {
 					Physical: {
 						device_slug,
-						path: '/'
-					}
-				}
+						path: "/",
+					},
+				},
 			},
 			...parts.map((part, index) => ({
 				name: part,
 				path: {
 					Physical: {
 						device_slug,
-						path: '/' + parts.slice(0, index + 1).join('/')
-					}
-				}
-			}))
+						path: "/" + parts.slice(0, index + 1).join("/"),
+					},
+				},
+			})),
 		];
 	}
 
-	if ('Cloud' in sdPath) {
-		const {service, identifier, path} = sdPath.Cloud;
-		const parts = path.split('/').filter(Boolean);
+	if ("Cloud" in sdPath) {
+		const { service, identifier, path } = sdPath.Cloud;
+		const parts = path.split("/").filter(Boolean);
 
 		return [
 			{
@@ -89,9 +85,9 @@ function parsePathSegments(sdPath: SdPath): PathSegment[] {
 					Cloud: {
 						service,
 						identifier,
-						path: ''
-					}
-				}
+						path: "",
+					},
+				},
 			},
 			...parts.map((part, index) => ({
 				name: part,
@@ -99,52 +95,45 @@ function parsePathSegments(sdPath: SdPath): PathSegment[] {
 					Cloud: {
 						service,
 						identifier,
-						path: parts.slice(0, index + 1).join('/')
-					}
-				}
-			}))
+						path: parts.slice(0, index + 1).join("/"),
+					},
+				},
+			})),
 		];
 	}
 
 	return [];
 }
 
-function IndexIndicator({path}: {path: SdPath}) {
+function IndexIndicator({ path }: { path: SdPath }) {
 	const popover = usePopover();
-	const enableIndexing = useLibraryMutation('locations.enable_indexing');
-	const {clearSelection} = useSelection();
-	const {setInspectorVisible} = useExplorer();
+	const enableIndexing = useLibraryMutation("locations.enable_indexing");
+	const { clearSelection } = useSelection();
+	const { setInspectorVisible } = useExplorer();
 
 	// Fetch all locations
-	const {data: locationsData} = useNormalizedQuery({
-		query: 'locations.list',
+	const { data: locationsData } = useNormalizedQuery({
+		query: "locations.list",
 		input: null,
-		resourceType: 'location'
+		resourceType: "location",
 	});
 
 	const locations = (locationsData as any)?.locations ?? [];
 
 	// Find location that contains this path
 	const matchingLocation = (() => {
-		if ('Physical' in path) {
+		if ("Physical" in path) {
 			const pathStr = path.Physical.path;
 			// Find location with longest matching prefix
 			return locations
 				.filter((loc: any) => {
-					if (!loc.sd_path || !('Physical' in loc.sd_path))
-						return false;
+					if (!loc.sd_path || !("Physical" in loc.sd_path)) return false;
 					const locPath = loc.sd_path.Physical.path;
 					return pathStr.startsWith(locPath);
 				})
 				.toSorted((a: any, b: any) => {
-					const aPath =
-						'Physical' in a.sd_path!
-							? a.sd_path!.Physical.path
-							: '';
-					const bPath =
-						'Physical' in b.sd_path!
-							? b.sd_path!.Physical.path
-							: '';
+					const aPath = "Physical" in a.sd_path! ? a.sd_path!.Physical.path : "";
+					const bPath = "Physical" in b.sd_path! ? b.sd_path!.Physical.path : "";
 					return bPath.length - aPath.length;
 				})[0];
 		}
@@ -152,8 +141,7 @@ function IndexIndicator({path}: {path: SdPath}) {
 	})();
 
 	const isIndexed =
-		matchingLocation?.index_mode !== undefined &&
-		matchingLocation.index_mode !== 'none';
+		matchingLocation?.index_mode !== undefined && matchingLocation.index_mode !== "none";
 
 	return (
 		<Popover.Root open={popover.open} onOpenChange={popover.setOpen}>
@@ -161,14 +149,14 @@ function IndexIndicator({path}: {path: SdPath}) {
 				<CircleButton
 					icon={
 						<Icon
-							name={isIndexed ? 'radio_button_checked' : 'radio_button_unchecked'}
+							name={isIndexed ? "radio_button_checked" : "radio_button_unchecked"}
 							size={20}
 							filled={isIndexed}
 						/>
 					}
 					active={!isIndexed}
-					className={isIndexed ? '!text-primary' : undefined}
-					title={isIndexed ? 'Location is indexed' : 'Not indexed'}
+					className={isIndexed ? "!text-primary" : undefined}
+					title={isIndexed ? "Location is indexed" : "Not indexed"}
 				/>
 			</Popover.Trigger>
 			<Popover.Content>
@@ -177,18 +165,14 @@ function IndexIndicator({path}: {path: SdPath}) {
 						<>
 							<div className="mb-2">
 								<div className="px-2 py-1.5">
-									<div className="text-on-surface text-title-small">
-										{matchingLocation.name}
-									</div>
+									<div className="text-on-surface text-title-small">{matchingLocation.name}</div>
 									<div className="text-on-surface-variant mt-0.5 text-body-small">
-										{isIndexed
-											? `Indexed (${matchingLocation.index_mode})`
-											: 'Not indexed'}
+										{isIndexed ? `Indexed (${matchingLocation.index_mode})` : "Not indexed"}
 									</div>
 								</div>
 							</div>
 
-							<div role="separator" className="border-outline-variant my-2 border-t" />
+							<hr className="border-outline-variant my-2 border-t" />
 
 							<div>
 								{!isIndexed && (
@@ -196,13 +180,13 @@ function IndexIndicator({path}: {path: SdPath}) {
 										onClick={async () => {
 											await enableIndexing.mutateAsync({
 												id: matchingLocation.id,
-												index_mode: 'deep'
+												index_mode: "deep",
 											});
 											popover.setOpen(false);
 										}}
 										className={clsx(
-											'text-on-surface hover:bg-on-surface/8 flex h-10 w-full items-center gap-3 rounded-extra-small px-3 text-label-large transition-colors ease-standard',
-											m3FocusRing
+											"text-on-surface hover:bg-on-surface/8 flex h-10 w-full items-center gap-3 rounded-extra-small px-3 text-label-large transition-colors ease-standard",
+											m3FocusRing,
 										)}
 									>
 										<Icon name="visibility" size={20} className="text-on-surface-variant" />
@@ -216,8 +200,8 @@ function IndexIndicator({path}: {path: SdPath}) {
 										popover.setOpen(false);
 									}}
 									className={clsx(
-										'text-on-surface hover:bg-on-surface/8 flex h-10 w-full items-center gap-3 rounded-extra-small px-3 text-label-large transition-colors ease-standard',
-										m3FocusRing
+										"text-on-surface hover:bg-on-surface/8 flex h-10 w-full items-center gap-3 rounded-extra-small px-3 text-label-large transition-colors ease-standard",
+										m3FocusRing,
 									)}
 								>
 									<Icon name="folder" size={20} className="text-on-surface-variant" />
@@ -235,14 +219,9 @@ function IndexIndicator({path}: {path: SdPath}) {
 									size="sm"
 									variant="filled"
 									onClick={() => {
-										const initialPath =
-											'Physical' in path
-												? path.Physical.path
-												: undefined;
-										useAddStorageDialog(
-											undefined,
-											initialPath
-										);
+										const initialPath = "Physical" in path ? path.Physical.path : undefined;
+										// oxlint-disable-next-line react/hooks -- useAddStorageDialog n'appelle aucun hook : il ouvre une boîte de dialogue (dialogManager.create) depuis un gestionnaire d'événement
+										useAddStorageDialog(undefined, initialPath);
 										popover.setOpen(false);
 									}}
 								>
@@ -257,37 +236,35 @@ function IndexIndicator({path}: {path: SdPath}) {
 	);
 }
 
-export function PathBar({path, devices, onNavigate}: PathBarProps) {
+export function PathBar({ path, devices, onNavigate }: PathBarProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [isShiftHeld, setIsShiftHeld] = useState(false);
 	const [isEditing, setIsEditing] = useState(false);
-	const [editValue, setEditValue] = useState('');
+	const [editValue, setEditValue] = useState("");
 	const [editingAsUri, setEditingAsUri] = useState(false);
-	const {navigateToView} = useExplorer();
+	const { navigateToView } = useExplorer();
 	const uri = sdPathToUri(path);
 	const currentDir = getCurrentDirectoryName(path);
 	const segments = parsePathSegments(path);
 
 	// Get device icon and device info based on the device_slug
 	const deviceInfo = (() => {
-		if ('Physical' in path) {
+		if ("Physical" in path) {
 			const deviceSlug = path.Physical.device_slug;
 			// Find device by slug
-			const device = Array.from(devices.values()).find(
-				(d) => d.slug === deviceSlug
-			);
+			const device = Array.from(devices.values()).find((d) => d.slug === deviceSlug);
 			return {
 				icon: device ? getDeviceIcon(device) : LaptopIcon,
-				device
+				device,
 			};
 		}
 		// For Cloud paths, we don't have a device
-		return {icon: LaptopIcon, device: undefined};
+		return { icon: LaptopIcon, device: undefined };
 	})();
 
 	const handleDeviceClick = () => {
 		if (deviceInfo.device) {
-			navigateToView('device', deviceInfo.device.id);
+			navigateToView("device", deviceInfo.device.id);
 		}
 	};
 
@@ -299,31 +276,24 @@ export function PathBar({path, devices, onNavigate}: PathBarProps) {
 
 	const exitEditMode = () => {
 		setIsEditing(false);
-		setEditValue('');
+		setEditValue("");
 		setEditingAsUri(false);
 	};
 
 	const handleContainerClick = (e: React.MouseEvent) => {
 		// Only enter edit mode if clicking the container itself, not buttons/segments
-		if (
-			e.target === e.currentTarget ||
-			(e.target as HTMLElement).tagName === 'INPUT'
-		) {
+		if (e.target === e.currentTarget || (e.target as HTMLElement).tagName === "INPUT") {
 			const isUriMode = showUri;
-			const valueToEdit = isUriMode
-				? uri
-				: 'Physical' in path
-					? path.Physical.path
-					: uri;
+			const valueToEdit = isUriMode ? uri : "Physical" in path ? path.Physical.path : uri;
 			enterEditMode(valueToEdit, isUriMode);
 		}
 	};
 
 	const handleEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-		if (e.key === 'Enter') {
+		if (e.key === "Enter") {
 			e.preventDefault();
 			submitEdit();
-		} else if (e.key === 'Escape') {
+		} else if (e.key === "Escape") {
 			e.preventDefault();
 			exitEditMode();
 		}
@@ -343,20 +313,18 @@ export function PathBar({path, devices, onNavigate}: PathBarProps) {
 				onNavigate(parsed);
 			} else {
 				// Parse as file path string
-				if ('Physical' in path) {
+				if ("Physical" in path) {
 					const newPath: SdPath = {
 						Physical: {
 							device_slug: path.Physical.device_slug,
-							path: trimmed.startsWith('/')
-								? trimmed
-								: `/${trimmed}`
-						}
+							path: trimmed.startsWith("/") ? trimmed : `/${trimmed}`,
+						},
 					};
 					onNavigate(newPath);
 				}
 			}
 		} catch (error) {
-			console.error('Failed to parse path:', error);
+			console.error("Failed to parse path:", error);
 		}
 
 		exitEditMode();
@@ -364,18 +332,18 @@ export function PathBar({path, devices, onNavigate}: PathBarProps) {
 
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === 'Shift') setIsShiftHeld(true);
+			if (e.key === "Shift") setIsShiftHeld(true);
 		};
 		const handleKeyUp = (e: KeyboardEvent) => {
-			if (e.key === 'Shift') setIsShiftHeld(false);
+			if (e.key === "Shift") setIsShiftHeld(false);
 		};
 
-		window.addEventListener('keydown', handleKeyDown);
-		window.addEventListener('keyup', handleKeyUp);
+		window.addEventListener("keydown", handleKeyDown);
+		window.addEventListener("keyup", handleKeyUp);
 
 		return () => {
-			window.removeEventListener('keydown', handleKeyDown);
-			window.removeEventListener('keyup', handleKeyUp);
+			window.removeEventListener("keydown", handleKeyDown);
+			window.removeEventListener("keyup", handleKeyUp);
 		};
 	}, []);
 
@@ -387,7 +355,7 @@ export function PathBar({path, devices, onNavigate}: PathBarProps) {
 		segments.reduce((sum, seg) => sum + seg.name.length * 6.5, 0) +
 			(segments.length - 1) * 16 + // separators
 			70, // base padding + icon
-		600
+		600,
 	);
 	const uriWidth = Math.min(uri.length * 7 + 70, 600);
 	const editWidth = Math.max(200, Math.min(editValue.length * 7 + 70, 600));
@@ -403,16 +371,16 @@ export function PathBar({path, devices, onNavigate}: PathBarProps) {
 	return (
 		<div className="flex items-center gap-2">
 			<motion.div
-				animate={{width: currentWidth}}
-				transition={{duration: m3Durations.short4, ease: m3Easings.standard}}
+				animate={{ width: currentWidth }}
+				transition={{ duration: m3Durations.short4, ease: m3Easings.standard }}
 				onMouseEnter={() => !isEditing && setIsExpanded(true)}
 				onMouseLeave={() => !isEditing && setIsExpanded(false)}
 				onClick={handleContainerClick}
 				className={clsx(
-					'flex h-10 items-center gap-1.5 rounded-full px-3',
-					'bg-surface-container-high transition-colors ease-standard',
-					'focus-within:bg-surface-container-highest focus-within:outline-2 focus-within:outline-primary',
-					!isEditing && 'cursor-text'
+					"flex h-10 items-center gap-1.5 rounded-full px-3",
+					"bg-surface-container-high transition-colors ease-standard",
+					"focus-within:bg-surface-container-highest focus-within:outline-2 focus-within:outline-primary",
+					!isEditing && "cursor-text",
 				)}
 			>
 				<button
@@ -421,24 +389,16 @@ export function PathBar({path, devices, onNavigate}: PathBarProps) {
 						handleDeviceClick();
 					}}
 					disabled={!deviceInfo.device}
-					title={
-						deviceInfo.device
-							? `Go to ${deviceInfo.device.name}`
-							: 'Device'
-					}
+					title={deviceInfo.device ? `Go to ${deviceInfo.device.name}` : "Device"}
 					className={clsx(
-						'size-5 flex-shrink-0 rounded-full transition-opacity',
+						"size-5 flex-shrink-0 rounded-full transition-opacity",
 						m3FocusRing,
 						deviceInfo.device
-							? 'cursor-pointer opacity-60 hover:opacity-100'
-							: 'cursor-default opacity-60'
+							? "cursor-pointer opacity-60 hover:opacity-100"
+							: "cursor-default opacity-60",
 					)}
 				>
-					<img
-						src={deviceInfo.icon}
-						alt="Device"
-						className="size-full"
-					/>
+					<img src={deviceInfo.icon} alt="Device" className="size-full" />
 				</button>
 
 				{isEditing ? (
@@ -448,19 +408,15 @@ export function PathBar({path, devices, onNavigate}: PathBarProps) {
 						onChange={(e) => setEditValue(e.target.value)}
 						onKeyDown={handleEditKeyDown}
 						onBlur={exitEditMode}
-						
+
 						className={clsx(
-							'min-w-0 flex-1 border-0 bg-transparent outline-none ring-0',
-							'text-on-surface text-label-medium',
-							'placeholder:text-on-surface-variant',
-							'focus:outline-none focus:ring-0',
-							editingAsUri && 'font-mono'
+							"min-w-0 flex-1 border-0 bg-transparent outline-none ring-0",
+							"text-on-surface text-label-medium",
+							"placeholder:text-on-surface-variant",
+							"focus:outline-none focus:ring-0",
+							editingAsUri && "font-mono",
 						)}
-						placeholder={
-							editingAsUri
-								? 'Enter SdPath JSON...'
-								: 'Enter path...'
-						}
+						placeholder={editingAsUri ? "Enter SdPath JSON..." : "Enter path..."}
 					/>
 				) : showUri ? (
 					<input
@@ -468,11 +424,11 @@ export function PathBar({path, devices, onNavigate}: PathBarProps) {
 						value={uri}
 						readOnly
 						className={clsx(
-							'min-w-0 flex-1 border-0 bg-transparent outline-none ring-0',
-							'text-on-surface text-label-medium',
-							'placeholder:text-on-surface-variant',
-							'cursor-text select-all',
-							'focus:outline-none focus:ring-0'
+							"min-w-0 flex-1 border-0 bg-transparent outline-none ring-0",
+							"text-on-surface text-label-medium",
+							"placeholder:text-on-surface-variant",
+							"cursor-text select-all",
+							"focus:outline-none focus:ring-0",
 						)}
 						placeholder="No path selected"
 					/>
@@ -482,7 +438,7 @@ export function PathBar({path, devices, onNavigate}: PathBarProps) {
 							const isLast = index === segments.length - 1;
 							return (
 								<div
-									key={index}
+									key={sdPathToUri(segment.path)}
 									className="flex flex-shrink-0 items-center gap-1"
 								>
 									<button
@@ -492,11 +448,11 @@ export function PathBar({path, devices, onNavigate}: PathBarProps) {
 										}}
 										disabled={isLast}
 										className={clsx(
-											'whitespace-nowrap rounded-extra-small text-label-medium transition-colors ease-standard',
+											"whitespace-nowrap rounded-extra-small text-label-medium transition-colors ease-standard",
 											m3FocusRing,
 											isLast
-												? 'text-on-surface cursor-default'
-												: 'text-on-surface-variant hover:text-on-surface cursor-pointer'
+												? "text-on-surface cursor-default"
+												: "text-on-surface-variant hover:text-on-surface cursor-pointer",
 										)}
 									>
 										{segment.name}
@@ -505,14 +461,8 @@ export function PathBar({path, devices, onNavigate}: PathBarProps) {
 										<button
 											onClick={(e) => {
 												e.stopPropagation();
-												const valueToEdit =
-													'Physical' in path
-														? path.Physical.path
-														: uri;
-												enterEditMode(
-													valueToEdit,
-													false
-												);
+												const valueToEdit = "Physical" in path ? path.Physical.path : uri;
+												enterEditMode(valueToEdit, false);
 											}}
 											className="text-on-surface-variant cursor-text opacity-60 transition-opacity hover:opacity-100"
 											aria-label="Edit path"
@@ -530,11 +480,11 @@ export function PathBar({path, devices, onNavigate}: PathBarProps) {
 						value={currentDir}
 						readOnly
 						className={clsx(
-							'min-w-0 flex-1 border-0 bg-transparent outline-none ring-0',
-							'text-on-surface text-label-medium',
-							'placeholder:text-on-surface-variant',
-							'cursor-text select-all',
-							'focus:outline-none focus:ring-0'
+							"min-w-0 flex-1 border-0 bg-transparent outline-none ring-0",
+							"text-on-surface text-label-medium",
+							"placeholder:text-on-surface-variant",
+							"cursor-text select-all",
+							"focus:outline-none focus:ring-0",
 						)}
 						placeholder="No path selected"
 					/>

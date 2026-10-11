@@ -32,35 +32,41 @@ async function cataloguedNames(root: string): Promise<Set<string>> {
 export async function discoverAphrodyBinaries(root = infraRoot()): Promise<AphrodyBinary[]> {
   const catalogued = await cataloguedNames(root);
   const found = new Map<string, AphrodyBinary>();
-  const add = async (path: string, source: AphrodyBinary["source"]): Promise<void> => {
+  const resolveCandidate = async (
+    path: string,
+    source: AphrodyBinary["source"],
+  ): Promise<AphrodyBinary | undefined> => {
     const name = basename(path).replace(/\.exe$/i, "");
-    if (
-      !isAphrodyBinary(name) ||
-      name.includes(".") ||
-      found.has(name) ||
-      !(await Bun.file(path).exists())
-    )
-      return;
-    found.set(name, { name, path, source, catalogued: catalogued.has(name) });
+    if (!isAphrodyBinary(name) || name.includes(".") || !(await Bun.file(path).exists()))
+      return undefined;
+    return { name, path, source, catalogued: catalogued.has(name) };
+  };
+  // The first candidate per name wins: local-bin, then release, then debug.
+  const register = (binary: AphrodyBinary | undefined): void => {
+    if (binary && !found.has(binary.name)) found.set(binary.name, binary);
   };
 
   const home = process.env.HOME;
   if (home) {
-    for (const name of new Set([...catalogued, "n2b"])) {
-      await add(
-        join(home, ".local", "bin", `${name}${process.platform === "win32" ? ".exe" : ""}`),
-        "local-bin",
+    const localBins = await Promise.all(
+      [...new Set([...catalogued, "n2b"])].map((name) =>
+        resolveCandidate(
+          join(home, ".local", "bin", `${name}${process.platform === "win32" ? ".exe" : ""}`),
+          "local-bin",
+        ),
+      ),
+    );
+    for (const binary of localBins) register(binary);
+  }
+  const profileCandidates = await Promise.all(
+    (["release", "debug"] as const).map(async (profile) => {
+      const paths = await Array.fromAsync(
+        new Bun.Glob(`target/${profile}/*`).scan({ cwd: root, absolute: true }),
       );
-    }
-  }
-  for (const profile of ["release", "debug"] as const) {
-    for await (const path of new Bun.Glob(`target/${profile}/*`).scan({
-      cwd: root,
-      absolute: true,
-    })) {
-      await add(path, profile);
-    }
-  }
+      return Promise.all(paths.map((path) => resolveCandidate(path, profile)));
+    }),
+  );
+  for (const binary of profileCandidates.flat()) register(binary);
   return [...found.values()].toSorted((left, right) => left.name.localeCompare(right.name));
 }
 

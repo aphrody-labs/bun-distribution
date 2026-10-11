@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode, type RefObject } from "react";
+import { createContext, useContext, useMemo, type ReactNode, type RefObject } from "react";
 import type Selecto from "react-selecto";
 
 interface DragSelectContextValue {
@@ -23,10 +23,7 @@ interface DragSelectProviderProps {
 
 export function DragSelectProvider({ children, selectoRef }: DragSelectProviderProps) {
 	const isWindows = navigator.platform.toLowerCase().includes("win");
+	const value = useMemo(() => ({ selectoRef, isWindows }), [selectoRef, isWindows]);
 
-	return (
-		<DragSelectContext.Provider value={{ selectoRef, isWindows }}>
-			{children}
-		</DragSelectContext.Provider>
-	);
+	return <DragSelectContext.Provider value={value}>{children}</DragSelectContext.Provider>;
 }

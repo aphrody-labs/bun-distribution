@@ -110,7 +110,9 @@ async function openState(cols: number, rows: number): Promise<State> {
   const opened: SyncAccess[] = [];
   try {
     for (const name of SLOT_NAMES) {
+      // oxlint-disable-next-line no-await-in-loop -- slot files are opened in order; a failure closes only the handles already opened
       const file = await root.getFileHandle(name, { create: true });
+      // oxlint-disable-next-line no-await-in-loop -- slot files are opened in order; a failure closes only the handles already opened
       opened.push(await file.createSyncAccessHandle());
     }
     const handles = opened as [SyncAccess, SyncAccess];
@@ -179,20 +181,22 @@ export function startOpfsWorker(scope: WorkerScope): void {
           const output = state.engine.input(new Uint8Array(request.bytes));
           persist(state);
           sendBytes(scope, "output", output);
+          // oxlint-disable-next-line unicorn/require-post-message-target-origin -- DedicatedWorkerGlobalScope.postMessage takes a transfer list, not a targetOrigin
           if (state.engine.exited()) scope.postMessage({ type: "exited" });
         } else if (request.type === "resize") {
           state.engine.resize(request.cols, request.rows);
         } else {
           for (const handle of state.handles) handle.close();
           state = null;
+          // oxlint-disable-next-line unicorn/require-post-message-target-origin -- DedicatedWorkerGlobalScope.postMessage takes a transfer list, not a targetOrigin
           scope.postMessage({ type: "closed" });
         }
+        return;
       })
       .catch((error: unknown) => {
-        scope.postMessage({
-          type: "error",
-          message: error instanceof Error ? error.message : String(error),
-        });
+        const message = error instanceof Error ? error.message : String(error);
+        // oxlint-disable-next-line unicorn/require-post-message-target-origin -- DedicatedWorkerGlobalScope.postMessage takes a transfer list, not a targetOrigin
+        scope.postMessage({ type: "error", message });
       });
   });
 }

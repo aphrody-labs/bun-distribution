@@ -12,7 +12,7 @@ import re
 import shutil
 from pathlib import Path
 
-CANONICAL_ROOT = Path("/srv/rg/releases")
+CANONICAL_ROOT = Path("/home/ubuntu/apps/rg/releases")
 SHA = re.compile(r"[0-9a-f]{40}\Z")
 
 
@@ -74,7 +74,7 @@ def main() -> None:
         fail("--max-delete must be between 1 and 3")
     root = args.root
     if args.apply and root != CANONICAL_ROOT:
-        fail("--apply requires /srv/rg/releases")
+        fail("--apply requires /home/ubuntu/apps/rg/releases")
     if root.is_symlink() or not root.is_dir():
         fail("release root missing or symlinked")
     if args.apply and (root.resolve() != CANONICAL_ROOT or os.geteuid() != 0):

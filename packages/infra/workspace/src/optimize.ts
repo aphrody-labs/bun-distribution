@@ -9,7 +9,7 @@ The current directory defines the workspace; existing AGENTS/PLAN remain authori
 
 export function optimizationPrompt(task: string): string {
   if (!task.trim()) throw new Error("Provide a bounded optimization task. Use --help for usage.");
-  return `Use the optimize-workspace skill from the Aphrody plugin. Read the installed project skill at .agents/skills/optimize-workspace/SKILL.md, or the canonical skill at ~/plugins/aphrody/skills/optimize-workspace/SKILL.md. Follow the selected repository's AGENTS.md, PLAN.md and MEMORY.md. Reuse Workspace/Infra and existing capability owners; batch searches and transformations; prefer native Bun APIs and qualified existing packages over rewrites. Complete scoped implementation and behavior gates, preserve concurrent edits, and report measured evidence and remaining limits. Commit only completed owned files when authorized; do not publish or rewrite history. Task follows as user instructions:\n\n${task}`;
+  return `Use the optimize-workspace skill from the Aphrody plugin (aphrody:optimize-workspace). Follow the selected repository's AGENTS.md, PLAN.md and MEMORY.md. Reuse Workspace/Infra and existing capability owners; batch searches and transformations; prefer native Bun APIs and qualified existing packages over rewrites. Complete scoped implementation and behavior gates, preserve concurrent edits, and report measured evidence and remaining limits. Commit only completed owned files when authorized; do not publish or rewrite history. Task follows as user instructions:\n\n${task}`;
 }
 
 export async function runOptimize(args: string[]): Promise<number> {

@@ -27,6 +27,24 @@ pub(crate) fn client() -> &'static reqwest::Client {
     &CLIENT
 }
 
+/// Build a chat-upstream request. Gateway/provider credentials are never used
+/// here: the configured chat backend has its own protected bearer credential.
+pub(crate) fn chat_request(method: reqwest::Method, url: reqwest::Url) -> reqwest::RequestBuilder {
+    request_with_token(method, url, aphrody_config::ai_env::CHAT_API_KEY.resolve().as_deref())
+}
+
+pub(crate) fn request_with_token(
+    method: reqwest::Method,
+    url: reqwest::Url,
+    token: Option<&str>,
+) -> reqwest::RequestBuilder {
+    let request = client().request(method, url);
+    match token {
+        Some(token) => request.bearer_auth(token),
+        None => request,
+    }
+}
+
 /// How an upstream call failed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Failure {
@@ -81,9 +99,34 @@ pub(crate) async fn post_json_with_retry(
     body: &Value,
     timeout: Duration,
 ) -> Result<Value, Failure> {
+    post_json_with_retry_token(url, body, timeout, None).await
+}
+
+/// Authenticated chat requests share retry policy without sending the chat
+/// credential to an independently configured vision or embedding endpoint.
+pub(crate) async fn post_chat_json_with_retry(
+    url: &reqwest::Url,
+    body: &Value,
+    timeout: Duration,
+) -> Result<Value, Failure> {
+    let token = aphrody_config::ai_env::CHAT_API_KEY.resolve();
+    post_json_with_retry_token(url, body, timeout, token.as_deref()).await
+}
+
+async fn post_json_with_retry_token(
+    url: &reqwest::Url,
+    body: &Value,
+    timeout: Duration,
+    token: Option<&str>,
+) -> Result<Value, Failure> {
     let mut attempt = 0_u8;
     loop {
-        let failure = match client().post(url.clone()).timeout(timeout).json(body).send().await {
+        let failure = match request_with_token(reqwest::Method::POST, url.clone(), token)
+            .timeout(timeout)
+            .json(body)
+            .send()
+            .await
+        {
             Ok(upstream) if upstream.status().is_success() => {
                 return upstream.json::<Value>().await.map_err(|error| {
                     if error.is_timeout() { Failure::Timeout } else { Failure::InvalidJson }
@@ -310,6 +353,40 @@ mod managed {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn upstream_chat_auth_is_not_shared_with_keyless_vision_requests() {
+        use axum::{
+            Json, Router,
+            http::{HeaderMap, header},
+            routing::post,
+        };
+        use serde_json::json;
+        let _ = rustls::crypto::ring::default_provider().install_default();
+        let app = Router::new().route(
+            "/probe",
+            post(|headers: HeaderMap| async move {
+                Json(json!({"authorization": headers.get(header::AUTHORIZATION)
+                .and_then(|value| value.to_str().ok())}))
+            }),
+        );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move { axum::serve(listener, app).await });
+        let url = reqwest::Url::parse(&format!("http://{address}/probe")).unwrap();
+        let chat = post_json_with_retry_token(
+            &url,
+            &json!({}),
+            Duration::from_secs(2),
+            Some("chat-only-fixture"),
+        )
+        .await
+        .unwrap();
+        assert_eq!(chat["authorization"], "Bearer chat-only-fixture");
+        let vision = post_json_with_retry(&url, &json!({}), Duration::from_secs(2)).await.unwrap();
+        assert!(vision["authorization"].is_null());
+        server.abort();
+    }
 
     #[test]
     fn configured_url_wins() {

@@ -60,12 +60,12 @@ const config: BuildFactoryConfig = {
   schemaVersion: 1,
   enabled: true,
   target: "vps",
-  cacheRoot: "/srv/factory/cache",
-  artifactRoot: "/srv/factory/artifacts",
-  lockPath: "/srv/factory/locks/heavy.lock",
+  cacheRoot: "/home/ubuntu/apps/factory/cache",
+  artifactRoot: "/home/ubuntu/apps/factory/artifacts",
+  lockPath: "/home/ubuntu/apps/factory/locks/heavy.lock",
   repositories: {
-    aphrody: "/srv/factory/workspaces/aphrody",
-    yolo: "/srv/factory/workspaces/yolo",
+    aphrody: "/home/ubuntu/apps/factory/workspaces/aphrody",
+    yolo: "/home/ubuntu/apps/factory/workspaces/yolo",
   },
   rust: { maxJobs: 6 },
 };
@@ -103,7 +103,10 @@ test("derives artifacts from --bin, packages, profiles and targets", async () =>
       root,
     ),
   ).toEqual([
-    { name: "aphrody-mcp", remotePath: "/srv/factory/cache/cargo/aphrody/release/aphrody-mcp" },
+    {
+      name: "aphrody-mcp",
+      remotePath: "/home/ubuntu/apps/factory/cache/cargo/aphrody/release/aphrody-mcp",
+    },
   ]);
   expect(
     await factoryArtifacts(
@@ -115,7 +118,8 @@ test("derives artifacts from --bin, packages, profiles and targets", async () =>
   ).toEqual([
     {
       name: "aphrody-cli",
-      remotePath: "/srv/factory/cache/cargo/aphrody/x86_64-unknown-linux-gnu/debug/aphrody-cli",
+      remotePath:
+        "/home/ubuntu/apps/factory/cache/cargo/aphrody/x86_64-unknown-linux-gnu/debug/aphrody-cli",
     },
   ]);
   expect(
@@ -125,7 +129,9 @@ test("derives artifacts from --bin, packages, profiles and targets", async () =>
       ["cargo", "build", "--profile", "dist", "--bin", "yolo"],
       root,
     ),
-  ).toEqual([{ name: "yolo", remotePath: "/srv/factory/workspaces/yolo/target/dist/yolo" }]);
+  ).toEqual([
+    { name: "yolo", remotePath: "/home/ubuntu/apps/factory/workspaces/yolo/target/dist/yolo" },
+  ]);
   await expect(
     factoryArtifacts(config, "aphrody", ["cargo", "check", "-p", "aphrody-mcp"], root),
   ).rejects.toThrow("Cargo build command");

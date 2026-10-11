@@ -48,6 +48,8 @@ interface Call {
   body?: any;
 }
 
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
+
 function fakes(overrides: { challonge?: (call: Call) => Response | undefined } = {}) {
   const calls: Call[] = [];
   let participantId = 7000;
@@ -63,7 +65,6 @@ function fakes(overrides: { challonge?: (call: Call) => Response | undefined } =
       body: init?.body ? JSON.parse(String(init.body)) : undefined,
     };
     calls.push(call);
-    const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
     if (call.host === "discord.com") {
       if (call.path.startsWith("/applications/") && call.method === "PUT")
         return json((call.body as object[]).map((c, i) => Object.assign({ id: String(i) }, c)));
@@ -368,6 +369,7 @@ test("/tournoi creer : accusé éphémère AVANT l'appel Challonge, confirmation
 test("commandes d'organisateur : refusées immédiatement (éphémère) sans toucher Challonge", async () => {
   const c = await context();
   for (const sub of ["creer", "demarrer", "score", "terminer"]) {
+    // oxlint-disable-next-line no-await-in-loop -- commandes d'organisateur séquentielles : chaque sous-commande suit la précédente
     await handleInteraction(
       c.ctx,
       command(sub, [{ type: 3, name: "nom", value: "x" }], member("U2", "joueur")),
@@ -570,6 +572,7 @@ test("inscriptions groupées : mises en attente, envoyées par lots de 20 (bulk_
   const c = await context({ batch: true });
   await createTournament(c);
   for (let i = 1; i <= 25; i += 1)
+    // oxlint-disable-next-line no-await-in-loop -- inscriptions séquentielles : chaque écriture du magasin doit précéder la suivante (ordre des correspondances)
     await handleInteraction(c.ctx, command("inscrire", [], member(`U${i}`, `joueur${i}`)));
   expect(challongeCalls(c.calls)).toHaveLength(0);
   expect(Object.keys((await c.store.read()).pending["901"]!)).toHaveLength(25);
@@ -776,6 +779,7 @@ test("runBot : enregistre /tournoi, se connecte à la Gateway locale et répond 
   );
   const deadline = Date.now() + 4000;
   while (Date.now() < deadline && !f.calls.some((c) => c.path.endsWith("/callback")))
+    // oxlint-disable-next-line no-await-in-loop -- sondage du rappel : délai entre deux vérifications séquentielles
     await Bun.sleep(10);
   controller.abort();
   expect(await running).toBe(0);

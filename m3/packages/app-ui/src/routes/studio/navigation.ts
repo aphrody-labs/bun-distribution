@@ -2,6 +2,7 @@
 export const studioSections = [
   { id: "a2a", label: "Outils des agents", icon: "hub" },
   { id: "drive", label: "Drive", icon: "cloud_sync" },
+  { id: "google", label: "Google", icon: "search" },
   { id: "runtime", label: "Moteur", icon: "memory" },
 ] as const;
 export type StudioSection = (typeof studioSections)[number]["id"];

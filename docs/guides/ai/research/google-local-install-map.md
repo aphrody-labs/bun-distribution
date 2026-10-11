@@ -13,8 +13,8 @@ are listed by path/size/structure only.
 - **Target root**: `C:\Users\<user>\AppData\Local\Google\Google`
 - **Machine map artefact** (gitignored): `var/data/google-local-map/tree.json` (not in repo)
   (676 files, 585 hashed, 71 secret-meta-only)
-- **Reproduce**: `pwsh -NoProfile -File scripts/forensics/map-google-local.ps1`
-  or `bash scripts/forensics/map-google-local.sh` (see §5)
+- **Reproduce**: `bun scripts/tools/os/scripts/forensics/map-google-local.ts`
+  or `bash scripts/tools/os/scripts/forensics/map-google-local.sh <dir>` (see §5)
 
 ## 1. What this install actually is
 
@@ -184,8 +184,9 @@ opened the contents of any artefact on the denylist (§5).
 Both scripts produce `var/data/google-local-map/tree.json` (not in repo) deterministically
 and never read secret-file contents (denylist enforced in code):
 
-- Windows: `pwsh -NoProfile -File scripts/forensics/map-google-local.ps1`
-- POSIX (for a copied tree on Linux): `bash scripts/forensics/map-google-local.sh`
+- Windows: `bun scripts/tools/os/scripts/forensics/map-google-local.ts` (target defaults to
+  `%LOCALAPPDATA%\Google\Google`)
+- POSIX (for a copied tree on Linux): `bash scripts/tools/os/scripts/forensics/map-google-local.sh <dir>`
 
 The native Rust path is `aphrody forensics map --target <dir> --out <dir>`
 (built with `--features forensics`), enhanced in this work to emit

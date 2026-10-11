@@ -47,7 +47,7 @@ et expose `/healthz`, `/api/v1/models`, `/api/v1/rag/query` et
 sans connexion valide, il rapporte son indisponibilité. Le catalogue de
 modèles provient du registre local `aphrody-models` et vérifie les fichiers
 présents. En production, `APHRODY_HOME` pointe vers
-`/srv/aphrody/shared/ai` pour l'état et les modèles IA.
+`/home/ubuntu/apps/aphrody/shared/ai` pour l'état et les modèles IA.
 Avec `APHRODY_MCP_DATABASE_URL`, `aphrody rag web-ingest <url>` utilise le
 scraper OS puis écrit dans la base PostgreSQL IA, corpus `bxc_crawl` ; les
 commandes IA `rag search` et `rag stats` lisent cette même base. Cette voie

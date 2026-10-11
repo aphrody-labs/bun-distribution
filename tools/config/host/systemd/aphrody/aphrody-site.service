@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# VPS direct Rust HTTP port 80, owner directive 2026-10-09.
+# VPS loopback origin behind nginx (aphrody.com.conf), 2026-10-10.
 [Unit]
 Description=Aphrody native read-only product site
 After=network.target
@@ -10,8 +10,8 @@ StartLimitBurst=5
 Type=simple
 User=aphrody-site
 Group=aphrody-site
-WorkingDirectory=/srv/aphrody/current
-ExecStart=/srv/aphrody/current/bin/aphrody-site --root /srv/aphrody/current --bind 0.0.0.0:80
+WorkingDirectory=/home/ubuntu/apps/aphrody/current
+ExecStart=/home/ubuntu/apps/aphrody/current/bin/aphrody-site --root /home/ubuntu/apps/aphrody/current --bind 127.0.0.1:8083
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=20
@@ -19,14 +19,13 @@ KillSignal=SIGINT
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
-ProtectHome=true
-ReadOnlyPaths=/srv/aphrody
+ProtectHome=tmpfs
+BindReadOnlyPaths=/home/ubuntu/apps/aphrody
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
-CapabilityBoundingSet=CAP_NET_BIND_SERVICE
-AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=
 UMask=0077
 
 [Install]

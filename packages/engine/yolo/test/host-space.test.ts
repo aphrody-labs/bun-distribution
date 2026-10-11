@@ -14,6 +14,27 @@ const link = (ino: number, nlink: number, blocks: number, dev = "2049"): LinkRec
   blocks,
 });
 
+const transport = (find: string, dfOutput: string) => ({
+  host: "local" as const,
+  remote: false,
+  async exec(cmd: string) {
+    if (cmd.includes("-printf '%y'")) return { code: 0, stdout: "d", stderr: "" };
+    if (cmd.includes("%D %i")) return { code: 0, stdout: find, stderr: "" };
+    return { code: 0, stdout: dfOutput, stderr: "" };
+  },
+  async service() {
+    return { code: 1, stdout: "", stderr: "unused" };
+  },
+  async tune() {
+    return { code: 1, stdout: "", stderr: "unused" };
+  },
+});
+const dfText = (total: number, avail: number) => `1B-blocks Avail\n${total} ${avail}\n`;
+const df = (total: number, avail: number) => `1B-blocks Avail\n${total} ${avail}\n`;
+const run = async (cmd: string): Promise<string> => await Bun.$`sh -c ${cmd}`.quiet().text();
+const key = (r: { dev: string; ino: string; nlink: number; blocks: number }): string =>
+  `${r.dev}:${r.ino}:${r.nlink}:${r.blocks}`;
+
 describe("estimateReclaim", () => {
   it("frees everything when no file has another link", () => {
     const e = estimateReclaim([link(1, 1, 8), link(2, 1, 16)]);
@@ -27,7 +48,7 @@ describe("estimateReclaim", () => {
   });
 
   it("frees nothing when the other link lives outside the set (the 2026-10-03 shenron case)", () => {
-    // /home/ubuntu/shenron/.../file is hard-linked to /srv/shenron/shared/.../file; only the home copy is deleted
+    // /home/ubuntu/shenron/.../file is hard-linked to /home/ubuntu/apps/shenron/shared/.../file; only the home copy is deleted
     const e = estimateReclaim([link(10, 2, 1_000_000)]);
     expect(e.naiveBytes).toBe(1_000_000 * 512);
     expect(e.freedBytes).toBe(0);
@@ -120,30 +141,24 @@ describe("parseDfSizeAvail", () => {
 describe("yolo host space", () => {
   const { runHostCommand } = require("../src/host") as typeof import("../src/host");
   const root = new URL("..", import.meta.url).pathname;
-  const transport = (find: string, df: string) => ({
-    host: "local" as const,
-    remote: false,
-    async exec(cmd: string) {
-      if (cmd.includes("-printf '%y'")) return { code: 0, stdout: "d", stderr: "" };
-      if (cmd.includes("%D %i")) return { code: 0, stdout: find, stderr: "" };
-      return { code: 0, stdout: df, stderr: "" };
-    },
-    async service() {
-      return { code: 1, stdout: "", stderr: "unused" };
-    },
-    async tune() {
-      return { code: 1, stdout: "", stderr: "unused" };
-    },
-  });
   const GIB = 1024 ** 3;
-  const dfText = (total: number, avail: number) => `1B-blocks Avail\n${total} ${avail}\n`;
 
   it("predicts the floor from the really freed bytes and exits 3 when it is not reached", async () => {
     let printed = "";
     // 30 GiB shared with a live copy (nlink 2, one name inside) + 5 GiB of own files
     const find = `2049 1 2 ${(30 * GIB) / 512}\n2049 2 1 ${(5 * GIB) / 512}\n`;
     const code = await runHostCommand(
-      ["space", "/srv/old", "--host", "local", "--min-free", "50%", "--depth", "0", "--json"],
+      [
+        "space",
+        "/home/ubuntu/apps/old",
+        "--host",
+        "local",
+        "--min-free",
+        "50%",
+        "--depth",
+        "0",
+        "--json",
+      ],
       root,
       { transport: transport(find, dfText(290 * GIB, 100 * GIB)), out: (s) => (printed += s) },
     );
@@ -157,7 +172,17 @@ describe("yolo host space", () => {
   it("exits 0 once the floor is reached", async () => {
     const find = `2049 2 1 ${(60 * GIB) / 512}\n`;
     const code = await runHostCommand(
-      ["space", "/srv/old", "--host", "local", "--min-free", "50%", "--depth", "0", "--json"],
+      [
+        "space",
+        "/home/ubuntu/apps/old",
+        "--host",
+        "local",
+        "--min-free",
+        "50%",
+        "--depth",
+        "0",
+        "--json",
+      ],
       root,
       { transport: transport(find, dfText(290 * GIB, 100 * GIB)), out: () => {} },
     );
@@ -169,7 +194,6 @@ describe("ship disk gate", () => {
   const { diskDecision, diskProbeCommand } =
     require("../src/host-space") as typeof import("../src/host-space");
   const GIB = 1024 ** 3;
-  const df = (total: number, avail: number) => `1B-blocks Avail\n${total} ${avail}\n`;
 
   it("accepts at the floor and refuses below it, with the shortfall in GiB", () => {
     expect(diskDecision(df(290 * GIB, 145 * GIB), 0.5).ok).toBe(true);
@@ -239,25 +263,27 @@ describe("limiter", () => {
   const { limiter } = require("../src/host-space") as typeof import("../src/host-space");
 
   it("never runs more than the limit at once, keeps every result and runs all tasks", async () => {
-    for (const limit of [1, 3, 8]) {
-      const gate = limiter(limit);
-      let active = 0;
-      let peak = 0;
-      const results = await Promise.all(
-        Array.from({ length: 50 }, (_, i) =>
-          gate(async () => {
-            active++;
-            peak = Math.max(peak, active);
-            await Bun.sleep(1 + (i % 3));
-            active--;
-            return i;
-          }),
-        ),
-      );
-      expect(results).toEqual(Array.from({ length: 50 }, (_, i) => i));
-      expect(peak).toBeLessThanOrEqual(limit);
-      expect(peak).toBe(Math.min(limit, 50));
-    }
+    await Promise.all(
+      [1, 3, 8].map(async (limit) => {
+        const gate = limiter(limit);
+        let active = 0;
+        let peak = 0;
+        const results = await Promise.all(
+          Array.from({ length: 50 }, (_, i) =>
+            gate(async () => {
+              active++;
+              peak = Math.max(peak, active);
+              await Bun.sleep(1 + (i % 3));
+              active--;
+              return i;
+            }),
+          ),
+        );
+        expect(results).toEqual(Array.from({ length: 50 }, (_, i) => i));
+        expect(peak).toBeLessThanOrEqual(limit);
+        expect(peak).toBe(Math.min(limit, 50));
+      }),
+    );
   });
 
   it("releases the slot when a task throws", async () => {
@@ -268,14 +294,11 @@ describe("limiter", () => {
 });
 
 describe("scanLinks", () => {
-  const { scanLinks, estimateReclaim, parseFindLinks } =
-    require("../src/host-space") as typeof import("../src/host-space");
+  const { scanLinks } = require("../src/host-space") as typeof import("../src/host-space");
   const { mkdtempSync, mkdirSync, writeFileSync, linkSync, symlinkSync, rmSync } =
     require("node:fs") as typeof import("node:fs");
   const { tmpdir } = require("node:os") as typeof import("node:os");
   const { join } = require("node:path") as typeof import("node:path");
-
-  const run = async (cmd: string): Promise<string> => await Bun.$`sh -c ${cmd}`.quiet().text();
 
   it("returns the same multiset of links as one find, whatever depth and parallelism", async () => {
     const root = mkdtempSync(join(tmpdir(), "scan-"));
@@ -300,13 +323,12 @@ describe("scanLinks", () => {
       const reference = parseFindLinks(
         await run(`find '${root}' -xdev -type f -printf '%D %i %n %b\\n'`),
       );
-      const key = (r: { dev: string; ino: string; nlink: number; blocks: number }): string =>
-        `${r.dev}:${r.ino}:${r.nlink}:${r.blocks}`;
-      const want = reference.map(key).sort();
+      const want = reference.map(key).toSorted();
       for (const depth of [0, 1, 2, 5]) {
         for (const parallel of [1, 4]) {
+          // oxlint-disable-next-line no-await-in-loop -- scans find réels sur disque : séquentiels pour rester dans le délai du test et mesurer chaque combinaison isolément
           const got = await scanLinks([root], { run, depth, parallel, batch: 2 });
-          expect(got.map(key).sort()).toEqual(want);
+          expect(got.map(key).toSorted()).toEqual(want);
           expect(estimateReclaim(got)).toEqual(estimateReclaim(reference));
         }
       }

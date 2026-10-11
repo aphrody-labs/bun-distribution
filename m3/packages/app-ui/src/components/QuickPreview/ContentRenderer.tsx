@@ -4,20 +4,10 @@ import { File as FileComponent } from "../../routes/explorer/File";
 import { formatBytes } from "../../routes/explorer/utils";
 import { usePlatform } from "../../contexts/PlatformContext";
 import { useServer } from "../../contexts/ServerContext";
-import {
-	useState,
-	useEffect,
-	useRef,
-	useCallback,
-	lazy,
-	Suspense,
-} from "react";
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 
 import { VideoPlayer } from "./VideoPlayer";
-import type {
-	VideoControlsState,
-	VideoControlsCallbacks,
-} from "./VideoControls";
+import type { VideoControlsState, VideoControlsCallbacks } from "./VideoControls";
 import { AudioPlayer } from "./AudioPlayer";
 import { useZoomPan } from "./useZoomPan";
 import { TextViewer } from "./TextViewer";
@@ -26,12 +16,8 @@ import { sounds } from "@aphrody/assets/sounds";
 import { CircleButton } from "@aphrody/m3-primitives";
 import { DirectoryPreview } from "./DirectoryPreview";
 
-const MeshViewer = lazy(() =>
-	import("./MeshViewer").then((m) => ({ default: m.MeshViewer })),
-);
-const MeshViewerUI = lazy(() =>
-	import("./MeshViewer").then((m) => ({ default: m.MeshViewerUI })),
-);
+const MeshViewer = lazy(() => import("./MeshViewer").then((m) => ({ default: m.MeshViewer })));
+const MeshViewerUI = lazy(() => import("./MeshViewer").then((m) => ({ default: m.MeshViewerUI })));
 
 interface ContentRendererProps {
 	file: File;
@@ -50,8 +36,9 @@ function ImageRenderer({ file, onZoomChange }: ContentRendererProps) {
 	const [shouldLoadOriginal, setShouldLoadOriginal] = useState(false);
 	const [showSplat, setShowSplat] = useState(false);
 	const [splatLoaded, setSplatLoaded] = useState(false);
-	const { zoom, zoomIn, zoomOut, reset, isZoomed, transform } =
-		useZoomPan(containerRef as React.RefObject<HTMLElement>);
+	const { zoom, zoomIn, zoomOut, reset, isZoomed, transform } = useZoomPan(
+		containerRef as React.RefObject<HTMLElement>,
+	);
 
 	// Track MeshViewer controls state
 	const [meshControls, setMeshControls] = useState<{
@@ -96,6 +83,7 @@ function ImageRenderer({ file, onZoomChange }: ContentRendererProps) {
 
 	// Reset and defer original loading by 50ms to ensure thumbnail renders first
 	useEffect(() => {
+		// oxlint-disable-next-line react/set-state-in-effect -- remise à zéro volontaire de l état quand le fichier change, avant le nouveau chargement
 		setShouldLoadOriginal(false);
 		setOriginalLoaded(false);
 		setOriginalUrl(null);
@@ -107,6 +95,7 @@ function ImageRenderer({ file, onZoomChange }: ContentRendererProps) {
 		}, 50);
 
 		return () => clearTimeout(timer);
+		// oxlint-disable-next-line react/exhaustive-effect-dependencies -- l effet doit rejouer à chaque changement de fichier (imageFileId), dépendance volontaire
 	}, [imageFileId]);
 
 	useEffect(() => {
@@ -118,57 +107,39 @@ function ImageRenderer({ file, onZoomChange }: ContentRendererProps) {
 		const physicalPath = sdPath?.Physical?.path;
 
 		if (!physicalPath) {
-			console.log(
-				"[ImageRenderer] No physical path available, sd_path:",
-				file.sd_path,
-			);
+			console.log("[ImageRenderer] No physical path available, sd_path:", file.sd_path);
 			return;
 		}
 
 		const url = platform.convertFileSrc(physicalPath);
-		console.log(
-			"[ImageRenderer] Loading original from:",
-			physicalPath,
-			"-> URL:",
-			url,
-		);
+		console.log("[ImageRenderer] Loading original from:", physicalPath, "-> URL:", url);
+		// oxlint-disable-next-line react/set-state-in-effect -- l URL dérive de la source physique du fichier (chargement différé) ; mise à jour d état volontaire
 		setOriginalUrl(url);
+		// oxlint-disable-next-line react/exhaustive-effect-dependencies -- l effet doit rejouer à chaque changement de fichier (imageFileId), dépendance volontaire
 	}, [shouldLoadOriginal, imageFileId, file.sd_path, platform]);
 
 	// Get highest resolution thumbnail first
 	const getHighestResThumbnail = () => {
-		const thumbnails =
-			file.sidecars?.filter((s) => s.kind === "thumb") || [];
+		const thumbnails = file.sidecars?.filter((s) => s.kind === "thumb") || [];
 		if (thumbnails.length === 0) return null;
 
 		const highest = thumbnails.toSorted((a, b) => {
-			const aSize = parseInt(
-				a.variant.split("x")[0]?.replace(/\D/g, "") || "0",
-			);
-			const bSize = parseInt(
-				b.variant.split("x")[0]?.replace(/\D/g, "") || "0",
-			);
+			const aSize = parseInt(a.variant.split("x")[0]?.replace(/\D/g, "") || "0");
+			const bSize = parseInt(b.variant.split("x")[0]?.replace(/\D/g, "") || "0");
 			return bSize - aSize;
 		})[0];
 
 		const contentUuid = file.content_identity?.uuid;
 		if (!contentUuid) return null;
 
-		return buildSidecarUrl(
-			contentUuid,
-			highest.kind,
-			highest.variant,
-			highest.format,
-		);
+		return buildSidecarUrl(contentUuid, highest.kind, highest.variant, highest.format);
 	};
 
 	const thumbnailUrl = getHighestResThumbnail();
 
 	// Stable callback to prevent re-renders that would reinitialize MeshViewer
 	const handleSplatLoaded = useCallback(() => {
-		console.log(
-			"[ImageRenderer] Splat is fully visible, hiding image overlay",
-		);
+		console.log("[ImageRenderer] Splat is fully visible, hiding image overlay");
 		setSplatLoaded(true);
 		sounds.splat();
 	}, []);
@@ -281,9 +252,7 @@ function ImageRenderer({ file, onZoomChange }: ContentRendererProps) {
 								}))
 							}
 							swaySpeed={meshControls.swaySpeed}
-							setSwaySpeed={(v) =>
-								setMeshControls((c) => ({ ...c, swaySpeed: v }))
-							}
+							setSwaySpeed={(v) => setMeshControls((c) => ({ ...c, swaySpeed: v }))}
 							cameraDistance={meshControls.cameraDistance}
 							setCameraDistance={(v) =>
 								setMeshControls((c) => ({
@@ -358,10 +327,7 @@ function ImageRenderer({ file, onZoomChange }: ContentRendererProps) {
 			)}
 
 			{/* Image container with zoom/pan transform */}
-			<div
-				className="relative w-full h-full flex items-center justify-center"
-				style={transform}
-			>
+			<div className="relative w-full h-full flex items-center justify-center" style={transform}>
 				{/* High-res thumbnail (always rendered as background layer) */}
 				{thumbnailUrl && (
 					<img
@@ -383,12 +349,7 @@ function ImageRenderer({ file, onZoomChange }: ContentRendererProps) {
 							transition: "opacity 0.3s",
 						}}
 						onLoad={() => setOriginalLoaded(true)}
-						onError={(e) =>
-							console.error(
-								"[ImageRenderer] Original failed to load:",
-								e,
-							)
-						}
+						onError={(e) => console.error("[ImageRenderer] Original failed to load:", e)}
 						draggable={false}
 					/>
 				)}
@@ -413,6 +374,7 @@ function VideoRenderer({
 
 	// Reset and defer video loading by 50ms to ensure thumbnail renders first
 	useEffect(() => {
+		// oxlint-disable-next-line react/set-state-in-effect -- remise à zéro volontaire de l état quand le fichier vidéo change, avant le nouveau chargement
 		setShouldLoadVideo(false);
 		setVideoUrl(null);
 
@@ -421,6 +383,7 @@ function VideoRenderer({
 		}, 50);
 
 		return () => clearTimeout(timer);
+		// oxlint-disable-next-line react/exhaustive-effect-dependencies -- l effet doit rejouer à chaque changement de fichier (videoFileId), dépendance volontaire
 	}, [videoFileId]);
 
 	useEffect(() => {
@@ -437,23 +400,16 @@ function VideoRenderer({
 		}
 
 		const url = platform.convertFileSrc(physicalPath);
-		console.log(
-			"[VideoRenderer] Loading video from:",
-			physicalPath,
-			"-> URL:",
-			url,
-		);
+		console.log("[VideoRenderer] Loading video from:", physicalPath, "-> URL:", url);
+		// oxlint-disable-next-line react/set-state-in-effect -- l URL dérive de la source physique du fichier vidéo ; mise à jour d état volontaire
 		setVideoUrl(url);
+		// oxlint-disable-next-line react/exhaustive-effect-dependencies -- l effet doit rejouer à chaque changement de fichier vidéo (videoFileId), dépendance volontaire
 	}, [shouldLoadVideo, videoFileId, file.sd_path, platform]);
 
 	if (!videoUrl) {
 		return (
 			<div className="w-full h-full flex items-center justify-center">
-				<FileComponent.Thumb
-					file={file}
-					size={800}
-					className="max-w-full max-h-full"
-				/>
+				<FileComponent.Thumb file={file} size={800} className="max-w-full max-h-full" />
 			</div>
 		);
 	}
@@ -480,6 +436,7 @@ function AudioRenderer({ file }: ContentRendererProps) {
 
 	// Reset and defer audio loading by 50ms to ensure thumbnail renders first
 	useEffect(() => {
+		// oxlint-disable-next-line react/set-state-in-effect -- remise à zéro volontaire de l état quand le fichier audio change, avant le nouveau chargement
 		setShouldLoadAudio(false);
 		setAudioUrl(null);
 
@@ -488,6 +445,7 @@ function AudioRenderer({ file }: ContentRendererProps) {
 		}, 50);
 
 		return () => clearTimeout(timer);
+		// oxlint-disable-next-line react/exhaustive-effect-dependencies -- l effet doit rejouer à chaque changement de fichier (audioFileId), dépendance volontaire
 	}, [audioFileId]);
 
 	useEffect(() => {
@@ -504,13 +462,10 @@ function AudioRenderer({ file }: ContentRendererProps) {
 		}
 
 		const url = platform.convertFileSrc(physicalPath);
-		console.log(
-			"[AudioRenderer] Loading audio from:",
-			physicalPath,
-			"-> URL:",
-			url,
-		);
+		console.log("[AudioRenderer] Loading audio from:", physicalPath, "-> URL:", url);
+		// oxlint-disable-next-line react/set-state-in-effect -- l URL dérive de la source physique du fichier audio ; mise à jour d état volontaire
 		setAudioUrl(url);
+		// oxlint-disable-next-line react/exhaustive-effect-dependencies -- l effet doit rejouer à chaque changement de fichier audio (audioFileId), dépendance volontaire
 	}, [shouldLoadAudio, audioFileId, file.sd_path, platform]);
 
 	if (!audioUrl) {
@@ -518,9 +473,7 @@ function AudioRenderer({ file }: ContentRendererProps) {
 			<div className="w-full h-full flex items-center justify-center">
 				<div className="text-center">
 					<FileComponent.Thumb file={file} size={200} />
-					<div className="mt-6 text-on-surface text-title-medium font-medium">
-						{file.name}
-					</div>
+					<div className="mt-6 text-on-surface text-title-medium font-medium">{file.name}</div>
 				</div>
 			</div>
 		);
@@ -534,9 +487,7 @@ function DocumentRenderer({ file }: ContentRendererProps) {
 		<div className="w-full h-full flex items-center justify-center">
 			<div className="text-center">
 				<FileComponent.Thumb file={file} size={200} />
-				<div className="mt-6 text-on-surface text-title-medium font-medium">
-					{file.name}
-				</div>
+				<div className="mt-6 text-on-surface text-title-medium font-medium">{file.name}</div>
 				<div className="text-on-surface-variant text-body-medium mt-2 capitalize">
 					{getContentKind(file) ?? "unknown"}
 				</div>
@@ -556,6 +507,7 @@ function TextRenderer({ file }: ContentRendererProps) {
 	const textFileId = file.content_identity?.uuid || file.id;
 
 	useEffect(() => {
+		// oxlint-disable-next-line react/set-state-in-effect -- remise à zéro volontaire de l état quand le fichier texte change, avant le nouveau chargement
 		setShouldLoadText(false);
 		setTextUrl(null);
 
@@ -564,6 +516,7 @@ function TextRenderer({ file }: ContentRendererProps) {
 		}, 50);
 
 		return () => clearTimeout(timer);
+		// oxlint-disable-next-line react/exhaustive-effect-dependencies -- l effet doit rejouer à chaque changement de fichier (textFileId), dépendance volontaire
 	}, [textFileId]);
 
 	useEffect(() => {
@@ -580,13 +533,10 @@ function TextRenderer({ file }: ContentRendererProps) {
 		}
 
 		const url = platform.convertFileSrc(physicalPath);
-		console.log(
-			"[TextRenderer] Loading text from:",
-			physicalPath,
-			"-> URL:",
-			url,
-		);
+		console.log("[TextRenderer] Loading text from:", physicalPath, "-> URL:", url);
+		// oxlint-disable-next-line react/set-state-in-effect -- l URL dérive de la source physique du fichier texte ; mise à jour d état volontaire
 		setTextUrl(url);
+		// oxlint-disable-next-line react/exhaustive-effect-dependencies -- l effet doit rejouer à chaque changement de fichier texte (textFileId), dépendance volontaire
 	}, [shouldLoadText, textFileId, file.sd_path, platform]);
 
 	const extension = file.name.split(".").pop()?.toLowerCase();
@@ -596,9 +546,7 @@ function TextRenderer({ file }: ContentRendererProps) {
 			<div className="w-full h-full flex items-center justify-center">
 				<div className="text-center">
 					<FileComponent.Thumb file={file} size={120} />
-					<div className="mt-4 text-on-surface text-title-medium font-medium">
-						{file.name}
-					</div>
+					<div className="mt-4 text-on-surface text-title-medium font-medium">{file.name}</div>
 					<div className="text-on-surface-variant text-body-medium mt-2">Loading...</div>
 				</div>
 			</div>
@@ -622,9 +570,7 @@ function DefaultRenderer({ file }: ContentRendererProps) {
 		<div className="w-full h-full flex items-center justify-center">
 			<div className="text-center">
 				<FileComponent.Thumb file={file} size={200} />
-				<div className="mt-6 text-on-surface text-title-medium font-medium">
-					{file.name}
-				</div>
+				<div className="mt-6 text-on-surface text-title-medium font-medium">{file.name}</div>
 				<div className="text-on-surface-variant text-body-medium mt-2 capitalize">
 					{getContentKind(file) ?? "unknown"}
 				</div>

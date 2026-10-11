@@ -39,10 +39,12 @@ describe("@aphrody/canvas vendored upstream", () => {
   test("vendored files match the SHA-256 recorded in vendor/UPSTREAM.md", async () => {
     const hashes = parseRecordedHashes(record);
     expect([...hashes.keys()]).toEqual([...VENDORED_FILES]);
-    for (const [name, hash] of hashes) {
-      const text = normalizeEol(await Bun.file(join(PACKAGE_DIR, "vendor", name)).text());
-      expect({ name, hash: sha256(text) }).toEqual({ name, hash });
-    }
+    await Promise.all(
+      [...hashes].map(async ([name, hash]) => {
+        const text = normalizeEol(await Bun.file(join(PACKAGE_DIR, "vendor", name)).text());
+        expect({ name, hash: sha256(text) }).toEqual({ name, hash });
+      }),
+    );
   });
 
   test("platform packages pin the vendored upstream version", () => {
@@ -96,6 +98,9 @@ describe("@aphrody/canvas publishable manifest", () => {
     for (const name of [...VENDORED_FILES, "package.json", "UPSTREAM.md"]) {
       expect(files).toContain(`vendor/${name}`);
     }
-    for (const file of files) expect(await Bun.file(join(PACKAGE_DIR, file)).exists()).toBe(true);
+    const present = await Promise.all(
+      files.map((file) => Bun.file(join(PACKAGE_DIR, file)).exists()),
+    );
+    for (const ok of present) expect(ok).toBe(true);
   });
 });

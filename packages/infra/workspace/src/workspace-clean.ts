@@ -54,10 +54,12 @@ export async function measureArtifact(path: string): Promise<{ bytes: number; fi
   if (!info) return { bytes: 0, files: 0 };
   if (info.isSymbolicLink()) return { bytes: 0, files: 0 };
   if (!info.isDirectory()) return { bytes: info.size, files: 1 };
+  const children = await Promise.all(
+    (await entries(path)).map((entry) => measureArtifact(join(path, entry))),
+  );
   let bytes = 0,
     files = 0;
-  for (const entry of await entries(path)) {
-    const child = await measureArtifact(join(path, entry));
+  for (const child of children) {
     bytes += child.bytes;
     files += child.files;
   }
@@ -81,6 +83,7 @@ export async function cleanWorkspace(root: string, apply = false): Promise<Clean
       if (ARTIFACTS.has(entry.name)) {
         if (tracked.some((file) => file === local || file.startsWith(`${local}/`))) {
           report.protected.push(local);
+          // oxlint-disable-next-line no-await-in-loop -- parcours en profondeur séquentiel : l'ordre de report.protected est une sortie déterministe
           await visit(full);
           continue;
         }
@@ -88,15 +91,18 @@ export async function cleanWorkspace(root: string, apply = false): Promise<Clean
         const ignored = git(root, ["check-ignore", "-q", "--", `${local}/`]).code === 0;
         const pythonCache = entry.name === "__pycache__";
         if (ignored || pythonCache) {
+          // oxlint-disable-next-line no-await-in-loop -- suppressions séquentielles : l'ordre de report.removed et des rm est une sortie déterministe
           const size = await measureArtifact(full);
           report.removed.push({ path: local, ...size });
           report.bytes += size.bytes;
           report.files += size.files;
+          // oxlint-disable-next-line no-await-in-loop -- suppressions séquentielles, un seul rm à la fois pour un état de disque prévisible
           if (apply) await rm(full, { recursive: true });
           continue;
         }
         report.protected.push(local);
       }
+      // oxlint-disable-next-line no-await-in-loop -- parcours en profondeur séquentiel : l'ordre de report.removed/protected est une sortie déterministe
       await visit(full);
     }
   }

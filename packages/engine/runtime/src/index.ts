@@ -31,7 +31,10 @@ export const Status = {
 } as const;
 export type StatusCode = (typeof Status)[keyof typeof Status];
 
-const STATUS_NAMES = Object.fromEntries(Object.entries(Status).map(([k, v]) => [v, k])) as Record<number, string>;
+const STATUS_NAMES = Object.fromEntries(Object.entries(Status).map(([k, v]) => [v, k])) as Record<
+  number,
+  string
+>;
 
 export class RuntimeError extends Error {
   readonly status: number;
@@ -105,7 +108,7 @@ export function defaultLibraryPath(): string {
     const manifest = JSON.parse(readFileSync(join(current, "manifest.json"), "utf8")) as {
       files?: Record<string, unknown>;
     };
-    const name = Object.keys(manifest.files ?? {}).find(file => /\.(so|dylib|dll)$/.test(file));
+    const name = Object.keys(manifest.files ?? {}).find((file) => /\.(so|dylib|dll)$/.test(file));
     if (name !== undefined && existsSync(join(current, name))) return join(current, name);
   } catch {
     // no installed artifact: fall through to the local build
@@ -166,7 +169,9 @@ function readBufferBytes(symbols: Symbols, buffer: Uint8Array): Uint8Array {
   const len = Number(view.getBigUint64(8, true));
   try {
     // Copy before releasing: returned bytes must outlive the native allocation.
-    return dataPtr && len > 0 ? new Uint8Array(toArrayBuffer(dataPtr, 0, len)).slice() : new Uint8Array(0);
+    return dataPtr && len > 0
+      ? new Uint8Array(toArrayBuffer(dataPtr, 0, len)).slice()
+      : new Uint8Array(0);
   } finally {
     symbols.yolo_buffer_free(ptr(buffer));
   }
@@ -240,11 +245,23 @@ export interface HttpReadyOptions {
 export class ProcessExitedError extends Error {
   readonly status: ProcessStatus;
   constructor(status: ProcessStatus) {
-    super(`process ${status.pid} exited before it was ready (code ${status.exitCode}, signal ${status.signal})`);
+    super(
+      `process ${status.pid} exited before it was ready (code ${status.exitCode}, signal ${status.signal})`,
+    );
     this.name = "ProcessExitedError";
     this.status = status;
   }
 }
+
+const concat = (chunks: Uint8Array[]): Uint8Array => {
+  const bytes = new Uint8Array(chunks.reduce((size, chunk) => size + chunk.length, 0));
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return bytes;
+};
 
 const cString = (text: string): Buffer => Buffer.from(`${text}\0`, "utf8");
 
@@ -276,7 +293,10 @@ export class ManagedProcess implements Disposable {
 
   #assertLive(): void {
     if (this.#released || this.#runtime.closed) {
-      throw new RuntimeError(Status.InvalidHandle, "process handle is released or its runtime is closed");
+      throw new RuntimeError(
+        Status.InvalidHandle,
+        "process handle is released or its runtime is closed",
+      );
     }
   }
 
@@ -354,20 +374,12 @@ export class ManagedProcess implements Disposable {
       const out = this.takeStdoutBytes();
       if (out.length) stdout.push(out);
     };
-    const concat = (chunks: Uint8Array[]): Uint8Array => {
-      const bytes = new Uint8Array(chunks.reduce((size, chunk) => size + chunk.length, 0));
-      let offset = 0;
-      for (const chunk of chunks) {
-        bytes.set(chunk, offset);
-        offset += chunk.length;
-      }
-      return bytes;
-    };
     try {
       for (;;) {
         signal?.throwIfAborted();
         drain();
         if (!this.status().running) {
+          // oxlint-disable-next-line no-await-in-loop -- single-shot: this await ends the loop right after the process is observed stopped, so it runs once
           const status = await this.stopAsync(0);
           stopped = true;
           signal?.throwIfAborted();
@@ -377,7 +389,8 @@ export class ManagedProcess implements Disposable {
         if (Date.now() >= deadline) {
           throw new RuntimeError(Status.Timeout, `process timed out after ${timeoutMs} ms`);
         }
-        await new Promise(resolve => setTimeout(resolve, pollMs));
+        // oxlint-disable-next-line no-await-in-loop -- poll loop: native state is re-read after each sleep, so iterations depend on the previous result
+        await new Promise((done) => setTimeout(done, pollMs));
       }
     } finally {
       if (!stopped && !this.#released && !this.#runtime.closed) await this.stopAsync(0);
@@ -421,7 +434,8 @@ export class ManagedProcess implements Disposable {
         throw new ProcessExitedError(status);
       }
       if (Date.now() >= deadline) throw new Error(`no stdout line after ${timeoutMs} ms`);
-      await new Promise(resolve => setTimeout(resolve, pollMs));
+      // oxlint-disable-next-line no-await-in-loop -- poll loop: native state is re-read after each sleep, so iterations depend on the previous result
+      await new Promise((done) => setTimeout(done, pollMs));
     }
   }
 
@@ -436,7 +450,8 @@ export class ManagedProcess implements Disposable {
     const operation = new Operation(this.#symbols, out[0] as bigint, this.#runtime);
     try {
       while (operation.waitRaw(0) === undefined) {
-        await new Promise(resolve => setTimeout(resolve, 5));
+        // oxlint-disable-next-line no-await-in-loop -- poll loop: native state is re-read after each sleep, so iterations depend on the previous result
+        await new Promise((done) => setTimeout(done, 5));
       }
     } finally {
       operation.release();
@@ -451,7 +466,8 @@ export class ManagedProcess implements Disposable {
       signal?.throwIfAborted();
       const status = this.status();
       if (!status.running) return status.exitCode;
-      await new Promise(resolve => setTimeout(resolve, pollMs));
+      // oxlint-disable-next-line no-await-in-loop -- poll loop: native state is re-read after each sleep, so iterations depend on the previous result
+      await new Promise((done) => setTimeout(done, pollMs));
     }
   }
 
@@ -468,18 +484,33 @@ export class ManagedProcess implements Disposable {
    * the event loop for more than one probe.
    */
   async waitForHttp(options: HttpReadyOptions): Promise<number> {
-    const { host = "127.0.0.1", port, path = "/", timeoutMs = 10_000, intervalMs = 50, signal, accept } = options;
+    const {
+      host = "127.0.0.1",
+      port,
+      path = "/",
+      timeoutMs = 10_000,
+      intervalMs = 50,
+      signal,
+      accept,
+    } = options;
     const deadline = Date.now() + timeoutMs;
     for (;;) {
       signal?.throwIfAborted();
       const status = this.status();
       if (!status.running) throw new ProcessExitedError(status);
-      const code = await this.#runtime.probeHttp(host, port, path, Math.min(500, Math.max(1, deadline - Date.now())));
+      // oxlint-disable-next-line no-await-in-loop -- probe loop: each HTTP probe must complete before the next, bounded by the shared deadline
+      const code = await this.#runtime.probeHttp(
+        host,
+        port,
+        path,
+        Math.min(500, Math.max(1, deadline - Date.now())),
+      );
       if (code !== undefined && (accept === undefined || accept(code))) return code;
       if (Date.now() >= deadline) {
         throw new Error(`http://${host}:${port}${path} not ready after ${timeoutMs} ms`);
       }
-      await new Promise(resolve => setTimeout(resolve, intervalMs));
+      // oxlint-disable-next-line no-await-in-loop -- poll loop: native state is re-read after each sleep, so iterations depend on the previous result
+      await new Promise((done) => setTimeout(done, intervalMs));
     }
   }
 
@@ -511,7 +542,10 @@ export class Operation implements Disposable {
 
   #assertLive(): void {
     if (this.#released || this.#runtime?.closed) {
-      throw new RuntimeError(Status.InvalidHandle, "operation handle is released or its runtime is closed");
+      throw new RuntimeError(
+        Status.InvalidHandle,
+        "operation handle is released or its runtime is closed",
+      );
     }
   }
 
@@ -590,7 +624,12 @@ export class Runtime implements Disposable {
     const library = dlopen(path, SYMBOLS);
     const symbols = library.symbols;
 
-    const info = new Uint32Array([16, EXPECTED_ABI_MAJOR, EXPECTED_ABI_MINOR, options.maxOperations ?? 0]);
+    const info = new Uint32Array([
+      16,
+      EXPECTED_ABI_MAJOR,
+      EXPECTED_ABI_MINOR,
+      options.maxOperations ?? 0,
+    ]);
     const out = new BigUint64Array(1);
     try {
       check(symbols, symbols.yolo_runtime_create(ptr(info), ptr(out)));
@@ -613,17 +652,19 @@ export class Runtime implements Disposable {
 
   buildInfo(): BuildInfo {
     const symbols = this.#live();
-    return callJson<BuildInfo>(symbols, out => symbols.yolo_runtime_build_info(out));
+    return callJson<BuildInfo>(symbols, (out) => symbols.yolo_runtime_build_info(out));
   }
 
   capabilities(): string[] {
     const symbols = this.#live();
-    return callJson<string[]>(symbols, out => symbols.yolo_runtime_capabilities(this.#handle, out));
+    return callJson<string[]>(symbols, (out) =>
+      symbols.yolo_runtime_capabilities(this.#handle, out),
+    );
   }
 
   systemStats(): SystemStats {
     const symbols = this.#live();
-    return callJson<SystemStats>(symbols, out => symbols.yolo_system_stats(this.#handle, out));
+    return callJson<SystemStats>(symbols, (out) => symbols.yolo_system_stats(this.#handle, out));
   }
 
   startBenchmark(iterations: number): Operation {
@@ -640,7 +681,9 @@ export class Runtime implements Disposable {
     const program = cString(options.program);
     const args = cStringArray(options.args ?? [], keep);
     const env = cStringArray(
-      Object.entries(options.env ?? {}).map(([key, value]) => (value === undefined ? key : `${key}=${value}`)),
+      Object.entries(options.env ?? {}).map(([key, value]) =>
+        value === undefined ? key : `${key}=${value}`,
+      ),
       keep,
     );
     const cwd = options.cwd === undefined ? undefined : cString(options.cwd);
@@ -658,14 +701,21 @@ export class Runtime implements Disposable {
     const info = new DataView(new ArrayBuffer(48));
     info.setUint32(0, 48, true);
     info.setBigUint64(40, lossless ? BigInt(budget) : 0n, true);
-    info.setUint32(4, lossless ? 4 : options.stdio === "null" ? 1 : options.stdio === "capture" ? 2 : 0, true);
+    info.setUint32(
+      4,
+      lossless ? 4 : options.stdio === "null" ? 1 : options.stdio === "capture" ? 2 : 0,
+      true,
+    );
     info.setBigUint64(8, BigInt(ptr(program)), true);
     info.setBigUint64(16, BigInt(ptr(args)), true);
     info.setBigUint64(24, BigInt(ptr(env)), true);
     info.setBigUint64(32, cwd === undefined ? 0n : BigInt(ptr(cwd)), true);
 
     const out = new BigUint64Array(1);
-    check(symbols, symbols.yolo_process_spawn(this.#handle, ptr(new Uint8Array(info.buffer)), ptr(out)));
+    check(
+      symbols,
+      symbols.yolo_process_spawn(this.#handle, ptr(new Uint8Array(info.buffer)), ptr(out)),
+    );
     const handle = out[0] as bigint;
     const probe = new Uint32Array(5);
     probe[0] = 20;
@@ -677,12 +727,24 @@ export class Runtime implements Disposable {
    * One HTTP GET on a native worker thread (the event loop is never blocked): the response status
    * code, or `undefined` when nothing answers (yet).
    */
-  async probeHttp(host: string, port: number, path: string, timeoutMs = 500): Promise<number | undefined> {
+  async probeHttp(
+    host: string,
+    port: number,
+    path: string,
+    timeoutMs = 500,
+  ): Promise<number | undefined> {
     const symbols = this.#live();
     const out = new BigUint64Array(1);
     check(
       symbols,
-      symbols.yolo_http_probe_start(this.#handle, ptr(cString(host)), port, ptr(cString(path)), timeoutMs, ptr(out)),
+      symbols.yolo_http_probe_start(
+        this.#handle,
+        ptr(cString(host)),
+        port,
+        ptr(cString(path)),
+        timeoutMs,
+        ptr(out),
+      ),
     );
     const operation = new Operation(symbols, out[0] as bigint, this);
     try {
@@ -692,7 +754,8 @@ export class Runtime implements Disposable {
           const { status } = JSON.parse(result) as { status: number | null };
           return status ?? undefined;
         }
-        await new Promise(resolve => setTimeout(resolve, 2));
+        // oxlint-disable-next-line no-await-in-loop -- poll loop: native state is re-read after each sleep, so iterations depend on the previous result
+        await new Promise((done) => setTimeout(done, 2));
       }
     } finally {
       operation.release();
@@ -719,7 +782,8 @@ export class Runtime implements Disposable {
         }
         const result = operation.wait(0);
         if (result !== undefined) return result;
-        await new Promise(resolve => setTimeout(resolve, pollMs));
+        // oxlint-disable-next-line no-await-in-loop -- poll loop: native state is re-read after each sleep, so iterations depend on the previous result
+        await new Promise((done) => setTimeout(done, pollMs));
       }
     } finally {
       operation.release();

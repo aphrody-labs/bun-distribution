@@ -42,6 +42,13 @@ export interface AutoSyncOptions {
   docCacheMaxEntries?: number | undefined;
 }
 
+const positiveLimit = (value: number | undefined, fallback: number): number => {
+  const result = value ?? fallback;
+  if (!Number.isSafeInteger(result) || result < 1)
+    throw new RangeError("Monitor limits must be positive integers");
+  return result;
+};
+
 export class AutoSyncEngine {
   #redis: NativeRedisClient | null = null;
   #db: Database | null = null;
@@ -62,23 +69,17 @@ export class AutoSyncEngine {
     this.#redis = options.redisClient ?? null;
     this.#db = options.sqliteDb ?? null;
 
-    const positive = (value: number | undefined, fallback: number) => {
-      const result = value ?? fallback;
-      if (!Number.isSafeInteger(result) || result < 1)
-        throw new RangeError("Monitor limits must be positive integers");
-      return result;
-    };
-    this.#intervalMs = positive(options.syncIntervalMs, 60000);
-    this.#gitTimeoutMs = positive(options.gitTimeoutMs, 10000);
-    this.#cacheTtlMs = positive(options.docCacheTtlMs, 3600000);
-    this.#cacheMaxEntries = positive(options.docCacheMaxEntries, 128);
+    this.#intervalMs = positiveLimit(options.syncIntervalMs, 60000);
+    this.#gitTimeoutMs = positiveLimit(options.gitTimeoutMs, 10000);
+    this.#cacheTtlMs = positiveLimit(options.docCacheTtlMs, 3600000);
+    this.#cacheMaxEntries = positiveLimit(options.docCacheMaxEntries, 128);
     this.#beaconPaths = options.beaconPaths ?? [
-      join(homedir(), "aphrody", ".coord", "shared", "YOLO-DAEMON-SYNC.json"),
+      join(homedir(), "src", "aphrody", ".coord", "shared", "YOLO-DAEMON-SYNC.json"),
       join(homedir(), ".aphrody", "ai", "yolo-sync.json"),
       join(findRepoRoot(), "var", "yolo-sync.json"),
     ];
     const yoloRoot = findRepoRoot();
-    const aphrodyRoot = join(homedir(), "aphrody");
+    const aphrodyRoot = join(homedir(), "src", "aphrody");
     this.#trackedRepos = options.trackedRepos ?? [
       yoloRoot,
       ...(existsSync(aphrodyRoot) ? [aphrodyRoot] : []),
@@ -151,6 +152,7 @@ export class AutoSyncEngine {
 
     // 1. Inspect Git state across tracked repositories
     for (const repoPath of this.#trackedRepos) {
+      // oxlint-disable-next-line no-await-in-loop -- repos are processed one at a time: each repo's Redis write and index run must finish before the next repo's git state is read
       const state = await this.getGitState(repoPath);
       reposState[state.repo] = state;
 
@@ -159,6 +161,7 @@ export class AutoSyncEngine {
 
       // Stream to Redis
       if (this.#redis?.isConnected) {
+        // oxlint-disable-next-line no-await-in-loop -- sequential per repo: the Redis hash write is ordered before the next repo is processed
         await this.#redis
           .hset(`yolo:sync:git:${state.repo}`, {
             branch: state.branch,
@@ -173,6 +176,7 @@ export class AutoSyncEngine {
       // 2. Incremental codebase indexer if commit changed or forced
       if (!state.error && (commitChanged || forceIndex) && this.#redis?.isConnected) {
         try {
+          // oxlint-disable-next-line no-await-in-loop -- indexing is sequential per repo: it updates shared Redis keys and the lastCommits cache in order
           const indexRes = await indexCodebaseToRedis(repoPath, state.commit, this.#redis);
           totalIndexed += indexRes.updatedFiles;
           this.#lastCommits.set(resolve(repoPath), state.commit);

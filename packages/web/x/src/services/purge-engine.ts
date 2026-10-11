@@ -276,6 +276,7 @@ export class RateGovernor {
       const { waitMs, reason: why } = this.delayBeforeNext();
       if (waitMs <= 0) return reason;
       reason = why;
+      // oxlint-disable-next-line no-await-in-loop -- attente de quota : chaque re-vérification du budget suit le délai précédent
       await this.sleepFn(waitMs, signal);
     }
     return reason;
@@ -370,6 +371,7 @@ export async function readWithBackoff<T>(
 
   for (;;) {
     try {
+      // oxlint-disable-next-line no-await-in-loop -- réessai séquentiel : la tentative suivante dépend de l'échec de celle-ci
       return await fetchPage();
     } catch (err) {
       // A dead session or a gone resource will not improve with waiting.
@@ -384,6 +386,7 @@ export async function readWithBackoff<T>(
           `[read] ${d.label}: rate limit — pause ${Math.round(waitMs / 1000)}s ` +
             `(${waits}/${maxWaits})`,
         );
+        // oxlint-disable-next-line no-await-in-loop -- pause de limitation de débit avant le réessai séquentiel
         await d.sleep(waitMs, d.signal);
         if (d.signal?.aborted) throw err;
         continue;
@@ -392,6 +395,7 @@ export async function readWithBackoff<T>(
       if (++retries > maxRetries) throw err;
       const backoff = 2_000 * 2 ** (retries - 1);
       d.log(`[read] ${d.label}: ${errorMessage(err)} — retry dans ${backoff}ms`);
+      // oxlint-disable-next-line no-await-in-loop -- recul exponentiel séquentiel entre deux réessais
       await d.sleep(backoff, d.signal);
       if (d.signal?.aborted) throw err;
     }
@@ -485,6 +489,7 @@ export async function runMutationQueue<T extends { id: string }>(
       break;
     }
 
+    // oxlint-disable-next-line no-await-in-loop -- purge séquentielle : chaque mutation attend l'autorisation du budget précédent
     const waited = await d.governor.acquire(d.signal);
     if (d.signal?.aborted) {
       stoppedBy = "aborted";
@@ -502,6 +507,7 @@ export async function runMutationQueue<T extends { id: string }>(
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
+        // oxlint-disable-next-line no-await-in-loop -- mutation sur l'API X : une seule à la fois pour respecter le quota et l'ordre de la file
         await d.mutate(item);
         d.governor.record(d.rateLimit());
         outcome = { status: "done", at: d.now() };
@@ -532,6 +538,7 @@ export async function runMutationQueue<T extends { id: string }>(
           }
           const waitMs = d.governor.penalise(d.rateLimit());
           d.log(`[purge] rate limit sur ${name} — pause ${Math.round(waitMs / 1000)}s`);
+          // oxlint-disable-next-line no-await-in-loop -- pause de limitation de débit avant de retenter la même cible
           await d.sleep(waitMs, d.signal);
           if (d.signal?.aborted) break;
           attempt--; // a throttle is not a strike against the target
@@ -545,6 +552,7 @@ export async function runMutationQueue<T extends { id: string }>(
 
         const backoff = 2_000 * 2 ** attempt;
         d.log(`[purge] ${name}: ${errorMessage(err)} — retry dans ${backoff}ms`);
+        // oxlint-disable-next-line no-await-in-loop -- recul exponentiel séquentiel entre deux tentatives de la même cible
         await d.sleep(backoff, d.signal);
       }
     }

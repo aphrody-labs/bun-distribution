@@ -33,8 +33,12 @@ if (!sourceRoot) {
   );
 }
 const MW = sourceRoot;
-for (const bundle of ["all.ts", "aphrody-components.ts", "aphrody-labs.ts"]) {
-  if (!(await Bun.file(join(MW, bundle)).exists())) {
+const BUNDLES = ["all.ts", "aphrody-components.ts", "aphrody-labs.ts"];
+const bundlePresent = await Promise.all(
+  BUNDLES.map((bundle) => Bun.file(join(MW, bundle)).exists()),
+);
+for (const [index, bundle] of BUNDLES.entries()) {
+  if (!bundlePresent[index]) {
     throw new Error(`Material Web source checkout is missing ${bundle}: ${MW}`);
   }
 }
@@ -90,8 +94,10 @@ async function walk(dir: string): Promise<void> {
     const st = statSync(full);
     if (st.isDirectory()) {
       if (SKIP_DIRS.has(name)) continue;
+      // oxlint-disable-next-line no-await-in-loop -- depth-first walk in readdir order: the defs lists it appends to feed the generated output order
       await walk(full);
     } else if (name.endsWith(".ts") && !name.endsWith("_test.ts") && !name.endsWith(".d.ts")) {
+      // oxlint-disable-next-line no-await-in-loop -- files are registered in walk order (defs lists feed the generated output), so reads stay sequential
       const src = await Bun.file(full).text();
       let m;
       RE.lastIndex = 0;
@@ -111,8 +117,8 @@ await walk(MW);
 // Tags re-exported by the three bundles must import from the bundled entry
 // path. Build the set of canonical relative paths from those bundles.
 const bundleImports = new Set<string>();
-for (const bundle of ["all.ts", "aphrody-components.ts", "aphrody-labs.ts"]) {
-  const src = await Bun.file(join(MW, bundle)).text();
+const bundleSources = await Promise.all(BUNDLES.map((bundle) => Bun.file(join(MW, bundle)).text()));
+for (const src of bundleSources) {
   for (const m of src.matchAll(/from ['"]\.\/([^'"]+\.js)['"]/g)) bundleImports.add(m[1]);
 }
 
@@ -323,6 +329,7 @@ const indexLines = [
   "",
 ];
 // Group elements that share the same import file (e.g. several tags per module is rare; one file = one element here).
+const writes: Promise<number>[] = [];
 for (const [group, items] of [...groups.entries()].toSorted()) {
   const fileName = `${group}.ts`;
   const lines = [
@@ -347,9 +354,10 @@ for (const [group, items] of [...groups.entries()].toSorted()) {
     lines.push(`});`);
     lines.push("");
   }
-  await Bun.write(join(OUT_DIR, fileName), lines.join("\n"));
+  writes.push(Bun.write(join(OUT_DIR, fileName), lines.join("\n")));
   indexLines.push(`export * from './wrappers/${group}.js';`.replace("./wrappers", "./"));
 }
+await Promise.all(writes);
 
 // index.ts at package root re-exports all groups.
 const idx = [HEADER];

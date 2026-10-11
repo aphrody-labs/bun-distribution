@@ -136,6 +136,7 @@ describe("m3 compile", () => {
     const decoder = new TextDecoder();
     let text = "";
     while (!/m3: \S+/.test(text)) {
+      // oxlint-disable-next-line no-await-in-loop -- lecture séquentielle d'un flux stdout jusqu'à la ligne d'origine : chaque chunk dépend du précédent
       const { value, done } = await reader.read();
       if (done) break;
       text += decoder.decode(value);

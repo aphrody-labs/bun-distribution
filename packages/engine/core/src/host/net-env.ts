@@ -6,6 +6,8 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { buildFiche, syncFicheWith, writeMemory } from "./fiche.ts";
+import { collectFacts, renderFacts, setKeys, staticUpdates } from "./net-facts.ts";
 import { ufwRules, type Tunnel } from "./wireguard.ts";
 
 export const BEGIN =
@@ -51,6 +53,7 @@ export function renderNetMap(
   member: string,
   probes?: Probe[],
   now = new Date(),
+  live: string[] = [],
 ): string {
   const lines = [BEGIN, `NET_MAP_GENERATED=${now.toISOString()}`, `NET_SELF=${member}`];
   lines.push(`NET_INTERFACE=${t.interface}`, `NET_WINDOWS_TUNNEL=${t.windowsTunnelName}`);
@@ -80,7 +83,7 @@ export function renderNetMap(
       lines.push(`NET_STATUS_${key(p.name)}=${p.ok ? "up" : "down"} ${p.target} ${p.ms}ms`);
     lines.push(`NET_STATUS_UP=${probes.filter((p) => p.ok).length}/${probes.length}`);
   }
-  lines.push(END);
+  lines.push(...live, END);
   return lines.join("\n");
 }
 
@@ -93,7 +96,7 @@ export function mergeNetMap(text: string, block: string): string {
   return `${text.replace(/\s*$/, "")}\n\n${block}\n`;
 }
 
-async function tcp(host: string, port: number, timeoutMs: number): Promise<boolean> {
+export async function tcp(host: string, port: number, timeoutMs: number): Promise<boolean> {
   return await new Promise<boolean>((resolve) => {
     const timer = setTimeout(() => resolve(false), timeoutMs);
     Bun.connect({
@@ -158,7 +161,26 @@ export function captureSshConfig(
   return re.test(envText) ? envText.replace(re, () => line) : `${envText.trimEnd()}\n${line}\n`;
 }
 
-/** `net-env [--member M] [--probe] [--write [--ssh-config]] [--file F]`: prints the block unless --write. */
+/** Send only the NET_LIVE_* lines (no secret) to `host` over SSH, atomically, for the Discord synchronisation of the hub. */
+export async function pushLive(lines: string[], host: string, path: string): Promise<boolean> {
+  const proc = Bun.spawn(
+    [
+      "ssh",
+      "-o",
+      "BatchMode=yes",
+      "-o",
+      "ConnectTimeout=8",
+      host,
+      `cat > ${path}.tmp && mv ${path}.tmp ${path}`,
+    ],
+    { stdin: "pipe", stdout: "ignore", stderr: "ignore", timeout: 20_000 },
+  );
+  proc.stdin.write(lines.filter((l) => l.startsWith("NET_LIVE_")).join("\n") + "\n");
+  await proc.stdin.end();
+  return (await proc.exited) === 0;
+}
+
+/** `net-env [--member M] [--probe] [--facts] [--write [--ssh-config]] [--push HOST [--push-path P]] [--fiche HOST [--fiche-memory F]] [--file F]`: prints the block unless --write. */
 export async function netEnvMain(t: Tunnel, args: string[]): Promise<void> {
   const value = (name: string) => {
     const at = args.indexOf(`--${name}`);
@@ -168,14 +190,38 @@ export async function netEnvMain(t: Tunnel, args: string[]): Promise<void> {
   const member = value("member") ?? "aphro-pc";
   if (!addressOf(t, member)) throw new Error(`unknown member ${member}`);
   const probes = args.includes("--probe") ? await probeNetwork(t, member) : undefined;
-  const block = renderNetMap(t, member, probes);
+  const collected = args.includes("--facts") ? await collectFacts(t, member, tcp) : undefined;
+  const block = renderNetMap(
+    t,
+    member,
+    probes,
+    new Date(),
+    collected ? renderFacts(collected) : [],
+  );
   if (!args.includes("--write")) console.log(block);
   else {
     const text = existsSync(file) ? readFileSync(file, "utf8") : "";
-    writeFileSync(file, mergeNetMap(text, block));
+    const merged = mergeNetMap(text, block);
+    writeFileSync(file, collected ? setKeys(merged, staticUpdates(collected.publicIps)) : merged);
     console.log(
       `net-env: ${file} updated${probes ? ` (${probes.filter((p) => p.ok).length}/${probes.length} up)` : ""}`,
     );
+  }
+  const pushHost = value("push");
+  if (pushHost && collected) {
+    const ok = await pushLive(
+      renderFacts(collected),
+      pushHost,
+      value("push-path") ?? "/var/lib/aphrody-discord-sync/net-live.env",
+    );
+    console.log(`push: ${pushHost} ${ok ? "ok" : "failed"}`);
+  }
+  const ficheHost = value("fiche");
+  if (ficheHost && args.includes("--write")) {
+    const merged = await syncFicheWith(ficheHost, await buildFiche(process.cwd(), file));
+    const memory = value("fiche-memory");
+    if (merged && memory) writeMemory(memory, merged);
+    console.log(`fiche: ${ficheHost} ${merged ? "ok" : "failed"}`);
   }
   if (args.includes("--ssh-config") && args.includes("--write")) {
     const before = readFileSync(file, "utf8");

@@ -3,7 +3,7 @@
 // Honours `prefers-reduced-motion` (first frame only). The atlas URL is a prop so that a surface
 // chooses how it ships the 1.5 MB sheet (`@aphrody/identity/atlas`, an asset URL, a CDN).
 import { type CSSProperties, useEffect, useState } from "react";
-import { frameAt, PET, type PetAnimation, spriteStyle } from "./pet";
+import { frameAt, PET, type PetAnimation, type PetTrack, spriteStyle } from "./pet";
 
 export interface AphrodyPetProps {
   /** Atlas image URL, e.g. `PET_ATLAS_URL` from `@aphrody/identity/atlas`. */
@@ -23,13 +23,26 @@ function prefersReducedMotion(): boolean {
   return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-export function AphrodyPet({ atlasUrl, animation = "idle", height, loop = true, label, className, style }: AphrodyPetProps) {
-  const track = PET.tracks[animation] ?? PET.tracks.idle;
+export function AphrodyPet({ animation = "idle", ...props }: AphrodyPetProps) {
+  const name = PET.tracks[animation] ? animation : "idle";
+  const track = PET.tracks[name];
   if (!track) throw new Error("bundled pet without an idle track");
+  // Keyed by track name: a track change remounts the clock, so it restarts from 0 without a state reset in an effect.
+  return <PetSprite key={name} track={track} {...props} />;
+}
+
+function PetSprite({
+  atlasUrl,
+  track,
+  height,
+  loop = true,
+  label,
+  className,
+  style,
+}: Omit<AphrodyPetProps, "animation"> & { track: PetTrack }) {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
-    setElapsed(0);
     if (track.kind === "still" || prefersReducedMotion()) return;
     const start = performance.now();
     let handle = requestAnimationFrame(function tick(now) {
@@ -43,10 +56,16 @@ export function AphrodyPet({ atlasUrl, animation = "idle", height, loop = true, 
   const scale = (height ?? PET.atlas.cellHeight) / PET.atlas.cellHeight;
   return (
     <div
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- sprite décoratif en background CSS : un <img> imposerait un src et un rendu différents
       role="img"
       aria-label={label ?? PET.displayName}
       className={className}
-      style={{ backgroundImage: `url("${atlasUrl}")`, backgroundRepeat: "no-repeat", ...spriteStyle(frame, scale), ...style }}
+      style={{
+        backgroundImage: `url("${atlasUrl}")`,
+        backgroundRepeat: "no-repeat",
+        ...spriteStyle(frame, scale),
+        ...style,
+      }}
     />
   );
 }

@@ -4,6 +4,7 @@ import { mkdtemp, open, readdir, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  hasFailedJob,
   publishSyncReceipts,
   syncPass,
   type SyncConfig,
@@ -290,6 +291,26 @@ test("reviewed indexing requires an intact managed generation rather than prior 
   expect(calls).toBe(0);
   expect(next["drive-retrieval"]?.ok).toBe(false);
 });
+test("a job parked on review is waiting, not failed; a real failure clears the wait and fails the timer", async () => {
+  const waiting = { observedAt: "2026-10-09T00:00:00.000Z", report: { review_blocked: 1 } };
+  expect(
+    hasFailedJob({
+      drive: { ok: true, failures: 0, nextAt: 0 },
+      "drive-replica": { ok: false, failures: 0, nextAt: 0, waiting },
+    }),
+  ).toBe(false);
+  const next = await syncPass(
+    { ...config, jobs: ["drive"] } as SyncConfig,
+    { drive: { ok: false, failures: 0, nextAt: 0, waiting } },
+    async () => {
+      throw new Error("Drive unavailable");
+    },
+    1000,
+  );
+  expect(next.drive?.waiting).toBeUndefined();
+  expect(hasFailedJob(next)).toBe(true);
+});
+
 test("remote receipts use native Bun atomic writes and expose only whitelisted public metadata", async () => {
   const path = await directory();
   const next: SyncState = {

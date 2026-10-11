@@ -12,6 +12,13 @@ import {
   reachable,
   renderNetMap,
 } from "../src/host/net-env.ts";
+import {
+  collectFacts,
+  parseWgDump,
+  renderFacts,
+  setKeys,
+  staticUpdates,
+} from "../src/host/net-facts.ts";
 import { loadTunnel } from "../src/host/wireguard.ts";
 
 const tunnel = loadTunnel(resolve(import.meta.dir, "../../../../tools/config/host"));
@@ -67,4 +74,36 @@ test("the SSH config is mirrored from the live file", () => {
   const replaced = captureSshConfig('A=1\nSSH_CONFIG="old\nvalue"\nB=2\n', file);
   expect(replaced).toContain("B=2");
   expect(replaced).not.toContain("old");
+});
+
+test("wg dump parsing gives public address, handshake age and traffic per member address", () => {
+  const dump = [
+    "priv\tpub\t51821\toff",
+    "k1\t(none)\t92.170.252.46:52103\t10.200.77.10/32\t1000\t10\t20\t25",
+    "k2\t(none)\t(none)\t10.200.77.2/32\t0\t0\t0\t25",
+  ].join("\n");
+  const peers = parseWgDump(dump, 1071);
+  expect(peers[0]).toMatchObject({
+    address: "10.200.77.10",
+    publicIp: "92.170.252.46",
+    handshakeAgeS: 71,
+    rx: 10,
+    tx: 20,
+  });
+  expect(peers[1]).toMatchObject({ address: "10.200.77.2", publicIp: "", handshakeAgeS: null });
+});
+
+test("live facts are rendered without secrets and rewrite the static public addresses", async () => {
+  const hubDump = "i\tp\t1\toff\nk\t(none)\t92.170.252.46:1\t10.200.77.10/32\t100\t1\t2\t25";
+  const runner = async (cmd: string[]) =>
+    cmd.at(-1)?.includes("wg show") ? hubDump : "hostname=h\nufw_rules=3";
+  const c = await collectFacts(tunnel, "aphro-pc", async (_h, p) => p === 22, runner, 130);
+  const lines = renderFacts(c, now).join("\n");
+  expect(lines).toContain("NET_LIVE_OMAR_PUBLIC_IP=92.170.252.46");
+  expect(lines).toContain("NET_LIVE_OMAR_WG_ONLINE=yes");
+  expect(lines).toContain("NET_LIVE_VPS_UFW_RULES=3");
+  expect(lines).toContain("NET_LIVE_DBFR_PORTS_OPEN=22");
+  expect(lines).not.toMatch(/PRIVATE|KEY=/);
+  const text = setKeys("OMAR_PUBLIC_IP=1.1.1.1\nOTHER=x\n", staticUpdates(c.publicIps));
+  expect(text).toBe("OMAR_PUBLIC_IP=92.170.252.46\nOTHER=x\n");
 });

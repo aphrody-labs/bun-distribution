@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
 // Stdio process launcher for the canonical native MCP on the private fleet hub.
-const policy = await Bun.file("/srv/aphrody-lab/fleet-policy.json").json();
+const policy = await Bun.file("/home/ubuntu/apps/lab/fleet-policy.json").json();
 const { hub } = policy;
 if (
   hub.host !== "vps" ||
@@ -9,7 +9,7 @@ if (
   hub.clientTokenFile !== "/home/ubuntu/.aphrody/private/a2a/bearer" ||
   hub.a2a !== "http://127.0.0.1:23888/" ||
   hub.toolHosts?.bun !== "/home/ubuntu/.bun/bin/bun" ||
-  hub.toolHosts?.m3 !== "/srv/aphrody-lab/m3-tool-host.mjs"
+  hub.toolHosts?.m3 !== "/home/ubuntu/apps/lab/m3-tool-host.mjs"
 )
   throw new Error("Unexpected declared fleet hub");
 const child = Bun.spawn([hub.stdio], {

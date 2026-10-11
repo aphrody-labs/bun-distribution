@@ -13,6 +13,7 @@ test("artifact accounting tolerates a file disappearing during a concurrent Carg
   expect(await measureArtifact(path)).toEqual({ bytes: 0, files: 0 });
 });
 afterEach(async () => {
+  // oxlint-disable-next-line no-await-in-loop -- roots are removed one by one at teardown (a failed removal must not hide the others)
   for (const root of roots.splice(0)) await rm(root, { recursive: true });
 });
 async function fixture() {
@@ -53,7 +54,9 @@ test("unignored source build directory and symlink targets survive", async () =>
 test("Git metadata and installed dependency trees are pruned", async () => {
   const root = await fixture();
   for (const parent of ["node_modules/a", ".venv/lib"]) {
+    // oxlint-disable-next-line no-await-in-loop -- fixture trees are created one at a time in order before the clean run
     await mkdir(join(root, parent, "target"), { recursive: true });
+    // oxlint-disable-next-line no-await-in-loop -- fixture trees are created one at a time in order before the clean run
     await writeFile(join(root, parent, "target/keep"), "dependency");
   }
   await cleanWorkspace(root, true);

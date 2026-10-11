@@ -258,6 +258,7 @@ if (import.meta.main) {
   void runSupervisorBenchCli(Bun.argv.slice(2)).then(
     (code) => {
       process.exitCode = code;
+      return;
     },
     (error: unknown) => {
       console.error(`yolo bench: ${error instanceof Error ? error.message : String(error)}`);

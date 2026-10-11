@@ -9,7 +9,7 @@ import { hostPlan } from "../src/host/plan.ts";
 test("migrated host plans resolve repository assets above tools/config", () => {
   const root = hostRepositoryRoot();
   expect(hostRoot()).toBe(join(root, "tools/config/host"));
-  const plan = hostPlan(["aphrody-mcp-http"], { target: "vps" });
+  const plan = hostPlan(["aphrody-mcp-http-dbfr"], { target: "dbfr" });
   const commands = plan.steps.map((step) => step.run).join("\n");
   expect(commands).not.toContain(join(root, "tools/scripts"));
   expect(commands).not.toContain(join(root, "tools/ai.json"));

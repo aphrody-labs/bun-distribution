@@ -9,7 +9,7 @@ use std::time::SystemTime;
 use ipnet::IpNet;
 use serde::Serialize;
 
-use crate::conf::{Config, Peer, Table};
+use crate::conf::{Config, Peer, PeerPatch, Table};
 use crate::{Key, Result};
 
 #[cfg(unix)]
@@ -120,6 +120,11 @@ impl Tunnel {
     /// `wg set <iface> peer ...` (add or update).
     pub fn set_peer(&self, peer: &Peer) -> Result<()> {
         self.inner.set_peer(peer)
+    }
+
+    /// Update only explicitly supplied peer fields, preserving live routes and secret PSKs.
+    pub fn patch_peer(&self, patch: &PeerPatch) -> Result<()> {
+        self.inner.patch_peer(patch)
     }
 
     /// `wg set <iface> peer <key> remove`.

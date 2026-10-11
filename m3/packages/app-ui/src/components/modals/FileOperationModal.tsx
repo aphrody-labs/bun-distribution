@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import {
 	Files,
@@ -9,12 +9,7 @@ import {
 	Copy as CopyIcon,
 	ArrowsLeftRight,
 } from "@phosphor-icons/react";
-import {
-	Dialog,
-	dialogManager,
-	useDialog,
-	type UseDialogProps,
-} from "@aphrody/m3-primitives";
+import { Dialog, dialogManager, useDialog, type UseDialogProps } from "@aphrody/m3-primitives";
 import type { SdPath, File as FileType } from "@aphrody/drive-client";
 import { useLibraryMutation, useLibraryQuery } from "../../contexts/SpacedriveContext";
 import { File, FileStack } from "../../routes/explorer/File";
@@ -29,10 +24,7 @@ interface FileOperationDialogProps {
 
 type ConflictResolution = "Overwrite" | "AutoModifyName" | "Skip" | "Abort";
 
-type DialogPhase =
-	| { type: "form" }
-	| { type: "executing" }
-	| { type: "error"; message: string };
+type DialogPhase = { type: "form" } | { type: "executing" } | { type: "error"; message: string };
 
 export function useFileOperationDialog() {
 	return (options: Omit<FileOperationDialogProps, "id">) => {
@@ -52,29 +44,36 @@ function FileOperationDialog(props: FileOperationDialogProps) {
 	const copyFiles = useLibraryMutation("files.copy");
 
 	// Fetch file info for sources (up to 3 for FileStack)
-	const sourcePaths = props.sources.slice(0, 3).map(s =>
-		"Physical" in s ? s.Physical.path : null
-	).filter((p): p is string => p !== null);
+	const sourcePaths = props.sources
+		.slice(0, 3)
+		.map((s) => ("Physical" in s ? s.Physical.path : null))
+		.filter((p): p is string => p !== null);
 
-	const sourceFileQueries = sourcePaths.map(path =>
-		useLibraryQuery(
-			{ type: "files.by_path", input: { path } },
-			{ enabled: !!path }
-		)
+	// One query per FileStack slot (max 3), called unconditionally to keep the hook order stable
+	const sourceFileQuery0 = useLibraryQuery(
+		{ type: "files.by_path", input: { path: sourcePaths[0] ?? "" } },
+		{ enabled: !!sourcePaths[0] },
+	);
+	const sourceFileQuery1 = useLibraryQuery(
+		{ type: "files.by_path", input: { path: sourcePaths[1] ?? "" } },
+		{ enabled: !!sourcePaths[1] },
+	);
+	const sourceFileQuery2 = useLibraryQuery(
+		{ type: "files.by_path", input: { path: sourcePaths[2] ?? "" } },
+		{ enabled: !!sourcePaths[2] },
 	);
 
-	const sourceFiles = sourceFileQueries
-		.map(q => q.data)
+	const sourceFiles = [sourceFileQuery0, sourceFileQuery1, sourceFileQuery2]
+		.map((q) => q.data)
 		.filter((f): f is FileType => f !== undefined && f !== null);
 
 	// Fetch destination folder info
-	const destPath: string | null = "Physical" in props.destination
-		? props.destination.Physical.path
-		: null;
+	const destPath: string | null =
+		"Physical" in props.destination ? props.destination.Physical.path : null;
 
 	const { data: destFile } = useLibraryQuery(
 		{ type: "files.by_path", input: { path: destPath! } },
-		{ enabled: !!destPath }
+		{ enabled: !!destPath },
 	);
 
 	// Check if any source is the same as destination
@@ -91,10 +90,6 @@ function FileOperationDialog(props: FileOperationDialogProps) {
 			dialogManager.setState(props.id, { open: false });
 		}
 	}, [hasSameSourceDest, props.id]);
-
-	if (hasSameSourceDest) {
-		return null;
-	}
 
 	const handleSubmit = async () => {
 		try {
@@ -127,15 +122,21 @@ function FileOperationDialog(props: FileOperationDialogProps) {
 		dialogManager.setState(props.id, { open: false });
 	};
 
+	// Latest submit handler, read by the keydown listener without re-subscribing on each render
+	const submitRef = useRef(handleSubmit);
+	useEffect(() => {
+		submitRef.current = handleSubmit;
+	});
+
 	// Keyboard shortcuts
 	useEffect(() => {
-		if (phase.type !== "form") return;
+		if (phase.type !== "form" || hasSameSourceDest) return;
 
 		const handleKeyDown = (e: KeyboardEvent) => {
 			// Enter - Submit
 			if (e.key === "Enter" && !e.shiftKey) {
 				e.preventDefault();
-				handleSubmit();
+				submitRef.current();
 				return;
 			}
 
@@ -173,7 +174,11 @@ function FileOperationDialog(props: FileOperationDialogProps) {
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [phase.type, operation, conflictResolution]);
+	}, [phase.type, hasSameSourceDest]);
+
+	if (hasSameSourceDest) {
+		return null;
+	}
 
 	// Executing state
 	if (phase.type === "executing") {
@@ -396,4 +401,3 @@ function getFileName(path: SdPath): string {
 
 	return "Unknown";
 }
-

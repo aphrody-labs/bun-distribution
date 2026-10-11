@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "root": "/srv/aphrody-lab",
+  "root": "/home/ubuntu/apps/lab",
   "aphrody": "/home/ubuntu/.local/bin/aphrody",
-  "google": "/srv/aphrody-lab/google-owner.mjs",
+  "yolo": "/home/ubuntu/apps/lab/google-owner.mjs",
   "receiptRoot": "/home/ubuntu/.aphrody/automation/drive-vps",
   "drive": {
     "home": "/home/ubuntu/.aphrody/workspaces/dbfr",
@@ -34,16 +34,16 @@
   },
   "replica": {
     "incoming": "/home/ubuntu/.aphrody/drive-sync/incoming-markdown",
-    "contract": "/srv/aphrody-lab/drive-sync-contract.json",
+    "contract": "/home/ubuntu/apps/lab/drive-sync-contract.json",
     "directory": "/home/ubuntu/.aphrody/workspaces/dbfr/incoming/drive-cloud",
     "stateRoot": "/home/ubuntu/.aphrody",
-    "shenronRoot": "/srv/shenron/shared/agent-home",
+    "shenronRoot": "/home/ubuntu/apps/shenron/shared/agent-home",
     "intervalSeconds": 300
   },
   "jobs": ["drive", "drive-review", "drive-replica", "drive-retrieval"],
   "publication": {
     "host": "local",
-    "directory": "/srv/aphrody-lab/state",
+    "directory": "/home/ubuntu/apps/lab/state",
     "receiptName": "agent-sync-vps-status.json"
   }
 }

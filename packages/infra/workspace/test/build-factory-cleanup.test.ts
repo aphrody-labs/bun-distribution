@@ -258,7 +258,11 @@ linuxTest("resource markers cannot impersonate an inherited heavy lock", async (
   expect(forged.exitCode).toBe(1);
   const unrelated = Bun.spawn(
     ["flock", "--close", f.config.lockPath, "bash", "-c", "printf READY; cat >/dev/null"],
-    { windowsHide: true, stdin: "pipe", stdout: "pipe" },
+    {
+      windowsHide: true,
+      stdin: "pipe",
+      stdout: "pipe",
+    },
   );
   const reader = unrelated.stdout.getReader();
   await reader.read();
@@ -275,7 +279,10 @@ linuxTest("resource markers cannot impersonate an inherited heavy lock", async (
   }
   const inherited = Bun.spawnSync(
     ["flock", "--close", f.config.lockPath, process.execPath, owner, "--held"],
-    { windowsHide: true, env },
+    {
+      windowsHide: true,
+      env,
+    },
   );
   expect(inherited.exitCode).toBe(0);
 });
@@ -393,7 +400,7 @@ await withFactoryResource(${JSON.stringify(config)}, async () => {
 );
 
 test("process references distinguish retired targets from live sibling prefixes", () => {
-  const path = "/srv/aphrody-build/cache/cargo/aphrody";
+  const path = "/home/ubuntu/build/cache/cargo/aphrody";
   for (const value of [
     path,
     path + "/debug",
@@ -594,6 +601,50 @@ await Bun.write(${JSON.stringify(receipt)}, JSON.stringify({tmp:process.env.TMPD
     }
   },
 );
+
+linuxTest("shared compiler daemon left on a retired cache root is replaced", async () => {
+  const f = fixture();
+  mkdirSync(posix.join(f.root, "locks"), { recursive: true });
+  f.config.cleanup = {
+    transientRoot: f.transient,
+    privilegeBinary: "/usr/bin/sudo",
+    retiredOutputs: [],
+  };
+  const binary = posix.join(f.root, "sccache-fixture");
+  const calls = posix.join(f.root, "calls.log");
+  const state = posix.join(f.root, "server-cache");
+  writeFileSync(state, "/srv/aphrody-build/cache/sccache");
+  writeFileSync(
+    binary,
+    `#!/usr/bin/env bun
+import { appendFileSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+const arg = process.argv[2];
+appendFileSync(${JSON.stringify(calls)}, arg + "\\n");
+const state = ${JSON.stringify(state)};
+if (arg === "--start-server") {
+  if (existsSync(state)) process.exit(2);
+  writeFileSync(state, process.env.SCCACHE_DIR);
+} else if (arg === "--show-stats") {
+  console.log('Cache location                  Local disk: ' + JSON.stringify(readFileSync(state, "utf8")));
+} else if (arg === "--stop-server") rmSync(state);
+`,
+  );
+  chmodSync(binary, 0o700);
+  await withFactoryResource(f.config, () => prewarmFactorySccache(f.config, binary), f.docker);
+  expect(readFileSync(calls, "utf8").trim().split("\n")).toEqual([
+    "--start-server",
+    "--show-stats",
+    "--stop-server",
+    "--start-server",
+  ]);
+  expect(readFileSync(state, "utf8")).toBe(posix.join(f.root, "cache/sccache"));
+  writeFileSync(calls, "");
+  await withFactoryResource(f.config, () => prewarmFactorySccache(f.config, binary), f.docker);
+  expect(readFileSync(calls, "utf8").trim().split("\n")).toEqual([
+    "--start-server",
+    "--show-stats",
+  ]);
+});
 
 linuxTest(
   "direct resource CLI passes the acquired job environment to its compiler command",

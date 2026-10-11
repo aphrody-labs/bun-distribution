@@ -11,6 +11,9 @@ export const desktopRoutes = {
   settings: "/settings",
 } as const;
 
+/** Destinations served by the in-browser Rust WebAssembly backend; absent from the Tauri app. */
+export const browserOnlyRoutes = { terminal: "/terminal" } as const;
+
 /**
  * Kit surfaces (crates/ui/app/src/kits.rs): shown in the navigation only when the kit answers,
  * and the admin surface only once the team's access pack is imported. Deep links

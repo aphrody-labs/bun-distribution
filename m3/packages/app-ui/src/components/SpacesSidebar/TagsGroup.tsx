@@ -1,17 +1,14 @@
-import {CaretRight, Plus, Tag as TagIcon, Trash} from '@phosphor-icons/react';
-import type {SearchTagsInput, SearchTagsOutput, Tag} from '@aphrody/drive-client';
-import clsx from 'clsx';
-import {useState} from 'react';
-import {useLocation, useNavigate} from 'react-router-dom';
-import {usePlatform} from '../../contexts/PlatformContext';
-import {
-	useLibraryMutation,
-	useNormalizedQuery
-} from '../../contexts/SpacedriveContext';
-import {useContextMenu} from '../../hooks/useContextMenu';
-import {useRefetchTagQueries} from '../../hooks/useRefetchTagQueries';
-import {useExplorer} from '../../routes/explorer/context';
-import {GroupHeader} from './GroupHeader';
+import { CaretRight, Plus, Tag as TagIcon, Trash } from "@phosphor-icons/react";
+import type { SearchTagsInput, SearchTagsOutput, Tag } from "@aphrody/drive-client";
+import { clsx } from "clsx";
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { usePlatform } from "../../contexts/PlatformContext";
+import { useLibraryMutation, useNormalizedQuery } from "../../contexts/SpacedriveContext";
+import { useContextMenu } from "../../hooks/useContextMenu";
+import { useRefetchTagQueries } from "../../hooks/useRefetchTagQueries";
+import { useExplorer } from "../../routes/explorer/context";
+import { GroupHeader } from "./GroupHeader";
 
 interface TagsGroupProps {
 	isCollapsed: boolean;
@@ -25,15 +22,15 @@ interface TagItemProps {
 	depth?: number;
 }
 
-function TagItem({tag, depth = 0}: TagItemProps) {
+function TagItem({ tag, depth = 0 }: TagItemProps) {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const platform = usePlatform();
-	const {loadPreferencesForSpaceItem} = useExplorer();
+	const { loadPreferencesForSpaceItem } = useExplorer();
 	const [isExpanded, setIsExpanded] = useState(false);
 	const refetchTagQueries = useRefetchTagQueries();
-	const deleteTag = useLibraryMutation('tags.delete', {
-		onSuccess: refetchTagQueries
+	const deleteTag = useLibraryMutation("tags.delete", {
+		onSuccess: refetchTagQueries,
 	});
 
 	const children: Tag[] = [];
@@ -49,26 +46,26 @@ function TagItem({tag, depth = 0}: TagItemProps) {
 		items: [
 			{
 				icon: Trash,
-				label: 'Delete Tag',
-				variant: 'danger',
+				label: "Delete Tag",
+				variant: "danger",
 				onClick: () => {
 					platform.confirm(
-						`Delete tag "${tag.canonical_name || tag.display_name || 'this tag'}"? This will remove it from all files.`,
+						`Delete tag "${tag.canonical_name || tag.display_name || "this tag"}"? This will remove it from all files.`,
 						async (confirmed) => {
 							if (!confirmed) return;
 							try {
-								await deleteTag.mutateAsync({tag_id: tag.id});
+								await deleteTag.mutateAsync({ tag_id: tag.id });
 								if (isActive) {
-									navigate('/');
+									navigate("/");
 								}
 							} catch (err) {
-								console.error('Failed to delete tag:', err);
+								console.error("Failed to delete tag:", err);
 							}
-						}
+						},
 					);
-				}
-			}
-		]
+				},
+			},
+		],
 	});
 
 	return (
@@ -77,23 +74,20 @@ function TagItem({tag, depth = 0}: TagItemProps) {
 				onClick={handleClick}
 				onContextMenu={contextMenu.show}
 				className={clsx(
-					'flex w-full cursor-pointer items-center gap-2 rounded-small px-2 py-1.5 text-label-large font-medium transition-colors',
+					"flex w-full cursor-pointer items-center gap-2 rounded-small px-2 py-1.5 text-label-large font-medium transition-colors",
 					isActive
-						? 'bg-secondary-container/30 text-on-surface'
-						: 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface',
-					tag.privacy_level === 'Archive' && 'opacity-50',
-					tag.privacy_level === 'Hidden' && 'opacity-25'
+						? "bg-secondary-container/30 text-on-surface"
+						: "text-on-surface-variant hover:bg-surface-container hover:text-on-surface",
+					tag.privacy_level === "Archive" && "opacity-50",
+					tag.privacy_level === "Hidden" && "opacity-25",
 				)}
-				style={{paddingLeft: `${8 + depth * 12}px`}}
+				style={{ paddingLeft: `${8 + depth * 12}px` }}
 			>
 				{hasChildren && (
 					<CaretRight
 						size={10}
 						weight="bold"
-						className={clsx(
-							'flex-shrink-0 transition-transform',
-							isExpanded && 'rotate-90'
-						)}
+						className={clsx("flex-shrink-0 transition-transform", isExpanded && "rotate-90")}
 						onClick={(e) => {
 							e.stopPropagation();
 							setIsExpanded(!isExpanded);
@@ -102,27 +96,19 @@ function TagItem({tag, depth = 0}: TagItemProps) {
 				)}
 
 				{tag.icon ? (
-					<TagIcon
-						size={16}
-						weight="bold"
-						style={{color: tag.color || '#3B82F6'}}
-					/>
+					<TagIcon size={16} weight="bold" style={{ color: tag.color || "#3B82F6" }} />
 				) : (
 					<span
 						className="size-2 flex-shrink-0 rounded-full"
-						style={{backgroundColor: tag.color || '#3B82F6'}}
+						style={{ backgroundColor: tag.color || "#3B82F6" }}
 					/>
 				)}
 
-				<span className="flex-1 truncate text-left">
-					{tag.canonical_name}
-				</span>
+				<span className="flex-1 truncate text-left">{tag.canonical_name}</span>
 			</button>
 
 			{isExpanded &&
-				children.map((child) => (
-					<TagItem key={child.id} tag={child} depth={depth + 1} />
-				))}
+				children.map((child) => <TagItem key={child.id} tag={child} depth={depth + 1} />)}
 		</div>
 	);
 }
@@ -131,25 +117,34 @@ export function TagsGroup({
 	isCollapsed,
 	onToggle,
 	sortableAttributes,
-	sortableListeners
+	sortableListeners,
 }: TagsGroupProps) {
 	const navigate = useNavigate();
-	const {loadPreferencesForSpaceItem} = useExplorer();
+	const { loadPreferencesForSpaceItem } = useExplorer();
 	const [isCreating, setIsCreating] = useState(false);
-	const [newTagName, setNewTagName] = useState('');
+	const [newTagName, setNewTagName] = useState("");
 
 	const refetchTagQueries = useRefetchTagQueries();
-	const createTag = useLibraryMutation('tags.create', {
-		onSuccess: refetchTagQueries
+	const createTag = useLibraryMutation("tags.create", {
+		onSuccess: refetchTagQueries,
 	});
 
-	const {data: tags = [], isLoading} = useNormalizedQuery<SearchTagsInput, SearchTagsOutput, Tag[]>({
-		query: 'tags.search',
+	const { data: tags = [], isLoading } = useNormalizedQuery<
+		SearchTagsInput,
+		SearchTagsOutput,
+		Tag[]
+	>({
+		query: "tags.search",
 		input: {
-			query: '', namespace: null, tag_type: null, include_archived: null,
-			limit: null, resolve_ambiguous: null, context_tag_ids: null,
+			query: "",
+			namespace: null,
+			tag_type: null,
+			include_archived: null,
+			limit: null,
+			resolve_ambiguous: null,
+			context_tag_ids: null,
 		},
-		resourceType: 'tag',
+		resourceType: "tag",
 		select: (data) => data.tags.map((result) => result.tag),
 	});
 
@@ -167,14 +162,14 @@ export function TagsGroup({
 				tag_type: null,
 				color: `#${Math.floor(Math.random() * 16777215)
 					.toString(16)
-					.padStart(6, '0')}`,
+					.padStart(6, "0")}`,
 				icon: null,
 				description: null,
 				is_organizational_anchor: null,
 				privacy_level: null,
 				search_weight: null,
 				attributes: null,
-				apply_to: null
+				apply_to: null,
 			});
 
 			if (result?.tag_id) {
@@ -182,10 +177,10 @@ export function TagsGroup({
 				navigate(`/tag/${result.tag_id}`);
 			}
 
-			setNewTagName('');
+			setNewTagName("");
 			setIsCreating(false);
 		} catch (err) {
-			console.error('Failed to create tag:', err);
+			console.error("Failed to create tag:", err);
 		}
 	};
 
@@ -198,28 +193,20 @@ export function TagsGroup({
 				sortableAttributes={sortableAttributes}
 				sortableListeners={sortableListeners}
 				rightComponent={
-					tags.length > 0 && (
-						<span className="text-outline ml-auto">
-							{tags.length}
-						</span>
-					)
+					tags.length > 0 && <span className="text-outline ml-auto">{tags.length}</span>
 				}
 			/>
 
 			{!isCollapsed && (
 				<div className="space-y-0.5">
 					{isLoading ? (
-						<div className="text-outline px-2 py-1 text-body-small">
-							Loading...
-						</div>
+						<div className="text-outline px-2 py-1 text-body-small">Loading...</div>
 					) : tags.length === 0 ? (
 						<div className="text-outline px-2 py-1 text-body-small">
 							No tags: create one to group files
 						</div>
 					) : (
-						tags.map((tag: Tag) => (
-							<TagItem key={tag.id} tag={tag} />
-						))
+						tags.map((tag: Tag) => <TagItem key={tag.id} tag={tag} />)
 					)}
 
 					{isCreating ? (
@@ -229,11 +216,11 @@ export function TagsGroup({
 								value={newTagName}
 								onChange={(e) => setNewTagName(e.target.value)}
 								onKeyDown={(e) => {
-									if (e.key === 'Enter') {
+									if (e.key === "Enter") {
 										handleCreateTag();
-									} else if (e.key === 'Escape') {
+									} else if (e.key === "Escape") {
 										setIsCreating(false);
-										setNewTagName('');
+										setNewTagName("");
 									}
 								}}
 								onBlur={() => {
@@ -242,7 +229,7 @@ export function TagsGroup({
 									}
 								}}
 								placeholder="Tag name..."
-								
+
 								className="bg-surface-container border-outline-variant text-on-surface placeholder:text-outline focus:border-primary w-full rounded-small border px-2 py-1 text-body-small outline-none"
 							/>
 						</div>

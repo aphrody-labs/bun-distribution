@@ -1,9 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # Google Fonts edge proxy behind nginx on cdn.aphrody.com (nginx/aphrody/cdn.aphrody.com.conf).
-# Bun source of @aphrody/google pinned in /srv/aphrody-cdn/src (packages/google/google/src and packages/engine/core/src/server
-# only, no dependency to install), a `git archive` of the revision in /srv/aphrody-cdn/src/REVISION. Upgrade with:
-#   git -C /srv/aphrody-build/workspaces/aphrody archive <sha> packages/google/google/src packages/engine/core/src/server | tar -x -C /srv/aphrody-cdn/src
-# The cache lives in /srv/aphrody-cdn/google.
+# Bun source of @aphrody/google pinned in /home/ubuntu/apps/cdn/src (packages/google/google/src and packages/engine/core/src/server
+# only, no dependency to install), a `git archive` of the revision in /home/ubuntu/apps/cdn/src/REVISION. Upgrade with:
+#   git -C /home/ubuntu/src/aphrody archive <sha> packages/google/google/src packages/engine/core/src/server | tar -x -C /home/ubuntu/apps/cdn/src
+# The cache lives in /home/ubuntu/apps/cdn/google. `--static` serves the asset CDN release tree
+# (`scripts/tools/infra/cdn.ts publish`, /home/ubuntu/apps/cdn/current) under /h/ and /s/<scope>/, then the
+# Material Symbols release (`bun run cdn publish` of aphrody-labs/material-design-icons, branch aphrody,
+# /home/ubuntu/apps/cdn/symbols/current, asset-catalog.json `releases`).
 [Unit]
 Description=Aphrody Google Fonts edge proxy (cdn.aphrody.com)
 After=network-online.target
@@ -13,8 +16,8 @@ Wants=network-online.target
 Type=simple
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/srv/aphrody-cdn/src
-ExecStart=/home/ubuntu/.local/bin/bun /srv/aphrody-cdn/src/packages/google/google/src/fonts-serve.ts --port 8796 --cache /srv/aphrody-cdn/google --origin https://cdn.aphrody.com
+WorkingDirectory=/home/ubuntu/apps/cdn/src
+ExecStart=/home/ubuntu/.local/bin/bun /home/ubuntu/apps/cdn/src/packages/google/google/src/fonts-serve.ts --port 8796 --cache /home/ubuntu/apps/cdn/google --origin https://cdn.aphrody.com --static /home/ubuntu/apps/cdn/current --static /home/ubuntu/apps/cdn/symbols/current
 Restart=always
 MemoryHigh=128M
 MemoryMax=256M
@@ -29,7 +32,7 @@ ProtectControlGroups=true
 RestrictSUIDSGID=true
 LockPersonality=true
 MemoryDenyWriteExecute=false
-ReadWritePaths=/srv/aphrody-cdn/google
+ReadWritePaths=/home/ubuntu/apps/cdn/google
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=aphrody-fonts-proxy

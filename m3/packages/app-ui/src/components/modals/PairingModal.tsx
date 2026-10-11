@@ -10,10 +10,11 @@ import {
   CaretDown,
 } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "motion/react";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import { drawQr } from "@aphrody/qr";
 import { useCoreMutation, useCoreQuery } from "../../contexts/SpacedriveContext";
 import { sounds } from "@aphrody/assets/sounds";
+import { Icon } from "@aphrody/m3-primitives";
 
 interface PairingModalProps {
   isOpen: boolean;
@@ -88,11 +89,17 @@ export function PairingModal({
   // Check if pairing completed
   const isCompleted = currentSession?.state === "Completed" || joinPairing.isSuccess;
 
+  // Latest close handler, read by the delayed close timer without restarting it on each render
+  const handleCloseRef = useRef(handleClose);
+  useEffect(() => {
+    handleCloseRef.current = handleClose;
+  });
+
   useEffect(() => {
     if (isCompleted) {
       sounds.pairing();
       const timer = setTimeout(() => {
-        handleClose();
+        handleCloseRef.current();
       }, 2000);
       return () => clearTimeout(timer);
     }
@@ -274,9 +281,9 @@ function GenerateMode({ generatePairing, currentSession, onGenerate, onCancel, o
 
             {/* Word Code */}
             <div>
-              <label className="text-label-medium font-medium text-on-surface-variant uppercase tracking-wider mb-2 block">
+              <div className="text-label-medium font-medium text-on-surface-variant uppercase tracking-wider mb-2 block">
                 Or type manually:
-              </label>
+              </div>
               <div className="relative">
                 <div className="p-4 bg-surface-container border border-outline-variant rounded-small font-mono text-body-medium text-on-surface break-all">
                   {generatePairing.data.code}
@@ -294,9 +301,9 @@ function GenerateMode({ generatePairing, currentSession, onGenerate, onCancel, o
             {/* Node ID for cross-network pairing */}
             {generatePairing.data.node_id && (
               <div>
-                <label className="text-label-medium font-medium text-on-surface-variant uppercase tracking-wider mb-2 block">
+                <div className="text-label-medium font-medium text-on-surface-variant uppercase tracking-wider mb-2 block">
                   For cross-network pairing:
-                </label>
+                </div>
                 <div className="relative">
                   <div className="p-3 bg-surface-container border border-outline-variant rounded-small font-mono text-body-small text-on-surface break-all">
                     {generatePairing.data.node_id}
@@ -401,10 +408,12 @@ function GenerateMode({ generatePairing, currentSession, onGenerate, onCancel, o
 
           {/* Cancel Button */}
           <button
+            aria-label="Cancel"
+            title="Cancel"
             onClick={onCancel}
             className="w-full px-4 py-2.5 text-label-large font-medium text-on-surface-variant hover:text-on-surface bg-surface-container hover:bg-on-surface/8 border border-outline-variant rounded-small transition-colors"
           >
-            Cancel
+            <Icon name="close" size={18} />
           </button>
         </>
       )}
@@ -456,10 +465,14 @@ function JoinMode({
 
         {/* Code Input */}
         <div>
-          <label className="text-label-medium font-medium text-on-surface-variant uppercase tracking-wider mb-2 block">
+          <label
+            htmlFor="pairing-join-code"
+            className="text-label-medium font-medium text-on-surface-variant uppercase tracking-wider mb-2 block"
+          >
             Pairing code
           </label>
           <textarea
+            id="pairing-join-code"
             value={joinCode}
             onChange={(e) => setJoinCode(e.target.value)}
             placeholder="brave-lion-sunset-river-eagle-mountain-forest-ocean-thunder-crystal-diamond-phoenix"
@@ -474,10 +487,14 @@ function JoinMode({
 
         {/* Node ID Input (optional, for cross-network) */}
         <div>
-          <label className="text-label-medium font-medium text-on-surface-variant uppercase tracking-wider mb-2 block">
+          <label
+            htmlFor="pairing-join-node-id"
+            className="text-label-medium font-medium text-on-surface-variant uppercase tracking-wider mb-2 block"
+          >
             Node ID <span className="text-outline">(optional)</span>
           </label>
           <input
+            id="pairing-join-node-id"
             type="text"
             value={joinNodeId}
             onChange={(e) => setJoinNodeId(e.target.value)}
@@ -513,10 +530,12 @@ function JoinMode({
       <div className="flex gap-3">
         {state ? (
           <button
+            aria-label="Cancel"
+            title="Cancel"
             onClick={onCancel}
             className="flex-1 px-4 py-2.5 text-label-large font-medium text-on-surface-variant hover:text-on-surface bg-surface-container hover:bg-on-surface/8 border border-outline-variant rounded-small transition-colors"
           >
-            Cancel
+            <Icon name="close" size={18} />
           </button>
         ) : (
           <>

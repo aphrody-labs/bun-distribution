@@ -6,6 +6,7 @@ from pathlib import Path
 
 import click
 
+from . import onnx_export
 from .protocol import TrainEmitter
 from .training_data import load_triples
 
@@ -86,17 +87,20 @@ def train(
                 lr=float(record.get("learning_rate", 0.0)),
             )
     model.save_pretrained(str(model_dir))
-    onnx_model = CrossEncoder(str(model_dir), backend="onnx")
-    onnx_model.save_pretrained(str(model_dir))
+    import torch  # installed with sentence-transformers
+
+    model.to("cpu")
     onnx_path = model_dir / "onnx" / "model.onnx"
-    if not onnx_path.is_file():
-        raise RuntimeError(f"ONNX export did not produce {onnx_path}")
-    probe = [
-        (triples[0]["query"], triples[0]["positive"]),
-        (triples[0]["query"], triples[0]["negative"]),
-    ]
-    reference = np.asarray(model.predict(probe)).reshape(-1)
-    exported = np.asarray(onnx_model.predict(probe)).reshape(-1)
+    onnx_export.export(model.transformers_model, model.tokenizer, onnx_path, "logits")
+    queries = [triples[0]["query"], triples[0]["query"]]
+    documents = [triples[0]["positive"], triples[0]["negative"]]
+    logits, feeds = onnx_export.run(onnx_path, model.tokenizer, queries, documents)
+    with torch.no_grad():
+        output = model.transformers_model(
+            **{name: torch.from_numpy(value) for name, value in feeds.items()}
+        )
+    reference = output.logits.numpy().reshape(-1)
+    exported = np.asarray(logits).reshape(-1)
     if not np.allclose(reference, exported, rtol=1e-3, atol=1e-4):
         raise RuntimeError("ONNX reranker parity failed")
     payload = onnx_path.read_bytes()

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { m3Durations, m3Easings } from "@aphrody/m3-motion";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import { CircleButton, Icon, m3FocusRing } from "@aphrody/m3-primitives";
 import type { DirectorySortBy, MediaSortBy } from "@aphrody/drive-client";
 
@@ -13,20 +13,21 @@ interface SortMenuPanelProps {
 }
 
 export function SortMenuPanel({ sortBy, onSortChange, viewMode }: SortMenuPanelProps) {
-  const sortOptions = viewMode === "media"
-    ? [
-        { value: "datetaken", label: "Date de prise", icon: "photo_camera" },
-        { value: "modified", label: "Date de modification", icon: "calendar_today" },
-        { value: "created", label: "Date de création", icon: "calendar_today" },
-        { value: "name", label: "Nom", icon: "sort_by_alpha" },
-        { value: "size", label: "Taille", icon: "straighten" },
-      ]
-    : [
-        { value: "name", label: "Nom", icon: "sort_by_alpha" },
-        { value: "modified", label: "Date de modification", icon: "calendar_today" },
-        { value: "size", label: "Taille", icon: "straighten" },
-        { value: "type", label: "Type", icon: "description" },
-      ];
+  const sortOptions =
+    viewMode === "media"
+      ? [
+          { value: "datetaken", label: "Date de prise", icon: "photo_camera" },
+          { value: "modified", label: "Date de modification", icon: "calendar_today" },
+          { value: "created", label: "Date de création", icon: "calendar_today" },
+          { value: "name", label: "Nom", icon: "sort_by_alpha" },
+          { value: "size", label: "Taille", icon: "straighten" },
+        ]
+      : [
+          { value: "name", label: "Nom", icon: "sort_by_alpha" },
+          { value: "modified", label: "Date de modification", icon: "calendar_today" },
+          { value: "size", label: "Taille", icon: "straighten" },
+          { value: "type", label: "Type", icon: "description" },
+        ];
 
   return (
     <div
@@ -56,7 +57,7 @@ export function SortMenuPanel({ sortBy, onSortChange, viewMode }: SortMenuPanelP
                 m3FocusRing,
                 isActive
                   ? "bg-secondary-container text-on-secondary-container"
-                  : "text-on-surface hover:bg-on-surface/8"
+                  : "text-on-surface hover:bg-on-surface/8",
               )}
             >
               <Icon name={option.icon} size={20} filled={isActive} />
@@ -148,14 +149,10 @@ export function SortMenu({ sortBy, onSortChange, viewMode, className }: SortMenu
               }}
               className="z-50"
             >
-              <SortMenuPanel
-                sortBy={sortBy}
-                onSortChange={onSortChange}
-                viewMode={viewMode}
-              />
+              <SortMenuPanel sortBy={sortBy} onSortChange={onSortChange} viewMode={viewMode} />
             </motion.div>
           </AnimatePresence>,
-          document.body
+          document.body,
         )}
     </>
   );

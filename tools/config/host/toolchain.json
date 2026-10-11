@@ -175,8 +175,8 @@
       "log": "~/.local/state/aphrody/log/bun-hygiene.log"
     },
     "windows": {
-      "script": "scripts/tools/bun-hygiene.ps1 -Register",
-      "task": "AphrodyBunHygiene (daily 05:30, user)",
+      "script": "scripts/tools/bun-hygiene.ts",
+      "task": "AphrodyBunHygiene (daily 05:30, hidden S4U task, boot catalog entry; aphrody infra boot apply --host local --entry AphrodyBunHygiene)",
       "log": "%LOCALAPPDATA%\\aphrody\\log\\bun-hygiene.log"
     },
     "steps": [
@@ -207,8 +207,8 @@
     "knownGap": "ssh key github_aphrody_code is not registered on GitHub account aphrody-code (Permission denied); needs `gh auth refresh -h github.com -s admin:public_key` as aphrody-code then `gh ssh-key add`"
   },
   "sourceCheckoutHosts": {
-    "vps": "~/aphrody",
-    "dbfr": "~/aphrody",
+    "vps": "~/src/aphrody",
+    "dbfr": "~/src/aphrody",
     "remote": "workspace (git@github.com:aphrody-labs/aphrody.git, blobless clone via forwarded agent)",
     "links": [
       "~/.local/bin/bun (release aphrody-labs/bun, also linked as ~/.bun/bin/bun)"

@@ -116,16 +116,10 @@ impl HostConfig {
         let ssh_cfg = home.join(".ssh").join("config");
         let parsed_cfg = if ssh_cfg.exists() { parse_ssh_config(&ssh_cfg, alias) } else { None };
 
-        // 3. Fallbacks
-        let (fallback_host, fallback_user, fallback_key) = match alias.to_lowercase().as_str() {
-            "vps" => ("51.77.147.152", "ubuntu", home.join(".ssh").join("ovh_vps")),
-            "dbfr" => ("51.255.162.6", "ubuntu", home.join(".ssh").join("id_ed25519")),
-            "omar" | "omar-pc" | "omar-wsl" => {
-                ("10.200.77.10", "omar", home.join(".ssh").join("id_ed25519"))
-            },
-            "aphro-pc" => ("10.200.77.4", "aphro", home.join(".ssh").join("id_ed25519")),
-            _ => (alias, "ubuntu", home.join(".ssh").join("id_ed25519")),
-        };
+        // Unconfigured aliases stay aliases; deployment endpoints belong in SSH config.
+        let fallback_host = alias;
+        let fallback_user = "ubuntu";
+        let fallback_key = home.join(".ssh").join("id_ed25519");
 
         let hostname = env_host
             .or_else(|| parsed_cfg.as_ref().and_then(|c| c.hostname.clone()))
@@ -467,20 +461,23 @@ mod tests {
     use super::*;
 
     #[test]
-    fn host_config_resolves_known_aliases() {
-        let vps = HostConfig::for_host(Host::Vps).unwrap();
-        assert!(vps.hostname == "51.77.147.152" || vps.hostname == "10.200.77.1");
-        assert_eq!(vps.user, "ubuntu");
-
-        let dbfr = HostConfig::for_host(Host::Dbfr).unwrap();
-        assert!(dbfr.hostname == "51.255.162.6" || dbfr.hostname == "10.200.77.3");
-        assert_eq!(dbfr.user, "ubuntu");
-
-        let omar = HostConfig::for_host(Host::Omar).unwrap();
-        assert_eq!(omar.hostname, "10.200.77.10");
-        assert_eq!(omar.user, "omar");
+    fn ssh_config_resolves_alias_without_workstation_state() {
+        let fixture = std::env::temp_dir().join(format!(
+            "aphrody-ssh-config-{}-{}.txt",
+            std::process::id(),
+            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
+        ));
+        std::fs::write(
+            &fixture,
+            "Host unrelated\n HostName unrelated.invalid\nHost example example-alias\n HostName example.invalid\n User configured-user\n Port 2222\n IdentityFile ~/.ssh/example-key\n",
+        ).unwrap();
+        let configured = parse_ssh_config(&fixture, "example-alias").unwrap();
+        std::fs::remove_file(&fixture).unwrap();
+        assert_eq!(configured.hostname.as_deref(), Some("example.invalid"));
+        assert_eq!(configured.user.as_deref(), Some("configured-user"));
+        assert_eq!(configured.port, Some(2222));
+        assert_eq!(configured.identity_path, Some(dirs_home().unwrap().join(".ssh/example-key")));
     }
-
     #[test]
     fn fast_rsync_differential_cycle() {
         let base = b"Aphrody OS control plane with Spacedrive VDFS, Russh 0.63 and FastRsync.";

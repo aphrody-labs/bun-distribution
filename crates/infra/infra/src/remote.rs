@@ -91,6 +91,35 @@ pub enum RemoteCommand {
         #[command(subcommand)]
         action: TokenAction,
     },
+    /// Keep this Windows tunnel member reachable unattended: hidden self-healing tasks (wg1 at
+    /// boot as SYSTEM, remote desktop + VNC, MCP HTTP, reverse SSH tunnel to the hub, WSL sshd),
+    /// MCP portproxy on the tunnel address, no sleep on mains power, WSL mirrored networking.
+    /// Relaunches itself elevated (sudo.exe inline, else UAC).
+    AlwaysOnline {
+        /// Inventory member configured on this PC.
+        #[arg(long, default_value = "omar")]
+        member: String,
+        /// SSH user on the hub for the reverse tunnel (default: the member id).
+        #[arg(long)]
+        hub_user: Option<String>,
+        /// WSL distribution running sshd on port 2222.
+        #[arg(long, default_value = "Ubuntu")]
+        distro: String,
+        /// SSH key of the reverse tunnel (default: ~/.ssh/id_ed25519).
+        #[arg(long)]
+        identity_file: Option<PathBuf>,
+        /// Installed `aphrody.exe` the tasks run (default: %LOCALAPPDATA%\Aphrody\bin\aphrody.exe;
+        /// `aphrody-mcp.exe` is its sibling).
+        #[arg(long)]
+        aphrody: Option<PathBuf>,
+        #[arg(long)]
+        no_wsl: bool,
+        #[arg(long)]
+        no_reverse: bool,
+        /// Print the plan, change nothing.
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -116,7 +145,7 @@ pub enum TokenAction {
 
 /// Addresses granted the `vnc-*` service served at `listen` (the default RFB allowlist); every
 /// `vnc-*` service when none is declared at that address (loopback bind).
-fn vnc_grantees(inventory: &Inventory, listen: &str) -> Vec<String> {
+pub(crate) fn vnc_grantees(inventory: &Inventory, listen: &str) -> Vec<String> {
     let all = || inventory.services.iter().filter(|s| s.id == "vnc" || s.id.starts_with("vnc-"));
     let own: Vec<&str> = all().filter(|s| s.address == listen).map(|s| s.id.as_str()).collect();
     let vnc = if own.is_empty() { all().map(|s| s.id.as_str()).collect() } else { own };
@@ -339,7 +368,8 @@ pub async fn execute_remote(root: &Path, cmd: &RemoteCommand) -> Result<Value> {
             };
             let scheme = if t.secure { "https" } else { "http" };
             let base = format!("{scheme}://{}/", t.addr());
-            std::process::Command::new(if cfg!(windows) { "explorer" } else { "xdg-open" }).no_window()
+            std::process::Command::new(if cfg!(windows) { "explorer" } else { "xdg-open" })
+                .no_window()
                 .arg(format!("{base}#token={token}"))
                 .spawn()?;
             json!({ "opened": base })
@@ -405,6 +435,26 @@ pub async fn execute_remote(root: &Path, cmd: &RemoteCommand) -> Result<Value> {
                 let path = tokens::store(kind, target.as_deref(), &value)?;
                 json!({ "kind": kind.as_str(), "stored": path })
             },
+        },
+        RemoteCommand::AlwaysOnline {
+            member,
+            hub_user,
+            distro,
+            identity_file,
+            aphrody,
+            no_wsl,
+            no_reverse,
+            dry_run,
+        } => {
+            let options = crate::always_online::Options {
+                member: member.clone(),
+                hub_user: hub_user.clone(),
+                distro: distro.clone(),
+                no_wsl: *no_wsl,
+                no_reverse: *no_reverse,
+            };
+            let paths = crate::always_online::Paths::detect(aphrody.clone(), identity_file.clone());
+            crate::always_online::execute(root, &options, &paths, *dry_run)?
         },
     };
     println!("{}", serde_json::to_string_pretty(&out)?);

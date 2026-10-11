@@ -11,9 +11,9 @@ prove the result. The pipeline overview is [UPDATE.md](../UPDATE.md). The Python
 
 | Lock | Resolves | Used by |
 | --- | --- | --- |
-| `uv.lock` (root) | the six workspace members, Python `==3.12.*`, `aphrody-train` extras `full` and `mine` as conflicting forks | `uv sync --all-packages --locked`, every test and ruff gate |
+| `uv.lock` (root) | the six workspace members, Python `==3.12.*`, `aphrody-train` torch forked per platform (cu130 on Linux and Windows, PyPI elsewhere) | `uv sync --all-packages --locked`, every test and ruff gate |
 | `packages/ai/py/aphrody/uv.lock` (not in repo) | the SDK on its own, Python `>=3.11` (forks per interpreter and platform) | CI distribution jobs, `uv build` of the SDK |
-| `packages/ai/py/aphrody-train/uv.lock` (not in repo) | the training package on its own, Python 3.12, CUDA torch from `download.pytorch.org/whl/cu129` | standalone training environment |
+| `packages/ai/py/aphrody-train/uv.lock` (not in repo) | the training package on its own, Python 3.12, CUDA torch from `download.pytorch.org/whl/cu130` | standalone training environment |
 
 All three move together: `apply` runs `uv lock --upgrade` in each directory and `verify` runs `uv lock --check` in each.
 (removed import receipt) holds archived migration snapshots; the module never reads or edits them. Lock revision is
@@ -56,17 +56,15 @@ pyproject it belongs to. Re-check every row on each bump and delete it as soon a
 
 | Package | Held at | Reason |
 | --- | --- | --- |
-| `torch` | `==2.8.0` (aphrody-train) | the 2.14.0 Windows wheel failed to import `torch.amp` in the CPU smoke test; 2.14.1 (2026-10-01) fixes MPS and CUDA 13.2 issues only, so the Windows smoke must be re-run on 2.14.x (and the cu129 index must carry it) before lifting. The SDK lock already resolves 2.14.1 for its `depth` extra |
-| `transformers` | below 4.58 | `sentence-transformers[onnx]` 5.x needs `optimum-onnx` 0.1.0, which caps transformers; transformers 5 needs sentence-transformers 6 (the `mine` extra, no ONNX export) |
-| `sentence-transformers` | `>=5.7,<6` in `full`; `>=6.1` in `mine` | the two extras conflict by design; the lock carries both forks |
+| `torch` | `==2.13.0` (aphrody-train) | first release that fixes GHSA-rrmf-rvhw-rf47; the Windows CPU smoke (`import torch.amp`) and the embed/rerank ONNX export pass on it. The 2.14.0 Windows wheel failed to import `torch.amp`, so the smoke and the export must be re-run on 2.14.x (and the cu130 index must carry it) before lifting. The SDK lock already resolves 2.14.1 for its `depth` extra |
 | `magika` | `~=0.6.1` | markitdown hard-pins `magika~=0.6.1` as a core dependency; `classify.py` handles both result shapes so a markitdown bump makes the upgrade a no-op |
 | `maturin` | `==1.14.1` | exact build-backend pin of the SDK. 1.15.0 changes the sdist tar headers (UID and GID in pax) and hardens the PEP 517 build-wheel path, so the reproducibility and RECORD-integrity checks and the cargo-built wheels need a full requalification (`uv build`, `py/tools/sdk/verify-wheel.py`, six CI jobs), which needs Cargo |
 | `torchvision`, `triton`, `nvidia-*`, `cuda-*` | follow torch | pinned by the torch wheel that pulls them |
-| `tokenizers`, `optimum`, `huggingface-hub` | follow transformers | `transformers` 4.57.6 caps tokenizers `<=0.23.0` and huggingface-hub `<1.0`; `optimum-onnx` caps optimum `<2.2`; docling-slim caps huggingface-hub `<2` |
+| `huggingface-hub` | resolver | docling-slim and sentence-transformers 6.1 cap huggingface-hub `<2` |
 | `typer`, `semchunk`, `mammoth`, `websockets` | resolver | docling-slim `typer<0.27`, docling-core `semchunk<4`, markitdown `mammoth<1.12`, google-genai `websockets<17` |
 | `fsspec`, `multidict`, `antlr4-python3-runtime`, `mpmath`, `pydantic-core`, `onnxruntime` | resolver | datasets `fsspec<=2026.6.0`, aiohttp `multidict<7`, omegaconf `antlr4==4.9.*`, sympy `mpmath<1.4`, pydantic `pydantic-core==2.46.5`, magika `onnxruntime<=1.20.1` on Windows |
 
-PyPI advisory holds (`torch`, `transformers`) stay in `tools/config/deps/advisory-holds.json`.
+No PyPI advisory hold remains; new ones go in `tools/config/deps/advisory-holds.json`.
 
 ## Commands
 
@@ -142,3 +140,19 @@ shared with `deps inventory`, plus one OSV batch). They belong in the weekly `ap
 - Fixed in passing: `aphrody-ci.yml` ran `uv run pytest` inside the standalone packages, whose environment has no
   pytest (the step only worked where a system pytest existed); it now syncs the workspace once and runs ruff and both suites
   from the root, and checks the three locks.
+
+## Record, 2026-10-09
+
+- Dependabot (16 PyPI alerts on the root and training locks): torch 2.8.0 -> 2.13.0 (GHSA-rrmf-rvhw-rf47,
+  GHSA-qfhq-4f3w-5fph, GHSA-vgrw-7cvw-pwgx), transformers 4.57.6 -> 5.18.0 (GHSA-x9r9-c232-4q39, GHSA-xrqw-3rrv-vx5w,
+  GHSA-fgcw-684q-jj6r, GHSA-29pf-2h5f-8g72, GHSA-69w3-r845-3855), sentence-transformers 5.7 -> 6.1 in both extras.
+- The ONNX export no longer goes through `sentence-transformers[onnx]` and optimum-onnx (which capped transformers below
+  4.58): `aphrody_train/onnx_export.py` exports the transformer with `torch.onnx` (dynamo, opset 18, single file) in the
+  layout the Rust ORT loaders read, and writes `special_tokens_map.json`, which transformers 5 no longer saves. The
+  `full`/`mine` conflict is gone; optimum and optimum-onnx left the locks, onnxscript entered.
+- torch moved from cu129 (Linux) + cu130 (Windows) to one cu130 index: uv refused two indexes for the same package across
+  marker environments once the extras stopped conflicting. `uv lock --upgrade-package torch` restores the PyPI fork for
+  macOS.
+- Gates: `modernize_workspace.py locks` (three locks), `ruff check`, pytest training + embedding fixtures; Windows CPU
+  smoke on torch 2.13.0 (`import torch.amp`); `dry_run --steps 4` (all-MiniLM-L6-v2, ONNX cosine 0.99999988) and rerank
+  (ms-marco-MiniLM-L2-v2, max abs diff 5e-6) end to end on CPU.

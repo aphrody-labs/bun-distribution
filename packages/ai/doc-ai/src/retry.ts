@@ -95,6 +95,7 @@ export async function withRetry<T>(
   let lastError: unknown;
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
+      // oxlint-disable-next-line no-await-in-loop -- retry attempts are sequential by design: each one runs only after the previous failed and backed off
       return await fn(attempt);
     } catch (err) {
       lastError = err;
@@ -106,6 +107,7 @@ export async function withRetry<T>(
       const exp = baseDelayMs * 2 ** (attempt - 1);
       const delayMs = Math.floor(random() * Math.min(maxDelayMs, exp));
       options.onRetry?.({ attempt, delayMs, error: err });
+      // oxlint-disable-next-line no-await-in-loop -- backoff wait before the next sequential attempt
       await sleep(delayMs);
     }
   }

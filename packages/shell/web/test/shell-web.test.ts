@@ -13,6 +13,7 @@ import {
   type WorkerMessage,
 } from "../src/index";
 
+const noop = (): void => {};
 const pkg = new URL("../pkg/", import.meta.url);
 const built = existsSync(new URL("aphrody_shell_web_bg.wasm", pkg));
 let wasm: WasmApi;
@@ -47,7 +48,7 @@ test.skipIf(!built)("WASM registry counts VFS entries through a pipeline", () =>
 
 test("tauri transport targets the plugin commands and filters by session", async () => {
   const calls: string[] = [];
-  let emit: (e: { payload: { session: string; bytes: number[]; exit: null } }) => void = () => {};
+  let emit: (e: { payload: { session: string; bytes: number[]; exit: null } }) => void = noop;
   const t = tauriTransport({
     invoke: async (c) => void calls.push(c),
     listen: async (_e, cb) => ((emit = cb), () => {}),
@@ -93,7 +94,7 @@ test("tauri channel transport passes a channel to the plugin", async () => {
 
 test("worker transport transfers input and closes after worker flush", () => {
   const messages: { type: string; bytes?: ArrayBuffer }[] = [];
-  let listener: (event: MessageEvent<WorkerMessage>) => void = () => {};
+  let listener: (event: MessageEvent<WorkerMessage>) => void = noop;
   let terminated = false;
   const worker: ShellWorker = {
     addEventListener: (_type, cb) => {
@@ -133,30 +134,34 @@ test("sandbox transport authenticates, reconnects, and replays queued input", as
     readyState = 0;
     binaryType = "";
     sent: unknown[] = [];
-    onopen: (() => void) | null = null;
-    onmessage: ((event: { data: ArrayBuffer }) => void) | null = null;
-    onclose: (() => void) | null = null;
+    readonly #listeners = new Map<string, (() => void)[]>();
     constructor(url: string) {
       this.url = url;
       FakeSocket.sockets.push(this);
+    }
+    addEventListener(type: string, listener: () => void) {
+      this.#listeners.set(type, [...(this.#listeners.get(type) ?? []), listener]);
+    }
+    #emit(type: string) {
+      for (const listener of this.#listeners.get(type) ?? []) listener();
     }
     send(value: unknown) {
       this.sent.push(value);
     }
     close() {
       this.readyState = 3;
-      this.onclose?.();
+      this.#emit("close");
     }
     open() {
       this.readyState = 1;
-      this.onopen?.();
+      this.#emit("open");
     }
     drop() {
       this.close();
     }
   }
-  const wasm = { resize_frame: (cols: number, rows: number) => `${cols}x${rows}` } as WasmApi;
-  const t = sandboxTransport(wasm, "wss://shell.example/ws", "token with space", {
+  const fakeWasm = { resize_frame: (cols: number, rows: number) => `${cols}x${rows}` } as WasmApi;
+  const t = sandboxTransport(fakeWasm, "wss://shell.example/ws", "token with space", {
     sessionId: "session-1",
     reconnectDelayMs: 1,
     WS: FakeSocket as unknown as typeof WebSocket,

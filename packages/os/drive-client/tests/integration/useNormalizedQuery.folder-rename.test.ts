@@ -15,16 +15,10 @@
 
 // Setup DOM environment before any other imports
 import { clientFromTcpSocket } from "../../src/bun";
+// oxlint-disable-next-line import/no-unassigned-import -- setup DOM à effet de bord, exécuté avant les autres imports
 import "./setup";
 
-import {
-	describe,
-	test,
-	expect,
-	beforeAll,
-	afterAll,
-	afterEach,
-} from "bun:test";
+import { describe, test, expect, beforeAll, afterAll, afterEach } from "bun:test";
 import { readFile } from "fs/promises";
 import { rename } from "fs/promises";
 import { join } from "path";
@@ -46,6 +40,10 @@ interface BridgeConfig {
 
 let bridgeConfig: BridgeConfig;
 let client: SpacedriveClient;
+
+// Create wrapper for React hooks with SpacedriveProvider
+const wrapper = ({ children }: { children: React.ReactNode }) =>
+	React.createElement(SpacedriveProvider, { client }, children);
 const allEventsReceived: any[] = []; // Collect all events for debugging
 
 beforeAll(async () => {
@@ -71,22 +69,15 @@ beforeAll(async () => {
 	console.log(`[TS] Library set to: ${bridgeConfig.library_id}`);
 
 	// Hook into the subscription manager to collect all events
-	const originalCreateSubscription = (client as any).subscriptionManager
-		.createSubscription;
-	(client as any).subscriptionManager.createSubscription = function (
-		filter: any,
-		callback: any,
-	) {
+	const originalCreateSubscription = (client as any).subscriptionManager.createSubscription;
+	(client as any).subscriptionManager.createSubscription = function (filter: any, callback: any) {
 		const wrappedCallback = (event: any) => {
 			allEventsReceived.push({
 				timestamp: new Date().toISOString(),
 				filter,
 				event,
 			});
-			console.log(
-				`[TS] 🔔 Event received:`,
-				JSON.stringify(event, null, 2),
-			);
+			console.log(`[TS] 🔔 Event received:`, JSON.stringify(event, null, 2));
 			callback(event);
 		};
 		return originalCreateSubscription.call(this, filter, wrappedCallback);
@@ -95,9 +86,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
 	// Log all events at the end for debugging
-	console.log(
-		`[TS] ===== ALL EVENTS RECEIVED (${allEventsReceived.length}) =====`,
-	);
+	console.log(`[TS] ===== ALL EVENTS RECEIVED (${allEventsReceived.length}) =====`);
 	allEventsReceived.forEach((item, idx) => {
 		console.log(`[TS] Event ${idx + 1} at ${item.timestamp}:`);
 		console.log(`[TS]   Filter:`, JSON.stringify(item.filter, null, 2));
@@ -120,10 +109,6 @@ describe("useNormalizedQuery - Folder Rename Integration", () => {
 
 		// Get device slug from hostname
 		const deviceSlug = hostname().toLowerCase().replace(/\s+/g, "-");
-
-		// Create wrapper for React hooks with SpacedriveProvider
-		const wrapper = ({ children }: { children: React.ReactNode }) =>
-			React.createElement(SpacedriveProvider, { client }, children);
 
 		// Query root directory listing (should contain original_folder)
 		const { result: rootResult } = renderHook(
@@ -186,10 +171,7 @@ describe("useNormalizedQuery - Folder Rename Integration", () => {
 		});
 
 		console.log("[TS] Initial root listing:", rootResult.current.data);
-		console.log(
-			"[TS] Initial original_folder contents:",
-			folderResult.current.data,
-		);
+		console.log("[TS] Initial original_folder contents:", folderResult.current.data);
 
 		// Verify initial state
 		const initialRootData = rootResult.current.data as { files: any[] };
@@ -202,9 +184,7 @@ describe("useNormalizedQuery - Folder Rename Integration", () => {
 		const originalFolderChildrenData = folderResult.current.data as {
 			files: any[];
 		};
-		expect(originalFolderChildrenData.files.length).toBeGreaterThanOrEqual(
-			2,
-		); // file1.txt, file2.rs
+		expect(originalFolderChildrenData.files.length).toBeGreaterThanOrEqual(2); // file1.txt, file2.rs
 
 		// Rename the folder
 		console.log("[TS] Renaming folder: original_folder -> renamed_folder");
@@ -232,9 +212,7 @@ describe("useNormalizedQuery - Folder Rename Integration", () => {
 		// UUID should be preserved (folder identity maintained)
 		expect(renamedFolder.uuid).toBe(originalFolderUuid);
 
-		console.log(
-			"[TS] ✓ Folder rename detected and cache updated correctly",
-		);
+		console.log("[TS] ✓ Folder rename detected and cache updated correctly");
 		console.log("[TS] ✓ Folder UUID preserved:", renamedFolder.uuid);
 	}, 30000); // 30s timeout for watcher delays
 });

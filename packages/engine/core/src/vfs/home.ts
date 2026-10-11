@@ -8,12 +8,13 @@ import { dirname, join, resolve } from "node:path";
 /** Replaced at compile time (`--define YOLO_VERSION='"x.y.z"'`). */
 declare const YOLO_VERSION: string | undefined;
 
+const embedded = (path: string): boolean => path.includes("$bunfs") || path.includes("~BUN");
+
 /**
  * True inside the standalone executable. A `--bytecode` build reports the build-time source path as `import.meta.dir`,
  * so the entry module's path (`/$bunfs/root/...`, `B:/~BUN/root/...`) is checked as well.
  */
 export function isCompiled(): boolean {
-  const embedded = (path: string): boolean => path.includes("$bunfs") || path.includes("~BUN");
   return embedded(import.meta.dir) || embedded(Bun.main);
 }
 
@@ -62,7 +63,10 @@ export function yoloVersion(): string {
 export function findCheckout(start: string = process.cwd()): string | null {
   let dir = resolve(start);
   for (;;) {
-    if (existsSync(join(dir, "vendor.toml")) && existsSync(join(dir, "packages/engine/yolo/src/index.ts"))) {
+    if (
+      existsSync(join(dir, "vendor.toml")) &&
+      existsSync(join(dir, "packages/engine/yolo/src/index.ts"))
+    ) {
       return dir;
     }
     const parent = dirname(dir);

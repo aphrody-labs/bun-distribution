@@ -23,16 +23,11 @@
       "unit": "privoxy.service",
       "path": "systemd/shenron/privoxy.service.d",
       "hosts": ["vps"]
-    },
-    {
-      "unit": "shenron-bot-docker.service",
-      "path": "systemd/shenron/shenron-bot-docker.service.d",
-      "hosts": ["dbfr"]
     }
   ],
   "nginxSnippets": {
     "dir": "nginx/snippets",
-    "files": ["proxy-client-ip.inc", "proxy-upstream.inc"]
+    "files": ["aphrody-security.inc", "proxy-client-ip.inc", "proxy-upstream.inc"]
   },
   "serviceCatalogs": {
     "aphrody": "aphrody:tools/config/service-catalog.json",
@@ -106,22 +101,6 @@
       "targetHost": "dbfr"
     },
     {
-      "service": "shenron-site-docker",
-      "unit": "shenron-site-docker.service",
-      "path": "systemd/shenron/shenron-site-docker.service",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "dbfr"
-    },
-    {
-      "service": "shenron-bot-docker",
-      "unit": "shenron-bot-docker.service",
-      "path": "systemd/shenron/shenron-bot-docker.service",
-      "dropIns": [],
-      "ownerRepo": "aphrody",
-      "targetHost": "dbfr"
-    },
-    {
       "service": "aphrody-shenron-build-runner",
       "unit": "aphrody-shenron-build-runner.service",
       "path": "systemd/aphrody/aphrody-shenron-build-runner.service",
@@ -183,13 +162,7 @@
       "service": "aphrody-a2a",
       "unit": "aphrody-a2a.service",
       "path": "systemd/aphrody/aphrody-a2a.service",
-      "dropIns": [
-        "run-as-ubuntu",
-        "sandbox-base",
-        "sandbox-kernel",
-        "net-inet-only",
-        "syscall-service"
-      ],
+      "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-kernel", "net-inet-only", "syscall-service"],
       "ownerRepo": "aphrody",
       "targetHost": "vps"
     },
@@ -243,6 +216,23 @@
       "ownerRepo": "aphrody",
       "targetHost": "vps",
       "pairs": "aphrody-selfheal.service"
+    },
+    {
+      "service": "aphrody-discord-sync",
+      "unit": "aphrody-discord-sync.service",
+      "path": "systemd/aphrody/aphrody-discord-sync.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-discord-sync-timer",
+      "unit": "aphrody-discord-sync.timer",
+      "path": "systemd/aphrody/aphrody-discord-sync.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "pairs": "aphrody-discord-sync.service"
     },
     {
       "service": "aphrody-self-update",
@@ -306,33 +296,27 @@
       "site": "bot.dragonballfr.com"
     },
     {
-      "service": "shenron-pg-backup",
-      "unit": "shenron-pg-backup.service",
-      "path": "systemd/shenron/shenron-pg-backup.service",
-      "dropIns": ["run-as-ubuntu", "sandbox-base"],
-      "ownerRepo": "aphrody",
-      "targetHost": "dbfr"
-    },
-    {
-      "service": "shenron-pg-backup",
-      "unit": "shenron-pg-backup.timer",
-      "path": "systemd/shenron/shenron-pg-backup.timer",
+      "service": "shenron-offsite-backup",
+      "unit": "shenron-offsite-backup.service",
+      "path": "systemd/shenron/shenron-offsite-backup.service",
       "dropIns": [],
       "ownerRepo": "aphrody",
-      "targetHost": "dbfr",
-      "pairs": "shenron-pg-backup.service"
+      "targetHost": "vps"
+    },
+    {
+      "service": "shenron-offsite-backup",
+      "unit": "shenron-offsite-backup.timer",
+      "path": "systemd/shenron/shenron-offsite-backup.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "pairs": "shenron-offsite-backup.service"
     },
     {
       "service": "shenron-site",
       "unit": "shenron-site.service",
       "path": "systemd/shenron/shenron-site.service",
-      "dropIns": [
-        "run-as-ubuntu",
-        "sandbox-base",
-        "sandbox-home-ro",
-        "sandbox-kernel",
-        "syscall-service"
-      ],
+      "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-home-ro", "sandbox-kernel", "syscall-service"],
       "ownerRepo": "aphrody",
       "targetHost": "dbfr",
       "site": "dragonballfr.com"
@@ -400,7 +384,8 @@
       "path": "systemd/shenron/shenron-container-backup.timer",
       "dropIns": [],
       "ownerRepo": "aphrody",
-      "targetHost": "dbfr"
+      "targetHost": "dbfr",
+      "pairs": "shenron-container-backup.service"
     },
     {
       "service": "shenron-embed",
@@ -419,16 +404,66 @@
       "targetHost": "dbfr"
     },
     {
+      "service": "aphrody-ai-gateway-dbfr",
+      "unit": "aphrody-ai-gateway-dbfr.service",
+      "path": "systemd/aphrody/aphrody-ai-gateway-dbfr.service",
+      "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-kernel", "net-inet-only", "syscall-service"],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
       "service": "aphrody-mcp-http-dbfr",
       "unit": "aphrody-mcp-http-dbfr.service",
       "path": "systemd/aphrody/aphrody-mcp-http-dbfr.service",
-      "dropIns": [
-        "run-as-ubuntu",
-        "sandbox-base",
-        "sandbox-kernel",
-        "net-inet-only",
-        "syscall-service"
-      ],
+      "dropIns": ["run-as-ubuntu", "sandbox-base", "sandbox-kernel", "net-inet-only", "syscall-service"],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "aphrody-desktop-xvfb",
+      "unit": "aphrody-desktop-xvfb.service",
+      "path": "systemd/aphrody/aphrody-desktop-xvfb.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-desktop-wm",
+      "unit": "aphrody-desktop-wm.service",
+      "path": "systemd/aphrody/aphrody-desktop-wm.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-remote",
+      "unit": "aphrody-remote.service",
+      "path": "systemd/aphrody/aphrody-remote.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-desktop-xvfb-dbfr",
+      "unit": "aphrody-desktop-xvfb.service",
+      "path": "systemd/aphrody/aphrody-desktop-xvfb.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "aphrody-desktop-wm-dbfr",
+      "unit": "aphrody-desktop-wm.service",
+      "path": "systemd/aphrody/aphrody-desktop-wm.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "aphrody-remote-dbfr",
+      "unit": "aphrody-remote.service",
+      "path": "systemd/aphrody/aphrody-remote.service",
+      "dropIns": [],
       "ownerRepo": "aphrody",
       "targetHost": "dbfr"
     },
@@ -447,6 +482,24 @@
       "dropIns": [],
       "ownerRepo": "aphrody",
       "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-gpu-depot",
+      "unit": "aphrody-gpu-depot.service",
+      "path": "systemd/aphrody/aphrody-gpu-depot.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "scope": "user"
+    },
+    {
+      "service": "aphrody-mesh",
+      "unit": "aphrody-mesh.service",
+      "path": "systemd/aphrody/aphrody-mesh.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "status": "pending"
     }
   ],
   "scheduledTasks": [
@@ -455,7 +508,7 @@
       "hosts": ["windows"],
       "command": "aphrody self update",
       "intervalMinutes": 30,
-      "register": "scripts/tools/infra/register-self-update-task.ps1",
+      "bootEntry": "local:Aphrody self update",
       "ownerRepo": "aphrody"
     }
   ],
@@ -491,11 +544,37 @@
       "site": "aphrody.com"
     },
     {
-      "file": "nginx/aphrody/bot.aphrody.com.conf",
+      "file": "nginx/aphrody/os.aphrody.com.conf",
       "ownerRepo": "aphrody",
       "targetHost": "vps",
-      "site": "bot.aphrody.com",
-      "service": "aphrody-discord-dev"
+      "site": "os.aphrody.com"
+    },
+    {
+      "file": "nginx/aphrody/reserved.aphrody.com.conf",
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "site": "reserved.aphrody.com"
+    },
+    {
+      "file": "nginx/aphrody/downloads.aphrody.com.conf",
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "site": "downloads.aphrody.com",
+      "service": "aphrody-downloads"
+    },
+    {
+      "file": "nginx/aphrody/creator.aphrody.com.conf",
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "site": "creator.aphrody.com",
+      "service": "aphrody-creator"
+    },
+    {
+      "file": "nginx/aphrody/bun.aphrody.com.conf",
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "site": "bun.aphrody.com",
+      "service": "aphrody-bun-site"
     },
     {
       "file": "nginx/nie/aphrody-nie-cdn.conf",

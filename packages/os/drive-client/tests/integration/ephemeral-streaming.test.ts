@@ -12,6 +12,7 @@
  */
 
 import { clientFromTcpSocket } from "../../src/bun";
+// oxlint-disable-next-line import/no-unassigned-import -- side effect: installs the Happy DOM test environment on import
 import "./setup";
 
 import { describe, test, expect, beforeAll } from "bun:test";
@@ -121,6 +122,7 @@ describe("Ephemeral Directory Event Streaming", () => {
         );
         break;
       }
+      // oxlint-disable-next-line no-await-in-loop -- polling for events at a fixed interval until the deadline
       await new Promise((r) => setTimeout(r, 50));
     }
 

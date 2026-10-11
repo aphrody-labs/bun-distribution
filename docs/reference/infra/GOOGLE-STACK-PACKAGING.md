@@ -28,28 +28,20 @@ packages. Credentials remain host-local and are not included in releases.
 
 ## Install and update
 
-Run these from the monorepo root. Both scripts default `AphrodyRoot` to the
-parent of their own `scripts/` directory, so an explicit root argument is not
-needed for the normal checkout.
+`crates/google/google` no longer ships a standalone installer script. The
+multicall binary `aphrody` links every compatibility name, including
+`aphrody-google` and `google`, under `$APHRODY_HOME/bin`:
 
-```powershell
-pwsh -NoProfile -File scripts/tools/install-google-stack.ps1 [-Target <triple>] [-SkipBuild]
-pwsh -NoProfile -File scripts/tools/update-google-stack.ps1 [-Target <triple>] [-SkipFetch] [-SkipBuild]
+```sh
+aphrody self install-path --bin
 ```
 
-Install builds `aphrody-google` through `scripts/build/rust/cargo-serial.ps1`
-unless `-SkipBuild` is supplied, then atomically replaces the binary under
-`$APHRODY_HOME/bin` and writes the `google` compatibility alias. It runs
-`aphrody-google doctor` after installation.
-
-Update fetches `main` from the selected remote unless `-SkipFetch` is
-supplied. Pass `-Remote <name>` to select it explicitly; otherwise the script
-uses `origin` when configured and falls back to `workspace`. It requires the
-checkout to be on `main`, at the same commit as `refs/remotes/<remote>/main`,
-and clean, including untracked files. In this checkout, the selected remote is
-`workspace`. It then invokes the installer. These checks make this an update
-from the verified monorepo checkout, not a release builder for arbitrary
-branches.
+This replaces the former `install-google-stack.ps1`/`update-google-stack.ps1`
+pair (both removed): building `aphrody-google` is a normal workspace build
+(`scripts/build/rust/cargo-serial.sh build -p aphrody-google`), and installing
+or refreshing the compatibility links is `aphrody self install-path --bin`,
+re-run after any rebuild. Run `aphrody-google doctor` after installation to
+verify runtime resolution and provider routing.
 
 ## Verification
 
@@ -58,7 +50,7 @@ and the sibling Python workspace. It also checks that no literal provider key
 assignments are present in their source trees.
 
 ```powershell
-pwsh -NoProfile -File scripts/audit/verify-google-pipeline.ps1 [-StaticOnly]
+bun scripts/audit/verify-google-pipeline.ts [--static-only]
 ```
 
 The script defaults to the monorepo and `../aphrody-py`. `-StaticOnly` stops

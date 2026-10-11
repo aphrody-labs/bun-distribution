@@ -281,6 +281,7 @@ export async function collectTimeline(
       break;
     }
 
+    // oxlint-disable-next-line no-await-in-loop -- pagination par curseur : la page suivante dépend du curseur de la précédente
     const page = await readWithBackoff(() => fetchPage(cursor), readDeps);
     pages++;
 
@@ -341,6 +342,7 @@ export async function captureArchive(
   const sources: SourceResult[] = [];
 
   for (const [source, fetchPage] of walks) {
+    // oxlint-disable-next-line no-await-in-loop -- parcours séquentiels des sources : quota de l'API X partagé, premier écrivain gagnant
     const { posts, result } = await collectTimeline(client, fetchPage, source, opts);
     for (const t of posts) {
       // First writer wins: the earlier walks carry the richer payload.

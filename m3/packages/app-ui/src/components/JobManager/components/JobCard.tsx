@@ -62,34 +62,45 @@ export function JobCard({ job, onPause, onResume, onCancel, getSpeedHistory }: J
       <div
         className="flex cursor-pointer transition-colors duration-200 ease-standard hover:bg-on-surface/8"
         style={{ height: CARD_HEIGHT }}
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- la zone contient du contenu flow (divs, barre de progression) : un <button> natif serait invalide ; rôle, tabIndex et clavier sont explicites
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
         onClick={toggleExpanded}
+        onKeyDown={(e) => {
+          // Only the card itself: keys pressed on the nested action buttons must not toggle it.
+          if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            toggleExpanded();
+          }
+        }}
       >
-      {/* Left icon area */}
-      <JobStatusIndicator job={job} />
+        {/* Left icon area */}
+        <JobStatusIndicator job={job} />
 
-      {/* Divider line */}
-      <div className="w-px bg-outline-variant" />
+        {/* Divider line */}
+        <div className="w-px bg-outline-variant" />
 
-      {/* Content column */}
-      <div className="flex-1 flex flex-col gap-2 p-3.5 min-h-0">
-        {/* Custom content (delegated to renderer) */}
-        <renderer.CardContent
-          job={job}
-          isExpanded={isExpanded}
-          statusBadge={statusBadge}
-          canExpand={canExpand}
-          isHovered={isHovered}
-          showActionButton={showActionButton}
-          canPause={canPause}
-          canResume={canResume}
-          canCancel={canCancel}
-          onAction={handleAction}
-          onCancel={handleCancel}
-        />
+        {/* Content column */}
+        <div className="flex-1 flex flex-col gap-2 p-3.5 min-h-0">
+          {/* Custom content (delegated to renderer) */}
+          <renderer.CardContent
+            job={job}
+            isExpanded={isExpanded}
+            statusBadge={statusBadge}
+            canExpand={canExpand}
+            isHovered={isHovered}
+            showActionButton={showActionButton}
+            canPause={canPause}
+            canResume={canResume}
+            canCancel={canCancel}
+            onAction={handleAction}
+            onCancel={handleCancel}
+          />
 
-        {/* Progress bar (always at bottom) */}
-        <JobProgressBar progress={job.progress} status={job.status} />
-      </div>
+          {/* Progress bar (always at bottom) */}
+          <JobProgressBar progress={job.progress} status={job.status} />
+        </div>
       </div>
 
       {/* Expanded details section - only if renderer provides DetailsPanel */}

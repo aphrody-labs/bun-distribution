@@ -100,27 +100,27 @@ describe("vps-cargo", () => {
     expect(script).toContain("tmux new-window -d -t vps-cargo -n job-1");
     expect(script).toContain("APHRODY_CARGO_JOBS=4");
     expect(script).toContain("APHRODY_BUILD_HOST=vps");
-    expect(script).toContain("flock --close /srv/aphrody-build/locks/heavy.lock");
+    expect(script).toContain("flock --close /home/ubuntu/build/locks/heavy.lock");
     expect(script).toContain("checkout moved away from");
     expect(script).toContain("umask 022; cd ");
-    expect(script).toContain('exit "$(cat /srv/aphrody-build/artifacts/wsl/job-1.exit)"');
+    expect(script).toContain('exit "$(cat /home/ubuntu/build/artifacts/wsl/job-1.exit)"');
   });
 
   test("an external repository gets its own checkout, ref, target directory and the shared locks", async () => {
     const { config: vu, root } = repositoryConfig(config, "vu");
     expect(root.replaceAll("\\", "/").endsWith("/vu")).toBe(true);
-    expect(vu.remoteWorkspace).toBe("/srv/aphrody-build/workspaces/vu-wsl");
+    expect(vu.remoteWorkspace).toBe("/home/ubuntu/build/wsl/vu");
     expect(vu.snapshotRef).toBe("refs/vu/snapshot");
     expect(vu.remoteHeavyLock).toBe(config.remoteHeavyLock);
     const script = remoteRunScript(vu, SHA, "job-2", ["build", "--release", "-p", "vu"], 2);
-    expect(script).toContain("cd /srv/aphrody-build/workspaces/vu-wsl");
-    expect(script).toContain("CARGO_TARGET_DIR=/srv/aphrody-build/cache/cargo/vu-wsl");
-    expect(script).toContain("flock --close /srv/aphrody-build/locks/heavy.lock");
+    expect(script).toContain("cd /home/ubuntu/build/wsl/vu");
+    expect(script).toContain("CARGO_TARGET_DIR=/home/ubuntu/build/cache/cargo/vu-wsl");
+    expect(script).toContain("flock --close /home/ubuntu/build/locks/heavy.lock");
     expect(script).toContain(
-      "/srv/aphrody-build/workspaces/aphrody-wsl/scripts/build/rust/cargo-serial.sh build --release -p vu",
+      "/home/ubuntu/build/wsl/aphrody/scripts/build/rust/cargo-serial.sh build --release -p vu",
     );
     // No factory seed: the first push into the new checkout is a full pack.
-    expect(remoteSeedScript(vu)).toContain("git init --quiet /srv/aphrody-build/workspaces/vu-wsl");
+    expect(remoteSeedScript(vu)).toContain("git init --quiet /home/ubuntu/build/wsl/vu");
     // The default repository keeps its relative wrapper.
     expect(remoteRunScript(config, SHA, "job-3", ["check"], 2)).toContain(
       " scripts/build/rust/cargo-serial.sh check",
@@ -458,15 +458,15 @@ test("dbfr is a bounded secondary factory; every Shenron build stays on the VPS 
   expect(dbfr.maxJobs).toBe(3);
   expect(dbfr.desktopLibraries).toBe(false);
   expect(dbfr.remoteEnv["SCCACHE_CACHE_SIZE"]).toBe("8G");
-  expect(dbfr.remoteHeavyLock).toContain("/home/ubuntu/aphrody-build/");
+  expect(dbfr.remoteHeavyLock).toContain("/home/ubuntu/build/");
   expect(() => repositoryConfig(dbfr, "shenron")).toThrow("primary host only");
   for (const name of ["shenron", "shenron-release", "shenron-omar"]) {
     const { config } = repositoryConfig(primary, name);
     expect(config.host).toBe("vps");
-    expect(config.remoteHeavyLock).toContain("/srv/aphrody-build/");
-    expect(config.cargoSerial).toContain("/srv/aphrody-build/");
-    expect(remoteRunScript(config, SHA, "shenron-routing", ["check"], 2)).not.toContain(
-      "/home/ubuntu/aphrody-build/",
+    expect(config.remoteHeavyLock).toContain("/home/ubuntu/build/");
+    expect(config.cargoSerial).toContain("/home/ubuntu/build/");
+    expect(remoteRunScript(config, SHA, "shenron-routing", ["check"], 2)).toContain(
+      "cd /home/ubuntu/build/wsl/shenron",
     );
   }
 });

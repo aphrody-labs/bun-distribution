@@ -5,6 +5,7 @@
  * Validates that events are correctly filtered and applied to maintain accurate cache state.
  */
 
+// oxlint-disable-next-line import/no-unassigned-import -- initialisation DOM à effet de bord
 import "./setup"; // Initialize DOM environment
 import { describe, it, expect } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";

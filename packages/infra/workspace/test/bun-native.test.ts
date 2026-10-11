@@ -84,7 +84,7 @@ async function fixture() {
   await mkdir(join(consumer, "src"), { recursive: true });
   const wrapper =
     process.platform === "win32"
-      ? "scripts/dev/windows-cargo.ps1"
+      ? "scripts/build/rust/cargo-serial.ts"
       : "scripts/build/rust/cargo-serial.sh";
   const serialScript = join(root, wrapper);
   await mkdir(dirname(serialScript), { recursive: true });
@@ -163,7 +163,7 @@ test("native builder fails before build when the serialization wrapper is absent
       join(
         root,
         process.platform === "win32"
-          ? "scripts/dev/windows-cargo.ps1"
+          ? "scripts/build/rust/cargo-serial.ts"
           : "scripts/build/rust/cargo-serial.sh",
       ),
     );

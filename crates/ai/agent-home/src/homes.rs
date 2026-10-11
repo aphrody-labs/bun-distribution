@@ -266,8 +266,8 @@ mod tests {
     #[test]
     fn env_wins_over_config_and_relative_values_join_the_state() {
         let state = tempfile::tempdir().unwrap();
-        let root = HomesRoot::resolve_with(state.path(), Some("/srv/homes"), Some("cfg"));
-        assert_eq!(root.path, PathBuf::from("/srv/homes"));
+        let root = HomesRoot::resolve_with(state.path(), Some("/data/homes"), Some("cfg"));
+        assert_eq!(root.path, PathBuf::from("/data/homes"));
         assert_eq!(root.source, HomesRootSource::Env);
         let root = HomesRoot::resolve_with(state.path(), Some("  "), Some("users"));
         assert_eq!(root.path, state.path().join("users"));

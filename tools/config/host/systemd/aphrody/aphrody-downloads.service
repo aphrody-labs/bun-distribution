@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Aphrody download server (downloads.aphrody.com, aphrody.com): read-only Bun.serve over the published
-# release tree. Source: packages/infra/workspace/src/downloads/server.ts (installed as /srv/aphrody-downloads/app/server.ts).
-# Release tree: /srv/aphrody-downloads/releases/<id>, `current` is flipped by scripts/release/publish-downloads.ts.
-# aphrody.com and www.aphrody.com serve the Bun fork site from /srv/aphrody-downloads/site/current (SITE_ROOT, SITE_HOSTS
+# release tree. Source: packages/infra/workspace/src/downloads/server.ts (installed as /home/ubuntu/apps/downloads/app/server.ts).
+# Release tree: /home/ubuntu/apps/downloads/releases/<id>, `current` is flipped by scripts/release/publish-downloads.ts.
+# aphrody.com and www.aphrody.com serve the Bun fork site from /home/ubuntu/apps/downloads/site/current (SITE_ROOT, SITE_HOSTS
 # defaults; published by scripts/aphrody/site/publish.ts in aphrody-labs/bun), falling back to the download routes.
 # Port 8797 is loopback only; nginx (nginx/aphrody/downloads.aphrody.com.conf) is the single public entry.
 [Unit]
@@ -14,11 +14,11 @@ Wants=network-online.target
 Type=simple
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/srv/aphrody-downloads/app
-Environment=DOWNLOADS_ROOT=/srv/aphrody-downloads/current
+WorkingDirectory=/home/ubuntu/apps/downloads/app
+Environment=DOWNLOADS_ROOT=/home/ubuntu/apps/downloads/current
 Environment=DOWNLOADS_PORT=8797
 Environment=DOWNLOADS_HOST=127.0.0.1
-ExecStart=/home/ubuntu/.bun/bin/bun /srv/aphrody-downloads/app/server.ts
+ExecStart=/home/ubuntu/.bun/bin/bun /home/ubuntu/apps/downloads/app/server.ts
 Restart=always
 RestartSec=2
 TimeoutStopSec=15
@@ -33,7 +33,7 @@ ProtectControlGroups=true
 RestrictSUIDSGID=true
 LockPersonality=true
 MemoryDenyWriteExecute=false
-ReadOnlyPaths=/srv/aphrody-downloads
+ReadOnlyPaths=/home/ubuntu/apps/downloads
 UMask=0077
 StandardOutput=journal
 StandardError=journal

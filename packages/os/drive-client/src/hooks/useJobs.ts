@@ -1,8 +1,8 @@
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import type {JobListItem, GenericProgress} from '../generated/types';
-import {useLibraryMutation} from './useMutation';
-import {useLibraryQuery} from './useQuery';
-import {useSpacedriveClient} from './useClient';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { JobListItem, GenericProgress } from "../generated/types";
+import { useLibraryMutation } from "./useMutation";
+import { useLibraryQuery } from "./useQuery";
+import { useSpacedriveClient } from "./useClient";
 
 // Speed sample for historical graph
 export interface SpeedSample {
@@ -19,7 +19,7 @@ export type ExtendedJobListItem = JobListItem & {
 };
 
 // Re-export GenericProgress for convenience
-export type {GenericProgress};
+export type { GenericProgress };
 
 // Downsample speed history to max 100 samples
 function downsampleSpeedHistory(samples: SpeedSample[]): SpeedSample[] {
@@ -31,11 +31,10 @@ function downsampleSpeedHistory(samples: SpeedSample[]): SpeedSample[] {
 	for (let i = 0; i < samples.length; i += step) {
 		// Average the samples in this bucket
 		const bucket = samples.slice(i, i + step);
-		const avgRate =
-			bucket.reduce((sum, s) => sum + s.bytesPerSecond, 0) / bucket.length;
+		const avgRate = bucket.reduce((sum, s) => sum + s.bytesPerSecond, 0) / bucket.length;
 		downsampled.push({
 			timestamp: bucket[0].timestamp,
-			bytesPerSecond: avgRate
+			bytesPerSecond: avgRate,
 		});
 	}
 
@@ -74,7 +73,7 @@ export interface UseJobsReturn {
  * Handles job list queries, event subscriptions, and speed history tracking.
  */
 export function useJobs(options: UseJobsOptions = {}): UseJobsReturn {
-	const {onJobCompleted, onJobFailed, onJobCancelled} = options;
+	const { onJobCompleted, onJobFailed, onJobCancelled } = options;
 	const [jobs, setJobs] = useState<ExtendedJobListItem[]>([]);
 	const client = useSpacedriveClient();
 
@@ -82,16 +81,16 @@ export function useJobs(options: UseJobsOptions = {}): UseJobsReturn {
 	const speedHistoryRef = useRef<Map<string, SpeedSample[]>>(new Map());
 
 	// Memoize input to prevent object recreation on every render
-	const input = useMemo(() => ({status: null}), []);
+	const input = useMemo(() => ({ status: null }), []);
 
-	const {data, isLoading, error, refetch} = useLibraryQuery({
-		type: 'jobs.list',
-		input
+	const { data, isLoading, error, refetch } = useLibraryQuery({
+		type: "jobs.list",
+		input,
 	});
 
-	const pauseMutation = useLibraryMutation('jobs.pause');
-	const resumeMutation = useLibraryMutation('jobs.resume');
-	const cancelMutation = useLibraryMutation('jobs.cancel');
+	const pauseMutation = useLibraryMutation("jobs.pause");
+	const resumeMutation = useLibraryMutation("jobs.resume");
+	const cancelMutation = useLibraryMutation("jobs.cancel");
 
 	// Ref for stable refetch access
 	const refetchRef = useRef(refetch);
@@ -107,6 +106,7 @@ export function useJobs(options: UseJobsOptions = {}): UseJobsReturn {
 
 	useEffect(() => {
 		if (data?.jobs) {
+			// oxlint-disable-next-line react/set-state-in-effect -- synchronisation de la liste locale depuis chaque nouvelle réponse de la requête (les événements la mettent ensuite à jour)
 			setJobs(data.jobs as ExtendedJobListItem[]);
 		}
 	}, [data]);
@@ -119,37 +119,27 @@ export function useJobs(options: UseJobsOptions = {}): UseJobsReturn {
 		let isCancelled = false;
 
 		const handleEvent = (event: any) => {
-			if ('JobStarted' in event) {
+			if ("JobStarted" in event) {
 				refetchRef.current();
 			} else if (
-				'JobQueued' in event ||
-				'JobCompleted' in event ||
-				'JobFailed' in event ||
-				'JobPaused' in event ||
-				'JobResumed' in event ||
-				'JobCancelled' in event
+				"JobQueued" in event ||
+				"JobCompleted" in event ||
+				"JobFailed" in event ||
+				"JobPaused" in event ||
+				"JobResumed" in event ||
+				"JobCancelled" in event
 			) {
-				if (
-					'JobCompleted' in event ||
-					'JobFailed' in event ||
-					'JobCancelled' in event
-				) {
+				if ("JobCompleted" in event || "JobFailed" in event || "JobCancelled" in event) {
 					const jobId =
-						event.JobCompleted?.job_id ||
-						event.JobFailed?.job_id ||
-						event.JobCancelled?.job_id;
+						event.JobCompleted?.job_id || event.JobFailed?.job_id || event.JobCancelled?.job_id;
 
 					if (jobId) {
 						// Set progress to 100% on completion so the UI
 						// doesn't stay at 0% when a job finishes before
 						// a throttled progress update is emitted.
-						if ('JobCompleted' in event) {
+						if ("JobCompleted" in event) {
 							setJobs((prev) =>
-								prev.map((job) =>
-									job.id === jobId
-										? { ...job, progress: 1.0 }
-										: job
-								)
+								prev.map((job) => (job.id === jobId ? { ...job, progress: 1.0 } : job)),
 							);
 						}
 
@@ -157,18 +147,18 @@ export function useJobs(options: UseJobsOptions = {}): UseJobsReturn {
 						speedHistoryRef.current.delete(jobId);
 
 						// Call callbacks
-						if ('JobCompleted' in event) {
-							const jobType = event.JobCompleted?.job_type || '';
+						if ("JobCompleted" in event) {
+							const jobType = event.JobCompleted?.job_type || "";
 							onJobCompleted?.(jobId, jobType);
-						} else if ('JobFailed' in event) {
+						} else if ("JobFailed" in event) {
 							onJobFailed?.(jobId);
-						} else if ('JobCancelled' in event) {
+						} else if ("JobCancelled" in event) {
 							onJobCancelled?.(jobId);
 						}
 					}
 				}
 				refetchRef.current();
-			} else if ('JobProgress' in event) {
+			} else if ("JobProgress" in event) {
 				const progressData = event.JobProgress;
 				if (!progressData) return;
 
@@ -180,15 +170,12 @@ export function useJobs(options: UseJobsOptions = {}): UseJobsReturn {
 					const samples = speedHistoryRef.current.get(jobId) || [];
 					samples.push({
 						timestamp: Date.now(),
-						bytesPerSecond: rate
+						bytesPerSecond: rate,
 					});
 
 					// Downsample if we have too many samples
 					if (samples.length > 100) {
-						speedHistoryRef.current.set(
-							jobId,
-							downsampleSpeedHistory(samples)
-						);
+						speedHistoryRef.current.set(jobId, downsampleSpeedHistory(samples));
 					} else {
 						speedHistoryRef.current.set(jobId, samples);
 					}
@@ -207,33 +194,34 @@ export function useJobs(options: UseJobsOptions = {}): UseJobsReturn {
 								current_phase: generic.phase,
 								current_path: generic.current_path,
 								status_message: generic.message,
-								generic_progress: generic
-							})
+								generic_progress: generic,
+							}),
 						};
-					})
+					}),
 				);
 			}
 		};
 
 		const filter = {
 			event_types: [
-				'JobQueued',
-				'JobStarted',
-				'JobProgress',
-				'JobCompleted',
-				'JobFailed',
-				'JobPaused',
-				'JobResumed',
-				'JobCancelled'
-			]
+				"JobQueued",
+				"JobStarted",
+				"JobProgress",
+				"JobCompleted",
+				"JobFailed",
+				"JobPaused",
+				"JobResumed",
+				"JobCancelled",
+			],
 		};
 
 		client.subscribeFiltered(filter, handleEvent).then((unsub: () => void) => {
 			if (isCancelled) {
 				unsub();
-			} else {
-				unsubscribe = unsub;
+				return;
 			}
+			unsubscribe = unsub;
+			return;
 		});
 
 		return () => {
@@ -244,39 +232,39 @@ export function useJobs(options: UseJobsOptions = {}): UseJobsReturn {
 
 	const pause = async (jobId: string) => {
 		try {
-			const result = await pauseMutation.mutateAsync({job_id: jobId});
+			const result = await pauseMutation.mutateAsync({ job_id: jobId });
 			if (!result.success) {
-				console.error('Failed to pause job:', jobId);
+				console.error("Failed to pause job:", jobId);
 			}
-		} catch (error) {
-			console.error('Failed to pause job:', error);
+		} catch (err) {
+			console.error("Failed to pause job:", err);
 		}
 	};
 
 	const resume = async (jobId: string) => {
 		try {
-			const result = await resumeMutation.mutateAsync({job_id: jobId});
+			const result = await resumeMutation.mutateAsync({ job_id: jobId });
 			if (!result.success) {
-				console.error('Failed to resume job:', jobId);
+				console.error("Failed to resume job:", jobId);
 			}
-		} catch (error) {
-			console.error('Failed to resume job:', error);
+		} catch (err) {
+			console.error("Failed to resume job:", err);
 		}
 	};
 
 	const cancel = async (jobId: string) => {
 		try {
-			const result = await cancelMutation.mutateAsync({job_id: jobId});
+			const result = await cancelMutation.mutateAsync({ job_id: jobId });
 			if (!result.success) {
-				console.error('Failed to cancel job:', jobId);
+				console.error("Failed to cancel job:", jobId);
 			}
-		} catch (error) {
-			console.error('Failed to cancel job:', error);
+		} catch (err) {
+			console.error("Failed to cancel job:", err);
 		}
 	};
 
-	const runningCount = jobs.filter((j) => j.status === 'running').length;
-	const pausedCount = jobs.filter((j) => j.status === 'paused').length;
+	const runningCount = jobs.filter((j) => j.status === "running").length;
+	const pausedCount = jobs.filter((j) => j.status === "paused").length;
 
 	// Helper to get speed history for a job (memoized to prevent re-creation)
 	const getSpeedHistory = useCallback((jobId: string): SpeedSample[] => {
@@ -292,6 +280,6 @@ export function useJobs(options: UseJobsOptions = {}): UseJobsReturn {
 		cancel,
 		isLoading,
 		error,
-		getSpeedHistory
+		getSpeedHistory,
 	};
 }

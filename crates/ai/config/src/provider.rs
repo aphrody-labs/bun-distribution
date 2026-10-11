@@ -185,7 +185,14 @@ pub fn builtin_providers(
         "vllm".to_string(),
         ModelProviderInfo {
             name: "vLLM".to_string(),
-            base_url: Some("http://localhost:8000/v1".to_string()),
+            base_url: Some(
+                crate::ai_env::CHAT_BASE_URL
+                    .resolve_with(env)
+                    .unwrap_or_else(|| "http://localhost:8000/v1".to_owned()),
+            ),
+            // Store the selected variable's name; the model factory reads its
+            // protected value at request time. No secret enters config.toml.
+            env_key: crate::ai_env::CHAT_API_KEY.resolve_source_with(env).map(str::to_owned),
             wire_api: WireApi::Chat,
             ..ModelProviderInfo::default()
         },

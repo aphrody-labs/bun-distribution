@@ -12,7 +12,8 @@
 //! | [`viewbox`] | read the `viewBox`, synthesize it from `width`/`height`, resize | `svgtypes` |
 //! | [`theme`] | resolve `currentColor`, `var(--md-sys-color-*)` and explicit colour remaps | `svgtypes` |
 //! | [`sprite`] | `<symbol>` sheets with collision-free ids | `roxmltree` |
-//! | [`glyph`] (feature `glyph`) | font glyph outline to SVG path data, variable axes | `skrifa` |
+//! | [`glyph`] (feature `glyph`) | font glyph outline to SVG path data, variable axes, `GSUB` ligatures | `skrifa` |
+//! | [`symbols`] (feature `symbols`) | Material Symbols by name: 960-grid paths, gstatic layout, WOFF2 | `skrifa`, `woff2` |
 //! | [`optimize`] (feature `raster`) | usvg-normalized, precision-bounded output | `usvg` |
 //! | [`raster`] (feature `raster`) | SVG to RGBA, PNG, multi-size ICO | `resvg`, `tiny-skia` |
 //! | [`diff`] (feature `raster`) | pixel comparison of two SVGs or two RGBA buffers | `resvg` |
@@ -30,6 +31,8 @@ pub mod viewbox;
 
 #[cfg(feature = "glyph")]
 pub mod glyph;
+#[cfg(feature = "symbols")]
+pub mod symbols;
 
 #[cfg(feature = "raster")]
 pub mod diff;

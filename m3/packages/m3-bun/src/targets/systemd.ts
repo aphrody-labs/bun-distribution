@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // systemd: a unit in the shape of the yolo host units (`tools/config/host/systemd/<ns>/*.service`: Type=simple, an
-// unprivileged user, `WorkingDirectory=/srv/<ns>/current`, an `EnvironmentFile` under `/etc/<ns>`, restart on
+// unprivileged user, `WorkingDirectory=/home/<user>/apps/<ns>/current`, an `EnvironmentFile` under `/etc/<ns>`, restart on
 // failure), with the sandbox written as the shared drop-ins of `tools/config/host/systemd/shared` (copied from the
 // yolo checkout when it is there), a catalog entry in the `service-catalog.json` format and an env example.
 // Nothing here installs anything: hosts change through Infra's catalog, plan first.
@@ -48,11 +48,11 @@ Wants=network-online.target
 Type=simple
 User=${c.user}
 Group=${c.user}
-WorkingDirectory=/srv/${c.namespace}/current
+WorkingDirectory=/home/${c.user}/apps/${c.namespace}/current
 Environment=PORT=${c.port}
 Environment=HOST=127.0.0.1
 EnvironmentFile=-/etc/${c.namespace}/${c.name}.env
-ExecStart=/srv/${c.namespace}/current/bin/${c.binary}
+ExecStart=/home/${c.user}/apps/${c.namespace}/current/bin/${c.binary}
 Restart=on-failure
 RestartSec=2
 
@@ -69,7 +69,7 @@ export const catalogEntry = (c: TargetContext) => ({
   health: `http://127.0.0.1:${c.port}/healthz`,
   port: c.port,
   sourceRepo: c.namespace,
-  workingDirectory: `/srv/${c.namespace}/current`,
+  workingDirectory: `/home/${c.user}/apps/${c.namespace}/current`,
   environmentFile: `/etc/${c.namespace}/${c.name}.env`,
   publicProxy: "nginx",
   public: Boolean(c.domain),

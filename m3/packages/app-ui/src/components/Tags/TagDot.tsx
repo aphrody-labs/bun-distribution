@@ -1,4 +1,4 @@
-import clsx from 'clsx';
+import { clsx } from "clsx";
 
 interface TagDotProps {
 	color: string;
@@ -12,14 +12,14 @@ interface TagDotProps {
  * Used in FileCard and compact layouts
  */
 export function TagDot({ color, tooltip, onClick, className }: TagDotProps) {
-	const Component = onClick ? 'button' : 'span';
+	const Component = onClick ? "button" : "span";
 
 	return (
 		<Component
 			className={clsx(
-				'size-1.5 rounded-full',
-				onClick && 'hover:scale-125 transition-transform cursor-pointer',
-				className
+				"size-1.5 rounded-full",
+				onClick && "hover:scale-125 transition-transform cursor-pointer",
+				className,
 			)}
 			style={{ backgroundColor: color }}
 			title={tooltip}

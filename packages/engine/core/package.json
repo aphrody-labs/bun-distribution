@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/yolo-core",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "Unified core library for YOLO, modeled directly after Bun's core library architecture",
   "license": "MIT",
   "repository": {
@@ -9,7 +9,8 @@
     "directory": "packages/engine/core"
   },
   "files": [
-    "src"
+    "src",
+    "data/host-layout.json"
   ],
   "type": "module",
   "main": "./src/index.ts",
@@ -45,6 +46,7 @@
     "access": "public"
   },
   "scripts": {
+    "prepack": "bun build-policy.ts",
     "test": "bun test test/core.test.ts test/units.test.ts test/ledger.test.ts test/host-config.test.ts test/redis_monitor.test.ts test/startup.test.ts test/gemma4.test.ts test/gemma4-inference.test.ts test/redis_vector.test.ts test/redis_native.test.ts test/core-transport.test.ts test/vfs-consistency.test.ts test/ledger-content.test.ts test/vendor-status.test.ts test/vendor-catalog.test.ts test/package-manager.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

@@ -168,9 +168,11 @@ export async function inspect(root: string, source: Source): Promise<Row> {
   const dir = join(root, source.id);
   const patches: Record<string, boolean> = {};
   if (!existsSync(dir)) return { id: source.id, state: "missing", detail: dir, patches };
-  for (const patch of source.patches ?? []) {
-    patches[patch.id] = await patchState(dir, patch);
-  }
+  // Lectures seules et indépendantes : l'état de chaque patch est lu en parallèle, dans l'ordre déclaré.
+  const states = await Promise.all(
+    (source.patches ?? []).map(async (patch) => [patch.id, await patchState(dir, patch)] as const),
+  );
+  for (const [id, applied] of states) patches[id] = applied;
   const unapplied = Object.entries(patches)
     .filter(([, applied]) => !applied)
     .map(([id]) => id);
@@ -253,6 +255,7 @@ async function cloneGit(source: Source, dir: string): Promise<void> {
 
 async function applyPatches(repo: string, dir: string, source: Source): Promise<string[]> {
   const applied: string[] = [];
+  // oxlint-disable no-await-in-loop -- patchs appliqués dans l'ordre déclaré : chacun dépend de l'état laissé par le précédent, et une erreur arrête la suite
   for (const patch of source.patches ?? []) {
     if (await patchState(dir, patch)) continue;
     const args = ["patch", `-p${patch.strip}`, "-s", "-d", dir, "-i", join(repo, patch.file)];
@@ -262,6 +265,7 @@ async function applyPatches(repo: string, dir: string, source: Source): Promise<
     if (real.code !== 0) throw new Error(`patch ${patch.id}: ${real.out || real.err}`);
     applied.push(patch.id);
   }
+  // oxlint-enable no-await-in-loop
   return applied;
 }
 
@@ -388,7 +392,8 @@ export async function runUpstreamSources(argv: string[]): Promise<number> {
           ? "would extract"
           : "would clone";
       actions[source.id] = args.apply
-        ? await syncSource(args.repo, root, source).catch(
+        ? // oxlint-disable-next-line no-await-in-loop -- sources synchronisées une à une : clones et extractions git partagent le même répertoire racine
+          await syncSource(args.repo, root, source).catch(
             (error: Error) => `FAILED: ${error.message}`,
           )
         : planned;

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Systemd service and unit supervisor, dependency resolver (DAG), and watchdog.
 
+#[cfg(unix)]
 use aphrody_proc::NoWindow as _;
 use std::{
     collections::{HashMap, HashSet, VecDeque},

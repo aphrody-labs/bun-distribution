@@ -133,10 +133,10 @@ describe("systemd", () => {
       "Type=simple",
       "User=ubuntu",
       "Group=ubuntu",
-      "WorkingDirectory=/srv/aphrody/current",
+      "WorkingDirectory=/home/ubuntu/apps/aphrody/current",
       "Environment=PORT=3456",
       "EnvironmentFile=-/etc/aphrody/hello-m3.env",
-      "ExecStart=/srv/aphrody/current/bin/hello-m3",
+      "ExecStart=/home/ubuntu/apps/aphrody/current/bin/hello-m3",
       "Restart=on-failure",
       "RestartSec=2",
       "WantedBy=multi-user.target",
@@ -176,7 +176,7 @@ describe("systemd", () => {
       health: "http://127.0.0.1:3456/healthz",
       port: 3456,
       sourceRepo: "aphrody",
-      workingDirectory: "/srv/aphrody/current",
+      workingDirectory: "/home/ubuntu/apps/aphrody/current",
       environmentFile: "/etc/aphrody/hello-m3.env",
       publicProxy: "nginx",
       public: true,
@@ -195,7 +195,7 @@ describe("systemd", () => {
         .toSorted()
         .map((f) => readFileSync(join(out, "systemd", "hello-m3.service.d", f), "utf8"));
       const merged = `${read("systemd", "hello-m3.service")
-        .replaceAll("/srv/aphrody/current", join(root, "current"))
+        .replaceAll("/home/ubuntu/apps/aphrody/current", join(root, "current"))
         .replace("[Install]", `${dropins.join("\n")}\n[Install]`)}`;
       const file = join(root, "hello-m3.service");
       writeFileSync(file, merged);

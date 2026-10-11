@@ -1,11 +1,5 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import {
-	useRef,
-	useMemo,
-	useState,
-	useEffect,
-	useLayoutEffect,
-} from "react";
+import { useRef, useMemo, useState, useEffect, useLayoutEffect } from "react";
 import { useExplorer } from "../../context";
 import { useSelection } from "../../SelectionContext";
 import { useNormalizedQuery } from "../../../../contexts/SpacedriveContext";
@@ -19,14 +13,22 @@ import { useExplorerFiles } from "../../hooks/useExplorerFiles";
 function isMediaFile(file: File): boolean {
 	if (!file.extension) return false;
 	const ext = file.extension.toLowerCase();
-	const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif', 'svg', 'bmp', 'tiff'];
-	const videoExts = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v', 'flv', 'wmv'];
+	const imageExts = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "svg", "bmp", "tiff"];
+	const videoExts = ["mp4", "mov", "avi", "mkv", "webm", "m4v", "flv", "wmv"];
 	return imageExts.includes(ext) || videoExts.includes(ext);
 }
 
 export function MediaView() {
-	const { currentPath, viewSettings, sortBy, setSortBy, setCurrentFiles, mode, scrollPosition, setScrollPosition } =
-		useExplorer();
+	const {
+		currentPath,
+		viewSettings,
+		sortBy,
+		setSortBy,
+		setCurrentFiles,
+		mode,
+		scrollPosition,
+		setScrollPosition,
+	} = useExplorer();
 	const {
 		selectFile,
 		focusedIndex,
@@ -182,11 +184,7 @@ export function MediaView() {
 	// Keyboard navigation for media view
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
-			if (
-				!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(
-					e.key,
-				)
-			) {
+			if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
 				return;
 			}
 			if (files.length === 0) return;
@@ -195,10 +193,7 @@ export function MediaView() {
 
 			// Calculate columns based on container width
 			const itemWidth = gridSize + gapSize;
-			const cols =
-				containerWidth > 0
-					? Math.max(4, Math.floor(containerWidth / itemWidth))
-					: 8;
+			const cols = containerWidth > 0 ? Math.max(4, Math.floor(containerWidth / itemWidth)) : 8;
 
 			let newIndex = focusedIndex;
 
@@ -217,9 +212,7 @@ export function MediaView() {
 				setSelectedFiles([files[newIndex]]);
 
 				// Scroll selected item into view
-				const element = document.querySelector(
-					`[data-file-id="${files[newIndex].id}"]`,
-				);
+				const element = document.querySelector(`[data-file-id="${files[newIndex].id}"]`);
 				if (element) {
 					element.scrollIntoView({
 						block: "nearest",
@@ -231,15 +224,7 @@ export function MediaView() {
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [
-		files,
-		focusedIndex,
-		gridSize,
-		gapSize,
-		containerWidth,
-		setFocusedIndex,
-		setSelectedFiles,
-	]);
+	}, [files, focusedIndex, gridSize, gapSize, containerWidth, setFocusedIndex, setSelectedFiles]);
 
 	// Calculate columns and actual item size to fill available space
 	const { columns, actualItemSize } = useMemo(() => {
@@ -264,9 +249,10 @@ export function MediaView() {
 		const rowsPerPage = Math.ceil(viewportHeight / rowHeight);
 		// 3 pages in each direction to reduce flickering
 		return Math.max(10, rowsPerPage * 3);
-	}, [actualItemSize, gapSize, containerWidth]);
+	}, [actualItemSize, gapSize]);
 
 	// Row virtualizer for vertical scrolling
+	// oxlint-disable-next-line react/incompatible-library -- TanStack Virtual renvoie des fonctions non mémoïsables (getScrollElement, measureElement) : le compilateur React doit l'ignorer
 	const rowVirtualizer = useVirtualizer({
 		count: rowCount,
 		getScrollElement: () => parentRef.current,
@@ -319,15 +305,11 @@ export function MediaView() {
 			}
 		}
 
-		if (firstRowIndex === undefined || lastRowIndex === undefined)
-			return undefined;
+		if (firstRowIndex === undefined || lastRowIndex === undefined) return undefined;
 
 		// Convert row indices to item indices
 		let firstItemIndex = firstRowIndex * columns;
-		let lastItemIndex = Math.min(
-			lastRowIndex * columns + columns,
-			files.length - 1,
-		);
+		let lastItemIndex = Math.min(lastRowIndex * columns + columns, files.length - 1);
 
 		// Find first valid date
 		let firstDate: Date | undefined;
@@ -384,9 +366,7 @@ export function MediaView() {
 		return (
 			<div className="flex flex-col items-center justify-center h-full text-on-surface-variant gap-2">
 				<div className="text-title-medium">No location selected</div>
-				<div className="text-body-medium">
-					Select a location from the sidebar to view media
-				</div>
+				<div className="text-body-medium">Select a location from the sidebar to view media</div>
 			</div>
 		);
 	}
@@ -427,48 +407,41 @@ export function MediaView() {
 				{virtualRows.map((virtualRow) => {
 					// Calculate items in this row
 					const startIndex = virtualRow.index * columns;
-					const endIndex = Math.min(
-						startIndex + columns,
-						files.length,
-					);
+					const endIndex = Math.min(startIndex + columns, files.length);
 					const rowTop = virtualRow.start;
 
 					// Render items directly without intermediate array
-					return Array.from(
-						{ length: endIndex - startIndex },
-						(_, idx) => {
-							const i = startIndex + idx;
-							const file = files[i];
-							if (!file) return null;
+					return Array.from({ length: endIndex - startIndex }, (_, idx) => {
+						const i = startIndex + idx;
+						const file = files[i];
+						if (!file) return null;
 
-							const columnIndex = i % columns;
-							const left =
-								columnIndex * (actualItemSize + gapSize);
+						const columnIndex = i % columns;
+						const left = columnIndex * (actualItemSize + gapSize);
 
-							return (
-								<div
-									key={file.id}
-									tabIndex={-1}
-									className="absolute outline-none focus:outline-none"
-									style={{
-										top: `${rowTop}px`,
-										left: `${left}px`,
-										width: `${actualItemSize}px`,
-										height: `${actualItemSize}px`,
-									}}
-								>
-									<MediaViewItem
-										file={file}
-										allFiles={files}
-										selected={selectedFileIds.has(file.id)}
-										focused={i === focusedIndex}
-										onSelect={selectFile}
-										size={actualItemSize}
-									/>
-								</div>
-							);
-						},
-					);
+						return (
+							<div
+								key={file.id}
+								tabIndex={-1}
+								className="absolute outline-none focus:outline-none"
+								style={{
+									top: `${rowTop}px`,
+									left: `${left}px`,
+									width: `${actualItemSize}px`,
+									height: `${actualItemSize}px`,
+								}}
+							>
+								<MediaViewItem
+									file={file}
+									allFiles={files}
+									selected={selectedFileIds.has(file.id)}
+									focused={i === focusedIndex}
+									onSelect={selectFile}
+									size={actualItemSize}
+								/>
+							</div>
+						);
+					});
 				})}
 			</div>
 		</div>

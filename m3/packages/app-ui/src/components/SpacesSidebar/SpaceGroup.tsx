@@ -30,15 +30,15 @@ export function SpaceGroup({
 	const { collapsedGroups, toggleGroup: toggleGroupLocal } = useSidebarStore();
 	const { active } = useDndContext();
 	const updateGroup = useLibraryMutation("spaces.update_group");
-	
+
 	// Use backend's is_collapsed value as the source of truth, fallback to local state
 	const isCollapsed = group.is_collapsed ?? collapsedGroups.has(group.id);
-	
+
 	// Toggle handler that updates both local and backend state
 	const handleToggle = async () => {
 		// Optimistically update local state for immediate UI feedback
 		toggleGroupLocal(group.id);
-		
+
 		// Update backend
 		try {
 			await updateGroup.mutateAsync({
@@ -58,8 +58,18 @@ export function SpaceGroup({
 
 	// System groups (Locations, Volumes, etc.) are dynamic - don't allow insertion/reordering
 	// Custom/QuickAccess groups allow insertion
-	const allowInsertion =
-		group.group_type === "QuickAccess" || group.group_type === "Custom";
+	const allowInsertion = group.group_type === "QuickAccess" || group.group_type === "Custom";
+
+	// Empty drop zone for groups with no items (hook called before any early return)
+	const { setNodeRef: setEmptyRef, isOver: isOverEmpty } = useDroppable({
+		id: `group-${group.id}-empty`,
+		disabled: !allowInsertion || isCollapsed || isDraggingSortableItem,
+		data: {
+			action: "add-to-group",
+			groupId: group.id,
+			spaceId,
+		},
+	});
 
 	// Devices group - fetches all devices (library + paired)
 	if (group.group_type === "Devices") {
@@ -131,17 +141,6 @@ export function SpaceGroup({
 		);
 	}
 
-	// Empty drop zone for groups with no items
-	const { setNodeRef: setEmptyRef, isOver: isOverEmpty } = useDroppable({
-		id: `group-${group.id}-empty`,
-		disabled: !allowInsertion || isCollapsed || isDraggingSortableItem,
-		data: {
-			action: "add-to-group",
-			groupId: group.id,
-			spaceId,
-		},
-	});
-
 	// QuickAccess and Custom groups render stored items
 	return (
 		<div className="rounded-small" data-group-id={group.id}>
@@ -170,13 +169,10 @@ export function SpaceGroup({
 							/>
 						))
 					) : (
-						<div
-							ref={setEmptyRef}
-							className="absolute inset-0 z-10"
-						>
-					{isOverEmpty && !isDraggingSortableItem && (
-						<div className="absolute top-1/2 -translate-y-1/2 left-2 right-2 h-[2px] bg-primary rounded-full" />
-					)}
+						<div ref={setEmptyRef} className="absolute inset-0 z-10">
+							{isOverEmpty && !isDraggingSortableItem && (
+								<div className="absolute top-1/2 -translate-y-1/2 left-2 right-2 h-[2px] bg-primary rounded-full" />
+							)}
 						</div>
 					)}
 				</div>

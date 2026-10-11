@@ -5,11 +5,11 @@ import { join, resolve, dirname } from "node:path";
 import { processes } from "../runtime";
 import { yoloRoot } from "../host/index.ts";
 
-/** The Aphrody Cargo serialization wrapper as an argv prefix: the PowerShell twin on Windows, the bash script elsewhere. */
+/** The Aphrody Cargo serialization wrapper as an argv prefix: the Bun twin on Windows, the bash script elsewhere. */
 export function cargoSerialArgv(root = yoloRoot()): string[] {
   const dir = join(root, "scripts", "build", "rust");
   return process.platform === "win32"
-    ? [Bun.which("pwsh") ?? "pwsh", "-NoProfile", "-File", join(dir, "cargo-serial.ps1")]
+    ? [process.execPath, join(dir, "cargo-serial.ts")]
     : [join(dir, "cargo-serial.sh")];
 }
 
@@ -91,10 +91,12 @@ export async function planPackageSync(options: PackageSyncOptions = {}): Promise
         blockers.push(`Missing required file: ${path}`);
       else if (dirname(realpathSync(path)) !== root)
         blockers.push(`Manifest or lock symlink escapes project: ${path}`);
+      // oxlint-disable-next-line no-await-in-loop -- deux manifestes lus dans l ordre : les blockers restent déterministes
       else inputHashes[path] = await hash(path);
     }
     if (Object.hasOwn(inputHashes, manifest)) {
       try {
+        // oxlint-disable-next-line no-await-in-loop -- lecture séquentielle du manifeste avant analyse
         const text = await Bun.file(manifest).text();
         const value: unknown = manager === "bun" ? JSON.parse(text) : Bun.TOML.parse(text);
         if (!value || typeof value !== "object" || Array.isArray(value))
@@ -176,6 +178,7 @@ export async function syncPackages(options: PackageSyncOptions = {}): Promise<Pa
         continue;
       }
       for (const [path, expected] of Object.entries(step.inputHashes)) {
+        // oxlint-disable-next-line no-await-in-loop -- contrôle des entrées séquentiel : arrêt à la première divergence
         if (!existsSync(path) || (await hash(path)) !== expected) {
           report.ok = false;
           report.results.push({
@@ -205,6 +208,7 @@ export async function syncPackages(options: PackageSyncOptions = {}): Promise<Pa
           maxOutputBytes: 262144,
         });
         try {
+          // oxlint-disable-next-line no-await-in-loop -- une commande de build à la fois, sérialisée par le verrou du propriétaire
           const outcome = await child.collectOutput({
             timeoutMs,
             ...(options.signal ? { signal: options.signal } : {}),
@@ -215,6 +219,7 @@ export async function syncPackages(options: PackageSyncOptions = {}): Promise<Pa
           child.release();
         }
         for (const [path, expected] of Object.entries(step.inputHashes)) {
+          // oxlint-disable-next-line no-await-in-loop -- contrôle des entrées après exécution, arrêt à la première divergence
           if (!existsSync(path) || (await hash(path)) !== expected) {
             reason = "Manifest or lock changed during sync";
             break;

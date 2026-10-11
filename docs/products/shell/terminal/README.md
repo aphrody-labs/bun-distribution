@@ -61,7 +61,7 @@ monorepo and are not part of this repository. The VT state (`aphrody-terminal-co
 
 ## Building microsoft/terminal locally (reference only)
 
-`scripts/build/shell/scripts/terminal/build.ps1` builds a local checkout of
+`scripts/build/shell/terminal-build.ts` (Bun, no console window) builds a local checkout of
 [microsoft/terminal](https://github.com/microsoft/terminal) with the Visual Studio 2026
 toolset (v145) and Windows SDK 10.0.26100.0 instead of the upstream v143 / 10.0.22621.0 pins.
 The checkout is not tracked here (`vendor/` is git-ignored).
@@ -78,12 +78,13 @@ The checkout is not tracked here (`vendor/` is git-ignored).
    under `TreatWarningAsError`), and makes `TargetPlatformVersion` overridable in
    `src/wap-common.build.pre.props`.
 
-2. Build (PowerShell 7, from a VS 2026 developer environment):
+2. Build (any shell; the script captures the newest Visual Studio 2026 developer environment
+   through vswhere and `VsDevCmd.bat` itself):
 
-   ```powershell
-   ./scripts/build/shell/scripts/terminal/build.ps1 -Project Conhost\Host_EXE      # smoke build
-   ./scripts/build/shell/scripts/terminal/build.ps1 -Configuration Release         # full solution
-   ./scripts/build/shell/scripts/terminal/build.ps1 -TerminalRoot D:\src\terminal  # checkout elsewhere
+   ```sh
+   bun scripts/build/shell/terminal-build.ts --project Conhost\\Host_EXE        # smoke build
+   bun scripts/build/shell/terminal-build.ts --configuration Release           # full solution
+   bun scripts/build/shell/terminal-build.ts --terminal-root D:/src/terminal   # checkout elsewhere
    ```
 
 The script restores NuGet packages with a current `nuget.exe` (the bundled NuGet cannot parse

@@ -174,6 +174,7 @@ export async function addParticipants(
       if (entry.misc) attributes.misc = entry.misc;
       return attributes;
     });
+    // oxlint-disable-next-line no-await-in-loop -- lots envoyés séquentiellement : limite de débit de l'API Challonge et ordre des participants créés
     created.push(...(await client.bulkAddParticipants(tournamentId, payload)));
   }
   return created;

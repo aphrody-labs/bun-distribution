@@ -47,7 +47,7 @@ class CertificatePublicationTests(unittest.TestCase):
         self.assertTrue(published.resolve().is_relative_to(self.target / "archive"))
         self.assertEqual(
             self.command.call_args.args[0],
-            ["docker", "exec", "shenron-gateway-1", "nginx", "-s", "reload"],
+            ["docker", "exec", "aphrody-gateway-1", "nginx", "-s", "reload"],
         )
 
     def test_archive_escape_is_rejected_without_gateway_reload(self):
@@ -65,7 +65,7 @@ class CertificatePublicationTests(unittest.TestCase):
 
     def test_another_profile_lineage_is_ignored(self):
         with patch.dict(
-            os.environ, RENEWED_LINEAGE=str(self.source / "live/aphrody.com")
+            os.environ, RENEWED_LINEAGE=str(self.source / "live/example.org")
         ):
             owner.main()
         self.command.assert_not_called()

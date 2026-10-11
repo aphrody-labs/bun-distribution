@@ -8,12 +8,13 @@
     "discordUserId": "1527405876695142620",
     "discordRole": "Aphrody Administrator",
     "unixUser": "omar",
-    "admin": "tools/config/host/omar-admin.json"
+    "admin": "tools/config/host/omar-admin.json",
+    "windowsUser": "omara"
   },
   "wireguard": {
     "interface": "wg1",
     "address": "10.200.77.10/32",
-    "publicKey": "lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=",
+    "publicKey": "EXfatxgVFs8Lr9k7QoJ2wiznY5MYO4C19+4gLbGmCEw=",
     "hub": {
       "host": "vps",
       "endpoint": "51.77.147.152:51821",
@@ -93,9 +94,6 @@
   },
   "pending": [
     "Omar's own SSH public key (replaces the shared windows-aphro key)",
-    "first wg1 handshake from 10.200.77.10",
-    "Windows user name for the User of the omar-pc / omar-rt aliases",
-    "remote.token and mcp.token delivered out of band",
     "aphro-pc remote/vnc/mcp tokens delivered to Omar out of band",
     "WSL Ubuntu user name for the omar-wsl aliases; WSL sshd on 2222 (mirrored networking)"
   ],

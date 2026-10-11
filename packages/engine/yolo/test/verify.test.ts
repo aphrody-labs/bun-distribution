@@ -25,14 +25,72 @@ const gate = (id: string, needs: string[] = [], surfaces: string[] = ["**"]): Ga
   surfaces,
 });
 
+const sleepRun = async () => {
+  await Bun.sleep(60);
+  return { exitCode: 0, output: "" };
+};
+
+const failingRun = async (g: Gate) => ({ exitCode: g.id === "a" ? 1 : 0, output: "bad" });
+
+const only = (files: string[]) => selectChanged(GATES, files).map((g) => g.id);
+
+const native = (script: string): Gate => ({
+  ...gate("x"),
+  command: [process.execPath, "-e", script],
+});
+
+const report = (over: Partial<Report> = {}): Report => ({
+  schema: "yolo.verify/1",
+  startedAt: "2026-10-03T00:00:00.000Z",
+  root: "/r",
+  commit: "0123456789abcdef",
+  dirty: true,
+  selection: "all",
+  parallel: 4,
+  wallMs: 100,
+  sumGateMs: 250,
+  speedup: 2.5,
+  ok: false,
+  gates: [
+    {
+      id: "lint",
+      title: "lint",
+      status: "pass",
+      command: ["bun", "run", "lint"],
+      exitCode: 0,
+      startMs: 0,
+      durationMs: 50,
+      detail: "",
+    },
+    {
+      id: "test",
+      title: "test",
+      status: "fail",
+      command: ["bun", "test"],
+      exitCode: 1,
+      startMs: 0,
+      durationMs: 200,
+      detail: "1 | a|b\nfailed",
+    },
+    {
+      id: "docs",
+      title: "docs",
+      status: "skipped",
+      command: ["mdbook"],
+      exitCode: null,
+      startMs: 0,
+      durationMs: 0,
+      detail: "dependency test did not pass",
+    },
+  ],
+  notRun: NOT_RUN_HEAVY,
+  ...over,
+});
+
 describe("runGates", () => {
   it("runs independent gates in parallel: wall time is below the summed time (measured)", async () => {
     const gates = ["a", "b", "c", "d"].map((id) => gate(id));
-    const run = async () => {
-      await Bun.sleep(60);
-      return { exitCode: 0, output: "" };
-    };
-    const { results, wallMs } = await runGates(gates, run, { parallel: 4, root: "/" });
+    const { results, wallMs } = await runGates(gates, sleepRun, { parallel: 4, root: "/" });
     const { sumGateMs, speedup } = summarize(results, wallMs);
     expect(results.every((r) => r.status === "pass")).toBe(true);
     expect(sumGateMs).toBeGreaterThanOrEqual(240);
@@ -141,7 +199,6 @@ describe("selectChanged", () => {
   });
 
   it("selects the gates whose surfaces match a changed file", () => {
-    const only = (files: string[]) => selectChanged(GATES, files).map((g) => g.id);
     expect(only(["docs/operations/infra/SERVER.md"])).toEqual(["whitespace", "docs"]);
     expect(only(["packages/engine/yolo/src/verify.ts"])).toEqual([
       "whitespace",
@@ -157,54 +214,6 @@ describe("selectChanged", () => {
 });
 
 describe("reports", () => {
-  const report = (over: Partial<Report> = {}): Report => ({
-    schema: "yolo.verify/1",
-    startedAt: "2026-10-03T00:00:00.000Z",
-    root: "/r",
-    commit: "0123456789abcdef",
-    dirty: true,
-    selection: "all",
-    parallel: 4,
-    wallMs: 100,
-    sumGateMs: 250,
-    speedup: 2.5,
-    ok: false,
-    gates: [
-      {
-        id: "lint",
-        title: "lint",
-        status: "pass",
-        command: ["bun", "run", "lint"],
-        exitCode: 0,
-        startMs: 0,
-        durationMs: 50,
-        detail: "",
-      },
-      {
-        id: "test",
-        title: "test",
-        status: "fail",
-        command: ["bun", "test"],
-        exitCode: 1,
-        startMs: 0,
-        durationMs: 200,
-        detail: "1 | a|b\nfailed",
-      },
-      {
-        id: "docs",
-        title: "docs",
-        status: "skipped",
-        command: ["mdbook"],
-        exitCode: null,
-        startMs: 0,
-        durationMs: 0,
-        detail: "dependency test did not pass",
-      },
-    ],
-    notRun: NOT_RUN_HEAVY,
-    ...over,
-  });
-
   it("renders Markdown with the table, the failure output and every gate that was not run", () => {
     const md = renderMarkdown(report());
     expect(md).toContain("# yolo verify: FAIL");
@@ -227,10 +236,6 @@ describe("reports", () => {
 describe("spawnRunner (real processes)", () => {
   it("reports the exit code and the output tail, and kills on timeout", async () => {
     const run = spawnRunner(process.cwd(), 300);
-    const native = (script: string): Gate => ({
-      ...gate("x"),
-      command: [process.execPath, "-e", script],
-    });
     expect(await run(native('console.log("ok")'))).toEqual({ exitCode: 0, output: "ok\n" });
     const failed = await run(native('console.error("oops"); process.exit(3)'));
     expect(failed.exitCode).toBe(3);
@@ -245,31 +250,34 @@ describe("yolo verify command", () => {
   it("prints help without inspecting gates or creating a report", async () => {
     const root = mkdtempSync(join(tmpdir(), "verify-help-"));
     try {
-      for (const help of ["--help", "-h"]) {
-        let printed = "";
-        let touched = 0;
-        const code = await runVerifyCommand([help], root, {
-          gates: [
-            {
-              ...gate("must-not-run"),
-              precondition: () => {
-                touched++;
-                throw new Error("help inspected a gate");
+      // Les deux aides sont indépendantes : elles n'écrivent ni ne lisent d'état partagé.
+      await Promise.all(
+        ["--help", "-h"].map(async (help) => {
+          let printed = "";
+          let touched = 0;
+          const code = await runVerifyCommand([help], root, {
+            gates: [
+              {
+                ...gate("must-not-run"),
+                precondition: () => {
+                  touched++;
+                  throw new Error("help inspected a gate");
+                },
               },
+            ],
+            run: async () => {
+              touched++;
+              throw new Error("help executed a gate");
             },
-          ],
-          run: async () => {
-            touched++;
-            throw new Error("help executed a gate");
-          },
-          out: (text) => (printed += text),
-        });
-        expect(code).toBe(0);
-        expect(printed).toContain("Usage: yolo verify");
-        expect(printed).toContain("--timeout SECS");
-        expect(touched).toBe(0);
-        expect(readdirSync(root)).toEqual([]);
-      }
+            out: (text) => (printed += text),
+          });
+          expect(code).toBe(0);
+          expect(printed).toContain("Usage: yolo verify");
+          expect(printed).toContain("--timeout SECS");
+          expect(touched).toBe(0);
+          expect(readdirSync(root)).toEqual([]);
+        }),
+      );
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -314,6 +322,7 @@ describe("yolo verify command", () => {
       for (const args of invalid) {
         let executed = 0;
         let error = "";
+        // oxlint-disable-next-line no-await-in-loop -- cas validés un par un : le contrôle readdir(root) doit observer l'état après chaque appel
         const code = await runVerifyCommand(args, root, {
           gates: [gate("a")],
           run: async () => {
@@ -368,10 +377,9 @@ describe("yolo verify command", () => {
     try {
       let printed = "";
       const gates = [gate("a"), gate("b", ["a"])];
-      const run = async (g: Gate) => ({ exitCode: g.id === "a" ? 1 : 0, output: "bad" });
       const code = await runVerifyCommand(["--json"], root, {
         gates,
-        run,
+        run: failingRun,
         out: (s) => (printed += s),
       });
       const r = JSON.parse(printed) as Report;

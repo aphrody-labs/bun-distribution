@@ -24,19 +24,10 @@ import type {
 	MediaSortBy,
 	SearchFilters as ApiSearchFilters,
 } from "@aphrody/drive-client";
-import {
-	useViewPreferencesStore,
-	useSortPreferencesStore,
-} from "@aphrody/drive-client";
+import { useViewPreferencesStore, useSortPreferencesStore } from "@aphrody/drive-client";
 
 export type SortBy = DirectorySortBy | MediaSortBy;
-export type ViewMode =
-	| "grid"
-	| "list"
-	| "media"
-	| "column"
-	| "size"
-	| "knowledge";
+export type ViewMode = "grid" | "list" | "media" | "column" | "size" | "knowledge";
 
 export interface ViewSettings {
 	gridSize: number;
@@ -89,10 +80,7 @@ function targetToKey(target: NavigationTarget): string {
 	return `view:${target.view}:${target.id || ""}`;
 }
 
-function targetsEqual(
-	a: NavigationTarget | null,
-	b: NavigationTarget | null,
-): boolean {
+function targetsEqual(a: NavigationTarget | null, b: NavigationTarget | null): boolean {
 	if (a === null || b === null) return a === b;
 	return targetToKey(a) === targetToKey(b);
 }
@@ -110,10 +98,7 @@ type NavigationAction =
 	| { type: "GO_FORWARD" }
 	| { type: "SYNC"; target: NavigationTarget };
 
-function navigationReducer(
-	state: NavigationState,
-	action: NavigationAction,
-): NavigationState {
+function navigationReducer(state: NavigationState, action: NavigationAction): NavigationState {
 	switch (action.type) {
 		case "NAVIGATE": {
 			const current = state.history[state.index];
@@ -149,10 +134,7 @@ function navigationReducer(
 				return state;
 			}
 
-			const newHistory = [
-				...state.history.slice(0, state.index + 1),
-				action.target,
-			];
+			const newHistory = [...state.history.slice(0, state.index + 1), action.target];
 			const trimmedHistory = newHistory.slice(-MAX_HISTORY_SIZE);
 			const indexAdjustment = newHistory.length - trimmedHistory.length;
 
@@ -365,8 +347,7 @@ function urlToTarget(search: string): NavigationTarget | null {
 			type: "view",
 			view,
 			id,
-			params:
-				Object.keys(extraParams).length > 0 ? extraParams : undefined,
+			params: Object.keys(extraParams).length > 0 ? extraParams : undefined,
 		};
 	}
 
@@ -398,11 +379,7 @@ interface ExplorerContextValue {
 	} | null;
 
 	navigateToPath: (path: SdPath) => void;
-	navigateToView: (
-		view: string,
-		id?: string,
-		params?: Record<string, string>,
-	) => void;
+	navigateToView: (view: string, id?: string, params?: Record<string, string>) => void;
 	goBack: () => void;
 	goForward: () => void;
 	canGoBack: boolean;
@@ -480,19 +457,12 @@ export function ExplorerProvider({
 	const sortPrefs = useSortPreferencesStore();
 
 	// Get per-tab state from TabManager
-	const { activeTabId, getExplorerState, updateExplorerState } =
-		useTabManager();
+	const { activeTabId, getExplorerState, updateExplorerState } = useTabManager();
 
 	// Memoize tabState to ensure it updates when activeTabId or explorerStates change
-	const tabState = useMemo(
-		() => getExplorerState(activeTabId),
-		[activeTabId, getExplorerState],
-	);
+	const tabState = useMemo(() => getExplorerState(activeTabId), [activeTabId, getExplorerState]);
 
-	const [navState, navDispatch] = useReducer(
-		navigationReducer,
-		initialNavigationState,
-	);
+	const [navState, navDispatch] = useReducer(navigationReducer, initialNavigationState);
 	const [uiState, uiDispatch] = useReducer(uiReducer, initialUIState);
 	const [currentFiles, setCurrentFiles] = useReducer(
 		(_: File[], files: File[]) => files,
@@ -500,7 +470,7 @@ export function ExplorerProvider({
 	);
 
 	// Parse columnStack from TabManager (stored as JSON strings)
-	// Must depend on activeTabId to recalculate when switching tabs
+	// tabState belongs to the active tab, so switching tabs recalculates this value
 	const columnStack = useMemo((): SdPath[] => {
 		if (!tabState.columnStack || tabState.columnStack.length === 0) {
 			return [];
@@ -510,7 +480,7 @@ export function ExplorerProvider({
 		} catch {
 			return [];
 		}
-	}, [activeTabId, tabState.columnStack]);
+	}, [tabState.columnStack]);
 
 	const setColumnStack = useCallback(
 		(columns: SdPath[]) => {
@@ -526,7 +496,7 @@ export function ExplorerProvider({
 			top: tabState.scrollTop,
 			left: tabState.scrollLeft,
 		}),
-		[activeTabId, tabState.scrollTop, tabState.scrollLeft],
+		[tabState.scrollTop, tabState.scrollLeft],
 	);
 
 	const setScrollPosition = useCallback(
@@ -541,7 +511,7 @@ export function ExplorerProvider({
 
 	const sizeViewTransform = useMemo(
 		() => tabState.sizeViewTransform ?? { k: 1, x: 0, y: 0 },
-		[activeTabId, tabState.sizeViewTransform],
+		[tabState.sizeViewTransform],
 	);
 
 	const setSizeViewTransform = useCallback(
@@ -607,10 +577,7 @@ export function ExplorerProvider({
 		if (uiState.viewMode === "media" && uiState.sortBy === "type") {
 			uiDispatch({ type: "SET_SORT_BY", sort: "datetaken" });
 			sortPrefs.setPreferences(pathKey, "datetaken");
-		} else if (
-			uiState.viewMode !== "media" &&
-			uiState.sortBy === "datetaken"
-		) {
+		} else if (uiState.viewMode !== "media" && uiState.sortBy === "datetaken") {
 			uiDispatch({ type: "SET_SORT_BY", sort: "modified" });
 			sortPrefs.setPreferences(pathKey, "modified");
 		}
@@ -679,7 +646,6 @@ export function ExplorerProvider({
 			sizeViewItemLimit: uiState.viewSettings.sizeViewItemLimit,
 		}),
 		[
-			activeTabId,
 			tabState.gridSize,
 			tabState.gapSize,
 			tabState.foldersFirst,
@@ -731,14 +697,7 @@ export function ExplorerProvider({
 				viewSettings: { ...viewSettings, ...settings },
 			});
 		},
-		[
-			activeTabId,
-			updateExplorerState,
-			tabState,
-			spaceKey,
-			viewSettings,
-			viewPrefs,
-		],
+		[activeTabId, updateExplorerState, tabState, spaceKey, viewSettings, viewPrefs],
 	);
 
 	const setSidebarVisible = useCallback((visible: boolean) => {
@@ -761,12 +720,9 @@ export function ExplorerProvider({
 		uiDispatch({ type: "SET_TAG_MODE", active });
 	}, []);
 
-	const enterSearchMode = useCallback(
-		(query: string, scope: SearchScope = "folder") => {
-			uiDispatch({ type: "ENTER_SEARCH_MODE", query, scope });
-		},
-		[],
-	);
+	const enterSearchMode = useCallback((query: string, scope: SearchScope = "folder") => {
+		uiDispatch({ type: "ENTER_SEARCH_MODE", query, scope });
+	}, []);
 
 	const exitSearchMode = useCallback(() => {
 		uiDispatch({ type: "EXIT_SEARCH_MODE" });
@@ -780,12 +736,9 @@ export function ExplorerProvider({
 		uiDispatch({ type: "EXIT_RECENTS_MODE" });
 	}, []);
 
-	const enterFilteredMode = useCallback(
-		(filters: ApiSearchFilters, label: string) => {
-			uiDispatch({ type: "ENTER_FILTERED_MODE", filters, label });
-		},
-		[],
-	);
+	const enterFilteredMode = useCallback((filters: ApiSearchFilters, label: string) => {
+		uiDispatch({ type: "ENTER_FILTERED_MODE", filters, label });
+	}, []);
 
 	const exitFilteredMode = useCallback(() => {
 		uiDispatch({ type: "EXIT_FILTERED_MODE" });
@@ -915,11 +868,7 @@ export function ExplorerProvider({
 		],
 	);
 
-	return (
-		<ExplorerContext.Provider value={value}>
-			{children}
-		</ExplorerContext.Provider>
-	);
+	return <ExplorerContext.Provider value={value}>{children}</ExplorerContext.Provider>;
 }
 
 export function useExplorer(): ExplorerContextValue {
@@ -939,12 +888,7 @@ export function useOptionalExplorer(): ExplorerContextValue | null {
 	return useContext(ExplorerContext);
 }
 
-export {
-	getSpaceItemKey,
-	getSpaceItemKey as getSpaceItemKeyFromRoute,
-	targetToKey,
-	targetsEqual,
-};
+export { getSpaceItemKey, getSpaceItemKey as getSpaceItemKeyFromRoute, targetToKey, targetsEqual };
 
 export type VirtualView = {
 	view: string;

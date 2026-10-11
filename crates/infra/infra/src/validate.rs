@@ -36,19 +36,19 @@ fn load(root: &Path, relative: &str) -> Result<Value> {
     serde_json::from_str(&text).with_context(|| format!("JSON invalide: {}", path.display()))
 }
 
-/// Host config (systemd units, nginx sites) lives in yolo: `$YOLO_ROOT/tools/config/host`,
-/// default `$HOME/aphrody` (`%USERPROFILE%\aphrody` on Windows).
+/// Host config (systemd units, nginx sites) lives in `$APHRODY_ROOT/tools/config/host`,
+/// default `$HOME/src/aphrody` (`%USERPROFILE%\src\aphrody` on Windows).
 pub fn host_systemd_root() -> PathBuf {
     host_config_root().join("systemd")
 }
 
-/// `$YOLO_ROOT/tools/config/host` (default `$HOME/aphrody`): systemd units, nginx sites and routes.
+/// `$APHRODY_ROOT/tools/config/host` (default `$HOME/src/aphrody`): systemd units, nginx sites and routes.
 pub fn host_config_root() -> PathBuf {
-    let yolo = std::env::var_os("YOLO_ROOT").map(PathBuf::from).unwrap_or_else(|| {
+    let root = std::env::var_os("APHRODY_ROOT").map(PathBuf::from).unwrap_or_else(|| {
         let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"));
-        PathBuf::from(home.unwrap_or_default()).join("aphrody")
+        PathBuf::from(home.unwrap_or_default()).join("src/aphrody")
     });
-    yolo.join("tools/config/host")
+    root.join("tools/config/host")
 }
 
 fn unit_template_exists(systemd_root: &Path, unit: &str) -> bool {
@@ -1191,7 +1191,7 @@ mod tests {
     #[test]
     fn a_site_nginx_serves_from_disk_has_no_unit_and_no_loopback_origin() {
         let routes = json!({ "routes": [
-            { "host": "creator.example.com", "service": "creator", "upstream": "static:/srv/creator/current" },
+            { "host": "creator.example.com", "service": "creator", "upstream": "static:/home/ubuntu/apps/creator/current" },
             { "host": "example.com", "service": "site", "upstream": "127.0.0.1:8100" }
         ] });
         let report = check(&static_catalog(), &routes);
@@ -1202,11 +1202,11 @@ mod tests {
     #[test]
     fn a_static_route_keeps_the_service_and_retirement_rules() {
         let unknown = json!({ "routes": [
-            { "host": "a.example.com", "service": "nope", "upstream": "static:/srv/a" }
+            { "host": "a.example.com", "service": "nope", "upstream": "static:/home/ubuntu/apps/a" }
         ] });
         assert!(check(&static_catalog(), &unknown).errors.iter().any(|e| e.contains("inconnu")));
         let retired_route = json!({ "routes": [
-            { "host": "a.example.com", "service": "creator", "upstream": "static:/srv/a",
+            { "host": "a.example.com", "service": "creator", "upstream": "static:/home/ubuntu/apps/a",
               "status": "retired", "retiredAt": "2026-10-01" }
         ] });
         assert!(
@@ -1217,7 +1217,7 @@ mod tests {
         );
         // Only `static:` is exempt: any other upstream still needs a loopback host:port.
         let bare = json!({ "routes": [
-            { "host": "a.example.com", "service": "creator", "upstream": "/srv/a" }
+            { "host": "a.example.com", "service": "creator", "upstream": "/home/ubuntu/apps/a" }
         ] });
         assert!(check(&static_catalog(), &bare).errors.iter().any(|e| e.contains("host:port")));
         let public_ip = json!({ "routes": [
@@ -1988,7 +1988,7 @@ mod tests {
     fn live_repositories_are_accepted() {
         let catalog = json!({
             "services": [{ "id": "site", "sourceRepo": "aphrody-web" }, { "id": "a2a", "sourceRepo": "aphrody-ai" }],
-            "policies": { "applicationRoots": { "aphrody-web": "/srv/aphrody/current", "rg": "/srv/rg/current" } }
+            "policies": { "applicationRoots": { "aphrody-web": "/home/ubuntu/apps/aphrody/current", "rg": "/home/ubuntu/apps/rg/current" } }
         });
         let report = check_repositories(
             &training(),
@@ -2003,7 +2003,7 @@ mod tests {
     fn retired_and_unknown_repositories_are_rejected() {
         let catalog = json!({
             "services": [{ "id": "site", "sourceRepo": "aphrody" }],
-            "policies": { "applicationRoots": { "aphrody-os": "/srv/aphrody/current" } }
+            "policies": { "applicationRoots": { "aphrody-os": "/home/ubuntu/apps/aphrody/current" } }
         });
         let contract = serde_json::from_value::<LocalAiContract>(set(
             ai_contract(),

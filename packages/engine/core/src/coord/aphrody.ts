@@ -14,7 +14,7 @@ import { diskDecision, diskProbeCommand, resolveMinFree } from "../fleet/space";
 import { parsePolicy } from "../fleet/safety";
 import { existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, posix, resolve } from "node:path";
 
 const PASSTHROUGH: Readonly<Record<string, readonly string[]>> = {
   infra: ["aphrody-infra"],
@@ -26,7 +26,7 @@ const PASSTHROUGH: Readonly<Record<string, readonly string[]>> = {
 export const APHRODY_COMMANDS = [...Object.keys(PASSTHROUGH), "ship", "hooks"] as const;
 
 export function aphrodyRoot(): string {
-  return resolve(process.env["YOLO_APHRODY_ROOT"] ?? join(homedir(), "aphrody"));
+  return resolve(process.env["YOLO_APHRODY_ROOT"] ?? join(homedir(), "src", "aphrody"));
 }
 
 export function onPath(bin: string): boolean {
@@ -84,7 +84,7 @@ const git = (cwd: string, ...args: string[]): string =>
 
 export function remotePaths(factory: Factory, sha: string) {
   // sibling of the other first-party workspaces: <workspaces>/yolo
-  const workspace = join(resolve(factory.workspaceRoot, ".."), "yolo").replaceAll("\\", "/");
+  const workspace = posix.join(posix.dirname(posix.normalize(factory.workspaceRoot)), "yolo");
   const artifacts = `${factory.artifactRoot}/yolo/${sha}`;
   return { workspace, artifacts, lock: factory.lockPath };
 }

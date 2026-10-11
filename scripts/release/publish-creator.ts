@@ -20,7 +20,7 @@ import { join, relative, resolve } from "node:path";
 export const SITE = {
   baseUrl: "https://creator.aphrody.com",
   host: "dbfr",
-  root: "/srv/aphrody-creator",
+  root: "/home/ubuntu/apps/creator",
   keepReleases: 5,
   vhost: "tools/config/host/nginx/shenron/zz-creator.aphrody.com.conf",
   certScript: "scripts/tools/infra/issue-creator-certificate.sh",
@@ -352,7 +352,7 @@ async function hostCommands(apply: boolean): Promise<void> {
     `create ${SITE.root}/releases owned by ubuntu`,
     `DNS creator.aphrody.com CNAME aphrody.com (aphrody ovh dns add, done separately with --apply)`,
     `certificate creator.aphrody.com (HTTP-01) through ${SITE.certScript} when absent`,
-    `${SITE.vhost} ships with the Shenron gateway release (container shenron-gateway-1): nginx -t, reload`,
+    `${SITE.vhost} ships with the Shenron gateway release (container aphrody-gateway-1): nginx -t, reload`,
   ];
   console.log(steps.map((s) => `- ${s}`).join("\n"));
   if (!apply) return console.log("plan only: pass --apply to execute");
@@ -363,7 +363,7 @@ async function hostCommands(apply: boolean): Promise<void> {
     300,
   );
   await remote(
-    "sudo docker exec shenron-gateway-1 nginx -t && sudo docker exec shenron-gateway-1 nginx -s reload",
+    "sudo docker exec aphrody-gateway-1 nginx -t && sudo docker exec aphrody-gateway-1 nginx -s reload",
   );
 }
 

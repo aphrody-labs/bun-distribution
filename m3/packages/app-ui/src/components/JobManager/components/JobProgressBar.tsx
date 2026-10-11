@@ -29,6 +29,7 @@ export function JobProgressBar({ progress, status }: JobProgressBarProps) {
 
   return (
     <div
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- <progress> cannot host the positioned indicator children (motion.div or the width-driven bar) and its native rendering would change
       role="progressbar"
       aria-valuemin={0}
       aria-valuemax={100}

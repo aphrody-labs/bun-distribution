@@ -274,6 +274,8 @@ export async function discoverMonorepoGatePlan(
       continue;
     }
     let matches = 0;
+    // Manifests are classified in scan order; each realpath check updates the shared `discovered` set.
+    // oxlint-disable-next-line no-await-in-loop -- sequential classification keeps scan-order results and the shared discovered set consistent
     for await (const scanned of new Bun.Glob(`${pattern.replace(/\/$/, "")}/package.json`).scan({
       cwd: root,
       onlyFiles: true,
@@ -348,6 +350,7 @@ export async function executeMonorepoGate(
   for (const check of plan.checks) {
     const started = performance.now();
     try {
+      // oxlint-disable-next-line no-await-in-loop -- gates run in plan order on the same worktree (they write build outputs), never concurrently
       const exitCode = await runner(check);
       results.push({
         name: check.name,
@@ -447,8 +450,10 @@ export async function runMonorepoGate(args: string[]): Promise<number> {
           const reader = (child.stdout as ReadableStream<Uint8Array>).getReader();
           try {
             while (true) {
+              // oxlint-disable-next-line no-await-in-loop -- stream chunks must be read and forwarded in order
               const { done, value } = await reader.read();
               if (done) break;
+              // oxlint-disable-next-line no-await-in-loop -- each chunk is written before the next is read, preserving order and backpressure
               await new Promise<void>((resolveWrite, rejectWrite) => {
                 process.stderr.write(value, (error) =>
                   error ? rejectWrite(error) : resolveWrite(),

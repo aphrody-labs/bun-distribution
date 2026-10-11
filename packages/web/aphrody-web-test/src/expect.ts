@@ -49,12 +49,14 @@ async function poll(
   let last: Probe = { pass: false, actual: "<not evaluated>" };
   for (;;) {
     try {
+      // oxlint-disable-next-line no-await-in-loop -- sondage séquentiel : chaque tentative doit attendre la précédente et le délai POLL_MS
       last = await probe();
     } catch (err) {
       last = { pass: false, actual: `<error: ${(err as Error).message}>` };
     }
     if (last.pass === !isNot) return;
     if (Date.now() >= deadline) break;
+    // oxlint-disable-next-line no-await-in-loop -- délai entre deux tentatives d'un sondage séquentiel
     await Bun.sleep(POLL_MS);
   }
   const not = isNot ? "not " : "";
@@ -89,9 +91,10 @@ export interface LocatorMatchers {
 }
 
 /** Builds the matcher object for a locator, with `isNot` threaded through. */
+const t = (o?: MatcherOptions) => o?.timeout ?? DEFAULT_EXPECT_TIMEOUT;
+
 function makeMatchers(locator: WebLocator, isNot: boolean): LocatorMatchers {
   const page = locator._page;
-  const t = (o?: MatcherOptions) => o?.timeout ?? DEFAULT_EXPECT_TIMEOUT;
 
   // Honour `.nth/.first/.last` so the matcher asserts on the targeted element.
   const firstId = (): Promise<number | null> => locator._resolveTargeted();

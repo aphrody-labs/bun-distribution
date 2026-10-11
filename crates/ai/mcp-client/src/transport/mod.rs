@@ -16,7 +16,8 @@ pub mod http;
 pub mod stdio;
 
 /// An active transport layer communicating with an MCP server.
-#[async_trait]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait Transport: Send + Sync {
     /// Send a JSON-RPC request and wait for the response payload.
     async fn call(

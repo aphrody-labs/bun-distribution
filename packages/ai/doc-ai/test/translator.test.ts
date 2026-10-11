@@ -9,6 +9,11 @@ import {
 import type { LlmClient } from "../src/llm.js";
 import type { SegmentTranslator } from "../src/translator.js";
 
+const upper: SegmentTranslator = async (t) => t.toUpperCase();
+const failing: SegmentTranslator = async () => {
+  throw new Error("nope");
+};
+
 const DOC = `---
 title: Hello
 description: A widget
@@ -74,7 +79,6 @@ describe("translateMarkdownOffline (deterministic no-op default)", () => {
   });
 
   test("applies an injected segment translator while preserving structure", async () => {
-    const upper: SegmentTranslator = async (t) => t.toUpperCase();
     const out = await translateMarkdownOffline(DOC, "fr", { segmentTranslator: upper });
     // translatable text is transformed
     expect(out).toContain("# HEADING ONE");
@@ -91,9 +95,6 @@ describe("translateMarkdownOffline (deterministic no-op default)", () => {
 
   test("a failing segment translator degrades gracefully (keeps original line)", async () => {
     const warnings: string[] = [];
-    const failing: SegmentTranslator = async () => {
-      throw new Error("nope");
-    };
     const out = await translateMarkdownOffline(DOC, "fr", {
       segmentTranslator: failing,
       warn: (m) => warnings.push(m),
@@ -105,7 +106,6 @@ describe("translateMarkdownOffline (deterministic no-op default)", () => {
 
   test("preserves quoting of quoted frontmatter values", async () => {
     const doc = `---\ntitle: "Quoted Title"\n---\n\nbody\n`;
-    const upper: SegmentTranslator = async (t) => t.toUpperCase();
     const out = await translateMarkdownOffline(doc, "fr", { segmentTranslator: upper });
     expect(out).toContain('title: "QUOTED TITLE"');
   });

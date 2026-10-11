@@ -393,6 +393,7 @@ impl JevRouter {
         native: Option<NativeEngine>,
         policy: RoutingPolicy,
     ) -> Result<Self, JevError> {
+        #[cfg(not(target_arch = "wasm32"))]
         let _ = rustls::crypto::ring::default_provider().install_default();
         let http = reqwest::Client::builder()
             .user_agent(concat!("aphrody-jev/", env!("CARGO_PKG_VERSION")))

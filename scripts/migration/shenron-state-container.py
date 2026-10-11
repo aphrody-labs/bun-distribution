@@ -41,7 +41,7 @@ def main():
     parser.add_argument(
         "--destination",
         type=pathlib.Path,
-        default=pathlib.Path("/srv/shenron/shared/state"),
+        default=pathlib.Path("/home/ubuntu/apps/shenron/shared/state"),
     )
     parser.add_argument("--apply", action="store_true")
     args = parser.parse_args()
@@ -58,7 +58,7 @@ def main():
         )
         return
     destination = args.destination.resolve()
-    if destination != pathlib.Path("/srv/shenron/shared/state") or destination.exists():
+    if destination != pathlib.Path("/home/ubuntu/apps/shenron/shared/state") or destination.exists():
         parser.error("fresh canonical destination required")
     for unit in (
         "shenron-site.service",

@@ -142,10 +142,30 @@
       "scope": "host",
       "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
     },
-    "scripts/audit/verify-google-pipeline.ps1": {
+    "scripts/audit/bench/run-shell-benchmark.sh": {
+      "count": 4,
+      "scope": "local",
+      "reason": "Benchmark of Bun process startup itself; the bun -e snippets are the measured subjects."
+    },
+    "scripts/audit/verify-google-pipeline.ts": {
       "count": 1,
       "scope": "local",
       "reason": "uv import probe of a Python package owner (Python via uv by policy)."
+    },
+    "scripts/audit/web-verify.test.ts": {
+      "count": 3,
+      "scope": "test",
+      "reason": "Fresh-process isolation fixture."
+    },
+    "scripts/build/os/build-wsl-distro.sh": {
+      "count": 1,
+      "scope": "host",
+      "reason": "Root-only Linux rootfs builder run through sudo by `aphrody wsl build distro`; system CPython validates the payload manifest before debootstrap, the user's Bun install is not on root's PATH."
+    },
+    "scripts/build/os/test-wsl-distro.sh": {
+      "count": 1,
+      "scope": "test",
+      "reason": "Root-only fixture suite of build-wsl-distro.sh with the same root interpreter; bootstrap, chroot and mounts are intercepted."
     },
     "scripts/release/atomic-deploy-aphrody-discord.sh": {
       "count": 3,
@@ -211,6 +231,11 @@
       "count": 4,
       "scope": "host",
       "reason": "Runtime-only host adapter; Bun is absent there, system CPython is the available interpreter."
+    },
+    "scripts/tools/os/mullvad-switch-relay.sh": {
+      "count": 1,
+      "scope": "host",
+      "reason": "Root WireGuard relay switch on the runtime-only VPS; Bun is absent there, system CPython reads the Mullvad relay API."
     }
   }
 }

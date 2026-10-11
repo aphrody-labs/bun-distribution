@@ -10,7 +10,7 @@ The owner's current task uses this VPS for serialized Rust, Bun and runtime
 builds. This supersedes the execution-only placement documented on 2026-10-03.
 WSL keeps sources and scoped static checks; heavy local Cargo remains prohibited.
 Build from the exact requested revision through Workspace/Infra and the shared
-factory lock. Recheck `/srv` capacity before dispatch: root-filesystem capacity
+factory lock. Recheck `~/build` capacity before dispatch: root-filesystem capacity
 does not establish available space on the separate factory volume.
 
 ## Authority and execution
@@ -49,8 +49,8 @@ build locks after the owner command ends.
 A single factory lock bounds heavy jobs across owners. Rust additionally uses
 `scripts/build/rust/cargo-serial.sh`, at most six rustc jobs, incremental disabled
 and sccache enabled. Bun heavy jobs run singly against the frozen lockfile.
-Caches live outside source snapshots under `/srv/aphrody-build/cache`; immutable
-artifacts under `/srv/aphrody-build/artifacts`. Provision directory ownership and
+Caches live outside source snapshots under `/home/ubuntu/build/cache`; immutable
+artifacts under `/home/ubuntu/build/artifacts`. Provision directory ownership and
 pinned toolchain through Infra before execution. Keep cache reuse and record
 source revision, toolchain versions, command, exit status and artifact hashes.
 
@@ -142,13 +142,13 @@ bash scripts/tools/install-vps-adapter.sh --stack shenron --package ~/.cache/aph
 ```
 
 Transfer that small sealed directory directly VPS-to-DBFR into
-`/srv/aphrody-infra/adapters/FULL_SHA`. It contains only the installer,
+`/home/ubuntu/apps/infra/adapters/FULL_SHA`. It contains only the installer,
 Shenron adapter, three catalogs and `SOURCE-MANIFEST.json`; no Git metadata,
 private configuration, dependency trees or source workspace is required.
 Install on DBFR as root:
 
 ```sh
-bash /srv/aphrody-infra/adapters/FULL_SHA/scripts/install-vps-adapter.sh --stack shenron --source-manifest /srv/aphrody-infra/adapters/FULL_SHA/SOURCE-MANIFEST.json --revision FULL_SHA
+bash /home/ubuntu/apps/infra/adapters/FULL_SHA/scripts/install-vps-adapter.sh --stack shenron --source-manifest /home/ubuntu/apps/infra/adapters/FULL_SHA/SOURCE-MANIFEST.json --revision FULL_SHA
 ```
 
 The requested full revision, exact file set, hashes and contained regular file
@@ -162,7 +162,7 @@ installer outside the checkout and set `APHRODY_ADAPTER_SOURCE_ROOT` to its
 existing Git root:
 
 ```sh
-APHRODY_ADAPTER_SOURCE_ROOT=/srv/aphrody-build/workspaces/aphrody bash ~/.cache/aphrody/install-vps-adapter-current.sh --stack shenron --package ~/.cache/aphrody/shenron-adapter-FULL_SHA --revision FULL_SHA
+APHRODY_ADAPTER_SOURCE_ROOT=/home/ubuntu/src/aphrody bash ~/.cache/aphrody/install-vps-adapter-current.sh --stack shenron --package ~/.cache/aphrody/shenron-adapter-FULL_SHA --revision FULL_SHA
 ```
 
 This explicit revision mode reads the five regular files directly from Git
@@ -190,7 +190,7 @@ active/enabled with successful jobs on 2026-10-03. Existing PG archives used
 286,408,704 bytes. Site/media assets are excluded from this database backup.
 
 Retarget the existing `shenron-sqlite-replica-backup.service` to the active
-`/srv/shenron/shared/bot/data/bot.db`; keep its timer and existing destination
+`/home/ubuntu/apps/shenron/shared/bot/data/bot.db`; keep its timer and existing destination
 for the Windows offsite acknowledgement contract. The source VPS backup timer
 is disabled at cutover, not duplicated on DBFR. Export/install the committed
 small adapter package with `--backup-owner` to include the canonical libexec
@@ -246,10 +246,10 @@ Shenron's compute client requires a loopback HTTP endpoint. Keep the existing VP
 ## Single transient resource and targeted cleanup (2026-10-07)
 
 `tools/config/build-factory.json` declares one factory scratch root:
-`/srv/aphrody-build/transient`, mode 0700 and owned by the build user. All
+`/home/ubuntu/build/transient`, mode 0700 and owned by the build user. All
 Workspace factory commands, including detached jobs, the exact-worktree VPS
 Cargo route and direct VPS Cargo/Forge routes share the existing
-`/srv/aphrody-build/locks/heavy.lock`. They set `TMPDIR` to that root and empty
+`/home/ubuntu/build/locks/heavy.lock`. They set `TMPDIR` to that root and empty
 its contents before and after qualified foreground execution. Forge uses its
 `forge/` subtree instead of creating another loop device or tmpfs. Cargo target
 directories, global sccache, Bun/uv caches, source snapshots, retained artifacts

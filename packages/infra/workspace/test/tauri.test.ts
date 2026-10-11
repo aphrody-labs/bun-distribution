@@ -20,16 +20,17 @@ test("Tauri check uses only the current app and serialized Cargo wrapper", async
   writeFileSync(join(root, "Cargo.toml"), "[workspace]\nmembers = []\n");
   writeFileSync(join(app, "Cargo.toml"), '[package]\nname = "test-app"\n');
   const windows = process.platform === "win32";
-  const wrapper = join(scripts, windows ? "cargo-serial.ps1" : "cargo-serial.sh");
+  const wrapper = join(scripts, windows ? "cargo-serial.ts" : "cargo-serial.sh");
   if (windows)
     writeFileSync(
       wrapper,
       [
-        `[IO.File]::WriteAllText('${root}/invocation', (($args | ForEach-Object { "$_\`n" }) -join ''))`,
-        `[IO.File]::WriteAllText('${root}/cargo-env', [string]$env:CARGO)`,
-        `[IO.File]::WriteAllText('${root}/rustc-env', [string]$env:RUSTC_WRAPPER)`,
+        `const root = ${JSON.stringify(root)};`,
+        'await Bun.write(`${root}/invocation`, Bun.argv.slice(2).map((arg) => `${arg}\\n`).join(""));',
+        'await Bun.write(`${root}/cargo-env`, process.env.CARGO ?? "");',
+        'await Bun.write(`${root}/rustc-env`, process.env.RUSTC_WRAPPER ?? "");',
         "",
-      ].join("\r\n"),
+      ].join("\n"),
     );
   else {
     writeFileSync(

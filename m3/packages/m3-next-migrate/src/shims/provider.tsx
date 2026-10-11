@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { setWindowTitle } from "./metadata";
 
 export type RouterMode = "tauri" | "vite" | "browser";
@@ -81,22 +89,24 @@ function forward() {
   if (typeof window !== "undefined") window.history.forward();
 }
 
+const NO_PARAMS: RouteParams = {};
+
 export function NextMigrateProvider({
   children,
   initialPath,
   mode = "tauri",
   useHashRouting,
-  params = {},
+  params = NO_PARAMS,
   onNavigate,
 }: NextMigrateProviderProps) {
   const isHash =
     useHashRouting ??
     (mode === "tauri" || (typeof window !== "undefined" && window.location.protocol === "file:"));
-  const parseLocation = (): { pathname: string; search: string } => {
+  const parseLocation = useCallback((): { pathname: string; search: string } => {
     if (typeof window === "undefined") return pathParts(initialPath ?? "/");
     if (isHash) return pathParts(window.location.hash.replace(/^#/, ""));
     return { pathname: window.location.pathname || "/", search: window.location.search || "" };
-  };
+  }, [initialPath, isHash]);
   // The first browser render must match the explicit server route; adopt the browser after hydration.
   const [currentLoc, setCurrentLoc] = useState(() =>
     initialPath !== undefined ? pathParts(initialPath) : parseLocation(),
@@ -139,57 +149,65 @@ export function NextMigrateProvider({
       window.removeEventListener("popstate", handleLocationChange);
       window.removeEventListener("hashchange", handleLocationChange);
     };
-  }, [isHash]);
+  }, [parseLocation]);
 
   const searchParams = useMemo(() => {
     return new URLSearchParams(currentLoc.search);
   }, [currentLoc.search]);
 
-  const navigate = (url: string, options?: { replace?: boolean; scroll?: boolean }) => {
-    if (typeof window === "undefined") return;
+  const navigate = useCallback(
+    (url: string, options?: { replace?: boolean; scroll?: boolean }) => {
+      if (typeof window === "undefined") return;
 
-    if (isHash) {
-      const targetHash = `#${url.startsWith("/") ? url : `/${url}`}`;
-      if (options?.replace) {
-        window.location.replace(targetHash);
+      if (isHash) {
+        const targetHash = `#${url.startsWith("/") ? url : `/${url}`}`;
+        if (options?.replace) {
+          window.location.replace(targetHash);
+        } else {
+          window.location.hash = targetHash;
+        }
+        setCurrentLoc(parseLocation());
       } else {
-        window.location.hash = targetHash;
+        if (options?.replace) {
+          window.history.replaceState({}, "", url);
+        } else {
+          window.history.pushState({}, "", url);
+        }
+        setCurrentLoc(parseLocation());
       }
-      setCurrentLoc(parseLocation());
-    } else {
-      if (options?.replace) {
-        window.history.replaceState({}, "", url);
-      } else {
-        window.history.pushState({}, "", url);
+
+      if (options?.scroll !== false) {
+        window.scrollTo(0, 0);
       }
-      setCurrentLoc(parseLocation());
-    }
 
-    if (options?.scroll !== false) {
-      window.scrollTo(0, 0);
-    }
+      onNavigate?.(url);
+    },
+    [isHash, onNavigate, parseLocation],
+  );
 
-    onNavigate?.(url);
-  };
-
-  const refresh = () => {
+  const refresh = useCallback(() => {
     setCurrentLoc(parseLocation());
-  };
+  }, [parseLocation]);
 
-  const openExternal = (url: string) =>
-    openExternalUrl(url, mode, typeof window === "undefined" ? undefined : window);
+  const openExternal = useCallback(
+    (url: string) => openExternalUrl(url, mode, typeof window === "undefined" ? undefined : window),
+    [mode],
+  );
 
-  const value: NextMigrateContextValue = {
-    pathname: currentLoc.pathname,
-    searchParams,
-    params,
-    mode,
-    navigate,
-    back,
-    forward,
-    refresh,
-    openExternal,
-  };
+  const value = useMemo<NextMigrateContextValue>(
+    () => ({
+      pathname: currentLoc.pathname,
+      searchParams,
+      params,
+      mode,
+      navigate,
+      back,
+      forward,
+      refresh,
+      openExternal,
+    }),
+    [currentLoc.pathname, searchParams, params, mode, navigate, refresh, openExternal],
+  );
 
   return <NextMigrateContext.Provider value={value}>{children}</NextMigrateContext.Provider>;
 }
@@ -238,9 +256,6 @@ export function RouteParamsProvider({
   children: ReactNode;
 }) {
   const context = useNextMigrateContext();
-  return (
-    <NextMigrateContext.Provider value={{ ...context, params }}>
-      {children}
-    </NextMigrateContext.Provider>
-  );
+  const contextValue = useMemo(() => ({ ...context, params }), [context, params]);
+  return <NextMigrateContext.Provider value={contextValue}>{children}</NextMigrateContext.Provider>;
 }

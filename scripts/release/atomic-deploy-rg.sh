@@ -3,8 +3,8 @@ set -Eeuo pipefail
 
 # Activate a complete, independently built RG release. The release owns its
 # systemd units and nginx routes; this script verifies both before switching.
-release_arg="${1:?usage: atomic-deploy-rg.sh /srv/rg/releases/ID}"
-root="${RG_RELEASE_ROOT:-/srv/rg}"
+release_arg="${1:?usage: atomic-deploy-rg.sh /home/ubuntu/apps/rg/releases/ID}"
+root="${RG_RELEASE_ROOT:-/home/ubuntu/apps/rg}"
 catalog="${RG_SERVICE_CATALOG:-/usr/local/share/aphrody-infra/service-catalog.json}"
 routes="${RG_NGINX_ROUTES:-/usr/local/share/aphrody-infra/nginx-routes.json}"
 systemd_dir="${RG_SYSTEMD_DIR:-/etc/systemd/system}"
@@ -91,7 +91,7 @@ for item in services:
     content = path.read_text()
     if '/home/ubuntu/rg' in content or (
         item['id'] != 'rg-postgrest'
-        and not re.search(r'^WorkingDirectory=/srv/rg/current(?:/[^\s]*)?$', content, re.MULTILINE)
+        and not re.search(r'^WorkingDirectory=/home/ubuntu/apps/rg/current(?:/[^\s]*)?$', content, re.MULTILINE)
     ):
         raise SystemExit(f'unit not release-based: {unit}')
     # The source checkout is never a runtime secret provider. Require every

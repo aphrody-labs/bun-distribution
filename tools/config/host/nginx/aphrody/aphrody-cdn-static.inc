@@ -13,10 +13,10 @@
 #   /h/<sha16>.<ext>    content-addressed copy, immutable for a year
 #
 # The release tree is built by `bun scripts/assets/cdn.ts build` and published under
-# `/srv/aphrody-cdn/releases/<id>` with an atomic `current` switch (`cdn.ts publish`).
+# `/home/ubuntu/apps/cdn/releases/<id>` with an atomic `current` switch (`cdn.ts publish`).
 
 location ^~ /h/ {
-    alias /srv/aphrody-cdn/current/h/;
+    alias /home/ubuntu/apps/cdn/current/h/;
     expires off;
     etag off;
     add_header Cache-Control               "public, immutable, max-age=31536000" always;
@@ -28,7 +28,7 @@ location ^~ /h/ {
 }
 
 location = /s/manifest.json {
-    alias /srv/aphrody-cdn/current/s/manifest.json;
+    alias /home/ubuntu/apps/cdn/current/s/manifest.json;
     add_header Cache-Control               "public, max-age=60, must-revalidate" always;
     add_header Access-Control-Allow-Origin "*"                                   always;
     add_header X-Robots-Tag                "noindex, nofollow"                   always;
@@ -36,7 +36,7 @@ location = /s/manifest.json {
 }
 
 location ^~ /s/ {
-    alias /srv/aphrody-cdn/current/s/;
+    alias /home/ubuntu/apps/cdn/current/s/;
     add_header Cache-Control               "public, max-age=3600, stale-while-revalidate=86400" always;
     add_header Access-Control-Allow-Origin "*"                                   always;
     add_header X-Content-Type-Options      "nosniff"                             always;
@@ -58,6 +58,8 @@ location ^~ /s/ {
         font/woff                woff;
         font/woff2               woff2;
         application/json         json;
+        application/manifest+json webmanifest;
+        text/css                 css;
         text/plain               txt md;
         video/mp4                mp4;
         video/webm               webm;

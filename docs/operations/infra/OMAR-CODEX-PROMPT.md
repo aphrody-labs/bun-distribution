@@ -1,11 +1,12 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # Prompt Codex du PC d'Omar (2026-10-09)
 
 Prompt complet, à coller en un seul message dans Codex lancé en PowerShell 7 administrateur
 (`codex --sandbox danger-full-access --ask-for-approval never`). Il remplace les blocs postés le 2026-10-08
 ([OMAR-REMOTE-CONTROL.md](OMAR-REMOTE-CONTROL.md) sections 4 et 4 bis) : fork Bun à jour, Aphrody depuis les
 sources, WireGuard wg1, bureau + VNC, MCP, SSH Windows et WSL Ubuntu, tunnel inverse et toujours en ligne
-(`scripts/tools/infra/install-always-online.ps1`). Defender et le pare-feu Windows sont désactivés exprès sur les
+(`aphrody infra remote always-online`). Defender et le pare-feu Windows sont désactivés exprès sur les
 PC de dev : aucune règle pare-feu à créer.
 
 ```text
@@ -21,7 +22,7 @@ RÈGLES DE SÉCURITÉ (absolues)
 
 FAITS
 - wg1 : réseau 10.200.77.0/24, interface Windows `aphrody`. Hub vps 10.200.77.1, endpoint 51.77.147.152:51821, clé publique McWuNyGdzU81q9MEyfvnxoGYIHqGW1UcRqpcge3NxB4=. dbfr 10.200.77.3. Propriétaire aphro-pc 10.200.77.4.
-- Omar = 10.200.77.10/24, clé publique déclarée lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=.
+- Omar = 10.200.77.10/24, clé publique déclarée EXfatxgVFs8Lr9k7QoJ2wiznY5MYO4C19+4gLbGmCEw=.
 - Services d'Omar : 22 SSH Windows, 2222 SSH WSL Ubuntu, 8795 bureau à distance, 5900 VNC, 8793 MCP HTTP (127.0.0.1 + portproxy sur 10.200.77.10).
 - Tunnel inverse (secours sans handshake) vers omar@51.77.147.152 : 22010→22, 28795→8795, 28793→8793, 22011→2222, 25900→5900 (seuls ports autorisés par le hub).
 - Variables (redéfinis-les à chaque session) : $Repo = "C:\src\aphrody" ; $BunRepo = "C:\bun" ; $AH = "$env:USERPROFILE\.aphrody" ; $Bin = "$env:LOCALAPPDATA\Aphrody\bin"
@@ -41,7 +42,7 @@ Checkout source du fork (docs, contributions) : if (Test-Path $BunRepo) { git -C
 
 3) DÉPÔT APHRODY (privé : le compte GitHub d'Omar doit y avoir accès ; 403/404 = blocage à signaler)
 if (Test-Path $Repo) { git -C $Repo pull --ff-only } else { New-Item -ItemType Directory -Force C:\src | Out-Null ; git clone --filter=blob:none https://github.com/aphrody-labs/aphrody.git $Repo }
-Set-Location $Repo ; git log --oneline -1 ; Test-Path scripts\tools\infra\install-always-online.ps1   # True attendu
+Set-Location $Repo ; git log --oneline -1 ; Test-Path crates\infra\infra\src\always_online.rs   # True attendu
 bun install
 
 4) APHRODY DEPUIS LES SOURCES (20 à 60 min, un seul build ; ne modifie ni Cargo.lock ni le code)
@@ -54,7 +55,7 @@ En échec de build : lis la première erreur, installe le prérequis manquant, r
 
 5) WIREGUARD wg1
 aphrody infra wg driver install ; aphrody infra wg driver status
-a. Si "$AH\wireguard\aphrody.key" existe : Get-Content "$AH\wireguard\aphrody.key" -Raw | aphrody infra wg pubkey → attendu lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=, puis d.
+a. Si "$AH\wireguard\aphrody.key" existe : Get-Content "$AH\wireguard\aphrody.key" -Raw | aphrody infra wg pubkey → attendu EXfatxgVFs8Lr9k7QoJ2wiznY5MYO4C19+4gLbGmCEw=, puis d.
 b. Sinon, dis à Omar : « Dans une AUTRE fenêtre PowerShell, colle la PrivateKey de ton tunnel (app WireGuard → tunnel → Modifier → ligne PrivateKey) : $k="$env:USERPROFILE\.aphrody\wireguard\aphrody.key"; New-Item -ItemType Directory -Force (Split-Path $k)|Out-Null; Read-Host "PrivateKey" | Set-Content -NoNewline $k » et attends sa confirmation, puis refais a. Ne lui demande JAMAIS de te la coller.
 c. Clé perdue : aphrody infra wg keygen (--force seulement pour remplacer un aphrody.key erroné) ; la clé PUBLIQUE affichée va dans le rapport, le propriétaire met à jour le hub.
 d. icacls "$AH\wireguard\aphrody.key" /inheritance:r /grant:r "${env:USERNAME}:F" /grant:r "SYSTEM:F"
@@ -90,7 +91,7 @@ if (-not (Select-String -Quiet -Path "$S\config" -Pattern '^Host aphro-pc' -Erro
 
 8) WSL UBUNTU (OpenSSH natif Linux, port 2222 ; WireGuard reste porté par Windows seul)
 wsl --status ; wsl -l -v   # sans distribution : wsl --install -d Ubuntu --no-launch, puis wsl -d Ubuntu -u root -- true
-Mode réseau mirrored : install-always-online.ps1 (étape 9) l'écrit dans %USERPROFILE%\.wslconfig puis redémarre WSL.
+Mode réseau mirrored : aphrody infra remote always-online (étape 9) l'écrit dans %USERPROFILE%\.wslconfig puis redémarre WSL.
 wsl -d Ubuntu -u root -- sh -c "apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq openssh-server && printf 'Port 2222\nPasswordAuthentication no\nKbdInteractiveAuthentication no\nPubkeyAuthentication yes\n' > /etc/ssh/sshd_config.d/60-aphrody-wsl.conf && grep -q '^\[boot\]' /etc/wsl.conf 2>/dev/null || printf '[boot]\nsystemd=true\n' >> /etc/wsl.conf"
 $u = (wsl -d Ubuntu -- whoami).Trim()
 wsl -d Ubuntu -- sh -c "install -d -m 700 ~/.ssh && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && tr -d '\r' < /mnt/c/ProgramData/ssh/administrators_authorized_keys | sed '/^#/d;/^$/d' >> ~/.ssh/authorized_keys && sort -u -o ~/.ssh/authorized_keys ~/.ssh/authorized_keys"
@@ -98,8 +99,8 @@ wsl -d Ubuntu -- sh -c "install -d -m 700 ~/.ssh && touch ~/.ssh/authorized_keys
 
 9) TOUJOURS EN LIGNE (tâches \Aphrody\ relancées toutes les 5 min, veille coupée)
 Unregister-ScheduledTask 'Aphrody Omar remote' -Confirm:$false -ErrorAction SilentlyContinue   # ancien garde-fou du 2026-10-08
-pwsh -NoProfile -File "$Repo\scripts\tools\infra\install-always-online.ps1" -DryRun
-pwsh -NoProfile -File "$Repo\scripts\tools\infra\install-always-online.ps1"
+aphrody infra --root $Repo remote always-online --dry-run
+aphrody infra --root $Repo remote always-online
 Il crée : Aphrody WG omar (démarrage, SYSTEM), Aphrody Remote Desktop (8795 + VNC 5900), Aphrody MCP HTTP (127.0.0.1:8793 + portproxy 10.200.77.10:8793), Aphrody omar reverse (tunnel inverse, clé ~/.ssh/id_ed25519), Aphrody WSL sshd (2222). Le tunnel inverse ne marche qu'une fois la clé publique d'Omar installée par le propriétaire : il réessaie seul toutes les 5 min.
 
 10) VÉRIFICATION (attends 60 s après l'étape 9)

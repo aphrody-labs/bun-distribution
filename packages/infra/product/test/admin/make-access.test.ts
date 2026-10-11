@@ -26,7 +26,7 @@ test("the pack mirrors the grants of the peer: hosts with ssh, services with a p
     peer: "omar",
     wgBlock: BLOCK,
     trainHost: "dbfr",
-    repoDirs: { dbfr: "/srv/aphrody" },
+    repoDirs: { dbfr: "/home/ubuntu/apps/aphrody" },
     issuedAt: "2026-10-06T00:00:00Z",
   });
   expect(Object.keys(pack.hosts)).toEqual(["vps", "dbfr"]);
@@ -36,7 +36,7 @@ test("the pack mirrors the grants of the peer: hosts with ssh, services with a p
     roles: ["admin"],
     repoDir: "~/aphrody",
   });
-  expect(pack.hosts.dbfr).toMatchObject({ roles: ["train"], repoDir: "/srv/aphrody" });
+  expect(pack.hosts.dbfr).toMatchObject({ roles: ["train"], repoDir: "/home/ubuntu/apps/aphrody" });
   expect(pack.trainHost).toBe("dbfr");
   expect(pack.services.mcpHttp).toEqual({
     url: "http://198.51.100.1:8789/mcp",

@@ -14,17 +14,20 @@ workspace = true
 
 [dependencies]
 aphrody-antigravity = { workspace = true }
-aphrody-gemini-runtime = { workspace = true }
 aphrody-gemini-web = { workspace = true }
-aphrody-model-client = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+
+# The Gemini CLI process adapter, the `Send` model-client streams, the CLI, routes, search and
+# translate run on the host. wasm32 keeps the facade over antigravity, gemini-web and the
+# language atlas.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+aphrody-gemini-runtime = { workspace = true }
+aphrody-model-client = { workspace = true }
 clap = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
 rustls = { workspace = true }
 futures = { workspace = true }
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 obscura-dom = { workspace = true }
 regex = { workspace = true }
 reqwest = { workspace = true }

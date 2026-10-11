@@ -40,7 +40,7 @@ export default function Brands({ adaptive }: PageProps) {
     context.fillText("Aphrody M3", 40, 82);
     context.font = "400 16px " + style.fontFamily;
     context.fillText("Canvas follows the live theme", 40, 114);
-  }, [theme.seedColor, theme.resolvedTheme, theme.variant, theme.contrastLevel]);
+  }, [theme]);
   return (
     <Page
       title="Brands"
@@ -113,6 +113,7 @@ export default function Brands({ adaptive }: PageProps) {
             width={420}
             height={180}
             style={{ width: "100%", maxWidth: 420, height: "auto" }}
+            // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- canvas dessiné par le thème : un élément img ne peut pas porter ce rendu, le rôle img explicite reste requis
             role="img"
             aria-label="Aphrody Material 3 canvas using the current theme"
           >

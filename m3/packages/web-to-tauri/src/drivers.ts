@@ -49,8 +49,10 @@ export async function bridgeDriver(exe?: string, label = "tauri-bridge"): Promis
       await bridge.evaluate(`window.location.assign(${JSON.stringify(url)}); return true;`);
       const deadline = Date.now() + 30_000;
       for (;;) {
+        // oxlint-disable-next-line no-await-in-loop -- polling until the page finishes navigating, at a fixed interval
         await Bun.sleep(300);
         // The page is unloading right after `assign`; a failing evaluate means "not ready yet".
+        // oxlint-disable-next-line no-await-in-loop -- polling until the page finishes navigating, at a fixed interval
         const state = await bridge
           .evaluate<string>(`return document.readyState + "|" + location.href;`)
           .catch(() => "");
@@ -105,8 +107,12 @@ export async function runParity(
       continue;
     }
     try {
-      const reference = await options.reference.capture(new URL(path, referenceBase).href);
-      const wrapped = await options.wrapped.capture(new URL(path, wrappedBase).href);
+      // The reference (CDP) and wrapped (app bridge) targets are independent, so both captures run together.
+      // oxlint-disable-next-line no-await-in-loop -- paths are captured one after another: every path navigates the same reference and wrapped pages
+      const [reference, wrapped] = await Promise.all([
+        options.reference.capture(new URL(path, referenceBase).href),
+        options.wrapped.capture(new URL(path, wrappedBase).href),
+      ]);
       const originMap =
         referenceBase === wrappedBase
           ? {}

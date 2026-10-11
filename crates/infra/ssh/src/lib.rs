@@ -46,7 +46,7 @@ pub enum Host {
     #[value(alias = "ovh-vps")]
     Vps,
     Dbfr,
-    /// Omar's Windows PC on wg1 (OpenSSH alias `omar-pc`, 10.200.77.10:22).
+    /// Omar's Windows PC through the configured OpenSSH alias `omar-pc`.
     #[value(alias = "omar-pc")]
     Omar,
     /// Omar's Windows PC through his reverse tunnel on the vps loopback (127.0.0.1:22010).
@@ -55,7 +55,7 @@ pub enum Host {
     OmarWsl,
     /// Omar's WSL Ubuntu through the reverse tunnel (127.0.0.1:22011).
     OmarWslRt,
-    /// The owner's Windows workstation on wg1 (10.200.77.4).
+    /// The owner's Windows workstation through the configured OpenSSH alias.
     AphroPc,
 }
 

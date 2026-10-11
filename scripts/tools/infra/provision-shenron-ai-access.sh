@@ -10,7 +10,7 @@ ai_url=http://127.0.0.1:8789
 [[ -f "$ai_env" && "$(stat -c %a "$ai_env")" = 600 ]] || { echo 'Aphrody AI env file must exist with mode 0600' >&2; exit 2; }
 grep -q '^APHRODY_MCP_DATABASE_URL=' "$ai_env" || { echo 'Aphrody AI database is not configured' >&2; exit 2; }
 
-backup="/srv/aphrody/shared/deploy-backups/shenron-ai-access-$(date -u +%Y%m%dT%H%M%SZ)"
+backup="/home/ubuntu/apps/aphrody/shared/deploy-backups/shenron-ai-access-$(date -u +%Y%m%dT%H%M%SZ)"
 install -d -m 0700 "$backup"
 cp -a "$ai_env" "$backup/aphrody-ai-http.env"
 client_existed=no

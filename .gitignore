@@ -48,6 +48,8 @@ compile_commands.json
 /var/json/
 /var/private/
 /var/unification/
+/var/winclean-live/
+/var/data/
 /tools/var/
 *.pem
 *.key
@@ -163,3 +165,4 @@ packages/infra/product/site/dist/
 
 # Native Web reference corpus: regenerable public mirrors and acquisition receipts.
 /var/mirrors/
+/var/cdn/

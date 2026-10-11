@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+# Browser viewer (WebSocket) and RFB (VNC) of the virtual desktop, bound to this host's wg1 address only.
+# /etc/aphrody/remote.env (root, 0600): APHRODY_REMOTE_TOKEN, APHRODY_VNC_PASSWORD (secrets, never in the repository)
+# and the non-secret APHRODY_REMOTE_BIND, APHRODY_VNC_BIND, APHRODY_VNC_ALLOW (loopback is always admitted).
+[Unit]
+Description=Aphrody remote desktop (viewer + VNC on the wg1 address)
+Requires=aphrody-desktop-xvfb.service
+After=aphrody-desktop-xvfb.service aphrody-desktop-wm.service wg-quick@wg1.service network-online.target
+Wants=aphrody-desktop-wm.service wg-quick@wg1.service network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/.aphrody
+Environment=DISPLAY=:99
+Environment=HOME=/home/ubuntu
+Environment=RUST_LOG=info
+EnvironmentFile=/etc/aphrody/remote.env
+ExecStart=/home/ubuntu/.local/bin/aphrody infra --root /home/ubuntu/.aphrody remote serve --bind ${APHRODY_REMOTE_BIND} --vnc ${APHRODY_VNC_BIND} --vnc-allow ${APHRODY_VNC_ALLOW} --fps 10 --quality 70
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=full
+RestrictRealtime=true
+UMask=0077
+MemoryMax=512M
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aphrody-remote
+
+[Install]
+WantedBy=multi-user.target

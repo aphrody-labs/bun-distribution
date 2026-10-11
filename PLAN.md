@@ -63,7 +63,7 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 | MCP HTTP auth | Bearer token in a 0600 EnvironmentFile (`APHRODY_MCP_HTTP_TOKEN`); finish `workspace/wip/infra-mcp-auth` (free port, `infra validate` fix), gate, rebase, push |
 | agent-home | Land `workspace/wip/agent-home-gaps`; gate `aphrody-agent-home`, `aphrody-config` |
 | code-graph | Python/TS extractors and `scripts/audit/ai/graph-parity.ts`; Graphify stays the parity oracle |
-| Publication | npm `@aphrody/*`, crates.io (316 crates: metadata, `publish = false`, path versions, 14 taken names), PyPI |
+| Publication | 2026-10-09: all 73 npm producer versions have verified registry tarballs and a clean frozen consumer installation. Full Rust publication remains open: 169 Aphrody members, 73 IECODE members, source/package gates and the crates.io new-name quota. Preserve fork licences, exact registry requirements and protected stores. IECODE/NIE/Inagle/RG require the qualified Aphrody Bun fork. Evidence and remaining blockers: [registry release](docs/operations/workspace/registry-release-2026-10-09.md); npm [receipt](docs/operations/workspace/npm-source-release-2026-10-09.md). PyPI remains a separate release queue. |
 | Repository hygiene | Archive absorbed GitHub repos and integrated forks; deprecate absorbed npm packages; prune stale worktrees |
 | Known failures | `web:verify`, 4 `packages/engine/yolo` tests (`libaphrody_ffi` absent), `aphrody infra validate` |
 | Context-dependent routing | Resolve checkout, toolchain and build host from the current context. Retire automatic WSL use on the current Windows workstation; qualify native, SSH and Docker routes independently. |

@@ -5,9 +5,9 @@
 > comptes, identifiants de projet, nombres d'API et affirmations de déploiement
 > ci-dessous ne sont pas un état live. Les scripts de provisionnement décrits
 > plus bas sont des archives de leur capture initiale, pas des procédures
-> actuelles garanties. Les scripts PowerShell pour le CLI Google ont été
-> réalignés sur le monorepo; leur gate complète reste bloquée par le conflit de
-> versions uv entre `tools/config/system-packages.json` et le workspace `aphrody-py`.
+> actuelles garanties. Le provisionnement est porté par l'outil Bun
+> `scripts/tools/infra/gcp.ts` (aucun PowerShell) ; le CLI Google est le lien
+> multi-appel `aphrody-google` installé par `aphrody self install-path`.
 > Voir le [contrat d'installation actuel](../../../reference/infra/GOOGLE-STACK-PACKAGING.md).
 > La propriété applicative courante est décrite dans le
 > [catalogue écosystème](../../../ecosystem/ECOSYSTEM.md) et les contrats Infra
@@ -22,7 +22,7 @@ et reproductible (CLAUDE.md §0.1).
 * **[Optimisation des Coûts & Quotas Always Free](../../../reference/ai/gcloud/COST_OPTIMIZATION.md)** — Runbook détaillé pour exploiter le catalogue GCP à $0.00/mois.
 
 > **Provisionné le 2026-05-23.** Source de vérité opérationnelle : les scripts
-> [`scripts/gcp-sa-setup.{ps1,sh}`](../../../../scripts/tools/infra) et
+> [`scripts/tools/infra/gcp.ts`](../../../../scripts/tools/infra/gcp.ts) et
 > [`scripts/tools/infra/gcp-enable-all.sh`](../../../../scripts/tools/infra/gcp-enable-all.sh). Cette doc
 > décrit l'état cible ; relancer un script suffit à le reconstituer.
 
@@ -131,27 +131,29 @@ APIs clés pour aphrody : `aiplatform` (Vertex AI), `generativelanguage`
 
 | Script | Plateforme | Rôle |
 |--------|------------|------|
-| [`scripts/tools/infra/gcp-sa-setup.ps1`](../../../../scripts/tools/infra/gcp-sa-setup.ps1) | Windows (hôte) | SA + owner + 37 APIs cœur + clé JSON + clé API + `.env` + vérif |
-| [`scripts/tools/infra/gcp-sa-setup.sh`](../../../../scripts/tools/infra/gcp-sa-setup.sh) | Linux (cible #1) | idem, miroir bash |
+| [`scripts/tools/infra/gcp.ts`](../../../../scripts/tools/infra/gcp.ts) `service-account` | Windows, Linux (Bun) | SA + owner + 37 APIs cœur + clé JSON + clé API + `.env` + vérif |
+| [`scripts/tools/infra/gcp.ts`](../../../../scripts/tools/infra/gcp.ts) `runtime` | Windows, Linux (Bun) | projet gcloud + contrat d'environnement non secret (utilisateur Windows, `export` ailleurs) |
 | [`scripts/tools/infra/gcp-enable-all.sh`](../../../../scripts/tools/infra/gcp-enable-all.sh) | Linux/bash | active **toutes** les 525 APIs first-party (lots de 20, repli individuel) |
 
 Tous **idempotents** et **non-interactifs**.
 
 ```bash
 # Provisionnement complet (SA + clé + clé API + .env + vérif)
-pwsh scripts/aphrody/gcp-sa-setup.ps1                             # Windows
-bash scripts/aphrody/gcp-sa-setup.sh                              # Linux
+bun --no-env-file scripts/tools/infra/gcp.ts service-account     # [--root <dir>] (défaut : racine du dépôt)
 
 # Forcer la rotation de la clé SA
-pwsh scripts/aphrody/gcp-sa-setup.ps1 -Rotate
-ROTATE=1 bash scripts/aphrody/gcp-sa-setup.sh
+bun --no-env-file scripts/tools/infra/gcp.ts service-account --rotate
+
+# Projet gcloud et environnement d'exécution (Vertex, ADC, aphrody google)
+bun --no-env-file scripts/tools/infra/gcp.ts runtime
 
 # Activer tout le catalogue Google
-bash scripts/aphrody/gcp-enable-all.sh                            # log -> /tmp/gcp-enable-all.log
+bash scripts/tools/infra/gcp-enable-all.sh                           # log -> /tmp/gcp-enable-all.log
 ```
 
-Chaque exécution de `gcp-sa-setup` vérifie l'accès en mintant un access token
-et **restaure** le compte gcloud actif sur l'utilisateur.
+Chaque exécution de `gcp.ts service-account` vérifie l'accès en mintant un access token
+dans une configuration gcloud jetable (`CLOUDSDK_CONFIG` temporaire, supprimée ensuite) :
+le compte gcloud actif de l'utilisateur n'est jamais modifié.
 
 ---
 
@@ -178,8 +180,9 @@ set -a; . ./.env; set +a
 
 - **gitignore** (`.gitignore` §7) couvre `secrets/`, `.secrets/`, `.env`,
   `.env.*`, `*secrets.json`. Vérifié : `git check-ignore secrets/aphrody-bot.json .env`.
-- **ACL fichiers** : `icacls … /inheritance:r /grant:r "$USER:(R,W)"` (Windows),
-  `chmod 600` (Linux). Aucune hérédité, lecture/écriture utilisateur uniquement.
+- **ACL fichiers** : DACL protégée accordée au seul SID de l'utilisateur courant
+  (`bun:ffi`, `scripts/tools/infra/win32-user.ts`) sur Windows, `chmod 600` ailleurs.
+  Aucune hérédité, aucun autre principal.
 - **Jamais** committer une clé. Le `git status` ne doit montrer que `scripts/`
   et `.env.example`.
 
@@ -191,7 +194,7 @@ gcloud iam service-accounts keys delete <KEY_ID> \
   --iam-account=aphrody-bot@aphrody.iam.gserviceaccount.com
 
 # Régénérer une clé SA propre
-pwsh scripts/aphrody/gcp-sa-setup.ps1 -Rotate
+bun --no-env-file scripts/tools/infra/gcp.ts service-account --rotate
 
 # Supprimer / recréer la clé API
 gcloud services api-keys delete projects/468000409790/locations/global/keys/6fcb027a-…
@@ -247,9 +250,9 @@ claude mcp get gcloud
 |----------|----------------|-----|
 | `PERMISSION_DENIED` malgré owner | API non activée | `gcloud services enable <api>` |
 | `API key not valid` | clé restreinte / mauvaise API | vérifier `api-keys describe`, ou recréer non restreinte |
-| `invalid_grant` ADC | clé SA expirée/supprimée | `pwsh scripts/aphrody/gcp-sa-setup.ps1 -Rotate` |
+| `invalid_grant` ADC | clé SA expirée/supprimée | `bun --no-env-file scripts/tools/infra/gcp.ts service-account --rotate` |
 | `SU_MAX_BATCH_SIZE_EXCEEDED` | > 20 services par `enable` | lots de 20 (déjà géré par les scripts) |
-| compte gcloud changé après script | activation SA | `gcloud config set account owner@example.com` (le script restaure auto) |
+| compte gcloud changé | activation SA manuelle | `gcloud config set account owner@example.com` (le script n'active la SA que dans une configuration jetable) |
 
 ---
 

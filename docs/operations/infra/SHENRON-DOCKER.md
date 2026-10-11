@@ -26,7 +26,7 @@ The container release directory is `releases/<commit>` or
   "commit": "FULL_40_CHARACTER_SHA",
   "imageId": "sha256:FULL_IMAGE_ID",
   "files": { "compose.yaml": "SHA256", "deploy.env": "SHA256" },
-  "publicVfs": { "path": "/srv/shenron/shared/server/data/shenron-vfs.sqlite", "sha256": "SHA256" }
+  "publicVfs": { "path": "/home/ubuntu/apps/shenron/shared/server/data/shenron-vfs.sqlite", "sha256": "SHA256" }
 }
 ```
 
@@ -70,7 +70,7 @@ Copy canonical `tools/config/host/nginx/shenron/*.conf` into the release's `ngin
 directory, and public static files into `public/`. Every file is sealed. Mount
 `nginx/` read-only at `/etc/nginx/conf.d`. Mount only the public shared directories
 `site/wiki`, `bot/assets` and `site/public-extra` at their corresponding
-`/srv/shenron-cdn/{wiki,assets,site-extra}` paths. Other static mounts must be
+`/home/ubuntu/apps/shenron-cdn/{wiki,assets,site-extra}` paths. Other static mounts must be
 sealed files or directories from the release. Private bot data, conversations,
 agent homes and unrelated TLS identities cannot be mounted in the gateway.
 
@@ -87,7 +87,7 @@ images, and seal on DBFR against the qualified public VFS:
 ```sh
 python3 scripts/release/seal-shenron-docker-release.py RELEASE \
   --commit SHENRON_COMMIT --image-id SHENRON_IMAGE_ID \
-  --public-vfs /srv/shenron/shared/server/data/VERSION/shenron-vfs.sqlite \
+  --public-vfs /home/ubuntu/apps/shenron/shared/server/data/VERSION/shenron-vfs.sqlite \
   --gateway-image-id GATEWAY_IMAGE_ID --gateway-commit APHRODY_COMMIT
 sudo aphrody-infra-deploy-shenron verify RELEASE
 ```
@@ -128,7 +128,7 @@ package availability and PostgreSQL collation versions remain runtime gates.
 
 For coordinated conversion, stop all app writers and the host PostgreSQL/Redis
 units through Infra, then run `sudo python3 scripts/migration/shenron-state-container.py
---apply`. The command requires a fresh `/srv/shenron/shared/state`, stopped units,
+--apply`. The command requires a fresh `/home/ubuntu/apps/shenron/shared/state`, stopped units,
 no Shenron containers and a clean PostgreSQL shutdown. It checksum-copies data,
 configuration and Redis RDB, checks originals stayed unchanged, preserves PG TLS
 credentials privately, normalizes Redis owned runtime paths and writes a private

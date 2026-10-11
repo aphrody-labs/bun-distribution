@@ -81,7 +81,7 @@ named in `needs`; the fresh-install adapter above executes the SSH/WireGuard sub
   generator), no `DNS` line, `PersistentKeepalive = 25`, endpoint `51.77.147.152:51821`.
 - **Keys.** Each private key is born on its own peer (`wg genkey` into a `0600` file on a host, the WireGuard app on
   Windows) and never enters the repository, the plan or a report; only public keys are declared. omar =
-  `lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=`, aphro-pc = `VewVolGGwY3Lvp78jp9dKB7RIxg2xUR2pbVS+y+uj2I=` (distinct).
+  `EXfatxgVFs8Lr9k7QoJ2wiznY5MYO4C19+4gLbGmCEw=`, aphro-pc = `VewVolGGwY3Lvp78jp9dKB7RIxg2xUR2pbVS+y+uj2I=` (distinct).
   The key announced earlier for omar was withdrawn (private key lost) and appears nowhere. The hub, WSL and dbfr keys
   are generated at apply.
 - **Routing.** The hub routes peer to peer (`ip_forward` is already 1; the apply persists it). No NAT, no `FORWARD`
@@ -331,3 +331,18 @@ the `omar` account, Windows tunnels, verification. Each host has `verify` steps 
 bound to the hub address only, handshakes, no ufw rule with an `Anywhere` source, effective `sshd -T -C user=omar`, `sudo -n
 -l -U omar`, no direct postgres login) and one `rollback` step that removes only what this lot created (tunnel, units, the
 `aphrody-wg` ufw rules, `omar` locked, grants removed; `wg0`, `shenron-admin` rules, the home directory and databases stay).
+
+## Maillage ouvert sur tous les ports (décision du propriétaire, 2026-10-09)
+
+Le propriétaire a ouvert tous les ports entre les membres du maillage wg1 (PC propriétaire, PC d'Omar et son WSL, vps, dbfr)
+et le réseau Docker, sans ouvrir quoi que ce soit à Internet.
+
+- vps et dbfr : règles ufw `aphrody-wg-mesh-all` (entrée depuis 10.200.77.0/24 sur wg1), `aphrody-docker-bridge-all`
+  (entrée sur docker0), `aphrody-wg-mesh-forward`, `aphrody-wg-to-docker` et `aphrody-docker-to-wg` (routage wg1 et docker0).
+- PC propriétaire : règles `Aphrody wg1 mesh (tous ports)` (entrée et sortie, 10.200.77.0/24, groupe Aphrody) ; Pare-feu Windows et
+  Defender restent désactivés exprès.
+- PostgreSQL et Redis de dbfr n'écoutent que sur loopback : ils ne sont donc pas joignables par le maillage ; ne les rebinde pas
+  hors loopback (`firewall.neverOpen`).
+- PC d'Omar et son WSL : ses ports se règlent de son côté (accord n°2) ; l'API Docker TCP 2375 du PC propriétaire écoute sur loopback
+  seulement.
+- Retrait : `ufw delete` des règles portant ces commentaires, `Remove-NetFirewallRule -Group Aphrody`.

@@ -2,8 +2,9 @@
 // Contract of the pure commands through WebAssembly. When APHRODY_NATIVE_BIN points at the native
 // `aphrody` binary, every case is also run natively and the outputs must be identical.
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import { loadCliWasm, loadCliWasmSync, type Cli, type RunOptions } from "../src";
 
 const wasmFile = join(import.meta.dir, "../wasm/aphrody_command_wasm_bg.wasm");
@@ -152,23 +153,34 @@ describe.skipIf(!built)("wasm", () => {
   const native = process.env.APHRODY_NATIVE_BIN;
   test.skipIf(!native || !existsSync(native))(
     "outputs are identical to the native `aphrody pure`",
-    () => {
-      for (const [name, args, options] of cases) {
-        const dir = Bun.spawnSync(["mktemp", "-d"], { windowsHide: true }).stdout.toString().trim();
-        for (const [file, text] of Object.entries(options.files ?? {})) {
-          const path = join(dir, file);
-          Bun.spawnSync(["mkdir", "-p", join(path, "..")], { windowsHide: true });
-          Bun.write(path, text);
-        }
-        const proc = Bun.spawnSync([native!, "pure", ...args], {
-          windowsHide: true,
-          cwd: dir,
-          stdin: new TextEncoder().encode(options.stdin ?? ""),
-        });
-        const wasm = cli.run(args, options);
-        expect(`${name}: ${proc.stdout.toString()}`).toBe(`${name}: ${wasm.stdout}`);
-        expect(proc.exitCode === 0 ? 0 : proc.exitCode === 1 ? 1 : 2, name).toBe(wasm.code);
-      }
+    async () => {
+      await Promise.all(
+        cases.map(async ([name, args, options]) => {
+          const dir = mkdtempSync(join(tmpdir(), "aphrody-cli-wasm-parity-"));
+          try {
+            await Promise.all(
+              Object.entries(options.files ?? {}).map(async ([file, text]) => {
+                const path = join(dir, file);
+                mkdirSync(dirname(path), { recursive: true });
+                await Bun.write(path, text);
+              }),
+            );
+            const proc = Bun.spawnSync([native!, "pure", ...args], {
+              windowsHide: true,
+              cwd: dir,
+              stdin: new TextEncoder().encode(options.stdin ?? ""),
+            });
+            const wasm = cli.run(args, options);
+            expect(`${name}: ${proc.stdout.toString()}`).toBe(`${name}: ${wasm.stdout}`);
+            expect(proc.exitCode, name).toBe(wasm.code);
+          } finally {
+            // Only the absolute directory returned by mkdtempSync is removed.
+            rmSync(dir, { recursive: true, force: true });
+          }
+        }),
+      );
     },
+    // Sixteen real native process startups can exceed the unit-test default on a busy host.
+    60_000,
   );
 });

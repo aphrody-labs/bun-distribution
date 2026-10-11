@@ -23,6 +23,18 @@ def require(condition, message):
         raise DeploymentError(message)
 
 
+# The one compose project of the host (tools/config/host/host-policy.toml [layout] compose_project).
+PROJECT = os.environ.get("APHRODY_COMPOSE_PROJECT", "aphrody")
+
+
+# Host-owned compose overrides, kept across releases (they were systemd drop-ins before the host project).
+OVERRIDES = ("shared/debate/guild-admission.override.json",)
+
+
+def overrides(root):
+    return [arg for name in OVERRIDES if (root / name).is_file() for arg in ("-f", str(root / name))]
+
+
 def command(args):
     result = subprocess.run(
         args, capture_output=True, text=True, timeout=240, check=False
@@ -69,13 +81,17 @@ def allowed_mount(name, volume, release, root, manifest, rollback=False):
         sealed = {n for n in files if n.startswith("nginx/")}
         present = {str(p.relative_to(release)) for p in source.rglob("*") if p.is_file()}
         # A release being rolled back to may carry vhosts added after sealing; it must still hold every sealed file.
+        extra = present - sealed
         return (
             source == release / "nginx"
             and bool(sealed)
-            and (present >= sealed if rollback else present == sealed)
+            and (present >= sealed if rollback else (not extra or all(p.startswith("nginx/zz-") for p in extra)))
         )
     # Public media roots only. Never expose private bot data, conversations or home.
     public = {
+        "/home/ubuntu/apps/shenron-cdn/wiki": root / "shared/site/wiki",
+        "/home/ubuntu/apps/shenron-cdn/assets": root / "shared/bot/assets",
+        "/home/ubuntu/apps/shenron-cdn/site-extra": root / "shared/site/public-extra",
         "/srv/shenron-cdn/wiki": root / "shared/site/wiki",
         "/srv/shenron-cdn/assets": root / "shared/bot/assets",
         "/srv/shenron-cdn/site-extra": root / "shared/site/public-extra",
@@ -84,14 +100,17 @@ def allowed_mount(name, volume, release, root, manifest, rollback=False):
         return source == public[target].resolve()
     # Sites migrated from the vps (vhosts zz-*.conf): public static roots and the HTTP-01 webroot.
     if target in (
+        "/home/ubuntu/apps/creator",
+        "/home/ubuntu/apps/downloads",
         "/srv/aphrody-creator",
         "/srv/aphrody-downloads",
         "/var/www/maintenance",
         "/var/www/letsencrypt",
     ):
         return source == pathlib.Path(target).resolve()
-    if source.is_relative_to(release) and volume.get("target", "").startswith(
-        "/srv/shenron-cdn/"
+    if source.is_relative_to(release) and (
+        volume.get("target", "").startswith("/home/ubuntu/apps/shenron-cdn/")
+        or volume.get("target", "").startswith("/srv/shenron-cdn/")
     ):
         if source.is_file():
             return str(source.relative_to(release)) in manifest.get("files", {})
@@ -169,12 +188,12 @@ def verify(release, root, rollback=False):
         "docker",
         "compose",
         "--project-name",
-        "shenron",
+        PROJECT,
         "--env-file",
         str(release / "deploy.env"),
         "-f",
         str(release / "compose.yaml"),
-    ]
+    ] + overrides(root)
     config = json.loads(command(compose + ["config", "--format", "json"]))
     services = config.get("services", {})
     require(
@@ -345,8 +364,21 @@ def switch(root, release):
     os.replace(temporary, current)
 
 
+def publish_compose(compose, root):
+    """~/apps/shenron/compose.yaml, included by ~/apps/compose.yaml, follows the active release."""
+    text = command(compose + ["config", "--format", "json"])
+    temporary = root / (".compose.yaml." + str(os.getpid()))
+    temporary.write_text(
+        "# Generated from current/compose.yaml by atomic-deploy-shenron-container.py; included by ~/apps/compose.yaml.\n"
+        + text
+    )
+    temporary.chmod(0o640)
+    os.replace(temporary, root / "compose.yaml")
+
+
 def compose_states(compose):
-    output = command(compose + ["ps", "--all", "--format", "json"])
+    # The host project also runs the other apps of ~/apps/compose.yaml: only this release's services count.
+    output = command(compose + ["ps", "--all", "--orphans=false", "--format", "json"])
     try:
         states = json.loads(output or "[]")
     except json.JSONDecodeError:
@@ -392,12 +424,12 @@ def restore_backup(backup, root):
         "docker",
         "compose",
         "--project-name",
-        "shenron",
+        PROJECT,
         "--env-file",
         str(target / "deploy.env"),
         "-f",
         str(target / "compose.yaml"),
-    ]
+    ] + overrides(root)
     command(compose + ["stop"])
     if previous:
         switch(root, previous)
@@ -420,6 +452,7 @@ def restore_backup(backup, root):
                     else []
                 )
             )
+        publish_compose(previous_config[0], root)
     else:
         current.unlink()
     print("Docker rollback verified")
@@ -522,6 +555,7 @@ def activate(release, root):
         if mutated:
             restore_backup(backup, root)
         raise
+    publish_compose(compose, root)
     print("Docker activation verified; rollback=" + str(backup))
 
 
@@ -540,7 +574,7 @@ def main():
         "usage: adapter [activate|verify] RELEASE | restore BACKUP",
     )
     root = pathlib.Path(
-        os.environ.get("SHENRON_RELEASE_ROOT", "/srv/shenron")
+        os.environ.get("SHENRON_RELEASE_ROOT", "/home/ubuntu/apps/shenron")
     ).resolve()
     release = pathlib.Path(target).resolve(strict=True)
     with (root / ".docker-deploy.lock").open("a") as lock:

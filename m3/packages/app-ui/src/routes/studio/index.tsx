@@ -1,27 +1,31 @@
 // SPDX-License-Identifier: Apache-2.0
 // Studio of the desktop app: agent tools and Drive.
 // Each section calls an existing native owner through typed Studio commands.
-import { useEffect, useState, type ComponentType } from "react";
+import { useState, type ComponentType } from "react";
 import { useSearchParams } from "react-router-dom";
 import { studioSection, studioSections, type StudioSection } from "./navigation";
 export { studioSections, type StudioSection } from "./navigation";
 import { DriveStudio } from "./DriveStudio";
 import { A2AStudio } from "./A2AStudio";
 import { RuntimeStudio } from "./RuntimeStudio";
+import { GoogleStudio } from "./GoogleStudio";
 
 const panels: Record<StudioSection, ComponentType> = {
   a2a: A2AStudio,
   drive: DriveStudio,
   runtime: RuntimeStudio,
+  google: GoogleStudio,
 };
 
 export function StudioRoute() {
   const [params, setParams] = useSearchParams();
   const section = studioSection(params.get("section"));
   const [visited, setVisited] = useState<ReadonlySet<StudioSection>>(() => new Set([section]));
-  useEffect(() => {
+  const [prevSection, setPrevSection] = useState(section);
+  if (section !== prevSection) {
+    setPrevSection(section);
     setVisited((current) => (current.has(section) ? current : new Set([...current, section])));
-  }, [section]);
+  }
   const setSection = (value: StudioSection) => {
     setParams((current) => {
       const next = new URLSearchParams(current);

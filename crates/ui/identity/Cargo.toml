@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-identity"
 description = "Aphrody product identity: brand icons, favicon and webmanifest, the measured palette (design tokens, M3 seed), and the typed 2D pet runtime (RGBA atlas, timed animations, directions)."
-version                = "1.0.0-canary"
+version                = "1.0.0-canary.1"
 edition.workspace      = true
 rust-version.workspace = true
 authors.workspace      = true
@@ -24,18 +24,35 @@ png        = { workspace = true }
 
 # "image -> SVG -> raster" chain (module `pixel`); choices and rejections in docs/toolchain-image-2026.md
 # (`dssim` rejected as AGPL, `vtracer` because it would pull a second `image`).
-image         = { workspace = true, features = ["png", "jpeg", "webp"] }
+image         = { workspace = true, features = ["png", "jpeg", "webp", "gif"] }
 image-compare = { workspace = true }
 palette       = { workspace = true, features = ["std"] }
-aphrody-svg   = { workspace = true, features = ["raster"] }
+aphrody-svg   = { workspace = true, features = ["raster", "glyph", "symbols"] }
+# Module `loader`: HTTPS download of cdn.aphrody.com sources (feature `net`).
+ureq          = { workspace = true, optional = true }
 
-# Module `logo` (ex-`aphrody-logo`): Windows `.ico` (`ico`), SVG wrapper (`base64`), `LogoError` (`thiserror`).
+# Module `logo`: M3 seed and light/dark schemes from the measured palette (`aphrody-m3-tokens`, JSON
+# export through `serde`), data-URI (`base64`), `LogoError` (`thiserror`); `ico` reads back the
+# `.ico` in tests.
+aphrody-m3-tokens = { workspace = true, features = ["serde"] }
 base64    = { workspace = true }
 ico       = "0.5"
 thiserror = { workspace = true }
+
+[dev-dependencies]
+# Parses the generated Rio themes (tests/terminal_theme.rs).
+toml = { workspace = true }
 
 [features]
 # `fs`: entry points that read the disk. Off for web and mobile, where `Image::depuis_octets`
 # and `Pet::from_png` are enough; everything else works in memory.
 default = ["fs"]
 fs = []
+# `net`: `loader::fetch_https`, the default downloader of `Loader::from_env`.
+net = ["fs", "dep:ureq"]
+
+# Option A of the web pet runtime (the crate clock in wasm32 behind a C ABI), kept to measure it
+# against the TypeScript port: m3/packages/identity/scripts/measure.ts --wasm.
+[[example]]
+name       = "pet_wasm"
+crate-type = ["cdylib"]

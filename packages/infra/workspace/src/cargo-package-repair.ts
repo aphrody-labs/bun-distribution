@@ -24,10 +24,12 @@ export async function runCargoPackageRepair(args: string[]): Promise<number> {
       ["git", "-C", root, "grep", "-lE", "--", "(-p|--package)-[a-z0-9]", "--", ":!*.lock"],
       { windowsHide: true, stdout: "pipe", stderr: "pipe" },
     );
+    // oxlint-disable-next-line no-await-in-loop -- dépôts traités un par un : sortie console et code de retour dans l'ordre
     const [code, stdout] = await Promise.all([child.exited, new Response(child.stdout).text()]);
     if (code > 1) throw new Error(`git grep failed for ${root}`);
     for (const file of stdout.trim().split("\n").filter(Boolean)) {
       const path = `${root}/${file}`;
+      // oxlint-disable-next-line no-await-in-loop -- fichiers traités un par un : journal console et réécritures dans l'ordre
       const text = await readFile(path, "utf8").catch(() => undefined);
       if (text === undefined) continue;
       let fixed = text;
@@ -43,6 +45,7 @@ export async function runCargoPackageRepair(args: string[]): Promise<number> {
       if (fixed === text) continue;
       repaired += 1;
       console.log(`repaired ${file}`);
+      // oxlint-disable-next-line no-await-in-loop -- réécritures séquentielles, une par fichier réparé
       if (apply) await writeFile(path, fixed);
     }
   }

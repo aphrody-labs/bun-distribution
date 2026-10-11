@@ -319,7 +319,7 @@ sudo journalctl -u aphrody-ovh-watch.service -n 50 -f
 
 ## Factory Tunnel: `vps-cargo` Build Pipeline
 
-The Aphrody Cargo factory runs on the VPS (`/srv/aphrody-build`). The CI/CD tunnel
+The Aphrody Cargo factory runs on the VPS (`/home/ubuntu/build`). The CI/CD tunnel
 (`scripts/build/rust/vps-cargo.ts`) compiles heavy Rust builds remotely.
 
 **If the VPS is expired**: The tunnel fails with no explicit error message. Check VPS status:

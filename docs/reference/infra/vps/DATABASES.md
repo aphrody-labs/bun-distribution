@@ -57,7 +57,7 @@ Embedded `bun:sqlite` stores for crawl, inference and scraping logs.
 
 ### B. BXC stores (`bxc.sqlite`, `bxc-memory.sqlite`)
 
-- Path: the shared Web state directory of the `aphrody` plane (`/srv/aphrody/shared/bxc`, see
+- Path: the shared Web state directory of the `aphrody` plane (`/home/ubuntu/apps/aphrody/shared/bxc`, see
   `docs/reference/infra/TOPOLOGY.md`); crawler queues are under `BXC_STORAGE_DIR` next to it.
 - WAL journal, 5 s busy timeout, 16 MB page cache (`aphrody-web/apps/bxc/src/db/BxcDB.ts`).
 - Tables: `scrapes` (id, url, profile, status, content, metadata JSON, timestamp, canonical URL,

@@ -377,7 +377,7 @@ mod tests {
 		// Create test credential
 		let credential = CloudCredential::new_access_key(
 			crate::volume::CloudServiceType::S3,
-			"AKIAIOSFODNN7EXAMPLE".to_string(),
+			"EXAMPLE_ACCESS_KEY".to_string(),
 			"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY".to_string(),
 			None,
 		);

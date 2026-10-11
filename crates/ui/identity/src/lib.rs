@@ -24,17 +24,26 @@ pub mod codex;
 /// Le design system du site : les couleurs de l'interface **dérivées** de la palette mesurée
 /// d'Aphrody, et la feuille `game-tokens.css` qu'elles produisent.
 pub mod design;
-/// L'icône canonique du personnage (`assets/logo/aphrody.webp`), embarquée une fois et dérivée en
-/// `.ico` Windows, `.svg` embarqué et PNG maskable M3 (ex-crate `aphrody-logo`).
+/// Chargeur d'images et d'icônes : PNG, JPEG, WebP, GIF, SVG, ICO et glyphes Material Symbols,
+/// une seule entrée `load(source, &Request)`, cache par empreinte du contenu.
+pub mod loader;
+/// Le logo (`assets/logo/aphrody.webp`, copie sans perte de `assets/logo/source/byron_r0.png`) et
+/// toutes ses déclinaisons : `.ico`, PNG, maskable, SVG vectoriel, wordmark, manifeste, CSS, jetons M3.
 pub mod logo;
 /// Le contrat « pet » de Codex : manifeste, pistes minutées, états. Dérivé d'`openai/codex`
 /// (Apache-2.0) — voir `NOTICE`.
 pub mod pets;
 /// Mesure, comparaison et rastérisation — le socle de la skill `pixel-perfect`.
 pub mod pixel;
+/// Thèmes de terminal (Windows Terminal, Rio, Nushell, prompt du Bun Shell) tirés du schéma M3.
+pub mod terminal_theme;
+/// Le pet sur le web : données générées pour `<aphrody-pet>` et suite de parité Rust ↔ web.
+pub mod web;
 
 #[cfg(feature = "fs")]
-pub use cli::{design_main, export_assets_main, pixel_main};
+pub use cli::{
+    charger_main, design_main, export_assets_main, pet_main, pixel_main, terminal_theme_main,
+};
 
 use serde::Deserialize;
 use sha2::{Digest, Sha256};

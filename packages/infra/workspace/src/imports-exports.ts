@@ -426,9 +426,11 @@ async function auditPackage(
   const parsedConfig = configRead.error
     ? { options: ts.getDefaultCompilerOptions() }
     : ts.parseJsonConfigFileContent(configRead.config, ts.sys, dir);
-  const parsedFiles: SourceFileAudit[] = [];
-  for (const file of files)
-    parsedFiles.push(parseSource(file, await Bun.file(file).text(), parsedConfig.options, dir));
+  const parsedFiles: SourceFileAudit[] = await Promise.all(
+    files.map(async (file) =>
+      parseSource(file, await Bun.file(file).text(), parsedConfig.options, dir),
+    ),
+  );
 
   const dependencies = item.manifest.dependencies ?? {};
   const devDependencies = item.manifest.devDependencies ?? {};

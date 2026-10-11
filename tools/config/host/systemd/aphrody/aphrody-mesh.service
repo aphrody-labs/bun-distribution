@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: Apache-2.0
+# Shared host entrypoint. Docker owns container restart; native adapters use this process's lifecycle.
+# Host paths and existing Compose project are selected by ~/.aphrody/host/mesh.json.
+[Unit]
+Description=Aphrody container and private mesh lifecycle
+Wants=network-online.target wg-quick@wg1.service
+After=network-online.target docker.service wg-quick@wg1.service
+Requires=docker.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/src/aphrody
+Environment=APHRODY_HOME=/home/ubuntu/.aphrody
+Environment=PATH=/home/ubuntu/.local/bin:/home/ubuntu/.bun/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/ubuntu/.local/bin/bun --no-env-file /home/ubuntu/.aphrody/lib/mesh/container-service.mjs --mesh run --config /home/ubuntu/.aphrody/host/mesh.json
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=15
+KillMode=control-group
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

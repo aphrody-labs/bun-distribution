@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! The canonical `APHRODY_AI_*` environment contract.
 //!
-//! Single source of truth for the eighteen environment variable names that
+//! Single source of truth for the canonical environment variable names that
 //! name aphrody's local/open-source AI stack (binaries, the `aphrody-ai-http`
 //! gateway, chat/code/reasoning/small, vision, OCR, STT, embed, rerank). This
 //! mirrors `tools/config/local-ai.json` (owned by `aphrody-infra`;
@@ -119,6 +119,14 @@ pub const CHAT_MODEL: CanonicalEnv = CanonicalEnv {
     aliases: &["APHRODY_LLM_MODEL", "APHRODY_SHENRON_LLM_MODEL"],
 };
 
+/// Bearer credential for the configured chat upstream only. This is distinct
+/// from [`HTTP_TOKEN`], which authenticates callers of the Aphrody gateway.
+/// Keep the value in the host's protected environment store, never in a provider table.
+pub const CHAT_API_KEY: CanonicalEnv = CanonicalEnv {
+    canonical: "APHRODY_AI_CHAT_API_KEY",
+    aliases: &["APHRODY_AI_CHAT_TOKEN", "VLLM_API_KEY", "SHENRON_OPENAI_API_KEY"],
+};
+
 /// `capabilities.code` — model id; base URL is [`CHAT_BASE_URL`].
 pub const CODE_MODEL: CanonicalEnv =
     CanonicalEnv { canonical: "APHRODY_AI_CODE_MODEL", aliases: &[] };
@@ -184,14 +192,15 @@ pub const RERANK_MODEL: CanonicalEnv =
 
 /// Every canonical variable, in the order `tools/config/local-ai.json`
 /// lists its `binaries` / `gateways` / `capabilities` sections. `aphrody ai
-/// env` writes exactly these eighteen names, and only these.
-pub const ALL: [CanonicalEnv; 18] = [
+/// env` writes exactly these names, and only these.
+pub const ALL: [CanonicalEnv; 19] = [
     BIN,
     MCP_BIN,
     HTTP_URL,
     HTTP_TOKEN,
     CHAT_BASE_URL,
     CHAT_MODEL,
+    CHAT_API_KEY,
     CODE_MODEL,
     REASONING_MODEL,
     SMALL_MODEL,

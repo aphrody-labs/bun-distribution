@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Folder, FolderOpen } from "@phosphor-icons/react";
 import {
+  Icon,
   Button,
   Input,
   Label,
@@ -14,10 +15,7 @@ import {
   TabsTrigger,
   TabsContent,
 } from "@aphrody/m3-primitives";
-import type {
-  IndexMode,
-  LocationAddInput,
-} from "@aphrody/drive-client";
+import type { IndexMode, LocationAddInput } from "@aphrody/drive-client";
 import { useLibraryMutation, useLibraryQuery } from "../../../contexts/SpacedriveContext";
 import { usePlatform } from "../../../contexts/PlatformContext";
 import { NewLocation } from "@aphrody/assets/icons";
@@ -99,18 +97,13 @@ const jobOptions: JobOption[] = [
   },
 ];
 
-export function useAddLocationDialog(
-  onLocationAdded?: (locationId: string) => void,
-) {
+export function useAddLocationDialog(onLocationAdded?: (locationId: string) => void) {
   return dialogManager.create((props) => (
     <AddLocationDialog {...props} onLocationAdded={onLocationAdded} />
   ));
 }
 
-function AddLocationDialog(props: {
-  id: number;
-  onLocationAdded?: (locationId: string) => void;
-}) {
+function AddLocationDialog(props: { id: number; onLocationAdded?: (locationId: string) => void }) {
   const dialog = useDialog(props);
   const platform = usePlatform();
   const [step, setStep] = useState<ModalStep>("picker");
@@ -133,9 +126,7 @@ function AddLocationDialog(props: {
   // Update selected jobs when preset mode changes
   const currentMode = form.watch("mode");
   const [selectedJobs, setSelectedJobs] = useState<Set<string>>(
-    new Set(
-      jobOptions.filter((j) => j.presets.includes("Deep")).map((j) => j.id),
-    ),
+    new Set(jobOptions.filter((j) => j.presets.includes("Deep")).map((j) => j.id)),
   );
 
   // Sync selected jobs with preset when mode changes
@@ -180,6 +171,7 @@ function AddLocationDialog(props: {
   };
 
   const handlePickerKeyDown = (e: React.KeyboardEvent) => {
+    // oxlint-disable-next-line react/incompatible-library -- react-hook-form watch() incompatible avec le compilateur React
     if (e.key === "Enter" && form.watch("path")) {
       e.preventDefault();
       const path = form.watch("path");
@@ -204,7 +196,7 @@ function AddLocationDialog(props: {
   const onSubmit = form.handleSubmit(async (data) => {
     // Build job policies from selected jobs
     const job_policies: any = {};
-    
+
     selectedJobs.forEach((jobId) => {
       job_policies[jobId] = { enabled: true };
     });
@@ -233,8 +225,7 @@ function AddLocationDialog(props: {
       console.error("Failed to add location:", error);
       form.setError("root", {
         type: "manual",
-        message:
-          error instanceof Error ? error.message : "Failed to add location",
+        message: error instanceof Error ? error.message : "Failed to add location",
       });
     }
   });
@@ -283,17 +274,12 @@ function AddLocationDialog(props: {
                     onClick={() => handleSelectSuggested(loc.path, loc.name)}
                     className="flex items-center gap-3 rounded-small border border-outline-variant bg-surface-container p-3 text-left transition-all hover:bg-on-surface/8 hover:border-primary/50 h-fit"
                   >
-                    <Folder
-                      className="size-5 shrink-0 text-primary"
-                      weight="fill"
-                    />
+                    <Folder className="size-5 shrink-0 text-primary" weight="fill" />
                     <div className="min-w-0 flex-1">
                       <div className="text-label-large font-medium text-on-surface truncate">
                         {loc.name}
                       </div>
-                      <div className="text-body-small text-outline truncate">
-                        {loc.path}
-                      </div>
+                      <div className="text-body-small text-outline truncate">{loc.path}</div>
                     </div>
                   </button>
                 ))}
@@ -318,8 +304,8 @@ function AddLocationDialog(props: {
       loading={addLocation.isPending}
       className="w-[520px]"
       buttonsSideContent={
-        <Button variant="gray" size="sm" onClick={handleCancel}>
-          Back
+        <Button aria-label="Back" title="Back" variant="gray" size="sm" onClick={handleCancel}>
+          <Icon name="arrow_back" size={18} />
         </Button>
       }
     >
@@ -380,8 +366,7 @@ function AddLocationDialog(props: {
           <TabsContent value="jobs" className="pt-3">
             <div className="space-y-3 max-h-[280px] overflow-y-auto pr-1">
               <p className="text-body-small text-outline">
-                Select which jobs to run after indexing. Extensions can add more
-                jobs.
+                Select which jobs to run after indexing. Extensions can add more jobs.
               </p>
               <div className="grid grid-cols-2 gap-2">
                 {jobOptions.map((job) => {
@@ -390,6 +375,7 @@ function AddLocationDialog(props: {
                     <button
                       key={job.id}
                       type="button"
+                      aria-label={job.label}
                       onClick={() => toggleJob(job.id)}
                       className={`
                           flex items-start gap-2 rounded-small border p-3 text-left transition-all
@@ -418,9 +404,7 @@ function AddLocationDialog(props: {
 
         {/* Error Display */}
         {form.formState.errors.root && (
-          <p className="text-body-small text-error">
-            {form.formState.errors.root.message}
-          </p>
+          <p className="text-body-small text-error">{form.formState.errors.root.message}</p>
         )}
       </div>
     </Dialog>

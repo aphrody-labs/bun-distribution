@@ -34,37 +34,60 @@ mod flags {
 }
 
 impl NoWindow for std::process::Command {
-    fn no_window(mut self) -> Self {
+    fn no_window(self) -> Self {
         #[cfg(windows)]
-        if !flags::parent_has_console() {
-            std::os::windows::process::CommandExt::creation_flags(&mut self, flags::CREATE_NO_WINDOW);
+        {
+            let mut command = self;
+            if !flags::parent_has_console() {
+                std::os::windows::process::CommandExt::creation_flags(
+                    &mut command,
+                    flags::CREATE_NO_WINDOW,
+                );
+            }
+            command
         }
+        #[cfg(not(windows))]
         self
     }
 
-    fn detached(mut self) -> Self {
+    fn detached(self) -> Self {
         #[cfg(windows)]
-        std::os::windows::process::CommandExt::creation_flags(
-            &mut self,
-            flags::CREATE_NO_WINDOW | flags::DETACHED_PROCESS,
-        );
+        {
+            let mut command = self;
+            std::os::windows::process::CommandExt::creation_flags(
+                &mut command,
+                flags::CREATE_NO_WINDOW | flags::DETACHED_PROCESS,
+            );
+            command
+        }
+        #[cfg(not(windows))]
         self
     }
 }
 
-#[cfg(feature = "tokio")]
+#[cfg(all(feature = "tokio", not(target_arch = "wasm32")))]
 impl NoWindow for tokio::process::Command {
-    fn no_window(mut self) -> Self {
+    fn no_window(self) -> Self {
         #[cfg(windows)]
-        if !flags::parent_has_console() {
-            self.creation_flags(flags::CREATE_NO_WINDOW);
+        {
+            let mut command = self;
+            if !flags::parent_has_console() {
+                command.creation_flags(flags::CREATE_NO_WINDOW);
+            }
+            command
         }
+        #[cfg(not(windows))]
         self
     }
 
-    fn detached(mut self) -> Self {
+    fn detached(self) -> Self {
         #[cfg(windows)]
-        self.creation_flags(flags::CREATE_NO_WINDOW | flags::DETACHED_PROCESS);
+        {
+            let mut command = self;
+            command.creation_flags(flags::CREATE_NO_WINDOW | flags::DETACHED_PROCESS);
+            command
+        }
+        #[cfg(not(windows))]
         self
     }
 }

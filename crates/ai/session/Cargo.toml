@@ -25,11 +25,12 @@ serde_json = { workspace = true }
 thiserror  = { workspace = true }
 tracing    = { workspace = true }
 chrono     = { workspace = true }
-tokio      = { workspace = true, features = ["fs", "io-util", "macros", "rt", "sync"] }
 
 # `external` (host-only): home directory, the state-dir authority, and the
 # process table for live-agent enrichment.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# The JSONL file store (tokio::fs) is host-only; the wasm32 build keeps the pure session model.
+tokio          = { workspace = true, features = ["fs", "io-util", "macros", "rt", "sync"] }
 dirs           = { workspace = true }
 sysinfo        = { workspace = true }
 aphrody-models = { workspace = true }

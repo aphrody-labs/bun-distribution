@@ -120,6 +120,7 @@ export class Crawler {
 
     while (this.running) {
       try {
+        // oxlint-disable-next-line no-await-in-loop -- single crawl loop: each step is driven by the previous step's outcome
         const didWork = await this.step();
         if (!didWork) {
           if (process.env.APHRODY_X_DEBUG) {
@@ -128,14 +129,17 @@ export class Crawler {
             );
           }
           // Idle wait
+          // oxlint-disable-next-line no-await-in-loop -- intentional idle wait between crawl passes
           await Bun.sleep(30000);
         } else {
           // Politeness delay between requests
+          // oxlint-disable-next-line no-await-in-loop -- politeness delay between requests to the same host
           await Bun.sleep(this.options.delayMs);
         }
       } catch (err: any) {
         console.error(`[crawler] Error in crawl step: ${err.message}`);
         // Backoff on error
+        // oxlint-disable-next-line no-await-in-loop -- backoff after a failed crawl step
         await Bun.sleep(15000);
       }
     }

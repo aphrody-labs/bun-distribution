@@ -13,7 +13,7 @@ set -euo pipefail
 #
 #   provision-aphrody-stack-env.sh --fresh-host
 #       Fresh host (no /etc/aphrody env yet, e.g. after the 2026-09-25
-#       retirement): creates the aphrody system user, /srv/aphrody/shared,
+#       retirement): creates the aphrody system user, /home/ubuntu/apps/aphrody/shared,
 #       the two login roles (or rotates their passwords: no env file on the host
 #       holds the old ones), the staged site/Web env, the AI HTTP env and the
 #       Shenron compute client env. Run it after the PostgreSQL cluster is back
@@ -31,7 +31,7 @@ case "${1:-}" in
 esac
 for cmd in openssl psql pg_isready runuser install grep stat id; do command -v "$cmd" >/dev/null || { echo "missing $cmd" >&2; exit 2; }; done
 env_dir=/etc/aphrody
-root=/srv/aphrody
+root=/home/ubuntu/apps/aphrody
 site_env="$env_dir/aphrody-site.env"
 next_site_env="$env_dir/aphrody-site.next.env"
 web_env="$env_dir/aphrody-web-api.env"
@@ -64,8 +64,8 @@ web_password="$(openssl rand -hex 32)"
 ai_password="$(openssl rand -hex 32)"
 web_backend_token="$(openssl rand -hex 32)"
 web_public_token="$(openssl rand -hex 32)"
-web_dsn="postgresql://aphrody_web:$web_password@127.0.0.1:5432/aphrody_web"
-ai_dsn="postgresql://aphrody_ai_http:$ai_password@127.0.0.1:5432/aphrody"
+printf -v web_dsn '%s://%s:%s@%s/%s' postgresql aphrody_web "$web_password" 127.0.0.1:5432 aphrody_web
+printf -v ai_dsn '%s://%s:%s@%s/%s' postgresql aphrody_ai_http "$ai_password" 127.0.0.1:5432 aphrody
 
 if [[ "$mode" = fresh ]]; then
   for file in "$site_env" "$next_site_env" "$web_env" "$next_web_env" "$ai_env" "$client_env"; do

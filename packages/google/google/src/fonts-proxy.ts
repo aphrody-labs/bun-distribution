@@ -4,8 +4,12 @@
  * edge proxy, stored on disk and served from there. CSS is requested with a modern browser
  * User-Agent (WOFF2 + unicode-range subsets) and its gstatic URLs are rewritten to this origin.
  * Only the allowed families are proxied (default: the Material 3 fonts and Material Symbols).
+ * With `staticRoot`, the files of the asset CDN release trees (`/h/`, `/s/<scope>/`) are served
+ * first, roots in order; paths none holds fall through to the proxy.
  */
-import { type EdgeRoute, createEdgeProxy } from "../../../engine/core/src/server/edge-proxy.ts";
+import { stat } from "node:fs/promises";
+import { extname, join } from "node:path";
+import { type EdgeRoute, createEdgeProxy } from "@aphrody/yolo-core/edge-proxy";
 
 export const M3_FONT_FAMILIES = [
   "Google Sans Flex",
@@ -110,12 +114,80 @@ export function createFontsProxy(opts: FontsProxyOptions) {
   });
 }
 
-export function serveFontsProxy(opts: FontsProxyOptions & { port?: number; hostname?: string }) {
+const STATIC_TYPES: Record<string, string> = {
+  ".css": "text/css; charset=utf-8",
+  ".ico": "image/x-icon",
+  ".json": "application/json",
+  ".png": "image/png",
+  ".svg": "image/svg+xml",
+  ".ttf": "font/ttf",
+  ".txt": "text/plain; charset=utf-8",
+  ".webmanifest": "application/manifest+json",
+  ".webp": "image/webp",
+  ".woff2": "font/woff2",
+};
+const STATIC_PATH = /^\/[hs]\/[A-Za-z0-9._@/-]+$/;
+
+/**
+ * A file of the `scripts/tools/infra/cdn.ts` release tree under `root`: `/h/<sha16>.<ext>`
+ * (immutable), `/s/manifest.json`, `/s/<scope>/<path>`. `null` when the tree does not hold it.
+ */
+export async function staticFile(root: string, pathname: string): Promise<Response | null> {
+  if (!STATIC_PATH.test(pathname) || pathname.split("/").some((p) => p === "." || p === ".."))
+    return null;
+  const path = join(root, pathname);
+  const info = await stat(path).catch(() => null);
+  if (!info?.isFile()) return null;
+  const cache = pathname.startsWith("/h/")
+    ? "public, max-age=31536000, immutable"
+    : pathname === "/s/manifest.json"
+      ? "public, max-age=60, must-revalidate"
+      : "public, max-age=3600, stale-while-revalidate=86400";
+  const file = Bun.file(path);
+  return new Response(file, {
+    headers: {
+      "content-type": STATIC_TYPES[extname(path).toLowerCase()] ?? file.type,
+      "cache-control": cache,
+      "access-control-allow-origin": "*",
+      "timing-allow-origin": "*",
+      "cross-origin-resource-policy": "cross-origin",
+      "x-content-type-options": "nosniff",
+      "x-robots-tag": "noindex, nofollow",
+    },
+  });
+}
+
+/**
+ * The first of `roots` holding `pathname`: the catalog release (`scripts/tools/infra/cdn.ts`) and the
+ * releases published from other repositories (Material Symbols: `asset-catalog.json` `releases`).
+ */
+export async function staticFromRoots(
+  roots: readonly string[],
+  pathname: string,
+): Promise<Response | null> {
+  const found = await Promise.all(roots.map((root) => staticFile(root, pathname)));
+  return found.find((response) => response !== null) ?? null;
+}
+
+export function serveFontsProxy(
+  opts: FontsProxyOptions & {
+    port?: number;
+    hostname?: string;
+    staticRoot?: string | readonly string[];
+  },
+) {
   const handle = createFontsProxy(opts);
+  const roots = [opts.staticRoot ?? []].flat().filter(Boolean);
   return Bun.serve({
     hostname: opts.hostname ?? "127.0.0.1",
     port: opts.port ?? 8796,
     routes: { "/health": Response.json({ ok: true, service: "aphrody-fonts-proxy" }) },
-    fetch: handle,
+    fetch: async (req) => {
+      if (roots.length && (req.method === "GET" || req.method === "HEAD")) {
+        const file = await staticFromRoots(roots, new URL(req.url).pathname);
+        if (file) return file;
+      }
+      return handle(req);
+    },
   });
 }

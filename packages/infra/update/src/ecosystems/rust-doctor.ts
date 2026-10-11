@@ -1202,6 +1202,7 @@ export async function runDoctor(c: Ctx, args: string[]): Promise<number> {
     if (!c.json) console.log(`doctor  ${stage.padEnd(9)} running...`);
     let result: StageResult;
     try {
+      // oxlint-disable-next-line no-await-in-loop -- étapes du doctor séquentielles : ordre fixe d'affichage et de dépendance entre étapes
       result = stage === "bumps" ? await d.bumps() : d[stage]();
     } catch (e) {
       result = {

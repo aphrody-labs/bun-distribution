@@ -212,6 +212,7 @@ describe("site hosts", () => {
     writeFileSync(join(tree, "docs", "quickstart.html"), "<h1>quickstart</h1>");
     writeFileSync(join(tree, "docs", "quickstart.md"), "# Quickstart\n");
     writeFileSync(join(tree, "llms.txt"), "# Bun\n");
+    writeFileSync(join(tree, "site.webmanifest"), "{}");
     writeFileSync(join(tree, "llms.txt.gz"), Bun.gzipSync(Buffer.from("# Bun\n")));
     symlinkSync(join(outside, "secret.txt"), join(tree, "leak.txt"));
     symlinkSync(tree, join(siteBase, "current"));
@@ -223,8 +224,8 @@ describe("site hosts", () => {
     createHandler(root, site)(new Request(`http://${host}${path}`, init));
 
   test("defaults next to the download tree", () => {
-    const options = siteOptions("/srv/aphrody-downloads/current", {});
-    expect(options.root).toBe(resolve("/srv/aphrody-downloads/site/current"));
+    const options = siteOptions("/home/ubuntu/apps/downloads/current", {});
+    expect(options.root).toBe(resolve("/home/ubuntu/apps/downloads/site/current"));
     expect([...options.hosts]).toEqual(["aphrody.com", "www.aphrody.com"]);
   });
 
@@ -243,6 +244,14 @@ describe("site hosts", () => {
     });
     expect(gz.headers.get("content-encoding")).toBe("gzip");
     expect((await at("aphrody.test", "/docs", { method: "HEAD" })).status).toBe(200);
+  });
+
+  test("web app manifest type and a CSP that admits the brand CDN", async () => {
+    const manifest = await at("aphrody.test", "/site.webmanifest");
+    expect(manifest.headers.get("content-type")).toBe("application/manifest+json");
+    const csp = (await at("aphrody.test", "/")).headers.get("content-security-policy");
+    expect(csp).toContain("style-src 'self' 'unsafe-inline' https://cdn.aphrody.com;");
+    expect(csp).toContain("font-src 'self' https://cdn.aphrody.com;");
   });
 
   test("falls back to downloads, then to the site 404, and keeps other hosts untouched", async () => {

@@ -6,6 +6,7 @@ import { dirname, join } from "node:path";
 
 import { testContext } from "../admin/helpers.ts";
 import { main, parseRoles } from "../../src/setup/cli.ts";
+import { R2_DIST } from "../../src/setup/r2.ts";
 import {
   DEFAULT_BASE,
   MARKETPLACE,
@@ -58,6 +59,31 @@ function site(
   }));
   const sums = artifacts.map((a) => `${a.sha256}  ${a.file}`).join("\n");
   return async (input: string | URL | Request) => {
+    const r2Url = String(input);
+    if (r2Url.startsWith(`${R2_DIST}/`)) {
+      const product = r2Url.includes("/bun/") ? "bun" : "aphrody";
+      const archive = `${product}-windows-x64.zip`;
+      const hash = "a".repeat(64);
+      if (r2Url.endsWith("SHA256SUMS.txt")) return new Response(`${hash}  ${archive}`);
+      return new Response(
+        JSON.stringify({
+          product,
+          version: "1.0.0",
+          platform: "windows-x64",
+          archive,
+          sha256: hash,
+          ...(product === "bun"
+            ? { binary: "bun-windows-x64/bun.exe", aliases: ["bun", "bunx"] }
+            : {
+                binaries: [
+                  "aphrody-windows-x64/aphrody.exe",
+                  "aphrody-windows-x64/aphrody-site.exe",
+                ],
+                aliases: ["aphrody"],
+              }),
+        }),
+      );
+    }
     const url = String(input);
     if (url === "https://creator.aphrody.com/latest.json")
       return Response.json({

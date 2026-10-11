@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTabManager } from "./useTabManager";
 
-import { deriveTitleFromPath } from "./route-title";
+import { browserDocumentTitle, deriveTitleFromPath } from "./route-title";
 
 /**
  * TabNavigationSync - Syncs router navigation with active tab
@@ -43,7 +43,12 @@ export function TabNavigationSync() {
       updateTabTitle(activeTabId, newTitle);
     }
     if (typeof document !== "undefined") {
-      document.title = activeTab?.title ? `${activeTab.title} — Aphrody OS` : "Aphrody OS";
+      document.title = browserDocumentTitle(
+        location.pathname,
+        newTitle ?? activeTab?.title ?? null,
+        document.querySelector('meta[name="aphrody-rpc"]')?.getAttribute("content") ===
+          "unavailable",
+      );
     }
   }, [
     currentPath,

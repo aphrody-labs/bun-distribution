@@ -11,9 +11,9 @@
 
 | Contenu | Volume | Emplacement sur le VPS principal |
 | --- | --- | --- |
-| Médias de tweets + assets (`/srv/rg-storage`) | 5,4 Go | `/var/www/rg-storage/` — servi de nouveau en local |
-| Sauvegardes Postgres (`/srv/rg-backups`) | 609 Mo | `~/rg-backups/` |
-| Corpus audio niers (`/srv/niers-corpus`) | 156 Mo | `~/niers/var/corpus/` |
+| Médias de tweets + assets (`/home/ubuntu/apps/rg-storage`) | 5,4 Go | `/var/www/rg-storage/` — servi de nouveau en local |
+| Sauvegardes Postgres (`/home/ubuntu/apps/rg-backups`) | 609 Mo | `~/rg-backups/` |
+| Corpus audio niers (`/home/ubuntu/apps/niers-corpus`) | 156 Mo | `~/niers/var/corpus/` |
 | Site achillée retiré, espace de travail azalée, journaux `rg-stats` | 15 Mo | `~/rg-archive-vps2/` |
 
 Deux conséquences de configuration, faites dans le même mouvement :
@@ -29,7 +29,7 @@ Deux conséquences de configuration, faites dans le même mouvement :
 
 ### Le corpus audio n'est pas revenu entier, et c'est voulu
 
-`/srv/niers-corpus/audio_awb` pesait 8,25 Go pour 5 512 fichiers. Comparés aux
+`/home/ubuntu/apps/niers-corpus/audio_awb` pesait 8,25 Go pour 5 512 fichiers. Comparés aux
 `.awb` réellement présents dans les CPK locaux (index Redis `iev:file:index`,
 4 559 noms distincts), **164 fichiers seulement n'existaient nulle part
 ailleurs**. Ceux-là sont revenus (43 Mo) ; les autres ont été supprimés, parce

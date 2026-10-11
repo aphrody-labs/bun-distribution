@@ -72,12 +72,28 @@ const bunWasm: Packer = async options => {
   return wasm.build(options);
 };
 
+/**
+ * Rust prefixes that name this machine (checkout, rustup, cargo registry) are remapped so the wasm
+ * carries no host path: panic and debug locations would otherwise expose the build user's home.
+ */
+export function remapFlags(root: string, env: NodeJS.ProcessEnv): string[] {
+  const home = env.USERPROFILE ?? env.HOME ?? "";
+  const cargoHome = env.CARGO_HOME ?? join(home, ".cargo");
+  const rustupHome = env.RUSTUP_HOME ?? join(home, ".rustup");
+  return [
+    `--remap-path-prefix=${root}=/aphrody`,
+    `--remap-path-prefix=${rustupHome}=/rustup`,
+    `--remap-path-prefix=${cargoHome}=/cargo`,
+  ];
+}
+
 export async function buildWasmPackage(options: BuildOptions, dependencies: BuildDependencies = {}) {
   const root = dependencies.root ?? repositoryRoot;
   const env = dependencies.env ?? process.env;
   const run = dependencies.run ?? runTool;
   const pack = dependencies.pack ?? bunWasm;
   const platform = dependencies.platform ?? process.platform;
+  env.RUSTFLAGS = [env.RUSTFLAGS, ...remapFlags(root, env)].filter(Boolean).join(" ");
   const crate = options.crate;
   const name = options.name ?? crate.replaceAll("-", "_");
   const profile = options.profile ?? "wasm-release";

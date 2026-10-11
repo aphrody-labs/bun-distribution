@@ -29,15 +29,14 @@ test("Drive daemon builds from the nested workspace through serialized Cargo", a
   writeFileSync(join(drive, "Cargo.toml"), "[workspace]\n");
   const windows = process.platform === "win32";
   const exe = windows ? ".exe" : "";
-  const literal = (path: string) => `'${path.replaceAll("'", "''")}'`;
   writeFileSync(
-    join(scripts, "cargo-serial.ps1"),
+    join(scripts, "cargo-serial.ts"),
     [
-      `[IO.File]::WriteAllText(${literal(join(root, "invocation"))}, (($args -join "\`n") + "\`n"))`,
-      `[IO.File]::WriteAllText(${literal(join(root, "rustc-env"))}, "$env:RUSTC_WRAPPER")`,
-      `$null = New-Item -ItemType Directory -Force (Join-Path $env:CARGO_TARGET_DIR 'debug')`,
-      `[IO.File]::WriteAllText((Join-Path $env:CARGO_TARGET_DIR 'debug/sd-daemon.exe'), 'daemon')`,
-    ].join("\r\n"),
+      `await Bun.write(${JSON.stringify(join(root, "invocation"))}, Bun.argv.slice(2).join("\\n") + "\\n");`,
+      `await Bun.write(${JSON.stringify(join(root, "rustc-env"))}, process.env.RUSTC_WRAPPER ?? "");`,
+      'await Bun.write(`${process.env.CARGO_TARGET_DIR}/debug/sd-daemon.exe`, "daemon");',
+      "",
+    ].join("\n"),
   );
   const wrapper = join(scripts, "cargo-serial.sh");
   writeFileSync(
@@ -51,7 +50,10 @@ printf 'daemon' > "$CARGO_TARGET_DIR/debug/sd-daemon"
   );
   chmodSync(wrapper, 0o755);
   const previous = Bun.env.RUSTC_WRAPPER;
+  // The root target directory is the checkout default, not an operator-wide CARGO_TARGET_DIR.
+  const previousTarget = Bun.env.CARGO_TARGET_DIR;
   Bun.env.RUSTC_WRAPPER = "test-sccache-wrapper";
+  delete Bun.env.CARGO_TARGET_DIR;
   try {
     expect(await runDriveDaemon(["--root", root, "--debug"])).toBe(0);
     const invocation = readFileSync(join(root, "invocation"), "utf8");
@@ -67,6 +69,7 @@ printf 'daemon' > "$CARGO_TARGET_DIR/debug/sd-daemon"
   } finally {
     if (previous === undefined) delete Bun.env.RUSTC_WRAPPER;
     else Bun.env.RUSTC_WRAPPER = previous;
+    if (previousTarget !== undefined) Bun.env.CARGO_TARGET_DIR = previousTarget;
   }
 });
 

@@ -10,16 +10,16 @@ if [[ -n "$container_target" && ( -f "$container_target/compose.yaml" || -f "$co
   exec python3 "$container_adapter" "$@"
 fi
 
-# Shenron release plane on the VPS (/srv/shenron/{releases,current,shared}),
+# Shenron release plane on the VPS (/home/ubuntu/apps/shenron/{releases,current,shared}),
 # modelled on atomic-deploy-rg.sh. The installed catalog snapshot is the
 # roster (application shenron, release-based, not retired: shenron-site and
 # shenron-bot); the release carries their units and the shenron.conf vhost.
 #
 #   atomic-deploy-shenron.sh assemble BUNDLE_SHENRON_DIR
-#       Build /srv/shenron/releases/<commit> from a bundle's shenron/ directory
+#       Build /home/ubuntu/apps/shenron/releases/<commit> from a bundle's shenron/ directory
 #       (git archive + sealed Next artifact + `bun install --frozen-lockfile`),
 #       without touching `current` or any running service. Idempotent.
-#   atomic-deploy-shenron.sh [activate] /srv/shenron/releases/<commit>
+#   atomic-deploy-shenron.sh [activate] /home/ubuntu/apps/shenron/releases/<commit>
 #       Verify, switch `current`, restart, probe loopback health and HTTPS
 #       routes; any failure restores the previous `current`, units, vhost,
 #       refreshed shared files and service states.
@@ -27,12 +27,12 @@ fi
 #       Re-apply the backup of an earlier activation (bundle rollback). Only the
 #       active release stays on disk: reassemble the previous bundle first.
 #
-# Mutable data stays in /srv/shenron/shared, linked into every release; the
+# Mutable data stays in /home/ubuntu/apps/shenron/shared, linked into every release; the
 # Git-tracked seed of those directories is refreshed on activation (backed up,
 # never deleted). Secrets stay in /etc env files; only key names are checked,
 # against the installed tools/config/secrets-contract.json.
 usage='usage: atomic-deploy-shenron.sh assemble DIR | [activate] RELEASE_DIR | restore BACKUP_DIR'
-root="${SHENRON_RELEASE_ROOT:-/srv/shenron}"
+root="${SHENRON_RELEASE_ROOT:-/home/ubuntu/apps/shenron}"
 share="${SHENRON_INFRA_SHARE:-/usr/local/share/aphrody-infra}"
 catalog="${SHENRON_SERVICE_CATALOG:-$share/service-catalog.json}"
 routes="${SHENRON_NGINX_ROUTES:-$share/nginx-routes.json}"
@@ -205,7 +205,7 @@ for name in ('shenron-site.service', 'shenron-bot.service'):
     content = unit.read_text()
     if manifest.get('sourceLayout') == 'monorepo':
         content = content.replace('/apps/site', '/' + site).replace('/apps/bot', '/' + bot)
-    content = content.replace('/srv/shenron/current/node_modules/next/dist/bin/next', '/srv/shenron/current/' + next_path)
+    content = content.replace('/home/ubuntu/apps/shenron/current/node_modules/next/dist/bin/next', '/home/ubuntu/apps/shenron/current/' + next_path)
     if manifest.get('target', 'vps') == 'dbfr':
         values = {}
         for line in content.splitlines():
@@ -348,7 +348,7 @@ manifest = json.loads((release / 'release.json').read_text())
 services = [item for item in catalog['services']
             if item.get('application') == 'shenron' and item['unit'].endswith('.service')
             and item.get('status') != 'retired'
-            and item.get('workingDirectory', '').startswith('/srv/shenron/current')]
+            and item.get('workingDirectory', '').startswith('/home/ubuntu/apps/shenron/current')]
 ids = [item['id'] for item in services]
 if manifest.get('schemaVersion') != 1 or manifest.get('repository') not in ('shenron', 'aphrody-labs/aphrody') or manifest.get('services') != ids:
     raise SystemExit('release.json does not match the installed Shenron service catalog')
@@ -381,7 +381,7 @@ for item in services:
     if not path.is_file():
         raise SystemExit(f'missing unit: {unit}')
     content = path.read_text()
-    if not re.search(r'^WorkingDirectory=/srv/shenron/current(?:/[^\s]*)?$', content, re.MULTILINE):
+    if not re.search(r'^WorkingDirectory=/home/ubuntu/apps/shenron/current(?:/[^\s]*)?$', content, re.MULTILINE):
         raise SystemExit(f'unit not release-based: {unit}')
     keys = set()
     present = 0
@@ -562,7 +562,7 @@ if [[ -n "$public_urls" ]]; then
 fi
 trap - ERR
 # One release on disk: once `current` is healthy every other release goes (each was ~2.4 GB; 34 had filled
-# /srv on 2026-10-09). In-flight .assembling-* stages belong to a concurrent assemble and are kept.
+# the release disk on 2026-10-09). In-flight .assembling-* stages belong to a concurrent assemble and are kept.
 pruned=0
 for old in "$release_root"/* "$release_root"/.superseded-*; do
   [[ -d "$old" && "$old" != "$release" ]] || continue

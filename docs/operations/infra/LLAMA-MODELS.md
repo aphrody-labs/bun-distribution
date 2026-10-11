@@ -6,11 +6,11 @@ Since 2026-10-09 the only llama-server in production is the Compose service `cha
 | --- | --- | --- |
 | `shenron-chat-v2` | Qwen3-4B-Instruct-2507 + shenron-chat-v2 LoRA, merged then Q4_K_M (imatrix unsloth) | `22362d5729eab45a4f2238246e6b5a448d26c01b5a541671e730415ec0d731b4` |
 
-File: `/srv/shenron/shared/models/shenron-chat-v2/shenron-chat-v2-merged-Q4_K_M.gguf`, mounted read-only on `/models/model.gguf`. Options: `--cache-ram 256 -fa on -ctk q8_0 -ctv q8_0 --no-repack`, ctx 8192, parallel 1, threads 4, `mem_limit 5g`.
+File: `/home/ubuntu/apps/shenron/shared/models/shenron-chat-v2/shenron-chat-v2-merged-Q4_K_M.gguf`, mounted read-only on `/models/model.gguf`. Options: `--cache-ram 256 -fa on -ctk q8_0 -ctv q8_0 --no-repack`, ctx 8192, parallel 1, threads 4, `mem_limit 5g`.
 
 ## Rebuilding the merged model
 
-Adapter source: `runs/shenron-chat-v2/adapter.gguf` of `/srv/shenron/shared/private-downloads/shenron-train-chat-v2.tar.gz` (sha256 `aab485357c68fdcbb6d4ba55911632b8228964106047db035e0223e2aecc6107`, kept beside the model as `adapter.gguf`).
+Adapter source: `runs/shenron-chat-v2/adapter.gguf` of `/home/ubuntu/apps/shenron/shared/private-downloads/shenron-train-chat-v2.tar.gz` (sha256 `aab485357c68fdcbb6d4ba55911632b8228964106047db035e0223e2aecc6107`, kept beside the model as `adapter.gguf`).
 
 ```sh
 llama-export-lora -m Qwen3-4B-Instruct-2507-F16.gguf --lora adapter.gguf -o merged-F16.gguf

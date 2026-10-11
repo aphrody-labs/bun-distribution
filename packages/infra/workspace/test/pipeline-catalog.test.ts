@@ -12,14 +12,16 @@ test("known domains run bottom to top, then new domains in name order", async ()
       join(root, "package.json"),
       JSON.stringify({ name: "aphrody-workspace", workspaces: ["packages/*/*"] }),
     );
-    for (const domain of ["os", "shell", "google", "ai", "future", "alpha"]) {
-      const dir = join(root, "packages", domain, "sample");
-      await mkdir(dir, { recursive: true });
-      await Bun.write(
-        join(dir, "package.json"),
-        JSON.stringify({ name: `@aphrody/${domain}`, scripts: { test: "bun test" } }),
-      );
-    }
+    await Promise.all(
+      ["os", "shell", "google", "ai", "future", "alpha"].map(async (domain) => {
+        const dir = join(root, "packages", domain, "sample");
+        await mkdir(dir, { recursive: true });
+        await Bun.write(
+          join(dir, "package.json"),
+          JSON.stringify({ name: `@aphrody/${domain}`, scripts: { test: "bun test" } }),
+        );
+      }),
+    );
     const { config } = await pipelineCatalog(root);
     const stages = config.stages.map((stage) => stage.id);
     expect(stages.indexOf("bun-os")).toBeLessThan(stages.indexOf("bun-shell"));

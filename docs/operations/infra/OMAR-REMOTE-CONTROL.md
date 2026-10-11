@@ -12,7 +12,7 @@ que hors bande. Inventaire : `tools/config/host/wireguard/aphrody-tunnel.json` ;
 
 - Tunnel `aphrody-private` (`wg1` côté Linux, `aphrody` côté Windows), sous-réseau `10.200.77.0/24`, split tunnel.
 - Hub `vps` `10.200.77.1`, endpoint `51.77.147.152:51821`, clé publique `McWuNyGdzU81q9MEyfvnxoGYIHqGW1UcRqpcge3NxB4=`.
-- `omar` = `10.200.77.10`, clé publique déclarée `lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=`.
+- `omar` = `10.200.77.10`, clé publique déclarée `EXfatxgVFs8Lr9k7QoJ2wiznY5MYO4C19+4gLbGmCEw=`.
 - `aphro-pc` (propriétaire) = `10.200.77.4`. Le flux aphro-pc → omar transite par le hub (routage peer à peer, sans NAT).
 - Services sur le PC d'Omar, joignables uniquement par le tunnel :
   - `8795/tcp` : bureau à distance complet `aphrody infra remote serve` (flux JPEG + souris/clavier, visionneuse
@@ -61,7 +61,7 @@ $k = "$env:USERPROFILE\.aphrody\wireguard\aphrody.key"
 New-Item -ItemType Directory -Force (Split-Path $k) | Out-Null
 Read-Host "PrivateKey" | Set-Content -NoNewline $k     # coller, rien ne s'affiche ailleurs
 icacls $k /inheritance:r /grant:r "${env:USERNAME}:F" | Out-Null
-Get-Content $k | aphrody infra wg pubkey   # doit afficher lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=
+Get-Content $k | aphrody infra wg pubkey   # doit afficher EXfatxgVFs8Lr9k7QoJ2wiznY5MYO4C19+4gLbGmCEw=
 ```
 
 - **B, nouvelle clé** : `aphrody infra wg keygen` (écrit `%USERPROFILE%\.aphrody\wireguard\aphrody.key`, affiche la
@@ -166,7 +166,7 @@ service `ssh-omar-wsl`). Règles de compatibilité :
 
 | Couche    | Windows                                                   | WSL Ubuntu                                                                   |
 | --------- | --------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| WireGuard | seul porteur de wg1 (clé `lTH5…`, `10.200.77.10`)         | aucun tunnel propre : réseau `mirrored`, il voit l'adaptateur wg1 de Windows |
+| WireGuard | seul porteur de wg1 (clé `EXfat…`, `10.200.77.10`)        | aucun tunnel propre : réseau `mirrored`, il voit l'adaptateur wg1 de Windows |
 | SSH       | `sshd` Windows `10.200.77.10:22`                          | `sshd` Linux `0.0.0.0:2222` (atteint en `10.200.77.10:2222`)                 |
 | Clés      | `C:\ProgramData\ssh\administrators_authorized_keys`       | `~/.ssh/authorized_keys` : mêmes lignes publiques                            |
 | VNC       | `aphrody infra remote serve` (5900), capture tout l'écran | fenêtres WSLg incluses dans la capture Windows ; pas de second serveur       |
@@ -199,19 +199,22 @@ WSL change). Côté propriétaire : `ssh omar-wsl` (wg1) ou `ssh omar-wsl-rt` (t
 
 ### 2.10 Toujours en ligne (2026-10-09)
 
-Une seule commande, en PowerShell 7 administrateur, une fois les sections 2.1 à 2.9 et la clé SSH en place :
+Une seule commande native, une fois les sections 2.1 à 2.9 et la clé SSH en place (hors session administrateur, elle
+se relance élevée par `sudo.exe` ou l'invite UAC) :
 
 ```powershell
-pwsh -File scripts/tools/infra/install-always-online.ps1 -DryRun   # plan
-pwsh -File scripts/tools/infra/install-always-online.ps1
+aphrody infra --root C:\src\aphrody remote always-online --dry-run   # plan JSON
+aphrody infra --root C:\src\aphrody remote always-online
 ```
 
-Le script coupe la veille et l'hibernation sur secteur, puis crée des tâches `\Aphrody\` relancées toutes les 5 minutes
-(`IgnoreNew`, 999 redémarrages, sans limite de durée) : `Aphrody WG omar` (démarrage, SYSTEM : WireGuardNT vit avec ce
-processus), `Aphrody Remote Desktop` (8795 + VNC 5900), `Aphrody MCP HTTP` (127.0.0.1:8793, portproxy permanent sur
-10.200.77.10:8793), `Aphrody omar reverse` (tunnel inverse de la section 4 ter, secours sans handshake) et
-`Aphrody WSL sshd` (`.wslconfig` mirrored, sshd 2222 maintenu). Options : `-NoWsl`, `-NoReverse`, `-Member`,
-`-Address`, `-IdentityFile`. Idempotent ; aucun secret lu ni affiché ; journaux dans `<aphrody home>\logs`.
+La commande coupe la veille et l'hibernation sur secteur, puis crée des tâches `\Aphrody\` cachées relancées toutes les
+5 minutes (`IgnoreNew`, 999 redémarrages, sans limite de durée) : `Aphrody WG omar` (démarrage, SYSTEM : WireGuardNT vit
+avec ce processus), `Aphrody Remote Desktop` (8795 + VNC 5900, bureau interactif derrière `conhost --headless`),
+`Aphrody MCP HTTP` (127.0.0.1:8793, S4U, portproxy permanent sur 10.200.77.10:8793), `Aphrody omar reverse` (tunnel
+inverse de la section 4 ter, S4U, secours sans handshake) et `Aphrody WSL sshd` (`.wslconfig` mirrored, sshd 2222
+maintenu). L'adresse du membre, le hub et la liste VNC viennent de l'inventaire du tunnel. Options : `--member`,
+`--hub-user`, `--distro`, `--identity-file`, `--aphrody`, `--no-wsl`, `--no-reverse`. Idempotent ; aucun secret lu ni
+affiché ; journaux dans `<aphrody home>\logs`.
 
 Le veilleur hub `aphrody-omar-watch` est retiré depuis le 2026-10-09 (unité et script supprimés) ; la joignabilité
 d'Omar se vérifie à la demande depuis aphro-pc (section 3).
@@ -310,7 +313,7 @@ RÈGLES DE SÉCURITÉ (absolues)
 FAITS
 - Tunnel `aphrody-private`, interface Windows `aphrody`, réseau 10.200.77.0/24 (split tunnel).
 - Hub vps 10.200.77.1, endpoint 51.77.147.152:51821, clé publique McWuNyGdzU81q9MEyfvnxoGYIHqGW1UcRqpcge3NxB4=
-- Omar = 10.200.77.10/24, clé publique déclarée lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=
+- Omar = 10.200.77.10/24, clé publique déclarée EXfatxgVFs8Lr9k7QoJ2wiznY5MYO4C19+4gLbGmCEw=
 - Propriétaire aphro-pc = 10.200.77.4 : seule source autorisée vers les services d'Omar.
 - Services Omar : 8795/tcp bureau à distance (`aphrody infra remote serve`) ; 8793/tcp MCP HTTP (`aphrody-mcp http`, qui refuse toute adresse non loopback : 127.0.0.1:8793 + netsh portproxy).
 - Variables (redéfinis-les dans chaque nouvelle session) : $Repo = "C:\src\aphrody" ; $AH = "$env:USERPROFILE\.aphrody" ; $Bin = "$env:LOCALAPPDATA\Aphrody\bin"
@@ -355,7 +358,7 @@ aphrody infra wg driver status
 
 6) CLÉ PRIVÉE (fichier $AH\wireguard\aphrody.key)
 a. S'il existe : Get-Content "$AH\wireguard\aphrody.key" -Raw | aphrody infra wg pubkey
-   Attendu : lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ= → OK, passe à d.
+   Attendu : EXfatxgVFs8Lr9k7QoJ2wiznY5MYO4C19+4gLbGmCEw= → OK, passe à d.
 b. S'il n'existe pas : affiche à Omar ce message et attends sa confirmation : « Dans une AUTRE fenêtre PowerShell, colle la PrivateKey de ton tunnel (app WireGuard → tunnel → Modifier → ligne PrivateKey) avec : $k="$env:USERPROFILE\.aphrody\wireguard\aphrody.key"; New-Item -ItemType Directory -Force (Split-Path $k)|Out-Null; Read-Host "PrivateKey" | Set-Content -NoNewline $k ». Ne lui demande JAMAIS de te la coller. Puis refais a.
 c. Si Omar n'a plus cette clé (ou si a. donne une autre clé publique et qu'il confirme l'avoir perdue) : aphrody infra wg keygen (ajoute --force seulement pour remplacer un aphrody.key erroné). Il affiche la clé PUBLIQUE seule : Omar la poste dans le salon admin Discord ; le propriétaire met à jour l'inventaire et le hub. Continue les étapes ; le handshake viendra après.
 d. Restreins l'ACL : icacls "$AH\wireguard\aphrody.key" /inheritance:r /grant:r "${env:USERNAME}:F"
@@ -432,7 +435,7 @@ Optionnel : Remove-Item "$AH\private\remote.token","$AH\private\mcp.token" ; ré
 
 11) RAPPORT FINAL (Omar le poste dans le salon admin Discord ; AUCUN secret : ni clé privée, ni jeton, ni contenu de .key/.token/.conf)
 - aphrody --version, git -C $Repo rev-parse --short HEAD, méthode (build source ou release)
-- clé publique : lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ= confirmée, OU la nouvelle clé publique issue de keygen
+- clé publique : EXfatxgVFs8Lr9k7QoJ2wiznY5MYO4C19+4gLbGmCEw= confirmée, OU la nouvelle clé publique issue de keygen
 - sortie de `aphrody infra --root $Repo wg show aphrody` (clés publiques seulement) et résultat du ping 10.200.77.1
 - healthz 8795 et 8793 (127.0.0.1 et 10.200.77.10), 401 sans jeton, portproxy, règles pare-feu, état de la tâche planifiée
 - jetons remis hors bande : oui/non (jamais leur valeur)

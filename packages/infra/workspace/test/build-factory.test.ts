@@ -16,10 +16,10 @@ const config: BuildFactoryConfig = {
   schemaVersion: 1,
   enabled: true,
   target: "vps",
-  cacheRoot: "/srv/aphrody-build/cache",
-  artifactRoot: "/srv/aphrody-build/artifacts",
-  lockPath: "/srv/aphrody-build/locks/heavy.lock",
-  repositories: { aphrody: "/srv/aphrody-build/workspaces/aphrody" },
+  cacheRoot: "/home/ubuntu/build/cache",
+  artifactRoot: "/home/ubuntu/build/artifacts",
+  lockPath: "/home/ubuntu/build/locks/heavy.lock",
+  repositories: { aphrody: "/home/ubuntu/src/aphrody" },
   rust: { maxJobs: 6 },
 };
 const revision = "a".repeat(40);
@@ -28,8 +28,8 @@ test("preparation plans restrict source owners, aliases, revisions and sibling w
   const declared = {
     ...config,
     repositories: {
-      aphrody: "/srv/aphrody-build/workspaces/aphrody",
-      yolo: "/srv/aphrody-build/workspaces/yolo",
+      aphrody: "/home/ubuntu/src/aphrody",
+      yolo: "/home/ubuntu/src/yolo",
     },
   };
   for (const repository of ["yolo", "aphrody"]) {
@@ -70,7 +70,10 @@ test("preparation plans restrict source owners, aliases, revisions and sibling w
   ).toThrow("execution-only");
   expect(() =>
     buildFactoryPreparePlan(
-      { ...declared, repositories: { ...declared.repositories, yolo: "/srv/unowned/yolo" } },
+      {
+        ...declared,
+        repositories: { ...declared.repositories, yolo: "/home/ubuntu/apps/unowned/yolo" },
+      },
       "yolo",
       revision,
       source,
@@ -447,13 +450,13 @@ test.skipIf(process.platform === "win32")(
 test("factory plans use the existing Infra owner and shared serial lock", () => {
   const plan = buildFactoryPlan(config, "aphrody", revision, ["bun", "run", "build"]);
   expect(plan.transport.slice(0, 4)).toEqual(["ssh", "exec", "--host", "vps"]);
-  expect(plan.transport[5]).toContain("flock --close -- /srv/aphrody-build/locks/heavy.lock");
+  expect(plan.transport[5]).toContain("flock --close -- /home/ubuntu/build/locks/heavy.lock");
   expect(plan.commandTimeoutSeconds).toBe(21600);
   expect(plan.transport[5]).toContain("git rev-parse HEAD");
   expect(plan.transport[5]).toContain("git status --porcelain");
   expect(plan.transport[5]).toContain("BUN_INSTALL_CACHE_DIR=");
   expect(plan.transport[5]).toContain("CARGO_NET_GIT_FETCH_WITH_CLI=true");
-  expect(plan.transport[5]).toContain("APHRODY_CARGO_LOCK_DIR=/srv/aphrody-build/locks");
+  expect(plan.transport[5]).toContain("APHRODY_CARGO_LOCK_DIR=/home/ubuntu/build/locks");
   expect(plan.command).toEqual(["bun", "run", "build"]);
 });
 
@@ -461,16 +464,16 @@ test("Yolo shares factory caches while preserving its canonical packaging target
   const declared: BuildFactoryConfig = await Bun.file(
     join(import.meta.dir, "../../../../tools/config/build-factory.json"),
   ).json();
-  expect(declared.repositories.yolo).toBe("/srv/aphrody-build/workspaces/yolo");
+  expect(declared.repositories.yolo).toBe("/home/ubuntu/src/yolo");
   const plan = buildFactoryPlan(declared, "yolo", revision, ["just", "runtime-package"]);
   expect(plan.repository).toBe("yolo");
   expect(plan.workspace).toBe(declared.repositories.yolo!);
   expect(plan.transport.slice(0, 4)).toEqual(["ssh", "exec", "--host", "vps"]);
   expect(plan.transport[5]).not.toContain("CARGO_TARGET_DIR=");
-  expect(plan.transport[5]).toContain("SCCACHE_DIR=/srv/aphrody-build/cache/sccache");
+  expect(plan.transport[5]).toContain("SCCACHE_DIR=/home/ubuntu/build/cache/sccache");
   expect(plan.transport[5]).toContain("git rev-parse HEAD");
   expect(plan.transport[5]).toContain("git status --porcelain");
-  expect(plan.transport[5]).toContain("flock --close -- /srv/aphrody-build/locks/heavy.lock");
+  expect(plan.transport[5]).toContain("flock --close -- /home/ubuntu/build/locks/heavy.lock");
   expect(() =>
     buildFactoryPlan({ ...declared, executionOnlyTargets: ["vps"] }, "yolo", revision, ["just"]),
   ).toThrow("execution-only");
@@ -617,7 +620,7 @@ test("source preparations use disjoint locks and builds also protect their pinne
   const first = buildFactoryPreparePlan(config, "aphrody", revision, source, {
     initializeSubmodules: false,
   });
-  expect(first.lockPath).toBe("/srv/aphrody-build/locks/aphrody.source.lock");
+  expect(first.lockPath).toBe("/home/ubuntu/build/locks/aphrody.source.lock");
   expect(first.transport[5]).toContain("heavy.lock");
   expect(first.transport[5]).toContain('if [ "$result" -eq 75 ]');
   expect(first.transport[5]).not.toContain("submodule update --init");
@@ -625,7 +628,7 @@ test("source preparations use disjoint locks and builds also protect their pinne
   expect(first.initializesSubmodules).toBe(false);
   const otherConfig = {
     ...config,
-    repositories: { ...config.repositories, yolo: "/srv/aphrody-build/workspaces/yolo" },
+    repositories: { ...config.repositories, yolo: "/home/ubuntu/src/yolo" },
   };
   const other = buildFactoryPreparePlan(otherConfig, "yolo", revision, {
     ...source,
@@ -640,7 +643,7 @@ test("source preparations use disjoint locks and builds also protect their pinne
     "check",
   ]);
   expect(build.transport[5]).toContain(
-    "flock --close -- /srv/aphrody-build/locks/heavy.lock flock --close -- /srv/aphrody-build/locks/aphrody.source.lock",
+    "flock --close -- /home/ubuntu/build/locks/heavy.lock flock --close -- /home/ubuntu/build/locks/aphrody.source.lock",
   );
 });
 

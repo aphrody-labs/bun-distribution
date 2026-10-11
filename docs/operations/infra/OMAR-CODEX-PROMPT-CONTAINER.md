@@ -33,7 +33,7 @@ irm https://downloads.aphrody.com/install.ps1 | iex
 $env:Path = "$Bin;$env:Path" ; aphrody --version ; aphrody-mcp http --help | Select-Object -First 3
 Dépôt (privé : le compte GitHub d'Omar doit y avoir accès ; 403/404 = blocage à signaler) :
 if (Test-Path $Repo) { git -C $Repo pull --ff-only } else { New-Item -ItemType Directory -Force C:\src | Out-Null ; git clone --filter=blob:none https://github.com/aphrody-labs/aphrody.git $Repo }
-git -C $Repo log --oneline -1 ; Test-Path "$Repo\scripts\install\container-service.ps1"     # True attendu
+git -C $Repo log --oneline -1 ; Test-Path "$Repo\scripts\install\container-service.ts"     # True attendu
 
 3) DOCKER DESKTOP ET IMAGE APHRODY
 winget install -e --id Docker.DockerDesktop --accept-source-agreements --accept-package-agreements --disable-interactivity     # « déjà installé » est normal
@@ -44,14 +44,15 @@ Set-Location $Repo ; docker build -f tools/config/container/Dockerfile --target 
 En échec réseau (curl 92), relance la même commande : les couches déjà faites sont réutilisées. Contrôle : docker run --rm aphrody:runtime aphrody --version
 
 4) SERVICE CONTENEUR (sans élévation, tâche interactive sans fenêtre, à l'ouverture de session)
-pwsh -NoProfile -File "$Repo\scripts\install\container-service.ps1" -Pc omar
+[Environment]::SetEnvironmentVariable('APHRODY_PC','omar','User') ; $env:APHRODY_PC = 'omar'
+Set-Location $Repo ; aphrody infra boot apply --host local --entry Container     # tâche cachée \Aphrody\Container (bun scripts/install/container-service.ts)
 Start-ScheduledTask -TaskPath '\Aphrody\' -TaskName Container ; Start-Sleep 40
 docker ps --format '{{.Names}} {{.Status}}' | Select-String aphrody-pc ; Invoke-RestMethod http://127.0.0.1:8999/healthz
-Le jeton du conteneur est généré dans $P\aphrody_mcp_http_token (ne l'affiche pas).
+Le jeton du conteneur est généré dans $P\aphrody_mcp_http_token (ne l'affiche pas ; un jeton de l'ancien script dans $HOME\.aphrodyprivate y est déplacé).
 
 5) A2A LOCAL (serveur A2A d'Omar, tâche au démarrage)
 Génère $P\a2a.token s'il n'existe pas (32 octets aléatoires en hexadécimal, icacls : lui + SYSTEM seulement), comme à l'étape 6 de OMAR-CODEX-PROMPT.md.
-Crée la tâche \Aphrody\ « Aphrody A2A omar » : exécute `aphrody a2a serve --bind 127.0.0.1:8788 --coord-dir "$AH\coord"` avec APHRODY_A2A_COORD_TOKEN lu depuis $P\a2a.token, déclencheur à l'ouverture de session, relance chaque minute en cas d'échec (5 fois), durée illimitée, cachée (même mécanisme que container-service.ps1 : module scripts\tools\infra\AphrodyHiddenTask.psm1, New-AphrodyTaskAction -Desktop).
+Crée la tâche \Aphrody\ « Aphrody A2A omar » : exécute `aphrody a2a serve --bind 127.0.0.1:8788 --coord-dir "$AH\coord"` avec APHRODY_A2A_COORD_TOKEN lu depuis $P\a2a.token, déclencheur à l'ouverture de session, relance chaque minute en cas d'échec (5 fois), durée illimitée, cachée (action `conhost.exe --headless "<programme>" <arguments>`, principal Interactive (toi), Settings.Hidden, comme `aphrody infra boot` (docs/operations/infra/BOOT.md)).
 Contrôle : Invoke-RestMethod http://127.0.0.1:8788/ping
 
 6) TUNNELS A2A ET MCP VERS LE HUB (une seule tâche persistante)
@@ -78,5 +79,5 @@ ssh -o BatchMode=yes omar@51.77.147.152 "curl -s -m 5 http://127.0.0.1:28788/pin
 - ce qui a échoué, pourquoi, ce qui reste à faire côté Omar ou côté propriétaire
 
 ROLLBACK (seulement si demandé)
-pwsh -NoProfile -File "$Repo\scripts\install\container-service.ps1" -Remove ; Unregister-ScheduledTask -TaskPath '\Aphrody\' -TaskName 'Aphrody A2A omar','Aphrody Omar tunnel' -Confirm:$false ; docker rm -f aphrody-pc
+Unregister-ScheduledTask -TaskPath '\Aphrody\' -TaskName Container -Confirm:$false ; Unregister-ScheduledTask -TaskPath '\Aphrody\' -TaskName 'Aphrody A2A omar','Aphrody Omar tunnel' -Confirm:$false ; docker rm -f aphrody-pc
 ```

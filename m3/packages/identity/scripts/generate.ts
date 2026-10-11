@@ -1,14 +1,24 @@
 // SPDX-License-Identifier: Apache-2.0
-// Regenerates src/animations.generated.ts from the canonical pet package of
-// crates/ui/identity (assets/aphrody/animations.json): only the geometry and timing a
-// renderer needs, so the 100 KB QA manifest never reaches a bundle. `src/pet.test.ts` fails when
-// the generated file and the crate disagree.
+// Regenerates the pet modules from the canonical package of crates/ui/identity:
+//   src/animations.generated.ts  from assets/aphrody/animations.json (geometry and timing for
+//                                the React component; the 100 KB QA manifest never reaches a bundle)
+//   src/web.generated.ts         from assets/aphrody/web.json (Codex-composed tracks, states, gaze
+//                                ring and sprite CSS for <aphrody-pet>; written by
+//                                `aphrody identity pet web`)
+// src/pet.test.ts and src/runtime.test.ts fail when a generated file and the crate disagree.
 //   bun scripts/generate.ts
 import { join } from "node:path";
-import { compactPet, renderModule } from "../src/compact";
+import { compactPet, renderModule, renderWebModule } from "../src/compact";
 
-const crate = join(import.meta.dir, "../../../../crates/ui/identity/assets/aphrody/animations.json");
-const out = join(import.meta.dir, "../src/animations.generated.ts");
-const compact = compactPet(await Bun.file(crate).json());
-await Bun.write(out, renderModule(compact));
-console.log(`${out}: ${Object.keys(compact.tracks).length} tracks, ${compact.directions.length} directions`);
+const assets = join(import.meta.dir, "../../../../crates/ui/identity/assets/aphrody");
+const src = join(import.meta.dir, "../src");
+
+const compact = compactPet(await Bun.file(join(assets, "animations.json")).json());
+await Bun.write(join(src, "animations.generated.ts"), renderModule(compact));
+console.log(
+  `animations.generated.ts: ${Object.keys(compact.tracks).length} tracks, ${compact.directions.length} directions`,
+);
+
+const web = await Bun.file(join(assets, "web.json")).json();
+await Bun.write(join(src, "web.generated.ts"), renderWebModule(web));
+console.log(`web.generated.ts: ${Object.keys(web.tracks).length} tracks, ${web.directions.length} directions`);

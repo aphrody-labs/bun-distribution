@@ -55,12 +55,12 @@ export async function resolveNodes(
   if (extraText) predicates.push(extraText);
   if (predicates.length === 0) return nodeIds ?? [];
 
-  const kept: number[] = [];
-  for (const id of nodeIds ?? []) {
-    const text = await nodeText(page, id);
-    if (predicates.every((p) => matchesText(p, text))) kept.push(id);
-  }
-  return kept;
+  const withText = await Promise.all(
+    (nodeIds ?? []).map(async (id) => ({ id, text: await nodeText(page, id) })),
+  );
+  return withText
+    .filter(({ text }) => predicates.every((p) => matchesText(p, text)))
+    .map(({ id }) => id);
 }
 
 /** Returns an element's stripped text content via `DOM.getOuterHTML`. */
@@ -172,9 +172,11 @@ export class WebLocator {
   async #waitForOne(timeout: number): Promise<number> {
     const deadline = Date.now() + timeout;
     do {
+      // oxlint-disable-next-line no-await-in-loop -- polling séquentiel : le locator est re-résolu à chaque tour jusqu'au timeout, chaque tour dépend du précédent
       const id = await this.#resolveOne();
       if (id !== null) return id;
       if (Date.now() >= deadline) break;
+      // oxlint-disable-next-line no-await-in-loop -- délai voulu entre deux sondages du polling, non parallélisable
       await Bun.sleep(POLL_MS);
     } while (Date.now() < deadline);
     throw new Error(`Timeout ${timeout}ms exceeded waiting for ${this._description}`);
@@ -275,10 +277,12 @@ export class WebLocator {
     const nodeId = await this.#waitForOne(options.timeout ?? DEFAULT_TIMEOUT);
     await this.#page._send("DOM.focus", { nodeId }).catch(() => undefined);
     for (const char of value) {
+      // oxlint-disable-next-line no-await-in-loop -- les frappes doivent être émises dans l'ordre, caractère par caractère (keyDown puis keyUp)
       await this.#page._send("Input.dispatchKeyEvent", {
         type: "keyDown",
         text: char,
       });
+      // oxlint-disable-next-line no-await-in-loop -- le keyUp de chaque caractère doit suivre son keyDown avant le caractère suivant
       await this.#page._send("Input.dispatchKeyEvent", {
         type: "keyUp",
         text: char,

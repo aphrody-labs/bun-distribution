@@ -19,7 +19,7 @@ cargo build -p aphrody-kernel --bin aphrody-kernel --bin aphrody-host-service --
 cargo build -p aphrody-kernel --no-default-features --target x86_64-pc-windows-gnu --bin aphrody-host-service --locked
 ```
 
-MSVC is also supported through `scripts/dev/windows-cargo.ps1`. Preserve the
+MSVC is also supported through `bun scripts/build/rust/cargo-serial.ts --msvc`. Preserve the
 configured sccache wrapper; any opt-out requires a demonstrated compiler issue
 and a recorded reason. The initial historical artifact was the GNU build.
 

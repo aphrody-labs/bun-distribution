@@ -2,7 +2,7 @@
 [package]
 name = "aphrody-svg"
 description = "The single SVG owner of the Aphrody ecosystem: parse, sanitize, optimize, normalize viewBox, M3 theming, sprite sheets, glyph outlines to SVG paths, rasterize to PNG/ICO and pixel diff."
-version                = "1.0.0-canary"
+version                = "1.0.0-canary.1"
 edition.workspace      = true
 rust-version.workspace = true
 authors.workspace      = true
@@ -18,6 +18,8 @@ default = ["raster", "glyph"]
 raster = ["dep:resvg", "dep:usvg", "dep:tiny-skia"]
 # skrifa: font glyph outlines (TTF/OTF, variable axes) to SVG path data.
 glyph = ["dep:skrifa"]
+# Material Symbols: GSUB ligature lookup by icon name, 960-grid paths, gstatic layout, WOFF2 decoding.
+symbols = ["glyph", "dep:woff2"]
 # Theme::m3: build a theme from aphrody-m3-tokens colour roles (`--md-sys-color-*`).
 m3 = ["dep:aphrody-m3-tokens"]
 
@@ -29,6 +31,7 @@ resvg     = { workspace = true, optional = true, features = ["text"] }
 usvg      = { workspace = true, optional = true }
 tiny-skia = { workspace = true, optional = true }
 skrifa    = { workspace = true, optional = true }
+woff2     = { workspace = true, optional = true }
 aphrody-m3-tokens = { workspace = true, optional = true, features = ["std"] }
 
 [dev-dependencies]

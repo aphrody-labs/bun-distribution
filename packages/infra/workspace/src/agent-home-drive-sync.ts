@@ -332,6 +332,7 @@ export async function syncPass(
       const failures = (old?.failures ?? 0) + 1;
       state[job.name] = {
         ...old,
+        waiting: undefined,
         ok: false,
         failures,
         nextAt: now + Math.min(3600, 60 * 2 ** Math.min(failures - 1, 6)) * 1000,
@@ -340,6 +341,10 @@ export async function syncPass(
     await persist(state);
   }
   return state;
+}
+/** A job parked on a human review is waiting, not failed: only real failures make the timer fail. */
+export function hasFailedJob(state: SyncState) {
+  return Object.values(state).some((job) => !job.ok && job.waiting === undefined);
 }
 async function save(path: string, value: unknown) {
   await mkdir(dirname(path), { recursive: true, mode: 0o700 });
@@ -543,7 +548,7 @@ if (import.meta.main) {
         ),
       }),
     );
-    if (!published || Object.values(state).some((job) => !job.ok)) process.exitCode = 1;
+    if (!published || hasFailedJob(state)) process.exitCode = 1;
   } finally {
     await rm(lockPath, { recursive: true });
   }

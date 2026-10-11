@@ -90,7 +90,7 @@
       "host": "windows",
       "os": "windows",
       "address": "10.200.77.10",
-      "publicKey": "lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=",
+      "publicKey": "EXfatxgVFs8Lr9k7QoJ2wiznY5MYO4C19+4gLbGmCEw=",
       "keyOrigin": "WireGuard app on Omar's Windows PC (empty tunnel); he sends only the public key",
       "publicKeyNote": "key actually configured on Omar's PC, relayed by the owner on 2026-10-08 (pair verified); replaces A42Sm27u… (2026-10-06), which never handshaked. Applied on the vps wg1 the same day",
       "udpSource": {
@@ -265,6 +265,46 @@
       "expose": "peer-listener",
       "auth": "bearer-token",
       "caveat": "aphrody-mcp http (WinClean computer_* tools) on 127.0.0.1:8793 of the owner PC, published on 10.200.77.4:8793 by netsh portproxy; bearer APHRODY_MCP_HTTP_TOKEN from <aphrody home>/private/mcp-http.env."
+    },
+    {
+      "id": "remote-desktop-vps",
+      "host": "vps",
+      "address": "10.200.77.1",
+      "port": 8795,
+      "proto": "tcp",
+      "expose": "listener",
+      "auth": "bearer-token",
+      "caveat": "Browser viewer of the virtual desktop of vps (unit aphrody-remote); bearer token in /etc/aphrody/remote.env (root 0600), bound to the wg1 address only."
+    },
+    {
+      "id": "vnc-vps",
+      "host": "vps",
+      "address": "10.200.77.1",
+      "port": 5900,
+      "proto": "tcp",
+      "expose": "listener",
+      "auth": "vnc-password",
+      "caveat": "RFB server of aphrody infra remote serve on vps (unit aphrody-remote, Xvfb :99 + openbox, user ubuntu); password in /etc/aphrody/remote.env (root 0600), never in the repository; peers admitted by --vnc-allow, loopback otherwise."
+    },
+    {
+      "id": "remote-desktop-dbfr",
+      "host": "dbfr",
+      "address": "10.200.77.3",
+      "port": 8795,
+      "proto": "tcp",
+      "expose": "listener",
+      "auth": "bearer-token",
+      "caveat": "Browser viewer of the virtual desktop of dbfr (unit aphrody-remote); bearer token in /etc/aphrody/remote.env (root 0600), bound to the wg1 address only."
+    },
+    {
+      "id": "vnc-dbfr",
+      "host": "dbfr",
+      "address": "10.200.77.3",
+      "port": 5900,
+      "proto": "tcp",
+      "expose": "listener",
+      "auth": "vnc-password",
+      "caveat": "RFB server of aphrody infra remote serve on dbfr (unit aphrody-remote, Xvfb :99 + openbox, user ubuntu); password in /etc/aphrody/remote.env (root 0600), never in the repository; peers admitted by --vnc-allow, loopback otherwise."
     }
   ],
   "grants": {
@@ -278,7 +318,12 @@
       "training",
       "remote-desktop-aphro-pc",
       "vnc-aphro-pc",
-      "mcp-http-aphro-pc"
+      "mcp-http-aphro-pc",
+      "remote-desktop-dbfr",
+      "vnc-dbfr",
+      "mcp-http-dbfr",
+      "remote-desktop-vps",
+      "vnc-vps"
     ],
     "aphro-pc": [
       "ssh-vps",
@@ -291,17 +336,37 @@
       "mcp-http-dbfr",
       "remote-desktop-omar",
       "mcp-http-omar",
-      "vnc-omar"
+      "vnc-omar",
+      "remote-desktop-vps",
+      "vnc-vps",
+      "remote-desktop-dbfr",
+      "vnc-dbfr"
     ],
     "wsl": ["ssh-vps", "ssh-dbfr", "mcp-http", "a2a", "mcp-http-dbfr"],
-    "dbfr": ["ssh-aphro-pc", "ssh-vps", "mcp-http", "ssh-omar", "ssh-omar-wsl"],
+    "dbfr": [
+      "ssh-aphro-pc",
+      "ssh-vps",
+      "mcp-http",
+      "ssh-omar",
+      "ssh-omar-wsl",
+      "remote-desktop-omar",
+      "vnc-omar",
+      "mcp-http-omar",
+      "remote-desktop-vps",
+      "vnc-vps"
+    ],
     "vps": [
       "mcp-http-dbfr",
       "ssh-aphro-pc",
       "ssh-omar",
       "ssh-omar-wsl",
       "mcp-http-aphro-pc",
-      "mcp-http-omar"
+      "mcp-http-omar",
+      "ssh-dbfr",
+      "remote-desktop-omar",
+      "vnc-omar",
+      "remote-desktop-dbfr",
+      "vnc-dbfr"
     ]
   },
   "firewall": {

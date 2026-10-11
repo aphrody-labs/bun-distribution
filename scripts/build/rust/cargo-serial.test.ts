@@ -11,7 +11,7 @@ afterEach(() => {
   for (const path of fixtures.splice(0)) rmSync(path, { recursive: true, force: true });
 });
 
-async function run(host: string, held = false) {
+async function run(host: string, held = false, extra: Record<string, string> = {}) {
   const root = mkdtempSync(join(tmpdir(), "aphrody-cargo-routing-"));
   fixtures.push(root);
   const wrapper = join(root, "scripts/build/rust/cargo-serial.sh");
@@ -42,7 +42,10 @@ process.exitCode = await child.exited;
   await Bun.write(sccache, "#!/bin/sh\nexit 0\n");
   chmodSync(sccache, 0o700);
   const cargo = join(bin, "cargo");
-  await Bun.write(cargo, '#!/bin/sh\nprintf "fixture-cargo:%s\\n" "$*"\n');
+  await Bun.write(
+    cargo,
+    '#!/bin/sh\nprintf "fixture-cargo:%s\\n" "$*"\nprintf "fixture-incremental:%s\\n" "${CARGO_INCREMENTAL-unset}"\n',
+  );
   chmodSync(cargo, 0o700);
   return Bun.spawnSync(["bash", wrapper, "check", "-p", "fixture"], {
     windowsHide: true,
@@ -59,6 +62,7 @@ process.exitCode = await child.exited;
       APHRODY_CARGO_LOCK_DIR: join(root, "locks"),
       APHRODY_CARGO_LOCK_TIMEOUT_SECS: "5",
       APHRODY_CARGO_TARGET_DIR: "",
+      ...extra,
     },
     timeout: 10_000,
     stdout: "pipe",
@@ -100,3 +104,12 @@ linuxTest(
     expect(output).not.toContain("fixture-resource-owner");
   },
 );
+
+linuxTest("heavy Cargo forces non-incremental builds unless the opt-in unsets it", async () => {
+  const strict = await run("vps");
+  expect(strict.stdout.toString()).toContain("fixture-incremental:0");
+  expect(strict.exitCode).toBe(0);
+  const loop = await run("vps", false, { CARGO_INCREMENTAL: "0", APHRODY_CARGO_INCREMENTAL: "1" });
+  expect(loop.stdout.toString()).toContain("fixture-incremental:unset");
+  expect(loop.exitCode).toBe(0);
+});

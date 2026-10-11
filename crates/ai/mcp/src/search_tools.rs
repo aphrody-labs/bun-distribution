@@ -3,7 +3,7 @@
 
 use std::sync::LazyLock;
 
-use aphrody_google::search::{RichSearchResult, SearchOptions, search_rich};
+use aphrody_google::search::execute_search_request as run;
 use rmcp::model::{CallToolRequestParams, CallToolResult, ContentBlock, Tool};
 use serde_json::{Value, json};
 
@@ -20,7 +20,10 @@ static TOOL: LazyLock<Tool> = LazyLock::new(|| {
                 "gl": { "type": "string", "description": "Region bias, e.g. 'US', 'FR'." },
                 "domain": { "type": "string", "description": "Google domain, e.g. 'google.fr'." },
                 "vertical": { "type": "string", "enum": ["web", "images", "news", "videos", "books"], "default": "web", "description": "Search vertical." },
-                "rich": { "type": "boolean", "default": false, "description": "Include featured snippet / knowledge panel / PAA / related searches." }
+                "rich": { "type": "boolean", "default": false, "description": "Include featured snippet / knowledge panel / PAA / related searches without changing the requested vertical." },
+                "anonymous": { "type": "boolean", "default": false, "description": "Do not read or send account cookies." },
+                "safe": { "type": "string", "enum": ["active", "off"], "description": "Google SafeSearch preference." },
+                "start": { "type": "integer", "minimum": 0, "maximum": 1000, "description": "Result offset for pagination." }
             },
             "required": ["query"],
             "additionalProperties": false
@@ -28,111 +31,46 @@ static TOOL: LazyLock<Tool> = LazyLock::new(|| {
     })).expect("static Google Search tool schema")
 });
 
+static ROUTES_TOOL: LazyLock<Tool> = LazyLock::new(|| {
+    serde_json::from_value(json!({
+        "name": "aphrody_google_routes",
+        "description": "Read the native catalogue of public Google entry points and official SEO, Web Vitals and accessibility guidance. Dated observations, not a crawl queue or authorization to mirror Search.",
+        "inputSchema": { "type": "object", "properties": {}, "additionalProperties": false },
+        "annotations": { "readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false }
+    })).expect("static Google route catalogue schema")
+});
+
 pub(crate) fn list(taken: impl Fn(&str) -> bool) -> Vec<Tool> {
-    if taken(TOOL.name.as_ref()) { Vec::new() } else { vec![TOOL.clone()] }
+    [&*TOOL, &*ROUTES_TOOL].into_iter().filter(|tool| !taken(tool.name.as_ref())).cloned().collect()
 }
 
 pub(crate) fn get(name: &str) -> Option<Tool> {
-    (TOOL.name == name).then(|| TOOL.clone())
+    [&*TOOL, &*ROUTES_TOOL].into_iter().find(|tool| tool.name == name).cloned()
 }
 
 pub(crate) fn owns(name: &str) -> bool {
-    TOOL.name == name
-}
-
-fn optional_text(args: &Value, name: &str) -> Result<Option<String>, String> {
-    args.get(name)
-        .map(|value| {
-            value.as_str().map(str::to_owned).ok_or_else(|| format!("{name} must be a string"))
-        })
-        .transpose()
-}
-
-fn parse_request(args: &Value) -> Result<(String, SearchOptions, bool), String> {
-    let query =
-        args.get("query").and_then(Value::as_str).ok_or("query must be a string")?.to_owned();
-    let mut options = SearchOptions::default();
-    if let Some(num) = args.get("num") {
-        let num = num
-            .as_u64()
-            .filter(|num| (1..=20).contains(num))
-            .ok_or("num must be an integer from 1 to 20")?;
-        options.num = Some(num as u8);
-    }
-    if let Some(hl) = optional_text(args, "hl")? {
-        options.hl = hl;
-    }
-    if let Some(gl) = optional_text(args, "gl")? {
-        options.gl = gl;
-    }
-    if let Some(domain) = optional_text(args, "domain")? {
-        options.domain = domain;
-    }
-    let vertical = optional_text(args, "vertical")?.unwrap_or_else(|| "web".to_owned());
-    let rich = args
-        .get("rich")
-        .map_or(Ok(false), |value| value.as_bool().ok_or("rich must be a boolean"))?;
-    options.classic = !rich;
-    options.udm = if rich {
-        None
-    } else {
-        Some(match vertical.as_str() {
-            "web" => 14,
-            "images" => 2,
-            "news" => 12,
-            "videos" => 7,
-            "books" => 36,
-            _ => return Err("vertical must be web, images, news, videos or books".to_owned()),
-        })
-    };
-    if rich && !matches!(vertical.as_str(), "web" | "images" | "news" | "videos" | "books") {
-        return Err("vertical must be web, images, news, videos or books".to_owned());
-    }
-    Ok((query, options, rich))
-}
-
-fn payload(result: &RichSearchResult, rich: bool) -> Value {
-    let mut value = serde_json::Map::new();
-    value.insert("query".to_owned(), json!(result.content.query));
-    value.insert("authenticated".to_owned(), json!(result.authenticated));
-    value.insert("transport".to_owned(), json!(result.profile_used));
-    if let Some(total) = result.content.total_results {
-        value.insert("totalResults".to_owned(), json!(total));
-    }
-    if let Some(corrected) = &result.content.corrected_query {
-        value.insert("correctedQuery".to_owned(), json!(corrected));
-    }
-    value.insert("organic".to_owned(), Value::Array(result.content.organic.iter().map(|hit| json!({
-        "position": hit.position, "title": hit.title, "url": hit.url, "snippet": hit.snippet,
-    })).collect()));
-    if rich {
-        if let Some(snippet) = &result.content.featured_snippet {
-            value.insert("featuredSnippet".to_owned(), json!(snippet));
-        }
-        if let Some(panel) = &result.content.knowledge_panel {
-            value.insert("knowledgePanel".to_owned(), json!(panel));
-        }
-        value.insert("peopleAlsoAsk".to_owned(), json!(result.content.people_also_ask));
-        value.insert("relatedSearches".to_owned(), json!(result.content.related_searches));
-    }
-    Value::Object(value)
-}
-
-async fn run(args: &Value) -> Result<Value, String> {
-    let (query, options, rich) = parse_request(args)?;
-    let result = search_rich(&query, &options).await?;
-    Ok(payload(&result, rich))
+    TOOL.name == name || ROUTES_TOOL.name == name
 }
 
 pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
     let args =
         request.arguments.as_ref().map_or_else(|| json!({}), |map| Value::Object(map.clone()));
-    match run(&args).await {
+    let result = if request.name == ROUTES_TOOL.name {
+        if args.as_object().is_some_and(serde_json::Map::is_empty) {
+            serde_json::to_value(aphrody_google::routes::catalog())
+                .map_err(|error| error.to_string())
+        } else {
+            Err("route catalogue accepts no arguments".to_owned())
+        }
+    } else {
+        run(&args).await
+    };
+    match result {
         Ok(value) => CallToolResult::success(vec![ContentBlock::text(
             serde_json::to_string_pretty(&value).unwrap_or_else(|_| "{}".to_owned()),
         )]),
         Err(error) => {
-            CallToolResult::error(vec![ContentBlock::text(format!("aphrody_search: {error}"))])
+            CallToolResult::error(vec![ContentBlock::text(format!("{}: {error}", request.name))])
         },
     }
 }
@@ -140,12 +78,15 @@ pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use aphrody_google::search::{SearchTransport, parse_serp};
+    use aphrody_google::search::{
+        RichSearchResult, SearchTransport, parse_search_request as parse_request, parse_serp,
+        project_search_result as payload, project_vertical_result as vertical_payload,
+    };
 
     #[test]
     fn schema_and_verticals_match_source_contract() {
         assert!(owns("aphrody_search"));
-        assert_eq!(list(|_| false).len(), 1);
+        assert_eq!(list(|_| false).len(), 2);
         let schema = serde_json::to_value(get("aphrody_search").unwrap()).unwrap();
         assert_eq!(schema["inputSchema"]["properties"]["num"]["maximum"], 20);
         assert_eq!(schema["inputSchema"]["properties"]["vertical"]["default"], "web");
@@ -185,5 +126,65 @@ mod tests {
         assert!(run(&json!({"query":"x", "num":21})).await.is_err());
         assert!(run(&json!({"query":"x", "vertical":"other"})).await.is_err());
         assert!(run(&json!({"query":"x", "rich":"yes"})).await.is_err());
+        for args in [
+            json!({"query":"  "}),
+            json!({"query":"x","anonymous":"yes"}),
+            json!({"query":"x","safe":"invalid"}),
+            json!({"query":"x","start":1001}),
+            json!({"query":"x","start":-1}),
+            json!({"query":"x","extra":true}),
+        ] {
+            assert!(run(&args).await.is_err(), "accepted invalid input: {args}");
+        }
+    }
+
+    #[test]
+    fn rich_results_preserve_vertical_and_privacy_preferences() {
+        for (vertical, udm) in [
+            ("web", None),
+            ("images", Some(2)),
+            ("news", Some(12)),
+            ("videos", Some(7)),
+            ("books", Some(36)),
+        ] {
+            let (query, options, rich) = parse_request(&json!({"query":"rust & bun","vertical":vertical,"rich":true,"anonymous":true,"safe":"active","start":20})).unwrap();
+            assert!(rich && options.anonymous);
+            assert_eq!(options.udm, udm);
+            let url = aphrody_google::search::search_url(&query, &options).unwrap();
+            let pairs: std::collections::HashMap<_, _> = url.query_pairs().into_owned().collect();
+            assert_eq!(pairs["q"], "rust & bun");
+            assert_eq!(pairs["safe"], "active");
+            assert_eq!(pairs["start"], "20");
+            assert_eq!(pairs.get("udm"), udm.map(|value| value.to_string()).as_ref());
+        }
+    }
+
+    #[test]
+    fn vertical_projection_uses_real_destination_urls() {
+        let images = vertical_payload("cat", json!([{"title":"Cat","imageUrl":"https://example.org/cat.png","thumbnail":"https://example.org/thumb.png"}])).unwrap();
+        assert_eq!(images["organic"][0]["url"], "https://example.org/cat.png");
+        let news = vertical_payload(
+            "news",
+            json!([{"title":"Story","url":"https://example.org/news","snippet":"Published text"}]),
+        )
+        .unwrap();
+        assert_eq!(news["organic"][0]["snippet"], "Published text");
+        assert!(
+            vertical_payload("cat", json!([{"thumbnail":"data:image/png;base64,AAAA"}])).is_err()
+        );
+    }
+
+    #[tokio::test]
+    async fn route_tool_is_local_read_only_and_rejects_arguments() {
+        let tool = get("aphrody_google_routes").unwrap();
+        assert_eq!(serde_json::to_value(tool).unwrap()["annotations"]["readOnlyHint"], true);
+        let request =
+            serde_json::from_value(json!({"name":"aphrody_google_routes","arguments":{}})).unwrap();
+        assert_ne!(call(&request).await.is_error, Some(true));
+        let request = serde_json::from_value(
+            json!({"name":"aphrody_google_routes","arguments":{"url":"https://example.org"}}),
+        )
+        .unwrap();
+        assert_eq!(call(&request).await.is_error, Some(true));
     }
 }

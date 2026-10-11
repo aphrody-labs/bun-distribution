@@ -28,6 +28,8 @@ interface Call {
   body?: any;
 }
 
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
+
 /** Faux Challonge v2.1 + faux webhook Discord ; `override` permet d'injecter des erreurs. */
 function harness(
   options: {
@@ -49,7 +51,6 @@ function harness(
     calls.push(call);
     const forced = options.override?.(call);
     if (forced) return forced;
-    const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
     if (url.hostname === "discord.com") return new Response(null, { status: 204 });
     const path = url.pathname.replace("/v2.1", "");
     if (path === "/tournaments" && call.method === "POST") {
@@ -236,7 +237,7 @@ test("create --shuffle : têtes de série explicites envoyées dans la même req
   await runChallonge(["create", "--name", "Cup", "--participants", "a,b,c", "--shuffle"], h.io);
   const sent = h.calls[1]!.body.data.attributes.participants as { name: string; seed: number }[];
   expect(sent.map((p) => p.seed)).toEqual([1, 2, 3]);
-  expect(sent.map((p) => p.name).sort()).toEqual(["a", "b", "c"]);
+  expect(sent.map((p) => p.name).toSorted()).toEqual(["a", "b", "c"]);
   expect(h.calls).toHaveLength(2); // pas de requête randomize en plus
 });
 
@@ -448,15 +449,17 @@ test("matches, list et show : sorties lisibles et JSON", async () => {
 });
 
 test("--dry-run sur report/start/list : plan seul", async () => {
-  for (const argv of [["report", "A", "2-0"], ["start"], ["list"], ["show"]]) {
-    const h = harness({
-      env: { CHALLONGE_API_KEY: undefined },
-      configDir: await mkdtemp(join(dir, "c16-")),
-    });
-    expect(await runChallonge([...argv, "--dry-run"], h.io)).toBe(0);
-    expect(h.calls).toHaveLength(0);
-    expect(h.out.join("\n")).toContain("Plan de requêtes");
-  }
+  await Promise.all(
+    [["report", "A", "2-0"], ["start"], ["list"], ["show"]].map(async (argv) => {
+      const h = harness({
+        env: { CHALLONGE_API_KEY: undefined },
+        configDir: await mkdtemp(join(dir, "c16-")),
+      });
+      expect(await runChallonge([...argv, "--dry-run"], h.io)).toBe(0);
+      expect(h.calls).toHaveLength(0);
+      expect(h.out.join("\n")).toContain("Plan de requêtes");
+    }),
+  );
 });
 
 test("bot --dry-run : définition des commandes slash, sans réseau ni identifiants", async () => {

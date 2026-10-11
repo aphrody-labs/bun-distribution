@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from 'motion/react';
-import type { SubtitleSettings } from './Subtitles';
+import { motion, AnimatePresence } from "motion/react";
+import type { SubtitleSettings } from "./Subtitles";
 
 interface SubtitleSettingsMenuProps {
 	isOpen: boolean;
@@ -12,14 +12,16 @@ export function SubtitleSettingsMenu({
 	isOpen,
 	settings,
 	onSettingsChange,
-	onClose
+	onClose,
 }: SubtitleSettingsMenuProps) {
 	return (
 		<AnimatePresence>
 			{isOpen && (
 				<>
 					{/* Backdrop */}
-					<div
+					<button
+						type="button"
+						aria-label="Close subtitle settings"
 						className="fixed inset-0 z-10"
 						onClick={onClose}
 					/>
@@ -33,7 +35,9 @@ export function SubtitleSettingsMenu({
 						className="absolute bottom-20 right-6 z-20 w-72 rounded-small border border-outline-variant bg-surface-container/95 p-4 backdrop-blur-xl shadow-md3-5"
 						onClick={(e) => e.stopPropagation()}
 					>
-						<h3 className="mb-4 text-label-large font-semibold text-on-surface">Subtitle settings</h3>
+						<h3 className="mb-4 text-label-large font-semibold text-on-surface">
+							Subtitle settings
+						</h3>
 
 						<div className="space-y-4">
 							{/* Font Size */}
@@ -51,7 +55,7 @@ export function SubtitleSettingsMenu({
 									onChange={(e) =>
 										onSettingsChange({
 											...settings,
-											fontSize: parseFloat(e.target.value)
+											fontSize: parseFloat(e.target.value),
 										})
 									}
 									className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-outline-variant [&::-webkit-slider-thumb]:size-3.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md3-3"
@@ -62,7 +66,9 @@ export function SubtitleSettingsMenu({
 							<div>
 								<label className="mb-2 flex items-center justify-between text-body-small text-on-surface-variant">
 									<span>Background opacity</span>
-									<span className="text-on-surface">{Math.round(settings.backgroundOpacity * 100)}%</span>
+									<span className="text-on-surface">
+										{Math.round(settings.backgroundOpacity * 100)}%
+									</span>
 								</label>
 								<input
 									type="range"
@@ -73,7 +79,7 @@ export function SubtitleSettingsMenu({
 									onChange={(e) =>
 										onSettingsChange({
 											...settings,
-											backgroundOpacity: parseFloat(e.target.value)
+											backgroundOpacity: parseFloat(e.target.value),
 										})
 									}
 									className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-outline-variant [&::-webkit-slider-thumb]:size-3.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md3-3"
@@ -82,19 +88,19 @@ export function SubtitleSettingsMenu({
 
 							{/* Position */}
 							<div>
-								<label className="mb-2 block text-body-small text-on-surface-variant">Position</label>
+								<span className="mb-2 block text-body-small text-on-surface-variant">Position</span>
 								<div className="flex gap-2">
 									<button
 										onClick={() =>
 											onSettingsChange({
 												...settings,
-												position: 'bottom'
+												position: "bottom",
 											})
 										}
 										className={`flex-1 rounded-small px-3 py-2 text-body-medium transition-colors ${
-											settings.position === 'bottom'
-												? 'bg-primary text-white'
-												: 'bg-outline-variant/50 text-on-surface-variant hover:bg-outline-variant'
+											settings.position === "bottom"
+												? "bg-primary text-white"
+												: "bg-outline-variant/50 text-on-surface-variant hover:bg-outline-variant"
 										}`}
 									>
 										Bottom
@@ -103,13 +109,13 @@ export function SubtitleSettingsMenu({
 										onClick={() =>
 											onSettingsChange({
 												...settings,
-												position: 'top'
+												position: "top",
 											})
 										}
 										className={`flex-1 rounded-small px-3 py-2 text-body-medium transition-colors ${
-											settings.position === 'top'
-												? 'bg-primary text-white'
-												: 'bg-outline-variant/50 text-on-surface-variant hover:bg-outline-variant'
+											settings.position === "top"
+												? "bg-primary text-white"
+												: "bg-outline-variant/50 text-on-surface-variant hover:bg-outline-variant"
 										}`}
 									>
 										Top

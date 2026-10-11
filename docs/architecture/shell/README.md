@@ -17,6 +17,7 @@ work.
 | Transports | `packages/shell/web`, `crates/shell/tauri` | The TypeScript `Transport` interface carries bytes over a dedicated OPFS worker, Tauri Channel, or authenticated WebSocket. |
 | Computer-use controller | `crates/shell/aphrody-term/src/computer_use.rs` | Plain-text screen scrape and key/text injection into the attached PTY; without a PTY, input actions return `NotConnected`. |
 | Renderer | `crates/ui/app` | The existing DOM terminal renderer consumes output; it does not parse shell commands. `aphrody-term` only builds coalesced quad lists; no GPU backend consumes them yet. |
+| Terminal capabilities | `crates/shell/term-caps` | Host terminal detection (environment, DA1, XTVERSION, kitty query), OSC/image emitters, OSC 8 path links and the Nushell integration module. [Matrix, target and remaining work](terminal-capabilities.md). |
 
 ## Browser persistence
 

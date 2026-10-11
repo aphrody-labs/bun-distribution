@@ -21,7 +21,7 @@ export function parseArgs(argv: string[]) {
     const a = argv[i];
     if (a === "--dry-run") o.dryRun = true;
     else if (a === "--source" && argv[i + 1]) o.source = argv[++i] as Host;
-    else if (a === "--image" && argv[i + 1]) o.images.push(argv[++i]);
+    else if (a === "--image" && argv[i + 1]) o.images.push(argv[++i]!);
     else throw new Error(`unknown or incomplete option: ${a}`);
   }
   if (!HOSTS.includes(o.source)) throw new Error(`unknown source host: ${o.source}`);
@@ -33,7 +33,7 @@ export function parseArgs(argv: string[]) {
 export function plan(source: Host, ids: Record<string, Record<string, string | null>>): Plan {
   const out: Plan = [];
   for (const image of Object.keys(ids[source] ?? {})) {
-    const from = ids[source][image];
+    const from = ids[source]?.[image];
     if (!from) continue;
     for (const host of HOSTS) {
       if (host !== source && ids[host]?.[image] !== from)
@@ -61,8 +61,29 @@ function imageId(host: Host, image: string): string | null {
   return r.exitCode === 0 ? r.stdout.toString().trim() : null;
 }
 
+/** `user@hostname` of a host as the local SSH configuration resolves it (reachable from the other servers). */
+function sshTarget(host: Host): string {
+  const out = Bun.spawnSync(["ssh", "-G", host], { stdout: "pipe" }).stdout.toString();
+  const get = (k: string) =>
+    out
+      .split("\n")
+      .find((l) => l.startsWith(`${k} `))
+      ?.slice(k.length + 1)
+      .trim();
+  const target = `${get("user")}@${get("hostname")}`;
+  if (!SAFE.test(target)) throw new Error(`invalid ssh target for ${host}: ${target}`);
+  return target;
+}
+
 function ship(source: Host, host: Host, image: string): void {
-  const line = `${onHost(source, `docker save ${image} | gzip -1`)} | ${onHost(host, "gunzip | docker load")}`;
+  // Server to server the stream goes directly (no hop through the PC); otherwise through the local engine/SSH.
+  const direct = source !== "pc" && host !== "pc";
+  const line = direct
+    ? onHost(
+        source,
+        `docker save ${image} | gzip -1 | ssh -o BatchMode=yes ${sshTarget(host)} 'gunzip | docker load'`,
+      )
+    : `${onHost(source, `docker save ${image} | gzip -1`)} | ${onHost(host, "gunzip | docker load")}`;
   const r = Bun.spawnSync(["sh", "-c", line], { stdout: "inherit", stderr: "inherit" });
   if (r.exitCode !== 0) throw new Error(`sync ${image} ${source} -> ${host} failed`);
 }

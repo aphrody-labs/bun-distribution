@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0
+# Virtual desktop of a headless Aphrody host (vps, dbfr) for computer-use agents: Xvfb :99, unix socket only.
+[Unit]
+Description=Aphrody virtual desktop (Xvfb :99, no TCP)
+Documentation=file:///home/ubuntu/src/aphrody/docs/operations/infra/VNC.md
+
+[Service]
+Type=simple
+User=ubuntu
+ExecStart=/usr/bin/Xvfb :99 -screen 0 1600x900x24 -nolisten tcp -dpi 96
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictRealtime=true
+UMask=0077
+MemoryMax=512M
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aphrody-desktop-xvfb
+
+[Install]
+WantedBy=multi-user.target

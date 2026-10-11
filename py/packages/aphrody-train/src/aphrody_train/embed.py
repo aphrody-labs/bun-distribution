@@ -6,6 +6,7 @@ from pathlib import Path
 
 import click
 
+from . import onnx_export
 from .protocol import TrainEmitter
 from .training_data import load_triples
 
@@ -86,15 +87,25 @@ def train(
             )
     model.save_pretrained(str(model_dir))
 
-    # The ONNX backend exports the trained checkpoint, including tokenizer assets.
-    onnx_model = SentenceTransformer(str(model_dir), backend="onnx")
-    onnx_model.save_pretrained(str(model_dir))
+    import torch  # installed with sentence-transformers
+
+    model.to("cpu")
     onnx_path = model_dir / "onnx" / "model.onnx"
-    if not onnx_path.is_file():
-        raise RuntimeError(f"ONNX export did not produce {onnx_path}")
+    onnx_export.export(
+        model.transformers_model, model.tokenizer, onnx_path, "last_hidden_state"
+    )
     probe = [triples[0]["query"], triples[0]["positive"]]
     reference = model.encode(probe, convert_to_numpy=True)
-    exported = onnx_model.encode(probe, convert_to_numpy=True)
+    # The ONNX graph replaces the transformer; pooling and normalization stay in torch.
+    hidden, feeds = onnx_export.run(onnx_path, model.tokenizer, probe)
+    features = {
+        "token_embeddings": torch.from_numpy(hidden),
+        "attention_mask": torch.from_numpy(feeds["attention_mask"]),
+    }
+    with torch.no_grad():
+        for module in list(model)[1:]:
+            features = module(features)
+    exported = features["sentence_embedding"].numpy()
     cosine = np.sum(reference * exported, axis=1) / (
         np.linalg.norm(reference, axis=1) * np.linalg.norm(exported, axis=1)
     )

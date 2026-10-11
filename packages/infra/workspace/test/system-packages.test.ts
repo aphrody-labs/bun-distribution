@@ -99,16 +99,17 @@ test("Windows plan and apply use one PowerShell 7 process each, through the WinG
   }
 });
 
+const wslPwshRunner: Runner = async (argv) => {
+  if (argv[0] === "sh")
+    return { exitCode: argv[2]?.startsWith("ls") ? 0 : 1, stdout: "someone\nPublic\n" };
+  if (argv[0] === "wslpath")
+    return { exitCode: 0, stdout: `/mnt/c/${argv[2]?.split("\\").slice(1).join("/")}\n` };
+  return { exitCode: argv[0] === "test" && argv[2]?.includes("someone") ? 0 : 1, stdout: "" };
+};
+
 test("pwsh 7 is found through wslpath when Windows is not on PATH", async () => {
   if (process.platform !== "linux") return;
-  const runner: Runner = async (argv) => {
-    if (argv[0] === "sh")
-      return { exitCode: argv[2]?.startsWith("ls") ? 0 : 1, stdout: "someone\nPublic\n" };
-    if (argv[0] === "wslpath")
-      return { exitCode: 0, stdout: `/mnt/c/${argv[2]?.split("\\").slice(1).join("/")}\n` };
-    return { exitCode: argv[0] === "test" && argv[2]?.includes("someone") ? 0 : 1, stdout: "" };
-  };
-  expect((await powershell(runner))?.[0]).toBe(
+  expect((await powershell(wslPwshRunner))?.[0]).toBe(
     "/mnt/c/Users/someone/AppData/Local/Microsoft/WindowsApps/pwsh.exe",
   );
 });

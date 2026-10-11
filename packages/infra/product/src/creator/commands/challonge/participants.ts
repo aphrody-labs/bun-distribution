@@ -98,7 +98,7 @@ export function readSeedFile(text: string): string[] {
   const ordered = withScore
     ? lines
         .map((l, index) => ({ ...l, index }))
-        .sort((a, b) => b.score! - a.score! || a.index - b.index)
+        .toSorted((a, b) => b.score! - a.score! || a.index - b.index)
     : lines;
   return ordered.map((l) => l.name);
 }

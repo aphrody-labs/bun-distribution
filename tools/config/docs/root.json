@@ -1,6 +1,70 @@
 {
   "readme": {
-    "summary": "Private Rust/Bun monorepo for the Aphrody browser OS and native cross-platform CLI: Bun fork runtime (`yolo`), Python runtime (`vu`), shared CLI/MCP/FFI and M3 UI framework. Browser OS and regrouped AI command coverage remain qualification targets.",
+    "summary": "Aphrody is a user-space operating system built from the aphrody-labs/aphrody monorepo: Rust crates (`crates/`), Bun packages (`packages/`), the Material Design 3 UI framework (`m3/`) and Python packages (`py/`), on its own JavaScript runtime, [aphrody-labs/bun](https://github.com/aphrody-labs/bun), a fork of Bun. The monorepo is private; the runtime, the component forks and the published builds are public.",
+    "sections": [
+      {
+        "id": "os",
+        "title": "What Aphrody is",
+        "public": true,
+        "body": [
+          "Aphrody runs in user space: on Linux and Windows on top of the host kernel, in a browser as WebAssembly. It does not ship a kernel of its own. Its layers and their sources:",
+          "",
+          "| Layer | Source | Role |",
+          "| --- | --- | --- |",
+          "| Runtime | [aphrody-labs/bun](https://github.com/aphrody-labs/bun) | Fork of Bun: runs the JavaScript and TypeScript parts and hosts the native bindings (Windows, .NET, Python) |",
+          "| Kernel | `crates/os/kernel`, `crates/os/ostd` | Privileged user-space control plane: administration, MCP tools, skills and bus events over local IPC; process supervision, guardrails, secrets, jobs |",
+          "| Desktop | `crates/ui/app`, `crates/ui/drive` | Tauri 3 GUI and window manager; file explorer |",
+          "| Shell | `crates/shell` | Terminal engine, PTY sessions, embedded Nushell, WebAssembly shell |",
+          "| Packages | `crates/pkg` | Content-addressed package store; parsers for winget, apk, deb and pacman sources |",
+          "| Command line | `crates/infra/aphrody` | The `aphrody` multi-call binary, which also carries the MCP server `aphrody-mcp` |",
+          "| UI framework | `m3/`, `crates/ui` | Material Design 3 for Bun, React and Tauri; native renderer and tokens |",
+          "| Web | `crates/web` | Browser engine (fork of Obscura), crawler and extraction |",
+          "| AI services | `crates/ai` | Agent runtime, inference, memory and MCP servers serving the apps |",
+          "",
+          "Python application code lives in `py/`; native Python hosting (PyO3, CPython, uv, Ruff) and the Python runtime `vu` belong to the runtime."
+        ]
+      },
+      {
+        "id": "releases",
+        "title": "Versions and release cycle",
+        "public": true,
+        "body": [
+          "- A distribution release is an immutable snapshot on [downloads.aphrody.com](https://downloads.aphrody.com), named `<UTC timestamp>-<commit>` after the monorepo commit it was built from. `latest.json` names the current release and lists every artifact with its version, size and SHA-256; `/releases/<id>/` serves a given release, and the host keeps the last five.",
+          "- Each artifact keeps its own version: the Cargo workspace version for `aphrody`, the package version for the others.",
+          "- Releases follow no calendar: `scripts/release/publish-downloads.ts` cuts one after the build factory has built a pushed revision.",
+          "- The runtime is versioned after the Bun release it is based on, with an `-aphrody.<n>` suffix, and tagged `aphrody-v<version>` in aphrody-labs/bun. Upstream `oven-sh/bun` `main` is merged into the fork.",
+          "- Packages under the `@aphrody` npm scope are published one by one, each with its own version."
+        ]
+      },
+      {
+        "id": "docs",
+        "title": "Documentation",
+        "public": true,
+        "body": [
+          "- Runtime: [aphrody.com/docs](https://aphrody.com/docs), built from `docs/` of aphrody-labs/bun (the Bun documentation plus the pages the fork adds); [llms.txt](https://aphrody.com/llms.txt) indexes every page.",
+          "- Components and versions: [aphrody.com/components](https://aphrody.com/components), generated from the monorepo, the runtime and the aphrody-labs organization at each site build.",
+          "- Distribution internals: `docs/` of the monorepo (index in `docs/README.md`), private with it."
+        ]
+      },
+      {
+        "id": "governance",
+        "title": "Community and governance",
+        "public": true,
+        "body": [
+          "- Aphrody is developed in the [aphrody-labs](https://github.com/aphrody-labs) GitHub organization, owned by the `aphrody-dev` account, which decides what is published. Owner directives are recorded with their date in `AGENTS.md`.",
+          "- The monorepo is private. The runtime, the component forks and the Python runtime `vu` are public repositories; issues are disabled on aphrody-labs/bun.",
+          "- Contribution rules: [CONTRIBUTING.md](CONTRIBUTING.md). First-party code is Apache-2.0 (some crates `Apache-2.0 OR MIT`); forks and upstream inputs keep their authors' licences, listed in `THIRD-PARTY.md` and `tools/config/upstream-sources.json`."
+        ]
+      },
+      {
+        "id": "security",
+        "title": "Security",
+        "public": true,
+        "body": [
+          "Report vulnerabilities privately through [GitHub private vulnerability reporting on aphrody-labs/bun](https://github.com/aphrody-labs/bun/security/advisories/new). Supported versions and artifact verification: [SECURITY.md](SECURITY.md)."
+        ]
+      }
+    ],
     "layout": [
       ["packages/<domain>/<package>", "Bun packages"],
       ["crates/<domain>/<crate>", "Rust crates"],
@@ -18,10 +82,7 @@
       ["AGENTS.md", "Working rules"],
       ["docs/README.md", "Documentation index"],
       ["docs/reference/workspace/STATE.md", "Workspace inventory"],
-      [
-        "docs/operations/workspace/windows-native.md",
-        "Context-dependent development, builds and authority"
-      ]
+      ["docs/operations/workspace/windows-native.md", "Context-dependent development, builds and authority"]
     ],
     "installation": [
       "## One install par agent IA",
@@ -67,15 +128,18 @@
   "plan": {
     "owners": [
       ["Aphrody", "Products, workflows, UI, integrations"],
-      ["Bun fork (`aphrody-labs/bun`)", "Precompiled runtime and SDK (CLI, aliases `bun`, `vu`); yolo is absorbed and is no longer an owner"],
+      [
+        "Bun fork (`aphrody-labs/bun`)",
+        "Precompiled runtime and SDK (CLI, aliases `bun`, `vu`); yolo is absorbed and is no longer an owner"
+      ],
       ["Workspace/Infra", "Orchestration, inventories, factories, release, hosts"],
       ["`m3/packages/app-ui`, `crates/ui/*`", "Canonical UI"],
-      ["Bun fork `bun-python-host`", "Pinned native owner of the `aphrody-rust` Python binding; Python applications remain in Aphrody"],
-      ["IECODE", "Separate repository, store and authority"],
       [
-        "Kernel",
-        "`aphrody-kernel`: minimal TCB + subsystems; Linux/Asterinas/kernel32 provide the rest"
+        "Bun fork `bun-python-host`",
+        "Pinned native owner of the `aphrody-rust` Python binding; Python applications remain in Aphrody"
       ],
+      ["IECODE", "Separate repository, store and authority"],
+      ["Kernel", "`aphrody-kernel`: minimal TCB + subsystems; Linux/Asterinas/kernel32 provide the rest"],
       [
         "Execution context",
         "Aphrody and Bun can be developed and built on any qualified host/target. Select native, SSH or Docker tools from the current context; local Windows / VPS SSH / DBFR deployment are current environment defaults, not product restrictions."
@@ -103,14 +167,8 @@
         "MCP",
         "`aphrody-mcp` (`crates/ai/mcp`) is the only MCP server and hosts the kernel in process; `m3-mcp` is a deprecated alias (2026-10-07); `yolo tool` and the M3 `tool-host` are tool hosts, not servers"
       ],
-      [
-        "Desktop",
-        "`aphrody-app` on `tauri-runtime-cef` (CEF + `tauri-winit` + GTK 4); routes `admin`, `creator`"
-      ],
-      [
-        "Python",
-        "`vu` runtime (uv + ruff + PyO3 + shared CPython), plan in `docs/plans/vu/PLAN.md`"
-      ],
+      ["Desktop", "`aphrody-app` on `tauri-runtime-cef` (CEF + `tauri-winit` + GTK 4); routes `admin`, `creator`"],
+      ["Python", "`vu` runtime (uv + ruff + PyO3 + shared CPython), plan in `docs/plans/vu/PLAN.md`"],
       [
         "Bun product",
         "One package, `packages/infra/product`, one entrypoint and `Aphrody-Setup.exe`: installation, administration and creator modules; showcase folded into canonical app-ui."
@@ -161,18 +219,12 @@
         "Runtime activation",
         "Point `bun`/`vu` on PATH to the fork binary: dbfr done; Windows and the VPS remain; embed `libaphrody_ffi`; `bun:ffi` binding"
       ],
-      [
-        "Prod dbfr on the fork Bun",
-        "Done, see 05eb852704. Remaining: yolo-tool-host, `install-yolo.*`"
-      ],
+      ["Prod dbfr on the fork Bun", "Done, see 05eb852704. Remaining: yolo-tool-host, `install-yolo.*`"],
       [
         "Native runtime acquisition",
         "Verified artifact on a fresh machine without engine rebuild; install, upgrade, rollback"
       ],
-      [
-        "Desktop",
-        "Windows installer for `aphrody-app`; real Windows run; rendering in the real CEF app"
-      ],
+      ["Desktop", "Windows installer for `aphrody-app`; real Windows run; rendering in the real CEF app"],
       [
         "Shenron production",
         "Restart `shenron-site`/`shenron-bot` after the release; measure `/api/chat`; verify the agent card"
@@ -181,17 +233,11 @@
         "MCP HTTP auth",
         "Bearer token in a 0600 EnvironmentFile (`APHRODY_MCP_HTTP_TOKEN`); finish `workspace/wip/infra-mcp-auth` (free port, `infra validate` fix), gate, rebase, push"
       ],
-      [
-        "agent-home",
-        "Land `workspace/wip/agent-home-gaps`; gate `aphrody-agent-home`, `aphrody-config`"
-      ],
-      [
-        "code-graph",
-        "Python/TS extractors and `scripts/audit/ai/graph-parity.ts`; Graphify stays the parity oracle"
-      ],
+      ["agent-home", "Land `workspace/wip/agent-home-gaps`; gate `aphrody-agent-home`, `aphrody-config`"],
+      ["code-graph", "Python/TS extractors and `scripts/audit/ai/graph-parity.ts`; Graphify stays the parity oracle"],
       [
         "Publication",
-        "npm `@aphrody/*`, crates.io (316 crates: metadata, `publish = false`, path versions, 14 taken names), PyPI"
+        "2026-10-09: all 73 npm producer versions have verified registry tarballs and a clean frozen consumer installation. Full Rust publication remains open: 169 Aphrody members, 73 IECODE members, source/package gates and the crates.io new-name quota. Preserve fork licences, exact registry requirements and protected stores. IECODE/NIE/Inagle/RG require the qualified Aphrody Bun fork. Evidence and remaining blockers: [registry release](docs/operations/workspace/registry-release-2026-10-09.md); npm [receipt](docs/operations/workspace/npm-source-release-2026-10-09.md). PyPI remains a separate release queue."
       ],
       [
         "Repository hygiene",

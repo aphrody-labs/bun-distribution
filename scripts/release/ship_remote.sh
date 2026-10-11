@@ -20,7 +20,7 @@ if [[ ! -x "$ship_cargo_wrapper" ]]; then
 fi
 export YOLO_CARGO_WRAPPER="$ship_cargo_wrapper"
 sha=$1; ws=$2; out=$3
-cache=${APHRODY_BUILD_CACHE:-/srv/aphrody-build/cache}
+cache=${APHRODY_BUILD_CACHE:-/home/ubuntu/build/cache}
 export PATH="$HOME/.cargo/bin:$HOME/.bun/bin:/usr/lib/llvm-${YOLO_LLVM:-23}/bin:$HOME/.local/bin:$PATH"
 jobs=$(nproc)
 export CARGO_BUILD_JOBS=$jobs CARGO_INCREMENTAL=0 CARGO_TERM_COLOR=never

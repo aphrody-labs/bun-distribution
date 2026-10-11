@@ -193,6 +193,23 @@ async fn stateless_mcp_discovers_and_lists_the_full_shenron_catalog() {
         assert!(tool["inputSchema"].is_object(), "{name} must publish an object schema");
     }
 
+    let call = serde_json::json!({
+        "jsonrpc": "2.0", "id": 3, "method": "tools/call",
+        "params": {
+            "_meta": request_meta,
+            "name": "bun_docs_search",
+            "arguments": {"query": "bun:windows", "limit": 1, "include_content": false}
+        }
+    });
+    stdin.write_all(format!("{call}\n").as_bytes()).await.expect("write tool call");
+    stdin.flush().await.expect("flush tool call");
+    let response = lines.next_line().await.expect("read tool result").expect("response");
+    let response: serde_json::Value = serde_json::from_str(&response).expect("tool JSON-RPC");
+    assert_eq!(response["id"], 3);
+    assert_eq!(response["result"]["resultType"], "complete");
+    assert_eq!(response["result"]["isError"], false);
+    assert!(response["result"]["content"].is_array());
+
     drop(stdin);
     child.kill().await.expect("stop Aphrody MCP server");
 }

@@ -57,3 +57,20 @@ The registry dependency must remain pinned to the qualified `rio-vt` release
 with its MIT license recorded by Cargo, and pass this repository's Windows and
 Linux gates. A backend gate proves parsing and PTY lifecycle only. It does not prove a Rio desktop renderer: that requires a Windows desktop run exercising
 interactive programs, resize, clipboard, graphics and accessibility.
+
+## Desktop terminals on Windows (state 2026-10-09)
+
+- Themes: `aphrody identity terminal-theme` (crate `aphrody-identity`, module `terminal_theme`) writes
+  `tools/config/host/windows/terminal/` (WT schemes `Aphrody M3`/`Aphrody M3 Light`, Rio themes,
+  Nushell colours, Bun Shell prompt palette); `--check` and `tests/terminal_theme.rs` gate drift.
+- Install: `bun tools/config/host/windows/terminal/install.ts` (WT LocalState with `.bak`, Rio into
+  `%LOCALAPPDATA%\rio`); `--check` reports drift.
+- Rio 0.5.28 is installed by winget (MSI), unforked: config covers shell, theme, tabs, renderer and
+  run() bindings (run() is lowercased by Rio, so no upper-case flags). Nushell prompt verified by capture.
+- Measured (loaded host, 3 runs, medians): first prompt WT 1062 ms, Rio Vulkan 1454 ms, Rio Webgpu
+  2676 ms; `seq.exe 1 1000000` (one write per line, ConPTY-bound) WT 62 s, Rio Webgpu 68 s, Rio
+  Vulkan 81 s. Spread is large (WT 235 ms to 7.5 s).
+- Remaining: rerun on an idle host with a single block write
+  (`let s = (seq 1 1000000 | str join (char nl)); print --raw $s`, harness in the session's
+  `%TEMP%\tbench\bench.ts`; Rio Webgpu timed out at 120 s there), then settle `[renderer] backend`
+  (Webgpu for now); check Bun Shell arrows and `img` interactively in WT and Rio.

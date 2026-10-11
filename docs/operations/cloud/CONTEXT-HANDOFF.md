@@ -37,7 +37,7 @@ Evidence lives in [MEMORY.md](../../../MEMORY.md), [PLAN.md](../../../PLAN.md) a
 
 No secret, cookie, token, database content or transcript in any repository or message. Owner directive 2026-10-07 lifts the publication and host-apply prohibitions. No
 visibility change, no public publication beyond the owner-ordered downloads. No destructive action on production
-data or hosts (dbfr: Shenron nginx, PostgreSQL, Redis, `/srv/shenron`). Heavy Rust beyond 4 CPU goes to the VPS
+data or hosts (dbfr: Shenron nginx, PostgreSQL, Redis, `/home/ubuntu/apps/shenron`). Heavy Rust beyond 4 CPU goes to the VPS
 factory. Preserve other sessions: `.coord/claims` is local to the owner machine, so check `git log` on a path
 before editing it and log what you take in [CLOUD-SYNC.md](CLOUD-SYNC.md).
 

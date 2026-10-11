@@ -46,6 +46,7 @@ export function Collapse(props: CollapseProps): React.ReactElement | null {
     }
     const measured = isHorizontal ? node.scrollWidth : node.scrollHeight;
     setNaturalSize(measured);
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- phase and children are re-measurement triggers: the natural size changes with them although the body does not read them
   }, [isHorizontal, phase, children]);
 
   if (!mounted) {

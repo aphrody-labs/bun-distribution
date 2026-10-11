@@ -82,10 +82,9 @@ closed 2026-09-26.
 | `aphrody.com` | `/api/v1/web/` | aphrody-web-api :3007 | retired 2026-09-25 |
 | `mcp.aphrody.com` | `/mcp` | aphrody-site :8083 | retired 2026-09-25 (`tools/config/host/nginx/aphrody/aphrody-apex.conf`) |
 | `n2b.aphrody.com` | `/api/v1/n2b`, `/api/v1/n2b/` | aphrody-site :8083 | retired 2026-09-25 (`tools/config/host/nginx/aphrody/aphrody.com.conf`) |
-| `api.aphrody.com` | `/healthz`, `/api/v1/a2a`, `/api/v1/models`, `/api/v1/rag/*`, `/api/` etc. | aphrody-site :8083, aphrody-a2a :8788, aphrody-ai-http :8789 | retired 2026-09-25 (`tools/config/host/nginx/aphrody/aphrody.com.conf`) |
 | `bot.aphrody.com` | `/` | `aphrody-discord-dev` (`127.0.0.1:4010`) | Bun dev app: signed Discord HTTP interactions, Gateway session for non-interaction events, OAuth2 login/callback; managed by `aphrody-infra` |
 | `downloads.aphrody.com` / `admin.aphrody.com` | `/` | none — reserved, explicit 410 | reserved; no backing service |
-| `cdn.aphrody.com` | `/s/`, `/h/`, `/s/manifest.json` | static `aphrody-cdn` release tree (`tools/config/asset-catalog.json`) — no backend process, so no `service-catalog.json` entry | retired 2026-09-25: `/srv/aphrody-cdn` and its vhost were removed with the Aphrody retirement (`tools/config/asset-catalog.json` `status: retired`); not part of the bundle |
+| `cdn.aphrody.com` | `/s/`, `/h/`, `/s/manifest.json` | static `aphrody-cdn` release tree (`tools/config/asset-catalog.json`) — no backend process, so no `service-catalog.json` entry | retired 2026-09-25: `/home/ubuntu/apps/cdn` and its vhost were removed with the Aphrody retirement (`tools/config/asset-catalog.json` `status: retired`); not part of the bundle |
 | `nie.aphrody.com` | `/health`, `/api/`, `/f/`, `/b`, `/cdn/` | nie-site :8085, nie-model-serve :8790 | retired 2026-09-25 |
 | `nie.aphrody.com` | **`/downloads/inacord/latest.json`, `/downloads/channels/stable/latest.json`, `/downloads/files/`** | static Inacord updater feed (`~/nie/var/releases/inacord/public/...`) | **kept live intentionally** (docs/PLAN.md 2026-09-26 ledger entry) even though the rest of the nie backend and the Inacord desktop app itself are retired — installed clients still poll this feed |
 | `rosegriffon.fr` (+`www.`) | `/` | rg-website :3004 | live |
@@ -173,7 +172,8 @@ of 2026-09-26 — nothing in this section is open any more:
 11. ~~`tools/config/host/nginx/aphrody/aphrody.com.conf`'s `mcp.`, `downloads.`, `n2b.`, `api.` hosts~~ — **resolved
     2026-09-26.** `mcp.aphrody.com`, `n2b.aphrody.com` and `api.aphrody.com` all back onto
     already-retired services (`aphrody-site` :8083, plus `aphrody-a2a` :8788 and `aphrody-ai-http`
-    :8789 for `api.aphrody.com`) — added matching `tools/config/host/nginx/routes.json` entries with
+    :8789 for `api.aphrody.com`; `api.aphrody.com` itself, its server block, route and DNS record were
+    removed on 2026-10-09) — added matching `tools/config/host/nginx/routes.json` entries with
     `status: retired`/`retiredAt: 2026-09-25` (same date as the services they back), plus an inline
     banner on each server block in `tools/config/host/nginx/aphrody/aphrody.com.conf`/`aphrody-apex.conf` naming the
     retirement. `downloads.aphrody.com` (and its `bot.`/`admin.` siblings) is different in kind:

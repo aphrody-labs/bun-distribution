@@ -102,7 +102,7 @@ describe("yolo package commands", () => {
       "update",
       "export function runUpdate(argv) { globalThis.yoloPackageArgs = argv; return 23; }\n",
     );
-    const args = ["rust", "status", "--root", "/srv/repo", "$(literal)"];
+    const args = ["rust", "status", "--root", "/home/ubuntu/apps/repo", "$(literal)"];
     expect(await runPackageCommand("update", args, fixtureRoot)).toBe(23);
     expect((globalThis as { yoloPackageArgs?: unknown }).yoloPackageArgs).toEqual(args);
   });

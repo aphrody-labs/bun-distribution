@@ -248,22 +248,23 @@ type BinState =
  * is what made an earlier run report every tool as off-PATH on a box where the
  * user's own terminal finds them all. The registry is the machine's answer.
  */
+const queryPersistentPath = (scope: "User" | "Machine"): string[] => {
+  const raw = run("powershell.exe", [
+    "-NoProfile",
+    "-Command",
+    `[Environment]::GetEnvironmentVariable('Path','${scope}')`,
+  ]);
+  return raw == null
+    ? []
+    : raw
+        .split(";")
+        .map((d) => d.trim())
+        .filter((d) => d.length > 0);
+};
+
 function persistentPathDirs(): string[] {
   if (process.platform !== "win32") return [];
-  const query = (scope: "User" | "Machine"): string[] => {
-    const raw = run("powershell.exe", [
-      "-NoProfile",
-      "-Command",
-      `[Environment]::GetEnvironmentVariable('Path','${scope}')`,
-    ]);
-    return raw == null
-      ? []
-      : raw
-          .split(";")
-          .map((d) => d.trim())
-          .filter((d) => d.length > 0);
-  };
-  return [...query("User"), ...query("Machine")];
+  return [...queryPersistentPath("User"), ...queryPersistentPath("Machine")];
 }
 
 export function locate(bin: string, home: string, persistent: readonly string[]): BinState {

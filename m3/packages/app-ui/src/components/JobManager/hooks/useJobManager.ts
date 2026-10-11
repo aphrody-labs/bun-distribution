@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { useLibraryQuery, useLibraryMutation, useSpacedriveClient } from "../../../contexts/SpacedriveContext";
+import {
+  useLibraryQuery,
+  useLibraryMutation,
+  useSpacedriveClient,
+} from "../../../contexts/SpacedriveContext";
 import type { JobListItem } from "../types";
 
 export function useJobManager() {
@@ -20,11 +24,14 @@ export function useJobManager() {
     refetchRef.current = refetch;
   }, [refetch]);
 
-  useEffect(() => {
+  // Adopt each new query result during render (no effect-driven cascade): same sync as before.
+  const [syncedData, setSyncedData] = useState<typeof data>(undefined);
+  if (data !== syncedData) {
+    setSyncedData(data);
     if (data?.jobs) {
       setJobs(data.jobs);
     }
-  }, [data]);
+  }
 
   // Subscribe to job events using filtered subscription
   useEffect(() => {
@@ -34,9 +41,15 @@ export function useJobManager() {
     let isCancelled = false;
 
     const handleEvent = (event: any) => {
-      if ("JobQueued" in event || "JobStarted" in event || "JobCompleted" in event ||
-          "JobFailed" in event || "JobPaused" in event || "JobResumed" in event ||
-          "JobCancelled" in event) {
+      if (
+        "JobQueued" in event ||
+        "JobStarted" in event ||
+        "JobCompleted" in event ||
+        "JobFailed" in event ||
+        "JobPaused" in event ||
+        "JobResumed" in event ||
+        "JobCancelled" in event
+      ) {
         refetchRef.current();
       } else if ("JobProgress" in event) {
         const progressData = event.JobProgress;
@@ -64,7 +77,16 @@ export function useJobManager() {
     };
 
     const filter = {
-      event_types: ["JobQueued", "JobStarted", "JobProgress", "JobCompleted", "JobFailed", "JobPaused", "JobResumed", "JobCancelled"],
+      event_types: [
+        "JobQueued",
+        "JobStarted",
+        "JobProgress",
+        "JobCompleted",
+        "JobFailed",
+        "JobPaused",
+        "JobResumed",
+        "JobCancelled",
+      ],
     };
 
     client.subscribeFiltered(filter, handleEvent).then((unsub) => {
@@ -73,6 +95,7 @@ export function useJobManager() {
       } else {
         unsubscribe = unsub;
       }
+      return;
     });
 
     return () => {

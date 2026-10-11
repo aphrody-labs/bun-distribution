@@ -193,43 +193,43 @@ function snapshot(path: string): unknown {
   if (stat.isDirectory())
     return Object.fromEntries(
       readdirSync(path)
-        .sort()
+        .toSorted()
         .map((name) => [name, snapshot(join(path, name))]),
     );
   return hash(readFileSync(path));
 }
 
+function rejects(installer: Installer, entry: Fixture) {
+  const before = { home: snapshot(entry.home), runtime: snapshot(entry.runtime) };
+  const result = run(entry, installer);
+  expect(result.exitCode).not.toBe(0);
+  expect({ home: snapshot(entry.home), runtime: snapshot(entry.runtime) }).toEqual(before);
+  const tempFiles = readdirSync(entry.temp).filter(
+    (name) => !name.startsWith("clr-debug-pipe-") && !name.startsWith("dotnet-diagnostic-"),
+  );
+  expect(tempFiles).toEqual([]);
+  return result;
+}
+
+function checkTempEmpty(tempDir: string) {
+  const tempFiles = readdirSync(tempDir).filter(
+    (name) => !name.startsWith("clr-debug-pipe-") && !name.startsWith("dotnet-diagnostic-"),
+  );
+  expect(tempFiles).toEqual([]);
+}
+
 for (const installer of installers) {
   describe(`${installer.script} validates before replacement`, () => {
-    function rejects(entry: Fixture) {
-      const before = { home: snapshot(entry.home), runtime: snapshot(entry.runtime) };
-      const result = run(entry, installer);
-      expect(result.exitCode).not.toBe(0);
-      expect({ home: snapshot(entry.home), runtime: snapshot(entry.runtime) }).toEqual(before);
-      const tempFiles = readdirSync(entry.temp).filter(
-        (name) => !name.startsWith("clr-debug-pipe-") && !name.startsWith("dotnet-diagnostic-"),
-      );
-      expect(tempFiles).toEqual([]);
-      return result;
-    }
-
-    function checkTempEmpty(tempDir: string) {
-      const tempFiles = readdirSync(tempDir).filter(
-        (name) => !name.startsWith("clr-debug-pipe-") && !name.startsWith("dotnet-diagnostic-"),
-      );
-      expect(tempFiles).toEqual([]);
-    }
-
     it("preserves an existing installation when the optional crate archive cannot be extracted", () => {
       const entry = fixture(installer);
       pack(entry, installer, "invalid");
-      rejects(entry);
+      rejects(installer, entry);
     }, 20_000);
 
     it("rejects a crate archive without its required directory before replacing code", () => {
       const entry = fixture(installer);
       pack(entry, installer, "missing");
-      expect(rejects(entry).stderr.toString()).toContain("missing crates directory");
+      expect(rejects(installer, entry).stderr.toString()).toContain("missing crates directory");
     }, 20_000);
 
     it("rejects a missing or unexecutable candidate without replacing code", () => {
@@ -242,7 +242,7 @@ for (const installer of installers) {
           chmodSync(executable, 0o755);
         }
         pack(entry, installer);
-        rejects(entry);
+        rejects(installer, entry);
       }
     }, 20_000);
 
@@ -250,7 +250,7 @@ for (const installer of installers) {
       const entry = fixture(installer, true);
       writeFileSync(join(entry.main, "artifact/manifest.json"), "{}\n");
       pack(entry, installer);
-      rejects(entry);
+      rejects(installer, entry);
     }, 20_000);
 
     it.skipIf(!nativeAvailable)(
@@ -266,7 +266,7 @@ for (const installer of installers) {
         manifest.files[library] = { bytes: Buffer.byteLength(invalid), sha256: hash(invalid) };
         writeFileSync(manifestPath, JSON.stringify(manifest));
         pack(entry, installer);
-        const result = rejects(entry);
+        const result = rejects(installer, entry);
         expect(result.stdout.toString()).toContain("Installed");
       },
       20_000,

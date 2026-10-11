@@ -131,6 +131,7 @@ export class OvhDns {
 
     for (let i = 0; i < ids.length; i += chunkSize) {
       const slice = ids.slice(i, i + chunkSize);
+      // oxlint-disable-next-line no-await-in-loop -- chunks run one after another to cap concurrent OVH requests at 15
       const batch = await Promise.all(slice.map((id) => this.getRecord(zone, id)));
       records.push(...batch);
     }
@@ -240,6 +241,7 @@ export class OvhDns {
     if (options.apply) {
       for (const rec of toUpdate) {
         if (rec.target !== targetIp) {
+          // oxlint-disable-next-line no-await-in-loop -- sequential writes: a failing PUT must stop before later records change
           await this.client.put(`/domain/zone/${zone}/record/${rec.id}`, { target: targetIp });
           updatedIds.push(rec.id);
         }

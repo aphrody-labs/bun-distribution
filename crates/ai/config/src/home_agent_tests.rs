@@ -79,9 +79,9 @@ fn component_defaults_are_empty_and_side_effect_free() {
 
 #[test]
 fn agent_home_table_reads_homes_dir() {
-    let value: toml::Value = toml::from_str("[agent_home]\nhomes_dir = \"/srv/homes\"\n").unwrap();
+    let value: toml::Value = toml::from_str("[agent_home]\nhomes_dir = \"/data/homes\"\n").unwrap();
     let cfg = AgentHomeConfig::from_toml(&value).unwrap();
-    assert_eq!(cfg.homes_dir.as_deref(), Some("/srv/homes"));
+    assert_eq!(cfg.homes_dir.as_deref(), Some("/data/homes"));
     let empty: toml::Value = toml::from_str("model = \"x\"\n").unwrap();
     assert_eq!(AgentHomeConfig::from_toml(&empty), None);
     let parsed: crate::ConfigToml = toml::from_str("[agent_home]\nhomes_dir = \"h\"\n").unwrap();

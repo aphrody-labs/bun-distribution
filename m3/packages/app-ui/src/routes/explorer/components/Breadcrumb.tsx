@@ -1,4 +1,4 @@
-import clsx from "clsx";
+import { clsx } from "clsx";
 import type { SdPath } from "@aphrody/drive-client";
 
 interface BreadcrumbProps {
@@ -54,7 +54,7 @@ export function Breadcrumb({ path, onNavigate }: BreadcrumbProps) {
       {segments.map((segment, index) => {
         const isLast = index === segments.length - 1;
         return (
-          <div key={index} className="flex items-center gap-1">
+          <div key={JSON.stringify(segment.path)} className="flex items-center gap-1">
             {index > 0 && <span className="text-outline">/</span>}
             <button
               onClick={() => !isLast && onNavigate(segment.path)}
@@ -62,7 +62,7 @@ export function Breadcrumb({ path, onNavigate }: BreadcrumbProps) {
               className={clsx(
                 isLast
                   ? "text-on-surface font-medium cursor-default"
-                  : "text-on-surface-variant hover:text-on-surface cursor-pointer"
+                  : "text-on-surface-variant hover:text-on-surface cursor-pointer",
               )}
             >
               {segment.name}

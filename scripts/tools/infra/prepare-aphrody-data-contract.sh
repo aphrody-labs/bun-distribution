@@ -68,7 +68,7 @@ printf '%s' "$legacy" | python3 -c 'import sys,urllib.parse; p=urllib.parse.urls
   echo 'Web DSN does not target local aphrody_web as aphrody_web' >&2; exit 2;
 }
 umask 077
-backup="/srv/aphrody/shared/deploy-backups/site-env-contract-$(date -u +%Y%m%dT%H%M%SZ)"
+backup="/home/ubuntu/apps/aphrody/shared/deploy-backups/site-env-contract-$(date -u +%Y%m%dT%H%M%SZ)"
 install -m 0600 -o root -g root "$site_env" "$backup"
 install -m 0600 -o root -g root "$web_env" "$backup.web-api"
 temp="$(mktemp /etc/aphrody/.aphrody-site.next.XXXXXXXX)"
@@ -80,8 +80,8 @@ if [[ -z "$canonical" ]]; then printf 'APHRODY_WEB_DATABASE_URL=%s\n' "$legacy" 
 if [[ -z "$canonical_public_token" ]]; then printf 'APHRODY_SITE_WEB_API_TOKEN=%s\n' "$legacy_public_token" >> "$temp"; fi
 if [[ -z "$site_backend_token" ]]; then printf 'APHRODY_SITE_WEB_BACKEND_TOKEN=%s\n' "$web_backend_token" >> "$temp"; fi
 if [[ -z "$web_canonical" ]]; then printf 'APHRODY_WEB_DATABASE_URL=%s\n' "$legacy" >> "$web_temp"; fi
-install -d -m 0700 -o aphrody -g aphrody /srv/aphrody/shared/ai/models
-install -d -m 0700 -o ubuntu -g ubuntu /srv/aphrody/shared/bxc/storage
+install -d -m 0700 -o aphrody -g aphrody /home/ubuntu/apps/aphrody/shared/ai/models
+install -d -m 0700 -o ubuntu -g ubuntu /home/ubuntu/apps/aphrody/shared/bxc/storage
 mv -T -- "$temp" "$next_env"
 mv -T -- "$web_temp" "$next_web_env"
 trap - EXIT

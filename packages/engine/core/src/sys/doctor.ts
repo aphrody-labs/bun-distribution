@@ -59,12 +59,10 @@ export function aphrodyTools(): { name: string; found: boolean }[] {
 
 /** Language servers and context-reduction tools (yolo `tools/config/host/toolchain.json` codeIntel). */
 export function codeIntelTools(): { name: string; found: boolean }[] {
-  return ["rust-analyzer", "tsc", "rtk", "context-mode"].map(
-    (name) => ({
-      name,
-      found: Boolean(Bun.which(name)),
-    }),
-  );
+  return ["rust-analyzer", "tsc", "rtk", "context-mode"].map((name) => ({
+    name,
+    found: Boolean(Bun.which(name)),
+  }));
 }
 
 export function collectDoctorReport(): DoctorReport {
@@ -165,8 +163,9 @@ export function collectDoctorReport(): DoctorReport {
   };
 }
 
+const statusIcon = (val: boolean): string => (val ? "✔ pass" : "✘ fail");
+
 export function renderDoctorMarkdown(report: DoctorReport): string {
-  const statusIcon = (val: boolean): string => (val ? "✔ pass" : "✘ fail");
   const lines = [
     `# yolo doctor: ${report.ok ? "PASS" : "WARN/FAIL"}`,
     "",

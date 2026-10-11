@@ -12,10 +12,15 @@ use std::{
 };
 
 use aphrody_patch::{PatchFileSystem, apply_patch, parse_patch};
+use aphrody_shell_session::SpawnSpec;
 use aphrody_shell_vfs::{FileKind, Vfs, VfsError, path as vpath};
-use aphrody_shell_web::opfs::SharedOpfsVfs;
+use aphrody_shell_web::{WebTerminal, local::LocalShell, opfs::SharedOpfsVfs};
 use serde_json::json;
 use wasm_bindgen::prelude::*;
+
+mod commands;
+mod rag;
+mod rpc;
 
 const TRIAGE_STRINGS_LIMIT: usize = 256;
 
@@ -130,15 +135,57 @@ impl WebOsFs {
         self.fs.mark_persisted();
     }
 
+    /// Answer one explorer wire request (`{"Query"|"Action": ...}`) from this filesystem;
+    /// `now` is an RFC 3339 timestamp, as the VFS stores none. Always returns the wire
+    /// envelope: `{"json": ...}`, `{"error": "..."}` or `"Pong"`.
+    pub fn rpc(&mut self, request: &str, now: &str) -> String {
+        let reply = serde_json::from_str::<serde_json::Value>(request)
+            .map_err(|e| format!("invalid request: {e}"))
+            .and_then(|req| rpc::handle(&mut self.fs, &req, now));
+        rpc::envelope(reply)
+    }
+
+    /// BM25 search over the text files of the home directory, chunked by `aphrody-rag-core`:
+    /// `{"results":[{path,start_line,end_line,score,content}]}`.
+    #[wasm_bindgen(js_name = ragSearch)]
+    pub fn rag_search(&mut self, query: &str, limit: usize) -> String {
+        rag::search(&mut self.fs, rpc::HOME, query, limit).to_string()
+    }
+
+    /// `{"documents","chunks"}` of the searchable home directory.
+    #[wasm_bindgen(js_name = ragStats)]
+    pub fn rag_stats(&mut self) -> String {
+        rag::stats(&mut self.fs, rpc::HOME).to_string()
+    }
+
+    /// Start a terminal whose shell works on this very filesystem, so files written by
+    /// the explorer and by shell commands are the same files and share one OPFS image.
+    ///
+    /// # Errors
+    /// Throws when the dimensions are zero.
+    pub fn shell(&mut self, cols: u16, rows: u16) -> Result<WebOsShell, String> {
+        let spec = SpawnSpec {
+            columns: cols,
+            rows,
+            cwd: Some(rpc::HOME.to_owned()),
+            ..SpawnSpec::default()
+        };
+        let (shell, greeting) = LocalShell::with_spec_and_vfs(&spec, Box::new(self.fs.clone()))
+            .map_err(|e| e.to_string())?;
+        let mut shell = shell;
+        commands::register(&mut shell, &self.fs);
+        let mut terminal = WebTerminal::new(cols, rows);
+        terminal.ingest(&greeting);
+        Ok(WebOsShell { shell, terminal })
+    }
+
     /// `aphrody re triage` report (format, sections, hashes, strings) as JSON.
     ///
     /// # Errors
     /// Throws when the file is unreadable or its headers are inconsistent.
     pub fn triage(&mut self, path: &str) -> Result<String, String> {
         let bytes = self.fs.read(path.as_bytes()).map_err(err)?;
-        let report =
-            aphrody_re::triage_bounded(&bytes, TRIAGE_STRINGS_LIMIT).map_err(|e| e.to_string())?;
-        serde_json::to_string(&report).map_err(|e| e.to_string())
+        triage_json(&bytes)
     }
 
     /// Printable strings of a file as a JSON array.
@@ -158,18 +205,69 @@ impl WebOsFs {
     /// Throws on a malformed patch or a hunk that does not match.
     #[wasm_bindgen(js_name = applyPatch)]
     pub fn apply_patch(&mut self, patch: &str, cwd: &str) -> Result<String, String> {
-        let args = parse_patch(patch).map_err(|e| e.to_string())?;
-        let adapter = PatchFs { fs: RefCell::new(self.fs.clone()), cwd: cwd.as_bytes() };
-        let summary = apply_patch(&args, &adapter).map_err(|e| e.to_string())?;
-        let names = |v: &[PathBuf]| -> Vec<String> {
-            v.iter().map(|p| p.to_string_lossy().into_owned()).collect()
-        };
-        Ok(json!({
-            "added": names(&summary.added),
-            "modified": names(&summary.modified),
-            "deleted": names(&summary.deleted),
-        })
-        .to_string())
+        apply_patch_json(&self.fs, patch, cwd.as_bytes())
+    }
+}
+
+/// Apply a Codex-style patch on `fs`; relative paths resolve against `cwd`.
+pub(crate) fn apply_patch_json(
+    fs: &SharedOpfsVfs,
+    patch: &str,
+    cwd: &[u8],
+) -> Result<String, String> {
+    let args = parse_patch(patch).map_err(|e| e.to_string())?;
+    let adapter = PatchFs { fs: RefCell::new(fs.clone()), cwd };
+    let summary = apply_patch(&args, &adapter).map_err(|e| e.to_string())?;
+    let names = |v: &[PathBuf]| -> Vec<String> {
+        v.iter().map(|p| p.to_string_lossy().into_owned()).collect()
+    };
+    Ok(json!({
+        "added": names(&summary.added),
+        "modified": names(&summary.modified),
+        "deleted": names(&summary.deleted),
+    })
+    .to_string())
+}
+
+/// Triage report of `bytes` as JSON.
+pub(crate) fn triage_json(bytes: &[u8]) -> Result<String, String> {
+    let report =
+        aphrody_re::triage_bounded(bytes, TRIAGE_STRINGS_LIMIT).map_err(|e| e.to_string())?;
+    serde_json::to_string(&report).map_err(|e| e.to_string())
+}
+
+/// Local shell and VT screen over the shared WebOS filesystem.
+#[wasm_bindgen]
+pub struct WebOsShell {
+    shell: LocalShell,
+    terminal: WebTerminal,
+}
+
+#[wasm_bindgen]
+impl WebOsShell {
+    /// Feed typed bytes; returns the shell output bytes (already applied to the screen).
+    pub fn input(&mut self, bytes: &[u8]) -> Vec<u8> {
+        let out = self.shell.input(bytes);
+        self.terminal.ingest(&out);
+        out
+    }
+
+    /// Resize the screen.
+    pub fn resize(&mut self, cols: u16, rows: u16) {
+        self.terminal.resize(cols, rows);
+    }
+
+    /// Whether `exit` was run.
+    #[must_use]
+    pub fn exited(&self) -> bool {
+        self.shell.exited()
+    }
+
+    /// `{columns, rows, lines, cursor:{row,col,visible}}` for the renderer.
+    #[must_use]
+    #[wasm_bindgen(js_name = snapshotJson)]
+    pub fn snapshot_json(&self) -> String {
+        self.terminal.snapshot_json()
     }
 }
 
@@ -178,6 +276,18 @@ impl WebOsFs {
 #[must_use]
 pub fn unified_diff(old: &str, new: &str) -> String {
     aphrody_patch::unified_diff(old, new)
+}
+
+/// Local language detection of `aphrody-google` (scripts and stop words, no network):
+/// `{"language","confidence","isReliable"}`.
+#[wasm_bindgen(js_name = detectLanguage)]
+pub fn detect_language(text: &str) -> Result<String, String> {
+    detect_language_json(text)
+}
+
+pub(crate) fn detect_language_json(text: &str) -> Result<String, String> {
+    serde_json::to_string(&aphrody_google::language_detect::detect_single_local(text))
+        .map_err(|e| e.to_string())
 }
 
 /// Crate version, shown in the WebOS About panel.
@@ -261,7 +371,8 @@ mod tests {
     fn patch_applies_relative_to_cwd() {
         let mut fs = WebOsFs::new(&[]).expect("empty image");
         fs.write("/src/a.txt", b"one\ntwo\n").expect("write");
-        let patch = "*** Begin Patch\n*** Update File: a.txt\n@@\n one\n-two\n+three\n*** End Patch";
+        let patch =
+            "*** Begin Patch\n*** Update File: a.txt\n@@\n one\n-two\n+three\n*** End Patch";
         let summary = fs.apply_patch(patch, "/src").expect("apply");
         assert!(summary.contains("a.txt"));
         assert_eq!(fs.read("/src/a.txt").expect("read"), b"one\nthree\n");
@@ -272,5 +383,59 @@ mod tests {
         let mut fs = WebOsFs::new(&[]).expect("empty image");
         fs.write("/bin/blob", b"\0\0\0hello-world\0\x01").expect("write");
         assert!(fs.strings("/bin/blob", 4, 10).expect("strings").contains("hello-world"));
+    }
+}
+
+#[cfg(test)]
+mod shell_tests {
+    use super::WebOsFs;
+
+    #[test]
+    fn shell_and_explorer_share_one_filesystem() {
+        let mut fs = WebOsFs::new(&[]).expect("empty image");
+        let mut shell = fs.shell(80, 24).expect("shell");
+        let _ = shell.input(b"echo from-shell > made.txt\r");
+        assert_eq!(fs.read("/home/user/made.txt").expect("read"), b"from-shell\n");
+        let reply = fs.rpc(
+            r#"{"Query":{"method":"query:files.directory_listing","library_id":null,"payload":{"path":{"Physical":{"device_slug":"webos","path":"/home/user"}},"sort_by":"name","limit":null,"include_hidden":null,"folders_first":null}}}"#,
+            "2026-10-10T00:00:00Z",
+        );
+        assert!(reply.contains("made.txt"), "{reply}");
+        assert!(shell.snapshot_json().contains("lines"));
+        assert!(!fs.image_if_dirty().expect("image").is_empty());
+    }
+}
+
+#[cfg(test)]
+mod command_tests {
+    use super::WebOsFs;
+
+    #[test]
+    fn terminal_reaches_triage_search_and_patch() {
+        let mut fs = WebOsFs::new(&[]).expect("empty image");
+        fs.write("/home/user/notes.md", b"# Notes\n\nthe walrus sings\n").expect("write");
+        let mut shell = fs.shell(100, 40).expect("shell");
+        let out = String::from_utf8(shell.input(b"search walrus\r")).expect("utf8");
+        assert!(out.contains("/home/user/notes.md:"), "{out}");
+        let out = String::from_utf8(shell.input(b"triage notes.md\r")).expect("utf8");
+        assert!(!out.contains("command not found"), "{out}");
+        let patch = "*** Begin Patch\n*** Add File: made.txt\n+patched\n*** End Patch";
+        fs.apply_patch(patch, "/home/user").expect("patch");
+        let out = String::from_utf8(shell.input(b"cat made.txt\r")).expect("utf8");
+        assert!(out.contains("patched"), "{out}");
+    }
+
+    #[test]
+    fn terminal_and_module_detect_languages() {
+        let mut fs = WebOsFs::new(&[]).expect("empty image");
+        fs.write("/home/user/fr.txt", "bonjour et merci pour le café\n".as_bytes()).expect("write");
+        let mut shell = fs.shell(100, 40).expect("shell");
+        let out = String::from_utf8(shell.input(b"detect-lang fr.txt\r")).expect("utf8");
+        assert!(out.contains(r#""language":"fr""#), "{out}");
+        let json = super::detect_language("こんにちは").expect("json");
+        assert!(
+            json.contains(r#""language":"ja""#) && json.contains(r#""isReliable":true"#),
+            "{json}"
+        );
     }
 }

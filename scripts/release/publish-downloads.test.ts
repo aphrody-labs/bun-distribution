@@ -19,6 +19,8 @@ import {
   buildManifest,
   buildSums,
   factoryCfg,
+  downloadsHostPlan,
+  hostCommands,
   loadConfig,
   planAssetsSnapshot,
   publishAssetsSnapshot,
@@ -126,12 +128,44 @@ describe("publish-downloads", () => {
     }
   });
 
-  test("factory binaries are staged on the build factory and pushed to the release host", () => {
-    expect(cfg.host.target).toBe("dbfr");
+  test("the live release host shares the factory; split contexts remain explicit", () => {
+    expect(cfg.host.target).toBe("vps");
     expect(factoryCfg(cfg).host.target).toBe("vps");
-    expect(cfg.factory.pushTo).toBe("dbfr");
-    const same = { ...cfg, factory: { ...cfg.factory, target: cfg.host.target } };
-    expect(factoryCfg(same)).toBe(same);
+    expect(cfg.factory.pushTo).toBeUndefined();
+    expect(factoryCfg(cfg)).toBe(cfg);
+    const split = {
+      ...cfg,
+      host: { ...cfg.host, target: "dbfr" },
+      factory: { ...cfg.factory, pushTo: "dbfr" },
+    };
+    expect(factoryCfg(split).host.target).toBe("vps");
+    expect(split.host.target).toBe("dbfr");
+  });
+
+  test("host repair refuses a target outside the current service catalog", () => {
+    expect(() => downloadsHostPlan({ ...cfg, host: { ...cfg.host, target: "dbfr" } })).toThrow(
+      "catalog",
+    );
+    expect(() => downloadsHostPlan({ ...cfg, host: { ...cfg.host, port: 9999 } })).toThrow(
+      "catalog",
+    );
+  });
+
+  test("host plan has no transport mutation and failed preflight prevents upload", async () => {
+    const calls: string[] = [];
+    const io = {
+      remote: async () => {
+        calls.push("preflight");
+        throw new Error("native unit unavailable");
+      },
+      put: async () => {
+        calls.push("upload");
+      },
+    };
+    await hostCommands(cfg, false, io);
+    expect(calls).toEqual([]);
+    await expect(hostCommands(cfg, true, io)).rejects.toThrow("native unit unavailable");
+    expect(calls).toEqual(["preflight"]);
   });
 
   test("the configuration is consistent with the catalog port and the declared assets", () => {

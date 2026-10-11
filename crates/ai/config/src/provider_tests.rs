@@ -86,6 +86,37 @@ fn lmstudio_and_vllm_use_fixed_local_ports() {
 }
 
 #[test]
+fn vllm_uses_shared_chat_endpoint_and_credential_reference() {
+    let env = |key: &str| match key {
+        "APHRODY_AI_CHAT_BASE_URL" => Some("http://gpu-host:8180/v1".to_owned()),
+        "APHRODY_OSS_BASE_URL" => Some("http://legacy:8000/v1".to_owned()),
+        "APHRODY_AI_CHAT_API_KEY" => Some("protected-fixture-token".to_owned()),
+        "VLLM_API_KEY" => Some("legacy-fixture-token".to_owned()),
+        _ => None,
+    };
+    let providers = builtin_providers(&env);
+    let vllm = &providers["vllm"];
+    assert_eq!(vllm.base_url.as_deref(), Some("http://gpu-host:8180/v1"));
+    assert_eq!(vllm.env_key.as_deref(), Some("APHRODY_AI_CHAT_API_KEY"));
+    assert_eq!(vllm.managed, None, "remote inference must never spawn a local GPU runtime");
+    let serialized = toml::to_string(vllm).unwrap();
+    assert!(!serialized.contains("protected-fixture-token"));
+    assert!(!serialized.contains("legacy-fixture-token"));
+}
+
+#[test]
+fn vllm_retains_chat_aliases_and_keyless_local_default() {
+    let providers = builtin_providers(&|key| match key {
+        "APHRODY_SHENRON_LLM_BASE_URL" => Some("http://declared:8180/v1".to_owned()),
+        "VLLM_API_KEY" => Some("fixture-token".to_owned()),
+        _ => None,
+    });
+    assert_eq!(providers["vllm"].base_url.as_deref(), Some("http://declared:8180/v1"));
+    assert_eq!(providers["vllm"].env_key.as_deref(), Some("VLLM_API_KEY"));
+    assert_eq!(builtin_providers(&no_env)["vllm"].env_key, None);
+}
+
+#[test]
 fn antigravity_is_keyless() {
     let providers = builtin_providers(&no_env);
     let antigravity = &providers["antigravity"];

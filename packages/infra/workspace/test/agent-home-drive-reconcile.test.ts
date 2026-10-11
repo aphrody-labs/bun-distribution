@@ -585,6 +585,24 @@ test("unchanged and out-of-scope documents never submit a review task", async ()
   expect(submissions).toBe(0);
 });
 
+test("a Docs document without a revision blocks the review without submitting or failing", async () => {
+  const value = await fixture();
+  let submissions = 0;
+  value.ports.client.sendMessage = async () => {
+    submissions++;
+    return {} as never;
+  };
+  const documents = value.ports.api.docs.documents;
+  const get = documents.get;
+  documents.get = async (params) => ({
+    data: { ...((await get(params)).data as Record<string, unknown>), revisionId: undefined },
+  });
+  expect(await reconcileDriveReview(value.config, async () => "", value.ports)).toEqual({
+    review_blocked: 1,
+  });
+  expect(submissions).toBe(0);
+});
+
 async function productionFixture() {
   const value = await fixture(false);
   const { config, documents } = value;

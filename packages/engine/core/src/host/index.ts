@@ -7,6 +7,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { accountProblems, loadTunnel, tunnelProblems } from "./wireguard.ts";
+export * from "./layout.ts";
 
 export interface HostUnit {
   service: string;
@@ -53,12 +54,14 @@ export function sourceCheckout(from = import.meta.dir): string | null {
   return null;
 }
 
-/** `$YOLO_ROOT`, else the source checkout running this code, else `$HOME/aphrody` (`%USERPROFILE%\aphrody`). */
+/** `$YOLO_ROOT`, else the source checkout running this code, else `$HOME/src/aphrody` (`%USERPROFILE%\src\aphrody`). */
 export function yoloRoot(
   env: Record<string, string | undefined> = process.env,
   checkout: string | null = sourceCheckout(),
 ): string {
-  return env.YOLO_ROOT || checkout || join(env.HOME || env.USERPROFILE || homedir(), "aphrody");
+  return (
+    env.YOLO_ROOT || checkout || join(env.HOME || env.USERPROFILE || homedir(), "src", "aphrody")
+  );
 }
 export const hostRoot = (env?: Record<string, string | undefined>) =>
   join(yoloRoot(env), "tools", "config", "host");

@@ -173,10 +173,10 @@ def main():
     for name in ("site", "bot"):
         services[name].setdefault("environment", {})["BUN_OPTIONS"] = "--smol"
     vfs = args.public_vfs.resolve(strict=True)
-    if not vfs.is_relative_to(pathlib.Path("/srv/shenron/shared/server")):
+    if not vfs.is_relative_to(pathlib.Path("/home/ubuntu/apps/shenron/shared/server")):
         parser.error("public VFS must stay in server shared store")
     services["site"]["environment"]["SHENRON_VFS_DB"] = str(
-        pathlib.Path("/var/lib/shenron") / vfs.relative_to("/srv/shenron/shared/server")
+        pathlib.Path("/var/lib/shenron") / vfs.relative_to("/home/ubuntu/apps/shenron/shared/server")
     )
     release.mkdir(parents=True)
     nginx = release / "nginx"
@@ -210,19 +210,19 @@ def main():
         volumes=[
             mount(nginx, "/etc/nginx/conf.d"),
             mount("/etc/aphrody/shenron-tls", "/etc/letsencrypt"),
-            mount(public, "/srv/shenron-cdn/site"),
+            mount(public, "/home/ubuntu/apps/shenron-cdn/site"),
             mount(public / "50x.html", "/var/www/shenron/50x.html"),
-            mount("/srv/shenron/shared/site/wiki", "/srv/shenron-cdn/wiki"),
-            mount("/srv/shenron/shared/bot/assets", "/srv/shenron-cdn/assets"),
+            mount("/home/ubuntu/apps/shenron/shared/site/wiki", "/home/ubuntu/apps/shenron-cdn/wiki"),
+            mount("/home/ubuntu/apps/shenron/shared/bot/assets", "/home/ubuntu/apps/shenron-cdn/assets"),
             mount(
-                "/srv/shenron/shared/site/public-extra", "/srv/shenron-cdn/site-extra"
+                "/home/ubuntu/apps/shenron/shared/site/public-extra", "/home/ubuntu/apps/shenron-cdn/site-extra"
             ),
             # aphrody.com and rosegriffon.fr vhosts (zz-*.conf) served by the same gateway.
             *[
                 mount(path, path)
                 for path in (
-                    "/srv/aphrody-creator",
-                    "/srv/aphrody-downloads",
+                    "/home/ubuntu/apps/creator",
+                    "/home/ubuntu/apps/downloads",
                     "/var/www/maintenance",
                     "/var/www/letsencrypt",
                 )
@@ -241,7 +241,7 @@ def main():
         depends_on={"site": {"condition": "service_healthy"}},
     )
     services["gateway"] = gateway
-    state = pathlib.Path("/srv/shenron/shared/state")
+    state = pathlib.Path("/home/ubuntu/apps/shenron/shared/state")
     if args.state_image_id:
         if not (state / "VERIFIED.json").is_file():
             parser.error("protected state must be prepared and checksum-verified first")

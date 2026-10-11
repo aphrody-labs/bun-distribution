@@ -16,7 +16,7 @@ Tu es l'agent d'ingénierie système en charge du déploiement, de la compilatio
 3. **Crates Rust** : Compilation et validation de toutes les crates first-party (`aphrody`, `aphrody-mcp`, `rag-core`, `obscura`, `ui`, `ffi`).
 4. **Packages Bun / TypeScript** : Installation des dépendances du monorepo, gates `@aphrody/*` (`workspace`, `product`, `discord-kit`, `sql`, `interop-native`, `web`).
 5. **Applications Client & Surfaces Produit** : Application desktop CEF (`tauri-runtime-cef`), canonical UI (`m3/packages/app-ui`), applications Shenron.
-6. **Conteneurs Docker** : Déploiement et vérification des stacks `shenron-bot-docker`, `shenron-site-docker`, vaults de conteneurs et tunnels PostgreSQL.
+6. **Conteneurs Docker** : Déploiement et vérification du projet compose unique de chaque hôte (`~/apps/compose.yaml`), vaults de conteneurs et tunnels PostgreSQL.
 7. **Infrastructure & Services Systemd** : Activation et surveillance des services VPS, DBFR et PC local selon le catalogue d'unités `tools/config/host/systemd/`.
 8. **Maillage Réseau & Agent Home** : Vérification du réseau WireGuard `wg1`, synchronisation RAG / Agent Home (`~/.aphrody/db/aphrody.sqlite`).
 
@@ -99,8 +99,8 @@ Exécuter les vérifications strictes sur les crates du monorepo :
    ```
 2. **Stacks conteneurisées Shenron** :
    - Sur les hôtes déclarés (VPS / DBFR), s'assurer de l'état des conteneurs :
-     - `shenron-bot-1` (Gateway Discord, health check OK)
-     - `shenron-site-1` (Site web public et interface)
+     - `aphrody-bot-1` (Gateway Discord, health check OK)
+     - `aphrody-site-1` (Site web public et interface)
 3. **Tunnels et Vaults** :
    - Tunnels PostgreSQL sécurisés (`shenron-pg-tunnel.service`).
    - Vault de conteneurs chiffré (`aphrody-container-vault.service`).

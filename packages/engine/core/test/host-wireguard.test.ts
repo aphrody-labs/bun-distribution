@@ -83,8 +83,18 @@ test("a declaration that breaks a rule is reported", () => {
     ["bad key", (t) => (t.peers[2].publicKey = "not-a-key"), /not a WireGuard key/],
     ["duplicate address", (t) => (t.peers[0].address = t.peers[1].address), /duplicate address/],
     ["address outside", (t) => (t.peers[0].address = "10.8.0.9"), /outside the subnet/],
-    ["foreign marker", (t) => (t.peers[3].udpSource.comment = "shenron-admin"), /comment must be/],
-    ["world source", (t) => (t.peers[3].udpSource.ips = ["0.0.0.0/0"]), /one public address/],
+    [
+      "foreign marker",
+      (t) =>
+        (t.peers[3].udpSource = { mode: "ufw", ips: ["92.170.252.46"], comment: "shenron-admin" }),
+      /comment must be/,
+    ],
+    [
+      "world source",
+      (t) =>
+        (t.peers[3].udpSource = { mode: "ufw", ips: ["0.0.0.0/0"], comment: "aphrody-wg-omar" }),
+      /one public address/,
+    ],
     ["postgres exposed", (t) => (t.services[0].port = 5432), /never-open port/],
     ["unknown grant", (t) => (t.grants.omar = ["nope"]), /unknown service/],
     ["mesh to dbfr", (t) => t.mesh[0].to.push("dbfr"), /opens every port of dbfr/],
@@ -115,7 +125,7 @@ test("WireGuard key format: 44 base64 characters, 32 bytes", () => {
 test("registered peers have valid public keys after host-local generation", () => {
   const t = tunnel();
   expect(t.peers.find((p) => p.id === "omar")?.publicKey).toBe(
-    "lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=",
+    "EXfatxgVFs8Lr9k7QoJ2wiznY5MYO4C19+4gLbGmCEw=",
   );
   expect(t.peers.find((p) => p.id === "omar")?.publicKeyNote).toContain("never handshaked");
   expect(t.peers.find((p) => p.id === "aphro-pc")?.publicKey).toBe(
@@ -227,7 +237,7 @@ test("hub config: known keys inline, the others are apply-time inputs, no privat
   expect(h.text).toContain("PublicKey = VewVolGGwY3Lvp78jp9dKB7RIxg2xUR2pbVS+y+uj2I=");
   expect(h.text).toContain("AllowedIPs = 10.200.77.10/32");
   expect(h.needs.map((n) => n.env)).toEqual(["WSL_PUBLIC_KEY", "DBFR_PUBLIC_KEY"]);
-  expect(h.text).toContain("PublicKey = lTH5TqUGhYwk5MvMD9b8hlL3EUns8KqKvWGxJYdY3AQ=");
+  expect(h.text).toContain("PublicKey = EXfatxgVFs8Lr9k7QoJ2wiznY5MYO4C19+4gLbGmCEw=");
   expect(PRIVATE_KEY_PATTERN.test(h.text)).toBe(false);
   expect(h.text).not.toMatch(/AllowedIPs = [^\n]*\/(0|2[0-3])\b/);
 });
@@ -244,9 +254,8 @@ test("ufw rules: specific sources, own marker, nothing for postgres, redis or th
     if (r.text.includes("10.200.77.2 port")) expect(r.text).toContain("port 22 proto tcp"); // SSH is active; training remains pending
   }
   const udp = rules.filter((r) => r.kind === "udp-source");
-  expect(udp.map((r) => r.text)).toEqual([
-    "ufw allow from 92.170.252.46 to any port 51821 proto udp comment 'aphrody-wg-omar'",
-  ]);
+  // Omar's source is `open` since 2026-10-09 (dynamic public address): the hub rule is declared by hand, not generated.
+  expect(udp.map((r) => r.text)).toEqual([]);
   const omar = rules
     .filter((r) => r.peer === "omar" && r.kind !== "udp-source")
     .map((r) => `${r.kind}:${r.service}`);
@@ -258,6 +267,8 @@ test("ufw rules: specific sources, own marker, nothing for postgres, redis or th
     "route:remote-desktop-aphro-pc",
     "route:vnc-aphro-pc",
     "route:mcp-http-aphro-pc",
+    "route:remote-desktop-dbfr",
+    "route:vnc-dbfr",
     "route:mesh:dev-pcs:aphro-pc",
     "input:mesh:pcs-to-build-hub:vps",
   ]);
@@ -277,7 +288,7 @@ test("ufw rules: specific sources, own marker, nothing for postgres, redis or th
     rules
       .filter((r) => r.kind === "route" && !r.service?.startsWith("mesh:"))
       .every((r) =>
-        /to 10\.200\.77\.([23] port (22|8793)|(4|10) port (22|5900|8793|8795)|10 port 2222) /.test(
+        /to 10\.200\.77\.(2 port (22|8793)|3 port (22|8793|5900|8795)|(4|10) port (22|5900|8793|8795)|10 port 2222) /.test(
           r.text,
         ),
       ),
@@ -378,9 +389,9 @@ test("the omar account files: no key invented, root-owned key file, one sudoers 
     "Match User omar",
     "AuthenticationMethods publickey",
     "PasswordAuthentication no",
-    "AllowTcpForwarding remote",
+    "AllowTcpForwarding yes",
     "PermitListen 127.0.0.1:22010 127.0.0.1:28795 127.0.0.1:28793 127.0.0.1:22011 127.0.0.1:25900",
-    "PermitOpen none",
+    "PermitOpen 127.0.0.1:23888 127.0.0.1:23889",
     "GatewayPorts no",
     "AuthorizedKeysFile /etc/ssh/authorized_keys.d/%u",
   ])

@@ -22,7 +22,7 @@ remain local to each host and are not packaged or synchronized.
 ## Current verification command
 
 ```powershell
-pwsh -NoProfile -File scripts/audit/verify-google-pipeline.ps1 [-StaticOnly]
+bun scripts/audit/verify-google-pipeline.ts [--static-only]
 ```
 
 The verifier checks current Rust, Bun, doc-ai and Python owner paths, package

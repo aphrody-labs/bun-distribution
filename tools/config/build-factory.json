@@ -4,10 +4,10 @@
   "enabled": true,
   "target": "vps",
   "executionOnlyTargets": [],
-  "workspaceRoot": "/srv/aphrody-build/workspaces/aphrody",
-  "cacheRoot": "/srv/aphrody-build/cache",
-  "artifactRoot": "/srv/aphrody-build/artifacts",
-  "lockPath": "/srv/aphrody-build/locks/heavy.lock",
+  "workspaceRoot": "/home/ubuntu/src/aphrody",
+  "cacheRoot": "/home/ubuntu/build/cache",
+  "artifactRoot": "/home/ubuntu/build/artifacts",
+  "lockPath": "/home/ubuntu/build/locks/heavy.lock",
   "hostEnvironment": {
     "name": "APHRODY_BUILD_HOST",
     "value": "vps"
@@ -51,9 +51,9 @@
     "cleanup": "existing-infra-allowlist-only"
   },
   "repositories": {
-    "aphrody": "/srv/aphrody-build/workspaces/aphrody",
-    "yolo": "/srv/aphrody-build/workspaces/yolo",
-    "iecode": "/srv/aphrody-build/workspaces/iecode"
+    "aphrody": "/home/ubuntu/src/aphrody",
+    "yolo": "/home/ubuntu/src/yolo",
+    "iecode": "/home/ubuntu/src/iecode"
   },
   "next": {
     "image": "node:22-bookworm-slim",
@@ -63,32 +63,32 @@
     "maxOldSpaceSizeMiB": 8192
   },
   "cleanup": {
-    "transientRoot": "/srv/aphrody-build/transient",
+    "transientRoot": "/home/ubuntu/build/transient",
     "privilegeBinary": "/usr/bin/sudo-rs",
     "retiredOutputs": [
       {
-        "path": "/srv/aphrody-build/cache/cargo/obscura-fork",
-        "terminalReceipt": "/srv/aphrody-build/artifacts/wsl/obscura-fork-check.log.exit",
+        "path": "/home/ubuntu/build/cache/cargo/obscura-fork",
+        "terminalReceipt": "/home/ubuntu/build/artifacts/wsl/obscura-fork-check.log.exit",
         "reason": "Terminal native fork-check target; no live job or mounted container may use it"
       },
       {
-        "path": "/srv/aphrody-build/cache/cargo/vu-uv",
-        "terminalReceipt": "/srv/aphrody-build/workspaces/vu-wsl/receipts/7c3db189-2026-10-05T21-13-26-131Z.json",
+        "path": "/home/ubuntu/build/cache/cargo/vu-uv",
+        "terminalReceipt": "/home/ubuntu/build/wsl/vu/receipts/7c3db189-2026-10-05T21-13-26-131Z.json",
         "reason": "Terminal qualified vu build intermediates; runtime artifacts and source receipts retained"
       },
       {
-        "path": "/srv/aphrody-build/cache/cargo/vu-ruff",
-        "terminalReceipt": "/srv/aphrody-build/workspaces/vu-wsl/receipts/7c3db189-2026-10-05T21-13-26-131Z.json",
+        "path": "/home/ubuntu/build/cache/cargo/vu-ruff",
+        "terminalReceipt": "/home/ubuntu/build/wsl/vu/receipts/7c3db189-2026-10-05T21-13-26-131Z.json",
         "reason": "Terminal qualified vu build intermediates; runtime artifacts and source receipts retained"
       },
       {
-        "path": "/srv/aphrody-build/cache/cargo/vu-wsl",
-        "terminalReceipt": "/srv/aphrody-build/workspaces/vu-wsl/receipts/7c3db189-2026-10-05T21-13-26-131Z.json",
+        "path": "/home/ubuntu/build/cache/cargo/vu-wsl",
+        "terminalReceipt": "/home/ubuntu/build/wsl/vu/receipts/7c3db189-2026-10-05T21-13-26-131Z.json",
         "reason": "Terminal qualified vu build intermediates; runtime artifacts and source receipts retained"
       },
       {
-        "path": "/srv/aphrody-build/cache/cargo/aphrody",
-        "terminalReceipt": "/srv/aphrody-build/artifacts/factory-jobs/downloads-aphrody-windows-x86_64-5bf7eed5a/exit.json",
+        "path": "/home/ubuntu/build/cache/cargo/aphrody",
+        "terminalReceipt": "/home/ubuntu/build/artifacts/factory-jobs/downloads-aphrody-windows-x86_64-5bf7eed5a/exit.json",
         "reason": "Terminal 2026-10-06 Aphrody Linux/Windows packaging intermediates; deployed/rollback binaries, artifact receipts, source and shared caches retained"
       }
     ]

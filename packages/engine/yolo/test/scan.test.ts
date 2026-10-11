@@ -59,7 +59,7 @@ describe("yolo scan CLI arguments", () => {
     expect(report.target).toBe(fixtureDir);
     expect(report.totalFiles).toBe(2);
     expect(report.byExtension.map((entry) => entry.ext)).toEqual([".ts"]);
-    expect(report.largestFiles.map((entry) => entry.path).sort()).toEqual([
+    expect(report.largestFiles.map((entry) => entry.path).toSorted()).toEqual([
       "alpha.ts",
       "nested/beta.ts",
     ]);
@@ -139,12 +139,16 @@ describe("yolo scan CLI arguments", () => {
   });
 
   it("rejects unknown options, extra directories and conflicting formats", async () => {
-    for (const args of [["--unknown"], [".", "nested"], ["--json", "--md"]]) {
-      const result = await invoke(args);
-      expect(result.code).toBe(1);
-      expect(result.stdout).toBe("");
-      expect(result.stderr).toMatch(/Unknown option|at most one scan directory|one output format/);
-    }
+    await Promise.all(
+      [["--unknown"], [".", "nested"], ["--json", "--md"]].map(async (args) => {
+        const result = await invoke(args);
+        expect(result.code).toBe(1);
+        expect(result.stdout).toBe("");
+        expect(result.stderr).toMatch(
+          /Unknown option|at most one scan directory|one output format/,
+        );
+      }),
+    );
   });
 
   it("returns a meaningful failure for a nonexistent directory", async () => {

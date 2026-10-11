@@ -12,8 +12,10 @@ import { PlatformProvider, type Platform } from "./contexts/PlatformContext";
 import { Shell } from "./Shell";
 import { explorerRoutes } from "./router";
 import { DesktopPet, DesktopWidget, SplashScreen } from "./desktop-surfaces";
+import { PetGuide } from "./pet-guide-view";
 import { QuickBar } from "./quickbar";
 import { appReady, isTauri, pickDirectory, pickFile, tauriInvoke } from "./tauri-bridge";
+import { wantsHttpBackend, webOsTransport } from "./webos-backend";
 
 /**
  * Native platform adapter providing OS capabilities (dialogs, window control, links).
@@ -92,7 +94,9 @@ const client = isTauri()
       },
       (event, handler) => listen(event, handler),
     )
-  : new SpacedriveClient(new HttpTransport());
+  : new SpacedriveClient(
+      wantsHttpBackend(window.location.search) ? new HttpTransport() : webOsTransport(),
+    );
 
 function App() {
   useEffect(() => {
@@ -102,6 +106,7 @@ function App() {
   return (
     <PlatformProvider platform={nativePlatform}>
       <Shell client={client} routes={explorerRoutes} />
+      <PetGuide />
     </PlatformProvider>
   );
 }

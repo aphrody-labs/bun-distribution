@@ -84,12 +84,7 @@ test("known_hosts lines and https bases are accepted", () => {
 });
 
 test("remote path safety", () => {
-  for (const ok of [
-    "~/aphrody",
-    "/srv/aphrody-build/workspaces/aphrody",
-    "data/triples.jsonl",
-    "/a/b-c_d.e",
-  ])
+  for (const ok of ["~/aphrody", "/home/ubuntu/src/aphrody", "data/triples.jsonl", "/a/b-c_d.e"])
     expect(isSafeRemotePath(ok)).toBe(true);
   for (const nope of ["a b", "a;b", "$HOME/x", "`id`", "../x", "a/../b", "a'b", 'a"b', "", "/a/*"])
     expect(isSafeRemotePath(nope)).toBe(false);
@@ -99,7 +94,7 @@ test("profile round trip through the kit's data folder", async () => {
   const { ctx } = testContext();
   expect(await loadProfile(ctx.paths)).toBeUndefined();
   await saveProfile(ctx.paths, samplePack());
-  expect((await loadProfile(ctx.paths))?.hosts.gpu?.repoDir).toBe("/srv/aphrody");
+  expect((await loadProfile(ctx.paths))?.hosts.gpu?.repoDir).toBe("/home/ubuntu/apps/aphrody");
   writeFileSync(ctx.paths.profileFile, "{broken");
   expect(await loadProfile(ctx.paths)).toBeUndefined();
 });

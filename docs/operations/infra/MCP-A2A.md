@@ -2,7 +2,7 @@
 
 # MCP et A2A persistants sur le VPS
 
-> **Mise à jour 2026-10-09 : ce qui suit décrit l'ancienne topologie système (ports 8788/8793, `/srv/aphrody/shared`).**
+> **Mise à jour 2026-10-09 : ce qui suit décrit l'ancienne topologie système (ports 8788/8793, `/home/ubuntu/apps/aphrody/shared`).**
 > Elle est remplacée par un hub unique en unités utilisateur sur le VPS : A2A `127.0.0.1:23888`, MCP HTTP
 > `127.0.0.1:23889`, tunnel Windows 24888/24889, présence des pairs (`aphrody a2a peers|send|inbox|register`) et
 > déploiement par `aphrody-sync.timer`. Voir [le hub](../workspace/codex-vps-relay-2026-10-09.md). L'A2A de dbfr
@@ -17,7 +17,7 @@ de flotte et les observations historiques du 2026-10-06 restent explicites.
 
 | Unité                      | Commande canonique                                                              | Écoute locale                                                                        | État persistant             |
 | -------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | --------------------------- |
-| `aphrody-a2a.service`      | `aphrody a2a serve --bind 127.0.0.1:8788 --coord-dir /srv/aphrody/shared/coord` | `127.0.0.1:8788` ; carte d'agent, `/ping`, JSON-RPC, REST, SSE et boîtes de messages | `/srv/aphrody/shared/coord` |
+| `aphrody-a2a.service`      | `aphrody a2a serve --bind 127.0.0.1:8788 --coord-dir /home/ubuntu/apps/aphrody/shared/coord` | `127.0.0.1:8788` ; carte d'agent, `/ping`, JSON-RPC, REST, SSE et boîtes de messages | `/home/ubuntu/apps/aphrody/shared/coord` |
 | `aphrody-mcp-http.service` | `aphrody-mcp http --bind 127.0.0.1:8793`                                        | `127.0.0.1:8793` ; `/mcp`, `/healthz`, `/api/v1/*`                                   | `/home/ubuntu/.aphrody`     |
 
 Le port **8793** évite le port 8789 réservé au tunnel de calcul WSL. Les unités
@@ -33,8 +33,8 @@ la [déclaration de flotte](../../../tools/config/host/agent-fleet.json), le
 ## Exécution et état durable
 
 Les services A2A et MCP HTTP travaillent dans le checkout privé dédié
-`/srv/aphrody/shared/agent-workspaces/aphrody`, sur `main`. Ils ne travaillent pas dans
-le checkout de compilation `/srv/aphrody-build/workspaces/aphrody-wsl` : celui-ci
+`/home/ubuntu/apps/aphrody/shared/agent-workspaces/aphrody`, sur `main`. Ils ne travaillent pas dans
+le checkout de compilation `/home/ubuntu/build/wsl/aphrody` : celui-ci
 sert uniquement de source pour créer le checkout initial. Le plan qualifie la
 révision Git du dépôt qui produit le plan, clone sans objets partagés et configure
 l'origin privé déclaré. Il préserve le travail d'un checkout existant ; aucun
@@ -61,7 +61,7 @@ protégés. Les profils `dbfr` et `ie` conservent leur isolation.
 `--coord-dir` est l'unique racine de stockage du listener, y compris pour les
 routes historiques. Deux stores natifs y ont des contrats distincts :
 
-| Store                          | Chemin sous `/srv/aphrody/shared/coord`              | Usage                                                                            |
+| Store                          | Chemin sous `/home/ubuntu/apps/aphrody/shared/coord`              | Usage                                                                            |
 | ------------------------------ | ---------------------------------------------------- | -------------------------------------------------------------------------------- |
 | `FsTaskStore` du protocole A2A | `a2a/tasks/`                                         | Tâches JSON-RPC/REST, statuts et résultats relus après reconstruction du serveur |
 | API de coordination par agent  | `agents/<agent>/tasks/` et `agents/<agent>/mailbox/` | CRUD `/coord/<agent>/tasks` et enveloppes `/coord/<agent>/envelopes`             |
@@ -162,7 +162,7 @@ authentification SSH autorisée ; une entrée d'inventaire ne prouve pas leur
 connectivité.
 
 Un client MCP lance par SSH
-`/home/ubuntu/.bun/bin/bun /srv/aphrody-lab/fleet-mcp.mjs`.
+`/home/ubuntu/.bun/bin/bun /home/ubuntu/apps/lab/fleet-mcp.mjs`.
 Ce [wrapper de lancement](../../../scripts/tools/infra/fleet-mcp.ts)
 lit la déclaration privée déployée, fixe le cwd dédié et les commandes des tool
 hosts, puis lance le binaire canonique
@@ -225,14 +225,14 @@ ni moteur n'est recopié. Depuis la racine du dépôt, les commandes de build so
 ```sh
 umask 077
 bun build scripts/tools/infra/fleet-yolo-tool-host.ts --target=bun --format=esm --env=disable --reject-unresolved --outfile="$HOME/.aphrody/automation/yolo-tool-host-fleet.mjs"
-bun build m3/packages/m3-mcp/src/tool-host.ts --target=bun --format=esm --env=disable --reject-unresolved --define 'import.meta.dir="/srv/aphrody/shared/agent-workspaces/aphrody/m3/packages/m3-mcp/src"' --outfile="$HOME/.aphrody/automation/m3-tool-host-fleet-vps.mjs"
+bun build m3/packages/m3-mcp/src/tool-host.ts --target=bun --format=esm --env=disable --reject-unresolved --define 'import.meta.dir="/home/ubuntu/apps/aphrody/shared/agent-workspaces/aphrody/m3/packages/m3-mcp/src"' --outfile="$HOME/.aphrody/automation/m3-tool-host-fleet-vps.mjs"
 chmod 600 "$HOME/.aphrody/automation/yolo-tool-host-fleet.mjs" "$HOME/.aphrody/automation/m3-tool-host-fleet-vps.mjs"
 ```
 
 `--env=disable` empêche l'inlining des variables d'environnement dans l'artefact.
 `--reject-unresolved` refuse les imports dynamiques non résolus. La définition
 M3 fixe les deux chemins d'assets calculés depuis `import.meta.dir` sur le
-checkout déclaré ; un bundle placé directement dans `/srv/aphrody-lab` aurait
+checkout déclaré ; un bundle placé directement dans `/home/ubuntu/apps/lab` aurait
 autrement une racine de données incorrecte. Elle ne modifie pas les sources M3.
 
 Les bundles protégés ont été qualifiés depuis un répertoire temporaire sans
@@ -261,8 +261,8 @@ des SVG et la génération d'icônes nécessitent leurs assets et restent distin
 des appels purs de thèmes qualifiés ici. Aucun modèle, dataset ou catalogue
 volumineux d'icônes n'a été transféré pour cette qualification.
 
-Infra a déployé ces bundles sous `/srv/aphrody-lab/yolo-tool-host.mjs` et
-`/srv/aphrody-lab/m3-tool-host.mjs`, avec leurs commandes explicites dans les
+Infra a déployé ces bundles sous `/home/ubuntu/apps/lab/yolo-tool-host.mjs` et
+`/home/ubuntu/apps/lab/m3-tool-host.mjs`, avec leurs commandes explicites dans les
 unités et le wrapper SSH stdio. Chaque unité expose
 `/home/ubuntu/.bun/bin/bun` en lecture seule sous `ProtectHome=tmpfs`. Les
 364 outils uniques mesurés sur les deux transports comprennent les 14 outils
@@ -339,7 +339,7 @@ de cache doivent être qualifiés puis livrés avant de lui attribuer leurs effe
 
 | Vérification                    | Résultat observé                                                                                |
 | ------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Unités A2A et MCP HTTP          | `active/running`, `enabled`, cwd `/srv/aphrody/shared/agent-workspaces/aphrody`                 |
+| Unités A2A et MCP HTTP          | `active/running`, `enabled`, cwd `/home/ubuntu/apps/aphrody/shared/agent-workspaces/aphrody`                 |
 | Authentification A2A            | 401 sans jeton et avec un mauvais jeton ; 200 sur l'API de coordination privée authentifiée     |
 | Authentification MCP HTTP       | 401 sans jeton et avec un mauvais jeton ; `tools/list` authentifié réussi                       |
 | Catalogue MCP HTTP et stdio SSH | 364 noms uniques sur chacun, dont 14 Yolo et 11 M3                                              |
@@ -464,7 +464,7 @@ contient sept documents validés et 98 chunks. Les copies WSL vérifiées
 conservent aussi ces sept documents ; les authentifications des fournisseurs
 restent dans leurs magasins propres.
 
-Le reçu VPS local `/srv/aphrody-lab/state/agent-sync-vps-status.json` est distinct
+Le reçu VPS local `/home/ubuntu/apps/lab/state/agent-sync-vps-status.json` est distinct
 du reçu WSL. Le plan de contrôle Discord peut le lire via
 `sync.cloudAutomationReportPath` et n'affiche que les métadonnées autorisées. Un
 reçu absent, invalide, âgé de plus de 180 secondes ou daté dans le futur ne

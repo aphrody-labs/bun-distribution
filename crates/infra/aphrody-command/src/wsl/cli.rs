@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-use aphrody_proc::NoWindow as _;
 use crate::wsl::{
     Config, Result, Target, artifact, build, doctor, expected_artifacts, import, latest_kernel,
     plan, sources,
 };
+use aphrody_proc::NoWindow as _;
 use clap::{Parser, Subcommand};
 use std::{fs, path::PathBuf};
 
@@ -44,6 +44,11 @@ pub enum Action {
         #[arg(long)]
         install_dir: PathBuf,
     },
+    /// Inspect or launch WSLg on the Windows host (no build configuration needed).
+    Wslg {
+        #[command(subcommand)]
+        action: crate::wsl::wslg::WslgAction,
+    },
 }
 #[derive(Parser)]
 #[command(version, about = "Aphrody WSL source build and distribution workbench")]
@@ -78,6 +83,10 @@ pub fn cli_main(args: Vec<std::ffi::OsString>) -> i32 {
 }
 
 pub fn run(action: Action, config_path: PathBuf) -> Result<()> {
+    if let Action::Wslg { action } = action {
+        println!("{}", serde_json::to_string_pretty(&crate::wsl::wslg::run(action)?)?);
+        return Ok(());
+    }
     let config = Config::read(&config_path)?;
     let result = match action {
         Action::Doctor => doctor(&config)?,
@@ -119,8 +128,10 @@ pub fn run(action: Action, config_path: PathBuf) -> Result<()> {
             import(&config, &install_dir)?;
             serde_json::json!({"imported":config.distribution})
         },
+        Action::Wslg { .. } => unreachable!("handled before the build configuration is read"),
         Action::Dependencies => {
-            let status = std::process::Command::new("sudo").no_window()
+            let status = std::process::Command::new("sudo")
+                .no_window()
                 .args([
                     "-n",
                     "env",
@@ -164,13 +175,15 @@ pub fn run(action: Action, config_path: PathBuf) -> Result<()> {
                 return Err(crate::wsl::Error::Invalid("dependency installation failed".into()));
             }
             // Rust-for-Linux needs bindgen >= 0.71.1 (newer than older distro packages) and the rust-src component.
-            let status = std::process::Command::new("cargo").no_window()
+            let status = std::process::Command::new("cargo")
+                .no_window()
                 .args(["install", "--locked", "bindgen-cli"])
                 .status()?;
             if !status.success() {
                 return Err(crate::wsl::Error::Invalid("bindgen-cli installation failed".into()));
             }
-            let status = std::process::Command::new("rustup").no_window()
+            let status = std::process::Command::new("rustup")
+                .no_window()
                 .args(["component", "add", "rust-src"])
                 .status()?;
             if !status.success() {

@@ -1,7 +1,7 @@
 {
   "name": "@aphrody/yolo-cli",
-  "version": "1.0.0",
-  "description": "Zero-dependency programmatic CLI for the YOLO Bun Industrial Engine",
+  "version": "1.0.2",
+  "description": "Yolo command line on Bun: workspace operations, documentation generation, code scan/rename/parse, plugin and forge commands",
   "license": "MIT",
   "repository": {
     "type": "git",

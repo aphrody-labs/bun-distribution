@@ -178,7 +178,7 @@ async function fixture(seconds = 3) {
 
 /** The factory host's POSIX layout, for plan validation where the Linux host scripts cannot run. */
 function remoteLayout() {
-  const root = "/srv/factory";
+  const root = "/home/ubuntu/apps/factory";
   const repository = posix.join(root, "source");
   const config: BuildFactoryConfig = {
     schemaVersion: 1,

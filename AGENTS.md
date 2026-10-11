@@ -136,7 +136,7 @@ engine (V8, Tauri, WebKit) builds go to the VPS factory. The cloud and the local
 [the cloud sync journal](docs/operations/cloud/CLOUD-SYNC.md).
 
 Select scoped Cargo gates for the actual host and target. Native Windows can use
-`scripts/dev/windows-cargo.ps1`; SSH factories use
+`bun scripts/build/rust/cargo-serial.ts --msvc <cargo args>`; SSH factories use
 `bun scripts/build/rust/vps-cargo.ts run -- <cargo args>` with a context configuration.
 Docker and other qualified native hosts are valid build contexts. Honor factory
 locks, resource limits and shared sccache; deployment hosts require their own

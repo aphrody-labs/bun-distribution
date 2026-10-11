@@ -43,11 +43,12 @@ export function parseSemver(input: string): Semver | null {
   };
 }
 
+const bare = (version: string) => version.replace(/^[=^~v\s]*/, "").trim();
+
 /** SemVer 2.0 precedence (Bun.semver.order) after the same validation and prefix stripping as parseSemver. */
 export function compareSemver(a: string, b: string): number {
   if (!parseSemver(a)) throw new Error(`invalid semver: ${a}`);
   if (!parseSemver(b)) throw new Error(`invalid semver: ${b}`);
-  const bare = (version: string) => version.replace(/^[=^~v\s]*/, "").trim();
   return Bun.semver.order(bare(a), bare(b));
 }
 
@@ -515,6 +516,7 @@ export async function buildReport(
     let latest: string | null = null;
     if (!offline) {
       try {
+        // oxlint-disable-next-line no-await-in-loop -- interrogation séquentielle de crates.io, limite de débit du registre
         latest = pickLatest(await crateVersions(dep.name), config.line);
       } catch (error) {
         rows.push({
@@ -576,6 +578,7 @@ export async function buildReport(
     }
     try {
       const { latest, eligible } = pickEligible(
+        // oxlint-disable-next-line no-await-in-loop -- interrogation séquentielle du registre npm, limite de débit
         await npmTimes(name),
         config.line,
         now,
@@ -605,7 +608,8 @@ export async function buildReport(
   for (const spec of config.patches) {
     const fileText =
       spec.appliedFile && existsSync(join(root, spec.appliedFile))
-        ? await readFile(join(root, spec.appliedFile), "utf8")
+        ? // oxlint-disable-next-line no-await-in-loop -- lecture séquentielle des correctifs dans l'ordre de la configuration
+          await readFile(join(root, spec.appliedFile), "utf8")
         : null;
     // The vendored copy is wired as a path dependency (workspace.dependencies or
     // [patch.crates-io]) or as a workspace member of the fork under crates/tauri.
@@ -618,11 +622,14 @@ export async function buildReport(
     if (!offline && check) {
       try {
         let text: string | null = null;
+        // oxlint-disable-next-line no-await-in-loop -- vérifications amont séquentielles par correctif (sites et registres, limite de débit)
         if (check.url) text = await fetchText(check.url);
         else if (check.crate && check.file) {
           const latest =
             latestPublished.get(check.crate) ??
+            // oxlint-disable-next-line no-await-in-loop -- interrogation séquentielle de crates.io, limite de débit du registre
             pickLatest(await crateVersions(check.crate), config.line);
+          // oxlint-disable-next-line no-await-in-loop -- téléchargement séquentiel du fichier amont de la version retenue
           text = latest ? await crateFile(check.crate, latest, check.file) : null;
         }
         contains = text === null ? null : new RegExp(check.regex, "m").test(text);
@@ -648,6 +655,7 @@ export async function buildReport(
       if (name === "tauri") {
         const dev = lsRemote(up.repository, "dev");
         try {
+          // oxlint-disable-next-line no-await-in-loop -- lecture séquentielle du manifeste de dev, par dépôt amont (limite de débit de GitHub)
           const devToml = await fetchText(
             `https://raw.githubusercontent.com/${up.repository}/dev/crates/tauri/Cargo.toml`,
           );
@@ -669,6 +677,7 @@ export async function buildReport(
       drift.push({ file: spec.file, key: "*", name: "*", mirror: null, expected: "file present" });
       continue;
     }
+    // oxlint-disable-next-line no-await-in-loop -- lecture séquentielle des miroirs : l'ordre des dérives reste celui de la configuration
     drift.push(...mirrorDrift(await readFile(path, "utf8"), spec, central));
   }
   const registry = await loadRegistry(root);
@@ -683,12 +692,13 @@ export async function buildReport(
 type Snapshot = Map<string, string | null>;
 
 async function snapshot(root: string, files: string[]): Promise<Snapshot> {
-  const map: Snapshot = new Map();
-  for (const file of files) {
-    const path = join(root, file);
-    map.set(file, existsSync(path) ? await readFile(path, "utf8") : null);
-  }
-  return map;
+  const texts = await Promise.all(
+    files.map((file) => {
+      const path = join(root, file);
+      return existsSync(path) ? readFile(path, "utf8") : null;
+    }),
+  );
+  return new Map(files.map((file, index): [string, string | null] => [file, texts[index] ?? null]));
 }
 
 async function restore(root: string, saved: Snapshot): Promise<void> {
@@ -747,6 +757,7 @@ export async function applyReport(
       if (text === null || text === undefined) continue;
       const next = rewriteMirror(text, mirror, central);
       if (next !== text) {
+        // oxlint-disable-next-line no-await-in-loop -- écritures des miroirs séquentielles : le journal de console suit l'ordre de la configuration
         await writeFile(join(root, mirror.file), next);
         console.log(`[tauri-sync] mirror updated: ${mirror.file}`);
       }

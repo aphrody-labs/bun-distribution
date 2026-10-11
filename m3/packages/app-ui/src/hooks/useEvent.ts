@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { useSpacedriveClient } from '../contexts/SpacedriveContext';
+import { useEffect, useEffectEvent } from "react";
+import { useSpacedriveClient } from "../contexts/SpacedriveContext";
 
 /**
  * Subscribe to core events
@@ -8,6 +8,8 @@ import { useSpacedriveClient } from '../contexts/SpacedriveContext';
  */
 export function useEvent(eventType: string, handler: (event: any) => void) {
 	const client = useSpacedriveClient();
+	// Latest handler without re-subscribing when the caller passes a new callback each render.
+	const onEvent = useEffectEvent(handler);
 
 	useEffect(() => {
 		if (!client) return;
@@ -16,15 +18,15 @@ export function useEvent(eventType: string, handler: (event: any) => void) {
 			// Fast path: check event type match before doing anything else
 			// Events come as { EventName: { ...data } } not { type: "EventName", ...data }
 			if (!eventType || eventType in event) {
-				handler(event);
+				onEvent(event);
 			}
 		};
 
 		// Listen to all events from the client
-		client.on('spacedrive-event', handleEvent);
+		client.on("spacedrive-event", handleEvent);
 
 		return () => {
-			client.off('spacedrive-event', handleEvent);
+			client.off("spacedrive-event", handleEvent);
 		};
 	}, [eventType, client]);
 }
@@ -33,5 +35,5 @@ export function useEvent(eventType: string, handler: (event: any) => void) {
  * Subscribe to all core events
  */
 export function useAllEvents(handler: (event: any) => void) {
-	return useEvent('', handler);
+	return useEvent("", handler);
 }

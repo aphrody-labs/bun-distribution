@@ -25,9 +25,10 @@ async function post(args: Record<string, unknown>) {
   });
 }
 test("native migration transport rejects writes and unbounded worker options", async () => {
-  for (const args of [{ mode: "fix" }, { dry_run: false }, { jobs: 7 }, { jobs: 1.5 }]) {
-    expect((await post(args)).status).toBe(400);
-  }
+  const responses = await Promise.all(
+    [{ mode: "fix" }, { dry_run: false }, { jobs: 7 }, { jobs: 1.5 }].map((args) => post(args)),
+  );
+  for (const response of responses) expect(response.status).toBe(400);
   expect(readFileSync(join(root, "entry.js"), "utf8")).toBe(original);
 });
 test("HTTP native scan contains both traversal and symlink roots", async () => {

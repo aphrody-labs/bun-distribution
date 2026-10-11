@@ -41,8 +41,8 @@ use crate::error::{ModelError, Result};
 
 /// Environment variable naming the aphrody state directory outright.
 ///
-/// It is the **state directory**, not the user's home: `APHRODY_HOME=/srv/aph`
-/// puts weights in `/srv/aph/models`, never `/srv/aph/.aphrody/models`.
+/// It is the **state directory**, not the user's home: `APHRODY_HOME=/data/aph`
+/// puts weights in `/data/aph/models`, never `/data/aph/.aphrody/models`.
 pub const ENV_APHRODY_HOME: &str = "APHRODY_HOME";
 
 /// Environment variable relocating only the runtimes directory.
@@ -283,7 +283,7 @@ mod tests {
     /// `$APHRODY_HOME/.aphrody/workspace` — two trees, and no error.
     #[test]
     fn explicit_override_is_the_state_dir_not_a_home() {
-        let explicit = PathBuf::from("/srv/aph");
+        let explicit = PathBuf::from("/data/aph");
         let home = std::path::Path::new("/home/u");
         assert_eq!(compose_state_dir(Some(explicit.clone()), home), explicit);
         assert_ne!(compose_state_dir(Some(explicit.clone()), home), explicit.join(".aphrody"));
@@ -303,8 +303,8 @@ mod tests {
         assert!(keep_non_empty(Some(std::ffi::OsString::from(""))).is_none());
         assert!(keep_non_empty(None).is_none());
         assert_eq!(
-            keep_non_empty(Some(std::ffi::OsString::from("/srv/aph"))),
-            Some(PathBuf::from("/srv/aph"))
+            keep_non_empty(Some(std::ffi::OsString::from("/data/aph"))),
+            Some(PathBuf::from("/data/aph"))
         );
     }
 }

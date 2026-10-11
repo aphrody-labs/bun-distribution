@@ -14,6 +14,15 @@ import {
   type Turn,
 } from "./codex-chat";
 
+const buildReply = (
+  appr: ApprovalItem,
+  decision: "accept" | "acceptForSession" | "decline" | "cancel",
+) => ({
+  id: appr.id,
+  result: { decision },
+  backendGeneration: appr.backendGeneration,
+});
+
 describe("Codex Chat - Approval Decisions & Wire Formatting", () => {
   it("preserves exact server-issued file-change request ID and backendGeneration in reply payload", () => {
     const approval: ApprovalItem = {
@@ -24,15 +33,6 @@ describe("Codex Chat - Approval Decisions & Wire Formatting", () => {
       status: "pending",
       backendGeneration: 3,
     };
-
-    const buildReply = (
-      appr: ApprovalItem,
-      decision: "accept" | "acceptForSession" | "decline" | "cancel",
-    ) => ({
-      id: appr.id,
-      result: { decision },
-      backendGeneration: appr.backendGeneration,
-    });
 
     const allowReply = buildReply(approval, "accept");
     expect(allowReply.id).toBe("req-approval-uuid-987");

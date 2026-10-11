@@ -1534,7 +1534,12 @@ pub fn cli_main(args: Vec<std::ffi::OsString>) -> i32 {
                 include_gitignored: false,
                 include_submodules: false,
             };
-            let ingest_result = aphrody_git::ingest(&source, &options)
+            if !aphrody_git::is_remote_source(&source) {
+                anyhow::bail!(
+                    "local directory ingestion moved to the `git_ingest` tool of `bun mcp` (Bun fork)"
+                );
+            }
+            let ingest_result = aphrody_git::ingest_remote(source.trim(), &options)
                 .map_err(|e| anyhow::anyhow!("ingestion failed: {e}"))?;
             if cli.json {
                 println!("{}", serde_json::to_string_pretty(&ingest_result)?);
@@ -1732,7 +1737,7 @@ mod tests {
         assert_eq!(strip_verbatim(PathBuf::from(r"\\?\C:\bun")), PathBuf::from(r"C:\bun"));
         let unc = PathBuf::from(r"\\?\UNC\host\share");
         assert_eq!(strip_verbatim(unc.clone()), unc);
-        assert_eq!(strip_verbatim(PathBuf::from("/srv/x")), PathBuf::from("/srv/x"));
+        assert_eq!(strip_verbatim(PathBuf::from("/data/x")), PathBuf::from("/data/x"));
     }
 
     #[test]

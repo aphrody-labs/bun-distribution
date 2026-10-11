@@ -3,13 +3,15 @@
 // bun packages/core/src/host/cli.ts compose-unit <unit> | compose-nginx <file> | check | list
 //   host-plan <unit>... [--target H] [--expect-tools N] [--binary-from PATH --binary-sha256 HEX] [--observe] [--json]   steps to install the units (dry run)
 //   host-apply <unit>... --target H [--expect-tools N] [--binary-from PATH --binary-sha256 HEX] [--apply]               same plan; executes it only with --apply
+//   relink <root>... [--apply]                                                 symlinks into a [layout.retired] location -> their replacement
 //   wg-plan [--observe] [--json]                                               private tunnel and omar account plan (no apply)
-//   net-env [--member M] [--probe] [--write] [--ssh-config] [--file F]          network map block of <aphrody home>/private/network.env
+//   net-env [--member M] [--probe] [--facts] [--write] [--ssh-config] [--push HOST] [--file F]          network map block of <aphrody home>/private/network.env
 //   wg-client <peer> [--hub-public-key K] [--format sections|paste|conf] [--private-key-file F|--private-key-stdin] [--out F]
 import { readFileSync } from "node:fs";
 import { checkCatalog, composeNginx, composeUnit, hostRoot, loadCatalog } from "./index.ts";
 import { applyPlan, hostPlan, observePlan, renderPlan } from "./plan.ts";
 import { netEnvMain } from "./net-env.ts";
+import { relink, retiredLinks } from "./layout.ts";
 import { loadTunnel, wgMain } from "./wireguard.ts";
 
 const [cmd, arg] = process.argv.slice(2);
@@ -80,6 +82,13 @@ else if (cmd === "host-plan" || cmd === "host-apply") {
     console.error(`host: ${error instanceof Error ? error.message : error}`);
     process.exit(1);
   }
+} else if (cmd === "relink" && arg) {
+  const links = retiredLinks(process.argv.slice(3).filter((a) => !a.startsWith("--")));
+  for (const l of links) console.log(`${l.path}: ${l.target} -> ${l.replacement}`);
+  if (flag("apply")) relink(links);
+  console.log(
+    `${links.length} link(s) ${flag("apply") ? "rewritten" : "to rewrite (pass --apply)"}`,
+  );
 } else if (cmd === "list") for (const u of loadCatalog().units) console.log(u.unit, u.targetHost);
 else if (cmd === "check") {
   const problems = checkCatalog();
@@ -88,7 +97,7 @@ else if (cmd === "check") {
   process.exit(problems.length ? 1 : 0);
 } else {
   console.error(
-    "usage: cli.ts compose-unit <unit> | compose-nginx <file> | list | check | host-plan <unit>... | host-apply <unit>... | wg-plan | wg-client <peer> | net-env",
+    "usage: cli.ts compose-unit <unit> | compose-nginx <file> | list | check | host-plan <unit>... | host-apply <unit>... | relink <root>... [--apply] | wg-plan | wg-client <peer> | net-env",
   );
   process.exit(2);
 }

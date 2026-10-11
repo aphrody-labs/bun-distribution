@@ -91,9 +91,9 @@ export default function Icons({ adaptive }: PageProps) {
             </button>
           ))}
         </div>
-        <p role="status" className="text-body-medium">
+        <output className="block text-body-medium">
           {matches.length ? `Selected icon: ${selected}` : "No icons match this filter."}
-        </p>
+        </output>
       </Section>
       <Section title="Typeface preview" description={fontState}>
         <Card className="flex flex-col gap-4">

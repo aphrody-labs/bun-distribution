@@ -63,7 +63,7 @@ Ce pipeline historique ne constitue pas une autorisation de déployer. Pour un
 déploiement actuel, revalider l’état et les prérequis dans le plan Infra et le
 runbook immuable avant toute activation. La commande CLI Rust, quand elle est
 explicitement choisie, est `aphrody-infra deploy --target vps --stack bundle --release
-/srv/aphrody-infra/bundles/ID --apply`, qui active Aphrody, puis Shenron, puis
+/home/ubuntu/apps/infra/bundles/ID --apply`, qui active Aphrody, puis Shenron, puis
 RG, chacun par son adaptateur atomique (Nginx validé, sondes loopback et HTTPS,
 rollback), enregistre `BUNDLE.previous.json` et restaure les étapes déjà
 activées si une étape échoue. `--stack aphrody|shenron|rg` active une seule

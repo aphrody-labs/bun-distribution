@@ -33,7 +33,7 @@ $uiManifest += "`n"
 $uiSha256 = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($uiManifest))).ToLowerInvariant()
 $releaseId += '-' + $BinarySha256.Substring(0,12) + '-' + $uiSha256.Substring(0,12) + '-' + $unitSha256.Substring(0,8)
 if (!$Apply) {
-    Write-Output "Plan: qualified native build and $($uiFiles.Count) hash-verified app-ui files -> /srv/aphrody/releases/$releaseId; dedicated aphrody-site identity; port80; backing up current link, unit and active state; native Infra apply required"
+    Write-Output "Plan: qualified native build and $($uiFiles.Count) hash-verified app-ui files -> /home/ubuntu/apps/aphrody/releases/$releaseId; dedicated aphrody-site identity; port80; backing up current link, unit and active state; native Infra apply required"
     return
 }
 $catalog = Get-Content (Join-Path $WorkspaceRoot 'tools/config/service-catalog.json') -Raw | ConvertFrom-Json
@@ -45,7 +45,7 @@ $script = @'
 #!/usr/bin/env bash
 set -Eeuo pipefail
 factory=/home/ubuntu/native-site-factory
-release=/srv/aphrody/releases/__RELEASE__
+release=/home/ubuntu/apps/aphrody/releases/__RELEASE__
 exec 9>"$factory/deploy.lock"
 flock -n 9 || { echo 'Another native site deployment is active' >&2; exit 2; }
 ui_archive="$factory/__UI_UPLOAD__.tar"
@@ -91,9 +91,9 @@ if test -e "$release" || test -L "$release"; then
   verify_shared_assets "$release"
   reuse=1
 fi
-if test -e /srv/aphrody/current && ! test -L /srv/aphrody/current; then echo 'current is not a symlink' >&2; exit 1; fi
-previous=$(readlink /srv/aphrody/current || true)
-backup=/srv/aphrody/shared/native-site-backups/$(date -u +%Y%m%dT%H%M%SZ)-__UI_UPLOAD__
+if test -e /home/ubuntu/apps/aphrody/current && ! test -L /home/ubuntu/apps/aphrody/current; then echo 'current is not a symlink' >&2; exit 1; fi
+previous=$(readlink /home/ubuntu/apps/aphrody/current || true)
+backup=/home/ubuntu/apps/aphrody/shared/native-site-backups/$(date -u +%Y%m%dT%H%M%SZ)-__UI_UPLOAD__
 sudo install -d -m 0700 "$backup"
 printf '%s\n' "$previous" | sudo tee "$backup/previous-current" >/dev/null
 if test -f /etc/systemd/system/aphrody-site.service; then
@@ -111,10 +111,10 @@ rollback() {
   if test "$installed" = 1; then sudo systemctl stop aphrody-site.service || true; fi
   if test "$switched" = 1; then
     if test -n "$previous"; then
-      sudo ln -s "$previous" /srv/aphrody/current.native-rollback-__UI_UPLOAD__
-      sudo mv -Tf /srv/aphrody/current.native-rollback-__UI_UPLOAD__ /srv/aphrody/current
-    elif test "$(readlink /srv/aphrody/current || true)" = "$release"; then
-      sudo unlink /srv/aphrody/current
+      sudo ln -s "$previous" /home/ubuntu/apps/aphrody/current.native-rollback-__UI_UPLOAD__
+      sudo mv -Tf /home/ubuntu/apps/aphrody/current.native-rollback-__UI_UPLOAD__ /home/ubuntu/apps/aphrody/current
+    elif test "$(readlink /home/ubuntu/apps/aphrody/current || true)" = "$release"; then
+      sudo unlink /home/ubuntu/apps/aphrody/current
     fi
   fi
   if test "$installed" = 1; then
@@ -183,8 +183,8 @@ if test "$previous_active" = 1; then
 fi
 installed=1
 sudo install -m 0644 "$release/aphrody-site.service" /etc/systemd/system/aphrody-site.service
-sudo ln -s "$release" /srv/aphrody/current.native-next-__UI_UPLOAD__
-sudo mv -Tf /srv/aphrody/current.native-next-__UI_UPLOAD__ /srv/aphrody/current
+sudo ln -s "$release" /home/ubuntu/apps/aphrody/current.native-next-__UI_UPLOAD__
+sudo mv -Tf /home/ubuntu/apps/aphrody/current.native-next-__UI_UPLOAD__ /home/ubuntu/apps/aphrody/current
 switched=1
 sudo systemd-analyze verify /etc/systemd/system/aphrody-site.service
 sudo systemctl daemon-reload

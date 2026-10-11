@@ -393,7 +393,13 @@ pub(crate) async fn run(action: GitAction) -> miette::Result<()> {
                 include_gitignored: false,
                 include_submodules: false,
             };
-            let ingest_result = aphrody_git::ingest(&source, &options).map_err(to_report)?;
+            if !aphrody_git::is_remote_source(&source) {
+                return Err(miette::miette!(
+                    "local directory ingestion moved to the `git_ingest` tool of `bun mcp` (Bun fork)"
+                ));
+            }
+            let ingest_result =
+                aphrody_git::ingest_remote(source.trim(), &options).map_err(to_report)?;
             if json {
                 emit(&serde_json::to_value(&ingest_result).map_err(to_report)?, true)?;
             } else {

@@ -45,7 +45,7 @@ test("gate plans locked all-target Rust checks, tests and release builds plus ea
   expect(plan.checks[0]!.command).toEqual(["bun", "install", "--frozen-lockfile"]);
   for (const subcommand of ["check", "clippy", "test", "build"]) {
     const check = plan.checks.find((item) => {
-      const wrapper = item.command.findIndex((arg) => /cargo-serial.(?:sh|ps1)$/.test(arg));
+      const wrapper = item.command.findIndex((arg) => /cargo-serial.(?:sh|ps1|ts)$/.test(arg));
       return wrapper >= 0 && item.command[wrapper + 1] === subcommand;
     })!;
     expect(check.command).toContain("--workspace");
@@ -140,11 +140,13 @@ test("discovery uses actual root workspace members, exclusions and overlapping p
       { ...packages[0]!, name: "@owner/vendor", path: "upstream/vendor" },
       { ...packages[0]!, name: "@owner/nested", path: "apps/owner/app/node_modules/nested" },
     ];
-    for (const pkg of entries) {
-      const path = join(root, pkg.path, "package.json");
-      await mkdir(dirname(path), { recursive: true });
-      await writeFile(path, JSON.stringify({ name: pkg.name, scripts: pkg.scripts }));
-    }
+    await Promise.all(
+      entries.map(async (pkg) => {
+        const path = join(root, pkg.path, "package.json");
+        await mkdir(dirname(path), { recursive: true });
+        await writeFile(path, JSON.stringify({ name: pkg.name, scripts: pkg.scripts }));
+      }),
+    );
     await writeFile(
       join(root, "package.json"),
       JSON.stringify({
@@ -152,8 +154,9 @@ test("discovery uses actual root workspace members, exclusions and overlapping p
         scripts: { "docs:check-links": "bun check-docs.ts" },
       }),
     );
-    for (const name of ["Cargo.toml", "Cargo.lock", "bun.lock"])
-      await writeFile(join(root, name), "");
+    await Promise.all(
+      ["Cargo.toml", "Cargo.lock", "bun.lock"].map((name) => writeFile(join(root, name), "")),
+    );
     const plan = await discoverMonorepoGatePlan(root);
     expect(plan.packages.map((pkg) => pkg.name)).toEqual(["@owner/app"]);
     expect(plan.gaps).toEqual([

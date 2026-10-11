@@ -6,17 +6,17 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/srv/aphrody-discord/current
+WorkingDirectory=/home/ubuntu/apps/discord/current
 Environment=NODE_ENV=production
 EnvironmentFile=/etc/aphrody-discord.env
-ExecStart=/home/ubuntu/.bun/bin/bun /srv/aphrody-discord/current/server.js
-Environment=HOME=/srv/aphrody-discord/shared
+ExecStart=/home/ubuntu/.bun/bin/bun /home/ubuntu/apps/discord/current/server.js
+Environment=HOME=/home/ubuntu/apps/discord/shared
 Restart=on-failure
 RestartSec=3
 TimeoutStopSec=20
 KillSignal=SIGINT
 MemoryDenyWriteExecute=false
-ReadWritePaths=/srv/aphrody-discord/shared
+ReadWritePaths=/home/ubuntu/apps/discord/shared
 UMask=0077
 StandardOutput=journal
 StandardError=journal

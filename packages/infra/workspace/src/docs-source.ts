@@ -227,44 +227,53 @@ export async function generateSourceReference(
     ids.add(target.id);
     if (!["typescript", "rust", "python"].includes(target.language) || !target.paths.length)
       throw new Error(`Invalid source reference target: ${target.id}`);
+    // Validation and file reads are independent per path: run them concurrently, keep sorted order.
+    // oxlint-disable-next-line no-await-in-loop -- targets are generated in declared order so the first failing target reports deterministically
+    const sources = await Promise.all(
+      [...new Set(target.paths)].toSorted().map(async (path) => {
+        if (
+          !path ||
+          isAbsolute(path) ||
+          path.includes("\\") ||
+          path
+            .split("/")
+            .some(
+              (part) =>
+                !part ||
+                part === "." ||
+                part === ".." ||
+                part === ".git" ||
+                part === ".npmrc" ||
+                part.startsWith(".env"),
+            )
+        )
+          throw new Error(`Unsafe source reference path: ${path}`);
+        const absolute = await realpath(resolve(base, path));
+        const local = relative(base, absolute);
+        if (local.split(sep)[0] === ".." || isAbsolute(local))
+          throw new Error(`Source reference escapes repository: ${path}`);
+        if (
+          local
+            .split(sep)
+            .some((part) => part === ".git" || part === ".npmrc" || part.startsWith(".env"))
+        )
+          throw new Error(`Unsafe resolved source reference path: ${path}`);
+        const bytes = await readFile(absolute);
+        return {
+          path,
+          text: bytes.toString("utf8"),
+          hash: createHash("sha256").update(bytes).digest("hex"),
+        };
+      }),
+    );
     const sections: string[] = [];
-    for (const path of [...new Set(target.paths)].toSorted()) {
-      if (
-        !path ||
-        isAbsolute(path) ||
-        path.includes("\\") ||
-        path
-          .split("/")
-          .some(
-            (part) =>
-              !part ||
-              part === "." ||
-              part === ".." ||
-              part === ".git" ||
-              part === ".npmrc" ||
-              part.startsWith(".env"),
-          )
-      )
-        throw new Error(`Unsafe source reference path: ${path}`);
-      const absolute = await realpath(resolve(base, path));
-      const local = relative(base, absolute);
-      if (local.split(sep)[0] === ".." || isAbsolute(local))
-        throw new Error(`Source reference escapes repository: ${path}`);
-      if (
-        local
-          .split(sep)
-          .some((part) => part === ".git" || part === ".npmrc" || part.startsWith(".env"))
-      )
-        throw new Error(`Unsafe resolved source reference path: ${path}`);
-      const bytes = await readFile(absolute);
-      const text = bytes.toString("utf8");
-      const hash = createHash("sha256").update(bytes).digest("hex");
-      const facts =
-        target.language === "typescript"
-          ? typescriptReference(text, path)
-          : target.language === "python"
-            ? await pythonReference(text)
-            : rustReference(text);
+    for (const { path, text, hash } of sources) {
+      let facts: string;
+      if (target.language === "typescript") facts = typescriptReference(text, path);
+      else if (target.language === "python") {
+        // oxlint-disable-next-line no-await-in-loop -- one Python interpreter per file, kept sequential to bound concurrent processes
+        facts = await pythonReference(text);
+      } else facts = rustReference(text);
       sections.push(`## Source: ${path}\n\nSHA-256: \`${hash}\`\n\n${facts}`);
     }
     const scope =

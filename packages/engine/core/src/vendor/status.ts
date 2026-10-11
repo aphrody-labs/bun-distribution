@@ -40,6 +40,10 @@ export async function resolveGitDir(worktree: string): Promise<string> {
   return resolve(worktree, pointer);
 }
 
+/** Git object id (SHA-1 or SHA-256), lower-cased; undefined for any other text. */
+const oid = (text: string): string | undefined =>
+  /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/i.test(text) ? text.toLowerCase() : undefined;
+
 /** Resolve full HEAD through loose/packed refs and the common directory of a linked worktree. */
 export async function readGitHead(worktree: string): Promise<string | undefined> {
   const gitDir = await resolveGitDir(worktree);
@@ -47,8 +51,6 @@ export async function readGitHead(worktree: string): Promise<string | undefined>
   const commonDir = (await commonFile.exists())
     ? resolve(gitDir, (await commonFile.text()).trim())
     : gitDir;
-  const oid = (text: string): string | undefined =>
-    /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/i.test(text) ? text.toLowerCase() : undefined;
   const resolveRef = async (value: string, depth: number): Promise<string | undefined> => {
     const direct = oid(value);
     if (direct) return direct;
@@ -60,14 +62,24 @@ export async function readGitHead(worktree: string): Promise<string | undefined>
       ref.split("/").some((part) => !part || part === "." || part === "..")
     )
       return undefined;
-    for (const dir of new Set([gitDir, commonDir])) {
-      const loose = Bun.file(join(dir, ref));
-      if (await loose.exists()) return resolveRef((await loose.text()).trim(), depth + 1);
-    }
-    for (const dir of new Set([commonDir, gitDir])) {
-      const packed = Bun.file(join(dir, "packed-refs"));
-      if (!(await packed.exists())) continue;
-      for (const line of (await packed.text()).split("\n")) {
+    // Candidate locations are read concurrently, then consulted in precedence order (gitDir, then commonDir).
+    const looseTexts = await Promise.all(
+      [...new Set([gitDir, commonDir])].map(async (dir) => {
+        const loose = Bun.file(join(dir, ref));
+        return (await loose.exists()) ? loose.text() : undefined;
+      }),
+    );
+    const looseText = looseTexts.find((text) => text !== undefined);
+    if (looseText !== undefined) return resolveRef(looseText.trim(), depth + 1);
+    const packedTexts = await Promise.all(
+      [...new Set([commonDir, gitDir])].map(async (dir) => {
+        const packed = Bun.file(join(dir, "packed-refs"));
+        return (await packed.exists()) ? packed.text() : undefined;
+      }),
+    );
+    for (const packedText of packedTexts) {
+      if (packedText === undefined) continue;
+      for (const line of packedText.split("\n")) {
         const split = line.trim().split(/\s+/);
         if (split[1] === ref && split[0]) return oid(split[0]);
       }
@@ -122,40 +134,35 @@ export async function inspectPackages(vendorDir?: string): Promise<readonly Subm
           .map((entry) => entry.name)
           .toSorted()
       : [];
-  const results: SubmoduleStatus[] = [];
+  // Each package is independent local I/O; results keep the catalog order of Promise.all.
+  return Promise.all(
+    pkgs.map(async (name): Promise<SubmoduleStatus> => {
+      const pkgPath = resolve(vDir, name);
+      if (!existsSync(pkgPath)) return { name, path: pkgPath, exists: false };
 
-  for (const name of pkgs) {
-    const pkgPath = resolve(vDir, name);
-    const exists = existsSync(pkgPath);
-    if (!exists) {
-      results.push({ name, path: pkgPath, exists: false });
-      continue;
-    }
+      let headCommit: string | undefined;
+      try {
+        headCommit = await readGitHead(pkgPath);
+      } catch {
+        // Fallback if git dir is not reachable
+      }
 
-    let headCommit: string | undefined;
-    try {
-      headCommit = await readGitHead(pkgPath);
-    } catch {
-      // Fallback if git dir is not reachable
-    }
+      let filesCount: number | undefined;
+      try {
+        filesCount = countFiles(pkgPath, 250);
+      } catch {
+        // Ignore counting failure
+      }
 
-    let filesCount: number | undefined;
-    try {
-      filesCount = countFiles(pkgPath, 250);
-    } catch {
-      // Ignore counting failure
-    }
-
-    results.push({
-      name,
-      path: pkgPath,
-      exists: true,
-      headCommit,
-      filesCount,
-    });
-  }
-
-  return results;
+      return {
+        name,
+        path: pkgPath,
+        exists: true,
+        headCommit,
+        filesCount,
+      };
+    }),
+  );
 }
 
 /** Compares `vendor.lock` with the current HEAD of each vendored submodule. */

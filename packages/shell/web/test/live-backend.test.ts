@@ -29,6 +29,7 @@ test.skipIf(!ready)(
       term.type("echo live-$((20+22))\r");
       let text = "";
       for (let i = 0; i < 40 && !text.includes("live-42\n"); i++) {
+        // oxlint-disable-next-line no-await-in-loop -- poll loop: waits for the live output to appear, bounded by the retry count
         await Bun.sleep(100);
         text = term.snapshot().lines.join("\n") + "\n";
       }
@@ -42,6 +43,7 @@ test.skipIf(!ready)(
       sandboxTerm.type("echo sandbox-42\r");
       let sandboxText = "";
       for (let i = 0; i < 40 && !sandboxText.includes("sandbox-42\n"); i++) {
+        // oxlint-disable-next-line no-await-in-loop -- poll loop: waits for the sandbox output to appear, bounded by the retry count
         await Bun.sleep(100);
         sandboxText = sandboxTerm.snapshot().lines.join("\n") + "\n";
       }
@@ -74,6 +76,7 @@ test.skipIf(!ready)(
         i < 40 && !(resumedText.includes("/tmp") && resumedText.includes("queued-42"));
         i++
       ) {
+        // oxlint-disable-next-line no-await-in-loop -- poll loop: waits for the expected state, bounded by the retry count
         await Bun.sleep(100);
         resumedText = resumedTerm.snapshot().lines.join("\n");
       }

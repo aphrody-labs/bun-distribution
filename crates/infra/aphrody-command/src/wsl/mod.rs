@@ -4,6 +4,7 @@
 pub mod cli;
 mod recipes;
 mod runner;
+pub mod wslg;
 pub use cli::cli_main;
 
 pub use recipes::{Step, Target, plan};

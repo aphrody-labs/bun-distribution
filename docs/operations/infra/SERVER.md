@@ -10,7 +10,7 @@ by running the commands directly. Decision: D26 in [DECISIONS.md](../../decision
 ```sh
 yolo host audit    --host vps [--json]                  # read-only: inventory, findings, prioritized plan
 yolo host reclaim  --host vps [--apply]
-yolo host archive  /srv/old /srv/other --to /mnt/backup/arc [--pull ./arc] [--pg-dump DB --pg-user postgres] [--remove-source] [--apply]
+yolo host archive  /home/ubuntu/apps/old /home/ubuntu/apps/other --to /mnt/backup/arc [--pull ./arc] [--pg-dump DB --pg-user postgres] [--remove-source] [--apply]
 yolo host services --host vps [--stop UNIT] [--disable] [--apply]
 yolo host tune     --host vps [--apply]
 yolo host net      --host vps [--size 50000000] [--apply]
@@ -44,7 +44,7 @@ just host audit --host vps                              # same thing through the
 1. Nothing is deleted unless it is regenerable (apt cache, rotated logs, journal, stopped containers and
    dangling images, docker build cache, build output found with its project marker, listed cache
    directories, an unused swap file) or archived **and** verified.
-2. Protected paths (`/`, `/home`, `/etc`, `/boot`, `/var/lib`, `/srv/*/shared`, database and container
+2. Protected paths (`/`, `/home`, `/etc`, `/boot`, `/var/lib`, `/home/ubuntu/apps/*/shared`, database and container
    state, other users' directories, the build factory cache and artifact roots) are never reached by a
    reclaim rule. They can only shrink through `archive` + verification. Even then `--remove-source` refuses
    `/`, system directories, `/etc`, `/usr`, the home directory, `~/.ssh`, `/etc/ssh`, mount points, and
@@ -66,7 +66,7 @@ just host audit --host vps                              # same thing through the
 8. Mounts are read-only (`ro,nosuid,nodev,noexec`, plus `noload`/`norecovery` so no journal is replayed)
    unless `--rw` **and** `--i-know-this-is-a-backup` are given; a disk without a filesystem is refused
    (never formatted); whole disks, system disks, volume layers (LUKS, LVM, RAID) and mount points outside
-   `/mnt`, `/media`, `/srv/mnt` are refused. fstab entries always carry `nofail` and `/etc/fstab` is copied
+   `/mnt`, `/media`, `/home/ubuntu/apps/mnt` are refused. fstab entries always carry `nofail` and `/etc/fstab` is copied
    first.
 9. Every apply is idempotent: archives of the same name are reused and re-verified, `rm` of a missing path
    succeeds, the sysctl drop-in is only replaced when its content changes, an active swap file is never

@@ -106,10 +106,14 @@ async function collect(paths: string[], recursive: boolean): Promise<string[]> {
     for (const entry of await readdir(path, { withFileTypes: true })) {
       if (entry.isSymbolicLink() || entry.name === "compressed") continue;
       if (entry.isDirectory() && !recursive) continue;
+      // oxlint-disable-next-line no-await-in-loop -- parcours récursif séquentiel : l'ordre de la liste de fichiers doit rester déterministe
       await visit(join(path, entry.name), false);
     }
   }
-  for (const path of paths) await visit(resolve(path), true);
+  for (const path of paths) {
+    // oxlint-disable-next-line no-await-in-loop -- racines parcourues dans l'ordre fourni pour une liste de fichiers déterministe
+    await visit(resolve(path), true);
+  }
   return out;
 }
 
@@ -215,6 +219,7 @@ export async function run(argv: string[]): Promise<number> {
   await Promise.all(
     Array.from({ length: Math.min(4, queue.length) }, async () => {
       for (let file = queue.shift(); file; file = queue.shift()) {
+        // oxlint-disable-next-line no-await-in-loop -- file de travail à concurrence bornée (4) : chaque worker traite ses fichiers séquentiellement
         const outcome = await compressFile(file, options, place, inPlace);
         results.push(outcome);
         const pct = outcome.before ? Math.round((1 - outcome.after / outcome.before) * 100) : 0;

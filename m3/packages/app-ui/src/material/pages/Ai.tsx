@@ -131,6 +131,7 @@ export default function Ai({ adaptive, host = "bun" }: PageProps) {
                 <ToolCall key={item.pair.id} pair={item.pair} defaultExpanded />
               ) : (
                 <MessageBubble
+                  // oxlint-disable-next-line react/no-array-index-key -- transcript texte en ajout seul : les items n'ont pas d'id et ne sont jamais réordonnés
                   key={index}
                   content={item.text}
                   isUser={false}
@@ -159,9 +160,9 @@ export default function Ai({ adaptive, host = "bun" }: PageProps) {
             onStop={stop}
             placeholder="Draft for the local protocol fixture"
           />
-          <p role="status" className="text-body-medium text-on-surface-variant">
+          <output className="block text-body-medium text-on-surface-variant">
             {notice || (running ? "Receiving AG-UI events…" : "Ready")}
-          </p>
+          </output>
           <Button
             variant="outlined"
             onClick={() => {

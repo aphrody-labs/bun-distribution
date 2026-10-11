@@ -20,10 +20,10 @@ per-service contracts; for example, the Discord development env is
 
 | Plane | Root | Contents | Adapter (installed name) | 2026-10-02 declared status |
 | --- | --- | --- | --- |
-| Aphrody | `/srv/aphrody` | historical five services from `aphrody-web` and `aphrody-ai` | historical adapter (`aphrody-infra-deploy-aphrody`) | retired |
-| Shenron | `/srv/shenron` | `shenron-site` and `shenron-bot` | `scripts/release/atomic-deploy-shenron.sh` (`aphrody-infra-deploy-shenron`) | active in catalog |
-| RG | `/srv/rg` | RG applications assembled on VPS | `scripts/release/atomic-deploy-rg.sh` (`aphrody-infra-deploy-rg`) | active in catalog |
-| Aphrody Discord dev | `/srv/aphrody-discord` | Bun bundle from pinned `aphrody-discord` commit | `scripts/build/build-aphrody-discord-release.sh` + `scripts/release/atomic-deploy-aphrody-discord.sh` | active in catalog; development service |
+| Aphrody | `/home/ubuntu/apps/aphrody` | historical five services from `aphrody-web` and `aphrody-ai` | historical adapter (`aphrody-infra-deploy-aphrody`) | retired |
+| Shenron | `/home/ubuntu/apps/shenron` | `shenron-site` and `shenron-bot` | `scripts/release/atomic-deploy-shenron.sh` (`aphrody-infra-deploy-shenron`) | active in catalog |
+| RG | `/home/ubuntu/apps/rg` | RG applications assembled on VPS | `scripts/release/atomic-deploy-rg.sh` (`aphrody-infra-deploy-rg`) | active in catalog |
+| Aphrody Discord dev | `/home/ubuntu/apps/discord` | Bun bundle from pinned `aphrody-discord` commit | `scripts/build/build-aphrody-discord-release.sh` + `scripts/release/atomic-deploy-aphrody-discord.sh` | active in catalog; development service |
 
 ### VPS observation (2026-10-02, read-only)
 
@@ -36,10 +36,10 @@ listing included Aphrody Discord development; RG (`rg-achillea-bot`, API, bot,
 cron and website); Shenron (bot, site and PostgreSQL tunnel); PostgreSQL 18;
 and nginx, SSH, Docker and Redis.
 
-The release links observed were `/srv/rg/current` →
-`/srv/rg/releases/5691ba4be97b94279878e00d264793c1b28f8cf1` and
-`/srv/shenron/current` → `/srv/shenron/releases/4cac743f`. The paths
-`/srv/aphrody/current` and `/srv/aphrody-infra/current` were absent. These
+The release links observed were `/home/ubuntu/apps/rg/current` →
+`/home/ubuntu/apps/rg/releases/5691ba4be97b94279878e00d264793c1b28f8cf1` and
+`/home/ubuntu/apps/shenron/current` → `/home/ubuntu/apps/shenron/releases/4cac743f`. The paths
+`/home/ubuntu/apps/aphrody/current` and `/home/ubuntu/apps/infra/current` were absent. These
 observations establish systemd/SSH and filesystem state only. No application
 health, database integrity, public endpoint, release checksum or rollback
 validation is claimed here. Do not infer from the design table or the
@@ -148,12 +148,12 @@ are met.
 The agent console served by `aphrody` is `aphrody-ui`'s tracked
 `crates/ui/app/ui-dist`, embedded at compile time by
 `aphrody-app-server`; a build that falls back to its placeholder page fails.
-Nginx serves `/ai.json` byte-for-byte from `/srv/aphrody/current/ai.json` and
+Nginx serves `/ai.json` byte-for-byte from `/home/ubuntu/apps/aphrody/current/ai.json` and
 routes the apex (`tools/config/host/nginx/aphrody/aphrody-apex.conf`: `aphrody.com`,
 `www.aphrody.com`, `mcp.aphrody.com`) to the loopback services.
 
 Persistent state stays outside releases: Web SQLite, crawler queue and cookies
-in `/srv/aphrody/shared/bxc` (`BXC_DB_PATH`, `BXC_STORAGE_DIR`,
+in `/home/ubuntu/apps/aphrody/shared/bxc` (`BXC_DB_PATH`, `BXC_STORAGE_DIR`,
 `BXC_COOKIES_DIR`, owner `ubuntu`), the A2A VFS in `shared/a2a` (links to the
 active `ai.json` and to the `shared/coord` mailbox), AI state in `shared/ai`
 (owner `aphrody`, `APHRODY_HOME`), the Gemini Web session
@@ -170,7 +170,7 @@ service never downloads). Web rankings/SEO live in PostgreSQL `aphrody_web`
 | --- | --- |
 | `aphrody-site.next.env` → `aphrody-site.env` | `APHRODY_WEB_DATABASE_URL`, `APHRODY_SITE_DATABASE_URL` (equal alias), `APHRODY_SITE_WEB_API_TOKEN`, `APHRODY_BXC_API_TOKEN` (equal alias), `APHRODY_SITE_WEB_BACKEND_TOKEN` |
 | `aphrody-web-api.next.env` → `aphrody-web-api.env` | `BXC_API_TOKEN` (= site backend token), `APHRODY_WEB_DATABASE_URL` (= site DSN) |
-| `aphrody-ai-http.env` | `APHRODY_MCP_DATABASE_URL`, `APHRODY_SHENRON_API_TOKEN` (server-side name), `APHRODY_AI_EMBED_MODEL=Xenova/multilingual-e5-small`, `APHRODY_AI_EMBED_BASE_URL=http://127.0.0.1:8794/v1`, `APHRODY_SHENRON_LLM_PROVIDER=gemini-web`, `APHRODY_SHENRON_GEMINI_COOKIE_FILE=/srv/aphrody/shared/ai/google-cookies.json` |
+| `aphrody-ai-http.env` | `APHRODY_MCP_DATABASE_URL`, `APHRODY_SHENRON_API_TOKEN` (server-side name), `APHRODY_AI_EMBED_MODEL=Xenova/multilingual-e5-small`, `APHRODY_AI_EMBED_BASE_URL=http://127.0.0.1:8794/v1`, `APHRODY_SHENRON_LLM_PROVIDER=gemini-web`, `APHRODY_SHENRON_GEMINI_COOKIE_FILE=/home/ubuntu/apps/aphrody/shared/ai/google-cookies.json` |
 | `aphrody-a2a.env` | optional |
 | `shenron-compute-client.env` | `APHRODY_AI_HTTP_URL`, `APHRODY_AI_HTTP_TOKEN` (+ legacy `APHRODY_SHENRON_API_URL`/`_TOKEN`), read by `shenron-site`/`shenron-bot` |
 
@@ -181,7 +181,7 @@ different values. The key list is mirrored in `tools/config/secrets-contract.jso
 
 ### Activation checks
 
-`atomic-deploy-aphrody-stack.sh /srv/aphrody/releases/ID` verifies
+`atomic-deploy-aphrody-stack.sh /home/ubuntu/apps/aphrody/releases/ID` verifies
 `SHA256SUMS` and the smoke attestation `SMOKE.json` (schema
 `aphrody-stack-smoke/v1`, status `ok`, same `RELEASE_ID`, SHA-256 of the
 release's `SHA256SUMS`, the five services, at least one `dragonball.*` tool),
@@ -253,7 +253,7 @@ NIE and IECode ship no VPS release. The bundle contains no secret.
    readability against the intended database only after its approved restore
    source and target have been established (prerequisite 2).
 2. **Database source.** The old restore dumps and
-   `/srv/aphrody/shared/db-backups/restore` referenced by earlier revisions of
+   `/home/ubuntu/apps/aphrody/shared/db-backups/restore` referenced by earlier revisions of
    this runbook were removed during the 2026-10-01 database deduplication; the
    Aphrody databases were retired. See
    [`db-dedup-2026-10-01.md`](../workspace/HISTORY.md). The 2026-10-02 VPS
@@ -288,11 +288,11 @@ NIE and IECode ship no VPS release. The bundle contains no secret.
    Aphrody HTTP vhosts keep that challenge path at `/var/www/letsencrypt` so
    Certbot can renew without another Nginx change.
 5. **E5 weights.** After unpacking (step 3 below), as `aphrody`:
-   `sudo -u aphrody /srv/aphrody/releases/ID/bin/aphrody-embed install --model-dir /srv/aphrody/shared/models/e5-native`
+   `sudo -u aphrody /home/ubuntu/apps/aphrody/releases/ID/bin/aphrody-embed install --model-dir /home/ubuntu/apps/aphrody/shared/models/e5-native`
    (pinned manifest, SHA-256 verified), or copy the files verified by the local
    build from `~/aphrody-release/e5-native`.
 6. **Gemini Web cookie.** Place a valid session at
-   `/srv/aphrody/shared/ai/google-cookies.json`, `chown aphrody:aphrody`,
+   `/home/ubuntu/apps/aphrody/shared/ai/google-cookies.json`, `chown aphrody:aphrody`,
    `chmod 0600` (the offloaded copy under `srv/aphrody/shared/ai/` may have
    expired: refresh it before use). Never log it.
 7. **Adapters.** On the VPS, `git -C ~/aphrody-infra fetch && git
@@ -303,7 +303,7 @@ NIE and IECode ship no VPS release. The bundle contains no secret.
 8. **RG release.** `git -C ../rg fetch && git -C ../rg
    checkout --detach RG_SHA`, then as `ubuntu`
    `bash ~/scripts/rg/assemble-vps-release.sh RG_SHA`
-   (builds `/srv/rg/releases/RG_SHA`; retired catalog services are skipped).
+   (builds `/home/ubuntu/apps/rg/releases/RG_SHA`; retired catalog services are skipped).
 
 ### Ordered commands (historical; do not execute without reactivation gates)
 
@@ -312,10 +312,10 @@ NIE and IECode ship no VPS release. The bundle contains no secret.
 scp ~/aphrody-release/bundles/ID.tar.gz{,.sha256} vps:/tmp/
 # VPS
 cd /tmp && sha256sum -c ID.tar.gz.sha256
-sudo install -d -m 0755 /srv/aphrody-infra/bundles
-sudo tar -C /srv/aphrody-infra/bundles -xzf ID.tar.gz
-(cd /srv/aphrody-infra/bundles/ID && sha256sum --quiet -c SHA256SUMS)
-B=/srv/aphrody-infra/bundles/ID/aphrody/ops
+sudo install -d -m 0755 /home/ubuntu/apps/infra/bundles
+sudo tar -C /home/ubuntu/apps/infra/bundles -xzf ID.tar.gz
+(cd /home/ubuntu/apps/infra/bundles/ID && sha256sum --quiet -c SHA256SUMS)
+B=/home/ubuntu/apps/infra/bundles/ID/aphrody/ops
 sudo env PGOPTIONS=-cdefault_transaction_read_only=off $B/provision-aphrody-stack-env.sh --fresh-host
 # Set these to the checksummed, approved restore files from prerequisite 2.
 VERIFIED_APHRODY_DUMP=/approved/private/path/aphrody.dump
@@ -324,21 +324,21 @@ PGOPTIONS=-cdefault_transaction_read_only=off $B/copy-aphrody-web-tables.sh --fr
   "$VERIFIED_APHRODY_DUMP" "$VERIFIED_APHRODY_WEB_DUMP"
 # prerequisites 4-8 (TLS, E5, cookie, adapters, RG release)
 # Windows or WSL, from the pinned aphrody-infra checkout:
-scripts/build/rust/cargo-serial.sh run -p aphrody-infra -- deploy --target vps --stack bundle --release /srv/aphrody-infra/bundles/ID
-scripts/build/rust/cargo-serial.sh run -p aphrody-infra -- deploy --target vps --stack bundle --release /srv/aphrody-infra/bundles/ID --apply
+scripts/build/rust/cargo-serial.sh run -p aphrody-infra -- deploy --target vps --stack bundle --release /home/ubuntu/apps/infra/bundles/ID
+scripts/build/rust/cargo-serial.sh run -p aphrody-infra -- deploy --target vps --stack bundle --release /home/ubuntu/apps/infra/bundles/ID --apply
 ```
 
 The bundle adapter verifies the bundle, compares `ADAPTER.json` with the
-pinned infra commit, copies `aphrody/` to `/srv/aphrody/releases/ID`,
-assembles `/srv/shenron/releases/SHENRON_SHA` (`git archive` + site artifact +
+pinned infra commit, copies `aphrody/` to `/home/ubuntu/apps/aphrody/releases/ID`,
+assembles `/home/ubuntu/apps/shenron/releases/SHENRON_SHA` (`git archive` + site artifact +
 `bun install --frozen-lockfile`, shared links, tracked seed), requires
-`/srv/rg/releases/RG_SHA`, records the current targets in
-`/srv/aphrody-infra/state/ID/BUNDLE.previous.json`, then runs the three
+`/home/ubuntu/apps/rg/releases/RG_SHA`, records the current targets in
+`/home/ubuntu/apps/infra/state/ID/BUNDLE.previous.json`, then runs the three
 adapters in order (a stack already on its pinned release is left untouched).
 If a step fails, its adapter restores that stack and the bundle adapter
 restores the completed steps newest first from their activation backups; the
 state directory is renamed `…failed-<stamp>` and nothing is recorded as
-active. On success `/srv/aphrody-infra/BUNDLE.json` (with `activatedAt`) and
+active. On success `/home/ubuntu/apps/infra/BUNDLE.json` (with `activatedAt`) and
 `BUNDLE.previous.json` describe the active and previous states;
 `sudo aphrody-infra-deploy-bundle --rollback` restores the previous state.
 
@@ -360,7 +360,7 @@ keeps a private checksummed dump; `prepare-aphrody-data-contract.sh` stages the
 canonical Web DSN on an already-provisioned host. No script drops a table or a
 database.
 
-After activation, `sudo /srv/aphrody/current/ops/aphrody-rag-web-ingest.sh URL`
+After activation, `sudo /home/ubuntu/apps/aphrody/current/ops/aphrody-rag-web-ingest.sh URL`
 ingests one approved page into the AI PostgreSQL corpus through the loopback
 Web API (credentials read from the two `0600` env files, CLI run as
 `aphrody`). It is not a crawler.

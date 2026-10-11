@@ -82,7 +82,7 @@ export function getImageProps(props: ImageProps): { props: ImgHTMLAttributes<HTM
 
 export const Image = forwardRef<HTMLImageElement, ImageProps>(function Image(props, ref) {
   const { props: imgProps } = getImageProps(props);
-  return <img ref={ref} {...imgProps} />;
+  return <img ref={ref} alt={imgProps.alt} {...imgProps} />;
 });
 
 export default Image;
