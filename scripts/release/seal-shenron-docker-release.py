@@ -55,7 +55,7 @@ def main():
             continue
         # Only declared public configuration/static content may be sealed.
         if relative not in ("compose.yaml", "deploy.env") and not relative.startswith(
-            ("nginx/", "public/")
+            ("nginx/", "public/", "cdn/_next/static/")
         ):
             parser.error(
                 "unexpected release file; protected stores remain outside releases"
