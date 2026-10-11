@@ -109,15 +109,54 @@ export function localHostCommand(
   return ["timeout", String(deadline), "bash", "-c", script];
 }
 
+/** Conservative UTF-16 bound including Windows quoting, escaping and the terminating NUL. */
+export function windowsCommandBound(command: readonly string[]): number {
+  return 1 + command.reduce((length, argument) => length + argument.length * 2 + 3, 0);
+}
+
+/** Compress only the declared SSH script; arguments never pass through a local shell. */
+export function prepareInfraCommand(
+  command: readonly string[],
+  platform: string = process.platform,
+): string[] {
+  if (command.some((argument) => argument.includes("\0")))
+    throw new Error("Infra arguments cannot contain NUL");
+  const prepared = [...command];
+  if (platform !== "win32" || windowsCommandBound(prepared) < 30000) return prepared;
+  const offset = prepared.length - 6;
+  if (
+    offset < 1 ||
+    prepared[offset] !== "ssh" ||
+    prepared[offset + 1] !== "exec" ||
+    prepared[offset + 2] !== "--host" ||
+    prepared[offset + 4] !== "--cmd"
+  )
+    throw new Error("Infra invocation exceeds the Windows command-line budget");
+  const encoded = Buffer.from(Bun.gzipSync(Buffer.from(prepared[offset + 5]!, "utf8"))).toString(
+    "base64",
+  );
+  // A sentinel preserves trailing newlines removed by command substitution. pipefail
+  // refuses decoder errors; exec preserves the original bash command's exit status.
+  const script = `set -o pipefail; payload=$(printf '%s' '${encoded}' | base64 --decode | gzip --decompress && printf '.') || exit 125; exec bash -c "\${payload%.}"`;
+  prepared[offset + 5] = `bash -c ${"'" + script.replaceAll("'", "'\\''") + "'"}`;
+  if (windowsCommandBound(prepared) >= 30000)
+    throw new Error(
+      "Compressed Infra invocation still exceeds the Windows command-line budget; nothing dispatched",
+    );
+  return prepared;
+}
+
 export async function runInfra(invocation: InfraInvocation): Promise<InfraResult> {
   const root = infraRoot();
   const environment = { ...process.env, ...invocation.env };
-  const command = localHostCommand(invocation.args, environment) ?? [
-    ...(await infraExecutable(root, environment)),
-    "--root",
-    root,
-    ...invocation.args,
-  ];
+  const command = prepareInfraCommand(
+    localHostCommand(invocation.args, environment) ?? [
+      ...(await infraExecutable(root, environment)),
+      "--root",
+      root,
+      ...invocation.args,
+    ],
+  );
   const child = Bun.spawn(command, {
     windowsHide: true,
     cwd: invocation.cwd ?? root,
