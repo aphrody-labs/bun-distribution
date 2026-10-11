@@ -311,6 +311,7 @@ test("release verifies uploaded bytes, installs the declared unit, and preserves
       (command) => command.includes("queue.sqlite") && !command.includes("readonly:true"),
     ),
   ).toBe(false);
+  expect(f.commands.some((command) => command.includes("sudo -n -u 'ubuntu' touch"))).toBe(true);
 });
 
 test("activation failure restores previous product files and the previous unit", async () => {
