@@ -32,6 +32,7 @@ async function noSymlinks(path: string): Promise<void> {
   let cursor = absolute;
   for (;;) {
     try {
+      // oxlint-disable-next-line no-await-in-loop -- remontée séquentielle de l'arborescence : chaque parent dépend du précédent
       if ((await lstat(cursor)).isSymbolicLink()) throw new Error(`Symlink refused: ${cursor}`);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
@@ -118,6 +119,7 @@ async function filesUnder(directory: string, base = directory): Promise<string[]
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name);
     if (entry.isSymbolicLink()) throw new Error(`Symlink refused: ${path}`);
+    // oxlint-disable-next-line no-await-in-loop -- parcours récursif séquentiel : l'ordre des chemins et le premier refus de symlink sont déterministes
     if (entry.isDirectory()) paths.push(...(await filesUnder(path, base)));
     else if (entry.isFile()) paths.push(relative(base, path).split(sep).join("/"));
     else throw new Error(`Unsupported output entry: ${path}`);
@@ -147,9 +149,12 @@ export async function exportDocumentationSite(
       throw new Error(`Duplicate documentation path: ${document.path}`);
     allowed.add(document.path);
     const source = join(root, document.path);
+    // oxlint-disable-next-line no-await-in-loop -- documents validés dans l'ordre : la première erreur signalée doit être celle du premier document fautif
     await noSymlinks(source);
+    // oxlint-disable-next-line no-await-in-loop -- même validation séquentielle que ci-dessus
     if (!(await lstat(source)).isFile())
       throw new Error(`Not a documentation file: ${document.path}`);
+    // oxlint-disable-next-line no-await-in-loop -- même validation séquentielle que ci-dessus
     const bytes = await readFile(source);
     if (createHash("sha256").update(bytes).digest("hex") !== document.sha256)
       throw new Error(`SHA mismatch: ${document.path}`);
@@ -196,8 +201,10 @@ export async function exportDocumentationSite(
       )
       .join(" ");
   for (const { document, text } of loaded) {
+    // oxlint-disable-next-line no-await-in-loop -- écritures séquentielles dans le dossier de sortie : ordre déterministe des pages
     await write(document.path, text);
     const markdown = `<p><a href="${escape(url(relative(dirname(htmlPath(document.path)), document.path)))}">Canonical Markdown</a></p>`;
+    // oxlint-disable-next-line no-await-in-loop -- écritures séquentielles dans le dossier de sortie : ordre déterministe des pages
     await write(
       htmlPath(document.path),
       shell(

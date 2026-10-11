@@ -455,7 +455,7 @@ test("new session invalidates a pending history read without restoring stale mes
   backend((method) => (method === "thread/read" ? read.promise : defaultRpc(method)));
   await mount(route());
   await act(async () => useChatStore.getState().setActiveThreadId("fixture-stale-thread"));
-  expect(host.querySelector('[role="status"]')?.textContent).toContain("Chargement du chat");
+  expect(host.querySelector('output')?.textContent).toContain("Chargement du chat");
   expect(host.querySelector('[aria-label="Arrêter la génération"]')).toBeNull();
   await click("Nouveau chat");
   await act(async () =>

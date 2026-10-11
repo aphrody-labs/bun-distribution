@@ -350,7 +350,7 @@ async function flushPending(
   const snapshot = await ctx.state.read();
   const waiting = Object.entries(snapshot.pending[tournament.id] ?? {})
     .map(([userId, p]) => ({ userId, name: p.name, at: p.at ?? 0 }))
-    .sort((a, b) => a.at - b.at);
+    .toSorted((a, b) => a.at - b.at);
   if (!waiting.length) return 0;
   const ordered = shuffleSeeds ? shuffle(waiting, ctx.random) : waiting;
   const entries: (SeedEntry & { userId: string })[] = ordered.map((w, index) => {
@@ -365,6 +365,7 @@ async function flushPending(
   let unresolved: { userId: string; name: string }[] = [];
   let sent = 0;
   for (const batch of chunk(entries, BULK_LIMIT)) {
+    // oxlint-disable-next-line no-await-in-loop -- batches run in order: each state update must land before the next bulk request (Challonge rate limits)
     const created = await ctx.challonge.bulkAddParticipants(
       tournament.id,
       batch.map((e) => ({
@@ -381,6 +382,7 @@ async function flushPending(
       if (hit) mapped[entry.userId] = { participantId: String(hit.id), name: entry.name };
       else unresolved.push({ userId: entry.userId, name: entry.name });
     }
+    // oxlint-disable-next-line no-await-in-loop -- batches run in order: each state update must land before the next bulk request (Challonge rate limits)
     await ctx.state.update((state) => {
       for (const entry of batch) {
         delete state.pending[tournament.id]?.[entry.userId];

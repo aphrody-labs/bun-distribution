@@ -300,7 +300,7 @@ function findPath(graph: Graph, source: string, destination: string): string[] {
     nodes.push(u);
     u = predecessors[u];
   }
-  return nodes.reverse();
+  return nodes.toReversed();
 }
 
 function mergeSegments(segments: RawSegment[]): RawSegment[] {
@@ -439,7 +439,7 @@ function alignmentCoords(version: number): number[] {
   const positions = [size - 7];
   for (let i = 1; i < count - 1; i++) positions[i] = positions[i - 1]! - interval;
   positions.push(6);
-  return positions.reverse();
+  return positions.toReversed();
 }
 
 function setupAlignment(matrix: BitMatrix, version: number) {

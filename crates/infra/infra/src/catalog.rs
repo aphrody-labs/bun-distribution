@@ -181,7 +181,7 @@ pub fn load_service_catalog(root: &Path) -> Result<ServiceCatalog> {
     serde_json::from_str(&content).with_context(|| format!("désérialisation de {}", path.display()))
 }
 
-/// The cross-host matrix is owned by yolo (`$YOLO_ROOT/tools/config/host/inventory/targets.json`).
+/// The cross-host matrix lives in `$APHRODY_ROOT/tools/config/host/inventory/targets.json`.
 pub fn load_target_matrix() -> Result<TargetMatrix> {
     let path = crate::validate::host_config_root().join("inventory/targets.json");
     let content =

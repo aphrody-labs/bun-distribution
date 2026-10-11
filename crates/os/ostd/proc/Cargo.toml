@@ -18,6 +18,10 @@ serde      = { workspace = true }
 serde_json = { workspace = true }
 thiserror  = { workspace = true }
 tracing    = { workspace = true }
+
+# The `tokio` feature adds `NoWindow` for `tokio::process::Command`: host-only (wasm32 has no
+# process and the workspace tokio pulls mio).
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio      = { workspace = true, optional = true }
 
 [target.'cfg(unix)'.dependencies]

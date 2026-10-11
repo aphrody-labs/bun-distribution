@@ -104,8 +104,10 @@ test.skipIf(!ready)(
     try {
       let wsUrl = "";
       for (let i = 0; i < 50 && !wsUrl; i++) {
+        // oxlint-disable-next-line no-await-in-loop -- sondage voulu : attendre le démarrage de Chrome, tentative après tentative.
         await Bun.sleep(200);
         try {
+          // oxlint-disable-next-line no-await-in-loop -- sondage voulu : chaque tentative dépend du démarrage de Chrome.
           const tabs = (await (await fetch(`http://127.0.0.1:${cdpPort}/json`)).json()) as {
             type: string;
             webSocketDebuggerUrl: string;
@@ -118,14 +120,14 @@ test.skipIf(!ready)(
       expect(wsUrl).not.toBe("");
       const cdp = new WebSocket(wsUrl);
       await new Promise<void>((resolve) => {
-        cdp.onopen = () => resolve();
+        cdp.addEventListener("open", () => resolve());
       });
       let id = 0;
       const pending = new Map<number, (message: any) => void>();
-      cdp.onmessage = (event) => {
+      cdp.addEventListener("message", (event) => {
         const message = JSON.parse(String(event.data));
         pending.get(message.id)?.(message);
-      };
+      });
       const evaluate = (expression: string) =>
         new Promise<string>((resolve) => {
           const next = ++id;
@@ -137,7 +139,9 @@ test.skipIf(!ready)(
       await evaluate(`location.href = "http://127.0.0.1:${http.port}/"`);
       let title = "";
       for (let i = 0; i < 100 && title !== "done" && title !== "error"; i++) {
+        // oxlint-disable-next-line no-await-in-loop -- sondage voulu : attendre que la page signale son état dans document.title.
         await Bun.sleep(250);
+        // oxlint-disable-next-line no-await-in-loop -- sondage voulu : chaque lecture de title suit le délai ci-dessus.
         title = await evaluate("document.title");
       }
       const result = await evaluate("document.body.innerText");

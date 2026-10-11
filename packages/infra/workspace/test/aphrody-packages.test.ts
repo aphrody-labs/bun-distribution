@@ -14,11 +14,57 @@ import {
   exportTargets,
   portableArchive,
   publishOrder,
+  publishAphrodyPackages,
   staleArchives,
   type AphrodyPackagesManifest,
 } from "../src/aphrody-packages.ts";
 
 const root = join(import.meta.dir, "../../../..");
+
+test("reserved registry timestamps do not imply approval or allow dependent publication", async () => {
+  const fixture = await mkdtemp(join(tmpdir(), "aphrody-registry-visibility-"));
+  const server = Bun.serve({
+    port: 0,
+    hostname: "127.0.0.1",
+    fetch: () => Response.json({ versions: {}, time: { "1.0.0": "2026-10-10T00:00:00Z" } }),
+  });
+  try {
+    await writeFile(join(fixture, "package.json"), JSON.stringify({ workspaces: ["packages/*"] }));
+    await Promise.all(
+      ["base", "consumer"].map(async (name) => {
+        const directory = join(fixture, "packages", name);
+        await mkdir(directory, { recursive: true });
+        await writeFile(join(directory, "index.js"), "export const ok = true;\n");
+        await writeFile(
+          join(directory, "package.json"),
+          JSON.stringify({
+            name: `@aphrody/${name}`,
+            version: "1.0.0",
+            exports: "./index.js",
+            ...(name === "consumer" ? { dependencies: { "@aphrody/base": "1.0.0" } } : {}),
+          }),
+        );
+      }),
+    );
+    for (const args of [
+      ["init", "--quiet"],
+      ["add", "package.json", "packages"],
+    ]) {
+      const initialized = Bun.spawnSync(["git", ...args], { cwd: fixture, windowsHide: true });
+      if (initialized.exitCode !== 0) throw new Error("registry fixture Git initialization failed");
+    }
+    const results = await publishAphrodyPackages({ root: fixture, registry: server.url.origin });
+    expect(results.map(({ name, status }) => ({ name, status }))).toEqual([
+      { name: "@aphrody/base", status: "unverified" },
+      { name: "@aphrody/consumer", status: "blocked" },
+    ]);
+    expect(results[0]!.detail).not.toContain("approval");
+    expect(results[1]!.detail).toContain("@aphrody/base");
+  } finally {
+    server.stop(true);
+    await rm(fixture, { recursive: true, force: true });
+  }
+}, 30_000);
 
 test("export targets cover every condition, main and module, but not patterns", () => {
   expect(
@@ -74,7 +120,7 @@ test("archive names are content addressed and pins detect missing or changed arc
 });
 
 const read = (archive: Uint8Array) =>
-  JSON.parse(new TextDecoder().decode(readTar(Bun.gunzipSync(archive))[0]!.data));
+  JSON.parse(new TextDecoder().decode(readTar(Bun.gunzipSync(new Uint8Array(archive)))[0]!.data));
 
 test("portable archives replace producer-relative file: specs with the pinned version", () => {
   const encoder = new TextEncoder();
@@ -144,14 +190,15 @@ test("JSON imported from outside the package is embedded and its specifier rewri
   }
 });
 
+const entry = (name: string) => ({
+  name,
+  type: "file" as const,
+  mode: 0o644,
+  size: 0,
+  data: new Uint8Array(),
+});
+
 test("private or traversing entries are refused", () => {
-  const entry = (name: string) => ({
-    name,
-    type: "file" as const,
-    mode: 0o644,
-    size: 0,
-    data: new Uint8Array(),
-  });
   expect(() => assertPublicEntries([entry("package/src/index.ts")], "@aphrody/a")).not.toThrow();
   for (const name of [
     "package/.env",

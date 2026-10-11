@@ -79,10 +79,11 @@ export interface BunDocument {
 export async function loadBunDocuments(options?: ResolveBunDocsOptions): Promise<BunDocument[]> {
   const { dir } = await resolveBunDocs(options);
   return await Promise.all(
-    BUN_DOCUMENTS.map(async (document) => ({
-      ...document,
-      content: await Bun.file(join(dir, document.page)).text(),
-    })),
+    BUN_DOCUMENTS.map(async (document) =>
+      Object.assign({}, document, {
+        content: await Bun.file(join(dir, document.page)).text(),
+      }),
+    ),
   );
 }
 

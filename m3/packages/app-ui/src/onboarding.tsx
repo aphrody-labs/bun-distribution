@@ -33,7 +33,13 @@ const STEPS: Array<{ icon: string; title: string; body: string }> = [
 
 const MODELS_STEP = STEPS.length - 1;
 
-function ModelsFolder({ modelsDir, onModelsDir }: { modelsDir: string | null; onModelsDir: (dir: string | null) => void }) {
+function ModelsFolder({
+  modelsDir,
+  onModelsDir,
+}: {
+  modelsDir: string | null;
+  onModelsDir: (dir: string | null) => void;
+}) {
   const [root, setRoot] = useState<string | null>(null);
   const [error, setError] = useState("");
 
@@ -52,6 +58,7 @@ function ModelsFolder({ modelsDir, onModelsDir }: { modelsDir: string | null; on
     return () => {
       active = false;
     };
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- modelsDir est un déclencheur volontaire : chaque changement de dossier relance la lecture de la racine
   }, [modelsDir]);
 
   const choose = async () => {
@@ -97,7 +104,10 @@ export function Onboarding({
   const current = STEPS[step] ?? STEPS[0]!;
   const last = step === STEPS.length - 1;
   return (
-    <section aria-label="Welcome to Aphrody" className="flex flex-col gap-4 rounded-2xl bg-surface-container px-6 py-5">
+    <section
+      aria-label="Welcome to Aphrody"
+      className="flex flex-col gap-4 rounded-2xl bg-surface-container px-6 py-5"
+    >
       <div className="flex items-start gap-4">
         {step === 0 ? (
           <AphrodyAvatar size={48} />
@@ -120,10 +130,15 @@ export function Onboarding({
       <div className="flex items-center gap-2">
         <div className="flex flex-1 gap-1" aria-label={`Step ${step + 1} of ${STEPS.length}`}>
           {STEPS.map((item, index) => (
-            <span key={item.title} className={`h-2 rounded-full ${index === step ? "w-6 bg-primary" : "w-2 bg-outline-variant"}`} />
+            <span
+              key={item.title}
+              className={`h-2 rounded-full ${index === step ? "w-6 bg-primary" : "w-2 bg-outline-variant"}`}
+            />
           ))}
         </div>
-        <Button variant="text" size="lg" onClick={onDone}>Skip</Button>
+        <Button aria-label="Skip" title="Skip" variant="text" size="lg" onClick={onDone}>
+          <Icon name="skip_next" size={18} />
+        </Button>
         <Button variant="filled" size="lg" onClick={() => (last ? onDone() : setStep(step + 1))}>
           {last ? "Start" : "Next"}
         </Button>

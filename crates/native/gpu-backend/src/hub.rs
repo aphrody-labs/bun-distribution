@@ -160,13 +160,16 @@ impl Hub {
             let info = adapter.get_info();
             let discrete = info.device_type == wgpu::DeviceType::DiscreteGpu;
             let nvidia = info.vendor == NVIDIA_VENDOR_ID;
-            match (discrete, nvidia) {
+            let device_rank = match (discrete, nvidia) {
                 (true, true) => 0,
                 (true, false) => 1,
                 _ => 2,
-            }
+            };
+            let backend_rank =
+                u8::from(cfg!(target_os = "windows") && info.backend != wgpu::Backend::Dx12);
+            (device_rank, backend_rank)
         };
-        if let Some(best) = adapters.into_iter().min_by_key(rank).filter(|a| rank(a) < 2) {
+        if let Some(best) = adapters.into_iter().min_by_key(rank).filter(|a| rank(a).0 < 2) {
             return Ok(best);
         }
         let options = wgpu::RequestAdapterOptions {

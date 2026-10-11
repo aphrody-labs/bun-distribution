@@ -40,6 +40,12 @@ test("the plan bounds jobs, refuses overrides and isolates the target directory"
   expect(heavy.env.CARGO_INCREMENTAL).toBe("0");
   // An explicit empty wrapper is a deliberate opt-out and survives.
   expect(heavy.env.RUSTC_WRAPPER).toBe("");
+  const incremental = planCargo(["check"], false, {
+    ...base,
+    CARGO_INCREMENTAL: "0",
+    APHRODY_CARGO_INCREMENTAL: "1",
+  });
+  expect("CARGO_INCREMENTAL" in incremental.env).toBe(false);
   const light = planCargo(["fetch", "--locked"], false, base);
   expect(light.heavy).toBe(false);
   expect(light.env.CARGO_BUILD_JOBS).toBeUndefined();
@@ -63,54 +69,59 @@ test("the MSVC context appends the private Git alias to inherited process config
   expect(plan.env.CARGO_BUILD_JOBS).toBe("4");
 });
 
-windowsTest("heavy Cargo waits on the shared kernel mutex and runs once it is free", async () => {
-  const root = mkdtempSync(join(tmpdir(), "aphrody-cargo-mutex-"));
-  fixtures.push(root);
-  const bin = join(root, "bin");
-  mkdirSync(bin);
-  const log = join(root, "cargo.log");
-  writeFileSync(join(bin, "cargo.cmd"), `@echo off\r\necho %*>>"${log}"\r\n`);
-  const env = {
-    ...process.env,
-    PATH: `${bin};${process.env.PATH ?? ""}`,
-    APHRODY_LOCAL_CARGO: "1",
-    APHRODY_CARGO_JOBS: "1",
-    APHRODY_CARGO_LOCK_TIMEOUT_SECS: "1",
-    RUSTC_WRAPPER: "",
-  };
-  const run = () =>
-    Bun.spawnSync(
-      [process.execPath, join(import.meta.dir, "cargo-serial.ts"), "check", "-p", "fixture"],
-      {
-        env,
-        stdout: "pipe",
-        stderr: "pipe",
-        windowsHide: true,
-        timeout: 30_000,
-      },
-    );
-  const { dlopen, FFIType, ptr } = await import("bun:ffi");
-  const kernel32 = dlopen("kernel32.dll", {
-    CreateMutexW: { args: [FFIType.ptr, FFIType.i32, FFIType.ptr], returns: FFIType.ptr },
-    ReleaseMutex: { args: [FFIType.ptr], returns: FFIType.i32 },
-    CloseHandle: { args: [FFIType.ptr], returns: FFIType.i32 },
-  });
-  const name = Buffer.from("Local\\AphrodyCargoBuild\0", "utf16le");
-  const handle = kernel32.symbols.CreateMutexW(null, 1, ptr(name));
-  expect(handle).toBeTruthy();
-  try {
-    const blocked = run();
-    expect(blocked.exitCode).toBe(1);
-    expect(blocked.stderr.toString()).toContain(
-      "Timed out waiting for the shared Windows Cargo build lock",
-    );
-  } finally {
-    kernel32.symbols.ReleaseMutex(handle);
-    kernel32.symbols.CloseHandle(handle);
-    kernel32.close();
-  }
-  const free = run();
-  expect(free.stderr.toString()).toBe("");
-  expect(free.exitCode).toBe(0);
-  expect(readFileSync(log, "utf8").trim()).toBe("check -p fixture");
-});
+windowsTest.each(["check", "package", "publish"])(
+  "Cargo %s waits on the shared kernel mutex before verification",
+  async (command) => {
+    const root = mkdtempSync(join(tmpdir(), "aphrody-cargo-mutex-"));
+    fixtures.push(root);
+    const bin = join(root, "bin");
+    mkdirSync(bin);
+    const log = join(root, "cargo.log");
+    writeFileSync(join(bin, "cargo.cmd"), `@echo off\r\necho %*>>"${log}"\r\n`);
+    const env = {
+      ...Object.fromEntries(
+        Object.entries(process.env).filter(([key]) => key.toUpperCase() !== "PATH"),
+      ),
+      PATH: `${bin};${process.env.PATH ?? ""}`,
+      APHRODY_LOCAL_CARGO: "1",
+      APHRODY_CARGO_JOBS: "1",
+      APHRODY_CARGO_LOCK_TIMEOUT_SECS: "1",
+      RUSTC_WRAPPER: "",
+    };
+    const run = () =>
+      Bun.spawnSync(
+        [process.execPath, join(import.meta.dir, "cargo-serial.ts"), command, "-p", "fixture"],
+        {
+          env,
+          stdout: "pipe",
+          stderr: "pipe",
+          windowsHide: true,
+          timeout: 30_000,
+        },
+      );
+    const { dlopen, FFIType, ptr } = await import("bun:ffi");
+    const kernel32 = dlopen("kernel32.dll", {
+      CreateMutexW: { args: [FFIType.ptr, FFIType.i32, FFIType.ptr], returns: FFIType.ptr },
+      ReleaseMutex: { args: [FFIType.ptr], returns: FFIType.i32 },
+      CloseHandle: { args: [FFIType.ptr], returns: FFIType.i32 },
+    });
+    const name = Buffer.from("Local\\AphrodyCargoBuild\0", "utf16le");
+    const handle = kernel32.symbols.CreateMutexW(null, 1, ptr(name));
+    expect(handle).toBeTruthy();
+    try {
+      const blocked = run();
+      expect(blocked.exitCode).toBe(1);
+      expect(blocked.stderr.toString()).toContain(
+        "Timed out waiting for the shared Windows Cargo build lock",
+      );
+    } finally {
+      kernel32.symbols.ReleaseMutex(handle);
+      kernel32.symbols.CloseHandle(handle);
+      kernel32.close();
+    }
+    const free = run();
+    expect(free.stderr.toString()).toBe("");
+    expect(free.exitCode).toBe(0);
+    expect(readFileSync(log, "utf8").trim()).toBe(`${command} -p fixture`);
+  },
+);

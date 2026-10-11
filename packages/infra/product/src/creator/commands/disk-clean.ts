@@ -59,8 +59,8 @@ async function volume(path: string, io: Io): Promise<void> {
 
 async function targetStats(target: CacheTarget): Promise<{ paths: string[]; bytes: number }> {
   const paths = (await Promise.all(target.patterns.map(expandStar))).flat();
-  let bytes = 0;
-  for (const path of paths) bytes += (await treeStats(path)).bytes;
+  const sizes = await Promise.all(paths.map((path) => treeStats(path)));
+  const bytes = sizes.reduce((sum, stats) => sum + stats.bytes, 0);
   return { paths, bytes };
 }
 
@@ -68,8 +68,10 @@ export async function scan(io: Io, root: string, top: number): Promise<number> {
   await volume(root, io);
   io.log("\nCaches récupérables (clean) :");
   let total = 0;
-  for (const target of catalog(io.env, io.platform)) {
-    const { bytes } = await targetStats(target);
+  const targets = catalog(io.env, io.platform);
+  const sizes = await Promise.all(targets.map((target) => targetStats(target)));
+  for (const [index, target] of targets.entries()) {
+    const { bytes } = sizes[index]!;
     total += bytes;
     if (bytes > 0)
       io.log(`  ${formatBytes(bytes).padStart(9)}  ${target.id.padEnd(12)} ${target.label}`);
@@ -101,7 +103,9 @@ export async function clean(io: Io, apply: boolean, only: string[] | undefined):
     }
     const olderThanMs = (target.minAgeDays ?? 0) * 86_400_000;
     let bytes = 0;
+    // oxlint-disable-next-line no-await-in-loop -- nettoyage séquentiel par cible : les motifs peuvent se recouvrir, une suppression concurrente du même dossier échouerait
     for (const path of (await Promise.all(target.patterns.map(expandStar))).flat()) {
+      // oxlint-disable-next-line no-await-in-loop -- nettoyage séquentiel par cible : les motifs peuvent se recouvrir, une suppression concurrente du même dossier échouerait
       const result = await clearDir(path, apply, olderThanMs);
       bytes += result.bytes;
       skipped += result.skipped;

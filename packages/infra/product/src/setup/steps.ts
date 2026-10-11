@@ -30,7 +30,6 @@ import {
 import {
   createShortcut,
   stepAcces,
-  stepAphrody,
   stepCles,
   stepDepot,
   stepMcp,
@@ -39,6 +38,7 @@ import {
   type StepResult,
 } from "../admin/lib/steps.ts";
 import { findTool } from "../admin/lib/tools.ts";
+import { stepNativeRuntime } from "./r2.ts";
 
 export const DEFAULT_BASE = "https://downloads.aphrody.com";
 export const SETUP_EXE = "Aphrody-Setup.exe";
@@ -342,7 +342,7 @@ export const stepCreatorKit: Step = {
 export function stepsFor(roles: ReadonlySet<Role>): Step[] {
   return [
     stepSetup,
-    stepAphrody,
+    stepNativeRuntime,
     stepDesktop,
     stepPlugins,
     stepMcp,

@@ -2,7 +2,7 @@
 // Knowledge Inspector: Aphrody local AI assistant for Spacedrive
 import { Icon, m3FocusRing, CircularProgress, toast } from "@aphrody/m3-primitives";
 import { useState } from "react";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import { askLocalAi, runRagSearch } from "../../../tauri-bridge";
 import { useI18n } from "../../../i18n";
 
@@ -13,18 +13,21 @@ interface Message {
   timestamp: Date;
 }
 
+/** Build a chat message stamped now; called from event handlers, never during render. */
+function createMessage(id: number, role: Message["role"], content: string): Message {
+  return { id, role, content, timestamp: new Date() };
+}
+
 export function KnowledgeInspector() {
   const { t } = useI18n();
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      role: "assistant",
-      content:
-        "Bonjour ! Je suis l'assistant Aphrody. Je peux explorer vos documents, indexer votre base vectorielle RAG et répondre à vos questions sur vos données.",
-      timestamp: new Date(),
-    },
+  const [messages, setMessages] = useState<Message[]>(() => [
+    createMessage(
+      1,
+      "assistant",
+      "Bonjour ! Je suis l'assistant Aphrody. Je peux explorer vos documents, indexer votre base vectorielle RAG et répondre à vos questions sur vos données.",
+    ),
   ]);
 
   const handleSend = async (customPrompt?: string) => {
@@ -32,12 +35,7 @@ export function KnowledgeInspector() {
     if (!promptToSend.trim() || loading) return;
 
     const userMessageId = messages.length + 1;
-    const newMessage: Message = {
-      id: userMessageId,
-      role: "user",
-      content: promptToSend,
-      timestamp: new Date(),
-    };
+    const newMessage = createMessage(userMessageId, "user", promptToSend);
 
     setMessages((prev) => [...prev, newMessage]);
     if (!customPrompt) setMessage("");
@@ -46,12 +44,11 @@ export function KnowledgeInspector() {
     try {
       // Local chat model first, then the RAG search below as a fallback.
       const response = await askLocalAi(promptToSend);
-      const assistantMessage: Message = {
-        id: userMessageId + 1,
-        role: "assistant",
-        content: response?.answer || "Aucune réponse retournée par le modèle local.",
-        timestamp: new Date(),
-      };
+      const assistantMessage = createMessage(
+        userMessageId + 1,
+        "assistant",
+        response?.answer || "Aucune réponse retournée par le modèle local.",
+      );
       setMessages((prev) => [...prev, assistantMessage]);
     } catch {
       // Fallback on direct CLI RAG / chat search
@@ -62,17 +59,16 @@ export function KnowledgeInspector() {
           results.length > 0
             ? `Résultats RAG trouvés :\n` +
               results
-                .map((r, i) => `${i + 1}. ${r.path || "Document"} (ligne: ${r.line ?? "N/A"})`)
+                .map(
+                  (r, i) =>
+                    `${i + 1}. ${r.path || "Document"} (ligne: ${r.line ?? "N/A"}` +
+                    `${r.language ? `, langue: ${r.language}` : ""})`,
+                )
                 .join("\n")
             : "Aucune information pertinente trouvée dans la base RAG locale.";
         setMessages((prev) => [
           ...prev,
-          {
-            id: userMessageId + 1,
-            role: "assistant",
-            content: fallbackText,
-            timestamp: new Date(),
-          },
+          createMessage(userMessageId + 1, "assistant", fallbackText),
         ]);
       } catch (innerErr) {
         toast.error("Erreur de communication avec le backend IA : " + String(innerErr));

@@ -38,11 +38,10 @@ export const CODEMODS: readonly Codemod[] = [
   ...MUI_CODEMODS,
   ...TAILWIND4_CODEMODS.map((codemod) =>
     codemod.id === "tailwind-config-v4"
-      ? {
-          ...codemod,
+      ? Object.assign({}, codemod, {
           run: (source: string, path: string) =>
             tailwindConfigToCss(source, path, M3_TAILWIND_HEADER),
-        }
+        })
       : codemod,
   ),
 ];

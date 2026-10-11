@@ -7,6 +7,12 @@
 //!   module (netlink), the boringtun userspace device (Linux, BSD, macOS) or the WireGuardNT
 //!   kernel driver (Windows, [`driver`]).
 //! - [`Inventory`]: the declared tunnel `tools/config/host/wireguard/aphrody-tunnel.json`.
+//!
+//! `aphrody infra wg set-peer` uses [`PeerPatch`]: omitted options preserve the live peer's
+//! AllowedIPs, endpoint, keepalive and preshared key. An explicit empty `--allowed-ips` clears
+//! its routes; `--keepalive 0` disables keepalive. [`Tunnel::set_peer`] and
+//! [`Tunnel::sync`] still apply complete peer configurations. Private keys and PSKs remain
+//! inside the backend; peer status and successful CLI receipts do not expose them.
 
 pub mod backend;
 pub mod conf;
@@ -16,7 +22,7 @@ mod key;
 pub mod state;
 
 pub use backend::{Backend, InterfaceStatus, PeerStatus, SyncReport, Tunnel};
-pub use conf::{Config, Interface, Peer, Table};
+pub use conf::{Config, Interface, Peer, PeerPatch, Table};
 pub use inventory::Inventory;
 pub use key::Key;
 

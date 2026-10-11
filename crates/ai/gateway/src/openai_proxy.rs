@@ -109,6 +109,31 @@ impl OpenAiProxyAdapter {
 
 #[async_trait::async_trait]
 impl GatewayAdapter for OpenAiProxyAdapter {
+    async fn health_check(&self) -> Result<(), GatewayError> {
+        let mut models_url = Url::parse(&self.base_url)?;
+        let base_path = models_url.path().trim_end_matches('/');
+        let models_path = if base_path.ends_with("/v1") {
+            format!("{base_path}/models")
+        } else if base_path.is_empty() {
+            "/v1/models".to_owned()
+        } else {
+            format!("{base_path}/v1/models")
+        };
+        models_url.set_path(&models_path);
+        let response = self
+            .http_client()
+            .get(models_url)
+            .bearer_auth(&self.api_key)
+            .timeout(std::time::Duration::from_secs(3))
+            .send()
+            .await?;
+        if !response.status().is_success() {
+            let status = response.status().as_u16();
+            return Err(GatewayError::UpstreamStatus { status, body: String::new() });
+        }
+        Ok(())
+    }
+
     async fn chat(&self, req: ChatRequest) -> Result<ChatResponse, GatewayError> {
         openai_compat::chat(&self.http_client(), self.endpoint_url()?, &self.api_key, req).await
     }
@@ -126,6 +151,7 @@ impl GatewayAdapter for OpenAiProxyAdapter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
     /// Install the rustls `ring` `CryptoProvider` once for the test process —
     /// `OpenAiProxyAdapter::new` builds a `reqwest::Client`, and rustls 0.23+
@@ -136,6 +162,48 @@ mod tests {
         ONCE.call_once(|| {
             let _ = rustls::crypto::ring::default_provider().install_default();
         });
+    }
+
+    async fn models_server(status: &'static str) -> String {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("bind");
+        let addr = listener.local_addr().expect("addr");
+        tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.expect("accept");
+            let mut request = Vec::new();
+            let mut chunk = [0_u8; 1024];
+            while !request.windows(4).any(|window| window == b"\r\n\r\n") {
+                let count = socket.read(&mut chunk).await.expect("read");
+                assert!(count > 0 && request.len() + count <= 8192);
+                request.extend_from_slice(&chunk[..count]);
+            }
+            let request = String::from_utf8(request).expect("request headers");
+            assert!(request.starts_with("GET /v1/models HTTP/1.1\r\n"));
+            assert!(
+                request
+                    .lines()
+                    .any(|line| line.eq_ignore_ascii_case("authorization: Bearer probe-key"))
+            );
+            let response =
+                format!("HTTP/1.1 {status}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+            socket.write_all(response.as_bytes()).await.expect("write");
+        });
+        format!("http://{addr}/v1")
+    }
+
+    #[tokio::test]
+    async fn readiness_probe_checks_upstream_models_with_credentials() {
+        install_rustls_provider();
+        let base = models_server("200 OK").await;
+        let adapter = OpenAiProxyAdapter::new("probe-key", base).expect("adapter");
+        adapter.health_check().await.expect("upstream is ready");
+    }
+
+    #[tokio::test]
+    async fn readiness_probe_rejects_unavailable_upstream() {
+        install_rustls_provider();
+        let base = models_server("503 Service Unavailable").await;
+        let adapter = OpenAiProxyAdapter::new("probe-key", base).expect("adapter");
+        assert!(adapter.health_check().await.is_err());
     }
 
     #[test]

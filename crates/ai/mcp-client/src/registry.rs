@@ -49,7 +49,6 @@ pub async fn assemble_tool_registry(
     register_configured_mcp_servers(&mut registry, &catalog, configured_servers).await?;
 
     // Register native web tools first, then compatibility tools still missing in Rust.
-    #[cfg(not(target_arch = "wasm32"))]
     if options.enable_bxc
         && let Err(error) = register_bxc_tools(&mut registry, &catalog, options.bxc_exposure).await
     {

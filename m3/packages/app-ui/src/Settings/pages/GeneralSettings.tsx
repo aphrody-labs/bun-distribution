@@ -54,8 +54,6 @@ export function GeneralSettings({
   useEffect(() => {
     if (!desktop) return;
     let active = true;
-    setReadingAutostart(true);
-    setAutostartError(null);
     void services
       .readAutostart()
       .then((enabled) => {
@@ -75,6 +73,7 @@ export function GeneralSettings({
     return () => {
       active = false;
     };
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- reload est un déclencheur explicite de relecture (bouton Réessayer), volontairement absent du corps
   }, [services, desktop, reload]);
 
   const handleStartWithSystemChange = async (enabled: boolean) => {
@@ -187,18 +186,28 @@ export function GeneralSettings({
                 />
               )}
             </div>
-            {readingAutostart && <p role="status">Lecture du démarrage automatique…</p>}
-            {savingAutostart && <p role="status">Modification du démarrage automatique…</p>}
-            {autostartStatus && <p role="status">{autostartStatus}</p>}
+            {readingAutostart && (
+              <output className="block">Lecture du démarrage automatique…</output>
+            )}
+            {savingAutostart && (
+              <output className="block">Modification du démarrage automatique…</output>
+            )}
+            {autostartStatus && <output className="block">{autostartStatus}</output>}
             {autostartError && (
               <div role="alert" className="space-y-3 text-error">
                 <p>Démarrage automatique indisponible : {autostartError}</p>
                 <Button
+                  aria-label="Réessayer"
+                  title="Réessayer"
                   variant="tonal"
                   disabled={savingAutostart}
-                  onClick={() => setReload((value) => value + 1)}
+                  onClick={() => {
+                    setReadingAutostart(true);
+                    setAutostartError(null);
+                    setReload((value) => value + 1);
+                  }}
                 >
-                  Réessayer
+                  <Icon name="refresh" size={18} />
                 </Button>
               </div>
             )}
@@ -216,9 +225,9 @@ export function GeneralSettings({
                   </p>
                 )}
                 {updateStatus && (
-                  <p role="status" className="text-body-large text-on-surface-variant mt-2">
+                  <output className="block text-body-large text-on-surface-variant mt-2">
                     {updateStatus}
-                  </p>
+                  </output>
                 )}
               </div>
               <Button

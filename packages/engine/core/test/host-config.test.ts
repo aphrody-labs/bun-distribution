@@ -16,7 +16,7 @@ const directives = (t: string) =>
   t
     .split("\n")
     .filter((l) => l.trim() && !l.startsWith("#") && !l.startsWith("["))
-    .sort();
+    .toSorted();
 
 test("catalog and tree agree", () => {
   expect(checkCatalog()).toEqual([]);

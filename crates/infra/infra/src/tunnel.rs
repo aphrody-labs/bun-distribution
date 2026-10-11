@@ -5,7 +5,7 @@ use std::io::Read as _;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, anyhow, bail};
-use aphrody_wireguard::{Backend, Config, Inventory, Key, Peer, Tunnel, driver, state};
+use aphrody_wireguard::{Backend, Config, Inventory, Key, PeerPatch, Tunnel, driver, state};
 use clap::{Subcommand, ValueEnum};
 use serde_json::{Value, json};
 
@@ -74,9 +74,9 @@ pub enum WgCommand {
         public_key: String,
         #[arg(long)]
         endpoint: Option<String>,
-        /// Comma separated CIDRs.
-        #[arg(long, value_delimiter = ',')]
-        allowed_ips: Vec<String>,
+        /// Replace comma separated CIDRs; omission preserves routes, an empty flag clears them.
+        #[arg(long, value_delimiter = ',', num_args = 0..)]
+        allowed_ips: Option<Vec<String>>,
         #[arg(long)]
         keepalive: Option<u16>,
         #[arg(long)]
@@ -280,14 +280,23 @@ pub async fn execute(root: &Path, cmd: &WgCommand, as_json: bool) -> Result<Valu
             preshared_key_file,
         } => {
             let name = name.clone().unwrap_or_else(|| default_name(root));
-            let mut p = Peer::new(public_key.parse().map_err(wg_err)?);
-            p.endpoint.clone_from(endpoint);
-            p.persistent_keepalive = *keepalive;
-            p.preshared_key = preshared_key_file.as_deref().map(read_key).transpose()?;
-            for a in allowed_ips {
-                p.allowed_ips.push(a.parse().with_context(|| format!("AllowedIPs {a}"))?);
-            }
-            Tunnel::open(&name, Backend::native()).and_then(|t| t.set_peer(&p)).map_err(wg_err)?;
+            let patch = PeerPatch {
+                public_key: public_key.parse().map_err(wg_err)?,
+                endpoint: endpoint.clone(),
+                persistent_keepalive: *keepalive,
+                preshared_key: preshared_key_file.as_deref().map(read_key).transpose()?,
+                allowed_ips: allowed_ips
+                    .as_ref()
+                    .map(|ips| {
+                        ips.iter()
+                            .map(|a| a.parse().with_context(|| format!("AllowedIPs {a}")))
+                            .collect::<Result<Vec<_>>>()
+                    })
+                    .transpose()?,
+            };
+            Tunnel::open(&name, Backend::native())
+                .and_then(|t| t.patch_peer(&patch))
+                .map_err(wg_err)?;
             json!({ "name": name, "peer": public_key, "configured": true })
         },
         WgCommand::RemovePeer { name, public_key } => {
@@ -425,5 +434,44 @@ mod tests {
         assert_eq!(name, if cfg!(windows) { "aphrody" } else { "wg1" });
         let inv = inventory(&root).unwrap();
         assert!(inv.render("aphro-pc", None).is_ok());
+    }
+
+    #[derive(clap::Parser)]
+    struct WgArgs {
+        #[command(subcommand)]
+        command: WgCommand,
+    }
+
+    #[test]
+    fn set_peer_cli_distinguishes_omitted_routes_from_explicit_replacement_and_clear() {
+        use clap::Parser as _;
+        let key = Key([1; 32]).to_base64();
+        let parse = |extra: &[&str]| {
+            let mut args = vec!["wg", "set-peer", "--public-key", key.as_str()];
+            args.extend_from_slice(extra);
+            WgArgs::try_parse_from(args).unwrap().command
+        };
+        let WgCommand::SetPeer { allowed_ips, endpoint, keepalive, preshared_key_file, .. } =
+            parse(&["--keepalive", "25"])
+        else {
+            panic!("set-peer expected");
+        };
+        assert_eq!(allowed_ips, None);
+        assert_eq!(endpoint, None);
+        assert_eq!(keepalive, Some(25));
+        assert_eq!(preshared_key_file, None);
+        let WgCommand::SetPeer { allowed_ips, .. } =
+            parse(&["--allowed-ips", "10.200.77.10/32,2001:db8::10/128"])
+        else {
+            panic!("set-peer expected");
+        };
+        assert_eq!(allowed_ips.unwrap(), ["10.200.77.10/32", "2001:db8::10/128"]);
+        let WgCommand::SetPeer { allowed_ips, keepalive, .. } =
+            parse(&["--allowed-ips", "--keepalive", "0"])
+        else {
+            panic!("set-peer expected");
+        };
+        assert_eq!(allowed_ips, Some(Vec::new()));
+        assert_eq!(keepalive, Some(0));
     }
 }

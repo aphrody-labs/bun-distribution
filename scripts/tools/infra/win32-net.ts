@@ -5,7 +5,7 @@
  * 100 ns like .NET `Process.StartTime`) and a kill-on-close job object so that a supervised
  * child never outlives its supervisor. Windows x64/arm64 only.
  */
-import { dlopen, FFIType, ptr, type Pointer } from "bun:ffi";
+import { dlopen, FFIType, ptr } from "bun:ffi";
 
 export type Listener = { address: string; port: number; pid: number };
 
@@ -45,9 +45,11 @@ const openKernel32 = () =>
     AssignProcessToJobObject: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.i32 },
   }).symbols;
 
+type Handle = NonNullable<ReturnType<ReturnType<typeof openKernel32>["CreateJobObjectW"]>>;
+
 let iphlpapi: ReturnType<typeof openIphlpapi> | undefined;
 let kernel32: ReturnType<typeof openKernel32> | undefined;
-let job: Pointer | undefined;
+let job: Handle | undefined;
 
 /** Canonical text of a literal IP (IPv6 compressed and lower-case). */
 export function normalizeAddress(address: string): string {

@@ -1,7 +1,7 @@
 import type { DirectorySortBy, File, SdPath } from "@aphrody/drive-client";
 import { CircleButton, CircleButtonGroup } from "@aphrody/m3-primitives";
 import * as d3 from "d3";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { useNormalizedQuery } from "../../../../contexts/SpacedriveContext";
@@ -151,6 +151,15 @@ function ThumbOverlay({
       key={overlay.id}
       {...listeners}
       {...attributes}
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- un <button> natif changerait le rendu des thumbs ; role et tabIndex identiques à ceux de attributes dnd-kit
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        // Enter/Space activent le même clic que la souris (sélection et zoom)
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        event.currentTarget.click();
+      }}
       className="pointer-events-auto absolute cursor-pointer overflow-hidden rounded-small"
       style={{
         // Adjust left/top to center the thumb instead of using transform
@@ -301,8 +310,8 @@ export function SizeView() {
   const sidebarWidth = sidebarVisible ? 220 : 0;
   const inspectorWidth = inspectorVisible ? 280 : 0;
 
-  // Find portal target (re-lookup when tab changes to ensure it's always found)
-  const portalTarget = useMemo(() => document.getElementById(SIZE_VIEW_LAYER_ID), [activeTabId]);
+  // Find portal target (re-looked up on every render so a tab change always finds it)
+  const portalTarget = document.getElementById(SIZE_VIEW_LAYER_ID);
 
   // Track which path+tab the current data belongs to
   const [dataSource, setDataSource] = useState<{
@@ -326,12 +335,13 @@ export function SizeView() {
     pathScope: currentPath ?? undefined,
   });
 
-  // Update data source when query succeeds
-  useEffect(() => {
-    if (directoryQuery.isSuccess && currentPath) {
-      setDataSource({ tabId: activeTabId, path: currentPath });
+  // Update data source when query succeeds (derived during render, not in an effect)
+  if (directoryQuery.isSuccess && currentPath) {
+    const nextDataSource = { tabId: activeTabId, path: currentPath };
+    if (JSON.stringify(nextDataSource) !== JSON.stringify(dataSource)) {
+      setDataSource(nextDataSource);
     }
-  }, [directoryQuery.isSuccess, activeTabId, currentPath]);
+  }
 
   // Only show files if they match the current tab and path
   const files = useMemo(() => {
@@ -397,6 +407,7 @@ export function SizeView() {
   const navigateToPathRef = useRef(navigateToPath);
   const filesRef = useRef(files);
   const selectedFilesRef = useRef(selectedFiles);
+  const setSizeViewTransformRef = useRef(setSizeViewTransform);
   const gRef = useRef<d3.Selection<SVGGElement, unknown, null, undefined> | null>(null);
   const contextMenuRef = useRef(contextMenu);
 
@@ -405,11 +416,12 @@ export function SizeView() {
     navigateToPathRef.current = navigateToPath;
     filesRef.current = files;
     selectedFilesRef.current = selectedFiles;
+    setSizeViewTransformRef.current = setSizeViewTransform;
     contextMenuRef.current = contextMenu;
-  }, [selectFile, navigateToPath, files, selectedFiles, contextMenu]);
+  }, [selectFile, navigateToPath, files, selectedFiles, setSizeViewTransform, contextMenu]);
 
   // Function to update thumb overlay positions based on current transform
-  const updateThumbOverlays = (transform: d3.ZoomTransform) => {
+  const updateThumbOverlays = useCallback((transform: d3.ZoomTransform) => {
     if (!svgRef.current || !gRef.current) return;
 
     const svgRect = svgRef.current.getBoundingClientRect();
@@ -442,7 +454,7 @@ export function SizeView() {
     });
 
     setThumbOverlays(overlays);
-  };
+  }, []);
 
   // Initialize zoom behavior once (after portal is ready)
   useEffect(() => {
@@ -542,7 +554,7 @@ export function SizeView() {
       .scaleExtent([0.1, 100])
       .on("zoom", (event) => {
         g.attr("transform", event.transform);
-        setSizeViewTransform({
+        setSizeViewTransformRef.current({
           k: event.transform.k,
           x: event.transform.x,
           y: event.transform.y,
@@ -562,7 +574,7 @@ export function SizeView() {
         .duration(300)
         .call(zoom.transform, d3.zoomIdentity)
         .on("end", () => {
-          setSizeViewTransform({ k: 1, x: 0, y: 0 });
+          setSizeViewTransformRef.current({ k: 1, x: 0, y: 0 });
           updateTextOnZoom(1);
         });
     });
@@ -574,7 +586,7 @@ export function SizeView() {
         clearTimeout(clickTimeoutRef.current);
       }
     };
-  }, [portalTarget]); // Run when portal is ready
+  }, [portalTarget, updateThumbOverlays]); // Run when portal is ready
 
   // Reset zoom when path changes within the same tab (but not on tab switch or initial mount)
   useEffect(() => {
@@ -762,7 +774,7 @@ export function SizeView() {
         event.stopPropagation();
 
         // Select the file if not already selected
-        const isSelected = selectedFiles.some((f) => f.id === d.data.file!.id);
+        const isSelected = selectedFilesRef.current.some((f) => f.id === d.data.file!.id);
         if (!isSelected) {
           selectFileRef.current(d.data.file!, filesRef.current, false, false);
         }
@@ -857,7 +869,7 @@ export function SizeView() {
         }
       });
     }
-  }, [bubbleData]);
+  }, [bubbleData, updateThumbOverlays]);
 
   // Apply stored transform when tab changes or bubbles first render
   useEffect(() => {
@@ -898,6 +910,7 @@ export function SizeView() {
         const isSelected = selectedFiles.some((f) => f.id === d.data.id);
         return isSelected ? baseStrokeWidth / scale : 0;
       });
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- bubbleData est une dépendance volontaire : les cercles sont recréés par l'effet de rendu des bulles, la sélection doit être réappliquée après chaque rendu
   }, [selectedFiles, bubbleData.length]);
 
   const handleResetZoom = () => {

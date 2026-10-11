@@ -254,6 +254,24 @@ export function evaluateDetectedStores(
   });
 }
 
+async function probeExternalStore(
+  c: ExternalStoreCandidate,
+  probeFn: (
+    path: string,
+    id: string,
+  ) => Promise<{ exists: boolean; modelCount?: number } | boolean>,
+): Promise<DetectedExternalStore> {
+  try {
+    const res = await probeFn(c.path, c.id);
+    if (typeof res === "boolean") {
+      return { ...c, exists: res };
+    }
+    return { ...c, exists: res.exists, modelCount: res.modelCount };
+  } catch {
+    return { ...c, exists: false };
+  }
+}
+
 /**
  * Scan external model stores for a given home directory using a probe function.
  * If no probe function is provided, returns candidates with exists=false.
@@ -275,20 +293,7 @@ export async function scanExternalModelDirectories(
       description: c.description,
     }));
   }
-  const results: DetectedExternalStore[] = [];
-  for (const c of candidates) {
-    try {
-      const res = await probeFn(c.path, c.id);
-      if (typeof res === "boolean") {
-        results.push({ ...c, exists: res });
-      } else {
-        results.push({ ...c, exists: res.exists, modelCount: res.modelCount });
-      }
-    } catch {
-      results.push({ ...c, exists: false });
-    }
-  }
-  return results;
+  return Promise.all(candidates.map((c) => probeExternalStore(c, probeFn)));
 }
 
 export type ModelKind = "chat" | "embedding" | "OCR" | "speech";

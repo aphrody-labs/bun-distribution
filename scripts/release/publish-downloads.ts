@@ -11,7 +11,7 @@
  *                                 repeat --staged; --staged-revision <sha> records their verified source revision
  *   github --release <id>         create/refresh the GitHub release of each configured EXISTING repository
  *   verify [--release <id>]       download from the public URL, check SHA-256, run the binaries
- *   host-plan | host-apply        install the declared unit, nginx vhost and app on the host (plan by default)
+ *   host-plan | host-apply        refresh the app on its cataloged native systemd/nginx host (plan by default)
  *
  * Hosts change only through `aphrody infra ssh`; the binaries are built on the factory from a pushed
  * revision (never Cargo in WSL). On the host itself (APHRODY_BUILD_HOST=<host.target>, the build-factory
@@ -19,6 +19,7 @@
  */
 import { createHash, randomUUID } from "node:crypto";
 import {
+  copyFileSync,
   existsSync,
   lstatSync,
   mkdirSync,
@@ -1103,7 +1104,7 @@ async function adoptPrebuiltStages(
           throw new Error(`staged payload must be regular: ${entry.file}`);
         const copied = join(stage, "files", entry.file);
         // Verify the staged copy itself so later source changes cannot alter the release bytes.
-        await run(["cp", "--", source, copied]);
+        copyFileSync(source, copied);
         if (statSync(copied).size !== entry.size || (await sha256File(copied)) !== entry.sha256)
           throw new Error(`staged size or checksum mismatch: ${entry.file}`);
         if (
@@ -1558,48 +1559,71 @@ async function verify(cfg: DownloadsConfig) {
   if (failures) throw new Error(`${failures} verification failure(s)`);
 }
 
-async function hostCommands(cfg: DownloadsConfig, apply: boolean) {
+export function downloadsHostPlan(cfg: DownloadsConfig) {
+  const catalog = JSON.parse(
+    readFileSync(join(root, "tools/config/service-catalog.json"), "utf8"),
+  ) as {
+    services: { id: string; host?: string; unit?: string; port?: number; releaseRoot?: string }[];
+  };
+  const service = catalog.services.find((item) => item.id === cfg.host.service);
+  if (
+    !service ||
+    service.host !== cfg.host.target ||
+    service.unit !== `${cfg.host.service}.service` ||
+    service.port !== cfg.host.port ||
+    service.releaseRoot !== `${cfg.host.root}/releases` ||
+    !/^[a-zA-Z0-9_-]+$/.test(cfg.host.service) ||
+    !/^[a-z0-9.-]+$/.test(cfg.site.certName) ||
+    !cfg.site.hosts.length ||
+    cfg.site.hosts.some((host) => !/^[a-z0-9.-]+$/.test(host))
+  )
+    throw new Error("downloads host does not match the declared native service catalog");
   const rootDir = cfg.host.root;
-  const unit = "tools/config/host/systemd/aphrody/aphrody-downloads.service";
-  const vhost = "tools/config/host/nginx/shenron/zz-downloads.aphrody.com.conf";
-  const cert = "scripts/tools/infra/issue-downloads-certificate.sh";
   const certDir = `/etc/letsencrypt/live/${cfg.site.certName}`;
+  const certificate = `${certDir}/fullchain.pem`;
+  const preflight = [
+    "set -e",
+    `test "$(systemctl show --property=FragmentPath --value ${q(service.unit!)})" = ${q(`/etc/systemd/system/${service.unit}`)}`,
+    `test -x ${q(cfg.host.bun)}`,
+    `sudo test -s ${q(certificate)}`,
+    ...cfg.site.hosts.map(
+      (host) => `sudo openssl x509 -in ${q(certificate)} -noout -checkend 0 -checkhost ${q(host)}`,
+    ),
+    "sudo nginx -t",
+  ].join("\n");
+  const setup = `sudo install -d -o ubuntu -g ubuntu ${q(rootDir)} ${q(`${rootDir}/releases`)} ${q(`${rootDir}/app`)}`;
+  const activate = [
+    "set -e",
+    `sudo systemctl restart ${q(service.unit!)}`,
+    `systemctl is-active --quiet ${q(service.unit!)}`,
+    `curl -fsS --retry 10 --retry-delay 1 --retry-connrefused --max-time 3 http://127.0.0.1:${cfg.host.port}/health >/dev/null`,
+    "sudo nginx -t && sudo systemctl reload nginx",
+  ].join("\n");
   const steps = [
+    `target ${cfg.host.target}: preflight cataloged ${service.unit}, native nginx and valid ${cfg.site.certName} certificate`,
     `create ${rootDir}/{releases,app} owned by ubuntu`,
     `upload packages/infra/workspace/src/downloads/server.ts -> ${rootDir}/app/server.ts`,
-    `upload ${unit}, install to /etc/systemd/system, daemon-reload, enable and restart ${cfg.host.service}`,
-    `certificate ${cfg.site.certName} (HTTP-01, ${cfg.site.hosts.join(", ")}) through ${cert} when ${certDir} is absent`,
-    `${vhost} ships with the Shenron gateway release (container aphrody-gateway-1): nginx -t, reload`,
+    `restart ${service.unit}; require loopback /health; native nginx -t/reload`,
   ];
-  console.log(steps.map((s) => `- ${s}`).join("\n"));
+  return { preflight, setup, activate, steps };
+}
+
+export async function hostCommands(cfg: DownloadsConfig, apply: boolean, io = releaseTransport) {
+  const hostPlan = downloadsHostPlan(cfg);
+  const rootDir = cfg.host.root;
+  console.log(hostPlan.steps.map((s) => `- ${s}`).join("\n"));
   if (!apply) {
     console.log("plan only: pass --apply to execute");
     return;
   }
-  await remote(
-    cfg,
-    `sudo install -d -o ubuntu -g ubuntu ${rootDir} ${rootDir}/releases ${rootDir}/app`,
-  );
-  await put(
+  await io.remote(cfg, hostPlan.preflight);
+  await io.remote(cfg, hostPlan.setup);
+  await io.put(
     cfg,
     join(root, "packages/infra/workspace/src/downloads/server.ts"),
     `${rootDir}/app/server.ts`,
   );
-  await put(cfg, join(root, unit), "/tmp/aphrody-downloads.service");
-  await remote(
-    cfg,
-    "sudo install -o root -g root -m 0644 /tmp/aphrody-downloads.service /etc/systemd/system/aphrody-downloads.service && sudo systemctl daemon-reload && sudo systemctl enable aphrody-downloads.service && sudo systemctl restart aphrody-downloads.service",
-  );
-  await put(cfg, join(root, cert), "/tmp/issue-downloads-certificate.sh");
-  await remote(
-    cfg,
-    `sudo test -d ${certDir} || sudo bash /tmp/issue-downloads-certificate.sh`,
-    300,
-  );
-  await remote(
-    cfg,
-    "sudo docker exec aphrody-gateway-1 nginx -t && sudo docker exec aphrody-gateway-1 nginx -s reload",
-  );
+  await io.remote(cfg, hostPlan.activate);
 }
 
 if (import.meta.main) {

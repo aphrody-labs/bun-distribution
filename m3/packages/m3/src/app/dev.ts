@@ -71,10 +71,13 @@ export async function devApp(options: DevAppOptions): Promise<DevApp> {
     hostname: options.hostname,
     development: true,
     fetch(request, srv) {
-      if (new URL(request.url).pathname === HMR_PATH && srv.upgrade(request, { data: undefined })) return undefined;
+      if (new URL(request.url).pathname === HMR_PATH && srv.upgrade(request, { data: undefined }))
+        return undefined;
       if (!app || lastError) {
         const message =
-          lastError instanceof Error ? (lastError.stack ?? lastError.message) : String(lastError ?? "building");
+          lastError instanceof Error
+            ? (lastError.stack ?? lastError.message)
+            : String(lastError ?? "building");
         return new Response(
           `<!DOCTYPE html><title>Build error</title><pre>${Bun.escapeHTML(message)}</pre><script>new WebSocket("ws://"+location.host+"${HMR_PATH}").onmessage=()=>location.reload()</script>`,
           { status: 500, headers: { "content-type": "text/html; charset=utf-8" } },
@@ -97,6 +100,7 @@ export async function devApp(options: DevAppOptions): Promise<DevApp> {
     running = running.then(build).then(() => {
       if (lastError) return;
       server.publish("hmr", JSON.stringify({ type: failedBefore ? "reload" : "refresh" }));
+      return;
     });
     return running;
   };
@@ -110,7 +114,9 @@ export async function devApp(options: DevAppOptions): Promise<DevApp> {
       timer = setTimeout(() => void rebuild(), 30);
     });
   } catch (error) {
-    console.warn(`@aphrody/m3: file watching unavailable (${String(error)}); call rebuild() manually`);
+    console.warn(
+      `@aphrody/m3: file watching unavailable (${String(error)}); call rebuild() manually`,
+    );
   }
 
   return {

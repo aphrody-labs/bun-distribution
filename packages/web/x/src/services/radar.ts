@@ -110,6 +110,8 @@ export async function radarSearchAll(
   let cursor: string | undefined;
   let pages = 0;
   while (pages < maxPages) {
+    // Pagination séquentielle : chaque curseur dépend de la page précédente.
+    // oxlint-disable-next-line no-await-in-loop -- le curseur suivant n'existe qu'après la réponse précédente
     const page = await radarSearch(client, rawQuery, { ...opts, cursor });
     pages++;
     tweets.push(...page.tweets);

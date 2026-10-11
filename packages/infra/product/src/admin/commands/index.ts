@@ -3,6 +3,7 @@ import type { Command } from "./types.ts";
 
 /** Lazy registry: each module default-exports a Command. `interne` is not listed in the summaries. */
 export const registry: Record<string, () => Promise<{ default: Command }>> = {
+  flotte: () => import("./flotte.ts"),
   "access-pack": () => import("./access-pack.ts"),
   installer: () => import("./installer.ts"),
   verifier: () => import("./verifier.ts"),
@@ -16,6 +17,7 @@ export const registry: Record<string, () => Promise<{ default: Command }>> = {
 };
 
 export const summaries: Record<string, string> = {
+  flotte: "Flotte native Windows/Python et depot GPU prive",
   "access-pack": "Préparer un fichier d’accès privé",
   installer: "Tout installer ou réparer sur ce PC",
   verifier: "Vérifier que tout est prêt (tunnel, SSH, MCP, A2A, GPU/CPU, disque)",

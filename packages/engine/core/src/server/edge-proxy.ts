@@ -61,6 +61,18 @@ async function brotli(data: Uint8Array): Promise<Uint8Array> {
 
 const dirOf = (path: string) => path.slice(0, path.lastIndexOf("/"));
 
+/** Longest key segment stored verbatim: generation (`~<base36>`, `.br`) and `.meta.json` suffixes stay under
+ * NAME_MAX (255); longer ones (variable-font file names on gstatic reach 262) become prefix + digest. */
+const MAX_SEGMENT = 200;
+
+export function edgeDiskPath(root: string, key: string): string {
+  const cut = key.lastIndexOf("/") + 1;
+  const name = key.slice(cut);
+  if (Buffer.byteLength(name) <= MAX_SEGMENT) return `${root}/${key}`;
+  const digest = new Bun.CryptoHasher("sha256").update(name).digest("hex").slice(0, 32);
+  return `${root}/${key.slice(0, cut)}${name.slice(0, 64)}-${digest}`;
+}
+
 const acceptsBrotli = (req: Request) => /\bbr\b/.test(req.headers.get("accept-encoding") ?? "");
 
 class UpstreamError extends Error {
@@ -169,7 +181,7 @@ export function createEdgeProxy(options: EdgeProxyOptions) {
     const route = options.route(new URL(req.url), req);
     if (route instanceof Response) return route;
     if (!route || !validEdgeKey(route.cacheKey)) return new Response("Not Found", { status: 404 });
-    const path = `${root}/${route.cacheKey}`;
+    const path = edgeDiskPath(root, route.cacheKey);
     try {
       const meta = await readMeta(path);
       if (meta) {

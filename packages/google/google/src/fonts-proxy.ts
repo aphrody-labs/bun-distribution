@@ -9,7 +9,7 @@
  */
 import { stat } from "node:fs/promises";
 import { extname, join } from "node:path";
-import { type EdgeRoute, createEdgeProxy } from "../../../engine/core/src/server/edge-proxy.ts";
+import { type EdgeRoute, createEdgeProxy } from "@aphrody/yolo-core/edge-proxy";
 
 export const M3_FONT_FAMILIES = [
   "Google Sans Flex",

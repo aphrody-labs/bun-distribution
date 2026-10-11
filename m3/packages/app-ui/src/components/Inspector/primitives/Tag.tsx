@@ -1,5 +1,5 @@
 import { Icon, m3FocusRing } from "@aphrody/m3-primitives";
-import clsx from "clsx";
+import { clsx } from "clsx";
 
 interface TagProps {
   /** User-data tag colour; stays an inline style. */

@@ -119,7 +119,7 @@ function pack(parts: string[], limit: number): string[] {
 function sanitize(input: Cue[], options: LayoutOptions, stats: LayoutStats): Cue[] {
   const sorted = input
     .map((cue) => ({ ...cue }))
-    .sort((a, b) => a.start - b.start || a.end - b.end);
+    .toSorted((a, b) => a.start - b.start || a.end - b.end);
   const out: Cue[] = [];
   for (const cue of sorted) {
     cue.text = clean(cue.text);

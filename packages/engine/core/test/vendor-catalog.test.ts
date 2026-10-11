@@ -91,7 +91,7 @@ test.skipIf(process.platform === "win32")(
     expect(result.stderr).toContain("exit 19");
     expect(await Bun.file(join(root, "formatter-calls")).text()).toBe("1\n");
     expect(await Bun.file(join(directory, "bun-catalog.ts")).text()).toBe("prior artifact\n");
-    expect(readdirSync(directory).sort()).toEqual(["bun-catalog.ts", "concurrent.draft.ts"]);
+    expect(readdirSync(directory).toSorted()).toEqual(["bun-catalog.ts", "concurrent.draft.ts"]);
   },
 );
 test("missing checkout data fails before producing a misleading catalog", async () => {

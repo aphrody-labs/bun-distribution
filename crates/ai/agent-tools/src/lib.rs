@@ -32,15 +32,22 @@
 //! (timeout / output cap) remain configurable via the builder.
 
 mod apply_patch;
+#[cfg(not(target_arch = "wasm32"))]
 mod computer_use;
 mod jev;
+#[cfg(not(target_arch = "wasm32"))]
 mod read_file;
+#[cfg(not(target_arch = "wasm32"))]
 mod search_text;
+#[cfg(not(target_arch = "wasm32"))]
 mod shell;
+#[cfg(not(target_arch = "wasm32"))]
 mod web_tools;
+#[cfg(not(target_arch = "wasm32"))]
 mod winclean;
 
 pub use apply_patch::ApplyPatchTool;
+#[cfg(not(target_arch = "wasm32"))]
 pub use computer_use::{
     BrowserComputerBackend, ComputerAction, ComputerBackend, ComputerEnvironment, ComputerPolicy,
     ComputerTool, ComputerUseTool, MockComputerBackend, RemoteComputerBackend, RemoteComputerMode,
@@ -48,15 +55,20 @@ pub use computer_use::{
     WslComputerBackend,
 };
 pub use jev::{JEV_TOOL, JevDecideTool};
+#[cfg(not(target_arch = "wasm32"))]
 pub use read_file::ReadFileTool;
+#[cfg(not(target_arch = "wasm32"))]
 pub use search_text::SearchTextTool;
+#[cfg(not(target_arch = "wasm32"))]
 pub use shell::{
     DEFAULT_MAX_OUTPUT_BYTES, DEFAULT_TIMEOUT, OutputSink, ShellExecConfig, ShellExecTool,
 };
+#[cfg(not(target_arch = "wasm32"))]
 pub use web_tools::{
     GoogleAiArgs, GoogleAiTool, JsEvalArgs, JsEvalTool, WebScrapeArgs, WebScrapeTool,
     WebSearchArgs, WebSearchTool,
 };
+#[cfg(not(target_arch = "wasm32"))]
 pub use winclean::{
     WINCLEAN_DIRECT_TOOLS, WINCLEAN_GATEWAY, WincleanGatewayTool, WincleanTool, winclean_tools,
 };

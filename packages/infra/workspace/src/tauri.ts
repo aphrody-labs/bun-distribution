@@ -46,6 +46,39 @@ export function resolveTauriLayout(repo: string) {
   return { appDir, uiDir, cargoSerial, cargo: cargoSerialCommand(repo) };
 }
 
+async function isFile(path: string): Promise<boolean> {
+  return stat(path).then(
+    (entry) => entry.isFile(),
+    () => false,
+  );
+}
+
+/**
+ * Updater settings injected at bundle time: `APHRODY_UPDATER_ENDPOINT` (the release feed of
+ * the aphrody-infra release plane) and `APHRODY_UPDATER_PUBKEY` (minisign public key; the
+ * private key stays in `TAURI_SIGNING_PRIVATE_KEY`, never in the repository). Signed updater
+ * artifacts are produced only when the signing key is present.
+ */
+function updaterConfigArgs(): string[] {
+  const endpoint = Bun.env.APHRODY_UPDATER_ENDPOINT ?? "";
+  const pubkey = Bun.env.APHRODY_UPDATER_PUBKEY ?? "";
+  const signing = Boolean(Bun.env.TAURI_SIGNING_PRIVATE_KEY);
+  if (!endpoint && !pubkey && !signing) {
+    console.warn(
+      "[tauri] Updater not configured (APHRODY_UPDATER_ENDPOINT / APHRODY_UPDATER_PUBKEY unset): in-app update checks will report it.",
+    );
+    return [];
+  }
+  if (!endpoint || !pubkey) {
+    throw new Error("APHRODY_UPDATER_ENDPOINT and APHRODY_UPDATER_PUBKEY must be set together");
+  }
+  const overlay = {
+    plugins: { updater: { pubkey, endpoints: [endpoint] } },
+    ...(signing ? { bundle: { createUpdaterArtifacts: true } } : {}),
+  };
+  return ["--config", JSON.stringify(overlay)];
+}
+
 export async function runTauri(args: string[]): Promise<number> {
   const { action, bundles, repo } = parseArgs(args);
   const { appDir, uiDir, cargoSerial, cargo } = resolveTauriLayout(repo);
@@ -90,13 +123,6 @@ export async function runTauri(args: string[]): Promise<number> {
     if (!existsSync(join(repo, member, "Cargo.toml")))
       throw new Error(`sidecar package ${pkg} is missing from ${member}`);
     return { dir: repo, manifest: root };
-  }
-
-  async function isFile(path: string): Promise<boolean> {
-    return stat(path).then(
-      (entry) => entry.isFile(),
-      () => false,
-    );
   }
 
   /**
@@ -160,32 +186,6 @@ export async function runTauri(args: string[]): Promise<number> {
     const besideApp = join(appTarget, profile, `aphrody${suffix}`);
     if (resolve(source) !== resolve(besideApp)) await copyFile(source, besideApp);
     console.log(`[tauri] Staged aphrody sidecar: ${staged}`);
-  }
-
-  /**
-   * Updater settings injected at bundle time: `APHRODY_UPDATER_ENDPOINT` (the release feed of
-   * the aphrody-infra release plane) and `APHRODY_UPDATER_PUBKEY` (minisign public key; the
-   * private key stays in `TAURI_SIGNING_PRIVATE_KEY`, never in the repository). Signed updater
-   * artifacts are produced only when the signing key is present.
-   */
-  function updaterConfigArgs(): string[] {
-    const endpoint = Bun.env.APHRODY_UPDATER_ENDPOINT ?? "";
-    const pubkey = Bun.env.APHRODY_UPDATER_PUBKEY ?? "";
-    const signing = Boolean(Bun.env.TAURI_SIGNING_PRIVATE_KEY);
-    if (!endpoint && !pubkey && !signing) {
-      console.warn(
-        "[tauri] Updater not configured (APHRODY_UPDATER_ENDPOINT / APHRODY_UPDATER_PUBKEY unset): in-app update checks will report it.",
-      );
-      return [];
-    }
-    if (!endpoint || !pubkey) {
-      throw new Error("APHRODY_UPDATER_ENDPOINT and APHRODY_UPDATER_PUBKEY must be set together");
-    }
-    const overlay = {
-      plugins: { updater: { pubkey, endpoints: [endpoint] } },
-      ...(signing ? { bundle: { createUpdaterArtifacts: true } } : {}),
-    };
-    return ["--config", JSON.stringify(overlay)];
   }
 
   try {

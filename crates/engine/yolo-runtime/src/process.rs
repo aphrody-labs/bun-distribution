@@ -9,7 +9,11 @@ use super::*;
 use std::ffi::{CStr, c_char};
 use std::io::{self, Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
-use std::process::{Child, Command, Stdio};
+use std::process::{Command, Stdio};
+#[cfg(not(windows))]
+use std::process::Child;
+#[cfg(windows)]
+use aphrody_proc::GroupChild as Child;
 use std::time::Instant;
 
 /// Grace period used when a runtime is destroyed with processes still running.
@@ -300,7 +304,13 @@ impl ProcState {
         }
       }
     }
-    #[cfg(not(unix))]
+    #[cfg(windows)]
+    {
+      let _ = grace_ms;
+      // The proc owner keeps the Job Object alive even after its leader exits.
+      let _ = lock(&self.child).kill_tree();
+    }
+    #[cfg(not(any(unix, windows)))]
     {
       let _ = grace_ms;
       if self.poll().is_none() {
@@ -493,7 +503,14 @@ pub unsafe extern "C" fn yolo_process_spawn(
         format!("{limit} operations already running"),
       );
     }
-    let mut child = match command.spawn() {
+    #[cfg(windows)]
+    let spawned = aphrody_proc::spawn_group(&mut command, aphrody_proc::SpawnOptions {
+      hide_window: true,
+      ..Default::default()
+    });
+    #[cfg(not(windows))]
+    let spawned = command.spawn();
+    let mut child = match spawned {
       Ok(child) => child,
       Err(error) => {
         return set_error(
@@ -509,8 +526,10 @@ pub unsafe extern "C" fn yolo_process_spawn(
     });
     let stdout = Arc::new(Capture::new(limit));
     let stderr = Arc::new(Capture::new(limit));
-    let stdout_pipe = child.stdout.take();
-    let stderr_pipe = child.stderr.take();
+    #[cfg(windows)]
+    let (stdout_pipe, stderr_pipe) = (child.take_stdout(), child.take_stderr());
+    #[cfg(not(windows))]
+    let (stdout_pipe, stderr_pipe) = (child.stdout.take(), child.stderr.take());
     let state = Arc::new(ProcState {
       pid: child.id(),
       child: Mutex::new(child),

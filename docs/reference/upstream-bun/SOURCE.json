@@ -2,7 +2,7 @@
   "source": "https://github.com/aphrody-labs/bun (fork of https://github.com/oven-sh/bun)",
   "repository": "https://github.com/aphrody-labs/bun.git",
   "path": "docs/",
-  "commit": "57752e1611cdbccfaa0825902390e9ad973a5e24",
+  "commit": "1a3f3dc4d332bee7b1fae6dc1cc46e995c9f46bc",
   "date": "2026-10-09",
   "command": "bun packages/infra/workspace/src/bun-upstream-docs.ts --root .",
   "files": {

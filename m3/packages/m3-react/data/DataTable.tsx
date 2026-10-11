@@ -40,7 +40,8 @@ export type DataTableFeatures = typeof dataTableFeatures;
 export type DataColumn<TData extends RowData = any> = ColumnDef<DataTableFeatures, TData, any>;
 
 /** Column helper typed for DataTable: `const col = dataColumns<Person>(); col.accessor("name", { header: "Name" })`. */
-export const dataColumns = <TData extends RowData = any>() => createColumnHelper<DataTableFeatures, TData>();
+export const dataColumns = <TData extends RowData = any>() =>
+  createColumnHelper<DataTableFeatures, TData>();
 
 export interface DataTableProps<TData extends RowData = any> {
   data: TData[];
@@ -102,7 +103,11 @@ const s = {
     alignItems: "center",
     gap: 4,
   },
-  td: { padding: "0 16px", height: 52, borderBottom: "1px solid var(--md-sys-color-outline-variant)" },
+  td: {
+    padding: "0 16px",
+    height: 52,
+    borderBottom: "1px solid var(--md-sys-color-outline-variant)",
+  },
   search: {
     alignSelf: "flex-start",
     minWidth: 240,
@@ -160,17 +165,18 @@ export function DataTable<TData extends RowData = any>(props: DataTableProps<TDa
   const columnCount = table.getAllLeafColumns().length;
   const scrollRef = useRef<HTMLDivElement>(null);
   const rowHeight = virtual?.rowHeight ?? 52;
+  // oxlint-disable-next-line react/incompatible-library -- TanStack Virtual renvoie des fonctions non mémoïsables (getVirtualItems, measureElement) : le compilateur React doit l'ignorer
   const virtualizer = useVirtualizer({
     count: virtual ? rows.length : 0,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => rowHeight,
-    getItemKey: index => rows[index]?.id ?? index,
+    getItemKey: (index) => rows[index]?.id ?? index,
     overscan: virtual?.overscan ?? 8,
     initialRect: virtual ? { width: 0, height: virtual.height } : undefined,
   });
 
   const items = virtual ? virtualizer.getVirtualItems() : undefined;
-  const visible = items ? items.map(item => rows[item.index]!) : rows;
+  const visible = items ? items.map((item) => rows[item.index]!) : rows;
   const padTop = items?.[0]?.start ?? 0;
   const padBottom = items?.length ? virtualizer.getTotalSize() - items[items.length - 1]!.end : 0;
 
@@ -184,16 +190,20 @@ export function DataTable<TData extends RowData = any>(props: DataTableProps<TDa
           placeholder={searchLabel}
           style={s.search}
           value={String(table.store.state.globalFilter ?? "")}
-          onChange={event => table.setGlobalFilter(event.currentTarget.value)}
+          onChange={(event) => table.setGlobalFilter(event.currentTarget.value)}
         />
       )}
-      <div ref={scrollRef} style={virtual ? { ...s.container, height: virtual.height } : s.container} data-m3-scroll="">
+      <div
+        ref={scrollRef}
+        style={virtual ? { ...s.container, height: virtual.height } : s.container}
+        data-m3-scroll=""
+      >
         <table style={s.table} aria-rowcount={virtual ? rows.length + 1 : undefined}>
           {caption && <caption style={s.caption}>{caption}</caption>}
           <thead>
-            {table.getHeaderGroups().map(group => (
+            {table.getHeaderGroups().map((group) => (
               <tr key={group.id}>
-                {group.headers.map(header => {
+                {group.headers.map((header) => {
                   const sorted = header.column.getIsSorted();
                   const label = header.isPlaceholder ? null : <table.FlexRender header={header} />;
                   return (
@@ -202,10 +212,20 @@ export function DataTable<TData extends RowData = any>(props: DataTableProps<TDa
                       scope="col"
                       colSpan={header.colSpan}
                       style={s.th}
-                      aria-sort={sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : undefined}
+                      aria-sort={
+                        sorted === "asc"
+                          ? "ascending"
+                          : sorted === "desc"
+                            ? "descending"
+                            : undefined
+                      }
                     >
                       {header.column.getCanSort() ? (
-                        <button type="button" style={s.sort} onClick={header.column.getToggleSortingHandler()}>
+                        <button
+                          type="button"
+                          style={s.sort}
+                          onClick={header.column.getToggleSortingHandler()}
+                        >
                           {label}
                           {sorted ? SORT_MARK[sorted] : null}
                         </button>
@@ -221,17 +241,19 @@ export function DataTable<TData extends RowData = any>(props: DataTableProps<TDa
           <tbody>
             {padTop > 0 && (
               <tr aria-hidden="true">
+                {/* oxlint-disable-next-line jsx-a11y/control-has-associated-label -- cellule de remplissage de virtualisation (ligne aria-hidden, sans contenu ni contrôle) */}
                 <td colSpan={columnCount} style={{ height: padTop, padding: 0 }} />
               </tr>
             )}
-            {visible.map(row => (
+            {visible.map((row) => (
               <tr
                 key={row.id}
                 data-row-id={row.id}
                 onClick={onRowClick ? () => onRowClick(row.original as TData) : undefined}
                 style={onRowClick ? { cursor: "pointer" } : undefined}
               >
-                {row.getAllCells().map(cell => (
+                {row.getAllCells().map((cell) => (
+                  // oxlint-disable-next-line jsx-a11y/control-has-associated-label -- cellule de données (td), pas un contrôle : son contenu est rendu par FlexRender
                   <td key={cell.id} style={s.td}>
                     <table.FlexRender cell={cell} />
                   </td>
@@ -240,6 +262,7 @@ export function DataTable<TData extends RowData = any>(props: DataTableProps<TDa
             ))}
             {padBottom > 0 && (
               <tr aria-hidden="true">
+                {/* oxlint-disable-next-line jsx-a11y/control-has-associated-label -- cellule de remplissage de virtualisation (ligne aria-hidden, sans contenu ni contrôle) */}
                 <td colSpan={columnCount} style={{ height: padBottom, padding: 0 }} />
               </tr>
             )}
@@ -266,7 +289,12 @@ export function DataTable<TData extends RowData = any>(props: DataTableProps<TDa
           <span>
             {table.store.state.pagination.pageIndex + 1} / {table.getPageCount()}
           </span>
-          <button type="button" style={s.button} disabled={!table.getCanNextPage()} onClick={() => table.nextPage()}>
+          <button
+            type="button"
+            style={s.button}
+            disabled={!table.getCanNextPage()}
+            onClick={() => table.nextPage()}
+          >
             Next
           </button>
         </nav>

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "generator": "aphrody identity terminal-theme",
+  "seed": "#8c6c88",
+  "spec": "2021",
+  "dark": {
+    "background": { "hex": "#171216", "ansi256": 233 },
+    "brand": { "hex": "#efb4e9", "ansi256": 218 },
+    "cwd": { "hex": "#63d3ff", "ansi256": 81 },
+    "git": { "hex": "#f6b8a9", "ansi256": 217 },
+    "symbol": { "hex": "#d9bfd3", "ansi256": 182 },
+    "success": { "hex": "#a0d756", "ansi256": 149 },
+    "error": { "hex": "#ffb4ab", "ansi256": 217 },
+    "duration": { "hex": "#ffb95b", "ansi256": 215 },
+    "muted": { "hex": "#9a8d96", "ansi256": 246 },
+    "text": { "hex": "#ebdfe6", "ansi256": 254 }
+  },
+  "light": {
+    "background": { "hex": "#fff7fa", "ansi256": 231 },
+    "brand": { "hex": "#7e4d7c", "ansi256": 96 },
+    "cwd": { "hex": "#006783", "ansi256": 24 },
+    "git": { "hex": "#825247", "ansi256": 95 },
+    "symbol": { "hex": "#6d586a", "ansi256": 241 },
+    "success": { "hex": "#426900", "ansi256": 58 },
+    "error": { "hex": "#ba1a1a", "ansi256": 124 },
+    "duration": { "hex": "#845400", "ansi256": 94 },
+    "muted": { "hex": "#4e444b", "ansi256": 239 },
+    "text": { "hex": "#201a1e", "ansi256": 234 }
+  }
+}

@@ -21,28 +21,21 @@ const DEFAULT_SETTINGS: SubtitleSettings = {
 	backgroundOpacity: 0.9,
 };
 
-export function Subtitles({
-	file,
-	videoElement,
-	settings = DEFAULT_SETTINGS,
-}: SubtitlesProps) {
+export function Subtitles({ file, videoElement, settings = DEFAULT_SETTINGS }: SubtitlesProps) {
 	const [cues, setCues] = useState<SubtitleCue[]>([]);
 	const [currentCue, setCurrentCue] = useState<SubtitleCue | null>(null);
 	const { buildSidecarUrl } = useServer();
 
 	// Load SRT sidecar if available
 	useEffect(() => {
-		const srtSidecar = file.sidecars?.find(
-			(s) => s.kind === "transcript" && s.variant === "srt",
-		);
+		const srtSidecar = file.sidecars?.find((s) => s.kind === "transcript" && s.variant === "srt");
 
 		if (!srtSidecar || !file.content_identity?.uuid) {
 			return;
 		}
 
 		// Map "text" format to "txt" extension (DB stores "text", file is .txt)
-		const extension =
-			srtSidecar.format === "text" ? "txt" : srtSidecar.format;
+		const extension = srtSidecar.format === "text" ? "txt" : srtSidecar.format;
 		const srtUrl = buildSidecarUrl(
 			file.content_identity.uuid,
 			srtSidecar.kind,
@@ -61,34 +54,23 @@ export function Subtitles({
 			.then(async (res) => {
 				if (!res.ok) {
 					if (res.status === 404) {
-						console.log(
-							"[Subtitles] No subtitle file found (not generated yet)",
-						);
+						console.log("[Subtitles] No subtitle file found (not generated yet)");
 					} else {
-						console.error(
-							"[Subtitles] Failed to fetch SRT, status:",
-							res.status,
-						);
+						console.error("[Subtitles] Failed to fetch SRT, status:", res.status);
 					}
 					return null;
 				}
 				return res.text();
 			})
 			.then((srtContent) => {
-				if (!srtContent) return;
+				if (!srtContent) return null;
 				const parsed = parseSRT(srtContent);
-				console.log(
-					"[Subtitles] Loaded and parsed",
-					parsed.length,
-					"subtitle cues",
-				);
+				console.log("[Subtitles] Loaded and parsed", parsed.length, "subtitle cues");
 				setCues(parsed);
+				return null;
 			})
 			.catch((err) => {
-				console.log(
-					"[Subtitles] Subtitles not available:",
-					err.message,
-				);
+				console.log("[Subtitles] Subtitles not available:", err.message);
 			});
 	}, [file, buildSidecarUrl]);
 
@@ -104,17 +86,12 @@ export function Subtitles({
 			return;
 		}
 
-		console.log(
-			"[Subtitles] Setting up video sync with",
-			cues.length,
-			"cues",
-		);
+		console.log("[Subtitles] Setting up video sync with", cues.length, "cues");
 
 		const updateSubtitle = () => {
 			const currentTime = videoElement.currentTime;
 			const activeCue = cues.find(
-				(cue) =>
-					currentTime >= cue.startTime && currentTime <= cue.endTime,
+				(cue) => currentTime >= cue.startTime && currentTime <= cue.endTime,
 			);
 
 			if (activeCue !== currentCue) {

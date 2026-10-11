@@ -48,7 +48,7 @@ export function deriveTitleFromPath(pathname: string, search: string): string | 
             "path" in physical &&
             typeof physical.path === "string"
           )
-            return physical.path.split(/[\\/]/).filter(Boolean).at(-1) ?? "Fichiers";
+            return physical.path.split(/[\\/]/).findLast(Boolean) ?? "Fichiers";
         }
       } catch {
         /* A malformed legacy URL keeps the generic title. */
@@ -65,4 +65,30 @@ export function deriveTitleFromPath(pathname: string, search: string): string | 
     return `Fichiers : ${pathname.slice(12).replaceAll("_", " ")}`;
   if (pathname.startsWith("/sources/")) return null;
   return "Aphrody";
+}
+
+/** Public preview titles preserve homepage SEO after hydration without changing native tabs. */
+export function browserDocumentTitle(
+  pathname: string,
+  title: string | null,
+  publicPreview: boolean,
+): string {
+  const route = pathname.replace(/\/+$/, "") || "/";
+  if (publicPreview && (route === "/" || route === "/index.html"))
+    return "Aphrody — Search, workspace and native OS";
+  if (publicPreview && route === "/os") return "Aphrody OS — Browser workspace";
+  if (publicPreview) {
+    const context = route
+      .slice(1)
+      .split("/")
+      .map((part) =>
+        part
+          .split("-")
+          .map((word) => word[0]?.toUpperCase() + word.slice(1))
+          .join(" "),
+      )
+      .join(" — ");
+    return `${context} — Aphrody`;
+  }
+  return title ? `${title} — Aphrody OS` : "Aphrody OS";
 }

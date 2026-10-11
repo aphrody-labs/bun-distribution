@@ -19,6 +19,18 @@ interface UseFileContextMenuProps {
   selected: boolean;
 }
 
+// Helper to run a mutation on each target file
+async function forEachTarget(targets: File[], fn: (f: File) => Promise<unknown>) {
+  for (const f of targets) {
+    try {
+      // oxlint-disable-next-line no-await-in-loop -- preserve ordered mutations per target file.
+      await fn(f);
+    } catch (err) {
+      console.error(`Failed for ${f.name}:`, err);
+    }
+  }
+}
+
 export function useFileContextMenu({ file, selectedFiles, selected }: UseFileContextMenuProps) {
   const { navigateToPath, currentPath, mode, openQuickPreview } = useExplorer();
   const platform = usePlatform();
@@ -33,17 +45,6 @@ export function useFileContextMenu({ file, selectedFiles, selected }: UseFileCon
   const generateThumbstrip = useLibraryMutation("media.thumbstrip.generate");
   const generateProxy = useLibraryMutation("media.proxy.generate");
 
-  // Helper to run a mutation on each target file
-  const forEachTarget = async (targets: File[], fn: (f: File) => Promise<unknown>) => {
-    for (const f of targets) {
-      try {
-        // oxlint-disable-next-line no-await-in-loop -- preserve ordered mutations per target file.
-        await fn(f);
-      } catch (err) {
-        console.error(`Failed for ${f.name}:`, err);
-      }
-    }
-  };
   const clipboard = useClipboard();
   const openFileOperation = useFileOperationDialog();
   const { startRename } = useSelection();

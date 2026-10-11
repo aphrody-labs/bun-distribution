@@ -135,6 +135,7 @@ async function walk(
     const dir = stack.pop() as string;
     let entries;
     try {
+      // oxlint-disable-next-line no-await-in-loop -- directories are walked depth-first one at a time and visit() runs in traversal order
       entries = await readdir(dir, { withFileTypes: true });
     } catch {
       continue;
@@ -143,6 +144,7 @@ async function walk(
       if (entry.isDirectory()) {
         if (!skip.has(entry.name)) stack.push(join(dir, entry.name));
       } else if (entry.isFile()) {
+        // oxlint-disable-next-line no-await-in-loop -- directories are walked depth-first one at a time and visit() runs in traversal order
         await visit(relative(root, dir).split(sep).join("/"), entry.name);
       }
     }
@@ -237,17 +239,19 @@ export async function confSchemaDrift(
   registry: Registry,
   version: string,
 ): Promise<{ file: string; tag: string | null }[]> {
-  const out: { file: string; tag: string | null }[] = [];
-  for (const project of registry.projects) {
-    for (const conf of project.confs ?? []) {
-      const file = `${project.path}/${conf}`;
+  const confs = registry.projects.flatMap((project) =>
+    (project.confs ?? []).map((conf) => `${project.path}/${conf}`),
+  );
+  // Reads are independent; Promise.all keeps the registry order of the drift list.
+  const drift = await Promise.all(
+    confs.map(async (file) => {
       const path = join(root, file);
-      if (!existsSync(path)) continue;
+      if (!existsSync(path)) return undefined;
       const tag = schemaTag(await readFile(path, "utf8"));
-      if (tag !== version) out.push({ file, tag });
-    }
-  }
-  return out;
+      return tag !== version ? { file, tag } : undefined;
+    }),
+  );
+  return drift.filter((item): item is { file: string; tag: string | null } => item !== undefined);
 }
 
 /** Rewrite drifted first-party `$schema` tags; returns the files changed. */
@@ -256,19 +260,21 @@ export async function fixConfSchemas(
   registry: Registry,
   version: string,
 ): Promise<string[]> {
-  const changed: string[] = [];
-  for (const { file } of await confSchemaDrift(root, registry, version)) {
-    const path = join(root, file);
-    const text = await readFile(path, "utf8");
-    const next = SCHEMA_TAG.test(text)
-      ? rewriteSchemaTag(text, version)
-      : text.replace(/^\{\n/, `{\n  "$schema": ${JSON.stringify(schemaUrl(version))},\n`);
-    if (next !== text) {
+  const drift = await confSchemaDrift(root, registry, version);
+  // Each file is rewritten independently; Promise.all keeps the drift order of the changed list.
+  const changed = await Promise.all(
+    drift.map(async ({ file }) => {
+      const path = join(root, file);
+      const text = await readFile(path, "utf8");
+      const next = SCHEMA_TAG.test(text)
+        ? rewriteSchemaTag(text, version)
+        : text.replace(/^\{\n/, `{\n  "$schema": ${JSON.stringify(schemaUrl(version))},\n`);
+      if (next === text) return undefined;
       await writeFile(path, next);
-      changed.push(file);
-    }
-  }
-  return changed;
+      return file;
+    }),
+  );
+  return changed.filter((file): file is string => file !== undefined);
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -405,6 +411,7 @@ export async function audit(root: string, registry: Registry): Promise<AuditRepo
   for (const project of registry.projects.filter((entry) => FIRST_PARTY.has(entry.kind))) {
     const cargo = join(root, project.path, "Cargo.toml");
     if (existsSync(cargo)) {
+      // oxlint-disable-next-line no-await-in-loop -- violations are appended in registry order, so the report keeps a stable order
       for (const dep of tauriCargoDeps(await readFile(cargo, "utf8"))) {
         if (!dep.inherited) {
           violations.push({
@@ -417,6 +424,7 @@ export async function audit(root: string, registry: Registry): Promise<AuditRepo
     }
     const manifest = join(root, project.path, "package.json");
     if (existsSync(manifest)) {
+      // oxlint-disable-next-line no-await-in-loop -- violations are appended in registry order, so the report keeps a stable order
       for (const dep of npmTauriDeps(await readFile(manifest, "utf8"))) {
         if (dep.version !== "catalog:") {
           violations.push({
@@ -430,6 +438,7 @@ export async function audit(root: string, registry: Registry): Promise<AuditRepo
     for (const conf of project.confs ?? []) {
       const path = join(root, project.path, conf);
       if (!existsSync(path)) continue;
+      // oxlint-disable-next-line no-await-in-loop -- violations are appended in registry order, so the report keeps a stable order
       const text = await readFile(path, "utf8");
       const tag = schemaTag(text);
       if (tauri && tag !== tauri) {

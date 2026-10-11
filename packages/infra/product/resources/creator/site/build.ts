@@ -34,7 +34,9 @@ export async function schemeCss(path = THEME): Promise<string> {
     );
   const theme = parseNativeThemeExport(await file.json());
   if (theme.seed !== SEED || theme.variant !== "fidelity")
-    throw new Error(`${path} is not the ${SEED} fidelity export (got ${theme.seed} ${theme.variant})`);
+    throw new Error(
+      `${path} is not the ${SEED} fidelity export (got ${theme.seed} ${theme.variant})`,
+    );
   const light = nativeThemeColorRoles(theme);
   const dark = nativeThemeColorRoles(theme, true);
   return [
@@ -79,11 +81,16 @@ export async function build(outDir = join(here, "dist")): Promise<string> {
     join(m3, "m3-fonts/fonts/web/GoogleSansFlex-latin.woff2"),
     join(outDir, "fonts/GoogleSansFlex-latin.woff2"),
   );
-  for (const name of ["index.html", "page.css", "app.js"])
-    await cp(join(here, "src", name), join(outDir, name));
-  for (const name of ["logo.webp", "favicon-32.png", "favicon-192.png", "apple-touch-icon.png"]) {
-    await cp(join(here, "assets", name), join(outDir, name));
-  }
+  await Promise.all(
+    ["index.html", "page.css", "app.js"].map((name) =>
+      cp(join(here, "src", name), join(outDir, name)),
+    ),
+  );
+  await Promise.all(
+    ["logo.webp", "favicon-32.png", "favicon-192.png", "apple-touch-icon.png"].map((name) =>
+      cp(join(here, "assets", name), join(outDir, name)),
+    ),
+  );
   return outDir;
 }
 

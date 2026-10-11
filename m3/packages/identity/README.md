@@ -11,6 +11,7 @@ repository.
 | `@aphrody/identity/pet` | `PET`, `frameAt`, `gazeFrame`, `spriteStyle` (timed tracks, 16-way gaze) | nothing |
 | `@aphrody/identity/runtime` | `PET_WEB`, `resolve`, `currentFrame`, `Ambient`, `gaze`: the crate clock (Codex-composed tracks, state lifetimes), tick for tick | nothing |
 | `@aphrody/identity/element` | `<aphrody-pet>` Custom Element, `defineAphrodyPet()` (16.6 KB minified, 3.6 KB gzip) | an atlas URL in `src` |
+| `@aphrody/identity/load` | `loadIcon(source, { size, scale, tint, fit, output })`: PNG, JPEG, WebP, GIF, SVG, ICO (best entry for `size × scale`) and `symbol:<name>?style=…&fill=…&wght=…&grad=…&opsz=…` from cdn.aphrody.com, to an `ImageBitmap` or SVG markup; the browser side of the crate loader (8.4 KB minified, 3.8 KB gzip) | a browser for bitmaps |
 
 The brand and atlas modules import the crate assets by relative path, so they resolve in an aphrody
 checkout (this repository mounted at `m3/`). `src/animations.generated.ts` is generated from the

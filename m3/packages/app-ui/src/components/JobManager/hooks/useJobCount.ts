@@ -44,9 +44,10 @@ export function useJobCount() {
 			.then((unsub) => {
 				if (isCancelled) {
 					unsub();
-				} else {
-					unsubscribe = unsub;
+					return;
 				}
+				unsubscribe = unsub;
+				return;
 			});
 
 		return () => {

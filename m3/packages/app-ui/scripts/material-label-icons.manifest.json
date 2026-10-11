@@ -1,0 +1,330 @@
+{
+  "schema": 1,
+  "base": "80a004bcb6957a789fe95f3dcf8ccb88276899d7",
+  "files": [
+    {
+      "path": "m3/packages/app-ui/src/codex-chat.tsx",
+      "before": "c7a44d3dc02da47beeb9e7f6cc06d2ce895c5f92bf435f8748f0c39aa535adbb",
+      "after": "0c6f85004c5e0ea3bd71323081109bffd3913f36a9aa06778ed6d861b4f88fc5",
+      "edits": [
+        {
+          "line": 310,
+          "label": "Annuler",
+          "icon": "close"
+        },
+        {
+          "line": 313,
+          "label": "Enregistrer",
+          "icon": "save"
+        },
+        {
+          "line": 2466,
+          "label": "Réessayer",
+          "icon": "refresh"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/components/JobManager/JobsScreen/index.tsx",
+      "before": "95a20c245e721f4d8c085db20ac0259e9ea5e6807ad6d14ad0a6846059d322cc",
+      "after": "b668ee773635de1b81c4a0035e681619a5fe14732a099c12aaa3de9ebf261a25",
+      "edits": [
+        {
+          "line": 92,
+          "label": "Paramètres",
+          "icon": "settings"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/components/modals/PairingModal.tsx",
+      "before": "5d47bf657c095368c67315e271542ec78e9ad058a95869f5001c5ea33de13e5b",
+      "after": "cb91d5ee1842e6d20edc765ee5a85382cd9ebb628de9f54abe1f1512fdcc8f7f",
+      "edits": [
+        {
+          "line": 407,
+          "label": "Cancel",
+          "icon": "close"
+        },
+        {
+          "line": 519,
+          "label": "Cancel",
+          "icon": "close"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/components/modals/SyncSetupModal.tsx",
+      "before": "95223eaafd311a1d85f533586021d8b3d701c116e69d9525f69df01bebd1874e",
+      "after": "a588cae77c462a40af55ffbb97f2ab85e934c9a2d98f276d3222308339b99886",
+      "edits": [
+        {
+          "line": 334,
+          "label": "Back",
+          "icon": "arrow_back"
+        },
+        {
+          "line": 412,
+          "label": "Back",
+          "icon": "arrow_back"
+        },
+        {
+          "line": 469,
+          "label": "Back",
+          "icon": "arrow_back"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/components/overlays/DaemonDisconnectedOverlay.tsx",
+      "before": "3187dee4ef33a69b9394c851944480e02e756774c9237dad9995ae73c64e5ffc",
+      "after": "9293527c7a7b2b5034a865f09845e955e66a66fb27c0532143fb626b74fc3552",
+      "edits": [
+        {
+          "line": 168,
+          "label": "Help",
+          "icon": "help"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/components/SpacesSidebar/SpaceCustomizationPanel.tsx",
+      "before": "99562f0ad36b3bc860466f662e344219dd57eb0c84ad089a18b1b8be7971e332",
+      "after": "96f65608d602552e6cf740049f0b44ad5ae6912cad10f0aa89f7a3791cd098cc",
+      "edits": [
+        {
+          "line": 272,
+          "label": "Add",
+          "icon": "add"
+        },
+        {
+          "line": 282,
+          "label": "Cancel",
+          "icon": "close"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/history-panel.tsx",
+      "before": "db2811318b674d51f86f9c20dabb01a61a3df285d753351b1facc07de0f4c420",
+      "after": "7324dfab3b5c68b51120ffd8064ed850346cd5cd41c1f4936e87ce4739694d50",
+      "edits": [
+        {
+          "line": 196,
+          "label": "Cancel",
+          "icon": "close"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/models-hub.tsx",
+      "before": "cc197645de4b07142771442e8f18c836c9e1a7cf6c777b76ace4fa9f14e7f31a",
+      "after": "0394d4d9d533b56123ab42690d3fe7aac3365a53dc4edc0da5f3bd54b2ab4e9b",
+      "edits": [
+        {
+          "line": 333,
+          "label": "Réessayer",
+          "icon": "refresh"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/onboarding.tsx",
+      "before": "6694a75b25cf474b9f3677ad92f06c51be67897f8cc31d822deb43d0a837932f",
+      "after": "2f90422bc18664bcf362fcc8d6e012a77b1ce0fc5d849c92c065cc4eac17117f",
+      "edits": [
+        {
+          "line": 126,
+          "label": "Skip",
+          "icon": "skip_next"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/quickbar.tsx",
+      "before": "10dad8c91a3112236a3f14cbea059b47a03ae613d94a6affd4bb25c8d826e1af",
+      "after": "b43ca8e0e3415e28de99a923da91b18671a34bab85fe80839757f6f72073e582",
+      "edits": [
+        {
+          "line": 406,
+          "label": "Nouveau fil",
+          "icon": "add"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/routes/explorer/components/AddLocationModal.tsx",
+      "before": "60c37192229424bf80cd271b9897c51836fcc7a7eabf1517d16cb75214719d81",
+      "after": "785b8f98d72c13c415e10b78751162111f4d5d074b80a46bddd7d9d503c23687",
+      "edits": [
+        {
+          "line": 322,
+          "label": "Back",
+          "icon": "arrow_back"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/routes/explorer/components/AddStorageModal.tsx",
+      "before": "53f07ae9488176e425fc84a6e56f4ee1ff88c4327d26b6723e3eb05a9bb61d5b",
+      "after": "e5dbe2d0fc9ece71615126f9cbde838aaa4259f405e1be4475060e6b4b8b86cf",
+      "edits": [
+        {
+          "line": 198,
+          "label": "Back",
+          "icon": "arrow_back"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/routes/explorer/TagAssignmentMode.tsx",
+      "before": "248c0182bbf828f0429f5a6bd15e79d5c28daad1d9ff3e6ec62fa92e71344a3f",
+      "after": "56f80d4d9ae9c88b9f5a5bbbb444cab71411a2ccda3223bbb58496bf5dea9e76",
+      "edits": [
+        {
+          "line": 165,
+          "label": "Done",
+          "icon": "check"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/routes/file-kinds/index.tsx",
+      "before": "f447619dbcfd51519fbd2f286045619620ae699a0a78bab970417e0e9e7c085d",
+      "after": "4a776f4ffba835f7a86723a1955c81f3c43b2fbb6e35164c7cfafe6da83e6396",
+      "edits": [
+        {
+          "line": 116,
+          "label": "Réessayer",
+          "icon": "refresh"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/routes/kit/KitSurface.tsx",
+      "before": "bc147110e8ca4451aa5d97e7a653783af91dc17d27c6c54c1a1a94317e32a2f3",
+      "after": "473d97c0fb6a885cc696c280ab8384a247196e0ee88816e2139d236abe5ecb1b",
+      "edits": [
+        {
+          "line": 87,
+          "label": "Annuler",
+          "icon": "close"
+        },
+        {
+          "line": 403,
+          "label": "Réessayer",
+          "icon": "refresh"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/routes/redundancy/index.tsx",
+      "before": "cd1b34d5c2d8c0b6f4dc4212a64c5bfbc2d091d6f086552e92563d7d62fe2d9b",
+      "after": "3db13640de1eff4d625e12360d11e957c0783fa633cd6f108fe7606bfed6b52c",
+      "edits": [
+        {
+          "line": 48,
+          "label": "Retry",
+          "icon": "refresh"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/routes/sources/Adapters.tsx",
+      "before": "ebe468bc07e641244d233421e368d58290b1c9bb517f8a5d043bb6cc86e4ec44",
+      "after": "3ce83c0f50f692d1083f82569ed9d49041acc1f4b0ef150181f467eeef1dbe3c",
+      "edits": [
+        {
+          "line": 290,
+          "label": "Done",
+          "icon": "check"
+        },
+        {
+          "line": 347,
+          "label": "Cancel",
+          "icon": "close"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/routes/sources/SourceDetail.tsx",
+      "before": "6aa4613da48fc4f40dd99e48ff963591e9fdad710a00c49675f750ab751ffb0d",
+      "after": "bbeaef5e8ff75da0cf7dabc443cb7273c4e456b83f56a32dca42a5f48ca4dcb6",
+      "edits": [
+        {
+          "line": 397,
+          "label": "Cancel",
+          "icon": "close"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/Settings/pages/AgentSettings.tsx",
+      "before": "8de851115e7e04f7d103cd713aac321cdc27d26be9298e1fb316abb76da794f7",
+      "after": "b5062f80d807456bbf16819d7a9b34cec30f793cbeb846a777970d6a870bdc01",
+      "edits": [
+        {
+          "line": 176,
+          "label": "Réessayer",
+          "icon": "refresh"
+        },
+        {
+          "line": 222,
+          "label": "Réessayer",
+          "icon": "refresh"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/Settings/pages/GeneralSettings.tsx",
+      "before": "9868788a4a9f3765ad2f4bdb5b0dd85a4487d75af42a4838696548d1010176e2",
+      "after": "99e87aff3f6ffae54c9c1527facf5e937df63b060ccc99e661567310313d033c",
+      "edits": [
+        {
+          "line": 201,
+          "label": "Réessayer",
+          "icon": "refresh"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/jan-ui-interaction.test.ts",
+      "before": "2e42b5613dba9bd776dad748a6155180dde52461b1a6f781dfdab1ae65401a8f",
+      "after": "f3970c5a205eceb578e029a54c9e89e3fbb57dc3295cc080a459dae765532648",
+      "edits": [
+        {
+          "line": 0,
+          "label": "Réessayer",
+          "icon": "aria-label",
+          "mode": "test-assertion"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/Settings/pages/AgentSettings.behavior.test.ts",
+      "before": "dfab928b2aaa1e1913f8650c9ff6147adbc5e0ecc016d239767ff7ba1bd24387",
+      "after": "c0fa9cb11c3c27474dae1b08d6445eaa40be608816ae6c06cbb8c96b34e3b4f5",
+      "edits": [
+        {
+          "line": 0,
+          "label": "Réessayer",
+          "icon": "aria-label",
+          "mode": "test-assertion"
+        }
+      ]
+    },
+    {
+      "path": "m3/packages/app-ui/src/Settings/pages/GeneralSettings.behavior.test.ts",
+      "before": "15435e242d218a8545294836e06402803b2f8efd930399537788b13315689262",
+      "after": "6d3d01e83e338a600f0597066ad352ae57780ac4906306ed87cd19a9abe84734",
+      "edits": [
+        {
+          "line": 0,
+          "label": "Réessayer",
+          "icon": "aria-label",
+          "mode": "test-assertion"
+        }
+      ]
+    }
+  ]
+}

@@ -55,6 +55,7 @@ export async function importInfraScripts(
   for (const path of SCRIPT_PATHS) {
     const entry = bySource.get(`aphrody-infra/${path}`);
     if (!entry?.sha256) throw new Error(`script absent from hashed source map: ${path}`);
+    // oxlint-disable-next-line no-await-in-loop -- contrôle préalable séquentiel : la première anomalie arrête l'import dans l'ordre des scripts
     const sourceBytes = await readFile(join(source, path));
     const sourceHash = hash(sourceBytes);
     if (entry.sha256 !== sourceHash)
@@ -66,6 +67,7 @@ export async function importInfraScripts(
     if (!targetPath.startsWith(`${target}/`))
       throw new Error(`script target escapes root: ${path}`);
     const existing = existsSync(targetPath);
+    // oxlint-disable-next-line no-await-in-loop -- contrôle préalable séquentiel : la première anomalie arrête l'import dans l'ordre des scripts
     if (existing && hash(await readFile(targetPath)) !== sourceHash)
       throw new Error(`Infra service script target conflict: ${destination}`);
     if (entry.importedSha256 && entry.importedSha256 !== sourceHash)
@@ -77,7 +79,9 @@ export async function importInfraScripts(
 
   for (const item of planned) {
     if (!item.existing) {
+      // oxlint-disable-next-line no-await-in-loop -- copies séquentielles avec COPYFILE_EXCL : chaque écriture doit réussir avant la suivante
       await mkdir(dirname(item.targetPath), { recursive: true });
+      // oxlint-disable-next-line no-await-in-loop -- copies séquentielles avec COPYFILE_EXCL : chaque écriture doit réussir avant la suivante
       await copyFile(join(source, item.path), item.targetPath, constants.COPYFILE_EXCL);
     }
     item.entry.target = item.destination;

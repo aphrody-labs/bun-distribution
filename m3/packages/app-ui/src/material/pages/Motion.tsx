@@ -39,10 +39,10 @@ export default function Motion({ adaptive }: PageProps) {
       packages={["@aphrody/m3-motion"]}
       panes={adaptive.panes}
     >
-      <p role="status" className="text-body-medium">
+      <output className="text-body-medium block">
         Reduced motion:{" "}
         {reduced ? "on — states update without animation" : "off — Material motion is active"}
-      </p>
+      </output>
       <Section title="Navigation patterns">
         <Card className="flex flex-col gap-4">
           <label className="flex flex-col gap-2 text-label-large">

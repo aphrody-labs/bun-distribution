@@ -53,6 +53,7 @@ console.log(
 const compilerBench = await initAsyncCompiler();
 const tStartDart = performance.now();
 for (let i = 0; i < ITERATIONS; i++) {
+  // oxlint-disable-next-line no-await-in-loop -- benchmark iterations are timed one after another; concurrent runs would measure contention
   await compilerBench.compileAsync(targetFile, {
     style: "compressed",
     loadPaths,

@@ -15,9 +15,8 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
-import factoryPolicy from "../../../../../../tools/config/build-factory.json";
-import { withFactoryResource } from "../../../../../infra/workspace/src/build-factory-cleanup.ts";
-import type { BuildFactoryConfig } from "../../../../../infra/workspace/src/build-factory.ts";
+import { withFactoryResource } from "@aphrody/workspace/src/build-factory-cleanup.ts";
+import { readFactoryConfig } from "@aphrody/workspace/src/build-factory.ts";
 import { auditGlibc, lowerGlibcCeiling } from "./glibc.ts";
 import { availableParallelism, totalmem, userInfo } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -390,8 +389,13 @@ function withLock<T>(p: Paths, body: () => Promise<T>): Promise<T> {
     writeFileSync(p.lock, String(process.pid));
   }
   const runLeased = async () => {
-    if (existsSync(factoryPolicy.lockPath)) {
-      return withFactoryResource(factoryPolicy as BuildFactoryConfig, body);
+    const factoryRoot =
+      process.env.APHRODY_ROOT?.trim() ||
+      process.env.APHRODY_WORKSPACE_ROOT?.trim() ||
+      resolve(import.meta.dir, "../../../../../..");
+    const factoryPolicy = await readFactoryConfig(factoryRoot);
+    if (factoryPolicy && existsSync(factoryPolicy.lockPath)) {
+      return withFactoryResource(factoryPolicy, body);
     }
     return body();
   };

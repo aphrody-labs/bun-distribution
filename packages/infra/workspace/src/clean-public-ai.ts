@@ -59,29 +59,31 @@ export async function scanFileForAiLeaks(filePath: string): Promise<ScanHit[]> {
   }
 }
 
-async function walkDir(dir: string, fileList: string[] = []): Promise<string[]> {
+async function walkDir(dir: string): Promise<string[]> {
   try {
     const entries = await readdir(dir, { withFileTypes: true });
-    for (const entry of entries) {
-      if (
-        entry.name.startsWith(".git") ||
-        entry.name === "node_modules" ||
-        entry.name === ".next" ||
-        entry.name === "dist"
-      ) {
-        continue;
-      }
-      const fullPath = resolve(dir, entry.name);
-      if (entry.isDirectory()) {
-        await walkDir(fullPath, fileList);
-      } else if (entry.isFile() && /\.(tsx?|jsx?|json|html|md|txt)$/i.test(entry.name)) {
-        fileList.push(fullPath);
-      }
-    }
+    const nested = await Promise.all(
+      entries.map(async (entry): Promise<string[]> => {
+        if (
+          entry.name.startsWith(".git") ||
+          entry.name === "node_modules" ||
+          entry.name === ".next" ||
+          entry.name === "dist"
+        ) {
+          return [];
+        }
+        const fullPath = resolve(dir, entry.name);
+        if (entry.isDirectory()) return walkDir(fullPath);
+        if (entry.isFile() && /\.(tsx?|jsx?|json|html|md|txt)$/i.test(entry.name))
+          return [fullPath];
+        return [];
+      }),
+    );
+    return nested.flat();
   } catch {
     // skip non-existent dirs
+    return [];
   }
-  return fileList;
 }
 
 export async function auditPublicSurfaces(
@@ -90,20 +92,13 @@ export async function auditPublicSurfaces(
   const root = resolve(rootDir);
   const publicDirs = [resolve(root, "apps/site/public"), resolve(root, "apps/site/src")];
 
-  const allFiles: string[] = [];
-  for (const dir of publicDirs) {
-    await walkDir(dir, allFiles);
-  }
+  const allFiles = (await Promise.all(publicDirs.map((dir) => walkDir(dir)))).flat();
 
-  const hits: ScanHit[] = [];
-  for (const file of allFiles) {
-    // Skip internal admin console files
-    if (file.includes("/src/app/admin/") || file.includes("/src/components/admin/")) {
-      continue;
-    }
-    const fileHits = await scanFileForAiLeaks(file);
-    hits.push(...fileHits);
-  }
+  // Skip internal admin console files
+  const scannable = allFiles.filter(
+    (file) => !(file.includes("/src/app/admin/") || file.includes("/src/components/admin/")),
+  );
+  const hits = (await Promise.all(scannable.map((file) => scanFileForAiLeaks(file)))).flat();
 
   return { hits, scannedCount: allFiles.length };
 }

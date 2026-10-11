@@ -20,6 +20,7 @@ import {
   type KitRun,
   type RunState,
 } from "../../kit-bridge";
+import { Icon } from "@aphrody/m3-primitives";
 
 type RunAction = { type: "event"; event: KitEvent } | { type: "answered" } | { type: "reset" };
 
@@ -80,11 +81,13 @@ export function KitDialog({ title, message, input, confirmLabel, onClose }: KitD
         )}
         <div className="flex justify-end gap-2">
           <button
+            aria-label="Annuler"
+            title="Annuler"
             type="button"
             onClick={() => onClose(null)}
             className="min-h-12 rounded-full px-6 text-label-large text-primary hover:bg-primary/10"
           >
-            Annuler
+            <Icon name="close" size={18} />
           </button>
           <button
             type="submit"
@@ -393,6 +396,8 @@ export function KitSurface({ kit, title, intro }: KitSurfaceProps) {
         >
           <p className="text-body-large">{error}</p>
           <button
+            aria-label="Réessayer"
+            title="Réessayer"
             type="button"
             onClick={() => {
               setError(null);
@@ -400,7 +405,7 @@ export function KitSurface({ kit, title, intro }: KitSurfaceProps) {
             }}
             className="min-h-12 self-start rounded-full bg-primary px-6 text-label-large text-on-primary"
           >
-            Réessayer
+            <Icon name="refresh" size={18} />
           </button>
         </div>
       )}

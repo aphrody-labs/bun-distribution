@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { AphrodyAvatar, AphrodyPet, PET_COLORS } from "@aphrody/identity";
-import { PET_ATLAS_URL } from "@aphrody/identity/atlas";
+import { PET_COLORS } from "@aphrody/identity";
+import { ProductSearchHome } from "./ProductSearchHome";
 import { Button } from "@aphrody/m3-primitives";
 import { Markdown } from "@aphrody/m3-ai";
 import { httpSchemeSheet } from "@aphrody/m3-theme";
@@ -8,7 +8,7 @@ import { M3ThemeProvider } from "@aphrody/m3-theme/react";
 import { Component, Suspense, useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { usePlatform } from "../../contexts/PlatformContext";
-import { publicDestinations } from "../../public-navigation";
+
 import { PAGES, type PageId } from "../../material/pages";
 import { useAdaptive } from "../../material/adaptive/window";
 import { PACKAGES } from "../../material/inventory";
@@ -43,77 +43,7 @@ function ProductPage({
 export function ProductHome() {
   const platform = usePlatform();
   if (platform.platform === "tauri") return <Navigate to="/explorer" replace />;
-  return (
-    <div className="h-full overflow-auto">
-      <ProductPage
-        title="Aphrody"
-        summary="Create, explore and build with Aphrody. Your apps, tools and Material 3 components share one workspace."
-      >
-        <section
-          className="flex flex-col items-start gap-6 rounded-extra-large bg-primary-container p-6 text-on-primary-container sm:flex-row sm:flex-wrap sm:items-center"
-          aria-label="Aphrody identity"
-        >
-          <AphrodyAvatar size={80} label="Aphrody logo" />
-          <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-1">
-            <h2 className="text-headline-medium">One home for your workspace</h2>
-            <p className="text-body-large">
-              Documentation, project templates and working components. The same interface on the web
-              and desktop.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Button
-                href="/docs"
-                variant="filled"
-                className="min-h-12 max-w-full whitespace-normal"
-              >
-                Read the docs
-              </Button>
-              <Button
-                href="/material-3/components"
-                variant="tonal"
-                className="min-h-12 max-w-full whitespace-normal"
-              >
-                Explore components
-              </Button>
-            </div>
-          </div>
-          <AphrodyPet atlasUrl={PET_ATLAS_URL} height={144} label="Aphrody pet" />
-        </section>
-        <div className="grid gap-4 md:grid-cols-3">
-          {publicDestinations.slice(1).map((destination) => (
-            <Link
-              key={destination.route}
-              to={destination.route}
-              className="state-layer flex flex-col gap-3 rounded-large bg-surface-container p-6"
-            >
-              <span className="material-symbol text-primary" aria-hidden="true">
-                {destination.icon}
-              </span>
-              <h2 className="text-title-large">{destination.label}</h2>
-              <p className="text-body-large text-on-surface-variant">
-                {destination.route === "/docs"
-                  ? "Understand the runtimes, desktop and shared architecture."
-                  : destination.route === "/templates"
-                    ? "Start with real source files and the workspace CLI."
-                    : "Try the actual M3 packages, motion, forms and themes."}
-              </p>
-            </Link>
-          ))}
-        </div>
-        <section className="flex flex-wrap items-center justify-between gap-4 rounded-large bg-surface-container-low p-6">
-          <div>
-            <h2 className="text-title-large">Your tools are here too</h2>
-            <p className="text-body-large text-on-surface-variant">
-              Chat, files, local models and Studio are available from the application navigation.
-            </p>
-          </div>
-          <Button href="/studio" variant="outlined">
-            Open Studio
-          </Button>
-        </section>
-      </ProductPage>
-    </div>
-  );
+  return <ProductSearchHome />;
 }
 
 function useCatalog<T>(path: "/api/docs" | "/api/templates", parse: (value: unknown) => T[]) {

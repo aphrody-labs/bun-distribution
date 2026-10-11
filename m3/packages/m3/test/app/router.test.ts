@@ -33,10 +33,11 @@ describe("build", () => {
     expect(manifest.version).toBe(1);
     expect(manifest.buildId).toBe("test");
     expect(manifest.middleware).toBe(true);
-    expect(Object.keys(manifest.clientModules).filter(k => !k.includes("src/app")).toSorted()).toEqual([
-      "app/counter.tsx",
-      "app/form.tsx",
-    ]);
+    expect(
+      Object.keys(manifest.clientModules)
+        .filter((k) => !k.includes("src/app"))
+        .toSorted(),
+    ).toEqual(["app/counter.tsx", "app/form.tsx"]);
     expect(existsSync(join(outDir, manifest.rscEntry))).toBe(true);
     expect(existsSync(join(outDir, manifest.ssrEntry))).toBe(true);
     expect(existsSync(join(outDir, "client", manifest.bootstrap))).toBe(true);
@@ -45,7 +46,7 @@ describe("build", () => {
 
   test("prerenders static pages and generateStaticParams, leaves request-bound pages dynamic", () => {
     expect(prerendered.pages.toSorted()).toEqual(["/", "/blog/first", "/blog/second"]);
-    expect(prerendered.dynamic.map(d => d.path)).toContain("/dash");
+    expect(prerendered.dynamic.map((d) => d.path)).toContain("/dash");
     expect(existsSync(join(outDir, "prerender", "index.html"))).toBe(true);
     expect(existsSync(join(outDir, "prerender", "blog/first.rsc"))).toBe(true);
   });
@@ -81,15 +82,19 @@ describe("host", () => {
   });
 
   test("notFound() and unknown paths render the not-found page with 404", async () => {
-    for (const path of ["/blog/missing", "/nope"]) {
-      const response = await get(path);
-      expect(await response.text()).toContain("Nothing here");
-      expect(response.status).toBe(404);
-    }
+    await Promise.all(
+      ["/blog/missing", "/nope"].map(async (path) => {
+        const response = await get(path);
+        expect(await response.text()).toContain("Nothing here");
+        expect(response.status).toBe(404);
+      }),
+    );
   });
 
   test("request data is read per request", async () => {
-    const response = await get("/dash", { headers: { "user-agent": "fixture-agent", cookie: "theme=dark" } });
+    const response = await get("/dash", {
+      headers: { "user-agent": "fixture-agent", cookie: "theme=dark" },
+    });
     const html = await response.text();
     expect(html).toContain("fixture-agent");
     expect(html).toContain("dark");
@@ -156,7 +161,7 @@ describe("host", () => {
 
   test("HTMLRewriter transforms the streamed HTML document", async () => {
     const rewrittenApp = await loadApp(outDir, {
-      rewriter: rw =>
+      rewriter: (rw) =>
         rw.on("main", {
           element(el) {
             el.setAttribute("data-rewritten", "true");

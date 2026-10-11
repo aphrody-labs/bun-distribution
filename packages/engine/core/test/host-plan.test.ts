@@ -50,6 +50,7 @@ beforeAll(() => {
         unit("aphrody-a2a", 8788),
         unit("aphrody-mcp-http", 8789),
         unit("other", 9000, "dbfr"),
+        unit("aphrody-ai-gateway-dbfr", 8786, "dbfr"),
       ],
     }),
   );
@@ -60,12 +61,22 @@ beforeAll(() => {
   );
   writeFileSync(join(root, "systemd/aphrody/other.service"), unitText("127.0.0.1:9000"));
   writeFileSync(
+    join(root, "systemd/aphrody/aphrody-ai-gateway-dbfr.service"),
+    `[Unit]\nDescription=fixture\n\n[Service]\nUser=ubuntu\nEnvironmentFile=/etc/aphrody/aphrody-ai-gateway.env\nExecStart=/home/ubuntu/.local/bin/aphrody gateway serve --addr 127.0.0.1:8786 --provider openai\n`,
+  );
+  writeFileSync(
     join(dir, "tools/config/service-catalog.json"),
     JSON.stringify({
       services: [
         { id: "aphrody-a2a", port: 8788, health: "http://127.0.0.1:8788/ping" },
         { id: "aphrody-mcp-http", port: 8789, health: "http://127.0.0.1:8789/healthz" },
         { id: "other", port: 9001 },
+        {
+          id: "aphrody-ai-gateway-dbfr",
+          port: 8786,
+          health: "http://127.0.0.1:8786/health",
+          modelId: "shenron-chat-v2",
+        },
       ],
     }),
   );
@@ -85,6 +96,30 @@ test("unit facts: binary, loopback bind, env files and writable paths come from 
     "/home/ubuntu/apps/x/shared/coord",
     "/home/ubuntu/apps/x/state",
   ]);
+});
+
+test("gateway unit facts: --addr is treated as a private loopback bind", () => {
+  const entry = loadCatalog(root).units[0];
+  const text = unitText("127.0.0.1:8786").replace("--bind", "--addr");
+  expect(unitFacts(entry, text).bind).toEqual({ host: "127.0.0.1", port: 8786 });
+});
+
+test("gateway host plan pins and authenticates the installed binary and generation smoke test", () => {
+  const plan = hostPlan(["aphrody-ai-gateway-dbfr"], {
+    root,
+    target: "dbfr",
+    binary: { from: "/tmp/aphrody-test", sha256: "a".repeat(64) },
+  });
+  const ids = plan.steps.map((step) => step.id);
+  expect(plan.target).toBe("dbfr");
+  expect(ids).toContain("aphrody-ai-gateway-dbfr/generate-token");
+  expect(ids).toContain("aphrody-ai-gateway-dbfr/install-binary");
+  expect(ids).toContain("aphrody-ai-gateway-dbfr/auth-required");
+  expect(ids).toContain("aphrody-ai-gateway-dbfr/auth-wrong-token");
+  expect(ids).toContain("aphrody-ai-gateway-dbfr/authenticated-generation");
+  expect(plan.steps.find((step) => step.id.endsWith("authenticated-generation"))?.run).toContain(
+    "shenron-chat-v2",
+  );
 });
 
 test("a unit that would bind anything but loopback is refused", () => {

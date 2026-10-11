@@ -6,6 +6,19 @@ exclude = [
   "crates/contracts/schema",
   "crates/os/kernel/comps/drive",
   "crates/tauri/aphrody-tauri-api",
+  "crates/tauri/aphrody-tauri-plugin-barcode-scanner",
+  "crates/tauri/aphrody-tauri-plugin-biometric",
+  "crates/tauri/aphrody-tauri-plugin-cli",
+  "crates/tauri/aphrody-tauri-plugin-geolocation",
+  "crates/tauri/aphrody-tauri-plugin-haptics",
+  "crates/tauri/aphrody-tauri-plugin-http",
+  "crates/tauri/aphrody-tauri-plugin-nfc",
+  "crates/tauri/aphrody-tauri-plugin-positioner",
+  "crates/tauri/aphrody-tauri-plugin-shell",
+  "crates/tauri/aphrody-tauri-plugin-sql",
+  "crates/tauri/aphrody-tauri-plugin-stronghold",
+  "crates/tauri/aphrody-tauri-plugin-upload",
+  "crates/tauri/aphrody-tauri-plugin-websocket",
   "crates/web/dragon-pixel-core",
   "crates/web/dragon-pixel-server",
   "crates/web/dragon-pixel-wasm",
@@ -64,7 +77,7 @@ aphrody-agent-home = { path = "crates/ai/agent-home", version = "1.0.0", feature
 aphrody-agent-proto = { path = "crates/contracts/agent-proto", version = "1.0.0-canary", features = [] }
 aphrody-agent-runtime = { path = "crates/ai/agent-runtime", version = "1.0.0", features = [] }
 aphrody-agent-tools = { path = "crates/ai/agent-tools", version = "1.0.0", features = [] }
-aphrody-identity = { path = "crates/ui/identity", version = "1.0.0-canary" }
+aphrody-identity = { path = "crates/ui/identity", version = "1.0.0-canary.1" }
 aphrody-antigravity = { path = "crates/google/antigravity", version = "1.0.0", features = [] }
 aphrody-app-protocol = { path = "crates/contracts/app-protocol", version = "1.0.0-canary", features = [] }
 aphrody-app-server = { path = "crates/ai/app-server", version = "1.0.0", features = [] }
@@ -82,7 +95,7 @@ aphrody-gemini-runtime = { path = "crates/google/gemini-runtime", version = "1.0
 aphrody-gemini-web = { path = "crates/google/gemini-web", version = "0.2.1", features = [] }
 aphrody-git = { path = "crates/infra/git", version = "0.1.0", features = [] }
 aphrody-google = { path = "crates/google/google", version = "1.0.0", features = [] }
-aphrody-gpu-backend = { path = "crates/native/gpu-backend", version = "1.0.0-canary" }
+aphrody-gpu-backend = { path = "crates/native/gpu-backend", version = "1.0.0-canary.1" }
 aphrody-guard = { path = "crates/os/ostd/guard", version = "1.0.0-canary", features = [] }
 aphrody-http-error = { path = "crates/ai/http-error", version = "1.0.0", features = [] }
 aphrody-infer = { path = "crates/ai/infer", version = "1.0.0", features = ["onnx"] }
@@ -92,7 +105,7 @@ aphrody-jev = { path = "crates/ai/jev", version = "1.0.0", features = [] }
 aphrody-jobs = { path = "crates/os/kernel/comps/jobs", version = "1.0.0-canary", features = [] }
 aphrody-kernel = { path = "crates/os/kernel/core", version = "1.0.0-canary", default-features = false, features = [] }
 aphrody-llama-server = { path = "crates/ai/llama-server", version = "1.0.0", features = [] }
-aphrody-m3-tokens = { path = "crates/ui/m3-tokens", version = "1.0.0-canary", features = [] }
+aphrody-m3-tokens = { path = "crates/ui/m3-tokens", version = "1.0.0-canary.1", features = [] }
 aphrody-mcp = { path = "crates/ai/mcp", version = "1.0.0" }
 aphrody-mcp-client = { path = "crates/ai/mcp-client", version = "1.0.0", features = [] }
 aphrody-memory = { path = "crates/ai/memory", version = "1.0.0", features = [] }
@@ -112,8 +125,8 @@ aphrody-proc = { path = "crates/os/ostd/proc", version = "1.0.0-canary", feature
 aphrody-rag = { path = "crates/ai/rag", version = "1.0.0", features = [] }
 aphrody-rag-core = { path = "crates/ai/rag-core", version = "1.0.0", features = [] }
 aphrody-rag-eval = { path = "crates/ai/rag-eval", version = "1.0.0", features = [] }
-aphrody-re = { package = "bun-re", git = "https://github.com/aphrody-labs/bun", rev = "e4d57537cf3475e443eba9bda390366aa5d9d0a4", version = "1.0.0-canary", features = [] }
-yolo-core = { git = "https://github.com/aphrody-labs/bun", rev = "6181424bc2fca4349560832161c07ba85c33e8ef", version = "1.0.0" }
+aphrody-re = { package = "bun-re", version = "=1.0.0-canary", features = [] }
+yolo-core = { version = "=1.0.0" }
 aphrody-rollout = { path = "crates/ai/rollout", version = "1.0.0", features = [] }
 aphrody-secrets = { path = "crates/os/ostd/secrets", version = "1.0.0-canary", features = [] }
 aphrody-session = { path = "crates/ai/session", version = "1.0.0", features = [] }
@@ -125,6 +138,7 @@ aphrody-shell-vfs = { path = "crates/shell/vfs", version = "1.0.0-canary", featu
 aphrody-terminal-core = { path = "crates/shell/terminal-core", version = "1.0.0-canary", features = [] }
 aphrody-term = { path = "crates/shell/aphrody-term", version = "1.0.0", features = [] }
 aphrody-terminal-backend = { path = "crates/shell/terminal-backend", version = "1.0.0-canary", features = [] }
+aphrody-term-caps = { path = "crates/shell/term-caps", version = "1.0.0-canary", default-features = false }
 aphrody-toolcall = { path = "crates/ai/toolcall", version = "1.0.0", features = [] }
 aphrody-toolcall-repair = { path = "crates/ai/toolcall-repair", version = "1.0.0", features = [] }
 aphrody-toolchains = { path = "crates/compat/toolchains", version = "1.0.0-canary", features = [] }
@@ -381,7 +395,7 @@ quote = "1.0.47"
 aphrody-m3-reproduce = { path = "crates/ui/m3-reproduce", version = "1.0.0-canary" }
 aphrody-tauri-wrap = { path = "crates/ui/tauri-wrap", version = "1.0.0-canary", default-features = false }
 aphrody-render = { path = "crates/ui/render", version = "1.0.0-canary" }
-aphrody-svg = { path = "crates/ui/svg", version = "1.0.0-canary", default-features = false }
+aphrody-svg = { path = "crates/ui/svg", version = "1.0.0-canary.1", default-features = false }
 ts-rs = {"version" = "12", "features" = ["serde-compat"]}
 read-fonts = {"version" = "0.44", "default-features" = false, "features" = ["std"]}
 woff2 = {"package" = "woff2-patched", "version" = "0.4.0"}
@@ -392,7 +406,7 @@ tobj = {"version" = "4.0.5", "default-features" = false}
 wgpu = {"version" = "30.0.1", "default-features" = false}
 # CUDA host API (driver + NVRTC), loaded from the official NVIDIA driver at run time: builds
 # without the CUDA toolkit and degrades to "unavailable" on machines without libcuda.
-cudarc = {"version" = "0.19.10", "default-features" = false, "features" = ["std", "driver", "nvrtc", "dynamic-loading", "cuda-12080"]}
+cudarc = {"version" = "0.19.10", "default-features" = false, "features" = ["std", "driver", "nvrtc", "dynamic-loading", "cuda-13040"]}
 bytemuck = {"version" = "1", "features" = ["derive"]}
 roxmltree = {"version" = "0.21"}
 svgtypes = {"version" = "0.16"}

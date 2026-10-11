@@ -77,6 +77,7 @@ export function CommandPalette({ open: controlledOpen, onOpenChange }: CommandPa
   // Focus input automatically upon opening
   useEffect(() => {
     if (isOpen) {
+      // oxlint-disable-next-line react/set-state-in-effect -- réinitialise la saisie et la surbrillance à chaque ouverture de la palette
       setDraft("");
       setHighlight(0);
       setTimeout(() => {
@@ -108,6 +109,7 @@ export function CommandPalette({ open: controlledOpen, onOpenChange }: CommandPa
   // Reset highlight within range when suggestions list changes
   useEffect(() => {
     if (suggestions.length === 0) {
+      // oxlint-disable-next-line react/set-state-in-effect -- la surbrillance suit la liste : réinitialisée à chaque changement de suggestions
       setHighlight(-1);
     } else {
       setHighlight(0);
@@ -187,7 +189,9 @@ export function CommandPalette({ open: controlledOpen, onOpenChange }: CommandPa
   if (!isOpen) return null;
 
   return (
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- overlay plein écran : le clic sur le fond ferme la palette, il n'y a pas de contrôle interactif à l'élément
     <div
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- overlay plein écran modal : un <dialog> natif changerait le positionnement et le focus existants
       role="dialog"
       aria-modal="true"
       aria-label="Palette de commandes"
@@ -236,6 +240,7 @@ export function CommandPalette({ open: controlledOpen, onOpenChange }: CommandPa
           {suggestions.length > 0 ? (
             <ul
               id="command-palette-suggestions"
+              // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role, jsx-a11y/prefer-tag-over-role -- la liste de suggestions est un listbox ARIA du combobox (un select natif ne permet pas la liste filtrée)
               role="listbox"
               aria-label="Résultats de recherche"
               className="m-0 flex list-none flex-col gap-1 p-0"
@@ -267,6 +272,7 @@ export function CommandPalette({ open: controlledOpen, onOpenChange }: CommandPa
                           : "Calcul";
 
                 return (
+                  // oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- option de liste : la sélection clavier passe par le champ de saisie, l'élément n'est pas focusable
                   <li
                     key={
                       item.kind === "thread"
@@ -280,6 +286,7 @@ export function CommandPalette({ open: controlledOpen, onOpenChange }: CommandPa
                               : "calculator"
                     }
                     id={`command-palette-item-${index}`}
+                    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role, jsx-a11y/prefer-tag-over-role -- options d'une liste filtrée pilotée au clavier depuis le champ de saisie (aria-activedescendant)
                     role="option"
                     aria-selected={isSelected}
                     onClick={() => void activateItem(item)}

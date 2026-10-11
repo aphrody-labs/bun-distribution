@@ -144,10 +144,11 @@ describe("native N2B CLI contract", () => {
       expect(
         n2bExitCode({
           ...result,
-          files: result.files.map((file) => ({
-            ...file,
-            findings: file.findings.map((finding) => ({ ...finding, severity: "error" })),
-          })),
+          files: result.files.map((file) =>
+            Object.assign({}, file, {
+              findings: file.findings.map((finding) => ({ ...finding, severity: "error" })),
+            }),
+          ),
         }),
       ).toBe(2);
     }
@@ -163,14 +164,14 @@ describe("native N2B CLI contract", () => {
   });
 
   test("CLI help works with a missing native library and leaves the directory untouched", () => {
-    const before = readdirSync(work).sort();
+    const before = readdirSync(work).toSorted();
     const help = run(["--help", "--library", missingLibrary]);
     expect(help.exitCode).toBe(0);
     expect(help.stdout.toString()).toContain("Usage: yolo n2b");
     expect(help.stdout.toString()).toContain("YOLO_TOOLING_LIB");
     expect(help.stderr.toString()).toBe("");
     expect(run(["-h"]).exitCode).toBe(0);
-    expect(readdirSync(work).sort()).toEqual(before);
+    expect(readdirSync(work).toSorted()).toEqual(before);
   });
 
   test("CLI argument and path errors are explicit and precede any native load", () => {

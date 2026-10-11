@@ -3,7 +3,7 @@
 // share (transcript to the clipboard) and delete (`thread/archive`; the app-server has no
 // hard delete, so archived threads leave the list but stay on disk).
 import { Button, Icon, Input } from "@aphrody/m3-primitives";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   filterThreads,
   groupByDate,
@@ -60,21 +60,13 @@ export function HistoryPanel({
   const [confirming, setConfirming] = useState<string | null>(null);
   const [archived, setArchived] = useState(false);
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      setThreads(await listAllThreads(rpc, 10, archived));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-  }, [rpc, archived]);
-
+  // Loading and error are reset by the handlers that change the list (see "Show archived history").
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    void listAllThreads(rpc, 10, archived)
+      .then(setThreads)
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)))
+      .finally(() => setLoading(false));
+  }, [rpc, archived]);
 
   const groups = useMemo(() => groupByDate(filterThreads(threads, query)), [threads, query]);
 
@@ -154,6 +146,8 @@ export function HistoryPanel({
         onClick={() => {
           setArchived(!archived);
           setConfirming(null);
+          setLoading(true);
+          setError("");
         }}
       >
         {archived ? "Show active history" : "Show archived history"}
@@ -192,8 +186,13 @@ export function HistoryPanel({
                       </Button>
                     ) : confirming === thread.id ? (
                       <>
-                        <Button variant="text" onClick={() => setConfirming(null)}>
-                          Cancel
+                        <Button
+                          aria-label="Cancel"
+                          title="Cancel"
+                          variant="text"
+                          onClick={() => setConfirming(null)}
+                        >
+                          <Icon name="close" size={18} />
                         </Button>
                         <Button variant="tonal" onClick={() => void remove(thread)}>
                           Archive

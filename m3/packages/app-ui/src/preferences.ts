@@ -103,16 +103,20 @@ export const DEFAULT_PREFERENCES: Preferences = {
   agentBinary: "aphrody",
 };
 
+const bool = (item: unknown, fallback: boolean) => (typeof item === "boolean" ? item : fallback);
+
+const str = (item: unknown, fallback: string) =>
+  typeof item === "string" && item.trim() ? item.trim() : fallback;
+
+const num = (item: unknown, fallback: number) =>
+  typeof item === "number" && !isNaN(item) ? item : fallback;
+
+const arr = (item: unknown, fallback: string[]) =>
+  Array.isArray(item) ? item.filter((x): x is string => typeof x === "string") : fallback;
+
 /** Merge an untrusted stored value over the defaults, keeping only known fields. */
 export function normalizePreferences(value: unknown): Preferences {
   const stored = (value && typeof value === "object" ? value : {}) as Partial<Preferences>;
-  const bool = (item: unknown, fallback: boolean) => (typeof item === "boolean" ? item : fallback);
-  const str = (item: unknown, fallback: string) =>
-    typeof item === "string" && item.trim() ? item.trim() : fallback;
-  const num = (item: unknown, fallback: number) =>
-    typeof item === "number" && !isNaN(item) ? item : fallback;
-  const arr = (item: unknown, fallback: string[]) =>
-    Array.isArray(item) ? item.filter((x): x is string => typeof x === "string") : fallback;
   const sources = (stored.sources ?? {}) as Partial<SearchSources>;
   const modelsDir =
     typeof stored.modelsDir === "string" && stored.modelsDir.trim()

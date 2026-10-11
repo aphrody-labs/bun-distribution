@@ -82,17 +82,18 @@ export interface StackReport {
   assets: { groups: number; wastedBytes: number; duplicates: DuplicateFiles[] };
 }
 
+const parseVersion = (version: string) => {
+  const [core = "", pre] = version.split("+")[0]!.split("-", 2);
+  return {
+    nums: core.split(".").map((part) => Number.parseInt(part, 10) || 0),
+    pre: pre ?? null,
+  };
+};
+
 /** Compares dotted versions numerically; a pre-release or build suffix sorts below the release. */
 export function compareVersions(a: string, b: string): number {
-  const parse = (version: string) => {
-    const [core = "", pre] = version.split("+")[0]!.split("-", 2);
-    return {
-      nums: core.split(".").map((part) => Number.parseInt(part, 10) || 0),
-      pre: pre ?? null,
-    };
-  };
-  const left = parse(a);
-  const right = parse(b);
+  const left = parseVersion(a);
+  const right = parseVersion(b);
   for (let index = 0; index < Math.max(left.nums.length, right.nums.length); index += 1) {
     const diff = (left.nums[index] ?? 0) - (right.nums[index] ?? 0);
     if (diff !== 0) return diff;

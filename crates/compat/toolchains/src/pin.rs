@@ -20,7 +20,8 @@ pub struct Pin {
 impl Pin {
     /// Whether `installed` satisfies the pin. Supported forms: an exact or
     /// partial version (`1.4.2`, `1.4`, `==1.4.2`, `v1.4.2`, matched component
-    /// by component), `>=X[.Y[.Z]]`, and `latest` (always satisfied).
+    /// by component), exact prerelease/fork identities, `>=X[.Y[.Z]]`, and
+    /// `latest` (always satisfied). Build metadata does not change identity.
     #[must_use]
     pub fn matches(&self, installed: &str) -> bool {
         let req = self.version.trim();
@@ -37,6 +38,14 @@ impl Pin {
             });
         }
         let exact = req.trim_start_matches("==").trim_start_matches('=');
+        // A fork/prerelease suffix is part of an exact pin's identity. Numeric
+        // prefix matching would silently accept aphrody.3 for aphrody.4.
+        if exact.contains('-') {
+            fn identity(v: &str) -> &str {
+                v.trim().trim_start_matches('v').split(['+', ' ']).next().unwrap_or(v)
+            }
+            return identity(exact) == identity(installed);
+        }
         components(exact).is_some_and(|want| want.len() <= have.len() && have.starts_with(&want))
     }
 }
@@ -164,4 +173,35 @@ fn mise_uv(dir: &Path) -> Result<Option<Pin>, ResolveError> {
 
 fn mise_nu(dir: &Path) -> Result<Option<Pin>, ResolveError> {
     mise(dir, &["nushell", "nu"])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Pin;
+    use std::path::PathBuf;
+
+    fn matches(requirement: &str, installed: &str) -> bool {
+        Pin { version: requirement.into(), source: PathBuf::from("package.json") }
+            .matches(installed)
+    }
+
+    #[test]
+    fn exact_fork_pin_preserves_release_identity() {
+        assert!(!matches("1.4.3-aphrody.4", "1.4.3-aphrody.3"));
+        assert!(!matches("1.4.3-aphrody.4", "1.4.3"));
+        assert!(!matches("1.4.3-aphrody.4", "1.4.3-aphrody.5"));
+        assert!(!matches("1.4.3-aphrody.4", "1.4.3-canary.4"));
+        assert!(matches("1.4.3-aphrody.4", "1.4.3-aphrody.4+41211b568"));
+        assert!(matches("==v1.4.3-aphrody.4", "v1.4.3-aphrody.4"));
+    }
+
+    #[test]
+    fn existing_numeric_and_minimum_pins_still_match() {
+        assert!(matches("1.4", "1.4.3-aphrody.4"));
+        assert!(matches("1.4.3", "1.4.3-aphrody.4"));
+        assert!(matches(">=1.4.2", "1.4.3-aphrody.4"));
+        assert!(!matches(">=1.4.4", "1.4.3-aphrody.4"));
+        assert!(matches("latest", "1.4.3-aphrody.4"));
+        assert!(!matches("1.4.3-aphrody.4", "not a version"));
+    }
 }

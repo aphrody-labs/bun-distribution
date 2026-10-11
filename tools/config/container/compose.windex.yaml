@@ -1,0 +1,91 @@
+# SPDX-License-Identifier: Apache-2.0
+# windex: PostgreSQL graph and Redis cache of the unified Windows index (scripts/tools/os/windex, docs/operations/os/WINDEX.md).
+# Separate project "aphrody-windex"; ports published on the host loopback only, never 0.0.0.0.
+#   bun scripts/tools/os/windex/cli.ts up        # generates the passwords once, then `docker compose up -d --wait`
+# Passwords are generated files under <APHRODY_HOME>/private/windex (never committed or printed); `windex up` hands them
+# to Compose through WINDEX_PG_PASSWORD / WINDEX_REDIS_PASSWORD of its own process only, and Compose copies them into the
+# containers as secrets (no bind mount, no container environment). The named volumes are persistent and are never
+# removed by windex.
+name: aphrody-windex
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: aphrody-windex-pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: windex
+      POSTGRES_DB: windex
+      POSTGRES_PASSWORD_FILE: /run/secrets/windex_pg_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8"
+    command:
+      - postgres
+      - -c
+      - shared_buffers=512MB
+      - -c
+      - work_mem=64MB
+      - -c
+      - maintenance_work_mem=512MB
+      - -c
+      - max_wal_size=4GB
+      # An index rebuildable from the disk: a crash may lose the last commits, never corrupt the cluster.
+      - -c
+      - synchronous_commit=off
+    secrets:
+      - windex_pg_password
+    ports:
+      - "127.0.0.1:${WINDEX_PG_PORT:-55432}:5432"
+    volumes:
+      # postgres >= 18 keeps PGDATA in a major-version subdirectory of /var/lib/postgresql.
+      - windex-pg:/var/lib/postgresql
+    shm_size: 256m
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U windex -d windex -h 127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  redis:
+    image: redis:8-alpine
+    container_name: aphrody-windex-redis
+    restart: unless-stopped
+    # The password goes into a tmpfs config file, never on the command line; the image entrypoint then drops
+    # to the redis user.
+    command:
+      - sh
+      - -c
+      - >-
+        umask 027 && printf 'requirepass %s\n' "$$(cat /run/secrets/windex_redis_password)" > /tmp/redis.conf &&
+        chown root:redis /tmp/redis.conf &&
+        exec docker-entrypoint.sh redis-server /tmp/redis.conf --dir /data --maxmemory 768mb
+        --maxmemory-policy allkeys-lru --save 300 100 --appendonly no
+    secrets:
+      - windex_redis_password
+    ports:
+      - "127.0.0.1:${WINDEX_REDIS_PORT:-56379}:6379"
+    volumes:
+      - windex-redis:/data
+    tmpfs:
+      - /tmp:mode=1777,size=1m
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - REDISCLI_AUTH="$$(cat /run/secrets/windex_redis_password)" redis-cli ping | grep -q PONG
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+volumes:
+  windex-pg:
+    name: aphrody-windex-pg
+  windex-redis:
+    name: aphrody-windex-redis
+
+secrets:
+  windex_pg_password:
+    environment: WINDEX_PG_PASSWORD
+  windex_redis_password:
+    environment: WINDEX_REDIS_PASSWORD

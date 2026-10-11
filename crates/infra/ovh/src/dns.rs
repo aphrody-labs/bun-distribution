@@ -12,6 +12,9 @@ pub struct DnsZoneInfo {
     pub name: String,
     pub has_dns_anycast: bool,
     pub dnssec_supported: bool,
+    // OVH's current zone response uses dnssecActivated. Keep isSigned for
+    // older responses and the existing serialized native API contract.
+    #[serde(rename(serialize = "isSigned", deserialize = "dnssecActivated"), alias = "isSigned")]
     pub is_signed: bool,
     #[serde(default)]
     pub name_servers: Vec<String>,
@@ -22,6 +25,40 @@ pub struct DnsZoneInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn zone_dnssec_accepts_current_and_legacy_api_fields() {
+        for field in ["dnssecActivated", "isSigned"] {
+            for activated in [true, false] {
+                let mut payload = serde_json::json!({
+                    "name": "example.com",
+                    "hasDnsAnycast": true,
+                    "dnssecSupported": true,
+                    "nameServers": ["dns.example.com"],
+                    "iam": { "state": "OK" }
+                });
+                payload[field] = serde_json::json!(activated);
+                let info: DnsZoneInfo = serde_json::from_value(payload).expect("zone response");
+                assert_eq!(info.is_signed, activated);
+                assert_eq!(info.name_servers, ["dns.example.com"]);
+                let serialized = serde_json::to_value(info).expect("native response");
+                assert_eq!(serialized["isSigned"], activated);
+            }
+        }
+    }
+
+    #[test]
+    fn zone_dnssec_missing_or_invalid_state_fails_closed() {
+        let payload = serde_json::json!({
+            "name": "example.com",
+            "hasDnsAnycast": true,
+            "dnssecSupported": true
+        });
+        assert!(serde_json::from_value::<DnsZoneInfo>(payload.clone()).is_err());
+        let mut invalid = payload;
+        invalid["dnssecActivated"] = serde_json::json!("true");
+        assert!(serde_json::from_value::<DnsZoneInfo>(invalid).is_err());
+    }
 
     fn record(id: u64, name: &str, kind: &str) -> DnsRecord {
         DnsRecord {

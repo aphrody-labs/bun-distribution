@@ -55,6 +55,8 @@ function ShellLayoutContent() {
 
   // Suppress inspector on Chat, Web, Models and Settings; show only in Explorer/Files routes
   const isExplorer =
+    location.pathname === "/os" ||
+    location.pathname === "/os/" ||
     location.pathname.startsWith("/explorer") ||
     location.pathname.startsWith("/tag") ||
     location.pathname.startsWith("/sources") ||
@@ -142,9 +144,12 @@ function ShellLayoutContent() {
 
   const narrow = useMediaQuery(NARROW_QUERY);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  useEffect(() => {
+  // Close the drawer when leaving the narrow layout (state adjusted during render, not in an effect).
+  const [prevNarrow, setPrevNarrow] = useState(narrow);
+  if (narrow !== prevNarrow) {
+    setPrevNarrow(narrow);
     if (!narrow) setDrawerOpen(false);
-  }, [narrow]);
+  }
   const railWidth = !narrow && sidebarVisible ? 280 : 0;
 
   const isPreviewActive = !!quickPreviewFileId;

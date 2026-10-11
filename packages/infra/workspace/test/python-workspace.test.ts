@@ -17,9 +17,12 @@ const measure = (command: string[], cwd: string = root, options = {}) =>
 async function pids(directory: string): Promise<number[]> {
   const deadline = performance.now() + 2000;
   while (performance.now() < deadline) {
+    // oxlint-disable-next-line no-await-in-loop -- poll loop: the pid file is re-read after each sleep until the deadline
     if (await Bun.file(`${directory}/pids.json`).exists()) {
+      // oxlint-disable-next-line no-await-in-loop -- poll loop: the pid file is re-read after each sleep until the deadline
       return await Bun.file(`${directory}/pids.json`).json();
     }
+    // oxlint-disable-next-line no-await-in-loop -- poll loop: the pid file is re-read after each sleep until the deadline
     await Bun.sleep(5);
   }
   throw new Error("Fixture did not become ready");
@@ -29,6 +32,7 @@ async function assertStopped(pid: number) {
   const deadline = performance.now() + 1000;
   while (performance.now() < deadline) {
     try {
+      // oxlint-disable-next-line no-await-in-loop -- poll loop: process state is re-read after each sleep until the deadline
       const stat = await readFile(`/proc/${pid}/stat`, "utf8");
       const state = stat.slice(stat.lastIndexOf(")") + 2).split(" ")[0];
       // Orphans are reaped by the host's init; a zombie cannot execute.
@@ -37,6 +41,7 @@ async function assertStopped(pid: number) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
       throw error;
     }
+    // oxlint-disable-next-line no-await-in-loop -- poll loop: process state is re-read after each sleep until the deadline
     await Bun.sleep(5);
   }
   throw new Error(`Fixture process ${pid} still runs`);
@@ -88,6 +93,7 @@ test("plan works and unknown commands fail", async () => {
       console.log = (line: string) => {
         printed += line;
       };
+      // oxlint-disable-next-line no-await-in-loop -- scenarios run one after another on a shared fixture; each run's output is asserted before the next
       const code = await runPythonWorkspace(action.split(" "), { root: "/py" });
       const result = JSON.parse(printed);
       expect(code).toBe(action === "plan" ? 0 : 2);
@@ -123,6 +129,7 @@ test("abort before launch cannot execute the command", async () => {
 
 test("invalid budgets are rejected without executing", async () => {
   for (const timeoutMs of [0, -1, NaN, Infinity, 0.5, 2_147_483_648]) {
+    // oxlint-disable-next-line no-await-in-loop -- budgets are checked one by one so each rejection is asserted in order
     const result = await measure([process.execPath, fixture, "0"], root, { ...silent, timeoutMs });
     expect(result.exitCode).toBe(2);
   }
@@ -160,6 +167,7 @@ for (const action of ["timeout", "cancel", "orphan"] as const) {
       );
       expect(result.exitCode).toBe(action === "timeout" ? 124 : action === "cancel" ? 130 : 0);
       expect(result.durationMs).toBeLessThan(3000);
+      // oxlint-disable-next-line no-await-in-loop -- owned processes are asserted stopped one by one, in spawn order
       for (const pid of ownedPids) await assertStopped(pid);
     } finally {
       controller.abort();

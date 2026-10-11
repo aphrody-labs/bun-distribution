@@ -197,8 +197,10 @@ test("archive preflight rejects unsafe paths, links, corrupt headers and truncat
   const dir = await mkdtemp(join(tmpdir(), "unsafe-pack-"));
   for (const [index, candidate] of cases.entries()) {
     const tar = join(dir, `${index}.tar.gz`);
+    // oxlint-disable-next-line no-await-in-loop -- cases run one after another in a shared temp directory, each extraction asserted before the next
     await writeFile(tar, Bun.gzipSync(new Uint8Array(candidate)));
     const dest = join(dir, `dest-${index}`);
+    // oxlint-disable-next-line no-await-in-loop -- cases run one after another in a shared temp directory, each extraction asserted before the next
     await expect(extractTarGz(tar, dest)).rejects.toThrow();
     expect(existsSync(dest)).toBe(false);
   }

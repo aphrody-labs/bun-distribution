@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/plugin-fs",
-  "version": "3.0.0-alpha.3",
+  "version": "3.0.0-alpha.4",
   "description": "Access the file system.",
   "license": "MIT OR Apache-2.0",
   "authors": [

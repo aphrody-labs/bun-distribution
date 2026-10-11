@@ -107,40 +107,45 @@ describe("Real configured inference HTTP transport", () => {
       return json(reply());
     });
     const engine = new UnifiedInferenceEngine("fixture", { endpointUrl });
-    for (const patch of [
-      { prompt: " " },
-      { temperature: -1 },
-      { temperature: NaN },
-      { topP: 0 },
-      { topP: 2 },
-      { maxTokens: 0 },
-      { maxTokens: 1.5 },
-      { thought: "prefill" },
-      { history: [{ role: "user" as const, content: "Q", imageCount: 1 }] },
-      { history: [{ role: "assistant" as const, content: "A", thought: "prefill" }] },
-      { timeoutMs: 0 },
-      { maxResponseBytes: 0 },
-    ]) {
-      await expect(engine.infer({ prompt: "Q", ...patch })).rejects.toThrow();
-    }
-    for (const url of ["invalid URL", "file:///tmp/model", "http://user:password@127.0.0.1/v1"])
-      await expect(engine.infer({ prompt: "Q", endpointUrl: url })).rejects.toThrow();
+    await Promise.all(
+      [
+        { prompt: " " },
+        { temperature: -1 },
+        { temperature: NaN },
+        { topP: 0 },
+        { topP: 2 },
+        { maxTokens: 0 },
+        { maxTokens: 1.5 },
+        { thought: "prefill" },
+        { history: [{ role: "user" as const, content: "Q", imageCount: 1 }] },
+        { history: [{ role: "assistant" as const, content: "A", thought: "prefill" }] },
+        { timeoutMs: 0 },
+        { maxResponseBytes: 0 },
+      ].map((patch) => expect(engine.infer({ prompt: "Q", ...patch })).rejects.toThrow()),
+    );
+    await Promise.all(
+      ["invalid URL", "file:///tmp/model", "http://user:password@127.0.0.1/v1"].map((url) =>
+        expect(engine.infer({ prompt: "Q", endpointUrl: url })).rejects.toThrow(),
+      ),
+    );
     expect(requests).toBe(0);
   });
 
   it("propagates HTTP errors instead of fabricating a successful local response", async () => {
-    for (const status of [400, 404, 500]) {
-      const engine = new UnifiedInferenceEngine("fixture", {
-        endpointUrl: listen(() => json({ error: "fixture failure" }, status)),
-      });
-      try {
-        await engine.infer({ prompt: "Q" });
-        throw new Error("expected provider failure");
-      } catch (error) {
-        expect(error).toBeInstanceOf(InferenceError);
-        expect((error as InferenceError).status).toBe(status);
-      }
-    }
+    await Promise.all(
+      [400, 404, 500].map(async (status) => {
+        const engine = new UnifiedInferenceEngine("fixture", {
+          endpointUrl: listen(() => json({ error: "fixture failure" }, status)),
+        });
+        try {
+          await engine.infer({ prompt: "Q" });
+          throw new Error("expected provider failure");
+        } catch (error) {
+          expect(error).toBeInstanceOf(InferenceError);
+          expect((error as InferenceError).status).toBe(status);
+        }
+      }),
+    );
   });
 
   it("rejects malformed and oversized responses", async () => {
@@ -151,14 +156,16 @@ describe("Real configured inference HTTP transport", () => {
       { choices: [{ message: { content: null } }] },
       { ...reply(), usage: { prompt_tokens: -1, completion_tokens: 1, total_tokens: 0 } },
     ];
-    for (const response of malformed) {
-      const endpointUrl = listen(() =>
-        typeof response === "string" ? new Response(response) : json(response),
-      );
-      await expect(
-        new UnifiedInferenceEngine("fixture", { endpointUrl }).infer({ prompt: "Q" }),
-      ).rejects.toThrow();
-    }
+    await Promise.all(
+      malformed.map((response) => {
+        const endpointUrl = listen(() =>
+          typeof response === "string" ? new Response(response) : json(response),
+        );
+        return expect(
+          new UnifiedInferenceEngine("fixture", { endpointUrl }).infer({ prompt: "Q" }),
+        ).rejects.toThrow();
+      }),
+    );
     const endpointUrl = listen(() => json(reply("x".repeat(1000))));
     await expect(
       new UnifiedInferenceEngine("fixture", { endpointUrl, maxResponseBytes: 100 }).infer({
@@ -186,6 +193,7 @@ describe("Real configured inference HTTP transport", () => {
               for (let offset = 0; offset < rest.length; offset += 3)
                 controller.enqueue(rest.slice(offset, offset + 3));
               controller.close();
+              return;
             });
           },
         }),
@@ -239,17 +247,19 @@ describe("Real configured inference HTTP transport", () => {
   });
 
   it("rejects truncated, malformed and provider-error streams", async () => {
-    for (const body of [
-      event("partial"),
-      "data: invalid\n\n",
-      'data: {"error":{"message":"fixture"}}\n\n',
-      'data: {"choices":[{"delta":{"content":3}}]}\n\n',
-    ]) {
-      const endpointUrl = listen(() => sse(body));
-      await expect(
-        collect(new UnifiedInferenceEngine("fixture", { endpointUrl }).stream({ prompt: "Q" })),
-      ).rejects.toThrow();
-    }
+    await Promise.all(
+      [
+        event("partial"),
+        "data: invalid\n\n",
+        'data: {"error":{"message":"fixture"}}\n\n',
+        'data: {"choices":[{"delta":{"content":3}}]}\n\n',
+      ].map((body) => {
+        const endpointUrl = listen(() => sse(body));
+        return expect(
+          collect(new UnifiedInferenceEngine("fixture", { endpointUrl }).stream({ prompt: "Q" })),
+        ).rejects.toThrow();
+      }),
+    );
     const endpointUrl = listen(() => json(reply()));
     await expect(
       collect(new UnifiedInferenceEngine("fixture", { endpointUrl }).stream({ prompt: "Q" })),
@@ -357,11 +367,13 @@ describe("Real configured inference HTTP transport", () => {
     await expect(
       new UnifiedInferenceEngine("fixture", { endpointUrl: unsupported }).embed("text"),
     ).rejects.toThrow("HTTP 404");
-    for (const vector of [[], [null, 0, 0], [1e99, 0, 0], [1, 2]]) {
-      const endpointUrl = listen(() => json({ data: [{ embedding: vector }] }));
-      await expect(
-        new UnifiedInferenceEngine("fixture", { endpointUrl }).embed("text", { dimensions: 3 }),
-      ).rejects.toThrow();
-    }
+    await Promise.all(
+      [[], [null, 0, 0], [1e99, 0, 0], [1, 2]].map((vector) => {
+        const endpointUrl = listen(() => json({ data: [{ embedding: vector }] }));
+        return expect(
+          new UnifiedInferenceEngine("fixture", { endpointUrl }).embed("text", { dimensions: 3 }),
+        ).rejects.toThrow();
+      }),
+    );
   });
 });

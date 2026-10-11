@@ -221,6 +221,8 @@ function mergeWorkspaceDependency(member: Table, ws: Table): Table {
 // Manifest transformation
 // ---------------------------------------------------------------------------------------------
 
+const resolvePath = (path: string, base: string): string => posix.normalize(posix.join(base, path));
+
 export interface TransformResult {
   readonly text: string;
   readonly warnings: readonly string[];
@@ -300,9 +302,6 @@ export function transformManifest(text: string, ctx: TransformContext): Transfor
 
   // 4. Dependencies
   const crateSrcAbs = crate.srcDir;
-  const resolvePath = (path: string, base: string): string =>
-    posix.normalize(posix.join(base, path));
-
   const rewriteDependency = (key: string, input: Table): { spec: Table; changed: boolean } => {
     let spec = { ...input };
     let pathBase = crateSrcAbs;
@@ -471,28 +470,29 @@ function globMatch(patterns: readonly string[], path: string): boolean {
   return patterns.some((p) => new Bun.Glob(p).match(path));
 }
 
+const asList = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
+
 export async function loadVendorConfig(path: string): Promise<VendorConfig> {
   const raw = Bun.TOML.parse(await Bun.file(path).text()) as Table;
-  const list = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
   return {
     prefix: String(raw.prefix ?? "aphrody-"),
     repository: String(raw.repository ?? ""),
     out: String(raw.out ?? "crates"),
-    exclude: list<string>(raw.exclude),
-    sources: list<Table>(raw.source).map((s) => ({
+    exclude: asList<string>(raw.exclude),
+    sources: asList<Table>(raw.source).map((s) => ({
       name: String(s.name),
-      crates: list<string>(s.crates),
-      excludeCrates: list<string>(s.exclude_crates),
-      exclude: list<string>(s.exclude),
+      crates: asList<string>(s.crates),
+      excludeCrates: asList<string>(s.exclude_crates),
+      exclude: asList<string>(s.exclude),
       rename: (s.rename ?? {}) as Record<string, string>,
       rustfmt: s.rustfmt === undefined ? undefined : String(s.rustfmt),
     })),
-    copy: list<Table>(raw.copy).map((c) => ({
+    copy: asList<Table>(raw.copy).map((c) => ({
       from: String(c.from),
       to: String(c.to),
-      exclude: list<string>(c.exclude),
+      exclude: asList<string>(c.exclude),
     })),
-    rewrite: list<Table>(raw.rewrite).map((r) => ({
+    rewrite: asList<Table>(raw.rewrite).map((r) => ({
       files: String(r.files),
       from: String(r.from),
       to: String(r.to),
@@ -518,13 +518,16 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
   for (const source of cfg.sources) {
     const repo = resolve(rootDir, "vendor", source.name);
     if (!existsSync(repo)) throw new Error(`Source repository not found: vendor/${source.name}`);
+    // oxlint-disable-next-line no-await-in-loop -- sources are validated in config order; a dirty checkout must abort before any later source is touched
     const dirty = (await git(repo, ["status", "--porcelain", "--untracked-files=no"])).trim();
     if (dirty !== "")
       throw new Error(`vendor/${source.name} has uncommitted changes; commit or reset them first`);
+    // oxlint-disable-next-line no-await-in-loop -- rev-parse runs per source in config order, after the same dirty-tree guard
     const sha = (await git(repo, ["rev-parse", "HEAD"])).trim();
     const dir = resolve(options.cacheDir, source.name);
     rmSync(dir, { recursive: true, force: true });
     mkdirSync(dir, { recursive: true });
+    // oxlint-disable-next-line no-await-in-loop -- one checkout at a time: each source rewrites its own cache directory and failures must stay reproducible
     await git(repo, ["checkout-index", "-a", "-f", `--prefix=${dir}/`]);
     checkouts.set(source.name, dir);
     sources.push({ name: source.name, sha });
@@ -545,6 +548,7 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
         p === "." ? dir === "." : new Bun.Glob(p).match(dir),
       );
       if (!matches || globMatch(source.excludeCrates ?? [], dir)) continue;
+      // oxlint-disable-next-line no-await-in-loop -- crates are collected in directory-walk order, which the generated vendor manifest records
       const manifest = Bun.TOML.parse(await Bun.file(join(checkout, file)).text()) as Table;
       const pkg = manifest.package as Table | undefined;
       if (pkg === undefined) continue;
@@ -589,7 +593,8 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
     const present = new Set(list);
     const rootManifestPath = join(checkout, "Cargo.toml");
     const rootManifest = existsSync(rootManifestPath)
-      ? (Bun.TOML.parse(await Bun.file(rootManifestPath).text()) as Table)
+      ? // oxlint-disable-next-line no-await-in-loop -- the root manifest is read per source in config order, before its members are walked
+        (Bun.TOML.parse(await Bun.file(rootManifestPath).text()) as Table)
       : {};
     const ws = (rootManifest.workspace ?? {}) as Table;
     const mine = crates.filter((c) => c.source === source.name);
@@ -608,6 +613,7 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
       const dest = posix.join(owner.newDir, rel);
       const abs = join(checkout, file);
       if (rel === "Cargo.toml") {
+        // oxlint-disable-next-line no-await-in-loop -- vendored files are rewritten in walk order so the output list and rewrite results stay deterministic
         const result = transformManifest(await Bun.file(abs).text(), {
           crate: owner,
           cfg,
@@ -623,6 +629,7 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
         put(dest, result.text);
       } else {
         const mode = lstatSync(abs).mode & 0o111 ? 0o755 : 0o644;
+        // oxlint-disable-next-line no-await-in-loop -- each file is staged in walk order into the shared output map (deterministic filesGenerated)
         put(dest, new Uint8Array(await Bun.file(abs).arrayBuffer()), mode);
       }
     }
@@ -635,7 +642,8 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
     const style =
       source.rustfmt === "default"
         ? "# Vendored crate: upstream uses the default rustfmt style (the root rustfmt.toml does not apply).\n"
-        : (await Bun.file(join(checkout, source.rustfmt)).text())
+        : // oxlint-disable-next-line no-await-in-loop -- the rustfmt config is read per source in config order, as the staging loop it feeds
+          (await Bun.file(join(checkout, source.rustfmt)).text())
             .split("\n")
             // nightly-only options only produce warnings on the stable toolchain
             .filter(
@@ -669,6 +677,7 @@ export async function runImport(options: ImportOptions): Promise<ImportResult> {
     for (const [from, to] of items) {
       put(
         to,
+        // oxlint-disable-next-line no-await-in-loop -- files are copied in walk order into the shared put map (deterministic output)
         new Uint8Array(await Bun.file(from).arrayBuffer()),
         lstatSync(from).mode & 0o111 ? 0o755 : 0o644,
       );
@@ -777,12 +786,14 @@ async function writeOutputs(
   for (const [path, file] of result.files) {
     const abs = resolve(outRoot, path);
     mkdirSync(dirname(abs), { recursive: true });
+    // oxlint-disable-next-line no-await-in-loop -- files are written one at a time: vendored trees hold thousands of files and sequential writes bound open handles
     await Bun.write(abs, file.data);
     chmodSync(abs, file.mode);
   }
   for (const [path, text] of extra) {
     const abs = resolve(outRoot, path);
     mkdirSync(dirname(abs), { recursive: true });
+    // oxlint-disable-next-line no-await-in-loop -- files are written one at a time: vendored trees hold thousands of files and sequential writes bound open handles
     await Bun.write(abs, text);
   }
 }
@@ -792,6 +803,7 @@ export async function scanSources(rootDir: string, cfg: VendorConfig): Promise<n
   let missed = 0;
   for (const source of cfg.sources) {
     const repo = resolve(rootDir, "vendor", source.name);
+    // oxlint-disable-next-line no-await-in-loop -- sources are listed in config order; each listing feeds the ordered manifest set
     const listing = await git(repo, ["ls-files", "-z", "--", "Cargo.toml", "**/Cargo.toml"]);
     const manifests = listing.split("\0").filter(Boolean).toSorted();
     console.log(`\x1b[1m${source.name}\x1b[0m (${manifests.length} manifests)`);
@@ -802,6 +814,7 @@ export async function scanSources(rootDir: string, cfg: VendorConfig): Promise<n
         !globMatch(source.excludeCrates ?? [], dir);
       let name = "";
       try {
+        // oxlint-disable-next-line no-await-in-loop -- manifests are parsed one by one in listing order to keep the reported names deterministic
         const manifest = Bun.TOML.parse(await Bun.file(join(repo, file)).text()) as Table;
         name = String((manifest.package as Table | undefined)?.name ?? "(workspace root)");
       } catch {
@@ -886,6 +899,7 @@ export async function runImportCommand(
         diffs.push(`missing: ${path}`);
         continue;
       }
+      // oxlint-disable-next-line no-await-in-loop -- verification reads one file at a time so diffs are reported in path order
       const actual = new Uint8Array(await Bun.file(abs).arrayBuffer());
       if (Bun.hash.wyhash(actual) !== Bun.hash.wyhash(data)) diffs.push(`differs: ${path}`);
     }

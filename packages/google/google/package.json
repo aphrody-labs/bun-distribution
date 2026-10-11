@@ -1,6 +1,6 @@
 {
   "name": "@aphrody/google",
-  "version": "1.0.0-canary.1",
+  "version": "1.0.0-canary.3",
   "description": "Canonical Bun facade for Aphrody Google Cloud and Gemini.",
   "license": "Apache-2.0",
   "files": [
@@ -26,11 +26,11 @@
   },
   "dependencies": {
     "@ai-sdk/google-vertex": "catalog:",
-    "ai": "catalog:",
-    "google-auth-library": "catalog:",
+    "@aphrody/yolo-core": "workspace:*",
     "@googleapis/docs": "catalog:",
     "@googleapis/drive": "catalog:",
-    "@aphrody/yolo-core": "workspace:*"
+    "ai": "catalog:",
+    "google-auth-library": "catalog:"
   },
   "engines": {
     "bun": ">=1.4.3"

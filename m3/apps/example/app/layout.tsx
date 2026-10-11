@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import Link from "next/link";
 import type { ReactNode } from "react";
+// oxlint-disable-next-line import/no-unassigned-import -- feuille de style globale du thème M3 (effet de bord voulu)
 import "m3:theme.css";
+// oxlint-disable-next-line import/no-unassigned-import -- feuille de style globale des polices M3 (effet de bord voulu)
 import "m3:fonts.css";
+// oxlint-disable-next-line import/no-unassigned-import -- feuille de style globale de l'application d'exemple (effet de bord voulu)
 import "./globals.css";
 
 export const metadata = {

@@ -16,9 +16,9 @@ if data.get('schemaVersion') != 1 or data.get('repository') != 'aphrody-discord'
     raise SystemExit('invalid Aphrody Discord release manifest')
 PY
 [[ -r /etc/aphrody-discord.env ]] || { echo 'missing /etc/aphrody-discord.env' >&2; exit 2; }
-[[ -f /etc/systemd/system/aphrody-discord-dev.service ]] || { echo 'missing installed aphrody-discord-dev.service' >&2; exit 2; }
-[[ -s /etc/letsencrypt/live/bot.aphrody.com/fullchain.pem && -s /etc/letsencrypt/live/bot.aphrody.com/privkey.pem ]] || { echo 'missing bot.aphrody.com TLS certificate' >&2; exit 2; }
-nginx -t
+# Runs as the compose service `discord` of the host project (tools/config/container/compose.yaml).
+compose=(docker compose --project-directory /home/ubuntu/apps)
+"${compose[@]}" config --services | grep -qx discord || { echo 'compose service discord is not declared' >&2; exit 2; }
 install -d -o ubuntu -g ubuntu -m 0750 "$root/releases" "$root/shared"
 commit="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["commit"])' "$release/release.json")"
 dest="$root/releases/$commit"
@@ -30,24 +30,28 @@ if [[ "$release" != "$dest" ]]; then
     install -o ubuntu -g ubuntu -m 0640 "$release/server.js" "$release/release.json" "$release/SHA256SUMS" "$dest/"
   fi
 fi
-old="$(readlink -f "$current" 2>/dev/null || true)"
-next="$root/.current.$commit.$$"
-ln -s "$dest" "$next"
+# Relative link: the container binds $root at the same path and resolves it the same way.
+old="$(readlink "$current" 2>/dev/null || true)"
+next="$root/.current.$commit.$"
+ln -s "releases/$commit" "$next"
 mv -Tf "$next" "$current"
 rollback() {
-  if [[ -n "$old" ]]; then ln -s "$old" "$root/.rollback.$$"; mv -Tf "$root/.rollback.$$" "$current"; else rm -f "$current"; fi
-  systemctl restart aphrody-discord-dev.service || true
+  if [[ -n "$old" ]]; then ln -s "$old" "$root/.rollback.$"; mv -Tf "$root/.rollback.$" "$current"; else rm -f "$current"; fi
+  "${compose[@]}" up -d --no-deps --force-recreate discord || true
   echo 'activation failed; previous release restored' >&2
 }
-systemctl daemon-reload
-systemctl enable aphrody-discord-dev.service
-if ! systemctl restart aphrody-discord-dev.service; then
+# Only the active release is kept once verified (rollback = rebuild from git).
+prune() {
+  find "$root/releases" -mindepth 1 -maxdepth 1 -type d ! -name "$commit" -exec rm -rf -- {} +
+}
+if ! "${compose[@]}" up -d --no-deps --force-recreate discord; then
   rollback
   exit 1
 fi
 for attempt in $(seq 1 30); do
   if curl --fail --silent http://127.0.0.1:4010/healthz | python3 -c 'import json,sys; h=json.load(sys.stdin); raise SystemExit(0 if h.get("status")=="ok" and h.get("gatewayConnected") is True else 1)' 2>/dev/null; then
-    if nginx -t && systemctl reload nginx && curl --fail --silent --show-error --resolve bot.aphrody.com:443:127.0.0.1 https://bot.aphrody.com/healthz >/dev/null; then
+    if curl --fail --silent --show-error --resolve bot.aphrody.com:443:127.0.0.1 https://bot.aphrody.com/healthz >/dev/null; then
+      prune
       echo "activated Aphrody Discord release $commit"
       exit 0
     fi

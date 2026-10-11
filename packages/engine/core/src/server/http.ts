@@ -40,16 +40,18 @@ function loopbackOrigin(origin: string): boolean {
   }
 }
 
+function jsonResponse(data: unknown, status = 200, headers: Record<string, string> = {}) {
+  return Response.json(data, {
+    status,
+    headers: { "Content-Type": "application/json; charset=utf-8", ...headers },
+  });
+}
+
 export function createApiServer(options: ApiServerOptions = {}) {
   const rootDir = options.rootDir ?? yoloHome();
   const hostname = options.hostname ?? "127.0.0.1";
   const requiredToken = options.token ?? Bun.env.YOLO_API_TOKEN;
   const context = options.toolContext ?? new ToolExecutionContext({ containPaths: true });
-  const jsonResponse = (data: unknown, status = 200, headers: Record<string, string> = {}) =>
-    Response.json(data, {
-      status,
-      headers: { "Content-Type": "application/json; charset=utf-8", ...headers },
-    });
   const server = Bun.serve({
     port: options.port ?? 8999,
     hostname,

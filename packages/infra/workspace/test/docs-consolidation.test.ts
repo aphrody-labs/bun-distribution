@@ -113,14 +113,13 @@ test("markdown rewriting re-points links, definitions and literal paths but not 
 });
 
 test("a moved file keeps its own relative links valid", () => {
-  const finalOf = (path: string) => (path === "docs/a/old.md" ? "docs/b/new.md" : path);
   const result = rewriteMarkdown(
     "[x](../c/target.md) [self](./old.md)",
     "docs/a/old.md",
     "docs/b/new.md",
-    finalOf,
+    movedTarget,
     null,
-    finalOf,
+    movedTarget,
   );
   expect(result.content).toBe("[x](../c/target.md) [self](./new.md)");
 });
@@ -134,8 +133,6 @@ test("path-normalized hashing ignores relocated paths but not wording", () => {
 });
 
 test("shingle similarity separates translations from copies", () => {
-  const tokens = (text: string) =>
-    new Set(normalizedTokens(text).map((_, i, all) => all.slice(i, i + 3).join(" ")));
   const a = tokens("the quick brown fox jumps over the lazy dog every single morning");
   const b = tokens("the quick brown fox jumps over the lazy dog every single evening");
   const { jaccard, containment } = shingleSimilarity(a, b);
@@ -357,17 +354,6 @@ test("owner duplicates: path-only differences are removed, diverged copies go to
     entry({ path: "docs/architecture/ui/packages/m3-design/README.md", sha256: "d1" }),
     entry({ path: "packages/ui/m3-design/README.md", sha256: "d2", modified: true }),
   ];
-  const pair = (
-    left: string,
-    right: string,
-    relation: "equal-modulo-paths" | "translation-or-variant",
-  ) => ({
-    left,
-    right,
-    jaccard: 0.9,
-    containment: 0.95,
-    relation,
-  });
   const scan: ScanResult = {
     scope: "ui",
     nearThreshold: 0.8,
@@ -412,6 +398,50 @@ test("owner duplicates: path-only differences are removed, diverged copies go to
     ["docs/products/ui/crates/aphrody-app/README.md", "crates/ui/app/README.md"],
   ]);
 });
+
+const phase = (id: string, equivalence: "identical" | "equal-modulo-paths") => ({
+  schemaVersion: 1 as const,
+  generatedAt: "t",
+  tool: "t",
+  dryRun: false,
+  scope: "ui",
+  root: "/r",
+  actions: [
+    {
+      id,
+      action: "remove-duplicate" as const,
+      path: `docs/${id}.md`,
+      canonical: `packages/${id}.md`,
+      equivalence,
+      reason: "r",
+      inboundRewritten: [],
+      sourceMapEntries: 1,
+      outcome: "applied" as const,
+    },
+  ],
+  rewrittenFiles: [{ file: "docs/a.md", links: 2, mentions: 1 }],
+  skippedFiles: [],
+  unresolvedRewrites: [],
+  removedDirectories: [],
+  sourceMap: { path: "docs/migration/source-map.json", entriesUpdated: 1 },
+});
+
+const pair = (
+  left: string,
+  right: string,
+  relation: "equal-modulo-paths" | "translation-or-variant",
+) => ({
+  left,
+  right,
+  jaccard: 0.9,
+  containment: 0.95,
+  relation,
+});
+
+const tokens = (text: string) =>
+  new Set(normalizedTokens(text).map((_, i, all) => all.slice(i, i + 3).join(" ")));
+
+const movedTarget = (path: string) => (path === "docs/a/old.md" ? "docs/b/new.md" : path);
 
 async function fixture(): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "docs-consolidation-"));
@@ -756,32 +786,6 @@ test("verify detects stale definitions and literal mentions with exact path boun
 }, 120_000);
 
 test("the consolidation report merges phases and keeps the measured numbers", () => {
-  const phase = (id: string, equivalence: "identical" | "equal-modulo-paths") => ({
-    schemaVersion: 1 as const,
-    generatedAt: "t",
-    tool: "t",
-    dryRun: false,
-    scope: "ui",
-    root: "/r",
-    actions: [
-      {
-        id,
-        action: "remove-duplicate" as const,
-        path: `docs/${id}.md`,
-        canonical: `packages/${id}.md`,
-        equivalence,
-        reason: "r",
-        inboundRewritten: [],
-        sourceMapEntries: 1,
-        outcome: "applied" as const,
-      },
-    ],
-    rewrittenFiles: [{ file: "docs/a.md", links: 2, mentions: 1 }],
-    skippedFiles: [],
-    unresolvedRewrites: [],
-    removedDirectories: [],
-    sourceMap: { path: "docs/migration/source-map.json", entriesUpdated: 1 },
-  });
   const report = buildConsolidationReport({
     name: "n",
     before: { summary: { nearThreshold: 0.8, documents: 10 }, exactClusters: [], nearPairs: [] },
@@ -883,13 +887,15 @@ test("all scope includes Infra and preserves shipped copies while excluding impo
       "docs/reference/imported/README.md",
       "docs/plans/infra/archive/README.md",
     ];
-    for (const path of paths) {
-      await mkdir(dirname(join(root, path)), { recursive: true });
-      await writeFile(
-        join(root, path),
-        "# Tool\n\nFirst-party infrastructure documentation with enough text for duplicate comparison.\n",
-      );
-    }
+    await Promise.all(
+      paths.map(async (path) => {
+        await mkdir(dirname(join(root, path)), { recursive: true });
+        await writeFile(
+          join(root, path),
+          "# Tool\n\nFirst-party infrastructure documentation with enough text for duplicate comparison.\n",
+        );
+      }),
+    );
     await mkdir(join(root, "tools/config/docs"), { recursive: true });
     await writeFile(
       join(root, "tools/config/docs/imported-upstream-docs.json"),
@@ -903,14 +909,12 @@ test("all scope includes Infra and preserves shipped copies while excluding impo
       { windowsHide: true },
     );
     const ui = await scanScope({ root });
-    expect(ui.entries.some((entry) => entry.path === paths[0])).toBe(false);
+    expect(ui.entries.some((item) => item.path === paths[0])).toBe(false);
     const all = await scanScope({ root, scope: ALL_SCOPE });
     expect(all.scope).toBe("all");
-    expect(all.entries.map((entry) => entry.path)).toContain(paths[0]!);
-    expect(all.entries.map((entry) => entry.path)).not.toContain(
-      "docs/reference/imported/README.md",
-    );
-    expect(all.entries.map((entry) => entry.path)).not.toContain(
+    expect(all.entries.map((item) => item.path)).toContain(paths[0]!);
+    expect(all.entries.map((item) => item.path)).not.toContain("docs/reference/imported/README.md");
+    expect(all.entries.map((item) => item.path)).not.toContain(
       "docs/plans/infra/archive/README.md",
     );
     const plan = planOwnerDuplicates(all, ALL_SCOPE.ownerRoots, retainDocumentationCopy);
@@ -938,8 +942,8 @@ test("all scope ignores file and parent symlinks and rejects aliased plan destin
     await symlink(join(outside, "alias.md"), join(root, "docs/alias.md"));
     await symlink(outside, join(root, "docs/linked"));
     const scanned = await scanScope({ root, scope: ALL_SCOPE });
-    expect(scanned.entries.map((entry) => entry.path)).not.toContain("docs/alias.md");
-    expect(scanned.entries.some((entry) => entry.path.startsWith("docs/linked/"))).toBe(false);
+    expect(scanned.entries.map((item) => item.path)).not.toContain("docs/alias.md");
+    expect(scanned.entries.some((item) => item.path.startsWith("docs/linked/"))).toBe(false);
     const plan: Plan = {
       schemaVersion: 1,
       scope: "all",
@@ -966,11 +970,13 @@ test("all scope ignores file and parent symlinks and rejects aliased plan destin
             action: "move",
             path,
             to: destination,
+            // oxlint-disable-next-line no-await-in-loop -- each unsafe plan is built from the fixture as the previous rejection left it
             sha256: sha256Of(await readFile(join(root, path))),
             reason: "move",
           },
         ],
       };
+      // oxlint-disable-next-line no-await-in-loop -- rejections are asserted one destination at a time against the same fixture
       await expect(applyPlan({ root, plan: unsafe, write: true, reportName: "t" })).rejects.toThrow(
         "Unsafe global",
       );
@@ -1012,12 +1018,14 @@ test("all scope excludes private agent context before inventory and path rewriti
       "docs/LIVE.md",
     ];
     const content = "# Synthetic private fixture\n\n`crates/aphrody-app` must remain unchanged.\n";
-    for (const path of paths) {
-      await mkdir(dirname(join(root, path)), { recursive: true });
-      await writeFile(join(root, path), content);
-    }
+    await Promise.all(
+      paths.map(async (path) => {
+        await mkdir(dirname(join(root, path)), { recursive: true });
+        await writeFile(join(root, path), content);
+      }),
+    );
     const scanned = await scanScope({ root, scope: ALL_SCOPE });
-    expect(scanned.entries.some((entry) => paths.includes(entry.path))).toBe(false);
+    expect(scanned.entries.some((item) => paths.includes(item.path))).toBe(false);
     const report = await applyPlan({
       root,
       plan: {
@@ -1031,7 +1039,8 @@ test("all scope excludes private agent context before inventory and path rewriti
       legacyPathMap: new Map([["crates/aphrody-app", "crates/ui/app"]]),
     });
     expect(report.actions[0]?.pathFixes).toEqual([]);
-    for (const path of paths) expect(await readFile(join(root, path), "utf8")).toBe(content);
+    const written = await Promise.all(paths.map((path) => readFile(join(root, path), "utf8")));
+    for (const text of written) expect(text).toBe(content);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

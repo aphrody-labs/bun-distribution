@@ -1,17 +1,17 @@
-import { useVirtualizer, VirtualItem } from '@tanstack/react-virtual';
-import clsx from 'clsx';
-import { memo, useEffect, useRef, useState } from 'react';
+import { useVirtualizer, VirtualItem } from "@tanstack/react-virtual";
+import { clsx } from "clsx";
+import { memo, useEffect, useRef, useState } from "react";
 
-import { languageMapping } from './prism';
+import { languageMapping } from "./prism";
 
-const prismaLazy = import('./prism-lazy').then(({ loadPrism }) => loadPrism());
-prismaLazy.catch((e) => console.error('Failed to load prism-lazy', e));
+const prismaLazy = import("./prism-lazy").then(({ loadPrism }) => loadPrism());
+prismaLazy.catch((e) => console.error("Failed to load prism-lazy", e));
 
 export interface TextViewerProps {
 	src: string;
 	className?: string;
-	onLoad?: (event: HTMLElementEventMap['load']) => void;
-	onError?: (event: HTMLElementEventMap['error']) => void;
+	onLoad?: (event: HTMLElementEventMap["load"]) => void;
+	onError?: (event: HTMLElementEventMap["error"]) => void;
 	codeExtension?: string;
 	isSidebarPreview?: boolean;
 }
@@ -20,33 +20,31 @@ export const TextViewer = memo(
 	({ src, className, onLoad, onError, codeExtension, isSidebarPreview }: TextViewerProps) => {
 		const [lines, setLines] = useState<string[]>([]);
 		const parentRef = useRef<HTMLPreElement>(null);
+		// oxlint-disable-next-line react/incompatible-library -- @tanstack/react-virtual useVirtualizer returns a mutable instance that the React Compiler cannot memoize safely
 		const rowVirtualizer = useVirtualizer({
 			count: lines.length,
 			getScrollElement: () => parentRef.current,
-			estimateSize: () => 22
+			estimateSize: () => 22,
 		});
 
 		useEffect(() => {
-			if (!src || src === '#') return;
+			if (!src || src === "#") return;
 
 			const controller = new AbortController();
 			fetch(src, {
-				mode: 'cors',
-				signal: controller.signal
+				mode: "cors",
+				signal: controller.signal,
 			})
 				.then((response) => {
 					if (!response.ok) throw new Error(`Invalid response: ${response.statusText}`);
 					if (!response.body) return;
-					onLoad?.(new UIEvent('load', {}));
+					onLoad?.(new UIEvent("load", {}));
 
 					const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-					return reader.read().then(function ingestLines({
-						done,
-						value
-					}): void | Promise<void> {
+					return reader.read().then(function ingestLines({ done, value }): void | Promise<void> {
 						if (done) return;
 
-						const chunks = value.split('\n');
+						const chunks = value.split("\n");
 						setLines([...chunks]);
 
 						if (isSidebarPreview) return;
@@ -56,23 +54,26 @@ export const TextViewer = memo(
 				})
 				.catch((error) => {
 					if (!controller.signal.aborted)
-						onError?.(new ErrorEvent('error', { message: `${error}` }));
+						onError?.(new ErrorEvent("error", { message: `${error}` }));
 				});
 
 			return () => controller.abort();
 		}, [src, onError, onLoad, codeExtension, isSidebarPreview]);
 
 		return (
-			<pre ref={parentRef} tabIndex={0} className={className}>
+			<pre
+				ref={parentRef}
+				// oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- the scrollable <pre> must stay keyboard-focusable to scroll read-only content; a textbox role is refused on a non-interactive <pre>
+				tabIndex={0}
+				className={className}
+			>
 				<div
-					tabIndex={0}
 					className={clsx(
-						'relative w-full whitespace-pre text-body-medium text-on-surface',
-						codeExtension &&
-							`language-${languageMapping.get(codeExtension) ?? codeExtension}`
+						"relative w-full whitespace-pre text-body-medium text-on-surface",
+						codeExtension && `language-${languageMapping.get(codeExtension) ?? codeExtension}`,
 					)}
 					style={{
-						height: `${rowVirtualizer.getTotalSize()}px`
+						height: `${rowVirtualizer.getTotalSize()}px`,
 					}}
 				>
 					{rowVirtualizer.getVirtualItems().map((row) => (
@@ -86,13 +87,13 @@ export const TextViewer = memo(
 				</div>
 			</pre>
 		);
-	}
+	},
 );
 
 function TextRow({
 	codeExtension,
 	row,
-	content
+	content,
 }: {
 	codeExtension?: string;
 	row: VirtualItem;
@@ -109,21 +110,21 @@ function TextRow({
 		prismaLazy.then(({ highlightElement }) => {
 			intersectionObserver = new IntersectionObserver((events) => {
 				for (const event of events) {
-					if (!event.isIntersecting || ref.getAttribute('data-highlighted') === 'true')
-						continue;
+					if (!event.isIntersecting || ref.getAttribute("data-highlighted") === "true") continue;
 
-					ref.setAttribute('data-highlighted', 'true');
+					ref.setAttribute("data-highlighted", "true");
 					highlightElement(event.target, false);
 
 					const children = ref.children;
 					if (children) {
 						for (const elem of children) {
-							elem.classList.remove('table');
+							elem.classList.remove("table");
 						}
 					}
 				}
 			});
 			intersectionObserver.observe(ref);
+			return undefined;
 		});
 
 		return () => intersectionObserver?.disconnect();
@@ -131,17 +132,17 @@ function TextRow({
 
 	return (
 		<div
-			className={clsx('absolute left-0 top-0 flex w-full whitespace-pre')}
+			className={clsx("absolute left-0 top-0 flex w-full whitespace-pre")}
 			style={{
 				height: `${row.size}px`,
-				transform: `translateY(${row.start}px)`
+				transform: `translateY(${row.start}px)`,
 			}}
 		>
 			{codeExtension && (
 				<div
 					key={row.key}
 					className={clsx(
-						'token block shrink-0 whitespace-pre pl-2 pr-4 text-sm leading-6 text-gray-450'
+						"token block shrink-0 whitespace-pre pl-2 pr-4 text-sm leading-6 text-gray-450",
 					)}
 				>
 					{row.index + 1}

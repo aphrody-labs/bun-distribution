@@ -4,7 +4,15 @@ Canonical Aphrody page about Bun. Every other page that discusses the Bun runtim
 its updates links here. This directory holds only this page, the fork `LICENSE.md` and `SOURCE.json`, the commit of
 `docs/` of the fork pinned by `bun run docs:bun:update`. The Bun docs are read in place in the fork checkout,
 else fetched at the pinned commit (sparse `git clone` of `docs/` into the user data directory). Verified against
-the fork checkout on 2026-10-09.
+the fork checkout on 2026-10-10.
+
+The public site of the fork is [bun.aphrody.com](https://bun.aphrody.com): home (what the fork is, its patches and
+their tests, current versions, installation), the full Bun documentation under `/docs` with search, downloads,
+release notes and the installers (`/install`, `/install.sh`, `/install.ps1`). The fork owns its generator,
+`scripts/aphrody/site/` (test `test/internal/aphrody-site.test.ts`); `publish.ts` runs on the vps and flips
+`/var/www/bun.aphrody.com/current`, served by the vhost
+[`bun.aphrody.com.conf`](../../../tools/config/host/nginx/aphrody/bun.aphrody.com.conf). `aphrody.com` and
+`aphrody.com/docs` stay the Aphrody app and its documentation; they do not duplicate the Bun docs.
 
 ## Rules
 
@@ -29,6 +37,10 @@ the fork checkout on 2026-10-09.
 
 ## Fork patches (kept when merging upstream)
 
+The list of patches with their sources and tests is owned by the fork:
+[APHRODY.md, Patches](https://github.com/aphrody-labs/bun/blob/main/APHRODY.md#patches), published on
+[bun.aphrody.com](https://bun.aphrody.com). Summary:
+
 - Built-in replacements of npm packages in `src/js/thirdparty/`: `dotenv.ts` (+ `dotenv/config.ts`, logic in
   `src/js/internal/dotenv.ts`), `picocolors.ts`, `tiny-invariant.ts`, `uuid.ts`, registered in
   `src/resolve_builtins/HardcodedModule.rs`. Tests: `test/js/first_party/{dotenv,picocolors,tiny-invariant,uuid}/`.
@@ -50,8 +62,9 @@ the fork checkout on 2026-10-09.
 
 `bun scripts/aphrody/sync-upstream.ts [--push] [--dry-run] [--keep-conflicts] [--root <dir>] [--no-fetch]`, in
 the fork, merges `upstream/main` into `main`, retries conflicts as a rename-aware three-way merge through
-`scope.ts`, re-applies the `@aphrody` scope and stops (exit 2, merge aborted) on any real conflict. The
-workflow `.github/workflows/aphrody-upstream-sync.yml` runs it every 6 hours. After a merge, refresh the docs
+`scope.ts`, re-applies the `@aphrody` scope and stops (exit 2, merge aborted) on any real conflict. The workflow
+`.github/workflows/aphrody-upstream-sync.yml` declares a 6-hour schedule, but GitHub Actions is disabled on the
+fork, so maintainers run the sync by hand (fork `APHRODY.md`, 2026-10-10). After a merge, refresh the docs
 pin here with `bun run docs:bun:update` and check it with `bun run docs:bun:check`.
 
 ## Distribution
@@ -68,8 +81,10 @@ Versions are `<base>-aphrody.<n>`; the binary reports `bun --version` = the upst
 linux-aarch64 builds for glibc and musl, x64 baseline builds, darwin-x64/aarch64 and windows-x64/aarch64.
 Repository pin (2026-10-09): `package.json` `packageManager` is `bun@1.4.3-aphrody.3` (revision `d46f0ed6c69`,
 `bun --revision` = `1.4.3-aphrody.3+d46f0ed6c`); `scripts/build/container/aphrody-build.ts` derives the release tag
-`aphrody-v1.4.3-aphrody.3` from it. The `.3` builds are local only: no GitHub release is published yet and there is no
-musl build, so installers and the build image that fetch `aphrody-v1.4.3-aphrody.3` fail until it is published.
+`aphrody-v1.4.3-aphrody.3` from it. GitHub releases `aphrody-v1.4.3-aphrody.3` and `aphrody-v1.4.3-aphrody.4` are
+published (2026-10-09); `.4` carries linux-x64 (glibc and musl), windows-x64, the Windows service host and
+`SHA256SUMS`. The npm runtime is `@aphrody/bun-runtime` (`npm install -g @aphrody/bun-runtime`); the installers are
+served by [bun.aphrody.com](https://bun.aphrody.com/install).
 The Alpine Aphrody OS image consumes the musl archives through the checksum-verifying fork installer. The npm name
 `@aphrody/bun` is not the fork runtime; never publish or install the runtime under it.
 

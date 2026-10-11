@@ -53,7 +53,6 @@ interface MeshSceneProps {
 }
 
 function MeshScene({ url }: MeshSceneProps) {
-  const meshRef = useRef<THREE.Mesh>(null);
   const [geometry, setGeometry] = useState<THREE.BufferGeometry | null>(null);
 
   useEffect(() => {
@@ -70,13 +69,17 @@ function MeshScene({ url }: MeshSceneProps) {
         console.error("[MeshScene] PLY load error:", error);
       },
     );
-
-    return () => {
-      if (geometry) {
-        geometry.dispose();
-      }
-    };
   }, [url]);
+
+  // Libère la géométrie courante lorsqu'elle est remplacée ou au démontage
+  useEffect(() => {
+    if (!geometry) {
+      return;
+    }
+    return () => {
+      geometry.dispose();
+    };
+  }, [geometry]);
 
   if (!geometry) {
     return null;
@@ -84,7 +87,7 @@ function MeshScene({ url }: MeshSceneProps) {
 
   return createElement(
     "mesh" as any,
-    { ref: meshRef, geometry },
+    { geometry },
     createElement("meshStandardMaterial" as any, {
       color: "#888888",
       metalness: 0.3,
@@ -139,13 +142,18 @@ function GaussianSplatViewer({
     startFocalPoint: { x: 0, y: 0, z: 0 },
     cameraOffset: { x: 0, y: 0, z: 0 },
   });
+  const onResetReadyRef = useRef(onResetReady);
+  const onDistanceCalculatedRef = useRef(onDistanceCalculated);
 
   // Update refs when props change (doesn't restart animation)
   useEffect(() => {
     swayAmountRef.current = swayAmount;
     swaySpeedRef.current = swaySpeed;
     cameraDistanceRef.current = cameraDistance;
-  }, [swayAmount, swaySpeed, cameraDistance]);
+    // Dernières versions des callbacks, lues au moment de l'appel sans relancer le viewer
+    onResetReadyRef.current = onResetReady;
+    onDistanceCalculatedRef.current = onDistanceCalculated;
+  }, [swayAmount, swaySpeed, cameraDistance, onResetReady, onDistanceCalculated]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -318,7 +326,7 @@ function GaussianSplatViewer({
                     );
 
                     // Provide reset function to parent
-                    onResetReady?.(() => {
+                    onResetReadyRef.current?.(() => {
                       if (initialRaycastFocalPointRef.current && viewerRef.current) {
                         const resetViewer = viewerRef.current;
                         const initial = initialRaycastFocalPointRef.current;
@@ -370,7 +378,7 @@ function GaussianSplatViewer({
                   currentCameraDistanceRef.current = actualDistance;
 
                   // Notify parent to sync the distance slider
-                  onDistanceCalculated?.(actualDistance);
+                  onDistanceCalculatedRef.current?.(actualDistance);
 
                   console.log("[GaussianSplatViewer] Calculated orbital distance:", actualDistance);
 
@@ -734,6 +742,7 @@ export function MeshViewerUI({
           {/* Sway amount slider */}
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
+              {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- le Slider de m3-primitives ne transmet pas d'id à son input natif ; le nom accessible est porté par aria-label */}
               <label className="text-label-medium text-on-surface-variant">Sway amount</label>
               <span className="text-label-medium text-on-surface-variant font-mono tabular-nums">
                 {swayAmount.toFixed(2)}
@@ -754,6 +763,7 @@ export function MeshViewerUI({
           {/* Speed slider */}
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
+              {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- le Slider de m3-primitives ne transmet pas d'id à son input natif ; le nom accessible est porté par aria-label */}
               <label className="text-label-medium text-on-surface-variant">Speed</label>
               <span className="text-label-medium text-on-surface-variant font-mono tabular-nums">
                 {swaySpeed.toFixed(2)}
@@ -774,6 +784,7 @@ export function MeshViewerUI({
           {/* Distance slider */}
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
+              {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- le Slider de m3-primitives ne transmet pas d'id à son input natif ; le nom accessible est porté par aria-label */}
               <label className="text-label-medium text-on-surface-variant">Distance</label>
               <span className="text-label-medium text-on-surface-variant font-mono tabular-nums">
                 {cameraDistance.toFixed(2)}
@@ -808,24 +819,47 @@ export function MeshViewer({
   onControlsChange,
 }: MeshViewerProps) {
   const platform = usePlatform();
-  const [meshUrl, setMeshUrl] = useState<string | null>(splatUrl || null);
+  const fileId = file.content_identity?.uuid || file.id;
   const [isGaussianSplat, setIsGaussianSplat] = useState(!!splatUrl);
   const [splatFailed, setSplatFailed] = useState(false);
-  const [shouldLoad, setShouldLoad] = useState(false);
+  // Chargement différé de 50 ms, par couple (fichier, sidecar) ; ready passe à true à l'échéance
+  const [loadState, setLoadState] = useState({ fileId, splatUrl, ready: false });
+  const shouldLoad = loadState.ready;
   const [loading, setLoading] = useState(!splatUrl);
   const resetFocalPointRef = useRef<(() => void) | null>(null);
   const [internalCameraDistance, setInternalCameraDistance] = useState(cameraDistanceProp);
+  const [prevCameraDistanceProp, setPrevCameraDistanceProp] = useState(cameraDistanceProp);
+
+  // Sync internal distance with prop changes (unless we've overridden it)
+  if (cameraDistanceProp !== prevCameraDistanceProp) {
+    setPrevCameraDistanceProp(cameraDistanceProp);
+    setInternalCameraDistance(cameraDistanceProp);
+  }
+
+  // Réinitialise le chargement quand le fichier ou le sidecar change (ajustement pendant le rendu)
+  if (loadState.fileId !== fileId || loadState.splatUrl !== splatUrl) {
+    setLoadState({ fileId, splatUrl, ready: false });
+    setLoading(true);
+  }
+
+  // Un sidecar splat est connu d'avance : sa présence fixe le mode, sans passer par un effet
+  const physicalPath: string | undefined = (file.sd_path as any)?.Physical?.path;
+  // URL du fichier, dérivée une fois la temporisation écoulée (pas d'état intermédiaire)
+  const fileUrl =
+    shouldLoad && platform.convertFileSrc && physicalPath
+      ? platform.convertFileSrc(physicalPath)
+      : null;
+  const activeMeshUrl = splatUrl || fileUrl;
+  const activeIsGaussianSplat = !!splatUrl || isGaussianSplat;
+  // Une fois la temporisation écoulée, un fichier sans chemin physique ne se charge pas : l'attente prend fin
+  const noPhysicalPath = shouldLoad && !!platform.convertFileSrc && !physicalPath;
+  const activeLoading = !splatUrl && loading && !noPhysicalPath;
 
   // Use props for control values, but use internal state for distance (can be overridden by raycast)
   const autoRotate = autoRotateProp;
   const swayAmount = swayAmountProp;
   const swaySpeed = swaySpeedProp;
   const cameraDistance = internalCameraDistance;
-
-  // Sync internal distance with prop changes (unless we've overridden it)
-  useEffect(() => {
-    setInternalCameraDistance(cameraDistanceProp);
-  }, [cameraDistanceProp]);
 
   // Notify parent when controls change
   useEffect(() => {
@@ -834,11 +868,11 @@ export function MeshViewer({
       swayAmount,
       swaySpeed,
       cameraDistance: internalCameraDistance,
-      isGaussianSplat,
+      isGaussianSplat: activeIsGaussianSplat,
       onResetFocalPoint: resetFocalPointRef.current || undefined,
     });
   }, [
-    isGaussianSplat,
+    activeIsGaussianSplat,
     autoRotate,
     swayAmount,
     swaySpeed,
@@ -846,30 +880,21 @@ export function MeshViewer({
     onControlsChange,
   ]);
 
-  const fileId = file.content_identity?.uuid || file.id;
-
   const handleSplatFallback = useCallback(() => {
     setSplatFailed(true);
   }, []);
 
   useEffect(() => {
-    setShouldLoad(false);
-    setMeshUrl(null);
-    setLoading(true);
-
     const timer = setTimeout(() => {
-      setShouldLoad(true);
+      setLoadState({ fileId, splatUrl, ready: true });
     }, 50);
 
     return () => clearTimeout(timer);
   }, [fileId, splatUrl]);
 
   useEffect(() => {
-    // If splatUrl is provided, use it directly (it's a Gaussian splat sidecar)
+    // Un sidecar splat est utilisé directement, sans détection de format
     if (splatUrl) {
-      setMeshUrl(splatUrl);
-      setIsGaussianSplat(true);
-      setLoading(false);
       return;
     }
 
@@ -877,17 +902,12 @@ export function MeshViewer({
       return;
     }
 
-    const sdPath = file.sd_path as any;
-    const physicalPath = sdPath?.Physical?.path;
-
-    if (!physicalPath) {
+    if (!fileUrl) {
       console.log("[MeshViewer] No physical path available");
-      setLoading(false);
       return;
     }
 
-    const url = platform.convertFileSrc(physicalPath);
-    setMeshUrl(url);
+    const url = fileUrl;
 
     // Only run detection if not using splatUrl (splatUrl is already known to be a Gaussian splat)
     if (splatUrl) {
@@ -931,14 +951,14 @@ export function MeshViewer({
     return () => {
       abortController.abort();
     };
-  }, [shouldLoad, fileId, file.sd_path, platform, splatUrl]);
+  }, [shouldLoad, fileUrl, platform, splatUrl]);
 
-  if (!meshUrl || loading) {
+  if (!activeMeshUrl || activeLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center">
         <div className="text-center">
           <FileComponent.Thumb file={file} size={200} />
-          {loading && (
+          {activeLoading && (
             <div className="mt-4 text-body-medium text-on-surface-variant">Loading 3D model...</div>
           )}
         </div>
@@ -949,9 +969,9 @@ export function MeshViewer({
   // Just render the canvas, UI will be handled by ContentRenderer
   return (
     <div className="absolute inset-0 bg-scrim">
-      {isGaussianSplat && !splatFailed ? (
+      {activeIsGaussianSplat && !splatFailed ? (
         <GaussianSplatViewer
-          url={meshUrl}
+          url={activeMeshUrl}
           onFallback={handleSplatFallback}
           onLoaded={onSplatLoaded}
           autoRotate={autoRotate}
@@ -966,7 +986,7 @@ export function MeshViewer({
               swayAmount,
               swaySpeed,
               cameraDistance: internalCameraDistance,
-              isGaussianSplat,
+              isGaussianSplat: activeIsGaussianSplat,
               onResetFocalPoint: resetFn,
             });
           }}
@@ -990,7 +1010,7 @@ export function MeshViewer({
             intensity: 0.5,
           })}
           <Suspense fallback={null}>
-            <MeshScene url={meshUrl} />
+            <MeshScene url={activeMeshUrl} />
           </Suspense>
           <MeshOrbitControls />
         </Canvas>

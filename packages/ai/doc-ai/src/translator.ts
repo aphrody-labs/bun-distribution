@@ -230,6 +230,7 @@ export async function translateMarkdownOffline(
 
   for (let i = 0; i < jobs.length; i += batchSize) {
     const batch = jobs.slice(i, i + batchSize);
+    // oxlint-disable-next-line no-await-in-loop -- lots séquentiels : les lots suivants ne partent qu'après la fin du précédent pour borner les appels LLM simultanés
     await Promise.all(
       batch.map(async (job) => {
         try {

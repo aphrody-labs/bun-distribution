@@ -66,6 +66,14 @@ describe("Kunkun Parity - Search & Filtering", () => {
   });
 });
 
+function parseCollapsed(raw: string | null): boolean {
+  try {
+    return raw ? JSON.parse(raw) === true : false;
+  } catch {
+    return false;
+  }
+}
+
 describe("M3 Adaptive Collapsible Sidebar Parity", () => {
   test("Sidebar storage keys are defined consistently", () => {
     expect(STORE_SIDEBAR_COLLAPSED).toBe("sidebar.collapsed");
@@ -73,14 +81,6 @@ describe("M3 Adaptive Collapsible Sidebar Parity", () => {
   });
 
   test("Sidebar default collapsed state is false", () => {
-    const parseCollapsed = (raw: string | null): boolean => {
-      try {
-        return raw ? JSON.parse(raw) === true : false;
-      } catch {
-        return false;
-      }
-    };
-
     expect(parseCollapsed(null)).toBe(false);
     expect(parseCollapsed("")).toBe(false);
     expect(parseCollapsed("false")).toBe(false);

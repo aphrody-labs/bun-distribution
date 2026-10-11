@@ -639,8 +639,11 @@ pub enum ToolSafety {
 ///
 /// Implementations tie the model-visible [`ToolDefinition`] to executable
 /// behavior. The bounds `Send + Sync` let registries hold `Arc<dyn ToolExecutor>`
-/// and dispatch across async tasks.
-#[async_trait::async_trait]
+/// and dispatch across async tasks. On `wasm32` the futures are `?Send`: the browser runs one
+/// thread and its `fetch`/`JsFuture` futures are not `Send`; implementors compiled for wasm32
+/// use the same `cfg_attr` pair.
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait ToolExecutor: Send + Sync {
     /// The definition advertised to the model and used for routing.
     fn definition(&self) -> &ToolDefinition;

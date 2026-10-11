@@ -6,13 +6,18 @@ import {
   lchownSync,
   lstatSync,
   readdirSync,
+  readFileSync,
   readlinkSync,
   renameSync,
   symlinkSync,
   type Dirent,
 } from "node:fs";
-import { join, posix } from "node:path";
-import policy from "../../../../../tools/config/host/host-policy.toml";
+import { join, posix, resolve } from "node:path";
+
+const sourcePolicy = resolve(import.meta.dir, "../../../../../tools/config/host/host-policy.toml");
+const policy = existsSync(sourcePolicy)
+  ? Bun.TOML.parse(readFileSync(sourcePolicy, "utf8"))
+  : JSON.parse(readFileSync(resolve(import.meta.dir, "../../data/host-layout.json"), "utf8"));
 
 export type LayoutRoot = "src" | "apps" | "build" | "archive" | "state";
 
@@ -46,7 +51,7 @@ export function hostLayout(home = String(table["home"])): HostLayout {
   };
   const retired = Object.entries((table["retired"] ?? {}) as Record<string, string>)
     .map(([from, to]): [string, string] => [expandHome(from, home), expandHome(to, home)])
-    .sort((a, b) => b[0].length - a[0].length);
+    .toSorted((a, b) => b[0].length - a[0].length);
   return {
     home,
     src: at("src"),

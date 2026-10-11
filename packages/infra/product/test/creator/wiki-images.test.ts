@@ -93,7 +93,7 @@ test("downloads gallery images across API continuations, filters non images", as
   const out = await mkdtemp(join(tmpdir(), "wiki-images-"));
   const code = await run([`${base}/wiki/Sol/Gallery`, "--out", out], fetch);
   expect(code).toBe(0);
-  expect((await readdir(out)).sort()).toEqual(["A.png", "B_.png", "manifest.json"]);
+  expect((await readdir(out)).toSorted()).toEqual(["A.png", "B_.png", "manifest.json"]);
   expect(await readFile(join(out, "A.png"), "utf8")).toBe("bytes:/files/A.png");
   // second run skips existing files with the same size
   const logs: string[] = [];

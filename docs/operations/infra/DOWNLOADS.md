@@ -11,7 +11,7 @@ existing repositories.
 | Path | Content | Auth |
 | --- | --- | --- |
 | `https://downloads.aphrody.com/` | index page | none, by design |
-| `https://aphrody.com/`, `https://www.aphrody.com/` | Bun fork site (docs, llms.txt, downloads, benchmarks, `/install`, `/install.ps1`) from `/home/ubuntu/apps/downloads/site/current`; unknown paths fall back to the routes below | none, by design |
+| `https://aphrody.com/`, `https://www.aphrody.com/` | separate product site on the VPS; www redirects to the apex | none, by design |
 | `/latest.json` | manifest: `name`, `version`, `platform`, `target`, `url`, `sha256`, `size` per artifact | none, by design |
 | `/SHA256SUMS`, `/files/<file>.sha256` | checksums of the current release | none, by design |
 | `/install.sh`, `/install.ps1`, `/install-yolo.sh`, `/install-yolo.ps1` | one-line installers | none, by design |
@@ -22,10 +22,10 @@ The site is read-only (GET and HEAD only), serves nothing but published, checksu
 write endpoint, so it stays public and unauthenticated like `cdn.aphrody.com`. GitHub release assets of private
 repositories need an authenticated token: the download server is the public path.
 
-The aphrody.com site is a static tree built from aphrody-labs/bun `origin/main` by the fork's site `build.ts` and
-published by its `publish.ts` (fork directory scripts/aphrody/site; VPS build, tar over `ssh dbfr` into `site/releases/<UTC>-<sha12>`,
-atomic `site/current` flip, last 5 kept; `publish.ts rollback` flips back). The server picks it by `Host`
-(`SITE_HOSTS`, default `aphrody.com,www.aphrody.com`; `SITE_ROOT`, default `<dirname DOWNLOADS_ROOT>/site/current`).
+Since the 2026-10-10 cutover, the downloads publisher owns only
+`downloads.aphrody.com`. The apex/www and `os.aphrody.com` have separate native
+nginx vhosts and app-ui deployments; `/docs` at the apex is proxied to the Rust
+site. The former downloads-hosted Bun fork site is not the current apex origin.
 
 One click on Windows: the « Download Aphrody » button of the index takes the first artifact of kind `desktop`,
 `Aphrody-Setup.exe` (`packages/infra/product`, 2026-10-06). It installs or repairs aphrody, yolo, the desktop app (once
@@ -76,7 +76,8 @@ bun run downloads:publish build   --revision <full-sha>     # factory prepare + 
 bun run downloads:publish release --revision <full-sha>     # stage (local Bun stages included: Wine and rcedit), secret scan, upload, flip `current`
 bun run downloads:publish github                            # releases on the configured existing repositories
 bun run downloads:publish verify                            # public download, SHA-256, `--version`
-bun run downloads:publish host-plan | host-apply --apply   # unit, vhost, certificate (first install or repair)
+bun run downloads:publish host-plan                     # native host/certificate preflight and app refresh plan
+bun run downloads:publish host-apply --apply             # refresh app on the provisioned systemd/nginx host
 ```
 
 `release` refuses to publish when a staged archive or the factory binary contains a denied file name (`.env`, keys,
@@ -86,15 +87,30 @@ releases are kept. Run it from a pushed, building revision; never Cargo in WSL.
 
 ## Host (vps, through `aphrody infra ssh`)
 
-- `aphrody-downloads.service` (`tools/config/host/systemd/aphrody/aphrody-downloads.service`), Bun on `127.0.0.1:8797`,
-  enabled; catalog entry `aphrody-downloads` in `tools/config/service-catalog.json`, route in
+- Native unit `aphrody-downloads.service`, declared in
+  `tools/config/host/systemd/aphrody/aphrody-downloads.service`: Bun on
+  `127.0.0.1:8797`, app `/home/ubuntu/apps/downloads/app/server.ts`, immutable
+  releases under `/home/ubuntu/apps/downloads/releases`; catalog entry
+  `aphrody-downloads` in `tools/config/service-catalog.json`, route in
   `tools/config/host/nginx/routes.json`, port in `tools/config/production-topology.json`.
 - nginx vhost `tools/config/host/nginx/aphrody/downloads.aphrody.com.conf`: nginx sends `/files/` itself (sendfile, ranges),
-  proxies the rest. Certificate `downloads.aphrody.com` (HTTP-01, names `downloads.aphrody.com`, `aphrody.com`,
-  `www.aphrody.com`) issued by `scripts/tools/infra/issue-downloads-certificate.sh`; renewal uses the existing
-  certbot timer and the shared challenge webroot. The leftover `aphrody-acme-temp.conf` (404 on the apex) was retired
-  to `/etc/nginx/retired/`.
-- Rollback: remove the vhost and `nginx -t`/reload, `systemctl disable --now aphrody-downloads`; releases stay on disk.
+  proxies the rest. Shared certificate `aphrody.com` includes downloads in its
+  SAN; the existing certbot timer renews it with `/var/www/letsencrypt`.
+- `host-apply` requires the configured target/unit/port/release root to match
+  the service catalog, the native unit to exist, Bun to be executable, the
+  certificate to be valid for the declared hosts and nginx to pass validation
+  before uploading anything. It refreshes the app, restarts the unit, requires
+  loopback health and reloads native nginx. It does not provision a missing
+  host or issue a replacement certificate.
+- The build factory and release host are both `vps`; no DBFR push is configured.
+  A previous immutable release remains available for a declared rollback.
+
+Live qualification on 2026-10-10: native unit active, nginx validation passed,
+public `/health` and `/latest.json` returned 200 with certificate validation,
+and Aphrody Web rendered the download page. Publisher tests passed on an
+isolated native VPS snapshot: 18 tests / 160 assertions, no failure or skip,
+including preservation of previous artifacts, failed-upload rollback and
+concurrent-publication refusal. Those fixture tests do not mutate production.
 
 ## Windows cross-build
 

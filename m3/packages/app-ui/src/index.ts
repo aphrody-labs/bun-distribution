@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Unified Aphrody UI - Canonical exports for shell, explorer and M3 integration.
 
+// oxlint-disable-next-line import/no-unassigned-import -- feuille de style globale de l'UI (effet de bord voulu)
 import "./styles.css";
 
 export { Shell } from "./Shell";
@@ -29,18 +30,11 @@ export { PlatformProvider, usePlatform } from "./contexts/PlatformContext";
 
 // Context
 export { SpacedriveProvider } from "./contexts/SpacedriveContext";
-export {
-  ServerProvider,
-  useServer,
-  type ServerContextValue,
-} from "./contexts/ServerContext";
+export { ServerProvider, useServer, type ServerContextValue } from "./contexts/ServerContext";
 
 // Hooks
 export { useContextMenu } from "./hooks/useContextMenu";
-export type {
-  ContextMenuItem,
-  ContextMenuConfig,
-} from "./hooks/useContextMenu";
+export type { ContextMenuItem, ContextMenuConfig } from "./hooks/useContextMenu";
 
 // Keybind hooks
 export { useKeybind } from "./hooks/useKeybind";
@@ -63,9 +57,4 @@ export {
   getComboForPlatform,
   toDisplayString,
 } from "./util/keybinds";
-export type {
-  KeybindId,
-  KeybindScope,
-  KeybindDefinition,
-  KeyCombo,
-} from "./util/keybinds";
+export type { KeybindId, KeybindScope, KeybindDefinition, KeyCombo } from "./util/keybinds";

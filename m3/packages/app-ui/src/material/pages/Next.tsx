@@ -20,6 +20,7 @@ export default function Next({ adaptive }: PageProps) {
   const [selected, setSelected] = useState<keyof NextOutput>("metadata");
   useEffect(() => {
     const controller = new AbortController();
+    // oxlint-disable-next-line react/set-state-in-effect -- the loading notice must reset for each seed before its request starts
     setNotice("Computing Next integration output…");
     void fetch("/api/next?seed=" + encodeURIComponent(seedColor), { signal: controller.signal })
       .then(async (response) => {
@@ -82,9 +83,7 @@ export default function Next({ adaptive }: PageProps) {
               ))}
             </select>
           </label>
-          <p role="status" className="text-body-medium text-on-surface-variant">
-            {notice}
-          </p>
+          <output className="block text-body-medium text-on-surface-variant">{notice}</output>
           <Code>{typeof output === "string" ? output : JSON.stringify(output ?? {}, null, 2)}</Code>
         </Card>
       </Section>

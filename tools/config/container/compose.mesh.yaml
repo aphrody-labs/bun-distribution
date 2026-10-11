@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Overlay for the two Windows PCs: the existing API container directly on WireGuard,
+# retaining its loopback API. No IP Helper portproxy and no duplicate native MCP listener.
+services:
+  pc:
+    ports: !override
+      - "127.0.0.1:${APHRODY_PC_PORT:-8999}:8999"
+      - "${APHRODY_TUNNEL_ADDRESS:?private tunnel address required}:8793:8999"

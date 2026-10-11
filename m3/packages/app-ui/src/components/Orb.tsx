@@ -11,16 +11,7 @@ interface OrbProps {
 	forceHoverState?: boolean;
 }
 
-export default function Orb({
-	hue = 0,
-	palette = "purple",
-	hoverIntensity = 0.2,
-	rotateOnHover = true,
-	forceHoverState = false,
-}: OrbProps) {
-	const ctnDom = useRef<HTMLDivElement>(null);
-
-	const vert = /* glsl */ `
+const vert = /* glsl */ `
     precision highp float;
     attribute vec2 position;
     attribute vec2 uv;
@@ -31,7 +22,7 @@ export default function Orb({
     }
   `;
 
-	const frag = /* glsl */ `
+const frag = /* glsl */ `
     precision highp float;
 
     uniform float iTime;
@@ -179,6 +170,15 @@ export default function Orb({
     }
   `;
 
+export default function Orb({
+	hue = 0,
+	palette = "purple",
+	hoverIntensity = 0.2,
+	rotateOnHover = true,
+	forceHoverState = false,
+}: OrbProps) {
+	const ctnDom = useRef<HTMLDivElement>(null);
+
 	useEffect(() => {
 		const container = ctnDom.current;
 		if (!container) return;
@@ -186,15 +186,15 @@ export default function Orb({
 		const paletteColors =
 			palette === "blue"
 				? {
-					baseColor1: [0.22, 0.48, 0.996],
-					baseColor2: [0.298, 0.69, 0.96],
-					baseColor3: [0.04, 0.065, 0.52],
-				}
+						baseColor1: [0.22, 0.48, 0.996],
+						baseColor2: [0.298, 0.69, 0.96],
+						baseColor3: [0.04, 0.065, 0.52],
+					}
 				: {
-					baseColor1: [0.611765, 0.262745, 0.996078],
-					baseColor2: [0.298039, 0.760784, 0.913725],
-					baseColor3: [0.062745, 0.078431, 0.6],
-				};
+						baseColor1: [0.611765, 0.262745, 0.996078],
+						baseColor2: [0.298039, 0.760784, 0.913725],
+						baseColor3: [0.062745, 0.078431, 0.6],
+					};
 
 		const renderer = new Renderer({
 			alpha: true,
@@ -211,11 +211,7 @@ export default function Orb({
 			uniforms: {
 				iTime: { value: 0 },
 				iResolution: {
-					value: new Vec3(
-						gl.canvas.width,
-						gl.canvas.height,
-						gl.canvas.width / gl.canvas.height,
-					),
+					value: new Vec3(gl.canvas.width, gl.canvas.height, gl.canvas.width / gl.canvas.height),
 				},
 				hue: { value: hue },
 				baseColor1: { value: new Vec3(...paletteColors.baseColor1) },
@@ -287,8 +283,7 @@ export default function Orb({
 			program.uniforms.hoverIntensity.value = hoverIntensity;
 
 			const effectiveHover = forceHoverState ? 1 : targetHover;
-			program.uniforms.hover.value +=
-				(effectiveHover - program.uniforms.hover.value) * 0.1;
+			program.uniforms.hover.value += (effectiveHover - program.uniforms.hover.value) * 0.1;
 
 			if (rotateOnHover && effectiveHover > 0.5) {
 				currentRot += dt * rotationSpeed;
@@ -310,10 +305,6 @@ export default function Orb({
 	}, [hue, palette, hoverIntensity, rotateOnHover, forceHoverState]);
 
 	return (
-		<div
-			ref={ctnDom}
-			className="absolute inset-0"
-			style={{ width: "100%", height: "100%" }}
-		/>
+		<div ref={ctnDom} className="absolute inset-0" style={{ width: "100%", height: "100%" }} />
 	);
 }

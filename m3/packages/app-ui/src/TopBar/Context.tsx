@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef } from "react";
+import { createContext, useContext, useState, useCallback, useMemo, useRef } from "react";
 
 export type TopBarPriority = "high" | "normal" | "low";
 export type TopBarPosition = "left" | "center" | "right";
@@ -37,9 +37,13 @@ const TopBarContext = createContext<TopBarContextValue | null>(null);
 export function TopBarProvider({ children }: { children: React.ReactNode }) {
 	const [items, setItems] = useState<Map<string, TopBarItem>>(new Map());
 	const [visibleItems, setVisibleItemsState] = useState<Set<string>>(new Set());
-	const [overflowItems, setOverflowItemsState] = useState<Map<TopBarPosition, TopBarItem[]>>(new Map());
-	const [leftContainerRef, setLeftContainerRef] = useState<React.RefObject<HTMLDivElement | null> | null>(null);
-	const [rightContainerRef, setRightContainerRef] = useState<React.RefObject<HTMLDivElement | null> | null>(null);
+	const [overflowItems, setOverflowItemsState] = useState<Map<TopBarPosition, TopBarItem[]>>(
+		new Map(),
+	);
+	const [leftContainerRef, setLeftContainerRef] =
+		useState<React.RefObject<HTMLDivElement | null> | null>(null);
+	const [rightContainerRef, setRightContainerRef] =
+		useState<React.RefObject<HTMLDivElement | null> | null>(null);
 	const [recalculationTrigger, setRecalculationTrigger] = useState(0);
 	const elementsRef = useRef<Map<string, React.ReactNode>>(new Map());
 	const submenuContentRef = useRef<Map<string, React.ReactNode>>(new Map());
@@ -51,11 +55,12 @@ export function TopBarProvider({ children }: { children: React.ReactNode }) {
 			submenuContentRef.current.set(item.id, item.submenuContent);
 		}
 
-		setItems(prev => {
+		setItems((prev) => {
 			const existingItem = prev.get(item.id);
 
 			// Check if structural properties changed
-			const structureChanged = !existingItem ||
+			const structureChanged =
+				!existingItem ||
 				existingItem.label !== item.label ||
 				existingItem.priority !== item.priority ||
 				existingItem.position !== item.position ||
@@ -76,12 +81,12 @@ export function TopBarProvider({ children }: { children: React.ReactNode }) {
 				newItems.set(item.id, {
 					...item,
 					width: existingItem?.width || 0,
-					elementVersion: 0
+					elementVersion: 0,
 				});
 
 				// Initially add to visible so it can be measured
 				if (!existingItem) {
-					setVisibleItemsState(prev2 => {
+					setVisibleItemsState((prev2) => {
 						const newVisible = new Set(prev2);
 						newVisible.add(item.id);
 						return newVisible;
@@ -94,12 +99,12 @@ export function TopBarProvider({ children }: { children: React.ReactNode }) {
 	}, []);
 
 	const unregisterItem = useCallback((id: string) => {
-		setItems(prev => {
+		setItems((prev) => {
 			const newItems = new Map(prev);
 			newItems.delete(id);
 			return newItems;
 		});
-		setVisibleItemsState(prev => {
+		setVisibleItemsState((prev) => {
 			const newVisible = new Set(prev);
 			newVisible.delete(id);
 			return newVisible;
@@ -107,7 +112,7 @@ export function TopBarProvider({ children }: { children: React.ReactNode }) {
 	}, []);
 
 	const updateItemWidth = useCallback((id: string, width: number) => {
-		setItems(prev => {
+		setItems((prev) => {
 			const item = prev.get(id);
 			if (!item || item.width === width) return prev;
 
@@ -115,32 +120,47 @@ export function TopBarProvider({ children }: { children: React.ReactNode }) {
 			newItems.set(id, { ...item, width });
 
 			// Trigger recalculation only when we actually update
-			setRecalculationTrigger(t => t + 1);
+			setRecalculationTrigger((t) => t + 1);
 
 			return newItems;
 		});
 	}, []);
 
 	const recalculate = useCallback(() => {
-		setRecalculationTrigger(prev => prev + 1);
+		setRecalculationTrigger((prev) => prev + 1);
 	}, []);
 
+	const contextValue = useMemo<TopBarContextValue>(
+		() => ({
+			items,
+			visibleItems,
+			overflowItems,
+			registerItem,
+			unregisterItem,
+			updateItemWidth,
+			leftContainerRef,
+			rightContainerRef,
+			setLeftContainerRef,
+			setRightContainerRef,
+			recalculate,
+		}),
+		[
+			items,
+			visibleItems,
+			overflowItems,
+			registerItem,
+			unregisterItem,
+			updateItemWidth,
+			leftContainerRef,
+			rightContainerRef,
+			setLeftContainerRef,
+			setRightContainerRef,
+			recalculate,
+		],
+	);
+
 	return (
-		<TopBarContext.Provider
-			value={{
-				items,
-				visibleItems,
-				overflowItems,
-				registerItem,
-				unregisterItem,
-				updateItemWidth,
-				leftContainerRef,
-				rightContainerRef,
-				setLeftContainerRef,
-				setRightContainerRef,
-				recalculate,
-			}}
-		>
+		<TopBarContext.Provider value={contextValue}>
 			<TopBarInternalProvider
 				setVisibleItems={setVisibleItemsState}
 				setOverflowItems={setOverflowItemsState}
@@ -172,8 +192,13 @@ function TopBarInternalProvider({
 	setOverflowItems: React.Dispatch<React.SetStateAction<Map<TopBarPosition, TopBarItem[]>>>;
 	recalculationTrigger: number;
 }) {
+	const internalValue = useMemo<TopBarInternalContextValue>(
+		() => ({ setVisibleItems, setOverflowItems, recalculationTrigger }),
+		[setVisibleItems, setOverflowItems, recalculationTrigger],
+	);
+
 	return (
-		<TopBarInternalContext.Provider value={{ setVisibleItems, setOverflowItems, recalculationTrigger }}>
+		<TopBarInternalContext.Provider value={internalValue}>
 			{children}
 		</TopBarInternalContext.Provider>
 	);

@@ -40,6 +40,35 @@ fn blank_values_count_as_unset() {
 }
 
 #[test]
+fn chat_upstream_credential_is_distinct_from_gateway_and_provider_credentials() {
+    let env = |name: &str| match name {
+        "APHRODY_AI_HTTP_TOKEN" => Some("gateway-only".to_owned()),
+        "OPENAI_API_KEY" => Some("provider-only".to_owned()),
+        "VLLM_API_KEY" => Some("upstream-alias".to_owned()),
+        _ => None,
+    };
+    assert_eq!(CHAT_API_KEY.resolve_with(&env), Some("upstream-alias".to_owned()));
+    assert_eq!(CHAT_API_KEY.resolve_source_with(&env), Some("VLLM_API_KEY"));
+    assert_eq!(
+        CHAT_API_KEY.resolve_with(&|name| {
+            if name == "APHRODY_AI_CHAT_API_KEY" {
+                Some("upstream-canonical".to_owned())
+            } else {
+                env(name)
+            }
+        }),
+        Some("upstream-canonical".to_owned())
+    );
+    assert_eq!(
+        CHAT_API_KEY.resolve_with(&|name| match name {
+            "APHRODY_AI_HTTP_TOKEN" | "OPENAI_API_KEY" => Some("not-a-chat-token".to_owned()),
+            _ => None,
+        }),
+        None
+    );
+}
+
+#[test]
 fn resolve_source_reports_which_name_supplied_the_value() {
     assert_eq!(EMBED_MODEL.resolve_source_with(&|_| None), None);
     assert_eq!(
@@ -56,12 +85,12 @@ fn resolve_source_reports_which_name_supplied_the_value() {
 }
 
 #[test]
-fn all_eighteen_canonical_names_are_unique() {
+fn all_canonical_names_are_unique() {
     let mut names: Vec<&str> = ALL.iter().map(|v| v.canonical).collect();
     names.sort_unstable();
     let mut deduped = names.clone();
     deduped.dedup();
-    assert_eq!(names.len(), 18);
+    assert_eq!(names.len(), 19);
     assert_eq!(names, deduped, "ALL must not repeat a canonical name");
 }
 
@@ -79,21 +108,12 @@ fn no_alias_shadows_another_variable_s_canonical_name() {
     }
 }
 
-/// Cross-checks [`ALL`] against `../aphrody-infra/tools/config/local-ai.json`
-/// (owned by `aphrody-infra`) when that sibling checkout is present. Skips
-/// cleanly otherwise — this repository does not depend on `aphrody-infra`
-/// existing on every machine that runs `cargo test`.
+/// The native config and its declared consumer contract share this repository.
 #[test]
-fn matches_the_aphrody_infra_contract_when_present() {
+fn matches_the_declared_ai_contract() {
     let candidate =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../aphrody-infra/tools/config/local-ai.json");
-    let Ok(raw) = std::fs::read_to_string(&candidate) else {
-        eprintln!(
-            "skipping: {} not found (aphrody-infra is a sibling checkout)",
-            candidate.display()
-        );
-        return;
-    };
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../tools/config/local-ai.json");
+    let raw = std::fs::read_to_string(&candidate).expect("the declared AI contract is present");
     let contract: serde_json::Value = serde_json::from_str(&raw).expect("valid JSON");
 
     let mut expected_canonicals = BTreeSet::new();

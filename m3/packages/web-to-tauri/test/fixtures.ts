@@ -92,8 +92,7 @@ export async function tempDir(prefix: string): Promise<string> {
 }
 
 export async function writeTree(root: string, files: Record<string, string>): Promise<void> {
-  for (const [path, content] of Object.entries(files)) {
-    const full = join(root, path);
-    await Bun.write(full, content);
-  }
+  await Promise.all(
+    Object.entries(files).map(([path, content]) => Bun.write(join(root, path), content)),
+  );
 }

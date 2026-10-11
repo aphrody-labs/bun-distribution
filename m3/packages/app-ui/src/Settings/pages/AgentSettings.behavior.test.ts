@@ -212,7 +212,7 @@ describe.skipIf(!hasDom)("Agent settings persistence and native catalog", () => 
     await ready(() => Boolean(container!.querySelector('[role="alert"]')));
     expect(container!.querySelector("select")).toBeNull();
     const retry = Array.from(container!.querySelectorAll("button")).find(
-      (button) => button.textContent === "Réessayer",
+      (button) => button.getAttribute("aria-label") === "Réessayer",
     )!;
     await act(async () => retry.click());
     await ready(() => container!.textContent!.includes("Aucun modèle disponible"));

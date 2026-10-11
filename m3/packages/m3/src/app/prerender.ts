@@ -15,13 +15,20 @@ export interface PrerenderResult {
 
 const fileBase = (path: string) => (path === "/" ? "index" : path.slice(1));
 
-export async function prerenderApp(outDir: string, origin = "http://localhost"): Promise<PrerenderResult> {
+export async function prerenderApp(
+  outDir: string,
+  origin = "http://localhost",
+): Promise<PrerenderResult> {
   const app = await loadApp(outDir);
   const result: PrerenderResult = { pages: [], dynamic: [] };
   const index: Record<string, { html: string; rsc: string }> = {};
   for (const path of await app.prerenderPaths()) {
     try {
-      const rendered = await app.render(new Request(new URL(path, origin)), { prerender: true, skipMiddleware: true });
+      // oxlint-disable-next-line no-await-in-loop -- rendu séquentiel : une seule instance d'app rendue à la fois, et result.pages / index.json restent dans l'ordre des chemins.
+      const rendered = await app.render(new Request(new URL(path, origin)), {
+        prerender: true,
+        skipMiddleware: true,
+      });
       if (rendered.dynamic) {
         result.dynamic.push({ path, reason: "uses request data" });
         continue;
@@ -35,7 +42,9 @@ export async function prerenderApp(outDir: string, origin = "http://localhost"):
       const rsc = `${base}.rsc`;
       const target = join(outDir, "prerender", html);
       mkdirSync(dirname(target), { recursive: true });
+      // oxlint-disable-next-line no-await-in-loop -- écritures séquentielles par page, dans l'ordre du rendu (sortie déterministe, pas de pic mémoire sur les HTML).
       await Bun.write(target, await rendered.response.text());
+      // oxlint-disable-next-line no-await-in-loop -- écriture séquentielle par page, appariée à l'écriture HTML ci-dessus.
       await Bun.write(join(outDir, "prerender", rsc), rendered.rsc);
       index[path] = { html, rsc };
       result.pages.push(path);

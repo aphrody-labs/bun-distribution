@@ -46,6 +46,7 @@ export async function pool<T, R>(items: T[], size: number, fn: (x: T) => Promise
     Array.from({ length: Math.min(size, items.length) }, async () => {
       while (next < items.length) {
         const i = next++;
+        // oxlint-disable-next-line no-await-in-loop -- pool à concurrence bornée : chaque worker traite sa file séquentiellement
         out[i] = await fn(items[i]!);
       }
     }),
@@ -134,6 +135,7 @@ export async function cachedText(
   if (hit !== undefined) return hit === "\u0000404" ? undefined : hit;
   let res: Response | undefined;
   for (let attempt = 0; attempt < 5; attempt++) {
+    // oxlint-disable-next-line no-await-in-loop -- relances séquentielles avec backoff : la tentative suivante dépend de la précédente
     res = await fetch(url, {
       ...init,
       headers: { ...UA, ...(init?.headers as object) },
@@ -141,6 +143,7 @@ export async function cachedText(
     }).catch(() => undefined);
     if (res && res.status !== 429 && res.status < 500) break;
     const wait = Math.min(60, Number(res?.headers.get("retry-after")) || 2 ** attempt * 2); // honour Retry-After, else exponential backoff
+    // oxlint-disable-next-line no-await-in-loop -- attente de Retry-After entre deux relances séquentielles
     await new Promise((r) => setTimeout(r, wait * 1000));
   }
   if (!res) return undefined;
@@ -206,6 +209,7 @@ export async function osv(deps: Dep[]): Promise<Map<string, string[]>> {
   const out = new Map<string, string[]>();
   for (let i = 0; i < deps.length; i += 1000) {
     const chunk = deps.slice(i, i + 1000);
+    // oxlint-disable-next-line no-await-in-loop -- lots OSV séquentiels pour respecter la limite de débit de l'API
     const res = await fetch("https://api.osv.dev/v1/querybatch", {
       method: "POST",
       headers: { ...UA, "content-type": "application/json" },
@@ -218,6 +222,7 @@ export async function osv(deps: Dep[]): Promise<Map<string, string[]>> {
       signal: AbortSignal.timeout(120_000),
     }).catch(() => undefined);
     if (!res?.ok) continue;
+    // oxlint-disable-next-line no-await-in-loop -- lecture de la réponse du lot OSV courant avant d'émettre le lot suivant
     const body = (await res.json()) as { results: { vulns?: { id: string }[] }[] };
     body.results.forEach((r, j) => {
       if (r.vulns?.length)

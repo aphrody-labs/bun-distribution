@@ -58,7 +58,10 @@
   ],
   "profiles": {
     "defaults": {
-      "colorScheme": "Aphrody",
+      "colorScheme": {
+        "dark": "Aphrody M3",
+        "light": "Aphrody M3 Light"
+      },
       "cursorShape": "bar",
       "font": {
         "face": "Cascadia Code",
@@ -66,16 +69,15 @@
       },
       "historySize": 100000,
       "padding": "8",
-      "startingDirectory": "C:\\aphrody"
+      "startingDirectory": null,
     },
     "list": [
       {
-        "commandline": "C:\\Users\\aphro\\AppData\\Local\\aphrody\\bin\\aphrody.exe shell start",
+        "commandline": "cmd.exe /d /s /c \"set APHRODY_ROOT=%CD%&&C:\\Users\\aphro\\AppData\\Local\\aphrody\\bin\\aphrody.exe shell start\"",
         "guid": "{a1b2c3d4-e5f6-7890-abcd-ef1234567890}",
         "hidden": false,
         "icon": "C:\\aphrody\\crates\\ui\\identity\\assets\\brand\\favicon.ico",
         "name": "Aphrody Shell",
-        "startingDirectory": "C:\\aphrody",
         "tabTitle": "aphrody"
       },
       {
@@ -84,7 +86,6 @@
         "hidden": false,
         "icon": "C:\\Users\\aphro\\.bun\\bin\\bun.exe",
         "name": "Bun Shell",
-        "startingDirectory": "C:\\bun",
         "tabTitle": "bun"
       },
       {
@@ -94,7 +95,6 @@
         "hidden": false,
         "icon": "ms-appx:///ProfileIcons/pwsh.png",
         "name": "PowerShell (admin)",
-        "startingDirectory": "C:\\aphrody",
         "tabColor": "#91704C",
         "tabTitle": "admin"
       },
@@ -104,7 +104,6 @@
         "hidden": false,
         "icon": "C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe",
         "name": "Docker",
-        "startingDirectory": "C:\\aphrody",
         "tabTitle": "docker"
       },
       {
@@ -132,7 +131,6 @@
         "hidden": true,
         "name": "PowerShell",
         "source": "Windows.Terminal.PowershellCore",
-        "startingDirectory": "C:\\aphrody"
       },
       {
         "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
@@ -154,27 +152,50 @@
   },
   "schemes": [
     {
-      "name": "Aphrody",
-      "background": "#131420",
-      "foreground": "#F7F3F0",
-      "cursorColor": "#EADBA6",
-      "selectionBackground": "#17335C",
-      "black": "#2A2B3A",
-      "red": "#E07A7A",
-      "green": "#9BBF8A",
-      "yellow": "#EADBA6",
-      "blue": "#7FA6E0",
-      "purple": "#C9A3BE",
-      "cyan": "#8CC4C4",
-      "white": "#C2B19E",
-      "brightBlack": "#6C6E86",
-      "brightRed": "#F2A0A0",
-      "brightGreen": "#B8D9A6",
-      "brightYellow": "#F5EAC4",
-      "brightBlue": "#A8C4F0",
-      "brightPurple": "#E0C2D6",
-      "brightCyan": "#B0DEDE",
-      "brightWhite": "#F7F3F0"
+      "name": "Aphrody M3",
+      "background": "#171216",
+      "foreground": "#ebdfe6",
+      "cursorColor": "#efb4e9",
+      "selectionBackground": "#643663",
+      "black": "#3a3338",
+      "red": "#ffb4ab",
+      "green": "#a0d756",
+      "yellow": "#ffb95b",
+      "blue": "#b0c6ff",
+      "purple": "#efb4e9",
+      "cyan": "#63d3ff",
+      "white": "#d1c3cc",
+      "brightBlack": "#9a8d96",
+      "brightRed": "#ffdad6",
+      "brightGreen": "#bbf46f",
+      "brightYellow": "#ffddb6",
+      "brightBlue": "#d9e2ff",
+      "brightPurple": "#ffd6f8",
+      "brightCyan": "#bce9ff",
+      "brightWhite": "#ebdfe6"
+    },
+    {
+      "name": "Aphrody M3 Light",
+      "background": "#fff7fa",
+      "foreground": "#201a1e",
+      "cursorColor": "#7e4d7c",
+      "selectionBackground": "#ffd6f8",
+      "black": "#201a1e",
+      "red": "#ba1a1a",
+      "green": "#426900",
+      "yellow": "#845400",
+      "blue": "#1a59c2",
+      "purple": "#7e4d7c",
+      "cyan": "#006783",
+      "white": "#ebdfe6",
+      "brightBlack": "#4e444b",
+      "brightRed": "#93000a",
+      "brightGreen": "#304f00",
+      "brightYellow": "#643f00",
+      "brightBlue": "#00419c",
+      "brightPurple": "#643663",
+      "brightCyan": "#004d63",
+      "brightWhite": "#ffffff"
     }
   ],
   "themes": [],

@@ -11,6 +11,7 @@ Licence Apache-2.0 ; dérivations et sources dans [`NOTICE`](NOTICE).
 | `web` | Données de `<aphrody-pet>` (`assets/aphrody/web.json`) et suite de parité Rust ↔ web |
 | `logo`, `assets`, `design` | Logo, favicon, manifeste web, jetons et CSS de marque |
 | `pixel` | Décodage, rastérisation SVG, comparaison et planches de sprites |
+| `loader` | Chargeur d'images et d'icônes : PNG, JPEG, WebP, GIF, SVG, ICO, glyphes Material Symbols ; taille, échelle, teinte, ajustement, cache par contenu |
 
 ## Pet
 
@@ -69,6 +70,41 @@ L'installation rejoue sur les fichiers écrits les contrôles du TUI et de l'ins
 galerie ; `tests/codex_conformite.rs` couvre les refus (grille incomplète, chemin sortant, frames
 vides ou hors grille, fps hors de ]0, 60], repli inexistant, atlas non WebP ou mal dimensionné,
 fichier non géré dans le dossier cible).
+
+## Chargeur d'images et d'icônes
+
+```rust
+use aphrody_identity::loader::{couleur, load, Fit, Request, Source};
+
+let source: Source = "symbol:home?style=rounded&fill=1&wght=500".parse()?;
+let icone = load(&source, &Request { size: Some(24), scale: 2.0, tint: couleur("#6750a4"), fit: Fit::Contain, ..Request::default() })?;
+let image = icone.rgba(); // Some(&Image) 48 × 48 ; Output::Svg donne icone.svg()
+```
+
+- Sources : fichier, octets, URL `https://cdn.aphrody.com/…` (toute autre URL est refusée), `symbol:<nom>?style=outlined|rounded|sharp&fill=0..1&wght=100..700&grad=-25..200&opsz=20..48`. Paramètre inconnu ou valeur hors bornes : erreur, pas de correction silencieuse.
+- Formats : PNG, JPEG, WebP (alpha), GIF (première frame), SVG assaini puis rastérisé à la taille demandée (ou rendu en SVG, teinté et dimensionné), ICO : toutes les entrées listées (`entrees`), PNG ou BMP 1 à 32 bits ; l'entrée dessinée est la plus petite qui couvre `size × scale`, la plus profonde à côté égal, sinon la plus grande.
+- Glyphes : chemin du glyphe lu par ligature (GSUB `rlig`) dans la police variable aux axes demandés (`APHRODY_SYMBOLS_DIR`, sinon `m3/packages/m3-fonts/fonts/upstream/material-symbols`, WOFF2 décodé une fois par style), sinon le SVG publié sur le CDN (feature `net`, variantes publiées seulement). Le chemin vient d'`aphrody_svg::symbols`, partagé avec `aphrody-bun`.
+- Ajustement : `Contain` (défaut), `Cover` (recadré au centre), `Fill`, `None` ; redimensionnement Lanczos 3 ; la teinte remplace la couleur et multiplie l'alpha.
+- Cache : clé SHA-256 du contenu source et de la requête, 256 rendus par défaut (`Loader::with_capacity`) ; les téléchargements sont aussi gardés par URL.
+- Erreurs : `LoadError` nomme la cause (fichier, format, entrée ICO, symbole inconnu, réseau, taille hors de 1..16384 px ou au-delà de 64 Mpx) ; aucune entrée utilisateur ne fait paniquer.
+
+CLI : `aphrody identity charger <SOURCE> [--taille PX] [--echelle F] [--teinte #hex] [--ajustement contain|cover|fill|none] [--svg] [-o FICHIER] [--json]`.
+Temps mesurés le 2026-10-09 (release, Windows, un processus par chargement, donc sans cache) :
+
+| Source | Sortie | Temps |
+| --- | --- | --- |
+| `favicon.ico` (7 entrées PNG), `--taille 32` | 32 × 32 | 0,8 ms |
+| `icon.svg` | 256 × 256 | 15 à 20 ms |
+| `aphrody.webp` 750 × 422 | 128 × 72 | 11 ms |
+| `icon-512.png` | 64 × 64 | 11 ms |
+| `symbol:home` depuis la police (décodage WOFF2 compris) | 48 × 48 | 150 à 330 ms |
+| `symbol:home` depuis cdn.aphrody.com | SVG | 400 ms |
+
+Fidélité des glyphes (`tests/loader.rs`) : six glyphes rendus depuis la police contre les SVG de
+Google (`crates/ui/bun/tests/fixtures/icons`), écart maximal de 1/255 par canal à 256 px et aucun
+pixel différent en RGBA 48 px. Côté web, `loadIcon()` de `@aphrody/identity/load` applique les
+mêmes règles avec les décodeurs du navigateur ; côté Bun, `@aphrody/bun-icons` (dépôt
+aphrody-labs/bun) importe `symbol:home` et les `.ico`.
 
 ## Tests
 

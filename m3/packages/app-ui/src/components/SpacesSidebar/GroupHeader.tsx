@@ -1,5 +1,5 @@
 import { CaretRight, DotsSixVertical, PencilSimple, Trash } from "@phosphor-icons/react";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import { useState } from "react";
 import { useContextMenu } from "../../hooks/useContextMenu";
 import { useLibraryMutation } from "@aphrody/drive-client";
@@ -41,7 +41,7 @@ export function GroupHeader({
     if (l === "sources") return t("groups.sources", "Sources & Distant");
     return label;
   })();
-  
+
   const updateGroup = useLibraryMutation("spaces.update_group");
   const deleteGroup = useLibraryMutation("spaces.delete_group");
 
@@ -68,7 +68,7 @@ export function GroupHeader({
 
   const handleDelete = async () => {
     if (!group) return;
-    
+
     try {
       await deleteGroup.mutateAsync({ group_id: group.id });
     } catch (error) {
@@ -133,7 +133,7 @@ export function GroupHeader({
             }
           }}
           onBlur={handleRename}
-          
+
           className="flex-1 px-2 py-1 text-label-small font-semibold tracking-wider rounded-small bg-surface-container border border-outline-variant text-on-surface placeholder:text-outline outline-none focus:border-primary"
         />
       ) : (

@@ -57,6 +57,53 @@ pub struct Peer {
     pub persistent_keepalive: Option<u16>,
 }
 
+/// A partial `wg set peer` update. Omitted fields retain their live values.
+///
+/// `Some(Vec::new())` explicitly clears AllowedIPs; `Some(0)` disables keepalive.
+/// A preshared key is carried only in memory and uses the redacted [`Key`] debug format.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PeerPatch {
+    pub public_key: Key,
+    pub preshared_key: Option<Key>,
+    pub allowed_ips: Option<Vec<IpNet>>,
+    pub endpoint: Option<String>,
+    pub persistent_keepalive: Option<u16>,
+}
+
+impl PeerPatch {
+    #[must_use]
+    pub fn new(public_key: Key) -> Self {
+        Self {
+            public_key,
+            preshared_key: None,
+            allowed_ips: None,
+            endpoint: None,
+            persistent_keepalive: None,
+        }
+    }
+
+    /// Merge into the same live peer, or create a new peer without inferred settings.
+    pub fn merge(&self, current: Option<&Peer>) -> Result<Peer> {
+        if current.is_some_and(|peer| peer.public_key != self.public_key) {
+            return Err(Error::Config("peer patch PublicKey differs from the live peer".into()));
+        }
+        let mut peer = current.cloned().unwrap_or_else(|| Peer::new(self.public_key));
+        if let Some(key) = self.preshared_key {
+            peer.preshared_key = Some(key);
+        }
+        if let Some(allowed_ips) = &self.allowed_ips {
+            peer.allowed_ips.clone_from(allowed_ips);
+        }
+        if let Some(endpoint) = &self.endpoint {
+            peer.endpoint = Some(endpoint.clone());
+        }
+        if let Some(keepalive) = self.persistent_keepalive {
+            peer.persistent_keepalive = Some(keepalive);
+        }
+        Ok(peer)
+    }
+}
+
 impl Serialize for Key {
     fn serialize<S: serde::Serializer>(&self, s: S) -> std::result::Result<S::Ok, S::Error> {
         s.serialize_str(&self.to_base64())
@@ -358,5 +405,78 @@ PersistentKeepalive = 25
         assert!(Config::parse("[Interface]\nBogus = 1\n").is_err());
         assert!(Config::parse("[Peer]\nAllowedIPs = 10.0.0.0/8\n").is_err());
         assert!(Config::parse("PrivateKey = x\n").is_err());
+    }
+
+    #[test]
+    fn keepalive_patch_preserves_live_routes_endpoint_and_psk() {
+        let cfg = Config::parse(SAMPLE).unwrap();
+        let current = &cfg.peers[0];
+        let mut patch = PeerPatch::new(current.public_key);
+        patch.persistent_keepalive = Some(31);
+        let merged = patch.merge(Some(current)).unwrap();
+        assert_eq!(merged.allowed_ips, current.allowed_ips);
+        assert_eq!(merged.endpoint, current.endpoint);
+        assert_eq!(merged.preshared_key, current.preshared_key);
+        assert_eq!(merged.persistent_keepalive, Some(31));
+        assert_eq!(cfg.peers[0].persistent_keepalive, Some(25));
+    }
+
+    #[test]
+    fn endpoint_patch_preserves_routes_keepalive_and_psk() {
+        let cfg = Config::parse(SAMPLE).unwrap();
+        let current = &cfg.peers[0];
+        let mut patch = PeerPatch::new(current.public_key);
+        patch.endpoint = Some("192.0.2.10:51820".into());
+        let merged = patch.merge(Some(current)).unwrap();
+        assert_eq!(merged.endpoint.as_deref(), Some("192.0.2.10:51820"));
+        assert_eq!(merged.allowed_ips, current.allowed_ips);
+        assert_eq!(merged.persistent_keepalive, current.persistent_keepalive);
+        assert_eq!(merged.preshared_key, current.preshared_key);
+    }
+
+    #[test]
+    fn explicit_patch_values_replace_routes_and_can_disable_keepalive() {
+        let cfg = Config::parse(SAMPLE).unwrap();
+        let current = &cfg.peers[0];
+        let mut patch = PeerPatch::new(current.public_key);
+        patch.allowed_ips = Some(vec!["10.200.77.10/32".parse().unwrap()]);
+        patch.persistent_keepalive = Some(0);
+        let merged = patch.merge(Some(current)).unwrap();
+        assert_eq!(merged.allowed_ips.len(), 1);
+        assert_eq!(merged.allowed_ips[0].to_string(), "10.200.77.10/32");
+        assert_eq!(merged.persistent_keepalive, Some(0));
+        assert_eq!(merged.endpoint, current.endpoint);
+        assert_eq!(merged.preshared_key, current.preshared_key);
+        patch.allowed_ips = Some(Vec::new());
+        assert!(patch.merge(Some(current)).unwrap().allowed_ips.is_empty());
+    }
+
+    #[test]
+    fn new_peer_patch_has_only_declared_settings_and_rejects_a_foreign_peer() {
+        let mut patch = PeerPatch::new(Key([1; 32]));
+        patch.allowed_ips = Some(vec!["2001:db8::10/128".parse().unwrap()]);
+        let added = patch.merge(None).unwrap();
+        assert_eq!(added.public_key, patch.public_key);
+        assert_eq!(added.allowed_ips, patch.allowed_ips.clone().unwrap());
+        assert_eq!(added.endpoint, None);
+        assert_eq!(added.persistent_keepalive, None);
+        assert_eq!(added.preshared_key, None);
+        assert!(patch.merge(Some(&Peer::new(Key([2; 32])))).is_err());
+    }
+
+    #[test]
+    fn explicit_psk_patch_preserves_nonsecret_settings_and_redacts_debug() {
+        let cfg = Config::parse(SAMPLE).unwrap();
+        let current = &cfg.peers[0];
+        let mut patch = PeerPatch::new(current.public_key);
+        let psk = Key([9; 32]);
+        patch.preshared_key = Some(psk);
+        let merged = patch.merge(Some(current)).unwrap();
+        assert_eq!(merged.preshared_key, Some(psk));
+        assert_eq!(merged.allowed_ips, current.allowed_ips);
+        assert_eq!(merged.endpoint, current.endpoint);
+        assert_eq!(merged.persistent_keepalive, current.persistent_keepalive);
+        assert!(!format!("{patch:?}").contains(&psk.to_base64()));
+        assert!(!serde_json::to_string(&merged).unwrap().contains(&psk.to_base64()));
     }
 }

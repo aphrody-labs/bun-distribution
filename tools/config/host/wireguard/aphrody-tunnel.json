@@ -320,7 +320,10 @@
       "vnc-aphro-pc",
       "mcp-http-aphro-pc",
       "remote-desktop-dbfr",
-      "vnc-dbfr"
+      "vnc-dbfr",
+      "mcp-http-dbfr",
+      "remote-desktop-vps",
+      "vnc-vps"
     ],
     "aphro-pc": [
       "ssh-vps",
@@ -340,14 +343,30 @@
       "vnc-dbfr"
     ],
     "wsl": ["ssh-vps", "ssh-dbfr", "mcp-http", "a2a", "mcp-http-dbfr"],
-    "dbfr": ["ssh-aphro-pc", "ssh-vps", "mcp-http", "ssh-omar", "ssh-omar-wsl"],
+    "dbfr": [
+      "ssh-aphro-pc",
+      "ssh-vps",
+      "mcp-http",
+      "ssh-omar",
+      "ssh-omar-wsl",
+      "remote-desktop-omar",
+      "vnc-omar",
+      "mcp-http-omar",
+      "remote-desktop-vps",
+      "vnc-vps"
+    ],
     "vps": [
       "mcp-http-dbfr",
       "ssh-aphro-pc",
       "ssh-omar",
       "ssh-omar-wsl",
       "mcp-http-aphro-pc",
-      "mcp-http-omar"
+      "mcp-http-omar",
+      "ssh-dbfr",
+      "remote-desktop-omar",
+      "vnc-omar",
+      "remote-desktop-dbfr",
+      "vnc-dbfr"
     ]
   },
   "firewall": {

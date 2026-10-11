@@ -74,6 +74,7 @@ async function readCapped(response: Response, max: number): Promise<string> {
   const chunks: Uint8Array[] = [];
   let total = 0;
   while (total < max) {
+    // oxlint-disable-next-line no-await-in-loop -- lecture séquentielle d'un flux : chaque chunk alimente le total borné par max.
     const { done, value } = await reader.read();
     if (done) break;
     chunks.push(value);
@@ -239,6 +240,7 @@ export async function probeUrl(input: string, options: ProbeOptions = {}): Promi
   let response: Response | undefined;
   for (let hop = 0; hop <= opts.maxRedirects; hop += 1) {
     try {
+      // oxlint-disable-next-line no-await-in-loop -- chaque saut de redirection dépend de la réponse précédente.
       response = await request(current, "text/html,application/xhtml+xml,*/*;q=0.8");
     } catch (error) {
       throw new ProbeError(
@@ -248,6 +250,7 @@ export async function probeUrl(input: string, options: ProbeOptions = {}): Promi
     const location = response.headers.get("location");
     if (response.status >= 300 && response.status < 400 && location) {
       redirects.push({ url: current.href, status: response.status, location });
+      // oxlint-disable-next-line no-await-in-loop -- le corps de la redirection est annulé avant de suivre le saut suivant.
       await response.body?.cancel().catch(() => undefined);
       try {
         current = new URL(location, current);
@@ -373,8 +376,10 @@ export async function probeUrl(input: string, options: ProbeOptions = {}): Promi
     .slice(0, opts.maxScripts);
   for (const url of sameSite) {
     try {
+      // oxlint-disable-next-line no-await-in-loop -- scan séquentiel : le budget maxScripts et l'ordre des signaux suivent le parcours.
       const res = await request(url, "*/*");
       if (!res.ok) continue;
+      // oxlint-disable-next-line no-await-in-loop -- lecture bornée du script juste après sa requête, dans le même ordre que le budget de scan.
       const text = await readCapped(res, opts.maxScriptBytes);
       scanned += 1;
       scriptText += `\n${text}`;
@@ -537,6 +542,7 @@ async function walkFiles(
     const current = queue.shift()!;
     let entries;
     try {
+      // oxlint-disable-next-line no-await-in-loop -- parcours BFS séquentiel : la file de répertoires se remplit à partir des entrées lues.
       entries = await readdir(current, { withFileTypes: true });
     } catch {
       continue;
@@ -578,10 +584,13 @@ export async function probeDirectory(dir: string): Promise<DirectoryProbe> {
   const frameworks = FRAMEWORK_DEPS.filter(([dep]) => dep in deps).map(([, id]) => id);
 
   let nextOutput: DirectoryProbe["nextOutput"] = null;
-  for (const name of ["next.config.ts", "next.config.js", "next.config.mjs"]) {
-    const path = join(dir, name);
-    if (!existsSync(path)) continue;
-    const text = await Bun.file(path).text();
+  const nextConfigTexts = await Promise.all(
+    ["next.config.ts", "next.config.js", "next.config.mjs"]
+      .map((name) => join(dir, name))
+      .filter((path) => existsSync(path))
+      .map((path) => Bun.file(path).text()),
+  );
+  for (const text of nextConfigTexts) {
     if (/output\s*:\s*["']export["']/.test(text)) nextOutput = "export";
     else if (/output\s*:\s*["']standalone["']/.test(text)) nextOutput = "standalone";
   }
@@ -611,24 +620,30 @@ export async function probeDirectory(dir: string): Promise<DirectoryProbe> {
     );
   }
 
-  let apiRoutes = 0;
-  for (const root of ["app", "src/app", "pages/api", "src/pages/api"]) {
-    if (!(await exists(join(dir, root)))) continue;
-    const files = await walkFiles(
-      join(dir, root),
-      (name) =>
-        /^route\.(?:ts|js)$/.test(name) ||
-        (/\.(?:ts|js)$/.test(name) && root.endsWith("pages/api")),
-      400,
-    );
-    apiRoutes += files.length;
-  }
+  const apiRouteCounts = await Promise.all(
+    ["app", "src/app", "pages/api", "src/pages/api"].map(async (root) => {
+      if (!(await exists(join(dir, root)))) return 0;
+      const files = await walkFiles(
+        join(dir, root),
+        (name) =>
+          /^route\.(?:ts|js)$/.test(name) ||
+          (/\.(?:ts|js)$/.test(name) && root.endsWith("pages/api")),
+        400,
+      );
+      return files.length;
+    }),
+  );
+  const apiRoutes = apiRouteCounts.reduce((total, count) => total + count, 0);
 
   const backends = new Set<string>();
-  for (const name of [".env", ".env.production", ".env.local", ".env.example"]) {
-    const path = join(dir, name);
-    if (!existsSync(path)) continue;
-    for (const line of (await Bun.file(path).text()).split("\n")) {
+  const envTexts = await Promise.all(
+    [".env", ".env.production", ".env.local", ".env.example"]
+      .map((name) => join(dir, name))
+      .filter((path) => existsSync(path))
+      .map((path) => Bun.file(path).text()),
+  );
+  for (const text of envTexts) {
+    for (const line of text.split("\n")) {
       const match =
         /^(?:export\s+)?[A-Z0-9_]*(?:API|BACKEND|SERVER|ENDPOINT|URL)[A-Z0-9_]*\s*=\s*["']?(https?:\/\/[^\s"'#]+)/.exec(
           line.trim(),
@@ -654,8 +669,10 @@ export async function probeDirectory(dir: string): Promise<DirectoryProbe> {
     const prefixes = new Set<string>();
     htmlPages = files.filter((file) => file.endsWith(".html")).length;
     for (const file of files) {
+      // oxlint-disable-next-line no-await-in-loop -- lecture séquentielle bornée en mémoire : jusqu'à 300 fichiers de 3 Mo, un seul texte charge à la fois.
       const size = (await stat(file)).size;
       if (size > 3_000_000) continue;
+      // oxlint-disable-next-line no-await-in-loop -- même raison : un seul fichier en mémoire à la fois.
       const text = await Bun.file(file).text();
       for (const id of detectApis(text)) {
         if (!signals.some((signal) => signal.id === id))

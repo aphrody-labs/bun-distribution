@@ -1,0 +1,68 @@
+{
+  "$comment": "Desired Aphrody shared data contract, owner request 2026-10-09. Inert declaration: no database/schema/host creation or SQLite migration is activated by this file.",
+  "schemaVersion": 1,
+  "status": "planned",
+  "owners": {
+    "postgresAndMigrations": "crates/infra/sql",
+    "bunClients": "packages/infra/sql",
+    "localHomeSchema": "crates/ai/store",
+    "indexing": "crates/ai/rag",
+    "codeGraph": "crates/ai/code-graph",
+    "training": "crates/ai/train",
+    "hosts": "Workspace/Infra"
+  },
+  "shared": {
+    "databaseIdentity": "aphrody-db",
+    "engine": "postgresql",
+    "targetMajor": 18,
+    "host": null,
+    "hostSelectionRequired": true,
+    "directUrlEnv": "APHRODY_DATABASE_URL",
+    "pooledUrlEnv": "APHRODY_DATABASE_URL_POOLED",
+    "tlsRequiredOutsideLoopback": true,
+    "consumers": ["product-auth", "ai-auth", "catalog", "rag", "mcp", "cli", "code-graph", "training-metadata"],
+    "profiles": ["aphrody", "dbfr", "ie"],
+    "profileIsolation": "separate credentials and databases or schemas with enforced grants; never a caller-supplied profile alone",
+    "migrationOwnerRequired": true,
+    "metadataSchema": "aphrody_product",
+    "metadataMigration": "crates/infra/sql/migrations/aphrody-product/0001_metadata.sql",
+    "metadataRustAdapter": "aphrody_sql::product",
+    "migrationPolicy": "checksummed additive migrations and advisory lock through aphrody-sql"
+  },
+  "authentication": {
+    "owner": "product auth adapter (implementation pending)",
+    "framework": "better-auth",
+    "providers": ["google", "github", "discord", "email", "aphrody-oauth"],
+    "contract": "one contract per public origin shared by web and desktop",
+    "oauthRedirects": "exact registered origins; native PKCE/browser handoff requires provider-specific qualification",
+    "providerTokens": "protected auth schema/store only; never retrieval, graph, catalog or training payloads",
+    "email": "verified mail transport required before activation"
+  },
+  "cache": {
+    "engine": "redis",
+    "urlEnv": "APHRODY_REDIS_URL",
+    "role": "derived cache, session acceleration and invalidation only",
+    "authoritative": false,
+    "keyFormat": "aphrody:v1:<profile>:<consumer>:<source-id>:<content-hash>",
+    "ttlRequired": true,
+    "restartBehavior": "rebuild from durable SQL/outbox; cache outage must not erase source state",
+    "invalidation": "SQL transaction writes version and outbox; publish only after commit, reconcile missed events"
+  },
+  "local": {
+    "engine": "sqlite",
+    "owner": "aphrody-store",
+    "pathContract": "configured profile home/db/aphrody.sqlite",
+    "offlinePreserved": true,
+    "rawProviderSessions": "remain in provider stores",
+    "cookies": "remain in isolated cookie store",
+    "messagesImport": false
+  },
+  "migration": {
+    "state": "not-started",
+    "destructive": false,
+    "eligible": ["explicitly approved catalog metadata", "code graph metadata", "approved retrieval corpus metadata", "training lineage metadata"],
+    "excluded": ["cookies", "provider credentials", "raw provider sessions", "private domain conversations", "model weights", "datasets without explicit approval"],
+    "gates": ["approved host and database allocation", "checksum-verified backup", "versioned schema adapter", "dry-run row counts and content hashes", "profile isolation negative tests", "dual-read comparison", "offline/restart/cache-outage tests", "rollback rehearsal", "owner cutover decision"],
+    "deleteSourceAfterCopy": false
+  }
+}

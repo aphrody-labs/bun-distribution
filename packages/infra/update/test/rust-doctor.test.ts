@@ -1,22 +1,94 @@
 // SPDX-License-Identifier: Apache-2.0
 import { describe, expect, test } from "bun:test";
 import {
-  crateFromPackageId, crateOfFile, errorLines, exitCode, featurePlan, glob, parseDiagnostics, parseFmtList, parseJunit, parseLibtest,
-  newestLlvm, parsePorcelain, stageStatus, targetPackages, totals, vendoredReason, type MetaPackage, type Problem, type StageResult,
+  crateFromPackageId,
+  crateOfFile,
+  errorLines,
+  exitCode,
+  featurePlan,
+  glob,
+  parseDiagnostics,
+  parseFmtList,
+  parseJunit,
+  parseLibtest,
+  newestLlvm,
+  parsePorcelain,
+  stageStatus,
+  targetPackages,
+  totals,
+  vendoredReason,
+  type MetaPackage,
+  type Problem,
+  type StageResult,
 } from "../src/ecosystems/rust-doctor.ts";
 
-const message = (o: Record<string, unknown>) => JSON.stringify({ reason: "compiler-message", package_id: "path+file:///repo/crates/ai/foo#aphrody-foo@1.0.0", manifest_path: "/repo/crates/ai/foo/Cargo.toml", ...o });
-const span = (file: string, line: number, applicability?: string) => ({ file_name: file, line_start: line, column_start: 5, is_primary: true, suggestion_applicability: applicability ?? null });
+const message = (o: Record<string, unknown>) =>
+  JSON.stringify({
+    reason: "compiler-message",
+    package_id: "path+file:///repo/crates/ai/foo#aphrody-foo@1.0.0",
+    manifest_path: "/repo/crates/ai/foo/Cargo.toml",
+    ...o,
+  });
+const span = (file: string, line: number, applicability?: string) => ({
+  file_name: file,
+  line_start: line,
+  column_start: 5,
+  is_primary: true,
+  suggestion_applicability: applicability ?? null,
+});
+const crateOf = (manifest: string, id: string) =>
+  manifest === "/repo/crates/ai/foo/Cargo.toml" ? "aphrody-foo" : crateFromPackageId(id);
+const pkg = (name: string, targets: (string | null)[]): MetaPackage => ({
+  name,
+  manifest_path: `/repo/${name}/Cargo.toml`,
+  features: {},
+  dependencies: targets.map((t, i) => ({ name: `d${i}`, target: t })),
+});
+const p = (severity: Problem["severity"]): Problem => ({
+  stage: "compile",
+  severity,
+  message: "m",
+});
+const stage = (problems: Problem[], fixed: number): StageResult => ({
+  stage: "compile",
+  status: stageStatus(problems),
+  seconds: 1,
+  summary: "",
+  problems,
+  fixed,
+  commands: [],
+});
 
 describe("parseDiagnostics", () => {
-  const crateOf = (manifest: string, id: string) => manifest === "/repo/crates/ai/foo/Cargo.toml" ? "aphrody-foo" : crateFromPackageId(id);
-
   test("keeps errors and warnings, drops summaries, notes and other reasons", () => {
     const text = [
-      message({ message: { level: "warning", message: "unused variable: `x`", code: { code: "unused_variables" }, spans: [span("crates/ai/foo/src/lib.rs", 12)] } }),
-      message({ message: { level: "warning", message: "1 warning emitted", code: null, spans: [] } }),
-      message({ message: { level: "error", message: "mismatched types", code: { code: "E0308" }, spans: [span("crates/ai/foo/src/lib.rs", 40)] } }),
-      message({ message: { level: "error", message: "aborting due to 1 previous error", code: null, spans: [] } }),
+      message({
+        message: {
+          level: "warning",
+          message: "unused variable: `x`",
+          code: { code: "unused_variables" },
+          spans: [span("crates/ai/foo/src/lib.rs", 12)],
+        },
+      }),
+      message({
+        message: { level: "warning", message: "1 warning emitted", code: null, spans: [] },
+      }),
+      message({
+        message: {
+          level: "error",
+          message: "mismatched types",
+          code: { code: "E0308" },
+          spans: [span("crates/ai/foo/src/lib.rs", 40)],
+        },
+      }),
+      message({
+        message: {
+          level: "error",
+          message: "aborting due to 1 previous error",
+          code: null,
+          spans: [],
+        },
+      }),
       message({ message: { level: "note", message: "some note", code: null, spans: [] } }),
       JSON.stringify({ reason: "compiler-artifact", package_id: "x" }),
       "   Compiling foo v1.0.0",
@@ -30,28 +102,72 @@ describe("parseDiagnostics", () => {
   });
 
   test("reports one row when the lib and its test build repeat a warning", () => {
-    const one = message({ message: { level: "warning", message: "function `a` is never used", code: { code: "dead_code" }, spans: [span("crates/ai/foo/src/a.rs", 3)] } });
+    const one = message({
+      message: {
+        level: "warning",
+        message: "function `a` is never used",
+        code: { code: "dead_code" },
+        spans: [span("crates/ai/foo/src/a.rs", 3)],
+      },
+    });
     expect(parseDiagnostics([one, one].join("\n"), crateOf)).toHaveLength(1);
   });
 
   test("a machine-applicable suggestion on the message or on a child makes it fixable", () => {
-    const direct = message({ message: { level: "warning", message: "unneeded `return`", code: { code: "clippy::needless_return" }, spans: [span("a.rs", 1, "MachineApplicable")] } });
-    const child = message({ message: { level: "warning", message: "collapsible", code: { code: "clippy::collapsible_if" }, spans: [span("b.rs", 2)], children: [{ message: "collapse", spans: [span("b.rs", 2, "MachineApplicable")], children: [] }] } });
-    const manual = message({ message: { level: "warning", message: "complex type", code: { code: "clippy::type_complexity" }, spans: [span("c.rs", 3, "MaybeIncorrect")] } });
-    expect(parseDiagnostics([direct, child, manual].join("\n"), crateOf).map((x) => x.fixable)).toEqual([true, true, false]);
+    const direct = message({
+      message: {
+        level: "warning",
+        message: "unneeded `return`",
+        code: { code: "clippy::needless_return" },
+        spans: [span("a.rs", 1, "MachineApplicable")],
+      },
+    });
+    const child = message({
+      message: {
+        level: "warning",
+        message: "collapsible",
+        code: { code: "clippy::collapsible_if" },
+        spans: [span("b.rs", 2)],
+        children: [
+          { message: "collapse", spans: [span("b.rs", 2, "MachineApplicable")], children: [] },
+        ],
+      },
+    });
+    const manual = message({
+      message: {
+        level: "warning",
+        message: "complex type",
+        code: { code: "clippy::type_complexity" },
+        spans: [span("c.rs", 3, "MaybeIncorrect")],
+      },
+    });
+    expect(
+      parseDiagnostics([direct, child, manual].join("\n"), crateOf).map((x) => x.fixable),
+    ).toEqual([true, true, false]);
   });
 
   test("an internal compiler error counts as an error", () => {
-    const ice = message({ message: { level: "error: internal compiler error", message: "unexpected panic", code: null, spans: [] } });
+    const ice = message({
+      message: {
+        level: "error: internal compiler error",
+        message: "unexpected panic",
+        code: null,
+        spans: [],
+      },
+    });
     expect(parseDiagnostics(ice, crateOf)[0]?.level).toBe("error");
   });
 });
 
 describe("crateFromPackageId", () => {
   test("handles the three id shapes Cargo prints", () => {
-    expect(crateFromPackageId("path+file:///repo/crates/ai/engine#aphrody-engine@1.0.0")).toBe("aphrody-engine");
+    expect(crateFromPackageId("path+file:///repo/crates/ai/engine#aphrody-engine@1.0.0")).toBe(
+      "aphrody-engine",
+    );
     expect(crateFromPackageId("path+file:///repo/crates/web/taffy#0.9.2")).toBe("taffy");
-    expect(crateFromPackageId("registry+https://github.com/rust-lang/crates.io-index#serde@1.0.229")).toBe("serde");
+    expect(
+      crateFromPackageId("registry+https://github.com/rust-lang/crates.io-index#serde@1.0.229"),
+    ).toBe("serde");
   });
 });
 
@@ -62,17 +178,30 @@ describe("featurePlan", () => {
     { name: "taffy", features: { grid: [], flexbox: [] } },
   ];
   test("enables every member feature except default, sorted, and records the skips with their reason", () => {
-    const plan = featurePlan(packages, [{ feature: "taffy/*", reason: "vendored" }, { feature: "a/cuda", reason: "needs CUDA" }]);
+    const plan = featurePlan(packages, [
+      { feature: "taffy/*", reason: "vendored" },
+      { feature: "a/cuda", reason: "needs CUDA" },
+    ]);
     expect(plan.enabled).toEqual(["a/engine", "b/gpu", "b/x"]);
-    expect(plan.skipped).toEqual([{ feature: "a/cuda", reason: "needs CUDA" }, { feature: "taffy/flexbox", reason: "vendored" }, { feature: "taffy/grid", reason: "vendored" }]);
+    expect(plan.skipped).toEqual([
+      { feature: "a/cuda", reason: "needs CUDA" },
+      { feature: "taffy/flexbox", reason: "vendored" },
+      { feature: "taffy/grid", reason: "vendored" },
+    ]);
   });
   test("no skip rule enables everything", () => {
-    expect(featurePlan(packages, []).enabled).toEqual(["a/cuda", "a/engine", "b/gpu", "b/x", "taffy/flexbox", "taffy/grid"]);
+    expect(featurePlan(packages, []).enabled).toEqual([
+      "a/cuda",
+      "a/engine",
+      "b/gpu",
+      "b/x",
+      "taffy/flexbox",
+      "taffy/grid",
+    ]);
   });
 });
 
 describe("targetPackages", () => {
-  const pkg = (name: string, targets: (string | null)[]): MetaPackage => ({ name, manifest_path: `/repo/${name}/Cargo.toml`, features: {}, dependencies: targets.map((t, i) => ({ name: `d${i}`, target: t })) });
   const packages = [
     pkg("web", ['cfg(target_arch = "wasm32")', null]),
     pkg("host", ['cfg(not(target_arch = "wasm32"))']),
@@ -80,17 +209,33 @@ describe("targetPackages", () => {
     pkg("plain", [null]),
   ];
   test("auto selects members with a dependency gated on the target family", () => {
-    expect(targetPackages(packages, { triple: "wasm32-unknown-unknown", packages: "auto" }).packages).toEqual(["host", "web"]);
-    expect(targetPackages(packages, { triple: "x86_64-pc-windows-msvc", packages: "auto" }).packages).toEqual(["win"]);
+    expect(
+      targetPackages(packages, { triple: "wasm32-unknown-unknown", packages: "auto" }).packages,
+    ).toEqual(["host", "web"]);
+    expect(
+      targetPackages(packages, { triple: "x86_64-pc-windows-msvc", packages: "auto" }).packages,
+    ).toEqual(["win"]);
   });
   test("include adds members that carry no target-gated dependency", () => {
-    expect(targetPackages(packages, { triple: "wasm32-unknown-unknown", packages: "auto", include: ["plain", "web"] }).packages).toEqual(["host", "plain", "web"]);
+    expect(
+      targetPackages(packages, {
+        triple: "wasm32-unknown-unknown",
+        packages: "auto",
+        include: ["plain", "web"],
+      }).packages,
+    ).toEqual(["host", "plain", "web"]);
   });
   test("workspace and explicit lists, with exclusions kept as data", () => {
-    const all = targetPackages(packages, { triple: "wasm32-unknown-unknown", packages: "workspace", exclude: [{ crates: "h*", reason: "host only" }] });
+    const all = targetPackages(packages, {
+      triple: "wasm32-unknown-unknown",
+      packages: "workspace",
+      exclude: [{ crates: "h*", reason: "host only" }],
+    });
     expect(all.packages).toEqual(["plain", "web", "win"]);
     expect(all.excluded).toEqual([{ crate: "host", reason: "host only" }]);
-    expect(targetPackages(packages, { triple: "x", packages: ["web", "web"] }).packages).toEqual(["web"]);
+    expect(targetPackages(packages, { triple: "x", packages: ["web", "web"] }).packages).toEqual([
+      "web",
+    ]);
   });
 });
 
@@ -115,8 +260,22 @@ describe("parseJunit", () => {
   test("separates failing from flaky cases and counts every case", () => {
     const r = parseJunit(xml);
     expect(r.tests).toBe(4);
-    expect(r.failures).toEqual([{ suite: "aphrody-foo", name: "tests::breaks", kind: "fail", message: "thread 'tests::breaks' panicked at src/lib.rs:9:5" }]);
-    expect(r.flaky).toEqual([{ suite: "aphrody-bar::integration", name: "sometimes", kind: "flaky", message: "test failure" }]);
+    expect(r.failures).toEqual([
+      {
+        suite: "aphrody-foo",
+        name: "tests::breaks",
+        kind: "fail",
+        message: "thread 'tests::breaks' panicked at src/lib.rs:9:5",
+      },
+    ]);
+    expect(r.flaky).toEqual([
+      {
+        suite: "aphrody-bar::integration",
+        name: "sometimes",
+        kind: "flaky",
+        message: "test failure",
+      },
+    ]);
   });
   test("an empty report has no case", () => {
     expect(parseJunit("<testsuites></testsuites>")).toEqual({ tests: 0, failures: [], flaky: [] });
@@ -142,21 +301,42 @@ describe("parseLibtest", () => {
 
 describe("format and git helpers", () => {
   test("parseFmtList returns repo-relative files once, newline-style lines included", () => {
-    const text = ["/repo/crates/a/src/lib.rs", "Incorrect newline style in /repo/crates/b/src/x.rs", "/repo/crates/a/src/lib.rs", "Warning: something", "/repo/../source/up/src/lib.rs"].join("\n");
-    expect(parseFmtList(text, "/repo")).toEqual(["../source/up/src/lib.rs", "crates/a/src/lib.rs", "crates/b/src/x.rs"]);
+    const text = [
+      "/repo/crates/a/src/lib.rs",
+      "Incorrect newline style in /repo/crates/b/src/x.rs",
+      "/repo/crates/a/src/lib.rs",
+      "Warning: something",
+      "/repo/../source/up/src/lib.rs",
+    ].join("\n");
+    expect(parseFmtList(text, "/repo")).toEqual([
+      "../source/up/src/lib.rs",
+      "crates/a/src/lib.rs",
+      "crates/b/src/x.rs",
+    ]);
   });
   test("crateOfFile picks the longest member directory", () => {
-    const dirs: [string, string][] = [["crates/web", "outer"], ["crates/web/taffy", "taffy"], ["crates/infra/aphrody", "aphrody"]];
+    const dirs: [string, string][] = [
+      ["crates/web", "outer"],
+      ["crates/web/taffy", "taffy"],
+      ["crates/infra/aphrody", "aphrody"],
+    ];
     expect(crateOfFile("crates/web/taffy/src/lib.rs", dirs)).toBe("taffy");
     expect(crateOfFile("crates/web/x.rs", dirs)).toBe("outer");
     expect(crateOfFile("crates/webby/x.rs", dirs)).toBeUndefined();
     expect(crateOfFile("docs/a.md", dirs)).toBeUndefined();
   });
   test("parsePorcelain keeps both sides of a rename and untracked paths", () => {
-    expect(parsePorcelain(" M a/b.rs\n?? new/\nR  old.rs -> fresh.rs\n")).toEqual(["a/b.rs", "new/", "old.rs", "fresh.rs"]);
+    expect(parsePorcelain(" M a/b.rs\n?? new/\nR  old.rs -> fresh.rs\n")).toEqual([
+      "a/b.rs",
+      "new/",
+      "old.rs",
+      "fresh.rs",
+    ]);
   });
   test("errorLines starts at the first error, or falls back to the tail", () => {
-    expect(errorLines("Compiling x\nerror[E0432]: unresolved import\n --> src/lib.rs:1:5\nmore", 2)).toEqual(["error[E0432]: unresolved import", " --> src/lib.rs:1:5"]);
+    expect(
+      errorLines("Compiling x\nerror[E0432]: unresolved import\n --> src/lib.rs:1:5\nmore", 2),
+    ).toEqual(["error[E0432]: unresolved import", " --> src/lib.rs:1:5"]);
     expect(errorLines("a\nb\nc", 2)).toEqual(["b", "c"]);
   });
 });
@@ -176,18 +356,19 @@ describe("classification", () => {
     expect(glob("a.b/*").test("aXb/x")).toBe(false);
   });
   test("vendoredReason returns the first matching reason", () => {
-    const v = [{ crates: "obscura*", reason: "upstream obscura" }, { crates: "taffy", reason: "upstream taffy" }];
+    const v = [
+      { crates: "obscura*", reason: "upstream obscura" },
+      { crates: "taffy", reason: "upstream taffy" },
+    ];
     expect(vendoredReason("obscura-net", v)).toBe("upstream obscura");
     expect(vendoredReason("taffy", v)).toBe("upstream taffy");
     expect(vendoredReason("aphrody-web", v)).toBeUndefined();
   });
   test("status, totals and exit code follow the worst severity", () => {
-    const p = (severity: Problem["severity"]): Problem => ({ stage: "compile", severity, message: "m" });
     expect(stageStatus([])).toBe("ok");
     expect(stageStatus([p("info")])).toBe("ok");
     expect(stageStatus([p("info"), p("warning")])).toBe("problems");
     expect(stageStatus([p("warning"), p("error")])).toBe("failed");
-    const stage = (problems: Problem[], fixed: number): StageResult => ({ stage: "compile", status: stageStatus(problems), seconds: 1, summary: "", problems, fixed, commands: [] });
     const t = totals([stage([p("error"), p("warning")], 2), stage([p("info"), p("warning")], 1)]);
     expect(t).toEqual({ errors: 1, warnings: 2, notes: 1, fixed: 3 });
     expect(exitCode(t, false)).toBe(1);

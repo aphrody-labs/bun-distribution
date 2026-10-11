@@ -352,21 +352,25 @@ describe("YOLO vendoring", () => {
       prefix: string;
       source: { name: string }[];
     };
-    expect(lock.sources.map((s) => s.name).sort()).toEqual(config.source.map((s) => s.name).sort());
-    for (const crate of lock.crates) {
-      expect(crate.package.startsWith(config.prefix)).toBe(true);
-      const manifest = Bun.TOML.parse(
-        await Bun.file(resolve(rootDir, crate.dir, "Cargo.toml")).text(),
-      ) as {
-        package: { name: string };
-        lib?: { name?: string };
-      };
-      expect(manifest.package.name).toBe(crate.package);
-      // library names stay unchanged so `use tauri::...` keeps compiling
-      if (manifest.lib?.name !== undefined) {
-        expect(manifest.lib.name).not.toContain(config.prefix.replace("-", "_"));
-      }
-    }
+    expect(lock.sources.map((s) => s.name).toSorted()).toEqual(
+      config.source.map((s) => s.name).toSorted(),
+    );
+    await Promise.all(
+      lock.crates.map(async (crate) => {
+        expect(crate.package.startsWith(config.prefix)).toBe(true);
+        const manifest = Bun.TOML.parse(
+          await Bun.file(resolve(rootDir, crate.dir, "Cargo.toml")).text(),
+        ) as {
+          package: { name: string };
+          lib?: { name?: string };
+        };
+        expect(manifest.package.name).toBe(crate.package);
+        // library names stay unchanged so `use tauri::...` keeps compiling
+        if (manifest.lib?.name !== undefined) {
+          expect(manifest.lib.name).not.toContain(config.prefix.replace("-", "_"));
+        }
+      }),
+    );
   });
 
   it("reports vendored sources against the submodule HEADs", async () => {
@@ -380,9 +384,12 @@ describe("YOLO vendoring", () => {
       declaration.source.map((source) => source.name).toSorted(),
     );
     const { readGitHead } = await import("../../core/src/vendor/status");
-    for (const source of status!.sources) {
+    const heads = await Promise.all(
+      status!.sources.map((source) => readGitHead(resolve(rootDir, "vendor", source.name))),
+    );
+    for (const [index, source] of status!.sources.entries()) {
       expect(source.lockedSha).toMatch(/^[a-f0-9]{40}$/);
-      expect(source.headSha).toBe(await readGitHead(resolve(rootDir, "vendor", source.name)));
+      expect(source.headSha).toBe(heads[index]!);
       expect(source.inSync).toBe(source.lockedSha === source.headSha);
     }
   });
@@ -448,27 +455,28 @@ describe("YOLO awesome", () => {
   });
 });
 
+const entry = (over: Record<string, unknown> = {}) => ({
+  name: "Thing",
+  url: "https://github.com/acme/thing",
+  description: "A thing",
+  section: "Tools",
+  github: "acme/thing",
+  ...over,
+});
+const facts = (over: Record<string, unknown> = {}) => ({
+  repo: "acme/thing",
+  archived: false,
+  disabled: false,
+  pushedAt: "2026-09-01T00:00:00Z",
+  stars: 1,
+  language: "TypeScript",
+  topics: [],
+  description: "",
+  license: "MIT",
+  ...over,
+});
+
 describe("YOLO awesome curation (Rust-based Bun)", () => {
-  const entry = (over: Record<string, unknown> = {}) => ({
-    name: "Thing",
-    url: "https://github.com/acme/thing",
-    description: "A thing",
-    section: "Tools",
-    github: "acme/thing",
-    ...over,
-  });
-  const facts = (over: Record<string, unknown> = {}) => ({
-    repo: "acme/thing",
-    archived: false,
-    disabled: false,
-    pushedAt: "2026-09-01T00:00:00Z",
-    stars: 1,
-    language: "TypeScript",
-    topics: [],
-    description: "",
-    license: "MIT",
-    ...over,
-  });
   const since = "2026-05-14";
 
   it("keeps active repositories and drops archived, stale, missing and Zig ones", async () => {

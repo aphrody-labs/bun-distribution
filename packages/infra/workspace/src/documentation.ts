@@ -117,6 +117,10 @@ export function loadDocumentationConfig(root: string): DocumentationConfig {
   return config;
 }
 
+const documentRank = (doc: DocumentRecord) =>
+  (doc.status === "canonical" ? 0 : 10) +
+  (/^(packages|crates|apps)\//.test(doc.path) ? 0 : doc.path.startsWith("docs/") ? 1 : 2);
+
 export function buildDocumentationManifest(
   root: string,
   config: DocumentationConfig,
@@ -173,12 +177,9 @@ export function buildDocumentationManifest(
   for (const [sha256, group] of groups) {
     if (group.length < 2) continue;
     // This is an authority alias, not permission to remove runtime templates or notices.
-    const ranked = [...group].toSorted((a, b) => {
-      const rank = (doc: DocumentRecord) =>
-        (doc.status === "canonical" ? 0 : 10) +
-        (/^(packages|crates|apps)\//.test(doc.path) ? 0 : doc.path.startsWith("docs/") ? 1 : 2);
-      return rank(a) - rank(b) || a.path.localeCompare(b.path);
-    });
+    const ranked = [...group].toSorted(
+      (a, b) => documentRank(a) - documentRank(b) || a.path.localeCompare(b.path),
+    );
     const canonical = ranked[0]!.path;
     for (const doc of group) doc.canonical = canonical;
     duplicates.push({ sha256, paths: group.map((doc) => doc.path), canonical, action: "retain" });
@@ -257,6 +258,7 @@ export async function generateDocumentation(
       console.warn(`docs: skipped ${target.root}: repository not present on this host`);
       continue;
     }
+    // oxlint-disable-next-line no-await-in-loop -- sources traitées séquentiellement : les sorties générées sont écrites dans l'ordre de configuration
     const outputs = await generateSourceReference(resolve(root, target.root), [target]);
     for (const [path, text] of outputs) if (!generatedOutput(root, path, text, check)) failures++;
   }

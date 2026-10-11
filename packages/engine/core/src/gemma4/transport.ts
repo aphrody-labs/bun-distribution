@@ -76,6 +76,7 @@ export async function postInferenceJson(
     let bytes = 0;
     let text = "";
     while (true) {
+      // oxlint-disable-next-line no-await-in-loop -- lecture séquentielle d'un flux HTTP : chaque segment doit être borné et décodé dans l'ordre
       const chunk = await reader.read();
       active.signal.throwIfAborted();
       if (chunk.done) break;
@@ -117,6 +118,7 @@ export async function* postInferenceEvents(
     let data: string[] = [];
     let eventBytes = 0;
     while (true) {
+      // oxlint-disable-next-line no-await-in-loop -- lecture séquentielle d'un flux SSE : les événements doivent être émis dans l'ordre d'arrivée
       const chunk = await reader.read();
       active.signal.throwIfAborted();
       pending += chunk.done ? decoder.decode() : decoder.decode(chunk.value, { stream: true });

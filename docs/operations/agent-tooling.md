@@ -62,3 +62,24 @@ Execution context (2026-10-09): develop and build on any qualified native, SSH o
 - Wait for a long command with a single blocking call (or a background run with notification), not `until`/`sleep`
   polling loops.
 - Report gates with the owner's evidence (`--json`) and name skipped checks.
+
+## 4. Fast edit loop
+
+- `APHRODY_CARGO_INCREMENTAL=1 scripts/build/rust/cargo-serial.sh check -p <crate>` unsets `CARGO_INCREMENTAL`
+  instead of forcing 0. sccache refuses only the environment variable. The dev profile stays incremental for
+  workspace members, and sccache still caches dependencies. Factories and CI keep the default (0). Measured on vps
+  with `aphrody-identity`, one-line edit then `check`: median 3.23 s down to 2.40 s. Measured on PC with `bun_core`:
+  median 2.44 s down to 1.24 s.
+- Local `git config core.fsmonitor true` and `core.untrackedCache true` cut `git status` from 66.5 to 40.0 ms
+  (bun) and from 50.2 to 32.0 ms (aphrody).
+- Rejected: `-Zthreads=8` (1.24 to 1.82 s), `rust-lld` for `test --no-run` (no measurable gain), and mold or tmpfs
+  for `check` (it does not link, and the vps has 45 GiB of RAM with swap in use). Defender, the power plan and
+  indexing are already neutral. No Dev Drive exists.
+- Remaining (2026-10-09):
+  - On the PC, remove `incremental = false` from `~/.cargo/config.toml` and remove `CARGO_INCREMENTAL` from the
+    user environment, after re-measuring aphrody `check`, `test --no-run` and `clippy` with
+    `CARGO_BUILD_INCREMENTAL=true`.
+  - Give rust-analyzer flycheck its own target directory (`initializationOptions`
+    `{"cargo":{"targetDir":true},"check":{"workspace":false}}` in the aphrody plugin's `lspServers`). Its
+    `cargo check --workspace` holds the build lock and stalls agent commands for 30 to 66 s.
+  - Compare `tsc --noEmit -p` with `tsgo --noEmit -p` (time and diagnostics).

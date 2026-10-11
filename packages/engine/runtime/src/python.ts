@@ -85,7 +85,7 @@ export function libpythonIn(current: string): string | null {
     if (!existsSync(dir)) continue;
     const name = readdirSync(dir)
       .filter((file) => LIBPYTHON.test(file))
-      .sort((a, b) => b.length - a.length)[0];
+      .toSorted((a, b) => b.length - a.length)[0];
     if (name !== undefined) return join(dir, name);
   }
   return null;

@@ -1,0 +1,42 @@
+{
+  "schema": "aphrody-training-runtime/v1",
+  "runtimeImage": {
+    "buildArgument": "APHRODY_NATIVE_RUNTIME_IMAGE",
+    "requiredReference": "immutable registry image digest",
+    "capabilities": ["Bun fork", "Buv/uv", "PyJS/bun:python", "shared CPython 3.12", "aphrody train"],
+    "pythonSdkWheelBuildArgument": "APHRODY_SDK_WHEEL",
+    "pythonSdkWheelSha256BuildArgument": "APHRODY_SDK_WHEEL_SHA256",
+    "pythonSdkWheel": "verified precompiled Aphrody wheel inside that immutable image; native binding built from the pinned Bun fork"
+  },
+  "pythonWorkspace": {
+    "buildContext": "reviewed tracked source archive; protected and ignored runtime files excluded",
+    "root": "py",
+    "packages": ["aphrody", "aphrody-train"],
+    "lock": "py/uv.lock",
+    "extras": ["full", "qlora"],
+    "bitsandbytes": "0.50.0",
+    "quantization": "nf4"
+  },
+  "inputContract": {
+    "baseModel": "verified local Hugging Face Qwen3-4B-Instruct-2507 snapshot, not a GGUF-only model",
+    "rollouts": "prepared rollouts.jsonl with untouched gold anti-overlap",
+    "gold": "read-only heldout JSONL",
+    "converter": "qualified official llama.cpp convert_lora_to_gguf.py with gguf-py and conversion modules",
+    "converterPython": "qualified CPython entry point from the locked training environment; APHRODY_LORA_CONVERTER_PYTHON or explicit native converter_python, never embedded sys.executable Bun",
+    "output": "new private run directory, never an existing completed run"
+  },
+  "allocation": {
+    "developmentWorkstation": "control only",
+    "buildHost": "declared VPS factory",
+    "trainingHost": "declared Omar CUDA allocation",
+    "gpuLease": "exclusive; suspend inference allocation before starting training",
+    "promotion": "independent heldout evaluation against active Shenron model; training does not promote"
+  },
+  "qualification": {
+    "nativeRuntimeArtifact": false,
+    "imageBuilt": false,
+    "omarCudaTraining": false,
+    "realDatasetReady": false,
+    "promoted": false
+  }
+}

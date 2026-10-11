@@ -79,7 +79,7 @@ export async function pipelineCatalog(root: string) {
   }
   for (const domain of [
     ...DOMAIN_ORDER,
-    ...[...groups.keys()].filter((domain) => !DOMAIN_ORDER.includes(domain)).toSorted(),
+    ...[...groups.keys()].filter((known) => !DOMAIN_ORDER.includes(known)).toSorted(),
   ]) {
     const steps = groups.get(domain);
     if (steps?.length) stages.push({ id: `bun-${domain}`, parallel: false, steps });

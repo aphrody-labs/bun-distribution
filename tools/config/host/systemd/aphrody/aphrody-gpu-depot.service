@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+# User service on the declared VPS factory; no GPU or provider stores.
+[Unit]
+Description=Aphrody private pinned model depot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=APHRODY_SETUP_NO_UPDATE=1
+ExecStart=%h/.bun/bin/bun %h/.aphrody/lib/gpu-fleet/product.mjs admin flotte depot %h/.aphrody/models/gpu-fleet/d36bdd3855c82a6a1a23f7c459b749f5724ae75d %h/.aphrody/private/gpu-fleet/depot.token 10.200.77.1
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=true
+UMask=0077
+
+[Install]
+WantedBy=default.target

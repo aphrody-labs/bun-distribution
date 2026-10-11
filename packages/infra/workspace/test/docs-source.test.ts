@@ -70,19 +70,22 @@ test("source references reject malformed ids, unsafe paths and escaping symlinks
   try {
     await writeFile(join(root, "api.ts"), "export const value: number = 1;");
     const target = { id: "safe", language: "typescript" as const, paths: ["api.ts"] };
-    for (const path of [
-      "../api.ts",
-      "/tmp/api.ts",
-      "a/../api.ts",
-      "./api.ts",
-      "a\\api.ts",
-      ".env",
-      ".npmrc",
-      "a//api.ts",
-    ])
-      await expect(generateSourceReference(root, [{ ...target, paths: [path] }])).rejects.toThrow(
-        "Unsafe",
-      );
+    await Promise.all(
+      [
+        "../api.ts",
+        "/tmp/api.ts",
+        "a/../api.ts",
+        "./api.ts",
+        "a\\api.ts",
+        ".env",
+        ".npmrc",
+        "a//api.ts",
+      ].map((path) =>
+        expect(generateSourceReference(root, [{ ...target, paths: [path] }])).rejects.toThrow(
+          "Unsafe",
+        ),
+      ),
+    );
     await expect(generateSourceReference(root, [{ ...target, id: "../escape" }])).rejects.toThrow(
       "Invalid",
     );

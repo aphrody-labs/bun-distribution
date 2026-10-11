@@ -24,9 +24,11 @@ beforeAll(async () => {
   });
   for (let i = 0; i < 200; i++) {
     try {
+      // oxlint-disable-next-line no-await-in-loop -- sondage de démarrage : chaque tentative doit attendre l'échec précédent et le délai
       (await KernelClient.connect(endpoint)).close();
       return;
     } catch {
+      // oxlint-disable-next-line no-await-in-loop -- délai entre deux tentatives de connexion séquentielles
       await Bun.sleep(50);
     }
   }
@@ -70,8 +72,10 @@ test("a Bun subsystem is served to other clients and leaves on close", async () 
   bun.close();
   await bun.closed;
   for (let i = 0; i < 100; i++) {
+    // oxlint-disable-next-line no-await-in-loop -- sondage séquentiel : on attend la désinscription côté kernel avant de relire
     const after = (await agent.request("tools/list")) as { tools: { name: string }[] };
     if (!after.tools.some((t) => t.name === "bun_reverse")) break;
+    // oxlint-disable-next-line no-await-in-loop -- délai entre deux relectures du sondage
     await Bun.sleep(20);
   }
   const after = (await agent.request("tools/list")) as { tools: { name: string }[] };

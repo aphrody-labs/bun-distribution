@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { createEdgeProxy, validEdgeKey } from "../src/server/edge-proxy";
+import { createEdgeProxy, edgeDiskPath, validEdgeKey } from "../src/server/edge-proxy";
 
 let upstream: ReturnType<typeof Bun.serve>;
 let hits = 0;
@@ -100,4 +100,24 @@ test("upstream 404, unknown routes, escaping keys and other methods", async () =
   expect(validEdgeKey("s/roboto/v1/a.woff2")).toBe(true);
   for (const k of ["../a", "a/../b", "/abs", "a//b", "a/./b", "a b"])
     expect(validEdgeKey(k)).toBe(false);
+});
+
+test("cache keys longer than a file name are stored under a digest name", async () => {
+  const long = `${"N".repeat(258)}.woff2`;
+  const handle = createEdgeProxy({
+    cacheDir,
+    route: () => ({
+      upstream: new URL("/font.woff2", upstream.url),
+      cacheKey: `s/v1/${long}`,
+      kind: "immutable",
+    }),
+  });
+  const path = edgeDiskPath(cacheDir, `s/v1/${long}`);
+  expect(path.slice(path.lastIndexOf("/") + 1).length).toBeLessThanOrEqual(97);
+  expect(edgeDiskPath(cacheDir, "s/v1/short.woff2")).toBe(`${cacheDir}/s/v1/short.woff2`);
+  const miss = await handle(new Request(`http://edge/s/v1/${long}`));
+  expect([miss.status, miss.headers.get("x-edge-cache")]).toEqual([200, "MISS"]);
+  expect(new Uint8Array(await miss.arrayBuffer())).toEqual(new Uint8Array([119, 79, 70, 50]));
+  const hit = await handle(new Request(`http://edge/s/v1/${long}`));
+  expect(hit.headers.get("x-edge-cache")).toBe("HIT");
 });

@@ -5,8 +5,8 @@
     "service": "aphrody-cdn",
     "host": "cdn.aphrody.com",
     "status": "live",
-    "sshHost": "dbfr",
-    "note": "`cdn.ts publish --vps dbfr` rsyncs the release under releaseRoot/releases/<sha> and switches `current`. The release tree is published under /s/ and /h/ by aphrody-fonts-proxy (`--static releaseRoot/current`); the paths it does not hold fall through to the Google Fonts proxy.",
+    "sshHost": "vps",
+    "note": "`cdn.ts publish --vps vps` rsyncs the release under releaseRoot/releases/<sha> and switches `current`. The release tree is published under /s/ and /h/ by aphrody-fonts-proxy (`--static releaseRoot/current`); the paths it does not hold fall through to the Google Fonts proxy.",
     "releaseRoot": "/home/ubuntu/apps/cdn",
     "paths": {
       "scoped": "/s/",
@@ -53,6 +53,59 @@
       "path": "assets/ai",
       "owns": "Aphrody agent brand (Byron), product captures and renders.",
       "exclude": ["**/*.psd"]
+    }
+  ],
+  "releases": [
+    {
+      "name": "material-symbols",
+      "repo": "aphrody-labs/material-design-icons",
+      "branch": "aphrody",
+      "commit": "24931a5a982371b6316a3c62032cb345d86018f6",
+      "checkout": "vps:/home/ubuntu/src/forks/material-design-icons",
+      "owns": "Material Symbols Outlined, Rounded and Sharp (Apache-2.0, Google): variable fonts FILL 0..1, wght 100..700, GRAD -50..200, opsz 20..48; web WOFF2, desktop TTF and the Google-compatible material-symbols.css. Optimized 24 px SVGs and symbols/manifest.json stay in the repository.",
+      "build": "bun run build && bun run check && bun run cdn build && bun run cdn publish --host dbfr && bun run cdn verify",
+      "releaseRoot": "/home/ubuntu/apps/cdn/symbols",
+      "served": "aphrody-fonts-proxy --static /home/ubuntu/apps/cdn/symbols/current (after the catalog release)",
+      "version": "12b46e640adf",
+      "symbols": 4154,
+      "verifiedAt": "2026-10-09",
+      "css": {
+        "url": "https://cdn.aphrody.com/s/symbols/material-symbols.css",
+        "hashed": "https://cdn.aphrody.com/h/c2672d57d2ec4ff8.css",
+        "sha256": "c2672d57d2ec4ff88b562fde7a46fe6417d743f9c2a0c55cd49ae80fdee1193f"
+      },
+      "files": {
+        "outlined.woff2": {
+          "url": "https://cdn.aphrody.com/h/d95874ebfb180692.woff2",
+          "sha256": "d95874ebfb180692d8736133ccf7101710a10c49874d1194d53e1fb7b9adbe2f",
+          "bytes": 3965504
+        },
+        "outlined.ttf": {
+          "url": "https://cdn.aphrody.com/h/2e810725d35d0775.ttf",
+          "sha256": "2e810725d35d0775040baab3ba3896d7c00ecfe698a3f7c18cc47c0d87134974",
+          "bytes": 10619144
+        },
+        "rounded.woff2": {
+          "url": "https://cdn.aphrody.com/h/ef57a72544240c6b.woff2",
+          "sha256": "ef57a72544240c6b07c07b15175c73861b79ea968205250384d3720f48112572",
+          "bytes": 5360732
+        },
+        "rounded.ttf": {
+          "url": "https://cdn.aphrody.com/h/b69ffe68733e6329.ttf",
+          "sha256": "b69ffe68733e63291a54048b646902b24202a982684b20d9c30751d7a784f192",
+          "bytes": 15103344
+        },
+        "sharp.woff2": {
+          "url": "https://cdn.aphrody.com/h/f0a9bc25bf1bcdb2.woff2",
+          "sha256": "f0a9bc25bf1bcdb2e6078913faea41745759a1ef0098a914cb56bff1ec57dafa",
+          "bytes": 3496988
+        },
+        "sharp.ttf": {
+          "url": "https://cdn.aphrody.com/h/bb3fdd0ac2b49750.ttf",
+          "sha256": "bb3fdd0ac2b497501f676bfd168fb4637abe441240964b162a1896da784fb35b",
+          "bytes": 8793108
+        }
+      }
     }
   ],
   "policy": {

@@ -171,6 +171,7 @@ export function QuickBar() {
     focus();
     return () => window.removeEventListener("focus", focus);
     // Mount-only listener: refreshThreads reads everything it needs at call time.
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- mount-only window focus listener by design: refreshThreads reads its state at call time, and re-subscribing on every render would re-focus the input each time
   }, []);
 
   const persist = (next: Preferences) => {
@@ -302,6 +303,7 @@ export function QuickBar() {
         });
       }
       const channel = new Channel<Notification>();
+      // oxlint-disable-next-line unicorn/prefer-add-event-listener -- Channel from the Tauri API exposes a single onmessage slot with ordered delivery; it is not an EventTarget
       channel.onmessage = (message) => {
         if (message.method === "item/agentMessage/delta") {
           setAnswer((text) => text + (message.params?.delta ?? ""));
@@ -352,12 +354,14 @@ export function QuickBar() {
   };
 
   return (
+    // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- the card is a layout wrapper whose key handler sees shortcuts from every field inside it
     <div className="flex min-h-screen items-start justify-center p-2" onKeyDown={onKeyDown}>
       <form
         ref={cardRef}
         onSubmit={(event) => void submit(event)}
         className="w-full rounded-[28px] bg-surface-container-high p-3 text-on-surface shadow-lg"
       >
+        {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- the header is a mouse-only window drag handle; keyboard users move the window through the window manager */}
         <header
           className="flex items-center gap-2 pb-2"
           onMouseDown={(event) => {
@@ -399,11 +403,13 @@ export function QuickBar() {
             <Icon name="forum" size={18} />
             <span className="flex-1 truncate">{activeThread.title}</span>
             <button
+              aria-label="Nouveau fil"
+              title="Nouveau fil"
               type="button"
               onClick={newThread}
               className="min-h-10 rounded-full px-3 text-primary hover:bg-primary/8 focus-visible:outline-2 focus-visible:outline-primary"
             >
-              Nouveau fil
+              <Icon name="add" size={18} />
             </button>
           </div>
         )}
@@ -429,6 +435,7 @@ export function QuickBar() {
         {suggestions.length > 0 && (
           <ul
             id="quickbar-suggestions"
+            // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role, jsx-a11y/prefer-tag-over-role -- the suggestions are a combobox listbox driven by aria-activedescendant on the input; a native select or datalist cannot render these rows
             role="listbox"
             aria-label="Suggestions"
             className="m-0 mt-2 list-none rounded-2xl bg-surface-container p-1"
@@ -468,6 +475,7 @@ export function QuickBar() {
                 <li
                   key={key}
                   id={`quickbar-suggestion-${index}`}
+                  // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role, jsx-a11y/prefer-tag-over-role -- each suggestion is an option of the combobox listbox above; a native element cannot be an option outside a select
                   role="option"
                   aria-selected={index === highlight}
                   onMouseDown={(event) => {
@@ -518,6 +526,7 @@ export function QuickBar() {
           <ul className="mt-2 flex flex-wrap gap-2">
             {attachments.map((item, index) => (
               <li
+                // oxlint-disable-next-line react/no-array-index-key -- attachments have no id and the same file can be attached twice, so the index keeps the keys unique
                 key={`${item.kind}-${index}`}
                 className="flex items-center gap-1 rounded-sm bg-secondary-container py-1 pr-1 pl-3 text-label-medium text-on-secondary-container"
               >

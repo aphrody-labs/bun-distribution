@@ -36,18 +36,24 @@ export function VirtualList<T>(props: VirtualListProps<T>) {
   } = props;
   const scrollRef = useRef<HTMLDivElement>(null);
   const endReported = useRef(-1);
+  // oxlint-disable-next-line react/incompatible-library -- TanStack Virtual renvoie des fonctions non mémoïsables (getVirtualItems, measureElement) : le compilateur React doit l'ignorer
   const virtualizer = useVirtualizer({
     count: items.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => estimateSize,
     overscan,
     gap,
-    getItemKey: getKey ? index => getKey(items[index]!, index) : undefined,
+    getItemKey: getKey ? (index) => getKey(items[index]!, index) : undefined,
     initialRect: { width: 0, height },
   });
   const virtualItems = virtualizer.getVirtualItems();
   const last = virtualItems.at(-1);
-  if (onEndReached && last && last.index === items.length - 1 && endReported.current !== items.length) {
+  if (
+    onEndReached &&
+    last &&
+    last.index === items.length - 1 &&
+    endReported.current !== items.length
+  ) {
     endReported.current = items.length;
     queueMicrotask(onEndReached);
   }
@@ -66,25 +72,38 @@ export function VirtualList<T>(props: VirtualListProps<T>) {
         ...style,
       }}
     >
-      <div
-        role="list"
+      <ul
         aria-label={props["aria-label"]}
-        style={{ position: "relative", width: "100%", height: virtualizer.getTotalSize() }}
+        style={{
+          position: "relative",
+          width: "100%",
+          height: virtualizer.getTotalSize(),
+          margin: 0,
+          padding: 0,
+          listStyle: "none",
+        }}
       >
-        {virtualItems.map(item => (
-          <div
+        {virtualItems.map((item) => (
+          <li
             key={item.key}
-            role="listitem"
             aria-setsize={items.length}
             aria-posinset={item.index + 1}
             data-index={item.index}
             ref={virtualizer.measureElement}
-            style={{ position: "absolute", top: 0, left: 0, width: "100%", transform: `translateY(${item.start}px)` }}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              margin: 0,
+              listStyle: "none",
+              transform: `translateY(${item.start}px)`,
+            }}
           >
             {renderItem(items[item.index]!, item.index)}
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }

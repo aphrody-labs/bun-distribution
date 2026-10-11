@@ -89,9 +89,7 @@ export default function Reader({ adaptive }: PageProps) {
           />
         </Card>
         {kind === "manga" ? (
-          <p role="status" className="text-body-medium">
-            Illustration page: {page}
-          </p>
+          <output className="block text-body-medium">Illustration page: {page}</output>
         ) : null}
       </Section>
     </Page>

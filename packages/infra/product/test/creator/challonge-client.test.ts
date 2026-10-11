@@ -281,13 +281,13 @@ test("--dry-run : aucun appel réseau, plan enregistré, réponses factices coh�
   expect(plan[0]!.url).toContain("community_id=asso");
 });
 
-test("pagination : continue sur page pleine, s'arrête sur page courte, vide ou déjà vue", async () => {
-  const items = (from: number, to: number) =>
-    Array.from({ length: to - from + 1 }, (_, i) => ({
-      id: String(from + i),
-      attributes: { name: `p${from + i}` },
-    }));
+const items = (from: number, to: number) =>
+  Array.from({ length: to - from + 1 }, (_, i) => ({
+    id: String(from + i),
+    attributes: { name: `p${from + i}` },
+  }));
 
+test("pagination : continue sur page pleine, s'arrête sur page courte, vide ou déjà vue", async () => {
   const pages = mock((call) =>
     json({ data: call.url.searchParams.get("page") === "1" ? items(1, 30) : items(31, 35) }),
   );

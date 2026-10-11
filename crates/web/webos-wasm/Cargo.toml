@@ -8,14 +8,17 @@ authors.workspace      = true
 homepage.workspace     = true
 repository.workspace   = true
 license.workspace      = true
-description            = "wasm-bindgen surface of the Aphrody WebOS apps: OPFS-backed VFS, binary triage and patch apply over existing crates; no terminal."
+description            = "wasm-bindgen surface of the Aphrody WebOS apps: OPFS-backed VFS, binary triage, patch apply, document search and language detection over existing crates, and the terminal."
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+aphrody-google    = { workspace = true }
 aphrody-patch     = { workspace = true }
+aphrody-rag-core  = { workspace = true }
 aphrody-re        = { workspace = true }
+aphrody-shell-session = { workspace = true }
 aphrody-shell-vfs = { workspace = true }
 aphrody-shell-web = { workspace = true }
 serde_json        = { workspace = true }

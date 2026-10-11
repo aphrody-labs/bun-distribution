@@ -135,6 +135,7 @@ export class DiscordRest {
     for (let attempt = 0; ; attempt += 1) {
       let res: Response;
       try {
+        // oxlint-disable-next-line no-await-in-loop -- Discord retries are sequential by design: each attempt waits for the rate-limit/backoff of the previous one
         res = await this.fetchImpl(url, init);
       } catch (cause) {
         throw new DiscordError(
@@ -144,9 +145,11 @@ export class DiscordRest {
       }
       if (res.ok) {
         if (res.status === 204) return undefined;
+        // oxlint-disable-next-line no-await-in-loop -- the body of this attempt is needed to return; the loop exits here
         const text = await res.text();
         return text ? (JSON.parse(text) as T) : undefined;
       }
+      // oxlint-disable-next-line no-await-in-loop -- error body of this attempt is needed to decide retry or throw
       const text = await res.text().catch(() => "");
       let parsed: { message?: string; code?: number; retry_after?: number } = {};
       try {
@@ -165,6 +168,7 @@ export class DiscordRest {
                   backoffMs(attempt, this.random),
               )
             : backoffMs(attempt, this.random);
+        // oxlint-disable-next-line no-await-in-loop -- rate-limit/backoff wait before the next sequential attempt
         await this.sleep(waitMs);
         continue;
       }

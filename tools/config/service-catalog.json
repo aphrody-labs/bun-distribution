@@ -16,7 +16,7 @@
       "workingDirectory": "/home/ubuntu/apps/cdn/src",
       "publicProxy": "nginx",
       "public": true,
-      "host": "dbfr"
+      "host": "vps"
     },
     {
       "id": "aphrody-downloads",
@@ -32,7 +32,7 @@
       "publicProxy": "nginx",
       "note": "read-only download site (index, latest.json, SHA256SUMS, install.sh, install.ps1, artifacts): public and unauthenticated by design, it serves published checksummed release files only; published by scripts/release/publish-downloads.ts from tools/config/downloads.json (docs/operations/infra/DOWNLOADS.md)",
       "public": true,
-      "host": "dbfr"
+      "host": "vps"
     },
     {
       "id": "aphrody-creator",
@@ -42,10 +42,43 @@
       "sourceRepo": "aphrody",
       "releaseRoot": "/home/ubuntu/apps/creator/releases",
       "publicProxy": "nginx",
-      "note": "static download page of creator-kit (Material 3 page, latest.json, packs) served from /home/ubuntu/apps/creator/current by the dbfr gateway container (vhost zz-creator.aphrody.com.conf, read-only bind), no application origin and no unit; public and unauthenticated by design, published by scripts/release/publish-creator.ts (docs/operations/infra/CREATOR.md)",
+      "note": "static download page of creator-kit (Material 3 page, latest.json, packs) served from /home/ubuntu/apps/creator/current by the vps nginx (vhost nginx/aphrody/creator.aphrody.com.conf), no application origin and no unit; public and unauthenticated by design, published by scripts/release/publish-creator.ts (docs/operations/infra/CREATOR.md)",
       "public": true,
-      "container": "aphrody-gateway-1",
-      "host": "dbfr"
+      "host": "vps"
+    },
+    {
+      "id": "aphrody-bun-site",
+      "application": "aphrody",
+      "kind": "nginx-static",
+      "runtime": "none",
+      "sourceRepo": "aphrody",
+      "releaseRoot": "/var/www/bun.aphrody.com/releases",
+      "publicProxy": "nginx",
+      "note": "static site of the Bun runtime fork aphrody-labs/bun (home, /runtime, full docs with search, downloads, release notes, installers) served from /var/www/bun.aphrody.com/current by the vps nginx (vhost nginx/aphrody/bun.aphrody.com.conf), no application origin; generated and published by the fork's scripts/aphrody/site/publish.ts (user timer aphrody-site-publish on the vps); public and unauthenticated by design (docs/reference/upstream-bun/APHRODY-FORK.md)",
+      "public": true,
+      "host": "vps"
+    },
+    {
+      "id": "aphrody-os",
+      "application": "aphrody",
+      "kind": "nginx-static",
+      "runtime": "none",
+      "sourceRepo": "aphrody",
+      "publicProxy": "nginx",
+      "note": "Aphrody OS web bundle (crates/ui/app/ui-dist) served by nginx from /var/www/os.aphrody.com with SPA fallback (vhost nginx/aphrody/os.aphrody.com.conf), no application origin and no unit; target of the homepage Open Aphrody OS button.",
+      "public": true,
+      "host": "vps"
+    },
+    {
+      "id": "aphrody-reserved",
+      "application": "aphrody",
+      "kind": "nginx-static",
+      "runtime": "none",
+      "sourceRepo": "aphrody",
+      "publicProxy": "nginx",
+      "note": "reserved hosts bot, mcp, nie and admin on aphrody.com: valid HTTPS answering 410 JSON from nginx (vhost nginx/aphrody/reserved.aphrody.com.conf) until a backend is declared; no application origin and no unit.",
+      "public": true,
+      "host": "vps"
     },
     {
       "id": "aphrody-llama-gemma4",
@@ -94,18 +127,37 @@
       "public": false
     },
     {
+      "id": "aphrody-ai-gateway-dbfr",
+      "application": "aphrody",
+      "kind": "openai-compatible-gateway",
+      "runtime": "rust",
+      "unit": "aphrody-ai-gateway-dbfr.service",
+      "host": "dbfr",
+      "health": "http://127.0.0.1:8786/health",
+      "port": 8786,
+      "modelId": "shenron-chat-v2",
+      "capabilities": [
+        "chat"
+      ],
+      "sourceRepo": "aphrody",
+      "public": false,
+      "note": "Persistent authenticated Aphrody OpenAI-compatible gateway on DBFR, bound to loopback only. Forwards to the existing Shenron chat model at 127.0.0.1:8799/v1; no Nginx route or public inference endpoint."
+    },
+    {
       "id": "aphrody-discord-dev",
       "application": "aphrody-discord",
       "kind": "discord-interactions-and-gateway",
       "runtime": "bun",
       "unit": "aphrody-discord-dev.service",
+      "container": "aphrody-discord-1",
       "health": "http://127.0.0.1:4010/healthz",
       "port": 4010,
       "sourceRepo": "aphrody-discord",
       "workingDirectory": "/home/ubuntu/apps/discord/current",
       "releaseRoot": "/home/ubuntu/apps/discord/releases",
       "publicProxy": "nginx",
-      "public": true,
+      "note": "bot.aphrody.com resolves to the vps and answers 410 (reserved) there; the interactions endpoint stays private until a route to this origin is declared.",
+      "public": false,
       "host": "dbfr"
     },
     {
@@ -114,16 +166,16 @@
       "kind": "rust-site",
       "runtime": "rust",
       "unit": "aphrody-site.service",
-      "health": "http://127.0.0.1:80/health",
-      "port": 80,
+      "health": "http://127.0.0.1:8083/health",
+      "port": 8083,
       "host": "vps",
       "sourceRepo": "aphrody",
       "workingDirectory": "/home/ubuntu/apps/aphrody/current",
       "releaseRoot": "/home/ubuntu/apps/aphrody/releases",
       "public": true,
-      "publicProxy": "direct-rust",
+      "publicProxy": "nginx",
       "staged": true,
-      "note": "Owner directive 2026-10-09: native read-only Rust product site on VPS port80, scoped CAP_NET_BIND_SERVICE under systemd. Source owner crates/web/site; templates are deployed read-only. MCP/A2A/host/provider APIs remain separately protected. Activation and source/artifact receipts recorded by Infra."
+      "note": "Native read-only Rust product site (crates/web/site) on loopback 127.0.0.1:8083 behind nginx (vhost nginx/aphrody/aphrody.com.conf, Let's Encrypt), no network capability under systemd since 2026-10-10. nginx serves / and the app-ui assets from /var/www/aphrody.com and proxies the other paths (/docs, templates, Material 3) here. MCP/A2A/host/provider APIs remain separately protected."
     },
     {
       "id": "aphrody-web-api",
@@ -381,7 +433,7 @@
       "unit": "shenron-offsite-backup.timer",
       "host": "vps",
       "public": false,
-      "note": "Daily 04:30 UTC pull of the DBFR container snapshots over wg (scripts/tools/infra/shenron-offsite-backup.ts): SHA-256 verified against VERIFIED.json under /home/ubuntu/build/archive/dbfr/backups/shenron, PostgreSQL dump restored into a disposable pgvector/pgvector:0.8.1-pg18 container and SQLite quick_check (.restore-verified); 14 days, newest three always kept; fails when the newest DBFR snapshot is older than 36 h."
+      "note": "Daily 04:30 UTC pull of the DBFR container snapshots over wg (scripts/tools/infra/shenron-offsite-backup.ts): SHA-256 verified against VERIFIED.json under /home/ubuntu/build/archive/dbfr/backups/shenron, PostgreSQL dump restored into a disposable pgvector/pgvector:0.8.1-pg18 container and SQLite quick_check (.restore-verified); rotation 1 (older snapshots deleted only after the newest is verified and restored); fails when the newest DBFR snapshot is older than 36 h."
     },
     {
       "id": "aphrody-mcp-http-dbfr",
@@ -389,12 +441,13 @@
       "kind": "rust-http",
       "runtime": "rust",
       "unit": "aphrody-mcp-http-dbfr.service",
+      "container": "aphrody-mcp-http-1",
       "health": "http://127.0.0.1:8793/healthz",
       "port": 8793,
       "sourceRepo": "aphrody",
       "workingDirectory": "/home/ubuntu/.aphrody",
       "public": false,
-      "note": "DBFR canonical native MCP with jobs enabled, protected host-local bearer, loopback127.0.0.1:8793. Private WireGuard projection must bind DBFR address10.200.77.3, never the VPS hub address. Activation requires qualified jobs binary and authentication probes.",
+      "note": "DBFR canonical native MCP with jobs enabled, protected host-local bearer, loopback127.0.0.1:8793. Private WireGuard projection must bind DBFR address10.200.77.3, never the VPS hub address. Activation requires qualified jobs binary and authentication probes. Since 2026-10-09 the compose service mcp-http (aphrody:toolbox, tools/config/container/compose.yaml, host network, uid 1000).",
       "host": "dbfr"
     },
     {
@@ -417,11 +470,12 @@
       "kind": "rust-worker",
       "runtime": "rust",
       "unit": "aphrody-jobs-worker-dbfr.service",
+      "container": "aphrody-jobs-worker-1",
       "sourceRepo": "aphrody",
       "workingDirectory": "/home/ubuntu/.aphrody",
       "public": false,
       "host": "dbfr",
-      "note": "Persistent local SQLite queue with fenced leases, capability filtering and bounded native web-pipeline/transcribe handlers. Inputs and credentials remain in protected host stores; no training role or network transport is granted."
+      "note": "Persistent local SQLite queue with fenced leases, capability filtering and bounded native web-pipeline/transcribe handlers. Inputs and credentials remain in protected host stores; no training role or network transport is granted. Since 2026-10-09 the compose service jobs-worker (aphrody:toolbox)."
     }
   ],
   "policies": {
@@ -503,28 +557,23 @@
       },
       {
         "host": "dbfr",
-        "kind": "systemd",
-        "unit": "shenron-compute.service"
+        "kind": "docker",
+        "container": "aphrody-shenron-compute-1"
       },
       {
         "host": "dbfr",
-        "kind": "systemd",
-        "unit": "shenron-embed.service"
+        "kind": "docker",
+        "container": "aphrody-shenron-embed-1"
       },
       {
         "host": "dbfr",
-        "kind": "systemd",
-        "unit": "shenron-timeline-api.service"
+        "kind": "docker",
+        "container": "aphrody-shenron-timeline-api-1"
       },
       {
         "host": "dbfr",
         "kind": "systemd",
         "unit": "shenron-timeline-refresh.timer"
-      },
-      {
-        "host": "dbfr",
-        "kind": "systemd",
-        "unit": "aphrody-jobs-worker-dbfr.service"
       },
       {
         "host": "local",

@@ -1,6 +1,26 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
+export function resolveBunMembers(
+  root: string,
+  declarations: string[],
+  failures: string[],
+): string[] {
+  const members = new Set<string>();
+  for (const declaration of declarations) {
+    const matches = [
+      ...new Bun.Glob(`${declaration}/package.json`).scanSync({ cwd: root, onlyFiles: true }),
+    ];
+    if (!matches.length) failures.push(`missing Bun workspace member: ${declaration}/package.json`);
+    for (const match of matches)
+      members.add(match.replaceAll("\\", "/").replace(/\/package\.json$/, ""));
+  }
+  return [...members].toSorted();
+}
+
+const describe = (paths: string[]) =>
+  `${paths.slice(0, 3).join(", ")}${paths.length > 3 ? ` (+${paths.length - 3} more)` : ""}`;
+
 export async function runIecodeDoctor(args: string[]): Promise<number> {
   let root = process.cwd();
   for (let index = 0; index < args.length; index++) {
@@ -42,7 +62,7 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
   ])
     file(path);
   for (const member of manifest.rust.members) file(join(member, "Cargo.toml"));
-  for (const member of manifest.bun.members) file(join(member, "package.json"));
+  const bunMembers = resolveBunMembers(root, manifest.bun.members, failures);
 
   const cargo = readFileSync(join(root, "Cargo.toml"), "utf8");
   if (cargo.includes("src/iecode/") || cargo.includes("src/niers/"))
@@ -61,7 +81,8 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
   if (!packageJson.packageManager?.startsWith("bun@"))
     failures.push("package.json must pin Bun with packageManager");
   if (
-    JSON.stringify(packageJson.workspaces?.packages ?? []) !== JSON.stringify(manifest.bun.members)
+    JSON.stringify(resolveBunMembers(root, packageJson.workspaces?.packages ?? [], failures)) !==
+    JSON.stringify(bunMembers)
   ) {
     failures.push("package.json and workspace.manifest.json Bun members differ");
   }
@@ -72,8 +93,8 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
   // that are not ignored. Disposable build output (bin/obj, __pycache__, node_modules) produced by
   // the other gates is ignored and therefore never trips the doctor, while a stray commit of it
   // does. Git is used instead of `find` so the checks behave identically on every host.
-  const gitList = (args: string[]) => {
-    const result = Bun.spawnSync(["git", ...args], {
+  const gitList = (gitArgs: string[]) => {
+    const result = Bun.spawnSync(["git", ...gitArgs], {
       windowsHide: true,
       cwd: root,
       stdout: "pipe",
@@ -94,9 +115,6 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
     "--",
     "src",
   ]);
-  const describe = (paths: string[]) =>
-    `${paths.slice(0, 3).join(", ")}${paths.length > 3 ? ` (+${paths.length - 3} more)` : ""}`;
-
   const forbiddenSourceDirectories = ["bin", "obj", "node_modules", ".turbo", "__pycache__"];
   for (const directory of forbiddenSourceDirectories) {
     const offenders = sourceFiles.filter((path) =>
@@ -158,7 +176,7 @@ export async function runIecodeDoctor(args: string[]): Promise<number> {
     return 1;
   }
   console.log(
-    `IECODE workspace OK: ${manifest.rust.members.length} Rust, ${manifest.bun.members.length} Bun, ${relative(root, manifestPath)}`,
+    `IECODE workspace OK: ${manifest.rust.members.length} Rust, ${bunMembers.length} Bun, ${relative(root, manifestPath)}`,
   );
   return 0;
 }

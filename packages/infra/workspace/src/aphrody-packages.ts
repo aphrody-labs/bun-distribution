@@ -429,13 +429,17 @@ export interface PublishOutcome {
   name: string;
   version: string;
   /** `staged`: the registry holds the version for owner approval (npm staged publishing). */
-  status: "published" | "staged" | "current" | "ready" | "blocked" | "failed";
+  status: "published" | "staged" | "unverified" | "current" | "ready" | "blocked" | "failed";
   detail?: string;
 }
 
 /** Registry state of one version: absent, or its tarball SHA-1 (npm `dist.shasum`). */
 async function registryShasum(name: string, version: string, registry: string) {
-  const response = await fetch(`${registry}/${name.replace("/", "%2f")}`, {
+  const url = new URL(`${registry.replace(/\/$/, "")}/${name.replace("/", "%2f")}`);
+  // Registry/CDN responses can retain a pre-publication packument despite no-cache.
+  // Give every visibility check a fresh cache key without changing package identity.
+  url.searchParams.set("cache", String(Date.now()));
+  const response = await fetch(url, {
     headers: { accept: "application/json", "cache-control": "no-cache" },
   });
   if (response.status === 404) return { exists: false } as const;
@@ -445,7 +449,8 @@ async function registryShasum(name: string, version: string, registry: string) {
     time?: Record<string, string>;
   };
   const published = packument.versions?.[version];
-  // A staged version blocks republication but is absent from `versions`.
+  // A timestamp reserves the version, but does not prove staged publishing:
+  // public version metadata can lag the timestamp.
   if (!published && packument.time?.[version]) return { exists: true, shasum: undefined } as const;
   return published
     ? ({ exists: true, shasum: published.dist?.shasum } as const)
@@ -484,7 +489,7 @@ export async function publishAphrodyPackages(options: {
     };
     const outcome = (status: PublishOutcome["status"], detail?: string) => {
       outcomes.push({ name, version: manifest.version, status, ...(detail ? { detail } : {}) });
-      if (status === "blocked" || status === "failed") failed.add(name);
+      if (["blocked", "failed", "staged", "unverified"].includes(status)) failed.add(name);
     };
     if (manifest.private) {
       outcome("blocked", "private: true");
@@ -535,7 +540,11 @@ export async function publishAphrodyPackages(options: {
       const state = await registryShasum(name, manifest.version, registry);
       if (state.exists) {
         if (state.shasum === shasum) outcome("current");
-        else if (!state.shasum) outcome("staged", "awaiting owner approval on the registry");
+        else if (!state.shasum)
+          outcome(
+            "unverified",
+            "registry version reserved but archive visibility is unconfirmed; recheck before republishing",
+          );
         else
           outcome(
             "blocked",
@@ -562,14 +571,21 @@ export async function publishAphrodyPackages(options: {
         // Staged versions stay invisible until approved, so success is confirmed on the registry.
         // The packument lags a fresh publish by seconds to minutes: poll before calling it staged.
         let after = await registryShasum(name, manifest.version, registry);
-        for (let attempt = 0; attempt < 12 && !after.exists; attempt++) {
+        for (let attempt = 0; attempt < 12 && !after.shasum; attempt++) {
           await Bun.sleep(10_000);
           after = await registryShasum(name, manifest.version, registry);
         }
-        outcome(
-          after.exists && after.shasum === shasum ? "published" : "staged",
-          after.exists ? undefined : "awaiting owner approval on the registry",
-        );
+        if (after.shasum === shasum) outcome("published");
+        else if (after.shasum)
+          outcome(
+            "blocked",
+            "registry archive differs from the submitted archive; investigate before bumping",
+          );
+        else
+          outcome(
+            "unverified",
+            "publish command succeeded but registry archive visibility is unconfirmed; recheck before republishing",
+          );
       }
     } finally {
       await rm(stage, { recursive: true, force: true });
@@ -598,8 +614,12 @@ export async function runAphrodyPackages(args: string[]): Promise<number> {
       console.log(
         `${item.status.padEnd(9)} ${item.name}@${item.version}${item.detail ? `  ${item.detail}` : ""}`,
       );
-    // Staged versions are published work awaiting the owner; only refusals fail the command.
-    return outcomes.some((item) => item.status === "failed" || item.status === "blocked") ? 1 : 0;
+    // Pending approval and unverified visibility do not prove a completed release.
+    return outcomes.some((item) =>
+      ["failed", "blocked", "staged", "unverified"].includes(item.status),
+    )
+      ? 1
+      : 0;
   }
   if (action !== "prepare") {
     console.log(usage);

@@ -246,7 +246,8 @@ async function publish(catalog: Catalog, out: string, vps: string, dryRun: boole
     process.platform !== "win32" && Bun.which("rsync")
       ? [
           // `--chmod`: a tree built on a Windows/DrvFs checkout reaches the host 0777 otherwise.
-          ["rsync", "-a", "--chmod=D755,F644", "--delete", `${out.replaceAll("\\", "/")}/`, `${vps}:${target}/`],
+          // `-H`: `s/` and `h/` are hardlinks of the same bytes; without it the release doubles.
+          ["rsync", "-aH", "--chmod=D755,F644", "--delete", `${out.replaceAll("\\", "/")}/`, `${vps}:${target}/`],
         ]
       : [
           ["tar", "-C", out, "-cf", "-", "."],

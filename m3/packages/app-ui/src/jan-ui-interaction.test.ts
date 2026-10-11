@@ -168,7 +168,7 @@ test("rendered hub reports transport failure instead of a successful empty store
   await mount(createElement(MemoryRouter, {}, createElement(ModelsHub)));
   expect(host.textContent).toContain("Catalogue : synthetic unavailable");
   expect(host.textContent).toContain("Stockage : synthetic unavailable");
-  expect(host.textContent).toContain("Réessayer");
+  expect(host.querySelector('button[aria-label="Réessayer"]')).not.toBeNull();
 });
 
 test("rendered update check does not report up-to-date when the release feed fails", async () => {

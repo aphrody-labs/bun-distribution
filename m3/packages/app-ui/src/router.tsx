@@ -8,6 +8,7 @@ import { JobsScreen } from "./components/JobManager";
 import { CodexChatRoute } from "./codex-chat";
 import { ModelsHub } from "./models-hub";
 import { StudioRoute } from "./routes/studio";
+import { TerminalRoute } from "./routes/terminal/TerminalRoute";
 import { AdminRoute } from "./routes/admin";
 import { CreatorRoute } from "./routes/creator";
 import { ExplorerView } from "./routes/explorer";
@@ -32,7 +33,8 @@ import {
 
 /**
  * Unified application routes for the Spacedrive M3 Shell:
- * - "/": the file explorer, the desktop's default surface (redirects to "/explorer")
+ * - "/": the public Aphrody product home
+ * - "/os": the shared desktop/browser file explorer surface
  * - "/explorer": Spacedrive VDFS Native File Explorer
  * - "/chat": Codex Chat (pixel-perfect Codex parity timeline + composer)
  * - "/models": Local Models Lifecycle & Hardware Telemetry
@@ -72,12 +74,20 @@ export const explorerRoutes = [
         element: <Navigate to={legacyRouteRedirects.codex} replace />,
       },
       {
+        path: "os",
+        element: <ExplorerView />,
+      },
+      {
         path: "explorer",
         element: <ExplorerView />,
       },
       {
         path: "models",
         element: <ModelsHub />,
+      },
+      {
+        path: "terminal",
+        element: <TerminalRoute />,
       },
       {
         path: "studio",

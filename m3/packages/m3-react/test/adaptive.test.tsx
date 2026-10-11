@@ -42,6 +42,10 @@ describe("classifyWidth — canonical M3 boundaries (600/840/1200/1600)", () => 
   });
 });
 
+function Probe() {
+  return React.createElement("span", { "data-testid": "size-class" }, useWindowSizeClass());
+}
+
 describe("useWindowSizeClass", () => {
   let root: Root | undefined;
   let host: HTMLElement | undefined;
@@ -53,16 +57,13 @@ describe("useWindowSizeClass", () => {
   });
 
   test("renders a window size class and reflects the current viewport", () => {
-    let observed: string | undefined;
-    function Probe() {
-      observed = useWindowSizeClass();
-      return React.createElement("span", null, observed);
-    }
     host = document.createElement("div");
     document.body.appendChild(host);
     root = createRoot(host);
     flushSync(() => root!.render(React.createElement(Probe)));
     // After mount the effect ran: the class is one of the five valid values.
-    expect(["compact", "medium", "expanded", "large", "extra-large"]).toContain(observed);
+    expect(["compact", "medium", "expanded", "large", "extra-large"]).toContain(
+      host.querySelector("span")?.textContent ?? "",
+    );
   });
 });

@@ -84,6 +84,7 @@ export async function driftRows(c: Ctx): Promise<DriftRow[]> {
   const rows: DriftRow[] = [];
   for (const s of manifest.sources) {
     if (s.kind === "crate") {
+      // oxlint-disable-next-line no-await-in-loop -- registry lookups are sequential: upstream registries rate-limit and the rows keep manifest order
       const latest = await registries
         .crate(s.crate!, s.version!.split(".")[0])
         .catch(() => undefined);
@@ -270,7 +271,8 @@ export async function bump(c: Ctx, only: string | undefined): Promise<number> {
   for (const s of targets) {
     const target =
       s.kind === "crate"
-        ? await registries.crate(s.crate!, s.version!.split(".")[0]).catch(() => undefined)
+        ? // oxlint-disable-next-line no-await-in-loop -- drift probes run one source at a time: each syncs a shared checkout and the registries rate-limit
+          await registries.crate(s.crate!, s.version!.split(".")[0]).catch(() => undefined)
         : refHead(s.url!, s.ref ?? "HEAD");
     const current = s.kind === "crate" ? s.version! : s.commit!;
     if (!target || target === current) {
@@ -285,6 +287,7 @@ export async function bump(c: Ctx, only: string | undefined): Promise<number> {
     };
     let verdict = "patches apply";
     try {
+      // oxlint-disable-next-line no-await-in-loop -- probe patches are applied to a single shared probe checkout, one source at a time
       await syncSource(c.root, probeRoot, probe);
     } catch (e) {
       verdict = `PATCH FAILS: ${(e as Error).message.split("\n")[0]}`;
@@ -311,7 +314,9 @@ export async function bump(c: Ctx, only: string | undefined): Promise<number> {
     if (existsSync(dir)) renameSync(dir, kept);
     try {
       const next = parseManifest(updated).sources.find((x) => x.id === s.id)!;
+      // oxlint-disable-next-line no-await-in-loop -- each source is applied to the same root checkout in turn; the next sync depends on the previous result
       await syncSource(c.root, root, next);
+      // oxlint-disable-next-line no-await-in-loop -- each source is applied to the same root checkout in turn; the next sync depends on the previous result
       const row = await inspect(root, next);
       if (row.state !== "ok") throw new Error(`state ${row.state}: ${row.detail}`);
       console.log(`done   ${s.id}; previous checkout kept at ${kept}`);
@@ -383,6 +388,7 @@ export async function runSources(c: Ctx, args: string[]): Promise<number> {
         }[];
       }>("tools/config/update/forks.json", { forks: [] });
       for (const f of cfg.forks) {
+        // oxlint-disable-next-line no-await-in-loop -- fork checks are sequential: GitHub API rate limits, and the report keeps fork order
         const i = await forkInfo(f.repo, f.parent);
         console.log(
           i.error
@@ -398,7 +404,8 @@ export async function runSources(c: Ctx, args: string[]): Promise<number> {
             const gap =
               live === recorded
                 ? undefined
-                : await ghJson(`/repos/${f.parent}/compare/${recorded}...${live}`).then(
+                : // oxlint-disable-next-line no-await-in-loop -- GitHub compare calls are sequential (API rate limits); the report keeps fork order
+                  await ghJson(`/repos/${f.parent}/compare/${recorded}...${live}`).then(
                     (x) => x.ahead_by as number,
                     () => undefined,
                   );

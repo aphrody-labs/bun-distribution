@@ -49,7 +49,7 @@ function distribution(skip: string[] = []): string {
 test("the Linux payload is the bundler list plus the en-US and the present French locale paks, nothing else", () => {
   const dir = distribution();
   const payload = cefPayload(LINUX, dir);
-  expect(Object.keys(payload).sort()).toEqual(
+  expect(Object.keys(payload).toSorted()).toEqual(
     [
       "chrome-sandbox",
       "chrome_100_percent.pak",
@@ -68,7 +68,7 @@ test("the Linux payload is the bundler list plus the en-US and the present Frenc
       "resources.pak",
       "v8_context_snapshot.bin",
       "vk_swiftshader_icd.json",
-    ].sort(),
+    ].toSorted(),
   );
   expect(payload["locales/fr.pak"]).toBe(join(dir, "locales", "fr.pak"));
   // The other French variants are optional: absent in the distribution, absent in the payload.

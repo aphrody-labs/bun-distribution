@@ -2,7 +2,7 @@
 import { GearSix, Plus } from "@phosphor-icons/react";
 import type { Space } from "@aphrody/drive-client";
 import { DropdownMenu } from "@aphrody/m3-primitives";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import { useCreateSpaceDialog } from "./CreateSpaceModal";
 import { AphrodyAvatar } from "@aphrody/identity";
 
@@ -13,7 +13,7 @@ interface SpaceSwitcherProps {
 }
 
 export function SpaceSwitcher({ spaces, currentSpace, onSwitch }: SpaceSwitcherProps) {
-  const createSpaceDialog = useCreateSpaceDialog;
+  const openCreateSpaceDialog = useCreateSpaceDialog();
   const spaceName = currentSpace?.name || "Aphrody";
 
   return (
@@ -63,7 +63,7 @@ export function SpaceSwitcher({ spaces, currentSpace, onSwitch }: SpaceSwitcherP
           <DropdownMenu.Separator className="border-outline-variant/40 my-1" />
         )}
         <DropdownMenu.Item
-          onClick={() => createSpaceDialog()}
+          onClick={() => openCreateSpaceDialog()}
           className="hover:bg-secondary-container/40 text-on-surface rounded-small px-3 py-2 text-label-large font-medium cursor-pointer flex items-center"
         >
           <Plus className="mr-2 size-5" weight="bold" />

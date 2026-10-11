@@ -37,6 +37,7 @@ export default function System({ adaptive }: PageProps) {
   const query = "seed=" + encodeURIComponent(seedColor) + "&target=" + encodeURIComponent(target);
   useEffect(() => {
     const controller = new AbortController();
+    // oxlint-disable-next-line react/set-state-in-effect -- réinitialise le message de chargement à chaque changement de requête (graine ou cible)
     setNotice("Computing local system outputs…");
     void fetch("/api/system?" + query, { signal: controller.signal })
       .then(async (response) => {
@@ -64,6 +65,7 @@ export default function System({ adaptive }: PageProps) {
   const selected = data?.themeFiles.find((file) => file.path === path);
   useEffect(() => {
     if (!path || selected?.binary) {
+      // oxlint-disable-next-line react/set-state-in-effect -- vide l'aperçu quand aucun fichier texte n'est sélectionné (réaction au changement de sélection)
       setContent("");
       return;
     }
@@ -144,9 +146,7 @@ export default function System({ adaptive }: PageProps) {
         ) : undefined
       }
     >
-      <p role="status" className="text-body-medium text-on-surface-variant">
-        {notice}
-      </p>
+      <output className="block text-body-medium text-on-surface-variant">{notice}</output>
       <Section
         title="OS theme artifacts"
         description="Inspect generated files before applying them through their native installer."

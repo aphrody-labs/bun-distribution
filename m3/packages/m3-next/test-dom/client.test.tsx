@@ -25,7 +25,9 @@ let theme: M3ThemeContextType;
 let toggle: ReturnType<typeof useM3ThemeToggle>;
 
 function Probe() {
+  // oxlint-disable-next-line react/globals -- test probe: publishes the live hook values to the test-scoped variables the assertions read
   theme = useM3Theme();
+  // oxlint-disable-next-line react/globals -- same test probe capture as the theme line above
   toggle = useM3ThemeToggle();
   return (
     <span id="probe">

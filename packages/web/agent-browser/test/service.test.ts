@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import {
   DEFAULT_WEB_CONFIG,
   engineBinaryCandidates,
@@ -61,7 +61,7 @@ describe("tools/config/web.json", () => {
   test("binary candidates put the explicit override first and expand ~ and relative paths", () => {
     const config = loadWebConfig({ root, env: {} });
     const candidates = engineBinaryCandidates(config, { APHRODY_WEB_BIN: "/opt/aphrody-web" });
-    expect(candidates[0]).toBe("/opt/aphrody-web");
+    expect(candidates[0]).toBe(resolve("/opt/aphrody-web"));
     expect(candidates).toContain(join(root, "target/debug/aphrody-web"));
     expect(
       candidates.some((path) => path === join(expandHome("~"), ".local/bin/aphrody-web")),
@@ -190,6 +190,7 @@ setInterval(() => {}, 1000);
     );
   try {
     const started = Date.now();
+    // oxlint-disable-next-line no-await-in-loop -- attente active bornée (2 s) du fichier de readiness créé par le processus fils
     while (!(await Bun.file(ready).exists()) && Date.now() - started < 2000) await Bun.sleep(5);
     expect(await Bun.file(ready).exists()).toBe(true);
     abort.abort();

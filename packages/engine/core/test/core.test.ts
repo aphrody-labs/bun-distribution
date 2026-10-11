@@ -7,7 +7,6 @@ import {
   vendor,
   runtime,
   verify,
-  mcp,
   fleet,
   scaffold,
   curation,

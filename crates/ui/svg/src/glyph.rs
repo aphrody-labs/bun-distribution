@@ -208,6 +208,81 @@ pub fn draw(
         .map_err(|e| Error::Font(e.to_string()))
 }
 
+/// The glyph a text shaper substitutes for the whole of `text` through the font's `GSUB`
+/// ligatures (`rlig` or `liga`, `LookupType` 4, also behind a `LookupType` 7 extension), as
+/// icon fonts name their glyphs: `home` -> the `home` icon. `None` when a character has no
+/// `cmap` entry or no ligature covers the full sequence. Only ligature substitution is
+/// applied (no reordering, no contextual lookups).
+#[must_use]
+pub fn ligature_glyph(font: &FontRef<'_>, text: &str) -> Option<GlyphId> {
+    use skrifa::raw::{
+        TableProvider,
+        tables::gsub::{ExtensionSubtable, LigatureSubstFormat1, SubstitutionLookup},
+        types::Tag,
+    };
+
+    let charmap = font.charmap();
+    let mut chars = text.chars();
+    let first = charmap.map(chars.next()?)?;
+    let rest: Vec<GlyphId> = chars.map(|c| charmap.map(c)).collect::<Option<_>>()?;
+
+    let gsub = font.gsub().ok()?;
+    let scripts = gsub.script_list().ok()?;
+    let features = gsub.feature_list().ok()?;
+    let lookups = gsub.lookup_list().ok()?;
+    let records = scripts.script_records();
+    let record = records
+        .iter()
+        .find(|r| r.script_tag() == Tag::new(b"DFLT"))
+        .or_else(|| records.iter().find(|r| r.script_tag() == Tag::new(b"latn")))
+        .or_else(|| records.first())?;
+    let lang_sys = record.script(scripts.offset_data()).ok()?.default_lang_sys()?.ok()?;
+
+    // Material Symbols carries its name ligatures under `rlig` and has no `liga` at all.
+    let tags = [Tag::new(b"rlig"), Tag::new(b"liga")];
+    let subtables = |index: u16| -> Vec<LigatureSubstFormat1<'_>> {
+        match lookups.lookups().get(usize::from(index)) {
+            Ok(SubstitutionLookup::Ligature(lookup)) => lookup.subtables().iter().flatten().collect(),
+            Ok(SubstitutionLookup::Extension(lookup)) => lookup
+                .subtables()
+                .iter()
+                .flatten()
+                .filter_map(|ext| match ext {
+                    ExtensionSubtable::Ligature(lig) => lig.extension().ok(),
+                    _ => None,
+                })
+                .collect(),
+            _ => Vec::new(),
+        }
+    };
+
+    for index in lang_sys.feature_indices() {
+        let Some(record) = features.feature_records().get(usize::from(index.get())) else {
+            continue;
+        };
+        if !tags.contains(&record.feature_tag()) {
+            continue;
+        }
+        let Ok(feature) = record.feature(features.offset_data()) else { continue };
+        for lookup in feature.lookup_list_indices() {
+            for subtable in subtables(lookup.get()) {
+                let Ok(coverage) = subtable.coverage() else { continue };
+                let Some(at) = coverage.get(first) else { continue };
+                let Ok(set) = subtable.ligature_sets().get(usize::from(at)) else { continue };
+                for ligature in set.ligatures().iter().flatten() {
+                    let components = ligature.component_glyph_ids();
+                    if components.len() == rest.len()
+                        && components.iter().zip(&rest).all(|(a, b)| GlyphId::from(a.get()) == *b)
+                    {
+                        return Some(GlyphId::from(ligature.ligature_glyph()));
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
 /// Extracts one glyph as SVG path data plus metrics. `Ok(None)` when a `Char` is not mapped.
 ///
 /// # Errors

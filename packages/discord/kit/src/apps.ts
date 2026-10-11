@@ -25,7 +25,10 @@ export async function compileDiscordApp(options: DiscordAppBuild): Promise<strin
   });
   if (!result.success)
     throw new AggregateError(result.logs, "Discord application compilation failed");
-  return outfile;
+  const executable = result.outputs.find((output) => output.kind === "entry-point");
+  if (!executable || !(await Bun.file(executable.path).exists()))
+    throw new Error("Discord application compilation produced no executable");
+  return resolve(executable.path);
 }
 
 export interface DiscordAppStart {
@@ -40,7 +43,8 @@ export interface DiscordAppStart {
 }
 
 /**
- * Use Yolo's native process-group supervision, status, output, graceful stop and release.
+ * Use the native owner's process-group supervision, status, output and release.
+ * Stop is graceful on Unix; Windows terminates the owned Job Object and its descendants.
  * The caller owns the returned handle (`using` or `release()`), including on startup failure.
  */
 export async function startDiscordApp(options: DiscordAppStart): Promise<ManagedProcess> {

@@ -44,19 +44,22 @@ function SummaryError({ retry }: { retry: () => void }) {
       <p role="alert" className="text-body-large">
         Redundancy data is unavailable.
       </p>
-      <Button variant="text" size="lg" className="text-on-error-container" onClick={retry}>
-        Retry
+      <Button
+        aria-label="Retry"
+        title="Retry"
+        variant="text"
+        size="lg"
+        className="text-on-error-container"
+        onClick={retry}
+      >
+        <Icon name="refresh" size={18} />
       </Button>
     </div>
   );
 }
 
 function SummaryLoading() {
-  return (
-    <p role="status" className="p-4 text-body-large text-on-surface-variant">
-      Loading…
-    </p>
-  );
+  return <output className="block p-4 text-body-large text-on-surface-variant">Loading…</output>;
 }
 
 function VolumeCard({ volume }: { volume: VolumeRedundancySummary }) {
@@ -78,6 +81,7 @@ function VolumeCard({ volume }: { volume: VolumeRedundancySummary }) {
         {volume.display_name || "Unnamed volume"}
       </h3>
       <div
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- <img> exige un src ; la barre est composée de divs CSS colorés
         role="img"
         aria-label={`${number.format(Math.round(redundantPercent))}% replicated, ${number.format(Math.round(atRiskPercent))}% at risk`}
         className="mt-3 flex h-3 overflow-hidden rounded-full bg-surface-container-highest"
@@ -384,7 +388,7 @@ export function CompareVolumes() {
                   </label>
                 </div>
                 {ready && (
-                  <div role="group" aria-label="Comparison" className="flex flex-wrap gap-2">
+                  <fieldset aria-label="Comparison" className="flex min-w-0 flex-wrap gap-2">
                     {(["unique_a", "shared", "unique_b"] as const).map((option) => (
                       <button
                         key={option}
@@ -407,7 +411,7 @@ export function CompareVolumes() {
                             : `On ${nameB}, not ${nameA}`}
                       </button>
                     ))}
-                  </div>
+                  </fieldset>
                 )}
               </div>
               <div className="min-h-0 flex-1">

@@ -5,11 +5,17 @@
 //! contract while the specialized crates retain their domain code.
 
 pub use aphrody_antigravity as antigravity;
+#[cfg(not(target_arch = "wasm32"))]
 pub use aphrody_gemini_runtime as gemini_runtime;
 pub use aphrody_gemini_web as gemini_web;
+#[cfg(not(target_arch = "wasm32"))]
 pub use aphrody_model_client as model_client;
 pub mod atlas;
+#[cfg(not(target_arch = "wasm32"))]
 mod cli;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod routes;
+#[cfg(not(target_arch = "wasm32"))]
 pub use cli::cli_main;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod detection;
@@ -30,7 +36,9 @@ pub fn authenticated_client() -> Result<antigravity::AntigravityClient, antigrav
 }
 
 /// Create an authenticated client from a completed OAuth PKCE login and persist
-/// the credentials using the platform's protected credential store.
+/// the credentials using the platform's protected credential store (host-only: the loopback
+/// redirect listener and the credential store do not exist in a browser).
+#[cfg(not(target_arch = "wasm32"))]
 pub async fn login() -> Result<(), antigravity::SdkError> {
     let token = antigravity::login().await?;
     antigravity::persist(&token)

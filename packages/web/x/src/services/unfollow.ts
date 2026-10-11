@@ -239,6 +239,7 @@ async function collectUsers(
       break;
     }
 
+    // oxlint-disable-next-line no-await-in-loop -- pagination : chaque page dépend du curseur renvoyé par la précédente, et readWithBackoff applique un rate-limit séquentiel
     const page = await readWithBackoff(() => fetchPage(cursor), readDeps);
     pages++;
 

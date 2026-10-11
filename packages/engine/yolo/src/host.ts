@@ -645,20 +645,24 @@ export async function executePlan(plan: Plan, ctx: RunContext): Promise<number> 
     const elapsed = (): number => Math.round((Bun.nanoseconds() - started) / 1e6);
     if (step.group !== undefined && aborted.has(step.group)) {
       ctx.out(`  skip  ${step.title} (an earlier step of this group failed)`);
+      // oxlint-disable-next-line no-await-in-loop -- plan steps run in order: each depends on the host and state left by the previous step, and a failure or refusal gates the rest
       await journal(step, "skipped", null, 0, null, null, "an earlier step of the group failed");
       continue;
     }
     if (step.blocked !== undefined) {
       ctx.out(`  skip  ${step.title}: ${step.blocked}`);
+      // oxlint-disable-next-line no-await-in-loop -- plan steps run in order: each depends on the host and state left by the previous step, and a failure or refusal gates the rest
       await journal(step, "skipped", null, 0, null, null, step.blocked);
       continue;
     }
     try {
       if (step.kind === "exec" || step.kind === "local-exec") assertSafeCommand(step.cmd);
       if (step.gate !== undefined) {
+        // oxlint-disable-next-line no-await-in-loop -- plan steps run in order: each depends on the host and state left by the previous step, and a failure or refusal gates the rest
         const why = await step.gate(ctx, state);
         if (why !== null) {
           ctx.out(red(`  refuse ${step.title}: ${why}`));
+          // oxlint-disable-next-line no-await-in-loop -- plan steps run in order: each depends on the host and state left by the previous step, and a failure or refusal gates the rest
           await journal(step, "refused", null, elapsed(), null, null, why);
           if (step.group !== undefined) aborted.add(step.group);
           refused = true;
@@ -668,6 +672,7 @@ export async function executePlan(plan: Plan, ctx: RunContext): Promise<number> 
     } catch (e) {
       const why = (e as Error).message;
       ctx.out(red(`  refuse ${step.title}: ${why}`));
+      // oxlint-disable-next-line no-await-in-loop -- plan steps run in order: each depends on the host and state left by the previous step, and a failure or refusal gates the rest
       await journal(step, "refused", null, elapsed(), null, null, why);
       if (step.group !== undefined) aborted.add(step.group);
       refused = true;
@@ -677,11 +682,13 @@ export async function executePlan(plan: Plan, ctx: RunContext): Promise<number> 
     let before: Metrics | null = null;
     if (step.mutates && step.metricPaths !== undefined)
       before = parseMetrics(
+        // oxlint-disable-next-line no-await-in-loop -- plan steps run in order: each depends on the host and state left by the previous step, and a failure or refusal gates the rest
         (await ctx.transport.exec(metricsCommand(step.metricPaths), 60)).stdout,
       );
 
     let result: StepResult;
     try {
+      // oxlint-disable-next-line no-await-in-loop -- plan steps run in order: each depends on the host and state left by the previous step, and a failure or refusal gates the rest
       result = await runStep(step, ctx, state);
     } catch (e) {
       result = { ok: false, code: 1, output: "", note: (e as Error).message };
@@ -690,10 +697,12 @@ export async function executePlan(plan: Plan, ctx: RunContext): Promise<number> 
 
     let after: Metrics | null = null;
     if (step.mutates && step.metricPaths !== undefined && result.ok)
+      // oxlint-disable-next-line no-await-in-loop -- plan steps run in order: each depends on the host and state left by the previous step, and a failure or refusal gates the rest
       after = parseMetrics((await ctx.transport.exec(metricsCommand(step.metricPaths), 60)).stdout);
 
     const note =
       (result.note ?? result.output.trim().split("\n").slice(-3).join(" | ")).slice(0, 400) || null;
+    // oxlint-disable-next-line no-await-in-loop -- plan steps run in order: each depends on the host and state left by the previous step, and a failure or refusal gates the rest
     await journal(step, result.ok ? "ok" : "failed", result.code, elapsed(), before, after, note);
     if (result.ok) {
       const freed =
@@ -1817,6 +1826,7 @@ export async function runNet(
     const ep = await sshEndpoint(host);
     const ms: number[] = [];
     for (let i = 0; i < 5; i++)
+      // oxlint-disable-next-line no-await-in-loop -- latency samples are taken one after another: concurrent probes would contend and skew each other's timing
       ms.push(await tcpConnectMs(ep.hostname, ep.port).catch(() => Number.NaN));
     const good = ms.filter(Number.isFinite);
     result["tcpConnectMs"] = {
@@ -1836,6 +1846,7 @@ export async function runNet(
     const rtt: number[] = [];
     for (let i = 0; i < 3; i++) {
       const t0 = Bun.nanoseconds();
+      // oxlint-disable-next-line no-await-in-loop -- latency samples are taken one after another: concurrent probes would contend and skew each other's timing
       await t.exec("true", 30);
       rtt.push((Bun.nanoseconds() - t0) / 1e6);
     }

@@ -2,7 +2,7 @@
 // Pixel-Perfect Codex Chat View (parité exacte codex-desktop-chat-main.png & docs/UI-DESIGN.md §4.1).
 // Zero debug telemetry noise, zero AI slop, pure high-precision coding assistant.
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { listen } from "@aphrody/api/event";
 import { clsx } from "clsx";
@@ -224,6 +224,7 @@ export function ThreadDrawer({
         aria-hidden="true"
       />
       <aside
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- panneau latéral modal stylé par classes : l'élément dialog natif changerait le rendu par défaut
         role="dialog"
         aria-label="Historique des sessions"
         className="fixed inset-y-0 right-0 z-50 w-full sm:w-96 bg-surface-container-high border-l border-outline-variant/40 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200"
@@ -290,10 +291,14 @@ export function ThreadDrawer({
                     key={t.id}
                     className="rounded-2xl bg-surface-container-highest p-3 border border-primary/50 shadow-sm flex flex-col gap-2"
                   >
-                    <label className="text-label-small font-medium text-on-surface-variant">
+                    <label
+                      htmlFor={`thread-rename-${t.id}`}
+                      className="text-label-small font-medium text-on-surface-variant"
+                    >
                       Renommer la session
                     </label>
                     <input
+                      id={`thread-rename-${t.id}`}
                       type="text"
                       className="w-full rounded-xl bg-surface-container px-3 py-1.5 text-body-medium text-on-surface border border-outline focus:outline-none focus:border-primary"
                       value={editingName}
@@ -306,11 +311,23 @@ export function ThreadDrawer({
                       placeholder="Nom de la session..."
                     />
                     <div className="flex justify-end gap-2 pt-1">
-                      <Button variant="text" size="sm" onClick={() => setEditingThreadId(null)}>
-                        Annuler
+                      <Button
+                        aria-label="Annuler"
+                        title="Annuler"
+                        variant="text"
+                        size="sm"
+                        onClick={() => setEditingThreadId(null)}
+                      >
+                        <Icon name="close" size={18} />
                       </Button>
-                      <Button variant="filled" size="sm" onClick={() => handleSaveRename(t.id)}>
-                        Enregistrer
+                      <Button
+                        aria-label="Enregistrer"
+                        title="Enregistrer"
+                        variant="filled"
+                        size="sm"
+                        onClick={() => handleSaveRename(t.id)}
+                      >
+                        <Icon name="save" size={18} />
                       </Button>
                     </div>
                   </div>
@@ -326,8 +343,9 @@ export function ThreadDrawer({
                       : "bg-surface-container border-outline-variant/30 hover:bg-surface-container-highest text-on-surface"
                   }`}
                 >
-                  <div
-                    className="cursor-pointer"
+                  <button
+                    type="button"
+                    className="block w-full cursor-pointer text-left"
                     onClick={() => {
                       onSelectThread?.(t.id);
                       onClose();
@@ -350,11 +368,11 @@ export function ThreadDrawer({
                       <span>{formattedDate}</span>
                       {t.cwd && (
                         <span className="truncate max-w-36" title={t.cwd}>
-                          · {t.cwd.replace(/\\/g, "/").split("/").filter(Boolean).pop()}
+                          · {t.cwd.replace(/\\/g, "/").split("/").findLast(Boolean)}
                         </span>
                       )}
                     </div>
-                  </div>
+                  </button>
 
                   <div className="mt-2 pt-2 border-t border-outline-variant/20 flex items-center justify-end gap-1">
                     {onRenameThread && (
@@ -440,6 +458,7 @@ export function DiffViewer({ diff, filename }: { diff: string; filename?: string
             bgClass = "bg-cyan-500/10";
           }
           return (
+            // oxlint-disable-next-line react/no-array-index-key -- lignes de sortie append-only sans identité stable ni unicité garantie du contenu
             <div key={idx} className={`px-2 py-0.5 whitespace-pre ${bgClass} ${lineClass}`}>
               {line}
             </div>
@@ -646,6 +665,9 @@ export interface CodexChatProps {
   onCompactThread?: (threadId: string) => void | Promise<void>;
 }
 
+// Référence stable : valeur par défaut des pièces jointes (évite un tableau neuf à chaque rendu).
+const NO_ATTACHMENTS: string[] = [];
+
 export function CodexChat({
   turns,
   busy,
@@ -653,7 +675,7 @@ export function CodexChat({
   settingsLocked = false,
   draft,
   onDraftChange,
-  attachedFiles = [],
+  attachedFiles = NO_ATTACHMENTS,
   onAddAttachment,
   onRemoveAttachment,
   onSend,
@@ -694,6 +716,7 @@ export function CodexChat({
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- turns et busy sont des déclencheurs volontaires : l'effet défile en bas à chaque nouveau message ou changement d'état d'exécution, sans les lire
   }, [turns, busy]);
 
   const handleCommitTitleRename = () => {
@@ -849,9 +872,9 @@ export function CodexChat({
         }
       };
 
-      recognition.onerror = () => {
+      recognition.addEventListener("error", () => {
         setIsListening(false);
-      };
+      });
 
       recognition.onend = () => {
         setIsListening(false);
@@ -1012,12 +1035,12 @@ export function CodexChat({
                     </div>
                     {turn.attachments && turn.attachments.length > 0 && (
                       <div className="flex flex-wrap gap-2 justify-end mt-2 max-w-[75%]">
-                        {turn.attachments.map((filePath, idx) => {
+                        {turn.attachments.map((filePath) => {
                           const filename =
                             filePath.replace(/\\/g, "/").split("/").pop() || filePath;
                           return (
                             <div
-                              key={idx}
+                              key={filePath}
                               className="app-chip flex items-center gap-1.5 px-3 py-1 bg-surface-container text-label-large text-on-surface"
                             >
                               <span className="material-symbol text-title-small text-primary">
@@ -1167,11 +1190,11 @@ export function CodexChat({
             {/* Attached files chips under textarea */}
             {attachedFiles && attachedFiles.length > 0 && (
               <div className="flex flex-wrap items-center gap-2 mb-2 pt-1 border-t border-outline-variant/15">
-                {attachedFiles.map((filePath, idx) => {
+                {attachedFiles.map((filePath) => {
                   const filename = filePath.replace(/\\/g, "/").split("/").pop() || filePath;
                   return (
                     <div
-                      key={idx}
+                      key={filePath}
                       className="app-chip flex items-center gap-2 px-3 py-1 bg-surface-container text-label-large text-on-surface"
                     >
                       <span className="material-symbol text-title-small text-primary">
@@ -1581,6 +1604,43 @@ async function copyChatText(text: string, success: string): Promise<void> {
   else toast.error("Copie impossible : le presse-papiers est indisponible.");
 }
 
+type RouteIntent = {
+  prompt?: string;
+  cwd?: string;
+  contextFiles?: string[];
+};
+
+/** Intention entrante (state de navigation ou query string) : prompt initial, dossier et fichiers de contexte. */
+function readRouteIntent(location: { search: string; state: unknown }): RouteIntent {
+  const state = location.state as {
+    initialPrompt?: string;
+    prompt?: string;
+    cwd?: string;
+    contextFiles?: string[];
+  } | null;
+
+  const searchParams = new URLSearchParams(location.search);
+  const queryPrompt = searchParams.get("prompt") || searchParams.get("q");
+  const queryFile = searchParams.get("file");
+
+  const incomingPrompt =
+    state?.initialPrompt ||
+    state?.prompt ||
+    queryPrompt ||
+    (queryFile ? `À propos du fichier ${queryFile} :\n` : undefined);
+
+  return { prompt: incomingPrompt, cwd: state?.cwd, contextFiles: state?.contextFiles };
+}
+
+/** Ref mise à jour après chaque rendu (layout effect) : effets et callbacks lisent la dernière valeur sans dépendance. */
+function useLatestRef<T>(value: T) {
+  const ref = useRef(value);
+  useLayoutEffect(() => {
+    ref.current = value;
+  });
+  return ref;
+}
+
 export function CodexChatRoute() {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [busy, setBusy] = useState(false);
@@ -1623,35 +1683,28 @@ export function CodexChatRoute() {
   const navigate = useNavigate();
 
   // Handle incoming routing query or state
+  // Brouillon et pièces jointes dérivés de la navigation entrante, appliqués pendant le rendu (ajustement d'état).
+  const [consumedLocation, setConsumedLocation] = useState<typeof location | null>(null);
+  if (location !== consumedLocation) {
+    setConsumedLocation(location);
+    const intent = readRouteIntent(location);
+    if (intent.prompt) {
+      setDraft(intent.prompt);
+    }
+    if (intent.contextFiles && intent.contextFiles.length > 0) {
+      const contextFiles = intent.contextFiles;
+      setAttachedFiles((prev) => Array.from(new Set([...prev, ...contextFiles])));
+    }
+  }
+
+  // Effets de bord de la navigation entrante : dossier du store puis remplacement de l'entrée d'historique.
   useEffect(() => {
-    const state = location.state as {
-      initialPrompt?: string;
-      prompt?: string;
-      cwd?: string;
-      contextFiles?: string[];
-    } | null;
-
-    const searchParams = new URLSearchParams(location.search);
-    const queryPrompt = searchParams.get("prompt") || searchParams.get("q");
-    const queryFile = searchParams.get("file");
-
-    const incomingPrompt =
-      state?.initialPrompt ||
-      state?.prompt ||
-      queryPrompt ||
-      (queryFile ? `À propos du fichier ${queryFile} :\n` : undefined);
-
-    if (incomingPrompt) {
-      setDraft(incomingPrompt);
-    }
-    if (state?.contextFiles && state.contextFiles.length > 0) {
-      setAttachedFiles((prev) => Array.from(new Set([...prev, ...state.contextFiles!])));
-    }
-    if (state?.cwd) {
-      setCwd(state.cwd);
+    const intent = readRouteIntent(location);
+    if (intent.cwd) {
+      setCwd(intent.cwd);
     }
 
-    if (incomingPrompt || state?.cwd || state?.contextFiles) {
+    if (intent.prompt || intent.cwd || intent.contextFiles) {
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location, navigate, setCwd]);
@@ -1789,6 +1842,9 @@ export function CodexChatRoute() {
     }
   };
 
+  // Latest-value ref : l'effet de sélection appelle toujours le switchThread du dernier rendu.
+  const switchThreadRef = useLatestRef(switchThread);
+
   // Sidebar selections use the same owner-backed history load as route actions.
   useEffect(() => {
     if (!ready || !activeThreadId || activeThreadId === threadIdRef.current) return;
@@ -1797,8 +1853,8 @@ export function CodexChatRoute() {
       toast.info("Arrêtez l’exécution avant de changer de chat.");
       return;
     }
-    void switchThread(activeThreadId).catch(() => {});
-  }, [activeThreadId, ready, busy]);
+    void switchThreadRef.current(activeThreadId).catch(() => {});
+  }, [activeThreadId, ready, busy, setActiveThreadId, switchThreadRef]);
 
   // React to new session request from SpacesSidebar
   useEffect(() => {
@@ -1812,6 +1868,7 @@ export function CodexChatRoute() {
         return;
       }
       threadLoadEpoch.current++;
+      // oxlint-disable-next-line react/set-state-in-effect -- la demande vient du store partagé (SpacesSidebar) : la remise à zéro du chargement doit suivre la consommation de cette demande dans cet effet
       setLoadingThread(false);
       setTurns([]);
       setDraft("");
@@ -1819,13 +1876,29 @@ export function CodexChatRoute() {
       setTurnId(undefined);
       threadIdRef.current = null;
     }
-  }, [newSessionRequested, clearNewSessionRequest]);
+  }, [
+    newSessionRequested,
+    clearNewSessionRequest,
+    busy,
+    threads,
+    setActiveThreadId,
+    setSessionTitle,
+  ]);
 
   // Backend initialization and catalog must succeed before a message can be sent.
+  // Ne se rejoue qu'au montage et au bouton « Réessayer » : les valeurs de départ sont figées à l'ouverture de l'effet.
+  const initSnapshot = useLatestRef({
+    model,
+    cwd,
+    activeThreadId,
+    setModel,
+    setCwd,
+    loadThreads,
+    switchThread,
+  });
   useEffect(() => {
+    const snap = initSnapshot.current;
     let active = true;
-    setReady(false);
-    setConnectionError(undefined);
     void (async () => {
       try {
         await ensureAphrodyInitialized();
@@ -1840,18 +1913,18 @@ export function CodexChatRoute() {
         if (!active) return;
         setModelOptions(options);
         const selected =
-          data.find((entry) => entry.id === model) ??
+          data.find((entry) => entry.id === snap.model) ??
           data.find((entry) => entry.default) ??
           data[0];
-        setModel(selected?.id ?? "");
+        snap.setModel(selected?.id ?? "");
         try {
           const res = await tauriInvoke<{ cwd?: string }>("aphrody_system_cwd");
-          if (active && res?.cwd && !cwd) setCwd(res.cwd);
+          if (active && res?.cwd && !snap.cwd) snap.setCwd(res.cwd);
         } catch {
           /* A browser host can use the backend's configured directory. */
         }
-        await loadThreads();
-        if (active && activeThreadId) await switchThread(activeThreadId);
+        await snap.loadThreads();
+        if (active && snap.activeThreadId) await snap.switchThread(snap.activeThreadId);
         if (active) setReady(true);
       } catch (error) {
         if (active) setConnectionError(chatErrorMessage(error));
@@ -1860,7 +1933,54 @@ export function CodexChatRoute() {
     return () => {
       active = false;
     };
-  }, [connectionAttempt]);
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- connectionAttempt est le seul déclencheur voulu (montage et bouton « Réessayer ») ; les autres valeurs sont lues via initSnapshot
+  }, [connectionAttempt, initSnapshot]);
+
+  const handleApprovalDecision = async (
+    approval: ApprovalItem,
+    decision: "accept" | "acceptForSession" | "decline" | "cancel",
+  ) => {
+    const newStatus =
+      decision === "accept" ? "approved" : decision === "acceptForSession" ? "session" : "denied";
+
+    const replyKey = `${approval.backendGeneration ?? ""}:${approval.id}`;
+    if (approvalReplies.current.has(replyKey) || confirmedApprovalReplies.current.has(replyKey))
+      return;
+    approvalReplies.current.add(replyKey);
+    const updateApproval = (patch: Partial<ApprovalItem>) =>
+      setTurns((items) =>
+        items.map((item) =>
+          item.role === "approval" &&
+          item.approval.id === approval.id &&
+          item.approval.backendGeneration === approval.backendGeneration
+            ? { ...item, approval: { ...item.approval, ...patch } }
+            : item,
+        ),
+      );
+    updateApproval({ submitting: true });
+
+    try {
+      await aphrodyReply({
+        id: approval.id,
+        result: { decision },
+        backendGeneration: approval.backendGeneration,
+      });
+      confirmedApprovalReplies.current.add(replyKey);
+      updateApproval({ status: newStatus, submitting: false });
+      toast.success(
+        decision === "accept"
+          ? "Action autorisée"
+          : decision === "acceptForSession"
+            ? "Action autorisée pour ce projet"
+            : "Action refusée",
+      );
+    } catch (e) {
+      updateApproval({ submitting: false });
+      toast.error(`Décision non envoyée : ${chatErrorMessage(e)}`);
+    } finally {
+      approvalReplies.current.delete(replyKey);
+    }
+  };
 
   const handleNotification = (payload: unknown) => {
     const notification = payload as {
@@ -2154,8 +2274,7 @@ export function CodexChatRoute() {
     }
   };
 
-  const notificationHandler = useRef(handleNotification);
-  notificationHandler.current = handleNotification;
+  const notificationHandler = useLatestRef(handleNotification);
 
   // The native broker already broadcasts each event. Use its event bus once;
   // browser hosts use the scoped SSE stream instead of a second native channel.
@@ -2185,7 +2304,8 @@ export function CodexChatRoute() {
       active = false;
       unsub?.();
     };
-  }, [activeThreadId, connectionAttempt]);
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- connectionAttempt déclenche la reconnexion du flux (bouton « Réessayer ») sans être lu dans l'effet
+  }, [activeThreadId, connectionAttempt, notificationHandler]);
 
   // General notification listener (fallback for process-wide and thread events)
   useEffect(() => {
@@ -2214,53 +2334,7 @@ export function CodexChatRoute() {
       cancelled = true;
       unlisten?.();
     };
-  }, []);
-
-  const handleApprovalDecision = async (
-    approval: ApprovalItem,
-    decision: "accept" | "acceptForSession" | "decline" | "cancel",
-  ) => {
-    const newStatus =
-      decision === "accept" ? "approved" : decision === "acceptForSession" ? "session" : "denied";
-
-    const replyKey = `${approval.backendGeneration ?? ""}:${approval.id}`;
-    if (approvalReplies.current.has(replyKey) || confirmedApprovalReplies.current.has(replyKey))
-      return;
-    approvalReplies.current.add(replyKey);
-    const updateApproval = (patch: Partial<ApprovalItem>) =>
-      setTurns((items) =>
-        items.map((item) =>
-          item.role === "approval" &&
-          item.approval.id === approval.id &&
-          item.approval.backendGeneration === approval.backendGeneration
-            ? { ...item, approval: { ...item.approval, ...patch } }
-            : item,
-        ),
-      );
-    updateApproval({ submitting: true });
-
-    try {
-      await aphrodyReply({
-        id: approval.id,
-        result: { decision },
-        backendGeneration: approval.backendGeneration,
-      });
-      confirmedApprovalReplies.current.add(replyKey);
-      updateApproval({ status: newStatus, submitting: false });
-      toast.success(
-        decision === "accept"
-          ? "Action autorisée"
-          : decision === "acceptForSession"
-            ? "Action autorisée pour ce projet"
-            : "Action refusée",
-      );
-    } catch (e) {
-      updateApproval({ submitting: false });
-      toast.error(`Décision non envoyée : ${chatErrorMessage(e)}`);
-    } finally {
-      approvalReplies.current.delete(replyKey);
-    }
-  };
+  }, [notificationHandler]);
 
   const handleSend = async () => {
     const text = draft.trim();
@@ -2462,15 +2536,22 @@ export function CodexChatRoute() {
           className="flex items-center justify-between gap-3 px-4 py-3 bg-error-container text-on-error-container"
         >
           <span>Connexion au service indisponible.</span>
-          <Button variant="text" onClick={() => setConnectionAttempt((attempt) => attempt + 1)}>
-            Réessayer
+          <Button
+            aria-label="Réessayer"
+            title="Réessayer"
+            variant="text"
+            onClick={() => {
+              setConnectionError(undefined);
+              setReady(false);
+              setConnectionAttempt((attempt) => attempt + 1);
+            }}
+          >
+            <Icon name="refresh" size={18} />
           </Button>
         </div>
       )}
       {loadingThread && (
-        <div role="status" className="px-4 py-2 text-on-surface-variant">
-          Chargement du chat…
-        </div>
+        <output className="block px-4 py-2 text-on-surface-variant">Chargement du chat…</output>
       )}
       <CodexChat
         turns={turns}

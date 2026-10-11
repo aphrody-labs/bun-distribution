@@ -142,14 +142,14 @@ export function unitFacts(entry: HostUnit, text: string): UnitFacts {
   const d = serviceDirectives(text);
   const execStart = d.get("ExecStart")?.[0];
   if (!execStart) throw new Error(`${entry.unit}: no ExecStart`);
-  const address = /--bind\s+(\S+)/.exec(execStart)?.[1];
+  const address = /(?:--bind|--addr)\s+(\S+)/.exec(execStart)?.[1];
   let bind: UnitFacts["bind"];
   if (address) {
     const at = address.lastIndexOf(":");
     bind = { host: address.slice(0, at), port: Number(address.slice(at + 1)) };
     // Never a public listener: the plan refuses a unit that would bind anything but loopback.
     if (!LOOPBACK.test(bind.host) || !Number.isInteger(bind.port)) {
-      throw new Error(`${entry.unit}: --bind ${address} is not a loopback address`);
+      throw new Error(`${entry.unit}: bind address ${address} is not a loopback address`);
     }
   }
   const paths = [...(d.get("ReadWritePaths") ?? []), ...(d.get("BindPaths") ?? [])]
@@ -177,6 +177,7 @@ interface ServiceEntry {
   id: string;
   port?: number;
   health?: string;
+  modelId?: string;
 }
 function serviceEntry(repoRoot: string, id: string): ServiceEntry | undefined {
   const file = join(repoRoot, "tools/config/service-catalog.json");
@@ -289,7 +290,8 @@ function unitSteps(
   const mcp = isMcp(f.service);
   const a2a = f.service === "aphrody-a2a";
   const jobs = f.service === "aphrody-jobs-worker-dbfr";
-  const install = mcp || a2a || jobs ? binary : undefined;
+  const gateway = f.service === "aphrody-ai-gateway-dbfr";
+  const install = mcp || a2a || jobs || gateway ? binary : undefined;
   if (install && !/^[0-9a-f]{64}$/.test(install.sha256)) {
     throw new Error(`${f.unit}: --binary-sha256 must be a 64 hex digit SHA-256`);
   }
@@ -456,8 +458,12 @@ function unitSteps(
       ),
     );
   }
-  const tokenEnv = mcp ? MCP_TOKEN_ENV : "APHRODY_A2A_COORD_TOKEN";
-  if ((mcp || f.service === "aphrody-a2a") && tokenFile) {
+  const tokenEnv = mcp
+    ? MCP_TOKEN_ENV
+    : gateway
+      ? "APHRODY_AI_HTTP_TOKEN"
+      : "APHRODY_A2A_COORD_TOKEN";
+  if ((mcp || a2a || gateway) && tokenFile) {
     // The token is made on the host and never leaves it: nothing here prints it, and the plan carries no value.
     const script = [
       "set -e",
@@ -597,23 +603,30 @@ function unitSteps(
       ),
     );
   }
-  if ((mcp || (a2a && tokenFile)) && port !== undefined) {
+  if ((mcp || (a2a && tokenFile) || (gateway && tokenFile)) && port !== undefined) {
     const endpoint = `http://127.0.0.1:${port}/${mcp ? "mcp" : ""}`;
     const post = `curl -s -o /dev/null -m 5 -w '%{http_code}' -X POST -H 'content-type: application/json' -H 'accept: application/json, text/event-stream' -d '{"jsonrpc":"2.0","id":1,"method":"ping"}'`;
+    const authEndpoint = gateway ? `http://127.0.0.1:${port}/v1/models` : endpoint;
+    const unauthRequest = gateway
+      ? `curl -s -o /dev/null -m 5 -w '%{http_code}' ${authEndpoint}`
+      : `${post} ${endpoint}`;
+    const wrongTokenRequest = gateway
+      ? `curl -s -o /dev/null -m 5 -w '%{http_code}' -H 'Authorization: Bearer 0000000000000000000000000000000000000000000000000000000000000000' ${authEndpoint}`
+      : `${post} -H 'Authorization: Bearer 0000000000000000000000000000000000000000000000000000000000000000' ${endpoint}`;
     steps.push(
       step(
         "verify",
         "check",
         "auth-required",
         "the private endpoint refuses a request without a token (401)",
-        `[ "$(${post} ${endpoint})" = 401 ]`,
+        `[ "$(${unauthRequest})" = 401 ]`,
       ),
       step(
         "verify",
         "check",
         "auth-wrong-token",
         "the private endpoint refuses a wrong token (401)",
-        `[ "$(${post} -H 'Authorization: Bearer 0000000000000000000000000000000000000000000000000000000000000000' ${endpoint})" = 401 ]`,
+        `[ "$(${wrongTokenRequest})" = 401 ]`,
       ),
     );
     if (a2a) {
@@ -624,6 +637,23 @@ function unitSteps(
           "auth-valid-token",
           "the protected task API accepts the host-local credential; no task body is printed",
           `curl -fsS -o /dev/null -m 5 -H "Authorization: Bearer $(sudo -n sed -n 's/^${tokenEnv}=//p' ${sq(tokenFile!)} | tail -n 1)" http://127.0.0.1:${port}/coord/aphrody/tasks`,
+        ),
+      );
+    }
+    if (gateway && tokenFile && svc?.modelId) {
+      const body = JSON.stringify({
+        model: svc.modelId,
+        messages: [{ role: "user", content: "Réponds uniquement: pass" }],
+        max_tokens: 6,
+        temperature: 0,
+      });
+      steps.push(
+        step(
+          "verify",
+          "check",
+          "authenticated-generation",
+          `the gateway forwards one short generation to ${svc.modelId}; response content is never printed`,
+          `curl -fsS -o /dev/null -m 60 -H "Authorization: Bearer $(sudo -n sed -n 's/^${tokenEnv}=//p' ${sq(tokenFile)} | tail -n 1)" -H 'Content-Type: application/json' --data ${sq(body)} http://127.0.0.1:${port}/v1/chat/completions`,
         ),
       );
     }

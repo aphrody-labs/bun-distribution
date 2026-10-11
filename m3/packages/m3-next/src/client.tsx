@@ -117,6 +117,7 @@ export function M3ThemeProvider({
       adopted.current = true;
       const stored = readStoredMode(cookieName);
       if (stored !== undefined && stored !== themeMode) {
+        // oxlint-disable-next-line react/set-state-in-effect -- adoption unique au premier montage de la préférence de thème enregistrée dans le cookie (synchronisation avec un stockage externe)
         setThemeMode(stored);
         return;
       }

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Host-agnostic shell session: browser WebSocket, Tauri IPC, or the in-WASM local shell. */
 
+const noop = (): void => {};
+
 export interface WasmApi {
   WebTerminal: new (
     cols: number,
@@ -46,12 +48,12 @@ export function webSocketTransport(
 ): Transport {
   const ws = new WS(url);
   ws.binaryType = "arraybuffer";
-  let out: (b: Uint8Array) => void = () => {};
+  let out: (b: Uint8Array) => void = noop;
   const queue: (() => void)[] = [];
-  ws.onopen = () => queue.splice(0).forEach((f) => f());
-  ws.onmessage = (e: MessageEvent) => {
+  ws.addEventListener("open", () => queue.splice(0).forEach((f) => f()));
+  ws.addEventListener("message", (e: MessageEvent) => {
     if (e.data instanceof ArrayBuffer) out(new Uint8Array(e.data));
-  };
+  });
   const whenOpen = (f: () => void) => (ws.readyState === 1 ? f() : queue.push(f));
   return {
     send: (b) => whenOpen(() => ws.send(b as Uint8Array<ArrayBuffer>)),
@@ -85,7 +87,7 @@ export function sandboxTransport(
   if (options.sessionId) endpoint.searchParams.set("session", options.sessionId);
   const delay = options.reconnectDelayMs ?? 500;
   const maxReconnects = options.maxReconnects ?? 5;
-  let out: (bytes: Uint8Array) => void = () => {};
+  let out: (bytes: Uint8Array) => void = noop;
   let closed = false;
   let reconnects = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -97,24 +99,24 @@ export function sandboxTransport(
     const socket = new WS(endpoint.href);
     ws = socket;
     socket.binaryType = "arraybuffer";
-    socket.onopen = () => {
+    socket.addEventListener("open", () => {
       if (socket !== ws || closed) return;
       reconnects = 0;
       if (size) socket.send(wasm.resize_frame(...size));
       for (const bytes of pending) socket.send(bytes as Uint8Array<ArrayBuffer>);
       pending.length = 0;
       pendingBytes = 0;
-    };
-    socket.onmessage = (event: MessageEvent) => {
+    });
+    socket.addEventListener("message", (event: MessageEvent) => {
       if (socket === ws && !closed && event.data instanceof ArrayBuffer)
         out(new Uint8Array(event.data));
-    };
-    socket.onclose = () => {
+    });
+    socket.addEventListener("close", () => {
       if (socket === ws && !closed && reconnects < maxReconnects) {
         reconnects += 1;
         timer = setTimeout(connect, delay * Math.min(reconnects, 8));
       }
-    };
+    });
   };
   connect();
   return {
@@ -154,6 +156,8 @@ export interface TauriOutput {
   exit: number | null | undefined;
 }
 
+const cmd = (name: string) => `plugin:aphrody-shell-tauri|${name}`;
+
 /** Talks to the `aphrody-shell-tauri` plugin (plugin commands are namespaced `plugin:aphrody-shell-tauri|`). */
 export function tauriTransport(
   bridge: TauriBridge,
@@ -161,8 +165,7 @@ export function tauriTransport(
   cols = 80,
   rows = 24,
 ): Transport {
-  const cmd = (name: string) => `plugin:aphrody-shell-tauri|${name}`;
-  let out: (b: Uint8Array) => void = () => {};
+  let out: (b: Uint8Array) => void = noop;
   let unlisten: (() => void) | undefined;
   let closed = false;
   const receive = (payload: TauriOutput) => {
@@ -172,6 +175,7 @@ export function tauriTransport(
   const ready = bridge.createChannel
     ? (() => {
         const onOutput = bridge.createChannel!();
+        // oxlint-disable-next-line unicorn/prefer-add-event-listener -- un Channel Tauri n'est pas un EventTarget : son contrat est la propriété onmessage (TauriBridge.createChannel)
         onOutput.onmessage = receive;
         return bridge.invoke(cmd("aphrody_shell_open_channel"), { session, cols, rows, onOutput });
       })()
@@ -179,13 +183,16 @@ export function tauriTransport(
         .listen("aphrody-shell-output", ({ payload }) => receive(payload))
         .then((u) => {
           unlisten = u;
-          if (!closed) return bridge.invoke(cmd("aphrody_shell_open"), { session, cols, rows });
+          return closed
+            ? undefined
+            : bridge.invoke(cmd("aphrody_shell_open"), { session, cols, rows });
         });
   const after = (name: string, args: Record<string, unknown>) =>
-    void ready.then(() => {
-      if (!closed || name === "aphrody_shell_close")
-        return bridge.invoke(cmd(name), { session, ...args });
-    });
+    void ready.then(() =>
+      !closed || name === "aphrody_shell_close"
+        ? bridge.invoke(cmd(name), { session, ...args })
+        : undefined,
+    );
   return {
     send: (b) => after("aphrody_shell_write", { bytes: Array.from(b) }),
     resize: (c, r) => after("aphrody_shell_resize", { cols: c, rows: r }),
@@ -218,7 +225,7 @@ export function workerTransport(
     type: "module",
   }) as ShellWorker,
 ): Transport {
-  let out: (bytes: Uint8Array) => void = () => {};
+  let out: (bytes: Uint8Array) => void = noop;
   let closed = false;
   worker.addEventListener("message", ({ data }) => {
     if (closed && data.type !== "closed") return;
@@ -230,6 +237,7 @@ export function workerTransport(
       worker.terminate();
     } else if (data.type === "closed") worker.terminate();
   });
+  // oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker.postMessage n'accepte pas d'origine : le second argument est la liste de transfert
   worker.postMessage({ type: "init", cols, rows });
   return {
     send: (bytes) => {
@@ -238,12 +246,14 @@ export function workerTransport(
       worker.postMessage({ type: "input", bytes: owned.buffer }, [owned.buffer]);
     },
     resize: (c, r) => {
+      // oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker.postMessage n'accepte pas d'origine : le second argument est la liste de transfert
       if (!closed) worker.postMessage({ type: "resize", cols: c, rows: r });
     },
     onOutput: (cb) => (out = cb),
     close: () => {
       if (closed) return;
       closed = true;
+      // oxlint-disable-next-line unicorn/require-post-message-target-origin -- Worker.postMessage n'accepte pas d'origine : le second argument est la liste de transfert
       worker.postMessage({ type: "close" });
     },
   };
@@ -256,7 +266,7 @@ export function localTransport(
   rows = 24,
 ): Transport & { snapshot(): Snapshot } {
   const shell = new wasm.WebShell(cols, rows);
-  let out: (b: Uint8Array) => void = () => {};
+  let out: (b: Uint8Array) => void = noop;
   return {
     send: (b) => out(shell.input(b)),
     resize: (c, r) => shell.resize(c, r),

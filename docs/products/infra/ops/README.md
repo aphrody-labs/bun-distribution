@@ -10,9 +10,9 @@ The Bun modules that serve multiple repositories are documented in
 
 | Path | Purpose | Formerly in |
 | --- | --- | --- |
-| `~/yolo/tools/config/host/sysctl/99-zzz-rg-memoire.conf` (not in repo) | Kernel memory tuning (`/etc/sysctl.d`) | `rg/infra/sysctl` |
-| `~/yolo/tools/config/host/logrotate/rsyslog` | Daily system log rotation (`/etc/logrotate.d`) | `rg/infra/logrotate` |
-| `~/yolo/tools/config/host/privoxy/shenron-media.conf` + `shenron:deploy/install-media-vpn-proxy.sh` | Mullvad HTTP bridge (`:8119` -> `10.8.0.1:1080`) | `shenron/deploy/privoxy/` |
+| `tools/config/host/aphrody-os/VPS-TUNING.md` (`90-aphrody-bun.conf`, package `aphrody-sysctl`) | Kernel memory tuning (`/etc/sysctl.d`) | `rg/infra/sysctl` |
+| `tools/config/host/logrotate/rsyslog` | Daily system log rotation (`/etc/logrotate.d`) | `rg/infra/logrotate` |
+| `tools/config/host/privoxy/shenron-media.conf` + `shenron:deploy/install-media-vpn-proxy.sh` | Mullvad HTTP bridge (`:8119` -> `10.8.0.1:1080`) | `shenron/deploy/privoxy/` |
 | `iecode/config/rg/host/systemd/rg-zram-swap.service` | Compressed zram swap, main VPS | `rg/infra/systemd` |
 | `tools/config/host/systemd/shared/nginx.service.d/*.conf` | nginx restart policy and CPU/IO priority | `rg/infra/systemd` |
 | `tools/config/host/systemd/shenron/privoxy.service.d/*.conf` | Privoxy restart & WireGuard dependency drop-in | `shenron/deploy/privoxy/` |

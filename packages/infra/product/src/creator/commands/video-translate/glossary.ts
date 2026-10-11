@@ -152,7 +152,7 @@ export class Glossary {
 
 /** Renders matched entries for the prompt, most specific (longest source form) first, capped. */
 export function renderGlossary(entries: GlossaryEntry[], limit = 32): string {
-  const ranked = [...entries].sort(
+  const ranked = [...entries].toSorted(
     (a, b) => Math.max(...b.src.map((s) => s.length)) - Math.max(...a.src.map((s) => s.length)),
   );
   return ranked
@@ -235,7 +235,9 @@ export async function loadGlossaries(
       continue;
     }
     const handle = Bun.file(spec);
+    // oxlint-disable-next-line no-await-in-loop -- glossaires lus dans l'ordre fourni : la première erreur signalée doit être celle du premier fichier fautif
     if (!(await handle.exists())) throw new UsageError(`glossaire introuvable : ${spec}`);
+    // oxlint-disable-next-line no-await-in-loop -- même lecture séquentielle ordonnée que ci-dessus
     files.push(validateGlossary(JSON.parse(await handle.text()), spec));
   }
   const byId = new Map<string, GlossaryEntry>();

@@ -240,4 +240,4 @@ bun run bench:check                            # the budget gate
 bun scripts/bench/run.ts --update-budget --baseline docs/reports/perf-before.json   # rewrite the budget from a fresh run
 ```
 
-YOLO_ROOT (default `~/yolo`) selects the yolo checkout; `BENCH_MCP_SERVER` points the mcp group at another `server.ts`.
+YOLO_ROOT (default: the enclosing Aphrody monorepo) selects the yolo checkout; `BENCH_MCP_SERVER` points the mcp group at another `server.ts`.

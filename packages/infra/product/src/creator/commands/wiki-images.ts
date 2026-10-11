@@ -59,6 +59,7 @@ async function pool<T>(items: T[], limit: number, work: (item: T) => Promise<voi
   const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
     while (next < items.length) {
       const item = items[next++] as T;
+      // oxlint-disable-next-line no-await-in-loop -- each pool worker drains its queue one item at a time; the worker count is the concurrency limit
       await work(item);
     }
   });
@@ -99,6 +100,7 @@ export async function run(argv: string[], fetchImpl: Fetch = fetch): Promise<num
   const found: WikiFile[] = [];
   if (titles.length > 0) found.push(...(await filesOfPages(target.apiUrl, titles, fetchImpl)));
   for (const category of categories)
+    // oxlint-disable-next-line no-await-in-loop -- categories are queried one at a time, as the MediaWiki API asks clients to avoid parallel requests
     found.push(...(await filesOfCategory(target.apiUrl, category, fetchImpl, depth)));
   if (values.prefix) found.push(...(await filesOfPrefix(target.apiUrl, values.prefix, fetchImpl)));
 

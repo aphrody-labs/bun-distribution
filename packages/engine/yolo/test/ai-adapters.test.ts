@@ -10,6 +10,11 @@ import { createApiServer } from "../../core/src/server/http";
 const root = resolve(import.meta.dir, "../../../..");
 const entry = resolve(import.meta.dir, "../src/index.ts");
 
+const withoutTiming = (value: Record<string, unknown>) => {
+  const { latencyMs: _, ...rest } = value;
+  return rest;
+};
+
 test("SDK, CLI, MCP and HTTP use the same provider contract and schema", async () => {
   const requests: unknown[] = [];
   const provider = Bun.serve({
@@ -65,10 +70,6 @@ test("SDK, CLI, MCP and HTTP use the same provider contract and schema", async (
     ]);
     expect(code, stderr).toBe(0);
     const fromCli = JSON.parse(stdout);
-    const withoutTiming = (value: Record<string, unknown>) => {
-      const { latencyMs: _, ...rest } = value;
-      return rest;
-    };
     for (const result of [core, fromMcp, fromHttp, fromCli]) {
       expect(withoutTiming(result as Record<string, unknown>)).toEqual(
         withoutTiming(direct as unknown as Record<string, unknown>),

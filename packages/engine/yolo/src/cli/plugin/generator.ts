@@ -2,6 +2,12 @@ import { existsSync, mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import type { PluginManifest, PluginHooksManifest } from "./schema";
 
+const ensureDir = (dirPath: string) => {
+  if (!existsSync(dirPath)) {
+    mkdirSync(dirPath, { recursive: true });
+  }
+};
+
 export interface GeneratePluginOptions {
   readonly targetDir: string;
   readonly yoloRoot: string;
@@ -25,12 +31,6 @@ export async function generateUnifiedYoloPlugin(options: GeneratePluginOptions):
   const bunDocsDir = join(yoloRoot, "vendor", "bun", "docs");
   const bunSrcDir = join(yoloRoot, "vendor", "bun", "src");
   const filesGenerated: string[] = [];
-
-  const ensureDir = (dirPath: string) => {
-    if (!existsSync(dirPath)) {
-      mkdirSync(dirPath, { recursive: true });
-    }
-  };
 
   const writeContent = async (relPath: string, content: string) => {
     const fullPath = join(pluginDir, relPath);

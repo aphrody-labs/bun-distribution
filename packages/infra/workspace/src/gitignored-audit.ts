@@ -42,8 +42,11 @@ export async function runGitignoredAudit(args: string[]): Promise<number> {
   const records: Record[] = [];
   for (const path of paths) {
     const full = resolve(root, path);
+    // One file at a time: hashing a large ignored tree in parallel would exhaust file descriptors.
+    // oxlint-disable-next-line no-await-in-loop -- sequential reads bound open file descriptors on large ignored trees
     const info = await stat(full).catch(() => undefined);
     if (!info?.isFile()) continue;
+    // oxlint-disable-next-line no-await-in-loop -- sequential reads bound open file descriptors on large ignored trees
     const bytes = await readFile(full);
     const name = path.split("/").at(-1) ?? "";
     const dot = name.lastIndexOf(".");

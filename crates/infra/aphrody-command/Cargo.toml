@@ -189,7 +189,7 @@ hex                       = { workspace = true, optional = true }
 # `aphrody logo` — canonical icon (identity/assets/logo/aphrody.webp) -> .ico / .svg / M3
 # maskable PNG + pixel-perfect terminal rendering (module `aphrody_identity::logo`).
 # Native-only (image+ico).
-aphrody-identity          = { workspace = true }
+aphrody-identity          = { workspace = true, features = ["net"] }
 aphrody-m3-tokens         = { workspace = true, features = ["serde"] }
 # `aphrody design tokens [--fusion]` — Material 3 color tokens as CSS custom
 # properties (+ shadcn/Tailwind fusion sheet). Native-only (std export).

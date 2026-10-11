@@ -49,7 +49,9 @@ describe("archiveDir", () => {
       windowsHide: true,
       cwd: dirname(archive),
       stdout: "pipe",
-    }).stdout.toString();
+    })
+      .stdout.toString()
+      .replaceAll("\r\n", "\n");
     expect(listing).toMatch(/-rwxr-xr-x .* (\.\/)?app\n/);
     expect(listing).toMatch(/ (\.\/)?deploy\/x\.conf\n/);
     expect(listing).toMatch(/ (\.\/)?README\.txt\n/);

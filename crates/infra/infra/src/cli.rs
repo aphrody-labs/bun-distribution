@@ -1,8 +1,8 @@
 //! `aphrody infra` (former `aphrody-infra` binary): unified infra/workflow orchestrator CLI.
 
-use aphrody_proc::NoWindow as _;
 use crate::{ServiceAction, devenv, reclaim, validate};
 use anyhow::{Context, Result, bail};
+use aphrody_proc::NoWindow as _;
 use clap::{Parser, Subcommand, ValueEnum};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -289,8 +289,16 @@ enum NginxCommand {
         #[arg(long)]
         comment: Vec<String>,
     },
-    /// Check a configuration file with `nginx -t -c <path> -q`.
-    Test { path: PathBuf },
+    /// Check a configuration file with `nginx -t -c <path> -q`, or with `--docker` a server
+    /// file (`conf.d` content) in a disposable nginx container (no bind mount) with its
+    /// includes from the parent of its directory (repository mirror of `/etc/nginx`) and
+    /// throwaway `/etc/letsencrypt` stand-ins, on any host with Docker.
+    Test {
+        path: PathBuf,
+        /// Container image for the check (`nginx:alpine` when the flag has no value).
+        #[arg(long, num_args = 0..=1, default_missing_value = "nginx:alpine", value_name = "IMAGE")]
+        docker: Option<String>,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -513,7 +521,8 @@ impl Run {
 }
 
 fn command(root: &Path, program: &str, args: &[&str]) -> Result<String> {
-    let output = Command::new(program).no_window()
+    let output = Command::new(program)
+        .no_window()
         .args(args)
         .current_dir(root)
         .output()
@@ -530,7 +539,7 @@ fn command(root: &Path, program: &str, args: &[&str]) -> Result<String> {
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_owned())
 }
 
-/// The cross-host target matrix lives in yolo: `$YOLO_ROOT/tools/config/host/inventory/targets.json`.
+/// The cross-host target matrix lives in `$APHRODY_ROOT/tools/config/host/inventory/targets.json`.
 fn load_matrix() -> Result<Matrix> {
     let path = validate::host_config_root().join("inventory/targets.json");
     let bytes = fs::read(&path).with_context(|| format!("manifest absent: {}", path.display()))?;
@@ -698,7 +707,8 @@ fn quality(
             let Some(script) = script else {
                 bail!("{} ne déclare pas de script pour {:?}", row["repo"], stage);
             };
-            let output = Command::new("bun").no_window()
+            let output = Command::new("bun")
+                .no_window()
                 .args(["run", &script])
                 .current_dir(&path)
                 .output()
@@ -801,7 +811,8 @@ fn maintenance(
     }
     let mut rows = Vec::new();
     for (name, path) in repositories {
-        let dirty = Command::new("git").no_window()
+        let dirty = Command::new("git")
+            .no_window()
             .args(["status", "--porcelain=v1"])
             .current_dir(&path)
             .output()
@@ -812,7 +823,8 @@ fn maintenance(
             json!({ "repo": name, "path": path, "dirty": dirty, "lockfile": lockfile.is_file() });
         match action {
             MaintenanceAction::Scan => {
-                let output = Command::new("cargo").no_window()
+                let output = Command::new("cargo")
+                    .no_window()
                     .args(["metadata", "--locked", "--no-deps", "--format-version=1"])
                     .current_dir(&path)
                     .output();
@@ -853,7 +865,8 @@ fn maintenance(
                 row["command"] = json!(format!("cargo {}", args.join(" ")));
                 row["applied"] = Value::Bool(apply);
                 if apply {
-                    let output = Command::new("cargo").no_window()
+                    let output = Command::new("cargo")
+                        .no_window()
                         .args(&args)
                         .current_dir(&path)
                         .output()
@@ -915,14 +928,16 @@ fn local_binary_check(name: &str) -> Value {
 }
 
 fn user_unit_check(name: &str) -> Value {
-    let enabled = Command::new("systemctl").no_window()
+    let enabled = Command::new("systemctl")
+        .no_window()
         .args(["--user", "is-enabled", name])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .status()
         .map(|status| status.success())
         .unwrap_or(false);
-    let active = Command::new("systemctl").no_window()
+    let active = Command::new("systemctl")
+        .no_window()
         .args(["--user", "is-active", name])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -1109,7 +1124,8 @@ async fn workspace_git_audit(
     let client = if base_client.is_authenticated() {
         base_client
     } else {
-        let token = Command::new("gh").no_window()
+        let token = Command::new("gh")
+            .no_window()
             .args(["auth", "token"])
             .output()
             .ok()
@@ -1390,7 +1406,8 @@ fn deploy(
         }
         // Each adapter re-verifies its preconditions (the Aphrody one its SMOKE.json
         // attestation) and rolls its stack back on failure.
-        let output = Command::new("ssh").no_window()
+        let output = Command::new("ssh")
+            .no_window()
             .args(remote_stack_adapter_args(stack, &adapter, release))
             .output()
             .context("ssh vps indisponible")?;
@@ -1420,8 +1437,14 @@ fn nginx_command(command: &NginxCommand) -> Result<()> {
             print!("{}", render_nginx(&raw, comment)?);
             Ok(())
         },
-        NginxCommand::Test { path } => {
+        NginxCommand::Test { path, docker: None } => {
             crate::NginxConfig::test_syntax(path).map_err(|error| anyhow::anyhow!(error))
+        },
+        NginxCommand::Test { path, docker: Some(image) } => {
+            let report =
+                crate::nginx::test_in_container(path, image).map_err(anyhow::Error::msg)?;
+            eprintln!("{report}");
+            Ok(())
         },
     }
 }
@@ -1467,7 +1490,8 @@ fn validate_catalogs(root: &Path, as_json: bool, run: &mut Run) -> Result<()> {
 
 /// Pipe `script` to a remote shell's stdin and return its stdout.
 fn run_remote(program: &str, args: &[&str], script: &str) -> Result<String> {
-    let output = Command::new(program).no_window()
+    let output = Command::new(program)
+        .no_window()
         .args(args)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -2465,9 +2489,18 @@ mod tests {
 
     #[test]
     fn release_path_rejects_traversal_and_empty_ids() {
-        assert!(release_path_is_valid("/home/ubuntu/apps/aphrody/releases/20260923-abc", DeployStack::Aphrody));
-        assert!(release_path_is_valid("/home/ubuntu/apps/rg/releases/20260923-abc", DeployStack::Rg));
-        assert!(!release_path_is_valid("/home/ubuntu/apps/aphrody/releases/", DeployStack::Aphrody));
+        assert!(release_path_is_valid(
+            "/home/ubuntu/apps/aphrody/releases/20260923-abc",
+            DeployStack::Aphrody
+        ));
+        assert!(release_path_is_valid(
+            "/home/ubuntu/apps/rg/releases/20260923-abc",
+            DeployStack::Rg
+        ));
+        assert!(!release_path_is_valid(
+            "/home/ubuntu/apps/aphrody/releases/",
+            DeployStack::Aphrody
+        ));
         assert!(!release_path_is_valid("/home/ubuntu/apps/rg/releases/../etc", DeployStack::Rg));
         assert!(!release_path_is_valid("/home/ubuntu/apps/rg/releases/a/./b", DeployStack::Rg));
         assert!(!release_path_is_valid("/home/ubuntu/apps/aphrody/current", DeployStack::Aphrody));
@@ -2485,7 +2518,10 @@ mod tests {
             DeployStack::Bundle
         ));
         assert!(!release_path_is_valid("/home/ubuntu/apps/rg/releases/x;reboot", DeployStack::Rg));
-        assert!(!release_path_is_valid("/home/ubuntu/apps/shenron/releases/a b", DeployStack::Shenron));
+        assert!(!release_path_is_valid(
+            "/home/ubuntu/apps/shenron/releases/a b",
+            DeployStack::Shenron
+        ));
     }
 
     #[test]
@@ -2507,7 +2543,15 @@ mod tests {
         assert!(DeployStack::Aphrody.requires().iter().any(|item| item.contains("SMOKE.json")));
         assert_eq!(
             remote_adapter_args("/usr/local/sbin/x", "/home/ubuntu/apps/rg/releases/a"),
-            ["-o", "BatchMode=yes", "vps", "sudo", "-n", "/usr/local/sbin/x", "/home/ubuntu/apps/rg/releases/a"]
+            [
+                "-o",
+                "BatchMode=yes",
+                "vps",
+                "sudo",
+                "-n",
+                "/usr/local/sbin/x",
+                "/home/ubuntu/apps/rg/releases/a"
+            ]
         );
     }
 

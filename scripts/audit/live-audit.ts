@@ -63,13 +63,7 @@ const option = (name: string) => {
 const config = (await Bun.file(join(root, "tools", "config", "live-audit.json")).json()) as Config;
 const routes = (
   (await Bun.file(
-    join(
-      process.env.YOLO_ROOT ?? join(homedir(), "yolo"),
-      "config",
-      "host",
-      "nginx",
-      "routes.json",
-    ),
+    join(process.env.YOLO_ROOT ?? root, "tools", "config", "host", "nginx", "routes.json"),
   ).json()) as { routes: Route[] }
 ).routes;
 const onlySite = option("--site");

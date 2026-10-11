@@ -87,7 +87,7 @@ Le [catalogue complet et les limites de qualification](docs/operations/bun-packa
 
 ## Repository
 
-Totals: 167 crates, 73 packages, 0 apps.
+Totals: 169 crates, 73 packages, 0 apps.
 
 | Path | Content |
 | --- | --- |

@@ -133,8 +133,8 @@ describe("compiled CLI without an installed Bun", () => {
     expect(broken.stderr.toString()).not.toContain("Hash mismatch");
   });
   it("prints verify and supervisor help and rejects invalid verify arguments without gates", () => {
-    const before = readdirSync(checkout).sort();
-    const installationBefore = readdirSync(home).sort();
+    const before = readdirSync(checkout).toSorted();
+    const installationBefore = readdirSync(home).toSorted();
     const help = run(["verify", "--help"], checkout);
     expect(help.exitCode).toBe(0);
     expect(help.stdout.toString()).toContain("Usage: yolo verify");
@@ -149,8 +149,8 @@ describe("compiled CLI without an installed Bun", () => {
     const bench = run(["bench", "--supervisor", "--help"]);
     expect(bench.exitCode).toBe(0);
     expect(bench.stdout.toString()).toContain("Usage: yolo bench --supervisor");
-    expect(readdirSync(checkout).sort()).toEqual(before);
-    expect(readdirSync(home).sort()).toEqual(installationBefore);
+    expect(readdirSync(checkout).toSorted()).toEqual(before);
+    expect(readdirSync(home).toSorted()).toEqual(installationBefore);
   });
 
   it("uses embedded Bun and version without loading the project's config or dotenv", () => {
@@ -267,6 +267,7 @@ describe("compiled CLI without an installed Bun", () => {
       let output = "";
       let baseUrl: string | undefined;
       while (baseUrl === undefined) {
+        // oxlint-disable-next-line no-await-in-loop -- lecture séquentielle du flux stdout jusqu'à la ligne d'écoute du serveur
         const chunk = await reader.read();
         if (chunk.done) throw new Error(`API exited before listening: ${output}`);
         output += decoder.decode(chunk.value, { stream: true });

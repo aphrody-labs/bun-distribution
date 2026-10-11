@@ -1,6 +1,6 @@
 import { m3Durations, m3Easings } from "@aphrody/m3-motion";
 import { type IconSource, m3FocusRing, renderIcon } from "@aphrody/m3-primitives";
-import clsx from "clsx";
+import { clsx } from "clsx";
 import { motion } from "motion/react";
 import { useState } from "react";
 
