@@ -6,7 +6,7 @@ param([string]$Pc = 'local', [Parameter(Mandatory)][string]$Compose)
 $ErrorActionPreference = 'Stop'
 $env:APHRODY_PC = $Pc
 # Per-PC bearer token, generated once under the user's private Aphrody directory and never committed.
-$private = Join-Path $HOME '.aphrodyprivate'
+$private = Join-Path $HOME '.aphrody/private'
 $tokenFile = Join-Path $private 'aphrody_mcp_http_token'
 if (-not (Test-Path $tokenFile)) {
     New-Item -ItemType Directory -Force $private | Out-Null
