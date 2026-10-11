@@ -21,6 +21,9 @@
     { "host": "mcp.dragonballfr.com", "service": "shenron-mcp", "upstream": "127.0.0.1:5010", "protocol": "mcp-a2a", "status": "retired", "retiredAt": "2026-09-25" }
   ],
   "internal": [
+    { "service": "aphrody-bun-os", "upstream": "127.0.0.1:18804", "via": "nginx", "publicHost": "os.aphrody.com", "paths": ["/desktop/", "/api/webos/capabilities", "/dist/workers/repl.js", "/dist/wasm/bun/bun_wasm.wasm"] },
+    { "service": "aphrody-downloads", "upstream": "127.0.0.1:8797", "via": "nginx", "publicHost": "aphrody.com", "paths": ["/api/search", "/api/index/search"] },
+    { "service": "aphrody-downloads", "upstream": "127.0.0.1:8797", "via": "nginx", "publicHost": "os.aphrody.com", "paths": ["/api/search"] },
     { "service": "aphrody-ai-http", "upstream": "127.0.0.1:8789", "via": "nginx", "publicHost": "aphrody.com", "paths": ["/api/v1/models", "/api/v1/rag/query", "/api/v1/rag/stats"], "status": "retired", "retiredAt": "2026-09-25" },
     { "service": "aphrody-web-api", "upstream": "127.0.0.1:3007", "via": "nginx", "publicHost": "aphrody.com", "paths": ["/api/v1/web/"], "status": "retired", "retiredAt": "2026-09-25" }
   ],
