@@ -25,11 +25,17 @@ export function hostAppFiles(
       join(layout.apps, "aphrody", "compose.yaml"),
     ],
   ];
-  if (host === "dbfr")
+  if (host === "dbfr") {
     files.push([
       join(layout.src, "bun", "scripts/aphrody/deploy/docker/compose.yaml"),
       join(layout.apps, "aphrody-bun", "compose.yaml"),
     ]);
+    for (const filename of ["bun-prod-runtime.yaml", "bun-services-runtime.yaml"])
+      files.push([
+        join(repo, "tools/config/host/apps/dbfr", filename),
+        join(layout.apps, filename),
+      ]);
+  }
   return files;
 }
 

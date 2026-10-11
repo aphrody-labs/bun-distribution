@@ -7,6 +7,6 @@ include:
   # Generated from shenron/current by scripts/release/atomic-deploy-shenron-container.py.
   - shenron/compose.yaml
   # scripts/aphrody/deploy/docker/compose.yaml of the Bun repository (aphrody-labs/bun).
-  - aphrody-bun/compose.yaml
+  - path: [aphrody-bun/compose.yaml, bun-prod-runtime.yaml]
   # tools/config/container/compose.yaml.
-  - aphrody/compose.yaml
+  - path: [aphrody/compose.yaml, bun-services-runtime.yaml]
