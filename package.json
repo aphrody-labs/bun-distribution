@@ -253,6 +253,7 @@
     "cli": "bun run bin/aphrody.ts"
   },
   "dependencies": {
+    "@aphrody/ovh": "workspace:*",
     "@neon/config": "^1.8.2",
     "@neon/env": "^1.4.7"
   },
