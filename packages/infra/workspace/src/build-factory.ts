@@ -21,6 +21,19 @@ export interface BuildFactoryConfig {
   schemaVersion: number;
   enabled: boolean;
   target: string;
+  windowsFactory?: {
+    host: string;
+    target: string;
+    workspaceRoot: string;
+    enabled: boolean;
+    nativeArchitectures: string[];
+    crossArchitectures: string[];
+    maxJobs: number;
+    reserveMemoryGiB: number;
+    reserveDiskGiB: number;
+    scope: string[];
+    execution: "local-windows";
+  };
   executionOnlyTargets?: string[];
   cacheRoot: string;
   artifactRoot: string;
