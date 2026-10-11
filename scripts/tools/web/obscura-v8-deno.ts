@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
-//! Showcase de V8 et de deno_core dans Obscura (crates/web/obscura-*), entièrement calculé depuis le code :
+//! Showcase de V8 et de deno_core dans Obscura (locked Bun OS provider), entièrement calculé depuis le code :
 //! versions épinglées, extension `obscura_dom` (ops #[op2] par thème, rapides ou asynchrones), API publique
 //! d'ObscuraJsRuntime, snapshot V8, drapeaux V8, garde de tas, watchdog CDP et globals de bootstrap.js.
 //! Puis exécution réelle : une page locale (Bun.serve, port 0) sollicite V8 et les ops Deno d'Obscura à travers
@@ -9,9 +9,10 @@
 //!   bun scripts/tools/web/obscura-v8-deno.ts [--static | --live] [--json] [--bin <aphrody>]
 
 import { resolve, join } from "node:path";
+import { obscuraSourceRoot } from "./obscura-sources";
 
 const REPO = resolve(import.meta.dir, "../../..");
-const WEB = join(REPO, "crates/web");
+const WEB = obscuraSourceRoot(REPO);
 const args = process.argv.slice(2);
 const asJson = args.includes("--json");
 const wantStatic = !args.includes("--live");
@@ -19,7 +20,7 @@ const wantLive = !args.includes("--static");
 const color = (c: number) => (s: string) =>
   asJson || !Bun.enableANSIColors ? s : `\x1b[${c}m${s}\x1b[0m`;
 const [green, red, yellow, dim, bold] = [color(32), color(31), color(33), color(2), color(1)];
-const read = (p: string) => Bun.file(join(REPO, p)).text();
+const read = (p: string) => Bun.file(join(p.startsWith("obscura") ? WEB : REPO, p)).text();
 const exists = (p: string) => Bun.file(join(REPO, p)).exists();
 
 // ───────────────────────────── inventaire statique ─────────────────────────────
@@ -97,14 +98,14 @@ async function inventory() {
   const [lock, opsSrc, runtime, flags, watchdog, boot, build, cdpRuntime, jsToml] =
     await Promise.all([
       read("Cargo.lock"),
-      read("crates/web/obscura-js/src/ops.rs"),
-      read("crates/web/obscura-js/src/runtime.rs"),
-      read("crates/web/obscura-js/src/v8_flags.rs"),
-      read("crates/web/obscura-js/src/cdp_watchdog.rs"),
-      read("crates/web/obscura-js/js/bootstrap.js"),
-      read("crates/web/obscura-js/build.rs"),
-      read("crates/web/obscura-cdp/src/domains/runtime.rs"),
-      read("crates/web/obscura-js/Cargo.toml"),
+      read("obscura-js/src/ops.rs"),
+      read("obscura-js/src/runtime.rs"),
+      read("obscura-js/src/v8_flags.rs"),
+      read("obscura-js/src/cdp_watchdog.rs"),
+      read("obscura-js/js/bootstrap.js"),
+      read("obscura-js/build.rs"),
+      read("obscura-cdp/src/domains/runtime.rs"),
+      read("obscura-js/Cargo.toml"),
     ]);
   const versions = lockVersions(lock, [
     "deno_core",
@@ -149,7 +150,7 @@ async function inventory() {
       (m) => `${m[1]} = ${m[2]!.trim()}`,
     ),
     extension: {
-      file: `crates/web/obscura-js/src/ops.rs:${extensionLine}`,
+      file: `${join(WEB, "obscura-js/src/ops.rs")}:${extensionLine}`,
       declared: ops.length,
       registered: ops.filter((o) => registered.has(o.name)).length,
       notRegistered: ops.filter((o) => !registered.has(o.name)).map((o) => `${o.name}:${o.line}`),
