@@ -2314,10 +2314,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-shell-session"
-version = "1.4.4"
-
-[[package]]
 name = "aphrody-shell-tauri"
 version = "1.4.4"
 dependencies = [
@@ -2328,10 +2324,6 @@ dependencies = [
  "serde_json",
  "tokio",
 ]
-
-[[package]]
-name = "aphrody-shell-vfs"
-version = "1.4.4"
 
 [[package]]
 name = "aphrody-site"
@@ -17829,8 +17821,6 @@ dependencies = [
 [[package]]
 name = "rio-grapheme-width"
 version = "0.5.28"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a901dda1fe16da68fbe8788db5f2b4525f95b43f064618d2bb6c7361c4e9150"
 dependencies = [
  "phf 0.13.1",
  "ucd-trie",
@@ -17839,8 +17829,6 @@ dependencies = [
 [[package]]
 name = "rio-graphics"
 version = "0.5.28"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40bdcb0a124c88c7e75a4f2b2953b158981bf541613b4b0146e21d07f4a104ac"
 dependencies = [
  "rustc-hash 2.1.3",
  "tracing",
@@ -17850,14 +17838,10 @@ dependencies = [
 [[package]]
 name = "rio-unicode"
 version = "0.5.28"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "48266e8c525eb4fb8d3ad899e1a050404fb782f876cad2df800dd5455126a99b"
 
 [[package]]
 name = "rio-vt"
 version = "0.5.28"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f80220ae32041e4cef8719cab57d3579cbe0dc26dd1cb1ca0693f85491e1696"
 dependencies = [
  "base64 0.23.1",
  "bitflags 2.13.2",
@@ -17873,7 +17857,6 @@ dependencies = [
  "rio-unicode",
  "rustc-hash 2.1.3",
  "serde",
- "simdutf",
  "smallvec",
  "tracing",
  "web-time",

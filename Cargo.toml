@@ -135,9 +135,9 @@ aphrody-session = { path = "crates/ai/session", version = "1.4.4", features = []
 aphrody-ssh = { path = "crates/infra/ssh", version = "1.4.4", features = [] }
 aphrody-shell-web = { path = "../bun/packages/bun-aphrody-web/integrations/crates/shell/web", version = "1.4.4", features = [] }
 aphrody-shell-tauri = { path = "crates/shell/tauri", version = "1.4.4", features = [] }
-aphrody-shell-session = { path = "crates/shell/session", version = "1.4.4", features = [] }
-aphrody-shell-vfs = { path = "crates/shell/vfs", version = "1.4.4", features = [] }
-aphrody-terminal-core = { path = "crates/shell/terminal-core", version = "1.4.4", features = [] }
+aphrody-shell-session = { path = "../bun/packages/bun-aphrody-web/integrations/crates/shell/session", version = "1.4.4", features = [] }
+aphrody-shell-vfs = { path = "../bun/packages/bun-aphrody-web/integrations/crates/shell/vfs", version = "1.4.4", features = [] }
+aphrody-terminal-core = { path = "../bun/packages/bun-aphrody-web/integrations/crates/shell/terminal-core", version = "1.4.4", features = [] }
 aphrody-term = { path = "crates/shell/aphrody-term", version = "1.4.4", features = [] }
 aphrody-terminal-backend = { path = "crates/shell/terminal-backend", version = "1.4.4", features = [] }
 aphrody-term-caps = { path = "crates/shell/term-caps", version = "1.4.4", default-features = false }
@@ -491,14 +491,6 @@ path = "crates/os/ostd/proc"
 [patch."https://github.com/aphrody-labs/aphrody".aphrody-rag-core]
 path = "crates/ai/rag-core"
 
-[patch."https://github.com/aphrody-labs/aphrody".aphrody-shell-session]
-path = "crates/shell/session"
-
-[patch."https://github.com/aphrody-labs/aphrody".aphrody-shell-vfs]
-path = "crates/shell/vfs"
-
-[patch."https://github.com/aphrody-labs/aphrody".aphrody-terminal-core]
-path = "crates/shell/terminal-core"
 
 [patch."https://github.com/aphrody-labs/aphrody".aphrody-toolcall]
 path = "crates/ai/toolcall"
