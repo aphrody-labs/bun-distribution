@@ -24,6 +24,27 @@
         "undici-types": "catalog:",
       },
     },
+    "../bun/packages/aphrody-migrated/m3/aphrody-m3-baseui": {
+      "name": "@aphrody/m3-baseui",
+      "version": "1.4.4",
+      "dependencies": {
+        "@base-ui/react": "catalog:",
+      },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+        "@aphrody/m3-tokens": "workspace:*",
+        "@types/react": "catalog:",
+        "@types/react-dom": "catalog:",
+        "react": "catalog:",
+        "react-dom": "catalog:",
+        "typescript": "catalog:",
+      },
+      "peerDependencies": {
+        "@aphrody/m3-tokens": "workspace:*",
+        "react": ">=19.0.0",
+        "react-dom": ">=19.0.0",
+      },
+    },
     "../bun/packages/aphrody-migrated/m3/aphrody-m3-codemods": {
       "name": "@aphrody/m3-codemods",
       "version": "1.4.4",
@@ -44,6 +65,24 @@
       "version": "1.4.4",
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
+      },
+    },
+    "../bun/packages/aphrody-migrated/m3/aphrody-m3-forms": {
+      "name": "@aphrody/m3-forms",
+      "version": "1.4.4",
+      "dependencies": {
+        "@aphrody/m3-primitives": "workspace:*",
+        "clsx": "catalog:",
+      },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+        "react-hook-form": "catalog:",
+      },
+      "peerDependencies": {
+        "react": ">=18.0.0",
+        "react-dom": ">=18.0.0",
+        "react-hook-form": ">=7.0.0",
+        "tailwindcss": ">=4.1.0",
       },
     },
     "../bun/packages/aphrody-migrated/m3/aphrody-m3-front": {
@@ -103,6 +142,29 @@
         "@aphrody/bun": "^3.3.0",
         "@aphrody/m3-config": "workspace:*",
         "typescript": "catalog:",
+      },
+    },
+    "../bun/packages/aphrody-migrated/m3/aphrody-m3-primitives": {
+      "name": "@aphrody/m3-primitives",
+      "version": "1.4.4",
+      "dependencies": {
+        "@aphrody/m3-motion": "workspace:*",
+        "@base-ui/react": "catalog:",
+        "class-variance-authority": "catalog:",
+        "clsx": "catalog:",
+        "motion": "catalog:",
+        "react-hook-form": "catalog:",
+        "react-resizable-layout": "catalog:",
+        "sonner": "catalog:",
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": ">=18.0.0",
+        "react-dom": ">=18.0.0",
+        "tailwindcss": ">=4.1.0",
       },
     },
     "../bun/packages/bun-aphrody-web": {
@@ -570,27 +632,6 @@
         "tailwindcss": ">=4.1.0",
       },
     },
-    "m3/packages/m3-baseui": {
-      "name": "@aphrody/m3-baseui",
-      "version": "1.4.4",
-      "dependencies": {
-        "@base-ui/react": "catalog:",
-      },
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-        "@aphrody/m3-tokens": "workspace:*",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "react": "catalog:",
-        "react-dom": "catalog:",
-        "typescript": "catalog:",
-      },
-      "peerDependencies": {
-        "@aphrody/m3-tokens": "workspace:*",
-        "react": ">=19.0.0",
-        "react-dom": ">=19.0.0",
-      },
-    },
     "m3/packages/m3-bun": {
       "name": "@aphrody/m3-bun",
       "version": "1.4.4",
@@ -698,24 +739,6 @@
         "tailwindcss": ">=4.1.0",
       },
     },
-    "m3/packages/m3-forms": {
-      "name": "@aphrody/m3-forms",
-      "version": "1.4.4",
-      "dependencies": {
-        "@aphrody/m3-primitives": "workspace:*",
-        "clsx": "catalog:",
-      },
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-        "react-hook-form": "catalog:",
-      },
-      "peerDependencies": {
-        "react": ">=18.0.0",
-        "react-dom": ">=18.0.0",
-        "react-hook-form": ">=7.0.0",
-        "tailwindcss": ">=4.1.0",
-      },
-    },
     "m3/packages/m3-motion": {
       "name": "@aphrody/m3-motion",
       "version": "1.4.4",
@@ -777,29 +800,6 @@
       },
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
-      },
-    },
-    "m3/packages/m3-primitives": {
-      "name": "@aphrody/m3-primitives",
-      "version": "1.4.4",
-      "dependencies": {
-        "@aphrody/m3-motion": "workspace:*",
-        "@base-ui/react": "catalog:",
-        "class-variance-authority": "catalog:",
-        "clsx": "catalog:",
-        "motion": "catalog:",
-        "react-hook-form": "catalog:",
-        "react-resizable-layout": "catalog:",
-        "sonner": "catalog:",
-        "zod": "catalog:",
-      },
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-      },
-      "peerDependencies": {
-        "react": ">=18.0.0",
-        "react-dom": ">=18.0.0",
-        "tailwindcss": ">=4.1.0",
       },
     },
     "m3/packages/m3-react": {
@@ -1415,7 +1415,7 @@
 
     "@aphrody/m3-ai": ["@aphrody/m3-ai@workspace:m3/packages/m3-ai"],
 
-    "@aphrody/m3-baseui": ["@aphrody/m3-baseui@workspace:m3/packages/m3-baseui"],
+    "@aphrody/m3-baseui": ["@aphrody/m3-baseui@workspace:../bun/packages/aphrody-migrated/m3/aphrody-m3-baseui"],
 
     "@aphrody/m3-bun": ["@aphrody/m3-bun@workspace:m3/packages/m3-bun"],
 
@@ -1431,7 +1431,7 @@
 
     "@aphrody/m3-fonts": ["@aphrody/m3-fonts@workspace:../bun/packages/aphrody-migrated/m3/aphrody-m3-fonts"],
 
-    "@aphrody/m3-forms": ["@aphrody/m3-forms@workspace:m3/packages/m3-forms"],
+    "@aphrody/m3-forms": ["@aphrody/m3-forms@workspace:../bun/packages/aphrody-migrated/m3/aphrody-m3-forms"],
 
     "@aphrody/m3-front": ["@aphrody/m3-front@workspace:../bun/packages/aphrody-migrated/m3/aphrody-m3-front"],
 
@@ -1447,7 +1447,7 @@
 
     "@aphrody/m3-os-themes": ["@aphrody/m3-os-themes@workspace:../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes"],
 
-    "@aphrody/m3-primitives": ["@aphrody/m3-primitives@workspace:m3/packages/m3-primitives"],
+    "@aphrody/m3-primitives": ["@aphrody/m3-primitives@workspace:../bun/packages/aphrody-migrated/m3/aphrody-m3-primitives"],
 
     "@aphrody/m3-react": ["@aphrody/m3-react@workspace:m3/packages/m3-react"],
 

@@ -7,7 +7,7 @@ from the checkout. Companion files: [CLI.md](CLI.md) (exact command trees), [MCP
 (every MCP tool), [ecosystem.json](ecosystem.json) (machine-readable). Check here before writing new
 code: reuse an existing crate, command or tool instead of duplicating it.
 
-Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 200 crates, 36 binaries, 100 Bun packages, 10 uv packages, 777 CLI commands, 334 MCP tools.
+Totals: 2 repositories (2 aphrody, 0 shared, 0 experiments), 200 crates, 36 binaries, 97 Bun packages, 10 uv packages, 777 CLI commands, 334 MCP tools.
 
 | Repository | Kind | Role |
 | --- | --- | --- |
@@ -150,7 +150,7 @@ Canonical Rust/Bun monorepo
 | `simdutf` | crates/native/simdutf | Unicode validation and transcoding at billions of characters per second |  |  |
 | `yolo-runtime` | crates/engine/yolo-runtime | Versioned C ABI of the precompiled YOLO native runtime (first slice: system stats and cancellable benchmark) |  | browser, cuda, default, gpu |
 
-### Bun packages (66)
+### Bun packages (63)
 
 | Package | Path | Description | Bin |
 | --- | --- | --- | --- |
@@ -169,16 +169,13 @@ Canonical Rust/Bun monorepo
 | `@aphrody/identity` | m3/packages/identity | Aphrody product identity for the M3 surfaces: brand emblem and icons, the Aphrody avatar, the animated pet (React component and <aphrody-pet> Custom Element, Codex-composed tracks, 16-way gaze) drawn from crates/ui/identity. |  |
 | `@aphrody/m3` | m3/packages/m3 | The @aphrody Material Design 3 framework for Bun: one plugin (Tailwind v4, Sass through Rust, m3:* virtual theme/font modules, ?url imports), serveM3 (Bun.serve + HMR + proxy), buildM3 (Bun.build, Tauri webview layout), M3App and the m3 CLI. | `m3` |
 | `@aphrody/m3-ai` | m3/packages/m3-ai | Material Design 3 agent-interaction components (tool calls, markdown, chat composer, workers, tasks): the SpaceUI (@spacedrive/ai) set rebuilt on @aphrody/m3-primitives. |  |
-| `@aphrody/m3-baseui` | m3/packages/m3-baseui | Base UI (aphrody-labs fork, forks/base-ui) with Material 3 styling: every Base UI primitive wrapped with M3 token classes; static CSS, no CSS-in-JS runtime, per-component modules and sheets. |  |
 | `@aphrody/m3-bun` | m3/packages/m3-bun | The one Bun-native tool for M3 apps: a single Bun plugin and the m3-bun CLI that build, minify, serve (HMR), compile to one executable, package and generate deploy configs (Docker, systemd, nginx, Vercel, Fly.io, Cloudflare, Coolify, VS Code, Windows, minimal Linux image). One Bun file server serves the UI and the API from one process. | `m3-bun` |
 | `@aphrody/m3-design` | m3/packages/m3-design | Automated design engine for Material Design 3 and Google Design |  |
 | `@aphrody/m3-example` | m3/apps/example | The m3 example app: App Router (React Server Components, server actions, streaming SSR, static generation), M3 theme, Tailwind v4 and the M3 DataTable, on Bun only. |  |
 | `@aphrody/m3-explorer` | m3/packages/m3-explorer | Material Design 3 file-management components (tag pill, inline rename, file thumb, grid item): the SpaceUI (@spacedrive/explorer) set rebuilt on @aphrody/m3-primitives. |  |
-| `@aphrody/m3-forms` | m3/packages/m3-forms | Material Design 3 form fields (react-hook-form) on @aphrody/m3-primitives: the SpaceUI (@spacedrive/forms) set, M3-styled. |  |
 | `@aphrody/m3-motion` | m3/packages/m3-motion | Material 3 animation plugin powered by Motion (formerly Framer Motion) |  |
 | `@aphrody/m3-next` | m3/packages/m3-next | Next.js 16 App Router integration for the @aphrody Material Design 3 layer: withM3 config (React Compiler, Cache Components, typed routes, Tauri static export), M3Html/M3Root server components, a light 'use client' theme provider, a proxy.ts helper, metadata/viewport helpers, crawler files and the m3-next runner (Next on Bun, no Node; from @aphrody/next-bun). | `m3-next` |
 | `@aphrody/m3-next-migrate` | m3/packages/m3-next-migrate | Migration analysis, codemods and runtime shims for Next.js 16 components and private-owner native Bun web apps; Tauri 3 source planning requires a registered native host adapter for activation | `m3-next-migrate`, `next-migrate` |
-| `@aphrody/m3-primitives` | m3/packages/m3-primitives | Material Design 3 React primitives: the SpaceUI (@spacedrive/primitives) component set rebuilt on the M3 roles, shape, typescale, state layers and motion of the aphrody design system. |  |
 | `@aphrody/m3-react` | m3/packages/m3-react | React wrappers (@lit/react createComponent) for every <md-*> element of the @aphrody/material-web fork. |  |
 | `@aphrody/m3-reader` | m3/packages/m3-reader | Material 3 manga and illustrated book readers for React |  |
 | `@aphrody/m3-tailwind` | m3/packages/m3-tailwind | Tailwind v4 CSS-first preset for Material 3: generates @theme (colour roles, shape, typescale, elevation, easing) from @aphrody/m3-tokens. |  |

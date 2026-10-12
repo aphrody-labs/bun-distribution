@@ -2166,8 +2166,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "34678a75399e8061f294e9a648710e5633f35db7be6b769f40a8e5b25707a66b",
-      "bytes": 59109,
+      "sha256": "2b2519fdf8eb3bb84c4e65914397f4130c4ab43a86ecde0014b84f0e95b9696e",
+      "bytes": 58442,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -6426,8 +6426,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "895636228d6e093d33dec8b1afa2f37dddfb2a12dedd75905f5b4e76cc360e2e",
-      "bytes": 35821,
+      "sha256": "43576000904ca25ab6af8011bfc5656e7bb62e23f563a4841cc25bca42915854",
+      "bytes": 36013,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",
@@ -10664,16 +10664,6 @@
       "canonical": "m3/packages/m3-ai/UPSTREAM-CHANGELOG.md"
     },
     {
-      "path": "m3/packages/m3-baseui/README.md",
-      "title": "@aphrody/m3-baseui",
-      "sha256": "61743a68563ac500864e838afbbd9dabb97a9d0c5d137d130e5f359672eda52e",
-      "bytes": 9590,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "m3/packages/m3-baseui/README.md"
-    },
-    {
       "path": "m3/packages/m3-bun/README.md",
       "title": "@aphrody/m3-bun",
       "sha256": "efff62a7867318bd1297f7a4e0771fe5f4f03e11ba692f7b88249c7a6b3bec7e",
@@ -10712,26 +10702,6 @@
       "status": "notice",
       "visibility": "private",
       "canonical": "m3/packages/m3-explorer/UPSTREAM-CHANGELOG.md"
-    },
-    {
-      "path": "m3/packages/m3-forms/README.md",
-      "title": "@aphrody/m3-forms",
-      "sha256": "ba60bd2a600c8132be4047581766efa993ed11a7bb689e67092b325539d546b9",
-      "bytes": 7570,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "m3/packages/m3-forms/README.md"
-    },
-    {
-      "path": "m3/packages/m3-forms/UPSTREAM-CHANGELOG.md",
-      "title": "@aphrody/m3-forms",
-      "sha256": "f041a14e0d9edfd0d1a073ebfea3517a85bc618353e7f0339367fae5daf589bd",
-      "bytes": 1233,
-      "domain": "",
-      "status": "notice",
-      "visibility": "private",
-      "canonical": "m3/packages/m3-forms/UPSTREAM-CHANGELOG.md"
     },
     {
       "path": "m3/packages/m3-motion/README.md",
@@ -10802,26 +10772,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "m3/packages/m3-next/examples/tauri/README.md"
-    },
-    {
-      "path": "m3/packages/m3-primitives/README.md",
-      "title": "@aphrody/m3-primitives",
-      "sha256": "fcefcf6e999ef608255e6b296880a538b75e3cfae94d926e0105dd5c8be464c5",
-      "bytes": 6892,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "m3/packages/m3-primitives/README.md"
-    },
-    {
-      "path": "m3/packages/m3-primitives/UPSTREAM-CHANGELOG.md",
-      "title": "@aphrody/m3-primitives",
-      "sha256": "f0d450852c6e0af44c215d4ffb20a9238982c48a6afa93b9eaf834b3e50e8606",
-      "bytes": 1106,
-      "domain": "",
-      "status": "notice",
-      "visibility": "private",
-      "canonical": "m3/packages/m3-primitives/UPSTREAM-CHANGELOG.md"
     },
     {
       "path": "m3/packages/m3-react/FRAMEWORKS.md",

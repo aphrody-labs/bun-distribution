@@ -1327,12 +1327,6 @@
           "bins": []
         },
         {
-          "name": "@aphrody/m3-baseui",
-          "path": "m3/packages/m3-baseui",
-          "description": "Base UI (aphrody-labs fork, forks/base-ui) with Material 3 styling: every Base UI primitive wrapped with M3 token classes; static CSS, no CSS-in-JS runtime, per-component modules and sheets.",
-          "bins": []
-        },
-        {
           "name": "@aphrody/m3-bun",
           "path": "m3/packages/m3-bun",
           "description": "The one Bun-native tool for M3 apps: a single Bun plugin and the m3-bun CLI that build, minify, serve (HMR), compile to one executable, package and generate deploy configs (Docker, systemd, nginx, Vercel, Fly.io, Cloudflare, Coolify, VS Code, Windows, minimal Linux image). One Bun file server serves the UI and the API from one process.",
@@ -1359,12 +1353,6 @@
           "bins": []
         },
         {
-          "name": "@aphrody/m3-forms",
-          "path": "m3/packages/m3-forms",
-          "description": "Material Design 3 form fields (react-hook-form) on @aphrody/m3-primitives: the SpaceUI (@spacedrive/forms) set, M3-styled.",
-          "bins": []
-        },
-        {
           "name": "@aphrody/m3-motion",
           "path": "m3/packages/m3-motion",
           "description": "Material 3 animation plugin powered by Motion (formerly Framer Motion)",
@@ -1386,12 +1374,6 @@
             "m3-next-migrate",
             "next-migrate"
           ]
-        },
-        {
-          "name": "@aphrody/m3-primitives",
-          "path": "m3/packages/m3-primitives",
-          "description": "Material Design 3 React primitives: the SpaceUI (@spacedrive/primitives) component set rebuilt on the M3 roles, shape, typescale, state layers and motion of the aphrody design system.",
-          "bins": []
         },
         {
           "name": "@aphrody/m3-react",
@@ -10496,7 +10478,7 @@
     "sharedRepos": 0,
     "crates": 200,
     "binaries": 36,
-    "bunPackages": 100,
+    "bunPackages": 97,
     "pythonPackages": 10,
     "cliBinaries": 34,
     "cliCommands": 777,
