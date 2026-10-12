@@ -32,12 +32,7 @@ describe("@aphrody/m3 data components (DataTable and VirtualList)", () => {
     ];
 
     const html = renderToString(
-      <DataTable
-        data={ITEMS}
-        columns={columns}
-        caption="Team Members"
-        searchable
-      />,
+      <DataTable data={ITEMS} columns={columns} caption="Team Members" searchable />,
     );
 
     expect(html).toContain("<table");
@@ -60,6 +55,7 @@ describe("@aphrody/m3 data components (DataTable and VirtualList)", () => {
     );
 
     expect(html).toContain("data-m3-virtual-list");
-    expect(html).toContain('role="list"');
+    expect(html.match(/<ul[\s>]/g)?.length).toBe(1);
+    expect(html).toMatch(/<li[\s>]/);
   });
 });

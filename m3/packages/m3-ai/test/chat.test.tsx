@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { describe, expect, test } from "bun:test";
-import { type ReactElement, useEffect } from "react";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { act, type ReactElement, useEffect } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -312,6 +312,15 @@ describe("chatReducer", () => {
 });
 
 describe("useOpenAIChat", () => {
+  // act() flushes the renders and passive effects that dispatches from the async send() schedule.
+  const actEnvironment = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
+  beforeAll(() => {
+    actEnvironment.IS_REACT_ACT_ENVIRONMENT = true;
+  });
+  afterAll(() => {
+    delete actEnvironment.IS_REACT_ACT_ENVIRONMENT;
+  });
+
   test("streams an answer into the conversation", async () => {
     let api: UseOpenAIChatResult | null = null;
     const finished: ChatMessage[] = [];
@@ -334,17 +343,15 @@ describe("useOpenAIChat", () => {
     }
     const host = document.createElement("div");
     const root = createRoot(host);
-    flushSync(() => root.render(<Harness />));
-    await api!.send("Hi");
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    flushSync(() => {});
+    await act(() => root.render(<Harness />));
+    await act(() => api!.send("Hi"));
     expect(api!.status).toBe("idle");
     expect(api!.messages.map((m) => [m.role, m.content])).toEqual([
       ["user", "Hi"],
       ["assistant", "Kame"],
     ]);
     expect(finished[0]?.content).toBe("Kame");
-    flushSync(() => root.unmount());
+    act(() => root.unmount());
   });
 
   test("reports unavailable when the server is down", async () => {
@@ -360,13 +367,11 @@ describe("useOpenAIChat", () => {
       return null;
     }
     const root = createRoot(document.createElement("div"));
-    flushSync(() => root.render(<Harness />));
-    await api!.send("Hi");
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    flushSync(() => {});
+    await act(() => root.render(<Harness />));
+    await act(() => api!.send("Hi"));
     expect(api!.status).toBe("unavailable");
     expect(api!.error?.kind).toBe("network");
-    flushSync(() => root.unmount());
+    act(() => root.unmount());
   });
 });
 

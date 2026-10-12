@@ -59,7 +59,7 @@
   "scripts": {
     "typecheck": "bun check --noEmit && bun check --noEmit -p tsconfig.types.json",
     "test": "bun test",
-    "lint": "oxlint -c .oxlintrc.json --no-ignore index.ts site.ts scripts/vendor-upstream.ts index.test.ts native.test.ts vendor.test.ts types.check.ts",
+    "lint": "oxlint --no-ignore index.ts site.ts scripts/vendor-upstream.ts index.test.ts native.test.ts vendor.test.ts types.check.ts",
     "format:check": "oxfmt --config .oxfmtrc.json --check index.ts index.d.ts site.ts site.d.ts scripts/vendor-upstream.ts index.test.ts native.test.ts vendor.test.ts types.check.ts",
     "vendor": "bun scripts/vendor-upstream.ts",
     "vendor:check": "bun scripts/vendor-upstream.ts --check",

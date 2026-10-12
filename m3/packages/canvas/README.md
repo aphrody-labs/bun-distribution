@@ -11,11 +11,11 @@ bun add @aphrody/canvas   # Bun >= 1.4.2
 
 ## Entry points
 
-| Import | Native addon | Contents |
-| --- | --- | --- |
-| `@aphrody/canvas` | loaded on import | The upstream API (`createCanvas`, `loadImage`, `Image`, `GlobalFonts`, `Path2D`, `SKRSContext2D`, ...), `loadNativeCanvas()`, `createNativeCanvas()`, `loadNativeImage()`, `drawM3Scene()`, `drawM3Scene3d()` and the site contract. |
-| `@aphrody/canvas/site` | never | `createM3CanvasSurface()`, `createBrowserCanvas()`, `configureBrowserCanvas()`, `selectCanvasBackend()`. |
-| `@aphrody/canvas/browser` | never | Same module as `/site`. |
+| Import                    | Native addon     | Contents                                                                                                                                                                                                                             |
+| ------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@aphrody/canvas`         | loaded on import | The upstream API (`createCanvas`, `loadImage`, `Image`, `GlobalFonts`, `Path2D`, `SKRSContext2D`, ...), `loadNativeCanvas()`, `createNativeCanvas()`, `loadNativeImage()`, `drawM3Scene()`, `drawM3Scene3d()` and the site contract. |
+| `@aphrody/canvas/site`    | never            | `createM3CanvasSurface()`, `createBrowserCanvas()`, `configureBrowserCanvas()`, `selectCanvasBackend()`.                                                                                                                             |
+| `@aphrody/canvas/browser` | never            | Same module as `/site`.                                                                                                                                                                                                              |
 
 ```ts
 import { createCanvas, GlobalFonts, type SKRSContext2D } from "@aphrody/canvas";
@@ -68,12 +68,12 @@ types (`M3Scene`, `M3Scene3d`, `M3Render3dPolicy`) come from `scene-types.d.ts`,
 Aphrody behavior goes in this facade or in the Rust render crates. The files the package needs
 from other trees are copies:
 
-| Path | Source |
-| --- | --- |
-| `vendor/index.js`, `js-binding.js`, `geometry.js`, `load-image.js`, `index.d.ts`, `LICENSE` | `third_party/canvas` (MIT, upstream copyright notice kept) |
-| `vendor/package.json` | `{"type": "commonjs"}`: the upstream loader is CommonJS, this package is ESM |
-| `vendor/UPSTREAM.md` | Provenance: commit, version, license, SHA-256 of every copy |
-| `scene-types.d.ts` | `packages/bun/src/scene-types.ts` |
+| Path                                                                                        | Source                                                                       |
+| ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `vendor/index.js`, `js-binding.js`, `geometry.js`, `load-image.js`, `index.d.ts`, `LICENSE` | `third_party/canvas` (MIT, upstream copyright notice kept)                   |
+| `vendor/package.json`                                                                       | `{"type": "commonjs"}`: the upstream loader is CommonJS, this package is ESM |
+| `vendor/UPSTREAM.md`                                                                        | Provenance: commit, version, license, SHA-256 of every copy                  |
+| `scene-types.d.ts`                                                                          | `packages/bun/src/scene-types.ts`                                            |
 
 The copies are committed rather than generated at pack time:
 
@@ -92,8 +92,8 @@ Copies are byte-identical after line-ending normalization to LF.
 git -C third_party/canvas fetch && git -C third_party/canvas checkout <reviewed-sha>
 cd packages/canvas
 bun run vendor            # rewrites vendor/, scene-types.d.ts and optionalDependencies
-# bump "version" to <upstream-version>-aphrody.1 and aphrodyCanvasVersion in site.ts,
-# site.d.ts and index.d.ts, then run the gates below
+# keep aphrodyCanvasVersion in site.ts, site.d.ts and index.d.ts equal to the
+# package version (the release-aligned Aphrody version), then run the gates below
 ```
 
 ## Validation

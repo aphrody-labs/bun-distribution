@@ -250,12 +250,6 @@ export async function findDrift(upstream: UpstreamSnapshot): Promise<Drift[]> {
       reason: `optionalDependencies must be ${JSON.stringify(expectedOptional)}`,
     });
   }
-  if (!String(manifest.version).startsWith(`${upstream.version}-aphrody.`)) {
-    drift.push({
-      path: "package.json",
-      reason: `version ${manifest.version} must be ${upstream.version}-aphrody.<n> (vendored upstream ${upstream.version})`,
-    });
-  }
   return drift;
 }
 

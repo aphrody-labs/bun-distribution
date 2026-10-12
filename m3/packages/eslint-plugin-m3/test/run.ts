@@ -21,8 +21,19 @@ const RULES = [
   "no-hardcoded-color",
 ];
 
+// The native oxlint on PATH (aphrody-labs/oxc build) silently ignores `jsPlugins`; only the npm
+// `oxlint` package hosts them. Run that package at the native binary's version, or APHRODY_OXLINT.
+function oxlintCommand(): string[] {
+  if (process.env.APHRODY_OXLINT) return [process.env.APHRODY_OXLINT];
+  const native = spawnSync(["oxlint", "--version"]).stdout.toString();
+  const version = /(\d+\.\d+\.\d+)/.exec(native)?.[1] ?? "latest";
+  return [process.execPath, "x", "--bun", `oxlint@${version}`];
+}
+
+const OXLINT = oxlintCommand();
+
 function lint(file: string): string {
-  const r = spawnSync(["oxlint", "-c", CONFIG, join(ROOT, "test", "fixtures", file)], {
+  const r = spawnSync([...OXLINT, "-c", CONFIG, join(ROOT, "test", "fixtures", file)], {
     cwd: ROOT,
   });
   return r.stdout.toString() + r.stderr.toString();

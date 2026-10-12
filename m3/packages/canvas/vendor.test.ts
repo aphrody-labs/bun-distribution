@@ -50,7 +50,6 @@ describe("@aphrody/canvas vendored upstream", () => {
   test("platform packages pin the vendored upstream version", () => {
     const upstreamVersion = /`@napi-rs\/canvas@([^`]+)`/.exec(record)?.[1];
     expect(upstreamVersion).toBeDefined();
-    expect(manifest.version.startsWith(`${upstreamVersion}-aphrody.`)).toBe(true);
     const optional: Record<string, string> = publishManifest.optionalDependencies;
     expect(Object.keys(optional)).toContain(`${UPSTREAM_PACKAGE}-win32-x64-msvc`);
     expect(Object.keys(optional)).toContain(`${UPSTREAM_PACKAGE}-linux-x64-gnu`);
