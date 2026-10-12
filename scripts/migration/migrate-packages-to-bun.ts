@@ -14,16 +14,27 @@ type Manifest = {
   repository?: string | { type?: string; url?: string };
 };
 
-type Candidate = { name: string; version: string; source: string; target: string; group: "m3" | "packages" };
+type Candidate = {
+  name: string;
+  version: string;
+  source: string;
+  target: string;
+  group: "m3" | "packages";
+};
 
 const root = resolve(import.meta.dir, "../..");
 const forkRoot = resolve(process.env.APHRODY_BUN_CHECKOUT ?? join(root, "..", "bun"));
-const submoduleRoot = resolve(process.env.APHRODY_BUN_SUBMODULE_ROOT ?? join(forkRoot, "packages", "aphrody-migrated"));
+const submoduleRoot = resolve(
+  process.env.APHRODY_BUN_SUBMODULE_ROOT ?? join(forkRoot, "packages", "aphrody-migrated"),
+);
 const apply = Bun.argv.includes("--apply");
 const checkOnly = Bun.argv.includes("--check");
 const forkOrg = process.env.APHRODY_BUN_GITHUB_ORG ?? "aphrody-labs";
 
-async function command(args: string[], cwd = root): Promise<{ code: number; stdout: string; stderr: string }> {
+async function command(
+  args: string[],
+  cwd = root,
+): Promise<{ code: number; stdout: string; stderr: string }> {
   const proc = Bun.spawn(["git", ...args], { cwd, stdout: "pipe", stderr: "pipe" });
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),
@@ -34,8 +45,10 @@ async function command(args: string[], cwd = root): Promise<{ code: number; stdo
 }
 
 function repoUrl(manifest: Manifest, name: string): string {
-  const repository = typeof manifest.repository === "string" ? manifest.repository : manifest.repository?.url;
-  if (repository?.startsWith("https://github.com/")) return repository.replace(/\.git$/, "") + ".git";
+  const repository =
+    typeof manifest.repository === "string" ? manifest.repository : manifest.repository?.url;
+  if (repository?.startsWith("https://github.com/"))
+    return repository.replace(/\.git$/, "") + ".git";
   const slug = name.replace(/^@/, "").replace(/\//g, "-");
   return `https://github.com/${forkOrg}/${slug}.git`;
 }
@@ -46,7 +59,14 @@ async function packageDirs(parent: string): Promise<string[]> {
     const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
     if (entries.some((entry) => entry.isFile() && entry.name === "package.json")) result.push(dir);
     for (const entry of entries) {
-      if (!entry.isDirectory() || entry.name.startsWith(".") || entry.name === "node_modules" || entry.name === "dist" || entry.name === "target") continue;
+      if (
+        !entry.isDirectory() ||
+        entry.name.startsWith(".") ||
+        entry.name === "node_modules" ||
+        entry.name === "dist" ||
+        entry.name === "target"
+      )
+        continue;
       await walk(join(dir, entry.name));
     }
   }
@@ -83,16 +103,32 @@ async function main() {
     seen.add(pkg.name);
     return duplicate;
   });
-  if (duplicates.length) throw new Error(`duplicate package names: ${duplicates.map((pkg) => pkg.name).join(", ")}`);
+  if (duplicates.length)
+    throw new Error(`duplicate package names: ${duplicates.map((pkg) => pkg.name).join(", ")}`);
 
   const state = await command(["status", "--short"]);
-  if (state.stdout.trim() && apply) throw new Error("working tree is dirty; use a clean tree before --apply");
+  if (state.stdout.trim() && apply)
+    throw new Error("working tree is dirty; use a clean tree before --apply");
   if (checkOnly) {
     const fork = await command(["rev-parse", "--show-toplevel"], forkRoot);
     if (fork.code !== 0) throw new Error(`invalid Bun fork checkout: ${forkRoot}`);
   }
 
-  console.log(JSON.stringify({ apply, forkRoot, submoduleRoot, total: packages.length, m3: packages.filter((p) => p.group === "m3").length, packages: packages.filter((p) => p.group === "packages").length, entries: packages }, null, 2));
+  console.log(
+    JSON.stringify(
+      {
+        apply,
+        forkRoot,
+        submoduleRoot,
+        total: packages.length,
+        m3: packages.filter((p) => p.group === "m3").length,
+        packages: packages.filter((p) => p.group === "packages").length,
+        entries: packages,
+      },
+      null,
+      2,
+    ),
+  );
   if (!apply) return;
 
   await mkdir(submoduleRoot, { recursive: true });
