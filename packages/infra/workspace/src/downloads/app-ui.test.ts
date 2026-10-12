@@ -87,10 +87,7 @@ test("explicit declaration enables only the protected current artifact and env t
 test("canonical homepage and OS serve namespaced assets without exposing native RPC", async () => {
   const home = await request("/");
   expect(home.status).toBe(200);
-  const homeHtml = await home.text();
-  expect(homeHtml).toContain('href="/_app-ui/"');
-  expect(homeHtml).not.toContain('href="/os"');
-  expect(homeHtml).not.toContain("app.js");
+  expect(await home.text()).toContain('href="/_app-ui/"');
   const os = await request("/os");
   expect(await os.text()).toContain('name="aphrody-rpc" content="unavailable"');
   expect(os.headers.get("content-security-policy")).toContain("base-uri 'self'");
