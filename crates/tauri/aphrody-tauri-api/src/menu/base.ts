@@ -4,12 +4,12 @@
 
 import { Channel, invoke, Resource } from '../core'
 import { transformImage } from '../image'
-import { CheckMenuItemOptions } from './checkMenuItem'
-import { IconMenuItemOptions } from './iconMenuItem'
-import { MenuOptions } from './menu'
-import { MenuItemOptions } from './menuItem'
-import { PredefinedMenuItemOptions } from './predefinedMenuItem'
-import { SubmenuOptions } from './submenu'
+import type { CheckMenuItemOptions } from './checkMenuItem'
+import type { IconMenuItemOptions } from './iconMenuItem'
+import type { MenuOptions } from './menu'
+import type { MenuItemOptions } from './menuItem'
+import type { PredefinedMenuItemOptions } from './predefinedMenuItem'
+import type { SubmenuOptions } from './submenu'
 
 /**
  * The kind of a menu item, used internally to route IPC calls to the right

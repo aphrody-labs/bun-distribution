@@ -503,7 +503,9 @@ class Window {
       return () => {
         // eslint-disable-next-line security/detect-object-injection
         const listeners = this.listeners[event]
-        listeners.splice(listeners.indexOf(handler), 1)
+        if (listeners) {
+          listeners.splice(listeners.indexOf(handler), 1)
+        }
       }
     }
     return listen(event, handler, {
@@ -541,7 +543,9 @@ class Window {
       return () => {
         // eslint-disable-next-line security/detect-object-injection
         const listeners = this.listeners[event]
-        listeners.splice(listeners.indexOf(handler), 1)
+        if (listeners) {
+          listeners.splice(listeners.indexOf(handler), 1)
+        }
       }
     }
     return once(event, handler, {
@@ -609,12 +613,12 @@ class Window {
   /** @ignore */
   _handleTauriEvent<T>(event: string, handler: EventCallback<T>): boolean {
     if (localTauriEvents.includes(event)) {
-      if (!(event in this.listeners)) {
-        // eslint-disable-next-line
-        this.listeners[event] = [handler]
+      const listeners = this.listeners[event]
+      if (listeners) {
+        listeners.push(handler)
       } else {
         // eslint-disable-next-line
-        this.listeners[event].push(handler)
+        this.listeners[event] = [handler]
       }
       return true
     }

@@ -4,6 +4,7 @@
     "lib": ["ESNext", "DOM"],
     "module": "Preserve",
     "moduleDetection": "force",
+    "jsx": "react-jsx",
     "moduleResolution": "Bundler",
     "strict": true,
     "noEmit": true,

@@ -159,7 +159,7 @@ class Channel<T = unknown> {
 
         // process pending messages
         while (this.#nextMessageIndex in this.#pendingMessages) {
-          const message = this.#pendingMessages[this.#nextMessageIndex]
+          const message = this.#pendingMessages[this.#nextMessageIndex] as T
           this.#onmessage(message)
           // eslint-disable-next-line @typescript-eslint/no-array-delete
           delete this.#pendingMessages[this.#nextMessageIndex]
@@ -601,7 +601,7 @@ export {
   Channel,
   PluginListener,
   addPluginListener,
-  PermissionState,
+  type PermissionState,
   checkPermissions,
   requestPermissions,
   invoke,

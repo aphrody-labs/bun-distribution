@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-License-Identifier: MIT
 
-import {
+import type {
   IconMenuItemOptions,
   PredefinedMenuItemOptions,
   CheckMenuItemOptions
@@ -16,7 +16,7 @@ import { type LogicalPosition, PhysicalPosition, type Window } from '../window'
 import { type ItemKind, MenuItemBase, newMenu } from './base'
 import { type MenuOptions } from './menu'
 import { Position } from '../dpi'
-import { transformImage, MenuIcon } from '../image'
+import { transformImage, type MenuIcon } from '../image'
 
 /** @ignore */
 export function itemFromKind([rid, id, kind]: [number, string, ItemKind]):

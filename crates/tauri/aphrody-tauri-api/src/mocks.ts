@@ -42,7 +42,7 @@
  */
 
 import type { InvokeArgs, InvokeOptions } from './core'
-import { EventName } from './event'
+import type { EventName } from './event'
 
 function mockInternals() {
   window.__TAURI_INTERNALS__ = window.__TAURI_INTERNALS__ ?? {}
@@ -206,7 +206,7 @@ export function mockIPC(
     callback?: (response: T) => void,
     once = false
   ) {
-    const identifier = window.crypto.getRandomValues(new Uint32Array(1))[0]
+    const identifier = window.crypto.getRandomValues(new Uint32Array(1))[0]!
     callbacks.set(identifier, (data) => {
       if (once) {
         unregisterCallback(identifier)

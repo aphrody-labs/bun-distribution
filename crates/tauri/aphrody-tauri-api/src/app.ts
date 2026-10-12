@@ -19,7 +19,7 @@
 
 import { addPluginListener, invoke, PluginListener } from './core'
 import { Image } from './image'
-import { Theme } from './window'
+import type { Theme } from './window'
 
 /**
  * Identifier type used for data stores on macOS and iOS.

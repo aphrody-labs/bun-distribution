@@ -5,7 +5,7 @@
 import { MenuItemBase, newMenu } from './base'
 import { type MenuItemOptions } from '../menu'
 import { invoke } from '../core'
-import { transformImage, MenuIcon } from '../image'
+import { transformImage, type MenuIcon } from '../image'
 
 /**
  * A native Icon to be used for the menu item
