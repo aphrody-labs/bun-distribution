@@ -73,6 +73,7 @@
     "**/node_modules/**",
     "target/**",
     "var/**",
+    "tmp/**",
     "dist/**",
     ".venv/**",
     ".uv-cache/**",
@@ -99,7 +100,8 @@
     "**/fixtures/**",
     "**/__snapshots__/**",
     "m3/packages/canvas/vendor/**",
-    "m3/packages/eslint-plugin-m3/test/**"
+    "m3/packages/eslint-plugin-m3/test/**",
+    "packages/web/webos-wasm/wasm/**"
   ],
   "overrides": [
     {
