@@ -638,6 +638,13 @@ async function appUiResponse(request: Request, root: string): Promise<Response |
           if (home && /(?:^|\/)app\.js(?:\?|$)/.test(src)) element.remove();
         },
       })
+      .on("a", {
+        element(element) {
+          const href = element.getAttribute("href") ?? "";
+          if (home && /^\/(?:os|studio|explorer|terminal|models|files|chat|settings)(?:\/|$)/.test(href))
+            element.remove();
+        },
+      })
       .on("head", {
         element(element) {
           element.append('<meta name="aphrody-rpc" content="unavailable">', { html: true });
