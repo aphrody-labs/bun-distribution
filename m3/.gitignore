@@ -1,9 +1,0 @@
-node_modules/
-.coord/
-dist/
-*.tsbuildinfo
-apps/*/bin/
-apps/*/release/
-packages/*/test/fixtures/.copy-*/
-packages/*/test/fixtures/**/bin/
-packages/*/test/fixtures/**/release/
