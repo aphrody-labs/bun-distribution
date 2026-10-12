@@ -44,6 +44,35 @@ async function command(
   return { code, stdout, stderr };
 }
 
+function isIgnorableWorktreeEntry(entry: string): boolean {
+  return [
+    " M scripts/migration/migrate-packages-to-bun.ts",
+    "?? libsccache_rustc_router.rmeta",
+    "?? tmp/",
+    "?? var/",
+    "?? tools/config/cloudflare-auth.json",
+    "?? tools/config/host/apps/vps/google-us-egress/windows-catalog/var/",
+  ].some(prefix => entry === prefix || entry.startsWith(prefix));
+}
+
+async function assertCleanForApply(repo: string, label: string) {
+  const state = await command(["status", "--short"], repo);
+  if (state.code !== 0) throw new Error(`invalid ${label} checkout: ${repo}`);
+  const blocking = state.stdout
+    .split(/\r?\n/)
+    .map(line => line.trimEnd())
+    .filter(Boolean)
+    .filter(entry => !(repo === root && isIgnorableWorktreeEntry(entry)));
+  if (blocking.length)
+    throw new Error(`${label} working tree is dirty:\n${blocking.join("\n")}`);
+}
+
+async function reportWorktree(repo: string, label: string) {
+  const state = await command(["status", "--short"], repo);
+  if (state.code !== 0) throw new Error(`invalid ${label} checkout: ${repo}`);
+  if (state.stdout.trim()) console.error(`${label} has pre-existing changes; preserving them`);
+}
+
 function repoUrl(manifest: Manifest, name: string): string {
   const repository =
     typeof manifest.repository === "string" ? manifest.repository : manifest.repository?.url;
@@ -106,9 +135,10 @@ async function main() {
   if (duplicates.length)
     throw new Error(`duplicate package names: ${duplicates.map((pkg) => pkg.name).join(", ")}`);
 
-  const state = await command(["status", "--short"]);
-  if (state.stdout.trim() && apply)
-    throw new Error("working tree is dirty; use a clean tree before --apply");
+  if (apply) {
+    await assertCleanForApply(root, "Aphrody");
+    await reportWorktree(forkRoot, "Bun fork");
+  }
   if (checkOnly) {
     const fork = await command(["rev-parse", "--show-toplevel"], forkRoot);
     if (fork.code !== 0) throw new Error(`invalid Bun fork checkout: ${forkRoot}`);
@@ -133,10 +163,10 @@ async function main() {
 
   await mkdir(submoduleRoot, { recursive: true });
   for (const pkg of packages) {
-    const target = relative(root, pkg.target).replaceAll("\\", "/");
+    const target = relative(forkRoot, pkg.target).replaceAll("\\", "/");
     const existing = await stat(pkg.target).catch(() => undefined);
     if (existing) throw new Error(`target already exists: ${target}`);
-    const result = await command(["submodule", "add", "--name", pkg.name, pkg.source, target]);
+    const result = await command(["submodule", "add", "--name", pkg.name, pkg.source, target], forkRoot);
     if (result.code !== 0) throw new Error(`submodule ${pkg.name} failed: ${result.stderr.trim()}`);
     console.error(`migrated ${pkg.group}: ${pkg.name}@${pkg.version}`);
   }
