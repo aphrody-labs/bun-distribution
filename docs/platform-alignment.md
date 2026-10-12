@@ -38,6 +38,13 @@ Web adapters must therefore preserve:
 3. shape roles and state behavior;
 4. accessible focus, disabled, selected, pressed, and error states.
 
+Material Web uses `--md-sys-color-*` custom properties for the color scheme,
+with matching `--md-sys-color-on-*` content roles. Production bundles should
+import individual component definitions such as a button or checkbox; the
+aggregate component entry point is intended for prototypes and development.
+State-layer opacity is part of the component token contract and must remain
+distinct for focus, hover, and pressed states.
+
 ## Package mapping
 
 | Contract | Package |
@@ -69,3 +76,7 @@ The native design mirror is maintained separately from this repository. A
 remote VPS checkout was inspected over `vps-wg`; its documented Rust contract
 was used as a reference, but its generated mirror artifacts are not copied
 into this repository.
+
+Context7 verification of the upstream documentation was performed against
+`/material-components/material-web` and
+`/websites/composables_jetpack-compose_androidx_compose_material3_material3`.
