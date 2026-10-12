@@ -49,13 +49,6 @@ crates = ["plugins/autostart", "plugins/clipboard-manager", "plugins/deep-link",
 # plugins/*/SECURITY.md: identical upstream policy, kept once as crates/tauri/SECURITY.md.
 exclude = ["plugins/*/examples/**", "plugins/*/tests/**", "plugins/*/contributors/**", "plugins/*/SECURITY.md"]
 
-[[source]]
-name = "create-tauri-app"
-rustfmt = "default"
-crates = ["."]
-# src/main.rs: served by `aphrody create-tauri-app`, no standalone binary.
-exclude = ["worker/**", ".scripts/**", "*.sh", "*.ps1", "package.json", "CONTRIBUTING.md", "src/main.rs"]
-
 # Plugin README logos live once in assets/tauri/contributors (identical files in six plugins).
 [[copy]]
 from = "plugins-workspace:plugins/nfc/contributors"

@@ -326,7 +326,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
-| `aphrody-create-tauri-app` | [crates/tauri/aphrody-create-tauri-app](../../../crates/tauri/aphrody-create-tauri-app) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
 | `aphrody-tauri` | [crates/tauri/aphrody-tauri](../../../crates/tauri/aphrody-tauri) | rust crate | 1.4.4 | lib | yes | 24 | uncommitted |
 | `@aphrody/api` | [crates/tauri/aphrody-tauri-api](../../../crates/tauri/aphrody-tauri-api) | bun package | 1.4.4 | lib | no | 0 | uncommitted |
 | `aphrody-tauri-build` | [crates/tauri/aphrody-tauri-build](../../../crates/tauri/aphrody-tauri-build) | rust crate | 1.4.4 | lib | yes | 1 | uncommitted |

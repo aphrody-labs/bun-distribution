@@ -10,20 +10,8 @@
       "name": "plugins-workspace",
       "sha": "7e44012db3c1ef7896158484a7afc626b04c691a"
     },
-    {
-      "name": "create-tauri-app",
-      "sha": "c7692bb0dbd9b90a368c5af8fcd9081b5d600426"
-    }
   ],
   "crates": [
-    {
-      "name": "create-tauri-app",
-      "package": "aphrody-create-tauri-app",
-      "version": "4.7.4",
-      "source": "create-tauri-app",
-      "from": ".",
-      "dir": "crates/tauri/aphrody-create-tauri-app"
-    },
     {
       "name": "tauri",
       "package": "aphrody-tauri",
