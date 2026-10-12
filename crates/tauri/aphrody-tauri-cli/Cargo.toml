@@ -59,7 +59,7 @@ shared_child = "1"
 duct = "1.0"
 toml_edit = { workspace = true, features = ["serde"] }
 json-patch = "4"
-tauri-utils = { version = "1.4.4", path = "../aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["isolation", "schema", "config-json5", "config-toml", "html-manipulation-2"] }
+tauri-utils = { version = "1.4.4", path = "../../../../bun/packages/bun-tauri/crates/aphrody-tauri-utils", package = "aphrody-tauri-utils", features = ["isolation", "schema", "config-json5", "config-toml", "html-manipulation-2"] }
 toml = { workspace = true }
 jsonschema = { version = "0.58", default-features = false }
 handlebars = "6"

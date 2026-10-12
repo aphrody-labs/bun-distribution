@@ -172,13 +172,5 @@
       "from": "crates/tauri-runtime-cef",
       "dir": "crates/tauri/aphrody-tauri-runtime-cef"
     },
-    {
-      "name": "tauri-utils",
-      "package": "aphrody-tauri-utils",
-      "version": "3.0.0-alpha.3",
-      "source": "tauri",
-      "from": "crates/tauri-utils",
-      "dir": "crates/tauri/aphrody-tauri-utils"
-    }
   ]
 }

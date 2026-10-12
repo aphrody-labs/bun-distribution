@@ -27,7 +27,6 @@ crates = [
   "crates/tauri-cli",
   "crates/tauri-runtime",
   "crates/tauri-runtime-cef",
-  "crates/tauri-utils",
   "crates/tests/acl",
   "packages/cli",
 ]
