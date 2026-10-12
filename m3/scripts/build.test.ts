@@ -8,13 +8,14 @@ import {
   closureHashes,
   globalSalt,
   hashPackage,
+  M3_CONFIG_ROOT,
   pipeline,
   pool,
   sourceFiles,
 } from "./build.ts";
 import { levels, workspaceDeps, workspacePackages } from "./lib/workspace.ts";
 
-const PRESET = join(import.meta.dir, "../packages/m3-config/bun-build.ts");
+const PRESET = join(M3_CONFIG_ROOT, "bun-build.ts");
 let root = "";
 
 const write = (rel: string, text: string) => {

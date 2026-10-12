@@ -284,7 +284,7 @@ export async function runCli(
     const candidate =
       workspace &&
       (workspaceCheckScript(workspace) === "check" ? workspace : join(workspace, "m3"));
-    const entry = candidate && join(candidate, "scripts/yolo.ts");
+    const entry = candidate && join(candidate, "scripts/bun.ts");
     if (!entry || !existsSync(entry))
       throw new Error(
         `m3 ${maintenance}: no M3 capability-owner task runner above the selected workspace`,

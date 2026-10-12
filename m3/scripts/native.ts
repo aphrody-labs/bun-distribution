@@ -10,8 +10,8 @@
 // `native/libaphrody_ffi.<suffix>`. The library is the `aphrody-ffi` cdylib of the aphrody repository
 // (the `bun_rs_*` exports of crates/ui/bun are linked into it); this repository never compiles it.
 //
-// The library is resolved and verified through the yolo producer SDK loader
-// (`@aphrody/runtime-sdk/ffi`, `nativeLibrary`, read from $YOLO_ROOT/packages/runtime): `--lib`, then
+// The library is resolved and verified through the Bun-native producer SDK loader
+// (`@aphrody/runtime-sdk/ffi`, `nativeLibrary`, read from $BUN_ROOT/packages/engine/runtime): `--lib`, then
 // $APHRODY_FFI_LIB / $BUN_RS_LIB, then the executable directory, ~/.local/bin, ~/.local/lib/aphrody and
 // the aphrody target directories ($APHRODY_ROOT, default: the enclosing aphrody checkout or ~/aphrody).
 // A candidate is accepted only when it dlopens and exports `bun_rs_version`.
@@ -32,16 +32,14 @@ import { dirname, join, resolve } from "node:path";
 
 export const REPO = resolve(dirname(import.meta.path), "..");
 const MONOREPO = resolve(REPO, "..");
-/** Same resolution as scripts/yolo.ts, inlined: this script also runs as a standalone copy. */
-export const YOLO_ROOT =
-  Bun.env["YOLO_ROOT"] ||
-  (existsSync(join(MONOREPO, "bin", "yolo")) ? MONOREPO : join(homedir(), "yolo"));
-/** The producer SDK loader (`@aphrody/runtime-sdk/ffi`): the monorepo keeps it under packages/engine, a standalone yolo checkout under packages. */
+/** Resolve the shared Bun owner; this script also runs as a standalone copy. */
+export const BUN_ROOT = Bun.env["BUN_ROOT"] || Bun.env["APHRODY_ROOT"] || MONOREPO;
+/** The producer SDK loader (`@aphrody/runtime-sdk/ffi`) in the canonical Bun owner. */
 export const RUNTIME_SDK_FFI =
   [
-    join(YOLO_ROOT, "packages", "engine", "runtime", "src", "ffi.ts"),
-    join(YOLO_ROOT, "packages", "runtime", "src", "ffi.ts"),
-  ].find((path) => existsSync(path)) ?? join(YOLO_ROOT, "packages", "runtime", "src", "ffi.ts");
+    join(BUN_ROOT, "packages", "engine", "runtime", "src", "ffi.ts"),
+    join(BUN_ROOT, "packages", "runtime", "src", "ffi.ts"),
+  ].find((path) => existsSync(path)) ?? join(BUN_ROOT, "packages", "runtime", "src", "ffi.ts");
 
 export const SUFFIX =
   process.platform === "win32" ? "dll" : process.platform === "darwin" ? "dylib" : "so";
@@ -139,7 +137,7 @@ export function searchDirs(root = aphrodyRoot(), copies = installedCopies()): st
   ];
 }
 
-/** The part of `@aphrody/runtime-sdk/ffi` this tool uses (see yolo packages/runtime/src/ffi.ts). */
+/** The part of `@aphrody/runtime-sdk/ffi` this tool uses. */
 interface RuntimeSdkFfi {
   nativeLibrary(options: {
     name: string;
@@ -169,7 +167,7 @@ export async function resolveLibrary(
   if (!existsSync(sdk)) {
     return {
       path: null,
-      error: `@aphrody/runtime-sdk/ffi not found at ${sdk}; set YOLO_ROOT to the yolo checkout`,
+      error: `@aphrody/runtime-sdk/ffi not found at ${sdk}; set BUN_ROOT to the Bun owner checkout`,
       loader: sdk,
     };
   }

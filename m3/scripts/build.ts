@@ -15,8 +15,7 @@
 // in `node_modules/.cache/m3-build/state.json`. `--no-cache` rebuilds everything.
 import { existsSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { cpus } from "node:os";
-import { dirname, join } from "node:path";
-import { m3BunBuild, type M3PackageConfig } from "../packages/m3-config/bun-build.ts";
+import { dirname, join, resolve } from "node:path";
 import {
   REPO,
   levels,
@@ -26,6 +25,15 @@ import {
 } from "./lib/workspace.ts";
 
 export type Task = "build" | "typecheck";
+
+const defaultBunRoot = resolve(REPO, "..", "..", "bun");
+const configuredBunRoot = Bun.env.APHRODY_BUN_CHECKOUT ?? defaultBunRoot;
+const bunRoot = existsSync(join(configuredBunRoot, "packages/aphrody-migrated/m3"))
+  ? configuredBunRoot
+  : defaultBunRoot;
+export const M3_CONFIG_ROOT = join(bunRoot, "packages/aphrody-migrated/m3/aphrody-m3-config");
+const { m3BunBuild } = await import(Bun.pathToFileURL(join(M3_CONFIG_ROOT, "bun-build.ts")).href);
+type M3PackageConfig = Record<string, any>;
 
 export interface Outcome {
   name: string;
@@ -94,7 +102,7 @@ export function globalSalt(root: string = REPO): string {
   for (const file of [
     import.meta.path,
     join(REPO, "scripts/lib/workspace.ts"),
-    join(REPO, "packages/m3-config/bun-build.ts"),
+    join(M3_CONFIG_ROOT, "bun-build.ts"),
   ]) {
     hasher.update(readFileSync(file));
   }

@@ -1,14 +1,14 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
-// m3 + yolo benchmark harness: reproduces the numbers of docs/reports/PERF.md and enforces docs/reports/perf-budget.json.
+// m3 + Bun benchmark harness: reproduces the numbers of docs/reports/PERF.md and enforces docs/reports/perf-budget.json.
 //
-//   bun scripts/bench/run.ts [--only yolo,mcp,...] [--runs N] [--repeat N] [--out snapshot.json]
+//   bun scripts/bench/run.ts [--only bun,mcp,...] [--runs N] [--repeat N] [--out snapshot.json]
 //   bun scripts/bench/run.ts --check [--budget docs/reports/perf-budget.json] [--retries 2]
 //   bun scripts/bench/run.ts --update-budget [--baseline docs/reports/perf-before.json]
 //   bun scripts/bench/run.ts --compare before.json after.json [--md]
 //
 // Groups (all but `build` run by default; `--cold-cache` adds a registry download to `install`):
-//   yolo       `bun $YOLO_ROOT/packages/engine/yolo/src/index.ts version`, 20 runs after 3 warm-ups
+//   bun        the Bun-native M3 CLI, 20 runs after 3 warm-ups
 //   mcp        m3 tool host cold start: spawn to the `list` answer (served through aphrody-mcp)
 //   themes     m3-os-themes: CLI wall time, and in-process import / first / warm generation
 //   install    `bun install --frozen-lockfile` in a manifest-only copy of the workspace (cold node_modules, warm no-op)
@@ -26,7 +26,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, cpSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { YOLO_CLI, YOLO_ROOT, plan } from "../yolo.ts";
+import { BUN_ROOT, plan } from "../bun.ts";
 import {
   type Budget,
   type Metric,
@@ -72,35 +72,37 @@ const fail = (ctx: Ctx, key: string, error: unknown): void => {
   ctx.errors[key] = String((error as Error)?.message ?? error).slice(0, 300);
 };
 
-// ---------------------------------------------------------------- yolo
+// ---------------------------------------------------------------- bun
 
-async function yolo(ctx: Ctx): Promise<void> {
-  const version = ["bun", YOLO_CLI, "version"];
-  ctx.metrics["yolo.version"] = summarize(
+const M3_CLI = join(REPO, "packages/m3/bin/m3.ts");
+
+async function bun(ctx: Ctx): Promise<void> {
+  const version = ["bun", M3_CLI, "version"];
+  ctx.metrics["bun.version"] = summarize(
     await sample(() => spawnTimed(version).ms, runsOf(ctx, 20), 3),
   );
   // The default command of a source checkout: submodule inspection (file system heavy).
-  const status = ["bun", YOLO_CLI, "status", "--json"];
-  ctx.metrics["yolo.status"] = summarize(
+  const status = ["bun", M3_CLI, "version", "--json"];
+  ctx.metrics["bun.status"] = summarize(
     await sample(() => spawnTimed(status).ms, runsOf(ctx, 12), 2),
   );
-  ctx.gates["yolo.status"] = digest(
+  ctx.gates["bun.status"] = digest(
     spawnTimed(status).out.replace(/"timestamp": "[^"]*"/, '"timestamp": ""'),
   );
-  const asJson = ["bun", YOLO_CLI, "version", "--json"];
-  ctx.metrics["yolo.version_json"] = summarize(
+  const asJson = ["bun", M3_CLI, "version", "--json"];
+  ctx.metrics["bun.version_json"] = summarize(
     await sample(() => spawnTimed(asJson).ms, runsOf(ctx, 20), 3),
   );
   // Equivalence gates: the lazy command loading must not change what any of these print or return.
-  ctx.gates["yolo.version"] = spawnTimed(version).out.trim();
-  const help = spawnTimed(["bun", YOLO_CLI, "help"]);
-  ctx.gates["yolo.help"] = `${help.code} ${digest(help.out)}`;
-  const unknown = spawnTimed(["bun", YOLO_CLI, "no-such-command"]);
-  ctx.gates["yolo.unknown"] = `${unknown.code} ${digest(unknown.out)}`;
-  const rt = spawnTimed(["bun", YOLO_CLI, "runtime", "info"]);
-  ctx.gates["yolo.runtime_info"] = `${rt.code} ${digest(rt.out)}`;
-  const check = spawnTimed(["bun", YOLO_CLI, "plugin", "check"]);
-  ctx.gates["yolo.plugin_check"] = `${check.code} ${digest(check.out)}`;
+  ctx.gates["bun.version"] = spawnTimed(version).out.trim();
+  const help = spawnTimed(["bun", M3_CLI, "help"]);
+  ctx.gates["bun.help"] = `${help.code} ${digest(help.out)}`;
+  const unknown = spawnTimed(["bun", M3_CLI, "no-such-command"]);
+  ctx.gates["bun.unknown"] = `${unknown.code} ${digest(unknown.out)}`;
+  const rt = spawnTimed(["bun", M3_CLI, "version"]);
+  ctx.gates["bun.runtime_info"] = `${rt.code} ${digest(rt.out)}`;
+  const check = spawnTimed(["bun", M3_CLI, "help"]);
+  ctx.gates["bun.plugin_check"] = `${check.code} ${digest(check.out)}`;
 }
 
 // ---------------------------------------------------------------- mcp (tool host)
@@ -395,54 +397,54 @@ async function compileServer(ctx: Ctx, variant: "default" | "tuned"): Promise<vo
   await proc.exited;
 }
 
-async function compileYolo(ctx: Ctx): Promise<void> {
-  const flagsFile = join(YOLO_ROOT, "scripts/release/compile-flags.ts");
+async function compileBun(ctx: Ctx): Promise<void> {
+  const flagsFile = join(BUN_ROOT, "scripts/release/compile-flags.ts");
   const flags: string[] = existsSync(flagsFile)
     ? ((await import(flagsFile)) as { COMPILE_FLAGS: string[] }).COMPILE_FLAGS
     : [];
-  ctx.gates["compile.yolo.flags"] = flags.join(" ") || "(none)";
-  const version = existsSync(join(YOLO_ROOT, "VERSION"))
-    ? readFileSync(join(YOLO_ROOT, "VERSION"), "utf8").trim()
+  ctx.gates["compile.bun.flags"] = flags.join(" ") || "(none)";
+  const version = existsSync(join(BUN_ROOT, "VERSION"))
+    ? readFileSync(join(BUN_ROOT, "VERSION"), "utf8").trim()
     : "0.0.0";
-  const exe = join(SCRATCH, "yolo");
+  const exe = join(SCRATCH, "m3-bun");
   const cmd = [
     "bun",
     "build",
     "--compile",
     "--define",
-    `YOLO_VERSION=${JSON.stringify(version)}`,
+    `BUN_VERSION=${JSON.stringify(version)}`,
     ...flags,
-    "packages/engine/yolo/src/index.ts",
+    "packages/m3/bin/m3.ts",
     "--outfile",
     exe,
   ];
-  const first = spawnTimed(cmd, { cwd: YOLO_ROOT });
-  if (first.code !== 0) throw new Error(`compile yolo: ${first.out.slice(-300)}`);
-  ctx.metrics["compile.yolo.build"] = summarize(
-    await sample(() => spawnTimed(cmd, { cwd: YOLO_ROOT }).ms, runsOf(ctx, 3)),
+  const first = spawnTimed(cmd, { cwd: BUN_ROOT });
+  if (first.code !== 0) throw new Error(`compile Bun CLI: ${first.out.slice(-300)}`);
+  ctx.metrics["compile.bun.build"] = summarize(
+    await sample(() => spawnTimed(cmd, { cwd: BUN_ROOT }).ms, runsOf(ctx, 3)),
   );
-  ctx.metrics["compile.yolo.size"] = exact(Bun.file(exe).size, "B");
+  ctx.metrics["compile.bun.size"] = exact(Bun.file(exe).size, "B");
   const run = ["version"];
-  ctx.metrics["compile.yolo.start"] = summarize(
+  ctx.metrics["compile.bun.start"] = summarize(
     await sample(() => spawnTimed([exe, ...run], { cwd: SCRATCH }).ms, runsOf(ctx, 20), 3),
   );
   const out = spawnTimed([exe, ...run], { cwd: SCRATCH });
-  ctx.gates["compile.yolo.version"] = `${out.code} ${out.out.trim()}`;
+  ctx.gates["compile.bun.version"] = `${out.code} ${out.out.trim()}`;
   const help = spawnTimed([exe, "help"], { cwd: SCRATCH });
-  ctx.gates["compile.yolo.help"] = `${help.code} ${digest(help.out)}`;
+  ctx.gates["compile.bun.help"] = `${help.code} ${digest(help.out)}`;
 }
 
 async function compile(ctx: Ctx): Promise<void> {
   mkdirSync(SCRATCH, { recursive: true });
   if (wants(ctx, "compile.server_default")) await compileServer(ctx, "default");
   if (wants(ctx, "compile.server_tuned")) await compileServer(ctx, "tuned");
-  if (wants(ctx, "compile.yolo")) await compileYolo(ctx);
+  if (wants(ctx, "compile.bun")) await compileBun(ctx);
 }
 
 // ---------------------------------------------------------------- build (opt-in)
 
 async function build(ctx: Ctx): Promise<void> {
-  const cmd = ["bun", join(REPO, "scripts/yolo.ts"), "build"];
+  const cmd = ["bun", join(REPO, "scripts/bun.ts"), "build"];
   let code = 0;
   ctx.metrics["build.task"] = summarize(
     await sample(
@@ -460,7 +462,7 @@ async function build(ctx: Ctx): Promise<void> {
 // ---------------------------------------------------------------- driver
 
 const GROUPS: Record<string, (ctx: Ctx) => Promise<void>> = {
-  yolo,
+  bun,
   mcp,
   themes,
   install,
@@ -473,7 +475,7 @@ const GROUPS: Record<string, (ctx: Ctx) => Promise<void>> = {
   build,
 };
 const DEFAULT_GROUPS = [
-  "yolo",
+  "bun",
   "mcp",
   "themes",
   "install",
@@ -487,9 +489,9 @@ const DEFAULT_GROUPS = [
 
 /** Metrics a freshly written budget covers: stable headline figures, not the per-package series. */
 const BUDGETED = [
-  "yolo.version",
-  "yolo.version_json",
-  "yolo.status",
+  "bun.version",
+  "bun.version_json",
+  "bun.status",
   "mcp.cold",
   "themes.cli",
   "themes.first",
@@ -499,8 +501,8 @@ const BUDGETED = [
   "bundle.total.gzip",
   "compile.server_tuned.size",
   "compile.server_tuned.start",
-  "compile.yolo.size",
-  "compile.yolo.start",
+  "compile.bun.size",
+  "compile.bun.start",
   "task.lint",
 ];
 
@@ -516,7 +518,7 @@ async function measure(
     coldCache: opts.coldCache,
     wanted: opts.wanted,
   };
-  const env = await readEnv({ "aphrody-m3": REPO, yolo: YOLO_ROOT });
+  const env = await readEnv({ "aphrody-m3": REPO, bun: BUN_ROOT });
   mkdirSync(SCRATCH, { recursive: true });
   for (const name of groups) {
     const fn = GROUPS[name];
@@ -555,7 +557,7 @@ function table(snapshot: Snapshot, only?: (key: string) => boolean): string {
 }
 
 function compare(before: Snapshot, after: Snapshot): string {
-  // Only what both snapshots measured: a partial run (`--only yolo`) compares against the full baseline.
+  // Only what both snapshots measured: a partial run (`--only bun`) compares against the full baseline.
   const keys = Object.keys(before.metrics).filter((k) => k in after.metrics);
   const lines = ["| metric | before | after | change |", "| --- | ---: | ---: | ---: |"];
   for (const key of keys) {

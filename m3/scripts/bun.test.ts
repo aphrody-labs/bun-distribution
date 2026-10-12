@@ -4,18 +4,18 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pipeline } from "./build.ts";
-import { REPO, EXAMPLE, YOLO_CLI, YOLO_COMMAND, YOLO_ROOT, plan } from "./yolo.ts";
+import { BUN_ROOT, REPO, EXAMPLE, plan } from "./bun.ts";
 
-describe("yolo task plan", () => {
-  test("build runs after a yolo preflight; serve and compile run the example app", () => {
-    expect(plan("build")[0]!.cmd).toEqual([...YOLO_COMMAND, "version", "--json"]);
-    expect(plan("build")[0]!.env).toEqual({ YOLO_HOME: REPO });
+describe("bun task plan", () => {
+  test("build uses the Bun-native pipeline; serve and compile run the example app", () => {
+    expect(plan("build")[0]!.cmd).toEqual(["bun", "scripts/build.ts", "build"]);
+    expect(plan("build")[0]!.cwd).toBe(REPO);
     expect(plan("serve")).toEqual([{ cmd: ["bun", "run", "dev"], cwd: EXAMPLE }]);
     expect(plan("compile")).toEqual([{ cmd: ["bun", "run", "compile"], cwd: EXAMPLE }]);
   });
   test("build then runs the cached package and app pipeline; typecheck uses the same owner", () => {
-    expect(plan("build")[1]!.cmd.slice(1)).toEqual(["scripts/build.ts", "build"]);
-    expect(plan("typecheck")[1]!.cmd.slice(1)).toEqual(["scripts/build.ts", "typecheck"]);
+    expect(plan("build")[0]!.cmd.slice(1)).toEqual(["scripts/build.ts", "build"]);
+    expect(plan("typecheck")[0]!.cmd.slice(1)).toEqual(["scripts/build.ts", "typecheck"]);
   });
   test("the root build includes every app and caches their compiled outputs", async () => {
     const root = await mkdtemp(join(tmpdir(), "m3-root-apps-"));
@@ -65,32 +65,31 @@ describe("yolo task plan", () => {
   });
   test("test runs the packages concurrently and still fails when one fails", () => {
     const steps = plan("test");
-    expect(steps[1]!.cmd).toContain("./scripts/bench/lib.test.ts");
-    expect(steps[2]!.cmd.slice(1, 4)).toEqual(["run", "--parallel", "--no-exit-on-error"]);
+    expect(steps[0]!.cmd).toContain("./scripts/bench/lib.test.ts");
+    expect(steps[1]!.cmd.slice(1, 4)).toEqual(["run", "--parallel", "--no-exit-on-error"]);
   });
   test("bench and bench:check run the harness, the latter with --check", () => {
-    expect(plan("bench", ["--only", "yolo"])[0]!.cmd.slice(1)).toEqual([
+    expect(plan("bench", ["--only", "bun"])[0]!.cmd.slice(1)).toEqual([
       "scripts/bench/run.ts",
       "--only",
-      "yolo",
+      "bun",
     ]);
     expect(plan("bench:check")[0]!.cmd.slice(1)).toEqual(["scripts/bench/run.ts", "--check"]);
   });
   test("test runs every workspace package and ends with the repository gates", () => {
     const steps = plan("test");
-    expect(steps[1]!.cmd).toContain("./scripts/check-exports.test.ts");
-    expect(steps[2]!.cmd).toContain("./packages/*");
-    expect(steps[2]!.cmd).not.toContain("*");
-    expect(steps[2]!.cmd).toContain("!@aphrody/nie-ui");
-    expect(steps.slice(3).map((s) => s.cmd[1])).toEqual([
+    expect(steps[0]!.cmd).toContain("./scripts/check-exports.test.ts");
+    expect(steps[1]!.cmd).toContain("./packages/*");
+    expect(steps[1]!.cmd).not.toContain("*");
+    expect(steps[1]!.cmd).toContain("!@aphrody/nie-ui");
+    expect(steps.slice(2).map((s) => s.cmd[1])).toEqual([
       "scripts/check-exports.ts",
       "scripts/check-assets.ts",
       "scripts/check-links.ts",
     ]);
   });
-  test("YOLO_CLI is the Bun entry under YOLO_ROOT, run by bun on every platform", () => {
-    expect(YOLO_CLI).toBe(join(YOLO_ROOT, "packages", "engine", "yolo", "src", "index.ts"));
-    expect(YOLO_COMMAND).toEqual(["bun", "run", YOLO_CLI]);
+  test("BUN_ROOT selects the shared native owner", () => {
+    expect(BUN_ROOT).toBeString();
   });
   test("install:theme defaults to a dry-run install", () => {
     const cmd = plan("install:theme")[0]!.cmd;
@@ -99,13 +98,13 @@ describe("yolo task plan", () => {
   });
   test("unknown tasks throw", () => expect(() => plan("nope")).toThrow());
   test("scoped lint forwards fixes and rejects unknown package selection", () => {
-    expect(plan("lint", ["--only", "@aphrody/m3", "--fix"])[1]!.cmd).toEqual([
+    expect(plan("lint", ["--only", "@aphrody/m3", "--fix"])[0]!.cmd).toEqual([
       "oxlint",
       "packages/m3",
       "--fix",
     ]);
     expect(() => plan("lint", ["--only", "@unknown/m3", "--fix"])).toThrow("Unknown M3 workspace");
-    expect(plan("typecheck", ["--only", "@aphrody/m3"])[1]!.cmd.slice(-2)).toEqual([
+    expect(plan("typecheck", ["--only", "@aphrody/m3"])[0]!.cmd.slice(-2)).toEqual([
       "--only",
       "@aphrody/m3",
     ]);

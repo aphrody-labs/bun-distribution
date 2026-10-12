@@ -13,7 +13,7 @@ import {
   RUNTIME_SDK_FFI,
   SUFFIX,
   searchDirs,
-  YOLO_ROOT,
+  BUN_ROOT,
 } from "./native.ts";
 
 const root = mkdtempSync(join(tmpdir(), "m3-native-"));
@@ -90,7 +90,7 @@ describe("resolution through @aphrody/runtime-sdk/ffi", () => {
 // The real library, when this machine has it: loaded and verified through the SDK loader.
 const real = existsSync(RUNTIME_SDK_FFI)
   ? await resolveLibrary()
-  : { path: null, error: "yolo runtime SDK not found" };
+  : { path: null, error: "Bun runtime SDK not found" };
 if (!real.path) console.warn(`[scripts/native] real-library check skipped: ${real.error}`);
 test.skipIf(!real.path)(
   `the built library exports bun_rs_version${real.path ? "" : ` [skipped: ${real.error}]`}`,
@@ -121,7 +121,7 @@ test.skipIf(!existsSync(RUNTIME_SDK_FFI))(
       {
         windowsHide: true,
         // The copy lives outside the monorepo, so it cannot find the producer SDK by itself.
-        env: { ...process.env, YOLO_ROOT },
+        env: { ...process.env, BUN_ROOT },
         stdout: "pipe",
         stderr: "pipe",
       },
