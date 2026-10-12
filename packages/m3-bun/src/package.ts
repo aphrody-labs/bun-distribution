@@ -58,29 +58,25 @@ export async function buildRootfs(executable: string, dir: string): Promise<Root
 export type ArchiveFormat = "tar.gz" | "zip";
 
 /** Archive the contents of `staging` into `archive` with the system tool; modes are preserved. */
-export async function archiveDir(
-  staging: string,
-  archive: string,
-  format: ArchiveFormat,
-): Promise<void> {
+export async function archiveDir(staging: string, archive: string, format: ArchiveFormat): Promise<void> {
   await mkdir(dirname(archive), { recursive: true });
   await rm(archive, { force: true });
   if (format === "zip") {
+    if (!Bun.which("zip")) {
+      throw new Error(
+        "m3-bun: zip archive requested but the native zip tool is unavailable; install zip or choose tar.gz",
+      );
+    }
     const proc = Bun.spawnSync(["zip", "-q", "-r", "-X", archive, "."], {
       cwd: staging,
       stdout: "pipe",
       stderr: "pipe",
     });
-    if (proc.exitCode !== 0)
-      throw new Error(`m3-bun: zip failed: ${proc.stderr.toString().trim()}`);
+    if (proc.exitCode !== 0) throw new Error(`m3-bun: zip failed: ${proc.stderr.toString().trim()}`);
     return;
   }
-  const gnu = Bun.spawnSync(["tar", "--version"], { stdout: "pipe" })
-    .stdout.toString()
-    .includes("GNU");
-  const reproducible = gnu
-    ? ["--sort=name", "--mtime=@0", "--owner=0", "--group=0", "--numeric-owner"]
-    : [];
+  const gnu = Bun.spawnSync(["tar", "--version"], { stdout: "pipe" }).stdout.toString().includes("GNU");
+  const reproducible = gnu ? ["--sort=name", "--mtime=@0", "--owner=0", "--group=0", "--numeric-owner"] : [];
   const proc = Bun.spawnSync(["tar", ...reproducible, "-czf", archive, "-C", staging, "."], {
     stdout: "pipe",
     stderr: "pipe",
@@ -130,8 +126,7 @@ Verify the download with SHA256SUMS. Built with @aphrody/m3-bun; the executable 
 
 /** Compile, stage and archive an app. */
 export async function packageApp(options: PackageOptions = {}): Promise<PackageReport> {
-  const app =
-    options.app ?? (await loadApp(resolve(options.dir ?? process.cwd()), options.configFile));
+  const app = options.app ?? (await loadApp(resolve(options.dir ?? process.cwd()), options.configFile));
   const target = options.target ?? app.bun.compile?.target;
   const windows = (target ?? "").startsWith("windows");
   const format = options.format ?? (windows ? "zip" : "tar.gz");

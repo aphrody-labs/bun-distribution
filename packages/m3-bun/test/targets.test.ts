@@ -3,13 +3,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadApp } from "../src/config.ts";
-import {
-  generateTargets,
-  getTarget,
-  TARGETS,
-  contextFor,
-  type TargetContext,
-} from "../src/targets/index.ts";
+import { generateTargets, getTarget, TARGETS, contextFor, type TargetContext } from "../src/targets/index.ts";
 import { ROOTFS_SCRIPT } from "../src/targets/docker.ts";
 import { sharedDropin } from "../src/targets/systemd.ts";
 import { cleanup, FIXTURE, freePort, tmp } from "./helpers.ts";
@@ -49,7 +43,7 @@ describe("the context", () => {
 
 describe("registry", () => {
   test("ten targets with unique ids, each with a description; an unknown id lists the known ones", () => {
-    expect(TARGETS.map((t) => t.id)).toEqual([
+    expect(TARGETS.map(t => t.id)).toEqual([
       "docker",
       "systemd",
       "nginx",
@@ -69,15 +63,13 @@ describe("registry", () => {
     for (const t of TARGETS) expect(existsSync(join(out, t.id))).toBe(true);
     const only = tmp();
     const generated = await generateTargets(["fly"], ctx, only);
-    expect(generated.map((g) => g.id)).toEqual(["fly"]);
+    expect(generated.map(g => g.id)).toEqual(["fly"]);
     expect(existsSync(join(only, "docker"))).toBe(false);
   });
 
   test("a generated path that escapes its directory is refused", async () => {
     const { writeFiles } = await import("../src/util.ts");
-    await expect(writeFiles(tmp(), [{ path: "../escape.txt", content: "x" }])).rejects.toThrow(
-      /escapes its directory/,
-    );
+    await expect(writeFiles(tmp(), [{ path: "../escape.txt", content: "x" }])).rejects.toThrow(/escapes its directory/);
   });
 });
 
@@ -96,10 +88,13 @@ describe("docker", () => {
     expect(file).toContain("USER 10001:10001");
     expect(file).toMatch(/dynamically linked/);
   });
-  test("the rootfs script is valid shell and copies the executable and every library", () => {
-    expect(Bun.spawnSync(["sh", "-n", "-c", ROOTFS_SCRIPT]).exitCode).toBe(0);
-    expect(ROOTFS_SCRIPT).toContain("cp --parents -L");
-  });
+  test.skipIf(process.platform === "win32")(
+    "the rootfs script is valid shell and copies the executable and every library",
+    () => {
+      expect(Bun.spawnSync(["sh", "-n", "-c", ROOTFS_SCRIPT]).exitCode).toBe(0);
+      expect(ROOTFS_SCRIPT).toContain("cp --parents -L");
+    },
+  );
   test("Dockerfile.scratch consumes the rootfs of `m3-bun package --rootfs`; compose is read-only with dropped capabilities", () => {
     expect(read("docker", "Dockerfile.scratch")).toContain("COPY rootfs/ /");
     const compose = Bun.YAML.parse(read("docker", "docker-compose.yml")) as {
@@ -141,9 +136,9 @@ describe("systemd", () => {
       "syscall-service.conf",
     ];
     names.forEach((name, i) => {
-      expect(
-        read("systemd", `hello-m3.service.d/${String(10 + i * 10).padStart(2, "0")}-${name}`),
-      ).toBe(sharedDropin(ctx.yoloRoot, name));
+      expect(read("systemd", `hello-m3.service.d/${String(10 + i * 10).padStart(2, "0")}-${name}`)).toBe(
+        sharedDropin(ctx.yoloRoot, name),
+      );
     });
     expect(sharedDropin("/nonexistent", "sandbox-base.conf")).toContain("ProtectSystem=strict");
     if (existsSync(join(ctx.yoloRoot, "config/host/systemd/shared/sandbox-base.conf"))) {
@@ -169,38 +164,31 @@ describe("systemd", () => {
     });
     expect(read("systemd", "hello-m3.env.example")).toContain("PORT=3456");
   });
-  test.skipIf(!Bun.which("systemd-analyze"))(
-    "systemd-analyze verify accepts the unit merged with its drop-ins",
-    () => {
-      const root = tmp("m3-bun-systemd-");
-      const bin = join(root, "current/bin");
-      mkdirSync(bin, { recursive: true });
-      writeFileSync(join(bin, "hello-m3"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
-      // The drop-ins are plain `[Service]` sections: appended in order, they are what systemd merges.
-      const dropins = readdirSync(join(out, "systemd", "hello-m3.service.d"))
-        .toSorted()
-        .map((f) => readFileSync(join(out, "systemd", "hello-m3.service.d", f), "utf8"));
-      const merged = `${read("systemd", "hello-m3.service")
-        .replaceAll("/srv/aphrody/current", join(root, "current"))
-        .replace("[Install]", `${dropins.join("\n")}\n[Install]`)}`;
-      const file = join(root, "hello-m3.service");
-      writeFileSync(file, merged);
-      const proc = Bun.spawnSync(["systemd-analyze", "verify", file], {
-        stdout: "pipe",
-        stderr: "pipe",
-      });
-      const text = `${proc.stdout.toString()}${proc.stderr.toString()}`;
-      // The machine running the test may lack the `ubuntu` account, the env file or the targets; no other finding is tolerated.
-      const findings = text
-        .split("\n")
-        .filter(
-          (l) =>
-            l.trim() &&
-            !/Failed to resolve (user|group)|User .* not found|Group .* not found|ubuntu/i.test(l),
-        );
-      expect(findings).toEqual([]);
-    },
-  );
+  test.skipIf(!Bun.which("systemd-analyze"))("systemd-analyze verify accepts the unit merged with its drop-ins", () => {
+    const root = tmp("m3-bun-systemd-");
+    const bin = join(root, "current/bin");
+    mkdirSync(bin, { recursive: true });
+    writeFileSync(join(bin, "hello-m3"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+    // The drop-ins are plain `[Service]` sections: appended in order, they are what systemd merges.
+    const dropins = readdirSync(join(out, "systemd", "hello-m3.service.d"))
+      .toSorted()
+      .map(f => readFileSync(join(out, "systemd", "hello-m3.service.d", f), "utf8"));
+    const merged = `${read("systemd", "hello-m3.service")
+      .replaceAll("/srv/aphrody/current", join(root, "current"))
+      .replace("[Install]", `${dropins.join("\n")}\n[Install]`)}`;
+    const file = join(root, "hello-m3.service");
+    writeFileSync(file, merged);
+    const proc = Bun.spawnSync(["systemd-analyze", "verify", file], {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const text = `${proc.stdout.toString()}${proc.stderr.toString()}`;
+    // The machine running the test may lack the `ubuntu` account, the env file or the targets; no other finding is tolerated.
+    const findings = text
+      .split("\n")
+      .filter(l => l.trim() && !/Failed to resolve (user|group)|User .* not found|Group .* not found|ubuntu/i.test(l));
+    expect(findings).toEqual([]);
+  });
 });
 
 describe("nginx", () => {
@@ -210,9 +198,7 @@ describe("nginx", () => {
     expect(conf).toContain("server_name hello.example.com;");
     expect(conf).toContain("location ^~ /.well-known/acme-challenge/");
     expect(conf).toContain("return 301 https://hello.example.com$request_uri;");
-    expect(conf).toContain(
-      "ssl_certificate /etc/letsencrypt/live/hello.example.com/fullchain.pem;",
-    );
+    expect(conf).toContain("ssl_certificate /etc/letsencrypt/live/hello.example.com/fullchain.pem;");
     expect(conf).toContain("listen 443 ssl;\n    http2 on;");
     expect(conf).toContain("include snippets/proxy-client-ip.inc;");
     expect(conf).toContain("proxy_pass http://hello_m3;");
@@ -277,19 +263,11 @@ describe("nginx", () => {
       const version = /nginx\/(\d+)\.(\d+)\.(\d+)/.exec(
         Bun.spawnSync(["nginx", "-v"], { stderr: "pipe" }).stderr.toString(),
       );
-      const modern = version
-        ? [Number(version[1]), Number(version[2]), Number(version[3])]
-        : [0, 0, 0];
+      const modern = version ? [Number(version[1]), Number(version[2]), Number(version[3])] : [0, 0, 0];
       const supportsDirective =
-        modern[0]! > 1 ||
-        (modern[0] === 1 && (modern[1]! > 25 || (modern[1] === 25 && modern[2]! >= 1)));
-      await generateTargets(
-        ["nginx"],
-        { ...ctx, tls, http2: supportsDirective ? "directive" : "listen" },
-        target,
-      );
-      const files =
-        tls === "letsencrypt" ? ["hello-m3.http.conf"] : ["hello-m3.conf", "hello-m3.http.conf"];
+        modern[0]! > 1 || (modern[0] === 1 && (modern[1]! > 25 || (modern[1] === 25 && modern[2]! >= 1)));
+      await generateTargets(["nginx"], { ...ctx, tls, http2: supportsDirective ? "directive" : "listen" }, target);
+      const files = tls === "letsencrypt" ? ["hello-m3.http.conf"] : ["hello-m3.conf", "hello-m3.http.conf"];
       for (const file of files) {
         // An unprivileged test cannot bind :80 and :443: move the listeners, keep every other line as generated.
         const generatedPath = join(target, "nginx", file);
@@ -334,9 +312,7 @@ describe("vercel", () => {
     expect(spa.test("/some/route")).toBe(true);
     expect(spa.test("/chunk-abc.js")).toBe(false);
     expect(spa.test("/api/x")).toBe(false);
-    expect(v.headers.flatMap((h: any) => h.headers.map((x: any) => x.key))).toContain(
-      "X-Content-Type-Options",
-    );
+    expect(v.headers.flatMap((h: any) => h.headers.map((x: any) => x.key))).toContain("X-Content-Type-Options");
   });
   test("api/index.ts adapts the app's routes to one fetch handler", () => {
     const fn = read("vercel", "api/index.ts");
@@ -369,10 +345,7 @@ const stripCommentLines = (text: string) => text.replace(/^\s*\/\/.*$/gm, "");
 
 describe("cloudflare", () => {
   test("wrangler.jsonc: worker, static assets with SPA fallback, worker-first API routes, custom domain", () => {
-    const w = JSON.parse(stripCommentLines(read("cloudflare", "wrangler.jsonc"))) as Record<
-      string,
-      any
-    >;
+    const w = JSON.parse(stripCommentLines(read("cloudflare", "wrangler.jsonc"))) as Record<string, any>;
     expect(w).toMatchObject({
       name: "hello-m3",
       main: "src/worker.ts",
@@ -387,15 +360,11 @@ describe("cloudflare", () => {
     expect(w.compatibility_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
   test("worker and pages function reuse the app's routes; pages has _headers and _redirects", () => {
-    expect(read("cloudflare", "src/worker.ts")).toContain(
-      "routesToFetch(normalizeApi(api).routes)",
-    );
+    expect(read("cloudflare", "src/worker.ts")).toContain("routesToFetch(normalizeApi(api).routes)");
     expect(read("cloudflare", "src/worker.ts")).toContain("env.ASSETS.fetch(request)");
     expect(read("cloudflare", "pages/functions/[[path]].ts")).toContain("export const onRequest");
     expect(read("cloudflare", "pages/_redirects")).toContain("/* /index.html 200");
-    expect(read("cloudflare", "pages/_headers")).toContain(
-      "Cache-Control: public, max-age=31536000, immutable",
-    );
+    expect(read("cloudflare", "pages/_headers")).toContain("Cache-Control: public, max-age=31536000, immutable");
   });
 });
 
@@ -434,10 +403,7 @@ describe("vscode", () => {
     expect(tasks.tasks.find((t: any) => t.label === "m3-bun: dev").isBackground).toBe(true);
     const launch = json("vscode", ".vscode/launch.json");
     expect(launch.configurations.map((c: any) => c.type)).toEqual(["bun", "bun", "bun", "bun"]);
-    expect(json("vscode", ".vscode/extensions.json").recommendations).toEqual([
-      "oven.bun-vscode",
-      "oxc.oxc-vscode",
-    ]);
+    expect(json("vscode", ".vscode/extensions.json").recommendations).toEqual(["oven.bun-vscode", "oxc.oxc-vscode"]);
   });
 });
 
@@ -473,17 +439,20 @@ describe("windows", () => {
 });
 
 describe("linux-image", () => {
-  test("README states the limit; the scripts are executable and valid bash", () => {
-    const readme = read("linux-image", "README.md");
-    expect(readme).toContain('a one-file or "no libc" image');
-    expect(readme).toContain("libc, libm, libdl, libpthread");
-    for (const file of ["build-image.sh", "run-qemu.sh"]) {
-      const path = join(out, "linux-image", file);
-      expect(Bun.spawnSync(["bash", "-n", path]).exitCode).toBe(0);
-      expect(Bun.file(path).size).toBeGreaterThan(200);
-      expect(Bun.spawnSync(["test", "-x", path]).exitCode).toBe(0);
-    }
-  });
+  test.skipIf(process.platform === "win32")(
+    "README states the limit; the scripts are executable and valid bash",
+    () => {
+      const readme = read("linux-image", "README.md");
+      expect(readme).toContain('a one-file or "no libc" image');
+      expect(readme).toContain("libc, libm, libdl, libpthread");
+      for (const file of ["build-image.sh", "run-qemu.sh"]) {
+        const path = join(out, "linux-image", file);
+        expect(Bun.spawnSync(["bash", "-n", path]).exitCode).toBe(0);
+        expect(Bun.file(path).size).toBeGreaterThan(200);
+        expect(Bun.spawnSync(["test", "-x", path]).exitCode).toBe(0);
+      }
+    },
+  );
   test("init.c compiles as C and is static-linkable", () => {
     const cc = Bun.which("cc") ?? Bun.which("gcc");
     if (!cc) return;
@@ -493,8 +462,6 @@ describe("linux-image", () => {
       { stdout: "pipe", stderr: "pipe" },
     );
     expect({ code: proc.exitCode, err: proc.stderr.toString() }).toEqual({ code: 0, err: "" });
-    expect(Bun.spawnSync(["file", bin], { stdout: "pipe" }).stdout.toString()).toMatch(
-      /statically linked/,
-    );
+    expect(Bun.spawnSync(["file", bin], { stdout: "pipe" }).stdout.toString()).toMatch(/statically linked/);
   });
 });

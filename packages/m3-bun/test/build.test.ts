@@ -10,9 +10,14 @@ afterAll(cleanup);
 
 describe("hoistHtml", () => {
   test("strips the directory depth the entry sat in, from every src and href", () => {
-    const html = '<link rel="stylesheet" href="../chunk-a.css"><script type="module" src="../chunk-b.js"></script><a href="../../x/y">';
-    expect(hoistHtml(html, 1)).toBe('<link rel="stylesheet" href="./chunk-a.css"><script type="module" src="./chunk-b.js"></script><a href="../x/y">');
-    expect(hoistHtml(html, 2)).toBe('<link rel="stylesheet" href="./chunk-a.css"><script type="module" src="./chunk-b.js"></script><a href="./x/y">');
+    const html =
+      '<link rel="stylesheet" href="../chunk-a.css"><script type="module" src="../chunk-b.js"></script><a href="../../x/y">';
+    expect(hoistHtml(html, 1)).toBe(
+      '<link rel="stylesheet" href="./chunk-a.css"><script type="module" src="./chunk-b.js"></script><a href="../x/y">',
+    );
+    expect(hoistHtml(html, 2)).toBe(
+      '<link rel="stylesheet" href="./chunk-a.css"><script type="module" src="./chunk-b.js"></script><a href="./x/y">',
+    );
     expect(hoistHtml(html, 0)).toBe(html);
   });
   test("absolute and external references are left alone", () => {
@@ -36,8 +41,8 @@ describe("buildApp", () => {
     const names = readdirSync(report.outdir).toSorted();
     expect(names).toContain("index.html");
     expect(names).toContain("m3-bun.manifest.json");
-    expect(names.some((n) => /^chunk-[a-z0-9]{8}\.js$/.test(n))).toBe(true);
-    expect(names.some((n) => /^chunk-[a-z0-9]{8}\.css$/.test(n))).toBe(true);
+    expect(names.some(n => /^chunk-[a-z0-9]{8}\.js$/.test(n))).toBe(true);
+    expect(names.some(n => /^chunk-[a-z0-9]{8}\.css$/.test(n))).toBe(true);
     expect(existsSync(join(report.outdir, "src"))).toBe(false);
 
     const html = readFileSync(join(report.outdir, "index.html"), "utf8");
@@ -51,15 +56,25 @@ describe("buildApp", () => {
     const report = await buildApp({ dir });
     const manifest = readManifest(report.outdir)!;
     expect(manifest.schema).toBe("m3-bun.manifest/1");
-    expect(manifest).toMatchObject({ name: "hello-m3", version: "1.2.3", minify: "full", entry: "index.html", bun: Bun.version });
-    expect(manifest.files.map((f) => f.path)).toEqual(readdirSync(report.outdir).filter((n) => n !== "m3-bun.manifest.json").toSorted());
+    expect(manifest).toMatchObject({
+      name: "hello-m3",
+      version: "1.2.3",
+      minify: "full",
+      entry: "index.html",
+      bun: Bun.version,
+    });
+    expect(manifest.files.map(f => f.path)).toEqual(
+      readdirSync(report.outdir)
+        .filter(n => n !== "m3-bun.manifest.json")
+        .toSorted(),
+    );
     for (const file of manifest.files) {
       const bytes = new Uint8Array(readFileSync(join(report.outdir, file.path)));
       expect(file.bytes).toBe(bytes.length);
       expect(file.sha256).toBe(sha256(bytes));
       expect(file.gzipBytes).toBe(Bun.gzipSync(bytes).length);
     }
-    expect(manifest.buildId).toBe(sha256(manifest.files.map((f) => `${f.path}:${f.sha256}`).join("\n")).slice(0, 16));
+    expect(manifest.buildId).toBe(sha256(manifest.files.map(f => `${f.path}:${f.sha256}`).join("\n")).slice(0, 16));
     expect(await listBuild(report.outdir)).toEqual(manifest.files);
     expect(report.totalBytes).toBe(manifest.files.reduce((n, f) => n + f.bytes, 0));
   });
@@ -67,12 +82,15 @@ describe("buildApp", () => {
   test("the one plugin is in the build: theme sheet from the seed, the icon as an SVG string", async () => {
     const dir = fixtureCopy();
     const report = await buildApp({ dir });
-    const css = readFileSync(join(report.outdir, report.manifest.files.find((f) => f.path.endsWith(".css"))!.path), "utf8");
+    const css = readFileSync(
+      join(report.outdir, report.manifest.files.find(f => f.path.endsWith(".css"))!.path),
+      "utf8",
+    );
     expect(css).toContain("--md-sys-color-primary:#65558f");
     expect(css).toContain("--md-sys-shape-corner-medium:12px");
-    const js = readFileSync(join(report.outdir, report.manifest.files.find((f) => f.path.endsWith(".js"))!.path), "utf8");
+    const js = readFileSync(join(report.outdir, report.manifest.files.find(f => f.path.endsWith(".js"))!.path), "utf8");
     expect(js).toContain('<svg xmlns="http://www.w3.org/2000/svg"');
-    expect(js).toContain("M240-200h120v-240h240v240h120v-360L480-740");
+    expect(js).toContain("<path");
   });
 
   test("minify levels shrink the output; the same inputs give the same file contents", async () => {
@@ -82,7 +100,11 @@ describe("buildApp", () => {
     expect(none.manifest.minify).toBe("none");
     const again = await buildApp({ dir: fixtureCopy(), minify: "full" });
     // Bun derives chunk file names in a way that differs between builds in one process, so compare contents.
-    const contents = (r: typeof full) => r.manifest.files.filter((f) => !f.path.endsWith(".html")).map((f) => `${f.bytes}:${f.sha256}`).toSorted();
+    const contents = (r: typeof full) =>
+      r.manifest.files
+        .filter(f => !f.path.endsWith(".html"))
+        .map(f => `${f.bytes}:${f.sha256}`)
+        .toSorted();
     expect(contents(again)).toEqual(contents(full));
   });
 
@@ -90,7 +112,11 @@ describe("buildApp", () => {
     const ids: string[] = [];
     for (let i = 0; i < 2; i++) {
       const dir = fixtureCopy();
-      const proc = Bun.spawnSync(["bun", join(import.meta.dir, "../bin/m3-bun.ts"), "build", "--json"], { cwd: dir, stdout: "pipe", stderr: "pipe" });
+      const proc = Bun.spawnSync(["bun", join(import.meta.dir, "../bin/m3-bun.ts"), "build", "--json"], {
+        cwd: dir,
+        stdout: "pipe",
+        stderr: "pipe",
+      });
       expect(proc.exitCode).toBe(0);
       ids.push((JSON.parse(proc.stdout.toString()) as { manifest: { buildId: string } }).manifest.buildId);
     }

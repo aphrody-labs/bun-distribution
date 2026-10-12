@@ -35,12 +35,7 @@ interface Sdk {
 }
 interface ManagedLike extends Disposable {
   status(): { running: boolean; pid: number; exitCode: number };
-  waitForHttp(options: {
-    port: number;
-    path?: string;
-    timeoutMs?: number;
-    signal?: AbortSignal;
-  }): Promise<number>;
+  waitForHttp(options: { port: number; path?: string; timeoutMs?: number; signal?: AbortSignal }): Promise<number>;
   stopAsync(graceMs?: number): Promise<{ exitCode: number }>;
 }
 
@@ -66,8 +61,7 @@ export async function launch(program: string, options: LaunchOptions): Promise<L
   const timeoutMs = options.timeoutMs ?? 15_000;
   if (!Number.isInteger(options.port) || options.port < 1 || options.port > 65535)
     throw new RangeError(`m3-bun: invalid readiness port ${options.port}`);
-  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0)
-    throw new RangeError("m3-bun: timeoutMs must be positive");
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new RangeError("m3-bun: timeoutMs must be positive");
   if (!path.startsWith("/") || path.startsWith("//"))
     throw new Error("m3-bun: readiness path must be an absolute path on the local server");
   options.signal?.throwIfAborted();
@@ -133,7 +127,11 @@ export async function launch(program: string, options: LaunchOptions): Promise<L
       }
     }
   }
-  const proc = Bun.spawn([program, ...(options.args ?? [])], {
+  const command =
+    process.platform === "win32" && /\.(cmd|bat)$/i.test(program)
+      ? [process.env.ComSpec ?? "cmd.exe", "/d", "/s", "/c", program, ...(options.args ?? [])]
+      : [program, ...(options.args ?? [])];
+  const proc = Bun.spawn(command, {
     cwd: options.cwd,
     env: { ...process.env, ...options.env } as Record<string, string>,
     stdout: "ignore",
@@ -242,16 +240,14 @@ export async function smoke(
     pid: child.pid,
     port,
     checks,
-    ok: checks.length > 0 && checks.every((c) => c.ok),
+    ok: checks.length > 0 && checks.every(c => c.ok),
     exitCode,
   };
 }
 
 /** One line per check, then the verdict. */
 export function formatSmoke(report: SmokeReport): string {
-  const lines = report.checks.map(
-    (c) => `  ${c.ok ? "ok  " : "FAIL"} GET ${c.path} -> ${c.status} ${c.contentType}`,
-  );
+  const lines = report.checks.map(c => `  ${c.ok ? "ok  " : "FAIL"} GET ${c.path} -> ${c.status} ${c.contentType}`);
   return [
     `m3-bun smoke: pid ${report.pid} on :${report.port} via ${report.via}`,
     ...lines,

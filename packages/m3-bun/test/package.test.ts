@@ -17,14 +17,18 @@ const LDD = `\tlinux-vdso.so.1 (0x00007e85dea9f000)
 
 describe("parseLdd", () => {
   test("absolute library paths and the loader; the vdso and unresolved names are skipped; sorted and unique", () => {
-    expect(parseLdd(LDD)).toEqual(["/lib/x86_64-linux-gnu/libc.so.6", "/lib/x86_64-linux-gnu/libpthread.so.0", "/lib64/ld-linux-x86-64.so.2"]);
+    expect(parseLdd(LDD)).toEqual([
+      "/lib/x86_64-linux-gnu/libc.so.6",
+      "/lib/x86_64-linux-gnu/libpthread.so.0",
+      "/lib64/ld-linux-x86-64.so.2",
+    ]);
     expect(parseLdd(`${LDD}${LDD}`)).toHaveLength(3);
     expect(parseLdd("")).toEqual([]);
   });
 });
 
 describe("archiveDir", () => {
-  test("tar.gz keeps the executable bit and lists every staged file", async () => {
+  test.skipIf(process.platform === "win32")("tar.gz keeps the executable bit and lists every staged file", async () => {
     const staging = tmp();
     writeFileSync(join(staging, "app"), "#!/bin/sh\n", { mode: 0o755 });
     writeFileSync(join(staging, "README.txt"), "hi");
@@ -49,7 +53,9 @@ describe("archiveDir", () => {
     await Bun.sleep(1100);
     writeFileSync(join(staging, "a"), "a");
     await archiveDir(staging, join(out, "2.tar.gz"), "tar.gz");
-    expect(sha256(new Uint8Array(readFileSync(join(out, "1.tar.gz"))))).toBe(sha256(new Uint8Array(readFileSync(join(out, "2.tar.gz")))));
+    expect(sha256(new Uint8Array(readFileSync(join(out, "1.tar.gz"))))).toBe(
+      sha256(new Uint8Array(readFileSync(join(out, "2.tar.gz")))),
+    );
   });
 
   test.skipIf(!Bun.which("zip"))("zip archives", async () => {
@@ -62,27 +68,43 @@ describe("archiveDir", () => {
 });
 
 describe("packageApp", () => {
-  test("stages the executable with README, manifest and checksums, archives it and records the archive hash", async () => {
-    const dir = fixtureCopy();
-    // Build the UI once so the manifest exists, and reuse a stand-in executable: compiling is covered by compile.test.ts.
-    const { buildApp } = await import("../src/build.ts");
-    await buildApp({ dir });
-    const stub = join(tmp(), "hello-m3");
-    writeFileSync(stub, "#!/bin/sh\necho stub\n", { mode: 0o755 });
-    const out = tmp();
-    const report = await packageApp({ dir, executable: stub, out, deploy: true });
-    expect(report.archive).toBe(join(out, `hello-m3-1.2.3-${process.platform}-${process.arch}.tar.gz`));
-    expect(report.files).toEqual(expect.arrayContaining(["hello-m3", "README.txt", "SHA256SUMS", "m3-bun.manifest.json", "deploy/docker/Dockerfile", "deploy/systemd/hello-m3.service", "deploy/vscode/.vscode/tasks.json"]));
-    expect(sha256(new Uint8Array(readFileSync(report.archive)))).toBe(report.sha256);
-    expect(readFileSync(report.checksumFile, "utf8")).toBe(`${report.sha256}  ${report.archive.split("/").pop()}\n`);
-    expect(statSync(report.archive).size).toBe(report.bytes);
-    const extracted = tmp();
-    Bun.spawnSync(["tar", "-xzf", report.archive, "-C", extracted]);
-    expect(readFileSync(join(extracted, "SHA256SUMS"), "utf8")).toBe(`${sha256(new Uint8Array(readFileSync(stub)))}  hello-m3\n`);
-    expect(readFileSync(join(extracted, "README.txt"), "utf8")).toContain("--healthcheck");
-    expect(statSync(join(extracted, "hello-m3")).mode & 0o111).not.toBe(0);
-    expect(existsSync(join(out, ".staging"))).toBe(false);
-  }, 60_000);
+  test.skipIf(process.platform === "win32")(
+    "stages the executable with README, manifest and checksums, archives it and records the archive hash",
+    async () => {
+      const dir = fixtureCopy();
+      // Build the UI once so the manifest exists, and reuse a stand-in executable: compiling is covered by compile.test.ts.
+      const { buildApp } = await import("../src/build.ts");
+      await buildApp({ dir });
+      const stub = join(tmp(), "hello-m3");
+      writeFileSync(stub, "#!/bin/sh\necho stub\n", { mode: 0o755 });
+      const out = tmp();
+      const report = await packageApp({ dir, executable: stub, out, deploy: true });
+      expect(report.archive).toBe(join(out, `hello-m3-1.2.3-${process.platform}-${process.arch}.tar.gz`));
+      expect(report.files).toEqual(
+        expect.arrayContaining([
+          "hello-m3",
+          "README.txt",
+          "SHA256SUMS",
+          "m3-bun.manifest.json",
+          "deploy/docker/Dockerfile",
+          "deploy/systemd/hello-m3.service",
+          "deploy/vscode/.vscode/tasks.json",
+        ]),
+      );
+      expect(sha256(new Uint8Array(readFileSync(report.archive)))).toBe(report.sha256);
+      expect(readFileSync(report.checksumFile, "utf8")).toBe(`${report.sha256}  ${report.archive.split("/").pop()}\n`);
+      expect(statSync(report.archive).size).toBe(report.bytes);
+      const extracted = tmp();
+      Bun.spawnSync(["tar", "-xzf", report.archive, "-C", extracted]);
+      expect(readFileSync(join(extracted, "SHA256SUMS"), "utf8")).toBe(
+        `${sha256(new Uint8Array(readFileSync(stub)))}  hello-m3\n`,
+      );
+      expect(readFileSync(join(extracted, "README.txt"), "utf8")).toContain("--healthcheck");
+      expect(statSync(join(extracted, "hello-m3")).mode & 0o111).not.toBe(0);
+      expect(existsSync(join(out, ".staging"))).toBe(false);
+    },
+    60_000,
+  );
 
   test("Windows targets default to zip and name the executable .exe", async () => {
     const dir = fixtureCopy();
@@ -90,11 +112,10 @@ describe("packageApp", () => {
     await buildApp({ dir });
     const stub = join(tmp(), "x.exe");
     writeFileSync(stub, "MZ");
+    if (!Bun.which("zip")) return;
     const report = await packageApp({ dir, executable: stub, out: tmp(), target: "windows-x64" });
-    if (Bun.which("zip")) {
-      expect(report.archive.endsWith("hello-m3-1.2.3-windows-x64.zip")).toBe(true);
-      expect(report.files).toContain("hello-m3.exe");
-    }
+    expect(report.archive.endsWith("hello-m3-1.2.3-windows-x64.zip")).toBe(true);
+    expect(report.files).toContain("hello-m3.exe");
   }, 60_000);
 });
 
@@ -106,7 +127,7 @@ describe("buildRootfs", () => {
     expect(report.libraries.length).toBeGreaterThanOrEqual(2);
     expect(statSync(join(dir, "app", "server")).mode & 0o111).not.toBe(0);
     for (const lib of report.libraries) expect(existsSync(join(dir, lib))).toBe(true);
-    expect(report.libraries.some((l) => /ld-linux|ld-musl/.test(l))).toBe(true);
+    expect(report.libraries.some(l => /ld-linux|ld-musl/.test(l))).toBe(true);
   });
   test("a file ldd cannot read is an error that says why", async () => {
     if (!Bun.which("ldd")) return;

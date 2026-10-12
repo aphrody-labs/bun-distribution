@@ -55,11 +55,20 @@ describe("smoke", () => {
   test("GETs each path, checks status and content type, reports ok", async () => {
     const port = freePort();
     // `launch` runs the program with the given args; a tiny wrapper script makes a runnable "executable".
-    const wrapper = join(tmp(), "run.sh");
-    writeFileSync(wrapper, `#!/bin/sh\nexec ${process.execPath} ${script()}\n`, { mode: 0o755 });
+    const wrapper = join(tmp(), process.platform === "win32" ? "run.cmd" : "run.sh");
+    writeFileSync(
+      wrapper,
+      process.platform === "win32"
+        ? `@echo off\r\n"${process.execPath}" "${script()}"\r\n`
+        : `#!/bin/sh\nexec ${process.execPath} ${script()}\n`,
+      { mode: 0o755 },
+    );
     const report = await smoke(wrapper, port, ["/", "/healthz"], { "/": "text/html", "/healthz": "application/json" });
     expect(report.ok).toBe(true);
-    expect(report.checks.map((c) => [c.path, c.status])).toEqual([["/", 200], ["/healthz", 200]]);
+    expect(report.checks.map(c => [c.path, c.status])).toEqual([
+      ["/", 200],
+      ["/healthz", 200],
+    ]);
     const wrong = await smoke(wrapper, freePort(), ["/"], { "/": "application/json" });
     expect(wrong.ok).toBe(false);
   }, 30_000);
