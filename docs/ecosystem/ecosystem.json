@@ -934,19 +934,6 @@
           ]
         },
         {
-          "name": "aphrody-tauri-cli",
-          "path": "crates/tauri/aphrody-tauri-cli",
-          "description": "Command line interface for building Tauri apps",
-          "bins": [],
-          "features": [
-            "default",
-            "native-tls",
-            "native-tls-vendored",
-            "platform-certs",
-            "rustls"
-          ]
-        },
-        {
           "name": "aphrody-tauri-plugin-autostart",
           "path": "crates/tauri/aphrody-tauri-plugin-autostart",
           "description": "Automatically launch your application at startup.",
@@ -1737,26 +1724,8 @@
           "bins": []
         },
         {
-          "name": "app",
-          "path": "crates/tauri/aphrody-tauri-cli/templates/plugin/__example-basic/vanilla",
-          "description": "",
-          "bins": []
-        },
-        {
           "name": "rg-ui-qualification",
           "path": "tmp/bun-iecode-rg-ui-gate",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "tauri-app",
-          "path": "crates/tauri/aphrody-tauri-cli/templates/plugin/__example-api/tauri-app",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "tauri-plugin-{{ plugin_name }}-api",
-          "path": "crates/tauri/aphrody-tauri-cli/templates/plugin",
           "description": "",
           "bins": []
         }

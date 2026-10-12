@@ -152,7 +152,7 @@ aphrody-render            = { workspace = true }
 aphrody-bindgen           = { workspace = true }
 aphrody-rag-eval          = { workspace = true }
 # `aphrody tauri` and `aphrody create-tauri-app`: the vendored Tauri CLIs served in process.
-tauri-cli                 = { path = "../../tauri/aphrody-tauri-cli", package = "aphrody-tauri-cli", version = "1.4.4" }
+tauri-cli                 = { path = "../../../../bun/packages/bun-tauri/crates/aphrody-tauri-cli", package = "aphrody-tauri-cli", version = "1.4.4" }
 create-tauri-app          = { path = "../../../../bun/packages/bun-tauri/crates/aphrody-create-tauri-app", package = "aphrody-create-tauri-app", version = "1.4.4" }
 aphrody-embed             = { workspace = true, features = ["server"] }
 # Messaging (outbound connectors + bidirectional channels: Slack/Telegram/Matrix/Discord/X).

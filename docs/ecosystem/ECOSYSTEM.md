@@ -115,7 +115,7 @@ Canonical Rust/Bun monorepo
 | `aphrody-svg` | crates/ui/svg | The single SVG owner of the Aphrody ecosystem: parse, sanitize, optimize, normalize viewBox, M3 theming, sprite sheets, glyph outlines to SVG paths, rasterize to PNG/ICO and pixel diff. |  | default, glyph, m3, raster, symbols |
 | `aphrody-taffy` | crates/ui/taffy | Aphrody fork of Taffy, a flexible UI layout library (flexbox, grid, block, float), with local layout fixes; the library is still imported as `taffy`. |  | alloc, block_layout, calc, content_size, debug, default, detailed_layout_info, document-features, flexbox, float_layout, grid, parse, parse_faster, profile, serde, std, strict_provenance, taffy_tree |
 | `aphrody-tauri` | crates/tauri/aphrody-tauri | Make tiny, secure apps for all desktop platforms with Tauri |  | common-controls-v6, compression, config-json5, config-toml, custom-protocol, data-url, default, devtools, dynamic-acl, gtk4, http-range, image, image-ico, image-png, isolation, linux-libxdo, native-tls, native-tls-vendored, process-relaunch-dangerous-allow-symlink-macos, protocol-asset, rustls-tls, specta, test, tracing, tray-icon, unstable, uuid, webview-data-url, webview2-com |
-| `aphrody-tauri-cli` | crates/tauri/aphrody-tauri-cli | Command line interface for building Tauri apps |  | default, native-tls, native-tls-vendored, platform-certs, rustls |
+| `aphrody-tauri-cli` | bun/packages/bun-tauri/crates/aphrody-tauri-cli | Command line interface for building Tauri apps |  | default, native-tls, native-tls-vendored, platform-certs, rustls |
 | `aphrody-tauri-plugin-autostart` | crates/tauri/aphrody-tauri-plugin-autostart | Automatically launch your application at startup. |  |  |
 | `aphrody-tauri-plugin-clipboard-manager` | crates/tauri/aphrody-tauri-plugin-clipboard-manager | Read and write to the system clipboard. |  |  |
 | `aphrody-tauri-plugin-deep-link` | crates/tauri/aphrody-tauri-plugin-deep-link | Set your Tauri application as the default handler for an URL |  |  |
@@ -233,10 +233,10 @@ Canonical Rust/Bun monorepo
 | `aphrody-m3` | m3 | Aphrody M3 design monorepo: UI/design packages, tokens, icons, templates and docs. |  |
 | `aphrody-native-check-fixture` | tmp/aphrody-integration-20261011/template-qualified |  |  |
 | `aphrody-ui-release-gate` | tmp/aphrody-integration-20261011/ui-gate |  |  |
-| `app` | crates/tauri/aphrody-tauri-cli/templates/plugin/__example-basic/vanilla |  |  |
+| `app` | bun/packages/bun-tauri/crates/aphrody-tauri-cli/templates/plugin/__example-basic/vanilla |  |  |
 | `rg-ui-qualification` | tmp/bun-iecode-rg-ui-gate |  |  |
-| `tauri-app` | crates/tauri/aphrody-tauri-cli/templates/plugin/__example-api/tauri-app |  |  |
-| `tauri-plugin-{{ plugin_name }}-api` | crates/tauri/aphrody-tauri-cli/templates/plugin |  |  |
+| `tauri-app` | bun/packages/bun-tauri/crates/aphrody-tauri-cli/templates/plugin/__example-api/tauri-app |  |  |
+| `tauri-plugin-{{ plugin_name }}-api` | bun/packages/bun-tauri/crates/aphrody-tauri-cli/templates/plugin |  |  |
 
 ### uv packages (8)
 

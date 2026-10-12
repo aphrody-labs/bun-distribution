@@ -7,7 +7,7 @@ Packages are prefixed with `aphrody-`; library and binary names are unchanged.
 | Package | Upstream crate | Version | Source | Directory |
 | :--- | :--- | :--- | :--- | :--- |
 | `aphrody-tauri` | `tauri` | 3.0.0-alpha.4 | `tauri` | `crates/tauri/aphrody-tauri` |
-| `aphrody-tauri-cli` | `tauri-cli` | 3.0.0-alpha.4 | `tauri` | `crates/tauri/aphrody-tauri-cli` |
+| `aphrody-tauri-cli` | `tauri-cli` | 3.0.0-alpha.4 | `tauri` | `bun/packages/bun-tauri/crates/aphrody-tauri-cli` |
 | `aphrody-tauri-plugin-autostart` | `tauri-plugin-autostart` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-autostart` |
 | `aphrody-tauri-plugin-clipboard-manager` | `tauri-plugin-clipboard-manager` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-clipboard-manager` |
 | `aphrody-tauri-plugin-deep-link` | `tauri-plugin-deep-link` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-deep-link` |

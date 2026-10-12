@@ -81,9 +81,9 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 - `crates/os/kernel/comps/drive/crates/utils`
 - `crates/os/kernel/comps/drive/patches/ffmpeg-sys-next`
 - `crates/os/kernel/comps/drive/xtask`
-- `crates/tauri/aphrody-tauri-cli/src/migrate/migrations/v2/fixtures/app`
-- `crates/tauri/aphrody-tauri-cli/src/migrate/migrations/v2/fixtures/no-default-features`
-- `crates/tauri/aphrody-tauri-cli/src/migrate/migrations/v2/fixtures/no-wry`
+- `bun/packages/bun-tauri/crates/aphrody-tauri-cli/src/migrate/migrations/v2/fixtures/app`
+- `bun/packages/bun-tauri/crates/aphrody-tauri-cli/src/migrate/migrations/v2/fixtures/no-default-features`
+- `bun/packages/bun-tauri/crates/aphrody-tauri-cli/src/migrate/migrations/v2/fixtures/no-wry`
 - `examples/runtime-rust-extension`
 - `m3/templates/desktop/src-tauri`
 
@@ -328,7 +328,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | --- | --- | --- | --- | --- | --- | ---: | --- |
 | `aphrody-tauri` | [crates/tauri/aphrody-tauri](../../../crates/tauri/aphrody-tauri) | rust crate | 1.4.4 | lib | yes | 24 | uncommitted |
 | `@aphrody/api` | [crates/tauri/aphrody-tauri-api](../../../crates/tauri/aphrody-tauri-api) | bun package | 1.4.4 | lib | no | 0 | uncommitted |
-| `aphrody-tauri-cli` | [crates/tauri/aphrody-tauri-cli](../../../crates/tauri/aphrody-tauri-cli) | rust crate | 1.4.4 | lib | yes | 2 | uncommitted |
+| `aphrody-tauri-cli` | [bun/packages/bun-tauri/crates/aphrody-tauri-cli](../../../bun/packages/bun-tauri/crates/aphrody-tauri-cli) | rust crate | 1.4.4 | lib | yes | 2 | uncommitted |
 | `aphrody-tauri-plugin-autostart` | [crates/tauri/aphrody-tauri-plugin-autostart](../../../crates/tauri/aphrody-tauri-plugin-autostart) | rust crate | 1.4.4 | lib | no | 0 | uncommitted |
 | `@aphrody/plugin-autostart` | [crates/tauri/aphrody-tauri-plugin-autostart](../../../crates/tauri/aphrody-tauri-plugin-autostart) | bun package | 1.4.4 | lib | no | 0 | uncommitted |
 | `aphrody-tauri-plugin-clipboard-manager` | [crates/tauri/aphrody-tauri-plugin-clipboard-manager](../../../crates/tauri/aphrody-tauri-plugin-clipboard-manager) | rust crate | 1.4.4 | lib | no | 0 | uncommitted |
