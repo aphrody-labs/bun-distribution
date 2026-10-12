@@ -125,9 +125,7 @@
       "unit": "aphrody-llama-gemma4.service",
       "health": "http://127.0.0.1:8798/health",
       "port": 8798,
-      "capabilities": [
-        "chat"
-      ],
+      "capabilities": ["chat"],
       "sourceRepo": "aphrody",
       "workingDirectory": "/home/ubuntu/.aphrody/runtimes/llama-b11415",
       "model": {
@@ -164,9 +162,7 @@
       "container": "aphrody-chat-1",
       "health": "http://127.0.0.1:8799/health",
       "port": 8799,
-      "capabilities": [
-        "chat"
-      ],
+      "capabilities": ["chat"],
       "sourceRepo": "aphrody",
       "model": {
         "catalogId": "shenron-chat-v2-merged-q4km",
@@ -187,9 +183,7 @@
       "health": "http://127.0.0.1:8786/health",
       "port": 8786,
       "modelId": "shenron-chat-v2",
-      "capabilities": [
-        "chat"
-      ],
+      "capabilities": ["chat"],
       "sourceRepo": "aphrody",
       "public": false,
       "note": "Persistent authenticated Aphrody OpenAI-compatible gateway on DBFR, bound to loopback only. Forwards to the existing Shenron chat model at 127.0.0.1:8799/v1; no Nginx route or public inference endpoint."
@@ -250,9 +244,7 @@
       "unit": "aphrody-ai-http.service",
       "health": "http://127.0.0.1:8789/healthz",
       "port": 8789,
-      "capabilities": [
-        "ai-http"
-      ],
+      "capabilities": ["ai-http"],
       "sourceRepo": "aphrody-ai",
       "workingDirectory": "/home/ubuntu/apps/aphrody/current",
       "publicProxy": "nginx",
@@ -285,9 +277,7 @@
       "unit": "aphrody-shenron-embed.service",
       "health": "http://127.0.0.1:8794/health",
       "port": 8794,
-      "capabilities": [
-        "embed"
-      ],
+      "capabilities": ["embed"],
       "sourceRepo": "aphrody-ai",
       "workingDirectory": "/home/ubuntu/apps/aphrody/current",
       "public": false,
@@ -302,9 +292,7 @@
       "unit": "aphrody-a2a.service",
       "health": "http://127.0.0.1:8788/ping",
       "port": 8788,
-      "capabilities": [
-        "a2a"
-      ],
+      "capabilities": ["a2a"],
       "sourceRepo": "aphrody",
       "workingDirectory": "/home/ubuntu/apps/aphrody/shared/agent-workspaces/aphrody",
       "a2a": {
@@ -574,6 +562,40 @@
       "public": false,
       "sourceRepo": "shenron",
       "note": "Temporary one-hour R2 object credentials for shenron-cdn prefixes _objects/ and _migration/; no corpus, DNS or worker mutation."
+    },
+    {
+      "id": "omar-browser-client-vps",
+      "application": "omar",
+      "kind": "browser-proxy",
+      "runtime": "ssh",
+      "host": "vps",
+      "unit": "aphrody-obscura-omar-client.service",
+      "health": "http://127.0.0.1:9223/health",
+      "target": "vps:127.0.0.1:9223",
+      "public": false,
+      "note": "Authenticated SSH loopback projection to Bun 1.4.4 browser bridge on Omar PC 127.0.0.1:9233; no engine or JS runtime installed remotely. Index origin http://omar.aphrody.com."
+    },
+    {
+      "id": "omar-browser-client-dbfr",
+      "application": "omar",
+      "kind": "browser-proxy",
+      "runtime": "ssh",
+      "host": "dbfr",
+      "health": "http://127.0.0.1:9223/health",
+      "target": "dbfr:127.0.0.1:9223",
+      "public": false,
+      "note": "Authenticated SSH loopback projection to Bun 1.4.4 browser bridge on Omar PC 127.0.0.1:9233; no engine or JS runtime installed remotely. Index origin http://omar.aphrody.com."
+    },
+    {
+      "id": "omar-browser-bridge",
+      "application": "omar",
+      "kind": "browser-proxy",
+      "runtime": "bun",
+      "host": "omar-pc",
+      "health": "http://127.0.0.1:9233/health",
+      "target": "omar-pc:127.0.0.1:9233",
+      "public": false,
+      "note": "Bun 1.4.4 SSH-only browser bridge on Omar PC; upstream Obscura Bearer auth retained."
     }
   ],
   "policies": {
@@ -591,10 +613,7 @@
       "bundle": {
         "root": "/home/ubuntu/apps/infra",
         "adapter": "scripts/release/atomic-deploy-bundle.sh",
-        "order": [
-          "aphrody",
-          "shenron"
-        ]
+        "order": ["aphrody", "shenron"]
       }
     },
     "applicationRoots": {
@@ -616,12 +635,7 @@
       "shenron-zswap.service",
       "filebrowser.service"
     ],
-    "sharedRuntimes": [
-      "bun",
-      "postgresql",
-      "redis",
-      "nginx"
-    ],
+    "sharedRuntimes": ["bun", "postgresql", "redis", "nginx"],
     "databasePolicy": "postgresql-primary-with-sqlite-local-cache",
     "authPolicy": "one-better-auth-contract-per-public-origin"
   },
@@ -677,28 +691,21 @@
         "host": "local",
         "kind": "scheduledTask",
         "name": "Aphrody WG aphro-pc",
-        "triggers": [
-          "atStartup"
-        ],
+        "triggers": ["atStartup"],
         "principal": "system"
       },
       {
         "host": "local",
         "kind": "scheduledTask",
         "name": "Aphrody MCP HTTP",
-        "triggers": [
-          "atStartup",
-          "atLogon"
-        ],
+        "triggers": ["atStartup", "atLogon"],
         "principal": "user"
       },
       {
         "host": "local",
         "kind": "scheduledTask",
         "name": "Aphrody Remote Desktop",
-        "triggers": [
-          "atLogon"
-        ],
+        "triggers": ["atLogon"],
         "principal": "user",
         "desktop": true
       },
@@ -707,9 +714,7 @@
         "kind": "scheduledTask",
         "name": "hub-tunnel",
         "path": "\\Aphrody\\Native\\",
-        "triggers": [
-          "atLogon"
-        ],
+        "triggers": ["atLogon"],
         "principal": "user"
       },
       {
@@ -717,9 +722,7 @@
         "kind": "scheduledTask",
         "name": "site",
         "path": "\\Aphrody\\Native\\",
-        "triggers": [
-          "atStartup"
-        ],
+        "triggers": ["atStartup"],
         "principal": "system",
         "execute": "%USERPROFILE%\\.bun\\bin\\bun.exe",
         "arguments": "--no-env-file scripts/tools/infra/native-startup.ts run site --config %USERPROFILE%\\.aphrody\\host\\aphrody-startup.json",
@@ -738,7 +741,7 @@
         "workingDirectory": "{root}"
       },
       {
-        "host": "local",
+        "host": "omar-pc",
         "kind": "windowsService",
         "name": "AphrodyHost",
         "restartOnFailure": true
@@ -758,9 +761,7 @@
         "host": "local",
         "kind": "scheduledTask",
         "name": "Container",
-        "triggers": [
-          "atLogon"
-        ],
+        "triggers": ["atLogon"],
         "principal": "user",
         "desktop": true,
         "periodic": true,
@@ -783,10 +784,7 @@
         "kind": "scheduledTask",
         "name": "Aphrody self update",
         "path": "\\",
-        "triggers": [
-          "every:30m",
-          "atLogon"
-        ],
+        "triggers": ["every:30m", "atLogon"],
         "principal": "user",
         "runLevel": "limited",
         "periodic": true,
@@ -800,9 +798,7 @@
         "kind": "scheduledTask",
         "name": "AphrodyBunHygiene",
         "path": "\\",
-        "triggers": [
-          "daily@05:30"
-        ],
+        "triggers": ["daily@05:30"],
         "principal": "user",
         "runLevel": "limited",
         "periodic": true,
@@ -817,9 +813,7 @@
         "kind": "scheduledTask",
         "name": "Omar Nginx",
         "principal": "system",
-        "triggers": [
-          "atStartup"
-        ],
+        "triggers": ["atStartup"],
         "execute": "C:/Users/omara/AppData/Local/Microsoft/WinGet/Packages/nginxinc.nginx_Microsoft.Winget.Source_8wekyb3d8bbwe/nginx-1.31.6/nginx.exe",
         "arguments": "-p C:/SSH/omar-server/nginx/ -c nginx.conf -g \"daemon off;\"",
         "workingDirectory": "C:/SSH/omar-server/nginx",
@@ -837,9 +831,7 @@
         "kind": "scheduledTask",
         "name": "Omar Llama CUDA",
         "principal": "system",
-        "triggers": [
-          "atStartup"
-        ],
+        "triggers": ["atStartup"],
         "execute": "C:/Users/omara/.aphrody/runtimes/llama-b11552-cuda/llama-server.exe",
         "arguments": "--model C:/Users/omara/.aphrody/models/omar-server/Qwen3-0.6B-Q8_0.gguf --host 127.0.0.1 --port 8081 --n-gpu-layers 99 --ctx-size 2048 --parallel 1 --alias omar-qwen3 --api-key-file C:/Users/omara/.aphrody/private/omar-server/llama-api-key.txt",
         "workingDirectory": "C:/Users/omara/.aphrody/runtimes/llama-b11552-cuda",
@@ -862,10 +854,7 @@
         "kind": "scheduledTask",
         "name": "Aphrody omar reverse",
         "path": "\\Aphrody\\",
-        "triggers": [
-          "atStartup",
-          "atLogon"
-        ],
+        "triggers": ["atStartup", "atLogon"],
         "principal": "user",
         "execute": "C:\\Windows\\System32\\bun.exe",
         "arguments": "--no-env-file C:\\aphrody\\scripts\\tools\\infra\\ssh-reverse-task.ts C:\\Users\\omara\\.aphrody\\private\\state\\reverse-tunnel.json",
@@ -903,10 +892,7 @@
         "host": "local",
         "kind": "scheduledTask",
         "name": "Shenron R2 S3 scoped renewal",
-        "triggers": [
-          "every:10m",
-          "atLogon"
-        ],
+        "triggers": ["every:10m", "atLogon"],
         "principal": "user",
         "runLevel": "limited",
         "periodic": true,
@@ -914,6 +900,36 @@
         "arguments": "-NoLogo -NoProfile -NonInteractive -File \"%USERPROFILE%\\.aphrody\\tools\\cloudflare-cli\\s3-profile.ps1\" -Action renew -Apply -BunExe \"C:/shenron/var/runtimes/bun-1.4.4-current-ae5a09dc/bun.exe\"",
         "timeLimitMinutes": 3,
         "description": "Renew one-hour Shenron R2 S3 object credentials scoped to shenron-cdn _objects/ and _migration/, protected by DPAPI CurrentUser."
+      },
+      {
+        "host": "vps",
+        "kind": "systemd",
+        "unit": "aphrody-obscura-omar-client.service"
+      },
+      {
+        "host": "dbfr",
+        "kind": "systemd",
+        "unit": "aphrody-obscura-omar-client.service"
+      },
+      {
+        "host": "local",
+        "kind": "windowsService",
+        "name": "OmarBrowserBridge",
+        "restartOnFailure": true
+      },
+      {
+        "host": "aphro-pc",
+        "kind": "scheduledTask",
+        "name": "Aphrody Omar Browser",
+        "path": "\\Aphrody\\",
+        "triggers": ["atStartup", "atLogon"],
+        "execute": "C:/Program Files/OpenSSH/ssh.exe",
+        "arguments": "-N -T -o BatchMode=yes -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -L 127.0.0.1:9223:127.0.0.1:9233 omar-pc",
+        "workingDirectory": "C:/Users/aphro",
+        "description": "Private shared Bun browser from Omar PC",
+        "principal": "user",
+        "runLevel": "highest",
+        "desktop": false
       }
     ]
   }
