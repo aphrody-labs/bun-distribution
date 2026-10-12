@@ -4,8 +4,8 @@ export { createM3App, dirSource, embeddedSource, startM3Server, DEFAULT_CSP, cac
 export type { FileSource, M3App as M3AppHandle, M3AppOptions, M3ServerOptions } from "./server.ts";
 export { defineM3Api, normalizeApi, routesToFetch } from "./api.ts";
 export type { M3ApiModule, M3Handler, M3Methods, M3Request, M3Route, M3Routes } from "./api.ts";
-export { COMPILE_TARGETS, compileTarget, defineM3Bun, findWorkspaceRoot, loadApp } from "./config.ts";
-export type { CompileTargetName, M3App, M3BunConfig, M3BunDeploy } from "./config.ts";
+export { COMPILE_TARGETS, compileTarget, defineM3Bun, findWorkspaceRoot, loadApp, resolveWindowsToolchain } from "./config.ts";
+export type { CompileTargetName, M3App, M3BunConfig, M3BunDeploy, WindowsToolchainResolution } from "./config.ts";
 export { m3Bun, m3BunExtras } from "./plugin.ts";
 export type { M3BunPluginOptions } from "./plugin.ts";
 export { tsM3Css } from "./theme-css.ts";

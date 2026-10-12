@@ -17,7 +17,7 @@ import { existsSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { buildApp, minifyOptions, readManifest, type BuildReport, type MinifyLevel } from "./build.ts";
-import { compileTarget, loadApp, type CompileTargetName, type M3App } from "./config.ts";
+import { compileTarget, loadApp, resolveWindowsToolchain, type CompileTargetName, type M3App } from "./config.ts";
 
 export interface EntryParams {
   /** Absolute path of `entry.ts` of this package. */
@@ -103,6 +103,7 @@ export async function compileApp(options: CompileOptions = {}): Promise<CompileR
   const app = options.app ?? (await loadApp(resolve(options.dir ?? process.cwd()), options.configFile));
   const target = options.target ?? app.bun.compile?.target;
   const minify = options.minify ?? app.minify;
+  resolveWindowsToolchain(target);
 
   let build: BuildReport | undefined;
   if (options.build !== false) build = await buildApp({ app, minify });

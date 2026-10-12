@@ -122,6 +122,21 @@ export function compileTarget(name: CompileTargetName | undefined): Bun.Build.Co
   return `bun-${name}` as Bun.Build.CompileTarget;
 }
 
+/** Resolve the native Windows toolchain through Bun 1.4.4 when the host is Windows. */
+export interface WindowsToolchainResolution {
+  error?: string | null;
+  [key: string]: unknown;
+}
+
+export function resolveWindowsToolchain(target: CompileTargetName | undefined): WindowsToolchainResolution | null {
+  const wantsWindows = (target ?? "").startsWith("windows") || (!target && process.platform === "win32");
+  if (!wantsWindows || process.platform !== "win32") return null;
+  const windows = require("bun:windows") as { toolchain(options: { arch: string }): WindowsToolchainResolution };
+  const toolchain = windows.toolchain({ arch: process.arch === "arm64" ? "arm64" : "x64" });
+  if (toolchain.error) throw new Error(`m3-bun: Windows toolchain unavailable: ${toolchain.error}`);
+  return toolchain;
+}
+
 /** Walk up from `start` to the directory holding a `package.json` with `workspaces`. */
 export function findWorkspaceRoot(start: string): string | undefined {
   let dir = resolve(start);
