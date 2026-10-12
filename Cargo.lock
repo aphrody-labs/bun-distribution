@@ -3050,17 +3050,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-tauri-schema-generator"
-version = "1.4.4"
-dependencies = [
- "aphrody-tauri-utils",
- "schemars 1.2.2",
- "serde",
- "serde_json",
- "url",
-]
-
-[[package]]
 name = "aphrody-tauri-utils"
 version = "1.4.4"
 dependencies = [

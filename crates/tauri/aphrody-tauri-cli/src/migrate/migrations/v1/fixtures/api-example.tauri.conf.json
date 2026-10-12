@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../../../../tauri-schema-generator/schemas/config.schema.json",
+  "$schema": "https://raw.githubusercontent.com/aphrody-labs/bun/main/packages/bun-tauri/crates/aphrody-tauri-schema-generator/schemas/config.schema.json",
   "build": {
     "distDir": "../dist",
     "devPath": "http://localhost:5173",

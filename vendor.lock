@@ -225,14 +225,6 @@
       "dir": "crates/tauri/aphrody-tauri-runtime-cef"
     },
     {
-      "name": "tauri-schema-generator",
-      "package": "aphrody-tauri-schema-generator",
-      "version": "0.0.0",
-      "source": "tauri",
-      "from": "crates/tauri-schema-generator",
-      "dir": "crates/tauri/aphrody-tauri-schema-generator"
-    },
-    {
       "name": "tauri-utils",
       "package": "aphrody-tauri-utils",
       "version": "3.0.0-alpha.3",

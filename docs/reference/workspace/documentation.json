@@ -1704,16 +1704,6 @@
       "canonical": "crates/tauri/aphrody-tauri-runtime/README.md"
     },
     {
-      "path": "crates/tauri/aphrody-tauri-schema-generator/README.md",
-      "title": "tauri-schema-generator",
-      "sha256": "e072ceed741bfd64ae0f09efbb100296fef14b57e551f5c8eb2798e3844bc9ad",
-      "bytes": 157,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tauri-schema-generator/README.md"
-    },
-    {
       "path": "crates/tauri/aphrody-tauri-utils/CHANGELOG.md",
       "title": "Changelog",
       "sha256": "d43012837706f49a811d342e0f0fa552d2336393f0326d956ec40888b0d482b6",

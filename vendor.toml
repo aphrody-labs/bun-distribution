@@ -32,7 +32,6 @@ crates = [
   "crates/tauri-plugin",
   "crates/tauri-runtime",
   "crates/tauri-runtime-cef",
-  "crates/tauri-schema-generator",
   "crates/tauri-utils",
   "crates/tests/acl",
   "packages/cli",
@@ -89,18 +88,6 @@ path = "src/main.rs"
 
 '''
 to = ""
-
-# One config schema: the generator crate owns it; the CLI embeds that copy instead of a second generated file.
-[[rewrite]]
-files = "crates/tauri/aphrody-tauri-schema-generator/build.rs"
-from = '''    write_if_changed(out.join("../aphrody-tauri-cli/config.schema.json"), config_schema)?;
-'''
-to = ""
-
-[[rewrite]]
-files = "crates/tauri/aphrody-tauri-cli/src/helpers/config.rs"
-from = '''include_str!("../../config.schema.json")'''
-to = '''include_str!("../../../aphrody-tauri-schema-generator/schemas/config.schema.json")'''
 
 # One version per crate: the vendored crates follow the workspace pins so Cargo.lock keeps a single copy
 # (jsonschema, resvg, urlpattern, infer, json5, cargo_metadata, zip, whoami).

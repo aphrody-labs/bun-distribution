@@ -978,7 +978,6 @@ _No subcommands (flags only)._
 - `aphrody-app` (aphrody / `aphrody-app`)
 - `aphrody-fake-llama-server` (aphrody / `aphrody-llama-server`)
 - `aphrody-llama-daemon` (aphrody / `aphrody-llama-server`)
-- `tauri-schema-generator` (aphrody / `aphrody-tauri-schema-generator`)
 - `aphrody-homebrew` (iecode / `aphrody-homebrew`)
 - `aphrody-nie-mcp` (iecode / `aphrody-nie-mcp`)
 - `export_aphrody` (iecode / `aphrody-nie-identity-source`)

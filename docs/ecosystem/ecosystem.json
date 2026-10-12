@@ -1184,15 +1184,6 @@
           ]
         },
         {
-          "name": "aphrody-tauri-schema-generator",
-          "path": "crates/tauri/aphrody-tauri-schema-generator",
-          "description": "Hosts the schema for the Tauri configuration file.",
-          "bins": [
-            "tauri-schema-generator"
-          ],
-          "features": []
-        },
-        {
           "name": "aphrody-tauri-utils",
           "path": "crates/tauri/aphrody-tauri-utils",
           "description": "Utilities for Tauri",
@@ -8875,11 +8866,6 @@
     {
       "binary": "aphrody-llama-daemon",
       "crate": "aphrody-llama-server",
-      "repo": "aphrody"
-    },
-    {
-      "binary": "tauri-schema-generator",
-      "crate": "aphrody-tauri-schema-generator",
       "repo": "aphrody"
     },
     {

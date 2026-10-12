@@ -32,7 +32,6 @@ Packages are prefixed with `aphrody-`; library and binary names are unchanged.
 | `aphrody-tauri-plugin-window-state` | `tauri-plugin-window-state` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-window-state` |
 | `aphrody-tauri-runtime` | `tauri-runtime` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-runtime` |
 | `aphrody-tauri-runtime-cef` | `tauri-runtime-cef` | 3.0.0-alpha.5 | `tauri` | `crates/tauri/aphrody-tauri-runtime-cef` |
-| `aphrody-tauri-schema-generator` | `tauri-schema-generator` | 0.0.0 | `tauri` | `crates/tauri/aphrody-tauri-schema-generator` |
 | `aphrody-tauri-utils` | `tauri-utils` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-utils` |
 
 ## Source commits
