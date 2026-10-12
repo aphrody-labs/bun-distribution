@@ -6,12 +6,13 @@ its updates links here. This directory holds only this page, the fork `LICENSE.m
 else fetched at the pinned commit (sparse `git clone` of `docs/` into the user data directory). Verified against
 the fork checkout on 2026-10-10.
 
-The public site of the fork is [bun.aphrody.com](https://bun.aphrody.com): home (what the fork is, its patches and
+The public site of the fork is [aphrody.app](https://aphrody.app): home (what the fork is, its patches and
 their tests, current versions, installation), the full Bun documentation under `/docs` with search, downloads,
 release notes and the installers (`/install`, `/install.sh`, `/install.ps1`). The fork owns its generator,
-`scripts/aphrody/site/` (test `test/internal/aphrody-site.test.ts`); `publish.ts` runs on the vps and flips
-`/var/www/bun.aphrody.com/current`, served by the vhost
-[`bun.aphrody.com.conf`](../../../tools/config/host/nginx/aphrody/bun.aphrody.com.conf). `aphrody.com` and
+`scripts/aphrody/site/` (test `test/internal/aphrody-site.test.ts`); `publish.ts` (user timer on the vps) deploys it
+to Cloudflare as the static assets of the Worker `aphrody-app` (`packages/bun-cloudflare/app` of the fork, API under
+`/api`). `bun.aphrody.com` answers a permanent redirect to the same path on aphrody.app
+([`bun.aphrody.com.conf`](../../../tools/config/host/nginx/aphrody/bun.aphrody.com.conf)). `aphrody.com` and
 `aphrody.com/docs` stay the Aphrody app and its documentation; they do not duplicate the Bun docs.
 
 ## Rules

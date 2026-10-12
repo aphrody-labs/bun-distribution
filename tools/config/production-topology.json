@@ -158,6 +158,15 @@
         "build": "bounded-linux-gates"
       },
       "forbidden": ["production-database", "public-runtime"]
+    },
+    "omar-pc": {
+      "role": "remote-gpu-workstation",
+      "allocations": {
+        "ai-gateway": "omar-llama-cuda",
+        "redis": "omar-cache"
+      },
+      "network": { "internalOnly": [6379, 8081], "publicPorts": [] },
+      "forbidden": ["production-database", "public-runtime"]
     }
   },
   "portPolicy": "nginx or explicitly catalogued read-only native Rust site ingress owns public80/443; MCP/A2A and all other application ports stay loopback or private-network",
