@@ -130,7 +130,10 @@ export function listPackages(root = REPO): Pkg[] {
 
 /** Package names of the host repositories that install the host-bound packages. */
 export function hostPackageNames(
-  roots = (process.env["M3_HOST_ROOTS"] ?? `${homedir()}/aphrody:/mnt/c/iecode`).split(":"),
+  roots = (process.env["M3_HOST_ROOTS"] ??
+    (process.platform === "win32"
+      ? ["C:\\aphrody", "C:\\iecode", "C:\\shenron"].join(";")
+      : `${homedir()}/aphrody:/mnt/c/iecode`)).split(process.platform === "win32" ? ";" : ":"),
 ): Set<string> {
   const names = new Set<string>();
   for (const root of roots.filter((r) => r && existsSync(join(r, "package.json")))) {
