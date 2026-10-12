@@ -35,7 +35,11 @@ const retainedAssetTrees = [
   `${home}/build/linux-wsl-7.2`,
   `${home}/build/linux-wsl-7.2-arm64`,
 ];
-const option = (name: string) => args[args.indexOf(name) + 1];
+const option = (name: string): string => {
+  const value = args[args.indexOf(name) + 1];
+  if (value === undefined || value.startsWith("--")) throw new Error(`${name} requires a value.`);
+  return value;
+};
 const output = args.includes("--out")
   ? option("--out")
   : `${home}/.local/share/aphrody/infra/bun-cleanup-${Date.now()}`;

@@ -27,7 +27,6 @@
   "scripts": {
     "dev": "bun ../../../packages/engine/yolo/src/index.ts m3 dev",
     "build": "bun run build.ts",
-    "check": "oxlint src/app.tsx && tsc --noEmit",
     "typecheck": "bun check -p tsconfig.json --noEmit",
     "test": "bun test src",
     "brand": "bun run scripts/brand-theme.ts",

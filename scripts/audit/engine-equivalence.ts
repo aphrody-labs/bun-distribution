@@ -10,7 +10,7 @@
 import { $ } from "bun";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { obscuraSourceRoot } from "../tools/web/obscura-sources";
+import { obscuraSourceRoot } from "@aphrody/web-source/integrations/scripts/tools/web/obscura-sources.ts";
 
 const ROOT = join(import.meta.dir, "../..");
 // The Bun fork checkout (aphrody-labs/bun): APHRODY_BUN_CHECKOUT, else C:/bun on Windows, else ~/bun.

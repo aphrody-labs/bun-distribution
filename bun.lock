@@ -11,6 +11,8 @@
       },
       "devDependencies": {
         "@aphrody/paths": "workspace:*",
+        "@aphrody/web-source": "workspace:*",
+        "@aphrody/web-test": "workspace:*",
         "@happy-dom/global-registrator": "catalog:",
         "@types/bun": "catalog:",
         "@types/node": "catalog:",

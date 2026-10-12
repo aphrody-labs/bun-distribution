@@ -24,7 +24,7 @@
     "lint": "oxlint src test",
     "test": "bun test",
     "typecheck": "bun check --noEmit",
-    "check": "aphrody ovh status",
+    "status": "aphrody ovh status",
     "dns": "aphrody ovh dns",
     "vps": "aphrody ovh vps",
     "email": "aphrody ovh email"

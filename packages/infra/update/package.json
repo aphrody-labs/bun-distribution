@@ -26,7 +26,7 @@
   "scripts": {
     "build": "bun build src/cli.ts --target bun --packages external --outdir dist",
     "lint": "oxlint src test",
-    "check": "bun ../../../packages/engine/yolo/src/index.ts update check",
+    "status": "bun ../../../packages/engine/yolo/src/index.ts update check",
     "test": "bun test test",
     "typecheck": "bun check --noEmit -p ."
   },

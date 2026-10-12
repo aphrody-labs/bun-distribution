@@ -17,11 +17,7 @@
  */
 
 import { expect } from "bun:test";
-import {
-  collectPageDiagnostics,
-  TestPage,
-  type PageDiagnostics,
-} from "../../../packages/web/aphrody-web-test/src/index.ts";
+import { collectPageDiagnostics, TestPage, type PageDiagnostics } from "@aphrody/web-test";
 
 export { TestPage };
 

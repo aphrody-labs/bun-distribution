@@ -245,7 +245,7 @@ for (const site of sites) {
   });
 
   // 5. key pages through the monorepo's native Web test owner.
-  const { TestPage } = await import("../../packages/web/aphrody-web-test/src/index.ts");
+  const { TestPage } = await import("@aphrody/web-test");
   for (const spec of site.pages) {
     let page: Awaited<ReturnType<typeof TestPage.create>> | undefined;
     try {
