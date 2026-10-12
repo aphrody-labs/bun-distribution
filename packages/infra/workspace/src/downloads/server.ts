@@ -630,14 +630,6 @@ async function appUiResponse(request: Request, root: string): Promise<Response |
           element.setAttribute("href", "/_app-ui/");
         },
       })
-      .on("script", {
-        element(element) {
-          const src = element.getAttribute("src") ?? "";
-          // The apex is a public landing page. Never hydrate the OS shell there;
-          // the OS surface is owned exclusively by os.aphrody.com.
-          if (home && /(?:^|\/)app\.js(?:\?|$)/.test(src)) element.remove();
-        },
-      })
       .on("head", {
         element(element) {
           element.append('<meta name="aphrody-rpc" content="unavailable">', { html: true });
