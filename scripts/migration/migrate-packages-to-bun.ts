@@ -165,7 +165,14 @@ async function main() {
   for (const pkg of packages) {
     const target = relative(forkRoot, pkg.target).replaceAll("\\", "/");
     const existing = await stat(pkg.target).catch(() => undefined);
-    if (existing) throw new Error(`target already exists: ${target}`);
+    if (existing) {
+      const tracked = await command(["ls-files", "--stage", "--", target], forkRoot);
+      if (tracked.stdout.split(/\r?\n/).some(line => line.startsWith("160000 "))) {
+        console.error(`already migrated: ${pkg.name}`);
+        continue;
+      }
+      throw new Error(`target already exists and is not a submodule: ${target}`);
+    }
     const result = await command(["submodule", "add", "--name", pkg.name, pkg.source, target], forkRoot);
     if (result.code !== 0) throw new Error(`submodule ${pkg.name} failed: ${result.stderr.trim()}`);
     console.error(`migrated ${pkg.group}: ${pkg.name}@${pkg.version}`);
