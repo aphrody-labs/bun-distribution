@@ -21,14 +21,6 @@
       "dir": "crates/tauri/aphrody-tauri"
     },
     {
-      "name": "tauri-bundler",
-      "package": "aphrody-tauri-bundler",
-      "version": "3.0.0-alpha.3",
-      "source": "tauri",
-      "from": "crates/tauri-bundler",
-      "dir": "crates/tauri/aphrody-tauri-bundler"
-    },
-    {
       "name": "tauri-cli",
       "package": "aphrody-tauri-cli",
       "version": "3.0.0-alpha.4",

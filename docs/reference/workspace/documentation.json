@@ -984,46 +984,6 @@
       "canonical": "crates/tauri/aphrody-tauri-api/README.md"
     },
     {
-      "path": "crates/tauri/aphrody-tauri-bundler/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "0e8ffebb3536e9ee479e8f20ea5aac843ec796549b8773cd0a26972bbc541c95",
-      "bytes": 138754,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tauri-bundler/CHANGELOG.md"
-    },
-    {
-      "path": "crates/tauri/aphrody-tauri-bundler/License-Apache.md",
-      "title": "Copyright 2017 Cargo-Bundle developers",
-      "sha256": "a0746c84c2a9663f57491dda8a619cc64152a8447889c0e17aa2f3e592e0097e",
-      "bytes": 10363,
-      "domain": "tauri",
-      "status": "notice",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tauri-bundler/License-Apache.md"
-    },
-    {
-      "path": "crates/tauri/aphrody-tauri-bundler/License-MIT.md",
-      "title": "Copyright 2017 Cargo-Bundle developers",
-      "sha256": "86fc515b82835f7cb6ad400cc64a9d3380d22d55b593e8c34f51efee9f6a250b",
-      "bytes": 2159,
-      "domain": "tauri",
-      "status": "notice",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tauri-bundler/License-MIT.md"
-    },
-    {
-      "path": "crates/tauri/aphrody-tauri-bundler/README.md",
-      "title": "Tauri Bundler",
-      "sha256": "220795bc36693d6addc5055e3a57831b429b4994d032a9f81556ee104246a5a0",
-      "bytes": 6333,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tauri-bundler/README.md"
-    },
-    {
       "path": "crates/tauri/aphrody-tauri-cli/CHANGELOG.md",
       "title": "Changelog",
       "sha256": "a05ec024b96697ada5161b3306646a22705ec7bd3941ddc65c9029261d9bdcef",
