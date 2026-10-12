@@ -162,6 +162,7 @@
     "test": "bun run --filter @aphrody/workspace test",
     "lint": "bun run --filter @aphrody/workspace lint",
     "format:check": "bun run --filter @aphrody/workspace format:check",
+    "migrate:packages:bun": "bun scripts/migration/migrate-packages-to-bun.ts --check",
     "ai:build": "bun run --filter '@aphrody/*' build",
     "ai:typecheck": "bun run --filter '@aphrody/*' typecheck",
     "ai:test": "bun run --filter '@aphrody/*' test",

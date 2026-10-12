@@ -1,0 +1,109 @@
+#!/usr/bin/env bun
+/**
+ * Generate/apply the package-by-package migration from Aphrody to the Bun fork.
+ * M3 is always planned first. Apply is explicit because submodule registration
+ * changes .gitmodules, the index and checkout state.
+ */
+
+import { mkdir, readdir, readFile, stat } from "node:fs/promises";
+import { join, relative, resolve } from "node:path";
+
+type Manifest = {
+  name?: string;
+  version?: string;
+  repository?: string | { type?: string; url?: string };
+};
+
+type Candidate = { name: string; version: string; source: string; target: string; group: "m3" | "packages" };
+
+const root = resolve(import.meta.dir, "../..");
+const forkRoot = resolve(process.env.APHRODY_BUN_CHECKOUT ?? join(root, "..", "bun"));
+const submoduleRoot = resolve(process.env.APHRODY_BUN_SUBMODULE_ROOT ?? join(forkRoot, "packages", "aphrody-migrated"));
+const apply = Bun.argv.includes("--apply");
+const checkOnly = Bun.argv.includes("--check");
+const forkOrg = process.env.APHRODY_BUN_GITHUB_ORG ?? "aphrody-labs";
+
+async function command(args: string[], cwd = root): Promise<{ code: number; stdout: string; stderr: string }> {
+  const proc = Bun.spawn(["git", ...args], { cwd, stdout: "pipe", stderr: "pipe" });
+  const [stdout, stderr, code] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  return { code, stdout, stderr };
+}
+
+function repoUrl(manifest: Manifest, name: string): string {
+  const repository = typeof manifest.repository === "string" ? manifest.repository : manifest.repository?.url;
+  if (repository?.startsWith("https://github.com/")) return repository.replace(/\.git$/, "") + ".git";
+  const slug = name.replace(/^@/, "").replace(/\//g, "-");
+  return `https://github.com/${forkOrg}/${slug}.git`;
+}
+
+async function packageDirs(parent: string): Promise<string[]> {
+  const result: string[] = [];
+  async function walk(dir: string) {
+    const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
+    if (entries.some((entry) => entry.isFile() && entry.name === "package.json")) result.push(dir);
+    for (const entry of entries) {
+      if (!entry.isDirectory() || entry.name.startsWith(".") || entry.name === "node_modules" || entry.name === "dist" || entry.name === "target") continue;
+      await walk(join(dir, entry.name));
+    }
+  }
+  await walk(join(root, parent));
+  return result;
+}
+
+async function load(parent: string, group: Candidate["group"]): Promise<Candidate[]> {
+  const result: Candidate[] = [];
+  for (const dir of await packageDirs(parent)) {
+    const manifestPath = join(dir, "package.json");
+    try {
+      const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as Manifest;
+      if (!manifest.name) continue;
+      result.push({
+        name: manifest.name,
+        version: manifest.version ?? "0.0.0",
+        source: repoUrl(manifest, manifest.name),
+        target: join(submoduleRoot, group, manifest.name.replace(/^@/, "").replace(/\//g, "-")),
+        group,
+      });
+    } catch {
+      // Non-package directories are intentionally ignored.
+    }
+  }
+  return result.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function main() {
+  const packages = [...(await load("m3/packages", "m3")), ...(await load("packages", "packages"))];
+  const seen = new Set<string>();
+  const duplicates = packages.filter((pkg) => {
+    const duplicate = seen.has(pkg.name);
+    seen.add(pkg.name);
+    return duplicate;
+  });
+  if (duplicates.length) throw new Error(`duplicate package names: ${duplicates.map((pkg) => pkg.name).join(", ")}`);
+
+  const state = await command(["status", "--short"]);
+  if (state.stdout.trim() && apply) throw new Error("working tree is dirty; use a clean tree before --apply");
+  if (checkOnly) {
+    const fork = await command(["rev-parse", "--show-toplevel"], forkRoot);
+    if (fork.code !== 0) throw new Error(`invalid Bun fork checkout: ${forkRoot}`);
+  }
+
+  console.log(JSON.stringify({ apply, forkRoot, submoduleRoot, total: packages.length, m3: packages.filter((p) => p.group === "m3").length, packages: packages.filter((p) => p.group === "packages").length, entries: packages }, null, 2));
+  if (!apply) return;
+
+  await mkdir(submoduleRoot, { recursive: true });
+  for (const pkg of packages) {
+    const target = relative(root, pkg.target).replaceAll("\\", "/");
+    const existing = await stat(pkg.target).catch(() => undefined);
+    if (existing) throw new Error(`target already exists: ${target}`);
+    const result = await command(["submodule", "add", "--name", pkg.name, pkg.source, target]);
+    if (result.code !== 0) throw new Error(`submodule ${pkg.name} failed: ${result.stderr.trim()}`);
+    console.error(`migrated ${pkg.group}: ${pkg.name}@${pkg.version}`);
+  }
+}
+
+await main();
