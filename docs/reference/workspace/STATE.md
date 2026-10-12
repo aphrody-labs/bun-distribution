@@ -84,7 +84,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 - `crates/tauri/aphrody-tauri-cli/src/migrate/migrations/v2/fixtures/app`
 - `crates/tauri/aphrody-tauri-cli/src/migrate/migrations/v2/fixtures/no-default-features`
 - `crates/tauri/aphrody-tauri-cli/src/migrate/migrations/v2/fixtures/no-wry`
-- `crates/tauri/aphrody-tauri/test/cef-rollback`
 - `examples/runtime-rust-extension`
 - `m3/templates/desktop/src-tauri`
 
