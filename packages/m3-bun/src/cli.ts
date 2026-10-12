@@ -24,7 +24,20 @@ import { dirSource, startM3Server } from "./server.ts";
 import { TARGETS, contextFor, generateTargets } from "./targets/index.ts";
 import { kib } from "./util.ts";
 
-export const COMMANDS = ["dev", "build", "serve", "compile", "package", "deploy", "targets", "smoke", "workspace", "pack", "help", "version"] as const;
+export const COMMANDS = [
+  "dev",
+  "build",
+  "serve",
+  "compile",
+  "package",
+  "deploy",
+  "targets",
+  "smoke",
+  "workspace",
+  "pack",
+  "help",
+  "version",
+] as const;
 export type Command = (typeof COMMANDS)[number];
 
 export interface Parsed {
@@ -33,7 +46,18 @@ export interface Parsed {
   flags: Map<string, string | true>;
 }
 
-const BOOLEAN = new Set(["dev", "no-hmr", "no-build", "build", "json", "rootfs", "deploy", "help", "version", "no-cache"]);
+const BOOLEAN = new Set([
+  "dev",
+  "no-hmr",
+  "no-build",
+  "build",
+  "json",
+  "rootfs",
+  "deploy",
+  "help",
+  "version",
+  "no-cache",
+]);
 
 /** Parse `argv` (without the runtime and script paths). */
 export function parseArgs(argv: readonly string[]): Parsed {
@@ -76,7 +100,7 @@ Usage:
   m3-bun build    [--minify none|basic|full] [--dev] [--outdir <dir>] [--json]
   m3-bun serve    [--port <n>] [--host <h>] [--build]
   m3-bun compile  [--target <t>] [--outfile <file>] [--minify <level>] [--no-build]
-  m3-bun package  [--target <t>] [--format tar.gz|zip] [--out <dir>] [--rootfs] [--deploy] [--executable <file>]
+  m3-bun package  [--target <t>] [--format tar.gz|zip] [--out <dir>] [--rootfs] [--deploy] [--executable <file>] [--json]
   m3-bun deploy   <target..|all> [--out <dir>] [--domain <host>] [--name <n>] [--port <n>] [--image <ref>]
                   [--namespace <ns>] [--user <u>] [--region <r>] [--tls-cert <f> --tls-key <f>] [--http2 directive|listen] [--cli "<cmd>"]
   m3-bun targets
@@ -85,7 +109,7 @@ Usage:
   m3-bun pack     [package-dir] [--out <dir>]
 
 Compile targets: ${COMPILE_TARGETS.join(", ")}
-Deploy targets:  ${TARGETS.map((t) => t.id).join(", ")} (generated, never applied)
+Deploy targets:  ${TARGETS.map(t => t.id).join(", ")} (generated, never applied)
 Commands run in the directory of the app's m3.config.ts.`;
 
 const str = (flags: Map<string, string | true>, name: string): string | undefined => {
@@ -99,21 +123,24 @@ const num = (flags: Map<string, string | true>, name: string): number | undefine
   const value = str(flags, name);
   if (value === undefined) return undefined;
   const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed < 0) throw new Error(`--${name} must be a non-negative integer, got ${value}`);
+  if (!Number.isInteger(parsed) || parsed < 0)
+    throw new Error(`--${name} must be a non-negative integer, got ${value}`);
   return parsed;
 };
 
 const level = (flags: Map<string, string | true>): MinifyLevel | undefined => {
   const value = str(flags, "minify");
   if (value === undefined) return undefined;
-  if (value !== "none" && value !== "basic" && value !== "full") throw new Error(`--minify must be none, basic or full, got ${value}`);
+  if (value !== "none" && value !== "basic" && value !== "full")
+    throw new Error(`--minify must be none, basic or full, got ${value}`);
   return value;
 };
 
 const target = (flags: Map<string, string | true>): CompileTargetName | undefined => {
   const value = str(flags, "target");
   if (value === undefined) return undefined;
-  if (!(COMPILE_TARGETS as readonly string[]).includes(value)) throw new Error(`--target must be one of ${COMPILE_TARGETS.join(", ")}, got ${value}`);
+  if (!(COMPILE_TARGETS as readonly string[]).includes(value))
+    throw new Error(`--target must be one of ${COMPILE_TARGETS.join(", ")}, got ${value}`);
   return value as CompileTargetName;
 };
 
@@ -141,7 +168,7 @@ export function bunfigHasPlugin(dir: string): boolean {
   const plugins = parsed.serve?.static?.plugins;
   if (!Array.isArray(plugins)) return false;
   const known = knownPluginFiles();
-  return plugins.some((specifier) => {
+  return plugins.some(specifier => {
     if (typeof specifier !== "string") return false;
     try {
       return known.includes(Bun.resolveSync(specifier, dir));
@@ -165,7 +192,9 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       console.log(USAGE);
       return 0;
     case "version": {
-      const manifest = JSON.parse(readFileSync(join(import.meta.dir, "..", "package.json"), "utf8")) as { version: string };
+      const manifest = JSON.parse(readFileSync(join(import.meta.dir, "..", "package.json"), "utf8")) as {
+        version: string;
+      };
       console.log(manifest.version);
       return 0;
     }
@@ -176,13 +205,23 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
     case "dev": {
       const app = await loadApp(cwd);
       if (!bunfigHasPlugin(app.dir)) {
-        console.error(`m3-bun dev: ${join(app.dir, "bunfig.toml")} must list the plugin so Bun can bundle the HTML entry:\n\n[serve.static]\nplugins = ["@aphrody/m3-bun/plugin"]`);
+        console.error(
+          `m3-bun dev: ${join(app.dir, "bunfig.toml")} must list the plugin so Bun can bundle the HTML entry:\n\n[serve.static]\nplugins = ["@aphrody/m3-bun/plugin"]`,
+        );
         return 1;
       }
       const index = ((await import(pathToFileURL(app.m3.entry).href)) as { default: import("bun").HTMLBundle }).default;
       const api = await importApi(app);
       const port = num(flags, "port");
-      const server = startM3Server({ name: app.name, version: app.version, index, hmr: !flags.has("no-hmr"), ...(api ? { api } : {}), ...(app.bun.csp !== undefined ? { csp: app.bun.csp } : {}), port: port ?? app.port });
+      const server = startM3Server({
+        name: app.name,
+        version: app.version,
+        index,
+        hmr: !flags.has("no-hmr"),
+        ...(api ? { api } : {}),
+        ...(app.bun.csp !== undefined ? { csp: app.bun.csp } : {}),
+        port: port ?? app.port,
+      });
       console.log(`m3-bun dev ${app.name}: listening on ${server.url}${app.api ? " (UI + API, one process)" : ""}`);
       return 0;
     }
@@ -190,11 +229,32 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       const app = await loadApp(cwd);
       const minify = level(flags);
       const outdir = str(flags, "outdir");
-      const report = await buildApp({ app, ...(minify ? { minify } : {}), ...(outdir ? { outdir } : {}), dev: flags.has("dev") });
-      if (flags.has("json")) console.log(JSON.stringify({ outdir: report.outdir, ms: report.ms, totalBytes: report.totalBytes, totalGzipBytes: report.totalGzipBytes, manifest: report.manifest }, null, 2));
+      const report = await buildApp({
+        app,
+        ...(minify ? { minify } : {}),
+        ...(outdir ? { outdir } : {}),
+        dev: flags.has("dev"),
+      });
+      if (flags.has("json"))
+        console.log(
+          JSON.stringify(
+            {
+              outdir: report.outdir,
+              ms: report.ms,
+              totalBytes: report.totalBytes,
+              totalGzipBytes: report.totalGzipBytes,
+              manifest: report.manifest,
+            },
+            null,
+            2,
+          ),
+        );
       else {
-        for (const file of report.manifest.files) console.log(`  ${file.path.padEnd(34)} ${kib(file.bytes).padStart(11)}  gzip ${kib(file.gzipBytes)}`);
-        console.log(`m3-bun build ${app.name}@${app.version}: ${report.manifest.files.length} files, ${kib(report.totalBytes)} (${kib(report.totalGzipBytes)} gzip), minify ${report.manifest.minify}, build ${report.manifest.buildId}, ${report.ms} ms -> ${report.outdir}`);
+        for (const file of report.manifest.files)
+          console.log(`  ${file.path.padEnd(34)} ${kib(file.bytes).padStart(11)}  gzip ${kib(file.gzipBytes)}`);
+        console.log(
+          `m3-bun build ${app.name}@${app.version}: ${report.manifest.files.length} files, ${kib(report.totalBytes)} (${kib(report.totalGzipBytes)} gzip), minify ${report.manifest.minify}, build ${report.manifest.buildId}, ${report.ms} ms -> ${report.outdir}`,
+        );
       }
       return 0;
     }
@@ -204,7 +264,15 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       const api = await importApi(app);
       const port = num(flags, "port");
       const host = str(flags, "host");
-      const server = startM3Server({ name: app.name, version: app.version, files: dirSource(app.outdir), ...(api ? { api } : {}), ...(app.bun.csp !== undefined ? { csp: app.bun.csp } : {}), port: port ?? app.port, ...(host ? { hostname: host } : {}) });
+      const server = startM3Server({
+        name: app.name,
+        version: app.version,
+        files: dirSource(app.outdir),
+        ...(api ? { api } : {}),
+        ...(app.bun.csp !== undefined ? { csp: app.bun.csp } : {}),
+        port: port ?? app.port,
+        ...(host ? { hostname: host } : {}),
+      });
       console.log(`m3-bun serve ${app.name}: listening on ${server.url}${app.api ? " (UI + API, one process)" : ""}`);
       return 0;
     }
@@ -213,8 +281,16 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       const t = target(flags);
       const outfile = str(flags, "outfile");
       const minify = level(flags);
-      const report = await compileApp({ app, ...(t ? { target: t } : {}), ...(outfile ? { outfile } : {}), ...(minify ? { minify } : {}), build: !flags.has("no-build") });
-      console.log(`m3-bun compile ${app.name}: ${report.outfile} (${kib(report.bytes)}, ${report.files} embedded files, target ${report.target}, ${report.bytecode ? "bytecode" : "no bytecode"}) in ${report.ms} ms`);
+      const report = await compileApp({
+        app,
+        ...(t ? { target: t } : {}),
+        ...(outfile ? { outfile } : {}),
+        ...(minify ? { minify } : {}),
+        build: !flags.has("no-build"),
+      });
+      console.log(
+        `m3-bun compile ${app.name}: ${report.outfile} (${kib(report.bytes)}, ${report.files} embedded files, target ${report.target}, ${report.bytecode ? "bytecode" : "no bytecode"}) in ${report.ms} ms`,
+      );
       for (const warning of report.warnings) console.warn(`warning: ${warning}`);
       return 0;
     }
@@ -223,11 +299,54 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       const t = target(flags);
       const out = str(flags, "out");
       const format = str(flags, "format") as ArchiveFormat | undefined;
-      if (format !== undefined && format !== "tar.gz" && format !== "zip") throw new Error(`--format must be tar.gz or zip, got ${format}`);
+      if (format !== undefined && format !== "tar.gz" && format !== "zip")
+        throw new Error(`--format must be tar.gz or zip, got ${format}`);
       const executable = str(flags, "executable");
-      const report = await packageApp({ app, ...(t ? { target: t } : {}), ...(out ? { out } : {}), ...(format ? { format } : {}), ...(executable ? { executable } : {}), rootfs: flags.has("rootfs"), deploy: flags.has("deploy") });
-      console.log(`m3-bun package: ${report.archive} (${kib(report.bytes)})\n  sha256 ${report.sha256}\n  files ${report.files.join(", ")}`);
-      if (report.rootfs) console.log(`  rootfs ${report.rootfs.dir}: ${kib(report.rootfs.bytes)}, ${report.rootfs.libraries.length} libraries (${report.rootfs.libraries.join(", ")})`);
+      const report = await packageApp({
+        app,
+        ...(t ? { target: t } : {}),
+        ...(out ? { out } : {}),
+        ...(format ? { format } : {}),
+        ...(executable ? { executable } : {}),
+        rootfs: flags.has("rootfs"),
+        deploy: flags.has("deploy"),
+      });
+      if (flags.has("json")) {
+        console.log(
+          JSON.stringify(
+            {
+              archive: report.archive,
+              bytes: report.bytes,
+              sha256: report.sha256,
+              checksumFile: report.checksumFile,
+              files: report.files,
+              ...(report.compile
+                ? {
+                    compile: {
+                      target: report.compile.target,
+                      outfile: report.compile.outfile,
+                      bytes: report.compile.bytes,
+                      files: report.compile.files,
+                      bytecode: report.compile.bytecode,
+                      warnings: report.compile.warnings,
+                    },
+                  }
+                : {}),
+              ...(report.rootfs ? { rootfs: report.rootfs } : {}),
+            },
+            null,
+            2,
+          ),
+        );
+      } else {
+        console.log(
+          `m3-bun package: ${report.archive} (${kib(report.bytes)})\n  sha256 ${report.sha256}\n  files ${report.files.join(", ")}`,
+        );
+        if (report.rootfs)
+          console.log(
+            `  rootfs ${report.rootfs.dir}: ${kib(report.rootfs.bytes)}, ${report.rootfs.libraries.length} libraries (${report.rootfs.libraries.join(", ")})`,
+          );
+      }
       return 0;
     }
     case "deploy": {
@@ -244,7 +363,8 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       const region = str(flags, "region");
       const cli = str(flags, "cli");
       const http2 = str(flags, "http2");
-      if (http2 !== undefined && http2 !== "directive" && http2 !== "listen") throw new Error(`--http2 must be directive or listen, got ${http2}`);
+      if (http2 !== undefined && http2 !== "directive" && http2 !== "listen")
+        throw new Error(`--http2 must be directive or listen, got ${http2}`);
       const name = str(flags, "name");
       const port = num(flags, "port");
       const context = contextFor(app, {
@@ -276,10 +396,14 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
     case "workspace": {
       const root = findWorkspaceRoot(cwd);
       const script = root ? join(root, "scripts", "build.ts") : undefined;
-      if (!root || !script || !existsSync(script)) throw new Error("m3-bun workspace: no scripts/build.ts above the working directory");
+      if (!root || !script || !existsSync(script))
+        throw new Error("m3-bun workspace: no scripts/build.ts above the working directory");
       const task = positionals[0] ?? "build";
       const only = str(flags, "only");
-      return run(["bun", script, task, ...(only ? ["--only", only] : []), ...(flags.has("no-cache") ? ["--no-cache"] : [])], root);
+      return run(
+        ["bun", script, task, ...(only ? ["--only", only] : []), ...(flags.has("no-cache") ? ["--no-cache"] : [])],
+        root,
+      );
     }
     case "pack": {
       const dir = resolve(cwd, positionals[0] ?? ".");

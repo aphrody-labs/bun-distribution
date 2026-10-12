@@ -55,7 +55,19 @@ describe("runCli", () => {
     expect((await capture(() => runCli(["help"]))).text).toContain("Compile targets: linux-x64");
     expect((await capture(() => runCli(["version"]))).text).toMatch(/^\d+\.\d+\.\d+/);
     const targets = await capture(() => runCli(["targets"]));
-    for (const id of ["docker", "systemd", "nginx", "vercel", "fly", "cloudflare", "coolify", "vscode", "windows", "linux-image"]) expect(targets.text).toContain(id);
+    for (const id of [
+      "docker",
+      "systemd",
+      "nginx",
+      "vercel",
+      "fly",
+      "cloudflare",
+      "coolify",
+      "vscode",
+      "windows",
+      "linux-image",
+    ])
+      expect(targets.text).toContain(id);
   });
 
   test("build prints the files and a summary; --json is the manifest", async () => {
@@ -71,14 +83,35 @@ describe("runCli", () => {
   test("deploy generates the requested targets into --out and says nothing was applied", async () => {
     const dir = fixtureCopy();
     const out = tmp();
-    const { code, text } = await capture(() => runCli(["deploy", "docker", "systemd", "--out", out, "--domain", "x.example.org", "--namespace", "demo", "--user", "svc"], dir));
+    const { code, text } = await capture(() =>
+      runCli(
+        [
+          "deploy",
+          "docker",
+          "systemd",
+          "--out",
+          out,
+          "--domain",
+          "x.example.org",
+          "--namespace",
+          "demo",
+          "--user",
+          "svc",
+        ],
+        dir,
+      ),
+    );
     expect(code).toBe(0);
     expect(text).toContain("generated only: nothing was applied, pushed or reloaded");
-    expect(readFileSync(join(out, "systemd", "hello-m3.service"), "utf8")).toContain("WorkingDirectory=/srv/demo/current");
+    expect(readFileSync(join(out, "systemd", "hello-m3.service"), "utf8")).toContain(
+      "WorkingDirectory=/srv/demo/current",
+    );
     expect(readFileSync(join(out, "systemd", "hello-m3.service"), "utf8")).toContain("User=svc");
     expect(existsSync(join(out, "nginx"))).toBe(false);
     const all = tmp();
-    await capture(() => runCli(["deploy", "all", "--out", all, "--http2", "listen", "--tls-cert", "/c.pem", "--tls-key", "/k.pem"], dir));
+    await capture(() =>
+      runCli(["deploy", "all", "--out", all, "--http2", "listen", "--tls-cert", "/c.pem", "--tls-key", "/k.pem"], dir),
+    );
     expect(readFileSync(join(all, "nginx", "hello-m3.conf"), "utf8")).toContain("ssl_certificate /c.pem;");
     expect(readFileSync(join(all, "nginx", "hello-m3.conf"), "utf8")).toContain("listen 443 ssl http2;");
   });
@@ -91,6 +124,35 @@ describe("runCli", () => {
     await expect(runCli(["deploy", "heroku"], dir)).rejects.toThrow(/unknown deploy target heroku/);
     await expect(runCli(["serve", "--port", "-1"], dir)).rejects.toThrow(/non-negative integer/);
     await expect(runCli(["package", "--format", "rar"], dir)).rejects.toThrow(/--format must be tar.gz or zip/);
+  });
+
+  test("package --json emits a stable release report", async () => {
+    const dir = fixtureCopy();
+    const executable = join(dir, "stub.exe");
+    await Bun.write(executable, "MZ");
+    const report = JSON.parse(
+      (
+        await capture(() =>
+          runCli(
+            [
+              "package",
+              "--json",
+              "--executable",
+              executable,
+              "--out",
+              join(dir, "release-json"),
+              "--target",
+              "windows-x64",
+            ],
+            dir,
+          ),
+        )
+      ).text,
+    ) as { archive: string; sha256: string; files: string[]; compile?: unknown };
+    expect(report.archive).toContain("windows-x64.zip");
+    expect(report.sha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(report.files).toContain("hello-m3.exe");
+    expect(report.compile).toBeUndefined();
   });
 
   test("smoke needs a compiled executable and says which command makes one", async () => {
