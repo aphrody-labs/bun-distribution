@@ -46,6 +46,7 @@
   "dependencies": {
     "@aphrody/api": "workspace:*",
     "@aphrody/assets": "workspace:*",
+    "@aphrody/bun-m3": "file:../../../../bun/packages/bun-m3",
     "@aphrody/bun-webview-page": "0.1.1-aphrody.2",
     "@aphrody/canvas": "workspace:*",
     "@aphrody/drive-client": "workspace:*",

@@ -154,6 +154,10 @@
         "google-auth-library": "11.1.0",
       },
     },
+    "../bun/packages/bun-m3": {
+      "name": "@aphrody/bun-m3",
+      "version": "1.4.4",
+    },
     "../bun/packages/bun-tauri": {
       "name": "@aphrody/tauri",
       "version": "1.4.4",
@@ -287,6 +291,7 @@
       "dependencies": {
         "@aphrody/api": "workspace:*",
         "@aphrody/assets": "workspace:*",
+        "@aphrody/bun-m3": "file:../../../../bun/packages/bun-m3",
         "@aphrody/bun-webview-page": "0.1.1-aphrody.2",
         "@aphrody/canvas": "workspace:*",
         "@aphrody/drive-client": "workspace:*",
@@ -1321,6 +1326,8 @@
     "@aphrody/bun-debug-adapter-protocol": ["@aphrody/bun-debug-adapter-protocol@0.0.1-aphrody.1", "", { "dependencies": { "@aphrody/bun-inspector-protocol": "0.0.2-aphrody.1", "semver": "^7.5.4", "source-map-js": "^1.0.2" } }, "sha512-SKX1W1qhGVSLqeADJEbBOmU3di1CQ5kzC94SqnlkL8K/AZ8iSoflKsoo9A0oKWWn04eTX2BEnd6pFIInLJK5bQ=="],
 
     "@aphrody/bun-inspector-protocol": ["@aphrody/bun-inspector-protocol@0.0.2-aphrody.1", "", { "dependencies": { "ws": "^8.18.3" } }, "sha512-YYOLqdmIMlOBo5RRuMyvCsHkxOjJuhVzBTJqa3RocBdKPgst7uOOn25V9uEHE42CGlODDA4Swk2+40fScrq7aA=="],
+
+    "@aphrody/bun-m3": ["@aphrody/bun-m3@workspace:../bun/packages/bun-m3"],
 
     "@aphrody/bun-mdx-rs": ["@aphrody/bun-mdx-rs@1.4.3-aphrody.1", "", { "optionalDependencies": { "@aphrody/bun-mdx-rs-darwin-arm64": "1.4.3-aphrody.1", "@aphrody/bun-mdx-rs-darwin-x64": "1.4.3-aphrody.1", "@aphrody/bun-mdx-rs-linux-arm64-gnu": "1.4.3-aphrody.1", "@aphrody/bun-mdx-rs-linux-arm64-musl": "1.4.3-aphrody.1", "@aphrody/bun-mdx-rs-linux-x64-gnu": "1.4.3-aphrody.1", "@aphrody/bun-mdx-rs-linux-x64-musl": "1.4.3-aphrody.1", "@aphrody/bun-mdx-rs-win32-arm64-msvc": "1.4.3-aphrody.1", "@aphrody/bun-mdx-rs-win32-x64-msvc": "1.4.3-aphrody.1" } }, "sha512-oNRVwylGNpp/W/pBhtaNtKPWFBksy4TfcwyKds/FxpL4iaNMN4D3uwMNgj+SXS7NzGlFTRG5T7g1yjz4DF0Kig=="],
 

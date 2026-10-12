@@ -17,6 +17,7 @@
       "packages/web/webos-wasm",
       "../bun/packages/bun-aphrody-web",
       "../bun/packages/bun-tauri",
+      "../bun/packages/bun-m3",
       "../bun/packages/bun-aphrody-web/packages/*",
       "../bun/packages/bun-aphrody-web/integrations/m3/packages/web-to-tauri",
       "../bun/packages/bun-google/aphrody/packages/google"

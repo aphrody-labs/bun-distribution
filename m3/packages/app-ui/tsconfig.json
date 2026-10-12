@@ -12,6 +12,7 @@
     "noEmit": true,
     "paths": {
       "~/*": ["./src/*"],
+      "@aphrody/bun-m3/*": ["../../../../bun/packages/bun-m3/src/*"],
       "@aphrody/tauri/*": ["../../../../bun/packages/bun-tauri/js/*"]
     },
     "types": ["@react-three/fiber"]
