@@ -308,7 +308,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-pkg-ffi` | [crates/pkg/ffi](../../../crates/pkg/ffi) | rust crate | 1.4.4 | cdylib, rlib | yes | 0 | uncommitted |
 | `aphrody-pkg-net` | [crates/pkg/net](../../../crates/pkg/net) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
 | `aphrody-pkg-store` | [crates/pkg/store](../../../crates/pkg/store) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
-| `aphrody-pkg-system` | [crates/pkg/system](../../../crates/pkg/system) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
 
 ## shell
 

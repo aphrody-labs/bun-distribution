@@ -2135,10 +2135,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-pkg-system"
-version = "1.4.4"
-
-[[package]]
 name = "aphrody-proc"
 version = "1.4.4"
 dependencies = [

@@ -96,7 +96,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-pkg-ffi` | crates/pkg/ffi | Versioned native package store C ABI |  |  |
 | `aphrody-pkg-net` | crates/pkg/net | Bounded resumable HTTP ingestion into the shared package store |  |  |
 | `aphrody-pkg-store` | crates/pkg/store | Verified content-addressed package blob store |  |  |
-| `aphrody-pkg-system` | crates/pkg/system | I/O-free models and parsers for system package sources (winget, apk, deb, pacman) |  |  |
 | `aphrody-proc` | crates/os/ostd/proc | Process supervision primitives shared by the llama-server supervisor, the command sandbox and the training runner: process groups that die with their owner (Linux session + killpg, Windows Job Object with KILL_ON_JOB_CLOSE), detached daemons, liveness probes, elevated execution without a new console window (Sudo for Windows inline, UAC, sudo-rs), free-port allocation, advisory file locks and the single-GPU lease (shared for inference, exclusive for training). |  | tokio |
 | `aphrody-rag` | crates/ai/rag | Unified RAG storage, embedding, vector scan, hybrid search, and agent tools for aphrody (P8). |  | default, native, ort |
 | `aphrody-rag-core` | crates/ai/rag-core | Pure, wasm32-safe core of the aphrody RAG layer: source-aware chunkers (Rust/JS-TS/Markdown/structural/prose), reciprocal-rank-fusion + MMR + vector helpers, and a bit-for-bit port of shenron's retrieval eval harness. |  | default, oxc |
