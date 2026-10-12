@@ -488,6 +488,51 @@
       "target": "local:127.0.0.1:6379",
       "public": false,
       "note": "Redis 8.10.2, authenticated loopback; Bun native Redis client, durable AOF/RDB volume. Compose owner C:/SSH/omar-server/config/redis.compose.yml; maxmemory 512MiB, Docker memory 768MiB."
+    },
+    {
+      "id": "omar-browser-client-vps",
+      "application": "omar",
+      "kind": "browser-proxy",
+      "runtime": "ssh",
+      "host": "vps",
+      "unit": "aphrody-obscura-omar-client.service",
+      "health": "http://127.0.0.1:9223/json/version",
+      "target": "vps:127.0.0.1:9223",
+      "public": false,
+      "note": "Authenticated SSH loopback projection to Bun 1.4.4 browser bridge on Omar PC127.0.0.1:9233; no engine or JS runtime installed remotely. Index origin http://omar.aphrody.com."
+    },
+    {
+      "id": "omar-browser-client-dbfr",
+      "application": "omar",
+      "kind": "browser-proxy",
+      "runtime": "ssh",
+      "host": "dbfr",
+      "unit": "aphrody-obscura-omar-client.service",
+      "health": "http://127.0.0.1:9223/json/version",
+      "target": "dbfr:127.0.0.1:9223",
+      "public": false,
+      "note": "Authenticated SSH loopback projection to Bun 1.4.4 browser bridge on Omar PC127.0.0.1:9233; no engine or JS runtime installed remotely. Index origin http://omar.aphrody.com."
+    },
+    {
+      "id": "omar-browser-bridge",
+      "application": "omar",
+      "kind": "browser-proxy",
+      "runtime": "bun",
+      "host": "local",
+      "health": "http://127.0.0.1:9233/health",
+      "target": "local:127.0.0.1:9233",
+      "public": false,
+      "note": "Bun1.4.4 SSH-only local CDP projection; upstream Obscura Bearer auth retained."
+    },
+    {
+      "id": "omar-browser-client-aphro-pc",
+      "application": "omar",
+      "kind": "browser-proxy",
+      "runtime": "ssh",
+      "host": "aphro-pc",
+      "health": "http://127.0.0.1:9223/json/version",
+      "public": false,
+      "note": "Native OpenSSH loopback tunnel to Omar Bun1.4.4 browser bridge; Windows scheduled task under Aphrody user."
     }
   ],
   "policies": {
@@ -790,6 +835,39 @@
         "host": "local",
         "kind": "docker",
         "container": "omar-redis"
+      },
+      {
+        "host": "vps",
+        "kind": "systemd",
+        "unit": "aphrody-obscura-omar-client.service"
+      },
+      {
+        "host": "dbfr",
+        "kind": "systemd",
+        "unit": "aphrody-obscura-omar-client.service"
+      },
+      {
+        "host": "local",
+        "kind": "windowsService",
+        "name": "OmarBrowserBridge",
+        "restartOnFailure": true
+      },
+      {
+        "host": "aphro-pc",
+        "kind": "scheduledTask",
+        "name": "Aphrody Omar Browser",
+        "path": "\\Aphrody\\",
+        "triggers": [
+          "atStartup",
+          "atLogon"
+        ],
+        "execute": "C:/Program Files/OpenSSH/ssh.exe",
+        "arguments": "-N -T -o BatchMode=yes -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -L 127.0.0.1:9223:127.0.0.1:9233 omar-pc",
+        "workingDirectory": "C:/Users/aphro",
+        "description": "Private shared Bun browser from Omar PC",
+        "principal": "user",
+        "runLevel": "highest",
+        "desktop": false
       }
     ]
   }
