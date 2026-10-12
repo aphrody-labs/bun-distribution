@@ -20,6 +20,11 @@ The canonical role names are kept in `packages/m3-tokens/src/native-theme.ts`.
 The CSS spelling is `--md-sys-color-*`; the Android-style spelling is exposed
 by the same role map without changing the semantic name.
 
+The native reference currently contains 49 color roles, 15 typography styles,
+motion easings and durations, shape values, and elevation levels. The
+TypeScript adapter preserves those counts and does not create a second
+palette.
+
 ## Web upstream baseline
 
 Material Web provides custom elements based on Material 3. Production code
@@ -45,6 +50,11 @@ Web adapters must therefore preserve:
 | Icons and Material Symbols catalogue | `material-design-icons`, `m3-icons`, `m3-fonts` |
 | Bun development, build, serve, and package commands | `m3-bun` |
 
+The native reference also defines the JSON/CSS mirror contract: schema version,
+specification version, seed, variant, contrast level, and separate light/dark
+role maps. Consumers should validate that contract before applying generated
+CSS.
+
 ## Source record
 
 - Android Compose Material 3: <https://developer.android.com/develop/ui/compose/designsystems/material3>
@@ -54,3 +64,8 @@ Web adapters must therefore preserve:
 
 The site requires JavaScript for some pages; package and Android documentation
 are used for the machine-readable implementation contract.
+
+The native design mirror is maintained separately from this repository. A
+remote VPS checkout was inspected over `vps-wg`; its documented Rust contract
+was used as a reference, but its generated mirror artifacts are not copied
+into this repository.
