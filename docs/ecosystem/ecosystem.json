@@ -85,13 +85,6 @@
           ]
         },
         {
-          "name": "aphrody-acl-tests",
-          "path": "crates/tauri/aphrody-acl-tests",
-          "description": "Aphrody platform crate aphrody-acl-tests.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-agent-home",
           "path": "crates/ai/agent-home",
           "description": "aphrody-agent-home — the agent's persistent home: Soul / Identity / User / Tools, mmap zero-copy file cache, content-addressed cache, bootstrap budget, system-prompt assembler, hot-reload, git backup.",

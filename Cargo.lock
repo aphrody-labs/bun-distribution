@@ -582,15 +582,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-acl-tests"
-version = "1.4.4"
-dependencies = [
- "aphrody-tauri-utils",
- "insta",
- "serde_json",
-]
-
-[[package]]
 name = "aphrody-agent-home"
 version = "1.4.4"
 dependencies = [

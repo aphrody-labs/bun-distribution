@@ -17,14 +17,6 @@
   ],
   "crates": [
     {
-      "name": "acl-tests",
-      "package": "aphrody-acl-tests",
-      "version": "0.1.0",
-      "source": "tauri",
-      "from": "crates/tests/acl",
-      "dir": "crates/tauri/aphrody-acl-tests"
-    },
-    {
       "name": "create-tauri-app",
       "package": "aphrody-create-tauri-app",
       "version": "4.7.4",

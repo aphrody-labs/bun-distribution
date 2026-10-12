@@ -6,7 +6,6 @@ Packages are prefixed with `aphrody-`; library and binary names are unchanged.
 
 | Package | Upstream crate | Version | Source | Directory |
 | :--- | :--- | :--- | :--- | :--- |
-| `aphrody-acl-tests` | `acl-tests` | 0.1.0 | `tauri` | `crates/tauri/aphrody-acl-tests` |
 | `aphrody-create-tauri-app` | `create-tauri-app` | 4.7.4 | `create-tauri-app` | `crates/tauri/aphrody-create-tauri-app` |
 | `aphrody-tauri` | `tauri` | 3.0.0-alpha.4 | `tauri` | `crates/tauri/aphrody-tauri` |
 | `aphrody-tauri-build` | `tauri-build` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-build` |
