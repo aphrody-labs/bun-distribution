@@ -25,6 +25,7 @@
     "./theme-to-tokens": "./src/theme-to-tokens.ts",
     "./dynamic-color": "./src/dynamic-color.ts",
     "./native-theme": "./src/native-theme.ts",
+    "./android": "./src/android.ts",
     "./breakpoints": "./src/breakpoints.ts",
     "./platform-contract": "./src/platform-contract.ts",
     "./breakpoints.css": "./src/breakpoints.css",
