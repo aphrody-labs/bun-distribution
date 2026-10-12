@@ -10,7 +10,6 @@ Packages are prefixed with `aphrody-`; library and binary names are unchanged.
 | `aphrody-tauri-build` | `tauri-build` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-build` |
 | `aphrody-tauri-bundler` | `tauri-bundler` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-bundler` |
 | `aphrody-tauri-cli` | `tauri-cli` | 3.0.0-alpha.4 | `tauri` | `crates/tauri/aphrody-tauri-cli` |
-| `aphrody-tauri-codegen` | `tauri-codegen` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-codegen` |
 | `aphrody-tauri-plugin` | `tauri-plugin` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-plugin` |
 | `aphrody-tauri-plugin-autostart` | `tauri-plugin-autostart` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-autostart` |
 | `aphrody-tauri-plugin-clipboard-manager` | `tauri-plugin-clipboard-manager` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-clipboard-manager` |

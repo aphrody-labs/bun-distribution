@@ -118,7 +118,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-tauri-build` | crates/tauri/aphrody-tauri-build | build time code to pair with https://crates.io/crates/tauri |  | codegen, config-json, config-json5, config-toml, default, isolation, quote, tauri-codegen |
 | `aphrody-tauri-bundler` | crates/tauri/aphrody-tauri-bundler | Wrap rust executables in OS-specific app bundles for Tauri |  | default, native-tls, native-tls-vendored, platform-certs, rustls |
 | `aphrody-tauri-cli` | crates/tauri/aphrody-tauri-cli | Command line interface for building Tauri apps |  | default, native-tls, native-tls-vendored, platform-certs, rustls |
-| `aphrody-tauri-codegen` | crates/tauri/aphrody-tauri-codegen | code generation meant to be consumed inside of `tauri` through `tauri-build` or `tauri-macros` |  | brotli, compression, config-json5, config-toml, isolation |
 | `aphrody-tauri-plugin` | crates/tauri/aphrody-tauri-plugin | Build script and runtime Tauri plugin definitions |  | build, runtime |
 | `aphrody-tauri-plugin-autostart` | crates/tauri/aphrody-tauri-plugin-autostart | Automatically launch your application at startup. |  |  |
 | `aphrody-tauri-plugin-clipboard-manager` | crates/tauri/aphrody-tauri-plugin-clipboard-manager | Read and write to the system clipboard. |  |  |

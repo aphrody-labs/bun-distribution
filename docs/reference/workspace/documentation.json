@@ -1104,26 +1104,6 @@
       "canonical": "crates/tauri/aphrody-tauri-cli/templates/plugin/ios-spm/README.md"
     },
     {
-      "path": "crates/tauri/aphrody-tauri-codegen/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "c9f00a8ef13add371f3e947951b6dabb9ca70e115bda693662c562c8b4c3683d",
-      "bytes": 44540,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tauri-codegen/CHANGELOG.md"
-    },
-    {
-      "path": "crates/tauri/aphrody-tauri-codegen/README.md",
-      "title": "tauri-codegen",
-      "sha256": "0a821bf01d6701b18586867a87219ecbac92fc649647fda0f5e12d8124fec8fc",
-      "bytes": 2968,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tauri-codegen/README.md"
-    },
-    {
       "path": "crates/tauri/aphrody-tauri-plugin-autostart/CHANGELOG.md",
       "title": "Changelog",
       "sha256": "ca39c52932255e9273e019a8ed2c90218f6f768ca2a84defde1d024a9d6372eb",

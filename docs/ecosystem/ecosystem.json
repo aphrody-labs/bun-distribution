@@ -976,19 +976,6 @@
           ]
         },
         {
-          "name": "aphrody-tauri-codegen",
-          "path": "crates/tauri/aphrody-tauri-codegen",
-          "description": "code generation meant to be consumed inside of `tauri` through `tauri-build` or `tauri-macros`",
-          "bins": [],
-          "features": [
-            "brotli",
-            "compression",
-            "config-json5",
-            "config-toml",
-            "isolation"
-          ]
-        },
-        {
           "name": "aphrody-tauri-plugin",
           "path": "crates/tauri/aphrody-tauri-plugin",
           "description": "Build script and runtime Tauri plugin definitions",

@@ -26,7 +26,6 @@ crates = [
   "crates/tauri-build",
   "crates/tauri-bundler",
   "crates/tauri-cli",
-  "crates/tauri-codegen",
   "crates/tauri-plugin",
   "crates/tauri-runtime",
   "crates/tauri-runtime-cef",

@@ -45,14 +45,6 @@
       "dir": "crates/tauri/aphrody-tauri-cli"
     },
     {
-      "name": "tauri-codegen",
-      "package": "aphrody-tauri-codegen",
-      "version": "3.0.0-alpha.3",
-      "source": "tauri",
-      "from": "crates/tauri-codegen",
-      "dir": "crates/tauri/aphrody-tauri-codegen"
-    },
-    {
       "name": "tauri-plugin",
       "package": "aphrody-tauri-plugin",
       "version": "3.0.0-alpha.3",
