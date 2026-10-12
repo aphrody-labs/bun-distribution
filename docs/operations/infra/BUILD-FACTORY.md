@@ -1,17 +1,21 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
+
 # VPS build factory and DBFR Shenron runtime
 
 Owner: Infra. Policy: [`tools/config/build-factory.json`](../../../tools/config/build-factory.json).
 Requested placement: [`production-topology.json`](../../../tools/config/production-topology.json).
 
-Current policy, verified 2026-10-07: the factory configuration declares
-`enabled: true`, `target: "vps"` and `executionOnlyTargets: []`.
-The owner's current task uses this VPS for serialized Rust, Bun and runtime
-builds. This supersedes the execution-only placement documented on 2026-10-03.
-WSL keeps sources and scoped static checks; heavy local Cargo remains prohibited.
-Build from the exact requested revision through Workspace/Infra and the shared
-factory lock. Recheck `~/build` capacity before dispatch: root-filesystem capacity
-does not establish available space on the separate factory volume.
+Current placement: Omar's Windows PC (`omar-pc`) is the native Windows build
+factory, in addition to the SSH VPS factory. The Windows factory is scoped to
+Windows native builds, packaging and smoke checks; x64 is native-qualified and
+ARM64 is a cross-build until tested on native ARM hardware. Run one heavy build
+at a time, preserve 6 GiB RAM and 20 GiB free disk, and do not enable automatic
+cleanup. The local checkout is `C:/aphrody`.
+
+The SSH VPS remains the serialized Rust/Bun/Linux and multi-platform factory,
+with its shared lock and pinned-source checks. Use native SSH execution through
+Infra for that work and recheck the separate `/home/ubuntu/build` volume before
+dispatch. Windows capacity does not replace VPS receipts or qualify Linux builds.
 
 ## Authority and execution
 
@@ -305,7 +309,6 @@ environment references, Docker bind mounts, inherited lease proof and owner
 termination. This receipt proves these declared host routes; it does not turn
 persistent compiler caches into disposable scratch or migrate arbitrary
 independently invoked container builds.
-
 
 The follow-up fifth allowlisted retirement removed the terminal `cargo/aphrody`
 target (30,700,023,808 allocated bytes). Its isolated native apply observed
