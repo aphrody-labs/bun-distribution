@@ -379,7 +379,7 @@
     {
       "name": "@aphrody/m3-mcp",
       "version": "3.3.8",
-      "path": "m3/packages/m3-mcp/package.json",
+      "path": "../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp/package.json",
       "status": "published",
       "sha256": "5f159e4759dfdad306b0e7282740c2b75d94898765338b9788db2a9532160460",
       "integrity": "sha512-8C7w2NXIp8ELnDkimIj0pci5ynrOIsBWwYRSOUFRdgoDr6Zd3rZP7iLjGJeCAOpCbCMS5gAqqq8w7ij5jVwL/g==",
@@ -421,7 +421,7 @@
     {
       "name": "@aphrody/m3-os-themes",
       "version": "3.3.8",
-      "path": "m3/packages/m3-os-themes/package.json",
+      "path": "../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes/package.json",
       "status": "published",
       "sha256": "967d0d9ac2065a9863647ee222b19b8807db3154d0646b44228ba087b0d0e67d",
       "integrity": "sha512-yqRL+/IFv+C5XpqYejh+SwEKV8QaCdg1mk0YPA1A8CdVttAJDo5Zd8BIubjgiKDV52d7t+b+E3Y3yQpfCk7rHQ==",

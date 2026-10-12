@@ -50,7 +50,7 @@ export const M3_TOOLS = {
     keepAlive: true,
   },
   "os-themes": {
-    module: "m3/packages/m3-os-themes/src/cli.ts",
+    module: "../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes/src/cli.ts",
     run: "runOsThemes",
     summary: "M3 OS themes: install | generate | uninstall (dry-run unless --apply) [m3-os-themes]",
   },

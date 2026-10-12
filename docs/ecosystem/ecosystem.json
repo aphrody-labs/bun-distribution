@@ -1413,7 +1413,7 @@
         },
         {
           "name": "@aphrody/m3-mcp",
-          "path": "m3/packages/m3-mcp",
+          "path": "../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp",
           "description": "Design/UI tool host of aphrody-m3 (served through the single aphrody-mcp): packages, M3 tokens (lookup, validate), docs search, research links, templates, Material Symbols SVG, SVG to Tauri icons.",
           "bins": []
         },
@@ -1442,7 +1442,7 @@
         },
         {
           "name": "@aphrody/m3-os-themes",
-          "path": "m3/packages/m3-os-themes",
+          "path": "../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes",
           "description": "Material 3 OS theme generators and installers (Windows 11, GNOME Shell, COSMIC, Chromium browsers) derived from @aphrody/m3-tokens dynamic colour roles.",
           "bins": [
             "m3-os-themes"

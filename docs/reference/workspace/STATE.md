@@ -283,11 +283,11 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@aphrody/m3-forms` | [m3/packages/m3-forms](../../../m3/packages/m3-forms) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-front` | [m3/packages/m3-front](../../../m3/packages/m3-front) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-icons` | [m3/packages/m3-icons](../../../m3/packages/m3-icons) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-mcp` | [m3/packages/m3-mcp](../../../m3/packages/m3-mcp) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-mcp` | [../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp](../../../../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-motion` | [m3/packages/m3-motion](../../../m3/packages/m3-motion) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-next` | [m3/packages/m3-next](../../../m3/packages/m3-next) | bun package | 1.4.4 | bin, lib | yes | 0 | uncommitted |
 | `@aphrody/m3-next-migrate` | [m3/packages/m3-next-migrate](../../../m3/packages/m3-next-migrate) | bun package | 1.4.4 | bin, lib | yes | 0 | uncommitted |
-| `@aphrody/m3-os-themes` | [m3/packages/m3-os-themes](../../../m3/packages/m3-os-themes) | bun package | 1.4.4 | bin, lib | yes | 0 | uncommitted |
+| `@aphrody/m3-os-themes` | [../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes](../../../../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes) | bun package | 1.4.4 | bin, lib | yes | 0 | uncommitted |
 | `@aphrody/m3-primitives` | [m3/packages/m3-primitives](../../../m3/packages/m3-primitives) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-react` | [m3/packages/m3-react](../../../m3/packages/m3-react) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-reader` | [m3/packages/m3-reader](../../../m3/packages/m3-reader) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |

@@ -10844,14 +10844,14 @@
       "canonical": "m3/packages/m3-icons/README.md"
     },
     {
-      "path": "m3/packages/m3-mcp/README.md",
+      "path": "../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp/README.md",
       "title": "@aphrody/m3-mcp",
       "sha256": "a86e9f4b5a667d0708956fb30317b607ab6ed19bb2f995009d4ba3413d56d688",
       "bytes": 1274,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
-      "canonical": "m3/packages/m3-mcp/README.md"
+      "canonical": "../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp/README.md"
     },
     {
       "path": "m3/packages/m3-motion/README.md",
@@ -10924,14 +10924,14 @@
       "canonical": "m3/packages/m3-next/examples/tauri/README.md"
     },
     {
-      "path": "m3/packages/m3-os-themes/README.md",
+      "path": "../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes/README.md",
       "title": "@aphrody/m3-os-themes",
       "sha256": "c6951b45042da6c643bea2ca85cb4c13297204ddeb36e20cddd2e871f67c93bb",
       "bytes": 3718,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
-      "canonical": "m3/packages/m3-os-themes/README.md"
+      "canonical": "../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes/README.md"
     },
     {
       "path": "m3/packages/m3-primitives/README.md",

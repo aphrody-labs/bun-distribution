@@ -24,6 +24,32 @@
         "undici-types": "catalog:",
       },
     },
+    "../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp": {
+      "name": "@aphrody/m3-mcp",
+      "version": "1.4.4",
+      "dependencies": {
+        "@aphrody/m3-os-themes": "workspace:*",
+        "@aphrody/material-design-icons": "workspace:*",
+        "zod": "catalog:",
+      },
+    },
+    "../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes": {
+      "name": "@aphrody/m3-os-themes",
+      "version": "1.4.4",
+      "bin": {
+        "m3-os-themes": "./src/cli.ts",
+      },
+      "dependencies": {
+        "@aphrody/identity": "workspace:*",
+        "@aphrody/m3-tokens": "workspace:*",
+        "@aphrody/web-source": "workspace:*",
+      },
+      "devDependencies": {
+        "@aphrody/bun": "^3.3.0",
+        "@aphrody/m3-config": "workspace:*",
+        "typescript": "catalog:",
+      },
+    },
     "../bun/packages/bun-aphrody-web": {
       "name": "@aphrody/web-source",
       "version": "1.4.4",
@@ -690,15 +716,6 @@
         "react",
       ],
     },
-    "m3/packages/m3-mcp": {
-      "name": "@aphrody/m3-mcp",
-      "version": "1.4.4",
-      "dependencies": {
-        "@aphrody/m3-os-themes": "workspace:*",
-        "@aphrody/material-design-icons": "workspace:*",
-        "zod": "catalog:",
-      },
-    },
     "m3/packages/m3-motion": {
       "name": "@aphrody/m3-motion",
       "version": "1.4.4",
@@ -760,23 +777,6 @@
       },
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
-      },
-    },
-    "m3/packages/m3-os-themes": {
-      "name": "@aphrody/m3-os-themes",
-      "version": "1.4.4",
-      "bin": {
-        "m3-os-themes": "./src/cli.ts",
-      },
-      "dependencies": {
-        "@aphrody/identity": "workspace:*",
-        "@aphrody/m3-tokens": "workspace:*",
-        "@aphrody/web-source": "workspace:*",
-      },
-      "devDependencies": {
-        "@aphrody/bun": "^3.3.0",
-        "@aphrody/m3-config": "workspace:*",
-        "typescript": "catalog:",
       },
     },
     "m3/packages/m3-primitives": {
@@ -1437,7 +1437,7 @@
 
     "@aphrody/m3-icons": ["@aphrody/m3-icons@workspace:m3/packages/m3-icons"],
 
-    "@aphrody/m3-mcp": ["@aphrody/m3-mcp@workspace:m3/packages/m3-mcp"],
+    "@aphrody/m3-mcp": ["@aphrody/m3-mcp@workspace:../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp"],
 
     "@aphrody/m3-motion": ["@aphrody/m3-motion@workspace:m3/packages/m3-motion"],
 
@@ -1445,7 +1445,7 @@
 
     "@aphrody/m3-next-migrate": ["@aphrody/m3-next-migrate@workspace:m3/packages/m3-next-migrate"],
 
-    "@aphrody/m3-os-themes": ["@aphrody/m3-os-themes@workspace:m3/packages/m3-os-themes"],
+    "@aphrody/m3-os-themes": ["@aphrody/m3-os-themes@workspace:../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes"],
 
     "@aphrody/m3-primitives": ["@aphrody/m3-primitives@workspace:m3/packages/m3-primitives"],
 
@@ -3192,6 +3192,8 @@
     "@ag-ui/proto/zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
 
     "@ai-sdk/google-vertex/google-auth-library": ["google-auth-library@10.9.1", "", { "dependencies": { "base64-js": "^1.3.0", "ecdsa-sig-formatter": "^1.0.11", "gaxios": "^7.1.4", "gcp-metadata": "8.1.2", "google-logging-utils": "1.1.3", "jws": "^4.0.0" } }, "sha512-i1ydyHrqcIxXkWh/uBmVkzCvIuq5yiK2ATndIe5XxKholrG/MTYP9xGYka4sQhrbIAgGjL2B6NOE7rFaiF3fXw=="],
+
+    "@aphrody/app-ui/@aphrody/bun-m3": ["@aphrody/bun-m3@file:../bun/packages/bun-m3", {}],
 
     "@aphrody/app-ui/@aphrody/tauri": ["@aphrody/tauri@file:../bun/packages/bun-tauri", {}],
 
