@@ -112,7 +112,7 @@ compte 1 297 liens locaux non résolus (notamment code, assets, chemins exclus
 références historiques) ; l'absence de collision de copie ne ferme pas ces
 références.
 
-Le module Infra `@aphrody/workspace` utilise Bun 1.4.3 et TypeScript 7.0.2
+Le module Infra `@aphrody/workspace` utilise Bun 1.4.4 et TypeScript 7.0.2
 comme compilateur ; son besoin d'API du compilateur est explicitement fourni
 par `@typescript/typescript6` 6.0.2 dans l'auditeur AST. Le lockfile, oxlint,
 le typecheck et oxfmt ont été vérifiés après cette séparation.

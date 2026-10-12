@@ -22,7 +22,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          curl -fsSL https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.sh | bash -s 1.4.3
+          curl -fsSL https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.sh | bash -s 1.4.4
           echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
       # The scanner imports only Node built-ins: no install step is needed.
       - name: Check inline Python/Bun/Node against the baseline

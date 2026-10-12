@@ -1574,8 +1574,13 @@ describe("executing plans", () => {
   });
 });
 
+// `yolo host` drives Linux hosts: the fleet safety rules accept only POSIX absolute paths, so the local
+// transport runs where the temp directory is one (not Windows, even with Git's sh, tar and zstd on PATH).
 const haveTools =
-  Bun.which("zstd") !== null && Bun.which("tar") !== null && Bun.which("sha256sum") !== null;
+  process.platform !== "win32" &&
+  Bun.which("zstd") !== null &&
+  Bun.which("tar") !== null &&
+  Bun.which("sha256sum") !== null;
 
 const makeSource = (root: string): string => {
   const src = join(root, "src");

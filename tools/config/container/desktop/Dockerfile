@@ -9,7 +9,7 @@ ARG UBUNTU_VERSION=24.04
 FROM ubuntu:${UBUNTU_VERSION} AS builder
 ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8
 ARG RUST_VERSION=1.98.1
-ARG BUN_VERSION=1.4.3
+ARG BUN_VERSION=1.4.4
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       build-essential ca-certificates clang cmake curl git libasound2-dev libclang-dev \

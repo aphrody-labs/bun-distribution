@@ -52,7 +52,7 @@ RUN APHRODY_DOWNLOAD_URL="${APHRODY_DOWNLOAD_URL}" \
 
 # Developer base. Pins follow package.json (packageManager) and tools/config/system-packages.json.
 FROM runtime-base AS base
-ARG BUN_VERSION=1.4.3
+ARG BUN_VERSION=1.4.4
 ARG UV_VERSION=0.12.22
 RUN apt-get update \
  && apt-get install -y --no-install-recommends coreutils gawk git grep openssh-client python3 ripgrep rsync tar unzip xz-utils zstd jq \

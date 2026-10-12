@@ -18,7 +18,7 @@
 # lines are POSIX sh, which neither Nushell nor Ion implement.
 
 ARG ALPINE_VERSION=3.24
-ARG BUN_VERSION=1.4.3
+ARG BUN_VERSION=1.4.4
 
 # The aphrody-labs/bun musl release (newest aphrody.N of BUN_VERSION), checksum-verified by its installer.
 FROM alpine:${ALPINE_VERSION} AS bun

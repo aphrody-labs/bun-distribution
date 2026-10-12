@@ -316,7 +316,6 @@ async function main(): Promise<void> {
 
     case "docs": {
       // The docs/ of the fork checkout, read in place, unless --dir or $BUN_DOCS_DIR names another corpus.
-      // The checkout's own `docs` script shadows the `bun docs` built-in, so it runs outside the checkout.
       const docsArgs = args
         .slice(1)
         .map((arg, i, all) =>
@@ -333,8 +332,7 @@ async function main(): Promise<void> {
         if (dir) docsArgs.push("--dir", resolve(dir));
       }
       const { runBunTool } = await import("./bun-tools");
-      const { tmpdir } = await import("node:os");
-      process.exitCode = await runBunTool("docs", docsArgs, tmpdir());
+      process.exitCode = await runBunTool("docs", docsArgs, process.cwd());
       break;
     }
 

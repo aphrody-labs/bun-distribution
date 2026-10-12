@@ -2,8 +2,10 @@
 
 # Bun 1.4.4 alignment dossier
 
-Status on 2026-10-11: target line only. Nothing in the repositories, hosts or registries is pinned to 1.4.4 yet.
-The active runtime pin stays `bun@1.4.3-aphrody.4` (`packageManager` in the root `package.json`). This dossier
+Status on 2026-10-12: the pins moved to 1.4.4 (`yolo update pins apply bun 1.4.4`, `packageManager` `bun@1.4.4`,
+engines `>=1.4.4`, `@types/bun` `npm:@aphrody/bun-types@1.4.4`). The release tag is `bun-v1.4.4`
+(`scripts/build/container/aphrody-build.ts` derives it from a plain `X.Y.Z` pin). Hosts and images still follow G4-G6.
+On 2026-10-11 the active runtime pin was `bun@1.4.3-aphrody.4` (`packageManager` in the root `package.json`). This dossier
 records the evidence, the gates and the order of changes; the per-reference matrix is in [references.md](references.md).
 
 ## Naming rules

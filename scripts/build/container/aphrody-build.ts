@@ -63,7 +63,7 @@ export function readPins(toolchain: string, packageJson: string, cargoLock: stri
     (JSON.parse(packageJson) as { packageManager?: string }).packageManager ?? "",
   );
   const bun = bunMatch?.[1];
-  const bunRelease = bun ? `aphrody-v${bun}${bunMatch?.[2] ?? ""}` : undefined;
+  const bunRelease = bun ? (bunMatch?.[2] ? `aphrody-v${bun}${bunMatch[2]}` : `bun-v${bun}`) : undefined;
   const wasmBindgen = /\[\[package\]\]\r?\nname = "wasm-bindgen"\r?\nversion = "([^"]+)"/.exec(
     cargoLock,
   )?.[1];

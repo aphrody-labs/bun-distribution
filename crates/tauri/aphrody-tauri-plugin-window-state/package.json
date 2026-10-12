@@ -31,7 +31,7 @@
     "@aphrody/api": "workspace:*"
   },
   "engines": {
-    "bun": ">=1.4.3"
+    "bun": ">=1.4.4"
   },
   "authors": [
     "Tauri Programme within The Commons Conservancy"

@@ -376,7 +376,10 @@ describe("YOLO vendoring", () => {
   it("reports vendored sources against the submodule HEADs", async () => {
     const { readVendorStatus } = await import("../src/index");
     const status = await readVendorStatus();
-    expect(status?.crates).toBeGreaterThan(40);
+    // Every crate of vendor.lock (each checked against crates/ above) is reported.
+    const lock = (await Bun.file(resolve(rootDir, "vendor.lock")).json()) as { crates: unknown[] };
+    expect(lock.crates.length).toBeGreaterThan(0);
+    expect(status?.crates).toBe(lock.crates.length);
     const declaration = Bun.TOML.parse(await Bun.file(resolve(rootDir, "vendor.toml")).text()) as {
       source: { name: string }[];
     };

@@ -9,7 +9,8 @@
  * `__YOLO__`, renames `gitignore` and refuses two templates of one `exclusive` group. The templates
  * stay here, their only source.
  */
-import { readdirSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 
 export interface StackTemplate {
@@ -59,8 +60,32 @@ export interface CreateOptions {
   readonly yoloPath: string;
 }
 
+/**
+ * The template layers as `bun create` reads them: m3/templates, overlaid with the files of the layers whose
+ * canonical source is @aphrody/web-source (integrations/m3/templates: the web and react pages).
+ */
+function stageTemplates(rootDir: string): { dir: string; cleanup(): void } {
+  const own = resolve(rootDir, "m3/templates");
+  const web = resolve(rootDir, "node_modules/@aphrody/web-source/integrations/m3/templates");
+  if (!existsSync(web)) return { dir: own, cleanup() {} };
+  const staged = mkdtempSync(join(tmpdir(), "yolo-create-templates-"));
+  const dir = join(staged, "m3", "templates");
+  cpSync(own, dir, { recursive: true });
+  cpSync(web, dir, { recursive: true });
+  return { dir, cleanup: () => rmSync(staged, { recursive: true, force: true }) };
+}
+
 /** Writes the project with `bun create aphrody/...` and returns the relative paths of the files created. */
 export async function createProject(options: CreateOptions): Promise<string[]> {
+  const templates = stageTemplates(options.rootDir);
+  try {
+    return await createFromTemplates(options, templates.dir);
+  } finally {
+    templates.cleanup();
+  }
+}
+
+async function createFromTemplates(options: CreateOptions, templatesDir: string): Promise<string[]> {
   const proc = Bun.spawn(
     [
       Bun.which("bun") ?? process.execPath,
@@ -70,7 +95,7 @@ export async function createProject(options: CreateOptions): Promise<string[]> {
       "--name",
       options.name,
       "--templates",
-      resolve(options.rootDir, "m3/templates"),
+      templatesDir,
       "--aphrody",
       options.yoloPath,
     ],

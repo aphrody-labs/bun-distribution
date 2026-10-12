@@ -24,7 +24,9 @@ export async function runBunTool(
   cwd: string,
 ): Promise<number> {
   const bun = Bun.which("bun") ?? process.execPath;
-  const env = { ...process.env, BUN_BE_BUN: "1" };
+  // A package script named after the built-in (the checkout's `docs`, `bench`) shadows it; Bun keeps the built-in
+  // when the running lifecycle event carries the command's own name.
+  const env = { ...process.env, BUN_BE_BUN: "1", npm_lifecycle_event: command };
   // Probe help only: never replay a potentially mutating command after it fails.
   const probe = Bun.spawnSync([bun, command, "--help"], {
     windowsHide: true,

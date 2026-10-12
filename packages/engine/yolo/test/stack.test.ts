@@ -151,7 +151,7 @@ describe("yolo create", () => {
       expect(pkg.devDependencies[name]).toMatch(pinned);
     }
     // the dev dependencies of the base template survive the merge, and the tsconfig compiles TSX
-    expect(pkg.devDependencies.typescript).toBeDefined();
+    expect(pkg.devDependencies["@types/bun"]).toBeDefined();
     expect(pkg.dependencies["@aphrody/runtime-sdk"]).toMatch(
       new RegExp(`^file:${rootDir.replaceAll("\\", "/")}/packages/(engine/)?runtime$`),
     );

@@ -39,6 +39,6 @@
     "stage": "bun ../../../scripts/release/stage-setup.ts"
   },
   "engines": {
-    "bun": ">=1.4.3"
+    "bun": ">=1.4.4"
   }
 }

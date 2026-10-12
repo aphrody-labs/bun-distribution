@@ -4,7 +4,7 @@
   "note": "Aphrody fournit les binaires applicatifs et les facades Rust/Bun/uv; ces paquets restent des prerequis OS.",
   "toolchains": {
     "bun": {
-      "version": "1.4.3",
+      "version": "1.4.4",
       "owner": "aphrody-os",
       "install": "https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.{sh,ps1} <version>",
       "rootEnv": "BUN_INSTALL"
@@ -147,7 +147,7 @@
         "name": "bun",
         "check": "bun",
         "url": "https://raw.githubusercontent.com/aphrody-labs/bun/main/scripts/aphrody/install.ps1",
-        "args": ["-Version", "1.4.3"]
+        "args": ["-Version", "1.4.4"]
       },
       {
         "name": "rustup",

@@ -120,7 +120,7 @@ sous-commande `audit` ou `backends` sans la vérifier sur le binaire courant.
 
 ## Toolchains et validation
 
-Bun `1.4.3`, uv `0.12.24`, Rust/Cargo `1.98.1`, Oxc `oxlint 1.86.0` /
+Bun `1.4.4`, uv `0.12.24`, Rust/Cargo `1.98.1`, Oxc `oxlint 1.86.0` /
 `oxfmt 0.71.0`, TypeScript `7.0.2`. Le wrapper Cargo global est `sccache`.
 Les cibles Rust installées incluent Linux, Windows MSVC/GNU, macOS Intel/ARM,
 WASM navigateur, WASI et Emscripten ; cela ne prouve pas leurs SDK externes.
@@ -170,8 +170,8 @@ Sources : [manifest développeur](../../../tools/config/developer-cli-tools.json
 | `atuin` | atuin 18.23.0 (78366dca8c4941731e06a2f81c0980cc2ccc3836) | `~/.cargo/bin/atuin` |
 | `bat` | bat 0.26.1 (979ba22) | `~/.cargo/bin/bat` |
 | `btm` | bottom 0.14.9 | `~/.cargo/bin/btm` |
-| `bun` | 1.4.3 | `~/.bun/bin/bun` |
-| `bunx` | 1.4.3 | `~/.bun/bin/bunx` |
+| `bun` | 1.4.4 | `~/.bun/bin/bun` |
+| `bunx` | 1.4.4 | `~/.bun/bin/bunx` |
 | `bxc` | bxc 0.9.15 | `~/.bun/bin/bxc` |
 | `carapace` | carapace-bin 1.8.0 | `/usr/bin/carapace` |
 | `cargo` | cargo 1.98.1 (797e8a9bc 2026-08-05) | `~/.cargo/bin/cargo` |
