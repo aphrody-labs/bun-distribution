@@ -307,7 +307,7 @@ async function lint(ctx: Ctx): Promise<void> {
 async function tasks(ctx: Ctx): Promise<void> {
   for (const task of ["lint", "typecheck", "test"]) {
     if (!wants(ctx, `task.${task}`)) continue;
-    const cmd = ["bun", join(REPO, "scripts/yolo.ts"), task];
+    const cmd = ["bun", join(REPO, "scripts/bun.ts"), task];
     let code = 0;
     const samples = await sample(
       () => {
