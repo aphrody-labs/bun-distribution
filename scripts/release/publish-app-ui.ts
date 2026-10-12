@@ -87,7 +87,7 @@ export function canonicalBunInputs(checkout: string, revision: string) {
       throw new Error("Canonical Bun source file escapes the checkout");
     return file;
   };
-  const receiptFile = ownedFile("packages/bun-aphrody-web/transfer-receipt.json");
+  const receiptFile = ownedFile("packages/web/rust/transfer-receipt.json");
   const receipt = JSON.parse(readFileSync(receiptFile, "utf8")) as {
     schemaVersion: number;
     sourceCommit: string;
@@ -97,12 +97,12 @@ export function canonicalBunInputs(checkout: string, revision: string) {
   if (
     receipt.schemaVersion !== 1 ||
     !entry ||
-    entry.destination !== "packages/bun-aphrody-web/crates/site/data/docs.json" ||
+    entry.destination !== "packages/web/rust/crates/site/data/docs.json" ||
     !/^[a-f0-9]{64}$/.test(entry.sha256) ||
     !/^[a-f0-9]{40}$/.test(receipt.sourceCommit)
   )
     throw new Error("Canonical Bun documentation transfer receipt required");
-  const docs = ownedFile(entry.destination);
+  const docs = ownedFile("packages/web/rust/crates/site/data/docs.json");
   if (sha(readFileSync(docs)) !== entry.sha256)
     throw new Error("Bun documentation transfer checksum mismatch");
   const search = ownedFile("packages/bun-google/src/search.ts");
@@ -697,8 +697,8 @@ async function main() {
         "--porcelain",
         "--",
         "packages/bun-google/src/search.ts",
-        "packages/bun-aphrody-web/crates/site/data/docs.json",
-        "packages/bun-aphrody-web/transfer-receipt.json",
+        "packages/web/rust/crates/site/data/docs.json",
+        "packages/web/rust/transfer-receipt.json",
       ],
       bunCheckout,
     )

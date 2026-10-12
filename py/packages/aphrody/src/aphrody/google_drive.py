@@ -8,5 +8,5 @@ _source_repo = next(
     if (parent / "Cargo.toml").is_file() and (parent / "PLAN.md").is_file()
 )
 _source_bun = _SourcePath(_source_environ.get("APHRODY_BUN_CHECKOUT", str(_source_repo.parent / "bun")))
-_source_provider = _source_bun / "packages/bun-aphrody-web/integrations/py/packages/aphrody/src/aphrody/google_drive.py"
+_source_provider = _source_bun / "packages/web/rust/integrations/py/packages/aphrody/src/aphrody/google_drive.py"
 exec(compile(_source_provider.read_bytes(), str(_source_provider), "exec"), globals())

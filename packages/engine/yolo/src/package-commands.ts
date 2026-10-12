@@ -66,7 +66,7 @@ export const M3_TOOLS = {
     summary: "Material Symbol or SVG to Tauri icons (ico, icns, PNG) [m3-svg-to-ico]",
   },
   "web-to-tauri": {
-    module: "../bun/packages/bun-aphrody-web/integrations/m3/packages/web-to-tauri/src/cli.ts",
+    module: "../bun/packages/web/rust/integrations/m3/packages/web-to-tauri/src/cli.ts",
     run: "runWebToTauri",
     summary: "Website or bundle to a Tauri 3 app: probe | plan | convert | parity [web-to-tauri]",
   },
@@ -110,7 +110,7 @@ export const PACKAGE_COMMANDS = {
     summary: "Translate Markdown, generate Lit API guides, sync docs/",
   },
   browser: {
-    module: "../bun/packages/bun-aphrody-web/packages/agent-browser/src/cli.ts",
+    module: "../bun/packages/web/rust/packages/agent-browser/src/cli.ts",
     run: "runAgentBrowser",
     summary: "One CDP browser command on the Obscura endpoint, as a JSON line",
   },

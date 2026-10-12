@@ -515,14 +515,14 @@ test("Google deployment binds the SDK and environment to the same rollback symli
 test("Bun transferred docs and packaged Google source require verified checksums", () => {
   const root = mkdtempSync(join(tmpdir(), "app-ui-bun-receipt-"));
   try {
-    const destination = "packages/bun-aphrody-web/crates/site/data/docs.json";
-    mkdirSync(join(root, "packages/bun-aphrody-web/crates/site/data"), { recursive: true });
+    const destination = "packages/web/rust/crates/site/data/docs.json";
+    mkdirSync(join(root, "packages/web/rust/crates/site/data"), { recursive: true });
     mkdirSync(join(root, "packages/bun-google/src"), { recursive: true });
-    writeFileSync(join(root, destination), "[]");
+    writeFileSync(join(root, "packages/web/rust/crates/site/data/docs.json"), "[]");
     writeFileSync(join(root, "packages/bun-google/src/search.ts"), "export {};");
     const hash = createHash("sha256").update("[]").digest("hex");
     writeFileSync(
-      join(root, "packages/bun-aphrody-web/transfer-receipt.json"),
+      join(root, "packages/web/rust/transfer-receipt.json"),
       JSON.stringify({
         schemaVersion: 1,
         sourceCommit: revision,

@@ -11,8 +11,8 @@ test("workspaces live below the declared roots or the sibling Bun fork packages,
     "m3/packages/canvas",
     "m3/apps/example",
     "crates/tauri/aphrody-tauri-api",
-    "../bun/packages/bun-aphrody-web",
-    "../bun/packages/bun-aphrody-web/packages/agent-browser",
+    "../bun/packages/web/rust",
+    "../bun/packages/web/rust/packages/agent-browser",
     "../bun/packages/bun-google/aphrody/packages/google",
   ])
     expect(allowedWorkspace(root, path)).toBe(true);

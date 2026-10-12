@@ -39,7 +39,7 @@ categories = ["command-line-utilities", "development-tools", "web-programming"]
 keywords = ["cli", "cross-platform", "rust", "linux", "wasm"]
 [workspace.dependencies]
 tauri-build = { package = "aphrody-tauri-build", path = "../../bun/packages/bun-tauri/crates/aphrody-tauri-build", version = "1.4.4" }
-aphrody-web-source = { path = "../bun/packages/bun-aphrody-web", version = "1.4.4" }
+aphrody-web-source = { path = "../bun/packages/web/rust", version = "1.4.4" }
 node-semver = "2.2.0"
 pep440_rs = "0.7.3"
 aphrody-pkg-core = { path = "crates/pkg/core", version = "1.4.4" }
@@ -135,11 +135,11 @@ aphrody-rollout = { path = "crates/ai/rollout", version = "1.4.4", features = []
 aphrody-secrets = { path = "crates/os/ostd/secrets", version = "1.4.4", features = [] }
 aphrody-session = { path = "crates/ai/session", version = "1.4.4", features = [] }
 aphrody-ssh = { path = "crates/infra/ssh", version = "1.4.4", features = [] }
-aphrody-shell-web = { path = "../bun/packages/bun-aphrody-web/integrations/crates/shell/web", version = "1.4.4", features = [] }
+aphrody-shell-web = { path = "../bun/packages/web/rust/integrations/crates/shell/web", version = "1.4.4", features = [] }
 aphrody-shell-tauri = { path = "crates/shell/tauri", version = "1.4.4", features = [] }
-aphrody-shell-session = { path = "../bun/packages/bun-aphrody-web/integrations/crates/shell/session", version = "1.4.4", features = [] }
-aphrody-shell-vfs = { path = "../bun/packages/bun-aphrody-web/integrations/crates/shell/vfs", version = "1.4.4", features = [] }
-aphrody-terminal-core = { path = "../bun/packages/bun-aphrody-web/integrations/crates/shell/terminal-core", version = "1.4.4", features = [] }
+aphrody-shell-session = { path = "../bun/packages/web/rust/integrations/crates/shell/session", version = "1.4.4", features = [] }
+aphrody-shell-vfs = { path = "../bun/packages/web/rust/integrations/crates/shell/vfs", version = "1.4.4", features = [] }
+aphrody-terminal-core = { path = "../bun/packages/web/rust/integrations/crates/shell/terminal-core", version = "1.4.4", features = [] }
 aphrody-term = { path = "crates/shell/aphrody-term", version = "1.4.4", features = [] }
 aphrody-terminal-backend = { path = "crates/shell/terminal-backend", version = "1.4.4", features = [] }
 aphrody-term-caps = { path = "crates/shell/term-caps", version = "1.4.4", default-features = false }
@@ -149,7 +149,7 @@ aphrody-toolchains = { path = "crates/compat/toolchains", version = "1.4.4", fea
 aphrody-train = { path = "crates/ai/train", version = "1.4.4", features = [] }
 aphrody-translate = { path = "crates/ai/translate", version = "1.4.4", features = [] }
 aphrody-command-wasm = { path = "crates/infra/aphrody-command-wasm", version = "1.4.4", features = [] }
-aphrody-webos-wasm = { path = "../bun/packages/bun-aphrody-web/crates/webos-wasm", version = "1.4.4", features = [] }
+aphrody-webos-wasm = { path = "../bun/packages/web/rust/crates/webos-wasm", version = "1.4.4", features = [] }
 aphrody-command-pure = { path = "crates/infra/aphrody-command-pure", version = "1.4.4", features = [] }
 aphrody-translate-core = { path = "crates/ai/translate-core", version = "1.4.4", features = [] }
 aphrody-vision = { path = "crates/ai/vision", version = "1.4.4", features = [] }
@@ -157,16 +157,16 @@ aphrody-voice = { path = "crates/ai/voice", version = "1.4.4", features = [] }
 aphrody-vpn = { path = "crates/infra/vpn", version = "1.4.4", features = [] }
 aphrody-remote-desktop = { path = "crates/infra/remote-desktop", version = "1.4.4", features = [] }
 aphrody-wireguard = { path = "crates/infra/wireguard", version = "1.4.4", features = [] }
-aphrody-web-crawl = { path = "../bun/packages/bun-aphrody-web/crates/web-crawl", version = "1.4.4", features = [] }
-aphrody-web-detect = { path = "../bun/packages/bun-aphrody-web/crates/web-detect", version = "1.4.4", features = [] }
+aphrody-web-crawl = { path = "../bun/packages/web/rust/crates/web-crawl", version = "1.4.4", features = [] }
+aphrody-web-detect = { path = "../bun/packages/web/rust/crates/web-detect", version = "1.4.4", features = [] }
 yolo-runtime = { path = "crates/engine/yolo-runtime", version = "1.4.4" }
-aphrody-web-engine = { path = "../bun/packages/bun-aphrody-web/crates/web-engine", version = "1.4.4", features = [] }
-aphrody-web-extract = { path = "../bun/packages/bun-aphrody-web/crates/web-extract", version = "1.4.4", features = [] }
-aphrody-web-frames = { path = "../bun/packages/bun-aphrody-web/crates/web-frames", version = "1.4.4", features = [] }
-aphrody-web-index = { path = "../bun/packages/bun-aphrody-web/crates/web-index", version = "1.4.4", features = [] }
-aphrody-web-service = { path = "../bun/packages/bun-aphrody-web/crates/web-service", version = "1.4.4", features = [] }
-aphrody-site = { path = "../bun/packages/bun-aphrody-web/crates/site", version = "1.4.4" }
-aphrody-x = { path = "../bun/packages/bun-aphrody-web/crates/x", version = "1.4.4", features = [] }
+aphrody-web-engine = { path = "../bun/packages/web/rust/crates/web-engine", version = "1.4.4", features = [] }
+aphrody-web-extract = { path = "../bun/packages/web/rust/crates/web-extract", version = "1.4.4", features = [] }
+aphrody-web-frames = { path = "../bun/packages/web/rust/crates/web-frames", version = "1.4.4", features = [] }
+aphrody-web-index = { path = "../bun/packages/web/rust/crates/web-index", version = "1.4.4", features = [] }
+aphrody-web-service = { path = "../bun/packages/web/rust/crates/web-service", version = "1.4.4", features = [] }
+aphrody-site = { path = "../bun/packages/web/rust/crates/site", version = "1.4.4" }
+aphrody-x = { path = "../bun/packages/web/rust/crates/x", version = "1.4.4", features = [] }
 aphrody-winclean = { path = "crates/os/kernel/comps/winclean", version = "1.4.4", features = [] }
 aphrody-yolo = { path = "crates/infra/yolo", version = "1.4.4" }
 arc-swap = "1.9.2"
@@ -217,15 +217,15 @@ libm = "0.2.16"
 minijinja = "2.24.0"
 notify = { version = "8", features = [] }
 notify-debouncer-full = "0.6"
-obscura-mcp = { path = "../bun/packages/bun-aphrody-web/crates/obscura-mcp", version = "1.4.4", features = [] }
-obscura-browser = { path = "../bun/packages/bun-aphrody-web/crates/obscura-browser", version = "1.4.4", features = [] }
-obscura = { path = "../bun/packages/bun-aphrody-web/crates/obscura", version = "1.4.4", package = "aphrody-obscura" }
-obscura-cdp = { path = "../bun/packages/bun-aphrody-web/crates/obscura-cdp", version = "1.4.4", features = [] }
-obscura-dom = { path = "../bun/packages/bun-aphrody-web/crates/obscura-dom", version = "1.4.4", features = [] }
-obscura-js = { path = "../bun/packages/bun-aphrody-web/crates/obscura-js", version = "1.4.4", features = [] }
-obscura-net = { path = "../bun/packages/bun-aphrody-web/crates/obscura-net", version = "1.4.4", features = [] }
-obscura-ssrf = { path = "../bun/packages/bun-aphrody-web/crates/obscura-ssrf", version = "1.4.4", features = [] }
-obscura-render = { path = "../bun/packages/bun-aphrody-web/crates/obscura-render", version = "1.4.4", features = [] }
+obscura-mcp = { path = "../bun/packages/web/rust/crates/obscura-mcp", version = "1.4.4", features = [] }
+obscura-browser = { path = "../bun/packages/web/rust/crates/obscura-browser", version = "1.4.4", features = [] }
+obscura = { path = "../bun/packages/web/rust/crates/obscura", version = "1.4.4", package = "aphrody-obscura" }
+obscura-cdp = { path = "../bun/packages/web/rust/crates/obscura-cdp", version = "1.4.4", features = [] }
+obscura-dom = { path = "../bun/packages/web/rust/crates/obscura-dom", version = "1.4.4", features = [] }
+obscura-js = { path = "../bun/packages/web/rust/crates/obscura-js", version = "1.4.4", features = [] }
+obscura-net = { path = "../bun/packages/web/rust/crates/obscura-net", version = "1.4.4", features = [] }
+obscura-ssrf = { path = "../bun/packages/web/rust/crates/obscura-ssrf", version = "1.4.4", features = [] }
+obscura-render = { path = "../bun/packages/web/rust/crates/obscura-render", version = "1.4.4", features = [] }
 octocrab = { version = "0.54", features = [] }
 once_cell = { version = "1", features = [] }
 opendal = { version = "0.59", default-features = false, features = ["executors-tokio", "services-fs"] }

@@ -15,11 +15,7 @@ use tokio::{
 use crate::{SubsystemError, SystemSubsystem, ToolDefinition};
 
 const RPC_TIMEOUT: Duration = Duration::from_secs(60);
-const AUTO_DISCOVERY_TIMEOUT: Duration = Duration::from_secs(10);
 const MAX_MCP_FRAME: usize = 64 * 1024 * 1024;
-// The Rust AI MCP catalog owns native Web tool aliases. The migrated CLI
-// aphrody-web has no MCP mode; obsolete browser/BXC binaries are not providers.
-const WEB_MCP_PROVIDERS: &[(&str, &[&str])] = &[("aphrody-mcp", &["server"])];
 
 async fn read_frame<R: AsyncBufRead + Unpin>(
     reader: &mut R,
@@ -82,8 +78,11 @@ pub struct McpProxySubsystem {
 }
 
 impl McpProxySubsystem {
-    /// Resolve the optional Aphrody Web provider once for a composite web subsystem.
-    /// An explicit command remains authoritative; otherwise use an installed provider.
+    /// Resolve an explicitly configured external Aphrody Web provider.
+    ///
+    /// The canonical `aphrody-mcp` already owns the kernel and Web tools. Auto-spawning
+    /// another `aphrody-mcp` here would recurse and duplicate the catalog, so discovery is
+    /// intentionally opt-in through `APHRODY_WEB_MCP_BIN`.
     pub async fn configured_provider(
         command: Option<String>,
     ) -> Result<Option<Arc<dyn SystemSubsystem>>, String> {
@@ -106,31 +105,7 @@ impl McpProxySubsystem {
             });
         }
 
-        for &(name, args) in WEB_MCP_PROVIDERS {
-            let Some(path) = installed_binary(name) else {
-                continue;
-            };
-            let Some(path) = path.to_str() else {
-                continue;
-            };
-            let args: Vec<String> = args.iter().map(|arg| (*arg).to_owned()).collect();
-            match tokio::time::timeout(AUTO_DISCOVERY_TIMEOUT, Self::spawn(path, &args)).await {
-                Ok(Ok(mut provider)) if provider.has_web_tools() => {
-                    provider.retain_web_tools();
-                    return Ok(Some(Arc::new(provider) as Arc<dyn SystemSubsystem>));
-                },
-                Ok(Ok(_)) => eprintln!("aphrody-kernel: {name} has no Aphrody Web tools"),
-                Ok(Err(error)) => {
-                    eprintln!("aphrody-kernel: optional {name} unavailable: {error}")
-                },
-                Err(_) => eprintln!("aphrody-kernel: optional {name} timed out during discovery"),
-            }
-        }
         Ok(None)
-    }
-
-    fn has_web_tools(&self) -> bool {
-        self.tools.iter().any(|tool| is_web_tool(&tool.name))
     }
 
     fn retain_web_tools(&mut self) {
@@ -583,12 +558,7 @@ printf '%s\n' '{"jsonrpc":"2.0","id":3,"result":{"tools":[],"nextCursor":"again"
     }
 
     #[test]
-    fn web_provider_discovery_uses_the_native_mcp_catalog() {
-        assert_eq!(super::WEB_MCP_PROVIDERS, &[("aphrody-mcp", &["server"][..])]);
-    }
-
-    #[test]
-    fn auto_discovery_accepts_only_web_provider_tools() {
+    fn explicit_web_provider_accepts_only_web_provider_tools() {
         assert!(is_web_tool("aphrody_web_call"));
         assert!(is_web_tool("bxc_actor_list"));
         assert!(!is_web_tool("aphrody_rag_search"));
