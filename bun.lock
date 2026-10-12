@@ -24,12 +24,26 @@
         "undici-types": "catalog:",
       },
     },
+    "../bun/packages/aphrody-migrated/m3/aphrody-m3-codemods": {
+      "name": "@aphrody/m3-codemods",
+      "version": "1.4.4",
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+      },
+    },
     "../bun/packages/aphrody-migrated/m3/aphrody-m3-config": {
       "name": "@aphrody/m3-config",
       "version": "1.4.4",
       "dependencies": {
         "@happy-dom/global-registrator": "catalog:",
         "element-internals-polyfill": "catalog:",
+      },
+    },
+    "../bun/packages/aphrody-migrated/m3/aphrody-m3-fonts": {
+      "name": "@aphrody/m3-fonts",
+      "version": "1.4.4",
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
       },
     },
     "../bun/packages/aphrody-migrated/m3/aphrody-m3-front": {
@@ -656,13 +670,6 @@
         "oxlint",
       ],
     },
-    "m3/packages/m3-codemods": {
-      "name": "@aphrody/m3-codemods",
-      "version": "1.4.4",
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-      },
-    },
     "m3/packages/m3-design": {
       "name": "@aphrody/m3-design",
       "version": "1.4.4",
@@ -689,13 +696,6 @@
         "react": ">=18.0.0",
         "react-dom": ">=18.0.0",
         "tailwindcss": ">=4.1.0",
-      },
-    },
-    "m3/packages/m3-fonts": {
-      "name": "@aphrody/m3-fonts",
-      "version": "1.4.4",
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
       },
     },
     "m3/packages/m3-forms": {
@@ -1419,7 +1419,7 @@
 
     "@aphrody/m3-bun": ["@aphrody/m3-bun@workspace:m3/packages/m3-bun"],
 
-    "@aphrody/m3-codemods": ["@aphrody/m3-codemods@workspace:m3/packages/m3-codemods"],
+    "@aphrody/m3-codemods": ["@aphrody/m3-codemods@workspace:../bun/packages/aphrody-migrated/m3/aphrody-m3-codemods"],
 
     "@aphrody/m3-config": ["@aphrody/m3-config@workspace:../bun/packages/aphrody-migrated/m3/aphrody-m3-config"],
 
@@ -1429,7 +1429,7 @@
 
     "@aphrody/m3-explorer": ["@aphrody/m3-explorer@workspace:m3/packages/m3-explorer"],
 
-    "@aphrody/m3-fonts": ["@aphrody/m3-fonts@workspace:m3/packages/m3-fonts"],
+    "@aphrody/m3-fonts": ["@aphrody/m3-fonts@workspace:../bun/packages/aphrody-migrated/m3/aphrody-m3-fonts"],
 
     "@aphrody/m3-forms": ["@aphrody/m3-forms@workspace:m3/packages/m3-forms"],
 

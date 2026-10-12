@@ -2166,8 +2166,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "6d37738632bd880a38e61bd2e8b19ccb4743d049a4032f4db920f8d57ab61289",
-      "bytes": 59508,
+      "sha256": "34678a75399e8061f294e9a648710e5633f35db7be6b769f40a8e5b25707a66b",
+      "bytes": 59109,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -6426,8 +6426,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "c18284f2141b00182f798439dd3db510a78aa99fe6d3a7282beff88ead0d9d28",
-      "bytes": 35693,
+      "sha256": "895636228d6e093d33dec8b1afa2f37dddfb2a12dedd75905f5b4e76cc360e2e",
+      "bytes": 35821,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",
@@ -10684,16 +10684,6 @@
       "canonical": "m3/packages/m3-bun/README.md"
     },
     {
-      "path": "m3/packages/m3-codemods/README.md",
-      "title": "Codemods — MUI React → @aphrody/m3-react",
-      "sha256": "e26951607db5cde99036fda573c99e741b7cf979408c76a8f5e5c5e98b882a60",
-      "bytes": 11427,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "m3/packages/m3-codemods/README.md"
-    },
-    {
       "path": "m3/packages/m3-design/README.md",
       "title": "@aphrody/m3-design",
       "sha256": "86cbcba601ff60e192072f93e8b0432ad468c3710e2b207fa89137e658c375cc",
@@ -10722,16 +10712,6 @@
       "status": "notice",
       "visibility": "private",
       "canonical": "m3/packages/m3-explorer/UPSTREAM-CHANGELOG.md"
-    },
-    {
-      "path": "m3/packages/m3-fonts/README.md",
-      "title": "@aphrody/m3-fonts",
-      "sha256": "b47635e3100da1e7f46440b60e8cd62b18aeaffbcfb4e23f12bed13e3f0f253b",
-      "bytes": 1493,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "m3/packages/m3-fonts/README.md"
     },
     {
       "path": "m3/packages/m3-forms/README.md",

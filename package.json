@@ -25,7 +25,9 @@
       "../bun/packages/aphrody-migrated/m3/aphrody-m3-front",
       "../bun/packages/bun-aphrody-web/packages/*",
       "../bun/packages/bun-aphrody-web/integrations/m3/packages/web-to-tauri",
-      "../bun/packages/bun-google/aphrody/packages/google"
+      "../bun/packages/bun-google/aphrody/packages/google",
+      "../bun/packages/aphrody-migrated/m3/aphrody-m3-codemods",
+      "../bun/packages/aphrody-migrated/m3/aphrody-m3-fonts"
     ],
     "catalog": {
       "@ag-ui/a2ui-toolkit": "0.0.4",

@@ -1341,12 +1341,6 @@
           ]
         },
         {
-          "name": "@aphrody/m3-codemods",
-          "path": "m3/packages/m3-codemods",
-          "description": "Codemods MUI React -> @aphrody/m3-react (Bun, sans dépendance runtime) + règles ast-grep",
-          "bins": []
-        },
-        {
           "name": "@aphrody/m3-design",
           "path": "m3/packages/m3-design",
           "description": "Automated design engine for Material Design 3 and Google Design",
@@ -1362,12 +1356,6 @@
           "name": "@aphrody/m3-explorer",
           "path": "m3/packages/m3-explorer",
           "description": "Material Design 3 file-management components (tag pill, inline rename, file thumb, grid item): the SpaceUI (@spacedrive/explorer) set rebuilt on @aphrody/m3-primitives.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-fonts",
-          "path": "m3/packages/m3-fonts",
-          "description": "Aphrody M3 typefaces: Google Sans Flex, Google Sans Code, Roboto Flex, Roboto Mono and Material Symbols with Japanese fallbacks (Noto Sans JP, M PLUS 1 Code) as @font-face CSS and a typed manifest.",
           "bins": []
         },
         {
@@ -10508,7 +10496,7 @@
     "sharedRepos": 0,
     "crates": 200,
     "binaries": 36,
-    "bunPackages": 102,
+    "bunPackages": 100,
     "pythonPackages": 10,
     "cliBinaries": 34,
     "cliCommands": 777,
