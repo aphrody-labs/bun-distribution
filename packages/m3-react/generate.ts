@@ -99,7 +99,7 @@ function walk(dir: string): void {
       while ((m = RE.exec(src))) {
         const [, tag, className] = m;
         if (!tag.startsWith("md-")) continue;
-        const rel = relative(MW, full).replace(/\.ts$/, ".js"); // import as .js (side-effect register)
+        const rel = relative(MW, full).replaceAll("\\", "/").replace(/\.ts$/, ".js"); // import as .js (side-effect register)
         if (!defs.has(tag)) defs.set(tag, []);
         defs.get(tag)!.push({ file: rel, className });
       }
@@ -348,7 +348,9 @@ for (const [group, items] of [...groups.entries()].toSorted()) {
     lines.push(`});`);
     lines.push("");
   }
-  writeFileSync(join(OUT_DIR, fileName), lines.join("\n"));
+  const target = join(OUT_DIR, fileName);
+  mkdirSync(dirname(target), { recursive: true });
+  writeFileSync(target, lines.join("\n"));
   indexLines.push(`export * from './wrappers/${group}.js';`.replace("./wrappers", "./"));
 }
 

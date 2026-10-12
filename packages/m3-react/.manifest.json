@@ -32,6 +32,13 @@
       "events": {}
     },
     {
+      "tag": "md-banner",
+      "name": "MdBanner",
+      "file": "banner/banner.js",
+      "className": "MdBanner",
+      "events": {}
+    },
+    {
       "tag": "md-bottom-app-bar",
       "name": "MdBottomAppBar",
       "file": "appbar/bottom-app-bar.js",

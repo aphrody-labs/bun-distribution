@@ -58,10 +58,10 @@
     },
     "./package.json": "./package.json",
     "./*": {
-      "types": "./dist/wrappers/*.d.ts",
+      "types": "./wrappers/*.ts",
       "bun": "./wrappers/*.ts",
       "import": "./wrappers/*.ts",
-      "default": "./dist/wrappers/*.js"
+      "default": "./wrappers/*.ts"
     }
   },
   "publishConfig": {

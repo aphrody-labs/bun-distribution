@@ -200,7 +200,7 @@ classe exportée, et compilent. Les 4 tags `md-button`, `md-card`, `md-menu-grou
 leurs classes exportées ne suivent pas la convention `Md*` (`Button`, `Card`, `MenuGroup`,
 `SplitButton`) — le wrapper les ré-alias correctement (`MdButton`, `MdCard`, …).
 
-## Liste complète des wrappers (119)
+## Liste complète des wrappers (120)
 
 > Régénérée par `generate.ts` (`.manifest.json`). 0 non résolu(s).
 
@@ -218,6 +218,7 @@ leurs classes exportées ne suivent pas la convention `Md*` (`Button`, `Card`, `
 | `MdAvatarGroup` | `md-avatar-group` | `@aphrody/material-web/avatar/avatar-group.js` | — |
 | `MdBackdrop` | `md-backdrop` | `@aphrody/material-web/backdrop/backdrop.js` | — |
 | `MdBadge` | `md-badge` | `@aphrody/material-web/badge/badge.js` | — |
+| `MdBanner` | `md-banner` | `@aphrody/material-web/banner/banner.js` | — |
 | `MdBarChart` | `md-bar-chart` | `@aphrody/material-web/charts/bar-chart.js` | — |
 | `MdBottomAppBar` | `md-bottom-app-bar` | `@aphrody/material-web/appbar/bottom-app-bar.js` | — |
 | `MdBottomSheet` | `md-bottom-sheet` | `@aphrody/material-web/sheet/bottom-sheet.js` | 4 |

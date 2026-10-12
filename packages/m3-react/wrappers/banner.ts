@@ -9,5 +9,5 @@ export const MdBanner = createComponent({
   react: React,
   tagName: 'md-banner',
   elementClass: MdBannerElement,
-  events: {onClose: 'close'},
+  events: {},
 });
