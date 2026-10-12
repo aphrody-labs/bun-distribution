@@ -26,7 +26,8 @@ async function run(command: string, commandArgs: string[]): Promise<CommandResul
 function numberAfter(text: string, patterns: RegExp[]): number | undefined {
   for (const pattern of patterns) {
     const match = text.match(pattern);
-    if (match) return Number(match[1].replace(/\s/g, "").replace(",", "."));
+    const value = match?.[1];
+    if (value !== undefined) return Number(value.replace(/\s/g, "").replace(",", "."));
   }
 }
 
@@ -66,6 +67,8 @@ const resetHoursValue = resetHours(resetIn);
 const graphFacts = graph.output.match(
   /(?:nodes?|nœuds?)\s*[:=]?\s*([\d\s.,]+).*?(?:edges?|arêtes?)\s*[:=]?\s*([\d\s.,]+)/is,
 );
+const graphNodes = graphFacts?.[1];
+const graphEdges = graphFacts?.[2];
 
 const report = {
   repository: repo,
@@ -79,8 +82,8 @@ const report = {
   credits: { remaining: creditBalance },
   graph: {
     command: graph.command,
-    nodes: graphFacts ? Number(graphFacts[1].replace(/[\s.,]/g, "")) : undefined,
-    edges: graphFacts ? Number(graphFacts[2].replace(/[\s.,]/g, "")) : undefined,
+    nodes: graphNodes === undefined ? undefined : Number(graphNodes.replace(/[\s.,]/g, "")),
+    edges: graphEdges === undefined ? undefined : Number(graphEdges.replace(/[\s.,]/g, "")),
     exitCode: graph.code,
   },
   commands: { status: status.code, usage: usage.code, credits: credits.code },
