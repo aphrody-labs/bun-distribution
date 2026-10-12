@@ -1124,26 +1124,6 @@
       "canonical": "crates/tauri/aphrody-tauri-codegen/README.md"
     },
     {
-      "path": "crates/tauri/aphrody-tauri-macros/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "48962e53daf6f50e9f63e281d031a572ef1b531d322c0257acde18040c7e6771",
-      "bytes": 43427,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tauri-macros/CHANGELOG.md"
-    },
-    {
-      "path": "crates/tauri/aphrody-tauri-macros/README.md",
-      "title": "tauri-macros",
-      "sha256": "7ea900c91b5ef15ac143b9a8b4f229e74952fa08760c79cdc15b64754d8b93d7",
-      "bytes": 3204,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tauri-macros/README.md"
-    },
-    {
       "path": "crates/tauri/aphrody-tauri-plugin-autostart/CHANGELOG.md",
       "title": "Changelog",
       "sha256": "ca39c52932255e9273e019a8ed2c90218f6f768ca2a84defde1d024a9d6372eb",

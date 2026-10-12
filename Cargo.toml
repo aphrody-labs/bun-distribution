@@ -422,7 +422,6 @@ swift-rs = { version = "1.0" }
 tauri-plugin = { package = "aphrody-tauri-plugin", path = "crates/tauri/aphrody-tauri-plugin", version = "1.4.4" }
 tauri-utils = { package = "aphrody-tauri-utils", path = "crates/tauri/aphrody-tauri-utils", version = "1.4.4" }
 tauri-runtime = { package = "aphrody-tauri-runtime", path = "crates/tauri/aphrody-tauri-runtime", version = "1.4.4" }
-tauri-macros = { package = "aphrody-tauri-macros", path = "crates/tauri/aphrody-tauri-macros", version = "1.4.4" }
 tauri-codegen = { package = "aphrody-tauri-codegen", path = "crates/tauri/aphrody-tauri-codegen", version = "1.4.4" }
 [workspace.lints.rust]
 unsafe_op_in_unsafe_fn = "deny"

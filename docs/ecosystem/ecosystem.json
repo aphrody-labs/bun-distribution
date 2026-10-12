@@ -989,20 +989,6 @@
           ]
         },
         {
-          "name": "aphrody-tauri-macros",
-          "path": "crates/tauri/aphrody-tauri-macros",
-          "description": "Macros for the tauri crate.",
-          "bins": [],
-          "features": [
-            "compression",
-            "config-json5",
-            "config-toml",
-            "custom-protocol",
-            "isolation",
-            "tracing"
-          ]
-        },
-        {
           "name": "aphrody-tauri-plugin",
           "path": "crates/tauri/aphrody-tauri-plugin",
           "description": "Build script and runtime Tauri plugin definitions",
