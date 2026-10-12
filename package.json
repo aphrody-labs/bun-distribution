@@ -2,7 +2,7 @@
   "name": "@aphrody/material",
   "version": "1.4.4",
   "private": true,
-  "description": "Canonical, host-independent Material 3 monorepo for Aphrody, Bun and Chromium consumers.",
+  "description": "Monorepo indépendant de composants, tokens, thèmes et outils Material Design 3.",
   "workspaces": ["packages/*"],
   "packageManager": "bun@1.4.4",
   "scripts": {

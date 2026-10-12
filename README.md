@@ -1,16 +1,17 @@
-# Aphrody Material
+# Material 3
 
-Canonical Material 3 monorepo, independent of Aphrody, Bun and Chromium.
+Monorepo de composants, tokens, thèmes, icônes et outils Material Design 3.
 
-All first-party packages live directly below `packages/*` and are consumed by
-the three hosts through this repository as a Git submodule. Host integrations
-must remain adapters; Material 3 source does not import host APIs.
+Les packages sont regroupés directement sous `packages/*`. Les intégrations
+restent découplées du modèle de composants. `m3-bun` fournit les commandes
+Bun pour développer, tester, servir et empaqueter les applications M3.
 
 ## Layout
 
 ```text
-packages/*  independent M3 packages
-scripts/    workspace-level checks
+packages/*  packages M3
+scripts/    vérifications du workspace
+docs/       documentation de conception
 ```
 
 ## Development
