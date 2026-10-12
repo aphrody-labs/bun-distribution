@@ -240,6 +240,9 @@ test("the persistent VPS build runner restarts after a clean wrapper exit", () =
     join(hostRoot(), "systemd/aphrody/aphrody-shenron-build-runner.service"),
     "utf8",
   );
+  expect(unit).toContain("ConditionPathExists=/home/ubuntu/build/runners/shenron/.runner");
+  expect(unit).toContain("User=ubuntu");
+  expect(unit).toContain("WorkingDirectory=/home/ubuntu/build/runners/shenron");
   expect(unit).toContain("Restart=always");
   expect(unit).toContain("RestartSec=15");
 });

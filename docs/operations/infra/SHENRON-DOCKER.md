@@ -185,7 +185,7 @@ on the host toolchain. Shenron owns the call sites: `scripts/build/container.ts`
   `origin/main` (`checkout -f --detach`, `clean -ffd`; ignored caches and `target/` are kept). The release of
   2026-10-07 ended in `== EXIT 1` because it fast-forwarded the editable `~/shenron` itself and uncommitted edits
   there blocked `git merge --ff-only`; edits in `~/shenron` no longer affect a release.
-- **Runner** (`aphrody-vps-shenron`, user `shenron-build`, already in `docker`): `server-artifact.yml` runs
+- **Runner** (`aphrody-vps-shenron`, user `ubuntu`, group `aphrody`, already in `docker`): `server-artifact.yml` runs
   `bun ci` and `scripts/build/server.ts` (not in repo) through `container.ts --target-volume shenron-ci` (the runner cleans its
   checkout between jobs; `target/` lives in a volume). The production public VFS is a workflow input, default
   `/home/shenron-build/data/shenron-vfs.public.sqlite` (public profile, staged with a verified SHA-256);

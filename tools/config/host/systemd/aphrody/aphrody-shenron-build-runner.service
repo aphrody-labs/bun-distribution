@@ -3,16 +3,16 @@ Description=Aphrody VPS build factory runner for private Shenron releases
 After=network-online.target docker.service
 Wants=network-online.target
 Requires=docker.service
-ConditionPathExists=/home/shenron-build/runner/.runner
+ConditionPathExists=/home/ubuntu/build/runners/shenron/.runner
 
 [Service]
 Type=simple
-User=shenron-build
-Group=shenron-build
+User=ubuntu
+Group=aphrody
 SupplementaryGroups=docker
-WorkingDirectory=/home/shenron-build/runner
-Environment=PATH=/home/shenron-build/.bun/bin:/home/shenron-build/.cargo/bin:/usr/local/bin:/usr/bin:/bin
-ExecStart=/home/shenron-build/runner/run.sh
+WorkingDirectory=/home/ubuntu/build/runners/shenron
+Environment=PATH=/home/ubuntu/.bun/bin:/home/ubuntu/.cargo/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/ubuntu/build/runners/shenron/run.sh
 Restart=always
 RestartSec=15
 KillMode=control-group

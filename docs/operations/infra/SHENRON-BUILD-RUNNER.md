@@ -2,6 +2,15 @@
 
 ## Verified activation, 2026-10-07
 
+### Current VPS layout, 2026-10-12
+
+The runner now lives at `/home/ubuntu/build/runners/shenron` and runs as `ubuntu:aphrody`,
+as declared by `tools/config/host/vps/layout.json`. The former `/home/shenron-build/runner`
+copy was removed during the 2026-10-09 migration; the `shenron-build` account remains but
+does not run the service. Do not run the registration installer again: the current runner
+registration is retained. Its systemd unit uses `Restart=always` with a 15-second delay so a
+wrapper that exits successfully after a child failure cannot leave the runner stopped.
+
 Runner `aphrody-vps-shenron` (repository runner ID 21) is registered, online, and
 its canonical systemd service is enabled/active. Real trusted manual qualification
 [run 37598615282](https://github.com/aphrody-labs/shenron/actions/runs/37598615282)
