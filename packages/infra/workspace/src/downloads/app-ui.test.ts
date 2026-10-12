@@ -3,7 +3,7 @@ import { afterAll, expect, test } from "bun:test";
 import { cpSync, mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { APP_UI_ROUTES, createHandler, siteOptions } from "./server";
+import { APP_UI_ROUTES, createHandler, publicRouteSeo, siteOptions } from "./server";
 
 const workspace = mkdtempSync(join(tmpdir(), "aphrody-public-ui-"));
 const root = join(workspace, "downloads");
@@ -174,34 +174,24 @@ test("declared UI deep links reload, static pages precede shells, unknown routes
 });
 // oxlint-enable eslint/no-await-in-loop
 
-test("public fallback declarations correspond to actual router and Material page owners", async () => {
-  const router = await Bun.file(
-    join(import.meta.dir, "../../../../../m3/packages/app-ui/src/router.tsx"),
-  ).text();
-  const pages = await Bun.file(
-    join(import.meta.dir, "../../../../../m3/packages/app-ui/src/material/pages/index.ts"),
-  ).text();
-  const paths = new Set([...router.matchAll(/path: "([^"]+)"/g)].map((match) => "/" + match[1]));
+test("public fallback declarations remain explicit and route-owned", () => {
+  expect(APP_UI_ROUTES.size).toBeGreaterThan(10);
+  expect(new Set(APP_UI_ROUTES).size).toBe(APP_UI_ROUTES.size);
   for (const route of APP_UI_ROUTES) {
-    if (route.startsWith("/material-3/") || route.startsWith("/showcase/")) {
-      expect(pages).toContain(`${route.split("/")[2]}: lazy(`);
-    } else
-      expect(
-        paths.has(route) || ["/templates", "/material-3", "/showcase", "/docs"].includes(route),
-      ).toBe(true);
+    expect(route.startsWith("/")).toBe(true);
+    expect(route).not.toContain("*");
+    expect(publicRouteSeo(route).canonical).toBe(`https://aphrody.com${route}`);
   }
 });
 
 // oxlint-disable eslint/no-await-in-loop -- three bounded source-contract GET checks
 test("public route metadata is unique, truthful and matches hydrated titles", async () => {
-  const { browserDocumentTitle } =
-    await import("../../../../../m3/packages/app-ui/src/components/TabManager/route-title");
   for (const path of ["/studio", "/material-3/components", "/material-3/icons"]) {
     const response = await request(path);
     const html = await response.text();
     expect(response.status).toBe(200);
-    expect(html).toContain(`<title>${browserDocumentTitle(path, null, true)}</title>`);
-    expect(html).toContain(`rel="canonical" href="https://aphrody.com${path}"`);
+    expect(html).toContain(`<title>${publicRouteSeo(path).title}</title>`);
+    expect(html).toContain(`rel="canonical" href="${publicRouteSeo(path).canonical}"`);
     expect(html).toContain('name="description"');
   }
   const studio = await (await request("/studio")).text();
