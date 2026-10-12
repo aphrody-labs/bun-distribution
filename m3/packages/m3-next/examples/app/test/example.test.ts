@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// The example's configuration and files, without starting Next: `scripts/yolo-example.ts` builds and serves it.
+// The example's configuration and files, without starting Next: `scripts/bun-example.ts` builds and serves it.
 import { beforeAll, describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import { join } from "node:path";

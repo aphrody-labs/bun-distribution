@@ -330,9 +330,9 @@ if (import.meta.main) {
       );
     }
     if (rows.length > 0)
-      extra += `## Example apps, built and measured through yolo
+      extra += `## Example apps, built and measured through Bun
 
-\`yolo web build\` on Bun ${Bun.version}: Next 16.3.8 with Turbopack, Turbopack workers on Bun too (the \`m3-next\` runner puts a Bun \`node\` first on PATH). Client assets are the files under \`static/\` (JS and CSS, unminified sum of every chunk the build emits, all routes). Cold removes \`.next\` (and \`out\`); warm keeps the build cache. Times are the wall time of the yolo command, median of three (runs listed), on a shared WSL machine.
+\`m3-next build\` on Bun ${Bun.version}: Next 16.3.8 with Turbopack, Turbopack workers on Bun too (the \`m3-next\` runner puts a Bun \`node\` first on PATH). Client assets are the files under \`static/\` (JS and CSS, unminified sum of every chunk the build emits, all routes). Cold removes \`.next\` (and \`out\`); warm keeps the build cache. Times are the wall time of the Bun command, median of three (runs listed), on native Windows or the selected qualified build host.
 
 | App | Client JS | Client CSS | Cold build | Warm build |
 | --- | --- | --- | --- | --- |

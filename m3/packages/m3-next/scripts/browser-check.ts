@@ -4,7 +4,7 @@
 // computed, and the theme round trip (client toggle -> cookie -> server render).
 //
 //   bun scripts/browser-check.ts [--base http://localhost:3218]     (server running: `bun run start` in examples/app)
-//   bun scripts/yolo-example.ts browser                             (builds with yolo, starts the server, runs this)
+//   bun scripts/bun-example.ts browser                             (builds with Bun, starts the server, runs this)
 //
 // The browser is Bun.WebView driven through @aphrody/bun-webview-page (Chrome, Chromium or Edge found on PATH or in
 // BUN_CHROME_PATH); no Playwright and no browser download.

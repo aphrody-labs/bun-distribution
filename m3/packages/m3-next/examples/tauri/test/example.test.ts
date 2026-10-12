@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// The static export's configuration and files, without starting Next: `scripts/yolo-example.ts export` builds it.
+// The static export's configuration and files, without starting Next: `scripts/bun-example.ts export` builds it.
 import { beforeAll, describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";

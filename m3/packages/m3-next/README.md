@@ -3,7 +3,7 @@
 # `@aphrody/m3-next`
 
 Next.js 16 for the M3 stack: App Router, Cache Components, `proxy.ts`, React Compiler, typed routes, Tailwind v4 and Base UI,
-run on Bun with no Node. `examples/app` is a working app (build and serve through yolo), `examples/tauri` the static export a
+run on Bun with no Node. `examples/app` is a working app (build and serve through Bun), `examples/tauri` the static export a
 Tauri webview loads.
 
 | Import                    | Runtime                            | Contents                                                                                                                                          |
@@ -13,7 +13,7 @@ Tauri webview loads.
 | `@aphrody/m3-next/client` | `'use client'`                     | `M3ThemeProvider`, `M3NextThemeProvider`, `useM3Theme`, `useM3ThemeToggle`                                                                        |
 | `@aphrody/m3-next/proxy`  | `proxy.ts`                         | `createM3Proxy`: every page request carries a valid theme cookie                                                                                  |
 | `@aphrody/m3-next/m3.css` | CSS                                | tokens, expressive tokens, colour roles and the Tailwind preset (`@aphrody/m3-tailwind`)                                                          |
-| `m3-next` (bin)           | Bun                                | runs the app's Next on Bun: `m3-next dev \| build \| start` (in the Aphrody checkout: `yolo m3 next`)                                             |
+| `m3-next` (bin)           | Bun                                | runs the app's Next on Bun: `m3-next dev \| build \| start`                                             |
 
 ## Set up
 
@@ -112,12 +112,11 @@ lives in `theme-proxy.ts` (exported as `@aphrody/m3-next/proxy`).
 ## Examples and checks
 
 ```sh
-bun scripts/yolo-example.ts check          # yolo web build, yolo web dev, next start, yolo tauri build; curl every route
-bun scripts/yolo-example.ts bench          # cold and warm yolo web build, three runs each
+bun scripts/bun-example.ts check           # Bun build, Bun dev, next start and static export; curl every route
+bun scripts/bun-example.ts bench           # cold and warm Bun build, three runs each
 bun scripts/bundle-report.ts --examples    # bundle sizes (docs/reports/M3-NEXT-BUNDLE.md)
 bun run test                               # unit tests, then the DOM tests (happy-dom preload)
 ```
 
-`yolo web build|dev` runs `bun run build|dev` in `$YOLO_HOME/m3/packages/app-ui`; `scripts/yolo-example.ts` points `YOLO_HOME` at a temporary
-directory whose `m3/packages/app-ui` is the example (a symlink under the temp dir), so nothing is written into yolo or this repository.
+`m3-next build|dev` runs directly in the selected example directory; `scripts/bun-example.ts` keeps all outputs within that example and uses no external workspace runner.
 Migrating an existing app to this stack: `@aphrody/m3-next-migrate` (`next-migrate codemod all <dir>`).
