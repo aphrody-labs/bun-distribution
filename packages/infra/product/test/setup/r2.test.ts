@@ -34,6 +34,9 @@ test("R2 plans bind archive identity and checksums and expose bunx native alias"
   const plan = await r2Plan("bun", fetcher());
   expect(plan.url).toBe(`${R2_DIST}/bun/bun-windows-x64.zip`);
   expect(plan.aliases["bunx.exe"]).toBe("bun.exe");
+  const versioned = await r2Plan("bun", fetcher({ path: "aphrody-v1.4.4" }));
+  expect(versioned.url).toBe(`${R2_DIST}/bun/aphrody-v1.4.4/bun-windows-x64.zip`);
+  await expect(r2Plan("bun", fetcher({ path: "../escape" }))).rejects.toThrow("path");
   for (const change of [
     { product: "other" },
     { platform: "linux-x64" },

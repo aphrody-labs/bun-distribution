@@ -41,7 +41,7 @@ if (import.meta.main) {
   if (
     assets &&
     (assets.schemaVersion !== 1 ||
-      assets.baseUrl !== "https://pub-0b56d0e2b2134c988df85460fe516cd2.r2.dev")
+      assets.baseUrl !== "https://assets.aphrody.app")
   )
     throw new Error("Unqualified public assets configuration");
   const bunCheckout = resolve(

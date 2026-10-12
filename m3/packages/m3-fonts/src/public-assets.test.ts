@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { expect, test } from "bun:test";
 import { FONTS, publicFontUrl, renderPublicStylesheet, renderStylesheet } from "./index";
-const base = "https://pub-0b56d0e2b2134c988df85460fe516cd2.r2.dev";
+const base = "https://assets.aphrody.app";
 test("public font sheets preserve manifest face metadata and map flat R2 names", () => {
   for (const sheet of ["core", "jp", "symbols"] as const) {
     const css = renderPublicStylesheet(base, sheet);

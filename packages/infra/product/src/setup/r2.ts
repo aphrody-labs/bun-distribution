@@ -5,7 +5,7 @@ import { join } from "node:path";
 import type { Context } from "../admin/lib/context.ts";
 import { stepAphrody as legacyStepAphrody, type Step } from "../admin/lib/steps.ts";
 
-export const R2_DIST = "https://pub-2a25b78efa294362ad9d988bb2deffeb.r2.dev";
+export const R2_DIST = "https://dist.aphrody.app";
 export type R2Product = "bun" | "aphrody";
 export interface R2Manifest {
   product: R2Product;
@@ -18,6 +18,8 @@ export interface R2Manifest {
   aliases: string[];
   revision?: string;
   updated?: string;
+  /** Release directory holding the archive and its SHA256SUMS.txt (bun/<tag>/), else the product root. */
+  path?: string;
 }
 export interface R2Plan {
   manifest: R2Manifest;
@@ -98,12 +100,20 @@ export async function r2Plan(
   fetchImpl: Context["fetchImpl"] = fetch,
 ): Promise<R2Plan> {
   const base = `${R2_DIST}/${product}`;
-  const [response, checksums] = await Promise.all([
-    fetchImpl(`${base}/manifest.json`, { signal: AbortSignal.timeout(15000), cache: "no-store" }),
-    fetchImpl(`${base}/SHA256SUMS.txt`, { signal: AbortSignal.timeout(15000), cache: "no-store" }),
-  ]);
-  if (!response.ok || !checksums.ok) throw new Error(`R2 ${product} metadata unavailable`);
+  const response = await fetchImpl(`${base}/manifest.json`, {
+    signal: AbortSignal.timeout(15000),
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error(`R2 ${product} metadata unavailable`);
   const manifest = (await response.json()) as R2Manifest;
+  if (manifest.path !== undefined && !names.test(manifest.path))
+    throw new Error("Invalid R2 manifest path");
+  const dir = manifest.path ? `${base}/${manifest.path}` : base;
+  const checksums = await fetchImpl(`${dir}/SHA256SUMS.txt`, {
+    signal: AbortSignal.timeout(15000),
+    cache: "no-store",
+  });
+  if (!checksums.ok) throw new Error(`R2 ${product} metadata unavailable`);
   if (
     manifest.product !== product ||
     manifest.platform !== "windows-x64" ||
@@ -138,7 +148,7 @@ export async function r2Plan(
     throw new Error("R2 Bun must provide bun and bunx aliases");
   return {
     manifest,
-    url: `${base}/${manifest.archive}`,
+    url: `${dir}/${manifest.archive}`,
     binaries,
     aliases: Object.fromEntries(
       manifest.aliases.map((alias) => [

@@ -127,7 +127,7 @@ test("static docs runtime installers and download host remain isolated", async (
   expect((await request("/_app-ui/.env")).status).toBe(404);
 });
 test("public assets opt in by artifact manifest and CSP admits only the declared R2 origin", async () => {
-  const origin = "https://pub-0b56d0e2b2134c988df85460fe516cd2.r2.dev";
+  const origin = "https://assets.aphrody.app";
   const manifest = join(ui, "public-assets.json");
   writeFileSync(manifest, JSON.stringify({ schemaVersion: 1, baseUrl: origin }));
   try {

@@ -6,7 +6,7 @@ import {
   publicPetSymbol,
   publicMaterialSymbolsIndex,
 } from "./public-assets";
-const base = "https://pub-0b56d0e2b2134c988df85460fe516cd2.r2.dev";
+const base = "https://assets.aphrody.app";
 test("public assets use explicit object paths while local atlas remains unchanged", () => {
   expect(publicPetAtlas("local.webp")).toBe("local.webp");
   expect(publicPetAtlas("local.webp", base)).toBe(base + "/pet/spritesheet.webp");

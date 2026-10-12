@@ -354,9 +354,9 @@ const SITE_TYPES: Record<string, string> = {
 
 /** The site loads its M3 tokens, fonts and Material Symbols from cdn.aphrody.com. */
 const SITE_CSP =
-  "default-src 'self'; img-src 'self' data: https:; media-src 'self' https:; style-src 'self' 'unsafe-inline' https://cdn.aphrody.com; font-src 'self' https://cdn.aphrody.com https://pub-0b56d0e2b2134c988df85460fe516cd2.r2.dev; script-src 'self'; connect-src 'self' https://api.github.com https://pub-0b56d0e2b2134c988df85460fe516cd2.r2.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+  "default-src 'self'; img-src 'self' data: https:; media-src 'self' https:; style-src 'self' 'unsafe-inline' https://cdn.aphrody.com; font-src 'self' https://cdn.aphrody.com https://assets.aphrody.app; script-src 'self'; connect-src 'self' https://api.github.com https://assets.aphrody.app; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
-const PUBLIC_ASSETS_ORIGIN = "https://pub-0b56d0e2b2134c988df85460fe516cd2.r2.dev";
+const PUBLIC_ASSETS_ORIGIN = "https://assets.aphrody.app";
 function artifactAssetsBase(root: string): string | undefined {
   const file = resolveSiteFile(root, "/public-assets.json");
   if (!file) return undefined;

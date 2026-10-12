@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "owner": "aphrody-dev",
-  "baseUrl": "https://pub-0b56d0e2b2134c988df85460fe516cd2.r2.dev",
+  "baseUrl": "https://assets.aphrody.app",
   "petAtlas": "pet/spritesheet.webp",
   "petSymbols": "pet/symbols/",
   "fontDirectory": "m3/fonts/",
