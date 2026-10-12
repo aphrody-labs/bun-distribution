@@ -27,6 +27,12 @@ workspace = true
 default = ["tooling"]
 tooling = ["dep:aphrody-n2b-core", "dep:memchr", "dep:aphrody-oxc-bridge"]
 inference = ["dep:aphrody-llama-server", "dep:aphrody-model-client", "dep:aphrody-models", "dep:futures"]
+# Keep the native CLI and the in-process CLI on the same command feature surface.
+# The binary facade in crates/infra/aphrody forwards these exact capabilities.
+native = ["aphrody-command/native"]
+rag = ["aphrody-command/rag"]
+train = ["aphrody-command/train"]
+mcp-toolbox = ["aphrody-command/mcp-toolbox"]
 gpu = ["aphrody-bun/gpu", "yolo-runtime/gpu"]
 # NVIDIA CUDA (official driver, loaded at run time) on top of the shared GPU hub.
 cuda = ["gpu", "yolo-runtime/cuda"]
