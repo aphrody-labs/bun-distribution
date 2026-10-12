@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { mock } from "bun:test";
 // oxlint-disable-next-line import/no-unassigned-import -- registers the DOM before UI imports
-import "../../../packages/bun/test-dom/src/index";
+import "@aphrody/m3-config/test/dom";
 import { createRequire } from "node:module";
 
 // Bun's test loader does not run the Bun.build resolver for CommonJS peers.

@@ -2,7 +2,7 @@
 // Real React DOM interactions against isolated native owner responses.
 // No live service, inference, protected conversation or clipboard is used.
 // oxlint-disable-next-line no-unassigned-import -- register the existing DOM owner before component imports
-import "../../../../packages/bun/test-dom/src/index";
+import "@aphrody/m3-config/test/dom";
 import { afterAll, afterEach, expect, spyOn, test } from "bun:test";
 import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
