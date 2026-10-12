@@ -4,7 +4,7 @@
 // wrangler deploy, no systemctl, no nginx reload, no tauri build, no registry write, no theme install,
 // no Lambda publish, no GitHub release.
 import { join, resolve } from "node:path";
-import { yoloRoot, writeFiles, type GeneratedFile } from "../util.ts";
+import { bunRoot, writeFiles, type GeneratedFile } from "../util.ts";
 import type { M3App } from "../config.ts";
 import { cloudflare } from "./cloudflare.ts";
 import { coolify } from "./coolify.ts";
@@ -73,7 +73,7 @@ export function contextFor(app: M3App, overrides: Partial<TargetContext> = {}): 
     outdir: app.outdir.slice(app.dir.length + 1).replaceAll("\\", "/") || "dist",
     ...(relativeApi ? { api: relativeApi } : {}),
     bunVersion: Bun.version,
-    yoloRoot: yoloRoot(),
+    bunRoot: bunRoot(),
     cli: "bunx --bun m3-bun",
     tls: "letsencrypt",
     ...(app.bun.compile?.windows ? { windows: app.bun.compile.windows } : {}),

@@ -11,7 +11,7 @@ export interface TargetContext {
   domain?: string;
   /** Container image reference. */
   image: string;
-  /** Install namespace under `~/apps` (one home per host) and `/etc` (yolo host convention). */
+  /** Install namespace under `~/apps` (one home per host) and `/etc`. */
   namespace: string;
   /** Unprivileged account of the systemd unit. */
   user: string;
@@ -25,13 +25,13 @@ export interface TargetContext {
   api?: string;
   /** Bun version the app is built with. */
   bunVersion: string;
-  /** The yolo checkout (host conventions are read from `tools/config/host`). */
-  yoloRoot: string;
+  /** The Bun owner checkout (host conventions are read from `tools/config/host`). */
+  bunRoot: string;
   /** How generated scripts invoke the CLI (`bunx --bun m3-bun`). */
   cli: string;
   /** TLS for nginx: Let's Encrypt paths (default) or explicit certificate files. */
   tls: "letsencrypt" | { cert: string; key: string };
-  /** HTTP/2 in the nginx vhost: the `http2 on;` directive of nginx 1.25.1+ (the yolo convention, default) or `listen ... http2`. */
+  /** HTTP/2 in the nginx vhost: the `http2 on;` directive of nginx 1.25.1+ or `listen ... http2`. */
   http2?: "directive" | "listen";
   /** Windows executable metadata; `icon` is relative to the app (`.ico` is used as is, `.svg` is converted). */
   windows?: { title?: string; publisher?: string; description?: string; icon?: string };

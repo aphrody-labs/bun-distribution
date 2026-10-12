@@ -126,7 +126,7 @@ describe("docker", () => {
 });
 
 describe("systemd", () => {
-  test("the unit has the shape of the yolo host units", () => {
+  test("the unit has the shape of the Aphrody host units", () => {
     const unit = read("systemd", "hello-m3.service");
     expect(unit).toContain("[Unit]");
     for (const line of [
@@ -143,7 +143,7 @@ describe("systemd", () => {
     ])
       expect(unit).toContain(line);
   });
-  test("the sandbox is the shared drop-ins, byte for byte from the yolo checkout when it is there", () => {
+  test("the sandbox is the shared drop-ins, byte for byte from the Bun owner when it is there", () => {
     const names = [
       "sandbox-base.conf",
       "sandbox-home-ro.conf",
@@ -154,13 +154,13 @@ describe("systemd", () => {
     names.forEach((name, i) => {
       expect(
         read("systemd", `hello-m3.service.d/${String(10 + i * 10).padStart(2, "0")}-${name}`),
-      ).toBe(sharedDropin(ctx.yoloRoot, name));
+      ).toBe(sharedDropin(ctx.bunRoot, name));
     });
     expect(sharedDropin("/nonexistent", "sandbox-base.conf")).toContain("ProtectSystem=strict");
-    if (existsSync(join(ctx.yoloRoot, "tools/config/host/systemd/shared/sandbox-base.conf"))) {
-      expect(sharedDropin(ctx.yoloRoot, "sandbox-base.conf")).toBe(
+    if (existsSync(join(ctx.bunRoot, "tools/config/host/systemd/shared/sandbox-base.conf"))) {
+      expect(sharedDropin(ctx.bunRoot, "sandbox-base.conf")).toBe(
         readFileSync(
-          join(ctx.yoloRoot, "tools/config/host/systemd/shared/sandbox-base.conf"),
+          join(ctx.bunRoot, "tools/config/host/systemd/shared/sandbox-base.conf"),
           "utf8",
         ),
       );
@@ -238,7 +238,7 @@ describe("nginx", () => {
       "failed (23): renderer denied",
     );
   });
-  test("vhost model: upstream with keepalive, ACME and redirect on :80, TLS on :443, the yolo proxy snippet", () => {
+  test("vhost model: upstream with keepalive, ACME and redirect on :80, TLS on :443, the proxy snippet", () => {
     const model = json("nginx", "hello-m3.nginx.json") as NginxModel;
     expect(model).toEqual(vhostModel(ctx));
     expect(model.upstreams).toEqual([
@@ -300,7 +300,7 @@ describe("nginx", () => {
     async () => {
       const dir = tmp("m3-bun-nginx-");
       mkdirSync(join(dir, "snippets"), { recursive: true });
-      const snippet = join(ctx.yoloRoot, "tools/config/host/nginx/snippets/proxy-client-ip.inc");
+      const snippet = join(ctx.bunRoot, "tools/config/host/nginx/snippets/proxy-client-ip.inc");
       writeFileSync(
         join(dir, "snippets/proxy-client-ip.inc"),
         existsSync(snippet)

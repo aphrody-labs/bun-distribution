@@ -36,7 +36,7 @@ export interface M3BunDeploy {
   image?: string;
   /** Install namespace under `~/apps` and `/etc` for systemd (default `aphrody`). */
   namespace?: string;
-  /** Unprivileged account of the systemd unit (default `ubuntu`, the yolo host convention). */
+  /** Unprivileged account of the systemd unit (default `ubuntu`). */
   user?: string;
   /** Fly.io primary region (default `cdg`). */
   region?: string;

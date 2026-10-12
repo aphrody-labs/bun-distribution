@@ -9,7 +9,7 @@
 //   m3-bun deploy   <target..|all> [--out d] [--domain h] [--name n] [--port n] [--image r] ...      configs, never applied
 //   m3-bun graph    [file] [--registry r] [--json]               recorded builds (bun:graph), or what depends on a file
 //   m3-bun targets                                              the deploy targets
-//   m3-bun smoke    [executable] [--port n]                     run it (yolo runtime when installed), GET /, /healthz, /api/m3/info
+//   m3-bun smoke    [executable] [--port n]                     run it, GET /, /healthz, /api/m3/info
 //   m3-bun workspace <build|typecheck|clean> [--only a,b] [--no-cache]          the repository pipeline (scripts/build.ts)
 //   m3-bun pack     [package-dir] [--out d]                     build a workspace package and `bun pm pack` it
 //   m3-bun lint     [paths..] [--strict] [--fix] [--correctness]     eslint-plugin-m3 rules through oxlint
