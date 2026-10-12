@@ -192,9 +192,9 @@ factory profile revision:
     [[ "$2" =~ ^[0-9a-f]{40}$ ]] || { echo 'Factory revision must be a full Git SHA.' >&2; exit 64; }
     exec ./bin/aphrody ops build-factory run --repo yolo --revision "$2" "${source_scope[@]}" -- just "$recipe"
 
-# Install the forked Tauri CLI (`cargo tauri`) from crates/tauri/aphrody-tauri-cli
+# Install the forked Tauri CLI (`cargo tauri`) from the Bun fork.
 install-cli:
-    "{{cargo_owner}}" install --path crates/tauri/aphrody-tauri-cli --locked
+    "{{cargo_owner}}" install --path ../../bun/packages/bun-tauri/crates/aphrody-tauri-cli --locked
 
 # Autonomous Code Generation Engine (from Bun upstream)
 generate:
