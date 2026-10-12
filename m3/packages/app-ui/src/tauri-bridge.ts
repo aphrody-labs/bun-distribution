@@ -146,7 +146,7 @@ export async function pickDirectory(
 ): Promise<string | null> {
   if (isTauri()) {
     try {
-      const { open } = await import("@aphrody/plugin-dialog");
+      const { open } = await import("@aphrody/tauri/plugins/dialog");
       const result = await open({
         title,
         defaultPath,
@@ -169,7 +169,7 @@ export async function pickFile(
 ): Promise<string | null> {
   if (isTauri()) {
     try {
-      const { open } = await import("@aphrody/plugin-dialog");
+      const { open } = await import("@aphrody/tauri/plugins/dialog");
       const result = await open({
         title,
         defaultPath,
@@ -193,7 +193,7 @@ export async function saveFileDialog(options: {
 }): Promise<string | null> {
   if (isTauri()) {
     try {
-      const { save } = await import("@aphrody/plugin-dialog");
+      const { save } = await import("@aphrody/tauri/plugins/dialog");
       return await save(options);
     } catch {
       return tauriInvoke<string | null>("plugin:dialog|save", { options });
@@ -205,7 +205,7 @@ export async function saveFileDialog(options: {
 export async function confirmNative(message: string, title = "Confirmation"): Promise<boolean> {
   if (isTauri()) {
     try {
-      const { confirm } = await import("@aphrody/plugin-dialog");
+      const { confirm } = await import("@aphrody/tauri/plugins/dialog");
       return await confirm(message, { title, kind: "warning" });
     } catch {
       const res = await tauriInvoke<string>("plugin:dialog|message", {
@@ -230,7 +230,7 @@ export async function messageNative(
 ): Promise<void> {
   if (isTauri()) {
     try {
-      const { message: msg } = await import("@aphrody/plugin-dialog");
+      const { message: msg } = await import("@aphrody/tauri/plugins/dialog");
       await msg(message, { title, kind });
       return;
     } catch {

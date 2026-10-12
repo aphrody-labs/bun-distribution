@@ -4,7 +4,7 @@
 // every `aphrody` child as APHRODY_MODELS_DIR by crates/ui/app).
 import { AphrodyAvatar } from "@aphrody/identity";
 import { Button, Icon, Kbd } from "@aphrody/m3-primitives";
-import { open } from "@aphrody/plugin-dialog";
+import { open } from "@aphrody/tauri/plugins/dialog";
 import { useEffect, useState } from "react";
 import { fetchModelStoreRoot } from "./tauri-bridge";
 

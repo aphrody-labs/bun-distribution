@@ -74,7 +74,7 @@
     "@aphrody/m3-theme": "workspace:*",
     "@aphrody/m3-tokens": "workspace:*",
     "@aphrody/material-design-icons": "workspace:*",
-    "@aphrody/plugin-dialog": "workspace:*",
+    "@aphrody/tauri": "file:../../../../bun/packages/bun-tauri",
     "@aphrody/qr": "workspace:*",
     "@aphrody/scaffold": "workspace:*",
     "@aphrody/web-source": "workspace:*",

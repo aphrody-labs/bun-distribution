@@ -248,7 +248,7 @@ export function QuickBar() {
 
   const attachFile = async () => {
     try {
-      const { open } = await import("@aphrody/plugin-dialog");
+      const { open } = await import("@aphrody/tauri/plugins/dialog");
       const picked = await open({ title: "Joindre un fichier", multiple: true, directory: false });
       const paths = Array.isArray(picked) ? picked : picked ? [picked] : [];
       setAttachments((items) => [
