@@ -1,17 +1,17 @@
 # Material 3
 
-Monorepo de composants, tokens, thèmes, icônes et outils Material Design 3.
+Monorepo for Material Design 3 components, tokens, themes, icons, and tools.
 
-Les packages sont regroupés directement sous `packages/*`. Les intégrations
-restent découplées du modèle de composants. `m3-bun` fournit les commandes
-Bun pour développer, tester, servir et empaqueter les applications M3.
+Packages are grouped directly under `packages/*`. Integrations remain decoupled
+from the component model. `m3-bun` provides Bun commands for developing,
+testing, serving, and packaging M3 applications.
 
 ## Layout
 
 ```text
-packages/*  packages M3
-scripts/    vérifications du workspace
-docs/       documentation de conception
+packages/*  M3 packages
+scripts/    workspace checks
+docs/       design documentation
 ```
 
 ## Development

@@ -1,32 +1,30 @@
 # Material Design 3
 
-## Principes
+## Principles
 
-Material Design 3 organise l'interface autour de composants réutilisables et
-de tokens sémantiques. Les tokens décrivent l'intention visuelle, tandis que
-les composants appliquent ces valeurs à leur structure et à leurs états.
+Material Design 3 organizes interfaces around reusable components and semantic
+tokens. Tokens describe visual intent, while components apply those values to
+their structure and states.
 
-## Couleur
+## Color
 
-Les rôles de couleur distinguent notamment la surface, le contenu, les
-contours et les couleurs d'accent. Une paire claire/sombre doit conserver un
-contraste lisible et des relations cohérentes entre les rôles.
+Color roles distinguish surfaces, content, outlines, and accent colors. A
+light/dark pair should preserve readable contrast and consistent relationships
+between roles.
 
-## États et interaction
+## States and interaction
 
-Les composants exposent des états explicites : repos, survol, focus, pression,
-sélection, désactivation et erreur. Les états ne doivent pas dépendre d'une
-couleur isolée ; ils doivent rester identifiables avec un contraste adapté.
+Components expose explicit states: rest, hover, focus, pressed, selected,
+disabled, and error. States should not depend on a single color; they should
+remain identifiable with appropriate contrast.
 
-## Thèmes
+## Themes
 
-Un thème regroupe les tokens de couleur, typographie, forme et élévation. Les
-packages de tokens produisent les valeurs consommées par les composants et les
-feuilles de style. Les applications peuvent définir une source de couleur
-personnalisée sans modifier les composants.
+A theme groups color, typography, shape, and elevation tokens. Token packages
+produce values consumed by components and stylesheets. Applications can define
+a custom color source without modifying components.
 
-## Développement avec m3-bun
+## Development with m3-bun
 
-`m3-bun` fournit l'outillage Bun pour lancer les vérifications, les tests et
-les commandes de développement des packages M3. Il ne définit pas le modèle
-de conception ; il l'exécute et le distribue.
+`m3-bun` provides Bun tooling for checks, tests, and development commands for
+M3 packages. It does not define the design system; it runs and distributes it.
