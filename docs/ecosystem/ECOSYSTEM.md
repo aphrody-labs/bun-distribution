@@ -117,7 +117,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-tauri` | crates/tauri/aphrody-tauri | Make tiny, secure apps for all desktop platforms with Tauri |  | common-controls-v6, compression, config-json5, config-toml, custom-protocol, data-url, default, devtools, dynamic-acl, gtk4, http-range, image, image-ico, image-png, isolation, linux-libxdo, native-tls, native-tls-vendored, process-relaunch-dangerous-allow-symlink-macos, protocol-asset, rustls-tls, specta, test, tracing, tray-icon, unstable, uuid, webview-data-url, webview2-com |
 | `aphrody-tauri-bundler` | crates/tauri/aphrody-tauri-bundler | Wrap rust executables in OS-specific app bundles for Tauri |  | default, native-tls, native-tls-vendored, platform-certs, rustls |
 | `aphrody-tauri-cli` | crates/tauri/aphrody-tauri-cli | Command line interface for building Tauri apps |  | default, native-tls, native-tls-vendored, platform-certs, rustls |
-| `aphrody-tauri-plugin` | crates/tauri/aphrody-tauri-plugin | Build script and runtime Tauri plugin definitions |  | build, runtime |
 | `aphrody-tauri-plugin-autostart` | crates/tauri/aphrody-tauri-plugin-autostart | Automatically launch your application at startup. |  |  |
 | `aphrody-tauri-plugin-clipboard-manager` | crates/tauri/aphrody-tauri-plugin-clipboard-manager | Read and write to the system clipboard. |  |  |
 | `aphrody-tauri-plugin-deep-link` | crates/tauri/aphrody-tauri-plugin-deep-link | Set your Tauri application as the default handler for an URL |  |  |

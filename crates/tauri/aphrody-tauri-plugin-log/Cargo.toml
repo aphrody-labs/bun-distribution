@@ -27,7 +27,7 @@ ios = { level = "full", notes = "" }
 name = "tauri_plugin_log"
 
 [build-dependencies]
-tauri-plugin = { version = "1.4.4", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
+tauri-plugin = { version = "1.4.4", path = "../../../../bun/packages/bun-tauri/crates/aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }

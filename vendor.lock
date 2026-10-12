@@ -37,14 +37,6 @@
       "dir": "crates/tauri/aphrody-tauri-cli"
     },
     {
-      "name": "tauri-plugin",
-      "package": "aphrody-tauri-plugin",
-      "version": "3.0.0-alpha.3",
-      "source": "tauri",
-      "from": "crates/tauri-plugin",
-      "dir": "crates/tauri/aphrody-tauri-plugin"
-    },
-    {
       "name": "tauri-plugin-autostart",
       "package": "aphrody-tauri-plugin-autostart",
       "version": "3.0.0-alpha.2",

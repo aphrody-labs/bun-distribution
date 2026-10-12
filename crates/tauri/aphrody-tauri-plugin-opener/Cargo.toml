@@ -25,7 +25,7 @@ ios = { level = "partial", notes = "Only allows to open URLs via `open`" }
 name = "tauri_plugin_opener"
 
 [build-dependencies]
-tauri-plugin = { version = "1.4.4", path = "../aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
+tauri-plugin = { version = "1.4.4", path = "../../../../bun/packages/bun-tauri/crates/aphrody-tauri-plugin", package = "aphrody-tauri-plugin", features = ["build"] }
 schemars = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 

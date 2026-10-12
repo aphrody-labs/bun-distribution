@@ -419,7 +419,7 @@ grass = "0.13"
 aphrody-drive = { path = "crates/ui/drive", version = "1.4.4" }
 tokio-util = { version = "0.7", features = ["io"] }
 swift-rs = { version = "1.0" }
-tauri-plugin = { package = "aphrody-tauri-plugin", path = "crates/tauri/aphrody-tauri-plugin", version = "1.4.4" }
+tauri-plugin = { package = "aphrody-tauri-plugin", path = "../../bun/packages/bun-tauri/crates/aphrody-tauri-plugin", version = "1.4.4" }
 tauri-utils = { package = "aphrody-tauri-utils", path = "crates/tauri/aphrody-tauri-utils", version = "1.4.4" }
 tauri-runtime = { package = "aphrody-tauri-runtime", path = "crates/tauri/aphrody-tauri-runtime", version = "1.4.4" }
 [workspace.lints.rust]

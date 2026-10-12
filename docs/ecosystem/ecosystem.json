@@ -960,16 +960,6 @@
           ]
         },
         {
-          "name": "aphrody-tauri-plugin",
-          "path": "crates/tauri/aphrody-tauri-plugin",
-          "description": "Build script and runtime Tauri plugin definitions",
-          "bins": [],
-          "features": [
-            "build",
-            "runtime"
-          ]
-        },
-        {
           "name": "aphrody-tauri-plugin-autostart",
           "path": "crates/tauri/aphrody-tauri-plugin-autostart",
           "description": "Automatically launch your application at startup.",
