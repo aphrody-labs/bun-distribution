@@ -61,13 +61,19 @@ m3-bun serve
 m3-bun compile
 m3-bun smoke
 m3-bun package
+m3-bun package --json
+m3-bun package --no-bytecode
 m3-bun deploy docker systemd nginx
 ```
 
 Development uses Bun HMR. Production serves the build directory and API from
 one process. Compilation generates a server entry, embeds the UI files and
 compiles it with Bun; it does not compile HTML into a server by itself. The
-default bytecode output is configurable through `compile.bytecode`.
+default bytecode output is configurable through `compile.bytecode`. Use
+`--no-bytecode` to override it for one `compile` or `package` invocation.
+`package --json` emits a stable release report with the archive, SHA-256,
+checksums, staged files and compile/rootfs metadata. Windows packages use ZIP;
+`zip.exe` is preferred and PowerShell `Compress-Archive` is the native fallback.
 
 `compile.target` selects a supported Bun target. It does not establish that the
 result runs on that target. Linux libraries/loader requirements must be included
