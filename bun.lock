@@ -127,6 +127,21 @@
         "zod": "catalog:",
       },
     },
+    "../bun/packages/aphrody-migrated/m3/aphrody-m3-motion": {
+      "name": "@aphrody/m3-motion",
+      "version": "1.4.4",
+      "dependencies": {
+        "motion": "catalog:",
+      },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+        "react-dom": "catalog:",
+      },
+      "peerDependencies": {
+        "motion": ">=12.0.0",
+        "react": ">=18.0.0",
+      },
+    },
     "../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes": {
       "name": "@aphrody/m3-os-themes",
       "version": "1.4.4",
@@ -157,6 +172,41 @@
         "react-resizable-layout": "catalog:",
         "sonner": "catalog:",
         "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": ">=18.0.0",
+        "react-dom": ">=18.0.0",
+        "tailwindcss": ">=4.1.0",
+      },
+    },
+    "../bun/packages/aphrody-migrated/m3/aphrody-m3-react": {
+      "name": "@aphrody/m3-react",
+      "version": "1.4.4",
+      "dependencies": {
+        "@aphrody/m3-tokens": "workspace:*",
+        "@aphrody/material-web": "catalog:",
+        "@lit/react": "catalog:",
+        "@tanstack/react-table": "catalog:",
+        "@tanstack/react-virtual": "catalog:",
+      },
+      "devDependencies": {
+        "@aphrody/m3-config": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": ">=18.0.0",
+        "react-dom": ">=18.0.0",
+      },
+    },
+    "../bun/packages/aphrody-migrated/m3/aphrody-m3-reader": {
+      "name": "@aphrody/m3-reader",
+      "version": "1.4.4",
+      "dependencies": {
+        "@tanstack/react-virtual": "catalog:",
+        "lucide-react": "catalog:",
+        "swiper": "catalog:",
       },
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
@@ -739,21 +789,6 @@
         "tailwindcss": ">=4.1.0",
       },
     },
-    "m3/packages/m3-motion": {
-      "name": "@aphrody/m3-motion",
-      "version": "1.4.4",
-      "dependencies": {
-        "motion": "catalog:",
-      },
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-        "react-dom": "catalog:",
-      },
-      "peerDependencies": {
-        "motion": ">=12.0.0",
-        "react": ">=18.0.0",
-      },
-    },
     "m3/packages/m3-next": {
       "name": "@aphrody/m3-next",
       "version": "1.4.4",
@@ -800,41 +835,6 @@
       },
       "devDependencies": {
         "@aphrody/m3-config": "workspace:*",
-      },
-    },
-    "m3/packages/m3-react": {
-      "name": "@aphrody/m3-react",
-      "version": "1.4.4",
-      "dependencies": {
-        "@aphrody/m3-tokens": "workspace:*",
-        "@aphrody/material-web": "catalog:",
-        "@lit/react": "catalog:",
-        "@tanstack/react-table": "catalog:",
-        "@tanstack/react-virtual": "catalog:",
-      },
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-      },
-      "peerDependencies": {
-        "react": ">=18.0.0",
-        "react-dom": ">=18.0.0",
-      },
-    },
-    "m3/packages/m3-reader": {
-      "name": "@aphrody/m3-reader",
-      "version": "1.4.4",
-      "dependencies": {
-        "@tanstack/react-virtual": "catalog:",
-        "lucide-react": "catalog:",
-        "swiper": "catalog:",
-      },
-      "devDependencies": {
-        "@aphrody/m3-config": "workspace:*",
-      },
-      "peerDependencies": {
-        "react": ">=18.0.0",
-        "react-dom": ">=18.0.0",
-        "tailwindcss": ">=4.1.0",
       },
     },
     "m3/packages/m3-tailwind": {
@@ -1439,7 +1439,7 @@
 
     "@aphrody/m3-mcp": ["@aphrody/m3-mcp@workspace:../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp"],
 
-    "@aphrody/m3-motion": ["@aphrody/m3-motion@workspace:m3/packages/m3-motion"],
+    "@aphrody/m3-motion": ["@aphrody/m3-motion@workspace:../bun/packages/aphrody-migrated/m3/aphrody-m3-motion"],
 
     "@aphrody/m3-next": ["@aphrody/m3-next@workspace:m3/packages/m3-next"],
 
@@ -1449,9 +1449,9 @@
 
     "@aphrody/m3-primitives": ["@aphrody/m3-primitives@workspace:../bun/packages/aphrody-migrated/m3/aphrody-m3-primitives"],
 
-    "@aphrody/m3-react": ["@aphrody/m3-react@workspace:m3/packages/m3-react"],
+    "@aphrody/m3-react": ["@aphrody/m3-react@workspace:../bun/packages/aphrody-migrated/m3/aphrody-m3-react"],
 
-    "@aphrody/m3-reader": ["@aphrody/m3-reader@workspace:m3/packages/m3-reader"],
+    "@aphrody/m3-reader": ["@aphrody/m3-reader@workspace:../bun/packages/aphrody-migrated/m3/aphrody-m3-reader"],
 
     "@aphrody/m3-tailwind": ["@aphrody/m3-tailwind@workspace:m3/packages/m3-tailwind"],
 

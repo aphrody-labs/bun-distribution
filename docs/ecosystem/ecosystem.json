@@ -1353,12 +1353,6 @@
           "bins": []
         },
         {
-          "name": "@aphrody/m3-motion",
-          "path": "m3/packages/m3-motion",
-          "description": "Material 3 animation plugin powered by Motion (formerly Framer Motion)",
-          "bins": []
-        },
-        {
           "name": "@aphrody/m3-next",
           "path": "m3/packages/m3-next",
           "description": "Next.js 16 App Router integration for the @aphrody Material Design 3 layer: withM3 config (React Compiler, Cache Components, typed routes, Tauri static export), M3Html/M3Root server components, a light 'use client' theme provider, a proxy.ts helper, metadata/viewport helpers, crawler files and the m3-next runner (Next on Bun, no Node; from @aphrody/next-bun).",
@@ -1374,18 +1368,6 @@
             "m3-next-migrate",
             "next-migrate"
           ]
-        },
-        {
-          "name": "@aphrody/m3-react",
-          "path": "m3/packages/m3-react",
-          "description": "React wrappers (@lit/react createComponent) for every <md-*> element of the @aphrody/material-web fork.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-reader",
-          "path": "m3/packages/m3-reader",
-          "description": "Material 3 manga and illustrated book readers for React",
-          "bins": []
         },
         {
           "name": "@aphrody/m3-tailwind",
@@ -10478,7 +10460,7 @@
     "sharedRepos": 0,
     "crates": 200,
     "binaries": 36,
-    "bunPackages": 97,
+    "bunPackages": 94,
     "pythonPackages": 10,
     "cliBinaries": 34,
     "cliCommands": 777,

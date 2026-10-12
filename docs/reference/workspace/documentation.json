@@ -2166,8 +2166,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "2b2519fdf8eb3bb84c4e65914397f4130c4ab43a86ecde0014b84f0e95b9696e",
-      "bytes": 58442,
+      "sha256": "01847001a189d2cf8e0309f6d031516a92cda002126dded6d989b9151d489ce3",
+      "bytes": 58051,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -6426,8 +6426,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "43576000904ca25ab6af8011bfc5656e7bb62e23f563a4841cc25bca42915854",
-      "bytes": 36013,
+      "sha256": "c85ceba2f929022dc7f50c835bf23bca5a28e50a1053981bba3c8efab8ac0557",
+      "bytes": 36205,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",
@@ -10704,16 +10704,6 @@
       "canonical": "m3/packages/m3-explorer/UPSTREAM-CHANGELOG.md"
     },
     {
-      "path": "m3/packages/m3-motion/README.md",
-      "title": "@aphrody/m3-motion",
-      "sha256": "1c0c5da92fc251fd54a8436eefb8f3e8f3959b88d3e19f1bd28a7cd2f3747159",
-      "bytes": 8101,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "m3/packages/m3-motion/README.md"
-    },
-    {
       "path": "m3/packages/m3-next-migrate/README.md",
       "title": "@aphrody/m3-next-migrate",
       "sha256": "8cf3c680258df714fca4cdc6242de88adeb746214ea6a8febbb2925649909ede",
@@ -10772,36 +10762,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "m3/packages/m3-next/examples/tauri/README.md"
-    },
-    {
-      "path": "m3/packages/m3-react/FRAMEWORKS.md",
-      "title": "Intégration frameworks (SSR / RSC) — @aphrody/m3-react",
-      "sha256": "ac51d9641e2edf4abb80edae5f889e430c96b46c1adefe9aaf219e50f37f1c92",
-      "bytes": 7053,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "m3/packages/m3-react/FRAMEWORKS.md"
-    },
-    {
-      "path": "m3/packages/m3-react/README.md",
-      "title": "@aphrody/m3-react",
-      "sha256": "b53b1648c4eeb497f9429d2a94a2008edf8b58ec96e323483843fdbc898ef900",
-      "bytes": 22363,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "m3/packages/m3-react/README.md"
-    },
-    {
-      "path": "m3/packages/m3-reader/README.md",
-      "title": "@aphrody/m3-reader",
-      "sha256": "5743e403fa007b57a8a1a2ee7d7642aa449d89588bd017585810c47224954975",
-      "bytes": 1568,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "m3/packages/m3-reader/README.md"
     },
     {
       "path": "m3/packages/m3-tailwind/README.md",

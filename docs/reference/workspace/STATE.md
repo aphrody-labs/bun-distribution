@@ -14,7 +14,7 @@ Totals: **127 crates**, **79 packages**, **0 apps** (127 Rust, 79 Bun).
 | --- | ---: | ---: | ---: | ---: |
 | [ai](#ai) | 37 | 2 | 0 | 0 |
 | [apps](#apps) | 0 | 1 | 0 | 0 |
-| [bun](#bun) | 0 | 22 | 0 | 0 |
+| [bun](#bun) | 0 | 25 | 0 | 0 |
 | [compat](#compat) | 4 | 0 | 0 | 0 |
 | [contracts](#contracts) | 3 | 0 | 0 | 0 |
 | [discord](#discord) | 0 | 1 | 0 | 0 |
@@ -24,7 +24,7 @@ Totals: **127 crates**, **79 packages**, **0 apps** (127 Rust, 79 Bun).
 | [ml](#ml) | 5 | 0 | 0 | 0 |
 | [native](#native) | 3 | 0 | 0 | 0 |
 | [os](#os) | 17 | 4 | 0 | 0 |
-| [packages](#packages) | 0 | 21 | 0 | 0 |
+| [packages](#packages) | 0 | 18 | 0 | 0 |
 | [pkg](#pkg) | 5 | 0 | 0 | 0 |
 | [shell](#shell) | 5 | 1 | 0 | 0 |
 | [tauri](#tauri) | 17 | 15 | 0 | 25 |
@@ -147,8 +147,11 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@aphrody/m3-front` | [../bun/packages/aphrody-migrated/m3/aphrody-m3-front](../../../../bun/packages/aphrody-migrated/m3/aphrody-m3-front) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-icons` | [../bun/packages/aphrody-migrated/m3/aphrody-m3-icons](../../../../bun/packages/aphrody-migrated/m3/aphrody-m3-icons) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-mcp` | [../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp](../../../../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-motion` | [../bun/packages/aphrody-migrated/m3/aphrody-m3-motion](../../../../bun/packages/aphrody-migrated/m3/aphrody-m3-motion) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-os-themes` | [../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes](../../../../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes) | bun package | 1.4.4 | bin, lib | yes | 0 | uncommitted |
 | `@aphrody/m3-primitives` | [../bun/packages/aphrody-migrated/m3/aphrody-m3-primitives](../../../../bun/packages/aphrody-migrated/m3/aphrody-m3-primitives) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-react` | [../bun/packages/aphrody-migrated/m3/aphrody-m3-react](../../../../bun/packages/aphrody-migrated/m3/aphrody-m3-react) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-reader` | [../bun/packages/aphrody-migrated/m3/aphrody-m3-reader](../../../../bun/packages/aphrody-migrated/m3/aphrody-m3-reader) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/web-source` | [../bun/packages/bun-aphrody-web](../../../../bun/packages/bun-aphrody-web) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/web-to-tauri` | [../bun/packages/bun-aphrody-web/integrations/m3/packages/web-to-tauri](../../../../bun/packages/bun-aphrody-web/integrations/m3/packages/web-to-tauri) | bun package | 1.4.4 | bin, lib | yes | 0 | uncommitted |
 | `@aphrody/agent-browser` | [../bun/packages/bun-aphrody-web/packages/agent-browser](../../../../bun/packages/bun-aphrody-web/packages/agent-browser) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
@@ -286,11 +289,8 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@aphrody/m3-bun` | [m3/packages/m3-bun](../../../m3/packages/m3-bun) | bun package | 1.4.4 | bin, lib | yes | 0 | uncommitted |
 | `@aphrody/m3-design` | [m3/packages/m3-design](../../../m3/packages/m3-design) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-explorer` | [m3/packages/m3-explorer](../../../m3/packages/m3-explorer) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-motion` | [m3/packages/m3-motion](../../../m3/packages/m3-motion) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-next` | [m3/packages/m3-next](../../../m3/packages/m3-next) | bun package | 1.4.4 | bin, lib | yes | 0 | uncommitted |
 | `@aphrody/m3-next-migrate` | [m3/packages/m3-next-migrate](../../../m3/packages/m3-next-migrate) | bun package | 1.4.4 | bin, lib | yes | 0 | uncommitted |
-| `@aphrody/m3-react` | [m3/packages/m3-react](../../../m3/packages/m3-react) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-reader` | [m3/packages/m3-reader](../../../m3/packages/m3-reader) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-tailwind` | [m3/packages/m3-tailwind](../../../m3/packages/m3-tailwind) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-theme` | [m3/packages/m3-theme](../../../m3/packages/m3-theme) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-tokens` | [m3/packages/m3-tokens](../../../m3/packages/m3-tokens) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |

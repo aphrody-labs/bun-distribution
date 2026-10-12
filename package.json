@@ -30,7 +30,10 @@
       "../bun/packages/aphrody-migrated/m3/aphrody-m3-fonts",
       "../bun/packages/aphrody-migrated/m3/aphrody-m3-primitives",
       "../bun/packages/aphrody-migrated/m3/aphrody-m3-baseui",
-      "../bun/packages/aphrody-migrated/m3/aphrody-m3-forms"
+      "../bun/packages/aphrody-migrated/m3/aphrody-m3-forms",
+      "../bun/packages/aphrody-migrated/m3/aphrody-m3-motion",
+      "../bun/packages/aphrody-migrated/m3/aphrody-m3-react",
+      "../bun/packages/aphrody-migrated/m3/aphrody-m3-reader"
     ],
     "catalog": {
       "@ag-ui/a2ui-toolkit": "0.0.4",
