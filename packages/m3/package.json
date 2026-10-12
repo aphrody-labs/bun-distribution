@@ -33,30 +33,30 @@
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "types": "./src/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./src/index.ts",
       "bun": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./plugin": {
-      "types": "./dist/plugin.d.ts",
+      "types": "./src/plugin.ts",
       "bun": "./src/plugin.ts",
       "default": "./dist/plugin.js"
     },
     "./server": {
-      "types": "./dist/server.d.ts",
+      "types": "./src/server.ts",
       "bun": "./src/server.ts",
       "default": "./dist/server.js"
     },
     "./build": {
-      "types": "./dist/build.d.ts",
+      "types": "./src/build.ts",
       "bun": "./src/build.ts",
       "default": "./dist/build.js"
     },
     "./config": {
-      "types": "./dist/config.d.ts",
+      "types": "./src/config.ts",
       "bun": "./src/config.ts",
       "default": "./dist/config.js"
     },
