@@ -125,6 +125,11 @@ describe("packageApp", () => {
     const report = await packageApp({ dir: fixtureCopy(), out: tmp(), bytecode: false });
     expect(report.compile?.bytecode).toBe(false);
   }, 60_000);
+
+  test("packageApp forwards a minify override to its build report", async () => {
+    const report = await packageApp({ dir: fixtureCopy(), out: tmp(), minify: "none" });
+    expect(report.compile?.build?.manifest.minify).toBe("none");
+  }, 60_000);
 });
 
 describe("buildRootfs", () => {

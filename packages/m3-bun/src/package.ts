@@ -7,6 +7,7 @@ import { chmod, cp, mkdir, rm } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import { compileApp, type CompileReport } from "./compile.ts";
 import { loadApp, type CompileTargetName, type M3App } from "./config.ts";
+import type { MinifyLevel } from "./build.ts";
 import { generateTargets, contextFor } from "./targets/index.ts";
 import { sha256 } from "./util.ts";
 
@@ -118,6 +119,8 @@ export interface PackageOptions {
   executable?: string;
   /** Override bytecode for an executable compiled as part of packaging. */
   bytecode?: boolean;
+  /** Override UI minification for an executable compiled as part of packaging. */
+  minify?: MinifyLevel;
   app?: M3App;
 }
 
@@ -164,6 +167,7 @@ export async function packageApp(options: PackageOptions = {}): Promise<PackageR
       app,
       ...(target ? { target } : {}),
       ...(options.bytecode !== undefined ? { bytecode: options.bytecode } : {}),
+      ...(options.minify !== undefined ? { minify: options.minify } : {}),
       outfile: join(staging, exeName),
     });
     executable = compile.outfile;

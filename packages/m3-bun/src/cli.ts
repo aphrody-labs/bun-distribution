@@ -300,6 +300,7 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
       const t = target(flags);
       const out = str(flags, "out");
       const format = str(flags, "format") as ArchiveFormat | undefined;
+      const minify = level(flags);
       if (format !== undefined && format !== "tar.gz" && format !== "zip")
         throw new Error(`--format must be tar.gz or zip, got ${format}`);
       const executable = str(flags, "executable");
@@ -310,6 +311,7 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
         ...(format ? { format } : {}),
         ...(executable ? { executable } : {}),
         ...(flags.has("no-bytecode") ? { bytecode: false } : {}),
+        ...(minify ? { minify } : {}),
         rootfs: flags.has("rootfs"),
         deploy: flags.has("deploy"),
       });
