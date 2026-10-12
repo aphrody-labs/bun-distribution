@@ -12,7 +12,6 @@ HOSTS = {
     "dragonballfr.com",
     "bot.dragonballfr.com",
     "cdn.dragonballfr.com",
-    "files.dragonballfr.com",
     "mcp.dragonballfr.com",
     # Sites migrés du VPS le 2026-10-09 (même conteneur gateway sur dbfr).
     "aphrody.com",

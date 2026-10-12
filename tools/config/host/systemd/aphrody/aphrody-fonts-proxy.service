@@ -35,6 +35,7 @@ MemoryDenyWriteExecute=false
 ReadWritePaths=/home/ubuntu/apps/cdn/google
 StandardOutput=journal
 StandardError=journal
+Environment=BUN_TMPDIR=/tmp
 SyslogIdentifier=aphrody-fonts-proxy
 
 [Install]
