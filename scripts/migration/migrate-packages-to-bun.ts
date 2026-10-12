@@ -171,6 +171,16 @@ async function main() {
         console.error(`already migrated: ${pkg.name}`);
         continue;
       }
+      const nestedGit = await command(["-C", pkg.target, "rev-parse", "--is-inside-work-tree"], forkRoot);
+      const origin = await command(["-C", pkg.target, "remote", "get-url", "origin"], forkRoot);
+      if (nestedGit.stdout.trim() === "true" && origin.stdout.trim().replace(/\/$/, "") === pkg.source) {
+        await command(["config", "-f", ".gitmodules", `submodule.${pkg.name}.path`, target], forkRoot);
+        await command(["config", "-f", ".gitmodules", `submodule.${pkg.name}.url`, pkg.source], forkRoot);
+        const staged = await command(["add", "--", ".gitmodules", target], forkRoot);
+        if (staged.code !== 0) throw new Error(`could not stage existing submodule ${pkg.name}`);
+        console.error(`adopted existing clone: ${pkg.name}`);
+        continue;
+      }
       throw new Error(`target already exists and is not a submodule: ${target}`);
     }
     const result = await command(["submodule", "add", "--name", pkg.name, pkg.source, target], forkRoot);
