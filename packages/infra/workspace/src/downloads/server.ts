@@ -638,6 +638,11 @@ async function appUiResponse(request: Request, root: string): Promise<Response |
             element.append(`<meta name="aphrody-assets-base" content="${assetsBase}">`, {
               html: true,
             });
+          if (home)
+            element.append(
+              `<style id="aphrody-public-home-shell">body:has(#aphrody-home-title){min-height:100vh;background:var(--md-sys-color-surface,#fdf7ff)}body:has(#aphrody-home-title) #root,body:has(#aphrody-home-title) .app-shell{min-height:100vh;border:0;background:var(--md-sys-color-surface,#fdf7ff)}body:has(#aphrody-home-title) .app-rail,body:has(#aphrody-home-title) [data-tauri-drag-region]{display:none!important}</style>`,
+              { html: true },
+            );
           if (!home)
             element.append(
               `<title>${seo.title}</title><meta name="description" content="${seo.description.replaceAll("&", "&amp;").replaceAll('"', "&quot;")}"><link rel="canonical" href="${seo.canonical}">`,
