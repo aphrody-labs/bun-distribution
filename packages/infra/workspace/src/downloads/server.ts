@@ -645,6 +645,15 @@ async function appUiResponse(request: Request, root: string): Promise<Response |
             element.remove();
         },
       })
+      .on("body", {
+        element(element) {
+          if (!home) return;
+          element.append(
+            `<script>(function(){const form=document.querySelector('form[aria-label="Recherche web Aphrody"]')||document.querySelector('form');if(!form)return;const live=document.querySelector('[aria-live]')||document.createElement('section');if(!live.parentNode)document.body.append(live);form.addEventListener('submit',async function(event){event.preventDefault();const input=form.querySelector('input[type="search"],input[name="q"]');const query=(input&&input.value||'').trim();if(!query)return;live.textContent='Searching…';try{const response=await fetch('/api/search?query='+encodeURIComponent(query)+'&safe=active');const data=await response.json();if(!response.ok)throw new Error(data.error||'Search unavailable');live.innerHTML='';for(const hit of Array.isArray(data.organic)?data.organic:[]){const article=document.createElement('article');const link=document.createElement('a');link.href=hit.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent=hit.title;const text=document.createElement('p');text.textContent=hit.snippet;article.append(link,text);live.append(article)}if(!live.childElementCount)live.textContent='No results.'}catch(error){live.textContent=error instanceof Error?error.message:'Search unavailable'}})})()</script>`,
+            { html: true },
+          );
+        },
+      })
       .on("head", {
         element(element) {
           element.append('<meta name="aphrody-rpc" content="unavailable">', { html: true });
