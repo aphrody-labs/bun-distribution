@@ -359,7 +359,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@aphrody/plugin-updater` | [crates/tauri/aphrody-tauri-plugin-updater](../../../crates/tauri/aphrody-tauri-plugin-updater) | bun package | 1.4.4 | lib | no | 0 | uncommitted |
 | `aphrody-tauri-plugin-window-state` | [crates/tauri/aphrody-tauri-plugin-window-state](../../../crates/tauri/aphrody-tauri-plugin-window-state) | rust crate | 1.4.4 | lib | no | 0 | uncommitted |
 | `@aphrody/plugin-window-state` | [crates/tauri/aphrody-tauri-plugin-window-state](../../../crates/tauri/aphrody-tauri-plugin-window-state) | bun package | 1.4.4 | lib | no | 0 | uncommitted |
-| `aphrody-tauri-runtime` | [crates/tauri/aphrody-tauri-runtime](../../../crates/tauri/aphrody-tauri-runtime) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
 | `aphrody-tauri-runtime-cef` | [crates/tauri/aphrody-tauri-runtime-cef](../../../crates/tauri/aphrody-tauri-runtime-cef) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
 
 ## ui

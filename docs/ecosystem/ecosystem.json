@@ -1096,16 +1096,6 @@
           "features": []
         },
         {
-          "name": "aphrody-tauri-runtime",
-          "path": "crates/tauri/aphrody-tauri-runtime",
-          "description": "Runtime for Tauri applications",
-          "bins": [],
-          "features": [
-            "default",
-            "devtools"
-          ]
-        },
-        {
           "name": "aphrody-tauri-runtime-cef",
           "path": "crates/tauri/aphrody-tauri-runtime-cef",
           "description": "Tauri runtime interface for Chromium Embedded Framework",

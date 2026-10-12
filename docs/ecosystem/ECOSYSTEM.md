@@ -133,7 +133,6 @@ Canonical Rust/Bun monorepo
 | `aphrody-tauri-plugin-store` | crates/tauri/aphrody-tauri-plugin-store | Simple, persistent key-value store. |  |  |
 | `aphrody-tauri-plugin-updater` | crates/tauri/aphrody-tauri-plugin-updater | In-app updates for Tauri applications. |  | default, native-tls, native-tls-vendored, rustls-tls, system-proxy, zip |
 | `aphrody-tauri-plugin-window-state` | crates/tauri/aphrody-tauri-plugin-window-state | Save window positions and sizes and restore them when the app is reopened. |  |  |
-| `aphrody-tauri-runtime` | crates/tauri/aphrody-tauri-runtime | Runtime for Tauri applications |  | default, devtools |
 | `aphrody-tauri-runtime-cef` | crates/tauri/aphrody-tauri-runtime-cef | Tauri runtime interface for Chromium Embedded Framework |  | default, devtools, unstable |
 | `aphrody-tauri-wrap` | crates/ui/tauri-wrap | Runtime plugin of web-to-tauri: turns a website, web app or built bundle into a native Tauri 3 window with the navigation policy, downloads, loopback server and sidecar that keep the page, its API and its backend unchanged. Also hosts the feature-gated debug bridge for Tauri 3 apps (`debug`). |  | bundle, debug-bridge, default |
 | `aphrody-term` | crates/shell/aphrody-term | Headless VT terminal engine (cell grid, native PTY, screen scraping, quad batching) for Aphrody computer use. |  | default |

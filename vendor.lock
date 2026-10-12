@@ -157,14 +157,6 @@
       "dir": "crates/tauri/aphrody-tauri-plugin-window-state"
     },
     {
-      "name": "tauri-runtime",
-      "package": "aphrody-tauri-runtime",
-      "version": "3.0.0-alpha.3",
-      "source": "tauri",
-      "from": "crates/tauri-runtime",
-      "dir": "crates/tauri/aphrody-tauri-runtime"
-    },
-    {
       "name": "tauri-runtime-cef",
       "package": "aphrody-tauri-runtime-cef",
       "version": "3.0.0-alpha.5",

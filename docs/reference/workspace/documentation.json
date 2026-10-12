@@ -1594,26 +1594,6 @@
       "canonical": "crates/tauri/aphrody-tauri-runtime-cef/CHANGELOG.md"
     },
     {
-      "path": "crates/tauri/aphrody-tauri-runtime/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "7581047d56a2480c089579dbf4b8f03ac6c8aa530cc9acd2bc101287865769a4",
-      "bytes": 92635,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tauri-runtime/CHANGELOG.md"
-    },
-    {
-      "path": "crates/tauri/aphrody-tauri-runtime/README.md",
-      "title": "tauri-runtime",
-      "sha256": "28a88dafa1492da0f0819f2f88f019e9580d7c61331165904ce4cd6bf1818778",
-      "bytes": 3044,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tauri-runtime/README.md"
-    },
-    {
       "path": "crates/tauri/aphrody-tauri/CHANGELOG.md",
       "title": "Changelog",
       "sha256": "259c5acb06abcff822e7b801e6408a5e0e9f47706fac0fa54959dbdc526e8610",
