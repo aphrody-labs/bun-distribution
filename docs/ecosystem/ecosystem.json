@@ -334,9 +334,13 @@
             "inference",
             "jobs",
             "magika",
+            "mcp-toolbox",
+            "native",
             "native-stealth",
             "ocr",
+            "rag",
             "tooling",
+            "train",
             "yara"
           ]
         },
@@ -785,23 +789,9 @@
           ]
         },
         {
-          "name": "aphrody-shell-session",
-          "path": "crates/shell/session",
-          "description": "Transport-neutral shell session and engine traits (input bytes in, output bytes out) with a scripted fake engine.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-shell-tauri",
           "path": "crates/shell/tauri",
           "description": "Tauri 3 plugin exposing native PTY shell sessions to the aphrody-shell-web webview client.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-shell-vfs",
-          "path": "crates/shell/vfs",
-          "description": "Byte-path virtual filesystem trait, in-memory backend and shared conformance suite for the WASM shell.",
           "bins": [],
           "features": []
         },
@@ -1119,13 +1109,6 @@
           "features": []
         },
         {
-          "name": "aphrody-terminal-core",
-          "path": "crates/shell/terminal-core",
-          "description": "Portable Rio VT terminal state shared by the native PTY backend, WASM and Tauri hosts.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-toolcall",
           "path": "crates/ai/toolcall",
           "description": "Tool catalogue model for the aphrody agent engine: ToolDefinition (name / description / JSON-schema input & output), the async ToolExecutor trait, ToolExposure (Direct / Deferred / DirectModelOnly / Hidden), and a JsonSchema type with prompt-budget compaction passes. Inspired by OpenAI Codex tools (Apache-2.0).",
@@ -1412,12 +1395,6 @@
           "bins": []
         },
         {
-          "name": "@aphrody/m3-mcp",
-          "path": "../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp",
-          "description": "Design/UI tool host of aphrody-m3 (served through the single aphrody-mcp): packages, M3 tokens (lookup, validate), docs search, research links, templates, Material Symbols SVG, SVG to Tauri icons.",
-          "bins": []
-        },
-        {
           "name": "@aphrody/m3-motion",
           "path": "m3/packages/m3-motion",
           "description": "Material 3 animation plugin powered by Motion (formerly Framer Motion)",
@@ -1438,14 +1415,6 @@
           "bins": [
             "m3-next-migrate",
             "next-migrate"
-          ]
-        },
-        {
-          "name": "@aphrody/m3-os-themes",
-          "path": "../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes",
-          "description": "Material 3 OS theme generators and installers (Windows 11, GNOME Shell, COSMIC, Chromium browsers) derived from @aphrody/m3-tokens dynamic colour roles.",
-          "bins": [
-            "m3-os-themes"
           ]
         },
         {
@@ -1709,24 +1678,6 @@
           "name": "aphrody-m3",
           "path": "m3",
           "description": "Aphrody M3 design monorepo: UI/design packages, tokens, icons, templates and docs.",
-          "bins": []
-        },
-        {
-          "name": "aphrody-native-check-fixture",
-          "path": "tmp/aphrody-integration-20261011/template-qualified",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "aphrody-ui-release-gate",
-          "path": "tmp/aphrody-integration-20261011/ui-gate",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "rg-ui-qualification",
-          "path": "tmp/bun-iecode-rg-ui-gate",
-          "description": "",
           "bins": []
         }
       ],
@@ -10573,9 +10524,9 @@
     "aphrodyRepos": 2,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 216,
-    "binaries": 37,
-    "bunPackages": 113,
+    "crates": 200,
+    "binaries": 36,
+    "bunPackages": 105,
     "pythonPackages": 10,
     "cliBinaries": 34,
     "cliCommands": 777,

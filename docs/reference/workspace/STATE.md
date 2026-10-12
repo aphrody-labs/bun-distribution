@@ -6,7 +6,7 @@ Facts read from `cargo metadata --no-deps`, the root `package.json` Bun workspac
 Crates are Rust workspace members outside `apps/`; packages are Bun workspaces outside `apps/`;
 apps are Rust or Bun members under `apps/`. `todo!` counts `todo!(` and `unimplemented!(` in `.rs` files.
 
-Totals: **143 crates**, **77 packages**, **0 apps** (143 Rust, 77 Bun).
+Totals: **127 crates**, **79 packages**, **0 apps** (127 Rust, 79 Bun).
 
 ## Per domain
 
@@ -14,7 +14,7 @@ Totals: **143 crates**, **77 packages**, **0 apps** (143 Rust, 77 Bun).
 | --- | ---: | ---: | ---: | ---: |
 | [ai](#ai) | 37 | 2 | 0 | 0 |
 | [apps](#apps) | 0 | 1 | 0 | 0 |
-| [bun](#bun) | 0 | 10 | 0 | 0 |
+| [bun](#bun) | 0 | 14 | 0 | 0 |
 | [compat](#compat) | 4 | 0 | 0 | 0 |
 | [contracts](#contracts) | 3 | 0 | 0 | 0 |
 | [discord](#discord) | 0 | 1 | 0 | 0 |
@@ -24,10 +24,10 @@ Totals: **143 crates**, **77 packages**, **0 apps** (143 Rust, 77 Bun).
 | [ml](#ml) | 5 | 0 | 0 | 0 |
 | [native](#native) | 3 | 0 | 0 | 0 |
 | [os](#os) | 17 | 4 | 0 | 0 |
-| [packages](#packages) | 0 | 31 | 0 | 0 |
-| [pkg](#pkg) | 6 | 0 | 0 | 0 |
-| [shell](#shell) | 8 | 1 | 0 | 0 |
-| [tauri](#tauri) | 29 | 15 | 0 | 30 |
+| [packages](#packages) | 0 | 29 | 0 | 0 |
+| [pkg](#pkg) | 5 | 0 | 0 | 0 |
+| [shell](#shell) | 5 | 1 | 0 | 0 |
+| [tauri](#tauri) | 17 | 15 | 0 | 25 |
 | [ui](#ui) | 14 | 0 | 0 | 0 |
 | [web](#web) | 0 | 1 | 0 | 0 |
 
@@ -39,6 +39,7 @@ Root `Cargo.toml` `[workspace] exclude`:
 - `crates/contracts/schema`
 - `crates/os/kernel/comps/drive`
 - `crates/tauri/aphrody-tauri-api`
+- `crates/tauri/aphrody-tauri-runtime`
 - `crates/tauri/aphrody-tauri-plugin-barcode-scanner`
 - `crates/tauri/aphrody-tauri-plugin-biometric`
 - `crates/tauri/aphrody-tauri-plugin-cli`
@@ -81,9 +82,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 - `crates/os/kernel/comps/drive/crates/utils`
 - `crates/os/kernel/comps/drive/patches/ffmpeg-sys-next`
 - `crates/os/kernel/comps/drive/xtask`
-- `bun/packages/bun-tauri/crates/aphrody-tauri-cli/src/migrate/migrations/v2/fixtures/app`
-- `bun/packages/bun-tauri/crates/aphrody-tauri-cli/src/migrate/migrations/v2/fixtures/no-default-features`
-- `bun/packages/bun-tauri/crates/aphrody-tauri-cli/src/migrate/migrations/v2/fixtures/no-wry`
 - `examples/runtime-rust-extension`
 - `m3/templates/desktop/src-tauri`
 
@@ -141,6 +139,8 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 
 | Name | Path | Kind | Version | Targets | Tests | `todo!` | Last commit |
 | --- | --- | --- | --- | --- | --- | ---: | --- |
+| `@aphrody/m3-mcp` | [../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp](../../../../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
+| `@aphrody/m3-os-themes` | [../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes](../../../../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes) | bun package | 1.4.4 | bin, lib | yes | 0 | uncommitted |
 | `@aphrody/web-source` | [../bun/packages/bun-aphrody-web](../../../../bun/packages/bun-aphrody-web) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/web-to-tauri` | [../bun/packages/bun-aphrody-web/integrations/m3/packages/web-to-tauri](../../../../bun/packages/bun-aphrody-web/integrations/m3/packages/web-to-tauri) | bun package | 1.4.4 | bin, lib | yes | 0 | uncommitted |
 | `@aphrody/agent-browser` | [../bun/packages/bun-aphrody-web/packages/agent-browser](../../../../bun/packages/bun-aphrody-web/packages/agent-browser) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
@@ -151,6 +151,8 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@aphrody/webos-wasm-source` | [../bun/packages/bun-aphrody-web/packages/webos-wasm](../../../../bun/packages/bun-aphrody-web/packages/webos-wasm) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/x` | [../bun/packages/bun-aphrody-web/packages/x](../../../../bun/packages/bun-aphrody-web/packages/x) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/google` | [../bun/packages/bun-google/aphrody/packages/google](../../../../bun/packages/bun-google/aphrody/packages/google) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
+| `@aphrody/bun-m3` | [../bun/packages/bun-m3](../../../../bun/packages/bun-m3) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
+| `@aphrody/tauri` | [../bun/packages/bun-tauri](../../../../bun/packages/bun-tauri) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 
 ## compat
 
@@ -283,11 +285,9 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@aphrody/m3-forms` | [m3/packages/m3-forms](../../../m3/packages/m3-forms) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-front` | [m3/packages/m3-front](../../../m3/packages/m3-front) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-icons` | [m3/packages/m3-icons](../../../m3/packages/m3-icons) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
-| `@aphrody/m3-mcp` | [../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp](../../../../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-motion` | [m3/packages/m3-motion](../../../m3/packages/m3-motion) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-next` | [m3/packages/m3-next](../../../m3/packages/m3-next) | bun package | 1.4.4 | bin, lib | yes | 0 | uncommitted |
 | `@aphrody/m3-next-migrate` | [m3/packages/m3-next-migrate](../../../m3/packages/m3-next-migrate) | bun package | 1.4.4 | bin, lib | yes | 0 | uncommitted |
-| `@aphrody/m3-os-themes` | [../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes](../../../../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes) | bun package | 1.4.4 | bin, lib | yes | 0 | uncommitted |
 | `@aphrody/m3-primitives` | [m3/packages/m3-primitives](../../../m3/packages/m3-primitives) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-react` | [m3/packages/m3-react](../../../m3/packages/m3-react) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-reader` | [m3/packages/m3-reader](../../../m3/packages/m3-reader) | bun package | 1.4.4 | lib | yes | 0 | uncommitted |
@@ -314,12 +314,9 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | --- | --- | --- | --- | --- | --- | ---: | --- |
 | `aphrody-term` | [crates/shell/aphrody-term](../../../crates/shell/aphrody-term) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
 | `aphrody-nu` | [crates/shell/nu](../../../crates/shell/nu) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
-| `aphrody-shell-session` | [crates/shell/session](../../../crates/shell/session) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
 | `aphrody-shell-tauri` | [crates/shell/tauri](../../../crates/shell/tauri) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
 | `aphrody-term-caps` | [crates/shell/term-caps](../../../crates/shell/term-caps) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
 | `aphrody-terminal-backend` | [crates/shell/terminal-backend](../../../crates/shell/terminal-backend) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
-| `aphrody-terminal-core` | [crates/shell/terminal-core](../../../crates/shell/terminal-core) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
-| `aphrody-shell-vfs` | [crates/shell/vfs](../../../crates/shell/vfs) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
 | `@aphrody/shell-web` | [packages/shell/web](../../../packages/shell/web) | bun package | 1.4.4 | lib | no | 0 | uncommitted |
 
 ## tauri
@@ -328,7 +325,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | --- | --- | --- | --- | --- | --- | ---: | --- |
 | `aphrody-tauri` | [crates/tauri/aphrody-tauri](../../../crates/tauri/aphrody-tauri) | rust crate | 1.4.4 | lib | yes | 24 | uncommitted |
 | `@aphrody/api` | [crates/tauri/aphrody-tauri-api](../../../crates/tauri/aphrody-tauri-api) | bun package | 1.4.4 | lib | no | 0 | uncommitted |
-| `aphrody-tauri-cli` | [bun/packages/bun-tauri/crates/aphrody-tauri-cli](../../../bun/packages/bun-tauri/crates/aphrody-tauri-cli) | rust crate | 1.4.4 | lib | yes | 2 | uncommitted |
 | `aphrody-tauri-plugin-autostart` | [crates/tauri/aphrody-tauri-plugin-autostart](../../../crates/tauri/aphrody-tauri-plugin-autostart) | rust crate | 1.4.4 | lib | no | 0 | uncommitted |
 | `@aphrody/plugin-autostart` | [crates/tauri/aphrody-tauri-plugin-autostart](../../../crates/tauri/aphrody-tauri-plugin-autostart) | bun package | 1.4.4 | lib | no | 0 | uncommitted |
 | `aphrody-tauri-plugin-clipboard-manager` | [crates/tauri/aphrody-tauri-plugin-clipboard-manager](../../../crates/tauri/aphrody-tauri-plugin-clipboard-manager) | rust crate | 1.4.4 | lib | no | 0 | uncommitted |
