@@ -38,7 +38,12 @@
       .filled { background: var(--primary); color: var(--on-primary); }
       .tonal { background: var(--surface-high); color: var(--on-surface); }
       .outlined { border: 1px solid var(--outline); background: transparent; color: var(--on-surface); }
-      .filled:hover, .tonal:hover, .outlined:hover { filter: brightness(.96); }
+      .filled, .tonal, .outlined { position: relative; overflow: hidden; }
+      .filled::after, .tonal::after, .outlined::after { content: ""; position: absolute; inset: 0; background: currentColor; opacity: 0; transition: opacity 160ms ease; pointer-events: none; }
+      .filled:hover::after, .tonal:hover::after, .outlined:hover::after { opacity: .08; }
+      .filled:focus-visible, .tonal:focus-visible, .outlined:focus-visible, .icon:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+      .card { transition: transform 180ms ease, box-shadow 180ms ease; }
+      .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px color-mix(in srgb, var(--on-surface) 12%, transparent); }
       .card { background: var(--surface-container); padding: 28px; }
       .card h2 { margin: 0 0 8px; font-size: 24px; }
       .card p { color: var(--on-surface-variant); }
