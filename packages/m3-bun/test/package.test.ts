@@ -58,13 +58,16 @@ describe("archiveDir", () => {
     );
   });
 
-  test.skipIf(!Bun.which("zip"))("zip archives", async () => {
-    const staging = tmp();
-    writeFileSync(join(staging, "app.exe"), "MZ");
-    const archive = join(tmp(), "a.zip");
-    await archiveDir(staging, archive, "zip");
-    expect(Bun.spawnSync(["unzip", "-l", archive], { stdout: "pipe" }).stdout.toString()).toContain("app.exe");
-  });
+  test.skipIf((!Bun.which("zip") && !Bun.which("pwsh") && !Bun.which("powershell")) || !Bun.which("unzip"))(
+    "zip archives",
+    async () => {
+      const staging = tmp();
+      writeFileSync(join(staging, "app.exe"), "MZ");
+      const archive = join(tmp(), "a.zip");
+      await archiveDir(staging, archive, "zip");
+      expect(Bun.spawnSync(["unzip", "-l", archive], { stdout: "pipe" }).stdout.toString()).toContain("app.exe");
+    },
+  );
 });
 
 describe("packageApp", () => {
@@ -112,7 +115,6 @@ describe("packageApp", () => {
     await buildApp({ dir });
     const stub = join(tmp(), "x.exe");
     writeFileSync(stub, "MZ");
-    if (!Bun.which("zip")) return;
     const report = await packageApp({ dir, executable: stub, out: tmp(), target: "windows-x64" });
     expect(report.archive.endsWith("hello-m3-1.2.3-windows-x64.zip")).toBe(true);
     expect(report.files).toContain("hello-m3.exe");

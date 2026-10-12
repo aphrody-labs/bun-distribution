@@ -62,16 +62,34 @@ export async function archiveDir(staging: string, archive: string, format: Archi
   await mkdir(dirname(archive), { recursive: true });
   await rm(archive, { force: true });
   if (format === "zip") {
-    if (!Bun.which("zip")) {
-      throw new Error(
-        "m3-bun: zip archive requested but the native zip tool is unavailable; install zip or choose tar.gz",
-      );
-    }
-    const proc = Bun.spawnSync(["zip", "-q", "-r", "-X", archive, "."], {
-      cwd: staging,
-      stdout: "pipe",
-      stderr: "pipe",
-    });
+    const zip = Bun.which("zip");
+    const proc = zip
+      ? Bun.spawnSync([zip, "-q", "-r", "-X", archive, "."], {
+          cwd: staging,
+          stdout: "pipe",
+          stderr: "pipe",
+        })
+      : (() => {
+          const powershell = Bun.which("pwsh") ?? Bun.which("powershell");
+          if (!powershell)
+            throw new Error(
+              "m3-bun: zip archive requested but neither zip nor PowerShell Compress-Archive is available",
+            );
+          return Bun.spawnSync(
+            [
+              powershell,
+              "-NoProfile",
+              "-NonInteractive",
+              "-Command",
+              "Compress-Archive -Path (Join-Path $env:M3_STAGING '*') -DestinationPath $env:M3_ARCHIVE -Force",
+            ],
+            {
+              env: { ...process.env, M3_STAGING: staging, M3_ARCHIVE: archive },
+              stdout: "pipe",
+              stderr: "pipe",
+            },
+          );
+        })();
     if (proc.exitCode !== 0) throw new Error(`m3-bun: zip failed: ${proc.stderr.toString().trim()}`);
     return;
   }
