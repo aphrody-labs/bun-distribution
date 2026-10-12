@@ -35,7 +35,8 @@ MemoryDenyWriteExecute=false
 ReadWritePaths=/home/ubuntu/apps/cdn/google
 StandardOutput=journal
 StandardError=journal
-Environment=BUN_TMPDIR=/tmp
+CacheDirectory=aphrody-fonts-proxy
+Environment=BUN_INSTALL_CACHE_DIR=/var/cache/aphrody-fonts-proxy
 SyslogIdentifier=aphrody-fonts-proxy
 
 [Install]
