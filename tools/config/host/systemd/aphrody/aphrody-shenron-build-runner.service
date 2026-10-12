@@ -13,7 +13,7 @@ SupplementaryGroups=docker
 WorkingDirectory=/home/shenron-build/runner
 Environment=PATH=/home/shenron-build/.bun/bin:/home/shenron-build/.cargo/bin:/usr/local/bin:/usr/bin:/bin
 ExecStart=/home/shenron-build/runner/run.sh
-Restart=on-failure
+Restart=always
 RestartSec=15
 KillMode=control-group
 KillSignal=SIGINT

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { composeUnit, hostRoot, loadCatalog } from "../../core/src/host/index.ts";
@@ -233,6 +233,15 @@ test("the declared loopback units plan against the real catalog", () => {
     expect(text).toContain("Restart=on-failure");
     expect(text).not.toMatch(/(SECRET|TOKEN|PASSWORD|DATABASE_URL)=/);
   }
+});
+
+test("the persistent VPS build runner restarts after a clean wrapper exit", () => {
+  const unit = readFileSync(
+    join(hostRoot(), "systemd/aphrody/aphrody-shenron-build-runner.service"),
+    "utf8",
+  );
+  expect(unit).toContain("Restart=always");
+  expect(unit).toContain("RestartSec=15");
 });
 
 const BUILD = {
