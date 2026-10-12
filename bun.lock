@@ -38,6 +38,10 @@
         "react-dom": "^19.3.0",
         "react-hook-form": "^7.89.0",
       },
+      "devDependencies": {
+        "@types/react": "^19.3.0",
+        "@types/react-dom": "^19.3.0",
+      },
       "peerDependencies": {
         "@aphrody/bun": "1.4.4",
         "@aphrody/drive-client": "1.4.4",
@@ -59,7 +63,8 @@
         "@aphrody/agent-browser": "workspace:*",
       },
       "devDependencies": {
-        "@aphrody/m3-config": "file:../../../../../../../aphrody/m3/packages/m3-config",
+        "@aphrody/m3-config": "workspace:*",
+        "@types/bun": "npm:@aphrody/bun-types@1.4.3-aphrody.4",
         "typescript": "7.0.2",
       },
       "peerDependencies": {
@@ -69,6 +74,9 @@
     "../bun/packages/bun-aphrody-web/packages/agent-browser": {
       "name": "@aphrody/agent-browser",
       "version": "1.4.4",
+      "devDependencies": {
+        "@types/bun": "npm:@aphrody/bun-types@1.4.3-aphrody.4",
+      },
       "peerDependencies": {
         "@aphrody/runtime-sdk": "1.4.4",
       },
@@ -80,6 +88,9 @@
         "@aphrody/agent-browser": "workspace:*",
         "@aphrody/bun-webview-page": "file:../../../bun-webview-page",
         "@aphrody/next-bun": "file:../../../bun-next",
+      },
+      "devDependencies": {
+        "@types/bun": "npm:@aphrody/bun-types@1.4.3-aphrody.4",
       },
     },
     "../bun/packages/bun-aphrody-web/packages/fuzzy": {
@@ -122,6 +133,9 @@
       "version": "1.4.4",
       "dependencies": {
         "zod": "^4.6.5",
+      },
+      "devDependencies": {
+        "@types/bun": "npm:@aphrody/bun-types@1.4.3-aphrody.4",
       },
       "peerDependencies": {
         "@aphrody/bun": "1.4.4",

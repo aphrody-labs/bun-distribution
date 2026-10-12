@@ -26,8 +26,9 @@ writeFileSync(
 writeFileSync(join(ui, "app.js"), "app script");
 writeFileSync(join(ui, "app.css"), "app style");
 writeFileSync(join(ui, "fonts", "pet.webp"), "pet image");
+const bunCheckout = Bun.env.APHRODY_BUN_CHECKOUT ?? join(import.meta.dir, "../../../../../../bun");
 const catalogue = await Bun.file(
-  join(import.meta.dir, "../../../../../crates/web/site/data/docs.json"),
+  join(bunCheckout, "packages/bun-aphrody-web/crates/site/data/docs.json"),
 ).json();
 writeFileSync(join(ui, "public-docs.json"), JSON.stringify(catalogue));
 mkdirSync(join(ui, "public-docs"));
