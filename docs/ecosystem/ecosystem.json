@@ -1347,12 +1347,6 @@
           "bins": []
         },
         {
-          "name": "@aphrody/m3-config",
-          "path": "m3/packages/m3-config",
-          "description": "Shared build, typecheck and test presets for the @aphrody Material Design 3 packages: tsconfig, the Bun.build preset and the happy-dom test preload.",
-          "bins": []
-        },
-        {
           "name": "@aphrody/m3-design",
           "path": "m3/packages/m3-design",
           "description": "Automated design engine for Material Design 3 and Google Design",
@@ -1380,18 +1374,6 @@
           "name": "@aphrody/m3-forms",
           "path": "m3/packages/m3-forms",
           "description": "Material Design 3 form fields (react-hook-form) on @aphrody/m3-primitives: the SpaceUI (@spacedrive/forms) set, M3-styled.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-front",
-          "path": "m3/packages/m3-front",
-          "description": "Framework-agnostic Material 3 front layer: <m3-theme> web component, lazy material-web registration and window-class observation on top of @aphrody/material-web and @aphrody/m3-tokens.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-icons",
-          "path": "m3/packages/m3-icons",
-          "description": "Material Symbols icons for @aphrody/m3: pixel-perfect inline SVG rendered from the aphrody-bun icons module (variable fonts), no icon font shipped at runtime.",
           "bins": []
         },
         {
@@ -10526,7 +10508,7 @@
     "sharedRepos": 0,
     "crates": 200,
     "binaries": 36,
-    "bunPackages": 105,
+    "bunPackages": 102,
     "pythonPackages": 10,
     "cliBinaries": 34,
     "cliCommands": 777,

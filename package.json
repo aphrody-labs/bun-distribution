@@ -20,6 +20,9 @@
       "../bun/packages/bun-m3",
       "../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp",
       "../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes",
+      "../bun/packages/aphrody-migrated/m3/aphrody-m3-config",
+      "../bun/packages/aphrody-migrated/m3/aphrody-m3-icons",
+      "../bun/packages/aphrody-migrated/m3/aphrody-m3-front",
       "../bun/packages/bun-aphrody-web/packages/*",
       "../bun/packages/bun-aphrody-web/integrations/m3/packages/web-to-tauri",
       "../bun/packages/bun-google/aphrody/packages/google"

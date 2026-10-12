@@ -2166,8 +2166,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "e2af2a10e7bab9304db80dd77684d6e927802b88e49d9a56d16b508edfe96906",
-      "bytes": 60159,
+      "sha256": "6d37738632bd880a38e61bd2e8b19ccb4743d049a4032f4db920f8d57ab61289",
+      "bytes": 59508,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -6426,8 +6426,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "112d0bce4126330278fedd436b4ca58ac7381ff6ee2497f18756befeea1d4366",
-      "bytes": 35501,
+      "sha256": "c18284f2141b00182f798439dd3db510a78aa99fe6d3a7282beff88ead0d9d28",
+      "bytes": 35693,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",
@@ -10694,16 +10694,6 @@
       "canonical": "m3/packages/m3-codemods/README.md"
     },
     {
-      "path": "m3/packages/m3-config/README.md",
-      "title": "@aphrody/m3-config",
-      "sha256": "fb2d236654c40962ca3ddef369a434a6f5c972d76941811355211e3a8d3e1dad",
-      "bytes": 1742,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "m3/packages/m3-config/README.md"
-    },
-    {
       "path": "m3/packages/m3-design/README.md",
       "title": "@aphrody/m3-design",
       "sha256": "86cbcba601ff60e192072f93e8b0432ad468c3710e2b207fa89137e658c375cc",
@@ -10762,26 +10752,6 @@
       "status": "notice",
       "visibility": "private",
       "canonical": "m3/packages/m3-forms/UPSTREAM-CHANGELOG.md"
-    },
-    {
-      "path": "m3/packages/m3-front/README.md",
-      "title": "@aphrody/m3-front",
-      "sha256": "6dd6232451fb0f84ce4d25a27aa5551b7b2f35aa9317fa5ef684e7c6540b87e5",
-      "bytes": 821,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "m3/packages/m3-front/README.md"
-    },
-    {
-      "path": "m3/packages/m3-icons/README.md",
-      "title": "@aphrody/m3-icons",
-      "sha256": "26593ed7796c01a93564fd2831fea78cd13f4e814067465af66f20a3847f8912",
-      "bytes": 1326,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "m3/packages/m3-icons/README.md"
     },
     {
       "path": "m3/packages/m3-motion/README.md",
