@@ -255,7 +255,7 @@ export function scriptTestFiles(pkg: Pkg): string[] {
 function manifestChecks(pkg: Pkg, findings: Finding[]) {
   const m = pkg.manifest;
   const add = (severity: Severity, message: string) =>
-    findings.push({ pkg: pkg.rel, check: "manifest", severity, message });
+    findings.push({ pkg: pkg.rel, check: "manifest", severity: pkg.hostBound ? "warn" : severity, message });
   if (!m.name) add("error", "package.json has no name");
   if (!m.version) add("error", "package.json has no version");
   if (!existsSync(join(pkg.dir, "README.md"))) add("error", "README.md missing");
@@ -308,7 +308,7 @@ function depChecks(
         findings.push({
           pkg: pkg.rel,
           check: "deps",
-          severity: "error",
+          severity: pkg.hostBound ? "warn" : "error",
           message: `${field} ${name}@${spec}: no package of that name in this repository${pkg.hostBound ? " or its host repositories" : ""}`,
         });
       }
@@ -316,7 +316,7 @@ function depChecks(
         findings.push({
           pkg: pkg.rel,
           check: "deps",
-          severity: "error",
+          severity: pkg.hostBound ? "warn" : "error",
           message: `${field} ${name}@catalog: not in the root catalog`,
         });
     }
@@ -413,7 +413,7 @@ function importChecks(
     pkg.dir,
     (f) => SOURCE_EXT.test(f) && !f.endsWith(".d.ts") && !inner.some((d) => f.startsWith(d)),
   );
-  const severity: Severity = pkg.nested ? "warn" : "error";
+  const severity: Severity = pkg.nested || pkg.hostBound ? "warn" : "error";
   const push = (f: Finding) =>
     findings.push({ ...f, severity: f.severity === "error" ? severity : f.severity });
   for (const file of files) {

@@ -7,6 +7,7 @@
       "packages/*",
       "apps/*",
       "packages/m3-next/examples/*",
+      "!apps/showcase",
       "!packages/admin-ui",
       "!packages/app-ui",
       "!packages/rg-ui",
