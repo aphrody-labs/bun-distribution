@@ -1124,26 +1124,6 @@
       "canonical": "crates/tauri/aphrody-tauri-codegen/README.md"
     },
     {
-      "path": "crates/tauri/aphrody-tauri-macos-sign/CHANGELOG.md",
-      "title": "Changelog",
-      "sha256": "ba2c3337d2165c9198cb2073bd0fcd4c9bad27582730dec1e3b9b3e42e3740ba",
-      "bytes": 5445,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tauri-macos-sign/CHANGELOG.md"
-    },
-    {
-      "path": "crates/tauri/aphrody-tauri-macos-sign/README.md",
-      "title": "Tauri MacOS Sign",
-      "sha256": "917761dff7c6ffacdf9019a04349caed68588486a827027c7a6305f9b5e6a569",
-      "bytes": 119,
-      "domain": "tauri",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/tauri/aphrody-tauri-macos-sign/README.md"
-    },
-    {
       "path": "crates/tauri/aphrody-tauri-macros/CHANGELOG.md",
       "title": "Changelog",
       "sha256": "48962e53daf6f50e9f63e281d031a572ef1b531d322c0257acde18040c7e6771",

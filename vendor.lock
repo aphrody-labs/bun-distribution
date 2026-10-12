@@ -65,14 +65,6 @@
       "dir": "crates/tauri/aphrody-tauri-codegen"
     },
     {
-      "name": "tauri-macos-sign",
-      "package": "aphrody-tauri-macos-sign",
-      "version": "3.0.0-alpha.2",
-      "source": "tauri",
-      "from": "crates/tauri-macos-sign",
-      "dir": "crates/tauri/aphrody-tauri-macos-sign"
-    },
-    {
       "name": "tauri-macros",
       "package": "aphrody-tauri-macros",
       "version": "3.0.0-alpha.3",

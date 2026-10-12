@@ -333,7 +333,6 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-tauri-bundler` | [crates/tauri/aphrody-tauri-bundler](../../../crates/tauri/aphrody-tauri-bundler) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
 | `aphrody-tauri-cli` | [crates/tauri/aphrody-tauri-cli](../../../crates/tauri/aphrody-tauri-cli) | rust crate | 1.4.4 | lib | yes | 2 | uncommitted |
 | `aphrody-tauri-codegen` | [crates/tauri/aphrody-tauri-codegen](../../../crates/tauri/aphrody-tauri-codegen) | rust crate | 1.4.4 | lib | yes | 1 | uncommitted |
-| `aphrody-tauri-macos-sign` | [crates/tauri/aphrody-tauri-macos-sign](../../../crates/tauri/aphrody-tauri-macos-sign) | rust crate | 1.4.4 | lib | no | 0 | uncommitted |
 | `aphrody-tauri-macros` | [crates/tauri/aphrody-tauri-macros](../../../crates/tauri/aphrody-tauri-macros) | rust crate | 1.4.4 | proc-macro | no | 0 | uncommitted |
 | `aphrody-tauri-plugin` | [crates/tauri/aphrody-tauri-plugin](../../../crates/tauri/aphrody-tauri-plugin) | rust crate | 1.4.4 | lib | no | 0 | uncommitted |
 | `aphrody-tauri-plugin-autostart` | [crates/tauri/aphrody-tauri-plugin-autostart](../../../crates/tauri/aphrody-tauri-plugin-autostart) | rust crate | 1.4.4 | lib | no | 0 | uncommitted |

@@ -12,7 +12,6 @@ Packages are prefixed with `aphrody-`; library and binary names are unchanged.
 | `aphrody-tauri-bundler` | `tauri-bundler` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-bundler` |
 | `aphrody-tauri-cli` | `tauri-cli` | 3.0.0-alpha.4 | `tauri` | `crates/tauri/aphrody-tauri-cli` |
 | `aphrody-tauri-codegen` | `tauri-codegen` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-codegen` |
-| `aphrody-tauri-macos-sign` | `tauri-macos-sign` | 3.0.0-alpha.2 | `tauri` | `crates/tauri/aphrody-tauri-macos-sign` |
 | `aphrody-tauri-macros` | `tauri-macros` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-macros` |
 | `aphrody-tauri-plugin` | `tauri-plugin` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-plugin` |
 | `aphrody-tauri-plugin-autostart` | `tauri-plugin-autostart` | 3.0.0-alpha.2 | `plugins-workspace` | `crates/tauri/aphrody-tauri-plugin-autostart` |

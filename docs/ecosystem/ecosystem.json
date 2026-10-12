@@ -996,13 +996,6 @@
           ]
         },
         {
-          "name": "aphrody-tauri-macos-sign",
-          "path": "crates/tauri/aphrody-tauri-macos-sign",
-          "description": "Code signing utilities for macOS and iOS apps",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-tauri-macros",
           "path": "crates/tauri/aphrody-tauri-macros",
           "description": "Macros for the tauri crate.",
