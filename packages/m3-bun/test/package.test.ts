@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { afterAll, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { archiveDir, buildRootfs, packageApp, parseLdd } from "../src/package.ts";
 import { sha256 } from "../src/util.ts";
 import { cleanup, fixtureCopy, tmp } from "./helpers.ts";
@@ -118,6 +118,7 @@ describe("packageApp", () => {
     const report = await packageApp({ dir, executable: stub, out: tmp(), target: "windows-x64" });
     expect(report.archive.endsWith("hello-m3-1.2.3-windows-x64.zip")).toBe(true);
     expect(report.files).toContain("hello-m3.exe");
+    expect(readFileSync(report.checksumFile, "utf8")).toBe(`${report.sha256}  ${basename(report.archive)}\n`);
   }, 60_000);
 });
 
