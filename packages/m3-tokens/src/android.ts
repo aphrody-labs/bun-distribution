@@ -53,6 +53,7 @@ export const ANDROID_COLOR_ROLES = {
   onErrorContainer: "on-error-container",
   outline: "outline",
   outlineVariant: "outline-variant",
+  shadow: "shadow",
   scrim: "scrim",
 } as const;
 
