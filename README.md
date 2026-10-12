@@ -14,6 +14,13 @@ scripts/    workspace checks
 docs/       design documentation
 ```
 
+## Platform alignment
+
+The shared contract follows the Material 3 theme model used by Android
+Compose: color scheme, typography, and shapes. Web packages expose the same
+semantic roles through CSS tokens and web components. See
+[`docs/platform-alignment.md`](docs/platform-alignment.md).
+
 ## Development
 
 ```powershell
