@@ -1,0 +1,13 @@
+{
+  "name": "@aphrody/material",
+  "version": "1.4.4",
+  "private": true,
+  "description": "Canonical, host-independent Material 3 monorepo for Aphrody, Bun and Chromium consumers.",
+  "workspaces": ["packages/*"],
+  "packageManager": "bun@1.4.4",
+  "scripts": {
+    "check": "bun check --noEmit packages/*/src/**/*.ts",
+    "test": "bun test packages/*/test",
+    "list": "bun scripts/list-packages.ts"
+  }
+}
