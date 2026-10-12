@@ -1,0 +1,371 @@
+[
+  {
+    "name": "@aphrody/app-ui",
+    "version": "0.1.0",
+    "description": "",
+    "dir": "packages/app-ui",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 3,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/assets",
+    "version": "0.1.1",
+    "description": "File-kind icons, extension badges, brand logos, images, sounds, videos and lottie animations, with icon resolution (getIcon, getLayeredIcon, getBeardedIcon, getIcon20): the Spacedrive @sd/assets set, merged with SpaceUI'",
+    "dir": "packages/assets",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 13,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/canvas",
+    "version": "1.0.9-aphrody.4",
+    "description": "Aphrody native Skia canvas facade over the pinned upstream @napi-rs/canvas runtime",
+    "dir": "packages/canvas",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 4,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/eslint-plugin-m3",
+    "version": "3.3.4",
+    "description": "Lint rules for sites consuming material-web (@aphrody/m3-react + Material Symbols) — runs under oxlint (jsPlugins) and ESLint.",
+    "dir": "packages/eslint-plugin-m3",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 2,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/identity",
+    "version": "0.1.1",
+    "description": "Aphrody product identity for the M3 surfaces: brand emblem and icons, the Aphrody avatar, and the animated pet sprite (atlas, timed tracks, 16-way gaze) drawn from crates/ui/identity.",
+    "dir": "packages/identity",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 4,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3",
+    "version": "3.3.7",
+    "description": "The @aphrody Material Design 3 framework for Bun: one plugin (Tailwind v4, Sass through Rust, m3:* virtual theme/font modules, ?url imports), serveM3 (Bun.serve + HMR + proxy), buildM3 (Bun.build, Tauri webview layout), ",
+    "dir": "packages/m3",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 18,
+    "bin": [
+      "m3"
+    ]
+  },
+  {
+    "name": "@aphrody/m3-ai",
+    "version": "3.3.7",
+    "description": "Material Design 3 agent-interaction components (tool calls, markdown, chat composer, workers, tasks): the SpaceUI (@spacedrive/ai) set rebuilt on @aphrody/m3-primitives.",
+    "dir": "packages/m3-ai",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 2,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3-baseui",
+    "version": "3.3.7",
+    "description": "Base UI (aphrody-labs fork, forks/base-ui) with Material 3 styling: every Base UI primitive wrapped with M3 token classes; static CSS, no CSS-in-JS runtime, per-component modules and sheets.",
+    "dir": "packages/m3-baseui",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 5,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3-bun",
+    "version": "3.3.7",
+    "description": "The one Bun-native tool for M3 apps: a single Bun plugin and the m3-bun CLI that build, minify, serve (HMR), compile to one executable, package and generate deploy configs (Docker, systemd, nginx, Vercel, Fly.io, Cloudfl",
+    "dir": "packages/m3-bun",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 9,
+    "bin": [
+      "m3-bun"
+    ]
+  },
+  {
+    "name": "@aphrody/m3-codemods",
+    "version": "3.3.7",
+    "description": "Codemods MUI React -> @aphrody/m3-react (Bun, sans dépendance runtime) + règles ast-grep",
+    "dir": "packages/m3-codemods",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 3,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3-config",
+    "version": "3.3.7",
+    "description": "Shared build, typecheck and test presets for the @aphrody Material Design 3 packages: tsconfig, the Bun.build preset and the happy-dom test preload.",
+    "dir": "packages/m3-config",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 6,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3-design",
+    "version": "3.3.7",
+    "description": "Automated design engine for Material Design 3 and Google Design",
+    "dir": "packages/m3-design",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 0,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3-example",
+    "version": "0.1.0",
+    "description": "The m3 example app: App Router (React Server Components, server actions, streaming SSR, static generation), M3 theme, Tailwind v4 and the M3 DataTable, on Bun only.",
+    "dir": "apps/example",
+    "kind": "app",
+    "workspace": true,
+    "private": true,
+    "exports": 0,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3-explorer",
+    "version": "3.3.7",
+    "description": "Material Design 3 file-management components (tag pill, inline rename, file thumb, grid item): the SpaceUI (@spacedrive/explorer) set rebuilt on @aphrody/m3-primitives.",
+    "dir": "packages/m3-explorer",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 1,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3-fonts",
+    "version": "3.3.7",
+    "description": "Aphrody M3 typefaces: Google Sans Flex, Google Sans Code, Roboto Flex, Roboto Mono and Material Symbols with Japanese fallbacks (Noto Sans JP, M PLUS 1 Code) as @font-face CSS and a typed manifest.",
+    "dir": "packages/m3-fonts",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 5,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3-forms",
+    "version": "3.3.7",
+    "description": "Material Design 3 form fields (react-hook-form) on @aphrody/m3-primitives: the SpaceUI (@spacedrive/forms) set, M3-styled.",
+    "dir": "packages/m3-forms",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 1,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3-front",
+    "version": "3.3.7",
+    "description": "Framework-agnostic Material 3 front layer: <m3-theme> web component, lazy material-web registration and window-class observation on top of @aphrody/material-web and @aphrody/m3-tokens.",
+    "dir": "packages/m3-front",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 5,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3-icons",
+    "version": "3.3.7",
+    "description": "Material Symbols icons for @aphrody/m3: pixel-perfect inline SVG rendered from the aphrody-bun icons module (variable fonts), no icon font shipped at runtime.",
+    "dir": "packages/m3-icons",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 6,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3-mcp",
+    "version": "3.3.7",
+    "description": "Design/UI tool host of aphrody-m3 (served through the single aphrody-mcp): packages, M3 tokens (lookup, validate), docs search, research links, templates, Material Symbols SVG, SVG to Tauri icons.",
+    "dir": "packages/m3-mcp",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 2,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3-motion",
+    "version": "3.3.7",
+    "description": "Material 3 animation plugin powered by Motion (formerly Framer Motion)",
+    "dir": "packages/m3-motion",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 1,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3-next",
+    "version": "3.3.7",
+    "description": "Next.js 16 App Router integration for the @aphrody Material Design 3 layer: withM3 config (React Compiler, Cache Components, typed routes, Tauri static export), M3Html/M3Root server components, a light 'use client' theme",
+    "dir": "packages/m3-next",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 6,
+    "bin": [
+      "m3-next"
+    ]
+  },
+  {
+    "name": "@aphrody/m3-next-migrate",
+    "version": "3.3.7",
+    "description": "Migration analysis, codemods and runtime shims for Next.js 16 components and private-owner native Bun web apps; Tauri 3 source planning requires a registered native host adapter for activation",
+    "dir": "packages/m3-next-migrate",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 16,
+    "bin": [
+      "m3-next-migrate",
+      "next-migrate"
+    ]
+  },
+  {
+    "name": "@aphrody/m3-os-themes",
+    "version": "3.3.7",
+    "description": "Material 3 OS theme generators and installers (Windows 11, GNOME Shell, COSMIC, Chromium browsers) derived from @aphrody/m3-tokens dynamic colour roles.",
+    "dir": "packages/m3-os-themes",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 3,
+    "bin": [
+      "m3-os-themes"
+    ]
+  },
+  {
+    "name": "@aphrody/m3-primitives",
+    "version": "3.3.7",
+    "description": "Material Design 3 React primitives: the SpaceUI (@spacedrive/primitives) component set rebuilt on the M3 roles, shape, typescale, state layers and motion of the aphrody design system.",
+    "dir": "packages/m3-primitives",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 1,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3-react",
+    "version": "3.3.7",
+    "description": "React wrappers (@lit/react createComponent) for every <md-*> element of the @aphrody/material-web fork.",
+    "dir": "packages/m3-react",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 8,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3-reader",
+    "version": "3.3.7",
+    "description": "Material 3 manga and illustrated book readers for React",
+    "dir": "packages/m3-reader",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 4,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3-tailwind",
+    "version": "3.3.7",
+    "description": "Tailwind v4 CSS-first preset for Material 3: generates @theme (colour roles, shape, typescale, elevation, easing) from @aphrody/m3-tokens.",
+    "dir": "packages/m3-tailwind",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 3,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3-theme",
+    "version": "3.3.7",
+    "description": "Canonical Material 3 fusion sheets: tokens.css (M3 + shadcn/ui + Tailwind v4 aliases), tailwind.css (every M3 system token as a Tailwind v4 utility) and spaceui.css (the SpaceUI themes rebuilt as M3 dynamic schemes, with",
+    "dir": "packages/m3-theme",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 6,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/m3-tokens",
+    "version": "3.3.7",
+    "description": "Material 3 design tokens (--md-sys-*) for the @aphrody/material-web fork: MUI-theme → M3 token CSS generation and runtime Material You dynamic colour via material-color-utilities.",
+    "dir": "packages/m3-tokens",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 9,
+    "bin": []
+  },
+  {
+    "name": "@aphrody/material-design-icons",
+    "version": "1.0.1",
+    "description": "Material Symbols SVG catalogue (forks/material-design-icons) with SVG to ICO/ICNS sync for Tauri desktop icons.",
+    "dir": "packages/material-design-icons",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 1,
+    "bin": [
+      "m3-svg-to-ico"
+    ]
+  },
+  {
+    "name": "@aphrody/scaffold",
+    "version": "1.0.0-canary.1",
+    "description": "The single project scaffolder of the UI stack: Tauri 3 shell (pins, config, capabilities, icon), M3 web and app templates, the canonical example and a writer that never overwrites. Used by m3 new, m3-next-migrate and web",
+    "dir": "packages/scaffold",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 7,
+    "bin": [
+      "aphrody-scaffold"
+    ]
+  },
+  {
+    "name": "@aphrody/web-to-tauri",
+    "version": "1.0.0-canary",
+    "description": "Converts a website, web app or built web bundle into a native Tauri 3 app: probes the target, plans a regression-free mode (remote, bundle, sidecar), generates the project and checks parity against the original.",
+    "dir": "packages/web-to-tauri",
+    "kind": "package",
+    "workspace": true,
+    "private": false,
+    "exports": 8,
+    "bin": [
+      "web-to-tauri"
+    ]
+  }
+]
