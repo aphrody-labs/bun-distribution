@@ -19,14 +19,13 @@ const pwsh = Bun.which("pwsh");
 const work = mkdtempSync(join(tmpdir(), "install-ps1-"));
 afterAll(() => rmSync(work, { recursive: true, force: true }));
 const windows = process.platform === "win32";
-const systemPath = windows
-  ? join(process.env.SystemRoot ?? "C:\\Windows", "System32")
-  : "/usr/bin:/bin";
+// Windows keeps System32 off PATH: a host install drops aphrody*.exe there and would shadow the stubs.
+const systemPath = windows ? "" : "/usr/bin:/bin";
 
 /** Environment for the installer: Windows .NET networking and temp files need the system variables. */
 function installerEnv(path: string, extra: Record<string, string>): Record<string, string> {
   const env: Record<string, string> = {
-    PATH: path ? `${path}${delimiter}${systemPath}` : systemPath,
+    PATH: [path, systemPath].filter(Boolean).join(delimiter),
     ...extra,
   };
   if (windows)

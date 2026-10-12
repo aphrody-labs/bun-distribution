@@ -79,13 +79,18 @@ test("export targets cover every condition, main and module, but not patterns", 
   ).toEqual(["dist/index.d.mts", "dist/index.mjs", "main.js"]);
 });
 
-test("the RG closure packs the runtime SDK as a workspace member", async () => {
-  const { members, external } = await aphrodyClosure(root, ["@aphrody/agent-browser"]);
+test("the closure packs the runtime SDK as a workspace member and leaves sibling-checkout members external", async () => {
+  const { members, external } = await aphrodyClosure(root, ["@aphrody/yolo-core"]);
   expect(members.map((member) => member.name)).toEqual([
-    "@aphrody/agent-browser",
     "@aphrody/runtime-sdk",
+    "@aphrody/yolo-core",
   ]);
-  expect(external).toEqual([]);
+  // @aphrody/web-source and the agent browser are workspace members linked from ../bun, published by that repository.
+  expect(external).toEqual(["@aphrody/web-source"]);
+  expect(await aphrodyClosure(root, ["@aphrody/agent-browser"])).toEqual({
+    members: [],
+    external: ["@aphrody/agent-browser"],
+  });
 });
 
 test("members follow the root workspaces globs beyond packages/*/*", async () => {

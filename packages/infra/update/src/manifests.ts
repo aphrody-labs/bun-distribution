@@ -6,7 +6,8 @@ import { join } from "node:path";
 /** Imported upstream packages: workspace members that keep their upstream manifests. */
 export const UPSTREAM = ["packages/aphrody-spaceui/", "third_party/"];
 
-/** Manifests actually selected by the root Bun workspace globs. */
+/** Manifests actually selected by the root Bun workspace globs, inside this repository: members
+ *  linked from a sibling checkout (`../bun/...`) follow the contract of the repository that owns them. */
 export async function firstPartyManifests(
   repo: string,
   patternsOverride?: readonly string[],
@@ -29,6 +30,7 @@ export async function firstPartyManifests(
     }),
   );
   return [...new Set(found.flat().map((path) => path.replaceAll("\\", "/")))]
+    .filter((path) => !path.startsWith("../"))
     .filter((path) => !excludes.some((exclude) => exclude.match(path)))
     .filter((path) => !UPSTREAM.some((prefix) => path.startsWith(prefix)))
     .toSorted();

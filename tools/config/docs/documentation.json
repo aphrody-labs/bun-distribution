@@ -24,12 +24,6 @@
       "id": "infra-rust",
       "language": "rust",
       "paths": ["crates/infra/infra/src/lib.rs", "crates/infra/git/src/lib.rs"]
-    },
-    {
-      "root": ".",
-      "id": "python-google",
-      "language": "python",
-      "paths": ["py/packages/aphrody/src/aphrody/google.py"]
     }
   ],
   "site": {

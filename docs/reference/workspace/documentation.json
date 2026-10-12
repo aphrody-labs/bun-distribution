@@ -4,10 +4,30 @@
   "visibility": "private",
   "documents": [
     {
+      "path": ".agents/skills/fork-runtime-routing/SKILL.md",
+      "title": "Native fork and Codex routing",
+      "sha256": "029dea201317aaade0323a4cb9c172e5ace5cffd824e1e1319e3de94291afb43",
+      "bytes": 3387,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": ".agents/skills/fork-runtime-routing/SKILL.md"
+    },
+    {
+      "path": ".claude/skills/fork-runtime-routing/SKILL.md",
+      "title": "Native fork and Claude routing",
+      "sha256": "7ad122c81c54c87878ccb784498438877245dd0345a775672d4c6d55a07e97bb",
+      "bytes": 3392,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": ".claude/skills/fork-runtime-routing/SKILL.md"
+    },
+    {
       "path": "AGENTS.md",
       "title": "Aphrody repository instructions",
-      "sha256": "4b8d25aa1eb931e096a0c0d56b33720a08e90d65641d75b44a52fc5c5d796373",
-      "bytes": 10894,
+      "sha256": "c98b08125df254eea0355b4311b19da07faa59ca33ef11195fa6051d4f1dccc0",
+      "bytes": 11947,
       "domain": "",
       "status": "historical",
       "visibility": "private",
@@ -66,7 +86,7 @@
     {
       "path": "README.md",
       "title": "Aphrody",
-      "sha256": "2292ff958bd04b31d7a46a1755c0b39da14448e51860cb3fb131e5bfd7452336",
+      "sha256": "acd5eb3ea30d847dd97bb9f44e628efc6ae16a1ee31b882c44d21e41fadabf2d",
       "bytes": 7717,
       "domain": "",
       "status": "generated",
@@ -102,6 +122,16 @@
       "status": "generated",
       "visibility": "private",
       "canonical": "THIRD-PARTY.md"
+    },
+    {
+      "path": "TODO-BUN.md",
+      "title": "Bun : migration du moteur et des consommateurs",
+      "sha256": "b35970f5150a1a54ad961f0c211701ac846689d07647b5435b0428822413e227",
+      "bytes": 1559,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "TODO-BUN.md"
     },
     {
       "path": "TODO.md",
@@ -275,9 +305,9 @@
     },
     {
       "path": "crates/compat/egui-winit/README.md",
-      "title": "egui-winit",
-      "sha256": "7a8ccbb9fbddf24243446291b8e5a4e6bddcb6b565602c9561581926d5ae362b",
-      "bytes": 571,
+      "title": "aphrody-egui-winit",
+      "sha256": "59ffa0cf5bab87ef4f866618a521f009826004b7f7e66c29fe9f6999afcdf871",
+      "bytes": 797,
       "domain": "compat",
       "status": "canonical",
       "visibility": "private",
@@ -362,16 +392,6 @@
       "status": "historical",
       "visibility": "private",
       "canonical": "crates/contracts/app-protocol/tests/fixtures/upstream/README.md"
-    },
-    {
-      "path": "crates/google/gemini-web/README.md",
-      "title": "gemini-web",
-      "sha256": "4d695362dde0259470d9e089fc1a4b71c7fee88fd96f612b96fc1bdb1ff91537",
-      "bytes": 3549,
-      "domain": "google",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/google/gemini-web/README.md"
     },
     {
       "path": "crates/infra/aphrody-command/README.md",
@@ -2004,100 +2024,10 @@
       "canonical": "crates/ui/tauri-wrap/README.md"
     },
     {
-      "path": "crates/web/obscura-dom/README.md",
-      "title": "obscura-dom",
-      "sha256": "be976a0a586290ee47b63825aea90f087661ee54f89699eb48bcd3e0c5071a40",
-      "bytes": 593,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/web/obscura-dom/README.md"
-    },
-    {
-      "path": "crates/web/obscura-render/assets/FONT-PROVENANCE.md",
-      "title": "Bundled font provenance",
-      "sha256": "973a9f0783a068088c169905cb4b3776935569a784f10234b6a0baab355c7ee3",
-      "bytes": 370,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/web/obscura-render/assets/FONT-PROVENANCE.md"
-    },
-    {
-      "path": "crates/web/obscura-render/render-repros/media-emulation.md",
-      "title": "Reduced-motion emulation reproduction",
-      "sha256": "7aca45c90631d2ebd2e136c93c98a70e3743fc2afdd7400929be52baa52926fe",
-      "bytes": 1365,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/web/obscura-render/render-repros/media-emulation.md"
-    },
-    {
-      "path": "crates/web/obscura/README.md",
-      "title": "obscura",
-      "sha256": "8717c0943ee3b2b6efa9f2dd7e926062d2342e2e63bf11d49cec7d52f3b82d2e",
-      "bytes": 1287,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/web/obscura/README.md"
-    },
-    {
-      "path": "crates/web/web-crawl/src/dragon_ball/README.md",
-      "title": "Module Dragon Ball d’Aphrody Web",
-      "sha256": "f58b0e61881f3964836b0c3a38a47c22cf0dd4e7f6f5b3bfa9839bb295090f21",
-      "bytes": 7041,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/web/web-crawl/src/dragon_ball/README.md"
-    },
-    {
-      "path": "crates/web/web-extract/README.md",
-      "title": "aphrody-web-extract",
-      "sha256": "f63d142da40c1cc9d6e8246a98bed6a999992deab435d1eebc0e2fa281aaa78f",
-      "bytes": 1342,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/web/web-extract/README.md"
-    },
-    {
-      "path": "crates/web/web-frames/THIRD_PARTY_NOTICES.md",
-      "title": "Third-party notices",
-      "sha256": "6ae97ddf7a6f968328e2bba496fec40e82dd2a4e129a2fbcda912213c8fcb680",
-      "bytes": 1395,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/web/web-frames/THIRD_PARTY_NOTICES.md"
-    },
-    {
-      "path": "crates/web/web-index/BENCHMARKS.md",
-      "title": "bxc-index benchmarks",
-      "sha256": "a9a446dcef4b22e9ac3dd57c51c8056656bf53555671ae76f26653a8fd70cec3",
-      "bytes": 10976,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/web/web-index/BENCHMARKS.md"
-    },
-    {
-      "path": "crates/web/web-index/README.md",
-      "title": "aphrody-web-index",
-      "sha256": "10ab126f37f2a49b71ff04a7ba28b66048188b228de959c8a2e171110526a50d",
-      "bytes": 1015,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "crates/web/web-index/README.md"
-    },
-    {
       "path": "docs/README.md",
       "title": "Documentation index",
-      "sha256": "eab60513d4e2baa1348acf0d7c2986ef48dcc5529569300a38bcb30145dba593",
-      "bytes": 7818,
+      "sha256": "9504b1ab7ae4352df2908f91031083a8505cbbf67d49787e5db7950ff0c77c34",
+      "bytes": 7687,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -2122,16 +2052,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/apis/ai/api-unified-pattern.md"
-    },
-    {
-      "path": "docs/apis/ai/google/catalog/cloud-apis.md",
-      "title": "Google · Cloud / GCP APIs",
-      "sha256": "e37ba175d5b72db9aeb862145326ddf95c82a3773194cea289b8bb0554ddff73",
-      "bytes": 8359,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/apis/ai/google/catalog/cloud-apis.md"
     },
     {
       "path": "docs/apis/ai/grok/api-endpoints.md",
@@ -2184,16 +2104,6 @@
       "canonical": "docs/apis/generated/infra-rust.md"
     },
     {
-      "path": "docs/apis/generated/python-google.md",
-      "title": "Source reference: python-google",
-      "sha256": "caadb054a4b665bbf768d8454efc09b8f3a6456ec438163ccab95bc4cf02876c",
-      "bytes": 732,
-      "domain": "generated",
-      "status": "generated",
-      "visibility": "private",
-      "canonical": "docs/apis/generated/python-google.md"
-    },
-    {
       "path": "docs/apis/generated/workspace-typescript.md",
       "title": "Source reference: workspace-typescript",
       "sha256": "4830989ef963d82e39acbe044e100d6387f8f9b25017fc8c031f84ad211fb8db",
@@ -2212,36 +2122,6 @@
       "status": "historical",
       "visibility": "private",
       "canonical": "docs/apis/infra/vps/APIS.md"
-    },
-    {
-      "path": "docs/apis/web/WEB-SERVICE-CONTRACT.md",
-      "title": "Aphrody Web service contract",
-      "sha256": "d328219c5005c3a00971fe5df299b040d3c5d8f1d12d6a7d4a3ca1960e3e85da",
-      "bytes": 12139,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/apis/web/WEB-SERVICE-CONTRACT.md"
-    },
-    {
-      "path": "docs/apis/web/web/MASSIVE-CRAWL-AND-SITE-TO-API.md",
-      "title": "Aphrody Web Massive Crawler & Site-to-API Synthesis Engine",
-      "sha256": "2b398801cd190efa3a041893dffc8118911dea4e3f2bb11588fc88c0614ef31c",
-      "bytes": 7989,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/apis/web/web/MASSIVE-CRAWL-AND-SITE-TO-API.md"
-    },
-    {
-      "path": "docs/apis/web/web/gemini-web-protocol.md",
-      "title": "Gemini web app (gemini.google.com) — consolidated protocol reference",
-      "sha256": "5477b708a1854f9983686b60a94474cd397d99e4c0993e3803464a21e2b4ea6e",
-      "bytes": 4715,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/apis/web/web/gemini-web-protocol.md"
     },
     {
       "path": "docs/architecture/ai/ARCHITECTURE.md",
@@ -2282,16 +2162,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/architecture/ai/discord/voicebox-architecture.md"
-    },
-    {
-      "path": "docs/architecture/ai/plugins/aphrody/agents/web-x-grok-architect.md",
-      "title": "name: web-x-grok-architect",
-      "sha256": "2883a79c940d8e1cc1b51983d059ca72c32aad2a01462e38d1a831aca983cb5f",
-      "bytes": 769,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/architecture/ai/plugins/aphrody/agents/web-x-grok-architect.md"
     },
     {
       "path": "docs/architecture/ai/research/adobe-connector/skills/adobe-design-from-template/SKILL.md",
@@ -2476,32 +2346,12 @@
     {
       "path": "docs/architecture/shell/terminal-capabilities.md",
       "title": "Terminal capabilities",
-      "sha256": "95cd2c3ff172443147fafd4e11d85ef758ef4f0f92d8da4b4654a166ee7e130e",
-      "bytes": 11307,
+      "sha256": "4813ee201b4aba3e6b774ff7240b1087233cf86ff8b98720b15856e131061536",
+      "bytes": 11428,
       "domain": "shell",
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/architecture/shell/terminal-capabilities.md"
-    },
-    {
-      "path": "docs/architecture/web/ARCHITECTURE.md",
-      "title": "Aphrody Web layer: architecture, owners, consumers and gaps",
-      "sha256": "7bf92fad93af4b5b1d02df8a627508bcc50c053d54745ad3004d3b4f9562349d",
-      "bytes": 20332,
-      "domain": "web",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/architecture/web/ARCHITECTURE.md"
-    },
-    {
-      "path": "docs/architecture/web/x/architecture.md",
-      "title": "aphrody-x — architecture & internals",
-      "sha256": "68d77df5d61028c71de44f75fe7cbf60dc326eecc9649720e6d24b738f3f0e37",
-      "bytes": 4834,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/architecture/web/x/architecture.md"
     },
     {
       "path": "docs/architecture/workspace/ARCHITECTURE.md",
@@ -2626,8 +2476,8 @@
     {
       "path": "docs/ecosystem/CLI.md",
       "title": "CLI command trees",
-      "sha256": "22bbf8c149442c949200105471d047cef973bf34ce7ca56d7e8a6265274fcadb",
-      "bytes": 87593,
+      "sha256": "746500bdc630def1c62b7c16731109df4d8dd05590b61ed258e54609ef88459d",
+      "bytes": 77431,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -2636,8 +2486,8 @@
     {
       "path": "docs/ecosystem/ECOSYSTEM.md",
       "title": "Aphrody ecosystem catalog",
-      "sha256": "33f69be56fcf385e6377a53a3c012f9fbee09b8b9a333961a333756173f171a2",
-      "bytes": 69318,
+      "sha256": "54599d1dda7ff879a776b5f59c8a2802e65683f72e949b61158a9e9225fb79d5",
+      "bytes": 63883,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -2646,8 +2496,8 @@
     {
       "path": "docs/ecosystem/MCP-TOOLS.md",
       "title": "MCP tools",
-      "sha256": "2dd9028d7cbbb23c8b44959f976a998fdf977c92b49f9e4b46483cb5635ea6c2",
-      "bytes": 65646,
+      "sha256": "b99bbc8e998f8012b7426822f63853a8ce560d7a947eb598c7f52ae49730302c",
+      "bytes": 57944,
       "domain": "",
       "status": "generated",
       "visibility": "private",
@@ -2714,16 +2564,6 @@
       "canonical": "docs/guides/ai/MCP_SETUP.md"
     },
     {
-      "path": "docs/guides/ai/research/google-local-install-map.md",
-      "title": "Google local install map — %LOCALAPPDATA%\\Google\\Google",
-      "sha256": "1d5a426657d3c04acf7583df887b41f672cbd9c9eaa87f9b52817605f9afa969",
-      "bytes": 10207,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/guides/ai/research/google-local-install-map.md"
-    },
-    {
       "path": "docs/guides/ai/ts/tsguide.md",
       "title": "Google TypeScript Style Guide",
       "sha256": "49bff63ca784c9905c937afdf0250a3ecfd0ceaf9758adc06f0ac194ef786604",
@@ -2752,46 +2592,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/guides/discord/carbon-oauth.md"
-    },
-    {
-      "path": "docs/guides/web/CRAWLABLE-UI.md",
-      "title": "Crawlable UI: running the gate and what it checks",
-      "sha256": "d7598ef31ab823c29aae019f147740c633f3338275392b9db3338116574cc09f",
-      "bytes": 6882,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/guides/web/CRAWLABLE-UI.md"
-    },
-    {
-      "path": "docs/guides/web/TAURI-DEBUG.md",
-      "title": "Debugging and testing Tauri 3 apps with aphrody-web",
-      "sha256": "9920c7c1638c791d6ad53942a10d3ab36ccdc7a368e65ec1e52942c0a0e96bde",
-      "bytes": 9650,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/guides/web/TAURI-DEBUG.md"
-    },
-    {
-      "path": "docs/guides/web/WEB-SMOKE-AND-CRAWL.md",
-      "title": "Running the web smoke and crawling a site",
-      "sha256": "630a1133cd83d71ce5722a4ff052f699f28676f543217736f78834088624ce6e",
-      "bytes": 1483,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/guides/web/WEB-SMOKE-AND-CRAWL.md"
-    },
-    {
-      "path": "docs/guides/web/web/NATIVE-INSTALL.md",
-      "title": "Installation native Aphrody Web",
-      "sha256": "1f989d3f5d9105b068d3e7ad8950e4e6a2eb2b77f1f641c693919f8c498fed90",
-      "bytes": 2432,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/guides/web/web/NATIVE-INSTALL.md"
     },
     {
       "path": "docs/guides/workspace/BEST_PRACTICES.md",
@@ -2874,6 +2674,16 @@
       "canonical": "docs/guides/workspace/runtime-consumer.md"
     },
     {
+      "path": "docs/omar/OMAR-SERVER-GUIDE.md",
+      "title": "Guide d'exploitation — Omar Server",
+      "sha256": "77d968f4e4e701752db21224f8f629b4c5c8c2c310e72c5b09fed37d66b546bc",
+      "bytes": 4618,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/omar/OMAR-SERVER-GUIDE.md"
+    },
+    {
       "path": "docs/operations/INSTALL-AGENT.md",
       "title": "Installation complète Aphrody par agent CLI",
       "sha256": "30b45faedbd87f04b57fd77bb84eeba4d2055b0ffcd8bdadff02024bb44e861d",
@@ -2902,6 +2712,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/agent-tooling.md"
+    },
+    {
+      "path": "docs/operations/agent-tooling/claude-native-unblock-2026-10-10.md",
+      "title": "Claude native fork and MCP qualification, 2026-10-10",
+      "sha256": "0d3abda276a79e217359a9f0209df64a008665c19d09b3e52141be626fc8a5a0",
+      "bytes": 5949,
+      "domain": "agent-tooling",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/agent-tooling/claude-native-unblock-2026-10-10.md"
     },
     {
       "path": "docs/operations/ai/CI-CD.md",
@@ -2944,16 +2764,6 @@
       "canonical": "docs/operations/ai/automation_and_deployment.md"
     },
     {
-      "path": "docs/operations/ai/google-drive-sync.md",
-      "title": "Shenron Agent Home ↔ Google Drive",
-      "sha256": "8f30886d48f8fbdde77201ba0307d292d367cac12333d8ba7fe9670f0f532187",
-      "bytes": 4992,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/operations/ai/google-drive-sync.md"
-    },
-    {
       "path": "docs/operations/ai/shenron-local-bridge.md",
       "title": "Shenron local bridge",
       "sha256": "7dbf6ef01d05cce5e2de7ca33dcbf72f422208c4b14d7d1b51257c295290296c",
@@ -2972,6 +2782,26 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/aphrodyos-setup-prompt.md"
+    },
+    {
+      "path": "docs/operations/bun-1.4.4/README.md",
+      "title": "Bun 1.4.4 alignment dossier",
+      "sha256": "dc3ce10f1921cd76094d156cefbf5193142f401d28bf030dcfb382dbb3929ff6",
+      "bytes": 12207,
+      "domain": "bun-1.4.4",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/bun-1.4.4/README.md"
+    },
+    {
+      "path": "docs/operations/bun-1.4.4/references.md",
+      "title": "Bun references to align on 1.4.4",
+      "sha256": "1cabe6d7fec309a851b8daea488795f3e2293193d209677cfb42fe816b8c3d52",
+      "bytes": 12449,
+      "domain": "bun-1.4.4",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/bun-1.4.4/references.md"
     },
     {
       "path": "docs/operations/bun-packages.md",
@@ -3166,8 +2996,8 @@
     {
       "path": "docs/operations/infra/DOWNLOADS.md",
       "title": "Aphrody downloads: site, publisher and GitHub releases",
-      "sha256": "7a8b05f213d6a0b7afb33b64699788b9bffb8373691d4b9bbab9c1104c28f8f8",
-      "bytes": 9250,
+      "sha256": "29e3440ef34dadb345335af04c7d519ce7b238bb710e56967f3fa09c59a06e98",
+      "bytes": 9806,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -3296,8 +3126,8 @@
     {
       "path": "docs/operations/infra/OMAR-REMOTE-CONTROL.md",
       "title": "Contrôle du PC Windows d'Omar depuis Aphrody (tunnel WireGuard privé)",
-      "sha256": "8317ba4b69aa8b8fdaadc1afc09fc04f56a1944cbad489c908f36dc4e6d96bac",
-      "bytes": 38018,
+      "sha256": "a8d77267174763f3bdd758f0d3dc86a54894b8cd8dcdcf7f2c949bde680ce7ad",
+      "bytes": 38602,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -3316,8 +3146,8 @@
     {
       "path": "docs/operations/infra/OVH-VPS-OPERATIONS.md",
       "title": "OVH VPS Operations — Aphrody Infra",
-      "sha256": "498542edf2d93b82d00bbc3054281b46675f35119e4211c0bed837d0d7ec5ff8",
-      "bytes": 16375,
+      "sha256": "147e43cefa59a4ecfc02895485b0d79b28d8b158d6934d6c927b9367df3d139b",
+      "bytes": 21990,
       "domain": "infra",
       "status": "canonical",
       "visibility": "private",
@@ -3424,14 +3254,44 @@
       "canonical": "docs/operations/infra/VNC.md"
     },
     {
+      "path": "docs/operations/infra/VPS-STORAGE-POLICY.md",
+      "title": "Politique de stockage des VPS",
+      "sha256": "0b0df1b465d8e23adcfd2151d91c8512a958a119b379fedef21dcdf57f590e23",
+      "bytes": 6058,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/VPS-STORAGE-POLICY.md"
+    },
+    {
       "path": "docs/operations/infra/aphrody-data-plane-2026-10-09.md",
       "title": "Aphrody shared data plane, 2026-10-09",
-      "sha256": "db978c787244acf025c8224e70e689788c1fd84f8e363e29c9c83429eb3d21ed",
-      "bytes": 7811,
+      "sha256": "50832cb2d835f637964f7a9fe0b3f41643852c4c19de2aca28a42d67a0aaa13d",
+      "bytes": 8537,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
       "canonical": "docs/operations/infra/aphrody-data-plane-2026-10-09.md"
+    },
+    {
+      "path": "docs/operations/infra/build-factory-async-install.md",
+      "title": "Detached build and verified installation",
+      "sha256": "4ef20668e898325815c4f410659a968bc5f56c0b752d38671253cf54abfc9412",
+      "bytes": 1838,
+      "domain": "infra",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/build-factory-async-install.md"
+    },
+    {
+      "path": "docs/operations/infra/bun-host-alignment-2026-10-11.md",
+      "title": "Align the installed Bun hosts, 2026-10-11",
+      "sha256": "1d64ea21fd72ba9642b8424b1ab29757b4b12965c66017c7b7395b76cf24751f",
+      "bytes": 2902,
+      "domain": "infra",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/bun-host-alignment-2026-10-11.md"
     },
     {
       "path": "docs/operations/infra/cloudflare-dns-r2-2026-10-09.md",
@@ -3442,6 +3302,16 @@
       "status": "historical",
       "visibility": "private",
       "canonical": "docs/operations/infra/cloudflare-dns-r2-2026-10-09.md"
+    },
+    {
+      "path": "docs/operations/infra/cutover-resume-2026-10-10.md",
+      "title": "Domain cutover resumption, 2026-10-10",
+      "sha256": "1c7ec7c2dc68182a65db01bc1ac653acb17887458648805c220e5cebb42a4199",
+      "bytes": 17192,
+      "domain": "infra",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/cutover-resume-2026-10-10.md"
     },
     {
       "path": "docs/operations/infra/dbfr-health-2026-10-09.md",
@@ -3456,8 +3326,8 @@
     {
       "path": "docs/operations/infra/domain-unification-2026-10-09.md",
       "title": "Aphrody domain qualification, 2026-10-09",
-      "sha256": "d2be559dfdd4401afb13e08146feaa5ee46d260171ce970e1dcd73f7530e92df",
-      "bytes": 6626,
+      "sha256": "57185da207e8d4e84c0e2ecdf8c2c812c9d623490a19730a24be1728a000b6cf",
+      "bytes": 8081,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -3466,8 +3336,8 @@
     {
       "path": "docs/operations/infra/fleet-release-2026-10-09.md",
       "title": "Native fleet release, 2026-10-09",
-      "sha256": "22efc9e66fbbb4789794f67d8d947c681c480332ca2e7ba3b9b80363b08312e3",
-      "bytes": 6724,
+      "sha256": "70f143e163fff57f2e72c4103fcd7fc66fdbae73687afb62e105474f9e47b366",
+      "bytes": 8971,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -3524,6 +3394,46 @@
       "canonical": "docs/operations/infra/native-sudo-rs-20261007.md"
     },
     {
+      "path": "docs/operations/infra/ovh-protected-2026-10-09.md",
+      "title": "Protected native OVH audit, 2026-10-09",
+      "sha256": "ded66c44327b968fcc8f0f3013adc8001586ab266a9f3bee2e30b2f3487a26b8",
+      "bytes": 3167,
+      "domain": "infra",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/ovh-protected-2026-10-09.md"
+    },
+    {
+      "path": "docs/operations/infra/public-webos-2026-10-11.md",
+      "title": "Public Bun WebOS static release",
+      "sha256": "7cc0e5c60ed38384315d8d2479c259fbad455abf53aab4f9eeb70c536e558315",
+      "bytes": 9386,
+      "domain": "infra",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/public-webos-2026-10-11.md"
+    },
+    {
+      "path": "docs/operations/infra/r2-domains-2026-10-10.md",
+      "title": "R2 public domains, 2026-10-10",
+      "sha256": "1e8ea58bbc7447330cfc02f575750b537b049bda45979b692c139a8cc13ec590",
+      "bytes": 9637,
+      "domain": "infra",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/r2-domains-2026-10-10.md"
+    },
+    {
+      "path": "docs/operations/infra/r2-native-install-2026-10-09.md",
+      "title": "Native Windows installation from R2, 2026-10-09",
+      "sha256": "24471b303485e2caa3a39458f1bf53d68103dbd144cc44d371d4085ec874d980",
+      "bytes": 4487,
+      "domain": "infra",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/r2-native-install-2026-10-09.md"
+    },
+    {
       "path": "docs/operations/infra/srv-reclaim-20261007.md",
       "title": "VPS factory reclamation, 2026-10-07",
       "sha256": "0afc47053f95b5ada63a55f9d5dbaef2a801d193d91a29bed6b50703af46a2b6",
@@ -3574,6 +3484,26 @@
       "canonical": "docs/operations/infra/update/UV.md"
     },
     {
+      "path": "docs/operations/infra/vps-bun-2026-10-10.md",
+      "title": "VPS Bun fork activation, 2026-10-10",
+      "sha256": "c57e6d5f44b3e2cecf013d87a4fa9211e95001997c2164d163dde420c10a7e7e",
+      "bytes": 1612,
+      "domain": "infra",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/vps-bun-2026-10-10.md"
+    },
+    {
+      "path": "docs/operations/infra/vps-bun-cleanup-2026-10-11.md",
+      "title": "VPS : inventaire Bun et nettoyage contrôlé",
+      "sha256": "74edd91766c75bc2f4242318290eb2805eac0ae770e6c1421a6083776a2627f4",
+      "bytes": 7477,
+      "domain": "infra",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/infra/vps-bun-cleanup-2026-10-11.md"
+    },
+    {
       "path": "docs/operations/omar-crystal-universe.md",
       "title": "Objectifs d'Omar — Dragon Pixel",
       "sha256": "37000a46a60a26d8416a127659c5548629f87d74cabeaf543a40298d0879e398",
@@ -3612,46 +3542,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/release/DISTRIBUTION.md"
-    },
-    {
-      "path": "docs/operations/web/AUTOMATION.md",
-      "title": "Aphrody Web: automation, configuration and services",
-      "sha256": "8aa0bc123f3aa5b9023f44639df542ee029d77fc405404fb2c31ad4cfc819cbd",
-      "bytes": 5445,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/operations/web/AUTOMATION.md"
-    },
-    {
-      "path": "docs/operations/web/TIMELINE.md",
-      "title": "Chronologie Shenron : code Bun et rafraîchissement",
-      "sha256": "9ca74e146c99758c8857ce8d54f94d8228c72ea43b959c170cf7e4ac5c959eb2",
-      "bytes": 7641,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/operations/web/TIMELINE.md"
-    },
-    {
-      "path": "docs/operations/web/VPS-WEB.md",
-      "title": "Aphrody Web sur les VPS",
-      "sha256": "605ad3b03677d22ec47ec7b9810138bfe46bf867fa9949bcb5ea20745ff12aee",
-      "bytes": 9859,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/operations/web/VPS-WEB.md"
-    },
-    {
-      "path": "docs/operations/web/google-product-2026-10-09.md",
-      "title": "Native Google product integration, 2026-10-09",
-      "sha256": "ac009c16618624add001aa2998f239396f4fe9e0c2b7f1876713015d2ddc7c76",
-      "bytes": 2265,
-      "domain": "web",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/operations/web/google-product-2026-10-09.md"
     },
     {
       "path": "docs/operations/workspace/HISTORY.md",
@@ -3694,6 +3584,26 @@
       "canonical": "docs/operations/workspace/aphrody-native-startup.md"
     },
     {
+      "path": "docs/operations/workspace/build-fleet-2026-10-11.md",
+      "title": "Native build fleet",
+      "sha256": "8939a25bc3528768288907600b01fd9a9cfd504b306ab30ab8cb539d84e47883",
+      "bytes": 4302,
+      "domain": "workspace",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/workspace/build-fleet-2026-10-11.md"
+    },
+    {
+      "path": "docs/operations/workspace/buv-gpu-cuda134-2026-10-10.md",
+      "title": "Buv GPU and PyJS native qualification — 2026-10-10",
+      "sha256": "94e5c3f81665ba45bf4bfc243a9a9d9f17fe9e3533e1df04d64ba6920ab5c7e1",
+      "bytes": 4323,
+      "domain": "workspace",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/workspace/buv-gpu-cuda134-2026-10-10.md"
+    },
+    {
       "path": "docs/operations/workspace/codex-vps-relay-2026-10-09.md",
       "title": "Hub A2A et MCP persistants sur le VPS (2026-10-09)",
       "sha256": "39f741d0b28bd9a6e8154de6852a2a07b0eb5be005da6eb45a6c13fe6ba1f849",
@@ -3714,6 +3624,26 @@
       "canonical": "docs/operations/workspace/config-consumers-2026-10-07.md"
     },
     {
+      "path": "docs/operations/workspace/discord-native-release-2026-10-10.md",
+      "title": "Discord native release, 2026-10-10",
+      "sha256": "a02128e8b88c2d48874d04f7dfd116cda9302fbd8fcc82009561202d3ba1e270",
+      "bytes": 1494,
+      "domain": "workspace",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/workspace/discord-native-release-2026-10-10.md"
+    },
+    {
+      "path": "docs/operations/workspace/google-account-backend-2026-10-11.md",
+      "title": "Google account backend and OVH delivery — 2026-10-11",
+      "sha256": "a234a4140353697e782b0a3c9e9cd35e2b5c3264e39da0651500cd4cdec35972",
+      "bytes": 10434,
+      "domain": "workspace",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/workspace/google-account-backend-2026-10-11.md"
+    },
+    {
       "path": "docs/operations/workspace/infra-qualification-2026-10-07.md",
       "title": "Qualification Infra et sccache — 7 octobre 2026",
       "sha256": "d52adaee09c296bfd9fb7b9f118a5d4d5cdde88f5a6f8fc3ea2d591ff86cfdf2",
@@ -3724,6 +3654,16 @@
       "canonical": "docs/operations/workspace/infra-qualification-2026-10-07.md"
     },
     {
+      "path": "docs/operations/workspace/integration-2026-10-11.md",
+      "title": "Branch integration and runtime qualification — 2026-10-11",
+      "sha256": "dfe9efe125be37803c74c6b0f35cd5fcf161ff3b51ec4a37062058f597236f47",
+      "bytes": 6944,
+      "domain": "workspace",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/workspace/integration-2026-10-11.md"
+    },
+    {
       "path": "docs/operations/workspace/m3-qualification-2026-10-07.md",
       "title": "Qualification M3 après déplacement — 7 octobre 2026",
       "sha256": "66efc9e20c08a9eedfd4211f4a54ab59448183d8630e420dff7975201e1263e5",
@@ -3732,6 +3672,16 @@
       "status": "historical",
       "visibility": "private",
       "canonical": "docs/operations/workspace/m3-qualification-2026-10-07.md"
+    },
+    {
+      "path": "docs/operations/workspace/native-ci-automation.md",
+      "title": "Native CI automation through Workspace",
+      "sha256": "8ffb72674a79d145f618b5a57d424e90491087c8e8ff24d08a333af8d0f52b4c",
+      "bytes": 2945,
+      "domain": "workspace",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/workspace/native-ci-automation.md"
     },
     {
       "path": "docs/operations/workspace/npm-source-release-2026-10-09.md",
@@ -3766,8 +3716,8 @@
     {
       "path": "docs/operations/workspace/product-content-source-audit-2026-10-09.md",
       "title": "Public product content source audit — 2026-10-09",
-      "sha256": "59512272a4ea72ebb3742265a44e63d2c1b0152206272c195673bb22d7787328",
-      "bytes": 4104,
+      "sha256": "1c268374dd6c70990037f03b2e5ec6d56eb87ffcfd4281415b3cb703b0591f67",
+      "bytes": 4174,
       "domain": "workspace",
       "status": "historical",
       "visibility": "private",
@@ -3776,12 +3726,62 @@
     {
       "path": "docs/operations/workspace/public-app-ui-artifact.md",
       "title": "Canonical public app-ui artifact",
-      "sha256": "69eb2cc3371bf5d640a9d3606e47aba242af3b1fe575e6a287361947112b90da",
-      "bytes": 5983,
+      "sha256": "79f7ae8b55fef258f91e0f8066b2644c2ec6f30a03e8367bc7aaa19b6e6ef163",
+      "bytes": 10938,
       "domain": "workspace",
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/workspace/public-app-ui-artifact.md"
+    },
+    {
+      "path": "docs/operations/workspace/public-bun-m3-site-2026-10-11.md",
+      "title": "Public Bun M3 site migration",
+      "sha256": "b3d4d7fd3f1a34caedee3087edb1c6074349c110dc2281c17948af64c0bce20f",
+      "bytes": 8770,
+      "domain": "workspace",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/workspace/public-bun-m3-site-2026-10-11.md"
+    },
+    {
+      "path": "docs/operations/workspace/public-crawl-index.md",
+      "title": "Public Google crawl index",
+      "sha256": "3e707c816fa68162a1ceb9aa25f3465036e57b9a879aad8414c19e3312155ba3",
+      "bytes": 5832,
+      "domain": "workspace",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/workspace/public-crawl-index.md"
+    },
+    {
+      "path": "docs/operations/workspace/public-google-search-publication.md",
+      "title": "M3 and Google search publication evidence",
+      "sha256": "2dd25f6291921ed97960298a422410a4b2be446d7578594c61c744855002fcdb",
+      "bytes": 4944,
+      "domain": "workspace",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/workspace/public-google-search-publication.md"
+    },
+    {
+      "path": "docs/operations/workspace/public-google-search.md",
+      "title": "Public M3 site and Google search publication",
+      "sha256": "01bc0e995d3b98e3d09d7735fa08025609159c569144b03c9c06b06f635f6d89",
+      "bytes": 4477,
+      "domain": "workspace",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "docs/operations/workspace/public-google-search.md"
+    },
+    {
+      "path": "docs/operations/workspace/public-page-backend-audit-2026-10-11.md",
+      "title": "Public pages and capability owners — 2026-10-11",
+      "sha256": "e8442546c941b5abb48e69451e38c7e7309a0768da2856394a5a523fbbd68df8",
+      "bytes": 19134,
+      "domain": "workspace",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/workspace/public-page-backend-audit-2026-10-11.md"
     },
     {
       "path": "docs/operations/workspace/python-native-transfer-2026-10-09.md",
@@ -3806,8 +3806,8 @@
     {
       "path": "docs/operations/workspace/registry-release-2026-10-09.md",
       "title": "Aphrody and IECODE registry release evidence (2026-10-09)",
-      "sha256": "ac9533ef1fca6bd96a493d81fc0e4f4482bc7c3b7c7eb8bc5a966ac136c52c05",
-      "bytes": 8140,
+      "sha256": "a98ed7db38d6dfd6f16dfc68c61f25690d99b3e6cfcda6e5a6a1b762c24fe46e",
+      "bytes": 9874,
       "domain": "workspace",
       "status": "historical",
       "visibility": "private",
@@ -3836,12 +3836,22 @@
     {
       "path": "docs/operations/workspace/rust-toolchains-and-cross-builds.md",
       "title": "Toolchains, build tools et compilation croisée Rust",
-      "sha256": "0e5b734f6ad65cb20113c3542755b9d75c4afe6e006a0dcda94afea5c5d93100",
-      "bytes": 5118,
+      "sha256": "bbc874c5fdf5ce606e6ce6798ec981b0cf449163d6f552cddda730dd958b4ea1",
+      "bytes": 8602,
       "domain": "workspace",
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/workspace/rust-toolchains-and-cross-builds.md"
+    },
+    {
+      "path": "docs/operations/workspace/sccache-vps-qualification-2026-10-11.md",
+      "title": "Qualification du sccache SSH VPS — 2026-10-11",
+      "sha256": "ed4eb5e16473151256143802129ebbfce6c6477bc776bd0ef11ddf9ba5d498f9",
+      "bytes": 6019,
+      "domain": "workspace",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/workspace/sccache-vps-qualification-2026-10-11.md"
     },
     {
       "path": "docs/operations/workspace/sdk-core-retirement-2026-10-09.md",
@@ -3882,6 +3892,16 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/operations/workspace/team-and-hosts.md"
+    },
+    {
+      "path": "docs/operations/workspace/timeline-release-2026-10-10.md",
+      "title": "Timeline current-source release, 2026-10-10",
+      "sha256": "0d569e2fb9e2f107b3a0e3b36c987342d5aa5f054f514cd0a208a56f58454a78",
+      "bytes": 924,
+      "domain": "workspace",
+      "status": "historical",
+      "visibility": "private",
+      "canonical": "docs/operations/workspace/timeline-release-2026-10-10.md"
     },
     {
       "path": "docs/operations/workspace/windows-native.md",
@@ -3966,8 +3986,8 @@
     {
       "path": "docs/plans/ai/gpu-fleet/VPS-GATEWAY.md",
       "title": "VPS cache, file depot and inference gateway",
-      "sha256": "f4f6be887935316ea1aa31cbe3c1a22dbcc023f454b1bb78e2c6e10194dcc68e",
-      "bytes": 3784,
+      "sha256": "2990c0486f3b90dc5141305fd2576f3fb52f1213f27b1b9338fb9bb74345b07b",
+      "bytes": 4909,
       "domain": "ai",
       "status": "canonical",
       "visibility": "private",
@@ -4136,8 +4156,8 @@
     {
       "path": "docs/plans/desktop-web/PLAN.md",
       "title": "Desktop and web engines: Obscura, Tauri/CEF and browser automation",
-      "sha256": "de50901dc143137b2f0bf41c40d3a63cbda7c0e9cd73e3a20646f41ec4b181da",
-      "bytes": 14880,
+      "sha256": "a5881a9ee82070cd7204dc500cd5f2261c1024debedfe242acd0fe9f9bc54774",
+      "bytes": 14823,
       "domain": "desktop-web",
       "status": "historical",
       "visibility": "private",
@@ -4346,8 +4366,8 @@
     {
       "path": "docs/plans/shell/wasm-stack-definitive.md",
       "title": "Shell / terminal stack: wasm, web, Tauri, serverless (definitive plan)",
-      "sha256": "b944b69f04636faf806ba232546cb90ebb0015c252e0020bd59b0ef4e89a2a69",
-      "bytes": 22139,
+      "sha256": "6ad38bb052ca21357ca0e77ad41f742f70fc7afd692d3ef74105f29b58f37d70",
+      "bytes": 25483,
       "domain": "shell",
       "status": "historical",
       "visibility": "private",
@@ -4382,16 +4402,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/plans/vu/scaffold/README.md"
-    },
-    {
-      "path": "docs/plans/web/next-fork/PLAN.md",
-      "title": "Fork Next.js — plan propriétaire",
-      "sha256": "e08ad1909856019de4d211dbaf048ea34026b8caa7999746387437e501947dd3",
-      "bytes": 1012,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/plans/web/next-fork/PLAN.md"
     },
     {
       "path": "docs/plans/workspace/PLAN.md",
@@ -4532,26 +4542,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/products/ai/gcloud/README.md"
-    },
-    {
-      "path": "docs/products/ai/google-deepmind/README.md",
-      "title": "Python repositories of the google-deepmind GitHub organization",
-      "sha256": "ac2d1ec8d39981e444dd286c237a64bcce10412d7f9d45020f8dae5eb967b37e",
-      "bytes": 4155,
-      "domain": "ai",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/products/ai/google-deepmind/README.md"
-    },
-    {
-      "path": "docs/products/ai/google/README.md",
-      "title": "Python repositories of the google GitHub organization",
-      "sha256": "25c2d531c6ec2dfaa784db72312e65019ac272cea1d37676c23736062f579efa",
-      "bytes": 6139,
-      "domain": "ai",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/products/ai/google/README.md"
     },
     {
       "path": "docs/products/ai/grok/README.md",
@@ -4824,76 +4814,6 @@
       "canonical": "docs/products/shell/terminal/README.md"
     },
     {
-      "path": "docs/products/web/README.md",
-      "title": "Aphrody Web",
-      "sha256": "edf795b74e4b6fd95af3af57cc9e85e47e6309e7569b959519c7410de10f2fec",
-      "bytes": 2506,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/products/web/README.md"
-    },
-    {
-      "path": "docs/products/web/chromium/README.md",
-      "title": "docs/chromium — Chromium & V8 build reference (Windows-first)",
-      "sha256": "77a2637d73c69223184b5d69f04afc1e74531e23d807b08ea49f5ab7a337b6d1",
-      "bytes": 2513,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/products/web/chromium/README.md"
-    },
-    {
-      "path": "docs/products/web/crates/aphrody-site/web/README.md",
-      "title": "Aphrody Web OS portal",
-      "sha256": "ebfaa415b6153264eaa56badc171545698cc3101c6d2a03f251a5bb651c2fea4",
-      "bytes": 1531,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/products/web/crates/aphrody-site/web/README.md"
-    },
-    {
-      "path": "docs/products/web/crates/aphrody-x/README.md",
-      "title": "Standalone X (Twitter) Web API Client",
-      "sha256": "75d13a4f5e86884c4850ac3159834fa7f632decae4cadc30525ce3e6ad577d40",
-      "bytes": 2776,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/products/web/crates/aphrody-x/README.md"
-    },
-    {
-      "path": "docs/products/web/drive-server/README.md",
-      "title": "Drive HTTP server migration workspace",
-      "sha256": "60bb750ae7477f553333d88283f0b6577bfbc9856122a387ee5d3c4c622c8c3c",
-      "bytes": 1908,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/products/web/drive-server/README.md"
-    },
-    {
-      "path": "docs/products/web/packages/m3-tokens/README.md",
-      "title": "@aphrody/m3-tokens",
-      "sha256": "5617588dcfd2bf8e9c7b3c784576c0b6a059e9373ba085260bcc8b31444cdeb2",
-      "bytes": 5988,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/products/web/packages/m3-tokens/README.md"
-    },
-    {
-      "path": "docs/products/web/x/README.md",
-      "title": "aphrody-x — headless X / Twitter framework",
-      "sha256": "f08dfeafaa7c954b6d74e39cab9b0dccde430a6b2040a1deaef5b002fc98cac4",
-      "bytes": 5460,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/products/web/x/README.md"
-    },
-    {
       "path": "docs/products/workspace/README.md",
       "title": "Aphrody source workspace",
       "sha256": "b9a416715a9ce9f59e931318c8644579a0013f0b2d4b26935066edd931cc2e8e",
@@ -5112,16 +5032,6 @@
       "status": "historical",
       "visibility": "private",
       "canonical": "docs/reference/ai/GIT-GITHUB.md"
-    },
-    {
-      "path": "docs/reference/ai/GOOGLE.md",
-      "title": "GOOGLE.md â€” Alignement Google ecosystem",
-      "sha256": "209805c5fa6bce97226303ec5b0796ff7fae525e23ddda64da17b677ebb23c39",
-      "bytes": 6061,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/GOOGLE.md"
     },
     {
       "path": "docs/reference/ai/HEARTBEAT.md",
@@ -5474,16 +5384,6 @@
       "canonical": "docs/reference/ai/cargo/ANDROID_TARGET.md"
     },
     {
-      "path": "docs/reference/ai/cargo/CHROMIUM_ANDROID_PATTERNS.md",
-      "title": "Patterns Chromium / Android — adoption dans aphrody",
-      "sha256": "dbfaffc1902b49c0b1791384633599dd6d8a076f2cf3e0c7c01237cc741f58dd",
-      "bytes": 8957,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/cargo/CHROMIUM_ANDROID_PATTERNS.md"
-    },
-    {
       "path": "docs/reference/ai/cargo/CROSS_PLATFORM.md",
       "title": "Cross-platform build",
       "sha256": "6bc221773db81bd7ce889fcaa4ccbb0e5fb10651870e332799d92a8509afd139",
@@ -5512,16 +5412,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/reference/ai/cargo/FFI_POLICY.md"
-    },
-    {
-      "path": "docs/reference/ai/cargo/GOOGLE_MODE.md",
-      "title": "Google Mode — Full coverage matrix (2026-05-17)",
-      "sha256": "3e8c63af93861e31a8c5c03a8af835fe3ea2263c7fc52f0f65eb31edd2c247b1",
-      "bytes": 7982,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/cargo/GOOGLE_MODE.md"
     },
     {
       "path": "docs/reference/ai/cargo/LINTS.md",
@@ -5694,16 +5584,6 @@
       "canonical": "docs/reference/ai/discord/voice-stack.md"
     },
     {
-      "path": "docs/reference/ai/discord/web-network-recon.md",
-      "title": "Discord — cartographie reseau, frameworks et authentification",
-      "sha256": "54d025ac6c749d0297602491e23622dc6202f882a942115337ad0e3e299fa633",
-      "bytes": 6615,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/discord/web-network-recon.md"
-    },
-    {
       "path": "docs/reference/ai/gcloud/COST_OPTIMIZATION.md",
       "title": "Google Cloud — Cost Optimization & Always Free Tier Runbook",
       "sha256": "58d572ff478ac9d4d4b5a1b8de6c006cfc727b417a5f7869cf69ebbdb905b562",
@@ -5732,166 +5612,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/reference/ai/gemini-embedding-2.md"
-    },
-    {
-      "path": "docs/reference/ai/google-deepmind/all-repos.md",
-      "title": "google-deepmind — Python repositories (exhaustive catalog)",
-      "sha256": "3cd2dfdf876cc70dd4c45180cbff95432841b08cf3d45cf1c9be7d9b74df77c6",
-      "bytes": 33649,
-      "domain": "ai",
-      "status": "generated",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/google-deepmind/all-repos.md"
-    },
-    {
-      "path": "docs/reference/ai/google-deepmind/catalog/foundation-models-and-alphax.md",
-      "title": "Google DeepMind · Foundation Models and AlphaX",
-      "sha256": "7344fd17c32f05294eb2f26c6d2626ce304254b833971a088770d525a11c6812",
-      "bytes": 7651,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/google-deepmind/catalog/foundation-models-and-alphax.md"
-    },
-    {
-      "path": "docs/reference/ai/google-deepmind/catalog/jax-ecosystem.md",
-      "title": "Google DeepMind · JAX Ecosystem",
-      "sha256": "2452de00d7febf14f107f112a6fed9aa1ba00837b22665c9611534a359d99eaf",
-      "bytes": 11532,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/google-deepmind/catalog/jax-ecosystem.md"
-    },
-    {
-      "path": "docs/reference/ai/google-deepmind/catalog/neural-network-libraries.md",
-      "title": "Google DeepMind · Neural Network Libraries",
-      "sha256": "a4e970a07bfc13bfd670b1404e3dcf4a7995b2e1b4311136e8846b043837ab35",
-      "bytes": 12606,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/google-deepmind/catalog/neural-network-libraries.md"
-    },
-    {
-      "path": "docs/reference/ai/google-deepmind/catalog/reinforcement-learning-and-environments.md",
-      "title": "Google DeepMind · Reinforcement Learning and Environments",
-      "sha256": "1e7814f70562c401c6279789d036940f54e8dc158833bd634bcc8cf935f1f381",
-      "bytes": 14826,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/google-deepmind/catalog/reinforcement-learning-and-environments.md"
-    },
-    {
-      "path": "docs/reference/ai/google-deepmind/catalog/science-datasets-and-tools.md",
-      "title": "Google DeepMind · Science, Datasets, and Tools",
-      "sha256": "7d8be8c3ae2579cda484f0f8b3c1f3c137c9b96a80d27ef97795de597aa1983c",
-      "bytes": 17020,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/google-deepmind/catalog/science-datasets-and-tools.md"
-    },
-    {
-      "path": "docs/reference/ai/google-interaction-patterns.md",
-      "title": "Analyse runtime des interactions design.google / Gemini → framework React",
-      "sha256": "c79e89a32337358efbbcd5e7318b3aa39b13de93088a558a52a0c44c5c9ffc92",
-      "bytes": 4029,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/google-interaction-patterns.md"
-    },
-    {
-      "path": "docs/reference/ai/google/all-repos.md",
-      "title": "google — Python repositories (exhaustive catalog)",
-      "sha256": "de08601d7078aecd0aa71fbc706302db1b76ccac9ce3fa8041eb09e3643bba78",
-      "bytes": 82628,
-      "domain": "ai",
-      "status": "generated",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/google/all-repos.md"
-    },
-    {
-      "path": "docs/reference/ai/google/catalog/ai-ml.md",
-      "title": "Google · AI / Machine Learning",
-      "sha256": "ba509daf37031321db15900f89622ca6830d8c5bdb3835a6ef02dbac5600c253",
-      "bytes": 21284,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/google/catalog/ai-ml.md"
-    },
-    {
-      "path": "docs/reference/ai/google/catalog/data-science.md",
-      "title": "Google · Data Science",
-      "sha256": "7840cf375ca71fefd7cc16255be47925375a125771bd480db54e52bbda60b96e",
-      "bytes": 8808,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/google/catalog/data-science.md"
-    },
-    {
-      "path": "docs/reference/ai/google/catalog/developer-tools.md",
-      "title": "Google · Developer Tools",
-      "sha256": "a37cfd9c3ccee42b938f1dacc27dcfc42673c0d0df021e2f907b6afe7a01c489",
-      "bytes": 17182,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/google/catalog/developer-tools.md"
-    },
-    {
-      "path": "docs/reference/ai/google/catalog/hardware-eda.md",
-      "title": "Google · Hardware / EDA",
-      "sha256": "6b1f6726949d140f0490236fd8c8450c2b8e322cfef17805d87aa4a96b955493",
-      "bytes": 4216,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/google/catalog/hardware-eda.md"
-    },
-    {
-      "path": "docs/reference/ai/google/catalog/mobile-android.md",
-      "title": "Google · Mobile / Android",
-      "sha256": "7d177a4faf83d4696dab030c5379ed05f833218b33239c4b293633db292147ba",
-      "bytes": 5509,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/google/catalog/mobile-android.md"
-    },
-    {
-      "path": "docs/reference/ai/google/catalog/other.md",
-      "title": "Google · Other & uncategorized",
-      "sha256": "53e577ba6e0da71f403a0ab994714a5aee35af0bc145a478a52f621322233637",
-      "bytes": 50648,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/google/catalog/other.md"
-    },
-    {
-      "path": "docs/reference/ai/google/catalog/vision-media-graphics.md",
-      "title": "Google · Vision, Media & Graphics",
-      "sha256": "768c503a794d8dc0e45ed9e80ddb2aba2ff4601f6c8bd837d160be60dcf83b3b",
-      "bytes": 13427,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/google/catalog/vision-media-graphics.md"
-    },
-    {
-      "path": "docs/reference/ai/google/catalog/web-systems-networking.md",
-      "title": "Google · Web / Systems / Networking",
-      "sha256": "d0e25eb5abf1843d7ecd37788434810990224ab216213c12dd55f273f201e301",
-      "bytes": 8348,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/google/catalog/web-systems-networking.md"
     },
     {
       "path": "docs/reference/ai/grok/bxc-and-grok.md",
@@ -6034,76 +5754,6 @@
       "canonical": "docs/reference/ai/nanobanana-pro.md"
     },
     {
-      "path": "docs/reference/ai/plugins/aphrody/agents/web-crossplat-builder.md",
-      "title": "name: web-crossplat-builder",
-      "sha256": "73ca09797953d6ea43431423314544a3342e40aac1337659f19a39eb867e35ec",
-      "bytes": 843,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/plugins/aphrody/agents/web-crossplat-builder.md"
-    },
-    {
-      "path": "docs/reference/ai/plugins/aphrody/agents/web-frontend-engineer.md",
-      "title": "web-frontend-engineer — HTML5 / CSS3 / Web Specialist",
-      "sha256": "c51d558c6a099483f31d0e310da208ee0bbff3b53dbfe01608acfd9edc62875c",
-      "bytes": 754,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/plugins/aphrody/agents/web-frontend-engineer.md"
-    },
-    {
-      "path": "docs/reference/ai/plugins/aphrody/agents/web-mcp-author.md",
-      "title": "name: web-mcp-author",
-      "sha256": "d11b27c0f0692f49607486d37d4554196dc4b3a459c489217dd7924ef5400ba7",
-      "bytes": 1463,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/plugins/aphrody/agents/web-mcp-author.md"
-    },
-    {
-      "path": "docs/reference/ai/plugins/aphrody/agents/web-rust-ffi-engineer.md",
-      "title": "name: web-rust-ffi-engineer",
-      "sha256": "8261f76b55aa406da7168cdfa98f89e77152a3a838a72a90c731731b24bf63c7",
-      "bytes": 1497,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/plugins/aphrody/agents/web-rust-ffi-engineer.md"
-    },
-    {
-      "path": "docs/reference/ai/plugins/aphrody/agents/web-scrape-debugger.md",
-      "title": "Aphrody Web profiles (escalation order)",
-      "sha256": "9273320da17f1df89262f649000e3ad1d44ddf6d350ee446cd6f555cecd05cdf",
-      "bytes": 3422,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/plugins/aphrody/agents/web-scrape-debugger.md"
-    },
-    {
-      "path": "docs/reference/ai/plugins/aphrody/agents/web-scraper-creator.md",
-      "title": "name: web-scraper-creator",
-      "sha256": "21c553f256ac7f72db6712ab4f700952f26e21cce9cf211437df6955bffe2e5c",
-      "bytes": 681,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/plugins/aphrody/agents/web-scraper-creator.md"
-    },
-    {
-      "path": "docs/reference/ai/plugins/aphrody/agents/web-verify-enforcer.md",
-      "title": "name: web-verify-enforcer",
-      "sha256": "e6bc800ee3626f1ff87f7952017a8e34424c0eb8b77fc2da14abeb31138d05cb",
-      "bytes": 1302,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/plugins/aphrody/agents/web-verify-enforcer.md"
-    },
-    {
       "path": "docs/reference/ai/plugins/aphrody/commands/docs.md",
       "title": "/docs — documentation lookup",
       "sha256": "e28c065beee3298d1f94b2e283509a0a5e1fe5b02d35a87d12a8783e0f95c08f",
@@ -6124,46 +5774,6 @@
       "canonical": "docs/reference/ai/plugins/aphrody/commands/n2b.md"
     },
     {
-      "path": "docs/reference/ai/plugins/aphrody/commands/web-build.md",
-      "title": "name: web-build",
-      "sha256": "e7e123d09308356bc20f1fe6f197d56b0baeebd78d32c81a3f0297acc48a4620",
-      "bytes": 595,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/plugins/aphrody/commands/web-build.md"
-    },
-    {
-      "path": "docs/reference/ai/plugins/aphrody/commands/web-new-scraper.md",
-      "title": "name: web-new-scraper",
-      "sha256": "5727cf5b03ecc08b96d6acc8e074e90127fd820f6e4620af9cae512a293348e8",
-      "bytes": 900,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/plugins/aphrody/commands/web-new-scraper.md"
-    },
-    {
-      "path": "docs/reference/ai/plugins/aphrody/commands/web-verify.md",
-      "title": "Basic",
-      "sha256": "6800bb0be329bc80099c00dba501b07d6bd20ea64334df45f49c4adbd3278812",
-      "bytes": 1315,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/plugins/aphrody/commands/web-verify.md"
-    },
-    {
-      "path": "docs/reference/ai/plugins/aphrody/commands/web.md",
-      "title": "description: Use Aphrody Web for research, fetch, browser, scraping or bounded crawl",
-      "sha256": "f55dad49c1aa7330824cd09fb9ca7a3e8befad88db5a2604108f7042167d2002",
-      "bytes": 267,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/plugins/aphrody/commands/web.md"
-    },
-    {
       "path": "docs/reference/ai/plugins/aphrody/skills/agent-browser/SKILL.md",
       "title": "agent-browser",
       "sha256": "fafddd0d3fce84766f88f509229579f178119231d977b4b012403f2808af442e",
@@ -6172,76 +5782,6 @@
       "status": "historical",
       "visibility": "private",
       "canonical": "docs/reference/ai/plugins/aphrody/skills/agent-browser/SKILL.md"
-    },
-    {
-      "path": "docs/reference/ai/plugins/aphrody/skills/web-build/SKILL.md",
-      "title": "name: web-build",
-      "sha256": "6334140d99eecf56425eca1746c96a2abd2da8dd996d4b2c67e624716533c9bc",
-      "bytes": 880,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/plugins/aphrody/skills/web-build/SKILL.md"
-    },
-    {
-      "path": "docs/reference/ai/plugins/aphrody/skills/web-docs/SKILL.md",
-      "title": "name: web-docs",
-      "sha256": "5ff22cc044ca03f9412dc148d4e210c799cf34a7154945c73d28b3646e351172",
-      "bytes": 712,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/plugins/aphrody/skills/web-docs/SKILL.md"
-    },
-    {
-      "path": "docs/reference/ai/plugins/aphrody/skills/web-mcp-server/SKILL.md",
-      "title": "name: web-mcp-server",
-      "sha256": "67e02c92945189ca344ba69ca76846d00814739521cbe65ca8903443ef7500ff",
-      "bytes": 1034,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/plugins/aphrody/skills/web-mcp-server/SKILL.md"
-    },
-    {
-      "path": "docs/reference/ai/plugins/aphrody/skills/web-new-scraper/SKILL.md",
-      "title": "name: web-new-scraper",
-      "sha256": "8d6ec3b2fd3c2a965e227a432730f4189420c39910e9cfd113c2b2f8b8f4f1bc",
-      "bytes": 766,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/plugins/aphrody/skills/web-new-scraper/SKILL.md"
-    },
-    {
-      "path": "docs/reference/ai/plugins/aphrody/skills/web-next-playwright/SKILL.md",
-      "title": "@aphrody/next-playwright",
-      "sha256": "801023e6f2bc4cf438599b7133e673a3af4e57a6983d7761065223542fefad31",
-      "bytes": 1629,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/plugins/aphrody/skills/web-next-playwright/SKILL.md"
-    },
-    {
-      "path": "docs/reference/ai/plugins/aphrody/skills/web-rust-ffi/SKILL.md",
-      "title": "Aphrody Web Rust FFI (cdylib for Bun)",
-      "sha256": "ad75f15159a45bf693891417f7352d2568f7dcab1bd04f6c15fe53b507eda7cd",
-      "bytes": 3051,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/plugins/aphrody/skills/web-rust-ffi/SKILL.md"
-    },
-    {
-      "path": "docs/reference/ai/plugins/aphrody/skills/web-verify/SKILL.md",
-      "title": "name: web-verify",
-      "sha256": "b84eca96b9c8d58d62f2aed58dffbbd75a0530e09f6a9d068e9753813780125e",
-      "bytes": 753,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/plugins/aphrody/skills/web-verify/SKILL.md"
     },
     {
       "path": "docs/reference/ai/py/AGENTS.md",
@@ -6312,26 +5852,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/reference/ai/rust/android-rust-practices.md"
-    },
-    {
-      "path": "docs/reference/ai/rust/chromium-rust-practices.md",
-      "title": "Pratiques Rust de Chromium distillées pour aphrody",
-      "sha256": "fffc22dc1de881c08d75f7f1b8fc5e501c89dd50c4d38813defe5373d9e1b6a2",
-      "bytes": 9695,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/rust/chromium-rust-practices.md"
-    },
-    {
-      "path": "docs/reference/ai/rust/google-rust-crates.md",
-      "title": "Google Rust Crates — Evaluation & Integration",
-      "sha256": "b01688c71395a9115169d982d28b32147ceb596012f5503d6d03b04f8cd8cb3f",
-      "bytes": 5913,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/ai/rust/google-rust-crates.md"
     },
     {
       "path": "docs/reference/ai/training.md",
@@ -6482,36 +6002,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/reference/infra/GITHUB-OWNERSHIP.md"
-    },
-    {
-      "path": "docs/reference/infra/GOOGLE-GEMINI-PIPELINE.md",
-      "title": "Pipeline Google/Gemini Aphrody",
-      "sha256": "ca54d6943413f68fde9aa959f7ef3bc9c8cad2a73a03fc99e45797cfd1779be6",
-      "bytes": 1890,
-      "domain": "infra",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/reference/infra/GOOGLE-GEMINI-PIPELINE.md"
-    },
-    {
-      "path": "docs/reference/infra/GOOGLE-STACK-PACKAGING.md",
-      "title": "Google stack packaging contract",
-      "sha256": "27a51e15089a24d5ec73770e757c125ed3b0b648ae4fa6e6ec22094d7a96fb8d",
-      "bytes": 3656,
-      "domain": "infra",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/infra/GOOGLE-STACK-PACKAGING.md"
-    },
-    {
-      "path": "docs/reference/infra/MCP-GOOGLE-WEB.md",
-      "title": "MCP Google / Cloud / Web",
-      "sha256": "03592088fcf6f56b958693804f158756d7be675c9a15e6fd6fda4afd2853de32",
-      "bytes": 971,
-      "domain": "infra",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/infra/MCP-GOOGLE-WEB.md"
     },
     {
       "path": "docs/reference/infra/MIGRATION-GUARDRAILS.md",
@@ -6676,10 +6166,10 @@
     {
       "path": "docs/reference/infra/ops/ASSET-CDN.md",
       "title": "Shared asset CDN — cdn.aphrody.com",
-      "sha256": "30b219843d1387a0274b8250b765120ec0fb86c39dd709cd8086d7ca471b9def",
-      "bytes": 5990,
+      "sha256": "44379a4c468793365edd6f8c73e9b0edb87448cc71e08a170acddd64ae889ba3",
+      "bytes": 6893,
       "domain": "infra",
-      "status": "canonical",
+      "status": "historical",
       "visibility": "private",
       "canonical": "docs/reference/infra/ops/ASSET-CDN.md"
     },
@@ -7146,8 +6636,8 @@
     {
       "path": "docs/reference/upstream-bun/APHRODY-FORK.md",
       "title": "Bun in Aphrody: the aphrody-labs/bun fork",
-      "sha256": "63ab78ec01fdc3e359af23be6fc30a792d93d4a0babf00e641ae14886842539e",
-      "bytes": 7197,
+      "sha256": "ada47b30c236f5c255237144ab608e6712c61a0df7fd02382ade592214a76359",
+      "bytes": 8566,
       "domain": "upstream-bun",
       "status": "imported",
       "visibility": "private",
@@ -7172,456 +6662,6 @@
       "status": "imported",
       "visibility": "private",
       "canonical": "docs/reference/upstream-codex/APHRODY-FORK.md"
-    },
-    {
-      "path": "docs/reference/web/AGENTS.md",
-      "title": "aphrody-web: agent rules",
-      "sha256": "c07f3d24e2ce190c95a8ea5c57026239380fcdc935f24caf46707ff7036ee478",
-      "bytes": 2079,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/AGENTS.md"
-    },
-    {
-      "path": "docs/reference/web/APHRODY-WEB-AUDIT.md",
-      "title": "aphrody-web audit (2026-10-02, read-only)",
-      "sha256": "4640f4b4d305d3babfd9d19eae4048138a7a39a44e477a70f290b5d405b4dc7f",
-      "bytes": 13824,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/APHRODY-WEB-AUDIT.md"
-    },
-    {
-      "path": "docs/reference/web/CURL-IMPERSONATE-INTEGRATION.md",
-      "title": "curl-impersonate et Aphrody OS",
-      "sha256": "40f45bec26334dd634e9e1bc9a40bcdf43ad2eb3542a74e1822d583dca4feb93",
-      "bytes": 2287,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/CURL-IMPERSONATE-INTEGRATION.md"
-    },
-    {
-      "path": "docs/reference/web/GOOGLE-ECOSYSTEM-VERIFICATION.md",
-      "title": "Google ecosystem verification contract",
-      "sha256": "a20827b73f1a53abd43054f144b28cef64be3f2cdb2cd71fddd598abb21f7857",
-      "bytes": 4925,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/GOOGLE-ECOSYSTEM-VERIFICATION.md"
-    },
-    {
-      "path": "docs/reference/web/GOOGLE-WEB-BRIDGE.md",
-      "title": "Contrat Google / Gemini / Aphrody Web Browser",
-      "sha256": "e85f003648d3344efdf2fcda033291aa224cbc2c5ec33f738f4931cec0f63be6",
-      "bytes": 3556,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/GOOGLE-WEB-BRIDGE.md"
-    },
-    {
-      "path": "docs/reference/web/URL-SLUG-SEO.md",
-      "title": "URL, slug and SEO conventions — the public Aphrody web surfaces",
-      "sha256": "2ffecb65e99839828ee8b0cf7d3fd5ddf4888d640fd559b484531a48bd70b3bb",
-      "bytes": 14424,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/URL-SLUG-SEO.md"
-    },
-    {
-      "path": "docs/reference/web/VENDOR.md",
-      "title": "Vendored and patched third-party code",
-      "sha256": "e0c345054339c70a533d6841a42dd09b91a00f7384d2484b0db9ade48f97d96d",
-      "bytes": 1980,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/VENDOR.md"
-    },
-    {
-      "path": "docs/reference/web/WEB-RUNTIME.md",
-      "title": "Runtime web unifié : Aphrody Web Browser, Bun et N2B",
-      "sha256": "f82157a889ae4984d40ec72df2d4b7234ce5bc5706ca7cc7374058f71d6402dd",
-      "bytes": 13875,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/WEB-RUNTIME.md"
-    },
-    {
-      "path": "docs/reference/web/chromium/aphrody-v8-state.md",
-      "title": "aphrody V8 build state (this machine)",
-      "sha256": "6c34ac8011bc7285a145f733b3760d35f97414505a04b63610233506d712fe7b",
-      "bytes": 3986,
-      "domain": "web",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/chromium/aphrody-v8-state.md"
-    },
-    {
-      "path": "docs/reference/web/chromium/get-the-code.md",
-      "title": "Getting the code — depottools + fetch v8",
-      "sha256": "a9ae786f423e25b165f10fb7caebbde549513c17b91ac91505aa764229f0fbda",
-      "bytes": 1948,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/chromium/get-the-code.md"
-    },
-    {
-      "path": "docs/reference/web/chromium/rust-bindings.md",
-      "title": "Rust ↔ V8 — the official binding (rustyv8)",
-      "sha256": "70cd865e51ed89705b51af2a6c9a4e5c83831fd4a12ee05a4baacb75c19df900",
-      "bytes": 2793,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/chromium/rust-bindings.md"
-    },
-    {
-      "path": "docs/reference/web/chromium/v8-build.md",
-      "title": "Building V8 — GN + ninja",
-      "sha256": "7f8d95cc650f5b3cdf0ba6406b29e83b4e561a3e41637c4587a0eb0ce3c07d42",
-      "bytes": 2724,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/chromium/v8-build.md"
-    },
-    {
-      "path": "docs/reference/web/chromium/v8-embed.md",
-      "title": "Embedding V8",
-      "sha256": "14f1550c3c7a8d60aac66b2d5037f08bcfec56c912cb1c8eecd6df96d3c25a85",
-      "bytes": 2339,
-      "domain": "web",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/chromium/v8-embed.md"
-    },
-    {
-      "path": "docs/reference/web/chromium/windows-build.md",
-      "title": "Windows build prerequisites",
-      "sha256": "e273d4a7b3fdf18489e8ed5c4395d2d10c450b58efc13457a1a60e8994f75425",
-      "bytes": 2465,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/chromium/windows-build.md"
-    },
-    {
-      "path": "docs/reference/web/crates/aphrody-x/RECON.md",
-      "title": "X (Twitter) private web API — reconnaissance",
-      "sha256": "58c35f7468db9cbc44680a7def93c1ccb9eef49eb53cda6cda90afb09a7d9f57",
-      "bytes": 6011,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/crates/aphrody-x/RECON.md"
-    },
-    {
-      "path": "docs/reference/web/drive-server/AGENTS.md",
-      "title": "Drive server agent rules",
-      "sha256": "dda03bea636cf1a2e0c56113c388bd44c021dbe2b6ca0f41592a392210143196",
-      "bytes": 562,
-      "domain": "web",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/drive-server/AGENTS.md"
-    },
-    {
-      "path": "docs/reference/web/drive-server/PROVENANCE.md",
-      "title": "Drive server provenance",
-      "sha256": "e62e059d09e326853260be5aa6477668ca42f9f599d2d9e5533d74633017006f",
-      "bytes": 2084,
-      "domain": "web",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/drive-server/PROVENANCE.md"
-    },
-    {
-      "path": "docs/reference/web/web/AGENT-INDEX.md",
-      "title": "Aphrody Web agent index — architecture",
-      "sha256": "f6d0e3456eca5b40540043d61417966d6ef75487dd8ecc9aaca494568434a739",
-      "bytes": 3032,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/AGENT-INDEX.md"
-    },
-    {
-      "path": "docs/reference/web/web/BUILD-WINDOWS.md",
-      "title": "Build Windows — Stack complète Aphrody Web + lightpanda + agent-browser",
-      "sha256": "4ce161c95cb51021d358e14dd31b8f9c1d89fb470a355aee5fd87c597ca3dab8",
-      "bytes": 21072,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/BUILD-WINDOWS.md"
-    },
-    {
-      "path": "docs/reference/web/web/CHROME-DEVTOOLS-MCP-ANALYSIS.md",
-      "title": "Chrome DevTools MCP Analysis Report",
-      "sha256": "71b45ebd052827aecd7032dd024e6116c0f9b7572b86620a60aeef33b6c3815c",
-      "bytes": 4980,
-      "domain": "web",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/CHROME-DEVTOOLS-MCP-ANALYSIS.md"
-    },
-    {
-      "path": "docs/reference/web/web/CHROMIUM-RUST.md",
-      "title": "Native Chromium Core (bxc-engine)",
-      "sha256": "21ea7d2dc6b06e252e6fcf82cb240dfea011d0689242018a7bd26ad7b064da74",
-      "bytes": 2190,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/CHROMIUM-RUST.md"
-    },
-    {
-      "path": "docs/reference/web/web/CLUSTER.md",
-      "title": "Aphrody Web cluster — sharded frontier, workers and aphrody web serve --agent",
-      "sha256": "0e1db156cafb871bf778b5f202a4561d0ae4886bc19439427a302c1db63182cb",
-      "bytes": 11585,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/CLUSTER.md"
-    },
-    {
-      "path": "docs/reference/web/web/EXTRACT.md",
-      "title": "Structured extraction to schema (aphrody web extract)",
-      "sha256": "ec56959b694dba3c46930acf4f155546a28eb959d121fa10981ab4821b6ac4a3",
-      "bytes": 12901,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/EXTRACT.md"
-    },
-    {
-      "path": "docs/reference/web/web/GOOGLE-ATLAS.md",
-      "title": "🗺️ Google Ecosystem Atlas",
-      "sha256": "93a4ab6535c81611be45436f652aa15fb1ec894d94db80e290a92d7eca3ef145",
-      "bytes": 1809,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/GOOGLE-ATLAS.md"
-    },
-    {
-      "path": "docs/reference/web/web/GOOGLE-TRANSLATE.md",
-      "title": "Google Cloud Translation API & moteur multi-niveaux — Open-Source Zero Rate-Limit",
-      "sha256": "fab5315d5c0468285de2dc9cc3313f6da78d626a181fa880761a9e68a5b37cff",
-      "bytes": 5146,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/GOOGLE-TRANSLATE.md"
-    },
-    {
-      "path": "docs/reference/web/web/INDEX.md",
-      "title": "Aphrody Web Documentation Index",
-      "sha256": "32684b7e372588c0190f274dd11c26b48ce9940c1ffab475278a014bc4f827e8",
-      "bytes": 4250,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/INDEX.md"
-    },
-    {
-      "path": "docs/reference/web/web/PACKAGE-MANAGER.md",
-      "title": "Aphrody Web dans la distribution Aphrody OS",
-      "sha256": "aed17313b0920d8504be6df251fa94bc1acc07e2a39fd93b04a8a9974f4134cd",
-      "bytes": 1665,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/PACKAGE-MANAGER.md"
-    },
-    {
-      "path": "docs/reference/web/web/SCRAPERS.md",
-      "title": "🕷️ Aphrody Web Dedicated Scrapers & Verticals",
-      "sha256": "3dcdcf396b5a4d4721bf6650020c00a7c7e5eab24d49a47e2e877fefa464acd1",
-      "bytes": 2759,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/SCRAPERS.md"
-    },
-    {
-      "path": "docs/reference/web/web/SERVERLESS.md",
-      "title": "Aphrody Web — Serverless",
-      "sha256": "98fd7d92a006d4cd99999ec9257fd4b84b9ee874cad510f5cf547360e93e1098",
-      "bytes": 4468,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/SERVERLESS.md"
-    },
-    {
-      "path": "docs/reference/web/web/WEB-BROWSER-ECOSYSTEM.md",
-      "title": "Aphrody Web Browser : carte des composants",
-      "sha256": "cb9af0b00ccaae2642f89f8afc584b05aa93fd8f02e1668edf9f5394e7d3af3c",
-      "bytes": 5282,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/WEB-BROWSER-ECOSYSTEM.md"
-    },
-    {
-      "path": "docs/reference/web/web/bxc-google-module-chrome-mcp.md",
-      "title": "Aphrody Web Google module → aphrody Chrome MCP / CDP upgrade design",
-      "sha256": "b84c9b2dec9e24392208ec3a43c4bd69baa259d6f131bef4b8aa0eeff2576460",
-      "bytes": 20942,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/bxc-google-module-chrome-mcp.md"
-    },
-    {
-      "path": "docs/reference/web/web/gemini-web-app-analysis.md",
-      "title": "Gemini Web App Static Code Analysis Report",
-      "sha256": "a95d5652044b806a7f12860d862855328faa413a3d2dbec2d9d95f9d1c210be6",
-      "bytes": 14178,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/gemini-web-app-analysis.md"
-    },
-    {
-      "path": "docs/reference/web/web/gemini-web-cdp-exploitation.md",
-      "title": "Exploiting the Gemini Web App (gemini.google.com/app) from aphrody — CDP recon + pure-Rust port design",
-      "sha256": "1720355a2b6772f1bfe8991ec949479bcccbeb87e07e536a23c90f86f3708a21",
-      "bytes": 19242,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/gemini-web-cdp-exploitation.md"
-    },
-    {
-      "path": "docs/reference/web/web/gemini-web-feature-matrix.md",
-      "title": "Gemini web app — feature-exploitation matrix (crates/google/gemini-web)",
-      "sha256": "55e472dbb44e35999caf9591269879fe80125a007d21c3bbb516919e3f4c23f2",
-      "bytes": 5959,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/gemini-web-feature-matrix.md"
-    },
-    {
-      "path": "docs/reference/web/web/obscura-integration-spec.md",
-      "title": "Spec d'intégration Obscura → aphrody (R4 scraping headless)",
-      "sha256": "c5f229cb7b25839d106c1f1b344c61b40d046b654fb798bba4eccbea1a26021e",
-      "bytes": 24373,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/obscura-integration-spec.md"
-    },
-    {
-      "path": "docs/reference/web/web/scrapy-crawler-and-auto-upgrade.md",
-      "title": "Scrapy Crawler & Autonomous Self-Upgrading Loop",
-      "sha256": "102ab779b48175f72b7f6971ffaf92f47165c23888dfbe1e01da16d82a25cb63",
-      "bytes": 4883,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/scrapy-crawler-and-auto-upgrade.md"
-    },
-    {
-      "path": "docs/reference/web/web/x/COVERAGE.md",
-      "title": "X client coverage map",
-      "sha256": "2f586e6536b55c5fcde9848dce45acdde7120c72bb723cc95b211d4e3ceacdc9",
-      "bytes": 2159,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/x/COVERAGE.md"
-    },
-    {
-      "path": "docs/reference/web/web/x/PREMIUM.md",
-      "title": "X Premium / Blue Verified — API surface",
-      "sha256": "7bcf8b3e719f8b0941d007a507266deee02048575a64cd6ba372cbed75940042",
-      "bytes": 1944,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/x/PREMIUM.md"
-    },
-    {
-      "path": "docs/reference/web/web/x/X_PRO.md",
-      "title": "X Pro (Gryphon / Decks) — API surface",
-      "sha256": "2aa6765b3786b644c22d8dd31451a0fb001d63a27884ba51932ff94d78903267",
-      "bytes": 6105,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/web/x/X_PRO.md"
-    },
-    {
-      "path": "docs/reference/web/x/bxc-cookies.md",
-      "title": "bxc cookie jar format (Playwright / CDP)",
-      "sha256": "b443944947774e2db23c6ddb6c42fb97aea42287190809e0cf2bc6d361783bdf",
-      "bytes": 2702,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/x/bxc-cookies.md"
-    },
-    {
-      "path": "docs/reference/web/x/bxc-integration.md",
-      "title": "bxc + @aphrody-code/x integration",
-      "sha256": "7d5867727bcb3247d072340eec778fd7aee5aeebe72ece3e15956670047aa909",
-      "bytes": 2334,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/x/bxc-integration.md"
-    },
-    {
-      "path": "docs/reference/web/x/commands.md",
-      "title": "aphrody-x — command reference",
-      "sha256": "e43b1299ff2f7cb8a9dd5d5dd77ee96e1f488a39c477152f08506ff4e6c0da0f",
-      "bytes": 5330,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/x/commands.md"
-    },
-    {
-      "path": "docs/reference/web/x/env-and-auth.md",
-      "title": "X.com environment and authentication",
-      "sha256": "3f50136d9a5659d2ee7d9bee0f8de14b19e3c1aa3bd3cbb3cf3cfdb78ee1fba4",
-      "bytes": 1705,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/x/env-and-auth.md"
-    },
-    {
-      "path": "docs/reference/web/x/grok-com-scan.md",
-      "title": "grok.com — bxc detect / recon (2026-06-03)",
-      "sha256": "e8f252dd89fdefae2a70c7e2de4e1a782c6259a001837d8e99df013c4b5ddb1f",
-      "bytes": 2017,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/x/grok-com-scan.md"
-    },
-    {
-      "path": "docs/reference/web/x/store.md",
-      "title": "aphrody-x — local-first store (birdclaw-class archive)",
-      "sha256": "90c20d28b1307296a492a056e5115494558dbad60668fec99f7edecde872d309",
-      "bytes": 4947,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/reference/web/x/store.md"
     },
     {
       "path": "docs/reference/workspace/AGENTS.md",
@@ -7706,8 +6746,8 @@
     {
       "path": "docs/reference/workspace/STATE.md",
       "title": "Workspace state",
-      "sha256": "43480f1ddebf2d4b0af85e86a91d0ee43164e48c4167743ffff3c62cb913d7a4",
-      "bytes": 40093,
+      "sha256": "73deb8af8cbc6488a3e3fea8bd2e11f8674bafaba6e4e359e76d7b051705c63e",
+      "bytes": 37844,
       "domain": "workspace",
       "status": "generated",
       "visibility": "private",
@@ -7794,16 +6834,6 @@
       "canonical": "docs/research/ai/cargo/SECURITY-DEEP.md"
     },
     {
-      "path": "docs/research/ai/google/catalog/security-forensics.md",
-      "title": "Google · Security & Forensics",
-      "sha256": "ef4fcd64932958144b7447cc7da2cfd42bd8002887594c530d289c4d0c4b305f",
-      "bytes": 14878,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/research/ai/google/catalog/security-forensics.md"
-    },
-    {
       "path": "docs/research/ai/litellm-review-2026-10-01.md",
       "title": "LiteLLM source and documentation review",
       "sha256": "6f494559c4162c29717ef16f522d3c57d7b6a8cd6ea97b440933a9d0f655d410",
@@ -7842,16 +6872,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/research/ai/plugin-providers/codex.md"
-    },
-    {
-      "path": "docs/research/ai/plugins/aphrody/agents/web-researcher.md",
-      "title": "Capabilities (the aphrody web CLI is your primary tool)",
-      "sha256": "825df13e40399fe837b4a72b15520bfb3595eb6619d34673fde02a91a77b3abb",
-      "bytes": 4322,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/research/ai/plugins/aphrody/agents/web-researcher.md"
     },
     {
       "path": "docs/research/ai/rag-benchmark.md",
@@ -8034,16 +7054,6 @@
       "canonical": "docs/research/ai/research/js-genai-evaluation.md"
     },
     {
-      "path": "docs/research/ai/research/keyless-google-audit.md",
-      "title": "Keyless Google-AI audit",
-      "sha256": "7b2aeb085190bcf9c132e0776d2e580bfbaec67fabc3209f0623ba1b8b2b1b01",
-      "bytes": 6225,
-      "domain": "ai",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "docs/research/ai/research/keyless-google-audit.md"
-    },
-    {
       "path": "docs/research/ai/research/openclaw-vs-aphrody.md",
       "title": "OpenClaw vs aphrody — Comparative Audit",
       "sha256": "e6ab287263d0a868df0626b8cf5103f73dc09968064612e9af3aa8dfdd7daef1",
@@ -8176,8 +7186,8 @@
     {
       "path": "docs/research/infra/hosting-offers-2026-10-05.md",
       "title": "Hébergement Aphrody : besoins réels et offres du marché (2026-10-05)",
-      "sha256": "f7cd0465636230de58a861ab5cf9fc39d5db2f7f0eb5598e0cc94633fb26e9a2",
-      "bytes": 24273,
+      "sha256": "46415c84a51aa05e7c6625e622af37d86be4cba768e35b2b8e34b012281e90b6",
+      "bytes": 24287,
       "domain": "infra",
       "status": "historical",
       "visibility": "private",
@@ -8342,36 +7352,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "docs/research/shell/wasm-stack-upstreams.md"
-    },
-    {
-      "path": "docs/research/web/tauri-cef-native-performance-2026-10-05.md",
-      "title": "Aphrody on tauri-runtime-cef: native and fast desktop app — research, 2026-10-05",
-      "sha256": "2c6cfa494ab36b15bc729b144c843fdee25ee1743c880eb5b167b5d3b1ee873d",
-      "bytes": 17291,
-      "domain": "web",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/research/web/tauri-cef-native-performance-2026-10-05.md"
-    },
-    {
-      "path": "docs/research/web/tauri-debugging-survey-2026-10-01.md",
-      "title": "Tauri debugging, MCP and browser-control tools: survey and fork decision",
-      "sha256": "b1713c1089907b5587fe3c99c24e117f0632ee31403d386355eabab95e6d50b6",
-      "bytes": 42320,
-      "domain": "web",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/research/web/tauri-debugging-survey-2026-10-01.md"
-    },
-    {
-      "path": "docs/research/web/web/research/tenor-giphy-runtime.md",
-      "title": "Tenor v2 and GIPHY runtime audit",
-      "sha256": "31c5e2ec8ed65d01b225b590ab0cf82cdaa049630f2720cdf7f702fb0bb684de",
-      "bytes": 10655,
-      "domain": "web",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "docs/research/web/web/research/tenor-giphy-runtime.md"
     },
     {
       "path": "docs/research/workspace/FILE-SURFACE-AUDIT.md",
@@ -9092,16 +8072,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "m3/docs/guides/SCAFFOLD.md"
-    },
-    {
-      "path": "m3/docs/guides/WEB-TO-TAURI.md",
-      "title": "Converting a website or web app to a native Tauri 3 app",
-      "sha256": "3b0527d53d287a04da44181dd298e4d27fdecad76edcbe55102abd9956506029",
-      "bytes": 6153,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "m3/docs/guides/WEB-TO-TAURI.md"
     },
     {
       "path": "m3/docs/guides/drive/.tasks/core/LSYNC-003-library-sync-setup.md",
@@ -11754,16 +10724,6 @@
       "canonical": "m3/docs/reports/PRODUCTION-READINESS.md"
     },
     {
-      "path": "m3/docs/research/GOOGLE-LINKS.md",
-      "title": "Google design and research link index",
-      "sha256": "a038b6026fbcd475e92538ff1fd3c85d4a094bdb6d3bcc83b179e3b8cf23d865",
-      "bytes": 3045,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "m3/docs/research/GOOGLE-LINKS.md"
-    },
-    {
       "path": "m3/docs/research/M3-WEB-RESEARCH-2026-10.md",
       "title": "M3 / Material 3 Expressive web research (2026-10-04)",
       "sha256": "6961efce81971e8649687b76122f36f8fa15ceaf8d9110f0c64c6de8e61742d0",
@@ -11956,8 +10916,8 @@
     {
       "path": "m3/packages/canvas/README.md",
       "title": "@aphrody/canvas",
-      "sha256": "0a1a0a7ce52675945835bf2bb7b77568b38714e37522a77289c97069f1a4b4a4",
-      "bytes": 5707,
+      "sha256": "840da7fdf4daff35b1329aa11e72bb0361a9953a9a05dd61a2761e8c46685241",
+      "bytes": 7203,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -12334,6 +11294,16 @@
       "canonical": "m3/packages/material-design-icons/README.md"
     },
     {
+      "path": "m3/packages/rg-ui/README.md",
+      "title": "@aphrody/rg-ui",
+      "sha256": "f19c9a1e6f2bb69b7037fc4d0e14c2d7f1bc0114b6bc40227bb03690255389a6",
+      "bytes": 2443,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "m3/packages/rg-ui/README.md"
+    },
+    {
       "path": "m3/packages/scaffold/README.md",
       "title": "@aphrody/scaffold",
       "sha256": "353fa8867f84bc931c25b3d625866a0d48e7e75c32436deb38a6089fbf52148a",
@@ -12342,16 +11312,6 @@
       "status": "canonical",
       "visibility": "private",
       "canonical": "m3/packages/scaffold/README.md"
-    },
-    {
-      "path": "m3/packages/web-to-tauri/README.md",
-      "title": "@aphrody/web-to-tauri",
-      "sha256": "6eed29df65bb7277728fab558959284ea42a22cb06efa42fa8ec4b7f84706b12",
-      "bytes": 599,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "m3/packages/web-to-tauri/README.md"
     },
     {
       "path": "m3/templates/README.md",
@@ -12664,56 +11624,6 @@
       "canonical": "packages/os/winclean/README.md"
     },
     {
-      "path": "packages/web/timeline/README.md",
-      "title": "@aphrody/timeline",
-      "sha256": "6b05930c50e5b34ee2cd7e0823aa0676aaac510c94ac5bd4461e9ce890ce58ea",
-      "bytes": 4718,
-      "domain": "web",
-      "status": "historical",
-      "visibility": "private",
-      "canonical": "packages/web/timeline/README.md"
-    },
-    {
-      "path": "packages/web/timeline/TODO.md",
-      "title": "Timeline DBFR",
-      "sha256": "1c47f562f42b5d3b62e4b04e16642493fd9b5b84127eb24fc6c4e79c49e69e1a",
-      "bytes": 765,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "packages/web/timeline/TODO.md"
-    },
-    {
-      "path": "packages/web/x/README.md",
-      "title": "@aphrody/x",
-      "sha256": "88d90e75af6ce31c8d0214867998b4f0983c1659c48a1ee071696c9547a18079",
-      "bytes": 18230,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "packages/web/x/README.md"
-    },
-    {
-      "path": "packages/web/x/examples/README.md",
-      "title": "AphrodyWeb Examples",
-      "sha256": "936d7790499257746b3d370a07ec6be0eb56b78d7fabea331781842658db574d",
-      "bytes": 4009,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "packages/web/x/examples/README.md"
-    },
-    {
-      "path": "packages/web/x/examples/showcase/README.md",
-      "title": "Showcase: HN 1000 Articles Crawler",
-      "sha256": "933f349f8b87abfbdf346b83a30374656e73b041c25cef8d90629c86afb5c19f",
-      "bytes": 4230,
-      "domain": "web",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "packages/web/x/examples/showcase/README.md"
-    },
-    {
       "path": "py/PLAN.md",
       "title": "Python workspace modernization",
       "sha256": "04743f4e9964be6d3ffbbe049462c6288d95d9ddbd309ab41efa658bda141cae",
@@ -12984,6 +11894,26 @@
       "canonical": "scripts/README.md"
     },
     {
+      "path": "tmp/aphrody-integration-20261011/template-qualified/DEPLOY.md",
+      "title": "Deploy",
+      "sha256": "d1725b37ce33bc56b2a879d66c8611bd4ee42eca580ebe5a73637f7db6f45970",
+      "bytes": 981,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "tmp/aphrody-integration-20261011/template-qualified/DEPLOY.md"
+    },
+    {
+      "path": "tmp/aphrody-integration-20261011/template-qualified/README.md",
+      "title": "NAME",
+      "sha256": "cc9e1019abe38afdd8539d7d3b1c6a2b1b8b796e5384d48496b06d82bb872d69",
+      "bytes": 1483,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "tmp/aphrody-integration-20261011/template-qualified/README.md"
+    },
+    {
       "path": "tools/config/container/desktop/README.md",
       "title": "Ubuntu desktop container",
       "sha256": "33e27b887b05badbc7f48a45c6f9de51186498f2bd0ae4f2160cc93b3cbdd6f8",
@@ -13024,6 +11954,16 @@
       "canonical": "tools/config/host/aphrody-os/VPS-TUNING.md"
     },
     {
+      "path": "tools/config/host/apps/vps/google-us-egress/README.md",
+      "title": "Scoped Google US egress",
+      "sha256": "ffe093b7b76137aaa8081608a40f64b3f96c7c2e754cd1c41689e90ec5d57bd7",
+      "bytes": 4002,
+      "domain": "",
+      "status": "canonical",
+      "visibility": "private",
+      "canonical": "tools/config/host/apps/vps/google-us-egress/README.md"
+    },
+    {
       "path": "tools/config/host/dbfr/LAYOUT.md",
       "title": "Disposition unique des hôtes Aphrody (vps, dbfr) : décision du 2026-10-09",
       "sha256": "0dc592dfd508e78655a0a5bf7761cd40eec7a8e176e5ab0e4dd40745d6835dd5",
@@ -13056,8 +11996,8 @@
     {
       "path": "tools/config/host/vps/README.md",
       "title": "Hôte vps : configuration versionnée",
-      "sha256": "bfdbd1666f283c75f396e67083a4ca22547d41b6245b67db2870c154447e78fa",
-      "bytes": 2738,
+      "sha256": "8db2a5d02145ee5c249f15c0910b8b21406e4647dfbc09080c38ed4c2c26ba7e",
+      "bytes": 3844,
       "domain": "",
       "status": "canonical",
       "visibility": "private",
@@ -13103,14 +12043,6 @@
       "paths": [
         "crates/infra/infra/src/lib.rs",
         "crates/infra/git/src/lib.rs"
-      ]
-    },
-    {
-      "root": ".",
-      "id": "python-google",
-      "language": "python",
-      "paths": [
-        "py/packages/aphrody/src/aphrody/google.py"
       ]
     }
   ],

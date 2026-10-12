@@ -13,7 +13,6 @@ Use the repository rules and active plan before changing code. Generated referen
 - [Pratiques documentaires depuis le code et pour les agents](<research/workspace/documentation-practices.md>): canonical, workspace.
 - [Source reference: workspace-typescript](<apis/generated/workspace-typescript.md>): generated, generated.
 - [Source reference: infra-rust](<apis/generated/infra-rust.md>): generated, generated.
-- [Source reference: python-google](<apis/generated/python-google.md>): generated, generated.
 
 ## Optional
 

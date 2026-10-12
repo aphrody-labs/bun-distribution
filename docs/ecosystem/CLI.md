@@ -6,13 +6,13 @@ Exact subcommand trees of every shipped binary, read from its clap derive defini
 commands omitted; `cfg:` marks commands compiled only under a feature or target). Flags are not
 listed: run `<command> --help` for them. See [ECOSYSTEM.md](ECOSYSTEM.md) for the crates behind them.
 
-Totals: 38 binaries with a clap surface, 906 commands.
+Totals: 34 binaries with a clap surface, 777 commands.
 
 ## aphrody
 
 ### `aphrody`
 
-Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 363 commands.
+Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 316 commands.
 
 - `aphrody pkg` — Unified native package indexes and verified content-addressed store. _(cfg: not(target_arch = "wasm32"))_
 - `aphrody site` — Native product site, sharing its catalog and renderer with HTTP and MCP. _(cfg: not(target_arch = "wasm32"))_
@@ -171,53 +171,6 @@ Crate `aphrody`, parser `crates/infra/aphrody-command/src/lib.rs#Cli`, 363 comma
   - `aphrody os status` — Inspect OS kernel status, active subsystems and diagnostics
   - `aphrody os doctor` — Run WinClean diagnostics on local Windows machine
 - `aphrody web` — Canonical Web engine: Obscura browser automation, crawling and extraction. _(aliases: webos; cfg: not(target_arch = "wasm32"))_
-  - `aphrody web design-sync` — Acquire Google Design/M3 reference data, index it, and generate native themes
-  - `aphrody web status` — Inspect the linked Rust Web runtime
-  - `aphrody web capabilities` — List the linked Rust Web capabilities
-  - `aphrody web fetch` — Fetch and convert a URL directly to clean Markdown
-  - `aphrody web search` — Search the Google Web index with the shared Rust SERP client
-  - `aphrody web recon` — One-shot page reconnaissance with linked Rust HTTP and DOM engines
-  - `aphrody web scrape` — Extract CSS-selected text or an entire page
-  - `aphrody web extract` — Extract main content and metadata from a page
-  - `aphrody web detect` — Detect site technologies and anti-bot challenges with the shared Rust engine
-  - `aphrody web gemini` — Ask Gemini through the shared authenticated Rust Web client
-  - `aphrody web x` — Read X profiles, timelines, search and news with cookie authentication
-    - `aphrody web x profile`
-    - `aphrody web x tweets`
-    - `aphrody web x search`
-    - `aphrody web x news`
-    - `aphrody web x whoami`
-  - `aphrody web media` — Extract direct media URLs or HLS variants from a page
-    - `aphrody web media resolve` — Resolve an embed page into video candidates
-    - `aphrody web media variants` — Parse variants from a known HLS master playlist
-  - `aphrody web browser` — Inspect a page through the shared native browser session
-    - `aphrody web browser snapshot` — Navigate and capture a readable snapshot in the same browser session
-  - `aphrody web crawl` — Crawl a bounded set of pages through the shared Rust frontier
-  - `aphrody web crawl-index` — Crawl into a private persistent frontier and index the selected home in process
-  - `aphrody web dragon-ball` — Native Dragon Ball campaign, provenance, export and home indexing
-    - `aphrody web dragon-ball discover` — Discover Google sources, media references and root technology evidence
-    - `aphrody web dragon-ball sources` — Inspect the embedded campaign and source registry
-    - `aphrody web dragon-ball plan` — Resolve a campaign without fetching or writing
-    - `aphrody web dragon-ball status` — Inspect existing campaign evidence without fetching or writing
-    - `aphrody web dragon-ball crawl` — Crawl and extract a native campaign into its protected corpus
-    - `aphrody web dragon-ball index` — Index existing campaign exports without any network collection
-    - `aphrody web dragon-ball assets` — Download campaign covers (and optional plates) into the protected asset store
-    - `aphrody web dragon-ball asset-plan` — Resolve asset requests without collection or writes
-    - `aphrody web dragon-ball asset-probe` — Probe at most three images; retain quota evidence but no media
-    - `aphrody web dragon-ball manga-volume` — Acquire original manga reader images through the native Web owners
-    - `aphrody web dragon-ball consolidate-bxc` — Consolidate legacy BXC stores into a new protected native store (sources remain read-only)
-    - `aphrody web dragon-ball export-bxc` — Read legacy BXC databases and export their native Shenron projection
-  - `aphrody web mediawiki` — Enumerate and extract pages through a MediaWiki Action API
-  - `aphrody web mirror` — Mirror HTML pages and their linked CSS/assets through Obscura
-  - `aphrody web wiki-search` — Search a MediaWiki installation through its Action API
-  - `aphrody web wiki-page` — Read a complete MediaWiki page dossier or Markdown through the Action API
-  - `aphrody web frames` — MPEG-7 frame vectors, SQLite indexing and local/trace.moe search
-    - `aphrody web frames vector`
-    - `aphrody web frames search`
-    - `aphrody web frames stats`
-    - `aphrody web frames list`
-    - `aphrody web frames quota`
-    - `aphrody web frames index`
 - `aphrody train` — Machine learning training and fine-tuning engine. _(cfg: all(not(target_arch = "wasm32"), feature = "train"))_
   - `aphrody train status` — Show training status, GPU lock availability, and active jobs.
   - `aphrody train lease` — Test acquiring the exclusive GPU training lease (preempts llama-server).
@@ -459,28 +412,6 @@ Crate `aphrody-rag-eval`, parser `crates/ai/rag-eval/src/cli.rs#Args`, 0 command
 
 _No subcommands (flags only)._
 
-### `aphrody web-engine`
-
-Crate `aphrody-web-engine`, parser `crates/web/web-engine/src/lib.rs#Args`, 6 commands.
-
-- `aphrody web-engine launch` _(aliases: serve)_
-- `aphrody web-engine response` — Bounded original text response and metadata, through the shared native network owner.
-- `aphrody web-engine fetch`
-- `aphrody web-engine scrape`
-- `aphrody web-engine crawl` — Bounded, robots-aware crawl of one or more seeds with the static Obscura HTTP stack. Reports what a native crawler or an LLM agent can extract from the initial HTML.
-- `aphrody web-engine chrome-path`
-
-### `aphrody web-worker`
-
-Crate `aphrody-web-engine`, parser `crates/web/web-engine/src/lib.rs#Args`, 6 commands.
-
-- `aphrody web-worker launch` _(aliases: serve)_
-- `aphrody web-worker response` — Bounded original text response and metadata, through the shared native network owner.
-- `aphrody web-worker fetch`
-- `aphrody web-worker scrape`
-- `aphrody web-worker crawl` — Bounded, robots-aware crawl of one or more seeds with the static Obscura HTTP stack. Reports what a native crawler or an LLM agent can extract from the initial HTML.
-- `aphrody web-worker chrome-path`
-
 ### `aphrody wsl`
 
 Crate `aphrody-command`, parser `crates/infra/aphrody-command/src/wsl/cli.rs#Args`, 15 commands.
@@ -500,81 +431,6 @@ Crate `aphrody-command`, parser `crates/infra/aphrody-command/src/wsl/cli.rs#Arg
   - `aphrody wsl wslg windows` — Top-level windows owned by msrdc (the WSLg RAIL windows).
   - `aphrody wsl wslg gpu` — Host display adapters, then the guest GPU report of `wslg-manager.sh gpu`.
   - `aphrody wsl wslg desktop` — Open the full WSLg desktop session (`mstsc.exe wslg_desktop.rdp`).
-
-### `aphrody x`
-
-Crate `aphrody-x`, parser `crates/web/x/src/cli.rs#Cli`, 70 commands.
-
-- `aphrody x post` — Post a new tweet.
-- `aphrody x reply` — Reply to an existing tweet.
-- `aphrody x delete` — Delete a tweet by its numeric ID.
-- `aphrody x note` — Post a long-form note tweet (X Premium).
-- `aphrody x like` — Like (favorite) a tweet.
-- `aphrody x unlike` — Unlike (remove favorite) a tweet.
-- `aphrody x retweet` — Retweet a tweet.
-- `aphrody x unretweet` — Remove a retweet.
-- `aphrody x bookmark` — Bookmark a tweet.
-- `aphrody x unbookmark` — Remove a bookmark from a tweet.
-- `aphrody x pin` — Pin a tweet to your profile.
-- `aphrody x unpin` — Unpin the currently pinned tweet from your profile.
-- `aphrody x follow` — Follow a user by their numeric user ID.
-- `aphrody x unfollow` — Unfollow a user by their numeric user ID.
-- `aphrody x block` — Block a user by their numeric user ID.
-- `aphrody x unblock` — Unblock a user by their numeric user ID.
-- `aphrody x mute` — Mute a user by their numeric user ID.
-- `aphrody x unmute` — Unmute a user by their numeric user ID.
-- `aphrody x user` — Look up a user by their handle (without @).
-- `aphrody x timeline` — Fetch the authenticated user's home timeline.
-- `aphrody x dm` — Send a direct message.
-- `aphrody x graphql` — Invoke any operation from the 158-op GraphQL catalog.
-- `aphrody x catalog` — List operations from the embedded GraphQL catalog.
-- `aphrody x coverage` — Coverage report: catalog stats + optional live queryId drift check.
-- `aphrody x rate-limit` — Print the most recently captured rate-limit headers.
-- `aphrody x query-ids` — Inspect or refresh the runtime GraphQL queryId cache.
-- `aphrody x read` — Read a single tweet by URL or numeric id.
-- `aphrody x thread` — Show the full conversation thread for a tweet.
-- `aphrody x replies` — List replies to a tweet (thread entries that reply to it).
-- `aphrody x search` — Search tweets matching a query.
-- `aphrody x user-tweets` — Fetch a user's profile timeline (by handle).
-- `aphrody x home` — Fetch your home timeline (For You, or Following with --following).
-- `aphrody x likes` — List your liked tweets.
-- `aphrody x bookmarks` — List your bookmarked tweets.
-- `aphrody x mentions` — Find mentions of a user (defaults to the authenticated account).
-- `aphrody x following` — List accounts a user follows (default: you).
-- `aphrody x followers` — List accounts that follow a user (default: you).
-- `aphrody x list-timeline` — Fetch tweets from a list timeline (by URL or numeric id).
-- `aphrody x community-timeline` — Fetch tweets from a community timeline (by URL https://x.com/i/communities/ID or numeric id).
-- `aphrody x community-info` — Fetch community info + first tweets page in parallel (demo of parallel indexing).
-- `aphrody x news` — Fetch news / trending topics from X's Explore tabs. _(aliases: trending)_
-- `aphrody x upload-media` — Upload a media file and print its media_id (for scripted posting).
-- `aphrody x lists` — List the lists you own (or are a member of with --member-of).
-- `aphrody x premium` — Dump Premium / Blue Verified upsells and account flags (GraphQL).
-- `aphrody x xpro` — X Pro (Gryphon) decks — pro.x.com/i/decks.
-  - `aphrody x xpro sync` — List decks via ViewerAccountSync.
-  - `aphrody x xpro deck` — Show one deck by id.
-  - `aphrody x xpro create` — Create a deck (mutation CreateDeck).
-  - `aphrody x xpro remove` — Remove a deck by id.
-  - `aphrody x xpro probe` — Probe X Pro API access.
-- `aphrody x whoami` — Print which X account your cookies belong to.
-- `aphrody x check` — Show which credential sources are available and where they resolve from.
-- `aphrody x sync` — Sync live data into the local SQLite store.
-  - `aphrody x sync authored` — Your own tweets.
-  - `aphrody x sync likes` — Tweets you liked.
-  - `aphrody x sync bookmarks` — Your bookmarks.
-  - `aphrody x sync timeline` — Your home timeline (For You).
-  - `aphrody x sync mentions` — Mentions of you.
-  - `aphrody x sync graph` — Your follow graph (following + followers).
-- `aphrody x db` — Query the local store (stats / full-text search / export).
-  - `aphrody x db stats` — Show store statistics.
-  - `aphrody x db search` — Full-text search stored tweets.
-  - `aphrody x db export` — Export all stored tweets.
-  - `aphrody x db digest` — Deterministic activity digest (top authors + most-liked tweets).
-- `aphrody x graph` — Follow-graph analysis over the local store (run `sync graph` first).
-  - `aphrody x graph mutuals` — Accounts that follow you back.
-  - `aphrody x graph non-mutual-following` — Accounts you follow that do not follow back.
-- `aphrody x import` — Import a Twitter/X data archive into the local store.
-  - `aphrody x import archive` — Import a Twitter/X data export (tweets.js or the archive directory).
-- `aphrody x jobs` — Print a cross-OS scheduler snippet for periodic `sync` (no system change).
 
 ### `aphrody yolo`
 
@@ -641,12 +497,6 @@ Crate `aphrody-pkg-cli`, parser `crates/pkg/cli/src/lib.rs#Cli`, 11 commands.
   - `aphrody-pkg store pin`
   - `aphrody-pkg store unpin`
   - `aphrody-pkg store gc` — Collect unreferenced blobs. Defaults to reporting without deletion.
-
-### `aphrody-site`
-
-Crate `aphrody-site`, parser `crates/web/site/src/main.rs#Cli`, 0 commands.
-
-_No subcommands (flags only)._
 
 ### `aphrody-store`
 

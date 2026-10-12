@@ -251,7 +251,8 @@ describe("site hosts", () => {
     expect(manifest.headers.get("content-type")).toBe("application/manifest+json");
     const csp = (await at("aphrody.test", "/")).headers.get("content-security-policy");
     expect(csp).toContain("style-src 'self' 'unsafe-inline' https://cdn.aphrody.com;");
-    expect(csp).toContain("font-src 'self' https://cdn.aphrody.com;");
+    expect(csp).toContain("font-src 'self' https://cdn.aphrody.com https://assets.aphrody.app;");
+    expect(csp).toContain("connect-src 'self' https://api.github.com https://assets.aphrody.app;");
   });
 
   test("falls back to downloads, then to the site 404, and keeps other hosts untouched", async () => {

@@ -127,17 +127,6 @@
           "features": []
         },
         {
-          "name": "aphrody-antigravity",
-          "path": "crates/google/antigravity",
-          "description": "Native Rust SDK for Antigravity (Google AI Ultra / Gemini) — token extraction from Windows Credential Manager, OAuth refresh, typed HTTP client.",
-          "bins": [],
-          "features": [
-            "default",
-            "grpc",
-            "local-ls"
-          ]
-        },
-        {
           "name": "aphrody-app",
           "path": "crates/ui/app",
           "description": "Aphrody OS desktop (Tauri 3): the GUI and window manager; drives the aphrody agent over its app-server protocol.",
@@ -180,13 +169,6 @@
           "name": "aphrody-bindgen",
           "path": "crates/ml/bindgen",
           "description": "Bindgen-based generator for dynamically loaded native-library bindings.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-boq",
-          "path": "crates/google/boq",
-          "description": "Google Boq batchexecute codec shared by the Gemini web and NotebookLM clients: f.req encoder, anti-XSSI strip, length-prefixed chunk parser, wrb.fr envelope extraction.",
           "bins": [],
           "features": []
         },
@@ -394,30 +376,9 @@
           "features": []
         },
         {
-          "name": "aphrody-gemini-runtime",
-          "path": "crates/google/gemini-runtime",
-          "description": "Cross-platform Gemini CLI runtime adapter: detect, version, turn streaming, plus the mcp.json loader and the legacy MCP client facade over aphrody-mcp-client.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-gemini-web",
-          "path": "crates/google/gemini-web",
-          "description": "Gemini web app (gemini.google.com) Boq RPC client — cookie auth, page-bootstrap token scrape, batchexecute envelope codec. Mirrors the notebooklm crate transport.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-git",
           "path": "crates/infra/git",
           "description": "Native Git and GitHub integration for the Aphrody ecosystem.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-google",
-          "path": "crates/google/google",
-          "description": "Canonical Rust facade for Aphrody Google Cloud, Gemini, Web and Antigravity integrations.",
           "bins": [],
           "features": []
         },
@@ -634,13 +595,6 @@
           "features": []
         },
         {
-          "name": "aphrody-model-antigravity",
-          "path": "crates/google/model-antigravity",
-          "description": "Antigravity (Google AI Ultra / Cloud Code) ModelClient implementation for aphrody agent engine — keyless token re-read on 401, function calling, reasoning stream.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-model-client",
           "path": "crates/ai/model-client",
           "description": "Provider abstraction for the aphrody agent engine: the async `ModelClient` trait, a unified `ModelStreamEvent` (text delta / tool call / reasoning / completed+usage), and a Gemini generateContent streaming client that maps Google's SSE wire onto the unified events. Lets the turn loop stay provider-agnostic (Gemini REST / gemini-web / agy).",
@@ -667,21 +621,6 @@
           "description": "Nushell embedded in Aphrody OS: structured evaluation for agents (the shell subsystem).",
           "bins": [],
           "features": []
-        },
-        {
-          "name": "aphrody-obscura",
-          "path": "crates/web/obscura",
-          "description": "Rust API for the Obscura headless browser",
-          "bins": [],
-          "features": [
-            "api",
-            "default",
-            "obscura-browser",
-            "obscura-net",
-            "render",
-            "stealth",
-            "tokio"
-          ]
         },
         {
           "name": "aphrody-ocr",
@@ -885,22 +824,6 @@
           "path": "crates/shell/vfs",
           "description": "Byte-path virtual filesystem trait, in-memory backend and shared conformance suite for the WASM shell.",
           "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-shell-web",
-          "path": "crates/shell/web",
-          "description": "Aphrody shell for WebAssembly: browser and Tauri webview terminal, local shell and wire protocol.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-site",
-          "path": "crates/web/site",
-          "description": "Native product website and catalog APIs, isolated from the Bun WebOS runtime",
-          "bins": [
-            "aphrody-site"
-          ],
           "features": []
         },
         {
@@ -1430,72 +1353,6 @@
           "features": []
         },
         {
-          "name": "aphrody-web-crawl",
-          "path": "crates/web/web-crawl",
-          "description": "Shared persistent crawl frontier and bounded Rust crawler for Aphrody Web.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-web-detect",
-          "path": "crates/web/web-detect",
-          "description": "Native technology and challenge detection for Aphrody Web",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-web-engine",
-          "path": "crates/web/web-engine",
-          "description": "Aphrody Web browser engine: CDP server, fetch and scrape on Obscura (entry points of the `aphrody-web` and `aphrody-web-worker` multi-call names).",
-          "bins": [],
-          "features": [
-            "default",
-            "render",
-            "stealth"
-          ]
-        },
-        {
-          "name": "aphrody-web-extract",
-          "path": "crates/web/web-extract",
-          "description": "Aphrody Web content extraction, Markdown, chunking, SimHash, URL metadata, media and embed resolution.",
-          "bins": [],
-          "features": [
-            "profiling"
-          ]
-        },
-        {
-          "name": "aphrody-web-frames",
-          "path": "crates/web/web-frames",
-          "description": "MPEG-7 ColorLayout frame indexing and trace.moe client for Aphrody Web",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-web-index",
-          "path": "crates/web/web-index",
-          "description": "HNSW approximate nearest-neighbour index with scalar int8 quantisation and mmap persistence",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "aphrody-web-service",
-          "path": "crates/web/web-service",
-          "description": "Canonical web execution contract for Aphrody OS: OXC analysis, Bun tooling and Obscura V8 pages.",
-          "bins": [],
-          "features": [
-            "default",
-            "render",
-            "stealth"
-          ]
-        },
-        {
-          "name": "aphrody-webos-wasm",
-          "path": "crates/web/webos-wasm",
-          "description": "wasm-bindgen surface of the Aphrody WebOS apps: OPFS-backed VFS, binary triage and patch apply over existing crates; no terminal.",
-          "bins": [],
-          "features": []
-        },
-        {
           "name": "aphrody-winclean",
           "path": "crates/os/kernel/comps/winclean",
           "description": "Rust-owned compatibility surface for 166 WinClean Windows tools.",
@@ -1510,99 +1367,9 @@
           "features": []
         },
         {
-          "name": "aphrody-x",
-          "path": "crates/web/x",
-          "description": "X / Twitter native GraphQL + REST client (cookie auth, no API key required)",
-          "bins": [],
-          "features": [
-            "test-support"
-          ]
-        },
-        {
           "name": "aphrody-yolo",
           "path": "crates/infra/yolo",
           "description": "Sovereign autonomous runtime core for Aphrody ecosystem.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "obscura-browser",
-          "path": "crates/web/obscura-browser",
-          "description": "Aphrody platform crate obscura-browser.",
-          "bins": [],
-          "features": [
-            "default",
-            "render",
-            "stealth"
-          ]
-        },
-        {
-          "name": "obscura-cdp",
-          "path": "crates/web/obscura-cdp",
-          "description": "Aphrody platform crate obscura-cdp.",
-          "bins": [],
-          "features": [
-            "default",
-            "render",
-            "stealth"
-          ]
-        },
-        {
-          "name": "obscura-dom",
-          "path": "crates/web/obscura-dom",
-          "description": "Aphrody platform crate obscura-dom.",
-          "bins": [],
-          "features": []
-        },
-        {
-          "name": "obscura-js",
-          "path": "crates/web/obscura-js",
-          "description": "Aphrody platform crate obscura-js.",
-          "bins": [],
-          "features": [
-            "default",
-            "render",
-            "stealth"
-          ]
-        },
-        {
-          "name": "obscura-mcp",
-          "path": "crates/web/obscura-mcp",
-          "description": "Aphrody platform crate obscura-mcp.",
-          "bins": [],
-          "features": [
-            "default",
-            "render",
-            "stealth"
-          ]
-        },
-        {
-          "name": "obscura-net",
-          "path": "crates/web/obscura-net",
-          "description": "Aphrody platform crate obscura-net.",
-          "bins": [],
-          "features": [
-            "default",
-            "futures-util",
-            "stealth",
-            "wreq",
-            "wreq-util"
-          ]
-        },
-        {
-          "name": "obscura-render",
-          "path": "crates/web/obscura-render",
-          "description": "Optional scoped render layer for Obscura: layout (taffy) and, with the paint feature, text and raster output for screenshots.",
-          "bins": [],
-          "features": [
-            "default",
-            "paint"
-          ]
-        },
-        {
-          "name": "obscura-ssrf",
-          "path": "crates/web/obscura-ssrf",
-          "description": "Shared SSRF deny-set and private-network opt-in for Obscura network transports and renderer.",
           "bins": [],
           "features": []
         },
@@ -1650,12 +1417,6 @@
           "name": "@aphrody/a2a",
           "path": "packages/os/a2a",
           "description": "A2A 1.0 client for Bun and the web platform: Agent Card discovery, JSON-RPC and HTTP+JSON bindings, SSE streaming, push notification configs, and a legacy-dialect shim",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/agent-browser",
-          "path": "packages/web/agent-browser",
-          "description": "Aphrody Web Bun client: CDP browser automation (agent-browser), engine lifecycle, web service client (fetch, scrape, crawl, sessions) and config reader, backed by the native aphrody-web engine.",
           "bins": []
         },
         {
@@ -1716,18 +1477,6 @@
           "name": "@aphrody/eslint-plugin-m3",
           "path": "m3/packages/eslint-plugin-m3",
           "description": "Lint rules for sites consuming material-web (@aphrody/m3-react + Material Symbols) — runs under oxlint (jsPlugins) and ESLint.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/fuzzy",
-          "path": "packages/web/fuzzy",
-          "description": "First-party Bitap fuzzy search with score parity against fuse.js 7.1.0 (string lists, keyed object lists, weights, field norm)",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/google",
-          "path": "packages/google/google",
-          "description": "Canonical Bun facade for Aphrody Google Cloud and Gemini.",
           "bins": []
         },
         {
@@ -2013,15 +1762,15 @@
           ]
         },
         {
-          "name": "@aphrody/qr",
-          "path": "packages/web/qr",
-          "description": "First-party QR Code encoder and canvas renderer (module-for-module parity with qrcode 1.5.4)",
-          "bins": []
-        },
-        {
           "name": "@aphrody/rag-core",
           "path": "packages/ai/rag-core",
           "description": "Aphrody RAG core for the web (WebAssembly) and for Bun (bun:ffi): chunking, fusion, eval and vector kernels behind one typed facade.",
+          "bins": []
+        },
+        {
+          "name": "@aphrody/rg-ui",
+          "path": "m3/packages/rg-ui",
+          "description": "Rose Griffon, Achillea and Azalee shared UI on the Aphrody Bun Base UI fork and native Material 3 tokens",
           "bins": []
         },
         {
@@ -2041,7 +1790,7 @@
         {
           "name": "@aphrody/shell-web",
           "path": "packages/shell/web",
-          "description": "Aphrody shell for browsers and Tauri webviews: WASM VT core, local shell and WebSocket/Tauri transports.",
+          "description": "",
           "bins": []
         },
         {
@@ -2051,30 +1800,16 @@
           "bins": []
         },
         {
-          "name": "@aphrody/timeline",
-          "path": "packages/web/timeline",
-          "description": "Native Bun timeline collection, SQL, Redis, GraphQL and retrieval projections",
-          "bins": []
-        },
-        {
           "name": "@aphrody/update",
           "path": "packages/infra/update",
           "description": "Unified update pipeline: tool pins, dependency sync, Cargo lock refresh, user systemd units and dev-env checks",
           "bins": []
         },
         {
-          "name": "@aphrody/web-test",
-          "path": "packages/web/aphrody-web-test",
-          "description": "Playwright-compatible browser and site test runner for Bun, backed by the shared Rust Obscura CDP server.",
+          "name": "@aphrody/webos-wasm",
+          "path": "packages/web/webos-wasm",
+          "description": "",
           "bins": []
-        },
-        {
-          "name": "@aphrody/web-to-tauri",
-          "path": "m3/packages/web-to-tauri",
-          "description": "Converts a website, web app or built web bundle into a native Tauri 3 app: probes the target, plans a regression-free mode (remote, bundle, sidecar), generates the project and checks parity against the original.",
-          "bins": [
-            "web-to-tauri"
-          ]
         },
         {
           "name": "@aphrody/winclean",
@@ -2086,12 +1821,6 @@
           "name": "@aphrody/workspace",
           "path": "packages/infra/workspace",
           "description": "Cross-monorepo workspace orchestrator, gates, audits, migration tools and operations",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/x",
-          "path": "packages/web/x",
-          "description": "Headless X (Twitter) client for Bun: a thin import over the Rust crate aphrody-x (aphrody-ffi), with batch jobs for mass scripting. Cookie-auth GraphQL + REST, no API key. Includes local For You algo (x-algorithm port), store, and X function tools (XTools, x_* JSON Schema definitions) for Grok or any tool-calling model.",
           "bins": []
         },
         {
@@ -2139,8 +1868,26 @@
           "bins": []
         },
         {
+          "name": "aphrody-native-check-fixture",
+          "path": "tmp/aphrody-integration-20261011/template-qualified",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "aphrody-ui-release-gate",
+          "path": "tmp/aphrody-integration-20261011/ui-gate",
+          "description": "",
+          "bins": []
+        },
+        {
           "name": "app",
           "path": "crates/tauri/aphrody-tauri-cli/templates/plugin/__example-basic/vanilla",
+          "description": "",
+          "bins": []
+        },
+        {
+          "name": "rg-ui-qualification",
+          "path": "tmp/bun-iecode-rg-ui-gate",
           "description": "",
           "bins": []
         },
@@ -4373,342 +4120,7 @@
           "cfg": [
             "not(target_arch = \"wasm32\")"
           ],
-          "children": [
-            {
-              "name": "design-sync",
-              "about": "Acquire Google Design/M3 reference data, index it, and generate native themes",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "status",
-              "about": "Inspect the linked Rust Web runtime",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "capabilities",
-              "about": "List the linked Rust Web capabilities",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "fetch",
-              "about": "Fetch and convert a URL directly to clean Markdown",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "search",
-              "about": "Search the Google Web index with the shared Rust SERP client",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "recon",
-              "about": "One-shot page reconnaissance with linked Rust HTTP and DOM engines",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "scrape",
-              "about": "Extract CSS-selected text or an entire page",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "extract",
-              "about": "Extract main content and metadata from a page",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "detect",
-              "about": "Detect site technologies and anti-bot challenges with the shared Rust engine",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "gemini",
-              "about": "Ask Gemini through the shared authenticated Rust Web client",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "x",
-              "about": "Read X profiles, timelines, search and news with cookie authentication",
-              "aliases": [],
-              "cfg": [],
-              "children": [
-                {
-                  "name": "profile",
-                  "about": "",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "tweets",
-                  "about": "",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "search",
-                  "about": "",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "news",
-                  "about": "",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "whoami",
-                  "about": "",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "media",
-              "about": "Extract direct media URLs or HLS variants from a page",
-              "aliases": [],
-              "cfg": [],
-              "children": [
-                {
-                  "name": "resolve",
-                  "about": "Resolve an embed page into video candidates",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "variants",
-                  "about": "Parse variants from a known HLS master playlist",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "browser",
-              "about": "Inspect a page through the shared native browser session",
-              "aliases": [],
-              "cfg": [],
-              "children": [
-                {
-                  "name": "snapshot",
-                  "about": "Navigate and capture a readable snapshot in the same browser session",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "crawl",
-              "about": "Crawl a bounded set of pages through the shared Rust frontier",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "crawl-index",
-              "about": "Crawl into a private persistent frontier and index the selected home in process",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "dragon-ball",
-              "about": "Native Dragon Ball campaign, provenance, export and home indexing",
-              "aliases": [],
-              "cfg": [],
-              "children": [
-                {
-                  "name": "discover",
-                  "about": "Discover Google sources, media references and root technology evidence",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "sources",
-                  "about": "Inspect the embedded campaign and source registry",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "plan",
-                  "about": "Resolve a campaign without fetching or writing",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "status",
-                  "about": "Inspect existing campaign evidence without fetching or writing",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "crawl",
-                  "about": "Crawl and extract a native campaign into its protected corpus",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "index",
-                  "about": "Index existing campaign exports without any network collection",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "assets",
-                  "about": "Download campaign covers (and optional plates) into the protected asset store",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "asset-plan",
-                  "about": "Resolve asset requests without collection or writes",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "asset-probe",
-                  "about": "Probe at most three images; retain quota evidence but no media",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "manga-volume",
-                  "about": "Acquire original manga reader images through the native Web owners",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "consolidate-bxc",
-                  "about": "Consolidate legacy BXC stores into a new protected native store (sources remain read-only)",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "export-bxc",
-                  "about": "Read legacy BXC databases and export their native Shenron projection",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            },
-            {
-              "name": "mediawiki",
-              "about": "Enumerate and extract pages through a MediaWiki Action API",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "mirror",
-              "about": "Mirror HTML pages and their linked CSS/assets through Obscura",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "wiki-search",
-              "about": "Search a MediaWiki installation through its Action API",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "wiki-page",
-              "about": "Read a complete MediaWiki page dossier or Markdown through the Action API",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "frames",
-              "about": "MPEG-7 frame vectors, SQLite indexing and local/trace.moe search",
-              "aliases": [],
-              "cfg": [],
-              "children": [
-                {
-                  "name": "vector",
-                  "about": "",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "search",
-                  "about": "",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "stats",
-                  "about": "",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "list",
-                  "about": "",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "quota",
-                  "about": "",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                },
-                {
-                  "name": "index",
-                  "about": "",
-                  "aliases": [],
-                  "cfg": [],
-                  "children": []
-                }
-              ]
-            }
-          ]
+          "children": []
         },
         {
           "name": "train",
@@ -6232,110 +5644,6 @@
       "commands": []
     },
     {
-      "binary": "aphrody web-engine",
-      "crate": "aphrody-web-engine",
-      "repo": "aphrody",
-      "source": "crates/web/web-engine/src/lib.rs#Args",
-      "commands": [
-        {
-          "name": "launch",
-          "about": "",
-          "aliases": [
-            "serve"
-          ],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "response",
-          "about": "Bounded original text response and metadata, through the shared native network owner.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "fetch",
-          "about": "",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "scrape",
-          "about": "",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "crawl",
-          "about": "Bounded, robots-aware crawl of one or more seeds with the static Obscura HTTP stack. Reports what a native crawler or an LLM agent can extract from the initial HTML.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "chrome-path",
-          "about": "",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        }
-      ]
-    },
-    {
-      "binary": "aphrody web-worker",
-      "crate": "aphrody-web-engine",
-      "repo": "aphrody",
-      "source": "crates/web/web-engine/src/lib.rs#Args",
-      "commands": [
-        {
-          "name": "launch",
-          "about": "",
-          "aliases": [
-            "serve"
-          ],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "response",
-          "about": "Bounded original text response and metadata, through the shared native network owner.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "fetch",
-          "about": "",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "scrape",
-          "about": "",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "crawl",
-          "about": "Bounded, robots-aware crawl of one or more seeds with the static Obscura HTTP stack. Reports what a native crawler or an LLM agent can extract from the initial HTML.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "chrome-path",
-          "about": "",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        }
-      ]
-    },
-    {
       "binary": "aphrody wsl",
       "crate": "aphrody-command",
       "repo": "aphrody",
@@ -6446,511 +5754,6 @@
               "children": []
             }
           ]
-        }
-      ]
-    },
-    {
-      "binary": "aphrody x",
-      "crate": "aphrody-x",
-      "repo": "aphrody",
-      "source": "crates/web/x/src/cli.rs#Cli",
-      "commands": [
-        {
-          "name": "post",
-          "about": "Post a new tweet.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "reply",
-          "about": "Reply to an existing tweet.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "delete",
-          "about": "Delete a tweet by its numeric ID.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "note",
-          "about": "Post a long-form note tweet (X Premium).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "like",
-          "about": "Like (favorite) a tweet.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "unlike",
-          "about": "Unlike (remove favorite) a tweet.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "retweet",
-          "about": "Retweet a tweet.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "unretweet",
-          "about": "Remove a retweet.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "bookmark",
-          "about": "Bookmark a tweet.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "unbookmark",
-          "about": "Remove a bookmark from a tweet.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "pin",
-          "about": "Pin a tweet to your profile.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "unpin",
-          "about": "Unpin the currently pinned tweet from your profile.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "follow",
-          "about": "Follow a user by their numeric user ID.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "unfollow",
-          "about": "Unfollow a user by their numeric user ID.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "block",
-          "about": "Block a user by their numeric user ID.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "unblock",
-          "about": "Unblock a user by their numeric user ID.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "mute",
-          "about": "Mute a user by their numeric user ID.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "unmute",
-          "about": "Unmute a user by their numeric user ID.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "user",
-          "about": "Look up a user by their handle (without @).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "timeline",
-          "about": "Fetch the authenticated user's home timeline.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "dm",
-          "about": "Send a direct message.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "graphql",
-          "about": "Invoke any operation from the 158-op GraphQL catalog.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "catalog",
-          "about": "List operations from the embedded GraphQL catalog.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "coverage",
-          "about": "Coverage report: catalog stats + optional live queryId drift check.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "rate-limit",
-          "about": "Print the most recently captured rate-limit headers.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "query-ids",
-          "about": "Inspect or refresh the runtime GraphQL queryId cache.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "read",
-          "about": "Read a single tweet by URL or numeric id.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "thread",
-          "about": "Show the full conversation thread for a tweet.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "replies",
-          "about": "List replies to a tweet (thread entries that reply to it).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "search",
-          "about": "Search tweets matching a query.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "user-tweets",
-          "about": "Fetch a user's profile timeline (by handle).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "home",
-          "about": "Fetch your home timeline (For You, or Following with --following).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "likes",
-          "about": "List your liked tweets.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "bookmarks",
-          "about": "List your bookmarked tweets.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "mentions",
-          "about": "Find mentions of a user (defaults to the authenticated account).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "following",
-          "about": "List accounts a user follows (default: you).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "followers",
-          "about": "List accounts that follow a user (default: you).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "list-timeline",
-          "about": "Fetch tweets from a list timeline (by URL or numeric id).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "community-timeline",
-          "about": "Fetch tweets from a community timeline (by URL https://x.com/i/communities/ID or numeric id).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "community-info",
-          "about": "Fetch community info + first tweets page in parallel (demo of parallel indexing).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "news",
-          "about": "Fetch news / trending topics from X's Explore tabs.",
-          "aliases": [
-            "trending"
-          ],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "upload-media",
-          "about": "Upload a media file and print its media_id (for scripted posting).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "lists",
-          "about": "List the lists you own (or are a member of with --member-of).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "premium",
-          "about": "Dump Premium / Blue Verified upsells and account flags (GraphQL).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "xpro",
-          "about": "X Pro (Gryphon) decks — pro.x.com/i/decks.",
-          "aliases": [],
-          "cfg": [],
-          "children": [
-            {
-              "name": "sync",
-              "about": "List decks via ViewerAccountSync.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "deck",
-              "about": "Show one deck by id.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "create",
-              "about": "Create a deck (mutation CreateDeck).",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "remove",
-              "about": "Remove a deck by id.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "probe",
-              "about": "Probe X Pro API access.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            }
-          ]
-        },
-        {
-          "name": "whoami",
-          "about": "Print which X account your cookies belong to.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "check",
-          "about": "Show which credential sources are available and where they resolve from.",
-          "aliases": [],
-          "cfg": [],
-          "children": []
-        },
-        {
-          "name": "sync",
-          "about": "Sync live data into the local SQLite store.",
-          "aliases": [],
-          "cfg": [],
-          "children": [
-            {
-              "name": "authored",
-              "about": "Your own tweets.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "likes",
-              "about": "Tweets you liked.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "bookmarks",
-              "about": "Your bookmarks.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "timeline",
-              "about": "Your home timeline (For You).",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "mentions",
-              "about": "Mentions of you.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "graph",
-              "about": "Your follow graph (following + followers).",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            }
-          ]
-        },
-        {
-          "name": "db",
-          "about": "Query the local store (stats / full-text search / export).",
-          "aliases": [],
-          "cfg": [],
-          "children": [
-            {
-              "name": "stats",
-              "about": "Show store statistics.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "search",
-              "about": "Full-text search stored tweets.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "export",
-              "about": "Export all stored tweets.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "digest",
-              "about": "Deterministic activity digest (top authors + most-liked tweets).",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            }
-          ]
-        },
-        {
-          "name": "graph",
-          "about": "Follow-graph analysis over the local store (run `sync graph` first).",
-          "aliases": [],
-          "cfg": [],
-          "children": [
-            {
-              "name": "mutuals",
-              "about": "Accounts that follow you back.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            },
-            {
-              "name": "non-mutual-following",
-              "about": "Accounts you follow that do not follow back.",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            }
-          ]
-        },
-        {
-          "name": "import",
-          "about": "Import a Twitter/X data archive into the local store.",
-          "aliases": [],
-          "cfg": [],
-          "children": [
-            {
-              "name": "archive",
-              "about": "Import a Twitter/X data export (tweets.js or the archive directory).",
-              "aliases": [],
-              "cfg": [],
-              "children": []
-            }
-          ]
-        },
-        {
-          "name": "jobs",
-          "about": "Print a cross-OS scheduler snippet for periodic `sync` (no system change).",
-          "aliases": [],
-          "cfg": [],
-          "children": []
         }
       ]
     },
@@ -7314,13 +6117,6 @@
           ]
         }
       ]
-    },
-    {
-      "binary": "aphrody-site",
-      "crate": "aphrody-site",
-      "repo": "aphrody",
-      "source": "crates/web/site/src/main.rs#Cli",
-      "commands": []
     },
     {
       "binary": "aphrody-store",
@@ -10195,16 +8991,6 @@
           "file": "crates/ai/agent-tools/src/apply_patch.rs"
         },
         {
-          "name": "google_ai",
-          "description": "Query Google AI models keylessly via native session and retrieve generated text.",
-          "file": "crates/ai/agent-tools/src/web_tools.rs"
-        },
-        {
-          "name": "js_eval",
-          "description": "Execute JavaScript code in an isolated native V8 runtime and return output.",
-          "file": "crates/ai/agent-tools/src/web_tools.rs"
-        },
-        {
           "name": "read_file",
           "description": "Read a bounded local UTF-8 file for repository inspection, RAG preparation, or data mining.",
           "file": "crates/ai/agent-tools/src/read_file.rs"
@@ -10218,16 +9004,6 @@
           "name": "shell",
           "description": "Run a command and capture its combined stdout/stderr output and exit code. The command is given as an argv vector and executed directly (no shell interpretation). Long output is truncated.",
           "file": "crates/ai/agent-tools/src/shell.rs"
-        },
-        {
-          "name": "web_scrape",
-          "description": "Scrape and convert any public web page directly into clean Markdown.",
-          "file": "crates/ai/agent-tools/src/web_tools.rs"
-        },
-        {
-          "name": "web_search",
-          "description": "Search the live web and return curated, markdown-formatted results.",
-          "file": "crates/ai/agent-tools/src/web_tools.rs"
         }
       ]
     },
@@ -10601,91 +9377,6 @@
       "repo": "aphrody",
       "kind": "json-catalog",
       "tools": [
-        {
-          "name": "aphrody_archive_item",
-          "description": "Retrieve an Internet Archive item's public metadata and file manifest without downloading media.",
-          "file": "crates/ai/mcp/src/public_web_tools.rs"
-        },
-        {
-          "name": "aphrody_archive_search",
-          "description": "Search Internet Archive's public catalog via AdvancedSearch, for example: collection:prelinger AND mediatype:movies.",
-          "file": "crates/ai/mcp/src/public_web_tools.rs"
-        },
-        {
-          "name": "aphrody_archive_wayback",
-          "description": "List public Wayback Machine captures through the CDX API; no archived content is downloaded.",
-          "file": "crates/ai/mcp/src/public_web_tools.rs"
-        },
-        {
-          "name": "aphrody_capabilities",
-          "description": "List the native Aphrody Web tools available in this build.",
-          "file": "crates/ai/mcp/src/bxc_tools.rs"
-        },
-        {
-          "name": "aphrody_detect_frameworks",
-          "description": "Detect web technologies, CDN and challenge evidence from a bounded HTTP response and DNS lookup.",
-          "file": "crates/ai/mcp/src/public_web_tools.rs"
-        },
-        {
-          "name": "aphrody_gemini_ask",
-          "description": "Query Google Gemini directly with automatic engine selection (Rust Bridge -> Web) using signed-in cookies.",
-          "file": "crates/ai/mcp/src/gemini_tools.rs"
-        },
-        {
-          "name": "aphrody_gemini_chat",
-          "description": "Chat with Gemini keeping continuous conversation context across multi-turn exchanges.",
-          "file": "crates/ai/mcp/src/gemini_tools.rs"
-        },
-        {
-          "name": "aphrody_gemini_rust",
-          "description": "Execute a one-shot Gemini Web query directly in the shared Rust runtime.",
-          "file": "crates/ai/mcp/src/gemini_tools.rs"
-        },
-        {
-          "name": "aphrody_google_calendar_public",
-          "description": "Fetch and parse events from any public Google iCalendar feed by ID.",
-          "file": "crates/ai/mcp/src/public_web_tools.rs"
-        },
-        {
-          "name": "aphrody_google_dns",
-          "description": "Query Google Public DNS-over-HTTPS (DoH) for any domain and record type (A, AAAA, MX, TXT, etc.).",
-          "file": "crates/ai/mcp/src/public_web_tools.rs"
-        },
-        {
-          "name": "aphrody_google_doc_export",
-          "description": "Export a publicly shared Google Document to plain text.",
-          "file": "crates/ai/mcp/src/public_web_tools.rs"
-        },
-        {
-          "name": "aphrody_google_routes",
-          "description": "Read the native catalogue of public Google entry points and official SEO, Web Vitals and accessibility guidance. Dated observations, not a crawl queue or authorization to mirror Search.",
-          "file": "crates/ai/mcp/src/search_tools.rs"
-        },
-        {
-          "name": "aphrody_google_sheet_export",
-          "description": "Export a publicly shared Google Spreadsheet to CSV.",
-          "file": "crates/ai/mcp/src/public_web_tools.rs"
-        },
-        {
-          "name": "aphrody_google_suggest",
-          "description": "Get real-time query suggestions from Google Autocomplete.",
-          "file": "crates/ai/mcp/src/public_web_tools.rs"
-        },
-        {
-          "name": "aphrody_google_supported_languages",
-          "description": "List all 195 official supported Google Cloud Translation languages, optionally localized in target language.",
-          "file": "crates/ai/mcp/src/public_web_tools.rs"
-        },
-        {
-          "name": "aphrody_search",
-          "description": "Powerful Google Web Search. Returns ranked organic results (title, URL, snippet) and, with `rich`, the featured snippet / knowledge panel / People-Also-Ask / related searches. Authenticates automatically from ~/.aphrody/cookies/google.json when present. Supports verticals (web/images/news/videos/books).",
-          "file": "crates/ai/mcp/src/search_tools.rs"
-        },
-        {
-          "name": "aphrody_web_crawl",
-          "description": "Run one bounded Rust crawl pass with optional persistent SQLite frontier, domain limits, robots checks and sitemap discovery. Returns page summaries and frontier statistics.",
-          "file": "crates/ai/mcp/src/native_crawl_tools.rs"
-        },
         {
           "name": "aphrody_x_algorithm_rank",
           "description": "Rank a list of X posts using the local port of X For You algorithm (filters + weighted engagement scorer + author diversity from xai-org/x-algorithm). Returns ScoredPost[].",
@@ -11954,198 +10645,6 @@
       ]
     },
     {
-      "server": "obscura-mcp",
-      "repo": "aphrody",
-      "kind": "json-catalog",
-      "tools": [
-        {
-          "name": "browser_back",
-          "description": "Navigate back in the page history (equivalent to the browser back button).",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_clear_cookies",
-          "description": "Wipe every cookie from the jar.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_click",
-          "description": "Click an element. Pass `ref` (preferred, from browser_snapshot / browser_interactive_elements) OR a `selector`.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_close",
-          "description": "Close the current browser page and reset state",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_console_messages",
-          "description": "Return the console messages logged by the current page",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_count",
-          "description": "Count how many elements on the page match a CSS selector. Cheap existence / pagination probe.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_detect_forms",
-          "description": "List every <form> on the page with its action URL, method, and a description of each input/textarea/select. Use to understand a form's structure before filling it in.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_evaluate",
-          "description": "Evaluate a JavaScript expression in the page context and return the result",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_extract",
-          "description": "Extract a structured object from the page given a map of {field_name: css_selector}. Returns one JSON object with each field set to the matching element's text content (or attribute via 'selector@attr' syntax, e.g. 'a@href'). For list extraction, append '[]' to the field name (e.g. 'rows[]') and the value will be an array.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_fill",
-          "description": "Set the value of an input element. Pass `ref` (preferred) OR `selector`.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_fill_form",
-          "description": "Fill multiple inputs in one call. `fields` is an array of {ref?, selector?, value, type?}. type='text' (default) sets value, type='check'/'uncheck' toggles checkboxes, type='select' picks an option by value or visible text. Saves N round-trips vs N browser_fill calls.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_forward",
-          "description": "Navigate forward in the page history.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_get_attribute",
-          "description": "Read an attribute of an element (href, src, value, class, data-*, etc.). Returns the raw attribute value as a string, or empty string if missing.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_get_cookies",
-          "description": "Return all cookies in the browser's cookie jar as one JSON object per line.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_interactive_elements",
-          "description": "List every clickable / typeable element on the current page with a stable ref ID and a brief description. Use this BEFORE clicking or filling so you can refer to elements by ref instead of guessing a CSS selector. Refs look like 'e3' and stay valid until the next navigation.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_links",
-          "description": "List every anchor link on the current page as one JSON object per line: {text, href}. Use when you need to enumerate where to navigate next.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_markdown",
-          "description": "Extract the current page as Markdown (headings, paragraphs, lists, links, code blocks). Use this instead of browser_snapshot when you want token-dense structured content rather than plain text.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_navigate",
-          "description": "Navigate to a URL and wait for the page to load",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_network_requests",
-          "description": "Return the list of network requests made by the current page",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_pdf",
-          "description": "Export the current rendered document as a paginated raster PDF using print media and bounded PDF defaults.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_press_key",
-          "description": "Dispatch a keyboard event on an element or the document",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_reload",
-          "description": "Reload the current page.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_screenshot",
-          "description": "Capture the current rendered viewport as a PNG image. Width and height default to the page's current CSS viewport.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_scroll",
-          "description": "Scroll the page or an element. `direction` is 'top'|'bottom'|'up'|'down'|'left'|'right' (default 'down'). `amount` in pixels (default viewport height). Use 'bottom' to trigger infinite-scroll loaders.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_search",
-          "description": "Find substring matches in the visible page text. Returns each match with its surrounding context. Use this to confirm content exists before scraping or to locate a section.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_select_option",
-          "description": "Select an option from a <select> element",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_set_cookie",
-          "description": "Add or replace a cookie in the jar. Use this to skip a login flow when you already have a session token.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_set_storage_state",
-          "description": "Restore session state previously returned by browser_storage_state. Pass the JSON object. Use to bring an authenticated session back without re-logging in.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_snapshot",
-          "description": "Get the current page content as text (title, URL, and readable body text)",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_storage_state",
-          "description": "Export the full authentication / session state (cookies + localStorage + sessionStorage) as a JSON object. Save this to skip a login on a subsequent run via browser_set_storage_state.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_tab_close",
-          "description": "Close a tab by ID (default: the active tab). If you close the active tab, the next remaining tab becomes active.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_tab_list",
-          "description": "List all open tabs with their ID, URL, title, and which one is active.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_tab_new",
-          "description": "Open a new tab (isolated browser page). Returns the tab ID; subsequent tool calls operate on the most recently opened or browser_tab_switch'd tab.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_tab_switch",
-          "description": "Switch the active tab. All subsequent tool calls (snapshot, click, etc.) target this tab.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_type",
-          "description": "Type text into an input element (appends to existing value). Pass `ref` (preferred) OR `selector`.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_wait_for",
-          "description": "Wait for a CSS selector to appear in the DOM",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        },
-        {
-          "name": "browser_wait_for_text",
-          "description": "Wait until a substring appears anywhere in the rendered page text. Use when you want to wait for a result message or notification rather than a specific selector.",
-          "file": "crates/web/obscura-mcp/src/lib.rs"
-        }
-      ]
-    },
-    {
       "server": "aphrody-nie-cli (NieMcpServer)",
       "repo": "iecode",
       "kind": "rmcp",
@@ -12253,14 +10752,14 @@
     "aphrodyRepos": 2,
     "experimentRepos": 0,
     "sharedRepos": 0,
-    "crates": 242,
-    "binaries": 38,
-    "bunPackages": 116,
+    "crates": 216,
+    "binaries": 37,
+    "bunPackages": 113,
     "pythonPackages": 10,
-    "cliBinaries": 38,
-    "cliCommands": 906,
-    "mcpServers": 20,
-    "mcpTools": 392,
-    "mcpUniqueToolNames": 390
+    "cliBinaries": 34,
+    "cliCommands": 777,
+    "mcpServers": 19,
+    "mcpTools": 334,
+    "mcpUniqueToolNames": 332
   }
 }

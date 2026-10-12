@@ -7,7 +7,7 @@ Every MCP tool registered in source, grouped by server: rmcp `#[tool]` routers, 
 full text is in [ecosystem.json](ecosystem.json). The kernel re-exports its subsystems' tools through
 `aphrody-kernel`, so one tool name can appear under several servers.
 
-Totals: 20 servers, 392 tool registrations, 390 unique tool names.
+Totals: 19 servers, 334 tool registrations, 332 unique tool names.
 
 ## aphrody — @aphrody/workspace subsystem `workspace`
 
@@ -24,18 +24,14 @@ Kind: kernel-subsystem. 6 tools.
 
 ## aphrody — aphrody-agent-tools
 
-Kind: kernel-subsystem. 8 tools.
+Kind: kernel-subsystem. 4 tools.
 
 | Tool | Description |
 | --- | --- |
 | `apply_patch` | Apply a patch document to the filesystem. Use this to create, delete, rename, and edit files. The patch is framed by `*** Begin Patch` / `*** End Patch` and uses `*** Add/Delete/Update File:` directi… |
-| `google_ai` | Query Google AI models keylessly via native session and retrieve generated text. |
-| `js_eval` | Execute JavaScript code in an isolated native V8 runtime and return output. |
 | `read_file` | Read a bounded local UTF-8 file for repository inspection, RAG preparation, or data mining. |
 | `search_text` | Search local repository text with ripgrep and return bounded line-numbered matches for data mining. |
 | `shell` | Run a command and capture its combined stdout/stderr output and exit code. The command is given as an argv vector and executed directly (no shell interpretation). Long output is truncated. |
-| `web_scrape` | Scrape and convert any public web page directly into clean Markdown. |
-| `web_search` | Search the live web and return curated, markdown-formatted results. |
 
 ## aphrody — aphrody-app subsystem `tauri`
 
@@ -168,27 +164,10 @@ Kind: kernel-subsystem. 8 tools.
 
 ## aphrody — aphrody-mcp
 
-Kind: json-catalog. 19 tools.
+Kind: json-catalog. 2 tools.
 
 | Tool | Description |
 | --- | --- |
-| `aphrody_archive_item` | Retrieve an Internet Archive item's public metadata and file manifest without downloading media. |
-| `aphrody_archive_search` | Search Internet Archive's public catalog via AdvancedSearch, for example: collection:prelinger AND mediatype:movies. |
-| `aphrody_archive_wayback` | List public Wayback Machine captures through the CDX API; no archived content is downloaded. |
-| `aphrody_capabilities` | List the native Aphrody Web tools available in this build. |
-| `aphrody_detect_frameworks` | Detect web technologies, CDN and challenge evidence from a bounded HTTP response and DNS lookup. |
-| `aphrody_gemini_ask` | Query Google Gemini directly with automatic engine selection (Rust Bridge -> Web) using signed-in cookies. |
-| `aphrody_gemini_chat` | Chat with Gemini keeping continuous conversation context across multi-turn exchanges. |
-| `aphrody_gemini_rust` | Execute a one-shot Gemini Web query directly in the shared Rust runtime. |
-| `aphrody_google_calendar_public` | Fetch and parse events from any public Google iCalendar feed by ID. |
-| `aphrody_google_dns` | Query Google Public DNS-over-HTTPS (DoH) for any domain and record type (A, AAAA, MX, TXT, etc.). |
-| `aphrody_google_doc_export` | Export a publicly shared Google Document to plain text. |
-| `aphrody_google_routes` | Read the native catalogue of public Google entry points and official SEO, Web Vitals and accessibility guidance. Dated observations, not a crawl queue or authorization to mirror Search. |
-| `aphrody_google_sheet_export` | Export a publicly shared Google Spreadsheet to CSV. |
-| `aphrody_google_suggest` | Get real-time query suggestions from Google Autocomplete. |
-| `aphrody_google_supported_languages` | List all 195 official supported Google Cloud Translation languages, optionally localized in target language. |
-| `aphrody_search` | Powerful Google Web Search. Returns ranked organic results (title, URL, snippet) and, with `rich`, the featured snippet / knowledge panel / People-Also-Ask / related searches. Authenticates automatic… |
-| `aphrody_web_crawl` | Run one bounded Rust crawl pass with optional persistent SQLite frontier, domain limits, robots checks and sitemap discovery. Returns page summaries and frontier statistics. |
 | `aphrody_x_algorithm_rank` | Rank a list of X posts using the local port of X For You algorithm (filters + weighted engagement scorer + author diversity from xai-org/x-algorithm). Returns ScoredPost[]. |
 | `aphrody_x_client` | Native X / Twitter client (cookie auth, no API key). Fetch a profile, a user's tweets, search the Latest timeline, trending news, or resolve the authenticated account. Auth uses an auth_token + ct0 c… |
 
@@ -470,50 +449,6 @@ Kind: json-catalog. 166 tools.
 | `wsl_list_processes` | Lists Linux processes in an existing WSL distribution. This is read-only and returns PID, parent PID, command, and arguments. |
 | `wsl_read_only_probe` | Runs one fixed, read-only diagnostic inside an existing WSL distribution. probe must be one of: system-info, re-toolchain, processes, mounts, or network. No arbitrary shell command is accepted. |
 | `wsl_send_signal` | Sends HUP, INT, TERM, or KILL to one exact Linux PID in an existing WSL distribution. Call wsl_list_processes first to identify the target PID. |
-
-## aphrody — obscura-mcp
-
-Kind: json-catalog. 37 tools.
-
-| Tool | Description |
-| --- | --- |
-| `browser_back` | Navigate back in the page history (equivalent to the browser back button). |
-| `browser_clear_cookies` | Wipe every cookie from the jar. |
-| `browser_click` | Click an element. Pass `ref` (preferred, from browser_snapshot / browser_interactive_elements) OR a `selector`. |
-| `browser_close` | Close the current browser page and reset state |
-| `browser_console_messages` | Return the console messages logged by the current page |
-| `browser_count` | Count how many elements on the page match a CSS selector. Cheap existence / pagination probe. |
-| `browser_detect_forms` | List every <form> on the page with its action URL, method, and a description of each input/textarea/select. Use to understand a form's structure before filling it in. |
-| `browser_evaluate` | Evaluate a JavaScript expression in the page context and return the result |
-| `browser_extract` | Extract a structured object from the page given a map of {field_name: css_selector}. Returns one JSON object with each field set to the matching element's text content (or attribute via 'selector@att… |
-| `browser_fill` | Set the value of an input element. Pass `ref` (preferred) OR `selector`. |
-| `browser_fill_form` | Fill multiple inputs in one call. `fields` is an array of {ref?, selector?, value, type?}. type='text' (default) sets value, type='check'/'uncheck' toggles checkboxes, type='select' picks an option b… |
-| `browser_forward` | Navigate forward in the page history. |
-| `browser_get_attribute` | Read an attribute of an element (href, src, value, class, data-*, etc.). Returns the raw attribute value as a string, or empty string if missing. |
-| `browser_get_cookies` | Return all cookies in the browser's cookie jar as one JSON object per line. |
-| `browser_interactive_elements` | List every clickable / typeable element on the current page with a stable ref ID and a brief description. Use this BEFORE clicking or filling so you can refer to elements by ref instead of guessing a… |
-| `browser_links` | List every anchor link on the current page as one JSON object per line: {text, href}. Use when you need to enumerate where to navigate next. |
-| `browser_markdown` | Extract the current page as Markdown (headings, paragraphs, lists, links, code blocks). Use this instead of browser_snapshot when you want token-dense structured content rather than plain text. |
-| `browser_navigate` | Navigate to a URL and wait for the page to load |
-| `browser_network_requests` | Return the list of network requests made by the current page |
-| `browser_pdf` | Export the current rendered document as a paginated raster PDF using print media and bounded PDF defaults. |
-| `browser_press_key` | Dispatch a keyboard event on an element or the document |
-| `browser_reload` | Reload the current page. |
-| `browser_screenshot` | Capture the current rendered viewport as a PNG image. Width and height default to the page's current CSS viewport. |
-| `browser_scroll` | Scroll the page or an element. `direction` is 'top'\|'bottom'\|'up'\|'down'\|'left'\|'right' (default 'down'). `amount` in pixels (default viewport height). Use 'bottom' to trigger infinite-scroll loaders. |
-| `browser_search` | Find substring matches in the visible page text. Returns each match with its surrounding context. Use this to confirm content exists before scraping or to locate a section. |
-| `browser_select_option` | Select an option from a <select> element |
-| `browser_set_cookie` | Add or replace a cookie in the jar. Use this to skip a login flow when you already have a session token. |
-| `browser_set_storage_state` | Restore session state previously returned by browser_storage_state. Pass the JSON object. Use to bring an authenticated session back without re-logging in. |
-| `browser_snapshot` | Get the current page content as text (title, URL, and readable body text) |
-| `browser_storage_state` | Export the full authentication / session state (cookies + localStorage + sessionStorage) as a JSON object. Save this to skip a login on a subsequent run via browser_set_storage_state. |
-| `browser_tab_close` | Close a tab by ID (default: the active tab). If you close the active tab, the next remaining tab becomes active. |
-| `browser_tab_list` | List all open tabs with their ID, URL, title, and which one is active. |
-| `browser_tab_new` | Open a new tab (isolated browser page). Returns the tab ID; subsequent tool calls operate on the most recently opened or browser_tab_switch'd tab. |
-| `browser_tab_switch` | Switch the active tab. All subsequent tool calls (snapshot, click, etc.) target this tab. |
-| `browser_type` | Type text into an input element (appends to existing value). Pass `ref` (preferred) OR `selector`. |
-| `browser_wait_for` | Wait for a CSS selector to appear in the DOM |
-| `browser_wait_for_text` | Wait until a substring appears anywhere in the rendered page text. Use when you want to wait for a result message or notification rather than a specific selector. |
 
 ## iecode — aphrody-nie-cli (NieMcpServer)
 

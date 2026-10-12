@@ -1,6 +1,38 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 
+const INTERNAL_ROOTS = [
+  "apps/",
+  "examples/",
+  "packages/",
+  "drive/apps/",
+  "drive/packages/",
+  "m3/apps/",
+  "m3/packages/",
+  "crates/tauri/",
+];
+/** Canonical sources transferred to the Bun fork, linked from its sibling checkout (C:/bun next to C:/aphrody). */
+const BUN_FORK_PACKAGES = "../bun/packages/";
+
+/** In-repository roots, or the Bun fork packages without any further escape. */
+export function allowedWorkspace(root: string, workspacePath: string): boolean {
+  const segments = workspacePath.split("/");
+  if (segments.some((segment) => segment === "" || segment === ".")) return false;
+  if (workspacePath.startsWith(BUN_FORK_PACKAGES)) {
+    const rest = workspacePath.slice(BUN_FORK_PACKAGES.length);
+    const forkPackages = resolve(root, BUN_FORK_PACKAGES);
+    const target = relative(forkPackages, resolve(root, workspacePath));
+    return (
+      rest.length > 0 && !rest.split("/").includes("..") && !!target && !target.startsWith("..")
+    );
+  }
+  return (
+    !segments.includes("..") &&
+    INTERNAL_ROOTS.some((prefix) => workspacePath.startsWith(prefix)) &&
+    !relative(root, resolve(root, workspacePath)).startsWith("..")
+  );
+}
+
 type RootManifest = {
   workspaces?: string[] | { packages?: string[] };
 };
@@ -62,14 +94,9 @@ export async function runWorkspaceLayout(args: string[]): Promise<number> {
     const packageManifest = join(absolutePath, "package.json");
     const gitMetadata = join(absolutePath, ".git");
 
-    if (
-      !/^(apps|examples|packages|drive\/(?:apps|packages)|m3\/packages|crates\/tauri)\//.test(
-        workspacePath,
-      ) ||
-      relative(root, absolutePath).startsWith("..")
-    ) {
+    if (!allowedWorkspace(root, workspacePath)) {
       errors.push(
-        `workspace must live below apps/, examples/, packages/, m3/packages/, crates/tauri/, drive/apps/, or drive/packages/: ${workspacePath}`,
+        `workspace must live below ${INTERNAL_ROOTS.join(", ")} or the sibling Bun fork checkout ${BUN_FORK_PACKAGES}: ${workspacePath}`,
       );
     }
     if (!existsSync(packageManifest)) {
