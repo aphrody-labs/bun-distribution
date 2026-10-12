@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 import { existsSync, readFileSync, realpathSync } from "node:fs";
-import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
 export const PRIVATE_OWNER_ROOT = resolve(import.meta.dir, "../../..");
 /** The repository that folds the M3 owner into its single Bun workspace (`m3/packages/app-ui/showcase/*`, ...). */
 const REPOSITORY_ROOT = resolve(PRIVATE_OWNER_ROOT, "..");
+const configuredBunRoot = Bun.env.APHRODY_BUN_CHECKOUT ?? Bun.env.BUN_ROOT;
+const bunCheckout = configuredBunRoot && existsSync(join(configuredBunRoot, "packages/aphrody-migrated"))
+  ? configuredBunRoot
+  : resolve(REPOSITORY_ROOT, "..", "bun");
+const BUN_OWNER_ROOT = resolve(bunCheckout, "packages/aphrody-migrated/m3/aphrody-m3");
 
 /** Private packages resolve only in their declared source owner workspace. */
 export function assertPrivateOwnerWorkspace(outDir: string): void {
@@ -15,13 +20,11 @@ export function assertPrivateOwnerWorkspace(outDir: string): void {
     private?: boolean;
   };
   const requiredOwners = ["m3", "m3-bun", "m3-config", "m3-next-migrate"];
-  if (
-    manifest.name !== "aphrody-m3" ||
-    manifest.private !== true ||
-    !requiredOwners.every((name) =>
-      existsSync(resolve(PRIVATE_OWNER_ROOT, "packages", name, "package.json")),
-    )
-  )
+  const ownerRoots = [PRIVATE_OWNER_ROOT, BUN_OWNER_ROOT];
+  const ownersPresent = requiredOwners.every((name) =>
+    ownerRoots.some((root) => existsSync(resolve(root, "packages", name, "package.json"))),
+  );
+  if (manifest.name !== "aphrody-m3" || manifest.private !== true || !ownersPresent)
     throw new Error(
       "Aphrody/M3 private owner workspace required; qualify native SDK source acquisition before scaffolding elsewhere",
     );
