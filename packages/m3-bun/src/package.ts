@@ -116,6 +116,8 @@ export interface PackageOptions {
   deploy?: boolean;
   /** Reuse an executable instead of compiling. */
   executable?: string;
+  /** Override bytecode for an executable compiled as part of packaging. */
+  bytecode?: boolean;
   app?: M3App;
 }
 
@@ -146,7 +148,7 @@ Verify the download with SHA256SUMS. Built with @aphrody/m3-bun; the executable 
 export async function packageApp(options: PackageOptions = {}): Promise<PackageReport> {
   const app = options.app ?? (await loadApp(resolve(options.dir ?? process.cwd()), options.configFile));
   const target = options.target ?? app.bun.compile?.target;
-  const windows = (target ?? "").startsWith("windows");
+  const windows = (target ?? "").startsWith("windows") || (!target && process.platform === "win32");
   const format = options.format ?? (windows ? "zip" : "tar.gz");
   const out = resolve(options.out ?? join(app.dir, "release"));
   const exeName = `${app.name}${windows ? ".exe" : ""}`;
@@ -161,6 +163,7 @@ export async function packageApp(options: PackageOptions = {}): Promise<PackageR
     compile = await compileApp({
       app,
       ...(target ? { target } : {}),
+      ...(options.bytecode !== undefined ? { bytecode: options.bytecode } : {}),
       outfile: join(staging, exeName),
     });
     executable = compile.outfile;

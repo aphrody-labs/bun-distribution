@@ -120,6 +120,11 @@ describe("packageApp", () => {
     expect(report.files).toContain("hello-m3.exe");
     expect(readFileSync(report.checksumFile, "utf8")).toBe(`${report.sha256}  ${basename(report.archive)}\n`);
   }, 60_000);
+
+  test("packageApp forwards a bytecode override to its compile report", async () => {
+    const report = await packageApp({ dir: fixtureCopy(), out: tmp(), bytecode: false });
+    expect(report.compile?.bytecode).toBe(false);
+  }, 60_000);
 });
 
 describe("buildRootfs", () => {

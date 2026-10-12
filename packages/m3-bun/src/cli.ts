@@ -100,7 +100,7 @@ Usage:
   m3-bun build    [--minify none|basic|full] [--dev] [--outdir <dir>] [--json]
   m3-bun serve    [--port <n>] [--host <h>] [--build]
   m3-bun compile  [--target <t>] [--outfile <file>] [--minify <level>] [--no-build] [--no-bytecode]
-  m3-bun package  [--target <t>] [--format tar.gz|zip] [--out <dir>] [--rootfs] [--deploy] [--executable <file>] [--json]
+  m3-bun package  [--target <t>] [--format tar.gz|zip] [--out <dir>] [--rootfs] [--deploy] [--executable <file>] [--no-bytecode] [--json]
   m3-bun deploy   <target..|all> [--out <dir>] [--domain <host>] [--name <n>] [--port <n>] [--image <ref>]
                   [--namespace <ns>] [--user <u>] [--region <r>] [--tls-cert <f> --tls-key <f>] [--http2 directive|listen] [--cli "<cmd>"]
   m3-bun targets
@@ -309,6 +309,7 @@ export async function runCli(argv: readonly string[], cwd: string = process.cwd(
         ...(out ? { out } : {}),
         ...(format ? { format } : {}),
         ...(executable ? { executable } : {}),
+        ...(flags.has("no-bytecode") ? { bytecode: false } : {}),
         rootfs: flags.has("rootfs"),
         deploy: flags.has("deploy"),
       });
