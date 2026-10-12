@@ -934,22 +934,6 @@
           ]
         },
         {
-          "name": "aphrody-tauri-build",
-          "path": "crates/tauri/aphrody-tauri-build",
-          "description": "build time code to pair with https://crates.io/crates/tauri",
-          "bins": [],
-          "features": [
-            "codegen",
-            "config-json",
-            "config-json5",
-            "config-toml",
-            "default",
-            "isolation",
-            "quote",
-            "tauri-codegen"
-          ]
-        },
-        {
           "name": "aphrody-tauri-bundler",
           "path": "crates/tauri/aphrody-tauri-bundler",
           "description": "Wrap rust executables in OS-specific app bundles for Tauri",

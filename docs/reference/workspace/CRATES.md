@@ -7,7 +7,6 @@ Packages are prefixed with `aphrody-`; library and binary names are unchanged.
 | Package | Upstream crate | Version | Source | Directory |
 | :--- | :--- | :--- | :--- | :--- |
 | `aphrody-tauri` | `tauri` | 3.0.0-alpha.4 | `tauri` | `crates/tauri/aphrody-tauri` |
-| `aphrody-tauri-build` | `tauri-build` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-build` |
 | `aphrody-tauri-bundler` | `tauri-bundler` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-bundler` |
 | `aphrody-tauri-cli` | `tauri-cli` | 3.0.0-alpha.4 | `tauri` | `crates/tauri/aphrody-tauri-cli` |
 | `aphrody-tauri-plugin` | `tauri-plugin` | 3.0.0-alpha.3 | `tauri` | `crates/tauri/aphrody-tauri-plugin` |

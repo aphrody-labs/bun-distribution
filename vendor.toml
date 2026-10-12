@@ -23,7 +23,6 @@ name = "tauri"
 rustfmt = "rustfmt.toml"
 crates = [
   "crates/tauri",
-  "crates/tauri-build",
   "crates/tauri-bundler",
   "crates/tauri-cli",
   "crates/tauri-plugin",

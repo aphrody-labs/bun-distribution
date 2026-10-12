@@ -37,6 +37,7 @@ description = "aphrody \u2014 the ultimate cross-platform CLI (Linux/Windows/WAS
 categories = ["command-line-utilities", "development-tools", "web-programming"]
 keywords = ["cli", "cross-platform", "rust", "linux", "wasm"]
 [workspace.dependencies]
+tauri-build = { package = "aphrody-tauri-build", path = "../../bun/packages/bun-tauri/crates/aphrody-tauri-build", version = "1.4.4" }
 aphrody-web-source = { path = "../bun/packages/bun-aphrody-web", version = "1.4.4" }
 node-semver = "2.2.0"
 pep440_rs = "0.7.3"
@@ -362,7 +363,6 @@ minijinja-contrib = { version = "2.24.0", features = ["pycompat"] }
 skrifa = "0.47.0"
 pollster = "1.0.1"
 tauri = { package = "aphrody-tauri", path = "crates/tauri/aphrody-tauri", version = "1.4.4", default-features = false, features = ["compression"] }
-tauri-build = { package = "aphrody-tauri-build", path = "crates/tauri/aphrody-tauri-build", version = "1.4.4" }
 tauri-runtime-cef = { package = "aphrody-tauri-runtime-cef", path = "crates/tauri/aphrody-tauri-runtime-cef", version = "1.4.4" }
 tauri-plugin-log = { package = "aphrody-tauri-plugin-log", path = "crates/tauri/aphrody-tauri-plugin-log", version = "1.4.4" }
 tauri-plugin-opener = { package = "aphrody-tauri-plugin-opener", path = "crates/tauri/aphrody-tauri-plugin-opener", version = "1.4.4" }
