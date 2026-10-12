@@ -62,7 +62,7 @@ export function versionPathDeps(
 
 /** Inserts `key` into the [package] table right after its `name`. */
 function addPackageKey(toml: string, line: string): string {
-  return toml.replace(/^(\[package\][^\[]*?^name\s*=\s*"[^"]*"\s*$)/m, `$1\n${line}`);
+  return toml.replace(/^(\[package\][^[]*?^name\s*=\s*"[^"]*"\s*$)/m, `$1\n${line}`);
 }
 
 if (import.meta.main) {
