@@ -6,8 +6,9 @@ import { join } from "node:path";
 import { KernelClient, registerSubsystem } from "../src/index.ts";
 
 const exe = process.platform === "win32" ? "aphrody.exe" : "aphrody";
-// The kernel ships as `aphrody kernel`; the Rust workspace root owns target/, APHRODY_BIN points at an installed build.
-const binary = process.env.APHRODY_BIN ?? join(import.meta.dir, "../../../../target/debug", exe);
+// The kernel ships as `aphrody kernel`; cargo builds into CARGO_TARGET_DIR (else the workspace target/), APHRODY_BIN points at an installed build.
+const targetDir = process.env.CARGO_TARGET_DIR || join(import.meta.dir, "../../../../target");
+const binary = process.env.APHRODY_BIN ?? join(targetDir, "debug", exe);
 const endpoint =
   process.platform === "win32"
     ? `\\\\.\\pipe\\aphrody-os-bun-test-${process.pid}`

@@ -135,7 +135,7 @@ export function tauriConf(options: TauriShellOptions): Record<string, unknown> {
 }
 
 export function cargoToml(options: TauriShellOptions): string {
-  const runtime = `tauri-runtime-cef = { version = "=${TAURI_3.runtimeCef}", features = ["macos-private-api"] }`;
+  const runtime = `tauri-runtime-cef = { version = "=${TAURI_3.runtimeCef}", package = "aphrody-tauri-runtime-cef", features = ["macos-private-api"] }`;
   const debug = debugBridgeMode(options);
   const lines = [
     "# SPDX-License-Identifier: Apache-2.0",
@@ -161,13 +161,16 @@ export function cargoToml(options: TauriShellOptions): string {
   lines.push(
     "",
     "[build-dependencies]",
-    `tauri-build = "=${TAURI_3.build}"`,
+    `tauri-build = { version = "=${TAURI_3.build}", package = "aphrody-tauri-build" }`,
     "",
     "[dependencies]",
-    `tauri = { version = "=${TAURI_3.tauri}", default-features = false, features = ["compression"] }`,
+    `tauri = { version = "=${TAURI_3.tauri}", package = "aphrody-tauri", default-features = false, features = ["compression"] }`,
     runtime,
   );
-  if (options.openerPlugin) lines.push(`tauri-plugin-opener = "=${TAURI_3.pluginOpener}"`);
+  if (options.openerPlugin)
+    lines.push(
+      `tauri-plugin-opener = { version = "=${TAURI_3.pluginOpener}", package = "aphrody-tauri-plugin-opener" }`,
+    );
   if (options.runtimePlugin) lines.push(runtimePluginLine(options.runtimePlugin));
   if (debug?.kind === "optional")
     lines.push(

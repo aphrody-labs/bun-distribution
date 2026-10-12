@@ -167,9 +167,12 @@ describe("runCli", () => {
         ? owner.workspaces
         : (owner.workspaces?.packages ?? []);
       const destination = relative(dirname(REPO_ROOT), project).replaceAll("\\", "/");
-      const included = patterns.some(
-        (pattern) => !pattern.startsWith("!") && new Bun.Glob(pattern).match(destination),
-      );
+      // A direct apps/* child of the M3 owner is an app slot even before the root declares it.
+      const included =
+        new Bun.Glob("apps/*").match(relativeProject) ||
+        patterns.some(
+          (pattern) => !pattern.startsWith("!") && new Bun.Glob(pattern).match(destination),
+        );
       const excluded = patterns.some(
         (pattern) => pattern.startsWith("!") && new Bun.Glob(pattern.slice(1)).match(destination),
       );

@@ -85,7 +85,7 @@ export function libraryFile(): string {
 
 /**
  * Resolution order: `$YOLO_RUNTIME_LIB`, the embedded sole FFI provider, the active installed artifact
- * (`$YOLO_RUNTIME_HOME` or `$YOLO_HOME/runtime`, default `~/.yolo/runtime`, `<target>/current`), then the local `target/runtime/`.
+ * (`$YOLO_RUNTIME_HOME` or `$YOLO_HOME/runtime`, default `~/.yolo/runtime`, `<target>/current`), then the local `$CARGO_TARGET_DIR/runtime/` (default `target/runtime/`).
  */
 export function defaultLibraryPath(): string {
   const fromEnv = process.env["YOLO_RUNTIME_LIB"];
@@ -113,7 +113,8 @@ export function defaultLibraryPath(): string {
   } catch {
     // no installed artifact: fall through to the local build
   }
-  return resolve(import.meta.dir, "../../../..", "target/runtime", libraryFile());
+  const target = process.env["CARGO_TARGET_DIR"] || resolve(import.meta.dir, "../../../..", "target");
+  return resolve(target, "runtime", libraryFile());
 }
 
 function installedTarget(): string {

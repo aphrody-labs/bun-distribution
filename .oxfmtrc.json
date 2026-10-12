@@ -14,6 +14,7 @@
     "crates/ui/app/ui-dist/**",
     "crates/web/obscura-js/**",
     "**/templates/**",
-    "vendor/**"
+    "vendor/**",
+    "m3/packages/canvas/vendor/**"
   ]
 }

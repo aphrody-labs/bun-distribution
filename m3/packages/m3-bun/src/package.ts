@@ -252,12 +252,13 @@ export async function archiveDir(
         .filter((entry) => !entry.name.endsWith("/"))
         .map((entry) => [entry.name, { data: entry.data, mode: entry.mode }]),
     );
+    // `bytes()` applies `compress`; `Bun.write(path, archive)` writes the uncompressed tar store.
     await Bun.write(
       archive,
-      new Bun.Archive(
+      await new Bun.Archive(
         files,
         format === "zip" ? { format: "zip", mtime: 0 } : { compress: "gzip", level: 9, mtime: 0 },
-      ),
+      ).bytes(),
     );
     return "bun-archive";
   }

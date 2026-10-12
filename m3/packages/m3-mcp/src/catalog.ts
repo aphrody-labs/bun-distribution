@@ -62,11 +62,11 @@ export function loadTokens(root = ROOT): Token[] {
       add({ name: m[1]!, value: m[2]!.trim(), source: `packages/m3-tokens/${path}` });
     }
   }
-  const dyn = read(join(pkg, "src/dynamic-color.ts"));
-  const roles = (/export const ROLES = \[([\s\S]*?)\]/.exec(dyn)?.[1] ?? "").replace(
-    /\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,
-    "",
-  );
+  // `dynamic-color.ts` is the public module of the roles; it re-exports the list from `native-theme.ts`.
+  const list = ["src/dynamic-color.ts", "src/native-theme.ts"]
+    .map((file) => /export const ROLES = \[([\s\S]*?)\]/.exec(read(join(pkg, file)))?.[1])
+    .find((roles) => roles !== undefined);
+  const roles = (list ?? "").replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "");
   for (const m of roles.matchAll(/["'](\w+)["']/g)) {
     add({
       name: `--md-sys-color-${kebab(m[1]!)}`,
@@ -172,8 +172,16 @@ export function researchLinks(
   }
   const dir = join(root, "docs/research");
   const files = existsSync(dir) ? [...walk(dir)].map((f) => relative(root, f)) : [];
+  // The link index moved with the M3 integrations to the Bun fork checkout next to this repository.
+  const index = [
+    dir,
+    join(root, "../../bun/packages/bun-aphrody-web/integrations/m3/docs/research"),
+  ]
+    .map((research) => join(research, "GOOGLE-LINKS.md"))
+    .find((file) => existsSync(file));
+  if (index && !index.startsWith(dir)) files.push(relative(root, index));
   const links = [
-    ...read(join(dir, "GOOGLE-LINKS.md")).matchAll(/^\|\s*([^|]+?)\s*\|\s*(https?:\/\/\S+)\s*\|/gm),
+    ...read(index ?? "").matchAll(/^\|\s*([^|]+?)\s*\|\s*(https?:\/\/\S+)\s*\|/gm),
   ].map((m) => `${m[1]}  ${m[2]}`);
   return { files, links };
 }

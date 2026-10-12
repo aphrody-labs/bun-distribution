@@ -34,8 +34,10 @@ const text = (value: string | Uint8Array | undefined): string =>
   typeof value === "string" ? value : new TextDecoder().decode(value);
 
 function cargoVersion(manifest: string, name: string): string | undefined {
-  const line = manifest.split("\n").find(entry => entry.startsWith(`${name} =`));
-  return /version\s*=\s*"=?([^"]+)"/.exec(line ?? "")?.[1] ?? /=\s*"=?([^"]+)"/.exec(line ?? "")?.[1];
+  const line = manifest.split("\n").find((entry) => entry.startsWith(`${name} =`));
+  return (
+    /version\s*=\s*"=?([^"]+)"/.exec(line ?? "")?.[1] ?? /=\s*"=?([^"]+)"/.exec(line ?? "")?.[1]
+  );
 }
 
 describe("pins", () => {
@@ -45,18 +47,25 @@ describe("pins", () => {
     expect(cargoVersion(manifest, "tauri-runtime-cef")).toBe(TAURI_3.runtimeCef);
     expect(cargoVersion(manifest, "tauri-build")).toBe(TAURI_3.build);
     expect(cargoVersion(manifest, "tauri-plugin-opener")).toBe(TAURI_3.pluginOpener);
-    const config = JSON.parse(await Bun.file(join(root, "tools/config/tauri-upstream.json")).text());
+    const config = JSON.parse(
+      await Bun.file(join(root, "tools/config/tauri-upstream.json")).text(),
+    );
     expect(config.js.cli.version).toBe(TAURI_3.jsCli);
     // The Tauri JS packages are workspace members (`workspace:*`), published under these versions.
     const version = async (dir: string) =>
-      (JSON.parse(await Bun.file(join(root, dir, "package.json")).text()) as { version: string }).version;
+      (JSON.parse(await Bun.file(join(root, dir, "package.json")).text()) as { version: string })
+        .version;
     expect(await version("crates/tauri/aphrody-tauri-api")).toBe(TAURI_3.jsApi);
     expect(await version("crates/tauri/aphrody-tauri-plugin-opener")).toBe(TAURI_3.jsPluginOpener);
   });
 
   it("are mirrored once: tauri-sync tracks this file and no other scaffolder", async () => {
-    const config = JSON.parse(await Bun.file(join(root, "tools/config/tauri-upstream.json")).text());
-    expect(config.mirrors.map((mirror: { file: string }) => mirror.file)).toEqual(["m3/packages/scaffold/src/pins.ts"]);
+    const config = JSON.parse(
+      await Bun.file(join(root, "tools/config/tauri-upstream.json")).text(),
+    );
+    expect(config.mirrors.map((mirror: { file: string }) => mirror.file)).toEqual([
+      "m3/packages/scaffold/src/pins.ts",
+    ]);
   });
 });
 
@@ -85,7 +94,7 @@ describe("app template", () => {
     expect(main).toContain("tauri_plugin_opener::init()");
 
     const conf = JSON.parse(text(files["src-tauri/tauri.conf.json"]));
-    expect(conf.$schema).toContain(`tauri-v${TAURI_3.tauri}`);
+    expect(conf.$schema).toContain(`tauri-v${TAURI_3.upstream}`);
     expect(conf.identifier).toBe("com.aphrody.demoapp");
     expect(conf.app.withGlobalTauri).toBe(true);
     expect(conf.app.windows).toHaveLength(1);
@@ -96,14 +105,16 @@ describe("app template", () => {
 
   it("writes an RGBA icon that tauri::generate_context! accepts", () => {
     const icon = appFiles({ name: "demo" })["src-tauri/icons/icon.png"] as Uint8Array;
-    expect(Array.from(icon.subarray(0, 8))).toEqual([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    expect(Array.from(icon.subarray(0, 8))).toEqual([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+    ]);
     expect(icon[25]).toBe(6);
     expect(isUsableAppIcon(icon)).toBe(true);
   });
 
   it("adds no Tauri file for the vite target", () => {
     const files = appFiles({ name: "demo", target: "vite" });
-    expect(Object.keys(files).some(path => path.startsWith("src-tauri/"))).toBe(false);
+    expect(Object.keys(files).some((path) => path.startsWith("src-tauri/"))).toBe(false);
     expect(JSON.parse(text(files["package.json"])).scripts.preview).toBe("m3-bun serve");
   });
 
@@ -113,7 +124,9 @@ describe("app template", () => {
       modernizeM3: true,
       appTsx: "export default () => null;",
     });
-    expect(JSON.parse(text(files["package.json"])).dependencies["@aphrody/m3-theme"]).toBe("workspace:*");
+    expect(JSON.parse(text(files["package.json"])).dependencies["@aphrody/m3-theme"]).toBe(
+      "workspace:*",
+    );
     expect(text(files["src/main.tsx"])).toContain("m3:theme.css");
     expect(text(files["src/App.tsx"])).toBe("export default () => null;");
   });
@@ -142,9 +155,11 @@ describe("example", () => {
     const files = exampleFiles();
     expect(text(files["README.md"])).toContain(EXAMPLE_NAME);
     expect(files["src-tauri/Cargo.toml"]).toBeDefined();
-    expect(JSON.parse(text(files["package.json"])).dependencies["@aphrody/m3-primitives"]).toBe("workspace:*");
+    expect(JSON.parse(text(files["package.json"])).dependencies["@aphrody/m3-primitives"]).toBe(
+      "workspace:*",
+    );
     expect(renderTemplate({ template: "example" })).toEqual(files);
-    expect(TEMPLATES.map(template => template.name)).toEqual(["web", "app", "spa", "example"]);
+    expect(TEMPLATES.map((template) => template.name)).toEqual(["web", "app", "spa", "example"]);
   });
 });
 
@@ -165,7 +180,10 @@ describe("spa template", () => {
     expect(JSON.parse(text(files["package.json"]))).toMatchObject({
       name: "my-spa",
       scripts: { dev: "m3-bun dev", build: "m3-bun build", serve: "m3-bun serve" },
-      dependencies: { "@tanstack/react-router": TANSTACK_ROUTER_RANGE, "@aphrody/m3-bun": "workspace:*" },
+      dependencies: {
+        "@tanstack/react-router": TANSTACK_ROUTER_RANGE,
+        "@aphrody/m3-bun": "workspace:*",
+      },
     });
     expect(renderTemplate({ template: "spa", name: "my-spa" })).toEqual(files);
   });
@@ -176,7 +194,7 @@ describe("spa template", () => {
     const imports = (path: string) =>
       tsx
         .scan(text(files[path]))
-        .imports.map(entry => entry.path)
+        .imports.map((entry) => entry.path)
         .toSorted();
     expect(imports("src/main.tsx")).toEqual([
       "./router",
@@ -212,7 +230,9 @@ describe("tauriShell", () => {
       externalBin: ["binaries/server"],
     });
     expect(JSON.parse(text(files["src-tauri/tauri.conf.json"])).app.windows).toEqual([]);
-    expect(JSON.parse(text(files["src-tauri/tauri.conf.json"])).bundle.externalBin).toEqual(["binaries/server"]);
+    expect(JSON.parse(text(files["src-tauri/tauri.conf.json"])).bundle.externalBin).toEqual([
+      "binaries/server",
+    ]);
     expect(JSON.parse(text(files["src-tauri/capabilities/default.json"])).permissions).toEqual([]);
     const cargo = text(files["src-tauri/Cargo.toml"]);
     // Crate defaults (the bundle server) and a debug-bridge feature that only forwards to the crate.
@@ -232,10 +252,16 @@ describe("tauriShell", () => {
       path: "../../crates/ui/tauri-wrap",
       init: 'aphrody_tauri_wrap::init(include_str!("../wrap.json"))',
     };
-    const none = text(tauriShell({ ...base, runtimePlugin: { ...plugin, features: [] } })["src-tauri/Cargo.toml"]);
-    expect(none).toContain('aphrody-tauri-wrap = { path = "../../crates/ui/tauri-wrap", default-features = false }');
+    const none = text(
+      tauriShell({ ...base, runtimePlugin: { ...plugin, features: [] } })["src-tauri/Cargo.toml"],
+    );
+    expect(none).toContain(
+      'aphrody-tauri-wrap = { path = "../../crates/ui/tauri-wrap", default-features = false }',
+    );
     const some = text(
-      tauriShell({ ...base, runtimePlugin: { ...plugin, features: ["bundle"] } })["src-tauri/Cargo.toml"],
+      tauriShell({ ...base, runtimePlugin: { ...plugin, features: ["bundle"] } })[
+        "src-tauri/Cargo.toml"
+      ],
     );
     expect(some).toContain(
       'aphrody-tauri-wrap = { path = "../../crates/ui/tauri-wrap", default-features = false, features = ["bundle"] }',
@@ -247,7 +273,9 @@ describe("tauriShell", () => {
   it("adds the wrap crate as an optional dependency for a debug bridge without runtime plugin", () => {
     const files = tauriShell({ ...base, debugBridge: { path: "../../crates/ui/tauri-wrap" } });
     const cargo = text(files["src-tauri/Cargo.toml"]);
-    expect(cargo).toContain('debug-bridge = ["dep:aphrody-tauri-wrap", "aphrody-tauri-wrap/debug-bridge"]');
+    expect(cargo).toContain(
+      'debug-bridge = ["dep:aphrody-tauri-wrap", "aphrody-tauri-wrap/debug-bridge"]',
+    );
     expect(cargo).toContain(
       'aphrody-tauri-wrap = { path = "../../crates/ui/tauri-wrap", default-features = false, optional = true }',
     );
@@ -276,7 +304,7 @@ describe("tauriShell", () => {
 describe("writeFiles", () => {
   const dirs: string[] = [];
   afterAll(async () => {
-    await Promise.all(dirs.map(dir => rm(dir, { recursive: true, force: true })));
+    await Promise.all(dirs.map((dir) => rm(dir, { recursive: true, force: true })));
   });
   const fresh = async () => {
     const dir = await mkdtemp(join(tmpdir(), "scaffold-"));
@@ -296,9 +324,9 @@ describe("writeFiles", () => {
   it("`merge` never overwrites and writes nothing when one file clashes", async () => {
     const dir = await fresh();
     await writeFile(join(dir, "keep.txt"), "mine");
-    await expect(writeFiles(dir, { "other.txt": "o", "keep.txt": "theirs" }, "merge")).rejects.toThrow(
-      "refusing to overwrite",
-    );
+    await expect(
+      writeFiles(dir, { "other.txt": "o", "keep.txt": "theirs" }, "merge"),
+    ).rejects.toThrow("refusing to overwrite");
     expect(await Bun.file(join(dir, "keep.txt")).text()).toBe("mine");
     expect(await Bun.file(join(dir, "other.txt")).exists()).toBe(false);
   });
@@ -322,7 +350,11 @@ describe("writeFiles", () => {
       scaffold(outside, { template: "web", name: "proj", m3Version: ownerM3Version() }, "new"),
     ).rejects.toThrow("Aphrody/M3 private owner workspace required");
     expect(await Bun.file(join(outside, "package.json")).exists()).toBe(false);
-    const dir = join(PRIVATE_OWNER_ROOT, "apps", "m3-migrate-contract-scaffold-" + crypto.randomUUID());
+    const dir = join(
+      PRIVATE_OWNER_ROOT,
+      "apps",
+      "m3-migrate-contract-scaffold-" + crypto.randomUUID(),
+    );
     try {
       const written = await scaffold(dir, { template: "app", name: "proj", target: "vite" }, "new");
       expect(written.length).toBe(8);
@@ -345,7 +377,9 @@ describe("names and icons", () => {
     expect(crateName("3D Viewer")).toBe("app-3d-viewer");
     expect(npmName("My App_1")).toBe("my-app_1");
     expect(npmName("###")).toBeNull();
-    expect(tauriIdentifier("123.example.com", "io.aphrody.wrapped")).toBe("io.aphrody.wrapped.s123-example-com");
+    expect(tauriIdentifier("123.example.com", "io.aphrody.wrapped")).toBe(
+      "io.aphrody.wrapped.s123-example-com",
+    );
   });
 
   it("encodes a valid solid PNG and rejects what Tauri would refuse", () => {

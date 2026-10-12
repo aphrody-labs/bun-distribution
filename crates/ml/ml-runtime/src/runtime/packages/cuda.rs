@@ -31,33 +31,6 @@ pub(crate) enum Cuda {
     )]
     Blas13,
     #[strum(
-        serialize = "cufft-12",
-        props(
-            project = "nvidia-cufft/12.3.0.29",
-            windows = "cufft64_12.dll",
-            linux = "libcufft.so.12"
-        )
-    )]
-    Fft12,
-    #[strum(
-        serialize = "curand-10",
-        props(
-            project = "nvidia-curand/10.4.3.29",
-            windows = "curand64_10.dll",
-            linux = "libcurand.so.10"
-        )
-    )]
-    Rand10,
-    #[strum(
-        serialize = "cudnn-9.25",
-        props(
-            project = "nvidia-cudnn-cu13/9.25.1.1",
-            windows = "cudnn64_9.dll,cudnn_adv64_9.dll,cudnn_cnn64_9.dll,cudnn_engines_precompiled64_9.dll,cudnn_engines_runtime_compiled64_9.dll,cudnn_engines_tensor_ir64_9.dll,cudnn_ext64_9.dll,cudnn_graph64_9.dll,cudnn_heuristic64_9.dll,cudnn_ops64_9.dll",
-            linux = "libcudnn.so.9,libcudnn_adv.so.9,libcudnn_cnn.so.9,libcudnn_engines_precompiled.so.9,libcudnn_engines_runtime_compiled.so.9,libcudnn_engines_tensor_ir.so.9,libcudnn_ext.so.9,libcudnn_graph.so.9,libcudnn_heuristic.so.9,libcudnn_ops.so.9"
-        )
-    )]
-    Dnn925,
-    #[strum(
         serialize = "nvrtc-13",
         props(
             project = "nvidia-cuda-nvrtc/13.3.33",
@@ -66,33 +39,6 @@ pub(crate) enum Cuda {
         )
     )]
     Rtc13,
-    #[strum(
-        serialize = "nvjitlink-13",
-        props(
-            project = "nvidia-nvjitlink/13.3.33",
-            windows = "nvJitLink_130_0.dll",
-            linux = "libnvJitLink.so.13"
-        )
-    )]
-    JitLink13,
-    #[strum(
-        serialize = "cusparse-12",
-        props(
-            project = "nvidia-cusparse/12.8.2.51",
-            windows = "cusparse64_12.dll",
-            linux = "libcusparse.so.12"
-        )
-    )]
-    Sparse12,
-    #[strum(
-        serialize = "cusolver-12",
-        props(
-            project = "nvidia-cusolver/12.2.6.9",
-            windows = "cusolver64_12.dll,cusolverMg64_12.dll",
-            linux = "libcusolver.so.12,libcusolverMg.so.12"
-        )
-    )]
-    Solver12,
 }
 
 impl Cuda {
@@ -163,10 +109,7 @@ impl RuntimePackage for Cuda {
     fn dependencies(self, _hardware: &Hardware) -> Result<Vec<Component>> {
         let packages = match self {
             Self::Blas13 => vec![Self::Rtc13],
-            Self::Fft12 | Self::Sparse12 => vec![Self::JitLink13],
-            Self::Solver12 => vec![Self::JitLink13, Self::Blas13, Self::Sparse12],
-            Self::Dnn925 => vec![Self::Blas13],
-            Self::Runtime13 | Self::Rand10 | Self::Rtc13 | Self::JitLink13 => Vec::new(),
+            Self::Runtime13 | Self::Rtc13 => Vec::new(),
         };
         Ok(packages.into_iter().map(Component::Cuda).collect())
     }

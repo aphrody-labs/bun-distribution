@@ -10,7 +10,10 @@ const REPOSITORY_ROOT = resolve(PRIVATE_OWNER_ROOT, "..");
 export function assertPrivateOwnerWorkspace(outDir: string): void {
   const manifest = JSON.parse(
     readFileSync(resolve(PRIVATE_OWNER_ROOT, "package.json"), "utf8"),
-  ) as { name: string; private?: boolean };
+  ) as {
+    name: string;
+    private?: boolean;
+  };
   const requiredOwners = ["m3", "m3-bun", "m3-config", "m3-next-migrate"];
   if (
     manifest.name !== "aphrody-m3" ||
@@ -28,11 +31,16 @@ export function assertPrivateOwnerWorkspace(outDir: string): void {
   const destination = relative(REPOSITORY_ROOT, resolve(outDir)).replaceAll("\\", "/");
   const destinationInOwner = relative(PRIVATE_OWNER_ROOT, resolve(outDir)).replaceAll("\\", "/");
   const patterns = workspace.workspaces?.packages ?? [];
-  const included = patterns.some(
-    (pattern) =>
-      !pattern.startsWith("!") &&
-      (new Bun.Glob(pattern).match(destination) || new Bun.Glob(pattern).match(destinationInOwner)),
-  );
+  // The root declares only the committed apps (stray `m3/apps/*` directories must not join `bun install`),
+  // so a new direct `apps/*` child of the owner is its app slot even before it is declared.
+  const included =
+    new Bun.Glob("apps/*").match(destinationInOwner) ||
+    patterns.some(
+      (pattern) =>
+        !pattern.startsWith("!") &&
+        (new Bun.Glob(pattern).match(destination) ||
+          new Bun.Glob(pattern).match(destinationInOwner)),
+    );
   const excluded = patterns.some(
     (pattern) =>
       pattern.startsWith("!") &&

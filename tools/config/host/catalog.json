@@ -500,6 +500,81 @@
       "ownerRepo": "aphrody",
       "targetHost": "vps",
       "status": "pending"
+    },
+    {
+      "service": "aphrody-mullvad-netns",
+      "unit": "aphrody-mullvad-netns.service",
+      "path": "systemd/aphrody/aphrody-mullvad-netns.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-mullvad-socks",
+      "unit": "aphrody-mullvad-socks.service",
+      "path": "systemd/aphrody/aphrody-mullvad-socks.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "aphrody-mullvad-loopback",
+      "unit": "aphrody-mullvad-loopback.socket",
+      "path": "systemd/aphrody/aphrody-mullvad-loopback.socket",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps",
+      "pairs": "aphrody-mullvad-loopback.service"
+    },
+    {
+      "service": "aphrody-mullvad-loopback",
+      "unit": "aphrody-mullvad-loopback.service",
+      "path": "systemd/aphrody/aphrody-mullvad-loopback.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "vps"
+    },
+    {
+      "service": "shenron-cloudflared",
+      "unit": "shenron-cloudflared.service",
+      "path": "systemd/shenron/shenron-cloudflared.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "shenron-cloudflare-audit",
+      "unit": "shenron-cloudflare-audit.service",
+      "path": "systemd/shenron/shenron-cloudflare-audit.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "shenron-cloudflare-audit",
+      "unit": "shenron-cloudflare-audit.timer",
+      "path": "systemd/shenron/shenron-cloudflare-audit.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr",
+      "pairs": "shenron-cloudflare-audit.service"
+    },
+    {
+      "service": "shenron-cloudflare-s3-renew",
+      "unit": "shenron-cloudflare-s3-renew.service",
+      "path": "systemd/shenron/shenron-cloudflare-s3-renew.service",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr"
+    },
+    {
+      "service": "shenron-cloudflare-s3-renew",
+      "unit": "shenron-cloudflare-s3-renew.timer",
+      "path": "systemd/shenron/shenron-cloudflare-s3-renew.timer",
+      "dropIns": [],
+      "ownerRepo": "aphrody",
+      "targetHost": "dbfr",
+      "pairs": "shenron-cloudflare-s3-renew.service"
     }
   ],
   "scheduledTasks": [

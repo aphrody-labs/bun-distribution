@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // `m3-bun lint`: the rules of `@aphrody/eslint-plugin-m3` run by oxlint (its `jsPlugins`), on the app's sources.
 // The config is generated per run from the plugin's own `recommended` or `strict` preset.
+import { readFileSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -19,7 +20,7 @@ export interface LintOptions {
   fix?: boolean;
   /** Also run oxlint's default `correctness` rules (default: only the m3 rules). */
   correctness?: boolean;
-  /** The oxlint executable (default: `oxlint` on PATH, else the `oxlint` package). */
+  /** The oxlint executable (default: the `oxlint` package, else `oxlint` on PATH). */
   oxlint?: string;
 }
 
@@ -55,22 +56,38 @@ interface OxlintJson {
   number_of_rules: number;
 }
 
-/** The oxlint executable: the option, `oxlint` on PATH, else the `bin` of a resolvable `oxlint` package. */
-export function oxlintBinary(explicit?: string): string {
+/**
+ * The oxlint executable: the option, the `bin` of an `oxlint` package resolvable from `from` or m3-bun, else
+ * `oxlint` on PATH. The package comes first: `jsPlugins` run only through its JS entry, a standalone native
+ * oxlint ignores them.
+ */
+export function oxlintBinary(explicit?: string, from?: string): string {
   if (explicit) return explicit;
+  for (const base of [from, import.meta.dir]) {
+    if (!base) continue;
+    try {
+      const manifest = Bun.resolveSync("oxlint/package.json", base);
+      const { bin } = require(manifest) as { bin: string | Record<string, string> };
+      return resolve(
+        manifest,
+        "..",
+        typeof bin === "string" ? bin : (bin.oxlint ?? Object.values(bin)[0]!),
+      );
+    } catch {}
+  }
   const onPath = Bun.which("oxlint");
   if (onPath) return onPath;
+  throw new Error("m3-bun lint: oxlint is not installed (bun add -d oxlint, or put it on PATH)");
+}
+
+/** A script `bin` (the package's JS entry) runs under this Bun; a native executable runs directly. */
+function oxlintArgv(binary: string): string[] {
+  if (/\.[cm]?js$/i.test(binary)) return [process.execPath, binary];
+  let head = "";
   try {
-    const manifest = Bun.resolveSync("oxlint/package.json", import.meta.dir);
-    const { bin } = require(manifest) as { bin: string | Record<string, string> };
-    return resolve(
-      manifest,
-      "..",
-      typeof bin === "string" ? bin : (bin.oxlint ?? Object.values(bin)[0]!),
-    );
-  } catch {
-    throw new Error("m3-bun lint: oxlint is not installed (bun add -d oxlint, or put it on PATH)");
-  }
+    head = readFileSync(binary).subarray(0, 64).toString("latin1");
+  } catch {}
+  return /^#!.*\b(node|bun)\b/.test(head) ? [process.execPath, binary] : [binary];
 }
 
 /** `m3(no-sx-prop)` -> `m3/no-sx-prop`. */
@@ -101,9 +118,10 @@ export async function lintApp(options: LintOptions = {}): Promise<LintReport> {
         rules,
       }),
     );
+    const binary = oxlintBinary(options.oxlint, dir);
     const proc = Bun.spawn(
       [
-        oxlintBinary(options.oxlint),
+        ...oxlintArgv(binary),
         "-c",
         config,
         "--format",
@@ -128,6 +146,10 @@ export async function lintApp(options: LintOptions = {}): Promise<LintReport> {
         `m3-bun lint: oxlint exited ${exitCode} without a JSON report:\n${stderr || stdout}`,
       );
     }
+    if (!options.correctness && json.number_of_rules < Object.keys(rules).length)
+      throw new Error(
+        `m3-bun lint: ${binary} enabled ${json.number_of_rules} of the ${Object.keys(rules).length} m3 rules: it does not run jsPlugins (a standalone native oxlint); install the oxlint package (bun add -d oxlint) or pass one that does`,
+      );
     const diagnostics = json.diagnostics.map((d): LintDiagnostic => {
       const span = d.labels?.[0]?.span;
       return {

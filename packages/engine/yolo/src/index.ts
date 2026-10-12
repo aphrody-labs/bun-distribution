@@ -57,27 +57,21 @@ export const readVendorStatus: Status["readVendorStatus"] = async (...args) =>
   (await vendorStatus()).readVendorStatus(...args);
 export const collectStatusReport: Status["collectStatusReport"] = async (...args) =>
   (await vendorStatus()).collectStatusReport(...args);
-export const resolveGitDir: Status["resolveGitDir"] = async (...args) =>
-  (await vendorStatus()).resolveGitDir(...args);
+export const resolveGitDir: Status["resolveGitDir"] = async (...args) => (await vendorStatus()).resolveGitDir(...args);
 export const readWorkspaceCargo: Cargo["readWorkspaceCargo"] = async (...args) =>
   (await vendorCargo()).readWorkspaceCargo(...args);
 export const generateBunCatalog: Catalog["generateBunCatalog"] = async (...args) =>
   (await vendorCatalog()).generateBunCatalog(...args);
-export const parseTsSource: Parse["parseTsSource"] = async (...args) =>
-  (await vfsParse()).parseTsSource(...args);
+export const parseTsSource: Parse["parseTsSource"] = async (...args) => (await vfsParse()).parseTsSource(...args);
 // The pure renderers are synchronous in the core API, so they load their module with a lazy `require`.
 export const renderStatusMarkdown: Status["renderStatusMarkdown"] = (...args) =>
-  (require("../../../../packages/engine/core/src/vendor/status") as Status).renderStatusMarkdown(
-    ...args,
-  );
+  (require("../../../../packages/engine/core/src/vendor/status") as Status).renderStatusMarkdown(...args);
 export const renderParseMarkdown: Parse["renderParseMarkdown"] = (...args) =>
   (require("../../../../packages/engine/core/src/vfs/parse") as Parse).renderParseMarkdown(...args);
 export const runBenchMetrics: Bench["runBenchMetrics"] = (...args) =>
   (require("../../../../packages/engine/core/src/sys/benchmark") as Bench).runBenchMetrics(...args);
 export const renderBenchMarkdown: Bench["renderBenchMarkdown"] = (...args) =>
-  (require("../../../../packages/engine/core/src/sys/benchmark") as Bench).renderBenchMarkdown(
-    ...args,
-  );
+  (require("../../../../packages/engine/core/src/sys/benchmark") as Bench).renderBenchMarkdown(...args);
 
 let cachedRoot: string | undefined;
 /** The yolo home, resolved on first use (it walks parent directories, which `version` and `help` do not need). */
@@ -87,8 +81,6 @@ const rootDir = (): string => (cachedRoot ??= yoloHome());
 export const WEB_APP_DIR = "m3/packages/app-ui";
 /** The checkout enclosing the working directory, else the working directory (ai, mcp, api). */
 const workspaceRoot = (): string => findCheckout() ?? process.cwd();
-/** The only copy of the Bun docs in Aphrody, mirrored from the aphrody-labs/bun fork (`bun run docs:bun:update`). */
-const BUN_DOCS_MIRROR = "docs/reference/upstream-bun";
 
 /** Native tools keep their own argv, working directory, environment and standard streams. */
 async function runNativePythonTool(tool: "uv" | "ruff", args: string[]): Promise<number> {
@@ -128,7 +120,7 @@ ${header}
   \x1b[32mapi [--port N]\x1b[0m      Serve local HTTP / REST / OpenAPI micro-server (Bun.serve)
   \x1b[32mweb [build|dev]\x1b[0m     Manage and build the Web & Desktop frontend
   \x1b[32mgenerate [--json]\x1b[0m   Autonomously scan upstream Bun and generate code & capability catalogs
-  \x1b[32mdocs [query] [--json|--md]\x1b[0m Search or inspect the Bun docs mirror in docs/reference/upstream-bun
+  \x1b[32mdocs [query] [--json|--md]\x1b[0m Search or inspect the Bun docs of the fork checkout (docs/, or --dir / $BUN_DOCS_DIR)
   \x1b[32mversion [--json] | doctor [--json|--md]\x1b[0m Installed version, target; check the installation
   \x1b[32mruntime install|list|verify|rollback|info\x1b[0m  Manage installed runtime artifacts
   \x1b[32mdesktop-runtime package|install|verify|rollback|info\x1b[0m  Manage native CEF desktop artifacts
@@ -244,9 +236,7 @@ async function main(): Promise<void> {
         console.log(`\n\x1b[1m\x1b[36m=== Cargo Workspace Config (via Bun.TOML) ===\x1b[0m`);
         console.log(`  Resolver: v${report.cargo.resolver}`);
         console.log(`  Members:  ${report.cargo.members.join(", ")}`);
-        console.log(
-          `  Default:  ${report.cargo.defaultMembers?.join(", ") ?? "Cargo implicit selection"}`,
-        );
+        console.log(`  Default:  ${report.cargo.defaultMembers?.join(", ") ?? "Cargo implicit selection"}`);
         console.log(
           `  Release:  opt-level=${String(report.cargo.releaseProfile["opt-level"] ?? "z")}, strip=${String(report.cargo.releaseProfile["strip"] ?? true)}`,
         );
@@ -261,15 +251,11 @@ async function main(): Promise<void> {
         break;
       }
       console.log(`\x1b[1m\x1b[36m=== Autonomous Bun Upstream Generator ===\x1b[0m`);
-      console.log(
-        `  Scanning upstream vendor/bun for Web APIs, Server, React, CSS, Image, JSON, Markdown...`,
-      );
+      console.log(`  Scanning upstream vendor/bun for Web APIs, Server, React, CSS, Image, JSON, Markdown...`);
       const report = await generateBunCatalog();
       console.log(`  \x1b[32m[SUCCESS]\x1b[0m Generated code catalog in ${report.elapsedMs} ms`);
       console.log(`  Target:   ${relative(rootDir(), report.targetCatalogPath)}`);
-      console.log(
-        `  Indexed:  ${report.totalDocFilesIndexed} docs, ${report.totalTypeFilesIndexed} type declarations`,
-      );
+      console.log(`  Indexed:  ${report.totalDocFilesIndexed} docs, ${report.totalTypeFilesIndexed} type declarations`);
       console.log(`\n  \x1b[1mDomains Cataloged:\x1b[0m`);
       for (const d of report.domains) {
         console.log(
@@ -287,8 +273,7 @@ async function main(): Promise<void> {
 
     case "bench": {
       if (args.includes("--supervisor")) {
-        const { runSupervisorBenchCli } =
-          await import("@aphrody/yolo-core/src/sys/supervisor-benchmark.ts");
+        const { runSupervisorBenchCli } = await import("@aphrody/yolo-core/src/sys/supervisor-benchmark.ts");
         process.exitCode = await runSupervisorBenchCli(args.slice(1));
         break;
       }
@@ -330,13 +315,26 @@ async function main(): Promise<void> {
     }
 
     case "docs": {
-      // The pinned upstream docs mirror, unless --dir names another corpus; without it `bun docs` finds one.
-      const docsArgs = args.slice(1);
-      const mirror = resolve(rootDir(), BUN_DOCS_MIRROR);
-      if (!docsArgs.some((a) => a === "--dir" || a.startsWith("--dir=")) && existsSync(mirror))
-        docsArgs.push("--dir", mirror);
+      // The docs/ of the fork checkout, read in place, unless --dir or $BUN_DOCS_DIR names another corpus.
+      // The checkout's own `docs` script shadows the `bun docs` built-in, so it runs outside the checkout.
+      const docsArgs = args
+        .slice(1)
+        .map((arg, i, all) =>
+          arg.startsWith("--dir=")
+            ? `--dir=${resolve(arg.slice("--dir=".length))}`
+            : all[i - 1] === "--dir"
+              ? resolve(arg)
+              : arg,
+        );
+      if (!docsArgs.some(a => a === "--dir" || a.startsWith("--dir="))) {
+        const { bunCheckout } = await import("@aphrody/yolo-core/src/vendor/catalog.ts");
+        const checkout = bunCheckout();
+        const dir = process.env.BUN_DOCS_DIR || (checkout && resolve(checkout, "docs"));
+        if (dir) docsArgs.push("--dir", resolve(dir));
+      }
       const { runBunTool } = await import("./bun-tools");
-      process.exitCode = await runBunTool("docs", docsArgs, process.cwd());
+      const { tmpdir } = await import("node:os");
+      process.exitCode = await runBunTool("docs", docsArgs, tmpdir());
       break;
     }
 
@@ -356,10 +354,7 @@ async function main(): Promise<void> {
 
     case "scan": {
       const { runScanCommand } = await import("./scan");
-      process.exitCode = await runScanCommand(
-        args.slice(1),
-        isCompiled() ? process.cwd() : rootDir(),
-      );
+      process.exitCode = await runScanCommand(args.slice(1), isCompiled() ? process.cwd() : rootDir());
       break;
     }
 
@@ -383,8 +378,7 @@ async function main(): Promise<void> {
     }
 
     case "desktop-runtime": {
-      const { runDesktopRelease } =
-        await import("@aphrody/yolo-core/src/distribution/desktop-release.ts");
+      const { runDesktopRelease } = await import("@aphrody/yolo-core/src/distribution/desktop-release.ts");
       process.exitCode = runDesktopRelease(args.slice(1));
       break;
     }
@@ -427,19 +421,13 @@ async function main(): Promise<void> {
 
     case "rename": {
       const { runRenameCommand } = await import("./rename");
-      process.exitCode = await runRenameCommand(
-        args.slice(1),
-        isCompiled() ? process.cwd() : rootDir(),
-      );
+      process.exitCode = await runRenameCommand(args.slice(1), isCompiled() ? process.cwd() : rootDir());
       break;
     }
 
     case "plugin": {
       const { runPluginCommand } = await import("./cli/plugin/command");
-      process.exitCode = await runPluginCommand(
-        args.slice(1),
-        isCompiled() ? workspaceRoot() : rootDir(),
-      );
+      process.exitCode = await runPluginCommand(args.slice(1), isCompiled() ? workspaceRoot() : rootDir());
       break;
     }
 
@@ -485,8 +473,7 @@ async function main(): Promise<void> {
     case "m3": {
       const { resolvePackageCommand, runPackageCommand } = await import("./package-commands");
       const status = await runPackageCommand(command, args.slice(1));
-      if (status !== 0 || !resolvePackageCommand(command, args.slice(1))?.keepAlive)
-        process.exit(status);
+      if (status !== 0 || !resolvePackageCommand(command, args.slice(1))?.keepAlive) process.exit(status);
       break;
     }
 
