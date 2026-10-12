@@ -151,6 +151,14 @@ export const bun = defineM3Bun({ api: "src/api.ts", compile: { bytecode: false }
     );
   }, 60_000);
 
+  test("compile options can disable bytecode for one release", async () => {
+    const report = await compileApp({ dir: fixtureCopy(), bytecode: false });
+    expect(report.bytecode).toBe(false);
+    expect(Bun.spawnSync([report.outfile, "--version"], { stdout: "pipe" }).stdout.toString()).toContain(
+      "hello-m3 1.2.3",
+    );
+  }, 60_000);
+
   test("compiling without a build and without --no-build output is an error that says what to run", async () => {
     const dir = fixtureCopy();
     await expect(compileApp({ dir, build: false })).rejects.toThrow(/no build in .*m3-bun build/);
