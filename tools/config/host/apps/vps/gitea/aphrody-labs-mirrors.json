@@ -4,7 +4,7 @@
   "sourceOwner": "aphrody-labs",
   "targetOwner": "aphrody-labs",
   "sourceCatalogCount": 239,
-  "targetForge": "Gitea aphrody-labs owner organization",
+  "targetForge": "Gitea aphrody-labs and aphrody-labs-native organizations",
   "apiUrl": "http://127.0.0.1:29020/api/v1",
   "credentialFile": "/home/ubuntu/.aphrody/config/gitea.env",
   "credentialVariable": "GITEA_TOKEN_LABS",
@@ -19,6 +19,23 @@
   "visibilityPolicy": "match-source",
   "actionsEnabled": true,
   "batchLimit": 5,
+  "nativeStorage": {
+    "owner": "aphrody-labs-native",
+    "repository": "chromium",
+    "volumeName": "aphrody-gitea-native-storage",
+    "physicalPath": "/home/ubuntu/forge-storage/aphrody-labs-native",
+    "ownerUid": 1000,
+    "ownerGid": 1000,
+    "directoryMode": "0750",
+    "hostMountPath": "/home/ubuntu/build/apps/gitea/native-storage",
+    "containerPath": "/data/git/repositories/aphrody-labs-native",
+    "repositorySizeKiB": 57002469,
+    "rootReserveKiB": 20971520,
+    "dataReserveKiB": 8388608,
+    "mountUnit": "home-ubuntu-build-apps-gitea-native\\x2dstorage.mount",
+    "lfsRequirement": "qualified-before-apply",
+    "runnerRequirement": "qualified-before-apply"
+  },
   "batches": {
     "wave-1": [
       "aphrody-m3-ai",
@@ -39847,9 +39864,23 @@
       "defaultBranch": "main",
       "sizeKiB": 57002469,
       "sourceUrl": "https://github.com/aphrody-labs/chromium.git",
-      "targetOwner": "aphrody-labs",
+      "targetOwner": "aphrody-labs-native",
       "targetName": "chromium",
-      "admission": "queued-storage-admission"
+      "admission": "queued-storage-admission",
+      "sourceQualification": {
+        "sha": "b8b053081e8e43f0206130dc6c70d996343cffa2",
+        "refs": [
+          "refs/heads/claude/bun-chromium-157-cef",
+          "refs/heads/main"
+        ],
+        "refShas": {
+          "refs/heads/claude/bun-chromium-157-cef": "95ff46fdacff0d4973f17710418f12e1ceedeed9",
+          "refs/heads/main": "b8b053081e8e43f0206130dc6c70d996343cffa2"
+        },
+        "lfsApplicable": false,
+        "lfsStatus": "unqualified",
+        "runnerStatus": "unqualified"
+      }
     },
     {
       "name": "deno_core",

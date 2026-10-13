@@ -29,10 +29,22 @@ services:
     ports:
       - "127.0.0.1:29020:3000"
       - "127.0.0.1:29022:22"
+    entrypoint: ["/bin/sh", "/usr/local/bin/gitea-native-storage-guard"]
+    command: ["/usr/bin/s6-svscan", "/etc/s6"]
     volumes:
       - ./data:/data
+      - ./native-storage-guard.sh:/usr/local/bin/gitea-native-storage-guard:ro
+      - native_storage:/data/git/repositories/aphrody-labs-native
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: "3"
+volumes:
+  native_storage:
+    name: aphrody-gitea-native-storage
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/ubuntu/build/apps/gitea/native-storage

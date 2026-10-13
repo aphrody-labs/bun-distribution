@@ -256,8 +256,30 @@ struct MirrorCatalog {
     visibility_policy: String,
     actions_enabled: bool,
     batch_limit: usize,
+    #[serde(rename = "nativeStorage")]
+    native_storage: NativeStorage,
     batches: std::collections::BTreeMap<String, Vec<String>>,
     repositories: Vec<MirrorEntry>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NativeStorage {
+    owner: String,
+    repository: String,
+    volume_name: String,
+    physical_path: String,
+    host_mount_path: String,
+    container_path: String,
+    repository_size_kib: u64,
+    root_reserve_kib: u64,
+    data_reserve_kib: u64,
+    owner_uid: u32,
+    owner_gid: u32,
+    directory_mode: String,
+    mount_unit: String,
+    lfs_requirement: String,
+    runner_requirement: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -267,6 +289,8 @@ struct MirrorEntry {
     #[serde(default)]
     target_owner: Option<String>,
     source_url: String,
+    #[serde(default)]
+    size_kib: Option<u64>,
     visibility: String,
     archived: bool,
     default_branch: String,
@@ -285,6 +309,10 @@ struct SourceQualification {
     ref_shas: std::collections::BTreeMap<String, String>,
     #[serde(default, rename = "lfsApplicable")]
     lfs_applicable: bool,
+    #[serde(default)]
+    lfs_status: Option<String>,
+    #[serde(default)]
+    runner_status: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -321,6 +349,22 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
         || !catalog.actions_enabled
         || catalog.batch_limit == 0
         || catalog.batch_limit > 5
+        || catalog.native_storage.owner != "aphrody-labs-native"
+        || catalog.native_storage.repository != "chromium"
+        || catalog.native_storage.volume_name != "aphrody-gitea-native-storage"
+        || catalog.native_storage.physical_path != "/home/ubuntu/forge-storage/aphrody-labs-native"
+        || catalog.native_storage.host_mount_path != "/home/ubuntu/build/apps/gitea/native-storage"
+        || catalog.native_storage.container_path != "/data/git/repositories/aphrody-labs-native"
+        || catalog.native_storage.repository_size_kib != 57_002_469
+        || catalog.native_storage.root_reserve_kib != 20 * 1024 * 1024
+        || catalog.native_storage.data_reserve_kib != 8 * 1024 * 1024
+        || catalog.native_storage.owner_uid != 1000
+        || catalog.native_storage.owner_gid != 1000
+        || catalog.native_storage.directory_mode != "0750"
+        || catalog.native_storage.mount_unit
+            != r"home-ubuntu-build-apps-gitea-native\x2dstorage.mount"
+        || catalog.native_storage.lfs_requirement != "qualified-before-apply"
+        || catalog.native_storage.runner_requirement != "qualified-before-apply"
         || !valid_repo(batch)
     {
         bail!("catalogue de miroirs hors contrat autorisé");
@@ -337,9 +381,18 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
             .find(|repo| &repo.name == name)
             .context("dépôt absent du catalogue")?;
         let target_owner = entry.target_owner.as_deref().unwrap_or(&catalog.target_owner);
-        if !matches!(target_owner, "aphrody-labs" | "aphrody-dev")
+        if !matches!(target_owner, "aphrody-labs" | "aphrody-dev" | "aphrody-labs-native")
             || (target_owner == "aphrody-dev" && entry.name != "bun-distribution")
             || (entry.name == "bun-distribution" && target_owner != "aphrody-dev")
+            || (target_owner == "aphrody-labs-native"
+                && (entry.name != catalog.native_storage.repository
+                    || entry.size_kib != Some(catalog.native_storage.repository_size_kib)
+                    || !entry.source_qualification.as_ref().is_some_and(|q| {
+                        matches!(q.lfs_status.as_deref(), Some("not-applicable" | "verified"))
+                            && q.runner_status.as_deref() == Some("qualified")
+                    })))
+            || (entry.name == catalog.native_storage.repository
+                && target_owner != catalog.native_storage.owner)
             || !matches!(entry.visibility.as_str(), "public" | "private")
             || entry.admission != batch
             || entry.source_url != format!("https://github.com/aphrody-labs/{}.git", entry.name)
@@ -406,9 +459,26 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
         "bunExecutable": catalog.bun_executable,
         "mirrorInterval": catalog.mirror_interval,
         "actions": catalog.actions_enabled,
+        "nativeStorage": {
+            "owner": catalog.native_storage.owner,
+            "repository": catalog.native_storage.repository,
+            "volumeName": catalog.native_storage.volume_name,
+            "physicalPath": catalog.native_storage.physical_path,
+            "hostMountPath": catalog.native_storage.host_mount_path,
+            "containerPath": catalog.native_storage.container_path,
+            "repositorySizeKiB": catalog.native_storage.repository_size_kib,
+            "rootReserveKiB": catalog.native_storage.root_reserve_kib,
+            "dataReserveKiB": catalog.native_storage.data_reserve_kib,
+            "ownerUid": catalog.native_storage.owner_uid,
+            "ownerGid": catalog.native_storage.owner_gid,
+            "directoryMode": catalog.native_storage.directory_mode,
+            "lfsRequirement": catalog.native_storage.lfs_requirement,
+            "runnerRequirement": catalog.native_storage.runner_requirement
+        },
         "repositories": entries.iter().map(|entry| serde_json::json!({
             "name": entry.name,
             "targetOwner": entry.target_owner.as_deref().unwrap_or(&catalog.target_owner),
+            "sizeKiB": entry.size_kib,
             "sourceUrl": entry.source_url,
             "visibility": entry.visibility,
             "archived": entry.archived,
@@ -417,6 +487,8 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
             "refs": entry.source_qualification.as_ref().map(|q| &q.refs),
             "refShas": entry.source_qualification.as_ref().map(|q| &q.ref_shas),
             "lfsApplicable": entry.source_qualification.as_ref().map(|q| q.lfs_applicable),
+            "lfsStatus": entry.source_qualification.as_ref().and_then(|q| q.lfs_status.as_deref()),
+            "runnerStatus": entry.source_qualification.as_ref().and_then(|q| q.runner_status.as_deref()),
         })).collect::<Vec<_>>(),
     });
     let encoded = base64::Engine::encode(
@@ -498,6 +570,15 @@ if(org[1].visibility!=='public')await req('PATCH','/orgs/aphrody-labs',{{visibil
 if((await req('GET','/orgs/aphrody-labs'))[1].visibility!=='public')bad('Gitea organization is not publicly readable');
 const free=Number((await Bun.$`df -Pk /home/ubuntu/apps/gitea/data | tail -n 1`.text()).trim().split(/\s+/)[3]);
 if(!Number.isFinite(free)||free<8*1024*1024)bad('Gitea storage admission below 8 GiB');
+const nativeEntry=d.repositories.find(repo=>repo.targetOwner===d.nativeStorage.owner);
+if(nativeEntry){{
+ const s=d.nativeStorage;
+ if(nativeEntry.name!==s.repository||nativeEntry.sizeKiB!==s.repositorySizeKiB||s.owner!=='aphrody-labs-native'||s.containerPath!=='/data/git/repositories/aphrody-labs-native')bad('Gitea native storage scope rejected');
+ const check=Bun.spawnSync(['docker','exec','aphrody-gitea','sh','-ec','p="$1"; test -d "$p"; data_device=$(stat -c %d /data); repo_device=$(stat -c %d "$p"); test "$data_device" != "$repo_device"; set -- $(df -Pk "$p" | tail -n 1); root_free="$4"; set -- $(df -Pk /data | tail -n 1); data_free="$4"; printf "%s %s" "$root_free" "$data_free"','native-storage',s.containerPath],{{timeout:10000}});
+ if(check.exitCode!==0)bad('Gitea native storage mount is absent or shares the /data filesystem');
+ const [rootFree,dataFree]=check.stdout.toString().trim().split(/\s+/).map(Number);
+ if(!Number.isFinite(rootFree)||rootFree<s.repositorySizeKiB+s.rootReserveKiB||!Number.isFinite(dataFree)||dataFree<s.dataReserveKiB)bad('Gitea native storage admission below repository size and reserves');
+}}
 for(const repo of d.repositories){{
 const owner=repo.targetOwner||d.owner;const path='/repos/'+owner+'/'+repo.name;const [status,current]=await req('GET',path,undefined,true);
  const expected=Object.keys(repo.refShas||{{}}).length?repo.refShas:(repo.refs.length?{{['refs/heads/'+repo.defaultBranch]:repo.head}}:{{}});
@@ -505,8 +586,17 @@ const owner=repo.targetOwner||d.owner;const path='/repos/'+owner+'/'+repo.name;c
  const metadataResponse=await fetch('https://api.github.com/repos/aphrody-labs/'+repo.name,{{headers:githubToken?{{Authorization:'Bearer '+githubToken,Accept:'application/vnd.github+json'}}:{{Accept:'application/vnd.github+json'}},signal:AbortSignal.timeout(12000)}});
  if(!metadataResponse.ok)bad('GitHub repository identity unavailable: '+repo.name);
  const metadata=await metadataResponse.json();
- if(metadata.full_name!=='aphrody-labs/'+repo.name||metadata.private!==(repo.visibility==='private')||metadata.archived!==repo.archived||(repo.refs.length&&metadata.default_branch!==repo.defaultBranch))bad('GitHub repository policy changed: '+repo.name);
+ if(metadata.full_name!=='aphrody-labs/'+repo.name||metadata.private!==(repo.visibility==='private')||metadata.archived!==repo.archived||(repo.refs.length&&metadata.default_branch!==repo.defaultBranch)||(owner===d.nativeStorage.owner&&metadata.size!==d.nativeStorage.repositorySizeKiB))bad('GitHub repository policy changed: '+repo.name);
+ if(owner===d.nativeStorage.owner&&(!['not-applicable','verified'].includes(repo.lfsStatus)||repo.runnerStatus!=='qualified'))bad('Gitea native repository LFS or runner status is not qualified');
  if(!sameRefs(gitRefs(repo.sourceUrl,sourceAuth),expected))bad('GitHub source ref set moved or incomplete: '+repo.name);
+ if(owner===d.nativeStorage.owner){{
+  const [,nativeOrg]=await req('GET','/orgs/'+owner,undefined,true);
+  if(!nativeOrg)await req('POST','/orgs',{{username:owner,visibility:'public'}});
+  const [,verifiedOrg]=await req('GET','/orgs/'+owner);
+  if(verifiedOrg.username!==owner||verifiedOrg.visibility!=='public')bad('Gitea native organization provision failed');
+  const [,orgRepos]=await req('GET','/orgs/'+owner+'/repos?limit=2&page=1');
+  if(!Array.isArray(orgRepos)||orgRepos.length>1||orgRepos.some(item=>item.name!==s.repository))bad('Gitea native organization contains repositories outside its declared scope');
+ }}
  const isMirror=!repo.archived;
  if(status===404){{
   await req('POST','/repos/migrate',{{clone_addr:repo.sourceUrl,repo_name:repo.name,repo_owner:owner,service:'github',auth_token:repo.visibility==='private'?githubToken:undefined,mirror:isMirror,lfs:repo.lfsApplicable,private:true,mirror_interval:d.mirrorInterval}});
