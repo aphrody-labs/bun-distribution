@@ -13,8 +13,15 @@
 
 - Read-only Cloudflare API inventory confirmed 14 proxied `app-*` A records,
   plus proxied AAAA records for `apt.aphrody.app` and `desktop.aphrody.app`.
-  `infra/cloudflare.json` now records both product hosts and labels
-  `51.77.147.152` as the IPv4 origin. No DNS records or Worker routes changed.
+  The former `infra/cloudflare.json` snapshot recorded both product hosts and
+  labeled `51.77.147.152` as the IPv4 origin. No DNS records or Worker routes
+  changed.
+- 2026-10-13 reconciliation: a fresh Cloudflare MCP inventory returned 49
+  `aphrody.app` records. The Libraries JSON was an unused 18-record partial
+  snapshot, omitted existing library aliases, and named Aphrody Infra as owner.
+  It was removed; Cloudflare remains live DNS state, Aphrody Infra owns routes
+  and deployment policy, and `capabilities.ts` owns library app host derivation.
+  No live records or routes were changed.
 
 - Created in the selected C:\src workspace on 2026-10-13.
 - Authored text is concise English. Identity belongs to Aphrody and Bun.
