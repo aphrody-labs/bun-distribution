@@ -14,6 +14,8 @@ test("workspaces live below the declared roots or the sibling Bun fork packages,
     "../bun/packages/web/rust",
     "../bun/packages/web/rust/packages/agent-browser",
     "../bun/packages/bun-google/aphrody/packages/google",
+    "../material/packages/app-ui",
+    "../material/packages/m3/packages/m3",
   ])
     expect(allowedWorkspace(root, path)).toBe(true);
   for (const path of [
@@ -24,6 +26,10 @@ test("workspaces live below the declared roots or the sibling Bun fork packages,
     "../bun/packages/",
     "../bun/packages/../../outside",
     "../bun/packages/x/../../../outside",
+    "../material/src",
+    "../material/packages/",
+    "../material/packages/../../outside",
+    "../material/packages/x/../../../outside",
     "packages/../../outside",
     "packages/./x",
   ])

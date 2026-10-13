@@ -11,17 +11,18 @@ const INTERNAL_ROOTS = [
   "m3/packages/",
   "crates/tauri/",
 ];
-/** Canonical sources transferred to the Bun fork, linked from its sibling checkout (C:/bun next to C:/aphrody). */
-const BUN_FORK_PACKAGES = "../bun/packages/";
+/** Canonical runtime/framework owners consumed from sibling package checkouts. */
+const EXTERNAL_PACKAGE_ROOTS = ["../bun/packages/", "../material/packages/"];
 
-/** In-repository roots, or the Bun fork packages without any further escape. */
+/** In-repository roots, or external owner packages without any further escape. */
 export function allowedWorkspace(root: string, workspacePath: string): boolean {
   const segments = workspacePath.split("/");
   if (segments.some((segment) => segment === "" || segment === ".")) return false;
-  if (workspacePath.startsWith(BUN_FORK_PACKAGES)) {
-    const rest = workspacePath.slice(BUN_FORK_PACKAGES.length);
-    const forkPackages = resolve(root, BUN_FORK_PACKAGES);
-    const target = relative(forkPackages, resolve(root, workspacePath));
+  const externalRoot = EXTERNAL_PACKAGE_ROOTS.find((prefix) => workspacePath.startsWith(prefix));
+  if (externalRoot) {
+    const rest = workspacePath.slice(externalRoot.length);
+    const ownerPackages = resolve(root, externalRoot);
+    const target = relative(ownerPackages, resolve(root, workspacePath));
     return (
       rest.length > 0 && !rest.split("/").includes("..") && !!target && !target.startsWith("..")
     );
@@ -96,13 +97,17 @@ export async function runWorkspaceLayout(args: string[]): Promise<number> {
 
     if (!allowedWorkspace(root, workspacePath)) {
       errors.push(
-        `workspace must live below ${INTERNAL_ROOTS.join(", ")} or the sibling Bun fork checkout ${BUN_FORK_PACKAGES}: ${workspacePath}`,
+        `workspace must live below ${[...INTERNAL_ROOTS, ...EXTERNAL_PACKAGE_ROOTS].join(", ")}: ${workspacePath}`,
       );
     }
     if (!existsSync(packageManifest)) {
       errors.push(`workspace has no package.json: ${workspacePath}`);
     }
-    if (existsSync(gitMetadata) && !declaredSubmodules.has(workspacePath)) {
+    if (
+      !relative(root, absolutePath).startsWith("..") &&
+      existsSync(gitMetadata) &&
+      !declaredSubmodules.has(workspacePath)
+    ) {
       errors.push(`nested Git metadata is not allowed: ${workspacePath}/.git`);
     }
   }
