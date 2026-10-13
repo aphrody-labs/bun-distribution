@@ -111,11 +111,11 @@ Generated entry proofs are restricted to the owner staging path. An entry that
 was already removed after compilation does not require a regenerated copy.
 
 The shared process owner runs `--version`, then an isolated temporary loopback
-server on a dynamically allocated port. Fifteen HTTP gates cover readiness,
+server on a dynamically allocated port. Sixteen HTTP gates cover readiness,
 anonymous denials, authenticated catalogs/status/owner identities, unknown
 paths, denied writes and origin rejection, plus the configured public HTTPS
 origin over the HTTP proxy upstream, anonymous denial and cross-site/foreign
-origin rejection. Responses are bounded and never
+origin rejection, and the minimal anonymous public source snapshot. Responses are bounded and never
 printed; the ephemeral bearer is generated in memory and passed only through
 the child environment, never arguments or disk. Both success and failure close
 the owned process tree. No service or proxy is activated by verification.
@@ -188,7 +188,7 @@ including all 24 flat crate gitlinks, and 16 application identities. This
 qualifies the standalone server inputs; deployment remains false, the installed
 binary remains unchanged, and Rust qualification is recorded separately.
 
-## Current twenty-five-crate candidate
+## Previous twenty-five-crate candidate
 
 `build/staging/server-4b8-25crates.exe` was compiled and executed from source
 `f964e89b894ecac675e5eee35ba3c7a9c36d0035`, with runtime
@@ -204,3 +204,19 @@ replacement of the installed product binary. The previous installation and
 service-activation review rejections remain in effect; neither action was
 retried. The public forge and Gitea API remain accessible; the prepared product
 route still returns 404 until its activation gate is resolved.
+
+## Current public-source candidate, 2026-10-14
+
+`build/staging/server-4b8-public-sources.exe` was compiled and executed from
+source `a1e5915dd7d5fa804460bb05dd3971d6c2062d78`, with runtime
+`4b8dee0bc69d2c290111001f2249e63e1dc95b70`. Its SHA-256 is
+`791db1d9219e05376daa6a573878cfa28ae5262c69ff7561ea3de2c431665a0d`;
+the executable is 193850368 bytes. All sixteen HTTP gates pass, including an
+anonymous response identical to the minimal committed public source snapshot.
+
+That snapshot enumerates 180 repositories over four anonymous forge API pages
+observed at `2026-10-13T23:49:24.132Z`; a subsequent live comparison passed.
+It describes visible repositories rather than completeness of their Git/LFS
+contents. The executable remains `compiled:true`, `executed:true`,
+`deployed:false`. Installation, service activation and public product ingress
+remain unqualified; the earlier automatic review rejections were not retried.
