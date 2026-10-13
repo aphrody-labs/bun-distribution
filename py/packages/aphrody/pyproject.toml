@@ -18,6 +18,8 @@ dependencies = ["httpx>=0.28", "google-genai>=1.0", "google-auth>=2.30"]
 license-files = ["LICENSE", "NOTICE", "LICENSES/AGPL-3.0-only.txt"]
 
 [project.optional-dependencies]
+decision = ["pydantic==2.14.1", "pydantic-ai-slim==2.55.0", "pydantic-graph==2.55.0", "pydantic-evals==2.55.0", "typesafe-sdk==0.7.4"]
+decision-compare = ["aphrody[decision]", "system-one-adapter==0.2.1"]
 voice = ["google-antigravity>=0.1.1", "faster-whisper>=1.0", "kokoro-onnx>=0.3", "sounddevice>=0.4.6", "numpy>=1.22"]
 images = ["pyoxipng>=9.1", "Pillow>=12.0"]
 icons = ["aphrody[images]", "resvg-py>=0.3", "scour>=0.38", "pyconify>=0.2"]
