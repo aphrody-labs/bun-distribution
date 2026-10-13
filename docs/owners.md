@@ -28,7 +28,7 @@ and version checks. Compiled apps use verified manifests without Cargo or Git.
 
 The source doctor checks tracked implementation, Cargo workspace members and
 native target paths. On 2026-10-13 the 16 library checkouts contain 423 Cargo
-packages, 11,527 Rust files and 1,659 TypeScript files. No declared workspace
+packages, 11,528 Rust files and 1,659 TypeScript files. No declared workspace
 member or declared library/binary target is missing. Source coverage does not
 prove operational support.
 
@@ -38,5 +38,7 @@ qualification. Provider state stays in its protected owner stores.
 
 Independent Cargo workspaces retain their histories and package identities.
 Do not merge unrelated formats into one engine or copy codec implementations.
-Current host build admission still has separate Bun Cargo and generic native
-wrappers; the active host build slot remains serialized by owner coordination.
+The Windows wrapper owns only its native admission mutex. Its worker delegates
+argv, streams, deadlines and child teardown to the same workspace process core.
+The Bun Cargo source owner retains its own checkout lock; the active host build
+slot remains serialized by owner coordination.

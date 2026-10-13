@@ -41,7 +41,7 @@
       "upstream": "storytold/artcraft",
       "fork": "aphrody-labs/artcraft",
       "branch": "main",
-      "revision": "f8dae6cec51cc84c8b565132db2c7471fad96148",
+      "revision": "9c4ed82af5278b7e8374e2093f53fc2af50937be",
       "upstreamRevision": "d4e4ac69bbd93d237eaf5d0260bc6a5ff3a5e373",
       "license": "MIT OR Apache-2.0",
       "kind": "library",
@@ -49,8 +49,10 @@
       "manifestPath": "Cargo.toml",
       "stars": 23258,
       "role": "engine",
-      "cargoPackage": "artcraft_client",
-      "protocol": "cli"
+      "cargoPackage": "artcraft_router",
+      "binary": "artcraft-cli",
+      "binaries": ["artcraft-cli"],
+      "protocol": "jsonl"
     },
     {
       "id": "photocraft",

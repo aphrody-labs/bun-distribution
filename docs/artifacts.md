@@ -19,8 +19,8 @@ embedding, manifests and extraction.
 
 The builder always supplies `compile.executablePath`. It never downloads another
 Bun distribution or starts Cargo. Build engines with the workspace's existing
-serialized native owner. Generation currently lacks a standalone engine CLI and
-cannot produce a functional artifact.
+serialized native owner. Generation now has the existing router's `artcraft-cli`
+JSONL binary; its Linux native build and offline operations are qualified.
 
 ```sh
 bun packages/artifacts/src/cli.ts build video \
@@ -71,6 +71,33 @@ digest, source/runtime pins and shared asset reference. Hostnames come from the
 canonical deployment configuration. Publishing a manifest does not qualify DNS,
 TLS, a native host or application operations.
 
-Windows x64 video is the first qualification target. Linux x64 uses a separately
-verified runtime pin. Other Windows, Linux, musl and macOS targets require their
-own native engine/runtime receipts and execution gates. No tests are added.
+Linux x64 video has passed compilation, extraction and artifact verification with
+its separately verified runtime pin. Windows video has a qualified native engine;
+its standalone executable remains unqualified. Other engines and targets require
+their own build and execution receipts. No tests are added.
+
+## Artifact verification
+
+```sh
+bun packages/artifacts/src/cli.ts verify \
+  --build-report .local/builds/report.json --app video
+```
+
+`verifyAppArtifact` selects one built, extraction-qualified application from the
+factory report, even when other applications failed. It validates the canonical
+manifest, native source/runtime receipts, executable size/SHA-256 and sidecar
+SHA-256 before running the compiled `--doctor` on its matching native target.
+Digests are checked again afterward. The doctor receives no provider credentials.
+
+The returned receipt binds application, hostname, target, binary, manifest,
+source/runtime pins and shared assets for the Infra activation owner. Its
+`native-doctor` qualification covers extraction and runtime identity. Media and
+provider operations retain their separate gates. `--metadata-only` skips execution
+and returns `metadata`; activation must require `native-doctor`.
+
+Infra can recheck its exclusive staging files with `--binary FILE --manifest FILE`
+or the API's `binary` and `manifestPath` options. The original report digests and
+manifest remain authoritative; path overrides change only the inspected files.
+
+Verification defaults to three minutes, with a five-minute maximum, caller
+cancellation and bounded metadata/output. It starts no Git, Cargo or downloads.

@@ -78,7 +78,8 @@ export type ArtifactErrorCode =
   | "INTEGRITY_FAILED"
   | "EXTRACTION_FAILED"
   | "INTERRUPTED"
-  | "BUILD_FAILED";
+  | "BUILD_FAILED"
+  | "VERIFICATION_FAILED";
 
 export class ArtifactError extends Error {
   constructor(

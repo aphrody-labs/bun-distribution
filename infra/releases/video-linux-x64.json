@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "identity": "Aphrody / Bun",
+  "app": "video",
+  "target": "bun-linux-x64",
+  "sourceRevision": "87b845138e2cecf43e97e2c2e011b820a6e70ecd",
+  "runtimeRevision": "dfde053a3045d6076ad315b6f63160c4ced71513",
+  "size": 196211384,
+  "sha256": "63f4df1f2322937630571de8c8469d03a86d56dc1cd267c0ed802d32c5cb2146",
+  "manifestSha256": "8bbd88e347c3b9b56ca95b18717a30be9434a36d76d2f5172caf0149aa7a40cc",
+  "nativeSha256": "2a7c68bcbecfcac24f938fbb6d30e906e96fa464562083d2750c150ea774b7f3",
+  "qualification": {
+    "host": "vps",
+    "mode": "ssh",
+    "payloadIntegrity": true,
+    "sourceFreeStartup": true,
+    "nativeVersion": "0.7.2",
+    "discoveredCommands": 701
+  },
+  "sharedAssets": {
+    "sha256": "36a1b825dfeb20e209f022d65f928db8510cd1035cfaf746cbf29e480625a4bc",
+    "url": "https://assets.aphrody.app/manifests/sha256/36a1b825dfeb20e209f022d65f928db8510cd1035cfaf746cbf29e480625a4bc.json"
+  }
+}

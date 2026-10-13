@@ -659,6 +659,8 @@ async function runNativeResult(
     // JSON travels in the environment, avoiding PowerShell's native argv re-quoting.
     env.APHRODY_NATIVE_ARGUMENTS = JSON.stringify(nativeArguments.slice(1));
     env.APHRODY_NATIVE_EXECUTABLE = Bun.which(nativeArguments[0]!) ?? nativeArguments[0];
+    env.APHRODY_NATIVE_BUN = await resolveBunExecutable(config, { root });
+    env.APHRODY_NATIVE_WORKER = join(root, "scripts", "native-worker.ts");
     const wrapperSeconds = Math.max(1, Math.ceil(Math.min(timeoutMs, runDeadline - 5_000) / 1000));
     argv = [
       powershell,

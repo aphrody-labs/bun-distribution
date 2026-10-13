@@ -3,6 +3,7 @@ import { parseArgs } from "node:util";
 import { loadConfig, repositoryRoot, type RuntimePin } from "@aphrody/bun-workspace";
 import { buildAppArtifact, planAppArtifacts } from "./build.ts";
 import { isObject, parseArtifactTarget } from "./manifest.ts";
+import { verifyAppArtifact } from "./verify.ts";
 import {
   ArtifactError,
   type NativeArtifactReceipt,
@@ -14,6 +15,8 @@ import {
 
 const usage = `Aphrody / Bun artifacts
   list [--json]
+  verify --build-report JSON --app APP [--binary FILE] [--manifest FILE]
+    [--metadata-only] [--timeout MS]
   build APP --target TARGET --bun FILE --runtime-pin JSON --native FILE --native-receipt JSON
     [--runtime-receipt JSON] [--resources JSON] [--shared-assets JSON] [--output FILE]
     [--protocol cli|cli-json|jsonl|mcp-stdio] [--root DIR] [--timeout MS]
@@ -53,6 +56,11 @@ try {
       root: { type: "string" },
       timeout: { type: "string" },
       protocol: { type: "string" },
+      "build-report": { type: "string" },
+      app: { type: "string" },
+      binary: { type: "string" },
+      manifest: { type: "string" },
+      "metadata-only": { type: "boolean" },
     },
   });
   const [command, appId, ...extra] = positionals;
@@ -61,6 +69,15 @@ try {
     const plan = planAppArtifacts(await loadConfig(values.root ?? repositoryRoot));
     if (values.json) console.log(JSON.stringify(plan, null, 2));
     else for (const app of plan) console.log(`Aphrody ${app.title}: ${app.availability}`);
+  } else if (command === "verify" && !appId && !extra.length) {
+    const receipt = await verifyAppArtifact(await readJSON<unknown>(required(values["build-report"], "Build report")), {
+      appId: required(values.app, "Application"),
+      binary: values.binary,
+      manifestPath: values.manifest,
+      execute: !values["metadata-only"],
+      timeoutMs: values.timeout === undefined ? undefined : Number(values.timeout),
+    });
+    console.log(JSON.stringify(receipt, null, 2));
   } else if (command === "build" && appId && !extra.length) {
     const pin = await readJSON<RuntimePin>(required(values["runtime-pin"], "Runtime pin"));
     if (!isObject(pin)) throw new ArtifactError("INVALID_OPTIONS", "A pinned target runtime is required.");
@@ -91,7 +108,7 @@ try {
       timeoutMs: values.timeout === undefined ? undefined : Number(values.timeout),
     });
     console.log(JSON.stringify(artifact, null, 2));
-  } else throw new ArtifactError("INVALID_OPTIONS", "Use list or build with one application identifier.");
+  } else throw new ArtifactError("INVALID_OPTIONS", "Use list, build or verify with one application identifier.");
 } catch (error) {
   const code = error instanceof ArtifactError ? error.code : "BUILD_FAILED";
   console.error(

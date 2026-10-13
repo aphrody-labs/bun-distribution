@@ -19,6 +19,25 @@ Passed:
 - Aggressive n2b across all 16 library inputs and the SDK, with reviewed rewrites.
 - Imported frontend native Bun check: 1,479 files; strict lint and frozen install.
 - Internal Rust n2b core, CLI and addon Cargo check on Windows; see [migration](migration.md).
+- Shared process, hash, provenance, discovery and app identity consolidation.
+- Source coverage: 423 Cargo packages, 11,528 Rust files, 1,659 TypeScript files;
+  every declared workspace member and explicit target is present.
+- App factory and standalone artifact source: native check on 59 authored files.
+- Cloudflare MCP created 14 app records and Git/deployment records.
+- Shared R2 assets: 17 entries, 16 unique objects, 41,682,420 bytes; immutable
+  manifest SHA-256 and custom-domain HTTPS response verified.
+- Existing bucket CORS retains its origins and accepts the 14 app domains.
+
+Aphrody Video is built for Linux x64: 196,211,384 bytes. Its embedded native
+engine version, payload integrity, startup from a source-free working directory
+and 701 command descriptions are qualified. The artifact digest and target pins
+are recorded in `infra/releases/video-linux-x64.json`.
+
+The control plane has authenticated Git/Komodo administration, connected
+Periphery, an online runner and HTTPS on both domains; see
+[control plane](control-plane.md). CI execution and app activation retain their
+own qualification. The Windows app compile was cancelled at the disk floor
+before producing an executable.
 
 Not qualified: other Rust engines, media decoding, rendering, export accuracy,
 native Bun.Video, CEF windows, installers, provider access, signing and CI
