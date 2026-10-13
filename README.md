@@ -13,6 +13,7 @@ packages/*  M3 packages
 scripts/    workspace checks
 docs/       design documentation
 crates/m3-tokens/  native color and design-token owner
+crates/m3/        shared controls, accessibility, focus and layout
 crates/libm3/     application layouts and COSMIC adapter
 crates/libm3-wasm/ scalar WASM ABI over that owner
 ```
@@ -30,6 +31,9 @@ independent palette or HCT implementation. The `std` feature enables dynamic
 seed colors, nine variants and contrast. The portable `no_std` facade accepts
 computed colors from the host.
 
+The same facade exposes the existing native control models, keyboard handling,
+accessibility, forms, focus and Taffy composition through `aphrody-m3`.
+
 The Bun WASM loader is exported by `@aphrody/libm3/wasm`. ABI 2 uses the native
 role order and distinguishes collapsed and expanded navigation rails. COSMIC
 controls use the host event loop and must be mounted under the custom Material
@@ -37,8 +41,21 @@ theme. See [the native integration contract](docs/libm3.md).
 
 ## Development
 
+Web packages are submodules. Their default automatic update is disabled so
+Cargo consumers can acquire the Rust framework without fetching every web
+repository. Initialize the complete web workspace explicitly:
+
+```powershell
+git submodule update --init --recursive --checkout
+```
+
 ```powershell
 bun install
 bun run list
 bun test
 ```
+
+Cargo application roots must patch the registry token dependency to the same
+Material Git URL and exact revision used by `libm3` or `aphrody-m3`. Patches in
+dependency workspaces do not apply to the application's dependency graph.
+See [the native integration contract](docs/libm3.md).

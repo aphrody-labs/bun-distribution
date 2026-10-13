@@ -18,3 +18,22 @@ It executed without host imports and exposed native role/variant names, all
 nine variants and validated opaque seeds. A new green seed changed Primary
 from ff65558f to ff1f6a4e. Widths 599/840/1200 returned bar/collapsed rail/
 expanded rail. These checks qualify this contract, not a displayed GUI.
+
+Consolidation restored the existing native component engine under crates/m3,
+including its control models, keyboard, accessibility, focus, forms and Taffy
+composition. libm3's std facade re-exports these models. The locked resolved
+graph has one local aphrody-m3-tokens 1.4.4 owner. Default upstream Rustfmt
+replaces the transferred legacy formatting configuration; input and normalized
+output hashes remain in crates/m3/transfer-receipt.json.
+
+Material web submodules declare update=none for Cargo acquisition. Full web
+bootstrap explicitly uses git submodule update --init --recursive --checkout.
+Consumer workspace roots must repeat the token patch using the same Git URL
+and exact Material revision. This dependency patch is not inherited.
+
+The unqualified Aphrody Cargo transition was reverted after a recursive
+submodule acquisition timeout. Its original clean token/component inputs,
+lockfile and concurrent work remain. Publisher authentication was unavailable;
+no crates.io publish or pointer to a nonexistent release was created. The
+first published native correction is ce47e503; later consolidation commits
+are identified by the os branch's Git history.

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 [workspace]
-members = ["crates/m3-tokens", "crates/libm3", "crates/libm3-wasm"]
+members = ["crates/m3-tokens", "crates/m3", "crates/libm3", "crates/libm3-wasm"]
 resolver = "3"
 
 [workspace.package]
@@ -9,6 +9,17 @@ edition = "2024"
 rust-version = "1.97"
 license = "Apache-2.0"
 repository = "https://github.com/aphrody-labs/material"
+
+[workspace.dependencies]
+aphrody-m3 = { path = "crates/m3", version = "1.4.4", default-features = false }
+aphrody-identity = { version = "=1.0.0-canary.1", default-features = false }
+aphrody-render = { version = "=1.0.0-canary" }
+taffy = { package = "aphrody-taffy", version = "=0.12.1" }
+serde = { version = "=1.0.229", default-features = false, features = ["derive", "std"] }
+
+# Registry renderer and identity dependencies use this same native token owner.
+[patch.crates-io]
+aphrody-m3-tokens = { path = "crates/m3-tokens" }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

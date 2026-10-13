@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+[package]
+name = "aphrody-m3"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors = ["aphrody-code"]
+homepage = "https://github.com/aphrody-labs/material"
+repository.workspace = true
+license.workspace = true
+description = "Rust Material 3 component and layout contracts for native and web hosts."
+
+[lints]
+workspace = true
+
+[features]
+default = ["native-render"]
+native-render = ["dep:aphrody-render", "aphrody-render/cpu"]
+wasm = []
+
+[dependencies]
+aphrody-m3-tokens = { path = "../m3-tokens", version = "1.4.4", features = ["serde"] }
+aphrody-identity = { workspace = true }
+taffy = { workspace = true }
+aphrody-render = { workspace = true, optional = true }
+serde = { workspace = true, features = ["derive"] }

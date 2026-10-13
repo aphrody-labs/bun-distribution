@@ -4,7 +4,13 @@ export interface MaterialWasmExports extends WebAssembly.Exports {
   m3_variant_count: () => number;
   m3_role_name_byte: (role: number, offset: number) => number;
   m3_variant_name_byte: (variant: number, offset: number) => number;
-  m3_seed_color: (seed: number, variant: number, contrast: number, mode: number, role: number) => number;
+  m3_seed_color: (
+    seed: number,
+    variant: number,
+    contrast: number,
+    mode: number,
+    role: number,
+  ) => number;
   m3_color: (mode: number, role: number) => number;
   m3_type_size: (role: number) => number;
   m3_shape_radius: (role: number) => number;
@@ -28,31 +34,48 @@ export async function loadMaterialWasm(bytes: BufferSource) {
     "m3_shape_radius",
     "m3_application_navigation",
   ]) {
-    if (typeof exports[name] !== "function") throw new Error(`Missing Material WASM export ${name}`);
+    if (typeof exports[name] !== "function")
+      throw new Error(`Missing Material WASM export ${name}`);
   }
-  if (exports.m3_abi_version() !== 2 || exports.m3_color_count() !== 49 || exports.m3_variant_count() !== 9)
+  if (
+    exports.m3_abi_version() !== 2 ||
+    exports.m3_color_count() !== 49 ||
+    exports.m3_variant_count() !== 9
+  )
     throw new Error("Unsupported Material WASM contract");
   const name = (read: (index: number, offset: number) => number, index: number) => {
     const bytes: number[] = [];
     for (let offset = 0; offset < 64; offset++) {
       const byte = read(index, offset);
-      if (byte === 0) return new TextDecoder("utf-8", { fatal: true }).decode(Uint8Array.from(bytes));
-      if (!Number.isInteger(byte) || byte < 1 || byte > 255) throw new Error("Invalid native Material name");
+      if (byte === 0)
+        return new TextDecoder("utf-8", { fatal: true }).decode(Uint8Array.from(bytes));
+      if (!Number.isInteger(byte) || byte < 1 || byte > 255)
+        throw new Error("Invalid native Material name");
       bytes.push(byte);
     }
     throw new Error("Native Material name exceeds its bound");
   };
   const roleNames = Object.freeze(
-    Array.from({ length: exports.m3_color_count() }, (_, index) => name(exports.m3_role_name_byte, index)),
+    Array.from({ length: exports.m3_color_count() }, (_, index) =>
+      name(exports.m3_role_name_byte, index),
+    ),
   );
   const variantNames = Object.freeze(
-    Array.from({ length: exports.m3_variant_count() }, (_, index) => name(exports.m3_variant_name_byte, index)),
+    Array.from({ length: exports.m3_variant_count() }, (_, index) =>
+      name(exports.m3_variant_name_byte, index),
+    ),
   );
   return {
     exports,
     roleNames,
     variantNames,
-    seedColor(seed: number, variant: number, contrast: number, mode: "light" | "dark", role: number) {
+    seedColor(
+      seed: number,
+      variant: number,
+      contrast: number,
+      mode: "light" | "dark",
+      role: number,
+    ) {
       if (
         (mode !== "light" && mode !== "dark") ||
         !Number.isInteger(seed) ||
@@ -73,7 +96,8 @@ export async function loadMaterialWasm(bytes: BufferSource) {
     },
     color(mode: "light" | "dark", role: number) {
       if (mode !== "light" && mode !== "dark") throw new RangeError("Invalid Material theme mode");
-      if (!Number.isInteger(role) || role < 0 || role >= 49) throw new RangeError("Material color role must be 0..48");
+      if (!Number.isInteger(role) || role < 0 || role >= 49)
+        throw new RangeError("Material color role must be 0..48");
       return exports.m3_color(mode === "light" ? 0 : 1, role) >>> 0;
     },
     navigation(family: number, width: number) {

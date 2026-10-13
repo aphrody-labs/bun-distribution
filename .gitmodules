@@ -1,81 +1,108 @@
 [submodule "packages/app-ui"]
 	path = packages/app-ui
 	url = https://github.com/aphrody-labs/aphrody-app-ui.git
+	update = none
 [submodule "packages/assets"]
 	path = packages/assets
 	url = https://github.com/aphrody-labs/aphrody-assets.git
+	update = none
 [submodule "packages/canvas"]
 	path = packages/canvas
 	url = https://github.com/aphrody-labs/aphrody-canvas.git
+	update = none
 [submodule "packages/eslint-plugin-m3"]
 	path = packages/eslint-plugin-m3
 	url = https://github.com/aphrody-labs/aphrody-eslint-plugin-m3.git
+	update = none
 [submodule "packages/identity"]
 	path = packages/identity
 	url = https://github.com/aphrody-labs/aphrody-identity.git
+	update = none
 [submodule "packages/m3"]
 	path = packages/m3
 	url = https://github.com/aphrody-labs/aphrody-m3.git
+	update = none
 [submodule "packages/m3-ai"]
 	path = packages/m3-ai
 	url = https://github.com/aphrody-labs/aphrody-m3-ai.git
+	update = none
 [submodule "packages/m3-baseui"]
 	path = packages/m3-baseui
 	url = https://github.com/aphrody-labs/aphrody-m3-baseui.git
+	update = none
 [submodule "packages/m3-bun"]
 	path = packages/m3-bun
 	url = https://github.com/aphrody-labs/aphrody-m3-bun.git
+	update = none
 [submodule "packages/m3-codemods"]
 	path = packages/m3-codemods
 	url = https://github.com/aphrody-labs/aphrody-m3-codemods.git
+	update = none
 [submodule "packages/m3-config"]
 	path = packages/m3-config
 	url = https://github.com/aphrody-labs/aphrody-m3-config.git
+	update = none
 [submodule "packages/m3-design"]
 	path = packages/m3-design
 	url = https://github.com/aphrody-labs/aphrody-m3-design.git
+	update = none
 [submodule "packages/m3-explorer"]
 	path = packages/m3-explorer
 	url = https://github.com/aphrody-labs/aphrody-m3-explorer.git
+	update = none
 [submodule "packages/m3-fonts"]
 	path = packages/m3-fonts
 	url = https://github.com/aphrody-labs/aphrody-m3-fonts.git
+	update = none
 [submodule "packages/m3-forms"]
 	path = packages/m3-forms
 	url = https://github.com/aphrody-labs/aphrody-m3-forms.git
+	update = none
 [submodule "packages/m3-front"]
 	path = packages/m3-front
 	url = https://github.com/aphrody-labs/aphrody-m3-front.git
+	update = none
 [submodule "packages/m3-icons"]
 	path = packages/m3-icons
 	url = https://github.com/aphrody-labs/aphrody-m3-icons.git
+	update = none
 [submodule "packages/m3-mcp"]
 	path = packages/m3-mcp
 	url = https://github.com/aphrody-labs/aphrody-m3-mcp.git
+	update = none
 [submodule "packages/m3-motion"]
 	path = packages/m3-motion
 	url = https://github.com/aphrody-labs/aphrody-m3-motion.git
+	update = none
 [submodule "packages/m3-next"]
 	path = packages/m3-next
 	url = https://github.com/aphrody-labs/aphrody-m3-next.git
+	update = none
 [submodule "packages/m3-next-example"]
 	path = packages/m3-next-example
 	url = https://github.com/aphrody-labs/aphrody-m3-next-example.git
+	update = none
 [submodule "packages/m3-next-migrate"]
 	path = packages/m3-next-migrate
 	url = https://github.com/aphrody-labs/aphrody-m3-next-migrate.git
+	update = none
 [submodule "packages/m3-next-tauri-example"]
 	path = packages/m3-next-tauri-example
 	url = https://github.com/aphrody-labs/aphrody-m3-next-tauri-example.git
+	update = none
 [submodule "packages/m3-os-themes"]
 	path = packages/m3-os-themes
 	url = https://github.com/aphrody-labs/aphrody-m3-os-themes.git
+	update = none
 [submodule "packages/m3-primitives"]
 	path = packages/m3-primitives
 	url = https://github.com/aphrody-labs/aphrody-m3-primitives.git
+	update = none
 [submodule "packages/m3-react"]
 	path = packages/m3-react
 	url = https://github.com/aphrody-labs/aphrody-m3-react.git
+	update = none
 [submodule "packages/m3-reader"]
 	path = packages/m3-reader
 	url = https://github.com/aphrody-labs/aphrody-m3-reader.git
+	update = none

@@ -8,6 +8,13 @@ concurrent submodule work. Follow Bun and COSMIC upstream conventions.
 adaptive-token owner. `crates/libm3` consumes it for application and COSMIC
 integration. `crates/libm3-wasm` is the same implementation's scalar ABI.
 Distribution tooling consumes this workspace; it does not keep another copy.
+`crates/m3` owns shared control models, accessibility, forms, focus, keyboard
+handling and composition. Keep renderer adapters separate from these models.
+
+Web submodules use `update = none` so Cargo fetches only the Rust owner. Full
+web/source consumers explicitly run `git submodule update --init --recursive
+--checkout`. Cargo consumer roots must patch `aphrody-m3-tokens` to the same
+Material Git URL and exact revision as their other Material dependencies.
 
 Use native Windows on the owner workstation; never start WSL. Resolve checkout
 paths from configuration or the selected workspace. Use native Bun check, lint,

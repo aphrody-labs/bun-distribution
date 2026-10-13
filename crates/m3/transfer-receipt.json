@@ -1,0 +1,514 @@
+{
+  "schemaVersion": 1,
+  "status": "source-transferred-formatted-prior-compile-qualified",
+  "sourceOwner": {
+    "repository": "https://github.com/aphrody-labs/aphrody",
+    "revision": "96e732f1c17591389e5bb6d2dc51cb9596edff72",
+    "path": "crates/ui/m3",
+    "cleanTrackedInput": true
+  },
+  "targetOwner": {
+    "repository": "https://github.com/aphrody-labs/material",
+    "path": "crates/m3",
+    "package": "aphrody-m3",
+    "version": "1.4.4"
+  },
+  "files": [
+    {
+      "path": "Cargo.toml",
+      "inputPath": "crates/ui/m3/Cargo.toml",
+      "gitBlob": "3b15b1dadeb496e8173ad8df06a8f03cb6dcb2ff",
+      "inputSha256": "bdc9f61549940de58f15887cd9cbcfca9d335bf97629b696de6aa6b84c5601c3",
+      "inputBytes": 720,
+      "outputSha256": "1bbb9425b1e82d0e122cb6e1c98f8dc0cd37c84615b5b07e798582f1de763676",
+      "outputBytes": 787
+    },
+    {
+      "path": "src/a11y.rs",
+      "inputPath": "crates/ui/m3/src/a11y.rs",
+      "gitBlob": "be07bca8a52e79fc0ed66b1b1a296856413b6bba",
+      "inputSha256": "54ae7c5cd000bc1fb3b50e92e0cd6eebf6555f4bcbcd29990623b45eb57b80f3",
+      "inputBytes": 9007,
+      "outputSha256": "5eb197f8665addd0a08242dbcafbbf2626a9777e6c652a12c808e70562a4640c",
+      "outputBytes": 9212,
+      "preNormalizationSha256": "54ae7c5cd000bc1fb3b50e92e0cd6eebf6555f4bcbcd29990623b45eb57b80f3",
+      "preNormalizationBytes": 9007
+    },
+    {
+      "path": "src/components.rs",
+      "inputPath": "crates/ui/m3/src/components.rs",
+      "gitBlob": "c99fbcd6019ea57b05434d80ffdeedec872a3fd6",
+      "inputSha256": "97de5971ea87a3206b57c866b61769b8c8151f443ba0f237eafda04506a16267",
+      "inputBytes": 3346,
+      "outputSha256": "97de5971ea87a3206b57c866b61769b8c8151f443ba0f237eafda04506a16267",
+      "outputBytes": 3346,
+      "preNormalizationSha256": "97de5971ea87a3206b57c866b61769b8c8151f443ba0f237eafda04506a16267",
+      "preNormalizationBytes": 3346
+    },
+    {
+      "path": "src/controls/buttons.rs",
+      "inputPath": "crates/ui/m3/src/controls/buttons.rs",
+      "gitBlob": "b885492540e24de6c91d25bb582105539a2b34fd",
+      "inputSha256": "31ac3b086c734092aa11a9968beca2aa3505ce661202ced7d338a4fc2d727037",
+      "inputBytes": 30714,
+      "outputSha256": "b0fe3e644d5ee7fd65056959c5225296362745a499f379ebcbcee4eaf0c724fe",
+      "outputBytes": 32365,
+      "preNormalizationSha256": "31ac3b086c734092aa11a9968beca2aa3505ce661202ced7d338a4fc2d727037",
+      "preNormalizationBytes": 30714
+    },
+    {
+      "path": "src/controls/card.rs",
+      "inputPath": "crates/ui/m3/src/controls/card.rs",
+      "gitBlob": "1ed7b4b5c4177db24277715a3eca3c33db17070c",
+      "inputSha256": "e2ccdb99097b17cfac453ae0d534403f0c7d701d3ca7aa2404b7b996ba3475f8",
+      "inputBytes": 5140,
+      "outputSha256": "6248fe7b53c3957b6fca2231c29bc7c3c7d9b8b1eebd21e5a86d4b6b64afdcb3",
+      "outputBytes": 5334,
+      "preNormalizationSha256": "e2ccdb99097b17cfac453ae0d534403f0c7d701d3ca7aa2404b7b996ba3475f8",
+      "preNormalizationBytes": 5140
+    },
+    {
+      "path": "src/controls/chip.rs",
+      "inputPath": "crates/ui/m3/src/controls/chip.rs",
+      "gitBlob": "59404c06cb22cd216794b9fe1cf778876921c2ab",
+      "inputSha256": "6735cb607a1bce83f9f05728e3337ae57aa8ef397c8d5b118aa9399af64e66bf",
+      "inputBytes": 12241,
+      "outputSha256": "b85ada13a382929529efb9e28d9b5049f1bca31b8a3046c4733b939607ebf9f3",
+      "outputBytes": 12503,
+      "preNormalizationSha256": "6735cb607a1bce83f9f05728e3337ae57aa8ef397c8d5b118aa9399af64e66bf",
+      "preNormalizationBytes": 12241
+    },
+    {
+      "path": "src/controls/mod.rs",
+      "inputPath": "crates/ui/m3/src/controls/mod.rs",
+      "gitBlob": "45faf84b0129bfefce44e4b927156fd9d6fbf616",
+      "inputSha256": "a3ac986ccb6dd74aaef6a740284e769599d1717fef29a522af710444e7592f56",
+      "inputBytes": 2737,
+      "outputSha256": "a3ac986ccb6dd74aaef6a740284e769599d1717fef29a522af710444e7592f56",
+      "outputBytes": 2737,
+      "preNormalizationSha256": "a3ac986ccb6dd74aaef6a740284e769599d1717fef29a522af710444e7592f56",
+      "preNormalizationBytes": 2737
+    },
+    {
+      "path": "src/controls/navigation.rs",
+      "inputPath": "crates/ui/m3/src/controls/navigation.rs",
+      "gitBlob": "d0c1c8c1cd6618ee20f18efba177c2eddacb994d",
+      "inputSha256": "c09ccdb44a3faa03ce712e81920083c154f4e5751a9bef49c983f3743a17bc83",
+      "inputBytes": 14621,
+      "outputSha256": "a09f3ab904fa24bb68e4f4698245d9b82671609d3c36dd863954975ea4de05d6",
+      "outputBytes": 15201,
+      "preNormalizationSha256": "c09ccdb44a3faa03ce712e81920083c154f4e5751a9bef49c983f3743a17bc83",
+      "preNormalizationBytes": 14621
+    },
+    {
+      "path": "src/controls/overlay.rs",
+      "inputPath": "crates/ui/m3/src/controls/overlay.rs",
+      "gitBlob": "379e1865c01c6ada9b46abdbbf055e4544c3f833",
+      "inputSha256": "6029274aee2b7ba6bf6691d5c7f584579d3a3bf4b785ee0c28b53a5e75f77312",
+      "inputBytes": 17349,
+      "outputSha256": "e7b91758a231038ac03176dff74deb7e082c2aded96f002f22ec5859933436d9",
+      "outputBytes": 18236,
+      "preNormalizationSha256": "6029274aee2b7ba6bf6691d5c7f584579d3a3bf4b785ee0c28b53a5e75f77312",
+      "preNormalizationBytes": 17349
+    },
+    {
+      "path": "src/controls/progress.rs",
+      "inputPath": "crates/ui/m3/src/controls/progress.rs",
+      "gitBlob": "96e55cc83d2de58d2e76d3928feddc45ab4fa51d",
+      "inputSha256": "db98df2e9cd2081a7051c38ba5e9daea656cae80ed9b35c27e741674296d61d3",
+      "inputBytes": 2881,
+      "outputSha256": "f4413851f10d72101105903294227ef4af436e3e27fa8b6d61338354db1d4564",
+      "outputBytes": 2926,
+      "preNormalizationSha256": "db98df2e9cd2081a7051c38ba5e9daea656cae80ed9b35c27e741674296d61d3",
+      "preNormalizationBytes": 2881
+    },
+    {
+      "path": "src/controls/selection.rs",
+      "inputPath": "crates/ui/m3/src/controls/selection.rs",
+      "gitBlob": "aa7a4f89e89fbe52ac10c0f4ddd4a86dc110c8e3",
+      "inputSha256": "50ce2326d5e4f7977bda06744dce16079ce819f072301a6fe6c36af5cdad2cd3",
+      "inputBytes": 18132,
+      "outputSha256": "630a1f0a3b642d2f7d444379028cb0b54664811d85c4edf330d158ca9313e249",
+      "outputBytes": 18886,
+      "preNormalizationSha256": "50ce2326d5e4f7977bda06744dce16079ce819f072301a6fe6c36af5cdad2cd3",
+      "preNormalizationBytes": 18132
+    },
+    {
+      "path": "src/controls/slider.rs",
+      "inputPath": "crates/ui/m3/src/controls/slider.rs",
+      "gitBlob": "851a6e2dc0acaa9bca770480f8e7fca8ba864496",
+      "inputSha256": "23ef358408041a0ced9e83ad7a363a6e992e81eae664bc5eb8e81497434ed92f",
+      "inputBytes": 7504,
+      "outputSha256": "34376771eaf765093c00e2221513ed9cc5533f2036ba6b1d770f647c72b0b342",
+      "outputBytes": 7751,
+      "preNormalizationSha256": "23ef358408041a0ced9e83ad7a363a6e992e81eae664bc5eb8e81497434ed92f",
+      "preNormalizationBytes": 7504
+    },
+    {
+      "path": "src/controls/tests.rs",
+      "inputPath": "crates/ui/m3/src/controls/tests.rs",
+      "gitBlob": "2eb56a4c75c6c6ef948a525b00744cfd7d9ee074",
+      "inputSha256": "5558acaa921f46e24c229934f29c650334fe75f76085f06efeb62a5ad665fae9",
+      "inputBytes": 16999,
+      "outputSha256": "16ab9de383f55c062218193a78e7622eb282839509f04560402509194534189e",
+      "outputBytes": 18152,
+      "preNormalizationSha256": "5558acaa921f46e24c229934f29c650334fe75f76085f06efeb62a5ad665fae9",
+      "preNormalizationBytes": 16999
+    },
+    {
+      "path": "src/focus.rs",
+      "inputPath": "crates/ui/m3/src/focus.rs",
+      "gitBlob": "88df2346d2349ac6f6c5351fcd38e6dc9e0119af",
+      "inputSha256": "5eb3d356b0cc5eb9a3d50786e41eaf8e9ce48ed323298b75c1bf3f1238f11d78",
+      "inputBytes": 4657,
+      "outputSha256": "328131bca882b238b0ef71b8481b86924846d738febd0d9afaa3bba4588834e3",
+      "outputBytes": 5002,
+      "preNormalizationSha256": "5eb3d356b0cc5eb9a3d50786e41eaf8e9ce48ed323298b75c1bf3f1238f11d78",
+      "preNormalizationBytes": 4657
+    },
+    {
+      "path": "src/forms.rs",
+      "inputPath": "crates/ui/m3/src/forms.rs",
+      "gitBlob": "e6d8a4aedf257e866bda2651693f54b6acd9c9e0",
+      "inputSha256": "117b7e2200ea3b2dffbc6b404c91afcd9b28844749576ba1813ab683a17823e6",
+      "inputBytes": 613,
+      "outputSha256": "117b7e2200ea3b2dffbc6b404c91afcd9b28844749576ba1813ab683a17823e6",
+      "outputBytes": 613,
+      "preNormalizationSha256": "117b7e2200ea3b2dffbc6b404c91afcd9b28844749576ba1813ab683a17823e6",
+      "preNormalizationBytes": 613
+    },
+    {
+      "path": "src/icons.rs",
+      "inputPath": "crates/ui/m3/src/icons.rs",
+      "gitBlob": "90f6407bc8df7220e3e6f9300905fd6c881e68b4",
+      "inputSha256": "a691c16edcbb157db7f61cb0c996a866d4b3d0c247e88199e8fc70d93e64bfcc",
+      "inputBytes": 667,
+      "outputSha256": "a691c16edcbb157db7f61cb0c996a866d4b3d0c247e88199e8fc70d93e64bfcc",
+      "outputBytes": 667,
+      "preNormalizationSha256": "a691c16edcbb157db7f61cb0c996a866d4b3d0c247e88199e8fc70d93e64bfcc",
+      "preNormalizationBytes": 667
+    },
+    {
+      "path": "src/interaction.rs",
+      "inputPath": "crates/ui/m3/src/interaction.rs",
+      "gitBlob": "25cbc3b1779f2d2b3f56f987fe0b3b2c002207c2",
+      "inputSha256": "b4e15b8b6a1c90b863432acdcc89b3464f4cb5e736dd36922fd4359d4c496c9c",
+      "inputBytes": 4472,
+      "outputSha256": "4c9327fb131d69dcf3f4dd4a3c7d5704f841987bf2a14b1c08752ae8faac36a8",
+      "outputBytes": 4745,
+      "preNormalizationSha256": "b4e15b8b6a1c90b863432acdcc89b3464f4cb5e736dd36922fd4359d4c496c9c",
+      "preNormalizationBytes": 4472
+    },
+    {
+      "path": "src/keyboard.rs",
+      "inputPath": "crates/ui/m3/src/keyboard.rs",
+      "gitBlob": "798dbe9c720e5a9837da3b65a7751f679d14b1a1",
+      "inputSha256": "48eaa52d9ba6644f3a8406d09b2c2082a119918d68d4fa3100b8b8216f93250b",
+      "inputBytes": 6441,
+      "outputSha256": "bd394d9bb2ef1f9c59204a7367703976f02db8d90a80e76b2af7da242689a9bc",
+      "outputBytes": 6588,
+      "preNormalizationSha256": "48eaa52d9ba6644f3a8406d09b2c2082a119918d68d4fa3100b8b8216f93250b",
+      "preNormalizationBytes": 6441
+    },
+    {
+      "path": "src/layout.rs",
+      "inputPath": "crates/ui/m3/src/layout.rs",
+      "gitBlob": "b1cdc3276d916be034fb1d9000551e957f907b5e",
+      "inputSha256": "f55e1defb23ac95eb67e9eab197a40a3cb9613306247bbbd2d10be2e83ba7f25",
+      "inputBytes": 11023,
+      "outputSha256": "785e3566b1861e618b64d7d5eaebecd0b4b63c7eef92151603eb4b9a741be8ef",
+      "outputBytes": 11483,
+      "preNormalizationSha256": "f55e1defb23ac95eb67e9eab197a40a3cb9613306247bbbd2d10be2e83ba7f25",
+      "preNormalizationBytes": 11023
+    },
+    {
+      "path": "src/lib.rs",
+      "inputPath": "crates/ui/m3/src/lib.rs",
+      "gitBlob": "b13f0ca7ebfe5402ae9b304442b72ab33e2dab62",
+      "inputSha256": "3006b60d6fb02f967e7b2202b98c3d15418e575a5b652a6b0fabe42ce37a2914",
+      "inputBytes": 2886,
+      "outputSha256": "19dba3faabde49191bd80c48530fb27636d97ec1ef06ea1a9a011cb2f2f65b05",
+      "outputBytes": 2920,
+      "preNormalizationSha256": "3006b60d6fb02f967e7b2202b98c3d15418e575a5b652a6b0fabe42ce37a2914",
+      "preNormalizationBytes": 2886
+    },
+    {
+      "path": "src/motion.rs",
+      "inputPath": "crates/ui/m3/src/motion.rs",
+      "gitBlob": "fb2e93b71f7f3e8a1d690ed0040b25b6275eae98",
+      "inputSha256": "2b53b05d90a92ca344136e8c0c11b869a8f30e5f4db9e69752917b132b114ba9",
+      "inputBytes": 709,
+      "outputSha256": "691aa4e782dbefc3b24e004813aa493f0c5cdbca2e4362623e0448e9f70455be",
+      "outputBytes": 742,
+      "preNormalizationSha256": "2b53b05d90a92ca344136e8c0c11b869a8f30e5f4db9e69752917b132b114ba9",
+      "preNormalizationBytes": 709
+    },
+    {
+      "path": "src/paint.rs",
+      "inputPath": "crates/ui/m3/src/paint.rs",
+      "gitBlob": "8158244b551d304259a7ceee4b62583b968108e4",
+      "inputSha256": "da24e3ab374ed3f1150d729b90681b5457cf4e927bf4253e1f184c411f553926",
+      "inputBytes": 9689,
+      "outputSha256": "457e70cdea6f653d0f509615021ed5c65ca1a84db4621fcb62ba355f2dd7940a",
+      "outputBytes": 10176,
+      "preNormalizationSha256": "da24e3ab374ed3f1150d729b90681b5457cf4e927bf4253e1f184c411f553926",
+      "preNormalizationBytes": 9689
+    },
+    {
+      "path": "src/theme.rs",
+      "inputPath": "crates/ui/m3/src/theme.rs",
+      "gitBlob": "53651b8bdb7f8da829229dd829f78d1ea45686ee",
+      "inputSha256": "d42f30d1670963938a1be190f8921e2bb1c98c1f212e7ce88c7deb44a66f1533",
+      "inputBytes": 3877,
+      "outputSha256": "0e63bf2f4392dc7bb615f5a98885c8f4ba0246cd3dce4e680fca3441d986c020",
+      "outputBytes": 4084,
+      "preNormalizationSha256": "d42f30d1670963938a1be190f8921e2bb1c98c1f212e7ce88c7deb44a66f1533",
+      "preNormalizationBytes": 3877
+    },
+    {
+      "path": "src/visual.rs",
+      "inputPath": "crates/ui/m3/src/visual.rs",
+      "gitBlob": "a49ae7adeb44b4215b5559e42914738fe4928fb6",
+      "inputSha256": "08e9afbdc6cd1116cbd650660af79e7c4d832cef2348b9617022e8cb03ab8ce5",
+      "inputBytes": 9851,
+      "outputSha256": "1031bc776a595396b1ffeeeceed55804bf4588ba94fdea6b60f8eaf140e80ab6",
+      "outputBytes": 10550,
+      "preNormalizationSha256": "08e9afbdc6cd1116cbd650660af79e7c4d832cef2348b9617022e8cb03ab8ce5",
+      "preNormalizationBytes": 9851
+    },
+    {
+      "path": "rustfmt.toml",
+      "inputPath": "rustfmt.toml",
+      "inputSha256": "3a34e6fee0aa31c0ba2f6fc01187c3e5fb0df1798e151e332afb5f991919b442",
+      "inputBytes": 569,
+      "outputSha256": null,
+      "outputBytes": 0,
+      "removed": true,
+      "removalReason": "Owner selected upstream default rustfmt; original input provenance is retained."
+    }
+  ],
+  "changes": [
+    "Cargo manifest resolves the new Material workspace owner and exact verified registry dependencies.",
+    "Identity fs/net features are disabled; the original measured-seed API is retained.",
+    "Material crates.io token patch resolves every transitive identity/SVG/renderer token dependency to the single local1.4.4 owner, verified by resolved metadata and lockfile.",
+    "All 23 transferred Rust inputs were normalized to upstream default rustfmt 1.10.0, Rust2024 style; original input hashes and pre-normalization output hashes are retained."
+  ],
+  "registryDependencies": [
+    {
+      "name": "aphrody-identity",
+      "version": "1.0.0-canary.1",
+      "sha256": "9158911cbde57a7fb552840b5982ccd70fcbbd7d6e1ffa7318793cc0f154fdf4",
+      "url": "https://static.crates.io/crates/aphrody-identity/aphrody-identity-1.0.0-canary.1.crate",
+      "sourceAPI": "design::pet_seed_hex is identical to the clean input owner.",
+      "registryAPI": "https://crates.io/api/v1/crates/aphrody-identity",
+      "tokenRequirement": "^1.0.0-canary.1"
+    },
+    {
+      "name": "aphrody-render",
+      "version": "1.0.0-canary",
+      "sha256": "93891f02fd63e796f32b2cefaaa3361187c4644ac0ff43e19eb6daf3c9f5e593",
+      "url": "https://static.crates.io/crates/aphrody-render/aphrody-render-1.0.0-canary.crate",
+      "sourceAPI": "Every packaged Rust source file matches the clean input renderer owner.",
+      "registryAPI": "https://crates.io/api/v1/crates/aphrody-render",
+      "tokenRequirement": "^1.0.0-canary"
+    },
+    {
+      "name": "aphrody-taffy",
+      "version": "0.12.1",
+      "sha256": "890354ef7e39b964dac0ea42feb5bf3e46ee62de96971b93183cdf8e85e58865",
+      "url": "https://static.crates.io/crates/aphrody-taffy/aphrody-taffy-0.12.1.crate",
+      "sourceAPI": "Every packaged Rust source file matches the clean input layout fork; library identity taffy is preserved.",
+      "registryAPI": "https://crates.io/api/v1/crates/aphrody-taffy"
+    }
+  ],
+  "qualification": {
+    "sourceRustFilesByteIdentical": false,
+    "sourceRustFiles": 23,
+    "native": true,
+    "noNative": true,
+    "wasm": true,
+    "singleLocalTokenOwner": true,
+    "testsRun": false,
+    "compiler": {
+      "version": "1.99.0",
+      "revision": "b940084d7",
+      "date": "2026-09-28",
+      "host": "x86_64-pc-windows-msvc"
+    },
+    "rustfmt": true,
+    "receiptNativeBunFormat": true,
+    "attempts": [
+      {
+        "command": "metadata --format-version1 --manifest-path Cargo.toml",
+        "exitCode": 64,
+        "reason": "Inherited sccache path was unavailable; disabled only in the validation process environment."
+      },
+      {
+        "command": "metadata --format-version1 --manifest-path Cargo.toml",
+        "exitCode": 143,
+        "boundSeconds": 240,
+        "reason": "Shared Cargo package-cache lock wait exhausted the deadline; descendants confirmed absent."
+      }
+    ],
+    "metadata": {
+      "exitCode": 0,
+      "target": "x86_64-pc-windows-msvc",
+      "packageCount": 197,
+      "observedAt": "2026-10-13T11:16:00.725Z"
+    },
+    "gates": [
+      {
+        "gate": "native",
+        "command": "check --locked --offline --package aphrody-m3 --lib --target x86_64-pc-windows-msvc",
+        "exitCode": 0,
+        "startedAt": "2026-10-13T11:16:39.240Z",
+        "completedAt": "2026-10-13T11:17:23.717Z",
+        "boundSeconds": 240,
+        "diagnostics": ["    Finished `dev` profile [unoptimized + debuginfo] target(s) in 42.51s"]
+      },
+      {
+        "gate": "noNative",
+        "command": "check --locked --offline --package aphrody-m3 --lib --no-default-features --target x86_64-pc-windows-msvc",
+        "exitCode": 0,
+        "startedAt": "2026-10-13T11:17:23.718Z",
+        "completedAt": "2026-10-13T11:17:31.759Z",
+        "boundSeconds": 240,
+        "diagnostics": ["    Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.27s"]
+      },
+      {
+        "gate": "wasm",
+        "command": "check --locked --offline --package aphrody-m3 --lib --no-default-features --features wasm --target wasm32-unknown-unknown",
+        "exitCode": 0,
+        "startedAt": "2026-10-13T11:17:31.759Z",
+        "completedAt": "2026-10-13T11:18:09.298Z",
+        "boundSeconds": 240,
+        "diagnostics": ["    Finished `dev` profile [unoptimized + debuginfo] target(s) in 35.72s"]
+      }
+    ],
+    "limits": [
+      "Cargo checks compile the original contracts and optional native paint adapter; no component behavior tests or GUI display were executed.",
+      "WASM check qualifies Rust compilation, not a shipped WASM component artifact or browser execution.",
+      "Registry dependency checksums and source/API compatibility were verified; no whole Aphrody Git dependency was added."
+    ],
+    "lockPreservation": {
+      "existingPackages": 686,
+      "currentPackages": 724,
+      "removedOrChangedExistingPackageIdentityOrChecksum": 0,
+      "addedPackages": 38
+    },
+    "preNormalizationSourceRustFilesByteIdentical": true,
+    "cargoGatesByteState": "before-default-rustfmt-normalization",
+    "postNormalizationCargoGatesRun": false,
+    "formatNormalization": {
+      "formatter": "rustfmt1.10.0-stable (b940084d7e 2026-09-28)",
+      "edition": "2024",
+      "styleEdition": "2024",
+      "config": "upstream defaults; skip_children only scopes the explicit 23 file inputs",
+      "changedFiles": [
+        "src/a11y.rs",
+        "src/controls/buttons.rs",
+        "src/controls/card.rs",
+        "src/controls/chip.rs",
+        "src/controls/navigation.rs",
+        "src/controls/overlay.rs",
+        "src/controls/progress.rs",
+        "src/controls/selection.rs",
+        "src/controls/slider.rs",
+        "src/controls/tests.rs",
+        "src/focus.rs",
+        "src/interaction.rs",
+        "src/keyboard.rs",
+        "src/layout.rs",
+        "src/lib.rs",
+        "src/motion.rs",
+        "src/paint.rs",
+        "src/theme.rs",
+        "src/visual.rs"
+      ],
+      "checkExitCode": 0,
+      "observedAt": "2026-10-13T11:41:36.377Z"
+    }
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "licenseFile": "../../LICENSE-APACHE",
+    "headersPreserved": true
+  },
+  "retirement": {
+    "oldSourceRemoved": false,
+    "consumerMigrationQualified": false,
+    "publicationQualified": false
+  },
+  "registryObservedAt": "2026-10-13T11:13:10.967Z",
+  "registryTransitiveAudit": [
+    {
+      "name": "aphrody-svg",
+      "version": "1.0.0-canary.1",
+      "dependenciesAPI": "https://crates.io/api/v1/crates/aphrody-svg/1.0.0-canary.1/dependencies",
+      "normalTokenRequirement": "^1.0.0-canary.1",
+      "tokenOptional": true,
+      "tokenFeatures": ["std"]
+    },
+    {
+      "name": "aphrody-sprite-sheet",
+      "version": "1.0.0-canary",
+      "dependenciesAPI": "https://crates.io/api/v1/crates/aphrody-sprite-sheet/1.0.0-canary/dependencies",
+      "normalTokenRequirement": null
+    }
+  ],
+  "resolvedOwners": [
+    {
+      "name": "aphrody-identity",
+      "version": "1.0.0-canary.1",
+      "id": "registry+https://github.com/rust-lang/crates.io-index#aphrody-identity@1.0.0-canary.1",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "manifest_path": "C:\\Users\\aphro\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\aphrody-identity-1.0.0-canary.1\\Cargo.toml"
+    },
+    {
+      "name": "aphrody-m3",
+      "version": "1.4.4",
+      "id": "path+file:///C:/src/material/crates/m3#aphrody-m3@1.4.4",
+      "source": null,
+      "manifest_path": "C:\\src\\material\\crates\\m3\\Cargo.toml"
+    },
+    {
+      "name": "aphrody-m3-tokens",
+      "version": "1.4.4",
+      "id": "path+file:///C:/src/material/crates/m3-tokens#aphrody-m3-tokens@1.4.4",
+      "source": null,
+      "manifest_path": "C:\\src\\material\\crates\\m3-tokens\\Cargo.toml"
+    },
+    {
+      "name": "aphrody-render",
+      "version": "1.0.0-canary",
+      "id": "registry+https://github.com/rust-lang/crates.io-index#aphrody-render@1.0.0-canary",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "manifest_path": "C:\\Users\\aphro\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\aphrody-render-1.0.0-canary\\Cargo.toml"
+    },
+    {
+      "name": "aphrody-svg",
+      "version": "1.0.0-canary.1",
+      "id": "registry+https://github.com/rust-lang/crates.io-index#aphrody-svg@1.0.0-canary.1",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "manifest_path": "C:\\Users\\aphro\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\aphrody-svg-1.0.0-canary.1\\Cargo.toml"
+    },
+    {
+      "name": "aphrody-taffy",
+      "version": "0.12.1",
+      "id": "registry+https://github.com/rust-lang/crates.io-index#aphrody-taffy@0.12.1",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "manifest_path": "C:\\Users\\aphro\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\aphrody-taffy-0.12.1\\Cargo.toml"
+    }
+  ],
+  "completedAt": "2026-10-13T11:20:05.760Z",
+  "lockfileSnapshot": {
+    "path": "Cargo.lock",
+    "sha256": "38ba0c63834d0464da74c4eea0f3533647c4abe3f658fe357988a8b10b155703",
+    "singleTokenOwner": {
+      "name": "aphrody-m3-tokens",
+      "version": "1.4.4",
+      "path": "crates/m3-tokens",
+      "registryOrGitSource": false
+    }
+  }
+}
