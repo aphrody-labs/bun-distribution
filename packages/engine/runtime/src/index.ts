@@ -113,7 +113,8 @@ export function defaultLibraryPath(): string {
   } catch {
     // no installed artifact: fall through to the local build
   }
-  const target = process.env["CARGO_TARGET_DIR"] || resolve(import.meta.dir, "../../../..", "target");
+  const target =
+    process.env["CARGO_TARGET_DIR"] || resolve(import.meta.dir, "../../../..", "target");
   return resolve(target, "runtime", libraryFile());
 }
 

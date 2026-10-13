@@ -17,7 +17,9 @@ export const runtimeBundlerPlugin: BunPlugin = {
   setup(build) {
     build.onResolve({ filter: /^runtime:/ }, (args) => {
       if (EXPORTS[args.path] === undefined) {
-        throw new Error(`${args.path} is not available yet (see docs/decisions/runtime/DECISIONS.md)`);
+        throw new Error(
+          `${args.path} is not available yet (see docs/decisions/runtime/DECISIONS.md)`,
+        );
       }
       return { path: args.path, namespace: "yolo-runtime" };
     });

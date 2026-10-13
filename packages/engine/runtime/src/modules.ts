@@ -25,19 +25,29 @@ export function closeSharedRuntime(): void {
   shared = undefined;
 }
 export const system = {
-  stats(): SystemStats { return sharedRuntime().systemStats(); },
+  stats(): SystemStats {
+    return sharedRuntime().systemStats();
+  },
   bench(iterations: number, options?: { signal?: AbortSignal }): Promise<BenchmarkResult> {
     return sharedRuntime().benchmark(iterations, options);
   },
-  info(): BuildInfo { return sharedRuntime().buildInfo(); },
-  capabilities(): string[] { return sharedRuntime().capabilities(); },
+  info(): BuildInfo {
+    return sharedRuntime().buildInfo();
+  },
+  capabilities(): string[] {
+    return sharedRuntime().capabilities();
+  },
 };
 export const processes = {
-  spawn(options: SpawnOptions): ManagedProcess { return sharedRuntime().spawn(options); },
+  spawn(options: SpawnOptions): ManagedProcess {
+    return sharedRuntime().spawn(options);
+  },
   probeHttp(host: string, port: number, path = "/", timeoutMs = 500): Promise<number | undefined> {
     return sharedRuntime().probeHttp(host, port, path, timeoutMs);
   },
 };
 export const browser = {
-  load(options?: LoadOptions): BrowserRuntime { return BrowserRuntime.load(options); },
+  load(options?: LoadOptions): BrowserRuntime {
+    return BrowserRuntime.load(options);
+  },
 };
