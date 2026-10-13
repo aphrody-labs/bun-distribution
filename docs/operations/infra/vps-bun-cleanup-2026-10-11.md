@@ -76,6 +76,26 @@ libérerait surtout de la place sur `sda1` et ne résoudrait pas le volume plein
 Les mesures sont datées et les montages ne doivent pas être additionnés comme
 s'ils étaient des copies indépendantes. Aucun gain de capacité n'est revendiqué.
 
+## Capacity recheck — 2026-10-13
+
+A fresh read-only inventory through `aphrody infra ssh exec` ran `lsblk
+--json --bytes --fs`, `findmnt` and `df -B1`. `/dev/sdb1` is the shared 299.2 GiB
+data filesystem mounted at `/home/ubuntu/build`, `/home/ubuntu/src` and
+`/home/ubuntu/apps`; it had 243,466,653,696 bytes used and 77,720,858,624 bytes
+available (76%). The root filesystem `/dev/sda1` had 96,336,699,392 bytes
+available (69% used). `/boot` and `/boot/efi` remain separate system
+partitions.
+
+The current build volume therefore already exceeds the requested 50 GB free
+capacity. This SSH session did not reclaim that space. The 2026-10-11 report
+recorded only 347,004,928 bytes free on the same data volume; the change is
+unattributed and must not be reported as this session's cleanup.
+
+A low-priority top-level `du` of `/home/ubuntu/build` stopped at its 18-second
+bound (exit 124) and could not read two private package-job temporary
+directories. This is an incomplete size/process inventory; no deletion or
+service action was taken, and it does not qualify any path for cleanup.
+
 ## Suppression
 
 Le script produit un `plan.json` vide : il ne supprime jamais le complément
