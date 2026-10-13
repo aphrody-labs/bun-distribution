@@ -36,3 +36,28 @@ test("public fallback strips inbound authentication and preserves range conditio
   expect(() => publicCdnFallback("@cdn_worker", "http://10.200.77.1")).toThrow();
   expect(() => renderPublicCdnGateway("server {}", "http://127.0.0.1:9077")).toThrow();
 });
+
+test("public fallback admits catalog video and audio paths without broadening private routes", () => {
+  const result = publicCdnFallback("@cdn_public_origin", "http://127.0.0.1:9077");
+  const expression = result.match(/if \(\$uri !~\* "([^"]+)"\)/)?.[1];
+  expect(expression).toBeDefined();
+  const allowed = new RegExp(expression!, "i");
+  for (const path of [
+    "/assets/wiki/bardock.web.mp4",
+    "/wiki/vegetagokukaioken.web.mp4",
+    "/sfx/official/nimbus.mp3",
+    "/media/episodes/beerus-01/optimized-720p.mp4",
+    "/wiki/chapter/cover.webp",
+  ])
+    expect(allowed.test(path)).toBe(true);
+  for (const path of [
+    "/private/cookies.mp3",
+    "/sfx/private.env",
+    "/wiki/hidden.sqlite",
+    "/api/public/video.mp4",
+    "/sfx/official/nimbus.mp3/secret",
+  ])
+    expect(allowed.test(path)).toBe(false);
+  expect(result).toContain("proxy_set_header Range $http_range");
+  expect(result).toContain("proxy_set_header If-Range $http_if_range");
+});
