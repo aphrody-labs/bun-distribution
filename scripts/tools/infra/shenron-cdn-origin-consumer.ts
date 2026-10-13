@@ -133,8 +133,20 @@ export async function applyOriginConsumer(candidate: string, pins: ConsumerPins,
     return null;
   });
   if (!response) {
-    if (sha(await Bun.file(TARGET).bytes()) !== pins.candidateCodeSha256 || command(["systemctl", "is-active", SERVICE]) !== "active") throw Error("Installed consumer or service state mismatch");
-    return { status: "installed_readiness_pending", sourceCommit: pins.sourceCommit, codeSha256: pins.candidateCodeSha256, service: SERVICE, configPreserved: true, unitPreserved: true, independentAttestationRequired: true };
+    if (
+      sha(await Bun.file(TARGET).bytes()) !== pins.candidateCodeSha256 ||
+      command(["systemctl", "is-active", SERVICE]) !== "active"
+    )
+      throw Error("Installed consumer or service state mismatch");
+    return {
+      status: "installed_readiness_pending",
+      sourceCommit: pins.sourceCommit,
+      codeSha256: pins.candidateCodeSha256,
+      service: SERVICE,
+      configPreserved: true,
+      unitPreserved: true,
+      independentAttestationRequired: true,
+    };
   }
   const attestation = await response.json();
   if (
