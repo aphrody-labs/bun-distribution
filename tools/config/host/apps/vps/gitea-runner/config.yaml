@@ -13,6 +13,7 @@ runner:
     - aphrody-bun-linux:docker://sha256:0d1de271d32fdaf226b683c3178667d469194fc7a724bd8c60dda8ecbb1c5eec
   envs:
     BUN_EXECUTABLE: /usr/local/bin/bun
+    PATH: /usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.cargo/bin
   action_shallow_clone: true
   idle_cleanup_interval: 0s
 container:
