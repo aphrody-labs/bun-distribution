@@ -1,7 +1,7 @@
 name: Aphrody / Bun
 on:
   push:
-    branches: [main]
+    branches: [main, os]
   workflow_dispatch:
     inputs:
       build:
@@ -12,7 +12,18 @@ jobs:
   native:
     runs-on: aphrody-bun-linux
     timeout-minutes: 720
+    env:
+      GIT_SSH_COMMAND: ssh -F /run/aphrody/git-ssh/config
     steps:
+      - name: Validate checkout transport
+        run: |
+          command -v git >/dev/null
+          command -v ssh >/dev/null
+          test -r /run/aphrody/git-ssh/identity
+          test -r /run/aphrody/git-ssh/config
+          test -r /run/aphrody/git-ssh/known_hosts
+          test "$(stat -c %a /run/aphrody/git-ssh/identity)" = 600
+          ssh -G -F /run/aphrody/git-ssh/config bun-forge >/dev/null
       - uses: builtin:checkout
         with:
           submodules: true
@@ -23,7 +34,9 @@ jobs:
           "$BUN_EXECUTABLE" --revision
           printf '%s\n' "${BUN_EXECUTABLE%/*}" >> "$GITHUB_PATH"
       - name: Install
-        run: bun install --frozen-lockfile
+        run: |
+          bun install --frozen-lockfile
+          bun scripts/node-modules.ts
       - name: Check
         run: bun run typecheck
       - name: Lint
