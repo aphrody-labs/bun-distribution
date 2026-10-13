@@ -3053,6 +3053,12 @@
       "freeGiB": 72.4,
       "declaredTotalGiB": 106.1,
       "admission": "Further large mirrors remain queued pending storage admission."
+    },
+    "runtimeProvenance": {
+      "executable": "/home/ubuntu/.bun/bin/bun-1.4.4",
+      "version": "1.4.4",
+      "revision": "dfde053a3045d6076ad315b6f63160c4ced71513",
+      "sourceUrl": "https://github.com/aphrody-labs/bun/releases/download/bun-v1.4.4/bun-linux-x64-full.zip"
     }
   }
 }
