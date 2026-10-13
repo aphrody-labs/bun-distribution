@@ -38,30 +38,30 @@ export interface PackageCommand extends PackageRunner {
 /** `yolo m3 <tool>`: the CLIs of the m3 packages besides the framework's own `m3` (their npm `bin` in brackets). */
 export const M3_TOOLS = {
   next: {
-    module: "m3/packages/m3-next/bin/m3-next.ts",
+    module: "../material/packages/m3-next/bin/m3-next.ts",
     run: "runM3Next",
     summary:
       "Next.js 16 on Bun, Turbopack workers included: dev | build | start [next args] [m3-next, runner from @aphrody/next-bun]",
   },
   bun: {
-    module: "m3/packages/m3-bun/src/cli.ts",
+    module: "../material/packages/m3-bun/src/cli.ts",
     run: "runCli",
     summary: "Build, serve, compile, package and deploy configs of an M3 app [m3-bun]",
     keepAlive: true,
   },
   "os-themes": {
-    module: "../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes/src/cli.ts",
+    module: "../material/packages/m3-os-themes/src/cli.ts",
     run: "runOsThemes",
     summary: "M3 OS themes: install | generate | uninstall (dry-run unless --apply) [m3-os-themes]",
   },
   "next-migrate": {
-    module: "m3/packages/m3-next-migrate/src/cli.ts",
+    module: "../material/packages/m3-next-migrate/src/cli.ts",
     run: "runNextMigrate",
     summary:
       "Next.js 16 migration, codemods (next16 and tailwind4 from @aphrody/next-bun, plus mui) and pages-hints [m3-next-migrate, next-migrate]",
   },
   "svg-to-ico": {
-    module: "m3/packages/material-design-icons/scripts/svg-to-ico.ts",
+    module: "../material/packages/material-design-icons/scripts/svg-to-ico.ts",
     run: "runSvgToIco",
     summary: "Material Symbol or SVG to Tauri icons (ico, icns, PNG) [m3-svg-to-ico]",
   },
@@ -71,7 +71,7 @@ export const M3_TOOLS = {
     summary: "Website or bundle to a Tauri 3 app: probe | plan | convert | parity [web-to-tauri]",
   },
   scaffold: {
-    module: "m3/packages/scaffold/src/cli.ts",
+    module: "../bun/packages/web/rust/integrations/m3/packages/scaffold/src/cli.ts",
     run: "runScaffold",
     summary: "The single project scaffolder: list | example | new [aphrody-scaffold]",
   },
@@ -121,7 +121,7 @@ export const PACKAGE_COMMANDS = {
     keepAlive: true,
   },
   m3: {
-    module: "m3/packages/m3/src/cli.ts",
+    module: "../material/packages/m3/packages/m3/src/cli.ts",
     run: "runCli",
     summary:
       "M3 framework CLI (dev, build, compile, desktop, tokens, check, new) and the m3 package tools",

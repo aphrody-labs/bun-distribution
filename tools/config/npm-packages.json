@@ -149,7 +149,7 @@
     {
       "name": "@aphrody/app-ui",
       "version": "0.1.1",
-      "path": "m3/packages/app-ui/package.json",
+      "path": "../material/packages/app-ui/package.json",
       "status": "published",
       "sha256": "e4d5340a492f25678dc97cb3172d27b5b33b416e9fa83a3aa51dbb2266c5670f",
       "integrity": "sha512-9tp+R/HJzBkjhh2IjFhtTVoGAldQTPaqgg/aFo4r8BZzHWDRSAxqHwLIzniXr/h8mEqcvDvgbyUXgjUZLQuMBA==",
@@ -214,7 +214,7 @@
     {
       "name": "@aphrody/assets",
       "version": "0.1.2",
-      "path": "m3/packages/assets/package.json",
+      "path": "../material/packages/assets/package.json",
       "status": "published",
       "sha256": "38e873b63ae16ef01c35eee9ee0a9a40e3c230d838738dbd1392a504e5c2b7f5",
       "integrity": "sha512-Rm5ZVWNmFdh2Hj5GpgVvuvpsAu0u7zQZsj+dXeE++DdzXeiUvAqMD7ITuy52seY+MQ+Dqb7xFmkFJZwDR6uIWQ==",
@@ -223,7 +223,7 @@
     {
       "name": "@aphrody/canvas",
       "version": "1.0.9-aphrody.5",
-      "path": "m3/packages/canvas/package.json",
+      "path": "../material/packages/canvas/package.json",
       "status": "published",
       "sha256": "e13672c532b48678ddf90253941bcb9b9afb1fb5a65a80d114ec95a26a420e7c",
       "integrity": "sha512-PhswT2TnemykLr1vXtdyP5bUIgDCYEHlFhlSAqkKU0bd4ADCIZKDlV9kmoT2BE5xWSXwFoUiuhInPe8LGuY92w==",
@@ -232,7 +232,7 @@
     {
       "name": "@aphrody/eslint-plugin-m3",
       "version": "3.3.5",
-      "path": "m3/packages/eslint-plugin-m3/package.json",
+      "path": "../material/packages/eslint-plugin-m3/package.json",
       "status": "published",
       "sha256": "a44283fb072159c989db4ff89aa84d6c4c0e76c10518a3ee4557079661875ddd",
       "integrity": "sha512-9rc9o6EjIuChuo2URc5Js1T+/lVSbRvZ8QgH3Lvr404QDmKqfVOlSZPWd45ty8bWU/921y/ELrc3EgCVsZqG9A==",
@@ -241,7 +241,7 @@
     {
       "name": "@aphrody/identity",
       "version": "0.1.2",
-      "path": "m3/packages/identity/package.json",
+      "path": "../material/packages/identity/package.json",
       "status": "published",
       "sha256": "f9872ff5fba08b6d07ddf37a36f75f0a07d5489c1686a9fa825742d6c18d24ce",
       "integrity": "sha512-QIKv7RBR212INGsl1oosLx1IOZFZWjzxp/kyT6yAO9DjTY11qUflxvo/GokbTyoJWEWMF3/hErWjh2rCRaV6+A==",
@@ -250,7 +250,7 @@
     {
       "name": "@aphrody/m3-ai",
       "version": "3.3.8",
-      "path": "m3/packages/m3-ai/package.json",
+      "path": "../material/packages/m3-ai/package.json",
       "status": "published",
       "sha256": "7e74057e7c2478266da09ebcf94782e076fae9727b5f4dfa73a3dc997fb8482e",
       "integrity": "sha512-T3Dd6Q+PgejD/EkPLfTNFCY0JVYrugW7S1SLZRJxHK4dP5VMikh+Oa95DBI2O4yqQa0lgpEk+30N9fOeExZg5g==",
@@ -273,7 +273,7 @@
     {
       "name": "@aphrody/m3-baseui",
       "version": "3.3.8",
-      "path": "m3/packages/m3-baseui/package.json",
+      "path": "../material/packages/m3-baseui/package.json",
       "status": "published",
       "sha256": "9eeeb790a45a6f5a428519a28a5e130b0fd54999ec14c2bc00a51a943c092471",
       "integrity": "sha512-Jagd7PV924Ifzn54jhSXaIZeV31Ts4z4oMJUMuakPp1cFP7dwWOYBxF9XZqDL9v53P2E/2wrwZidA5IC2snilw==",
@@ -282,7 +282,7 @@
     {
       "name": "@aphrody/m3-bun",
       "version": "3.3.8",
-      "path": "m3/packages/m3-bun/package.json",
+      "path": "../material/packages/m3-bun/package.json",
       "status": "published",
       "sha256": "6433c40a72bf33410bd1d105e37f2d7e8c4f802d2114715305f04737503790ee",
       "integrity": "sha512-gR8dN8XhRwC/LMIQWKrQSU/vq1fY2nZ2Ki9OOJBLoAatfezjJr2+106TCBPRP/LXgSmXJS0henALDlqpbuk3aA==",
@@ -307,7 +307,7 @@
     {
       "name": "@aphrody/m3-codemods",
       "version": "3.3.8",
-      "path": "m3/packages/m3-codemods/package.json",
+      "path": "../material/packages/m3-codemods/package.json",
       "status": "published",
       "sha256": "f8d2339d87f74acd6e8b129a8dab1465ba8901c6daa44c1bbfcf6dc6bc4b899f",
       "integrity": "sha512-uZnum1e37TGksNEGCSEcsvO+LiUZDPIyrsQyQ9iGzpm81WxW3GPnSa+gJT0xrll/RFJpO7xws0biu+GHF0CzGA==",
@@ -316,7 +316,7 @@
     {
       "name": "@aphrody/m3-config",
       "version": "3.3.8",
-      "path": "m3/packages/m3-config/package.json",
+      "path": "../material/packages/m3-config/package.json",
       "status": "published",
       "sha256": "7bdb561d93bd2c4d91deb5eb2960371b3d03fc3c82e71f6158226f6147f4a29e",
       "integrity": "sha512-TLNBcne6hZ26TlMEPx9BN+ZC3j0Q8hC4x3LVPRDUbiFV/sA12ZDhHStJIR0H3vysRaoMGW9leNA8vd3fdAN4IQ==",
@@ -325,7 +325,7 @@
     {
       "name": "@aphrody/m3-design",
       "version": "3.3.8",
-      "path": "m3/packages/m3-design/package.json",
+      "path": "../material/packages/m3-design/package.json",
       "status": "published",
       "sha256": "9fb2b655f0ff779ad0b34d57910bb60ebf6c1f34a759256cbf842840e42e9553",
       "integrity": "sha512-RibKr/snXQIOGGqg/7en/O71/UPF5hvhoR2qbR2BBuw/Z6hL6Ip8OH/g8cAWu9+qFWqzIpltoPhvTw3OoWTzuw==",
@@ -334,7 +334,7 @@
     {
       "name": "@aphrody/m3-explorer",
       "version": "3.3.8",
-      "path": "m3/packages/m3-explorer/package.json",
+      "path": "../material/packages/m3-explorer/package.json",
       "status": "published",
       "sha256": "d1b6afd657a417a2b386d2625dc8dfef6943a789f2e426cc10e9b4450244f10c",
       "integrity": "sha512-QxGOGp1kuoRBEOMVYitg2uT9yR+P++3VdjZzVKy2zA+yXO8Mb3iuaM2x5LSRZRtyqi8PnVU2MOSRSzrISdwbtA==",
@@ -343,7 +343,7 @@
     {
       "name": "@aphrody/m3-fonts",
       "version": "3.3.8",
-      "path": "m3/packages/m3-fonts/package.json",
+      "path": "../material/packages/m3-fonts/package.json",
       "status": "published",
       "sha256": "ba0bc1e7a2bdca6e6dbf6015c5c6b4a5f6e71311407d3d22e275c5ff933160af",
       "integrity": "sha512-+Lq3OQYwHu5GViF65f05hVdtHOsi+juDRkSoqFfZ8v41gtNQkhx2DWKaOpryi+Da9hxOVz9Q6BP6xzcixkN3jg==",
@@ -352,7 +352,7 @@
     {
       "name": "@aphrody/m3-forms",
       "version": "3.3.8",
-      "path": "m3/packages/m3-forms/package.json",
+      "path": "../material/packages/m3-forms/package.json",
       "status": "published",
       "sha256": "305f252978a460a4a8f46e514686ac08150be4acaab095766674e8184237c1ec",
       "integrity": "sha512-LZOdVZDcRka1OvIo0b1BVhgiaBzKPyBqzRJut3ALEjB6EIzZp+h8gdS7GEVzU0B9ZaSUcwfqD/AkBUppQRkjVQ==",
@@ -361,7 +361,7 @@
     {
       "name": "@aphrody/m3-front",
       "version": "3.3.8",
-      "path": "m3/packages/m3-front/package.json",
+      "path": "../material/packages/m3-front/package.json",
       "status": "published",
       "sha256": "515917c0fece79d50bd57abc07d0e44c48f61fccec222aa59a2f02af7ed8c790",
       "integrity": "sha512-wuLNggLzxrkya3aj10ps2a4NztVw1EJxbWPtP4cfo32TVu/3ftrMzeABFWVSnkbbEMYB48rHsx12ZqV94kzPhg==",
@@ -370,7 +370,7 @@
     {
       "name": "@aphrody/m3-icons",
       "version": "3.3.8",
-      "path": "m3/packages/m3-icons/package.json",
+      "path": "../material/packages/m3-icons/package.json",
       "status": "published",
       "sha256": "2375b3f9b2557802b84ec229020dbddb182abee611e98a166d5159d7d292860d",
       "integrity": "sha512-KigbIOun74ikOUteeAUd77BbLJxNZStb2IOT0SmOa6Vu39gXwVp697g3EtliBaBXYAdfQdY9vz3ZtVuhQPBr2w==",
@@ -379,7 +379,7 @@
     {
       "name": "@aphrody/m3-mcp",
       "version": "3.3.8",
-      "path": "../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp/package.json",
+      "path": "../material/packages/m3-mcp/package.json",
       "status": "published",
       "sha256": "5f159e4759dfdad306b0e7282740c2b75d94898765338b9788db2a9532160460",
       "integrity": "sha512-8C7w2NXIp8ELnDkimIj0pci5ynrOIsBWwYRSOUFRdgoDr6Zd3rZP7iLjGJeCAOpCbCMS5gAqqq8w7ij5jVwL/g==",
@@ -388,7 +388,7 @@
     {
       "name": "@aphrody/m3-motion",
       "version": "3.3.8",
-      "path": "m3/packages/m3-motion/package.json",
+      "path": "../material/packages/m3-motion/package.json",
       "status": "published",
       "sha256": "c97a03542e2448c4730cb59116436ecb62fae25c919625037c0492edb25da423",
       "integrity": "sha512-l72TK/lzf7WoiPnmnRJJNDnP6CbS6hQ3cTdfiGYVqLoqReSiK2iOaru020EDp74+GK0gO8t0KWIEuhcZTVMjmg==",
@@ -397,7 +397,7 @@
     {
       "name": "@aphrody/m3-next-migrate",
       "version": "3.3.8",
-      "path": "m3/packages/m3-next-migrate/package.json",
+      "path": "../material/packages/m3-next-migrate/package.json",
       "status": "published",
       "sha256": "9b85f5099652cf1b8f35d11b0e34915115b7d353b10cb29828df987a39fe94c3",
       "integrity": "sha512-9BVqCmkNZlJehvi+2NNgnBpLE1IMBfyJMFAFgnuomCtB+6Ob8AYNDwIvmHsRORpSs6bdnr0EIgXFnKl9ZZiLXg==",
@@ -406,7 +406,7 @@
     {
       "name": "@aphrody/m3-next",
       "version": "3.3.8",
-      "path": "m3/packages/m3-next/package.json",
+      "path": "../material/packages/m3-next/package.json",
       "status": "published",
       "sha256": "772c8d388e57a3b06c907ee0f1f544eee8fcdcc6e02015d612f89a3e76b6194c",
       "integrity": "sha512-zebfT2EQqEx5xtZyZGFha1wqzIoCI5UTuhHZKCNnf6ejWy7sJbezCsk+kjdZLCG2+clD91E0YYCYhP/wXObwtA==",
@@ -421,7 +421,7 @@
     {
       "name": "@aphrody/m3-os-themes",
       "version": "3.3.8",
-      "path": "../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes/package.json",
+      "path": "../material/packages/m3-os-themes/package.json",
       "status": "published",
       "sha256": "967d0d9ac2065a9863647ee222b19b8807db3154d0646b44228ba087b0d0e67d",
       "integrity": "sha512-yqRL+/IFv+C5XpqYejh+SwEKV8QaCdg1mk0YPA1A8CdVttAJDo5Zd8BIubjgiKDV52d7t+b+E3Y3yQpfCk7rHQ==",
@@ -430,7 +430,7 @@
     {
       "name": "@aphrody/m3-primitives",
       "version": "3.3.8",
-      "path": "m3/packages/m3-primitives/package.json",
+      "path": "../material/packages/m3-primitives/package.json",
       "status": "published",
       "sha256": "dab77242b1bb9587639e11a743031d6dd57823d92caef103bee5f7314fb6edd0",
       "integrity": "sha512-C5KeebAc51LW9OON66uE8iw8DXRbBOTz9HgYOh1VnKwDhvEREQdPSrw6SoiQrSQR3DoscdmNfx5gnvlMUrA3/A==",
@@ -449,7 +449,7 @@
     {
       "name": "@aphrody/m3-react",
       "version": "3.3.8",
-      "path": "m3/packages/m3-react/package.json",
+      "path": "../material/packages/m3-react/package.json",
       "status": "published",
       "sha256": "1d081718eab8af9c548c4eea0a3bbc292cce1bb5a1b516f14b7904d0afe377c5",
       "integrity": "sha512-gdQrrDqkoMBGv9yKEbb7q81BmEVXsi9e0cRk+4jPy0ajfuo22+0yNuwQNlhNpshk4J6nJDZnwABVw7qI2C6vmw==",
@@ -464,7 +464,7 @@
     {
       "name": "@aphrody/m3-reader",
       "version": "3.3.8",
-      "path": "m3/packages/m3-reader/package.json",
+      "path": "../material/packages/m3-reader/package.json",
       "status": "published",
       "sha256": "55a733605d6ca213a5cb68a1fc615a947cf98bbbe0919468aadb89ae57680911",
       "integrity": "sha512-mCuJZ10bNyL1jNQQ4Bq5Yy+TTKsPHtBRYHJ0Tzi/VvnUaevnk1YI+tq4iEvBouj4SHxtoLDsCg1glPbtB24NFA==",
@@ -473,7 +473,7 @@
     {
       "name": "@aphrody/m3-tailwind",
       "version": "3.3.8",
-      "path": "m3/packages/m3-tailwind/package.json",
+      "path": "../material/packages/m3-tailwind/package.json",
       "status": "published",
       "sha256": "93eff1d3634490c05c613b6a188196b220d79ac780e89d4b8438ec839dfadc95",
       "integrity": "sha512-SH4w83xPUOzcDBWU33s5Xr97N+Vd6+lJLdQTljYGKsJiJEt5Xl86eBvqDYsGSEStSWSm58ePic7aWG2Is8X0sg==",
@@ -482,7 +482,7 @@
     {
       "name": "@aphrody/m3-theme",
       "version": "3.3.8",
-      "path": "m3/packages/m3-theme/package.json",
+      "path": "../material/packages/m3-theme/package.json",
       "status": "published",
       "sha256": "681afa9895a2d23e391c6bd9c51095853cd76281d0ae09eb9c8551519ff12e28",
       "integrity": "sha512-Y01G2ARAgv2dOAGmKeYQSy9p8ZoBdA5It0huI8JpxIq+/momFmfIWYEIUvZX6g9AzeWkapXc1A0wZWCr6tasGQ==",
@@ -491,7 +491,7 @@
     {
       "name": "@aphrody/m3-tokens",
       "version": "3.3.8",
-      "path": "m3/packages/m3-tokens/package.json",
+      "path": "../material/packages/m3-tokens/package.json",
       "status": "published",
       "sha256": "d02d21c64e3f622b8f5e8831bb0e6a1a7d622627b2152320a62f0fbd08099313",
       "integrity": "sha512-HAr1jHxfcmPGYRJVGb039cn1keAyc1+g7wvuTmLlNvXMH4Q5AUrpgkqMRmO0uaH4YrJDphR3ca10Wp5sM/TUig==",
@@ -500,7 +500,7 @@
     {
       "name": "@aphrody/m3",
       "version": "3.3.8",
-      "path": "m3/packages/m3/package.json",
+      "path": "../material/packages/m3/package.json",
       "status": "published",
       "sha256": "c66347367dd12e5583acd5cf408eaf522149b1734ecbd3963352ddb07be4839c",
       "integrity": "sha512-UrqyimZuJBsVZKYxp75CqdkkgYGtTDsS02Fg2hR6F9RuUS3AaOZahCbqjXCJmUypR8UnjHsVj82ERt+1BKi6yg==",
@@ -519,7 +519,7 @@
     {
       "name": "@aphrody/material-design-icons",
       "version": "1.0.2",
-      "path": "m3/packages/material-design-icons/package.json",
+      "path": "../material/packages/material-design-icons/package.json",
       "status": "published",
       "sha256": "df4f50504e91517440b1e245c09d737a8061809cbe8d82685e33a75e7b6ee44f",
       "integrity": "sha512-j8TVLvgDQnxuABtyWr8KEhQS3jb16zER9Yo8e/tsRM1q9pSUVzxX/cqXBkg3/24jIHPqdezeFTnPun0e1f90kw==",
@@ -528,7 +528,7 @@
     {
       "name": "@aphrody/scaffold",
       "version": "1.0.0-canary.2",
-      "path": "m3/packages/scaffold/package.json",
+      "path": "../material/packages/scaffold/package.json",
       "status": "published",
       "sha256": "bc7d9a78481affbd82e1736f28453238128b7c75912c5f8e4c48e886ecd011b7",
       "integrity": "sha512-Ir+QAxOVrHzMG6lrcuvg6XJeMgpI751PwOlEvCDMemYXBtXK4s45ldxYCB8L8W1Rjb6JQXkhK3wpkcL0WmKPXg==",
@@ -537,7 +537,7 @@
     {
       "name": "@aphrody/web-to-tauri",
       "version": "1.0.0-canary.1",
-      "path": "m3/packages/web-to-tauri/package.json",
+      "path": "../material/packages/web-to-tauri/package.json",
       "status": "published",
       "sha256": "98eeb7c18708936f380e45c6d639fd6cd756b3e642565c2f0d4e4f1ae36d780e",
       "integrity": "sha512-SASubhqVib9VQVeoilpS4fRiU7l4qmTMGn8NGFctKJxXuTznlzTpLevp1WmRiPr3AdmZD6xjuc4GzmX2PMnL9Q==",

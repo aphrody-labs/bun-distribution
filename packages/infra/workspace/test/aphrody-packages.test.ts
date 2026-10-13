@@ -95,7 +95,11 @@ test("the closure packs the runtime SDK as a workspace member and leaves sibling
 
 test("members follow the root workspaces globs beyond packages/*/*", async () => {
   const directories = await aphrodyPackageDirectories(root);
-  expect(directories.get("@aphrody/canvas")).toBe(join(root, "m3/packages/canvas"));
+  expect(directories.has("@aphrody/canvas")).toBe(false);
+  expect(await aphrodyClosure(root, ["@aphrody/canvas"])).toEqual({
+    members: [],
+    external: ["@aphrody/canvas"],
+  });
   expect(directories.get("@aphrody/api")).toBe(join(root, "crates/tauri/aphrody-tauri-api"));
 });
 

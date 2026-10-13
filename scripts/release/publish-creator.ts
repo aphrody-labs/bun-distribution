@@ -217,7 +217,7 @@ async function stage(): Promise<{
   const themeOut = join(dir, "theme");
   await run([
     "bun",
-    "../bun/packages/aphrody-migrated/m3/aphrody-m3-os-themes/src/cli.ts",
+    "../material/packages/m3-os-themes/src/cli.ts",
     "generate",
     "--target",
     "windows",

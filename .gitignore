@@ -107,7 +107,6 @@ Thumbs.db
 *.db-wal
 /packages/shell/web/pkg/
 /crates/ui/app/examples/shell_e2e/frontend/pkg/
-/packages/web/webos-wasm/wasm/
 /crates/ui/app/examples/shell_e2e/frontend/index.js
 # Python SDK packaging outputs; the source package remains canonical.
 /packages/google/antigravity-sdk-python/build/
