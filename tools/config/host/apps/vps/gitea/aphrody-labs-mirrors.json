@@ -45139,15 +45139,15 @@
       "targetName": "bun-distribution",
       "admission": "wave-14",
       "sourceQualification": {
-        "sha": "f4765b9db5f5c8225be3a165f79edbe7b107a55a",
+        "sha": "4a737b4ab442c059466669d98914e79baeb1c070",
         "refs": [
           "refs/heads/os"
         ],
         "refShas": {
-          "refs/heads/os": "f4765b9db5f5c8225be3a165f79edbe7b107a55a"
+          "refs/heads/os": "4a737b4ab442c059466669d98914e79baeb1c070"
         },
         "lfsApplicable": false,
-        "verifiedAt": "2026-10-13T22:13:41Z"
+        "verifiedAt": "2026-10-13T23:27:50Z"
       },
       "lfsApplicable": false
     },
