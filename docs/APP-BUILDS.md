@@ -11,10 +11,13 @@ missing native executable prevents an independent build.
 | Capability | Owner |
 | --- | --- |
 | Compilation and embedded files | Native `Bun.build`, `compile.assets`, `Bun.embeddedFiles` |
+| Native application artifacts | `@aphrody/bun-artifacts` in Bun Libraries |
+| Library capability names and canonical application hosts | `@aphrody/bun-workspace/capabilities` in Bun Libraries |
+| Child process ownership, deadlines and output capture | `@aphrody/bun-workspace/process` in Bun Libraries |
+| Streamed file identity | `@aphrody/bun-workspace/hash` in Bun Libraries |
 | Cloudflare control and credentials | Runtime `packages/bun-cloudflare`; domain changes use the configured MCP |
 | R2 object authentication | Canonical `createR2Client` and `loadCloudflareEnvironment` |
-| File identity | `src/distribution.ts: identity` |
-| Embedded byte identity | Shared `contentIdentity(Blob)` |
+| Distribution-specific and embedded byte identity | Thin `src/distribution.ts` adapter over the shared Bun Libraries hash owner |
 | Executable headers | Package converter `abi` and the GNU loader gate in `src/elf.ts` |
 | Application orchestration | `infra/app-build.ts` |
 | Shared object plans | `infra/assets.ts` |

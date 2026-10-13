@@ -1,44 +1,53 @@
 # Application domains
 
-The application hostnames in infra/apps.json use the existing aphrody-app
-Worker in the aphrody.app zone. This is the single public edge owner. The
-main homepage, www redirect, and assets/dist R2 custom domains retain their
-existing ownership.
+The 14 library application identities and canonical hostnames come from the
+Bun Libraries capability catalog. Its canonical form is
+`app-<capability>.aphrody.app`; the forked library hostname remains an alias.
+Bun OS plans consume this owner instead of repeating those 14 hostname values.
+APT and the Bun Libraries desktop keep their product hosts. The existing
+`aphrody-app` Worker remains the public edge owner. The homepage, www redirect,
+and assets/dist R2 custom domains retain their existing ownership.
 
 ## Hosts
 
-| App | Public hostname | Edge owner |
+| App | Canonical hostname | Existing alias | Edge owner |
 | --- | --- | --- |
-| Filmcraft | https://filmcraft.aphrody.app | aphrody-app |
-| Artcraft | https://artcraft.aphrody.app | aphrody-app |
-| Photocraft | https://photocraft.aphrody.app | aphrody-app |
-| Vectorcraft | https://vectorcraft.aphrody.app | aphrody-app |
-| Effectcraft | https://effectcraft.aphrody.app | aphrody-app |
-| Lightcraft | https://lightcraft.aphrody.app | aphrody-app |
-| PDFcraft | https://pdfcraft.aphrody.app | aphrody-app |
-| Wordcraft | https://wordcraft.aphrody.app | aphrody-app |
-| Soundcraft | https://soundcraft.aphrody.app | aphrody-app |
-| Designcraft | https://designcraft.aphrody.app | aphrody-app |
-| CADcraft | https://cadcraft.aphrody.app | aphrody-app |
-| Deckcraft | https://deckcraft.aphrody.app | aphrody-app |
-| Gridcraft | https://gridcraft.aphrody.app | aphrody-app |
-| Figcraft | https://figcraft.aphrody.app | aphrody-app |
-| APT | https://apt.aphrody.app | aphrody-app |
-| Desktop | https://desktop.aphrody.app | aphrody-app |
+| Video | https://app-video.aphrody.app | https://filmcraft.aphrody.app | aphrody-app |
+| Generation | https://app-generation.aphrody.app | https://artcraft.aphrody.app | aphrody-app |
+| Images | https://app-images.aphrody.app | https://photocraft.aphrody.app | aphrody-app |
+| Vectors | https://app-vectors.aphrody.app | https://vectorcraft.aphrody.app | aphrody-app |
+| Compositing | https://app-compositing.aphrody.app | https://effectcraft.aphrody.app | aphrody-app |
+| Photo processing | https://app-photo-processing.aphrody.app | https://lightcraft.aphrody.app | aphrody-app |
+| PDF | https://app-pdf.aphrody.app | https://pdfcraft.aphrody.app | aphrody-app |
+| Documents | https://app-documents.aphrody.app | https://wordcraft.aphrody.app | aphrody-app |
+| Audio | https://app-audio.aphrody.app | https://soundcraft.aphrody.app | aphrody-app |
+| Layout | https://app-layout.aphrody.app | https://designcraft.aphrody.app | aphrody-app |
+| CAD | https://app-cad.aphrody.app | https://cadcraft.aphrody.app | aphrody-app |
+| Slides | https://app-slides.aphrody.app | https://deckcraft.aphrody.app | aphrody-app |
+| Tables | https://app-tables.aphrody.app | https://gridcraft.aphrody.app | aphrody-app |
+| Interface layouts | https://app-interface-layouts.aphrody.app | https://figcraft.aphrody.app | aphrody-app |
+| APT | https://apt.aphrody.app | — | aphrody-app |
+| Desktop | https://desktop.aphrody.app | — | aphrody-app |
 
 ## Routing and qualification
 
-Each hostname is an enabled Workers Custom Domain with preview routing disabled.
+The existing application hostnames are attached to the configured edge.
 Cloudflare owns its DNS record and certificate provisioning. Its managed,
 proxied DNS record routes to the Worker; it is not a private backend address.
 Domain changes use the configured Cloudflare MCP and preserve existing DNS or
 Worker ownership when a hostname conflicts.
 
-A valid DNS answer and HTTPS response qualify public edge routing. The current
-edge response remains the existing public site. Application executables,
+A valid DNS answer and HTTPS response qualify public edge routing. Both names
+currently share the existing edge response. Application executables,
 application behavior, native backends and independent deployment require their
 own build and deployment receipts. A hostname response does not qualify those
 application capabilities.
+
+The 14 canonical `app-*` DNS records remain proxied and unchanged; 14 Worker
+routes now bind them to `aphrody-app`. Public HTTPS returned 200 for 12 hosts.
+`app-tables` and `app-interface-layouts` returned 503 because their native
+artifacts are not installed on the Worker. The routes do not qualify independent
+application deployments.
 
 The ignored out/app-domains/receipt.json records preflight DNS/domain ownership,
 creation results, read-back checks, public DNS/HTTPS observations, and separate
