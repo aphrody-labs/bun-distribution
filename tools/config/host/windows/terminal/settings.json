@@ -69,11 +69,11 @@
       },
       "historySize": 100000,
       "padding": "8",
-      "startingDirectory": null,
+      "startingDirectory": null
     },
     "list": [
       {
-        "commandline": "cmd.exe /d /s /c \"set APHRODY_ROOT=%CD%&&C:\\Users\\aphro\\AppData\\Local\\aphrody\\bin\\aphrody.exe shell start\"",
+        "commandline": "cmd.exe /d /s /c \"%LOCALAPPDATA%\\Aphrody\\bin\\aphrody.exe shell start\"",
         "guid": "{a1b2c3d4-e5f6-7890-abcd-ef1234567890}",
         "hidden": false,
         "icon": "C:\\src\\aphrody\\crates\\ui\\identity\\assets\\brand\\favicon.ico",
@@ -130,7 +130,7 @@
         "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
         "hidden": true,
         "name": "PowerShell",
-        "source": "Windows.Terminal.PowershellCore",
+        "source": "Windows.Terminal.PowershellCore"
       },
       {
         "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
