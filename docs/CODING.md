@@ -19,7 +19,7 @@ commands, separate configuration and artifacts, short symlinks, minimal permissi
 and checked command status.
 
 Use Bun-native APIs and commands.
-review aggressive findings before accepting any source change. Run `bun check`,
+Run `bun check`,
 `bun lint` and `bun fmt` directly. Confirm technical choices in primary sources.
 
 References:
