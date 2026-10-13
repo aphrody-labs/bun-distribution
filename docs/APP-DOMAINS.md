@@ -44,11 +44,19 @@ application behavior, native backends and independent deployment require their
 own build and deployment receipts. A hostname response does not qualify those
 application capabilities.
 
-The 14 canonical `app-*` DNS records remain proxied and unchanged; 14 Worker
-routes now bind them to `aphrody-app`. Public HTTPS returned 200 for 12 hosts.
-`app-tables` and `app-interface-layouts` returned 503 because their native
-artifacts are not installed on the Worker. The routes do not qualify independent
-application deployments.
+The 14 canonical `app-*` DNS records remain proxied; 14 Worker routes bind them
+to `aphrody-app`. The library-name aliases use enabled `aphrody-app` Worker
+custom domains. APT, desktop, the apex, and `www` also use enabled custom domains
+with previews disabled. `video.aphrody.app` remains an R2 custom domain and is
+not an application alias.
+
+Live Cloudflare readback on 2026-10-13 found 49 DNS records, all 14 canonical
+Worker routes, and 18 enabled Worker custom domains (14 library aliases plus
+APT, desktop, the apex, and `www`). A native HTTPS HEAD check returned 200 for
+the apex, all 14 canonical hosts, all 14 aliases, APT, and desktop; `www`
+returned 301. This supersedes the earlier 12/14 HTTP 200 observation. These
+responses qualify hostname routing only; they do not establish application
+readiness, native artifact availability, behavior, or independent deployment.
 
 The ignored out/app-domains/receipt.json records preflight DNS/domain ownership,
 creation results, read-back checks, public DNS/HTTPS observations, and separate

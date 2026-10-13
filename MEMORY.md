@@ -71,6 +71,13 @@
   strict stdout decoding and silent stderr behavior remain; streaming Git tree
   and archive commands remain with Bun OS. Full native check, lint and format
   passed. No export, build or tests ran.
+- A live Cloudflare MCP readback on 2026-10-13 found 49 `aphrody.app` DNS
+  records, 14 canonical app Worker routes, and 18 enabled Worker custom domains:
+  the 14 library aliases, APT, desktop, apex and `www`. The `video` hostname
+  remains R2. HTTPS HEAD returned 200 for the apex, all canonical app hosts,
+  aliases, APT and desktop; `www` returned 301. `docs/APP-DOMAINS.md` now
+  supersedes its earlier 12/14 response snapshot. HTTP status is routing evidence
+  only; application readiness remains unqualified. No Cloudflare state changed.
 
 ## Owners and execution
 
