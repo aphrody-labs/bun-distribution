@@ -7,10 +7,6 @@
   "bin": {
     "bun-os": "src/cli.ts"
   },
-  "type": "module",
-  "exports": {
-    ".": "./src/distribution.ts"
-  },
   "workspaces": [
     "packages/package-converter",
     "packages/workspace",
@@ -18,9 +14,14 @@
     "packages/artifacts",
     "apps/desktop"
   ],
+  "type": "module",
+  "exports": {
+    ".": "./src/distribution.ts"
+  },
   "scripts": {
     "setup": "bun scripts/setup.ts",
     "cargo:metadata": "bun scripts/cargo.ts metadata",
+    "cargo:fmt": "bun scripts/cargo.ts fmt",
     "cargo:check": "bun scripts/cargo.ts check",
     "cargo:test": "bun scripts/cargo.ts test",
     "plan": "bun src/cli.ts plan",

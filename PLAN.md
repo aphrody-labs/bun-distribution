@@ -16,6 +16,7 @@
 
 - [x] Integrate `craft-fonts` and its licensed assets into the Bun OS Cargo workspace; preserve the source repository and publish its `os` integration commit `f1bfd5fd75f24619cad085230c7290f17ee7821e`.
 - [x] Route Cargo metadata/check through the bounded workspace process owner. Locked metadata resolves `craft-fonts` and `craft-fonts-tests`; `cargo check --locked` passes on native Windows.
+- [x] Route `cargo fmt --all -- --check` through the same serialized native owner; root Rust formatting passes.
 - [x] Align Bun OS quality script names with Bun Libraries: `typecheck`, `lint`, and `format:check`. Native `bun run check` passes on 91 files, lint, and format.
 - [x] Document source ownership, asset provenance, license boundaries, and the optional font embedding contract.
 - [ ] Keep Rust tests and the new font CI job out of this batch; tests were not requested or run.

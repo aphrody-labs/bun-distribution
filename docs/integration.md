@@ -13,20 +13,22 @@ option is an environment variable instead.
 
 ## The build option: `CRAFT_FONTS_DIR`
 
+From the Bun OS workspace root, point the consuming application's build at the integrated assets:
+
 ```sh
-git clone https://github.com/storytold/craft-fonts ../craft-fonts
-CRAFT_FONTS_DIR=$PWD/../craft-fonts cargo build --release
+CRAFT_FONTS_DIR="$(pwd)" cargo build --release
 ```
 
 - **Unset** (the default): nothing changes. The app uses its own bundled fonts and system fonts.
-- **Set to a craft-fonts checkout:** the app's `build.rs` reads `fonts/manifest.txt` and embeds
+- **Set to the Bun OS workspace root:** the app's `build.rs` reads `fonts/manifest.txt` and embeds
   every font it lists.
-- **Set but not a checkout** (no manifest, missing file): the build prints a `cargo::warning` and
+- **Set but not a valid workspace root** (missing manifest or font file): the build prints a `cargo::warning` and
   carries on without craft-fonts, unless `CRAFT_FONTS_REQUIRED=1` is also set, which turns it
   into a build error. Release workflows set both, so a release can't silently ship without them.
 
-Use an **absolute** path (e.g. `CRAFT_FONTS_DIR=$PWD/../craft-fonts`): Cargo runs build scripts in
-the crate's own directory, so a relative path would resolve from there. `CRAFT_FONTS_DIR` is read by
+Use an **absolute** path (e.g. `CRAFT_FONTS_DIR=$PWD` at the Bun OS workspace
+root): Cargo runs build scripts in the crate's own directory, so a relative path
+would resolve from there. `CRAFT_FONTS_DIR` is read by
 `build.rs`, so changing it rebuilds only the crate that embeds the fonts.
 
 ## The `build.rs` recipe
@@ -124,18 +126,19 @@ app was built without craft-fonts. Code that uses it must work when it is empty.
 
 ## Releases and licences
 
-The fonts are OFL-1.1: they can be embedded and redistributed, but the licence text must go with
-them. In `release.yml`, check out craft-fonts at a pinned commit and build with it:
+The fonts are OFL-1.1: they can be embedded and redistributed, but the licence text
+must go with them. In a consumer release workflow, check out Bun OS at a pinned
+commit and build with its shared asset manifest:
 
 ```yaml
 - uses: actions/checkout@v4
   with:
-    repository: storytold/craft-fonts
-    ref: <full commit SHA>        # bump deliberately
-    path: craft-fonts
+    repository: aphrody-labs/bun-distribution
+    ref: fb5ed11da132911bb87bbad06831976927893e01 # bump to the qualified Bun OS revision
+    path: bun-os
 # then, on the build steps:
 env:
-  CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
+  CRAFT_FONTS_DIR: ${{ github.workspace }}/bun-os
   CRAFT_FONTS_REQUIRED: "1"
 ```
 
