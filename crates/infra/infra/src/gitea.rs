@@ -280,6 +280,7 @@ struct NativeStorage {
     mount_unit: String,
     lfs_requirement: String,
     runner_requirement: String,
+    runner_job_qualification: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -323,6 +324,8 @@ pub struct MirrorReport {
     pub repositories: Vec<String>,
     pub visibility: &'static str,
     pub capacity_free_kib: Option<u64>,
+    pub runner_online: Option<bool>,
+    pub runner_job_qualification: &'static str,
 }
 
 /// Plan by default; `--apply` creates and verifies one explicitly admitted batch.
@@ -364,7 +367,8 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
         || catalog.native_storage.mount_unit
             != r"home-ubuntu-build-apps-gitea-native\x2dstorage.mount"
         || catalog.native_storage.lfs_requirement != "qualified-before-apply"
-        || catalog.native_storage.runner_requirement != "qualified-after-clone"
+        || catalog.native_storage.runner_requirement != "online-presence-after-clone"
+        || catalog.native_storage.runner_job_qualification != "not-run"
         || !valid_repo(batch)
     {
         bail!("catalogue de miroirs hors contrat autorisé");
@@ -388,7 +392,10 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
                 && (entry.name != catalog.native_storage.repository
                     || entry.size_kib != Some(catalog.native_storage.repository_size_kib)
                     || !entry.source_qualification.as_ref().is_some_and(|q| {
-                        matches!(q.lfs_status.as_deref(), Some("not-applicable" | "verified"))
+                        matches!(
+                            q.lfs_status.as_deref(),
+                            Some("unqualified" | "not-applicable" | "verified")
+                        )
                     })))
             || (entry.name == catalog.native_storage.repository
                 && target_owner != catalog.native_storage.owner)
@@ -441,6 +448,8 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
         repositories: entries.iter().map(|entry| entry.name.clone()).collect(),
         visibility: "match-source",
         capacity_free_kib: None,
+        runner_online: None,
+        runner_job_qualification: "not-run",
     };
     if !apply {
         return Ok(report);
@@ -472,7 +481,8 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
             "ownerGid": catalog.native_storage.owner_gid,
             "directoryMode": catalog.native_storage.directory_mode,
             "lfsRequirement": catalog.native_storage.lfs_requirement,
-            "runnerRequirement": catalog.native_storage.runner_requirement
+            "runnerRequirement": catalog.native_storage.runner_requirement,
+            "runnerJobQualification": catalog.native_storage.runner_job_qualification
         },
         "repositories": entries.iter().map(|entry| serde_json::json!({
             "name": entry.name,
@@ -569,6 +579,7 @@ if(org[1].visibility!=='public')await req('PATCH','/orgs/aphrody-labs',{{visibil
 if((await req('GET','/orgs/aphrody-labs'))[1].visibility!=='public')bad('Gitea organization is not publicly readable');
 const nativeEntry=d.repositories.find(repo=>repo.targetOwner===d.nativeStorage.owner);
 if(nativeEntry){{
+ // Organization creation is idempotent and precedes source gates; it grants no clone permission.
  const owner=d.nativeStorage.owner;
  const [,nativeOrg]=await req('GET','/orgs/'+owner,undefined,true);
  if(!nativeOrg)await req('POST','/orgs',{{username:owner,visibility:'public'}});
@@ -578,6 +589,7 @@ if(nativeEntry){{
  if(!Array.isArray(orgRepos)||orgRepos.length>1||orgRepos.some(item=>item.name!==d.nativeStorage.repository))bad('Gitea native organization contains repositories outside its declared scope');
 }}
 let free=null;
+let runnerOnline=null;
 function admitNativeStorage(repo){{
  const s=d.nativeStorage;
  if(repo.name!==s.repository||repo.sizeKiB!==s.repositorySizeKiB||s.owner!=='aphrody-labs-native'||s.containerPath!=='/data/git/repositories/aphrody-labs-native')bad('Gitea native storage scope rejected');
@@ -594,6 +606,7 @@ const owner=repo.targetOwner||d.owner;const path='/repos/'+owner+'/'+repo.name;c
  if(!metadataResponse.ok)bad('GitHub repository identity unavailable: '+repo.name);
  const metadata=await metadataResponse.json();
  if(metadata.full_name!=='aphrody-labs/'+repo.name||metadata.private!==(repo.visibility==='private')||metadata.archived!==repo.archived||(repo.refs.length&&metadata.default_branch!==repo.defaultBranch)||(owner===d.nativeStorage.owner&&metadata.size!==d.nativeStorage.repositorySizeKiB))bad('GitHub repository policy changed: '+repo.name);
+ // This gate remains before capacity admission and migration, including on retries after org creation.
  if(owner===d.nativeStorage.owner&&(!['not-applicable','verified'].includes(repo.lfsStatus)||repo.lfsApplicable&&repo.lfsStatus!=='verified'))bad('Gitea native repository LFS status is not qualified');
  if(!sameRefs(gitRefs(repo.sourceUrl,sourceAuth),expected))bad('GitHub source ref set moved or incomplete: '+repo.name);
  free=Number((await Bun.$`df -Pk /home/ubuntu/apps/gitea/data | tail -n 1`.text()).trim().split(/\s+/)[3]);
@@ -617,7 +630,9 @@ const owner=repo.targetOwner||d.owner;const path='/repos/'+owner+'/'+repo.name;c
  if(!sameRefs(sourceNow,expected)||!sameRefs(targetNow,expected))bad('Gitea mirror refs diverge; repository remains private: '+repo.name);
  if(owner===d.nativeStorage.owner){{
   const [,runnerList]=await req('GET','/orgs/'+owner+'/actions/runners');
-  if(!Array.isArray(runnerList.runners)||!runnerList.runners.some(runner=>!runner.disabled&&runner.status==='online'))bad('Gitea native repository is cloned, but no online organization runner is qualified');
+  runnerOnline=Array.isArray(runnerList.runners)&&runnerList.runners.some(runner=>!runner.disabled&&runner.status==='online');
+  if(!runnerOnline)bad('Gitea native repository is cloned, but no online organization runner is available');
+  // API presence is not a Cargo/Bun workflow execution; the receipt keeps that qualification pending.
  }}
  const publishPayload={{private:repo.visibility==='private',archived:repo.archived}};
  if(repo.archived){{
@@ -630,7 +645,7 @@ const owner=repo.targetOwner||d.owner;const path='/repos/'+owner+'/'+repo.name;c
  const anonymous=await fetch(d.publicBaseUrl+'/api/v1/repos/'+owner+'/'+repo.name,{{signal:AbortSignal.timeout(10000)}});
  if((repo.visibility==='private'&&anonymous.status!==404)||(repo.visibility==='public'&&anonymous.status!==200))bad('Gitea anonymous visibility mismatch: '+repo.name);
 }}
-console.log(JSON.stringify({{owner:d.owner,repositories:d.repositories.map(x=>x.name),freeKiB:free,verified:true}}));
+console.log(JSON.stringify({{owner:d.owner,repositories:d.repositories.map(x=>x.name),freeKiB:free,runnerOnline,runnerJobQualification:'not-run',verified:true}}));
 BUN
 "#
     );
@@ -680,6 +695,12 @@ BUN
             let remote: serde_json::Value = serde_json::from_slice(&output.stdout)
                 .context("réponse Gitea distante invalide")?;
             report.capacity_free_kib = remote.get("freeKiB").and_then(serde_json::Value::as_u64);
+            report.runner_online = remote.get("runnerOnline").and_then(serde_json::Value::as_bool);
+            if remote.get("runnerJobQualification").and_then(serde_json::Value::as_str)
+                != Some("not-run")
+            {
+                bail!("qualification d'un job runner absente du reçu distant");
+            }
             report.applied = true;
             return Ok(report);
         }
