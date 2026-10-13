@@ -105,7 +105,7 @@ describe("WASM release package", () => {
     expect(f.packed).toEqual([]);
   });
 
-  test("Windows hosts run locked Cargo directly", async () => {
+  test("Windows hosts run locked Cargo through the native build wrapper", async () => {
     const f = await fixture();
     await buildWasmPackage(
       { crate: "command-wasm", out: f.out },

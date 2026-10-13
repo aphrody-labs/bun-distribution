@@ -162,6 +162,7 @@ export async function buildWasmPackage(
             ? [
                 process.execPath,
                 join(repositoryRoot, "scripts/build/rust/cargo-serial.ts"),
+                "--msvc",
                 ...localArgs,
               ]
             : ["cargo", ...localArgs],
