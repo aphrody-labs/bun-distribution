@@ -21,9 +21,7 @@
       "kind": "git",
       "url": "https://github.com/tauri-apps/tauri",
       "ref": "v3",
-      "sparse": [
-        "crates/tauri-runtime-cef"
-      ],
+      "sparse": ["crates/tauri-runtime-cef"],
       "license": "Apache-2.0 OR MIT",
       "tier": "reference",
       "purpose": "Tauri 3 branch; only crates/tauri-runtime-cef is read: the one desktop runtime (CEF + tauri-winit + GTK 4). The local patch for tauri-apps/tauri#16189 (patches/tauri-runtime-cef-3.0.0-alpha.5-glib-work-source.patch, base 3.0.0-alpha.5) is re-checked against it; drop the patch once upstream merges a fix.",
@@ -194,6 +192,114 @@
       "purpose": "OpenAI Codex CLI upstream and fork aphrody-labs/codex; Aphrody absorbs its app-server v2 protocol, configuration shapes, execution events and agent lifecycle natively into the workspace.",
       "consumers": "crates/ai/app-server; crates/contracts/app-protocol; crates/ai/config; crates/ai/rollout; crates/ai/engine; crates/ai/session; tools/config/codex-absorption.json; docs/reference/ai/THIRD_PARTY_CODEX.md; docs/plans/ai/plans/codex-oss.md",
       "observedCommit": "bd274564e1b1b3febb3886d274e6d97c2a3d275e"
+    },
+    {
+      "id": "jev-aaddrick-building-with-typesafe-jev",
+      "kind": "git",
+      "url": "https://github.com/aaddrick/building-with-typesafe-jev",
+      "ref": "a46856c9fbc890653891e25f85ee2f16e1d9b513",
+      "observedCommit": "a46856c9fbc890653891e25f85ee2f16e1d9b513",
+      "observedAt": "2026-10-13",
+      "license": "MIT",
+      "tier": "reference",
+      "purpose": "Jev integration reference: evaluate non-duplicated capabilities for the canonical Rust aphrody-jev backend. Reference registration is not source fusion or runtime qualification.",
+      "consumers": "crates/ai/jev; canonical aphrody-mcp Jev tools"
+    },
+    {
+      "id": "jev-integrate-your-mind-jev-codex-plugin",
+      "kind": "git",
+      "url": "https://github.com/integrate-your-mind/jev-codex-plugin",
+      "ref": "f67f0f35df13cbc0556539e6f86fe14e2c04d6f8",
+      "observedCommit": "f67f0f35df13cbc0556539e6f86fe14e2c04d6f8",
+      "observedAt": "2026-10-13",
+      "license": "MIT",
+      "tier": "reference",
+      "purpose": "Jev integration reference: evaluate non-duplicated capabilities for the canonical Rust aphrody-jev backend. Reference registration is not source fusion or runtime qualification.",
+      "consumers": "crates/ai/jev; canonical aphrody-mcp Jev tools"
+    },
+    {
+      "id": "jev-yijunyu-jev-rs",
+      "kind": "git",
+      "url": "https://github.com/yijunyu/jev-rs",
+      "ref": "a56901b67358796c74d6a4e86f89aec78339ea35",
+      "observedCommit": "a56901b67358796c74d6a4e86f89aec78339ea35",
+      "observedAt": "2026-10-13",
+      "license": "Apache-2.0",
+      "tier": "reference",
+      "purpose": "Jev integration reference: evaluate non-duplicated capabilities for the canonical Rust aphrody-jev backend. Reference registration is not source fusion or runtime qualification.",
+      "consumers": "crates/ai/jev; canonical aphrody-mcp Jev tools"
+    },
+    {
+      "id": "jev-codesoda-systemone",
+      "kind": "git",
+      "url": "https://github.com/codesoda/systemone",
+      "ref": "6772abbbc37b25fb0c43a43f8232aa36f89b17df",
+      "observedCommit": "6772abbbc37b25fb0c43a43f8232aa36f89b17df",
+      "observedAt": "2026-10-13",
+      "license": "MIT",
+      "tier": "reference",
+      "purpose": "Jev integration reference: evaluate non-duplicated capabilities for the canonical Rust aphrody-jev backend. Reference registration is not source fusion or runtime qualification.",
+      "consumers": "crates/ai/jev; canonical aphrody-mcp Jev tools"
+    },
+    {
+      "id": "jev-kunobi-ninja-kunobi-jev",
+      "kind": "git",
+      "url": "https://github.com/kunobi-ninja/kunobi-jev",
+      "ref": "1ccae8619eaa7c1e1b8e33cab4cd779ace745b67",
+      "observedCommit": "1ccae8619eaa7c1e1b8e33cab4cd779ace745b67",
+      "observedAt": "2026-10-13",
+      "license": "Apache-2.0",
+      "tier": "reference",
+      "purpose": "Jev integration reference: evaluate non-duplicated capabilities for the canonical Rust aphrody-jev backend. Reference registration is not source fusion or runtime qualification.",
+      "consumers": "crates/ai/jev; canonical aphrody-mcp Jev tools"
+    },
+    {
+      "id": "jev-Shearerbeard-jev-driver",
+      "kind": "git",
+      "url": "https://github.com/Shearerbeard/jev-driver",
+      "ref": "62f09484399e198e0ef720a642b0a7db6628c5d1",
+      "observedCommit": "62f09484399e198e0ef720a642b0a7db6628c5d1",
+      "observedAt": "2026-10-13",
+      "license": "Apache-2.0",
+      "tier": "reference",
+      "purpose": "Jev integration reference: evaluate non-duplicated capabilities for the canonical Rust aphrody-jev backend. Reference registration is not source fusion or runtime qualification.",
+      "consumers": "crates/ai/jev; canonical aphrody-mcp Jev tools"
+    },
+    {
+      "id": "jev-SC0d3r-jev-systemone",
+      "kind": "git",
+      "url": "https://github.com/SC0d3r/jev-systemone",
+      "ref": "fb277d30d3bef5034cd664e72122cc0d5b91f9c3",
+      "observedCommit": "fb277d30d3bef5034cd664e72122cc0d5b91f9c3",
+      "observedAt": "2026-10-13",
+      "license": "MIT",
+      "tier": "reference",
+      "purpose": "Jev integration reference: evaluate non-duplicated capabilities for the canonical Rust aphrody-jev backend. Reference registration is not source fusion or runtime qualification.",
+      "consumers": "crates/ai/jev; canonical aphrody-mcp Jev tools"
+    },
+    {
+      "id": "jev-AbdelStark-awesome-typesafe-jev",
+      "kind": "git",
+      "url": "https://github.com/AbdelStark/awesome-typesafe-jev",
+      "ref": "1c0a0e4e08b1f1aa47e2d6d405c9f09879089194",
+      "observedCommit": "1c0a0e4e08b1f1aa47e2d6d405c9f09879089194",
+      "observedAt": "2026-10-13",
+      "license": "MIT",
+      "tier": "reference",
+      "purpose": "Jev integration reference: evaluate non-duplicated capabilities for the canonical Rust aphrody-jev backend. Reference registration is not source fusion or runtime qualification.",
+      "consumers": "crates/ai/jev; canonical aphrody-mcp Jev tools"
+    },
+    {
+      "id": "jev-logan-markewich-jeff",
+      "kind": "git",
+      "url": "https://github.com/logan-markewich/jeff",
+      "ref": "34b32f99a727c47b679adde33f4702a001e02979",
+      "observedCommit": "34b32f99a727c47b679adde33f4702a001e02979",
+      "observedAt": "2026-10-13",
+      "license": "MIT",
+      "tier": "reference",
+      "purpose": "Jev integration reference: evaluate non-duplicated capabilities for the canonical Rust aphrody-jev backend. Reference registration is not source fusion or runtime qualification.",
+      "consumers": "crates/ai/jev; canonical aphrody-mcp Jev tools"
     }
   ],
   "integrated": [
