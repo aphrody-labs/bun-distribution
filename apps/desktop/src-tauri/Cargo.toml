@@ -1,6 +1,6 @@
 [package]
 name = "aphrody-bun-desktop"
-version = "0.1.0"
+version = "1.4.4"
 description = "Aphrody desktop library inspector"
 authors = ["aphrody-dev <contact@aphrody.com>"]
 edition = "2024"

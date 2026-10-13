@@ -60,10 +60,14 @@
     "workspace:manifests": "bun scripts/workspace-manifests.ts"
   },
   "dependencies": {
+    "@aphrody/tauri": "catalog:",
     "@aphrody/bun-workspace": "workspace:*",
     "@aphrody/bun-artifacts": "workspace:*",
     "@aphrody/bun-video-project": "workspace:*",
     "@aphrody/bun-app-host": "workspace:*"
+  },
+  "catalog": {
+    "@aphrody/tauri": "file:toolchains/bun/packages/bun-tauri"
   },
   "devDependencies": {
     "@aphrody/bun-types": "1.4.4"

@@ -24,5 +24,6 @@ async function run(argv: string[]): Promise<void> {
 
 await run(["git", "submodule", "update", "--init", "--depth", "1"]);
 await run([process.execPath, "install", "--frozen-lockfile"]);
+await run([process.execPath, "scripts/node-modules.ts"]);
 const cargo = await inspectCargoWorkspace(await loadConfig(root), { root, timeoutMs: 60_000 });
 console.log(`Cargo workspace: ${cargo.packageNames.length} packages in ${cargo.workspaceRoot}`);

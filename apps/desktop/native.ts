@@ -50,7 +50,7 @@ if (command === "build") {
     target: "bun",
     minify: true,
     compile: {
-      outfile: join(desktopRoot, "src-tauri/binaries", filename),
+      outfile: join(output, "native", filename),
       autoloadDotenv: false,
       autoloadBunfig: false,
       autoloadPackageJson: false,

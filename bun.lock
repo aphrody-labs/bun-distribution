@@ -9,6 +9,7 @@
         "@aphrody/bun-artifacts": "workspace:*",
         "@aphrody/bun-video-project": "workspace:*",
         "@aphrody/bun-workspace": "workspace:*",
+        "@aphrody/tauri": "catalog:",
       },
       "devDependencies": {
         "@aphrody/bun-types": "1.4.4",
@@ -20,12 +21,15 @@
       "dependencies": {
         "@aphrody/bun-video-project": "workspace:*",
         "@aphrody/bun-workspace": "workspace:*",
-        "@aphrody/tauri": "file:../../toolchains/bun/packages/bun-tauri",
+        "@aphrody/tauri": "catalog:",
       },
     },
     "packages/bun-app-host": {
       "name": "@aphrody/bun-app-host",
       "version": "1.4.4",
+      "bin": {
+        "aphrody-server": "./src/cli.ts",
+      },
       "dependencies": {
         "@aphrody/bun-artifacts": "workspace:*",
         "@aphrody/bun-video-project": "workspace:*",
@@ -81,6 +85,9 @@
       },
     },
   },
+  "catalog": {
+    "@aphrody/tauri": "file:toolchains/bun/packages/bun-tauri",
+  },
   "packages": {
     "@aphrody/bun-app-host": ["@aphrody/bun-app-host@workspace:packages/bun-app-host"],
 
@@ -95,6 +102,8 @@
     "@aphrody/bun-video-project": ["@aphrody/bun-video-project@workspace:packages/bun-video-project"],
 
     "@aphrody/bun-workspace": ["@aphrody/bun-workspace@workspace:packages/bun-workspace"],
+
+    "@aphrody/tauri": ["@aphrody/tauri@file:toolchains/bun/packages/bun-tauri", {}],
 
     "@bun-os/package-converter": ["@bun-os/package-converter@workspace:packages/package-converter"],
 

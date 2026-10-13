@@ -16,6 +16,7 @@ for (const entry of [{ path: "package.json", manifest: product }, ...entries]) {
   for (const field of ["dependencies", "devDependencies", "optionalDependencies"]) {
     for (const name of Object.keys(entry.manifest[field] ?? {})) {
       if (names.has(name)) entry.manifest[field][name] = "workspace:*";
+      else if (Object.hasOwn(product.catalog ?? {}, name)) entry.manifest[field][name] = "catalog:";
     }
   }
 }

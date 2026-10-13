@@ -1,9 +1,10 @@
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { loadConfig, assertRuntime, repositoryRoot } from "@aphrody/bun-workspace";
 import { capabilityFor, type Catalog } from "./shared.ts";
 import { nativeVideoCapabilities } from "@aphrody/bun-video-project/native";
 
 export const desktopRoot = import.meta.dir;
+export const desktopOutput = join(repositoryRoot, "build/apps/desktop");
 
 export async function buildDesktop() {
   const config = await loadConfig(repositoryRoot);
@@ -25,7 +26,7 @@ export async function buildDesktop() {
   };
   const web = await Bun.build({
     entrypoints: [join(desktopRoot, "src/app.ts")],
-    outdir: join(desktopRoot, "dist/web"),
+    outdir: join(desktopOutput, "web"),
     target: "browser",
     format: "esm",
     minify: true,
@@ -33,19 +34,19 @@ export async function buildDesktop() {
   });
   if (!web.success) throw new AggregateError(web.logs, "Bun frontend build failed");
   await Promise.all([
-    Bun.write(join(desktopRoot, "dist/web/index.html"), Bun.file(join(desktopRoot, "src/index.html"))),
-    Bun.write(join(desktopRoot, "dist/web/style.css"), Bun.file(join(desktopRoot, "src/style.css"))),
+    Bun.write(join(desktopOutput, "web/index.html"), Bun.file(join(desktopRoot, "src/index.html"))),
+    Bun.write(join(desktopOutput, "web/style.css"), Bun.file(join(desktopRoot, "src/style.css"))),
   ]);
   const server = await Bun.build({
     entrypoints: [join(desktopRoot, "server.ts")],
-    outdir: join(desktopRoot, "dist"),
+    outdir: desktopOutput,
     target: "bun",
     format: "esm",
     minify: true,
   });
   if (!server.success) throw new AggregateError(server.logs, "Bun backend build failed");
   console.log("Aphrody: " + catalog.libraries.length + " libraries bundled.");
-  return resolve(desktopRoot, "dist");
+  return desktopOutput;
 }
 
 if (import.meta.main) await buildDesktop();
