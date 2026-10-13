@@ -2,7 +2,7 @@
 import { suffix } from "bun:ffi";
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { NativeTooling } from "../../packages/engine/runtime/src/tooling.ts";
+import { NativeTooling } from "@aphrody/runtime-sdk/tooling";
 
 /** Qualify the host provider before embedding it; this never starts a compiler. */
 export async function toolingAsset(root: string, path = process.env.YOLO_TOOLING_LIB) {

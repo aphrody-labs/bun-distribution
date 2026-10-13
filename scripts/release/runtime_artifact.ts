@@ -7,7 +7,7 @@
  */
 import { mkdirSync } from "node:fs";
 import { basename, resolve } from "node:path";
-import { libraryFile, Runtime } from "../../packages/engine/runtime/src/index";
+import { libraryFile, Runtime } from "@aphrody/runtime-sdk";
 import { peExports, runtimeCapabilities } from "./runtime-artifact-info.ts";
 
 const root = resolve(import.meta.dir, "../..");

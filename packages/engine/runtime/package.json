@@ -24,6 +24,7 @@
     "./runtime.d.ts": "./runtime.d.ts",
     "./bundler": "./src/bundler.ts",
     "./artifact": "./src/artifact.ts",
+    "./release": "./src/release.ts",
     "./ffi": "./src/ffi.ts",
     "./tooling": "./src/tooling.ts",
     "./tooling-schema": "./src/tooling-schema.ts",

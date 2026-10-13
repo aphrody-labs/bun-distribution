@@ -29,7 +29,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
-import { hostTarget, verifyArtifact } from "../../packages/engine/runtime/src/artifact";
+import { hostTarget, verifyArtifact } from "@aphrody/runtime-sdk/artifact";
 import { COMPILE_FLAGS } from "./compile-flags";
 import { toolingAsset } from "./tooling-asset";
 

@@ -7,12 +7,8 @@
  *   bun run scripts/release/runtime_release.ts list | verify | rollback
  */
 import { join, resolve } from "node:path";
-import {
-  hostTarget,
-  runtimeHome,
-  verifyArtifact,
-} from "../../packages/engine/runtime/src/artifact";
-import { install, list, rollback } from "../../packages/engine/runtime/src/release";
+import { hostTarget, runtimeHome, verifyArtifact } from "@aphrody/runtime-sdk/artifact";
+import { install, list, rollback } from "@aphrody/runtime-sdk/release";
 
 export { install, list, rollback };
 
