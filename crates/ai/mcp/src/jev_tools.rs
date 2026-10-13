@@ -29,11 +29,19 @@ pub(crate) struct JevDecideRequest {
 }
 
 fn router() -> Result<&'static Arc<JevRouter>, String> {
-    static ROUTER: OnceLock<Result<Arc<JevRouter>, String>> = OnceLock::new();
-    ROUTER
-        .get_or_init(|| JevRouter::from_env().map(Arc::new).map_err(|error| error.to_string()))
-        .as_ref()
-        .map_err(Clone::clone)
+    static ROUTER: OnceLock<Arc<JevRouter>> = OnceLock::new();
+    configured_router(&ROUTER, JevRouter::from_env)
+}
+
+fn configured_router(
+    cache: &OnceLock<Arc<JevRouter>>,
+    build: impl FnOnce() -> Result<JevRouter, aphrody_jev::JevError>,
+) -> Result<&Arc<JevRouter>, String> {
+    if cache.get().is_none() {
+        let router = build().map_err(|error| error.to_string())?;
+        let _ = cache.set(Arc::new(router));
+    }
+    cache.get().ok_or_else(|| "Jev router initialization failed".into())
 }
 
 /// Run one decision and render the result (or error) as JSON text.
@@ -87,6 +95,25 @@ mod tests {
     use serde_json::json;
 
     use super::*;
+
+    #[test]
+    fn unavailable_configuration_can_recover_without_rebuilding_a_valid_router() {
+        let cache = OnceLock::new();
+        assert!(configured_router(&cache, || Err(aphrody_jev::JevError::NoBackend)).is_err());
+        assert!(cache.get().is_none());
+        let router = configured_router(&cache, || {
+            JevRouter::new(
+                None,
+                None,
+                Some(aphrody_jev::Endpoint::local("http://127.0.0.1:8790", None)?),
+                aphrody_jev::RoutingPolicy::default(),
+            )
+        })
+        .unwrap();
+        let cached =
+            configured_router(&cache, || panic!("a valid router must stay shared")).unwrap();
+        assert!(Arc::ptr_eq(router, cached));
+    }
 
     #[tokio::test]
     async fn untyped_question_is_rejected_before_routing() {
