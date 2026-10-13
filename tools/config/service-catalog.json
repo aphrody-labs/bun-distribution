@@ -846,6 +846,24 @@
       "public": false,
       "capabilities": ["ci-runner"],
       "note": "GiteaRunner5.0.0; one trusted Bun/Rust job, builtin checkout, no Node actions. Native Linux Bun fork revision differs from Windows."
+    },
+    {
+      "id": "aphrody-bun-os-server",
+      "application": "aphrody",
+      "kind": "native-application",
+      "runtime": "bun",
+      "unit": "aphrody-bun-os-server.service",
+      "host": "vps",
+      "port": 29030,
+      "health": "http://127.0.0.1:29030/healthz",
+      "sourceRepo": "bun-distribution",
+      "workingDirectory": "/home/ubuntu/src/bun-os/install/bin",
+      "releaseRoot": "/home/ubuntu/src/bun-os/install/bin",
+      "public": false,
+      "publicProxy": "nginx",
+      "staged": true,
+      "required": false,
+      "note": "Unified Bun OS read-only catalog API. Linux x86-64 binary compiled/executed at root1e5c6435;7 localHTTP checks pass, install SHA matches. Existing Infra lifecycle and source.aphrody.app ingress own activation. Protected bearer provisioned; candidate unit/nginx syntax pass. Automatic tool review rejected grouped unit/snippet installation and service activation before execution (blocked by policy). Staged/unrequired; no Nginx reload or deployment qualification. /api/product/v1/ preserves Gitea /api/v1/."
     }
   ],
   "policies": {

@@ -117,7 +117,8 @@
         "ssl_protocols TLSv1.2 TLSv1.3",
         "server_tokens off",
         "client_max_body_size 512m",
-        "include snippets/aphrody-security.inc"
+        "include snippets/aphrody-security.inc",
+        "include snippets/bun-os-product-api.inc"
       ],
       "locations": [
         {

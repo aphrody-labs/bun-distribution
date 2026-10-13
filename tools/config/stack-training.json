@@ -116,6 +116,13 @@
       "role": "Inazuma Eleven modding toolchain (.NET, native C/C++, Rust, Bun, Python); desktop and WSL only",
       "source": "https://github.com/aphrody-labs/iecode",
       "production": false
+    },
+    {
+      "id": "bun-distribution",
+      "role": "Unified Bun OS product assembly and standalone catalog server; Aphrody Infra retains service orchestration and deployment ownership.",
+      "source": "https://github.com/aphrody-labs/bun-distribution",
+      "production": false,
+      "note": "Canonical os branch, self-hosted by the existing Gitea mirror at source.aphrody.app. Native source/runtime and production activation require separate qualification."
     }
   ],
   "retiredRepositories": [],

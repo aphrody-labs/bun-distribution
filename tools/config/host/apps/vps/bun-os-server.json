@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "owner": "aphrody-infra",
+  "service": {
+    "unit": "tools/config/host/systemd/aphrody/aphrody-bun-os-server.service",
+    "executable": "/home/ubuntu/src/bun-os/install/bin/bun-os-server",
+    "environmentFile": "/home/ubuntu/.aphrody/secrets/bun-os/server.env",
+    "health": "http://127.0.0.1:29030/healthz"
+  },
+  "status": "staged",
+  "source": {
+    "repository": "aphrody-labs/bun-distribution",
+    "branch": "os",
+    "mirror": "http://127.0.0.1:29020/aphrody-dev/bun-distribution.git",
+    "checkout": "/home/ubuntu/src/bun-os",
+    "recursiveSubmodules": false,
+    "bootstrapBackend": "https://github.com/aphrody-labs/bun-distribution.git",
+    "observedRevision": "1e5c6435ffdb13d1aff8db1eb432033df00fd3af",
+    "currentBackend": "http://127.0.0.1:29020/aphrody-dev/bun-distribution.git",
+    "mirrorAlignedRevision": "1e5c6435ffdb13d1aff8db1eb432033df00fd3af"
+  },
+  "build": {
+    "runtime": "/home/ubuntu/.bun/bin/bun-1.4.4",
+    "runtimeRevision": "dfde053a3045d6076ad315b6f63160c4ced71513",
+    "command": ["/home/ubuntu/.bun/bin/bun-1.4.4", "packages/bun-app-host/src/build.ts", "build"],
+    "timeoutSeconds": 30,
+    "output": "/home/ubuntu/src/bun-os/build/apps/bun-os-server",
+    "cargo": false,
+    "qualificationReceipt": "/home/ubuntu/src/bun-os/build/apps/bun-os-server.json",
+    "sha256": "9daadd110d9c4792ebf6e1bb3fb03d13902a336ed8ab5b920d3a2091c20b6649",
+    "install": {
+      "frozenLockfile": true,
+      "ignoreScripts": true,
+      "filters": [
+        "@aphrody/bun-app-host",
+        "@aphrody/bun-artifacts",
+        "@aphrody/bun-workspace",
+        "@aphrody/bun-os-workspace"
+      ]
+    }
+  },
+  "ingress": {
+    "owner": "existing-source-forge-vhost",
+    "origin": "https://source.aphrody.app",
+    "prefix": "/api/product/v1/",
+    "upstreamPrefix": "/api/v1/",
+    "snippet": "tools/config/host/nginx/snippets/bun-os-product-api.inc",
+    "authentication": "bearer from protected Infra secret store",
+    "existingForgePrefix": "/api/v1/"
+  },
+  "qualification": {
+    "linuxCompiled": true,
+    "linuxExecuted": true,
+    "tokenInjected": false,
+    "serviceActivated": false,
+    "publicRouteActivated": false,
+    "http": {
+      "passed": 7,
+      "total": 7
+    },
+    "tokenProvisioned": true,
+    "secretContract": "SECURE: 1/1",
+    "unitSyntax": true,
+    "nginxCandidateSyntax": true
+  },
+  "serviceId": "aphrody-bun-os-server",
+  "activation": {
+    "status": "policy-rejected",
+    "tool": "exec_command",
+    "reason": "blocked by policy",
+    "action": "Grouped systemd unit/snippet installation, manager reload and Aphrody Infra service start. Rejected before execution; no service activation or Nginx reload occurred."
+  }
+}
