@@ -12,9 +12,9 @@
 - [x] Consolidate Windows, GNOME, COSMIC and Chromium theme generators under
       the shared `aphrody-m3-os-themes` package owner; use one Rust theme export
       adapter from the M3 token workspace.
-- [ ] Finish source-consumer lock migration to the published Material revision.
+- [x] Migrate the Aphrody Rust consumers to the pinned Material revision; locked metadata and scoped native Windows consumer checks pass.
 - [ ] Complete themed component coverage and cross-platform desktop qualification.
-- [ ] Retire the old source paths after publishing and migrating consumer pins.
+- [ ] Remove the remaining Aphrody source directory. Its crate is excluded from the Aphrody Cargo workspace and all checked consumers use this owner, but the duplicate directory remains physically present.
 - [ ] Route web dynamic-color APIs through the qualified native binding.
 
 ## Consolidation gates
@@ -26,8 +26,10 @@ renderer-free and WASM checks passed before default Rustfmt normalization;
 the final normalized source checks are recorded in the consolidation receipt.
 No tests or GUI display qualification were run.
 
-Consumer migration remains open. An attempted Aphrody root migration timed
-out while acquiring unrelated web submodules; its unqualified manifest changes
-were reverted. Original consumer sources remain until a new root lock graph
-and native consumer build qualify their retirement. The token crate was
-packaged locally; no crates.io publication was performed.
+On 2026-10-13, the Aphrody root dependency and lock graph were pinned to this
+Material revision. Native Windows `cargo metadata --locked` and `cargo check
+--locked` passed for `aphrody-app`, `aphrody-bun`, `aphrody-identity`,
+`aphrody-m3`, `aphrody-m3-reproduce` and `aphrody-svg`. Tests were not run.
+The old Aphrody directory is excluded from workspace membership, but remains
+on disk because its requested recursive removal was rejected by the host tool
+policy. No crates.io publication was performed.

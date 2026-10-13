@@ -48,5 +48,8 @@ not an additional token algorithm and retain their own source identities.
 
 This transfer does not establish a native GUI, WASM, cross-platform or complete
 Material application qualification. Existing tests were moved without adding
-or running tests. The old source owners are removed and consumers migrated
-only after the integrator qualifies this workspace and publishes its revision.
+or running tests. On 2026-10-13, Aphrody pinned this Material revision and its
+selected Rust consumers passed locked native Windows Cargo checks. The duplicate
+crate source remains on disk in Aphrody, excluded from Cargo workspace membership;
+its recursive removal was rejected by the host tool policy. This receipt does
+not claim the duplicate files have been deleted. Tests were not run.

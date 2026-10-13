@@ -1,5 +1,14 @@
 # Material integration evidence
 
+13 October 2026: Aphrody's native consumers now resolve `aphrody-m3-tokens`
+from this Material revision. On native Windows, locked Cargo metadata and a
+locked scoped check passed for Aphrody app, Bun UI, identity, M3 components,
+M3 reproduction and SVG packages. Aphrody excludes its duplicate token crate
+from its Cargo workspace and redirects its font consumers to this checkout.
+The duplicate source directory remains physically present because the host
+tool policy rejected its recursive removal. Tests were not run; source deletion
+is still open.
+
 13 October 2026: the reduced private OS-theme copy in `aphrody-m3` was replaced
 by its shared `aphrody-m3-os-themes` owner at `27b36bd`; framework commit
 `393d397` now resolves the same Windows, GNOME, COSMIC and Chromium sources as

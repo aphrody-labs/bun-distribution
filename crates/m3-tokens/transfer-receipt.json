@@ -1003,9 +1003,26 @@
   ],
   "qualification": {
     "copiedInputsVerified": true,
-    "compile": false,
+    "compile": true,
     "tests": false,
     "oldOwnersRemoved": false
+  },
+  "consumerQualification": {
+    "repository": "aphrody-labs/aphrody",
+    "baseRevision": "8f5eb538caaf1d886a17456e41241b5b59a3e585",
+    "metadataLocked": true,
+    "cargoCheckLocked": true,
+    "packages": [
+      "aphrody-app",
+      "aphrody-bun",
+      "aphrody-identity",
+      "aphrody-m3",
+      "aphrody-m3-reproduce",
+      "aphrody-svg"
+    ],
+    "tests": false,
+    "duplicateSourceExcludedFromWorkspace": true,
+    "duplicateSourceDirectoryRemoved": false
   },
   "fonts": [
     {
@@ -1037,10 +1054,7 @@
     "native": {
       "code": {
         "sha256": "74642762fae66d5883077794a763e1086394b8cb72f2623e456e06359dc5c64b",
-        "axes": [
-          "MONO",
-          "wght"
-        ]
+        "axes": ["MONO", "wght"]
       },
       "flex": {
         "sha256": "0b67daf86ec4af890308d540f853082f6f77d98029cecbbd0134c6aafa0de39c"
@@ -1050,9 +1064,7 @@
       "owner": "packages/m3-fonts/fonts.lock.json",
       "code": {
         "sha256": "c9649573afcd966f61096b1e9c3c3115e7b54315ca2adf9839c6f8b17d5f8e1f",
-        "axes": [
-          "wght"
-        ]
+        "axes": ["wght"]
       },
       "flex": {
         "sha256": "c31a482fbecbf2e07e6890134d20078723aadf732c9b9c6c9a44f86f8265b6fe"
