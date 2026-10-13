@@ -56,6 +56,8 @@
     "video:build": "bun packages/workspace/src/cli.ts build filmcraft",
     "apps:plan": "bun scripts/build-apps.ts plan",
     "apps:build": "bun scripts/build-apps.ts build",
+    "packages:plan": "bun scripts/build-packages.ts plan",
+    "packages:build": "bun scripts/build-packages.ts build",
     "workspace:manifests": "bun scripts/workspace-manifests.ts"
   },
   "dependencies": {

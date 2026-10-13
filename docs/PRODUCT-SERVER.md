@@ -21,6 +21,9 @@ Infra injects `APHRODY_APP_TOKEN` from its protected store; it must have at
 least 32 characters. `HOST` defaults to loopback and `PORT` to 3000.
 The CLI does not accept a secret argument. The compiled executable embeds the
 sanitized catalog and runs without Git, Cargo or the source checkout.
+The catalog records committed flat `crates/` and `packages/` submodules with
+their exact Git pins and declared repositories. Package entries use
+`package:<directory>` IDs; this inventory does not certify package builds.
 
 For the staged HTTPS reverse proxy, Infra sets the non-secret
 `APHRODY_APP_ORIGIN=https://source.aphrody.app`. Only an explicit HTTPS origin

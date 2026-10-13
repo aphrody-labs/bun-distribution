@@ -23,6 +23,13 @@ apps-plan:
 apps-build:
     bun run apps:build
 
+# Select imported packages explicitly; all outputs belong to build/packages.
+packages-plan selection:
+    bun run packages:plan --package "{{selection}}"
+
+packages-build selection:
+    bun run packages:build --package "{{selection}}"
+
 # Run the product through its canonical app-host owner.
 server-serve:
     bun packages/bun-app-host/src/cli.ts serve

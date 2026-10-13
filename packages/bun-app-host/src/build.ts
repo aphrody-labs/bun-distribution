@@ -63,24 +63,30 @@ export async function productCatalog(root: string): Promise<ProductCatalog> {
       throw new Error("Incomplete or duplicate committed submodule owner.");
     paths.set(owner.path, owner.url);
   }
-  const crateSources: ProductCatalog["sources"] = [];
-  const tree = await command(["git", "ls-tree", "-r", "-z", sourceRevision, "--", "crates/"], root);
+  const workspaceSources: ProductCatalog["sources"] = [];
+  const tree = await command(["git", "ls-tree", "-r", "-z", sourceRevision, "--", "crates/", "packages/"], root);
   for (const entry of tree.split("\0").filter(Boolean)) {
     const match = /^(\d{6}) (\w+) ([a-f0-9]{40})\t(.+)$/.exec(entry);
-    if (!match) throw new Error("Invalid committed crate tree entry.");
+    if (!match) throw new Error("Invalid committed workspace tree entry.");
     if (match[1] !== "160000") continue;
-    if (match[2] !== "commit") throw new Error("Committed crate gitlink has an invalid object type.");
+    if (match[2] !== "commit") throw new Error("Committed workspace gitlink has an invalid object type.");
     const path = match[4]!;
-    const packageName = /^crates\/([a-zA-Z0-9][a-zA-Z0-9_.-]*)$/.exec(path)?.[1];
+    const ownerPath = /^(crates|packages)\/([a-zA-Z0-9][a-zA-Z0-9_.-]*)$/.exec(path);
     const repository = paths.get(path);
-    if (!packageName || !repository || !/^((https?|ssh):\/\/|([a-zA-Z0-9_.-]+@)?[a-zA-Z0-9_.-]+:)/.test(repository))
-      throw new Error("Committed crate gitlink lacks its declared source owner.");
+    if (!ownerPath || !repository || !/^((https?|ssh):\/\/|([a-zA-Z0-9_.-]+@)?[a-zA-Z0-9_.-]+:)/.test(repository))
+      throw new Error("Committed workspace gitlink lacks its declared source owner.");
     if (repository.includes("://")) {
       const url = new URL(repository);
       if (url.password || (url.username && url.username !== "git"))
-        throw new Error("Committed crate repository contains credentials.");
+        throw new Error("Committed workspace repository contains credentials.");
     }
-    crateSources.push({ id: "crate:" + packageName, path, repository, revision: match[3]!, license: null });
+    workspaceSources.push({
+      id: (ownerPath[1] === "crates" ? "crate:" : "package:") + ownerPath[2],
+      path,
+      repository,
+      revision: match[3]!,
+      license: null,
+    });
   }
   const config = await loadConfig(root);
   const metadata = await Bun.file(join(root, "package.json")).json();
@@ -114,7 +120,7 @@ export async function productCatalog(root: string): Promise<ProductCatalog> {
         revision: source.revision,
         license: null,
       })),
-      ...crateSources,
+      ...workspaceSources,
     ],
     apps: inventory.apps.map(app => ({
       id: app.id,

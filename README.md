@@ -55,6 +55,17 @@ shared nightly, workspace and access contract.
 
 The root owns one Bun `node_modules`, the nightly toolchain, Cargo intermediate
 outputs in `build/rust`, and shared `target` and `install` locations.
+Imported JavaScript packages are selected explicitly through the root build
+owner:
+
+```sh
+just packages-plan paths,ovh,kernel-client
+just packages-build paths,ovh,kernel-client
+```
+
+The plan reports absent or unmigrated workspace members. Successful builds
+write JavaScript and hash receipts under `build/packages/<package>`; those
+receipts do not qualify execution, installation, or deployment.
 The runtime's existing build and vendored dependency
 trees have not yet been migrated into root-owned locations. Rust source
 repositories still declare independent Cargo workspaces; the root Cargo
