@@ -44,12 +44,15 @@ package owns native extraction and artifact manifests.
 
 ## Authentication and persistence
 
-Gitea installation is locked, signup is disabled, repositories default to
-private and anonymous repository viewing requires sign-in. The canonical web,
-API and SSH URL is `source.aphrody.app`; `git.aphrody.app` remains a compatible
-HTTPS alias to the same Gitea instance and repository data. Create the first
-admin through the native CLI on the private origin with a random password
-captured directly into the protected secret store.
+Gitea installation is locked and signup is disabled. Anonymous visitors can
+browse and clone public upstream mirrors; private repositories remain
+inaccessible anonymously, including through repository API and archive/clone
+endpoints. New repositories default to private. The canonical web, API and SSH
+URL is `source.aphrody.app`; `git.aphrody.app` remains a compatible HTTPS alias
+to the same Gitea instance and repository data. Administrative API operations
+remain authenticated. Create the first admin through the native CLI on the
+private origin with a random password captured directly into the protected
+secret store.
 
 Komodo creates the configured admin from a mounted password file. Local and
 OIDC registration are disabled. MongoDB is private; JWT, webhook and database
