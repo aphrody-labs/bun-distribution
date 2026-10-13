@@ -342,6 +342,13 @@
       "vhost": "nginx/aphrody/control.aphrody.app.conf"
     },
     {
+      "host": "source.aphrody.app",
+      "service": "aphrody-forge",
+      "upstream": "127.0.0.1:29020",
+      "probePath": "/user/login",
+      "vhost": "nginx/aphrody/control.aphrody.app.conf"
+    },
+    {
       "host": "deploy.aphrody.app",
       "service": "aphrody-deploy",
       "upstream": "127.0.0.1:29021",

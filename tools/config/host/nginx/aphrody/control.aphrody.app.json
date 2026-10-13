@@ -32,6 +32,7 @@
         "gridcraft.aphrody.app",
         "figcraft.aphrody.app",
         "git.aphrody.app",
+        "source.aphrody.app",
         "deploy.aphrody.app"
       ],
       "listen_ports": ["80", "[::]:80"],
@@ -107,7 +108,7 @@
       ]
     },
     {
-      "server_names": ["git.aphrody.app"],
+      "server_names": ["git.aphrody.app", "source.aphrody.app"],
       "listen_ports": ["443 ssl", "[::]:443 ssl"],
       "ssl_certificate": "/etc/letsencrypt/live/aphrody-control/fullchain.pem",
       "ssl_certificate_key": "/etc/letsencrypt/live/aphrody-control/privkey.pem",

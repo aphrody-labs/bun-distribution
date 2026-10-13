@@ -14,9 +14,9 @@ services:
       USER_GID: "1000"
       GITEA__DEFAULT__APP_NAME: Aphrody / Bun
       GITEA__database__DB_TYPE: sqlite3
-      GITEA__server__DOMAIN: git.aphrody.app
-      GITEA__server__ROOT_URL: https://git.aphrody.app/
-      GITEA__server__SSH_DOMAIN: git.aphrody.app
+      GITEA__server__DOMAIN: source.aphrody.app
+      GITEA__server__ROOT_URL: https://source.aphrody.app/
+      GITEA__server__SSH_DOMAIN: source.aphrody.app
       GITEA__server__SSH_PORT: "29022"
       GITEA__security__INSTALL_LOCK: "true"
       GITEA__service__DISABLE_REGISTRATION: "true"
