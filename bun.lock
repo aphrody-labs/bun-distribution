@@ -348,6 +348,7 @@
       "devDependencies": {
         "@aphrody/m3": "workspace:*",
         "@aphrody/paths": "workspace:*",
+        "@types/bun": "catalog:",
         "@types/react": "catalog:",
         "react": "catalog:",
       },
