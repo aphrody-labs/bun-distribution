@@ -5,6 +5,7 @@
   "license": "Apache-2.0",
   "files": [
     "dist",
+    "src",
     "README.md",
     "LICENSE.txt"
   ],
@@ -16,6 +17,7 @@
     },
     "./rest": {
       "types": "./dist/rest.d.mts",
+      "bun": "./src/rest.ts",
       "import": "./dist/rest.mjs"
     },
     "./apps": {
@@ -28,6 +30,7 @@
     },
     "./lab": {
       "types": "./dist/lab/ai-lab.d.mts",
+      "bun": "./src/lab/ai-lab.ts",
       "import": "./dist/lab/ai-lab.mjs"
     },
     "./assistant": {

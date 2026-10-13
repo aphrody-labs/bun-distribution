@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { loadCredentials, makeApi } from "../../../packages/discord/kit/src/lab/ai-lab.ts";
-import { DiscordRESTError } from "../../../packages/discord/kit/src/rest.ts";
+import { loadCredentials, makeApi } from "@aphrody/discord-kit/lab";
+import { DiscordRESTError } from "@aphrody/discord-kit/rest";
 
 interface DiscordUser {
   id: string;

@@ -272,6 +272,7 @@
   },
   "devDependencies": {
     "@aphrody/app-ui": "workspace:*",
+    "@aphrody/discord-kit": "workspace:*",
     "@aphrody/google": "workspace:*",
     "@aphrody/m3": "workspace:*",
     "@aphrody/m3-config": "workspace:*",
