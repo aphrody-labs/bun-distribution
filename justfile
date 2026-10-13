@@ -45,3 +45,13 @@ vendor-prepare:
 
 vendor-verify:
     bun scripts/vendor-cargo.ts verify
+
+# Inspect sources without compiling, then build through the same native owner.
+cargo-build-plan:
+    bun scripts/cargo-build-proof.ts plan
+
+cargo-build-status:
+    bun scripts/cargo-build-proof.ts status
+
+cargo-build:
+    bun scripts/cargo-build-proof.ts build

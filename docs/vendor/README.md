@@ -3,7 +3,8 @@
 `scripts/vendor-cargo.ts` owns the root Cargo source snapshot. It uses the
 existing native admission wrapper, root nightly and shared process deadlines.
 It does not create another workspace, modify root manifests/lockfiles, compile
-Rust, activate source replacement, or clean external caches.
+Rust, activate source replacement, or clean external caches. The separate
+`cargo-build-proof.ts` entry point uses the same native owner to qualify builds.
 
 ## Prepare and qualify
 
@@ -36,9 +37,36 @@ gate both pass. This is a snippet for root configuration, not a portable standal
 configuration. Verification uses a generated absolute test configuration under
 `build/vendor`; the active source table remains untouched.
 
-`cargo-inventory.json` is written only after qualification. Its `compiled`
-and `activeSourceReplacement` flags remain false. Actual source sizes and package
-counts belong to that receipt; cached archive size is preflight evidence only.
+`cargo-inventory.json` is written only after source verification. Its `compiled`
+flag comes from a revalidated build receipt; its `activeSourceReplacement` flag
+comes from the actual root configuration. Neither flag is inferred from a
+source plan or an old successful check. Actual source sizes and package counts
+belong to that inventory; cached archive size is preflight evidence only.
+
+## Native build proof
+
+```sh
+just cargo-build-plan
+just cargo-build-status
+just cargo-build
+```
+
+Plan reads and hashes sources within 30 seconds. Status reports `missing`,
+`invalid` or `valid` build evidence. Build captures inputs before and after,
+runs Cargo directly under the native mutex with a 300-second deadline, and
+requires exit 0, Cargo's successful `build-finished` message and hashed artifacts
+for every root member. It builds offline with the lockfile and all features.
+Capture phases each have a separate 30-second deadline. Run this command as a
+bounded background build on an admitted host; partial Cargo outputs stay in
+the shared cache and do not produce a successful receipt.
+
+The local `build/vendor/cargo-build-receipt.json` binds member source trees and
+revisions, manifests, lockfile, vendor bytes, source configuration, execution
+scripts, Bun/Cargo/rustc binaries and hashed build flags. Subsequent input or
+artifact changes invalidate it. Parent commits that change only unrelated
+documentation do not invalidate the source key; Git ancestry is still checked.
+No credential values are recorded. A successful check is separate from this
+full build proof. The current build evidence remains missing.
 
 ## Scope and upstream integrity
 
@@ -59,6 +87,8 @@ The 2026-10-13 snapshot contains 24 root members and 540 remote packages
 with all root features resolves exactly the 564 lockfile package identities.
 Cargo nightly-2026-09-15 is recorded in the generated inventory. Source content
 is 671331989 bytes across 28483 checksum-listed files. Manifest, notice and
-declared license files are independently checked; full compilation remains
-pending. The active source configuration, root toolchain, source lock and Git
+declared license files are independently checked. Locked offline Cargo check
+passes for all 24 members; a full successful build remains pending (see
+[native qualification](../NATIVE-QUALIFICATION.md)). The active source
+configuration, root toolchain, source lock and Git
 module ledger hashes are recorded and unchanged by this lot.
