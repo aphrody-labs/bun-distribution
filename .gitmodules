@@ -157,3 +157,19 @@
 	path = crates/aphrody-http-error
 	url = bun-forge:aphrody-dev/bun-crate-aphrody-http-error.git
 	branch = os
+[submodule "crates/aphrody-guard"]
+	path = crates/aphrody-guard
+	url = bun-forge:aphrody-dev/bun-crate-aphrody-guard.git
+	branch = os
+[submodule "crates/aphrody-subsystem"]
+	path = crates/aphrody-subsystem
+	url = bun-forge:aphrody-dev/bun-crate-aphrody-subsystem.git
+	branch = os
+[submodule "crates/aphrody-proc"]
+	path = crates/aphrody-proc
+	url = bun-forge:aphrody-dev/bun-crate-aphrody-proc.git
+	branch = os
+[submodule "crates/aphrody-config"]
+	path = crates/aphrody-config
+	url = bun-forge:aphrody-dev/bun-crate-aphrody-config.git
+	branch = os

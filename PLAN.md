@@ -87,12 +87,12 @@
 
 ## Product/server and offline sources — 2026-10-13
 
-- [x] Root Cargo owns twenty flat pinned crate submodules, shared direct
+- [x] Root Cargo owns twenty-four flat pinned crate submodules, shared direct
       dependencies, one nightly and one target/build/install configuration.
-      The seventeen most recent crates have metadata/format gates; their native
+      The twenty-one most recent crates have metadata/format gates; their native
       compilation remains pending while the release owner holds build slots.
-- [x] Commit the root Cargo vendor snapshot: 539 dependency source packages,
-      559 full-graph identities including twenty product crates. Locked offline
+- [x] Commit the root Cargo vendor snapshot: 540 dependency source packages,
+      564 full-graph identities including twenty-four product crates. Locked offline
       metadata passes. Preserve exact source bytes and license notices.
 - [ ] Qualify an offline native build before enabling vendor replacement in
       the active Cargo configuration. Runtime/vendor migrations remain open.

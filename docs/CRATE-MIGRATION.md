@@ -151,3 +151,31 @@ The integrated 20-member root passes locked offline metadata with all features
 formatting, TypeScript checking of 111 files, lint and formatting. Child forge
 refs match the formatted local heads; Apache notices and fixture trees remain
 unchanged. Native compilation, Clippy and tests for this batch remain pending.
+
+## Aphrody runtime primitives
+
+The next four packages were split from the immutable Aphrody source pin
+`3187d795e84ff88da67f53f12be1add715ad73b2`; each extracted tree matches its
+source prefix. Child manifests inherit the product version, edition and Rust
+version from this workspace, retain the source Apache-2.0 license, and keep
+the source-effective local lint policy.
+
+| Crate | Source prefix | Split commit | Dependencies |
+|---|---|---|---|
+| `aphrody-guard` | `crates/os/ostd/guard` | `d074a4b411efdd3e05de20f59373e7a8bf5a481a` | libc, pretty_assertions (dev) |
+| `aphrody-subsystem` | `crates/os/ostd/subsystem` | `01db6a17875a3aa58ec4d8b3a2d44ae645a71074` | async-trait, serde, serde_json, thiserror, tokio |
+| `aphrody-proc` | `crates/os/ostd/proc` | `edcb752128ef1bbcca7b0829417bc4a79f94ba2a` | serde, serde_json, thiserror, tracing, tokio (optional), rustix (Unix), windows (Windows), pretty_assertions/tempfile (dev) |
+| `aphrody-config` | `crates/ai/config` | `fda495b079928c1d8249011eb76708cb9c9e5b88` | serde, serde_json, thiserror, toml, pretty_assertions/tempfile (dev) |
+
+`aphrody-config` embeds a synthetic contract fixture containing only the 19
+public canonical environment-variable names. It does not copy runtime values
+or the source checkout's external local configuration file. Root formatting
+and locked offline metadata with all features pass for 24 members and 564
+package identities. Native compile, Clippy and test gates remain pending.
+
+The updated font pilot also inherits the root MSRV; fonts tests inherit
+`craft-fonts` and exact `skrifa =0.48.0` from the workspace, preserving
+skrifa defaults and the resolved source version. All direct dependencies of
+the 24 members use workspace inheritance. Imported Apache license bytes
+match Git blob `d9a10c0d8e868ebf8da0b3dc95bb0be634c34bfe` and SHA-256
+`a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9`.

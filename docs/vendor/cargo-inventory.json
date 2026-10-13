@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "observedAt": "2026-10-13T21:52:23.894Z",
-  "lockSHA256": "79d75aaff120907ff28309e922c0a3aee974aa4bc6d2f3193c32977aa95bd1d1",
-  "manifestSHA256": "10d1d7a6a593bd3c0fa24e8c6354054049559f9d69ca8c35525fd04a711b5238",
+  "observedAt": "2026-10-13T22:23:44.108Z",
+  "lockSHA256": "85bbe01a673f19c365ccad433f63bb120a479886ac8484429d1b2ea9c604e5b2",
+  "manifestSHA256": "cf689021bdf92dc75e2062b3108f44cd94bd3303f5c6c701b2991e165ae3ed5d",
   "toolchainChannel": "nightly-2026-09-15",
   "toolchainSHA256": "e93446be76d3d27ebbd0b7682d615d0de0a350059e6e33e18bd1330340954a1a",
   "cargoVersion": "cargo 1.100.0-nightly (7941be6fb 2026-09-11)",
   "sourceLockSHA256": "ea3adf94c50a9552555c7cc41dda016882de203a1dd70ffda1c68da305912632",
-  "gitmodulesSHA256": "9fc48d04330e9441df1ba6ded125f498616923b8031f2e25462ed35c4c2332d9",
+  "gitmodulesSHA256": "6c85db2f36a5ba51d1444dff7b1e7c56621e037cad17ced612eafc145d01d255",
   "activeConfigSHA256": "42e04ea9049614191a47680a9a678243a9f398537736f941c89854ae23285832",
-  "memberCount": 20,
-  "packageCount": 539,
-  "sourceBytes": 671263538,
-  "sourceFiles": 28472,
+  "memberCount": 24,
+  "packageCount": 540,
+  "sourceBytes": 671331989,
+  "sourceFiles": 28483,
   "packages": [
     {
       "name": "accesskit",
@@ -6456,6 +6456,26 @@
         }
       ],
       "manifestSHA256": "b6ead6cf404555ced33f7574c6c11413e29e7bcd5eb0ceeb59452830a46675ed"
+    },
+    {
+      "name": "signal-hook-registry",
+      "version": "1.4.8",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "license": "MIT OR Apache-2.0",
+      "licenseFile": null,
+      "directory": "signal-hook-registry-1.4.8",
+      "archiveSHA256": "c4db69cba1110affc0e9f7bcd48bbf87b3f4fc7c61fc9155afd4c469eb3d6c1b",
+      "notices": [
+        {
+          "path": "LICENSE-APACHE",
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "sha256": "503558bfefe66ca15e4e3f7955b3cb0ec87fd52f29bf24b336af7bd00e946d5c"
+        }
+      ],
+      "manifestSHA256": "54bcf376404635b6cfc7e20474cc84a756ef5c8b54e2954d3186e44b68854fac"
     },
     {
       "name": "signature",

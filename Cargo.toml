@@ -21,6 +21,10 @@ members = [
     "crates/aphrody-toolcall-repair",
     "crates/aphrody-translate-core",
     "crates/aphrody-http-error",
+    "crates/aphrody-guard",
+    "crates/aphrody-subsystem",
+    "crates/aphrody-proc",
+    "crates/aphrody-config",
 ]
 
 [workspace.package]
@@ -35,16 +39,18 @@ keywords = ["aphrody", "bun", "runtime", "protocol", "workspace"]
 categories = ["development-tools", "api-bindings", "web-programming"]
 
 [workspace.dependencies]
-craft-atomic = { path = "crates/craft-atomic" }
-craft-settings = { path = "crates/craft-settings" }
-craft-cms = { path = "crates/craft-cms" }
-craft-print = { path = "crates/craft-print" }
-craft-quit = { path = "crates/craft-quit" }
-craft-ui = { path = "crates/craft-ui" }
-deckcraft-matroska = { path = "crates/deckcraft-matroska" }
-pdfcraft-compare = { path = "crates/pdfcraft-compare" }
-cadcraft-color = { path = "crates/cadcraft-color" }
-gridcraft-pdf = { path = "crates/gridcraft-pdf" }
+craft-fonts = { path = "crates/craft-fonts", version = "=1.4.4" }
+craft-fonts-tests = { path = "crates/craft-fonts-tests", version = "=1.4.4" }
+craft-atomic = { path = "crates/craft-atomic", version = "=1.4.4" }
+craft-settings = { path = "crates/craft-settings", version = "=1.4.4" }
+craft-cms = { path = "crates/craft-cms", version = "=1.4.4" }
+craft-print = { path = "crates/craft-print", version = "=1.4.4" }
+craft-quit = { path = "crates/craft-quit", version = "=1.4.4" }
+craft-ui = { path = "crates/craft-ui", version = "=1.4.4" }
+deckcraft-matroska = { path = "crates/deckcraft-matroska", version = "=1.4.4" }
+pdfcraft-compare = { path = "crates/pdfcraft-compare", version = "=1.4.4" }
+cadcraft-color = { path = "crates/cadcraft-color", version = "=1.4.4" }
+gridcraft-pdf = { path = "crates/gridcraft-pdf", version = "=1.4.4" }
 aphrody-a2a = { path = "crates/aphrody-a2a", version = "=1.4.4" }
 aphrody-agent-proto = { path = "crates/aphrody-agent-proto", version = "=1.4.4" }
 aphrody-app-protocol = { path = "crates/aphrody-app-protocol", version = "=1.4.4" }
@@ -53,6 +59,10 @@ aphrody-patch = { path = "crates/aphrody-patch", version = "=1.4.4" }
 aphrody-toolcall-repair = { path = "crates/aphrody-toolcall-repair", version = "=1.4.4" }
 aphrody-translate-core = { path = "crates/aphrody-translate-core", version = "=1.4.4" }
 aphrody-http-error = { path = "crates/aphrody-http-error", version = "=1.4.4" }
+aphrody-guard = { path = "crates/aphrody-guard", version = "=1.4.4" }
+aphrody-subsystem = { path = "crates/aphrody-subsystem", version = "=1.4.4" }
+aphrody-proc = { path = "crates/aphrody-proc", version = "=1.4.4" }
+aphrody-config = { path = "crates/aphrody-config", version = "=1.4.4" }
 anyhow = { version = "=1.0.104", default-features = false }
 async-trait = { version = "=0.1.92", default-features = false }
 axum = { version = "=0.8.9", default-features = false }
@@ -82,15 +92,18 @@ rustls = { version = "=0.23.45", default-features = false }
 rustix = { version = "=1.1.5", default-features = false }
 serde = { version = "=1.0.229", default-features = false, features = ["derive", "std"] }
 serde_json = { version = "=1.0.154", default-features = false, features = ["std"] }
+skrifa = { version = "=0.48.0", default-features = false }
 sha2 = { version = "=0.11.1", default-features = false }
 similar = { version = "=3.2.0", default-features = false }
 tempfile = { version = "=3.27.0", default-features = false, features = ["getrandom"] }
 thiserror = { version = "=2.0.21", default-features = false }
+toml = { version = "=1.1.8+spec-1.1.0", default-features = false }
 toml_edit = { version = "=0.25.17", default-features = false, features = ["display", "parse"] }
 tokio = { version = "=1.53.2", default-features = false }
 tracing = { version = "=0.1.44", default-features = false }
 url = { version = "=2.5.8", default-features = false }
 uuid = { version = "=1.28.0", default-features = false }
+windows = { version = "=0.62.2", default-features = false }
 winsafe = { version = "=0.0.29", default-features = false }
 winprint = { git = "https://github.com/storytold/winprint.rs", rev = "5f80b9baf6b58937c401656634e42d33f00ddf49", default-features = false }
 muda = { version = "=0.21.2", default-features = false }
