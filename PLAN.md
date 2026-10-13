@@ -26,8 +26,10 @@
 - [x] Delegate content-object hashing, conditional R2 writes, and remote checksum verification to Bun Libraries `@aphrody/bun-workspace/assets`; retain Bun OS scoped inventory, plan schema, and configured public asset domain.
 - [ ] Qualify native Windows app execution from the delegated builder before
       retiring its unused native-app launcher and descriptor helpers.
-- [ ] Align application catalog and deployment with native Aphrody Infra;
-      retire the unapplied duplicate forge/control-plane recipe.
+- [x] Keep `infra/apps.json` scoped to distribution build and asset inputs,
+      source library hostnames from Bun Libraries, and use Aphrody Infra's host,
+      route and app-activation owners. Remove the unapplied duplicate
+      Forgejo/FerretDB profile; preserve its dated pins in the session report.
 - [ ] Complete Material consumer migration through qualified published packages.
 - [ ] Commit and push each qualified ownership batch with precise paths.
 

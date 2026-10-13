@@ -292,7 +292,7 @@ forge/runner registration, native job image and live workflows are unqualified.
 The factory daemon and existing production/global Docker contexts are not the
 deployment owner. No private control/backend listener was exposed.
 
-Evidence: [control-plane profile](../infra/control-plane.json),
+Evidence: [control-plane profile at the reporting revision](https://github.com/aphrody-labs/bun-distribution/blob/d99d98d445d17a35d7066d8921b591d28cc1c4ad/infra/control-plane.json),
 [deployment contract](DEPLOYMENT-CONTROL.md).
 
 The [Rust systems catalog](RUST-SYSTEMS.md) verifies canonical package names,

@@ -192,3 +192,8 @@ aphrody-dev <contact@aphrody.com>. Concurrent submodule work remained unstaged.
 - Bun Libraries `@aphrody/bun-workspace/assets` now exposes `publishContentObject`: a 256 MiB bounded content hash, content-addressed key validation, conditional `If-None-Match` PUT, immutable cache headers, and streamed remote checksum verification. The font planner retains its 128 MiB limit.
 - Bun OS `infra/assets.ts` delegates upload and verification while preserving its scoped app inventory, plan receipt, `objects/sha256/` key and configured public asset origin. Native check, lint and format passed in Bun OS and Bun Libraries root. No tests or live R2 operations were run.
 - Bun Libraries commits `b21ee14`, `bf91d0b`, `5f43bb9`, `774e4c9` are on `main`; consumer commit `87d101c` is on Bun OS `os`.
+
+## Deployment ownership, 2026-10-13
+
+- Bun OS `infra/apps.json` is the distribution build/asset inventory. Bun Libraries owns the 14 library capability IDs and hostname mapping; Aphrody Infra owns host services, `git`/`deploy` routes, Compose and native app activation.
+- Removed Bun OS's prepared-not-deployed Forgejo/FerretDB profile and Compose duplicate after confirming they had no code consumers. The dated session report retains the profile summary; exact pins remain in the pre-removal Git revision. No host, service or DNS state changed.
