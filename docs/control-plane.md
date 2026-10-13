@@ -27,9 +27,14 @@ owned. No local Windows build or WSL is part of this deployment.
 | slides | 29011 | app-slides.aphrody.app |
 | tables | 29012 | app-tables.aphrody.app |
 | interface-layouts | 29013 | app-interface-layouts.aphrody.app |
-| Git forge | 29020 | git.aphrody.app |
+| Git forge | 29020 | source.aphrody.app (canonical); git.aphrody.app (legacy alias) |
 | Deployment | 29021 | deploy.aphrody.app |
 | Git SSH | 29022 | Private tunnel only |
+
+`source.aphrody.app` must be present in the active TLS certificate before its
+HTTPS route is deployed. The currently observed `aphrody-control` certificate
+covers the existing 14 `app-*` names, `git.aphrody.app` and
+`deploy.aphrody.app`; it does not cover `source.aphrody.app` or a wildcard.
 
 This table describes canonical reservations. Application slots stay staged,
 without a container or systemd unit, until a verified native artifact qualifies.
@@ -40,7 +45,9 @@ package owns native extraction and artifact manifests.
 ## Authentication and persistence
 
 Gitea installation is locked, signup is disabled, repositories default to
-private and anonymous repository viewing requires sign-in. Create the first
+private and anonymous repository viewing requires sign-in. The canonical web,
+API and SSH URL is `source.aphrody.app`; `git.aphrody.app` remains a compatible
+HTTPS alias to the same Gitea instance and repository data. Create the first
 admin through the native CLI on the private origin with a random password
 captured directly into the protected secret store.
 
