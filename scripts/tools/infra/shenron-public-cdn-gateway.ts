@@ -9,7 +9,7 @@ export function publicCdnFallback(name: string, upstream: string): string {
     throw Error("Qualified loopback upstream required");
   return `location ${name} {
   if ($request_method !~ "^(GET|HEAD)$") { return 405; }
-  if ($uri !~* "^/(?:assets/|wiki/.+\\.(?:avif|gif|jpe?g|png|svg|webp)$)") { return 404; }
+  if ($uri !~* "^/(?:assets/|(?:wiki|dbz|adn|media)/.+\\.(?:avif|gif|jpe?g|png|svg|webp)$)") { return 404; }
   if ($uri ~* "(?:^|/)(?:api|_objects|_migration|private|manifests|cookies|node_modules)(?:/|$)") { return 404; }
   if ($uri ~* "\\.(?:sql|sqlite|db|env|jsonl|pem|key|toml|ya?ml|ini|log|bak)$") { return 404; }
   proxy_pass ${upstream};
