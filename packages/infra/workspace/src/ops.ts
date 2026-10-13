@@ -233,9 +233,6 @@ export async function runOps(argv: readonly string[]): Promise<number> {
   if (operation === "spaceui-icons") {
     return await (await import("./spaceui-icons.ts")).runSpaceUiIcons(rest);
   }
-  if (operation === "ui-dedup-manifest") {
-    return await (await import("./ui-dedup-manifest.ts")).runUiDedupManifest(rest);
-  }
   if (operation === "bun-native") {
     return await (await import("./bun-native.ts")).runBunNative(rest);
   }

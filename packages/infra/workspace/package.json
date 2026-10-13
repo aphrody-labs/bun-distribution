@@ -20,7 +20,6 @@
     "./drive-daemon": "./src/drive-daemon.ts",
     "./tauri": "./src/tauri.ts",
     "./bun-native": "./src/bun-native.ts",
-    "./ui-dedup-manifest": "./src/ui-dedup-manifest.ts",
     "./spaceui-icons": "./src/spaceui-icons.ts",
     "./desktop-smoke": "./src/desktop-smoke.ts",
     "./spaceui-to-m3": "./src/spaceui-to-m3.ts",

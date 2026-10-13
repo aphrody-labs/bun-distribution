@@ -1756,8 +1756,8 @@
     {
       "path": "docs/apis/generated/workspace-typescript.md",
       "title": "Source reference: workspace-typescript",
-      "sha256": "1d4da4080da8e323376626da077de9c4dcab96048849197347126f438019351e",
-      "bytes": 7476,
+      "sha256": "398a504c21fdbf796e32fda7575e3dde2cd5a17d5d81090fad972b179b5a346a",
+      "bytes": 7376,
       "domain": "generated",
       "status": "generated",
       "visibility": "private",

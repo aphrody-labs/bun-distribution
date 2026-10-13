@@ -28,7 +28,7 @@ export function createInfraClient(baseUrl = "http://127.0.0.1:8787"): InfraApiCl
 
 ## Source: packages/infra/workspace/src/index.ts
 
-SHA-256: `1feab2a7af5ee739ab20dbc4c6ed1e0c1cbc27f824db530bde670bccb35c1832`
+SHA-256: `40d63fee07eccd668130908c1a91765d290488a85e041bec7b4d6dfc1dd07e1c`
 
 ### Source line 1
 
@@ -165,256 +165,250 @@ export { runBunNative } from "./bun-native.ts";
 ### Source line 25
 
 ```typescript
-export { runUiDedupManifest } from "./ui-dedup-manifest.ts";
+export { runSpaceUiIcons } from "./spaceui-icons.ts";
 ```
 
 ### Source line 26
 
 ```typescript
-export { runSpaceUiIcons } from "./spaceui-icons.ts";
+export { runDesktopSmoke } from "./desktop-smoke.ts";
 ```
 
 ### Source line 27
 
 ```typescript
-export { runDesktopSmoke } from "./desktop-smoke.ts";
+export { runSpaceUiToM3 } from "./spaceui-to-m3.ts";
 ```
 
 ### Source line 28
 
 ```typescript
-export { runSpaceUiToM3 } from "./spaceui-to-m3.ts";
+export { runDocsLinks } from "./docs-links.ts";
 ```
 
 ### Source line 29
 
 ```typescript
-export { runDocsLinks } from "./docs-links.ts";
+export { runVendorLicenseAudit } from "./vendor-license-audit.ts";
 ```
 
 ### Source line 30
 
 ```typescript
-export { runVendorLicenseAudit } from "./vendor-license-audit.ts";
+export { runWorkspaceDeps } from "./workspace-deps.ts";
 ```
 
 ### Source line 31
 
 ```typescript
-export { runWorkspaceDeps } from "./workspace-deps.ts";
+export { runBunUpstreamDocs } from "./bun-upstream-docs.ts";
 ```
 
 ### Source line 32
 
 ```typescript
-export { runBunUpstreamDocs } from "./bun-upstream-docs.ts";
+export { runEcosystemDeps, syncManifest, syncXaiPackage } from "./ecosystem-deps.ts";
 ```
 
 ### Source line 33
 
 ```typescript
-export { runEcosystemDeps, syncManifest, syncXaiPackage } from "./ecosystem-deps.ts";
+export { runWorkspaceLayout } from "./workspace-layout.ts";
 ```
 
 ### Source line 34
 
 ```typescript
-export { runWorkspaceLayout } from "./workspace-layout.ts";
+export { runCargoBoundaries } from "./cargo-boundaries.ts";
 ```
 
 ### Source line 35
 
 ```typescript
-export { runCargoBoundaries } from "./cargo-boundaries.ts";
+export { runAutomationInventory } from "./automation-inventory.ts";
 ```
 
 ### Source line 36
 
 ```typescript
-export { runAutomationInventory } from "./automation-inventory.ts";
+export { runRuntimeGate } from "./runtime-gate.ts";
 ```
 
 ### Source line 37
 
 ```typescript
-export { runRuntimeGate } from "./runtime-gate.ts";
+export { runIecodeDoctor } from "./iecode-doctor.ts";
 ```
 
 ### Source line 38
 
 ```typescript
-export { runIecodeDoctor } from "./iecode-doctor.ts";
+export { runPowerShellSyntax } from "./powershell-syntax.ts";
 ```
 
 ### Source line 39
 
 ```typescript
-export { runPowerShellSyntax } from "./powershell-syntax.ts";
+export { runWorkspaceClean } from "./workspace-clean.ts";
 ```
 
 ### Source line 40
 
 ```typescript
-export { runWorkspaceClean } from "./workspace-clean.ts";
+export { scanRepository, runRepositoryState } from "./repository-state.ts";
 ```
 
 ### Source line 41
 
 ```typescript
-export { scanRepository, runRepositoryState } from "./repository-state.ts";
+export { runAiReleaseGate } from "./ai-release-gate.ts";
 ```
 
 ### Source line 42
 
 ```typescript
-export { runAiReleaseGate } from "./ai-release-gate.ts";
+export { runAgentHome } from "./agent-home.ts";
 ```
 
 ### Source line 43
 
 ```typescript
-export { runAgentHome } from "./agent-home.ts";
+export { runAgentPluginSync } from "./agent-plugin-sync.ts";
 ```
 
 ### Source line 44
 
 ```typescript
-export { runAgentPluginSync } from "./agent-plugin-sync.ts";
+export { runPythonQuality } from "./python-quality.ts";
 ```
 
 ### Source line 45
 
 ```typescript
-export { runPythonQuality } from "./python-quality.ts";
+export { runDocsOverlaps } from "./docs-overlaps.ts";
 ```
 
 ### Source line 46
 
 ```typescript
-export { runDocsOverlaps } from "./docs-overlaps.ts";
+export { runDocsConsolidation } from "./docs-consolidation.ts";
 ```
 
 ### Source line 47
 
 ```typescript
-export { runDocsConsolidation } from "./docs-consolidation.ts";
+export { runGitignoredAudit } from "./gitignored-audit.ts";
 ```
 
 ### Source line 48
 
 ```typescript
-export { runGitignoredAudit } from "./gitignored-audit.ts";
+export { runRuntimeVersions } from "./runtime-versions.ts";
 ```
 
 ### Source line 49
 
 ```typescript
-export { runRuntimeVersions } from "./runtime-versions.ts";
+export { runMonorepoGate } from "./monorepo-gate.ts";
 ```
 
 ### Source line 50
 
 ```typescript
-export { runMonorepoGate } from "./monorepo-gate.ts";
-```
-
-### Source line 51
-
-```typescript
 export { runInfraAudit, sourceInventory, observeCommand } from "./infra-audit.ts";
 ```
 
-### Source line 53
+### Source line 52
 
 ```typescript
 export { runWindowsPaths, scanWindowsPaths } from "./windows-paths.ts";
 ```
 
-### Source line 54
+### Source line 53
 
 ```typescript
 export type { WindowsPathFinding } from "./windows-paths.ts";
 ```
 
-### Source line 55
+### Source line 54
 
 ```typescript
 export { runGitAttribution, stripAttributionTrailers } from "./git-attribution.ts";
 ```
 
-### Source line 56
+### Source line 55
 
 ```typescript
 export { runCleanPublicAi, auditPublicSurfaces, scanFileForAiLeaks } from "./clean-public-ai.ts";
 ```
 
-### Source line 57
+### Source line 56
 
 ```typescript
 export { runRepositoryHealth } from "./repository-health.ts";
 ```
 
-### Source line 58
+### Source line 57
 
 ```typescript
 export { runWorkspaceRepair } from "./workspace-repair.ts";
 ```
 
-### Source line 59
+### Source line 58
 
 ```typescript
 export { runCargoPackageRepair } from "./cargo-package-repair.ts";
 ```
 
-### Source line 60
+### Source line 59
 
 ```typescript
 export { runCargoReleaseAudit, auditCargoRelease, classifyRequirements, } from "./cargo-release-audit.ts";
 ```
 
-### Source line 65
+### Source line 64
 
 ```typescript
 export { runShenron } from "./shenron.ts";
 ```
 
-### Source line 66
+### Source line 65
 
 ```typescript
 export { getDiscordBotsStatus, runDiscord } from "./discord.ts";
 ```
 
-### Source line 67
+### Source line 66
 
 ```typescript
 export type { DiscordBotStatus } from "./discord.ts";
 ```
 
-### Source line 69
+### Source line 68
 
 ```typescript
 export { pipelineCatalog, runPipelineCatalog } from "./pipeline-catalog.ts";
 ```
 
-### Source line 70
+### Source line 69
 
 ```typescript
 export { collectAgentLive, runAgentLive } from "./agent-live.ts";
 ```
 
-### Source line 71
+### Source line 70
 
 ```typescript
 export { runStackDedup } from "./stack-dedup.ts";
 ```
 
-### Source line 73
+### Source line 72
 
 ```typescript
 export { runDocumentation, buildDocumentationManifest, renderDocumentationAgentIndex, } from "./documentation.ts";
 ```
 
-### Source line 79
+### Source line 78
 
 ```typescript
 export * from "@aphrody/paths";

@@ -22,7 +22,6 @@ export { runTauriApps } from "@aphrody/update/src/tauri/apps.ts";
 export { runTauriSync } from "@aphrody/update/src/tauri/sync.ts";
 export { runUpstreamSources } from "@aphrody/update/src/sources/restore.ts";
 export { runBunNative } from "./bun-native.ts";
-export { runUiDedupManifest } from "./ui-dedup-manifest.ts";
 export { runSpaceUiIcons } from "./spaceui-icons.ts";
 export { runDesktopSmoke } from "./desktop-smoke.ts";
 export { runSpaceUiToM3 } from "./spaceui-to-m3.ts";
