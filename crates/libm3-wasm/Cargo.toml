@@ -1,0 +1,13 @@
+[package]
+name = "libm3-wasm"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Bounded scalar WASM API for portable Bun OS Material contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+libm3 = { path = "../libm3", default-features = false, features = ["std"] }

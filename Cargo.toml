@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+[workspace]
+members = ["crates/m3-tokens", "crates/libm3", "crates/libm3-wasm"]
+resolver = "3"
+
+[workspace.package]
+version = "1.4.4"
+edition = "2024"
+rust-version = "1.97"
+license = "Apache-2.0"
+repository = "https://github.com/aphrody-labs/material"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = "warn"
+
+[profile.release]
+panic = "abort"
+lto = "thin"
+codegen-units = 1

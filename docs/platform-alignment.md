@@ -72,10 +72,9 @@ CSS.
 The site requires JavaScript for some pages; package and Android documentation
 are used for the machine-readable implementation contract.
 
-The native design mirror is maintained separately from this repository. A
-remote VPS checkout was inspected over `vps-wg`; its documented Rust contract
-was used as a reference, but its generated mirror artifacts are not copied
-into this repository.
+The native design engine is maintained in `crates/m3-tokens`. `libm3` and its
+WASM binding consume it directly. Web adapters preserve its named JSON role
+contract; numeric WASM role indices use the native owner's order.
 
 Context7 verification of the upstream documentation was performed against
 `/material-components/material-web` and

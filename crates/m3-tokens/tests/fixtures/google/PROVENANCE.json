@@ -1,0 +1,373 @@
+{
+  "schemaVersion": 1,
+  "fetched": "2026-10-09",
+  "license": "Apache-2.0 (upstream notices kept in each file and LICENSE copies)",
+  "origins": {
+    "material-web": {
+      "repository": "https://github.com/material-components/material-web",
+      "tag": "v2.5.0",
+      "commit": "b4de401eb665ec63474f39319a4ba8f2145974cc",
+      "directory": "tokens/versions/latest/sass",
+      "designSystem": "Google Material 3 34.0.21 (audience 3p, platform web, font static)"
+    },
+    "compose-material3": {
+      "repository": "https://github.com/androidx/androidx (mirror of android.googlesource.com/platform/frameworks/support)",
+      "branch": "androidx-main",
+      "commit": "a0c645de83b353f2aa79c3b33a11e8ba853ca1e4",
+      "commitDate": "2026-10-09T08:44:23Z",
+      "directory": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens"
+    }
+  },
+  "files": [
+    {
+      "path": "material-web/_md-sys-shape.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-sys-shape.scss",
+      "sha256": "9082f60d9522a004f3b868328e15f990d5f3b2173fa459fcfeba19266c25063d",
+      "bytes": 2185
+    },
+    {
+      "path": "material-web/_md-sys-motion.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-sys-motion.scss",
+      "sha256": "a8b17ba962a014fa7fc22030154be8b4c84d00ef96c484c040ab29bc65e8377d",
+      "bytes": 4535
+    },
+    {
+      "path": "material-web/_md-sys-state.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-sys-state.scss",
+      "sha256": "a06bd6e2db9052a15c5209f9dfa2b9e0ec471ce244836f20c47105237df9c9c0",
+      "bytes": 848
+    },
+    {
+      "path": "material-web/_md-sys-elevation.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-sys-elevation.scss",
+      "sha256": "74e27e52c0cb429bc508295f1e6f46d6f69711d6505d9abe6ffed349b0c44380",
+      "bytes": 849
+    },
+    {
+      "path": "material-web/_md-sys-typescale.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-sys-typescale.scss",
+      "sha256": "7cfeae8b9eb51af63f4e423aa92f47dafeeaf0ade87f585ebee0ba366ea0dc14",
+      "bytes": 27253
+    },
+    {
+      "path": "material-web/_md-sys-typescale-emphasized.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-sys-typescale-emphasized.scss",
+      "sha256": "4b7a3372d0434942b26082cb9a1dc772c81ee1bae2a9a9e3ec99ac8585703a2b",
+      "bytes": 34069
+    },
+    {
+      "path": "material-web/_md-ref-typeface.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-ref-typeface.scss",
+      "sha256": "fd88b5fd2c558ad311eb5d8479870863a57d012dc33716d39520a576f4c9bc70",
+      "bytes": 741
+    },
+    {
+      "path": "material-web/_md-sys-state-focus-indicator.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-sys-state-focus-indicator.scss",
+      "sha256": "e3322bf6f1a984e5bfbb6997a29b7f8e9e623f4949e62c3569a218cef26c83e3",
+      "bytes": 644
+    },
+    {
+      "path": "material-web/_md-comp-checkbox.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-checkbox.scss",
+      "sha256": "cd243437f5ca117a58f954467a8325f0c798810311dbffa60e3690e3f89d8e5b",
+      "bytes": 12905
+    },
+    {
+      "path": "material-web/_md-comp-switch.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-switch.scss",
+      "sha256": "f1563978122d7c31bf0a9b7e9c3a1ec296622777abcba9675803f7eeb6d5efbb",
+      "bytes": 11238
+    },
+    {
+      "path": "material-web/_md-comp-radio-button.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-radio-button.scss",
+      "sha256": "1d235ee909826f8478b4fa0d344e4d3a5050c94c8edcc810a11d7a4386ca8a41",
+      "bytes": 4038
+    },
+    {
+      "path": "material-web/_md-comp-assist-chip.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-assist-chip.scss",
+      "sha256": "181fdf021774d5e243e747d86b4bc10ffb95ba039be453c2992a2265dac10bc0",
+      "bytes": 7485
+    },
+    {
+      "path": "material-web/_md-comp-filter-chip.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-filter-chip.scss",
+      "sha256": "71b93b91910deaf786b6df1229b594aa2f9bf10cac200d4f65ee80d990fc9177",
+      "bytes": 19804
+    },
+    {
+      "path": "material-web/_md-comp-input-chip.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-input-chip.scss",
+      "sha256": "cb8e6790861906da196f05497e5a3748d6432cfc128bfee03f8830cac3ebdf65",
+      "bytes": 25266
+    },
+    {
+      "path": "material-web/_md-comp-suggestion-chip.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-suggestion-chip.scss",
+      "sha256": "3e78b50399eccf69b8d641a686fd80cbe6745920f6315986b536a3f8081a5161",
+      "bytes": 8025
+    },
+    {
+      "path": "material-web/_md-comp-elevated-card.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-elevated-card.scss",
+      "sha256": "1ba0c4b55e333927b80f170f4fdd2bff6be76cc97412d13cd5c98ff806da4c85",
+      "bytes": 4032
+    },
+    {
+      "path": "material-web/_md-comp-filled-card.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-filled-card.scss",
+      "sha256": "1db98d1690f83b2f62ae880d7bdfeea72cff34208d060a37b84e115bd7aa625d",
+      "bytes": 3913
+    },
+    {
+      "path": "material-web/_md-comp-outlined-card.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-outlined-card.scss",
+      "sha256": "d1f174b0160acb70abf1febadc8a5e4a82dc4d086ef9371cc52547bfbce0cb0e",
+      "bytes": 4680
+    },
+    {
+      "path": "material-web/_md-comp-icon-button-standard.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-icon-button-standard.scss",
+      "sha256": "a1edf7b218756f1c4d63e94e1096da2ed88687047451f35a291a6ed1d36dd907",
+      "bytes": 3868
+    },
+    {
+      "path": "material-web/_md-comp-icon-button-filled.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-icon-button-filled.scss",
+      "sha256": "6fc693ef4a356de6a815e1f8340fb547c012fccd08da72bb018387ebe1c3a7a1",
+      "bytes": 4348
+    },
+    {
+      "path": "material-web/_md-comp-icon-button-tonal.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-icon-button-tonal.scss",
+      "sha256": "64bdf6cc443df9415d863833ec62316672ba15ca94975c418452265915e9f385",
+      "bytes": 4459
+    },
+    {
+      "path": "material-web/_md-comp-icon-button-outlined.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-icon-button-outlined.scss",
+      "sha256": "07b573e6d68e49fc0a8bb1c4839ff6302240634291d58b4d3c1ded5446ccd6c0",
+      "bytes": 4832
+    },
+    {
+      "path": "material-web/_md-comp-icon-button-small.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-icon-button-small.scss",
+      "sha256": "c7af621ddc38d2014eae0f57ff2c48de03b800e965438db2b515dc2d6607eb54",
+      "bytes": 2116
+    },
+    {
+      "path": "material-web/_md-comp-fab.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-fab.scss",
+      "sha256": "5690e851fc3227b73ebb369b589d96f43ae007bae585c4363af1ef691d4a6a5c",
+      "bytes": 709
+    },
+    {
+      "path": "material-web/_md-comp-fab-small.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-fab-small.scss",
+      "sha256": "834deaa9d3f01e5a024f12b83319e17d9fd8f6c2aeda653aedb1cfe10da96182",
+      "bytes": 734
+    },
+    {
+      "path": "material-web/_md-comp-fab-large.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-fab-large.scss",
+      "sha256": "8807aa204c9ce20e134725d9a8c74b1deba1dc213d019457a9d2c37cc799a091",
+      "bytes": 739
+    },
+    {
+      "path": "material-web/_md-comp-fab-primary-container.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-fab-primary-container.scss",
+      "sha256": "8a557fdb23a97bb710b5edbd6403b2825defcc6d1ee80b003b1d9dfe6012fb6e",
+      "bytes": 2537
+    },
+    {
+      "path": "material-web/_md-comp-slider.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-slider.scss",
+      "sha256": "acadd62a3e6726e72a6922533cf71d03ae18ee2460737608e804fb5098f76fd2",
+      "bytes": 15013
+    },
+    {
+      "path": "material-web/_md-comp-primary-navigation-tab.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-primary-navigation-tab.scss",
+      "sha256": "8e8f196a1182a8ae062787b37eef1c40861e1c411605dce8d31e6178cfe91d65",
+      "bytes": 8356
+    },
+    {
+      "path": "material-web/_md-comp-nav-bar.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-nav-bar.scss",
+      "sha256": "08d2ea65685790df01ca18d4c150fb041687da2d6a2f4ce5bf854344d80962ad",
+      "bytes": 3462
+    },
+    {
+      "path": "material-web/_md-comp-nav-bar-item-vertical.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-nav-bar-item-vertical.scss",
+      "sha256": "274d0b32dec84ae49b9130fac72b81390cb89afef89eadab4efeb56331d59251",
+      "bytes": 972
+    },
+    {
+      "path": "material-web/_md-comp-dialog.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-dialog.scss",
+      "sha256": "10f482b989c1770023e4a685ebef68cceea4126d31eada204a3161f764e430d6",
+      "bytes": 8216
+    },
+    {
+      "path": "material-web/_md-comp-menu.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-menu.scss",
+      "sha256": "a8b3359efbc76aaf0f93d1688157dbb48f443d15c30885824052bc2083ec7b6c",
+      "bytes": 13346
+    },
+    {
+      "path": "material-web/_md-comp-button-small.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-button-small.scss",
+      "sha256": "42852eff4503d9515650fca211ba856c108a5c8c07f1094585e2c3aa5c83c2e6",
+      "bytes": 1902
+    },
+    {
+      "path": "material-web/_md-comp-button-filled.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-button-filled.scss",
+      "sha256": "a07bdbae9b49cc91e6599ab2a0bcd0a455f9d4235ee37f81a2fc1c8864faca72",
+      "bytes": 6695
+    },
+    {
+      "path": "material-web/_md-comp-button-group-standard-small.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-button-group-standard-small.scss",
+      "sha256": "7ced4f6770a2675a34d9d43a095144f85c855237a29d5e387a1c4527172bece5",
+      "bytes": 1115
+    },
+    {
+      "path": "material-web/_md-comp-button-group-connected-small.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-button-group-connected-small.scss",
+      "sha256": "ed7b1b34f3a6a26b057009e6a12cba35183cca49bfe836a33ee88ba754823e02",
+      "bytes": 1126
+    },
+    {
+      "path": "material-web/_md-comp-split-button-small.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-split-button-small.scss",
+      "sha256": "2ec828cd4e8b0835fc375c61c0ab6521909f77439603765a5374d42207bff9d9",
+      "bytes": 1720
+    },
+    {
+      "path": "material-web/_md-comp-loading-indicator.scss",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/tokens/versions/latest/sass/_md-comp-loading-indicator.scss",
+      "sha256": "d282795984857d4040831da1ee5a05eab73bf70ac90e387fc3c7f4d41e00a3e0",
+      "bytes": 1449
+    },
+    {
+      "path": "material-web/LICENSE",
+      "origin": "material-web",
+      "url": "https://raw.githubusercontent.com/material-components/material-web/b4de401eb665ec63474f39319a4ba8f2145974cc/LICENSE",
+      "sha256": "295cdb4364b782931c914f5ca8c47fac87c732fa7e448b788a47aa5b25728212",
+      "bytes": 11348
+    },
+    {
+      "path": "compose-material3/ShapeTokens.kt",
+      "origin": "compose-material3",
+      "url": "https://raw.githubusercontent.com/androidx/androidx/a0c645de83b353f2aa79c3b33a11e8ba853ca1e4/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ShapeTokens.kt",
+      "sha256": "02178111f81c7f03135cc7157040fa903180e212fd52b8f686b4304080efb5a3",
+      "bytes": 2944
+    },
+    {
+      "path": "compose-material3/TypeScaleTokens.kt",
+      "origin": "compose-material3",
+      "url": "https://raw.githubusercontent.com/androidx/androidx/a0c645de83b353f2aa79c3b33a11e8ba853ca1e4/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/TypeScaleTokens.kt",
+      "sha256": "7ca6378374d78da8a1091d2ee4a4c228f70d0daef65dfd51c18b58f7d9679ba4",
+      "bytes": 16942
+    },
+    {
+      "path": "compose-material3/TypefaceTokens.kt",
+      "origin": "compose-material3",
+      "url": "https://raw.githubusercontent.com/androidx/androidx/a0c645de83b353f2aa79c3b33a11e8ba853ca1e4/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/TypefaceTokens.kt",
+      "sha256": "a1411a760a5d2a1f47c6b698f7e051779566c83b723c13ed698dfae06ef7d36e",
+      "bytes": 1216
+    },
+    {
+      "path": "compose-material3/MotionTokens.kt",
+      "origin": "compose-material3",
+      "url": "https://raw.githubusercontent.com/androidx/androidx/a0c645de83b353f2aa79c3b33a11e8ba853ca1e4/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/MotionTokens.kt",
+      "sha256": "58bf152e5f81d8bcb80f1475a2e3c54535873245f41d005ab5c797cdd5dc6ebc",
+      "bytes": 2669
+    },
+    {
+      "path": "compose-material3/ExpressiveMotionTokens.kt",
+      "origin": "compose-material3",
+      "url": "https://raw.githubusercontent.com/androidx/androidx/a0c645de83b353f2aa79c3b33a11e8ba853ca1e4/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ExpressiveMotionTokens.kt",
+      "sha256": "deefcefc93405c69445071b40e4d9894458bb20cff18b805192c90aea5ba6c73",
+      "bytes": 1355
+    },
+    {
+      "path": "compose-material3/StandardMotionTokens.kt",
+      "origin": "compose-material3",
+      "url": "https://raw.githubusercontent.com/androidx/androidx/a0c645de83b353f2aa79c3b33a11e8ba853ca1e4/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StandardMotionTokens.kt",
+      "sha256": "4b36c30679dcc0b1ec6010e4e40c070901151b59252d9a21d0e4348511370592",
+      "bytes": 1352
+    },
+    {
+      "path": "compose-material3/StateTokens.kt",
+      "origin": "compose-material3",
+      "url": "https://raw.githubusercontent.com/androidx/androidx/a0c645de83b353f2aa79c3b33a11e8ba853ca1e4/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt",
+      "sha256": "f9bddb282a3ca50e0c05bda6b5aa713441f885e3fe16866bfb44cee42059552f",
+      "bytes": 935
+    },
+    {
+      "path": "compose-material3/ElevationTokens.kt",
+      "origin": "compose-material3",
+      "url": "https://raw.githubusercontent.com/androidx/androidx/a0c645de83b353f2aa79c3b33a11e8ba853ca1e4/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ElevationTokens.kt",
+      "sha256": "b0613cc2c1e30fb62da126f82f5870f7231e3cf4117f36132e466e1827de0a3c",
+      "bytes": 1243
+    },
+    {
+      "path": "compose-material3/LoadingIndicatorTokens.kt",
+      "origin": "compose-material3",
+      "url": "https://raw.githubusercontent.com/androidx/androidx/a0c645de83b353f2aa79c3b33a11e8ba853ca1e4/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/LoadingIndicatorTokens.kt",
+      "sha256": "58624ed41af880124a8c27055a56cc0c3694594bf1b12ea8c2fb1234db24b0cf",
+      "bytes": 1438
+    },
+    {
+      "path": "compose-material3/LICENSE.txt",
+      "origin": "compose-material3",
+      "url": "https://raw.githubusercontent.com/androidx/androidx/a0c645de83b353f2aa79c3b33a11e8ba853ca1e4/LICENSE.txt",
+      "sha256": "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0",
+      "bytes": 10175
+    }
+  ]
+}
