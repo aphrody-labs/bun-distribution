@@ -51,6 +51,26 @@
       "private": true
     },
     {
+      "name": "bun-crate-deckcraft-matroska",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-pdfcraft-compare",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-cadcraft-color",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-gridcraft-pdf",
+      "mirror": false,
+      "private": true
+    },
+    {
       "name": "bun-distribution",
       "mirror": true,
       "upstream": "https://github.com/aphrody-labs/bun-distribution.git",

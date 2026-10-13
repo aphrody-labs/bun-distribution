@@ -245,8 +245,12 @@ struct MirrorCatalog {
     target_owner: String,
     source_catalog_count: usize,
     api_url: String,
+    public_base_url: String,
     credential_file: String,
     credential_variable: String,
+    source_credential_file: String,
+    source_credential_user: String,
+    repository_root: String,
     bun_executable: String,
     mirror_interval: String,
     visibility_policy: String,
@@ -275,10 +279,12 @@ struct MirrorEntry {
 #[serde(rename_all = "camelCase")]
 struct SourceQualification {
     #[serde(rename = "sha")]
-    head: String,
+    head: Option<String>,
     refs: Vec<String>,
     #[serde(default, rename = "refShas")]
     ref_shas: std::collections::BTreeMap<String, String>,
+    #[serde(default, rename = "lfsApplicable")]
+    lfs_applicable: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -303,8 +309,12 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
         || catalog.source_catalog_count != 239
         || catalog.repositories.len() != catalog.source_catalog_count
         || catalog.api_url != "http://127.0.0.1:29020/api/v1"
+        || catalog.public_base_url != "https://source.aphrody.app"
         || catalog.credential_file != "/home/ubuntu/.aphrody/config/gitea.env"
         || catalog.credential_variable != "GITEA_TOKEN_LABS"
+        || catalog.source_credential_file != "/home/ubuntu/.config/gh/hosts.yml"
+        || catalog.source_credential_user != "aphrody-code"
+        || catalog.repository_root != "/data/git/repositories"
         || catalog.bun_executable != "/home/ubuntu/.bun/bin/bun-1.4.4"
         || catalog.mirror_interval != "8h"
         || catalog.visibility_policy != "match-source"
@@ -330,8 +340,7 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
         if !matches!(target_owner, "aphrody-labs" | "aphrody-dev")
             || (target_owner == "aphrody-dev" && entry.name != "bun-distribution")
             || (entry.name == "bun-distribution" && target_owner != "aphrody-dev")
-            || entry.visibility != "public"
-            || entry.archived
+            || !matches!(entry.visibility.as_str(), "public" | "private")
             || entry.admission != batch
             || entry.source_url != format!("https://github.com/aphrody-labs/{}.git", entry.name)
             || !valid_repo(&entry.name)
@@ -351,16 +360,20 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
                 || reference.ends_with('/')
         });
         let incomplete_ref_shas = if qualification.ref_shas.is_empty() {
-            qualification.refs != [default_ref.clone()]
+            !qualification.refs.is_empty() && qualification.refs != [default_ref.clone()]
         } else {
             qualification.ref_shas.len() != qualification.refs.len()
                 || qualification.refs.iter().any(|reference| {
                     qualification.ref_shas.get(reference).is_none_or(|sha| !valid_sha(sha))
                 })
-                || qualification.ref_shas.get(&default_ref) != Some(&qualification.head)
+                || qualification.ref_shas.get(&default_ref) != qualification.head.as_ref()
         };
-        if !valid_sha(&qualification.head)
-            || !qualification.refs.contains(&default_ref)
+        let empty_source = qualification.refs.is_empty()
+            && qualification.ref_shas.is_empty()
+            && qualification.head.is_none();
+        if (!empty_source
+            && (!qualification.head.as_deref().is_some_and(valid_sha)
+                || !qualification.refs.contains(&default_ref)))
             || unique_refs.len() != qualification.refs.len()
             || invalid_ref
             || incomplete_ref_shas
@@ -374,7 +387,7 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
         batch: batch.to_owned(),
         owner: catalog.target_owner.clone(),
         repositories: entries.iter().map(|entry| entry.name.clone()).collect(),
-        visibility: "public",
+        visibility: "match-source",
         capacity_free_kib: None,
     };
     if !apply {
@@ -384,8 +397,12 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
     let payload = serde_json::json!({
         "owner": catalog.target_owner,
         "apiUrl": catalog.api_url,
+        "publicBaseUrl": catalog.public_base_url,
         "tokenFile": catalog.credential_file,
         "tokenVariable": catalog.credential_variable,
+        "sourceCredentialFile": catalog.source_credential_file,
+        "sourceCredentialUser": catalog.source_credential_user,
+        "repositoryRoot": catalog.repository_root,
         "bunExecutable": catalog.bun_executable,
         "mirrorInterval": catalog.mirror_interval,
         "actions": catalog.actions_enabled,
@@ -393,10 +410,13 @@ pub fn mirrors(root: &Path, apply: bool, batch: &str) -> Result<MirrorReport> {
             "name": entry.name,
             "targetOwner": entry.target_owner.as_deref().unwrap_or(&catalog.target_owner),
             "sourceUrl": entry.source_url,
+            "visibility": entry.visibility,
+            "archived": entry.archived,
             "defaultBranch": entry.default_branch,
-            "head": entry.source_qualification.as_ref().map(|q| q.head.as_str()),
+            "head": entry.source_qualification.as_ref().and_then(|q| q.head.as_deref()),
             "refs": entry.source_qualification.as_ref().map(|q| &q.refs),
             "refShas": entry.source_qualification.as_ref().map(|q| &q.ref_shas),
+            "lfsApplicable": entry.source_qualification.as_ref().map(|q| q.lfs_applicable),
         })).collect::<Vec<_>>(),
     });
     let encoded = base64::Engine::encode(
@@ -450,16 +470,26 @@ if(ownerToken){{
  }}
 }}
 async function req(method,path,payload,missing=false){{
- let r;try{{r=await fetch(d.apiUrl+path,{{method,headers:{{Authorization:'token '+token,'Content-Type':'application/json'}},body:payload===undefined?undefined:JSON.stringify(payload),signal:AbortSignal.timeout(12000)}})}}catch{{bad('Gitea API unavailable')}}
+ let r;try{{const timeout=method==='POST'&&(path==='/repos/migrate'||path.endsWith('/mirror-sync'))?120000:12000;r=await fetch(d.apiUrl+path,{{method,headers:{{Authorization:'token '+token,'Content-Type':'application/json'}},body:payload===undefined?undefined:JSON.stringify(payload),signal:AbortSignal.timeout(timeout)}})}}catch{{bad('Gitea API unavailable: '+method+' '+path)}}
  if(missing&&r.status===404)return [404,null];
  if(!r.ok)bad('Gitea API request failed: '+method+' '+path+' ('+r.status+')');
  if(r.status===204)return [r.status,null];try{{return [r.status,await r.json()]}}catch{{bad('Gitea API response invalid')}}
 }}
-function gitRefs(url,authToken){{
- const env=authToken?{{...process.env,GIT_CONFIG_COUNT:'1',GIT_CONFIG_KEY_0:'http.extraheader',GIT_CONFIG_VALUE_0:'Authorization: token '+authToken}}:process.env;
+const needsGitHubAuth=d.repositories.length>0;
+let githubToken=null;
+if(needsGitHubAuth){{
+ const authDir=Bun.file('/home/ubuntu/.config/gh'),authFile=Bun.file(d.sourceCredentialFile);
+ const [dirStat,fileStat]=await Promise.all([authDir.stat(),authFile.stat()]);
+ if((dirStat.mode&0o777)!==0o700||(fileStat.mode&0o777)!==0o600)bad('GitHub credential store permissions invalid');
+ const auth=Bun.spawnSync(['gh','auth','token','--hostname','github.com','--user',d.sourceCredentialUser],{{timeout:10000}});
+ if(auth.exitCode!==0)bad('GitHub repo-scope credential unavailable');
+ githubToken=auth.stdout.toString().trim();if(!githubToken)bad('GitHub repo-scope credential unavailable');
+}}
+function gitRefs(url,authorization){{
+ const env=authorization?{{...process.env,GIT_CONFIG_COUNT:'1',GIT_CONFIG_KEY_0:'http.extraheader',GIT_CONFIG_VALUE_0:authorization}}:process.env;
  const result=Bun.spawnSync(['git','ls-remote','--refs',url],{{timeout:12000,env}});
- if(result.exitCode!==0)bad('Gitea mirror ref query failed');
- const refs={{}};for(const line of result.stdout.toString().trim().split(String.fromCharCode(10)).filter(Boolean)){{const [sha,ref]=line.trim().split(/\s+/);refs[ref]=sha;}}
+ if(result.exitCode!==0)bad('Git mirror ref query failed');
+ const refs={{}};for(const line of result.stdout.toString().trim().split(String.fromCharCode(10)).filter(Boolean)){{const [sha,ref]=line.trim().split(/\s+/);if(ref.startsWith('refs/heads/')||ref.startsWith('refs/tags/'))refs[ref]=sha;}}
  return refs;
 }}
 function sameRefs(left,right){{const a=Object.keys(left).sort(),b=Object.keys(right).sort();return a.length===b.length&&a.every((key,index)=>key===b[index]&&left[key]===right[key]);}}
@@ -470,22 +500,41 @@ const free=Number((await Bun.$`df -Pk /home/ubuntu/apps/gitea/data | tail -n 1`.
 if(!Number.isFinite(free)||free<8*1024*1024)bad('Gitea storage admission below 8 GiB');
 for(const repo of d.repositories){{
 const owner=repo.targetOwner||d.owner;const path='/repos/'+owner+'/'+repo.name;const [status,current]=await req('GET',path,undefined,true);
- const expected=Object.keys(repo.refShas||{{}}).length?repo.refShas:{{['refs/heads/'+repo.defaultBranch]:repo.head}};
- if(!sameRefs(gitRefs(repo.sourceUrl),expected))bad('GitHub source ref set moved or incomplete: '+repo.name);
+ const expected=Object.keys(repo.refShas||{{}}).length?repo.refShas:(repo.refs.length?{{['refs/heads/'+repo.defaultBranch]:repo.head}}:{{}});
+ const sourceAuth=repo.visibility==='private'?'Authorization: Basic '+btoa('x-access-token:'+githubToken):null;
+ const metadataResponse=await fetch('https://api.github.com/repos/aphrody-labs/'+repo.name,{{headers:githubToken?{{Authorization:'Bearer '+githubToken,Accept:'application/vnd.github+json'}}:{{Accept:'application/vnd.github+json'}},signal:AbortSignal.timeout(12000)}});
+ if(!metadataResponse.ok)bad('GitHub repository identity unavailable: '+repo.name);
+ const metadata=await metadataResponse.json();
+ if(metadata.full_name!=='aphrody-labs/'+repo.name||metadata.private!==(repo.visibility==='private')||metadata.archived!==repo.archived||(repo.refs.length&&metadata.default_branch!==repo.defaultBranch))bad('GitHub repository policy changed: '+repo.name);
+ if(!sameRefs(gitRefs(repo.sourceUrl,sourceAuth),expected))bad('GitHub source ref set moved or incomplete: '+repo.name);
+ const isMirror=!repo.archived;
  if(status===404){{
-  await req('POST','/repos/migrate',{{clone_addr:repo.sourceUrl,repo_name:repo.name,repo_owner:owner,service:'git',mirror:true,private:true,mirror_interval:d.mirrorInterval}});
- }}else if(!current.mirror||current.original_url!==repo.sourceUrl)bad('Existing Gitea repository conflicts with source policy: '+repo.name);
+  await req('POST','/repos/migrate',{{clone_addr:repo.sourceUrl,repo_name:repo.name,repo_owner:owner,service:'github',auth_token:repo.visibility==='private'?githubToken:undefined,mirror:isMirror,lfs:repo.lfsApplicable,private:true,mirror_interval:d.mirrorInterval}});
+ }}else if(current.mirror!==isMirror||current.original_url!==repo.sourceUrl)bad('Existing Gitea repository conflicts with source policy: '+repo.name);
  else if(!current.private)await req('PATCH',path,{{private:true}});
- const before=(await req('GET',path))[1];if(before.has_actions!==true)await req('PATCH',path,{{has_actions:true}});
- await req('POST',path+'/mirror-sync');
- const info=await req('GET',path);if(!info[1].mirror||info[1].private!==true||info[1].original_url!==repo.sourceUrl||info[1].default_branch!==repo.defaultBranch||info[1].has_actions!==true)bad('Gitea mirror policy verification failed: '+repo.name);
+ const before=(await req('GET',path))[1];if(before.has_actions!==!repo.archived)await req('PATCH',path,{{has_actions:!repo.archived}});
+ if(isMirror)await req('POST',path+'/mirror-sync');
+ if(repo.visibility==='private'&&isMirror){{
+  const repoPath=d.repositoryRoot+'/'+owner+'/'+repo.name+'.git';
+  const dir=Bun.spawnSync(['docker','exec','aphrody-gitea','chmod','700',repoPath],{{timeout:10000}});
+  const file=Bun.spawnSync(['docker','exec','aphrody-gitea','chmod','600',repoPath+'/config'],{{timeout:10000}});
+  if(dir.exitCode!==0||file.exitCode!==0)bad('Gitea private mirror credential storage protection failed: '+repo.name);
+ }}
  const targetUrl='http://127.0.0.1:29020/'+owner+'/'+repo.name+'.git';
- const sourceNow=gitRefs(repo.sourceUrl),targetNow=gitRefs(targetUrl,token);
+ const sourceNow=gitRefs(repo.sourceUrl,sourceAuth),targetNow=gitRefs(targetUrl,'Authorization: token '+token);
  if(!sameRefs(sourceNow,expected)||!sameRefs(targetNow,expected))bad('Gitea mirror refs diverge; repository remains private: '+repo.name);
- await req('PATCH',path,{{private:false}});
- const published=await req('GET',path);if(!published[1].mirror||published[1].private!==false||published[1].original_url!==repo.sourceUrl||published[1].default_branch!==repo.defaultBranch||published[1].has_actions!==true)bad('Gitea public mirror verification failed: '+repo.name);
+ const publishPayload={{private:repo.visibility==='private',archived:repo.archived}};
+ if(repo.archived){{
+  if(isMirror)bad('archived source cannot be a pull mirror');
+  const [,snapshot]=await req('GET',path);
+  if(snapshot.private!==publishPayload.private)await req('PATCH',path,{{private:publishPayload.private}});
+  if(snapshot.archived!==true)await req('PATCH',path,{{archived:true}});
+ }}else if((await req('GET',path))[1].private!==publishPayload.private)await req('PATCH',path,{{private:publishPayload.private}});
+ const published=(await req('GET',path))[1];if(published.mirror!==isMirror||published.private!==publishPayload.private||published.archived!==repo.archived||published.original_url!==repo.sourceUrl||published.default_branch!==repo.defaultBranch||published.has_actions!==!repo.archived)bad('Gitea mirror policy verification failed: '+repo.name);
+ const anonymous=await fetch(d.publicBaseUrl+'/api/v1/repos/'+owner+'/'+repo.name,{{signal:AbortSignal.timeout(10000)}});
+ if((repo.visibility==='private'&&anonymous.status!==404)||(repo.visibility==='public'&&anonymous.status!==200))bad('Gitea anonymous visibility mismatch: '+repo.name);
 }}
-console.log(JSON.stringify({{owner:d.owner,repositories:d.repositories.map(x=>x.name),visibility:'public',freeKiB:free,verified:true}}));
+console.log(JSON.stringify({{owner:d.owner,repositories:d.repositories.map(x=>x.name),freeKiB:free,verified:true}}));
 BUN
 "#
     );
