@@ -1,12 +1,13 @@
 # Application domains
 
 The 14 library application identities and canonical hostnames come from the
-Bun Libraries capability catalog. Its canonical form is
-`app-<capability>.aphrody.app`; the forked library hostname remains an alias.
-Bun OS plans consume this owner instead of repeating those 14 hostname values.
-APT and the Bun Libraries desktop keep their product hosts. The existing
-`aphrody-app` Worker remains the public edge owner. The homepage, www redirect,
-and assets/dist R2 custom domains retain their existing ownership.
+Bun Libraries capability catalog and its deployment settings. Its canonical
+form is `app-<capability>.aphrody.app`; the forked library hostname remains an
+alias. Bun OS plans consume this owner instead of repeating those hostname
+values or Cloudflare account identifiers. APT and the Bun Libraries desktop
+keep product hosts in the distribution inventory. Bun Cloudflare owns Worker
+routing; the DNS inventory remains with Bun Libraries. The homepage, www
+redirect, and assets/dist R2 custom domains retain their existing owners.
 
 ## Hosts
 

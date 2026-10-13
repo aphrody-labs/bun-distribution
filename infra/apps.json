@@ -1,11 +1,5 @@
 {
   "schemaVersion": 1,
-  "baseDomain": "aphrody.app",
-  "cloudflare": {
-    "accountId": "ca22c1a51a145f919b54afa18d936516",
-    "zoneId": "f4dab237b9811435da6fee0b5b3438d4",
-    "worker": "aphrody-app"
-  },
   "workspaces": {
     "os": "..",
     "libraries": "../../bun-libraries",
