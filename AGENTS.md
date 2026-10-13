@@ -44,6 +44,13 @@ Keep private repositories, credentials, domain conversations and data private.
 
 ## Architecture
 
+Owner directive 2026-10-13: Aphrody AI is exclusively a private backend, server
+and automation service, never a public product. The native CLI and authenticated
+site must share capability owners and backend contracts with complete operation,
+session, streaming, cancellation, error and permission parity. Cloudflare prompt
+streaming alone is not parity. Keep native host operations behind qualified
+private execution; never expose the unauthenticated loopback app-server.
+
 Owner directive 2026-10-13: all Aphrody sites and applications are surfaces of one
 product, owned by `packages/infra/product` (`@aphrody/product`). Bun owns runtime
 capabilities and Material owns shared framework/UI packages. Consolidate product

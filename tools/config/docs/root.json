@@ -19,7 +19,7 @@
           "| Command line | `crates/infra/aphrody` | The `aphrody` multi-call binary, which also carries the MCP server `aphrody-mcp` |",
           "| UI framework | Material packages | External M3 framework, components and app-ui; product consumers use package interfaces |",
           "| Web | Bun capabilities | External Obscura engine, crawler and extraction; Aphrody keeps product integration |",
-          "| AI services | `crates/ai` | Agent runtime, inference, memory and MCP servers serving the apps |",
+          "| AI backend | `crates/ai` | Private server and automation backend shared by the CLI and authenticated application; never a public product |",
           "",
           "Python application code lives in `py/`; native Python hosting (PyO3, CPython, uv, Ruff) and the Python runtime `vu` belong to the runtime."
         ]
@@ -209,7 +209,8 @@
       "Keep API/CLI/permission identities, licences, provenance, features and lockfiles. Remove a replaced path in the batch that qualifies its replacement.",
       "Engines build per version/target; refuse an incompatible ABI before any native call.",
       "npm `@aphrody` is the only package channel outside the monorepo; `workspace:*` inside it.",
-      "Select development/build context independently from product capability. Current execution and administrator scope: [execution context](docs/operations/workspace/windows-native.md)."
+      "Select development/build context independently from product capability. Current execution and administrator scope: [execution context](docs/operations/workspace/windows-native.md).",
+      "Aphrody AI is a private server/backend and automation service, never a public product. CLI and authenticated site sessions consume the same capability owners and versioned backend contracts; complete parity includes models, inference, voice, OCR, translation, memory, RAG, training, agents, Document AI, gateway and status when qualified on the execution target. Preserve authorization, streaming, cancellation, errors, session continuity and isolated provider stores. A prompt-only Cloudflare endpoint does not qualify full parity."
     ],
     "queue": [
       [
@@ -283,6 +284,10 @@
       [
         "Context-dependent routing",
         "Resolve checkout, toolchain and build host from the current context. Retire automatic WSL use on the current Windows workstation; qualify native, SSH and Docker routes independently."
+      ],
+      [
+        "Private AI backend parity",
+        "Unify native CLI and Cloudflare site backend dispatch, sessions and capability discovery. Verify each available CLI AI operation through both clients, including failures, streaming, cancellation and automation. Native-only operations require a qualified private execution target; never expose the unauthenticated loopback app-server or synchronize protected provider histories. Current Cloudflare prompt endpoint remains partial."
       ]
     ],
     "success": [

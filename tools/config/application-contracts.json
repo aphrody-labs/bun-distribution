@@ -42,7 +42,52 @@
       "tooling": { "runtime": "dotnet-cpp-bun-python", "package": "iecode", "sourceRepo": "iecode" }
     },
     "aphrody": {
-      "role": "single-desktop-super-app",
+      "role": "single-product",
+      "ai": {
+        "role": "private-backend-and-automation",
+        "publicProduct": false,
+        "clients": [
+          "native-cli",
+          "authenticated-site"
+        ],
+        "sessionOwner": "aphrody-app-server",
+        "capabilityOwners": "shared-with-native-cli",
+        "requiredCapabilities": [
+          "doc-ai",
+          "rag",
+          "model",
+          "infer",
+          "voice",
+          "ocr",
+          "translate",
+          "memory",
+          "gateway",
+          "train",
+          "agent",
+          "status"
+        ],
+        "parity": {
+          "status": "pending",
+          "cloudflare": "prompt-stream-only; complete parity not qualified",
+          "required": [
+            "operation-results",
+            "errors",
+            "streaming",
+            "cancellation",
+            "session-continuity",
+            "capability-discovery",
+            "authorization",
+            "automation"
+          ]
+        },
+        "isolation": [
+          "provider-authentication",
+          "raw-provider-sessions",
+          "cookies",
+          "protected-data"
+        ],
+        "deployment": "cloudflare-with-qualified-private-native-execution-for-host-capabilities"
+      },
       "desktop": { "runtime": "tauri-v2", "package": "aphrody-app", "sourceRepo": "aphrody-ui", "ui": "@aphrody/app-ui", "sidecars": ["sd-daemon", "aphrody"], "modules": ["agent (aphrody app-server over stdio)", "drive (aphrody-drive plugin + sd-daemon; the Spacedrive drive/apps/tauri host was removed 2026-09-26)", "models", "identity (pet and pixel pipeline, ex-Inacord)", "browser", "terminal", "systemd", "infra", "windows", "settings"] },
       "gameFeatures": "opt-in aphrody-mcp nie.* only; disabled in the root build until NIE is integrated; aphrody-ui never depends on ../nie"
     }

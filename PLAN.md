@@ -44,6 +44,7 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 - Engines build per version/target; refuse an incompatible ABI before any native call.
 - npm `@aphrody` is the only package channel outside the monorepo; `workspace:*` inside it.
 - Select development/build context independently from product capability. Current execution and administrator scope: [execution context](docs/operations/workspace/windows-native.md).
+- Aphrody AI is a private server/backend and automation service, never a public product. CLI and authenticated site sessions consume the same capability owners and versioned backend contracts; complete parity includes models, inference, voice, OCR, translation, memory, RAG, training, agents, Document AI, gateway and status when qualified on the execution target. Preserve authorization, streaming, cancellation, errors, session continuity and isolated provider stores. A prompt-only Cloudflare endpoint does not qualify full parity.
 
 ## Open queue
 
@@ -67,6 +68,7 @@ Architecture, contracts and open queue. Evidence: [MEMORY.md](MEMORY.md). Rules:
 | Repository hygiene | Archive absorbed GitHub repos and integrated forks; deprecate absorbed npm packages; prune stale worktrees |
 | Known failures | `web:verify`, 4 `packages/engine/yolo` tests (`libaphrody_ffi` absent), `aphrody infra validate` |
 | Context-dependent routing | Resolve checkout, toolchain and build host from the current context. Retire automatic WSL use on the current Windows workstation; qualify native, SSH and Docker routes independently. |
+| Private AI backend parity | Unify native CLI and Cloudflare site backend dispatch, sessions and capability discovery. Verify each available CLI AI operation through both clients, including failures, streaming, cancellation and automation. Native-only operations require a qualified private execution target; never expose the unauthenticated loopback app-server or synchronize protected provider histories. Current Cloudflare prompt endpoint remains partial. |
 
 ## Success
 

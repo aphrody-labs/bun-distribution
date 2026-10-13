@@ -18,7 +18,7 @@ Aphrody runs in user space: on Linux and Windows on top of the host kernel, in a
 | Command line | `crates/infra/aphrody` | The `aphrody` multi-call binary, which also carries the MCP server `aphrody-mcp` |
 | UI framework | Material packages | External M3 framework, components and app-ui; product consumers use package interfaces |
 | Web | Bun capabilities | External Obscura engine, crawler and extraction; Aphrody keeps product integration |
-| AI services | `crates/ai` | Agent runtime, inference, memory and MCP servers serving the apps |
+| AI backend | `crates/ai` | Private server and automation backend shared by the CLI and authenticated application; never a public product |
 
 Python application code lives in `py/`; native Python hosting (PyO3, CPython, uv, Ruff) and the Python runtime `vu` belong to the runtime.
 
