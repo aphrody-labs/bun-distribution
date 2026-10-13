@@ -9,8 +9,8 @@ Run on the qualified host with its explicit canonical target:
 
 ```sh
 aphrody infra --root "$HOME/src/aphrody" deploy --stack app --target vps --local \
-  --id aphrody-app-video --source "$HOME/src/bun-libraries" \
-  --build-report "$HOME/src/bun-libraries/.local/builds/linux-video.json" \
+  --id aphrody-app-video --source "$APHRODY_BUN_OS_CHECKOUT" \
+  --build-report "$APHRODY_BUN_OS_BUILD_REPORT" \
   --bun "$HOME/.bun/bin/bun-1.4.4"
 ```
 
@@ -18,8 +18,12 @@ The default prints a verified plan. Add `--apply` for activation. Paths come fro
 the selected checkouts and host policy; explicit host selection does not imply
 remote or local execution permission.
 
-The adapter invokes the artifact owner's `verify` command, stages the exact
-binary and sidecar, and invokes that same validator again. Source-free native
+The adapter invokes `packages/bun-artifacts/src/cli.ts verify` from the Bun OS
+checkout, stages the exact binary and sidecar under `~/apps/<app>/`, and invokes
+that same validator again. The build report is emitted in the Bun OS checkout's
+`build/staging/app-owner/<app>-<build-id>/build-report.json`; set
+`APHRODY_BUN_OS_BUILD_REPORT` to the report for the requested application build.
+Source-free native
 doctor qualification is required. Catalog capability, host and listener bind
 the receipt without maintaining a second application registry.
 

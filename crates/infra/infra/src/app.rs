@@ -120,7 +120,7 @@ fn verify(
 ) -> Result<VerifiedApp> {
     let mut args = vec![
         "--no-env-file".into(),
-        options.source.join("packages/artifacts/src/cli.ts").to_string_lossy().into_owned(),
+        options.source.join("packages/bun-artifacts/src/cli.ts").to_string_lossy().into_owned(),
         "verify".into(),
         "--build-report".into(),
         options.build_report.to_string_lossy().into_owned(),
@@ -243,7 +243,7 @@ fn render_unit(
     ensure!(plain(app) && plain(user), "Invalid application service identity");
     let replacements = [
         ("{user}", user.to_owned()),
-        ("{app_root}", format!("{}/bun-libraries/{app}", layout.apps)),
+        ("{app_root}", layout.app(app)),
         ("{state_root}", layout.state.clone()),
         ("{port}", port.to_string()),
     ];
@@ -407,7 +407,7 @@ pub fn deploy_app(root: &Path, options: &AppDeployOptions<'_>) -> Result<AppDepl
     );
     let user = std::env::var("USER").context("The target service user is unavailable")?;
     ensure!(plain(&user), "Invalid target service user");
-    let app_root = PathBuf::from(&layout.apps).join("bun-libraries").join(app);
+    let app_root = PathBuf::from(layout.app(app));
     let unit = format!("aphrody-app@{app}.service");
     let environment_file =
         PathBuf::from(&layout.state).join("secrets/apps").join(format!("{app}.env"));
