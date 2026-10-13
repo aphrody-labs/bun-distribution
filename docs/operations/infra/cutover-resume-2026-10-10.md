@@ -50,7 +50,7 @@ do not redirect them to unrelated services or reactivate retired workloads.
 ## Publication and remaining work
 
 The existing npm batch had live Bun processes 24788, 39548 and 4124 during
-this observation. `var/lint/npm-apply.txt` remained empty, last written at
+this observation. Its publication log remained empty, last written at
 00:12:30 local time. This is neither successful publication nor a terminal
 failure. Do not restart while the original process remains live; inspect its
 terminal result and registry versions before claiming completion.
@@ -72,14 +72,17 @@ script reference exists, and scoped whitespace/integrity checks pass. No engine
 build is required for this documentation-only batch. Global docs closure remains
 pending.
 
-## Guarded web activation adapter
+## Guarded web activation adapter (historical)
 
-`scripts/tools/infra/cloudflare-web-activate.ps1` fills the installed Infra
-CLI's Cloudflare coverage gap. Plan is the default. It verifies exact owner
-account/zone identities and the apex A / www CNAME, reads current SSL/HSTS
-settings and both qualified R2 buckets' custom domains, and probes the origin
-directly using curl `--resolve` with normal certificate validation.
-Snapshots and a checksum-verified second copy stay under the protected home.
+At the time of this observation, a PowerShell adapter filled the installed
+Infra CLI's Cloudflare coverage gap. Plan was the default. It verified exact
+owner account/zone identities and the apex A / www CNAME, read SSL/HSTS
+settings and both qualified R2 buckets' custom domains, and probed the origin
+directly using curl `--resolve` with normal certificate validation. Snapshots
+and a checksum-verified second copy stayed under the protected home. The adapter
+is no longer present in the selected checkout; Cloudflare operations now use
+the Cloudflare MCP owner. The results below are a historical receipt, not a
+current command or procedure.
 
 The live plan at 22:30 UTC proved apex TLS/status `0 200` and www `0 301`.
 Cloudflare still had SSL `full`, disabled HSTS, a pending zone and no custom

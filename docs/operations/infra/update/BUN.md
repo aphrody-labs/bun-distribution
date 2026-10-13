@@ -126,7 +126,7 @@ Mirror of `tools/config/deps/bun-holds.json` (bumps refused) and the npm entries
 | Package | Held at | Reason | Released when |
 | --- | --- | --- | --- |
 | `undici-types` | 8.9.0 | `@types/node` 26.6.x depends on `undici-types ~8.9.0`; the catalog pin follows it so the workspace holds one copy (the old pin 7.24.6 made two). | `@types/node` moves |
-| `@aphrody/canvas` | catalog entry unused | First-party (`m3/packages/canvas`); consumers resolve it through `workspace:*`. The registry copy is not a source of truth (publishing is an owner decision). | never bumped through the catalog |
+| `@aphrody/canvas` | catalog entry unused | First-party (`../material/packages/canvas`); consumers resolve it through `workspace:*`. The registry copy is not a source of truth (publishing is an owner decision). | never bumped through the catalog |
 | `jsdom` | 29.x | jsdom 30 declares `undici ^8.10.2` but the root override forces `undici ^7.30.0` (miniflare, `@ai-sdk/provider-utils`, `cheerio`, `shadcn` need 7). | the `undici` override can move to 8 |
 | `msw` | 2.x | msw 3.0.x does not intercept Bun's native `fetch`: `setupServer().listen()` leaves `fetch` unpatched (`getaddrinfo ENOTFOUND` on a mocked host). `packages/rg/patreon-bun` (not in repo) goes from 174 passing tests to 8 failing, with requests reaching the real API. The renamed option `onUnhandledFrame` is not the cause. Tried 3.0.0 on 2026-10-02 and reverted. | a 3.x release that patches Bun's `fetch` (re-test on every 3.x) |
 | `adm-zip`, `js-yaml`, `sharp` (advisories) | 0.6.0, 4.3.1, 0.33.5 | Pinned exactly by `@mintlify/*` (the `mint` docs tool of `@aphrody/koharu-docs`, dev only). Every other consumer already resolves a fixed release. | the next `mint` release that moves them |

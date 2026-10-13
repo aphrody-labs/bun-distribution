@@ -218,14 +218,14 @@ ne suffit pas de constater que le transport HTTP répond.
 
 La [façade Yolo versionnée](../../../scripts/tools/infra/fleet-yolo-tool-host.ts)
 importe statiquement `runToolHost` de son propriétaire. Le tool host M3 est
-construit directement depuis son
-[entrée existante](../../../../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp/src/tool-host.ts). Aucun registre
+construit directement depuis l'entrée actuelle du package Material
+[`@aphrody/m3-mcp`](../../../../material/packages/m3-mcp/src/tool-host.ts). Aucun registre
 ni moteur n'est recopié. Depuis la racine du dépôt, les commandes de build sont :
 
 ```sh
 umask 077
 bun build scripts/tools/infra/fleet-yolo-tool-host.ts --target=bun --format=esm --env=disable --reject-unresolved --outfile="$HOME/.aphrody/automation/yolo-tool-host-fleet.mjs"
-bun build ../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp/src/tool-host.ts --target=bun --format=esm --env=disable --reject-unresolved --define 'import.meta.dir="/home/ubuntu/apps/aphrody/shared/agent-workspaces/aphrody/../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp/src"' --outfile="$HOME/.aphrody/automation/m3-tool-host-fleet-vps.mjs"
+bun build ../material/packages/m3-mcp/src/tool-host.ts --target=bun --format=esm --env=disable --reject-unresolved --define 'import.meta.dir="/home/ubuntu/apps/aphrody/shared/agent-workspaces/aphrody/../material/packages/m3-mcp/src"' --outfile="$HOME/.aphrody/automation/m3-tool-host-fleet-vps.mjs"
 chmod 600 "$HOME/.aphrody/automation/yolo-tool-host-fleet.mjs" "$HOME/.aphrody/automation/m3-tool-host-fleet-vps.mjs"
 ```
 
@@ -244,10 +244,12 @@ de lecture a été exercé pour chacun :
 | `yolo-tool-host-fleet.mjs`   | 14 noms uniques ; `yolo_scan` lit le cwd demandé, sans écriture                            | 149 932 octets | `0ae3bf561eb336f524052335c1165d43dafff45765cb42d6318ee97d937007df` |
 | `m3-tool-host-fleet-vps.mjs` | 11 noms uniques ; `m3_os_themes_list` renvoie 11 noms de fichiers à générer, sans écriture | 412 831 octets | `0c426ef909116f4a027437f0cb7c41d20687d409efe3a287ad7d22bf57be5f08` |
 
-Le package source M3 est `@aphrody/m3-mcp` 3.3.7 ; son entrée
-`../bun/packages/aphrody-migrated/m3/aphrody-m3-mcp/src/tool-host.ts` a le SHA-256
-`ace1a3325c6c9162a238f49c9567ae13f67e6e30978017738f632f1a28dd9aa7`.
-La recette a été exécutée sur le dépôt au HEAD
+Le reçu de build ci-dessus date du package source `@aphrody/m3-mcp` 3.3.7. Le
+package actuel est `@aphrody/m3-mcp` 1.4.5 ; son entrée Material a actuellement
+le même SHA-256,
+`ace1a3325c6c9162a238f49c9567ae13f67e6e30978017738f632f1a28dd9aa7`. Cette
+égalité de source ne requalifie pas les bundles historiques ni leurs
+dépendances pour la version actuelle. La recette historique a été exécutée sur le dépôt au HEAD
 `ccb466047601a61a71487a8a45a2807395838a27`, avec la façade Yolo en cours
 d'intégration. Ces SHA identifient les artefacts qualifiés et doivent être
 recalculés après toute modification de leurs sources ou dépendances.

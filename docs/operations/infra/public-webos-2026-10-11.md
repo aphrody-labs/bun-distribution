@@ -1,8 +1,12 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Public Bun WebOS static release
 
-Source: `aphrody-labs/bun`, `packages/bun-webos/public-site`. The public page runs
-its example locally in the visitor's browser. The real WebOS server and assistant
+Source at publication (2026-10-11): the public-site package in `aphrody-labs/bun`.
+That package path is no longer present in the selected checkout. The current
+WebOS runtime integration is tracked at
+`../bun/packages/web/rust/integrations/m3/packages/app-ui/webos.ts`; it is not
+the static page source for this historical release. The public page runs its
+example locally in the visitor's browser. The real WebOS server and assistant
 remain separately configured local/private integrations.
 
 The VPS Nginx apex adds `snippets/public-webos.inc`. Its exact allowlist serves

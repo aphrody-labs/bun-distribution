@@ -46,7 +46,7 @@ irm https://downloads.aphrody.com/install.ps1 | iex
 Each installer checks every download against the release `SHA256SUMS`, runs the new binary before linking it, and
 calls `aphrody self install-path` so the former standalone names (`aphrody-mcp`, `aphrody-infra`, `aphrody-kernel`,
 ...) are links to the single binary. `yolo` goes through `packages/engine/yolo/install.sh` (published as `install-yolo.sh`),
-whose layout is `bin/`, `artifact/` (verified runtime), `packages/engine/runtime`, `m3/templates`.
+whose layout, relative to `~/.yolo`, is bin/, artifact/ (verified runtime), packages/runtime/, templates/ and crates/.
 
 ## Components
 
@@ -55,7 +55,7 @@ Declared in `tools/config/downloads.json`.
 | Component | Source | Platforms |
 | --- | --- | --- |
 | `aphrody` | factory build of a pushed revision: `scripts/build/rust/cargo-serial.sh build --release --locked -p aphrody --bin aphrody` | linux x86_64 (glibc 2.39 gate through `scripts/audit/elf-glibc-imports.ts --max 2.39`), windows x86_64 when the factory has an `xwin` build |
-| `yolo` | `bun build --compile` of `packages/engine/yolo/src/index.ts`, verified runtime artifact `~/.yolo/runtime/<target>/current`, `packages/engine/runtime`, `m3/templates` | linux x86_64 |
+| `yolo` | `bun build --compile` of `packages/engine/yolo/src/index.ts`, verified runtime artifact `~/.yolo/runtime/<target>/current` plus its installed packages/runtime/ and templates/ | linux x86_64 |
 | `aphrody-setup` (kind `desktop`) | local stage `scripts/release/stage-setup.ts`: Bun compile of `packages/infra/product`, pet icon by rcedit under Wine, not signed; the `.exe` and its flat `.tar.gz` update archive | windows x86_64 |
 | `omar-kit` (kind `kit`) | local stage `scripts/release/stage-omar-kit.ts`: the pack zip and the flat `.tar.gz` its updater reads | windows x86_64 |
 | `aphrody-app` (kind `desktop-app`) | Tauri NSIS installer of `crates/ui/app`, installed by the setup with `/S` | declared, disabled: no Windows build of the desktop app yet |

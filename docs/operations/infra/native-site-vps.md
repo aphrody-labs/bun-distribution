@@ -10,7 +10,7 @@ bundle Aphrody retiré.
 
 Le service `aphrody-site` du catalogue utilise `runtime: rust`, `host: vps`,
 `port: 80`, `publicProxy: direct-rust`, la santé `/health`, et le propriétaire
-`crates/web/site`. Il sert les catalogues produit en lecture et le SSR natif.
+`../bun/packages/web/rust/crates/site`. Il sert les catalogues produit en lecture et le SSR natif.
 Aucun endpoint MCP/Infra/credentials, accès hôte WebOS ou serveur JS n'est ajouté.
 
 Unité source : `tools/config/host/systemd/aphrody/aphrody-site.service`.
@@ -22,8 +22,8 @@ quel ; les autres services et jobs ne sont pas arrêtés.
 
 ## Qualification du build isolé
 
-La factory reçoit uniquement les sources `crates/web/site`, les templates suivis
-`m3/templates` et le lockfile, accompagnés de tailles/SHA-256. La projection
+La factory reçoit uniquement les sources `../bun/packages/web/rust/crates/site`, les templates suivis
+`../material/packages/m3/templates` et le lockfile, accompagnés de tailles/SHA-256. La projection
 workspace ne contient que `aphrody-site` et les mêmes pins de dépendances ; Cargo
 normalise son lockfile de sous-ensemble en préservant les versions/checksums du
 lockfile source. Comparer chaque dépendance registry du sous-ensemble à la source,
