@@ -106,7 +106,7 @@ Thumbs.db
 *.db-shm
 *.db-wal
 /packages/shell/web/pkg/
-# Existing local WebOS artifacts remain protected until their Bun owner is qualified.
+# Bun's WebOS owner is qualified; local retired artifacts remain ignored pending permitted cleanup.
 /packages/web/webos-wasm/wasm/
 /crates/ui/app/examples/shell_e2e/frontend/pkg/
 /crates/ui/app/examples/shell_e2e/frontend/index.js
