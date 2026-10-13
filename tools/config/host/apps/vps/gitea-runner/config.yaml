@@ -21,7 +21,8 @@ container:
   privileged: false
   force_pull: false
   options: --cpus=2 --memory=8g --pids-limit=512 --volume=${APHRODY_HOST_HOME}/.bun/bin/bun:/usr/local/bin/bun:ro
-  valid_volumes: []
+  valid_volumes:
+    - ${APHRODY_HOST_HOME}/.bun/bin/bun:ro
   sweep: true
 cache:
   enabled: false
