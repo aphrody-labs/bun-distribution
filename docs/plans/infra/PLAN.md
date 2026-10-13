@@ -11,6 +11,11 @@ tunnel ; les sockets SSH et wg1 des serveurs sont enabled/active.
 Preuves et limite du test sans reboot complet :
 [accès SSH](../../operations/infra/ssh-recovery-2026-10-13.md).
 
+Sur Omar, sshd écoute indépendamment de l'arrivée de WireGuard, avec accès
+entrant limité à l'adresse privée par le pare-feu. `omar` et `omar-pc`
+réussissent après redémarrage de la tâche WireGuard ; le relais est conservé.
+Voir [SSH Omar](../../operations/infra/omar-ssh-recovery-2026-10-13.md).
+
 > Contexte courant (2026-10-09) : développement et builds selon l'hôte, la cible et les ressources disponibles ; aucun produit n'est réservé à un poste. Voir le [contexte](../../operations/workspace/windows-native.md).
 
 
