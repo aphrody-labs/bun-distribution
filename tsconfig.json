@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "types": ["@aphrody/bun-types"],
+    "strict": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "noEmit": true
+  },
+  "include": ["packages/workspace/src/**/*.ts", "apps/desktop/**/*.ts", "scripts/**/*.ts"],
+  "exclude": ["node_modules", "toolchains", "apps/desktop/dist", "apps/desktop/src-tauri"]
+}

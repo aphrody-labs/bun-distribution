@@ -1,0 +1,12 @@
+node_modules/
+dist/
+target/
+**/dist/
+**/target/
+.local/
+.env
+.env.*
+!.env.example
+*.log
+apps/desktop/src-tauri/binaries/
+apps/desktop/src-tauri/gen/
