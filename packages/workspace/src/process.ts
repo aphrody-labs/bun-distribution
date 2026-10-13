@@ -25,9 +25,13 @@ export interface ProcessLimits {
 export interface ProcessOptions extends ProcessLimits {
   input?: Uint8Array;
   stdin?: "ignore" | "inherit";
-  stdout?: "capture" | "inherit";
+  stdout?: "capture" | "discard" | "inherit";
   stderr?: "capture" | "discard" | "inherit";
   env?: Record<string, string | undefined>;
+  /** Record the owned child without implementing another process manager. */
+  onStart?: (pid: number) => void | Promise<void>;
+  /** Receive bounded raw output from captured or discarded streams. */
+  onOutput?: (channel: "stdout" | "stderr", bytes: Uint8Array) => void | Promise<void>;
 }
 
 export interface ProcessResult {
@@ -83,7 +87,9 @@ export async function runProcess(argv: string[], cwd: string, options: ProcessOp
     options.timeoutMs > 43_200_000 ||
     !Number.isSafeInteger(options.maxOutputBytes) ||
     options.maxOutputBytes < 1 ||
-    (options.signal !== undefined && !(options.signal instanceof AbortSignal))
+    (options.signal !== undefined && !(options.signal instanceof AbortSignal)) ||
+    (options.onStart !== undefined && typeof options.onStart !== "function") ||
+    (options.onOutput !== undefined && typeof options.onOutput !== "function")
   ) {
     throw new ProcessError("INVALID_OPTIONS", "Invalid native process options.");
   }
@@ -182,30 +188,37 @@ export async function runProcess(argv: string[], cwd: string, options: ProcessOp
   options.signal?.addEventListener("abort", interrupt, { once: true });
   if (options.signal?.aborted) interrupt();
 
-  const collect = async (stream: ReadableStream<Uint8Array>, retain: boolean): Promise<string> => {
+  const stage = async <T>(task: () => T | Promise<T>): Promise<T> => {
+    if (reads.signal.aborted) throw failure;
+    let interrupted: (() => void) | undefined;
+    const cancelled = new Promise<never>((_resolve, reject) => {
+      interrupted = () => reject(failure);
+      reads.signal.addEventListener("abort", interrupted, { once: true });
+    });
+    try {
+      return await Promise.race([Promise.resolve().then(task), cancelled]);
+    } finally {
+      if (interrupted) reads.signal.removeEventListener("abort", interrupted);
+    }
+  };
+  const collect = async (
+    stream: ReadableStream<Uint8Array>,
+    retain: boolean,
+    channel: "stdout" | "stderr",
+  ): Promise<string> => {
     const reader = stream.getReader();
     const chunks: Uint8Array[] = [];
     let retainedBytes = 0;
     try {
       for (;;) {
-        if (reads.signal.aborted) throw failure;
-        let interrupted: (() => void) | undefined;
-        const cancelled = new Promise<never>((_resolve, reject) => {
-          interrupted = () => reject(failure);
-          reads.signal.addEventListener("abort", interrupted, { once: true });
-        });
-        let chunk: Awaited<ReturnType<typeof reader.read>>;
-        try {
-          chunk = await Promise.race([reader.read(), cancelled]);
-        } finally {
-          if (interrupted) reads.signal.removeEventListener("abort", interrupted);
-        }
+        const chunk = await stage(() => reader.read());
         if (chunk.done) break;
         outputBytes += chunk.value.byteLength;
         if (outputBytes > options.maxOutputBytes) {
           fail("OUTPUT_LIMIT", "The native process exceeded its output limit.");
           throw failure;
         }
+        if (options.onOutput) await stage(() => options.onOutput!(channel, chunk.value));
         if (retain) {
           chunks.push(chunk.value);
           retainedBytes += chunk.value.byteLength;
@@ -230,6 +243,7 @@ export async function runProcess(argv: string[], cwd: string, options: ProcessOp
   };
 
   try {
+    if (options.onStart) await stage(() => options.onStart!(child.pid));
     const [code, stdout, stderr] = await Promise.all([
       child.exited.then(code => {
         // Close pipes inherited by remaining Windows children after the direct child exits.
@@ -244,9 +258,11 @@ export async function runProcess(argv: string[], cwd: string, options: ProcessOp
         }
         return code;
       }),
-      child.stdout instanceof ReadableStream ? collect(child.stdout, true) : Promise.resolve(""),
+      child.stdout instanceof ReadableStream
+        ? collect(child.stdout, options.stdout !== "discard", "stdout")
+        : Promise.resolve(""),
       child.stderr instanceof ReadableStream
-        ? collect(child.stderr, options.stderr !== "discard")
+        ? collect(child.stderr, options.stderr !== "discard", "stderr")
         : Promise.resolve(""),
     ]);
     if (failure) throw failure;

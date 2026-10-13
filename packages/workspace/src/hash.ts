@@ -6,12 +6,18 @@ export function hashContent(data: string | Uint8Array | ArrayBuffer): string {
 export interface FileHashOptions {
   signal?: AbortSignal;
   maxBytes?: number;
+  expectedBytes?: number;
 }
 
 /** One streamed hash owner for local files and remote object verification. */
 export async function hashStream(stream: ReadableStream<Uint8Array>, options: FileHashOptions = {}): Promise<string> {
   const maxBytes = options.maxBytes ?? Number.MAX_SAFE_INTEGER;
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 0) throw new Error("Invalid file hash size limit.");
+  if (
+    options.expectedBytes !== undefined &&
+    (!Number.isSafeInteger(options.expectedBytes) || options.expectedBytes < 0 || options.expectedBytes > maxBytes)
+  )
+    throw new Error("Invalid expected file size.");
   options.signal?.throwIfAborted();
   const hasher = new Bun.CryptoHasher("sha256");
   const reader = stream.getReader();
@@ -29,6 +35,8 @@ export async function hashStream(stream: ReadableStream<Uint8Array>, options: Fi
       const chunk = await Promise.race([reader.read(), cancelled]);
       rejectRead = undefined;
       if (chunk.done) {
+        if (options.expectedBytes !== undefined && bytes !== options.expectedBytes)
+          throw new Error("File length changed during hashing.");
         finished = true;
         return hasher.digest("hex");
       }
@@ -52,5 +60,9 @@ export async function hashFile(path: string, options: FileHashOptions = {}): Pro
   options.signal?.throwIfAborted();
   const file = Bun.file(path);
   if (options.maxBytes !== undefined && file.size > options.maxBytes) throw new Error("File hash size limit exceeded.");
-  return hashStream(file.stream(), options);
+  return hashStream(file.stream(), {
+    ...options,
+    maxBytes: options.maxBytes ?? file.size,
+    expectedBytes: options.expectedBytes ?? file.size,
+  });
 }
