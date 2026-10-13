@@ -53,7 +53,7 @@ export interface AppEntry {
   entrypoint: string;
   entrypointWorkspace?: string;
   assetRoots: string[];
-  source: { repository: string; revision?: string; path: string; license: string };
+  source?: { repository: string; revision?: string; path: string; license: string };
   native: {
     required: boolean;
     binary?: string | null;
@@ -198,10 +198,12 @@ async function snapshot(configPath: string, config: AppInventory, target: AppTar
   };
 }
 async function nativeArtifacts(configPath: string, app: AppEntry, target: AppTarget) {
+  const source = app.source;
+  if (!source) throw new Error("Native artifact source metadata is missing");
   const descriptor = app.native.artifactsByTarget?.[target];
   if (!app.native.binary) throw new Error("No native executable capability owner is configured for this app");
   if (!descriptor) throw new Error("Native backend has no qualified artifact descriptor");
-  if (!app.source.revision || descriptor.sourceRevision !== app.source.revision)
+  if (!source.revision || descriptor.sourceRevision !== source.revision)
     throw new Error("Native source pin mismatch");
   const files: EmbeddedNativeFile[] = [],
     basenames = new Set<string>();
@@ -234,7 +236,7 @@ async function nativeArtifacts(configPath: string, app: AppEntry, target: AppTar
     receipt.schemaVersion !== 1 ||
     receipt.target !== target ||
     receipt.sha256 !== files[0]!.sha256 ||
-    receipt.source?.repository !== app.source.repository ||
+    receipt.source?.repository !== source.repository ||
     receipt.source?.revision !== descriptor.sourceRevision ||
     !receipt.qualification?.passed ||
     !receipt.qualification.gates?.includes("native-backend") ||
@@ -300,23 +302,36 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
   const root = libraryRoot ?? (await workspace(configPath, config, app.entrypointWorkspace ?? app.workspace));
   let resolvedHostnames: string[];
   let librarySourceRevision: string | undefined;
+  let resolvedSource = app.source;
   if (ownsNativeBuild) {
     const libraryConfig = await loadLibraryConfig(libraryRoot!);
     const capability = appCapabilityForLibrary(app.id);
     const module = libraryConfig.modules.find(module => module.id === app.id);
     resolvedHostnames = appHostnamesForLibrary(app.id, libraryConfig);
     if (!capability || !module?.binary) reasonsForMissingOwner(app.id);
-    if (app.source.revision && module.revision !== app.source.revision)
-      throw new Error("Bun OS source pin differs from the Bun Libraries capability owner");
+    if (!module.fork || !module.path || !module.license || !module.revision)
+      throw new Error("Bun Libraries source metadata is incomplete");
+    resolvedSource = {
+      repository: module.fork,
+      revision: module.revision,
+      path: module.path,
+      license: module.license,
+    };
     librarySourceRevision = module.revision;
     if (app.hostname && !resolvedHostnames.includes(app.hostname))
       throw new Error("Configured application hostname differs from the library owner");
   } else {
+    if (!resolvedSource) throw new Error("A source record is required for non-library applications");
     if (!app.hostname) throw new Error("A hostname is required for non-library applications");
     resolvedHostnames = [app.hostname];
   }
   const capability = ownsNativeBuild ? appCapabilityForLibrary(app.id) : undefined;
-  const resolvedApp = { ...app, hostname: resolvedHostnames[0]!, hostnames: resolvedHostnames };
+  const resolvedApp = {
+    ...app,
+    source: resolvedSource,
+    hostname: resolvedHostnames[0]!,
+    hostnames: resolvedHostnames,
+  };
   let entrypoint = inside(root, resolve(root, ownsNativeBuild ? "scripts/build-apps.ts" : app.entrypoint));
   const reasons: string[] = [];
   if (!(await Bun.file(entrypoint).exists())) reasons.push("Configured entrypoint is absent");
@@ -340,7 +355,7 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
     };
   } else if (app.native.required) {
     try {
-      const selected = await nativeArtifacts(configPath, app, target);
+      const selected = await nativeArtifacts(configPath, resolvedApp, target);
       nativeFiles = selected.files;
       nativeEvidence = selected.evidence;
     } catch (error) {
@@ -497,7 +512,7 @@ async function buildLibraryApp(configPath: string, appId: string, target: AppTar
     manifest.appId !== capability.id ||
     manifest.target !== targetName ||
     !record(manifest.source) ||
-    manifest.source.revision !== app.source.revision ||
+    manifest.source.revision !== plan.app.source?.revision ||
     manifest.hostname !== plan.app.hostname
   )
     throw new Error("Bun Libraries artifact manifest differs from the prepared distribution plan");
@@ -542,7 +557,7 @@ async function buildLibraryApp(configPath: string, appId: string, target: AppTar
     status: "complete",
     appId,
     target,
-    source: app.source,
+    source: plan.app.source,
     artifact: { path: artifact.path, bytes: artifact.size, sha256: artifact.sha256, abi: abiValue },
     runtime: { version: runtime.version, revision: runtime.revision, sha256: runtime.sha256 },
     nativeContract: { appId, target, files: nativeFiles },
