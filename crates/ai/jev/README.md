@@ -4,6 +4,12 @@
 `aphrody-jev` sends typed Jev decisions to TypeSafe SaaS or a compatible
 gateway, and can use local jeff or aphrody inference as a fallback.
 
+A compatible self-hosted System One backend can also run independently:
+configure `JEFF_BASE_URL` and optionally `JEFF_API_KEY`. With no explicit mode,
+hosted credentials or native engine URL, the router uses that configured backend.
+Explicit modes retain their existing credential requirements. This does not
+authenticate a TypeSafe account.
+
 ## Native decision policy
 
 Rust consumers share `aphrody_jev::confident_choice(&request, &response,

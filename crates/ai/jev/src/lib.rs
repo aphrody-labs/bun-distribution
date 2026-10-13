@@ -428,7 +428,10 @@ impl JevRouter {
     /// `APHRODY_AI_CHAT_BASE_URL` (or alias), and no managed llama-server
     /// running for the chat role.
     pub fn from_env() -> Result<Self, JevError> {
-        let var = |name: &str| std::env::var(name).ok().filter(|v| !v.trim().is_empty());
+        Self::from_environment(|name| std::env::var(name).ok().filter(|v| !v.trim().is_empty()))
+    }
+
+    fn from_environment(var: impl Fn(&str) -> Option<String>) -> Result<Self, JevError> {
         let native = |required: bool| -> Result<Option<NativeEngine>, JevError> {
             let explicit = var("APHRODY_JEV_ENGINE_URL");
             if explicit.is_none() && !required {
@@ -448,11 +451,17 @@ impl JevRouter {
             )
             .map(Some)
         };
+        let local = var("JEFF_BASE_URL")
+            .map(|base| Endpoint::local(&base, var("JEFF_API_KEY")))
+            .transpose()?;
         let mode = match var("APHRODY_JEV_MODE") {
             Some(mode) => mode.parse()?,
             None if var("TYPESAFE_API_KEY").is_some() => JevMode::ApiKey,
             None if var("CLOUDFLARE_API_TOKEN").is_some() => JevMode::Keyless,
             None if var("APHRODY_JEV_ENGINE_URL").is_some() => JevMode::Aphrody,
+            None if local.is_some() => {
+                return Self::new(None, None, local, RoutingPolicy::default());
+            },
             None => return Err(JevError::NoBackend),
         };
         let missing = |what: &str| JevError::Config(format!("mode {mode} requires {what}"));
@@ -472,9 +481,6 @@ impl JevRouter {
             )?),
             _ => None,
         };
-        let local = var("JEFF_BASE_URL")
-            .map(|base| Endpoint::local(&base, var("JEFF_API_KEY")))
-            .transpose()?;
         let policy = RoutingPolicy::default();
         let router = match mode {
             JevMode::Aphrody => {
@@ -710,6 +716,30 @@ fn log_failover(event: &Failover) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn configured_local_backend_does_not_require_hosted_credentials() {
+        let router = super::JevRouter::from_environment(|name| {
+            (name == "JEFF_BASE_URL").then(|| "http://127.0.0.1:8790".into())
+        })
+        .unwrap();
+        assert!(router.local.is_some());
+        assert!(router.saas.is_none());
+        assert!(router.edge.is_none());
+        assert!(router.native.is_none());
+    }
+
+    #[test]
+    fn explicit_remote_mode_never_silently_selects_the_local_backend() {
+        let result = super::JevRouter::from_environment(|name| match name {
+            "APHRODY_JEV_MODE" => Some("api-key".into()),
+            "JEFF_BASE_URL" => Some("http://127.0.0.1:8790".into()),
+            _ => None,
+        });
+        assert!(
+            matches!(result, Err(super::JevError::Config(message)) if message.contains("requires TYPESAFE_API_KEY"))
+        );
+    }
 
     #[test]
     fn default_native_base_url_prefers_the_explicit_argument_over_any_resolution() {
