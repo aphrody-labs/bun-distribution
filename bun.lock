@@ -17,6 +17,15 @@
         "@aphrody/tauri": "file:../../toolchains/bun/packages/bun-tauri",
       },
     },
+    "packages/app-host": {
+      "name": "@aphrody/bun-app-host",
+      "version": "0.1.0",
+      "dependencies": {
+        "@aphrody/bun-artifacts": "file:../artifacts",
+        "@aphrody/bun-video-project": "file:../video",
+        "@aphrody/bun-workspace": "file:../workspace",
+      },
+    },
     "packages/artifacts": {
       "name": "@aphrody/bun-artifacts",
       "version": "0.1.0",
@@ -24,7 +33,7 @@
         "aphrody-artifacts": "./src/cli.ts",
       },
       "dependencies": {
-        "@aphrody/bun-workspace": "workspace:*",
+        "@aphrody/bun-workspace": "file:../workspace",
       },
     },
     "packages/video": {
@@ -34,7 +43,7 @@
         "aphrody-video": "./src/cli.ts",
       },
       "dependencies": {
-        "@aphrody/bun-workspace": "workspace:*",
+        "@aphrody/bun-workspace": "file:../workspace",
       },
     },
     "packages/workspace": {
@@ -46,6 +55,8 @@
     },
   },
   "packages": {
+    "@aphrody/bun-app-host": ["@aphrody/bun-app-host@workspace:packages/app-host"],
+
     "@aphrody/bun-artifacts": ["@aphrody/bun-artifacts@workspace:packages/artifacts"],
 
     "@aphrody/bun-desktop": ["@aphrody/bun-desktop@workspace:apps/desktop"],
@@ -60,7 +71,13 @@
 
     "undici-types": ["undici-types@8.11.2", "", {}, "sha512-iMVNmWZ0leK/goS6eXMizSzmm9CDWtyphwbaCms3DNLqRxDL+mMoNVcZMTyyVgXP0N+Z8neAMzDoUOUJL8veKg=="],
 
+    "@aphrody/bun-app-host/@aphrody/bun-workspace": ["@aphrody/bun-workspace@file:packages/workspace", { "bin": { "aphrody-bun": "./src/cli.ts" } }],
+
+    "@aphrody/bun-artifacts/@aphrody/bun-workspace": ["@aphrody/bun-workspace@file:packages/workspace", { "bin": { "aphrody-bun": "./src/cli.ts" } }],
+
     "@aphrody/bun-desktop/@aphrody/tauri": ["@aphrody/tauri@file:toolchains/bun/packages/bun-tauri", {}],
+
+    "@aphrody/bun-video-project/@aphrody/bun-workspace": ["@aphrody/bun-workspace@file:packages/workspace", { "bin": { "aphrody-bun": "./src/cli.ts" } }],
 
     "@types/node/undici-types": ["undici-types@8.9.0", "", {}, "sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg=="],
   }

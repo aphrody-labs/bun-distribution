@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: MIT
 import { mkdir, realpath } from "node:fs/promises";
 import { timingSafeEqual } from "node:crypto";
 import { dirname, join, relative, resolve, sep } from "node:path";
-import type { AppManifest, AppRuntime } from "../../artifacts/src/types.ts";
-import { hashContent, runProcess } from "./index.ts";
+import type { AppManifest, AppRuntime } from "@aphrody/bun-artifacts/types";
+import { hashContent, runProcess } from "@aphrody/bun-workspace";
 import {
   createVideoLibrary,
   VideoLibraryError,
@@ -10,7 +11,7 @@ import {
   stringifyNativeJSON,
   type NativeObject,
   type VideoCommand,
-} from "../../video/src/index.ts";
+} from "@aphrody/bun-video-project";
 
 const headers = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
 const reply = (value: unknown, status = 200) =>

@@ -11,6 +11,7 @@ retain its errors, limits and qualification.
 | Bun provenance | Workspace `runtime.ts` | Tools and compiled app manifests |
 | Content digests | Workspace `hash.ts` | App payloads and shared R2 assets |
 | Child lifetime, cancellation and captured output | Workspace `process.ts` | Cargo tools and native video transport |
+| Standalone application HTTP transport | `@aphrody/bun-app-host` | Bun Libraries apps and Bun OS distribution |
 | Video project, timeline and commands | FilmCraft Rust library | Typed Bun video adapter |
 | Media decoding and encoding | Native Bun.Video owner | Bun media consumers |
 | Shared Rust primitives | Craft library owners | Native library engines |

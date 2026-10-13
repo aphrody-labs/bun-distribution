@@ -10,6 +10,7 @@
     ".": "./src/index.ts",
     "./assets": "./src/assets.ts",
     "./capabilities": "./src/capabilities.ts",
+    "./coverage": "./src/coverage.ts",
     "./hash": "./src/hash.ts",
     "./process": "./src/process.ts",
     "./runtime": "./src/runtime.ts"

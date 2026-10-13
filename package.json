@@ -5,6 +5,7 @@
   "license": "MIT",
   "workspaces": [
     "packages/workspace",
+    "packages/app-host",
     "apps/desktop",
     "packages/video",
     "packages/artifacts"

@@ -182,6 +182,29 @@ Some native Rust engines still embed fonts. R2 object deduplication is qualified
 removing every embedded font copy is not complete. Each independent executable
 necessarily includes its own runtime and native code.
 
+## Cross-repository owner consolidation — 2026-10-13
+
+The standalone HTTP transport now lives in `@aphrody/bun-app-host`. Its source
+imports artifact types, video operations, and process/hash primitives through
+package identities rather than relative paths across sibling packages. The
+artifact builder consumes this owner. Bun OS consumes the canonical Bun
+Libraries workspace APIs through local sibling package dependencies; six
+shared implementation modules now forward to that owner.
+
+The Bun OS video adapter matched the Bun Libraries source byte-for-byte. Bun OS
+now runs its desktop and video commands through the Bun Libraries package and
+retains only typed import forwarders in its former video package directory.
+The host denied recursive removal of that verified duplicate directory; the
+implementation was replaced with forwarding modules and the canonical README
+link was retained. No alternate source implementation remains in those files.
+
+Both native Bun quality aggregates pass: Bun Libraries checks 60 files; Bun OS
+checks 108 files. Bun installs in both checkouts pass offline with a frozen
+lockfile. No tests, native builds, DNS changes, app activation, or deployment
+were run in this consolidation batch. The Bun OS app-build plan still needs an
+explicit clean Bun Libraries revision pin before it can claim reproducible
+cross-repository application builds.
+
 ## Published batches
 
 All owned commits use `aphrody-dev <contact@aphrody.com>`, precise staged paths,

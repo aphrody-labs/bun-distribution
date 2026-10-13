@@ -287,7 +287,7 @@ async function buildArtifact(options: BuildAppOptions): Promise<BuiltAppArtifact
       );
   const entrypoint = options.entrypoint
     ? resolve(root, options.entrypoint)
-    : checkoutPath(root, "packages/workspace/src/server.ts");
+    : checkoutPath(root, "packages/app-host/src/server.ts");
   if (!(await Bun.file(entrypoint).exists()))
     throw new ArtifactError("OWNER_UNAVAILABLE", "The application server owner is unavailable.");
   const timeoutMs = options.timeoutMs ?? 180_000;
