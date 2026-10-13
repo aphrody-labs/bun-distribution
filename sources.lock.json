@@ -83,7 +83,7 @@
     {
       "id": "material",
       "repository": "aphrody-labs/material",
-      "revision": "1e65a503420e4a8962b8ceaa18819eedbc280454",
+      "revision": "e858361dfd2597b067eea56d471ff4caab7442f8",
       "mount": "sources/material",
       "gitlinks": [
         {
@@ -114,7 +114,7 @@
         {
           "path": "packages/m3",
           "repository": "aphrody-labs/aphrody-m3",
-          "revision": "b6e01a8df4da20314757c5505b224f553c68483d"
+          "revision": "393d397037dace7a13eb2bee29e43a3a67d176f8"
         },
         {
           "path": "packages/m3-ai",
@@ -204,7 +204,7 @@
         {
           "path": "packages/m3-os-themes",
           "repository": "aphrody-labs/aphrody-m3-os-themes",
-          "revision": "a218bd6db5327603e503d46ebe1ee6804959c351"
+          "revision": "27b36bd34253da5010ec2855403852ba6e97d6e6"
         },
         {
           "path": "packages/m3-primitives",
@@ -272,7 +272,7 @@
     {
       "id": "material/packages/m3",
       "repository": "aphrody-labs/aphrody-m3",
-      "revision": "b6e01a8df4da20314757c5505b224f553c68483d",
+      "revision": "393d397037dace7a13eb2bee29e43a3a67d176f8",
       "mount": "sources/material/packages/m3",
       "parent": "material",
       "submodulePath": "packages/m3",
@@ -296,8 +296,22 @@
           "path": "forks/material-web",
           "repository": "aphrody-labs/material-web",
           "revision": "a06811ee5dad1a670d99e5faf14cdf7082a70a10"
+        },
+        {
+          "path": "packages/m3-os-themes",
+          "repository": "aphrody-labs/aphrody-m3-os-themes",
+          "revision": "27b36bd34253da5010ec2855403852ba6e97d6e6"
         }
       ]
+    },
+    {
+      "id": "material/packages/m3/packages/m3-os-themes",
+      "repository": "aphrody-labs/aphrody-m3-os-themes",
+      "revision": "27b36bd34253da5010ec2855403852ba6e97d6e6",
+      "mount": "sources/material/packages/m3/packages/m3-os-themes",
+      "parent": "material/packages/m3",
+      "submodulePath": "packages/m3-os-themes",
+      "gitlinks": []
     },
     {
       "id": "material/packages/m3/forks/fonts",
@@ -491,7 +505,7 @@
     {
       "id": "material/packages/m3-os-themes",
       "repository": "aphrody-labs/aphrody-m3-os-themes",
-      "revision": "a218bd6db5327603e503d46ebe1ee6804959c351",
+      "revision": "27b36bd34253da5010ec2855403852ba6e97d6e6",
       "mount": "sources/material/packages/m3-os-themes",
       "parent": "material",
       "submodulePath": "packages/m3-os-themes",

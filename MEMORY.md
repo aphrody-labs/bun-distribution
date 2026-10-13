@@ -1,5 +1,19 @@
 # Project decisions and session evidence
 
+## Material source and checkout alignment — 2026-10-13
+
+- Advanced Bun OS's Material export pin from `1e65a503` to the current owner
+  revision `e858361d`. The canonical M3 package is `393d3970`; both its nested
+  and top-level theme references resolve to the same `aphrody-m3-os-themes`
+  commit `27b36bd3`. The source lock now records 84 mounts, 77 unique
+  repository/revision pairs and 75 gitlinks.
+- `runtimeCheckout()` now prefers the workspace path when a stale configured
+  alias resolves to that same physical checkout; a distinct explicit checkout
+  still wins. The full Windows plan resolves `C:\src\bun` and Material at
+  `e858361d`.
+- The distribution plan validated all 84 source entries. Native Bun typecheck
+  passed on 91 files, lint and format passed. No tests or builds were run.
+
 ## Shared quality owner, 2026-10-13
 
 - Bun Libraries commit 89731c4 aligns its check/lint/format runner with the

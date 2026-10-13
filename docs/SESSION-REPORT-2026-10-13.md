@@ -25,15 +25,15 @@ libm3 and WASM adapter; it retains its web package submodules. Linux, WSL,
 WSLg, the WSL kernel, COSMIC and official APT remain distinct sources with
 their own histories and licenses.
 
-The final source lock contains **83 mounts, 77 repository/revision pairs and
-74 gitlinks across nine roots**. The original four-root audit had 78 mounts
-and 71 pairs. Different revisions of libcosmic/iced/icons remain separate
-mounts; deduplication does not collapse version-specific topology.
+The source lock now contains **84 mounts, 77 repository/revision pairs and
+75 gitlinks across nine roots**. The initial consolidated lock had 83 mounts,
+77 pairs and 74 gitlinks. Different revisions of libcosmic/iced/icons remain
+separate mounts; deduplication does not collapse version-specific topology.
 
 | Root | Locked revision |
 | --- | --- |
 | Bun | c209b95eb0dcc964745f4684f127abb83cbe2697 |
-| Material/os | 1e65a503420e4a8962b8ceaa18819eedbc280454 |
+| Material/os | e858361dfd2597b067eea56d471ff4caab7442f8 |
 | COSMIC epoch | cfa498958dc8aeac73aa911cbd318c01e47ac957 |
 | libcosmic/os | 7f715bc5d2d383a070fd8c760aa52c5627df96b6 |
 | Linux aphrody-bun | 47f637c546bf4bb274c7149815ed66d748e4f325 |
@@ -41,6 +41,14 @@ mounts; deduplication does not collapse version-specific topology.
 | WSLg main | 6942bb534b537302a7a22617261d9274db3cfa37 |
 | WSL kernel aphrody-wsl-6.18 | e5043002ed6f0b0eb17a0fb9efafa794045853ed |
 | APT main | 745fc126218c7cb3df48b22bbc7c7098fa2f7966 |
+
+The follow-up pin advances Material to its current owner revision. Its M3
+package is `393d397037dace7a13eb2bee29e43a3a67d176f8`; the top-level and nested
+M3 theme references both resolve to `aphrody-labs/aphrody-m3-os-themes` at
+`27b36bd34253da5010ec2855403852ba6e97d6e6`. The Bun OS plan validates all 84
+locked mounts. Its Windows runtime build path now resolves through the selected
+workspace checkout (`C:\\src\\bun`) when the machine alias points to the same
+physical repository; explicit per-build checkout configuration remains first.
 
 The APT GitHub mirror used initially was archived. The owner fork was then
 fast-forwarded from official live Salsa main, normally pushed and checked by
@@ -89,9 +97,10 @@ References: [source lock](../sources.lock.json),
    4.62 s. The independent no_std libm3 gate passed in 0.47 s. Complete metadata
    resolves 217 packages and one local token 1.4.4 owner; the earlier filtered
    graph had 197 packages. No unit tests or displayed GUI were run.
-7. Final Material/os consolidation **1e65a503420e4a8962b8ceaa18819eedbc280454**
-   was normally pushed and independently verified by remote ref. The OS lock
-   now pins it. It contains the 79-source-hash native consolidation receipt.
+7. Material/os consolidation **1e65a503420e4a8962b8ceaa18819eedbc280454**
+   was normally pushed and independently verified by remote ref. It contains
+   the 79-source-hash native consolidation receipt. The source lock has since
+   advanced to `e858361dfd2597b067eea56d471ff4caab7442f8`.
    The public scalar WASM remains the exact earlier ce47e503 artifact; no fresh
    scalar artifact from 1e65a503 is claimed.
 8. Three unqualified Aphrody consumer manifest changes were reverted exactly.
@@ -214,8 +223,8 @@ Gzip and bounded Zstandard use runtime APIs. XZ/bzip2 require an explicitly
 selected native 7-Zip executable, including the actual APT .tar.xz inspection.
 That external decoder remains part of the source-inspection dependency contract.
 
-The final build uses the current 1e65a503 Material source lock and app catalog;
-its native version, source/DLL conversions and WinGet validation passed.
+The qualified APT build used the then-current 1e65a503 Material source lock and
+app catalog; its native version, source/DLL conversions and WinGet validation passed.
 It supersedes the earlier 994dd5f2 artifact. Conditional R2 publication created
 one content-addressed object. Public HTTPS retrieval returned HTTP 200,
 171469824 bytes and the exact SHA256, with an immutable one-year cache policy.

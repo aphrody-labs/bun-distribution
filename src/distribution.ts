@@ -2,7 +2,7 @@ import { exportPinnedSources, type SourceExportOptions } from "../factory/source
 import { hashStream } from "@aphrody/bun-workspace/hash";
 import { runProcess } from "@aphrody/bun-workspace/process";
 import { mkdir, lstat, copyFile, open, unlink, cp } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { dirname, join, resolve, relative, isAbsolute } from "node:path";
 import { sourceIntegrity } from "../container/source-integrity.ts";
 import { inspectLinuxABI } from "./elf.ts";
@@ -18,13 +18,23 @@ export function materialCheckout(config: Config = {}): string {
   return checkout;
 }
 export function runtimeCheckout(config: Config = {}): string {
-  const configured = config.checkouts?.bun ?? Bun.env.APHRODY_BUN_CHECKOUT;
+  const explicitCheckout = config.checkouts?.bun;
+  const configured = explicitCheckout ?? Bun.env.APHRODY_BUN_CHECKOUT;
+  const workspaceCheckout = resolve(packageRoot, "../bun");
   if (configured) {
     const root = resolve(configured);
     if (!existsSync(join(root, "scripts/build.ts")))
       throw new Error("Configured Bun checkout has no native build owner");
+    if (!explicitCheckout && existsSync(join(workspaceCheckout, "scripts/build.ts"))) {
+      try {
+        if (realpathSync.native(root) === realpathSync.native(workspaceCheckout)) return workspaceCheckout;
+      } catch {
+        // Keep the explicit checkout when its physical path cannot be resolved.
+      }
+    }
     return root;
   }
+  if (existsSync(join(workspaceCheckout, "scripts/build.ts"))) return workspaceCheckout;
   let root = dirname(process.execPath);
   for (let depth = 0; depth < 8; depth++) {
     if (existsSync(join(root, "scripts/build.ts")) && existsSync(join(root, "src/runtime/Cargo.toml"))) return root;

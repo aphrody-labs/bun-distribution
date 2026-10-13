@@ -12,6 +12,15 @@
 - [x] Configure shared Cargo build and install destinations and ignore rules.
 - [x] Preserve first-party attribution and imported licenses/notices.
 
+## Material source ownership follow-up — 2026-10-13
+
+- [x] Advance the exported Material pin to the current `os` owner revision and
+      synchronize both M3 references to the single `aphrody-m3-os-themes` owner.
+- [x] Resolve equivalent stale machine aliases to the selected workspace Bun
+      checkout while preserving explicit per-build checkout configuration.
+- [x] Validate the source graph through the distribution plan and run native
+      Bun typecheck, lint and format gates.
+
 ## Integrated Craft fonts and shared quality — 2026-10-13
 
 - [x] Integrate `craft-fonts` and its licensed assets into the Bun OS Cargo workspace; preserve the source repository and publish its `os` integration commit `f1bfd5fd75f24619cad085230c7290f17ee7821e`.
