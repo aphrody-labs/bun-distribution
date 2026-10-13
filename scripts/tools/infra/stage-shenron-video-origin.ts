@@ -4,7 +4,7 @@ import { chmod, lstat, mkdir, realpath, rename, rm } from "node:fs/promises";
 import { dirname, join, relative, sep } from "node:path";
 
 const PRIVATE_ROOT = "/home/ubuntu/.aphrody/profiles/dbfr/video-handoff/beerus-01";
-const PUBLIC_ROOT = "/srv/shenron/shared/site/public-extra";
+const PUBLIC_ROOT = "/home/ubuntu/apps/shenron/shared/site/public-extra";
 const PUBLIC_DIR = "media/episodes/beerus-01";
 const MAX_CACHEABLE_BYTES = 512 * 1024 * 1024;
 const SHA256 = /^[a-f0-9]{64}$/;
@@ -118,6 +118,19 @@ export async function stageShenronVideo(
 
 if (import.meta.main) {
   const args = process.argv.slice(2);
+  if (args.length === 1 && args[0] === "--preflight") {
+    if (
+      (await realpath(PRIVATE_ROOT)) !== PRIVATE_ROOT ||
+      (await realpath(PUBLIC_ROOT)) !== PUBLIC_ROOT
+    )
+      throw Error("DBFR staging roots differ");
+    if (!(await lstat(PRIVATE_ROOT)).isDirectory() || !(await lstat(PUBLIC_ROOT)).isDirectory())
+      throw Error("DBFR staging roots are not directories");
+    console.log(
+      JSON.stringify({ status: "ready", privateRoot: PRIVATE_ROOT, publicRoot: PUBLIC_ROOT }),
+    );
+    process.exit(0);
+  }
   if (args.length !== 0 && args.length !== 4)
     throw Error("Usage: bun stage-shenron-video-origin.ts [POSTER WEBP_SHA256 VIDEO MP4_SHA256]");
   const stage = join(PRIVATE_ROOT, "stage");
