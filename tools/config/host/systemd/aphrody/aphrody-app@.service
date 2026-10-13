@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: Apache-2.0
+# Rendered by the canonical Aphrody Infra application adapter.
+[Unit]
+Description=Aphrody %i / Bun
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User={user}
+Group={user}
+WorkingDirectory={app_root}
+Environment=HOST=127.0.0.1
+Environment=PORT={port}
+Environment=APHRODY_APP_DATA={state_root}/apps/%i/data
+Environment=APHRODY_ARTIFACT_CACHE={state_root}/cache/apps/%i
+EnvironmentFile={state_root}/secrets/apps/%i.env
+ExecStart={app_root}/app --serve
+Restart=on-failure
+RestartSec=2
+KillMode=control-group
+TimeoutStopSec=10
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths={state_root}/apps/%i/data {state_root}/cache/apps/%i
+
+[Install]
+WantedBy=multi-user.target

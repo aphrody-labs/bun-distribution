@@ -7,6 +7,7 @@
 
 pub mod always_online;
 pub mod api;
+pub mod app;
 pub mod boot;
 pub mod catalog;
 pub mod cli;

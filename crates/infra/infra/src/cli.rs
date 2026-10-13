@@ -79,12 +79,27 @@ enum CommandKind {
     Deploy {
         #[arg(long)]
         target: String,
-        /// aphrody (five-service stack), shenron, rg, or bundle (aphrody -> shenron -> rg).
+        /// Existing stack adapter, or one verified application bound to its catalog id.
         #[arg(long, value_enum, default_value_t = DeployStack::Aphrody)]
         stack: DeployStack,
         /// Release directory on the target, below the stack's release root.
         #[arg(long)]
         release: Option<String>,
+        /// Canonical service id for --stack app.
+        #[arg(long, requires = "source")]
+        id: Option<String>,
+        /// Source checkout providing the existing application artifact validator.
+        #[arg(long)]
+        source: Option<PathBuf>,
+        /// Successful application build report, interpreted by its artifact owner.
+        #[arg(long)]
+        build_report: Option<PathBuf>,
+        /// Qualified native Bun executable on the selected execution host.
+        #[arg(long, default_value = "bun")]
+        bun: String,
+        /// Run the application adapter on this explicitly selected target host.
+        #[arg(long)]
+        local: bool,
         #[arg(long)]
         apply: bool,
     },
@@ -364,6 +379,8 @@ enum DriveCommand {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, ValueEnum)]
 #[serde(rename_all = "kebab-case")]
 enum DeployStack {
+    /// One verified native application using the canonical service and ingress catalogs.
+    App,
     /// Five-service Aphrody stack (site, Web API, A2A, AI HTTP, E5).
     Aphrody,
     /// Internal Shenron compute only (AI HTTP, E5, managed llama companion).
@@ -381,6 +398,7 @@ impl DeployStack {
     fn release_root(self) -> String {
         let layout = &*crate::layout::HOST_LAYOUT;
         match self {
+            Self::App => format!("{}/bun-libraries/", layout.apps),
             Self::Aphrody | Self::AphrodyCompute => format!("{}/releases/", layout.app("aphrody")),
             Self::Shenron => format!("{}/releases/", layout.app("shenron")),
             Self::Rg => format!("{}/releases/", layout.app("rg")),
@@ -391,6 +409,7 @@ impl DeployStack {
     /// Adapter installed by `scripts/tools/install-vps-adapter.sh`.
     fn adapter(self) -> &'static str {
         match self {
+            Self::App => "",
             Self::Aphrody | Self::AphrodyCompute => "/usr/local/sbin/aphrody-infra-deploy-aphrody",
             Self::Shenron => "/usr/local/sbin/aphrody-infra-deploy-shenron",
             Self::Rg => "/usr/local/sbin/aphrody-infra-deploy-rg",
@@ -401,6 +420,7 @@ impl DeployStack {
     /// Environment variable overriding the adapter path (tests, staging hosts).
     fn adapter_env(self) -> &'static str {
         match self {
+            Self::App => "",
             Self::Aphrody | Self::AphrodyCompute => "APHRODY_REMOTE_DEPLOY_ADAPTER",
             Self::Shenron => "SHENRON_REMOTE_DEPLOY_ADAPTER",
             Self::Rg => "RG_REMOTE_DEPLOY_ADAPTER",
@@ -411,6 +431,12 @@ impl DeployStack {
     /// What the adapter verifies before it switches anything.
     fn requires(self) -> &'static [&'static str] {
         match self {
+            Self::App => &[
+                "catalog id, host and listener declared by Aphrody Infra",
+                "artifact owner verifies build report, manifest, executable digests and native doctor",
+                "protected app environment, isolated persistent data and payload cache",
+                "native service health before public ingress activation",
+            ],
             Self::Aphrody => &[
                 "explicit --apply",
                 "SMOKE.json attestation matching the release SHA256SUMS",
@@ -1386,6 +1412,9 @@ fn deploy(
     apply: bool,
     run: &mut Run,
 ) -> Result<()> {
+    if stack == DeployStack::App {
+        bail!("Application deployment uses the native catalog-bound owner");
+    }
     let matrix = load_matrix()?;
     let _ = selected(&matrix, Some(target))?;
     let adapter = std::env::var(stack.adapter_env()).unwrap_or_else(|_| stack.adapter().to_owned());
@@ -2292,8 +2321,47 @@ async fn run_cli(cli: Cli) -> Result<()> {
         },
         CommandKind::Doctor { json, strict } => doctor(&root, *json, *strict, &mut run),
         CommandKind::Sync { target, apply } => sync(&root, target.as_deref(), *apply, &mut run),
-        CommandKind::Deploy { target, stack, release, apply } => {
-            deploy(target, *stack, release.as_deref(), *apply, &mut run)
+        CommandKind::Deploy {
+            target,
+            stack,
+            release,
+            id,
+            source,
+            build_report,
+            bun,
+            local,
+            apply,
+        } => {
+            if *stack == DeployStack::App {
+                let plan = crate::app::deploy_app(
+                    &root,
+                    &crate::app::AppDeployOptions {
+                        target,
+                        id: id.as_deref().context("--id is required for --stack app")?,
+                        source: source
+                            .as_deref()
+                            .context("--source is required for --stack app")?,
+                        build_report: build_report
+                            .as_deref()
+                            .context("--build-report is required for --stack app")?,
+                        bun,
+                        local: *local,
+                        apply: *apply,
+                    },
+                )?;
+                run.action(
+                    "deploy.app",
+                    if plan.applied { "applied" } else { "planned" },
+                    json!(&plan),
+                );
+                println!("{}", serde_json::to_string_pretty(&plan)?);
+                Ok(())
+            } else {
+                if id.is_some() || source.is_some() || build_report.is_some() || *local {
+                    bail!("Application options require --stack app");
+                }
+                deploy(target, *stack, release.as_deref(), *apply, &mut run)
+            }
         },
         CommandKind::Boot { action, host, entry, json } => {
             let drift =

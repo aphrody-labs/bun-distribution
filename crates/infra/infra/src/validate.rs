@@ -52,8 +52,16 @@ pub fn host_config_root() -> PathBuf {
 }
 
 fn unit_template_exists(systemd_root: &Path, unit: &str) -> bool {
+    let instance_template = unit.split_once('@').and_then(|(name, instance)| {
+        let (_, suffix) = instance.split_once('.')?;
+        Some(format!("{name}@.{suffix}"))
+    });
     std::fs::read_dir(systemd_root).into_iter().flatten().flatten().any(|owner| {
-        owner.path().join(unit).is_file() || owner.path().join(format!("{unit}.example")).is_file()
+        owner.path().join(unit).is_file()
+            || owner.path().join(format!("{unit}.example")).is_file()
+            || instance_template
+                .as_ref()
+                .is_some_and(|template| owner.path().join(template).is_file())
     })
 }
 
