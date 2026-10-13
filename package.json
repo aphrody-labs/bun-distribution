@@ -293,6 +293,7 @@
     "@types/react-dom": "catalog:",
     "@types/three": "catalog:",
     "cheerio": "catalog:",
+    "element-internals-polyfill": "3.0.2",
     "typescript": "catalog:",
     "undici-types": "catalog:"
   },

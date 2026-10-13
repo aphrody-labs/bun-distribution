@@ -74,14 +74,7 @@ GlobalRegistrator.register();
 
 rendreReseauNatif();
 
-try {
-  const polyfill = "element-internals-polyfill";
-  await import(polyfill);
-} catch {
-  try {
-    await import("../m3/packages/m3-config/node_modules/element-internals-polyfill/dist/index.js");
-  } catch {}
-}
+await import("element-internals-polyfill");
 
 // Conformité WHATWG FormData.append(name, value, filename) :
 // Si value est un Blob et que filename est fourni, happy-dom oublie le nom et force "blob".
