@@ -124,6 +124,16 @@ class JevModel(Model):
         inputs = DecisionInput.model_validate_json(prompts[0])
         response = await self.transport(inputs)
         output = bind_response(inputs, response)
+        # Pydantic AI requires RequestUsage; its internal defaults are not a
+        # provider measurement. Keep the application's unknown usage as None.
+        usage = (
+            RequestUsage(details={"aphrody_provider_usage_missing": 1})
+            if response.usage is None
+            else RequestUsage(
+                input_tokens=response.usage.input_tokens,
+                output_tokens=response.usage.output_tokens,
+            )
+        )
         return ModelResponse(
             parts=[
                 ToolCallPart(
@@ -133,8 +143,10 @@ class JevModel(Model):
                 )
             ],
             model_name=response.model,
-            usage=RequestUsage(
-                input_tokens=response.usage.input_tokens,
-                output_tokens=response.usage.output_tokens,
-            ),
+            usage=usage,
+            metadata={
+                "aphrody_provider_usage": (
+                    response.usage.model_dump() if response.usage is not None else None
+                )
+            },
         )

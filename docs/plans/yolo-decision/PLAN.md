@@ -20,6 +20,10 @@ modèle déléguant exactement un appel au serveur Rust `/v1/systemone`.
 Le seuil est envoyé à Rust comme `minimum_confidence`; son champ `selections`
 est obligatoire. Python ne recalcule ni confiance ni sélection. Les sorties
 portent candidat, sélection/abstention, distribution, modèle et usage.
+La voie SDK Bun empruntée et l'usage explicitement non mesuré (`None`) sont
+décrits dans [la bascule consommateurs](BUN-CUTOVER.md). Les chemins HTTP et le
+host existants sont conservés jusqu'aux gates natifs du binaire Bun et de
+l'ABI SDK 1.6 ; les fixtures applicatives ne qualifient pas cette activation.
 HTTP distant sans TLS, credentials dans URL et redirections sont refusés.
 Le client HTTP emprunté peut recevoir l'authentification du service privé.
 Les helpers acceptent un token explicite; le pont lit uniquement la référence

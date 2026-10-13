@@ -76,6 +76,20 @@ async def test_http_passes_exact_jev_contract_and_threshold():
 
 
 @pytest.mark.asyncio
+async def test_http_preserves_explicit_unreported_usage():
+    raw = response()
+    raw["usage"] = None
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(lambda _request: httpx.Response(200, json=raw))
+    ) as client:
+        output = await YoloDecision(
+            JevHTTP("http://127.0.0.1:8787/v1/systemone", client)
+        ).decide(inputs())
+    assert output.usage is None
+    assert json.loads(output.model_dump_json())["usage"] is None
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("token", [None, "synthetic-auth-fixture"])
 async def test_json_helper_uses_only_explicit_backend_auth(monkeypatch, token):
     from aphrody.decision.workflow import decide_async_json

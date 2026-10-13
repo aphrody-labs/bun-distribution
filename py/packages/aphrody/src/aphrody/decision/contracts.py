@@ -62,14 +62,15 @@ class ChoiceAnswer(Contract):
 
 
 class Usage(Contract):
-    input_tokens: Annotated[int, Field(ge=0)] = 0
-    output_tokens: Annotated[int, Field(ge=0)] = 0
+    input_tokens: Annotated[int, Field(ge=0)]
+    output_tokens: Annotated[int, Field(ge=0)]
 
 
 class JevResponse(Contract):
     model: Annotated[str, Field(min_length=1)]
     answers: dict[str, ChoiceAnswer]
-    usage: Usage = Field(default_factory=Usage)
+    # None means unreported; a real measured zero must be supplied explicitly.
+    usage: Usage | None
     # Required: only the Rust owner may apply the confidence policy.
     selections: dict[str, Name | None]
 
@@ -81,7 +82,7 @@ class DecisionOutput(Contract):
     confidence: Probability
     probabilities: dict[Name, Probability]
     model: str
-    usage: Usage
+    usage: Usage | None
     status: Literal["selected", "abstained"]
     inference_owner: Literal["aphrody-jev"] = "aphrody-jev"
     # A decision is a proposal. It cannot authorize or execute an operation.
