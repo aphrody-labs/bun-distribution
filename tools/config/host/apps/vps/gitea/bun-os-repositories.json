@@ -75,6 +75,46 @@
       "mirror": true,
       "upstream": "https://github.com/aphrody-labs/bun-distribution.git",
       "private": false
+    },
+    {
+      "name": "bun-crate-aphrody-a2a",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-aphrody-agent-proto",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-aphrody-app-protocol",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-aphrody-toolcall",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-aphrody-patch",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-aphrody-toolcall-repair",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-aphrody-translate-core",
+      "mirror": false,
+      "private": true
+    },
+    {
+      "name": "bun-crate-aphrody-http-error",
+      "mirror": false,
+      "private": true
     }
   ]
 }
