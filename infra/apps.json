@@ -2,11 +2,8 @@
   "schemaVersion": 1,
   "workspaces": {
     "os": "..",
-    "libraries": "../../bun-libraries",
+    "libraries": "..",
     "material": "../../material"
-  },
-  "ownerPins": {
-    "bunLibraries": "7b5816ac06631bdc6ff772fb1f52c4cd7e66e8e6"
   },
   "storage": {
     "assets": {
@@ -318,7 +315,7 @@
       "entrypoint": "apps/desktop/server.ts",
       "entrypointWorkspace": "libraries",
       "source": {
-        "repository": "aphrody-labs/bun-libraries",
+        "repository": "aphrody-labs/bun-distribution",
         "path": "apps/desktop",
         "license": "MIT"
       },
@@ -336,7 +333,7 @@
     }
   ],
   "build": {
-    "outputRoot": "../../build/bun-os-apps",
+    "outputRoot": "../build/apps",
     "timeoutSeconds": 600,
     "sharedHeavyLock": "../../bun/build/cargo-serial/.build.lock",
     "lockKind": "exclusive-file"

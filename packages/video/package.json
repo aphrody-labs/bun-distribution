@@ -2,18 +2,15 @@
   "name": "@aphrody/bun-os-video-compat",
   "version": "1.4.4",
   "private": true,
+  "description": "Aphrody / Bun native video project bridge",
   "license": "MIT",
   "type": "module",
-  "description": "Aphrody / Bun native video project bridge",
   "exports": {
     ".": "./src/index.ts",
     "./*": "./src/*.ts"
   },
-  "bin": {
-    "aphrody-video": "./src/cli.ts"
-  },
   "dependencies": {
-    "@aphrody/bun-video-project": "file:../../../bun-libraries/packages/video"
+    "@aphrody/bun-video-project": "workspace:*"
   },
   "engines": {
     "bun": "=1.4.4"

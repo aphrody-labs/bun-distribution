@@ -2,17 +2,21 @@
   "name": "@aphrody/bun-os",
   "version": "1.4.4",
   "private": true,
-  "description": "Aphrody OS and Bun Libraries unified source workspace",
+  "description": "Aphrody OS unified product and library workspace",
   "license": "MIT",
   "bin": {
     "bun-os": "src/cli.ts"
   },
   "workspaces": [
-    "packages/package-converter",
-    "packages/workspace",
-    "packages/video",
+    "apps/desktop",
     "packages/artifacts",
-    "apps/desktop"
+    "packages/bun-app-host",
+    "packages/bun-artifacts",
+    "packages/bun-video-project",
+    "packages/bun-workspace",
+    "packages/package-converter",
+    "packages/video",
+    "packages/workspace"
   ],
   "type": "module",
   "exports": {
@@ -30,9 +34,9 @@
     "wasm": "bun src/cli.ts wasm",
     "image": "bun src/cli.ts image",
     "typecheck": "bun check -p tsconfig.json --threads=2 --no-pretty",
-    "lint": "bun lint --deny-warnings src container factory infra packages/package-converter/src packages/workspace/src packages/video/src packages/artifacts/src apps/desktop scripts",
-    "format": "bun fmt --write -c bun-format.json --ignore-pattern '**/*.html' src container factory infra packages/package-converter/src packages/workspace/src packages/video/src packages/artifacts/src apps/desktop scripts",
-    "format:check": "bun fmt --check -c bun-format.json --ignore-pattern '**/*.html' src container factory infra packages/package-converter/src packages/workspace/src packages/video/src packages/artifacts/src apps/desktop scripts",
+    "lint": "bun lint --deny-warnings src container factory infra packages apps/desktop scripts",
+    "format": "bun fmt --write -c bun-format.json --ignore-pattern '**/*.html' src container factory infra packages apps/desktop scripts",
+    "format:check": "bun fmt --check -c bun-format.json --ignore-pattern '**/*.html' src container factory infra packages apps/desktop scripts",
     "check": "bun scripts/quality.ts",
     "doctor": "bun packages/workspace/src/cli.ts doctor",
     "catalog": "bun packages/workspace/src/cli.ts list",
@@ -49,15 +53,19 @@
     "desktop:build": "bun run --cwd apps/desktop desktop:build",
     "frontend:dev": "bun run --cwd libraries/artcraft/frontend dev",
     "frontend:build": "bun run --cwd libraries/artcraft/frontend build",
-    "video": "bun ../bun-libraries/packages/video/src/cli.ts",
+    "video": "bun packages/bun-video-project/src/cli.ts",
     "assets": "bun packages/workspace/src/assets-cli.ts",
-    "artifacts": "bun packages/artifacts/src/cli.ts",
+    "artifacts": "bun packages/bun-artifacts/src/cli.ts",
     "video:build": "bun packages/workspace/src/cli.ts build filmcraft",
     "apps:plan": "bun scripts/build-apps.ts plan",
-    "apps:build": "bun scripts/build-apps.ts build"
+    "apps:build": "bun scripts/build-apps.ts build",
+    "workspace:manifests": "bun scripts/workspace-manifests.ts"
   },
   "dependencies": {
-    "@aphrody/bun-workspace": "file:../bun-libraries/packages/workspace"
+    "@aphrody/bun-workspace": "workspace:*",
+    "@aphrody/bun-artifacts": "workspace:*",
+    "@aphrody/bun-video-project": "workspace:*",
+    "@aphrody/bun-app-host": "workspace:*"
   },
   "devDependencies": {
     "@aphrody/bun-types": "1.4.4"

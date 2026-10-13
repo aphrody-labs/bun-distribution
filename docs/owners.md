@@ -19,11 +19,11 @@ retain its errors, limits and qualification.
 | Hosts, services, boot and deployment authority | Native Aphrody Infra | App deployment adapter and controller |
 | Git forge and workflow execution | Deployed forge and runner | First party Bun shell workflows |
 | DNS and R2 desired state | Aphrody Infra | Cloudflare API and app release configuration |
-| Live DNS records, proxy and object storage | Cloudflare | Aphrody Infra control and Bun Libraries asset contracts |
-| Distribution profiles, OS images and package conversion | Bun OS | Qualified Bun runtime, APT sources and Bun Libraries artifacts |
+| Live DNS records, proxy and object storage | Cloudflare | Aphrody Infra control and Bun OS asset contracts |
+| Distribution profiles, OS images and package conversion | Bun OS | Qualified Bun runtime, APT sources and in-repo artifact packages |
 | Debian APT source and package-manager implementation | Official APT fork | Bun OS distro build and conversion adapter |
 | M3 tokens, shared components and `libm3` | Material | Aphrody and Bun app UI consumers |
-| Product routes, sites and app activation policy | Aphrody Infra | Bun Libraries app capability manifest |
+| Product routes, sites and app activation policy | Aphrody Infra | Bun OS app capability manifest |
 
 The video process module translates workspace errors into its public video
 errors. It has no child management implementation. Captured and discarded
@@ -57,5 +57,5 @@ history before removing it.
 Aphrody Infra declares and actuates desired DNS, host, route and app lifecycle
 state. Cloudflare's live records/R2 and application health require direct
 qualification; a checked-in hostname or successful source build is not live
-activation evidence. Bun Libraries owns app identity, host naming, shared asset
+activation evidence. Bun OS owns app identity, host naming, shared asset
 manifests and artifact verification consumed by the Infra adapter.

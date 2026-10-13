@@ -12,7 +12,7 @@
     "./metadata": "./src/metadata.ts"
   },
   "dependencies": {
-    "@aphrody/bun-workspace": "file:../../../bun-libraries/packages/workspace"
+    "@aphrody/bun-workspace": "workspace:*"
   },
   "engines": {
     "bun": ">=1.4.4"

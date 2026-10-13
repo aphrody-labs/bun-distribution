@@ -11,11 +11,11 @@
     "./process": "./src/process.ts",
     "./runtime": "./src/runtime.ts"
   },
+  "dependencies": {
+    "@aphrody/bun-app-host": "workspace:*",
+    "@aphrody/bun-workspace": "workspace:*"
+  },
   "engines": {
     "bun": "1.4.4"
-  },
-  "dependencies": {
-    "@aphrody/bun-workspace": "file:../../../bun-libraries/packages/workspace",
-    "@aphrody/bun-app-host": "file:../../../bun-libraries/packages/app-host"
   }
 }

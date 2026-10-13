@@ -4,7 +4,7 @@ import { basename, dirname, isAbsolute, join, relative, resolve } from "node:pat
 import { hostname } from "node:os";
 import { isBuiltin } from "node:module";
 import { appCapabilityForLibrary, appHostnamesForLibrary } from "@aphrody/bun-workspace/capabilities";
-import { loadConfig as loadLibraryConfig } from "@aphrody/bun-workspace";
+import { loadConfig as loadLibraryConfig, runtimePinFor, type RuntimeTarget } from "@aphrody/bun-workspace";
 import { runProcess } from "@aphrody/bun-workspace/process";
 import { command, identity, packageRoot, type RuntimeReceipt } from "../src/distribution.ts";
 import { inspectLinuxABI } from "../src/elf.ts";
@@ -64,11 +64,10 @@ export interface AppEntry {
 export interface AppInventory extends AssetInventory {
   targets: AppTarget[];
   apps: AppEntry[];
-  ownerPins?: { bunLibraries?: string };
   runtimeSnapshots?: Partial<Record<AppTarget, RuntimeSnapshot>>;
 }
 export interface OwnerWorkspace {
-  repository: "aphrody-labs/bun-libraries";
+  repository: "aphrody-labs/bun-distribution";
   checkout: string;
   expectedRevision: string;
   revision: string;
@@ -103,11 +102,11 @@ export interface AppPlan {
   status: "prepared" | "blocked";
   reasons: string[];
   ownerWorkspace?: OwnerWorkspace;
-  buildOwner?: { repository: "aphrody-labs/bun-libraries"; capability: string };
+  buildOwner?: { repository: "aphrody-labs/bun-distribution"; capability: string };
   compiler?: {
-    repository: "aphrody-labs/bun-libraries";
+    repository: "aphrody-labs/bun-distribution";
     checkout: string;
-    path: "packages/artifacts/src/compiler.ts";
+    path: "packages/bun-artifacts/src/compiler.ts";
     revision: string;
     sha256: string;
   };
@@ -140,6 +139,9 @@ export function nativeTarget(): AppTarget | undefined {
   if (process.platform === "linux" && ["x64", "arm64"].includes(process.arch))
     return ("linux-" + process.arch) as AppTarget;
   if (process.platform === "darwin" && process.arch === "arm64") return "macos-arm64";
+}
+function libraryRuntimeTarget(target: AppTarget): RuntimeTarget {
+  return (target === "macos-arm64" ? "darwin-arm64" : target) as RuntimeTarget;
 }
 export async function executableABI(path: string, target: AppTarget, library = false) {
   const size = (await lstat(path)).size;
@@ -327,34 +329,12 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
   const libraryRoot = ownsNativeBuild ? artifactRoot : undefined;
   const root = libraryRoot ?? (await workspace(configPath, config, app.entrypointWorkspace ?? app.workspace));
   const reasons: string[] = [];
-  const expectedLibraryRevision = config.ownerPins?.bunLibraries;
   let ownerWorkspace: OwnerWorkspace | undefined;
   try {
-    if (!expectedLibraryRevision || !/^[a-f0-9]{40}$/.test(expectedLibraryRevision))
-      throw new Error("A full Bun Libraries source revision pin is required");
-    const [revision, status, origin] = await Promise.all([
-      command(["git", "rev-parse", "HEAD"], artifactRoot),
-      command(["git", "status", "--porcelain=v1", "--untracked-files=all", "--ignore-submodules=none"], artifactRoot),
-      command(["git", "remote", "get-url", "origin"], artifactRoot),
-    ]);
-    const clean = status === "";
-    ownerWorkspace = {
-      repository: "aphrody-labs/bun-libraries",
-      checkout: artifactRoot,
-      expectedRevision: expectedLibraryRevision,
-      revision,
-      clean,
-    };
-    if (
-      !/^(?:https:\/\/github\.com\/aphrody-labs\/bun-libraries|git@github\.com:aphrody-labs\/bun-libraries)(?:\.git)?$/.test(
-        origin,
-      )
-    )
-      throw new Error("Bun Libraries workspace is outside its capability owner");
-    if (revision !== expectedLibraryRevision) throw new Error("Bun Libraries workspace revision differs from its pin");
-    if (!clean) throw new Error("Bun Libraries workspace has uncommitted or untracked source changes");
+    ownerWorkspace = await inspectOwnerWorkspace(artifactRoot);
+    if (!ownerWorkspace.clean) throw new Error("Bun OS workspace has uncommitted or untracked source changes");
   } catch (error) {
-    reasons.push(error instanceof Error ? error.message : "Bun Libraries workspace revision is unavailable");
+    reasons.push(error instanceof Error ? error.message : "Bun OS workspace revision is unavailable");
   }
   let resolvedHostnames: string[];
   let librarySourceRevision: string | undefined;
@@ -366,7 +346,7 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
     resolvedHostnames = appHostnamesForLibrary(app.id, libraryConfig);
     if (!capability || !module?.binary) reasonsForMissingOwner(app.id);
     if (!module.fork || !module.path || !module.license || !module.revision)
-      throw new Error("Bun Libraries source metadata is incomplete");
+      throw new Error("Bun OS source metadata is incomplete");
     resolvedSource = {
       repository: module.fork,
       revision: module.revision,
@@ -391,25 +371,22 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
   let entrypoint = inside(root, resolve(root, ownsNativeBuild ? "scripts/build-apps.ts" : app.entrypoint));
   let compiler: AppPlan["compiler"] | undefined;
   try {
-    const compilerPath = inside(artifactRoot, join(artifactRoot, "packages/artifacts/src/compiler.ts"));
+    const compilerPath = inside(artifactRoot, join(artifactRoot, "packages/bun-artifacts/src/compiler.ts"));
     const compilerRevision = await command(["git", "rev-parse", "HEAD"], artifactRoot);
     const compilerStatus = await command(
-      ["git", "status", "--porcelain", "--", "packages/artifacts/src/compiler.ts"],
+      ["git", "status", "--porcelain", "--", "packages/bun-artifacts/src/compiler.ts"],
       artifactRoot,
     );
     const compilerOrigin = await command(["git", "remote", "get-url", "origin"], artifactRoot);
     if (!(await Bun.file(compilerPath).exists())) throw new Error("Shared compiler source is absent");
-    if (compilerStatus) throw new Error("Bun Libraries compiler checkout has uncommitted changes");
-    if (
-      !/^(?:https:\/\/github\.com\/aphrody-labs\/bun-libraries|git@github\.com:aphrody-labs\/bun-libraries)(?:\.git)?$/.test(
-        compilerOrigin,
-      )
-    )
-      throw new Error("Shared compiler checkout is outside its capability owner");
+    if (compilerStatus) throw new Error("Bun OS compiler checkout has uncommitted changes");
+    assertProductOrigin(compilerOrigin);
+    if (compilerRevision !== ownerWorkspace?.revision)
+      throw new Error("Shared compiler revision differs from the planned product");
     compiler = {
-      repository: "aphrody-labs/bun-libraries",
+      repository: "aphrody-labs/bun-distribution",
       checkout: artifactRoot,
-      path: "packages/artifacts/src/compiler.ts",
+      path: "packages/bun-artifacts/src/compiler.ts",
       revision: compilerRevision,
       sha256: (await identity(compilerPath)).sha256,
     };
@@ -477,7 +454,7 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
     ...(capability
       ? {
           buildOwner: {
-            repository: "aphrody-labs/bun-libraries" as const,
+            repository: "aphrody-labs/bun-distribution" as const,
             capability: capability.id,
           },
         }
@@ -491,25 +468,37 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
   };
 }
 function reasonsForMissingOwner(appId: string): never {
-  throw new Error("Bun Libraries has no native application capability for " + appId);
+  throw new Error("Bun OS has no native application capability for " + appId);
 }
 
-async function inspectOwnerWorkspace(checkout: string, expectedRevision: string): Promise<OwnerWorkspace> {
+function assertProductOrigin(origin: string): void {
+  const knownOrigins = new Set([
+    "https://github.com/aphrody-labs/bun-distribution",
+    "https://github.com/aphrody-labs/bun-distribution.git",
+    "git@github.com:aphrody-labs/bun-distribution",
+    "git@github.com:aphrody-labs/bun-distribution.git",
+    "bun-forge:aphrody-dev/bun-distribution.git",
+    "https://source.aphrody.app/aphrody-dev/bun-distribution.git",
+    "ssh://git@source.aphrody.app/aphrody-dev/bun-distribution.git",
+    "git@source.aphrody.app:aphrody-dev/bun-distribution.git",
+  ]);
+  if (!knownOrigins.has(origin)) throw new Error("Bun OS workspace is outside its product owner");
+}
+
+async function inspectOwnerWorkspace(checkout: string, expectedRevision?: string): Promise<OwnerWorkspace> {
   const [revision, status, origin] = await Promise.all([
     command(["git", "rev-parse", "HEAD"], checkout),
     command(["git", "status", "--porcelain=v1", "--untracked-files=all", "--ignore-submodules=none"], checkout),
     command(["git", "remote", "get-url", "origin"], checkout),
   ]);
-  if (
-    !/^(?:https:\/\/github\.com\/aphrody-labs\/bun-libraries|git@github\.com:aphrody-labs\/bun-libraries)(?:\.git)?$/.test(
-      origin,
-    )
-  )
-    throw new Error("Bun Libraries workspace is outside its capability owner");
+  assertProductOrigin(origin);
+  const pinnedRevision = expectedRevision ?? revision;
+  if (!/^[a-f0-9]{40}$/.test(pinnedRevision)) throw new Error("A full product source revision is required");
+  await command(["git", "merge-base", "--is-ancestor", pinnedRevision, revision], checkout);
   return {
-    repository: "aphrody-labs/bun-libraries",
+    repository: "aphrody-labs/bun-distribution",
     checkout,
-    expectedRevision,
+    expectedRevision: pinnedRevision,
     revision,
     clean: status === "",
   };
@@ -523,22 +512,19 @@ async function buildLibraryApp(configPath: string, appId: string, target: AppTar
   const config = (await readInventory(configPath)) as AppInventory;
   const app = config.apps.find(entry => entry.id === appId);
   const capability = appCapabilityForLibrary(appId);
-  if (!app || app.kind !== "native-cli" || !capability) throw new Error("No Bun Libraries app owner is configured");
+  if (!app || app.kind !== "native-cli" || !capability) throw new Error("No Bun OS app owner is configured");
   const plan = await planApp(configPath, appId, target);
   if (plan.status !== "prepared" || !plan.runtime) throw new Error(plan.reasons.join("; "));
   const libraryRoot = await workspace(configPath, config, "libraries");
   const currentOwnerWorkspace = await inspectOwnerWorkspace(libraryRoot, plan.ownerWorkspace!.expectedRevision);
   if (!currentOwnerWorkspace.clean || currentOwnerWorkspace.revision !== plan.ownerWorkspace!.revision)
-    throw new Error("Bun Libraries workspace changed after app planning; plan the build again");
+    throw new Error("Bun OS workspace changed after app planning; plan the build again");
   const libraryConfig = await loadLibraryConfig(libraryRoot);
-  if (
-    libraryConfig.runtime.version !== plan.runtime.version ||
-    libraryConfig.runtime.revision !== plan.runtime.revision
-  )
-    throw new Error("Bun Libraries and distribution runtime pins differ");
+  const targetRuntime = runtimePinFor(libraryConfig, libraryRuntimeTarget(target));
+  if (targetRuntime.version !== plan.runtime.version || targetRuntime.revision !== plan.runtime.revision)
+    throw new Error("Bun OS and distribution runtime pins differ");
   const output = resolve(
-    requestedOutput ??
-      join(packageRoot, "../../build/bun-os-apps", appId, new Date().toISOString().replace(/[:.]/g, "")),
+    requestedOutput ?? join(packageRoot, "build/apps", appId, new Date().toISOString().replace(/[:.]/g, "")),
   );
   try {
     await lstat(output);
@@ -549,12 +535,12 @@ async function buildLibraryApp(configPath: string, appId: string, target: AppTar
   await mkdir(join(output, "logs"), { recursive: true });
   const ownerOutput = join(
     libraryRoot,
-    ".local/apps/bun-os",
+    "build/staging/app-owner",
     appId + "-" + new Date().toISOString().replace(/[:.]/g, ""),
   );
   const ownerRelative = relative(libraryRoot, ownerOutput).replaceAll("\\", "/");
   if (ownerRelative.startsWith("../") || isAbsolute(ownerRelative))
-    throw new Error("Bun Libraries output left its owner checkout");
+    throw new Error("Bun OS output left its owner checkout");
   const pinPath = join(ownerOutput, "runtime-pin.json");
   const outputRelative = join(ownerRelative, "artifacts").replaceAll("\\", "/");
   const reportRelative = join(ownerRelative, "build-report.json").replaceAll("\\", "/");
@@ -565,9 +551,9 @@ async function buildLibraryApp(configPath: string, appId: string, target: AppTar
     pinPath,
     JSON.stringify(
       {
-        version: libraryConfig.runtime.version,
-        repository: libraryConfig.runtime.repository,
-        revision: libraryConfig.runtime.revision,
+        version: targetRuntime.version,
+        repository: targetRuntime.repository,
+        revision: targetRuntime.revision,
       },
       null,
       2,
@@ -606,18 +592,21 @@ async function buildLibraryApp(configPath: string, appId: string, target: AppTar
     maxOutputBytes: 4 * 1024 * 1024,
     env: { ...Bun.env, BUN_BE_BUN: undefined },
   });
+  const finishedOwner = await inspectOwnerWorkspace(libraryRoot, plan.ownerWorkspace!.expectedRevision);
+  if (!finishedOwner.clean || finishedOwner.revision !== plan.ownerWorkspace!.revision)
+    throw new Error("Bun OS workspace changed during application compilation");
   await Bun.write(join(output, "logs/build.stdout"), result.stdout);
   await Bun.write(join(output, "logs/build.stderr"), result.stderr);
   const reportValue: unknown = (await Bun.file(join(libraryRoot, reportRelative)).json()) as unknown;
   if (!record(reportValue) || reportValue.complete !== true || !Array.isArray(reportValue.results))
-    throw new Error("Bun Libraries artifact build did not produce a complete report");
+    throw new Error("Bun OS artifact build did not produce a complete report");
   const built = reportValue.results[0];
   if (!record(built) || built.appId !== capability.id || built.status !== "built" || built.extraction !== "qualified")
-    throw new Error("Bun Libraries did not qualify the standalone application artifact");
-  if (!record(built.artifact)) throw new Error("Bun Libraries artifact receipt is incomplete");
+    throw new Error("Bun OS did not qualify the standalone application artifact");
+  if (!record(built.artifact)) throw new Error("Bun OS artifact receipt is incomplete");
   const artifact = built.artifact;
   if (!record(artifact.manifest) || !Array.isArray(artifact.manifest.native))
-    throw new Error("Bun Libraries artifact manifest is incomplete");
+    throw new Error("Bun OS artifact manifest is incomplete");
   const manifest = artifact.manifest;
   if (
     typeof artifact.path !== "string" ||
@@ -626,20 +615,21 @@ async function buildLibraryApp(configPath: string, appId: string, target: AppTar
     typeof manifest.runtime !== "object" ||
     !record(manifest.runtime)
   )
-    throw new Error("Bun Libraries artifact identity or runtime receipt is invalid");
+    throw new Error("Bun OS artifact identity or runtime receipt is invalid");
   const runtime = manifest.runtime;
   if (typeof runtime.version !== "string" || typeof runtime.revision !== "string" || typeof runtime.sha256 !== "string")
-    throw new Error("Bun Libraries runtime receipt is invalid");
+    throw new Error("Bun OS runtime receipt is invalid");
   if (
     runtime.version !== plan.runtime.version ||
     runtime.revision !== plan.runtime.revision ||
-    manifest.appId !== capability.id ||
+    !record(manifest.app) ||
+    manifest.app.id !== capability.id ||
     manifest.target !== targetName ||
     !record(manifest.source) ||
     manifest.source.revision !== plan.app.source?.revision ||
     manifest.hostname !== plan.app.hostname
   )
-    throw new Error("Bun Libraries artifact manifest differs from the prepared distribution plan");
+    throw new Error("Bun OS artifact manifest differs from the prepared distribution plan");
   const artifactPath = resolve(libraryRoot, artifact.path);
   const artifactRelative = relative(libraryRoot, artifactPath);
   if (
@@ -648,14 +638,14 @@ async function buildLibraryApp(configPath: string, appId: string, target: AppTar
     artifactRelative.startsWith("../") ||
     isAbsolute(artifactRelative)
   )
-    throw new Error("Bun Libraries artifact path left its owner checkout");
+    throw new Error("Bun OS artifact path left its owner checkout");
   const artifactFile = Bun.file(artifactPath);
   if (!(await artifactFile.exists()) || artifactFile.size !== artifact.size)
-    throw new Error("Bun Libraries artifact file size differs from its manifest");
+    throw new Error("Bun OS artifact file size differs from its manifest");
   const artifactHash = new Bun.CryptoHasher("sha256");
   for await (const chunk of artifactFile.stream()) artifactHash.update(chunk);
   if (artifactHash.digest("hex") !== artifact.sha256)
-    throw new Error("Bun Libraries artifact file hash differs from its manifest");
+    throw new Error("Bun OS artifact file hash differs from its manifest");
   const nativeFiles = (manifest.native as unknown[]).map(file => {
     if (
       !record(file) ||
@@ -664,7 +654,7 @@ async function buildLibraryApp(configPath: string, appId: string, target: AppTar
       typeof file.size !== "number" ||
       typeof file.kind !== "string"
     )
-      throw new Error("Bun Libraries native file receipt is invalid");
+      throw new Error("Bun OS native file receipt is invalid");
     const backend = file.kind === "engine";
     return {
       name: basename(file.path),
@@ -705,7 +695,7 @@ async function buildLibraryApp(configPath: string, appId: string, target: AppTar
       extraction: "qualified",
     },
     buildOwner: {
-      repository: "aphrody-labs/bun-libraries",
+      repository: "aphrody-labs/bun-distribution",
       capability: capability.id,
       report: join(libraryRoot, reportRelative),
     },
@@ -784,6 +774,9 @@ async function compileWorker(planPath: string, output: string) {
     throw new Error("Runtime changed during compilation");
   if ((await identity(compilerPath)).sha256 !== plan.compiler.sha256)
     throw new Error("Shared compiler changed during compilation");
+  const finishedOwner = await inspectOwnerWorkspace(plan.compiler.checkout, plan.ownerWorkspace!.expectedRevision);
+  if (!finishedOwner.clean || finishedOwner.revision !== plan.compiler.revision)
+    throw new Error("Bun OS workspace changed during compilation");
   const artifactABI = await executableABI(outfile, plan.target);
   const artifact = { path: outfile, ...(await identity(outfile)), abi: artifactABI };
   const receipt = {

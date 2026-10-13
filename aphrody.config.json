@@ -5,6 +5,18 @@
     "repository": "aphrody-labs/bun",
     "revision": "c62d01d81506a8b78b1d39b44d17edc81b4a6355"
   },
+  "runtimeTargets": {
+    "windows-x64": {
+      "version": "1.4.4",
+      "repository": "aphrody-labs/bun",
+      "revision": "c62d01d81506a8b78b1d39b44d17edc81b4a6355"
+    },
+    "linux-x64": {
+      "version": "1.4.4",
+      "repository": "aphrody-labs/bun",
+      "revision": "dfde053a3045d6076ad315b6f63160c4ced71513"
+    }
+  },
   "desktop": {
     "package": "@aphrody/tauri",
     "version": "1.4.4",

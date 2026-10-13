@@ -17,10 +17,12 @@ import {
   loadConfig,
   repositoryRoot,
   resolveModuleBinary,
+  runtimePinFor,
   runProcess,
   type Config,
   type RuntimeFacts,
   type RuntimePin,
+  type RuntimeTarget,
 } from "../packages/workspace/src/index.ts";
 import { validateAssetReference, type AssetReference } from "../packages/workspace/src/assets.ts";
 import {
@@ -33,7 +35,7 @@ import {
   type NativeArtifactReceipt,
   type NativeFileInput,
   type RuntimeArtifactReceipt,
-} from "../packages/artifacts/src/index.ts";
+} from "@aphrody/bun-artifacts";
 
 type Protocol = AppManifest["engine"]["protocol"];
 type Qualification = NativeArtifactReceipt["qualification"];
@@ -135,7 +137,12 @@ async function qualifyRuntime(
       "console.log(JSON.stringify({version:Bun.version,revision:Bun.revision,sourceUrl:process.release.sourceUrl??null,standalone:Bun.isStandaloneExecutable,platform:process.platform,arch:process.arch}))",
     ],
     root,
-    { timeoutMs: 5_000, maxOutputBytes: 4096, stderr: "discard", env: { ...Bun.env, BUN_BE_BUN: undefined } },
+    {
+      timeoutMs: 5_000,
+      maxOutputBytes: 4096,
+      stderr: "discard",
+      env: { ...Bun.env, BUN_BE_BUN: undefined },
+    },
   );
   const value: unknown = result.code === 0 ? JSON.parse(result.stdout.trim()) : undefined;
   if (
@@ -197,7 +204,11 @@ async function resourceInputs(
         !["library", "resource", "notice"].includes(String(input.kind))
       )
         throw new Error("Select absolute native resource inputs and their payload paths.");
-      return { source: input.source, path: input.path, kind: input.kind as NativeFileInput["kind"] };
+      return {
+        source: input.source,
+        path: input.path,
+        kind: input.kind as NativeFileInput["kind"],
+      };
     });
   }
   return result;
@@ -219,7 +230,10 @@ async function buildOne(
   const module = findModule(config, result.libraryId);
   if (!module.binary) {
     result.status = "owner-unavailable";
-    result.error = { code: "OWNER_UNAVAILABLE", message: "The application has no existing native engine CLI." };
+    result.error = {
+      code: "OWNER_UNAVAILABLE",
+      message: "The application has no existing native engine CLI.",
+    };
     return;
   }
   try {
@@ -344,14 +358,19 @@ export async function main(args = Bun.argv.slice(2)): Promise<number> {
   const root = resolve(values.root ?? repositoryRoot);
   const config = await loadConfig(root);
   const target = values.target ? parseArtifactTarget(values.target) : nativeHostTarget();
+  const runtimeTarget = target.slice(4) as RuntimeTarget;
   const expectedRuntime = values["runtime-pin"]
     ? runtimePin(await readJSON(resolve(root, values["runtime-pin"])))
-    : config.runtime;
+    : runtimePinFor(config, runtimeTarget);
   const mode = values.mode ?? "native";
   const host = values.host ?? hostname();
   if (!["native", "ssh", "docker"].includes(mode) || !/^[A-Za-z0-9._-]{1,128}$/.test(host))
     throw new Error("Select a native host qualification context.");
-  const qualification = { host, mode: mode as Qualification["mode"], observedAt: new Date().toISOString() };
+  const qualification = {
+    host,
+    mode: mode as Qualification["mode"],
+    observedAt: new Date().toISOString(),
+  };
   const capabilities = appCapabilities(config);
   const ids = new Set(capabilities.map(app => app.id));
   const selected = new Set((values.app ?? []).flatMap(value => value.split(",")));
@@ -378,7 +397,12 @@ export async function main(args = Bun.argv.slice(2)): Promise<number> {
           stage: "plan",
           status: module.binary ? "planned" : "owner-unavailable",
           ...(!module.binary
-            ? { error: { code: "OWNER_UNAVAILABLE", message: "The application has no existing native engine CLI." } }
+            ? {
+                error: {
+                  code: "OWNER_UNAVAILABLE",
+                  message: "The application has no existing native engine CLI.",
+                },
+              }
             : {}),
         };
       }),
@@ -407,7 +431,7 @@ export async function main(args = Bun.argv.slice(2)): Promise<number> {
     );
     report.runtimeReceipt = runtime.receipt;
     const resources = await resourceInputs(values.resources ? resolve(root, values.resources) : undefined, ids);
-    const output = checkoutPath(root, values.output ?? ".local/apps");
+    const output = checkoutPath(root, values.output ?? "build/apps");
     const nativeTimeout = deadline(values["native-timeout"], 1800, 43_200);
     const compileTimeout = deadline(values["compile-timeout"], 180, 600);
     for (const result of report.results) {

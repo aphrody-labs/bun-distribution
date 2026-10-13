@@ -1,28 +1,29 @@
 # Standalone application builds
 
 `infra/apps.json` inventories distribution targets and product-specific inputs.
-Library capability IDs, native Rust engine builds, standalone artifacts and
-canonical application hosts belong to Bun Libraries. Bun OS delegates its 14
-library builds there. APT and the desktop server retain their configured Bun
-entrypoints. An unresolved external context prevents an independent build.
+Library source modules remain pinned under `libraries/`; their capability IDs,
+Rust build recipes, standalone artifacts and canonical application hosts use
+this Bun OS workspace's shared package and setup graph. One root lockfile and
+one `build/` directory serve all application builds. An unresolved external
+context prevents an independent build.
 
 ## Owners
 
-| Capability                                               | Owner                                                                       |
-| -------------------------------------------------------- | --------------------------------------------------------------------------- |
-| Library engine builds and standalone artifacts           | `scripts/build-apps.ts` and `@aphrody/bun-artifacts` in Bun Libraries       |
-| Shared Bun standalone compiler                           | `@aphrody/bun-artifacts/compiler` in Bun Libraries                         |
-| App source policy, native contracts and release receipts | `infra/app-build.ts` in Bun OS                                             |
-| Library capability names and canonical application hosts | `@aphrody/bun-workspace/capabilities` in Bun Libraries                      |
-| Child process ownership, deadlines and output capture    | `@aphrody/bun-workspace/process` in Bun Libraries                           |
-| Streamed file identity                                   | `@aphrody/bun-workspace/hash` in Bun Libraries                              |
-| Cloudflare control and credentials                       | Runtime `packages/bun-cloudflare`; domain changes use the configured MCP    |
-| R2 object authentication                                 | Canonical `createR2Client` and `loadCloudflareEnvironment`                  |
-| Distribution-specific and embedded byte identity         | Thin `src/distribution.ts` adapter over the shared Bun Libraries hash owner |
-| Executable headers                                       | Package converter `abi` and the GNU loader gate in `src/elf.ts`             |
-| Distribution app orchestration                           | `infra/app-build.ts`, delegating library builds to Bun Libraries            |
-| Shared object plans                                      | `infra/assets.ts`                                                           |
-| Edge and public catalog                                  | The edge/catalog capability owner                                           |
+| Capability                                               | Owner                                                    |
+| -------------------------------------------------------- | -------------------------------------------------------- |
+| Library engine builds and standalone artifacts           | `scripts/build-apps.ts`, `@aphrody/bun-artifacts`         |
+| Shared Bun standalone compiler                           | `@aphrody/bun-artifacts/compiler`                        |
+| App source policy, native contracts and release receipts | `infra/app-build.ts`                                     |
+| Library capability names and canonical application hosts | `@aphrody/bun-workspace/capabilities`                    |
+| Child process ownership, deadlines and output capture    | `@aphrody/bun-workspace/process`                         |
+| Streamed file identity                                   | `@aphrody/bun-workspace/hash`                            |
+| Cloudflare control and credentials                       | Runtime `packages/bun-cloudflare`; domain changes use MCP |
+| R2 object authentication                                 | `createR2Client` and `loadCloudflareEnvironment`          |
+| Distribution and embedded byte identity                  | `src/distribution.ts` adapter over `@aphrody/bun-workspace/hash` |
+| Executable headers                                       | Package converter `abi` and GNU loader gate in `src/elf.ts` |
+| Distribution app orchestration                           | `infra/app-build.ts`                                     |
+| Shared object plans                                      | `infra/assets.ts`                                        |
+| Edge and public catalog                                  | The edge/catalog capability owner                        |
 
 ## Configuration
 
@@ -65,11 +66,11 @@ bun infra/app-build.ts build apt --config infra/apps.json --target windows-x64 -
 bun infra/app-build.ts release apt --config infra/apps.json --receipt /NEW/OUTPUT/receipt.json --out /RELEASE.json
 ```
 
-All standalone Bun artifacts use the compiler owned by Bun Libraries. Bun OS
-keeps distribution planning, protected-input policy, source/runtime/native/asset
-proofs, ABI checks, host locks, receipts and release staging. The build plan pins
-the compiler repository revision and source hash; builds require its owned
-checkout and compiler file to remain unchanged.
+All standalone Bun artifacts use the compiler in `@aphrody/bun-artifacts`.
+Bun OS owns distribution planning, protected-input policy,
+source/runtime/native/asset proofs, ABI checks, host locks, receipts and release
+staging. The build plan pins the product revision and compiler source hash; the
+workspace and compiler file must remain unchanged through compilation.
 
 Compilation bundles JavaScript, rejects unresolved imports, disables build-time
 environment inlining and executable dotenv/config autoloading, and embeds

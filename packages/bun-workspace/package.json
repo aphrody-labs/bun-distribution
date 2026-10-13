@@ -1,0 +1,24 @@
+{
+  "name": "@aphrody/bun-workspace",
+  "version": "1.4.4",
+  "private": true,
+  "bin": {
+    "aphrody-bun": "./src/cli.ts"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./assets": "./src/assets.ts",
+    "./capabilities": "./src/capabilities.ts",
+    "./coverage": "./src/coverage.ts",
+    "./hash": "./src/hash.ts",
+    "./process": "./src/process.ts",
+    "./runtime": "./src/runtime.ts"
+  },
+  "dependencies": {
+    "@aphrody/bun-os-workspace": "workspace:*"
+  },
+  "engines": {
+    "bun": "1.4.4"
+  }
+}
