@@ -106,6 +106,8 @@ Thumbs.db
 *.db-shm
 *.db-wal
 /packages/shell/web/pkg/
+# Existing local WebOS artifacts remain protected until their Bun owner is qualified.
+/packages/web/webos-wasm/wasm/
 /crates/ui/app/examples/shell_e2e/frontend/pkg/
 /crates/ui/app/examples/shell_e2e/frontend/index.js
 # Python SDK packaging outputs; the source package remains canonical.
