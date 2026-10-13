@@ -124,24 +124,24 @@
       "canonical": "THIRD-PARTY.md"
     },
     {
-      "path": "TODO-BUN.md",
+      "path": "docs/plans/python-bun/CONSUMERS.md",
       "title": "Bun : migration du moteur et des consommateurs",
       "sha256": "b35970f5150a1a54ad961f0c211701ac846689d07647b5435b0428822413e227",
       "bytes": 1559,
-      "domain": "",
+      "domain": "python-bun",
       "status": "canonical",
       "visibility": "private",
-      "canonical": "TODO-BUN.md"
+      "canonical": "docs/plans/python-bun/CONSUMERS.md"
     },
     {
-      "path": "TODO.md",
+      "path": "docs/plans/workspace/CURRENT-BATCH.md",
       "title": "Current batch",
-      "sha256": "e4ec2ee9c8af84e123c97a8eb09f8d85b483586837c5fd9b5d986f8170abde38",
-      "bytes": 1694,
-      "domain": "",
+      "sha256": "43bb189e2a472ec9a8f2ca219bb64efba98273618b55b584ccea2c4285112e4c",
+      "bytes": 1712,
+      "domain": "workspace",
       "status": "canonical",
       "visibility": "private",
-      "canonical": "TODO.md"
+      "canonical": "docs/plans/workspace/CURRENT-BATCH.md"
     },
     {
       "path": "agy.md",

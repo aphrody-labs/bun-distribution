@@ -14,8 +14,8 @@
 - [ ] Finish installed help-index qualification after recursive collector repair.
 - [ ] Regenerate final documentation evidence; commit and push the owned receipt.
 
-The product queue lives in [PLAN.md](PLAN.md); completed batch evidence lives in
-[MEMORY.md](MEMORY.md). This file is a bounded checklist, not another product plan.
+The product queue lives in [PLAN.md](../../../PLAN.md); completed batch evidence lives in
+[MEMORY.md](../../../MEMORY.md). This file is a bounded checklist, not another product plan.
 
 ## Cloudflare account setup
 

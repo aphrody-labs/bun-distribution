@@ -29,7 +29,7 @@ Les propriétaires Workspace ont été invoqués par `/home/aphro/aphrody/bin/yo
   activation, publication ni réussite des gates Rust/Bun.
 
 La correction du [rapport M3](../../../m3/docs/reports/PRODUCTION-READINESS.md), le
-[TODO](../../../TODO.md) et les index restent avec le lot de migration en
+[TODO](../../plans/workspace/CURRENT-BATCH.md) et les index restent avec le lot de migration en
 cours. Ce reçu peut être livré indépendamment, sans inclure les modifications
 des autres sessions.
 
