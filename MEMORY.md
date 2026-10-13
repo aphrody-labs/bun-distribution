@@ -3,12 +3,15 @@
 # Aphrody M3 — dated evidence
 
 2026-10-13: the reduced private OS-theme implementation was replaced by the
-shared `aphrody-m3-os-themes` owner at `c956834d`. M3's MCP and showcase now
+shared `aphrody-m3-os-themes` owner at `27b36bd`. M3's MCP and showcase now
 resolve the same Windows, GNOME, COSMIC and Chromium generator source as the
-Material desktop package. The framework lockfile points at version 1.4.5 and
-retains its existing `identity` and `m3-tokens` workspace owners. Workspace
-installation and type qualification remain blocked by unrelated missing
-workspace submodules/catalog entries; no tests were run.
+Material desktop package. Its validated native-theme adapter now lives under
+the shared M3 token owner and the Material package re-exports that adapter;
+the Rust token crate remains the only color generator. OS themes use the M3
+baseline seed by default and accept a product seed from the host. The framework
+lockfile points at version 1.4.5 with only its token workspace dependency.
+Workspace installation and type qualification remain blocked by unrelated
+missing workspace submodules/catalog entries; no tests were run.
 
 2026-10-04: finalization scope confirmed as Aphrody M3. Baseline
 `8f4b3a5177a5919c590066bc338be3d2e2fefd79`; preexisting production source work
