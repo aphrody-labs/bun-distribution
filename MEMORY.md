@@ -49,7 +49,7 @@
   execution, desktop launch or deployed app qualification were performed here.
 - Bun OS commit ce0fbb0ba3dc048ebb0add00f78206050b7ca36b delegates standalone
   compilation to Bun Libraries' `@aphrody/bun-artifacts/compiler`. Plans record
-  the Bun Libraries checkout, clean-repo revision and compiler source SHA-256;
+  the Bun Libraries checkout/revision and unchanged compiler source SHA-256;
   the compile receipt and release staging carry the pin. Distribution input
   policy, native contracts, source proofs, ABI checks, locks and receipts remain
   in Bun OS. Bun OS native check (36 files), lint and format passed; commit was

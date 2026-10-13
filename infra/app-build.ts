@@ -345,11 +345,18 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
   try {
     const compilerPath = inside(artifactRoot, join(artifactRoot, "packages/artifacts/src/compiler.ts"));
     const compilerRevision = await command(["git", "rev-parse", "HEAD"], artifactRoot);
-    const compilerStatus = await command(["git", "status", "--porcelain"], artifactRoot);
+    const compilerStatus = await command(
+      ["git", "status", "--porcelain", "--", "packages/artifacts/src/compiler.ts"],
+      artifactRoot,
+    );
     const compilerOrigin = await command(["git", "remote", "get-url", "origin"], artifactRoot);
     if (!(await Bun.file(compilerPath).exists())) throw new Error("Shared compiler source is absent");
     if (compilerStatus) throw new Error("Bun Libraries compiler checkout has uncommitted changes");
-    if (!/^https:\/\/github\.com\/aphrody-labs\/bun-libraries(?:\.git)?$/.test(compilerOrigin))
+    if (
+      !/^(?:https:\/\/github\.com\/aphrody-labs\/bun-libraries|git@github\.com:aphrody-labs\/bun-libraries)(?:\.git)?$/.test(
+        compilerOrigin,
+      )
+    )
       throw new Error("Shared compiler checkout is outside its capability owner");
     compiler = {
       repository: "aphrody-labs/bun-libraries",
