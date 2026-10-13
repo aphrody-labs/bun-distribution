@@ -1,21 +1,9 @@
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
-import {
-  assertRuntimeFacts,
-  currentRuntimeFacts,
-  runtimeFromFacts,
-  type Runtime,
-  type RuntimePin,
-} from "./runtime.ts";
+import { assertRuntimeFacts, currentRuntimeFacts, runtimeFromFacts, type Runtime, type RuntimePin } from "./runtime.ts";
 import { runProcess } from "./process.ts";
 import { inspectModuleCoverage, type ModuleCoverage } from "./coverage.ts";
 
-export {
-  appCapabilities,
-  appCapabilityFor,
-  appHostname,
-  capabilityFor,
-  type AppCapability,
-} from "./capabilities.ts";
+export { appCapabilities, appCapabilityFor, appHostname, capabilityFor, type AppCapability } from "./capabilities.ts";
 export { inspectModuleCoverage, type ModuleCoverage } from "./coverage.ts";
 export { hashContent, hashFile, hashStream, type FileHashOptions } from "./hash.ts";
 export {
@@ -141,10 +129,7 @@ export async function findWorkspace(options: WorkspaceDiscoveryOptions = {}): Pr
       throw new Error("APHRODY_ROOT must contain aphrody.config.json.");
     }
     const configuredName = basename(root).toLowerCase();
-    if (
-      configuredName === "aphrody" &&
-      (await Bun.file(join(root, "../bun-libraries/aphrody.config.json")).exists())
-    ) {
+    if (configuredName === "aphrody" && (await Bun.file(join(root, "../bun-libraries/aphrody.config.json")).exists())) {
       return resolve(root, "../bun-libraries");
     }
   }
@@ -155,8 +140,7 @@ export async function findWorkspace(options: WorkspaceDiscoveryOptions = {}): Pr
       const cursorName = basename(cursor).toLowerCase();
       if (cursorName === "bun-libraries" || cursorName === "bun_libraries") {
         const siblingAphrody = join(dirname(cursor), "aphrody");
-        if (await Bun.file(join(siblingAphrody, "aphrody.config.json")).exists())
-          return siblingAphrody;
+        if (await Bun.file(join(siblingAphrody, "aphrody.config.json")).exists()) return siblingAphrody;
       }
       const parent = dirname(cursor);
       if (parent === cursor) break;
@@ -205,9 +189,7 @@ export async function loadConfig(root = repositoryRoot): Promise<Config> {
       !object(deployment) ||
       typeof deployment.domain !== "string" ||
       deployment.domain.length > 253 ||
-      !deployment.domain
-        .split(".")
-        .every((label) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label)) ||
+      !deployment.domain.split(".").every(label => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label)) ||
       !deployment.domain.includes(".") ||
       typeof deployment.appPrefix !== "string" ||
       !/^[a-z0-9-]*$/.test(deployment.appPrefix) ||
@@ -223,8 +205,7 @@ export async function loadConfig(root = repositoryRoot): Promise<Config> {
     }
     try {
       const url = new URL(deployment.assets.url);
-      if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash)
-        throw new Error();
+      if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash) throw new Error();
     } catch {
       throw new Error("aphrody.config.json: assets require an HTTPS URL without credentials.");
     }
@@ -269,17 +250,13 @@ export async function loadConfig(root = repositoryRoot): Promise<Config> {
       !entry.license ||
       typeof entry.description !== "string" ||
       entry.kind !== "library" ||
-      (entry.sourceKind !== undefined &&
-        !["workspace", "submodule"].includes(String(entry.sourceKind))) ||
+      (entry.sourceKind !== undefined && !["workspace", "submodule"].includes(String(entry.sourceKind))) ||
       (entry.role !== undefined && !["engine", "shared", "fonts"].includes(String(entry.role)))
     ) {
       throw new Error(`Invalid library metadata: ${entry.id}`);
     }
     for (const key of ["binary", "cargoPackage"] as const) {
-      if (
-        entry[key] !== undefined &&
-        (typeof entry[key] !== "string" || !/^[a-zA-Z0-9_-]+$/.test(entry[key]))
-      ) {
+      if (entry[key] !== undefined && (typeof entry[key] !== "string" || !/^[a-zA-Z0-9_-]+$/.test(entry[key]))) {
         throw new Error(`Invalid Cargo name: ${entry.id}.${key}`);
       }
     }
@@ -287,34 +264,25 @@ export async function loadConfig(root = repositoryRoot): Promise<Config> {
       entry.cargoPackages !== undefined &&
       (!Array.isArray(entry.cargoPackages) ||
         entry.cargoPackages.length === 0 ||
-        entry.cargoPackages.some(
-          (name) => typeof name !== "string" || !/^[a-zA-Z0-9_-]+$/.test(name),
-        ) ||
+        entry.cargoPackages.some(name => typeof name !== "string" || !/^[a-zA-Z0-9_-]+$/.test(name)) ||
         new Set(entry.cargoPackages).size !== entry.cargoPackages.length)
     ) {
       throw new Error(`Invalid Cargo package group: ${entry.id}`);
     }
-    if (
-      entry.binary !== undefined &&
-      (entry.role !== "engine" || entry.binary !== `${entry.id}-cli`)
-    ) {
+    if (entry.binary !== undefined && (entry.role !== "engine" || entry.binary !== `${entry.id}-cli`)) {
       throw new Error(`Only an explicit headless engine CLI is allowed: ${entry.id}`);
     }
     if (entry.manifestPath !== undefined) {
       if (typeof entry.manifestPath !== "string") throw new Error(`Invalid manifest: ${entry.id}`);
       checkoutPath(modulePath, entry.manifestPath);
     }
-    if (
-      entry.protocol !== undefined &&
-      !["cli", "cli-json", "jsonl", "mcp-stdio"].includes(String(entry.protocol))
-    ) {
+    if (entry.protocol !== undefined && !["cli", "cli-json", "jsonl", "mcp-stdio"].includes(String(entry.protocol))) {
       throw new Error(`Invalid native protocol: ${entry.id}`);
     }
   }
   if (
     value.priorities !== undefined &&
-    (!Array.isArray(value.priorities) ||
-      value.priorities.some((id) => typeof id !== "string" || !ids.has(id)))
+    (!Array.isArray(value.priorities) || value.priorities.some(id => typeof id !== "string" || !ids.has(id)))
   ) {
     throw new Error("Priorities must reference catalog libraries.");
   }
@@ -331,17 +299,13 @@ export function assertRuntime(config: Config, allowRevisionDrift = false): Runti
 }
 
 /** Compiled sidecars must use a separate, verified Bun executable. */
-export async function resolveBunExecutable(
-  config: Config,
-  options: ExecutionOptions = {},
-): Promise<string> {
+export async function resolveBunExecutable(config: Config, options: ExecutionOptions = {}): Promise<string> {
   const root = options.root ?? repositoryRoot;
   const configured = Bun.env.APHRODY_BUN_BINARY;
   let candidate = Bun.which("bun");
   if (configured) {
     if (isAbsolute(configured)) candidate = configured;
-    else if (configured.includes("/") || configured.includes("\\"))
-      candidate = checkoutPath(root, configured);
+    else if (configured.includes("/") || configured.includes("\\")) candidate = checkoutPath(root, configured);
     else candidate = Bun.which(configured);
   }
   if (!candidate || !(await Bun.file(candidate).exists())) {
@@ -406,15 +370,12 @@ async function git(args: string[], root: string): Promise<string> {
 }
 
 export function findModule(config: Config, id: string): Module {
-  const module = config.modules.find((entry) => entry.id === id);
+  const module = config.modules.find(entry => entry.id === id);
   if (!module) throw new Error(`Unknown library: ${id}`);
   return module;
 }
 
-export async function inspectSourceCoverage(
-  config: Config,
-  root = repositoryRoot,
-): Promise<ModuleCoverage[]> {
+export async function inspectSourceCoverage(config: Config, root = repositoryRoot): Promise<ModuleCoverage[]> {
   const result: ModuleCoverage[] = [];
   for (const module of config.modules) result.push(await inspectModuleCoverage(module, root));
   return result;
@@ -428,7 +389,7 @@ interface Pin {
 }
 
 function pinnedSources(config: Config): Pin[] {
-  const pins: Pin[] = config.modules.filter((module) => module.sourceKind !== "workspace");
+  const pins: Pin[] = config.modules.filter(module => module.sourceKind !== "workspace");
   if (config.desktop.source) {
     pins.push({
       id: "bun-sdk",
@@ -441,10 +402,7 @@ function pinnedSources(config: Config): Pin[] {
 }
 
 /** Owner-selected local artifacts stay outside Git in .local/config.json. */
-export async function localBinaries(
-  config: Config,
-  root = repositoryRoot,
-): Promise<Record<string, string>> {
+export async function localBinaries(config: Config, root = repositoryRoot): Promise<Record<string, string>> {
   const file = Bun.file(join(root, ".local", "config.json"));
   if (!(await file.exists())) return {};
   const value: unknown = await file.json();
@@ -482,15 +440,12 @@ export function nativeBinaryName(module: Module, platform = process.platform): s
   return `${module.binary}${platform === "win32" ? ".exe" : ""}`;
 }
 
-export async function listModuleStatus(
-  config: Config,
-  root = repositoryRoot,
-): Promise<ModuleStatus[]> {
+export async function listModuleStatus(config: Config, root = repositoryRoot): Promise<ModuleStatus[]> {
   const result: ModuleStatus[] = [];
   const binaries = await localBinaries(config, root);
   // Keep process and signal ownership bounded, even for a large catalogue.
   for (const module of pinnedSources(config)) {
-    const library = config.modules.find((entry) => entry.id === module.id);
+    const library = config.modules.find(entry => entry.id === module.id);
     const hasHeadlessBinary = library?.role === "engine" && library.binary === `${module.id}-cli`;
     const status: ModuleStatus = {
       sourceKind: "submodule",
@@ -504,9 +459,7 @@ export async function listModuleStatus(
       revisionMatches: false,
       clean: null,
       launchable: false,
-      launchReason: hasHeadlessBinary
-        ? "Library source not initialized."
-        : "Library has no headless CLI.",
+      launchReason: hasHeadlessBinary ? "Library source not initialized." : "Library has no headless CLI.",
     };
     try {
       const index = await git(["ls-files", "--stage", "--", module.path], root);
@@ -518,8 +471,7 @@ export async function listModuleStatus(
       if (status.initialized) {
         status.revision = await git(["rev-parse", "HEAD"], directory);
         status.revisionMatches = status.revision === module.revision;
-        status.clean =
-          (await git(["status", "--porcelain=v1", "--untracked-files=all"], directory)) === "";
+        status.clean = (await git(["status", "--porcelain=v1", "--untracked-files=all"], directory)) === "";
         const manifestExists = library
           ? await Bun.file(checkoutPath(directory, library.manifestPath ?? "Cargo.toml")).exists()
           : false;
@@ -543,7 +495,7 @@ export async function listModuleStatus(
     }
     result.push(status);
   }
-  for (const module of config.modules.filter((entry) => entry.sourceKind === "workspace")) {
+  for (const module of config.modules.filter(entry => entry.sourceKind === "workspace")) {
     const status: ModuleStatus = {
       sourceKind: "workspace",
       id: module.id,
@@ -563,18 +515,22 @@ export async function listModuleStatus(
         checkoutPath(root, `${module.path}/${module.manifestPath ?? "Cargo.toml"}`),
       ).exists();
       status.revision = await git(["rev-parse", "HEAD"], root);
-      // An imported source is qualified by its preserved ancestor, rather than a gitlink.
-      const ancestry = await command(
-        ["git", "merge-base", "--is-ancestor", module.revision, status.revision],
-        root,
-      );
-      if (ancestry.code > 1)
-        throw new Error(`Imported source history is unavailable: ${module.id}`);
+      // Preserve import ancestry and qualify every crate's independent Git pin.
+      const ancestry = await command(["git", "merge-base", "--is-ancestor", module.revision, status.revision], root);
+      if (ancestry.code > 1) throw new Error(`Imported source history is unavailable: ${module.id}`);
       status.revisionMatches = ancestry.code === 0;
-      status.clean =
-        (await git(["status", "--porcelain=v1", "--ignore-submodules=all"], root)) === "";
+      status.clean = (await git(["status", "--porcelain=v1", "--ignore-submodules=all"], root)) === "";
+      for (const name of module.cargoPackages ?? []) {
+        const cratePath = `crates/${name}`;
+        const indexEntry = await git(["ls-files", "--stage", "--", cratePath], root);
+        const pin = /^160000 ([0-9a-f]{40}) 0\t/.exec(indexEntry)?.[1];
+        if (!pin) throw new Error(`Product crate lacks its Git submodule: ${name}`);
+        const crateRoot = checkoutPath(root, cratePath);
+        status.pointerMatches &&= (await git(["rev-parse", "HEAD"], crateRoot)) === pin;
+        status.clean &&= (await git(["status", "--porcelain=v1"], crateRoot)) === "";
+      }
       const headless = module.role === "engine" && module.binary === `${module.id}-cli`;
-      status.launchable = headless && status.initialized && status.revisionMatches;
+      status.launchable = headless && status.initialized && status.revisionMatches && status.pointerMatches;
       if (headless)
         status.launchReason = status.launchable
           ? "Workspace CLI; native build may be required."
@@ -589,7 +545,7 @@ export async function listModuleStatus(
 
 async function requireModule(config: Config, id: string, root: string): Promise<Module> {
   const module = findModule(config, id);
-  const status = (await listModuleStatus(config, root)).find((entry) => entry.id === id)!;
+  const status = (await listModuleStatus(config, root)).find(entry => entry.id === id)!;
   if (status.error || !status.initialized || !status.pointerMatches || !status.revisionMatches) {
     throw new Error(
       `${id} differs from the pinned source. Run aphrody-bun status and sync from a clean checkout. ${status.error ?? ""}`.trim(),
@@ -616,12 +572,9 @@ export async function syncModules(config: Config, root = repositoryRoot): Promis
   if (await git(["status", "--porcelain=v1", "--untracked-files=all"], root)) {
     throw new Error("Sync refused: monorepo has local changes.");
   }
-  const paths = await git(
-    ["config", "--file", ".gitmodules", "--get-regexp", "^submodule\\..*\\.path$"],
-    root,
-  );
+  const paths = await git(["config", "--file", ".gitmodules", "--get-regexp", "^submodule\\..*\\.path$"], root);
   for (const module of pinnedSources(config)) {
-    const line = paths.split("\n").find((entry) => entry.endsWith(` ${module.path}`));
+    const line = paths.split("\n").find(entry => entry.endsWith(` ${module.path}`));
     if (!line) throw new Error(`Source missing from .gitmodules: ${module.id}`);
     const key = line.slice(0, line.indexOf(" ")).replace(/\.path$/, ".url");
     const url = await git(["config", "--file", ".gitmodules", "--get", key], root);
@@ -633,7 +586,7 @@ export async function syncModules(config: Config, root = repositoryRoot): Promis
     if (!accepted.includes(url)) throw new Error(`Unexpected fork URL: ${module.id}`);
   }
   for (const module of pinnedSources(config)) {
-    const current = (await listModuleStatus(config, root)).find((entry) => entry.id === module.id)!;
+    const current = (await listModuleStatus(config, root)).find(entry => entry.id === module.id)!;
     if (
       current.error ||
       !current.pointerMatches ||
@@ -652,18 +605,12 @@ export async function syncModules(config: Config, root = repositoryRoot): Promis
       syncDeadline,
       true,
     );
-    if (result.code !== 0)
-      throw new Error(`Source initialization failed: ${module.id} (${result.code}).`);
+    if (result.code !== 0) throw new Error(`Source initialization failed: ${module.id} (${result.code}).`);
   }
   const initialized = await listModuleStatus(config, root);
   if (
     initialized.some(
-      (state) =>
-        state.error ||
-        !state.initialized ||
-        !state.revisionMatches ||
-        !state.pointerMatches ||
-        !state.clean,
+      state => state.error || !state.initialized || !state.revisionMatches || !state.pointerMatches || !state.clean,
     )
   ) {
     throw new Error("Initialized sources differ from the pinned catalog.");
@@ -678,10 +625,7 @@ interface CargoModule {
   binary: string | null;
 }
 
-export async function resolveCargoModule(
-  module: Module,
-  root = repositoryRoot,
-): Promise<CargoModule> {
+export async function resolveCargoModule(module: Module, root = repositoryRoot): Promise<CargoModule> {
   if (module.binary && (module.role !== "engine" || module.binary !== `${module.id}-cli`)) {
     throw new Error(`Only an explicit headless engine CLI is allowed: ${module.id}`);
   }
@@ -693,7 +637,7 @@ export async function resolveCargoModule(
     };
     const prefix = `${relative(root, directory).replaceAll("\\", "/")}/`;
     const members =
-      workspace.workspace?.members?.filter((member) =>
+      workspace.workspace?.members?.filter(member =>
         module.sourceKind === "workspace" ? true : member.startsWith(prefix),
       ) ?? [];
     if (members.length) {
@@ -711,10 +655,9 @@ export async function resolveCargoModule(
           cargoPackages.push(value.package.name);
         }
       }
-      if (module.cargoPackages?.some((name) => !cargoPackages.includes(name)))
+      if (module.cargoPackages?.some(name => !cargoPackages.includes(name)))
         throw new Error(`Cargo package group is incomplete: ${module.id}`);
-      if (!cargoPackages.length)
-        throw new Error(`No root Cargo packages belong to the library: ${module.id}`);
+      if (!cargoPackages.length) throw new Error(`No root Cargo packages belong to the library: ${module.id}`);
       if (module.cargoPackage && !cargoPackages.includes(module.cargoPackage)) {
         throw new Error(`Cargo package is outside its library: ${module.id}`);
       }
@@ -733,8 +676,7 @@ export async function resolveCargoModule(
     package?: { name?: string };
   };
   const cargoPackage = module.cargoPackage ?? value.package?.name ?? null;
-  if (!cargoPackage && module.binary)
-    throw new Error(`cargoPackage required for the headless CLI: ${module.id}`);
+  if (!cargoPackage && module.binary) throw new Error(`cargoPackage required for the headless CLI: ${module.id}`);
   const binary = module.binary ?? null;
   return { directory, manifest, cargoPackage, cargoPackages: [], binary };
 }
@@ -760,16 +702,7 @@ export async function resolveModuleBinary(
   const executable = Bun.which("cargo");
   if (!executable) throw new Error("Native Cargo missing on this host.");
   const metadata = await runProcess(
-    [
-      executable,
-      "metadata",
-      "--offline",
-      "--no-deps",
-      "--format-version",
-      "1",
-      "--manifest-path",
-      cargo.manifest,
-    ],
+    [executable, "metadata", "--offline", "--no-deps", "--format-version", "1", "--manifest-path", cargo.manifest],
     cargo.directory,
     {
       timeoutMs: Math.min(options.timeoutMs ?? shortDeadline, shortDeadline),
@@ -802,10 +735,7 @@ async function runNativeResult(
   captureStdout = false,
 ): Promise<CommandResult> {
   assertRuntime(config);
-  if (
-    !nativeArguments.length ||
-    nativeArguments.some((arg) => typeof arg !== "string" || arg.includes("\0"))
-  ) {
+  if (!nativeArguments.length || nativeArguments.some(arg => typeof arg !== "string" || arg.includes("\0"))) {
     throw new Error("Invalid native arguments.");
   }
   const root = options.root ?? repositoryRoot;
@@ -868,12 +798,7 @@ async function runNativeResult(
     if (!flock) throw new Error("Native flock required for build serialization on this Unix host.");
     const temporaryDirectory = Bun.env.TMPDIR ?? "/tmp";
     const identity = process.getuid?.() ?? "user";
-    argv = [
-      flock,
-      "--nonblock",
-      join(temporaryDirectory, `aphrody-bun-native-${identity}.lock`),
-      ...nativeArguments,
-    ];
+    argv = [flock, "--nonblock", join(temporaryDirectory, `aphrody-bun-native-${identity}.lock`), ...nativeArguments];
   }
   // The wrapper kills its process tree before the outer Bun deadline.
   return command(
@@ -886,11 +811,7 @@ async function runNativeResult(
   );
 }
 
-export async function runNative(
-  config: Config,
-  argv: string[],
-  options: NativeExecutionOptions = {},
-): Promise<number> {
+export async function runNative(config: Config, argv: string[], options: NativeExecutionOptions = {}): Promise<number> {
   return (await runNativeResult(config, argv, options)).code;
 }
 
@@ -910,13 +831,7 @@ async function serializedCargo(
     const bun = await resolveBunExecutable(config, { root });
     argv = [bun, "msvc", "exec", "--", cargo, ...args];
     if (Bun.env.APHRODY_BUN_CHECKOUT) {
-      const owner = join(
-        resolve(Bun.env.APHRODY_BUN_CHECKOUT),
-        "scripts",
-        "build",
-        "rust",
-        "cargo-serial.ts",
-      );
+      const owner = join(resolve(Bun.env.APHRODY_BUN_CHECKOUT), "scripts", "build", "rust", "cargo-serial.ts");
       if (!(await Bun.file(owner).exists()))
         throw new Error("Cargo owner wrapper missing from the configured APHRODY_BUN_CHECKOUT.");
       argv = [bun, owner, "--msvc", ...args];
@@ -960,15 +875,7 @@ export async function inspectCargoWorkspace(
   }
   const result = await serializedCargo(
     config,
-    [
-      "metadata",
-      "--locked",
-      "--no-deps",
-      "--format-version",
-      "1",
-      "--manifest-path",
-      join(root, "Cargo.toml"),
-    ],
+    ["metadata", "--locked", "--no-deps", "--format-version", "1", "--manifest-path", join(root, "Cargo.toml")],
     root,
     root,
     options.timeoutMs ?? shortDeadline,
@@ -988,6 +895,13 @@ export async function inspectCargoWorkspace(
     throw new Error("Cargo workspace or target directory differs from the product root.");
   }
   const members = new Set(value.workspace_members);
+  const gitlinks = await command(["git", "ls-files", "--stage", "--", "crates"], root);
+  if (gitlinks.code !== 0) throw new Error("Crate Git index inspection failed.");
+  const pinnedCrates = new Map<string, string>();
+  for (const line of gitlinks.stdout.split("\n")) {
+    const match = /^160000 ([0-9a-f]{40}) 0\t(crates\/[^/]+)$/.exec(line.trim());
+    if (match) pinnedCrates.set(match[2], match[1]);
+  }
   const packageNames: string[] = [];
   for (const entry of value.packages) {
     if (!object(entry) || !members.has(entry.id)) continue;
@@ -998,7 +912,14 @@ export async function inspectCargoWorkspace(
     ) {
       throw new Error("Cargo workspace member lacks its package identity.");
     }
-    checkoutPath(root, relative(root, entry.manifest_path));
+    const cratePath = `crates/${entry.name}`;
+    if (resolve(entry.manifest_path) !== join(root, cratePath, "Cargo.toml"))
+      throw new Error(`Cargo crate must be flat under crates: ${entry.name}`);
+    const expectedRevision = pinnedCrates.get(cratePath);
+    if (!expectedRevision) throw new Error(`Cargo crate is not a pinned Git submodule: ${entry.name}`);
+    const actualRevision = await command(["git", "rev-parse", "HEAD"], join(root, cratePath));
+    if (actualRevision.code !== 0 || actualRevision.stdout.trim() !== expectedRevision)
+      throw new Error(`Cargo crate revision differs from its Git pin: ${entry.name}`);
     packageNames.push(entry.name);
   }
   if (packageNames.length !== members.size || packageNames.length === 0) {
@@ -1036,9 +957,7 @@ export async function cargoModule(
     if (args.length) throw new Error(`${action} accepts only a library ID.`);
     if (action === "build") flags.push("--release");
   }
-  return (
-    await serializedCargo(config, flags, cargo.directory, root, options.timeoutMs ?? cargoDeadline)
-  ).code;
+  return (await serializedCargo(config, flags, cargo.directory, root, options.timeoutMs ?? cargoDeadline)).code;
 }
 
 export async function runModule(
@@ -1052,14 +971,8 @@ export async function runModule(
   const module = await requireModule(config, id, root);
   const selected = (await localBinaries(config, root))[id];
   if (selected) {
-    return (
-      await command(
-        [selected, ...args],
-        checkoutPath(root, module.path),
-        options.timeoutMs ?? runDeadline,
-        true,
-      )
-    ).code;
+    return (await command([selected, ...args], checkoutPath(root, module.path), options.timeoutMs ?? runDeadline, true))
+      .code;
   }
   const cargo = await resolveCargoModule(module, root);
   if (!cargo.binary || module.role !== "engine" || cargo.binary !== `${id}-cli`)
@@ -1112,6 +1025,5 @@ export async function runModule(
     throw new Error(`Cargo did not report a headless CLI artifact: ${id}`);
   }
   // Release the build mutex before starting the headless CLI.
-  return (await command([binary, ...args], cargo.directory, options.timeoutMs ?? runDeadline, true))
-    .code;
+  return (await command([binary, ...args], cargo.directory, options.timeoutMs ?? runDeadline, true)).code;
 }

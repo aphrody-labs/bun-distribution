@@ -28,8 +28,18 @@
 - [x] Route `cargo fmt --all -- --check` through the same serialized native owner; root Rust formatting passes.
 - [x] Align Bun OS quality script names with Bun Libraries: `typecheck`, `lint`, and `format:check`. Native `bun run check` passes on 91 files, lint, and format.
 - [x] Document source ownership, asset provenance, license boundaries, and the optional font embedding contract.
-- [ ] Keep Rust tests and the new font CI job out of this batch; tests were not requested or run.
+- [x] Qualify the font Git-submodule batch under the root nightly: 12 Rust
+      tests and 4 workspace routing tests pass. A remote CI build remains
+      unqualified until runner access and target runtime are wired.
 ## Still required for full consolidation
+
+- [x] Convert the font pilot into two private, pinned Git submodules directly
+      under `crates/`, preserving split histories, licenses and asset tests.
+- [x] Pin the root nightly to `nightly-2026-09-15`; serialize jobs and route
+      Cargo intermediate outputs to `build/rust`, artifacts to `target`.
+- [ ] Apply the same per-crate Git ownership to all remaining product owners.
+- [ ] Deliver idempotent forge identities/repositories and runner credentials
+      through Aphrody Infra and protected secret stores.
 
 - [ ] Migrate Rust crate manifests and workspace inheritance out of the 16
       nested library workspaces and the Bun runtime workspace into one root

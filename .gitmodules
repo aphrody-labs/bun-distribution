@@ -77,3 +77,11 @@
 	path = toolchains/bun
 	url = https://github.com/aphrody-labs/bun.git
 	shallow = true
+[submodule "crates/craft-fonts"]
+	path = crates/craft-fonts
+	url = bun-forge:aphrody-dev/bun-crate-craft-fonts.git
+	branch = os
+[submodule "crates/craft-fonts-tests"]
+	path = crates/craft-fonts-tests
+	url = bun-forge:aphrody-dev/bun-crate-craft-fonts-tests.git
+	branch = os
