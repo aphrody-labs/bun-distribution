@@ -66,6 +66,42 @@ export interface Config {
   sourceExport?: Omit<SourceExportOptions, "lock" | "checkouts">;
 }
 
+async function inspectLockedCheckout(checkout: string, revision: string) {
+  try {
+    const [head, status] = await Promise.all([
+      runProcess(["git", "rev-parse", "HEAD"], checkout, {
+        timeoutMs: 15_000,
+        maxOutputBytes: 4096,
+      }),
+      runProcess(["git", "status", "--porcelain=v1", "--untracked-files=all", "--ignore-submodules=none"], checkout, {
+        timeoutMs: 15_000,
+        maxOutputBytes: 1024 * 1024,
+      }),
+    ]);
+    if (head.code !== 0 || status.code !== 0) throw new Error("checkout inspection failed");
+    const checkoutRevision = head.stdout.trim();
+    const clean = status.stdout.length === 0;
+    const matchesLock = checkoutRevision === revision;
+    return {
+      lockedRevision: revision,
+      checkoutRevision,
+      clean,
+      matchesLock,
+      eligible: clean && matchesLock,
+      state: !matchesLock ? "revision-mismatch" : clean ? "pinned-clean" : "pinned-dirty",
+    };
+  } catch {
+    return {
+      lockedRevision: revision,
+      checkoutRevision: null,
+      clean: false,
+      matchesLock: false,
+      eligible: false,
+      state: "inspection-failed",
+    };
+  }
+}
+
 function cargoOwner(config: Config): string[] {
   if (config.cargoCommand?.length) return config.cargoCommand;
   const checkout = runtimeCheckout(config);
@@ -163,6 +199,8 @@ export async function contentIdentity(blob: Blob) {
 export async function plan(profile: Profile, target: Target, config: Config = {}) {
   const manifest = await Bun.file(join(packageRoot, "distribution.json")).json();
   const sources = await readLock();
+  const runtimeSource = sources.repositories.find(source => source.id === "bun")!;
+  const runtime = runtimeCheckout(config);
   return {
     ...manifest,
     selectedProfile: profile,
@@ -174,7 +212,11 @@ export async function plan(profile: Profile, target: Target, config: Config = {}
       revision,
       mount,
     })),
-    runtimeBuild: { cwd: runtimeCheckout(config), argv: [process.execPath, "bd", "--release"] },
+    runtimeBuild: {
+      cwd: runtime,
+      argv: [process.execPath, "bd", "--release"],
+      source: await inspectLockedCheckout(runtime, runtimeSource.revision),
+    },
     materialBuild: {
       cwd: materialCheckout(config),
       argv: [

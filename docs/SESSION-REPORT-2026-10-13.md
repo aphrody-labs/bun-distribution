@@ -231,6 +231,12 @@ one content-addressed object. Public HTTPS retrieval returned HTTP 200,
 The result qualifies public artifact delivery, not the native libapt engine
 or every application behavior.
 
+The distribution plan also inspects the selected Bun runtime checkout before
+building. It compares HEAD and tracked/untracked/submodule status with the pinned
+source revision. The current observation found lock `c209b95e`, checkout HEAD
+`4958106d`, and a dirty worktree; it marks the runtime build ineligible. No
+runtime build was launched from that checkout.
+
 Public artifact: [apt.exe](https://dist.aphrody.app/objects/sha256/43cacda8663021aa0640297978ef600b0d43bf8fe715d04a0f5464ee96bb2fbd).
 
 After those replacements were publicly verified, three obsolete owned output

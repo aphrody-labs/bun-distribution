@@ -21,6 +21,13 @@
 - [x] Validate the source graph through the distribution plan and run native
       Bun typecheck, lint and format gates.
 
+## Runtime source preflight — 2026-10-13
+
+- [x] Report the locked Bun revision, selected checkout revision, worktree
+      cleanliness and build eligibility in the read-only distribution plan.
+- [x] Use the shared bounded process owner for Git inspection; never infer a
+      reproducible runtime build from a checkout path alone.
+
 ## Integrated Craft fonts and shared quality — 2026-10-13
 
 - [x] Integrate `craft-fonts` and its licensed assets into the Bun OS Cargo workspace; preserve the source repository and publish its `os` integration commit `f1bfd5fd75f24619cad085230c7290f17ee7821e`.

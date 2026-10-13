@@ -1,5 +1,15 @@
 # Project decisions and session evidence
 
+## Runtime source preflight — 2026-10-13
+
+- The distribution plan now inspects Bun's selected checkout with bounded Git
+  calls from the shared process owner. It reports the lock pin, checkout HEAD,
+  cleanliness, pin match and whether a runtime build is eligible.
+- The observed lock is `c209b95e`; the selected checkout was `4958106d`, dirty,
+  so the plan reports `eligible: false`. No runtime build was started from this
+  checkout. This is a dated observation; concurrent Bun work remains protected.
+- Native Bun typecheck passed on 91 files, lint and format passed. No tests ran.
+
 ## Material source and checkout alignment — 2026-10-13
 
 - Advanced Bun OS's Material export pin from `1e65a503` to the current owner
