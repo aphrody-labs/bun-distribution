@@ -88,3 +88,22 @@ Only passing gates and unchanged source/artifact proofs set `executed=true` and
 record the HTTP count. Existing deployment qualification is preserved. The
 CLI prints only source/runtime/artifact identities and gate totals; it never
 dumps private catalog responses or the bearer.
+
+## Windows qualification, 2026-10-13
+
+The fresh candidate `build/staging/server-d2-verified.exe` passed all eleven
+HTTP gates and its version/source/runtime/artifact checks. Its receipt records
+source `efa6ccb6a82125c6109d7090364d38f7dece9989`, runtime
+`d2ff37699e391e8e271fc877e9bcc81cdc49fa82` and artifact SHA-256
+`137cb093ead1efa1d47627a322604959da11fa99dda2a51993c71197c706aa8b`.
+It is compiled and executed, with deployment false.
+
+Automatic approval review rejected the proposed replacement of the canonical
+`build/apps` and `install/bin` binaries before execution, reporting only
+`blocked by policy`. The qualified candidate therefore remains in staging;
+the installed binary retains the earlier runtime
+`cb64a09ae6dd618efc300c39b9b03ccfa861cac2` and SHA-256
+`0816173e335eff2308929f0c10e043912c0d65d11fb5812d36415d7be95c8325`.
+An earlier review also rejected service activation. Neither this candidate
+qualification nor the source portal's HTTPS readiness proves that the product
+service or its public proxy routes have been activated.
