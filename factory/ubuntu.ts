@@ -247,18 +247,37 @@ async function fetchSources(job: string, root: string, profile: FactoryProfile, 
     await status(step);
     const remaining = deadline - Date.now();
     if (remaining <= 0) throw new Error("source job deadline reached");
-    const p = Bun.spawn(args, { cwd, env, stdout: "pipe", stderr: "pipe", timeout: Math.min(limit, remaining) });
-    await status(step, { activeChildPid: p.pid });
-    const [stdout, stderr, code] = await Promise.all([
-      new Response(p.stdout).text(),
-      new Response(p.stderr).text(),
-      p.exited,
-    ]);
-    await Bun.write(job + "/logs/" + step + ".stdout", stdout);
-    await Bun.write(job + "/logs/" + step + ".stderr", stderr);
-    await status(step, { activeChildPid: null, exitCode: code });
-    if (code !== 0) throw new Error(step + " failed exit=" + code + "; logs=" + job + "/logs/" + step);
-    return { stdout, stderr, code };
+    const stdoutLog = await open(job + "/logs/" + step + ".stdout", "w");
+    const stderrLog = await open(job + "/logs/" + step + ".stderr", "w");
+    let childPid: number | null = null;
+    const append = async (file: Awaited<ReturnType<typeof open>>, bytes: Uint8Array) => {
+      let offset = 0;
+      while (offset < bytes.byteLength) {
+        const { bytesWritten } = await file.write(bytes, offset, bytes.byteLength - offset);
+        if (!bytesWritten) throw new Error("factory log write made no progress");
+        offset += bytesWritten;
+      }
+    };
+    try {
+      const result = await runProcess(args, cwd, {
+        env,
+        timeoutMs: Math.min(limit, remaining),
+        maxOutputBytes: 128 * 1024 * 1024,
+        onStart: async pid => {
+          childPid = pid;
+          await status(step, { activeChildPid: pid });
+        },
+        onOutput: (channel, bytes) => append(channel === "stdout" ? stdoutLog : stderrLog, bytes),
+      });
+      await status(step, { activeChildPid: null, exitCode: result.code });
+      if (result.code !== 0) throw new Error(step + " failed exit=" + result.code + "; logs=" + job + "/logs/" + step);
+      return result;
+    } catch (error) {
+      if (childPid !== null) await status(step, { activeChildPid: null });
+      throw error;
+    } finally {
+      await Promise.all([stdoutLog.close(), stderrLog.close()]);
+    }
   }
   async function hash(path: string) {
     const bytes = (await stat(path)).size;
@@ -887,8 +906,8 @@ async function main() {
     const temporary = join(root, "tmp");
     await mkdir(temporary, { recursive: true });
     await sameDevice(root, temporary);
-    const child = Bun.spawn({
-      cmd: [
+    const result = await runProcess(
+      [
         "flock",
         "-n",
         resolve(root, profile.sharedHeavyLockRelative),
@@ -896,20 +915,23 @@ async function main() {
         import.meta.path,
         ...Bun.argv.slice(2),
       ],
-      cwd: root,
-      env: {
-        ...Bun.env,
-        TMPDIR: temporary,
-        TMP: temporary,
-        TEMP: temporary,
-        BUN_OS_SHARED_LOCK_HELD: "1",
-        BUN_RUNTIME_TRANSPILER_CACHE_PATH: join(root, "cache/transpiler"),
+      root,
+      {
+        timeoutMs: action === "rootfs" ? 15000000 : action === "package" ? 7800000 : 2400000,
+        maxOutputBytes: 1024 * 1024,
+        env: {
+          ...Bun.env,
+          TMPDIR: temporary,
+          TMP: temporary,
+          TEMP: temporary,
+          BUN_OS_SHARED_LOCK_HELD: "1",
+          BUN_RUNTIME_TRANSPILER_CACHE_PATH: join(root, "cache/transpiler"),
+        },
+        stdout: "inherit",
+        stderr: "inherit",
       },
-      stdout: "inherit",
-      stderr: "inherit",
-      timeout: action === "rootfs" ? 15000000 : action === "package" ? 7800000 : 2400000,
-    });
-    process.exitCode = await child.exited;
+    );
+    process.exitCode = result.code;
     if (process.exitCode !== 0)
       console.error(
         "Shared factory execution failed exit=" +

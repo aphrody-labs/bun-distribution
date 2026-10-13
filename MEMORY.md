@@ -58,6 +58,13 @@
   5162f75486c6ee7097a1a229561b2f04fd319826b92dcae3aa7fc1feb8a3b3ad, but stayed
   blocked by the configured runtime snapshot checksum mismatch. No app binary
   was built or executed.
+- Bun OS commit TBD routes Ubuntu source APT/GPG commands and the exclusive
+  `flock` build re-entry through Bun Libraries' `@aphrody/bun-workspace/process`.
+  Streamed logs, captured output for parsing, PID receipts, finite deadlines,
+  output limits, and owned process-tree cleanup are retained. The long-running
+  Docker engine remains with its dedicated service-lifetime receipt. Native
+  Bun OS check (35 files), lint, format, and `plan apt` passed; the plan remains
+  blocked by the runtime checksum mismatch. No factory build or tests ran.
 
 ## Owners and execution
 
