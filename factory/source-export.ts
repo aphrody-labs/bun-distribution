@@ -320,12 +320,6 @@ function gitEnvironment() {
   };
 }
 
-async function drain(stream: ReadableStream<Uint8Array>) {
-  for await (const _chunk of stream) {
-    // Never retain or print subprocess stderr, which can contain authentication data.
-  }
-}
-
 async function abortable<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
   if (signal.aborted) {
     // A credential-owner promise may already be running; suppress its eventual rejection without logging it.
@@ -512,62 +506,66 @@ async function githubCoverage(source: Source, options: SourceExportOptions, sign
 }
 
 async function localTree(source: Source, checkout: string, maximum: number, signal: AbortSignal) {
-  const child = Bun.spawn({
-    cmd: [
-      "git",
-      "-c",
-      "core.fsmonitor=false",
-      "-c",
-      "core.hooksPath=",
-      "-c",
-      "core.pager=",
-      "-C",
-      checkout,
-      "ls-tree",
-      "-r",
-      "--full-tree",
-      "-z",
-      source.revision,
-    ],
-    env: gitEnvironment(),
-    stdout: "pipe",
-    stderr: "pipe",
-    windowsHide: true,
-    timeout: 600_000,
-  });
-  const abort = () => child.kill();
-  signal.addEventListener("abort", abort, { once: true });
-  const stderr = drain(child.stderr);
   let pending = "";
   let files = 0;
   let entries = 0;
   const links = new Map<string, string>();
   const text = new TextDecoder("utf-8", { fatal: true });
-  try {
-    for await (const chunk of chunksOf(child.stdout, signal)) {
-      pending += text.decode(chunk, { stream: true });
-      const lines = pending.split("\0");
-      pending = lines.pop()!;
-      if (pending.length > 64 * 1024) fail("git-tree-path-size-limit");
-      for (const line of lines) {
-        if (++entries > maximum) fail("git-tree-entry-estimate-exceeded");
-        const match = /^(100644|100755|120000|160000) (blob|commit) ([a-f0-9]{40})\t(.+)$/.exec(line);
-        if (!match) fail("unsupported-local-git-tree-entry");
-        const path = sourcePath(match[4]!);
-        if (match[1] === "160000" && match[2] === "commit") links.set(path, match[3]!);
-        else if (match[2] === "blob" && match[1] !== "160000") files++;
-        else fail("unsupported-local-git-tree-entry");
-      }
+  const parse = (chunk: Uint8Array, final = false) => {
+    pending += text.decode(chunk, { stream: !final });
+    const lines = pending.split("\0");
+    pending = lines.pop()!;
+    if (pending.length > 64 * 1024) fail("git-tree-path-size-limit");
+    for (const line of lines) {
+      if (++entries > maximum) fail("git-tree-entry-estimate-exceeded");
+      const match = /^(100644|100755|120000|160000) (blob|commit) ([a-f0-9]{40})\t(.+)$/.exec(line);
+      if (!match) fail("unsupported-local-git-tree-entry");
+      const path = sourcePath(match[4]!);
+      if (match[1] === "160000" && match[2] === "commit") links.set(path, match[3]!);
+      else if (match[2] === "blob" && match[1] !== "160000") files++;
+      else fail("unsupported-local-git-tree-entry");
     }
-    pending += text.decode();
-    const [code] = await Promise.all([child.exited, stderr]);
-    if (code !== 0 || pending) fail("local-git-tree-inventory-failed");
+  };
+  try {
+    const result = await runProcess(
+      [
+        "git",
+        "-c",
+        "core.fsmonitor=false",
+        "-c",
+        "core.hooksPath=",
+        "-c",
+        "core.pager=",
+        "-C",
+        checkout,
+        "ls-tree",
+        "-r",
+        "--full-tree",
+        "-z",
+        source.revision,
+      ],
+      checkout,
+      {
+        env: gitEnvironment(),
+        timeoutMs: 600_000,
+        maxOutputBytes: maximum * 64 * 1024,
+        signal,
+        stdout: "discard",
+        stderr: "discard",
+        onOutput(channel, chunk) {
+          if (channel === "stdout") parse(chunk);
+        },
+      },
+    );
+    parse(new Uint8Array(), true);
+    if (result.code !== 0 || pending) fail("local-git-tree-inventory-failed");
     if (links.size !== source.gitlinks.length || source.gitlinks.some(link => links.get(link.path) !== link.revision))
       fail("source-gitlink-mismatch");
     return files;
-  } finally {
-    signal.removeEventListener("abort", abort);
-    if (child.exitCode === null) child.kill();
+  } catch (error) {
+    if (error instanceof ExportError) throw error;
+    if (signal.aborted) fail("source-export-deadline-or-cancellation");
+    fail("local-git-tree-inventory-failed");
   }
 }
 
@@ -688,27 +686,39 @@ async function acquire(
     await Bun.write(join(view, "config"), "[core]\n\trepositoryformatversion = 0\n\tbare = true\n");
     await Bun.write(join(view, "objects/info/alternates"), `${objects.replaceAll("\\", "/")}\n`);
     await Bun.write(join(view, "info/attributes"), "* -export-ignore -export-subst\n");
-    const child = Bun.spawn({
-      cmd: ["git", `--git-dir=${view}`, "archive", "--format=tar", source.revision],
-      env: gitEnvironment(),
-      stdout: "pipe",
-      stderr: "pipe",
-      windowsHide: true,
-      timeout: 600_000,
-    });
-    const abort = () => child.kill();
-    signal.addEventListener("abort", abort, { once: true });
+    await safeDirectory(dirname(incoming), true);
+    const handle = await open(incoming, "wx", 0o600);
+    const hash = new Bun.CryptoHasher("sha256");
+    let bytes = 0;
+    let complete = false;
     try {
-      const [saved, , code] = await Promise.all([
-        saveStream(incoming, child.stdout, estimate.archiveBytes, signal),
-        drain(child.stderr),
-        child.exited,
-      ]);
-      if (code !== 0) fail("git-archive-failed");
-      digest = saved;
+      const result = await runProcess(["git", `--git-dir=${view}`, "archive", "--format=tar", source.revision], view, {
+        env: gitEnvironment(),
+        timeoutMs: 600_000,
+        maxOutputBytes: estimate.archiveBytes + 64 * 1024,
+        signal,
+        stdout: "discard",
+        stderr: "discard",
+        async onOutput(channel, chunk) {
+          if (channel !== "stdout") return;
+          bytes += chunk.byteLength;
+          if (bytes > estimate.archiveBytes) fail("stream-size-limit");
+          hash.update(chunk);
+          await writeChunk(handle, chunk);
+        },
+      });
+      if (result.code !== 0) fail("git-archive-failed");
+      signal.throwIfAborted();
+      await handle.sync();
+      digest = { sha256: hash.digest("hex"), bytes };
+      complete = true;
+    } catch (error) {
+      if (error instanceof ExportError) throw error;
+      if (signal.aborted) fail("source-export-deadline-or-cancellation");
+      fail("git-archive-failed");
     } finally {
-      signal.removeEventListener("abort", abort);
-      if (child.exitCode === null) child.kill();
+      await handle.close();
+      if (!complete) await unlink(incoming);
     }
   } else {
     const headers = await abortable(
