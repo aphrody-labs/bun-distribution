@@ -6,6 +6,11 @@ v3 SDK. Aphrody owns the desktop identity; Bun owns JavaScript tooling.
 Video is the current priority. [The video adapter](docs/video.md) reuses native
 project, timeline, codec and export owners through Bun.
 
+The workspace now owns app identity, provenance, hashes, source coverage,
+process lifetime and shared assets. [App artifacts](docs/artifacts.md) embed
+real native engines; [the factory](docs/builds.md) builds and qualifies them.
+[Infra](docs/control-plane.md) owns deployment, Git hosting and workflows.
+
 ## Setup
 
 Requires our `aphrody-labs/bun` runtime, Git and native Rust. Windows uses MSVC
@@ -34,6 +39,9 @@ bun run desktop:build                    # native bundle and Bun sidecar
 bun run workspace run photocraft --help  # headless library inspection
 bun run workspace build filmcraft        # native library build
 bun run workspace check craft-libs        # shared Rust workspace check
+bun run artifacts list                    # independent app build inputs
+bun scripts/build-apps.ts plan             # all app owners and availability
+bun run assets plan                       # shared licensed asset manifest
 ```
 
 The shell uses capability labels. Inspection runs only a configured headless
@@ -46,6 +54,9 @@ For an existing binary, use ignored `.local/config.json`:
 
 Unix binaries omit `.exe`. Native builds are serialized and bounded.
 Each native, SSH or Docker target needs its own toolchain and permissions.
+Standalone applications expose their complete engine with `--native` and
+require no checkout, Git or Cargo. Their HTTP binding requires a protected
+application token. Generation currently has no standalone native CLI.
 
 ## Frontend library tooling
 

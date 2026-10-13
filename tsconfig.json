@@ -17,7 +17,8 @@
     "packages/workspace/src/**/*.ts",
     "apps/desktop/**/*.ts",
     "scripts/**/*.ts",
-    "packages/video/src/**/*.ts"
+    "packages/video/src/**/*.ts",
+    "packages/artifacts/src/**/*.ts"
   ],
   "exclude": ["node_modules", "toolchains", "apps/desktop/dist", "apps/desktop/src-tauri"]
 }

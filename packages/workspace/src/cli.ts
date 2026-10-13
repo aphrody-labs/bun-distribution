@@ -2,6 +2,7 @@
 import {
   cargoModule,
   inspectRuntime,
+  inspectSourceCoverage,
   listModuleStatus,
   loadConfig,
   repositoryRoot,
@@ -84,6 +85,7 @@ async function main(): Promise<number> {
         flock: process.platform !== "win32" ? Bun.which("flock") : null,
       };
       const modules = await listModuleStatus(config);
+      const coverage = await inspectSourceCoverage(config);
       const ok =
         runtime.recognizedFork &&
         runtime.versionMatches &&
@@ -93,6 +95,9 @@ async function main(): Promise<number> {
         modules.every(
           module =>
             !module.error && module.initialized && module.pointerMatches && module.revisionMatches && module.clean,
+        ) &&
+        coverage.every(
+          module => !module.errors.length && !module.missingWorkspaceMembers.length && !module.missingTargets.length,
         );
       const report = {
         ok,
@@ -103,6 +108,7 @@ async function main(): Promise<number> {
         externalBun,
         tools,
         modules,
+        coverage,
       };
       if (json) console.log(JSON.stringify(report, null, 2));
       else {
@@ -114,6 +120,14 @@ async function main(): Promise<number> {
         console.log(
           `Library sources: ${modules.filter(module => module.initialized && module.pointerMatches && module.revisionMatches && module.clean).length}/${modules.length} pinned, clean`,
         );
+        console.log(
+          `Implementation: ${coverage.reduce((sum, module) => sum + module.cargoPackages, 0)} Cargo packages; ${coverage.reduce((sum, module) => sum + module.rustSources, 0)} Rust sources; ${coverage.reduce((sum, module) => sum + module.typescriptSources, 0)} TypeScript sources`,
+        );
+        for (const module of coverage) {
+          for (const issue of [...module.errors, ...module.missingWorkspaceMembers, ...module.missingTargets]) {
+            console.error(`Source coverage: ${module.id}: ${issue}`);
+          }
+        }
       }
       return ok ? 0 : 1;
     }

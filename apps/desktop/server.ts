@@ -1,28 +1,8 @@
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { serveForTauri } from "@aphrody/tauri/server";
-import { assertRuntime, listModuleStatus, loadConfig, runModule } from "@aphrody/bun-workspace";
+import { assertRuntime, findWorkspace, listModuleStatus, loadConfig, runModule } from "@aphrody/bun-workspace";
 import { capabilityFor, type Catalog, type Inspection } from "./shared.ts";
 import { nativeVideoCapabilities } from "@aphrody/bun-video-project/native";
-
-async function findWorkspace(): Promise<string> {
-  if (Bun.env.APHRODY_ROOT) {
-    const root = resolve(Bun.env.APHRODY_ROOT);
-    if (!(await Bun.file(join(root, "aphrody.config.json")).exists())) {
-      throw new Error("APHRODY_ROOT must contain aphrody.config.json.");
-    }
-    return root;
-  }
-  for (const start of [process.cwd(), import.meta.dir]) {
-    let cursor = resolve(start);
-    for (;;) {
-      if (await Bun.file(join(cursor, "aphrody.config.json")).exists()) return cursor;
-      const parent = dirname(cursor);
-      if (parent === cursor) break;
-      cursor = parent;
-    }
-  }
-  throw new Error("Run from the Aphrody checkout or set APHRODY_ROOT.");
-}
 
 const root = await findWorkspace();
 const config = await loadConfig(root);

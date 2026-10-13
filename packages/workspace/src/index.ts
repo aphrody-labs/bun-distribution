@@ -1,4 +1,27 @@
-import { basename, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { assertRuntimeFacts, currentRuntimeFacts, runtimeFromFacts, type Runtime, type RuntimePin } from "./runtime.ts";
+import { runProcess } from "./process.ts";
+import { inspectModuleCoverage, type ModuleCoverage } from "./coverage.ts";
+
+export { appCapabilities, appCapabilityFor, appHostname, capabilityFor, type AppCapability } from "./capabilities.ts";
+export { inspectModuleCoverage, type ModuleCoverage } from "./coverage.ts";
+export { hashContent, hashFile, hashStream, type FileHashOptions } from "./hash.ts";
+export {
+  ProcessError,
+  runProcess,
+  type ProcessErrorCode,
+  type ProcessLimits,
+  type ProcessOptions,
+  type ProcessResult,
+} from "./process.ts";
+export {
+  assertRuntimeFacts,
+  currentRuntimeFacts,
+  runtimeFromFacts,
+  type Runtime,
+  type RuntimeFacts,
+  type RuntimePin,
+} from "./runtime.ts";
 
 /** Resolve from this checkout; no workstation or host path is embedded. */
 export const repositoryRoot = resolve(import.meta.dir, "../../..");
@@ -18,31 +41,30 @@ export interface Module {
   binary?: string;
   cargoPackage?: string;
   manifestPath?: string;
+  protocol?: "cli" | "cli-json" | "jsonl" | "mcp-stdio";
 }
 
 export interface Config {
   schemaVersion: 1;
-  runtime: { version: string; repository: string; revision: string };
+  runtime: RuntimePin;
   modules: Module[];
   priorities?: string[];
   desktop: Record<string, unknown> & { source?: Source };
+  deployment?: Deployment;
+}
+
+/** Application release settings reference the canonical Infra host owner. */
+export interface Deployment {
+  domain: string;
+  appPrefix: string;
+  assets: { bucket: string; url: string };
+  host: string;
 }
 
 export interface Source {
   path: string;
   repository: string;
   revision: string;
-}
-
-export interface Runtime {
-  version: string;
-  revision: string;
-  sourceUrl: string | null;
-  executable: string;
-  recognizedFork: boolean;
-  versionMatches: boolean;
-  revisionMatches: boolean;
-  expected: Config["runtime"];
 }
 
 export interface ModuleStatus {
@@ -71,6 +93,12 @@ export interface NativeExecutionOptions extends ExecutionOptions {
   serialize?: boolean;
 }
 
+export interface ModuleBinaryOptions extends ExecutionOptions {
+  binary?: string;
+  maxOutputBytes?: number;
+  signal?: AbortSignal;
+}
+
 interface CommandResult {
   code: number;
   stdout: string;
@@ -82,6 +110,33 @@ const syncDeadline = 300_000;
 const cargoDeadline = 1_800_000;
 const runDeadline = 43_200_000;
 const revisionPattern = /^[0-9a-f]{40}$/;
+
+export interface WorkspaceDiscoveryOptions {
+  root?: string;
+  starts?: readonly string[];
+}
+
+/** Discovery is shared by checkout shells; standalone applications use their manifest. */
+export async function findWorkspace(options: WorkspaceDiscoveryOptions = {}): Promise<string> {
+  const configured = options.root ?? Bun.env.APHRODY_ROOT;
+  if (configured !== undefined) {
+    const root = resolve(configured);
+    if (!(await Bun.file(join(root, "aphrody.config.json")).exists())) {
+      throw new Error("APHRODY_ROOT must contain aphrody.config.json.");
+    }
+    return root;
+  }
+  for (const start of options.starts ?? [process.cwd(), import.meta.dir]) {
+    let cursor = resolve(start);
+    for (;;) {
+      if (await Bun.file(join(cursor, "aphrody.config.json")).exists()) return cursor;
+      const parent = dirname(cursor);
+      if (parent === cursor) break;
+      cursor = parent;
+    }
+  }
+  throw new Error("Run from the Aphrody checkout or set APHRODY_ROOT.");
+}
 
 /** A lexical path guard for trusted checkout files and manifest arguments. */
 export function checkoutPath(root: string, path: string): string {
@@ -98,6 +153,8 @@ function object(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+export { object as isObject };
+
 export async function loadConfig(root = repositoryRoot): Promise<Config> {
   const value: unknown = await Bun.file(join(root, "aphrody.config.json")).json();
   if (!object(value) || value.schemaVersion !== 1 || !object(value.runtime)) {
@@ -113,6 +170,33 @@ export async function loadConfig(root = repositoryRoot): Promise<Config> {
   }
   if (!Array.isArray(value.modules) || !object(value.desktop)) {
     throw new Error("aphrody.config.json: modules and desktop required.");
+  }
+  if (value.deployment !== undefined) {
+    const deployment = value.deployment;
+    if (
+      !object(deployment) ||
+      typeof deployment.domain !== "string" ||
+      deployment.domain.length > 253 ||
+      !deployment.domain.split(".").every(label => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label)) ||
+      !deployment.domain.includes(".") ||
+      typeof deployment.appPrefix !== "string" ||
+      !/^[a-z0-9-]*$/.test(deployment.appPrefix) ||
+      deployment.appPrefix.length > 40 ||
+      typeof deployment.host !== "string" ||
+      !/^[a-z][a-z0-9-]*$/.test(deployment.host) ||
+      !object(deployment.assets) ||
+      typeof deployment.assets.bucket !== "string" ||
+      !/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(deployment.assets.bucket) ||
+      typeof deployment.assets.url !== "string"
+    ) {
+      throw new Error("aphrody.config.json: invalid application deployment settings.");
+    }
+    try {
+      const url = new URL(deployment.assets.url);
+      if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash) throw new Error();
+    } catch {
+      throw new Error("aphrody.config.json: assets require an HTTPS URL without credentials.");
+    }
   }
   if (value.desktop.source !== undefined) {
     const source = value.desktop.source;
@@ -170,6 +254,9 @@ export async function loadConfig(root = repositoryRoot): Promise<Config> {
       if (typeof entry.manifestPath !== "string") throw new Error(`Invalid manifest: ${entry.id}`);
       checkoutPath(modulePath, entry.manifestPath);
     }
+    if (entry.protocol !== undefined && !["cli", "cli-json", "jsonl", "mcp-stdio"].includes(String(entry.protocol))) {
+      throw new Error(`Invalid native protocol: ${entry.id}`);
+    }
   }
   if (
     value.priorities !== undefined &&
@@ -180,63 +267,13 @@ export async function loadConfig(root = repositoryRoot): Promise<Config> {
   return value as unknown as Config;
 }
 
-function runtimeFromFacts(
-  config: Config,
-  facts: Pick<Runtime, "version" | "revision" | "sourceUrl" | "executable">,
-): Runtime {
-  const { version, revision, sourceUrl, executable } = facts;
-  let recognizedFork = false;
-  if (sourceUrl) {
-    try {
-      const source = new URL(sourceUrl);
-      const tag = source.pathname.split("/")[5];
-      const stableTag = tag === `bun-v${config.runtime.version}`;
-      const revisionTag = tag?.startsWith(`${config.runtime.version}+`)
-        ? tag.slice(config.runtime.version.length + 1)
-        : null;
-      const pinnedTag =
-        revisionTag !== null && /^[0-9a-f]{7,40}$/.test(revisionTag) && revision.startsWith(revisionTag);
-      recognizedFork =
-        source.protocol === "https:" &&
-        source.hostname === "github.com" &&
-        source.pathname.startsWith("/aphrody-labs/bun/releases/download/") &&
-        revisionPattern.test(revision) &&
-        (stableTag || pinnedTag);
-    } catch {
-      recognizedFork = false;
-    }
-  }
-  return {
-    version,
-    revision,
-    sourceUrl,
-    executable,
-    recognizedFork,
-    versionMatches: version === config.runtime.version,
-    revisionMatches: revision === config.runtime.revision,
-    expected: config.runtime,
-  };
-}
-
 export function inspectRuntime(config: Config): Runtime {
-  const release = process.release as typeof process.release & { sourceUrl?: string };
-  return runtimeFromFacts(config, {
-    version: Bun.version,
-    revision: Bun.revision,
-    sourceUrl: release.sourceUrl ?? null,
-    executable: process.execPath,
-  });
+  return runtimeFromFacts(config.runtime, currentRuntimeFacts());
 }
 
 /** All commands require the declared release fork; SHA drift is explicit. */
 export function assertRuntime(config: Config, allowRevisionDrift = false): Runtime {
-  const runtime = inspectRuntime(config);
-  if (!runtime.recognizedFork || !runtime.versionMatches || (!allowRevisionDrift && !runtime.revisionMatches)) {
-    throw new Error(
-      `Required runtime: ${config.runtime.repository} ${config.runtime.version}+${config.runtime.revision}. Observed: ${runtime.version}+${runtime.revision}; provenance ${runtime.recognizedFork ? "valid" : "invalid"}.`,
-    );
-  }
-  return runtime;
+  return assertRuntimeFacts(config.runtime, currentRuntimeFacts(), allowRevisionDrift);
 }
 
 /** Compiled sidecars must use a separate, verified Bun executable. */
@@ -277,15 +314,12 @@ export async function resolveBunExecutable(config: Config, options: ExecutionOpt
   ) {
     throw new Error("Native Bun returned invalid provenance metadata.");
   }
-  const runtime = runtimeFromFacts(config, {
+  assertRuntimeFacts(config.runtime, {
     version: facts.version,
     revision: facts.revision,
     sourceUrl: facts.sourceUrl as string | null,
     executable: candidate,
   });
-  if (!runtime.recognizedFork || !runtime.versionMatches || !runtime.revisionMatches) {
-    throw new Error("Native Bun does not match the pinned Aphrody runtime.");
-  }
   return candidate;
 }
 
@@ -297,73 +331,14 @@ async function command(
   env: Record<string, string | undefined> = Bun.env,
   captureStdout = false,
 ): Promise<CommandResult> {
-  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > runDeadline) {
-    throw new Error("Invalid command deadline.");
-  }
-  const controller = new AbortController();
-  const child = Bun.spawn(argv, {
-    cwd,
-    env,
+  return runProcess(argv, cwd, {
+    timeoutMs,
+    maxOutputBytes: 64 * 1024 * 1024,
     stdin: inherit ? "inherit" : "ignore",
-    stdout: captureStdout ? "pipe" : inherit ? "inherit" : "pipe",
-    stderr: inherit ? "inherit" : "pipe",
-    signal: controller.signal,
-    killSignal: "SIGTERM",
-    windowsHide: true,
-    detached: process.platform !== "win32",
+    stdout: inherit && !captureStdout ? "inherit" : "capture",
+    stderr: inherit ? "inherit" : "capture",
+    env,
   });
-  let stopping = false;
-  const stop = () => {
-    if (stopping) return;
-    stopping = true;
-    if (process.platform !== "win32") {
-      try {
-        process.kill(-child.pid, "SIGKILL");
-      } catch {
-        /* The owned group may already have exited. */
-      }
-      controller.abort();
-      return;
-    }
-    // Stop the native owner's children before terminating its wrapper.
-    try {
-      const taskkill = Bun.which("taskkill");
-      if (!taskkill) {
-        controller.abort();
-        return;
-      }
-      const killer = Bun.spawn([taskkill, "/PID", String(child.pid), "/T", "/F"], {
-        stdin: "ignore",
-        stdout: "ignore",
-        stderr: "ignore",
-        windowsHide: true,
-        signal: AbortSignal.timeout(5_000),
-      });
-      void killer.exited.then(
-        () => controller.abort(),
-        () => controller.abort(),
-      );
-    } catch {
-      controller.abort();
-    }
-  };
-  const timer = setTimeout(stop, timeoutMs);
-  process.once("SIGINT", stop);
-  process.once("SIGTERM", stop);
-  try {
-    const [code, stdout, stderr] = await Promise.all([
-      child.exited,
-      inherit && !captureStdout ? Promise.resolve("") : new Response(child.stdout).text(),
-      inherit ? Promise.resolve("") : new Response(child.stderr).text(),
-    ]);
-    if (stopping || controller.signal.aborted)
-      throw new Error(`Command interrupted or deadline exceeded (${timeoutMs} ms).`);
-    return { code, stdout, stderr };
-  } finally {
-    clearTimeout(timer);
-    process.removeListener("SIGINT", stop);
-    process.removeListener("SIGTERM", stop);
-  }
 }
 
 async function git(args: string[], root: string): Promise<string> {
@@ -376,6 +351,12 @@ export function findModule(config: Config, id: string): Module {
   const module = config.modules.find(entry => entry.id === id);
   if (!module) throw new Error(`Unknown library: ${id}`);
   return module;
+}
+
+export async function inspectSourceCoverage(config: Config, root = repositoryRoot): Promise<ModuleCoverage[]> {
+  const result: ModuleCoverage[] = [];
+  for (const module of config.modules) result.push(await inspectModuleCoverage(module, root));
+  return result;
 }
 
 interface Pin {
@@ -419,7 +400,7 @@ export async function localBinaries(config: Config, root = repositoryRoot): Prom
       throw new Error(`Invalid local headless CLI: ${id}`);
     }
     const path = isAbsolute(entry) ? resolve(entry) : checkoutPath(root, entry);
-    const expected = `${module.binary}${process.platform === "win32" ? ".exe" : ""}`;
+    const expected = nativeBinaryName(module);
     if (basename(path).toLowerCase() !== expected.toLowerCase()) {
       throw new Error(`Local CLI ${id} must be named ${expected}.`);
     }
@@ -427,6 +408,14 @@ export async function localBinaries(config: Config, root = repositoryRoot): Prom
     binaries[id] = path;
   }
   return binaries;
+}
+
+/** Keep native engine names separate from public application identities. */
+export function nativeBinaryName(module: Module, platform = process.platform): string {
+  if (module.role !== "engine" || module.binary !== `${module.id}-cli`) {
+    throw new Error(`Library has no headless CLI: ${module.id}`);
+  }
+  return `${module.binary}${platform === "win32" ? ".exe" : ""}`;
 }
 
 export async function listModuleStatus(config: Config, root = repositoryRoot): Promise<ModuleStatus[]> {
@@ -581,6 +570,52 @@ export async function resolveCargoModule(module: Module, root = repositoryRoot):
   if (!cargoPackage && module.binary) throw new Error(`cargoPackage required for the headless CLI: ${module.id}`);
   const binary = module.binary ?? null;
   return { directory, manifest, cargoPackage, binary };
+}
+
+/** Discover an existing checkout artifact. Builds and native protocol validation stay explicit. */
+export async function resolveModuleBinary(
+  config: Config,
+  id: string,
+  options: ModuleBinaryOptions = {},
+): Promise<string> {
+  const root = options.root ?? repositoryRoot;
+  const module = await requireModule(config, id, root);
+  const expected = nativeBinaryName(module);
+  const selected = options.binary ?? (await localBinaries(config, root))[id];
+  if (selected) {
+    const path = isAbsolute(selected) ? resolve(selected) : checkoutPath(root, selected);
+    if (basename(path).toLowerCase() !== expected.toLowerCase())
+      throw new Error(`Native CLI ${id} must be named ${expected}.`);
+    if (!(await Bun.file(path).exists())) throw new Error(`Native CLI missing: ${id}`);
+    return path;
+  }
+  const cargo = await resolveCargoModule(module, root);
+  const executable = Bun.which("cargo");
+  if (!executable) throw new Error("Native Cargo missing on this host.");
+  const metadata = await runProcess(
+    [executable, "metadata", "--offline", "--no-deps", "--format-version", "1", "--manifest-path", cargo.manifest],
+    cargo.directory,
+    {
+      timeoutMs: Math.min(options.timeoutMs ?? shortDeadline, shortDeadline),
+      maxOutputBytes: options.maxOutputBytes ?? 16 * 1024 * 1024,
+      signal: options.signal,
+    },
+  );
+  if (metadata.code !== 0) throw new Error(`Cargo artifact discovery failed: ${id}`);
+  const value: unknown = JSON.parse(metadata.stdout);
+  if (
+    !object(value) ||
+    typeof value.target_directory !== "string" ||
+    !isAbsolute(value.target_directory) ||
+    value.target_directory.includes("\0")
+  ) {
+    throw new Error(`Cargo returned an invalid artifact directory: ${id}`);
+  }
+  for (const profile of ["release", "debug"]) {
+    const candidate = join(value.target_directory, profile, expected);
+    if (await Bun.file(candidate).exists()) return candidate;
+  }
+  throw new Error(`Native CLI missing: ${id}; build its existing library owner.`);
 }
 
 /** Serialize a native build owner, including the Tauri CLI, without a shell. */

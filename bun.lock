@@ -17,6 +17,16 @@
         "@aphrody/tauri": "file:../../toolchains/bun/packages/bun-tauri",
       },
     },
+    "packages/artifacts": {
+      "name": "@aphrody/bun-artifacts",
+      "version": "0.1.0",
+      "bin": {
+        "aphrody-artifacts": "./src/cli.ts",
+      },
+      "dependencies": {
+        "@aphrody/bun-workspace": "workspace:*",
+      },
+    },
     "packages/video": {
       "name": "@aphrody/bun-video-project",
       "version": "0.1.0",
@@ -36,6 +46,8 @@
     },
   },
   "packages": {
+    "@aphrody/bun-artifacts": ["@aphrody/bun-artifacts@workspace:packages/artifacts"],
+
     "@aphrody/bun-desktop": ["@aphrody/bun-desktop@workspace:apps/desktop"],
 
     "@aphrody/bun-types": ["@aphrody/bun-types@file:toolchains/bun/packages/bun-types", { "dependencies": { "@types/node": "*", "undici-types": "*" } }],

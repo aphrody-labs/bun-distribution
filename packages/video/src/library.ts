@@ -6,10 +6,13 @@ import {
   inspectRuntime,
   listModuleStatus,
   loadConfig,
-  localBinaries,
   repositoryRoot,
-  resolveCargoModule,
+  resolveModuleBinary,
+  assertRuntimeFacts,
+  currentRuntimeFacts,
+  hashFile,
   type Config,
+  type RuntimePin,
 } from "@aphrody/bun-workspace";
 import { VideoLibraryError } from "./errors.ts";
 import {
@@ -54,11 +57,22 @@ export interface VideoLibraryOptions {
   maxOutputBytes?: number;
   dataDir?: string;
   signal?: AbortSignal;
+  artifact?: VideoArtifact;
+}
+
+/** Verified native payload from the standalone artifact owner. */
+export interface VideoArtifact {
+  runtime: RuntimePin;
+  sourceRevision: string;
+  version: "0.7.2";
+  sha256: string;
+  cwd: string;
 }
 
 interface ResolvedOptions extends ProcessLimits {
   binary?: string;
   dataDir: string;
+  cwd: string;
 }
 
 export interface VideoCommand {
@@ -157,7 +171,10 @@ function optionsFor(options: VideoLibraryOptions): ResolvedOptions {
     maxOutputBytes,
     signal: options.signal,
     binary: options.binary === undefined ? undefined : pathArgument(options.binary),
-    dataDir: pathArgument(options.dataDir ?? join(repositoryRoot, ".local", "video", "presets")),
+    dataDir: pathArgument(
+      options.dataDir ?? join(options.artifact?.cwd ?? repositoryRoot, ".local", "video", "presets"),
+    ),
+    cwd: options.artifact ? pathArgument(options.artifact.cwd) : repositoryRoot,
   };
 }
 
@@ -231,7 +248,7 @@ async function validatedBinary(path: string, options: ResolvedOptions): Promise<
     throw new VideoLibraryError("INVALID_OPTIONS", "Select the native video library CLI artifact.");
   }
   if (!(await Bun.file(path).exists())) throw new VideoLibraryError("ENGINE_MISSING", buildInstruction);
-  const version = await runBounded([path, "--version"], repositoryRoot, {
+  const version = await runBounded([path, "--version"], options.cwd, {
     timeoutMs: Math.min(options.timeoutMs, 5_000),
     maxOutputBytes: Math.min(options.maxOutputBytes, 4_096),
     signal: options.signal,
@@ -243,28 +260,13 @@ async function validatedBinary(path: string, options: ResolvedOptions): Promise<
 }
 
 async function resolveBinary(config: Config, options: ResolvedOptions): Promise<string> {
-  if (options.binary) return validatedBinary(options.binary, options);
-  const selected = (await localBinaries(config)).filmcraft;
-  if (selected) return validatedBinary(selected, options);
-  const module = await resolveCargoModule(findModule(config, "filmcraft"));
-  const cargo = Bun.which("cargo");
-  if (!cargo) throw new VideoLibraryError("ENGINE_MISSING", buildInstruction);
-  const metadata = await runBounded(
-    [cargo, "metadata", "--offline", "--no-deps", "--format-version", "1", "--manifest-path", module.manifest],
-    module.directory,
-    { timeoutMs: Math.min(options.timeoutMs, 20_000), maxOutputBytes: options.maxOutputBytes, signal: options.signal },
-  );
-  if (metadata.code !== 0) throw new VideoLibraryError("ENGINE_MISSING", buildInstruction);
-  const parsed = parseNativeJSON<NativeObject>(metadata.stdout);
-  if (typeof parsed.target_directory !== "string") {
-    throw new VideoLibraryError("ENGINE_MISSING", buildInstruction);
-  }
-  const filename = process.platform === "win32" ? "filmcraft-cli.exe" : "filmcraft-cli";
-  for (const profile of ["release", "debug"]) {
-    const candidate = join(parsed.target_directory, profile, filename);
-    if (await Bun.file(candidate).exists()) return validatedBinary(candidate, options);
-  }
-  throw new VideoLibraryError("ENGINE_MISSING", buildInstruction);
+  const binary = await resolveModuleBinary(config, "filmcraft", {
+    binary: options.binary,
+    timeoutMs: Math.min(options.timeoutMs, 20_000),
+    maxOutputBytes: options.maxOutputBytes,
+    signal: options.signal,
+  });
+  return validatedBinary(binary, options);
 }
 
 function nativeResult(result: ProcessResult, failureKind?: "json" | "jsonl" | null): void {
@@ -290,10 +292,29 @@ function nativeResult(result: ProcessResult, failureKind?: "json" | "jsonl" | nu
 /** Resolve an existing native artifact. This API never builds or reconstructs project formats. */
 export async function createVideoLibrary(options: VideoLibraryOptions = {}): Promise<VideoLibrary> {
   const resolved = optionsFor(options);
-  const config = await sourceConfig();
   let binary: string;
   try {
-    binary = await resolveBinary(config, resolved);
+    if (options.artifact) {
+      const artifact = options.artifact;
+      if (
+        !resolved.binary ||
+        artifact.version !== "0.7.2" ||
+        !/^[0-9a-f]{40}$/.test(artifact.sourceRevision) ||
+        !/^[0-9a-f]{64}$/.test(artifact.sha256)
+      )
+        throw new VideoLibraryError("INVALID_OPTIONS", "A verified native video artifact is required.");
+      try {
+        assertRuntimeFacts(artifact.runtime, currentRuntimeFacts());
+      } catch {
+        throw new VideoLibraryError("RUNTIME_MISMATCH", "The compiled Aphrody Bun runtime differs from its manifest.");
+      }
+      if ((await hashFile(resolved.binary)) !== artifact.sha256) {
+        throw new VideoLibraryError("SOURCE_MISMATCH", "The native video artifact digest differs from its manifest.");
+      }
+      binary = await validatedBinary(resolved.binary, resolved);
+    } else {
+      binary = await resolveBinary(await sourceConfig(), resolved);
+    }
   } catch (error) {
     if (error instanceof VideoLibraryError) throw error;
     throw new VideoLibraryError("ENGINE_MISSING", buildInstruction);
@@ -314,7 +335,7 @@ export async function createVideoLibrary(options: VideoLibraryOptions = {}): Pro
     const argv = [binary, "--compact", "--data-dir", resolved.dataDir];
     if (projectPath !== undefined) argv.push("--project", pathArgument(projectPath));
     if (saveAs !== undefined) argv.push("--save-as", pathArgument(saveAs));
-    const result = await runBounded([...argv, ...args], repositoryRoot, resolved, input);
+    const result = await runBounded([...argv, ...args], resolved.cwd, resolved, input);
     nativeResult(result, failureKind);
     return result.stdout;
   };

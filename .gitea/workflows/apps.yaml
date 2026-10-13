@@ -1,0 +1,25 @@
+name: Aphrody / Bun
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  native:
+    runs-on: aphrody-bun-linux
+    timeout-minutes: 720
+    steps:
+      - uses: builtin:checkout
+        with:
+          submodules: recursive
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Check
+        run: bun run typecheck
+      - name: Lint
+        run: bun run lint
+      - name: Format
+        run: bun run format:check
+      - name: Build apps
+        run: bun scripts/build-apps.ts build --target bun-linux-x64 --bun "$BUN_EXECUTABLE" --runtime-pin infra/runtime-pins/linux-x64.json --host vps --mode docker --shared-assets infra/shared-assets.json --output .local/apps --report .local/builds/linux-x64.json

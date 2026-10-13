@@ -19,6 +19,7 @@ export {
   type VideoCommand,
   type VideoLibrary,
   type VideoLibraryOptions,
+  type VideoArtifact,
 } from "./library.ts";
 export { nativeVideoCapabilities, openNativeVideo, type NativeVideo, type NativeVideoMetadata } from "./native.ts";
 export { TICKS_PER_SECOND, ticksFromDecimalSeconds, ticksToDecimalSeconds } from "./time.ts";

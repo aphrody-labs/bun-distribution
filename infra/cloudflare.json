@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "owner": "aphrody-infra",
+  "zone": "aphrody.app",
+  "zoneId": "f4dab237b9811435da6fee0b5b3438d4",
+  "origin": "51.77.147.152",
+  "records": [
+    {
+      "name": "app-video.aphrody.app",
+      "id": "4d596f7d0574c0c2a467d8298bd4e476",
+      "type": "A",
+      "content": "51.77.147.152",
+      "proxied": true
+    },
+    {
+      "name": "app-generation.aphrody.app",
+      "id": "f511e27a1a10c2de9cdc17b913d33674",
+      "type": "A",
+      "content": "51.77.147.152",
+      "proxied": true
+    },
+    {
+      "name": "app-images.aphrody.app",
+      "id": "e17d6e495a752eb75320b8ed4ac27604",
+      "type": "A",
+      "content": "51.77.147.152",
+      "proxied": true
+    },
+    {
+      "name": "app-vectors.aphrody.app",
+      "id": "93bc5f03a0ab40228cce259461759389",
+      "type": "A",
+      "content": "51.77.147.152",
+      "proxied": true
+    },
+    {
+      "name": "app-compositing.aphrody.app",
+      "id": "d47fc742f0b6f6596fc9561563273835",
+      "type": "A",
+      "content": "51.77.147.152",
+      "proxied": true
+    },
+    {
+      "name": "app-photo-processing.aphrody.app",
+      "id": "75550d73f35e1b4424a8f39ae602be7e",
+      "type": "A",
+      "content": "51.77.147.152",
+      "proxied": true
+    },
+    {
+      "name": "app-pdf.aphrody.app",
+      "id": "a4a3c704236ae375258b4fae2352e5d4",
+      "type": "A",
+      "content": "51.77.147.152",
+      "proxied": true
+    },
+    {
+      "name": "app-documents.aphrody.app",
+      "id": "1c4a02b46a8dad1bf4a1cc1c7c618859",
+      "type": "A",
+      "content": "51.77.147.152",
+      "proxied": true
+    },
+    {
+      "name": "app-audio.aphrody.app",
+      "id": "1f04ecffc9e04d16aabf419dd230c5fd",
+      "type": "A",
+      "content": "51.77.147.152",
+      "proxied": true
+    },
+    {
+      "name": "app-layout.aphrody.app",
+      "id": "031e1380e35451a8f47d5daf4d358018",
+      "type": "A",
+      "content": "51.77.147.152",
+      "proxied": true
+    },
+    {
+      "name": "app-cad.aphrody.app",
+      "id": "4b28c0b79978922be051cfc4169881e1",
+      "type": "A",
+      "content": "51.77.147.152",
+      "proxied": true
+    },
+    {
+      "name": "app-slides.aphrody.app",
+      "id": "bfdbdf62b047f673cd5e08e7cbdb5ea8",
+      "type": "A",
+      "content": "51.77.147.152",
+      "proxied": true
+    },
+    {
+      "name": "app-tables.aphrody.app",
+      "id": "f361ccc19d8fd4302a54ad995f8ab845",
+      "type": "A",
+      "content": "51.77.147.152",
+      "proxied": true
+    },
+    {
+      "name": "app-interface-layouts.aphrody.app",
+      "id": "54cb28b2edbaba83ebb6ff55e2bb0bcc",
+      "type": "A",
+      "content": "51.77.147.152",
+      "proxied": true
+    },
+    {
+      "name": "git.aphrody.app",
+      "id": "d0b886d613ed6299f52f175198c36550",
+      "type": "A",
+      "content": "51.77.147.152",
+      "proxied": true
+    },
+    {
+      "name": "deploy.aphrody.app",
+      "id": "9b153d7fe31b23adbebefa7606288fd8",
+      "type": "A",
+      "content": "51.77.147.152",
+      "proxied": true
+    }
+  ],
+  "assets": {
+    "bucket": "aphrody-assets",
+    "domain": "assets.aphrody.app",
+    "ssl": "active",
+    "enabled": true
+  }
+}

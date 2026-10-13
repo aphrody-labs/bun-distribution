@@ -27,3 +27,13 @@
 - [x] Apply aggressive n2b to authored code and review its recommendations.
 - [x] Complete aggressive library and SDK migration through their owners.
 - [x] Patch the internal n2b owner for large monorepos through a subagent.
+
+## Unified deployment
+
+- [ ] Consolidate shared concepts into their existing capability owners.
+- [x] Create app subdomains through Cloudflare MCP and retain active R2 domains.
+- [ ] Package independent apps with verified Aphrody Bun and native engines.
+- [x] Reference one content-addressed asset manifest across apps.
+- [ ] Prepare canonical Infra services, routes and release workflows.
+- [ ] Deploy the Rust controller and self-hosted forge/runner on the VPS.
+- [ ] Qualify artifacts, domains and services separately; publish owned changes.

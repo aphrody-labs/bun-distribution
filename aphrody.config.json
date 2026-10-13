@@ -32,7 +32,8 @@
       "stars": 11833,
       "binary": "filmcraft-cli",
       "cargoPackage": "filmcraft-cli",
-      "role": "engine"
+      "role": "engine",
+      "protocol": "cli-json"
     },
     {
       "id": "artcraft",
@@ -48,7 +49,8 @@
       "manifestPath": "Cargo.toml",
       "stars": 23258,
       "role": "engine",
-      "cargoPackage": "artcraft_client"
+      "cargoPackage": "artcraft_client",
+      "protocol": "cli"
     },
     {
       "id": "photocraft",
@@ -66,7 +68,8 @@
       "stars": 54861,
       "binary": "photocraft-cli",
       "cargoPackage": "photocraft-cli",
-      "role": "engine"
+      "role": "engine",
+      "protocol": "jsonl"
     },
     {
       "id": "vectorcraft",
@@ -84,7 +87,8 @@
       "stars": 8073,
       "binary": "vectorcraft-cli",
       "cargoPackage": "vectorcraft-cli",
-      "role": "engine"
+      "role": "engine",
+      "protocol": "cli"
     },
     {
       "id": "effectcraft",
@@ -102,7 +106,8 @@
       "stars": 5927,
       "binary": "effectcraft-cli",
       "cargoPackage": "effectcraft-cli",
-      "role": "engine"
+      "role": "engine",
+      "protocol": "cli"
     },
     {
       "id": "lightcraft",
@@ -120,7 +125,8 @@
       "stars": 11480,
       "binary": "lightcraft-cli",
       "cargoPackage": "lightcraft-cli",
-      "role": "engine"
+      "role": "engine",
+      "protocol": "cli"
     },
     {
       "id": "pdfcraft",
@@ -138,7 +144,8 @@
       "stars": 11844,
       "binary": "pdfcraft-cli",
       "cargoPackage": "pdfcraft-cli",
-      "role": "engine"
+      "role": "engine",
+      "protocol": "cli"
     },
     {
       "id": "wordcraft",
@@ -156,7 +163,8 @@
       "stars": 9759,
       "binary": "wordcraft-cli",
       "cargoPackage": "wordcraft-cli",
-      "role": "engine"
+      "role": "engine",
+      "protocol": "cli"
     },
     {
       "id": "soundcraft",
@@ -174,7 +182,8 @@
       "stars": 2333,
       "binary": "soundcraft-cli",
       "cargoPackage": "soundcraft-cli",
-      "role": "engine"
+      "role": "engine",
+      "protocol": "cli"
     },
     {
       "id": "designcraft",
@@ -192,7 +201,8 @@
       "stars": 3510,
       "binary": "designcraft-cli",
       "cargoPackage": "designcraft-cli",
-      "role": "engine"
+      "role": "engine",
+      "protocol": "cli"
     },
     {
       "id": "cadcraft",
@@ -210,7 +220,8 @@
       "stars": 3665,
       "binary": "cadcraft-cli",
       "cargoPackage": "cadcraft-cli",
-      "role": "engine"
+      "role": "engine",
+      "protocol": "cli"
     },
     {
       "id": "deckcraft",
@@ -228,7 +239,8 @@
       "stars": 2699,
       "binary": "deckcraft-cli",
       "cargoPackage": "deckcraft-cli",
-      "role": "engine"
+      "role": "engine",
+      "protocol": "cli"
     },
     {
       "id": "gridcraft",
@@ -246,7 +258,8 @@
       "stars": 4023,
       "binary": "gridcraft-cli",
       "cargoPackage": "gridcraft-cli",
-      "role": "engine"
+      "role": "engine",
+      "protocol": "cli"
     },
     {
       "id": "figcraft",
@@ -264,7 +277,8 @@
       "stars": 24,
       "binary": "figcraft-cli",
       "cargoPackage": "figcraft-cli",
-      "role": "engine"
+      "role": "engine",
+      "protocol": "cli"
     },
     {
       "id": "craft-libs",
@@ -297,5 +311,14 @@
       "role": "fonts"
     }
   ],
-  "priorities": ["filmcraft"]
+  "priorities": ["filmcraft"],
+  "deployment": {
+    "domain": "aphrody.app",
+    "appPrefix": "app-",
+    "host": "vps",
+    "assets": {
+      "bucket": "aphrody-assets",
+      "url": "https://assets.aphrody.app"
+    }
+  }
 }
