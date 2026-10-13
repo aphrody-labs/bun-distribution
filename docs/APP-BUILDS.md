@@ -11,7 +11,8 @@ entrypoints. An unresolved external context prevents an independent build.
 | Capability                                               | Owner                                                                       |
 | -------------------------------------------------------- | --------------------------------------------------------------------------- |
 | Library engine builds and standalone artifacts           | `scripts/build-apps.ts` and `@aphrody/bun-artifacts` in Bun Libraries       |
-| APT and desktop compilation                              | Native `Bun.build`, `compile.assets`, `Bun.embeddedFiles`                   |
+| Shared Bun standalone compiler                           | `@aphrody/bun-artifacts/compiler` in Bun Libraries                         |
+| App source policy, native contracts and release receipts | `infra/app-build.ts` in Bun OS                                             |
 | Library capability names and canonical application hosts | `@aphrody/bun-workspace/capabilities` in Bun Libraries                      |
 | Child process ownership, deadlines and output capture    | `@aphrody/bun-workspace/process` in Bun Libraries                           |
 | Streamed file identity                                   | `@aphrody/bun-workspace/hash` in Bun Libraries                              |
@@ -62,10 +63,16 @@ bun infra/app-build.ts build apt --config infra/apps.json --target windows-x64 -
 bun infra/app-build.ts release apt --config infra/apps.json --receipt /NEW/OUTPUT/receipt.json --out /RELEASE.json
 ```
 
+All standalone Bun artifacts use the compiler owned by Bun Libraries. Bun OS
+keeps distribution planning, protected-input policy, source/runtime/native/asset
+proofs, ABI checks, host locks, receipts and release staging. The build plan pins
+the compiler repository revision and source hash; builds require its owned
+checkout and compiler file to remain unchanged.
+
 Compilation bundles JavaScript, rejects unresolved imports, disables build-time
 environment inlining and executable dotenv/config autoloading, and embeds
 explicit approved assets. The source graph and input checksums accompany the
-artifact. Changed runtime or source inputs fail the build.
+artifact. Changed compiler, runtime or application inputs fail the build.
 
 Native wrappers verify embedded payload hashes and materialize one cache
 object per digest. Loader views use hard links, preserving dependency

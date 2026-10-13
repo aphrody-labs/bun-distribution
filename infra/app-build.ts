@@ -3,6 +3,7 @@ import { lstat, mkdir, open, realpath, unlink } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { hostname } from "node:os";
 import { isBuiltin } from "node:module";
+import type { compileStandaloneApp } from "../../bun-libraries/packages/artifacts/src/compiler.ts";
 import { appCapabilityForLibrary, appHostnamesForLibrary } from "@aphrody/bun-workspace/capabilities";
 import { loadConfig as loadLibraryConfig } from "@aphrody/bun-workspace";
 import { runProcess } from "@aphrody/bun-workspace/process";
@@ -95,6 +96,13 @@ export interface AppPlan {
   status: "prepared" | "blocked";
   reasons: string[];
   buildOwner?: { repository: "aphrody-labs/bun-libraries"; capability: string };
+  compiler?: {
+    repository: "aphrody-labs/bun-libraries";
+    checkout: string;
+    path: "packages/artifacts/src/compiler.ts";
+    revision: string;
+    sha256: string;
+  };
   runtime?: {
     path: string;
     bytes: number;
@@ -297,7 +305,8 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
   const app = config.apps.find(app => app.id === appId);
   if (!app || !config.targets.includes(target)) throw new Error("Unknown app or target");
   const ownsNativeBuild = app.workspace === "libraries" && app.kind === "native-cli";
-  const libraryRoot = ownsNativeBuild ? await workspace(configPath, config, "libraries") : undefined;
+  const artifactRoot = await workspace(configPath, config, "libraries");
+  const libraryRoot = ownsNativeBuild ? artifactRoot : undefined;
   const root = libraryRoot ?? (await workspace(configPath, config, app.entrypointWorkspace ?? app.workspace));
   let resolvedHostnames: string[];
   let librarySourceRevision: string | undefined;
@@ -333,6 +342,26 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
   };
   let entrypoint = inside(root, resolve(root, ownsNativeBuild ? "scripts/build-apps.ts" : app.entrypoint));
   const reasons: string[] = [];
+  let compiler: AppPlan["compiler"] | undefined;
+  try {
+    const compilerPath = inside(artifactRoot, join(artifactRoot, "packages/artifacts/src/compiler.ts"));
+    const compilerRevision = await command(["git", "rev-parse", "HEAD"], artifactRoot);
+    const compilerStatus = await command(["git", "status", "--porcelain"], artifactRoot);
+    const compilerOrigin = await command(["git", "remote", "get-url", "origin"], artifactRoot);
+    if (!(await Bun.file(compilerPath).exists())) throw new Error("Shared compiler source is absent");
+    if (compilerStatus) throw new Error("Bun Libraries compiler checkout has uncommitted changes");
+    if (!/^https:\/\/github\.com\/aphrody-labs\/bun-libraries(?:\.git)?$/.test(compilerOrigin))
+      throw new Error("Shared compiler checkout is outside its capability owner");
+    compiler = {
+      repository: "aphrody-labs/bun-libraries",
+      checkout: artifactRoot,
+      path: "packages/artifacts/src/compiler.ts",
+      revision: compilerRevision,
+      sha256: (await identity(compilerPath)).sha256,
+    };
+  } catch (error) {
+    reasons.push(error instanceof Error ? error.message : "Shared standalone compiler unavailable");
+  }
   if (!(await Bun.file(entrypoint).exists())) reasons.push("Configured entrypoint is absent");
   else entrypoint = inside(root, await realpath(entrypoint));
   if (protectedInput(entrypoint)) reasons.push("Entrypoint points to a protected store");
@@ -382,6 +411,7 @@ export async function planApp(configPath: string, appId: string, target: AppTarg
           },
         }
       : {}),
+    ...(compiler ? { compiler } : {}),
     runtime,
     nativeFiles,
     nativeEvidence,
@@ -559,6 +589,7 @@ async function buildLibraryApp(configPath: string, appId: string, target: AppTar
     source: plan.app.source,
     artifact: { path: artifact.path, bytes: artifact.size, sha256: artifact.sha256, abi: abiValue },
     runtime: { version: runtime.version, revision: runtime.revision, sha256: runtime.sha256 },
+    compiler: plan.compiler,
     nativeContract: { appId, target, files: nativeFiles },
     assets: {
       id: appId,
@@ -589,7 +620,8 @@ async function buildLibraryApp(configPath: string, appId: string, target: AppTar
 }
 async function compileWorker(planPath: string, output: string) {
   const plan = (await Bun.file(planPath).json()) as AppPlan;
-  if (plan.status !== "prepared" || !plan.runtime) throw new Error("Prepared app plan and runtime snapshot required");
+  if (plan.status !== "prepared" || !plan.runtime || !plan.compiler)
+    throw new Error("Prepared app plan, runtime snapshot and shared compiler pin required");
   const current = await planApp(plan.configPath, plan.app.id, plan.target);
   if (JSON.stringify(current) !== JSON.stringify(plan)) throw new Error("App inputs changed before compilation");
   const proofs = new Map<string, { bytes: number; sha256: string }>();
@@ -600,47 +632,26 @@ async function compileWorker(planPath: string, output: string) {
   };
   const outfile = join(output, plan.app.id + (plan.target === "windows-x64" ? ".exe" : ""));
   const target = (plan.target === "macos-arm64" ? "bun-darwin-arm64" : "bun-" + plan.target) as Bun.Build.CompileTarget;
-  const result = await Bun.build({
-    entrypoints: [plan.entrypoint],
-    target: "bun",
-    packages: "bundle",
-    allowUnresolved: [],
-    splitting: false,
-    env: "disable",
-    minify: true,
-    metafile: true,
-    define: { __BUN_OS_NATIVE_CONTRACT__: JSON.stringify(contract) },
-    compile: {
-      target,
-      executablePath: plan.runtime.path,
-      outfile,
-      assets: [
-        ...plan.nativeFiles.map(file => file.path),
-        ...plan.assets.objects.flatMap(object => object.sources.slice(0, 1)),
-      ],
-      autoloadDotenv: false,
-      autoloadBunfig: false,
-      autoloadPackageJson: false,
-      autoloadTsconfig: false,
-    },
-    plugins: [
-      {
-        name: "app-input-proof",
-        setup(build) {
-          build.onLoad({ filter: /.*/, namespace: "file" }, async args => {
-            if (protectedInput(args.path)) throw new Error("Bundler input points to a protected store");
-            proofs.set(args.path, await identity(args.path));
-            return undefined;
-          });
-        },
-      },
+  const compilerPath = inside(plan.compiler.checkout, join(plan.compiler.checkout, plan.compiler.path));
+  if ((await identity(compilerPath)).sha256 !== plan.compiler.sha256)
+    throw new Error("Shared compiler changed after planning");
+  const compilerModule = (await import(compilerPath)) as { compileStandaloneApp: typeof compileStandaloneApp };
+  const result = await compilerModule.compileStandaloneApp({
+    entrypoint: plan.entrypoint,
+    target,
+    executablePath: plan.runtime.path,
+    outfile,
+    assets: [
+      ...plan.nativeFiles.map(file => file.path),
+      ...plan.assets.objects.flatMap(object => object.sources.slice(0, 1)),
     ],
+    define: { __BUN_OS_NATIVE_CONTRACT__: JSON.stringify(contract) },
+    onInput: async path => {
+      if (protectedInput(path)) throw new Error("Bundler input points to a protected store");
+      proofs.set(path, await identity(path));
+    },
   });
-  if (!result.success || !result.metafile) throw new Error("Native compile failed or emitted no source graph");
-  const unresolved = Object.values(result.metafile.inputs)
-    .flatMap(input => input.imports)
-    .filter(item => item.external && !item.path.startsWith("bun:") && item.path !== "bun" && !isBuiltin(item.path));
-  if (unresolved.length) throw new Error("Compiled app still has external JavaScript imports");
+  if (!result.metafile) throw new Error("Shared compiler emitted no source graph");
   const provenPaths = new Set([...proofs.keys()].map(path => resolve(path)));
   for (const path of Object.keys(result.metafile.inputs)) {
     if (path.startsWith("<") || path.startsWith("bun:") || path === "bun" || isBuiltin(path)) continue;
@@ -664,6 +675,8 @@ async function compileWorker(planPath: string, output: string) {
   }
   if ((await identity(plan.runtime.path)).sha256 !== plan.runtime.sha256)
     throw new Error("Runtime changed during compilation");
+  if ((await identity(compilerPath)).sha256 !== plan.compiler.sha256)
+    throw new Error("Shared compiler changed during compilation");
   const artifactABI = await executableABI(outfile, plan.target);
   const artifact = { path: outfile, ...(await identity(outfile)), abi: artifactABI };
   const receipt = {
@@ -675,6 +688,7 @@ async function compileWorker(planPath: string, output: string) {
     source: plan.app.source,
     sources,
     runtime: plan.runtime,
+    compiler: plan.compiler,
     artifact,
     nativeFiles: plan.nativeFiles,
     nativeEvidence: plan.nativeEvidence,
@@ -848,6 +862,7 @@ export async function stageAppRelease(configPath: string, receiptPath: string) {
       revision: receipt.runtime.revision,
       sha256: receipt.runtime.sha256,
     },
+    compiler: receipt.compiler,
     native: receipt.nativeContract,
     assets: receipt.assets,
     qualification: { ...receipt.qualification, uploaded: false },
