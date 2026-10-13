@@ -1,14 +1,35 @@
 {
   "schemaVersion": 1,
   "purpose": "production-stack-knowledge-for-aphrody-infra",
-  "selectionRule": "value = production-fit + reuse + maintenance - duplication - runtime-cost",
+  "selectionRule": "value = production-fit + reuse + maintenance - duplication - runtime-cost; assign one implementation owner per capability: product integration in Aphrody, runtime and SDK in Bun, shared UI in Material, distribution assembly in Bun OS, host policy in Aphrody Infra, and Debian APT sources in its fork",
   "repositories": [
     {
       "id": "aphrody",
-      "role": "Active unified Rust + Bun source workspace; owns crates/, packages/, apps/ and the Infra orchestration catalogs. Imported domains retain their compatibility names.",
+      "role": "Aphrody product workflows and integration: native CLI, browser and desktop surfaces, application delivery, and Infra desired-state catalogs. Imported capability owners retain runtime, SDK, shared UI, distribution and package-manager implementation.",
       "source": "https://github.com/aphrody-labs/aphrody",
       "production": false,
-      "note": "Canonical private monorepo (aphrody-labs/aphrody). Deployment qualification is pending."
+      "note": "Product integration repository; runtime, UI framework, distribution and Debian APT sources stay with their named capability owners."
+    },
+    {
+      "id": "bun",
+      "role": "Bun runtime and SDK: JavaScriptCore/WebKit, built-ins, package manager, system APIs, native integrations and Bun Cloudflare capabilities. Runtime source changes belong to the aphrody-labs/bun fork; product configuration and release orchestration stay with Aphrody Infra.",
+      "source": "https://github.com/aphrody-labs/bun",
+      "production": true,
+      "note": "Canonical runtime and system SDK owner; produces SDK artifacts consumed by Bun OS and served from bun-lib.aphrody.app. Infra owns DNS and R2 state. Resolve the checkout from workspace configuration."
+    },
+    {
+      "id": "material",
+      "role": "Material 3 framework: native tokens, shared controls, libm3, WASM adapters and shared app UI packages. Aphrody and Bun consume pinned Material owners without duplicating framework implementation.",
+      "source": "https://github.com/aphrody-labs/material",
+      "production": true,
+      "note": "Canonical Material 3, libm3, tokens, controls, WASM adapters and shared app-ui source owner."
+    },
+    {
+      "id": "apt",
+      "role": "Debian APT source fork and package manager implementation. Bun OS owns distribution integration and cross-ecosystem package conversion.",
+      "source": "https://github.com/aphrody-labs/apt",
+      "production": true,
+      "note": "Retains official Debian APT history and package identity."
     },
     {
       "id": "aphrody-ai",
@@ -28,7 +49,7 @@
     },
     {
       "id": "aphrody-ui",
-      "role": "UI layer: Tauri desktop, Material 3 design system (Rust crates and @aphrody/* packages), renderers, canvas, Aphrody Drive and the bun_rs native library (crate aphrody-bun) behind @aphrody/bun; its tracked crates/aphrody-app/ui-dist is the agent console embedded in the aphrody release binary",
+      "role": "Aphrody UI application integration: product layouts, renderers, canvas, Aphrody Drive and native app wiring. Material framework, controls, tokens and shared app-ui belong to Material; Bun system UI and SDK integrations belong to Bun.",
       "source": "https://github.com/aphrody-labs/aphrody",
       "production": true,
       "monorepoPaths": "crates/ui, m3/packages",
@@ -119,10 +140,10 @@
     },
     {
       "id": "bun-distribution",
-      "role": "Unified Bun OS product assembly and standalone catalog server; Aphrody Infra retains service orchestration and deployment ownership.",
+      "role": "Bun OS workspace: Bun Libraries history, shared workspace/process/artifact/assets packages, independent library app builds, OS distribution and Ubuntu factory, APT adapters and cross-ecosystem package conversion. Aphrody Infra owns host orchestration, services, routes, DNS desired state and activation.",
       "source": "https://github.com/aphrody-labs/bun-distribution",
       "production": false,
-      "note": "Canonical os branch, self-hosted by the existing Gitea mirror at source.aphrody.app. Native source/runtime and production activation require separate qualification."
+      "note": "Canonical Bun OS checkout is branch os in the C:/src workspace. It owns distribution assembly and package conversion; APT implementation stays in apt. Infra owns hosts, DNS state and activation."
     }
   ],
   "retiredRepositories": [],
