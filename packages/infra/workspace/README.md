@@ -21,11 +21,11 @@ yolo ops infra doctor --strict --json
 yolo ops infra quality plan --json
 yolo ops infra quality lint --repo aphrody-infra --run
 yolo ops orchestrate health
-yolo ops imports-exports --root ../aphrody-ui --json
-yolo ops monorepo-audit --root ../aphrody-ui --only imports --json
-yolo ops bun-workspace --root ../aphrody-ui --json
+yolo ops imports-exports --root . --json
+yolo ops monorepo-audit --root . --only imports --json
+yolo ops bun-workspace --root . --json
 yolo ops bun-upstream-docs --check
-yolo ops ui-verify --root ../aphrody-ui --quick
+yolo ops monorepo-gate --root . --no-build
 ```
 
 The `client` export is the typed fetch boundary for `aphrody-infra serve`.
@@ -72,7 +72,7 @@ yolo ops infra quality audit --repo shenron --run
 yolo ops infra quality fix --repo aphrody-ui --run
 ```
 
-`imports-exports`, `monorepo-audit`, `bun-workspace`, `bun-upstream-docs` and `ui-verify` are reusable Bun modules. They centralize the UI AST inventory, audit dispatcher, Bun workspace contract, the Bun docs of the aphrody-labs/bun fork (read in place, commit pinned in `docs/reference/upstream-bun/SOURCE.json`), and UI gate runner. The UI exposes them through its existing package scripts, which call `yolo ops`.
+`imports-exports`, `monorepo-audit`, `bun-workspace`, `bun-upstream-docs` and `monorepo-gate` are reusable Bun modules. They centralize the UI AST inventory, audit dispatcher, Bun workspace contract, the Bun docs of the aphrody-labs/bun fork (read in place, commit pinned in `docs/reference/upstream-bun/SOURCE.json`), and the shared validation gate. The UI exposes them through its existing package scripts, which call `yolo ops`.
 
 `automation-inventory --root ~/src --json` emits the current cross-repository automation catalogue and classification.
 

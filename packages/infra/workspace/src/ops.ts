@@ -267,9 +267,6 @@ export async function runOps(argv: readonly string[]): Promise<number> {
   if (operation === "drive-upstream-audit") {
     return await (await import("./drive-upstream-audit.ts")).runDriveUpstreamAudit(rest);
   }
-  if (operation === "ui-verify") {
-    return await (await import("./ui-verify.ts")).runUiVerify(rest);
-  }
   if (operation === "bun-workspace") {
     return await (await import("./bun-workspace.ts")).runBunWorkspace(rest);
   }

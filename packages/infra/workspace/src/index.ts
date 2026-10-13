@@ -15,7 +15,6 @@ export { runScriptAudit } from "./audit-scripts.ts";
 export { runImportsExports, scanImportsExports } from "./imports-exports.ts";
 export { runMonorepoAudit } from "./monorepo-audit.ts";
 export { runBunWorkspace } from "./bun-workspace.ts";
-export { runUiVerify } from "./ui-verify.ts";
 export { runDriveUpstreamAudit } from "./drive-upstream-audit.ts";
 export { runDriveDaemon } from "./drive-daemon.ts";
 export { runTauri } from "./tauri.ts";

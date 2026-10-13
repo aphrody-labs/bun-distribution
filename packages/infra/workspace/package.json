@@ -16,7 +16,6 @@
     "./imports-exports": "./src/imports-exports.ts",
     "./monorepo-audit": "./src/monorepo-audit.ts",
     "./bun-workspace": "./src/bun-workspace.ts",
-    "./ui-verify": "./src/ui-verify.ts",
     "./drive-upstream-audit": "./src/drive-upstream-audit.ts",
     "./drive-daemon": "./src/drive-daemon.ts",
     "./tauri": "./src/tauri.ts",
