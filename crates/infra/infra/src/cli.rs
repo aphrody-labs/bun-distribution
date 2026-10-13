@@ -423,7 +423,7 @@ impl DeployStack {
     fn release_root(self) -> String {
         let layout = &*crate::layout::HOST_LAYOUT;
         match self {
-            Self::App => format!("{}/bun-libraries/", layout.apps),
+            Self::App => format!("{}/releases/", layout.app("bun-os")),
             Self::Aphrody | Self::AphrodyCompute => format!("{}/releases/", layout.app("aphrody")),
             Self::Shenron => format!("{}/releases/", layout.app("shenron")),
             Self::Rg => format!("{}/releases/", layout.app("rg")),
