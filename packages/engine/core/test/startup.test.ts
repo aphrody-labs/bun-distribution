@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { inspectPackages } from "../../core/src/vendor/status";
 import { isCompiled } from "../../core/src/vfs/home";
-import { SUPPORTED_TARGETS, hostTarget } from "../../runtime/src/artifact";
-import { hostTarget as leafHostTarget } from "../../runtime/src/target";
+import { SUPPORTED_TARGETS, hostTarget } from "@aphrody/runtime-sdk/artifact";
+import { hostTarget as leafHostTarget } from "@aphrody/runtime-sdk/target";
 import { COMPILE_FLAGS } from "../../../../scripts/release/compile-flags";
 
 const cli = resolve(import.meta.dir, "../../../../packages/engine/yolo/src/index.ts");

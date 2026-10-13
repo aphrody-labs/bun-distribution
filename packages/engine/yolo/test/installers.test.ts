@@ -15,7 +15,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { hostTarget, runtimeHome } from "../../runtime/src/artifact";
+import { hostTarget, runtimeHome } from "@aphrody/runtime-sdk/artifact";
 import { COMPILE_FLAGS } from "../../../../scripts/release/compile-flags";
 import { toolingAsset } from "../../../../scripts/release/tooling-asset.ts";
 

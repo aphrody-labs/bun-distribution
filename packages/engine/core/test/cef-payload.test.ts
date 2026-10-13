@@ -2,8 +2,8 @@ import { afterEach, expect, test } from "bun:test";
 import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { verifyDesktopArtifact } from "../../runtime/src/desktop-artifact";
-import { hostTarget } from "../../runtime/src/target";
+import { verifyDesktopArtifact } from "@aphrody/runtime-sdk/desktop-artifact";
+import { hostTarget } from "@aphrody/runtime-sdk/target";
 import { packageDesktop } from "../src/distribution/desktop-package.ts";
 import { cefNotice, cefPayload, strippedInArtifact } from "../src/distribution/cef-payload.ts";
 

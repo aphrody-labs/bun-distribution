@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 import { expect, test } from "bun:test";
 import type { ESTreeProgram } from "../../core/src/compiler/oxc.ts";
-import { NativeTooling } from "../../runtime/src/tooling.ts";
+import { NativeTooling } from "@aphrody/runtime-sdk/tooling";
 
 // These acceptance tests require the real Rust provider, never a transport fixture.
 const nativePath = process.env.YOLO_TOOLING_LIB;

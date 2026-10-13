@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { DesktopError, DesktopSession } from "../../runtime/src/desktop";
+import { DesktopError, DesktopSession } from "@aphrody/runtime-sdk/desktop";
 
 const sessions: DesktopSession[] = [];
 afterEach(async () => {

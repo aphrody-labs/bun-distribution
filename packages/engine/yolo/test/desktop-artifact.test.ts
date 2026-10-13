@@ -19,8 +19,8 @@ import {
   verifyDesktopArtifact,
   writeDesktopManifest,
   type DesktopManifest,
-} from "../../runtime/src/desktop-artifact";
-import { hostTarget } from "../../runtime/src/target";
+} from "@aphrody/runtime-sdk/desktop-artifact";
+import { hostTarget } from "@aphrody/runtime-sdk/target";
 const owned: string[] = [];
 afterEach(() => {
   for (const path of owned.splice(0)) rmSync(path, { force: true, recursive: true });

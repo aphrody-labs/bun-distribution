@@ -4,7 +4,7 @@ import { dlopen, FFIType } from "bun:ffi";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { NativeTooling } from "../../runtime/src/tooling.ts";
+import { NativeTooling } from "@aphrody/runtime-sdk/tooling";
 
 // This tiny C provider tests ownership/transport failures only, never Oxc or N2B behavior.
 const compiler = Bun.which("clang");

@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { COMPILE_FLAGS } from "../../../../scripts/release/compile-flags";
 import { toolingAsset } from "../../../../scripts/release/tooling-asset.ts";
-import { hostTarget } from "../../runtime/src/artifact.ts";
-import { libraryFile } from "../../runtime/src/index.ts";
+import { hostTarget } from "@aphrody/runtime-sdk/artifact";
+import { libraryFile } from "@aphrody/runtime-sdk";
 
 const root = resolve(import.meta.dir, "../../../..");
 const version = readFileSync(join(root, "packages/engine/yolo/VERSION"), "utf8").trim();
