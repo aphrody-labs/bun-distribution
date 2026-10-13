@@ -600,11 +600,14 @@ function git(root: string, args: string[]): string {
   return new TextDecoder().decode(result.stdout);
 }
 
-export function listRepositoryFiles(root: string): { files: string[]; untracked: Set<string> } {
+export function listRepositoryFiles(
+  root: string,
+  trackedOnly = false,
+): { files: string[]; untracked: Set<string> } {
   const tracked = git(root, ["ls-files", "-z"]).split("\0").filter(Boolean);
-  const others = git(root, ["ls-files", "-z", "--others", "--exclude-standard"])
-    .split("\0")
-    .filter(Boolean);
+  const others = trackedOnly
+    ? []
+    : git(root, ["ls-files", "-z", "--others", "--exclude-standard"]).split("\0").filter(Boolean);
   const present = [...new Set([...tracked, ...others])].filter((path) =>
     existsSync(join(root, path)),
   );

@@ -1235,12 +1235,6 @@
       ],
       "bunPackages": [
         {
-          "name": "__NAME__",
-          "path": "m3/templates/base",
-          "description": "",
-          "bins": []
-        },
-        {
           "name": "@aphrody/a2a",
           "path": "packages/os/a2a",
           "description": "A2A 1.0 client for Bun and the web platform: Agent Card discovery, JSON-RPC and HTTP+JSON bindings, SSE streaming, push notification configs, and a legacy-dialect shim",
@@ -1253,27 +1247,9 @@
           "bins": []
         },
         {
-          "name": "@aphrody/app-ui",
-          "path": "m3/packages/app-ui",
-          "description": "",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/assets",
-          "path": "m3/packages/assets",
-          "description": "File-kind icons, extension badges, brand logos, images, sounds, videos and lottie animations, with icon resolution (getIcon, getLayeredIcon, getBeardedIcon, getIcon20): the Spacedrive @sd/assets set, merged with SpaceUI's @spacedrive/icons, for the Material Design 3 explorer surfaces.",
-          "bins": []
-        },
-        {
           "name": "@aphrody/bun",
           "path": "packages/interop/native",
           "description": "bun:ffi bindings for the Aphrody native library (aphrody-ffi: M3 tokens, icons, SVG, render, web, X, inference) and the aphrody app-server client. Not the Bun runtime: the aphrody-labs/bun fork binary ships as @aphrody/bun-runtime.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/canvas",
-          "path": "m3/packages/canvas",
-          "description": "Aphrody native Skia canvas facade over the pinned upstream @napi-rs/canvas runtime",
           "bins": []
         },
         {
@@ -1299,101 +1275,6 @@
           "path": "packages/os/drive-client",
           "description": "Type-safe TypeScript client for Spacedrive daemon",
           "bins": []
-        },
-        {
-          "name": "@aphrody/eslint-plugin-m3",
-          "path": "m3/packages/eslint-plugin-m3",
-          "description": "Lint rules for sites consuming material-web (@aphrody/m3-react + Material Symbols) — runs under oxlint (jsPlugins) and ESLint.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/identity",
-          "path": "m3/packages/identity",
-          "description": "Aphrody product identity for the M3 surfaces: brand emblem and icons, the Aphrody avatar, the animated pet (React component and <aphrody-pet> Custom Element, Codex-composed tracks, 16-way gaze) drawn from crates/ui/identity.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3",
-          "path": "m3/packages/m3",
-          "description": "The @aphrody Material Design 3 framework for Bun: one plugin (Tailwind v4, Sass through Rust, m3:* virtual theme/font modules, ?url imports), serveM3 (Bun.serve + HMR + proxy), buildM3 (Bun.build, Tauri webview layout), M3App and the m3 CLI.",
-          "bins": [
-            "m3"
-          ]
-        },
-        {
-          "name": "@aphrody/m3-ai",
-          "path": "m3/packages/m3-ai",
-          "description": "Material Design 3 agent-interaction components (tool calls, markdown, chat composer, workers, tasks): the SpaceUI (@spacedrive/ai) set rebuilt on @aphrody/m3-primitives.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-bun",
-          "path": "m3/packages/m3-bun",
-          "description": "The one Bun-native tool for M3 apps: a single Bun plugin and the m3-bun CLI that build, minify, serve (HMR), compile to one executable, package and generate deploy configs (Docker, systemd, nginx, Vercel, Fly.io, Cloudflare, Coolify, VS Code, Windows, minimal Linux image). One Bun file server serves the UI and the API from one process.",
-          "bins": [
-            "m3-bun"
-          ]
-        },
-        {
-          "name": "@aphrody/m3-design",
-          "path": "m3/packages/m3-design",
-          "description": "Automated design engine for Material Design 3 and Google Design",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-example",
-          "path": "m3/apps/example",
-          "description": "The m3 example app: App Router (React Server Components, server actions, streaming SSR, static generation), M3 theme, Tailwind v4 and the M3 DataTable, on Bun only.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-explorer",
-          "path": "m3/packages/m3-explorer",
-          "description": "Material Design 3 file-management components (tag pill, inline rename, file thumb, grid item): the SpaceUI (@spacedrive/explorer) set rebuilt on @aphrody/m3-primitives.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-next",
-          "path": "m3/packages/m3-next",
-          "description": "Next.js 16 App Router integration for the @aphrody Material Design 3 layer: withM3 config (React Compiler, Cache Components, typed routes, Tauri static export), M3Html/M3Root server components, a light 'use client' theme provider, a proxy.ts helper, metadata/viewport helpers, crawler files and the m3-next runner (Next on Bun, no Node; from @aphrody/next-bun).",
-          "bins": [
-            "m3-next"
-          ]
-        },
-        {
-          "name": "@aphrody/m3-next-migrate",
-          "path": "m3/packages/m3-next-migrate",
-          "description": "Migration analysis, codemods and runtime shims for Next.js 16 components and private-owner native Bun web apps; Tauri 3 source planning requires a registered native host adapter for activation",
-          "bins": [
-            "m3-next-migrate",
-            "next-migrate"
-          ]
-        },
-        {
-          "name": "@aphrody/m3-tailwind",
-          "path": "m3/packages/m3-tailwind",
-          "description": "Tailwind v4 CSS-first preset for Material 3: generates @theme (colour roles, shape, typescale, elevation, easing) from @aphrody/m3-tokens.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-theme",
-          "path": "m3/packages/m3-theme",
-          "description": "Canonical Material 3 fusion sheets: tokens.css (M3 + shadcn/ui + Tailwind v4 aliases), tailwind.css (every M3 system token as a Tailwind v4 utility) and spaceui.css (the SpaceUI themes rebuilt as M3 dynamic schemes, with SpaceUI compatibility aliases).",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/m3-tokens",
-          "path": "m3/packages/m3-tokens",
-          "description": "Material 3 design tokens (--md-sys-*) for the @aphrody/material-web fork: MUI-theme → M3 token CSS generation and runtime Material You dynamic colour via material-color-utilities.",
-          "bins": []
-        },
-        {
-          "name": "@aphrody/material-design-icons",
-          "path": "m3/packages/material-design-icons",
-          "description": "Material Symbols SVG catalogue (forks/material-design-icons) with SVG to ICO/ICNS sync for Tauri desktop icons.",
-          "bins": [
-            "m3-svg-to-ico"
-          ]
         },
         {
           "name": "@aphrody/os",
@@ -1515,24 +1396,10 @@
           "bins": []
         },
         {
-          "name": "@aphrody/rg-ui",
-          "path": "m3/packages/rg-ui",
-          "description": "Rose Griffon, Achillea and Azalee shared UI on the Aphrody Bun Base UI fork and native Material 3 tokens",
-          "bins": []
-        },
-        {
           "name": "@aphrody/runtime-sdk",
           "path": "packages/engine/runtime",
           "description": "Light TypeScript SDK of the YOLO native runtime: loads the precompiled library through its versioned C ABI",
           "bins": []
-        },
-        {
-          "name": "@aphrody/scaffold",
-          "path": "m3/packages/scaffold",
-          "description": "The single project scaffolder of the UI stack: Tauri 3 shell (pins, config, capabilities, icon), M3 web and app templates, the canonical example and a writer that never overwrites. Used by m3 new, m3-next-migrate and web-to-tauri.",
-          "bins": [
-            "aphrody-scaffold"
-          ]
         },
         {
           "name": "@aphrody/shell-web",
@@ -1606,12 +1473,6 @@
           "name": "aphrody",
           "path": ".",
           "description": "",
-          "bins": []
-        },
-        {
-          "name": "aphrody-m3",
-          "path": "m3",
-          "description": "Aphrody M3 design monorepo: UI/design packages, tokens, icons, templates and docs.",
           "bins": []
         }
       ],
@@ -10460,7 +10321,7 @@
     "sharedRepos": 0,
     "crates": 200,
     "binaries": 36,
-    "bunPackages": 94,
+    "bunPackages": 73,
     "pythonPackages": 10,
     "cliBinaries": 34,
     "cliCommands": 777,

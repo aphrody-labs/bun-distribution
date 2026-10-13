@@ -301,8 +301,8 @@ function titleOf(file: string): string {
 }
 
 function docsFiles(root: string): string[] {
-  return run("git", ["ls-files", "-co", "--exclude-standard", "--", "docs"], root)
-    .split("\n")
+  return run("git", ["ls-files", "-z", "--", "docs"], root)
+    .split("\0")
     .filter((f) => f && existsSync(join(root, f)) && statSync(join(root, f)).isFile());
 }
 
@@ -360,7 +360,7 @@ export function renderDocsIndex(root: string): string {
       const label = CATEGORIES.includes(top) ? top : `${top} (outside the category layout)`;
       const vendored = domain.startsWith("upstream-") ? " vendored upstream copy" : "";
       out.push(
-        `| ${label} | [${domain}](${dir}/)${vendored} | ${dl.length} | ${entry ? `[${titleOf(join(root, entry)) || entry.split("/").pop()}](${relative("docs", entry)})` : "-"} |`,
+        `| ${label} | [${domain}](${dir}/)${vendored} | ${dl.length} | ${entry ? `[${titleOf(join(root, entry)) || entry.split("/").pop()}](${posix(relative("docs", entry))})` : "-"} |`,
       );
     }
   }

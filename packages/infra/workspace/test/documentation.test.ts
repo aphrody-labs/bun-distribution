@@ -45,8 +45,11 @@ describe("unified documentation", () => {
       put("docs/reference/upstream-example/readme.md", "# Upstream\n");
       put("docs/apis/generated/api.md", "<!-- Generated from source. Do not edit. -->\n# API\n");
       put("docs/MEMORY.md", "# Private runtime context\n");
+      execFileSync("git", ["add", "."], { cwd: root, windowsHide: true });
+      put("docs/audit/private-draft.md", "# Concurrent private draft\n");
       const manifest = buildDocumentationManifest(root, config);
       expect(manifest.documents).toHaveLength(5);
+      expect(manifest.documents.some((doc) => doc.path.includes("private-draft"))).toBe(false);
       expect(manifest.duplicates).toHaveLength(1);
       expect(manifest.duplicates[0]?.action).toBe("retain");
       expect(manifest.duplicates[0]?.canonical).toBe("packages/infra/example/README.md");
@@ -102,6 +105,7 @@ describe("unified documentation", () => {
     const { root, put } = fixture();
     try {
       put("docs/guides/workspace/main.md", "# Guide\n");
+      execFileSync("git", ["add", "."], { cwd: root, windowsHide: true });
       expect(
         await runDocumentation([
           "ai",

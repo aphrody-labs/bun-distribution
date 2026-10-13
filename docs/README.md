@@ -24,11 +24,11 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | architecture | [(files)](architecture/) | 2 | - |
 | architecture | [ai](architecture/ai/) | 5 | - |
 | architecture | [convergence](architecture/convergence/) | 1 | - |
-| architecture | [discord](architecture/discord/) | 4 | [Architecture Discord](architecture\discord\README.md) |
+| architecture | [discord](architecture/discord/) | 4 | [Architecture Discord](architecture/discord/README.md) |
 | architecture | [interop](architecture/interop/) | 1 | - |
 | architecture | [os](architecture/os/) | 4 | - |
-| architecture | [runtime-native](architecture/runtime-native/) | 4 | [Frontière runtime Yolo / produit Aphrody](architecture\runtime-native\README.md) |
-| architecture | [shell](architecture/shell/) | 2 | [Shell and terminal layers](architecture\shell\README.md) |
+| architecture | [runtime-native](architecture/runtime-native/) | 4 | [Frontière runtime Yolo / produit Aphrody](architecture/runtime-native/README.md) |
+| architecture | [shell](architecture/shell/) | 2 | [Shell and terminal layers](architecture/shell/README.md) |
 | architecture | [workspace](architecture/workspace/) | 4 | - |
 | apis | [ai](apis/ai/) | 3 | - |
 | apis | [compat](apis/compat/) | 1 | - |
@@ -42,48 +42,48 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | decisions | [shell](decisions/shell/) | 2 | - |
 | guides | [ai](guides/ai/) | 7 | - |
 | guides | [discord](guides/discord/) | 2 | - |
-| guides | [workspace](guides/workspace/) | 8 | [Parcours Workspace Aphrody](guides\workspace\README.md) |
+| guides | [workspace](guides/workspace/) | 8 | [Parcours Workspace Aphrody](guides/workspace/README.md) |
 | operations | [(files)](operations/) | 9 | - |
 | operations | [agent-tooling](operations/agent-tooling/) | 1 | - |
 | operations | [ai](operations/ai/) | 5 | - |
-| operations | [bun-1.4.4](operations/bun-1.4.4/) | 2 | [Bun 1.4.4 alignment dossier](operations\bun-1.4.4\README.md) |
+| operations | [bun-1.4.4](operations/bun-1.4.4/) | 2 | [Bun 1.4.4 alignment dossier](operations/bun-1.4.4/README.md) |
 | operations | [cloud](operations/cloud/) | 4 | - |
 | operations | [container](operations/container/) | 2 | - |
-| operations | [discord](operations/discord/) | 2 | [Discord Operations Runbooks & Guides](operations\discord\README.md) |
+| operations | [discord](operations/discord/) | 2 | [Discord Operations Runbooks & Guides](operations/discord/README.md) |
 | operations | [infra](operations/infra/) | 59 | - |
 | operations | [os](operations/os/) | 1 | - |
 | operations | [release](operations/release/) | 1 | - |
 | operations | [workspace](operations/workspace/) | 39 | - |
-| plans | [agent-home-pipeline](plans/agent-home-pipeline/) | 1 | [Agent home, one database, one pipeline, one RAG](plans\agent-home-pipeline\PLAN.md) |
-| plans | [ai](plans/ai/) | 19 | [Delivery plan](plans\ai\PLAN.md) |
-| plans | [compat](plans/compat/) | 1 | [PLAN — aphrody-compat](plans\compat\PLAN.md) |
-| plans | [contracts](plans/contracts/) | 1 | [PLAN — aphrody-contracts](plans\contracts\PLAN.md) |
+| plans | [agent-home-pipeline](plans/agent-home-pipeline/) | 1 | [Agent home, one database, one pipeline, one RAG](plans/agent-home-pipeline/PLAN.md) |
+| plans | [ai](plans/ai/) | 19 | [Delivery plan](plans/ai/PLAN.md) |
+| plans | [compat](plans/compat/) | 1 | [PLAN — aphrody-compat](plans/compat/PLAN.md) |
+| plans | [contracts](plans/contracts/) | 1 | [PLAN — aphrody-contracts](plans/contracts/PLAN.md) |
 | plans | [convergence](plans/convergence/) | 1 | - |
-| plans | [desktop-web](plans/desktop-web/) | 2 | [Desktop and web engines: Obscura, Tauri/CEF and browser automation](plans\desktop-web\PLAN.md) |
-| plans | [discord](plans/discord/) | 2 | [Aphrody Discord plan](plans\discord\PLAN.md) |
+| plans | [desktop-web](plans/desktop-web/) | 2 | [Desktop and web engines: Obscura, Tauri/CEF and browser automation](plans/desktop-web/PLAN.md) |
+| plans | [discord](plans/discord/) | 2 | [Aphrody Discord plan](plans/discord/PLAN.md) |
 | plans | [fusion](plans/fusion/) | 13 | - |
-| plans | [gpu-hub](plans/gpu-hub/) | 1 | [GPU hub, Aphrody OS image and WASM target](plans\gpu-hub\PLAN.md) |
-| plans | [infra](plans/infra/) | 6 | [Aphrody Infra plan](plans\infra\PLAN.md) |
-| plans | [m3-native-rust](plans/m3-native-rust/) | 3 | [Aphrody en Rust natif et M3 pour Rust/Bun](plans\m3-native-rust\PLAN.md) |
-| plans | [native](plans/native/) | 1 | [PLAN — aphrody-native](plans\native\PLAN.md) |
+| plans | [gpu-hub](plans/gpu-hub/) | 1 | [GPU hub, Aphrody OS image and WASM target](plans/gpu-hub/PLAN.md) |
+| plans | [infra](plans/infra/) | 6 | [Aphrody Infra plan](plans/infra/PLAN.md) |
+| plans | [m3-native-rust](plans/m3-native-rust/) | 3 | [Aphrody en Rust natif et M3 pour Rust/Bun](plans/m3-native-rust/PLAN.md) |
+| plans | [native](plans/native/) | 1 | [PLAN — aphrody-native](plans/native/PLAN.md) |
 | plans | [os](plans/os/) | 1 | - |
-| plans | [os-kernel](plans/os-kernel/) | 1 | [Architecture cible de aphrody-kernel](plans\os-kernel\PLAN.md) |
-| plans | [python-bun](plans/python-bun/) | 2 | [Python, JavaScript and Rust in the Bun fork](plans\python-bun\PLAN.md) |
+| plans | [os-kernel](plans/os-kernel/) | 1 | [Architecture cible de aphrody-kernel](plans/os-kernel/PLAN.md) |
+| plans | [python-bun](plans/python-bun/) | 3 | [Python, JavaScript and Rust in the Bun fork](plans/python-bun/PLAN.md) |
 | plans | [runtime](plans/runtime/) | 1 | - |
 | plans | [shell](plans/shell/) | 1 | - |
-| plans | [vu](plans/vu/) | 7 | [`vu`: the Aphrody Python runtime](plans\vu\PLAN.md) |
-| plans | [workspace](plans/workspace/) | 1 | [Aphrody — FFI unique et consolidation Rust, Python, Bun](plans\workspace\PLAN.md) |
-| plans | [x-bun-import](plans/x-bun-import/) | 2 | [`@aphrody/x`: a thin Bun import over `aphrody-x`](plans\x-bun-import\PLAN.md) |
-| plans | [yolo-fork-unified](plans/yolo-fork-unified/) | 1 | [yolo et le fork Bun : un seul produit runtime](plans\yolo-fork-unified\PLAN.md) |
-| products | [ai](products/ai/) | 14 | [Aphrody AI](products\ai\README.md) |
-| products | [compat](products/compat/) | 2 | [Aphrody Compat](products\compat\README.md) |
-| products | [contracts](products/contracts/) | 5 | [Aphrody Contracts](products\contracts\README.md) |
-| products | [discord](products/discord/) | 3 | [Intégration Discord](products\discord\README.md) |
-| products | [infra](products/infra/) | 5 | [Aphrody Infra](products\infra\README.md) |
-| products | [native](products/native/) | 1 | [Aphrody Native](products\native\README.md) |
-| products | [os](products/os/) | 5 | [Aphrody OS](products\os\README.md) |
-| products | [shell](products/shell/) | 4 | [Aphrody Shell](products\shell\README.md) |
-| products | [workspace](products/workspace/) | 1 | [Aphrody source workspace](products\workspace\README.md) |
+| plans | [vu](plans/vu/) | 7 | [`vu`: the Aphrody Python runtime](plans/vu/PLAN.md) |
+| plans | [workspace](plans/workspace/) | 2 | [Aphrody — FFI unique et consolidation Rust, Python, Bun](plans/workspace/PLAN.md) |
+| plans | [x-bun-import](plans/x-bun-import/) | 2 | [`@aphrody/x`: a thin Bun import over `aphrody-x`](plans/x-bun-import/PLAN.md) |
+| plans | [yolo-fork-unified](plans/yolo-fork-unified/) | 1 | [yolo et le fork Bun : un seul produit runtime](plans/yolo-fork-unified/PLAN.md) |
+| products | [ai](products/ai/) | 14 | [Aphrody AI](products/ai/README.md) |
+| products | [compat](products/compat/) | 2 | [Aphrody Compat](products/compat/README.md) |
+| products | [contracts](products/contracts/) | 5 | [Aphrody Contracts](products/contracts/README.md) |
+| products | [discord](products/discord/) | 3 | [Intégration Discord](products/discord/README.md) |
+| products | [infra](products/infra/) | 5 | [Aphrody Infra](products/infra/README.md) |
+| products | [native](products/native/) | 1 | [Aphrody Native](products/native/README.md) |
+| products | [os](products/os/) | 5 | [Aphrody OS](products/os/README.md) |
+| products | [shell](products/shell/) | 4 | [Aphrody Shell](products/shell/README.md) |
+| products | [workspace](products/workspace/) | 1 | [Aphrody source workspace](products/workspace/README.md) |
 | reference | [ai](reference/ai/) | 116 | - |
 | reference | [compat](reference/compat/) | 4 | - |
 | reference | [contracts](reference/contracts/) | 2 | - |
@@ -95,7 +95,7 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | reference | [shell](reference/shell/) | 10 | - |
 | reference | [upstream-bun](reference/upstream-bun/) vendored upstream copy | 3 | - |
 | reference | [upstream-codex](reference/upstream-codex/) vendored upstream copy | 2 | - |
-| reference | [workspace](reference/workspace/) | 13 | [Workspace documentation](reference\workspace\INDEX.md) |
+| reference | [workspace](reference/workspace/) | 13 | [Workspace documentation](reference/workspace/INDEX.md) |
 | reference | [yolo](reference/yolo/) | 1 | - |
 | research | [ai](research/ai/) | 43 | - |
 | research | [compat](research/compat/) | 1 | - |
@@ -109,4 +109,4 @@ Regenerate with `bun run docs:gen`; `bun run docs:check` gates drift; the `aphro
 | ecosystem (outside the category layout) | [(files)](ecosystem/) | 4 | - |
 | omar (outside the category layout) | [(files)](omar/) | 1 | - |
 
-Total: 587 files.
+Total: 589 files.

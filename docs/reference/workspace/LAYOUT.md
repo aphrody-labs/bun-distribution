@@ -1,7 +1,8 @@
 # Conventions du monorepo
 
 `crates/<domaine>/<rôle>` contient une bibliothèque Rust ; `packages/<domaine>/<rôle>`
-contient un package Bun/TypeScript ; `apps/<produit>` contient une application.
+contient un package Bun/TypeScript. Les surfaces produit vivent dans leur
+propriétaire de capacité ; il n’existe pas de dossier applicatif `apps/` à la racine.
 Le CLI général vit dans `crates/infra/aphrody`. Un domaine ne désigne pas le runtime client.
 
 Les dossiers ne répètent pas le préfixe `aphrody-`. Les noms publics des packages
@@ -18,5 +19,13 @@ Le propriétaire de l’orchestration est `packages/infra/workspace`. Ses comman
 actuel. Les archives de migration documentent une histoire et ne définissent
 pas les chemins actifs.
 
-Sources : `Cargo.toml`, `package.json`, `PLAN.md` à la racine ; provenance des
-renommages dans (removed import receipt) et `short-paths-2026-10-01.json`.
+Les scripts sont rangés sous `scripts/{audit,build,dev,migration,release,tools}` ;
+les lanceurs du checkout vivent sous `scripts/dev/cli`. Les documents suivent
+`docs/<catégorie>/<domaine>` et les configurations opérationnelles `tools/config`.
+
+Les index documentaires générés ne lisent que les fichiers suivis par Git.
+Les brouillons non suivis restent propres à leur session ; ajouter explicitement
+un nouveau document à Git avant de régénérer les index.
+
+Sources : [Cargo.toml](../../../Cargo.toml), [package.json](../../../package.json),
+[PLAN.md](../../../PLAN.md) et [AGENTS.md](../../../AGENTS.md).

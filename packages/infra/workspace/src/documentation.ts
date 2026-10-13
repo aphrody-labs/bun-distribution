@@ -126,7 +126,7 @@ export function buildDocumentationManifest(
   config: DocumentationConfig,
 ): DocumentationManifest {
   const imported = importedUpstreamMatcher(root);
-  const paths = listRepositoryFiles(root)
+  const paths = listRepositoryFiles(root, true)
     .files.filter((path) => /\.(md|mdx)$/.test(path) && !PRIVATE_CONTEXT.test(path))
     .toSorted();
   const documents: DocumentRecord[] = [];
