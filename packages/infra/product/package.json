@@ -20,7 +20,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./setup": "./src/setup/cli.ts",
+    "./setup/r2": "./src/setup/r2.ts",
     "./admin": "./src/admin/cli.ts",
+    "./admin/context": "./src/admin/lib/context.ts",
+    "./admin/guide": "./src/admin/guide.ts",
     "./creator": "./src/creator/cli.ts",
     "./access": "./src/admin/lib/profile.ts",
     "./access-pack": "./src/admin/access.ts",

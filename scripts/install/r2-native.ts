@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 // SPDX-License-Identifier: Apache-2.0
 import { join } from "node:path";
-import { defaultContext } from "../../packages/infra/product/src/admin/lib/context.ts";
-import { r2Plan, stageR2 } from "../../packages/infra/product/src/setup/r2.ts";
+import { defaultContext } from "@aphrody/product/admin/context";
+import { r2Plan, stageR2 } from "@aphrody/product/setup/r2";
 
 const args = process.argv.slice(2);
 if (args.some((arg) => !["--stage", "--help"].includes(arg)))

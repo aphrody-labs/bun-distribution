@@ -278,6 +278,7 @@
     "@aphrody/m3-tokens": "workspace:*",
     "@aphrody/os": "workspace:*",
     "@aphrody/paths": "workspace:*",
+    "@aphrody/product": "workspace:*",
     "@aphrody/runtime-sdk": "workspace:*",
     "@aphrody/update": "workspace:*",
     "@aphrody/web-source": "workspace:*",

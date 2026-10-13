@@ -3,7 +3,7 @@
 // Compatibility command: build the complete Aphrody product, including its administrator module.
 import { resolve } from "node:path";
 import { stageSetup } from "./stage-setup.ts";
-export { guideHtml } from "../../packages/infra/product/src/admin/guide.ts";
+export { guideHtml } from "@aphrody/product/admin/guide";
 
 if (import.meta.main) {
   const args = Bun.argv.slice(2);
