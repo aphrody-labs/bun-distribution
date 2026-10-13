@@ -1,7 +1,7 @@
-// Job-worker plumbing of the web app (js/host.js, web/worker.js) under Node with a fake Worker,
+// Job-worker plumbing of the web app (js/host.js, web/worker.js) under Bun with a fake Worker,
 // no browser or Wasm build needed:
 //
-//   node apps/effectcraft-web/tests/workers.mjs
+//   bun apps/effectcraft-web/tests/workers.mjs
 //
 // - A reused worker is sent a file again when it was replaced, even by one of the same size
 //   (#218), and not when it is unchanged.
@@ -9,13 +9,13 @@
 //   "ready" forever (#216): host.js on the worker's error, worker.js re-raising the failed start.
 // Exits non-zero on failure.
 import assert from "node:assert/strict";
-import { copyFileSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 
-const here = dirname(fileURLToPath(import.meta.url));
-const tick = () => new Promise((r) => setTimeout(r, 0));
+const here = import.meta.dir;
+const tick = () => Bun.sleep(0);
 globalThis.self = globalThis;
 
 // A Worker that starts (or fails to) on "init" and finishes each job at once.
@@ -46,7 +46,15 @@ globalThis.Worker = FakeWorker;
 
 const host = await import(pathToFileURL(join(here, "../js/host.js")));
 const run = (id, files) =>
-  new Promise((resolve) => host.workerRun(id, "{}", files, "http://localhost/", (kind, json) => kind !== "file" && resolve({ kind, json })));
+  new Promise((resolve) =>
+    host.workerRun(
+      id,
+      "{}",
+      files,
+      "http://localhost/",
+      (kind, json) => kind !== "file" && resolve({ kind, json }),
+    ),
+  );
 const sent = (w) => w.posted.filter((m) => m.type === "file").map((m) => m.bytes[0]);
 
 // #218: equal-length replacement.
@@ -56,7 +64,11 @@ assert.equal((await run(1, [["/collision.png", red, 1]])).kind, "reply");
 assert.equal((await run(2, [["/collision.png", blue, 2]])).kind, "reply");
 assert.equal((await run(3, [["/collision.png", blue, 2]])).kind, "reply");
 assert.equal(workers.length, 1, "the worker is reused");
-assert.deepEqual(sent(workers[0]), [1, 2], "the replacement is sent once, the unchanged file not again");
+assert.deepEqual(
+  sent(workers[0]),
+  [1, 2],
+  "the replacement is sent once, the unchanged file not again",
+);
 
 // #216: a worker that fails to start.
 failStart = true;
@@ -69,8 +81,8 @@ assert.equal(host.workerStats().running, 0);
 
 // #216, worker side: a rejected start is re-raised where the page's `onerror` sees it.
 const dir = mkdtempSync(join(tmpdir(), "ec-worker-"));
-copyFileSync(join(here, "../web/worker.js"), join(dir, "worker.js"));
-writeFileSync(
+await Bun.write(join(dir, "worker.js"), Bun.file(join(here, "../web/worker.js")));
+await Bun.write(
   join(dir, "effectcraft_web.js"),
   `export default async function init() {}
 export function workerInit() {}
@@ -79,7 +91,7 @@ export async function workerFrameInit() {}`,
 );
 const posted = [];
 globalThis.postMessage = (m) => posted.push(m);
-// A browser's Worker `error` event only sees thrown errors, not unhandled rejections (Node would
+// A browser's Worker `error` event only sees thrown errors, not unhandled rejections (Bun would
 // turn one into an uncaught exception unless it is listened to).
 const unhandled = [];
 process.on("unhandledRejection", (e) => unhandled.push(e));

@@ -1,7 +1,7 @@
-// Page-side helpers of the web app (js/host.js) under Node with a fake DOM, no browser or Wasm
+// Page-side helpers of the web app (js/host.js) under Bun with a fake DOM, no browser or Wasm
 // build needed:
 //
-//   node apps/effectcraft-web/tests/page.mjs
+//   bun apps/effectcraft-web/tests/page.mjs
 //
 // - Add Files… / Upload Folder…: a picked file that can't be read is listed with its error
 //   instead of failing the whole pick silently, and cancelling picks nothing (#226).
@@ -10,11 +10,11 @@
 //   instead of reloading (#225).
 // Exits non-zero on failure.
 import assert from "node:assert/strict";
-import { dirname, join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 
-const here = dirname(fileURLToPath(import.meta.url));
-const tick = () => new Promise((r) => setTimeout(r, 0));
+const here = import.meta.dir;
+const tick = () => Bun.sleep(0);
 globalThis.self = globalThis;
 
 class FakeElement {
@@ -96,7 +96,10 @@ const text = () => [...notice().all()].find((e) => e.tag === "p").textContent;
 host.showDeviceLost("GPU device lost (Destroyed): destroyed", true);
 host.showDeviceLost("again", true);
 assert.equal(document.body.children.length, 1, "one notice");
-assert.equal([...notice().all()].find((e) => e.tag === "small").textContent, "GPU device lost (Destroyed): destroyed");
+assert.equal(
+  [...notice().all()].find((e) => e.tag === "small").textContent,
+  "GPU device lost (Destroyed): destroyed",
+);
 assert.match(text(), /Reload to continue/);
 assert.deepEqual(
   buttons().map((b) => b.textContent),
