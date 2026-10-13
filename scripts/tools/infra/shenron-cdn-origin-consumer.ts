@@ -128,7 +128,14 @@ export async function applyOriginConsumer(candidate: string, pins: ConsumerPins,
     throw Error("Unrelated runtime inputs changed");
   const response = await fetch("http://127.0.0.1:9077/.well-known/shenron-cdn-origin.json", {
     signal: AbortSignal.timeout(10000),
+  }).catch((error: any) => {
+    if (error.code !== "ECONNREFUSED") throw error;
+    return null;
   });
+  if (!response) {
+    if (sha(await Bun.file(TARGET).bytes()) !== pins.candidateCodeSha256 || command(["systemctl", "is-active", SERVICE]) !== "active") throw Error("Installed consumer or service state mismatch");
+    return { status: "installed_readiness_pending", sourceCommit: pins.sourceCommit, codeSha256: pins.candidateCodeSha256, service: SERVICE, configPreserved: true, unitPreserved: true, independentAttestationRequired: true };
+  }
   const attestation = await response.json();
   if (
     !response.ok ||
