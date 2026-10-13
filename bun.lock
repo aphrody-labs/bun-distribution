@@ -947,7 +947,6 @@
       },
       "devDependencies": {
         "@types/bun": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "packages/discord/kit": {
@@ -1000,7 +999,6 @@
       "version": "1.4.4",
       "devDependencies": {
         "@types/bun": "catalog:",
-        "typescript": "catalog:",
       },
     },
     "packages/infra/ovh": {
