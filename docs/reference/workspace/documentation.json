@@ -144,16 +144,6 @@
       "canonical": "docs/plans/workspace/CURRENT-BATCH.md"
     },
     {
-      "path": "agy.md",
-      "title": "Reprise agent",
-      "sha256": "9f8071d0b427c22a6a2ef32410539136a47a778b705732501da0bf47aab33f52",
-      "bytes": 317,
-      "domain": "",
-      "status": "canonical",
-      "visibility": "private",
-      "canonical": "agy.md"
-    },
-    {
       "path": "crates/ai/agent-home/templates/AGENTS.md",
       "title": "YOLO global agent policy",
       "sha256": "7b8cb4bad3c0fa6baa882016653409c7640e4d78a510abeb2a3abbc10ab2690f",
@@ -2516,8 +2506,8 @@
     {
       "path": "docs/operations/cloud/CLOUD-READY.md",
       "title": "Cloud-ready setup, end to end",
-      "sha256": "44878c066321aeea43a6c698083ab3a24b32ed66ec6c58decca43aa682ea8ef7",
-      "bytes": 5086,
+      "sha256": "007ed27864702554a61fa3461c7c788f267ac07ddf0e20f17cb79071a9929906",
+      "bytes": 5184,
       "domain": "cloud",
       "status": "canonical",
       "visibility": "private",

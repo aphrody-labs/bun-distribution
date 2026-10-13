@@ -14,7 +14,8 @@ loop. Applies to `aphrody-labs/{aphrody,vu,shenron,bun}`; Yolo ships from the ap
 | bun fork | `cloud-ssh.sh`, `session-start.ts` (builds go to the VPS factory) | `scripts/dev/` |
 
 All hooks are idempotent, tolerant (exit 0) and do nothing outside a cloud session except `session-start.ts`, which
-only prints the Git state, host reachability and the open work (`agy.md`).
+only prints local Git state and canonical repository guidance (`START-HERE.md`).
+It does not contact SSH hosts or select a backlog item; the current request owns the scope.
 
 ## Cloud environment (claude.ai, environment settings)
 
