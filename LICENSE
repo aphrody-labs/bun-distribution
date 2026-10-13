@@ -1,6 +1,7 @@
 MIT License
 
 Copyright (c) 2026 Yohan Pierre
+Copyright (c) 2026 Aphrody Labs
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,5 +21,5 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-The Rust libm3 crates are Apache-2.0 licensed as declared in their manifests.
-Imported repositories retain their own licenses and notices.
+This license applies only to material authored for this product. Bundled and
+submodule sources retain their own license terms and notices.

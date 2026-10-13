@@ -3,3 +3,16 @@
 /.factory.lock
 /node_modules/
 /target/
+/build/
+/install/
+/dist/
+**/dist/
+**/target
+**/node_modules
+.local/
+.env
+.env.*
+!.env.example
+*.log
+apps/desktop/src-tauri/binaries/
+apps/desktop/src-tauri/gen/

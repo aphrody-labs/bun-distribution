@@ -1,0 +1,10 @@
+dist/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/binaries/
+# Extra formats emitted by `aphrody tauri icon`; the desktop bundle uses the explicit icon list.
+src-tauri/icons/android/
+src-tauri/icons/ios/
+src-tauri/icons/Square*Logo.png
+src-tauri/icons/StoreLogo.png
+src-tauri/icons/64x64.png

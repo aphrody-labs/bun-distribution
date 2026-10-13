@@ -5,21 +5,74 @@
     "": {
       "name": "@aphrody/bun-os",
       "dependencies": {
-        "@aphrody/bun-workspace": "file:../bun-libraries/packages/workspace",
+        "@aphrody/bun-workspace": "workspace:*",
       },
       "devDependencies": {
         "@aphrody/bun-types": "1.4.4",
       },
     },
+    "apps/desktop": {
+      "name": "@aphrody/bun-desktop",
+      "version": "0.1.0",
+      "dependencies": {
+        "@aphrody/bun-video-project": "workspace:*",
+        "@aphrody/bun-workspace": "workspace:*",
+        "@aphrody/tauri": "file:../../toolchains/bun/packages/bun-tauri",
+      },
+    },
+    "packages/artifacts": {
+      "name": "@aphrody/bun-artifacts",
+      "version": "0.1.0",
+      "bin": {
+        "aphrody-artifacts": "./src/cli.ts",
+      },
+      "dependencies": {
+        "@aphrody/bun-workspace": "workspace:*",
+      },
+    },
+    "packages/package-converter": {
+      "name": "@bun-os/package-converter",
+      "version": "1.4.4",
+      "bin": {
+        "package-converter": "src/cli.ts",
+      },
+    },
+    "packages/video": {
+      "name": "@aphrody/bun-video-project",
+      "version": "0.1.0",
+      "bin": {
+        "aphrody-video": "./src/cli.ts",
+      },
+      "dependencies": {
+        "@aphrody/bun-workspace": "workspace:*",
+      },
+    },
+    "packages/workspace": {
+      "name": "@aphrody/bun-workspace",
+      "version": "0.1.0",
+      "bin": {
+        "aphrody-bun": "./src/cli.ts",
+      },
+    },
   },
   "packages": {
+    "@aphrody/bun-artifacts": ["@aphrody/bun-artifacts@workspace:packages/artifacts"],
+
+    "@aphrody/bun-desktop": ["@aphrody/bun-desktop@workspace:apps/desktop"],
+
     "@aphrody/bun-types": ["@aphrody/bun-types@1.4.4", "", { "dependencies": { "@types/node": "*", "undici-types": "*" } }, "sha512-DIqOZplh9uy2ywEYYMCalX3nWZO6+n2Dg7/hJubGTyDKxOzRkml7HNtf0i4sG1E/LdLlB/bUcRDtZd0ZQemW1w=="],
 
-    "@aphrody/bun-workspace": ["@aphrody/bun-workspace@file:../bun-libraries/packages/workspace", { "bin": { "aphrody-bun": "./src/cli.ts" } }],
+    "@aphrody/bun-video-project": ["@aphrody/bun-video-project@workspace:packages/video"],
+
+    "@aphrody/bun-workspace": ["@aphrody/bun-workspace@workspace:packages/workspace"],
+
+    "@bun-os/package-converter": ["@bun-os/package-converter@workspace:packages/package-converter"],
 
     "@types/node": ["@types/node@26.6.5", "", { "dependencies": { "undici-types": "~8.9.0" } }, "sha512-uMzsv9stDdofIZBx4UGh4Z9ZgXnGC9seRDscilBcTHAeOFk67MZg/k9bWVfO+bk4qZmG+l52hRnLwUiH2LnJTg=="],
 
     "undici-types": ["undici-types@8.11.2", "", {}, "sha512-iMVNmWZ0leK/goS6eXMizSzmm9CDWtyphwbaCms3DNLqRxDL+mMoNVcZMTyyVgXP0N+Z8neAMzDoUOUJL8veKg=="],
+
+    "@aphrody/bun-desktop/@aphrody/tauri": ["@aphrody/tauri@file:toolchains/bun/packages/bun-tauri", {}],
 
     "@types/node/undici-types": ["undici-types@8.9.0", "", {}, "sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg=="],
   }

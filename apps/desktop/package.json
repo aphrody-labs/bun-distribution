@@ -1,0 +1,22 @@
+{
+  "name": "@aphrody/bun-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun build.ts",
+    "dev": "bun dev.ts",
+    "native:dev": "bun native.ts dev",
+    "native:build": "bun native.ts build",
+    "desktop:dev": "bun native.ts dev",
+    "desktop:build": "bun native.ts build"
+  },
+  "dependencies": {
+    "@aphrody/bun-video-project": "workspace:*",
+    "@aphrody/bun-workspace": "workspace:*",
+    "@aphrody/tauri": "file:../../toolchains/bun/packages/bun-tauri"
+  },
+  "engines": {
+    "bun": "1.4.4"
+  }
+}

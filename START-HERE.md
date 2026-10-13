@@ -39,3 +39,9 @@ as a build from the distribution's locked runtime revision.
 Inspect permissions, running jobs, storage and current coordination
 before starting a factory operation. Never start workstation WSL, confuse
 the VPS with the local MCP context, or delete protected .local/provider stores.
+
+---
+
+Read AGENTS.md, GOAL.md and PLAN.md. Install our Bun 1.4.4 runtime.
+Run `bun run setup`, then `bun run check`. README.md covers library commands
+and the Aphrody shell. Native binaries require separate host qualification.

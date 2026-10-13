@@ -1,0 +1,6 @@
+{
+  "identifier": "aphrody-catalog",
+  "description": "Allow the main window to inspect libraries through the local Bun backend.",
+  "windows": ["main"],
+  "permissions": ["core:default", "aphrody:default"]
+}

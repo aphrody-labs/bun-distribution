@@ -1,0 +1,51 @@
+import { join, resolve } from "node:path";
+import { loadConfig, assertRuntime, repositoryRoot } from "@aphrody/bun-workspace";
+import { capabilityFor, type Catalog } from "./shared.ts";
+import { nativeVideoCapabilities } from "@aphrody/bun-video-project/native";
+
+export const desktopRoot = import.meta.dir;
+
+export async function buildDesktop() {
+  const config = await loadConfig(repositoryRoot);
+  assertRuntime(config);
+  const catalog: Catalog = {
+    runtime: { version: config.runtime.version, repository: config.runtime.repository },
+    video: { nativeAvailable: nativeVideoCapabilities().available },
+    libraries: config.modules
+      .filter(module => module.kind === "library")
+      .map(module => ({
+        id: module.id,
+        priority: config.priorities?.includes(module.id) ?? false,
+        ...capabilityFor(module.id),
+        license: module.license,
+        initialized: false,
+        inspectable: false,
+      })),
+    inspections: [],
+  };
+  const web = await Bun.build({
+    entrypoints: [join(desktopRoot, "src/app.ts")],
+    outdir: join(desktopRoot, "dist/web"),
+    target: "browser",
+    format: "esm",
+    minify: true,
+    define: { __APHRODY_CATALOG__: JSON.stringify(catalog) },
+  });
+  if (!web.success) throw new AggregateError(web.logs, "Bun frontend build failed");
+  await Promise.all([
+    Bun.write(join(desktopRoot, "dist/web/index.html"), Bun.file(join(desktopRoot, "src/index.html"))),
+    Bun.write(join(desktopRoot, "dist/web/style.css"), Bun.file(join(desktopRoot, "src/style.css"))),
+  ]);
+  const server = await Bun.build({
+    entrypoints: [join(desktopRoot, "server.ts")],
+    outdir: join(desktopRoot, "dist"),
+    target: "bun",
+    format: "esm",
+    minify: true,
+  });
+  if (!server.success) throw new AggregateError(server.logs, "Bun backend build failed");
+  console.log("Aphrody: " + catalog.libraries.length + " libraries bundled.");
+  return resolve(desktopRoot, "dist");
+}
+
+if (import.meta.main) await buildDesktop();

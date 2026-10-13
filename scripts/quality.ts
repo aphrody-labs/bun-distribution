@@ -1,9 +1,10 @@
 #!/usr/bin/env bun
-import { runProcess } from "@aphrody/bun-workspace/process";
+import { resolve } from "node:path";
+import { runProcess } from "../packages/workspace/src/process.ts";
 
-const checks = ["typecheck", "lint:all", "fmt:check"];
-for (const check of checks) {
-  const result = await runProcess([process.execPath, "run", "--bun", check], process.cwd(), {
+const root = resolve(import.meta.dir, "..");
+for (const check of ["typecheck", "lint:all", "fmt:check"]) {
+  const result = await runProcess([process.execPath, "run", "--bun", check], root, {
     timeoutMs: 300_000,
     maxOutputBytes: 64 * 1024 * 1024,
     stdin: "inherit",

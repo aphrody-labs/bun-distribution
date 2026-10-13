@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Aphrody</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <aside class="sidebar" aria-label="Navigation">
+      <a class="brand" href="#"
+        ><span class="brand-mark" aria-hidden="true">a</span
+        ><span>Aphrody<span class="brand-subtitle">Powered by Bun</span></span></a
+      >
+      <p class="nav-title">Native libraries</p>
+      <nav id="categories" aria-label="Library categories"></nav>
+      <div class="sidebar-bottom">
+        <span class="status-dot" aria-hidden="true"></span><span id="runtime">Local libraries</span>
+      </div>
+    </aside>
+    <main>
+      <header class="toolbar">
+        <div class="breadcrumb">Aphrody <span aria-hidden="true">/</span> Libraries</div>
+        <button id="refresh" class="refresh" type="button" aria-label="Refresh the catalog">Refresh</button>
+      </header>
+      <section class="intro">
+        <div>
+          <h1>Libraries</h1>
+          <p>Native capabilities for Aphrody and Bun.</p>
+        </div>
+        <label class="search"
+          ><svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="10.5" cy="10.5" r="6.5"></circle>
+            <path d="m16 16 4 4"></path></svg
+          ><span class="sr-only">Search libraries</span
+          ><input id="search" type="search" placeholder="Find a capability" autocomplete="off"
+        /></label>
+      </section>
+      <section id="featured" class="featured" aria-label="Aphrody capabilities" hidden></section>
+      <section class="library" aria-labelledby="library-title">
+        <div class="section-heading">
+          <h2 id="library-title">All libraries</h2>
+          <span id="count" class="count"></span>
+        </div>
+        <div id="apps" class="app-grid"></div>
+        <p id="empty" class="empty" hidden>No capabilities match this search.</p>
+      </section>
+      <div id="notification" class="notification" role="status" aria-live="polite" hidden></div>
+      <footer>Local processing libraries. <span id="footer-runtime"></span></footer>
+    </main>
+  </body>
+</html>

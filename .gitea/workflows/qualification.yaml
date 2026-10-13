@@ -1,0 +1,27 @@
+name: Aphrody / Bun qualification
+on:
+  workflow_dispatch:
+jobs:
+  source:
+    runs-on: aphrody-bun-linux
+    timeout-minutes: 10
+    steps:
+      - uses: builtin:checkout
+        with:
+          submodules: true
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Runtime
+        run: |
+          "$BUN_EXECUTABLE" -e 'import { assertRuntimeFacts, currentRuntimeFacts } from "./packages/workspace/src/runtime.ts"; console.log(JSON.stringify(assertRuntimeFacts(await Bun.file("infra/runtime-pins/linux-x64.json").json(), currentRuntimeFacts())));'
+          printf '%s\n' "${BUN_EXECUTABLE%/*}" >> "$GITHUB_PATH"
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Check
+        run: bun run typecheck
+      - name: Lint
+        run: bun run lint
+      - name: Format
+        run: bun run format:check
+      - name: Application plan
+        run: bun run apps:plan

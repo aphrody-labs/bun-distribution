@@ -1,55 +1,29 @@
-# Bun OS
+# Bun OS workspace
 
-Write project documentation in English. Follow the owner's requested language
-for replies; the current request asks for French. Read GOAL.md, PLAN.md,
-MEMORY.md and START-HERE.md before changes. Preserve concurrent work.
+This checkout is the unified Aphrody/Bun product workspace. Read `GOAL.md`,
+`PLAN.md`, `MEMORY.md` and `START-HERE.md` before changes. Preserve concurrent
+work, repository history, first-party attribution, and every imported license
+and notice. Product documentation is in English; replies follow the owner's
+language.
 
-This checkout owns distribution assembly. The canonical runtime remains
-aphrody-labs/bun on main in its existing checkout. Material owns the native
-Material framework, tokens, libm3 and its WASM binding. COSMIC, libcosmic,
-Linux, WSL, WSLg and APT retain their owners, histories and licenses.
-Resolve paths from explicit configuration, the selected checkout or the
-installed executable. Never hardcode a workstation checkout path in code.
+Use Bun 1.4.4 and native Bun APIs for JavaScript and TypeScript. Use the native
+quality commands in `package.json`; use Rust's serialized wrapper for Cargo.
+Do not start WSL on the workstation. Resolve paths from this checkout or
+explicit configuration, never a hard-coded workstation path.
 
-Follow Linux kernel, Debian, COSMIC and Bun upstream conventions; read
-docs/CODING.md. Use the installed Aphrody Bun runtime and its native tools.
-Use the Aphrody CLI's `aphrody n2b` owner for migration review; do not invoke
-`bun n2b`. Confirm APIs in primary sources. Use native bun check, bun lint
-and bun fmt for authorized gates. Do not invoke
-separate OXC, TypeScript, Node or Python commands for this workflow.
+The root owns product assembly, shared setup, workspace configuration and
+release coordination. Capability source remains in managed Git submodules
+until its history can be migrated without data loss. Keep one root Bun
+workspace and shared install/build/cache locations. Do not claim a single Cargo
+workspace while imported crates still belong to nested workspaces; migrate
+their manifests and references in controlled batches before removing those
+boundaries. Keep upstream license notices intact.
 
-Use native Windows on the owner workstation; never start WSL there.
-SSH, Docker and native hosts are distinct execution contexts. Use bun ssh
-for the VPS. Bound long jobs asynchronously, retain PIDs/logs/receipts, and
-use ConnectTimeout=15 and BatchMode=yes. Serialize heavy work through the
-existing host lock. The Ubuntu factory keeps its state, socket, logs and
-temporary files on its qualified build filesystem. Preserve active Shenron
-restoration, services, sources, unpushed work and protected data.
+Preserve protected `.local` stores, credentials, sessions, databases, model
+weights and concurrent work. Bound long commands and serialize native builds.
+Use Cloudflare MCP for account/domain mutations. Do not add or run tests unless
+the owner requests them; explicit end-to-end qualification requests authorize
+the relevant gates.
 
-The current objective unifies Bun OS, Bun Libraries, Aphrody and the Bun fork
-in the selected src workspace. Consolidate infrastructure, builds, factories,
-quality gates, documentation, plugins, sites, domains, distribution and owners.
-Reuse qualified implementations; preserve repository histories and concurrent
-work. The earlier reporting-only phase and temporary resource hold have ended.
-
-Keep authentication, raw provider sessions, cookies, databases, model weights
-and protected .local stores isolated. Do not synchronize provider stores or
-configure deprecated MCP aliases. Our measured 50 GB cleanup was on the SSH
-VPS; it does not authorize workstation media or episode deletion.
-
-Use Cloudflare MCP for account/domain mutations. aphrody-app is the existing
-public edge owner for the application domains. Preserve the homepage, www,
-existing services and R2 custom domains. A DNS/HTTPS response qualifies routing;
-it does not qualify an independently deployed native application.
-
-Reuse capability owners: Bun OS owns `exportPinnedSources` because its Git/LFS
-acquisition, staged tree integrity and source receipts are distribution
-contracts. Bun Libraries owns the qualified artifact package and shared process
-lifetimes and streamed hashes. The canonical `bun-cloudflare` client owns
-R2/authentication, and package-converter owns ABI helpers. Native Aphrody Infra
-owns hosts, services, control-plane deployment and app activation. Existing
-adapters remain until their replacement preserves their contracts and passes
-its gates.
-Keep target/runtime and ABI versions distinct. Qualify source, binary, package,
-desktop, image, WASM, performance and publication independently.
-Do not add or run tests unless the owner requests them.
+Commit owned paths as `aphrody-dev <contact@aphrody.com>`, without co-authors.
+Fetch and verify ancestry before pushing. Never force-push.

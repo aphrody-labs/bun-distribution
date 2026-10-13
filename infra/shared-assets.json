@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "owner": "aphrody-assets",
+  "bucket": "aphrody-assets",
+  "reference": {
+    "sha256": "36a1b825dfeb20e209f022d65f928db8510cd1035cfaf746cbf29e480625a4bc",
+    "url": "https://assets.aphrody.app/manifests/sha256/36a1b825dfeb20e209f022d65f928db8510cd1035cfaf746cbf29e480625a4bc.json"
+  },
+  "entries": 17,
+  "objects": 16,
+  "bytes": 41682420
+}
