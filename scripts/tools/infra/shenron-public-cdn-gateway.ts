@@ -32,9 +32,8 @@ export function publicCdnFallback(name: string, upstream: string): string {
 }`;
 }
 
-function closingBrace(source: string, start: number): number {
-  let depth = 1,
-    quote = "",
+function* syntaxPositions(source: string, start = 0) {
+  let quote = "",
     comment = false;
   for (let i = start; i < source.length; i++) {
     const c = source[i]!;
@@ -58,14 +57,86 @@ function closingBrace(source: string, start: number): number {
       comment = true;
       continue;
     }
-    if (c === "{") depth++;
-    if (c === "}" && --depth === 0) return i;
+    yield i;
+  }
+}
+
+function closingBrace(source: string, start: number): number {
+  let depth = 1;
+  for (const i of syntaxPositions(source, start)) {
+    if (source[i] === "{") depth++;
+    if (source[i] === "}" && --depth === 0) return i;
   }
   throw Error("Unclosed CDN fallback block");
 }
 
+function blocks(source: string, pattern: RegExp) {
+  const found: { start: number; end: number; match: RegExpExecArray }[] = [];
+  let previous = -1;
+  for (const start of syntaxPositions(source)) {
+    if (start <= previous || (start > 0 && /[\w]/.test(source[start - 1]!))) continue;
+    pattern.lastIndex = start;
+    const match = pattern.exec(source);
+    if (!match) continue;
+    const end = closingBrace(source, pattern.lastIndex);
+    found.push({ start, end, match });
+    previous = end;
+  }
+  return found;
+}
+
+function bunVideoLocation(path: string, mime: string) {
+  return `location = ${path} {
+  if ($request_method !~ "^(GET|HEAD)$") { return 405; }
+  root /srv/shenron-cdn/site;
+  types {}
+  default_type ${mime};
+  add_header X-Content-Type-Options nosniff always;
+  add_header Cache-Control "no-cache" always;
+  try_files $uri =404;
+}`;
+}
+
+function insertBunVideoAssets(source: string) {
+  let result = "",
+    previous = 0,
+    owners = 0;
+  for (const server of blocks(source, /server\s*\{/y)) {
+    const body = source.slice(server.start, server.end);
+    if (!blocks(body, /location\s+@cdn_(?:worker|public_origin)\s*\{/y).length) continue;
+    const existing = blocks(
+      body,
+      /location\s*=\s*(\/assets\/bun-video\/(?:hls\.worker\.js|LICENSE\.txt))\s*\{/y,
+    );
+    const missing: string[] = [];
+    for (const [path, mime] of [
+      ["/assets/bun-video/hls.worker.js", "application/javascript"],
+      ["/assets/bun-video/LICENSE.txt", "text/plain"],
+    ]) {
+      const wanted = bunVideoLocation(path!, mime!);
+      const matches = existing.filter((entry) => entry.match[1] === path);
+      if (
+        matches.length > 1 ||
+        (matches.length && body.slice(matches[0]!.start, matches[0]!.end + 1) !== wanted)
+      )
+        throw Error("Conflicting exact Bun Video asset location");
+      if (!matches.length) missing.push(wanted);
+    }
+    result +=
+      source.slice(previous, server.end) + (missing.length ? `\n${missing.join("\n")}\n` : "");
+    previous = server.end;
+    owners++;
+  }
+  if (!owners) throw Error("No owned server for staged Bun Video assets");
+  return result + source.slice(previous);
+}
+
 /** Replace only named CDN fallback blocks; preserve site/API/TLS routing verbatim. */
-export function renderPublicCdnGateway(source: string, upstream: string): string {
+export function renderPublicCdnGateway(
+  source: string,
+  upstream: string,
+  includeBunVideoAssets = false,
+): string {
   const pattern = /^[ \t]*location\s+(@cdn_(?:worker|public_origin))\s*\{/gm;
   let result = "",
     previous = 0,
@@ -78,15 +149,17 @@ export function renderPublicCdnGateway(source: string, upstream: string): string
     count++;
   }
   if (!count) throw Error("No owned CDN fallback blocks found");
-  return result + source.slice(previous);
+  const rendered = result + source.slice(previous);
+  return includeBunVideoAssets ? insertBunVideoAssets(rendered) : rendered;
 }
 
 if (import.meta.main) {
-  const [source, destination, upstream] = process.argv.slice(2);
+  const [source, destination, upstream, assets] = process.argv.slice(2);
   if (!source || !destination || !upstream || source === destination)
     throw Error("Expected distinct SOURCE CANDIDATE and qualified LOOPBACK_UPSTREAM");
+  if (assets && assets !== "--bun-video-assets") throw Error("Unknown explicit asset option");
   const input = await Bun.file(source).text();
-  const output = renderPublicCdnGateway(input, upstream);
+  const output = renderPublicCdnGateway(input, upstream, assets === "--bun-video-assets");
   await Bun.write(destination, output);
   console.log(
     JSON.stringify({

@@ -70,3 +70,46 @@ test("public fallback admits catalog video and audio paths without broadening pr
   expect(result).toContain("proxy_set_header Range $http_range");
   expect(result).toContain("proxy_set_header If-Range $http_if_range");
 });
+
+test("explicit SDK assets override only their two exact paths in each owning server", () => {
+  const first =
+    "server { location /assets/ { alias /srv/shenron-cdn/assets/; }\nlocation @cdn_worker { return 404; }\n}";
+  const second = "server {\nlocation @cdn_public_origin { return 404; }\n}";
+  const unrelated = "server {\nlocation / { return 302 /home; }\n}";
+  const source = `${first}${second}\n${unrelated}`;
+  const old = renderPublicCdnGateway(source, "http://127.0.0.1:9077");
+  expect(old).not.toContain("/assets/bun-video/");
+  expect(renderPublicCdnGateway(source, "http://127.0.0.1:9077", false)).toBe(old);
+  const result = renderPublicCdnGateway(source, "http://127.0.0.1:9077", true);
+  expect(result.match(/location = \/assets\/bun-video\/hls\.worker\.js/g)).toHaveLength(2);
+  expect(result.match(/location = \/assets\/bun-video\/LICENSE\.txt/g)).toHaveLength(2);
+  expect(result).toContain("location /assets/ { alias /srv/shenron-cdn/assets/; }");
+  expect(result).toContain(unrelated);
+  for (const token of [
+    "root /srv/shenron-cdn/site;",
+    "default_type application/javascript;",
+    "default_type text/plain;",
+    "X-Content-Type-Options nosniff always",
+    'Cache-Control "no-cache" always',
+    "try_files $uri =404;",
+  ])
+    expect(result).toContain(token);
+  expect(result).not.toContain("location /assets/bun-video/");
+  expect(renderPublicCdnGateway(result, "http://127.0.0.1:9077", true)).toBe(result);
+});
+
+test("quoted and commented fake servers are ignored and conflicting exact SDK routes fail closed", () => {
+  const body = "server {\nlocation @cdn_worker { return 404; }\n}";
+  const fake =
+    '# server { location @cdn_worker { fake; } }\nset $label "server { location @cdn_worker { fake; } }";\n';
+  const result = renderPublicCdnGateway(fake + body, "http://127.0.0.1:9077", true);
+  expect(result).toContain(fake);
+  expect(result.match(/location = \/assets\/bun-video\/hls\.worker\.js/g)).toHaveLength(1);
+  const conflict = body.replace(
+    "server {",
+    "server { location = /assets/bun-video/hls.worker.js { proxy_pass http://wrong; }",
+  );
+  expect(() => renderPublicCdnGateway(conflict, "http://127.0.0.1:9077", true)).toThrow(
+    "Conflicting exact",
+  );
+});
