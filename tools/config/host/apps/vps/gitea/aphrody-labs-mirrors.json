@@ -45360,26 +45360,26 @@
       "name": "bun-distribution",
       "owner": "aphrody-dev",
       "branch": "os",
-      "private": true,
+      "private": false,
       "actionsEnabled": true,
-      "sourceSnapshotQualifiedSha": "f4765b9db5f5c8225be3a165f79edbe7b107a55a",
-      "latestSourceObservedSha": "ca445b76516ff4b75582c70d1a3cc9c119397b67",
-      "targetObservedSha": "995674e586f61a0cd35dd9cee4b472a12d7ee559",
+      "sourceSnapshotQualifiedSha": "4a737b4ab442c059466669d98914e79baeb1c070",
+      "latestSourceObservedSha": "4a737b4ab442c059466669d98914e79baeb1c070",
+      "targetObservedSha": "4a737b4ab442c059466669d98914e79baeb1c070",
       "sourceRefs": [
         "refs/heads/os"
       ],
       "targetRefs": [
         "refs/heads/os"
       ],
-      "refsAligned": false,
+      "refsAligned": true,
       "mirror": true,
       "defaultBranch": "os",
       "sourceUrl": "https://github.com/aphrody-labs/bun-distribution.git",
-      "lfsStatus": "pending fresh check after source pushes stabilize; .gitattributes had no filter=lfs at qualified snapshot f4765b9",
-      "status": "private-during-resync",
-      "anonymousStatus": 404,
-      "lastChecked": "2026-10-13T22:13:41Z",
-      "publicCutover": false
+      "lfsStatus": "not rechecked at current refs; prior qualified snapshot f4765b9 had no filter=lfs; repository catalog lfsApplicable=false",
+      "status": "refs-and-visibility-qualified",
+      "anonymousStatus": 200,
+      "lastChecked": "2026-10-13T23:27:50Z",
+      "publicCutover": true
     },
     "storage": {
       "freeKiB": 63631316,
@@ -46630,21 +46630,22 @@
       "freeKiB": 63631316
     },
     "currentStatus": {
-      "verifiedAt": "2026-10-13T22:20:41Z",
+      "verifiedAt": "2026-10-13T23:29:21Z",
       "totalRepositories": 239,
-      "qualifiedCurrentSourceSnapshots": 212,
-      "pendingQualification": 27,
+      "qualifiedCurrentSourceSnapshots": 213,
+      "pendingQualification": 26,
       "pendingBreakdown": {
         "existingMirrorsFullRefsVisibility": 1,
         "storageAdmission": 24,
         "lfsQualification": 1,
-        "distributionResync": 1
+        "distributionResync": 0
       },
       "sourceVisibility": {
         "public": 205,
         "private": 34
       },
-      "archived": 5
+      "archived": 5,
+      "qualificationScope": "Counts are repository-level recorded source snapshots and pending qualifications; the other qualified repositories were not refreshed simultaneously in this pass."
     },
     "existingMirrorsRequalification": {
       "verifiedAt": "2026-10-13T22:20:41Z",
