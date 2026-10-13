@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { isAbsolute, join, resolve } from "node:path";
 import { infraRoot, runInfra } from "./runtime.ts";
 import { buildFactoryPlan, readFactoryConfig } from "./build-factory.ts";
 
@@ -38,6 +38,34 @@ export type FleetReadiness = {
   observed?: number;
   diskGiB?: number;
 };
+
+async function resolveLocalHost(host: FleetHost, workspaceRoot: string): Promise<FleetHost> {
+  const marker = "$APHRODY_BUN_CHECKOUT/";
+  const locks = host.externalLocks ?? [];
+  if (!host.local || !locks.some((lock) => lock.startsWith(marker))) return host;
+
+  const configured = process.env.APHRODY_BUN_CHECKOUT?.trim();
+  const candidates = [
+    ...(configured ? [configured] : []),
+    resolve(workspaceRoot, "..", "bun"),
+  ].filter(isAbsolute);
+  const checkout = (
+    await Promise.all(
+      candidates.map(async (candidate) => {
+        const path = resolve(candidate);
+        return (await Bun.file(join(path, "docs", "docs.json")).exists()) ? path : undefined;
+      }),
+    )
+  ).find((path) => path !== undefined);
+  if (!checkout)
+    throw new Error("The configured Bun checkout is unavailable for its native build lock");
+  return {
+    ...host,
+    externalLocks: locks.map((lock) =>
+      lock.startsWith(marker) ? join(checkout, lock.slice(marker.length)) : lock,
+    ),
+  };
+}
 
 function digest(value: unknown) {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -285,6 +313,7 @@ export async function runBuildFleet(args: readonly string[]): Promise<number> {
     )
   )
     throw Error("Invalid host capacity or protected production policy");
+  const hosts = await Promise.all(config.hosts.map((host) => resolveLocalHost(host, root)));
   const stateRoot = join(
     process.env.USERPROFILE ?? process.env.HOME ?? root,
     ".aphrody",
@@ -296,7 +325,7 @@ export async function runBuildFleet(args: readonly string[]): Promise<number> {
       throw Error("Stable job id required");
     const file = join(stateRoot, rest[1] + ".json");
     const saved = JSON.parse(await readFile(file, "utf8"));
-    const host = config.hosts.find((h) => h.id === saved.host?.id);
+    const host = hosts.find((h) => h.id === saved.host?.id);
     if (!host) throw Error("Recorded host is not in fleet catalog");
     const script = `(async()=>{const fs=await import('node:fs'),path=await import('node:path'),os=await import('node:os');${processIdentitySource}
       const marker=path.join(os.homedir(),'.aphrody','build-fleet',${JSON.stringify(rest[1] + ".json")});
@@ -317,7 +346,7 @@ export async function runBuildFleet(args: readonly string[]): Promise<number> {
     return 0;
   }
   if (operation === "readiness") {
-    console.log(JSON.stringify(await inspectFleet(config.hosts), null, 2));
+    console.log(JSON.stringify(await inspectFleet(hosts), null, 2));
     return 0;
   }
   if (!["plan", "run"].includes(operation) || rest[0] !== "--file" || !rest[1])
@@ -353,11 +382,11 @@ export async function runBuildFleet(args: readonly string[]): Promise<number> {
       return recorded.every((r) => r.state === "terminal" && r.exitCode === 0) ? 0 : 1;
     }
   }
-  const readiness = await inspectFleet(config.hosts),
+  const readiness = await inspectFleet(hosts),
     occupied = new Set<string>();
   const plans = await Promise.all(
     requests.map(async (request) => {
-      const host = selectHost(config.hosts, readiness, request, occupied);
+      const host = selectHost(hosts, readiness, request, occupied);
       occupied.add(host.id);
       let command: string | undefined;
       if (request.kind === "build" && host.id === "vps") {
