@@ -8,7 +8,6 @@ exclude = [
   "crates/os/kernel/comps/drive",
   "crates/tauri/aphrody-tauri-api",
   "crates/tauri/aphrody-tauri-runtime",
-  "crates/ui/m3-tokens",
   "crates/web/dragon-pixel-core",
   "crates/web/dragon-pixel-server",
   "crates/web/dragon-pixel-wasm",

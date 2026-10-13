@@ -372,8 +372,8 @@
           ],
           [
             "2026-10-13",
-            "Aphrody M3 token consumers now resolve the Material Git owner at 229a767493818a5dd9f92451b4a99699894a1865. The old crate is excluded from Aphrody Cargo membership; native Windows locked metadata and scoped checks passed for app, Bun UI, identity, M3, M3 reproduce and SVG. Active fonts and CDN catalogs now point to Material. Aphrody processes were stopped, the native hub-tunnel task disabled, and the selected checkout is already under C:/src/aphrody.",
-            "The duplicate source directory remains on disk because recursive removal was rejected by host policy. The .git directory owner remains BUILTIN Administrators; this session is not elevated. Tests were not run. Bun lint/fmt passed for the changed creator page; Bun check reaches existing type errors in Material's pinned MCU fork."
+            "Material owns the transferred M3 component and token sources. Retired the duplicate crates/ui/m3 and crates/ui/m3-tokens trees after validating transfer receipts and source hashes, finding no Aphrody Rust consumer for the local component crate, and confirming every token consumer resolves pinned Material revision 229a767493818a5dd9f92451b4a99699894a1865. Cargo refreshed the root lockfile and metadata reports only the Material token crate. Aphrody remains at C:/src/aphrody; user repository roots point there and no Aphrody processes were present at the probe.",
+            "No tests or Rust build ran in this retirement batch; Cargo metadata is the post-removal gate. The Git metadata directory remains owned by BUILTIN Administrators: icacls setowner returned Access denied without an elevated administrator token. Bun M3 integration and broader app/UI qualification remain open."
           ],
           [
             "2026-10-13",

@@ -6,7 +6,7 @@ Facts read from `cargo metadata --no-deps`, the root `package.json` Bun workspac
 Crates are Rust workspace members outside `apps/`; packages are Bun workspaces outside `apps/`;
 apps are Rust or Bun members under `apps/`. `todo!` counts `todo!(` and `unimplemented!(` in `.rs` files.
 
-Totals: **127 crates**, **82 packages**, **0 apps** (127 Rust, 82 Bun).
+Totals: **125 crates**, **83 packages**, **0 apps** (125 Rust, 83 Bun).
 
 ## Per domain
 
@@ -20,14 +20,14 @@ Totals: **127 crates**, **82 packages**, **0 apps** (127 Rust, 82 Bun).
 | [engine](#engine) | 1 | 3 | 0 | 0 |
 | [infra](#infra) | 15 | 7 | 0 | 0 |
 | [interop](#interop) | 1 | 1 | 0 | 0 |
-| [material](#material) | 0 | 32 | 0 | 0 |
+| [material](#material) | 0 | 33 | 0 | 0 |
 | [ml](#ml) | 5 | 0 | 0 | 0 |
 | [native](#native) | 3 | 0 | 0 | 0 |
 | [os](#os) | 17 | 4 | 0 | 0 |
 | [pkg](#pkg) | 5 | 0 | 0 | 0 |
 | [shell](#shell) | 5 | 1 | 0 | 0 |
 | [tauri](#tauri) | 17 | 15 | 0 | 25 |
-| [ui](#ui) | 14 | 0 | 0 | 0 |
+| [ui](#ui) | 12 | 0 | 0 | 0 |
 
 ## Workspace exclusions
 
@@ -38,19 +38,6 @@ Root `Cargo.toml` `[workspace] exclude`:
 - `crates/os/kernel/comps/drive`
 - `crates/tauri/aphrody-tauri-api`
 - `crates/tauri/aphrody-tauri-runtime`
-- `crates/tauri/aphrody-tauri-plugin-barcode-scanner`
-- `crates/tauri/aphrody-tauri-plugin-biometric`
-- `crates/tauri/aphrody-tauri-plugin-cli`
-- `crates/tauri/aphrody-tauri-plugin-geolocation`
-- `crates/tauri/aphrody-tauri-plugin-haptics`
-- `crates/tauri/aphrody-tauri-plugin-http`
-- `crates/tauri/aphrody-tauri-plugin-nfc`
-- `crates/tauri/aphrody-tauri-plugin-positioner`
-- `crates/tauri/aphrody-tauri-plugin-shell`
-- `crates/tauri/aphrody-tauri-plugin-sql`
-- `crates/tauri/aphrody-tauri-plugin-stronghold`
-- `crates/tauri/aphrody-tauri-plugin-upload`
-- `crates/tauri/aphrody-tauri-plugin-websocket`
 - `crates/web/dragon-pixel-core`
 - `crates/web/dragon-pixel-server`
 - `crates/web/dragon-pixel-wasm`
@@ -222,6 +209,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `@aphrody/canvas` | [../material/packages/canvas](../../../../material/packages/canvas) | bun package | 1.4.5 | lib | yes | 0 | uncommitted |
 | `@aphrody/eslint-plugin-m3` | [../material/packages/eslint-plugin-m3](../../../../material/packages/eslint-plugin-m3) | bun package | 1.4.5 | lib | yes | 0 | uncommitted |
 | `@aphrody/identity` | [../material/packages/identity](../../../../material/packages/identity) | bun package | 1.4.5 | lib | yes | 0 | uncommitted |
+| `@aphrody/libm3` | [../material/packages/libm3](../../../../material/packages/libm3) | bun package | 1.4.4 | lib | no | 0 | uncommitted |
 | `aphrody-m3` | [../material/packages/m3](../../../../material/packages/m3) | bun package | - | private | yes | 0 | uncommitted |
 | `@aphrody/m3-ai` | [../material/packages/m3-ai](../../../../material/packages/m3-ai) | bun package | 1.4.5 | lib | yes | 0 | uncommitted |
 | `@aphrody/m3-baseui` | [../material/packages/m3-baseui](../../../../material/packages/m3-baseui) | bun package | 1.4.5 | lib | yes | 0 | uncommitted |
@@ -360,9 +348,7 @@ Tracked Cargo manifests outside the root workspace (excluded, nested workspaces 
 | `aphrody-bun` | [crates/ui/bun](../../../crates/ui/bun) | rust crate | 1.4.4 | rlib | yes | 0 | uncommitted |
 | `aphrody-drive` | [crates/ui/drive](../../../crates/ui/drive) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
 | `aphrody-identity` | [crates/ui/identity](../../../crates/ui/identity) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
-| `aphrody-m3` | [crates/ui/m3](../../../crates/ui/m3) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
 | `aphrody-m3-reproduce` | [crates/ui/m3-reproduce](../../../crates/ui/m3-reproduce) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
-| `aphrody-m3-tokens` | [crates/ui/m3-tokens](../../../crates/ui/m3-tokens) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
 | `aphrody-render` | [crates/ui/render](../../../crates/ui/render) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
 | `aphrody-softraster` | [crates/ui/softraster](../../../crates/ui/softraster) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |
 | `aphrody-sprite-sheet` | [crates/ui/sprite-sheet](../../../crates/ui/sprite-sheet) | rust crate | 1.4.4 | lib | yes | 0 | uncommitted |

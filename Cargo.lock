@@ -1605,17 +1605,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aphrody-m3"
-version = "1.4.4"
-dependencies = [
- "aphrody-identity",
- "aphrody-m3-tokens",
- "aphrody-render",
- "aphrody-taffy",
- "serde",
-]
-
-[[package]]
 name = "aphrody-m3-reproduce"
 version = "1.4.4"
 dependencies = [

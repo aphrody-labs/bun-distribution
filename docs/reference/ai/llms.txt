@@ -37,6 +37,7 @@
 - [`vu`: the Aphrody Python runtime](..\..\plans\vu\PLAN.md)
 - [Aphrody — FFI unique et consolidation Rust, Python, Bun](..\..\plans\workspace\PLAN.md)
 - [`@aphrody/x`: a thin Bun import over `aphrody-x`](..\..\plans\x-bun-import\PLAN.md)
+- [Yolo : modèle de décision privé](..\..\plans\yolo-decision\PLAN.md)
 - [yolo et le fork Bun : un seul produit runtime](..\..\plans\yolo-fork-unified\PLAN.md)
 - [Aphrody AI](..\..\products\ai\README.md)
 - [Aphrody Compat](..\..\products\compat\README.md)
