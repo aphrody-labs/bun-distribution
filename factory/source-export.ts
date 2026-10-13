@@ -13,6 +13,7 @@ import {
   unlink,
 } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { runProcess } from "@aphrody/bun-workspace/process";
 import { readLock, type Source, type SourceLock } from "../src/distribution.ts";
 
 /** Upper bounds, measured by the source owner before acquisition. Entries include directories and symlinks. */
@@ -377,40 +378,35 @@ async function gitText(
   settings: { overrides?: string[]; trim?: boolean } = {},
 ) {
   signal.throwIfAborted();
-  const child = Bun.spawn({
-    cmd: [
-      "git",
-      "-c",
-      "core.hooksPath=",
-      "-c",
-      "core.fsmonitor=false",
-      "-c",
-      "core.pager=",
-      ...(settings.overrides ?? []).flatMap(value => ["-c", value]),
-      "-C",
-      checkout,
-      ...args,
-    ],
-    env: gitEnvironment(),
-    stdout: "pipe",
-    stderr: "pipe",
-    windowsHide: true,
-    timeout: 120_000,
-  });
-  const abort = () => child.kill();
-  signal.addEventListener("abort", abort, { once: true });
   try {
-    const [output, , code] = await Promise.all([
-      bytesOf(child.stdout, 1024 * 1024, signal),
-      drain(child.stderr),
-      child.exited,
-    ]);
-    if (code !== 0) fail("git-owner-command-failed");
-    const text = decoder.decode(output);
-    return settings.trim === false ? text : text.trim();
-  } finally {
-    signal.removeEventListener("abort", abort);
-    if (child.exitCode === null) child.kill();
+    const result = await runProcess(
+      [
+        "git",
+        "-c",
+        "core.hooksPath=",
+        "-c",
+        "core.fsmonitor=false",
+        "-c",
+        "core.pager=",
+        ...(settings.overrides ?? []).flatMap(value => ["-c", value]),
+        ...args,
+      ],
+      checkout,
+      {
+        env: gitEnvironment(),
+        timeoutMs: 120_000,
+        maxOutputBytes: 1024 * 1024,
+        signal,
+        stdout: "capture",
+        stderr: "discard",
+      },
+    );
+    if (result.code !== 0) fail("git-owner-command-failed");
+    return settings.trim === false ? result.stdout : result.stdout.trim();
+  } catch (error) {
+    if (error instanceof ExportError) throw error;
+    if (signal.aborted) fail("source-export-deadline-or-cancellation");
+    fail("git-owner-command-failed");
   }
 }
 
