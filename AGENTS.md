@@ -44,6 +44,12 @@ Keep private repositories, credentials, domain conversations and data private.
 
 ## Architecture
 
+Owner directive 2026-10-13: all Aphrody sites and applications are surfaces of one
+product, owned by `packages/infra/product` (`@aphrody/product`). Bun owns runtime
+capabilities and Material owns shared framework/UI packages. Consolidate product
+entrypoints, releases and routes here; retire separate implementations after
+consumer and host qualification. A source move alone is not deployment proof.
+
 Owner directive (2026-10-13): Aphrody is the product repository. Google, M3,
 Obscura and Tauri framework/runtime/SDK sources belong outside Aphrody, in Bun
 or Material. Consume package, registry crate or pinned Git interfaces; retire

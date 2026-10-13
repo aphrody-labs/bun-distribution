@@ -124,7 +124,7 @@ rendering and truthful unavailable notices do not establish those capabilities.
   scheme source, search wiring and the explicit AI fixture.
 - `m3/packages/app-ui/src/tauri-bridge.ts`, `kit-bridge.ts`,
   `backend-inventory.ts`, `codex-chat.tsx`: actual bridge commands and RPC methods.
-- `packages/infra/workspace/src/downloads/server.ts`: `APP_UI_ROUTES`,
+- `packages/infra/product/src/downloads/server.ts` (moved from Workspace on 2026-10-13): `APP_UI_ROUTES`,
   `appUiResponse`, `appUiDocsResponse`, `publicSearchResponse`, `createHandler`.
 - `m3/packages/app-ui/build.ts`: generated public home/docs artifacts.
 - `m3/packages/m3-theme/src/index.ts`: `httpSchemeSheet` requests `/api/m3/css`.
