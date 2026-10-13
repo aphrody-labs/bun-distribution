@@ -1,7 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import { isAbsolute, join, relative, sep } from "node:path";
+import { checkoutRoot as resolveCheckoutRoot, findWorkspaceRoot } from "@aphrody/paths";
 const sha = (bytes: Uint8Array) => new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
+
+/** Resolve product inputs from the selected execution context, independent of UI package location. */
+export function productBuildContext(env: NodeJS.ProcessEnv = process.env) {
+  const workspaceRoot = findWorkspaceRoot(undefined, env);
+  return {
+    workspaceRoot,
+    bunCheckout: resolveCheckoutRoot("bun", env),
+    uiDist: join(workspaceRoot, "crates/ui/app/ui-dist"),
+    publicAssets: join(workspaceRoot, "tools/config/public-assets.json"),
+  };
+}
 
 export function canonicalBunInputs(checkout: string, revision: string) {
   if (!/^[a-f0-9]{40}$/.test(revision)) throw new Error("Exact Bun source revision required");
