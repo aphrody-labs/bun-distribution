@@ -11,6 +11,17 @@ parsed both files after the same-volume move and verified their hashes; the old
 asset directory is absent. The Bun OS build/docs already resolve the reference
 from this owner path. No app build or tests ran.
 
+## FilmCraft Windows artifact ownership — 2026-10-14
+
+Moved the existing Windows video artifact, its report and runtime pin from the
+retired Bun Libraries local output into Bun OS `.local/apps/bun-os/`. Updated
+the Bun OS build report and shared build receipt to the new owner path. The
+212,555,776-byte executable retained SHA-256
+`3882d6b68c65cb54861e786d2dbd2e1976ffb81d52ebc8232c2b1c32e5990691`; Bun
+parsed both receipts and verified the path and artifact identity. Its pinned
+runtime is `2ae8fc65fba1d05c423a2433b1195835109942b6`; the receipt still marks
+app behavior and deployment false. No build or tests ran.
+
 ## Runtime source preflight — 2026-10-13
 
 - The distribution plan now inspects Bun's selected checkout with bounded Git
