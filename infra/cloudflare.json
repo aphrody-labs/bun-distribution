@@ -3,7 +3,7 @@
   "owner": "aphrody-infra",
   "zone": "aphrody.app",
   "zoneId": "f4dab237b9811435da6fee0b5b3438d4",
-  "origin": "51.77.147.152",
+  "ipv4Origin": "51.77.147.152",
   "records": [
     {
       "name": "app-video.aphrody.app",
@@ -101,6 +101,20 @@
       "id": "54cb28b2edbaba83ebb6ff55e2bb0bcc",
       "type": "A",
       "content": "51.77.147.152",
+      "proxied": true
+    },
+    {
+      "name": "apt.aphrody.app",
+      "id": "69680f65aa2d8f41e11c00b6bd95acc5",
+      "type": "AAAA",
+      "content": "100::",
+      "proxied": true
+    },
+    {
+      "name": "desktop.aphrody.app",
+      "id": "572d9e2b46d863f80bf44acb730daaa2",
+      "type": "AAAA",
+      "content": "100::",
       "proxied": true
     },
     {

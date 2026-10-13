@@ -9,6 +9,13 @@
   from its `infra/apps.json`. APT and the Bun Libraries desktop keep their own
   product-specific hosts. Existing Cloudflare records and routes were not changed.
 
+## Cloudflare inventory reconciliation
+
+- Read-only Cloudflare API inventory confirmed 14 proxied `app-*` A records,
+  plus proxied AAAA records for `apt.aphrody.app` and `desktop.aphrody.app`.
+  `infra/cloudflare.json` now records both product hosts and labels
+  `51.77.147.152` as the IPv4 origin. No DNS records or Worker routes changed.
+
 - Created in the selected C:\src workspace on 2026-10-13.
 - Authored text is concise English. Identity belongs to Aphrody and Bun.
 - Imported sources are libraries. The shell exposes capabilities and headless
