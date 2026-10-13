@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "sourceService": "shenron-bot",
+  "offsiteHost": "vps",
+  "backupDirectory": "backups/shenron-sqlite",
+  "offsiteDirectory": "archive/dbfr/backups/shenron-sqlite",
+  "backupScript": "scripts/tools/infra/backup-shenron-sqlite.sh",
+  "replicaExecutable": "/usr/local/bin/shenron-bot"
+}
