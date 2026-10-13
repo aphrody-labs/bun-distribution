@@ -65,6 +65,12 @@
   Docker engine remains with its dedicated service-lifetime receipt. Native
   Bun OS check (35 files), lint, format, and `plan apt` passed; the plan remains
   blocked by the runtime checksum mismatch. No factory build or tests ran.
+- Bun OS commit ce9bb1448313078d15b96efde6c109572e8d061e routes bounded
+  source-export Git metadata commands through the same Bun Libraries process
+  owner. The one MiB combined output ceiling, two-minute deadline, cancellation,
+  strict stdout decoding and silent stderr behavior remain; streaming Git tree
+  and archive commands remain with Bun OS. Full native check, lint and format
+  passed. No export, build or tests ran.
 
 ## Owners and execution
 
